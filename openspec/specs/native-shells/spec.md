@@ -218,7 +218,7 @@ The payloads the web app hands a shell (the reminder schedule, the widget data, 
 - **THEN** the Android unit test of the addresses fails against the shared fixture
 
 ### Requirement: Obsidian note links leave the shell
-A shell that lists the capability `obsidian-links` SHALL accept, through its external-link method, an Obsidian note link of the exact form the `task-management` "Origin validation" requirement defines (`obsidian://open` with only `vault` and `file`) and hand it to the operating system, which opens Obsidian or does nothing when Obsidian is not installed. Every other `obsidian:` URL, and every other custom scheme, SHALL still be refused; the external-link allow-list otherwise stays `https`, `http`, `mailto` and `tel`. The shell SHALL NOT navigate its web view to an `obsidian:` URL. The check SHALL be a pure function covered by each shell's unit tests and by the shared bridge fixtures.
+A shell that lists the capability `obsidian-links` SHALL accept, through its external-link method, an Obsidian note link of the exact form the `task-management` "Origin validation" requirement defines (`obsidian://open` with only `vault` and `file`) and hand it to the operating system, which opens Obsidian or does nothing when Obsidian is not installed. Every other `obsidian:` URL, and every other custom scheme, SHALL still be refused; the external-link allow-list otherwise stays `https`, `http`, `mailto` and `tel`, and on Android also a `geo:` point of the form `geo:<lat>,<lon>` or `geo:<lat>,<lon>?q=<lat>,<lon>` with coordinates in range, which the Android shell SHALL hand to the maps app and, when no app opens it, open as the same point on openstreetmap.org in the browser. The shell SHALL NOT navigate its web view to an `obsidian:` URL. The check SHALL be a pure function covered by each shell's unit tests and by the shared bridge fixtures.
 
 #### Scenario: Open a note from the Android app
 - **WHEN** the user taps the origin chip of a task whose origin is `{kind: "obsidian", id: "Daily/2026-10-29.md", url: "obsidian://open?vault=Notes&file=Daily%2F2026-10-29"}` in the Android app with Obsidian installed
@@ -236,12 +236,24 @@ A shell that lists the capability `obsidian-links` SHALL accept, through its ext
 - **WHEN** a shell released before this change loads a web app that knows `obsidian-links`
 - **THEN** the shell does not list the capability, the web app never calls the external-link method with an Obsidian link, and the chip offers "Copy link"
 
+#### Scenario: Open in maps from the Android app
+- **WHEN** the user taps "Open in maps" on a task's location with coordinates in the Android app
+- **THEN** the phone's maps app opens at that point, or the browser opens it on openstreetmap.org when no maps app is installed, and the web view stays on the task
+
+#### Scenario: Another geo link refused
+- **WHEN** a page hands the Android shell `geo:0,0?q=pizza`
+- **THEN** the shell opens nothing
+
 ### Requirement: System bars follow the app's theme
-A shell MAY offer the bridge capability `system-bars`, which lets the web app hand it the bar colour as `#rrggbb` and whether the icons on it must be light. A shell that offers it SHALL colour the phone's status bar (and on Android the navigation bar) with it and choose legible icons (on iOS, where the status bar is drawn over the page, the colour SHALL fill the web view's background and under-page area and the icons MAY follow the system appearance), SHALL remember the last colour and apply it at its next launch before the page is drawn, and SHALL ignore a malformed payload. The web app SHALL hand the colour over whenever the bar colour changes, and SHALL NOT call the method on a shell that does not list the capability. The payload SHALL be part of the shared bridge fixtures.
+A shell MAY offer the bridge capability `system-bars`, which lets the web app hand it the bar colour as `#rrggbb` and whether the icons on it must be light. A shell that offers it SHALL colour the phone's status bar (and on Android the navigation bar) with it and SHALL show light icons when the payload asks for them and dark icons otherwise, whatever the phone's own appearance is (on iOS, where the status bar is drawn over the page, the colour SHALL fill the web view's background and under-page area). Choosing the icons SHALL NOT change the appearance the page sees from the system. A shell SHALL remember the last colour and icon choice and apply them at its next launch before the page is drawn, and SHALL ignore a malformed payload. The web app SHALL hand the colour over whenever the bar colour changes, and SHALL NOT call the method on a shell that does not list the capability. The payload SHALL be part of the shared bridge fixtures.
 
 #### Scenario: Theme change on Android
 - **WHEN** the user switches the dark side's theme while the Android app is in dark mode
 - **THEN** the status and navigation bars take the new theme's bar colour in the same moment the page changes
+
+#### Scenario: Dark theme under a light system on iPhone
+- **WHEN** the iPhone is in light appearance and the user chooses a dark theme in the app
+- **THEN** the status bar icons turn light, and a page that follows the system still sees a light system
 
 #### Scenario: Malformed payload
 - **WHEN** the shell receives a colour `red` or a payload without `dark`
@@ -267,7 +279,7 @@ Until Google Play approves the app's background-location declaration, the Androi
 - **THEN** the Android CI job fails and names the permission and the build
 
 ### Requirement: Microphone for voice capture
-The Android shell SHALL declare `RECORD_AUDIO` and SHALL ask for it the first time the web app records, and not before. It SHALL grant audio capture only to a page of the configured server, and SHALL NOT grant the camera from that request. A page of another origin SHALL be refused without a prompt. The microphone feature SHALL NOT be required, so a device without one can still install the app. The web app SHALL ask the shell before it records when the shell lists the `microphone` capability, and SHALL keep today's behaviour when it does not.
+The Android shell SHALL declare `RECORD_AUDIO`, and `MODIFY_AUDIO_SETTINGS`, without which the web view opens no microphone, and SHALL ask for it the first time the web app records, and not before. It SHALL grant audio capture only to a page of the configured server, and SHALL NOT grant the camera from that request. A page of another origin SHALL be refused without a prompt. The microphone feature SHALL NOT be required, so a device without one can still install the app. The web app SHALL ask the shell before it records when the shell lists the `microphone` capability, and SHALL keep today's behaviour when it does not.
 
 #### Scenario: First dictation
 - **WHEN** the person taps the microphone in the Android app and has not allowed it
@@ -281,8 +293,12 @@ The Android shell SHALL declare `RECORD_AUDIO` and SHALL ask for it the first ti
 - **WHEN** the person has already allowed the microphone and taps it again
 - **THEN** Android does not ask again and the page records
 
+#### Scenario: Server speech service in the app
+- **WHEN** the person has allowed the microphone, chose **This server's speech service** and taps the microphone in Quick Add
+- **THEN** Android shows its microphone indicator and the page records, as in Chrome on the same phone
+
 ### Requirement: The iOS bridge exists on every server
-The iOS app's bridge (`window.opentodoShell` and its message handler) SHALL exist on the pages of the configured server's origin in every build, whatever that server's host. The portable build, which is the one published through TestFlight and the App Store, SHALL NOT declare `WKAppBoundDomains`, not even a placeholder, because WebKit denies user scripts, `evaluateJavaScript` and message handlers outside the declared domains as soon as the key is present. Only a one-server build SHALL declare app-bound domains, and only the hosts its builder names. The page-side origin check SHALL compare against what `location.origin` prints, which leaves out only the scheme's own default port. The iOS tests SHALL load a page from a server on an ordinary host in the real shell and check that the page sees the bridge.
+The iOS app's bridge (`window.opentodoShell` and its message handler) SHALL exist on the pages of the configured server's origin in every build, whatever that server's host. The portable build, which is the one published through TestFlight and the App Store, SHALL NOT declare `WKAppBoundDomains`, not even a placeholder, because WebKit denies user scripts, `evaluateJavaScript` and message handlers outside the declared domains as soon as the key is present. Only a one-server build SHALL declare app-bound domains, and only the hosts its builder names. The page-side origin check SHALL compare against what `location.origin` prints, which leaves out only the scheme's own default port. The message handler's origin check SHALL read the port WebKit reports for a frame's security origin as 0 as the scheme's own default port (443 for `https`, 80 for `http`), never as another port, so a server on its standard port is answered. The iOS tests SHALL load a page from a server on an ordinary host in the real shell and check that the page sees the bridge.
 
 #### Scenario: Widget and reminders on a self-hosted server
 - **WHEN** a person installs the App Store build, connects it to `https://todo.example.com` and signs in
@@ -299,6 +315,14 @@ The iOS app's bridge (`window.opentodoShell` and its message handler) SHALL exis
 #### Scenario: A port that is not the scheme's default
 - **WHEN** the configured server is `https://todo.example.com:80`
 - **THEN** the bridge's origin check expects `https://todo.example.com:80`, the origin the page reports, and the bridge exists
+
+#### Scenario: A server on the standard port
+- **WHEN** the configured server is `https://todo.example.com` and its page calls the bridge, and WebKit reports the frame's security origin as `https`, `todo.example.com`, port 0
+- **THEN** the message handler answers the call: links open in Safari, the widget is published, and reminders and the test notification are scheduled
+
+#### Scenario: Port 0 is never another port
+- **WHEN** the configured server is `https://todo.example.com:8443` and a frame of `https://todo.example.com` (port 0) calls the bridge
+- **THEN** the call is refused
 
 ### Requirement: The iOS first-run screen shows the address it uses
 The iOS app's first-run screen SHALL show the scheme of the address it will open. An address typed without a scheme SHALL be reached over `https` and SHALL appear in the field as the `https://` origin the app uses once the person leaves the field or connects, never only internally. Plain `http` SHALL be used only when typed, and while a local `http` address is in the field the screen SHALL say that the connection is not encrypted. A host name typed in Unicode SHALL be sent in its ASCII (Punycode) form on every supported iOS version. The Connect button SHALL look and be active as soon as the address is well-formed and SHALL look and be inactive, also to VoiceOver, while it is empty or unusable. After connecting, Settings → About SHALL show the exact server address the app uses under the app's own row. The check SHALL request only the address shown and SHALL NOT follow redirects; nothing on this screen touches task data, so it has no offline or convergence behaviour of its own.
@@ -318,3 +342,292 @@ The iOS app's first-run screen SHALL show the scheme of the address it will open
 #### Scenario: The address after connecting
 - **WHEN** a connected person opens Settings → About in the iOS app
 - **THEN** the "OpenTodo for iOS" row shows the server address the app opened, such as `https://todo.example.com`
+
+### Requirement: Completed widget
+The Android app SHALL offer a **Completed** home-screen widget beside the Today widget, showing the number of tasks the person completed today and a bar per day for the last 7 days, scaled to the busiest of them, with a one-letter weekday under each bar and the time of the last update; a tap SHALL open Statistics. It SHALL read only data the web app published through the bridge with the Today list: today's count and the 7-day series (days and numbers only, never task content), counted by the same rules as Statistics from the same local rows, and stored in the app's private storage. The widget SHALL never make a request of its own. While an encrypted account is locked, the web app SHALL publish today's count alone, and the widget SHALL show that count and say it is locked, without bars. A publication from a web app that publishes no completions SHALL leave the widget asking the person to open the app. The bars SHALL use the theme's accent and track colours as the launcher resolves them for light and dark. The iOS app's Completed widget is a separate follow-up. Completing a task from the widget is out of scope.
+
+#### Scenario: A day's completions appear
+- **WHEN** the person completes three tasks today and the web app publishes
+- **THEN** the Completed widget shows today's count as three, today's bar is the highest of a week in which no day had more, and the update time is shown
+
+#### Scenario: Recent days as bars
+- **WHEN** the widget is shown after a publication
+- **THEN** it draws seven bars, oldest on the left, each labelled with its weekday's letter, without making any request, and reads them aloud as each weekday and its count
+
+#### Scenario: The same count as Statistics
+- **WHEN** a task completed today is in a project shared with the person and was completed by someone else
+- **THEN** the widget counts it exactly as Statistics' Completed does for today
+
+#### Scenario: Locked encrypted account
+- **WHEN** the account is encrypted and the device is locked
+- **THEN** the web app publishes today's count only, and the widget shows that number and "Locked: today's count only", without bars
+
+#### Scenario: An older web app
+- **WHEN** the stored publication has no completions
+- **THEN** the widget asks the person to open OpenTodo once
+
+### Requirement: Position for the web app
+The Android shell SHALL answer a page's request for the device's position: for a page of the configured server it SHALL ask Android for location (precise or approximate) the first time, and not before, and SHALL give the page the position when either is allowed; it SHALL refuse a page of any other origin without a prompt, and SHALL NOT let the web view keep the answer, so a later refusal in the system settings holds. The Google Play build, which declares no location permission, SHALL refuse without asking. The decision SHALL be a pure function covered by the shell's unit tests. This requirement touches no synced data: the position goes only to the page, which writes it as an ordinary location edit, offline as online.
+
+#### Scenario: Use my location in the Android app
+- **WHEN** the person chooses "Use my location" in the Android app for the first time and allows location
+- **THEN** Android asks once, and the task's location gets the device's coordinates
+
+#### Scenario: Location refused
+- **WHEN** the person refuses Android's location prompt
+- **THEN** the editor says the browser did not share the position and nothing is written
+
+#### Scenario: Another origin
+- **WHEN** a page of another origin loaded in the shell asks for the position
+- **THEN** it is refused and Android does not ask
+
+### Requirement: A shell's pull to refresh yields to the web app
+A shell that has its own pull to refresh, which reloads the page (the iOS shell), SHALL list the bridge capability `pull-refresh` in its visible app. A web app that handles a pull down itself (app-shell "Pull down to sync on a touch device") SHALL call the bridge method `pullHandled`, without arguments, on every page load in such a shell, and SHALL NOT call it in a shell that does not list the capability. From that call until another page loads in the web view, the shell SHALL NOT offer its own pull to refresh, so one pull never both syncs and reloads. When another page loads (a reload, a sign-in page, a web app of an older server), the shell's pull to refresh SHALL be back until that page calls the method. A shell without a pull to refresh (the Android shell) SHALL NOT list the capability. The bridge version SHALL stay 1, and the call SHALL be part of the shared bridge fixtures. The call hands over no data, works offline and stores nothing.
+
+#### Scenario: Current web app in the iOS app
+- **WHEN** the iOS app shows a web app that handles the pull, and the user pulls Today down
+- **THEN** the web app syncs and shows its own mark, the shell's refresh control does not appear, and the page is not reloaded
+
+#### Scenario: Older server
+- **WHEN** the iOS app loads the web app of a server that does not know `pullHandled`
+- **THEN** the method is never called and pulling down reloads the page, as before
+
+#### Scenario: A sign-in page
+- **WHEN** the web view leaves the web app for a sign-in page of another origin
+- **THEN** the shell's pull to refresh is back on that page
+
+#### Scenario: Android
+- **WHEN** the web app runs in the Android shell
+- **THEN** `pull-refresh` is not listed, `pullHandled` is not called, and the web app's pull to sync works by itself
+
+### Requirement: The notification permission is asked with the first reminder
+A shell with the `reminders` capability SHALL ask for the phone's notification permission only while the app is visible and only when it is handed a schedule with at least one reminder, and SHALL NOT ask at launch, from a background run, or again after the user answered. A background run that is handed reminders without the permission SHALL answer that notifications are not allowed yet and leave the question to the visible app, which is handed the schedule again whenever it opens. The web app SHALL treat an answer from a background run as no answer: it SHALL NOT turn the device's setting off because of it. Nothing here changes task data or needs the network.
+
+#### Scenario: First reminder on a fresh install
+- **WHEN** the user installs the app, signs in, and adds a task with a reminder for tomorrow
+- **THEN** the phone asks to allow notifications at that moment, and after Allow the reminder fires tomorrow with the app closed
+
+#### Scenario: No reminders yet
+- **WHEN** the user signs in to an account without any reminder in the next seven days
+- **THEN** the phone asks nothing
+
+#### Scenario: A background run comes first
+- **WHEN** a reminder arrives from another device during a background run, before the user was ever asked
+- **THEN** nothing is asked and the setting stays on, and the phone asks the next time the app is opened
+
+#### Scenario: The user says no
+- **WHEN** the user answers the phone's question with Don't allow
+- **THEN** the device's setting reads Off with the explanation, reminders still appear inside the app, and the phone is not asked again until the user turns the setting on
+
+### Requirement: Exact alarms are asked for with an explanation
+On Android, a shell SHALL NOT open the system's alarm settings by itself. When exact alarms are not allowed it SHALL schedule inexact alarms and answer `exact-denied`, and a shell MAY offer the bridge capability `alarm-settings`, whose method opens the system page where the user allows them, only from the visible app. The web app SHALL then say once per device, where the user is, that reminders can arrive a few minutes late, with an action that opens that page when the capability is listed, and SHALL keep the same notice and action in Settings → Notifications while exact alarms are not allowed. After the user allows them the shell SHALL schedule the stored reminders exactly without waiting for the next hand-over.
+
+#### Scenario: New install on Android 14
+- **WHEN** the first reminder is handed over on a phone that refuses exact alarms
+- **THEN** the app stays where it is, shows the notice once with Allow, and the reminder is scheduled inexactly
+
+#### Scenario: Allow
+- **WHEN** the user taps Allow, turns on Alarms & reminders for OpenTodo and returns
+- **THEN** the stored reminders are exact, and the notice is gone from Settings
+
+#### Scenario: A shell without the capability
+- **WHEN** the web app runs in an older shell that answers `exact-denied` and does not list `alarm-settings`
+- **THEN** the notice says where the setting is in Android's settings and offers no button
+
+### Requirement: A background run ends when the app is done
+A shell that runs the web app in the background MAY offer the bridge capability `background` to that run. The web app, in a run that lists it, SHALL tell the shell it is done once it has synced, or found it cannot (offline, signed out, a locked encrypted account), and has handed over the reminders and the widget data that follow from it. The shell SHALL end the run then, and SHALL end it by itself after a limit of at least 60 seconds on Android and within the time iOS grants when nothing is heard. A run that performs a notification action SHALL be done only after the action's operation is stored on the device. A run SHALL change nothing but through the web app's own operations, so an interrupted run loses nothing: what it did not send goes out with the next sync.
+
+#### Scenario: A quick refresh
+- **WHEN** a background run syncs and hands over the schedule in four seconds
+- **THEN** the run ends then, not after its limit
+
+#### Scenario: A slow server
+- **WHEN** the sync of a background run takes 40 seconds on Android
+- **THEN** the run lasts until the schedule is handed over, and a reminder set on another device is scheduled
+
+#### Scenario: Offline
+- **WHEN** a background run starts without a connection
+- **THEN** the web app hands over what the device already knows, says it is done, and the run ends
+
+#### Scenario: An older web app
+- **WHEN** the server's web app does not know the capability
+- **THEN** the run ends at its limit, as before
+
+### Requirement: Launch screen until the page shows
+A shell SHALL open on a launch screen in the web app's default canvas colour, light or dark with the phone's appearance, and SHALL keep it until the shell has something to show: the page of the server ready to be drawn, a sign-in page, an error screen or a dialog of the shell. Between the launch screen and what follows, the shell SHALL NOT show an empty web view. On Android the launch screen SHALL carry the app's icon. The launch screen SHALL NOT outlast five seconds from the start of the load: after that the shell shows the web view with whatever it has, so a slow server still gets the screens it had. The bar colour and icons the shell remembers from the last run (see "System bars follow the app's theme") SHALL appear together with the page, not over the launch screen. The launch screen SHALL need no dependency and no permission. This is presentation only: it reads and writes no task data, works the same offline (a start from the stored copy ends it like any page), and changes nothing that syncs.
+
+#### Scenario: Cold start on Android
+- **WHEN** the user taps the app's icon on an Android phone in dark mode with a server configured
+- **THEN** the icon shows over the dark canvas colour until the page can be drawn, and the page follows with no blank frame
+
+#### Scenario: Cold start on iPhone
+- **WHEN** the user opens the iOS app in light mode with a server configured
+- **THEN** the light canvas colour shows until the page has loaded, and the page follows with no white web view between them
+
+#### Scenario: A slow server
+- **WHEN** the page has not loaded five seconds after the start
+- **THEN** the launch screen goes and the web view shows what it has, as it did before
+
+#### Scenario: The server cannot be reached
+- **WHEN** the load fails and no stored copy can stand in
+- **THEN** the launch screen goes at once and the shell's error screen shows, with the text it had
+
+#### Scenario: A login wall answers first
+- **WHEN** the first page is a sign-in page of another origin
+- **THEN** the launch screen goes when that page has loaded, and the site bar names its host
+
+#### Scenario: A remembered dark theme under a light phone
+- **WHEN** the app last ran with a dark theme and the phone's appearance is light
+- **THEN** the launch screen is light with the system's status bar icons, and the remembered bar colour and icons appear with the page
+
+#### Scenario: Offline start from the stored copy
+- **WHEN** the Android app opens with no network and a stored copy of the web app
+- **THEN** the launch screen stays until that copy can be drawn, and Today shows the locally stored tasks
+
+### Requirement: Reminders by push through UnifiedPush
+The Android shell MAY offer the bridge capability `push`: it registers with the UnifiedPush distributor the user chose, and hands the web app a Web Push subscription (the endpoint the distributor gave, and a public key and secret the shell made on the phone). The web app SHALL subscribe the device with it on the user's server, exactly as a browser is subscribed, and SHALL do so only when the user turned push delivery on, the server offers push, and the shell lists the capability. The shell SHALL keep the private key on the phone, never hand it to the page, and SHALL use no push service of its own and no service the user did not choose.
+
+When the distributor delivers a message, the shell SHALL decrypt it on the phone (RFC 8291), and for a reminder SHALL show the same notification, with the same actions, as a reminder scheduled on the device, without the web app running. A reminder SHALL alert once: when both the device's schedule and a push carry it, the second SHALL replace the first without another sound. A message that cannot be decrypted or is not a reminder SHALL show nothing. After a message the shell SHALL refresh in the background, so its schedule and widgets follow.
+
+When the distributor gives a new endpoint, the shell SHALL keep it and the web app SHALL subscribe it at its next run; when the distributor unregisters the app, or the user turns push delivery off, signs out or changes servers, the shell SHALL forget the registration and its keys and the web app SHALL remove the device's subscription from the server. Reminders scheduled on the device SHALL keep working with or without push. Nothing here writes task data: a notification's actions are the web app's own operations, which apply on the device, work offline and converge like any other.
+
+The subscription the shell hands over and a message the server encrypts for it SHALL be part of the shared bridge fixtures, written by the server's own encryption.
+
+#### Scenario: A reminder set on another device a minute ago
+- **WHEN** push delivery is on, the Android app is closed, and a reminder due in two minutes is added on a computer
+- **THEN** the phone shows the reminder at its time, with Done, Snooze 10 min and Dismiss, although the phone never refreshed in between
+
+#### Scenario: Scheduled on the phone and pushed
+- **WHEN** a reminder is both in the phone's schedule and pushed by the server at the same time
+- **THEN** the phone alerts once and shows one notification
+
+#### Scenario: No distributor
+- **WHEN** no UnifiedPush app is installed
+- **THEN** the shell reports that push is unavailable, the setting says a UnifiedPush app is needed, and reminders scheduled on the phone work as before
+
+#### Scenario: The distributor rotates the endpoint
+- **WHEN** the distributor gives the app a new endpoint while the app is closed
+- **THEN** the next background run subscribes the new endpoint on the server and removes the old one, and reminders in between still fire from the phone's schedule
+
+#### Scenario: Sign-out
+- **WHEN** the user signs out
+- **THEN** the device's subscription is removed from the server, the shell unregisters from the distributor and deletes its keys, and a later message for that registration shows nothing
+
+#### Scenario: A message the app cannot read
+- **WHEN** the distributor delivers bytes that do not decrypt with the app's keys
+- **THEN** nothing is shown and nothing of the message is logged beyond its length
+
+#### Scenario: Encrypted account
+- **WHEN** the account is end-to-end encrypted
+- **THEN** the pushed reminder carries no task name, the notification reads the generic text, and the task opens decrypted on tap
+
+#### Scenario: Fixture
+- **WHEN** the server's encryption changes how it writes a message
+- **THEN** the server test that writes the fixture fails until it is regenerated, and then the Android unit test fails until the shell decrypts the new form
+
+### Requirement: Saving a file from the app
+When the web app saves a file in a shell, the shell SHALL open the phone's save dialog with the file's name and write the file where the user chooses. This SHALL hold for a file the web app makes on the device (a recovery key, recovery codes, an export of tracked time, a theme, a decrypted attachment) and for a file it fetches from the user's server (an export, an attachment, a server archive), and for no other address. A file SHALL be written whole or not at all: when the user cancels, storage runs out or the transfer breaks, nothing partial SHALL remain and the web app SHALL be able to tell the user it was not saved. The shell SHALL keep no copy after the save ends. Saving works offline for files made on the device, changes no task data and syncs nothing. A shell MAY offer the bridge capability `files` for files made on the device; the web app SHALL use it only when listed and SHALL otherwise save as a browser does. Its payload SHALL be part of the shared bridge fixtures.
+
+#### Scenario: Recovery key on Android
+- **WHEN** the user taps Download on the recovery key in the Android app
+- **THEN** the save dialog opens with `opentodo-recovery-key.txt`, and the chosen folder holds the file with the key after the user confirms
+
+#### Scenario: Export from the server on iPhone
+- **WHEN** the user taps Download export (JSON) in the iOS app
+- **THEN** the save dialog opens with `opentodo-export.json` and the file the server sent is saved, fetched with the app's own session
+
+#### Scenario: Cancelled
+- **WHEN** the user closes the save dialog without choosing a place
+- **THEN** no file is written, the shell keeps no copy, and the app stays where it was
+
+#### Scenario: Offline
+- **WHEN** the phone is offline and the user downloads the recovery codes
+- **THEN** the file is saved, since it is made on the device
+
+#### Scenario: A foreign address
+- **WHEN** a page asks to download from a host that is not the user's server
+- **THEN** the shell saves nothing and treats the address as any foreign link
+
+#### Scenario: A shell without the capability
+- **WHEN** the web app runs in a shell that does not list `files`
+- **THEN** it does not call the method and saves the way it does in a browser
+
+### Requirement: Back stays inside the Android app
+On Android, Back SHALL first close what the web app has open (a dialog, a sheet, a task), then go back in the app's history, and leave the app only from its first screen. This SHALL hold every time the app is shown, including after Back has left the app and the user returned to it without the app having been closed.
+
+#### Scenario: Back after returning
+- **WHEN** the user leaves the app with Back from Today, opens it again from the launcher, opens a task and presses Back
+- **THEN** the task closes and the app stays open on Today
+
+#### Scenario: Back on the first screen
+- **WHEN** the user presses Back on the screen the app started on, with nothing open
+- **THEN** the app goes to the background, as any Android app does
+
+### Requirement: Haptic feedback through the shell
+A shell MAY offer the bridge capability `haptics`: the web app names a kind of feedback, `tick` or `success`, and the shell plays the platform's own feedback for it, following the phone's system setting for touch feedback and needing no permission. A shell SHALL ignore a kind it does not know. The web app SHALL give `success` when a task is completed and `tick` when a long press lifts a row, only while the device's haptics preference is on; in a shell that lists the capability it SHALL use the bridge, and elsewhere it SHALL keep the browser's vibration. The Appearance preference SHALL be shown wherever either way is available. The kinds SHALL be part of the shared bridge fixtures.
+
+#### Scenario: Completing a task on iPhone
+- **WHEN** the user completes a task in the iOS app with haptics on
+- **THEN** the phone gives its success feedback once
+
+#### Scenario: Haptics off
+- **WHEN** the user turned haptics off in Appearance on this device
+- **THEN** the web app does not call the shell and nothing is felt
+
+#### Scenario: Unknown kind
+- **WHEN** a newer web app hands an older shell the kind `warning`
+- **THEN** the shell does nothing and reports no error
+
+### Requirement: Done from a reminder notification
+A reminder notification SHALL offer Done in both shells, next to Snooze 10 min and Dismiss. Done SHALL complete the reminder's task through the web app's own task operation, so it applies on the device at once, works offline, and reaches every device when the phone next syncs; a repeating task SHALL move to its next occurrence as it does in the app. On an encrypted account that is locked, Done SHALL open the app at its unlock screen and complete nothing until the user unlocks.
+
+#### Scenario: Done on iPhone
+- **WHEN** a reminder notification shows on an iPhone and the user taps Done
+- **THEN** the task is completed, the notification is gone, and the completion appears on the user's other devices after the next sync
+
+#### Scenario: Done offline
+- **WHEN** the phone is offline and the user taps Done
+- **THEN** the task is completed on the phone and the operation is sent when the phone is online again, converging with edits made elsewhere
+
+#### Scenario: Locked account
+- **WHEN** the encrypted account is locked and the user taps Done
+- **THEN** the app opens at the unlock screen and the task stays open
+
+### Requirement: No link previews in the iOS shell
+The iOS shell SHALL NOT show the system's link preview when a link in the web app is held: a long press never lifts a browser preview of a page out of the app. Tapping a link SHALL behave as before (the server's own addresses stay in the shell, others open in the browser), and a link in content SHALL still be copyable. This is presentation only: nothing is stored or synced, and it is the same offline.
+
+#### Scenario: Holding a link in a note
+- **WHEN** the user holds a finger on a link in a task's notes in the iOS app
+- **THEN** no preview of the linked page appears, and the link can still be copied
+
+#### Scenario: Tapping still opens
+- **WHEN** the user taps a link to another site in a comment
+- **THEN** it opens in the system browser as before
+
+### Requirement: No native overscroll effect on Android
+The Android shell SHALL NOT draw the platform's overscroll glow or stretch over the page; the page's own scrolling decides what happens at an edge. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: The end of a list
+- **WHEN** a person flings to the end of a long list in the Android app
+- **THEN** no glow or stretch appears
+
+### Requirement: Haptic kinds for outcomes and selection
+The shells SHALL accept the haptic kinds `warning`, `error` and `selection` besides `tick` and `success`, map each to the platform's own feedback, and play `tick` for a kind they do not know. On a device without haptics, nothing SHALL play. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: An older shell
+- **WHEN** the page asks a shell that knows only `tick` and `success` for `selection`
+- **THEN** the shell plays `tick` and reports no error
+
+### Requirement: A status bar tap reaches the page
+The iOS shell SHALL deliver a tap on the status bar to the page as a scroll-to-top event and SHALL list the `scroll-top` capability. The web view itself SHALL NOT scroll in response. Shells without the capability SHALL behave as before. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: A tap on the status bar in the iPhone app
+- **WHEN** a person scrolled far down the Inbox in the iPhone app and taps the status bar
+- **THEN** the page receives one scroll-to-top event and the web view does not move
+
+### Requirement: No keyboard accessory bar in the iOS app
+The iOS shell SHALL NOT show the web view's keyboard accessory bar above the on-screen keyboard. If the platform changes so it cannot be removed, the app SHALL keep working with the bar. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: Editing a title in the iPhone app
+- **WHEN** a person taps a task title to edit it in the iPhone app
+- **THEN** the keyboard opens without the previous, next and Done bar

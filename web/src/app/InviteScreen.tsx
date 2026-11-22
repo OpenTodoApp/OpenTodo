@@ -4,15 +4,9 @@ import { useOnline } from '../lib/online'
 import type { AuthStatus, InvitationPreview, User } from '../lib/types'
 import { AuthScreen } from './AuthScreen'
 import { t } from '../lib/i18n'
-import { InstanceMark, InstanceWordmark } from './InstanceBrand'
+import { LinkCard as Card, LinkStateCard, type LinkState } from './LinkCard'
 
-export type InviteState =
-  | { kind: 'loading' }
-  | { kind: 'offline' }
-  | { kind: 'invalid' }
-  | { kind: 'rate-limited' }
-  | { kind: 'error'; message: string }
-  | { kind: 'ready'; preview: InvitationPreview }
+export type InviteState = LinkState<InvitationPreview>
 
 interface Props {
   token: string
@@ -89,53 +83,10 @@ export function InviteView({ state, user, form, onRetry, onLogout }: {
       </Card>
     )
   }
-  switch (state.kind) {
-    case 'loading':
-      return <Card title={t('Checking your invitation…')}><p className="text-body text-muted">{t('One moment.')}</p></Card>
-    case 'offline':
-      return (
-        <Card title={t('You seem to be offline')}>
-          <p className="text-body text-muted">{t('Accepting an invitation needs a connection to the server. The page will retry when the network returns.')}</p>
-          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>{t('Retry now')}</button>
-        </Card>
-      )
-    case 'invalid':
-      return (
-        <Card title={t('This invitation link is no longer valid')}>
-          <p className="text-body text-muted">{t('It may have expired, been revoked, or already been used. Ask the person who invited you for a new link.')}</p>
-          <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">{t('Go to sign-in')}</a>
-        </Card>
-      )
-    case 'rate-limited':
-      return (
-        <Card title={t('Too many attempts')}>
-          <p className="text-body text-muted">{t('Wait a minute, then try again.')}</p>
-          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>{t('Retry')}</button>
-        </Card>
-      )
-    case 'error':
-      return (
-        <Card title={t('Something went wrong')}>
-          <p className="text-body text-danger">{state.message}</p>
-          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>{t('Retry')}</button>
-        </Card>
-      )
-    case 'ready':
-      return <>{form}</>
-  }
-}
-
-function Card({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="flex min-h-full items-center justify-center bg-canvas p-6">
-      <div className="w-full max-w-sm space-y-3 rounded-card border border-default bg-surface p-6 shadow-1">
-        <div className="flex items-center gap-3">
-          <InstanceMark size={32} />
-          <h1 className="text-h3 font-semibold"><InstanceWordmark /></h1>
-        </div>
-        <h2 className="font-medium">{title}</h2>
-        {children}
-      </div>
-    </div>
-  )
+  if (state.kind === 'ready') return <>{form}</>
+  return <LinkStateCard state={state} onRetry={onRetry}
+    checking={t('Checking your invitation…')}
+    offline={t('Accepting an invitation needs a connection to the server. The page will retry when the network returns.')}
+    invalidTitle={t('This invitation link is no longer valid')}
+    invalid={t('It may have expired, been revoked, or already been used. Ask the person who invited you for a new link.')} />
 }

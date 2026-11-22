@@ -72,6 +72,27 @@ describe('weekly review steps', () => {
 })
 
 describe('Daily check', () => {
+  // CI under load (#1672, #1635): presses that come before the last pick re-rendered
+  // read the focus as it was then. Here a press follows the write at once: the picks add
+  // up, and the fourth is refused, whatever the render's pace.
+  it('quick presses: each pick adds to the focus as it is stored, and a fourth is refused', async () => {
+    for (const title of ['One', 'Two', 'Three', 'Four']) await createTask({ title, due: { date: '2026-10-14' } })
+    navigate({ view: 'review', step: 'daily' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => document.querySelectorAll('[data-group="today"] [data-task-id]').length === 4)
+    // j f four times as a quick typist does: each key renders, but the pick it made may
+    // not be stored and read back yet when the next comes.
+    for (let i = 0; i < 4; i++) {
+      await key(document.body, 'j')
+      await key(document.body, 'f')
+    }
+    await waitFor(async () => ((await db.review.get('me'))?.focus ?? '').split(',').filter(Boolean).length === 3, 'three in focus')
+    await waitFor(() => (document.querySelector('[data-daily-message]')?.textContent ?? '').includes('holds 3 tasks'), 'the fourth refused')
+    const titles = await Promise.all(((await db.review.get('me'))!.focus.split(',')).map(async (id) => (await db.tasks.get(id))!.title))
+    expect(titles).toEqual(['One', 'Two', 'Three'])
+    await r.unmount()
+  })
+
   it('Pick a focus with f, refuse a fourth, then Done for today records the check', async () => {
     const ids: string[] = []
     for (const title of ['One', 'Two', 'Three', 'Four']) ids.push(await createTask({ title, due: { date: '2026-10-14' } }))

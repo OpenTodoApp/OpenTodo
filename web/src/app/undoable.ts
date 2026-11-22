@@ -7,17 +7,20 @@ import type { DoOnChoice } from '../lib/dayParts'
 import type { Task } from '../lib/types'
 import { showUndoToast } from './bulk/toastStore'
 import { markCompleted, withListTransition, success } from './motion'
+import { prepareCompletionSound } from './completionSound'
 
 /**
  * Completes or reopens a task. A completion is written at once; just before, the list
  * learns that the row departs (motion-v2 D2) and the device ticks (D6).
  */
 export async function completeWithUndo(id: string, completed: boolean): Promise<void> {
+  const cue = prepareCompletionSound(completed)
   if (completed) {
     markCompleted(id)
     success()
   }
   const r = await completeUndoable(id, completed)
+  if (r.completed) cue?.()
   if (r.entry) showUndoToast(r.label, r.entry.id)
 }
 
@@ -29,8 +32,8 @@ export async function deleteWithUndo(id: string): Promise<void> {
 }
 
 /** Returns the id to follow (a copy when the move crosses sharing scopes). */
-export async function moveWithUndo(id: string, projectId: string | null, targetName: string): Promise<string> {
-  const r = await withListTransition(1, () => moveUndoable(id, projectId, targetName))
+export async function moveWithUndo(id: string, projectId: string | null, targetName: string, toWorkspace?: string): Promise<string> {
+  const r = await withListTransition(1, () => moveUndoable(id, projectId, targetName, Date.now(), toWorkspace))
   if (r.entry) showUndoToast(r.label, r.entry.id)
   return r.newId
 }

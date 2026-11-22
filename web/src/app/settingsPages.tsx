@@ -2,7 +2,8 @@
 // and settings-subpages): the cards of a one-page section, or of one sub-page of a
 // section with an overview. Demo instances keep every card and disable the refused
 // ones under one note at the top of the page.
-import { lazy, type ReactNode, Suspense } from 'react'
+import { type ReactNode, Suspense } from 'react'
+import { lazy } from '../lib/lazy'
 import type { User } from '../lib/types'
 import { LearnMore, Notice } from '../ui'
 import { useDemo } from '../lib/demo'

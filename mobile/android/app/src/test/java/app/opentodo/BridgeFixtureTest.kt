@@ -67,6 +67,30 @@ class BridgeFixtureTest {
 
     @Test fun signOutEmptiesTheWidget() = checkWidget("widget-signed-out.json")
 
+    /** completed-widget D1: the days and today's count the web app publishes, and counts only once locked. */
+    private fun checkCompleted(name: String) {
+        val f = fixture(name)
+        assertEquals(name, "publishWidget", f.getString("method"))
+        val want = f.getJSONObject("expect")
+        val days = want.getJSONArray("days")
+        val expected = CompletedModel(
+            updatedAt = want.getLong("updatedAt"),
+            locked = want.getBoolean("locked"),
+            today = want.getInt("today"),
+            days = (0 until days.length()).map { i -> days.getJSONObject(i).let { CompletedModel.Day(it.getString("day"), it.getInt("done")) } },
+        )
+        assertEquals(name, expected, CompletedModel.parse(f.getString("payload")))
+    }
+
+    @Test fun completedWidget() = checkCompleted("widget-completed.json")
+
+    @Test fun lockedCompletedWidget() = checkCompleted("widget-completed-locked.json")
+
+    /** A publication without completions (an older web app) leaves the Completed widget asking to open the app. */
+    @Test fun completedWidgetNeedsAPublication() {
+        assertEquals(null, CompletedModel.parse(fixture("widget.json").getString("payload")))
+    }
+
     /** app-links D6: the link the web app hands openAppLink opens with its list, and the shared vectors hold. */
     @Test fun appLinks() {
         val f = fixture("app-links.json")
@@ -166,8 +190,8 @@ class BridgeFixtureTest {
         val kinds = f.getJSONArray("kinds")
         assertTrue(kinds.length() >= 2)
         for (sdk in listOf(26, 30, 36)) {
-            for (i in 0 until kinds.length()) assertNotNull(kinds.getString(i), Haptic.constant(kinds.getString(i), sdk))
-            assertEquals(null, Haptic.constant(f.getString("unknown"), sdk))
+            assertEquals(5, kinds.length())
+            assertEquals(Haptic.constant("tick", sdk), Haptic.constant(f.getString("unknown"), sdk))
         }
     }
 
@@ -204,8 +228,28 @@ class BridgeFixtureTest {
         val methods = fixture("capabilities.json").getJSONObject("methods")
         assertEquals("alarm-settings", methods.getString("openAlarmSettings"))
         assertEquals("background", methods.getString("backgroundDone"))
+        assertEquals("completion-sound", methods.getString("playCompletionSound"))
         val script = Bridge.script("1.0.0", listOf("reminders", "widgets"))
         for (m in methods.keys()) assertTrue("$m in the page script", script.contains("$m: function () { send('$m', []) }"))
+    }
+
+    @Test fun completionSoundRespectsRingerMode() {
+        assertTrue(CompletionSound.allowsSound(android.media.AudioManager.RINGER_MODE_NORMAL))
+        assertFalse(CompletionSound.allowsSound(android.media.AudioManager.RINGER_MODE_SILENT))
+        assertFalse(CompletionSound.allowsSound(android.media.AudioManager.RINGER_MODE_VIBRATE))
+    }
+
+    @Test fun completionSoundMatchesWebSamples() {
+        val expected = fixture("completion-sound.json")
+        val clip = CompletionSound.samples()
+        assertEquals(expected.getInt("sampleRate"), CompletionSound.SAMPLE_RATE)
+        assertEquals(expected.getInt("frames"), clip.size)
+        val samples = expected.getJSONArray("samples")
+        for (i in 0 until samples.length()) {
+            val pair = samples.getJSONArray(i)
+            val frame = pair.getInt(0)
+            assertTrue("frame $frame", kotlin.math.abs(clip[frame].toInt() - pair.getInt(1)) <= 1)
+        }
     }
 
     /** shell-reminders-on D3: `alarm-settings` needs a screen and Android 12; nothing else changes with the API level. */

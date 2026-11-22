@@ -15,6 +15,13 @@
 //     navigation can be text-selected, or a field, editable area or comment cannot
 //     (shell-touch, GitHub issue 1338), or a tab of the tab bar is under 48 px tall
 //     (touch-pressed-states, GitHub issue 1349),
+//   - pressing a task row's completion circle shows no pressed colour by 100 ms, the
+//     engine does not hold that colour back 60 ms, or the row is pressed with it
+//     (press-feedback-delay),
+//   - on the touch screen a hover look appears under a resting pointer, or a tap on a
+//     field or a switch leaves a focus ring while Tab after it draws none (touch-input-mode),
+//   - a task row held for 300 ms does not rise, does not settle after an early release,
+//     or rises under reduced motion (row-lift-overscroll),
 //   - an option of a segmented control or a day's name in a Day or Week header is cut,
 //   - in Day and Week, the calendar's sticky header takes more than half of the calendar
 //     or the now line paints over it (GitHub issue 775),
@@ -43,7 +50,9 @@
 // CHROMIUM_PATH / WEBKIT_PATH (optional executables), OPENTODO_LANG (an interface
 // language such as de: the synced preference is written before capturing, and
 // signed-out screens start in it too; OpenSpec change app-localization 11.1),
-// LAYOUT_DATE (default 2026-11-01: the browsers' clock and the seeded dates).
+// LAYOUT_DATE (default 2026-11-01: the browsers' clock and the seeded dates),
+// SHARD (i/n: only every n-th engine × width × theme combination, from the i-th, so
+// n jobs side by side check them all; CI's pull request legs).
 //
 // The browsers' clock is fixed at 09:00 UTC on LAYOUT_DATE and the account is seeded
 // around that day, so the check sees the same calendars whatever day it runs: which
@@ -56,7 +65,7 @@ const pw = await import('playwright').catch(async () => {
   return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
 })
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { MAX_SCROLLERS, addButtonCovers, addButtonRoom, axeProblems, calendarGridRoom, crowdedControls, crumbOverlap, cutLabels, overlayContentFit, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, tintDrift, touchFeel, verticalScrollers } from './ux-audit/measure.mjs'
+import { MAX_SCROLLERS, addButtonCovers, addButtonRoom, axeProblems, calendarGridRoom, crowdedControls, crumbOverlap, cutLabels, missingMainScroller, overlayContentFit, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, tintDrift, touchFeel, verticalScrollers } from './ux-audit/measure.mjs'
 import { calendarEvents, seed as seedAccount } from './ux-audit/seed.mjs'
 import { ANY_LANG_OVERLAYS, OVERLAYS, chooseLayout, closes, openScreen, screens } from './ux-audit/layout-screens.mjs'
 
@@ -71,6 +80,8 @@ const CONCURRENCY = Number(process.env.CONCURRENCY ?? 3)
 const SHOTS_ALL = process.env.SHOTS === 'all'
 const LANG = process.env.OPENTODO_LANG ?? ''
 const LAYOUT_DATE = process.env.LAYOUT_DATE ?? '2026-11-01'
+const [SHARD_AT, SHARD_OF] = (process.env.SHARD || '1/1').split('/').map(Number)
+if (!(SHARD_OF >= 1 && SHARD_AT >= 1 && SHARD_AT <= SHARD_OF)) throw new Error(`SHARD must be i/n with 1 <= i <= n, not ${process.env.SHARD}`)
 const NOW = new Date(`${LAYOUT_DATE}T09:00:00Z`).getTime()
 if (!/^\d{4}-\d{2}-\d{2}$/.test(LAYOUT_DATE) || Number.isNaN(NOW)) throw new Error(`LAYOUT_DATE ${LAYOUT_DATE}: expected YYYY-MM-DD`)
 // Screens wait on English headings and overlays are opened by English names: in another
@@ -205,6 +216,24 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
     page.on('pageerror', (e) => { if (!/access control checks|Load failed|The network connection was lost|cancelled/i.test(e.message)) pageErrors.push(e.message) })
     await page.goto(base + '/inbox')
     await page.locator('[data-task-id]').first().waitFor({ timeout: 30000 })
+    // The touch probes (mobile-native-feel): each on a page of its own, opened on the
+    // Inbox and closed after, so a press, a hold or a tap one leaves behind cannot change
+    // what the next one reads.
+    for (const [step, screen, label, probe] of [
+      ['press feedback', 'inbox', 'press', (q) => pressFeedback(q)],
+      ['row lift', 'inbox', 'hold', (q) => rowLift(q)],
+      ['touch input', 'settings', 'touch input', (q) => touchInput(q, base)],
+    ]) {
+      run.step = step
+      const q = await ctx.newPage()
+      try {
+        await q.goto(base + '/inbox')
+        await q.locator('[data-task-id]').first().waitFor({ timeout: 30000 })
+        for (const m of await probe(q)) await fail(q, screen, null, `${label}: ${m}`)
+      } finally {
+        await q.close()
+      }
+    }
     for (const s of screens(ids, base)) {
       if (ONLY && !ONLY.has(s.name)) continue
       if (s.engines && !s.engines.includes(engine)) continue
@@ -238,6 +267,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       const scrollers = await p.evaluate(verticalScrollers)
       if (scrollers.length > MAX_SCROLLERS) await fail(p, s.name, null, `${scrollers.length} vertical scroll regions (at most ${MAX_SCROLLERS}): ${scrollers.join(', ')}`)
       for (const m of await p.evaluate(tabRowOverflow)) await fail(p, s.name, null, m)
+      for (const m of await p.evaluate(missingMainScroller)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(cutLabels)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(crumbOverlap)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(smallTargets, [null, MIN_TARGET])) await fail(p, s.name, null, `touch target: ${m}`)
@@ -302,6 +332,16 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       }
       if (s.anon) await p.close()
     }
+    // page-transitions 2.2: Inbox → task page → Back slides with a direction (Chromium, a phone).
+    if (engine === 'chromium' && width < 768 && !ONLY && !OTHER_LANG) {
+      run.step = 'page transitions'
+      for (const m of await pageTransitions(page, base)) await fail(page, 'page-transitions', null, m)
+    }
+    // swipe-back-follows 2.1: a touch drag from the edge of a task's page (Chromium, 390 and 768 px).
+    if (engine === 'chromium' && (width === 390 || width === 768) && !ONLY && !OTHER_LANG) {
+      run.step = 'swipe back'
+      for (const m of await swipeBack(page, base, width)) await fail(page, 'swipe-back', null, m)
+    }
     for (const e of pageErrors) failures.push(`page error [${tag}]: ${e}`)
   } catch (e) {
     failures.push(`[${tag}] aborted: ${e.message.split('\n')[0]}`)
@@ -314,7 +354,270 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
 }
 
 
+// page-transitions D4: opens a task's page from the Inbox and goes back, recording each
+// view transition the route change starts (its direction, and the opacity the old page's
+// animation ends at) and awaiting it, so the check stays deterministic; then the same with
+// reduced motion, where no page transition may run. Returns the problems.
+async function pageTransitions(p, base) {
+  const problems = []
+  const record = () => p.evaluate(() => {
+    const w = window
+    w.__navs = []
+    const start = document.startViewTransition?.bind(document)
+    if (!start || w.__navWrapped) return
+    w.__navWrapped = true
+    document.startViewTransition = (update) => {
+      const vt = start(update)
+      const dir = document.documentElement.dataset.nav
+      if (!dir) return vt
+      const rec = { dir, oldEnd: null, done: false }
+      w.__navs.push(rec)
+      vt.ready.then(() => {
+        const old = document.getAnimations().find((a) => a.effect?.pseudoElement === '::view-transition-old(page)')
+        const frames = old?.effect?.getKeyframes() ?? []
+        rec.oldEnd = frames.length ? Number(frames[frames.length - 1].opacity ?? 1) : null
+      }).catch(() => {})
+      vt.finished.finally(() => { rec.done = true })
+      return vt
+    }
+  })
+  const settledNavs = async () => {
+    await p.waitForFunction(() => (window.__navs ?? []).every((r) => r.done) && !document.documentElement.dataset.nav, null, { timeout: 5000 })
+    return p.evaluate(() => window.__navs)
+  }
+  const round = async (reduced) => {
+    await p.emulateMedia({ reducedMotion: reduced ? 'reduce' : 'no-preference' })
+    await openScreen(p, base + '/inbox')
+    await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().waitFor()
+    // The transitions load after the first paint (the page-transitions spec).
+    await p.waitForTimeout(300)
+    await record()
+    // A tap: a change made from the keyboard happens at once (the page-transitions spec).
+    await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().locator('[data-row-open]').click()
+    await p.locator('[data-task-page]').first().waitFor({ timeout: 10000 })
+    const forward = await settledNavs()
+    await p.evaluate(() => { window.__navs = [] })
+    await p.goBack()
+    await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().waitFor({ timeout: 10000 })
+    const back = await settledNavs()
+    return { forward, back }
+  }
+  try {
+    const moving = await round(false)
+    const f = moving.forward
+    const b = moving.back
+    if (f.length !== 1 || f[0].dir !== 'forward' || f[0].oldEnd !== 0) problems.push(`opening a task's page: expected one forward transition whose old page ends at opacity 0, got ${JSON.stringify(f)}`)
+    if (b.length !== 1 || b[0].dir !== 'back' || b[0].oldEnd !== 0) problems.push(`going back: expected one back transition whose old page ends at opacity 0, got ${JSON.stringify(b)}`)
+    const still = await round(true)
+    if (still.forward.length || still.back.length) problems.push(`with reduced motion a page transition ran: ${JSON.stringify(still)}`)
+  } catch (e) {
+    problems.push(`could not be checked: ${e.message.split('\n')[0]}`)
+  } finally {
+    await p.emulateMedia({ reducedMotion: 'no-preference' }).catch(() => {})
+  }
+  return problems
+}
+
+// swipe-back-follows D4: on a task's page opened from the Inbox, a slow touch drag from
+// the left edge to a fifth of the width springs back (the page moved with the finger, the
+// route stays); a drag past a third goes back to the Inbox. Touch events are dispatched
+// 10 px every 40 ms (0.25 px/ms), so neither drag is a flick. Returns the problems.
+async function swipeBack(p, base, width) {
+  const problems = []
+  const drag = (to, release) => p.evaluate(async ({ to, release }) => {
+    const pause = () => new Promise((r) => setTimeout(r, 40))
+    const ev = (type, x) => window.dispatchEvent(new PointerEvent(type, { pointerId: 7, pointerType: 'touch', isPrimary: true, clientX: x, clientY: 400, bubbles: true }))
+    ev('pointerdown', 5)
+    let mid = ''
+    for (let x = 5; x <= to; x += 10) {
+      ev('pointermove', x)
+      await pause()
+      if (!mid && x >= to / 2) mid = document.getElementById('content')?.style.transform ?? ''
+    }
+    if (release) ev('pointerup', to)
+    return mid
+  }, { to, release })
+  const open = async () => {
+    await openScreen(p, base + '/inbox')
+    await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().waitFor()
+    // The edge watcher loads after the first paint.
+    await p.waitForTimeout(300)
+    await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().locator('[data-row-open]').press('Enter')
+    await p.locator('[data-task-page]').first().waitFor({ timeout: 10000 })
+  }
+  try {
+    await open()
+    const short = await drag(Math.round(width / 5), true)
+    if (!/translateX\(\d+(\.\d+)?px\)/.test(short)) problems.push(`the page did not follow the finger mid-drag (transform "${short}")`)
+    await p.waitForTimeout(400)
+    if (!(await p.locator('[data-task-page]').first().isVisible())) problems.push('a slow drag to a fifth of the width left the task page')
+    const rest = await p.evaluate(() => document.getElementById('content')?.style.transform ?? '')
+    if (rest) problems.push(`the page did not spring back (transform "${rest}")`)
+    await drag(Math.round(width / 2), true)
+    await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().waitFor({ timeout: 10000 })
+    if (!/\/inbox$/.test(new URL(p.url()).pathname)) problems.push(`a drag past a third did not go back to the Inbox (${p.url()})`)
+  } catch (e) {
+    problems.push(`could not be checked: ${e.message.split('\n')[0]}`)
+  }
+  return problems
+}
+
 // The overlay's box once two readings 150 ms apart agree (at most about 3 s).
+/**
+ * Presses a row's completion circle (press-feedback-delay): the circle takes its pressed
+ * colour (`press-selected`) by 100 ms, the engine holds that colour back 60 ms (the pressed
+ * circle's computed transition delay for its background), and the row's body is not
+ * pressed with it, so the row takes no tint. Colours are compared as drawn on a canvas, so two spellings of one colour
+ * are equal; hover, which touch emulation may add on a press, is neither colour. The wait
+ * is read from the engine rather than timed across the round trip to it, which on a busy
+ * machine takes longer than the wait itself.
+ */
+async function pressFeedback(p) {
+  // A press the emulation never reports as :active (it happens now and then in Chromium's
+  // touch emulation) says nothing about the CSS: the next row is pressed instead, and a run
+  // where neither registers is logged, not failed.
+  for (let n = 0; n < 2; n++) {
+    const res = await pressOnce(p, n)
+    if (res) return res
+  }
+  log('  press feedback: no press registered as :active in two tries; not judged')
+  return []
+}
+
+/** One press on the n-th row's circle; null when the press did not register. */
+async function pressOnce(p, n) {
+  const row = p.locator('li[data-task-id]').nth(n)
+  const circle = row.locator('button[aria-label^="Complete "]').first()
+  const box = await circle.boundingBox()
+  if (!box) return ['no completion circle on the first rows']
+  const handles = [await circle.elementHandle(), await row.elementHandle()]
+  const look = () => p.evaluate(([c, r]) => {
+    const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
+    const rgba = (colour) => { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = colour; ctx.fillRect(0, 0, 1, 1); return ctx.getImageData(0, 0, 1, 1).data.join(',') }
+    const token = (name) => { const d = document.createElement('div'); d.style.backgroundColor = `var(${name})`; document.body.append(d); const v = getComputedStyle(d).backgroundColor; d.remove(); return rgba(v) }
+    const cs = getComputedStyle(c)
+    const props = cs.transitionProperty.split(',').map((x) => x.trim())
+    const delays = cs.transitionDelay.split(',').map((x) => parseFloat(x) * (x.trim().endsWith('ms') ? 1 : 1000))
+    const i = props.findIndex((x) => x === 'background-color' || x === 'all')
+    return {
+      active: c.matches(':active'),
+      circle: rgba(cs.backgroundColor), pressed: token('--ot-selected'),
+      // The row's tint follows a press of its body (the part that opens the task); a
+      // selected row has the same colour, so the press itself is what is read.
+      rowPressed: !!r.querySelector(':scope > [data-row-open]:active'),
+      wait: i < 0 ? null : delays[i % delays.length],
+    }
+  }, handles)
+  await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await p.waitForTimeout(150)
+  await p.mouse.down()
+  const early = await look()
+  await p.waitForTimeout(100)
+  const held = await look()
+  // Released off the circle, so the press does not complete the task.
+  await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 200)
+  await p.mouse.up()
+  await p.waitForTimeout(400)
+  if (!held.active) return null
+  const out = []
+  if (held.circle !== held.pressed) out.push(`the circle shows no pressed colour 100 ms in (${held.circle}, pressed is ${held.pressed})`)
+  else if (held.wait === null || held.wait < 60) out.push(`the pressed circle's colour does not wait 60 ms (its transition delay is ${held.wait ?? 'none'})`)
+  if (early.rowPressed || held.rowPressed) out.push('the row counts as pressed while its circle is')
+  return out
+}
+
+/**
+ * Hover and focus follow the input (touch-input-mode): a pointer resting on a task row
+ * gives it no hover look, a tapped field and a tapped switch draw no focus ring, and Tab
+ * after them draws one. The switch is tapped twice, so the setting is as it was.
+ */
+async function touchInput(p, base) {
+  const out = []
+  // The first row, read once its colour has settled; it fails only on the hover colour
+  // itself (--ot-hover), drawn on a canvas so two spellings of one colour compare equal.
+  const row = p.locator('li[data-task-id]').first()
+  const bg = () => row.evaluate((el) => {
+    const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
+    const rgba = (c) => { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = c; ctx.fillRect(0, 0, 1, 1); return ctx.getImageData(0, 0, 1, 1).data.join(',') }
+    const d = document.createElement('div'); d.style.backgroundColor = 'var(--ot-hover)'; document.body.append(d)
+    const hover = rgba(getComputedStyle(d).backgroundColor); d.remove()
+    return { now: rgba(getComputedStyle(el).backgroundColor), hover }
+  })
+  await row.scrollIntoViewIfNeeded()
+  let rest = await bg()
+  for (let i = 0; i < 10; i++) {
+    await p.waitForTimeout(150)
+    const next = await bg()
+    if (next.now === rest.now) break
+    rest = next
+  }
+  const box = await row.boundingBox()
+  await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await p.waitForTimeout(300)
+  const hovered = await bg()
+  if (hovered.now === hovered.hover && rest.now !== rest.hover) out.push('a resting pointer gives a task row its hover look')
+  await p.mouse.move(0, 0)
+  // The ring of the focused element: an outline or a box-shadow drawn by the focus.
+  const ring = () => p.evaluate(() => {
+    const el = document.activeElement
+    if (!el || el === document.body) return 'nothing focused'
+    const cs = getComputedStyle(el)
+    return cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0 ? `outline on ${el.tagName.toLowerCase()}` : cs.boxShadow !== 'none' && el.matches('.ui-input') ? `ring on ${el.tagName.toLowerCase()}` : ''
+  })
+  for (const [name, path, selector, twice] of [['field', '/settings/general/focus', 'input.ui-input:visible', false], ['switch', '/settings/general/focus', '[role="switch"]:visible', true]]) {
+    await p.goto(base + path)
+    const target = p.locator(selector).first()
+    await target.waitFor({ timeout: 10000 }).catch(() => {})
+    if (!(await target.count())) { out.push(`no ${name} on ${path} to tap`); continue }
+    await target.tap()
+    await p.waitForTimeout(100)
+    const after = await ring()
+    if (after) out.push(`a tapped ${name} shows a focus ring (${after})`)
+    if (twice) await target.tap()
+    await p.keyboard.press('Tab')
+    await p.waitForTimeout(100)
+    const tabbed = await ring()
+    if (!tabbed.startsWith('outline') && !tabbed.startsWith('ring')) out.push(`Tab after a tapped ${name} draws no focus ring (${tabbed || 'none'})`)
+  }
+  return out
+}
+
+/**
+ * A held row rises before its hold arms and settles after an early release; under
+ * reduced motion it does not move (row-lift-overscroll). The touch is a pointer event
+ * of type touch on the row's title, so the same code runs in every engine.
+ */
+async function rowLift(p) {
+  const out = []
+  const row = p.locator('li[data-task-id]').first()
+  const title = row.locator('[data-row-open]').first()
+  if (!(await title.count())) return ['no task row to hold']
+  await row.scrollIntoViewIfNeeded()
+  const scale = () => row.evaluate((el) => {
+    const t = getComputedStyle(el).transform
+    return t === 'none' ? 1 : new DOMMatrixReadOnly(t).a
+  })
+  const hold = async (ms) => {
+    const box = await title.boundingBox()
+    const at = { pointerId: 41, pointerType: 'touch', isPrimary: true, bubbles: true, clientX: box.x + 8, clientY: box.y + box.height / 2 }
+    await title.evaluate((el, at) => el.dispatchEvent(new PointerEvent('pointerdown', at)), at)
+    await p.waitForTimeout(ms)
+    const held = await scale()
+    await p.evaluate((at) => window.dispatchEvent(new PointerEvent('pointerup', at)), at)
+    return held
+  }
+  const lifted = await hold(300)
+  if (!(lifted > 1.001)) out.push(`a row held for 300 ms has not risen (scale ${lifted})`)
+  await p.waitForTimeout(400)
+  const settled = await scale()
+  if (Math.abs(settled - 1) > 0.0005) out.push(`a row released early has not settled (scale ${settled})`)
+  await p.emulateMedia({ reducedMotion: 'reduce' })
+  const still = await hold(300)
+  await p.emulateMedia({ reducedMotion: null })
+  if (Math.abs(still - 1) > 0.0005) out.push(`under reduced motion a held row moves (scale ${still})`)
+  return out
+}
+
 async function settledBox(p, overlay) {
   let prev = await overlay.boundingBox()
   for (let i = 0; i < 20; i++) {
@@ -437,8 +740,9 @@ const ids = { ...await seedAccount({ base, pw, lang: LANG, now: NOW }), date: LA
 const llmServer = ids.llm
 const combos = []
 for (const e of ENGINES) for (const w of WIDTHS) for (const t of THEMES) combos.push([e, w, t])
-log(`· checking ${combos.length} combinations (${ENGINES.join(', ')} × ${WIDTHS.join('/')} px × ${THEMES.join('/')})`)
-const queue = [...combos]
+const mine = combos.filter((_, i) => i % SHARD_OF === SHARD_AT - 1)
+log(`· checking ${mine.length} combinations (${ENGINES.join(', ')} × ${WIDTHS.join('/')} px × ${THEMES.join('/')}${SHARD_OF > 1 ? `, shard ${SHARD_AT}/${SHARD_OF}` : ''})`)
+const queue = [...mine]
 await Promise.all(Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
   while (queue.length) { const [e, w, t] = queue.shift(); await runCombo(e, w, t, ids) }
 }))

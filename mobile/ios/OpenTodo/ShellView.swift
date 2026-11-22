@@ -1,3 +1,4 @@
+import ObjectiveC
 import SwiftUI
 import UIKit
 import WebKit
@@ -34,14 +35,17 @@ final class ShellController: NSObject, ObservableObject {
     /// Receives the files the web app saves (shell-repairs D3); made with the first one.
     private var saver: DownloadSaver?
     private var barsObserver: NSObjectProtocol?
+    private var paintObserver: NSObjectProtocol?
     /// The name of the launch screen's colour in the asset catalog (`UILaunchScreen` in Info.plist).
     static let launchColor = "LaunchBackground"
     /// The longest the launch colour stays before the web view shows whatever it has.
     static let revealCap: TimeInterval = 5
-    /// The web view shows: a page has loaded, a load failed, or the cap passed (shell-first-paint).
+    /// The web view shows: the page drew its first frame or loaded, a load failed, or the cap passed (shell-first-paint).
     private(set) var revealed = false
     /// The bars the web app asked for last; their icons come with the web view.
     private var bars: SystemBars?
+    /// Takes the status bar tap for the page (status-bar-scroll-top).
+    let scrollTopDecoy = ScrollTopDecoy()
 
     init(origin: URL) {
         self.origin = origin
@@ -58,8 +62,9 @@ final class ShellController: NSObject, ObservableObject {
         self.webView = WKWebView(frame: .zero, configuration: config)
         self.bridge = bridge
         super.init()
-        // Hidden over the launch colour until a page has loaded (shell-first-paint): the app
-        // goes from its launch screen to the page with no empty web view between them.
+        // Hidden over the launch colour until the page has drawn its first frame, or has loaded
+        // (shell-first-paint, shell-reveal-on-paint): the app goes from its launch screen to the
+        // page with no empty web view between them.
         webView.alpha = 0
         Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(ShellController.revealCap * 1_000_000_000))
@@ -78,6 +83,13 @@ final class ShellController: NSObject, ObservableObject {
         // The default adjustment would also inset the scroll view, shrinking 100dvh by the top and
         // bottom insets and leaving the bar colour as a band under the tab bar.
         webView.scrollView.contentInsetAdjustmentBehavior = .never
+        // A tap on the status bar goes to the page (status-bar-scroll-top D1): the web view's
+        // scroll view gives it up, and the decoy takes it and tells the page.
+        webView.scrollView.scrollsToTop = false
+        scrollTopDecoy.onTap = { [weak self] in self?.webView.evaluateJavaScript(ScrollTop.script) }
+        webView.addSubview(scrollTopDecoy)
+        // No previous, next and Done bar above the keyboard (ios-keyboard-bar D1).
+        KeyboardBar.remove(from: webView)
         // Pull to refresh: the gesture every iOS person tries when a page looks stale. A web app
         // with its own pull to sync takes it over (pull-to-sync D4); an older one keeps this reload.
         refresher.addTarget(self, action: #selector(pulledToRefresh), for: .valueChanged)
@@ -87,6 +99,10 @@ final class ShellController: NSObject, ObservableObject {
                 self?.pull.handledByPage()
                 self?.applyPull()
             }
+        }
+        // The web app has drawn its first frame (shell-reveal-on-paint D2): no need to wait for its load.
+        paintObserver = NotificationCenter.default.addObserver(forName: FirstPaint.painted, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.reveal() }
         }
         // The last bars the app asked for, before the page draws (theme-engine D8).
         if let json = Prefs.shared.systemBars, let bars = SystemBars.parse(json) { apply(bars) }
@@ -464,6 +480,69 @@ struct SiteBar: View {
         .padding(.trailing, 4)
         .background(.bar)
         .accessibilityElement(children: .contain)
+    }
+}
+
+/// The one scroll view iOS hands a status bar tap to (status-bar-scroll-top D1): 1 × 1
+/// No keyboard accessory bar (ios-keyboard-bar D1): WebKit's content view supplies the
+/// previous, next and Done bar through `inputAccessoryView`. The view is given a subclass
+/// of its own class, made once, that supplies none. Done stays reachable through the
+/// keyboard's return key and a tap outside. Guarded: without the content view, or if the
+/// class cannot be made, nothing changes and the bar stays.
+enum KeyboardBar {
+    static let className = "OpenTodoContentViewWithoutBar"
+
+    /// Removes the bar from this web view; returns whether it did.
+    @discardableResult
+    static func remove(from webView: WKWebView) -> Bool {
+        guard let content = webView.scrollView.subviews.first(where: { NSStringFromClass(type(of: $0)).hasPrefix("WKContent") })
+            ?? webView.scrollView.subviews.first(where: { NSStringFromClass(type(of: $0)) == className })
+        else { return false }
+        if NSStringFromClass(type(of: content)) == className { return true }
+        guard let subclass = subclass(of: type(of: content)) else { return false }
+        object_setClass(content, subclass)
+        return true
+    }
+
+    private static func subclass(of base: AnyClass) -> AnyClass? {
+        if let made = NSClassFromString(className) { return made }
+        guard let made = objc_allocateClassPair(base, className, 0) else { return nil }
+        let getter = #selector(getter: UIResponder.inputAccessoryView)
+        guard let method = class_getInstanceMethod(base, getter) else {
+            objc_disposeClassPair(made)
+            return nil
+        }
+        let none: @convention(block) (AnyObject) -> UIView? = { _ in nil }
+        class_addMethod(made, getter, imp_implementationWithBlock(none), method_getTypeEncoding(method))
+        objc_registerClassPair(made)
+        return made
+    }
+}
+
+/// point, taller in content than its frame and scrolled off its top, so it always counts as
+/// scrollable; its delegate tells the page and declines, so it never moves. It takes no
+/// touches and is not on the accessibility tree.
+final class ScrollTopDecoy: UIScrollView, UIScrollViewDelegate {
+    var onTap: () -> Void = {}
+
+    init() {
+        super.init(frame: CGRect(x: 0, y: 0, width: 1, height: 1))
+        contentSize = CGSize(width: 1, height: 3)
+        contentOffset = CGPoint(x: 0, y: 1)
+        scrollsToTop = true
+        isUserInteractionEnabled = false
+        showsVerticalScrollIndicator = false
+        backgroundColor = .clear
+        isAccessibilityElement = false
+        accessibilityElementsHidden = true
+        delegate = self
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
+        onTap()
+        return false
     }
 }
 

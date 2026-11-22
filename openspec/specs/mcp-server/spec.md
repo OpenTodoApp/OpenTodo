@@ -1408,7 +1408,7 @@ Over MCP, a token limited to chosen workspaces SHALL see and change only those w
 
 ### Requirement: Connected apps in Settings
 
-The server SHALL list a signed-in person's own OAuth grants that are neither revoked nor expired at `GET /api/v1/me/oauth-grants`, each with the client's registered name, when it was connected, its last use, its scope (`read` or `agent`) and its workspace limit, and never a token. `DELETE /api/v1/me/oauth-grants/{id}` SHALL revoke one of the caller's grants and delete its current access token in the same request, record `mcp_oauth.disconnected`, and answer 404 for another person's, a revoked or an unknown grant. Both routes SHALL work while the owner's MCP switch is off; the delete SHALL be refused on a demo instance. Settings → Account → Security → Session SHALL list the connected apps next to the signed-in OpenTodo apps, each with Disconnect behind a confirmation. Grants are server state outside the op log: nothing syncs, and a device that is offline sees the list only once it is online again.
+The server SHALL list a signed-in person's own OAuth grants that are neither revoked nor expired at `GET /api/v1/me/oauth-grants`, each with the client's registered name, when it was connected, its last use, its scope (`read` or `agent`) and its workspace limit, and never a token, to a session, a `full` or an `admin` token; `read` and `agent` tokens SHALL be refused with 403 `insufficient_scope`, as on `/api/v1/me/agent-access`. `DELETE /api/v1/me/oauth-grants/{id}` SHALL revoke one of the caller's grants and delete its current access token in the same request, record `mcp_oauth.disconnected`, and answer 404 for another person's, a revoked or an unknown grant. Both routes SHALL work while the owner's MCP switch is off; the delete SHALL be refused on a demo instance. Settings → Account → Security → Session SHALL list the connected apps next to the signed-in OpenTodo apps, each with Disconnect behind a confirmation. Grants are server state outside the op log: nothing syncs, and a device that is offline sees the list only once it is online again.
 
 #### Scenario: A person sees their own connected apps
 
@@ -1435,6 +1435,11 @@ The server SHALL list a signed-in person's own OAuth grants that are neither rev
 - **WHEN** a demo visitor sends `DELETE /api/v1/me/oauth-grants/{id}`
 - **THEN** the answer is 403 `demo_restricted`
 
+#### Scenario: A read or agent token cannot list connected apps
+
+- **WHEN** a `read` or an `agent` token is presented on `GET /api/v1/me/oauth-grants`
+- **THEN** the answer is 403 `insufficient_scope`, while a session and a `full` token get the list
+
 ### Requirement: Deleting an app's access token ends its grant
 
 Deleting the access token of one of the person's grants with `DELETE /api/v1/tokens/{id}` SHALL also revoke that grant, so its refresh token cannot mint another access token, and SHALL record `mcp_oauth.disconnected`. Deleting an ordinary API token SHALL leave every grant unchanged.
@@ -1448,3 +1453,33 @@ Deleting the access token of one of the person's grants with `DELETE /api/v1/tok
 
 - **WHEN** a person deletes an API token they created themselves
 - **THEN** no grant is revoked
+
+### Requirement: Read tools name sections and match labels
+`list_projects` and `opentodo://projects` SHALL carry each project's live sections in board order, each with its id, `flow_mode` and name marked as untrusted text, and SHALL leave the list out for a project without sections. `search_tasks` SHALL also match a task that carries a label whose name holds the query, or whose name the query is with a trailing `s` or `es`, ignoring case and a leading `#` or `@`. `list_tasks`' `label` SHALL, when no label has that name or id, find the labels whose name the argument is with a trailing `s` or `es`. Encrypted names SHALL never match. The rule SHALL only add matches and SHALL never stem a word otherwise. The on-device assistant's read tools SHALL apply the same rule, pinned by shared vectors. These are reads of synced data: they work on whatever a device has synced, change nothing and need no convergence.
+
+#### Scenario: A board column is named
+- **WHEN** an assistant calls `list_projects` for an account whose project "Website launch" has the sections "To do" and "In progress"
+- **THEN** the project carries both sections in order with their ids, and the id of "In progress" can be passed to `show_board`
+
+#### Scenario: A plural finds a label
+- **WHEN** an assistant calls `search_tasks` with `query: "errands"` and three open tasks carry the label "errand"
+- **THEN** the result holds those three tasks
+
+#### Scenario: Other words are not stemmed
+- **WHEN** an assistant calls `search_tasks` with `query: "commissioni"` and tasks carry the label "commissione"
+- **THEN** the label does not match
+
+### Requirement: Find free time
+The registry SHALL offer the read tool `find_free_time` with `from`, `to` (at most 14 days apart), `min_minutes` and `timezone`. It SHALL return the free slots of each day within the user's working day, after removing calendar events, frames, slots and timed tasks, leaving out projects kept away from assistants. It is listed and callable like the other read tools, for MCP clients and the in-app assistant.
+
+#### Scenario: Free slots over MCP
+- **WHEN** an MCP client with a read token calls `find_free_time` for tomorrow with `min_minutes` 60
+- **THEN** the result lists tomorrow's free slots of at least an hour, each with start, end and minutes
+
+#### Scenario: Range too long
+- **WHEN** a caller asks for a range of 30 days
+- **THEN** the tool returns an `invalid_arguments` error naming the 14-day limit
+
+#### Scenario: Without a token
+- **WHEN** an MCP request without a token calls `find_free_time`
+- **THEN** the request is refused as unauthenticated like every MCP request

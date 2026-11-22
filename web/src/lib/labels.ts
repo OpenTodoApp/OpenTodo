@@ -171,12 +171,3 @@ export function duplicateLabelIds(labels: Label[]): Set<string> {
   return out
 }
 
-/** Open-task count per label id over the given (already filtered) open tasks. */
-export function countOpenByLabel(openTasks: Task[]): Map<string, number> {
-  const counts = new Map<string, number>()
-  for (const task of openTasks) {
-    if (task.deleted_at || task.completed_at) continue
-    for (const id of new Set(task.labels)) counts.set(id, (counts.get(id) ?? 0) + 1)
-  }
-  return counts
-}

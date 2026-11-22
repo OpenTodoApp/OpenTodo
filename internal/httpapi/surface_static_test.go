@@ -214,7 +214,7 @@ func (w *walker) call(c *ast.CallExpr, scope *ast.BlockStmt) {
 				}
 			}
 		}
-	case "writeJSON", "WriteJSON":
+	case "writeJSON", "WriteJSON", "surfaceJSON":
 		if len(c.Args) != 3 {
 			return
 		}

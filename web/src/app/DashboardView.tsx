@@ -12,7 +12,7 @@ import { resolveLabels } from '../lib/labels'
 import { hasTimeColumn } from '../lib/rowTime'
 import { listSlotsOff } from '../lib/rowSlots'
 import { useLiveSections } from '../lib/localData'
-import { setTaskCompleted } from '../lib/ops'
+import { setTaskCompletedWithFeedback } from './completionSound'
 import { describeRule, type RuleNames } from '../lib/rules'
 import type { Label, Project, Task, View } from '../lib/types'
 import { MAX_PANELS, addPanel, dashboardPanels, evaluateViews, isDashboard, movePanel, removePanel, type PanelState } from '../lib/views'
@@ -117,7 +117,7 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
       else if (f.panel?.kind === 'view') navigate({ view: 'view', id: f.panel.id })
     },
     'dashboard.open-view': () => { const f = focused(); if (f?.panel?.kind !== 'view') return false; navigate({ view: 'view', id: f.panel.id }) },
-    'dashboard.complete': () => { const f = focused(); if (!f || f.cur < 0 || !f.tasks[f.cur]) return false; act(setTaskCompleted(f.tasks[f.cur].id, !f.tasks[f.cur].completed_at)) },
+    'dashboard.complete': () => { const f = focused(); if (!f || f.cur < 0 || !f.tasks[f.cur]) return false; act(setTaskCompletedWithFeedback(f.tasks[f.cur].id, !f.tasks[f.cur].completed_at)) },
     'dashboard.escape': () => {
       if (openId) { setOpenId(null); return }
       if (!focused()) return false
@@ -288,7 +288,7 @@ function Panel({ index, panel, selectedId, tasks, held, names, projectMap, label
           {tasks.map((tk) => {
             const row = (
               <TaskRow key={tk.id} task={tk} project={tk.project_id ? projectMap.get(tk.project_id) : undefined} labels={resolveLabels(tk.labels, labelMap)}
-                showProject selected={tk.id === selectedId} timeColumn={timeColumn} slotsOff={slotsOff} blockedBy={blocked.get(tk.id)} onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))} onOpen={() => onOpenTask(tk.id)}
+                showProject selected={tk.id === selectedId} timeColumn={timeColumn} slotsOff={slotsOff} blockedBy={blocked.get(tk.id)} onToggle={() => act(setTaskCompletedWithFeedback(tk.id, !tk.completed_at))} onOpen={() => onOpenTask(tk.id)}
                 onPointerDown={(e) => onDragTask(tk, e)} />
             )
             // A held card (rule-boards D6): shown first, marked, until it matches or changes again.

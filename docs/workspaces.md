@@ -47,7 +47,7 @@ In a comment or a task's notes, type `@` and pick a group, such as **Adults**, l
 
 ## Move things
 
-The project menu has **Move to workspace…** for projects you own. Its tasks, sections and sub-projects follow, and labels on its tasks are matched by name in the other workspace. Undo puts everything back. A task in the Inbox moves with the command **Move … to workspace** in search.
+The project menu has **Move to workspace…** for projects you own. Its tasks, sections and sub-projects follow, and labels on its tasks are matched by name in the other workspace. Undo puts everything back. Move a task by picking another workspace's project, or its **No project**, in its **Project** picker.
 
 ## Import into a workspace
 

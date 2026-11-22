@@ -1,1 +1,0 @@
-- **A theme's list text size now changes task titles on phones, not only the sidebar.** On a phone the task title used a fixed size, so setting the theme's list text size to 14 or 15 px left the task rows unchanged while the sidebar followed it; the title now scales with the setting (keeping its slightly larger phone size), as it already did on wider screens.

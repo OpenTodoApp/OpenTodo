@@ -1,7 +1,8 @@
 // What calendar-clarity adds to the task list page: Colour by on a project's board
 // (the card edge and the project menu's choice), Upcoming's query filter (its header
 // control and dialog), and a project's Calendar layout, loaded when first shown.
-import { lazy, Suspense, useState, type ReactNode } from 'react'
+import { Suspense, useState, type ReactNode } from 'react'
+import { lazy } from '../../lib/lazy'
 import { BOARD_COLOR_BY_KEY } from '../../lib/colorBy'
 import { t } from '../../lib/i18n'
 import type { Project, Task } from '../../lib/types'
@@ -36,8 +37,9 @@ export interface ListExtras {
 /**
  * `layout`: a project's layout and its choice, which join the project menu on mid-size touch screens.
  * `projectId`: the project whose board offers "Show notes on cards" (board-polish D4), personal and synced.
+ * `projectName`: the project the query filter narrows, named in its dialog's title (project-query-filter); Upcoming's otherwise.
  */
-export function useListExtras(board: boolean, filter: QueryFilter | null, layout: { mode: ProjectViewMode; onChoose: (m: ProjectViewMode) => void } | null, projectId: string | null = null): ListExtras {
+export function useListExtras(board: boolean, filter: QueryFilter | null, layout: { mode: ProjectViewMode; onChoose: (m: ProjectViewMode) => void } | null, projectId: string | null = null, projectName?: string): ListExtras {
   const compact = useMediaQuery(COMPACT_LAYOUT_QUERY)
   // One device choice for every board; Project leaves cards as they were.
   const color = useColorBy(BOARD_COLOR_BY_KEY)
@@ -53,7 +55,7 @@ export function useListExtras(board: boolean, filter: QueryFilter | null, layout
     edgeOf: board && color.mode !== 'project' ? color.hueOf : undefined,
     boardGroups: groups.length ? groups : undefined,
     queryControl: filter ? { query: filter.query, onOpen: () => setOpen(true), onClear: () => filter.setQuery('') } : null,
-    queryHost: filter ? <QueryFilterHost open={open} filter={filter} title={t('Filter Upcoming')} onClose={() => setOpen(false)} /> : null,
+    queryHost: filter ? <QueryFilterHost open={open} filter={filter} title={projectName ? t('Filter {name}', { name: projectName }) : t('Filter Upcoming')} onClose={() => setOpen(false)} /> : null,
     cardNotes: board && cardNotes,
   }
 }

@@ -11,7 +11,8 @@ import { useShortcutHints } from './shortcuts/hints'
 const GO_KEYS: Record<string, string> = Object.fromEntries(SHORTCUTS.filter((s) => s.id.startsWith('go.')).map((s) => [s.id.slice(3), s.keys[0]]))
 import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
-import { type FormEvent, Fragment, type KeyboardEvent, lazy, type ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, Fragment, type KeyboardEvent, type ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { orderDestinations, readAppearance, readSidebarCounts, type DestinationId, type Promotable } from '../lib/appearance'
 import { useAssistantStatus } from '../lib/assistantStatus'
 import { readCalendarMode } from '../lib/calendarMode'
@@ -41,7 +42,7 @@ import { navigate, type Route } from './router'
 import { taskIndexOf, useLiveTasks, useOpenTasks } from '../lib/liveTasks'
 import { useSettledValue } from '../lib/useSettledValue'
 import { beginDrag } from '../lib/dnd'
-import { holdForRowMenu } from './rowMenuHold'
+import { contextForRowMenu, holdForRowMenu } from './rowMenuHold'
 import { moveProjectBy, moveProjectTo } from '../lib/move'
 import { canEditProject, canEditTasks, roleOf } from '../lib/sharing'
 import { taskDrop } from './taskDrop'
@@ -461,7 +462,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
           )}
         </nav>}
       </div>
-      <div ref={scroller} className={`ui-scroller min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-scroll onPointerDown={holdForRowMenu}>
+      <div ref={scroller} className={`ui-scroller min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-scroll onPointerDown={holdForRowMenu} onContextMenu={contextForRowMenu}>
       {space === 'notes' ? <Suspense fallback={null}><NotesSidebar route={route} collapsed={collapsed} /></Suspense> : <>
       {finding && !collapsed && (
         <div className="pt-3" data-sidebar-find>

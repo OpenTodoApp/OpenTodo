@@ -171,7 +171,7 @@ func TestSecurityRoutePolicies(t *testing.T) {
 		"GET /api/v1/invitations/{token}":      "public",
 		"/dav/":                                "public demo",
 		"/mcp":                                 "public demo",
-		// App sign-in (native-app-foundation D5): the code exchange is anonymous;
+		// App sign-in (app-sign-in): the code exchange is anonymous;
 		// the browser steps need a session, and a token cannot mint a code.
 		"POST /api/v1/app/token":      "public demo",
 		"GET /app/sign-in":            "auth session-only demo sign-in-first",
@@ -180,10 +180,10 @@ func TestSecurityRoutePolicies(t *testing.T) {
 		"DELETE /api/v1/me/apps/{id}": "auth demo",
 		"POST /api/v1/app/sign-out":   "auth demo",
 		// Connected AI apps (connected-apps-list).
-		"GET /api/v1/me/oauth-grants":         "auth",
+		"GET /api/v1/me/oauth-grants":         "auth full-tokens",
 		"DELETE /api/v1/me/oauth-grants/{id}": "auth demo",
 		// API tokens and app passwords: minting needs a fresh session or an admin token.
-		"GET /api/v1/tokens":                  "auth",
+		"GET /api/v1/tokens":                  "auth full-tokens",
 		"POST /api/v1/tokens":                 "auth admin-token fresh demo",
 		"DELETE /api/v1/tokens/{id}":          "auth demo",
 		"POST /api/v1/app-passwords":          "auth admin-token fresh demo",

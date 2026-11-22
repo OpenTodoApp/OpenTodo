@@ -73,6 +73,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     private val io = Executors.newSingleThreadExecutor()
     /** Files the app saves (shell-repairs D2): the bridge's chunks, the server's downloads, the save dialog. */
     private val saver = FileSaver(this)
+    private val completionSound = CompletionSound()
     /** The launch screen stays until the page can be drawn (shell-first-paint); null once it went. */
     private var hold: LaunchHold? = null
     /** The bars asked for while the launch screen is up: they come with the page. */
@@ -174,6 +175,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     }
 
     override fun onPause() {
+        completionSound.release()
         // A login wall's or provider's session cookie survives the app being closed.
         CookieManager.getInstance().flush()
         super.onPause()
@@ -678,6 +680,10 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     /** On the web view, so it follows the phone's touch-feedback setting and needs no permission. */
     override fun haptic(constant: Int) {
         if (::web.isInitialized) web.performHapticFeedback(constant)
+    }
+
+    override fun playCompletionSound() {
+        if (hasWindowFocus()) completionSound.play(this)
     }
 
     /** One link screen at a time; a device where nothing answers the link has no distributor to ask. */

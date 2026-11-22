@@ -5,7 +5,7 @@ import { applyOps, createProject, deleteProject, getDeviceId, resetDeviceId } fr
 import { fieldSortBy, type FieldDef, type Label, type Op, type Project, type Task, type View } from './types'
 import {
   MAX_PANELS, START_VIEW_KEY, addPanel, compareTasks, createView, dashboardPanels, deleteView, displayOptions, evaluateViews, groupTasks,
-  movePanel, removePanel, reorderView, resolveStartView, runView, setOnDrop, setPanels, setPinned, setStartView, updateView, viewOptions, type ViewContext,
+  movePanel, removePanel, reorderView, resolveStartView, runView, setOnDrop, setPanels, setStartView, updateView, viewOptions, type ViewContext,
 } from './views'
 
 let n = 0
@@ -96,8 +96,6 @@ describe('createView / updateView / deleteView', () => {
     expect(await pos(b)).toBeLessThan(await pos(a))
     await reorderView(b, -1) // already first: no-op
     expect(await pos(b)).toBeLessThan(await pos(a))
-    await setPinned(b, false)
-    expect((await db.views.get(b))!.pinned).toBe(false)
     await deleteView(a)
     expect((await db.views.get(a))!.deleted_at).toBeTypeOf('number')
   })

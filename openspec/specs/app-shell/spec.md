@@ -232,7 +232,7 @@ From 768 px wide the shell SHALL have no bar above the content column; search SH
 - **THEN** the bar starts with Back, named "Back to the list", and has no menu button
 
 ### Requirement: Sync status is quiet
-Sync status SHALL be a dot in the sidebar footer, green when synced, animated while syncing, grey when offline and red on error, with the text ("Synced", "3 pending", "Offline") in its tooltip and announced to assistive technology. The text SHALL be visible beside the dot only while offline, on error, or while changes are pending.
+Sync status SHALL be a dot in the sidebar footer, green when synced, animated while syncing, grey when offline and red on error, with the text ("Synced", "3 pending", "Offline") in its tooltip and announced to assistive technology. The text SHALL be visible beside the dot only while offline, on error, while changes are pending, or while the sync is stale. The sync SHALL count as stale when the dot would otherwise read synced or syncing but the last successful sync is more than 15 minutes old (or the page has been open for 15 minutes without one): the dot SHALL then be amber and read "Not synced since {time}" ("Not synced yet"), and a click SHALL sync now.
 
 #### Scenario: Synced
 - **WHEN** the device is online, live and has no pending changes
@@ -241,6 +241,10 @@ Sync status SHALL be a dot in the sidebar footer, green when synced, animated wh
 #### Scenario: Pending offline
 - **WHEN** the device is offline with two unsynced changes
 - **THEN** the footer reads "Offline · 2 pending" beside the grey dot
+
+#### Scenario: Data stopped arriving
+- **WHEN** the device is online and its last successful sync was an hour ago without an error
+- **THEN** the footer reads "Not synced since" with that time beside an amber dot, never "Synced"
 
 ### Requirement: Notices are toasts
 Shell notices (a removed start view, a change the server refused, a reminder, an undo offer) SHALL appear as toasts in one stack in the bottom corner, SHALL not push content, SHALL be dismissable, and SHALL be announced to assistive technology. A toast that offers an action SHALL stay until acted on or dismissed; an informational toast SHALL leave after eight seconds.
@@ -735,7 +739,7 @@ Once a list is on screen, nothing SHALL appear or grow above its rows unless the
 - **THEN** a toast explains it, and the list does not move
 
 ### Requirement: No floating add button in the rituals
-Below 768 px the shell SHALL hide the floating add button in Focus and in Close the day, which keep nothing else on screen. The tab bar SHALL stay, the rest of the review SHALL keep the button, and the button SHALL return on the next view that offers quick add. Close the day SHALL draw one divider under the shell's bar on a phone, also while it offers Reopen the day.
+Below 768 px the shell SHALL NOT show the floating add button on a screen that ends in its own action, so the button never covers that action: Focus and Close the day, which keep nothing else on screen, and every step of the Weekly review, which ends in Back and Next. The tab bar SHALL stay. The Daily check and the Monthly look, whose action is in the page header, SHALL keep the button, and the button SHALL return on the next view that offers quick add. Close the day SHALL draw one divider under the shell's bar on a phone, also while it offers Reopen the day.
 
 #### Scenario: Focus on a phone
 - **WHEN** the user opens Focus on a 390 px phone
@@ -744,6 +748,14 @@ Below 768 px the shell SHALL hide the floating add button in Focus and in Close 
 #### Scenario: Close the day after closing
 - **WHEN** the user reopens Close the day on a 390 px phone after closing the day
 - **THEN** Reopen the day shows in the page under the shell's bar, with one divider under the bar and no floating add button
+
+#### Scenario: Weekly review on a phone
+- **WHEN** the user opens the Weekly review on a 360 px phone
+- **THEN** the tab bar stays, there is no floating add button, and nothing covers the step's Next button
+
+#### Scenario: Leaving the review
+- **WHEN** the user opens the Daily check from the review's menu, or the Inbox from the tab bar
+- **THEN** the floating add button is back
 
 ### Requirement: Workspace picture
 The workspace control at the top of the sidebar SHALL show the current workspace's own picture followed by its name on one line:
@@ -837,3 +849,252 @@ On a phone, a touch that starts within 20 pixels of the left edge and moves righ
 #### Scenario: Row swipes keep their place
 - **WHEN** a person swipes a task row right starting in the middle of the row
 - **THEN** the row's own swipe action runs and the menu stays closed
+
+### Requirement: Room under the floating add button
+Below 768 px every screen that shows the floating add button SHALL be scrollable until its last control is clear of the button, the tab bar and the bottom safe area. The room SHALL come from one shared rule: the content column keeps the button's footprint at its end while the button is offered. A screen that fills the column and scrolls inside itself (the calendar's Day and Week grid, the notes graph) SHALL run down to the tab bar and keep that room at the end of its own scroller, or keep its controls above the button where nothing scrolls. A screen that does not show the add button SHALL keep no room for it, and from 768 px no screen SHALL. A screen whose content already ends above the button SHALL NOT scroll because of the room. The rule is layout only: it reads and writes no data, and is the same offline.
+
+#### Scenario: The last hour of the day
+- **WHEN** the calendar's Day is scrolled to its end on a 360 × 740 phone
+- **THEN** the 23:00 hour and a block in it are above the add button, and nothing that can be tapped is under the button
+
+#### Scenario: The grid reaches the tab bar
+- **WHEN** the calendar's Day or Week opens on a 390 × 844 phone
+- **THEN** the grid runs down to the tab bar, with the add button over it, and the page itself does not scroll
+
+#### Scenario: No room without the button
+- **WHEN** Statistics, the Trash or a step of the Weekly review is scrolled to its end on a phone
+- **THEN** its content ends at the tab bar, with no empty band the height of the add button under it
+
+#### Scenario: A short page does not scroll
+- **WHEN** the Inbox holds three tasks on a 390 × 844 phone
+- **THEN** the page does not scroll
+
+#### Scenario: From 768 px
+- **WHEN** the calendar's Day or a list is open at 768 px or wider
+- **THEN** no room for the add button is kept at the end of the page or of the grid
+
+### Requirement: Help in the phone bar's menu
+Below 768 px, on a page whose bar has a menu (the overflow menu or the page's own menu), the page's Help action SHALL be the last item of that menu, after a separator, and the bar SHALL show no Help button, so the title has that room. The item SHALL be named "Help", SHALL open the same guide section for the screen as the header's Help action does, SHALL be reachable with the menu's keyboard model (arrow keys, End, type-ahead), and focus SHALL return to the menu's button when the guide closes. A step that takes the menu's place (a picker inside the project menu) SHALL NOT show the item, and the bar SHALL NOT grow a Help button while that step is open. On a page whose bar has no menu that can hold the item, the bar SHALL keep the Help button. From 768 px the page header SHALL keep its Help button and its menus SHALL NOT repeat Help. This is presentation only: it reads and writes no data and behaves the same offline.
+
+#### Scenario: Inbox on a small phone
+- **WHEN** the Inbox is open on a 360 px screen
+- **THEN** the bar shows the menu button, the title with its lead line, Process, Display options and the Inbox menu, and no Help button
+
+#### Scenario: Help from the menu
+- **WHEN** the user opens the "…" menu of a project on a 360 px screen and chooses Help, its last item
+- **THEN** the guide's section for projects opens over the page, and closing it puts focus on the menu's button
+
+#### Scenario: Help by keyboard
+- **WHEN** the user focuses the bar's menu button on Today at 390 px, presses Enter, then End, then Enter
+- **THEN** focus is on Help after End, and the guide's section for Today opens
+
+#### Scenario: A page without a menu
+- **WHEN** Settings is open on a 360 px screen
+- **THEN** the bar shows the menu button, the title and the Help button
+
+#### Scenario: A picker step
+- **WHEN** the user opens a project's menu on a 360 px screen and chooses Move to…
+- **THEN** the picker shows no Help item, and the bar behind it still has no Help button
+
+#### Scenario: Wider screens
+- **WHEN** the Inbox is open on a 1280 px screen
+- **THEN** the header ends with the Help button, and the Inbox menu has no Help item
+
+### Requirement: Pull down to sync on a touch device
+On a touch device, a finger that pulls the page down from the top of the page's scroller SHALL ask for a sync now, once per pull, when it is released past the pull distance; a shorter pull SHALL do nothing. A mark SHALL follow the pull, SHALL stay while the sync runs and be announced to assistive technology as syncing, and SHALL go when the sync settles. The app SHALL never reload for a pull, and the open page, its scroll position and unsaved input SHALL stay as they were.
+
+The pull SHALL start only with one finger, on a page scrolled to its top, with a move that is clearly vertical. It SHALL NOT start from a mouse, a trackpad or a wheel, in the strip at the left edge that belongs to the edge swipe, inside a scroller within the page that has something to scroll (the calendar grid, a board column), on a focused text field, while text is selected, on a handle that takes its own drag, while a drag is lifted, or while a dialog or sheet is open. A move that turns sideways SHALL be left to the row swipes. While another pulled sync runs, a pull SHALL ask for nothing more.
+
+With reduced motion, the mark SHALL appear in place instead of following the finger and SHALL NOT turn.
+
+The pull changes nothing stored. Offline, signed out or with the device locked, it SHALL say so in a toast with the sync status's own words ("Offline", "Signed out", "Locked"), a sync error SHALL be shown with its sentence, and pending changes SHALL stay queued as before. What the sync brings converges as any sync does; the pull adds no write path.
+
+#### Scenario: Pull on Today
+- **WHEN** a person on a phone pulls Today down from its top past the pull distance and lets go
+- **THEN** one sync runs, the mark shows while it runs and goes when it ends, and Today is still open at its top
+
+#### Scenario: A short pull
+- **WHEN** a person pulls the list down a little and lets go
+- **THEN** the mark returns and no sync is asked for
+
+#### Scenario: Offline
+- **WHEN** a person on a phone without a connection pulls the Inbox down and lets go
+- **THEN** a toast says "Offline", nothing reloads, and their unsynced changes stay pending
+
+#### Scenario: A scrolled list
+- **WHEN** a person has scrolled a list down and drags a finger down
+- **THEN** the list scrolls back and no sync is asked for
+
+#### Scenario: A row swipe
+- **WHEN** a person swipes a task row sideways on a list at its top
+- **THEN** the row's own swipe runs and no mark appears
+
+#### Scenario: Inside the calendar
+- **WHEN** a person drags a finger down inside the Week grid
+- **THEN** the grid scrolls or keeps its own gesture and no sync is asked for
+
+#### Scenario: A mouse
+- **WHEN** a person on a computer drags the list down with a mouse or scrolls up at the top with a trackpad
+- **THEN** nothing happens, and the gesture's code is not loaded
+
+#### Scenario: Reduced motion
+- **WHEN** a person who asked for reduced motion pulls a list down
+- **THEN** the mark appears in one place without following the finger, and the sync runs on release as usual
+
+### Requirement: A page header follows its own width
+From 768 px, where a page shows its own header, the header SHALL be laid out by the width of the column it sits in, not by the window's. A header narrower than 40 rem on a touch screen, or narrower than 28 rem with a mouse, is a narrow header: a 768 px window with the sidebar open, and a list beside the docked task panel. A narrow header SHALL follow the phone bar's rules in its own row:
+
+- On a page with a menu (the overflow menu or the page's own menu) Help SHALL be the last item of that menu, after a separator, opening the same guide section and returning focus to the menu's button; the row SHALL show no Help button. A page without a menu SHALL keep the button.
+- A list SHALL show Process the Inbox or Ask, the chip of an active filter and its display options in the row; Select tasks, the duration filter's choices, Display mode, and on a project its Layout, Share and Add a note SHALL be items of the page's menu, reachable by tap and with the menu's keyboard model.
+- The title SHALL give way, down to 6 rem, before the actions wrap under it, and a cut title SHALL keep its full text reachable as it does at other widths.
+- A task's page SHALL show only the nearest step up of its path, as a back arrow followed by the step's name; the task's title SHALL NOT be repeated in the path. The name SHALL show whole or not at all: while it does not fit, the arrow alone leads back and its accessible name is the step's name.
+- Statistics SHALL be one row: the title, the period as one menu button showing the chosen period, and the menu holding Export time entries.
+
+A header of 40 rem or more on a touch screen, or of 28 rem or more with a mouse, SHALL keep its actions, its Help button and its full path as before. This is presentation only: it reads and writes no data, sends nothing and behaves the same offline; there is nothing to converge.
+
+#### Scenario: Inbox on a tablet beside the sidebar
+- **WHEN** the Inbox is open in a 768 px window on a touch screen with the sidebar open
+- **THEN** the header is one row with the title, "3 to sort" in full, Process, Display options and the Inbox menu, and no Help button
+
+#### Scenario: Moved actions by tap
+- **WHEN** the user taps the Inbox menu in that header
+- **THEN** the menu lists Select tasks and the duration filter's choices, and Help is its last item
+
+#### Scenario: Help by keyboard
+- **WHEN** the user focuses the menu's button in that header, presses Enter, then End, then Enter
+- **THEN** focus is on Help after End, the guide's section for the Inbox opens, and closing it puts focus on the menu's button
+
+#### Scenario: A task's page
+- **WHEN** a task of the Inbox is open as its page in a 768 px window on a touch screen with the sidebar open
+- **THEN** the header is one row: a back arrow with "Inbox", the position, Next task, Previous task, Close and the task's menu; the task's title is the page's heading below and not in the path
+
+#### Scenario: A step whose name does not fit
+- **WHEN** the nearest step up is a parent task with a name longer than the row has room for
+- **THEN** the row shows the back arrow without text, and the arrow's accessible name is the parent's name
+
+#### Scenario: Statistics
+- **WHEN** Statistics is open in a 768 px window on a touch screen with the sidebar open
+- **THEN** the header is one row with "Statistics", a button reading "This week" that opens the five periods, and the menu with Export time entries
+
+#### Scenario: A project with a long name
+- **WHEN** a project named "Home renovation with a rather long project name" is open as a board in a 768 px window on a touch screen with the sidebar open
+- **THEN** the header is one row with the name and the project menu; Layout, Share, Select tasks, the filter, Add a note and Help are in the menu
+
+#### Scenario: A list beside the docked panel
+- **WHEN** the Inbox is open in a 1024 px window on a touch screen and a task is open in the panel beside it
+- **THEN** the Inbox header shows Process, Display options and the Inbox menu, and Help is in that menu
+
+#### Scenario: The sidebar collapsed
+- **WHEN** the Inbox is open in a 768 px window on a touch screen with the sidebar collapsed to icons
+- **THEN** the header shows Process, Select, Filter, Display options, the Inbox menu and the Help button, as before
+
+#### Scenario: A mouse at 1280 px
+- **WHEN** the Inbox is open in a 1280 px window with a mouse, with or without a task in the panel beside it
+- **THEN** the header shows the same controls as before, ending with the Help button, and the Inbox menu has no Help item
+
+### Requirement: A lead line shows whole or not at all
+The lead line beside a compact header's title SHALL take the room the title and the actions leave, and SHALL be shown whole or not shown: it SHALL NOT be cut with an ellipsis. While hidden it SHALL NOT be announced or focusable. A lead line holding a control that is offered nowhere else (the calendar's Re-plan) SHALL keep its width and SHALL NOT be hidden. In a narrow header a project's lead line SHALL be the plain text the phone bar shows (progress, members and role, read-only, maintenance, public), with members and public links opened from Share in the project menu. The lead line of a day page (Today, Upcoming) wraps as before. This is presentation only and behaves the same offline.
+
+#### Scenario: Room for the lead line
+- **WHEN** the Inbox with three tasks to sort is open in a header with room beside the title
+- **THEN** "3 to sort" shows in full
+
+#### Scenario: No room for the lead line
+- **WHEN** a project's header has less room beside the name than its lead line needs
+- **THEN** the lead line is not shown, nothing in the header ends with an ellipsis except the name, and the header stays one row
+
+#### Scenario: A lead line with a control
+- **WHEN** the calendar's header shows "2 blocks behind · Re-plan"
+- **THEN** the lead line keeps its width at every header width and Re-plan can be pressed
+
+### Requirement: Tab height on a touch screen
+The tab bar's tabs SHALL be 56 px tall with a touch screen as the main pointer, as with a mouse, so the bar fills the 56 px the shell reserves for it under the content and the add button keeps its distance from it. The rule that gives every button on a touch screen a 44 px minimum SHALL NOT make a tab shorter than that. While the bar is minimised a tab SHALL be at least 44 px tall on a touch screen. The cold-start skeleton's tab bar SHALL have the same height as the real one. The layout check SHALL fail on any screen whose tab bar, not minimised, has a tab under 48 px tall. This is presentation only and the same offline.
+
+#### Scenario: The tab bar on a phone
+- **WHEN** the Inbox is open at 360 px on a touch screen
+- **THEN** each of the four tabs is 56 px tall and the bar's top edge is where the content's reserved room ends
+
+#### Scenario: The skeleton does not move
+- **WHEN** the app starts cold on a phone that was signed in
+- **THEN** the skeleton's tab bar is as tall as the tab bar that replaces it
+
+#### Scenario: A short tab fails the check
+- **WHEN** a tab of the tab bar is 44 px tall on a screen of the layout check
+- **THEN** the check fails naming the screen and the tab
+
+### Requirement: Sidebar rows on touch give the name the room
+On a coarse pointer a sidebar row that has a menu (a project, a label, a saved view, a favourite, a pinned note) SHALL NOT paint its menu button and SHALL NOT keep room for it: the row's name takes the width up to the row's marks and count, which stay. Holding the row still for the touch hold time SHALL tint it, and releasing SHALL open the row's menu, the same menu the button opens, and SHALL NOT open the row; moving the finger before the hold SHALL scroll the list and open nothing, and on a row that can be dragged a move after the hold SHALL drag it as before. A tap SHALL open the row as before. The menu button SHALL remain in the Tab order and in the accessibility tree with its name ("Menu for project Home renovation") at the end of its row: while it has keyboard focus it SHALL show there, over the count, at least 44 by 44 CSS pixels, and Enter or Space SHALL open the menu; while it is not shown it SHALL take no taps. A group heading's own menu and the rows of the Labels and Views pages are not affected. With a fine pointer nothing SHALL change: the button shows on hover and focus as before. Nothing here changes what the menu's items do or write, so it is the same offline.
+
+#### Scenario: A long project name on a tablet
+- **WHEN** the project "Home renovation with a rather long project name", shared and with 7 open tasks, is shown in the 256 px sidebar at 768 px on a touch screen
+- **THEN** its row shows no menu button, its name runs up to the members mark and the count, and at least six more characters of the name show than with the button
+
+#### Scenario: Hold opens the menu
+- **WHEN** the user holds a project's row in the phone drawer until it tints, and lifts the finger
+- **THEN** the project's menu opens, the project is not opened and the drawer stays open
+
+#### Scenario: Tap and scroll
+- **WHEN** the user taps a project's row, and on another visit drags a finger over the rows
+- **THEN** the tap opens the project and the drag scrolls the list, and neither opens a menu
+
+#### Scenario: Keyboard on a touch device
+- **WHEN** a user with a keyboard attached to a tablet presses Tab on a project's row
+- **THEN** the row's menu button shows at the end of the row with the focus ring, and Enter opens the menu
+
+#### Scenario: Screen reader on touch
+- **WHEN** a screen reader user on a phone moves past a project's row in the drawer
+- **THEN** the next item is the button "Menu for project", named after the project, and activating it opens the menu
+
+#### Scenario: Mouse
+- **WHEN** the same sidebar is shown at 1280 px with a mouse
+- **THEN** every row looks and behaves as before: the menu button appears on hover and on focus
+
+### Requirement: Sidebar footer on touch shows whole words
+On a coarse pointer the account control in the sidebar footer SHALL show the person's name only where the whole name fits beside the avatar; where it does not, the control SHALL show the avatar alone, never part of the name with an ellipsis. The sync state SHALL always show its dot. While a sync runs the dot SHALL be the only sign, so the footer does not change with every sync; the words of the other states that show words ("Offline · 2 pending", "3 pending", "Locked") SHALL show only where they fit whole, and SHALL take their room before the name. The account control SHALL keep the person's name as its accessible name and the sync control its state as its accessible name, whatever is shown. Every control of the footer SHALL keep a target of at least 44 by 44 CSS pixels, none SHALL overlap another, and the row SHALL NOT be wider than the sidebar. A sync error SHALL keep its words and its detail as before. With a fine pointer the footer SHALL NOT change.
+
+#### Scenario: Tablet sidebar
+- **WHEN** Ada Lovelace's sidebar is 256 px wide on a touch screen, with the assistant launcher and notifications in the footer
+- **THEN** the account control shows her avatar alone and is named "Ada Lovelace"
+
+#### Scenario: Phone drawer
+- **WHEN** the same account opens the drawer on a 360 px wide phone
+- **THEN** the footer reads "Ada Lovelace" whole beside the avatar
+
+#### Scenario: A sync runs
+- **WHEN** a sync starts and ends while the drawer is open on a 360 px wide phone
+- **THEN** the dot pulses and turns green again, the name stays "Ada Lovelace" throughout, and no words appear beside the dot
+
+#### Scenario: Offline on a tablet
+- **WHEN** the device goes offline with nothing pending and the sidebar is 256 px wide on a touch screen
+- **THEN** the footer reads "Offline" whole beside the grey dot
+
+#### Scenario: Words that do not fit
+- **WHEN** the sync state's words are wider than the room left beside the footer's other controls
+- **THEN** only the dot shows, the row is no wider than the sidebar, and the control's accessible name still carries the words
+
+### Requirement: The cold-start skeleton holds the phone's chrome
+Below 768 px, while the app does not yet know the account, the loading skeleton SHALL show the shell's top bar and the bottom tab bar as empty shapes in the places and sizes the shell gives them, including the top and bottom safe areas, so that nothing moves when the shell replaces the skeleton. The shapes SHALL take their frame from the same definition as the real bar and tab bar. A day page's bar (Today, Upcoming) SHALL have no hairline in the skeleton, as it has none in the shell. The shapes SHALL show only where the shell will show them: on a device that was signed in, and not on a screen without the tab bar (a task page, the routine editor, the capture screen, an invitation or a reset link). They SHALL carry no text and no name for assistive technology; the skeleton's rows keep the one loading status. From 768 px the skeleton is unchanged. This is presentation only: it reads no task data and is the same offline.
+
+#### Scenario: Cold start on a phone
+- **WHEN** a signed-in user opens the Inbox at 360 px and the account is not yet known
+- **THEN** the skeleton shows a bar at the top and a tab bar with four tab shapes at the bottom, and when the app appears the bar, its menu button and every tab are at the same position and size
+
+#### Scenario: A phone with safe areas
+- **WHEN** the same start happens on a phone with a 59 px top inset and a 34 px bottom inset
+- **THEN** the skeleton's bar starts below the top inset and its tab bar ends above the bottom inset, exactly as the shell's do
+
+#### Scenario: Today
+- **WHEN** the app starts on Today at 360 px
+- **THEN** the skeleton's bar has no hairline, and its height is the height of Today's bar
+
+#### Scenario: A device that was never signed in
+- **WHEN** the app opens at 360 px in a browser that holds no account
+- **THEN** the skeleton shows rows only, and the sign-in screen follows
+
+#### Scenario: A screen without the tab bar
+- **WHEN** the app starts on the capture screen or a task page at 360 px
+- **THEN** the skeleton shows rows only
+
+#### Scenario: A wide window
+- **WHEN** the app starts at 1280 px
+- **THEN** the skeleton shows rows and no bar or tab bar

@@ -5,7 +5,8 @@
 // web-component-structure the days come from lib/calendarDays, the live reads from
 // lib/liveData, and the columns, agenda, planning list and keys live in ./calendar.
 import { Button, DESKTOP_HEADER_QUERY, MenuItem, PageBody, useMediaQuery } from '../ui'
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { calendarTasks, DEFAULT_BLOCK_MINUTES, formatTime as toHHMM, placementStart, weekDates, type GridPrefs } from '../lib/calendar'
 import { fitInFrame, frameTarget, framesByDate, useFrames, type PlacedFrame } from '../lib/frames'
 import { clampSlotMinutes, slotAt, slotKey, slotName, type SlotView } from '../lib/slots'
@@ -325,7 +326,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
 
         {/* Focusable, so the grid scrolls with the keyboard even when no block is in view (axe scrollable-region-focusable). */}
         <div ref={scroller} className="add-room-end relative min-h-0 flex-1 overflow-auto outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
-          data-calendar-scroller data-scroll-x tabIndex={0} role="region" aria-label={mode === 'week' ? t('Week calendar') : t('Day calendar')}>
+          data-calendar-scroller data-main-scroller data-scroll-x tabIndex={0} role="region" aria-label={mode === 'week' ? t('Week calendar') : t('Day calendar')}>
           {mode === 'week' && !wide ? (
             <WeekAgenda days={days} today={today} prefs={prefs} tasks={shown} meetings={meetings} frames={frames} taskMap={taskMap} hueOf={hueOf} projectionHue={projectionHue} deadlines={deadlines} selectedId={selectedId} subMap={feeds.subMap} zone={zone}
               onSelect={select} onOpen={open} onAdd={(d) => chrome.add.add({ date: d })} />

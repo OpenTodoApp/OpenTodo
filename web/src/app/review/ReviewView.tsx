@@ -5,11 +5,13 @@
 // steps use the ordinary task rows, so the list keys work inside them; the Projects
 // step is the project walk, which owns its keys while it is shown. "Finish review"
 // writes the synced `review` row; the menu opens the Daily check and the Monthly look.
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy } from '../../lib/lazy'
 import { Badge, Button, Card, Dialog, Icon, MenuItem, Notice, PageBody, PageHeader, Skeleton, type IconName } from '../../ui'
 import { useAllLabels, useAllProjects, useProjectPrefsLoaded, useReviewEvery, useReviewRow, useReviewedAt } from '../../lib/localData'
 import { formatInstant } from '../../lib/dates'
-import { createTask, setTaskCompleted } from '../../lib/ops'
+import { createTask } from '../../lib/ops'
+import { setTaskCompletedWithFeedback } from '../completionSound'
 import { resolveLabels } from '../../lib/labels'
 import { hasTimeColumn } from '../../lib/rowTime'
 import { listSlotsOff } from '../../lib/rowSlots'
@@ -105,7 +107,7 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
   const row = (item: Task) => (
     <TaskRow key={item.id} task={item} project={item.project_id ? projectMap.get(item.project_id) : undefined} labels={resolveLabels(item.labels, labelMap)}
       showProject={step !== 'clear'} selected={item.id === selected} timeColumn={timeColumn} slotsOff={slotsOff}
-      onToggle={() => act(setTaskCompleted(item.id, !item.completed_at))}
+      onToggle={() => act(setTaskCompletedWithFeedback(item.id, !item.completed_at))}
       onOpen={() => { setSelected(item.id); setPanelTaskId(item.id) }} />
   )
   const allDone = !!steps && STEP_IDS.every((s) => steps.done[s])

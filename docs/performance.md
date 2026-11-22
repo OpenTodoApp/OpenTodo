@@ -121,38 +121,16 @@ The settings:
 | `server-start` Start to healthy | ms | 2,000 | 8,000 |
 | `server-idle-rss` Memory when idle | MB | 60 | 240 |
 | `server-pull-rss` Peak memory during one device's first sync | MB | 150 | 600 |
-| `server-export-rss` Peak memory during the JSON export | MB | 200 | 800 |
+| `server-export-rss` Peak memory during the JSON export | MB | 110 | 440 |
 | `server-pull-page` A sync page of 1,000 operations (95th percentile) | ms | 80 | 320 |
 | `server-push` A push of 100 operations (95th percentile) | ms | 100 | 400 |
-| `server-list-project` `GET /api/v1/tasks?project_id=` of the 2,000-task project (95th percentile) | ms | 150 | 600 |
+| `server-list-project` `GET /api/v1/tasks?project_id=` of the 2,000-task project (95th percentile) | ms | 170 | 600 |
 | `server-get-task` `GET /api/v1/tasks/{id}` (95th percentile) | ms | 10 | 40 |
 | `server-export` The full JSON export | ms | 3,000 | 12,000 |
 | `server-mcp-search` The MCP `search_tasks` tool (95th percentile) | ms | 200 | 800 |
 | `server-db-size` The database file | MB | 150 | 150 |
 
-### The native app
-
-The app in `mobile/app`, with the same account in its own database on the device.
-**Simulator** is the nightly measurement, on an iPhone simulator on GitHub's macOS
-runner; **iPhone, native app** is measured by hand on a phone before the app
-replaces the current one.
-
-| Metric | Unit | Simulator | iPhone, native app |
-| --- | --- | --- | --- |
-| `app-cold-start` Cold start with the data on the device, to the Today list | ms | — | 1,000 |
-| `app-js-to-today` From the app's code starting to the Today list | ms | 800 | — |
-| `app-inbox` Open Inbox | ms | 300 | 300 |
-| `app-pull-page` Apply a sync page of 500 changes | ms | 400 | 400 |
-| `app-pull-frame` Longest frame while that page applies | ms | 50 | 50 |
-| `app-complete-task` Complete a task, to the frame without it (95th percentile) | ms | 50 | 50 |
-| `app-native-memory` The app's memory after the session | MB | — | 180 |
-| `app-memory-growth` Memory over the empty app after the session | MB | 100 | — |
-
-Two budgets are split because a simulator cannot judge them. A simulator spends
-one to two seconds between the launch and the app's first line of code, whatever
-the app does, so there the budget covers what the app controls: from its code
-starting to the Today list. An empty app already takes about 245 MB on a
-simulator, so there the budget is how much the session adds.
+`server-list-project` is 170 ms for now, temporarily: the CI runner's floor is about 156 ms (95 to 161 on unchanged code), against 117 ms on a developer machine. It goes back to 150 under #1656 once the runner profile explains the floor.
 
 ### With a year of note history
 
@@ -275,19 +253,3 @@ Reference-device results are to be recorded per release in `docs/performance/`.
 No release has a record yet, 1.0 included: its budgets were measured in CI only,
 and the first real-device record comes after 1.0
 ([#990](https://github.com/OpenTodoApp/OpenTodo/issues/990)).
-
-### The native app: first runs
-
-The `app-perf` job (nightly until the native app was paused on 2026-11-13, now run by hand) measures the React Native app in `mobile/app` against
-[its budgets](#the-native-app) on an iPhone 16 simulator on GitHub's macOS runner,
-and fails when one is exceeded. The first runs (2026-11-11):
-
-| Metric | Budget | Measured (two runs) |
-| --- | --- | --- |
-| Cold start to Today drawn | 1,000 ms on a phone | 1,406–2,539 ms on the simulator, of which 1.0–1.9 s passes before any of the app's code runs |
-| From the app's code starting to Today drawn | 800 ms | 329–622 ms, of which the database and Today take 125–206 ms |
-| Opening Inbox | 300 ms | 30–50 ms |
-| A 500-change sync page | 400 ms | 74–135 ms |
-| Longest frame while it applies | 50 ms | 18 ms |
-| Completing a task, to the frame without it | 50 ms | 45 ms (334 ms before repeating tasks stopped reading every task) |
-| Memory over the empty app | 100 MB | 30–34 MB (46–88 MB once the session also completes twenty tasks) |

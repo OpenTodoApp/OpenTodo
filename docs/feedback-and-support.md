@@ -37,11 +37,11 @@ If something stops you because of how you use a computer or phone (a screen read
 
 ## Buy me a coffee
 
-If OpenTodo saves you a subscription, [a coffee](https://buymeacoffee.com/pixari) helps keep it going. It is entirely optional: OpenTodo has no paid plan and every feature is free.
+If OpenTodo saves you a subscription, [a coffee](https://buymeacoffee.com/pixari) helps keep it going, or you can [sponsor it on GitHub](https://github.com/sponsors/pixari). It is entirely optional: OpenTodo has no paid plan and every feature is free.
 
 ## Settings → About
 
-**Settings → About** has all of these in one place: the version your server runs, Help, the documentation and the website, the issue tracker, the Discord server, the X account as Follow on X, and What's new, the source code and the coffee button.
+**Settings → About** has all of these in one place: the version your server runs, Help, the documentation and the website, the issue tracker, the Discord server, the X account as Follow on X, and What's new, the source code, the coffee button and the GitHub Sponsors link.
 
 ## The welcome note
 

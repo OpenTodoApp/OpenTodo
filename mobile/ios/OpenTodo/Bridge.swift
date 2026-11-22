@@ -30,19 +30,26 @@ struct SystemBars: Equatable {
     }
 }
 
-/// Haptic feedback through the bridge (shell-repairs D5, capability `haptics`): WebKit has
-/// no `navigator.vibrate`, so the web app names a kind and the shell plays the platform's
-/// own feedback. The kinds are pinned by the shared bridge fixture haptics.json.
+/// Haptic feedback through the bridge (shell-repairs D5, haptic-kinds D1, capability
+/// `haptics`): WebKit has no `navigator.vibrate`, so the web app names a kind and the shell
+/// plays the platform's own feedback. The kinds are pinned by the shared bridge fixture
+/// haptics.json.
 enum Haptics {
     enum Kind: String, CaseIterable {
-        /// A light tap: a toggle, a step of a drag.
+        /// A light tap: a step of a drag, a lifted row.
         case tick
         /// A task was completed.
         case success
+        /// Something needs attention.
+        case warning
+        /// Something failed (a failure toast).
+        case error
+        /// A switch flipped or a segment chosen.
+        case selection
     }
 
-    /// The kind of a handed-over name; any other name is ignored.
-    static func kind(_ name: String) -> Kind? { Kind(rawValue: name) }
+    /// The kind of a handed-over name; a name this shell does not know plays `tick`, so a newer page never fails.
+    static func kind(_ name: String) -> Kind { Kind(rawValue: name) ?? .tick }
 
     /// Only an iPhone has the engine; an iPad would show a switch that does nothing.
     @MainActor static var available: Bool { UIDevice.current.userInterfaceIdiom == .phone }
@@ -51,8 +58,20 @@ enum Haptics {
         switch kind {
         case .tick: UIImpactFeedbackGenerator(style: .light).impactOccurred()
         case .success: UINotificationFeedbackGenerator().notificationOccurred(.success)
+        case .warning: UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        case .error: UINotificationFeedbackGenerator().notificationOccurred(.error)
+        case .selection: UISelectionFeedbackGenerator().selectionChanged()
         }
     }
+}
+
+/// A tap on the status bar reaches the page (status-bar-scroll-top D1, D2, capability
+/// `scroll-top`): the page scrolls an inner element, so the web view's own scroll view has
+/// nothing to scroll to the top. The shell runs `script` instead, and the page scrolls its
+/// frontmost scroller. Pinned by the shared bridge fixture scroll-top.json.
+enum ScrollTop {
+    static let capability = "scroll-top"
+    static let script = "window.dispatchEvent(new CustomEvent('opentodo:scroll-top'))"
 }
 
 /// Who answers a pull down (pull-to-sync D4, capability `pull-refresh`): the shell's own
@@ -60,6 +79,16 @@ enum Haptics {
 /// pull itself (the web app's pull to sync). A newer web app says so on every load; an
 /// older one never does and keeps the reload. The call is pinned by the shared bridge
 /// fixture pull.json.
+/// The page's first frame with the app's own content is drawn (shell-reveal-on-paint D1,
+/// capability `first-paint`): the visible app shows its web view without waiting for the
+/// page's load. An older web app never says it; the load and the cap still show the page.
+/// The call is pinned by the shared bridge fixture painted.json.
+enum FirstPaint {
+    static let painted = Notification.Name("app.opentodo.painted")
+    static let capability = "first-paint"
+    static let method = "painted"
+}
+
 struct PullRefresh: Equatable {
     static let handled = Notification.Name("app.opentodo.pullHandled")
     static let capability = "pull-refresh"
@@ -92,8 +121,10 @@ protocol BridgeActions: AnyObject {
     func bridgedOpenAppLink(_ url: String)
     func bridgedSetSystemBars(_ json: String)
     func bridgedHaptic(_ kind: String)
+    func bridgedPlayCompletionSound()
     func bridgedBackgroundDone()
     func bridgedPullHandled()
+    func bridgedPainted()
 }
 
 /// The bridge, version 1 (native-shells D5): a document-start script that defines
@@ -118,13 +149,14 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
     /// The capabilities this shell offers, in the contract's names. `share`: the shell has
     /// a screen (the background run has none, so it lists nothing a person would see or
     /// feel); `haptics`: the device can play them; `pull-refresh`: the visible app has a
-    /// refresh control the page can take over (pull-to-sync D4). No `files`: WebKit
+    /// refresh control the page can take over (pull-to-sync D4); `first-paint`: the visible
+    /// app hides its web view until the page has drawn (shell-reveal-on-paint D2). No `files`: WebKit
     /// downloads what the web app saves (shell-repairs D3). No `alarm-settings`: iOS has
     /// no exact-alarm permission. `background` (shell-reminders-on D4) is only ever
     /// listed without a screen: the run that can be told it is done.
     static func capabilities(biometric: Bool, share: Bool, haptics: Bool = true) -> [String] {
         var caps = ["reminders", "widgets"]
-        if share { caps += ["share", "links", "obsidian-links", AppLink.capability, "system-bars", PullRefresh.capability] }
+        if share { caps += ["share", "links", "obsidian-links", AppLink.capability, "system-bars", PullRefresh.capability, FirstPaint.capability, "completion-sound", ScrollTop.capability] }
         if share && haptics { caps.append("haptics") }
         if !share { caps.append("background") }
         if biometric { caps.append("biometric") }
@@ -200,10 +232,16 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
         case "haptic":
             actions.bridgedHaptic(string(0))
             reply(nil, nil)
+        case "playCompletionSound":
+            if args.isEmpty { actions.bridgedPlayCompletionSound() }
+            reply(nil, nil)
         case "backgroundDone":
             actions.bridgedBackgroundDone()
         case PullRefresh.method:
             actions.bridgedPullHandled()
+            reply(nil, nil)
+        case FirstPaint.method:
+            actions.bridgedPainted()
             reply(nil, nil)
         default:
             reply(nil, "unknown_method")
@@ -305,8 +343,10 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
             openAppLink: function (url, schemes) { call('openAppLink', [String(url), String(schemes)]) },
             setSystemBars: function (json) { call('setSystemBars', [String(json)]) },
             haptic: function (kind) { call('haptic', [String(kind)]) },
+            playCompletionSound: function () { call('playCompletionSound', []).catch(function () {}) },
             backgroundDone: function () { call('backgroundDone', []) },
-            pullHandled: function () { call('pullHandled') }
+            pullHandled: function () { call('pullHandled') },
+            painted: function () { call('painted') }
           });
         })();
         """

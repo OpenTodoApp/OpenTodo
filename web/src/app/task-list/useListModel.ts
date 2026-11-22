@@ -8,6 +8,7 @@ import { liveBlocked } from '../../lib/dependencies'
 import { useFlowView } from '../../lib/useFlow'
 import { durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../../lib/filters'
 import { UPCOMING_FILTER_KEY, useQueryFilter } from '../calendar/queryFilter'
+import { projectFilterKey } from '../../lib/deviceFilters'
 import { habitStatsMap, patchHabitStats, type HabitStats } from '../../lib/habits'
 import { boardColumns, completedBySection, completedNewestFirst, completedOpenKey, keepGroups, listGroups, patchCompletedBySection, patchTreeParts, patchViewTasks, siblingPositions, tasksForView, treeParts, type ListGroup, type ListScope, type TreeParts } from '../../lib/listGroups'
 import { useAllLabels, useCollapsedSections, useListColumnsPref, useLiveProjects, useMemberships, useProjectPrefsRow, useProjectSectionRows, useProjectViewMode, useShowCompletedPref } from '../../lib/liveData'
@@ -176,9 +177,11 @@ export function useListModel(route: ListRoute, userId?: string) {
     }
     return last
   }, [route.view, viewTasks, today])
-  // Upcoming's query filter (calendar-clarity D4), under the duration filter; per device, on local rows.
-  const upcoming = useQueryFilter(UPCOMING_FILTER_KEY, allTasks)
-  const queryTest = route.view === 'upcoming' ? upcoming.test : null
+  // Upcoming's query filter (calendar-clarity D4), and each project's (project-query-filter D1),
+  // under the duration filter; per device, on local rows, before sections and board columns.
+  const queryKey = route.view === 'upcoming' ? UPCOMING_FILTER_KEY : route.view === 'project' ? projectFilterKey(route.id) : null
+  const queryFilter = useQueryFilter(queryKey ?? UPCOMING_FILTER_KEY, allTasks)
+  const queryTest = queryKey ? queryFilter.test : null
   // While Habits is on, Today's habits are in its strip, not among its rows (habits-home D3).
   const todayHabits = habitsOn && route.view === 'today'
   const tasks = useMemo(() => {
@@ -236,6 +239,10 @@ export function useListModel(route: ListRoute, userId?: string) {
   const display = useStableDisplay(displayOf(displayScope))
   // Upcoming's Today groups follow Today's own options (builtin-view-options D4).
   const todayDisplay = useStableDisplay(upcomingToday ? displayOf({ kind: 'today' }) : undefined)
+  const todayContextFilter = useMemo(() => {
+    const byDuration = duration && filterKey ? durationPredicate(duration) : null
+    return { assignees: assigneeFilter, matches: (task: Task) => (!todayHabits || !task.habit) && (!byDuration || byDuration(task)) }
+  }, [assigneeFilter, todayHabits, duration, filterKey])
   // Nest subtasks (D5): the rows are a tree, with the collapse toggle and Left and Right.
   const nested = (route.view === 'today' || route.view === 'upcoming') && !!(display?.subtasks || todayDisplay?.subtasks)
   // The header's display button and the switch to manual order; a project's board and timeline have their own layout.
@@ -273,14 +280,15 @@ export function useListModel(route: ListRoute, userId?: string) {
   const groups = useMemo<ListGroup[]>(() => (keptGroups.current = keepGroups(keptGroups.current, listGroups({
     view: route.view, tasks, laterTasks, projectId, timeline: layout.timeline, tree, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
     projects, projectMap, fields: sortFields, score, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday,
-    upcomingToday, todayDisplay,
+    upcomingToday, todayDisplay, todayContextFilter,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }))), [dt.resolved, tree, tasks, laterTasks, projectId, layout.timeline, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, score, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday, todayDisplay])
+  }))), [dt.resolved, tree, tasks, laterTasks, projectId, layout.timeline, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, score, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday, todayDisplay, todayContextFilter])
   // Upcoming's projected occurrences (series-occurrences D4): off by default, per device; never rows.
   const projectedGroups = useUpcomingGroups(route.view === 'upcoming', groups, { allTasks, projects, today, zone, duration: filterKey ? duration : null, queryTest, resolved: dt.resolved })
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
-  // The list's own rows: Today's Done today group is not part of Today's open list (today-closed-list D6).
-  const ownRows = useMemo(() => (doneToday?.length ? groups.filter((g) => g.key !== 'done').flatMap((g) => g.rows) : rows), [doneToday, groups, rows])
+  // Context and Done today are visible without becoming members of the open list.
+  const ownRows = useMemo(() => route.view === 'today'
+    ? groups.filter((g) => g.key !== 'done').flatMap((g) => g.rows.filter((r) => !r.contextual)) : rows, [route.view, groups, rows])
   const siblingPos = useMemo(() => siblingPositions(groups), [groups])
   // The time column (rows-v2 D2): one fact of the whole list, from its visible rows; cards have none.
   // A task a calendar slot holds shows the slot's start there (calendar-slots D8).
@@ -317,7 +325,7 @@ export function useListModel(route: ListRoute, userId?: string) {
     allTasks, taskMap, progress, blocked, flow, habits, ...filter, logbook, logbookLimit, setLogbookLimit, completedDisplay, completedQuery, setCompletedQuery,
     collapsed, toggleCollapsed, ...layout, tree, columns, groups: projectedGroups, rows, ownRows, siblingPos, timeColumn, slotsOff, doneBySection,
     showCompleted, reusable, completedTasks, completedOpen, display, displayScope, listDisplay, urgency, nested, dayParts, closed, upcomingToday, upcomingThrough,
-    queryFilter: route.view === 'upcoming' ? upcoming : null,
+    queryFilter: queryKey ? queryFilter : null,
     /** Habits is on and this is Today (habits-home D3): the strip lists its habits. */
     todayHabits,
   }

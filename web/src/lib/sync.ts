@@ -83,6 +83,24 @@ let retryTimer: ReturnType<typeof setTimeout> | null = null
 /** Removes the listeners startSync added (platform visibility and network). */
 let removeListeners: (() => void) | null = null
 
+/**
+ * The account this session is signed in as, set by App whenever the status is
+ * read. The reseed after a restore refuses to run while the local data's stored
+ * account does not match it, so a stale marker during an account switch never
+ * re-uploads the previous account's data (client-data-safety). Null when signed
+ * out or not yet known; the reseed then runs on the stored marker alone, as
+ * before, which keeps the direct unit tests of reseedAfterRestore unchanged.
+ */
+let syncAccount: string | null = null
+
+/** Remember which account this session is signed in as (App, on every status read). */
+export function setSyncAccount(id: string | null): void {
+  syncAccount = id
+}
+
+/** A reseed was asked to run under a different account than owns the local data. */
+export class AccountMismatchError extends Error {}
+
 /** The session's local data went away while an exchange waited (client-sync-robustness). */
 class SessionEnded extends Error {}
 /** The exchange made no progress for EXCHANGE_STALL.ms and was given up (sync-exchange-watchdog). */
@@ -428,7 +446,18 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
         }
         publish({ state: 'reseeding' })
         alive()
-        await reseedAfterRestore(res.generation as string)
+        try {
+          await reseedAfterRestore(res.generation as string)
+        } catch (e) {
+          // The signed-in account and the local data's account disagree (an account
+          // switch mid-flight): stop this pass without re-uploading, and let the
+          // next one run once the switch's clear has reconciled the two.
+          if (e instanceof AccountMismatchError) {
+            publish({ pending: await db.outbox.count() })
+            return
+          }
+          throw e
+        }
         alive()
         publish({ pending: await db.outbox.count() })
         continue
@@ -563,6 +592,13 @@ async function generationChanged(generation: string | undefined): Promise<boolea
 export async function reseedAfterRestore(generation: string): Promise<number> {
   // Never re-send an encrypted account's content while it cannot be encrypted.
   if (await syncBlocked()) throw new LockedError()
+  // Never re-upload the local data under a different account than the one signed
+  // in: during an account switch the stored marker can still be the previous
+  // account's, and reseeding it would push that account's data to the new server
+  // (client-data-safety). Refuse until the marker is reconciled; the switch's
+  // clear resets the marker and the generation, so no reseed runs after it.
+  const owner = ((await db.meta.get('userId'))?.value ?? null) as string | null
+  if (syncAccount !== null && owner !== syncAccount) throw new AccountMismatchError()
   let emitted = 0
   await db.transaction('rw', [...entityTables(), db.outbox, db.meta], async () => {
     let chunk: Op[] = []
@@ -873,7 +909,7 @@ onTestTeardown(stopSyncAndWait)
 // holds the lock runs the loop (exchanges, timer, live channel); the others ask
 // it to sync over the channel and show the status it broadcasts. When the leader
 // closes, the lock passes to another tab. Without a shared lock (platform.leader:
-// no Web Locks or BroadcastChannel, or the native app) every instance syncs on its own.
+// no Web Locks or BroadcastChannel) every instance syncs on its own.
 
 const LOCK_NAME = 'opentodo-sync'
 const CHANNEL_NAME = 'opentodo-sync'

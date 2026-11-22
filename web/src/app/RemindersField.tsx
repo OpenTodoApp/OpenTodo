@@ -1,5 +1,6 @@
 import { Icon, Menu, NumberInput, Select } from '../ui'
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { useReminderRows } from '../lib/localData'
 import { addDaysISO, localDueOf, todayISO } from '../lib/dates'
 import { addReminder, deleteReminder, dismissReminder, rearmReminder, snoozeReminder, sortReminders, updateReminder, type ReminderInput } from '../lib/reminders'

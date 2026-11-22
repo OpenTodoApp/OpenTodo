@@ -6,7 +6,8 @@ import { useHabitsEnabled } from '../../lib/habitPrefs'
 import { openHabitForm } from '../habits/habitFormStore'
 import { keysOf } from '../../lib/shortcuts'
 import { Kbd } from '../shortcuts/Kbd'
-import { createContext, lazy, Suspense, useContext, useEffect, useLayoutEffect, useMemo, useState, type RefObject } from 'react'
+import { createContext, Suspense, useContext, useEffect, useLayoutEffect, useMemo, useState, type RefObject } from 'react'
+import { lazy } from '../../lib/lazy'
 import type { Step } from '../../lib/move'
 import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan, useTickedTasks } from '../../lib/bulk'
 import { useAllLabels, useLabelsLoaded, useLiveSections, useProjects, useMembershipMapOrLoading, useReviewRow, useUserPrefsRow } from '../../lib/localData'
@@ -17,6 +18,7 @@ import { itemKeywords, projectSource, sectionSource, type PickerItem } from '../
 import { roleOf } from '../../lib/sharing'
 import { toggleTracking, useRunningEntry } from '../../lib/timeEntries'
 import { act } from '../actionError'
+import { prepareCompletionSound } from '../completionSound'
 import type { Label, Membership, Priority, Project, Section, Task } from '../../lib/types'
 import { DESKTOP_HEADER_QUERY, Icon, Dialog, useFinePointer, useMediaQuery } from '../../ui'
 import { Tooltip } from '../../ui'
@@ -67,8 +69,10 @@ const bulkConfirm = createStore<ConfirmSpec | null>('bulkConfirm', null)
 /** Apply a bulk action and offer its undo. */
 export async function runBulk(ids: readonly string[], action: BulkAction): Promise<void> {
   if (ids.length === 0) return
+  const cue = prepareCompletionSound(action.kind === 'complete')
   // The rows that stay slide into place; more than the cap update at once (motion-v2 D4).
   const r = await withListTransition(ids.length, () => applyBulk(ids, action))
+  if (r.completed) cue?.()
   // Trash keeps its offer longer and offers the way back: a new offer replaces the
   // previous one, so the shorter window must be enough to undo a big delete.
   if (action.kind === 'trash') showBulkToast(r.label, r.undoId, { ttl: TRASH_TOAST_MS, action: { label: t('Show Trash'), run: () => navigate({ view: 'trash' }) } })
@@ -207,6 +211,7 @@ export interface ListReorder {
   edges: (id: string) => Promise<{ first: boolean; last: boolean } | null>
   /** A tree list (a project, the Inbox): open an inline add line after the task or under it (add-below). */
   add?: { below: (id: string) => void; under: (id: string) => void }
+  contextActions?: (task: Task) => ActionItem[]
 }
 export const ListReorderContext = createContext<ListReorder | null>(null)
 
@@ -295,7 +300,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
       } },
     ] },
     { items: [
-      ...(n === 1 ? [...addItems(ids[0], a.reorder, d.edges), ...reorderItem(ids[0], a.reorder, d.edges)] : []),
+      ...(n === 1 ? [...addItems(ids[0], a.reorder, d.edges), ...reorderItem(ids[0], a.reorder, d.edges), ...(a.reorder?.contextActions?.(d.tasks[0]) ?? [])] : []),
       { kind: 'picker', id: 'move', label: t('Move to project'), icon: 'folder-input', picker: {
         title: t('Move to project'), placeholder: t('Find a project…'), source: projectSource(d.projects, { memberships: d.memberships }),
         getKey: itemKey, getLabel: itemLabel, getPath: itemPath, getKeywords: itemKeywords, rankContext: 'project',

@@ -1,4 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { gunzipSync } from 'node:zlib'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -12,10 +13,12 @@ const dist = path.resolve(process.cwd(), '../internal/web/dist')
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const file = path.join(dir, name)
-    return statSync(file).isDirectory() ? files(file) : /\.(js|css|html|webmanifest)$/.test(name) ? [file] : []
+    return statSync(file).isDirectory() ? files(file) : /\.(js|css|html|webmanifest)(\.gz)?$/.test(name) ? [file] : []
   })
 }
-const built: Record<string, string> = Object.fromEntries((existsSync(dist) ? files(dist) : []).map((f) => [f, readFileSync(f, 'utf8')]))
+// A file the build keeps only compressed (compressed-static-assets) is read as what it decodes to.
+const text = (f: string) => (f.endsWith('.gz') ? gunzipSync(readFileSync(f)) : readFileSync(f)).toString('utf8')
+const built: Record<string, string> = Object.fromEntries((existsSync(dist) ? files(dist) : []).map((f) => [f, text(f)]))
 
 describe('production build', () => {
   it.runIf(process.env.REQUIRE_BUILT === '1')('exists (REQUIRE_BUILT=1)', () => {

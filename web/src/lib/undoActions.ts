@@ -19,6 +19,7 @@ import { compileView } from './views'
 import { t } from './i18n'
 import { uuid } from './ids'
 import { labelKey } from './labels'
+import { descendants } from './tree'
 import { dayPartFields, dayPartName, dayPartOf, doOnPatch, type DayPart, type DoOnChoice } from './dayParts'
 import { energyName, type Energy } from './energy'
 import { sectorPatch } from './sectorWrites'
@@ -41,7 +42,7 @@ async function apply(changes: Change[], label: string): Promise<UndoableResult> 
 }
 
 /** Complete (subtree, or a series rolling forward) or reopen one task. */
-export async function completeUndoable(id: string, completed: boolean, opts: { now?: number; today?: string } = {}): Promise<UndoableResult> {
+export async function completeUndoable(id: string, completed: boolean, opts: { now?: number; today?: string } = {}): Promise<UndoableResult & { completed?: boolean }> {
   // A plain task needs only its subtree; a series plans its roll over every task
   // (its occurrence records). Reading all 10,000 tasks of a large account for every
   // tick queued the next writes behind it (list-rendering-at-scale).
@@ -52,7 +53,8 @@ export async function completeUndoable(id: string, completed: boolean, opts: { n
   const task = tasks[0]
   if (!task) return { entry: null, label: '' }
   const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? logicalToday(), await membershipMap()) : planReopen([task])
-  return apply(changes, completed ? t('Task completed') : t('Task reopened'))
+  const result = await apply(changes, completed ? t('Task completed') : t('Task reopened'))
+  return { ...result, completed: completed && !task.completed_at && !!result.entry }
 }
 
 /** Move one task and its subtasks to the Trash. */
@@ -66,12 +68,21 @@ export async function trashUndoable(id: string, now = Date.now()): Promise<Undoa
  * Move one task (with its subtree) to a project; across sharing scopes it becomes
  * a copy, whose id is returned so the panel can follow it.
  */
-export async function moveUndoable(id: string, projectId: string | null, targetName: string, now = Date.now()): Promise<UndoableResult & { newId: string }> {
+export async function moveUndoable(id: string, projectId: string | null, targetName: string, now = Date.now(), toWorkspace?: string): Promise<UndoableResult & { newId: string }> {
   const { tasks, all } = await readTicked([id])
   const task = tasks[0]
+  // "No project" of another workspace (workspaces, "Move an Inbox task"): the task lands
+  // in that workspace's Inbox. A subtask follows its parent's workspace, so it leaves it.
+  const target = projectId === null && toWorkspace !== undefined ? workspaceIdFor(toWorkspace, (await readWorkspaceState()).list) : undefined
+  if (task && target !== undefined && task.project_id == null) {
+    if ((task.workspace_id ?? null) === target && !task.parent_id) return { entry: null, label: '', newId: id }
+    const patch = task.parent_id ? { workspace_id: target, parent_id: null } : { workspace_id: target }
+    return { ...(await apply([{ entity: 'task', entityId: id, patch }], t('Moved to {target}', { target: targetName }))), newId: id }
+  }
   if (!task || (task.project_id ?? null) === projectId) return { entry: null, label: '', newId: id }
   const memberships = await membershipMap()
-  const changes = planMove([task], all, { projectId }, memberships, await currentUserId(), now, await keepWorkspaceFor())
+  const keep = target !== undefined ? () => target : await keepWorkspaceFor()
+  const changes = planMove([task], all, { projectId }, memberships, await currentUserId(), now, keep)
   const copy = changes.find((c) => c.entity === 'task' && c.entityId !== id && c.patch.title !== undefined && !c.patch.deleted_at && c.patch.parent_id === (task.parent_id ?? null))
   const r = await apply(changes, t('Moved to {target}', { target: targetName }))
   return { ...r, newId: copy?.entityId ?? id }
@@ -168,6 +179,27 @@ export async function reviewEveryUndoable(projectId: string, every: string, labe
   await getDeviceId()
   const entry = await applyBatch([{ entity: 'project_prefs', entityId: projectId, patch: { review_every: every }, base: { review_every: '' } }], { source: 'action', label })
   return { entry, label }
+}
+
+/**
+ * Archive several projects at once (archive-several-projects, GitHub issue 1661): each
+ * project and its live sub-projects, as archiving one does, in one batch with one Undo.
+ * A project already archived, or listed twice through its parent, is written once.
+ */
+export async function archiveProjectsUndoable(ids: readonly string[]): Promise<UndoableResult> {
+  const all = (await db.projects.toArray()).filter((p) => !p.deleted_at)
+  const seen = new Set<string>()
+  const changes: Change[] = []
+  for (const id of ids) {
+    for (const pid of [id, ...descendants(id, all)]) {
+      const p = all.find((x) => x.id === pid)
+      if (!p || p.archived || seen.has(pid)) continue
+      seen.add(pid)
+      changes.push({ entity: 'project', entityId: pid, patch: { archived: true } })
+    }
+  }
+  if (changes.length === 0) return { entry: null, label: '' }
+  return apply(changes, t('Archived {projects}', { projects: t('{n, plural, one {# project} other {# projects}}', { n: ids.length }) }))
 }
 
 /** Put a project in maintenance or end it (project-review-cadence): one shared op, with Undo. */

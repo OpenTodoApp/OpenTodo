@@ -5,7 +5,7 @@
 // or as counts when the account is locked or the user signs out (the store empties).
 // Outside a shell nothing here runs.
 import { liveQuery, type Subscription } from 'dexie'
-import { localDueOf, logicalToday } from './dates'
+import { addDaysISO, localDueOf, logicalToday } from './dates'
 import { todayAssigneeFilter, todayList, type TodayAssigneeFilter } from './dayLists'
 import { db, getMeta, setMeta } from './db'
 import { encryptionSnapshot, onEncryptionChange } from './e2ee'
@@ -13,6 +13,9 @@ import { publishGeofences } from './geofences'
 import { has, publishWidget, scheduleReminders, shell, shellVisible, type ShellPermission, type ShellReminder, type ShellWidgetData } from './shell'
 import { heldAway, inQuietProject, type ProjectLink } from './reminderWatcher'
 import { currentUserId } from './sharing'
+import { compute, sharedIds } from './stats'
+import type { StatProject } from './statsCounted'
+import type { Membership } from './types'
 import type { Reminder, Task } from './types'
 
 /** The device's "notifications through the app" switch (Settings → Notifications in a shell). */
@@ -67,6 +70,17 @@ export function shellWidget(tasks: readonly Task[], today: string, now: number, 
     }
   })
   return { updatedAt: now, locked, count: list.length, overdue: rows.filter((r) => r.overdue).length, tasks: locked ? [] : rows }
+}
+
+/**
+ * The Completed widget's numbers (completed-widget D1): today's completions and, while
+ * the account is readable, the last 7 days', from the Statistics count itself, so the
+ * widget and the Stats screen never disagree. Locked: today's count only (D1).
+ */
+export function shellCompleted(tasks: readonly Task[], projects: readonly StatProject[], memberships: readonly Pick<Membership, 'projectId'>[], me: string | null, today: string, locked: boolean): NonNullable<ShellWidgetData['completed']> {
+  const stats = compute({ tasks, projects, shared: sharedIds(memberships), me, today }, { start: addDaysISO(today, -6), end: today })
+  const days = stats.perDay.map((d) => ({ day: d.date, done: d.count }))
+  return locked ? { today: days[days.length - 1].done } : { today: days[days.length - 1].done, days }
 }
 
 /**
@@ -159,9 +173,11 @@ export async function publishReminders(now = Date.now()): Promise<ShellPermissio
 /** Computes and hands over the widgets' Today list now. */
 async function publishToday(now = Date.now()): Promise<void> {
   const enc = encryptionSnapshot()
-  const [tasks, prefs, memberships, me] = await Promise.all([db.tasks.toArray(), db.userPrefs.get('me'), db.memberships.toArray(), currentUserId()])
+  const [tasks, prefs, memberships, me, projects] = await Promise.all([db.tasks.toArray(), db.userPrefs.get('me'), db.memberships.toArray(), currentUserId(), db.projects.toArray()])
   const hide = todayAssigneeFilter(prefs, memberships, me)
-  publishWidget(shellWidget(tasks, logicalToday(undefined, now), now, enc.enabled && !enc.unlocked, hide))
+  const today = logicalToday(undefined, now)
+  const locked = enc.enabled && !enc.unlocked
+  publishWidget({ ...shellWidget(tasks, today, now, locked, hide), completed: shellCompleted(tasks, projects, memberships, me, today, locked) })
 }
 
 let started = false

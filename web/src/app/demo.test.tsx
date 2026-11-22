@@ -4,7 +4,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api, ApiError } from '../lib/api'
-import { demoBannerText, demoDetailsText, DEMO_LIMIT_NOTICE, expireSandboxIfGone, getDemo, isDemoRestricted, sandboxErrorMessage, setDemo, startSandbox } from '../lib/demo'
+import { demoBannerText, demoDetailsText, DEMO_LIMIT_NOTICE, expireSandboxIfGone, getDemo, sandboxErrorMessage, setDemo, startSandbox } from '../lib/demo'
 import type { AuthStatus, DemoInfo, Project, User } from '../lib/types'
 import { DemoBanner, DemoExpiredScreen } from './App'
 import { AuthScreen } from './AuthScreen'
@@ -68,12 +68,6 @@ describe('banner and state', () => {
     expect(getDemo()).toEqual({ ...info, token: '' })
     setDemo(undefined)
     expect(getDemo()).toBeNull()
-  })
-
-  it('recognises the refusal error', () => {
-    expect(isDemoRestricted(new ApiError(403, 'demo_restricted', 'Import is disabled on this demo instance.'))).toBe(true)
-    expect(isDemoRestricted(new ApiError(403, 'forbidden', 'no'))).toBe(false)
-    expect(isDemoRestricted(null)).toBe(false)
   })
 })
 

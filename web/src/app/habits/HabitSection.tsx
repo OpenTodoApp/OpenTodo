@@ -3,7 +3,8 @@
 // streaks), the tiny version and the anchor, the month grid with editable past days,
 // and Graduate or Resume. Off means off (habits-home D2): nothing at all while
 // Habits is off; while it is not decided only the switch, which turns Habits on.
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
+import { lazy } from '../../lib/lazy'
 import { graduate, resume } from '../../lib/habitActions'
 import { habitStats, isGraduated, keptDays } from '../../lib/habits'
 import { trackAsHabit, useHabitsChoice, useHabitsEnabled } from '../../lib/habitPrefs'

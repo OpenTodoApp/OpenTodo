@@ -1,7 +1,8 @@
 // Away in Today (OpenSpec change away-periods, design D4): the menu item that
 // opens the dialog, End now while away, and the title's meta "Away until
 // Friday". The dialog loads on first use.
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
+import { lazy } from '../../lib/lazy'
 import { useAwayOn, type Away } from '../../lib/away'
 import { addDaysISO, formatDate, weekday } from '../../lib/dates'
 import { t } from '../../lib/i18n'

@@ -6,7 +6,8 @@
 // Daily check), and after a session moves on to the next one. The running session
 // is the device-local row (lib/focus/state.ts); the engine that ends it on time runs
 // in the shell (BreakReminder), so leaving this screen keeps it running.
-import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { lazy } from '../../lib/lazy'
 import { Button, EmptyState, IconButton, MenuItem, MenuSeparator, Notice, PageBody, PageHeader } from '../../ui'
 import { useReviewRow, useSubtasks, useUserPrefsRow } from '../../lib/localData'
 import { orderedFocusIds } from '../../lib/bento'

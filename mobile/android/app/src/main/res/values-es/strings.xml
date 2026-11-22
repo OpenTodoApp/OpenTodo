@@ -42,6 +42,10 @@
     <string name="widget_empty">No queda nada para hoy.</string>
     <string name="widget_untitled">Tarea</string>
     <string name="widget_more">+ %1$d más</string>
+    <string name="widget_completed">Completadas</string>
+    <string name="widget_completed_description">Cuántas tareas completaste esta semana</string>
+    <string name="widget_completed_locked">Bloqueado: solo el número de hoy</string>
+    <string name="widget_completed_days">Completadas por día: %1$s</string>
     <string name="setup_old_webview">El Android System WebView de este teléfono es antiguo (versión %1$s). Actualízalo desde la tienda de apps para que OpenTodo funcione por completo.</string>
     <string name="site_bar_host">Iniciando sesión en %1$s</string>
     <string name="site_bar_close">Volver a OpenTodo</string>

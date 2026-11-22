@@ -7,7 +7,8 @@
 // Offline it shows what was last fetched. Loaded lazily, only for users with
 // routines. A line's newest run shows its blocks under it, read-only
 // (assistant-routine-blocks D2).
-import { Fragment, lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy } from '../../lib/lazy'
 import { api } from '../../lib/api'
 import { formatInstant } from '../../lib/dates'
 import { t } from '../../lib/i18n'

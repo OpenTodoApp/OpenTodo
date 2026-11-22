@@ -3,8 +3,8 @@
 // server's origin only. Everything here is optional: outside a shell `shell()` is
 // null and every caller keeps today's browser behaviour. A method the shell does not
 // list in `capabilities` is never called, so an older shell keeps working for the
-// capabilities both sides know. The bridge comes from the platform port
-// (native-app-foundation D3): the native app has no web view and no bridge.
+// capabilities both sides know. The bridge comes from the platform port.
+import { resettable } from './moduleState'
 import { platform } from './platform'
 
 /** The bridge version this web app speaks. */
@@ -13,7 +13,7 @@ export const BRIDGE_VERSION = 1
 /** The oldest shell app version this web app expects (bumped when a shell bug needs a forced update). */
 export const MIN_SHELL_APP = '0.10.0'
 
-export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'alarm-settings' | 'background' | 'pull-refresh' | 'push' | 'app-links'
+export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'completion-sound' | 'alarm-settings' | 'background' | 'pull-refresh' | 'first-paint' | 'push' | 'app-links' | 'scroll-top'
 
 /**
  * One location reminder handed to the shell (location-reminders D3): the circle
@@ -61,6 +61,12 @@ export interface ShellWidgetData {
   count: number
   overdue: number
   tasks: { id: string; title?: string; time?: string; priority: number; overdue: boolean }[]
+  /**
+   * The Completed widget (completed-widget D1): how many tasks were completed today and,
+   * while the account is readable, on each of the last 7 days (oldest first), counted as
+   * Statistics counts them. Numbers and days only, never task content.
+   */
+  completed?: { today: number; days?: { day: string; done: number }[] }
 }
 
 /** The answer of `scheduleReminders`: whether the shell may show notifications. */
@@ -110,6 +116,8 @@ export interface OpenTodoShell {
   saveFile?(json: string): Promise<string> | string
   /** shell-repairs D5: the platform's own feedback for a `ShellHaptic`; an unknown kind is ignored. */
   haptic?(kind: string): void
+  /** A foreground cue whose playback follows the phone's mute policy. */
+  playCompletionSound?(): void
   /** shell-reminders-on D3: opens the system page where exact alarms are allowed (Android, the visible app). */
   openAlarmSettings?(): void
   /** shell-reminders-on D4: a background run's web app is done; the shell ends the run. */
@@ -119,6 +127,8 @@ export interface OpenTodoShell {
    * own pull to refresh (`pull-refresh`) turns that off until another page loads.
    */
   pullHandled?(): void
+  /** shell-reveal-on-paint D1: the page's first frame with the app's own content is drawn (`first-paint`). */
+  painted?(): void
   /**
    * shell-push D5: registers with the UnifiedPush app the user chose (the visible app
    * may open its link screen) and answers a JSON `ShellPushSubscription`, or `{"error": ShellPushError}`.
@@ -316,8 +326,8 @@ export function openObsidian(url: string): boolean {
   return true
 }
 
-/** The kinds of feedback a shell with `haptics` plays (shell-repairs D5). */
-export type ShellHaptic = 'tick' | 'success'
+/** The kinds of feedback a shell with `haptics` plays (shell-repairs D5, haptic-kinds D1). */
+export type ShellHaptic = 'tick' | 'success' | 'warning' | 'error' | 'selection'
 
 /** Plays `kind` through a shell that lists `haptics`. False in a browser or another shell. */
 export function shellHaptic(kind: ShellHaptic): boolean {
@@ -337,6 +347,23 @@ export function takeOverPull(): boolean {
   const s = shell()
   if (!s || !has('pull-refresh') || !s.pullHandled) return false
   s.pullHandled()
+  return true
+}
+
+let paintAnnounced = false
+resettable('shellPaint', () => { paintAnnounced = false })
+
+/**
+ * Tells a shell that lists `first-paint` (one that keeps its web view hidden over its
+ * launch screen) that the page has drawn its first frame, so it shows the web view
+ * without waiting for the page's load (shell-reveal-on-paint D1). Once per page load;
+ * false in a browser, a shell without it, or after the first call.
+ */
+export function announcePainted(): boolean {
+  const s = shell()
+  if (paintAnnounced || !s || !has('first-paint') || !s.painted) return false
+  paintAnnounced = true
+  s.painted()
   return true
 }
 

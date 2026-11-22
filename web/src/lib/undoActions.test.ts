@@ -83,3 +83,29 @@ describe('part headings', () => {
     expect(await dropUndoable('part:night', [id])).toBeNull()
   })
 })
+
+// OpenSpec change archive-several-projects (GitHub issue 1661).
+describe('archiveProjectsUndoable', () => {
+  it('archives each project with its sub-projects in one batch, each once, and Undo brings them all back', async () => {
+    const { createProject, updateProject } = await import('./ops')
+    const { archiveProjectsUndoable } = await import('./undoActions')
+    const home = await createProject({ name: 'Home' })
+    const garden = await createProject({ name: 'Garden', parent_id: home })
+    const work = await createProject({ name: 'Work' })
+    const old = await createProject({ name: 'Old' })
+    const keep = await createProject({ name: 'Keep' })
+    await updateProject(old, { archived: true })
+    await db.outbox.clear()
+    // Garden is listed through its parent and on its own; Old is archived already.
+    const r = await archiveProjectsUndoable([home, garden, work, old])
+    expect(r.label).toBe('Archived 4 projects')
+    for (const id of [home, garden, work, old]) expect((await db.projects.get(id))?.archived).toBe(true)
+    expect((await db.projects.get(keep))?.archived).toBeFalsy()
+    const ops = await db.outbox.toArray()
+    expect(ops.map((o) => o.entityId).sort()).toEqual([home, garden, work].sort())
+    expect(new Set(ops.map((o) => `${o.ts}|${o.device}`)).size).toBe(1)
+    await undoBatch(r.entry!.id)
+    for (const id of [home, garden, work]) expect((await db.projects.get(id))?.archived).toBeFalsy()
+    expect((await db.projects.get(old))?.archived).toBe(true)
+  })
+})

@@ -6,7 +6,7 @@ import { db, useDatabase } from './db'
 import { applyOps, createTask, getDeviceId, mutate, resetDeviceId } from './ops'
 import { activeBody, APPEND_ATTR, decodeDoc, encodeDoc, newDoc, toModel, updateBody, type RNode } from './richtext'
 import * as rt from './richtext'
-import { foldAppends, noteIsFull, pendingAppends } from './noteAppends'
+import { foldAppends, pendingAppends } from './noteAppends'
 import type { Op, Task } from './types'
 
 class Server {
@@ -162,7 +162,6 @@ describe('pending appends (rule 5)', () => {
     const row = { notes_doc: doc, appends: { b: 'second', a: 'first' }, _clock: { 'appends.a': { ts: 1, device: 's' }, 'appends.b': { ts: 2, device: 's' } } }
     expect(pendingAppends(row).map((p) => p.id)).toEqual(['a', 'b'])
     expect(foldAppends(rt, row, undefined, doc.length + 10)).toBeNull()
-    expect(noteIsFull(rt, row, doc.length + 10)).toBe(true)
     const folded = foldAppends(rt, row)!
     expect(folded['appends.a']).toBe('')
     expect(folded.description).toBe('base\n\nfirst\n\nsecond')

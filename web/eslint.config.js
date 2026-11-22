@@ -9,6 +9,10 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import noGenericAriaLabel from './eslint/no-generic-aria-label.js'
 import noFixedWait from './eslint/no-fixed-wait.js'
 
+// One lazy() for the app (OpenSpec change lazy-retry-online): React's keeps a failed
+// import forever, src/lib/lazy.ts lets a part that failed offline load again.
+const reactLazy = { name: 'react', importNames: ['lazy'], message: "Import lazy from src/lib/lazy: React's keeps a failed import (lazy-retry-online)." }
+
 export default [
   { ignores: ['node_modules/**', 'storybook-static/**', 'public/**', 'scripts/**'] },
   {
@@ -25,6 +29,7 @@ export default [
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'error',
       'a11y/no-generic-aria-label': 'error',
+      'no-restricted-imports': ['error', { paths: [reactLazy] }],
     },
   },
   {
@@ -66,7 +71,7 @@ export default [
     // in the workbench without the screens, so nothing under src/ui imports src/app.
     files: ['src/ui/**/*.{ts,tsx}'],
     rules: {
-      'no-restricted-imports': ['error', { patterns: [{ regex: '(^|/)app(/|$)', message: 'src/ui must not import from src/app (web-layering); move what it needs into src/ui or src/lib.' }] }],
+      'no-restricted-imports': ['error', { paths: [reactLazy], patterns: [{ regex: '(^|/)app(/|$)', message: 'src/ui must not import from src/app (web-layering); move what it needs into src/ui or src/lib.' }] }],
     },
   },
   {
@@ -81,12 +86,12 @@ export default [
     rules: {
       'no-restricted-imports': ['error', {
         patterns: [{
-          regex: '(^|/)lib/db$', allowImportNames: ['clearLocalData', 'requestPersistentStorage'],
+          regex: '(^|/)lib/db$', allowImportNames: ['clearLocalData', 'hasLocalData', 'requestPersistentStorage'],
           message: 'Screens read local data through src/lib (lib/localData.ts, lib/liveTasks.ts), not lib/db (web-layering).',
         }],
         // Every live read is a named hook in src/lib (wave 4, M5): shared snapshots
         // where one exists (lib/localData.ts), else a hook beside its query.
-        paths: [{ name: 'dexie-react-hooks', message: 'Screens read live data through a named hook in src/lib (lib/localData.ts or beside the query), not useLiveQuery.' }],
+        paths: [reactLazy, { name: 'dexie-react-hooks', message: 'Screens read live data through a named hook in src/lib (lib/localData.ts or beside the query), not useLiveQuery.' }],
       }],
       'no-restricted-syntax': ['error', {
         selector: "MemberExpression[object.name='db']",
@@ -94,4 +99,6 @@ export default [
       }],
     },
   },
+  // The one place React's lazy() is wrapped.
+  { files: ['src/lib/lazy.ts'], rules: { 'no-restricted-imports': 'off' } },
 ]

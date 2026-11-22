@@ -2,7 +2,8 @@
 // `?oauth_consent=<authorize request>`. The parameter is read when this module
 // loads, before the router or sign-in touch the address, and removed from it;
 // the screen itself is loaded only then, so the first load does not carry it.
-import { lazy, Suspense, useSyncExternalStore } from 'react'
+import { Suspense, useSyncExternalStore } from 'react'
+import { lazy } from '../lib/lazy'
 import { resettable } from '../lib/moduleState'
 
 const OAuthConsent = lazy(() => import('./OAuthConsent').then((m) => ({ default: m.OAuthConsent })))

@@ -1,4 +1,5 @@
-import { type FormEvent, type ReactNode, lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { type FormEvent, type ReactNode, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { Button, Dialog, StatusIndicator } from '../ui'
 import { Field, Input } from '../ui'
 import { Checkbox } from '../ui'

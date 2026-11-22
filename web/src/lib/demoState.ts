@@ -5,7 +5,7 @@ import { readJSON, writeString } from './deviceStorage'
 /**
  * Whether this server is a demo instance (OpenSpec `demo-mode`), as `auth/status`
  * last said, remembered on this device. Kept apart from `demo.ts` so the data
- * layer the native app shares can skip the routes a demo refuses without
+ * layer can skip the routes a demo refuses without
  * pulling in the banner's text.
  */
 const KEY = 'opentodo.demo'

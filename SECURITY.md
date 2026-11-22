@@ -94,7 +94,9 @@ The [in-app assistant](docs/assistant.md) is off by default. It sends data to a 
 ### Web and container hardening
 
 - Responses carry a strict Content-Security-Policy, `X-Frame-Options: DENY` and `X-Content-Type-Options: nosniff`. Markdown in comments is rendered by an in-house renderer to React elements: raw HTML stays text, and only http(s) and mailto links are rendered.
-- Signed app code: every build lists the web app's files with their SHA-256 in `app-manifest.json`, release builds sign the list, and installed apps check every update against it. Report-only mode is on: a failed check is shown in Settings → About and the update is still installed, until a later release turns refusal on. The official keys' fingerprints (release and recovery) are published here and in [Signed app code](docs/security/signed-app.md) once they are created; there are none yet.
+- Signed app code: every build lists the web app's files with their SHA-256 in `app-manifest.json`, release builds sign the list, and installed apps check every update against it. Report-only mode is on: a failed check is shown in Settings → About and the update is still installed, until a later release turns refusal on. The official keys' fingerprints, also in [Signed app code](docs/security/signed-app.md):
+  - Release key: `d463e1ee47f9f29bd7a8f052de415ff3c4f042c6a334b6d624f2f72af2c8e043`
+  - Recovery key: `ed22d7780eefdc4f054f419d58cbdeb95a8557eb25bd9636d258a00730244967`
 - The container runs as a non-root user (uid 65532) on a distroless base with no shell.
 - Multipath TCP is off (`godebug multipathtcp=0` in `go.mod`; Go would otherwise enable it on Linux listeners), so the server's listeners never expose the kernel's MPTCP code ([CVE-2026-98432](https://www.openwall.com/lists/oss-security/2026/10/30/1)). This only narrows the surface: the server, and a container, run on the host's kernel, so keep the host kernel patched. See [Host kernel](docs/self-hosting/docker.md#host-kernel).
 - Security-relevant events are recorded in an owner-visible audit log; see [What is logged](#what-is-logged).

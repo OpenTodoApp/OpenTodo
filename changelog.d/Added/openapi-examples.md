@@ -1,1 +1,0 @@
-- **Examples in the OpenAPI description.** Every request and response body in `/api/v1/openapi.json` has an example, so API explorers and Postman show a filled-in call: tasks, projects, sections, labels, notes, comments and sync show what a server really answers, the other routes an example built from their schema ([HTTP API](docs/api.md#openapi-description)).

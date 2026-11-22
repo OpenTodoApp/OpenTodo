@@ -15758,7 +15758,7 @@
     },
     "/api/v1/me/oauth-grants": {
       "get": {
-        "description": "`{grants:[{id, clientId, clientName, scope, workspaces, createdAt, lastUsedAt}]}`: the AI apps you connected that are neither revoked nor expired, most recently used first; `scope` is `read` or `agent`, `workspaces` is empty for every workspace, `lastUsedAt` is null before first use; shown with the sessions in Settings → Account, also while MCP is off",
+        "description": "`{grants:[{id, clientId, clientName, scope, workspaces, createdAt, lastUsedAt}]}`: the AI apps you connected that are neither revoked nor expired, most recently used first; `scope` is `read` or `agent`, `workspaces` is empty for every workspace, `lastUsedAt` is null before first use; shown with the sessions in Settings → Account, also while MCP is off; `read` and `agent` tokens → 403 `insufficient_scope`\n\nRefuses read and agent tokens.",
         "externalDocs": {
           "url": "https://open-todo.app/docs/api/#integrations"
         },
@@ -15835,7 +15835,7 @@
         "tags": [
           "Integrations"
         ],
-        "x-opentodo-policy": "signed-in"
+        "x-opentodo-policy": "signed-in.full-tokens"
       }
     },
     "/api/v1/me/oauth-grants/{id}": {
@@ -39970,7 +39970,7 @@
     },
     "/api/v1/tokens": {
       "get": {
-        "description": "`{tokens:[{id,name,scope,createdAt,lastUsedAt}]}`; `lastUsedAt` is updated at most once a minute",
+        "description": "`{tokens:[{id,name,scope,createdAt,lastUsedAt}]}`; `lastUsedAt` is updated at most once a minute; `read` and `agent` tokens → 403 `insufficient_scope`\n\nRefuses read and agent tokens.",
         "externalDocs": {
           "url": "https://open-todo.app/docs/api/#your-account-and-credentials"
         },
@@ -40052,7 +40052,7 @@
         "tags": [
           "Your account and credentials"
         ],
-        "x-opentodo-policy": "signed-in"
+        "x-opentodo-policy": "signed-in.full-tokens"
       },
       "post": {
         "description": "`{name, scope?}` (`full` default, `read`, `agent` or `admin`) → 201 `{token, secret}` (secret shown once); another scope → 400 `invalid_input`; `admin` only from a session (a token gets 403 `session_required`)\n\nNeeds a session or an admin token; full tokens are refused. Needs a recently confirmed session or second factor.",

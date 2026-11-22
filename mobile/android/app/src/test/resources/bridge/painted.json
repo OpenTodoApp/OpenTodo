@@ -1,0 +1,8 @@
+{
+  "description": "First paint (shell-reveal-on-paint D1): a shell that keeps its web view hidden over its launch screen lists the capability. The web app calls the method once per page load, without arguments, after its first frame with its own content is drawn; the shell then shows the web view without waiting for the page to finish loading. A shell without it lists nothing and is not called.",
+  "capability": "first-paint",
+  "method": "painted",
+  "calls": [
+    []
+  ]
+}

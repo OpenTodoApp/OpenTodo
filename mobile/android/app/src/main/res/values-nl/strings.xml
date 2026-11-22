@@ -42,6 +42,10 @@
     <string name="widget_empty">Voor vandaag is er niets meer open.</string>
     <string name="widget_untitled">Taak</string>
     <string name="widget_more">+ %1$d meer</string>
+    <string name="widget_completed">Afgerond</string>
+    <string name="widget_completed_description">Hoeveel taken je deze week hebt afgerond</string>
+    <string name="widget_completed_locked">Vergrendeld: alleen het aantal van vandaag</string>
+    <string name="widget_completed_days">Afgerond per dag: %1$s</string>
     <string name="setup_old_webview">De Android System WebView van deze telefoon is oud (versie %1$s). Werk deze bij in de app store, zodat OpenTodo volledig werkt.</string>
     <string name="site_bar_host">Aangemeld bij %1$s</string>
     <string name="site_bar_close">Terug naar OpenTodo</string>

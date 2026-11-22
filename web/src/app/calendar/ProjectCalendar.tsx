@@ -4,7 +4,8 @@
 // calendar's range controls among its actions and its options in a menu beside them;
 // the range is the page's own state, so moving through weeks never leaves the project.
 // Loaded only when a project shows this layout.
-import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react'
+import { Suspense, useMemo, useState, type ReactNode } from 'react'
+import { lazy } from '../../lib/lazy'
 import { readCalendarMode, type CalendarMode } from '../../lib/calendarMode'
 import { t } from '../../lib/i18n'
 import { useProjects } from '../../lib/localData'

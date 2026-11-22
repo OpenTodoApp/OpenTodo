@@ -4,7 +4,8 @@
 // sheet on phones) with Clear and Done; the When parts share one popover that shows
 // one segment at a time. The Add menu offers what is not set, grouped by facet.
 // Every editor writes exactly the operation its chip wrote (usePropertiesModel).
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { lazy } from '../../lib/lazy'
 import { facetsOf, type FacetId, type FacetPart, type WhenSegmentId } from '../../lib/facets'
 import { removeLabel } from '../../lib/labels'
 import { priorityAccessibleName, priorityShort } from '../../lib/priority'
@@ -200,10 +201,10 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
         <div className="space-y-2">
           {childCount > 0 && <p className="text-meta text-muted">{t('{n, plural, one {Moving this task moves its subtask too.} other {Moving this task moves its subtasks too.}}', { n: childCount })}</p>}
           <ComboboxPanel<PickerItem> label={t('Project')} placeholder={t('Find or create a project…')} source={m.projectItems}
-            getKey={itemKey} getLabel={itemLabel} getPath={itemPath} getSecondary={itemMeta} getKeywords={itemKeywords}
+            getKey={itemKey} getLabel={itemLabel} getPath={itemPath} getSecondary={itemMeta} getKeywords={itemKeywords} getGroup={(i) => i.group}
             pinned={m.projectPins} selected={[m.currentProject?.key ?? INBOX_KEY]} rankContext="task.project"
             renderLeading={(i) => (i.project ? <ProjectMark project={i.project} /> : <Icon name="inbox" className="text-faint" />)}
-            onPick={async (i) => { await m.moveTo(i.value); onClose() }}
+            onPick={async (i) => { await m.moveTo(i.value, i.workspace); onClose() }}
             onCreate={async (name) => { const pid = await createProject({ name: name.trim() }); await m.moveTo(pid); onClose() }}
             onClose={onClose} />
         </div>

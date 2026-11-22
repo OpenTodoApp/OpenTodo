@@ -6,7 +6,8 @@
 // in Dexie meta, never synced. It sits above the sections, the board and the
 // timeline, below the quick add, so chrome stays together above content.
 import { resettable } from '../lib/moduleState'
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { Button, Icon, IconButton, useMediaQuery } from '../ui'
 import { setProjectNoteFolded, useMembership, useProjectNoteFolded } from '../lib/localData'
 import { canEditProjectNote, roleOf } from '../lib/sharing'

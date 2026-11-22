@@ -82,6 +82,7 @@ Phones, Apple, Obsidian and voice.
 | [`obsidian-origin`](openspec/changes/archive/2026-10-31-obsidian-origin/) | **Shipped.** An `obsidian` origin that links a task back to its note | [#605](https://github.com/OpenTodoApp/OpenTodo/issues/605) |
 | [`view-project-drops`](openspec/changes/archive/2026-11-14-view-project-drops/) | **Shipped.** In views grouped by project, drop a task into another project's group to move it, or onto a task to nest it | [#1211](https://github.com/OpenTodoApp/OpenTodo/issues/1211) |
 | [`today-project-drops`](openspec/changes/archive/2026-11-14-today-project-drops/) | **Shipped.** Move, place and nest tasks in Today's project groups | [#1211](https://github.com/OpenTodoApp/OpenTodo/issues/1211) |
+| [`today-context-subtasks`](openspec/changes/archive/2026-11-16-today-context-subtasks/) | **Shipped.** Show undated and later subtasks as context in Today, with explicit moves in project groups | [#1404](https://github.com/OpenTodoApp/OpenTodo/issues/1404) |
 | [`board-completed-column`](openspec/changes/archive/2026-11-14-board-completed-column/) | **Shipped.** Show completed tasks on a project board: a Completed column at the end; drop a card there to complete it | [#1291](https://github.com/OpenTodoApp/OpenTodo/issues/1291) |
 | [`completed-view-review`](openspec/changes/archive/2026-11-14-completed-view-review/) | **Shipped.** Completed for reviews: narrow to projects, group by project, search, and done rows without a strikethrough | [#1325](https://github.com/OpenTodoApp/OpenTodo/issues/1325) |
 | [`click-selects-title`](openspec/changes/click-selects-title/) | One click rule in every list: a first click selects the row (and shows it beside the list), a second click edits its title, `a` adds a subtask after a click; "Click a task to" goes | [#1405](https://github.com/OpenTodoApp/OpenTodo/issues/1405) |
@@ -290,20 +291,6 @@ The phone apps stay web-view shells and are made to feel like apps, in the order
 | [`shell-push`](openspec/changes/shell-push/) | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | [#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344) |
 
 Push to the iPhone app needs a relay the project would run, or an app signed by whoever runs the server; not planned.
-
-### Native app
-
-**Paused (2026-11-13).** The phone apps stay web-view shells, made to feel native ([`mobile/AUDIT.md`](mobile/AUDIT.md)). The work below is kept, not scheduled.
-
-A phone app drawn with the platform's own views, replacing the web-view shells that testers found disappointing. It is built with React Native in `mobile/app/`, runs the web app's shared sync, encryption and parsing code, and is built and published by CI without Xcode. Its CI runs only when the app or a shared module it imports changes, so the web app's pipeline stays as fast as it is.
-
-| Change | What | Issues |
-| --- | --- | --- |
-| [`native-app-foundation`](openspec/changes/native-app-foundation/) | The app's place in the repo, a platform port for the shared code, local storage chosen by measurement, sign-in through the system browser, sync, lean CI lanes and an "OpenTodo Preview" in TestFlight next to the current app | [#600](https://github.com/OpenTodoApp/OpenTodo/issues/600) |
-| [`native-app-everyday`](openspec/changes/native-app-everyday/) | Five tabs, native lists with swipe and long-press, capture with the keyboard up at once, task detail, native pickers, Browse, Search, passphrase unlock, Android conventions | |
-| [`native-app-handover`](openspec/changes/native-app-handover/) | Widget, share, reminders with actions, background refresh, biometric unlock, iPad split view, Google Play and F-Droid; then a go/no-go gate and the switch from the shells | [#603](https://github.com/OpenTodoApp/OpenTodo/issues/603) |
-
-In order. No op field changes; the server gains only app sign-in.
 
 ## Shipped
 

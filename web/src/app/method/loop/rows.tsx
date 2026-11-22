@@ -5,7 +5,7 @@ import { resolveLabels } from '../../../lib/labels'
 import { useAllLabels, useAllProjects } from '../../../lib/localData'
 import { hasTimeColumn } from '../../../lib/rowTime'
 import { listSlotsOff } from '../../../lib/rowSlots'
-import { setTaskCompleted } from '../../../lib/ops'
+import { setTaskCompletedWithFeedback } from '../../completionSound'
 import type { Task } from '../../../lib/types'
 import { act } from '../../actionError'
 import { openFromRow } from '../../sidePanel'
@@ -26,7 +26,7 @@ export function Rows({ tasks, label }: { tasks: readonly Task[]; label?: string 
       {tasks.map((task) => (
         <TaskRow key={task.id} task={task} project={task.project_id ? projectMap.get(task.project_id) : undefined} labels={resolveLabels(task.labels, labelMap)}
           showProject selected={false} timeColumn={timeColumn} slotsOff={slotsOff}
-          onToggle={() => act(setTaskCompleted(task.id, !task.completed_at))}
+          onToggle={() => act(setTaskCompletedWithFeedback(task.id, !task.completed_at))}
           onOpen={(e) => openFromRow(task.id, e)} onOpenPage={() => openTaskPage(task.id)} />
       ))}
     </ul>

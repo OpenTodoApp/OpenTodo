@@ -298,7 +298,13 @@ function stepOf(seq: Chord[]): Shortcut | undefined {
 }
 
 let installed = 0
-const onWindowKey = (e: KeyboardEvent) => { dispatch(e) }
+let lastKey = -Infinity
+const onWindowKey = (e: KeyboardEvent) => { lastKey = performance.now(); dispatch(e) }
+
+/** When the last key went down (performance.now): a page change made from the keyboard happens at once (page-transitions). */
+export function lastKeyAt(): number {
+  return lastKey
+}
 
 /** Installs the one window listener (shared by every caller); returns the function that releases it. */
 export function installShortcutDispatcher(target: Pick<Window, 'addEventListener' | 'removeEventListener'> = window): () => void {
@@ -314,6 +320,7 @@ export function installShortcutDispatcher(target: Pick<Window, 'addEventListener
 /** Forgets every frame and the prefix (tests). */
 export function resetShortcutScopes(): void {
   frames = []
+  lastKey = -Infinity
   clearPrefix()
 }
 resettable('shortcuts', resetShortcutScopes)

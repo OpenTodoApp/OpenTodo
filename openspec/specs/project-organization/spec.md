@@ -512,3 +512,33 @@ Where a project picker displays a colour dot next to a project name, it SHALL di
 
 - **WHEN** a picker offers No project, Top level or another choice that does not refer to a project
 - **THEN** the option retains its existing symbol and selection behaviour
+
+### Requirement: The sidebar's project menu
+A project's menu in the sidebar, in the Projects tree and in Favourites, SHALL be the project header's menu: the same items for the person's role, with the same handlers, confirmations and dialogs, followed by Move up and Move down for the row where the person may reorder it. A right-click on a sidebar row that has a menu SHALL open that menu and suppress the browser's own, except in a text field (the inline rename) and over selected text; a right-click raised by touch SHALL be suppressed and left to the touch hold. Archiving or deleting a project from the sidebar SHALL go to the Inbox only when that project's page is open, and leave any other page as it is. The All projects page keeps its own row menu.
+
+#### Scenario: The whole menu from the sidebar
+- **WHEN** the owner right-clicks a project in the sidebar
+- **THEN** its menu opens with the header's items (Duplicate, Save as template, Fields, Move to, Rename, Icon, Archive, Delete, Activity, History, Routines, Display mode, the colours) and Move up and Move down, and the browser's menu does not appear
+
+#### Scenario: The same role rules
+- **WHEN** an editor of a shared project opens its sidebar menu
+- **THEN** it offers what the header offers an editor, without Rename, Icon, the colours, Archive or Delete
+
+#### Scenario: Archive from another page
+- **WHEN** the person is in Today and archives a project from its sidebar menu
+- **THEN** the project is archived after the confirmation and Today stays on screen
+
+#### Scenario: Rename keeps the field's menu
+- **WHEN** the person right-clicks inside the inline rename field of a sidebar project
+- **THEN** no app menu opens and the field's own menu appears
+
+### Requirement: Archive several projects at once
+The All projects table SHALL let the user tick several projects and archive them together. Ctrl or ⌘+click on a row SHALL tick it without opening it; Shift+click and Shift+↑/↓ SHALL extend from the last tick; Space or x on a row SHALL tick or untick it; while anything is ticked, Ctrl+A SHALL tick every listed row and Escape SHALL clear the selection. "Select projects" in the page's menu SHALL show the boxes without ticking anything, for touch screens. While the boxes show, each row's box SHALL stand where its colour mark is and a click on a row SHALL tick it. Only projects the user may archive from the Project menu SHALL be tickable. While projects are ticked, the selection bar SHALL show their count, Archive and Clear. Archive SHALL ask first, naming the count, and SHALL then archive every ticked project with its sub-projects in one batch with one Undo toast; a project already archived or listed twice through its parent SHALL be written once. The selection is device state, never synced, and archiving works offline.
+
+#### Scenario: Archive three projects after an import
+- **WHEN** the user Ctrl+clicks "Home", Shift+clicks "Work" (with "Garden" under "Home" between them) and chooses Archive in the bar, then confirms "Archive 3 projects?"
+- **THEN** Home, Garden and Work are archived in one batch and leave the table, the other projects stay, and the toast offers Undo, which brings all three back
+
+#### Scenario: A viewer's project
+- **WHEN** a project is shared with the user as a viewer and the user presses Space on its row
+- **THEN** nothing is ticked and the selection bar does not appear

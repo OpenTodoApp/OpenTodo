@@ -298,7 +298,7 @@ export async function deleteField(id: string): Promise<void> {
   await mutate('field', id, { deleted_at: Date.now() })
 }
 
-export { fieldNameOf, fieldValueLabel, rememberFieldNames } from './fieldNames'
+export { fieldValueLabel, rememberFieldNames } from './fieldNames'
 export { applicableFields, applicableFieldsLookup, fieldChain, fieldDescendants, liveFields, type FieldProject } from './fieldTree'
 
 /** Set one value of a task (null clears); one `fields.<id>` op, nothing else touched. */

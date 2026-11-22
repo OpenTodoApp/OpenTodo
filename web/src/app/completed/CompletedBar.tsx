@@ -2,7 +2,8 @@
 // search row where the other lists have their quick add, and the header's display
 // button for the projects it is narrowed to and its grouping. The panel's content
 // loads with the first open of the button; everything applies at once, on this device.
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import { lazy } from '../../lib/lazy'
 import type { CompletedDisplay } from '../../lib/completedDisplay'
 import { t } from '../../lib/i18n'
 import { Icon, IconButton, Input, Popover } from '../../ui'

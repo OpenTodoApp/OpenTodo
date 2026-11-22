@@ -1,7 +1,6 @@
 // Opening a task's origin (OpenSpec change task-origin, obsidian-origin D4): the
 // address the device may open and the opening itself, through a native shell
-// when there is one. Web only: it opens tabs and asks the shell, so the native
-// app, which shares lib/taskOrigin.ts (native-app-foundation D2), does not import it.
+// when there is one. Kept out of lib/taskOrigin.ts: it opens tabs and asks the shell.
 import { has, openObsidian, shell } from './shell'
 import { httpURL, obsidianURL } from './taskOrigin'
 import { canOpenAppLink, isAppLink, openAppLink } from './appLinks'

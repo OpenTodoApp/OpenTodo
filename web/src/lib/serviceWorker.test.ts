@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
+import { gunzipSync } from 'node:zlib'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -24,7 +25,7 @@ describe('built service worker', () => {
     expect(sw).not.toContain('self.__WB_MANIFEST')
     // A task page (/t/) is its own document, never the app (task-pages D8), and the
     // OAuth endpoints and discovery documents reach the server too (mcp-oauth), and the
-    // OpenTodo app's sign-in (native-app-foundation D5).
+    // OpenTodo app's sign-in (app-sign-in).
     expect(sw).toContain('[/^\\/api\\//,/^\\/healthz/,/^\\/t\\//,/^\\/oauth\\//,/^\\/app\\/sign-in$/,/^\\/\\.well-known\\//,/^\\/mcp$/]')
     expect(sw).toContain('push-sw.js')
     expect(sw).toContain('/share?inbox=')
@@ -47,7 +48,9 @@ describe('built file list', () => {
     const m = JSON.parse(Buffer.from(envelope.payload, 'base64url').toString()) as { app: string; worker: { path: string; sha256: string }; files: Record<string, { sha256: string; size: number; load: string }> }
     expect(m.app).toBe('opentodo-web')
     for (const [p, f] of Object.entries(m.files)) {
-      const body = readFileSync(path.join(dist, p))
+      // A file the build keeps only compressed is listed as the bytes it decodes to (compressed-static-assets).
+      const file = path.join(dist, p)
+      const body = existsSync(file) ? readFileSync(file) : gunzipSync(readFileSync(file + '.gz'))
       expect(createHash('sha256').update(body).digest('hex'), p).toBe(f.sha256)
       expect(body.length, p).toBe(f.size)
     }

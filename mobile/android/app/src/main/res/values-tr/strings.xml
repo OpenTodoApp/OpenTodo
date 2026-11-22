@@ -42,6 +42,10 @@
     <string name="widget_empty">Bugün için başka görev kalmadı.</string>
     <string name="widget_untitled">Görev</string>
     <string name="widget_more">+ %1$d daha</string>
+    <string name="widget_completed">Tamamlanan</string>
+    <string name="widget_completed_description">Bu hafta kaç görev tamamladığın</string>
+    <string name="widget_completed_locked">Kilitli: yalnızca bugünün sayısı</string>
+    <string name="widget_completed_days">Günlük tamamlanan: %1$s</string>
     <string name="setup_old_webview">Bu telefonun Android System WebView sürümü eski (sürüm %1$s). OpenTodo’nun tam çalışması için uygulama mağazanızdan güncelleyin.</string>
     <string name="site_bar_host">%1$s üzerinde oturum açılıyor</string>
     <string name="site_bar_close">OpenTodo’ya dön</string>
