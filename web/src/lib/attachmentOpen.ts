@@ -66,9 +66,10 @@ async function openFile(a: Attachment, opts: { download?: boolean }, tab: Window
   }
   if (shell()) {
     // A phone shell has no tabs (#1654): a new window is blocked or reaches the system
-    // browser without the session, so the file is saved through the shell instead.
+    // browser without the session, so the file is saved through the shell instead. A type
+    // the server serves inline keeps its real type, so the shell can show it first (ios-quick-look).
     const { saveFromServer } = await import('./saveFile')
-    saveFromServer(contentUrl(a.id, true), a.name)
+    saveFromServer(contentUrl(a.id, opts.download || !isInlineType(a.mime)), a.name)
     return
   }
   if (tab) tab.location.href = contentUrl(a.id, opts.download)
