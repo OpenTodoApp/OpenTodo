@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { base64Decode, fingerprint } from './appCode'
-import { checkForUpdate, cachedFile, fetchLazy, pruneCaches, type InstallEnv } from './appInstall'
+import { answerAfterFailure, checkForUpdate, cachedFile, fetchLazy, pruneCaches, type InstallEnv } from './appInstall'
 import { loadTrust, saveTrust, type TrustRecord } from './appTrust'
 import { clearLocalData } from './db'
 
@@ -382,6 +382,32 @@ describe('lazy files (design D7)', () => {
   it('answers nothing for a path that is not listed', async () => {
     const { e } = await installed()
     expect(await fetchLazy(e, e.record(), 'evil.js')).toBeNull()
+  })
+
+  it('while reporting: a failed download answers 404, and a later changed file is served only with its check recorded', async () => {
+    const { srv, e } = await installed()
+    srv.release!.served = { 'assets/MapView-1.js': null }
+    expect((await fetchLazy(e, e.record(), 'assets/MapView-1.js'))?.response.status).toBe(404)
+    srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
+    const changed = await fetchLazy(e, e.record(), 'assets/MapView-1.js')
+    expect(changed?.check).toMatchObject({ passed: false, cause: 'changed-file', path: 'assets/MapView-1.js', refused: false })
+    expect(await cachedFile(e, e.record(), 'assets/MapView-1.js')).toBeNull()
+  })
+
+  it('with refusal on, storage that fails never lets an unchecked file through', async () => {
+    const { srv, e } = await installed(true)
+    const open = e.caches.open.bind(e.caches)
+    e.caches.open = async (name: string) => { const c = await open(name); return Object.assign(Object.create(Object.getPrototypeOf(c)), c, { put: async () => { throw new DOMException('full', 'QuotaExceededError') } }) }
+    e.save = async () => { throw new DOMException('full', 'QuotaExceededError') }
+    // An intact file is still served (it was checked), just not stored.
+    expect(await text((await fetchLazy(e, e.record(), 'assets/MapView-1.js'))!.response)).toBe('map1')
+    // A changed one answers 404 although its check could not be recorded.
+    srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
+    expect((await fetchLazy(e, e.record(), 'assets/MapView-1.js'))?.response.status).toBe(404)
+    // And a request whose handling throws answers 404 for a listed file, the network only for others.
+    expect(answerAfterFailure(e.record(), 'assets/MapView-1.js')?.status).toBe(404)
+    expect(answerAfterFailure(e.record(), 'robots.txt')).toBeNull()
+    expect(answerAfterFailure({ ...e.record(), refuse: false }, 'assets/MapView-1.js')).toBeNull()
   })
 
   it('answers 404 for a listed file that could not be downloaded, and never serves a later changed one', async () => {

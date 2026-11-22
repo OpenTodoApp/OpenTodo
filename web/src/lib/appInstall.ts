@@ -295,6 +295,16 @@ export async function cachedFile(env: Pick<InstallEnv, 'caches'>, record: TrustR
 export type LazyResult = { response: Response; check?: CheckResult }
 
 /**
+ * The answer for a request whose handling threw: 404 for a listed file once
+ * refusal is on, so nothing unchecked is served; null (the network) otherwise,
+ * as report-only serves while it records (D17).
+ */
+export function answerAfterFailure(record: TrustRecord | null, path: string): Response | null {
+  if (!record?.refuse) return null
+  return path in (record.current?.files ?? {}) || path in (record.previous?.files ?? {}) ? new Response('', { status: 404 }) : null
+}
+
+/**
  * A listed file that isn't stored yet (a lazy chunk such as the map): fetched,
  * checked against the current list and stored when it matches (D7). A mismatch
  * is recorded; with refusal on it fails the request, while reporting the
@@ -309,11 +319,12 @@ export async function fetchLazy(env: InstallEnv, record: TrustRecord, path: stri
   if (!got) return { response: new Response('', { status: 404 }) }
   if (got.body.byteLength === want.size && (await sha256Hex(got.body)) === want.sha256) {
     const holder = record.current?.files[path]?.sha256 === want.sha256 ? record.current : record.previous
-    if (holder) await (await env.caches.open(holder.cache)).put(cacheKey(path), fileResponse(got.body.slice(0), got.type))
+    // A store that fails (storage full) only means the file is fetched again next time: it was checked.
+    if (holder) await env.caches.open(holder.cache).then((c) => c.put(cacheKey(path), fileResponse(got.body.slice(0), got.type))).catch(() => undefined)
     return { response: fileResponse(got.body, got.type) }
   }
   const check: CheckResult = { at: env.now(), version: record.current?.version ?? '', passed: false, cause: 'changed-file', path, refused: record.refuse }
-  await env.save({ ...record, lastCheck: check })
+  await env.save({ ...record, lastCheck: check }).catch(() => undefined)
   if (record.refuse) return { response: new Response('', { status: 404 }), check }
   return { response: fileResponse(got.body, got.type), check }
 }
