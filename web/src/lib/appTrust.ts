@@ -80,22 +80,6 @@ export async function loadTrust(idb: IDBFactory | undefined = globalThis.indexed
   }
 }
 
-/** Writes the record in one transaction. */
-export async function saveTrust(record: TrustRecord, idb: IDBFactory = globalThis.indexedDB): Promise<void> {
-  const db = await open(idb)
-  try {
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readwrite')
-      tx.objectStore(STORE).put(record, KEY)
-      tx.oncomplete = () => resolve()
-      tx.onerror = () => reject(tx.error)
-      tx.onabort = () => reject(tx.error)
-    })
-  } finally {
-    db.close()
-  }
-}
-
 /**
  * Changes the record as stored, in one transaction: `change` gets the stored record
  * and returns the one to store, or null to leave it. Transactions on the store run

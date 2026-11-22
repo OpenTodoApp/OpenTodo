@@ -4,7 +4,7 @@ import path from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { base64Decode, fingerprint } from './appCode'
 import { answerAfterFailure, checkForUpdate, cachedFile, fetchLazy, pruneCaches, stagingName, type InstallEnv } from './appInstall'
-import { loadTrust, saveTrust, updateTrust, type TrustRecord } from './appTrust'
+import { loadTrust, updateTrust, type TrustRecord } from './appTrust'
 import { clearLocalData } from './db'
 
 // The worker's checks (OpenSpec change signed-web-app, tasks 3.1 to 3.3), run
@@ -675,13 +675,13 @@ describe('caches', () => {
 describe('the trust record', () => {
   it('survives signing out (clearLocalData clears only the app database)', async () => {
     const record: TrustRecord = { mode: 'signed', keys: ['k'], refuse: true, announced: [] }
-    await saveTrust(record)
+    await updateTrust(() => record)
     await clearLocalData()
     expect(await loadTrust()).toEqual(record)
   })
 
   it('updateTrust changes the record as stored, or leaves it', async () => {
-    await saveTrust({ mode: 'signed', keys: ['k'], refuse: false, announced: ['1.0.0'] })
+    await updateTrust(() => ({ mode: 'signed', keys: ['k'], refuse: false, announced: ['1.0.0'] }))
     const next = await updateTrust((stored) => (stored ? { ...stored, refuse: true } : null))
     expect(next).toMatchObject({ refuse: true, announced: ['1.0.0'] })
     expect(await loadTrust()).toMatchObject({ refuse: true, announced: ['1.0.0'] })
