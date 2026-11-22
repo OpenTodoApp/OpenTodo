@@ -3,6 +3,8 @@ package web
 import (
 	"bytes"
 	"compress/gzip"
+	"encoding/base64"
+	"encoding/json"
 	"io"
 	"io/fs"
 	"net/http"
@@ -11,6 +13,8 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+
+	"github.com/OpenTodoApp/opentodo/internal/websign"
 )
 
 func TestInjectNoIndex(t *testing.T) {
@@ -314,5 +318,41 @@ func TestCompressedAssets(t *testing.T) {
 		if rec := get(http.MethodGet, target, map[string]string{"Accept-Encoding": "gzip"}); rec.Code != http.StatusNotFound {
 			t.Errorf("%s: %d, want 404", target, rec.Code)
 		}
+	}
+}
+
+// A client without gzip gets a compressed-only file decoded, but never more than
+// its signed size: a form that decodes to more (a decompression bomb) is refused.
+func TestCompressedAssetDecodeCap(t *testing.T) {
+	gzipOf := func(b []byte) []byte {
+		var buf bytes.Buffer
+		zw, _ := gzip.NewWriterLevel(&buf, gzip.BestCompression)
+		zw.Write(b)
+		zw.Close()
+		return buf.Bytes()
+	}
+	small := bytes.Repeat([]byte("ok();"), 100)
+	payload, _ := json.Marshal(map[string]any{"app": websign.App, "files": map[string]any{
+		"assets/bomb-a1.js": map[string]any{"sha256": "00", "size": 200, "load": "install"},
+		"assets/ok-b2.js":   map[string]any{"sha256": "00", "size": len(small), "load": "install"},
+	}})
+	envelope, _ := json.Marshal(map[string]any{"format": websign.Format, "payload": base64.RawURLEncoding.EncodeToString(payload), "signatures": []any{}})
+	sub := fstest.MapFS{
+		"index.html":           {Data: []byte("<html><head></head></html>")},
+		websign.FileName:       {Data: envelope},
+		"assets/bomb-a1.js.gz": {Data: gzipOf(make([]byte, 64<<20))},
+		"assets/ok-b2.js.gz":   {Data: gzipOf(small)},
+	}
+	h := handlerFor(sub, Options{})
+	get := func(target string) *httptest.ResponseRecorder {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, target, nil))
+		return rec
+	}
+	if rec := get("/assets/bomb-a1.js"); rec.Code != http.StatusInternalServerError || rec.Body.Len() > 1024 {
+		t.Errorf("bomb: %d, %d bytes; want a short 500", rec.Code, rec.Body.Len())
+	}
+	if rec := get("/assets/ok-b2.js"); rec.Code != http.StatusOK || !bytes.Equal(rec.Body.Bytes(), small) {
+		t.Errorf("a file within its signed size: %d", rec.Code)
 	}
 }

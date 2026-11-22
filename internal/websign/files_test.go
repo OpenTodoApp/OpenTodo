@@ -51,3 +51,23 @@ func TestCheckFSCompressedForms(t *testing.T) {
 		[]Problem{{"assets/b.js", "unlisted-file"}})
 	check("neither form", fstest.MapFS{}, []Problem{{"assets/a.js", "missing-file"}})
 }
+
+// A compressed form that decodes to more than its listed size, a decompression bomb
+// among them, is a changed file, read no further than one byte past that size.
+func TestCheckFSDecodeCap(t *testing.T) {
+	var buf bytes.Buffer
+	zw, _ := gzip.NewWriterLevel(&buf, gzip.BestCompression)
+	zw.Write(make([]byte, 64<<20)) // 64 MiB of zeros, about 64 KiB compressed
+	zw.Close()
+	m := &Manifest{Files: map[string]File{"assets/a.js": {SHA256: "00", Size: 200}}}
+	got, err := CheckFS(fstest.MapFS{"assets/a.js.gz": {Data: buf.Bytes()}}, m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []Problem{{"assets/a.js.gz", "changed-file"}}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("problems %v, want %v", got, want)
+	}
+	if _, n, err := hashGzip(fstest.MapFS{"b.gz": {Data: buf.Bytes()}}, "b.gz", 200); err != nil || n != 201 {
+		t.Fatalf("read %d bytes (%v), want the cap and one more: 201", n, err)
+	}
+}

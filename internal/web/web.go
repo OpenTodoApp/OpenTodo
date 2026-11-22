@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/OpenTodoApp/opentodo/internal/websign"
 )
 
 //go:embed all:dist
@@ -49,6 +51,7 @@ func HandlerWith(o Options) http.Handler {
 func handlerFor(sub fs.FS, o Options) http.Handler {
 	fileServer := http.FileServer(http.FS(sub))
 	built, _ := fs.ReadFile(sub, "index.html")
+	sizes := listedSizes(sub)
 	index := built
 	if o.NoIndex && index != nil {
 		index = InjectNoIndex(index)
@@ -114,7 +117,7 @@ func handlerFor(sub fs.FS, o Options) http.Handler {
 				if strings.HasSuffix(p, ".md") {
 					w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 				}
-				serveGzipOnly(w, r, p, gz)
+				serveGzipOnly(w, r, p, gz, decodeLimit(sizes, p))
 				return
 			}
 		}
@@ -163,10 +166,45 @@ func serveCompressed(w http.ResponseWriter, r *http.Request, sub fs.FS, p string
 	return true
 }
 
+// maxDecoded bounds the decoded size of a compressed file the signed list does not
+// name (a development build without a list): far above any chunk of the app.
+const maxDecoded = 64 << 20
+
+// listedSizes reads the build's file sizes from its signed list, or nil without one.
+func listedSizes(sub fs.FS) map[string]int64 {
+	data, err := fs.ReadFile(sub, websign.FileName)
+	if err != nil {
+		return nil
+	}
+	_, payload, err := websign.ParseEnvelope(data)
+	if err != nil {
+		return nil
+	}
+	m, err := websign.ParseManifest(payload)
+	if err != nil {
+		return nil
+	}
+	sizes := make(map[string]int64, len(m.Files))
+	for p, f := range m.Files {
+		sizes[p] = f.Size
+	}
+	return sizes
+}
+
+// decodeLimit is the most a compressed form of p may decode to: its signed size,
+// else maxDecoded.
+func decodeLimit(sizes map[string]int64, p string) int64 {
+	if n, ok := sizes[p]; ok {
+		return n
+	}
+	return maxDecoded
+}
+
 // serveGzipOnly answers for p, which the build keeps only as gz: the compressed
 // form when the request wants it, else the bytes it decodes to, through
-// http.ServeContent, which answers a Range and a HEAD (D1, D2).
-func serveGzipOnly(w http.ResponseWriter, r *http.Request, p string, gz []byte) {
+// http.ServeContent, which answers a Range and a HEAD (D1, D2). A form that
+// decodes to more than limit bytes (its signed size) is refused, not decoded out.
+func serveGzipOnly(w http.ResponseWriter, r *http.Request, p string, gz []byte, limit int64) {
 	w.Header().Add("Vary", "Accept-Encoding")
 	if wantsGzip(r) {
 		writeGzip(w, r, p, gz)
@@ -177,8 +215,8 @@ func serveGzipOnly(w http.ResponseWriter, r *http.Request, p string, gz []byte) 
 		http.Error(w, "broken build file", http.StatusInternalServerError)
 		return
 	}
-	raw, err := io.ReadAll(zr)
-	if err != nil {
+	raw, err := io.ReadAll(io.LimitReader(zr, limit+1))
+	if err != nil || int64(len(raw)) > limit {
 		http.Error(w, "broken build file", http.StatusInternalServerError)
 		return
 	}

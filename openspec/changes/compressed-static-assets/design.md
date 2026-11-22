@@ -26,7 +26,9 @@ with a q above 0) and has no `Range` header, with `Content-Encoding: gzip`, the 
 own `Content-Type` and `Content-Length`, and the file's `Cache-Control`. Otherwise it
 decodes the form in memory and answers through `http.ServeContent`, which handles a
 Range and a HEAD on the decoded bytes; that costs a little CPU for the rare client
-without gzip. Every answer for such a file carries `Vary: Accept-Encoding`, so a shared
+without gzip. The decoder reads at most the file's size in the embedded signed list
+(64 MiB for a file it does not name), so a form that decodes to more, a decompression
+bomb among them, is answered with a 500 instead of being decoded out. Every answer for such a file carries `Vary: Accept-Encoding`, so a shared
 cache keeps the two apart. A request that names `<file>.gz` itself is a 404: the form is
 how a file travels, not a file.
 
@@ -37,7 +39,8 @@ the service worker or the signed-list check see the body, so the bytes and their
 SHA-256 are the file's. `websign` checks a build the same way (`CheckFS`): a `.gz` file
 counts as the file it decodes to, in place of it or beside it (where it must decode to
 the same bytes), and a form that does not decode, or decodes to other bytes, is a
-changed file named by its own path. `websign verify <url>` fetches through Go's client,
+changed file named by its own path. It reads no more than one byte past the listed
+size, so a bomb is a changed file, not an exhausted machine. `websign verify <url>` fetches through Go's client,
 which asks for and decodes gzip itself. `no-transform` stays: it tells intermediaries not
 to change what the origin sent.
 
@@ -55,8 +58,9 @@ answer needs its own (`W/` or a suffix).
 
 Go: a handler test over an in-memory file system answers a file kept only as `.gz`, and
 one with both forms, for gzip, no gzip, `gzip;q=0`, `*`, a Range and a HEAD, and a
-request for the `.gz` name with 404; a websign test checks a form in place of its file,
-beside it, of other bytes, not gzip at all, and of an unlisted file. Node:
+request for the `.gz` name with 404, and refuses a 64 MiB bomb listed at 200 bytes to a
+client without gzip; a websign test checks a form in place of its file, beside it, of
+other bytes, not gzip at all, of an unlisted file, and a bomb (read only to the cap). Node:
 `compress-dist` replaces only the listed types above the threshold, `app-manifest`
 leaves `.gz` out, and `bundle-budget` reads through `.gz`. The browser end-to-end checks
 (including the signed web app's) run against the built server as before.

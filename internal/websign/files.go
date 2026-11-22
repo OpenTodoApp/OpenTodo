@@ -55,8 +55,10 @@ func HashFile(fsys fs.FS, name string) (string, int64, error) {
 // build may leave out. It is checked as the file it decodes to, never listed.
 const GzipSuffix = ".gz"
 
-// hashGzip returns the SHA-256 and size of what a compressed form decodes to.
-func hashGzip(fsys fs.FS, name string) (string, int64, error) {
+// hashGzip returns the SHA-256 and size of what a compressed form decodes to,
+// reading at most max+1 bytes of it: a form that decodes to more than its listed
+// size (a decompression bomb among them) is a changed file without being read out.
+func hashGzip(fsys fs.FS, name string, max int64) (string, int64, error) {
 	f, err := fsys.Open(name)
 	if err != nil {
 		return "", 0, err
@@ -67,7 +69,7 @@ func hashGzip(fsys fs.FS, name string) (string, int64, error) {
 		return "", 0, err
 	}
 	defer zr.Close()
-	return hashReader(zr)
+	return hashReader(io.LimitReader(zr, max+1))
 }
 
 func hashReader(r io.Reader) (string, int64, error) {
@@ -92,9 +94,8 @@ func CheckFS(fsys fs.FS, m *Manifest) ([]Problem, error) {
 			return err
 		}
 		name, compressed := p, strings.HasSuffix(p, GzipSuffix)
-		hash := HashFile
 		if compressed {
-			name, hash = strings.TrimSuffix(p, GzipSuffix), hashGzip
+			name = strings.TrimSuffix(p, GzipSuffix)
 		}
 		if d.IsDir() || !Listed(name) {
 			return nil
@@ -105,7 +106,13 @@ func CheckFS(fsys fs.FS, m *Manifest) ([]Problem, error) {
 			problems = append(problems, Problem{name, "unlisted-file"})
 			return nil
 		}
-		sum, size, err := hash(fsys, p)
+		var sum string
+		var size int64
+		if compressed {
+			sum, size, err = hashGzip(fsys, p, want.Size)
+		} else {
+			sum, size, err = HashFile(fsys, p)
+		}
 		if err != nil {
 			if !compressed {
 				return err

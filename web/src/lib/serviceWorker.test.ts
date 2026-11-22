@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
+import { gunzipSync } from 'node:zlib'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -47,7 +48,9 @@ describe('built file list', () => {
     const m = JSON.parse(Buffer.from(envelope.payload, 'base64url').toString()) as { app: string; worker: { path: string; sha256: string }; files: Record<string, { sha256: string; size: number; load: string }> }
     expect(m.app).toBe('opentodo-web')
     for (const [p, f] of Object.entries(m.files)) {
-      const body = readFileSync(path.join(dist, p))
+      // A file the build keeps only compressed is listed as the bytes it decodes to (compressed-static-assets).
+      const file = path.join(dist, p)
+      const body = existsSync(file) ? readFileSync(file) : gunzipSync(readFileSync(file + '.gz'))
       expect(createHash('sha256').update(body).digest('hex'), p).toBe(f.sha256)
       expect(body.length, p).toBe(f.size)
     }
