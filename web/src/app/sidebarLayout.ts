@@ -51,6 +51,25 @@ export const toggleSidebarCollapsed = (): void => setSidebarCollapsed(!layout.ge
 export const sidebarLayout = layout.get
 export const useSidebarLayout = layout.use
 
+/**
+ * The list's room beside a docked panel (tablet-layouts D2): the app frame keeps at
+ * least this many rem, about 22 rem of list and its gutters, or the sidebar folds to
+ * its icon rail while the panel is docked.
+ */
+export const LIST_ROOM_REM = 25
+
+/**
+ * Whether the sidebar is folded to icons for room now: only while a panel is docked
+ * and the sidebar is open at `widthRem`. It folds when the frame is under
+ * LIST_ROOM_REM, and unfolds only when the frame would still keep that room with the
+ * sidebar back at its width, so the two never alternate. Never stored.
+ */
+export function foldForRoom(folded: boolean, docked: boolean, frameRem: number, widthRem: number): boolean {
+  if (!docked) return false
+  if (!folded) return frameRem < LIST_ROOM_REM
+  return frameRem - (widthRem - SIDEBAR_COLLAPSED_REM) < LIST_ROOM_REM
+}
+
 /** Tests: back to the defaults. */
 export function resetSidebarLayout(): void {
   removeItem(WIDTH_KEY)

@@ -5,7 +5,7 @@
 
 ## 2. Layout
 
-- [ ] 2.1 Measured pane rules (`ResizeObserver` on the frame); vitest for the thresholds
+- [x] 2.1 Measured pane rules (`ResizeObserver` on the frame); vitest for the thresholds
 - [ ] 2.2 Compact sidebar from 600 px; three panes from 900 px; Notes and Calendar follow
 - [ ] 2.3 Open task and scroll position survive a resize; layout check test
 

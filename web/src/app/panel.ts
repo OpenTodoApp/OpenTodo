@@ -126,7 +126,8 @@ export function setPanelWidth(px: number | null, persist = true, store: PanelWid
   writeString(store.key, px ? String(Math.round(px)) : null) // storage refused: the width holds until the panel opens again
 }
 
-export const SPLIT_QUERY = '(min-width: 64rem)'
+/** Where a task docks beside the list (tablet-layouts D2): 900 px, measured on the window. */
+export const SPLIT_QUERY = '(min-width: 56.25rem)'
 /**
  * Where the Inbox's own split keeps its empty pane (task-list-width D4): from 90 rem, the
  * step where the docked panel widens (`--panel-w`), a list keeps a comfortable width

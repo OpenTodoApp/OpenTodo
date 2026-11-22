@@ -258,7 +258,8 @@ describe('the side panel', () => {
   })
 
   it('a narrow window keeps the page', async () => {
-    viewport(900)
+    // A task docks from 900 px (tablet-layouts D2); one pixel less keeps the page.
+    viewport(899)
     const { r } = await list({ view: 'today' })
     expect(emptyPane()).toBeNull()
     await key(document.body, 'j')
