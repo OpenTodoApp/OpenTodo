@@ -6,7 +6,8 @@
 // Acting on it (series-exceptions D4): its menu (right-click, long press, Shift+F10,
 // the menu key) and, for those who may edit the series, a drag that moves this
 // occurrence alone. The menu loads on first use.
-import { lazy, Suspense, useCallback, useMemo, useState } from 'react'
+import { Suspense, useCallback, useMemo, useState } from 'react'
+import { lazy } from '../../lib/lazy'
 import { formatDate, formatTime as formatWallTime } from '../../lib/dates'
 import { beginDrag, swallowNextClick } from '../../lib/dnd'
 import { formatMinutes } from '../../lib/duration'

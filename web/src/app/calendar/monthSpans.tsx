@@ -1,7 +1,8 @@
 // Spans in the Month (OpenSpec change multi-day-tasks, design D3, D4, D8): the
 // selection of the spans, the cells without them, the selection order, the keys of a
 // selected span's ends, the trailing end of a date-only row and the bars of a week row.
-import { lazy, type MutableRefObject, Suspense, useMemo } from 'react'
+import { type MutableRefObject, Suspense, useMemo } from 'react'
+import { lazy } from '../../lib/lazy'
 import { dueFromView, viewedTask } from '../../lib/dates'
 import { getTask } from '../../lib/localData'
 import { cellTasks } from '../../lib/month'

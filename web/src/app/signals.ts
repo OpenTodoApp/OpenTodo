@@ -143,7 +143,8 @@ export const useConnectionsRequest = connections.use
 // Loaded once; a test ends only once it has arrived, since the chunk pulls in the whole
 // Linked references graph and must not finish loading after the test environment is gone.
 let probeChunk: Promise<typeof import('./LinkedReferences').watchConnected> | null = null
-const loadProbe = () => (probeChunk ??= import('./LinkedReferences').then(({ watchConnected }) => watchConnected))
+// A failed load (offline) is forgotten, so the next call fetches again (lazy-retry-online).
+const loadProbe = () => (probeChunk ??= import('./LinkedReferences').then(({ watchConnected }) => watchConnected, (err: unknown) => { probeChunk = null; throw err }))
 onTestTeardown(() => probeChunk?.catch(() => {}))
 resettable('connectionsProbe', () => { probeChunk = null })
 

@@ -6,7 +6,8 @@
 // displayed at all, so they are neither tab stops nor heard there. Each writes through
 // the same path as its key: Priority through updateTask, More through the list's
 // actions menu, Schedule through the panel's Do on editor.
-import { lazy, Suspense, useRef, useState, type KeyboardEvent } from 'react'
+import { Suspense, useRef, useState, type KeyboardEvent } from 'react'
+import { lazy } from '../../lib/lazy'
 import { act } from '../actionError'
 import { updateTask } from '../../lib/ops'
 import { priorityShort } from '../../lib/priority'

@@ -4,7 +4,8 @@
 // sheet on phones) with Clear and Done; the When parts share one popover that shows
 // one segment at a time. The Add menu offers what is not set, grouped by facet.
 // Every editor writes exactly the operation its chip wrote (usePropertiesModel).
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { lazy } from '../../lib/lazy'
 import { facetsOf, type FacetId, type FacetPart, type WhenSegmentId } from '../../lib/facets'
 import { removeLabel } from '../../lib/labels'
 import { priorityAccessibleName, priorityShort } from '../../lib/priority'

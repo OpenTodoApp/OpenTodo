@@ -6,7 +6,8 @@
 // server's default theme and themes (theme-instance-default D4), loaded lazily.
 // settings-foundation D8: the name is a field, saved with the save bar; the logo
 // and the themes apply when chosen, and a refused logo says why under its row.
-import { lazy, Suspense, useEffect, useState, type ChangeEvent, type ReactNode } from 'react'
+import { Suspense, useEffect, useState, type ChangeEvent, type ReactNode } from 'react'
+import { lazy } from '../lib/lazy'
 import { api, isNetworkError } from '../lib/api'
 import { type Branding, logoUrl, setBranding, useBranding } from '../lib/branding'
 import { t } from '../lib/i18n'
