@@ -21,7 +21,7 @@ A list row SHALL have one of two layouts. **One line** (the default) SHALL be th
 - **THEN** each row's details wrap onto further lines and no value is cut off except long names, which end in an ellipsis
 
 ### Requirement: Priority is never colour alone
-A row of an open task with priority 1, 2 or 3 SHALL show a priority mark in the priority's colour and with a distinct shape per level: three bars for priority 1, two for priority 2, one for priority 3, drawn with the icon set; priority 4, the default, has none. On a one-line row the mark SHALL follow the title and be read as "Priority n"; on a detailed row it SHALL be followed by the text "P1", "P2" or "P3". The checkbox ring SHALL keep its colours, and the circle of an open priority-1 or priority-2 task SHALL also be filled with its priority colour, more for priority 1 than for priority 2, so the levels differ in lightness as well as hue; priority 3 and 4 keep an empty circle. A completed task's circle SHALL keep its filled check without the priority fill.
+A row of an open task with priority 1, 2 or 3 SHALL show a priority mark in the priority's colour and with a distinct shape per level: three bars for priority 1, two for priority 2, one for priority 3, drawn with the icon set; priority 4, the default, has none. On a one-line row the mark SHALL follow the title and be read as "Priority n"; on a detailed row it SHALL be followed by the text "P1", "P2" or "P3". The circle of an open priority-1 or priority-2 task SHALL have a border and fill in its priority colour. Priority 1 is filled more strongly than priority 2 so the levels differ in lightness as well as hue. An open priority-3 task SHALL have a blue outline using its priority colour and an empty centre at rest, including in the task panel. An open priority-4 row SHALL keep its neutral, empty circle. A completed task's circle SHALL keep its filled check without the priority fill.
 
 #### Scenario: One-line row
 - **WHEN** a list shows a priority-1 task and a priority-4 task on one-line rows
@@ -30,6 +30,10 @@ A row of an open task with priority 1, 2 or 3 SHALL show a priority mark in the 
 #### Scenario: Circles that read without colour
 - **WHEN** a list shows a priority-1, a priority-2, a priority-3 and a priority-4 task and is seen through a deuteranopia or protanopia simulation, in light or dark
 - **THEN** the priority-1 circle is a darker disc than the priority-2 circle, and the priority-3 and priority-4 circles are empty rings
+
+#### Scenario: A low-priority task
+- **WHEN** a priority-3 task is open in a list or in the task panel
+- **THEN** its completion circle has the priority-3 blue outline and an empty centre at rest
 
 ### Requirement: Where the row layout is chosen
 The account SHALL have one row layout, set in Settings › Appearance as "Task rows" (One line or Detailed), stored in the user's synced preferences and used by every list without its own choice: Today, Upcoming, the Inbox, search results and the other built-in lists, and every view, project or label that has not chosen. A saved view, the New view page, a project's list, a label's page, Today, Upcoming and the Inbox SHALL offer One line and Detailed in their display panel, showing the layout in use; a choice SHALL be stored on the view, in the user's personal preferences of the project, on the label, or in the user's preferences for that built-in view, apply at once and win over the account's. Every choice SHALL be an operation written locally first, working offline and converging per field by last writer wins. An empty or unknown stored value SHALL read as the account's layout (for the account itself, One line) and SHALL not be rewritten.

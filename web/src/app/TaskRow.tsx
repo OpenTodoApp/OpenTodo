@@ -636,7 +636,7 @@ function CompactRow({ task, date, time, today, selected, readOnly = false, proje
       {/* A span's place on this day (multi-day-tasks D3): "Day 2 of 3". */}
       {position && <span data-span-position className="shrink-0 text-hint tabular-nums text-muted">{t('Day {n} of {m}', { n: position.n, m: position.of })}</span>}
       {task.estimate_minutes ? <span data-estimate className="shrink-0 text-hint tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
-      {/* The row's priority ring: coloured for P1 and P2, neutral for P3; read as "P1". */}
+      {/* The row's priority ring uses the priority colour and its accessible name. */}
       {priority && (
         <span data-priority={task.priority} className="inline-flex shrink-0 items-center">
           <span aria-hidden data-priority-dot className={`h-2.5 w-2.5 rounded-full border-2 ${priority}`} /><span className="sr-only">{priorityAccessibleName(task.priority)}</span>
