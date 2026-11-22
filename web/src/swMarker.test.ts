@@ -1,5 +1,5 @@
 // A worker that cannot read its record from the start, nor the refusal mode it
-// remembered: the mode is unknown, and unknown refuses (precache follow-up).
+// remembered, or with none remembered: the mode is unknown, and unknown refuses (precache follow-up).
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TrustRecord } from './lib/appTrust'
 
@@ -23,6 +23,7 @@ const handlers: Record<string, (e: unknown) => void> = {}
 const network = vi.fn(async () => new Response('from the network'))
 const g = globalThis as Record<string, unknown>
 const saved: Record<string, unknown> = {}
+let cachesFail = true
 
 beforeAll(async () => {
   for (const k of ['self', 'importScripts', '__APP_KEYS__', 'fetch', 'caches']) saved[k] = g[k]
@@ -35,7 +36,7 @@ beforeAll(async () => {
   g.importScripts = () => undefined
   g.__APP_KEYS__ = []
   g.fetch = network
-  g.caches = { open: async () => { throw new Error('caches') } }
+  g.caches = { open: async () => { if (cachesFail) throw new Error('caches'); return { match: async () => undefined, put: async () => undefined } } }
   await import('./sw')
 })
 afterAll(() => { for (const [k, v] of Object.entries(saved)) g[k] = v })
@@ -56,5 +57,14 @@ describe('a worker that can read neither its record nor its mode', () => {
     expect((await respond('/assets/index-1.js')).status).toBe(404)
     expect((await respond('/inbox', 'navigate')).status).toBe(404)
     expect(served()).toEqual([])
+  })
+
+  it('with no remembered mode either: 404, and report-only works once the record can be read', async () => {
+    cachesFail = false
+    expect((await respond('/assets/index-1.js')).status).toBe(404)
+    expect(served()).toEqual([])
+    stored = { mode: 'signed', keys: [], refuse: false, announced: [] } as unknown as TrustRecord
+    lazy.mockResolvedValueOnce(null as never) // a file the record does not list
+    expect(await (await respond('/assets/index-1.js')).text()).toBe('from the network')
   })
 })

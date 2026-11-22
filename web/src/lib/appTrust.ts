@@ -144,11 +144,13 @@ export interface TrustState {
 
 /**
  * The worker's reads of its record. `remembered.get` answers the refusal mode last
- * remembered, false when none was, and null (or a rejection) when it cannot be read. "No record" (a first install) is cached like any
- * record; a failed read is not, so the next request reads again. While the store
- * cannot be read the worker keeps the last record it read, and the refusal mode is
- * also remembered outside the store (`remembered`), so a worker that never read its
- * record still fails closed for the app's files when the device had refusal on.
+ * remembered, and null (or a rejection) when none was or it cannot be read: unknown.
+ * "No record" (a first install) is cached like any record; a failed read is not, so
+ * the next request reads again. Every save the worker makes goes through `saved`, so
+ * the record standing in while the store cannot be read is the last one this worker
+ * read or wrote, and the remembered mode follows it. While the store cannot be read,
+ * refusal applies unless both the remembered mode and the stand-in say report-only:
+ * a stand-in never overrides a mode another worker remembered since.
  */
 export function trustReader(load: () => Promise<TrustRecord | null>, remembered: { get: () => Promise<boolean | null>; set: (on: boolean) => Promise<void> }) {
   let pending: Promise<TrustState> | null = null
@@ -161,15 +163,19 @@ export function trustReader(load: () => Promise<TrustRecord | null>, remembered:
       return { record, unreadable: false, refuse: !!record?.refuse }
     } catch {
       pending = null
-      // A remembered mode that cannot be read either is unknown, and unknown refuses:
-      // `get` answers false only when nothing was ever remembered.
-      const refuse = known ? known.refuse : (await remembered.get().catch(() => null)) !== false
-      return { record: known, unreadable: true, refuse }
+      const mode = await remembered.get().catch(() => null)
+      return { record: known, unreadable: true, refuse: mode !== false || !!known?.refuse }
     }
   }
   return {
     read: (): Promise<TrustState> => (pending ??= read()),
     /** After a write: the next read goes to the store. */
     forget: (): void => { pending = null },
+    /** After a save that succeeded: the saved record stands in, its mode is remembered, the next read goes to the store. */
+    saved: async (record: TrustRecord): Promise<void> => {
+      known = record
+      pending = null
+      await remembered.set(record.refuse).catch(() => undefined)
+    },
   }
 }

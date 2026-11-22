@@ -32,7 +32,8 @@ const env: InstallEnv = {
   languages: () => self.navigator.languages ?? [],
   now: () => Date.now(),
   load: () => loadTrust(self.indexedDB),
-  save: (r) => saveTrust(r, self.indexedDB),
+  // Every save, the update check's included, also sets the record that stands in and the remembered mode.
+  save: async (r) => { await saveTrust(r, self.indexedDB); await records.saved(r) },
 }
 
 // The worker's own state: the check that is running and when the last one started.
@@ -42,8 +43,8 @@ const env: InstallEnv = {
 const state: { running: Promise<CheckOutcome | null> | null; lastCheck: number } = { running: null, lastCheck: 0 }
 const MODE_KEY = '/__refuse'
 const remembered = {
-  // true or false as remembered, false when nothing was; a failure to read rejects (unknown).
-  get: async () => { const r = await (await caches.open('opentodo-policy')).match(MODE_KEY); return r ? (await r.text()) === '1' : false },
+  // true or false as remembered; null when nothing was, and a failure to read rejects: both unknown.
+  get: async () => { const r = await (await caches.open('opentodo-policy')).match(MODE_KEY); return r ? (await r.text()) === '1' : null },
   set: async (on: boolean) => { await (await caches.open('opentodo-policy')).put(MODE_KEY, new Response(on ? '1' : '0')) },
 }
 const records = trustReader(env.load, remembered)
@@ -166,7 +167,13 @@ async function navigation(event: FetchEvent): Promise<Response> {
     if (!lazy || lazy.check || !lazy.response.ok) return new Response('', { status: 404 })
     page = lazy.response
   }
-  const stored = await (await caches.open(POLICY_CACHE)).match(POLICY_KEY).catch(() => undefined)
+  let stored: Response | undefined
+  try {
+    stored = await (await caches.open(POLICY_CACHE)).match(POLICY_KEY)
+  } catch {
+    // The stored policy cannot be read: report-only keeps the network, refusal the built-in policy.
+    if (!t.refuse) return fetch(event.request)
+  }
   const headers = new Headers(page.headers)
   headers.set('Content-Security-Policy', pagePolicy(stored ? await stored.text() : null))
   headers.set('Cache-Control', 'no-cache')
