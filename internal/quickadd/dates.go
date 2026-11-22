@@ -683,6 +683,11 @@ func numericDateAt(tokens []token, j int, ctx *dateCtx) (string, int, bool) {
 		return "", 0, false
 	}
 	dotted := m[2] == "."
+	// "3-4 tomatoes" is a range: month-first, a dashed day and month without a year is
+	// never a date ("3/4" and "3-4-2027" are). Day-first languages write "3-3" for a date.
+	if m[2] == "-" && m[5] == "" && ctx.dayMonthOrder != "DM" {
+		return "", 0, false
+	}
 	if strings.HasSuffix(t.norm, ".") && !dotted {
 		return "", 0, false
 	}

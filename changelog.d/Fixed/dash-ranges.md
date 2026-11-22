@@ -1,0 +1,1 @@
+- **"3-4 tomatoes" stays an item, not a date.** Where dates are written month first, quick add read a dashed range like `3-4` or `4-5` as a due date. Now it stays in the title; `3/4` and `3-4-2027` are still dates, and day-first formats are unchanged.

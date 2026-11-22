@@ -565,6 +565,9 @@ function numericDateAt(tokens: readonly Token[], j: number, ctx: DateContext): {
   const m = NUMERIC_RE.exec(t.norm)
   if (!m) return null
   const dotted = m[2] === '.'
+  // "3-4 tomatoes" is a range: month-first, a dashed day and month without a year is
+  // never a date ("3/4" and "3-4-2027" are). Day-first languages write "3-3" for a date.
+  if (m[2] === '-' && !m[4] && ctx.dayMonthOrder !== 'DM') return null
   // A trailing dot only belongs to the German "12.11." form.
   if (t.norm.endsWith('.') && !dotted) return null
   // "9.30" is a time or a number in month/day locales; dotted dates are D.M only.
