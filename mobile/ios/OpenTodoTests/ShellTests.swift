@@ -171,7 +171,8 @@ final class BridgeOnAServerTests: XCTestCase {
         } catch {
             // Says which half failed: the page never asked (`/` missing) or it loaded but did not report.
             let at = shell.webView.url?.absoluteString ?? "no address"
-            return XCTFail("\(error.localizedDescription); the server was asked for \(server.paths); the web view is at \(at), loading: \(shell.webView.isLoading)")
+            return XCTFail("\(error.localizedDescription); the server was asked for \(server.paths) and answered \(server.answers); "
+                + "the web view is at \(at), loading: \(shell.webView.isLoading), progress: \(shell.webView.estimatedProgress)")
         }
         XCTAssertEqual(report["origin"], origin.absoluteString)
         XCTAssertEqual(report["handler"], "object", "the message handler reaches the page: \(report)")
@@ -394,6 +395,7 @@ final class PageServer: @unchecked Sendable {
     private let queue = DispatchQueue(label: "PageServer")
     private var routes: [String: Response] = [:]
     private var requested: [String] = []
+    private var sent: [String] = []
     private var starting: CheckedContinuation<Void, Error>?
     private var reported: [String: String]?
     private var waiting: CheckedContinuation<[String: String], Error>?
@@ -443,6 +445,9 @@ final class PageServer: @unchecked Sendable {
 
     /// The paths asked for so far, in order.
     var paths: [String] { queue.sync { requested } }
+
+    /// Whether each answer went out ("/ sent", or the send error), in order.
+    var answers: [String] { queue.sync { sent } }
 
     private func changed(_ state: NWListener.State) {
         guard let starting else { return }
@@ -511,6 +516,10 @@ final class PageServer: @unchecked Sendable {
         let bytes = Data(body.utf8)
         let head = "HTTP/1.1 \(status)\r\n\(headers)Content-Type: \(type)\r\nContent-Length: \(bytes.count)\r\n"
             + "Cache-Control: no-store\r\nConnection: close\r\n\r\n"
-        connection.send(content: Data(head.utf8) + bytes, completion: .contentProcessed { _ in connection.cancel() })
+        connection.send(content: Data(head.utf8) + bytes, completion: .contentProcessed { error in
+            // On the server's queue, as every other field: what happened to each answer.
+            self.sent.append(error.map { "\(path) not sent: \($0)" } ?? "\(path) sent")
+            connection.cancel()
+        })
     }
 }
