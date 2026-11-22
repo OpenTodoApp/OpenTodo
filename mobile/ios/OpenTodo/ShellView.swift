@@ -1,3 +1,4 @@
+import ObjectiveC
 import SwiftUI
 import UIKit
 import WebKit
@@ -85,6 +86,8 @@ final class ShellController: NSObject, ObservableObject {
         webView.scrollView.scrollsToTop = false
         scrollTopDecoy.onTap = { [weak self] in self?.webView.evaluateJavaScript(ScrollTop.script) }
         webView.addSubview(scrollTopDecoy)
+        // No previous, next and Done bar above the keyboard (ios-keyboard-bar D1).
+        KeyboardBar.remove(from: webView)
         // Pull to refresh: the gesture every iOS person tries when a page looks stale. A web app
         // with its own pull to sync takes it over (pull-to-sync D4); an older one keeps this reload.
         refresher.addTarget(self, action: #selector(pulledToRefresh), for: .valueChanged)
@@ -475,6 +478,41 @@ struct SiteBar: View {
 }
 
 /// The one scroll view iOS hands a status bar tap to (status-bar-scroll-top D1): 1 × 1
+/// No keyboard accessory bar (ios-keyboard-bar D1): WebKit's content view supplies the
+/// previous, next and Done bar through `inputAccessoryView`. The view is given a subclass
+/// of its own class, made once, that supplies none. Done stays reachable through the
+/// keyboard's return key and a tap outside. Guarded: without the content view, or if the
+/// class cannot be made, nothing changes and the bar stays.
+enum KeyboardBar {
+    static let className = "OpenTodoContentViewWithoutBar"
+
+    /// Removes the bar from this web view; returns whether it did.
+    @discardableResult
+    static func remove(from webView: WKWebView) -> Bool {
+        guard let content = webView.scrollView.subviews.first(where: { NSStringFromClass(type(of: $0)).hasPrefix("WKContent") })
+            ?? webView.scrollView.subviews.first(where: { NSStringFromClass(type(of: $0)) == className })
+        else { return false }
+        if NSStringFromClass(type(of: content)) == className { return true }
+        guard let subclass = subclass(of: type(of: content)) else { return false }
+        object_setClass(content, subclass)
+        return true
+    }
+
+    private static func subclass(of base: AnyClass) -> AnyClass? {
+        if let made = NSClassFromString(className) { return made }
+        guard let made = objc_allocateClassPair(base, className, 0) else { return nil }
+        let getter = #selector(getter: UIResponder.inputAccessoryView)
+        guard let method = class_getInstanceMethod(base, getter) else {
+            objc_disposeClassPair(made)
+            return nil
+        }
+        let none: @convention(block) (AnyObject) -> UIView? = { _ in nil }
+        class_addMethod(made, getter, imp_implementationWithBlock(none), method_getTypeEncoding(method))
+        objc_registerClassPair(made)
+        return made
+    }
+}
+
 /// point, taller in content than its frame and scrolled off its top, so it always counts as
 /// scrollable; its delegate tells the page and declines, so it never moves. It takes no
 /// touches and is not on the accessibility tree.

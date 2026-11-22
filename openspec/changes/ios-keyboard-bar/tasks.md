@@ -1,10 +1,10 @@
 ## 1. iOS
 
-- [ ] 1.1 Override `inputAccessoryView` on the content view; guarded when the class is missing; XCTest
+- [x] 1.1 Override `inputAccessoryView` on the content view; guarded when the class is missing; XCTest
 
 ## 2. Web
 
-- [ ] 2.1 `watchVisualViewport()` scrolls the nearest scroller by the shortfall plus 12 px; vitest with a stub viewport
+- [x] 2.1 `watchVisualViewport()` scrolls the nearest scroller by the shortfall plus 12 px; vitest with a stub viewport
 
 ## 3. Check
 

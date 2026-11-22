@@ -257,10 +257,38 @@ export function useFinePointer(): boolean {
   return useSyncExternalStore(mediaSubscriber(FINE), () => window.matchMedia(FINE).matches, () => false)
 }
 
+/** Room kept between the focused field and the keyboard (ios-keyboard-bar D2). */
+export const KEYBOARD_GAP = 12
+
+/** The nearest ancestor that scrolls vertically, else null (the document). */
+function scrollerOf(el: HTMLElement): HTMLElement | null {
+  for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+    const y = getComputedStyle(p).overflowY
+    if ((y === 'auto' || y === 'scroll') && p.scrollHeight > p.clientHeight) return p
+  }
+  return null
+}
+
+/**
+ * Keeps the focused field visible above the keyboard (ios-keyboard-bar D2): its own
+ * scroller (a sheet, a panel, the page) moves by the shortfall plus KEYBOARD_GAP, so the
+ * document behind a sheet stays still. A field taller than the room shows its top.
+ */
+export function keepAboveKeyboard(el: HTMLElement, vv: { offsetTop: number; height: number }): void {
+  const r = el.getBoundingClientRect()
+  const top = vv.offsetTop + KEYBOARD_GAP
+  const bottom = vv.offsetTop + vv.height - KEYBOARD_GAP
+  const by = r.height > bottom - top ? r.top - top : r.bottom > bottom ? r.bottom - bottom : r.top < top ? r.top - top : 0
+  if (!by) return
+  const scroller = scrollerOf(el)
+  if (scroller) scroller.scrollTop += by
+  else el.scrollIntoView({ block: 'nearest' })
+}
+
 /**
  * The on-screen keyboard (design D2): publishes how much of the layout viewport it
- * covers as `--vv-bottom`, so bottom sheets sit above it, and scrolls the focused
- * field back into view when the keyboard opens. Installed once at startup.
+ * covers as `--vv-bottom`, so bottom sheets sit above it, and keeps the focused field
+ * above it (keepAboveKeyboard) when it opens or changes height. Installed once at startup.
  */
 export function watchVisualViewport(): () => void {
   const vv = typeof window === 'undefined' ? undefined : window.visualViewport
@@ -278,10 +306,7 @@ export function watchVisualViewport(): () => void {
     if (keyboard && !open && fits && vv.scale <= 1.01 && (window.scrollX || window.scrollY)) window.scrollTo(0, 0)
     keyboard = open
     const el = document.activeElement as HTMLElement | null
-    if (el && el.matches?.('input, textarea, select, [contenteditable="true"]')) {
-      const r = el.getBoundingClientRect()
-      if (r.bottom > vv.offsetTop + vv.height || r.top < vv.offsetTop) el.scrollIntoView({ block: 'nearest' })
-    }
+    if (el && el.matches?.('input, textarea, select, [contenteditable="true"]')) keepAboveKeyboard(el, vv)
   }
   vv.addEventListener('resize', update)
   vv.addEventListener('scroll', update)
