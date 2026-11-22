@@ -52,6 +52,8 @@ interface Release {
   version: string
   files: Record<string, string>
   lazy?: string[]
+  /** Catalogues: path → language (lazy, precache-device-language D2). */
+  langs?: Record<string, string>
   refuse?: boolean
   build?: string
   signers?: Signer[]
@@ -64,8 +66,11 @@ interface Release {
 const sha = (s: string | Uint8Array) => createHash('sha256').update(s).digest('hex')
 
 async function envelope(r: Release): Promise<string> {
-  const files: Record<string, { sha256: string; size: number; load: string }> = {}
-  for (const [p, body] of Object.entries(r.files)) files[p] = { sha256: sha(body), size: Buffer.byteLength(body), load: r.lazy?.includes(p) ? 'lazy' : 'install' }
+  const files: Record<string, { sha256: string; size: number; load: string; lang?: string }> = {}
+  for (const [p, body] of Object.entries(r.files)) {
+    const lang = r.langs?.[p]
+    files[p] = { sha256: sha(body), size: Buffer.byteLength(body), load: r.lazy?.includes(p) || lang ? 'lazy' : 'install', ...(lang ? { lang } : {}) }
+  }
   const payload = Buffer.from(JSON.stringify({
     app: 'opentodo-web', version: r.version, ...(r.build ? { build: r.build } : {}), refuse: r.refuse ?? false,
     keys: (r.names ?? ['release', 'recovery']).map((n) => ({ spki: keys[n].spki, role: n })),
@@ -376,6 +381,51 @@ describe('lazy files (design D7)', () => {
   it('answers nothing for a path that is not listed', async () => {
     const { e } = await installed()
     expect(await fetchLazy(e, e.record(), 'evil.js')).toBeNull()
+  })
+})
+
+describe('interface catalogues (precache-device-language D3)', () => {
+  const langs1 = { 'assets/lang-de-1.js': 'de', 'assets/lang-fr-1.js': 'fr' }
+  const c1: Release = { ...v1, files: { ...v1.files, 'assets/lang-de-1.js': 'de1', 'assets/lang-fr-1.js': 'fr1' }, langs: langs1 }
+  const c2: Release = { ...v2, files: { ...v2.files, 'assets/lang-de-2.js': 'de2', 'assets/lang-fr-2.js': 'fr2' }, langs: { 'assets/lang-de-2.js': 'de', 'assets/lang-fr-2.js': 'fr' } }
+
+  it('a first install stores no catalogue; the language is stored when first loaded', async () => {
+    const srv = server()
+    await srv.serve(c1)
+    const e = env(srv)
+    await checkForUpdate(e)
+    expect(srv.requests.filter((p) => p.includes('/lang-'))).toEqual([])
+    expect(await cachedFile(e, e.record(), 'assets/lang-de-1.js')).toBeNull()
+    await fetchLazy(e, e.record(), 'assets/lang-de-1.js')
+    expect(await text(await cachedFile(e, e.record(), 'assets/lang-de-1.js'))).toBe('de1')
+  })
+
+  it('an update installs the catalogues of the languages the device holds, and no other', async () => {
+    const srv = server()
+    await srv.serve(c1)
+    const e = env(srv)
+    await checkForUpdate(e)
+    await fetchLazy(e, e.record(), 'assets/lang-de-1.js')
+    srv.requests = []
+    await srv.serve(c2)
+    expect(await checkForUpdate(e)).toMatchObject({ kind: 'installed', version: '1.4.0', check: { passed: true } })
+    expect(srv.requests).toContain('/assets/lang-de-2.js')
+    expect(srv.requests).not.toContain('/assets/lang-fr-2.js')
+    srv.offline = true
+    const r = e.record()
+    expect(await text(await cachedFile(e, { ...r, previous: undefined }, 'assets/lang-de-2.js'))).toBe('de2')
+    expect(await cachedFile(e, { ...r, previous: undefined }, 'assets/lang-fr-2.js')).toBeNull()
+  })
+
+  it('refuses an update whose held catalogue was changed, with refusal on', async () => {
+    const srv = server()
+    await srv.serve({ ...c1, refuse: true })
+    const e = env(srv)
+    await checkForUpdate(e)
+    await fetchLazy(e, e.record(), 'assets/lang-de-1.js')
+    await srv.serve({ ...c2, refuse: true, served: { 'assets/lang-de-2.js': 'tampered' } })
+    expect(await checkForUpdate(e)).toMatchObject({ kind: 'refused', check: { cause: 'changed-file', path: 'assets/lang-de-2.js' } })
+    expect(e.record().current?.version).toBe('1.3.0')
   })
 })
 

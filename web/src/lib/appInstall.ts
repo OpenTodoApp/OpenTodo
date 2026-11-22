@@ -94,7 +94,22 @@ export function fileResponse(body: BodyInit | null, type: string | null): Respon
 interface StageResult { failure?: { cause: CheckCause; path: string } }
 
 /**
- * Downloads every install file into the staging cache, reusing unchanged files
+ * The languages whose interface catalogue the current set holds: those the
+ * device has used (precache-device-language D3). The cache is the record, so
+ * a first install holds none and a cleared cache forgets them.
+ */
+async function heldLanguages(current: InstalledVersion | undefined, currentCache: Cache | null): Promise<Set<string>> {
+  const held = new Set<string>()
+  if (!current || !currentCache) return held
+  for (const [path, f] of Object.entries(current.files)) {
+    if (f.lang && !held.has(f.lang) && (await currentCache.match(cacheKey(path)))) held.add(f.lang)
+  }
+  return held
+}
+
+/**
+ * Downloads every install file, and the catalogues of the languages the
+ * current set holds, into the staging cache, reusing unchanged files
  * of the current version. With stopOnFailure (refusal on), the first file that
  * fails stops the download; otherwise every file is stored as served and the
  * first failure is reported. A network error throws Interrupted.
@@ -102,7 +117,8 @@ interface StageResult { failure?: { cause: CheckCause; path: string } }
 async function stage(env: InstallEnv, staging: Cache, files: Record<string, ManifestFile>, current: InstalledVersion | undefined, stopOnFailure: boolean): Promise<StageResult> {
   const result: StageResult = {}
   const currentCache = current ? await env.caches.open(current.cache) : null
-  const queue = Object.keys(files).filter((p) => files[p].load === 'install').sort()
+  const held = await heldLanguages(current, currentCache)
+  const queue = Object.keys(files).filter((p) => files[p].load === 'install' || (files[p].lang !== undefined && held.has(files[p].lang!))).sort()
   const fail = (cause: CheckCause, path: string) => {
     if (!result.failure || path < result.failure.path) result.failure = { cause, path }
   }

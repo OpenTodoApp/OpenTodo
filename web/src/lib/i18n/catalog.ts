@@ -76,6 +76,28 @@ export async function loadLanguage(code: LanguageCode, intlLocale: string = code
   applyCatalog(code, intlLocale, entries)
 }
 
+/** An interface catalogue's built file (precache-device-language D1). */
+const CATALOGUE_FILE = /\/assets\/lang-[a-z]{2,3}(?:-[A-Za-z]+)?-[^/]+\.js$/
+
+/**
+ * The first visit runs before the service worker controls the page, so the
+ * catalogue it loaded came from the network and the worker never stored it
+ * (precache-device-language D3). Once a worker takes control, each catalogue
+ * the page loaded is asked for again through it, which stores it for offline
+ * use; the browser's HTTP cache usually answers. Nothing happens for a page
+ * that started controlled: its catalogue went through the worker already.
+ */
+export function storeCataloguesOnceControlled(
+  sw: Pick<ServiceWorkerContainer, 'addEventListener' | 'controller'> | undefined = typeof navigator !== 'undefined' ? navigator.serviceWorker : undefined,
+  loaded: () => string[] = () => performance.getEntriesByType('resource').map((e) => e.name),
+  get: (url: string) => Promise<unknown> = (url) => fetch(url),
+): void {
+  if (!sw || sw.controller) return
+  sw.addEventListener('controllerchange', () => {
+    for (const url of new Set(loaded().filter((u) => CATALOGUE_FILE.test(new URL(u, 'http://x').pathname)))) void get(url).catch(() => undefined)
+  }, { once: true })
+}
+
 /** The translation of a source message in the active catalog, or the source itself. */
 function lookup(message: string, context?: string): string {
   if (language === 'en') return message
