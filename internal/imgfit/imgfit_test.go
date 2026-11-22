@@ -55,7 +55,7 @@ func TestSquareCropsAndScales(t *testing.T) {
 	}
 }
 
-func TestPad(t *testing.T) {
+func TestPadAndFlatten(t *testing.T) {
 	logo := solid(100, 100, color.RGBA{255, 0, 0, 255})
 	out := Pad(logo, 100, 0.8, color.RGBA{0, 0, 0, 255})
 	if c := out.RGBAAt(2, 2); c != (color.RGBA{0, 0, 0, 255}) {
@@ -63,5 +63,9 @@ func TestPad(t *testing.T) {
 	}
 	if c := out.RGBAAt(50, 50); c.R < 250 {
 		t.Fatalf("centre %v, want logo", c)
+	}
+	clear := solid(4, 4, color.RGBA{})
+	if c := Flatten(clear, color.White).RGBAAt(1, 1); c.A != 255 || c.R != 255 {
+		t.Fatalf("flattened %v", c)
 	}
 }
