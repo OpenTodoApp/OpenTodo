@@ -184,6 +184,9 @@ var ErrNewerState = errors.New("the vault state was written by a newer ot")
 type FileState struct {
 	Project string `json:"project"`
 	Hash    string `json:"hash"`
+	// Held is when the file was first held as half saved (unix ms; engine.go
+	// halfSaved), while it stays empty.
+	Held int64 `json:"held,omitempty"`
 }
 
 // NewState makes the state of a new vault with a fresh device id.
