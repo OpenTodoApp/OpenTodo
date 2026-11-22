@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { compressDist } from './compress-dist.mjs'
 
 describe('compressDist', () => {
-  it('writes a copy for a compressible file of 1 KiB or more that shrinks, and only then', () => {
+  it('replaces a compressible file of 1 KiB or more that shrinks by its gzip form, and only that', () => {
     const dist = mkdtempSync(path.join(tmpdir(), 'compress-dist-'))
     mkdirSync(path.join(dist, 'assets'))
     const big = 'const a = 1;\n'.repeat(200)
@@ -22,9 +22,13 @@ describe('compressDist', () => {
     expect(res.files).toBe(4)
     for (const p of ['assets/main-a1.js', 'assets/main-a1.css', 'assets/icon-b2.svg', 'assets/CREDITS-c3.md']) {
       expect(gunzipSync(readFileSync(path.join(dist, p + '.gz'))).toString()).toBe(big)
+      expect(existsSync(path.join(dist, p))).toBe(false) // one form only
     }
     // Too small, not a compressible type, does not shrink enough, or outside assets/.
-    for (const p of ['assets/tiny-d4.js', 'assets/font-e5.woff2', 'assets/noise-f6.js', 'index.html']) expect(existsSync(path.join(dist, p + '.gz'))).toBe(false)
+    for (const p of ['assets/tiny-d4.js', 'assets/font-e5.woff2', 'assets/noise-f6.js', 'index.html']) {
+      expect(existsSync(path.join(dist, p + '.gz'))).toBe(false)
+      expect(existsSync(path.join(dist, p))).toBe(true)
+    }
     expect(res.packed).toBeLessThan(res.raw)
   })
 })

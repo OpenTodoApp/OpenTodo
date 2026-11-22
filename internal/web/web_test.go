@@ -210,6 +210,7 @@ func TestCompressedAssets(t *testing.T) {
 		"assets/main-a1.js":    {Data: js},
 		"assets/main-a1.js.gz": {Data: gz.Bytes()},
 		"assets/font-b2.woff2": {Data: []byte("font")},
+		"assets/only-c3.js.gz": {Data: gz.Bytes()},
 	}
 	h := handlerFor(sub, Options{})
 	get := func(method, target string, hdr map[string]string) *httptest.ResponseRecorder {
@@ -282,5 +283,36 @@ func TestCompressedAssets(t *testing.T) {
 	}
 	if rec := get(http.MethodGet, "/assets/font-b2.woff2", map[string]string{"Accept-Encoding": "gzip"}); rec.Header().Get("Content-Encoding") != "" || rec.Header().Get("Vary") != "" {
 		t.Errorf("no copy: encoding %q, vary %q", rec.Header().Get("Content-Encoding"), rec.Header().Get("Vary"))
+	}
+
+	// A file the build keeps only compressed: the copy for gzip, else the decoded bytes.
+	if rec := get(http.MethodGet, "/assets/only-c3.js", map[string]string{"Accept-Encoding": "gzip"}); rec.Header().Get("Content-Encoding") != "gzip" || !bytes.Equal(rec.Body.Bytes(), gz.Bytes()) {
+		t.Errorf("gzip-only, gzip: encoding %q", rec.Header().Get("Content-Encoding"))
+	}
+	plain := get(http.MethodGet, "/assets/only-c3.js", nil)
+	if plain.Code != http.StatusOK || plain.Header().Get("Content-Encoding") != "" || !bytes.Equal(plain.Body.Bytes(), js) {
+		t.Errorf("gzip-only, no gzip: %d %q, body is the file: %v", plain.Code, plain.Header().Get("Content-Encoding"), bytes.Equal(plain.Body.Bytes(), js))
+	}
+	for k, want := range map[string]string{
+		"Content-Type":  "text/javascript; charset=utf-8",
+		"Vary":          "Accept-Encoding",
+		"Cache-Control": "public, max-age=31536000, immutable, no-transform",
+	} {
+		if got := plain.Header().Get(k); got != want {
+			t.Errorf("gzip-only, no gzip: %s = %q, want %q", k, got, want)
+		}
+	}
+	part := get(http.MethodGet, "/assets/only-c3.js", map[string]string{"Accept-Encoding": "gzip", "Range": "bytes=0-9"})
+	if part.Code != http.StatusPartialContent || !bytes.Equal(part.Body.Bytes(), js[:10]) || part.Header().Get("Content-Encoding") != "" {
+		t.Errorf("gzip-only, a byte range: %d %q", part.Code, part.Body.String())
+	}
+	if head := get(http.MethodHead, "/assets/only-c3.js", nil); head.Code != http.StatusOK || head.Body.Len() != 0 || head.Header().Get("Content-Length") != strconv.Itoa(len(js)) {
+		t.Errorf("gzip-only, HEAD: %d, %d bytes, length %q", head.Code, head.Body.Len(), head.Header().Get("Content-Length"))
+	}
+	// The compressed form is not a file of its own.
+	for _, target := range []string{"/assets/only-c3.js.gz", "/assets/main-a1.js.gz"} {
+		if rec := get(http.MethodGet, target, map[string]string{"Accept-Encoding": "gzip"}); rec.Code != http.StatusNotFound {
+			t.Errorf("%s: %d, want 404", target, rec.Code)
+		}
 	}
 }

@@ -1,6 +1,7 @@
 package websign
 
 import (
+	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -46,8 +47,32 @@ func HashFile(fsys fs.FS, name string) (string, int64, error) {
 		return "", 0, err
 	}
 	defer f.Close()
+	return hashReader(f)
+}
+
+// GzipSuffix marks a build's compressed form of a file (OpenSpec change
+// compressed-static-assets): assets/x.js.gz stands for assets/x.js, which the
+// build may leave out. It is checked as the file it decodes to, never listed.
+const GzipSuffix = ".gz"
+
+// hashGzip returns the SHA-256 and size of what a compressed form decodes to.
+func hashGzip(fsys fs.FS, name string) (string, int64, error) {
+	f, err := fsys.Open(name)
+	if err != nil {
+		return "", 0, err
+	}
+	defer f.Close()
+	zr, err := gzip.NewReader(f)
+	if err != nil {
+		return "", 0, err
+	}
+	defer zr.Close()
+	return hashReader(zr)
+}
+
+func hashReader(r io.Reader) (string, int64, error) {
 	h := sha256.New()
-	n, err := io.Copy(h, f)
+	n, err := io.Copy(h, r)
 	if err != nil {
 		return "", 0, err
 	}
@@ -55,8 +80,10 @@ func HashFile(fsys fs.FS, name string) (string, int64, error) {
 }
 
 // CheckFS compares a built web app with its manifest: every listed file
-// present with its size and hash, the worker's hash, and no file left out.
-// The problems are sorted by path.
+// present with its size and hash, the worker's hash, and no file left out. A
+// compressed form (GzipSuffix) counts as the file it decodes to: in place of a
+// file the build left out, or beside it, where it must decode to the same bytes.
+// One that does not decode is a changed file. The problems are sorted by path.
 func CheckFS(fsys fs.FS, m *Manifest) ([]Problem, error) {
 	var problems []Problem
 	seen := map[string]bool{}
@@ -64,18 +91,26 @@ func CheckFS(fsys fs.FS, m *Manifest) ([]Problem, error) {
 		if err != nil {
 			return err
 		}
-		if d.IsDir() || !Listed(p) {
+		name, compressed := p, strings.HasSuffix(p, GzipSuffix)
+		hash := HashFile
+		if compressed {
+			name, hash = strings.TrimSuffix(p, GzipSuffix), hashGzip
+		}
+		if d.IsDir() || !Listed(name) {
 			return nil
 		}
-		seen[p] = true
-		want, ok := m.Files[p]
+		seen[name] = true
+		want, ok := m.Files[name]
 		if !ok {
-			problems = append(problems, Problem{p, "unlisted-file"})
+			problems = append(problems, Problem{name, "unlisted-file"})
 			return nil
 		}
-		sum, size, err := HashFile(fsys, p)
+		sum, size, err := hash(fsys, p)
 		if err != nil {
-			return err
+			if !compressed {
+				return err
+			}
+			sum, size = "", -1 // not gzip: it cannot be the listed file
 		}
 		if sum != want.SHA256 || size != want.Size {
 			problems = append(problems, Problem{p, "changed-file"})

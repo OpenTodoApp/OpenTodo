@@ -3,13 +3,16 @@ package web
 
 import (
 	"bytes"
+	"compress/gzip"
 	"embed"
+	"io"
 	"io/fs"
 	"mime"
 	"net/http"
 	"path"
 	"strconv"
 	"strings"
+	"time"
 )
 
 //go:embed all:dist
@@ -69,6 +72,12 @@ func handlerFor(sub fs.FS, o Options) http.Handler {
 			}
 			return
 		}
+		// A compressed form is how a file travels, not a file of its own
+		// (compressed-static-assets): asked for by name, it does not exist.
+		if strings.HasSuffix(p, gzipSuffix) {
+			http.NotFound(w, r)
+			return
+		}
 		if p != "" {
 			if f, err := sub.Open(p); err == nil {
 				stat, statErr := f.Stat()
@@ -98,6 +107,17 @@ func handlerFor(sub fs.FS, o Options) http.Handler {
 				}
 			}
 		}
+		// A file the build keeps only compressed (compressed-static-assets D1).
+		if strings.HasPrefix(p, "assets/") {
+			if gz, err := fs.ReadFile(sub, p+gzipSuffix); err == nil {
+				w.Header().Set("Cache-Control", "public, max-age=31536000, immutable, no-transform")
+				if strings.HasSuffix(p, ".md") {
+					w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+				}
+				serveGzipOnly(w, r, p, gz)
+				return
+			}
+		}
 		// A missing file is a 404, never the page: a tab still running the previous
 		// release asks for its old chunks, and an HTML answer to a script request
 		// fails in ways the app cannot tell from being offline. Only extension-less
@@ -117,20 +137,56 @@ func handlerFor(sub fs.FS, o Options) http.Handler {
 	})
 }
 
-// serveCompressed answers with the build's gzip copy of p (OpenSpec change
-// compressed-static-assets, D2) when there is one, the request accepts gzip and asks
-// for the whole file, and reports whether it did. Every answer for a file with a
-// copy says Vary: Accept-Encoding, so a shared cache keeps the two forms apart. The
-// browser decodes the copy back to the file the signed list names (D3).
+// gzipSuffix marks a build's compressed form of a file.
+const gzipSuffix = ".gz"
+
+// wantsGzip reports whether the compressed form answers r: the client accepts gzip
+// and asks for the whole file, not a byte range of it (compressed-static-assets D2).
+func wantsGzip(r *http.Request) bool {
+	return r.Header.Get("Range") == "" && acceptsGzip(r.Header.Values("Accept-Encoding"))
+}
+
+// serveCompressed answers with the gzip form of p when the build wrote one beside
+// it and the request wants it, and reports whether it did. Every answer for a file
+// with a compressed form says Vary: Accept-Encoding, so a shared cache keeps the two
+// apart. The browser decodes it back to the file the signed list names (D3).
 func serveCompressed(w http.ResponseWriter, r *http.Request, sub fs.FS, p string) bool {
-	gz, err := fs.ReadFile(sub, p+".gz")
+	gz, err := fs.ReadFile(sub, p+gzipSuffix)
 	if err != nil {
 		return false
 	}
 	w.Header().Add("Vary", "Accept-Encoding")
-	if r.Header.Get("Range") != "" || !acceptsGzip(r.Header.Values("Accept-Encoding")) {
+	if !wantsGzip(r) {
 		return false
 	}
+	writeGzip(w, r, p, gz)
+	return true
+}
+
+// serveGzipOnly answers for p, which the build keeps only as gz: the compressed
+// form when the request wants it, else the bytes it decodes to, through
+// http.ServeContent, which answers a Range and a HEAD (D1, D2).
+func serveGzipOnly(w http.ResponseWriter, r *http.Request, p string, gz []byte) {
+	w.Header().Add("Vary", "Accept-Encoding")
+	if wantsGzip(r) {
+		writeGzip(w, r, p, gz)
+		return
+	}
+	zr, err := gzip.NewReader(bytes.NewReader(gz))
+	if err != nil {
+		http.Error(w, "broken build file", http.StatusInternalServerError)
+		return
+	}
+	raw, err := io.ReadAll(zr)
+	if err != nil {
+		http.Error(w, "broken build file", http.StatusInternalServerError)
+		return
+	}
+	http.ServeContent(w, r, p, time.Time{}, bytes.NewReader(raw))
+}
+
+// writeGzip sends gz, the compressed form of p, with Content-Encoding: gzip and p's own type.
+func writeGzip(w http.ResponseWriter, r *http.Request, p string, gz []byte) {
 	h := w.Header()
 	if h.Get("Content-Type") == "" {
 		ct := mime.TypeByExtension(path.Ext(p))
@@ -145,7 +201,6 @@ func serveCompressed(w http.ResponseWriter, r *http.Request, sub fs.FS, p string
 	if r.Method != http.MethodHead {
 		w.Write(gz)
 	}
-	return true
 }
 
 // acceptsGzip reports whether Accept-Encoding allows gzip: named (or as x-gzip), or

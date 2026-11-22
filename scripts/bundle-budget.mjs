@@ -14,7 +14,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, posix } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { gzipSync } from 'node:zlib'
+import { gunzipSync, gzipSync } from 'node:zlib'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DIST = join(ROOT, 'internal/web/dist')
@@ -26,17 +26,22 @@ export function staticImports(code) {
   return [...out]
 }
 
+/** A built file, read through its gzip form when the build kept only that (compressed-static-assets). */
+function readBuilt(file) {
+  return existsSync(file) || !existsSync(file + '.gz') ? readFileSync(file) : gunzipSync(readFileSync(file + '.gz'))
+}
+
 /** The entry chunk, its static closure and their gzip sizes, in bytes. */
 export function measure(dist = DIST) {
   const html = readFileSync(join(dist, 'index.html'), 'utf8')
   const entry = /<script type="module"[^>]*\ssrc="\/([^"]+)"/.exec(html)?.[1]
   if (!entry) throw new Error('index.html has no module entry: build the web app first (make web)')
-  const gz = (rel) => gzipSync(readFileSync(join(dist, rel)), { level: 9 }).length
+  const gz = (rel) => gzipSync(readBuilt(join(dist, rel)), { level: 9 }).length
   const seen = new Set([entry])
   const queue = [entry]
   while (queue.length) {
     const rel = queue.shift()
-    for (const imp of staticImports(readFileSync(join(dist, rel), 'utf8'))) {
+    for (const imp of staticImports(readBuilt(join(dist, rel)).toString('utf8'))) {
       const next = posix.normalize(posix.join(posix.dirname(rel), imp))
       if (!seen.has(next)) { seen.add(next); queue.push(next) }
     }

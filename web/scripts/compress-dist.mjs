@@ -1,10 +1,11 @@
-// Gzip copies of the web app's files (OpenSpec change compressed-static-assets, D1):
-// `npm run build` runs it last, after the signed list is written. For each script,
-// style sheet, SVG or Markdown file under dist/assets of at least 1 KiB, it writes
-// <file>.gz when that is at most 90 % of the file, so the server can send it with
-// Content-Encoding: gzip and spend no CPU per request. The copies are never listed
-// or precached: the browser decodes them back to the listed bytes.
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+// The web app's compressed files (OpenSpec change compressed-static-assets, D1):
+// `npm run build` runs it last, after the signed list is written from the files as
+// built. Each script, style sheet, SVG or Markdown file under dist/assets of at
+// least 1 KiB is replaced by <file>.gz when that is at most 90 % of it: the binary
+// embeds one form only, the server sends it with Content-Encoding: gzip (and
+// decodes it for the rare client without gzip), and the browser, websign and the
+// signed list all see the bytes it decodes to.
+import { readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { constants, gzipSync } from 'node:zlib'
@@ -14,7 +15,7 @@ const TYPES = /\.(js|css|svg|md)$/
 const MIN_BYTES = 1024
 const MAX_RATIO = 0.9
 
-/** Writes the copies under dist/assets; returns the files compressed and the bytes before and after. */
+/** Replaces files under dist/assets by their gzip form; returns the files compressed and the bytes before and after. */
 export function compressDist(dist) {
   const dir = path.join(dist, 'assets')
   let files = 0, raw = 0, packed = 0
@@ -26,6 +27,7 @@ export function compressDist(dist) {
     const gz = gzipSync(body, { level: constants.Z_BEST_COMPRESSION })
     if (gz.length > body.length * MAX_RATIO) continue
     writeFileSync(file + '.gz', gz)
+    unlinkSync(file)
     files++; raw += body.length; packed += gz.length
   }
   return { files, raw, packed }
