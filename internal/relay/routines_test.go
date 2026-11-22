@@ -82,6 +82,38 @@ func TestSendRoutineToSuitableDevice(t *testing.T) {
 	}
 }
 
+// A run that fired as the stream opened is queued on it once, though the
+// dispatch on open sends it again; a new stream of the same device gets it
+// again (the old one may have closed unread).
+func TestSendRoutineOncePerStream(t *testing.T) {
+	h := NewHub()
+	d := newFakeDevice(t)
+	roles := Roles{Routines: true, Caps: []string{CapRoutines}}
+	s1, _ := h.OpenWith("u1", "laptop", "s1", d.pub(), roles)
+	d.connect(t, s1)
+	for range 2 {
+		sent, err := h.SendRoutine("u1", false, "laptop", RoutineRun{RuleID: "r", RunID: "run1"})
+		if err != nil || sent.DeviceID != "laptop" || sent.SessionHash != "s1" {
+			t.Fatalf("sent %+v %v", sent, err)
+		}
+	}
+	openRoutine(t, d, <-s1.Events())
+	select {
+	case ev := <-s1.Events():
+		t.Fatalf("queued twice: %+v", ev)
+	default:
+	}
+	d2 := newFakeDevice(t)
+	s2, _ := h.OpenWith("u1", "laptop", "s1", d2.pub(), roles)
+	d2.connect(t, s2)
+	if _, err := h.SendRoutine("u1", false, "laptop", RoutineRun{RuleID: "r", RunID: "run1"}); err != nil {
+		t.Fatal(err)
+	}
+	if r := openRoutine(t, d2, <-s2.Events()); r.RunID != "run1" {
+		t.Fatalf("request %+v", r)
+	}
+}
+
 func TestRoutinesOptIn(t *testing.T) {
 	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {

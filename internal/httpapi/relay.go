@@ -264,7 +264,6 @@ func (s *Server) handleRelayEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer s.streams.release(ip)
-	opened := s.now()
 	st, err := s.relayHub.OpenWith(uid, device, sess.TokenHash, pub, roles)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_input", "key: not a P-256 public key")
@@ -289,7 +288,7 @@ func (s *Server) handleRelayEvents(w http.ResponseWriter, r *http.Request) {
 	}
 	if roles.Routines && slices.Contains(roles.Caps, relay.CapRoutines) {
 		// The runs that waited for a device go to this one (D9).
-		go s.rules.DispatchWaiting(context.WithoutCancel(ctx), uid, device, sess.TokenHash, opened)
+		go s.rules.DispatchWaiting(context.WithoutCancel(ctx), uid, device)
 	}
 	ticker := time.NewTicker(heartbeatInterval)
 	defer ticker.Stop()

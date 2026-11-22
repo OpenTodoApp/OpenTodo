@@ -149,12 +149,11 @@ func (s *Store) bindDevice(ctx context.Context, runID, device, session, rev stri
 // waitingRun is a run waiting for a device.
 type waitingRun struct {
 	runID, ruleID, device, session, rev string
-	dispatched                          int64 // unix ms, 0 when never sent
 }
 
 // waiting lists a user's waiting runs (one per routine, D9).
 func (s *Store) waiting(ctx context.Context, uid string) ([]waitingRun, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT run_id, rule_id, device_id, device_session, device_rev, dispatched_at FROM rule_runs WHERE user_id = ? AND outcome = ? ORDER BY at, id`, uid, OutcomeWaiting)
+	rows, err := s.db.QueryContext(ctx, `SELECT run_id, rule_id, device_id, device_session, device_rev FROM rule_runs WHERE user_id = ? AND outcome = ? ORDER BY at, id`, uid, OutcomeWaiting)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +161,7 @@ func (s *Store) waiting(ctx context.Context, uid string) ([]waitingRun, error) {
 	var out []waitingRun
 	for rows.Next() {
 		var w waitingRun
-		if err := rows.Scan(&w.runID, &w.ruleID, &w.device, &w.session, &w.rev, &w.dispatched); err != nil {
+		if err := rows.Scan(&w.runID, &w.ruleID, &w.device, &w.session, &w.rev); err != nil {
 			return nil, err
 		}
 		out = append(out, w)
@@ -179,11 +178,8 @@ func (s *Store) waitingOne(ctx context.Context, uid, runID string) (waitingRun, 
 }
 
 // DispatchWaiting sends a user's waiting runs to a device whose routines
-// stream just opened, from session at opened (D9): the runs not with another
-// online device, and not already sent to this stream (a run that fired as it
-// opened). A run sent to the session before opened went to an earlier stream,
-// which may have closed before the device read it: it is sent again.
-func (e *Engine) DispatchWaiting(ctx context.Context, uid, device, session string, opened time.Time) {
+// stream just opened (D9): the runs not with another online device.
+func (e *Engine) DispatchWaiting(ctx context.Context, uid, device string) {
 	e.work.Lock()
 	defer e.work.Unlock()
 	list, err := e.Store.waiting(ctx, uid)
@@ -193,9 +189,6 @@ func (e *Engine) DispatchWaiting(ctx context.Context, uid, device, session strin
 	}
 	for _, w := range list {
 		if w.device != "" && w.device != device && e.Devices != nil && e.Devices.Online(uid, w.device) {
-			continue
-		}
-		if w.device == device && w.session == session && w.dispatched >= opened.UnixMilli() {
 			continue
 		}
 		r, err := e.findRule(ctx, uid, w.ruleID)

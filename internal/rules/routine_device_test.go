@@ -151,7 +151,7 @@ func TestDeviceRunWaiting(t *testing.T) {
 	}
 	// The laptop opens: it gets the Saturday occurrence.
 	d.online = []string{"laptop"}
-	h.e.DispatchWaiting(h.ctx, "alice", "laptop", "sess-laptop", h.clock)
+	h.e.DispatchWaiting(h.ctx, "alice", "laptop")
 	if len(d.sent) != 1 || d.sent[0].RunID != saturday.Run.RunID {
 		t.Fatalf("sent %+v", d.sent)
 	}
@@ -317,29 +317,5 @@ func TestDeviceRunNothingAndFired(t *testing.T) {
 	}
 	if len(h.sink.calls) == 0 || h.sink.calls[len(h.sink.calls)-1].kind != "fired" {
 		t.Fatalf("no fired notice: %+v", h.sink.calls)
-	}
-}
-
-// A run that fired while the laptop's stream was opening went to that stream:
-// the dispatch on open does not send it a second time. A run sent to an
-// earlier stream of the same session (it may have closed unread) is sent again.
-func TestDispatchWaitingSkipsRunsSentToThisStream(t *testing.T) {
-	h, d := deviceHarness(t)
-	d.online = []string{"laptop"}
-	h.routine("alice", "g", "Groceries", `{"kind":"manual"}`, "", groceries)
-	opened := h.clock
-	h.runNow("alice", "g", "", false)
-	if len(d.sent) != 1 {
-		t.Fatalf("sent %+v", d.sent)
-	}
-	h.e.DispatchWaiting(h.ctx, "alice", "laptop", "sess-laptop", opened)
-	if len(d.sent) != 1 {
-		t.Fatalf("sent twice to one stream: %+v", d.sent)
-	}
-	// The stream drops; the laptop reconnects from the same session later.
-	h.clock = h.clock.Add(time.Minute)
-	h.e.DispatchWaiting(h.ctx, "alice", "laptop", "sess-laptop", h.clock)
-	if len(d.sent) != 2 || d.sent[1].RunID != d.sent[0].RunID {
-		t.Fatalf("not sent again to the new stream: %+v", d.sent)
 	}
 }

@@ -79,17 +79,36 @@ func (h *Hub) SendRoutine(userID string, needAI bool, prefer string, run Routine
 	run.Op = OpRoutineRun
 	h.mu.Lock()
 	s := h.pickRoutines(userID, needAI, prefer)
+	queued := s != nil && s.runs[run.RunID]
+	if s != nil && !queued {
+		if s.runs == nil {
+			s.runs = map[string]bool{}
+		}
+		s.runs[run.RunID] = true
+	}
 	h.mu.Unlock()
 	if s == nil {
 		return Sent{}, ErrNoDevice
 	}
+	// A run this stream already has (it fired as the stream opened, and the
+	// dispatch on open sends it again) is not queued a second time.
+	if queued {
+		return Sent{DeviceID: s.DeviceID, SessionHash: s.SessionHash}, nil
+	}
+	unqueue := func() {
+		h.mu.Lock()
+		delete(s.runs, run.RunID)
+		h.mu.Unlock()
+	}
 	raw, err := json.Marshal(run)
 	if err != nil {
+		unqueue()
 		return Sent{}, err
 	}
 	// The run id is the additional data: a box cannot be replayed as another run.
 	box, err := s.key.seal(raw, run.RunID)
 	if err != nil {
+		unqueue()
 		return Sent{}, err
 	}
 	data, _ := json.Marshal(map[string]string{"id": run.RunID, "box": box})
@@ -97,8 +116,8 @@ func (h *Hub) SendRoutine(userID string, needAI bool, prefer string, run Routine
 	case s.events <- Event{Name: "routine", Data: string(data)}:
 		return Sent{DeviceID: s.DeviceID, SessionHash: s.SessionHash}, nil
 	case <-s.done:
-		return Sent{}, ErrNoDevice
 	default:
-		return Sent{}, ErrNoDevice
 	}
+	unqueue()
+	return Sent{}, ErrNoDevice
 }
