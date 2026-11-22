@@ -849,3 +849,38 @@ func TestInvalidOpRefusedAlone(t *testing.T) {
 		t.Errorf("next sync not idle: %+v", rep)
 	}
 }
+
+// vault-file-keeps-project: a file at a path the vault knows that lost its
+// front matter stays its project's file; its colour and icon stay, and the
+// front matter is written back.
+func TestFrontMatterDeletedKeepsTheProject(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home", "color": "#22c55e", "icon": "house"})
+	s.create("tasks", map[string]any{"title": "Fix the lamp", "project_id": home})
+	v := s.vault(t)
+	text := v.read(t, "Home.md")
+	end := strings.Index(text[3:], "\n---\n")
+	if !strings.HasPrefix(text, "---\n") || end < 0 {
+		t.Fatalf("no front matter:\n%s", text)
+	}
+	v.write(t, "Home.md", strings.TrimLeft(text[3+end+5:], "\n")+"- [ ] Oil the hinge\n")
+	rep := v.sync(t)
+	if rep.Created != 1 {
+		t.Fatalf("report %+v", rep)
+	}
+	projects := s.list("projects")
+	if len(projects) != 1 {
+		t.Fatalf("%d projects, want 1: %+v", len(projects), projects)
+	}
+	if p := s.get("projects", home); p["color"] != "#22c55e" || p["icon"] != "house" {
+		t.Fatalf("project %+v", p)
+	}
+	for _, task := range s.list("tasks") {
+		if task["project_id"] != home || task["deleted_at"] != nil {
+			t.Fatalf("task %+v", task)
+		}
+	}
+	if got := v.read(t, "Home.md"); !strings.Contains(got, "opentodo-id: "+home) || !strings.Contains(got, "Oil the hinge") {
+		t.Fatalf("Home.md:\n%s", got)
+	}
+}

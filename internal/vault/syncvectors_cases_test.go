@@ -360,6 +360,21 @@ var vxCases = []vxDef{
 			r.sync(vxOpts{name: "work emptied"})
 			r.sync(vxOpts{name: "work still empty past the hold", advance: 6 * time.Minute})
 		}},
+	{name: "front-matter-lost", desc: "a file at a known path that lost its front matter keeps its project, colour and icon, and gets the front matter back; a file emptied on purpose trashes its tasks past the hold and keeps its project",
+		run: func(r *vxRec) {
+			r.project("p-home", "Home", map[string]any{"color": "#22c55e", "icon": "house"})
+			r.task("t-water", "Water the plants", "p-home", nil)
+			r.project("p-work", "Work", map[string]any{"position": 2000})
+			r.task("t-report", "Write the report", "p-work", nil)
+			r.sync(vxOpts{name: "init", init: true, device: "vault:vectors"})
+			text := r.read("Home.md")
+			end := strings.Index(text[3:], "\n---\n")
+			r.write("Home.md", strings.TrimLeft(text[3+end+5:], "\n")+"- [ ] Oil the hinge\n")
+			r.sync(vxOpts{name: "front matter deleted"})
+			r.write("Work.md", "")
+			r.sync(vxOpts{name: "work emptied"})
+			r.sync(vxOpts{name: "work still empty past the hold", advance: 6 * time.Minute})
+		}},
 	{name: "time-zone", desc: "completion dates and conflict times are the machine's local dates",
 		setup: func(c *vxCase) { c.Loc = "Pacific/Auckland" },
 		run: func(r *vxRec) {
