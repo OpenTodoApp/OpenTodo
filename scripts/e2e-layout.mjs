@@ -216,14 +216,24 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
     page.on('pageerror', (e) => { if (!/access control checks|Load failed|The network connection was lost|cancelled/i.test(e.message)) pageErrors.push(e.message) })
     await page.goto(base + '/inbox')
     await page.locator('[data-task-id]').first().waitFor({ timeout: 30000 })
-    run.step = 'press feedback'
-    for (const m of await pressFeedback(page)) await fail(page, 'inbox', null, `press: ${m}`)
-    run.step = 'row lift'
-    for (const m of await rowLift(page)) await fail(page, 'inbox', null, `hold: ${m}`)
-    run.step = 'touch input'
-    for (const m of await touchInput(page, base)) await fail(page, 'settings', null, `touch input: ${m}`)
-    await page.goto(base + '/inbox')
-    await page.locator('[data-task-id]').first().waitFor({ timeout: 30000 })
+    // The touch probes (mobile-native-feel): each on a page of its own, opened on the
+    // Inbox and closed after, so a press, a hold or a tap one leaves behind cannot change
+    // what the next one reads.
+    for (const [step, screen, label, probe] of [
+      ['press feedback', 'inbox', 'press', (q) => pressFeedback(q)],
+      ['row lift', 'inbox', 'hold', (q) => rowLift(q)],
+      ['touch input', 'settings', 'touch input', (q) => touchInput(q, base)],
+    ]) {
+      run.step = step
+      const q = await ctx.newPage()
+      try {
+        await q.goto(base + '/inbox')
+        await q.locator('[data-task-id]').first().waitFor({ timeout: 30000 })
+        for (const m of await probe(q)) await fail(q, screen, null, `${label}: ${m}`)
+      } finally {
+        await q.close()
+      }
+    }
     for (const s of screens(ids, base)) {
       if (ONLY && !ONLY.has(s.name)) continue
       if (s.engines && !s.engines.includes(engine)) continue
@@ -523,10 +533,9 @@ async function pressOnce(p, n) {
  */
 async function touchInput(p, base) {
   const out = []
-  // The third row, away from the two the press check uses, read once its colour has
-  // settled; it fails only on the hover colour itself (--ot-hover), drawn on a canvas so
-  // two spellings of one colour compare equal.
-  const row = p.locator('li[data-task-id]').nth(2)
+  // The first row, read once its colour has settled; it fails only on the hover colour
+  // itself (--ot-hover), drawn on a canvas so two spellings of one colour compare equal.
+  const row = p.locator('li[data-task-id]').first()
   const bg = () => row.evaluate((el) => {
     const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
     const rgba = (c) => { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = c; ctx.fillRect(0, 0, 1, 1); return ctx.getImageData(0, 0, 1, 1).data.join(',') }
@@ -579,23 +588,8 @@ async function touchInput(p, base) {
  * of type touch on the row's title, so the same code runs in every engine.
  */
 async function rowLift(p) {
-  // Rows away from the ones the press check uses, once no drag from it is in flight; a
-  // row that does not rise is tried once more on the next row, since a press check's
-  // release can still be settling on the page. The CSS failing fails both.
-  await p.locator('[data-drag-ghost]').waitFor({ state: 'detached', timeout: 5000 }).catch(() => {})
-  await p.waitForTimeout(400)
-  let out = []
-  for (const n of [3, 4]) {
-    out = await liftOnce(p, p.locator('li[data-task-id]').nth(n))
-    if (!out.some((m) => m.includes('has not risen'))) return out
-    log(`  row lift: row ${n} did not rise; ${n === 3 ? 'trying the next row' : 'reported'}`)
-  }
-  return out
-}
-
-/** One row: held for 300 ms, released, then held under reduced motion. */
-async function liftOnce(p, row) {
   const out = []
+  const row = p.locator('li[data-task-id]').first()
   const title = row.locator('[data-row-open]').first()
   if (!(await title.count())) return ['no task row to hold']
   await row.scrollIntoViewIfNeeded()
