@@ -339,6 +339,11 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       run.step = 'page transitions'
       for (const m of await pageTransitions(page, base)) await fail(page, 'page-transitions', null, m)
     }
+    // tablet-layouts 2.3: an open task and the list survive turning a tablet and split view (Chromium, 1024 px).
+    if (engine === 'chromium' && width === 1024 && !ONLY && !OTHER_LANG) {
+      run.step = 'tablet resize'
+      for (const m of await tabletResize(page, base)) await fail(page, 'tablet-resize', null, m)
+    }
     // swipe-back-follows 2.1: a touch drag from the edge of a task's page (Chromium, 390 and 768 px).
     if (engine === 'chromium' && (width === 390 || width === 768) && !ONLY && !OTHER_LANG) {
       run.step = 'swipe back'
@@ -416,6 +421,40 @@ async function pageTransitions(p, base) {
     problems.push(`could not be checked: ${e.message.split('\n')[0]}`)
   } finally {
     await p.emulateMedia({ reducedMotion: 'no-preference' }).catch(() => {})
+  }
+  return problems
+}
+
+// tablet-layouts D3: a task opened from the Inbox stays open while the window changes
+// size (an iPad turned, a split view, Stage Manager): docked from 900 px, a sheet over
+// the list below, the list still there and its scroll position kept. Returns the problems.
+async function tabletResize(p, base) {
+  const problems = []
+  const start = p.viewportSize()
+  try {
+    await openScreen(p, base + '/inbox')
+    const row = p.locator('[data-task-id]').filter({ hasText: 'Sand the boards' }).first()
+    await row.waitFor()
+    await row.locator('[data-row-open]').click()
+    const id = await row.getAttribute('data-task-id')
+    await p.locator(`[data-detail-for="${id}"]`).first().waitFor({ timeout: 10000 })
+    const scroll = await p.evaluate(() => document.getElementById('content')?.scrollTop ?? 0)
+    for (const [width, height] of [[1180, 820], [820, 1180], [678, 900], [1024, 768]]) {
+      await p.setViewportSize({ width, height })
+      await p.waitForTimeout(500)
+      const s = await p.evaluate((id) => ({
+        task: new URLSearchParams(location.search).get('task'), page: location.pathname,
+        detail: !!document.querySelector(`[data-detail-for="${id}"]`), list: !!document.querySelector('[data-list-page]'),
+        scroll: document.getElementById('content')?.scrollTop ?? 0,
+      }), id)
+      if (s.task !== id || !s.detail) problems.push(`at ${width} px the open task closed (${s.page}?task=${s.task})`)
+      if (!s.list) problems.push(`at ${width} px the list left the screen`)
+      if (Math.abs(s.scroll - scroll) > 1) problems.push(`at ${width} px the list scrolled from ${scroll} to ${s.scroll}`)
+    }
+  } catch (err) {
+    problems.push(`could not be checked: ${err.message.split('\n')[0]}`)
+  } finally {
+    await p.setViewportSize(start)
   }
   return problems
 }
