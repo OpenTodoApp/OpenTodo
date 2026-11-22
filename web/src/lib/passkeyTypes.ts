@@ -1,7 +1,6 @@
 // The JSON the server and the browser exchange for passkeys (OpenSpec change
-// `passkeys`): every binary field a base64url string. Types only, so lib/api.ts,
-// which the native app shares (native-app-foundation D2), names them without
-// lib/passkeys.ts and its browser credential API.
+// `passkeys`): every binary field a base64url string. Types only, so lib/api.ts
+// names them without lib/passkeys.ts and its browser credential API.
 
 /** Server-sent creation options (PublicKeyCredentialCreationOptionsJSON). */
 export interface CreationOptionsJSON {

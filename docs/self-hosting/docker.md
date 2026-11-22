@@ -281,9 +281,9 @@ Any version from 0.1.0 on upgrades directly to the latest one, with no version i
 
 The project moved from the GitHub account `pixari` to the organization [OpenTodoApp](https://github.com/OpenTodoApp) after 0.14.2. The image is now **`ghcr.io/opentodoapp/opentodo`** (the Helm chart `oci://ghcr.io/opentodoapp/charts/opentodo`), with the same tags: `stable`, `<major>.<minor>`, `<version>` and `latest`. GitHub redirects the old repository addresses; the container registry does not.
 
-The old name `ghcr.io/pixari/opentodo` (and `oci://ghcr.io/pixari/charts/opentodo`) keeps getting every image and chart, with the same digests and signed, **through the 0.16 releases**. From 0.17.0 it is no longer updated, so switch before then: replace `ghcr.io/pixari/opentodo` with `ghcr.io/opentodoapp/opentodo` in your `docker-compose.yml`, `docker run` command, Quadlet file or platform template, then pull as usual. Nothing else changes: same tags, same data volume, same configuration. Releases up to 0.14.2 were published under the old name only; 0.14.2 was copied to the new one with the same digest, so a pin such as `ghcr.io/pixari/opentodo:0.14.2@sha256:…` can move to the new name unchanged.
+The old name `ghcr.io/pixari/opentodo` (and `oci://ghcr.io/pixari/charts/opentodo`) got every image and chart, with the same digests and signed, **through 0.16.0**. It is no longer updated, so switch if you still use it: replace `ghcr.io/pixari/opentodo` with `ghcr.io/opentodoapp/opentodo` in your `docker-compose.yml`, `docker run` command, Quadlet file or platform template, then pull as usual. Nothing else changes: same tags, same data volume, same configuration. Releases up to 0.14.2 were published under the old name only; 0.14.2 was copied to the new one with the same digest, so a pin such as `ghcr.io/pixari/opentodo:0.14.2@sha256:…` can move to the new name unchanged.
 
-For maintainers: the CI jobs that publish the image (`docker` in `ci.yml`), the `Promote stable` workflow and the Helm chart publish also push to the old names with `scripts/legacy-image.sh`. Packages owned by the user `pixari` may refuse the organization's `GITHUB_TOKEN`; the repository secret `GHCR_LEGACY_TOKEN`, a classic personal access token of `pixari` with the `write:packages` scope, is used when it is set. A refused legacy push prints a warning and never fails a release. The window is `legacy.publishedThrough` in [`deploy/deploy.json`](../../deploy/deploy.json).
+For maintainers: CI publishes only under the new names. `Promote stable` still copies a release from before the move (0.14.2 and earlier) from the old name to the new one first, with the same digest and signatures. The old names and the window are `legacy` in [`deploy/deploy.json`](../../deploy/deploy.json).
 
 ## Verifying the image and downloads
 
@@ -295,7 +295,7 @@ cosign verify ghcr.io/opentodoapp/opentodo:<version> \
   --certificate-identity-regexp '^https://github\.com/(?i:OpenTodoApp/OpenTodo|pixari/OpenTodo)/\.github/workflows/ci\.yml@refs/(tags/v|heads/main)'
 ```
 
-Releases up to 0.14.2 were built before [the move to OpenTodoApp](#the-move-to-opentodoapp) and their signatures name `pixari/OpenTodo`; the expression accepts both. The same command works on `ghcr.io/pixari/opentodo:<version>` while that name is still updated.
+Releases up to 0.14.2 were built before [the move to OpenTodoApp](#the-move-to-opentodoapp) and their signatures name `pixari/OpenTodo`; the expression accepts both. The same command works on `ghcr.io/pixari/opentodo:<version>` for the releases published there.
 
 The image also carries a software bill of materials (SBOM) and SLSA build provenance. To read them:
 

@@ -293,20 +293,6 @@ The phone apps stay web-view shells and are made to feel like apps, in the order
 
 Push to the iPhone app needs a relay the project would run, or an app signed by whoever runs the server; not planned.
 
-### Native app
-
-**Paused (2026-11-13).** The phone apps stay web-view shells, made to feel native ([`mobile/AUDIT.md`](mobile/AUDIT.md)). The work below is kept, not scheduled.
-
-A phone app drawn with the platform's own views, replacing the web-view shells that testers found disappointing. It is built with React Native in `mobile/app/`, runs the web app's shared sync, encryption and parsing code, and is built and published by CI without Xcode. Its CI runs only when the app or a shared module it imports changes, so the web app's pipeline stays as fast as it is.
-
-| Change | What | Issues |
-| --- | --- | --- |
-| [`native-app-foundation`](openspec/changes/native-app-foundation/) | The app's place in the repo, a platform port for the shared code, local storage chosen by measurement, sign-in through the system browser, sync, lean CI lanes and an "OpenTodo Preview" in TestFlight next to the current app | [#600](https://github.com/OpenTodoApp/OpenTodo/issues/600) |
-| [`native-app-everyday`](openspec/changes/native-app-everyday/) | Five tabs, native lists with swipe and long-press, capture with the keyboard up at once, task detail, native pickers, Browse, Search, passphrase unlock, Android conventions | |
-| [`native-app-handover`](openspec/changes/native-app-handover/) | Widget, share, reminders with actions, background refresh, biometric unlock, iPad split view, Google Play and F-Droid; then a go/no-go gate and the switch from the shells | [#603](https://github.com/OpenTodoApp/OpenTodo/issues/603) |
-
-In order. No op field changes; the server gains only app sign-in.
-
 ## Shipped
 
 ### 1. Core engine and architecture

@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// Signed-in apps (OpenSpec change native-app-foundation, design D5). The
+// Signed-in apps (OpenSpec change app-sign-in). The
 // OpenTodo app's grants live in app_sign_in_grant (internal/mcpoauth); their
 // access tokens are API tokens of the `app` scope. Ending every session of an
 // account ends them too.

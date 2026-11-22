@@ -1,6 +1,7 @@
 // Switch and Checkbox (OpenSpec change ui-primitives, design D4). A setting that
 // applies at once is a switch (role="switch"); a choice submitted with a form is a checkbox.
 import { forwardRef, useEffect, useImperativeHandle, useRef, type InputHTMLAttributes, type ReactNode } from 'react'
+import { selectionHaptic, useTouchPress } from './touchPress'
 
 export interface SwitchProps {
   checked: boolean
@@ -16,6 +17,7 @@ export interface SwitchProps {
 }
 
 export function Switch({ checked, onChange, label, description, disabled, hideLabel, id, describedBy }: SwitchProps) {
+  const press = useTouchPress()
   return (
     <label className={`inline-flex items-start gap-3 ${disabled ? '' : 'cursor-pointer'}`}>
       {/* precision-settings D4: a 32 × 18 px track inside the button, so a touch screen's
@@ -27,7 +29,8 @@ export function Switch({ checked, onChange, label, description, disabled, hideLa
         aria-checked={checked}
         aria-describedby={describedBy}
         disabled={disabled}
-        onClick={() => onChange(!checked)}
+        onPointerDown={press.down}
+        onClick={() => { if (press.byTouch()) selectionHaptic(); onChange(!checked) }}
         data-switch
         className="mt-px inline-flex shrink-0 items-center justify-center rounded-full
           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-50"

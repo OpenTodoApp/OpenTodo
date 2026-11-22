@@ -1,0 +1,1 @@
+- **Tap the status bar to scroll to the top in the iPhone app.** As in other iPhone apps, a tap on the status bar scrolls the list, the note or the calendar back to its top, or the open sheet or panel if there is one.

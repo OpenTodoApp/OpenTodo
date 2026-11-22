@@ -1214,6 +1214,13 @@ Today and Upcoming SHALL draw nothing below the shell until everything their bri
 - **WHEN** Today is open and a sync brings a new unread reply
 - **THEN** the briefing names it, as before
 
+### Requirement: A row rises while it is held
+On a touch device, a task row or sidebar row held for a long press SHALL visibly rise towards its dragged look before the drag starts, and SHALL settle back when the finger lifts early. Under reduced motion it SHALL only show the hold tint. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: An early release
+- **WHEN** a person holds a row for 250 ms and lifts the finger
+- **THEN** the row settles back and no drag starts
+
 ### Requirement: Separators between task groups
 
 The main on-screen task lists in built-in views, projects, labels, and saved and ad hoc filters SHALL draw a decorative hairline in the theme's soft border colour between adjacent visible top-level task groups in One line and Detailed. Within each list section, a top-level task and its visible descendants SHALL form one group. The first group in a section, rows within a group, and rows on phones or in narrow panes SHALL have no separator. The hairline SHALL follow the actual task row width, add no space or focus target, and require no user setting.

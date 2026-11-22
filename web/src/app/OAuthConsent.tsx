@@ -52,7 +52,7 @@ export function OAuthConsentView({ info, busy, onAllow, onDeny, workspaces = [],
 
 /**
  * The consent for the request `query` describes: the OpenTodo app's built-in
- * client gets its sign-in confirmation (native-app-foundation D5), every other
+ * client gets its sign-in confirmation (app-sign-in), every other
  * client the MCP consent.
  */
 export function OAuthConsent({ query, onDone }: { query: string; onDone: () => void }) {

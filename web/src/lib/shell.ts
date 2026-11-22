@@ -3,8 +3,7 @@
 // server's origin only. Everything here is optional: outside a shell `shell()` is
 // null and every caller keeps today's browser behaviour. A method the shell does not
 // list in `capabilities` is never called, so an older shell keeps working for the
-// capabilities both sides know. The bridge comes from the platform port
-// (native-app-foundation D3): the native app has no web view and no bridge.
+// capabilities both sides know. The bridge comes from the platform port.
 import { platform } from './platform'
 
 /** The bridge version this web app speaks. */
@@ -13,7 +12,7 @@ export const BRIDGE_VERSION = 1
 /** The oldest shell app version this web app expects (bumped when a shell bug needs a forced update). */
 export const MIN_SHELL_APP = '0.10.0'
 
-export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'completion-sound' | 'alarm-settings' | 'background' | 'pull-refresh' | 'push' | 'app-links'
+export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'completion-sound' | 'alarm-settings' | 'background' | 'pull-refresh' | 'push' | 'app-links' | 'scroll-top'
 
 /**
  * One location reminder handed to the shell (location-reminders D3): the circle
@@ -324,8 +323,8 @@ export function openObsidian(url: string): boolean {
   return true
 }
 
-/** The kinds of feedback a shell with `haptics` plays (shell-repairs D5). */
-export type ShellHaptic = 'tick' | 'success'
+/** The kinds of feedback a shell with `haptics` plays (shell-repairs D5, haptic-kinds D1). */
+export type ShellHaptic = 'tick' | 'success' | 'warning' | 'error' | 'selection'
 
 /** Plays `kind` through a shell that lists `haptics`. False in a browser or another shell. */
 export function shellHaptic(kind: ShellHaptic): boolean {

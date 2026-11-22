@@ -1,6 +1,6 @@
 // The OAuth authorize return (OpenSpec change mcp-oauth, design D5): a client sends
 // the browser to /oauth/authorize, or the OpenTodo app to /app/sign-in
-// (native-app-foundation D5), which need a session and therefore send a
+// (app-sign-in), which need a session and therefore send a
 // signed-out browser here with the address to come back to. Read once, before the
 // router touches the URL, and followed only when it is one of these two addresses
 // of this server — anything else is dropped.

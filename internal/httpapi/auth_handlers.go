@@ -17,7 +17,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// app_sign_in tells the OpenTodo app this server has its sign-in routes
-	// (native-app-foundation D11), whatever the version string of a dev build.
+	// (app-sign-in), whatever the version string of a dev build.
 	writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "version": s.version, "app_sign_in": true})
 }
 

@@ -371,8 +371,9 @@ describe('the stage (focus-redesign)', () => {
     await click(q('[data-focus-next-subtask] button')!)
     await waitFor(async () => !!(await db.tasks.get(first))?.completed_at, 'completed')
     await waitFor(() => q('[data-focus-next-subtask]')?.textContent === 'Write the summary', 'the following subtask')
+    // The Undo toast follows the write in its own step: wait for it, as for the states above.
+    await waitFor(() => !!document.body.textContent?.includes('Undo'), 'Undo')
     expect(q('[data-running]')).toBeTruthy()
-    expect(document.body.textContent).toContain('Undo')
     await r.unmount()
   })
 

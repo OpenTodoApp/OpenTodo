@@ -314,7 +314,7 @@ final class BridgeTests: XCTestCase {
 
     func testCapabilitiesFollowTheDevice() {
         XCTAssertEqual(Bridge.capabilities(biometric: false, share: true),
-                       ["reminders", "widgets", "share", "links", "obsidian-links", "app-links", "system-bars", "pull-refresh", "completion-sound", "haptics"])
+                       ["reminders", "widgets", "share", "links", "obsidian-links", "app-links", "system-bars", "pull-refresh", "completion-sound", "scroll-top", "haptics"])
         XCTAssertTrue(Bridge.capabilities(biometric: true, share: true).contains("biometric"))
     }
 
@@ -361,7 +361,8 @@ final class BridgeTests: XCTestCase {
                 let visible = Set(Bridge.capabilities(biometric: biometric, share: true, haptics: haptics))
                 XCTAssertTrue(visible.isSuperset(of: both), "\(visible)")
                 XCTAssertTrue(visible.isDisjoint(with: backgroundOnly), "\(visible)")
-                XCTAssertTrue(visible.isSubset(of: visibleOnly.union(both).union(["biometric", "pull-refresh"])), "\(visible)")
+                XCTAssertTrue(visible.isSubset(of: visibleOnly.union(both).union(["biometric", "pull-refresh", ScrollTop.capability])), "\(visible)")
+                XCTAssertTrue(visible.contains(ScrollTop.capability))
                 XCTAssertTrue(visible.contains("links"))
                 XCTAssertFalse(visible.contains("alarm-settings"))
             }
@@ -427,9 +428,33 @@ final class BridgeTests: XCTestCase {
         XCTAssertEqual(fixture["method"] as? String, "haptic")
         let kinds = try XCTUnwrap(fixture["kinds"] as? [String])
         XCTAssertEqual(Set(kinds), Set(Haptics.Kind.allCases.map(\.rawValue)))
-        for kind in kinds { XCTAssertNotNil(Haptics.kind(kind), kind) }
+        for kind in kinds { XCTAssertEqual(Haptics.kind(kind).rawValue, kind) }
         let unknown = try XCTUnwrap(fixture["unknown"] as? String)
-        XCTAssertNil(Haptics.kind(unknown), unknown)
+        XCTAssertEqual(Haptics.kind(unknown), .tick, unknown)
+    }
+
+    /// status-bar-scroll-top D1, D2: the capability and the script follow the shared bridge
+    /// fixture, only the visible app lists it, and the decoy tells the page once per tap and
+    /// never scrolls.
+    func testScrollTopFollowsTheBridgeFixture() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/scroll-top.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        XCTAssertEqual(fixture["capability"] as? String, ScrollTop.capability)
+        XCTAssertEqual(fixture["script"] as? String, ScrollTop.script)
+        XCTAssertFalse(Bridge.backgroundCapabilities.contains(ScrollTop.capability))
+
+        let decoy = ScrollTopDecoy()
+        var taps = 0
+        decoy.onTap = { taps += 1 }
+        XCTAssertTrue(decoy.scrollsToTop)
+        XCTAssertFalse(decoy.isUserInteractionEnabled)
+        XCTAssertGreaterThan(decoy.contentSize.height, decoy.bounds.height)
+        let offset = decoy.contentOffset
+        XCTAssertFalse(decoy.scrollViewShouldScrollToTop(decoy))
+        XCTAssertEqual(taps, 1)
+        XCTAssertEqual(decoy.contentOffset, offset)
     }
 
     /// pull-to-sync D4: the capability and the call follow the shared bridge fixture; only
@@ -470,7 +495,10 @@ final class BridgeTests: XCTestCase {
     func testHapticKinds() {
         XCTAssertEqual(Haptics.kind("tick"), .tick)
         XCTAssertEqual(Haptics.kind("success"), .success)
-        for other in ["", "warning", "Tick", "tick ", "error"] { XCTAssertNil(Haptics.kind(other), other) }
+        XCTAssertEqual(Haptics.kind("warning"), .warning)
+        XCTAssertEqual(Haptics.kind("error"), .error)
+        XCTAssertEqual(Haptics.kind("selection"), .selection)
+        for other in ["", "thud", "Tick", "tick "] { XCTAssertEqual(Haptics.kind(other), .tick, other) }
     }
 
     /// shell-repairs D7: the remembered bars decide the status bar icons, and nothing

@@ -1,6 +1,6 @@
 // Settings → Account: session and a pointer to Security (OpenSpec settings-redesign D1, D3).
 // The signed-in apps come in as children from the settings page, so this module,
-// which the sidebar loads, does not carry them (native-app-foundation).
+// which the sidebar loads, does not carry them (app-sign-in).
 import { type ReactNode, useState } from 'react'
 import { Button } from '../ui'
 import { ConfirmDialog } from '../ui'

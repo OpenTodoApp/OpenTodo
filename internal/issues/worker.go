@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"sync"
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
@@ -49,11 +48,9 @@ type Worker struct {
 	// NewProvider builds a connection's client (tests use a fake).
 	NewProvider func(c *Connection, token string) (Provider, error)
 
-	keys  *e2ee.Store
-	now   func() time.Time
-	sem   chan struct{}
-	mu    sync.Mutex
-	locks map[string]*sync.Mutex
+	keys *e2ee.Store
+	now  func() time.Time
+	gate poll.Gate
 }
 
 // NewWorker wires the worker on the server database and data directory, with
@@ -82,28 +79,6 @@ func (w *Worker) log() *slog.Logger {
 		return slog.Default()
 	}
 	return w.Log
-}
-
-func (w *Worker) slots() chan struct{} {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	if w.sem == nil {
-		w.sem = make(chan struct{}, InFlight)
-	}
-	return w.sem
-}
-
-// lock serialises polls of one connection (a hand sync waits for a scheduled one).
-func (w *Worker) lock(id string) *sync.Mutex {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	if w.locks == nil {
-		w.locks = map[string]*sync.Mutex{}
-	}
-	if w.locks[id] == nil {
-		w.locks[id] = &sync.Mutex{}
-	}
-	return w.locks[id]
 }
 
 // RunOnce polls the connections due now, at most InFlight at a time (Poll also
@@ -212,16 +187,11 @@ func (w *Worker) pollError(err error) *PollError {
 // now and `ot issues sync`). A failed poll changes nothing about the tasks
 // already created; the returned error is a *PollError.
 func (w *Worker) Poll(ctx context.Context, c *Connection) (RunCounts, error) {
-	sem := w.slots()
-	select {
-	case sem <- struct{}{}:
-	case <-ctx.Done():
-		return RunCounts{}, ctx.Err()
+	release, err := w.gate.Enter(ctx, InFlight, c.ID)
+	if err != nil {
+		return RunCounts{}, err
 	}
-	defer func() { <-sem }()
-	l := w.lock(c.ID)
-	l.Lock()
-	defer l.Unlock()
+	defer release()
 	// Reload: a poll that waited may find the connection changed or gone.
 	fresh, err := w.Store.ByID(ctx, c.ID)
 	if err != nil {

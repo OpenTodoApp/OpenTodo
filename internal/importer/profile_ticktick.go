@@ -2,7 +2,6 @@ package importer
 
 import (
 	"bytes"
-	"encoding/csv"
 	"errors"
 	"fmt"
 	"io"
@@ -79,29 +78,7 @@ func (tickTickProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 	loc := opts.Location()
 	folders := map[string]bool{}
 	lists := map[string]bool{}
-	for {
-		rec, err := r.Read()
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil {
-			var pe *csv.ParseError
-			if errors.As(err, &pe) {
-				out.Rows = append(out.Rows, Row{Line: pe.StartLine, Kind: KindTask, Err: fmt.Sprintf("unreadable CSV record: %v", pe.Err)})
-				continue
-			}
-			return nil, csvFailure(err, "file")
-		}
-		if allBlank(rec) {
-			continue
-		}
-		line, _ := r.FieldPos(0)
-		get := func(c string) string {
-			if i, ok := col[c]; ok && i < len(rec) {
-				return strings.TrimSpace(rec[i])
-			}
-			return ""
-		}
+	if err := r.eachRecord(col, &out.Rows, func(line int, rec []string, get func(string) string) error {
 		folder, list := get("Folder Name"), get("List Name")
 		folderSource, listSource := "", ""
 		if folder != "" {
@@ -152,13 +129,16 @@ func (tickTickProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 				item.Origin = importedOrigin("ticktick", item.SourceID)
 				out.Rows = append(out.Rows, item)
 			}
-			continue
+			return nil
 		}
 		row.Description = content
 		out.Rows = append(out.Rows, row)
 		if len(out.Rows) > MaxRows {
-			return nil, ErrTooManyRows
+			return ErrTooManyRows
 		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 	return out, nil
 }

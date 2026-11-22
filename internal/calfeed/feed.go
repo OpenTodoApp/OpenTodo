@@ -231,7 +231,13 @@ func taskEvent(cal *caldav.Component, zones map[string]bool, t FeedTask, opts Fe
 // a timed one, in its zone when it has one. DTEND of whole days is exclusive.
 func eventTimes(t FeedTask) (caldav.Prop, caldav.Prop) {
 	date := t.Date
-	compact := func(d string) string { return d[:4] + d[5:7] + d[8:10] }
+	// YYYY-MM-DD to YYYYMMDD; anything shorter only loses its dashes, never panics (GitHub issue 1717).
+	compact := func(d string) string {
+		if len(d) < 10 {
+			return strings.ReplaceAll(d, "-", "")
+		}
+		return d[:4] + d[5:7] + d[8:10]
+	}
 	if t.Time == nil || t.Start != "" {
 		first := date
 		if t.Start != "" {

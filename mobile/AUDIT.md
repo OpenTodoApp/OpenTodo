@@ -1,6 +1,6 @@
 # Mobile audit: why the apps feel like a website, and the plan
 
-2026-11-13. The Android and iOS apps are shells around the web app. The owner decided to keep that and make the shells feel native; the React Native app (`mobile/app`, `native-app-*`) is paused, its code kept.
+2026-11-13. The Android and iOS apps are shells around the web app. The owner decided to keep that and make the shells feel native; the React Native app that was tried in `mobile/app` was removed on 2026-11-21.
 
 The audit read both shells and the web app on a phone. Paths are from the repository root.
 
@@ -89,3 +89,9 @@ Open:
 ## Device check, after each step
 
 Fresh install, then: a reminder set on another device fires with the app closed, after a force quit and after a reboot; Done from the notification completes the task; a download saves; Back and the back swipe go back; cold start shows no blank screen, online and offline.
+
+Native feel (`mobile-native-feel`), on an iPhone and an Android phone:
+
+- A scroll that starts on a row does not flash it; a pressed circle dims alone (`press-feedback-delay`).
+- After taps, no row keeps a hover look and no control a focus ring; with VoiceOver and with TalkBack the focused control still shows its ring; an iPad keyboard's Tab shows it again (`touch-input-mode`).
+- A held task row and a held sidebar row rise before the menu or the drag, and settle when lifted early; with reduced motion only the tint shows; no glow or stretch at a list's end in the Android app (`row-lift-overscroll`).
