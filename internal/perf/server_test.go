@@ -59,7 +59,11 @@ func TestServerBudgets(t *testing.T) {
 	var sum perfseed.Summary
 	readJSON(t, filepath.Join(fixture, "perfseed.json"), &sum)
 	samples := map[string][]float64{}
+	// The runner's speed for this kind of work, timed in each run next to the
+	// budgets it scales (perf-relative-budgets D1).
+	ref := newReference(t, t.TempDir())
 	for i := range runs {
+		samples[ReferenceID] = append(samples[ReferenceID], ref.measure(t))
 		for k, v := range measureOnce(t, bin, fixture, sum) {
 			samples[k] = append(samples[k], v)
 		}
@@ -75,9 +79,11 @@ func TestServerBudgets(t *testing.T) {
 		}
 	}
 	rep.Metrics = plain
+	rep.Reported = map[string]float64{ReferenceID: median(samples[ReferenceID])}
+	t.Logf("%-22s median %8.1f ms  scale %.2f  runs %v", ReferenceID, median(samples[ReferenceID]), rep.Scale, samples[ReferenceID])
 	writeJSON(t, env("PERF_REPORT", filepath.Join(root, "perf-report", "server.json")), rep)
 	for _, m := range rep.Metrics {
-		t.Logf("%-22s median %8.1f %-2s budget %6g  runs %v", m.ID, m.Median, m.Unit, m.Limit, m.Runs)
+		t.Logf("%-22s median %8.1f %-2s budget %6g (here %6.1f)  runs %v", m.ID, m.Median, m.Unit, m.Limit, m.Scaled, m.Runs)
 		if !m.OK {
 			t.Errorf("%s", m.Failure)
 		}

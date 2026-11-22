@@ -15,8 +15,8 @@ The release build is reproducible (OpenSpec change `play-production`): the same 
 | Tool | Version | Pinned in |
 | --- | --- | --- |
 | JDK | Temurin 21.0.13+9 (F-Droid: its build server's default, Debian's OpenJDK 21) | `java-version` in `.github/workflows/ci.yml` and `android-repro.yml` |
-| Gradle | 9.9.0 | `distributionUrl` and `distributionSha256Sum` in `android/gradle/wrapper/gradle-wrapper.properties` |
-| Android Gradle Plugin | 9.5.1 (Kotlin 2.4.21) | `android/build.gradle.kts` |
+| Gradle | 9.9.1 | `distributionUrl` and `distributionSha256Sum` in `android/gradle/wrapper/gradle-wrapper.properties` |
+| Android Gradle Plugin | 9.5.2 (Kotlin 2.4.21) | `android/build.gradle.kts` |
 | Build tools | 36.0.0 | `buildToolsVersion` in `android/app/build.gradle.kts`; the SDK step in CI |
 
 The APK carries no build-time, machine or checkout metadata: no dependency block (`dependenciesInfo`, which F-Droid refuses) and no commit file (`vcsInfo`); the version comes only from `OPENTODO_VERSION`. `scripts/repo-checks.test.mjs` fails when one of the pins goes missing or this table stops naming it.
