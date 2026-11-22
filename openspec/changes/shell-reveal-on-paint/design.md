@@ -33,6 +33,8 @@
 
 `announcePainted()` in `shell.ts` calls `opentodoShell.painted()` once per page load, and only when the shell lists `first-paint`. In `main.tsx`, a component rendered beside `App` calls it from an effect, two animation frames after React's first commit. The first frame's callback runs before that frame is drawn and the second's runs after it, so by then the skeleton or the first screen is on screen.
 
+The component sits outside `ErrorBoundary`, so an app that fails on its first render still makes the call, and its error screen shows at once. Every page the app's root renders makes the call: setup, sign-in, a reset or invitation link, and the app. Measured in Chromium, setup called it at 332 ms, sign-in at 343 ms and an invalid reset link at 356 ms, once each. Pages that aren't the app keep the end of the load: a single sign-on page of another origin has no bridge, the shell's own error screen ends the hold through the failure path, and the public shared-task page (`t.html`) isn't the app.
+
 The frames have to be counted from the commit, not from `render()`: React commits later. Counted from `render()`, the call came 1 ms after the content appeared, before it was drawn. Counted from the commit, in Chromium at 390 px, it comes after the frame with the content: 238 ms against 222 ms at 1×, and 816 against 768 ms at 6×, one call per load.
 
 The web view is at alpha 0, not hidden, so WebKit runs its frames at full speed and the callbacks fire (`shell-first-paint` D4).

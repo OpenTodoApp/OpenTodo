@@ -63,8 +63,9 @@ void bootLanguage().finally(() => {
     <StrictMode>
       <ErrorBoundary>
         <App />
-        <Painted />
       </ErrorBoundary>
+      {/* Outside the boundary: an app that fails on its first render shows its error screen at once. */}
+      <Painted />
     </StrictMode>,
   )
 })
