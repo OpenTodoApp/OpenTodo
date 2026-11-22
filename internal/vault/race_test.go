@@ -187,6 +187,11 @@ func TestHalfSavedFileIsNotPushed(t *testing.T) {
 			t.Fatalf("task %s was trashed from the half-saved file", id)
 		}
 	}
+	// The empty file is held before the merge now (TestEmptyFileMidSaveTrashesNothing),
+	// so nothing is pushed and the hook may not run: the save then lands after the sync.
+	if v.read(t, "Home.md") == "" {
+		v.write(t, "Home.md", saved)
+	}
 	if v.read(t, "Home.md") != saved {
 		t.Fatalf("the save was overwritten:\n%s", v.read(t, "Home.md"))
 	}
@@ -261,5 +266,67 @@ func TestSaveHeldEmptyThroughTheRunIsNotPushed(t *testing.T) {
 	}
 	if s.get("tasks", pay)["deleted_at"] != nil {
 		t.Fatal("the task was trashed")
+	}
+}
+
+// TestEmptyFileMidSaveTrashesNothing (the TestVaultWatch data loss): an editor
+// saves in two steps, an empty file and then its text, and a sync reads the
+// empty step. Every check after the read (the re-read before the push, the
+// watch's snapshot) still saw the same empty file, so the sync trashed every
+// task of it in the app and wrote the file over the save. A vault file the
+// sync wrote is never empty (its frontmatter at least), so an empty one is a
+// save still under way: that file is neither read nor written, the rest of the
+// vault syncs, and the next sync reads the save.
+func TestEmptyFileMidSaveTrashesNothing(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home"})
+	lamp := s.create("tasks", map[string]any{"title": "Fix the lamp", "project_id": home})
+	v := s.vault(t)
+	saved := v.read(t, "Home.md")
+	v.write(t, "Home.md", "")
+	rep := v.sync(t)
+	if got := s.get("tasks", lamp)["deleted_at"]; got != nil {
+		t.Fatalf("the empty step trashed the task: deleted_at %v", got)
+	}
+	if text := v.read(t, "Home.md"); text != "" {
+		t.Fatalf("the half-saved file was written over:\n%s", text)
+	}
+	if rep.Written != 0 || !hasEvent(rep, "skipped", "Home.md") {
+		t.Errorf("report %+v", rep)
+	}
+	// The save completes; the next sync keeps the task and adds the new line.
+	v.write(t, "Home.md", saved+"- [ ] Oil the hinge\n")
+	if rep := v.sync(t); rep.Created != 1 {
+		t.Fatalf("second sync %+v", rep)
+	}
+	text := v.read(t, "Home.md")
+	if !strings.Contains(text, "Fix the lamp") || !strings.Contains(lineOf(t, text, "Oil the hinge"), "🆔 ") {
+		t.Fatalf("saved file:\n%s", text)
+	}
+	if got := s.get("tasks", lamp)["deleted_at"]; got != nil {
+		t.Fatalf("the task was trashed later: deleted_at %v", got)
+	}
+}
+
+// TestEmptyFileMidSaveHoldsOnlyThatFile: while one file is half saved, an edit
+// in another file still reaches the app.
+func TestEmptyFileMidSaveHoldsOnlyThatFile(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home"})
+	work := s.create("projects", map[string]any{"name": "Work"})
+	lamp := s.create("tasks", map[string]any{"title": "Fix the lamp", "project_id": home})
+	s.create("tasks", map[string]any{"title": "Send the invoice", "project_id": work})
+	v := s.vault(t)
+	v.write(t, "Home.md", "")
+	v.edit(t, "Work.md", "- [ ] Send the invoice", "- [ ] Send the invoice 📅 2026-11-30")
+	rep := v.sync(t)
+	if rep.Updated != 1 || !hasEvent(rep, "skipped", "Home.md") {
+		t.Fatalf("report %+v", rep)
+	}
+	if got := s.get("tasks", lamp)["deleted_at"]; got != nil {
+		t.Fatalf("the half-saved file's task was trashed: %v", got)
+	}
+	if text := v.read(t, "Home.md"); text != "" {
+		t.Fatalf("the half-saved file was written over:\n%s", text)
 	}
 }
