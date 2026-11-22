@@ -1,9 +1,13 @@
 package web
 
 import (
+	"bytes"
+	"compress/gzip"
 	"io"
 	"io/fs"
+	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -190,5 +194,93 @@ func TestThemeCreditsAsText(t *testing.T) {
 	handlerFor(sub, Options{}).ServeHTTP(rec, httptest.NewRequest("GET", "/assets/CREDITS-abc.md", nil))
 	if rec.Code != 200 || rec.Header().Get("Content-Type") != "text/plain; charset=utf-8" || rec.Body.String() != "# Credits\n" {
 		t.Fatalf("status %d, type %q, body %q", rec.Code, rec.Header().Get("Content-Type"), rec.Body.String())
+	}
+}
+
+// The build's gzip copies (OpenSpec change compressed-static-assets): sent when gzip is
+// accepted and the whole file asked for, never for a Range or a client without gzip.
+func TestCompressedAssets(t *testing.T) {
+	js := bytes.Repeat([]byte("const a = 1;\n"), 200)
+	var gz bytes.Buffer
+	zw := gzip.NewWriter(&gz)
+	zw.Write(js)
+	zw.Close()
+	sub := fstest.MapFS{
+		"index.html":           {Data: []byte("<html><head></head></html>")},
+		"assets/main-a1.js":    {Data: js},
+		"assets/main-a1.js.gz": {Data: gz.Bytes()},
+		"assets/font-b2.woff2": {Data: []byte("font")},
+	}
+	h := handlerFor(sub, Options{})
+	get := func(method, target string, hdr map[string]string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(method, target, nil)
+		for k, v := range hdr {
+			req.Header.Set(k, v)
+		}
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		return rec
+	}
+
+	rec := get(http.MethodGet, "/assets/main-a1.js", map[string]string{"Accept-Encoding": "br, gzip;q=0.8"})
+	if rec.Code != http.StatusOK || rec.Header().Get("Content-Encoding") != "gzip" {
+		t.Fatalf("gzip accepted: %d %q", rec.Code, rec.Header().Get("Content-Encoding"))
+	}
+	zr, err := gzip.NewReader(rec.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(zr)
+	if !bytes.Equal(body, js) {
+		t.Fatal("the gzip copy does not decode to the file")
+	}
+	for k, want := range map[string]string{
+		"Vary":           "Accept-Encoding",
+		"Content-Type":   "text/javascript; charset=utf-8",
+		"Content-Length": strconv.Itoa(gz.Len()),
+		"Cache-Control":  "public, max-age=31536000, immutable, no-transform",
+	} {
+		if got := rec.Header().Get(k); got != want {
+			t.Errorf("gzip answer %s = %q, want %q", k, got, want)
+		}
+	}
+
+	head := get(http.MethodHead, "/assets/main-a1.js", map[string]string{"Accept-Encoding": "gzip"})
+	if head.Header().Get("Content-Encoding") != "gzip" || head.Body.Len() != 0 {
+		t.Errorf("HEAD: encoding %q, body %d bytes", head.Header().Get("Content-Encoding"), head.Body.Len())
+	}
+
+	// The file as it is: no gzip, gzip refused, or a byte range (on the raw bytes).
+	for name, hdr := range map[string]map[string]string{
+		"no Accept-Encoding": {},
+		"gzip;q=0":           {"Accept-Encoding": "gzip;q=0, *"},
+		"identity only":      {"Accept-Encoding": "identity"},
+		"a byte range":       {"Accept-Encoding": "gzip", "Range": "bytes=0-9"},
+	} {
+		rec := get(http.MethodGet, "/assets/main-a1.js", hdr)
+		if rec.Header().Get("Content-Encoding") != "" {
+			t.Errorf("%s: Content-Encoding %q", name, rec.Header().Get("Content-Encoding"))
+		}
+		if rec.Header().Get("Vary") != "Accept-Encoding" {
+			t.Errorf("%s: Vary %q", name, rec.Header().Get("Vary"))
+		}
+		want := js
+		if hdr["Range"] != "" {
+			want = js[:10]
+			if rec.Code != http.StatusPartialContent {
+				t.Errorf("%s: status %d", name, rec.Code)
+			}
+		}
+		if !bytes.Equal(rec.Body.Bytes(), want) {
+			t.Errorf("%s: body is not the file", name)
+		}
+	}
+
+	// "*" covers gzip; a file without a copy is sent as it is, with no Vary.
+	if rec := get(http.MethodGet, "/assets/main-a1.js", map[string]string{"Accept-Encoding": "*"}); rec.Header().Get("Content-Encoding") != "gzip" {
+		t.Errorf("*: Content-Encoding %q", rec.Header().Get("Content-Encoding"))
+	}
+	if rec := get(http.MethodGet, "/assets/font-b2.woff2", map[string]string{"Accept-Encoding": "gzip"}); rec.Header().Get("Content-Encoding") != "" || rec.Header().Get("Vary") != "" {
+		t.Errorf("no copy: encoding %q, vary %q", rec.Header().Get("Content-Encoding"), rec.Header().Get("Vary"))
 	}
 }

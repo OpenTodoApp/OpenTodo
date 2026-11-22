@@ -5,8 +5,10 @@ import (
 	"bytes"
 	"embed"
 	"io/fs"
+	"mime"
 	"net/http"
 	"path"
+	"strconv"
 	"strings"
 )
 
@@ -88,6 +90,9 @@ func handlerFor(sub fs.FS, o Options) http.Handler {
 					if strings.HasSuffix(p, ".md") {
 						w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 					}
+					if strings.HasPrefix(p, "assets/") && serveCompressed(w, r, sub, p) {
+						return
+					}
 					fileServer.ServeHTTP(w, r)
 					return
 				}
@@ -110,6 +115,65 @@ func handlerFor(sub fs.FS, o Options) http.Handler {
 		w.WriteHeader(http.StatusOK)
 		w.Write(index)
 	})
+}
+
+// serveCompressed answers with the build's gzip copy of p (OpenSpec change
+// compressed-static-assets, D2) when there is one, the request accepts gzip and asks
+// for the whole file, and reports whether it did. Every answer for a file with a
+// copy says Vary: Accept-Encoding, so a shared cache keeps the two forms apart. The
+// browser decodes the copy back to the file the signed list names (D3).
+func serveCompressed(w http.ResponseWriter, r *http.Request, sub fs.FS, p string) bool {
+	gz, err := fs.ReadFile(sub, p+".gz")
+	if err != nil {
+		return false
+	}
+	w.Header().Add("Vary", "Accept-Encoding")
+	if r.Header.Get("Range") != "" || !acceptsGzip(r.Header.Values("Accept-Encoding")) {
+		return false
+	}
+	h := w.Header()
+	if h.Get("Content-Type") == "" {
+		ct := mime.TypeByExtension(path.Ext(p))
+		if ct == "" {
+			ct = "application/octet-stream"
+		}
+		h.Set("Content-Type", ct)
+	}
+	h.Set("Content-Encoding", "gzip")
+	h.Set("Content-Length", strconv.Itoa(len(gz)))
+	w.WriteHeader(http.StatusOK)
+	if r.Method != http.MethodHead {
+		w.Write(gz)
+	}
+	return true
+}
+
+// acceptsGzip reports whether Accept-Encoding allows gzip: named (or as x-gzip), or
+// covered by "*", with a quality above zero; an explicit gzip;q=0 refuses it.
+func acceptsGzip(values []string) bool {
+	star := false
+	for _, v := range values {
+		for _, part := range strings.Split(v, ",") {
+			name, params, _ := strings.Cut(strings.TrimSpace(part), ";")
+			name = strings.ToLower(strings.TrimSpace(name))
+			q := 1.0
+			for _, prm := range strings.Split(params, ";") {
+				k, val, ok := strings.Cut(strings.TrimSpace(prm), "=")
+				if ok && strings.EqualFold(strings.TrimSpace(k), "q") {
+					if f, err := strconv.ParseFloat(strings.TrimSpace(val), 64); err == nil {
+						q = f
+					}
+				}
+			}
+			switch name {
+			case "gzip", "x-gzip":
+				return q > 0
+			case "*":
+				star = q > 0
+			}
+		}
+	}
+	return star
 }
 
 // InjectNoIndex returns page with the robots noindex meta tag after <head>.
