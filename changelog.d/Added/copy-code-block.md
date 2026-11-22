@@ -1,0 +1,1 @@
+- **Copy a code block from a note.** A code block in a note, a comment or an answer shows a **Copy** button at its top corner that puts the code on your clipboard as plain text, without the fences and with its indentation kept. A viewer of a note they cannot edit can copy the whole note as Markdown too.

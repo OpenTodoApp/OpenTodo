@@ -1,9 +1,10 @@
-// Forward and back page transitions (OpenSpec change page-transitions, design D1 to D3).
-// A route change runs inside a view transition with a direction: forward (deeper: a
-// project, a task's page, a note, a settings section) slides the new page in from the
-// end edge, back slides it out, and a switch between destinations cross-fades. The CSS is
-// in index.css (`:root[data-nav]`); this module is loaded after the first paint, so a
-// navigation before it arrives swaps at once, as before.
+// Forward and back page transitions (OpenSpec changes page-transitions, design D1 to D3,
+// and transitions-push-only D1, D2). A route change to or from a pushed page (a task's
+// page, Settings and its sections and pages) runs inside a view transition with a
+// direction: forward slides the new page in from the end edge, back slides it out. A
+// change between list views applies at once, so the new list is never late for an
+// animation. The CSS is in index.css (`:root[data-nav]`); this module is loaded after the
+// first paint, so a navigation before it arrives swaps at once, as before.
 import { flushSync } from 'react-dom'
 import { resettable } from '../lib/moduleState'
 import { noMotion, prefersReducedMotion } from './motion'
@@ -15,25 +16,23 @@ export type NavDirection = 'forward' | 'back' | 'none'
 /** Where a back swipe left the page (swipe-back-follows D1): the old page's slide starts there, so the hand-off has no jump. */
 export const NAV_FROM = '--nav-from'
 
-/** How deep a route sits below the destinations of the sidebar and the tab bar (0). */
+/** How deep a route is pushed above the list views (0): Settings, its sections and pages, a task's page, the theme editor. */
 export function routeDepth(r: Route): number {
   switch (r.view) {
+    case 'settings': return r.page ? 3 : r.section ? 2 : 1
+    case 'theme-editor': return 3
     case 'task': return 2
-    case 'theme-editor': return 2
-    case 'settings': return r.page ? 2 : r.section ? 1 : 0
-    case 'project': case 'label': case 'place': case 'view': case 'import': return 1
-    case 'notes': return r.id ? 1 : 0
-    case 'rules': return r.id || r.create || r.run ? 1 : 0
     default: return 0
   }
 }
 
-/** The direction of a change from `from` to `to`; a step back through history is always back. */
+/** The direction of a change from `from` to `to`: none between list views or pushed pages of one depth, else a step back through history is always back. */
 export function navDirection(from: Route, to: Route, popped: boolean): NavDirection {
-  if (popped) return 'back'
   const a = routeDepth(from)
   const b = routeDepth(to)
-  return b > a ? 'forward' : b < a ? 'back' : 'none'
+  if (a === b) return 'none'
+  if (popped) return 'back'
+  return b > a ? 'forward' : 'back'
 }
 
 interface ViewTransition { finished: Promise<void>; ready?: Promise<void>; updateCallbackDone?: Promise<void>; skipTransition(): void }
@@ -62,13 +61,14 @@ export function canTransitionPage(): boolean {
 let running: ViewTransition | null = null
 resettable('pageTransition', () => { running = null; lastPointer = -Infinity })
 
-/** Shows a route change: inside a view transition with its direction when the gates hold, at once otherwise. */
+/** Shows a route change: inside a view transition with its direction when it has one and the gates hold, at once otherwise. */
 export function showRouteChange(apply: () => void, from: string, to: string, popped: boolean): void {
   // The next navigation never waits: a transition still running jumps to its end.
   running?.skipTransition()
   const root = document.documentElement
-  if (!canTransitionPage()) { apply(); root.style.removeProperty(NAV_FROM); return }
-  root.dataset.nav = navDirection(parseRoute(from), parseRoute(to), popped)
+  const dir = navDirection(parseRoute(from), parseRoute(to), popped)
+  if (dir === 'none' || !canTransitionPage()) { apply(); root.style.removeProperty(NAV_FROM); return }
+  root.dataset.nav = dir
   const start = (document as unknown as { startViewTransition: StartViewTransition }).startViewTransition.bind(document)
   const vt = start(() => flushSync(apply))
   running = vt

@@ -1,0 +1,1 @@
+- **The installed web app downloads only the languages it shows.** A first install and every update fetch the interface text of the languages used on this device, about 6 MB less (2 MB compressed) for a device in one language. A language never used on the device needs a connection the first time you pick it.
