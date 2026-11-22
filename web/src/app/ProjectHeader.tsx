@@ -15,8 +15,7 @@ import { t } from '../lib/i18n'
 import { roleName } from '../lib/roleNames'
 import { inMaintenance } from '../lib/reviewCadence'
 import { useLiveTasks, useOpenTaskCount } from '../lib/liveTasks'
-import { percentOf, projectProgressOf, shareOf } from '../lib/progress'
-import { projectFlowOf } from '../lib/flow'
+import { percentOf, projectProgressOf, shareOf, showsProgress } from '../lib/progress'
 import { useProjectViewMode, useShowCompletedPref } from '../lib/liveData'
 import { saveShowCompleted } from '../lib/sections'
 import { isReusable } from '../lib/reusable'
@@ -58,7 +57,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   const openTasks = useOpenTaskCount(project.id)
   // The project's own progress beside its title (task-progress D4): the All projects rule, patched per write; an area never finishes, so it has none.
   const liveTasks = useLiveTasks()
-  const share = liveTasks && projectFlowOf(project) !== 'area' ? shareOf(projectProgressOf(liveTasks).get(project.id)) : null
+  const share = liveTasks && showsProgress(project) ? shareOf(projectProgressOf(liveTasks).get(project.id)) : null
   const percent = share === null ? null : percentOf(share)
   // "Show completed tasks" (project-completed-section): a preference of this device, in the list and the board (board-completed-column D1).
   const layoutMode = useProjectViewMode(project.id)

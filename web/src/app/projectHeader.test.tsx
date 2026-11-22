@@ -94,6 +94,11 @@ describe('project header', () => {
     await waitFor(() => visibleText(progress()!) === '75%', 'the progress after a write')
     await r.rerender(<ProjectHeader project={{ ...p('home', 'Home'), flow_mode: 'area' }} />)
     await waitFor(() => !progress(), 'no progress for an area')
+    // A reusable list is restocked, never finished (reusable-no-progress).
+    await r.rerender(<ProjectHeader project={{ ...p('home', 'Home'), reusable: true }} />)
+    await waitFor(() => !progress(), 'no progress for a reusable list')
+    await r.rerender(<ProjectHeader project={p('home', 'Home')} />)
+    await waitFor(() => !!progress(), 'the progress again once it is an ordinary project')
     await r.unmount()
   })
 

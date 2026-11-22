@@ -9,7 +9,7 @@ import type { Due, Project, Task } from './types'
 import { openCount } from './views'
 import { projectFlowOf } from './flow'
 import { inMaintenance } from './reviewCadence'
-import { progressPart } from './progress'
+import { progressPart, showsProgress } from './progress'
 
 /**
  * The health words, most urgent first (design D2): the first rule that holds decides.
@@ -137,8 +137,8 @@ export function summarizeProjects(input: HealthInput): Map<string, ProjectSummar
     out.set(p.id, {
       open: f.open,
       done: f.done,
-      // An area never finishes, so it shows no progress (the table reads "Area").
-      progress: total && !area ? f.done / total : null,
+      // An area never finishes, a reusable list is restocked: neither shows progress (the table reads "Area" for an area).
+      progress: total && showsProgress(p) ? f.done / total : null,
       area,
       nextDue: f.nextDue,
       nextDueLate: !!f.nextDue && (localDate(f.nextDue, input.zone) ?? '') < input.today,
