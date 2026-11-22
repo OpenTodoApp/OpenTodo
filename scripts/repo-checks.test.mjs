@@ -426,8 +426,16 @@ test('browser end-to-end checks run in CI and the race detector nightly', () => 
   assert.match(read('Makefile'), /^e2e: cli\n\tscripts\/e2e\.sh$/m, 'make e2e builds bin/ot and runs scripts/e2e.sh')
   assert.match(read('scripts/e2e.sh'), /e2e-smoke e2e-views e2e-offline/, 'scripts/e2e.sh runs the two-device, saved-view and offline-start scripts')
   // The built service worker and manifest tests run after the build, where they cannot skip.
-  const build = jobsOf(read('.github/workflows/ci.yml'))['web-build'] ?? ''
-  assert.ok(build.indexOf('run: npm run test:built') > build.indexOf('run: npm run build'), 'the web-build job runs npm run test:built after npm run build')
+  const ciJobs = jobsOf(read('.github/workflows/ci.yml'))
+  const script = read('scripts/ci-web-build.sh')
+  assert.ok(script.includes('npm run build') && script.indexOf('npm run test:built') > script.indexOf('npm run build'), 'the CI web build runs npm run test:built after npm run build')
+  assert.ok(needsOf(ciJobs.server ?? '').includes('web-build'), 'the server job waits for web-build where it runs')
+  assert.match(ciJobs['web-build'] ?? '', /run: \.\/scripts\/ci-web-build\.sh/, 'the web-build job runs the CI web build')
+  // ci-pr-server-builds-web: on a pull request the server job builds the web app itself.
+  assert.match(ciJobs['web-build'] ?? '', /^ {4}if: .*github\.event_name != 'pull_request'/m, 'web-build is skipped on pull requests')
+  assert.match(ciJobs.server ?? '', /if: github\.event_name == 'pull_request'\n\s+run: \|\n\s+\(cd web && npm ci --no-audit --no-fund\)\n\s+\.\/scripts\/ci-web-build\.sh\n\s+rm -rf web\/node_modules\n/, 'on a pull request the server job runs the CI web build, then removes node_modules before the Go steps')
+  assert.match(ciJobs.server ?? '', /if: github\.event_name != 'pull_request'\n\s+with:\n\s+name: web-dist/, 'elsewhere it downloads web-dist')
+  assert.match(ciJobs.server ?? '', /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && needs\.web-build\.result != 'cancelled' && /m, 'the server job runs when web-build was skipped, not when it was cancelled')
   // The report-only interface audit runs nightly and on demand, off every critical path (ci-speed).
   const audit = read('.github/workflows/ux-audit.yml')
   assert.match(audit, /^ {2}schedule:\n {4}- cron: /m, 'the interface audit runs nightly')
