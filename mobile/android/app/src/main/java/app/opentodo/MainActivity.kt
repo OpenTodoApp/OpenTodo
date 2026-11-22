@@ -237,8 +237,9 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         web.visibility = View.VISIBLE
     }
 
+    /** Sets the web view up once per server, then opens the launch intent; [replay] false skips the intent (a rebuilt web view). */
     @SuppressLint("SetJavaScriptEnabled")
-    private fun start() {
+    private fun start(replay: Boolean = true) {
         val server = Prefs(this).server ?: return
         if (!started || origin != server) {
             origin = server
@@ -272,6 +273,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             Bridge(this, server, this).install(web)
             HiddenRun.schedulePeriodic(this)
         }
+        if (!replay) return
         val share = pendingShare
         pendingShare = null
         handle(share ?: intent)
@@ -450,18 +452,22 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         }
     }
 
-    /** Replaces the web view after its render process died, and reloads the server. */
+    /** Replaces the web view after its render process died, and reopens the page it showed. */
     private fun rebuildWeb() {
         val parent = web.parent as? ViewGroup ?: return
+        val last = web.url
         val index = parent.indexOfChild(web)
         val params = web.layoutParams
         parent.removeView(web)
         web.destroy()
         web = WebView(this).apply { layoutParams = params }
         parent.addView(web, index)
-        // A new web view: re-run the one-time setup (settings, clients, the bridge) and reload.
+        // A new web view: re-run the one-time setup (settings, clients, the bridge), then the page
+        // it showed. Not the launch intent: a share or an opentodo-open link would be replayed.
         started = false
-        start()
+        start(replay = false)
+        val base = origin ?: return
+        load(RenderRecovery.reloadUrl(last, base))
     }
 
     private inner class Chrome : WebChromeClient() {
