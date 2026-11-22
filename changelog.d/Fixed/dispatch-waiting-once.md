@@ -1,1 +1,1 @@
-- A device that opens its routines stream just as a routine runs gets that run once, not twice.
+- **A routine run reaches a device once.** A routine that ran just as a device opened its routines stream was sent to it twice, and the device ran it twice.
