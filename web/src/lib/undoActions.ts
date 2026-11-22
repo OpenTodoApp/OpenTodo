@@ -6,7 +6,7 @@
 // every device converges by last-writer-wins.
 import { bulkLabel, planComplete, planLabels, planMove, planPriority, planReopen, planTrash, readTicked, toProposed } from './bulk'
 import { db, type AssistantUndo } from './db'
-import { logicalToday } from './dates'
+import { formatDate, logicalToday } from './dates'
 import { seriesRule } from './recurring'
 import { getDeviceId, liveSubtree, planReminders, updateTask, type Change } from './ops'
 import type { ReminderPhrase } from './nlp'
@@ -96,6 +96,11 @@ export async function priorityUndoable(id: string, priority: Task['priority']): 
   // The one row, not readTicked's whole table: a key press stays cheap on a large account.
   const changes = planPriority([task], priority)
   if (changes.length) await apply(changes, bulkLabel({ kind: 'priority', priority }, 1))
+}
+
+/** Set (or with null remove) one task's deadline, as one step of undo history (OpenSpec change undo-deadline). */
+export function deadlineUndoable(id: string, deadline: string | null): Promise<UndoableResult> {
+  return plainEditUndoable(id, { deadline }, deadline ? t('Deadline {date}', { date: formatDate(deadline, 'long') }) : t('Deadline removed'))
 }
 
 /** Move one task and its subtasks to the Trash. */
