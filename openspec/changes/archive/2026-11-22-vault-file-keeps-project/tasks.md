@@ -14,4 +14,4 @@
 ## 3. Docs and checks
 
 - [x] 3.1 Update the vault guide's file-matching section (`docs/` page for `ot vault`, found with `grep -rn "opentodo-id" docs/`) to say a file at a known path keeps its project. Then `make docs` and `make docs-check`.
-- [ ] 3.2 Add the changelog fragment `changelog.d/Fixed/vault-file-keeps-project.md`, then run `make check`.
+- [x] 3.2 Add the changelog fragment `changelog.d/Fixed/vault-file-keeps-project.md`, then run `make check`.
