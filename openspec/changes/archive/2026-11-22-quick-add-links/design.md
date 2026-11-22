@@ -8,7 +8,7 @@ Quick add parses a line into a title and attributes with one grammar, implemente
 
 Goals: one more token, behaving exactly like the existing ones (tint, chip, dismissal, quoting, parsing switch), the same task from the same line on every surface, offline.
 
-Non-goals: page titles or previews (an outbound request per link, against the no-third-party-calls rule); links in descriptions; links already in a title before an edit; routines and `ot time`.
+Non-goals: page titles or previews (an outbound request per link, against the no-third-party-calls rule); links in descriptions; links already in a title before an edit; routines.
 
 ## Decisions
 
@@ -16,7 +16,7 @@ Non-goals: page titles or previews (an outbound request per link, against the no
 
 The grammar gains a `link` token: a whitespace token starting `http://` or `https://` (case-insensitive), unquoted, with a non-empty host (the text between `://` and the first `/`, `?` or `#`, without a user and a port). A double quote ends a token, so a URL holding one is cut there. The URL is the token without its trailing `.,;:!?` and unbalanced closing `)` or `]`; the whole token leaves the title, so a sentence's full stop goes with its link (`Read the spec at https://x.example/a.` saves as `Read the spec at`). Link tokens are set aside before the other attributes are read, so no other grammar reads inside a URL. `links.go` and `links.ts` are the two copies, pinned by the shared vectors and the fuzz test.
 
-The parser reads links only when the caller sets a context option (`Links` / `links`). Quick add in the app, title editing, the parse route and `ot add` set it. Routines (`internal/rules`) and `ot time` don't, so a routine that writes a URL into a title keeps doing so.
+The parser reads links only when the caller sets a context option (`Links` / `links`). Quick add in the app, title editing, the parse route and `ot add` set it. Routines (`internal/rules`) don't, so a routine that writes a URL into a title keeps doing so.
 
 Alternative: always parse links. Rejected because it silently changes existing routines.
 
@@ -30,7 +30,7 @@ A line with a link is never matched to an item of a reusable list (`reusable-lis
 
 ### D3. One operation set
 
-The task create, its fields, its reminders and its link attachments are written in one `mutate()` (web) or one request sequence with one `Idempotency-Key` per attachment (`ot add`, via `POST /api/v1/tasks/{id}/attachments` with `{url}`). The web path works offline and uploads in one batch. The server's resolver already places an attachment whose task is in the same batch (`batchTasks`), so no sync change is needed. Encrypted accounts encrypt the link like any link attachment. Undo removes the task and its attachments together.
+The task create, its fields, its reminders and its link attachments are written in one `mutate()` (web) or one request sequence with one `Idempotency-Key` per attachment (`ot add`, via `POST /api/v1/tasks/{id}/attachments` with `{url, name}`, the URL normalised and named after its host as the app does; an agent token may not attach, so `ot add` does not read links with one and they stay in the title). The web path works offline and uploads in one batch. The server's resolver already places an attachment whose task is in the same batch (`batchTasks`), so no sync change is needed. Encrypted accounts encrypt the link like any link attachment. Undo removes the task and its attachments together.
 
 ### D4. The parse route
 

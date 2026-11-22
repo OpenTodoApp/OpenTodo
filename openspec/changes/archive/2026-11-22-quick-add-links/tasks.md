@@ -16,6 +16,6 @@
 
 ## 3. The command line, docs and archive
 
-- [ ] 3.1 `ot add` attaches the line's links through `POST /api/v1/tasks/{id}/attachments`: verified by a CLI test against the test server
+- [x] 3.1 `ot add --natural` attaches the line's links through `POST /api/v1/tasks/{id}/attachments`, once each, not the `--origin-url`, a retry with a key converging: verified by `TestAddNaturalLinks`
 - [x] 3.2 `docs/quick-add.md`, `docs/attachments.md` and the parse route in `docs/api.md` (`docs/openapi.json` describes `fields` as an object, unchanged): verified by `make docs-check`
-- [ ] 3.3 Changelog fragment and archive: verified by `openspec validate --all --strict`
+- [x] 3.3 Changelog fragment and archive: verified by `openspec validate --all --strict`

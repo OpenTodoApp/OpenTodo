@@ -25,7 +25,7 @@ type Context struct {
 	// the account's Time sectors switch.
 	Sectors bool `json:"sectors,omitempty"`
 	// Links reads http(s) URLs as link attachments (quick-add-links D1), for the
-	// callers that attach them; routines and `ot time` leave it off.
+	// callers that attach them; routines leave it off.
 	Links bool `json:"links,omitempty"`
 }
 
