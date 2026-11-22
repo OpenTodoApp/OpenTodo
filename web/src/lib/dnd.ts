@@ -218,24 +218,39 @@ export function edgeStep(y: number, top: number, bottom: number): number {
 /** The page's own scrollers a drag can scroll: the main content and the sidebar's list. */
 const SCROLLERS = '[data-main-scroller], [data-sidebar-scroll]'
 
+/** The step for `el` at `y`, when it can still move that way (a 1 px tolerance for fractional scroll positions). */
+function edgeRoom(el: HTMLElement, y: number): number {
+  const r = el.getBoundingClientRect()
+  const step = edgeStep(y, Math.max(r.top, 0), Math.min(r.bottom, window.innerHeight))
+  if (!step) return 0
+  const room = step < 0 ? el.scrollTop > 0 : el.scrollTop + el.clientHeight < el.scrollHeight - 1
+  return room ? step : 0
+}
+
 /**
- * The scroller a pointer at (x, y) is near the edge of, with its step: the innermost of
- * the page's scrollers whose box holds the point and that can still move that way. By
- * geometry, not the element under the pointer, so a bar floating over the list's bottom
- * edge (the selection bar, the add button) does not hide the list from the drag.
+ * The scroller a pointer at (x, y) is near the edge of, with its step: the one holding the
+ * element under the pointer (the open phone drawer's list, not the page behind it), else
+ * by geometry the innermost one whose box holds the point and can still move that way, so
+ * a bar floating over the list's bottom edge (the selection bar, the add button) does not
+ * hide the list. Never a scroller inside an inert region, and never under a dialog.
  */
 export function edgeScroller(x: number, y: number, doc: Document = document): { el: HTMLElement; step: number } | null {
+  const under = doc.elementFromPoint?.(x, y)
+  if (under?.closest('[data-overlay-root], [role="dialog"]')) return null
+  const own = under?.closest<HTMLElement>(SCROLLERS)
+  if (own && !own.closest('[inert]')) {
+    const step = edgeRoom(own, y)
+    if (step) return { el: own, step }
+  }
   const inside = [...doc.querySelectorAll<HTMLElement>(SCROLLERS)].filter((el) => {
+    if (el.closest('[inert]')) return false
     const r = el.getBoundingClientRect()
-    return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom
+    return r.height > 0 && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom
   })
   // Document order puts a nested scroller after the one around it: try the inner one first.
   for (const el of inside.reverse()) {
-    const r = el.getBoundingClientRect()
-    const step = edgeStep(y, Math.max(r.top, 0), Math.min(r.bottom, window.innerHeight))
-    if (!step) continue
-    const room = step < 0 ? el.scrollTop > 0 : el.scrollTop + el.clientHeight < el.scrollHeight
-    if (room) return { el, step }
+    const step = edgeRoom(el, y)
+    if (step) return { el, step }
   }
   return null
 }

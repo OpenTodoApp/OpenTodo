@@ -337,6 +337,42 @@ describe('the scroller near the pointer (drag-edge-scroll D2)', () => {
     delete doc.elementFromPoint
   })
 
+  it('the open phone drawer scrolls, not the inert page behind it; nothing scrolls under a dialog', () => {
+    vi.stubGlobal('innerHeight', 800)
+    const aside = document.createElement('aside')
+    document.body.appendChild(aside)
+    const list = { top: 0, bottom: 800, scrollTop: 0, scrollHeight: 3000 }
+    const page = { top: 0, bottom: 800, scrollTop: 0, scrollHeight: 3000 }
+    const drawer = scroller('data-sidebar-scroll', list, aside)
+    const main = document.createElement('main')
+    main.setAttribute('inert', '')
+    document.body.appendChild(main)
+    scroller('data-main-scroller', page, main)
+    const row = document.createElement('div')
+    drawer.appendChild(row)
+    const doc = document as unknown as { elementFromPoint: unknown }
+    doc.elementFromPoint = () => row
+    expect(edgeScroller(100, 795)?.el).toBe(drawer)
+    // Under a bar over the drawer's edge, still the drawer: the page behind is inert.
+    doc.elementFromPoint = () => document.body
+    expect(edgeScroller(100, 795)?.el).toBe(drawer)
+    const dialog = document.createElement('div')
+    dialog.setAttribute('data-overlay-root', '')
+    document.body.appendChild(dialog)
+    doc.elementFromPoint = () => dialog
+    expect(edgeScroller(100, 795)).toBeNull()
+    delete doc.elementFromPoint
+  })
+
+  it('a fractional position at the end counts as the end, so the outer scroller takes over', () => {
+    vi.stubGlobal('innerHeight', 800)
+    const outer = { top: 0, bottom: 800, scrollTop: 0, scrollHeight: 2000 }
+    const inner = { top: 400, bottom: 800, scrollTop: 199.5, scrollHeight: 600 }
+    const out = scroller('data-main-scroller', outer)
+    scroller('data-main-scroller', inner, out)
+    expect(edgeScroller(100, 795)?.el).toBe(out)
+  })
+
   it('takes the inner of two nested scrollers while it can move, then the outer one', () => {
     vi.stubGlobal('innerHeight', 800)
     const outer = { top: 0, bottom: 800, scrollTop: 0, scrollHeight: 2000 }
