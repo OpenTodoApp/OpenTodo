@@ -158,7 +158,9 @@ async function stage(env: InstallEnv, staging: Cache, files: Record<string, Mani
  * once, and each stages into its own cache, never one the other deletes.
  */
 export function stagingName(version: string, payloadHash: string, now: number): string {
-  return `${APP_CACHE_PREFIX}${version}-${payloadHash.slice(0, 12)}-${now.toString(36)}`
+  // A random tail after the start time keeps two installs of one list apart, also within
+  // one millisecond; the time still parses (base 36 stops at the dot).
+  return `${APP_CACHE_PREFIX}${version}-${payloadHash.slice(0, 12)}-${now.toString(36)}.${crypto.randomUUID().slice(0, 8)}`
 }
 
 /** A staging cache younger than this may still be filling in another worker. */
@@ -201,7 +203,8 @@ export async function checkForUpdate(env: InstallEnv): Promise<CheckOutcome> {
   // Every write goes onto the record as stored, in one transaction, and only while it is
   // still the one this check started from: another worker (an open tab's worker beside
   // the one installing) may have installed or refused meanwhile, and its write stays.
-  const unchanged = (stored: TrustRecord | null) => (stored?.current?.payloadHash ?? null) === (record?.current?.payloadHash ?? null)
+  // The installed set by its cache, unique per install: a list installed again since has a new one.
+  const unchanged = (stored: TrustRecord | null) => (stored?.current?.cache ?? null) === (record?.current?.cache ?? null)
     && !!stored?.refuse === !!record?.refuse && stored?.mode === record?.mode
   /** Records a check on the stored record; answers whether it announces, false when nothing was written. */
   const recordCheck = async (check: CheckResult, announceKey: string | null): Promise<boolean> => {
@@ -347,7 +350,7 @@ export async function fetchLazy(env: InstallEnv, record: TrustRecord, path: stri
   // writing it back could replace a newer one.
   // The check is recorded on the record as stored, and only while it still holds the
   // set that was checked: another worker may have installed a newer one meanwhile.
-  if (persist) await env.update((stored) => (stored && stored.current?.payloadHash === record.current?.payloadHash ? { ...stored, lastCheck: check } : null)).catch(() => undefined)
+  if (persist) await env.update((stored) => (stored && stored.current?.cache === record.current?.cache ? { ...stored, lastCheck: check } : null)).catch(() => undefined)
   if (refuse) return { response: new Response('', { status: 404 }), check }
   return { response: fileResponse(got.body, got.type), check }
 }

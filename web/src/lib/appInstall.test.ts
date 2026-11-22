@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { base64Decode, fingerprint } from './appCode'
-import { answerAfterFailure, checkForUpdate, cachedFile, fetchLazy, pruneCaches, type InstallEnv } from './appInstall'
+import { answerAfterFailure, checkForUpdate, cachedFile, fetchLazy, pruneCaches, stagingName, type InstallEnv } from './appInstall'
 import { loadTrust, saveTrust, updateTrust, type TrustRecord } from './appTrust'
 import { clearLocalData } from './db'
 
@@ -190,6 +190,21 @@ describe('updates while reporting (refusal off)', () => {
     return { srv, e }
   }
 
+  it('a report-only check writes nothing when another worker turned refusal on or changed the mode meanwhile', async () => {
+    for (const change of [{ refuse: true }, { mode: 'self-built' }] as Partial<TrustRecord>[]) {
+      const { srv, e } = await installed()
+      const held = e.record()
+      expect(held.refuse).toBe(false)
+      await e.save({ ...held, ...change })
+      const other = e.record()
+      e.load = async () => structuredClone(held)
+      await srv.serve(v2)
+      expect(await checkForUpdate(e)).toEqual({ kind: 'unchanged' })
+      expect(e.record()).toEqual(other)
+      expect((await e.caches.keys()).filter((n) => n.includes('1.4.0'))).toEqual([])
+    }
+  })
+
   it('installs a valid update, keeps the previous set and reuses unchanged files', async () => {
     const { srv, e } = await installed()
     await srv.serve(v2)
@@ -373,6 +388,22 @@ describe('refusal (design D17)', () => {
     expect(await checkForUpdate(e)).toEqual({ kind: 'unchanged' })
     expect(e.record()).toEqual(other)
     expect((await e.caches.keys()).filter((n) => n.includes('1.5.0'))).toEqual([])
+  })
+
+  it('an install of the same list again since the check started counts as overtaken (v1, v2, v1)', async () => {
+    const { srv, e } = await refusing()
+    const held = e.record()
+    await srv.serve(v2)
+    await checkForUpdate(e)
+    await srv.serve({ ...v1, version: '1.3.0' })
+    await e.save({ ...e.record(), current: { ...held.current!, cache: stagingName('1.3.0', held.current!.payloadHash, 1_700_000_000_000) }, previous: e.record().current })
+    const again = e.record()
+    expect(again.current?.payloadHash).toBe(held.current?.payloadHash)
+    expect(again.current?.cache).not.toBe(held.current?.cache)
+    e.load = async () => structuredClone(held)
+    await srv.serve({ ...v2, version: '1.5.0', files: { ...v2.files, 'index.html': '<div id=root>5</div>' } })
+    expect(await checkForUpdate(e)).toEqual({ kind: 'unchanged' })
+    expect(e.record()).toEqual(again)
   })
 
   it('a check another worker\'s install overtook records nothing and announces nothing', async () => {
