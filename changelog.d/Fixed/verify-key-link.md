@@ -1,0 +1,1 @@
+- **Verify key in Settings → About opens the published keys.** It opened a missing page on the website; it now opens the key table in the docs, to compare with the fingerprint shown. (#1778)
