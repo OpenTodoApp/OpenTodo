@@ -58,6 +58,29 @@ export async function completeUndoable(id: string, completed: boolean, opts: { n
 }
 
 /**
+ * One task's fields that updateTask writes as they are (no date, start or project rules), as
+ * one step of undo history (OpenSpec change undo-estimate). Planned from the one row; a field
+ * already at that value is left out and nothing at all records nothing. A repeating task goes
+ * through updateTask as before, so the change carries to its series and follows the panel's
+ * scope, without a step.
+ */
+async function plainEditUndoable(id: string, patch: Partial<Task>, label: string): Promise<UndoableResult> {
+  const task = await db.tasks.get(id)
+  if (!task || task.recurrence) {
+    await updateTask(id, patch)
+    return { entry: null, label: '' }
+  }
+  const changed = Object.fromEntries(Object.entries(patch).filter(([k, v]) => ((task as unknown as Record<string, unknown>)[k] ?? null) !== (v ?? null)))
+  if (!Object.keys(changed).length) return { entry: null, label: '' }
+  return apply([{ entity: 'task', entityId: id, patch: changed }], label)
+}
+
+/** Set (or with null remove) one task's estimate in minutes, as one step of undo history. */
+export function estimateUndoable(id: string, minutes: number | null): Promise<UndoableResult> {
+  return plainEditUndoable(id, { estimate_minutes: minutes }, minutes ? t('Estimate {to} min', { to: String(minutes) }) : t('Estimate removed'))
+}
+
+/**
  * Set one task's priority as one step of undo history (OpenSpec change undo-priority): the bulk
  * action's plan and words for one task, no toast. A task already at that priority records nothing.
  * A repeating task is written as before, through updateTask.

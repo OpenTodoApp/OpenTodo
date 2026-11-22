@@ -4,7 +4,7 @@ import { db, useDatabase } from './db'
 import { createTask, resetDeviceId, updateTask } from './ops'
 import type { OnDropRule } from './types'
 import { topUndo, undoBatch } from './undo'
-import { dropOnPanel, dropUndoable, eveningUndoable, priorityUndoable } from './undoActions'
+import { dropOnPanel, dropUndoable, estimateUndoable, eveningUndoable, priorityUndoable } from './undoActions'
 
 let n = 0
 beforeEach(() => {
@@ -107,6 +107,33 @@ describe('archiveProjectsUndoable', () => {
     await undoBatch(r.entry!.id)
     for (const id of [home, garden, work]) expect((await db.projects.get(id))?.archived).toBeFalsy()
     expect((await db.projects.get(old))?.archived).toBe(true)
+  })
+})
+
+// OpenSpec change undo-estimate: one task's estimate is one step of history.
+describe('estimateUndoable', () => {
+  it('records one step; undo restores the old estimate', async () => {
+    const id = await createTask({ title: 'Write the report' })
+    await updateTask(id, { estimate_minutes: 30 })
+    const r = await estimateUndoable(id, 90)
+    expect(r.label).toBe('Estimate 90 min')
+    expect((await db.tasks.get(id))!.estimate_minutes).toBe(90)
+    await undoBatch(topUndo(await db.assistantUndo.toArray())!.id)
+    expect((await db.tasks.get(id))!.estimate_minutes).toBe(30)
+  })
+
+  it('removing it is a step too; the same value records nothing', async () => {
+    const id = await createTask({ title: 'Write the report' })
+    await updateTask(id, { estimate_minutes: 30 })
+    expect((await estimateUndoable(id, 30)).entry).toBeNull()
+    expect((await estimateUndoable(id, null)).label).toBe('Estimate removed')
+    expect(await db.assistantUndo.count()).toBe(1)
+  })
+
+  it('a repeating task is written as before, without a step', async () => {
+    const id = await createTask({ title: 'Review', due: { date: '2030-01-07' }, recurrence: 'every week' })
+    expect((await estimateUndoable(id, 45)).entry).toBeNull()
+    expect((await db.tasks.get(id))!.estimate_minutes).toBe(45)
   })
 })
 

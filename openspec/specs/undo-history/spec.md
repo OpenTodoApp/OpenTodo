@@ -57,6 +57,21 @@ Undo SHALL skip a field that was changed again after the batch, detected by the 
 - **WHEN** the person creates a task and then undoes that action
 - **THEN** the task moves to the Trash and can be restored, with no field-level conflict check
 
+### Requirement: Changing an estimate is a step
+Setting or removing one task's estimate (the task panel's Estimate field or its remove button, or a calendar block's lower edge) SHALL record one step in the undo history, named "Estimate {minutes} min" or "Estimate removed". The calendar edit SHALL also offer the Undo toast, like the block's other edits; the task panel SHALL NOT show one. Undoing it SHALL restore the previous estimate and redoing it SHALL apply it again. Setting the estimate a task already has SHALL record nothing. A repeating task's estimate SHALL be written as before, carried to its series and following the task panel's scope, and SHALL NOT record a step. The change SHALL be written locally first, offline too, as an ordinary op that converges through sync.
+
+#### Scenario: Undo an estimate typed by mistake
+- **WHEN** a person types 90 in the Estimate field of a task estimated at 30 minutes and then presses Ctrl/Cmd-Z with no field focused
+- **THEN** the estimate is 30 minutes again
+
+#### Scenario: Calendar resize
+- **WHEN** a person drags the lower edge of a one-hour block in the week to make it 90 minutes
+- **THEN** the toast offers Undo, and undoing it gives the block its hour back
+
+#### Scenario: A repeating task
+- **WHEN** a person sets the estimate of a weekly task
+- **THEN** the series gets that estimate as before and no step is added
+
 ### Requirement: Adding a task with quick add is a step
 Adding one task with quick add (a list's quick add line, the quick add sheet, or the command bar's add) SHALL record one step in the undo history, named like a pasted batch ("1 task added"), without showing an undo toast. Undoing that step SHALL move the task and the reminders and time entry quick add created with it to the Trash; redoing it SHALL bring them back. The task SHALL be written as before: locally first, offline too, as one batch of ops that converges through sync like any other creation.
 
