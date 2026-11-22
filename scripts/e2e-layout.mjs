@@ -493,7 +493,7 @@ async function pressFeedback(p) {
 /** One press on the n-th row's circle; null when the press did not register. */
 async function pressOnce(p, n) {
   const row = p.locator('li[data-task-id]').nth(n)
-  const circle = row.locator('button[aria-label^="Complete "]').first()
+  const circle = row.locator('button:has(> [data-check-mark])').first()
   const box = await circle.boundingBox()
   if (!box) return ['no completion circle on the first rows']
   const handles = [await circle.elementHandle(), await row.elementHandle()]

@@ -414,6 +414,8 @@ function RowLine({ m, projectMark, projectColumn, slotsOff }: { m: MetaValues; p
 
 export interface TaskRowProps {
   contextual?: boolean
+  /** The list has another visible top-level group before this row. */
+  groupSeparator?: boolean
   task: Task
   project?: Project
   /** Already resolved: unknown and deleted label ids are not in this list. */
@@ -765,7 +767,7 @@ function RowTrailing({ score, origin, revealed, forceActions }: { score?: ReactN
   )
 }
 
-function FullRow({ task, contextual = false, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onOpenPage, onToggleCollapse, shape = 'row', timeColumn = false, slotsOff, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dropNote, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, logbook = false, expanded = false, onExpand, layout, edge, notes = false, score }: TaskRowProps) {
+function FullRow({ task, contextual = false, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, groupSeparator, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onOpenPage, onToggleCollapse, shape = 'row', timeColumn = false, slotsOff, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dropNote, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, logbook = false, expanded = false, onExpand, layout, edge, notes = false, score }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -897,6 +899,7 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
       inert={departing || undefined}
       data-depth={depth}
       data-contextual={contextual || undefined}
+      data-task-group-separator={groupSeparator && !card && !departing && !dragging && dropIndicator !== 'before' ? '' : undefined}
       data-drop-target={dropKey}
       data-draggable={onPointerDown ? '' : undefined}
       data-swipeable={swipe && !card && !readOnly && !inline && !departing ? '' : undefined}
