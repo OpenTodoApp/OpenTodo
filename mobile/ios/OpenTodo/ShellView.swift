@@ -35,11 +35,12 @@ final class ShellController: NSObject, ObservableObject {
     /// Receives the files the web app saves (shell-repairs D3); made with the first one.
     private var saver: DownloadSaver?
     private var barsObserver: NSObjectProtocol?
+    private var paintObserver: NSObjectProtocol?
     /// The name of the launch screen's colour in the asset catalog (`UILaunchScreen` in Info.plist).
     static let launchColor = "LaunchBackground"
     /// The longest the launch colour stays before the web view shows whatever it has.
     static let revealCap: TimeInterval = 5
-    /// The web view shows: a page has loaded, a load failed, or the cap passed (shell-first-paint).
+    /// The web view shows: the page drew its first frame or loaded, a load failed, or the cap passed (shell-first-paint).
     private(set) var revealed = false
     /// The bars the web app asked for last; their icons come with the web view.
     private var bars: SystemBars?
@@ -61,8 +62,9 @@ final class ShellController: NSObject, ObservableObject {
         self.webView = WKWebView(frame: .zero, configuration: config)
         self.bridge = bridge
         super.init()
-        // Hidden over the launch colour until a page has loaded (shell-first-paint): the app
-        // goes from its launch screen to the page with no empty web view between them.
+        // Hidden over the launch colour until the page has drawn its first frame, or has loaded
+        // (shell-first-paint, shell-reveal-on-paint): the app goes from its launch screen to the
+        // page with no empty web view between them.
         webView.alpha = 0
         Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(ShellController.revealCap * 1_000_000_000))
@@ -97,6 +99,10 @@ final class ShellController: NSObject, ObservableObject {
                 self?.pull.handledByPage()
                 self?.applyPull()
             }
+        }
+        // The web app has drawn its first frame (shell-reveal-on-paint D2): no need to wait for its load.
+        paintObserver = NotificationCenter.default.addObserver(forName: FirstPaint.painted, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.reveal() }
         }
         // The last bars the app asked for, before the page draws (theme-engine D8).
         if let json = Prefs.shared.systemBars, let bars = SystemBars.parse(json) { apply(bars) }

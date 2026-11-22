@@ -123,6 +123,12 @@ final class BridgeHost: BridgeActions {
         NotificationCenter.default.post(name: PullRefresh.handled, object: nil)
     }
 
+    /// shell-reveal-on-paint D2: the visible app's web view shows; a background run shows nothing.
+    func bridgedPainted() {
+        guard interactive else { return }
+        NotificationCenter.default.post(name: FirstPaint.painted, object: nil)
+    }
+
     func bridgedOpenExternal(_ url: String) {
         guard interactive, let target = URL(string: url) else { return }
         UIApplication.shared.open(target)

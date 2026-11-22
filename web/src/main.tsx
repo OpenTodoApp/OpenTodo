@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+import { StrictMode, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { App } from './app/App'
@@ -8,7 +8,7 @@ import { watchFocusClearance } from './lib/focusClearance'
 import { keepTouchActive } from './lib/touchActive'
 import { bootLanguage, t } from './lib/i18n'
 import { logUnhandledRejections, watchAppUpdates } from './lib/appUpdate'
-import { has, installShellLinks, shell } from './lib/shell'
+import { announcePainted, has, installShellLinks, shell } from './lib/shell'
 
 // Bottom sheets sit above the on-screen keyboard; the focused field stays visible.
 watchVisualViewport()
@@ -47,6 +47,15 @@ void import('./lib/pageBranding').then((m) => m.watchPageBranding())
 // page-transitions D3: forward and back slides, loaded after the first paint (a change before it swaps at once).
 requestAnimationFrame(() => setTimeout(() => void import('./app/pageTransition').then((m) => m.installPageTransitions()), 0))
 
+// shell-reveal-on-paint D1: after React's first commit, the first callback runs before
+// the next frame and the second after it, so the app's own content is on screen.
+function Painted() {
+  useEffect(() => {
+    requestAnimationFrame(() => requestAnimationFrame(() => announcePainted()))
+  }, [])
+  return null
+}
+
 // The last language applied on this device (else the browser's) is loaded before
 // the first render, so there is no flash of English (app-localization D3).
 void bootLanguage().finally(() => {
@@ -55,6 +64,8 @@ void bootLanguage().finally(() => {
       <ErrorBoundary>
         <App />
       </ErrorBoundary>
+      {/* Outside the boundary: an app that fails on its first render shows its error screen at once. */}
+      <Painted />
     </StrictMode>,
   )
 })

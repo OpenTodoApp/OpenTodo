@@ -10,7 +10,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { shellGeofences } from './geofences'
-import { backgroundDone, forgetShellData, openAlarmSettings, setSystemBars, shellHaptic, shellVisible, takeOverPull, type OpenTodoShell, type ShellCapability, type ShellGeofencePayload, type ShellHaptic } from './shell'
+import { announcePainted, backgroundDone, forgetShellData, openAlarmSettings, setSystemBars, shellHaptic, shellVisible, takeOverPull, type OpenTodoShell, type ShellCapability, type ShellGeofencePayload, type ShellHaptic } from './shell'
 import { fileChunks } from './saveFile'
 import { shellUrlAction } from './shellActions'
 import { parsePushState, parsePushSubscription, pushState, pushSubscribe, pushUnsubscribe } from './shellPush'
@@ -366,6 +366,25 @@ function pull() {
   }
 }
 
+/** shell-reveal-on-paint D1: the call that tells a shell hiding its web view that the page has drawn, captured from the real call. */
+function painted() {
+  const calls: unknown[][] = []
+  // A shell that does not list the capability is never called.
+  window.opentodoShell = { bridge: 1, platform: 'android', app: '1.6.0', capabilities: ['haptics'], painted: (...args: unknown[]) => void calls.push(args) }
+  announcePainted()
+  window.opentodoShell = { bridge: 1, platform: 'ios', app: '1.6.0', capabilities: ['first-paint'], painted: (...args: unknown[]) => void calls.push(args) }
+  announcePainted()
+  // Once per page load.
+  announcePainted()
+  delete window.opentodoShell
+  return {
+    description: 'First paint (shell-reveal-on-paint D1): a shell that keeps its web view hidden over its launch screen lists the capability. The web app calls the method once per page load, without arguments, after its first frame with its own content is drawn; the shell then shows the web view without waiting for the page to finish loading. A shell without it lists nothing and is not called.',
+    capability: 'first-paint' as const,
+    method: 'painted' as const,
+    calls,
+  }
+}
+
 /**
  * shell-push D5: the subscription a shell with `push` hands over, its errors and
  * its states. The keys are those of push-message.json (written by the server's own
@@ -403,7 +422,7 @@ afterEach(() => {
 
 describe('Android bridge fixtures', () => {
   it('are current (mobile/android/app/src/test/resources/bridge)', () => {
-    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'app-links.json': text(appLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()), 'pull.json': text(pull()), 'push-bridge.json': text(pushBridge()), 'scroll-top.json': text(scrollTop()) }
+    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'app-links.json': text(appLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()), 'pull.json': text(pull()), 'painted.json': text(painted()), 'push-bridge.json': text(pushBridge()), 'scroll-top.json': text(scrollTop()) }
     for (const [name, f] of Object.entries(fixtures())) want[name] = text(f)
     if (update) {
       mkdirSync(dir, { recursive: true })

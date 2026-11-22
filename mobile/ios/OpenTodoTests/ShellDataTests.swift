@@ -329,7 +329,7 @@ final class BridgeTests: XCTestCase {
 
     func testCapabilitiesFollowTheDevice() {
         XCTAssertEqual(Bridge.capabilities(biometric: false, share: true),
-                       ["reminders", "widgets", "share", "links", "obsidian-links", "app-links", "system-bars", "pull-refresh", "completion-sound", "scroll-top", "haptics"])
+                       ["reminders", "widgets", "share", "links", "obsidian-links", "app-links", "system-bars", "pull-refresh", "first-paint", "completion-sound", "scroll-top", "haptics"])
         XCTAssertTrue(Bridge.capabilities(biometric: true, share: true).contains("biometric"))
     }
 
@@ -376,7 +376,7 @@ final class BridgeTests: XCTestCase {
                 let visible = Set(Bridge.capabilities(biometric: biometric, share: true, haptics: haptics))
                 XCTAssertTrue(visible.isSuperset(of: both), "\(visible)")
                 XCTAssertTrue(visible.isDisjoint(with: backgroundOnly), "\(visible)")
-                XCTAssertTrue(visible.isSubset(of: visibleOnly.union(both).union(["biometric", "pull-refresh", ScrollTop.capability])), "\(visible)")
+                XCTAssertTrue(visible.isSubset(of: visibleOnly.union(both).union(["biometric", "pull-refresh", FirstPaint.capability, ScrollTop.capability])), "\(visible)")
                 XCTAssertTrue(visible.contains(ScrollTop.capability))
                 XCTAssertTrue(visible.contains("links"))
                 XCTAssertFalse(visible.contains("alarm-settings"))
@@ -490,6 +490,38 @@ final class BridgeTests: XCTestCase {
         let origin = try XCTUnwrap(URL(string: "https://todo.example.com"))
         let script = Bridge.script(origin: origin, app: "1.2.3", capabilities: [PullRefresh.capability])
         XCTAssertTrue(script.contains("pullHandled: function () { call('pullHandled') }"))
+    }
+
+    /// shell-reveal-on-paint D1, D2: the capability and the call follow the shared bridge
+    /// fixture; only the visible app, which hides its web view, lists the capability.
+    func testFirstPaintFollowsTheBridgeFixture() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/painted.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        XCTAssertEqual(fixture["capability"] as? String, FirstPaint.capability)
+        XCTAssertEqual(fixture["method"] as? String, FirstPaint.method)
+        // One call per page load, without arguments.
+        let calls = try XCTUnwrap(fixture["calls"] as? [[Any]])
+        XCTAssertEqual(calls.count, 1)
+        XCTAssertTrue(calls[0].isEmpty)
+        XCTAssertTrue(Bridge.capabilities(biometric: false, share: true).contains(FirstPaint.capability))
+        XCTAssertFalse(Bridge.capabilities(biometric: true, share: false).contains(FirstPaint.capability))
+        let origin = try XCTUnwrap(URL(string: "https://todo.example.com"))
+        let script = Bridge.script(origin: origin, app: "1.2.3", capabilities: [FirstPaint.capability])
+        XCTAssertTrue(script.contains("painted: function () { call('painted') }"))
+    }
+
+    /// shell-reveal-on-paint D2: the visible app's call shows the web view before the page
+    /// has loaded; a background run's call shows nothing.
+    func testThePagesFirstFrameShowsTheWebView() throws {
+        let shell = ShellController(origin: try XCTUnwrap(URL(string: "https://todo.example")))
+        BridgeHost(interactive: false).bridgedPainted()
+        XCTAssertFalse(shell.revealed)
+        XCTAssertEqual(shell.webView.alpha, 0)
+        BridgeHost(interactive: true).bridgedPainted()
+        XCTAssertTrue(shell.revealed)
+        XCTAssertFalse(shell.loaded)
     }
 
     /// pull-to-sync D4: the shell's refresh control is on until the page showing takes the
