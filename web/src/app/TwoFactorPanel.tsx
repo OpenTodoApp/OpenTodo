@@ -308,7 +308,7 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
 export function EnrolmentGate({ user, onEnrolled, onLogout }: { user: User; onEnrolled: () => void; onLogout: () => void }) {
   const online = useOnline()
   return (
-    <div className="flex min-h-full items-center justify-center bg-canvas p-6">
+    <div className="flex min-h-full items-start justify-center bg-canvas p-6 pt-[max(1.5rem,var(--safe-top))] sm:items-center">
       <div className="w-full max-w-lg space-y-4 rounded-card border border-default bg-surface p-6 shadow-1" data-testid="enrolment-gate">{/* surface-lint-allow: the enrolment gate replaces the page */}
         <div>
           <h1 className="text-h3 font-semibold">{t('Set up two-factor authentication')}</h1>
