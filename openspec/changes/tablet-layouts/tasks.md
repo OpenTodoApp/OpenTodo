@@ -1,7 +1,7 @@
 ## 1. Audit
 
-- [ ] 1.1 Every screen at 744, 820, 1024, 1180, 1366 px portrait and landscape, and 320, 507, 678, 981 px; findings recorded in design.md (D1)
-- [ ] 1.2 Update D2 from the findings before any code
+- [x] 1.1 Every screen at 744, 820, 1024, 1180, 1366 px portrait and landscape, and 320, 507, 678, 981 px; findings recorded in design.md (D1)
+- [x] 1.2 Update D2 from the findings before any code
 
 ## 2. Layout
 
