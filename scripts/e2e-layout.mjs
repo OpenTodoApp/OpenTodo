@@ -724,9 +724,11 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
     }
     if (kind === 'drawer') {
       await p.mouse.click(p.viewportSize().width - 10, p.viewportSize().height / 2)
-      await p.waitForTimeout(350)
-      const box = await overlay.boundingBox()
-      if (box && box.x + box.width > 1) await fail(p, screen, name, 'drawer does not close with a tap outside')
+      // Until it has slid away: a busy runner can take longer than the slide itself.
+      const gone = () => overlay.boundingBox().then((b) => !b || b.x + b.width <= 1)
+      let closed = await gone()
+      for (let i = 0; !closed && i < 20; i++) { await p.waitForTimeout(100); closed = await gone() }
+      if (!closed) await fail(p, screen, name, 'drawer does not close with a tap outside')
     }
     return
   }

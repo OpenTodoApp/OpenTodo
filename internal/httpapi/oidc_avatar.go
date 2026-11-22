@@ -6,7 +6,6 @@ import (
 	"errors"
 	"image"
 	_ "image/gif" // provider pictures come as PNG, JPEG or GIF
-	"image/jpeg"
 	_ "image/png"
 	"io"
 	"net"
@@ -125,9 +124,5 @@ func (s *Server) fetchProviderPicture(ctx context.Context, pictureURL string) ([
 	if err != nil {
 		return nil, errors.New("the picture could not be read")
 	}
-	var out bytes.Buffer
-	if err := jpeg.Encode(&out, imgfit.Square(img, avatarSize), &jpeg.Options{Quality: avatarQuality}); err != nil {
-		return nil, err
-	}
-	return out.Bytes(), nil
+	return encodeAvatar(imgfit.Square(img, avatarSize))
 }

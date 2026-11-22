@@ -43,7 +43,7 @@ import { hueName } from '../../lib/colourNames'
 import { t, msg, translatedList } from '../../lib/i18n'
 import { customPriorityName, isNoPriority } from '../../lib/priority'
 import { DAY_PARTS, dayPartName, dayPartOf } from '../../lib/dayParts'
-import { dayPartUndoable, eveningUndoable, sectorUndoable } from '../../lib/undoActions'
+import { dayPartUndoable, eveningUndoable, priorityUndoable, sectorUndoable } from '../../lib/undoActions'
 import { sectorChoices } from '../../lib/sectorNames'
 import { runGiveBackSlot, runTakeSlot, type SlotState } from '../task-list/slotActions'
 import { requestFrames } from '../calendar/framesRequest'
@@ -251,7 +251,7 @@ export function commands(ctx: PaletteContext): Command[] {
     if (writable) {
       out.push(
         { id: 'task:complete', label: tk.completed_at ? t('Reopen {title}', { title }) : t('Complete {title}', { title }), icon: 'check', shortcut: keysOf('list.complete'), keywords: 'done finish', run: () => list.toggleComplete(tk.id, !tk.completed_at) },
-        ...([1, 2, 3, 4] as const).map((p): Command => ({ id: `task:p${p}`, label: isNoPriority(p) ? t('Remove the priority of {title}', { title }) : t('Set priority {p} on {title}', { p: customPriorityName(p) || p, title }), keywords: `p${p} priority ${p}${p === 4 ? ' none clear' : ''}`, icon: 'flag', shortcut: String(p), run: () => updateTask(tk.id, { priority: p }) })),
+        ...([1, 2, 3, 4] as const).map((p): Command => ({ id: `task:p${p}`, label: isNoPriority(p) ? t('Remove the priority of {title}', { title }) : t('Set priority {p} on {title}', { p: customPriorityName(p) || p, title }), keywords: `p${p} priority ${p}${p === 4 ? ' none clear' : ''}`, icon: 'flag', shortcut: String(p), run: () => priorityUndoable(tk.id, p) })),
         { id: 'task:estimate', label: t('Edit the estimate of {title}', { title }), icon: 'clock', shortcut: keysOf('list.estimate'), run: () => { estimateFocus.request(tk.id); list.open(tk.id) } },
         { id: 'task:deadline', label: t('Set the deadline of {title}', { title }), icon: 'hourglass', shortcut: keysOf('list.deadline'), run: () => { deadlineFocus.request(tk.id); list.open(tk.id) } },
         { id: 'task:blocked-by', label: t('Choose what {title} waits for', { title }), icon: 'lock', shortcut: keysOf('list.blocked-by'), keywords: 'blocked by depends dependency', run: () => { blockedByFocus.request(tk.id); list.open(tk.id) } },

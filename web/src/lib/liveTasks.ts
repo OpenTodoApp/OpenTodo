@@ -8,6 +8,7 @@
 // The snapshot is shared: callers treat the array and its tasks as read-only (sort
 // a copy, never the array itself).
 import { taskSnapshot } from './taskSnapshot'
+import { useFirstCopyPending } from './firstCopy'
 import { visibleTaskSets } from './trash'
 import type { Task } from './types'
 import { LayeredMap, noteChanges, noteKeys, patchSorted, perList } from './taskDelta'
@@ -24,7 +25,9 @@ const both = taskSnapshot()
 
 /** Every visible task of every workspace, live; undefined until loaded. */
 export function useTasksOfEveryWorkspace(): Task[] | undefined {
-  return both.use()?.every
+  const copying = useFirstCopyPending()
+  const snapshot = both.use()
+  return copying ? undefined : snapshot?.every
 }
 
 /** Every workspace's visible tasks outside React (the tracked totals' store), and its subscription. */
@@ -32,7 +35,10 @@ export const everyTask = { read: (): Task[] | undefined => both.read()?.every, s
 
 /** Every visible task (not deleted, project not in the Trash) of the current workspace, live; undefined until loaded. */
 export function useLiveTasks(): Task[] | undefined {
-  return both.use()?.here
+  // A new device's first copy reads as not loaded, so lists keep their skeleton (first-copy-skeleton).
+  const copying = useFirstCopyPending()
+  const snapshot = both.use()
+  return copying ? undefined : snapshot?.here
 }
 
 // Derived lists are computed once per snapshot and shared by every caller; a
