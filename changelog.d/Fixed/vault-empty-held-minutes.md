@@ -1,0 +1,1 @@
+- **A file left empty for a few seconds mid-save keeps its tasks, also in `ot vault watch`.** A save whose empty step lasted over two syncs (another file changed meanwhile) still trashed the file's tasks; an empty file is now held for up to five minutes before it syncs as emptied.

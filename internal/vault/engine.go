@@ -133,6 +133,8 @@ type engine struct {
 	// pending are files iCloud has not downloaded yet: only a `.<name>.icloud`
 	// placeholder is on disk. They are neither read nor written.
 	pending map[string]bool
+	// held: the half-saved files among pending, with their first hold time.
+	held map[string]int64
 	// raced are vault files saved while the run went on, and racedTasks the
 	// tasks of task notes saved meanwhile: not written, and their values keep
 	// their base so the next run merges the save.
@@ -391,6 +393,7 @@ func (e *engine) scan() error {
 	}
 	e.disk = disk
 	e.pending = map[string]bool{}
+	e.held = map[string]int64{}
 	for _, p := range sortedKeys(e.st.Files) {
 		if _, ok := disk[p]; ok {
 			continue
@@ -445,23 +448,37 @@ func (e *engine) holdHalfSaved() {
 	}
 }
 
+// halfSavedHold is how long an empty file stays held as half saved: longer
+// than any editor's two-step save, short enough that a file emptied on
+// purpose syncs as empty soon.
+const halfSavedHold = 5 * time.Minute
+
 // halfSaved lists the vault files that look like an editor's first save step:
 // empty now, holding text when the last sync wrote them, and not emptied
 // because all their lines moved to other files (the Inbox's last line into a
-// project: the moved lines carry their ids). A file is held once: a file held
-// last sync has lost its hash, so if it is still empty it was emptied on
-// purpose and syncs as it is.
+// project: the moved lines carry their ids). A held file stays held while it
+// is empty, up to halfSavedHold from its first hold (a watch can sync again
+// within the save); then it was emptied on purpose and syncs as it is. A hold
+// time in the future (a clock set back since) ends the hold. Each
+// one's first hold time is recorded in e.held.
 func (e *engine) halfSaved() []string {
 	var out []string
 	empty := hashOf(nil)
+	now := e.o.Now().UnixMilli()
 	for _, p := range sortedKeys(e.disk) {
 		fs, ok := e.st.Files[p]
-		if !ok || len(e.disk[p]) != 0 || fs.Hash == empty || fs.Hash == "" {
+		if !ok || len(e.disk[p]) != 0 || fs.Hash == empty {
 			continue
 		}
-		if !e.allMoved(p) {
-			out = append(out, p)
+		switch {
+		case fs.Hash == "" && fs.Held != 0 && now >= fs.Held && now-fs.Held < halfSavedHold.Milliseconds():
+			e.held[p] = fs.Held
+		case fs.Hash != "" && !e.allMoved(p):
+			e.held[p] = now
+		default:
+			continue
 		}
+		out = append(out, p)
 	}
 	return out
 }
