@@ -50,6 +50,8 @@
 	<string>OpenTodo connects to the server you enter so it can sync your tasks on this network.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Record a voice note and send it to the server for transcription.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>OpenTodo saves the images you choose to your photo library.</string>
 	<key>UIApplicationShortcutItems</key>
 	<array>
 		<dict>

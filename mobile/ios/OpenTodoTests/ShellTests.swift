@@ -165,7 +165,14 @@ final class BridgeOnAServerTests: XCTestCase {
         shell.load()
         // 90 s, not 30: on a cold CI simulator the first web view launch can take longer than
         // half a minute (two of six main runs on 2026-11-10 timed out with a healthy bridge).
-        let report = try await server.report(timeout: 90)
+        let report: [String: String]
+        do {
+            report = try await server.report(timeout: 90)
+        } catch {
+            // Says which half failed: the page never asked (`/` missing) or it loaded but did not report.
+            let at = shell.webView.url?.absoluteString ?? "no address"
+            return XCTFail("\(error.localizedDescription); the server was asked for \(server.paths); the web view is at \(at), loading: \(shell.webView.isLoading)")
+        }
         XCTAssertEqual(report["origin"], origin.absoluteString)
         XCTAssertEqual(report["handler"], "object", "the message handler reaches the page: \(report)")
         XCTAssertEqual(report["shell"], "object", "window.opentodoShell exists: \(report)")

@@ -193,6 +193,8 @@ describe('attachment data layer', () => {
       vi.stubGlobal('fetch', vi.fn(async () => new Response(envelope)))
       vi.stubGlobal('URL', Object.assign(Object.create(URL), { createObjectURL: (b: Blob) => { opened = b; return 'blob:x' }, revokeObjectURL: () => {} }))
       vi.stubGlobal('document', { createElement: () => ({ click: () => {} }) })
+      // No early tab handed back (lib/attachmentOpen.ts): the decrypted file opens by the anchor.
+      vi.stubGlobal('window', { open: () => null })
       await openAttachment((await db.attachments.get(id))!)
       expect(await opened!.text()).toBe('the plan')
       expect(opened!.type).toBe('text/plain')

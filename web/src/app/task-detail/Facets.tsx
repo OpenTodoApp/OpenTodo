@@ -39,7 +39,7 @@ import { t } from '../../lib/i18n'
 import { act, reportActionError } from '../actionError'
 import { energyLevelsOn, energyOf, setTaskEnergy } from '../../lib/energy'
 import { useUserPrefsRow } from '../../lib/localData'
-import { eveningUndoable } from '../../lib/undoActions'
+import { eveningUndoable, priorityUndoable } from '../../lib/undoActions'
 import { EnergyChoice } from './EnergyChoice'
 
 export const PRIORITIES: { p: Priority; cls: string }[] = [
@@ -236,7 +236,7 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
           {PRIORITIES.map(({ p, cls }) => (
             <button key={p} type="button" aria-pressed={task.priority === p} aria-label={priorityAccessibleName(p)}
               className={`min-w-11 max-w-full truncate rounded-control border px-2.5 py-1 text-meta ${cls} ${task.priority === p ? 'bg-sunken font-semibold dark:bg-raised' : 'border-dashed hover:bg-sunken dark:hover:bg-raised'}`}
-              onClick={() => { act(updateTask(task.id, { priority: p })); onClose() }}>{priorityShort(p)}</button>
+              onClick={() => { act(priorityUndoable(task.id, p)); onClose() }}>{priorityShort(p)}</button>
           ))}
         </div>
       ))

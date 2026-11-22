@@ -1297,8 +1297,8 @@ jobs:
 
   # TestFlight (OpenSpec change ios-distribution D5, D9): after the release, the iPhone app of a
   # final tag is archived, signed through the App Store Connect API and uploaded to TestFlight by
-  # .github/workflows/ios-testflight.yml, which the owner can also run by hand for any ref. A
-  # person submits a build for review in App Store Connect (RELEASING.md). The secrets live in the
+  # .github/workflows/ios-testflight.yml, which the owner can also run by hand for any ref, then
+  # submitted for App Store review (D10, released after approval). The secrets live in the
   # `release` environment; without them the job warns and succeeds, and the release never depends
   # on it.
   ios-testflight:

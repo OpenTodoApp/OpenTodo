@@ -11,7 +11,7 @@ This change is the step from source to store. The code changes are small: one sh
 **Goals:**
 - An OpenTodo app any iPhone or iPad user can install from the App Store and point at their own server.
 - A TestFlight group that testers can join from a link.
-- A release pipeline that needs no Mac at all: signed and uploaded in CI after final tags and on demand, submitted for review by hand.
+- A release pipeline that needs no Mac at all: signed and uploaded in CI after final tags and on demand, and a final tag's build submitted for App Store review by CI (D10).
 - Building from source keeps working, with or without a paid team.
 
 **Non-Goals:**
@@ -44,10 +44,10 @@ Nothing is saved as a task before the capture screen's Save, as before. The cost
 - An App Intent that opens the app. A share extension cannot run one either.
 - A share extension that creates the task itself through the REST API. Rejected: a second API client with its own credential, and no encryption on encrypted accounts (ios-shell D3 rejected native REST for the same reasons).
 
-**D5. Signed and uploaded in CI, submitted for review by hand.**
+**D5. Signed and uploaded in CI; review submission in D10.**
 The `ios` job keeps building unsigned on pull requests that touch `mobile/ios/**` and on tags. After the GitHub release of a final `v*` tag (no `-rc` suffix, the same rule as the Play upload), the `ios-testflight` job uploads the app to TestFlight; D9 is how. The owner can run the same workflow by hand for any ref. Without the secrets, the job warns and succeeds.
 
-Nothing is submitted for review automatically. The owner adds the build to the external TestFlight group and submits it for App Store review in App Store Connect. That is one step in RELEASING.md. Review is a human gate and outcomes vary, so a release never waits on it.
+A final tag's build is then submitted for App Store review by the same job (D10; the owner's standing decision of 22 Nov, which replaces "submitted by hand"). The owner still adds a build to the external TestFlight group by hand. Review is a human gate at Apple and outcomes vary, so a release never waits on it: the GitHub release and the other publishing jobs are done before.
 
 The `.ipa` is not attached to the GitHub release. Apple re-signs store builds, and a store-signed `.ipa` installs on no other device. The release notes link the store listing instead.
 
@@ -99,6 +99,23 @@ Rejected: fastlane (`match`, `cert`, `sigh`). It is a Ruby toolchain and a depen
 - Missing secrets: a warning, and the job succeeds.
 - Anything else (a taken bundle ID, no app record, a profile without the App Group, a refused key, a failed export or upload): the job fails with Apple's message and what to do. The release is already published by then and is not affected; the Play upload and the other publishing jobs do not depend on it.
 - "What to test" that cannot be set in time: a warning, the upload still counts.
+
+**D10. App Store review for a final tag.**
+After Apple has processed a final tag's build (D9 step 6), `appstore.mjs submit` prepares and submits the App Store version through the REST API, with the same key and the `release` environment, and nothing new stored:
+1. The App Store version of the marketing version (`1.2.0`) is created, or, when Apple's one editable iOS version is still an earlier unsubmitted one, moved to this version; a later editable version is never moved back (an older tag run again stops), and a version still in review or waiting for release stops it too, since Apple takes no new version then. Its release type is `AFTER_APPROVAL`: Apple releases it when review approves.
+2. What's New, in every localization the version has, is the version's CHANGELOG.md section as plain text (Markdown removed, at most 4,000 characters): only what that release shipped. The listing and the changelog are English today, so each localization gets the English text; a translated changelog would change that. An app's first App Store version has no What's New (Apple refuses it): it is set only once a version has reached the App Store (ready for distribution, replaced, or removed from sale).
+3. The processed build is attached. Export compliance is the build's own answer: `ITSAppUsesNonExemptEncryption` is `NO` (D7), so the build already says no non-exempt encryption; a build without an answer gets the same answer, and a build that declares encryption stops the submission.
+4. The version goes into a review submission (`reviewSubmissions`, reusing one that is not yet submitted, its rejected item marked resolved) and the submission is submitted. A submission already waiting or in review holds this version (nothing to do) or another (it stops: Apple takes one at a time); a draft holding other items is not sent along.
+
+*Idempotent.* A version that is already waiting for review, in review, approved or released is left alone, so a run again or a hand run never resubmits it. A draft submission is reused, an attached build and an equal What's New are not written again, and no second version is created. `submit --dry-run` reads App Store Connect as usual and logs each write instead of making it.
+
+*Triggers.* After a release the job submits (`app_store: submit`). A run by hand defaults to `dry-run`; `submit`, `skip` and `submit-only` are the other choices. `submit-only` uploads nothing and submits the build given as `build_number`, already processed (a release whose build is in TestFlight from before this change). The version is the tag's own: when `git describe` finds another tag on the commit, the run stops. A release candidate is never submitted, checked by the step's condition and by `scripts/repo-checks.test.mjs`. A build Apple had not finished processing within the wait is not submitted: the run warns, and running the workflow again submits it.
+
+*What the API cannot do, once, by the owner in App Store Connect* (each is a precondition Apple checks at submission; a missing one fails the step with Apple's message, after the upload has counted): the Paid or Free Apps agreement accepted in Business; the app's App Privacy answers ("Data Not Collected", `mobile/ios/store/privacy.md`); the age rating questionnaire; the category, the support URL and the privacy policy URL in App Information; pricing and availability; screenshots for the required iPhone and iPad sizes in each localization; the App Review information (contact, and the notes and demo server from `mobile/ios/store/review-notes.md`), which App Store Connect carries from version to version; and the content rights declaration. Apple's answer to a failed submission lists every missing setting, and the job's log shows all of them.
+
+*Who can submit.* A `v*` tag or a run by hand now reaches a public App Store release, not only TestFlight. A tag ruleset already lets only organization admins create `v*` tags (RELEASING.md); the `release` environment should allow deployments from `v*` tags only (Settings → Environments → release → Deployment branches and tags), so a run by hand from a branch with an edited workflow cannot use the key. No per-release approval: the owner's decision.
+
+Rejected: `appStoreVersionSubmissions`, the older one-call submission. Apple deprecated it in favour of review submissions, which also carry in-app events and product pages later.
 
 ## Data model impact
 
