@@ -220,7 +220,7 @@ describe('the page holds still under a held or dragged row (drag-edge-scroll D1)
   it('a press adds no touchmove listener of its own: the standing one, there before the touch, blocks the scroll', () => {
     const add = vi.spyOn(window, 'addEventListener')
     const cancel = beginDrag(press, { label: 'Task', onDrop: vi.fn() })
-    expect(add.mock.calls.filter(([type]) => type === 'touchmove')).toEqual([])
+    expect(add.mock.calls.filter(([type]) => String(type) === 'touchmove')).toEqual([])
     add.mockRestore()
     // Before the hold the finger scrolls; once armed, and once lifted, it does not.
     expect(touchmove()).toBe(false)
