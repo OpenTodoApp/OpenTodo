@@ -18,9 +18,9 @@
   },
   "gated": ["desktop", "phone", "server"],
   "reference": {
-    "$comment": "perf-relative-budgets: the server's time limits are relative to the reference workload (internal/perf/reference_test.go), timed in every run next to them. A limit is multiplied by that run's reference median over the baseline, the reference's median on the runner the limits describe, and is never more than the limit times the backstop. Memory and sizes stay absolute.",
+    "$comment": "perf-relative-budgets: the server's time limits are relative to the reference workload (internal/perf/reference_test.go), timed in every run next to them. A limit is multiplied by that run's reference median over the baseline, the reference's median on the runner the limits describe, and is never more than the limit times the backstop. Memory and sizes stay absolute. Baseline 8.3 ms: the reference's median on the CI runner of the pull request's perf run (AMD EPYC 9V74, 4 CPUs, runs 7.7 to 8.5 ms), where server-list-project read 123 ms.",
     "setting": "server",
-    "baseline": 12,
+    "baseline": 8.3,
     "backstop": 1.5,
     "units": ["ms", "s"]
   },

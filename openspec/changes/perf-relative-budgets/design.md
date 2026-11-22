@@ -68,4 +68,4 @@ No screen changes.
 ## Risks / Trade-offs
 
 - **The reference and the routes may not slow down together** on a runner that is slow at something else, such as disk or the network stack. The backstop bounds what that can hide. The reference covers what #1656 measured: SQLite stepping and Go allocation.
-- **A provisional baseline.** Until this pull request's perf run reports the CI value, the baseline is the one measured on a developer machine (about 12 ms on a 4-CPU Xeon at 2.1 GHz). Task 2.2 replaces it.
+- **The baseline is one runner's.** This pull request's perf run measured the reference at 7.7–8.5 ms (median 8.3) on an AMD EPYC 9V74 with 4 CPUs, where `server-list-project` read 123 ms; a developer machine (a 4-CPU Xeon at 2.1 GHz) reads about 12 ms. 8.3 ms is the baseline; a later runner type that reads it differently scales its limits by the ratio, which is the point.

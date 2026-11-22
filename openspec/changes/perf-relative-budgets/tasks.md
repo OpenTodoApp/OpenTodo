@@ -6,8 +6,8 @@
 
 ## 2. Calibration
 
-- [ ] 2.1 This pull request's perf run (`perf.yml`) passes and reports `server-reference` on the CI runner; verified by the run's `perf-report/server.json`
-- [ ] 2.2 `baseline` is set to that CI value and the pull request states it; verified by `go test -tags perf -run TestBudgetsFile ./internal/perf` and the next perf run
+- [x] 2.1 This pull request's perf run (`perf.yml`) passes and reports `server-reference` on the CI runner; verified by the run's `perf-report/server.json`
+- [x] 2.2 `baseline` is set to that CI value and the pull request states it; verified by `go test -tags perf -run TestBudgetsFile ./internal/perf` and the next perf run
 
 ## 3. Check
 
