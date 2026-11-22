@@ -12,7 +12,9 @@ import { Badge, Icon, Notice, SettingRow } from '../ui'
 import { navigate } from './router'
 
 export const SECURITY_URL = 'https://open-todo.app/security#app-signing'
-export const VERIFY_URL = 'https://open-todo.app/security/verify'
+// The published fingerprints, to compare with the one shown here (#1778): the docs'
+// key table, until the website's /security/verify page ships (signed-web-app 5.5).
+export const VERIFY_URL = 'https://open-todo.app/docs/security/signed-app#the-keys'
 
 /** The trust record and whether its key is an official one; undefined while loading. */
 function useTrust(): { record: TrustRecord | null | undefined; official: boolean } {
@@ -56,7 +58,7 @@ export function AppCodeView({ record, official, serverVersion }: { record: Trust
         control={
           <>
             {signed && (
-              <a href={`${VERIFY_URL}#${record.signer}`} target="_blank" rel="noopener noreferrer" data-app-code-verify
+              <a href={VERIFY_URL} target="_blank" rel="noopener noreferrer" data-app-code-verify
                 className="ui-btn ui-btn--secondary ui-btn--sm inline-flex items-center gap-1.5 whitespace-nowrap">
                 {t('Verify key')}<Icon name="external-link" size="xs" />
               </a>
