@@ -13,7 +13,7 @@ The OpenTodo app for iPhone and iPad opens your own OpenTodo server, like the [i
 
 ## Install it
 
-The official app is in the App Store: [OpenTodo for iPhone and iPad](https://apps.apple.com/us/app/opentodo/id6832200428). It is the first release, so expect some rough edges, and [say what to improve](feedback-and-support.md). New builds go to testers through TestFlight, Apple's app for testing, before they reach the App Store.
+The official app is in the App Store: [OpenTodo for iPhone and iPad](https://apps.apple.com/us/app/opentodo/id6832200428). It is the first release, so expect some rough edges, and [say what to improve](feedback-and-support.md). New builds go to testers through TestFlight, Apple's app for testing, and every OpenTodo release is sent to Apple's App Store review the same day: the App Store update arrives once Apple approves it, usually within a few days.
 
 As the copyright holder, the author of OpenTodo allows distributing its iOS app through Apple's App Store and TestFlight. You can still build the app yourself from source ([Building it](#building-it)).
 
