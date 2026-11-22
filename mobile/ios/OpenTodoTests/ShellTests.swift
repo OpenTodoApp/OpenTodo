@@ -172,7 +172,7 @@ final class BridgeOnAServerTests: XCTestCase {
             // Says which half failed: the page never asked (`/` missing) or it loaded but did not report.
             let at = shell.webView.url?.absoluteString ?? "no address"
             return XCTFail("\(error.localizedDescription); the server was asked for \(server.paths) and answered \(server.answers); "
-                + "the web view is at \(at), loading: \(shell.webView.isLoading), progress: \(shell.webView.estimatedProgress)")
+                + "the web view is at \(at), loading: \(shell.webView.isLoading), progress: \(shell.webView.estimatedProgress), failure: \(String(describing: shell.failure))")
         }
         XCTAssertEqual(report["origin"], origin.absoluteString)
         XCTAssertEqual(report["handler"], "object", "the message handler reaches the page: \(report)")
