@@ -4123,7 +4123,9 @@
     "web/src/app/AssistantsPanel.tsx",
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/InviteLinksSection.tsx",
+    "web/src/app/MarkdownView.tsx",
     "web/src/app/MembersPanel.tsx",
+    "web/src/app/NotesEditor.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/OAuthClients.tsx",
     "web/src/app/PublicLinksSection.tsx",
@@ -4164,6 +4166,9 @@
   "Copy bookmarklet": [
     "web/src/app/CaptureSettings.tsx"
   ],
+  "Copy code": [
+    "web/src/app/MarkdownView.tsx"
+  ],
   "Copy codes": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
@@ -4189,6 +4194,9 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskActionsMenu.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Copy note": [
+    "web/src/app/NotesEditor.tsx"
   ],
   "Copy recovery key": [
     "web/src/app/EncryptionPanel.tsx"
@@ -4244,6 +4252,8 @@
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
   "Could not copy": [
+    "web/src/app/MarkdownView.tsx",
+    "web/src/app/NotesEditor.tsx",
     "web/src/app/assistant/MessageActions.tsx"
   ],
   "Could not refresh. Replying and ticking are off until the connection is back.": [
