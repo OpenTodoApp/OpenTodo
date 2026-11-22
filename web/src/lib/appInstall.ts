@@ -8,6 +8,7 @@
 // sw.ts wires this to the worker's events; the tests run it with fakes.
 import { compareVersions, MANIFEST_PATH, parseList, sha256Hex, verifyList, type ManifestFile, type ParsedList } from './appCode'
 import type { CheckCause, CheckResult, InstalledVersion, TrustMode, TrustRecord } from './appTrust'
+import { uuid } from './ids'
 
 export interface InstallEnv {
   /** A same-origin fetch from the worker (never through its own fetch handler). */
@@ -160,7 +161,7 @@ async function stage(env: InstallEnv, staging: Cache, files: Record<string, Mani
 export function stagingName(version: string, payloadHash: string, now: number): string {
   // A random tail after the start time keeps two installs of one list apart, also within
   // one millisecond; the time still parses (base 36 stops at the dot).
-  return `${APP_CACHE_PREFIX}${version}-${payloadHash.slice(0, 12)}-${now.toString(36)}.${crypto.randomUUID().slice(0, 8)}`
+  return `${APP_CACHE_PREFIX}${version}-${payloadHash.slice(0, 12)}-${now.toString(36)}.${uuid().slice(0, 8)}`
 }
 
 /** A staging cache younger than this may still be filling in another worker. */
