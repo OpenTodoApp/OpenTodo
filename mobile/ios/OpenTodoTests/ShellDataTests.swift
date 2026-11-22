@@ -1054,6 +1054,7 @@ final class FocusActivityTests: XCTestCase {
         model.pendingPath = before
     }
 
+    @MainActor
     func testThePageScriptHasPublishFocus() throws {
         let origin = try XCTUnwrap(URL(string: "https://todo.example.com"))
         let script = Bridge.script(origin: origin, app: "1.0.0", capabilities: ["focus"])
