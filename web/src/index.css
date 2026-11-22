@@ -1358,6 +1358,29 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
 }
+/* Page transitions (page-transitions D2): during a route change <html data-nav> names the
+   page body and the chrome, so the sidebar, the phone bar and the tab bar stay where they
+   are while the page slides by 30% with a fade: in from the end edge going forward, out to
+   it going back; a switch between destinations keeps the plain cross-fade. Taps reach the
+   new page at once (navigation never waits for the animation). */
+:root[data-nav] #content { view-transition-name: page; }
+:root[data-nav] [data-sidebar] { view-transition-name: sidebar; }
+:root[data-nav] [data-phone-bar] { view-transition-name: phone-bar; }
+:root[data-nav] [data-tab-bar] { view-transition-name: tab-bar; }
+:root[data-nav]::view-transition { pointer-events: none; }
+:root { --nav-shift: 30%; }
+:root[dir="rtl"] { --nav-shift: -30%; }
+@keyframes nav-from-end { from { transform: translateX(var(--nav-shift)); opacity: 0; } }
+@keyframes nav-to-end { to { transform: translateX(var(--nav-shift)); opacity: 0; } }
+@keyframes nav-from-start { from { transform: translateX(calc(-1 * var(--nav-shift))); opacity: 0; } }
+@keyframes nav-to-start { to { transform: translateX(calc(-1 * var(--nav-shift))); opacity: 0; } }
+:root[data-nav="forward"]::view-transition-new(page) { animation: nav-from-end var(--duration-emphasis) var(--ease-spring) both; }
+:root[data-nav="forward"]::view-transition-old(page) { animation: nav-to-start var(--duration-emphasis) var(--ease-spring) both; }
+:root[data-nav="back"]::view-transition-new(page) { animation: nav-from-start var(--duration-emphasis) var(--ease-spring) both; }
+:root[data-nav="back"]::view-transition-old(page) { animation: nav-to-end var(--duration-emphasis) var(--ease-spring) both; }
+@media (prefers-reduced-motion: reduce) {
+  :root[data-nav]::view-transition-old(page), :root[data-nav]::view-transition-new(page) { animation: none !important; }
+}
 :root[data-density="compact"] .row-pad { padding-block: 0.375rem; }
 /* The task panel's facet lines follow the density too (task-panel-facets D4). */
 :root[data-density="compact"] .facet-line [data-part], :root[data-density="compact"] .facet-line > span:first-child { min-height: 1.5rem; height: auto; }

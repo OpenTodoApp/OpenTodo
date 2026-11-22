@@ -1,0 +1,6 @@
+inbox › sidebar-view-menu [chromium 390px light]: does not close with a tap outside (tap at 195,164 on html; panel 0,327 390x517, now 0,327 390x517)
+project › project-picker [chromium 390px light]: does not close with a tap outside (tap at 195,165 on html; panel 0,329 390x515, now 0,329 390x515)
+project › parent-picker [chromium 390px light]: does not close with a tap outside (tap at 195,165 on html; panel 0,329 390x515, now 0,329 390x515)
+project › section-picker [chromium 390px light]: does not close with a tap outside (tap at 195,233 on html; panel 0,465 390x379, now 0,465 390x379)
+project › when-popover [chromium 390px light]: does not close with a tap outside (tap at 195,42 on html; panel 0,84 390x760, now 0,84 390x760)
+project › blocked-by-picker [chromium 390px light]: does not close with a tap outside (tap at 195,189 on html; panel 0,377 390x467, now 0,377 390x467)
