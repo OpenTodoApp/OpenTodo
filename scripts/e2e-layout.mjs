@@ -678,7 +678,7 @@ async function rowLift(p, attempt = 1) {
   const still = await hold(300)
   await p.emulateMedia({ reducedMotion: null })
   if (still.state === 'replaced') {
-    if (attempt === 1) { await p.waitForTimeout(500); return rowLift(p, 2) }
+    if (attempt === 1) { await p.waitForTimeout(500); return [...out, ...await rowLift(p, 2)] }
     return [...out, 'the held row was re-rendered before the reduced-motion hold, twice']
   }
   if (Math.abs(still.scale - 1) > 0.0005 || still.rising) out.push(`under reduced motion a held row moves (scale ${still.scale})`)
