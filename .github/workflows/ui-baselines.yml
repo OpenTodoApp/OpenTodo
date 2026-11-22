@@ -40,7 +40,7 @@ jobs:
       contents: write
       pull-requests: write
       # A pull request the workflow's own token opens starts no pull_request run, so the
-      # fold starts CI on its branch by hand (the pull request tier, `base: main`).
+      # fold starts CI on its branch by hand (the path tier, `base: main`).
       actions: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
