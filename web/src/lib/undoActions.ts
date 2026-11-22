@@ -8,7 +8,7 @@ import { planComplete, planLabels, planMove, planReopen, planTrash, readTicked, 
 import { db, type AssistantUndo } from './db'
 import { logicalToday } from './dates'
 import { seriesRule } from './recurring'
-import { getDeviceId, liveSubtree, planReminders, type Change } from './ops'
+import { getDeviceId, liveSubtree, planReminders, updateTask, type Change } from './ops'
 import type { ReminderPhrase } from './nlp'
 import { currentUserId, membershipMap } from './sharing'
 import type { FilterContext } from './filter'
@@ -265,6 +265,24 @@ export async function dayPartUndoable(ids: readonly string[], part: DayPart | nu
     .map((task) => ({ entity: 'task', entityId: task.id, patch: { ...fields } }))
   if (!changes.length) return { entry: null, label: '' }
   return apply(changes, movedTo(part))
+}
+
+/**
+ * Mark one task for This Evening, or take it out (OpenSpec change undo-evening): the same two
+ * fields as before, as one step of undo history, no toast; planned from the one row. A task
+ * already there records nothing. A repeating task is written as before, through updateTask,
+ * so the change carries to its series and follows the panel's scope.
+ */
+export async function eveningUndoable(id: string, evening: boolean): Promise<void> {
+  const part: DayPart | null = evening ? 'evening' : null
+  const fields = dayPartFields(part)
+  const task = await db.tasks.get(id)
+  if (!task || task.recurrence) {
+    await updateTask(id, fields)
+    return
+  }
+  if (dayPartOf(task) === part && (task.day_part ?? null) === fields.day_part) return
+  await apply([{ entity: 'task', entityId: id, patch: { ...fields } }], movedTo(part))
 }
 
 /**
