@@ -30,8 +30,9 @@ Measured with the interface tour (`scripts/ux-audit/tour.mjs`, its seeded accoun
 
 Updated from the findings (task 1.2). Measured on the app frame (`ResizeObserver`, as `useHeaderRoom` does for headers), not media queries, so split view and Stage Manager get the right layout at any size:
 - **under 600 px:** phone rules (drawer, overlay panel, bottom bar), as today.
-- **600-899 px:** the sidebar as icons (it expands over the list), and no bottom bar. An opened task is an overlay sheet from the end edge, with the list kept behind it (F1, F2).
-- **900 px and up:** the task panel docks. When the list would fall under 22rem, the sidebar folds to icons while a task is docked, and comes back when it closes (F2, F3). At 1024 px that gives the list about 470 px instead of 278. Without a docked task the sidebar keeps its width.
+- **600-899 px:** an opened task is an overlay sheet from the end edge, with the list kept behind it (F1, F2). The navigation does not change: below 768 px the bottom tab bar and the drawer stay, and from 768 px the sidebar and its rail and fold rules apply as today. Amended during the work: an icon rail in place of the tab bar from 600 px would change navigation on large phones in landscape and small tablets, and every phone rule (the add button, the bar's hiding, the interface budget) with it, for little gain on the screens the audit found wanting.
+- **900 px and up:** the task panel docks. When the list would fall under 25rem (`LIST_ROOM_REM`), the sidebar folds to icons while a task is docked, and comes back when it closes (F2, F3). At 1024 px that gives the list about 470 px instead of 278. Without a docked task the sidebar keeps its width.
+- Notes and Calendar follow the same 900 px rule (`SPLIT_QUERY`).
 - The existing `--panel-w` clamp keeps its upper bounds.
 
 **Fixed in the same change:** F4 (`touch-target` makes Settings' navigation 44 px tall on a coarse pointer at every width) and F6 (the section cards reserve their height). F5 (the board's own scroll region) gets its own small change, because it is the board's layout, not the panes'.

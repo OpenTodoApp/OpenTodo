@@ -6,7 +6,7 @@
 ## 2. Layout
 
 - [x] 2.1 Measured pane rules (`ResizeObserver` on the frame); vitest for the thresholds
-- [ ] 2.2 Compact sidebar from 600 px; three panes from 900 px; Notes and Calendar follow
+- [x] 2.2 Notes and Calendar follow the 900 px pane rule (layout check passes at 981 px); the compact sidebar from 600 px was dropped in D2
 - [x] 2.3 Open task and scroll position survive a resize; layout check test
 
 ## 3. Check
