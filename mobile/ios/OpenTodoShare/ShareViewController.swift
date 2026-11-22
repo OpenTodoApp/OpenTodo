@@ -13,6 +13,7 @@ final class ShareViewController: UIViewController {
     private var files: [ShareInbox.File] = []
     private var pending = 0
     private var started = false
+    private var finished = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -104,8 +105,7 @@ final class ShareViewController: UIViewController {
     /// If no application object answers, the extension closes without opening the app.
     /// `done` runs once: when the open answers, or after a second if it never does.
     private func open(_ url: URL, done: @escaping () -> Void) {
-        var finished = false
-        let once = { DispatchQueue.main.async { if !finished { finished = true; done() } } }
+        let once = { DispatchQueue.main.async { if !self.finished { self.finished = true; done() } } }
         typealias Open = @convention(c) (AnyObject, Selector, NSURL, NSDictionary, (@convention(block) (Bool) -> Void)?) -> Void
         let selector = NSSelectorFromString("openURL:options:completionHandler:")
         var responder: UIResponder? = self
