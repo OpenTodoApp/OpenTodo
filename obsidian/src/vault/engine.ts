@@ -16,6 +16,9 @@ import { LimitError, TaskNotesError, type Event, type Options, type Reply, type 
 import { isCiphertext, View } from './view'
 import { localDateTime } from './zone'
 
+/** How long an empty file stays held as half saved (engine.go halfSavedHold). */
+const HALF_SAVED_HOLD = 5 * 60_000
+
 export const MAX_FILE_BYTES = 1 << 20
 export const MAX_FILE_LINES = 5000
 export const MAX_TASKS = 20000
@@ -49,6 +52,8 @@ export class Engine {
   retouch = new Set<string>()
   takeOver = false
   pending = new Set<string>()
+  /** The half-saved files among pending, with their first hold time. */
+  held = new Map<string, number>()
   /** Plaintext of ciphertext values: entity\0id\0field\0value → text, null when it does not open. */
   plain: Map<string, string | null>
 
@@ -347,16 +352,21 @@ export class Engine {
   /**
    * The vault files that look like an editor's first save step (engine.go
    * halfSaved): empty now, holding text when the last sync wrote them, and not
-   * emptied because all their lines moved to other files. A file held last
-   * sync has lost its hash, so if still empty it syncs as it is.
+   * emptied because all their lines moved to other files. A held file stays
+   * held while it is empty, up to HALF_SAVED_HOLD from its first hold; then it
+   * was emptied on purpose and syncs as it is.
    */
   halfSaved(): string[] {
     const out: string[] = []
     const empty = hashOf('')
+    const now = this.o.now()
     for (const p of sortedKeys(this.disk)) {
       const fs = own(this.st.files, p) ? this.st.files[p] : undefined
-      if (!fs || this.disk.get(p) !== '' || fs.hash === empty || fs.hash === '') continue
-      if (!this.allMoved(p)) out.push(p)
+      if (!fs || this.disk.get(p) !== '' || fs.hash === empty) continue
+      if (fs.hash === '' && fs.held && now - fs.held < HALF_SAVED_HOLD) this.held.set(p, fs.held)
+      else if (fs.hash !== '' && !this.allMoved(p)) this.held.set(p, now)
+      else continue
+      out.push(p)
     }
     return out
   }

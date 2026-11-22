@@ -337,7 +337,7 @@ var vxCases = []vxDef{
 			r.write("Work.md", strings.Replace(work, "Write the report", "Write the annual report", 1))
 			r.sync(vxOpts{name: "downloaded with an edit"})
 		}},
-	{name: "half-saved", desc: "a file read empty in the middle of a save is held and its tasks kept, even after one of its lines moved; the next sync reads the save",
+	{name: "half-saved", desc: "a file read empty in the middle of a save is held and its tasks kept, even after one of its lines moved and across a second sync at the empty step; the next sync reads the save",
 		run: func(r *vxRec) {
 			home(r)
 			r.project("p-work", "Work", map[string]any{"position": 2000})
@@ -353,6 +353,7 @@ var vxCases = []vxDef{
 			r.write("Work.md", r.read("Work.md")+plumber+"\n")
 			r.write("Home.md", "")
 			r.sync(vxOpts{name: "mid save"})
+			r.sync(vxOpts{name: "still mid save"})
 			r.write("Home.md", strings.Replace(saved, plumber+"\n", "", 1)+"- [ ] Oil the hinge\n")
 			r.sync(vxOpts{name: "the save lands"})
 		}},
