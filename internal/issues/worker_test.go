@@ -267,7 +267,7 @@ func TestHostDownBacksOff(t *testing.T) {
 	var waits []time.Duration
 	for range 3 {
 		h.clock = time.UnixMilli(h.conn(c.ID).NextPollAt)
-		if _, err := h.poll(h.conn(c.ID)); ReasonOf(errors.Unwrap(err)) != ReasonTimeout && err.(*PollError).Reason != ReasonTimeout {
+		if _, err := h.poll(h.conn(c.ID)); reasonOf(errors.Unwrap(err)) != ReasonTimeout && err.(*PollError).Reason != ReasonTimeout {
 			t.Fatalf("err = %v", err)
 		}
 		cc := h.conn(c.ID)

@@ -344,6 +344,37 @@ export class Engine {
     }
   }
 
+  /**
+   * The vault files that look like an editor's first save step (engine.go
+   * halfSaved): empty now, holding text when the last sync wrote them, and not
+   * emptied because all their lines moved to other files. A file held last
+   * sync has lost its hash, so if still empty it syncs as it is.
+   */
+  halfSaved(): string[] {
+    const out: string[] = []
+    const empty = hashOf('')
+    for (const p of sortedKeys(this.disk)) {
+      const fs = own(this.st.files, p) ? this.st.files[p] : undefined
+      if (!fs || this.disk.get(p) !== '' || fs.hash === empty || fs.hash === '') continue
+      if (!this.allMoved(p)) out.push(p)
+    }
+    return out
+  }
+
+  /** Whether file p had tasks printed in it and every one of them is now in another file. */
+  private allMoved(p: string): boolean {
+    let printed = 0
+    for (const [id, at] of Object.entries(this.st.printed)) {
+      if (at !== p) continue
+      printed++
+      const mark = `🆔 ${id}`
+      let found = false
+      for (const [q, text] of this.disk) if (q !== p && text.includes(mark)) { found = true; break }
+      if (!found) return false
+    }
+    return printed > 0
+  }
+
   /** The app becomes the base, except the rows of files a read-only run or a missing download left pending. */
   saveBase(): void {
     const next = S.clone(this.app)
@@ -411,6 +442,15 @@ export async function sync(o: Options): Promise<Report> {
   const e = new Engine(o, st)
   e.takeOver = taken
   await e.scan()
+  // A file that held text when the sync last wrote it and is empty now is an
+  // editor's first save step (engine.go halfSaved): held once like a file not
+  // downloaded yet, neither read nor written, its base kept.
+  for (const p of e.halfSaved()) {
+    e.disk.delete(p)
+    e.changed.delete(p)
+    e.pending.add(p)
+    e.event('skipped', p, '', `skipped ${p}: it is empty, as while a file is being saved; the next sync reads it`)
+  }
   await e.pull()
   await e.openAll(e.base)
   await e.openAll(e.app)
