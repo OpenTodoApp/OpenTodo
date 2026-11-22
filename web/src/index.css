@@ -1371,7 +1371,8 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 :root { --nav-shift: 30%; }
 :root[dir="rtl"] { --nav-shift: -30%; }
 @keyframes nav-from-end { from { transform: translateX(var(--nav-shift)); opacity: 0; } }
-@keyframes nav-to-end { to { transform: translateX(var(--nav-shift)); opacity: 0; } }
+/* A back swipe hands over from where the finger left the page (swipe-back-follows D1). */
+@keyframes nav-to-end { from { transform: translateX(var(--nav-from, 0px)); } to { transform: translateX(var(--nav-shift)); opacity: 0; } }
 @keyframes nav-from-start { from { transform: translateX(calc(-1 * var(--nav-shift))); opacity: 0; } }
 @keyframes nav-to-start { to { transform: translateX(calc(-1 * var(--nav-shift))); opacity: 0; } }
 :root[data-nav="forward"]::view-transition-new(page) { animation: nav-from-end var(--duration-emphasis) var(--ease-spring) both; }

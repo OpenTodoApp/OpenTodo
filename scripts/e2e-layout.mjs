@@ -327,6 +327,11 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       run.step = 'page transitions'
       for (const m of await pageTransitions(page, base)) await fail(page, 'page-transitions', null, m)
     }
+    // swipe-back-follows 2.1: a touch drag from the edge of a task's page (Chromium, 390 and 768 px).
+    if (engine === 'chromium' && (width === 390 || width === 768) && !ONLY && !OTHER_LANG) {
+      run.step = 'swipe back'
+      for (const m of await swipeBack(page, base, width)) await fail(page, 'swipe-back', null, m)
+    }
     for (const e of pageErrors) failures.push(`page error [${tag}]: ${e}`)
   } catch (e) {
     failures.push(`[${tag}] aborted: ${e.message.split('\n')[0]}`)
@@ -399,6 +404,50 @@ async function pageTransitions(p, base) {
     problems.push(`could not be checked: ${e.message.split('\n')[0]}`)
   } finally {
     await p.emulateMedia({ reducedMotion: 'no-preference' }).catch(() => {})
+  }
+  return problems
+}
+
+// swipe-back-follows D4: on a task's page opened from the Inbox, a slow touch drag from
+// the left edge to a fifth of the width springs back (the page moved with the finger, the
+// route stays); a drag past a third goes back to the Inbox. Touch events are dispatched
+// 10 px every 40 ms (0.25 px/ms), so neither drag is a flick. Returns the problems.
+async function swipeBack(p, base, width) {
+  const problems = []
+  const drag = (to, release) => p.evaluate(async ({ to, release }) => {
+    const pause = () => new Promise((r) => setTimeout(r, 40))
+    const ev = (type, x) => window.dispatchEvent(new PointerEvent(type, { pointerId: 7, pointerType: 'touch', isPrimary: true, clientX: x, clientY: 400, bubbles: true }))
+    ev('pointerdown', 5)
+    let mid = ''
+    for (let x = 5; x <= to; x += 10) {
+      ev('pointermove', x)
+      await pause()
+      if (!mid && x >= to / 2) mid = document.getElementById('content')?.style.transform ?? ''
+    }
+    if (release) ev('pointerup', to)
+    return mid
+  }, { to, release })
+  const open = async () => {
+    await openScreen(p, base + '/inbox')
+    await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().waitFor()
+    // The edge watcher loads after the first paint.
+    await p.waitForTimeout(300)
+    await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().locator('[data-row-open]').press('Enter')
+    await p.locator('[data-task-page]').first().waitFor({ timeout: 10000 })
+  }
+  try {
+    await open()
+    const short = await drag(Math.round(width / 5), true)
+    if (!/translateX\(\d+(\.\d+)?px\)/.test(short)) problems.push(`the page did not follow the finger mid-drag (transform "${short}")`)
+    await p.waitForTimeout(400)
+    if (!(await p.locator('[data-task-page]').first().isVisible())) problems.push('a slow drag to a fifth of the width left the task page')
+    const rest = await p.evaluate(() => document.getElementById('content')?.style.transform ?? '')
+    if (rest) problems.push(`the page did not spring back (transform "${rest}")`)
+    await drag(Math.round(width / 2), true)
+    await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().waitFor({ timeout: 10000 })
+    if (!/\/inbox$/.test(new URL(p.url()).pathname)) problems.push(`a drag past a third did not go back to the Inbox (${p.url()})`)
+  } catch (e) {
+    problems.push(`could not be checked: ${e.message.split('\n')[0]}`)
   }
   return problems
 }
