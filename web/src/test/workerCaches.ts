@@ -7,6 +7,7 @@ const MODE = '/__refuse'
 export function workerCaches() {
   const stores = new Map<string, Map<string, string>>()
   let fails = false
+  const failingPuts = new Set<string>()
   const store = (name: string) => {
     let s = stores.get(name)
     if (!s) stores.set(name, (s = new Map()))
@@ -19,7 +20,10 @@ export function workerCaches() {
         const s = store(name)
         return {
           match: async (key: string) => { const v = s.get(String(key)); return v === undefined ? undefined : new Response(v) },
-          put: async (key: string, r: Response) => { s.set(String(key), await r.text()) },
+          put: async (key: string, r: Response) => {
+            if (failingPuts.has(String(key))) throw new Error('quota')
+            s.set(String(key), await r.text())
+          },
         }
       },
     },
@@ -34,6 +38,10 @@ export function workerCaches() {
       if (v === '1') s.set(ON, '1')
       else if (v !== null) s.set(MODE, v)
     },
-    reset() { stores.clear(); fails = false },
+    /** Writes of this key fail from now on, as a full storage would refuse them. */
+    failPut(key: string) { failingPuts.add(key) },
+    /** Removes one key of the policy cache, as an eviction or a cleanup might. */
+    drop(key: string) { store(POLICY).delete(key) },
+    reset() { stores.clear(); fails = false; failingPuts.clear() },
   }
 }

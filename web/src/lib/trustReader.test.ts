@@ -123,4 +123,20 @@ describe('rememberedMode', () => {
     shared.fail(true)
     await expect(m.get()).rejects.toThrow()
   })
+
+  it('refusal also replaces an old report-only value: losing or failing the on-key never reads as report-only', async () => {
+    const lost = workerCaches()
+    const a = rememberedMode(() => lost.caches.open('opentodo-policy'))
+    await a.set(false)
+    await a.set(true)
+    lost.drop('/__refuse-on')
+    expect(await a.get()).toBeNull()
+
+    const full = workerCaches()
+    const b = rememberedMode(() => full.caches.open('opentodo-policy'))
+    await b.set(false)
+    full.failPut('/__refuse-on')
+    await expect(b.set(true)).rejects.toThrow()
+    expect(await b.get()).toBeNull()
+  })
 })

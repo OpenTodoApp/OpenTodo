@@ -137,7 +137,7 @@ export function diagnosticsLine(r: TrustRecord): string {
  * The refusal mode remembered beside the page policy, for a worker that cannot read
  * its record. It only ever turns on, like the record's own ratchet (D5): refusal is
  * its own key, written once and never overwritten, so a late report-only write from
- * any worker cannot undo it. `get` answers true, false only for an explicit report-only
+ * any worker cannot undo it; turning it on also overwrites the report-only value. `get` answers true, false only for an explicit report-only
  * value, and null for nothing or anything else; a cache that cannot be opened rejects.
  */
 export function rememberedMode(open: () => Promise<Pick<Cache, 'match' | 'put'>>) {
@@ -149,7 +149,13 @@ export function rememberedMode(open: () => Promise<Pick<Cache, 'match' | 'put'>>
       return r && (await r.text()) === '0' ? false : null
     },
     set: async (on: boolean): Promise<void> => {
-      await (await open()).put(on ? REFUSE_ON_KEY : REPORT_ONLY_KEY, new Response(on ? '1' : '0'))
+      const c = await open()
+      if (!on) return c.put(REPORT_ONLY_KEY, new Response('0'))
+      // Refusal also replaces an older report-only value: losing the on-key alone, or
+      // failing to write it, then reads as unknown, never as report-only.
+      const writes = await Promise.allSettled([c.put(REPORT_ONLY_KEY, new Response('1')), c.put(REFUSE_ON_KEY, new Response('1'))])
+      const failed = writes.find((w) => w.status === 'rejected')
+      if (failed) throw (failed as PromiseRejectedResult).reason
     },
   }
 }
