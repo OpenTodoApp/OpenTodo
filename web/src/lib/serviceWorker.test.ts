@@ -45,7 +45,7 @@ describe('built file list', () => {
   it.skipIf(!list || !sw)('lists every file with its hash, installs what Workbox precached, and keeps the old list in sw.js', () => {
     const envelope = JSON.parse(list!) as { format: number; payload: string; signatures: unknown[] }
     expect(envelope.format).toBe(1)
-    const m = JSON.parse(Buffer.from(envelope.payload, 'base64url').toString()) as { app: string; worker: { path: string; sha256: string }; files: Record<string, { sha256: string; size: number; load: string }> }
+    const m = JSON.parse(Buffer.from(envelope.payload, 'base64url').toString()) as { app: string; worker: { path: string; sha256: string }; files: Record<string, { sha256: string; size: number; load: string; lang?: string }> }
     expect(m.app).toBe('opentodo-web')
     for (const [p, f] of Object.entries(m.files)) {
       // A file the build keeps only compressed is listed as the bytes it decodes to (compressed-static-assets).
@@ -58,8 +58,13 @@ describe('built file list', () => {
     expect(m.files['manifest.webmanifest']).toBeUndefined()
     const legacy = JSON.parse(/opentodoPrecache=(\[[^\]]*\])/.exec(sw!)![1]) as { url: string }[]
     const installs = Object.keys(m.files).filter((p) => m.files[p].load === 'install').sort()
+    // The interface catalogues are lazy with their language (precache-device-language D2),
+    // and the Workbox list keeps them for the Android shells that read it (D4).
+    const catalogues = Object.keys(m.files).filter((p) => m.files[p].lang).sort()
+    expect(catalogues.length).toBeGreaterThan(0)
+    for (const p of catalogues) expect(m.files[p].load, p).toBe('lazy')
     // Workbox lists the icons twice and the web app manifest, which the list leaves to the server (D7).
-    expect([...new Set(legacy.map((e) => e.url))].filter((u) => u !== 'manifest.webmanifest').sort()).toEqual(installs)
+    expect([...new Set(legacy.map((e) => e.url))].filter((u) => u !== 'manifest.webmanifest').sort()).toEqual([...installs, ...catalogues].sort())
     for (const lazy of ['t.html', 'sw.js']) expect(m.files[lazy]?.load).toBe('lazy')
   })
 })

@@ -35,4 +35,4 @@ OpenTodo speaks **English**, **Deutsch**, **Français**, **Español**, **Italian
 
 ## Offline
 
-A language is loaded the first time you pick it and then kept on the device, so switching later works offline. If it cannot be loaded (for example on a new device without a connection), the app stays in its current language, the setting says so, and your choice applies as soon as it can.
+The app downloads only the languages this device has shown. A language is loaded the first time it appears and is then kept on the device, updates included, so switching back to it works offline. A language never used on this device needs a connection the first time. Without one, the app stays in its current language, the setting says so, and your choice applies as soon as it can.
