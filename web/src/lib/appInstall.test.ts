@@ -397,6 +397,19 @@ describe('lazy files (design D7)', () => {
     expect(await cachedFile(e, e.record(), 'assets/MapView-1.js')).toBeNull()
   })
 
+  it('persist false never writes the record in use back (a stand-in for one that could not be read)', async () => {
+    const { srv, e } = await installed(true)
+    const saves: unknown[] = []
+    e.save = async (r) => void saves.push(r)
+    srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
+    const changed = await fetchLazy(e, e.record(), 'assets/MapView-1.js', false)
+    expect(changed?.response.status).toBe(404)
+    expect(changed?.check).toMatchObject({ cause: 'changed-file' })
+    expect(saves).toEqual([])
+    await fetchLazy(e, e.record(), 'assets/MapView-1.js', true)
+    expect(saves).toHaveLength(1)
+  })
+
   it('with refusal on, storage that fails never lets an unchecked file through', async () => {
     const { srv, e } = await installed(true)
     const open = e.caches.open.bind(e.caches)

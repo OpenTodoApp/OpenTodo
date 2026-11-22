@@ -6,7 +6,7 @@
 // IndexedDB (attachments D9). While refusal is off (report-only, design D17),
 // every check runs and is recorded, and updates are installed anyway.
 import { answerAfterFailure, checkForUpdate, cachedFile, fetchLazy, pruneCaches, type CheckOutcome, type InstallEnv } from './lib/appInstall'
-import { loadTrust, saveTrust, trustsOwnKey, type TrustRecord } from './lib/appTrust'
+import { loadTrust, rememberedMode, saveTrust, trustReader, trustsOwnKey, type TrustRecord, type TrustState } from './lib/appTrust'
 import { pagePolicy } from './lib/pagePolicy'
 import { entryFromForm, entrySize, putInboxEntry, SHARE_MAX_BYTES, shareRequestVerdict } from './lib/shareInbox'
 
@@ -32,16 +32,34 @@ const env: InstallEnv = {
   languages: () => self.navigator.languages ?? [],
   now: () => Date.now(),
   load: () => loadTrust(self.indexedDB),
-  save: (r) => saveTrust(r, self.indexedDB),
+  // Every save, the update check's included, also sets the record that stands in and the remembered mode.
+  save: async (r) => { await saveTrust(r, self.indexedDB); await records.saved(r) },
 }
 
-// The worker's own state: the trust record, read once per worker start and
-// after every write; the check that is running; when the last one started.
-const state: { record: Promise<TrustRecord | null> | null; running: Promise<CheckOutcome | null> | null; lastCheck: number } = { record: null, running: null, lastCheck: 0 }
-function trust(): Promise<TrustRecord | null> {
-  state.record ??= env.load().catch(() => null)
-  return state.record
+// The worker's own state: the check that is running and when the last one started.
+// The trust record is read once per worker start and after every write; a read
+// that fails is not kept, and the refusal mode is remembered beside the page
+// policy so a worker that cannot read its record still fails closed.
+const state: { running: Promise<CheckOutcome | null> | null; lastCheck: number } = { running: null, lastCheck: 0 }
+// The page's policy follows the owner's settings only in connect-src (the
+// on-device assistant's provider origins, assistant-on-device D4): the latest
+// policy the server sent, refreshed in the background on every navigation.
+const POLICY_CACHE = 'opentodo-policy'
+const POLICY_KEY = '/__policy'
+const remembered = rememberedMode(() => caches.open(POLICY_CACHE))
+const records = trustReader(env.load, remembered)
+/** One read of the trust state: a request decides everything from the one it took. */
+const trustState = (): Promise<TrustState> => records.read()
+async function trust(): Promise<TrustRecord | null> {
+  return (await records.read()).record
 }
+/**
+ * While the record cannot be read and refusal applies, an app file that was not
+ * answered checked gets a 404, whatever record stands in (it may be older than the
+ * set just installed): never the network. Files the stand-in's sets hold in the
+ * cache are served: each was checked when it was stored.
+ */
+const closedFor = (t: TrustState): Response | null => (t.unreadable && t.refuse ? new Response('', { status: 404 }) : null)
 
 async function tell(message: Record<string, unknown>): Promise<void> {
   // An own-key build's refusal names that key instead of OpenTodo (design D11).
@@ -60,7 +78,7 @@ function check(force = false): Promise<CheckOutcome | null> {
   state.running = (async () => {
     try {
       const outcome = await checkForUpdate(env)
-      state.record = null
+      records.forget()
       if (outcome.kind === 'installed') await tell({ state: outcome.first ? 'installed' : 'ready', version: outcome.version, check: outcome.check })
       else if (outcome.kind === 'refused' && outcome.announce) await tell({ state: 'refused', check: outcome.check })
       return outcome
@@ -84,7 +102,11 @@ self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     await self.clients.claim()
     // The caches of the Workbox worker this one replaced, and any set the record no longer names.
-    await pruneCaches(env, await trust(), true)
+    // Never while the record cannot be read: every set would look unnamed.
+    // A fresh read, which also remembers the mode early, for a worker that later cannot read its record.
+    records.forget()
+    const t = await trustState()
+    if (!t.unreadable) await pruneCaches(env, t.record, true)
   })())
 })
 
@@ -96,7 +118,7 @@ self.addEventListener('message', (event) => {
   if (data?.type !== 'opentodo-app' || !data.check) return
   event.waitUntil((async () => {
     await check()
-    state.record = null // another worker may have written it
+    records.forget() // another worker may have written it
     const r = await trust()
     const source = event.source as Client | null
     if (r?.lastCheck?.refused && source) source.postMessage({ type: 'opentodo-app', state: 'refused', check: r.lastCheck, ownKey: await trustsOwnKey(r).catch(() => false) })
@@ -118,11 +140,6 @@ const NAVIGATION_DENYLIST = [/^\/api\//, /^\/healthz/, /^\/t\//, /^\/oauth\//, /
 const DATA_PATHS = [/^\/api\//, /^\/healthz/, /^\/dav\//, /^\/feeds\//, /^\/oauth\//, /^\/\.well-known\//, /^\/mcp(\/|$)/, /^\/branding\//, /^\/manifest\.webmanifest$/]
 const CODE_DESTINATIONS = new Set(['script', 'worker', 'sharedworker', 'style', 'serviceworker'])
 
-// The page's policy follows the owner's settings only in connect-src (the
-// on-device assistant's provider origins, assistant-on-device D4): the latest
-// policy the server sent, refreshed in the background on every navigation.
-const POLICY_CACHE = 'opentodo-policy'
-const POLICY_KEY = '/__policy'
 
 async function refreshPolicy(): Promise<void> {
   try {
@@ -135,11 +152,30 @@ async function refreshPolicy(): Promise<void> {
 }
 
 async function navigation(event: FetchEvent): Promise<Response> {
-  const r = await trust()
-  const page = await cachedFile(env, r, 'index.html')
+  const t = await trustState()
   event.waitUntil(Promise.all([refreshPolicy(), check()]))
-  if (!page) return fetch(event.request)
-  const stored = await (await caches.open(POLICY_CACHE)).match(POLICY_KEY).catch(() => undefined)
+  let page: Response | null
+  try {
+    page = await cachedFile(env, t.record, 'index.html')
+  } catch {
+    // The cache cannot be read: report-only keeps the network (D17), refusal serves nothing unchecked.
+    return t.refuse ? new Response('', { status: 404 }) : fetch(event.request)
+  }
+  if (!page) {
+    // Report-only keeps the network (D17). With refusal the page is served only
+    // checked against the record: fetched and checked now, or not at all.
+    if (!t.refuse) return fetch(event.request)
+    const lazy = t.record ? await fetchLazy(env, t.record, 'index.html', !t.unreadable, t.refuse).catch(() => null) : null
+    if (!lazy || lazy.check || !lazy.response.ok) return new Response('', { status: 404 })
+    page = lazy.response
+  }
+  let stored: Response | undefined
+  try {
+    stored = await (await caches.open(POLICY_CACHE)).match(POLICY_KEY)
+  } catch {
+    // The stored policy cannot be read: report-only keeps the network, refusal the built-in policy.
+    if (!t.refuse) return fetch(event.request)
+  }
   const headers = new Headers(page.headers)
   headers.set('Content-Security-Policy', pagePolicy(stored ? await stored.text() : null))
   headers.set('Cache-Control', 'no-cache')
@@ -147,20 +183,26 @@ async function navigation(event: FetchEvent): Promise<Response> {
 }
 
 async function appFile(event: FetchEvent, path: string): Promise<Response> {
-  const r = await trust()
-  const hit = await cachedFile(env, r, path)
-  if (hit) return hit
-  if (r) {
-    const lazy = await fetchLazy(env, r, path)
-    if (lazy) {
-      if (lazy.check) {
-        state.record = null
-        await tell({ state: lazy.check.refused ? 'refused' : 'checked', check: lazy.check })
+  const t = await trustState()
+  try {
+    const hit = await cachedFile(env, t.record, path)
+    if (hit) return hit
+    if (t.record) {
+      // The mode that applies, not the stand-in's own: a mismatch is served only when report-only.
+      const lazy = await fetchLazy(env, t.record, path, !t.unreadable, t.refuse)
+      if (lazy) {
+        if (lazy.check) {
+          records.forget()
+          await tell({ state: lazy.check.refused ? 'refused' : 'checked', check: lazy.check })
+        }
+        return lazy.response
       }
-      return lazy.response
     }
+    return closedFor(t) ?? fetch(event.request)
+  } catch {
+    // Decided from the same snapshot: no second read within one request.
+    return answerAfterFailure(t.record, path) ?? closedFor(t) ?? fetch(event.request)
   }
-  return fetch(event.request)
 }
 
 self.addEventListener('fetch', (event) => {
@@ -186,7 +228,7 @@ self.addEventListener('fetch', (event) => {
   let rel: string
   try { rel = decodeURIComponent(path.slice(1)) } catch { return }
   if (!rel || rel === 'sw.js') return
-  event.respondWith(appFile(event, rel).catch(async () => answerAfterFailure(await trust().catch(() => null), rel) ?? fetch(request)))
+  event.respondWith(appFile(event, rel))
 })
 
 async function share(request: Request): Promise<Response> {
