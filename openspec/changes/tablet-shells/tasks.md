@@ -6,7 +6,7 @@
 
 ## 2. Android
 
-- [ ] 2.1 `resizeableActivity="true"`; resize and fold keep state; JVM test reads the manifest
+- [x] 2.1 `resizeableActivity="true"`; resize and fold keep state; JVM test reads the manifest
 
 ## 3. Check
 

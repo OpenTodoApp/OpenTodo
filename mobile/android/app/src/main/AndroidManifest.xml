@@ -49,8 +49,9 @@
 
         <activity
             android:name=".MainActivity"
-            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode"
             android:exported="true"
+            android:resizeableActivity="true"
             android:launchMode="singleTask"
             android:theme="@style/Theme.OpenTodo.Launch"
             android:windowSoftInputMode="adjustResize">

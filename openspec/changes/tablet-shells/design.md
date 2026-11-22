@@ -10,7 +10,7 @@
 
  ## D3. Windows
 
- Android: `resizeableActivity="true"` and the existing `configChanges` keep the activity alive across resizes and fold changes; WindowManager's `WindowInfoTracker` reports a hinge so a later change could avoid it (not now).
+ Android: `resizeableActivity="true"` and `configChanges` keep the activity alive across resizes and fold changes. `configChanges` also gains `keyboard` and `navigation`: before, attaching a keyboard cover or a trackpad recreated the activity and reloaded the web view (only `keyboardHidden` was there). WindowManager's `WindowInfoTracker` reports a hinge so a later change could avoid it (not now).
 
  ## D4. Tests
 
