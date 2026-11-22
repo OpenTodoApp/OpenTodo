@@ -203,7 +203,9 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         hold = h
         val root = findViewById<View>(R.id.root)
         root.background = null
-        web.visibility = View.INVISIBLE
+        // Transparent, not INVISIBLE: an invisible web view is a hidden page, which runs no
+        // animation frame, so the web app could never say it has drawn (shell-reveal-on-paint D2).
+        web.alpha = 0f
         if (firstFrame && Build.VERSION.SDK_INT >= 31) {
             root.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
                 override fun onPreDraw(): Boolean {
@@ -232,7 +234,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         findViewById<View>(R.id.root).setBackgroundResource(R.color.background)
         heldBars?.let { setSystemBars(it) }
         heldBars = null
-        web.visibility = View.VISIBLE
+        web.alpha = 1f
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -684,6 +686,14 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
 
     override fun playCompletionSound() {
         if (hasWindowFocus()) completionSound.play(this)
+    }
+
+    /**
+     * shell-reveal-on-paint D2: the web app has drawn its first frame, so the launch screen goes
+     * without waiting for the page's load. The load and the cap still end it for an older web app.
+     */
+    override fun painted() {
+        if (!mainFrameFailed) reveal()
     }
 
     /** One link screen at a time; a device where nothing answers the link has no distributor to ask. */

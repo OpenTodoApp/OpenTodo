@@ -92,9 +92,31 @@ class BridgeTest {
         val (scenario, web) = open()
         waitUntil("the web view shows", timeoutMs = 3_000) {
             var shown = false
-            scenario.onActivity { shown = web.visibility == View.VISIBLE }
+            scenario.onActivity { shown = web.alpha == 1f }
             shown
         }
+    }
+
+    /**
+     * shell-reveal-on-paint D2: a page that says it has drawn shows at once, while its load is
+     * still held back by an image slower than the cap. Shown within three seconds, so neither
+     * the end of the load nor the cap can have shown it; the call came from an animation frame,
+     * so the hidden web view runs them.
+     */
+    @Test fun thePagesFirstFrameShowsTheWebViewBeforeItsLoadEnds() {
+        server.rootPage = "<!doctype html><title>OpenTodo test</title><p>first frame</p><img src=\"/slow.png\">" +
+            "<script>requestAnimationFrame(function () { requestAnimationFrame(function () {" +
+            " if (window.opentodoShell && window.opentodoShell.capabilities.indexOf('first-paint') >= 0) window.opentodoShell.painted() }) })</script>"
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        lateinit var web: WebView
+        scenario.onActivity { web = it.findViewById(R.id.web) }
+        server.waitForPath("/slow.png")
+        waitUntil("the web view shows before the page has loaded", timeoutMs = 3_000) {
+            var shown = false
+            scenario.onActivity { shown = web.alpha == 1f }
+            shown
+        }
+        assertEquals("\"interactive\"", web.js("document.readyState"))
     }
 
     @Test fun aCallAnswersThroughTheMessageChannel() {
