@@ -34,7 +34,7 @@ Select a task and press a key: <kbd>c</kbd> completes it, <kbd>1</kbd> to <kbd>4
 
 ### Dates and times
 
-A due date is a calendar day; a time is the clock time where you are. Type `tomorrow` or `3pm`, pick them from a calendar, or fix a time to a time zone. See [Dates and times](dates-and-times.md).
+A due date is a calendar day; a time is the clock time where you are. Type them in words like `tomorrow` or `3pm`, pick them from a calendar, or fix a time to a time zone. See [Dates and times](dates-and-times.md).
 
 ### Deadlines
 
@@ -46,11 +46,11 @@ A deadline is the day a task must be finished by, separate from the day you plan
 
 ### Wait for another task
 
-**Blocked by** makes a task wait for others: it is dimmed with a lock until they are done. See [Notes, subtasks and dependencies](notes-and-subtasks.md#wait-for-another-task).
+**Blocked by** makes a task wait for other tasks: it is dimmed with a lock until they are done. See [Notes, subtasks and dependencies](notes-and-subtasks.md#wait-for-another-task).
 
 ## Change several tasks at once
 
-Tick tasks with <kbd>x</kbd> or their checkboxes, then **Actions** (or <kbd>.</kbd>) changes them all in one go, with **Undo** afterwards. See [Change several tasks at once](bulk-actions.md).
+Tick tasks with <kbd>x</kbd> or their checkboxes, then **Actions** (or <kbd>.</kbd>) changes all of them in one go, with **Undo** afterwards. See [Change several tasks at once](bulk-actions.md).
 
 ## Complete, reopen and delete
 
@@ -62,7 +62,7 @@ Open the task and type in **Add subtask**, or select it in the list and press <k
 
 ## Organise with projects
 
-Create a project with **+** next to **Projects**; pick a parent to make it a sub-project. The **Project** menu colours, moves, renames, duplicates, archives or deletes it. See [Projects and sub-projects](projects.md) and [Sections and boards](sections-and-boards.md).
+Create a project with **+** next to **Projects** in the sidebar; pick a parent to make it a sub-project. The **Project** menu colours, moves, renames, duplicates, archives or deletes it. See [Projects and sub-projects](projects.md) and [Sections and boards](sections-and-boards.md).
 
 ## Project notes
 
@@ -76,4 +76,4 @@ In the Inbox and in projects, you decide the order: drag a task, or select it an
 
 - Keep the Inbox as a landing spot: capture fast, then sort into projects once a day.
 - Use priorities sparingly. If everything is P1, nothing is.
-- An estimate shows on the row, like `30m`, which makes quick wins easy to spot. The **Filter** action in a list's header can show only tasks of 15 minutes or less (**Quick wins**).
+- A task with an estimate shows it on the row, like `30m`, which makes it easy to spot quick wins. The **Filter** action in a list's header can show only tasks of 15 minutes or less (**Quick wins**).
