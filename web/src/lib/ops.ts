@@ -27,6 +27,7 @@ import { keepProjectWorkspace, keepWorkspaceFor, workspaceFields, type KeepWorks
 import { resettable } from './moduleState'
 import type { AppendRow } from './noteAppends'
 import { LOCAL_ERRORS } from './localErrors'
+import { linkChanges } from './linkAttachment'
 
 let devicePromise: Promise<string> | null = null
 /** The local data epoch the memoised id was read in; a sign-out starts a new one. */
@@ -745,6 +746,8 @@ export type NewTaskInput = {
    * task's final due and written in the same batch as the task.
    */
   reminders?: ReminderPhrase[]
+  /** URLs typed in quick add (quick-add-links D2): link attachments written in the same batch as the task. */
+  links?: string[]
   /**
    * Created already done (today-closed-list D6, Log a win): `completed_at` is now and
    * `completed_by` the signed-in account, in the creating batch.
@@ -816,12 +819,14 @@ export function planReminders(taskId: string, due: Task['due'], phrases: readonl
   })
 }
 
-/** A planned task with what quick add asked for alongside it: its reminders and the time already spent. */
-async function withCompanions(input: NewTaskInput, planned: { id: string; change: Change }, now: Date): Promise<Change[]> {
+/** A planned task with what quick add asked for alongside it: its reminders, the time already spent and its links. */
+export async function planCompanions(input: NewTaskInput, planned: { id: string; change: Change }, now: Date): Promise<Change[]> {
   const { id, change } = planned
   const changes: Change[] = [change, ...planReminders(id, (change.patch as { due: Task['due'] }).due, input.reminders, now)]
   // Time already spent (quick add `30m/2h`, time-tracking D10): one closed entry ending now.
-  const me = input.spent_minutes ? await currentUserId() : null
+  const me = input.spent_minutes || input.links?.length ? await currentUserId() : null
+  // Links typed in the line (quick-add-links D2): link attachments, not the origin again.
+  changes.push(...linkChanges(id, input.links, me, { origin: input.origin?.url, now: now.getTime(), id: uuid }))
   if (me && input.spent_minutes) {
     const end = now.getTime()
     changes.push({ entity: 'time_entry', entityId: uuid(), patch: {
@@ -834,7 +839,7 @@ async function withCompanions(input: NewTaskInput, planned: { id: string; change
 export async function createTask(input: NewTaskInput, now = new Date()): Promise<string> {
   const planned = await planTask(input)
   // One batch: the task never syncs without its reminders and its time entry.
-  await mutateMany(await withCompanions(input, planned, now))
+  await mutateMany(await planCompanions(input, planned, now))
   return planned.id
 }
 
@@ -846,7 +851,7 @@ export async function createTask(input: NewTaskInput, now = new Date()): Promise
 export async function planNewTasks(inputs: readonly NewTaskInput[], placement: Placement = 'bottom', now = new Date()): Promise<{ ids: string[]; changes: Change[] }> {
   const planned = await planTasks(inputs, placement)
   const changes: Change[] = []
-  for (const [i, p] of planned.entries()) changes.push(...(await withCompanions(inputs[i], p, now)))
+  for (const [i, p] of planned.entries()) changes.push(...(await planCompanions(inputs[i], p, now)))
   return { ids: planned.map((p) => p.id), changes }
 }
 

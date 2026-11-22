@@ -1,4 +1,5 @@
 import { type FormEvent, forwardRef, useCallback, type KeyboardEvent, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { useMe } from '../lib/sharing'
 import { keysOf } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 import { Icon } from '../ui'
@@ -97,6 +98,8 @@ function useParseContext(settings: QuickAddSettings, projects: readonly ProjectR
   const energy = energyLevelsOn(prefs)
   // Sector phrases only while the account uses time sectors (time-sectors D8).
   const sectors = timeSectorsOn(prefs)
+  // Links need an author for their attachment: before the first sign-in they stay text (quick-add-links D2).
+  const signedIn = !!useMe()
   return useCallback(() => {
     if (!settings.enabled) return null
     const langs = preferredLanguages()
@@ -110,8 +113,10 @@ function useParseContext(settings: QuickAddSettings, projects: readonly ProjectR
       dayParts,
       energy,
       sectors,
+      // A link typed or pasted becomes a link attachment (quick-add-links).
+      links: signedIn,
     }
-  }, [settings, projects, dtPrefs, resolved, dayParts, energy, sectors])
+  }, [settings, projects, dtPrefs, resolved, dayParts, energy, sectors, signedIn])
 }
 
 /**

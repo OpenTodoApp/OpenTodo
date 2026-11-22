@@ -18,6 +18,8 @@ import { applyBatch } from './undo'
 import { compileView } from './views'
 import { t } from './i18n'
 import { uuid } from './ids'
+import { linkChanges } from './linkAttachment'
+import { originOf } from './taskOrigin'
 import { labelKey } from './labels'
 import { descendants } from './tree'
 import { dayPartFields, dayPartName, dayPartOf, doOnPatch, type DayPart, type DoOnChoice } from './dayParts'
@@ -425,13 +427,18 @@ export async function dropOnPanel(taskId: string, view: Pick<View, 'name' | 'que
  * and any reminders, written as one undoable batch. Recurrence and project moves go
  * through their own helpers before this (they plan series and scopes).
  */
-export async function titleEditUndoable(id: string, patch: Partial<Task>, reminders: ReminderPhrase[] = []): Promise<UndoableResult> {
+export async function titleEditUndoable(id: string, patch: Partial<Task>, reminders: ReminderPhrase[] = [], links: string[] = []): Promise<UndoableResult> {
   const task = (await readTicked([id])).tasks[0]
   if (!task) return { entry: null, label: '' }
   const due = 'due' in patch ? patch.due ?? null : task.due
   const changes: Change[] = []
   if (Object.keys(patch).length) changes.push({ entity: 'task', entityId: id, patch })
   changes.push(...planReminders(id, due, reminders))
+  // Links typed in the edit become link attachments in the same change (quick-add-links D5).
+  if (links.length) {
+    const existing = (await db.attachments.where('task_id').equals(id).toArray()).flatMap((a) => (a.url && !a.deleted_at && !a.comment_id ? [a.url] : []))
+    changes.push(...linkChanges(id, links, await currentUserId(), { origin: originOf(task)?.url, existing, id: uuid }))
+  }
   if (!changes.length) return { entry: null, label: '' }
   return apply(changes, t('Task updated'))
 }

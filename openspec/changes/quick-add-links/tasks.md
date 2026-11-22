@@ -9,13 +9,13 @@
 
 ## 2. The app
 
-- [ ] 2.1 Quick add turns `links` on and shows the link chip (tint, ×, two Backspaces) in every presentation: verified by a component test per presentation
-- [ ] 2.2 Saving writes the link attachments in the same `mutate()` as the task, offline, one Undo; a link equal to the origin is not attached: verified by a test of the save path with the network off
-- [ ] 2.3 A multi-line paste attaches each line's links: verified by a paste test
-- [ ] 2.4 Title editing reads links typed during the edit and attaches them on commit in one undoable change: verified by a title-edit test
+- [x] 2.1 Quick add (one parse context for the list's line, the phone's sheet, the capture screen and the command bar's Add mode) and Search's "Add as a task" turn `links` on; the link chip reads the host, × and two Backspaces keep it as text: verified by `quickAddLinks.test.tsx`
+- [x] 2.2 Saving writes the link attachments in the task's batch (`withCompanions`, `linkAttachment.ts`, shared with Add a link…), once each and never the origin: verified by `quickAddLinks.test.ts`
+- [x] 2.3 A multi-line paste attaches each line's links: verified by `quickAddLinks.test.ts` ("each line of a paste")
+- [x] 2.4 Title editing reads links typed during the edit and attaches them in the same undoable change: verified by `quickAddLinks.test.ts` (title edit, Undo)
 
 ## 3. The command line, docs and archive
 
 - [ ] 3.1 `ot add` attaches the line's links through `POST /api/v1/tasks/{id}/attachments`: verified by a CLI test against the test server
-- [ ] 3.2 `docs/quick-add.md`, `docs/attachments.md` and the parse route in `docs/api.md` and `docs/openapi.json`: verified by `make docs-check`
+- [x] 3.2 `docs/quick-add.md`, `docs/attachments.md` and the parse route in `docs/api.md` (`docs/openapi.json` describes `fields` as an object, unchanged): verified by `make docs-check`
 - [ ] 3.3 Changelog fragment and archive: verified by `openspec validate --all --strict`
