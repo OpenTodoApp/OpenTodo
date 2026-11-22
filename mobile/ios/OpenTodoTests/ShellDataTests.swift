@@ -930,6 +930,22 @@ final class DownloadsTests: XCTestCase {
         XCTAssertFalse(Downloads.saves(response: u("https://todo.example.com/today"), server: server, isAttachment: false, canShowMIMEType: true))
     }
 
+    func testImagesAndPDFsAreShownFirst() {
+        XCTAssertTrue(Downloads.previews(mimeType: "image/jpeg", fileName: "IMG_1234.jpg"))
+        XCTAssertTrue(Downloads.previews(mimeType: "image/png", fileName: "download"))
+        XCTAssertTrue(Downloads.previews(mimeType: "image/heic", fileName: "photo.heic"))
+        XCTAssertTrue(Downloads.previews(mimeType: "application/pdf", fileName: "invoice.pdf"))
+        // A decrypted attachment from the page without a type: the name decides.
+        XCTAssertTrue(Downloads.previews(mimeType: nil, fileName: "receipt.png"))
+        // Saved as before: the server's own choice of a plain download, other files, and SVG.
+        XCTAssertFalse(Downloads.previews(mimeType: "application/octet-stream", fileName: "photo.jpg"))
+        XCTAssertFalse(Downloads.previews(mimeType: "text/plain", fileName: "opentodo-recovery-key.txt"))
+        XCTAssertFalse(Downloads.previews(mimeType: "application/json", fileName: "opentodo-export.json"))
+        XCTAssertFalse(Downloads.previews(mimeType: "image/svg+xml", fileName: "logo.svg"))
+        XCTAssertFalse(Downloads.previews(mimeType: nil, fileName: "logo.svg"))
+        XCTAssertFalse(Downloads.previews(mimeType: nil, fileName: "archive"))
+    }
+
     func testAnAttachmentIsReadFromTheHeader() {
         let url = u("https://todo.example.com/api/v1/export")
         func response(_ headers: [String: String]) -> URLResponse {

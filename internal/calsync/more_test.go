@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/OpenTodoApp/opentodo/internal/calfeed"
 	"github.com/OpenTodoApp/opentodo/internal/calsync/calsynctest"
 	"github.com/OpenTodoApp/opentodo/internal/config"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
@@ -288,4 +289,14 @@ func TestShownCalendarUnreadableIsSkipped(t *testing.T) {
 	if got := h.srv.Members("work"); len(got) != 1 {
 		t.Fatalf("target members = %v; the task should have synced to the target despite the bad shown calendar", got)
 	}
+}
+
+// masterEvent parses a calendar object and returns its event that is not an
+// override (remote.master).
+func masterEvent(data []byte) (calfeed.Event, bool) {
+	cal, err := calfeed.ParseCalendar(data)
+	if err != nil {
+		return calfeed.Event{}, false
+	}
+	return remote{Events: cal.Events}.master()
 }

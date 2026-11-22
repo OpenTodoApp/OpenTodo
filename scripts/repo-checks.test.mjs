@@ -310,7 +310,7 @@ test('the full matrix runs on tags, nightly and by hand; pull requests run the f
   assert.match(ci, /types: \[opened, synchronize, reopened\]/, 'drafts and ready pull requests run the same tier, so marking one ready starts no run')
   const jobs = jobsOf(ci)
   assert.match(jobs.changes, /full: \$\{\{ steps\.filter\.outputs\.full \}\}/)
-  assert.match(jobs.changes, /git diff --name-only "\$BEFORE" HEAD/, 'a push to main is compared with the commit before')
+  assert.match(jobs.changes, /git diff --name-only "\$BEFORE" HEAD > changed\.txt\n\s+cat changed\.txt\n\s+\.\/scripts\/ci-changes\.sh < changed\.txt \| sed -E 's\/\^\(ui\|layout\|a11y\|mobile\|ios\)=true\$\/\\1=false\/' >> "\$GITHUB_OUTPUT"/, 'a push to main is compared with the commit before and skips the heavy jobs the queue ran (ci-pr-fast-tier)')
   assert.match(jobs.changes, /git diff --name-only "\$QUEUE_BASE" HEAD > changed\.txt\n\s+cat changed\.txt\n\s+\.\/scripts\/ci-changes\.sh < changed\.txt >> "\$GITHUB_OUTPUT"/, 'the merge queue runs the whole path tier')
   assert.match(jobs.changes, /git diff --name-only "\$BASE"\.\.\.HEAD > changed\.txt\n\s+cat changed\.txt\n(\s+#.*\n)*\s+\.\/scripts\/ci-changes\.sh < changed\.txt \| sed -E 's\/\^\(ui\|layout\|a11y\|mobile\|ios\)=true\$\/\\1=false\/' >> "\$GITHUB_OUTPUT"\n\n/, 'every pull request turns the heavy jobs off, with no condition around it')
   assert.doesNotMatch(jobs.changes, /DRAFT/, 'a draft is no longer a tier of its own')
@@ -717,9 +717,9 @@ test('the Play upload runs only for final tags, after the release, with its secr
   }
 })
 
-// The iPhone app's TestFlight upload (OpenSpec change ios-distribution D5, D9): final tags after the
-// release and by hand, the App Store Connect key only in the release environment, a registration
-// job of its own, and never any signing material in the repository.
+// The iPhone app's TestFlight upload (OpenSpec change ios-distribution D5, D9, D10): final tags after
+// the release and by hand, the App Store Connect key only in the release environment, a registration
+// job of its own, review submission for final tags only, and never any signing material in the repository.
 test('the TestFlight upload runs for final tags after the release and by hand, with its secrets in the release environment', () => {
   const caller = jobsOf(read('.github/workflows/ci.yml'))['ios-testflight']
   assert.match(caller, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\) \}\}$/m, 'final tags only')
@@ -733,7 +733,13 @@ test('the TestFlight upload runs for final tags after the release and by hand, w
   assert.match(job, /node scripts\/release\/appstore\.mjs register\n[\s\S]*ios-testflight\.sh archive /, 'the bundle IDs are registered before the archive')
   assert.match(job, /^ {8}id: upload$/m, 'the upload step has an id the cleanup reads')
   assert.match(job, /if: always\(\) && steps\.secrets\.outputs\.ready == 'true'\n[\s\S]*?UPLOADED: \$\{\{ steps\.upload\.outcome == 'success' \}\}\n[\s\S]*?if \[ "\$UPLOADED" != "true" \][^\n]*appstore\.mjs cleanup/, 'the keychain always goes; the certificate is revoked only when nothing was uploaded (ITMS-90035)')
-  assert.doesNotMatch(flow, /reviewSubmissions|appStoreVersionSubmissions|betaAppReviewSubmissions/, 'CI never submits for review')
+  // App Store review (D10): a final tag's build only, after Apple processed it, never a release candidate; a hand run is a dry run unless chosen.
+  assert.match(job, /appstore\.mjs processed[\s\S]*?name: Submit for App Store review[\s\S]*?appstore\.mjs submit/, 'the submission waits for processing')
+  assert.match(job, /^ {8}if: steps\.secrets\.outputs\.ready == 'true' && !contains\(inputs\.ref, '-rc\.'\) && \(inputs\.app_store == 'submit' \|\| inputs\.app_store == 'dry-run' \|\| inputs\.app_store == 'submit-only'\)$/m, 'a release candidate is never submitted')
+  assert.match(flow, /^ {6}app_store:\n {8}description:[^\n]*\n {8}type: choice\n {8}options: \[dry-run, submit, skip, submit-only\]\n {8}default: dry-run$/m, 'a run by hand is a dry run unless submit is chosen')
+  assert.match(job, /id: upload\n {8}if: steps\.secrets\.outputs\.ready == 'true' && inputs\.app_store != 'submit-only'$/m, 'submit-only uploads nothing')
+  assert.ok(job.indexOf('Release tag only') < job.indexOf('Submit for App Store review'), 'the tag check runs first')
+  assert.doesNotMatch(flow, /betaAppReviewSubmissions/, 'CI never submits a TestFlight build to beta review')
   const register = jobsOf(read('.github/workflows/ios-register-ids.yml'))['ios-register-ids']
   assert.ok(register, 'ios-register-ids.yml has an ios-register-ids job')
   assert.match(read('.github/workflows/ios-register-ids.yml'), /^ {2}workflow_dispatch:$/m)

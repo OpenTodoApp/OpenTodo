@@ -176,7 +176,9 @@ func TestHalfSavedFileIsNotPushed(t *testing.T) {
 	mum := s.create("tasks", map[string]any{"title": "Call mum", "project_id": home})
 	v := s.vault(t)
 	saved := v.read(t, "Home.md") + "- [ ] Buy seeds\n"
-	v.write(t, "Home.md", "") // the save's first step, as the sync reads it
+	// The save's first step as the sync reads it: a line short (an empty first
+	// step is held before the merge, TestEmptyFileMidSaveTrashesNothing).
+	v.write(t, "Home.md", strings.Replace(saved, lineOf(t, saved, "Call mum")+"\n", "", 1))
 	beforePush(t, func() { v.write(t, "Home.md", saved) })
 	rep := v.sync(t)
 	if !hasEvent(rep, "skipped", "Home.md") {
@@ -261,5 +263,143 @@ func TestSaveHeldEmptyThroughTheRunIsNotPushed(t *testing.T) {
 	}
 	if s.get("tasks", pay)["deleted_at"] != nil {
 		t.Fatal("the task was trashed")
+	}
+}
+
+// TestEmptyFileMidSaveTrashesNothing (the TestVaultWatch data loss): an editor
+// saves in two steps, an empty file and then its text, and a sync reads the
+// empty step. Every check after the read (the re-read before the push, the
+// watch's snapshot) still saw the same empty file, so the sync trashed every
+// task of it in the app and wrote the file over the save. A vault file the
+// sync wrote is never empty (its frontmatter at least), so an empty one is a
+// save still under way: that file is neither read nor written, the rest of the
+// vault syncs, and the next sync reads the save.
+func TestEmptyFileMidSaveTrashesNothing(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home"})
+	lamp := s.create("tasks", map[string]any{"title": "Fix the lamp", "project_id": home})
+	v := s.vault(t)
+	saved := v.read(t, "Home.md")
+	v.write(t, "Home.md", "")
+	rep := v.sync(t)
+	if got := s.get("tasks", lamp)["deleted_at"]; got != nil {
+		t.Fatalf("the empty step trashed the task: deleted_at %v", got)
+	}
+	if text := v.read(t, "Home.md"); text != "" {
+		t.Fatalf("the half-saved file was written over:\n%s", text)
+	}
+	if rep.Written != 0 || !hasEvent(rep, "skipped", "Home.md") {
+		t.Errorf("report %+v", rep)
+	}
+	// The save completes; the next sync keeps the task and adds the new line.
+	v.write(t, "Home.md", saved+"- [ ] Oil the hinge\n")
+	if rep := v.sync(t); rep.Created != 1 {
+		t.Fatalf("second sync %+v", rep)
+	}
+	text := v.read(t, "Home.md")
+	if !strings.Contains(text, "Fix the lamp") || !strings.Contains(lineOf(t, text, "Oil the hinge"), "🆔 ") {
+		t.Fatalf("saved file:\n%s", text)
+	}
+	if got := s.get("tasks", lamp)["deleted_at"]; got != nil {
+		t.Fatalf("the task was trashed later: deleted_at %v", got)
+	}
+}
+
+// TestEmptyFileMidSaveHoldsOnlyThatFile: while one file is half saved, an edit
+// in another file still reaches the app.
+func TestEmptyFileMidSaveHoldsOnlyThatFile(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home"})
+	work := s.create("projects", map[string]any{"name": "Work"})
+	lamp := s.create("tasks", map[string]any{"title": "Fix the lamp", "project_id": home})
+	s.create("tasks", map[string]any{"title": "Send the invoice", "project_id": work})
+	v := s.vault(t)
+	v.write(t, "Home.md", "")
+	v.edit(t, "Work.md", "- [ ] Send the invoice", "- [ ] Send the invoice 📅 2026-11-30")
+	rep := v.sync(t)
+	if rep.Updated != 1 || !hasEvent(rep, "skipped", "Home.md") {
+		t.Fatalf("report %+v", rep)
+	}
+	if got := s.get("tasks", lamp)["deleted_at"]; got != nil {
+		t.Fatalf("the half-saved file's task was trashed: %v", got)
+	}
+	if text := v.read(t, "Home.md"); text != "" {
+		t.Fatalf("the half-saved file was written over:\n%s", text)
+	}
+}
+
+// TestEmptyFileMidSaveAfterPartialMove: one line was cut from Home.md into
+// Work.md, and the sync reads Home.md at its empty save step. The moved line
+// does not make the empty file real: its other tasks stay.
+func TestEmptyFileMidSaveAfterPartialMove(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home"})
+	s.create("projects", map[string]any{"name": "Work"})
+	lamp := s.create("tasks", map[string]any{"title": "Fix the lamp", "project_id": home})
+	mum := s.create("tasks", map[string]any{"title": "Call mum", "project_id": home})
+	v := s.vault(t)
+	line := lineOf(t, v.read(t, "Home.md"), "Fix the lamp")
+	v.write(t, "Work.md", v.read(t, "Work.md")+line+"\n")
+	v.write(t, "Home.md", "")
+	rep := v.sync(t)
+	if !hasEvent(rep, "skipped", "Home.md") {
+		t.Errorf("report %+v", rep)
+	}
+	for _, id := range []string{lamp, mum} {
+		if s.get("tasks", id)["deleted_at"] != nil {
+			t.Fatalf("task %s was trashed", id)
+		}
+	}
+	if v.read(t, "Home.md") != "" {
+		t.Fatalf("the half-saved file was written over:\n%s", v.read(t, "Home.md"))
+	}
+}
+
+// TestEmptyFileMidSaveWithoutTasks: a project file holding only prose is read
+// at its empty save step: it is held too, and no second project is made.
+func TestEmptyFileMidSaveWithoutTasks(t *testing.T) {
+	s := newServer(t)
+	s.create("projects", map[string]any{"name": "Home"})
+	v := s.vault(t)
+	saved := v.read(t, "Home.md") + "\nIdeas for the garden.\n"
+	v.write(t, "Home.md", saved)
+	v.sync(t)
+	v.write(t, "Home.md", "")
+	rep := v.sync(t)
+	if !hasEvent(rep, "skipped", "Home.md") || rep.Written != 0 {
+		t.Errorf("report %+v", rep)
+	}
+	if got := len(s.list("projects")); got != 1 {
+		t.Fatalf("%d projects, want 1", got)
+	}
+	v.write(t, "Home.md", saved)
+	v.sync(t)
+	if got := len(s.list("projects")); got != 1 {
+		t.Fatalf("%d projects after the save, want 1", got)
+	}
+	if !strings.Contains(v.read(t, "Home.md"), "Ideas for the garden.") {
+		t.Fatalf("file:\n%s", v.read(t, "Home.md"))
+	}
+}
+
+// TestFileEmptiedOnPurpose: a file still empty at the next sync was emptied
+// on purpose: it is held once only, then its tasks go.
+func TestFileEmptiedOnPurpose(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home"})
+	lamp := s.create("tasks", map[string]any{"title": "Fix the lamp", "project_id": home})
+	v := s.vault(t)
+	v.write(t, "Home.md", "")
+	if rep := v.sync(t); !hasEvent(rep, "skipped", "Home.md") {
+		t.Fatalf("first sync %+v", rep)
+	}
+	rep := v.sync(t)
+	if hasEvent(rep, "skipped", "Home.md") {
+		t.Fatalf("held again: %+v", rep)
+	}
+	for _, task := range s.list("tasks") {
+		if task["id"] == lamp && task["deleted_at"] == nil {
+			t.Fatalf("the task of the emptied file stays: %+v", rep)
+		}
 	}
 }

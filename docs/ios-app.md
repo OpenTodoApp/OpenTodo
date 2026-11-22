@@ -13,7 +13,7 @@ The OpenTodo app for iPhone and iPad opens your own OpenTodo server, like the [i
 
 ## Install it
 
-The official app is in the App Store: [OpenTodo for iPhone and iPad](https://apps.apple.com/us/app/opentodo/id6832200428). It is the first release, so expect some rough edges, and [say what to improve](feedback-and-support.md). New builds go to testers through TestFlight, Apple's app for testing, before they reach the App Store.
+The official app is in the App Store: [OpenTodo for iPhone and iPad](https://apps.apple.com/us/app/opentodo/id6832200428). It is the first release, so expect some rough edges, and [say what to improve](feedback-and-support.md). New builds go to testers through TestFlight, Apple's app for testing, and every OpenTodo release is sent to Apple's App Store review the same day: the App Store update arrives once Apple approves it, usually within a few days.
 
 As the copyright holder, the author of OpenTodo allows distributing its iOS app through Apple's App Store and TestFlight. You can still build the app yourself from source ([Building it](#building-it)).
 
@@ -72,7 +72,7 @@ Pulling a page down from its top [syncs now](offline-and-sync.md#the-sync-status
 
 ## Saving files
 
-Whatever the app saves opens the system's save dialog, where you choose a place in Files: the recovery key and recovery codes, an export, a theme, an attachment. Cancel and nothing is saved.
+An image or a PDF attached to a task opens in the system's preview: the share button saves it to Photos or Files, or sends it. Everything else the app saves opens the system's save dialog, where you choose a place in Files: the recovery key and recovery codes, an export, a theme, any other attachment. Cancel and nothing is saved.
 
 ## Haptic feedback
 

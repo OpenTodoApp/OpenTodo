@@ -2,7 +2,6 @@ package issues
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -71,19 +70,6 @@ type RateLimitedError struct{ Until time.Time }
 
 func (e *RateLimitedError) Error() string {
 	return "provider rate limit until " + e.Until.UTC().Format(time.RFC3339)
-}
-
-// ReasonOf maps an error of a poll to the reason stored on the connection.
-func ReasonOf(err error) string {
-	var pe *Error
-	var rl *RateLimitedError
-	switch {
-	case errors.As(err, &pe):
-		return pe.Reason
-	case errors.As(err, &rl):
-		return ReasonRateLimited
-	}
-	return ReasonConnection
 }
 
 // NormalizeHost checks a host typed by a person and returns it as

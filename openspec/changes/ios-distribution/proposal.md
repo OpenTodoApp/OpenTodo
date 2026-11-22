@@ -19,6 +19,7 @@ This replaces the licence question the first version of this proposal asked (an 
 - **Store-safe share hand-over.** The share extension stops opening the app through the responder chain's `openURL:`, which App Review rejects (ios-shell D5). It saves the share to the App Group and confirms in its own sheet. The app opens the capture screen with the share the next time it comes to the front.
 - **A signed upload in CI, without a Mac and without stored certificates.** After the GitHub release of a final `v*` tag, a job archives the app, signs it with a distribution certificate and profiles it makes for that run through the App Store Connect API, uploads it to TestFlight, sets "What to test" from the CHANGELOG, and revokes the certificate again. The owner can run the same job by hand for any ref. Release candidates upload nothing. Without the secrets, the job warns and succeeds, as the Google Play upload does.
 - **Bundle IDs registered by CI.** A script registers `app.open-todo.ios`, `app.open-todo.ios.widget` and `app.open-todo.ios.share` with App Groups when they are missing, before every archive, and a manual job does only that and reports, so the owner sees whether `app.open-todo.ios` is free before creating the app record.
+- **App Store review from CI for a final tag** (design D10): the App Store version, What's New from the changelog, the build, and the review submission, released after approval; idempotent, with a dry run.
 - **Listing material in the repository:** `mobile/ios/store/` holds the store texts, the App Privacy answers ("Data Not Collected"), the export compliance answer, the App Review notes (pointing at the public demo instance, so a reviewer needs no account) and a screenshot script.
 - **A public TestFlight group** for testers. It is linked from `docs/ios-app.md` and from the call for testers (#9).
 - **Docs.** `docs/ios-app.md` starts with installing from TestFlight or the App Store and keeps "Build it yourself" as the second path. `docs/install-phone.md`, `docs/troubleshooting.md`, `mobile/README.md` and `RELEASING.md` (the TestFlight step and the manual review submission) follow.
@@ -30,7 +31,6 @@ No op, field, route, migration or environment variable. Not **BREAKING**.
 - The App Intents, the extra widgets and the Live Activity: `apple-shortcuts` and `focus-live-activity`. They make the app stronger in review (guideline 4.2, minimum functionality) but are not required to submit it.
 - APNs push. ios-shell D3 still holds: it would need a server sender and a credential per instance.
 - Offline start in the store build. The store build is the portable build. iOS gives a service worker only to hosts fixed at build time, so the store app cannot know your server (ios-shell D2). The one-server build stays available from source.
-- Submitting for review from CI. A person submits each build in App Store Connect.
 - A Mac app, a watch app, iPad-specific layouts.
 - Self-service account deletion. App Review guideline 5.1.1(v) can ask for it in apps that create accounts. If review demands it, it becomes its own change (`self-account-deletion`). Design D6 explains why we expect not to need it.
 

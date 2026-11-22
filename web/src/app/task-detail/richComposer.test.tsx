@@ -69,6 +69,27 @@ describe('rich composer', () => {
     await r.unmount()
   })
 
+  it('The formatting row is not left pressed after posting (formatting-row-pressed)', async () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('coarse'), media: q, addEventListener: () => {}, removeEventListener: () => {} }))
+    const p = props()
+    const r = await render(<CommentsView {...p} />)
+    const v = await richView(r.container)
+    v.focus()
+    await typeText(v, '- buy milk')
+    const end = v.state.selection.from
+    v.dispatch(v.state.tr.setSelection(TextSelection.create(v.state.doc, end - 4, end)))
+    await press(v, 'b', { ctrlKey: true })
+    const pressed = () => [...r.container.querySelectorAll('[data-editor-toolbar] [aria-pressed="true"]')].map((b) => b.getAttribute('aria-label'))
+    await waitFor(() => pressed().includes('Bold'), 'Bold pressed')
+    expect(pressed()).toEqual(['Bold', 'Bullet list'])
+    await press(v, 'Enter', { ctrlKey: true })
+    await waitFor(() => (p.onCreate as ReturnType<typeof vi.fn>).mock.calls.length > 0)
+    await waitFor(() => v.state.doc.textContent === '', 'the composer emptied')
+    await flush()
+    expect(pressed()).toEqual([])
+    await r.unmount()
+  })
+
   it('Unchanged edit is byte-identical: nothing is written', async () => {
     const body = 'Use *stars* and __double__ underscores\n\n* a star list'
     const p = props({ threads: [{ root: comment('c1', 'me', body), replies: [] }] })

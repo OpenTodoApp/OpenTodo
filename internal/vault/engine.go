@@ -425,7 +425,69 @@ func (e *engine) scan() error {
 		}
 		e.changed[p] = true
 	}
+	e.holdHalfSaved()
 	return nil
+}
+
+// holdHalfSaved holds the half-saved files (halfSaved) like files not
+// downloaded yet: neither read nor written, their base kept, read next sync.
+func (e *engine) holdHalfSaved() {
+	// A file that held text when the sync last wrote it and is empty now is an
+	// editor's first save step (the file cut to nothing before its text). Every
+	// later check would see the same empty file, so read as it is it would trash
+	// the file's tasks and write over the save. It is held like a file not
+	// downloaded yet: neither read nor written, its base kept, read next sync.
+	for _, p := range e.halfSaved() {
+		delete(e.disk, p)
+		delete(e.changed, p)
+		e.pending[p] = true
+		e.rep.event("skipped", p, "", "skipped %s: it is empty, as while a file is being saved; the next sync reads it", p)
+	}
+}
+
+// halfSaved lists the vault files that look like an editor's first save step:
+// empty now, holding text when the last sync wrote them, and not emptied
+// because all their lines moved to other files (the Inbox's last line into a
+// project: the moved lines carry their ids). A file is held once: a file held
+// last sync has lost its hash, so if it is still empty it was emptied on
+// purpose and syncs as it is.
+func (e *engine) halfSaved() []string {
+	var out []string
+	empty := hashOf(nil)
+	for _, p := range sortedKeys(e.disk) {
+		fs, ok := e.st.Files[p]
+		if !ok || len(e.disk[p]) != 0 || fs.Hash == empty || fs.Hash == "" {
+			continue
+		}
+		if !e.allMoved(p) {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// allMoved reports whether file p had tasks printed in it and every one of
+// them is now in another file.
+func (e *engine) allMoved(p string) bool {
+	printed := 0
+	for id, at := range e.st.Printed {
+		if at != p {
+			continue
+		}
+		printed++
+		mark := []byte(markID + " " + id)
+		found := false
+		for q, b := range e.disk {
+			if q != p && bytes.Contains(b, mark) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return printed > 0
 }
 
 // savedSinceRead lists the files the merge read as changed that no longer

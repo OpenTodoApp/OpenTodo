@@ -43,3 +43,10 @@ Shell work is verified with `make ios` on a Mac (unit and UI tests, the unsigned
 - [ ] 6.3 A comment on #9 with the TestFlight link once the public group exists, and the link in `docs/ios-app.md`. Verified by the comment.
 - [x] 6.4 Changelog fragment `changelog.d/Added/ios-distribution.md`. Verified by `make repo-check`.
 - [ ] 6.5 `make openspec-validate`, `make repo-check` and `make check` pass. Verified by their exit codes.
+
+## 7. App Store review for a final tag (D10)
+
+- [x] 7.1 `appstore.mjs submit <version> <build> [--dry-run]`: the version created or moved, `AFTER_APPROVAL`, What's New in every localization (not on the first version), export compliance as the build declares it, the build attached, a review submission reused or created and submitted; nothing written for a version already submitted, in review, approved or released. Verified by `appstore.test.mjs` (a new version, each finished state, a half-done run again, the editable version moved, the first version, a build not processed, export compliance, the dry run, What's New from the changelog).
+- [x] 7.2 `ios-testflight.yml`: the submit step after processing, final tags only, `app_store` input (`submit` after a release, `dry-run` by default by hand, `skip`), the summary from the step's outcome. Verified by `scripts/repo-checks.test.mjs`.
+- [x] 7.3 `RELEASING.md` and `docs/ios-app.md`: review submitted by CI, the owner's once-only App Store Connect setup, the dry run. Verified by `make docs-check`.
+- [ ] 7.4 The first submission: the owner completes the App Store Connect setup in D10, then runs **iOS TestFlight** by hand for the latest final tag with `dry-run`, reads its log, and runs it with `submit`. Verified by the version waiting for review in App Store Connect.
