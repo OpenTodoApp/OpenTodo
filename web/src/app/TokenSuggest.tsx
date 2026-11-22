@@ -48,7 +48,9 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
   const [closedAt, setClosedAt] = useState<number | null>(null)
   const at: TokenAtCaret | null = enabled && caret !== null ? tokenAtCaret(value, caret, { energy }) : null
   const open = !!at && closedAt !== at.start
-  const ticked = useTickedSuggest({ items: useTickedItems(reuseProjectId), query: tickedQuery ?? value, enabled: !open && !!onTicked, onPick: (item) => onTicked?.(item.title) })
+  // Only while the field has focus (caret), and no query at all until two characters are typed.
+  const typed = (tickedQuery ?? value).trim().length >= 2
+  const ticked = useTickedSuggest({ items: useTickedItems(typed ? reuseProjectId : null), query: tickedQuery ?? value, enabled: !open && !!onTicked && caret !== null, onPick: (item) => onTicked?.(item.title) })
 
   const items = useMemo<Item[]>(() => {
     if (!at) return []

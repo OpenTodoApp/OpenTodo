@@ -3,7 +3,7 @@
 // the most recently ticked first. Nothing is chosen until an arrow key moves into the
 // list, so Enter still adds what was typed; Enter or a click on an item brings it back
 // through the list's own add, which reopens it (reusable-lists D3) with its toast and Undo.
-// Esc closes the list and keeps the text. The field keeps focus (the combobox pattern).
+// Esc closes the list and keeps the text; it shows only while the field has focus.
 import { type KeyboardEvent, useEffect, useId, useMemo, useState } from 'react'
 import { t } from '../../lib/i18n'
 import { tickedMatches, type TickedItem } from '../../lib/tickedItems'
@@ -15,7 +15,8 @@ export function useTickedSuggest({ items, query, enabled, onPick }: { items: rea
   const [closedFor, setClosedFor] = useState<string | null>(null)
   const matches = useMemo(() => (enabled ? tickedMatches(items, query) : []), [enabled, items, query])
   const shown = matches.length > 0 && closedFor !== query
-  useEffect(() => { setActive(-1) }, [query])
+  // A new text starts with nothing chosen; an emptied field forgets an Esc.
+  useEffect(() => { setActive(-1); if (!query.trim()) setClosedFor(null) }, [query])
 
   const pick = (item: TickedItem) => { setActive(-1); onPick(item) }
 
@@ -50,9 +51,10 @@ export function useTickedSuggest({ items, query, enabled, onPick }: { items: rea
       className="surface-overlay absolute left-0 right-0 top-full z-30 mt-1 max-h-64 overflow-y-auto overscroll-contain p-1 sm:right-auto sm:w-72">
       {matches.map((item, i) => (
         <li key={item.id} id={`${listId}-${i}`} role="option" aria-selected={i === active}
-          className={`flex items-center gap-2 rounded-control px-2 py-1.5 text-body pointer-coarse:min-h-11 ${i === active ? 'bg-sunken dark:bg-raised' : ''}`}
+          // Hover only highlights: nothing is chosen for Enter until an arrow key says so.
+          className={`flex items-center gap-2 rounded-control px-2 py-1.5 text-body pointer-coarse:min-h-11 hover:bg-sunken dark:hover:bg-raised ${i === active ? 'bg-sunken dark:bg-raised' : ''}`}
           // Keep focus in the field: the pick happens on mouse down.
-          onMouseDown={(e) => { e.preventDefault(); pick(item) }} onMouseEnter={() => setActive(i)} data-ticked-suggestion={item.id}>
+          onMouseDown={(e) => { e.preventDefault(); pick(item) }} data-ticked-suggestion={item.id}>
           <Icon name="rotate-ccw" size="xs" className="text-faint" />
           <span className="min-w-0 flex-1 truncate">{item.title}</span>
         </li>

@@ -4,7 +4,7 @@
 // works offline and on decrypted titles.
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db'
-import { normalizeTitle } from './reusable'
+import { normalizeTitle, reopenableItems } from './reusable'
 
 export interface TickedItem { id: string; title: string }
 
@@ -20,13 +20,15 @@ export function tickedMatches(items: readonly TickedItem[], query: string): Tick
   return items.filter((i) => normalizeTitle(i.title).includes(q)).slice(0, TICKED_LIMIT)
 }
 
-/** A reusable list's ticked top-level items, the most recently ticked first; none for null. */
+/**
+ * The items an add to a reusable list would reopen (`reopenableItems`: one per name,
+ * none whose name is open), the most recently ticked first; none for null. The screen
+ * passes null until something is typed, so an idle quick add runs no query.
+ */
 export function useTickedItems(projectId: string | null | undefined): readonly TickedItem[] {
   return useLiveQuery(async () => {
     if (!projectId) return NONE
     const rows = await db.tasks.where('project_id').equals(projectId).toArray()
-    return rows.filter((r) => r.completed_at && !r.deleted_at && !r.parent_id)
-      .sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0))
-      .map((r) => ({ id: r.id, title: r.title }))
+    return reopenableItems(projectId, rows).map((r) => ({ id: r.id, title: r.title }))
   }, [projectId], NONE) ?? NONE
 }

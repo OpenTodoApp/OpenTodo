@@ -202,7 +202,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
 
   // `#` and `@` suggestions (smart-title-tokens D1): a listbox under the field for the token at the caret.
   const energyOn = energyLevelsOn(useUserPrefsRow())
-  const suggest = useTokenSuggest({ input: inputRef, value, setValue: change, projects, labels, enabled: settings.enabled, energy: energyOn, reuseProjectId, tickedQuery: parsed?.title ?? value, onTicked: (title) => { change(''); void onAdd({ title }) } })
+  const suggest = useTokenSuggest({ input: inputRef, value, setValue: change, projects, labels, enabled: settings.enabled, energy: energyOn, reuseProjectId, tickedQuery: parsed?.title ?? value, onTicked: (title) => { void add(false, title) } })
   // Unmatched #tokens are explained once the caret has left them (natural-language-capture "Unmatched tokens are explained").
   const misses = (parsed?.unmatched ?? []).filter((m) => !suggest.open || caretOutside(inputRef.current, m.span))
 
@@ -246,10 +246,9 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
     void add(false)
   }
 
-  async function add(open: boolean) {
+  async function add(open: boolean, title?: string) { // `title`: a picked ticked item (reusable-suggest) in place of the typed title, tokens kept
     const line = value.trim()
-    if (!line) return
-    if (parsed && !parsed.title) return // only attributes typed so far; wait for a title
+    if (!line || (parsed && !parsed.title && !title)) return // only attributes typed so far; wait for a title
     const snapshot = parsed
     const description = notes?.trim()
     // Clear first so the next entry can be typed while labels are being created.
@@ -259,7 +258,8 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
     setHighlight(null)
     if (notes !== null) notesField.close()
     // Unknown @names become labels first (one op each), then the task references their ids.
-    const parsedInput: QuickAddInput = snapshot ? await toTaskInput(snapshot, { labels, createLabel: createLabelByName }) : { title: line }
+    const typed: QuickAddInput = snapshot ? await toTaskInput(snapshot, { labels, createLabel: createLabelByName }) : { title: line }
+    const parsedInput = title ? { ...typed, title } : typed
     const input = description ? { ...parsedInput, description } : parsedInput
     await (open && onAddAndOpen ? onAddAndOpen(input) : onAdd(input))
   }

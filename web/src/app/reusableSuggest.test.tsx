@@ -6,7 +6,7 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
-import { createProject, createTask, resetDeviceId, setTaskCompleted, updateProject } from '../lib/ops'
+import { createProject, createTask, mutate, resetDeviceId, updateProject } from '../lib/ops'
 import { tickedMatches } from '../lib/tickedItems'
 import { render, mockFetch, noPublicLinks, type, waitFor } from '../ui/test-utils'
 import { bulkToast, hideBulkToast } from './bulk/toastStore'
@@ -27,10 +27,9 @@ async function groceries(reusable = true) {
   const oat = await createTask({ title: 'Oat milk', project_id: pid })
   const bread = await createTask({ title: 'Bread', project_id: pid })
   await createTask({ title: 'Milk chocolate', project_id: pid }) // open: never suggested
-  await setTaskCompleted(milk, true)
-  await new Promise((r) => setTimeout(r, 5))
-  await setTaskCompleted(oat, true) // ticked last: listed first
-  await setTaskCompleted(bread, true)
+  await mutate('task', milk, { completed_at: 1_000 })
+  await mutate('task', oat, { completed_at: 3_000 }) // ticked last: listed first
+  await mutate('task', bread, { completed_at: 2_000 })
   return { pid, milk, oat, bread }
 }
 
@@ -94,11 +93,67 @@ describe('suggesting ticked items in a reusable list', () => {
     await r.unmount()
   })
 
+  it('a pick keeps the tokens typed with it, and closes notes and Esc memory with the field', async () => {
+    const { pid, oat } = await groceries()
+    const { r, quick } = await open(pid)
+    await type(quick, 'milk p1')
+    await waitFor(() => options(r.container).length === 2, 'suggestions')
+    await key(quick, 'ArrowDown')
+    await key(quick, 'Enter')
+    await waitFor(async () => (await db.tasks.get(oat))!.completed_at === null, 'Oat milk reopened')
+    expect((await db.tasks.get(oat))!.priority).toBe(1)
+    await waitFor(() => quick.value === '', 'the field is empty')
+    // Esc is forgotten once the field empties: the same text suggests again.
+    await type(quick, 'mil')
+    await waitFor(() => options(r.container).length === 1, 'Milk suggested')
+    await key(quick, 'Escape')
+    expect(options(r.container)).toEqual([])
+    await type(quick, '')
+    await type(quick, 'mil')
+    await waitFor(() => options(r.container).length === 1, 'suggested again')
+    await r.unmount()
+  })
+
+  it('hover does not choose, and the list closes when the field loses focus', async () => {
+    const { pid } = await groceries()
+    const { r, quick } = await open(pid)
+    await type(quick, 'mil')
+    await waitFor(() => options(r.container).length === 2, 'suggestions')
+    const first = r.container.querySelector('[data-ticked-suggestion]')!
+    await act(async () => { first.dispatchEvent(new MouseEvent('mouseover', { bubbles: true })); first.dispatchEvent(new MouseEvent('mouseenter')) })
+    expect(quick.getAttribute('aria-activedescendant')).toBeNull()
+    await act(async () => { quick.blur() })
+    await waitFor(() => options(r.container).length === 0, 'closed on blur')
+    await r.unmount()
+  })
+
+  it('one suggestion per name, the one an add reopens; none for a name that is open, nor for occurrence records', async () => {
+    const pid = await createProject({ name: 'Groceries' })
+    await updateProject(pid, { reusable: true })
+    const a = await createTask({ title: 'Eggs', project_id: pid })
+    const b = await createTask({ title: 'eggs.', project_id: pid })
+    await mutate('task', a, { completed_at: 1_000 })
+    await mutate('task', b, { completed_at: 2_000 })
+    const tea = await createTask({ title: 'Tea', project_id: pid })
+    await mutate('task', tea, { completed_at: 1_500 })
+    await createTask({ title: 'tea', project_id: pid }) // open twin
+    const record = await createTask({ title: 'Eggnog', project_id: pid })
+    await mutate('task', record, { completed_at: 1_200, series_id: 'series-1' })
+    const { r, quick } = await open(pid)
+    await type(quick, 'eg')
+    await waitFor(() => options(r.container).length === 1, 'one Eggs')
+    expect(r.container.querySelector(`[data-ticked-suggestion="${b}"]`)).toBeTruthy()
+    await type(quick, 'tea')
+    await waitFor(() => quick.value === 'tea', 'typed')
+    expect(options(r.container)).toEqual([])
+    await r.unmount()
+  })
+
   it('an ordinary project suggests nothing', async () => {
     const { pid } = await groceries(false)
     const { r, quick } = await open(pid)
     await type(quick, 'mil')
-    await act(async () => { await new Promise((res) => setTimeout(res, 50)) })
+    await waitFor(() => quick.value === 'mil', 'typed')
     expect(options(r.container)).toEqual([])
     await r.unmount()
   })
