@@ -8,7 +8,7 @@ import {
   retryUpload, stateOf, useAttachmentLimits, useUploadProgress, type AttachmentState,
 } from '../../lib/attachments'
 import { openAttachment } from '../../lib/attachmentOpen'
-import { hasAttachmentBlob, useAttachmentBlobs, useTask, useTaskAttachments, type AttachmentBlob } from '../../lib/localData'
+import { useAttachmentBlobs, useTask, useTaskAttachments, type AttachmentBlob } from '../../lib/localData'
 import { embeddedIds } from '../../lib/markdown'
 import { useDemo } from '../../lib/demo'
 import type { Attachment, ProjectRole } from '../../lib/types'
@@ -372,10 +372,13 @@ function safeHost(url: string): string {
 /** The attachments of one comment, under its text (design D7): open on activation. */
 export function CommentAttachments({ list }: { list: Attachment[] }) {
   const [note, setNote] = useState<string | null>(null)
+  // Read live, not awaited on the tap: the open must stay inside the click (Safari
+  // blocks a tab opened after an await; lib/attachmentOpen.ts).
+  const blobs = useAttachmentBlobs(list)
   if (list.length === 0) return null
   async function open(a: Attachment) {
     setNote(null)
-    if (!a.url && !(await hasAttachmentBlob(a.id))) {
+    if (!a.url && !blobs.has(a.id)) {
       if (typeof navigator !== 'undefined' && navigator.onLine === false) return setNote(t('Connect to the internet to open this file.'))
       if (!a.uploaded_at) return setNote(t('This file is still uploading.'))
     }
