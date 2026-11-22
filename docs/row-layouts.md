@@ -18,6 +18,8 @@ Task rows come in two layouts:
 
 The date stays on the row in both layouts. Priority is never shown by colour alone: a one-line row shows the bars (three for priority 1, two for priority 2, one for priority 3) after the title, and screen readers read "Priority 1".
 
+In wide task lists, a faint line separates each top-level task and its visible subtasks from the next group. Phones and narrow panes hide the lines.
+
 ## For every list
 
 **Settings › Appearance › Theme and density › Task rows** picks the layout of every list: Today, Upcoming, the Inbox, search results and every view, project and label without its own choice. It syncs to your devices.

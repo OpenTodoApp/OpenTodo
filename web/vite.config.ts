@@ -124,6 +124,12 @@ export default defineConfig({
       // The task page (task-pages D8) is its own small document: no app shell, no
       // local database, no editor. The server serves t.html for /t/<secret>.
       input: { main: 'index.html', t: 't.html' },
+      // An interface catalogue is named lang-<code>-<hash>.js (precache-device-language
+      // D1), so the signed list can tell it from the aisle vocabularies, which share
+      // their file names: the worker installs a catalogue only once the device uses it.
+      output: {
+        chunkFileNames: (chunk) => (/\/src\/locales\/[a-z]{2,3}(-[A-Za-z]+)?\.json$/.test(chunk.facadeModuleId ?? '') ? 'assets/lang-[name]-[hash].js' : 'assets/[name]-[hash].js'),
+      },
     },
   },
   server: {

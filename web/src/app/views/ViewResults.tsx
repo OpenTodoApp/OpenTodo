@@ -13,6 +13,7 @@ import { groupKey, setGroupCollapsed, useCollapsedGroups } from '../collapsedGro
 import { ActionMenu } from '../menus/ActionMenu'
 import { projectHue } from '../projectHue'
 import { useShortcutScope } from '../shortcuts'
+import { mapTaskGroups } from '../task-list/taskGroupSeparators'
 
 // A folded column's button (board-polish D2), loaded with the first fold.
 const FoldedStrip = lazy(() => import('../FoldedStrip'))
@@ -45,14 +46,16 @@ export interface ViewResultsProps {
   /** The project supplying the header's tint and icon, in a view grouped by project. */
   projectOf?: (key: string) => Project | undefined
   /** A row of the list, or a card of the board; the key is unique across groups. */
-  renderTask: (task: Task, key: string, shape: 'row' | 'card') => ReactNode
+  renderTask: (task: Task, key: string, shape: 'row' | 'card', separator?: boolean) => ReactNode
+  /** Whether the result is rendered under another visible row in this group. */
+  isNested?: (key: string) => boolean
   /** Where the groups' fold state is kept (see useFoldedGroups); absent: groups do not fold. */
   foldScope?: string
   /** The group of the selected card, for `z` on the board (board-polish D5). */
   selectedGroup?: string | null
 }
 
-export function ViewResults({ groups, layout, renderTask, foldScope, selectedGroup = null, projectOf }: ViewResultsProps) {
+export function ViewResults({ groups, layout, renderTask, isNested, foldScope, selectedGroup = null, projectOf }: ViewResultsProps) {
   const fold = (key: string, on: boolean) => { if (foldScope) setGroupCollapsed(foldScope, key, on) }
   // `z` on a view's board: the selected card's column, else the focused header or strip.
   useShortcutScope('board', {
@@ -97,7 +100,8 @@ export function ViewResults({ groups, layout, renderTask, foldScope, selectedGro
         <section key={g.key} data-group={g.key} className="mb-3">
           {g.heading && <ListGroupHeader title={g.heading} count={g.tasks.length} {...appearance(g.key)}
             collapsed={foldScope ? !!g.folded : undefined} onToggle={foldScope ? () => fold(g.key, !g.folded) : undefined} />}
-          {!g.folded && <ul>{g.tasks.map((tk) => renderTask(tk, `${g.key}:${tk.id}`, 'row'))}</ul>}
+          {!g.folded && <ul>{mapTaskGroups(g.tasks, (tk) => !isNested?.(`${g.key}:${tk.id}`),
+            (tk, separator) => renderTask(tk, `${g.key}:${tk.id}`, 'row', separator))}</ul>}
         </section>
       ))}
     </>

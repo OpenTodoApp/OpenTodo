@@ -5,7 +5,7 @@
 // and the share sheet's POST /share with files, handed to the page through
 // IndexedDB (attachments D9). While refusal is off (report-only, design D17),
 // every check runs and is recorded, and updates are installed anyway.
-import { checkForUpdate, cachedFile, fetchLazy, pruneCaches, type CheckOutcome, type InstallEnv } from './lib/appInstall'
+import { answerAfterFailure, checkForUpdate, cachedFile, fetchLazy, pruneCaches, type CheckOutcome, type InstallEnv } from './lib/appInstall'
 import { loadTrust, saveTrust, trustsOwnKey, type TrustRecord } from './lib/appTrust'
 import { pagePolicy } from './lib/pagePolicy'
 import { entryFromForm, entrySize, putInboxEntry, SHARE_MAX_BYTES, shareRequestVerdict } from './lib/shareInbox'
@@ -29,6 +29,7 @@ const env: InstallEnv = {
   fetch: (path, init) => fetch(new URL(path, self.location.origin).href, init),
   caches: self.caches,
   builtinKeys: __APP_KEYS__,
+  languages: () => self.navigator.languages ?? [],
   now: () => Date.now(),
   load: () => loadTrust(self.indexedDB),
   save: (r) => saveTrust(r, self.indexedDB),
@@ -185,7 +186,7 @@ self.addEventListener('fetch', (event) => {
   let rel: string
   try { rel = decodeURIComponent(path.slice(1)) } catch { return }
   if (!rel || rel === 'sw.js') return
-  event.respondWith(appFile(event, rel).catch(() => fetch(request)))
+  event.respondWith(appFile(event, rel).catch(async () => answerAfterFailure(await trust().catch(() => null), rel) ?? fetch(request)))
 })
 
 async function share(request: Request): Promise<Response> {

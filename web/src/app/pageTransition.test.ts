@@ -11,17 +11,25 @@ import { installShortcutDispatcher } from './shortcuts/dispatch'
 const r = (x: Route) => x
 
 describe('the direction of a route change', () => {
-  it('deeper is forward, shallower back, a switch between destinations none', () => {
+  it('a pushed page (a task, Settings and its sections and pages) is forward, back from it back', () => {
     expect(navDirection(r({ view: 'inbox' }), r({ view: 'task', id: 't' }), false)).toBe('forward')
     expect(navDirection(r({ view: 'project', id: 'p' }), r({ view: 'task', id: 't' }), false)).toBe('forward')
     expect(navDirection(r({ view: 'task', id: 't' }), r({ view: 'inbox' }), false)).toBe('back')
-    expect(navDirection(r({ view: 'notes' }), r({ view: 'notes', id: 'n' }), false)).toBe('forward')
+    expect(navDirection(r({ view: 'inbox' }), r({ view: 'settings' }), false)).toBe('forward')
     expect(navDirection(r({ view: 'settings' }), r({ view: 'settings', section: 'appearance' }), false)).toBe('forward')
-    expect(navDirection(r({ view: 'inbox' }), r({ view: 'today' }), false)).toBe('none')
-    expect(navDirection(r({ view: 'project', id: 'a' }), r({ view: 'project', id: 'b' }), false)).toBe('none')
+    expect(navDirection(r({ view: 'settings', section: 'appearance' }), r({ view: 'settings' }), false)).toBe('back')
   })
 
-  it('a step back through history is always back', () => {
+  it('a switch between list views has none, by a tap or through history (transitions-push-only D1)', () => {
+    expect(navDirection(r({ view: 'inbox' }), r({ view: 'today' }), false)).toBe('none')
+    expect(navDirection(r({ view: 'project', id: 'a' }), r({ view: 'project', id: 'b' }), false)).toBe('none')
+    expect(navDirection(r({ view: 'inbox' }), r({ view: 'view', id: 'v' }), false)).toBe('none')
+    expect(navDirection(r({ view: 'view', id: 'v' }), r({ view: 'inbox' }), true)).toBe('none')
+    expect(navDirection(r({ view: 'notes' }), r({ view: 'notes', id: 'n' }), false)).toBe('none')
+    expect(navDirection(r({ view: 'notes', id: 'n' }), r({ view: 'notes' }), true)).toBe('none')
+  })
+
+  it('a step back through history from a pushed page is always back', () => {
     expect(navDirection(r({ view: 'inbox' }), r({ view: 'task', id: 't' }), true)).toBe('back')
     expect(routeDepth(r({ view: 'today' }))).toBe(0)
   })
@@ -55,6 +63,16 @@ describe('showing a route change', () => {
     expect(document.documentElement.dataset.nav).toBe('forward')
     finish()
     await vi.waitFor(() => expect(document.documentElement.dataset.nav).toBeUndefined())
+  })
+
+  it('a change between list views applies at once, with no view transition', () => {
+    const apply = vi.fn()
+    showRouteChange(apply, '/inbox', '/today', false)
+    showRouteChange(apply, '/notes', '/notes/n', false)
+    showRouteChange(apply, '/today', '/inbox', true)
+    expect(apply).toHaveBeenCalledTimes(3)
+    expect(calls).toEqual([])
+    expect(document.documentElement.dataset.nav).toBeUndefined()
   })
 
   it('a next change does not wait: the running transition jumps to its end', async () => {
