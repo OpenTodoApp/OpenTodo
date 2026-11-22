@@ -36,6 +36,12 @@ final class BridgeHost: BridgeActions {
 
     func bridgedPublishWidget(_ json: String) { WidgetPublication.publish(json) }
 
+    /// A background run has no session to show (it never lists `focus`).
+    func bridgedPublishFocus(_ json: String) {
+        guard interactive else { return }
+        FocusLive.shared.publish(json)
+    }
+
     func bridgedBiometricStore(_ keyB64: String) async -> Bool {
         guard interactive, let key = BiometricKeyStore.decode(keyB64) else { return false }
         return BiometricKeyStore.store(key)

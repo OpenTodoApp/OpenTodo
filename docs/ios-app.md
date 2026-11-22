@@ -74,6 +74,10 @@ Pulling a page down from its top [syncs now](offline-and-sync.md#the-sync-status
 
 Whatever the app saves opens the system's save dialog, where you choose a place in Files: the recovery key and recovery codes, an export, a theme, an attachment. Cancel and nothing is saved.
 
+## Focus on the lock screen
+
+While a [Focus](focus.md#outside-the-app) session runs or is paused, a Live Activity on the lock screen and in the Dynamic Island shows the task, the phase (**Work · 2 of 4**, **Short break**, **Paused**) and a clock that iOS keeps running by itself. A tap opens the Focus screen; **Pause** and **Resume** open the app and pause or resume the session there. When the planned end passes it reads **Session done** or **Break over**, and a notification arrives at that moment if notifications are allowed. With **Start breaks automatically** on, the break starts once you next open the app. The task's name follows the task names switch in **Settings → Notifications**, and an encrypted account shows **Focus session**. Turn it off in iOS **Settings → OpenTodo → Live Activities**. Signing out and **Change server** remove it.
+
 ## Haptic feedback
 
 Completing a task gives the phone's success tap, and adding a task or picking up a row a light one. Flipping a switch or choosing a segment with your finger gives a selection click, and a failure message the error tap. Turn it off in **Settings → Appearance → Haptic feedback**.

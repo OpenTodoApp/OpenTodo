@@ -60,7 +60,7 @@ Each stretch of work is a [time entry](time-tracking.md) on the task; breaks are
 
 ## Outside the app
 
-The [Android app](android-app.md#focus-in-the-notifications) shows a running session in its notifications.
+The [Android app](android-app.md#focus-in-the-notifications) shows a running session in its notifications, the [iPhone app](ios-app.md#focus-on-the-lock-screen) on the lock screen.
 
 ## Settings
 

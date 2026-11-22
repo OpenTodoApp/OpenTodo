@@ -115,5 +115,8 @@ struct TodayWidget: Widget {
 
 @main
 struct OpenTodoWidgets: WidgetBundle {
-    var body: some Widget { TodayWidget() }
+    var body: some Widget {
+        TodayWidget()
+        FocusActivityWidget()
+    }
 }

@@ -44,6 +44,7 @@ final class AppModel: ObservableObject {
         WidgetPublication.publish("{\"updatedAt\":0,\"locked\":false,\"count\":0,\"overdue\":0,\"tasks\":[]}")
         ShareInbox.clear()
         BiometricKeyStore.forget()
+        FocusLive.shared.clear()
         prefs.serverOrigin = nil
         prefs.systemBars = nil
         StatusBar.show(lightIcons: nil)
@@ -53,6 +54,7 @@ final class AppModel: ObservableObject {
     }
 
     /// `opentodo://task/<id>`, `opentodo://reminder/<id>?action=done|snooze|dismiss`,
+    /// `opentodo://focus[?action=pause|resume]` from the Focus Live Activity,
     /// `opentodo://share?files=1` from the share extension. Any app may open these, so the
     /// values are treated as data and never pasted into a path.
     func handle(url: URL) {
@@ -68,6 +70,9 @@ final class AppModel: ObservableObject {
             pendingPath = ShareInbox.read().map { ShareMap.path(title: $0.title, text: $0.text, url: $0.url, withFiles: !$0.files.isEmpty) } ?? "/share"
         case "add":
             show(add: query.first { $0.name == "text" }?.value ?? "")
+        case "focus":
+            // focus-live-activity D4: the Live Activity's tap, Pause and Resume.
+            pendingPath = FocusLink.path(action: query.first { $0.name == "action" }?.value)
         default:
             break
         }

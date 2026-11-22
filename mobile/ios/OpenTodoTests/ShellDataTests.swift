@@ -329,7 +329,7 @@ final class BridgeTests: XCTestCase {
 
     func testCapabilitiesFollowTheDevice() {
         XCTAssertEqual(Bridge.capabilities(biometric: false, share: true),
-                       ["reminders", "widgets", "share", "links", "obsidian-links", "app-links", "system-bars", "pull-refresh", "first-paint", "completion-sound", "scroll-top", "haptics"])
+                       ["reminders", "widgets", "share", "links", "obsidian-links", "app-links", "system-bars", "pull-refresh", "first-paint", "completion-sound", "scroll-top", "focus", "haptics"])
         XCTAssertTrue(Bridge.capabilities(biometric: true, share: true).contains("biometric"))
     }
 
@@ -949,5 +949,115 @@ final class DownloadsTests: XCTestCase {
         XCTAssertEqual(Downloads.fileName("a\\b\\export.json"), "export.json")
         XCTAssertEqual(Downloads.fileName("exports/"), "exports")
         for empty in ["", " ", "/", "..", ".", "a/..", "../"] { XCTAssertEqual(Downloads.fileName(empty), "download", empty) }
+    }
+}
+
+/// focus-live-activity tasks 2.1 to 2.4: the shared bridge fixtures the web app writes,
+/// parsed here, with what the Live Activity and the session-end notification make of them.
+final class FocusActivityTests: XCTestCase {
+    private func fixture(_ name: String) throws -> [String: Any] {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/\(name)")
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+    }
+
+    private func number(_ o: [String: Any], _ key: String) -> Double? { (o[key] as? NSNumber)?.doubleValue }
+
+    @discardableResult
+    private func check(_ name: String) throws -> FocusPublication {
+        let f = try fixture(name)
+        XCTAssertEqual(f["method"] as? String, "publishFocus", name)
+        let want = try XCTUnwrap(f["expect"] as? [String: Any])
+        let p = FocusPublication.parse(try XCTUnwrap(f["payload"] as? String))
+        XCTAssertEqual(p.state.rawValue, want["state"] as? String, name)
+        XCTAssertEqual(p.title, want["title"] as? String, name)
+        XCTAssertEqual(p.countsDown, want["countsDown"] as? Bool, name)
+        XCTAssertEqual(p.end, number(want, "end"), name)
+        XCTAssertEqual(p.countUpFrom, number(want, "countUpFrom"), name)
+        XCTAssertEqual(p.frozenMs, number(want, "frozenMs"), name)
+        XCTAssertEqual(p.notifyAt, number(want, "notifyAt"), name)
+        XCTAssertEqual(p.cycle, (want["cycle"] as? NSNumber)?.intValue, name)
+        XCTAssertEqual(p.cycleLength, (want["cycleLength"] as? NSNumber)?.intValue, name)
+        return p
+    }
+
+    func testARunningPomodoroCountsDownToItsStaleDate() throws {
+        let p = try check("focus-running.json")
+        let content = FocusAttributes.content(p)
+        XCTAssertEqual(content.phase, .work)
+        XCTAssertEqual(content.cycle, 2)
+        XCTAssertEqual(content.cycleLength, 4)
+        XCTAssertEqual(content.end, Date(timeIntervalSince1970: try XCTUnwrap(p.plannedEndAt) / 1000))
+        XCTAssertNotNil(content.start)
+        XCTAssertLessThanOrEqual(try XCTUnwrap(content.start), try XCTUnwrap(content.end))
+        XCTAssertEqual(content.action, .pause)
+        XCTAssertFalse(content.paused)
+    }
+
+    func testPausedIsFrozenWithoutTitleOrNotification() throws {
+        let p = try check("focus-paused.json")
+        let content = FocusAttributes.content(p)
+        XCTAssertNil(content.title)
+        XCTAssertNil(content.end)
+        XCTAssertEqual(content.frozenSeconds, 15 * 60)
+        XCTAssertEqual(content.action, .resume)
+        XCTAssertNil(p.notifyAt)
+    }
+
+    func testFlowtimeCountsUp() throws {
+        let p = try check("focus-flowtime.json")
+        let content = FocusAttributes.content(p)
+        XCTAssertNil(content.start)
+        XCTAssertEqual(content.countUpFrom, Date(timeIntervalSince1970: try XCTUnwrap(p.countUpFrom) / 1000))
+    }
+
+    func testABreakIsShortAndEndsAsBreakOver() throws {
+        let p = try check("focus-break.json")
+        XCTAssertTrue(p.isBreak)
+        XCTAssertEqual(FocusAttributes.content(p).phase, .shortBreak)
+    }
+
+    func testNoneShowsNothing() throws {
+        let p = try check("focus-none.json")
+        XCTAssertFalse(p.shown)
+        XCTAssertNil(p.action)
+    }
+
+    func testMalformedOrUnknownVersionsReadAsNone() {
+        for bad in ["", "not json", "[]", "{}", #"{"v":2,"state":"running","runningSince":1}"#, #"{"v":1,"state":"later"}"#, #"{"v":1,"state":"running"}"#] {
+            XCTAssertEqual(FocusPublication.parse(bad), FocusPublication.none, bad)
+        }
+        XCTAssertFalse(FocusPublication.parse(#"{"v":1,"state":"done","phase":"work"}"#).shown)
+    }
+
+    /// The tap, Pause and Resume open the addresses the web app reads (actions.json).
+    func testTheLinksOpenTheWebAppsAddresses() throws {
+        let actions = try fixture("actions.json")
+        let open = try XCTUnwrap((actions["focusOpen"] as? [String: Any])?["path"] as? String)
+        XCTAssertEqual(FocusLink.path(action: nil), open)
+        let paths = try XCTUnwrap(actions["focusActions"] as? [[String: Any]]).compactMap { $0["path"] as? String }
+        XCTAssertEqual([FocusLink.path(action: "pause"), FocusLink.path(action: "resume")], paths)
+        XCTAssertEqual(FocusLink.path(action: "stop"), open)
+        XCTAssertEqual(FocusLink.url(.pause).absoluteString, "opentodo://focus?action=pause")
+        XCTAssertEqual(Notifications.route(reminder: nil, task: nil, action: UNNotificationDefaultActionIdentifier, focus: true), .focus)
+    }
+
+    @MainActor
+    func testTheAppOpensTheFocusAddresses() {
+        let model = AppModel.shared
+        let before = model.pendingPath
+        model.handle(url: FocusLink.url(.pause))
+        XCTAssertEqual(model.pendingPath, "/focus?action=pause")
+        model.handle(url: FocusLink.open)
+        XCTAssertEqual(model.pendingPath, "/focus")
+        model.pendingPath = before
+    }
+
+    func testThePageScriptHasPublishFocus() throws {
+        let origin = try XCTUnwrap(URL(string: "https://todo.example.com"))
+        let script = Bridge.script(origin: origin, app: "1.0.0", capabilities: ["focus"])
+        XCTAssertTrue(script.contains("publishFocus: function (json) { call('publishFocus', [String(json)]) }"))
+        XCTAssertFalse(Bridge.backgroundCapabilities.contains("focus"))
     }
 }
