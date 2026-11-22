@@ -40,10 +40,11 @@
    tall), where a pinned row would cover the top of the list (stickyQuickAdd.ts). */
 @custom-variant pins (@media (width >= 48rem) and (not ((pointer: coarse) and (height < 500px))));
 /* Focus rings follow the input in use (touch-input-mode D2, lib/inputMode.ts): a ring for
-   a keyboard, a mouse or a trackpad, none after a tap. `focus-ring:` is the same for a
-   field's `:focus` ring; its border still shows the focus. */
-@custom-variant focus-visible (&:where(:root:not([data-input="touch"]) *):focus-visible);
-@custom-variant focus-ring (&:where(:root:not([data-input="touch"]) *):focus);
+   a keyboard, a mouse or a trackpad, none on what a tap focused (`data-tap`, set on that
+   element only, so a change of input restyles one element). `focus-ring:` is the same for
+   a field's `:focus` ring; its border still shows the focus. */
+@custom-variant focus-visible (&:where(:not([data-tap])):focus-visible);
+@custom-variant focus-ring (&:where(:not([data-tap])):focus);
 
 @theme inline {
   /* A theme may set --ot-font (theme-engine D1: a system, serif, monospace or installed
