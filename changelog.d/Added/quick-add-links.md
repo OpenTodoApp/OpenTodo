@@ -1,0 +1,1 @@
+- **The quick-add parse route reports links.** `POST /api/v1/quick-add/parse` now returns the `http` and `https` URLs of a line as `fields.links`, with a `link` chip naming each host, and leaves them out of `title`, so a client can attach them to the new task. (#1743)
