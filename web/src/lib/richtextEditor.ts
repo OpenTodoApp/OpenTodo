@@ -527,6 +527,62 @@ export interface EditorHooks {
 
 const isEmpty = (doc: PMNode) => doc.childCount === 1 && doc.firstChild?.type === schema.nodes.paragraph && doc.firstChild.content.size === 0
 
+// The formatting row's pressed controls (formatting-row-pressed D1): a view's
+// listeners hear every update, a selection move as much as an edit.
+const viewListeners = new WeakMap<EditorView, Set<() => void>>()
+
+/** Calls `fn` after each update of `view`; returns the unsubscribe. */
+export function onViewUpdate(view: EditorView, fn: () => void): () => void {
+  let set = viewListeners.get(view)
+  if (!set) viewListeners.set(view, (set = new Set()))
+  set.add(fn)
+  return () => { set.delete(fn) }
+}
+
+function viewUpdates(): Plugin {
+  const notify = (view: EditorView) => { for (const fn of viewListeners.get(view) ?? []) fn() }
+  // A new state with new plugins (the composer's reset after posting) builds this view
+  // again without an update, so creation tells the listeners too.
+  return new Plugin({ view: (view) => { queueMicrotask(() => notify(view)); return { update: notify } } })
+}
+
+/** Which of the row's formatting applies at the selection: a mark on all of the
+ *  selected text (or stored at the caret), and the list the caret's item is in. */
+export function formattingAt(state: EditorState): Set<string> {
+  const { marks, nodes } = schema
+  const { empty, $from, ranges } = state.selection
+  // Every range: a table's cell selection is one per cell, not the span between its corners.
+  const on = (type: MarkType) => empty ? !!type.isInSet(state.storedMarks ?? $from.marks())
+    : ranges.every((r) => rangeAll(state, r.$from.pos, r.$to.pos, type)) && ranges.some((r) => hasText(state, r.$from.pos, r.$to.pos))
+  const out = new Set<string>()
+  if (on(marks.strong)) out.add('bold')
+  if (on(marks.em)) out.add('italic')
+  if (on(marks.link)) out.add('link')
+  for (let d = $from.depth; d > 0; d--) {
+    const node = $from.node(d)
+    if (node.type !== nodes.list_item) continue
+    const list = $from.node(d - 1)
+    if (list.type === nodes.bullet_list) out.add(node.attrs.checked === null ? 'bullet' : 'checklist')
+    break
+  }
+  return out
+}
+
+// Every text node of [from, to) carries the mark (a selection over plain text and bold is not bold).
+function rangeAll(state: EditorState, from: number, to: number, type: MarkType): boolean {
+  let all = true
+  state.doc.nodesBetween(from, to, (node) => {
+    if (node.isText && !type.isInSet(node.marks)) all = false
+  })
+  return all
+}
+
+function hasText(state: EditorState, from: number, to: number): boolean {
+  let seen = false
+  state.doc.nodesBetween(from, to, (node) => { if (node.isText) seen = true })
+  return seen
+}
+
 /** Marks the editor `is-empty` (with data-placeholder) so CSS can show a hint. */
 function placeholder(text: string): Plugin {
   return new Plugin({
@@ -631,6 +687,7 @@ export function plugins(hooks: EditorHooks): Plugin[] {
     rules(),
     ...tablePlugins(),
     trailingParagraph(),
+    viewUpdates(),
     keymap({
       'Mod-z': undoAndTell, 'Mod-Shift-z': redo, 'Mod-y': redo,
       'Mod-b': toggleMark(marks.strong), 'Mod-i': toggleMark(marks.em), 'Mod-Shift-x': toggleMark(marks.strike),

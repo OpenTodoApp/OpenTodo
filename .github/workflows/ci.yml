@@ -4,18 +4,20 @@ on:
   push:
     branches: [main, master]
     tags: ["v*"]
+  # A pull request runs the fast tier (ci-pr-fast-tier): the checks, web, server, image and
+  # the small packages; the browser, workbench, accessibility and phone jobs wait for the queue.
   pull_request:
-    # ready_for_review: a draft runs the light jobs only; marking it ready runs the rest.
-    types: [opened, synchronize, reopened, ready_for_review]
-  # The merge queue: the pull request tier on the pull request merged onto the queue's base.
+    types: [opened, synchronize, reopened]
+  # The merge queue: the whole path tier, the heavy jobs included, on the
+  # pull request merged onto the queue's base. Its "CI result" is the gate to main.
   merge_group:
-  # The full matrix every night and on demand; pushes to main run the pull request tier.
+  # The full matrix every night and on demand; pushes to main run the path tier without the heavy jobs.
   schedule:
     - cron: "41 2 * * *"
   workflow_dispatch:
     inputs:
       base:
-        description: Run the pull request tier against this branch, for example main (empty runs every job)
+        description: Run the path tier (heavy jobs included) against this branch, for example main (empty runs every job)
         required: false
         default: ''
 
@@ -37,16 +39,16 @@ env:
 # ci-release-gates; scripts/repo-checks.test.mjs checks all three). Dependabot
 # (.github/dependabot.yml) proposes the updates.
 jobs:
-  # Tiered CI (OpenSpec ci-speed; path filter from site-bundle D7, no third-party
-  # action). A pull request runs the fast tier: the checks, and for code the web,
-  # server and image jobs and one linux/amd64 binary; one Chromium layout and
-  # end-to-end job when `layout` paths changed; the workbench checks when `ui` paths
-  # changed; Android, extension, Obsidian plugin and skill only for their own paths; a docs-only
-  # change runs the checks and the docs website. A push to main runs the same tier for
-  # what it changed since the commit before; a draft pull request skips the browser,
-  # workbench, accessibility and phone jobs until it is marked ready. Release tags, the
-  # nightly schedule and a run by hand run every job and every matrix leg (`full`,
-  # every output true). The interface audit runs nightly (ux-audit.yml).
+  # Tiered CI (OpenSpec ci-speed, ci-pr-fast-tier; path filter from site-bundle D7, no
+  # third-party action). The path tier: the checks, and for code the web, server and image
+  # jobs and one linux/amd64 binary; one Chromium layout and end-to-end job when `layout`
+  # paths changed; the workbench checks when `ui` paths changed; Android, extension,
+  # Obsidian plugin and skill only for their own paths; a docs-only change runs the checks
+  # and the docs website. The merge queue runs the whole path tier for what it changes;
+  # a pull request, draft or not, and a push to main run it without the browser,
+  # workbench, accessibility and phone jobs, which the queue runs before anything lands.
+  # Release tags, the nightly schedule and a run by hand run every job and every matrix
+  # leg (`full`, every output true). The interface audit runs nightly (ux-audit.yml).
   changes:
     name: Changed paths
     runs-on: ubuntu-latest
@@ -80,11 +82,10 @@ jobs:
           REF: ${{ github.ref }}
           BASE: ${{ github.event.pull_request.base.sha }}
           BEFORE: ${{ github.event.before }}
-          DRAFT: ${{ github.event.pull_request.draft }}
           QUEUE_BASE: ${{ github.event.merge_group.base_sha }}
           DISPATCH_BASE: ${{ inputs.base }}
         run: |
-          # The merge queue runs the pull request tier for what the queued change adds.
+          # The merge queue runs the whole path tier for what the queued change adds.
           if [ "$EVENT" = "merge_group" ]; then
             echo "full=false" >> "$GITHUB_OUTPUT"
             git diff --name-only "$QUEUE_BASE" HEAD > changed.txt
@@ -92,17 +93,20 @@ jobs:
             ./scripts/ci-changes.sh < changed.txt >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          # A push to main runs the pull request tier for what it changed since the
-          # commit before; a push that cannot be compared (a new branch) runs everything.
+          # A push to main runs the path tier for what it changed since the commit before,
+          # without the browser, workbench, accessibility and phone jobs: the merge queue
+          # ran them on this same tree before it landed (ci-pr-fast-tier). The image,
+          # its publishing and "CI result" still run. A push that cannot be compared (a new
+          # branch) runs everything; the nightly runs every job on main.
           if [ "$EVENT" = "push" ] && [ "${REF#refs/tags/}" = "$REF" ] && [ -n "$BEFORE" ] \
             && ! printf '%s' "$BEFORE" | grep -Eq '^0+$' && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
             echo "full=false" >> "$GITHUB_OUTPUT"
             git diff --name-only "$BEFORE" HEAD > changed.txt
             cat changed.txt
-            ./scripts/ci-changes.sh < changed.txt >> "$GITHUB_OUTPUT"
+            ./scripts/ci-changes.sh < changed.txt | sed -E 's/^(ui|layout|a11y|mobile|ios)=true$/\1=false/' >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          # A run by hand with a base: the pull request tier against it. The UI baselines fold
+          # A run by hand with a base: the path tier against it. The UI baselines fold
           # starts one for its pull request, which the workflow's token opened without a run.
           if [ "$EVENT" = "workflow_dispatch" ] && [ -n "$DISPATCH_BASE" ]; then
             printf '%s' "$DISPATCH_BASE" | grep -Eq '^[A-Za-z0-9._/-]+$' || { echo "::error::base must be a branch name"; exit 1; }
@@ -121,13 +125,9 @@ jobs:
           echo "full=false" >> "$GITHUB_OUTPUT"
           git diff --name-only "$BASE"...HEAD > changed.txt
           cat changed.txt
-          if [ "$DRAFT" = "true" ]; then
-            # A draft runs the checks, web, server and the small packages; the browser,
-            # workbench, accessibility and phone jobs wait until it is marked ready.
-            ./scripts/ci-changes.sh < changed.txt | sed -E 's/^(ui|layout|a11y|mobile|ios)=true$/\1=false/' >> "$GITHUB_OUTPUT"
-          else
-            ./scripts/ci-changes.sh < changed.txt >> "$GITHUB_OUTPUT"
-          fi
+          # The fast tier: the checks, web, server, image and the small packages. The
+          # browser, workbench, accessibility and phone jobs run in the merge queue.
+          ./scripts/ci-changes.sh < changed.txt | sed -E 's/^(ui|layout|a11y|mobile|ios)=true$/\1=false/' >> "$GITHUB_OUTPUT"
 
   # The web app is built in its own job (ci-speed): the server, layout and binary
   # jobs need only web-dist, so they start while the unit tests still run.
@@ -221,11 +221,17 @@ jobs:
           path: web-manifest
 
   web:
-    name: Web (typecheck, lint, test)
+    name: Web (${{ matrix.shard == 1 && 'typecheck, lint, ' || '' }}test ${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: changes
     if: needs.changes.outputs.code == 'true'
+    # The unit tests in three shards: on one runner they took 5.5 to 8.5 minutes,
+    # the longest step of every pull request. Typecheck and lint run in the first shard.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -236,12 +242,16 @@ jobs:
       - run: npm ci --no-audit --no-fund
         working-directory: web
       - run: npm run typecheck
+        if: matrix.shard == 1
         working-directory: web
       - name: React hooks lint (make web-lint)
+        if: matrix.shard == 1
         run: npm run lint
         working-directory: web
-      - run: npm test
+      - run: npm test -- --shard="$SHARD/3"
         working-directory: web
+        env:
+          SHARD: ${{ matrix.shard }}
 
   web-scale:
     # The scale tests (*.perf.test.tsx: lists of 2,000 rows, the 10,000-task account of

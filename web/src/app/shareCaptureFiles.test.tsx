@@ -76,7 +76,8 @@ describe('shared files', () => {
   it('lists an oversized file as refused with the limit and saves the task without it', async () => {
     await open({ title: 'Video', files: [shared('clip.mp4', 'video/mp4', 'x'.repeat(2000))] })
     await waitFor(() => listedFiles().includes('clip.mp4'))
-    expect(document.querySelector('[data-shared-file="clip.mp4"]')!.textContent).toContain('at most 1000 bytes')
+    // The server's limit is read from the local database after the file is listed: wait for it.
+    await waitFor(() => !!document.querySelector('[data-shared-file="clip.mp4"]')!.textContent?.includes('at most 1000 bytes'), 'the refusal with the limit')
     await save()
     await waitFor(async () => (await db.tasks.count()) === 1)
     expect(await db.attachments.count()).toBe(0)

@@ -82,4 +82,23 @@ describe('routines on this device', () => {
     expect(relaySnapshot().routines).toBe(true)
     stop()
   })
+
+  it('runs a request that arrives right after hello, before the stream key is derived', async () => {
+    await setMeta('relay.routines', true)
+    publishEncryption({ enabled: true, unlocked: true })
+    const stop = startRelay()
+    await vi.waitFor(() => expect(FakeSource.last).not.toBeNull())
+    const es = FakeSource.last!
+    const url = new URL(es.url, 'https://todo.example')
+    const server = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveBits']) as CryptoKeyPair
+    const serverPub = new Uint8Array(await crypto.subtle.exportKey('raw', server.publicKey))
+    const k = await streamKey(server.privateKey, fromB64url(url.searchParams.get('key')!), 's2')
+    const request = { op: 'routine.run', rule: 'g', run: 'run-1', occurrence: 'schedule:1', at: 1, rev: 'x', auto: false, tokens: 0, budget: 0 }
+    const box = await seal(k, JSON.stringify(request), 'run-1')
+    // The server sends the waiting runs as soon as hello is out (DispatchWaiting).
+    es.emit('hello', { stream: 's2', key: b64url(serverPub) })
+    es.emit('routine', { id: 'run-1', box })
+    await vi.waitFor(() => expect(ran.requests).toEqual([request]))
+    stop()
+  })
 })
