@@ -461,7 +461,8 @@ async function swipeBack(p, base, width) {
     if (rest) problems.push(`the page did not spring back (transform "${rest}")`)
     await drag(Math.round(width / 2), true)
     await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().waitFor({ timeout: 10000 })
-    if (!/\/inbox$/.test(new URL(p.url()).pathname)) problems.push(`a drag past a third did not go back to the Inbox (${p.url()})`)
+    // From 600 px the page was opened by its address, with no trail in the app: Back leads home, the list.
+    if (!(width >= 600 ? /^\/(inbox)?$/ : /\/inbox$/).test(new URL(p.url()).pathname)) problems.push(`a drag past a third did not go back to the Inbox (${p.url()})`)
   } catch (e) {
     problems.push(`could not be checked: ${e.message.split('\n')[0]}`)
   }
