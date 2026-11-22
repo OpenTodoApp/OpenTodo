@@ -5,7 +5,8 @@
 // web-component-structure the days come from lib/calendarDays, the live reads from
 // lib/liveData, and the columns, agenda, planning list and keys live in ./calendar.
 import { Button, DESKTOP_HEADER_QUERY, MenuItem, PageBody, useMediaQuery } from '../ui'
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { calendarTasks, DEFAULT_BLOCK_MINUTES, formatTime as toHHMM, placementStart, weekDates, type GridPrefs } from '../lib/calendar'
 import { fitInFrame, frameTarget, framesByDate, useFrames, type PlacedFrame } from '../lib/frames'
 import { clampSlotMinutes, slotAt, slotKey, slotName, type SlotView } from '../lib/slots'

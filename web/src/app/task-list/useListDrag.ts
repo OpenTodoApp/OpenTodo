@@ -136,6 +136,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
         onDragStart?.()
       },
       onHoldChange: (held) => row?.toggleAttribute('data-touch-hold', held),
+      press: row,
       onHoldRelease: grip ? undefined : (x, y) => dragState.current.openRowMenu(task, x, y, row),
       onMove: (target, x, y) => {
         // Over a sidebar target the list shows no drop line (the target shows its ring).

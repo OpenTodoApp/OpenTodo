@@ -2,7 +2,8 @@
 // everywhere except a page that keeps a split. It reads the trail the list left
 // (taskTrail.ts) for "4 / 12", j and k and the way back; opened from a link or a
 // reload there is no trail, and Back goes to the task's own list with it selected.
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { useHabitsEnabled } from '../lib/habitPrefs'
 import { useTask } from '../lib/localData'
 import type { User } from '../lib/types'

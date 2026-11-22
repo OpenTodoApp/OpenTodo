@@ -1403,3 +1403,58 @@ When the shell sends the scroll-to-top event, the page SHALL scroll its frontmos
 #### Scenario: An open task panel
 - **WHEN** the scroll-to-top event arrives while a task's panel is open over the list
 - **THEN** the panel scrolls to its top and the list keeps its place
+
+### Requirement: Page changes move with a direction
+When a person opens a deeper page, the new page SHALL slide in from the end edge; going back SHALL slide it out the same way; switching between top-level destinations SHALL cross-fade. The sidebar, bottom bar and header chrome SHALL stay in place. With reduced motion, the no-motion display setting, a focused text field, a hidden tab or a change made from the keyboard, the page SHALL change at once, so keys typed straight after a shortcut reach the new page. Navigation SHALL never wait for an animation to finish before it accepts the next input. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: Into a task and back
+- **WHEN** a person on a phone opens a task page from the Inbox and then goes back
+- **THEN** the task page slides in from the end edge and slides out the same way, and the bottom bar does not move
+
+#### Scenario: Reduced motion
+- **WHEN** the system asks for reduced motion
+- **THEN** pages change at once
+
+#### Scenario: Keys straight after a shortcut
+- **WHEN** a person closes a task page with Escape and at once presses j and c
+- **THEN** the list is back before the keys arrive, and they move to and complete a task in it
+
+### Requirement: The back swipe follows the finger
+On a touch device, a swipe from the start edge on a page with Back SHALL move the page with the finger and SHALL go back when released past a third of the width or with a flick, continuing from where the finger left it; otherwise the page SHALL return to its place. On a page without Back the swipe SHALL pull the menu open with the finger. With reduced motion the swipe SHALL act on release without following. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: A short slow swipe
+- **WHEN** a person drags a task page a fifth of the way across and lets go slowly
+- **THEN** the page returns and the route stays
+
+#### Scenario: A flick on a tablet
+- **WHEN** a person flicks a task page from the edge on a 1024 px wide tablet
+- **THEN** it goes back even though the finger moved less than a third of the width
+
+### Requirement: The focused field stays above the keyboard
+When the on-screen keyboard opens or changes height, the focused field SHALL be scrolled inside its own scroller so that its bottom edge is at least 12 px above the keyboard, without scrolling the document behind a sheet or panel. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: The last field of a sheet
+- **WHEN** a person taps the note field at the bottom of the task sheet on a phone
+- **THEN** the sheet scrolls so the field sits above the keyboard and the page behind does not move
+
+### Requirement: A part that failed to load offline recovers
+When a lazily loaded part of the app fails to load because the device is offline, the part SHALL show the "could not be shown" message and SHALL render itself again, without a reload, once the device is back online. Other failures SHALL keep the message and the Reload button. It changes no data, so offline behaviour of local data and convergence are unaffected.
+
+#### Scenario: Connection lost while a screen loads
+- **WHEN** a person on a new device opens a project and the connection drops before its panels have loaded
+- **THEN** the panels show the message, and once the connection is back they render without a reload
+
+#### Scenario: Another error
+- **WHEN** a part fails to render for another reason
+- **THEN** it keeps the message and the Reload button
+
+### Requirement: The web app is sent compressed
+The server SHALL send a built script, style sheet, SVG or Markdown file of the web app compressed with gzip, with `Content-Encoding: gzip`, when the request accepts gzip and asks for the whole file, and SHALL send the file as it is to a client that does not accept gzip and for a Range request. Every answer for a file that has a compressed form SHALL carry `Vary: Accept-Encoding`. The decoded bytes SHALL be exactly the file the signed list names. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: A first install
+- **WHEN** a browser that accepts gzip installs the app from a self-hosted server
+- **THEN** the scripts and styles arrive gzip-encoded and decode to the files of the signed list
+
+#### Scenario: A client without gzip
+- **WHEN** a client asks for a script without accepting gzip, or asks for a byte range of it
+- **THEN** it receives the file as it is, with no `Content-Encoding`

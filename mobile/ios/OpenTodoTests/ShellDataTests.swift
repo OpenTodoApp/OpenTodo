@@ -1,5 +1,6 @@
 import UIKit
 import UserNotifications
+import WebKit
 import XCTest
 @testable import OpenTodo
 
@@ -96,6 +97,20 @@ final class LaunchScreenTests: XCTestCase {
         shell.reveal()
         XCTAssertTrue(shell.revealed)
         XCTAssertEqual(shell.webView.alpha, 1)
+    }
+
+    /// ios-keyboard-bar D1: the web view's content view supplies no accessory bar, and
+    /// removing it twice changes nothing.
+    func testTheKeyboardHasNoAccessoryBar() throws {
+        let shell = ShellController(origin: try XCTUnwrap(URL(string: "https://todo.example")))
+        let content = try XCTUnwrap(shell.webView.scrollView.subviews.first { NSStringFromClass(type(of: $0)) == KeyboardBar.className })
+        XCTAssertNil(content.inputAccessoryView)
+        XCTAssertTrue(KeyboardBar.remove(from: shell.webView))
+        XCTAssertEqual(NSStringFromClass(type(of: content)), KeyboardBar.className)
+        // A second web view gets the same class, made once.
+        let other = WKWebView(frame: .zero)
+        XCTAssertTrue(KeyboardBar.remove(from: other))
+        XCTAssertNil(other.scrollView.subviews.first { NSStringFromClass(type(of: $0)) == KeyboardBar.className }?.inputAccessoryView)
     }
 
     /// Over the launch colour the system chooses the status bar icons; the bars' own come with the page.

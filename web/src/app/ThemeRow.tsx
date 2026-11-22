@@ -7,7 +7,8 @@
 // (one more op, only when accepted). Below a list whose chosen theme is a palette,
 // About this theme opens its credits (ThemeAbout, lazy). Lazy itself: loaded with
 // Settings › Appearance, out of the first load; the data is in themeCatalogue.ts.
-import { lazy, Suspense, useState, type ReactNode } from 'react'
+import { Suspense, useState, type ReactNode } from 'react'
+import { lazy } from '../lib/lazy'
 import { BUILTIN_THEMES, customChoice, DEFAULT_THEME, instanceChoice, readThemeChoices, setCustomThemeChoice, setDefaultThemeChoice, setInstanceThemeChoice, setThemeChoice, type ChoiceStatus, type SideChoice, type Side } from '../lib/theme/choice'
 import { useInstanceThemes, type InstanceThemes } from '../lib/theme/choice'
 import { canAddTheme, customiseDocument, deleteCustomThemeUndoable, duplicateDocument, knownCustom, limitMessage, newDocument, uniqueName, useCustomThemes, type LiveTheme } from '../lib/theme/custom'

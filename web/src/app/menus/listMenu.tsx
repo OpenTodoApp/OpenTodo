@@ -3,7 +3,8 @@
 // the menu, never a modal. Turning aisles on asks once, in place, whether to add
 // the missing aisle sections. Editors and above change the switches; a viewer
 // sees them disabled.
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
+import { lazy } from '../../lib/lazy'
 import { t } from '../../lib/i18n'
 import { updateProject } from '../../lib/ops'
 import { isReusable, sortsIntoAisles } from '../../lib/reusable'

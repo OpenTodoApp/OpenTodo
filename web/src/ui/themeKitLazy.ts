@@ -2,7 +2,7 @@
 // design D3 "Bundle"): the colour field, the token row and the contrast badge stay
 // out of the first load, as the accent picker does (accentPickerLazy.ts). Screens
 // render them inside Suspense.
-import { lazy } from 'react'
+import { lazy } from '../lib/lazy'
 
 export type { ColourFieldProps } from './ColourField'
 export type { TokenRowProps } from './TokenRow'

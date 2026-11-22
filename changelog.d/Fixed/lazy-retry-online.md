@@ -1,0 +1,1 @@
+- **A screen that could not load offline comes back by itself.** If the connection dropped while a screen or panel was still loading, it showed "This part of the app could not be shown" until you reloaded. It now loads again on its own once you are back online.

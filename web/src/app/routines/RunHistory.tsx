@@ -4,7 +4,8 @@
 // detail, step by step with the items it touched (titles from this device),
 // the error with a link to the setting, and Undo run. The server keeps ids and
 // counts only. Offline the last fetched page is shown with its age.
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
+import { lazy } from '../../lib/lazy'
 import { api } from '../../lib/api'
 import { formatInstant } from '../../lib/dates'
 import { readJSON, writeJSON } from '../../lib/deviceStorage'

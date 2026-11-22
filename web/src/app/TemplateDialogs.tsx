@@ -2,7 +2,8 @@
 // Duplicate… and Save as template… from the project menu, From a template… from
 // the sidebar, which opens on the template library (template-library). Everything happens on the device: a copy is one batch of ops, a
 // template file is built from local data and downloaded.
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { logicalToday } from '../lib/dates'
 import { projectsAndLabels, useProjects } from '../lib/localData'
 import { useEncryption } from '../lib/e2ee'
