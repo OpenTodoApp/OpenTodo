@@ -162,8 +162,18 @@ final class ShareMapTests: XCTestCase {
         let parts = try XCTUnwrap(URLComponents(string: path))
         XCTAssertEqual(parts.path, "/share")
         var out: [String: String] = [:]
-        for item in parts.queryItems ?? [] { out[item.name] = item.value ?? "" }
+        for item in parts.queryItems ?? [] {
+            XCTAssertNil(out[item.name], "\(item.name) appears twice in \(path)")
+            out[item.name] = item.value ?? ""
+        }
         return out
+    }
+
+    /// iOS 16's `URL(string:)` refuses anything but ASCII: a share with an é was dropped.
+    func testTheAddressIsASCIIForAnyText() {
+        let path = ShareMap.path(title: "Café ½", text: "日本語 🎉", url: "https://example.com/ü", withFiles: false)
+        XCTAssertTrue(path.unicodeScalars.allSatisfy(\.isASCII), path)
+        XCTAssertNotNil(URLComponents(string: path), path)
     }
 
     func testPathsFollowTheSharedCases() throws {

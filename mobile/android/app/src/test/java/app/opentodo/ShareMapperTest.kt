@@ -24,10 +24,12 @@ class ShareMapperTest {
         assertEquals("/share", path.substringBefore('?'))
         val q = path.substringAfter('?', "")
         if (q.isEmpty()) return emptyMap()
-        return q.split('&').associate {
+        val pairs = q.split('&').map {
             val (k, v) = it.split('=', limit = 2)
             URLDecoder.decode(k, "UTF-8") to URLDecoder.decode(v, "UTF-8")
         }
+        assertEquals("a parameter appears twice in $path", pairs.size, pairs.map { it.first }.toSet().size)
+        return pairs.toMap()
     }
 
     @Test fun pathsFollowTheSharedCases() {
