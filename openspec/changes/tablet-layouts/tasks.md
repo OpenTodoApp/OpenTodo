@@ -13,4 +13,4 @@
 
 - [x] 3.1 `scripts/e2e-layout.mjs` gains 744, 1024 and 1180 px with landscape heights; `make layout-check` (passes locally at 744, 768, 1024 and 1180 px; adding the widths to CI's matrix is a workflow change for the CTO)
 - [x] 3.2 `npm test`, `npm run build`, `make bundle-budget` in web/
-- [ ] 3.3 Device check rows on an iPad (portrait, landscape, split view, Stage Manager) and an Android tablet or foldable
+- [ ] 3.3 Device check rows on an iPad (portrait, landscape, split view, Stage Manager) and an Android tablet or foldable (rows on the owner's device-check list; ticked once checked)
