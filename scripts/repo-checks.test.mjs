@@ -300,8 +300,8 @@ test('Playwright jobs run in the pinned image at one version', () => {
 
 // CI capacity (ci-pr-fast-tier): the merge queue and a push to main run the path tier for
 // what they change; release tags, the nightly schedule and a run by hand run every job and
-// matrix leg; a pull request skips the browser, workbench, accessibility and phone jobs,
-// which the merge queue runs before the change lands.
+// matrix leg; a pull request skips the browser, workbench, accessibility, phone, binary and
+// site bundle jobs, which the merge queue runs before the change lands.
 test('the full matrix runs on tags, nightly and by hand; pull requests run the fast tier', () => {
   const ci = read('.github/workflows/ci.yml')
   assert.match(ci, /^ {2}schedule:\n {4}- cron: "[^"]+"$/m, 'a nightly full run')
@@ -316,6 +316,9 @@ test('the full matrix runs on tags, nightly and by hand; pull requests run the f
   assert.doesNotMatch(jobs.changes, /DRAFT/, 'a draft is no longer a tier of its own')
   for (const id of ['layout', 'cli']) assert.match(jobs[id], /fromJSON\(needs\.changes\.outputs\.full != 'true' && /, `${id} runs its full matrix only when full`)
   assert.doesNotMatch(ci, /fromJSON\(github\.event_name == 'pull_request'/, 'no matrix keys off the event alone')
+  // ci-pr-shorter-chain: the binaries and the site bundle only lengthen a pull request's chain.
+  for (const id of ['cli', 'site-bundle']) assert.match(jobs[id], /^ {4}if: \$\{\{ !cancelled\(\) && (!failure\(\) && )?github\.event_name != 'pull_request' && /m, `${id} runs in the merge queue, not on pull requests`)
+  for (const id of ['cli', 'site-bundle']) assert.doesNotMatch(jobs[id].match(/^ {4}if: .*$/m)[0], /merge_group|github\.event_name == /, `${id} is skipped on no other event`)
 })
 
 test('the image, stable tag and release are published only after every gate', () => {
