@@ -48,11 +48,11 @@ In a reusable list, adding a task from quick add whose title normalizes equal to
 - **THEN** both produce the same normalized title and the same chosen match for every vector
 
 ### Requirement: Ticked items stay in a reusable list
-A reusable list SHALL end with a completed group headed "Got it" and its count on every device, whatever the device's "Show completed tasks" preference, most recently completed first, closed by default with its open state remembered per device. Unticking an item in the group SHALL reopen it. The Project menu SHALL NOT offer "Show completed tasks" in a reusable list, and the line "n completed tasks hidden" SHALL NOT appear there.
+A reusable list SHALL end with a completed group headed "Completed" and its count, as any project's group is on every device, whatever the device's "Show completed tasks" preference, most recently completed first, closed by default with its open state remembered per device. Unticking an item in the group SHALL reopen it. The Project menu SHALL NOT offer "Show completed tasks" in a reusable list, and the line "n completed tasks hidden" SHALL NOT appear there.
 
 #### Scenario: Partner's phone
 - **WHEN** Alice ticks off Eggs in the shared reusable "Groceries" and Bob, who never changed any display preference, opens it after sync
-- **THEN** Bob's list ends with "Got it 1" holding Eggs
+- **THEN** Bob's list ends with "Completed 1" holding Eggs
 
 ### Requirement: Duplicate items converge
 When a device that may edit a reusable list holds two or more live, open, top-level tasks of that project whose titles normalize equal, and none of them has notes, subtasks, comments, attachments, reminders, time entries or a recurrence rule, the device SHALL tombstone all of them except the one with the smallest id, as ordinary deletions shown in the activity log as a merged duplicate and restorable from the Trash. Because every device chooses the same survivor, devices SHALL converge on one item without coordination. A task that carries any of those things SHALL never be tombstoned this way. Viewers' devices SHALL NOT perform it.

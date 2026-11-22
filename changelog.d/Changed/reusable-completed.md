@@ -1,0 +1,1 @@
+- **A reusable list's ticked items are under "Completed".** The group was headed "Got it", which didn't fit every list; it now reads like any other project's.

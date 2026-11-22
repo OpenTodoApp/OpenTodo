@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 // Quick add in a reusable list (OpenSpec reusable-lists, tasks 4.2–4.4): an item
 // already on the list is reopened in place or pointed at, with a toast offering
-// Add anyway; the ticked items always show as "Got it"; duplicates converge.
+// Add anyway; the ticked items always show under "Completed"; duplicates converge.
 import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -95,14 +95,14 @@ describe('adding to a reusable list', () => {
     expect(bulkToast()!.label).toBe('1 back on the list, 1 already there, 1 added')
   })
 
-  it('reopens from the list’s own quick add and keeps the Got it group whatever the device preference', async () => {
+  it('reopens from the list’s own quick add and keeps the Completed group whatever the device preference', async () => {
     const { pid, milk } = await groceries()
     expect(await loadShowCompleted(pid)).toBe(false)
     const r = await render(<TaskListView route={{ view: 'project', id: pid }} />)
     const group = () => r.container.querySelector<HTMLElement>('[data-completed-group]')
-    await waitFor(() => group() !== null, 'the Got it group')
-    expect(group()!.textContent).toContain('Got it')
-    expect(group()!.querySelector('[data-group-count] .sr-only')?.textContent).toBe('1 item ticked off')
+    await waitFor(() => group() !== null, 'the Completed group')
+    expect(group()!.textContent).toContain('Completed')
+    expect(group()!.querySelector('[data-group-count] .sr-only')?.textContent).toBe('1 completed task')
     // No "hidden by display options" line in a reusable list.
     expect(r.container.textContent).not.toContain('hidden by display options')
     const quick = r.container.querySelector('textarea[aria-label="Add a task"]') as HTMLTextAreaElement

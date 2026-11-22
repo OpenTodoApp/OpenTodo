@@ -20,7 +20,7 @@ With **Reusable list** on, the **List…** step also offers **Sort into aisles**
 A new item then goes to the aisle section its name suggests. "Greek yoghurt" goes to Dairy and eggs, "Bananas" to Produce. The words come from a list built into the app for each app language, with English as a fallback, and never leave your device.
 
 - Each aisle section remembers its aisle, so you can rename it ("Fridge"), move it or give it another icon and items still find it. Members using another language find it too.
-- An item reopened from **Got it** stays in the section it was in. Move "Oat drink" to another section once and it comes back there.
+- An item reopened from **Completed** stays in the section it was in. Move "Oat drink" to another section once and it comes back there.
 - An item whose words are not in the list goes where quick add puts it today: the section you are adding to, or **No section**.
 - Adding inside a section, from its own **+**, always puts the item there.
 

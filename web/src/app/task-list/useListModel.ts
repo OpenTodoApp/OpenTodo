@@ -220,7 +220,7 @@ export function useListModel(route: ListRoute, userId?: string) {
   // With "Show completed tasks" on (project-completed-section), the list layout
   // keeps them in one Completed group at the end, newest first, closed by default.
   const showCompletedPref = useShowCompletedPref(projectId)
-  // A reusable list always ends with its ticked items, "Got it", on every device (reusable-lists D7).
+  // A reusable list always ends with its ticked items, under Completed, on every device (reusable-lists D7).
   const reusable = !!projectId && isReusable(projectMap.get(projectId))
   const showCompleted = !!projectId && (showCompletedPref || reusable) && !board && !layout.timeline
   const completedTasks = useMemo(() => (showCompleted ? completedNewestFirst(doneBySection) : NO_TASKS), [showCompleted, doneBySection])
@@ -324,7 +324,7 @@ export function useListModel(route: ListRoute, userId?: string) {
     projectEditable: !!projectId && canEditTasks(roleOf(projectId, memberMap)),
     allTasks, taskMap, progress, blocked, flow, habits, ...filter, logbook, logbookLimit, setLogbookLimit, completedDisplay, completedQuery, setCompletedQuery,
     collapsed, toggleCollapsed, ...layout, tree, columns, groups: projectedGroups, rows, ownRows, siblingPos, timeColumn, slotsOff, doneBySection,
-    showCompleted, reusable, completedTasks, completedOpen, display, displayScope, listDisplay, urgency, nested, dayParts, closed, upcomingToday, upcomingThrough,
+    showCompleted, completedTasks, completedOpen, display, displayScope, listDisplay, urgency, nested, dayParts, closed, upcomingToday, upcomingThrough,
     queryFilter: queryKey ? queryFilter : null,
     /** Habits is on and this is Today (habits-home D3): the strip lists its habits. */
     todayHabits,
