@@ -9,7 +9,6 @@ import { setDateTime } from '../../lib/dates'
 import { createProject, createTask, resetDeviceId } from '../../lib/ops'
 import { mockFetch, noPublicLinks, render, waitFor } from '../../ui/test-utils'
 import { openedTask, resetTaskPage } from '../taskPage.testkit'
-import { setRowClick } from '../rowClick'
 import { TaskListView } from '../TaskListView'
 
 let coarse = false
@@ -33,11 +32,17 @@ afterEach(() => {
   setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
 })
 
-/** A mouse click on a row's title (a keyboard Enter has detail 0). */
-const clickTitle = (root: ParentNode, title: string) => act(async () => {
-  const btn = [...root.querySelectorAll<HTMLButtonElement>('[data-row-open]')].find((b) => b.textContent?.includes(title))!
-  btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }))
-})
+/** Two distinct title clicks select and then edit the row. A tap opens it. */
+async function clickTitle(root: ParentNode, title: string) {
+  const target = [...root.querySelectorAll<HTMLElement>('[data-row-title]')].find((el) => el.textContent === title)!
+  const click = () => act(async () => {
+    target.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: coarse ? 'touch' : 'mouse', pointerId: 1 }))
+    target.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: coarse ? 'touch' : 'mouse', pointerId: 1 }))
+    target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }))
+  })
+  await click()
+  if (!coarse && window.innerWidth >= 768) await click()
+}
 const key = (el: Element, k: string, init: KeyboardEventInit = {}) => act(async () => { el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init })) })
 const editorTitle = () => document.querySelector<HTMLInputElement>('[data-inline-title]')
 async function typeInto(input: HTMLInputElement, text: string) {
@@ -54,7 +59,7 @@ async function list(route: { view: 'inbox' } | { view: 'project'; id: string } =
 }
 
 describe('inline title editing', () => {
-  it('a click edits the title in place; Enter saves without opening the task', async () => {
+  it('edits a selected title, and Enter only saves', async () => {
     const id = await createTask({ title: 'Renew pasport' })
     const r = await list()
     await clickTitle(r.container, 'Renew pasport')
@@ -66,6 +71,8 @@ describe('inline title editing', () => {
     await waitFor(async () => (await db.tasks.get(id))!.title === 'Renew passport')
     await waitFor(() => !editorTitle())
     expect(openedTask()).toBeNull()
+    expect(r.container.querySelector('[data-add-line]')).toBeNull()
+    expect(await db.tasks.count()).toBe(1)
     expect(r.container.querySelector('[data-task-id][aria-current]')).toBeTruthy()
     await r.unmount()
   })
@@ -108,7 +115,7 @@ describe('inline title editing', () => {
     await r.unmount()
   })
 
-  it('opens the task page instead on a coarse pointer, or with "Open details"', async () => {
+  it('opens the task page with a tap or in a narrow list', async () => {
     const a = await createTask({ title: 'Alpha' })
     const b = await createTask({ title: 'Beta' })
     coarse = true
@@ -120,12 +127,11 @@ describe('inline title editing', () => {
     resetTaskPage()
     coarse = false
 
-    setRowClick('open')
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 700 })
     r = await list()
     await clickTitle(r.container, 'Beta')
     await waitFor(() => openedTask() === b)
     expect(editorTitle()).toBeNull()
-    setRowClick('edit')
     await r.unmount()
   })
 

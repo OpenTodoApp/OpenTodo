@@ -2994,6 +2994,7 @@
     "web/src/app/task-detail/Composer.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/ZoneControl.tsx",
+    "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/themes/ImportReport.tsx",
     "web/src/app/themes/ThemeEditor.tsx",
     "web/src/app/themes/ThemePreview.tsx",
@@ -3541,13 +3542,6 @@
   ],
   "Clears your tasks from this device after uploading unsynced changes.": [
     "web/src/lib/settingsCopy.ts"
-  ],
-  "Click a task to": [
-    "web/src/app/PreferencesPanels.tsx",
-    "web/src/lib/settingsCopy.ts"
-  ],
-  "Click a task to open its panel. The + button adds tasks, projects and more. Made a mistake? Undo is in the toast and Ctrl+Z.": [
-    "web/src/lib/sampleTasks.ts"
   ],
   "Click to sync now": [
     "web/src/app/SyncStatus.tsx"
@@ -5459,6 +5453,9 @@
   "Don’t ask again for {scheme}: on this device": [
     "web/src/app/AppLinkConfirm.tsx"
   ],
+  "Double-click a task to open it. The + button adds tasks, projects and more. Made a mistake? Undo is in the toast and Ctrl+Z.": [
+    "web/src/lib/sampleTasks.ts"
+  ],
   "Down": [
     "web/src/app/palette/BarParts.tsx"
   ],
@@ -5733,7 +5730,6 @@
     "web/src/app/habits/HabitForm.tsx"
   ],
   "Edit in place": [
-    "web/src/app/PreferencesPanels.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Edit issue connection": [
@@ -5781,11 +5777,8 @@
   "Edit the query of a saved view; Enter saves it, Esc discards": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Edit the selected task's title in place, with its date, priority, labels and project under it; Enter saves, Esc cancels, Shift+Enter opens the details": [
+  "Edit the selected task's title in place (also click its selected title). Enter saves, Esc cancels, Shift+Enter opens the details": [
     "web/src/lib/shortcuts.ts"
-  ],
-  "Edit the title, open the details or expand the row. This device only.": [
-    "web/src/lib/settingsCopy.ts"
   ],
   "Edit the title. Tab, Enter or a click away saves it and the decision keys work again. Esc restores it": [
     "web/src/lib/shortcuts.ts"
@@ -5798,6 +5791,9 @@
   ],
   "Edit this occurrence alone and move the series on": [
     "web/src/app/RecurrenceField.tsx"
+  ],
+  "Edit title": [
+    "web/src/app/bulk/BulkActions.tsx"
   ],
   "Edit webhook": [
     "web/src/app/WebhooksPanel.tsx"
@@ -6503,9 +6499,6 @@
   ],
   "Expand subtasks": [
     "web/src/app/TaskRow.tsx"
-  ],
-  "Expand the row": [
-    "web/src/app/PreferencesPanels.tsx"
   ],
   "Expand {name}": [
     "web/src/app/ProjectsTable.tsx",
@@ -12791,7 +12784,6 @@
     "web/src/app/datetime/DateField.tsx"
   ],
   "Open details": [
-    "web/src/app/PreferencesPanels.tsx",
     "web/src/app/task-list/InlineEditor.tsx"
   ],
   "Open in Help": [
@@ -15592,6 +15584,7 @@
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
+    "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/themes/ThemeEditor.tsx",
     "web/src/app/themes/ThemePreview.tsx",
     "web/src/ui/patterns/SaveBar.tsx"
