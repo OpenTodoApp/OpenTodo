@@ -40,15 +40,4 @@ enum JSON {
     static func jsArray(_ values: [String]) -> String {
         "[" + values.map(jsString).joined(separator: ", ") + "]"
     }
-
-    static func number(_ value: Any?) -> Double? {
-        if let n = value as? NSNumber { return n.doubleValue }
-        if let n = value as? Double { return n }
-        if let n = value as? Int { return Double(n) }
-        return nil
-    }
-
-    static func int(_ value: Any?) -> Int? {
-        number(value).map { Int($0) }
-    }
 }
