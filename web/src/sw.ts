@@ -6,7 +6,7 @@
 // IndexedDB (attachments D9). While refusal is off (report-only, design D17),
 // every check runs and is recorded, and updates are installed anyway.
 import { answerAfterFailure, checkForUpdate, cachedFile, fetchLazy, pruneCaches, type CheckOutcome, type InstallEnv } from './lib/appInstall'
-import { loadTrust, saveTrust, trustsOwnKey, type TrustRecord } from './lib/appTrust'
+import { loadTrust, saveTrust, trustReader, trustsOwnKey, type TrustRecord, type TrustState } from './lib/appTrust'
 import { pagePolicy } from './lib/pagePolicy'
 import { entryFromForm, entrySize, putInboxEntry, SHARE_MAX_BYTES, shareRequestVerdict } from './lib/shareInbox'
 
@@ -35,12 +35,24 @@ const env: InstallEnv = {
   save: (r) => saveTrust(r, self.indexedDB),
 }
 
-// The worker's own state: the trust record, read once per worker start and
-// after every write; the check that is running; when the last one started.
-const state: { record: Promise<TrustRecord | null> | null; running: Promise<CheckOutcome | null> | null; lastCheck: number } = { record: null, running: null, lastCheck: 0 }
-function trust(): Promise<TrustRecord | null> {
-  state.record ??= env.load().catch(() => null)
-  return state.record
+// The worker's own state: the check that is running and when the last one started.
+// The trust record is read once per worker start and after every write; a read
+// that fails is not kept, and the refusal mode is remembered beside the page
+// policy so a worker that cannot read its record still fails closed.
+const state: { running: Promise<CheckOutcome | null> | null; lastCheck: number } = { running: null, lastCheck: 0 }
+const MODE_KEY = '/__refuse'
+const records = trustReader(env.load, {
+  get: async () => (await (await caches.open('opentodo-policy')).match(MODE_KEY).then((r) => r?.text()).catch(() => undefined)) === '1',
+  set: async (on) => { await (await caches.open('opentodo-policy')).put(MODE_KEY, new Response(on ? '1' : '0')) },
+})
+const trustState = (): Promise<TrustState> => records.read()
+async function trust(): Promise<TrustRecord | null> {
+  return (await records.read()).record
+}
+/** A 404 for an app file while the record cannot be read and refusal applies: nothing unchecked. */
+const closedWhileUnreadable = async (): Promise<Response | null> => {
+  const t = await trustState()
+  return t.unreadable && t.refuse && !t.record ? new Response('', { status: 404 }) : null
 }
 
 async function tell(message: Record<string, unknown>): Promise<void> {
@@ -60,7 +72,7 @@ function check(force = false): Promise<CheckOutcome | null> {
   state.running = (async () => {
     try {
       const outcome = await checkForUpdate(env)
-      state.record = null
+      records.forget()
       if (outcome.kind === 'installed') await tell({ state: outcome.first ? 'installed' : 'ready', version: outcome.version, check: outcome.check })
       else if (outcome.kind === 'refused' && outcome.announce) await tell({ state: 'refused', check: outcome.check })
       return outcome
@@ -84,7 +96,9 @@ self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     await self.clients.claim()
     // The caches of the Workbox worker this one replaced, and any set the record no longer names.
-    await pruneCaches(env, await trust(), true)
+    // Never while the record cannot be read: every set would look unnamed.
+    const t = await trustState()
+    if (!t.unreadable) await pruneCaches(env, t.record, true)
   })())
 })
 
@@ -96,7 +110,7 @@ self.addEventListener('message', (event) => {
   if (data?.type !== 'opentodo-app' || !data.check) return
   event.waitUntil((async () => {
     await check()
-    state.record = null // another worker may have written it
+    records.forget() // another worker may have written it
     const r = await trust()
     const source = event.source as Client | null
     if (r?.lastCheck?.refused && source) source.postMessage({ type: 'opentodo-app', state: 'refused', check: r.lastCheck, ownKey: await trustsOwnKey(r).catch(() => false) })
@@ -138,7 +152,7 @@ async function navigation(event: FetchEvent): Promise<Response> {
   const r = await trust()
   const page = await cachedFile(env, r, 'index.html')
   event.waitUntil(Promise.all([refreshPolicy(), check()]))
-  if (!page) return fetch(event.request)
+  if (!page) return (await closedWhileUnreadable()) ?? fetch(event.request)
   const stored = await (await caches.open(POLICY_CACHE)).match(POLICY_KEY).catch(() => undefined)
   const headers = new Headers(page.headers)
   headers.set('Content-Security-Policy', pagePolicy(stored ? await stored.text() : null))
@@ -154,13 +168,13 @@ async function appFile(event: FetchEvent, path: string): Promise<Response> {
     const lazy = await fetchLazy(env, r, path)
     if (lazy) {
       if (lazy.check) {
-        state.record = null
+        records.forget()
         await tell({ state: lazy.check.refused ? 'refused' : 'checked', check: lazy.check })
       }
       return lazy.response
     }
   }
-  return fetch(event.request)
+  return (await closedWhileUnreadable()) ?? fetch(event.request)
 }
 
 self.addEventListener('fetch', (event) => {
@@ -186,7 +200,7 @@ self.addEventListener('fetch', (event) => {
   let rel: string
   try { rel = decodeURIComponent(path.slice(1)) } catch { return }
   if (!rel || rel === 'sw.js') return
-  event.respondWith(appFile(event, rel).catch(async () => answerAfterFailure(await trust().catch(() => null), rel) ?? fetch(request)))
+  event.respondWith(appFile(event, rel).catch(async () => answerAfterFailure(await trust().catch(() => null), rel) ?? (await closedWhileUnreadable().catch(() => null)) ?? fetch(request)))
 })
 
 async function share(request: Request): Promise<Response> {

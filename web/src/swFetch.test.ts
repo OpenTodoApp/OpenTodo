@@ -9,12 +9,14 @@ const record = (refuse: boolean): TrustRecord => ({
   current: { version: '1.0.0', payloadHash: 'h', cache: 'opentodo-app-1', at: 0, files: { 'assets/lang-de-1.js': { sha256: 'x', size: 1, load: 'lazy', lang: 'de' } } },
 } as unknown as TrustRecord)
 
-let stored: TrustRecord | null = null
-vi.mock('./lib/appTrust', () => ({
-  loadTrust: async () => stored,
+let stored: TrustRecord | null | 'unreadable' = null
+vi.mock('./lib/appTrust', async (real) => ({
+  ...(await real<typeof import('./lib/appTrust')>()),
+  loadTrust: async () => { if (stored === 'unreadable') throw new Error('unreadable'); return stored },
   saveTrust: async () => undefined,
   trustsOwnKey: async () => false,
 }))
+let refuseRemembered: string | null = null
 vi.mock('./lib/appInstall', async (real) => ({
   ...(await real<typeof import('./lib/appInstall')>()),
   cachedFile: async () => null,
@@ -35,10 +37,13 @@ beforeAll(async () => {
     location: { origin: 'https://todo.example.com' },
     addEventListener: (type: string, fn: (e: unknown) => void) => { handlers[type] = fn },
     clients: { matchAll: async () => [], claim: async () => undefined },
-    caches: {}, indexedDB: {}, navigator: { languages: ['de'] }, skipWaiting: () => undefined,
+    indexedDB: {}, navigator: { languages: ['de'] }, skipWaiting: () => undefined,
     __WB_MANIFEST: [],
   }
   g.importScripts = () => undefined
+  saved.caches = g.caches
+  // The remembered refusal mode beside the page policy.
+  g.caches = { open: async () => ({ match: async () => (refuseRemembered === null ? undefined : new Response(refuseRemembered)), put: async (_k: string, r: Response) => { refuseRemembered = await r.text() } }) }
   g.__APP_KEYS__ = []
   g.fetch = network
   await import('./sw')
@@ -54,6 +59,13 @@ async function answer(path: string): Promise<Response> {
   return responded!
 }
 
+/** The worker re-reads its record after a check, as it does when a page asks. */
+async function reread() {
+  let done: Promise<unknown> = Promise.resolve()
+  handlers.message({ data: { type: 'opentodo-app', check: true }, source: null, waitUntil: (p: Promise<unknown>) => { done = p } })
+  await done
+}
+
 describe('the worker fetch handler after a failure', () => {
   it('answers 404 for a listed file with refusal on, without asking the network', async () => {
     stored = record(true)
@@ -64,12 +76,22 @@ describe('the worker fetch handler after a failure', () => {
 
   it('keeps the network while reporting (refusal off)', async () => {
     stored = record(false)
-    // The worker re-reads its record after a check, as it does when a page asks.
-    let done: Promise<unknown> = Promise.resolve()
-    handlers.message({ data: { type: 'opentodo-app', check: true }, source: null, waitUntil: (p: Promise<unknown>) => { done = p } })
-    await done
+    await reread()
     const r = await answer('/assets/lang-de-1.js')
     expect(await r.text()).toBe('from the network')
     expect(network).toHaveBeenCalledOnce()
+  })
+
+  it('while the record cannot be read, the last mode decides: refusal answers 404, never the network', async () => {
+    stored = record(true)
+    await reread()
+    await answer('/assets/lang-de-1.js')
+    expect(refuseRemembered).toBe('1')
+    stored = 'unreadable'
+    await reread()
+    network.mockClear()
+    // The last record read stands in: still 404, and a later read goes to the store again.
+    expect((await answer('/assets/lang-de-1.js')).status).toBe(404)
+    expect(network).not.toHaveBeenCalled()
   })
 })

@@ -132,3 +132,41 @@ export function diagnosticsLine(r: TrustRecord): string {
   }
   return parts.join(' ')
 }
+
+/** What the worker knows of its record: the record (or the last one it read), and whether this read failed. */
+export interface TrustState {
+  record: TrustRecord | null
+  /** The store could not be read: the record is the last one read in this worker, or none. */
+  unreadable: boolean
+  /** Refusal applies: the record says so, or, unreadable, the last mode the device had did. */
+  refuse: boolean
+}
+
+/**
+ * The worker's reads of its record. "No record" (a first install) is cached like any
+ * record; a failed read is not, so the next request reads again. While the store
+ * cannot be read the worker keeps the last record it read, and the refusal mode is
+ * also remembered outside the store (`remembered`), so a worker that never read its
+ * record still fails closed for the app's files when the device had refusal on.
+ */
+export function trustReader(load: () => Promise<TrustRecord | null>, remembered: { get: () => Promise<boolean>; set: (on: boolean) => Promise<void> }) {
+  let pending: Promise<TrustState> | null = null
+  let known: TrustRecord | null = null
+  const read = async (): Promise<TrustState> => {
+    try {
+      const record = await load()
+      known = record
+      if (record) await remembered.set(record.refuse).catch(() => undefined)
+      return { record, unreadable: false, refuse: !!record?.refuse }
+    } catch {
+      pending = null
+      const refuse = known ? known.refuse : await remembered.get().catch(() => false)
+      return { record: known, unreadable: true, refuse }
+    }
+  }
+  return {
+    read: (): Promise<TrustState> => (pending ??= read()),
+    /** After a write: the next read goes to the store. */
+    forget: (): void => { pending = null },
+  }
+}
