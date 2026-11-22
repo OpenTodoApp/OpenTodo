@@ -1,0 +1,1 @@
+- **A running Focus session shows in the Android app's notifications.** The task, the phase and a clock that keeps running with the phone locked, with Pause and Resume, and a "Session done" or "Break over" notification at the end. The task's name follows the task names switch and never shows for an encrypted account.

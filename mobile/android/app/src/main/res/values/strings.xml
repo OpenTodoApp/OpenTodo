@@ -54,4 +54,15 @@
     <string name="setup_sign_in">Sign in here</string>
     <string name="error_sign_in">Your server is behind a login page, and signing in didn\'t continue in the app. Sign in again here.</string>
     <string name="save_failed">The file could not be saved.</string>
+    <string name="channel_focus">Focus</string>
+    <string name="focus_generic">Focus session</string>
+    <string name="focus_work">Work</string>
+    <string name="focus_work_of">Work · %1$d of %2$d</string>
+    <string name="focus_short_break">Short break</string>
+    <string name="focus_long_break">Long break</string>
+    <string name="focus_paused">Paused</string>
+    <string name="focus_pause">Pause</string>
+    <string name="focus_resume">Resume</string>
+    <string name="focus_done">Session done</string>
+    <string name="focus_break_over">Break over</string>
 </resources>

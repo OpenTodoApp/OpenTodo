@@ -1,0 +1,19 @@
+{
+  "description": "Flowtime, paused once for five minutes and running again: a clock counting up from countUpFrom (the time worked before the stretch is included), no planned end, no notification.",
+  "method": "publishFocus",
+  "payload": "{\"v\":1,\"state\":\"running\",\"taskId\":\"plain\",\"title\":\"Water the plants\",\"mode\":\"flowtime\",\"phase\":\"work\",\"phaseStartedAt\":1792668600000,\"runningSince\":1792669800000,\"elapsedMs\":300000}",
+  "now": 1792670400000,
+  "expect": {
+    "state": "running",
+    "title": "Water the plants",
+    "phase": "work",
+    "breakKind": null,
+    "cycle": null,
+    "cycleLength": null,
+    "countsDown": false,
+    "end": null,
+    "countUpFrom": 1792669500000,
+    "frozenMs": null,
+    "notifyAt": null
+  }
+}

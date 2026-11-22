@@ -143,6 +143,10 @@ The app opens on its icon over the app's background colour, light or dark with t
 
 Back closes what is open (a dialog, a sheet, a task), then goes back through the app, and leaves the app only from the screen it started on.
 
+## Focus in the notifications
+
+While a [Focus](focus.md#outside-the-app) session runs or is paused, a quiet notification shows the task, the phase (**Work · 2 of 4**, **Short break**, **Paused**) and a clock that Android keeps running by itself. A tap opens the Focus screen; **Pause** and **Resume** open the app and pause or resume the session there, so its time entry stops and starts as on the screen. At the planned end the notification gives way to **Session done** or **Break over**, on time when the app may set exact alarms and up to a few minutes late otherwise. With **Start breaks automatically** on, the break starts once you next open the app. The task's name follows the task names switch in **Settings → Notifications**, and an encrypted account shows **Focus session**. Turn the notification off with the **Focus** category in Android's notification settings for OpenTodo. Signing out and **Change server** remove it.
+
 ## Haptic feedback
 
 Completing a task gives a short tap, and adding a task or picking up a row a light one. Flipping a switch or choosing a segment with your finger gives a click, and a failure message a firmer buzz. It uses the phone's own touch feedback and needs no extra permission. Turn it off in **Settings → Appearance → Haptic feedback**, or for the whole phone in Android's sound and vibration settings.

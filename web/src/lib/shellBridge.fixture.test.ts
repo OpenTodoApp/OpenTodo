@@ -15,6 +15,9 @@ import { fileChunks } from './saveFile'
 import { shellUrlAction } from './shellActions'
 import { parsePushState, parsePushSubscription, pushState, pushSubscribe, pushUnsubscribe } from './shellPush'
 import { shellCompleted, shellReminders, shellWidget } from './shellPublish'
+import { focusPayload } from './focus/shellPublish'
+import { FOCUS_DEFAULTS } from './focus/prefs'
+import { finish, idleState, pause, resume, start } from './focus/timer'
 import { openOrigin } from './originOpen'
 import vectors from '../../../internal/origin/testdata/origin_vectors.json'
 import appLinkVectors from '../../../internal/origin/testdata/app_links.vectors.json'
@@ -106,7 +109,7 @@ const regionExpect = (p: ShellGeofencePayload) => p.regions.map((r) => ({ id: r.
 interface Fixture {
   description: string
   /** The bridge method and the exact argument string the web app passes. */
-  method: 'scheduleReminders' | 'publishWidget' | 'scheduleGeofences'
+  method: 'scheduleReminders' | 'publishWidget' | 'scheduleGeofences' | 'publishFocus'
   payload: string
   now: number
   expect: unknown
@@ -132,6 +135,40 @@ const doneTasks: Task[] = [
   { id: 'd4', completed_at: NOW - 6 * DAY }, { id: 'd5', completed_at: NOW - 9 * DAY }, { id: 'd6', completed_at: null },
   { id: 'd7', completed_at: NOW - HOUR, deleted_at: NOW },
 ].map((x) => ({ title: x.id, project_id: null, due: null, priority: 4, deleted_at: null, created_at: NOW - 30 * DAY, series_id: null, ...x }) as unknown as Task)
+
+/**
+ * focus-live-activity D1, D2: the Focus sessions the web app hands publishFocus,
+ * built by the real builder from real timer states, with what the shell must make
+ * of them: the clock counts down to `end` or up from `countUpFrom`, is frozen at
+ * `frozenMs` while paused, the activity is stale and the session-end notification
+ * fires at `notifyAt`, and nothing is shown for none.
+ */
+function focusFixtures(): Record<string, Fixture> {
+  const pomodoro = { ...FOCUS_DEFAULTS, mode: 'pomodoro' as const }
+  const flow = { ...FOCUS_DEFAULTS, mode: 'flowtime' as const }
+  const t0 = NOW - 10 * 60_000
+  const running = focusPayload(start(idleState('call', 'pomodoro', t0, { cycle: 2, lengthMinutes: 25 }), t0, pomodoro), pomodoro, 'Call the plumber ☎')
+  const paused = focusPayload(pause(start(idleState('call', 'pomodoro', t0), t0, pomodoro), NOW), pomodoro)
+  const flowPaused = pause(start(idleState('plain', 'flowtime', t0 - 20 * 60_000), t0 - 20 * 60_000, flow), t0 - 15 * 60_000)
+  const flowtime = focusPayload(resume(flowPaused, t0), flow, 'Water the plants')
+  const breakState = focusPayload(finish(start(idleState('call', 'pomodoro', t0 - 25 * 60_000), t0 - 25 * 60_000, pomodoro), { ...pomodoro, autoStartBreaks: true }), pomodoro)
+  const show = (p: typeof running) => ({
+    state: p.state, title: p.title ?? null, phase: p.phase ?? null, breakKind: p.breakKind ?? null, cycle: p.cycle ?? null, cycleLength: p.cycleLength ?? null,
+    countsDown: p.state === 'running' && p.plannedEndAt != null,
+    end: p.state === 'running' ? (p.plannedEndAt ?? null) : null,
+    countUpFrom: p.state === 'running' && p.plannedEndAt == null && p.runningSince != null ? p.runningSince - (p.elapsedMs ?? 0) : null,
+    frozenMs: p.state === 'paused' ? (p.plannedMs != null ? p.plannedMs - (p.elapsedMs ?? 0) : (p.elapsedMs ?? 0)) : null,
+    notifyAt: p.state === 'running' ? (p.plannedEndAt ?? null) : null,
+  })
+  const f = (description: string, p: typeof running): Fixture => ({ description, method: 'publishFocus', payload: JSON.stringify(p), now: NOW, expect: show(p) })
+  return {
+    'focus-running.json': f('A Pomodoro work session, second of four, started ten minutes ago, titles allowed: "Call the plumber ☎", "Work · 2 of 4", a clock counting down to end; stale and the "Session done" notification at notifyAt.', running),
+    'focus-paused.json': f('The same session paused now (no title: the titles option is off or the account is encrypted, so the shell reads "Focus session"): "Paused", the time left frozen, no notification.', paused),
+    'focus-flowtime.json': f('Flowtime, paused once for five minutes and running again: a clock counting up from countUpFrom (the time worked before the stretch is included), no planned end, no notification.', flowtime),
+    'focus-break.json': f('A short break started on its own after a work session: "Short break", counting down; the "Break over" notification at notifyAt.', breakState),
+    'focus-none.json': f('Nothing runs (sign-out, lock of an encrypted account, nothing stored, or the session left): the shell ends the activity or the notification, cancels the alarm and forgets the stored state.', focusPayload(null, pomodoro)),
+  }
+}
 
 function fixtures(): Record<string, Fixture> {
   const titled = shellReminders(reminders, tasks, NOW, { titles: true, encrypted: false })
@@ -219,6 +256,9 @@ function actions() {
       { id: 'g-arrive', action: 'done' }, { id: 'g-arrive', action: 'dismiss' }, { id: 'r 1/ü', action: 'done' },
     ].map(({ id, action }) => ({ id, action, path: `/?reminder=${encodeURIComponent(id).replace(/%20/g, '+')}&action=${action}` })),
     quickAdd: { path: '/?add=' },
+    // focus-live-activity D4: a tap on the activity or notification opens focusOpen; Pause and Resume open these.
+    focusOpen: { path: '/focus' },
+    focusActions: (['pause', 'resume'] as const).map((action) => ({ action, path: `/focus?action=${action}` })),
   }
 }
 
@@ -330,7 +370,7 @@ function haptics() {
  * has a screen" from `links`, so no background run may list anything of visibleOnly.
  */
 function capabilities() {
-  const visibleOnly = ['share', 'links', 'obsidian-links', 'app-links', 'system-bars', 'microphone', 'files', 'haptics', 'completion-sound', 'alarm-settings']
+  const visibleOnly = ['share', 'links', 'obsidian-links', 'app-links', 'system-bars', 'microphone', 'files', 'haptics', 'completion-sound', 'alarm-settings', 'focus']
   const backgroundOnly = ['background']
   const both = ['reminders', 'widgets', 'push']
   const called: string[] = []
@@ -423,7 +463,7 @@ afterEach(() => {
 describe('Android bridge fixtures', () => {
   it('are current (mobile/android/app/src/test/resources/bridge)', () => {
     const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'app-links.json': text(appLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()), 'pull.json': text(pull()), 'painted.json': text(painted()), 'push-bridge.json': text(pushBridge()), 'scroll-top.json': text(scrollTop()) }
-    for (const [name, f] of Object.entries(fixtures())) want[name] = text(f)
+    for (const [name, f] of Object.entries({ ...fixtures(), ...focusFixtures() })) want[name] = text(f)
     if (update) {
       mkdirSync(dir, { recursive: true })
       for (const [name, body] of Object.entries(want)) writeFileSync(path.join(dir, name), body)
@@ -465,5 +505,6 @@ describe('Android bridge fixtures', () => {
     const a = actions()
     for (const r of [...a.reminderActions, ...a.locationActions]) expect(shellUrlAction(new URL(r.path, 'https://x').search)).toEqual({ kind: 'reminder', id: r.id, action: r.action })
     expect(shellUrlAction(new URL(a.quickAdd.path, 'https://x').search)).toEqual({ kind: 'add', text: '' })
+    for (const f of a.focusActions) { const u = new URL(f.path, 'https://x'); expect(shellUrlAction(u.search, u.pathname)).toEqual({ kind: 'focus', action: f.action }) }
   })
 })

@@ -4,11 +4,11 @@ Web tasks run `npm test` and `npm run build` in `web/`. iOS tasks run `make ios`
 
 ## 1. Web app
 
-- [ ] 1.1 `web/src/lib/shell.ts`: `ShellCapability` gains `focus`, and `OpenTodoShell` gains the optional `publishFocus(json)`. Verified by `shell.test.ts` (no call without the capability).
-- [ ] 1.2 `web/src/lib/focus/shellPublish.ts`: build the payload from `FocusState` and the prefs (`plannedEndAt` for timed phases only, `cycleLength` from the long-break count, the title only when the device option is on and the account is not encrypted). Publish from the transitions in `useFocusTimer.ts`, on start when a row is stored, and `none` on sign-out, on lock, and when no row is stored. Verified by `shellPublish.test.ts` (each transition publishes once, a paused state has no `plannedEndAt`, Flowtime has none, the encrypted account carries no title, sign-out publishes `none` before `clearLocalData`).
-- [ ] 1.3 `/focus?action=pause|resume` in `shellActions.ts`: apply through the Space transition, ignore when already in that state, then remove the parameter. Verified by `shellActions.test.ts` (pause, resume, stale action writes no op).
-- [ ] 1.4 Skip the service-worker session-end notification while the shell lists `focus`. Verified by `useFocusTimer.test.tsx` (no `showNotification` call with the capability, unchanged without it).
-- [ ] 1.5 Shared bridge fixtures: `focus-running.json`, `focus-paused.json`, `focus-flowtime.json`, `focus-none.json`, produced from the web code, plus the two addresses. Verified by `shellBridge.fixture.test.ts`.
+- [x] 1.1 `web/src/lib/shell.ts`: `ShellCapability` gains `focus`, and `OpenTodoShell` gains the optional `publishFocus(json)`. Verified by `shell.test.ts` (no call without the capability).
+- [x] 1.2 `web/src/lib/focus/shellPublish.ts`: build the payload from `FocusState` and the prefs (`plannedEndAt` for timed phases only, `cycleLength` from the long-break count, the title only when the device option is on and the account is not encrypted). Publish from the transitions in `useFocusTimer.ts`, on start when a row is stored, and `none` on sign-out, on lock, and when no row is stored. Verified by `shellPublish.test.ts` (each transition publishes once, a paused state has no `plannedEndAt`, Flowtime has none, the encrypted account carries no title, sign-out publishes `none` before `clearLocalData`).
+- [x] 1.3 `/focus?action=pause|resume` in `shellActions.ts`: apply through the Space transition, ignore when already in that state, then remove the parameter. Verified by `shellActions.test.ts` (pause, resume, stale action writes no op).
+- [x] 1.4 Skip the service-worker session-end notification while the shell lists `focus`. Verified by `useFocusTimer.test.tsx` (no `showNotification` call with the capability, unchanged without it).
+- [x] 1.5 Shared bridge fixtures: `focus-running.json`, `focus-paused.json`, `focus-flowtime.json`, `focus-none.json`, produced from the web code, plus the two addresses. Verified by `shellBridge.fixture.test.ts`.
 
 ## 2. iOS
 
@@ -22,15 +22,15 @@ Web tasks run `npm test` and `npm run build` in `web/`. iOS tasks run `make ios`
 
 ## 3. Android
 
-- [ ] 3.1 `FocusState.kt` parsing the shared fixtures. Verified by `FocusStateTest`.
-- [ ] 3.2 `publishFocus` in `Bridge.kt`. A "Focus" channel (low importance, no sound), and an ongoing notification with `setUsesChronometer`, `setChronometerCountDown` for timed phases and `setWhen`, plus Pause/Resume actions opening the activity at `/focus?action=…`. The content comes from a pure `FocusNotificationModel`, so it can be tested without a device. Verified by the JVM unit test `FocusNotificationModelTest` (content per state, count-down flag, the action's address, removal on `none`) and an instrumented test in `connectedDebugAndroidTest` posting and removing the notification.
-- [ ] 3.3 Session-end alarm (exact, inexact when denied) that replaces the ongoing notification with "Session done"/"Break over", rescheduled and cancelled as on iOS. Cleanup on server change and sign-out. Verified by `FocusNotificationModelTest` (the alarm time per state, cancelled on paused and none) and the instrumented test.
-- [ ] 3.4 Strings in `values-*/strings.xml` for the six languages. Verified by `make android` (`checkTranslations`).
+- [x] 3.1 `FocusState.kt` parsing the shared fixtures. Verified by `FocusStateTest`.
+- [x] 3.2 `publishFocus` in `Bridge.kt`. A "Focus" channel (low importance, no sound), and an ongoing notification with `setUsesChronometer`, `setChronometerCountDown` for timed phases and `setWhen`, plus Pause/Resume actions opening the activity at `/focus?action=…`. The content comes from a pure `FocusNotificationModel`, so it can be tested without a device. Verified by the JVM unit test `FocusNotificationModelTest` (content per state, count-down flag, the action's address, removal on `none`) and an instrumented test in `connectedDebugAndroidTest` posting and removing the notification.
+- [x] 3.3 Session-end alarm (exact, inexact when denied) that replaces the ongoing notification with "Session done"/"Break over", rescheduled and cancelled as on iOS. Cleanup on server change and sign-out. Verified by `FocusNotificationModelTest` (the alarm time per state, cancelled on paused and none) and the instrumented test.
+- [x] 3.4 Strings in `values-*/strings.xml` for the six languages. Verified by `make android` (`checkTranslations`).
 - [ ] 3.5 Emulator or device run: a session with the app in the background, Pause from the notification, the session-end notification. Recorded in `mobile/README.md`.
 
 ## 4. Documentation and release
 
 - [ ] 4.1 `docs/focus.md`: "On the lock screen" (what the iOS and Android apps show, Pause/Resume opening the app, where to turn it off, titles and encrypted accounts, auto-start waiting until the app runs). Verified by `npm run docs:check`.
 - [ ] 4.2 `docs/ios-app.md`, `docs/android-app.md` and `mobile/README.md`: the `focus` capability, the payload and the cleanup. Verified by `npm run docs:check`.
-- [ ] 4.3 CHANGELOG entry under Unreleased. Verified by `make check`.
+- [x] 4.3 CHANGELOG entry under Unreleased. Verified by `make check`.
 - [ ] 4.4 `npm test`, `npm run build`, `make ios`, `make android`, `make openspec-validate`, `make repo-check` and `make check` pass. Verified by their exit codes.

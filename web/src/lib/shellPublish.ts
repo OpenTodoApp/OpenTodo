@@ -182,10 +182,14 @@ async function publishToday(now = Date.now()): Promise<void> {
 
 let started = false
 
-/** Starts the publishers when the page runs in a shell with `reminders` or `widgets`; a no-op otherwise. */
+/** Starts the publishers when the page runs in a shell with `reminders`, `widgets`, `geofences` or `focus`; a no-op otherwise. */
 export function startShellPublishers(): () => void {
-  if (started || !shell() || (!has('reminders') && !has('widgets') && !has('geofences'))) return () => {}
+  if (started || !shell() || (!has('reminders') && !has('widgets') && !has('geofences') && !has('focus'))) return () => {}
   started = true
+  // The Focus session (focus-live-activity D1), from its own chunk.
+  let stopFocus: (() => void) | null = null
+  let stopped = false
+  if (has('focus')) void import('./focus/shellPublish').then((m) => { if (!stopped) stopFocus = m.startFocusPublisher() }).catch(() => undefined)
   let timer: ReturnType<typeof setTimeout> | null = null
   const run = () => {
     if (timer) clearTimeout(timer)
@@ -207,6 +211,6 @@ export function startShellPublishers(): () => void {
   const onVisible = () => { if (document.visibilityState === 'visible') void recheckShellNotifications().catch(() => undefined) }
   const canVisible = typeof document !== 'undefined' && has('reminders')
   if (canVisible) document.addEventListener('visibilitychange', onVisible)
-  return () => { sub.unsubscribe(); offEnc(); clearInterval(tick); if (canVisible) document.removeEventListener('visibilitychange', onVisible); if (timer) clearTimeout(timer); started = false }
+  return () => { stopped = true; stopFocus?.(); sub.unsubscribe(); offEnc(); clearInterval(tick); if (canVisible) document.removeEventListener('visibilitychange', onVisible); if (timer) clearTimeout(timer); started = false }
 }
 

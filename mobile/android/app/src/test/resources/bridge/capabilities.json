@@ -10,7 +10,8 @@
     "files",
     "haptics",
     "completion-sound",
-    "alarm-settings"
+    "alarm-settings",
+    "focus"
   ],
   "backgroundOnly": [
     "background"

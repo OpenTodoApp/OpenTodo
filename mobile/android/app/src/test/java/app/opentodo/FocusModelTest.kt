@@ -1,0 +1,103 @@
+package app.opentodo
+
+import org.json.JSONObject
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/**
+ * The Focus session of focus-live-activity (task 3.1, 3.2, 3.3): the shared bridge fixtures
+ * the web app writes, parsed here, with what the ongoing notification and the end alarm
+ * must make of them.
+ */
+class FocusModelTest {
+    private fun fixture(name: String): JSONObject {
+        val url = javaClass.classLoader!!.getResource("bridge/$name")
+        assertNotNull("missing bridge fixture $name (web: UPDATE_BRIDGE_FIXTURES=1)", url)
+        return JSONObject(url!!.readText())
+    }
+
+    private fun JSONObject.longOrNull(key: String): Long? = if (isNull(key)) null else getLong(key)
+    private fun JSONObject.intOrNull(key: String): Int? = if (isNull(key)) null else getInt(key)
+
+    private fun check(name: String): FocusModel {
+        val f = fixture(name)
+        assertEquals(name, "publishFocus", f.getString("method"))
+        val want = f.getJSONObject("expect")
+        val m = FocusModel.parse(f.getString("payload"))
+        assertEquals(name, want.getString("state"), m.state.name.lowercase())
+        assertEquals(name, if (want.isNull("title")) null else want.getString("title"), m.title)
+        assertEquals(name, want.getBoolean("countsDown"), m.countsDown)
+        assertEquals(name, want.longOrNull("end"), m.end)
+        assertEquals(name, want.longOrNull("countUpFrom"), m.countUpFrom)
+        assertEquals(name, want.longOrNull("frozenMs"), m.frozenMs)
+        assertEquals(name, want.longOrNull("notifyAt"), m.notifyAt)
+        assertEquals(name, want.intOrNull("cycle"), m.cycle)
+        assertEquals(name, want.intOrNull("cycleLength"), m.cycleLength)
+        return m
+    }
+
+    @Test fun aRunningPomodoroCountsDownAndNotifiesAtItsEnd() {
+        val m = check("focus-running.json")
+        assertEquals(FocusModel.Label.Work(2, 4), m.label)
+        assertEquals("/focus?action=pause", m.actionPath)
+        assertTrue(m.shown)
+    }
+
+    @Test fun pausedIsFrozenWithoutTitleOrAlarm() {
+        val m = check("focus-paused.json")
+        assertEquals(FocusModel.Label.Paused, m.label)
+        assertEquals("/focus?action=resume", m.actionPath)
+        assertNull(m.notifyAt)
+        assertEquals(15 * 60_000L, m.frozenMs)
+    }
+
+    @Test fun flowtimeCountsUp() {
+        val m = check("focus-flowtime.json")
+        assertFalse(m.countsDown)
+        assertEquals(FocusModel.Label.Work(null, null), m.label)
+    }
+
+    @Test fun aBreakCountsDownToBreakOver() {
+        val m = check("focus-break.json")
+        assertEquals(FocusModel.Label.ShortBreak, m.label)
+        assertEquals(FocusModel.Phase.BREAK, m.phase)
+    }
+
+    @Test fun noneRemovesEverything() {
+        val m = check("focus-none.json")
+        assertFalse(m.shown)
+        assertNull(m.actionPath)
+    }
+
+    @Test fun malformedOrUnknownVersionsReadAsNone() {
+        for (bad in listOf(null, "", "not json", "[]", "{}", """{"v":2,"state":"running","runningSince":1}""", """{"v":1,"state":"later"}""", """{"v":1,"state":"running"}""")) {
+            assertEquals(bad, FocusModel.NONE, FocusModel.parse(bad))
+        }
+        assertFalse(FocusModel.parse("""{"v":1,"state":"done","phase":"work"}""").shown)
+    }
+
+    @Test fun theActionsOpenAddressesTheWebAppReads() {
+        val actions = fixture("actions.json")
+        assertEquals(FocusModel.OPEN_PATH, actions.getJSONObject("focusOpen").getString("path"))
+        val paths = actions.getJSONArray("focusActions").let { a -> (0 until a.length()).map { a.getJSONObject(it).getString("path") } }
+        assertEquals(listOf("/focus?action=pause", "/focus?action=resume"), paths)
+        assertEquals(paths[0], FocusModel.parse(fixture("focus-running.json").getString("payload")).actionPath)
+        assertEquals(paths[1], FocusModel.parse(fixture("focus-paused.json").getString("payload")).actionPath)
+    }
+
+    @Test fun theFrozenClockReadsAsOnScreen() {
+        assertEquals("24:59", FocusModel.clockText(24 * 60_000L + 59_000))
+        assertEquals("1:05:00", FocusModel.clockText(65 * 60_000L))
+        assertEquals("0:00", FocusModel.clockText(-5))
+    }
+
+    @Test fun onlyTheVisibleAppListsFocus() {
+        assertTrue(Bridge.capabilityList(play = true, hasScreen = true, background = false, sdkInt = 34, biometric = false).contains("focus"))
+        assertFalse(Bridge.capabilityList(play = false, hasScreen = false, background = true, sdkInt = 34, biometric = false).contains("focus"))
+        assertTrue(Bridge.script("1.0.0", listOf("focus")).contains("publishFocus: function (json) { send('publishFocus', [String(json)]) }"))
+    }
+}
