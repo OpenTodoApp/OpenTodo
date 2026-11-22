@@ -1361,8 +1361,8 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 /* Page transitions (page-transitions D2): during a route change <html data-nav> names the
    page body and the chrome, so the sidebar, the phone bar and the tab bar stay where they
    are while the page slides by 30% with a fade: in from the end edge going forward, out to
-   it going back; a switch between destinations keeps the plain cross-fade. Taps reach the
-   new page at once (navigation never waits for the animation). */
+   it going back. Only pushed pages slide; list views change at once (transitions-push-only).
+   Taps reach the new page at once (navigation never waits for the animation). */
 :root[data-nav] #content { view-transition-name: page; }
 :root[data-nav] [data-sidebar] { view-transition-name: sidebar; }
 :root[data-nav] [data-phone-bar] { view-transition-name: phone-bar; }
