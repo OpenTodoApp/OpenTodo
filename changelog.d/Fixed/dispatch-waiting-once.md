@@ -1,0 +1,1 @@
+- A device that opens its routines stream just as a routine runs gets that run once, not twice.
