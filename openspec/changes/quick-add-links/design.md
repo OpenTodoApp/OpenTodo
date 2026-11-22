@@ -8,19 +8,21 @@ Quick add parses a line into a title and attributes with one grammar, implemente
 
 Goals: one more token, behaving exactly like the existing ones (tint, chip, dismissal, quoting, parsing switch), the same task from the same line on every surface, offline.
 
-Non-goals: page titles or previews (an outbound request per link, against the no-third-party-calls rule); links in descriptions; links in title edits, routines and `ot time`.
+Non-goals: page titles or previews (an outbound request per link, against the no-third-party-calls rule); links in descriptions; links already in a title before an edit; routines and `ot time`.
 
 ## Decisions
 
 ### D1. A link token, on only where asked
 
-The grammar gains a `link` token: a run starting `http://` or `https://` (case-insensitive) up to whitespace, with trailing `.,;:!?` and an unbalanced closing `)` or `]` left outside, and a host that parses as a URL. Quick add parses links only when the caller sets a context option (`Links`). Quick add in the app, the parse route and `ot add` set it. Routines (`internal/rules`), `ot time` and title editing don't, so a routine that writes a URL into a title keeps doing so.
+The grammar gains a `link` token: a whitespace token starting `http://` or `https://` (case-insensitive), unquoted, with a non-empty host (the text between `://` and the first `/`, `?` or `#`, without a user and a port). A double quote ends a token, so a URL holding one is cut there. The URL is the token without its trailing `.,;:!?` and unbalanced closing `)` or `]`; the whole token leaves the title, so a sentence's full stop goes with its link (`Read the spec at https://x.example/a.` saves as `Read the spec at`). Link tokens are set aside before the other attributes are read, so no other grammar reads inside a URL. `links.go` and `links.ts` are the two copies, pinned by the shared vectors and the fuzz test.
+
+The parser reads links only when the caller sets a context option (`Links` / `links`). Quick add in the app, title editing, the parse route and `ot add` set it. Routines (`internal/rules`) and `ot time` don't, so a routine that writes a URL into a title keeps doing so.
 
 Alternative: always parse links. Rejected because it silently changes existing routines.
 
 ### D2. The chip and the saved task
 
-The chip reads the host without `www.` (the full URL is its accessible name and tooltip). Its colour is the neutral chip colour, since links have no attribute colour. On save, every link not dismissed and not quoted becomes, in order, a link attachment named as **Attach → Add a link…** names it today (the URL's last path segment, else the host). Its token leaves the title, and whitespace around it collapses like any token.
+The chip reads the host without `www.`, a port or a user, ASCII letters lowercased (the full URL is its accessible name and tooltip). Its colour is the neutral slate, since links have no attribute colour. On save, every link not dismissed and not quoted becomes, in order, a link attachment through the same path as **Attach → Add a link…**, which names it after its host and stores the URL as the browser normalises it. Its token leaves the title, and whitespace around it collapses like any token.
 
 At most 5 links per line become attachments; the sixth and later stay in the title with no chip. A line whose title would be empty keeps the URL as its title and shows no chip. A link equal to the task's origin URL (share capture) is not attached; it already shows as the origin.
 
@@ -30,7 +32,7 @@ The task create, its fields, its reminders and its link attachments are written 
 
 ### D4. The parse route
 
-`fields.links` is an array of `{url, name}` in line order, present only when the line has links. It is additive, so older callers ignore it. Its chips carry kind `link`. The shared vectors gain cases for: plain links, trailing punctuation, parentheses, quoting, dismissal, more than five links, a URL-only line, a non-http scheme (`ftp://`, `javascript:` stay text), and a line with parsing off.
+`fields.links` is an array of the URLs in line order, present only when the line has links. It is additive, so older callers ignore it. Its chips carry kind `link` and read the host. The route always reads links. The shared vectors gain cases for: plain links, trailing punctuation, parentheses, quoting, more than five links, a URL-only line, a non-http scheme (`ftp://`, `javascript:` stay text), and a line with parsing off. Dismissal exists only in the app's parser, so its cases are in `links.test.ts`.
 
 ## Data model
 
@@ -45,7 +47,11 @@ No new chrome. The link chip joins the existing chip row under the line (or the 
 - A user who wanted the URL in the title must dismiss the chip. This is the same trade as dates, and quoting is the escape.
 - Two implementations must agree on URL edges. The vectors are the contract, and the fuzz test in `internal/quickadd` gets the link token.
 
-## Open questions for the owner
+## Decisions of the owner (22 Nov)
 
-1. On by default, or opt-in under Settings → Quick add? The proposal says on, like every other token.
-2. Should a link typed during a title edit (`Parsing while editing a title`) become an attachment too? The proposal says no: links already in the title stay put anyway, but a pasted link silently leaving the title of an existing task may surprise.
+1. On by default, like every other token; the per-device parsing switch turns it off with the rest.
+2. Title editing reads links too, with the same chip and dismissal. As for every token, only text typed during the edit is read (`Parsing while editing a title`), so URLs already in a title stay.
+
+### D5. Title editing
+
+The panel's title field and the inline title editor parse with `links` on. On commit, the links typed during the edit become link attachments of the edited task, in the same undoable change as the other attributes. A viewer who cannot edit the task does not parse, as today.
