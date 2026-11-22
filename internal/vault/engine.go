@@ -458,7 +458,8 @@ const halfSavedHold = 5 * time.Minute
 // because all their lines moved to other files (the Inbox's last line into a
 // project: the moved lines carry their ids). A held file stays held while it
 // is empty, up to halfSavedHold from its first hold (a watch can sync again
-// within the save); then it was emptied on purpose and syncs as it is. Each
+// within the save); then it was emptied on purpose and syncs as it is. A hold
+// time in the future (a clock set back since) ends the hold. Each
 // one's first hold time is recorded in e.held.
 func (e *engine) halfSaved() []string {
 	var out []string
@@ -470,7 +471,7 @@ func (e *engine) halfSaved() []string {
 			continue
 		}
 		switch {
-		case fs.Hash == "" && fs.Held != 0 && now-fs.Held < halfSavedHold.Milliseconds():
+		case fs.Hash == "" && fs.Held != 0 && now >= fs.Held && now-fs.Held < halfSavedHold.Milliseconds():
 			e.held[p] = fs.Held
 		case fs.Hash != "" && !e.allMoved(p):
 			e.held[p] = now

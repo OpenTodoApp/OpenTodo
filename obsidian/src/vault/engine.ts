@@ -363,7 +363,7 @@ export class Engine {
     for (const p of sortedKeys(this.disk)) {
       const fs = own(this.st.files, p) ? this.st.files[p] : undefined
       if (!fs || this.disk.get(p) !== '' || fs.hash === empty) continue
-      if (fs.hash === '' && fs.held && now - fs.held < HALF_SAVED_HOLD) this.held.set(p, fs.held)
+      if (fs.hash === '' && fs.held && now >= fs.held && now - fs.held < HALF_SAVED_HOLD) this.held.set(p, fs.held)
       else if (fs.hash !== '' && !this.allMoved(p)) this.held.set(p, now)
       else continue
       out.push(p)

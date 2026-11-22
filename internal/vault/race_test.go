@@ -437,3 +437,28 @@ func TestEmptyFileHeldAcrossQuickSyncs(t *testing.T) {
 		t.Fatalf("the task was trashed after the save: %v", got)
 	}
 }
+
+// TestEmptyFileHoldEndsWhenTheClockWentBack: a hold time in the future (the
+// clock was set back since) does not hold the file for hours: the file syncs
+// as it is.
+func TestEmptyFileHoldEndsWhenTheClockWentBack(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home"})
+	lamp := s.create("tasks", map[string]any{"title": "Fix the lamp", "project_id": home})
+	v := s.vault(t)
+	v.write(t, "Home.md", "")
+	ahead := time.Now().Add(3 * time.Hour)
+	v.now = func() time.Time { return ahead }
+	if rep := v.sync(t); !hasEvent(rep, "skipped", "Home.md") {
+		t.Fatalf("first sync %+v", rep)
+	}
+	v.now = time.Now
+	if rep := v.sync(t); hasEvent(rep, "skipped", "Home.md") {
+		t.Fatalf("held with a hold time hours ahead: %+v", rep)
+	}
+	for _, task := range s.list("tasks") {
+		if task["id"] == lamp && task["deleted_at"] == nil {
+			t.Fatal("the task of the file emptied on purpose stays")
+		}
+	}
+}
