@@ -30,7 +30,7 @@ afterEach(() => {
 })
 
 describe('opening an attachment in the phone app (#1654)', () => {
-  it('saves a file the device does not hold from the server, for the eye and for Download alike, and opens no window', async () => {
+  it('saves a file the device does not hold from the server, with its real type for the eye and as a download for Download, and opens no window', async () => {
     window.opentodoShell = iosShell
     const opened = vi.spyOn(window, 'open').mockImplementation(() => null)
     const clicks = clickedAnchors()
@@ -38,9 +38,16 @@ describe('opening an attachment in the phone app (#1654)', () => {
     await openAttachment(file(), { download: true })
     expect(opened).not.toHaveBeenCalled()
     expect(clicks).toEqual([
-      { href: '/api/v1/attachments/a1/content?download=1', download: 'plan.pdf', target: '' },
+      { href: '/api/v1/attachments/a1/content', download: 'plan.pdf', target: '' },
       { href: '/api/v1/attachments/a1/content?download=1', download: 'plan.pdf', target: '' },
     ])
+  })
+
+  it('asks the server for a risky type as a download, so the shell offers only the save dialog', async () => {
+    window.opentodoShell = iosShell
+    const clicks = clickedAnchors()
+    await openAttachment(file({ mime: 'image/svg+xml', name: 'logo.svg' }))
+    expect(clicks).toEqual([{ href: '/api/v1/attachments/a1/content?download=1', download: 'logo.svg', target: '' }])
   })
 
   it('saves a file the device holds instead of opening its object URL in a new window', async () => {
