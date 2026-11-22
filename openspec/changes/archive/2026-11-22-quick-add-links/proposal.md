@@ -12,9 +12,9 @@ Issue #1743: a link typed or pasted into quick add stays in the title. To keep i
 - **Limits.** At most 5 links per line become attachments; further ones stay in the title. A line that is only a URL keeps it as the title, with no chip. Trailing punctuation that ends a sentence (`.`, `,`, `;`, `:`, `!`, `?`, an unbalanced `)` or `]`) is not part of the URL, and leaves the title with it. A link equal to the origin of a shared page is not attached twice.
 - **Offline and convergence.** The task and its link attachments are one local operation set, visible at once, uploaded together, converging like any attachment. Not **BREAKING**: no new op field, entity, route, mandatory env var or dependency.
 
-Out of scope: links already in a title before an edit; routines and `ot time`, which keep URLs in their titles; fetching a page title for the chip or the attachment name (no outbound request); turning description links into attachments; changing **Attach → Add a link…**.
+Out of scope: links already in a title before an edit; routines, which keep URLs in their titles; fetching a page title for the chip or the attachment name (no outbound request); turning description links into attachments; changing **Attach → Add a link…**.
 
-Roadmap: adds a `quick-add-links` row to 0.20 "Everywhere" ([ROADMAP.md](../../../ROADMAP.md)), for [#1743](https://github.com/OpenTodoApp/OpenTodo/issues/1743).
+Roadmap: adds a `quick-add-links` row to 0.20 "Everywhere" ([ROADMAP.md](../../../../ROADMAP.md)), for [#1743](https://github.com/OpenTodoApp/OpenTodo/issues/1743).
 
 ## Capabilities
 
