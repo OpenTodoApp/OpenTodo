@@ -9,7 +9,7 @@ The app has three panes only from 1024 px (sidebar, list and the docked task pan
 ## What Changes
 
 - First, an audit task: every screen at 744, 820, 1024, 1180 and 1366 px, portrait and landscape, and at split-view and Stage Manager sizes (320, 507, 678, 981 px wide), with a findings list in this change's design before any layout code.
-- Layouts follow the space the shell has: from 900 px the task panel docks beside the list (instead of 1024) when the list keeps at least 22rem; the sidebar stays docked from 768 px in landscape and collapses to icons below that in portrait; Notes and Calendar get the same three-pane rule.
+- Layouts follow the space the shell has: from 900 px the task panel docks beside the list (instead of 1024), and the sidebar folds while the list would keep less than 25rem; from 600 px a task opens as a sheet over the list; below 768 px the tab bar and drawer stay as they are; Notes and Calendar get the same three-pane rule.
 - The layout check gains tablet widths and a landscape height for each.
 
 No new mandatory environment variable, no change to the op log, routes or data.

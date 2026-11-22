@@ -16,7 +16,7 @@ Every task in a list is one line. To read the rest without leaving the list, exp
 ## Open and close the details
 
 - **Keyboard:** select the task (<kbd>j</kbd> / <kbd>k</kbd>) and press <kbd>→</kbd>. <kbd>←</kbd> or <kbd>Esc</kbd> closes them again.
-- **Mouse:** point at the row and choose **Show details**, the first of the actions at its end. To expand rows with a plain click, set **Click a task to** to **Expand the row** under **Settings → General → Keyboard**; a double-click then opens the task's page.
+- **Mouse** · Point at the row and choose **Show details**, the first of the actions at its end. A click on the row selects it. Double-click to open the task's page.
 - **Tablet:** tap the small arrow at the end of the row; tap it again to close.
 - **Phone:** a row has no arrow. Tap the task to open it: its page shows the same details and more.
 

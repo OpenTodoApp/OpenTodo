@@ -5,6 +5,7 @@
 // menu and opens a confirmation dialog; a submenu item swaps the items for its own
 // (Priority, Date), so a long list of choices costs the menu one row.
 import { useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { flushSync } from 'react-dom'
 import { Icon, type IconName, Menu } from '../../ui'
 import { Tooltip } from '../../ui'
 import { MenuCloseContext, MenuGroup, MenuItem, MenuSeparator } from '../../ui'
@@ -49,7 +50,7 @@ export interface PickerSpec<T> extends Omit<ComboboxConfig<T>, 'onPick' | 'onClo
 }
 
 export type ActionItem =
-  | (ItemBase & { kind: 'action'; onSelect: () => unknown })
+  | (ItemBase & { kind: 'action'; onSelect: () => unknown; closeBeforeSelect?: boolean })
   | (ItemBase & { kind: 'check'; checked: boolean; onSelect: () => unknown })
   // The picker's item type is erased here; each hook builds it with a concrete T.
   // `any`: a menu mixes pickers of different item types.
@@ -117,7 +118,11 @@ function Items({ groups, onPicker, onStep, onConfirm, onSubmenu }: {
               }
               switch (item.kind) {
                 case 'action':
-                  return <MenuItem key={item.id} {...common} onSelect={() => void item.onSelect()} />
+                  return <MenuItem key={item.id} {...common} keepOpen={item.closeBeforeSelect} onSelect={() => {
+                    // Release the mobile menu's inert background before focusing an editor there.
+                    if (item.closeBeforeSelect) flushSync(() => close?.())
+                    void item.onSelect()
+                  }} />
                 case 'check':
                   return <MenuItem key={item.id} {...common} checked={item.checked} onSelect={() => void item.onSelect()} />
                 case 'picker':

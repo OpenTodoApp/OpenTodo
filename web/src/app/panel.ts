@@ -126,7 +126,10 @@ export function setPanelWidth(px: number | null, persist = true, store: PanelWid
   writeString(store.key, px ? String(Math.round(px)) : null) // storage refused: the width holds until the panel opens again
 }
 
-export const SPLIT_QUERY = '(min-width: 64rem)'
+/** Where a task docks beside the list (tablet-layouts D2): 900 px, measured on the window. */
+export const SPLIT_QUERY = '(min-width: 56.25rem)'
+/** From 600 px a task opened on a split page is a sheet over the list rather than a page (tablet-layouts D2). */
+export const SHEET_QUERY = '(min-width: 37.5rem)'
 /**
  * Where the Inbox's own split keeps its empty pane (task-list-width D4): from 90 rem, the
  * step where the docked panel widens (`--panel-w`), a list keeps a comfortable width
@@ -175,7 +178,12 @@ let projection: { id: string; date: string } | null = null
 export function openTaskPanel(id: string, projectedDate?: string): void {
   const next = projectedDate ? { id, date: projectedDate } : null
   if (next?.date !== projection?.date || next?.id !== projection?.id) { projection = next; emit() }
-  if (!docks()) { openTaskPage(id); return }
+  if (!docks()) {
+    // 600-899 px: the list keeps its place under a sheet from the end edge.
+    if (split && typeof matchMedia !== 'undefined' && matchMedia(SHEET_QUERY).matches) { dock(id); return }
+    openTaskPage(id)
+    return
+  }
   if (splitKind === 'panel') setSidePanelOpen(true)
   dock(id)
 }

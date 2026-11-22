@@ -29,7 +29,7 @@ const load = vi.fn(async () => {
 vi.mock('./lib/appTrust', async (real) => ({
   ...(await real<typeof import('./lib/appTrust')>()),
   loadTrust: () => load(),
-  saveTrust: async () => undefined,
+  updateTrust: async (change: (s: null) => TrustRecord | null) => change(null),
   trustsOwnKey: async () => false,
 }))
 const lazy = vi.fn(async (_env: unknown, record: TrustRecord, path: string) => (path in (record.current?.files ?? {}) ? { response: new Response('checked') } : null))
@@ -37,10 +37,11 @@ const prune = vi.fn(async () => undefined)
 vi.mock('./lib/appInstall', async (real) => ({
   ...(await real<typeof import('./lib/appInstall')>()),
   cachedFile: async () => { if (cacheFails) throw new Error('caches'); return null },
-  // An update the test sets is saved through the worker's env, as checkForUpdate saves.
-  checkForUpdate: async (env: { save: (r: TrustRecord) => Promise<void> }) => {
+  // An update the test sets is written through the worker's env, as checkForUpdate writes.
+  checkForUpdate: async (env: { update: (change: () => TrustRecord) => Promise<TrustRecord | null> }) => {
     if (!update) return { kind: 'unchanged' }
-    await env.save(update)
+    const next = update
+    await env.update(() => next)
     update = null
     return { kind: 'installed', first: false, version: '2', check: {} }
   },

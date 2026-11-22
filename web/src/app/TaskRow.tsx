@@ -63,7 +63,7 @@ import { energyChipLabel, energyName, energyOf, type Energy } from '../lib/energ
 import { sectorLabel } from '../lib/sectorNames'
 import { formatSpan, spanOf, type Span } from '../lib/span'
 import { usePendingDone } from '../lib/pendingDone'
-import { clickExpands, DOUBLE_CLICK_MS } from './rowClick'
+import { DOUBLE_CLICK_MS, type RowClickIntent } from './rowClick'
 
 /** The details of an expanded row (row-expand D3), loaded on the first expand. */
 const RowDetails = lazy(() => import('./task-list/RowDetails'))
@@ -441,7 +441,11 @@ export interface TaskRowProps {
   readOnly?: boolean
   onToggle: () => void
   /** Opens the task; Shift or Ctrl/⌘ clicks tick instead when `onTick` is set (bulk-edit D3). */
-  onOpen: (e?: React.MouseEvent) => void
+  onOpen: (e?: React.MouseEvent, intent?: RowClickIntent) => void
+  /** Use the select-then-edit click rule in the main task lists. */
+  selectOnClick?: boolean
+  /** Enables compact title editing from a short left swipe. */
+  onEditTitle?: () => void
   /** A double-click on the row opens the task's page (row-click-modes D2); without it a double-click is two clicks. */
   onOpenPage?: () => void
   /** Ticked for a bulk action (bulk-edit). */
@@ -591,19 +595,27 @@ export interface CompactRowProps {
 const ROW_CONTROL = 'button, a, input, label, select, textarea, [role="button"], [role="menuitem"], [contenteditable="true"]'
 
 /**
- * A click on a row's title or empty area, and a double-click on the row (row-click-modes D1,
- * D2). `expand`: the row can show its details. With a double-click to open the page, its
- * second click does nothing; under "Expand the row" a pointer click expands. A double-click
- * opens the page except on the row's controls and in a title already being edited, where it
- * selects a word; one whose first click opened the editor still opens the page.
+ * A fine-pointer press records whether the row was selected before the click.
+ * Keyboard, touch and assistive-technology activation retain the open action.
  */
-function useRowClicks(expand: false | undefined | (() => void), openPage: (() => void) | undefined, selectMode: boolean) {
+function useRowClicks(selectOnClick: boolean | undefined, selected: boolean | undefined, openPage: (() => void) | undefined, selectMode: boolean) {
   const opened = useRef(-Infinity)
-  const clickRow = (e: React.MouseEvent, open: () => void) => {
+  const press = useRef<{ selected: boolean; pointerId: number } | null>(null)
+  const recordPress = (e: React.PointerEvent) => {
+    press.current = selectOnClick && e.button === 0 && (e.pointerType === 'mouse' || e.pointerType === 'pen')
+      && window.innerWidth >= 768 && window.matchMedia?.('(pointer: fine)').matches
+      ? { selected: !!selected, pointerId: e.pointerId } : null
+  }
+  const clickRow = (e: React.MouseEvent, open: TaskRowProps['onOpen']) => {
+    const previous = press.current
+    press.current = null
     if (openPage && e.detail > 1) return
+    const pointerId = (e.nativeEvent as Partial<PointerEvent>).pointerId
+    if (!previous || e.detail === 0 || (pointerId !== undefined && pointerId !== previous.pointerId)) { open(e); return }
+    if (!previous.selected) { open(e, 'select'); return }
+    if (!(e.target instanceof Element) || !e.target.closest('[data-row-title]')) return
     opened.current = e.timeStamp
-    if (expand && clickExpands(e, true)) expand()
-    else open()
+    open(e, 'edit')
   }
   const doubleClick = (e: React.MouseEvent<HTMLLIElement>) => {
     const el = e.target as Element
@@ -614,7 +626,7 @@ function useRowClicks(expand: false | undefined | (() => void), openPage: (() =>
     }
     if (!selectMode && !e.shiftKey && !e.ctrlKey && !e.metaKey) openPage?.()
   }
-  return { clickRow, doubleClick }
+  return { clickRow, doubleClick, recordPress, cancelPress: () => { press.current = null } }
 }
 
 const TONE_TEXT: Partial<Record<Tone, string>> ={ danger: 'text-danger', accent: 'text-accent', default: 'text-default' }
@@ -767,7 +779,7 @@ function RowTrailing({ score, origin, revealed, forceActions }: { score?: ReactN
   )
 }
 
-function FullRow({ task, contextual = false, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, groupSeparator, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onOpenPage, onToggleCollapse, shape = 'row', timeColumn = false, slotsOff, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dropNote, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, logbook = false, expanded = false, onExpand, layout, edge, notes = false, score }: TaskRowProps) {
+function FullRow({ task, contextual = false, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, groupSeparator, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, selectOnClick, onOpenPage, onEditTitle, onToggleCollapse, shape = 'row', timeColumn = false, slotsOff, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dropNote, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, logbook = false, expanded = false, onExpand, layout, edge, notes = false, score }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -865,7 +877,6 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
   // A viewer's row reveals Show details only (row-expand D2); an editor's all four actions.
   const revealed = !card && !inline && actions && (!readOnly || canExpand)
 
-  // A departing row is the last picture of a task that was completed: done, and out of reach.
   const departing = motion === 'leave'
   // The tick the user just gave shows before the write comes back (list-rendering-at-scale D3).
   const checked = usePendingDone(task) || departing
@@ -873,7 +884,7 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
   // In a long list's block (incremental-list-updates D5) the lists around the row are presentational: it says it is an item.
   const inBlock = use(RowBlockContext)
   // Swipe right completes, left schedules, on touch rows the user may edit (phone-v2 D3).
-  const swiping = useRowSwipe({ task, enabled: swipe && !card && !readOnly && !inline && !departing, onComplete: onToggle, force: forceSwipe, rowEl: rowRef })
+  const swiping = useRowSwipe({ task, enabled: swipe && !card && !readOnly && !inline && !departing, onComplete: onToggle, onEditTitle, force: forceSwipe, rowEl: rowRef })
   const feedback = dragFeedback(prefersReducedMotion())
   const lift = dragging ? feedback.lift : ''
   // The origin is a link, so it never sits inside the open button: on a card it ends the
@@ -882,9 +893,13 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
     : (originChip || score || !inline) && <RowTrailing score={score} origin={originChip} revealed={revealed} forceActions={forceActions} />
 
   const grip = !!(onGripDown && (contextual ? onMore : onGripClick && onTick)) && !readOnly && !inline && !departing
-  const { clickRow, doubleClick } = useRowClicks(canExpand && onExpand, onOpenPage, selectMode)
+  const { clickRow, doubleClick, recordPress, cancelPress } = useRowClicks(selectOnClick, selected, onOpenPage, selectMode)
   // The swipe takes the press first (rowSwipe), then the drag owner — or, with no drag, the row's own touch hold (task-row-context-menu).
-  const handlePointerDown = (e: React.PointerEvent<HTMLLIElement>) => { if (swipe) swiping.onPointerDown(e); holdForRow(e, onPointerDown, onRowMenu) }
+  const handlePointerDown = (e: React.PointerEvent<HTMLLIElement>) => {
+    recordPress(e)
+    if (swipe) swiping.onPointerDown(e)
+    holdForRow(e, onPointerDown, onRowMenu)
+  }
 
   return (
     <li data-drag-id="task-row"
@@ -908,14 +923,13 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
       aria-current={selected || undefined}
       aria-level={card || !treeItem ? undefined : depth + 1}
       onPointerDown={handlePointerDown}
-      // The row's empty area opens the task under either "Click a task to" choice (row-and-cursor
-      // D1): a pointer shortcut; the open button stays the keyboard path. Drags and swipes
-      // swallow their click (lib/dnd.ts, rowSwipe.ts), so they never get here.
+      onPointerCancel={cancelPress}
+      // The row's empty area selects, or opens on touch. Drags and swipes swallow their click.
       onClick={inline || departing ? undefined : (e) => {
         const hit = (e.target as Element).closest(ROW_CONTROL)
         if (hit && e.currentTarget.contains(hit)) return
         if (onTick && !readOnly && (selectMode || e.shiftKey || e.ctrlKey || e.metaKey)) { onTick(e.shiftKey); return }
-        clickRow(e, () => onOpen())
+        clickRow(e, selectOnClick ? onOpen : () => onOpen())
       }}
       onDoubleClick={onOpenPage && !departing ? doubleClick : undefined} onContextMenu={onContextMenu}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
@@ -976,7 +990,7 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
         onClick={(e) => {
           // Shift+click extends, Ctrl/⌘+click toggles the tick instead of opening (bulk-edit D3); in Select mode a tap does.
           if (onTick && !readOnly && (selectMode || e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); onTick(e.shiftKey); return }
-          clickRow(e, () => onOpen(e))
+          clickRow(e, onOpen)
         }}>
         <div className={card ? '' : 'flex min-w-0 items-baseline gap-2'} data-row-head>
         <RowTitle title={task.title} tone={checked ? (logbook ? 'text-muted' : 'text-faint line-through') : contextual || blockedBy > 0 || (waitsFor && !done) ? 'text-muted' : ''} waiting={!!waitsFor && !done}

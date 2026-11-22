@@ -462,7 +462,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
           )}
         </nav>}
       </div>
-      <div ref={scroller} className={`ui-scroller min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-scroll onPointerDown={holdForRowMenu} onContextMenu={contextForRowMenu}>
+      <div ref={scroller} className={`ui-scroller relative min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-scroll onPointerDown={holdForRowMenu} onContextMenu={contextForRowMenu}>
       {space === 'notes' ? <Suspense fallback={null}><NotesSidebar route={route} collapsed={collapsed} /></Suspense> : <>
       {finding && !collapsed && (
         <div className="pt-3" data-sidebar-find>
