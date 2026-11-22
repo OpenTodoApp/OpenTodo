@@ -89,3 +89,8 @@ Open:
 ## Device check, after each step
 
 Fresh install, then: a reminder set on another device fires with the app closed, after a force quit and after a reboot; Done from the notification completes the task; a download saves; Back and the back swipe go back; cold start shows no blank screen, online and offline.
+
+Native feel (`mobile-native-feel`), on an iPhone and an Android phone:
+
+- A scroll that starts on a row does not flash it; a pressed circle dims alone (`press-feedback-delay`).
+- After taps, no row keeps a hover look and no control a focus ring; with VoiceOver and with TalkBack the focused control still shows its ring; an iPad keyboard's Tab shows it again (`touch-input-mode`).

@@ -171,9 +171,12 @@ await row(p2, 'Pick paint colours').waitFor()
 
 step('offline edit on device 2, then reconnect')
 await ctx2.setOffline(true)
-await p2.getByRole('combobox', { name: 'Add a task' }).fill('Added while offline')
-await p2.getByRole('combobox', { name: 'Add a task' }).press('Enter')
-await row(p2, 'Added while offline').waitFor()
+// On a failure the report keeps device 2's navigations, errors and open requests (e2e-diagnose.mjs).
+await diagnosed(p2, 'offline-add', async () => {
+  await p2.getByRole('combobox', { name: 'Add a task' }).fill('Added while offline')
+  await p2.getByRole('combobox', { name: 'Add a task' }).press('Enter')
+  await row(p2, 'Added while offline').waitFor()
+})
 await p2.waitForFunction(() => /Offline/.test(document.body.innerText), null, { timeout: 5000 })
 await snap(p2, 'offline')
 await ctx2.setOffline(false)
