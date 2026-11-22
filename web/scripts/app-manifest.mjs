@@ -37,7 +37,8 @@ function walk(dir, base = '') {
     if (name.startsWith('.')) continue
     const rel = base ? `${base}/${name}` : name
     if (statSync(path.join(dir, rel)).isDirectory()) out.push(...walk(dir, rel))
-    else if (!UNLISTED.has(rel)) out.push(rel)
+    // A gzip copy is the listed file's transfer form, not a file of its own (compressed-static-assets).
+    else if (!UNLISTED.has(rel) && !rel.endsWith('.gz')) out.push(rel)
   }
   return out
 }
