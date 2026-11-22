@@ -22,6 +22,7 @@ import {
   register,
   registerReport,
   setWhatToTest,
+  submitArgs,
   submitForReview,
   token,
   versionBelow,
@@ -548,4 +549,13 @@ test('submit: a rejected version goes again through its submission, its item mar
 test("Apple's errors are all shown, with the associated ones", async () => {
   const call = client(credentials, { fetchImpl: async () => new Response(JSON.stringify({ errors: [{ code: 'STATE_ERROR', detail: 'Cannot submit', meta: { associatedErrors: { '/v1/appScreenshots': [{ detail: 'Screenshots are missing' }] } } }, { detail: 'Age rating is missing' }] }), { status: 409 }) })
   await assert.rejects(call('submitting', 'PATCH', '/v1/reviewSubmissions/x', {}), /409 STATE_ERROR\): Cannot submit; Screenshots are missing; Age rating is missing/)
+})
+
+test("submit reads the CHANGELOG.md it is given: the workflow's scripts submit a tag's own notes", () => {
+  assert.deepEqual(submitArgs(['1.6.0', '10600', '--changelog', 'CHANGELOG.md']), { version: '1.6.0', build: '10600', changelog: 'CHANGELOG.md', dry: false })
+  assert.deepEqual(submitArgs(['1.6.0', '10600', '--changelog', 'CHANGELOG.md', '--dry-run']).dry, true)
+  assert.match(submitArgs(['1.6.0', '10600']).changelog, /CHANGELOG\.md$/)
+  assert.throws(() => submitArgs(['1.6.0', '10600', '--changelog']), /usage/)
+  assert.throws(() => submitArgs(['1.6.0', '10600', '--force']), /usage/)
+  assert.throws(() => submitArgs(['1.6.0']), /usage/)
 })

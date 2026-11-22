@@ -737,7 +737,14 @@ test('the TestFlight upload runs for final tags after the release and by hand, w
   assert.match(job, /^ {8}id: upload$/m, 'the upload step has an id the cleanup reads')
   assert.match(job, /if: always\(\) && steps\.secrets\.outputs\.ready == 'true'\n[\s\S]*?UPLOADED: \$\{\{ steps\.upload\.outcome == 'success' \}\}\n[\s\S]*?if \[ "\$UPLOADED" != "true" \][^\n]*appstore\.mjs cleanup/, 'the keychain always goes; the certificate is revoked only when nothing was uploaded (ITMS-90035)')
   // App Store review (D10): a final tag's build only, after Apple processed it, never a release candidate; a hand run is a dry run unless chosen.
-  assert.match(job, /appstore\.mjs processed[\s\S]*?name: Submit for App Store review[\s\S]*?appstore\.mjs submit/, 'the submission waits for processing')
+  assert.match(job, /appstore\.mjs processed[\s\S]*?name: Submit for App Store review[\s\S]*?set -- submit /, 'the submission waits for processing')
+  const tools = job.match(/- name: Release scripts of this workflow's commit\n[\s\S]*?(?=\n {6}- |\n {6}# )/)?.[0] ?? ''
+  assert.match(tools, /^ {10}ref: \$\{\{ github\.workflow_sha \}\}$/m, "the submission's scripts are pinned to the workflow's exact commit, never a branch name")
+  assert.match(tools, /^ {10}sparse-checkout: scripts\/release$/m, 'only scripts/release is checked out from the workflow commit')
+  assert.match(tools, /^ {10}path: release-tools$/m, 'the workflow copy sits beside the tag, never over it')
+  assert.match(job, /node release-tools\/scripts\/release\/appstore\.mjs "\$@"/, "submit runs the workflow commit's appstore.mjs")
+  assert.match(job, /set -- submit "\$VERSION" "\$BUILD" --changelog CHANGELOG\.md/, "What's New is the tag's own CHANGELOG.md")
+  assert.equal((job.match(/release-tools\//g) ?? []).length, 1, 'every other step runs the tag')
   assert.match(job, /^ {8}if: steps\.secrets\.outputs\.ready == 'true' && !contains\(inputs\.ref, '-rc\.'\) && \(inputs\.app_store == 'submit' \|\| inputs\.app_store == 'dry-run' \|\| inputs\.app_store == 'submit-only'\)$/m, 'a release candidate is never submitted')
   assert.match(flow, /^ {6}app_store:\n {8}description:[^\n]*\n {8}type: choice\n {8}options: \[dry-run, submit, skip, submit-only\]\n {8}default: dry-run$/m, 'a run by hand is a dry run unless submit is chosen')
   assert.match(job, /id: upload\n {8}if: steps\.secrets\.outputs\.ready == 'true' && inputs\.app_store != 'submit-only'$/m, 'submit-only uploads nothing')
