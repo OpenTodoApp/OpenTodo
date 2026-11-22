@@ -59,7 +59,7 @@ final class ShellController: NSObject, ObservableObject {
         bridge.install(into: config.userContentController,
                        app: Version.app,
                        capabilities: Bridge.capabilities(biometric: BiometricKeyStore.available, share: true, haptics: Haptics.available))
-        self.webView = WKWebView(frame: .zero, configuration: config)
+        self.webView = ShellWebView(frame: .zero, configuration: config)
         self.bridge = bridge
         super.init()
         // Hidden over the launch colour until the page has drawn its first frame, or has loaded
@@ -543,6 +543,24 @@ final class ScrollTopDecoy: UIScrollView, UIScrollViewDelegate {
     func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
         onTap()
         return false
+    }
+}
+
+/// The app's web view, with the iPad's shortcut overlay commands (tablet-shells D1). Holding
+/// Cmd with a hardware keyboard lists them; each one has the page press its own shortcut.
+/// Every other key still reaches the page as typed.
+final class ShellWebView: WKWebView {
+    override var keyCommands: [UIKeyCommand]? {
+        let own = KeyCommands.commands.map { command in
+            UIKeyCommand(title: command.title, action: #selector(pressShortcut(_:)), input: command.input,
+                         modifierFlags: .command, propertyList: command.id)
+        }
+        return (super.keyCommands ?? []) + own
+    }
+
+    @objc func pressShortcut(_ command: UIKeyCommand) {
+        guard let id = command.propertyList as? String, KeyCommands.commands.contains(where: { $0.id == id }) else { return }
+        evaluateJavaScript(KeyCommands.script(id: id))
     }
 }
 

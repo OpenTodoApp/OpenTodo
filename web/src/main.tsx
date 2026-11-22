@@ -42,6 +42,8 @@ if (has('background')) { const search = location.search; void import('./lib/shel
 if (shell()) void import('./lib/shellPublish').then((m) => m.startShellPublishers())
 // status-bar-scroll-top: the iPhone app's status bar tap scrolls the frontmost scroller to the top.
 if (has('scroll-top')) void import('./ui/scrollTop').then((m) => m.listenForScrollTop())
+// tablet-shells D1: the iPad's shortcut overlay presses the page's own shortcuts.
+if (has('key-commands')) void import('./lib/shellShortcuts').then((m) => m.listenForShellShortcuts())
 // The Android app's push subscription follows the registration its UnifiedPush app gave (shell-push D6); a background run does it before it ends.
 if (has('push') && !has('background')) void import('./lib/shellPush').then((m) => m.syncShellPush()).catch(() => undefined)
 // The page's icons and description follow the instance branding: the service

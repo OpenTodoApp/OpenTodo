@@ -2,7 +2,7 @@
 
  ## D1. Keyboard
 
- WKWebView already delivers key events to a focused page on iPad. The shell adds `UIKeyCommand`s with `discoverabilityTitle` for the shortcut overlay (new task, search, go to Today, Inbox, Upcoming), each posting the page's own shortcut id over the bridge (`opentodo:shortcut`), so the shortcut registry stays the one source; keys the page handles itself are not duplicated.
+ WKWebView already delivers key events to a focused page on iPad. The shell's web view (`ShellWebView`) adds `UIKeyCommand`s for the shortcut overlay: Cmd+N Add task, Cmd+K Search, Cmd+1 Inbox, Cmd+2 Today, Cmd+3 Upcoming (capability `key-commands`, pinned by the bridge fixture key-commands.json). Each posts the page's shortcut id (`opentodo:shortcut`), and the page presses that shortcut's own keys through the one dispatcher (`lib/shellShortcuts.ts`): the registry stays the one source, a screen's override applies (the calendar's `q`), and it works while a text field has focus. Only those five ids are accepted. Every other key reaches the page as typed.
 
  ## D2. Pointer
 

@@ -5,7 +5,7 @@ On an iPad the shell SHALL pass hardware keyboard shortcuts to the page, SHALL l
 
 #### Scenario: The shortcut overlay
 - **WHEN** a person holds Cmd on an iPad with a hardware keyboard in the app
-- **THEN** the system overlay lists New task, Search, Today, Inbox and Upcoming, and choosing one does what the same key does in the page
+- **THEN** the system overlay lists Add task, Search, Inbox, Today and Upcoming, and choosing one does what the same key does in the page
 
 #### Scenario: Unfolding a foldable
 - **WHEN** a person unfolds an Android foldable with a task open

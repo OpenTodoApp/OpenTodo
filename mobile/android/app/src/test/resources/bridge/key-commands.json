@@ -1,0 +1,37 @@
+{
+  "description": "The iPad shortcut overlay (tablet-shells): a shell that lists the capability registers each command as Cmd plus its input, titled in its own language, and runs its script; the page presses that shortcut's own keys.",
+  "capability": "key-commands",
+  "event": "opentodo:shortcut",
+  "commands": [
+    {
+      "id": "list.quick-add",
+      "input": "n",
+      "title": "Add task",
+      "script": "window.dispatchEvent(new CustomEvent('opentodo:shortcut', { detail: { id: 'list.quick-add' } }))"
+    },
+    {
+      "id": "global.palette",
+      "input": "k",
+      "title": "Search",
+      "script": "window.dispatchEvent(new CustomEvent('opentodo:shortcut', { detail: { id: 'global.palette' } }))"
+    },
+    {
+      "id": "go.inbox",
+      "input": "1",
+      "title": "Inbox",
+      "script": "window.dispatchEvent(new CustomEvent('opentodo:shortcut', { detail: { id: 'go.inbox' } }))"
+    },
+    {
+      "id": "go.today",
+      "input": "2",
+      "title": "Today",
+      "script": "window.dispatchEvent(new CustomEvent('opentodo:shortcut', { detail: { id: 'go.today' } }))"
+    },
+    {
+      "id": "go.upcoming",
+      "input": "3",
+      "title": "Upcoming",
+      "script": "window.dispatchEvent(new CustomEvent('opentodo:shortcut', { detail: { id: 'go.upcoming' } }))"
+    }
+  ]
+}

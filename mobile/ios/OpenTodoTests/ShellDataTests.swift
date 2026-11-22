@@ -329,7 +329,7 @@ final class BridgeTests: XCTestCase {
 
     func testCapabilitiesFollowTheDevice() {
         XCTAssertEqual(Bridge.capabilities(biometric: false, share: true),
-                       ["reminders", "widgets", "share", "links", "obsidian-links", "app-links", "system-bars", "pull-refresh", "first-paint", "completion-sound", "scroll-top", "haptics"])
+                       ["reminders", "widgets", "share", "links", "obsidian-links", "app-links", "system-bars", "pull-refresh", "first-paint", "completion-sound", "scroll-top", "key-commands", "haptics"])
         XCTAssertTrue(Bridge.capabilities(biometric: true, share: true).contains("biometric"))
     }
 
@@ -376,7 +376,7 @@ final class BridgeTests: XCTestCase {
                 let visible = Set(Bridge.capabilities(biometric: biometric, share: true, haptics: haptics))
                 XCTAssertTrue(visible.isSuperset(of: both), "\(visible)")
                 XCTAssertTrue(visible.isDisjoint(with: backgroundOnly), "\(visible)")
-                XCTAssertTrue(visible.isSubset(of: visibleOnly.union(both).union(["biometric", "pull-refresh", FirstPaint.capability, ScrollTop.capability])), "\(visible)")
+                XCTAssertTrue(visible.isSubset(of: visibleOnly.union(both).union(["biometric", "pull-refresh", FirstPaint.capability, ScrollTop.capability, KeyCommands.capability])), "\(visible)")
                 XCTAssertTrue(visible.contains(ScrollTop.capability))
                 XCTAssertTrue(visible.contains("links"))
                 XCTAssertFalse(visible.contains("alarm-settings"))
@@ -446,6 +446,27 @@ final class BridgeTests: XCTestCase {
         for kind in kinds { XCTAssertEqual(Haptics.kind(kind).rawValue, kind) }
         let unknown = try XCTUnwrap(fixture["unknown"] as? String)
         XCTAssertEqual(Haptics.kind(unknown), .tick, unknown)
+    }
+
+    /// tablet-shells D1: the overlay's commands follow the shared bridge fixture, only the
+    /// visible app lists the capability, and the web view registers each one under Cmd.
+    @MainActor
+    func testKeyCommandsFollowTheBridgeFixture() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/key-commands.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        XCTAssertEqual(fixture["capability"] as? String, KeyCommands.capability)
+        let commands = try XCTUnwrap(fixture["commands"] as? [[String: String]])
+        XCTAssertEqual(commands.map { $0["id"] }, KeyCommands.commands.map(\.id))
+        XCTAssertEqual(commands.map { $0["input"] }, KeyCommands.commands.map(\.input))
+        XCTAssertEqual(commands.map { $0["script"] }, KeyCommands.commands.map { KeyCommands.script(id: $0.id) })
+        XCTAssertFalse(Bridge.backgroundCapabilities.contains(KeyCommands.capability))
+
+        let view = ShellWebView(frame: .zero, configuration: WKWebViewConfiguration())
+        let own = (view.keyCommands ?? []).filter { $0.propertyList is String && $0.modifierFlags == .command }
+        XCTAssertEqual(own.compactMap { $0.propertyList as? String }, KeyCommands.commands.map(\.id))
+        XCTAssertEqual(own.compactMap(\.input), KeyCommands.commands.map(\.input))
     }
 
     /// status-bar-scroll-top D1, D2: the capability and the script follow the shared bridge

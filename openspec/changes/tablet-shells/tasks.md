@@ -1,7 +1,7 @@
 ## 1. iPad
 
 - [ ] 1.1 Audit: key events, pointer media queries and Stage Manager sizes in the current app; findings in design.md
-- [ ] 1.2 `UIKeyCommand`s for the main shortcuts posting shortcut ids; XCTest
+- [ ] 1.2 `UIKeyCommand`s for the main shortcuts posting shortcut ids; XCTest (written; ticked once the iOS CI job compiles it)
 - [ ] 1.3 Fine pointer and hover with a trackpad (bridge fallback only if the audit needs it)
 
 ## 2. Android

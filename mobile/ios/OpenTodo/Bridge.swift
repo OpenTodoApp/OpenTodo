@@ -74,6 +74,27 @@ enum ScrollTop {
     static let script = "window.dispatchEvent(new CustomEvent('opentodo:scroll-top'))"
 }
 
+/// The iPad's shortcut overlay (tablet-shells D1, capability `key-commands`): holding Cmd
+/// lists these commands, and choosing one, or pressing its chord, runs `script`, which has
+/// the page press that shortcut's own keys. The ids, chords and English titles are pinned
+/// by the shared bridge fixture key-commands.json.
+enum KeyCommands {
+    static let capability = "key-commands"
+    struct Command { let id: String; let input: String; let title: String }
+    static var commands: [Command] {
+        [
+            Command(id: "list.quick-add", input: "n", title: String(localized: "Add task")),
+            Command(id: "global.palette", input: "k", title: String(localized: "Search")),
+            Command(id: "go.inbox", input: "1", title: String(localized: "Inbox")),
+            Command(id: "go.today", input: "2", title: String(localized: "Today")),
+            Command(id: "go.upcoming", input: "3", title: String(localized: "Upcoming")),
+        ]
+    }
+    static func script(id: String) -> String {
+        "window.dispatchEvent(new CustomEvent('opentodo:shortcut', { detail: { id: '\(id)' } }))"
+    }
+}
+
 /// Who answers a pull down (pull-to-sync D4, capability `pull-refresh`): the shell's own
 /// refresh control, which reloads the page, until the page showing says it handles the
 /// pull itself (the web app's pull to sync). A newer web app says so on every load; an
@@ -156,7 +177,7 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
     /// listed without a screen: the run that can be told it is done.
     static func capabilities(biometric: Bool, share: Bool, haptics: Bool = true) -> [String] {
         var caps = ["reminders", "widgets"]
-        if share { caps += ["share", "links", "obsidian-links", AppLink.capability, "system-bars", PullRefresh.capability, FirstPaint.capability, "completion-sound", ScrollTop.capability] }
+        if share { caps += ["share", "links", "obsidian-links", AppLink.capability, "system-bars", PullRefresh.capability, FirstPaint.capability, "completion-sound", ScrollTop.capability, KeyCommands.capability] }
         if share && haptics { caps.append("haptics") }
         if !share { caps.append("background") }
         if biometric { caps.append("biometric") }

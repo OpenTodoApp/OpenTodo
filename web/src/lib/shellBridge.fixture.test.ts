@@ -13,6 +13,7 @@ import { shellGeofences } from './geofences'
 import { announcePainted, backgroundDone, forgetShellData, openAlarmSettings, setSystemBars, shellHaptic, shellVisible, takeOverPull, type OpenTodoShell, type ShellCapability, type ShellGeofencePayload, type ShellHaptic } from './shell'
 import { fileChunks } from './saveFile'
 import { shellUrlAction } from './shellActions'
+import { KEY_COMMANDS, SHORTCUT_EVENT, shortcutScript } from './shellShortcuts'
 import { parsePushState, parsePushSubscription, pushState, pushSubscribe, pushUnsubscribe } from './shellPush'
 import { shellCompleted, shellReminders, shellWidget } from './shellPublish'
 import { openOrigin } from './originOpen'
@@ -416,13 +417,23 @@ function scrollTop() {
   }
 }
 
+/** tablet-shells D1: the iPad overlay's commands, their chords and titles, and the script each one runs. */
+function keyCommands() {
+  return {
+    description: 'The iPad shortcut overlay (tablet-shells): a shell that lists the capability registers each command as Cmd plus its input, titled in its own language, and runs its script; the page presses that shortcut\'s own keys.',
+    capability: 'key-commands' satisfies ShellCapability,
+    event: SHORTCUT_EVENT,
+    commands: KEY_COMMANDS.map((c) => ({ ...c, script: shortcutScript(c.id) })),
+  }
+}
+
 afterEach(() => {
   delete window.opentodoShell
 })
 
 describe('Android bridge fixtures', () => {
   it('are current (mobile/android/app/src/test/resources/bridge)', () => {
-    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'app-links.json': text(appLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()), 'pull.json': text(pull()), 'painted.json': text(painted()), 'push-bridge.json': text(pushBridge()), 'scroll-top.json': text(scrollTop()) }
+    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'app-links.json': text(appLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()), 'pull.json': text(pull()), 'painted.json': text(painted()), 'push-bridge.json': text(pushBridge()), 'scroll-top.json': text(scrollTop()), 'key-commands.json': text(keyCommands()) }
     for (const [name, f] of Object.entries(fixtures())) want[name] = text(f)
     if (update) {
       mkdirSync(dir, { recursive: true })
