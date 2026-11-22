@@ -4,7 +4,7 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
-import { setDeadlineDates } from '../lib/deadlineDates'
+import { deadlineDatesOn, setDeadlineDates } from '../lib/deadlineDates'
 import { applyOps, resetDeviceId } from '../lib/ops'
 import type { Task } from '../lib/types'
 import { click, render, spokenText, visibleText, waitFor } from '../ui/test-utils'
@@ -41,17 +41,39 @@ describe('deadlines as dates', () => {
     const date = on.container.querySelector('[data-deadline]')!
     expect(visibleText(date)).toMatch(/Oct\D*17|17\D*Oct/)
     expect(date.className).toBe(tone)
-    expect(spokenText(date)).toMatch(/^Deadline .*17/)
-    expect(spokenText(date)).not.toContain('3d')
+    // Read with the countdown, so a passed or near deadline is said in words, not only by colour.
+    expect(spokenText(date)).toMatch(/^Deadline .*17.*, 3d$/)
     await on.unmount()
   })
 
-  it('a past deadline keeps the danger tone as a date', async () => {
+  it('a past deadline keeps the danger tone as a date and is read as over', async () => {
     await setDeadlineDates(true)
     const r = await row({ deadline: '2026-10-12' })
     await waitFor(() => /12/.test(visibleText(r.container.querySelector('[data-deadline]')!)), 'the date shown')
-    expect(r.container.querySelector('[data-deadline]')!.className).toContain('text-danger')
+    const el = r.container.querySelector('[data-deadline]')!
+    expect(el.className).toContain('text-danger')
+    expect(spokenText(el)).toMatch(/2d over$/)
     await r.unmount()
+  })
+
+  it('in a list with a time column the countdown sits in the column; a date stays with the facts', async () => {
+    const timed = (over: Partial<Task>) => render(<ul><TaskRow task={task(over)} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} timeColumn /></ul>)
+    const off = await timed({ deadline: '2027-01-15' })
+    expect(off.container.querySelector('[data-row-time] [data-deadline]')).toBeTruthy()
+    await off.unmount()
+    await setDeadlineDates(true)
+    const on = await timed({ deadline: '2027-01-15' })
+    await waitFor(() => !on.container.querySelector('[data-row-time] [data-deadline]'), 'out of the column')
+    const el = on.container.querySelector('[data-deadline]')!
+    expect(visibleText(el)).toMatch(/2027/)
+    await on.unmount()
+  })
+
+  it('an empty or unknown stored value reads as off', () => {
+    expect(deadlineDatesOn({ deadline_dates: '' })).toBe(false)
+    expect(deadlineDatesOn({ deadline_dates: 'yes' })).toBe(false)
+    expect(deadlineDatesOn(undefined)).toBe(false)
+    expect(deadlineDatesOn({ deadline_dates: 'on' })).toBe(true)
   })
 
   it('the switch in Appearance writes one synced op, and a change from another device applies', async () => {

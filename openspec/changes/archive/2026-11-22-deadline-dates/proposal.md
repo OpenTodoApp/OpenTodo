@@ -6,7 +6,7 @@
 
 ## What Changes
 
-- A setting in **Settings › Appearance › Theme and density**, **Show deadlines as dates**, off by default. With it on, every task row shows the deadline's date in the user's date format, in the countdown's place, next to the same hourglass and in the same tone: neutral, amber in the last week, red on the day and after. The task panel already shows the full date and is unchanged.
+- A setting in **Settings › Appearance › Theme and density**, **Show deadlines as dates**, off by default. With it on, every task row shows the deadline's date in the user's date format, in the countdown's place, next to the same hourglass and in the same tone: neutral, amber in the last week, red on the day and after. In a list's time column, too narrow for a date, it moves to the row's other facts. Screen readers still hear the countdown. The task panel already shows the full date and is unchanged.
 - It is a per-account choice, synced like **Show full task titles** and changed offline as an ordinary op.
 - The settings search finds it.
 

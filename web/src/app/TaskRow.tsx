@@ -782,14 +782,15 @@ function RowTrailing({ score, origin, revealed, forceActions }: { score?: ReactN
 
 /**
  * A row's deadline: the countdown and its tone (deadlines), or with deadlines as dates
- * (deadline-dates D1) the date in the countdown's place and tone; and the accessible name.
+ * (deadline-dates D1) the date in the countdown's place and tone; and the accessible name, with the countdown.
  */
 function rowDeadline(task: Task, off: boolean, asDate: boolean, resolved: ResolvedDateTime): { deadline: { label: string; tone: 'overdue' | 'soon' | 'later' } | null; deadlineLabel: string } {
   const countdown = off ? null : describeDeadline(task.deadline, undefined, task.due ? localDueOf(task.due).date : null)
   if (!countdown) return { deadline: null, deadlineLabel: '' }
   const date = formatDate(task.deadline!, 'long', resolved)
-  if (asDate) return { deadline: { ...countdown, label: formatDate(task.deadline!, 'compact', resolved) }, deadlineLabel: t('Deadline {date}', { date }) }
-  return { deadline: countdown, deadlineLabel: t('Deadline {date}, {label}', { date, label: countdown.label }) }
+  // The accessible name keeps the countdown either way, so a passed deadline is said in words, not only by colour.
+  const deadlineLabel = t('Deadline {date}, {label}', { date, label: countdown.label })
+  return { deadline: asDate ? { ...countdown, label: formatDate(task.deadline!, 'compact', resolved) } : countdown, deadlineLabel }
 }
 
 function FullRow({ task, contextual = false, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, groupSeparator, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, selectOnClick, onOpenPage, onEditTitle, onToggleCollapse, shape = 'row', timeColumn = false, slotsOff, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dropNote, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, logbook = false, expanded = false, onExpand, layout, edge, notes = false, score }: TaskRowProps) {
@@ -821,7 +822,8 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
   const slotInColumn = column && !due?.time && slotted ? { start: formatTime(slotted.start), name: slotName(slotted) } : null
   const part = done ? null : dayPartOf(task)
   const partInColumn = column && !due?.time && !slotInColumn ? shownPart(part, implied) : null
-  const deadlineInColumn = column && !due?.time && !slotInColumn && !partInColumn && !!deadline
+  // A date does not fit the time column (deadline-dates D1): it stays with the row's facts.
+  const deadlineInColumn = column && !due?.time && !slotInColumn && !partInColumn && !!deadline && !deadlineDates
   const comments = useCommentCount(task.id)
   const attachments = useAttachmentCount(task.id)
   // End-to-end encryption (OpenSpec e2ee): content the server still holds in
