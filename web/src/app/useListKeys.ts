@@ -17,6 +17,7 @@ import { panelTaskId, sidePanelDocks } from './panel'
 import { closeSidePanelFrom, useSidePanel } from './sidePanel'
 import { openTaskPage } from './taskTrail'
 import { dayPartFields } from '../lib/dayParts'
+import { priorityUndoable } from '../lib/undoActions'
 
 export interface KeyRow {
   key: string
@@ -140,7 +141,7 @@ export function useListKeys(opts: ListKeys): void {
       const priority = Number(chord.key) as Priority
       if (b?.ticked.length) { act(runBulk(b.ticked, { kind: 'priority', priority })); return }
       if (!row) return false
-      act(updateTask(row.id, { priority }))
+      act(priorityUndoable(row.id, priority))
     },
     'list.labels': () => {
       if (b?.ticked.length) { b.openActions('labels'); return }

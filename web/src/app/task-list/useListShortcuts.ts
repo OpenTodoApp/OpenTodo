@@ -25,6 +25,7 @@ import { deleteWithUndo, parkWithUndo } from '../undoable'
 import type { ListRoute } from './useListModel'
 import { dayPartFields } from '../../lib/dayParts'
 import { t } from '../../lib/i18n'
+import { priorityUndoable } from '../../lib/undoActions'
 import { announceOnBoard } from '../BoardView'
 import type { AddingBelow } from './belowLine'
 
@@ -229,7 +230,7 @@ export function useListShortcuts(c: ShortcutContext) {
       const priority = Number(chord.key) as Priority
       if (ticked.length) { act(runBulk(ticked, { kind: 'priority', priority })); return }
       if (!selectedId || (row && !writable)) return false
-      act(updateTask(selectedId, { priority }))
+      act(priorityUndoable(selectedId, priority))
     },
     'list.labels': () => {
       if (ticked.length) { ui.openActions('labels'); return }

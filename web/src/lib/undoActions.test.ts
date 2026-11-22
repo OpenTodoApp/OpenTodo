@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
 import { createTask, resetDeviceId, updateTask } from './ops'
 import type { OnDropRule } from './types'
-import { undoBatch } from './undo'
-import { dropOnPanel, dropUndoable } from './undoActions'
+import { topUndo, undoBatch } from './undo'
+import { dropOnPanel, dropUndoable, priorityUndoable } from './undoActions'
 
 let n = 0
 beforeEach(() => {
@@ -107,5 +107,31 @@ describe('archiveProjectsUndoable', () => {
     await undoBatch(r.entry!.id)
     for (const id of [home, garden, work]) expect((await db.projects.get(id))?.archived).toBeFalsy()
     expect((await db.projects.get(old))?.archived).toBe(true)
+  })
+})
+
+// OpenSpec change undo-priority: one task's priority is one step of history.
+describe('priorityUndoable', () => {
+  it('records one step named like the bulk action; undo restores the old priority', async () => {
+    const id = await createTask({ title: 'Pay rent', priority: 3 })
+    await priorityUndoable(id, 1)
+    expect((await db.tasks.get(id))!.priority).toBe(1)
+    const step = topUndo(await db.assistantUndo.toArray())
+    expect(step).toMatchObject({ label: 'Priority 1 set on 1 task', count: 1 })
+    await undoBatch(step!.id)
+    expect((await db.tasks.get(id))!.priority).toBe(3)
+  })
+
+  it('a repeating task is written as before (updateTask), without a step', async () => {
+    const id = await createTask({ title: 'Water plants', due: { date: '2030-01-07' }, recurrence: 'every week' })
+    await priorityUndoable(id, 1)
+    expect((await db.tasks.get(id))!.priority).toBe(1)
+    expect(await db.assistantUndo.count()).toBe(0)
+  })
+
+  it('the same priority again records nothing', async () => {
+    const id = await createTask({ title: 'Pay rent', priority: 2 })
+    await priorityUndoable(id, 2)
+    expect(await db.assistantUndo.count()).toBe(0)
   })
 })
