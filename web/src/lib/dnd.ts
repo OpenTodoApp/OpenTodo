@@ -1,5 +1,6 @@
 import { t } from './i18n'
 import { playHaptic } from './haptics'
+import { resettable } from './moduleState'
 // Pointer-based drag and drop (OpenSpec `board-view`, design D6): native pointer
 // events, no library, works with mouse, pen and touch. A mouse or pen drag starts
 // after a few pixels of movement; touch arms after a short long-press so a plain
@@ -89,6 +90,28 @@ export interface Hold {
 
 const PRESS_ATTR = 'data-touch-press'
 
+// How many holds and lifted drags want the page still under the finger (drag-edge-scroll D1).
+let holding = 0
+let blocker = false
+// The standing listener stays; only the count of holds resets.
+resettable('dnd', () => { holding = 0 })
+/**
+ * One touchmove listener for the page's lifetime, not one per press: iOS WebKit decides
+ * whether a touch may scroll from the listeners present when it starts, so a listener
+ * added by the press itself cannot stop the page moving with the finger.
+ */
+function holdPage(): () => void {
+  if (!blocker && typeof window !== 'undefined') {
+    blocker = true
+    window.addEventListener('touchmove', (ev) => { if (holding > 0 && ev.cancelable) ev.preventDefault() }, { passive: false })
+  }
+  holding++
+  let done = false
+  return () => { if (!done) { done = true; holding-- } }
+}
+// A touch device gets the listener when this module loads, before its first press.
+if (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0) holdPage()()
+
 /**
  * The touch hold both row gestures share (task-row-context-menu, design D1): after
  * TOUCH_HOLD_MS still it arms (`onArmed`, once), and `stop()` ends it (`onEnd`, once).
@@ -102,13 +125,13 @@ export function trackHold(e: HoldPress, opts: HoldOptions): Hold {
   let armed = false
   let done = false
   let timer: ReturnType<typeof setTimeout> | undefined
-  const blockScroll = (ev: TouchEvent) => { if (armed) ev.preventDefault() }
+  let release = () => {}
   const stop = () => {
     if (done) return
     done = true
     clearTimeout(timer)
     opts.press?.removeAttribute(PRESS_ATTR)
-    window.removeEventListener('touchmove', blockScroll)
+    release()
     if (armed) {
       armed = false
       opts.onEnd()
@@ -118,9 +141,9 @@ export function trackHold(e: HoldPress, opts: HoldOptions): Hold {
   timer = setTimeout(() => {
     if (done) return
     armed = true
+    release = holdPage()
     opts.onArmed()
   }, TOUCH_HOLD_MS)
-  window.addEventListener('touchmove', blockScroll, { passive: false })
   return { armed: () => armed, stop }
 }
 
@@ -179,6 +202,22 @@ export function swallowNextClick(): void {
   setTimeout(() => window.removeEventListener('click', stop, { capture: true }), 0)
 }
 
+/** How close to a scroller's top or bottom edge a lifted drag scrolls it, and its fastest step per frame (drag-edge-scroll D2). */
+const EDGE_ZONE = 48
+export const EDGE_STEP = 16
+
+/** The scroll step for a pointer at `y` in a scroller showing `top` to `bottom`: negative near the top, positive near the bottom, faster nearer the edge. */
+export function edgeStep(y: number, top: number, bottom: number): number {
+  const zone = Math.min(EDGE_ZONE, (bottom - top) / 4)
+  if (zone <= 0) return 0
+  if (y < top + zone) return -Math.ceil(EDGE_STEP * Math.min(1, (top + zone - y) / zone))
+  if (y > bottom - zone) return Math.ceil(EDGE_STEP * Math.min(1, (y - (bottom - zone)) / zone))
+  return 0
+}
+
+/** The page's own scrollers a drag can scroll: the main content and the sidebar's list. */
+const SCROLLERS = '[data-main-scroller], [data-sidebar-scroll]'
+
 /**
  * Start tracking a press from an element's onPointerDown. Only the primary button
  * of a mouse starts a drag; presses on buttons inside the element (the completion
@@ -194,6 +233,10 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
   let heldSelected = false
   let ghost: HTMLElement | null = null
   let target: string | null = null
+  let releasePage = () => {}
+  let lastX = startX
+  let lastY = startY
+  let frame = 0
   // The shared hold (task-row-context-menu): it arms the drag instead of lifting it.
   const hold = trackHold(e, {
     onArmed: () => {
@@ -216,6 +259,7 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
     hold.stop()
     // haptic-kinds D2: the lift ticks on touch, once (a hold that selected ticked already).
     if (e.pointerType !== 'mouse' && !heldSelected) playHaptic('tick')
+    if (e.pointerType === 'touch') releasePage = holdPage()
     ghost = makeGhost(opts.label)
     document.body.style.userSelect = 'none'
     opts.onStart?.()
@@ -229,13 +273,37 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
     }
     opts.onMove?.(target, x, y)
   }
+  // Near a scroller's edge the list keeps scrolling under a still pointer, so a row
+  // reaches places off screen; each step re-reads the target under the pointer.
+  const scrollEdge = () => {
+    frame = 0
+    if (!lifted) return
+    const el = document.elementFromPoint?.(lastX, lastY)?.closest<HTMLElement>(SCROLLERS)
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    const step = edgeStep(lastY, Math.max(r.top, 0), Math.min(r.bottom, window.innerHeight))
+    if (!step) return
+    const before = el.scrollTop
+    el.scrollTop = before + step
+    if (el.scrollTop === before) return
+    place(lastX, lastY)
+    frame = requestAnimationFrame(scrollEdge)
+  }
+  const follow = (x: number, y: number) => {
+    lastX = x
+    lastY = y
+    place(x, y)
+    if (!frame) frame = requestAnimationFrame(scrollEdge)
+  }
   const cleanup = () => {
     hold.stop()
     window.removeEventListener('pointermove', move)
     window.removeEventListener('pointerup', up)
     window.removeEventListener('pointercancel', cancel)
     window.removeEventListener('keydown', key, true)
-    window.removeEventListener('touchmove', blockScroll)
+    releasePage()
+    cancelAnimationFrame(frame)
+    frame = 0
     ghost?.remove()
     // Only a lifted drag marks drop targets; a click (the completion circle) skips
     // looking for marks in the whole page, a 2,000-row list's (list-rendering-at-scale).
@@ -252,7 +320,7 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
           if (!far) return
           lift()
           ev.preventDefault()
-          place(ev.clientX, ev.clientY)
+          follow(ev.clientX, ev.clientY)
           return
         }
         // Moving before the hold elapses is a scroll (or a swipe), not a drag; after a hold that selected, it carries the selection.
@@ -260,14 +328,14 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
         if (!far) return
         lift()
         ev.preventDefault()
-        place(ev.clientX, ev.clientY)
+        follow(ev.clientX, ev.clientY)
         return
       }
       if (!far) return
       lift()
     }
     ev.preventDefault()
-    place(ev.clientX, ev.clientY)
+    follow(ev.clientX, ev.clientY)
   }
   const up = (ev: PointerEvent) => {
     if (ev.pointerId !== e.pointerId) return
@@ -303,16 +371,9 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
     ev.stopPropagation()
     cancel()
   }
-  // While a touch drag is lifted the page must not scroll under the finger; while it
-  // is merely armed, trackHold blocks the scroll for both holders of a hold.
-  const blockScroll = (ev: TouchEvent) => {
-    if (lifted) ev.preventDefault()
-  }
-
   window.addEventListener('pointermove', move)
   window.addEventListener('pointerup', up)
   window.addEventListener('pointercancel', cancel)
   window.addEventListener('keydown', key, true)
-  window.addEventListener('touchmove', blockScroll, { passive: false })
   return cancel
 }

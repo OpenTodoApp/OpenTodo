@@ -6,7 +6,7 @@
 // the touch rework); a move before the hold is a swipe or a scroll, never a drag —
 // except on the grip, which never scrolls and drags on movement alone.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { beginDrag, TOUCH_HOLD_MS } from './dnd'
+import { beginDrag, EDGE_STEP, edgeStep, TOUCH_HOLD_MS } from './dnd'
 
 beforeEach(() => { vi.useFakeTimers() })
 afterEach(() => { vi.useRealTimers() })
@@ -206,5 +206,102 @@ describe('the click after a drag (row-and-cursor D1)', () => {
     expect(row.hasAttribute('data-drop-active')).toBe(false)
     at.mockRestore()
     row.remove()
+  })
+})
+
+// drag-edge-scroll D1, D2 (GitHub issue 1760).
+describe('the page holds still under a held or dragged row (drag-edge-scroll D1)', () => {
+  const touchmove = () => {
+    const ev = new Event('touchmove', { cancelable: true, bubbles: true })
+    window.dispatchEvent(ev)
+    return ev.defaultPrevented
+  }
+
+  it('a press adds no touchmove listener of its own: the standing one, there before the touch, blocks the scroll', () => {
+    const add = vi.spyOn(window, 'addEventListener')
+    const cancel = beginDrag(press, { label: 'Task', onDrop: vi.fn() })
+    expect(add.mock.calls.filter(([type]) => type === 'touchmove')).toEqual([])
+    add.mockRestore()
+    // Before the hold the finger scrolls; once armed, and once lifted, it does not.
+    expect(touchmove()).toBe(false)
+    vi.advanceTimersByTime(TOUCH_HOLD_MS + 10)
+    expect(touchmove()).toBe(true)
+    move(80)
+    expect(touchmove()).toBe(true)
+    up(80)
+    expect(touchmove()).toBe(false)
+    cancel()
+  })
+
+  it('a swipe before the hold, a mouse drag and a cancelled drag leave scrolling alone', () => {
+    beginDrag(press, { label: 'Task', onDrop: vi.fn() })
+    move(80)
+    vi.advanceTimersByTime(TOUCH_HOLD_MS + 10)
+    expect(touchmove()).toBe(false)
+    up(80)
+    beginDrag({ ...press, pointerType: 'mouse' }, { label: 'Task', onDrop: vi.fn() })
+    move(80)
+    expect(touchmove()).toBe(false)
+    up(80)
+    const cancel = beginDrag(press, { label: 'Task', onDrop: vi.fn() })
+    vi.advanceTimersByTime(TOUCH_HOLD_MS + 10)
+    move(80)
+    cancel()
+    expect(touchmove()).toBe(false)
+  })
+})
+
+describe('a drag near a scroller\'s edge scrolls it (drag-edge-scroll D2)', () => {
+  it('the step grows towards the edge and is nothing in the middle', () => {
+    expect(edgeStep(200, 0, 400)).toBe(0)
+    expect(edgeStep(399, 0, 400)).toBe(EDGE_STEP)
+    expect(edgeStep(1, 0, 400)).toBe(-EDGE_STEP)
+    expect(edgeStep(376, 0, 400)).toBeGreaterThan(0)
+    expect(edgeStep(376, 0, 400)).toBeLessThan(EDGE_STEP)
+    expect(edgeStep(120, 100, 500)).toBeLessThan(0)
+    expect(edgeStep(10, 0, 0)).toBe(0)
+  })
+
+  it('a pointer resting at the bottom of the list keeps it scrolling, re-reading the target; it stops at the end and on release', () => {
+    const scroller = document.createElement('div')
+    scroller.setAttribute('data-main-scroller', '')
+    const row = document.createElement('div')
+    row.setAttribute('data-drop-target', 'task:a')
+    scroller.appendChild(row)
+    document.body.appendChild(scroller)
+    let top = 0
+    Object.defineProperty(scroller, 'scrollTop', { get: () => top, set: (v: number) => { top = Math.max(0, Math.min(100, v)) }, configurable: true })
+    scroller.getBoundingClientRect = () => ({ top: 0, bottom: 400, left: 0, right: 300, width: 300, height: 400, x: 0, y: 0, toJSON() {} })
+    const at = vi.fn(() => row)
+    const doc = document as unknown as { elementFromPoint: unknown }
+    const before = doc.elementFromPoint
+    doc.elementFromPoint = at
+    vi.stubGlobal('innerHeight', 800)
+    try {
+      const onMove = vi.fn()
+      beginDrag({ ...press, pointerType: 'mouse' }, { label: 'Task', onDrop: vi.fn(), onMove })
+      move(50, 395)
+      const moves = onMove.mock.calls.length
+      vi.advanceTimersByTime(50)
+      expect(top).toBeGreaterThan(0)
+      expect(onMove.mock.calls.length).toBeGreaterThan(moves)
+      vi.advanceTimersByTime(1000)
+      expect(top).toBe(100)
+      const settled = onMove.mock.calls.length
+      vi.advanceTimersByTime(100)
+      expect(onMove.mock.calls.length).toBe(settled)
+      move(50, 200)
+      vi.advanceTimersByTime(100)
+      expect(top).toBe(100)
+      move(50, 2)
+      up(50, 2)
+      const after = top
+      vi.advanceTimersByTime(100)
+      expect(top).toBe(after)
+    } finally {
+      doc.elementFromPoint = before
+      vi.unstubAllGlobals()
+      scroller.remove()
+    }
   })
 })
