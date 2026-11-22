@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"testing/fstest"
 
@@ -354,5 +355,55 @@ func TestCompressedAssetDecodeCap(t *testing.T) {
 	}
 	if rec := get("/assets/ok-b2.js"); rec.Code != http.StatusOK || !bytes.Equal(rec.Body.Bytes(), small) {
 		t.Errorf("a file within its signed size: %d", rec.Code)
+	}
+}
+
+// A compressed-only file is decoded once, however many clients without gzip or Range
+// requests ask for it (security read of #1753), and decoded as a browser decodes it:
+// a form of two gzip members is refused, not served as their join.
+func TestCompressedAssetDecodedOnce(t *testing.T) {
+	member := func(b []byte) []byte {
+		var buf bytes.Buffer
+		zw := gzip.NewWriter(&buf)
+		zw.Write(b)
+		zw.Close()
+		return buf.Bytes()
+	}
+	js := bytes.Repeat([]byte("const a = 1;\n"), 200)
+	sub := fstest.MapFS{
+		"index.html":          {Data: []byte("<html><head></head></html>")},
+		"assets/big-a1.js.gz": {Data: member(js)},
+		"assets/two-b2.js.gz": {Data: append(member(js[:100]), member(js[100:])...)},
+	}
+	h := handlerFor(sub, Options{})
+	get := func(target, rng string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, target, nil)
+		if rng != "" {
+			req.Header.Set("Range", rng)
+		}
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		return rec
+	}
+	before := decodeCount.Load()
+	var wg sync.WaitGroup
+	for i := 0; i < 50; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if rec := get("/assets/big-a1.js", "bytes=0-0"); rec.Code != http.StatusPartialContent || rec.Body.String() != "c" {
+				t.Errorf("Range: %d %q", rec.Code, rec.Body.String())
+			}
+		}()
+	}
+	wg.Wait()
+	if rec := get("/assets/big-a1.js", ""); rec.Code != http.StatusOK || !bytes.Equal(rec.Body.Bytes(), js) {
+		t.Errorf("whole file: %d", rec.Code)
+	}
+	if n := decodeCount.Load() - before; n != 1 {
+		t.Errorf("51 requests decoded the file %d times, want once", n)
+	}
+	if rec := get("/assets/two-b2.js", ""); rec.Code != http.StatusInternalServerError {
+		t.Errorf("two gzip members: %d, want 500", rec.Code)
 	}
 }

@@ -3,15 +3,15 @@ package web
 
 import (
 	"bytes"
-	"compress/gzip"
 	"embed"
-	"io"
 	"io/fs"
 	"mime"
 	"net/http"
 	"path"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/websign"
@@ -52,6 +52,7 @@ func handlerFor(sub fs.FS, o Options) http.Handler {
 	fileServer := http.FileServer(http.FS(sub))
 	built, _ := fs.ReadFile(sub, "index.html")
 	sizes := listedSizes(sub)
+	var decoded sync.Map // path → *decodedForm, for clients without gzip
 	index := built
 	if o.NoIndex && index != nil {
 		index = InjectNoIndex(index)
@@ -117,7 +118,7 @@ func handlerFor(sub fs.FS, o Options) http.Handler {
 				if strings.HasSuffix(p, ".md") {
 					w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 				}
-				serveGzipOnly(w, r, p, gz, decodeLimit(sizes, p))
+				serveGzipOnly(w, r, p, gz, decodedOnce(&decoded, p, gz, decodeLimit(sizes, p)))
 				return
 			}
 		}
@@ -200,23 +201,46 @@ func decodeLimit(sizes map[string]int64, p string) int64 {
 	return maxDecoded
 }
 
+// decodedForm is a compressed-only file decoded once, for every client without
+// gzip and every Range request after the first (security read of #1753: decoding
+// per request let parallel requests for a big chunk exhaust a small server). At
+// most the embedded app, about 14 MB, filled only by the clients that need it.
+type decodedForm struct {
+	once sync.Once
+	raw  []byte
+	err  error
+}
+
+// decodeCount counts the decodes, so a test can see a second request reuse one.
+var decodeCount atomic.Int64
+
+// decodedOnce returns a function giving p's decoded bytes, decoded on first use.
+func decodedOnce(cache *sync.Map, p string, gz []byte, limit int64) func() ([]byte, error) {
+	return func() ([]byte, error) {
+		e, _ := cache.LoadOrStore(p, &decodedForm{})
+		f := e.(*decodedForm)
+		f.once.Do(func() {
+			decodeCount.Add(1)
+			var buf bytes.Buffer
+			_, f.err = websign.DecodeGzip(&buf, bytes.NewReader(gz), limit)
+			f.raw = buf.Bytes()
+		})
+		return f.raw, f.err
+	}
+}
+
 // serveGzipOnly answers for p, which the build keeps only as gz: the compressed
-// form when the request wants it, else the bytes it decodes to, through
-// http.ServeContent, which answers a Range and a HEAD (D1, D2). A form that
-// decodes to more than limit bytes (its signed size) is refused, not decoded out.
-func serveGzipOnly(w http.ResponseWriter, r *http.Request, p string, gz []byte, limit int64) {
+// form when the request wants it, else the bytes it decodes to (decoded once, as a
+// browser decodes it, never past its signed size), through http.ServeContent, which
+// answers a Range and a HEAD (D1, D2). A form that does not decode is a 500.
+func serveGzipOnly(w http.ResponseWriter, r *http.Request, p string, gz []byte, decode func() ([]byte, error)) {
 	w.Header().Add("Vary", "Accept-Encoding")
 	if wantsGzip(r) {
 		writeGzip(w, r, p, gz)
 		return
 	}
-	zr, err := gzip.NewReader(bytes.NewReader(gz))
+	raw, err := decode()
 	if err != nil {
-		http.Error(w, "broken build file", http.StatusInternalServerError)
-		return
-	}
-	raw, err := io.ReadAll(io.LimitReader(zr, limit+1))
-	if err != nil || int64(len(raw)) > limit {
 		http.Error(w, "broken build file", http.StatusInternalServerError)
 		return
 	}

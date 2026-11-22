@@ -9,6 +9,7 @@
 - [x] 2.1 `internal/web` sends the `.gz` form with `Content-Encoding: gzip` and `Vary: Accept-Encoding` when gzip is accepted and no Range is asked, and the decoded file otherwise; a request for the `.gz` name is a 404; verified by `go test ./internal/web` (gzip, no gzip, `q=0`, `*`, Range, HEAD)
 - [x] 2.2 `websign.CheckFS` checks a `.gz` form as the file it decodes to; verified by `go test ./internal/websign` and `go run ./cmd/websign verify internal/web/dist`
 - [x] 2.3 Both decoders stop at the signed size (a decompression bomb is a 500 to a client without gzip, a changed file to websign); verified by `go test ./internal/web ./internal/websign` (`TestCompressedAssetDecodeCap`, `TestCheckFSDecodeCap`)
+- [x] 2.4 The security read's findings: one decode per path (`TestCompressedAssetDecodedOnce`, with `-race`), one gzip member and no trailing bytes in both decoders, compressed forms only under `assets/` (`TestCheckFSCompressedFormIsOneMember`); verified by `go test -race ./internal/web` and `go test ./internal/websign`
 
 ## 3. Check
 

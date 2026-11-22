@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"reflect"
 	"testing"
 	"testing/fstest"
@@ -67,7 +68,51 @@ func TestCheckFSDecodeCap(t *testing.T) {
 	if want := []Problem{{"assets/a.js.gz", "changed-file"}}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("problems %v, want %v", got, want)
 	}
-	if _, n, err := hashGzip(fstest.MapFS{"b.gz": {Data: buf.Bytes()}}, "b.gz", 200); err != nil || n != 201 {
-		t.Fatalf("read %d bytes (%v), want the cap and one more: 201", n, err)
+	if _, n, err := hashGzip(fstest.MapFS{"b.gz": {Data: buf.Bytes()}}, "b.gz", 200); !errors.Is(err, ErrGzipTooLarge) || n != 201 {
+		t.Fatalf("read %d bytes (%v), want ErrGzipTooLarge after the cap and one more: 201", n, err)
+	}
+}
+
+// A compressed form is decoded as a browser decodes it: exactly one gzip member and
+// nothing after it, and only under assets/, where the server sends one from (the
+// security read of #1753).
+func TestCheckFSCompressedFormIsOneMember(t *testing.T) {
+	js := bytes.Repeat([]byte("const a = 1;\n"), 100)
+	member := func(b []byte) []byte {
+		var buf bytes.Buffer
+		zw := gzip.NewWriter(&buf)
+		zw.Write(b)
+		zw.Close()
+		return buf.Bytes()
+	}
+	sum := sha256.Sum256(js)
+	m := &Manifest{Files: map[string]File{
+		"assets/a.js": {SHA256: hex.EncodeToString(sum[:]), Size: int64(len(js))},
+		"sw.js":       {SHA256: hex.EncodeToString(sum[:]), Size: int64(len(js))},
+	}}
+	half := len(js) / 2
+	for name, tc := range map[string]struct {
+		fsys fstest.MapFS
+		want []Problem
+	}{
+		// Go would decode both members to the listed bytes; a browser may stop after the first.
+		"two members": {fstest.MapFS{"assets/a.js.gz": {Data: append(member(js[:half]), member(js[half:])...)}, "sw.js": {Data: js}},
+			[]Problem{{"assets/a.js.gz", "changed-file"}}},
+		"bytes after the member": {fstest.MapFS{"assets/a.js.gz": {Data: append(member(js), "trailer"...)}, "sw.js": {Data: js}},
+			[]Problem{{"assets/a.js.gz", "changed-file"}}},
+		"a compressed form outside assets/": {fstest.MapFS{"assets/a.js.gz": {Data: member(js)}, "sw.js.gz": {Data: member(js)}},
+			[]Problem{{"sw.js", "missing-file"}, {"sw.js.gz", "unlisted-file"}}},
+		"one member, nothing after": {fstest.MapFS{"assets/a.js.gz": {Data: member(js)}, "sw.js": {Data: js}}, nil},
+	} {
+		got, err := CheckFS(tc.fsys, m)
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if len(got) == 0 {
+			got = nil
+		}
+		if !reflect.DeepEqual(got, tc.want) {
+			t.Errorf("%s: problems %v, want %v", name, got, tc.want)
+		}
 	}
 }

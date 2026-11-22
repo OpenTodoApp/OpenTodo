@@ -1,9 +1,11 @@
 package websign
 
 import (
+	"bufio"
 	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -55,21 +57,58 @@ func HashFile(fsys fs.FS, name string) (string, int64, error) {
 // build may leave out. It is checked as the file it decodes to, never listed.
 const GzipSuffix = ".gz"
 
-// hashGzip returns the SHA-256 and size of what a compressed form decodes to,
-// reading at most max+1 bytes of it: a form that decodes to more than its listed
-// size (a decompression bomb among them) is a changed file without being read out.
+// Errors from DecodeGzip for a compressed form that is not exactly one file.
+var (
+	ErrGzipTooLarge = errors.New("websign: the compressed form decodes to more than its size")
+	ErrGzipTrailing = errors.New("websign: the compressed form has bytes after its gzip member")
+)
+
+// CompressedDir is where a build keeps compressed forms (compress-dist.mjs); a
+// compressed form anywhere else is not one, so the server never sends it.
+const CompressedDir = "assets/"
+
+// DecodeGzip writes what a compressed form decodes to into dst, at most max bytes.
+// It reads exactly one gzip member, as a browser does, and refuses bytes after it
+// (ErrGzipTrailing) and a form that decodes to more than max, a decompression
+// bomb among them (ErrGzipTooLarge), without reading past max+1 decoded bytes.
+// The server and CheckFS both decode through it, so they see what a browser sees.
+func DecodeGzip(dst io.Writer, src io.Reader, max int64) (int64, error) {
+	br := bufio.NewReader(src)
+	zr, err := gzip.NewReader(br)
+	if err != nil {
+		return 0, err
+	}
+	zr.Multistream(false)
+	n, err := io.Copy(dst, io.LimitReader(zr, max+1))
+	if err != nil {
+		return n, err
+	}
+	if n > max {
+		return n, ErrGzipTooLarge
+	}
+	if err := zr.Close(); err != nil {
+		return n, err
+	}
+	if _, err := br.ReadByte(); err != io.EOF {
+		return n, ErrGzipTrailing
+	}
+	return n, nil
+}
+
+// hashGzip returns the SHA-256 and size of what a compressed form decodes to
+// (DecodeGzip, capped at max: a changed file is not read out).
 func hashGzip(fsys fs.FS, name string, max int64) (string, int64, error) {
 	f, err := fsys.Open(name)
 	if err != nil {
 		return "", 0, err
 	}
 	defer f.Close()
-	zr, err := gzip.NewReader(f)
+	h := sha256.New()
+	n, err := DecodeGzip(h, f, max)
 	if err != nil {
-		return "", 0, err
+		return "", n, err
 	}
-	defer zr.Close()
-	return hashReader(io.LimitReader(zr, max+1))
+	return hex.EncodeToString(h.Sum(nil)), n, nil
 }
 
 func hashReader(r io.Reader) (string, int64, error) {
@@ -98,6 +137,13 @@ func CheckFS(fsys fs.FS, m *Manifest) ([]Problem, error) {
 			name = strings.TrimSuffix(p, GzipSuffix)
 		}
 		if d.IsDir() || !Listed(name) {
+			return nil
+		}
+		// Only the build's own compressed forms stand for a file: under CompressedDir,
+		// which is all the server sends (security read of #1753). Any other .gz is a
+		// file of its own the list does not name.
+		if compressed && !strings.HasPrefix(p, CompressedDir) {
+			problems = append(problems, Problem{p, "unlisted-file"})
 			return nil
 		}
 		seen[name] = true
