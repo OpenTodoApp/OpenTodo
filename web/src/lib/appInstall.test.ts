@@ -496,6 +496,18 @@ describe('lazy files (design D7)', () => {
     expect(e.record().lastCheck).toMatchObject({ cause: 'changed-file', path: 'assets/MapView-1.js' })
   })
 
+  it('records nothing when the same list was installed again since (a new cache)', async () => {
+    const { srv, e } = await installed()
+    const held = e.record()
+    await e.save({ ...held, current: { ...held.current!, cache: stagingName(held.current!.version, held.current!.payloadHash, 1_700_000_000_000) } })
+    const again = e.record()
+    expect(again.current?.cache).not.toBe(held.current?.cache)
+    srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
+    const changed = await fetchLazy(e, held, 'assets/MapView-1.js')
+    expect(changed?.check).toMatchObject({ cause: 'changed-file' })
+    expect(e.record()).toEqual(again)
+  })
+
   it('never writes an older set back over one another worker installed meanwhile', async () => {
     const { srv, e } = await installed()
     const held = e.record()
