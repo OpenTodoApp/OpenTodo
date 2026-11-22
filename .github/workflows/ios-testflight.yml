@@ -3,8 +3,14 @@ name: iOS TestFlight
 # The iPhone app to TestFlight (OpenSpec change ios-distribution D5, D9). ci.yml calls this after
 # the GitHub release of every final tag (v1.2.0, never v1.2.0-rc.1); Actions → iOS TestFlight →
 # Run workflow uploads a release tag by hand. Only a tag is ever checked out: the job holds the
-# App Store Connect key, so it never runs a branch's or a commit's code. Nothing is ever submitted
-# for review.
+# App Store Connect key, so it never runs a branch's or a commit's code.
+#
+# A final tag's build then goes to App Store review (D10): once Apple has processed it,
+# scripts/release/appstore.mjs submit makes the App Store version, sets What's New from
+# CHANGELOG.md in every localization, attaches the build and submits it, released after approval.
+# A release candidate is never submitted. A run again changes nothing that is already submitted,
+# in review or approved. `app_store` is `submit` after a release, and `dry-run` by default for a
+# run by hand (it logs what it would write); `skip` uploads only.
 #
 # Signing needs no Mac and nothing stored: the archive is built unsigned and signed ad hoc, then
 # scripts/release/appstore.mjs makes an Apple Distribution certificate from a key generated on the
@@ -28,6 +34,10 @@ on:
         type: string
         required: false
         default: ""
+      app_store:
+        type: string
+        required: false
+        default: submit
   workflow_dispatch:
     inputs:
       ref:
@@ -37,6 +47,11 @@ on:
         description: Build number to use instead of the next free one (10200 or 10200.N for 1.2.0); usually empty
         required: false
         default: ""
+      app_store:
+        description: "App Store review for a final tag: submit, dry-run (log what it would do) or skip"
+        type: choice
+        options: [dry-run, submit, skip]
+        default: dry-run
 
 permissions:
   contents: read
@@ -146,6 +161,17 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           BUILD: ${{ steps.version.outputs.build }}
         run: node scripts/release/appstore.mjs processed "$VERSION" "$BUILD"
+      # A final tag only (vX.Y.Z, checked above); a build still processing is left for a run again.
+      - name: Submit for App Store review (a final tag)
+        id: submit
+        if: steps.secrets.outputs.ready == 'true' && !contains(inputs.ref, '-rc.') && (inputs.app_store == 'submit' || inputs.app_store == 'dry-run')
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BUILD: ${{ steps.version.outputs.build }}
+          MODE: ${{ inputs.app_store }}
+        run: |
+          if [ "$MODE" = "dry-run" ]; then node scripts/release/appstore.mjs submit "$VERSION" "$BUILD" --dry-run
+          else node scripts/release/appstore.mjs submit "$VERSION" "$BUILD"; fi
       - name: Delete the keychain and the key; revoke the certificate only if nothing was uploaded
         if: always() && steps.secrets.outputs.ready == 'true'
         env:
@@ -161,5 +187,13 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
           BUILD: ${{ steps.version.outputs.build }}
+          STATE: ${{ steps.submit.outputs.state }}
         run: |
-          echo "OpenTodo $VERSION ($BUILD) is uploaded to TestFlight and Apple has processed it; nothing was submitted for review." >> "$GITHUB_STEP_SUMMARY"
+          case "$STATE" in
+            submitted) review="it is submitted for App Store review and is released after approval" ;;
+            already-submitted) review="its App Store version was already submitted, in review or approved: nothing changed" ;;
+            build-not-ready) review="Apple had not processed it yet, so nothing was submitted: run the workflow again with app_store submit" ;;
+            dry-run) review="a dry run: the submit step's notices list what it would have written" ;;
+            *) review="it was not submitted for review" ;;
+          esac
+          echo "OpenTodo $VERSION ($BUILD) is uploaded to TestFlight; $review." >> "$GITHUB_STEP_SUMMARY"
