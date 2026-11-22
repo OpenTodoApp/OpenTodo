@@ -10,8 +10,8 @@ import { describeDue, localDueOf, logicalToday } from '../../lib/dates'
 import { sectorLabel } from '../../lib/sectorNames'
 import { removeLabel, resolveLabels } from '../../lib/labels'
 import type { EditPlan } from '../../lib/nlp/edit'
-import { updateTask } from '../../lib/ops'
 import { priorityShort } from '../../lib/priority'
+import { priorityUndoable } from '../../lib/undoActions'
 import type { Label, Priority, Project, Task } from '../../lib/types'
 import { Button, Icon, IconButton, type IconName, Menu, MenuItem } from '../../ui'
 import { act } from '../actionError'
@@ -142,7 +142,7 @@ export function EditBar({ task, projects, labelMap, onDetails }: { task: Task; p
         trigger={<span className={`inline-flex items-center gap-1 text-meta ${task.priority === 4 ? 'text-faint' : 'text-muted'}`}><Icon name="flag" size="xs" />{priorityShort(task.priority)}</span>}
         triggerClassName="inline-flex min-h-7 items-center rounded-control px-1.5 hover:bg-sunken dark:hover:bg-raised">
         {([1, 2, 3, 4] as Priority[]).map((p) => (
-          <MenuItem key={p} label={priorityShort(p)} checked={task.priority === p} onSelect={() => act(updateTask(task.id, { priority: p }))} />
+          <MenuItem key={p} label={priorityShort(p)} checked={task.priority === p} onSelect={() => act(priorityUndoable(task.id, p))} />
         ))}
       </Menu>
       <BarButton icon="tag" label={t('Labels')} text={labels.length ? labels.map((l) => l.name).join(', ') : t('Labels')} empty={!labels.length} expanded={open === 'labels'}
