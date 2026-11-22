@@ -132,6 +132,8 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
   /** Every label (deleted ones are ignored) for resolving and colouring `@name` chips. */
   labels?: readonly LabelRef[]
   onAdd: (input: QuickAddInput) => Promise<void> | void
+  /** A reusable list: quick add suggests its ticked items by name (reusable-suggest, #1839). */
+  reuseProjectId?: string | null
   /** Prefilled line (the capture screen proposes the shared page's title); parsed like typed text. */
   initialValue?: string
   /** Form id, so a button elsewhere can submit it with `form=`. */
@@ -157,7 +159,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
   logDone?: boolean
   /** Whether Shift+Enter opens the notes field (quick-add-notes D2); off where the screen has its own notes, and in the palette, whose Shift+Enter adds and opens. */
   notes?: boolean
-}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, initialValue, formId, hideHint, autoFocus, label, voiceShortcut, layout = 'line', onAddAndOpen, escape, onAddMany, logDone, notes: notesOn = true }, ref) {
+}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, reuseProjectId, initialValue, formId, hideHint, autoFocus, label, voiceShortcut, layout = 'line', onAddAndOpen, escape, onAddMany, logDone, notes: notesOn = true }, ref) {
   // The `q` badge is printed only while "Show shortcut hints" is on (keyboard-shortcuts).
   const hints = useShortcutHints()
   const [value, setValue] = useState(initialValue ?? '')
@@ -200,7 +202,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
 
   // `#` and `@` suggestions (smart-title-tokens D1): a listbox under the field for the token at the caret.
   const energyOn = energyLevelsOn(useUserPrefsRow())
-  const suggest = useTokenSuggest({ input: inputRef, value, setValue: change, projects, labels, enabled: settings.enabled, energy: energyOn })
+  const suggest = useTokenSuggest({ input: inputRef, value, setValue: change, projects, labels, enabled: settings.enabled, energy: energyOn, reuseProjectId, tickedQuery: parsed?.title ?? value, onTicked: (title) => { change(''); void onAdd({ title }) } })
   // Unmatched #tokens are explained once the caret has left them (natural-language-capture "Unmatched tokens are explained").
   const misses = (parsed?.unmatched ?? []).filter((m) => !suggest.open || caretOutside(inputRef.current, m.span))
 
