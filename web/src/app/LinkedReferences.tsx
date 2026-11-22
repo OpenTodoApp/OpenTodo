@@ -63,6 +63,7 @@ export function ReferenceRow({ r, project, onOpen, after }: { r: Reference; proj
 
 export default function LinkedReferences({ kind, id, folded = false }: { kind: LinkKind; id: string; folded?: boolean }) {
   const refs = useReferences(kind, id)
+  performance.mark('dbg:refs-render:' + (refs ? refs.length : 'null'))
   const shown = !!refs && refs.length > 0
   useEffect(() => {
     if (!shown) return

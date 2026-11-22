@@ -247,7 +247,7 @@ export class LinkIndex {
   build(w: World): void {
     if (this.building?.w === w || this.built === w) return
     if (this.timer) clearTimeout(this.timer)
-    this.building = { w, queue: this.steps(w), at: 0 }
+    performance.mark('dbg:build-start'); this.building = { w, queue: this.steps(w), at: 0 }
     const fresh = { sources: new Map<string, Source>(), reverse: new Map<string, Set<string>>() }
     const run = () => {
       const b = this.building
@@ -267,7 +267,7 @@ export class LinkIndex {
       this.building = null
       this.sources = fresh.sources
       this.reverse = fresh.reverse
-      this.built = b.w
+      this.built = b.w; performance.mark('dbg:build-end')
       // The world may have moved on while building: catch up.
       const now = read()
       if (now && now !== b.w) this.follow(now)

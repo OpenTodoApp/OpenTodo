@@ -43,7 +43,7 @@ const log = (s) => console.log('·', s)
 const debug = process.env.PERF_DEBUG ? (s) => console.log('  ', new Date().toISOString().slice(11, 23), s) : () => {}
 
 const profiles = {
-  desktop: { viewport: { width: 1280, height: 800 }, throttle: 1 },
+  desktop: { viewport: { width: 1280, height: 800 }, throttle: Number(process.env.T ?? 1) },
   phone: { viewport: { width: 412, height: 915 }, throttle: 4, isMobile: true, hasTouch: true, deviceScaleFactor: 2.625 },
 }
 
@@ -343,6 +343,7 @@ async function notesSession(browser, profileName) {
   const ctx = await browser.newContext({ viewport: prof.viewport, isMobile: prof.isMobile, hasTouch: prof.hasTouch, deviceScaleFactor: prof.deviceScaleFactor, serviceWorkers: 'block' })
   try {
     await ctx.addInitScript(instrument)
+    await ctx.addInitScript(() => { window.__lt = []; new PerformanceObserver((l) => window.__lt.push(...l.getEntries())).observe({ type: 'longtask', buffered: true }) })
     const login = await ctx.request.post(`${server.base}/api/v1/auth/login`, { data: { email: summary.ownerEmail, password: summary.password } })
     if (!login.ok()) throw new Error(`login: ${login.status()}`)
     const page = await ctx.newPage()
@@ -375,6 +376,7 @@ async function notesSession(browser, profileName) {
     // note-links D5: a note other notes link to, opened before anything built the link index, to its Linked references painted.
     const t1 = await go(page, `/notes/${summary.notes.linkedNote}`)
     out['note-references'] = (await markAfter(page, 'ot:note-references', t1, 30_000)) - t1
+    console.log('DBG', out['note-references'].toFixed(0), JSON.stringify(await page.evaluate((t) => [...performance.getEntriesByType('mark').filter((m) => m.startTime >= t - 50 && (m.name.startsWith('dbg:') || m.name.startsWith('ot:'))).map((m) => [Math.round(m.startTime - t), m.name]), ...(window.__lt || []).filter((e) => e.startTime >= t - 50).map((e) => [Math.round(e.startTime - t), 'longtask ' + Math.round(e.duration)])].sort((a, b) => a[0] - b[0]), t1)))
     // unlinked-mentions 3.1: its 40 plain mentions are counted after Linked references paint.
     await markAfter(page, 'ot:note-mentions', t1, 30_000)
     if (enough(out)) return out
