@@ -5,6 +5,7 @@
     "A limit is only raised in a pull request that states the reason, here and in its description.",
     "Reviewed on 2026-11-03 against the first CI measurements (task 1.6; numbers in the pull requests and docs/performance.md). The interaction limits of the design (cursor 16 ms, completion and keystroke 50 ms on a computer; 50 and 150 in the phone profile) were set before the benchmark existed and are below what it can measure: it times from the input to the frame after the change (requestAnimationFrame, then a task), so an interaction that does nothing measures one frame of up to 16.7 ms plus the paint. They now follow the response times the design meant: on a computer the cursor in 50 ms (three frames: holding j keeps up with the key repeat) and a completion or keystroke in 100 ms (RAIL's instant response); in the phone profile, the CPU slowed four times as Lighthouse's mid-tier phone, 150 ms for the cursor and 200 ms for a completion or keystroke (Core Web Vitals' good interaction). The phones measured by hand keep their limits. No other limit changed.",
     "notes-share raised from 100 to 130 MB on 2026-11-03 (OpenSpec change notes-compaction-at-scale, design D5): the first complete compaction of the notes fixture leaves 116 MB, all of it kept by the compaction rules: one revision per UTC day of each note's projection (13,400 descriptions, 65 MB), the 30-day window's documents (31 MB) and the current values, stored twice (the op and the materialized row, 15 MB). The 100 MB of performance-10k D7 was an estimate made before the fixture existed.",
+    "The server's time limits are relative to the reference workload since 2026-11-22 (OpenSpec change perf-relative-budgets, #1656): the same code read 83 to 161 ms for server-list-project on different runners. server-list-project stays at 170 ms.",
     "server-export-rss lowered from 200 to 110 MB (server) and 800 to 440 (pi4) on 2026-11-20: the export streamed one collection a page at a time instead of materializing the whole account and encoding it at once, so its peak follows the page, not the account. On the 10,000-task fixture the export peaked at 127 MB before and 71 MB after (idle 55 MB); 110 MB leaves headroom over 71 and still catches a return to holding the account."
   ],
   "settings": {
@@ -16,6 +17,13 @@
     "pi4": "Raspberry Pi 4 (4 GB), arm64 image"
   },
   "gated": ["desktop", "phone", "server"],
+  "reference": {
+    "$comment": "perf-relative-budgets: the server's time limits are relative to the reference workload (internal/perf/reference_test.go), timed in every run next to them. A limit is multiplied by that run's reference median over the baseline, the reference's median on the runner the limits describe, and is never more than the limit times the backstop. Memory and sizes stay absolute.",
+    "setting": "server",
+    "baseline": 12,
+    "backstop": 1.5,
+    "units": ["ms", "s"]
+  },
   "metrics": [
     { "id": "cold-start", "name": "cold start to the Today list", "unit": "ms", "limits": { "desktop": 1200, "phone": 3000, "device-android": 3000, "device-ios": 3000 } },
     { "id": "open-project", "name": "open the 2,000-task project", "unit": "ms", "limits": { "desktop": 400, "phone": 1200, "device-android": 1200, "device-ios": 1200 } },
