@@ -1,0 +1,1 @@
+- **The iPhone app opens as soon as the app has drawn.** It no longer waits for the page to finish loading, which could keep the launch colour up for several seconds on every cold start (#1755).
