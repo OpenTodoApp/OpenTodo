@@ -10,7 +10,8 @@ name: iOS TestFlight
 # CHANGELOG.md in every localization, attaches the build and submits it, released after approval.
 # A release candidate is never submitted. A run again changes nothing that is already submitted,
 # in review or approved. `app_store` is `submit` after a release, and `dry-run` by default for a
-# run by hand (it logs what it would write); `skip` uploads only.
+# run by hand (it logs what it would write); `skip` uploads only; `submit-only` uploads nothing and
+# submits the build named by `build_number`, already in App Store Connect.
 #
 # Signing needs no Mac and nothing stored: the archive is built unsigned and signed ad hoc, then
 # scripts/release/appstore.mjs makes an Apple Distribution certificate from a key generated on the
@@ -48,9 +49,9 @@ on:
         required: false
         default: ""
       app_store:
-        description: "App Store review for a final tag: submit, dry-run (log what it would do) or skip"
+        description: "App Store review for a final tag: submit, dry-run (log what it would do), skip, or submit-only (no upload: submit build_number)"
         type: choice
-        options: [dry-run, submit, skip]
+        options: [dry-run, submit, skip, submit-only]
         default: dry-run
 
 permissions:
@@ -79,9 +80,15 @@ jobs:
       - name: Release tag only
         env:
           REF: ${{ inputs.ref }}
+          MODE: ${{ inputs.app_store }}
+          BUILD_NUMBER: ${{ inputs.build_number }}
         run: |
           if ! printf '%s' "$REF" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$'; then
             echo "::error::ref must be a release tag such as v1.2.0, got: $REF"
+            exit 1
+          fi
+          if [ "$MODE" = "submit-only" ] && { [ -z "$BUILD_NUMBER" ] || printf '%s' "$REF" | grep -q -- '-rc\.'; }; then
+            echo "::error::submit-only needs a final tag and the build_number of a build already in App Store Connect"
             exit 1
           fi
       - name: Secrets
@@ -112,35 +119,42 @@ jobs:
         if: steps.secrets.outputs.ready == 'true'
         env:
           BUILD_NUMBER: ${{ inputs.build_number }}
+          REF: ${{ inputs.ref }}
         run: |
           described=$(git describe --tags --abbrev=0)
           v=$(node scripts/release/appstore.mjs version "$described")
           read -r version code <<< "$v"
+          # A commit with two tags (v1.2.0 and v1.3.0-rc.1) must not build or submit the other one's version.
+          read -r asked _ <<< "$(node scripts/release/appstore.mjs version "$REF")"
+          if [ "$asked" != "$version" ]; then
+            echo "::error::$REF is version $asked, but git describe found $described ($version): run it for $described, or remove the extra tag"
+            exit 1
+          fi
           build=$(node scripts/release/appstore.mjs build-number "$version" "$BUILD_NUMBER")
           app_id=$(node scripts/release/appstore.mjs app-id)
           echo "version $version, build $build (version code $code), app $app_id"
           { echo "version=$version"; echo "build=$build"; echo "app_id=$app_id"; } >> "$GITHUB_OUTPUT"
       - name: Newest Xcode
-        if: steps.secrets.outputs.ready == 'true'
+        if: steps.secrets.outputs.ready == 'true' && inputs.app_store != 'submit-only'
         run: scripts/release/ios-testflight.sh xcode
       - name: Archive, unsigned, then signed ad hoc with the entitlements
-        if: steps.secrets.outputs.ready == 'true'
+        if: steps.secrets.outputs.ready == 'true' && inputs.app_store != 'submit-only'
         env:
           VERSION: ${{ steps.version.outputs.version }}
           BUILD: ${{ steps.version.outputs.build }}
         run: scripts/release/ios-testflight.sh archive "$ARCHIVE" "$VERSION" "$BUILD" "$APPLE_TEAM_ID"
       - name: This run's distribution certificate and App Store profiles
-        if: steps.secrets.outputs.ready == 'true'
+        if: steps.secrets.outputs.ready == 'true' && inputs.app_store != 'submit-only'
         run: |
           scripts/release/ios-testflight.sh csr "$SIGNING"
           node scripts/release/appstore.mjs sign "$SIGNING"
           scripts/release/ios-testflight.sh keychain "$SIGNING"
       - name: Export for the App Store, then check its signature
-        if: steps.secrets.outputs.ready == 'true'
+        if: steps.secrets.outputs.ready == 'true' && inputs.app_store != 'submit-only'
         run: scripts/release/ios-testflight.sh export "$ARCHIVE" "$SIGNING" "$RUNNER_TEMP/export"
       - name: Upload to TestFlight
         id: upload
-        if: steps.secrets.outputs.ready == 'true'
+        if: steps.secrets.outputs.ready == 'true' && inputs.app_store != 'submit-only'
         env:
           VERSION: ${{ steps.version.outputs.version }}
           BUILD: ${{ steps.version.outputs.build }}
@@ -150,7 +164,7 @@ jobs:
           node scripts/release/appstore.mjs key-file "$ASC_KEY_FILE"
           scripts/release/ios-testflight.sh upload "$RUNNER_TEMP"/export/*.ipa "$APP_ID" "$VERSION" "$BUILD"
       - name: What to test
-        if: steps.secrets.outputs.ready == 'true'
+        if: steps.secrets.outputs.ready == 'true' && inputs.app_store != 'submit-only'
         env:
           VERSION: ${{ steps.version.outputs.version }}
           BUILD: ${{ steps.version.outputs.build }}
@@ -164,7 +178,7 @@ jobs:
       # A final tag only (vX.Y.Z, checked above); a build still processing is left for a run again.
       - name: Submit for App Store review (a final tag)
         id: submit
-        if: steps.secrets.outputs.ready == 'true' && !contains(inputs.ref, '-rc.') && (inputs.app_store == 'submit' || inputs.app_store == 'dry-run')
+        if: steps.secrets.outputs.ready == 'true' && !contains(inputs.ref, '-rc.') && (inputs.app_store == 'submit' || inputs.app_store == 'dry-run' || inputs.app_store == 'submit-only')
         env:
           VERSION: ${{ steps.version.outputs.version }}
           BUILD: ${{ steps.version.outputs.build }}

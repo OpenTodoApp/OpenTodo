@@ -735,8 +735,9 @@ test('the TestFlight upload runs for final tags after the release and by hand, w
   assert.match(job, /if: always\(\) && steps\.secrets\.outputs\.ready == 'true'\n[\s\S]*?UPLOADED: \$\{\{ steps\.upload\.outcome == 'success' \}\}\n[\s\S]*?if \[ "\$UPLOADED" != "true" \][^\n]*appstore\.mjs cleanup/, 'the keychain always goes; the certificate is revoked only when nothing was uploaded (ITMS-90035)')
   // App Store review (D10): a final tag's build only, after Apple processed it, never a release candidate; a hand run is a dry run unless chosen.
   assert.match(job, /appstore\.mjs processed[\s\S]*?name: Submit for App Store review[\s\S]*?appstore\.mjs submit/, 'the submission waits for processing')
-  assert.match(job, /^ {8}if: steps\.secrets\.outputs\.ready == 'true' && !contains\(inputs\.ref, '-rc\.'\) && \(inputs\.app_store == 'submit' \|\| inputs\.app_store == 'dry-run'\)$/m, 'a release candidate is never submitted')
-  assert.match(flow, /^ {6}app_store:\n {8}description:[^\n]*\n {8}type: choice\n {8}options: \[dry-run, submit, skip\]\n {8}default: dry-run$/m, 'a run by hand is a dry run unless submit is chosen')
+  assert.match(job, /^ {8}if: steps\.secrets\.outputs\.ready == 'true' && !contains\(inputs\.ref, '-rc\.'\) && \(inputs\.app_store == 'submit' \|\| inputs\.app_store == 'dry-run' \|\| inputs\.app_store == 'submit-only'\)$/m, 'a release candidate is never submitted')
+  assert.match(flow, /^ {6}app_store:\n {8}description:[^\n]*\n {8}type: choice\n {8}options: \[dry-run, submit, skip, submit-only\]\n {8}default: dry-run$/m, 'a run by hand is a dry run unless submit is chosen')
+  assert.match(job, /id: upload\n {8}if: steps\.secrets\.outputs\.ready == 'true' && inputs\.app_store != 'submit-only'$/m, 'submit-only uploads nothing')
   assert.ok(job.indexOf('Release tag only') < job.indexOf('Submit for App Store review'), 'the tag check runs first')
   assert.doesNotMatch(flow, /betaAppReviewSubmissions/, 'CI never submits a TestFlight build to beta review')
   const register = jobsOf(read('.github/workflows/ios-register-ids.yml'))['ios-register-ids']

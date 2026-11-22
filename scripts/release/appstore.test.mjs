@@ -24,6 +24,7 @@ import {
   setWhatToTest,
   submitForReview,
   token,
+  versionBelow,
   waitForProcessing,
   whatToTest,
   whatsNew,
@@ -489,4 +490,62 @@ test("What's New is the version's changelog section as plain text, at most 4000 
   const long = `## [1.6.0]\n\n${'- word '.repeat(2000)}\n`
   assert.ok([...whatsNew(long, '1.6.0')].length <= WHATS_NEW_LIMIT)
   assert.throws(() => whatsNew(changelog, '9.9.9'), /no section for 9\.9\.9/)
+})
+
+test('submit: a later editable version is never moved back by an older tag run again', async () => {
+  const s = store({ versions: [released, { id: 'v17', attributes: { versionString: '1.7.0', appVersionState: 'PREPARE_FOR_SUBMISSION', releaseType: 'AFTER_APPROVAL' } }] })
+  await assert.rejects(submitForReview(s.call, { version: '1.6.0', build: '10600', notes: 'x', log: quiet }), /1\.7\.0 is open for editing and is not older than 1\.6\.0/)
+  assert.deepEqual(s.writes(), [])
+  assert.equal(versionBelow('1.5.10', '1.6.0'), true)
+  assert.equal(versionBelow('1.10.0', '1.9.9'), false)
+  assert.equal(versionBelow('1.6.0', '1.6.0'), false)
+})
+
+test('submit: a draft submission holding other items is not sent along', async () => {
+  const s = store({
+    versions: [released],
+    submissions: [{ id: 'sub1', attributes: { state: 'READY_FOR_REVIEW' } }],
+    items: [{ id: 'i9', relationships: { appStoreVersion: { data: { type: 'appStoreVersions', id: 'someone-else' } } } }],
+  })
+  await assert.rejects(submitForReview(s.call, { version: '1.6.0', build: '10600', notes: 'x', log: quiet }), /holds 1 other item/)
+  assert.ok(!s.writes().includes('PATCH /v1/reviewSubmissions/sub1'), 'not submitted')
+})
+
+test('submit: What\'s New only once a version has reached the App Store; a pending one blocks a new version', async () => {
+  const inReview = { id: 'v10', attributes: { versionString: '1.0.0', appVersionState: 'IN_REVIEW', releaseType: 'AFTER_APPROVAL' } }
+  const s = store({ versions: [inReview] })
+  await assert.rejects(submitForReview(s.call, { version: '1.6.0', build: '10600', notes: 'x', log: quiet }), /1\.0\.0 is in review: Apple takes no new version/)
+  assert.deepEqual(s.writes(), [])
+  // The first version itself, still editable, with an earlier one only rejected: no What's New.
+  const first = store({ versions: [{ id: 'v16', attributes: { versionString: '1.6.0', appVersionState: 'REJECTED', releaseType: 'AFTER_APPROVAL' } }] })
+  await submitForReview(first.call, { version: '1.6.0', build: '10600', notes: 'x', log: quiet })
+  assert.ok(!first.writes().some((w) => w.includes('appStoreVersionLocalizations')))
+})
+
+test('submit: a submission already waiting for review with this version is left alone; with another, it stops', async () => {
+  const v16 = { id: 'v16', attributes: { versionString: '1.6.0', appVersionState: 'PREPARE_FOR_SUBMISSION', releaseType: 'AFTER_APPROVAL' } }
+  const mine = store({ versions: [released, v16], attachedBuild: { type: 'builds', id: 'b1' }, locs: [{ id: 'l', attributes: { locale: 'en-US', whatsNew: 'x' } }],
+    submissions: [{ id: 'sub1', attributes: { state: 'WAITING_FOR_REVIEW' } }], items: [{ id: 'i1', relationships: { appStoreVersion: { data: { type: 'appStoreVersions', id: 'v16' } } } }] })
+  assert.equal((await submitForReview(mine.call, { version: '1.6.0', build: '10600', notes: 'x', log: quiet })).state, 'already-submitted')
+  assert.deepEqual(mine.writes(), [])
+  const other = store({ versions: [released, v16], attachedBuild: { type: 'builds', id: 'b1' }, locs: [{ id: 'l', attributes: { locale: 'en-US', whatsNew: 'x' } }],
+    submissions: [{ id: 'sub2', attributes: { state: 'IN_REVIEW' } }], items: [{ id: 'i2', relationships: { appStoreVersion: { data: { type: 'appStoreVersions', id: 'other' } } } }] })
+  await assert.rejects(submitForReview(other.call, { version: '1.6.0', build: '10600', notes: 'x', log: quiet }), /in review with other items/)
+  assert.deepEqual(other.writes(), [])
+})
+
+test('submit: a rejected version goes again through its submission, its item marked resolved', async () => {
+  const s = store({
+    versions: [released, { id: 'v16', attributes: { versionString: '1.6.0', appVersionState: 'REJECTED', releaseType: 'AFTER_APPROVAL' } }],
+    attachedBuild: { type: 'builds', id: 'b1' }, locs: [{ id: 'l', attributes: { locale: 'en-US', whatsNew: 'x' } }],
+    submissions: [{ id: 'sub3', attributes: { state: 'UNRESOLVED_ISSUES' } }],
+    items: [{ id: 'i3', attributes: { state: 'REJECTED' }, relationships: { appStoreVersion: { data: { type: 'appStoreVersions', id: 'v16' } } } }],
+  })
+  await submitForReview(s.call, { version: '1.6.0', build: '10600', notes: 'x', log: quiet })
+  assert.deepEqual(s.writes(), ['PATCH /v1/reviewSubmissionItems/i3', 'PATCH /v1/reviewSubmissions/sub3'])
+})
+
+test("Apple's errors are all shown, with the associated ones", async () => {
+  const call = client(credentials, { fetchImpl: async () => new Response(JSON.stringify({ errors: [{ code: 'STATE_ERROR', detail: 'Cannot submit', meta: { associatedErrors: { '/v1/appScreenshots': [{ detail: 'Screenshots are missing' }] } } }, { detail: 'Age rating is missing' }] }), { status: 409 }) })
+  await assert.rejects(call('submitting', 'PATCH', '/v1/reviewSubmissions/x', {}), /409 STATE_ERROR\): Cannot submit; Screenshots are missing; Age rating is missing/)
 })

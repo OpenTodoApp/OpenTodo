@@ -55,7 +55,14 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 export class AscError extends Error {
   constructor(what, status, errors) {
     const first = errors?.[0] ?? {}
-    super(`${what} failed (${status}${first.code ? ` ${first.code}` : ''}): ${first.detail || first.title || 'no detail'}`)
+    // Every reason Apple gives, with the associated ones (a submission names each missing setting there).
+    const reasons = []
+    for (const e of errors ?? []) {
+      reasons.push(e.detail || e.title || '')
+      for (const list of Object.values(e.meta?.associatedErrors ?? {})) for (const a of list ?? []) reasons.push(a.detail || a.title || '')
+    }
+    const said = [...new Set(reasons.filter(Boolean))].join('; ')
+    super(`${what} failed (${status}${first.code ? ` ${first.code}` : ''}): ${said || 'no detail'}`)
     this.status = status
     this.detail = first.detail || first.title || ''
   }
@@ -465,10 +472,27 @@ export async function waitForProcessing(call, { version, build, attempts = 90, w
 
 /** The states in which an App Store version can still be edited and submitted. */
 export const EDITABLE_STATES = new Set(['PREPARE_FOR_SUBMISSION', 'DEVELOPER_REJECTED', 'REJECTED', 'METADATA_REJECTED', 'INVALID_BINARY', 'READY_FOR_REVIEW'])
-/** Review submissions that are not yet submitted (a draft, or one answered with issues) and can take the version. */
+/** Versions that reached the App Store: an app with one has What's New on later versions. */
+const RELEASED_STATES = new Set(['READY_FOR_DISTRIBUTION', 'READY_FOR_SALE', 'REPLACED_WITH_NEW_VERSION', 'REMOVED_FROM_SALE', 'DEVELOPER_REMOVED_FROM_SALE'])
+/** Versions on their way to release: Apple takes no new version until they are done. */
+const PENDING_STATES = new Set(['WAITING_FOR_REVIEW', 'IN_REVIEW', 'ACCEPTED', 'PENDING_DEVELOPER_RELEASE', 'PENDING_APPLE_RELEASE', 'PROCESSING_FOR_DISTRIBUTION', 'WAITING_FOR_EXPORT_COMPLIANCE'])
+/** Review submissions not yet submitted (a draft, or one answered with issues) that can take the version. */
 const OPEN_SUBMISSIONS = new Set(['READY_FOR_REVIEW', 'UNRESOLVED_ISSUES'])
+/** Review submissions Apple has; one active per platform. */
+const ACTIVE_SUBMISSIONS = new Set(['WAITING_FOR_REVIEW', 'IN_REVIEW'])
 export const WHATS_NEW_LIMIT = 4000
 export const RELEASE_TYPE = 'AFTER_APPROVAL'
+/** `a` < `b` for marketing versions (`1.5.10` < `1.6.0`); an unreadable one counts as lower. */
+export function versionBelow(a, b) {
+  const pa = String(a ?? '').split('.').map(Number)
+  const pb = String(b ?? '').split('.').map(Number)
+  if (pa.some(Number.isNaN)) return true
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0)
+    if (d) return d < 0
+  }
+  return false
+}
 const versionState = (v) => v?.attributes?.appVersionState ?? v?.attributes?.appStoreState ?? ''
 
 /** A call that reads as usual and only logs what it would write (`submit --dry-run`). */
@@ -523,8 +547,14 @@ export async function submitForReview(call, { version, build, notes, log = defau
   if (same) {
     target = same
   } else {
-    // Apple keeps one editable version per platform: an unsubmitted one is moved to this version.
+    const pending = versions.find((v) => PENDING_STATES.has(versionState(v)))
+    if (pending) throw new Error(`App Store version ${pending.attributes?.versionString} is ${versionState(pending).toLowerCase().replaceAll('_', ' ')}: Apple takes no new version until it is released or withdrawn; nothing was changed`)
+    // Apple keeps one editable version per platform: an unsubmitted earlier one is moved to this
+    // version. A later one (an older tag run again by hand) is never moved back.
     const editable = versions.find((v) => EDITABLE_STATES.has(versionState(v)))
+    if (editable && !versionBelow(editable.attributes?.versionString, version)) {
+      throw new Error(`App Store version ${editable.attributes?.versionString} is open for editing and is not older than ${version}: nothing was changed; submit ${version} only after that version is done`)
+    }
     if (editable) {
       const res = await call(`moving App Store version ${editable.attributes?.versionString} to ${version}`, 'PATCH', `/v1/appStoreVersions/${editable.id}`, {
         data: { type: 'appStoreVersions', id: editable.id, attributes: { versionString: version, releaseType: RELEASE_TYPE } },
@@ -542,7 +572,7 @@ export async function submitForReview(call, { version, build, notes, log = defau
   }
 
   // What's New in every localization the version has; the first version of an app has none.
-  const released = versions.some((v) => v.id !== target.id && !EDITABLE_STATES.has(versionState(v)))
+  const released = versions.some((v) => v.id !== target.id && RELEASED_STATES.has(versionState(v)))
   const locs = (await call('reading the version\'s localizations', 'GET', `/v1/appStoreVersions/${target.id}/appStoreVersionLocalizations?limit=200`)).data ?? []
   if (!locs.length && target.id !== 'dry-run') throw new Error(`App Store version ${version} has no localization: set up the listing in App Store Connect first`)
   if (released) {
@@ -559,7 +589,19 @@ export async function submitForReview(call, { version, build, notes, log = defau
     await call(`attaching build ${build}`, 'PATCH', `/v1/appStoreVersions/${target.id}/relationships/build`, { data: { type: 'builds', id: found.id } })
   }
 
-  const subs = (await call('listing the review submissions', 'GET', `/v1/reviewSubmissions?filter[app]=${app.id}&filter[platform]=IOS&limit=200`)).data ?? []
+  const states = [...OPEN_SUBMISSIONS, ...ACTIVE_SUBMISSIONS].join(',')
+  const subs = (await call('listing the review submissions', 'GET', `/v1/reviewSubmissions?filter[app]=${app.id}&filter[platform]=IOS&filter[state]=${states}&limit=200`)).data ?? []
+  const holds = async (x) => ((await call('reading the submission\'s items', 'GET', `/v1/reviewSubmissions/${x.id}/items?include=appStoreVersion&limit=200`)).data ?? [])
+    .some((i) => i.relationships?.appStoreVersion?.data?.id === target.id)
+  // One active submission per platform: this version's means it is submitted; another's blocks it.
+  const active = subs.find((x) => ACTIVE_SUBMISSIONS.has(x.attributes?.state))
+  if (active) {
+    if (await holds(active)) {
+      log('notice', `App Store version ${version} is already in review submission ${active.id}: nothing to submit`)
+      return { state: 'already-submitted', versionId: target.id, submissionId: active.id }
+    }
+    throw new Error(`review submission ${active.id} is ${active.attributes.state.toLowerCase().replaceAll('_', ' ')} with other items: Apple takes one at a time; nothing was submitted`)
+  }
   let submission = subs.find((x) => OPEN_SUBMISSIONS.has(x.attributes?.state))
   if (!submission) {
     submission = (await call('creating the review submission', 'POST', '/v1/reviewSubmissions', {
@@ -567,6 +609,15 @@ export async function submitForReview(call, { version, build, notes, log = defau
     })).data
   }
   const items = (await call('reading the submission\'s items', 'GET', `/v1/reviewSubmissions/${submission.id}/items?include=appStoreVersion&limit=200`)).data ?? []
+  // A submission someone filled by hand (other items) is not sent along with this version.
+  const others = items.filter((i) => i.relationships?.appStoreVersion?.data?.id !== target.id)
+  if (others.length) throw new Error(`review submission ${submission.id} holds ${others.length} other item(s): submit or clear it in App Store Connect, then run again`)
+  // A rejected item of this version (a submission answered with issues) is marked resolved before it goes again.
+  for (const i of items) {
+    if (i.relationships?.appStoreVersion?.data?.id === target.id && i.attributes?.state === 'REJECTED') {
+      await call('marking the rejected item resolved', 'PATCH', `/v1/reviewSubmissionItems/${i.id}`, { data: { type: 'reviewSubmissionItems', id: i.id, attributes: { resolved: true } } })
+    }
+  }
   if (!items.some((i) => i.relationships?.appStoreVersion?.data?.id === target.id)) {
     await call(`adding version ${version} to the review submission`, 'POST', '/v1/reviewSubmissionItems', {
       data: { type: 'reviewSubmissionItems', relationships: { reviewSubmission: { data: { type: 'reviewSubmissions', id: submission.id } }, appStoreVersion: { data: { type: 'appStoreVersions', id: target.id } } } },
