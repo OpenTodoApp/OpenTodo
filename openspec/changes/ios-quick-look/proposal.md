@@ -20,5 +20,5 @@ Out of scope: an in-app viewer for every platform and the browser (#1477 item 9,
 
 ## Impact
 
-- `mobile/ios/OpenTodo/Downloads.swift`, `mobile/ios/project.yml`, `mobile/ios/OpenTodo/Info.plist`, `mobile/ios/OpenTodo/InfoPlist.xcstrings`, `mobile/ios/OpenTodoTests/ShellDataTests.swift`, `docs/ios-app.md`.
-- No web app, server, bridge or Android change. App Privacy stays "Data Not Collected": adding a chosen image to Photos is not collection.
+- `mobile/ios/OpenTodo/Downloads.swift`, `mobile/ios/project.yml`, `mobile/ios/OpenTodo/Info.plist`, `mobile/ios/OpenTodo/InfoPlist.xcstrings`, `mobile/ios/OpenTodoTests/ShellDataTests.swift`, `docs/ios-app.md`, `web/src/lib/attachmentOpen.ts` (in a shell, an inline type is no longer asked for as a download, so the shell sees its real type).
+- No server, bridge or Android change; Android still gets the save dialog. App Privacy stays "Data Not Collected": adding a chosen image to Photos is not collection.
