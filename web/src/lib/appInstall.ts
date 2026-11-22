@@ -20,6 +20,8 @@ export interface InstallEnv {
   now: () => number
   load: () => Promise<TrustRecord | null>
   save: (r: TrustRecord) => Promise<void>
+  /** Changes the record as stored in one transaction (`updateTrust`): null from `change` leaves it. */
+  update: (change: (stored: TrustRecord | null) => TrustRecord | null) => Promise<TrustRecord | null>
 }
 
 export type CheckOutcome =
@@ -327,7 +329,9 @@ export async function fetchLazy(env: InstallEnv, record: TrustRecord, path: stri
   const check: CheckResult = { at: env.now(), version: record.current?.version ?? '', passed: false, cause: 'changed-file', path, refused: refuse }
   // `persist` false: the record in use stands in for one that could not be read, and
   // writing it back could replace a newer one.
-  if (persist) await env.save({ ...record, lastCheck: check }).catch(() => undefined)
+  // The check is recorded on the record as stored, and only while it still holds the
+  // set that was checked: another worker may have installed a newer one meanwhile.
+  if (persist) await env.update((stored) => (stored && stored.current?.payloadHash === record.current?.payloadHash ? { ...stored, lastCheck: check } : null)).catch(() => undefined)
   if (refuse) return { response: new Response('', { status: 404 }), check }
   return { response: fileResponse(got.body, got.type), check }
 }

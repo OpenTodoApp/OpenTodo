@@ -96,6 +96,33 @@ export async function saveTrust(record: TrustRecord, idb: IDBFactory = globalThi
   }
 }
 
+/**
+ * Changes the record as stored, in one transaction: `change` gets the stored record
+ * and returns the one to store, or null to leave it. Transactions on the store run
+ * one at a time, also between workers, so nothing written meanwhile is lost.
+ * Answers the record written, or null when nothing was.
+ */
+export async function updateTrust(change: (stored: TrustRecord | null) => TrustRecord | null, idb: IDBFactory = globalThis.indexedDB): Promise<TrustRecord | null> {
+  const db = await open(idb)
+  try {
+    return await new Promise<TrustRecord | null>((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite')
+      const store = tx.objectStore(STORE)
+      let next: TrustRecord | null = null
+      const req = store.get(KEY)
+      req.onsuccess = () => {
+        next = change((req.result as TrustRecord | undefined) ?? null)
+        if (next) store.put(next, KEY)
+      }
+      tx.oncomplete = () => resolve(next)
+      tx.onerror = () => reject(tx.error)
+      tx.onabort = () => reject(tx.error)
+    })
+  } finally {
+    db.close()
+  }
+}
+
 let officialPrints: Promise<string[]> | null = null
 resettable('officialKeys', () => { officialPrints = null })
 

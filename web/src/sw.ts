@@ -6,7 +6,7 @@
 // IndexedDB (attachments D9). While refusal is off (report-only, design D17),
 // every check runs and is recorded, and updates are installed anyway.
 import { answerAfterFailure, checkForUpdate, cachedFile, fetchLazy, pruneCaches, type CheckOutcome, type InstallEnv } from './lib/appInstall'
-import { loadTrust, rememberedMode, saveTrust, trustReader, trustsOwnKey, type TrustRecord, type TrustState } from './lib/appTrust'
+import { loadTrust, rememberedMode, saveTrust, trustReader, updateTrust, trustsOwnKey, type TrustRecord, type TrustState } from './lib/appTrust'
 import { pagePolicy } from './lib/pagePolicy'
 import { entryFromForm, entrySize, putInboxEntry, SHARE_MAX_BYTES, shareRequestVerdict } from './lib/shareInbox'
 
@@ -34,6 +34,7 @@ const env: InstallEnv = {
   load: () => loadTrust(self.indexedDB),
   // Every save, the update check's included, also sets the record that stands in and the remembered mode.
   save: async (r) => { await saveTrust(r, self.indexedDB); await records.saved(r) },
+  update: async (change) => { const r = await updateTrust(change, self.indexedDB); if (r) await records.saved(r); return r },
 }
 
 // The worker's own state: the check that is running and when the last one started.

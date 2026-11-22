@@ -4,7 +4,7 @@ import path from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { base64Decode, fingerprint } from './appCode'
 import { answerAfterFailure, checkForUpdate, cachedFile, fetchLazy, pruneCaches, type InstallEnv } from './appInstall'
-import { loadTrust, saveTrust, type TrustRecord } from './appTrust'
+import { loadTrust, saveTrust, updateTrust, type TrustRecord } from './appTrust'
 import { clearLocalData } from './db'
 
 // The worker's checks (OpenSpec change signed-web-app, tasks 3.1 to 3.3), run
@@ -119,6 +119,11 @@ function env(srv: ReturnType<typeof server>, caches = new MemoryCaches(), builti
     now: () => 1_700_000_000_000,
     load: async () => (record ? structuredClone(record) : null),
     save: async (r: TrustRecord) => { record = structuredClone(r) },
+    update: async (change: (stored: TrustRecord | null) => TrustRecord | null) => {
+      const next = change(record ? structuredClone(record) : null)
+      if (next) record = structuredClone(next)
+      return next
+    },
     record: () => record!,
   } as never
   return e
@@ -401,6 +406,8 @@ describe('lazy files (design D7)', () => {
     const { srv, e } = await installed(true)
     const saves: unknown[] = []
     e.save = async (r) => void saves.push(r)
+    const update = e.update
+    e.update = async (change) => { const r = await update(change); if (r) saves.push(r); return r }
     srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
     const changed = await fetchLazy(e, e.record(), 'assets/MapView-1.js', false)
     expect(changed?.response.status).toBe(404)
@@ -408,6 +415,29 @@ describe('lazy files (design D7)', () => {
     expect(saves).toEqual([])
     await fetchLazy(e, e.record(), 'assets/MapView-1.js', true)
     expect(saves).toHaveLength(1)
+  })
+
+  it('records the check on the record as stored, keeping what another worker wrote meanwhile', async () => {
+    const { srv, e } = await installed()
+    const held = e.record()
+    await e.save({ ...held, announced: ['written meanwhile'] })
+    srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
+    await fetchLazy(e, held, 'assets/MapView-1.js')
+    expect(e.record().announced).toEqual(['written meanwhile'])
+    expect(e.record().lastCheck).toMatchObject({ cause: 'changed-file', path: 'assets/MapView-1.js' })
+  })
+
+  it('never writes an older set back over one another worker installed meanwhile', async () => {
+    const { srv, e } = await installed()
+    const held = e.record()
+    await srv.serve(v2)
+    await checkForUpdate(e)
+    const installed2 = e.record()
+    expect(installed2.current?.version).toBe('1.4.0')
+    srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
+    const changed = await fetchLazy(e, held, 'assets/MapView-1.js')
+    expect(changed?.check).toMatchObject({ cause: 'changed-file' })
+    expect(e.record()).toEqual(installed2)
   })
 
   it('with refusal on, storage that fails never lets an unchecked file through', async () => {
@@ -567,5 +597,14 @@ describe('the trust record', () => {
     await saveTrust(record)
     await clearLocalData()
     expect(await loadTrust()).toEqual(record)
+  })
+
+  it('updateTrust changes the record as stored, or leaves it', async () => {
+    await saveTrust({ mode: 'signed', keys: ['k'], refuse: false, announced: ['1.0.0'] })
+    const next = await updateTrust((stored) => (stored ? { ...stored, refuse: true } : null))
+    expect(next).toMatchObject({ refuse: true, announced: ['1.0.0'] })
+    expect(await loadTrust()).toMatchObject({ refuse: true, announced: ['1.0.0'] })
+    expect(await updateTrust(() => null)).toBeNull()
+    expect(await loadTrust()).toMatchObject({ refuse: true })
   })
 })

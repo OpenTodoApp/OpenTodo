@@ -1,0 +1,1 @@
+- **A file check recorded in one tab no longer undoes an update another tab just installed.** The installed web app records the check on the stored install record, and only while it still holds the version that was checked.
