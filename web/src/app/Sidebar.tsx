@@ -321,7 +321,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   }
 
   function startAdding() {
-    setParentId(route.view === 'project' && tree.nodes.has(route.id) ? route.id : '')
+    setParentId('') // Top level: nested only by picking a parent (new-project-top-level, #1759)
     setGroupOpen('projects', true)
     setAdding(true)
   }

@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
-import { click, render, waitFor } from '../ui/test-utils'
+import { click, render, type, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { Sidebar } from './Sidebar'
 import { resetSidebarLayout } from './sidebarLayout'
@@ -82,3 +82,47 @@ describe('New project from the + menu (GitHub issue 997)', () => {
     await r.unmount()
   })
 })
+
+// new-project-top-level (GitHub issue 1759): a new project starts at the top level, whatever
+// project is on screen, so projects created in a row are never nested in each other.
+describe('a new project starts at the top level (GitHub issue 1759)', () => {
+  async function createFromSidebar(r: Awaited<ReturnType<typeof render>>, name: string) {
+    await click(r.container.querySelector('[data-sidebar-group="Projects"] button[aria-label="Add or fold projects"]')!)
+    await waitFor(() => !!menuItem('New project'), 'the + menu')
+    await click(menuItem('New project')!)
+    const field = () => r.container.querySelector<HTMLInputElement>('input[placeholder="Project name"]')
+    await waitFor(() => !!field(), 'the name field')
+    const form = field()!.closest('form')!
+    expect(form.querySelector('[aria-label="Parent project: Top level"]')).not.toBeNull()
+    await type(field()!, name)
+    await click([...form.querySelectorAll('button')].find((b) => b.textContent === 'Create')!)
+    let created: { id: string; parent_id: string | null } | undefined
+    await waitFor(async () => !!(created = (await db.projects.toArray()).find((p) => p.name === name)), `${name} created`)
+    return created!
+  }
+
+  it('creates top-level projects while a project is on screen, also several in a row', async () => {
+    const work = await createProject({ name: 'Work' })
+    const r = await render(<aside data-sidebar><Sidebar route={{ view: 'project', id: work }} user={user} /></aside>)
+    await waitFor(() => r.container.textContent!.includes('Work'), 'the projects')
+    const first = await createFromSidebar(r, 'Errands')
+    expect(first.parent_id).toBeNull()
+    // The app opens the new project after a create: the next one still starts at the top level.
+    await r.rerender(<aside data-sidebar><Sidebar route={{ view: 'project', id: first.id }} user={user} /></aside>)
+    const second = await createFromSidebar(r, 'Garden')
+    expect(second.parent_id).toBeNull()
+    await r.unmount()
+  })
+
+  it('keeps the name and the Parent project field in the form that comes into view, the name focused', async () => {
+    phone()
+    const r = await render(<aside data-sidebar><Sidebar route={{ view: 'inbox' }} user={user} /></aside>)
+    const field = await openNewProject(r.container)
+    const form = field.closest('form')!
+    expect(scrolledForm()).toBe(true)
+    expect(document.activeElement).toBe(field)
+    expect(form.querySelector('[aria-label^="Parent project:"]')).not.toBeNull()
+    await r.unmount()
+  })
+})
+
