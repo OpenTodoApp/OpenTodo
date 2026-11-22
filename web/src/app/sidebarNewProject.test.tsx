@@ -130,10 +130,12 @@ describe('a new project starts at the top level (GitHub issue 1759)', () => {
     await waitFor(() => !!r.container.querySelector('button[aria-label="Parent project: Work"]'), 'Work as the parent')
     await type(field()!, 'Clients')
     await click([...field()!.closest('form')!.querySelectorAll('button')].find((b) => b.textContent === 'Create')!)
-    let created: { parent_id: string | null } | undefined
+    let created: { id: string; parent_id: string | null } | undefined
     await waitFor(async () => !!(created = (await db.projects.toArray()).find((p) => p.name === 'Clients')), 'Clients created')
     expect(created!.parent_id).toBe(work)
-    await waitFor(() => !!r.container.querySelector('[data-project-id]') && r.container.textContent!.includes('Clients'), 'Clients shown under its expanded parent')
+    const item = (id: string) => r.container.querySelector(`[data-project-id="${id}"]`)?.closest('[role="treeitem"]')
+    await waitFor(() => item(created!.id)?.getAttribute('aria-level') === '2', 'Clients one level under Work')
+    expect(item(work)?.getAttribute('aria-expanded')).toBe('true')
     await r.unmount()
   })
 
