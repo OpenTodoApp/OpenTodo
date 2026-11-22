@@ -41,7 +41,8 @@ let cache: Promise<StarterLibrary> | null = null
 
 /** The starters of this release; one lazy chunk, loaded when a starters list is shown. */
 export function loadStarters(): Promise<StarterLibrary> {
-  cache ??= import('../../generated/routineStarters.json').then((m) => m.default as unknown as StarterLibrary)
+  // A failed load (offline) is forgotten, so the next call fetches again (lazy-retry-online).
+  cache ??= import('../../generated/routineStarters.json').then((m) => m.default as unknown as StarterLibrary, (err: unknown) => { cache = null; throw err })
   return cache
 }
 resettable('routineStarters', () => { cache = null })

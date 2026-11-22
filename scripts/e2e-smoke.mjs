@@ -1,5 +1,6 @@
 // Resolve Playwright locally (npm i / npx -p) or from a global install (npm i -g playwright).
 import { diagnoser } from './e2e-diagnose.mjs'
+import { untilOfflineReady } from './e2e-sw.mjs'
 const { chromium } = await import('playwright').catch(async () => {
   const { createRequire } = await import('node:module')
   const { execSync } = await import('node:child_process')
@@ -168,10 +169,15 @@ await p2.locator('aside').getByRole('button', { name: /^Home renovation/ }).clic
 await row(p2, 'Pick paint colours').waitFor()
 
 step('offline edit on device 2, then reconnect')
+// Offline only once device 2's service worker holds the app (issue 1746).
+await untilOfflineReady(p2, { label: 'device 2' })
 await ctx2.setOffline(true)
-await p2.getByRole('combobox', { name: 'Add a task' }).fill('Added while offline')
-await p2.getByRole('combobox', { name: 'Add a task' }).press('Enter')
-await row(p2, 'Added while offline').waitFor()
+// On a failure the report keeps device 2's navigations, errors and open requests (e2e-diagnose.mjs).
+await diagnosed(p2, 'offline-add', async () => {
+  await p2.getByRole('combobox', { name: 'Add a task' }).fill('Added while offline')
+  await p2.getByRole('combobox', { name: 'Add a task' }).press('Enter')
+  await row(p2, 'Added while offline').waitFor()
+})
 await p2.waitForFunction(() => /Offline/.test(document.body.innerText), null, { timeout: 5000 })
 await snap(p2, 'offline')
 await ctx2.setOffline(false)

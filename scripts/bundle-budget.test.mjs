@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
+import { gzipSync } from 'node:zlib'
 import { measure, staticImports } from './bundle-budget.mjs'
 
 test('bundle-budget: static imports, not dynamic ones', () => {
@@ -24,6 +25,21 @@ test('bundle-budget: the entry and its static closure, each chunk counted once',
     assert.equal(m.entry, 'assets/main-1.js')
     assert.equal(m.initialChunks, 3)
     assert.ok(m.initialGzip > m.entryGzip && m.initialGzip < 1000)
+  } finally {
+    rmSync(dist, { recursive: true, force: true })
+  }
+})
+
+test('bundle-budget: a chunk the build keeps only as gzip is read through it (compressed-static-assets)', () => {
+  const dist = mkdtempSync(join(tmpdir(), 'bundle-budget-'))
+  try {
+    mkdirSync(join(dist, 'assets'))
+    writeFileSync(join(dist, 'index.html'), '<script type="module" crossorigin src="/assets/main-1.js"></script>')
+    writeFileSync(join(dist, 'assets/main-1.js.gz'), gzipSync('import"./a-2.js";export const m=0'))
+    writeFileSync(join(dist, 'assets/a-2.js.gz'), gzipSync('export const a=1'))
+    const m = measure(dist)
+    assert.equal(m.entry, 'assets/main-1.js')
+    assert.equal(m.initialChunks, 2)
   } finally {
     rmSync(dist, { recursive: true, force: true })
   }

@@ -3,7 +3,8 @@ import { resettable } from '../lib/moduleState'
 import { useHabitForm } from './habits/habitFormStore'
 import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, Skeleton, TruncatedText, trapTab, useMediaQuery, useOverlay, pageBar, usePageBar, useOverlayDepth } from '../ui'
 import { useCommandBar } from './palette/useCommandBar'
-import { lazy, Suspense, useEffect, useRef, useState, type ComponentType, type RefObject } from 'react'
+import { Suspense, useEffect, useRef, useState, type ComponentType, type RefObject } from 'react'
+import { lazy } from '../lib/lazy'
 import type { User } from '../lib/types'
 import { openStartView } from './startView'
 import { describeRejected } from '../lib/sharing'
@@ -204,12 +205,12 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   // A right swipe from the left edge opens the closed phone menu, unless a dialog is open (edge-swipe-menu).
   const drawerClosed = useRef(drawer.closed)
   drawerClosed.current = drawer.closed
-  // A page with Back goes back, a top-level page opens the menu (edge-swipe-back); the installed web app on iOS keeps the system's swipe. Loaded after the first paint.
+  // A page with Back goes back, at any width (swipe-back-follows: a tablet too), a top-level page below 768 px opens the menu (edge-swipe-back); the installed web app on iOS keeps the system's swipe. Loaded after the first paint.
   useEffect(() => {
-    let stop: (() => void) | undefined
-    let gone = false
-    void import('./edgeWatch').then(({ watchEdge }) => {
-      if (!gone) stop = watchEdge(() => pageBar()?.back?.onClick, () => setSidebarOpen(true), () => drawerClosed.current && !document.querySelector('[aria-modal="true"]'))
+    let stop: (() => void) | undefined, gone = false
+    void import('./edgeWatch').then(({ watchEdge, headerBack }) => {
+      const back = () => pageBar()?.back?.onClick ?? headerBack() // from 768 px, the header's Back
+      if (!gone) stop = watchEdge(back, () => setSidebarOpen(true), () => !document.querySelector('[aria-modal="true"]') && (drawerClosed.current || (!!back() && !!window.matchMedia?.(DESKTOP_HEADER_QUERY).matches)))
     })
     return () => { gone = true; stop?.() }
   }, [])
@@ -348,7 +349,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             document below the frame (issue #95). */}
         {/* Below 768 px the add button's footprint is reserved at the end of every page that shows it, so it never covers the last row
             (phone-v2 D2, phone-fab-scroll-room; a page with its own scroller: `.page-fill` in index.css); the room under the selection bar is in index.css (no-layout-jump). */}
-        <div ref={content} id="content" data-add-room={addRoom || undefined}
+        <div ref={content} id="content" data-main-scroller data-add-room={addRoom || undefined}
           className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${addRoom ? 'max-md:pb-(--add-room)' : ''} ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
           {/* One screen failing (a render bug, a chunk gone after an upgrade) leaves the shell usable (client-sync-robustness). */}
           <PanelBoundary resetKey={route}>

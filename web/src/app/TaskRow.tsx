@@ -25,7 +25,8 @@
 import { isSample } from '../lib/sampleTasks'
 import { hueFor, Icon, LabelChips, ProgressRing, ReadAs, ToneText, Tooltip, TruncatedText, useOverflowing, type HueName, type IconName, type Tone } from '../ui'
 import { slotName, useSlotOf } from '../lib/slots'
-import { lazy, memo, type ReactNode, Suspense, use, useLayoutEffect, useRef } from 'react'
+import { memo, type ReactNode, Suspense, use, useLayoutEffect, useRef } from 'react'
+import { lazy } from '../lib/lazy'
 import { RowBlockContext } from './task-list/rowBlockContext'
 import { ProjectMark } from './ProjectMark'
 import type { RowImplied } from '../lib/listGroups'
@@ -413,6 +414,8 @@ function RowLine({ m, projectMark, projectColumn, slotsOff }: { m: MetaValues; p
 
 export interface TaskRowProps {
   contextual?: boolean
+  /** The list has another visible top-level group before this row. */
+  groupSeparator?: boolean
   task: Task
   project?: Project
   /** Already resolved: unknown and deleted label ids are not in this list. */
@@ -681,6 +684,7 @@ function holdForRow(e: React.PointerEvent<HTMLLIElement>, drag: TaskRowProps['on
   const hold = trackHold(e, {
     onArmed: () => li.setAttribute('data-touch-hold', ''),
     onEnd: () => li.removeAttribute('data-touch-hold'),
+    press: li,
   })
   function stop() {
     if (done) return
@@ -775,7 +779,7 @@ function RowTrailing({ score, origin, revealed, forceActions }: { score?: ReactN
   )
 }
 
-function FullRow({ task, contextual = false, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, selectOnClick, onOpenPage, onEditTitle, onToggleCollapse, shape = 'row', timeColumn = false, slotsOff, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dropNote, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, logbook = false, expanded = false, onExpand, layout, edge, notes = false, score }: TaskRowProps) {
+function FullRow({ task, contextual = false, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, groupSeparator, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, selectOnClick, onOpenPage, onEditTitle, onToggleCollapse, shape = 'row', timeColumn = false, slotsOff, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dropNote, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, logbook = false, expanded = false, onExpand, layout, edge, notes = false, score }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -910,6 +914,7 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
       inert={departing || undefined}
       data-depth={depth}
       data-contextual={contextual || undefined}
+      data-task-group-separator={groupSeparator && !card && !departing && !dragging && dropIndicator !== 'before' ? '' : undefined}
       data-drop-target={dropKey}
       data-draggable={onPointerDown ? '' : undefined}
       data-swipeable={swipe && !card && !readOnly && !inline && !departing ? '' : undefined}
@@ -930,7 +935,7 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
       data-expanded={showDetails || undefined}
       data-row-layout={detailed ? 'detailed' : undefined} {...(card && edge ? { 'data-hue': edge, 'data-card-edge': '' } : {})}
-      className={`group relative flex items-start gap-2 rounded-control px-2 ${showDetails ? 'flex-wrap' : ''} ${card ? '' : '@container/row'} ${card && edge ? 'border-s-3 border-s-hue-solid' : ''} ${swipe ? 'touch-pan-y' : ''} transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2.5 border border-default bg-surface shadow-1 dark:bg-raised' : 'row-pad'} ${card || dragging || dropIndicator || inline || showDetails ? '' : 'row-offscreen'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
+      className={`group relative flex items-start gap-2 rounded-control px-2 ${showDetails ? 'flex-wrap' : ''} ${card ? '' : '@container/row'} ${card && edge ? 'border-s-3 border-s-hue-solid' : ''} ${swipe ? 'touch-pan-y' : ''} transition-[opacity,transform,box-shadow] duration-(--duration-emphasis) ease-calm ${card ? 'py-2.5 border border-default bg-surface shadow-1 dark:bg-raised' : 'row-pad'} ${card || dragging || dropIndicator || inline || showDetails ? '' : 'row-offscreen'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
     >
       {(dropIndicator === 'before' || dropIndicator === 'after') && (
         // The drop position: a line with a dot at its start (task-list-presentation "Drag feedback").
@@ -952,7 +957,7 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
               aria-label={collapsed ? t('Expand subtasks') : t('Collapse subtasks')}
               aria-expanded={!collapsed}
               onClick={onToggleCollapse} // its 44 px touch target ends where the checkbox's begins (phone-row-controls D2)
-              className="group/fold flex h-5 w-4 items-center justify-center rounded-chip text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-fine:-mx-1 pointer-fine:-my-0.5 pointer-fine:h-6 pointer-fine:w-6 pointer-coarse:-my-3 pointer-coarse:-ml-8 pointer-coarse:mr-1 pointer-coarse:h-11 pointer-coarse:w-11 pointer-coarse:justify-end pointer-coarse:active:opacity-100"
+              className="group/fold flex h-5 w-4 items-center justify-center rounded-chip text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-fine:-mx-1 pointer-fine:-my-0.5 pointer-fine:h-6 pointer-fine:w-6 pointer-coarse:-my-3 pointer-coarse:-ml-8 pointer-coarse:mr-1 pointer-coarse:h-11 pointer-coarse:w-11 pointer-coarse:justify-end pointer-coarse:active:animate-none"
             >
               <span data-fold-mark className="pointer-events-none flex items-center justify-center rounded-full pointer-coarse:-mr-2 pointer-coarse:size-7 pointer-coarse:shrink-0 pointer-coarse:group-active/fold:bg-selected"><Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} /></span>
             </button>

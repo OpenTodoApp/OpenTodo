@@ -1,4 +1,5 @@
 import { t } from './i18n'
+import { playHaptic } from './haptics'
 // Pointer-based drag and drop (OpenSpec `board-view`, design D6): native pointer
 // events, no library, works with mouse, pen and touch. A mouse or pen drag starts
 // after a few pixels of movement; touch arms after a short long-press so a plain
@@ -28,6 +29,8 @@ export interface DragOptions {
    * becoming a drag (false, from cleanup) — the pressed element's held feedback.
    */
   onHoldChange?: (held: boolean) => void
+  /** Touch only: the pressed row, marked while the finger is on it (HoldOptions.press). */
+  press?: Element | null
   /** A touch hold completed and the finger lifted without moving: open the row's menu here, on a fine or a coarse primary pointer alike (task-row-context-menu; the grip owns selection, so the body's hold is only ever the menu). */
   onHoldRelease?: (x: number, y: number) => void
   /**
@@ -70,6 +73,11 @@ export interface HoldOptions {
   onArmed: () => void
   /** The armed hold ended without a release — `stop()`, called by the caller on movement or a cancel. */
   onEnd: () => void
+  /**
+   * The pressed row: marked `data-touch-press` from the touch until the hold ends, so
+   * it can rise while it is held, before it arms (row-lift-overscroll D1).
+   */
+  press?: Element | null
 }
 
 export interface Hold {
@@ -78,6 +86,8 @@ export interface Hold {
   /** End the hold now: `onEnd` runs once if it was armed, and never again. */
   stop: () => void
 }
+
+const PRESS_ATTR = 'data-touch-press'
 
 /**
  * The touch hold both row gestures share (task-row-context-menu, design D1): after
@@ -97,12 +107,14 @@ export function trackHold(e: HoldPress, opts: HoldOptions): Hold {
     if (done) return
     done = true
     clearTimeout(timer)
+    opts.press?.removeAttribute(PRESS_ATTR)
     window.removeEventListener('touchmove', blockScroll)
     if (armed) {
       armed = false
       opts.onEnd()
     }
   }
+  opts.press?.setAttribute(PRESS_ATTR, '')
   timer = setTimeout(() => {
     if (done) return
     armed = true
@@ -195,12 +207,15 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
     },
     // Armed and not lifted any more: the tint hands over to the drag's own feedback (a lift), or simply ends (cleanup, a cancel).
     onEnd: () => opts.onHoldChange?.(false),
+    press: opts.press,
   })
 
   const lift = () => {
     if (lifted) return
     lifted = true
     hold.stop()
+    // haptic-kinds D2: the lift ticks on touch, once (a hold that selected ticked already).
+    if (e.pointerType !== 'mouse' && !heldSelected) playHaptic('tick')
     ghost = makeGhost(opts.label)
     document.body.style.userSelect = 'none'
     opts.onStart?.()

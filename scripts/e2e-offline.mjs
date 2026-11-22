@@ -4,6 +4,7 @@
 // with the tasks from IndexedDB, /api/* is never answered from a cache, a task added
 // offline is queued, and it reaches the server once the network is back.
 // See scripts/README.md.
+import { untilOfflineReady } from './e2e-sw.mjs'
 // Resolve Playwright locally (npm i / npx -p) or from a global install (npm i -g playwright).
 const { chromium } = await import('playwright').catch(async () => {
   const { createRequire } = await import('node:module')
@@ -48,6 +49,9 @@ for (let i = 0; i < 75 && !(await serverTitles()).includes('Online before the ou
 if (!(await serverTitles()).includes('Online before the outage')) throw new Error('the online task did not reach the server')
 
 step('the built service worker controls the page')
+// The worker installs from the first load; the reload is made once it is active, so the
+// reloaded page is controlled at once (issue 1746).
+await untilOfflineReady(page)
 await page.reload()
 await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15000 })
 const manifest = await page.evaluate(async () => {

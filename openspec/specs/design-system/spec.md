@@ -1358,3 +1358,32 @@ With a mouse or trackpad as the main pointer, selection, callouts and the browse
 #### Scenario: A selectable control fails the check
 - **WHEN** a button on a screen of the layout check's touch emulation can be text-selected
 - **THEN** the check fails naming the screen and the button
+
+### Requirement: Pressed feedback waits for a tap
+On a touch device the pressed look of a control SHALL appear only after the finger has rested on it for 60 ms, SHALL NOT appear when the touch turns into a scroll within that time, and SHALL be shown only on the innermost interactive element under the finger, not on the rows or cards that contain it. Lifting the finger SHALL remove it at once. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: A scroll that starts on a row
+- **WHEN** a person puts a finger on a task row and starts scrolling within 60 ms
+- **THEN** the row never shows its pressed look
+
+#### Scenario: A button inside a row
+- **WHEN** a person presses the completion circle of a row and holds it for 100 ms
+- **THEN** the circle shows its pressed look and the row does not
+
+### Requirement: Hover and focus follow the input in use
+A hover look SHALL only apply on a device whose pointer can hover. A focus ring SHALL be drawn when focus comes from a keyboard, a mouse or a trackpad, or from assistive technology, and SHALL NOT be drawn when focus comes from a tap. A field focused by a tap SHALL still show that it is focused by its border and caret. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: A tap on a switch
+- **WHEN** a person taps a switch on a phone
+- **THEN** the switch changes and no focus ring or hover look stays on it
+
+#### Scenario: Tab after taps
+- **WHEN** a person who has been tapping presses Tab on an iPad's hardware keyboard
+- **THEN** the focused control shows its focus ring
+
+### Requirement: Haptics for switches, segments, failures and lifts
+With haptics on, a switch flipped by touch and a segment chosen by touch SHALL play `selection`, a failure toast SHALL play `error`, and lifting a row to drag it SHALL play `tick`. Keyboard changes and changes made by the app itself SHALL NOT play anything. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: A switch by keyboard
+- **WHEN** a person flips the "Show full task titles" switch with Space on a hardware keyboard
+- **THEN** no haptic plays

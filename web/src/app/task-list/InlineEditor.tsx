@@ -4,7 +4,8 @@
 // and Project, the panel's own editors, and Open details. Enter or a click away saves,
 // Esc discards the title change, Shift+Enter saves and opens the panel. The title is
 // the panel's TitleField, so `tomorrow p1 #work` typed here applies as it does there.
-import { type FocusEvent, type KeyboardEvent, lazy, Suspense, useMemo, useRef, useState } from 'react'
+import { type FocusEvent, type KeyboardEvent, Suspense, useMemo, useRef, useState } from 'react'
+import { lazy } from '../../lib/lazy'
 import { describeDue, localDueOf, logicalToday } from '../../lib/dates'
 import { sectorLabel } from '../../lib/sectorNames'
 import { removeLabel, resolveLabels } from '../../lib/labels'
@@ -99,8 +100,8 @@ export function InlineEditor({ task, caret, compact = false, projects, labelMap,
         className={`ui-input w-full py-1 text-body ${compact ? 'min-h-11' : ''}`} ariaLabel={t('Title')} placeholder={t('Untitled')} dataAttrs={{ 'data-inline-title': true }}
         actions={compact ? (save) => (
           <div className="mt-1 flex flex-wrap gap-1">
-            <Button type="button" size="sm" className="min-h-11" aria-label={t('Save')} onPointerDown={(e) => e.preventDefault()} onClick={() => { save(); finish() }}>{t('Save')}</Button>
-            <Button type="button" size="sm" variant="ghost" className="min-h-11" aria-label={t('Cancel')} onPointerDown={(e) => e.preventDefault()} onClick={cancel}>{t('Cancel')}</Button>
+            <Button type="button" size="sm" className="min-h-11" onPointerDown={(e) => e.preventDefault()} onClick={() => { save(); finish() }}>{t('Save')}</Button>
+            <Button type="button" size="sm" variant="ghost" className="min-h-11" onPointerDown={(e) => e.preventDefault()} onClick={cancel}>{t('Cancel')}</Button>
           </div>
         ) : undefined} />
       {!compact && <EditBar task={task} projects={projects} labelMap={labelMap} onDetails={() => { details.current = true; finish() }} />}

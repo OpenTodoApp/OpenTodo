@@ -9,7 +9,7 @@ import { saveViewMode } from '../../lib/sections'
 import { setCurrentUserId } from '../../lib/sharing'
 import { setTaskOpen } from '../../lib/userPrefs'
 import { createView } from '../../lib/views'
-import { minWidthPx, mockFetch, noPublicLinks, render, waitFor } from '../../ui/test-utils'
+import { minWidthPx, mockFetch, noPublicLinks, render, visibleText, waitFor } from '../../ui/test-utils'
 import { FilterView } from '../FilterView'
 import { NextView } from '../method/MethodListView'
 import { PanelHost } from '../PanelHost'
@@ -237,7 +237,9 @@ describe('click selects before editing', () => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(field, 'Order more tiles')
       field.dispatchEvent(new Event('input', { bubbles: true }))
     })
-    await act(async () => row(a).querySelector<HTMLButtonElement>(`button[aria-label="${decision}"]`)!.click())
+    const button = [...row(a).querySelectorAll('button')].find((button) => visibleText(button) === decision)
+    expect(button).toBeDefined()
+    await act(async () => button!.click())
     await waitFor(() => !editor() && row(a).contains(document.activeElement), 'focus returned to row')
     await waitFor(async () => (await db.tasks.get(a))?.title === (decision === 'Save' ? 'Order more tiles' : 'Order the tiles'))
     expect(openedTask()).toBeNull()

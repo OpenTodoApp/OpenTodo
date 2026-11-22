@@ -1,0 +1,6 @@
+{
+  "description": "A tap on the status bar (status-bar-scroll-top): a shell that lists the capability runs the script, and the page scrolls its frontmost scroller to the top.",
+  "capability": "scroll-top",
+  "event": "opentodo:scroll-top",
+  "script": "window.dispatchEvent(new CustomEvent('opentodo:scroll-top'))"
+}

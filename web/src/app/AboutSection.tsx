@@ -5,7 +5,8 @@
 // the version comes from this server's status while online. What's new (OpenSpec whats-new)
 // loads with this section. The App code row says who signed the code this device
 // runs (signed-web-app).
-import { lazy, Suspense, useState } from 'react'
+import { Suspense, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { Badge, Icon, Notice, SettingRow, SettingsSection } from '../ui'
 import { t } from '../lib/i18n'
 import type { User } from '../lib/types'

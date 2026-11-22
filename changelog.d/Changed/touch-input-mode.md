@@ -1,0 +1,1 @@
+- **No stuck hover or focus ring after a tap.** On a phone or a tablet, a tapped row, link or calendar block no longer keeps its hover colour, and a tapped field or switch draws no focus ring. A keyboard, a mouse, a trackpad and VoiceOver or TalkBack still show the ring.

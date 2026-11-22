@@ -19,13 +19,20 @@ export const MANIFEST = 'app-manifest.json'
 const UNLISTED = new Set([MANIFEST, 'manifest.webmanifest'])
 const WORKER = 'sw.js'
 
+/** An interface catalogue's chunk (vite.config.ts, precache-device-language D1). */
+const CATALOGUE = /^assets\/lang-([a-z]{2,3}(?:-[A-Za-z]+)?)-[^/]+\.js$/
+
 /**
  * Whether the worker downloads a file before switching versions ("install")
  * or checks it when first used ("lazy"): the precache rule of vite.config.ts.
- * The map and the task page are lazy, as they were never precached.
+ * The map and the task page are lazy, as they were never precached. The one
+ * deliberate difference from the globs: an interface catalogue is lazy, and
+ * the worker installs it only for a language the device already holds
+ * (precache-device-language D2, D3); the Workbox list keeps every catalogue
+ * for the Android shells that read it.
  */
 export function loadOf(file) {
-  if (file === WORKER || file === 't.html') return 'lazy'
+  if (file === WORKER || file === 't.html' || CATALOGUE.test(file)) return 'lazy'
   if (!/\.(js|css|html|svg|png|woff2|md)$/.test(file)) return 'lazy'
   if (/(^|\/)(MapView-|maplibre-gl-worker-)/.test(file) || file.startsWith('assets/t-')) return 'lazy'
   return 'install'
@@ -37,7 +44,8 @@ function walk(dir, base = '') {
     if (name.startsWith('.')) continue
     const rel = base ? `${base}/${name}` : name
     if (statSync(path.join(dir, rel)).isDirectory()) out.push(...walk(dir, rel))
-    else if (!UNLISTED.has(rel)) out.push(rel)
+    // A gzip copy is the listed file's transfer form, not a file of its own (compressed-static-assets).
+    else if (!UNLISTED.has(rel) && !rel.endsWith('.gz')) out.push(rel)
   }
   return out
 }
@@ -49,7 +57,8 @@ export function buildManifest(dist, { version = '0.0.0-dev', build, keys = [], r
   const files = {}
   for (const rel of walk(dist).sort()) {
     const body = readFileSync(path.join(dist, rel))
-    files[rel] = { sha256: sha256(body), size: body.length, load: loadOf(rel) }
+    const lang = CATALOGUE.exec(rel)?.[1]
+    files[rel] = { sha256: sha256(body), size: body.length, load: loadOf(rel), ...(lang ? { lang } : {}) }
   }
   if (!files[WORKER]) throw new Error(`app-manifest: ${WORKER} is missing from ${dist}`)
   const payload = {

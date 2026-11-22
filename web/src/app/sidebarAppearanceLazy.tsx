@@ -1,4 +1,5 @@
-import { type ComponentProps, lazy, Suspense } from 'react'
+import { type ComponentProps, Suspense } from 'react'
+import { lazy } from '../lib/lazy'
 
 const Appearance = lazy(() => import('./SidebarAppearance').then((m) => ({ default: m.SidebarAppearance })))
 

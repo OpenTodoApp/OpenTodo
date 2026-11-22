@@ -35,6 +35,7 @@ export function holdForRowMenu(e: ReactPointerEvent<HTMLElement>): void {
   const hold = trackHold(e, {
     onArmed: () => item.setAttribute('data-touch-hold', ''),
     onEnd: () => item.removeAttribute('data-touch-hold'),
+    press: item,
   })
   function stop() {
     hold.stop()

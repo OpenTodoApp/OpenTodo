@@ -603,3 +603,31 @@ The iOS shell SHALL NOT show the system's link preview when a link in the web ap
 #### Scenario: Tapping still opens
 - **WHEN** the user taps a link to another site in a comment
 - **THEN** it opens in the system browser as before
+
+### Requirement: No native overscroll effect on Android
+The Android shell SHALL NOT draw the platform's overscroll glow or stretch over the page; the page's own scrolling decides what happens at an edge. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: The end of a list
+- **WHEN** a person flings to the end of a long list in the Android app
+- **THEN** no glow or stretch appears
+
+### Requirement: Haptic kinds for outcomes and selection
+The shells SHALL accept the haptic kinds `warning`, `error` and `selection` besides `tick` and `success`, map each to the platform's own feedback, and play `tick` for a kind they do not know. On a device without haptics, nothing SHALL play. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: An older shell
+- **WHEN** the page asks a shell that knows only `tick` and `success` for `selection`
+- **THEN** the shell plays `tick` and reports no error
+
+### Requirement: A status bar tap reaches the page
+The iOS shell SHALL deliver a tap on the status bar to the page as a scroll-to-top event and SHALL list the `scroll-top` capability. The web view itself SHALL NOT scroll in response. Shells without the capability SHALL behave as before. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: A tap on the status bar in the iPhone app
+- **WHEN** a person scrolled far down the Inbox in the iPhone app and taps the status bar
+- **THEN** the page receives one scroll-to-top event and the web view does not move
+
+### Requirement: No keyboard accessory bar in the iOS app
+The iOS shell SHALL NOT show the web view's keyboard accessory bar above the on-screen keyboard. If the platform changes so it cannot be removed, the app SHALL keep working with the bar. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: Editing a title in the iPhone app
+- **WHEN** a person taps a task title to edit it in the iPhone app
+- **THEN** the keyboard opens without the previous, next and Done bar

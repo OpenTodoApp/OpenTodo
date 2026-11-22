@@ -2,7 +2,8 @@
 // account-profile "Profile picture"): choose an image, crop it in a circle,
 // save it as a 256×256 JPEG, or remove the current one. The cropper is a lazy
 // chunk, so react-easy-crop loads only when this dialog opens.
-import { lazy, Suspense, useEffect, useState, type ChangeEvent } from 'react'
+import { Suspense, useEffect, useState, type ChangeEvent } from 'react'
+import { lazy } from '../../lib/lazy'
 import { ApiError } from '../../lib/api'
 import { useAction } from '../../lib/useAction'
 import { errorMessage } from '../../lib/i18n/errors'

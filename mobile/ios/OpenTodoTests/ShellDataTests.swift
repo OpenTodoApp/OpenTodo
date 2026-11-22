@@ -1,5 +1,6 @@
 import UIKit
 import UserNotifications
+import WebKit
 import XCTest
 @testable import OpenTodo
 
@@ -96,6 +97,20 @@ final class LaunchScreenTests: XCTestCase {
         shell.reveal()
         XCTAssertTrue(shell.revealed)
         XCTAssertEqual(shell.webView.alpha, 1)
+    }
+
+    /// ios-keyboard-bar D1: the web view's content view supplies no accessory bar, and
+    /// removing it twice changes nothing.
+    func testTheKeyboardHasNoAccessoryBar() throws {
+        let shell = ShellController(origin: try XCTUnwrap(URL(string: "https://todo.example")))
+        let content = try XCTUnwrap(shell.webView.scrollView.subviews.first { NSStringFromClass(type(of: $0)) == KeyboardBar.className })
+        XCTAssertNil(content.inputAccessoryView)
+        XCTAssertTrue(KeyboardBar.remove(from: shell.webView))
+        XCTAssertEqual(NSStringFromClass(type(of: content)), KeyboardBar.className)
+        // A second web view gets the same class, made once.
+        let other = WKWebView(frame: .zero)
+        XCTAssertTrue(KeyboardBar.remove(from: other))
+        XCTAssertNil(other.scrollView.subviews.first { NSStringFromClass(type(of: $0)) == KeyboardBar.className }?.inputAccessoryView)
     }
 
     /// Over the launch colour the system chooses the status bar icons; the bars' own come with the page.
@@ -314,7 +329,7 @@ final class BridgeTests: XCTestCase {
 
     func testCapabilitiesFollowTheDevice() {
         XCTAssertEqual(Bridge.capabilities(biometric: false, share: true),
-                       ["reminders", "widgets", "share", "links", "obsidian-links", "app-links", "system-bars", "pull-refresh", "completion-sound", "haptics"])
+                       ["reminders", "widgets", "share", "links", "obsidian-links", "app-links", "system-bars", "pull-refresh", "first-paint", "completion-sound", "scroll-top", "haptics"])
         XCTAssertTrue(Bridge.capabilities(biometric: true, share: true).contains("biometric"))
     }
 
@@ -361,7 +376,8 @@ final class BridgeTests: XCTestCase {
                 let visible = Set(Bridge.capabilities(biometric: biometric, share: true, haptics: haptics))
                 XCTAssertTrue(visible.isSuperset(of: both), "\(visible)")
                 XCTAssertTrue(visible.isDisjoint(with: backgroundOnly), "\(visible)")
-                XCTAssertTrue(visible.isSubset(of: visibleOnly.union(both).union(["biometric", "pull-refresh"])), "\(visible)")
+                XCTAssertTrue(visible.isSubset(of: visibleOnly.union(both).union(["biometric", "pull-refresh", FirstPaint.capability, ScrollTop.capability])), "\(visible)")
+                XCTAssertTrue(visible.contains(ScrollTop.capability))
                 XCTAssertTrue(visible.contains("links"))
                 XCTAssertFalse(visible.contains("alarm-settings"))
             }
@@ -427,9 +443,33 @@ final class BridgeTests: XCTestCase {
         XCTAssertEqual(fixture["method"] as? String, "haptic")
         let kinds = try XCTUnwrap(fixture["kinds"] as? [String])
         XCTAssertEqual(Set(kinds), Set(Haptics.Kind.allCases.map(\.rawValue)))
-        for kind in kinds { XCTAssertNotNil(Haptics.kind(kind), kind) }
+        for kind in kinds { XCTAssertEqual(Haptics.kind(kind).rawValue, kind) }
         let unknown = try XCTUnwrap(fixture["unknown"] as? String)
-        XCTAssertNil(Haptics.kind(unknown), unknown)
+        XCTAssertEqual(Haptics.kind(unknown), .tick, unknown)
+    }
+
+    /// status-bar-scroll-top D1, D2: the capability and the script follow the shared bridge
+    /// fixture, only the visible app lists it, and the decoy tells the page once per tap and
+    /// never scrolls.
+    func testScrollTopFollowsTheBridgeFixture() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/scroll-top.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        XCTAssertEqual(fixture["capability"] as? String, ScrollTop.capability)
+        XCTAssertEqual(fixture["script"] as? String, ScrollTop.script)
+        XCTAssertFalse(Bridge.backgroundCapabilities.contains(ScrollTop.capability))
+
+        let decoy = ScrollTopDecoy()
+        var taps = 0
+        decoy.onTap = { taps += 1 }
+        XCTAssertTrue(decoy.scrollsToTop)
+        XCTAssertFalse(decoy.isUserInteractionEnabled)
+        XCTAssertGreaterThan(decoy.contentSize.height, decoy.bounds.height)
+        let offset = decoy.contentOffset
+        XCTAssertFalse(decoy.scrollViewShouldScrollToTop(decoy))
+        XCTAssertEqual(taps, 1)
+        XCTAssertEqual(decoy.contentOffset, offset)
     }
 
     /// pull-to-sync D4: the capability and the call follow the shared bridge fixture; only
@@ -452,6 +492,38 @@ final class BridgeTests: XCTestCase {
         XCTAssertTrue(script.contains("pullHandled: function () { call('pullHandled') }"))
     }
 
+    /// shell-reveal-on-paint D1, D2: the capability and the call follow the shared bridge
+    /// fixture; only the visible app, which hides its web view, lists the capability.
+    func testFirstPaintFollowsTheBridgeFixture() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/painted.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        XCTAssertEqual(fixture["capability"] as? String, FirstPaint.capability)
+        XCTAssertEqual(fixture["method"] as? String, FirstPaint.method)
+        // One call per page load, without arguments.
+        let calls = try XCTUnwrap(fixture["calls"] as? [[Any]])
+        XCTAssertEqual(calls.count, 1)
+        XCTAssertTrue(calls[0].isEmpty)
+        XCTAssertTrue(Bridge.capabilities(biometric: false, share: true).contains(FirstPaint.capability))
+        XCTAssertFalse(Bridge.capabilities(biometric: true, share: false).contains(FirstPaint.capability))
+        let origin = try XCTUnwrap(URL(string: "https://todo.example.com"))
+        let script = Bridge.script(origin: origin, app: "1.2.3", capabilities: [FirstPaint.capability])
+        XCTAssertTrue(script.contains("painted: function () { call('painted') }"))
+    }
+
+    /// shell-reveal-on-paint D2: the visible app's call shows the web view before the page
+    /// has loaded; a background run's call shows nothing.
+    func testThePagesFirstFrameShowsTheWebView() throws {
+        let shell = ShellController(origin: try XCTUnwrap(URL(string: "https://todo.example")))
+        BridgeHost(interactive: false).bridgedPainted()
+        XCTAssertFalse(shell.revealed)
+        XCTAssertEqual(shell.webView.alpha, 0)
+        BridgeHost(interactive: true).bridgedPainted()
+        XCTAssertTrue(shell.revealed)
+        XCTAssertFalse(shell.loaded)
+    }
+
     /// pull-to-sync D4: the shell's refresh control is on until the page showing takes the
     /// pull over, and on again for the next page (an older web app never takes it).
     func testThePageTakesThePullOverUntilAnotherPageLoads() {
@@ -470,7 +542,10 @@ final class BridgeTests: XCTestCase {
     func testHapticKinds() {
         XCTAssertEqual(Haptics.kind("tick"), .tick)
         XCTAssertEqual(Haptics.kind("success"), .success)
-        for other in ["", "warning", "Tick", "tick ", "error"] { XCTAssertNil(Haptics.kind(other), other) }
+        XCTAssertEqual(Haptics.kind("warning"), .warning)
+        XCTAssertEqual(Haptics.kind("error"), .error)
+        XCTAssertEqual(Haptics.kind("selection"), .selection)
+        for other in ["", "thud", "Tick", "tick "] { XCTAssertEqual(Haptics.kind(other), .tick, other) }
     }
 
     /// shell-repairs D7: the remembered bars decide the status bar icons, and nothing
