@@ -114,6 +114,29 @@ describe('a new project starts at the top level (GitHub issue 1759)', () => {
     await r.unmount()
   })
 
+  it('picking a parent in the form still makes a sub-project, with the parent expanded', async () => {
+    const work = await createProject({ name: 'Work' })
+    const r = await render(<aside data-sidebar><Sidebar route={{ view: 'inbox' }} user={user} /></aside>)
+    await waitFor(() => r.container.textContent!.includes('Work'), 'the projects')
+    await click(r.container.querySelector('[data-sidebar-group="Projects"] button[aria-label="Add or fold projects"]')!)
+    await waitFor(() => !!menuItem('New project'), 'the + menu')
+    await click(menuItem('New project')!)
+    const field = () => r.container.querySelector<HTMLInputElement>('input[placeholder="Project name"]')
+    await waitFor(() => !!field(), 'the name field')
+    await click(r.container.querySelector('button[aria-label="Parent project: Top level"]')!)
+    const option = () => [...document.querySelectorAll<HTMLElement>('[role="option"]')].find((el) => el.textContent?.trim() === 'Work')
+    await waitFor(() => !!option(), 'the Work option')
+    await click(option()!)
+    await waitFor(() => !!r.container.querySelector('button[aria-label="Parent project: Work"]'), 'Work as the parent')
+    await type(field()!, 'Clients')
+    await click([...field()!.closest('form')!.querySelectorAll('button')].find((b) => b.textContent === 'Create')!)
+    let created: { parent_id: string | null } | undefined
+    await waitFor(async () => !!(created = (await db.projects.toArray()).find((p) => p.name === 'Clients')), 'Clients created')
+    expect(created!.parent_id).toBe(work)
+    await waitFor(() => !!r.container.querySelector('[data-project-id]') && r.container.textContent!.includes('Clients'), 'Clients shown under its expanded parent')
+    await r.unmount()
+  })
+
   it('keeps the name and the Parent project field in the form that comes into view, the name focused', async () => {
     phone()
     const r = await render(<aside data-sidebar><Sidebar route={{ view: 'inbox' }} user={user} /></aside>)
