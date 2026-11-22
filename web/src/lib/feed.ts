@@ -253,11 +253,16 @@ async function newestSharedEvent(projectId: string): Promise<number> {
 /**
  * While a shared project's list is on screen, keep it seen up to its newest event
  * (quiet-unread D2): what arrives while the person is looking at it is not unread.
+ * A hidden page (a background tab, a closed laptop) marks nothing until it is shown again.
  */
 export function useMarkProjectSeen(projectId: string | null): void {
   const newest = useLiveQuery(() => (projectId ? newestSharedEvent(projectId) : 0), [projectId], 0)
   useEffect(() => {
-    if (projectId && newest > 0) markSeen(projectId, newest)
+    if (!projectId || newest <= 0) return
+    const mark = () => { if (document.visibilityState === 'visible') markSeen(projectId, newest) }
+    mark()
+    document.addEventListener('visibilitychange', mark)
+    return () => document.removeEventListener('visibilitychange', mark)
   }, [projectId, newest])
 }
 

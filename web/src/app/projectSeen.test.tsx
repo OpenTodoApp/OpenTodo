@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 // A shared project on screen is seen (OpenSpec change quiet-unread, D2).
 import 'fake-indexeddb/auto'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from '../lib/db'
 import { ensureFeedBaselines, flushSeen, seenTimes, unreadCounts, useMarkProjectSeen } from '../lib/feed'
 import { applyOps, resetDeviceId } from '../lib/ops'
@@ -11,6 +11,10 @@ import { render, waitFor } from '../ui/test-utils'
 
 let n = 0
 let seq = 0
+let visibility: DocumentVisibilityState = 'visible'
+Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => visibility })
+const show = (v: DocumentVisibilityState) => { visibility = v; document.dispatchEvent(new Event('visibilitychange')) }
+afterEach(() => { visibility = 'visible' })
 beforeEach(async () => {
   useDatabase(`project-seen-${Date.now()}-${n++}`)
   resetDeviceId()
@@ -53,5 +57,23 @@ describe('useMarkProjectSeen', () => {
     await flushSeen()
     expect((await db.prefs.get('mine'))?.feed_seen_at ?? 0).toBe(0)
     await r2.unmount()
+  })
+
+  it('a hidden page does not mark; becoming visible does', async () => {
+    await setup()
+    await applyOps(created('p1', 'bob', 2000))
+    const Open = ({ id }: { id: string | null }) => { useMarkProjectSeen(id); return null }
+    const r = await render(<Open id="p1" />)
+    await waitFor(async () => (await seenTimes()).get('p1') === 2000, 'p1 seen while visible')
+    // The tab goes to the background; Bob keeps adding.
+    show('hidden')
+    await applyOps(created('p1', 'bob', 4000))
+    await waitFor(async () => (await unreadCounts()).byProject.get('p1') === 1, 'the change counted')
+    await flushSeen()
+    expect((await seenTimes()).get('p1')).toBe(2000)
+    // Back on screen: seen.
+    show('visible')
+    await waitFor(async () => (await seenTimes()).get('p1') === 4000, 'seen once visible')
+    await r.unmount()
   })
 })
