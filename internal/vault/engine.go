@@ -211,17 +211,6 @@ func Sync(ctx context.Context, o Options) (*Report, error) {
 	if err := e.scan(); err != nil {
 		return nil, err
 	}
-	// A file that held text when the sync last wrote it and is empty now is an
-	// editor's first save step (the file cut to nothing before its text). Every
-	// later check would see the same empty file, so read as it is it would trash
-	// the file's tasks and write over the save. It is held like a file not
-	// downloaded yet: neither read nor written, its base kept, read next sync.
-	for _, p := range e.halfSaved() {
-		delete(e.disk, p)
-		delete(e.changed, p)
-		e.pending[p] = true
-		e.rep.event("skipped", p, "", "skipped %s: it is empty, as while a file is being saved; the next sync reads it", p)
-	}
 	if err := e.scanNotes(); err != nil {
 		return nil, err
 	}
@@ -436,7 +425,24 @@ func (e *engine) scan() error {
 		}
 		e.changed[p] = true
 	}
+	e.holdHalfSaved()
 	return nil
+}
+
+// holdHalfSaved holds the half-saved files (halfSaved) like files not
+// downloaded yet: neither read nor written, their base kept, read next sync.
+func (e *engine) holdHalfSaved() {
+	// A file that held text when the sync last wrote it and is empty now is an
+	// editor's first save step (the file cut to nothing before its text). Every
+	// later check would see the same empty file, so read as it is it would trash
+	// the file's tasks and write over the save. It is held like a file not
+	// downloaded yet: neither read nor written, its base kept, read next sync.
+	for _, p := range e.halfSaved() {
+		delete(e.disk, p)
+		delete(e.changed, p)
+		e.pending[p] = true
+		e.rep.event("skipped", p, "", "skipped %s: it is empty, as while a file is being saved; the next sync reads it", p)
+	}
 }
 
 // halfSaved lists the vault files that look like an editor's first save step:
