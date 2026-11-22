@@ -4,7 +4,8 @@
 // actions behave alike; the board only places them side by side. A group collapsed in
 // the list is a folded column on the board and the other way round, per device
 // (OpenSpec change board-polish, design D1).
-import { lazy, Suspense, useMemo, type ReactNode } from 'react'
+import { Suspense, useMemo, type ReactNode } from 'react'
+import { lazy } from '../../lib/lazy'
 import { ListGroupHeader } from '../../ui'
 import type { Project, Task, ViewLayout } from '../../lib/types'
 import { t } from '../../lib/i18n'

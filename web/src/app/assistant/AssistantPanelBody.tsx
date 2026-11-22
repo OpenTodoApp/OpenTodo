@@ -1,4 +1,5 @@
-import { lazy, Suspense, type ReactNode } from 'react'
+import { Suspense, type ReactNode } from 'react'
+import { lazy } from '../../lib/lazy'
 import { BrandMark, Skeleton } from '../../ui'
 import type { AssistantSkill } from '../../lib/assistantSkills'
 import { AssistantWelcome } from './AssistantWelcome'

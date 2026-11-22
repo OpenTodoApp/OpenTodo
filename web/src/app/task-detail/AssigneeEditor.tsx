@@ -2,7 +2,8 @@
 // task of a project with two or more members "Take turns…" (OpenSpec change
 // chore-rotation, design D5), which turns the same anchored popover into the
 // rotation editor. The rotation editor loads on first use.
-import { lazy, Suspense, useState, type RefObject } from 'react'
+import { Suspense, useState, type RefObject } from 'react'
+import { lazy } from '../../lib/lazy'
 import { useMembershipMap } from '../../lib/localData'
 import { updateTask } from '../../lib/ops'
 import { canRotate, memberSet } from '../../lib/rotation'

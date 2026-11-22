@@ -2,7 +2,8 @@
 // chunk when a note is first opened (task 3.1), the rendered Markdown while it loads,
 // and plain text when it cannot load. Notes are shown in full in the panel and on the
 // task page; long ones grow with the panel's own scrolling (task-panel-notes-below).
-import { Component, lazy, type ReactNode, Suspense, useState } from 'react'
+import { Component, type ReactNode, Suspense, useState } from 'react'
+import { lazy } from '../../lib/lazy'
 import { updateTask } from '../../lib/ops'
 import type { Task } from '../../lib/types'
 import { t } from '../../lib/i18n'

@@ -4,7 +4,8 @@
 // recurring tasks. A pure projection of local rows like Day, Week and Month; moving
 // a task, by drag onto a day or with the arrows, is one due edit that keeps its time
 // and zone. Projections and events are read-only and written nowhere. Works offline.
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { Button, Dialog, hueFor, MenuItem, MenuSeparator, NumberInput, PageBody, Skeleton, useWide } from '../ui'
 import { allDayEvents, calendarTasks, deadlineMarkers, eventBlocks, nudgeDue } from '../lib/calendar'
 import { CalendarsToggle } from './calendar/CalendarsToggle'

@@ -3,7 +3,8 @@
 // encrypted one is decrypted here with the key after `#` in the link (design D3).
 // The page keeps no copy of the task: it refreshes every 30 seconds while visible
 // and after each action, and only the guest's typed name is stored in the browser.
-import { type FormEvent, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { MarkdownView as Markdown } from '../app/MarkdownView'
 import { formatDate, formatDueLong, formatInstant } from '../lib/dates'
 import { t } from '../lib/i18n'

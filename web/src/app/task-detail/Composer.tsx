@@ -5,7 +5,8 @@
 // Expanded, the field is the notes' rich-text editor (editor-everywhere D1, D2),
 // loaded lazily; until it arrives it is a plain text field holding the same text.
 import { flushSync } from 'react-dom'
-import { forwardRef, type KeyboardEvent, lazy, Suspense, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, type KeyboardEvent, Suspense, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { lazy } from '../../lib/lazy'
 import { Kbd } from '../shortcuts/Kbd'
 import { planFiles, type PlannedFile } from '../../lib/attachments'
 import { mentionAt, mentionCandidates, mentionsInBody, mentionToken, type MentionTarget } from '../../lib/comments'

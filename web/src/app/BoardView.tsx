@@ -4,7 +4,8 @@
 // selection and keyboard handling. Columns are drop targets for lib/dnd.
 import { Button, useWide } from '../ui'
 import type { ReactNode } from 'react'
-import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { lazy } from '../lib/lazy'
 import type { Label, Project, Section, Task } from '../lib/types'
 import { AddSection, SectionHeader, SectionMark, SectionQuickAdd } from './Sections'
 import { t } from '../lib/i18n'

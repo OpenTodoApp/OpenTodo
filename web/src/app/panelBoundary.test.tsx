@@ -5,6 +5,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { bulkToast, hideBulkToast } from './bulk/toastStore'
 import { act as runAction } from './actionError'
 import { PanelBoundary } from './PanelBoundary'
+import { lazy } from '../lib/lazy'
+import { Suspense } from 'react'
 import { useDatabase } from '../lib/db'
 import { createTask, resetDeviceId, setTaskParent } from '../lib/ops'
 import { flush, render, waitFor } from '../ui/test-utils'
@@ -24,6 +26,58 @@ describe('PanelBoundary', () => {
     await r.rerender(<div><nav>sidebar</nav><PanelBoundary resetKey="b"><p>fine</p></PanelBoundary></div>)
     expect(r.container.querySelector('[data-panel-error]')).toBeNull()
     expect(r.container.textContent).toContain('fine')
+    await r.unmount()
+    err.mockRestore()
+  })
+})
+
+describe('a part that failed to load offline (lazy-retry-online)', () => {
+  const setOnline = (on: boolean) => Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => on })
+
+  it('renders again once the device is back online, without a reload', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {})
+    let online = false
+    setOnline(false)
+    const Part = lazy(async () => {
+      if (!online) throw new TypeError('Failed to fetch dynamically imported module: /assets/Part.js')
+      return { default: () => <p>part</p> }
+    })
+    const r = await render(<PanelBoundary><Suspense fallback={null}><Part /></Suspense></PanelBoundary>)
+    await waitFor(() => !!r.container.querySelector('[data-panel-error]'), 'the message')
+    online = true
+    setOnline(true)
+    window.dispatchEvent(new Event('online'))
+    await waitFor(() => r.container.textContent === 'part', 'the part')
+    await r.unmount()
+    err.mockRestore()
+  })
+
+  it('tries again a moment later when the first try after the connection returns still fails', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {})
+    setOnline(false)
+    let failures = 2 // the offline load, then the first try once back online
+    const Part = lazy(async () => {
+      if (failures-- > 0) throw new TypeError('Failed to fetch dynamically imported module: /assets/Part.js')
+      return { default: () => <p>part</p> }
+    })
+    const r = await render(<PanelBoundary><Suspense fallback={null}><Part /></Suspense></PanelBoundary>)
+    await waitFor(() => !!r.container.querySelector('[data-panel-error]'), 'the message')
+    setOnline(true)
+    window.dispatchEvent(new Event('online'))
+    await waitFor(() => r.container.textContent === 'part', 'the part, a second later', 3000)
+    await r.unmount()
+    err.mockRestore()
+  })
+
+  it('a chunk that fails while online, or another error, keeps the message', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {})
+    setOnline(true)
+    const Part = lazy(async (): Promise<{ default: () => null }> => { throw new TypeError('Failed to fetch dynamically imported module: /assets/Gone.js') })
+    const r = await render(<div><PanelBoundary><Suspense fallback={null}><Part /></Suspense></PanelBoundary><PanelBoundary><Broken /></PanelBoundary></div>)
+    await waitFor(() => r.container.querySelectorAll('[data-panel-error]').length === 2, 'both messages')
+    window.dispatchEvent(new Event('online'))
+    await flush(0)
+    expect(r.container.querySelectorAll('[data-panel-error]').length).toBe(2)
     await r.unmount()
     err.mockRestore()
   })

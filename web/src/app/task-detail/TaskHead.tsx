@@ -6,7 +6,8 @@ import type { Project } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { Icon, Tooltip } from '../../ui'
 import { TitleField } from '../TitleField'
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
+import { lazy } from '../../lib/lazy'
 
 // The scope control and the occurrence's actions load with the first repeating task opened.
 const OccurrenceScope = lazy(() => import('./OccurrenceScope'))
