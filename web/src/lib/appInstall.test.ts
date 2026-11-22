@@ -391,6 +391,9 @@ describe('lazy files (design D7)', () => {
     srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
     const changed = await fetchLazy(e, e.record(), 'assets/MapView-1.js')
     expect(changed?.check).toMatchObject({ passed: false, cause: 'changed-file', path: 'assets/MapView-1.js', refused: false })
+    // Report-only serves what it got, and the check is saved with the record.
+    expect(await text(changed!.response)).toBe('tampered')
+    expect(e.record().lastCheck).toMatchObject({ passed: false, cause: 'changed-file', path: 'assets/MapView-1.js', refused: false })
     expect(await cachedFile(e, e.record(), 'assets/MapView-1.js')).toBeNull()
   })
 
@@ -401,6 +404,9 @@ describe('lazy files (design D7)', () => {
     e.save = async () => { throw new DOMException('full', 'QuotaExceededError') }
     // An intact file is still served (it was checked), just not stored.
     expect(await text((await fetchLazy(e, e.record(), 'assets/MapView-1.js'))!.response)).toBe('map1')
+    e.caches.open = open
+    expect(await cachedFile(e, e.record(), 'assets/MapView-1.js')).toBeNull()
+    e.caches.open = async (name: string) => { const c = await open(name); return Object.assign(Object.create(Object.getPrototypeOf(c)), c, { put: async () => { throw new DOMException('full', 'QuotaExceededError') } }) }
     // A changed one answers 404 although its check could not be recorded.
     srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
     expect((await fetchLazy(e, e.record(), 'assets/MapView-1.js'))?.response.status).toBe(404)
