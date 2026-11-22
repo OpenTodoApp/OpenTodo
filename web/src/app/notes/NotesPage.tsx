@@ -15,7 +15,8 @@
 // first under Pinned, the others under Recent (D4); typed text offers New note
 // "<text>" as the first row, under the cursor when no note matches (D3); Source
 // gains Unlinked, read from the note-links index (D5); `p` pins the focused note.
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { lazy } from '../../lib/lazy'
 import { encryptionSnapshot, onEncryptionChange } from '../../lib/e2ee'
 import { currentLanguage } from '../../lib/i18n/catalog'
 import { isFavourite, pinnedNoteIds, setFavourite } from '../../lib/favourites'

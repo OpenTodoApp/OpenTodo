@@ -2,7 +2,8 @@
 // note-markdown-source): on or off for as long as the note is open (never stored),
 // Ctrl+Shift+M, the slash entry and the Markdown button toggle it (D4), the caret goes
 // back to the block that held it (D1), and remote merges pass through the source (D3).
-import { lazy, Suspense, useEffect, useRef, useState, type RefObject } from 'react'
+import { Suspense, useEffect, useRef, useState, type RefObject } from 'react'
+import { lazy } from '../../lib/lazy'
 import { TextSelection } from 'prosemirror-state'
 import type { EditorView } from 'prosemirror-view'
 import { docBlocks } from '../../lib/markdownSource'

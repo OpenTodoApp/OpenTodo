@@ -1437,6 +1437,17 @@ When the on-screen keyboard opens or changes height, the focused field SHALL be 
 - **WHEN** a person taps the note field at the bottom of the task sheet on a phone
 - **THEN** the sheet scrolls so the field sits above the keyboard and the page behind does not move
 
+### Requirement: A part that failed to load offline recovers
+When a lazily loaded part of the app fails to load because the device is offline, the part SHALL show the "could not be shown" message and SHALL render itself again, without a reload, once the device is back online. Other failures SHALL keep the message and the Reload button. It changes no data, so offline behaviour of local data and convergence are unaffected.
+
+#### Scenario: Connection lost while a screen loads
+- **WHEN** a person on a new device opens a project and the connection drops before its panels have loaded
+- **THEN** the panels show the message, and once the connection is back they render without a reload
+
+#### Scenario: Another error
+- **WHEN** a part fails to render for another reason
+- **THEN** it keeps the message and the Reload button
+
 ### Requirement: The web app is sent compressed
 The server SHALL send a built script, style sheet, SVG or Markdown file of the web app compressed with gzip, with `Content-Encoding: gzip`, when the request accepts gzip and asks for the whole file, and SHALL send the file as it is to a client that does not accept gzip and for a Range request. Every answer for a file that has a compressed form SHALL carry `Vary: Accept-Encoding`. The decoded bytes SHALL be exactly the file the signed list names. It changes no data, so offline behaviour and convergence are unaffected.
 

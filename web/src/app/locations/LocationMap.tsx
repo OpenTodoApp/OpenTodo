@@ -2,7 +2,8 @@
 // dynamic import, so a device with maps off, or a screen without a map, never
 // downloads it. Devices without WebGL, and a server whose provider is down, get
 // nothing here; the location stays readable with "Open in maps".
-import { Component, lazy, Suspense, useState, type ReactNode } from 'react'
+import { Component, Suspense, useState, type ReactNode } from 'react'
+import { lazy } from '../../lib/lazy'
 import { useMapsOn } from '../../lib/locations'
 import { resettable } from '../../lib/moduleState'
 import type { MapViewProps } from './MapView'

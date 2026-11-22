@@ -1,7 +1,8 @@
 // What calendar-clarity adds to the task list page: Colour by on a project's board
 // (the card edge and the project menu's choice), Upcoming's query filter (its header
 // control and dialog), and a project's Calendar layout, loaded when first shown.
-import { lazy, Suspense, useState, type ReactNode } from 'react'
+import { Suspense, useState, type ReactNode } from 'react'
+import { lazy } from '../../lib/lazy'
 import { BOARD_COLOR_BY_KEY } from '../../lib/colorBy'
 import { t } from '../../lib/i18n'
 import type { Project, Task } from '../../lib/types'

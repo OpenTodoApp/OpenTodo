@@ -2,7 +2,8 @@
 // scorer per task snapshot, worked out only when a list asks for a score, and the
 // score chip a row shows while its list is ordered by urgency. The chip and its
 // breakdown load with their own chunk.
-import { createContext, lazy, Suspense, useMemo } from 'react'
+import { createContext, Suspense, useMemo } from 'react'
+import { lazy } from '../lib/lazy'
 import { currentDayStart } from '../lib/dates'
 import { liveBlocked } from '../lib/dependencies'
 import { useRunningEntry } from '../lib/timeEntries'

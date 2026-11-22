@@ -4,7 +4,8 @@
 // and Project, the panel's own editors, and Open details. Enter or a click away saves,
 // Esc discards the title change, Shift+Enter saves and opens the panel. The title is
 // the panel's TitleField, so `tomorrow p1 #work` typed here applies as it does there.
-import { type FocusEvent, type KeyboardEvent, lazy, Suspense, useMemo, useRef, useState } from 'react'
+import { type FocusEvent, type KeyboardEvent, Suspense, useMemo, useRef, useState } from 'react'
+import { lazy } from '../../lib/lazy'
 import { describeDue, localDueOf, logicalToday } from '../../lib/dates'
 import { sectorLabel } from '../../lib/sectorNames'
 import { removeLabel, resolveLabels } from '../../lib/labels'

@@ -6,7 +6,8 @@
 // a part whose value is absent is left out. The panel's content (DisplayOptionsBody)
 // loads with the first list that shows the button, after the first screen
 // (builtin-view-options: bundle budget).
-import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
+import { Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
+import { lazy } from '../../lib/lazy'
 import { IconButton, Popover } from '../../ui'
 import type { FieldDef, GroupBy, RowProperty, SortBy, SortDir, ViewLayout } from '../../lib/types'
 import { msg, t, translatedMap } from '../../lib/i18n'

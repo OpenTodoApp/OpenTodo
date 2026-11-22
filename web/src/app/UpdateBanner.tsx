@@ -1,4 +1,5 @@
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
+import { lazy } from '../lib/lazy'
 import { useRefusal, useUpdateReason } from '../lib/appUpdate'
 import { t } from '../lib/i18n'
 import { ToastRegion } from '../ui'

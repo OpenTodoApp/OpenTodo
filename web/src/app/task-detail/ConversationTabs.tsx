@@ -3,7 +3,8 @@
 // this device; Shift+C switches to Comments and focuses the composer. History is
 // a separate chunk, loaded when its tab is first opened.
 import { Skeleton } from '../../ui'
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { lazy } from '../../lib/lazy'
 import { useLiveCommentCount } from '../../lib/localData'
 import type { Task } from '../../lib/types'
 import { Tabs } from '../../ui'

@@ -14,7 +14,8 @@
 // and the tiles are not offered (D7).
 import { useHabitsEnabled } from '../lib/habitPrefs'
 import { readMethodMode } from '../lib/method/mode'
-import { type DragEvent, type KeyboardEvent, lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { type DragEvent, type KeyboardEvent, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { cachedCustom, customAccentStyle, type CustomAccentValues, deriveCustom, DENSITIES, type Density, destinationOrder, type DestinationId, FIXED_DESTINATIONS, moveDestination, PROMOTABLE, type Promotable, readAppearance, readSidebarCounts, setAppearance, setCustomAccent, setPromoted, setSidebarCounts, SIDEBAR_COUNTS, type SidebarCounts, THEME_MODES, type Appearance } from '../lib/appearance'
 import { ActionMenu } from './menus/ActionMenu'
 import { useUserPrefsRow } from '../lib/localData'

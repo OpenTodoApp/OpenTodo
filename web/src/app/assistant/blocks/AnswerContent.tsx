@@ -1,7 +1,8 @@
 // An answer with its blocks (OpenSpec change assistant-generative-ui D3, D4): the
 // Markdown cut where the model called each display tool, and each block in a
 // labelled frame with its own lazily loaded renderer, which reads the device's rows.
-import { Component, lazy, Suspense, type ReactNode } from 'react'
+import { Component, Suspense, type ReactNode } from 'react'
+import { lazy } from '../../../lib/lazy'
 import { blockLabel, splitAnswer, type AssistantBlock } from '../../../lib/assistantBlocks'
 import type { AssistantMessage } from '../../../lib/assistant'
 import { t } from '../../../lib/i18n'

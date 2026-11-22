@@ -3,7 +3,8 @@
 // picker the shell mounts once and loads only when asked for: a task for an empty
 // slot, or a slot for a task. The rules and the writes (lib/focusEdit) load with
 // the first use, so the menus cost the first load only this file.
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
+import { lazy } from '../../lib/lazy'
 import { readFocusStyle, type BentoSlot } from '../../lib/bento'
 import { t } from '../../lib/i18n'
 import { useReviewRow, useUserPrefsRow } from '../../lib/localData'
