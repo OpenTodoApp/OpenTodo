@@ -38,10 +38,16 @@ beforeAll(async () => {
   g.__APP_KEYS__ = []
   g.fetch = network
   g.caches = { open: async () => ({ match: async () => (marker === null ? undefined : new Response(marker)), put: async () => undefined }) }
-  await import('./sw')
 })
 afterAll(() => { for (const [k, v] of Object.entries(saved)) g[k] = v })
-beforeEach(() => { network.mockClear(); lazy.mockClear() })
+// Each test starts a new worker that has never read its record, with refusal remembered.
+beforeEach(async () => {
+  stored = 'unreadable'
+  marker = '1'
+  network.mockClear(); lazy.mockClear()
+  vi.resetModules()
+  await import('./sw')
+})
 /** Requests that could have served content: the page policy's HEAD refresh carries none. */
 const served = () => network.mock.calls.filter((c) => (c as unknown[])[1] === undefined || ((c as unknown[])[1] as RequestInit).method !== 'HEAD')
 
@@ -61,11 +67,12 @@ describe('a worker that never read its record', () => {
   })
 
   it('reads the store again on the next request, and then serves the page checked', async () => {
+    expect((await respond('/inbox', 'navigate')).status).toBe(404)
     stored = { mode: 'signed', keys: [], refuse: true, announced: [], current: { version: '1', payloadHash: 'h', cache: 'c', at: 0, files: { 'index.html': { sha256: 'x', size: 1, load: 'install' } } } } as unknown as TrustRecord
     const page = await respond('/inbox', 'navigate')
     expect(await page.text()).toBe('<p>checked</p>')
     // The record read is the store's own, so a check it records may be saved.
-    expect(lazy).toHaveBeenCalledWith(expect.anything(), stored, 'index.html', true)
+    expect(lazy).toHaveBeenCalledWith(expect.anything(), stored, 'index.html', true, true)
     expect(served()).toEqual([])
   })
 })

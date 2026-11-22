@@ -46,10 +46,16 @@ beforeAll(async () => {
   g.caches = { open: async () => ({ match: async () => (refuseRemembered === null ? undefined : new Response(refuseRemembered)), put: async (_k: string, r: Response) => { refuseRemembered = await r.text() } }) }
   g.__APP_KEYS__ = []
   g.fetch = network
-  await import('./sw')
 })
 afterAll(() => { for (const [k, v] of Object.entries(saved)) g[k] = v })
-beforeEach(() => network.mockClear())
+// Each test starts a new worker, with nothing remembered.
+beforeEach(async () => {
+  stored = null
+  refuseRemembered = null
+  network.mockClear()
+  vi.resetModules()
+  await import('./sw')
+})
 
 /** Dispatches a GET through the worker's fetch handler and returns what it answered. */
 async function answer(path: string): Promise<Response> {

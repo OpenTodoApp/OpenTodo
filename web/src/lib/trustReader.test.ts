@@ -78,4 +78,20 @@ describe('trustReader', () => {
     fail = false
     expect(await r.read()).toMatchObject({ unreadable: false, refuse: false })
   })
+
+  it('a read a save overtook keeps neither its record nor its mode', async () => {
+    let answer: (r: TrustRecord) => void = () => undefined
+    const load = vi.fn(() => new Promise<TrustRecord>((resolve) => { answer = resolve }))
+    const m = memory()
+    const r = trustReader(load, m)
+    const slow = r.read()
+    await r.saved(rec(true))
+    answer(rec(false)) // the store as it was before the save
+    expect(await slow).toMatchObject({ unreadable: false, refuse: true, record: { refuse: true } })
+    expect(m.set).not.toHaveBeenCalledWith(false)
+    // The stand-in is still the saved record.
+    const fail = vi.fn(async () => { throw new Error('unreadable') })
+    load.mockImplementation(fail)
+    expect(await r.read()).toMatchObject({ unreadable: true, refuse: true, record: { refuse: true } })
+  })
 })

@@ -155,24 +155,35 @@ export interface TrustState {
 export function trustReader(load: () => Promise<TrustRecord | null>, remembered: { get: () => Promise<boolean | null>; set: (on: boolean) => Promise<void> }) {
   let pending: Promise<TrustState> | null = null
   let known: TrustRecord | null = null
+  // Counts this worker's saves: a read that a save overtook keeps neither its record nor its mode.
+  let saves = 0
   const read = async (): Promise<TrustState> => {
+    const at = saves
     try {
       const record = await load()
+      if (saves !== at) return { record: known, unreadable: false, refuse: !!known?.refuse }
       known = record
       if (record) await remembered.set(record.refuse).catch(() => undefined)
       return { record, unreadable: false, refuse: !!record?.refuse }
     } catch {
-      pending = null
       const mode = await remembered.get().catch(() => null)
       return { record: known, unreadable: true, refuse: mode !== false || !!known?.refuse }
     }
   }
   return {
-    read: (): Promise<TrustState> => (pending ??= read()),
+    read: (): Promise<TrustState> => {
+      if (pending) return pending
+      const p = read()
+      pending = p
+      // A failed read is not kept: the next request reads again.
+      void p.then((t) => { if (t.unreadable && pending === p) pending = null })
+      return p
+    },
     /** After a write: the next read goes to the store. */
     forget: (): void => { pending = null },
     /** After a save that succeeded: the saved record stands in, its mode is remembered, the next read goes to the store. */
     saved: async (record: TrustRecord): Promise<void> => {
+      saves++
       known = record
       pending = null
       await remembered.set(record.refuse).catch(() => undefined)

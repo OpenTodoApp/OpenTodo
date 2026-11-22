@@ -41,11 +41,16 @@ const env: InstallEnv = {
 // that fails is not kept, and the refusal mode is remembered beside the page
 // policy so a worker that cannot read its record still fails closed.
 const state: { running: Promise<CheckOutcome | null> | null; lastCheck: number } = { running: null, lastCheck: 0 }
+// The page's policy follows the owner's settings only in connect-src (the
+// on-device assistant's provider origins, assistant-on-device D4): the latest
+// policy the server sent, refreshed in the background on every navigation.
+const POLICY_CACHE = 'opentodo-policy'
+const POLICY_KEY = '/__policy'
 const MODE_KEY = '/__refuse'
 const remembered = {
   // true or false as remembered; null when nothing was, and a failure to read rejects: both unknown.
-  get: async () => { const r = await (await caches.open('opentodo-policy')).match(MODE_KEY); return r ? (await r.text()) === '1' : null },
-  set: async (on: boolean) => { await (await caches.open('opentodo-policy')).put(MODE_KEY, new Response(on ? '1' : '0')) },
+  get: async () => { const r = await (await caches.open(POLICY_CACHE)).match(MODE_KEY); return r ? (await r.text()) === '1' : null },
+  set: async (on: boolean) => { await (await caches.open(POLICY_CACHE)).put(MODE_KEY, new Response(on ? '1' : '0')) },
 }
 const records = trustReader(env.load, remembered)
 /** One read of the trust state: a request decides everything from the one it took. */
@@ -56,7 +61,8 @@ async function trust(): Promise<TrustRecord | null> {
 /**
  * While the record cannot be read and refusal applies, an app file that was not
  * answered checked gets a 404, whatever record stands in (it may be older than the
- * set just installed): never the network.
+ * set just installed): never the network. Files the stand-in's sets hold in the
+ * cache are served: each was checked when it was stored.
  */
 const closedFor = (t: TrustState): Response | null => (t.unreadable && t.refuse ? new Response('', { status: 404 }) : null)
 
@@ -102,10 +108,10 @@ self.addEventListener('activate', (event) => {
     await self.clients.claim()
     // The caches of the Workbox worker this one replaced, and any set the record no longer names.
     // Never while the record cannot be read: every set would look unnamed.
+    // A fresh read, which also remembers the mode early, for a worker that later cannot read its record.
+    records.forget()
     const t = await trustState()
     if (!t.unreadable) await pruneCaches(env, t.record, true)
-    // The mode is remembered early, for a worker that later cannot read its record.
-    if (t.record) await remembered.set(t.record.refuse).catch(() => undefined)
   })())
 })
 
@@ -139,11 +145,6 @@ const NAVIGATION_DENYLIST = [/^\/api\//, /^\/healthz/, /^\/t\//, /^\/oauth\//, /
 const DATA_PATHS = [/^\/api\//, /^\/healthz/, /^\/dav\//, /^\/feeds\//, /^\/oauth\//, /^\/\.well-known\//, /^\/mcp(\/|$)/, /^\/branding\//, /^\/manifest\.webmanifest$/]
 const CODE_DESTINATIONS = new Set(['script', 'worker', 'sharedworker', 'style', 'serviceworker'])
 
-// The page's policy follows the owner's settings only in connect-src (the
-// on-device assistant's provider origins, assistant-on-device D4): the latest
-// policy the server sent, refreshed in the background on every navigation.
-const POLICY_CACHE = 'opentodo-policy'
-const POLICY_KEY = '/__policy'
 
 async function refreshPolicy(): Promise<void> {
   try {
@@ -157,13 +158,19 @@ async function refreshPolicy(): Promise<void> {
 
 async function navigation(event: FetchEvent): Promise<Response> {
   const t = await trustState()
-  let page = await cachedFile(env, t.record, 'index.html')
   event.waitUntil(Promise.all([refreshPolicy(), check()]))
+  let page: Response | null
+  try {
+    page = await cachedFile(env, t.record, 'index.html')
+  } catch {
+    // The cache cannot be read: report-only keeps the network (D17), refusal serves nothing unchecked.
+    return t.refuse ? new Response('', { status: 404 }) : fetch(event.request)
+  }
   if (!page) {
     // Report-only keeps the network (D17). With refusal the page is served only
     // checked against the record: fetched and checked now, or not at all.
     if (!t.refuse) return fetch(event.request)
-    const lazy = t.record ? await fetchLazy(env, t.record, 'index.html', !t.unreadable).catch(() => null) : null
+    const lazy = t.record ? await fetchLazy(env, t.record, 'index.html', !t.unreadable, t.refuse).catch(() => null) : null
     if (!lazy || lazy.check || !lazy.response.ok) return new Response('', { status: 404 })
     page = lazy.response
   }
@@ -186,7 +193,8 @@ async function appFile(event: FetchEvent, path: string): Promise<Response> {
     const hit = await cachedFile(env, t.record, path)
     if (hit) return hit
     if (t.record) {
-      const lazy = await fetchLazy(env, t.record, path, !t.unreadable)
+      // The mode that applies, not the stand-in's own: a mismatch is served only when report-only.
+      const lazy = await fetchLazy(env, t.record, path, !t.unreadable, t.refuse)
       if (lazy) {
         if (lazy.check) {
           records.forget()

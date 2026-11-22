@@ -310,9 +310,10 @@ export function answerAfterFailure(record: TrustRecord | null, path: string): Re
  * is recorded; with refusal on it fails the request, while reporting the
  * served file is used but never stored. A listed file that could not be
  * downloaded answers 404: a listed file is only ever served checked, so the
- * caller never asks the network for it again on its own.
+ * caller never asks the network for it again on its own. `refuse` is the mode
+ * that applies, the record's own unless the caller knows better (a stand-in record).
  */
-export async function fetchLazy(env: InstallEnv, record: TrustRecord, path: string, persist = true): Promise<LazyResult | null> {
+export async function fetchLazy(env: InstallEnv, record: TrustRecord, path: string, persist = true, refuse = record.refuse): Promise<LazyResult | null> {
   const want = record.current?.files[path] ?? record.previous?.files[path]
   if (!want) return null
   const got = await download(env, path).catch(() => null)
@@ -323,10 +324,10 @@ export async function fetchLazy(env: InstallEnv, record: TrustRecord, path: stri
     if (holder) await env.caches.open(holder.cache).then((c) => c.put(cacheKey(path), fileResponse(got.body.slice(0), got.type))).catch(() => undefined)
     return { response: fileResponse(got.body, got.type) }
   }
-  const check: CheckResult = { at: env.now(), version: record.current?.version ?? '', passed: false, cause: 'changed-file', path, refused: record.refuse }
+  const check: CheckResult = { at: env.now(), version: record.current?.version ?? '', passed: false, cause: 'changed-file', path, refused: refuse }
   // `persist` false: the record in use stands in for one that could not be read, and
   // writing it back could replace a newer one.
   if (persist) await env.save({ ...record, lastCheck: check }).catch(() => undefined)
-  if (record.refuse) return { response: new Response('', { status: 404 }), check }
+  if (refuse) return { response: new Response('', { status: 404 }), check }
   return { response: fileResponse(got.body, got.type), check }
 }

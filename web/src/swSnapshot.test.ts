@@ -11,6 +11,7 @@ const recordWith = (files: string[]): TrustRecord => ({
 } as unknown as TrustRecord)
 const older = recordWith(['assets/old-1.js'])
 let update: TrustRecord | null = null
+let cacheFails = false
 
 /** What each load answers, in order: a record or 'fail'. The last answer repeats. */
 let loads: (TrustRecord | 'fail')[] = []
@@ -29,7 +30,7 @@ const lazy = vi.fn(async (_env: unknown, record: TrustRecord, path: string) => (
 const prune = vi.fn(async () => undefined)
 vi.mock('./lib/appInstall', async (real) => ({
   ...(await real<typeof import('./lib/appInstall')>()),
-  cachedFile: async () => null,
+  cachedFile: async () => { if (cacheFails) throw new Error('caches'); return null },
   // An update the test sets is saved through the worker's env, as checkForUpdate saves.
   checkForUpdate: async (env: { save: (r: TrustRecord) => Promise<void> }) => {
     if (!update) return { kind: 'unchanged' }
@@ -68,7 +69,7 @@ beforeAll(async () => {
   await import('./sw')
 })
 afterAll(() => { for (const [k, v] of Object.entries(saved)) g[k] = v })
-beforeEach(() => { marker = null; markerFails = false; update = null })
+beforeEach(() => { marker = null; markerFails = false; update = null; cacheFails = false })
 
 /** Every test starts from its own state: the worker read `record`, then (unless kept readable) its store failed. */
 async function standIn(record: TrustRecord, readable = false) {
@@ -131,7 +132,7 @@ describe('the worker decides each request from one snapshot', () => {
   it('a file the stand-in lists goes through the checked download, without saving the stand-in', async () => {
     await standIn(older)
     expect(await (await respond('/assets/old-1.js')).text()).toBe('checked')
-    expect(lazy).toHaveBeenCalledWith(expect.anything(), older, 'assets/old-1.js', false)
+    expect(lazy).toHaveBeenCalledWith(expect.anything(), older, 'assets/old-1.js', false, true)
   })
 
   it('activate does not prune while the record cannot be read', async () => {
@@ -150,7 +151,7 @@ describe('the worker decides each request from one snapshot', () => {
     await install()
     expect(marker).toBe('1')
     expect(await (await respond('/assets/new-1.js')).text()).toBe('checked')
-    expect(lazy).toHaveBeenCalledWith(expect.anything(), refusing, 'assets/new-1.js', false)
+    expect(lazy).toHaveBeenCalledWith(expect.anything(), refusing, 'assets/new-1.js', false, true)
     expect((await respond('/assets/other-1.js')).status).toBe(404)
     expect(network).not.toHaveBeenCalled()
   })
@@ -168,5 +169,19 @@ describe('the worker decides each request from one snapshot', () => {
     let responded: Promise<Response> | null = null
     handlers.fetch({ request: { url: 'https://todo.example.com/inbox', method: 'GET', mode: 'navigate', destination: 'document', headers: new Headers() }, respondWith: (p: Promise<Response>) => { responded = p }, waitUntil: () => undefined })
     expect(await (await responded!).text()).toBe('from the network')
+  })
+
+  it('a page whose cache cannot be read: the network when report-only, 404 with refusal', async () => {
+    const navigate = async () => {
+      let responded: Promise<Response> | null = null
+      handlers.fetch({ request: { url: 'https://todo.example.com/inbox', method: 'GET', mode: 'navigate', destination: 'document', headers: new Headers() }, respondWith: (p: Promise<Response>) => { responded = p }, waitUntil: () => undefined })
+      return responded!
+    }
+    await standIn({ ...older, refuse: false } as TrustRecord, true)
+    cacheFails = true
+    expect(await (await navigate()).text()).toBe('from the network')
+    await standIn(older, true)
+    cacheFails = true
+    expect((await navigate()).status).toBe(404)
   })
 })

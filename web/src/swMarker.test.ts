@@ -37,10 +37,16 @@ beforeAll(async () => {
   g.__APP_KEYS__ = []
   g.fetch = network
   g.caches = { open: async () => { if (cachesFail) throw new Error('caches'); return { match: async () => undefined, put: async () => undefined } } }
-  await import('./sw')
 })
 afterAll(() => { for (const [k, v] of Object.entries(saved)) g[k] = v })
-beforeEach(() => { network.mockClear(); lazy.mockClear() })
+// Each test starts a new worker that can read neither its record nor its caches.
+beforeEach(async () => {
+  stored = 'unreadable'
+  cachesFail = true
+  network.mockClear(); lazy.mockClear()
+  vi.resetModules()
+  await import('./sw')
+})
 /** Requests that could have served content: the page policy's HEAD refresh carries none. */
 const served = () => network.mock.calls.filter((c) => (c as unknown[])[1] === undefined || ((c as unknown[])[1] as RequestInit).method !== 'HEAD')
 
