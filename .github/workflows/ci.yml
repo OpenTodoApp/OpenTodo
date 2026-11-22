@@ -4,8 +4,9 @@ on:
   push:
     branches: [main, master]
     tags: ["v*"]
-  # A pull request runs the fast tier (ci-pr-fast-tier): the checks, web, server, image and
-  # the small packages; the browser, workbench, accessibility and phone jobs wait for the queue.
+  # A pull request runs the fast tier (ci-pr-fast-tier, ci-pr-shorter-chain): the checks, web,
+  # server, image and the small packages; the browser, workbench, accessibility, phone, binary
+  # and site bundle jobs wait for the queue.
   pull_request:
     types: [opened, synchronize, reopened]
   # The merge queue: the whole path tier, the heavy jobs included, on the
@@ -46,7 +47,8 @@ jobs:
   # Obsidian plugin and skill only for their own paths; a docs-only change runs the checks
   # and the docs website. The merge queue runs the whole path tier for what it changes;
   # a pull request, draft or not, and a push to main run it without the browser,
-  # workbench, accessibility and phone jobs, which the queue runs before anything lands.
+  # workbench, accessibility and phone jobs, which the queue runs before anything lands;
+  # a pull request also skips the binary and site bundle jobs (ci-pr-shorter-chain).
   # Release tags, the nightly schedule and a run by hand run every job and every matrix
   # leg (`full`, every output true). The interface audit runs nightly (ux-audit.yml).
   changes:
@@ -504,8 +506,8 @@ jobs:
           path: docs-report
 
   # The site bundle (OpenSpec site-bundle): docs site, screenshots, tokens, icons,
-  # changelog and manifest for the website repository. Every run uploads it as an
-  # artefact (a preview of unreleased docs); a v* tag names it after the tag and the
+  # changelog and manifest for the website repository. Every run outside pull requests
+  # uploads it as an artefact (a preview of unreleased docs); a v* tag names it after the tag and the
   # release job attaches it. The manifest's import formats come from the linux/amd64
   # server binary when the binaries were built, otherwise from `go run`.
   site-bundle:
@@ -513,7 +515,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [changes, cli]
-    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.cli.result != 'failure' && needs.changes.outputs.docs == 'true' }}
+    # Not on pull requests (ci-pr-shorter-chain): it waits for the binaries and catches
+    # nothing the docs check misses there; the merge queue builds it before a change lands.
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && needs.changes.result == 'success' && needs.cli.result != 'failure' && needs.changes.outputs.docs == 'true' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -535,15 +539,11 @@ jobs:
           path: bin-linux
       - name: Build the bundle
         id: bundle
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           case "$GITHUB_REF" in
             refs/tags/v*) version="$GITHUB_REF_NAME" ;;
             *) version="main-$(git rev-parse --short HEAD)" ;;
           esac
-          [ "$GITHUB_EVENT_NAME" = pull_request ] && version="pr${PR_NUMBER}-$(git rev-parse --short "$PR_HEAD_SHA")"
           bin=""
           if [ -f bin-linux/opentodo-linux-amd64 ]; then chmod +x bin-linux/opentodo-linux-amd64; bin="--bin bin-linux/opentodo-linux-amd64"; fi
           node scripts/site-bundle.mjs --version "$version" $bin
@@ -659,12 +659,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [changes, server, web-sign]
-    # web-sign runs on release tags only; elsewhere it is skipped, not failed.
-    if: ${{ !cancelled() && !failure() && needs.changes.outputs.code == 'true' }}
+    # web-sign runs on release tags only; elsewhere it is skipped, not failed. Not on pull
+    # requests (ci-pr-shorter-chain): the server job builds the linux/amd64 binaries there,
+    # and the merge queue cross-compiles before a change lands.
+    if: ${{ !cancelled() && !failure() && github.event_name != 'pull_request' && needs.changes.outputs.code == 'true' }}
     strategy:
       fail-fast: false
       matrix:
-        # linux/amd64 on pull requests (the site bundle reads it); every platform on pushes and tags.
+        # linux/amd64 on path-tier runs (the site bundle reads it); every platform on full runs.
         include: ${{ fromJSON(needs.changes.outputs.full != 'true' && '[{"goos":"linux","goarch":"amd64"}]' || '[{"goos":"linux","goarch":"amd64"},{"goos":"linux","goarch":"arm64"},{"goos":"darwin","goarch":"amd64"},{"goos":"darwin","goarch":"arm64"},{"goos":"windows","goarch":"amd64","ext":".exe"},{"goos":"windows","goarch":"arm64","ext":".exe"}]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

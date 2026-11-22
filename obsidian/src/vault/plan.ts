@@ -130,7 +130,11 @@ export async function plan(e: Engine, dry: boolean): Promise<void> {
     } else renames.set(p, conflictName(p))
   }
   for (const p of e.pending) {
-    if (own(files, p)) files[p] = { ...files[p], hash: '' }
+    if (own(files, p)) {
+      const held = e.held.get(p)
+      const { held: _was, ...rest } = files[p]
+      files[p] = held ? { ...rest, hash: '', held } : { ...rest, hash: '' }
+    }
   }
   for (const p of e.skip) {
     delete files[p]

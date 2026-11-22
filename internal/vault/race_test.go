@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 // during runs fn once, right before the next sync writes the vault's files:
@@ -382,8 +383,8 @@ func TestEmptyFileMidSaveWithoutTasks(t *testing.T) {
 	}
 }
 
-// TestFileEmptiedOnPurpose: a file still empty at the next sync was emptied
-// on purpose: it is held once only, then its tasks go.
+// TestFileEmptiedOnPurpose: a file still empty a while after it was first held
+// was emptied on purpose: its tasks go.
 func TestFileEmptiedOnPurpose(t *testing.T) {
 	s := newServer(t)
 	home := s.create("projects", map[string]any{"name": "Home"})
@@ -393,6 +394,8 @@ func TestFileEmptiedOnPurpose(t *testing.T) {
 	if rep := v.sync(t); !hasEvent(rep, "skipped", "Home.md") {
 		t.Fatalf("first sync %+v", rep)
 	}
+	later := time.Now().Add(2 * halfSavedHold)
+	v.now = func() time.Time { return later }
 	rep := v.sync(t)
 	if hasEvent(rep, "skipped", "Home.md") {
 		t.Fatalf("held again: %+v", rep)
@@ -400,6 +403,62 @@ func TestFileEmptiedOnPurpose(t *testing.T) {
 	for _, task := range s.list("tasks") {
 		if task["id"] == lamp && task["deleted_at"] == nil {
 			t.Fatalf("the task of the emptied file stays: %+v", rep)
+		}
+	}
+}
+
+// TestEmptyFileHeldAcrossQuickSyncs: the watch syncs again while the save's
+// empty step still lasts (another file changed): the file is held again, and
+// the save that lands then keeps every task.
+func TestEmptyFileHeldAcrossQuickSyncs(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home"})
+	work := s.create("projects", map[string]any{"name": "Work"})
+	lamp := s.create("tasks", map[string]any{"title": "Fix the lamp", "project_id": home})
+	s.create("tasks", map[string]any{"title": "Send the invoice", "project_id": work})
+	v := s.vault(t)
+	saved := v.read(t, "Home.md")
+	v.write(t, "Home.md", "")
+	if rep := v.sync(t); !hasEvent(rep, "skipped", "Home.md") {
+		t.Fatalf("first sync %+v", rep)
+	}
+	v.edit(t, "Work.md", "- [ ] Send the invoice", "- [ ] Send the invoice 📅 2026-11-30")
+	if rep := v.sync(t); !hasEvent(rep, "skipped", "Home.md") || rep.Updated != 1 {
+		t.Fatalf("second sync %+v", rep)
+	}
+	if got := s.get("tasks", lamp)["deleted_at"]; got != nil {
+		t.Fatalf("the second sync at the empty step trashed the task: %v", got)
+	}
+	v.write(t, "Home.md", saved+"- [ ] Oil the hinge\n")
+	if rep := v.sync(t); rep.Created != 1 {
+		t.Fatalf("the save %+v", rep)
+	}
+	if got := s.get("tasks", lamp)["deleted_at"]; got != nil {
+		t.Fatalf("the task was trashed after the save: %v", got)
+	}
+}
+
+// TestEmptyFileHoldEndsWhenTheClockWentBack: a hold time in the future (the
+// clock was set back since) does not hold the file for hours: the file syncs
+// as it is.
+func TestEmptyFileHoldEndsWhenTheClockWentBack(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home"})
+	lamp := s.create("tasks", map[string]any{"title": "Fix the lamp", "project_id": home})
+	v := s.vault(t)
+	v.write(t, "Home.md", "")
+	ahead := time.Now().Add(3 * time.Hour)
+	v.now = func() time.Time { return ahead }
+	if rep := v.sync(t); !hasEvent(rep, "skipped", "Home.md") {
+		t.Fatalf("first sync %+v", rep)
+	}
+	v.now = time.Now
+	if rep := v.sync(t); hasEvent(rep, "skipped", "Home.md") {
+		t.Fatalf("held with a hold time hours ahead: %+v", rep)
+	}
+	for _, task := range s.list("tasks") {
+		if task["id"] == lamp && task["deleted_at"] == nil {
+			t.Fatal("the task of the file emptied on purpose stays")
 		}
 	}
 }
