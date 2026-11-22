@@ -8,7 +8,7 @@ import { planComplete, planLabels, planMove, planReopen, planTrash, readTicked, 
 import { db, type AssistantUndo } from './db'
 import { logicalToday } from './dates'
 import { seriesRule } from './recurring'
-import { getDeviceId, liveSubtree, planReminders, type Change } from './ops'
+import { getDeviceId, liveSubtree, planReminders, updateTask, type Change } from './ops'
 import type { ReminderPhrase } from './nlp'
 import { currentUserId, membershipMap } from './sharing'
 import type { FilterContext } from './filter'
@@ -55,6 +55,29 @@ export async function completeUndoable(id: string, completed: boolean, opts: { n
   const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? logicalToday(), await membershipMap()) : planReopen([task])
   const result = await apply(changes, completed ? t('Task completed') : t('Task reopened'))
   return { ...result, completed: completed && !task.completed_at && !!result.entry }
+}
+
+/**
+ * One task's fields that updateTask writes as they are (no date, start or project rules), as
+ * one step of undo history (OpenSpec change undo-estimate). Planned from the one row; a field
+ * already at that value is left out and nothing at all records nothing. A repeating task goes
+ * through updateTask as before, so the change carries to its series and follows the panel's
+ * scope, without a step.
+ */
+async function plainEditUndoable(id: string, patch: Partial<Task>, label: string): Promise<UndoableResult> {
+  const task = await db.tasks.get(id)
+  if (!task || task.recurrence) {
+    await updateTask(id, patch)
+    return { entry: null, label: '' }
+  }
+  const changed = Object.fromEntries(Object.entries(patch).filter(([k, v]) => ((task as unknown as Record<string, unknown>)[k] ?? null) !== (v ?? null)))
+  if (!Object.keys(changed).length) return { entry: null, label: '' }
+  return apply([{ entity: 'task', entityId: id, patch: changed }], label)
+}
+
+/** Set (or with null remove) one task's estimate in minutes, as one step of undo history. */
+export function estimateUndoable(id: string, minutes: number | null): Promise<UndoableResult> {
+  return plainEditUndoable(id, { estimate_minutes: minutes }, minutes ? t('Estimate {to} min', { to: String(minutes) }) : t('Estimate removed'))
 }
 
 /** Move one task and its subtasks to the Trash. */

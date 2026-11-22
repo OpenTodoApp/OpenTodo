@@ -40,6 +40,7 @@ import { act, reportActionError } from '../actionError'
 import { dayPartFields } from '../../lib/dayParts'
 import { energyLevelsOn, energyOf, setTaskEnergy } from '../../lib/energy'
 import { useUserPrefsRow } from '../../lib/localData'
+import { estimateUndoable } from '../../lib/undoActions'
 import { EnergyChoice } from './EnergyChoice'
 
 export const PRIORITIES: { p: Priority; cls: string }[] = [
@@ -241,7 +242,7 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
         </div>
       ))
     case 'estimate':
-      return frame('clock', t('Estimate'), <EstimateField task={task} />, task.estimate_minutes !== null ? () => act(updateTask(task.id, { estimate_minutes: null })) : undefined)
+      return frame('clock', t('Estimate'), <EstimateField task={task} />, task.estimate_minutes !== null ? () => act(estimateUndoable(task.id, null)) : undefined)
     case 'energy':
       return frame('zap', t('Energy'), <EnergyChoice task={task} onChosen={onClose} />, energyOf(task) ? () => act(setTaskEnergy(task.id, null)) : undefined)
     case 'labels':

@@ -16,10 +16,9 @@ import { CalendarsToggle } from './calendar/CalendarsToggle'
 import { addDaysISO, dueFromView, formatDate, formatShort, viewedTask } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import { getTask, readGridPrefs, useCalendarShowCompleted, useGridPrefs, useLiveProjects } from '../lib/liveData'
-import { updateTask } from '../lib/ops'
 import type { CalendarSubscription, Task } from '../lib/types'
 import { useCalendarDrag, type DragState, type DropTarget } from './calendarDrag'
-import { rescheduleWithUndo, setDueWithUndo, spanWithUndo } from './undoable'
+import { estimateWithUndo, rescheduleWithUndo, setDueWithUndo, spanWithUndo } from './undoable'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { CalendarRangeSwitch } from './CalendarRange'
 import { placement as placementSignal } from './signals'
@@ -195,7 +194,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
       const time = toHHMM(target.start)
       if (task.due?.time !== time || target.estimate !== task.estimate_minutes) act(rescheduleWithUndo(taskId, dueFromView(stored, { date: target.date, time })!, target.estimate))
     } else if (target.estimate !== task.estimate_minutes) {
-      act(updateTask(taskId, { estimate_minutes: target.estimate }))
+      act(estimateWithUndo(taskId, target.estimate))
     }
     setSelectedId(taskId)
   }, [taskMap, rawMap, slotIndex, heldBy, zone])

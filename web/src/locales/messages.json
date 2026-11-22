@@ -6203,7 +6203,8 @@
     "web/src/app/review/BentoSlots.tsx"
   ],
   "Estimate removed": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Estimate {from} min → {to} min": [
     "web/src/lib/assistant.ts"
@@ -6212,7 +6213,8 @@
     "web/src/app/TaskRow.tsx"
   ],
   "Estimate {to} min": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Estimated at 15 minutes or less": [
     "web/src/lib/filters.ts"
