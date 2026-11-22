@@ -1,0 +1,1 @@
+- **Document linking SSO providers without a verified email.** Users can sign in locally and link one to an existing account.

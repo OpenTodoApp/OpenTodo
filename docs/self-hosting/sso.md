@@ -14,6 +14,7 @@ What it does:
 
 - Adds **Sign in with &lt;name&gt;** to the sign-in screen, next to the password form.
 - Signs in the account linked to that identity. On the first sign-in, an identity whose provider says the email is **verified** is linked to the member account with that email, if that account's address was confirmed: through the emailed link of a sign-up or an email change, or by an earlier sign-on with the same verified address. The owner, admins, accounts with two-factor authentication or a passkey, and accounts whose address was never confirmed are never linked by email alone: they sign in as usual and link the provider in **Settings → Account → Security → Linked accounts**.
+- Links a provider to an existing account from **Settings → Account → Security → Linked accounts**, even when the provider does not send a verified-email claim.
 - Optionally creates a `member` account for someone who has no account yet (**Allow new accounts via SSO**), or when open sign-up is on.
 - Optionally requires single sign-on for everyone except the owner (**SSO only**).
 - Optionally signs people out of the provider when they sign out of OpenTodo.
@@ -44,7 +45,7 @@ Create an OpenID Connect client ("application", "relying party"):
 | Signing algorithm | RS256, PS256, ES256 or EdDSA (RS256 is the usual default) |
 | Client authentication | `client_secret_basic` or `client_secret_post` |
 
-Make sure the provider sends `email` and `email_verified` in the identity token. Without a verified email an identity cannot be linked to an existing account or create one.
+For automatic email matching or account creation, the provider must return `email` and `email_verified: true` in its identity token. A person with an existing account can sign in locally. They can link a provider that omits a verified email from **Settings → Account → Security → Linked accounts**.
 
 Provider notes:
 
@@ -91,7 +92,8 @@ Leave the switch off if the provider's picture addresses point to a host you do 
 ## Accounts and linking
 
 - An identity is recognised by its issuer and subject (`sub`), never by email once linked. Changing your email at the provider keeps you on the same OpenTodo account, and a changed email cannot take over another account.
-- A first-time identity with a verified email that matches a member account whose address was confirmed is linked to it. The owner, admins, accounts with two-factor authentication or a passkey, and accounts whose address nobody confirmed (sign-up or email change without outgoing email) are refused (`oidc_link_required`) and link only from Settings while signed in, so the provider can never stand in for their own second factor. An unverified or missing email is refused (`oidc_email_unverified`) and nothing is created.
+- On first sign-in, OpenTodo matches a verified provider email only to a confirmed member email. A missing or unverified email cannot match by email or create an account (`oidc_email_unverified`).
+- The owner, admins, accounts with two-factor authentication or a passkey, and accounts with an unconfirmed email cannot link by email alone (`oidc_link_required`). They can sign in with another credential and connect the provider from **Settings → Account → Security → Linked accounts**. The provider does not need to return a verified email for this link.
 - When nothing matches, a `member` account is created only if **Allow new accounts via SSO** is on or `OPENTODO_ALLOW_SIGNUP=true`. Otherwise the person sees "There is no account for this identity yet" and you can invite them.
 - Accounts created this way have no password. They can add a passkey in **Settings → Account → Security**.
 - Everyone can link or unlink the provider in **Settings → Account → Security → Linked accounts**. Linking a new identity needs a sign-in in the last ten minutes; from an older session the app asks for your password or a code first, then sends you to the provider again. Unlinking is refused when it would leave the account with no way to sign in.
@@ -130,7 +132,7 @@ An installed app that signed in through the provider opens offline from its cach
 | --- | --- |
 | The provider says the redirect URI is invalid | `OPENTODO_BASE_URL` is unset or differs from the registered redirect URI; copy the value from the panel |
 | "Signing in with … did not work" | The code exchange or token check failed. The server log (`level=WARN msg="oidc sign-in failed"`) names the step: wrong client secret, audience, clock skew over 60 seconds, unsupported signing algorithm |
-| "did not confirm a verified email address" | The provider sends no `email_verified: true`; enable email verification or the `email` scope |
+| "did not confirm a verified email address" | The provider did not send `email_verified: true`, so first sign-in cannot match an account by email or create one. To use this provider with an existing account, sign in locally and link it in **Settings → Account → Security → Linked accounts** |
 | "This account is not linked to … yet" | The email belongs to the owner, an admin or an account with two-factor authentication or a passkey: sign in with the password (and code) and link the provider in **Settings → Account → Security → Linked accounts** |
 | "There is no account for this identity yet" | Provisioning is off: invite the person, or turn on **Allow new accounts via SSO** |
 | "That sign-in took too long or was started in another tab" | The 10-minute sign-in window passed, or the server restarted during the sign-in; start again |
