@@ -1005,9 +1005,28 @@ a.note-ref:focus-visible { @apply outline-2 outline-focus; }
 /* One row at the top end for the Outline button, Markdown and Formatting (note-outline D2,
    note-markdown-source D4); the first block and the formatting row leave it room. */
 .notes-corner { @apply absolute end-0 top-0 z-10 flex items-center; }
+/* A viewer's Copy note control (copy-code-block D4): present for the keyboard and
+   screen readers, out of sight — the corner has no room for another visible button.
+   It takes no room of its own, so a note without a code block reserves no corner. */
+.note-copy-action { @apply absolute size-px overflow-hidden opacity-0; }
+.note-copy-action:focus-visible { @apply relative size-8 overflow-visible opacity-100; }
 .notes-frame[data-corner] .notes-editor > :first-child,
 .notes-frame[data-corner] .editor-toolbar,
 .notes-frame[data-corner] > .notes-source { padding-inline-end: var(--notes-corner); }
+/* A code block in rendered Markdown (copy-code-block D3): the Copy button sits in a
+   bar above the code at its end corner, so it never covers the first line and the
+   code keeps its own scroller. */
+.md-code { @apply relative rounded-control bg-sunken dark:bg-raised; }
+.md-code__bar { @apply flex justify-end px-0.5 pt-0.5; }
+.md-code > pre { @apply bg-transparent p-2; }
+/* A rendered note under a corner (copy-code-block): its first code block leaves the
+   corner its room, so the note's controls and the block's Copy button never overlap.
+   After the bar's own padding, so this wins: same layer, same specificity class. */
+.notes-frame[data-corner] > :not(.notes-corner):has(.md-code) .md-code__bar { padding-inline-end: var(--notes-corner); }
+/* The same block inside the editor (editor-copy-code-block D1): its node view draws
+   the bar and the code, so it takes the rendered block's look and keeps the editor's
+   own code typography. */
+.notes-editor .md-code > pre { @apply m-0; }
 /* A note's outline (note-outline D2): the Outline button beside the Formatting toggle,
    or a column in the start margin, sticky inside the note's scroller and never a
    scroller of its own; the room around the note makes space for it. */
@@ -1207,6 +1226,17 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
 .row-selected { background-color: var(--ot-selected-row); }
 .row-selected::before { content: ''; position: absolute; inset-block: 0.375rem; inset-inline-start: 0; width: 2px; border-radius: 9999px; background-color: var(--text-color-accent); }
 @media (hover: hover) { .row-hover:hover { background-color: var(--ot-hover); } }
+@media screen and (min-width: 768px) {
+  @container row (width >= 40rem) {
+    [data-task-group-separator] > [data-leading-slot]::after {
+      content: '';
+      position: absolute;
+      inset: 0 0.5rem auto;
+      border-top: 1px solid var(--ot-border-soft);
+      pointer-events: none;
+    }
+  }
+}
 /* The "Add a subtask" line under a parent's last visible subtask (quick-subtask-add,
    GitHub issue 1191): out of the list and the tab order until the parent is the
    selected row; it stays while an input inside holds focus. */
