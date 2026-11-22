@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
 import { createTask, resetDeviceId, updateTask } from './ops'
 import type { OnDropRule } from './types'
-import { undoBatch } from './undo'
-import { dropOnPanel, dropUndoable } from './undoActions'
+import { topUndo, undoBatch } from './undo'
+import { dropOnPanel, dropUndoable, eveningUndoable } from './undoActions'
 
 let n = 0
 beforeEach(() => {
@@ -107,5 +107,32 @@ describe('archiveProjectsUndoable', () => {
     await undoBatch(r.entry!.id)
     for (const id of [home, garden, work]) expect((await db.projects.get(id))?.archived).toBeFalsy()
     expect((await db.projects.get(old))?.archived).toBe(true)
+  })
+})
+
+// OpenSpec change undo-evening: This Evening on one task is one step of history.
+describe('eveningUndoable', () => {
+  it('marks the task, records one step, and undo takes it out again', async () => {
+    const id = await createTask({ title: 'Call mum' })
+    await eveningUndoable(id, true)
+    expect((await db.tasks.get(id))!.evening).toBe(true)
+    const step = topUndo(await db.assistantUndo.toArray())
+    expect(step?.count).toBe(1)
+    await undoBatch(step!.id)
+    expect((await db.tasks.get(id))!.evening).toBeFalsy()
+  })
+
+  it('a task already there records nothing', async () => {
+    const id = await createTask({ title: 'Call mum' })
+    await updateTask(id, { evening: true, day_part: null })
+    await eveningUndoable(id, true)
+    expect(await db.assistantUndo.count()).toBe(0)
+  })
+
+  it('a repeating task is written as before, without a step', async () => {
+    const id = await createTask({ title: 'Read', due: { date: '2030-01-07' }, recurrence: 'every day' })
+    await eveningUndoable(id, true)
+    expect((await db.tasks.get(id))!.evening).toBe(true)
+    expect(await db.assistantUndo.count()).toBe(0)
   })
 })

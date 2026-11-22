@@ -16,7 +16,7 @@ import { toggleTracking } from '../lib/timeEntries'
 import { panelTaskId, sidePanelDocks } from './panel'
 import { closeSidePanelFrom, useSidePanel } from './sidePanel'
 import { openTaskPage } from './taskTrail'
-import { dayPartFields } from '../lib/dayParts'
+import { eveningUndoable } from '../lib/undoActions'
 
 export interface KeyRow {
   key: string
@@ -161,7 +161,7 @@ export function useListKeys(opts: ListKeys): void {
     'list.blocked-by': openWith(blockedByFocus),
     // Park or un-park (someday-and-evening D5).
     'list.park': () => { if (!row) return false; act(row.start === 'someday' ? unparkTask(row.id) : parkTask(row.id)) },
-    'list.evening': () => { if (!row) return false; act(updateTask(row.id, dayPartFields(row.evening ? null : 'evening'))) },
+    'list.evening': () => { if (!row) return false; act(eveningUndoable(row.id, !row.evening)) },
     ...o.extra,
   }, { paused: o.paused })
 }
