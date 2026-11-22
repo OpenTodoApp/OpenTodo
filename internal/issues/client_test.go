@@ -292,8 +292,8 @@ func TestGitHubAccountWithoutIssueAccess(t *testing.T) {
 	}
 }
 
-// reasonOf is the reason a provider error records (Worker.pollError's mapping
-// of the provider's own errors).
+// reasonOf is the reason a provider error carries: its own reason, rate
+// limited, else a failed connection.
 func reasonOf(err error) string {
 	var pe *Error
 	var rl *RateLimitedError
