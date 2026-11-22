@@ -1,12 +1,12 @@
 // OpenSpec change rule-boards, task 2.3: a drop on a board column as one undoable batch.
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
-import { createTask, resetDeviceId, updateTask } from './ops'
+import { createProject, createTask, resetDeviceId, updateTask } from './ops'
 import { addReminder } from './reminders'
 import { deadlineFireAt } from './reminderTime'
 import type { OnDropRule } from './types'
-import { topUndo, undoBatch } from './undo'
-import { deadlineUndoable, dropOnPanel, dropUndoable, estimateUndoable, eveningUndoable, priorityUndoable } from './undoActions'
+import { redoBatch, topUndo, undoBatch } from './undo'
+import { assigneeUndoable, deadlineUndoable, dropOnPanel, dropUndoable, estimateUndoable, eveningUndoable, priorityUndoable } from './undoActions'
 
 let n = 0
 beforeEach(() => {
@@ -192,6 +192,41 @@ describe('deadlineUndoable', () => {
     const rep = await createTask({ title: 'Pay', due: { date: '2030-01-07' }, recurrence: 'every month' })
     expect((await deadlineUndoable(rep, '2030-01-10')).entry).toBeNull()
     expect((await db.tasks.get(rep))!.deadline).toBe('2030-01-10')
+    expect(await db.assistantUndo.count()).toBe(0)
+  })
+})
+
+// OpenSpec change undo-assignee: one task's assignee is one step of history.
+describe('assigneeUndoable', () => {
+  it('records one step named for the member; undo and redo, in a shared project', async () => {
+    await db.meta.put({ key: 'userId', value: 'u-me' })
+    const p = await createProject({ name: 'Wedding' })
+    await db.memberships.put({ projectId: p, role: 'owner', ownerId: 'u-me', members: [{ userId: 'u-ana', name: 'Ana', email: 'ana@example.com' }] } as never)
+    const id = await createTask({ title: 'Book the venue', project_id: p })
+    const a = await assigneeUndoable(id, 'u-ana')
+    expect(a.label).toBe('Assigned to Ana')
+    expect((await db.tasks.get(id))!.assignee_id).toBe('u-ana')
+    const b = await assigneeUndoable(id, 'u-me')
+    expect(b.label).toBe('Assigned to you')
+    const c = await assigneeUndoable(id, null)
+    expect(c.label).toBe('Unassigned')
+    await undoBatch(c.entry!.id)
+    expect((await db.tasks.get(id))!.assignee_id).toBe('u-me')
+    await undoBatch(b.entry!.id)
+    expect((await db.tasks.get(id))!.assignee_id).toBe('u-ana')
+    await redoBatch(b.entry!.id)
+    expect((await db.tasks.get(id))!.assignee_id).toBe('u-me')
+    await undoBatch(b.entry!.id)
+    await undoBatch(a.entry!.id)
+    expect((await db.tasks.get(id))!.assignee_id ?? null).toBeNull()
+  })
+
+  it('the same assignee records nothing; a repeating task is written as before', async () => {
+    const id = await createTask({ title: 'Book the venue' })
+    expect((await assigneeUndoable(id, null)).entry).toBeNull()
+    const rep = await createTask({ title: 'Take the bins out', due: { date: '2030-01-07' }, recurrence: 'every week' })
+    expect((await assigneeUndoable(rep, 'u-ana')).entry).toBeNull()
+    expect((await db.tasks.get(rep))!.assignee_id).toBe('u-ana')
     expect(await db.assistantUndo.count()).toBe(0)
   })
 })
