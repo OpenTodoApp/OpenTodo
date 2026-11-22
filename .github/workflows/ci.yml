@@ -132,13 +132,17 @@ jobs:
           ./scripts/ci-changes.sh < changed.txt | sed -E 's/^(ui|layout|a11y|mobile|ios)=true$/\1=false/' >> "$GITHUB_OUTPUT"
 
   # The web app is built in its own job (ci-speed): the server, layout and binary
-  # jobs need only web-dist, so they start while the unit tests still run.
+  # jobs need only web-dist, so they start while the unit tests still run. On a pull
+  # request the server is its only consumer, so the server job builds it there
+  # (ci-pr-server-builds-web).
   web-build:
     name: Web build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    # Not on pull requests (ci-pr-server-builds-web): there the server job, its one consumer,
+    # builds the web app itself instead of waiting for this job's runner.
+    if: needs.changes.outputs.code == 'true' && github.event_name != 'pull_request'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -148,27 +152,8 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: npm ci --no-audit --no-fund
         working-directory: web
-      # The signed file list (signed-web-app): a release tag names the version, a build
-      # of main is labelled a preview build; anything else is 0.0.0-dev. Signing is the
-      # web-sign job's, on release tags only.
-      - name: Build (the file list names the version)
-        working-directory: web
-        env:
-          REF: ${{ github.ref }}
-        run: |
-          case "$REF" in
-            refs/tags/v*) export OPENTODO_VERSION="${GITHUB_REF_NAME#v}" ;;
-            refs/heads/main) export OPENTODO_BUILD=preview ;;
-          esac
-          npm run build
-      # The first load's gzip size against web/bundle-budget.json (raise it only on purpose).
-      - name: Bundle budget
-        run: node scripts/bundle-budget.mjs
-      # The built service worker and manifest (and no workbench code in the build):
-      # these skip before a build, and fail here if the build is missing.
-      - name: Tests of the built app (service worker, manifest)
-        run: npm run test:built
-        working-directory: web
+      # Build, bundle budget and the tests of the built app (scripts/ci-web-build.sh).
+      - run: ./scripts/ci-web-build.sh
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: web-dist
@@ -282,16 +267,29 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     needs: [changes, web-build]
-    if: needs.changes.outputs.code == 'true'
+    # web-build is skipped on pull requests; this job then builds the web app itself.
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.code == 'true' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
+      # Node for the web build on pull requests and the sync client contract tests below.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: github.event_name != 'pull_request'
         with:
           name: web-dist
           path: internal/web/dist
+      - name: Web build (pull requests; elsewhere the web-build job)
+        if: github.event_name == 'pull_request'
+        run: ./scripts/ci-web-build.sh
       - name: Toolchain matches go.mod (patched release toolchain)
         run: |
           want=$(sed -n 's/^toolchain //p' go.mod)
@@ -320,13 +318,6 @@ jobs:
         run: ./scripts/cli-smoke.sh | tee /dev/stderr | grep -q '^CLI OK$'
       # The web app's sync client (src/lib) against this server binary, no mocks
       # (OpenSpec self-hosting "The sync client is tested against the server").
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: web/package-lock.json
-      - run: npm ci --no-audit --no-fund
-        working-directory: web
       - name: Sync client contract tests (against bin/opentodo)
         run: npm run test:contract
         working-directory: web
