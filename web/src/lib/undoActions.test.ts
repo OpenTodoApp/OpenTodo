@@ -2,9 +2,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
 import { createTask, resetDeviceId, updateTask } from './ops'
+import { addReminder } from './reminders'
+import { deadlineFireAt } from './reminderTime'
 import type { OnDropRule } from './types'
 import { topUndo, undoBatch } from './undo'
-import { dropOnPanel, dropUndoable, estimateUndoable, eveningUndoable, priorityUndoable } from './undoActions'
+import { deadlineUndoable, dropOnPanel, dropUndoable, estimateUndoable, eveningUndoable, priorityUndoable } from './undoActions'
 
 let n = 0
 beforeEach(() => {
@@ -159,6 +161,37 @@ describe('priorityUndoable', () => {
   it('the same priority again records nothing', async () => {
     const id = await createTask({ title: 'Pay rent', priority: 2 })
     await priorityUndoable(id, 2)
+    expect(await db.assistantUndo.count()).toBe(0)
+  })
+})
+
+// OpenSpec change undo-deadline: one task's deadline is one step of history.
+describe('deadlineUndoable', () => {
+  it('records one step; undo restores the old deadline, and removing it is a step too', async () => {
+    const id = await createTask({ title: 'File taxes', deadline: '2030-04-15' })
+    const r = await deadlineUndoable(id, '2030-04-30')
+    expect(r.entry).not.toBeNull()
+    expect((await db.tasks.get(id))!.deadline).toBe('2030-04-30')
+    await undoBatch(r.entry!.id)
+    expect((await db.tasks.get(id))!.deadline).toBe('2030-04-15')
+    expect((await deadlineUndoable(id, null)).label).toBe('Deadline removed')
+  })
+
+  it('a deadline reminder follows the deadline, and the restored one after undo', async () => {
+    const id = await createTask({ title: 'File taxes', deadline: '2030-04-15' })
+    const rem = await addReminder(id, { kind: 'deadline', offset_minutes: 0 })
+    const r = await deadlineUndoable(id, '2030-04-30')
+    expect((await db.reminders.get(rem))!.fire_at).toBe(deadlineFireAt('2030-04-30', 0))
+    await undoBatch(r.entry!.id)
+    expect((await db.reminders.get(rem))!.fire_at).toBe(deadlineFireAt('2030-04-15', 0))
+  })
+
+  it('the same deadline records nothing; a repeating task is written as before', async () => {
+    const id = await createTask({ title: 'File taxes', deadline: '2030-04-15' })
+    expect((await deadlineUndoable(id, '2030-04-15')).entry).toBeNull()
+    const rep = await createTask({ title: 'Pay', due: { date: '2030-01-07' }, recurrence: 'every month' })
+    expect((await deadlineUndoable(rep, '2030-01-10')).entry).toBeNull()
+    expect((await db.tasks.get(rep))!.deadline).toBe('2030-01-10')
     expect(await db.assistantUndo.count()).toBe(0)
   })
 })

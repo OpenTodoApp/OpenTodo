@@ -21,7 +21,7 @@ import { TimeField } from '../datetime/TimeField'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { RecurrenceField } from '../RecurrenceField'
 import { RemindersField } from '../RemindersField'
-import { doOnWithUndo, parkWithUndo, setDueWithUndo } from '../undoable'
+import { deadlineWithUndo, doOnWithUndo, parkWithUndo, setDueWithUndo } from '../undoable'
 import { ZoneControl } from './ZoneControl'
 import { useViewerZone } from '../useViews'
 import { t } from '../../lib/i18n'
@@ -328,7 +328,7 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
 
       {shows('deadline') && <Segment id="deadline" icon="hourglass" label={t('Deadline')} bare={!!segment}>
         <DatePicker label={t('Deadline')} value={task.deadline ?? null} choices={quickChoices('deadline')} emptyText={t('No deadline')}
-          onChange={(deadline) => act(updateTask(task.id, { deadline }))} />
+          onChange={(deadline) => act(deadlineWithUndo(task.id, deadline))} />
       </Segment>}
 
       {shows('repeat') && <Segment id="repeat" icon="repeat" label={t('Repeat')} bare={!!segment}>

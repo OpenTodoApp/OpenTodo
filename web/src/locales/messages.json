@@ -4817,7 +4817,8 @@
     "web/src/app/RemindersField.tsx"
   ],
   "Deadline removed": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Deadline today": [
     "web/src/app/UrgencyChip.tsx"
@@ -4827,6 +4828,7 @@
     "web/src/app/ScheduleSheet.tsx",
     "web/src/app/TimelineView.tsx",
     "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts",
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Deadline {date}, {label}": [
