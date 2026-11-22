@@ -13,4 +13,4 @@
 
 ## 3. Check
 
-- [ ] 3.1 `make check`, and the browser end-to-end checks including the signed web app's (`make e2e`, `make e2e-signed`); the transfer of everything the worker precaches measured before and after with `curl`, and every asset fetched without gzip matching its signed hash
+- [x] 3.1 `make check`, and the browser end-to-end checks including the signed web app's (`make e2e`, `make e2e-signed`); the transfer of everything the worker precaches measured before and after with `curl`, and every asset fetched without gzip matching its signed hash
