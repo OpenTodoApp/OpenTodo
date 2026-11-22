@@ -7,6 +7,7 @@ After ci-pr-shorter-chain, a pull request's longest path is changed paths → we
 ## What Changes
 
 - On a pull request, the web-build job is skipped and the server job builds the web app itself (build, bundle budget, tests of the built app) before its Go steps. In the merge queue, on pushes, tags, the nightly run and runs by hand, web-build runs as before and the server job downloads `web-dist`.
+- On a pull request, `node_modules` is removed again after the build, so the Go steps' `./...` never includes the Go code some npm packages ship.
 - Both jobs run the same script, `scripts/ci-web-build.sh`, so the two builds cannot drift apart.
 - A pull request's longest path becomes changed paths → server: two runner waits instead of three.
 

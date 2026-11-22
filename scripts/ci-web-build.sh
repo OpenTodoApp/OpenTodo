@@ -4,6 +4,7 @@
 # `npm ci` in web/ already. The signed file list (signed-web-app) names the version: a release
 # tag the tag's version, a build of main a preview build, anything else 0.0.0-dev.
 set -eu
+GITHUB_REF_NAME="${GITHUB_REF_NAME:-}"
 case "${GITHUB_REF:-}" in
   refs/tags/v*) export OPENTODO_VERSION="${GITHUB_REF_NAME#v}" ;;
   refs/heads/main) export OPENTODO_BUILD=preview ;;
