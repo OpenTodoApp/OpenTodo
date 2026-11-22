@@ -17,7 +17,7 @@ The due date is when you plan to work on a task. Two more dates say when it must
 
 A **deadline** is the day a task must be finished by, and the two are separate: you can plan a report for Tuesday that is due to your boss on Friday. Moving or clearing the due date never changes the deadline, and you may even plan a task after its deadline; the countdown then turns red.
 
-A task with a deadline shows a countdown on its row, next to an hourglass: `3d` for three days to go, `Today` on the day, and `2d over` once it has passed. It turns amber in the last week and red on the day and after. Hover it to see the full date. The countdown follows the calendar on your device, so it moves on at midnight even offline.
+A task with a deadline shows a countdown by an hourglass: `3d` to go, `Today` on the day, `2d over` once passed. It turns amber in the last week and red from the day on. Hover it for the full date, or turn on **Settings › Appearance › Show deadlines as dates**. The countdown follows your device's calendar, so it moves on at midnight even offline.
 
 On the [calendar](calendar-views.md#open-the-calendar), a deadline shows on its day with an amber diamond: a chip in the Day and Week strip under the day's name, a row at the end of a Month day, and a row at the end of a Plan column. When the task is planned on its deadline day, the diamond sits on the task instead. Click one to open the task. They never count toward the day's capacity.
 

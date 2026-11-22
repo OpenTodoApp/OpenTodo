@@ -7856,5 +7856,7 @@
   "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "Alt projeleriyle birlikte kenar çubuğundan ayrılırlar. Ayarlar → Veri bölümünden arşivden çıkarabilirsiniz.",
   "Archived {projects}": "{projects} arşivlendi",
   "The filter language of saved views, for example search: milk & p1 or @errand.": "Kayıtlı görünümlerin filtre dili, örneğin search: milk & p1 veya @errand.",
-  "Filter {name}": "“{name}” filtrele"
+  "Filter {name}": "“{name}” filtrele",
+  "Show deadlines as dates": "Son teslim tarihlerini tarih olarak göster",
+  "The date on task rows instead of the days left": "Görev satırlarında kalan günler yerine tarih"
 }

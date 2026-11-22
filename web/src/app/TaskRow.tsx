@@ -55,6 +55,7 @@ import { useTaskTracked } from '../lib/timeEntries'
 import { OriginChip } from './OriginChip'
 import { DEADLINE_TONE, ladderTone, PRIORITY_RING } from './rowTone'
 import { RowActionCluster } from './task-list/RowActionCluster'
+import { useDeadlineDates } from '../lib/deadlineDates'
 import { useFullTitles } from '../lib/fullTitles'
 import { useAccountRowLayout, type RowLayout } from '../lib/rowLayout'
 import { DRAG_THRESHOLD, swallowNextClick, trackHold } from '../lib/dnd'
@@ -779,12 +780,25 @@ function RowTrailing({ score, origin, revealed, forceActions }: { score?: ReactN
   )
 }
 
+/**
+ * A row's deadline: the countdown and its tone (deadlines), or with deadlines as dates
+ * (deadline-dates D1) the date in the countdown's place and tone; and the accessible name.
+ */
+function rowDeadline(task: Task, off: boolean, asDate: boolean, resolved: ResolvedDateTime): { deadline: { label: string; tone: 'overdue' | 'soon' | 'later' } | null; deadlineLabel: string } {
+  const countdown = off ? null : describeDeadline(task.deadline, undefined, task.due ? localDueOf(task.due).date : null)
+  if (!countdown) return { deadline: null, deadlineLabel: '' }
+  const date = formatDate(task.deadline!, 'long', resolved)
+  if (asDate) return { deadline: { ...countdown, label: formatDate(task.deadline!, 'compact', resolved) }, deadlineLabel: t('Deadline {date}', { date }) }
+  return { deadline: countdown, deadlineLabel: t('Deadline {date}, {label}', { date, label: countdown.label }) }
+}
+
 function FullRow({ task, contextual = false, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, groupSeparator, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, selectOnClick, onOpenPage, onEditTitle, onToggleCollapse, shape = 'row', timeColumn = false, slotsOff, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dropNote, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, logbook = false, expanded = false, onExpand, layout, edge, notes = false, score }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
   const detailed = !card && (layout ?? accountLayout) === 'detailed'
   const hides = (p: RowProperty) => hidden.includes(p)
+  const deadlineDates = useDeadlineDates()
   // One shared, ticking map for every row (time-tracking D4); stories and tests may pass the figure.
   const trackedLive = useTaskTracked(task.id)
   const tracked = trackedProp ?? trackedLive
@@ -798,8 +812,7 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
   const start = task.start ?? null
   const span = spanOf(task)
   const startText = done || !start || hides('start') || (start === 'someday' && implied?.someday) ? null : startWords(start, span, dt.resolved)
-  const deadline = done || hides('deadline') ? null : describeDeadline(task.deadline, undefined, task.due ? localDueOf(task.due).date : null)
-  const deadlineLabel = deadline ? t('Deadline {date}, {label}', { date: formatDate(task.deadline!, 'long', dt.resolved), label: deadline.label }) : ''
+  const { deadline, deadlineLabel } = rowDeadline(task, done || hides('deadline'), deadlineDates, dt.resolved)
   // The column (rows-v2 D2, D3): the due time, else the deadline countdown; the line never repeats it.
   const column = timeColumn && !card && !hides('date') && !detailed
   const timeInColumn = column && !!due?.time

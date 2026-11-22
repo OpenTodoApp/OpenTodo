@@ -7856,5 +7856,7 @@
   "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "它们将连同子项目一起从侧边栏移出。你可以在“设置 → 数据”中取消归档。",
   "Archived {projects}": "已归档{projects}",
   "The filter language of saved views, for example search: milk & p1 or @errand.": "已保存视图的筛选语法，例如 search: milk & p1 或 @errand。",
-  "Filter {name}": "筛选“{name}”"
+  "Filter {name}": "筛选“{name}”",
+  "Show deadlines as dates": "将最后期限显示为日期",
+  "The date on task rows instead of the days left": "在任务行中显示日期，而不是剩余天数"
 }

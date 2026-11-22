@@ -7856,5 +7856,7 @@
   "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "Sie verschwinden mit ihren Unterprojekten aus der Seitenleiste. Du kannst sie unter Einstellungen → Daten aus dem Archiv holen.",
   "Archived {projects}": "{projects} archiviert",
   "The filter language of saved views, for example search: milk & p1 or @errand.": "Die Filtersprache der gespeicherten Ansichten, zum Beispiel search: milk & p1 oder @errand.",
-  "Filter {name}": "„{name}“ filtern"
+  "Filter {name}": "„{name}“ filtern",
+  "Show deadlines as dates": "Fristen als Datum anzeigen",
+  "The date on task rows instead of the days left": "Das Datum in Aufgabenzeilen statt der verbleibenden Tage"
 }
