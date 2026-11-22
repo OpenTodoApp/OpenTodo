@@ -1,0 +1,1 @@
+- **This Evening can be undone.** Marking one task for This Evening, or taking it out, with its key, the task panel or the command palette is a step: Ctrl/Cmd+Z puts it back. A repeating task is not covered yet.

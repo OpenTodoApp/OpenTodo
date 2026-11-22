@@ -634,11 +634,15 @@ async function touchInput(p, base) {
  * reduced motion it does not move (row-lift-overscroll). The touch is a pointer event
  * of type touch on the row's title, so the same code runs in every engine.
  */
-async function rowLift(p) {
+async function rowLift(p, attempt = 1) {
   const out = []
-  const row = p.locator('li[data-task-id]').first()
-  const title = row.locator('[data-row-open]').first()
-  if (!(await title.count())) return ['no task row to hold']
+  // One row for the whole probe: a list that is still filling in can change which row is
+  // first between the press and the read, and a locator would then read another row.
+  const first = p.locator('li[data-task-id]').first()
+  if (!(await first.locator('[data-row-open]').count())) return ['no task row to hold']
+  const row = await first.elementHandle()
+  const title = await row.$('[data-row-open]')
+  if (!title) return ['no task row to hold']
   await row.scrollIntoViewIfNeeded()
   const scale = () => row.evaluate((el) => {
     const t = getComputedStyle(el).transform
@@ -649,15 +653,22 @@ async function rowLift(p) {
   const rising = () => row.evaluate((el) => el.getAnimations().some((a) => a.transitionProperty === 'transform' && a.playState !== 'idle'))
   const hold = async (ms) => {
     const box = await title.boundingBox()
+    if (!box) return { scale: 1, rising: false, state: 'replaced' }
     const at = { pointerId: 41, pointerType: 'touch', isPrimary: true, bubbles: true, clientX: box.x + 8, clientY: box.y + box.height / 2 }
     await title.evaluate((el, at) => el.dispatchEvent(new PointerEvent('pointerdown', at)), at)
     await p.waitForTimeout(ms)
-    const held = { scale: await scale(), rising: await rising() }
+    const held = { scale: await scale(), rising: await rising(), state: await row.evaluate((el) => (!el.isConnected ? 'replaced' : el.hasAttribute('data-touch-press') ? 'pressed' : 'not pressed')) }
     await p.evaluate((at) => window.dispatchEvent(new PointerEvent('pointerup', at)), at)
     return held
   }
   const lifted = await hold(300)
-  if (!(lifted.scale > 1.001) && !lifted.rising) out.push(`a row held for 300 ms has not risen (scale ${lifted.scale})`)
+  if (!(lifted.scale > 1.001) && !lifted.rising) out.push(`a row held for 300 ms has not risen (scale ${lifted.scale}, row ${lifted.state})`)
+  // A row re-rendered under the probe (the list still filling in) is the probe's problem,
+  // not the app's: hold a fresh row once more, and report only a second replacement.
+  if (lifted.state === 'replaced') {
+    if (attempt === 1) { await p.waitForTimeout(500); return rowLift(p, 2) }
+    return ['the held row was re-rendered while it was held, twice']
+  }
   // Settled once its transitions end (a loaded runner can take longer than their 350 ms), at most 2 s.
   await row.evaluate((el) => Promise.race([Promise.all(el.getAnimations().map((a) => a.finished.catch(() => {}))), new Promise((r) => setTimeout(r, 2000))]))
   await p.waitForTimeout(50)
@@ -666,6 +677,10 @@ async function rowLift(p) {
   await p.emulateMedia({ reducedMotion: 'reduce' })
   const still = await hold(300)
   await p.emulateMedia({ reducedMotion: null })
+  if (still.state === 'replaced') {
+    if (attempt === 1) { await p.waitForTimeout(500); return [...out, ...await rowLift(p, 2)] }
+    return [...out, 'the held row was re-rendered before the reduced-motion hold, twice']
+  }
   if (Math.abs(still.scale - 1) > 0.0005 || still.rising) out.push(`under reduced motion a held row moves (scale ${still.scale})`)
   return out
 }
