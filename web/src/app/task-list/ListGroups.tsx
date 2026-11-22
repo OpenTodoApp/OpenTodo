@@ -1,7 +1,8 @@
 // The list body (OpenSpec change web-component-structure): rows, the grouped list
 // with its headers and section groups, and the logbook's "Show more". The board and
 // the timeline have their own bodies (BoardView, TimelineView).
-import { type CSSProperties, Fragment, isValidElement, lazy, Suspense, type ReactElement, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, Fragment, isValidElement, Suspense, type ReactElement, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { lazy } from '../../lib/lazy'
 import { t, useLanguageVersion } from '../../lib/i18n'
 import { BLOCKED_OPEN_KEY, earlierCollapsed, flatRow, type ListGroup, type ListRow as Row } from '../../lib/listGroups'
 import type { DropAt } from '../listDrop'

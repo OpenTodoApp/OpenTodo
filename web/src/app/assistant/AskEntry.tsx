@@ -3,7 +3,8 @@
 // and the Assistant page at `/ask`, which holds the conversation itself. When the
 // assistant is not available they show nothing, or why. Part of the main chunk; the
 // sheet and the page's conversation stay in the lazy assistant chunk.
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
+import { lazy } from '../../lib/lazy'
 import { openAssistant, openAssistantWith, useAssistantStatus, type AssistantStatus } from '../../lib/assistantStatus'
 import type { AccountRole } from '../../lib/types'
 import { Button, PageBody, PageHeader, Tooltip } from '../../ui'

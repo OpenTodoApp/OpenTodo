@@ -12,7 +12,8 @@
 // one that continues it. On All occurrences of a series with a past (an earlier
 // piece, a done or skipped record), a second choice Only future ones · Also past
 // ones (series-all-scope D1) lets edits reach the past too.
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
+import { lazy } from '../../lib/lazy'
 import { formatDate, logicalToday } from '../../lib/dates'
 import { t } from '../../lib/i18n'
 import { useSeriesRecords } from '../../lib/localData'
