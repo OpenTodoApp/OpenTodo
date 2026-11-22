@@ -270,7 +270,7 @@ export function SettingsList({ user, current, page, inPage = false, compact = fa
                   <li key={s.id}>
                     <a href={routePath({ view: 'settings', section: s.id })} data-settings-link={s.id} aria-current={on ? (inPage ? 'true' : 'page') : undefined}
                       className={compact
-                        ? `touch-target flex min-h-[1.875rem] items-center gap-2.5 rounded-control px-2 text-body focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${on ? 'bg-selected font-medium text-strong' : 'text-default hover:bg-hover'}`
+                        ? `touch-target flex min-h-[1.875rem] pointer-coarse:min-h-11 items-center gap-2.5 rounded-control px-2 text-body focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${on ? 'bg-selected font-medium text-strong' : 'text-default hover:bg-hover'}`
                         : 'flex min-h-14 items-center gap-3 px-4 py-3 hover:bg-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus dark:hover:bg-raised'}
                       onClick={(e) => followLink(e, { view: 'settings', section: s.id })}>
                       {compact
@@ -315,7 +315,7 @@ function PanePages({ user, section, page }: { user: User; section: SettingsSecti
         return (
           <li key={p.id}>
             <a href={routePath({ view: 'settings', section: section.id, page: p.id })} data-settings-pane-page={p.id} aria-current={on ? 'page' : undefined}
-              className={`touch-target flex min-h-[1.875rem] items-center gap-2 rounded-control px-2 text-body focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${on ? 'bg-selected font-medium text-strong' : 'text-default hover:bg-hover'}`}
+              className={`touch-target flex min-h-[1.875rem] pointer-coarse:min-h-11 items-center gap-2 rounded-control px-2 text-body focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${on ? 'bg-selected font-medium text-strong' : 'text-default hover:bg-hover'}`}
               onClick={(e) => followLink(e, { view: 'settings', section: section.id, page: p.id })}>
               <span className={on ? 'text-strong' : 'text-muted'}><Icon name={p.icon} size="xs" /></span>
               <TruncatedText text={p.label} className="min-w-0 flex-1" />
