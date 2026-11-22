@@ -13,7 +13,7 @@
 //   node scripts/release/appstore.mjs notes <version> <build>       "What to test" from CHANGELOG.md
 //   node scripts/release/appstore.mjs processed <version> <build>   wait for Apple's processing (VALID)
 //   node scripts/release/appstore.mjs key-file <path>               ASC_KEY_P8 as a file for altool (mode 600)
-//   node scripts/release/appstore.mjs submit <version> <build> [--dry-run]
+//   node scripts/release/appstore.mjs submit <version> <build> [--dry-run] [--changelog <file>]
 //                                                                   App Store version, What's New, build, review (a final tag)
 //
 // The key comes from ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_P8 (the .p8 file's content), the team
@@ -397,6 +397,23 @@ export async function cleanup(call, { dir, log = defaultLog }) {
   writeState(dir, { certificateId: null, profileIds: [] })
 }
 
+/**
+ * `submit <version> <build> [--dry-run] [--changelog <file>]`. The workflow runs this script from
+ * its own commit and passes the tag's CHANGELOG.md (ios-distribution D10).
+ */
+export function submitArgs(args) {
+  const [version, build, ...rest] = args
+  let changelog = join(ROOT, 'CHANGELOG.md')
+  let dry = false
+  for (let i = 0; i < rest.length; i++) {
+    if (rest[i] === '--dry-run') dry = true
+    else if (rest[i] === '--changelog' && rest[i + 1]) changelog = rest[++i]
+    else throw new Error('usage: submit <version> <build> [--dry-run] [--changelog <file>]')
+  }
+  if (!version || !build) throw new Error('usage: submit <version> <build> [--dry-run] [--changelog <file>]')
+  return { version, build, changelog, dry }
+}
+
 /** TestFlight's "What to test": the version's CHANGELOG.md section, or a plain line for a build between releases. */
 export function whatToTest(changelog, version, build) {
   try {
@@ -691,11 +708,10 @@ async function main(argv) {
       return
     }
     case 'submit': {
-      const [version, build, flag] = args
+      const { version, build, changelog, dry } = submitArgs(args)
       const v = marketingVersion(version)
-      if (!v || !build) throw new Error('usage: submit <version> <build> [--dry-run]')
-      const notes = whatsNew(readFileSync(join(ROOT, 'CHANGELOG.md'), 'utf8'), v.version)
-      const dry = flag === '--dry-run'
+      if (!v) throw new Error(`"${version}" is not a release version`)
+      const notes = whatsNew(readFileSync(changelog, 'utf8'), v.version)
       const out = await submitForReview(dry ? dryRun(call) : call, { version: v.version, build, notes })
       // The job summary says what happened (submitted, already-submitted, build-not-ready).
       if (process.env.GITHUB_OUTPUT) writeFileSync(process.env.GITHUB_OUTPUT, `state=${dry ? 'dry-run' : out.state}\n`, { flag: 'a' })
