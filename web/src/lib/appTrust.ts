@@ -80,14 +80,25 @@ export async function loadTrust(idb: IDBFactory | undefined = globalThis.indexed
   }
 }
 
-/** Writes the record in one transaction. */
-export async function saveTrust(record: TrustRecord, idb: IDBFactory = globalThis.indexedDB): Promise<void> {
+/**
+ * Changes the record as stored, in one transaction: `change` gets the stored record
+ * and returns the one to store, or null to leave it. Transactions on the store run
+ * one at a time, also between workers, so nothing written meanwhile is lost.
+ * Answers the record written, or null when nothing was.
+ */
+export async function updateTrust(change: (stored: TrustRecord | null) => TrustRecord | null, idb: IDBFactory = globalThis.indexedDB): Promise<TrustRecord | null> {
   const db = await open(idb)
   try {
-    await new Promise<void>((resolve, reject) => {
+    return await new Promise<TrustRecord | null>((resolve, reject) => {
       const tx = db.transaction(STORE, 'readwrite')
-      tx.objectStore(STORE).put(record, KEY)
-      tx.oncomplete = () => resolve()
+      const store = tx.objectStore(STORE)
+      let next: TrustRecord | null = null
+      const req = store.get(KEY)
+      req.onsuccess = () => {
+        next = change((req.result as TrustRecord | undefined) ?? null)
+        if (next) store.put(next, KEY)
+      }
+      tx.oncomplete = () => resolve(next)
       tx.onerror = () => reject(tx.error)
       tx.onabort = () => reject(tx.error)
     })
@@ -131,4 +142,91 @@ export function diagnosticsLine(r: TrustRecord): string {
     parts.push(`at=${new Date(c.at).toISOString().replace(/\.\d{3}Z$/, 'Z')}`)
   }
   return parts.join(' ')
+}
+
+/**
+ * The refusal mode remembered beside the page policy, for a worker that cannot read
+ * its record. It only ever turns on, like the record's own ratchet (D5): refusal is
+ * its own key, written once and never overwritten, so a late report-only write from
+ * any worker cannot undo it; turning it on also overwrites the report-only value. `get` answers true, false only for an explicit report-only
+ * value, and null for nothing or anything else; a cache that cannot be opened rejects.
+ */
+export function rememberedMode(open: () => Promise<Pick<Cache, 'match' | 'put'>>) {
+  return {
+    get: async (): Promise<boolean | null> => {
+      const c = await open()
+      if (await c.match(REFUSE_ON_KEY)) return true
+      const r = await c.match(REPORT_ONLY_KEY)
+      return r && (await r.text()) === '0' ? false : null
+    },
+    set: async (on: boolean): Promise<void> => {
+      const c = await open()
+      if (!on) return c.put(REPORT_ONLY_KEY, new Response('0'))
+      // Refusal also replaces an older report-only value: losing the on-key alone, or
+      // failing to write it, then reads as unknown, never as report-only.
+      const writes = await Promise.allSettled([c.put(REPORT_ONLY_KEY, new Response('1')), c.put(REFUSE_ON_KEY, new Response('1'))])
+      const failed = writes.find((w) => w.status === 'rejected')
+      if (failed) throw (failed as PromiseRejectedResult).reason
+    },
+  }
+}
+const REFUSE_ON_KEY = '/__refuse-on'
+const REPORT_ONLY_KEY = '/__refuse'
+
+/** What the worker knows of its record: the record (or the last one it read), and whether this read failed. */
+export interface TrustState {
+  record: TrustRecord | null
+  /** The store could not be read: the record is the last one read in this worker, or none. */
+  unreadable: boolean
+  /** Refusal applies: the record says so, or, unreadable, the last mode the device had did. */
+  refuse: boolean
+}
+
+/**
+ * The worker's reads of its record. `remembered.get` answers the refusal mode last
+ * remembered, and null (or a rejection) when none was or it cannot be read: unknown.
+ * "No record" (a first install) is cached like any record; a failed read is not, so
+ * the next request reads again. Every save the worker makes goes through `saved`, so
+ * the record standing in while the store cannot be read is the last one this worker
+ * read or wrote, and the remembered mode follows it. While the store cannot be read,
+ * refusal applies unless both the remembered mode and the stand-in say report-only:
+ * a stand-in never overrides a mode another worker remembered since.
+ */
+export function trustReader(load: () => Promise<TrustRecord | null>, remembered: { get: () => Promise<boolean | null>; set: (on: boolean) => Promise<void> }) {
+  let pending: Promise<TrustState> | null = null
+  let known: TrustRecord | null = null
+  // Counts this worker's saves: a read that a save overtook keeps neither its record nor its mode.
+  let saves = 0
+  const read = async (): Promise<TrustState> => {
+    const at = saves
+    try {
+      const record = await load()
+      if (saves !== at) return { record: known, unreadable: false, refuse: !!known?.refuse }
+      known = record
+      if (record) await remembered.set(record.refuse).catch(() => undefined)
+      return { record, unreadable: false, refuse: !!record?.refuse }
+    } catch {
+      const mode = await remembered.get().catch(() => null)
+      return { record: known, unreadable: true, refuse: mode !== false || !!known?.refuse }
+    }
+  }
+  return {
+    read: (): Promise<TrustState> => {
+      if (pending) return pending
+      const p = read()
+      pending = p
+      // A failed read is not kept: the next request reads again.
+      void p.then((t) => { if (t.unreadable && pending === p) pending = null })
+      return p
+    },
+    /** After a write: the next read goes to the store. */
+    forget: (): void => { pending = null },
+    /** After a save that succeeded: the saved record stands in, its mode is remembered, the next read goes to the store. */
+    saved: async (record: TrustRecord): Promise<void> => {
+      saves++
+      known = record
+      pending = null
+      await remembered.set(record.refuse).catch(() => undefined)
+    },
+  }
 }

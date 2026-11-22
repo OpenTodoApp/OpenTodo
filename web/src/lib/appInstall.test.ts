@@ -3,8 +3,8 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { base64Decode, fingerprint } from './appCode'
-import { checkForUpdate, cachedFile, fetchLazy, pruneCaches, type InstallEnv } from './appInstall'
-import { loadTrust, saveTrust, type TrustRecord } from './appTrust'
+import { answerAfterFailure, checkForUpdate, cachedFile, fetchLazy, pruneCaches, stagingName, type InstallEnv } from './appInstall'
+import { loadTrust, updateTrust, type TrustRecord } from './appTrust'
 import { clearLocalData } from './db'
 
 // The worker's checks (OpenSpec change signed-web-app, tasks 3.1 to 3.3), run
@@ -52,6 +52,8 @@ interface Release {
   version: string
   files: Record<string, string>
   lazy?: string[]
+  /** Catalogues: path → language (lazy, precache-device-language D2). */
+  langs?: Record<string, string>
   refuse?: boolean
   build?: string
   signers?: Signer[]
@@ -64,8 +66,11 @@ interface Release {
 const sha = (s: string | Uint8Array) => createHash('sha256').update(s).digest('hex')
 
 async function envelope(r: Release): Promise<string> {
-  const files: Record<string, { sha256: string; size: number; load: string }> = {}
-  for (const [p, body] of Object.entries(r.files)) files[p] = { sha256: sha(body), size: Buffer.byteLength(body), load: r.lazy?.includes(p) ? 'lazy' : 'install' }
+  const files: Record<string, { sha256: string; size: number; load: string; lang?: string }> = {}
+  for (const [p, body] of Object.entries(r.files)) {
+    const lang = r.langs?.[p]
+    files[p] = { sha256: sha(body), size: Buffer.byteLength(body), load: r.lazy?.includes(p) || lang ? 'lazy' : 'install', ...(lang ? { lang } : {}) }
+  }
   const payload = Buffer.from(JSON.stringify({
     app: 'opentodo-web', version: r.version, ...(r.build ? { build: r.build } : {}), refuse: r.refuse ?? false,
     keys: (r.names ?? ['release', 'recovery']).map((n) => ({ spki: keys[n].spki, role: n })),
@@ -104,15 +109,21 @@ function server() {
   return s
 }
 
-function env(srv: ReturnType<typeof server>, caches = new MemoryCaches(), builtin: Signer[] = ['release', 'recovery']) {
+function env(srv: ReturnType<typeof server>, caches = new MemoryCaches(), builtin: Signer[] = ['release', 'recovery'], languages: string[] = []) {
   let record: TrustRecord | null = null
-  const e: InstallEnv & { caches: MemoryCaches; record: () => TrustRecord } = {
+  const e: InstallEnv & { caches: MemoryCaches; record: () => TrustRecord; save: (r: TrustRecord) => Promise<void> } = {
     fetch: srv.fetch,
     caches: caches as unknown as CacheStorage & MemoryCaches,
     builtinKeys: builtin.map((n) => keys[n].spki),
+    languages: () => languages,
     now: () => 1_700_000_000_000,
     load: async () => (record ? structuredClone(record) : null),
     save: async (r: TrustRecord) => { record = structuredClone(r) },
+    update: async (change: (stored: TrustRecord | null) => TrustRecord | null) => {
+      const next = change(record ? structuredClone(record) : null)
+      if (next) record = structuredClone(next)
+      return next
+    },
     record: () => record!,
   } as never
   return e
@@ -178,6 +189,21 @@ describe('updates while reporting (refusal off)', () => {
     srv.requests = []
     return { srv, e }
   }
+
+  it('a report-only check writes nothing when another worker turned refusal on or changed the mode meanwhile', async () => {
+    for (const change of [{ refuse: true }, { mode: 'self-built' }] as Partial<TrustRecord>[]) {
+      const { srv, e } = await installed()
+      const held = e.record()
+      expect(held.refuse).toBe(false)
+      await e.save({ ...held, ...change })
+      const other = e.record()
+      e.load = async () => structuredClone(held)
+      await srv.serve(v2)
+      expect(await checkForUpdate(e)).toEqual({ kind: 'unchanged' })
+      expect(e.record()).toEqual(other)
+      expect((await e.caches.keys()).filter((n) => n.includes('1.4.0'))).toEqual([])
+    }
+  })
 
   it('installs a valid update, keeps the previous set and reuses unchanged files', async () => {
     const { srv, e } = await installed()
@@ -336,6 +362,61 @@ describe('refusal (design D17)', () => {
     srv.list = null
     expect(await checkForUpdate(e)).toMatchObject({ kind: 'refused', check: { cause: 'no-list' } })
   })
+
+  // Two workers at once (an open tab's worker beside the one installing): each write goes
+  // onto the record as stored, and only while it is the one the check started from.
+  it('records a refusal on the record as stored, keeping what another worker wrote meanwhile', async () => {
+    const { srv, e } = await refusing()
+    const held = e.record()
+    await e.save({ ...held, announced: [...held.announced, 'meanwhile'] })
+    e.load = async () => structuredClone(held)
+    await srv.serve({ ...v2, signers: [] })
+    expect(await checkForUpdate(e)).toMatchObject({ kind: 'refused', announce: true, check: { cause: 'unsigned' } })
+    expect(e.record().announced).toContain('meanwhile')
+    expect(e.record().lastCheck).toMatchObject({ cause: 'unsigned', refused: true })
+  })
+
+  it('an install another worker overtook writes nothing and drops its staged set', async () => {
+    const { srv, e } = await refusing()
+    const held = e.record()
+    await srv.serve(v2)
+    await checkForUpdate(e)
+    const other = e.record()
+    expect(other.current?.version).toBe('1.4.0')
+    e.load = async () => structuredClone(held)
+    await srv.serve({ ...v2, version: '1.5.0', files: { ...v2.files, 'index.html': '<div id=root>5</div>' } })
+    expect(await checkForUpdate(e)).toEqual({ kind: 'unchanged' })
+    expect(e.record()).toEqual(other)
+    expect((await e.caches.keys()).filter((n) => n.includes('1.5.0'))).toEqual([])
+  })
+
+  it('an install of the same list again since the check started counts as overtaken (v1, v2, v1)', async () => {
+    const { srv, e } = await refusing()
+    const held = e.record()
+    await srv.serve(v2)
+    await checkForUpdate(e)
+    await srv.serve({ ...v1, version: '1.3.0' })
+    await e.save({ ...e.record(), current: { ...held.current!, cache: stagingName('1.3.0', held.current!.payloadHash, 1_700_000_000_000) }, previous: e.record().current })
+    const again = e.record()
+    expect(again.current?.payloadHash).toBe(held.current?.payloadHash)
+    expect(again.current?.cache).not.toBe(held.current?.cache)
+    e.load = async () => structuredClone(held)
+    await srv.serve({ ...v2, version: '1.5.0', files: { ...v2.files, 'index.html': '<div id=root>5</div>' } })
+    expect(await checkForUpdate(e)).toEqual({ kind: 'unchanged' })
+    expect(e.record()).toEqual(again)
+  })
+
+  it('a check another worker\'s install overtook records nothing and announces nothing', async () => {
+    const { srv, e } = await refusing()
+    const held = e.record()
+    await srv.serve(v2)
+    await checkForUpdate(e)
+    const other = e.record()
+    e.load = async () => structuredClone(held)
+    srv.list = null
+    expect(await checkForUpdate(e)).toMatchObject({ kind: 'refused', announce: false, check: { cause: 'no-list' } })
+    expect(e.record()).toEqual(other)
+  })
 })
 
 describe('lazy files (design D7)', () => {
@@ -376,6 +457,158 @@ describe('lazy files (design D7)', () => {
   it('answers nothing for a path that is not listed', async () => {
     const { e } = await installed()
     expect(await fetchLazy(e, e.record(), 'evil.js')).toBeNull()
+  })
+
+  it('while reporting: a failed download answers 404, and a later changed file is served only with its check recorded', async () => {
+    const { srv, e } = await installed()
+    srv.release!.served = { 'assets/MapView-1.js': null }
+    expect((await fetchLazy(e, e.record(), 'assets/MapView-1.js'))?.response.status).toBe(404)
+    srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
+    const changed = await fetchLazy(e, e.record(), 'assets/MapView-1.js')
+    expect(changed?.check).toMatchObject({ passed: false, cause: 'changed-file', path: 'assets/MapView-1.js', refused: false })
+    // Report-only serves what it got, and the check is saved with the record.
+    expect(await text(changed!.response)).toBe('tampered')
+    expect(e.record().lastCheck).toMatchObject({ passed: false, cause: 'changed-file', path: 'assets/MapView-1.js', refused: false })
+    expect(await cachedFile(e, e.record(), 'assets/MapView-1.js')).toBeNull()
+  })
+
+  it('persist false never writes the record in use back (a stand-in for one that could not be read)', async () => {
+    const { srv, e } = await installed(true)
+    const saves: unknown[] = []
+    const update = e.update
+    e.update = async (change) => { const r = await update(change); if (r) saves.push(r); return r }
+    srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
+    const changed = await fetchLazy(e, e.record(), 'assets/MapView-1.js', false)
+    expect(changed?.response.status).toBe(404)
+    expect(changed?.check).toMatchObject({ cause: 'changed-file' })
+    expect(saves).toEqual([])
+    await fetchLazy(e, e.record(), 'assets/MapView-1.js', true)
+    expect(saves).toHaveLength(1)
+  })
+
+  it('records the check on the record as stored, keeping what another worker wrote meanwhile', async () => {
+    const { srv, e } = await installed()
+    const held = e.record()
+    await e.save({ ...held, announced: ['written meanwhile'] })
+    srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
+    await fetchLazy(e, held, 'assets/MapView-1.js')
+    expect(e.record().announced).toEqual(['written meanwhile'])
+    expect(e.record().lastCheck).toMatchObject({ cause: 'changed-file', path: 'assets/MapView-1.js' })
+  })
+
+  it('records nothing when the same list was installed again since (a new cache)', async () => {
+    const { srv, e } = await installed()
+    const held = e.record()
+    await e.save({ ...held, current: { ...held.current!, cache: stagingName(held.current!.version, held.current!.payloadHash, 1_700_000_000_000) } })
+    const again = e.record()
+    expect(again.current?.cache).not.toBe(held.current?.cache)
+    srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
+    const changed = await fetchLazy(e, held, 'assets/MapView-1.js')
+    expect(changed?.check).toMatchObject({ cause: 'changed-file' })
+    expect(e.record()).toEqual(again)
+  })
+
+  it('never writes an older set back over one another worker installed meanwhile', async () => {
+    const { srv, e } = await installed()
+    const held = e.record()
+    await srv.serve(v2)
+    await checkForUpdate(e)
+    const installed2 = e.record()
+    expect(installed2.current?.version).toBe('1.4.0')
+    srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
+    const changed = await fetchLazy(e, held, 'assets/MapView-1.js')
+    expect(changed?.check).toMatchObject({ cause: 'changed-file' })
+    expect(e.record()).toEqual(installed2)
+  })
+
+  it('with refusal on, storage that fails never lets an unchecked file through', async () => {
+    const { srv, e } = await installed(true)
+    const open = e.caches.open.bind(e.caches)
+    e.caches.open = async (name: string) => { const c = await open(name); return Object.assign(Object.create(Object.getPrototypeOf(c)), c, { put: async () => { throw new DOMException('full', 'QuotaExceededError') } }) }
+    e.update = async () => { throw new DOMException('full', 'QuotaExceededError') }
+    // An intact file is still served (it was checked), just not stored.
+    expect(await text((await fetchLazy(e, e.record(), 'assets/MapView-1.js'))!.response)).toBe('map1')
+    e.caches.open = open
+    expect(await cachedFile(e, e.record(), 'assets/MapView-1.js')).toBeNull()
+    e.caches.open = async (name: string) => { const c = await open(name); return Object.assign(Object.create(Object.getPrototypeOf(c)), c, { put: async () => { throw new DOMException('full', 'QuotaExceededError') } }) }
+    // A changed one answers 404 although its check could not be recorded.
+    srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
+    expect((await fetchLazy(e, e.record(), 'assets/MapView-1.js'))?.response.status).toBe(404)
+    // And a request whose handling throws answers 404 for a listed file, the network only for others.
+    expect(answerAfterFailure(e.record(), 'assets/MapView-1.js')?.status).toBe(404)
+    expect(answerAfterFailure(e.record(), 'robots.txt')).toBeNull()
+    expect(answerAfterFailure({ ...e.record(), refuse: false }, 'assets/MapView-1.js')).toBeNull()
+  })
+
+  it('answers 404 for a listed file that could not be downloaded, and never serves a later changed one', async () => {
+    const { srv, e } = await installed(true)
+    srv.release!.served = { 'assets/MapView-1.js': null }
+    const failed = await fetchLazy(e, e.record(), 'assets/MapView-1.js')
+    expect(failed?.response.status).toBe(404)
+    expect(await cachedFile(e, e.record(), 'assets/MapView-1.js')).toBeNull()
+    srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
+    const changed = await fetchLazy(e, e.record(), 'assets/MapView-1.js')
+    expect(changed?.response.status).toBe(404)
+    expect(await text(changed!.response)).toBe('')
+    expect(await cachedFile(e, e.record(), 'assets/MapView-1.js')).toBeNull()
+  })
+})
+
+describe('interface catalogues (precache-device-language D3)', () => {
+  const langs1 = { 'assets/lang-de-1.js': 'de', 'assets/lang-fr-1.js': 'fr' }
+  const c1: Release = { ...v1, files: { ...v1.files, 'assets/lang-de-1.js': 'de1', 'assets/lang-fr-1.js': 'fr1' }, langs: langs1 }
+  const c2: Release = { ...v2, files: { ...v2.files, 'assets/lang-de-2.js': 'de2', 'assets/lang-fr-2.js': 'fr2' }, langs: { 'assets/lang-de-2.js': 'de', 'assets/lang-fr-2.js': 'fr' } }
+
+  it('a first install stores no catalogue; the language is stored when first loaded', async () => {
+    const srv = server()
+    await srv.serve(c1)
+    const e = env(srv)
+    await checkForUpdate(e)
+    expect(srv.requests.filter((p) => p.includes('/lang-'))).toEqual([])
+    expect(await cachedFile(e, e.record(), 'assets/lang-de-1.js')).toBeNull()
+    await fetchLazy(e, e.record(), 'assets/lang-de-1.js')
+    expect(await text(await cachedFile(e, e.record(), 'assets/lang-de-1.js'))).toBe('de1')
+  })
+
+  it('an update installs the catalogues of the languages the device holds, and no other', async () => {
+    const srv = server()
+    await srv.serve(c1)
+    const e = env(srv)
+    await checkForUpdate(e)
+    await fetchLazy(e, e.record(), 'assets/lang-de-1.js')
+    srv.requests = []
+    await srv.serve(c2)
+    expect(await checkForUpdate(e)).toMatchObject({ kind: 'installed', version: '1.4.0', check: { passed: true } })
+    expect(srv.requests).toContain('/assets/lang-de-2.js')
+    expect(srv.requests).not.toContain('/assets/lang-fr-2.js')
+    srv.offline = true
+    const r = e.record()
+    expect(await text(await cachedFile(e, { ...r, previous: undefined }, 'assets/lang-de-2.js'))).toBe('de2')
+    expect(await cachedFile(e, { ...r, previous: undefined }, 'assets/lang-fr-2.js')).toBeNull()
+  })
+
+  it('from a list that names no language, an update keeps the device language\'s catalogue', async () => {
+    const srv = server()
+    // The list before catalogues named their language: every catalogue installed.
+    await srv.serve({ ...v1, files: { ...v1.files, 'assets/de-1.js': 'de1', 'assets/fr-1.js': 'fr1' } })
+    const e = env(srv, new MemoryCaches(), ['release', 'recovery'], ['de-DE', 'en'])
+    await checkForUpdate(e)
+    srv.requests = []
+    await srv.serve(c2)
+    expect(await checkForUpdate(e)).toMatchObject({ kind: 'installed', version: '1.4.0' })
+    expect(srv.requests).toContain('/assets/lang-de-2.js')
+    expect(srv.requests).not.toContain('/assets/lang-fr-2.js')
+  })
+
+  it('refuses an update whose held catalogue was changed, with refusal on', async () => {
+    const srv = server()
+    await srv.serve({ ...c1, refuse: true })
+    const e = env(srv)
+    await checkForUpdate(e)
+    await fetchLazy(e, e.record(), 'assets/lang-de-1.js')
+    await srv.serve({ ...c2, refuse: true, served: { 'assets/lang-de-2.js': 'tampered' } })
+    expect(await checkForUpdate(e)).toMatchObject({ kind: 'refused', check: { cause: 'changed-file', path: 'assets/lang-de-2.js' } })
+    expect(e.record().current?.version).toBe('1.3.0')
   })
 })
 
@@ -442,8 +675,17 @@ describe('caches', () => {
 describe('the trust record', () => {
   it('survives signing out (clearLocalData clears only the app database)', async () => {
     const record: TrustRecord = { mode: 'signed', keys: ['k'], refuse: true, announced: [] }
-    await saveTrust(record)
+    await updateTrust(() => record)
     await clearLocalData()
     expect(await loadTrust()).toEqual(record)
+  })
+
+  it('updateTrust changes the record as stored, or leaves it', async () => {
+    await updateTrust(() => ({ mode: 'signed', keys: ['k'], refuse: false, announced: ['1.0.0'] }))
+    const next = await updateTrust((stored) => (stored ? { ...stored, refuse: true } : null))
+    expect(next).toMatchObject({ refuse: true, announced: ['1.0.0'] })
+    expect(await loadTrust()).toMatchObject({ refuse: true, announced: ['1.0.0'] })
+    expect(await updateTrust(() => null)).toBeNull()
+    expect(await loadTrust()).toMatchObject({ refuse: true })
   })
 })

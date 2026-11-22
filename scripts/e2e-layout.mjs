@@ -487,7 +487,8 @@ async function pressFeedback(p) {
 /** One press on the n-th row's circle; null when the press did not register. */
 async function pressOnce(p, n) {
   const row = p.locator('li[data-task-id]').nth(n)
-  const circle = row.locator('button[aria-label^="Complete "]').first()
+  const circle = row.locator('button:has(> [data-check-mark])').first()
+  if (!(await circle.count())) return ['no completion circle on the first rows']
   const box = await circle.boundingBox()
   if (!box) return ['no completion circle on the first rows']
   const handles = [await circle.elementHandle(), await row.elementHandle()]
@@ -597,24 +598,29 @@ async function rowLift(p) {
     const t = getComputedStyle(el).transform
     return t === 'none' ? 1 : new DOMMatrixReadOnly(t).a
   })
+  // The rise under way: a transform transition started on the row. On a loaded runner it
+  // can still be in its 150 ms delay when the hold is read, with the scale still at 1.
+  const rising = () => row.evaluate((el) => el.getAnimations().some((a) => a.transitionProperty === 'transform' && a.playState !== 'idle'))
   const hold = async (ms) => {
     const box = await title.boundingBox()
     const at = { pointerId: 41, pointerType: 'touch', isPrimary: true, bubbles: true, clientX: box.x + 8, clientY: box.y + box.height / 2 }
     await title.evaluate((el, at) => el.dispatchEvent(new PointerEvent('pointerdown', at)), at)
     await p.waitForTimeout(ms)
-    const held = await scale()
+    const held = { scale: await scale(), rising: await rising() }
     await p.evaluate((at) => window.dispatchEvent(new PointerEvent('pointerup', at)), at)
     return held
   }
   const lifted = await hold(300)
-  if (!(lifted > 1.001)) out.push(`a row held for 300 ms has not risen (scale ${lifted})`)
-  await p.waitForTimeout(400)
+  if (!(lifted.scale > 1.001) && !lifted.rising) out.push(`a row held for 300 ms has not risen (scale ${lifted.scale})`)
+  // Settled once its transitions end (a loaded runner can take longer than their 350 ms), at most 2 s.
+  await row.evaluate((el) => Promise.race([Promise.all(el.getAnimations().map((a) => a.finished.catch(() => {}))), new Promise((r) => setTimeout(r, 2000))]))
+  await p.waitForTimeout(50)
   const settled = await scale()
   if (Math.abs(settled - 1) > 0.0005) out.push(`a row released early has not settled (scale ${settled})`)
   await p.emulateMedia({ reducedMotion: 'reduce' })
   const still = await hold(300)
   await p.emulateMedia({ reducedMotion: null })
-  if (Math.abs(still - 1) > 0.0005) out.push(`under reduced motion a held row moves (scale ${still})`)
+  if (Math.abs(still.scale - 1) > 0.0005 || still.rising) out.push(`under reduced motion a held row moves (scale ${still.scale})`)
   return out
 }
 
