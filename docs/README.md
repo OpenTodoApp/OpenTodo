@@ -5,7 +5,7 @@ summary: How to use OpenTodo day to day, run your own server, and connect it to 
 ---
 # OpenTodo documentation
 
-Start with the [README](../README.md) for the feature overview, quick start and configuration table.
+Start with the [README](../README.md) for the feature overview and the quick start. Settings are in the [configuration reference](self-hosting/configuration.md).
 
 ## Using OpenTodo
 

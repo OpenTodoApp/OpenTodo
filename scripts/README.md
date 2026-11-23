@@ -192,7 +192,7 @@ OPENTODO_BIN=bin/opentodo node scripts/docs-screenshots.mjs store-today,store-up
 
 ## `screenshots.mjs`
 
-Seeds a fresh server with realistic demo data (three accounts, shared projects, sections, subtasks, comments, reminders, saved views, settings) and captures the website's screenshots (`docs/screenshots/site/*.webp`, shipped in the site bundle as `shots/`), keeping any that look the same as before (`scripts/same-image.mjs`). Run it against an **empty** data directory; see [`website/README.md`](../website/README.md#refresh-the-screenshots) for the full recipe.
+Seeds a fresh server with realistic demo data (three accounts, shared projects, sections, subtasks, comments, reminders, saved views, settings) and captures the website's screenshots (`docs/screenshots/site/*.webp`, shipped in the site bundle as `shots/`), keeping any that look the same as before (`scripts/same-image.mjs`). Run it against an **empty** data directory; the website, now in [its own repository](https://github.com/OpenTodoApp/OpenTodoWebsite), gets them through the site bundle.
 
 ## `release-notes.sh`
 
