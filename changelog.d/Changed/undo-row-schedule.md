@@ -1,0 +1,1 @@
+- **The phone's Schedule sheet and Park in Someday can be undone everywhere.** A date chosen after a left swipe (or Schedule… in the touch menu), and parking a task in Someday from the sheet, the command palette or the park key of saved views and reviews, now offer Undo like the other date changes. A repeating task is not covered yet.

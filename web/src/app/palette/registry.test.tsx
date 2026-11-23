@@ -157,3 +157,21 @@ describe('Pin note (notes-home D4)', () => {
     expect(commands({ ...base, note: { id: 'n1', pinned: false } }).some((c) => c.id === 'note:run-routine')).toBe(true)
   })
 })
+
+// OpenSpec change undo-row-schedule: the palette's Park in Someday is one step of undo history with the toast.
+describe('Park in Someday from the palette', () => {
+  it('records one step named Moved to Someday, with the Undo toast', async () => {
+    useDatabase(`registry-park-${Date.now()}`)
+    resetDeviceId()
+    const id = await createTask({ title: 'Paint the shed' })
+    const task = (await db.tasks.get(id))!
+    const list = { readOnly: () => false, open: () => {}, toggleComplete: () => {} } as unknown as ListState
+    await commands({ ...ctx, project: undefined, view: undefined, label: undefined, section: undefined, route: { view: 'inbox' }, list, task })
+      .find((x) => x.id === 'task:park')!.run()
+    expect((await db.tasks.get(id))!.start).toBe('someday')
+    const steps = await db.assistantUndo.toArray()
+    expect(steps.map((s) => s.label)).toEqual(['Moved to Someday'])
+    expect(bulkToast()?.undoId).toBe(steps[0].id)
+    hideBulkToast()
+  })
+})
