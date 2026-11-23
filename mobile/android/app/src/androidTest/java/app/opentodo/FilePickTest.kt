@@ -15,6 +15,7 @@ import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import org.junit.After
 import org.junit.Before
@@ -64,7 +65,7 @@ class FilePickTest {
         Intents.init()
         try {
             intending(hasAction(Intent.ACTION_GET_CONTENT))
-                .respondWith(Instrumentation.ActivityResult(Activity.RESULT_OK, Intent().setData(PickedFileProvider.uri())))
+                .respondWith(Instrumentation.ActivityResult(Activity.RESULT_OK, Intent().setData(PickedFileProvider.uri(InstrumentationRegistry.getInstrumentation().context.packageName))))
             // The input covers the page: a real tap, which a file input needs to open its picker.
             onView(withId(R.id.web)).perform(click())
             web.waitForJs("window.picked", "\"${PickedFileProvider.NAME}: ${PickedFileProvider.BODY}\"")
