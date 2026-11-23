@@ -326,3 +326,40 @@ describe('parkUndoable', () => {
     expect(await db.assistantUndo.count()).toBe(1)
   })
 })
+
+// Undo skips steps for fields this device can't decrypt (OpenSpec e2ee): the change is written, no step is kept.
+describe('a value this device cannot decrypt', () => {
+  it('a rename, a location and a due are written as before, without a step', async () => {
+    const { locationUndoable, titleUndoable } = await import('./undoActions')
+    const id = await createTask({ title: 'Secret', due: { date: '2030-01-10' } })
+    await db.tasks.update(id, { title: '[Cannot decrypt]', location: '[Cannot decrypt]', _e2ee: { wire: {}, raw: { title: 'v1.x', location: 'v1.y' } } } as never)
+    expect((await titleUndoable(id, 'Plain')).entry).toBeNull()
+    expect((await db.tasks.get(id))!.title).toBe('Plain')
+    expect((await locationUndoable(id, null)).entry).toBeNull()
+    expect((await db.tasks.get(id))!.location ?? null).toBeNull()
+    await db.tasks.update(id, { _e2ee: { wire: {}, raw: { due: 'v1.z' } } } as never)
+    expect((await calendarEditUndoable(id, { due: { date: '2030-01-11' } })).entry).toBeNull()
+    expect(await db.assistantUndo.count()).toBe(0)
+  })
+
+  it('a title edit with attributes and a plain date change are written, without a step', async () => {
+    const { dueUndoable, titleEditUndoable } = await import('./undoActions')
+    const id = await createTask({ title: 'Secret' })
+    await db.tasks.update(id, { title: '[Cannot decrypt]', _e2ee: { wire: {}, raw: { title: 'v1.x' } } } as never)
+    expect((await titleEditUndoable(id, { title: 'Call Ana', priority: 1 })).entry).toBeNull()
+    const t = (await db.tasks.get(id))!
+    expect(t.title).toBe('Call Ana')
+    expect(t.priority).toBe(1)
+    await db.tasks.update(id, { _e2ee: { wire: {}, raw: { due: 'v1.z' } } } as never)
+    expect((await dueUndoable(id, { date: '2030-02-01' })).entry).toBeNull()
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2030-02-01' })
+    expect(await db.assistantUndo.count()).toBe(0)
+  })
+
+  it('a readable field of the same row still records its step', async () => {
+    const { dueUndoable } = await import('./undoActions')
+    const id = await createTask({ title: 'Secret' })
+    await db.tasks.update(id, { _e2ee: { wire: {}, raw: { title: 'v1.x' } } } as never)
+    expect((await dueUndoable(id, { date: '2030-02-01' })).entry).not.toBeNull()
+  })
+})

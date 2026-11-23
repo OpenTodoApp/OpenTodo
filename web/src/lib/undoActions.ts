@@ -59,6 +59,12 @@ export async function completeUndoable(id: string, completed: boolean, opts: { n
   return { ...result, completed: completed && !task.completed_at && !!result.entry }
 }
 
+/** Whether two field values are the same: an object (a due, a location) compared with its keys in one order. */
+function sameValue(a: unknown, b: unknown): boolean {
+  const key = (v: unknown) => JSON.stringify(v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([x], [y]) => x.localeCompare(y))) : v ?? null)
+  return key(a) === key(b)
+}
+
 /**
  * One task's fields that updateTask writes as they are (no date, start or project rules), as
  * one step of undo history (OpenSpec change undo-estimate). Planned from the one row; a field
@@ -72,9 +78,19 @@ async function plainEditUndoable(id: string, patch: Partial<Task>, label: string
     await updateTask(id, patch)
     return { entry: null, label: '' }
   }
-  const changed = Object.fromEntries(Object.entries(patch).filter(([k, v]) => ((task as unknown as Record<string, unknown>)[k] ?? null) !== (v ?? null)))
+  const changed = Object.fromEntries(Object.entries(patch).filter(([k, v]) => !sameValue((task as unknown as Record<string, unknown>)[k], v)))
   if (!Object.keys(changed).length) return { entry: null, label: '' }
   return apply([{ entity: 'task', entityId: id, patch: changed }], label)
+}
+
+/** Set or with null clear one task's location, as one step of undo history (OpenSpec change undo-panel-extras). */
+export function locationUndoable(id: string, location: Task['location'] | null): Promise<UndoableResult> {
+  return plainEditUndoable(id, { location }, location ? t('Task updated') : t('Location removed'))
+}
+
+/** Remove one task's origin (the task panel's Remove origin), as one step of undo history (undo-panel-extras). */
+export function originRemovedUndoable(id: string): Promise<UndoableResult> {
+  return plainEditUndoable(id, { origin: null }, t('Task updated'))
 }
 
 /**
@@ -93,10 +109,7 @@ export async function calendarEditUndoable(id: string, patch: Partial<Task>): Pr
     await updateTask(id, patch)
     return { entry: null, label: '' }
   }
-  // A due is an object: compared with its keys in one order, so the same dates record nothing.
-  const key = (v: unknown) => JSON.stringify(v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b))) : v ?? null)
-  const same = (a: unknown, b: unknown) => key(a) === key(b)
-  const changed: Partial<Task> = Object.fromEntries(Object.entries(patch).filter(([k, v]) => !same((task as unknown as Record<string, unknown>)[k], v)))
+  const changed: Partial<Task> = Object.fromEntries(Object.entries(patch).filter(([k, v]) => !sameValue((task as unknown as Record<string, unknown>)[k], v)))
   if (!Object.keys(changed).length) return { entry: null, label: '' }
   if (changed.due && !('start' in patch) && task.start === 'someday') changed.start = null
   // The Day and Week length keys change only the estimate: named as the panel's estimate step.

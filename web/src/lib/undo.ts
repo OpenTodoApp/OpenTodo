@@ -33,12 +33,15 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
   // Dating a sectored task clears its sector here, so one Undo restores it (time-sectors D2).
   changes = await withSectorClears(changes)
   const inverse: AssistantUndo['inverse'] = []
+  // A field this device cannot decrypt (OpenSpec e2ee): the change is written, but no step is kept.
+  let unreadable = false
   for (const c of changes) {
     if (c.create) {
       if (!c.patch.deleted_at) inverse.push({ entity: c.entity, entityId: c.entityId, patch: { deleted_at: Date.now() }, created: true })
       continue
     }
-    const local = (await tableOf(c.entity).get(c.entityId)) as (Record<string, unknown> & { _clock?: Record<string, FieldClock> }) | undefined
+    const local = (await tableOf(c.entity).get(c.entityId)) as (Record<string, unknown> & { _clock?: Record<string, FieldClock>; _e2ee?: { raw?: Record<string, unknown> } }) | undefined
+    if (local?._e2ee?.raw && Object.keys(c.patch).some((f) => local._e2ee!.raw![f] !== undefined)) unreadable = true
     const patch: Record<string, unknown> = {}
     // The clock each field held before this batch overwrote it (#1488 D4), so a later reversal
     // refreshes only the batches this one sat directly on top of.
@@ -69,6 +72,7 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
     }
   }
   await mutateMany(batch, opts.origin ? { origin: opts.origin } : undefined)
+  if (unreadable) return null
   const clocks: AssistantUndo['clocks'] = []
   for (const c of [...changes, ...switched]) {
     if (c.create) continue
