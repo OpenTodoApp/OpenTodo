@@ -136,6 +136,15 @@ type engine struct {
 	pending map[string]bool
 	// held: the half-saved files among pending, with their first hold time.
 	held map[string]int64
+	// printedAtStart is st.Printed as the run found it: a held file's tasks
+	// are the ones printed in it then, before the plan moves any elsewhere.
+	// A task held last run counts as printed in the file it was held for.
+	printedAtStart map[string]string
+	// heldTasks are the tasks whose rows the last run held (State.Held).
+	heldTasks []string
+	// printedBefore is st.Printed as the last run left it: a task's line in
+	// the file it was printed in is the vault's own, not a move by the user.
+	printedBefore map[string]string
 	// raced are vault files saved while the run went on, and racedTasks the
 	// tasks of task notes saved meanwhile: not written, and their values keep
 	// their base so the next run merges the save.
@@ -201,8 +210,12 @@ func Sync(ctx context.Context, o Options) (*Report, error) {
 			}
 		}
 	}
+	var heldTasks []string
+	for id := range st.Held["task"] {
+		heldTasks = append(heldTasks, id)
+	}
 	st.Held = nil
-	e := &engine{o: o, st: st, takeOver: takeOver, t: o.Transport, rep: &Report{Warnings: []string{}, Events: []Event{}},
+	e := &engine{heldTasks: heldTasks, o: o, st: st, takeOver: takeOver, t: o.Transport, rep: &Report{Warnings: []string{}, Events: []Event{}},
 		base: base, app: st.Store.Clone(), startCursor: st.Cursor,
 		refused: map[string]bool{}, stamped: map[string]int64{}, conf: map[string][]string{},
 		bodies: map[string]map[string]map[string]any{}, fresh: map[string]bool{}, retouch: map[string]bool{},
@@ -395,6 +408,26 @@ func (e *engine) scan() error {
 	e.disk = disk
 	e.pending = map[string]bool{}
 	e.held = map[string]int64{}
+	e.printedAtStart = make(map[string]string, len(e.st.Printed))
+	e.printedBefore = make(map[string]string, len(e.st.Printed))
+	for id, p := range e.st.Printed {
+		e.printedAtStart[id] = p
+		e.printedBefore[id] = p
+	}
+	// A task held last run belongs to the file of the project it was held
+	// in, even if the app moved it and the last run printed it elsewhere: its
+	// held file may still be held.
+	fileOf := map[string]string{}
+	for _, p := range sortedKeys(e.st.Files) {
+		fileOf[e.st.Files[p].Project] = p
+	}
+	for _, id := range e.heldTasks {
+		// Only rows held for a half-saved file (one held last run), not those
+		// of a file or task note saved during the run.
+		if p, ok := fileOf[e.base.Get("task", id).Str("project_id")]; ok && e.st.Files[p].Held != 0 {
+			e.printedAtStart[id] = p
+		}
+	}
 	for _, p := range sortedKeys(e.st.Files) {
 		if _, ok := disk[p]; ok {
 			continue
@@ -520,32 +553,37 @@ func cutShort(b []byte, fs FileState) bool {
 	return slices.Contains(fs.Prefixes, prefixHash(b[:k]))
 }
 
-// lostLines counts the tasks printed in file p that cur (the file now) no
-// longer holds, and reports whether every one of them is in another file
-// (lines cut out of p to move them).
+// lostLines counts the tasks printed in file p when the run started that cur
+// (the file now) no longer holds, and reports whether every one of them is in
+// another file the user changed (lines cut out of p to move them).
 func (e *engine) lostLines(p string, cur []byte) (missing int, elsewhere bool) {
 	elsewhere = true
-	for id, at := range e.st.Printed {
+	for id, at := range e.printedAtStart {
 		if at != p {
 			continue
 		}
-		mark := []byte(markID + " " + id)
-		if bytes.Contains(cur, mark) {
+		if bytes.Contains(cur, []byte(markID+" "+id)) {
 			continue
 		}
 		missing++
-		found := false
-		for q, b := range e.disk {
-			if q != p && bytes.Contains(b, mark) {
-				found = true
-				break
-			}
-		}
-		if !found {
+		if !e.movedByUser(id, p) {
 			elsewhere = false
 		}
 	}
 	return missing, elsewhere
+}
+
+// movedByUser reports whether task id's line is in a file other than p that
+// the user changed since the last sync, other than the file the last sync
+// printed it in (where the line is the vault's own).
+func (e *engine) movedByUser(id, p string) bool {
+	mark := []byte(markID + " " + id)
+	for q, b := range e.disk {
+		if q != p && q != e.printedBefore[id] && e.changed[q] && bytes.Contains(b, mark) {
+			return true
+		}
+	}
+	return false
 }
 
 // savedSinceRead lists the files the merge read as changed that no longer
@@ -660,7 +698,14 @@ func (e *engine) holdRaced() {
 		return e.raced[p] || half
 	}
 	for id, p := range e.st.Printed {
-		if heldFile(p) {
+		if e.raced[p] {
+			hold("task", id)
+		}
+	}
+	// A half-saved file's tasks as the run found them: one the app moved to
+	// another file meanwhile is still merged against its row from here.
+	for id, p := range e.printedAtStart {
+		if _, half := e.held[p]; half && !e.movedByUser(id, p) {
 			hold("task", id)
 		}
 	}

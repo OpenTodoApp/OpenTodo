@@ -69,6 +69,10 @@ export class Engine {
   pending = new Set<string>()
   /** The half-saved files among pending, with their first hold time. */
   held = new Map<string, number>()
+  /** st.printed as the run found it (engine.go printedAtStart): a held file's tasks are the ones printed in it then. */
+  printedAtStart: Record<string, string> = {}
+  /** st.printed as the last run left it (engine.go printedBefore). */
+  printedBefore: Record<string, string> = {}
   /** Plaintext of ciphertext values: entity\0id\0field\0value → text, null when it does not open. */
   plain: Map<string, string | null>
 
@@ -84,7 +88,19 @@ export class Engine {
         for (const [id, row] of Object.entries(rows)) this.base[entity][id] = row
       }
     }
+    const heldTasks = Object.keys(st.held?.task ?? {})
     delete st.held
+    this.printedAtStart = { ...st.printed }
+    this.printedBefore = { ...st.printed }
+    // A task held last run belongs to the file of the project it was held in,
+    // even if the app moved it and the last run printed it elsewhere (engine.go scan).
+    const fileOf = new Map<string, string>()
+    for (const p of sortedKeys(st.files)) fileOf.set(st.files[p].project, p)
+    for (const id of heldTasks) {
+      const p = fileOf.get(S.str(S.get(this.base, 'task', id), 'project_id'))
+      // Only rows held for a half-saved file (one held last run).
+      if (p !== undefined && st.files[p].held) this.printedAtStart[id] = p
+    }
     this.app = S.clone(st.store)
     this.startCursor = st.cursor
     this.plain = o.plain ?? new Map<string, string | null>()
@@ -404,22 +420,27 @@ export class Engine {
   }
 
   /**
-   * The tasks printed in file p that cur (the file now) no longer holds, and
-   * whether every one of them is in another file (engine.go lostLines).
+   * The tasks printed in file p when the run started that cur (the file now) no
+   * longer holds, and whether every one of them is in another file the user
+   * changed (engine.go lostLines).
    */
   private lostLines(p: string, cur: string): [number, boolean] {
     let missing = 0
     let elsewhere = true
-    for (const [id, at] of Object.entries(this.st.printed)) {
+    for (const [id, at] of Object.entries(this.printedAtStart)) {
       if (at !== p) continue
-      const mark = `🆔 ${id}`
-      if (cur.includes(mark)) continue
+      if (cur.includes(`🆔 ${id}`)) continue
       missing++
-      let found = false
-      for (const [q, text] of this.disk) if (q !== p && text.includes(mark)) { found = true; break }
-      if (!found) elsewhere = false
+      if (!this.movedByUser(id, p)) elsewhere = false
     }
     return [missing, elsewhere]
+  }
+
+  /** Whether task id's line is in a file other than p that the user changed, other than the one the last sync printed it in (engine.go movedByUser). */
+  private movedByUser(id: string, p: string): boolean {
+    const mark = `🆔 ${id}`
+    for (const [q, text] of this.disk) if (q !== p && q !== this.printedBefore[id] && this.changed.has(q) && text.includes(mark)) return true
+    return false
   }
 
   /** The app becomes the base, except the rows of files a read-only run or a missing download left pending. */
@@ -449,7 +470,12 @@ export class Engine {
       held[entity] ??= {}
       held[entity][id] = row
     }
-    for (const id of Object.keys(this.st.printed)) if (this.held.has(this.st.printed[id])) hold('task', id)
+    // A half-saved file's tasks as the run found them: one the app moved to another
+    // file meanwhile is still merged against its row from here (engine.go holdRaced).
+    for (const id of Object.keys(this.printedAtStart)) {
+      const p = this.printedAtStart[id]
+      if (this.held.has(p) && !this.movedByUser(id, p)) hold('task', id)
+    }
     for (const p of sortedKeys(this.st.files)) {
       const fs = this.st.files[p]
       if (this.held.has(p) && fs.project !== '') hold('project', fs.project)

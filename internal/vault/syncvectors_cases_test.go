@@ -390,6 +390,21 @@ var vxCases = []vxDef{
 			r.sync(vxOpts{name: "the save lands"})
 			r.sync(vxOpts{name: "idle"})
 		}},
+	{name: "held-app-move", desc: "a task the app moves out of a file held as half saved, across two syncs and an edit to the file it moved to, stays where the app put it once the save lands",
+		run: func(r *vxRec) {
+			home(r)
+			r.project("p-work", "Work", map[string]any{"position": 2000})
+			r.task("t-report", "Write the report", "p-work", nil)
+			r.sync(vxOpts{name: "init", init: true, device: "vault:vectors"})
+			saved := r.read("Home.md")
+			r.write("Home.md", saved[:strings.Index(saved, "- [ ] Call the plumber")])
+			r.put("task", "t-call", map[string]any{"project_id": "p-work"})
+			r.sync(vxOpts{name: "held while the app moves a task"})
+			r.replace("Work.md", "Write the report", "Write the full report")
+			r.sync(vxOpts{name: "still held a sync later, the other file edited"})
+			r.write("Home.md", saved)
+			r.sync(vxOpts{name: "the save lands"})
+		}},
 	{name: "end-deleted", desc: "the last lines of a file deleted on purpose are held as a save in progress, then trashed once the hold has passed, not before",
 		run: func(r *vxRec) {
 			home(r)

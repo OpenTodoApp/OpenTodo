@@ -473,3 +473,91 @@ func TestEmptyFileHoldEndsWhenTheClockWentBack(t *testing.T) {
 		}
 	}
 }
+
+// TestAppMoveOutOfHeldFileStays: while Home.md is held as half saved, the app
+// moves one of its tasks to Work; once the save lands, the task stays in Work.
+func TestAppMoveOutOfHeldFileStays(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home"})
+	work := s.create("projects", map[string]any{"name": "Work"})
+	s.create("tasks", map[string]any{"title": "Water plants", "project_id": home})
+	lamp := s.create("tasks", map[string]any{"title": "Fix the lamp", "project_id": home})
+	v := s.vault(t)
+	saved := v.read(t, "Home.md")
+	v.write(t, "Home.md", saved[:strings.Index(saved, "- [ ] Fix the lamp")])
+	s.do("PATCH", "/api/v1/tasks/"+lamp, map[string]any{"project_id": work})
+	if rep := v.sync(t); !hasEvent(rep, "skipped", "Home.md") {
+		t.Fatalf("not held: %+v", rep)
+	}
+	v.write(t, "Home.md", saved)
+	v.now = func() time.Time { return time.Now().Add(time.Minute) }
+	v.sync(t)
+	if got := s.get("tasks", lamp)["project_id"]; got != work {
+		t.Fatalf("the app's move was undone: project %v, want Work", got)
+	}
+	if text := v.read(t, "Home.md"); strings.Contains(text, "Fix the lamp") {
+		t.Errorf("Home.md still holds the moved task:\n%s", text)
+	}
+}
+
+// TestAppMoveOutOfHeldFileStaysAcrossSyncs: the same, with the file still
+// held across two syncs (a watch syncs again within the save), and with the
+// cut losing only the moved task's line.
+func TestAppMoveOutOfHeldFileStaysAcrossSyncs(t *testing.T) {
+	for _, cutAt := range []string{"- [ ] Water plants", "- [ ] Fix the lamp"} {
+		t.Run(cutAt, func(t *testing.T) {
+			s := newServer(t)
+			home := s.create("projects", map[string]any{"name": "Home"})
+			work := s.create("projects", map[string]any{"name": "Work"})
+			lamp := s.create("tasks", map[string]any{"title": "Fix the lamp", "project_id": home})
+			s.create("tasks", map[string]any{"title": "Water plants", "project_id": home})
+			v := s.vault(t)
+			saved := v.read(t, "Home.md")
+			v.write(t, "Home.md", saved[:strings.Index(saved, cutAt)])
+			s.do("PATCH", "/api/v1/tasks/"+lamp, map[string]any{"project_id": work})
+			for i := 0; i < 2; i++ {
+				if rep := v.sync(t); !hasEvent(rep, "skipped", "Home.md") {
+					t.Fatalf("sync %d did not hold Home.md: %+v", i+1, rep)
+				}
+			}
+			v.write(t, "Home.md", saved)
+			v.now = func() time.Time { return time.Now().Add(time.Minute) }
+			v.sync(t)
+			if got := s.get("tasks", lamp)["project_id"]; got != work {
+				t.Fatalf("the app's move was undone: project %v, want Work", got)
+			}
+		})
+	}
+}
+
+// TestAppMoveOutOfHeldFileStaysWhenTheOtherFileIsEdited: an edit to the file
+// the app's move put the task in, during the hold, is not a move by the user.
+func TestAppMoveOutOfHeldFileStaysWhenTheOtherFileIsEdited(t *testing.T) {
+	for _, cutAt := range []string{"- [ ] Water plants", "- [ ] Fix the lamp"} {
+		t.Run(cutAt, func(t *testing.T) {
+			s := newServer(t)
+			home := s.create("projects", map[string]any{"name": "Home"})
+			work := s.create("projects", map[string]any{"name": "Work"})
+			lamp := s.create("tasks", map[string]any{"title": "Fix the lamp", "project_id": home})
+			s.create("tasks", map[string]any{"title": "Water plants", "project_id": home})
+			s.create("tasks", map[string]any{"title": "Send report", "project_id": work})
+			v := s.vault(t)
+			saved := v.read(t, "Home.md")
+			v.write(t, "Home.md", saved[:strings.Index(saved, cutAt)])
+			s.do("PATCH", "/api/v1/tasks/"+lamp, map[string]any{"project_id": work})
+			if rep := v.sync(t); !hasEvent(rep, "skipped", "Home.md") {
+				t.Fatalf("not held: %+v", rep)
+			}
+			v.edit(t, "Work.md", "Send report", "Send the report")
+			if rep := v.sync(t); !hasEvent(rep, "skipped", "Home.md") {
+				t.Fatalf("not held after the edit: %+v", rep)
+			}
+			v.write(t, "Home.md", saved)
+			v.now = func() time.Time { return time.Now().Add(time.Minute) }
+			v.sync(t)
+			if got := s.get("tasks", lamp)["project_id"]; got != work {
+				t.Fatalf("the app's move was undone: project %v, want Work", got)
+			}
+		})
+	}
+}

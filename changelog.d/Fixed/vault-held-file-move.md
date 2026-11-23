@@ -1,0 +1,1 @@
+- **A task moved in the app while a vault file is being saved stays moved.** If the app moved a task to another project while `ot vault` or the Obsidian plugin was leaving a half-saved file alone, the finished save no longer moves it back.
