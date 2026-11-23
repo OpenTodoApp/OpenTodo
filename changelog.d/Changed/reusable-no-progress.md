@@ -1,0 +1,1 @@
+- **A reusable list shows no "% done".** A list you restock, like groceries, is never finished, so its percentage only counted what was ticked off on earlier trips. Areas already worked this way.

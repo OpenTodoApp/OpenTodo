@@ -6580,7 +6580,6 @@
   "unknown file format; update the app": "formato di file sconosciuto; aggiorna l’app",
   "unknown passkey": "passkey sconosciuta",
   "unknown pattern \"{word}\"": "schema sconosciuto «{word}»",
-  "unread changes": "modifiche non lette",
   "unread updates": "aggiornamenti non letti",
   "unscheduled": "non pianificata",
   "unsupported key derivation {kdf}; update the app": "derivazione della chiave {kdf} non supportata; aggiorna l’app",
@@ -7196,12 +7195,10 @@
   "Sort into aisles": "Ordina per corsia",
   "This aisle is not one of the standard aisles.": "Questa corsia non è tra quelle standard.",
   "merged a duplicate": "ha unito un duplicato",
-  "{n, plural, one {# item ticked off} other {# items ticked off}}": "{n, plural, one {# articolo spuntato} other {# articoli spuntati}}",
   "{n, plural, one {Added # aisle section} other {Added # aisle sections}}": "{n, plural, one {Aggiunta # sezione per corsia} other {Aggiunte # sezioni per corsia}}",
   "{reopened, plural, one {# back on the list} other {# back on the list}}, {open, plural, one {# already there} other {# already there}}, {added, plural, one {# added} other {# added}}": "{reopened, plural, one {# di nuovo in lista} other {# di nuovo in lista}}, {open, plural, one {# già presente} other {# già presenti}}, {added, plural, one {# aggiunto} other {# aggiunti}}",
   "{title} is already on the list": "{title} è già in lista",
   "{title} is back on the list": "{title} è di nuovo in lista",
-  "Got it|list": "Preso",
   "Graduate": "Consolida",
   "Graduated": "Consolidata",
   "Stop sorting into aisles": "Non ordinare più per corsia",
@@ -7863,5 +7860,6 @@
   "{name} assigned you a task": "{name} ti ha assegnato un’attività",
   "{name} completed a task": "{name} ha completato un’attività",
   "{name} reopened a task": "{name} ha riaperto un’attività",
-  "Completed or reopened": "Completata o riaperta"
+  "Completed or reopened": "Completata o riaperta",
+  "Unread changes": "Modifiche non lette"
 }

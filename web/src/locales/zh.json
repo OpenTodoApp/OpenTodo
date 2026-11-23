@@ -2061,7 +2061,6 @@
   "Google client": "Google 客户端",
   "Google did not grant lasting access. Remove OpenTodo at myaccount.google.com/permissions and connect again.": "Google 未授予持久访问权限。请在 myaccount.google.com/permissions 中移除 OpenTodo 并重新连接。",
   "Got it": "知道了",
-  "Got it|list": "知道了",
   "Graduate": "毕业",
   "Graduated": "已毕业",
   "Graph of notes": "笔记关系图",
@@ -6709,7 +6708,6 @@
   "unknown file format; update the app": "未知文件格式；请更新应用",
   "unknown passkey": "未知通行密钥",
   "unknown pattern \"{word}\"": "未知模式 \"{word}\"",
-  "unread changes": "未读更改",
   "unread updates": "未读更新",
   "unscheduled": "未排期",
   "unsupported key derivation {kdf}; update the app": "不支持的密钥派生算法 {kdf}；请更新应用",
@@ -6908,7 +6906,6 @@
   "{n, plural, one {# hour before} other {# hours before}}": "{n, plural, other {# 小时前}}",
   "{n, plural, one {# hour} other {# hours}}": "{n, plural, other {# 小时}}",
   "{n, plural, one {# item changed} other {# items changed}}": "{n, plural, other {# 个条目已更改}}",
-  "{n, plural, one {# item ticked off} other {# items ticked off}}": "{n, plural, other {已勾选 # 项}}",
   "{n, plural, one {# item written by AI} other {# items written by AI}}": "{n, plural, other {由 AI 写入 # 个条目}}",
   "{n, plural, one {# item written} other {# items written}}": "{n, plural, other {已写入 # 个条目}}",
   "{n, plural, one {# item} other {# items}}": "{n, plural, other {# 个条目}}",
@@ -7863,5 +7860,6 @@
   "{name} assigned you a task": "{name} 给你分配了一项任务",
   "{name} completed a task": "{name} 完成了一项任务",
   "{name} reopened a task": "{name} 重新打开了一项任务",
-  "Completed or reopened": "已完成或重新打开"
+  "Completed or reopened": "已完成或重新打开",
+  "Unread changes": "未读更改"
 }

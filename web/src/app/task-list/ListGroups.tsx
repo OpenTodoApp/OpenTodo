@@ -409,7 +409,7 @@ export interface GroupedListProps {
   projects: Project[]
   labels: Label[]
   /** The project's Completed group at the end of the list (project-completed-section). */
-  completed?: { tasks: Task[]; open: boolean; onToggle: () => void; gotIt?: boolean }
+  completed?: { tasks: Task[]; open: boolean; onToggle: () => void }
   /** The always-visible actions of Today's Earlier group, for its task ids (page-rhythm D6). */
   earlierActions?: (ids: readonly string[]) => ReactNode
   /** Upcoming's calendar events for a day, drawn above its tasks and outside the count. */
@@ -795,10 +795,7 @@ function LogWinAction() {
 function CompletedGroup({ c, rowList, renderRow, fieldColumns }: { c: NonNullable<GroupedListProps['completed']>; rowList: RowList; renderRow: RenderRow; fieldColumns: boolean }) {
   return (
     <section role={fieldColumns ? 'rowgroup' : undefined} className="mb-4" data-completed-group>
-      {/* In a reusable list the ticked items are "Got it" (reusable-lists D7). */}
-      {c.gotIt
-        ? <ListGroupHeader title={t('Got it', { context: 'list' })} count={c.tasks.length} countLabel={(n) => t('{n, plural, one {# item ticked off} other {# items ticked off}}', { n })} collapsed={!c.open} onToggle={c.onToggle} />
-        : <ListGroupHeader title={t('Completed')} count={c.tasks.length} countLabel={(n) => t('{n, plural, one {# completed task} other {# completed tasks}}', { n })} collapsed={!c.open} onToggle={c.onToggle} />}
+      <ListGroupHeader title={t('Completed')} count={c.tasks.length} countLabel={(n) => t('{n, plural, one {# completed task} other {# completed tasks}}', { n })} collapsed={!c.open} onToggle={c.onToggle} />
       {c.open && rowList(renderListRows(c.tasks.map((task) => flatRow(task)), renderRow))}
     </section>
   )

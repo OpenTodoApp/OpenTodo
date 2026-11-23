@@ -2076,7 +2076,6 @@
   "Google client": "Google-client",
   "Google did not grant lasting access. Remove OpenTodo at myaccount.google.com/permissions and connect again.": "Google heeft geen blijvende toegang verleend. Verwijder OpenTodo op myaccount.google.com/permissions en koppel opnieuw.",
   "Got it": "Begrepen",
-  "Got it|list": "Begrepen",
   "Graduate": "Afronden",
   "Graduated": "Afgerond",
   "Graphite": "Grafiet",
@@ -6747,7 +6746,6 @@
   "unknown file format; update the app": "onbekend bestandsformaat; werk de app bij",
   "unknown passkey": "onbekende passkey",
   "unknown pattern \"{word}\"": "onbekend patroon “{word}”",
-  "unread changes": "ongelezen wijzigingen",
   "unread updates": "ongelezen updates",
   "unscheduled": "ongepland",
   "unsupported key derivation {kdf}; update the app": "niet-ondersteunde sleutelafleiding {kdf}; werk de app bij",
@@ -6943,7 +6941,6 @@
   "{n, plural, one {# hour before} other {# hours before}}": "{n, plural, one {# uur eerder} other {# uren eerder}}",
   "{n, plural, one {# hour} other {# hours}}": "{n, plural, one {# uur} other {# uren}}",
   "{n, plural, one {# item changed} other {# items changed}}": "{n, plural, one {# item gewijzigd} other {# items gewijzigd}}",
-  "{n, plural, one {# item ticked off} other {# items ticked off}}": "{n, plural, one {# item afgevinkt} other {# items afgevinkt}}",
   "{n, plural, one {# item written by AI} other {# items written by AI}}": "{n, plural, one {# item door AI geschreven} other {# items door AI geschreven}}",
   "{n, plural, one {# item written} other {# items written}}": "{n, plural, one {# item geschreven} other {# items geschreven}}",
   "{n, plural, one {# item} other {# items}}": "{n, plural, one {# item} other {# items}}",
@@ -7863,5 +7860,6 @@
   "{name} assigned you a task": "{name} heeft je een taak toegewezen",
   "{name} completed a task": "{name} heeft een taak voltooid",
   "{name} reopened a task": "{name} heeft een taak opnieuw geopend",
-  "Completed or reopened": "Voltooid of opnieuw geopend"
+  "Completed or reopened": "Voltooid of opnieuw geopend",
+  "Unread changes": "Ongelezen wijzigingen"
 }

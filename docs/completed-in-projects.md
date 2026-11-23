@@ -31,7 +31,7 @@ The board's **Project** menu has the same choice. The board then ends with a fol
 
 ## Good to know
 
-- A [reusable list](reusable-lists.md) always keeps its ticked items, in a **Got it** group on every device, so it has no **Show completed tasks** choice.
+- A [reusable list](reusable-lists.md) always keeps its ticked items, in its **Completed** group on every device, so it has no **Show completed tasks** choice.
 
 - The setting is per project and per device, for both layouts, and is not synced.
 - The timeline keeps showing open tasks only.

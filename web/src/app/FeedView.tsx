@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { describeEvent, guestActorLabel, isPending, mergeOlder, usePendingOpIds } from '../lib/activity'
 import { isNetworkError } from '../lib/api'
 import { useAllProjects, useProjectsLoaded, useTasksByIdRead, useMembershipMap } from '../lib/localData'
-import { dayOf, fetchFeed, filterFeed, groupByDay, markEventsSeen, seenTimes, type FeedKind, useSharedProjectIds, useFeedEvents } from '../lib/feed'
+import { countsAsUnread, dayOf, fetchFeed, filterFeed, groupByDay, markEventsSeen, seenTimes, type FeedKind, useSharedProjectIds, useFeedEvents } from '../lib/feed'
 import { useOnline } from '../lib/online'
 import { memberName, useCurrentUserId } from '../lib/sharing'
 import type { ActivityEvent } from '../lib/types'
@@ -122,7 +122,7 @@ export function FeedView() {
   const today = dayOf(Date.now())
   const yesterday = dayOf(Date.now() - 86_400_000)
   const dayLabel = (d: string) => (d === today ? t('Today') : d === yesterday ? t('Yesterday') : dt.formatDate(d, d.slice(0, 4) === today.slice(0, 4) ? 'heading' : 'long'))
-  const isNew = (e: ActivityEvent) => !!seenAtOpen && !!e.projectId && e.actor !== me && e.ts > (seenAtOpen.get(e.projectId) ?? Number.POSITIVE_INFINITY)
+  const isNew = (e: ActivityEvent) => !!seenAtOpen && !!e.projectId && countsAsUnread(e, me ?? null) && e.ts > (seenAtOpen.get(e.projectId) ?? Number.POSITIVE_INFINITY)
 
   return (
     <PageBody width="list">

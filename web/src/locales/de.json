@@ -6580,7 +6580,6 @@
   "unknown file format; update the app": "unbekanntes Dateiformat; aktualisiere die App",
   "unknown passkey": "unbekannter Passkey",
   "unknown pattern \"{word}\"": "unbekanntes Muster „{word}“",
-  "unread changes": "ungelesene Änderungen",
   "unread updates": "ungelesene Neuigkeiten",
   "unscheduled": "ungeplant",
   "unsupported key derivation {kdf}; update the app": "nicht unterstützte Schlüsselableitung {kdf}; aktualisiere die App",
@@ -7196,12 +7195,10 @@
   "Sort into aisles": "Nach Gängen sortieren",
   "This aisle is not one of the standard aisles.": "Dieser Gang gehört nicht zu den Standardgängen.",
   "merged a duplicate": "hat ein Duplikat zusammengeführt",
-  "{n, plural, one {# item ticked off} other {# items ticked off}}": "{n, plural, one {# Eintrag abgehakt} other {# Einträge abgehakt}}",
   "{n, plural, one {Added # aisle section} other {Added # aisle sections}}": "{n, plural, one {# Gangabschnitt hinzugefügt} other {# Gangabschnitte hinzugefügt}}",
   "{reopened, plural, one {# back on the list} other {# back on the list}}, {open, plural, one {# already there} other {# already there}}, {added, plural, one {# added} other {# added}}": "{reopened, plural, one {# wieder auf der Liste} other {# wieder auf der Liste}}, {open, plural, one {# schon da} other {# schon da}}, {added, plural, one {# hinzugefügt} other {# hinzugefügt}}",
   "{title} is already on the list": "{title} steht schon auf der Liste",
   "{title} is back on the list": "{title} ist wieder auf der Liste",
-  "Got it|list": "Erledigt",
   "Graduate": "Abschließen",
   "Graduated": "Abgeschlossen",
   "Stop sorting into aisles": "Nicht mehr nach Gängen sortieren",
@@ -7863,5 +7860,6 @@
   "{name} assigned you a task": "{name} hat dir eine Aufgabe zugewiesen",
   "{name} completed a task": "{name} hat eine Aufgabe erledigt",
   "{name} reopened a task": "{name} hat eine Aufgabe wieder geöffnet",
-  "Completed or reopened": "Erledigt oder wieder geöffnet"
+  "Completed or reopened": "Erledigt oder wieder geöffnet",
+  "Unread changes": "Ungelesene Änderungen"
 }

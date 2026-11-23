@@ -7652,9 +7652,6 @@
   "Got it": [
     "web/src/app/assistant/DisclosureNotice.tsx"
   ],
-  "Got it|list": [
-    "web/src/app/task-list/ListGroups.tsx"
-  ],
   "Graduate": [
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/habits/HabitSection.tsx"
@@ -21004,6 +21001,9 @@
   "Unpin {name}": [
     "web/src/app/ViewsView.tsx"
   ],
+  "Unread changes": [
+    "web/src/app/Sidebar.tsx"
+  ],
   "Unsaved changes": [
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/ui/patterns/SaveBar.tsx"
@@ -24720,9 +24720,6 @@
     "web/src/lib/recurrence.ts",
     "web/src/lib/testdata/recurrence-1.0.ts"
   ],
-  "unread changes": [
-    "web/src/app/Sidebar.tsx"
-  ],
   "unread updates": [
     "web/src/app/Sidebar.tsx"
   ],
@@ -25403,9 +25400,6 @@
   ],
   "{n, plural, one {# item changed} other {# items changed}}": [
     "web/src/app/auditFormat.ts"
-  ],
-  "{n, plural, one {# item ticked off} other {# items ticked off}}": [
-    "web/src/app/task-list/ListGroups.tsx"
   ],
   "{n, plural, one {# item written by AI} other {# items written by AI}}": [
     "web/src/lib/rules/inbox.ts"

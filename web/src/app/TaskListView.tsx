@@ -15,6 +15,7 @@ import { sharedWithSomeoneElse } from '../lib/dayLists'
 import { useMemberships, useMembershipMap, useUserPrefsRow } from '../lib/localData'
 import { briefingHidden, preferredPlacement, setBriefingShown, setTodayEventsShown, setTodayHidesOthers, setUpcomingEventsShown, setUpcomingStartsWithToday, todayHidesOthers, upcomingStartsWithToday, USER_PREFS_ID } from '../lib/userPrefs'
 import { useMe } from '../lib/sharing'
+import { useMarkProjectSeen } from '../lib/feed'
 import { completedOpenKey, flatRow, isTodayProjectGroup, sectionOfRows, type ListGroup, type ListRow } from '../lib/listGroups'
 import { moveTaskBy, taskStepEdges, type Step } from '../lib/move'
 import type { ViewPlacement } from '../lib/viewOrder'
@@ -253,6 +254,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const m = useListModel(route, userId)
   const workspaceName = useWorkspaceName()
   const { rows, groups: taskGroups, columns: dataColumns, board, timeline, projectId, today, taskMap, isReadOnly, collapsedSections, viewMode, sectionMap } = m
+  useMarkProjectSeen(route.view === 'project' ? projectId ?? null : null) // a shared project on screen is seen (quiet-unread D2)
   const upcomingCal = useUpcomingList(route.view === 'upcoming', taskGroups, today, m.upcomingThrough, m.zone, m.dt.resolved)
   // Completed rows stay on screen for their sequence (motion-v2); data stays as read.
   const { groups, columns } = useListMotion(upcomingCal.groups, dataColumns)
@@ -482,7 +484,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               contextualDrag={!!drag.draggingId && contextIds.has(drag.draggingId)}
               editable={m.projectEditable} renderRow={renderRow} addingTo={addingTo} setAddingTo={ui.setAddingTo} onToggleSection={toggleSection}
               doneBySection={m.showCompleted ? NO_DONE : m.doneBySection} revealed={revealed}
-              completed={m.showCompleted && projectId ? { tasks: m.completedTasks, open: m.completedOpen, onToggle: () => m.toggleCollapsed(completedOpenKey(projectId)), gotIt: m.reusable } : undefined} toggleCollapsed={m.toggleCollapsed} collapsedGroups={collapsedGroups} projects={m.projects} labels={m.labels}
+              completed={m.showCompleted && projectId ? { tasks: m.completedTasks, open: m.completedOpen, onToggle: () => m.toggleCollapsed(completedOpenKey(projectId)) } : undefined} toggleCollapsed={m.toggleCollapsed} collapsedGroups={collapsedGroups} projects={m.projects} labels={m.labels}
               earlierActions={route.view === 'today' || m.upcomingToday ? earlierActions : undefined}
               eventsFor={upcomingCal.eventsFor} summarised={summarised}
               onReveal={(key) => setRevealed((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n })} />

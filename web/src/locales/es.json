@@ -6580,7 +6580,6 @@
   "unknown file format; update the app": "formato de archivo desconocido; actualiza la app",
   "unknown passkey": "llave de acceso desconocida",
   "unknown pattern \"{word}\"": "patrón desconocido «{word}»",
-  "unread changes": "cambios sin leer",
   "unread updates": "novedades sin leer",
   "unscheduled": "sin programar",
   "unsupported key derivation {kdf}; update the app": "derivación de clave {kdf} no compatible; actualiza la app",
@@ -7196,12 +7195,10 @@
   "Sort into aisles": "Ordenar por pasillo",
   "This aisle is not one of the standard aisles.": "Este pasillo no es uno de los pasillos estándar.",
   "merged a duplicate": "fusionó un duplicado",
-  "{n, plural, one {# item ticked off} other {# items ticked off}}": "{n, plural, one {# artículo marcado} other {# artículos marcados}}",
   "{n, plural, one {Added # aisle section} other {Added # aisle sections}}": "{n, plural, one {Se añadió # sección de pasillo} other {Se añadieron # secciones de pasillo}}",
   "{reopened, plural, one {# back on the list} other {# back on the list}}, {open, plural, one {# already there} other {# already there}}, {added, plural, one {# added} other {# added}}": "{reopened, plural, one {# de vuelta en la lista} other {# de vuelta en la lista}}, {open, plural, one {# ya estaba} other {# ya estaban}}, {added, plural, one {# añadido} other {# añadidos}}",
   "{title} is already on the list": "{title} ya está en la lista",
   "{title} is back on the list": "{title} vuelve a estar en la lista",
-  "Got it|list": "Ya lo tengo",
   "Graduate": "Graduar",
   "Graduated": "Graduados",
   "Stop sorting into aisles": "Dejar de ordenar por pasillo",
@@ -7863,5 +7860,6 @@
   "{name} assigned you a task": "{name} te asignó una tarea",
   "{name} completed a task": "{name} completó una tarea",
   "{name} reopened a task": "{name} reabrió una tarea",
-  "Completed or reopened": "Completada o reabierta"
+  "Completed or reopened": "Completada o reabierta",
+  "Unread changes": "Cambios sin leer"
 }

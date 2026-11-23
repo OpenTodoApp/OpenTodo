@@ -212,6 +212,26 @@ describe('primary destinations and More (ux-overhaul 4.1)', () => {
   })
 })
 
+describe('unread changes on a project row (quiet-unread D3)', () => {
+  it('shows a dot, not a count', async () => {
+    await setCurrentUserId('alice')
+    const id = await createProject({ name: 'Groceries' })
+    await db.memberships.put({ projectId: id, role: 'editor', ownerId: 'alice', members: [] } as Membership)
+    await ensureFeedBaselines(1000)
+    await applyOps(['Milk', 'Eggs'].flatMap((title, i): Op[] => [
+      { id: `${i}a`, entity: 'task', entityId: `t${i}`, field: 'project_id', value: id, ts: 2000 + i * 10_000, device: 'bob', actor: 'bob' },
+      { id: `${i}b`, entity: 'task', entityId: `t${i}`, field: 'title', value: title, ts: 2000 + i * 10_000, device: 'bob', actor: 'bob' },
+      { id: `${i}c`, entity: 'task', entityId: `t${i}`, field: 'created_at', value: 2000, ts: 2000 + i * 10_000, device: 'bob', actor: 'bob' },
+    ]))
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    const row = () => r.container.querySelector(`[data-project-id="${id}"]`)
+    await waitFor(() => !!row()?.querySelector('[data-unread]'), 'the dot')
+    expect(row()?.querySelector('[data-unread-count]')).toBeNull()
+    expect(spokenText(row()!)).toContain('Unread changes')
+    await r.unmount()
+  })
+})
+
 describe('the desktop sidebar (sidebar-compact-desktop)', () => {
   const menuItems = () => [...document.querySelectorAll('[role="menu"] [role="menuitem"]')].map((b) => b.getAttribute('data-menu-label'))
   const moreButton = (root: ParentNode) => root.querySelector<HTMLButtonElement>('[data-sidebar-more-menu] button[aria-haspopup="menu"]')!
