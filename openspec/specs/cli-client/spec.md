@@ -29,7 +29,7 @@ The client SHALL read a configuration file from the platform's user configuratio
 - **THEN** the command exits with code 2 and a message listing the available workspaces (`ot workspaces` prints the same list, with `--json`)
 
 ### Requirement: Sign-in creates an API token
-`ot login <server-url>` SHALL prompt for email and password (never echoing the password), obtain a session, create an API token named `cli@<hostname>`, discard the session and store only the token in the selected profile. `ot auth set-token` SHALL store a token obtained elsewhere, `ot auth status` SHALL show the server, the signed-in account and the token name, and `ot auth logout` SHALL revoke the stored token on the server and remove it locally.
+`ot login <server-url>` SHALL prompt for email and password (never echoing the password), obtain a session (completing the two-factor challenge with a code or a recovery code when the account has one), create an API token named `cli@<hostname>`, discard the session and store only the token in the selected profile. `ot auth set-token` SHALL store a token obtained elsewhere, `ot auth status` SHALL show the server, the signed-in account and the token name, and `ot auth logout` SHALL revoke the stored token on the server and remove it locally.
 
 #### Scenario: Successful login
 - **WHEN** valid credentials are entered
@@ -42,6 +42,14 @@ The client SHALL read a configuration file from the platform's user configuratio
 #### Scenario: Revoked token
 - **WHEN** the stored token has been revoked and any command is run
 - **THEN** the command exits with code 3 and suggests `ot login`
+
+#### Scenario: Two-factor authentication
+- **WHEN** the account has two-factor authentication and the password is right
+- **THEN** `ot login` asks for the authenticator code or a recovery code, completes the challenge with it, and creates and stores the token as for any other login
+
+#### Scenario: Wrong two-factor code
+- **WHEN** the code entered at the two-factor prompt is wrong
+- **THEN** the command exits with code 3, prints the server's error message and stores nothing
 
 ### Requirement: List tasks
 `ot list` SHALL print open tasks sorted like the web views, with `--inbox` (the Inbox tasks of OpenSpec `project-organization`: no project and not scheduled), `--today` (due today or earlier, overdue first), `--upcoming`, `--project <name-or-id>`, `--completed` and `--all` filters, plus `--limit`. Human output SHALL show an id prefix, priority, due date and time, project and title; dates SHALL be evaluated in the local time zone. Aliases `ot today`, `ot inbox` and `ot upcoming` SHALL exist.
