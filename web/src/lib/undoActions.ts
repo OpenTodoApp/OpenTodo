@@ -8,7 +8,7 @@ import { bulkLabel, planComplete, planLabels, planMove, planPriority, planReopen
 import { db, type AssistantUndo } from './db'
 import { formatDate, logicalToday } from './dates'
 import { seriesRule } from './recurring'
-import { getDeviceId, liveSubtree, planReminders, updateTask, type Change } from './ops'
+import { getDeviceId, liveSubtree, parkTask, planReminders, updateTask, type Change } from './ops'
 import type { ReminderPhrase } from './nlp'
 import { currentUserId, memberName, membershipMap } from './sharing'
 import type { FilterContext } from './filter'
@@ -340,6 +340,12 @@ export async function parkUndoable(id: string): Promise<UndoableResult> {
   const { tasks } = await readTicked([id])
   const task = tasks[0]
   if (!task) return { entry: null, label: '' }
+  // A repeating task: clearing its date ends the repetition, which updateTask plans; it is parked
+  // as before, without a step (undo-row-schedule).
+  if (task.recurrence) {
+    await parkTask(id)
+    return { entry: null, label: '' }
+  }
   const patch: Partial<Task> = { start: 'someday' }
   if (task.due) patch.due = null
   if (task.evening) patch.evening = false

@@ -9,10 +9,10 @@ import { addDaysISO, formatDate, formatTime, logicalToday, quickChoices } from '
 import { addTaskToSlot, liveSlots, slotName, useSlots } from '../../lib/slots'
 import { runSlot } from '../calendar/slotActions'
 import { t } from '../../lib/i18n'
-import { parkTask, updateTask } from '../../lib/ops'
 import type { Task } from '../../lib/types'
 import { Dialog, Icon } from '../../ui'
 import { act } from '../actionError'
+import { calendarEditWithUndo, parkWithUndo } from '../undoable'
 import { DateField } from '../datetime/DateField'
 import { prefersReducedMotion, tick } from '../motion'
 import { beginSwipe, revealed, SWIPE, type SwipeDir } from '../rowSwipe'
@@ -121,11 +121,14 @@ export function RowScheduleHost() {
 
 type Choice = { id: string; label: string; apply: () => Promise<void> }
 
-/** The day a choice sets: the task keeps its time, a parked task comes back. */
+/**
+ * The day a choice sets: the task keeps its time, a parked task comes back. One step of undo
+ * history with the Undo toast, as a drop on a calendar day (undo-row-schedule).
+ */
 async function schedule(task: Task, date: string): Promise<void> {
   const patch: Partial<Task> = { due: task.due ? { ...task.due, date } : { date } }
   if (task.start === 'someday') patch.start = null
-  await updateTask(task.id, patch)
+  await calendarEditWithUndo(task.id, patch)
 }
 
 /** The Schedule sheet of a left swipe and of the touch row menu: five choices (design D3). */
@@ -137,7 +140,7 @@ export function RowScheduleSheet({ task, onClose }: { task: Task; onClose: () =>
     { id: 'today', label: t('Today'), apply: () => schedule(task, today) },
     { id: 'tomorrow', label: t('Tomorrow'), apply: () => schedule(task, addDaysISO(today, 1)) },
     { id: 'next-week', label: t('Next week'), apply: () => schedule(task, nextWeek) },
-    { id: 'someday', label: t('Someday'), apply: () => parkTask(task.id) },
+    { id: 'someday', label: t('Someday'), apply: () => parkWithUndo(task.id) },
   ]
   // Slots of today and of the task's day (calendar-slots D10): "Add to Admin 16:00".
   const slots = useSlots()

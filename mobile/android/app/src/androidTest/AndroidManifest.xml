@@ -9,5 +9,10 @@
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
             tools:node="remove" />
+        <!-- FilePickTest: the picked file, at a content:// address as a document provider gives it. -->
+        <provider
+            android:name="app.opentodo.PickedFileProvider"
+            android:authorities="${applicationId}.picked"
+            android:exported="true" />
     </application>
 </manifest>
