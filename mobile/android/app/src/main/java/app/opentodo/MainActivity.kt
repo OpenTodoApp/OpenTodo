@@ -198,6 +198,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
      * and later the system's splash screen stays as long as the first frame is held back
      * ([firstFrame]: only at a cold start, when that splash screen is showing).
      */
+    @SuppressLint("ClickableViewAccessibility")
     private fun holdLaunchScreen(firstFrame: Boolean) {
         val h = LaunchHold(SystemClock.uptimeMillis())
         hold = h
@@ -206,6 +207,10 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         // Transparent, not INVISIBLE: an invisible web view is a hidden page, which runs no
         // animation frame, so the web app could never say it has drawn (shell-reveal-on-paint D2).
         web.alpha = 0f
+        // A transparent view still takes touches and accessibility focus: nobody can tap or
+        // hear the page under the launch screen before it shows.
+        web.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+        web.setOnTouchListener { _, _ -> true }
         if (firstFrame && Build.VERSION.SDK_INT >= 31) {
             root.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
                 override fun onPreDraw(): Boolean {
@@ -235,6 +240,8 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         heldBars?.let { setSystemBars(it) }
         heldBars = null
         web.alpha = 1f
+        web.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
+        web.setOnTouchListener(null)
     }
 
     @SuppressLint("SetJavaScriptEnabled")

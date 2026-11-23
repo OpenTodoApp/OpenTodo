@@ -1,7 +1,7 @@
 ## 1. Android shell
 
 - [x] 1.1 `Bridge.kt` lists `first-paint` with a screen only, has `painted` in the page script and passes it to the host; verified by `BridgeFixtureTest` (`firstPaintFollowsTheFixture`, `capabilitiesOfTheVisibleAppAndOfABackgroundRun`, `thePageScriptHasTheMethodsOfTheNewCapabilities`) in CI's Android job
-- [x] 1.2 `MainActivity`: the hold makes the web view transparent instead of invisible, and `painted()` reveals; verified by the instrumented tests `thePagesFirstFrameShowsTheWebViewBeforeItsLoadEnds` and `theWebViewShowsOnceThePageHasLoaded` in CI's emulator job
+- [x] 1.2 `MainActivity`: the hold makes the web view transparent instead of invisible, and `painted()` reveals; verified by the instrumented tests `thePagesFirstFrameShowsTheWebViewBeforeItsLoadEnds` and `theWebViewShowsOnceThePageHasLoaded` in CI's emulator job; the held page takes no touch and is hidden from accessibility, verified by `theHeldWebViewIsHiddenFromTouchAndAccessibility`
 
 ## 2. Fixture
 

@@ -45,5 +45,5 @@ No screen changes.
 ## Risks / Trade-offs
 
 - **Not compiled here.** There is no Android SDK in this environment; CI's Android job builds the app and runs the unit and instrumented tests.
-- **A transparent web view takes touches.** While the launch screen holds, a tap reaches the page under it. The page is the app being shown, and the hold lasts until its first frame at most, as on iOS.
+- **A transparent web view would take touches and accessibility focus.** So while the launch screen holds, the web view drops every touch and hides its page from accessibility services; `reveal()` restores both. Otherwise a tap, or TalkBack, would reach a page nobody can see, for up to the whole cap with an older server that never calls `painted()`.
 - **Device check:** a cold start on a phone, light and dark, with the app swiped away first. The time from the tap to the app is compared with a build of main, after the owner's iPhone check for #1757.
