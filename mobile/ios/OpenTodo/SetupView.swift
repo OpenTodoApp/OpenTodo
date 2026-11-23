@@ -362,6 +362,8 @@ final class NetworkWait: ObservableObject {
     }
 
     func stop() {
+        // The handler holds its monitor: let go of both.
+        monitor?.pathUpdateHandler = nil
         monitor?.cancel()
         monitor = nil
         retry = nil
