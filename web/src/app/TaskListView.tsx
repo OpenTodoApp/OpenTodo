@@ -92,6 +92,7 @@ import { closedListOffered } from '../lib/closedListPrefs'
 import { dayPartsOn, setDayParts } from '../lib/dayParts'
 import { readMethodMode } from '../lib/method/mode'
 import { addManyToList, createUnlessReused } from './reuseAdd'
+import { isReusable } from '../lib/reusable'
 
 export { BLOCKED_OPEN_KEY } from '../lib/listGroups'
 
@@ -447,7 +448,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             // Sticks under the page header from 768 px, so adding never needs a scroll back up (add-position D4).
             <div ref={quickAddRow} style={{ top: quickAddTop.top, '--below-head-gap': `${quickAddTop.gap}px` } as CSSProperties} className={`mb-3 pb-2 ${STICKY_QUICK_ADD}`} data-quick-add-row>
               {m.projectReadOnly ? <ReadOnlyQuickAdd /> : (
-                <QuickAdd ref={quickAddRef} onAdd={onAdd} onAddMany={onAddMany} projects={m.projects} labels={m.labels} placeholder={placeholderFor(route, currentProject, currentLabel, currentPlace ?? undefined, workspaceName, phone)} voiceShortcut />
+                <QuickAdd ref={quickAddRef} onAdd={onAdd} onAddMany={onAddMany} reuseProjectId={isReusable(currentProject) ? currentProject!.id : null} projects={m.projects} labels={m.labels} placeholder={placeholderFor(route, currentProject, currentLabel, currentPlace ?? undefined, workspaceName, phone)} voiceShortcut />
               )}
             </div>
           )}

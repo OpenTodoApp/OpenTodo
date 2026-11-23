@@ -473,13 +473,17 @@ func (a *App) applyNatural(ctx context.Context, c *client, title string, langs [
 	qctx := a.quickContext(langs, projects)
 	// Part phrases ("tomorrow morning") follow the account's Day parts preference,
 	// the `~deep` tokens its Energy levels (task-energy D3).
-	parts, energy, sectors, err := c.quickPrefs(ctx)
+	parts, energy, sectors, scope, err := c.quickPrefs(ctx)
 	if err != nil {
 		return nil, nil, 0, err
 	}
 	// And the sector phrases its Time sectors switch (time-sectors D8), with Monday weeks.
 	qctx.DayParts, qctx.Energy, qctx.Sectors = parts, energy, sectors
+	// Links become link attachments, as in the app's quick add (quick-add-links),
+	// unless the token cannot attach: an agent token keeps them in the title.
+	qctx.Links = scope != "agent"
 	r := quickadd.Parse(title, qctx)
+	f.links = r.Links
 	if r.Title == "" {
 		return nil, nil, 0, usageErr("--natural: the line has no title left after its attributes")
 	}

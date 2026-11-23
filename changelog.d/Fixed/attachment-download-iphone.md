@@ -1,0 +1,1 @@
+- **Downloading an attachment works on iPhone.** In Safari and the Home Screen app, Download, or opening a file the browser does not show (a zip, a document), did nothing for a file this device did not hold: the download started only after the file was looked up, outside the tap. It now starts with the tap.

@@ -5,7 +5,7 @@
 // navigate and open tasks of a shared project, never change them: every handler
 // that writes checks `writable` (or the task's own read-only state) first.
 import type { Dispatch, RefObject, SetStateAction } from 'react'
-import { detachOccurrence, setTaskParent, skipOccurrence, unparkTask, updateTask } from '../../lib/ops'
+import { detachOccurrence, setTaskParent, skipOccurrence, unparkTask } from '../../lib/ops'
 import type { ListColumn, ListRow } from '../../lib/listGroups'
 import { moveTaskBy, type Step } from '../../lib/move'
 import { duplicateTask } from '../../lib/templates'
@@ -23,8 +23,8 @@ import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, placeInDay } 
 import { isActivationTarget, isTypingTarget, useShortcutScope } from '../shortcuts'
 import { deleteWithUndo, parkWithUndo } from '../undoable'
 import type { ListRoute } from './useListModel'
-import { dayPartFields } from '../../lib/dayParts'
 import { t } from '../../lib/i18n'
+import { eveningUndoable, priorityUndoable } from '../../lib/undoActions'
 import { announceOnBoard } from '../BoardView'
 import type { AddingBelow } from './belowLine'
 
@@ -229,7 +229,7 @@ export function useListShortcuts(c: ShortcutContext) {
       const priority = Number(chord.key) as Priority
       if (ticked.length) { act(runBulk(ticked, { kind: 'priority', priority })); return }
       if (!selectedId || (row && !writable)) return false
-      act(updateTask(selectedId, { priority }))
+      act(priorityUndoable(selectedId, priority))
     },
     'list.labels': () => {
       if (ticked.length) { ui.openActions('labels'); return }
@@ -275,7 +275,7 @@ export function useListShortcuts(c: ShortcutContext) {
     'list.blocked-by': openFor(blockedByFocus),
     // Park or un-park (someday-and-evening D5).
     'list.park': () => { if (!row || !writable) return false; act(row.task.start === 'someday' ? unparkTask(row.task.id) : parkWithUndo(row.task.id)) },
-    'list.evening': () => { if (!row || !writable) return false; act(updateTask(row.task.id, dayPartFields(row.task.evening ? null : 'evening'))) },
+    'list.evening': () => { if (!row || !writable) return false; act(eveningUndoable(row.task.id, !row.task.evening)) },
     // Duplicate the task and its open subtasks right below it (project-templates D6).
     'list.duplicate': () => { if (!row || !writable) return false; act(duplicateTask(row.task.id).then((id) => setSelectedId(id))) },
   })

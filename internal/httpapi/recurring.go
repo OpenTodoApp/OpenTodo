@@ -13,8 +13,6 @@ import (
 // The completion rule itself lives in internal/sync (RecurringCompletion) so the
 // REST API, CalDAV and the AI assistant tools share it.
 
-func occurrenceID(seriesID, date string) string { return opsync.OccurrenceID(seriesID, date) }
-
 // canonicalizeRecurrence rewrites body.recurrence to its canonical form when it
 // parses, the form a 1.0 client reads when one means the same thing for the
 // task's due date: the body's, else the task's (recurrence-1-0-compatible;

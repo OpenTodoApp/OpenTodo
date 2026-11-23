@@ -13,7 +13,8 @@ Since 21 Nov every change reaches `main` through the merge queue, and the queue 
 
 - A pull request, draft or not, runs the **fast tier**: the repository checks, and for code the web (typecheck, lint, unit tests, docs), web build, web scale, server, image and one binary jobs; the docs website, extension, Obsidian plugin and skill jobs for their own paths. That is today's draft tier, now for every pull request.
 - The **merge queue** runs the whole path tier for what the queued change adds, heavy jobs included: the Chromium layout and end-to-end job, the workbench accessibility and visual checks, the accessibility gate on real screens, Android and iOS. Its "CI result" stays the one required check, so nothing reaches `main` without them.
-- A push to `main`, release tags, the nightly run and a run by hand are unchanged.
+- A push to `main` also runs the path tier without those heavy jobs: with every change landing through the merge queue, the queue already ran them on the same tree. The image, its signing and publishing, and "CI result" still run on the push, so `main`'s status stays visible and the owner's instance is rebuilt as before. (Added on 22 Nov after the first part merged in #1788: queued runs waited up to 45 minutes for a runner while each push re-ran about 10 heavy jobs.)
+- Release tags, the nightly run and a run by hand are unchanged and run every job.
 - `ready_for_review` no longer starts a run, because a draft and a ready pull request now run the same tier.
 
 ## Effect
@@ -25,6 +26,6 @@ Since 21 Nov every change reaches `main` through the merge queue, and the queue 
 
 - Running only the unit tests a change touches (`vitest --changed`): a separate change, once its misses are measured.
 - Repository settings: the ruleset, the required check and the merge queue configuration stay as they are.
-- A push to `main` still runs the path tier although the queue just tested the same tree; dropping that is a separate change, because the push run is also what publishes the image.
+- A push to `main` that did not come through the merge queue (an emergency push by an admin) also skips the heavy jobs; the nightly run covers it.
 
 Advances the ROADMAP's CI and release-hygiene work; no runtime change, no op log or environment change.

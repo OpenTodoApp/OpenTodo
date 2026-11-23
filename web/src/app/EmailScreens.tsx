@@ -16,7 +16,7 @@ import { t } from '../lib/i18n'
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="flex min-h-full items-center justify-center bg-canvas p-6">
+    <div className="flex min-h-full items-start justify-center bg-canvas p-6 pt-[max(1.5rem,var(--safe-top))] sm:items-center">
       <div className="w-full max-w-sm space-y-3 rounded-card border border-default bg-surface p-6 shadow-1">
         <div className="flex items-center gap-3">
           <InstanceMark size={32} />

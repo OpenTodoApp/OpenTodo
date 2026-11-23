@@ -13,11 +13,18 @@ name: UI baselines
 #   the pinned Playwright image and replace the branch.
 # - Run on any other branch: regenerate inside the image and upload only the new or
 #   changed baselines as the ui-baselines artifact, to commit in web/src/ui/__screenshots__.
+#   The `stories` input limits it to the stories a branch changed (every story takes longer
+#   than one runner allows); it is ignored on main, which always regenerates every baseline.
 #
 # The first push to main after the branch is missing writes it from main's PNGs (or, when
 # main has just dropped them, from main's parent).
 on:
   workflow_dispatch:
+    inputs:
+      stories:
+        description: 'Only the stories whose test titles match this regular expression, e.g. screens-signed-out (empty: every story; ignored on main)'
+        required: false
+        default: ''
   push:
     branches: [main]
     paths: ['web/src/ui/__screenshots__/**']
@@ -78,7 +85,8 @@ jobs:
     name: Generate UI baselines
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Every story (over 3,000 screenshots on two workers) runs close to 30 minutes.
+    timeout-minutes: 45
     permissions:
       contents: write
     # The image the UI check job runs in (pinned by digest; same as PLAYWRIGHT_IMAGE in the Makefile).
@@ -98,7 +106,9 @@ jobs:
         working-directory: scripts/ui-check
         env:
           UPDATE: ${{ github.ref == 'refs/heads/main' && 'all' || 'changed' }}
-        run: NODE_PATH=$(npm root -g) playwright test -c playwright.config.ts --update-snapshots="$UPDATE"
+          # Through the environment, never into the script: the input is free text.
+          STORIES: ${{ github.ref != 'refs/heads/main' && inputs.stories || '' }}
+        run: NODE_PATH=$(npm root -g) playwright test -c playwright.config.ts --update-snapshots="$UPDATE" ${STORIES:+--grep "$STORIES"}
       - name: Replace the branch (main)
         if: github.ref == 'refs/heads/main'
         run: |

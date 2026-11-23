@@ -224,6 +224,8 @@ func acceptedLanguages(h string) []string {
 func parseLine(line string, a parseAccountData, today, now string) parseResponse {
 	ctx := a.ctx
 	ctx.Today, ctx.Now = today, now
+	// The route reports links as quick add reads them (quick-add-links D4).
+	ctx.Links = true
 	a.ctx = ctx // the chips name a sector relative to this day
 	r, marks := quickadd.ParseMarked(line, ctx)
 	fields := map[string]any{}
@@ -290,6 +292,9 @@ func parseLine(line string, a parseAccountData, today, now string) parseResponse
 			}
 		}
 		fields["reminders"] = rs
+	}
+	if len(r.Links) > 0 {
+		fields["links"] = r.Links
 	}
 	return parseResponse{Title: r.Title, Fields: fields, Chips: chipsOf(line, r, marks, a), Unmatched: unmatchedOf(r.Title), Origin: nil}
 }
@@ -368,6 +373,8 @@ func chipsOf(line string, r quickadd.Result, marks []quickadd.Mark, a parseAccou
 			}
 		case "recurrence", "reminder":
 			c.Text = m.Span.Text // the user's own words, already in their language
+		case "link":
+			c.Text = quickadd.LinkHost(m.Span.Text)
 		default:
 			continue
 		}

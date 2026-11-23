@@ -300,8 +300,8 @@ test('Playwright jobs run in the pinned image at one version', () => {
 
 // CI capacity (ci-pr-fast-tier): the merge queue and a push to main run the path tier for
 // what they change; release tags, the nightly schedule and a run by hand run every job and
-// matrix leg; a pull request skips the browser, workbench, accessibility and phone jobs,
-// which the merge queue runs before the change lands.
+// matrix leg; a pull request skips the browser, workbench, accessibility, phone, binary and
+// site bundle jobs, which the merge queue runs before the change lands.
 test('the full matrix runs on tags, nightly and by hand; pull requests run the fast tier', () => {
   const ci = read('.github/workflows/ci.yml')
   assert.match(ci, /^ {2}schedule:\n {4}- cron: "[^"]+"$/m, 'a nightly full run')
@@ -310,12 +310,15 @@ test('the full matrix runs on tags, nightly and by hand; pull requests run the f
   assert.match(ci, /types: \[opened, synchronize, reopened\]/, 'drafts and ready pull requests run the same tier, so marking one ready starts no run')
   const jobs = jobsOf(ci)
   assert.match(jobs.changes, /full: \$\{\{ steps\.filter\.outputs\.full \}\}/)
-  assert.match(jobs.changes, /git diff --name-only "\$BEFORE" HEAD/, 'a push to main is compared with the commit before')
+  assert.match(jobs.changes, /git diff --name-only "\$BEFORE" HEAD > changed\.txt\n\s+cat changed\.txt\n\s+\.\/scripts\/ci-changes\.sh < changed\.txt \| sed -E 's\/\^\(ui\|layout\|a11y\|mobile\|ios\)=true\$\/\\1=false\/' >> "\$GITHUB_OUTPUT"/, 'a push to main is compared with the commit before and skips the heavy jobs the queue ran (ci-pr-fast-tier)')
   assert.match(jobs.changes, /git diff --name-only "\$QUEUE_BASE" HEAD > changed\.txt\n\s+cat changed\.txt\n\s+\.\/scripts\/ci-changes\.sh < changed\.txt >> "\$GITHUB_OUTPUT"/, 'the merge queue runs the whole path tier')
   assert.match(jobs.changes, /git diff --name-only "\$BASE"\.\.\.HEAD > changed\.txt\n\s+cat changed\.txt\n(\s+#.*\n)*\s+\.\/scripts\/ci-changes\.sh < changed\.txt \| sed -E 's\/\^\(ui\|layout\|a11y\|mobile\|ios\)=true\$\/\\1=false\/' >> "\$GITHUB_OUTPUT"\n\n/, 'every pull request turns the heavy jobs off, with no condition around it')
   assert.doesNotMatch(jobs.changes, /DRAFT/, 'a draft is no longer a tier of its own')
   for (const id of ['layout', 'cli']) assert.match(jobs[id], /fromJSON\(needs\.changes\.outputs\.full != 'true' && /, `${id} runs its full matrix only when full`)
   assert.doesNotMatch(ci, /fromJSON\(github\.event_name == 'pull_request'/, 'no matrix keys off the event alone')
+  // ci-pr-shorter-chain: the binaries and the site bundle only lengthen a pull request's chain.
+  for (const id of ['cli', 'site-bundle']) assert.match(jobs[id], /^ {4}if: \$\{\{ !cancelled\(\) && (!failure\(\) && )?github\.event_name != 'pull_request' && /m, `${id} runs in the merge queue, not on pull requests`)
+  for (const id of ['cli', 'site-bundle']) assert.doesNotMatch(jobs[id].match(/^ {4}if: .*$/m)[0], /merge_group|github\.event_name == /, `${id} is skipped on no other event`)
 })
 
 test('the image, stable tag and release are published only after every gate', () => {
@@ -423,8 +426,16 @@ test('browser end-to-end checks run in CI and the race detector nightly', () => 
   assert.match(read('Makefile'), /^e2e: cli\n\tscripts\/e2e\.sh$/m, 'make e2e builds bin/ot and runs scripts/e2e.sh')
   assert.match(read('scripts/e2e.sh'), /e2e-smoke e2e-views e2e-offline/, 'scripts/e2e.sh runs the two-device, saved-view and offline-start scripts')
   // The built service worker and manifest tests run after the build, where they cannot skip.
-  const build = jobsOf(read('.github/workflows/ci.yml'))['web-build'] ?? ''
-  assert.ok(build.indexOf('run: npm run test:built') > build.indexOf('run: npm run build'), 'the web-build job runs npm run test:built after npm run build')
+  const ciJobs = jobsOf(read('.github/workflows/ci.yml'))
+  const script = read('scripts/ci-web-build.sh')
+  assert.ok(script.includes('npm run build') && script.indexOf('npm run test:built') > script.indexOf('npm run build'), 'the CI web build runs npm run test:built after npm run build')
+  assert.ok(needsOf(ciJobs.server ?? '').includes('web-build'), 'the server job waits for web-build where it runs')
+  assert.match(ciJobs['web-build'] ?? '', /run: \.\/scripts\/ci-web-build\.sh/, 'the web-build job runs the CI web build')
+  // ci-pr-server-builds-web: on a pull request the server job builds the web app itself.
+  assert.match(ciJobs['web-build'] ?? '', /^ {4}if: .*github\.event_name != 'pull_request'/m, 'web-build is skipped on pull requests')
+  assert.match(ciJobs.server ?? '', /if: github\.event_name == 'pull_request'\n\s+run: \|\n\s+\(cd web && npm ci --no-audit --no-fund\)\n\s+\.\/scripts\/ci-web-build\.sh\n\s+rm -rf web\/node_modules\n/, 'on a pull request the server job runs the CI web build, then removes node_modules before the Go steps')
+  assert.match(ciJobs.server ?? '', /if: github\.event_name != 'pull_request'\n\s+with:\n\s+name: web-dist/, 'elsewhere it downloads web-dist')
+  assert.match(ciJobs.server ?? '', /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && needs\.web-build\.result != 'cancelled' && /m, 'the server job runs when web-build was skipped, not when it was cancelled')
   // The report-only interface audit runs nightly and on demand, off every critical path (ci-speed).
   const audit = read('.github/workflows/ux-audit.yml')
   assert.match(audit, /^ {2}schedule:\n {4}- cron: /m, 'the interface audit runs nightly')
@@ -717,9 +728,9 @@ test('the Play upload runs only for final tags, after the release, with its secr
   }
 })
 
-// The iPhone app's TestFlight upload (OpenSpec change ios-distribution D5, D9): final tags after the
-// release and by hand, the App Store Connect key only in the release environment, a registration
-// job of its own, and never any signing material in the repository.
+// The iPhone app's TestFlight upload (OpenSpec change ios-distribution D5, D9, D10): final tags after
+// the release and by hand, the App Store Connect key only in the release environment, a registration
+// job of its own, review submission for final tags only, and never any signing material in the repository.
 test('the TestFlight upload runs for final tags after the release and by hand, with its secrets in the release environment', () => {
   const caller = jobsOf(read('.github/workflows/ci.yml'))['ios-testflight']
   assert.match(caller, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\) \}\}$/m, 'final tags only')
@@ -733,7 +744,20 @@ test('the TestFlight upload runs for final tags after the release and by hand, w
   assert.match(job, /node scripts\/release\/appstore\.mjs register\n[\s\S]*ios-testflight\.sh archive /, 'the bundle IDs are registered before the archive')
   assert.match(job, /^ {8}id: upload$/m, 'the upload step has an id the cleanup reads')
   assert.match(job, /if: always\(\) && steps\.secrets\.outputs\.ready == 'true'\n[\s\S]*?UPLOADED: \$\{\{ steps\.upload\.outcome == 'success' \}\}\n[\s\S]*?if \[ "\$UPLOADED" != "true" \][^\n]*appstore\.mjs cleanup/, 'the keychain always goes; the certificate is revoked only when nothing was uploaded (ITMS-90035)')
-  assert.doesNotMatch(flow, /reviewSubmissions|appStoreVersionSubmissions|betaAppReviewSubmissions/, 'CI never submits for review')
+  // App Store review (D10): a final tag's build only, after Apple processed it, never a release candidate; a hand run is a dry run unless chosen.
+  assert.match(job, /appstore\.mjs processed[\s\S]*?name: Submit for App Store review[\s\S]*?set -- submit /, 'the submission waits for processing')
+  const tools = job.match(/- name: Release scripts of this workflow's commit\n[\s\S]*?(?=\n {6}- |\n {6}# )/)?.[0] ?? ''
+  assert.match(tools, /^ {10}ref: \$\{\{ github\.workflow_sha \}\}$/m, "the submission's scripts are pinned to the workflow's exact commit, never a branch name")
+  assert.match(tools, /^ {10}sparse-checkout: scripts\/release$/m, 'only scripts/release is checked out from the workflow commit')
+  assert.match(tools, /^ {10}path: release-tools$/m, 'the workflow copy sits beside the tag, never over it')
+  assert.match(job, /node release-tools\/scripts\/release\/appstore\.mjs "\$@"/, "submit runs the workflow commit's appstore.mjs")
+  assert.match(job, /set -- submit "\$VERSION" "\$BUILD" --changelog CHANGELOG\.md/, "What's New is the tag's own CHANGELOG.md")
+  assert.equal((job.match(/release-tools\//g) ?? []).length, 1, 'every other step runs the tag')
+  assert.match(job, /^ {8}if: steps\.secrets\.outputs\.ready == 'true' && !contains\(inputs\.ref, '-rc\.'\) && \(inputs\.app_store == 'submit' \|\| inputs\.app_store == 'dry-run' \|\| inputs\.app_store == 'submit-only'\)$/m, 'a release candidate is never submitted')
+  assert.match(flow, /^ {6}app_store:\n {8}description:[^\n]*\n {8}type: choice\n {8}options: \[dry-run, submit, skip, submit-only\]\n {8}default: dry-run$/m, 'a run by hand is a dry run unless submit is chosen')
+  assert.match(job, /id: upload\n {8}if: steps\.secrets\.outputs\.ready == 'true' && inputs\.app_store != 'submit-only'$/m, 'submit-only uploads nothing')
+  assert.ok(job.indexOf('Release tag only') < job.indexOf('Submit for App Store review'), 'the tag check runs first')
+  assert.doesNotMatch(flow, /betaAppReviewSubmissions/, 'CI never submits a TestFlight build to beta review')
   const register = jobsOf(read('.github/workflows/ios-register-ids.yml'))['ios-register-ids']
   assert.ok(register, 'ios-register-ids.yml has an ios-register-ids job')
   assert.match(read('.github/workflows/ios-register-ids.yml'), /^ {2}workflow_dispatch:$/m)

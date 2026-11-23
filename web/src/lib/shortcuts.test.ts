@@ -3,7 +3,14 @@
 // in a scope and an ancestor scope, without an explicit override; every row the
 // sheet and the guide show comes from the registry; the resolved bindings hold.
 import { describe, expect, it } from 'vitest'
-import { chordKey, chordsOf, chordText, keysOf, labelMessage, listedShortcuts, matchesChord, parseChord, parseKeys, SCOPE_ANCESTORS, sequencesClash, shortcut, type Shortcut, SHORTCUT_SECTIONS, SHORTCUTS, spotlightGroup, VIEW_SCOPES } from './shortcuts'
+import { chordKey, chordsOf, chordText, keysOf, labelMessage, listedShortcuts, matchesChord, type Chord, parseChord, parseKeys, SCOPE_ANCESTORS, shortcut, type Shortcut, SHORTCUT_SECTIONS, SHORTCUTS, spotlightGroup, VIEW_SCOPES } from './shortcuts'
+
+/** Whether two sequences collide: the same keys, or one is the start of the other (`d` and `d d`). */
+function sequencesClash(a: Chord[], b: Chord[]): boolean {
+  const n = Math.min(a.length, b.length)
+  for (let i = 0; i < n; i++) if (chordKey([a[i]]) !== chordKey([b[i]])) return false
+  return true
+}
 
 /** Whether entries `a` and `b` can be active at the same time, given their scopes and views. */
 function canMeet(a: Shortcut, b: Shortcut): boolean {

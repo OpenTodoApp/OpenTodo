@@ -42,6 +42,7 @@ function mapFiles(e: Engine, m: MergeRun): void {
   paths.sort((a, b) => slashes(a) - slashes(b))
   const claimed = new Set<string>()
   const fresh: string[] = []
+  const known: string[] = []
   for (const p of paths) {
     const pre = parseDoc(e.disk.get(p)!, () => false)
     if (p === INBOX_FILE) e.fileOf.set(p, '')
@@ -53,11 +54,27 @@ function mapFiles(e: Engine, m: MergeRun): void {
       }
       e.fileOf.set(p, pre.id)
       projectEdits(e, m, p, pre)
+    } else if (pre.id === '' && own(e.st.files, p) && e.st.files[p].project !== '') {
+      known.push(p)
     } else {
       if (pre.id !== '') e.warn(`${p}: the project id ${short(pre.id)} is not in the account; the file becomes a new project`)
       fresh.push(p)
     }
   }
+  // A file without opentodo-id at a path the last sync wrote for a live project
+  // stays that project's file (merge.go mapFiles), after every id has claimed its
+  // project. Matched by its path, it carries no front-matter edits.
+  for (const p of known) {
+    const pid = e.st.files[p].project
+    if (claimed.has(pid) || S.get(e.app, 'project', pid) === undefined || !m.av.projectLive(pid)) {
+      fresh.push(p)
+      continue
+    }
+    claimed.add(pid)
+    e.fileOf.set(p, pid)
+    projectEdits(e, m, p, { ...parseDoc('', () => false), id: pid }, true)
+  }
+  fresh.sort((a, b) => paths.indexOf(a) - paths.indexOf(b))
   for (const p of fresh) newProject(e, p)
   for (const p of paths) {
     if (e.skip.has(p)) continue
@@ -110,7 +127,7 @@ function projectCycle(e: Engine, pid: string, parent: string): boolean {
 }
 
 /** A renamed file renames its project, a moved one moves it, edited front matter sets its colour, icon, flow and status. */
-function projectEdits(e: Engine, m: MergeRun, p: string, d: Doc): void {
+function projectEdits(e: Engine, m: MergeRun, p: string, d: Doc, byPath = false): void {
   const pid = d.id
   if (S.get(e.base, 'project', pid) === undefined) return
   const b = () => e.body('project', pid)
@@ -138,6 +155,7 @@ function projectEdits(e: Engine, m: MergeRun, p: string, d: Doc): void {
       e.event('project', p, '', `moved project ${goQuote(m.av.text('project', pid, 'name'))}`)
     }
   }
+  if (byPath) return // no front matter to read edits from
   const baseRow = S.get(e.base, 'project', pid)
   const appRow = S.get(e.app, 'project', pid)
   if (d.color !== S.str(baseRow, 'color') && d.color !== '' && S.str(appRow, 'color') === S.str(baseRow, 'color')) {

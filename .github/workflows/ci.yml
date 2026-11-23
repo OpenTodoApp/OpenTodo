@@ -4,14 +4,15 @@ on:
   push:
     branches: [main, master]
     tags: ["v*"]
-  # A pull request runs the fast tier (ci-pr-fast-tier): the checks, web, server, image and
-  # the small packages; the browser, workbench, accessibility and phone jobs wait for the queue.
+  # A pull request runs the fast tier (ci-pr-fast-tier, ci-pr-shorter-chain): the checks, web,
+  # server, image and the small packages; the browser, workbench, accessibility, phone, binary
+  # and site bundle jobs wait for the queue.
   pull_request:
     types: [opened, synchronize, reopened]
   # The merge queue: the whole path tier, the heavy jobs included, on the
   # pull request merged onto the queue's base. Its "CI result" is the gate to main.
   merge_group:
-  # The full matrix every night and on demand; pushes to main run the path tier.
+  # The full matrix every night and on demand; pushes to main run the path tier without the heavy jobs.
   schedule:
     - cron: "41 2 * * *"
   workflow_dispatch:
@@ -44,9 +45,10 @@ jobs:
   # jobs and one linux/amd64 binary; one Chromium layout and end-to-end job when `layout`
   # paths changed; the workbench checks when `ui` paths changed; Android, extension,
   # Obsidian plugin and skill only for their own paths; a docs-only change runs the checks
-  # and the docs website. The merge queue and a push to main run the whole path tier for
-  # what they change; a pull request, draft or not, runs it without the browser,
-  # workbench, accessibility and phone jobs, which the queue runs before anything lands.
+  # and the docs website. The merge queue runs the whole path tier for what it changes;
+  # a pull request, draft or not, and a push to main run it without the browser,
+  # workbench, accessibility and phone jobs, which the queue runs before anything lands;
+  # a pull request also skips the binary and site bundle jobs (ci-pr-shorter-chain).
   # Release tags, the nightly schedule and a run by hand run every job and every matrix
   # leg (`full`, every output true). The interface audit runs nightly (ux-audit.yml).
   changes:
@@ -93,14 +95,17 @@ jobs:
             ./scripts/ci-changes.sh < changed.txt >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          # A push to main runs the path tier for what it changed since the
-          # commit before; a push that cannot be compared (a new branch) runs everything.
+          # A push to main runs the path tier for what it changed since the commit before,
+          # without the browser, workbench, accessibility and phone jobs: the merge queue
+          # ran them on this same tree before it landed (ci-pr-fast-tier). The image,
+          # its publishing and "CI result" still run. A push that cannot be compared (a new
+          # branch) runs everything; the nightly runs every job on main.
           if [ "$EVENT" = "push" ] && [ "${REF#refs/tags/}" = "$REF" ] && [ -n "$BEFORE" ] \
             && ! printf '%s' "$BEFORE" | grep -Eq '^0+$' && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
             echo "full=false" >> "$GITHUB_OUTPUT"
             git diff --name-only "$BEFORE" HEAD > changed.txt
             cat changed.txt
-            ./scripts/ci-changes.sh < changed.txt >> "$GITHUB_OUTPUT"
+            ./scripts/ci-changes.sh < changed.txt | sed -E 's/^(ui|layout|a11y|mobile|ios)=true$/\1=false/' >> "$GITHUB_OUTPUT"
             exit 0
           fi
           # A run by hand with a base: the path tier against it. The UI baselines fold
@@ -127,13 +132,17 @@ jobs:
           ./scripts/ci-changes.sh < changed.txt | sed -E 's/^(ui|layout|a11y|mobile|ios)=true$/\1=false/' >> "$GITHUB_OUTPUT"
 
   # The web app is built in its own job (ci-speed): the server, layout and binary
-  # jobs need only web-dist, so they start while the unit tests still run.
+  # jobs need only web-dist, so they start while the unit tests still run. On a pull
+  # request the server is its only consumer, so the server job builds it there
+  # (ci-pr-server-builds-web).
   web-build:
     name: Web build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    # Not on pull requests (ci-pr-server-builds-web): there the server job, its one consumer,
+    # builds the web app itself instead of waiting for this job's runner.
+    if: needs.changes.outputs.code == 'true' && github.event_name != 'pull_request'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -143,27 +152,8 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: npm ci --no-audit --no-fund
         working-directory: web
-      # The signed file list (signed-web-app): a release tag names the version, a build
-      # of main is labelled a preview build; anything else is 0.0.0-dev. Signing is the
-      # web-sign job's, on release tags only.
-      - name: Build (the file list names the version)
-        working-directory: web
-        env:
-          REF: ${{ github.ref }}
-        run: |
-          case "$REF" in
-            refs/tags/v*) export OPENTODO_VERSION="${GITHUB_REF_NAME#v}" ;;
-            refs/heads/main) export OPENTODO_BUILD=preview ;;
-          esac
-          npm run build
-      # The first load's gzip size against web/bundle-budget.json (raise it only on purpose).
-      - name: Bundle budget
-        run: node scripts/bundle-budget.mjs
-      # The built service worker and manifest (and no workbench code in the build):
-      # these skip before a build, and fail here if the build is missing.
-      - name: Tests of the built app (service worker, manifest)
-        run: npm run test:built
-        working-directory: web
+      # Build, bundle budget and the tests of the built app (scripts/ci-web-build.sh).
+      - run: ./scripts/ci-web-build.sh
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: web-dist
@@ -218,11 +208,17 @@ jobs:
           path: web-manifest
 
   web:
-    name: Web (typecheck, lint, test)
+    name: Web (${{ matrix.shard == 1 && 'typecheck, lint, ' || '' }}test ${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: changes
     if: needs.changes.outputs.code == 'true'
+    # The unit tests in three shards: on one runner they took 5.5 to 8.5 minutes,
+    # the longest step of every pull request. Typecheck and lint run in the first shard.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -233,12 +229,16 @@ jobs:
       - run: npm ci --no-audit --no-fund
         working-directory: web
       - run: npm run typecheck
+        if: matrix.shard == 1
         working-directory: web
       - name: React hooks lint (make web-lint)
+        if: matrix.shard == 1
         run: npm run lint
         working-directory: web
-      - run: npm test
+      - run: npm test -- --shard="$SHARD/3"
         working-directory: web
+        env:
+          SHARD: ${{ matrix.shard }}
 
   web-scale:
     # The scale tests (*.perf.test.tsx: lists of 2,000 rows, the 10,000-task account of
@@ -267,16 +267,32 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     needs: [changes, web-build]
-    if: needs.changes.outputs.code == 'true'
+    # web-build is skipped on pull requests; this job then builds the web app itself.
+    if: ${{ !cancelled() && !failure() && needs.web-build.result != 'cancelled' && needs.changes.outputs.code == 'true' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
+      # Node for the web build on pull requests and the sync client contract tests below.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: github.event_name != 'pull_request'
         with:
           name: web-dist
           path: internal/web/dist
+      # Then node_modules goes again: `./...` below would include the Go code some npm
+      # packages ship, and the contract tests install it afresh after the Go steps.
+      - name: Web build (pull requests; elsewhere the web-build job)
+        if: github.event_name == 'pull_request'
+        run: |
+          (cd web && npm ci --no-audit --no-fund)
+          ./scripts/ci-web-build.sh
+          rm -rf web/node_modules
       - name: Toolchain matches go.mod (patched release toolchain)
         run: |
           want=$(sed -n 's/^toolchain //p' go.mod)
@@ -305,11 +321,6 @@ jobs:
         run: ./scripts/cli-smoke.sh | tee /dev/stderr | grep -q '^CLI OK$'
       # The web app's sync client (src/lib) against this server binary, no mocks
       # (OpenSpec self-hosting "The sync client is tested against the server").
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: web/package-lock.json
       - run: npm ci --no-audit --no-fund
         working-directory: web
       - name: Sync client contract tests (against bin/opentodo)
@@ -491,8 +502,8 @@ jobs:
           path: docs-report
 
   # The site bundle (OpenSpec site-bundle): docs site, screenshots, tokens, icons,
-  # changelog and manifest for the website repository. Every run uploads it as an
-  # artefact (a preview of unreleased docs); a v* tag names it after the tag and the
+  # changelog and manifest for the website repository. Every run outside pull requests
+  # uploads it as an artefact (a preview of unreleased docs); a v* tag names it after the tag and the
   # release job attaches it. The manifest's import formats come from the linux/amd64
   # server binary when the binaries were built, otherwise from `go run`.
   site-bundle:
@@ -500,7 +511,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [changes, cli]
-    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.cli.result != 'failure' && needs.changes.outputs.docs == 'true' }}
+    # Not on pull requests (ci-pr-shorter-chain): it waits for the binaries and catches
+    # nothing the docs check misses there; the merge queue builds it before a change lands.
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && needs.changes.result == 'success' && needs.cli.result != 'failure' && needs.changes.outputs.docs == 'true' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -522,15 +535,11 @@ jobs:
           path: bin-linux
       - name: Build the bundle
         id: bundle
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           case "$GITHUB_REF" in
             refs/tags/v*) version="$GITHUB_REF_NAME" ;;
             *) version="main-$(git rev-parse --short HEAD)" ;;
           esac
-          [ "$GITHUB_EVENT_NAME" = pull_request ] && version="pr${PR_NUMBER}-$(git rev-parse --short "$PR_HEAD_SHA")"
           bin=""
           if [ -f bin-linux/opentodo-linux-amd64 ]; then chmod +x bin-linux/opentodo-linux-amd64; bin="--bin bin-linux/opentodo-linux-amd64"; fi
           node scripts/site-bundle.mjs --version "$version" $bin
@@ -646,12 +655,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [changes, server, web-sign]
-    # web-sign runs on release tags only; elsewhere it is skipped, not failed.
-    if: ${{ !cancelled() && !failure() && needs.changes.outputs.code == 'true' }}
+    # web-sign runs on release tags only; elsewhere it is skipped, not failed. Not on pull
+    # requests (ci-pr-shorter-chain): the server job builds the linux/amd64 binaries there,
+    # and the merge queue cross-compiles before a change lands.
+    if: ${{ !cancelled() && !failure() && github.event_name != 'pull_request' && needs.changes.outputs.code == 'true' }}
     strategy:
       fail-fast: false
       matrix:
-        # linux/amd64 on pull requests (the site bundle reads it); every platform on pushes and tags.
+        # linux/amd64 on path-tier runs (the site bundle reads it); every platform on full runs.
         include: ${{ fromJSON(needs.changes.outputs.full != 'true' && '[{"goos":"linux","goarch":"amd64"}]' || '[{"goos":"linux","goarch":"amd64"},{"goos":"linux","goarch":"arm64"},{"goos":"darwin","goarch":"amd64"},{"goos":"darwin","goarch":"arm64"},{"goos":"windows","goarch":"amd64","ext":".exe"},{"goos":"windows","goarch":"arm64","ext":".exe"}]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1284,8 +1295,8 @@ jobs:
 
   # TestFlight (OpenSpec change ios-distribution D5, D9): after the release, the iPhone app of a
   # final tag is archived, signed through the App Store Connect API and uploaded to TestFlight by
-  # .github/workflows/ios-testflight.yml, which the owner can also run by hand for any ref. A
-  # person submits a build for review in App Store Connect (RELEASING.md). The secrets live in the
+  # .github/workflows/ios-testflight.yml, which the owner can also run by hand for any ref, then
+  # submitted for App Store review (D10, released after approval). The secrets live in the
   # `release` environment; without them the job warns and succeeds, and the release never depends
   # on it.
   ios-testflight:

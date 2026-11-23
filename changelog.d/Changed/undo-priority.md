@@ -1,0 +1,1 @@
+- **A priority change can be undone.** Setting one task's priority with a key, its menu, the task panel or the command palette is a step: Ctrl/Cmd+Z puts the old priority back. A repeating task is not covered yet.

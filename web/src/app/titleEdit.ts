@@ -40,7 +40,7 @@ export async function applyTitleEdit(task: Task, plan: EditPlan, labels: readonl
     }
     if (ids.length !== task.labels.length) patch.labels = ids
   }
-  const r = await titleEditUndoable(id, patch, plan.reminders)
+  const r = await titleEditUndoable(id, patch, plan.reminders, plan.links)
   if (recurrence) await setRecurrence(id, recurrence)
   if (r.entry) showUndoToast(r.label, r.entry.id)
   return id
@@ -53,8 +53,9 @@ export async function applyTitleEdit(task: Task, plan: EditPlan, labels: readonl
  */
 export async function commitTitleEdit(task: Task, plan: EditPlan, labels: readonly LabelRef[], projectName?: (id: string) => string): Promise<string> {
   const fields = Object.keys(plan.patch)
-  if (!fields.length && !plan.labels.length && !plan.reminders.length) return task.id
-  if (fields.length === 1 && plan.patch.title && !plan.labels.length && !plan.reminders.length) {
+  const extras = plan.labels.length + plan.reminders.length + (plan.links?.length ?? 0)
+  if (!fields.length && !extras) return task.id
+  if (fields.length === 1 && plan.patch.title && !extras) {
     await updateTask(task.id, { title: plan.patch.title })
     return task.id
   }

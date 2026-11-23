@@ -15,7 +15,7 @@ import { FIELD_ICON, FIELD_TOKEN, type FieldKind, type FieldRow, type QuickAddPr
 
 export const FIELD_NAME = translatedMap<FieldKind>({
   when: msg('When'), project: msg('Project'), label: msg('Label'), priority: msg('Priority'), estimate: msg('Estimate'),
-  deadline: msg('Deadline'), recurrence: msg('Repeats'), reminder: msg('Reminder'), spent: msg('Time spent'), energy: msg('Energy'),
+  deadline: msg('Deadline'), recurrence: msg('Repeats'), reminder: msg('Reminder'), spent: msg('Time spent'), energy: msg('Energy'), link: msg('Link'),
 })
 
 /** What an unset row says: how to set it. */

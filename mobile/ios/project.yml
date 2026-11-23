@@ -46,6 +46,9 @@ targets:
         # Unlocking an encrypted account with the key in the keychain (BiometricKeyStore):
         # without it iOS refuses the Face ID prompt. Translated in OpenTodo/InfoPlist.xcstrings.
         NSFaceIDUsageDescription: OpenTodo uses Face ID to unlock your encrypted tasks on this iPhone.
+        # Saving an image from Quick Look's share button (Downloads, ios-quick-look): adding to
+        # Photos only, never reading them. Without it that choice ends the app. Translated in InfoPlist.xcstrings.
+        NSPhotoLibraryAddUsageDescription: OpenTodo saves the images you choose to your photo library.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         UIApplicationShortcutItems:
