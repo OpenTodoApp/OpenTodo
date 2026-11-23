@@ -1278,11 +1278,11 @@ jobs:
           gh release upload "$GITHUB_REF_NAME" release/* --clobber
 
   # Google Play (OpenSpec change play-production D1, D2): after the release, the AAB of a
-  # final tag is signed with the upload key and put on Play's internal testing track
-  # (scripts/release/play-upload.mjs); a person promotes it to production in the Play
-  # Console (RELEASING.md). The secrets live in the `release` environment. Release
-  # candidates upload nothing; without the secrets the job warns and succeeds, and the
-  # release never depends on it.
+  # final tag is put on Play's internal testing track (scripts/release/play-upload.mjs),
+  # re-signed with the upload key when one is set; a person promotes it to production in
+  # the Play Console (RELEASING.md). The secrets live in the `release` environment. Release
+  # candidates upload nothing; without the service account the job warns and succeeds, and
+  # the release never depends on it.
   play:
     name: Google Play (internal track)
     # !cancelled() && !failure(): a skipped job upstream (the app builds skip on tags) must not
@@ -1334,8 +1334,10 @@ jobs:
             upload="$RUNNER_TEMP/upload.aab"
             cp "$aab" "$upload"
             zip -q -d "$upload" 'META-INF/*.SF' 'META-INF/*.RSA' 'META-INF/*.EC' 'META-INF/*.DSA' 'META-INF/MANIFEST.MF' || true
+            trap 'rm -f "$RUNNER_TEMP/upload.jks"' EXIT
             printf '%s' "$UPLOAD_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
-            jarsigner -keystore "$RUNNER_TEMP/upload.jks" -storepass:env UPLOAD_KEYSTORE_PASSWORD -keypass:env UPLOAD_KEY_PASSWORD "$upload" "$UPLOAD_KEY_ALIAS" > /dev/null
+            # jarsigner's output names what is wrong (alias, password) and holds no secret.
+            jarsigner -keystore "$RUNNER_TEMP/upload.jks" -storepass:env UPLOAD_KEYSTORE_PASSWORD -keypass:env UPLOAD_KEY_PASSWORD "$upload" "$UPLOAD_KEY_ALIAS"
             rm -f "$RUNNER_TEMP/upload.jks"
           fi
           node scripts/release/play-upload.mjs "$GITHUB_REF_NAME" "$upload"
