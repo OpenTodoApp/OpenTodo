@@ -37,12 +37,13 @@ describe('a plain rename', () => {
     expect((await db.tasks.get(id))!.title).toBe('b'.repeat(60))
   })
 
-  it('the same title records nothing; a repeating task is renamed as before, without a step', async () => {
+  it("the same title records nothing; a repeating task's rename is one step (undo-series-edits)", async () => {
     const id = await createTask({ title: 'Milk' })
     await rename(id, 'Milk')
+    expect(await db.assistantUndo.count()).toBe(0)
     const rep = await createTask({ title: 'Take the bins out', due: { date: '2030-01-07' }, recurrence: 'every week' })
     await rename(rep, 'Take the bins and recycling out')
     expect((await db.tasks.get(rep))!.title).toBe('Take the bins and recycling out')
-    expect(await db.assistantUndo.count()).toBe(0)
+    expect(await db.assistantUndo.count()).toBe(1)
   })
 })
