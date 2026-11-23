@@ -1615,6 +1615,8 @@ export interface OidcSettings {
   providerLogout: boolean
   /** The provider's `picture` claim becomes the profile picture at sign-in (oidc-profile-pictures); absent on older servers. */
   syncPictures?: boolean
+  /** A token without an email_verified claim may create a new account, never link one (sso-missing-email-verified); absent on older servers. */
+  trustMissingEmailVerified?: boolean
   /** Paste this into the provider's client configuration. */
   redirectUri: string
   /** False when the redirect URI was derived from the request (set OPENTODO_BASE_URL). */
@@ -1625,7 +1627,7 @@ export interface OidcSettings {
 
 /** A settings change; omitted fields are kept. `clientSecret: ''` removes the secret. */
 export type OidcSettingsInput = Partial<Pick<OidcSettings,
-  'issuer' | 'clientId' | 'clientSecret' | 'displayName' | 'scopes' | 'allowProvision' | 'ssoOnly' | 'providerLogout' | 'syncPictures'>>
+  'issuer' | 'clientId' | 'clientSecret' | 'displayName' | 'scopes' | 'allowProvision' | 'ssoOnly' | 'providerLogout' | 'syncPictures' | 'trustMissingEmailVerified'>>
 
 /** Result of POST /api/v1/settings/oidc/test. */
 export interface OidcTestResult {

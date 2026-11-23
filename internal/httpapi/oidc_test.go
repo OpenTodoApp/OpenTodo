@@ -2,8 +2,10 @@ package httpapi
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"image"
+	"log/slog"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -652,5 +654,83 @@ func TestOIDCProviderPicture(t *testing.T) {
 	o.mustStatus(resp, 200, out)
 	if fetches != 4 || out["avatarVersion"] != float64(1) {
 		t.Fatalf("linked: fetches %d profile %v", fetches, out)
+	}
+}
+
+// TestOIDCMissingEmailVerifiedSwitch (sso-missing-email-verified): a provider
+// that sends no email_verified claim (Synology SSO Server) is refused until the
+// owner turns the switch on; then it may create an account, never link one,
+// and an explicit false stays refused.
+func TestOIDCMissingEmailVerifiedSwitch(t *testing.T) {
+	o := newOIDCEnv(t, false)
+	cfg := o.configure(map[string]any{"allowProvision": true})
+	if cfg["trustMissingEmailVerified"] != false {
+		t.Fatalf("default settings = %v", cfg)
+	}
+	o.idp.MutateClaims = func(c map[string]any) { delete(c, "email_verified") }
+	o.idp.SetUser(oidctest.User{Subject: "syn-1", Email: "nas@example.com", Name: "NAS user"})
+	if resp := o.ssoLogin(o.client("203.0.113.10")); location(resp) != "/?error=oidc_email_unverified" {
+		t.Fatalf("switch off = %q", location(resp))
+	}
+
+	cfg = o.configure(map[string]any{"allowProvision": true, "trustMissingEmailVerified": true})
+	if cfg["trustMissingEmailVerified"] != true {
+		t.Fatalf("settings = %v", cfg)
+	}
+	if n := o.auditCount("name = 'settings.changed' AND details LIKE '%oidc.trust_missing_email_verified%'"); n != 1 {
+		t.Fatalf("settings.changed events = %d", n)
+	}
+	member := o.client("203.0.113.11")
+	if resp := o.ssoLogin(member); location(resp) != "/" || !hasCookie(resp, sessionCookie) {
+		t.Fatalf("switch on, new address = %q", location(resp))
+	}
+	resp, out := member.do("GET", "/api/v1/me", nil)
+	member.mustStatus(resp, 200, out)
+	if u := out["user"].(map[string]any); u["email"] != "nas@example.com" || u["role"] != "member" {
+		t.Fatalf("created user = %v", u)
+	}
+
+	// The owner's address is never linked by an unconfirmed email.
+	o.idp.SetUser(oidctest.User{Subject: "syn-2", Email: "owner@example.com", Name: "Someone"})
+	if resp := o.ssoLogin(o.client("203.0.113.12")); location(resp) != "/?error=oidc_link_required" || hasCookie(resp, sessionCookie) {
+		t.Fatalf("existing address = %q", location(resp))
+	}
+
+	// An explicit false is refused whatever the switch says.
+	o.idp.MutateClaims = nil
+	o.idp.SetUser(oidctest.User{Subject: "syn-3", Email: "fresh@example.com", EmailVerified: false, Name: "Fresh"})
+	if resp := o.ssoLogin(o.client("203.0.113.13")); location(resp) != "/?error=oidc_email_unverified" {
+		t.Fatalf("explicit false = %q", location(resp))
+	}
+}
+
+// TestWarnSSOTrustAtStart (sso-missing-email-verified): the server logs a
+// warning at start only while the switch is on.
+func TestWarnSSOTrustAtStart(t *testing.T) {
+	ctx := context.Background()
+	idp := oidctest.New(t)
+	dir := t.TempDir()
+	db, err := storetest.OpenDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+	svc := oidc.New(settings.New(db), dir, oidc.Options{Client: idp.HTTPClient()})
+	var buf bytes.Buffer
+	s := &Server{oidc: svc, log: slog.New(slog.NewTextHandler(&buf, nil))}
+	issuer, clientID, off, on := idp.Issuer(), idp.ClientID, false, true
+	if _, err := svc.Save(ctx, oidc.Update{Issuer: &issuer, ClientID: &clientID, TrustMissingEmailVerified: &off}); err != nil {
+		t.Fatal(err)
+	}
+	s.warnSSOTrust()
+	if buf.Len() != 0 {
+		t.Fatalf("switch off logged: %s", buf.String())
+	}
+	if _, err := svc.Save(ctx, oidc.Update{TrustMissingEmailVerified: &on}); err != nil {
+		t.Fatal(err)
+	}
+	s.warnSSOTrust()
+	if !strings.Contains(buf.String(), "level=WARN") || !strings.Contains(buf.String(), oidc.KeyTrustMissingEmailVerified) {
+		t.Fatalf("switch on: %q", buf.String())
 	}
 }

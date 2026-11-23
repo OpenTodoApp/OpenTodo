@@ -255,3 +255,54 @@ func TestUnlinkRules(t *testing.T) {
 		t.Fatalf("unlink with another identity left: %v", err)
 	}
 }
+
+// TestOIDCMissingEmailVerifiedCreatesOnly (sso-missing-email-verified): with the
+// owner's switch, a token without email_verified may create a new account, but
+// never links to an existing one and never confirms the address.
+func TestOIDCMissingEmailVerifiedCreatesOnly(t *testing.T) {
+	ctx := context.Background()
+	s, db := newService(t, false)
+	mustOwner(t, s)
+	trusted := func(sub, email string) ExternalIdentity {
+		id := ext(sub, email, false)
+		id.TrustMissingEmailVerified = true
+		return id
+	}
+
+	// A new address: an account is created when provisioning allows it, its
+	// address unconfirmed.
+	u, created, linked, err := s.MatchOrProvision(ctx, trusted("syn-1", "Nas.User@example.com"), true, "Synology")
+	if err != nil || !created || !linked || u.Email != "nas.user@example.com" {
+		t.Fatalf("create = %+v created=%v linked=%v err=%v", u, created, linked, err)
+	}
+	if n := countRows(t, db, "SELECT COUNT(*) FROM users WHERE id = ? AND email_verified_at IS NULL", u.ID); n != 1 {
+		t.Fatal("the created account's address counts as confirmed")
+	}
+	// The same subject signs in again.
+	if again, _, _, err := s.MatchOrProvision(ctx, trusted("syn-1", "nas.user@example.com"), true, "Synology"); err != nil || again.ID != u.ID {
+		t.Fatalf("returning = %+v %v", again, err)
+	}
+	// Without provisioning or open sign-up nothing is created.
+	if _, _, _, err := s.MatchOrProvision(ctx, trusted("syn-2", "other@example.com"), false, "Synology"); !errors.Is(err, ErrSignupClosed) {
+		t.Fatalf("closed: %v", err)
+	}
+	// An existing account, even an unguarded member with a confirmed address,
+	// is never linked by an unconfirmed email.
+	if _, err := db.Exec("INSERT INTO users(id,email,password_hash,created_at,email_verified_at) VALUES('m1','member@example.com','x',1,1)"); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, _, err := s.MatchOrProvision(ctx, trusted("syn-3", "member@example.com"), true, "Synology"); !errors.Is(err, ErrLinkRequiresSession) {
+		t.Fatalf("existing account by email: %v", err)
+	}
+	if n := countRows(t, db, "SELECT COUNT(*) FROM identities WHERE user_id = 'm1'"); n != 0 {
+		t.Fatalf("identities linked to the member: %d", n)
+	}
+	// The switch never applies to a provider that says false, nor without it.
+	if _, _, _, err := s.MatchOrProvision(ctx, ext("syn-4", "fresh@example.com", false), true, "Synology"); !errors.Is(err, ErrEmailUnverified) {
+		t.Fatalf("without the switch: %v", err)
+	}
+	// No email at all is still refused.
+	if _, _, _, err := s.MatchOrProvision(ctx, trusted("syn-5", ""), true, "Synology"); !errors.Is(err, ErrEmailUnverified) {
+		t.Fatalf("no email: %v", err)
+	}
+}

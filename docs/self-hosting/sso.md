@@ -44,7 +44,7 @@ Create an OpenID Connect client ("application", "relying party"):
 | Signing algorithm | RS256, PS256, ES256 or EdDSA (RS256 is the usual default) |
 | Client authentication | `client_secret_basic` or `client_secret_post` |
 
-Make sure the provider sends `email` and `email_verified` in the identity token. Without a verified email an identity cannot be linked to an existing account or create one.
+Make sure the provider sends `email` and `email_verified` in the identity token. Without a verified email an identity cannot be linked to an existing account or create one. For a provider that sends no `email_verified` at all, see [Providers without email_verified](#providers-without-email_verified).
 
 Provider notes:
 
@@ -52,6 +52,7 @@ Provider notes:
 - **Keycloak**: create a client with *Client authentication* on and *Standard flow* on. The issuer is `https://sso.example.com/realms/<realm>`. Users need *Email verified* set for linking.
 - **Authelia**: add a client under `identity_providers.oidc.clients` with `redirect_uris`, `scopes: [openid, email, profile]` and `require_pkce: true`. The issuer is your Authelia URL.
 - **Zitadel / hosted services**: use a Web application with PKCE and the code flow; the issuer is shown on the application page.
+- **Synology SSO Server** (DSM 7.4): add an application under **Application List** with the redirect URI above. The issuer is the **Well-known URL** without `/.well-known/openid-configuration`. It sends no `email_verified`, so a first sign-in is refused until you choose one of the two ways in [Providers without email_verified](#providers-without-email_verified).
 
 ## 3. Configure OpenTodo
 
@@ -91,12 +92,21 @@ Leave the switch off if the provider's picture addresses point to a host you do 
 ## Accounts and linking
 
 - An identity is recognised by its issuer and subject (`sub`), never by email once linked. Changing your email at the provider keeps you on the same OpenTodo account, and a changed email cannot take over another account.
-- A first-time identity with a verified email that matches a member account whose address was confirmed is linked to it. The owner, admins, accounts with two-factor authentication or a passkey, and accounts whose address nobody confirmed (sign-up or email change without outgoing email) are refused (`oidc_link_required`) and link only from Settings while signed in, so the provider can never stand in for their own second factor. An unverified or missing email is refused (`oidc_email_unverified`) and nothing is created.
+- A first-time identity with a verified email that matches a member account whose address was confirmed is linked to it. The owner, admins, accounts with two-factor authentication or a passkey, and accounts whose address nobody confirmed (sign-up or email change without outgoing email) are refused (`oidc_link_required`) and link only from Settings while signed in, so the provider can never stand in for their own second factor. An unverified or missing email is refused (`oidc_email_unverified`) and nothing is created, except that a provider sending no `email_verified` at all may create a new account when you allow it ([Providers without email_verified](#providers-without-email_verified)).
 - When nothing matches, a `member` account is created only if **Allow new accounts via SSO** is on or `OPENTODO_ALLOW_SIGNUP=true`. Otherwise the person sees "There is no account for this identity yet" and you can invite them.
 - Accounts created this way have no password. They can add a passkey in **Settings → Account → Security**.
 - Everyone can link or unlink the provider in **Settings → Account → Security → Linked accounts**. Linking a new identity needs a sign-in in the last ten minutes; from an older session the app asks for your password or a code first, then sends you to the provider again. Unlinking is refused when it would leave the account with no way to sign in.
 - Going through the provider again with an identity that is already linked counts as confirming it's you, so accounts without a password can still make changes that ask for a recent sign-in (the dialog offers **Confirm with …**).
 - A provider sign-in counts as two-factor: someone with an authenticator app is not asked for a code, because the provider applies its own policy. If the owner requires two-factor for everyone (**Settings → People → Access policies → Two-factor policy**), accounts without an authenticator are still asked to enrol one.
+
+### Providers without email_verified
+
+Some providers, such as Synology SSO Server, send an email address but no `email_verified` claim. OpenTodo can't tell whether the address belongs to the person, so by default it refuses their first sign-in (`oidc_email_unverified`). There are two ways in:
+
+- **Link by hand (works for everyone, nothing to switch on).** Create the person's account with a password, or invite them. They sign in with it once, then link the provider in **Settings → Account → Security → Linked accounts**. From then on the provider signs them in.
+- **Accept new accounts without a confirmed email.** Turn this on in **Settings → People → Single sign-on**, together with **Allow new accounts via SSO** (or open sign-up). A sign-in without any `email_verified` claim can then create a new account. It never links to an existing account, whoever has that address: such an account still links by hand. An explicit `email_verified: false` is still refused, and the new account's address doesn't count as confirmed.
+
+> **Warning:** turn the switch on only for a provider you control, where people cannot set their own address (for example DSM accounts whose address only the NAS administrator can set). Anywhere people can type any address, someone could create an account under another person's address. While the switch is on, the panel shows a warning and the server logs one at every start.
 
 ## SSO only
 
@@ -132,7 +142,7 @@ An installed app that signed in through the provider opens offline from its cach
 | --- | --- |
 | The provider says the redirect URI is invalid | `OPENTODO_BASE_URL` is unset or differs from the registered redirect URI; copy the value from the panel |
 | "Signing in with … did not work" | The code exchange or token check failed. The server log (`level=WARN msg="oidc sign-in failed"`) names the step: wrong client secret, audience, clock skew over 60 seconds, unsupported signing algorithm |
-| "did not confirm a verified email address" | The provider sends no `email_verified: true`; enable email verification or the `email` scope |
+| "did not confirm a verified email address" | The provider sends no `email_verified: true`; enable email verification or the `email` scope. A provider that sends no `email_verified` at all (Synology SSO Server): see [Providers without email_verified](#providers-without-email_verified) |
 | "This account is not linked to … yet" | The email belongs to the owner, an admin or an account with two-factor authentication or a passkey: sign in with the password (and code) and link the provider in **Settings → Account → Security → Linked accounts** |
 | "There is no account for this identity yet" | Provisioning is off: invite the person, or turn on **Allow new accounts via SSO** |
 | "That sign-in took too long or was started in another tab" | The 10-minute sign-in window passed, or the server restarted during the sign-in; start again |

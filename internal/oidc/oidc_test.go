@@ -45,7 +45,7 @@ func TestVerifyIDTokenVectors(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if c.Subject != "abc" || c.Email != "a@example.com" || !bool(c.EmailVerified) {
+			if c.Subject != "abc" || c.Email != "a@example.com" || !c.EmailVerified.Value || !c.EmailVerified.Present {
 				t.Fatalf("claims = %+v", c)
 			}
 		})
@@ -377,5 +377,41 @@ func TestExchangeChecksPKCEAndClientAuth(t *testing.T) {
 	}
 	if q := p.LastAuthorize; q.Get("code_challenge_method") != "S256" || q.Get("nonce") != "n-1" || q.Get("scope") != oidc.DefaultScopes {
 		t.Fatalf("authorize query = %v", q)
+	}
+}
+
+// TestEmailVerifiedPresence (sso-missing-email-verified): a token without an
+// email_verified claim (Synology SSO Server) is told apart from one that says
+// false, and null counts as missing.
+func TestEmailVerifiedPresence(t *testing.T) {
+	p := oidctest.New(t)
+	now := time.Now()
+	for _, tc := range []struct {
+		name              string
+		value             any
+		omit              bool
+		present, verified bool
+	}{
+		{name: "missing", omit: true},
+		{name: "null", value: nil},
+		{name: "false", value: false, present: true},
+		{name: "string false", value: "false", present: true},
+		{name: "true", value: true, present: true, verified: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cl := baseClaims(p, now)
+			if tc.omit {
+				delete(cl, "email_verified")
+			} else {
+				cl["email_verified"] = tc.value
+			}
+			c, err := oidc.VerifyIDToken(p.Sign(cl, "RS256"), lookup(p), opts(p, now))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if c.EmailVerified.Present != tc.present || c.EmailVerified.Value != tc.verified {
+				t.Fatalf("email_verified = %+v, want present=%v verified=%v", c.EmailVerified, tc.present, tc.verified)
+			}
+		})
 	}
 }
