@@ -26947,15 +26947,17 @@
                       "assigned",
                       "status"
                     ],
-                    "type": "object"
+                    "type": [
+                      "object",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
                   "deviceId",
                   "endpoint",
                   "includeContent",
-                  "keys",
-                  "notify"
+                  "keys"
                 ],
                 "type": "object"
               }

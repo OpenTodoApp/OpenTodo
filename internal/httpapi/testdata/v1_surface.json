@@ -10221,7 +10221,7 @@
         "keys": "object",
         "keys.auth": "string",
         "keys.p256dh": "string",
-        "notify": "object",
+        "notify": "object|null?",
         "notify.assigned": "boolean",
         "notify.status": "boolean"
       },
