@@ -206,6 +206,16 @@ final class OfflineStartTests: XCTestCase {
         }
     }
 
+    /// A load from the cache that finished with an empty document (nothing stored) is not the
+    /// app: the screen says the server is unreachable. The app's page always has scripts.
+    func testAnEmptyDocumentFromTheCacheIsNotTheApp() {
+        XCTAssertTrue(ShellController.cacheHeldThePage(scripts: NSNumber(value: 3)))
+        XCTAssertTrue(ShellController.cacheHeldThePage(scripts: 1))
+        XCTAssertFalse(ShellController.cacheHeldThePage(scripts: NSNumber(value: 0)))
+        XCTAssertFalse(ShellController.cacheHeldThePage(scripts: nil))
+        XCTAssertFalse(ShellController.cacheHeldThePage(scripts: "3"))
+    }
+
     /// Which errors read as "No connection to your server" and which as a certificate problem.
     func testLoadErrorsAreSortedIntoWhatTheScreenSays() {
         func kind(_ code: Int) -> ShellController.Failure.Kind { ShellController.kind(of: NSError(domain: NSURLErrorDomain, code: code)) }

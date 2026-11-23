@@ -208,6 +208,21 @@ final class ShellController: NSObject, ObservableObject {
         loadingFromCache ? .offline : kind
     }
 
+    /// With nothing stored, WebKit can finish the load from the cache with an empty document
+    /// rather than fail it. The web app's page always has scripts; a document without any
+    /// was not the app, so the screen says the server is unreachable. Pinned by OfflineStartTests.
+    nonisolated static func cacheHeldThePage(scripts: Any?) -> Bool {
+        ((scripts as? NSNumber)?.intValue ?? 0) > 0
+    }
+
+    private func checkTheCacheHeldThePage() {
+        webView.evaluateJavaScript("document.scripts.length") { [weak self] value, _ in
+            guard let self, !Self.cacheHeldThePage(scripts: value) else { return }
+            self.loaded = false
+            self.failure = Failure(kind: .offline, detail: "")
+        }
+    }
+
     /// Opens a path of the web app in the same web view, e.g. `/?task=…` from a widget or a reminder.
     func open(path: String) {
         guard let url = URL(string: path, relativeTo: origin)?.absoluteURL else { return }
@@ -460,7 +475,10 @@ extension ShellController: WKNavigationDelegate {
         showSite(webView.url)
         loaded = true
         failure = nil
-        if navigation === cacheNavigation { cacheNavigation = nil }
+        if navigation === cacheNavigation {
+            cacheNavigation = nil
+            checkTheCacheHeldThePage()
+        }
         reveal()
         refresher.endRefreshing()
         handOverShareIfNeeded()
