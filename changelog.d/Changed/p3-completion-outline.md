@@ -1,1 +1,0 @@
-- **Low-priority tasks are easier to spot.** The P3 completion circle uses a blue outline with an empty centre (#1752).

@@ -1,1 +1,0 @@
-- **Away shows which tasks it will skip.** Show details in the Away dialog lists each repeating task the period skips, how many times, and when it is due afterwards, before you choose Set away.

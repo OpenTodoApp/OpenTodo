@@ -1,1 +1,0 @@
-- **Undoing an action on one day of a repeating task keeps its custom field values.** Undoing a day completed, skipped or moved from the calendar no longer empties the fields that day had.

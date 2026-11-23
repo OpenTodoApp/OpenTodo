@@ -1,1 +1,0 @@
-- **On a phone, closing Search or the add sheet puts focus back on the button that opened it.** The tab bar and the add button leave the screen under a sheet, so focus fell to the page; a screen reader now continues from Search or the add button.

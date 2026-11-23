@@ -1,1 +1,0 @@
-- **The Android app recovers instead of closing when the system reclaims its memory.** If Android killed the web view's render process (common under memory pressure), the whole app went with it. It now rebuilds the view and reloads; your data, which lives on the device, is untouched.
