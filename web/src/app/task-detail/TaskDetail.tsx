@@ -2,13 +2,13 @@
 // task beside a list in the shell's panel slot, on a page that keeps a split (the
 // Inbox, task-full-page D3). Everywhere else a task opens as its page (TaskPageView);
 // both read the same model (useTaskDetail) and the same parts.
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { roleOf } from '../../lib/sharing'
 import type { Label, Project, Task } from '../../lib/types'
-import { IconButton, playExit } from '../../ui'
+import { captureFocus, focusInto, IconButton, playExit, useMediaQuery } from '../../ui'
 import { navigate } from '../router'
 import { ProjectMark } from '../ProjectMark'
-import { panelTaskId } from '../panel'
+import { panelTaskId, setPanelCovering } from '../panel'
 import { PanelResizeHandle } from '../sidePanel'
 import { SampleNotice } from '../SampleNotice'
 import { isSample } from '../../lib/sampleTasks'
@@ -69,6 +69,22 @@ export function TaskDetail({ taskId, initial, userId, projects, labelMap, onClos
     const el = panel.current
     return () => { if (panelTaskId() === null) playExit(el, { className: 'panel-exit' }) }
   }, [])
+  // Below 48 rem the panel is as wide as the page, a sheet over the list (tablet-layouts): while
+  // it is on screen the page behind it is inert (setPanelCovering), so focus moves into the
+  // panel, and goes back to where it was (the row) once the page is usable again.
+  const covers = !useMediaQuery('(min-width: 48rem)')
+  const shown = !!m.task
+  useEffect(() => {
+    const el = panel.current
+    if (!covers || !shown || !el) return
+    const restore = captureFocus(null, document, (n) => n instanceof Node && el.contains(n))
+    setPanelCovering(true)
+    focusInto(el)
+    return () => {
+      setPanelCovering(false)
+      requestAnimationFrame(restore)
+    }
+  }, [covers, shown])
   // The pinned bottom of the panel: the comment composer renders here while the
   // Comments tab is shown, so it is in view without scrolling (ux-overhaul).
   const [footer, setFooter] = useState<HTMLDivElement | null>(null)

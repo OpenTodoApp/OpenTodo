@@ -31,7 +31,7 @@ import { WelcomeDialog } from './WelcomeDialog'
 import { ArchivePrompt } from './ArchivePrompt'
 import { notificationsOpen, sidebarFind } from './signals'
 import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
-import { closePanelIfStale, panelTaskId, usePanel } from './panel'
+import { closePanelIfStale, panelTaskId, usePanel, usePanelCovering } from './panel'
 import { currentAddress, openTaskPage, settleTrail } from './taskTrail'
 import { AddButton, TAB_BAR_HEIGHT_REM, TabBar } from './TabBar'
 import { PHONE_BAR_FRAME, PHONE_BAR_LINE, hasPhoneChrome } from './phoneFrame'
@@ -196,18 +196,6 @@ function openAddressItem(): boolean {
   return false
 }
 
-/**
- * Whether the panel slot holds anything, and whether a task's panel covers the page: below
- * 48 rem it is as wide as the page, a sheet over the list (tablet-layouts), and the page
- * behind it is inert, so Tab, a screen reader and a pointer reach only the panel and never a
- * row it covers (accessibility-aa, 2.4.11 Focus not obscured).
- */
-function usePanelSlot(): { panelOpen: boolean; panelCoversPage: boolean } {
-  const occupant = usePanel()
-  const wide = useMediaQuery('(min-width: 48rem)')
-  return { panelOpen: !!occupant, panelCoversPage: occupant?.kind === 'task' && !wide }
-}
-
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -287,7 +275,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   useEffect(() => { const off = onQuickAddSheetRequest(() => setAddOpen(true)); void handleShellUrl(requestQuickAddSheet); return off }, []) // and a native shell's address actions (native-shells)
   const addButton = useRef<HTMLButtonElement>(null)
   const sheetOpen = useOverlayDepth() > 0
-  const { panelOpen, panelCoversPage } = usePanelSlot()
+  const [panelOpen, panelCoversPage] = [!!usePanel(), usePanelCovering()]
   const phoneChrome = !sheetOpen && !panelOpen && hasPhoneChrome(route)
   // The add button's room at the end of the page: only where the button is.
   const addRoom = phoneChrome && offersQuickAdd(route)

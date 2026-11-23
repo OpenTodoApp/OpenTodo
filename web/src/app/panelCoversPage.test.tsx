@@ -50,7 +50,9 @@ async function openOver(width: number) {
 describe('the task panel over the page', () => {
   it('makes the page behind it inert while it covers the whole width, and gives it back on close', async () => {
     const { r, unsplit } = await openOver(700)
-    expect(main().inert).toBe(true)
+    await waitFor(() => main().inert, 'the page inert')
+    // Focus is in the panel, not dropped to the body under the inert page.
+    expect(panel()!.contains(document.activeElement)).toBe(true)
     await act(async () => { closePanel() })
     await waitFor(() => !panel(), 'the panel closed')
     expect(main().inert).toBe(false)
@@ -60,6 +62,25 @@ describe('the task panel over the page', () => {
 
   it('leaves the page usable where the panel covers only part of it', async () => {
     const { r, unsplit } = await openOver(800)
+    expect(main().inert).toBe(false)
+    unsplit()
+    await r.unmount()
+  })
+
+  it('puts focus back on the element that opened it once the page is usable again', async () => {
+    viewport(700)
+    const id = await createTask({ title: 'Undated inbox task' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!main(), 'the shell')
+    const opener = document.createElement('button')
+    opener.textContent = 'Opener'
+    main().append(opener)
+    opener.focus()
+    const unsplit = setTaskSplit(true)
+    await act(async () => { openTaskPanel(id) })
+    await waitFor(() => main().inert && panel()!.contains(document.activeElement), 'focus in the panel')
+    await act(async () => { closePanel() })
+    await waitFor(() => document.activeElement === opener, 'focus back on the opener')
     expect(main().inert).toBe(false)
     unsplit()
     await r.unmount()

@@ -297,6 +297,22 @@ export function usePanelHandlers(): PanelHandlers {
   return useSyncExternalStore(subscribe, panelHandlers, () => handlers)
 }
 
+/**
+ * Whether a task's panel is on screen and as wide as the page (below 48 rem, a sheet over
+ * the list): the shell makes the page behind it inert while it is (accessibility-aa, 2.4.11
+ * Focus not obscured). Set by the mounted panel itself, so a panel still loading or one that
+ * failed to render never leaves the page inert.
+ */
+let covering = false
+export function setPanelCovering(on: boolean): void {
+  if (covering === on) return
+  covering = on
+  emit()
+}
+export function usePanelCovering(): boolean {
+  return useSyncExternalStore(subscribe, () => covering, () => false)
+}
+
 /** Tests: forget the occupant and the handlers between cases. */
 export function resetPanel(): void {
   occupant = null
@@ -306,6 +322,7 @@ export function resetPanel(): void {
   splitKind = 'split'
   sideOpen = null
   projection = null
+  covering = false
   emit()
 }
 resettable('panel', resetPanel)
