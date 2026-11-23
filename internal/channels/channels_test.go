@@ -658,11 +658,15 @@ func TestStatusReachesChannelsWithTheEvent(t *testing.T) {
 	if len(reqs) != 2 {
 		t.Fatalf("requests: %d", len(reqs))
 	}
-	var first, second map[string]any
-	_ = json.Unmarshal(reqs[0].body, &first)
-	_ = json.Unmarshal(reqs[1].body, &second)
-	if first["message"] != "A task assigned to you was completed" || second["message"] != "A task assigned to you was reopened" {
-		t.Fatalf("messages: %v / %v", first["message"], second["message"])
+	// Each event is delivered on its own, so the two can arrive in either order.
+	got := map[any]bool{}
+	for _, r := range reqs {
+		var m map[string]any
+		_ = json.Unmarshal(r.body, &m)
+		got[m["message"]] = true
+	}
+	if !got["A task assigned to you was completed"] || !got["A task assigned to you was reopened"] {
+		t.Fatalf("messages: %v", got)
 	}
 	ch := h.create("u1", Input{Kind: ptr(KindNtfy), URL: ptr(h.recv.srv.URL), Topic: ptr("d")})
 	for _, ev := range ch.Events {
