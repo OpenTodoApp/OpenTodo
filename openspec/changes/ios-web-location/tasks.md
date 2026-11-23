@@ -5,7 +5,7 @@
 
 ## 2. Tests
 
-- [x] 2.1 `WebLocationTests` (JavaScriptCore): the server's page keeps WebKit's geolocation; another host, a look-alike host, another port, plain http and an opaque origin are refused with code 1; without a server every page is refused
+- [x] 2.1 `WebLocationTests` (JavaScriptCore, a `Navigator` with WebKit's configurable prototype accessor): the server's page keeps WebKit's geolocation; another host, a look-alike host, another port, plain http and an opaque origin are refused with code 1, also through the prototype's getter and after defining it back; without a server every page is refused
 
 ## 3. Check
 

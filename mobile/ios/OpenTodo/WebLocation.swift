@@ -7,6 +7,9 @@ import WebKit
 /// page's own: on any page other than the configured server's it replaces `navigator.geolocation`
 /// with one that refuses at once, without a prompt, as the Android app refuses other origins.
 /// With no server (the first-run sign-in sheet, the background run) every page is refused.
+/// WebKit runs no app script in a frame's first empty document, so a page written to get
+/// around this can still reach WebKit's geolocation that way (see the OpenSpec change
+/// ios-web-location); WebKit gives a position only to a secure page.
 enum WebLocation {
     /// The code WebKit's refusal carries (`GeolocationPositionError.PERMISSION_DENIED`).
     static let refused = 1

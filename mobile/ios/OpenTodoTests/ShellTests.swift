@@ -143,53 +143,65 @@ final class HealthCheckTests: XCTestCase {
     }
 }
 
-/// native-shells "Microphone for voice capture": the cases both apps read (Android's
-/// WebMicrophoneTest too), microphone/cases.json.
 /// native-shells "Position for the web app" on iOS: the script that runs at the start of every
-/// frame. JavaScriptCore stands in for the page, with a `navigator` whose geolocation records
-/// a call, and a `setTimeout` that runs its function at once.
+/// document WebKit gives the app's scripts. JavaScriptCore stands in for the page: a `Navigator`
+/// whose prototype carries a configurable `geolocation` accessor, as WebKit's WebIDL attribute
+/// is, that records a call, and a `setTimeout` that runs its function at once.
 final class WebLocationTests: XCTestCase {
     private let server = URL(string: "https://todo.example.com")!
 
-    /// What a page at `pageOrigin` gets from `getCurrentPosition` once the script ran:
-    /// "position" from WebKit's own geolocation, or "refused <code>".
-    private func ask(at pageOrigin: String, allowing origin: URL?) throws -> String {
+    private func page(at pageOrigin: String, allowing origin: URL?) throws -> JSContext {
         let context = try XCTUnwrap(JSContext())
-        var thrown: String?
-        context.exceptionHandler = { _, value in thrown = value?.toString() }
+        context.exceptionHandler = { _, value in XCTFail("script threw: \(value?.toString() ?? "?")") }
         context.evaluateScript("""
         var __answer = 'nothing';
         var location = { origin: \(JSON.jsString(pageOrigin)) };
         function setTimeout(f) { f(); }
-        var navigator = { geolocation: { getCurrentPosition: function (ok) { __answer = 'position'; ok({}); } } };
+        var __webkit = { getCurrentPosition: function (ok) { __answer = 'position'; ok({}); } };
+        function Navigator() {}
+        Object.defineProperty(Navigator.prototype, 'geolocation', { get: function () { return __webkit; }, configurable: true });
+        var navigator = new Navigator();
         """)
         context.evaluateScript(WebLocation.script(allowing: origin))
-        context.evaluateScript("navigator.geolocation.getCurrentPosition(function () {}, function (e) { __answer = 'refused ' + e.code; });")
-        XCTAssertNil(thrown, pageOrigin)
+        return context
+    }
+
+    /// What `getCurrentPosition` answers, asked through `expression` (the page's geolocation).
+    private func ask(_ context: JSContext, through expression: String = "navigator.geolocation") throws -> String {
+        context.evaluateScript("__answer = 'nothing'; (\(expression)).getCurrentPosition(function () {}, function (e) { __answer = 'refused ' + e.code; });")
         return try XCTUnwrap(context.evaluateScript("__answer")?.toString())
     }
 
+    /// The script steps aside on the server's own page (written as the address the app uses);
+    /// WebKit then answers it, on https or localhost (it gives no position to a plain-http page).
     func testTheServersPagesKeepWebKitsGeolocation() throws {
-        XCTAssertEqual(try ask(at: "https://todo.example.com", allowing: server), "position")
-        XCTAssertEqual(try ask(at: "https://todo.example.com", allowing: URL(string: "https://TODO.example.com:443/app")!), "position")
-        XCTAssertEqual(try ask(at: "http://192.168.1.20:8080", allowing: URL(string: "http://192.168.1.20:8080")!), "position")
+        XCTAssertEqual(try ask(try page(at: "https://todo.example.com", allowing: server)), "position")
+        XCTAssertEqual(try ask(try page(at: "https://todo.example.com", allowing: URL(string: "https://TODO.example.com:443/app")!)), "position")
     }
 
-    /// A sign-in provider, a frame it embeds, a look-alike host, another port or plain http:
-    /// refused at once, so WebKit never asks.
+    /// A sign-in provider, a look-alike host, another port, plain http or an opaque origin:
+    /// refused at once, so WebKit is never asked, also when the page goes to the prototype's
+    /// getter for the original.
     func testAnyOtherOriginIsRefusedWithoutAPrompt() throws {
         for other in ["https://idp.example.org", "https://todo.example.com.evil.test", "https://todo.example.com:8443",
                       "http://todo.example.com", "null"] {
-            XCTAssertEqual(try ask(at: other, allowing: server), "refused \(WebLocation.refused)", other)
+            let context = try page(at: other, allowing: server)
+            XCTAssertEqual(try ask(context), "refused \(WebLocation.refused)", other)
+            XCTAssertEqual(try ask(context, through: "Object.getOwnPropertyDescriptor(Navigator.prototype, 'geolocation').get.call(navigator)"),
+                           "refused \(WebLocation.refused)", "\(other): the prototype's getter")
+            context.evaluateScript("try { Object.defineProperty(Navigator.prototype, 'geolocation', { get: function () { return __webkit; } }); } catch (e) {}")
+            XCTAssertEqual(try ask(context), "refused \(WebLocation.refused)", "\(other): defined back")
         }
     }
 
     /// The first-run sign-in sheet and the background run: no page gets the position.
     func testWithoutAServerEveryPageIsRefused() throws {
-        XCTAssertEqual(try ask(at: "https://todo.example.com", allowing: nil), "refused \(WebLocation.refused)")
+        XCTAssertEqual(try ask(try page(at: "https://todo.example.com", allowing: nil)), "refused \(WebLocation.refused)")
     }
 }
 
+/// native-shells "Microphone for voice capture": the cases both apps read (Android's
+/// WebMicrophoneTest too), microphone/cases.json.
 final class MediaCaptureTests: XCTestCase {
     func testRequestsFollowTheSharedCases() throws {
         let file = URL(fileURLWithPath: #filePath)

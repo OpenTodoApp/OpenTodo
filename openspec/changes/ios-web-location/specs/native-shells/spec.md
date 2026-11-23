@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Position for the web app
-The Android shell SHALL answer a page's request for the device's position: for a page of the configured server it SHALL ask Android for location (precise or approximate) the first time, and not before, and SHALL give the page the position when either is allowed; it SHALL refuse a page of any other origin without a prompt, and SHALL NOT let the web view keep the answer, so a later refusal in the system settings holds. The Google Play build, which declares no location permission, SHALL refuse without asking. The decision SHALL be a pure function covered by the shell's unit tests. The iOS shell SHALL declare the app's location use while in use, so a page of the configured server gets the position after iOS asks once; on every page of another origin it SHALL replace the page's geolocation, before the page's own scripts run, with one that refuses at once without a prompt, and its first-run sign-in screen and background run SHALL refuse every page; that script SHALL be covered by the shell's unit tests. This requirement touches no synced data: the position goes only to the page, which writes it as an ordinary location edit, offline as online.
+The Android shell SHALL answer a page's request for the device's position: for a page of the configured server it SHALL ask Android for location (precise or approximate) the first time, and not before, and SHALL give the page the position when either is allowed; it SHALL refuse a page of any other origin without a prompt, and SHALL NOT let the web view keep the answer, so a later refusal in the system settings holds. The Google Play build, which declares no location permission, SHALL refuse without asking. The decision SHALL be a pure function covered by the shell's unit tests. The iOS shell SHALL declare the app's location use while in use, so a secure page (https or localhost) of the configured server gets the position after iOS asks for the app's location the first time; in every document of another origin that WebKit runs the app's scripts in, it SHALL replace the page's geolocation, before the page's own scripts run, with one that refuses at once without a prompt, and its first-run sign-in screen and background run SHALL do so for every page; that script SHALL be covered by the shell's unit tests. This requirement touches no synced data: the position goes only to the page, which writes it as an ordinary location edit, offline as online.
 
 #### Scenario: Use my location in the Android app
 - **WHEN** the person chooses "Use my location" in the Android app for the first time and allows location
@@ -11,7 +11,7 @@ The Android shell SHALL answer a page's request for the device's position: for a
 
 #### Scenario: Use my location in the iPhone app
 - **WHEN** the person chooses "Use my location" in the iPhone app for the first time and allows location while using the app
-- **THEN** iOS asks once, and the task's location gets the device's coordinates
+- **THEN** iOS asks for the app's location, and the task's location gets the device's coordinates
 
 #### Scenario: Location refused
 - **WHEN** the person refuses Android's location prompt
