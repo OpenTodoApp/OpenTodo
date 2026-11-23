@@ -150,8 +150,15 @@ final class HealthCheckTests: XCTestCase {
 final class WebLocationTests: XCTestCase {
     private let server = URL(string: "https://todo.example.com")!
 
-    private func page(at pageOrigin: String, allowing origin: URL?) throws -> JSContext {
-        let context = try XCTUnwrap(JSContext())
+    /// A document as WebKit makes it: `Navigator.prototype.geolocation` is a configurable
+    /// accessor that, like WebKit's native one, returns the geolocation of whichever navigator
+    /// it is called on (its internal slot, `__slot` here), so a getter of another realm works too.
+    /// `script`: whether WebKit ran the app's scripts in it, which it does not in a frame's
+    /// first empty document. A realm of a frame shares the machine, as frames of one page do.
+    private func page(at pageOrigin: String, allowing origin: URL?, script: Bool = true,
+                      sharing machine: JSVirtualMachine? = nil) throws -> JSContext {
+        let made: JSContext? = if let machine { JSContext(virtualMachine: machine) } else { JSContext() }
+        let context = try XCTUnwrap(made)
         context.exceptionHandler = { _, value in XCTFail("script threw: \(value?.toString() ?? "?")") }
         context.evaluateScript("""
         var __answer = 'nothing';
@@ -159,11 +166,19 @@ final class WebLocationTests: XCTestCase {
         function setTimeout(f) { f(); }
         var __webkit = { getCurrentPosition: function (ok) { __answer = 'position'; ok({}); } };
         function Navigator() {}
-        Object.defineProperty(Navigator.prototype, 'geolocation', { get: function () { return __webkit; }, configurable: true });
+        Object.defineProperty(Navigator.prototype, 'geolocation', { get: function () { return this.__slot; }, configurable: true });
         var navigator = new Navigator();
+        Object.defineProperty(navigator, '__slot', { value: __webkit });
         """)
-        context.evaluateScript(WebLocation.script(allowing: origin))
+        if script { context.evaluateScript(WebLocation.script(allowing: origin)) }
         return context
+    }
+
+    /// The page's frame `frame`: its `Navigator.prototype` getter, handed to the page as
+    /// `frameGetter`, as `iframe.contentWindow.Navigator.prototype` would give it.
+    private func handFrameGetter(of frame: JSContext, to page: JSContext) {
+        page.setObject(frame.evaluateScript("Object.getOwnPropertyDescriptor(Navigator.prototype, 'geolocation').get"),
+                       forKeyedSubscript: "frameGetter" as NSString)
     }
 
     /// What `getCurrentPosition` answers, asked through `expression` (the page's geolocation).
@@ -197,6 +212,32 @@ final class WebLocationTests: XCTestCase {
     /// The first-run sign-in sheet and the background run: no page gets the position.
     func testWithoutAServerEveryPageIsRefused() throws {
         XCTAssertEqual(try ask(try page(at: "https://todo.example.com", allowing: nil)), "refused \(WebLocation.refused)")
+    }
+
+    /// Another realm's getter called on the page's navigator (`iframe.contentWindow.Navigator
+    /// .prototype` geolocation getter `.call(navigator)`): refused when WebKit ran the script in
+    /// that frame, which it does for every frame that loads a document.
+    func testAFramesGetterIsRefusedWhereTheScriptRan() throws {
+        for other in ["https://idp.example.org", "https://todo.example.com:8443"] {
+            let top = try page(at: other, allowing: server)
+            let frame = try page(at: other, allowing: server, sharing: top.virtualMachine)
+            handFrameGetter(of: frame, to: top)
+            XCTAssertEqual(try ask(top, through: "frameGetter.call(navigator)"), "refused \(WebLocation.refused)", other)
+        }
+    }
+
+    /// Known limit (OpenSpec ios-web-location): WebKit runs no app script in a frame's first
+    /// empty document (an `iframe` without `src`), so its getter, called on the page's own
+    /// navigator, still reaches WebKit's geolocation. This pins the limit the proposal and the
+    /// spec name; when it no longer holds, this test fails and they are updated with it.
+    func testKnownLimitAnEmptyFramesGetterReachesWebKit() throws {
+        let top = try page(at: "https://idp.example.org", allowing: server)
+        let blank = try page(at: "https://idp.example.org", allowing: server, script: false, sharing: top.virtualMachine)
+        handFrameGetter(of: blank, to: top)
+        XCTAssertEqual(try ask(top), "refused \(WebLocation.refused)")
+        XCTAssertEqual(try ask(top, through: "frameGetter.call(navigator)"), "position")
+        // And the empty frame's own geolocation, the first known limit.
+        XCTAssertEqual(try ask(blank), "position")
     }
 }
 

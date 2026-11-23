@@ -8,9 +8,18 @@
 
 - **The iPhone app declares `NSLocationWhenInUseUsageDescription`**, translated like its other usage descriptions. With it, WebKit answers a page's `navigator.geolocation` request and iOS asks once for the app's location while in use.
 - **Other origins are turned away.** WebKit gives an app no per-origin answer for the position, so a script runs at the start of every frame, before the page's own scripts. On any page other than the configured server's (a sign-in provider, a frame it embeds, a look-alike host, another port or scheme), it replaces `navigator.geolocation` with one that refuses at once with `PERMISSION_DENIED`, without a prompt. The first-run sign-in sheet and the background run refuse every page.
-- **Tests:** `WebLocationTests` run the script in JavaScriptCore for the server's page, other origins, and no server.
+- **Tests:** `WebLocationTests` run the script in JavaScriptCore for the server's page, other origins, and no server. They also call a frame's `Navigator.prototype` getter on the page's own navigator, and pin the two known limits below.
 
-Known limit, for the security read: WebKit does not run an app's scripts in a frame's first empty document (an `iframe` without `src`). So a page of another origin can create one and reach the geolocation the script took away. It can take that frame's `navigator.geolocation`, or that frame's `Navigator.prototype` getter called on its own `navigator`. Once the app has location permission, iOS does not ask again. Whether WebKit then shows its own question naming the page's host has to be checked on a device. The script refuses other origins' ordinary requests, and the server's own pages are the only ones the app opens outside a sign-in. It is not a guarantee against a page written to get around it. WebKit gives a position only to a secure page (https or localhost), so a server on plain http gets none, as in Safari.
+### Known limits
+
+WebKit does not run an app's scripts in a frame's first empty document (an `iframe` without `src`, before it loads anything). A script in the page cannot close this. A page can reach such a frame through `window[0]` or `window.frames`, which a script cannot intercept. So a page written to get around the script can still reach WebKit's geolocation in two ways:
+
+1. **The empty frame's own geolocation:** `iframe.contentWindow.navigator.geolocation`.
+2. **The empty frame's getter, from another realm:** `iframe.contentWindow.Navigator.prototype`'s `geolocation` getter, called with `.call(navigator)` on the page's own navigator. WebKit's getter answers for any navigator, whichever realm it came from. A frame that loads a document runs the script, so its getter refuses; `WebLocationTests` covers both cases.
+
+Only sign-in-flow pages can reach these limits. The shell keeps a page of another origin, in the main frame or a frame, only during a sign-in, and the first-run sign-in sheet opens only the server's sign-in and its provider's pages. Every other address opens in the browser. The server's own pages get the position anyway. Once the app has location permission, iOS does not ask again. Whether WebKit then shows its own question naming the page's host is left to a device check (task 3.2). The script refuses ordinary requests from other origins. It is not a guarantee against a page written to get around it.
+
+WebKit gives a position only to a secure page (https or localhost), so a server on plain http gets none, as in Safari.
 
 ## Capabilities
 
