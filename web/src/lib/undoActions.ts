@@ -94,10 +94,11 @@ export function originRemovedUndoable(id: string): Promise<UndoableResult> {
 }
 
 /**
- * A date move from the keyboard (Month, Plan, Day and Week, a span's ends) or in the timeline
- * (keys and drags), as one step of undo history named "Rescheduled", or for a length key that
- * changes only the estimate "Estimate {to} min" (OpenSpec change
- * undo-calendar-moves). The patch is already in the task's own zone. A field already at that value
+ * A date move from the keyboard (Month, Plan, Day and Week, a span's ends), in the timeline
+ * (keys and drags), the phone's Schedule sheet or the task panel's Start, Multi-day and zone
+ * controls, as one step of undo history named "Rescheduled", or for a length key that changes
+ * only the estimate "Estimate {to} min" (OpenSpec changes undo-calendar-moves, undo-row-schedule,
+ * undo-start-zone). The patch is already in the task's own zone. A field already at that value
  * is left out, and nothing at all records nothing. A date on a parked task takes it out of Someday
  * in the same step, as updateTask does. A repeating task goes through updateTask as before, without
  * a step, so the move carries to its series.
