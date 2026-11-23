@@ -161,6 +161,8 @@ enum SystemSignIn {
     static func outcome(of url: URL, state: String) -> Outcome {
         guard url.scheme?.lowercased() == callbackScheme, url.host?.lowercased() == callbackHost,
               let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
+              // A key named twice would leave the choice of value to the parser: never accepted.
+              !["state", "code", "error"].contains(where: { key in items.filter { $0.name == key }.count > 1 }),
               items.first(where: { $0.name == "state" })?.value == state else { return .invalid }
         if let code = items.first(where: { $0.name == "code" })?.value, isToken(code) { return .code(code) }
         if let error = items.first(where: { $0.name == "error" })?.value, isToken(error) { return .error(error) }

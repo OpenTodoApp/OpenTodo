@@ -191,7 +191,7 @@ private struct SignInWebView: UIViewRepresentable {
 }
 
 @MainActor
-final class SignInController: NSObject, ObservableObject, WKNavigationDelegate {
+final class SignInController: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelegate {
     let origin: String
     let webView: WKWebView
     @Published private(set) var host: String
@@ -216,7 +216,15 @@ final class SignInController: NSObject, ObservableObject, WKNavigationDelegate {
         self.webView = WKWebView(frame: .zero, configuration: config)
         super.init()
         webView.navigationDelegate = self
+        webView.uiDelegate = self
         webView.allowsLinkPreview = false
+    }
+
+    /// A login wall's pages never get the microphone or the camera, and nobody is asked.
+    func webView(_ webView: WKWebView, requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+                 initiatedByFrame frame: WKFrameInfo, type: WKMediaCaptureType,
+                 decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+        decisionHandler(.deny)
     }
 
     /// The sheet went away: nothing connects from here any more.

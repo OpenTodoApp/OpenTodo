@@ -20,13 +20,15 @@ import androidx.test.rule.GrantPermissionRule
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
  * #1606: an import picks a file through Android's picker, which hands the web view a
  * `content://` address. The web view keeps `allowContentAccess = false`, so this checks that
- * the page can still read the picked file, as the import does before it sends it.
+ * the page can still read the picked file, and send it to the server as the import does.
  */
 @RunWith(AndroidJUnit4::class)
 class FilePickTest {
@@ -69,6 +71,12 @@ class FilePickTest {
             // The input covers the page: a real tap, which a file input needs to open its picker.
             onView(withId(R.id.web)).perform(click())
             web.waitForJs("window.picked", "\"${PickedFileProvider.NAME}: ${PickedFileProvider.BODY}\"")
+            // And it reaches the server the way the import sends it, which is where #1606 failed.
+            web.waitForJs("window.uploaded", "\"sent\"")
+            assertEquals("one upload: ${server.uploads}", 1, server.uploads.size)
+            val body = server.uploads[0]
+            assertTrue("the upload names the file: $body", body.contains("filename=\"${PickedFileProvider.NAME}\""))
+            assertTrue("the upload carries its bytes: $body", body.contains(PickedFileProvider.BODY))
         } finally {
             Intents.release()
         }
