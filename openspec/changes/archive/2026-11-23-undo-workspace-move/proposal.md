@@ -8,6 +8,7 @@
 
 - Both go through `moveWithUndo` with the target workspace, as the panel does: one step in the undo history named with the existing words "Moved to {workspace}", and the Undo toast.
 - A task already in that workspace records nothing, as before.
+- The toast offers the move only for a task that is still in the Inbox (no project, no parent): one given a project or a parent stays where it is.
 
 ## Out of scope
 

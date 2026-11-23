@@ -154,10 +154,21 @@ describe('moving an Inbox task to another workspace can be undone', () => {
     await switchTo('w-work')
     const id = await createTask({ title: 'Call the bank' })
     await offerMoveToWorkspace(id)
-    await bulkToast()!.action!.run()
+    bulkToast()!.action!.run()
     await waitFor(async () => (await db.assistantUndo.count()) === 1, 'one step')
     expect((await db.tasks.get(id))!.workspace_id ?? null).toBeNull()
-    await undoBatch((await db.assistantUndo.toArray())[0].id)
+    const step = (await db.assistantUndo.toArray())[0]
+    await waitFor(() => bulkToast()?.undoId === step.id, 'the Undo toast')
+    await undoBatch(step.id)
     expect((await db.tasks.get(id))!.workspace_id).toBe('w-work')
+  })
+
+  it('a task with a project gets no Move action', async () => {
+    await storeWorkspaces(list)
+    await switchTo('w-work')
+    const p = await createProject({ name: 'Errands' })
+    const id = await createTask({ title: 'Call the bank', project_id: p })
+    await offerMoveToWorkspace(id)
+    expect(bulkToast()).toBeFalsy()
   })
 })
