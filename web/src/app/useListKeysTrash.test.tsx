@@ -12,9 +12,10 @@ import { useListKeys } from './useListKeys'
 
 const trashTicked = vi.fn<(ids: readonly string[]) => Promise<void>>()
 const runBulk = vi.fn<(ids: readonly string[], action: unknown) => Promise<void>>()
-const parkTask = vi.fn<(id: string) => Promise<void>>()
+const parkWithUndo = vi.fn<(id: string) => Promise<void>>()
 vi.mock('./bulk/BulkActions', () => ({ runBulk: (ids: readonly string[], action: unknown) => runBulk(ids, action), trashTicked: (ids: readonly string[]) => trashTicked(ids) }))
-vi.mock('../lib/ops', async (orig) => ({ ...(await orig<typeof import('../lib/ops')>()), parkTask: (id: string) => parkTask(id) }))
+// Parking is one step of undo history with the toast, as in the task lists (undo-row-schedule).
+vi.mock('./undoable', async (orig) => ({ ...(await orig<typeof import('./undoable')>()), parkWithUndo: (id: string) => parkWithUndo(id) }))
 
 const task = { id: 't1', title: 'one' } as Task
 const bulk = { ticked: ['t1', 't2'], order: ['t1', 't2'], selection: { set: () => {} }, openActions: () => {} } as unknown as BulkList
@@ -25,7 +26,7 @@ function Harness() {
 }
 
 let release = () => {}
-beforeEach(() => { trashTicked.mockReset(); runBulk.mockReset(); parkTask.mockReset(); release = installShortcutDispatcher(); vi.spyOn(console, 'error').mockImplementation(() => {}) })
+beforeEach(() => { trashTicked.mockReset(); runBulk.mockReset(); parkWithUndo.mockReset(); release = installShortcutDispatcher(); vi.spyOn(console, 'error').mockImplementation(() => {}) })
 afterEach(() => { release(); resetShortcutScopes(); act(() => hideBulkToast()); vi.restoreAllMocks() })
 
 const press = (key = 'Delete') => act(async () => { document.body.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })) })
@@ -71,11 +72,11 @@ describe('the other list shortcuts report a failure too', () => {
   })
 
   it('park on the selected task', async () => {
-    parkTask.mockRejectedValue(new Error('park refused'))
+    parkWithUndo.mockRejectedValue(new Error('park refused'))
     const r = await render(<Harness />)
     await press('n')
     await waitFor(() => bulkToast() !== null, 'the failure toast')
-    expect(parkTask).toHaveBeenCalledWith('t1')
+    expect(parkWithUndo).toHaveBeenCalledWith('t1')
     expect(bulkToast()).toMatchObject({ label: 'park refused' })
     await r.unmount()
   })

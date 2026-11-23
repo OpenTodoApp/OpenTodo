@@ -7,6 +7,7 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from '../lib/db'
+import { undoBatch } from '../lib/undo'
 import { setDateTime } from '../lib/dates'
 import { createTask, resetDeviceId } from '../lib/ops'
 import { flush, key, render, minWidthPx, waitFor } from '../ui/test-utils'
@@ -112,6 +113,25 @@ describe('swipe actions on a touch list', () => {
     await waitFor(() => !document.querySelector('[data-testid="row-schedule-sheet"]'))
     await waitFor(async () => (await db.tasks.get(id))!.due?.date === '2026-10-15', 'the new due date')
     expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-15' })
+    // One step of undo history with the Undo toast (undo-row-schedule).
+    await waitFor(() => !!document.querySelector('[data-bulk-toast] [data-toast-undo]'))
+    const steps = await db.assistantUndo.toArray()
+    expect(steps.map((s) => s.label)).toEqual(['Rescheduled'])
+    await undoBatch(steps[0].id)
+    expect((await db.tasks.get(id))!.due ?? null).toBeNull()
+  })
+
+  it('Someday in the Schedule sheet parks the task as one step with Undo', async () => {
+    const [id] = await inbox('Paint the shed')
+    await swipe(row(id), [-20, -60, -110])
+    await waitFor(() => !!document.querySelector('[data-testid="row-schedule-sheet"]'))
+    await act(async () => { document.querySelector<HTMLButtonElement>('[data-schedule-choice="someday"]')!.click() })
+    await waitFor(async () => (await db.tasks.get(id))!.start === 'someday', 'parked')
+    await waitFor(() => !!document.querySelector('[data-bulk-toast] [data-toast-undo]'))
+    const steps = await db.assistantUndo.toArray()
+    expect(steps.map((s) => s.label)).toEqual(['Moved to Someday'])
+    await undoBatch(steps[0].id)
+    expect((await db.tasks.get(id))!.start ?? null).toBeNull()
   })
 
   it('a diagonal move scrolls: the row does not move and nothing fires', async () => {
