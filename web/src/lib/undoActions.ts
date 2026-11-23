@@ -31,6 +31,7 @@ import { planDayDrop } from './dayDrop'
 import { planTasksMove, type TaskTarget } from './move'
 import { replanChanges, type ReplanProposal, type UnfitChoice } from './replan'
 import { keepWorkspaceFor, Partition, readWorkspaceState, workspaceIdFor } from './workspaces'
+import { resettable } from './moduleState'
 
 export interface UndoableResult {
   /** The undo entry (null when nothing changed). */
@@ -180,6 +181,7 @@ export function skipOccurrence(id: string, opts: { now?: number; today?: string 
   return next
 }
 let skipQueue: Promise<unknown> = Promise.resolve()
+resettable('undoActions', () => { skipQueue = Promise.resolve() })
 
 async function skipNow(id: string, opts: { now?: number; today?: string }): Promise<boolean> {
   const series = await db.tasks.get(id)
