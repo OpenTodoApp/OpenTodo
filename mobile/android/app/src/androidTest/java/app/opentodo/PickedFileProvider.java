@@ -44,12 +44,21 @@ public class PickedFileProvider extends ContentProvider {
         return cursor;
     }
 
-    @Override public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
+    /**
+     * Written once, as a real document is: the web view checks that a picked file has not
+     * changed since it was picked, and refuses a read of one that has (NotReadableError). The
+     * import reads the same file more than once (the preview, then the import), so every open
+     * must see the same file.
+     */
+    @Override public synchronized ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
         File file = new File(getContext().getCacheDir(), NAME);
-        try (FileOutputStream out = new FileOutputStream(file)) {
-            out.write(BODY.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            throw new FileNotFoundException(e.toString());
+        byte[] body = BODY.getBytes(StandardCharsets.UTF_8);
+        if (!file.exists() || file.length() != body.length) {
+            try (FileOutputStream out = new FileOutputStream(file)) {
+                out.write(body);
+            } catch (IOException e) {
+                throw new FileNotFoundException(e.toString());
+            }
         }
         return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
     }
