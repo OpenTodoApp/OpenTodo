@@ -20,6 +20,7 @@ func TestCanonicalLink(t *testing.T) {
 		"http://example.com:08080/x":     {"http://example.com:8080/x", "example.com"},
 		"https://example.com:/a":         {"https://example.com/a", "example.com"},
 		"https://www.example.com/50%off": {"https://www.example.com/50%off", "www.example.com"},
+		`https://www.example.com\a`:      {`https://www.example.com\a`, "www.example.com"},
 	} {
 		if href, host := canonicalLink(in); href != want[0] || host != want[1] {
 			t.Errorf("canonicalLink(%q) = %q, %q; want %q, %q", in, href, host, want[0], want[1])

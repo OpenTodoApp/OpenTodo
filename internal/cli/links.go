@@ -49,11 +49,12 @@ func hostName(u *url.URL) string {
 }
 
 // rawHost names a link url.Parse refuses (a bad escape in its path, say) after
-// its authority alone, "www." kept as the app keeps it.
+// its authority alone (a backslash ends it too, as new URL reads it), "www." kept as
+// the app keeps it.
 func rawHost(raw string) string {
 	if i := strings.Index(raw, "://"); i >= 0 {
 		rest := raw[i+3:]
-		if end := strings.IndexAny(rest, "/?#"); end >= 0 {
+		if end := strings.IndexAny(rest, `/?#\`); end >= 0 {
 			rest = rest[:end]
 		}
 		if u, err := url.Parse("http://" + rest); err == nil && u.Hostname() != "" {
