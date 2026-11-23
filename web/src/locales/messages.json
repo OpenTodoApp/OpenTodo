@@ -4829,7 +4829,6 @@
   "Deadline {date}": [
     "web/src/app/ParseChips.tsx",
     "web/src/app/ScheduleSheet.tsx",
-    "web/src/app/TaskRow.tsx",
     "web/src/app/TimelineView.tsx",
     "web/src/lib/assistant.ts",
     "web/src/lib/undoActions.ts",
@@ -14869,7 +14868,8 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Renamed “{from}” → “{to}”": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Rename…": [
     "web/src/app/locations/PlacesView.tsx"

@@ -77,6 +77,14 @@ async function plainEditUndoable(id: string, patch: Partial<Task>, label: string
   return apply([{ entity: 'task', entityId: id, patch: changed }], label)
 }
 
+/** Rename one task, as one step of undo history named with both titles (OpenSpec change undo-rename). */
+export async function titleUndoable(id: string, title: string): Promise<UndoableResult> {
+  // Each title clipped to 50 characters, as the assistant names the same change.
+  const clip = (s: string) => (s.length > 50 ? s.slice(0, 49) + '…' : s)
+  const from = (await db.tasks.get(id))?.title ?? ''
+  return plainEditUndoable(id, { title }, t('Renamed “{from}” → “{to}”', { from: clip(from), to: clip(title) }))
+}
+
 /** Set (or with null remove) one task's estimate in minutes, as one step of undo history. */
 export function estimateUndoable(id: string, minutes: number | null): Promise<UndoableResult> {
   return plainEditUndoable(id, { estimate_minutes: minutes }, minutes ? t('Estimate {to} min', { to: String(minutes) }) : t('Estimate removed'))
