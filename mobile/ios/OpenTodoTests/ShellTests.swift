@@ -195,15 +195,14 @@ final class OfflineStartTests: XCTestCase {
     }
 
     /// A first start with the server unreachable and nothing stored: the load from the cache
-    /// fails with its own error, and the screen still says the server can't be reached.
+    /// fails with its own error, and the screen still says the server can't be reached. Any
+    /// other failure, also one after a start from the cache, says what it is.
     func testAFailedCacheFallbackSaysTheServerIsUnreachable() {
         let cacheMiss = ShellController.kind(of: NSError(domain: NSURLErrorDomain, code: NSURLErrorResourceUnavailable))
-        XCTAssertEqual(ShellController.shownKind(cacheMiss, triedCache: true, loaded: false), .offline)
-        for kind: ShellController.Failure.Kind in [.offline, .untrusted, .signIn, .other] {
-            XCTAssertEqual(ShellController.shownKind(kind, triedCache: true, loaded: false), .offline, "after the cache fallback")
-            // Without a fallback, or once a page showed, each failure says what it is.
-            XCTAssertEqual(ShellController.shownKind(kind, triedCache: false, loaded: false), kind)
-            XCTAssertEqual(ShellController.shownKind(kind, triedCache: true, loaded: true), kind)
+        XCTAssertEqual(ShellController.shownKind(cacheMiss, loadingFromCache: true), .offline)
+        for kind: ShellController.Failure.Kind in [.offline, .untrusted, .other] {
+            XCTAssertEqual(ShellController.shownKind(kind, loadingFromCache: true), .offline, "the cache load failed")
+            XCTAssertEqual(ShellController.shownKind(kind, loadingFromCache: false), kind, "any other load")
         }
     }
 

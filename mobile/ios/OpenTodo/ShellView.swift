@@ -28,6 +28,8 @@ final class ShellController: NSObject, ObservableObject {
     /// The first load of this launch has already fallen back to the web view's cache, so a
     /// second offline failure is a real failure, not another reason to retry (#1458).
     private var triedCache = false
+    /// The load in flight is the one from the cache (loadFromCache), until it commits or a new load starts.
+    private var loadingFromCache = false
     private var bridge: Bridge?
     private let refresher = UIRefreshControl()
     /// Whether that control is on, or the page handles the pull itself (pull-to-sync D4).
@@ -172,6 +174,7 @@ final class ShellController: NSObject, ObservableObject {
     func load() {
         flow.started(origin)
         triedCache = false
+        loadingFromCache = false
         var request = URLRequest(url: origin)
         request.cachePolicy = .useProtocolCachePolicy
         webView.load(request)
@@ -184,6 +187,7 @@ final class ShellController: NSObject, ObservableObject {
     /// still fails, and then the offline screen is shown.
     private func loadFromCache() {
         triedCache = true
+        loadingFromCache = true
         var request = URLRequest(url: origin)
         request.cachePolicy = .returnCacheDataDontLoad
         webView.load(request)
@@ -197,16 +201,18 @@ final class ShellController: NSObject, ObservableObject {
     }
 
     /// The failure the screen names. The load from the cache is tried only because the server
-    /// could not be reached; when it fails too (a first start, nothing stored yet), the screen
-    /// says the server is unreachable, as Android's does, not the cache's own error, which
-    /// would show as "The app could not be loaded". Pinned by OfflineStartTests.
-    nonisolated static func shownKind(_ kind: Failure.Kind, triedCache: Bool, loaded: Bool) -> Failure.Kind {
-        triedCache && !loaded ? .offline : kind
+    /// could not be reached; when that load fails too (a first start, nothing stored yet), the
+    /// screen says the server is unreachable, as Android's does, not the cache's own error,
+    /// which would show as "The app could not be loaded". Any other failure, also after a start
+    /// from the cache, says what it is. Pinned by OfflineStartTests.
+    nonisolated static func shownKind(_ kind: Failure.Kind, loadingFromCache: Bool) -> Failure.Kind {
+        loadingFromCache ? .offline : kind
     }
 
     /// Opens a path of the web app in the same web view, e.g. `/?task=…` from a widget or a reminder.
     func open(path: String) {
         guard let url = URL(string: path, relativeTo: origin)?.absoluteURL else { return }
+        loadingFromCache = false
         webView.load(URLRequest(url: url))
     }
 
@@ -249,7 +255,9 @@ final class ShellController: NSObject, ObservableObject {
             loadFromCache()
             return
         }
-        failure = Failure(kind: Self.shownKind(kind, triedCache: triedCache, loaded: loaded), detail: nsError.localizedDescription)
+        let fromCache = loadingFromCache
+        loadingFromCache = false
+        failure = Failure(kind: Self.shownKind(kind, loadingFromCache: fromCache), detail: nsError.localizedDescription)
         reveal()
     }
 
@@ -443,6 +451,7 @@ extension ShellController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
         provisional = false
+        loadingFromCache = false
         showSite(webView.url)
         // Another page: the shell's pull to refresh is back until this page takes it over.
         pull.pageLoaded()

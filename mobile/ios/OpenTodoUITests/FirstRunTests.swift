@@ -30,7 +30,8 @@ final class FirstRunTests: XCTestCase {
     /// is stored, so the load from the cache fails too.
     func testAFirstStartWithTheServerUnreachableSaysSo() {
         let app = XCUIApplication()
-        app.launchArguments = ["-OPENTODO_RESET", "-OPENTODO_SERVER", "http://localhost:9"]
+        app.launchArguments = ["-OPENTODO_RESET"]
+        app.launchEnvironment["OPENTODO_SERVER"] = "http://localhost:9"
         app.launch()
         XCTAssertTrue(app.staticTexts["No connection to your server."].waitForExistence(timeout: 30))
         XCTAssertTrue(app.buttons["Try again"].exists)
