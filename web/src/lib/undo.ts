@@ -11,7 +11,7 @@ import { defaultReminderChanges } from './defaultReminder'
 import { withSectorClears } from './sectorWrites'
 import type { ProposedChange } from './assistantTypes'
 import type { Entity } from './types'
-import { uuid } from './ids'
+import { occurrenceId, uuid } from './ids'
 
 export const UNDO_KEEP = 20
 
@@ -29,7 +29,7 @@ export interface BatchOptions {
 export async function applyBatch(changes: ProposedChange[], opts: BatchOptions): Promise<AssistantUndo | null> {
   if (changes.length === 0) return null
   // A `fields` map becomes one `fields.<id>` entry per value, each with its own clock (custom-fields).
-  // Its base (a new occurrence record's undo state) is unfolded the same way, so each value's undo is its own.
+  // Its base (an occurrence record's state before the action) is unfolded the same way, so each value's undo is its own.
   changes = unfoldFieldPatches(changes as Change[]).map((u, i) => ({ ...changes[i], patch: u.patch, ...(changes[i].base ? { base: unfoldBase(changes[i].base!) } : {}) }))
   // Dating a sectored task clears its sector here, so one Undo restores it (time-sectors D2).
   changes = await withSectorClears(changes)
@@ -38,7 +38,11 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
   let unreadable = false
   for (const c of changes) {
     if (c.create) {
-      if (!c.patch.deleted_at) inverse.push({ entity: c.entity, entityId: c.entityId, patch: { deleted_at: Date.now() }, created: true })
+      // A new occurrence record goes back trashed, so no live record makes its date an exception (M5), and
+      // marked undone (open and skipped, which no other write leaves in the Trash), so the Trash leaves it
+      // out (trash.ts undoneRecord). A re-tick revives it (recordFields).
+      const open = c.entity === 'task' && isRecordId(c.entityId, c.patch) && 'completed_at' in c.patch ? { completed_at: null, skipped: true } : {}
+      if (!c.patch.deleted_at) inverse.push({ entity: c.entity, entityId: c.entityId, patch: { deleted_at: Date.now(), ...open }, created: true })
       continue
     }
     const local = (await tableOf(c.entity).get(c.entityId)) as (Record<string, unknown> & { _clock?: Record<string, FieldClock>; _e2ee?: { raw?: Record<string, unknown> } }) | undefined
@@ -92,6 +96,12 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
   const all = await db.assistantUndo.orderBy('created_at').reverse().primaryKeys()
   if (all.length > UNDO_KEEP) await db.assistantUndo.bulkDelete(all.slice(UNDO_KEEP))
   return entry
+}
+
+/** Whether a created task is a series' occurrence record: its id is the one the series and date name (not a copy). */
+function isRecordId(id: string, patch: Record<string, unknown>): boolean {
+  const { series_id: series, occurrence_date: date } = patch
+  return typeof series === 'string' && typeof date === 'string' && id === occurrenceId(series, date)
 }
 
 /** A base's `fields` object as one `fields.<id>` entry per value, as unfoldFieldPatches does for the patch. */
