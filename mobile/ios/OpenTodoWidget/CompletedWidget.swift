@@ -43,10 +43,10 @@ struct CompletedWidgetView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 2) {
             Text("Completed").font(.headline)
             if let completed = entry.completed {
-                Text("\(completed.today)").font(.largeTitle.weight(.semibold))
+                Text("\(completed.today)").font(.title.weight(.semibold))
                 if completed.locked {
                     Text("Locked: today’s count only").font(.caption).foregroundStyle(.secondary)
                 } else if !days.isEmpty {
@@ -65,7 +65,8 @@ struct CompletedWidgetView: View {
     private var bars: some View {
         let busiest = days.map(\.done).max() ?? 0
         return HStack(alignment: .bottom, spacing: 4) {
-            ForEach(days, id: \.day) { day in
+            // By position: a malformed payload could name a day twice.
+            ForEach(Array(days.enumerated()), id: \.offset) { _, day in
                 VStack(spacing: 2) {
                     // The accent over a track, as the system resolves both for light and dark.
                     GeometryReader { geo in
@@ -79,7 +80,7 @@ struct CompletedWidgetView: View {
                 }
             }
         }
-        .frame(height: 44)
+        .frame(height: 34)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(String(localized: "Completed per day: \(spoken)"))
     }

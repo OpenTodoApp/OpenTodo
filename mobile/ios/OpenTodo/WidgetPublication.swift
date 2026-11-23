@@ -96,7 +96,8 @@ enum WidgetPublication {
         }
 
         private static func isDay(_ s: String) -> Bool {
-            s.range(of: #"^\d{4}-\d\d-\d\d$"#, options: .regularExpression) != nil
+            // ASCII digits and nothing after, as Kotlin's Regex.matches on Android.
+            s.range(of: #"\A[0-9]{4}-[0-9]{2}-[0-9]{2}\z"#, options: .regularExpression) != nil
         }
 
         /// A bar's height out of 100: the day's count over the busiest day's; a day with any completion keeps a sliver.
