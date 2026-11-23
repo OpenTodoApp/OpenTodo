@@ -13,28 +13,32 @@ The OpenTodo app for Android opens your own OpenTodo server, like the [installed
 
 ## Install the app
 
-**Install from GitHub for now.** The Google Play and F-Droid links below don't open yet: the app is still in Google Play's closed testing and waiting for its first F-Droid build. You can switch to a store later (see below).
-
-The same app comes from three places. Pick the one you already use; all three are signed with the same certificate, so updates from one install over the others.
+The app comes from Google Play or GitHub, and soon from F-Droid. Pick the one you already use:
 
 - **Google Play**: search for **OpenTodo** in the Play Store, or open [play.google.com/store/apps/details?id=app.opentodo](https://play.google.com/store/apps/details?id=app.opentodo). Play updates it by itself.
-- **F-Droid**: search for **OpenTodo** in the F-Droid app, or open [f-droid.org/packages/app.opentodo](https://f-droid.org/packages/app.opentodo/). F-Droid builds every version from the source code and publishes it only when its build matches the project's (see [below](#check-what-you-installed)), so a new version appears there a few days after the release.
+- **F-Droid** (coming: the app is waiting for its first F-Droid build): search for **OpenTodo** in the F-Droid app, or open [f-droid.org/packages/app.opentodo](https://f-droid.org/packages/app.opentodo/). F-Droid builds every version from the source code and publishes it only when its build matches the project's (see [below](#check-what-you-installed)), so a new version appears there a few days after the release.
 - **GitHub**: download `opentodo-android-<version>.apk` from the [latest release](https://github.com/OpenTodoApp/OpenTodo/releases/latest) and open it on the phone (Android asks you to allow installing from your browser or file manager once). You update it the same way; tools such as Obtainium can follow the releases for you.
 
 Release candidates (`-rc` versions) are only on GitHub, never in the stores.
 
 ### Switching between Google Play, F-Droid and GitHub
 
-Because all three carry the same certificate, you can switch without uninstalling: install the app from the other source over the one you have, and Android treats it as an update. The server, your offline copy, reminders, widgets and fingerprint unlock stay. Install a version at least as new as the one on the phone; Android refuses to go back to an older one. Afterwards, updates come from where you installed last (in the Play Store or F-Droid you may need to tap **Update** once).
+**Between GitHub and F-Droid** you can switch without uninstalling: both carry the same certificate, so install the app from the other source over the one you have, and Android treats it as an update. The server, your offline copy, reminders, widgets and fingerprint unlock stay. Install a version at least as new as the one on the phone; Android refuses to go back to an older one. Afterwards, updates come from where you installed last (in F-Droid you may need to tap **Update** once).
 
-Don't uninstall to switch: uninstalling deletes the app's data on the phone, including changes not yet synced and the fingerprint unlock key.
+**Between Google Play and GitHub or F-Droid** you have to uninstall first: Google Play signs the app with its own key, so Android won't install one over the other. Uninstalling deletes the app's data on the phone, including changes not yet synced and the fingerprint unlock key. So open the app with a connection first and let it sync, then uninstall, install from the other source, enter your server's address and sign in again. Your tasks are on the server and come back; turn on fingerprint unlock again in Settings.
 
 ### Check what you installed
 
-Every APK from Google Play, F-Droid and GitHub is signed with the certificate whose SHA-256 fingerprint is:
+The APK from GitHub and F-Droid is signed with the project's release certificate, whose SHA-256 fingerprint is:
 
 ```
 ff2eacdf7e79712e44fdd9d2e3110891e712c170ea516bd3fbbecc291072befa
+```
+
+The app from Google Play is signed by Google Play's app signing key for OpenTodo, whose SHA-256 fingerprint is:
+
+```
+e2669a539e03370b3bcae306fecf0633ac37592d83bd60c880ca50aeccc83932
 ```
 
 On a computer with the Android SDK's build tools, check a downloaded APK, or one copied from the phone with `adb shell pm path app.opentodo` and `adb pull`:
@@ -44,7 +48,7 @@ apksigner verify --print-certs opentodo-android-0.20.0.apk
 # Signer #1 certificate SHA-256 digest: ff2eacdf7e79712e44fdd9d2e3110891e712c170ea516bd3fbbecc291072befa
 ```
 
-Any other fingerprint means the APK was not signed by the OpenTodo project: don't install it.
+Any other fingerprint means the APK was not signed for the OpenTodo project: don't install it.
 
 The build is also **reproducible**: building a release's tag from the source gives the same APK apart from the signature, so you can check that the APK is exactly the published code. With a clone of the repository, JDK 17 and the Android SDK:
 

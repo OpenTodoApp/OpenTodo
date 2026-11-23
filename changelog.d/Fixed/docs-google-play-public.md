@@ -1,0 +1,1 @@
+- **The Android guides say the app is on Google Play.** F-Droid is still coming. Google Play signs the app with its own key, so moving between Play and the GitHub or F-Droid app needs an uninstall: the guide says how without losing changes, and lists both certificate fingerprints.

@@ -199,11 +199,15 @@ Record each run here: date, device, Android version, server version.
 
 Release builds are signed only in CI, on a `v*` tag, in the `android-sign` job, which waits for approval in the `signing` environment, from four secrets: `ANDROID_KEYSTORE_BASE64` (the keystore file, base64), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. The job writes `keystore.properties` and the keystore to the runner's temporary directory, builds `opentodo-android-<version>.apk` and `.aab` (the AAB with `-Popentodo.play=true`, the Google Play build without location permissions until Play approves background location; `scripts/android-store-check.sh` checks both on every CI run), deletes both files, and the release job attaches the two files with build provenance. Without the secrets the tag build skips signing with a warning. Never commit a keystore or `keystore.properties` (both are ignored).
 
-**One certificate everywhere** (`play-production` D1). The release key signs the GitHub APK, F-Droid publishes that same signed APK (`AllowedAPKSigningKeys` in the F-Droid metadata), and Google Play signs with the same key through Play App Signing ("use my own key"). Its certificate's SHA-256 is
+**Two certificates** (`play-production` D1, changed by Play's key upgrade of 26 October 2026). The release key signs the GitHub APK, and F-Droid publishes that same signed APK (`AllowedAPKSigningKeys` in the F-Droid metadata), so those two install over each other. Its certificate's SHA-256 is
 
 `ff2eacdf7e79712e44fdd9d2e3110891e712c170ea516bd3fbbecc291072befa`
 
-(`CN=Raffaele Pizzari, O=OpenTodo, C=DE`). The signing step prints it to the job summary with `apksigner verify --print-certs` and fails when it differs from the one in `android/store/fdroid/app.opentodo.yml`; `docs/android-app.md` publishes it for users.
+(`CN=Raffaele Pizzari, O=OpenTodo, C=DE`). The signing step prints it to the job summary with `apksigner verify --print-certs` and fails when it differs from the one in `android/store/fdroid/app.opentodo.yml`. Google Play signs what it delivers with its own app signing key since the upgrade:
+
+`e2669a539e03370b3bcae306fecf0633ac37592d83bd60c880ca50aeccc83932`
+
+so moving between Play and GitHub or F-Droid needs an uninstall. `docs/android-app.md` publishes both fingerprints for users.
 
 **Google Play upload.** After the release, the `play` job of a final tag (no suffix) takes the AAB, replaces the release key's signature with the **upload key**'s, and `scripts/release/play-upload.mjs` puts it on Play's internal testing track with the CHANGELOG notes (Play Developer API, a service account, no dependency). The secrets are in the `release` environment: `PLAY_UPLOAD_KEYSTORE_BASE64`, `PLAY_UPLOAD_KEYSTORE_PASSWORD`, `PLAY_UPLOAD_KEY_ALIAS`, `PLAY_UPLOAD_KEY_PASSWORD` and `PLAY_SERVICE_ACCOUNT_JSON` (a service account with "Release apps to testing tracks" only, so CI can never promote to production). Without them the job warns and succeeds. A leaked upload key is reset by Google without changing the app's identity; the release key never goes to Play again after the one-time enrolment.
 
