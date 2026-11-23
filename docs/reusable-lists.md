@@ -9,7 +9,7 @@ order: 19
 ---
 # Reusable lists
 
-<picture><source srcset="images/reusable-list-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/reusable-list-light.webp" alt="The Groceries project as a reusable list: open items in the Produce, Bakery, Dairy and eggs and Drinks sections, and at the end a Got it group, opened, holding the ticked-off Milk and Butter."></picture>
+<picture><source srcset="images/reusable-list-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/reusable-list-light.webp" alt="The Groceries project as a reusable list: open items in the Produce, Bakery, Dairy and eggs and Drinks sections, and at the end a Completed group, opened, holding the ticked-off Milk and Butter."></picture>
 
 Some lists come back every week: groceries, the pharmacy, packing. Make such a project a **reusable list**:
 

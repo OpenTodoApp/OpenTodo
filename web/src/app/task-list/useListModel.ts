@@ -220,7 +220,7 @@ export function useListModel(route: ListRoute, userId?: string) {
   // With "Show completed tasks" on (project-completed-section), the list layout
   // keeps them in one Completed group at the end, newest first, closed by default.
   const showCompletedPref = useShowCompletedPref(projectId)
-  // A reusable list always ends with its ticked items, under Completed, on every device (reusable-lists D7).
+  // A reusable list always ends with its ticked items, under Completed, on every device (reusable-lists D7, reusable-completed D1).
   const reusable = !!projectId && isReusable(projectMap.get(projectId))
   const showCompleted = !!projectId && (showCompletedPref || reusable) && !board && !layout.timeline
   const completedTasks = useMemo(() => (showCompleted ? completedNewestFirst(doneBySection) : NO_TASKS), [showCompleted, doneBySection])
