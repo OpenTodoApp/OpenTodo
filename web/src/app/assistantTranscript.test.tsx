@@ -164,6 +164,8 @@ describe('message actions (D8)', () => {
     await waitFor(() => !!document.querySelector('[data-assistant-apply]'), 'the proposal')
     await click(document.querySelector('[data-assistant-apply]')!)
     await waitFor(async () => (await db.tasks.get(id))!.priority === 1, 'the change applied')
+    // applyBatch stores the step just after the write lands, so wait for it rather than count it later.
+    await waitFor(async () => (await db.assistantUndo.count()) > 0, 'the undo step')
     reply = () => sse(['text', { text: 'Second.' }], ['done', { stop_reason: 'end_turn' }])
     await click(document.querySelector('[data-assistant-regenerate]')!)
     await waitFor(() => turns.length === 2, 'the second turn')

@@ -11,6 +11,7 @@ import { type ReactNode, useSyncExternalStore } from 'react'
 import type { Task } from '../lib/types'
 import { openTaskPage } from './taskTrail'
 import { resettable } from '../lib/moduleState'
+import { captureFocus } from '../ui'
 import { readString, writeString } from '../lib/deviceStorage'
 
 export type PanelOccupant =
@@ -163,6 +164,8 @@ export function splitEmptyPane(): (() => ReactNode) | null {
 
 function dock(id: string): void {
   if (occupant?.kind === 'task' && occupant.id === id) return
+  // Opening from closed: where focus goes back to if the panel ends up covering the page.
+  if (!occupant) rememberOpener()
   occupant = { kind: 'task', id, path: currentPath() }
   syncQuery(id)
   emit()
@@ -202,6 +205,7 @@ export function closeTaskPanel(): void {
 
 /** Show something other than a task in the slot (project activity, history, the planning list). */
 export function openPanel(key: string, render: () => ReactNode): void {
+  if (!occupant) rememberOpener()
   occupant = { kind: 'custom', key, path: currentPath(), render }
   syncQuery(null)
   emit()
@@ -211,8 +215,14 @@ export function closePanel(): void {
   projection = null
   if (!occupant) return
   occupant = null
+  const back = coveredSinceOpen ? focusBack : null
+  focusBack = null
+  focusFrom = null
+  coveredSinceOpen = false
   syncQuery(null)
   emit()
+  // After the page behind it is usable again: back to the row or button that opened it.
+  if (back) requestAnimationFrame(back)
 }
 
 /** Close a panel opened for another page (the shell calls this on every route change). */
@@ -297,6 +307,47 @@ export function usePanelHandlers(): PanelHandlers {
   return useSyncExternalStore(subscribe, panelHandlers, () => handlers)
 }
 
+/**
+ * Whether a task's panel is on screen and as wide as the page (below 48 rem, a sheet over
+ * the list): the shell makes the page behind it inert while it is (accessibility-aa, 2.4.11
+ * Focus not obscured). Set by the mounted panel itself, so a panel still loading or one that
+ * failed to render never leaves the page inert.
+ */
+let covering = false
+/**
+ * Where focus goes back to when a panel that covered the page closes: captured once, when the
+ * slot opens from closed (the row or button that opened it), so switching tasks in the panel
+ * or resizing while it is open keeps it.
+ */
+let focusBack: (() => void) | null = null
+let focusFrom: Element | null = null
+let coveredSinceOpen = false
+function rememberOpener(): void {
+  if (typeof document === 'undefined') return
+  const active = document.activeElement
+  focusFrom = active && active !== document.body ? active : null
+  focusBack = captureFocus()
+}
+/**
+ * The panel `el` starts or stops covering the page. Opened from a dialog or a menu that has
+ * closed since, the remembered opener is gone or inside that overlay: the element focus went
+ * back to (its trigger) is the one to return to.
+ */
+export function setPanelCovering(on: boolean, el?: Element): void {
+  if (on && typeof document !== 'undefined') {
+    const active = document.activeElement
+    const stale = !focusFrom || !focusFrom.isConnected || !!focusFrom.closest('[data-overlay], [data-overlay-root]')
+    if (stale && active && active !== document.body && !el?.contains(active)) rememberOpener()
+  }
+  if (on) coveredSinceOpen = true
+  if (covering === on) return
+  covering = on
+  emit()
+}
+export function usePanelCovering(): boolean {
+  return useSyncExternalStore(subscribe, () => covering, () => false)
+}
+
 /** Tests: forget the occupant and the handlers between cases. */
 export function resetPanel(): void {
   occupant = null
@@ -306,6 +357,10 @@ export function resetPanel(): void {
   splitKind = 'split'
   sideOpen = null
   projection = null
+  covering = false
+  focusBack = null
+  focusFrom = null
+  coveredSinceOpen = false
   emit()
 }
 resettable('panel', resetPanel)

@@ -403,7 +403,12 @@
           "files": {
             "Inbox.md": {
               "project": "",
-              "hash": "e6202b4bffb84352890e9be90d8a6ce0ae5ae89acfc315146194007008e61852"
+              "hash": "e6202b4bffb84352890e9be90d8a6ce0ae5ae89acfc315146194007008e61852",
+              "size": 60,
+              "prefixes": [
+                "e9b8a28bdf4b1336",
+                "e6202b4bffb84352"
+              ]
             }
           },
           "printed": {
@@ -701,7 +706,12 @@
           "files": {
             "Inbox.md": {
               "project": "",
-              "hash": "576bffcfc1839add1b60d5204b3d6320c1f03ccd768c99d0777dcc2fbbed0a53"
+              "hash": "576bffcfc1839add1b60d5204b3d6320c1f03ccd768c99d0777dcc2fbbed0a53",
+              "size": 81,
+              "prefixes": [
+                "8da6fb861957fa27",
+                "576bffcfc1839add"
+              ]
             }
           },
           "printed": {

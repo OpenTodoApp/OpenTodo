@@ -52,6 +52,7 @@ On a phone, the add sheet shows plain chips for what it understood, then a row o
 | `p1`–`p4` | Priority, 1 highest, 4 [no priority](priorities.md#no-priority), the default. Typing `p` after a space lists the four levels with [your names for them](priorities.md); only the number is read. | `p1`, `P3` |
 | `+duration` | Estimate in minutes, from 1 minute to 7 days (10080 minutes). Shown on the task row. | `+30`, `+30m`, `+45min`, `+2h`, `+1h30`, `+1.5h` |
 | `spent/estimate` | Time already spent and an estimate (see [Time spent](#time-spent)). | `30m/2h`, `1h/1h30`, `45min/2h` |
+| a link | An `http` or `https` address becomes a [link attachment](attachments.md#add-a-file-or-a-link) of the task and leaves the title; its chip shows the site. A full stop or comma right after it goes too. Up to five per line; a line that is only a link keeps it as the title. The same works while you edit a title, for a link you type in that edit. | `Review the mockup https://example.com/mockup tomorrow` → *Review the mockup*, due tomorrow, with the link attached |
 
 The same works when you edit a title in the task panel: type ` tomorrow p1` after the title and press <kbd>Enter</kbd>, and the date and priority are set with the title left as it was; only what you typed in this edit is read, and **Undo** takes it back.
 
@@ -143,7 +144,7 @@ Every "this" phrase also has its "sometime" form (`sometime this month`, `irgend
 
 When a line has two dates, the first one counts and the second stays in the title. The same goes for a second time, deadline, project, priority or estimate.
 
-**Day/month order.** Numeric dates follow your date format in **Settings → Language and region → Date and time**: day-month reads `12/11` as 12 November, month-day as 11 December. With the date format on System or ISO, they follow your language instead: 11 December when your first language is US English (`en`, `en-US`) and 12 November for every other language, including English outside the US. The date format syncs, so every device reads a line the same way. If one reading is impossible (`25/12`), the other is used. Dotted dates (`12.11.`) are always day.month and only used when the order is day/month.
+**Day/month order.** Numeric dates follow your date format in **Settings → Language and region → Date and time**: day-month reads `12/11` as 12 November, month-day as 11 December. With the date format on System or ISO, they follow your language instead: 11 December when your first language is US English (`en`, `en-US`) and 12 November for every other language, including English outside the US. The date format syncs, so every device reads a line the same way. If one reading is impossible (`25/12`), the other is used. Dotted dates (`12.11.`) are always day.month and only used when the order is day/month. Month first, a dashed date without a year is a range, not a date: `3-4 tomatoes` and `Party 25-12` stay as typed, while `3/4`, `3-4-2027`, `on 3-4`, `by 4-15` and `until 12-31` are dates. The order is your first language's when the date format doesn't set one, so with English first `Verjaardag 3-3` stays text.
 
 **Week start.** `next week` and `next <weekday>` use **Week starts on** in **Settings → Language and region → Date and time**, so they give the same result on all your devices.
 

@@ -405,6 +405,17 @@ func TestFileEmptiedOnPurpose(t *testing.T) {
 			t.Fatalf("the task of the emptied file stays: %+v", rep)
 		}
 	}
+	// The project stays, with no second one and no "Home 2.md"
+	// (vault-file-keeps-project); the file gets its front matter back.
+	if got := len(s.list("projects")); got != 1 {
+		t.Fatalf("%d projects, want 1", got)
+	}
+	if _, err := os.Stat(filepath.Join(v.dir, "Home 2.md")); err == nil {
+		t.Fatal("Home 2.md was written")
+	}
+	if text := v.read(t, "Home.md"); !strings.Contains(text, "opentodo-id: "+home) {
+		t.Fatalf("Home.md:\n%s", text)
+	}
 }
 
 // TestEmptyFileHeldAcrossQuickSyncs: the watch syncs again while the save's

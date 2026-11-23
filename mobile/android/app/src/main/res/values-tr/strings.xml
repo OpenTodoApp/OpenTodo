@@ -54,4 +54,15 @@
     <string name="setup_sign_in">Buradan oturum açın</string>
     <string name="error_sign_in">Sunucunuz bir giriş sayfasının arkasında ve oturum açma işlemi uygulamada devam etmedi. Buradan tekrar oturum açın.</string>
     <string name="save_failed">Dosya kaydedilemedi.</string>
+    <string name="channel_focus">Odak</string>
+    <string name="focus_generic">Odak oturumu</string>
+    <string name="focus_work">İş</string>
+    <string name="focus_work_of">İş · %1$d / %2$d</string>
+    <string name="focus_short_break">Kısa mola</string>
+    <string name="focus_long_break">Uzun mola</string>
+    <string name="focus_paused">Duraklatıldı</string>
+    <string name="focus_pause">Duraklat</string>
+    <string name="focus_resume">Sürdür</string>
+    <string name="focus_done">Oturum bitti</string>
+    <string name="focus_break_over">Mola bitti</string>
 </resources>

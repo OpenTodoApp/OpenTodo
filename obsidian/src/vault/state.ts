@@ -57,6 +57,7 @@ export function stateJSON(st: State): Record<string, unknown> {
   if (st.backfill_ack) out.backfill_ack = st.backfill_ack
   if (st.shared && st.shared.length > 0) out.shared = st.shared
   out.store = st.store
+  if (st.held && Object.keys(st.held).length > 0) out.held = st.held
   out.files = st.files
   out.printed = st.printed
   if (st.extra && Object.keys(st.extra).length > 0) out.extra = st.extra

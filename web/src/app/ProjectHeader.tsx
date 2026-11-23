@@ -5,7 +5,7 @@ import { useDemo } from '../lib/demo'
 import { useOnline } from '../lib/online'
 import { canEditTasks, canManageMembers } from '../lib/sharing'
 import type { Project } from '../lib/types'
-import { ActionMenu, type ActionGroup, type ActionItem } from './menus/ActionMenu'
+import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
 import { useProjectMenu } from './menus/useProjectMenu'
 import { renameProject } from './menus/projectAppearance'
 import { ProjectMark } from './Sidebar'
@@ -105,7 +105,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   const groups = menu.groups
 
   // On a phone Share is a menu item, since the bar keeps two slots (phone-v2 D1).
-  const shareItem: ActionItem = { kind: 'action', id: 'share', label: canManageMembers(role) ? t('Share project') : t('Members'), icon: 'users', onSelect: () => menu.share() }
+  const shareItem = menu.shareItem
 
   const title = currentNameEdit ? (
     <input className="ui-input max-w-xs text-h1 font-semibold" autoFocus value={currentNameEdit.value} onChange={(e) => setNameEdit({ projectId: project.id, value: e.target.value })} aria-label={t('Project name')}

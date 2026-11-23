@@ -1,0 +1,19 @@
+{
+  "description": "A short break started on its own after a work session: \"Short break\", counting down; the \"Break over\" notification at notifyAt.",
+  "method": "publishFocus",
+  "payload": "{\"v\":1,\"state\":\"running\",\"taskId\":\"call\",\"mode\":\"pomodoro\",\"phase\":\"break\",\"breakKind\":\"short\",\"cycle\":1,\"cycleLength\":4,\"phaseStartedAt\":1792669800000,\"runningSince\":1792669800000,\"elapsedMs\":0,\"plannedEndAt\":1792670100000,\"plannedMs\":300000}",
+  "now": 1792670400000,
+  "expect": {
+    "state": "running",
+    "title": null,
+    "phase": "break",
+    "breakKind": "short",
+    "cycle": 1,
+    "cycleLength": 4,
+    "countsDown": true,
+    "end": 1792670100000,
+    "countUpFrom": null,
+    "frozenMs": null,
+    "notifyAt": 1792670100000
+  }
+}

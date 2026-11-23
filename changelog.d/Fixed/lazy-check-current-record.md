@@ -1,1 +1,0 @@
-- **Two tabs checking for an update at once no longer undo each other's result.** The installed web app writes each check and each install onto its stored install record in one step, and only while that record is still the one the check started from.

@@ -4,10 +4,11 @@
 // otherwise; opening an entity of another workspace switches first and says so.
 import { useEffect } from 'react'
 import { t } from '../lib/i18n'
-import { onCurrentWorkspaceGone, readWorkspaceState, switchTo, workspaceIdFor, workspaceOfEntity, type PartitionedKind } from '../lib/workspaces'
-import { useWorkspaceState } from '../lib/localData'
-import { updateTask } from '../lib/ops'
+import { onCurrentWorkspaceGone, readWorkspaceState, switchTo, workspaceOfEntity, type PartitionedKind } from '../lib/workspaces'
+import { getTask, useWorkspaceState } from '../lib/localData'
+import type { Task } from '../lib/types'
 import { showBulkToast } from './bulk/toastStore'
+import { moveWithUndo } from './undoable'
 import { focusHeading, pageHeading } from './pageFocus'
 import { navigate, type Route } from './router'
 
@@ -92,13 +93,21 @@ export function useWorkspaceName(): string | undefined {
 export async function offerMoveToWorkspace(taskId: string): Promise<void> {
   const state = await readWorkspaceState()
   if (state.list.length <= 1) return
+  if (!isInboxTask(await getTask(taskId))) return
   const other = state.list.find((w) => w.id !== state.current && w.default) ?? state.list.find((w) => w.id !== state.current)
   if (!other) return
   const here = state.list.find((w) => w.id === state.current)
   showBulkToast(t('Added to {name}', { name: here ? workspaceLabel(here.name, here.default) : '' }), null, {
     ttl: 5000,
-    action: { label: t('Move to {name}', { name: workspaceLabel(other.name, other.default) }), run: () => { void updateTask(taskId, { workspace_id: workspaceIdFor(other.id, state.list) }) } },
+    // Only an Inbox task moves to another workspace's Inbox (workspaces "Move an Inbox task"); one given a project or a parent since stays.
+    action: { label: t('Move to {name}', { name: workspaceLabel(other.name, other.default) }), run: () => { void moveInboxTask(taskId, workspaceLabel(other.name, other.default), other.id) } },
   })
+}
+
+const isInboxTask = (task: Task | undefined): boolean => !!task && !task.project_id && !task.parent_id
+
+async function moveInboxTask(taskId: string, name: string, workspaceId: string): Promise<void> {
+  if (isInboxTask(await getTask(taskId))) await moveWithUndo(taskId, null, name, workspaceId)
 }
 
 /** The account's other workspaces, by name: the targets of "Move to workspace…". */

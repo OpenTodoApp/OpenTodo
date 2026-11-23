@@ -833,15 +833,39 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "1405921a44f10ccfc1fda6180d941db346c57feb766cd67614c6f4ae6247a1e3"
+              "hash": "1405921a44f10ccfc1fda6180d941db346c57feb766cd67614c6f4ae6247a1e3",
+              "size": 153,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "4dca984cb5e6eccf",
+                "372cd2c3a21e503e",
+                "1405921a44f10ccf"
+              ]
             },
             "Inbox.md": {
               "project": "",
-              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753"
+              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753",
+              "size": 30,
+              "prefixes": [
+                "9678c3c7e2ff5772"
+              ]
             },
             "Work.md": {
               "project": "p-work",
-              "hash": "7ded4e1425af2bb67b6ffe556f02893addefeefd6652340b1d99c89408e092fd"
+              "hash": "7ded4e1425af2bb67b6ffe556f02893addefeefd6652340b1d99c89408e092fd",
+              "size": 92,
+              "prefixes": [
+                "f52d711103d50a43",
+                "311b75839baf6970",
+                "be5b0aa916c741be",
+                "a26864372fa7f1ae",
+                "2abe908025ed9668",
+                "7ded4e1425af2bb6"
+              ]
             }
           },
           "printed": {
@@ -1210,19 +1234,171 @@
               }
             }
           },
+          "held": {
+            "project": {
+              "p-home": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Home",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                }
+              }
+            },
+            "task": {
+              "t-rent": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Pay rent",
+                  "t": 1793606400003,
+                  "d": "app"
+                }
+              },
+              "t-water": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Water the plants",
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              }
+            }
+          },
           "files": {
             "Home.md": {
               "project": "p-home",
               "hash": "",
-              "held": 1793610120000
+              "held": 1793610120000,
+              "size": 153,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "4dca984cb5e6eccf",
+                "372cd2c3a21e503e",
+                "1405921a44f10ccf"
+              ]
             },
             "Inbox.md": {
               "project": "",
-              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753"
+              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753",
+              "size": 30,
+              "prefixes": [
+                "9678c3c7e2ff5772"
+              ]
             },
             "Work.md": {
               "project": "p-work",
-              "hash": "597dfd24866b54a4f4f3d590f30883a85a56eb1caafb33fed33b336ac6d93a67"
+              "hash": "597dfd24866b54a4f4f3d590f30883a85a56eb1caafb33fed33b336ac6d93a67",
+              "size": 127,
+              "prefixes": [
+                "f52d711103d50a43",
+                "311b75839baf6970",
+                "be5b0aa916c741be",
+                "a26864372fa7f1ae",
+                "2abe908025ed9668",
+                "7ded4e1425af2bb6",
+                "597dfd24866b54a4"
+              ]
             }
           },
           "printed": {
@@ -1562,19 +1738,171 @@
               }
             }
           },
+          "held": {
+            "project": {
+              "p-home": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Home",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                }
+              }
+            },
+            "task": {
+              "t-rent": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Pay rent",
+                  "t": 1793606400003,
+                  "d": "app"
+                }
+              },
+              "t-water": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Water the plants",
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              }
+            }
+          },
           "files": {
             "Home.md": {
               "project": "p-home",
               "hash": "",
-              "held": 1793610120000
+              "held": 1793610120000,
+              "size": 153,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "4dca984cb5e6eccf",
+                "372cd2c3a21e503e",
+                "1405921a44f10ccf"
+              ]
             },
             "Inbox.md": {
               "project": "",
-              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753"
+              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753",
+              "size": 30,
+              "prefixes": [
+                "9678c3c7e2ff5772"
+              ]
             },
             "Work.md": {
               "project": "p-work",
-              "hash": "597dfd24866b54a4f4f3d590f30883a85a56eb1caafb33fed33b336ac6d93a67"
+              "hash": "597dfd24866b54a4f4f3d590f30883a85a56eb1caafb33fed33b336ac6d93a67",
+              "size": 127,
+              "prefixes": [
+                "f52d711103d50a43",
+                "311b75839baf6970",
+                "be5b0aa916c741be",
+                "a26864372fa7f1ae",
+                "2abe908025ed9668",
+                "7ded4e1425af2bb6",
+                "597dfd24866b54a4"
+              ]
             }
           },
           "printed": {
@@ -2195,15 +2523,40 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "bd73deb32bdddad0228539a1938150ee0ee252dca38151ee10522acbc04c48bd"
+              "hash": "bd73deb32bdddad0228539a1938150ee0ee252dca38151ee10522acbc04c48bd",
+              "size": 180,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "4dca984cb5e6eccf",
+                "372cd2c3a21e503e",
+                "bd73deb32bdddad0"
+              ]
             },
             "Inbox.md": {
               "project": "",
-              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753"
+              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753",
+              "size": 30,
+              "prefixes": [
+                "9678c3c7e2ff5772"
+              ]
             },
             "Work.md": {
               "project": "p-work",
-              "hash": "597dfd24866b54a4f4f3d590f30883a85a56eb1caafb33fed33b336ac6d93a67"
+              "hash": "597dfd24866b54a4f4f3d590f30883a85a56eb1caafb33fed33b336ac6d93a67",
+              "size": 127,
+              "prefixes": [
+                "f52d711103d50a43",
+                "311b75839baf6970",
+                "be5b0aa916c741be",
+                "a26864372fa7f1ae",
+                "2abe908025ed9668",
+                "7ded4e1425af2bb6",
+                "597dfd24866b54a4"
+              ]
             }
           },
           "printed": {
@@ -2644,19 +2997,171 @@
               }
             }
           },
+          "held": {
+            "project": {
+              "p-work": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Work",
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400006,
+                  "d": "app"
+                }
+              }
+            },
+            "task": {
+              "t-call": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-work",
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "title": {
+                  "v": "Call the plumber",
+                  "t": 1793606400004,
+                  "d": "app"
+                }
+              },
+              "t-report": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-work",
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Write the report",
+                  "t": 1793606400007,
+                  "d": "app"
+                }
+              }
+            }
+          },
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "bd73deb32bdddad0228539a1938150ee0ee252dca38151ee10522acbc04c48bd"
+              "hash": "bd73deb32bdddad0228539a1938150ee0ee252dca38151ee10522acbc04c48bd",
+              "size": 180,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "4dca984cb5e6eccf",
+                "372cd2c3a21e503e",
+                "bd73deb32bdddad0"
+              ]
             },
             "Inbox.md": {
               "project": "",
-              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753"
+              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753",
+              "size": 30,
+              "prefixes": [
+                "9678c3c7e2ff5772"
+              ]
             },
             "Work.md": {
               "project": "p-work",
               "hash": "",
-              "held": 1793610300000
+              "held": 1793610300000,
+              "size": 127,
+              "prefixes": [
+                "f52d711103d50a43",
+                "311b75839baf6970",
+                "be5b0aa916c741be",
+                "a26864372fa7f1ae",
+                "2abe908025ed9668",
+                "7ded4e1425af2bb6",
+                "597dfd24866b54a4"
+              ]
             }
           },
           "printed": {
@@ -2677,84 +3182,12 @@
       "want": {
         "pushed": [
           {
-            "id": "v-6974569df5f3a2f03fd00b389bb90b0f7bd7c3fc",
-            "entity": "project",
-            "entityId": "527a1553-25c9-828c-aea5-dcb08a2d850b",
-            "field": "archived",
-            "value": false,
-            "ts": 1793610660000,
-            "device": "vault:vectors"
-          },
-          {
-            "id": "v-494fd3d88d0ac1bfa381180ff327a42058fea0f9",
-            "entity": "project",
-            "entityId": "527a1553-25c9-828c-aea5-dcb08a2d850b",
-            "field": "color",
-            "value": "#ef4444",
-            "ts": 1793610660000,
-            "device": "vault:vectors"
-          },
-          {
-            "id": "v-54bec49f5ced1856fdf1b9b862a2b1e95979176d",
-            "entity": "project",
-            "entityId": "527a1553-25c9-828c-aea5-dcb08a2d850b",
-            "field": "created_at",
-            "value": 1793610660000,
-            "ts": 1793610660000,
-            "device": "vault:vectors"
-          },
-          {
-            "id": "v-ff358dbf5b4e74d71c5e87f1218d5023c2daf5d9",
-            "entity": "project",
-            "entityId": "527a1553-25c9-828c-aea5-dcb08a2d850b",
-            "field": "deleted_at",
-            "value": null,
-            "ts": 1793610660000,
-            "device": "vault:vectors"
-          },
-          {
-            "id": "v-3695e7100457848010334a391f592eeed88be552",
-            "entity": "project",
-            "entityId": "527a1553-25c9-828c-aea5-dcb08a2d850b",
-            "field": "icon",
-            "value": null,
-            "ts": 1793610660000,
-            "device": "vault:vectors"
-          },
-          {
-            "id": "v-3182f6f1ae5fc6a0e6133255687ad715b58be053",
-            "entity": "project",
-            "entityId": "527a1553-25c9-828c-aea5-dcb08a2d850b",
-            "field": "name",
-            "value": "Work",
-            "ts": 1793610660000,
-            "device": "vault:vectors"
-          },
-          {
-            "id": "v-d5e3183f2f6e63e03c386d5dd5a850568b38f49c",
-            "entity": "project",
-            "entityId": "527a1553-25c9-828c-aea5-dcb08a2d850b",
-            "field": "parent_id",
-            "value": null,
-            "ts": 1793610660000,
-            "device": "vault:vectors"
-          },
-          {
-            "id": "v-d753161d3d3b7839880ad16c6b3f092dedec7c75",
-            "entity": "project",
-            "entityId": "527a1553-25c9-828c-aea5-dcb08a2d850b",
-            "field": "position",
-            "value": 3000,
-            "ts": 1793610660000,
-            "device": "vault:vectors"
-          },
-          {
             "id": "v-12cf737b19784a4cb5f3720e8e7bf0df970c40ed",
             "entity": "task",
             "entityId": "t-call",
             "field": "deleted_at",
             "value": 1793610660000,
-            "ts": 1793610660001,
+            "ts": 1793610660000,
             "device": "vault:vectors"
           },
           {
@@ -2763,30 +3196,24 @@
             "entityId": "t-report",
             "field": "deleted_at",
             "value": 1793610660000,
-            "ts": 1793610660002,
+            "ts": 1793610660001,
             "device": "vault:vectors"
           }
         ],
         "files": {
           "Home.md": "---\nopentodo-id: p-home\nopentodo-color: \"#22c55e\"\n---\n\n- [ ] Water the plants 🆔 t-water\n- [ ] Pay rent 🆔 t-rent\n- [ ] Oil the hinge 🆔 458d0a2c-6d4f-8899-9773-a9369857d0b7\n",
           "Inbox.md": "- [ ] Buy stamps 🆔 t-inbox\n",
-          "Work 2.md": "---\nopentodo-id: 527a1553-25c9-828c-aea5-dcb08a2d850b\nopentodo-color: \"#ef4444\"\n---\n",
           "Work.md": "---\nopentodo-id: p-work\nopentodo-color: \"#22c55e\"\n---\n"
         },
         "report": {
-          "written": 2,
+          "written": 1,
           "created": 0,
           "updated": 0,
           "trashed": 2,
           "conflicts": 0,
           "warnings": [],
-          "cursor": 85,
+          "cursor": 77,
           "events": [
-            {
-              "kind": "project",
-              "file": "Work.md",
-              "text": "created project \"Work\""
-            },
             {
               "kind": "trashed",
               "file": "Work.md",
@@ -2801,16 +3228,11 @@
             },
             {
               "kind": "written",
-              "file": "Work 2.md",
-              "text": "wrote Work 2.md"
-            },
-            {
-              "kind": "written",
               "file": "Work.md",
               "text": "wrote Work.md"
             }
           ],
-          "projects": 3,
+          "projects": 2,
           "tasks": 4
         },
         "state": {
@@ -2818,53 +3240,11 @@
           "device": "vault:vectors",
           "profile": "default",
           "server": "https://todo.example.com",
-          "cursor": 85,
-          "clock": 1793610660002,
+          "cursor": 77,
+          "clock": 1793610660001,
           "offset": 0,
           "store": {
             "project": {
-              "527a1553-25c9-828c-aea5-dcb08a2d850b": {
-                "archived": {
-                  "v": false,
-                  "t": 1793610660000,
-                  "d": "vault:vectors"
-                },
-                "color": {
-                  "v": "#ef4444",
-                  "t": 1793610660000,
-                  "d": "vault:vectors"
-                },
-                "created_at": {
-                  "v": 1793610660000,
-                  "t": 1793610660000,
-                  "d": "vault:vectors"
-                },
-                "deleted_at": {
-                  "v": null,
-                  "t": 1793610660000,
-                  "d": "vault:vectors"
-                },
-                "icon": {
-                  "v": null,
-                  "t": 1793610660000,
-                  "d": "vault:vectors"
-                },
-                "name": {
-                  "v": "Work",
-                  "t": 1793610660000,
-                  "d": "vault:vectors"
-                },
-                "parent_id": {
-                  "v": null,
-                  "t": 1793610660000,
-                  "d": "vault:vectors"
-                },
-                "position": {
-                  "v": 3000,
-                  "t": 1793610660000,
-                  "d": "vault:vectors"
-                }
-              },
               "p-home": {
                 "archived": {
                   "v": false,
@@ -3051,7 +3431,7 @@
                 },
                 "deleted_at": {
                   "v": 1793610660000,
-                  "t": 1793610660001,
+                  "t": 1793610660000,
                   "d": "vault:vectors"
                 },
                 "labels": {
@@ -3177,7 +3557,7 @@
                 },
                 "deleted_at": {
                   "v": 1793610660000,
-                  "t": 1793610660002,
+                  "t": 1793610660001,
                   "d": "vault:vectors"
                 },
                 "labels": {
@@ -3253,19 +3633,37 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "bd73deb32bdddad0228539a1938150ee0ee252dca38151ee10522acbc04c48bd"
+              "hash": "bd73deb32bdddad0228539a1938150ee0ee252dca38151ee10522acbc04c48bd",
+              "size": 180,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "4dca984cb5e6eccf",
+                "372cd2c3a21e503e",
+                "bd73deb32bdddad0"
+              ]
             },
             "Inbox.md": {
               "project": "",
-              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753"
-            },
-            "Work 2.md": {
-              "project": "527a1553-25c9-828c-aea5-dcb08a2d850b",
-              "hash": "939d513dd792881ca8c86bd0b967ae2a105678c9c874ebf5626ba692a094b90d"
+              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753",
+              "size": 30,
+              "prefixes": [
+                "9678c3c7e2ff5772"
+              ]
             },
             "Work.md": {
               "project": "p-work",
-              "hash": "a26864372fa7f1aea1263c0834eebba73d75b88b693593f4dbe21f9ed146fc2e"
+              "hash": "a26864372fa7f1aea1263c0834eebba73d75b88b693593f4dbe21f9ed146fc2e",
+              "size": 54,
+              "prefixes": [
+                "f52d711103d50a43",
+                "311b75839baf6970",
+                "be5b0aa916c741be",
+                "a26864372fa7f1ae"
+              ]
             }
           },
           "printed": {

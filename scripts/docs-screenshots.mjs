@@ -96,7 +96,9 @@ async function save(name, theme, png, card) {
 }
 
 // ------------------------------------------------------------------ helpers
-const HIDE = `[data-testid="demo-banner"]{display:none!important} *,*::before,*::after{caret-color:transparent!important;transition:none!important;animation:none!important}`
+// The demo's 9:30 reminder fires once a run passes that time of day; its card
+// would sit over every later shot, so no capture depends on the hour it runs at.
+const HIDE = `[data-testid="demo-banner"]{display:none!important} [role="alertdialog"][aria-label^="Reminder:"]{display:none!important} *,*::before,*::after{caret-color:transparent!important;transition:none!important;animation:none!important}`
 async function context(theme, opts = {}) {
   const c = await browser.newContext({ viewport: DESKTOP, deviceScaleFactor: 1.25, colorScheme: theme, timezoneId: 'UTC', locale: 'en-GB', ...opts })
   await c.addInitScript((css) => { addEventListener('DOMContentLoaded', () => { const s = document.createElement('style'); s.textContent = css; document.head.append(s) }) }, HIDE)

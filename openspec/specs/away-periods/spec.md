@@ -24,6 +24,17 @@ The user SHALL be able to set an away period from Today's menu and the command p
 - **WHEN** the device is offline and the user sets an away period
 - **THEN** the skips and the period apply at once on the device and reach the other devices on the next sync
 
+### Requirement: Which tasks the period skips
+When the period skips anything, the Away dialog SHALL offer Show details beside its line of what it will do. It SHALL list, before Set away, one row per repeating task the period skips: its title, how many of its occurrences are skipped, and the date it will be due once they are, in title order, in a list that scrolls when it is long. The list SHALL follow the chosen days and the Everything or Only choice as they change, and Hide details SHALL close it. It SHALL be computed on the device from the same plan Set away writes, so it works offline and lists exactly what will be skipped.
+
+#### Scenario: Checking before going away
+- **WHEN** the user opens Away for 25 November to 1 December with a daily "Water plants" and a weekly "Bins" on Fridays, and chooses Show details
+- **THEN** the list shows "Bins" with 1 skipped and due 4 December, and "Water plants" with 7 skipped and due 2 December
+
+#### Scenario: A shorter period
+- **WHEN** the details are open and the user moves the last day to 26 November
+- **THEN** the list shows only "Water plants", with 2 skipped
+
 ### Requirement: Skipping inside the period
 For each covered series with a calendar rule, every occurrence whose date is within the period, from the current occurrence on, SHALL be skipped exactly as "Skip this occurrence" skips it (OpenSpec `recurring-tasks`): the current occurrence moves the series to its next date that is not an exception, and each later one gets a skipped occurrence record with its derived id. A covered completion-relative series whose due date is within the period SHALL move to the day after the period; a habit also gets the skipped record of that date. A series the user may not edit SHALL NOT be covered. Tasks without a repeat rule SHALL keep their dates. Because the records are skipped, a habit's streak SHALL neither break nor grow over the period, and no skipped day SHALL count as done in Completed or Statistics. Applying the same period twice SHALL write no second record, because the ids are derived.
 

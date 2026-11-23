@@ -8,12 +8,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { commitFiles, formatBytes, isImage, limits as readLimits, planFiles, useAttachmentLimits } from '../lib/attachments'
 import { useAllLabels, useProjects } from '../lib/localData'
 import { useDemo } from '../lib/demo'
-import { createTask, planNewTasks, planReminders, planTask } from '../lib/ops'
+import { createTask, planCompanions, planNewTasks, planTask } from '../lib/ops'
 import { addTasksUndoable } from '../lib/pasteTasks'
 import { showBulkToast } from './bulk/toastStore'
 import { captureFiles, type CapturedFile, isEmptyShare, parseShare, proposedDescription, proposedOrigin, proposedTitle, titleFromFiles, type SharePayload } from '../lib/share'
 import { deleteInboxEntry, getInboxEntry, type SharedFile } from '../lib/shareInbox'
-import type { Task } from '../lib/types'
 import { IconButton } from '../ui'
 import { Icon } from '../ui'
 import { InstanceMark, useInstanceName } from './InstanceBrand'
@@ -161,8 +160,8 @@ export function ShareCapture() {
         const { id, change } = await planTask(task)
         const asFiles = await Promise.all(toAttach.map(async (f) => new File([await f.blob.arrayBuffer()], f.name, { type: f.type })))
         const planned = await planFiles(id, asFiles, { projectId: project })
-        // Typed reminders ride in the same batch, as createTask writes them (quick-add-recurrence D3).
-        await commitFiles(planned, [change, ...planReminders(id, (change.patch as { due: Task['due'] }).due, input.reminders)])
+        // Typed reminders, time spent and links ride in the same batch, as createTask writes them (quick-add-recurrence D3, quick-add-links D2).
+        await commitFiles(planned, await planCompanions(task, { id, change }, new Date()))
       } else {
         // One mutate: title, parsed attributes, description and project land as one op set, locally first.
         await createTask(task)

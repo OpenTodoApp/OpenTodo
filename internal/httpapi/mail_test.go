@@ -3,6 +3,7 @@ package httpapi
 import (
 	"bytes"
 	"database/sql"
+	"fmt"
 	"io"
 	"mime/quotedprintable"
 	"net"
@@ -598,16 +599,26 @@ func TestInvitationsSentByEmail(t *testing.T) {
 	if n < 2 {
 		t.Fatalf("audit = %d", n)
 	}
-	// A failing relay revokes the invitation and answers 502.
+	// A failing relay answers 502 and leaves no invitation: none pending, and
+	// none in the list as Revoked, as the error says (#1907). The audit keeps it.
 	resp, out = e.do("PUT", "/api/v1/settings/smtp", map[string]any{"password": "wrong"})
 	e.mustStatus(resp, 200, out)
 	resp, out = e.do("POST", "/api/v1/invitations", map[string]any{"email": "carol@example.com", "send": true})
 	if resp.StatusCode != 502 || errCode(out) != "email_failed" {
 		t.Fatalf("failing = %d %v", resp.StatusCode, out)
 	}
-	e.db.QueryRow(`SELECT COUNT(*) FROM invitations WHERE email = 'carol@example.com' AND revoked_at IS NULL`).Scan(&n)
+	e.db.QueryRow(`SELECT COUNT(*) FROM invitations WHERE email = 'carol@example.com'`).Scan(&n)
 	if n != 0 {
-		t.Fatal("pending invitation after a failed send")
+		t.Fatalf("%d invitations left after a failed send", n)
+	}
+	resp, out = e.do("GET", "/api/v1/invitations", nil)
+	e.mustStatus(resp, 200, out)
+	if strings.Contains(fmt.Sprint(out), "carol@example.com") {
+		t.Fatalf("the unsent invitation is listed: %v", out)
+	}
+	e.db.QueryRow(`SELECT COUNT(*) FROM audit_events WHERE name = 'invitation.revoked'`).Scan(&n)
+	if n != 1 {
+		t.Fatalf("invitation.revoked audit events = %d, want 1", n)
 	}
 }
 

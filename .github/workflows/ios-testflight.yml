@@ -175,6 +175,16 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           BUILD: ${{ steps.version.outputs.build }}
         run: node scripts/release/appstore.mjs processed "$VERSION" "$BUILD"
+      # The submission runs this workflow's own copy of scripts/release (its exact commit, the
+      # trust of this file), so a tag from before `submit` existed can still be submitted. The
+      # What's New text is the tag's own CHANGELOG.md (ios-distribution D10).
+      - name: Release scripts of this workflow's commit
+        if: steps.secrets.outputs.ready == 'true' && !contains(inputs.ref, '-rc.') && (inputs.app_store == 'submit' || inputs.app_store == 'dry-run' || inputs.app_store == 'submit-only')
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: release-tools
+          sparse-checkout: scripts/release
       # A final tag only (vX.Y.Z, checked above); a build still processing is left for a run again.
       - name: Submit for App Store review (a final tag)
         id: submit
@@ -184,8 +194,9 @@ jobs:
           BUILD: ${{ steps.version.outputs.build }}
           MODE: ${{ inputs.app_store }}
         run: |
-          if [ "$MODE" = "dry-run" ]; then node scripts/release/appstore.mjs submit "$VERSION" "$BUILD" --dry-run
-          else node scripts/release/appstore.mjs submit "$VERSION" "$BUILD"; fi
+          set -- submit "$VERSION" "$BUILD" --changelog CHANGELOG.md
+          if [ "$MODE" = "dry-run" ]; then set -- "$@" --dry-run; fi
+          node release-tools/scripts/release/appstore.mjs "$@"
       - name: Delete the keychain and the key; revoke the certificate only if nothing was uploaded
         if: always() && steps.secrets.outputs.ready == 'true'
         env:

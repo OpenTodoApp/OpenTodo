@@ -67,8 +67,9 @@ type State struct {
 	Partition *opsync.Partition
 	Workspace string
 	// Remembered maps source ids recorded by earlier, not undone imports of the
-	// same profile to the entity ids they created.
-	Remembered map[string]string
+	// same profile to the entity ids they created, one per import that created
+	// one (an import into another workspace creates its own, #1899).
+	Remembered map[string][]string
 }
 
 // RowResult is the per-row outcome shown in a preview.
@@ -260,6 +261,11 @@ type planner struct {
 	exportedBy     string
 	foreignEntries int
 
+	// commentCount is the comments the plan creates; commentsCapped and
+	// commentsLarge count those that went into descriptions instead
+	// (todoist-notes-comments).
+	commentCount, commentsCapped, commentsLarge int
+
 	// createdBySource maps a project row's source id to the id of the project this
 	// import creates (for view hints).
 	createdBySource map[string]string
@@ -291,7 +297,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		implicitProj: map[string]*implicit{}, implicitByID: map[string]*implicit{}, implicitLbl: map[string]*implicit{},
 		sectionByKey: map[string]string{}, implicitSec: map[string]*implicit{}, createdBySource: map[string]string{}}
 	if st.Remembered == nil {
-		st.Remembered = map[string]string{}
+		st.Remembered = map[string][]string{}
 	}
 	for kind, list := range map[string][]opsync.Entity{KindProject: st.Projects, KindLabel: st.Labels, KindTask: st.Tasks,
 		KindSection: st.Sections, KindReminder: st.Reminders, KindView: st.Views, KindRule: st.Rules, KindUserPrefs: st.UserPrefs, KindAttachment: st.Attachments, KindTimeEntry: st.TimeEntries, KindPlace: st.Places, KindField: st.Fields, KindReview: st.Review, KindProjectPrefs: st.ProjectPrefs, KindNote: st.Notes, KindTheme: st.Themes, KindObjective: st.Objectives, KindMemory: st.Memory} {
@@ -365,6 +371,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 	} else {
 		p.changes = pl.planForeign(parsed.Rows)
 		pl.stampWorkspace(p.changes)
+		p.Notes = pl.withCommentsNote(p.Notes)
 	}
 	for i := range pl.results {
 		r := &pl.results[i]
@@ -487,11 +494,6 @@ func (pl *planner) nextPosition() int64 {
 	return pl.position
 }
 
-func (pl *planner) alive(kind, id string) bool {
-	e := pl.byKind[kind][id]
-	return e != nil && !e.Deleted()
-}
-
 // resolveProject returns the project id ("" for the Inbox), a display name, and
 // whether the row named a project itself.
 func (pl *planner) resolveProject(row Row, bySource, byFileName map[string]*projPlan, res *RowResult) (string, string, bool) {
@@ -499,7 +501,7 @@ func (pl *planner) resolveProject(row Row, bySource, byFileName map[string]*proj
 		if pp, ok := bySource[row.ProjectSourceID]; ok {
 			return pp.id, pp.name, true
 		}
-		if id, ok := pl.st.Remembered[row.ProjectSourceID]; ok && pl.alive(KindProject, id) {
+		if id, ok := pl.remembered(KindProject, row.ProjectSourceID); ok {
 			return id, str(pl.byKind[KindProject][id], "name"), true
 		}
 		if row.ProjectName == "" {

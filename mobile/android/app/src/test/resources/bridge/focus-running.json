@@ -1,0 +1,19 @@
+{
+  "description": "A Pomodoro work session, second of four, started ten minutes ago, titles allowed: \"Call the plumber ☎\", \"Work · 2 of 4\", a clock counting down to end; stale and the \"Session done\" notification at notifyAt.",
+  "method": "publishFocus",
+  "payload": "{\"v\":1,\"state\":\"running\",\"taskId\":\"call\",\"title\":\"Call the plumber ☎\",\"mode\":\"pomodoro\",\"phase\":\"work\",\"cycle\":2,\"cycleLength\":4,\"phaseStartedAt\":1792669800000,\"runningSince\":1792669800000,\"elapsedMs\":0,\"plannedEndAt\":1792671300000,\"plannedMs\":1500000}",
+  "now": 1792670400000,
+  "expect": {
+    "state": "running",
+    "title": "Call the plumber ☎",
+    "phase": "work",
+    "breakKind": null,
+    "cycle": 2,
+    "cycleLength": 4,
+    "countsDown": true,
+    "end": 1792671300000,
+    "countUpFrom": null,
+    "frozenMs": null,
+    "notifyAt": 1792671300000
+  }
+}

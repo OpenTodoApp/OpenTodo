@@ -75,3 +75,47 @@ describe('Unlinked mentions', () => {
     await r.unmount()
   })
 })
+
+// note-links "Finding unlinked mentions … SHALL run after Linked references are painted":
+// idle time can come before the references mark's frame-and-timer, so the match waits for both.
+describe('the match waits for the Linked references mark', () => {
+  it('asks for idle time only after a frame and a timer, then runs; cancelling at any stage stops it', async () => {
+    vi.useFakeTimers()
+    const frames: FrameRequestCallback[] = []
+    const idles: IdleRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => frames.push(cb))
+    vi.stubGlobal('cancelAnimationFrame', (h: number) => { frames[h - 1] = () => {} })
+    vi.stubGlobal('requestIdleCallback', (cb: IdleRequestCallback) => idles.push(cb))
+    vi.stubGlobal('cancelIdleCallback', (h: number) => { idles[h - 1] = () => {} })
+    try {
+      const { afterPaintIdle } = await import('./UnlinkedMentions')
+      const order: string[] = []
+      afterPaintIdle(() => order.push('match'))
+      // The references mark is queued the same way, in the same frame.
+      expect(idles).toHaveLength(0)
+      frames.shift()!(0)
+      setTimeout(() => order.push('mark'), 0)
+      expect(idles).toHaveLength(0)
+      vi.advanceTimersByTime(0)
+      expect(idles).toHaveLength(1)
+      idles[0]!({ didTimeout: false, timeRemaining: () => 10 })
+      expect(order).toEqual(['mark', 'match'])
+
+      const ran = vi.fn()
+      afterPaintIdle(ran)()
+      afterPaintIdle(ran)
+      expect(frames).toHaveLength(2)
+      for (const f of frames.splice(0)) f(0)
+      vi.advanceTimersByTime(0)
+      const stopAtIdle = afterPaintIdle(ran)
+      for (const f of frames.splice(0)) f(0)
+      vi.advanceTimersByTime(0)
+      stopAtIdle()
+      for (const cb of idles.splice(1)) cb({ didTimeout: false, timeRemaining: () => 10 })
+      expect(ran).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.useRealTimers()
+      vi.unstubAllGlobals()
+    }
+  })
+})

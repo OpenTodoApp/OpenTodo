@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 	"unicode/utf8"
@@ -58,6 +59,15 @@ func FuzzParse(f *testing.F) {
 		}
 		if len(r.Title) > len(line) {
 			t.Fatalf("title %q longer than the line %q", r.Title, line)
+		}
+		// Links (quick-add-links): at most MaxLinks, each an http(s) URL of the line.
+		if len(r.Links) > MaxLinks || (!ctx.Links && len(r.Links) > 0) {
+			t.Fatalf("links %v", r.Links)
+		}
+		for _, l := range r.Links {
+			if matchLink(l) != l || !strings.Contains(line, l) {
+				t.Fatalf("link %q is not a URL of %q", l, line)
+			}
 		}
 		checkDate := func(what, d string) {
 			if d == "" {

@@ -1,1 +1,0 @@
-- **Sharing to OpenTodo on an iPhone opens the capture screen on iOS 18 and later.** The share extension opened the app through a call iOS 18 ignores, so a share could be saved without the app opening.

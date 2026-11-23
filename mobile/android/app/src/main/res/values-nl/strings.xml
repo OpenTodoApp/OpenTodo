@@ -54,4 +54,15 @@
     <string name="setup_sign_in">Hier aanmelden</string>
     <string name="error_sign_in">Je server zit achter een aanmeldpagina, en de aanmelding ging in de app niet verder. Meld je hier opnieuw aan.</string>
     <string name="save_failed">Het bestand kon niet worden opgeslagen.</string>
+    <string name="channel_focus">Focus</string>
+    <string name="focus_generic">Focussessie</string>
+    <string name="focus_work">Werk</string>
+    <string name="focus_work_of">Werk · %1$d van %2$d</string>
+    <string name="focus_short_break">Korte pauze</string>
+    <string name="focus_long_break">Lange pauze</string>
+    <string name="focus_paused">Gepauzeerd</string>
+    <string name="focus_pause">Pauzeren</string>
+    <string name="focus_resume">Hervatten</string>
+    <string name="focus_done">Sessie beëindigd</string>
+    <string name="focus_break_over">Pauze voorbij</string>
 </resources>

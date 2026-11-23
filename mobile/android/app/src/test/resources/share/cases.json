@@ -1,0 +1,21 @@
+{
+  "about": "What a share becomes in both apps (Android ShareMapper, iOS ShareMap): the capture screen's /share query, compared decoded, since the web app reads it with URLSearchParams. Both apps' unit tests read this file.",
+  "paths": [
+    { "title": "Buy milk", "text": "and bread", "withFiles": false, "expect": { "title": "Buy milk", "text": "and bread" } },
+    { "title": "Recipe", "text": "Look at https://example.com", "withFiles": false, "expect": { "title": "Recipe", "text": "Look at https://example.com" } },
+    { "title": null, "text": " https://example.com/x \n", "withFiles": false, "expect": { "url": "https://example.com/x" } },
+    { "title": "Example", "text": "https://example.com/a?b=1&c=2", "withFiles": false, "expect": { "title": "Example", "url": "https://example.com/a?b=1&c=2" } },
+    { "title": "  ", "text": " Buy milk ", "withFiles": false, "expect": { "text": "Buy milk" } },
+    { "title": "Ça & co", "text": "50% = ½ + ½", "withFiles": false, "expect": { "title": "Ça & co", "text": "50% = ½ + ½" } },
+    { "title": null, "text": null, "withFiles": true, "expect": { "files": "1" } },
+    { "title": null, "text": "Two photos", "withFiles": true, "expect": { "text": "Two photos", "files": "1" } },
+    { "title": "", "text": "  ", "withFiles": false, "expect": {} }
+  ],
+  "accept": [
+    { "sizes": [2097152, 3145728], "expect": [0, 1] },
+    { "sizes": [-1, 15728640, 22020096, 5242880, 6291456], "expect": [1, 3] },
+    { "sizes": [1, 20971521, 2], "expect": [0, 2] },
+    { "sizes": [13107201, 13107201, 10], "expect": [0, 2] },
+    { "sizes": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "expect": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] }
+  ]
+}

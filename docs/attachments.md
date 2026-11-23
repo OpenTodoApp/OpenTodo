@@ -17,7 +17,7 @@ A task, a comment on it, or a [note](notes.md) can carry files and links: a rece
 
 - **Pick, paste or drop.** Choose **Attach › Choose files…** to pick files, paste an image or a file into the task panel, or drop files onto it (a drop zone appears while you drag).
 - **In the text.** An image pasted into the notes or a comment is attached and shown in place ([details](formatting.md#images)).
-- **Links.** Choose **Attach › Add a link…** and paste an `http` or `https` address. The server never downloads a link.
+- **Links.** Paste an `http(s)` address in **Attach › Add a link…** or [quick add](quick-add.md#tokens-any-language). The server never downloads a link.
 - **Offline.** A file added without a connection appears at once, marked "waiting to upload", and uploads after the next sync; other devices show "uploading" until it arrives.
 
 Images show a thumbnail; other files show their name, type and size. **Open** shows the file in a new tab when the browser can display it safely (images, PDF, text, audio, video); anything else, and every encrypted file, is downloaded. In the phone apps, **Open** saves the file. You can rename and remove your own attachments; the notice that follows undoes a removal.

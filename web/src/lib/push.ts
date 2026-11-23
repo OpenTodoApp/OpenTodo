@@ -4,7 +4,7 @@
 import { api, ApiError } from './api'
 import { getMeta, setMeta } from './db'
 import { getDeviceId } from './ops'
-import type { PushSubscriptionStatus } from './types'
+import type { PushNotify, PushSubscriptionStatus } from './types'
 import { formatInstant } from './dates'
 import { t, msg, translatedMap } from './i18n'
 import { messageOf } from './errorText'
@@ -12,6 +12,8 @@ import { has } from './shell'
 
 const META_ENABLED = 'push:enabled'
 const META_INCLUDE = 'push:includeContent'
+const META_NOTIFY = 'push:notify'
+const NOTIFY_OFF: PushNotify = { assigned: false, status: false }
 
 export interface PushState {
   /** The browser can do web push at all (service worker, PushManager, Notification). */
@@ -22,6 +24,8 @@ export interface PushState {
   /** This device asked for notifications and the server holds its subscription. */
   enabled: boolean
   includeContent: boolean
+  /** Assignment and status pushes on this device (assignee-notifications D2). */
+  notify: PushNotify
   subscription: PushSubscriptionStatus | null
   /** Enabled here but the server dropped the subscription (gone) or it keeps failing: offer to re-enable. */
   needsRenewal: boolean
@@ -59,8 +63,9 @@ function urlBase64ToBytes(s: string): Uint8Array<ArrayBuffer> {
 export async function loadPushState(): Promise<PushState> {
   const enabledHere = await getMeta<boolean>(META_ENABLED, false)
   const includeContent = await getMeta<boolean>(META_INCLUDE, false)
+  const notify = await getMeta<PushNotify>(META_NOTIFY, NOTIFY_OFF)
   const base: PushState = {
-    supported: pushSupported(), available: true, permission: permission(), enabled: false, includeContent,
+    supported: pushSupported(), available: true, permission: permission(), enabled: false, includeContent, notify,
     subscription: null, needsRenewal: false, serviceWorker: !!(await swRegistration(1500)), serverUnreachable: false,
   }
   try {
@@ -69,6 +74,7 @@ export async function loadPushState(): Promise<PushState> {
     return {
       ...base, subscription: sub, enabled: enabledHere && !!sub,
       includeContent: sub ? sub.includeContent : includeContent,
+      notify: sub?.notify ?? notify,
       needsRenewal: enabledHere && (!sub || sub.needsRenewal),
     }
   } catch (err) {
@@ -89,7 +95,8 @@ export class PushPermissionError extends Error {}
  * Enable push on this device: ask for the permission, subscribe with the
  * server's key and register the subscription. Re-running it renews a dropped one.
  */
-export async function enablePush(includeContent: boolean): Promise<PushState> {
+export async function enablePush(includeContent: boolean, notify?: PushNotify): Promise<PushState> {
+  notify ??= await getMeta<PushNotify>(META_NOTIFY, NOTIFY_OFF)
   if (!pushSupported()) throw new Error(t('This browser does not support push notifications.'))
   const perm = await Notification.requestPermission()
   if (perm !== 'granted') throw new PushPermissionError(t('Notifications are blocked for this site.'))
@@ -118,9 +125,11 @@ export async function enablePush(includeContent: boolean): Promise<PushState> {
     endpoint: sub.endpoint,
     keys: { p256dh: json.keys?.p256dh ?? '', auth: json.keys?.auth ?? '' },
     includeContent,
+    notify,
   })
   await setMeta(META_ENABLED, true)
   await setMeta(META_INCLUDE, includeContent)
+  await setMeta(META_NOTIFY, notify)
   return loadPushState()
 }
 
@@ -142,6 +151,16 @@ export async function disablePush(): Promise<void> {
 export async function setIncludeContent(include: boolean): Promise<PushState> {
   await setMeta(META_INCLUDE, include)
   if (await getMeta<boolean>(META_ENABLED, false)) return enablePush(include)
+  return loadPushState()
+}
+
+/**
+ * Change this device's assignment and status pushes (assignee-notifications D2):
+ * re-registers the subscription with them, keeping "include task titles".
+ */
+export async function setPushNotify(notify: PushNotify): Promise<PushState> {
+  await setMeta(META_NOTIFY, notify)
+  if (await getMeta<boolean>(META_ENABLED, false)) return enablePush(await getMeta<boolean>(META_INCLUDE, false), notify)
   return loadPushState()
 }
 

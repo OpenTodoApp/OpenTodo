@@ -18,6 +18,8 @@ function onKey(e: KeyboardEvent) {
   if (e.key !== 'Escape' || e.isComposing) return
   const top = stack[stack.length - 1]
   if (!top) return
+  // A field whose own suggestion list is open closes that list first (data-claims-escape).
+  if (e.target instanceof Element && e.target.closest('[data-claims-escape]')) return
   // Capture phase on window: the topmost overlay wins over every other Escape
   // handler (detail panel, list selection) and nothing behind it reacts.
   e.preventDefault()

@@ -22,9 +22,19 @@ export async function openAttachment(a: Attachment, opts: { download?: boolean }
     if (href) window.open(href, '_blank', 'noopener,noreferrer')
     return
   }
-  // Safari and the Home Screen app allow a new window only inside the click: past
-  // an await it is blocked without a word. A file that opens in a tab gets its tab
-  // now, and the tab is sent to the file once its bytes or address are known.
+  // Safari and the Home Screen app allow a new window or a download only inside the
+  // click: past an await it is blocked without a word. A download, or a type the
+  // browser does not show, of a file the server holds is the server's copy, saved by
+  // an anchor clicked now (the device's copy is the same bytes; offline it is used).
+  if (!a.encrypted && a.uploaded_at && !shell() && (opts.download || !isInlineType(a.mime)) && navigator.onLine !== false) {
+    const link = document.createElement('a')
+    link.href = contentUrl(a.id, true)
+    link.download = a.name
+    link.click()
+    return
+  }
+  // A file that opens in a tab gets its tab now, and the tab is sent to the file
+  // once its bytes or address are known.
   const tab = !opts.download && !shell() && isInlineType(a.mime) ? window.open('about:blank', '_blank') : null
   if (tab) tab.opener = null
   try {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"slices"
 	"testing"
 	"time"
@@ -438,5 +439,41 @@ func TestGuestReplyMarksComeOnlyFromThePagesPublisher(t *testing.T) {
 	}
 	if res := f.apply("alice", "A", f.op("comment", "c-import", "guest_name", `"Someone else"`)); len(res.Rejected) != 1 {
 		t.Fatalf("changing a stored guest_name: %+v", res.Rejected)
+	}
+}
+
+// A server-side import's apply call marks its context; its comments do not count
+// against the per-account limit (an import bounds them itself, todoist-notes-comments
+// D3), and a device's call with the same ops still does.
+func TestCommentRateLimitSkippedForImportJob(t *testing.T) {
+	f := newSharing(t)
+	f.s.SetCommentRateLimit(2, time.Minute)
+	var ops []Op
+	for i := range 5 {
+		ops = append(ops, f.commentOps(fmt.Sprintf("imp%d", i), "t1", "alice", "imported")...)
+	}
+	for i := range ops {
+		ops[i].Device = "import"
+	}
+	res, err := f.s.Apply(WithoutCommentLimit(f.ctx), "alice", ops)
+	if err != nil || len(res.Rejected) != 0 {
+		t.Fatalf("import batch = %+v, %v", res, err)
+	}
+	// The import used none of the window: a device still gets its two, then is refused.
+	for _, id := range []string{"d1", "d2"} {
+		if res := f.apply("alice", "A", f.commentOps(id, "t1", "alice", "ok")...); len(res.Rejected) != 0 {
+			t.Fatalf("comment %s rejected: %+v", id, res)
+		}
+	}
+	if res := f.apply("alice", "A", f.commentOps("d3", "t1", "alice", "too many")...); !slices.Contains(reasons(res), ReasonRateLimited) {
+		t.Fatalf("third device comment = %+v", res)
+	}
+	// The mark lifts the limit, not the authorship rule.
+	bob := f.commentOps("imp-bob", "t1", "bob", "not mine")
+	for i := range bob {
+		bob[i].Device = "import"
+	}
+	if res, _ := f.s.Apply(WithoutCommentLimit(f.ctx), "alice", bob); !slices.Contains(reasons(res), ReasonForbidden) {
+		t.Fatalf("comment authored by another account = %+v", res)
 	}
 }

@@ -25,6 +25,8 @@ The bell at the bottom of the sidebar shows a small dot when one new thing arriv
 
 Select an entry to open the task. Opening the task marks it as read. You don't get notified about your own actions.
 
+To hear about assignments with OpenTodo closed, see [Assignment notifications](assignment-notifications.md).
+
 ## Reminders inside the app
 
 While OpenTodo is open, a reminder appears in the corner of the screen when it's due, with **Snooze** (10 minutes, 1 hour, tomorrow 09:00) and **Dismiss**. It needs no permission or connection. Press <kbd>Esc</kbd> to dismiss it.

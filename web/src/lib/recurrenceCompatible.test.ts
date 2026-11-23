@@ -3,7 +3,7 @@ import { compatibleRule, parseRule } from './recurrence'
 // Shared with internal/recurrence (Go): both implementations must satisfy every vector.
 import vectors from './recurrence.vectors.json'
 import quickadd from './nlp/quickadd.vectors.json'
-import { parse } from './nlp/parse'
+import { parse, type ParseContext } from './nlp/parse'
 import { check10 } from './testdata/check10'
 import { parseRule as parse10 } from './testdata/recurrence-1.0'
 
@@ -36,7 +36,8 @@ describe('rules a 1.0 client reads', () => {
   it('every rule quick add stores in the shared vectors', () => {
     let n = 0
     for (const c of quickadd.cases) {
-      const r = parse(c.line, c.ctx)
+      // JSON reads dayMonthOrder as a string; the vectors only hold 'DM' or 'MD'.
+      const r = parse(c.line, c.ctx as ParseContext)
       if (!r.recurrence) continue
       n++
       expect(check10(r.recurrence, r.due?.date), c.name).toBeNull()
