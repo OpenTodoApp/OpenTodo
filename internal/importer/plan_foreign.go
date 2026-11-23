@@ -281,6 +281,8 @@ func (fp *foreignPlan) resolve(i int) {
 	labelNames, sectionName := fp.taskLabels(row, projectID, res)
 	due := fp.taskDue(row)
 	id := pl.newID()
+	comments := pl.taskComments(id, row.Comments)
+	row.Description = foldComments(row.Description, comments.folded)
 	fields := fp.taskFields(row, projectID, parentID, due)
 	// Label ids are only known once implicit labels are allotted; validate names
 	// as a list first so a bad row does not create labels.
@@ -305,6 +307,8 @@ func (fp *foreignPlan) resolve(i int) {
 	fp.reminderChanges[i] = append(pl.reminders(id, due, row.Reminders, res), pl.links(id, row.Links, res)...)
 	fp.reminderChanges[i] = append(fp.reminderChanges[i], pl.timeEntries(id, row.TimeEntries, res)...)
 	fp.reminderChanges[i] = append(fp.reminderChanges[i], pl.fileAttachments(id, row.Files, res)...)
+	pl.commitComments(comments)
+	fp.reminderChanges[i] = append(fp.reminderChanges[i], comments.changes...)
 }
 
 // taskPlace resolves the project and the parent task of task row i (a subtask
@@ -445,7 +449,7 @@ func (fp *foreignPlan) taskFields(row Row, projectID, parentID string, due *Due)
 
 // changes lists the planned changes in apply order: used implicit labels, the
 // file's projects, used implicit projects, used sections, created custom field
-// definitions, tasks, then their reminders, links and time entries.
+// definitions, tasks, then their reminders, links, time entries and comments.
 func (fp *foreignPlan) changes() []change {
 	pl := fp.pl
 	var out []change

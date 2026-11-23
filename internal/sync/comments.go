@@ -45,6 +45,18 @@ const (
 	CommentRateWindow = time.Minute
 )
 
+// commentLimitKey marks the context of a server-side import job's apply call.
+type commentLimitKey struct{}
+
+// WithoutCommentLimit marks ctx so the comments Apply creates do not count
+// against CommentRateLimit. Only the import job sets it (OpenSpec change
+// todoist-notes-comments, D3): an import writes at most importer.MaxComments
+// comments, so its own cap bounds them instead. No route sets it, so every
+// device write stays limited; the authorship rules apply unchanged.
+func WithoutCommentLimit(ctx context.Context) context.Context {
+	return context.WithValue(ctx, commentLimitKey{}, true)
+}
+
 // batchComment is what a batch says about a comment it creates.
 type batchComment struct {
 	task, author string

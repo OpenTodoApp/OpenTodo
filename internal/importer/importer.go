@@ -34,6 +34,11 @@ const (
 	// MaxPreviewRows bounds the per-row list in a preview response. Totals always
 	// count every row; rows in error, skipped or updated are listed first.
 	MaxPreviewRows = 5000
+	// MaxComments bounds the comments one import creates (OpenSpec change
+	// todoist-notes-comments, D3). An import's comments do not count against
+	// the per-account comment limit, so this cap bounds them; a comment past
+	// it goes into its task's description instead.
+	MaxComments = 5000
 )
 
 // Row kinds.
@@ -80,6 +85,9 @@ const (
 	// KindMemory is a fact the assistant remembers (OpenSpec change
 	// assistant-memory, D1), restored verbatim from an own export with its id.
 	KindMemory = "memory"
+	// KindComment is a comment on a task (OpenSpec change todoist-notes-comments):
+	// only the Todoist CSV profile creates one, from a note row.
+	KindComment = "comment"
 )
 
 // Due is a floating due date with an optional wall-clock time.
@@ -152,6 +160,10 @@ type Row struct {
 	// field values of the task's project (more-importers D3).
 	Fields []FieldValue
 
+	// Comments become comments of the task, authored by the importing account
+	// (todoist-notes-comments); only the Todoist CSV profile sets them.
+	Comments []Comment
+
 	// Origin is where the task came from (OpenSpec change task-origin): an issue
 	// for Linear, the source id for Todoist, Things and TickTick; nil otherwise.
 	Origin *origin.Origin
@@ -185,6 +197,14 @@ func (r *Row) fail(format string, args ...any) {
 	if r.Err == "" {
 		r.Err = fmt.Sprintf(format, args...)
 	}
+}
+
+// Comment is a comment a file gives for its task: the original author's name
+// and time ("" and zero when the file does not say) and the text.
+type Comment struct {
+	Author string
+	At     time.Time
+	Text   string
 }
 
 // Link is a link attachment read from a file.

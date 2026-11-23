@@ -99,7 +99,6 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 	section := ""
 	seen := map[string]int{}
 	var last *Row
-	lastCommented := false
 	if err := r.eachRecord(col, &out.Rows, func(line int, rec []string, get func(string) string) error {
 		switch strings.ToLower(get("TYPE")) {
 		case "":
@@ -117,19 +116,9 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 					Title: section, ProjectSourceID: projectSource})
 			}
 		case "note":
-			if last != nil {
-				if text := get("CONTENT"); text != "" {
-					// The heading is added once per task (a description that was empty
-					// starts with it, so its position cannot tell).
-					if !lastCommented {
-						last.Description = strings.TrimSpace(last.Description+"\n\nComments") + "\n"
-						lastCommented = true
-					}
-					last.Description += "\n- " + text
-				}
-				if !hasPrefix(last.Warnings, "comments appended") {
-					last.warn("comments appended to the description (their authors cannot be kept)")
-				}
+			// A note is a comment of the task right above it (todoist-notes-comments).
+			if text := get("CONTENT"); last != nil && text != "" {
+				last.Comments = append(last.Comments, Comment{Author: todoistAuthor(get("AUTHOR")), At: todoistNoteTime(get("DATE")), Text: text})
 			}
 		case "task":
 			row := Row{Line: line, Kind: KindTask, ProjectSourceID: projectSource, SectionName: section}
@@ -164,7 +153,7 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 			row.SourceID = fmt.Sprintf("todoist:%s:%d", hex.EncodeToString(sum[:8]), seen[key])
 			row.Origin = importedOrigin("todoist", row.SourceID)
 			out.Rows = append(out.Rows, row)
-			last, lastCommented = &out.Rows[len(out.Rows)-1], false
+			last = &out.Rows[len(out.Rows)-1]
 			stack = append(stack, row.SourceID)
 		default:
 			out.Rows = append(out.Rows, Row{Line: line, Kind: KindTask, Err: fmt.Sprintf("unknown row type %q", get("TYPE"))})
@@ -177,6 +166,25 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 		return nil, err
 	}
 	return out, nil
+}
+
+// todoistAuthorID is the account id Todoist writes after a note's author name.
+var todoistAuthorID = regexp.MustCompile(`\s*\(\d+\)$`)
+
+// todoistAuthor is a note's author name without its account id
+// ("Pete (14148749)" is Pete).
+func todoistAuthor(s string) string {
+	return strings.Join(strings.Fields(todoistAuthorID.ReplaceAllString(strings.TrimSpace(s), "")), " ")
+}
+
+// todoistNoteTime reads a note's DATE, an ISO 8601 instant
+// ("2023-11-01T16:08:26.405000Z"); zero when it is missing or unreadable.
+func todoistNoteTime(s string) time.Time {
+	t, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(s))
+	if err != nil {
+		return time.Time{}
+	}
+	return t.UTC()
 }
 
 // todoistProject reads the project from the file name inside a backup
