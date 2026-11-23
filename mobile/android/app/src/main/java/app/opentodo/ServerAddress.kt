@@ -58,6 +58,17 @@ object ServerAddress {
         return text.substring(0, schemeEnd) + ascii + port + rest.substring(end)
     }
 
+    /**
+     * True when the address only works on the home network: this device, a private or link-local
+     * address, or a `.local` name. Tailscale and CGNAT addresses (100.64.0.0/10), names without a
+     * dot (MagicDNS) and public hosts are reachable from elsewhere, so they are not.
+     */
+    fun homeOnly(input: String): Boolean {
+        val ok = parse(input) as? Result.Ok ?: return false
+        val host = try { URI(ok.origin).host } catch (e: Exception) { null } ?: return false
+        return isLocal(host)
+    }
+
     /** This device, private IPv4 ranges, IPv6 loopback, unique-local and link-local, and `.local` names. */
     fun isLocal(rawHost: String): Boolean {
         val host = rawHost.lowercase().removePrefix("[").removeSuffix("]")

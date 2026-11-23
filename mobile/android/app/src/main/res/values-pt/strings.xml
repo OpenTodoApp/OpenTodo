@@ -10,6 +10,8 @@
     <string name="setup_refused">Este endereço não pode ser usado. Introduza um endereço como todo.example.com.</string>
     <string name="setup_needs_https">Este endereço precisa de uma ligação segura (https).</string>
     <string name="setup_insecure">Este endereço está na sua rede local e não é cifrado: outras pessoas na mesma rede poderiam ler o que envia. Toque novamente para ligar mesmo assim.</string>
+    <string name="setup_home_only">Este endereço só funciona na rede de casa.</string>
+    <string name="setup_home_only_link">Usar o OpenTodo fora de casa</string>
     <string name="setup_no_network">Sem ligação. O primeiro arranque precisa da rede; este ecrã tenta de novo quando ela voltar.</string>
     <string name="setup_not_opentodo">Este endereço não responde como um servidor OpenTodo. Verifique o endereço.</string>
     <string name="setup_untrusted">Este telemóvel não confia no certificado do servidor. Pergunte a quem gere o servidor ou instale a respetiva autoridade de certificação nas definições do Android.</string>
