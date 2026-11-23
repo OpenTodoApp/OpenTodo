@@ -93,8 +93,9 @@ type SubscriptionInput struct {
 		Auth   string `json:"auth"`
 	} `json:"keys"`
 	IncludeContent bool `json:"includeContent"`
-	// Notify is optional; absent means both off.
-	Notify Notify `json:"notify"`
+	// Notify is optional: absent keeps the device's stored choices (both off
+	// for a new subscription), so a client that does not know it changes nothing.
+	Notify *Notify `json:"notify"`
 }
 
 // Notify is a device's choice of assignment and status pushes, both off by
@@ -185,9 +186,16 @@ func (s *Service) Upsert(ctx context.Context, userID, sessionHash string, in Sub
 	if err != nil {
 		return nil, false, err
 	}
+	notify := Notify{}
+	if existing != nil {
+		notify = existing.Notify
+	}
+	if in.Notify != nil {
+		notify = *in.Notify
+	}
 	if existing == nil {
 		id := ids.New()
-		if err := s.insertCapped(ctx, userID, id, session, include, now, in); err != nil {
+		if err := s.insertCapped(ctx, userID, id, session, include, notify, now, in); err != nil {
 			return nil, false, err
 		}
 		sub, err := s.subscription(ctx, userID, id)
@@ -201,7 +209,7 @@ func (s *Service) Upsert(ctx context.Context, userID, sessionHash string, in Sub
 	if !same || existing.Disabled(s.now()) {
 		q += `, last_ok_at=NULL, last_error='', failures=0`
 	}
-	if _, err := s.db.ExecContext(ctx, q+` WHERE id=?`, session, in.Endpoint, in.Keys.P256DH, in.Keys.Auth, include, boolInt(in.Notify.Assigned), boolInt(in.Notify.Status), now, existing.ID); err != nil {
+	if _, err := s.db.ExecContext(ctx, q+` WHERE id=?`, session, in.Endpoint, in.Keys.P256DH, in.Keys.Auth, include, boolInt(notify.Assigned), boolInt(notify.Status), now, existing.ID); err != nil {
 		return nil, false, fmt.Errorf("update push subscription: %w", err)
 	}
 	sub, err := s.subscription(ctx, userID, existing.ID)
@@ -210,14 +218,14 @@ func (s *Service) Upsert(ctx context.Context, userID, sessionHash string, in Sub
 
 // insertCapped stores a new subscription and, in the same transaction, removes
 // the account's least recently registered ones beyond MaxSubscriptionsPerUser.
-func (s *Service) insertCapped(ctx context.Context, userID, id string, session any, include int, now int64, in SubscriptionInput) error {
+func (s *Service) insertCapped(ctx context.Context, userID, id string, session any, include int, notify Notify, now int64, in SubscriptionInput) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("store push subscription: %w", err)
 	}
 	defer tx.Rollback()
 	if _, err := tx.ExecContext(ctx, `INSERT INTO push_subscriptions(id,user_id,device_id,session_hash,endpoint,p256dh,auth,include_content,notify_assigned,notify_status,created_at,updated_at)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`, id, userID, in.DeviceID, session, in.Endpoint, in.Keys.P256DH, in.Keys.Auth, include, boolInt(in.Notify.Assigned), boolInt(in.Notify.Status), now, now); err != nil {
+		VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`, id, userID, in.DeviceID, session, in.Endpoint, in.Keys.P256DH, in.Keys.Auth, include, boolInt(notify.Assigned), boolInt(notify.Status), now, now); err != nil {
 		return fmt.Errorf("store push subscription: %w", err)
 	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM push_subscriptions WHERE user_id = ? AND id NOT IN

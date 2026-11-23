@@ -207,7 +207,7 @@ func openMCPSettings(ctx context.Context, cfg config.Config, hosted *Hosted, db 
 }
 
 // openPush builds web push to subscribed devices: reminders
-// (docs/reminders.md) and assignment and status pushes (docs/push-notifications.md). On unless OPENTODO_PUSH=off (nil then); the VAPID key
+// (docs/reminders.md) and assignment and status pushes (docs/assignment-notifications.md). On unless OPENTODO_PUSH=off (nil then); the VAPID key
 // pair is created under the data directory on first use. In-app reminders work
 // either way.
 func openPush(cfg config.Config, o Options, db *sql.DB, syncSvc *opsync.Service, log *slog.Logger) *push.Service {

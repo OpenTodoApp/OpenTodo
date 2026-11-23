@@ -3,6 +3,7 @@ package push
 import (
 	"context"
 	"encoding/json"
+	gosync "sync"
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
@@ -13,13 +14,14 @@ import (
 // Assignment and status pushes (OpenSpec change assignee-notifications, design
 // D3): the service is a notify sink that pushes "Kim assigned you a task" and
 // "Kim completed a task" to the recipient's devices that opted in. Sinks must
-// not block the sync, so the sends run in the background, at most
-// notifySenders at once; an event that finds them all busy is dropped, and a
-// failed send is not retried (best effort, as the bell's events).
+// not block the sync, so each event's sends run in the background, to all of
+// the recipient's devices at once; at most notifySenders events are in flight
+// and one that finds them all busy is dropped. A failed send is not retried
+// (best effort, as the bell's events).
 
 const (
-	notifySenders = 4
-	notifyTimeout = 30 * time.Second
+	notifySenders = 32
+	notifyTimeout = 15 * time.Second
 )
 
 // TaskPayload is the JSON pushed for an assignment or a status change. Title is
@@ -32,8 +34,13 @@ type TaskPayload struct {
 	Title     string `json:"title,omitempty"`
 }
 
-// Assigned implements notify.Sink.
+// Assigned implements notify.Sink. A rotating task's turn passing is not an
+// assignment by its author and is not pushed; the bell and channels say "It's
+// your turn".
 func (s *Service) Assigned(ctx context.Context, e notify.Assigned) {
+	if e.Turn {
+		return
+	}
 	s.notifyTask(ctx, e.AssigneeID, func(n Notify) bool { return n.Assigned },
 		TaskPayload{Type: "assigned", TaskID: e.TaskID, ActorName: e.ActorName}, e.TaskTitle)
 }
@@ -83,14 +90,20 @@ func (s *Service) sendTask(ctx context.Context, uid string, wants func(Notify) b
 		return
 	}
 	readable := title != "" && title != e2ee.Placeholder
+	var wg gosync.WaitGroup
 	for _, sub := range targets {
 		q := p
 		if sub.IncludeContent && readable {
 			q.Title = textutil.TruncateEllipsis(title, 200)
 		}
 		b, _ := json.Marshal(q)
-		if res, err := s.Send(ctx, sub, b, topicFor(p.TaskID)); res == Failed {
-			s.log.Warn("push send failed", "subscription", sub.ID, "err", err)
-		}
+		wg.Add(1)
+		go func(sub *Subscription) {
+			defer wg.Done()
+			if res, err := s.Send(ctx, sub, b, topicFor(p.TaskID)); res == Failed {
+				s.log.Warn("push send failed", "subscription", sub.ID, "err", err)
+			}
+		}(sub)
 	}
+	wg.Wait()
 }

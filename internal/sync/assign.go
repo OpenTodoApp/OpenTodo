@@ -78,6 +78,11 @@ func (s *Service) emitAssigned(ctx context.Context, at int64, changes []Change, 
 		if !ok {
 			continue
 		}
+		// A new occurrence record copies its series' assignee: nobody was
+		// assigned anything (the series' own change carries a turn).
+		if _, record := c.Fields["series_id"]; record {
+			continue
+		}
 		author, turn := who(c)
 		assignee := idValue(fc.To)
 		if assignee == "" || assignee == author {

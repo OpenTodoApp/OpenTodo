@@ -12,7 +12,8 @@ import (
 // the task's assignee when that is someone other than the batch's author and
 // the task is not deleted (OpenSpec change assignee-notifications, design D1).
 // A new occurrence record of a repeating task is the completion of that
-// occurrence. Best effort: it reads the stored state and never fails the batch.
+// occurrence; a skipped occurrence and a task created already completed are
+// not status changes. Best effort: it reads the stored state and never fails the batch.
 func (s *Service) emitStatus(ctx context.Context, author string, at int64, changes []Change) {
 	if len(s.sinks) == 0 {
 		return
@@ -27,6 +28,17 @@ func (s *Service) emitStatus(ctx context.Context, author string, at int64, chang
 			continue
 		}
 		if !isNullRaw(json.RawMessage(s.rawField(ctx, c.ScopeID, "task", c.EntityID, "deleted_at"))) {
+			continue
+		}
+		// A skipped occurrence is not a completion.
+		if s.rawField(ctx, c.ScopeID, "task", c.EntityID, "skipped") == "true" {
+			continue
+		}
+		// A task created already completed (an import, a copy) changed nobody's
+		// work; a new occurrence record is the completion of that occurrence.
+		_, created := c.Fields["created_at"]
+		_, record := c.Fields["series_id"]
+		if created && !record {
 			continue
 		}
 		assignee := idValue(json.RawMessage(s.rawField(ctx, c.ScopeID, "task", c.EntityID, "assignee_id")))

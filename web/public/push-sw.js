@@ -496,9 +496,14 @@
         const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
         const w = windows[0]
         if (w && 'navigate' in w) {
-          await w.navigate(d.url)
-          if ('focus' in w) await w.focus()
-          return
+          try {
+            // navigate() refuses a window this worker does not control; open one then.
+            await w.navigate(d.url)
+            if ('focus' in w) await w.focus()
+            return
+          } catch {
+            // fall through
+          }
         }
         await self.clients.openWindow(d.url)
         return

@@ -50,12 +50,12 @@ func TestNotifyOnlyOptedInDevices(t *testing.T) {
 	s := e.service()
 	assigned, status, off := newFakePush(t), newFakePush(t), newFakePush(t)
 	in := assigned.input("laptop", true)
-	in.Notify = Notify{Assigned: true}
+	in.Notify = &Notify{Assigned: true}
 	if _, _, err := s.Upsert(ctx, "u1", "", in); err != nil {
 		t.Fatal(err)
 	}
 	in = status.input("phone", false)
-	in.Notify = Notify{Status: true}
+	in.Notify = &Notify{Status: true}
 	if _, _, err := s.Upsert(ctx, "u1", "", in); err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +90,7 @@ func TestNotifyNeverCarriesAnEncryptedTitle(t *testing.T) {
 	s := e.service()
 	f := newFakePush(t)
 	in := f.input("laptop", true)
-	in.Notify = Notify{Assigned: true}
+	in.Notify = &Notify{Assigned: true}
 	if _, _, err := s.Upsert(ctx, "u1", "", in); err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +108,7 @@ func TestNotifyQuietWhileAway(t *testing.T) {
 	s := e.service()
 	f := newFakePush(t)
 	in := f.input("laptop", true)
-	in.Notify = Notify{Assigned: true}
+	in.Notify = &Notify{Assigned: true}
 	if _, _, err := s.Upsert(ctx, "u1", "", in); err != nil {
 		t.Fatal(err)
 	}
@@ -118,5 +118,41 @@ func TestNotifyQuietWhileAway(t *testing.T) {
 	settle(s)
 	if got := f.taskPayloads(t, 0); len(got) != 0 {
 		t.Fatalf("pushed while away: %+v", got)
+	}
+}
+
+// A client that does not send notify (an older web app, the Android shell)
+// keeps the device's stored choices.
+func TestUpsertWithoutNotifyKeepsTheChoices(t *testing.T) {
+	e := newTestEnv(t)
+	ctx := context.Background()
+	s := e.service()
+	f := newFakePush(t)
+	in := f.input("laptop", false)
+	in.Notify = &Notify{Assigned: true, Status: true}
+	if _, _, err := s.Upsert(ctx, "u1", "", in); err != nil {
+		t.Fatal(err)
+	}
+	sub, _, err := s.Upsert(ctx, "u1", "", f.input("laptop", true))
+	if err != nil || sub.Notify != (Notify{Assigned: true, Status: true}) || !sub.IncludeContent {
+		t.Fatalf("after an update without notify: %+v %v", sub, err)
+	}
+}
+
+// A rotating task's turn is not pushed as an assignment.
+func TestTurnIsNotPushed(t *testing.T) {
+	e := newTestEnv(t)
+	ctx := context.Background()
+	s := e.service()
+	f := newFakePush(t)
+	in := f.input("laptop", true)
+	in.Notify = &Notify{Assigned: true}
+	if _, _, err := s.Upsert(ctx, "u1", "", in); err != nil {
+		t.Fatal(err)
+	}
+	s.Assigned(ctx, notify.Assigned{AssigneeID: "u1", ActorName: "Ben", TaskID: "t1", Turn: true})
+	settle(s)
+	if got := f.taskPayloads(t, 0); len(got) != 0 {
+		t.Fatalf("turn pushed: %+v", got)
 	}
 }
