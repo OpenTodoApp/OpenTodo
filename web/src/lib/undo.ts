@@ -29,7 +29,8 @@ export interface BatchOptions {
 export async function applyBatch(changes: ProposedChange[], opts: BatchOptions): Promise<AssistantUndo | null> {
   if (changes.length === 0) return null
   // A `fields` map becomes one `fields.<id>` entry per value, each with its own clock (custom-fields).
-  changes = unfoldFieldPatches(changes as Change[]).map((u, i) => ({ ...changes[i], patch: u.patch }))
+  // Its base (a new occurrence record's undo state) is unfolded the same way, so each value's undo is its own.
+  changes = unfoldFieldPatches(changes as Change[]).map((u, i) => ({ ...changes[i], patch: u.patch, ...(changes[i].base ? { base: unfoldBase(changes[i].base!) } : {}) }))
   // Dating a sectored task clears its sector here, so one Undo restores it (time-sectors D2).
   changes = await withSectorClears(changes)
   const inverse: AssistantUndo['inverse'] = []
@@ -91,6 +92,14 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
   const all = await db.assistantUndo.orderBy('created_at').reverse().primaryKeys()
   if (all.length > UNDO_KEEP) await db.assistantUndo.bulkDelete(all.slice(UNDO_KEEP))
   return entry
+}
+
+/** A base's `fields` object as one `fields.<id>` entry per value, as unfoldFieldPatches does for the patch. */
+function unfoldBase(base: Record<string, unknown>): Record<string, unknown> {
+  const fields = base.fields
+  if (!fields || typeof fields !== 'object' || Array.isArray(fields)) return base
+  const { fields: _, ...rest } = base
+  return { ...rest, ...Object.fromEntries(Object.entries(fields).map(([id, v]) => [`fields.${id}`, v])) }
 }
 
 type FieldClock = { ts: number; device: string }

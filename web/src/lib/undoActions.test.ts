@@ -480,3 +480,24 @@ describe('skipOccurrence', () => {
     expect(await db.assistantUndo.count()).toBe(2)
   })
 })
+
+// custom-fields: an undo's base is unfolded like the patch, one fields.<id> per value.
+describe('undoing an action on one occurrence', () => {
+  it('a habit day skipped from the calendar comes back with the series\' custom field values', async () => {
+    const { actOnOccurrenceUndoable } = await import('./occurrenceActions')
+    const { createField, setFieldValue } = await import('./fields')
+    const project = await createProject({ name: 'Health' })
+    const id = await createTask({ title: 'Walk', due: { date: '2026-10-14' }, recurrence: 'every day', project_id: project })
+    await updateTask(id, { habit: true })
+    const field = await createField(project, { name: 'Route', type: 'text' })
+    await setFieldValue(id, field, 'Park')
+    const r = await actOnOccurrenceUndoable(id, '2026-10-14', { kind: 'skip' }, { today: '2026-10-14' })
+    const [rec] = await db.tasks.filter((x) => x.series_id === id).toArray()
+    expect(rec).toMatchObject({ skipped: true })
+    expect(rec.fields?.[field]).toBe('Park')
+    await undoBatch(r!.entry!.id)
+    const back = (await db.tasks.get(rec.id))!
+    expect(back).toMatchObject({ skipped: false, deleted_at: null })
+    expect(back.fields?.[field]).toBe('Park')
+  })
+})
