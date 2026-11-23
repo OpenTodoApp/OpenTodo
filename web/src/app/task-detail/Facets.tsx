@@ -21,6 +21,7 @@ import type { Label, Priority, Project, Task } from '../../lib/types'
 import { isZoned, zoneCity } from '../../lib/dates'
 import { ComboboxPanel, Icon, type IconName, Menu, MenuGroup, MenuItem, MenuSeparator } from '../../ui'
 import { AssigneeEditor } from './AssigneeEditor'
+import { CompletedEditor } from './CompletedEditor'
 import { RotationLine } from './RotationLine'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { EstimateField } from '../EstimateField'
@@ -273,6 +274,11 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
           ))}
         </ul>
       ))
+    case 'completed':
+      // Editing when the task was completed (GitHub issue 1667). Clear
+      // reopens the task, the same as unchecking it.
+      return frame('check', t('Completed'), <CompletedEditor task={task} />,
+        task.completed_at ? () => act(updateTask(task.id, { completed_at: null })) : undefined)
     default:
       return null
   }

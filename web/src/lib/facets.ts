@@ -3,7 +3,7 @@
 // ordered list of parts. The words are the list row's (describeDue, the deadline
 // countdown, formatMinutes), expanded where the panel has room, so the row and the
 // panel tell the same story. Pure: everything the words need comes in `ctx`.
-import { daysBetweenISO, describeDeadline, describeDue, formatDate, formatTime, logicalToday, type ResolvedDateTime } from './dates'
+import { daysBetweenISO, describeDeadline, describeDue, formatDate, formatInstant, formatTime, logicalToday, type ResolvedDateTime } from './dates'
 import { formatMinutes } from './duration'
 import { t } from './i18n'
 import { ruleWords } from './recurrenceWords'
@@ -130,6 +130,10 @@ export function facetsOf(task: Task, ctx: FacetContext): Facets {
   else if (revealed.has('when')) when.push({ id: 'when', text: t('Start'), segment: 'start', empty: true })
   if (ctx.reminders > 0) when.push({ id: 'reminders', text: t('{reminders, plural, one {# reminder} other {# reminders}}', { reminders: ctx.reminders }), segment: 'reminders' })
   else if (revealed.has('reminders')) when.push({ id: 'reminders', text: t('Reminder'), segment: 'reminders', empty: true })
+  // The completion (GitHub issue 1667): when a plain task was ticked off. A
+  // task with a recurrence rule or a series keeps its completions on
+  // occurrence records, so it shows none here.
+  if (task.completed_at && !task.recurrence && !task.series_id) when.push({ id: 'completed', text: t('Completed {instant}', { instant: formatInstant(task.completed_at, 'datetime', ctx.dateTime, today) }) })
   // Nothing set: one part that reads so, and opens Do on.
   if (!due && !when.some((p) => p.id !== 'evening')) when.unshift({ id: 'due', text: t('Not scheduled'), segment: 'due', empty: true })
   else if (!due && !sector) when.unshift({ id: 'due', text: t('No date'), segment: 'due', empty: true })
