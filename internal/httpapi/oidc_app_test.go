@@ -218,7 +218,9 @@ func TestOIDCAppFlowSignsInTheWebView(t *testing.T) {
 	}
 
 	// A fresh flow, redeemed with the right verifier, signs the web view in once.
+	// app_mode=login is what the apps send for a sign-in.
 	p = newAppPKCE("app-state-2")
+	p.mode = "login"
 	code = o.appAuthorize(sheet, p).Query().Get("code")
 	resp, out := redeem(webView, code, p.verifier)
 	if resp.StatusCode != http.StatusSeeOther || location(resp) != "/" || !hasCookie(resp, sessionCookie) {
@@ -337,7 +339,8 @@ func TestOIDCAppFlowModeComesFromTheStart(t *testing.T) {
 	code = o.appAuthorize(sheet, p).Query().Get("code")
 	webView := o.client("203.0.113.41")
 	resp, out = redeem(webView, code, p.verifier)
-	if hasCookie(resp, sessionCookie) || location(resp) == "/settings/account/security?linked=1" {
+	// It ends on Settings with the error, as a link's callback would, so the app's page shows it there.
+	if hasCookie(resp, sessionCookie) || resp.StatusCode != http.StatusSeeOther || location(resp) != "/settings/account/security?error=oidc_state_invalid" {
 		t.Fatalf("link without a session = %d %q %v", resp.StatusCode, location(resp), out)
 	}
 	resp, out = o.do("GET", "/api/v1/me/identities", nil)

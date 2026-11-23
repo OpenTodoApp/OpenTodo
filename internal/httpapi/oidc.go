@@ -131,8 +131,8 @@ func (s *Server) handleOIDCStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// With a session the flow links an identity to that account (design D4).
-	// An app flow never does: the sheet's browser session is not the app's, so
-	// the app's web view decides when it redeems the code.
+	// An app flow never decides by session: the sheet's browser session is not
+	// the app's, so the app says which it is (app_mode) and the redeem follows it.
 	mode, userID := oidc.ModeLogin, ""
 	if _, sess, _, err := s.authenticateSession(r); err == nil && sess != nil && app == nil {
 		mode, userID = oidc.ModeLink, sess.User.ID
@@ -367,6 +367,10 @@ func (s *Server) handleOIDCAppSession(w http.ResponseWriter, r *http.Request) {
 		if _, sess, _, err := s.authenticateSession(r); err == nil && sess != nil {
 			userID = sess.User.ID
 		}
+		// Refusals end where a link's callback would, on Settings with the error
+		// (reauth_required opens the re-authentication there), not as JSON, which
+		// the app's redeem script could only take back to the start page.
+		r.Header.Set("Accept", "text/html")
 		// Without a session finishOIDCLink refuses: sign in again, then link.
 		s.finishOIDCLink(w, r, c, userID, identityOf(&h.Claims), h.Claims.Picture)
 		return

@@ -34,7 +34,7 @@
 
 #### Scenario: The person confirms in the browser
 - **WHEN** the provider step of an app flow succeeds
-- **THEN** the browser shows "Continue to the OpenTodo app as ada@example.com?" with Continue and Cancel, and no code has reached the app yet
+- **THEN** the browser shows "Sign in to todo.example.com as ada@example.com on this device?" with Sign in and Cancel, and no code has reached the app yet
 - **AND** Continue sends the browser to `opentodo://sso?code=…&state=<app state>`, and the same ticket posted again sends nothing to the app
 
 #### Scenario: The person cancels

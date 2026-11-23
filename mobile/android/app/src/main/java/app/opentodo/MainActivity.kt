@@ -320,10 +320,11 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     private fun signInBrowser(): String? {
         val pm = packageManager
         val view = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com/")).addCategory(Intent.CATEGORY_BROWSABLE)
-        // "android" is the chooser: there is no default browser.
-        val default = pm.resolveActivity(view, PackageManager.MATCH_DEFAULT_ONLY)?.activityInfo?.packageName
-            ?.takeIf { it != "android" && it != packageName }
         val browsers = pm.queryIntentActivities(view, PackageManager.MATCH_ALL).map { it.activityInfo.packageName }.distinct().filter { it != packageName }
+        // Without a default browser this resolves to the chooser ("android", or a maker's own
+        // screen), which is no browser: only a package that handles the address counts.
+        val default = pm.resolveActivity(view, PackageManager.MATCH_DEFAULT_ONLY)?.activityInfo?.packageName
+            ?.takeIf { it in browsers }
         val tabs = browsers.filter { pm.resolveService(Intent(SystemSignIn.CUSTOM_TABS_SERVICE).setPackage(it), 0) != null }.toSet()
         return SystemSignIn.browserFor(default, browsers, tabs)
     }

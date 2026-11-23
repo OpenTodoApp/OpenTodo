@@ -17,7 +17,7 @@
 ## 3. Android
 
 - [x] 3.1 `SystemSignIn` rules. Verified by `SystemSignInTest` in `make android`.
-- [x] 3.2 `MainActivity` opens the start route in a Custom Tab when the server announces it, else in the web view; `opentodo://sso` intent filter; the pending verifier survives process death. Verified by `make android` (unit tests, lint, debug APK).
+- [x] 3.2 `MainActivity` opens the start route in one named browser (Custom Tabs where it has them: `SystemSignIn.browserFor`) when the server announces it, else in the web view, and passes `mode=link` on as `app_mode`; `opentodo://sso` intent filter; the pending verifier survives process death. Verified by `make android` (unit tests, lint, debug APK).
 - [ ] 3.3 By hand on an Android device against a server with Google: sign-in, linking from Settings, closing the tab, and the app killed while the tab is in front.
 
 ## 4. Docs
