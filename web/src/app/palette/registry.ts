@@ -6,7 +6,7 @@
 import { openHabitForm } from '../habits/habitFormStore'
 import { logicalToday } from '../../lib/dates'
 import { createLabel } from '../../lib/labels'
-import { createProject, detachOccurrence, skipOccurrence, unparkTask, updateProject } from '../../lib/ops'
+import { createProject, detachOccurrence, skipOccurrence, unparkTask } from '../../lib/ops'
 import { reorderLabel, updateLabel } from '../../lib/labels'
 import { deleteSection, renameSection, reorderSection } from '../../lib/sections'
 import { syncNow } from '../../lib/sync'
@@ -28,6 +28,7 @@ import { reviewEveryPicker, setMaintenance } from '../menus/reviewMenu'
 import { inMaintenance } from '../../lib/reviewCadence'
 import { requestTemplateDialog } from '../TemplateDialogs'
 import { visibleSections } from '../settingsSections'
+import { renameProject, setProjectColour } from '../menus/projectAppearance'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus, logWinRequest, openReplan, placeInDay, sidebarFind } from '../signals'
 import { setVimEnabled } from '../vim/prefs'
 import { requestNewWorkspace } from '../NewWorkspaceDialog'
@@ -294,11 +295,11 @@ export function commands(ctx: PaletteContext): Command[] {
     const p = ctx.project
     const name = p.row.name
     out.push(...fromMenu(t('Project “{name}”', { name }), projectMenuGroups(p.row, p, {
-      rename: () => prompt(t('Rename project'), t('Project name'), name, (v) => updateProject(p.row.id, { name: v.trim() })),
+      rename: () => prompt(t('Rename project'), t('Project name'), name, (v) => renameProject(p.row, v)),
       pin: () => setFavourite('project', p.row.id, !p.pinned),
     }), 'project'))
     if (p.role !== 'viewer') {
-      out.push(...HUES.map((h): Command => ({ id: `project:colour:${h.name}`, label: t('Project “{name}”: Colour {colour}', { name, colour: hueName(h.name) }), icon: 'palette', menuLabel: t('Colour {name}', { name: hueName(h.name) }), run: () => updateProject(p.row.id, { color: h.hex }) })))
+      out.push(...HUES.map((h): Command => ({ id: `project:colour:${h.name}`, label: t('Project “{name}”: Colour {colour}', { name, colour: hueName(h.name) }), icon: 'palette', menuLabel: t('Colour {name}', { name: hueName(h.name) }), run: () => setProjectColour(p.row, h.hex) })))
     }
     // Set project flow (project-flow-modes D7): in every mode, for the owner and admins.
     if (p.role === 'owner' || p.role === 'admin') {

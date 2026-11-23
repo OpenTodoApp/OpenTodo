@@ -13,7 +13,7 @@ import type { ReminderPhrase } from './nlp'
 import { currentUserId, memberName, membershipMap } from './sharing'
 import type { FilterContext } from './filter'
 import { planRule, ruleParts, type RuleNames } from './rules'
-import type { Task, View } from './types'
+import type { Project, Task, View } from './types'
 import { applyBatch } from './undo'
 import { compileView } from './views'
 import { t } from './i18n'
@@ -126,6 +126,25 @@ export async function titleUndoable(id: string, title: string): Promise<Undoable
   const clip = (s: string) => (s.length > 50 ? s.slice(0, 49) + '…' : s)
   const from = (await db.tasks.get(id))?.title ?? ''
   return plainEditUndoable(id, { title }, t('Renamed “{from}” → “{to}”', { from: clip(from), to: clip(title) }))
+}
+
+/**
+ * One project's name, colour or icon, as one step of undo history named `label` (OpenSpec change
+ * undo-project-appearance). A field already at that value is left out; nothing at all records nothing.
+ */
+export async function projectEditUndoable(id: string, patch: Partial<Pick<Project, 'name' | 'color' | 'icon'>>, label: string): Promise<UndoableResult> {
+  const project = await db.projects.get(id)
+  if (!project || project.deleted_at) return { entry: null, label: '' }
+  const changed = Object.fromEntries(Object.entries(patch).filter(([k, v]) => !sameValue((project as unknown as Record<string, unknown>)[k], v)))
+  if (!Object.keys(changed).length) return { entry: null, label: '' }
+  return apply([{ entity: 'project', entityId: id, patch: changed }], label)
+}
+
+/** Rename one project, as one step named with both names, as a task's rename is (undo-project-appearance). */
+export async function projectRenameUndoable(id: string, name: string): Promise<UndoableResult> {
+  const clip = (s: string) => (s.length > 50 ? s.slice(0, 49) + '…' : s)
+  const from = (await db.projects.get(id))?.name ?? ''
+  return projectEditUndoable(id, { name }, t('Renamed “{from}” → “{to}”', { from: clip(from), to: clip(name) }))
 }
 
 /** Set (or with null remove) one task's estimate in minutes, as one step of undo history. */

@@ -363,3 +363,31 @@ describe('a value this device cannot decrypt', () => {
     expect((await dueUndoable(id, { date: '2030-02-01' })).entry).not.toBeNull()
   })
 })
+
+// OpenSpec change undo-project-appearance (#1748): a project's name, colour and icon.
+describe('project name, colour and icon', () => {
+  it('a rename is one step named with both names; undo and redo restore it; the same name records nothing', async () => {
+    const { projectRenameUndoable } = await import('./undoActions')
+    const id = await createProject({ name: 'Work' })
+    const r = await projectRenameUndoable(id, 'Office')
+    expect(r.label).toBe('Renamed “Work” → “Office”')
+    expect((await db.projects.get(id))!.name).toBe('Office')
+    await undoBatch(r.entry!.id)
+    expect((await db.projects.get(id))!.name).toBe('Work')
+    await redoBatch(r.entry!.id)
+    expect((await db.projects.get(id))!.name).toBe('Office')
+    expect((await projectRenameUndoable(id, 'Office')).entry).toBeNull()
+    expect(await db.assistantUndo.count()).toBe(1)
+  })
+
+  it('a colour and an icon are steps; undo puts the old ones back', async () => {
+    const { projectEditUndoable } = await import('./undoActions')
+    const id = await createProject({ name: 'Home', color: '#2563eb', icon: 'house' })
+    const c = await projectEditUndoable(id, { color: '#dc2626' }, 'Colour Red')
+    const i = await projectEditUndoable(id, { icon: null }, 'Project updated')
+    expect(await db.projects.get(id)).toMatchObject({ color: '#dc2626', icon: null })
+    await undoBatch(i.entry!.id)
+    await undoBatch(c.entry!.id)
+    expect(await db.projects.get(id)).toMatchObject({ color: '#2563eb', icon: 'house' })
+  })
+})
