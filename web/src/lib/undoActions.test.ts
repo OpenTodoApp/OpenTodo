@@ -6,7 +6,7 @@ import { addReminder } from './reminders'
 import { deadlineFireAt } from './reminderTime'
 import type { OnDropRule } from './types'
 import { redoBatch, topUndo, undoBatch } from './undo'
-import { assigneeUndoable, calendarEditUndoable, deadlineUndoable, dropOnPanel, dropUndoable, estimateUndoable, eveningUndoable, priorityUndoable } from './undoActions'
+import { assigneeUndoable, calendarEditUndoable, deadlineUndoable, dropOnPanel, dropUndoable, estimateUndoable, eveningUndoable, parkUndoable, priorityUndoable } from './undoActions'
 
 let n = 0
 beforeEach(() => {
@@ -307,6 +307,23 @@ describe('calendarEditUndoable', () => {
     const t = (await db.tasks.get(id))!
     expect(t.start).toBe('someday')
     expect(t.due ?? null).toBeNull()
+  })
+})
+
+// OpenSpec change undo-row-schedule: a repeating task is parked as before, ending its repetition.
+describe('parkUndoable', () => {
+  it('parks a plain task as one step; a repeating task as before, without a step', async () => {
+    const id = await createTask({ title: 'Paint the shed', due: { date: '2030-01-10' } })
+    const r = await parkUndoable(id)
+    expect(r.label).toBe('Moved to Someday')
+    await undoBatch(r.entry!.id)
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2030-01-10' })
+    const rep = await createTask({ title: 'Bins', due: { date: '2030-01-07' }, recurrence: 'every week' })
+    expect((await parkUndoable(rep)).entry).toBeNull()
+    const t = (await db.tasks.get(rep))!
+    expect(t.start).toBe('someday')
+    expect(t.recurrence ?? null).toBeNull()
+    expect(await db.assistantUndo.count()).toBe(1)
   })
 })
 
