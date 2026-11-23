@@ -6,32 +6,61 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/OpenTodoApp/opentodo/internal/quickadd"
 )
 
 // canonicalLink is a link in the form the web app stores for a plain ASCII URL
-// (new URL(x).href): scheme and host lowercased, no default port, "/" for an
-// empty path; host is the name the app gives it (u.hostname, IPv6 bracketed).
-// A link Go cannot parse is sent as typed, for the server to judge.
+// (new URL(x).href): scheme and host lowercased, the port as a number and none
+// when it is empty or the default, "/" for an empty path; host is the name the
+// app gives it (u.hostname, IPv6 bracketed). A link Go cannot parse is sent as
+// typed, for the server to judge, and named after its host all the same.
 func canonicalLink(raw string) (href, host string) {
 	u, err := url.Parse(raw)
 	if err != nil || u.Hostname() == "" {
-		return raw, quickadd.LinkHost(raw)
+		return raw, rawHost(raw)
 	}
-	u.Scheme, u.Host = strings.ToLower(u.Scheme), strings.ToLower(u.Host)
-	if p := u.Port(); (u.Scheme == "https" && p == "443") || (u.Scheme == "http" && p == "80") {
-		u.Host = strings.TrimSuffix(u.Host, ":"+p)
+	u.Scheme = strings.ToLower(u.Scheme)
+	host = hostName(u)
+	port := u.Port()
+	if n, err := strconv.Atoi(port); err == nil {
+		port = strconv.Itoa(n)
+	}
+	if port == "" || (u.Scheme == "https" && port == "443") || (u.Scheme == "http" && port == "80") {
+		u.Host = host
+	} else {
+		u.Host = host + ":" + port
 	}
 	if u.Path == "" && u.RawPath == "" {
 		u.Path = "/"
 	}
-	host = u.Hostname()
+	return u.String(), host
+}
+
+// hostName is u.hostname as the web app reads it: lowercased, IPv6 bracketed.
+func hostName(u *url.URL) string {
+	host := strings.ToLower(u.Hostname())
 	if strings.Contains(host, ":") {
 		host = "[" + host + "]"
 	}
-	return u.String(), host
+	return host
+}
+
+// rawHost names a link url.Parse refuses (a bad escape in its path, say) after
+// its authority alone, "www." kept as the app keeps it.
+func rawHost(raw string) string {
+	if i := strings.Index(raw, "://"); i >= 0 {
+		rest := raw[i+3:]
+		if end := strings.IndexAny(rest, "/?#"); end >= 0 {
+			rest = rest[:end]
+		}
+		if u, err := url.Parse("http://" + rest); err == nil && u.Hostname() != "" {
+			return hostName(u)
+		}
+	}
+	return quickadd.LinkHost(raw)
 }
 
 // attachLinks posts the links a --natural title named as link attachments of the
