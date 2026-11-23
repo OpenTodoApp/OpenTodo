@@ -7858,5 +7858,9 @@
   "The filter language of saved views, for example search: milk & p1 or @errand.": "Язык фильтров сохранённых представлений, например search: milk & p1 или @errand.",
   "Filter {name}": "Фильтр «{name}»",
   "Show deadlines as dates": "Показывать крайние сроки датами",
-  "The date on task rows instead of the days left": "Дата в строках задач вместо оставшихся дней"
+  "The date on task rows instead of the days left": "Дата в строках задач вместо оставшихся дней",
+  "Completed or reopened": "Выполнена или открыта снова",
+  "{name} assigned you a task": "{name} назначил(а) вам задачу",
+  "{name} completed a task": "{name} выполнил(а) задачу",
+  "{name} reopened a task": "{name} снова открыл(а) задачу"
 }

@@ -7861,5 +7861,6 @@
   "The date on task rows instead of the days left": "A data nas linhas das tarefas em vez dos dias que faltam",
   "{name} assigned you a task": "{name} atribuiu uma tarefa a você",
   "{name} completed a task": "{name} concluiu uma tarefa",
-  "{name} reopened a task": "{name} reabriu uma tarefa"
+  "{name} reopened a task": "{name} reabriu uma tarefa",
+  "Completed or reopened": "Concluída ou reaberta"
 }

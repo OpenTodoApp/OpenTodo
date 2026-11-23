@@ -7861,5 +7861,6 @@
   "The date on task rows instead of the days left": "De datum in taakregels in plaats van de resterende dagen",
   "{name} assigned you a task": "{name} heeft je een taak toegewezen",
   "{name} completed a task": "{name} heeft een taak voltooid",
-  "{name} reopened a task": "{name} heeft een taak opnieuw geopend"
+  "{name} reopened a task": "{name} heeft een taak opnieuw geopend",
+  "Completed or reopened": "Voltooid of opnieuw geopend"
 }

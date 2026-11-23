@@ -2220,11 +2220,13 @@
   "Assigned to me": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/NotificationChannelEditor.tsx",
+    "web/src/app/NotificationsSettings.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TaskListView.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts"
   ],
   "Assigned to someone": [
@@ -3918,6 +3920,11 @@
   ],
   "Completed occurrence of {title}": [
     "web/src/app/task-detail/TaskHead.tsx"
+  ],
+  "Completed or reopened": [
+    "web/src/app/NotificationChannelEditor.tsx",
+    "web/src/app/NotificationsSettings.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Completed per day": [
     "web/src/app/method/loop/PulseDetails.tsx"

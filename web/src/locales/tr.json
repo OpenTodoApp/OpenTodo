@@ -7861,5 +7861,6 @@
   "The date on task rows instead of the days left": "Görev satırlarında kalan günler yerine tarih",
   "{name} assigned you a task": "{name} sana bir görev atadı",
   "{name} completed a task": "{name} bir görevi tamamladı",
-  "{name} reopened a task": "{name} bir görevi yeniden açtı"
+  "{name} reopened a task": "{name} bir görevi yeniden açtı",
+  "Completed or reopened": "Tamamlandı veya yeniden açıldı"
 }

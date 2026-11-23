@@ -18,7 +18,7 @@ const noop = () => {}
 const now = 1_760_000_060_000
 
 const push: PushState = {
-  supported: true, available: true, permission: 'granted', enabled: true, includeContent: false, needsRenewal: false,
+  supported: true, available: true, permission: 'granted', enabled: true, includeContent: false, notify: { assigned: false, status: false }, needsRenewal: false,
   serviceWorker: true, serverUnreachable: false,
   subscription: { id: 's', deviceId: 'dev', includeContent: false, createdAt: 1, lastOkAt: now - 3_600_000, lastError: '', failures: 0, needsRenewal: false },
 }
