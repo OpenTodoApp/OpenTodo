@@ -89,7 +89,7 @@ Phones, Apple, Obsidian and voice.
 | [`quick-add-links`](openspec/changes/archive/2026-11-22-quick-add-links/) | **Shipped.** A link typed or pasted into quick add becomes a link attachment, with a chip like a date's | [#1743](https://github.com/OpenTodoApp/OpenTodo/issues/1743) |
 | [`away-periods`](openspec/changes/archive/2026-11-20-away-periods/) | **Shipped.** Away: mark a period, also after the fact, that skips the repeating occurrences in it in one Undo, keeps streaks and pauses reminders | [#805](https://github.com/OpenTodoApp/OpenTodo/issues/805) |
 | [`workspace-activity`](openspec/changes/archive/2026-11-20-workspace-activity/) | **Shipped.** A workspace Activity page for retrospectives: every project, a date range, several kinds at once, tracked time, filters remembered on the device | [#1443](https://github.com/OpenTodoApp/OpenTodo/issues/1443) |
-| [`caldav-push`](openspec/changes/caldav-push/) | Push to calendar apps: a change on any device wakes a subscribed CalDAV client (WebDAV-Push), off until the owner turns it on | [#1585](https://github.com/OpenTodoApp/OpenTodo/issues/1585) |
+| [`caldav-push`](openspec/changes/archive/2026-11-21-caldav-push/) | Push to calendar apps: a change on any device wakes a subscribed CalDAV client (WebDAV-Push), off until the owner turns it on | [#1585](https://github.com/OpenTodoApp/OpenTodo/issues/1585) |
 | [`drag-ticked-together`](openspec/changes/archive/2026-11-20-drag-ticked-together/) | **Shipped.** Drag several ticked tasks within a list to reorder or nest them in one move, with one Undo | [#1498](https://github.com/OpenTodoApp/OpenTodo/issues/1498) |
 | [`quarter-view-and-plan-spans`](openspec/changes/archive/2026-11-20-quarter-view-and-plan-spans/) | **Shipped.** A Quarter view in the Calendar (three months at a glance, `g q`), and 3-day and custom Plan spans | [#1026](https://github.com/OpenTodoApp/OpenTodo/issues/1026) |
 | [`spans-stay-in-sections`](openspec/changes/archive/2026-11-20-spans-stay-in-sections/) | **Shipped.** A multi-day task stays in its section with its dates instead of folding into Later before its first day | [#1572](https://github.com/OpenTodoApp/OpenTodo/issues/1572) |
@@ -101,8 +101,8 @@ Phones, Apple, Obsidian and voice.
 | [`theme-title-weight`](openspec/changes/archive/2026-11-18-theme-title-weight/) | **Shipped.** A theme can set how heavy task titles are (`titleWeight`), with the control in the theme editor | [#1469](https://github.com/OpenTodoApp/OpenTodo/issues/1469) |
 | [`subtask-panel-order`](openspec/changes/archive/2026-11-19-subtask-panel-order/) | **Shipped.** Reorder a task's subtasks from the task panel and the task page: drag the handle, Alt+arrows on it, or Move up and Move down | [#1577](https://github.com/OpenTodoApp/OpenTodo/issues/1577) |
 | [`app-links`](openspec/changes/archive/2026-11-20-app-links/) | **Shipped.** Opt-in links to other apps (`zotero:`, `mid:`, `onenote:`…) in notes and origins, checked on the viewer's device | [#1287](https://github.com/OpenTodoApp/OpenTodo/issues/1287) |
-| [`obsidian-plugin`](openspec/changes/obsidian-plugin/) | An Obsidian community plugin, mobile included (built and released; waiting for the directory listing) | [#606](https://github.com/OpenTodoApp/OpenTodo/issues/606) |
-| [`obsidian-vault-sync`](openspec/changes/obsidian-vault-sync/) | Vault sync from inside Obsidian (built; waiting for the manual runs on devices) | [#607](https://github.com/OpenTodoApp/OpenTodo/issues/607) |
+| [`obsidian-plugin`](openspec/changes/archive/2026-11-21-obsidian-plugin/) | An Obsidian community plugin, mobile included (built and released; waiting for the directory listing) | [#606](https://github.com/OpenTodoApp/OpenTodo/issues/606) |
+| [`obsidian-vault-sync`](openspec/changes/archive/2026-11-21-obsidian-vault-sync/) | Vault sync from inside Obsidian (built; waiting for the manual runs on devices) | [#607](https://github.com/OpenTodoApp/OpenTodo/issues/607) |
 | [`voice-ramble`](openspec/changes/archive/2026-10-31-voice-ramble/) | **Shipped.** Speak a brain dump or drop a photo of notes; review the proposed tasks | [#608](https://github.com/OpenTodoApp/OpenTodo/issues/608) |
 | [`outlook-calendar-sync`](openspec/changes/archive/2026-10-31-outlook-calendar-sync/) | **Shipped.** Microsoft 365 and Outlook in calendar sync | [#609](https://github.com/OpenTodoApp/OpenTodo/issues/609) |
 | [`play-production`](openspec/changes/play-production/) | **In progress.** Google Play production, F-Droid and reproducible builds: reproducible builds, the F-Droid metadata and the Play upload are in; the store listings wait for the owner's Play Console and F-Droid steps | [#603](https://github.com/OpenTodoApp/OpenTodo/issues/603) |
@@ -142,11 +142,11 @@ The release that makes OpenTodo the default choice.
 | [`stability-contract`](openspec/changes/archive/2026-11-03-stability-contract/) | **Shipped.** A frozen v1 API and op schema, upgrade paths from any 0.x, an export guarantee | [#587](https://github.com/OpenTodoApp/OpenTodo/issues/587) |
 | [`external-security-review`](openspec/changes/external-security-review/) | A threat model and disclosure policy; an independent security review is optional, depending on funding |  |
 | [`accessibility-aa`](openspec/changes/archive/2026-11-03-accessibility-aa/) | **Shipped.** WCAG 2.2 AA on every screen, with a conformance statement |  |
-| [`performance-10k`](openspec/changes/performance-10k/) | Budgets and tests for 10,000 tasks, on phones too |  |
+| [`performance-10k`](openspec/changes/archive/2026-11-09-performance-10k/) | Budgets and tests for 10,000 tasks, on phones too |  |
 | [`notes-compaction-at-scale`](openspec/changes/archive/2026-11-03-notes-compaction-at-scale/) | **Shipped.** A year of note history compacted in a minute without holding writes back; a new device downloads only the latest notes | [#590](https://github.com/OpenTodoApp/OpenTodo/issues/590) |
 | [`migration-everywhere`](openspec/changes/archive/2026-11-03-migration-everywhere/) | **Shipped.** A switch guide and checked importer for every competitor | [#591](https://github.com/OpenTodoApp/OpenTodo/issues/591) |
 | [`caldav-verified`](openspec/changes/caldav-verified/) | CalDAV verified on real clients | [#9](https://github.com/OpenTodoApp/OpenTodo/issues/9) |
-| [`docs-1-0`](openspec/changes/docs-1-0/) | Complete user, self-host and API docs and a contributor guide |  |
+| [`docs-1-0`](openspec/changes/archive/2026-11-06-docs-1-0/) | Complete user, self-host and API docs and a contributor guide |  |
 
 Order inside the plan: `project-flow-modes` before `today-closed-list` and `time-sectors`; `calendar-frames` before `calendar-slots`; the three series changes in order, then `multi-day-tasks`; `ios-shell` before `ios-distribution` and `apple-shortcuts`. Each milestone ends with a release.
 
@@ -176,11 +176,11 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 
 | Change | What | Issues |
 | --- | --- | --- |
-| [`note-links`](openspec/changes/note-links/) | Link notes, tasks and projects with `[[`; Linked references on each | |
-| [`notes-home`](openspec/changes/notes-home/) | The Notes page as a home: write from the search field, pinned notes, unlinked notes | |
-| [`notes-graph`](openspec/changes/notes-graph/) | Connections: a local graph of what links to and from an item | |
-| [`notes-graph-page`](openspec/changes/notes-graph-page/) | The graph of all notes: Graph mode of the Notes page, pan, zoom, topics by project and label | |
-| [`note-pane-width`](openspec/changes/note-pane-width/) | A note beside the Notes list resizes by its left edge and keeps a readable column | |
+| [`note-links`](openspec/changes/archive/2026-11-09-note-links/) | Link notes, tasks and projects with `[[`; Linked references on each | |
+| [`notes-home`](openspec/changes/archive/2026-11-09-notes-home/) | The Notes page as a home: write from the search field, pinned notes, unlinked notes | |
+| [`notes-graph`](openspec/changes/archive/2026-11-09-notes-graph/) | Connections: a local graph of what links to and from an item | |
+| [`notes-graph-page`](openspec/changes/archive/2026-11-13-notes-graph-page/) | The graph of all notes: Graph mode of the Notes page, pan, zoom, topics by project and label | |
+| [`note-pane-width`](openspec/changes/archive/2026-11-09-note-pane-width/) | A note beside the Notes list resizes by its left edge and keeps a readable column | |
 | [`notes-space`](openspec/changes/archive/2026-11-13-notes-space/) | **Shipped.** A Tasks and Notes switch in the sidebar, one-line note rows, and search tokens (`in:`, `@label`, `kind:`, `linked:`, `changed:`) as chips | |
 | [`notes-in-routines`](openspec/changes/archive/2026-11-13-notes-in-routines/) | **Shipped.** Routines work with standalone notes: note triggers, Find, Create and Change notes, Turn into task, a Note type | |
 | [`note-attachments`](openspec/changes/archive/2026-11-13-note-attachments/) | **Shipped.** Images and files in standalone notes | |
@@ -205,18 +205,18 @@ The assistant's answers show the app's own interface (`assistant-generative-ui`,
 
 | Change | What | Issues |
 | --- | --- | --- |
-| [`assistant-eval`](openspec/changes/assistant-eval/) | Recorded scenarios against a real provider, which check the tool calls a model makes (blocks used, nothing written, no map claims), run by hand with `make assistant-eval` | |
+| [`assistant-eval`](openspec/changes/archive/2026-11-21-assistant-eval/) | Recorded scenarios against a real provider, which check the tool calls a model makes (blocks used, nothing written, no map claims), run by hand with `make assistant-eval` | |
 | [`assistant-usage-cache`](openspec/changes/archive/2026-11-10-assistant-usage-cache/) | **Shipped.** Input read from the provider's cache counts at a tenth toward the monthly cap, and each answer names it | |
 | [`assistant-device-reads`](openspec/changes/archive/2026-11-10-assistant-device-reads/) | **Shipped.** The on-device assistant (encrypted accounts) reads time entries, frames, slots and notes like the server's | |
-| [`assistant-time-blocks`](openspec/changes/assistant-time-blocks/) | Time, free time and deadlines blocks; `find_free_time` as a read tool for the assistant and MCP | |
-| [`assistant-project-blocks`](openspec/changes/assistant-project-blocks/) | Board, timeline, activity, stats, task and habit blocks, offered by relevance | |
-| [`assistant-followups`](openspec/changes/assistant-followups/) | Up to three follow-up suggestions under an answer, sent with one tap | |
+| [`assistant-time-blocks`](openspec/changes/archive/2026-11-21-assistant-time-blocks/) | Time, free time and deadlines blocks; `find_free_time` as a read tool for the assistant and MCP | |
+| [`assistant-project-blocks`](openspec/changes/archive/2026-11-21-assistant-project-blocks/) | Board, timeline, activity, stats, task and habit blocks, offered by relevance | |
+| [`assistant-followups`](openspec/changes/archive/2026-11-21-assistant-followups/) | Up to three follow-up suggestions under an answer, sent with one tap | |
 | [`assistant-proposal-editing`](openspec/changes/archive/2026-11-10-assistant-proposal-editing/) | **Shipped.** Edit proposals in every shape, drag them in the calendar, proposals that grow over turns, before and after | |
 | [`assistant-memory`](openspec/changes/archive/2026-11-10-assistant-memory/) | **Shipped.** The assistant remembers facts you confirm: synced and encrypted like settings, managed in Settings, never sent to MCP or routines | |
-| [`assistant-in-context`](openspec/changes/assistant-in-context/) | Rewrite this, Find a slot, What's next? and Brief me, started from a task, a project or Today | |
+| [`assistant-in-context`](openspec/changes/archive/2026-11-21-assistant-in-context/) | Rewrite this, Find a slot, What's next? and Brief me, started from a task, a project or Today | |
 | [`assistant-routine-blocks`](openspec/changes/archive/2026-11-10-assistant-routine-blocks/) | **Shipped.** Routines' AI steps show the day's agenda, deadlines and tasks as blocks in the routine inbox | |
-| [`assistant-lean-tools`](openspec/changes/assistant-lean-tools/) | Write tools only once the model asks for them, so questions send far fewer tokens | |
-| [`assistant-eval-gaps`](openspec/changes/assistant-eval-gaps/) | What the first real eval run found: sections in project reads, labels found by their plural, one task as a link, answers always in words | |
+| [`assistant-lean-tools`](openspec/changes/archive/2026-11-13-assistant-lean-tools/) | Write tools only once the model asks for them, so questions send far fewer tokens | |
+| [`assistant-eval-gaps`](openspec/changes/archive/2026-11-21-assistant-eval-gaps/) | What the first real eval run found: sections in project reads, labels found by their plural, one task as a link, answers always in words | |
 | [`mcp-blocks`](openspec/changes/archive/2026-11-10-mcp-blocks/) | **Shipped.** Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | |
 | [`assistant-tool-sources`](openspec/changes/archive/2026-11-14-assistant-tool-sources/) | **Shipped.** Each read in an answer shows what it returned ("Looked at 3 tasks"), so invented rows cannot pass as data | [#1317](https://github.com/OpenTodoApp/OpenTodo/issues/1317) |
 
@@ -253,7 +253,7 @@ Habits get their own place: easy to start, forgiving on a bad day, connected to 
 
 | Change | What | Issues |
 | --- | --- | --- |
-| [`habits-home`](openspec/changes/habits-home/) | A Habits switch where off means off, a Habits screen and Today strip, one-step creation, a forgiving measure and strength, the tiny version, editing past days, graduating, and a calm visual language | |
+| [`habits-home`](openspec/changes/archive/2026-11-13-habits-home/) | A Habits switch where off means off, a Habits screen and Today strip, one-step creation, a forgiving measure and strength, the tiny version, editing past days, graduating, and a calm visual language | |
 | [`habit-notes`](openspec/changes/archive/2026-11-14-habit-notes/) | **Shipped.** The habit's note, a note on each check-in, habits in `[[` links, Make habits from a note, habits in the weekly review | |
 | [`habits-assistant`](openspec/changes/archive/2026-11-14-habits-assistant/) | **Shipped.** Habit numbers on the server, `list_habits`, `get_habit` and `log_habit`, a habits route and `ot habits`, Start a habit and How are my habits?, check-ins from capture, routine steps | |
 | [`habit-targets`](openspec/changes/archive/2026-11-14-habit-targets/) | **Shipped.** Times per week or month, and daily amounts that add up exactly across devices | |
@@ -266,32 +266,32 @@ The phone apps stay web-view shells and are made to feel like apps, in the order
 
 | Change | What | Issues |
 | --- | --- | --- |
-| [`shell-repairs`](openspec/changes/shell-repairs/) | Saving files from both apps, Back on Android, haptics through the bridge, Face ID on iPhone, Done on the iPhone notification, status bar icons that follow the theme | |
-| [`shell-reminders-on`](openspec/changes/shell-reminders-on/) | Reminders on by default in the apps with the task's name, the permission asked with the first reminder, exact alarms asked for with an explanation, background runs that end when they are done | |
-| [`touch-keyboard-hints`](openspec/changes/touch-keyboard-hints/) | No keyboard shortcuts or key hints on a device without a keyboard | [#1337](https://github.com/OpenTodoApp/OpenTodo/issues/1337) |
-| [`shell-touch`](openspec/changes/shell-touch/) | No tap flash, callouts or page bounce, chrome that cannot be selected, every control answers a tap | [#1338](https://github.com/OpenTodoApp/OpenTodo/issues/1338) |
-| [`phone-row-titles`](openspec/changes/phone-row-titles/) | A task's title on up to two lines on a phone | [#1339](https://github.com/OpenTodoApp/OpenTodo/issues/1339) |
-| [`phone-header-room`](openspec/changes/phone-header-room/) | Help in the bar's menu on a phone, so the title has room | [#1340](https://github.com/OpenTodoApp/OpenTodo/issues/1340) |
-| [`sheet-drag-dismiss`](openspec/changes/sheet-drag-dismiss/) | Bottom sheets follow the finger and close on a drag | [#1341](https://github.com/OpenTodoApp/OpenTodo/issues/1341) |
-| [`pull-to-sync`](openspec/changes/pull-to-sync/) | Pull down to sync, never a reload | [#1342](https://github.com/OpenTodoApp/OpenTodo/issues/1342) |
-| [`shell-first-paint`](openspec/changes/shell-first-paint/) | The apps open on their colour and icon, and the loading frame already has the phone's bars | [#1343](https://github.com/OpenTodoApp/OpenTodo/issues/1343) |
-| [`touch-pressed-states`](openspec/changes/touch-pressed-states/) | A pressed colour of their own for the tab bar, menus, drawer rows and row controls on touch; tabs at their full height | [#1349](https://github.com/OpenTodoApp/OpenTodo/issues/1349) |
-| [`phone-bar-overflow`](openspec/changes/phone-bar-overflow/) | Filter in the page's menu on a phone, an active filter as a small chip, so a project's name has room | [#1350](https://github.com/OpenTodoApp/OpenTodo/issues/1350) |
-| [`phone-titles-everywhere`](openspec/changes/phone-titles-everywhere/) | Two lines for a title on a phone in Notes, the calendar agendas, Close the day and the command bar | [#1351](https://github.com/OpenTodoApp/OpenTodo/issues/1351) |
-| [`phone-row-controls`](openspec/changes/phone-row-controls/) | No Show details arrow on a phone's rows, no touch target on another's, a short add hint | [#1359](https://github.com/OpenTodoApp/OpenTodo/issues/1359) |
-| [`touch-sheet-focus`](openspec/changes/touch-sheet-focus/) | A picker opened by touch keeps the on-screen keyboard down until its field is tapped | [#1360](https://github.com/OpenTodoApp/OpenTodo/issues/1360) |
-| [`phone-calendar-chrome`](openspec/changes/phone-calendar-chrome/) | The calendar on a phone: one row under the bar, the views in a menu | [#1361](https://github.com/OpenTodoApp/OpenTodo/issues/1361) |
-| [`touch-no-tooltips`](openspec/changes/touch-no-tooltips/) | No tooltip after a tap; hover and keyboard focus as before | [#1362](https://github.com/OpenTodoApp/OpenTodo/issues/1362) |
-| [`phone-fab-clearance`](openspec/changes/phone-fab-clearance/) | No floating add button on a Weekly review step, whose own action it covered | [#1368](https://github.com/OpenTodoApp/OpenTodo/issues/1368) |
-| [`phone-icon-picker`](openspec/changes/phone-icon-picker/) | Icons and colours as 44 px targets on touch; the picker inside the sheet's padding | [#1369](https://github.com/OpenTodoApp/OpenTodo/issues/1369) |
-| [`phone-task-page-targets`](openspec/changes/phone-task-page-targets/) | A task page's completion circle takes its whole 44 px, clear of Back | [#1370](https://github.com/OpenTodoApp/OpenTodo/issues/1370) |
-| [`phone-stats-period`](openspec/changes/phone-stats-period/) | The Statistics period as one menu button on a phone; a public list's name on two lines | [#1371](https://github.com/OpenTodoApp/OpenTodo/issues/1371) |
-| [`phone-timeline-rows`](openspec/changes/phone-timeline-rows/) | A timeline on a phone: the name on its own line above its bar, 44 px rows, a tap opens the task | [#1372](https://github.com/OpenTodoApp/OpenTodo/issues/1372) |
-| [`tablet-header-room`](openspec/changes/tablet-header-room/) | A page header follows its own width: one row beside a tablet's sidebar, nothing cut short | [#1379](https://github.com/OpenTodoApp/OpenTodo/issues/1379) |
-| [`touch-sidebar-names`](openspec/changes/touch-sidebar-names/) | On touch a sidebar row's name has the room; its menu opens on a hold | [#1380](https://github.com/OpenTodoApp/OpenTodo/issues/1380) |
-| [`reminder-card-compact`](openspec/changes/reminder-card-compact/) | The in-app reminder as one compact card on touch: Snooze and Dismiss on one row | [#1381](https://github.com/OpenTodoApp/OpenTodo/issues/1381) |
-| [`phone-fab-scroll-room`](openspec/changes/phone-fab-scroll-room/) | The calendar's Day and Week reach the tab bar; no empty room under pages without the add button | [#1382](https://github.com/OpenTodoApp/OpenTodo/issues/1382) |
-| [`shell-push`](openspec/changes/shell-push/) | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | [#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344) |
+| [`shell-repairs`](openspec/changes/archive/2026-11-21-shell-repairs/) | Saving files from both apps, Back on Android, haptics through the bridge, Face ID on iPhone, Done on the iPhone notification, status bar icons that follow the theme | |
+| [`shell-reminders-on`](openspec/changes/archive/2026-11-21-shell-reminders-on/) | Reminders on by default in the apps with the task's name, the permission asked with the first reminder, exact alarms asked for with an explanation, background runs that end when they are done | |
+| [`touch-keyboard-hints`](openspec/changes/archive/2026-11-21-touch-keyboard-hints/) | No keyboard shortcuts or key hints on a device without a keyboard | [#1337](https://github.com/OpenTodoApp/OpenTodo/issues/1337) |
+| [`shell-touch`](openspec/changes/archive/2026-11-21-shell-touch/) | No tap flash, callouts or page bounce, chrome that cannot be selected, every control answers a tap | [#1338](https://github.com/OpenTodoApp/OpenTodo/issues/1338) |
+| [`phone-row-titles`](openspec/changes/archive/2026-11-21-phone-row-titles/) | A task's title on up to two lines on a phone | [#1339](https://github.com/OpenTodoApp/OpenTodo/issues/1339) |
+| [`phone-header-room`](openspec/changes/archive/2026-11-21-phone-header-room/) | Help in the bar's menu on a phone, so the title has room | [#1340](https://github.com/OpenTodoApp/OpenTodo/issues/1340) |
+| [`sheet-drag-dismiss`](openspec/changes/archive/2026-11-21-sheet-drag-dismiss/) | Bottom sheets follow the finger and close on a drag | [#1341](https://github.com/OpenTodoApp/OpenTodo/issues/1341) |
+| [`pull-to-sync`](openspec/changes/archive/2026-11-21-pull-to-sync/) | Pull down to sync, never a reload | [#1342](https://github.com/OpenTodoApp/OpenTodo/issues/1342) |
+| [`shell-first-paint`](openspec/changes/archive/2026-11-21-shell-first-paint/) | The apps open on their colour and icon, and the loading frame already has the phone's bars | [#1343](https://github.com/OpenTodoApp/OpenTodo/issues/1343) |
+| [`touch-pressed-states`](openspec/changes/archive/2026-11-21-touch-pressed-states/) | A pressed colour of their own for the tab bar, menus, drawer rows and row controls on touch; tabs at their full height | [#1349](https://github.com/OpenTodoApp/OpenTodo/issues/1349) |
+| [`phone-bar-overflow`](openspec/changes/archive/2026-11-21-phone-bar-overflow/) | Filter in the page's menu on a phone, an active filter as a small chip, so a project's name has room | [#1350](https://github.com/OpenTodoApp/OpenTodo/issues/1350) |
+| [`phone-titles-everywhere`](openspec/changes/archive/2026-11-21-phone-titles-everywhere/) | Two lines for a title on a phone in Notes, the calendar agendas, Close the day and the command bar | [#1351](https://github.com/OpenTodoApp/OpenTodo/issues/1351) |
+| [`phone-row-controls`](openspec/changes/archive/2026-11-21-phone-row-controls/) | No Show details arrow on a phone's rows, no touch target on another's, a short add hint | [#1359](https://github.com/OpenTodoApp/OpenTodo/issues/1359) |
+| [`touch-sheet-focus`](openspec/changes/archive/2026-11-21-touch-sheet-focus/) | A picker opened by touch keeps the on-screen keyboard down until its field is tapped | [#1360](https://github.com/OpenTodoApp/OpenTodo/issues/1360) |
+| [`phone-calendar-chrome`](openspec/changes/archive/2026-11-21-phone-calendar-chrome/) | The calendar on a phone: one row under the bar, the views in a menu | [#1361](https://github.com/OpenTodoApp/OpenTodo/issues/1361) |
+| [`touch-no-tooltips`](openspec/changes/archive/2026-11-21-touch-no-tooltips/) | No tooltip after a tap; hover and keyboard focus as before | [#1362](https://github.com/OpenTodoApp/OpenTodo/issues/1362) |
+| [`phone-fab-clearance`](openspec/changes/archive/2026-11-21-phone-fab-clearance/) | No floating add button on a Weekly review step, whose own action it covered | [#1368](https://github.com/OpenTodoApp/OpenTodo/issues/1368) |
+| [`phone-icon-picker`](openspec/changes/archive/2026-11-21-phone-icon-picker/) | Icons and colours as 44 px targets on touch; the picker inside the sheet's padding | [#1369](https://github.com/OpenTodoApp/OpenTodo/issues/1369) |
+| [`phone-task-page-targets`](openspec/changes/archive/2026-11-21-phone-task-page-targets/) | A task page's completion circle takes its whole 44 px, clear of Back | [#1370](https://github.com/OpenTodoApp/OpenTodo/issues/1370) |
+| [`phone-stats-period`](openspec/changes/archive/2026-11-21-phone-stats-period/) | The Statistics period as one menu button on a phone; a public list's name on two lines | [#1371](https://github.com/OpenTodoApp/OpenTodo/issues/1371) |
+| [`phone-timeline-rows`](openspec/changes/archive/2026-11-21-phone-timeline-rows/) | A timeline on a phone: the name on its own line above its bar, 44 px rows, a tap opens the task | [#1372](https://github.com/OpenTodoApp/OpenTodo/issues/1372) |
+| [`tablet-header-room`](openspec/changes/archive/2026-11-21-tablet-header-room/) | A page header follows its own width: one row beside a tablet's sidebar, nothing cut short | [#1379](https://github.com/OpenTodoApp/OpenTodo/issues/1379) |
+| [`touch-sidebar-names`](openspec/changes/archive/2026-11-21-touch-sidebar-names/) | On touch a sidebar row's name has the room; its menu opens on a hold | [#1380](https://github.com/OpenTodoApp/OpenTodo/issues/1380) |
+| [`reminder-card-compact`](openspec/changes/archive/2026-11-21-reminder-card-compact/) | The in-app reminder as one compact card on touch: Snooze and Dismiss on one row | [#1381](https://github.com/OpenTodoApp/OpenTodo/issues/1381) |
+| [`phone-fab-scroll-room`](openspec/changes/archive/2026-11-21-phone-fab-scroll-room/) | The calendar's Day and Week reach the tab bar; no empty room under pages without the add button | [#1382](https://github.com/OpenTodoApp/OpenTodo/issues/1382) |
+| [`shell-push`](openspec/changes/archive/2026-11-21-shell-push/) | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | [#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344) |
 
 Push to the iPhone app needs a relay the project would run, or an app signed by whoever runs the server; not planned.
 
