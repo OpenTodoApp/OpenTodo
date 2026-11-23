@@ -11,6 +11,7 @@ import { dayPartOf } from '../../lib/dayParts'
 import { undoBatch } from '../../lib/undo'
 import { createTask, mutate } from '../../lib/ops'
 import { applyLanguagePreference } from '../../lib/i18n'
+import { ruleWords } from '../../lib/recurrenceWords'
 import { USER_PREFS_ID } from '../../lib/userPrefs'
 import { click, key, render, type, waitFor } from '../../ui/test-utils'
 import { setupTaskDetailTests } from './taskDetail.testkit'
@@ -160,6 +161,10 @@ describe('WhenControl', () => {
       await key(input, 'Enter')
       await queued(id, from)
       expect(await queuedFields(id, from)).toEqual({ recurrence: 'every 3 days after completion' })
+      // The field resets its text and clears its error when the live task's rule changes. Wait for the
+      // live task to arrive (the words above render from it in the same pass) before typing, or a late
+      // reset wipes the typed words or the refusal below.
+      await waitFor(() => seg('repeat').querySelector('[data-rule-words]')?.textContent === ruleWords('every 3 days after completion'), 'the live task shows the second rule')
       // Words that are no rule in any active language keep the previous rule.
       await type(input, 'elke blursdag')
       await key(input, 'Enter')
