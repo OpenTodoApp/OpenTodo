@@ -8,13 +8,13 @@ import { t } from '../../lib/i18n'
 import { resolveLabels } from '../../lib/labels'
 import { useMembershipMap, useProjectLiveSections, useProjectTasks, useReminderCount } from '../../lib/liveData'
 import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
-import { setTaskParent } from '../../lib/ops'
 import { INBOX_KEY, parentSource } from '../../lib/pickerSources'
 import { useProjectsOfEveryWorkspace, useWorkspaceState } from '../../lib/localData'
 import { projectsByWorkspace } from './projectsByWorkspace'
 import { effectiveSection } from '../../lib/sections'
 import { isSoloScope, memberName } from '../../lib/sharing'
 import type { Task } from '../../lib/types'
+import { parentUndoable } from '../../lib/undoActions'
 import { moveWithUndo } from '../undoable'
 import { isInboxTask } from '../../lib/inbox'
 import { useViewerZone } from '../useViews'
@@ -79,7 +79,7 @@ export function usePropertiesModel({ task, userId, projects, labelMap, parent, o
   const changeParent = async (value: string | null) => {
     setParentError(null)
     try {
-      await setTaskParent(task.id, value)
+      await parentUndoable(task.id, value)
     } catch (err) {
       setParentError(messageOf(err))
     }
