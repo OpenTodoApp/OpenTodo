@@ -239,15 +239,34 @@ final class ShareMapTests: XCTestCase {
 
 @MainActor
 final class ReminderTests: XCTestCase {
-    func testSelectKeepsFutureRemindersInOrderAndLimitsThem() {
+    /// The cases both apps read (Android's ReminderScheduleTest too): reminders/schedule.json.
+    /// Before them, one entry the decoder could not read dropped the whole schedule.
+    func testTheScheduleFollowsTheSharedCases() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/reminders/schedule.json")
+        let doc = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        let now = Date(timeIntervalSince1970: try XCTUnwrap(doc["now"] as? Double) / 1000)
+        let cases = try XCTUnwrap(doc["cases"] as? [[String: Any]])
+        XCTAssertFalse(cases.isEmpty)
+        for c in cases {
+            let name = c["name"] as? String ?? "?"
+            let want = try XCTUnwrap(c["armed"] as? [[String: Any]], name).map { r in
+                "\(r["id"] as? String ?? "?") at \(r["fireAt"] as? Double ?? -1): \(r["title"] as? String ?? "no title")"
+            }
+            let got = Reminders.select(Reminders.parse(try XCTUnwrap(c["handed"] as? String, name)), now: now).map { r in
+                "\(r.id) at \(r.fireAt): \(r.title ?? "no title")"
+            }
+            XCTAssertEqual(got, want, name)
+        }
+    }
+
+    /// iOS keeps at most 64 pending notifications: the earliest 64.
+    func testSelectKeepsTheEarliestUpToTheLimit() {
         let now = Date(timeIntervalSince1970: 1_000)
-        let handed = [
-            Reminders.Handed(id: "past", taskId: "t", fireAt: 999_000, title: nil),
-            Reminders.Handed(id: "later", taskId: "t", fireAt: 2_000_000, title: nil),
-            Reminders.Handed(id: "soon", taskId: "t", fireAt: 1_500_000, title: "Call"),
-        ]
-        XCTAssertEqual(Reminders.select(handed, now: now).map(\.id), ["soon", "later"])
-        XCTAssertEqual(Reminders.select(handed, now: now, limit: 1).map(\.id), ["soon"])
+        let handed = (0..<70).reversed().map { Reminders.Handed(id: "r\($0)", taskId: "t", fireAt: 2_000_000 + Double($0) * 1000, title: nil) }
+        XCTAssertEqual(Reminders.select(handed, now: now).map(\.id), (0..<64).map { "r\($0)" })
+        XCTAssertEqual(Reminders.select(handed, now: now, limit: 1).map(\.id), ["r0"])
     }
 
     /// shell-reminders-on D2: every combination of status, screen and schedule. Only the
@@ -268,11 +287,9 @@ final class ReminderTests: XCTestCase {
         XCTAssertEqual(Reminders.permission(status: .notDetermined, interactive: false, hasReminders: true), .refuse)
     }
 
-    func testParseIgnoresWhatItCannotRead() {
-        XCTAssertEqual(Reminders.parse("not json").count, 0)
-        XCTAssertEqual(Reminders.parse("[]").count, 0)
+    func testParseKeepsTheTaskAndTheTitle() {
         let json = #"[{"id":"a","taskId":"b","fireAt":1700000000000,"title":"Call"}]"#
-        XCTAssertEqual(Reminders.parse(json).first?.title, "Call")
+        XCTAssertEqual(Reminders.parse(json), [Reminders.Handed(id: "a", taskId: "b", fireAt: 1_700_000_000_000, title: "Call")])
     }
 }
 
