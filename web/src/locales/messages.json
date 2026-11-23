@@ -2235,14 +2235,16 @@
   ],
   "Assigned to you": [
     "web/src/app/IssueEditor.tsx",
-    "web/src/app/IssuesPanel.tsx"
+    "web/src/app/IssuesPanel.tsx",
+    "web/src/lib/undoActions.ts"
   ],
   "Assigned to you in these repositories": [
     "web/src/app/IssueEditor.tsx"
   ],
   "Assigned to {name}": [
     "web/src/app/AssigneePicker.tsx",
-    "web/src/app/filter/conditionText.ts"
+    "web/src/app/filter/conditionText.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Assigned to {name}, taking turns": [
     "web/src/app/AssigneePicker.tsx"
@@ -7165,7 +7167,8 @@
     "web/src/app/AssigneePicker.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
-    "web/src/app/task-list/ListGroups.tsx"
+    "web/src/app/task-list/ListGroups.tsx",
+    "web/src/lib/undoActions.ts"
   ],
   "Four views over priority and date: sort work by urgent and important, and drag a card to re-plan it.": [
     "web/src/lib/boardTemplates.ts"
@@ -20777,7 +20780,8 @@
     "web/src/app/filter/conditionText.ts",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
-    "web/src/lib/facets.ts"
+    "web/src/lib/facets.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Unavailable custom field": [
     "web/src/app/views/DisplayOptionsBody.tsx",

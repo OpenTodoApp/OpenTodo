@@ -2,7 +2,7 @@
 // task-list-presentation "Completion feedback", "Single-action undo"): the list,
 // the panel and the calendar call these instead of the plain ops, so every
 // complete, delete, move, date change and park shows the same toast.
-import { completeUndoable, deadlineUndoable, doOnUndoable, dueUndoable, estimateUndoable, moveUndoable, parkUndoable, rescheduleUndoable, spanUndoable, trashUndoable } from '../lib/undoActions'
+import { assigneeUndoable, completeUndoable, deadlineUndoable, doOnUndoable, dueUndoable, estimateUndoable, moveUndoable, parkUndoable, rescheduleUndoable, spanUndoable, trashUndoable } from '../lib/undoActions'
 import type { DoOnChoice } from '../lib/dayParts'
 import type { Task } from '../lib/types'
 import { showUndoToast } from './bulk/toastStore'
@@ -58,6 +58,12 @@ export async function rescheduleWithUndo(id: string, due: NonNullable<Task['due'
 /** Set or remove one task's deadline in the When editor, with Undo, like its due date beside it. */
 export async function deadlineWithUndo(id: string, deadline: string | null): Promise<void> {
   const r = await deadlineUndoable(id, deadline)
+  if (r.entry) showUndoToast(r.label, r.entry.id)
+}
+
+/** Assign one task, or with null unassign it, with Undo: in Assigned to me the row leaves the list. */
+export async function assigneeWithUndo(id: string, assignee: string | null): Promise<void> {
+  const r = await assigneeUndoable(id, assignee)
   if (r.entry) showUndoToast(r.label, r.entry.id)
 }
 

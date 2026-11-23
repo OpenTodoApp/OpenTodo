@@ -10,7 +10,7 @@ import { formatDate, logicalToday } from './dates'
 import { seriesRule } from './recurring'
 import { getDeviceId, liveSubtree, planReminders, updateTask, type Change } from './ops'
 import type { ReminderPhrase } from './nlp'
-import { currentUserId, membershipMap } from './sharing'
+import { currentUserId, memberName, membershipMap } from './sharing'
 import type { FilterContext } from './filter'
 import { planRule, ruleParts, type RuleNames } from './rules'
 import type { Task, View } from './types'
@@ -103,6 +103,16 @@ export async function priorityUndoable(id: string, priority: Task['priority']): 
 /** Set (or with null remove) one task's deadline, as one step of undo history (OpenSpec change undo-deadline). */
 export function deadlineUndoable(id: string, deadline: string | null): Promise<UndoableResult> {
   return plainEditUndoable(id, { deadline }, deadline ? t('Deadline {date}', { date: formatDate(deadline, 'long') }) : t('Deadline removed'))
+}
+
+/**
+ * Assign one task to a member, or with null unassign it, as one step of undo history (OpenSpec
+ * change undo-assignee). The step is named with the member's name, or "you" for the person.
+ */
+export async function assigneeUndoable(id: string, assignee: string | null): Promise<UndoableResult> {
+  const name = assignee && assignee !== await currentUserId() ? memberName(assignee, await membershipMap()) ?? t('Former member') : null
+  const label = !assignee ? t('Unassigned') : name ? t('Assigned to {name}', { name }) : t('Assigned to you')
+  return plainEditUndoable(id, { assignee_id: assignee }, label)
 }
 
 /** Move one task and its subtasks to the Trash. */
