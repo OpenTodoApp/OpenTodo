@@ -960,16 +960,22 @@ jobs:
           xcodebuild -version
           xcrun simctl list runtimes
       # Measurement: between the end of the build and the first test, `make ios` waits 1.5 to
-      # 9 minutes in silence. This boots the simulator `make ios` picks (the Makefile's rule)
-      # and prints how long it took; xcodebuild then finds it booted.
+      # 9 minutes in silence. This boots the simulator the tests run on and prints how long it
+      # took: the Makefile's iPhone under the newest runtime that has it, which is the one
+      # `name=` chose (xcodebuild takes the latest OS), handed to `make ios` by its id so both
+      # use the same device.
       - name: Boot the simulator, timed
         timeout-minutes: 15
         run: |
           sim=$(xcrun simctl list devices available | sed -n 's/^[[:space:]]*//; s/ (.*//; /^iPhone/p' | head -1)
-          udid=$(xcrun simctl list devices available | grep -m1 -F "    $sim (" | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/')
+          udid=$(xcrun simctl list devices available -j | jq -r --arg n "$sim" '
+            [.devices | to_entries[] | select(.key | test("SimRuntime\\.iOS-"))
+             | {v: (.key | capture("iOS-(?<a>[0-9]+)-(?<b>[0-9]+)") | [(.a|tonumber), (.b|tonumber)]), d: .value[]}
+             | select(.d.name == $n)] | sort_by(.v) | last | .d.udid')
+          test -n "$udid" && test "$udid" != null
           echo "simulator: $sim ($udid)"
+          echo "SIM_ID=$udid" >> "$GITHUB_ENV"
           start=$(date +%s)
-          xcrun simctl boot "$udid" || true
           xcrun simctl bootstatus "$udid" -b > /dev/null
           echo "booted in $(( $(date +%s) - start )) s"
       - name: Unit tests, device build and the dependency check (make ios)
