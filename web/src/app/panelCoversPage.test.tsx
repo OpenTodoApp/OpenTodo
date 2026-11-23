@@ -1,0 +1,67 @@
+// @vitest-environment happy-dom
+// The task panel over the whole page (below 48 rem, a sheet over the list; accessibility-aa
+// "Focus not obscured"): the page behind it is inert while it is open, so Tab never lands on
+// a row it covers. Wider, the panel covers part of the list and the list stays usable.
+import 'fake-indexeddb/auto'
+import { act } from 'react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { db } from '../lib/db'
+import { createTask, resetDeviceId } from '../lib/ops'
+import type { User } from '../lib/types'
+import { minWidthPx, render, waitFor } from '../ui/test-utils'
+import { closePanel, openTaskPanel, resetPanel, setTaskSplit } from './panel'
+import { navigate } from './router'
+import { Shell } from './Shell'
+
+const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
+const original = window.matchMedia
+function viewport(width: number) {
+  window.matchMedia = ((q: string) => ({
+    matches: /pointer:\s*fine/.test(q) ? true : /pointer:\s*coarse/.test(q) ? false : minWidthPx(q) <= width,
+    media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
+  })) as typeof window.matchMedia
+}
+
+beforeEach(async () => {
+  await db.delete()
+  await db.open()
+  resetDeviceId()
+  resetPanel()
+  vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
+  navigate({ view: 'inbox' })
+})
+afterEach(() => { window.matchMedia = original; resetPanel(); vi.unstubAllGlobals() })
+
+const main = () => document.querySelector<HTMLElement>('main[data-app-frame]')!
+const panel = () => document.querySelector('[data-detail-variant="panel"]')
+
+async function openOver(width: number) {
+  viewport(width)
+  const id = await createTask({ title: 'Undated inbox task' })
+  const r = await render(<Shell user={user} onLogout={() => {}} />)
+  await waitFor(() => !!main(), 'the shell')
+  // A list page with its task split: from 600 px to 900 px the task is a sheet over it.
+  const unsplit = setTaskSplit(true)
+  await act(async () => { openTaskPanel(id) })
+  await waitFor(() => !!panel(), 'the panel')
+  return { r, unsplit }
+}
+
+describe('the task panel over the page', () => {
+  it('makes the page behind it inert while it covers the whole width, and gives it back on close', async () => {
+    const { r, unsplit } = await openOver(700)
+    expect(main().inert).toBe(true)
+    await act(async () => { closePanel() })
+    await waitFor(() => !panel(), 'the panel closed')
+    expect(main().inert).toBe(false)
+    unsplit()
+    await r.unmount()
+  })
+
+  it('leaves the page usable where the panel covers only part of it', async () => {
+    const { r, unsplit } = await openOver(800)
+    expect(main().inert).toBe(false)
+    unsplit()
+    await r.unmount()
+  })
+})
