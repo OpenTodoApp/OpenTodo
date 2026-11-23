@@ -158,7 +158,7 @@ class FocusModelTest {
             assertEquals(forged, "/focus", running.authorize(forged, null, "t"))
             assertEquals(forged, "/focus", running.authorize(forged, "t", "t"))
         }
-        assertEquals("/focus?action=pause", FocusModel.decodedFully("/focus?%2561ction=pause%"))
+        assertEquals("/focus?action=pause%", FocusModel.decodedFully("/focus?%2561ction=pause%"))
         assertEquals("100%", FocusModel.decodedFully("100%"))
         // Everything else is untouched: the Focus screen itself, and other addresses.
         assertEquals("/focus", running.authorize("/focus", null, null))
