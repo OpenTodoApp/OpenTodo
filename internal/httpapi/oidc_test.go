@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"image"
 	"log/slog"
 	"net/http"
@@ -696,11 +697,53 @@ func TestOIDCMissingEmailVerifiedSwitch(t *testing.T) {
 		t.Fatalf("existing address = %q", location(resp))
 	}
 
-	// An explicit false is refused whatever the switch says.
-	o.idp.MutateClaims = nil
-	o.idp.SetUser(oidctest.User{Subject: "syn-3", Email: "fresh@example.com", EmailVerified: false, Name: "Fresh"})
-	if resp := o.ssoLogin(o.client("203.0.113.13")); location(resp) != "/?error=oidc_email_unverified" {
-		t.Fatalf("explicit false = %q", location(resp))
+	// A member whose address is confirmed is not linked either.
+	if _, err := o.db.Exec("INSERT INTO users(id,email,password_hash,role,created_at,email_verified_at) VALUES('m-syn','member.syn@example.com','x','member',1,1)"); err != nil {
+		t.Fatal(err)
+	}
+	o.idp.SetUser(oidctest.User{Subject: "syn-4", Email: "member.syn@example.com", Name: "Someone"})
+	if resp := o.ssoLogin(o.client("203.0.113.14")); location(resp) != "/?error=oidc_link_required" || hasCookie(resp, sessionCookie) {
+		t.Fatalf("existing member address = %q", location(resp))
+	}
+
+	// null counts as missing: a new address is created.
+	o.idp.MutateClaims = func(c map[string]any) { c["email_verified"] = nil }
+	o.idp.SetUser(oidctest.User{Subject: "syn-5", Email: "null@example.com", Name: "Null"})
+	if resp := o.ssoLogin(o.client("203.0.113.15")); location(resp) != "/" {
+		t.Fatalf("null = %q", location(resp))
+	}
+
+	// An explicit false, as a boolean or a string, is refused whatever the switch says.
+	for i, v := range []any{false, "false"} {
+		o.idp.MutateClaims = func(c map[string]any) { c["email_verified"] = v }
+		o.idp.SetUser(oidctest.User{Subject: fmt.Sprintf("syn-f%d", i), Email: fmt.Sprintf("fresh%d@example.com", i), Name: "Fresh"})
+		if resp := o.ssoLogin(o.client("203.0.113.16")); location(resp) != "/?error=oidc_email_unverified" {
+			t.Fatalf("explicit %v = %q", v, location(resp))
+		}
+	}
+}
+
+// TestIdentityOfTrust (sso-missing-email-verified): only a token without the
+// claim, with the switch on, is trusted for a new account.
+func TestIdentityOfTrust(t *testing.T) {
+	for _, tc := range []struct {
+		name         string
+		claim        oidc.ClaimBool
+		on, verified bool
+		trusted      bool
+	}{
+		{name: "missing, off", claim: oidc.ClaimBool{}},
+		{name: "missing, on", claim: oidc.ClaimBool{}, on: true, trusted: true},
+		{name: "false, on", claim: oidc.ClaimBool{Present: true}, on: true},
+		{name: "true, on", claim: oidc.ClaimBool{Present: true, Value: true}, on: true, verified: true},
+		{name: "true, off", claim: oidc.ClaimBool{Present: true, Value: true}, verified: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			id := identityOf(&oidc.Claims{Issuer: "i", Subject: "s", Email: "a@example.com", EmailVerified: tc.claim}, oidc.Config{TrustMissingEmailVerified: tc.on})
+			if id.EmailVerified != tc.verified || id.TrustMissingEmailVerified != tc.trusted {
+				t.Fatalf("identity = %+v", id)
+			}
+		})
 	}
 }
 

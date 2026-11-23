@@ -297,7 +297,8 @@ func TestOIDCMissingEmailVerifiedCreatesOnly(t *testing.T) {
 	if n := countRows(t, db, "SELECT COUNT(*) FROM identities WHERE user_id = 'm1'"); n != 0 {
 		t.Fatalf("identities linked to the member: %d", n)
 	}
-	// The switch never applies to a provider that says false, nor without it.
+	// Without the trust flag (switch off, or a provider that says false: the
+	// HTTP layer sets the flag only for a missing claim) nothing is created.
 	if _, _, _, err := s.MatchOrProvision(ctx, ext("syn-4", "fresh@example.com", false), true, "Synology"); !errors.Is(err, ErrEmailUnverified) {
 		t.Fatalf("without the switch: %v", err)
 	}
