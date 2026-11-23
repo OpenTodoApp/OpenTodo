@@ -10,7 +10,7 @@ For this review we run a server at review.open-todo.app with a reviewer account 
 1. On the first screen, enter review.open-todo.app and tap Connect.
 2. Sign in with the user name and password in the review information.
 
-Features to try: add a task (quick add understands "tomorrow 3pm"), reminders (allow notifications when asked), the share sheet (share a link from Safari to OpenTodo), the Today widget, the shared project "Household" with its assignments, and Settings. Face ID unlock applies only to accounts with end-to-end encryption, which can be turned on in Settings → Encryption.
+Features to try: add a task (quick add understands "tomorrow 3pm"), reminders (allow notifications when asked), the share sheet (share a link from Safari to OpenTodo), the Today and Completed widgets, "Use my location" in a task's location (allow location while using the app when asked), the shared project "Household" with its assignments, and Settings. Face ID unlock applies only to accounts with end-to-end encryption, which can be turned on in Settings → Encryption.
 
 The public demo (demo.open-todo.app, "Try the demo") also works without an account, but it turns off sharing and settings.
 
@@ -19,7 +19,8 @@ Accounts are created on each person's own server, by the person who runs it. The
 What the app adds to the web page:
 - Reminders scheduled on the phone as local notifications, with Snooze and Dismiss
 - A share extension: links, text, photos and files from other apps become a new task
-- A Today widget
+- A Today widget, and a Completed widget with how many tasks were completed today and in the last seven days
+- Location while the app is in use, only for the server's own pages: "Use my location" fills a task's location; any other page (a sign-in provider's, for one) is refused without asking
 - Face ID or Touch ID unlock of an end-to-end encrypted account (the key stays in the Keychain)
 - Microphone (voice notes) and camera (photos for a task) only when the person uses them
 
