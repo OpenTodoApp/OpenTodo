@@ -309,3 +309,20 @@ describe('calendarEditUndoable', () => {
     expect(t.due ?? null).toBeNull()
   })
 })
+
+// A value this device cannot decrypt (OpenSpec e2ee): an edit records no step, so an undo never writes
+// the placeholder back over the real value on every device (undo-panel-extras).
+describe('a value this device cannot decrypt', () => {
+  it('a rename, a location and a due are written as before, without a step', async () => {
+    const { locationUndoable, titleUndoable } = await import('./undoActions')
+    const id = await createTask({ title: 'Secret', due: { date: '2030-01-10' } })
+    await db.tasks.update(id, { title: '[Cannot decrypt]', location: '[Cannot decrypt]', _e2ee: { wire: {}, raw: { title: 'v1.x', location: 'v1.y' } } } as never)
+    expect((await titleUndoable(id, 'Plain')).entry).toBeNull()
+    expect((await db.tasks.get(id))!.title).toBe('Plain')
+    expect((await locationUndoable(id, null)).entry).toBeNull()
+    expect((await db.tasks.get(id))!.location ?? null).toBeNull()
+    await db.tasks.update(id, { _e2ee: { wire: {}, raw: { due: 'v1.z' } } } as never)
+    expect((await calendarEditUndoable(id, { due: { date: '2030-01-11' } })).entry).toBeNull()
+    expect(await db.assistantUndo.count()).toBe(0)
+  })
+})
