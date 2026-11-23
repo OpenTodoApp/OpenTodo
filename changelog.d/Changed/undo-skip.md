@@ -1,0 +1,1 @@
+- **Skipping an occurrence can be undone.** Ctrl/Cmd+Z after skipping a repeating task or a habit brings back the date it was on.

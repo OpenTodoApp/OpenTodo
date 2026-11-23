@@ -5,7 +5,7 @@
 // navigate and open tasks of a shared project, never change them: every handler
 // that writes checks `writable` (or the task's own read-only state) first.
 import type { Dispatch, RefObject, SetStateAction } from 'react'
-import { detachOccurrence, skipOccurrence, unparkTask } from '../../lib/ops'
+import { detachOccurrence, unparkTask } from '../../lib/ops'
 import type { ListColumn, ListRow } from '../../lib/listGroups'
 import { moveTaskBy, type Step } from '../../lib/move'
 import { duplicateTask } from '../../lib/templates'
@@ -24,7 +24,7 @@ import { isActivationTarget, isTypingTarget, useShortcutScope } from '../shortcu
 import { deleteWithUndo, parkWithUndo } from '../undoable'
 import type { ListRoute } from './useListModel'
 import { t } from '../../lib/i18n'
-import { eveningUndoable, parentUndoable, priorityUndoable } from '../../lib/undoActions'
+import { eveningUndoable, parentUndoable, priorityUndoable, skipOccurrence } from '../../lib/undoActions'
 import { announceOnBoard } from '../BoardView'
 import type { AddingBelow } from './belowLine'
 

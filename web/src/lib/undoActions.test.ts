@@ -437,3 +437,46 @@ describe('project name, colour and icon', () => {
     expect(await db.projects.get(id)).toMatchObject({ color: '#2563eb', icon: 'house' })
   })
 })
+
+// OpenSpec change undo-skip (#1748): skipping a repeating task's occurrence is a step.
+describe('skipOccurrence', () => {
+  it('moves a series on as one step named "Occurrence skipped"; undo brings the date back', async () => {
+    const { skipOccurrence } = await import('./undoActions')
+    const id = await createTask({ title: 'Gym', due: { date: '2026-10-12' }, recurrence: 'every monday' })
+    expect(await skipOccurrence(id, { today: '2026-10-12' })).toBe(true)
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-19' })
+    const entry = (await db.assistantUndo.toArray())[0]
+    expect(entry.label).toBe('Occurrence skipped')
+    await undoBatch(entry.id)
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-12' })
+    await redoBatch(entry.id)
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-19' })
+  })
+
+  it('a habit skip is "Day skipped"; undo writes back the open occurrence, never a record in the Trash', async () => {
+    const { skipOccurrence } = await import('./undoActions')
+    const id = await createTask({ title: 'Walk', due: { date: '2026-10-14' }, recurrence: 'every day' })
+    await updateTask(id, { habit: true })
+    const records = () => db.tasks.filter((x) => x.series_id === id).toArray()
+    expect(await skipOccurrence(id, { today: '2026-10-14' })).toBe(true)
+    expect((await records()).map((r) => r.skipped)).toEqual([true])
+    const entry = (await db.assistantUndo.toArray())[0]
+    expect(entry.label).toBe('Day skipped')
+    await undoBatch(entry.id)
+    // series-exceptions D3: the record stays, as an untouched open occurrence (nothing goes to the Trash).
+    expect(await records()).toMatchObject([{ skipped: false, completed_at: null, deleted_at: null }])
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-14' })
+    await redoBatch(entry.id)
+    expect((await records()).map((r) => r.skipped)).toEqual([true])
+    expect(await skipOccurrence(await createTask({ title: 'Plain' }))).toBe(false)
+    expect(await db.assistantUndo.count()).toBe(1)
+  })
+
+  it('two skips at once run one after the other', async () => {
+    const { skipOccurrence } = await import('./undoActions')
+    const id = await createTask({ title: 'Gym', due: { date: '2026-10-12' }, recurrence: 'every monday' })
+    await Promise.all([skipOccurrence(id, { today: '2026-10-12' }), skipOccurrence(id, { today: '2026-10-12' })])
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-26' })
+    expect(await db.assistantUndo.count()).toBe(2)
+  })
+})
