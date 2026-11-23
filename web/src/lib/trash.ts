@@ -7,13 +7,12 @@
 // learns about it from the `purged` list of the next sync. A purge is only sent
 // while online; offline it is queued in `meta` and shown as pending, and nothing
 // is deleted locally before the server confirms.
-import { useLiveQuery } from 'dexie-react-hooks'
 import { forgetEntities } from './activity'
 import { api, ApiError, isNetworkError } from './api'
 import { db, entityTables, getMeta, setMeta } from './db'
 import type { Entity, Note, Project, Task } from './types'
 import { t } from './i18n'
-import { isOccurrenceRecord, seriesRule } from './recurring'
+import { isOccurrenceRecord } from './recurring'
 import { readWorkspaceState, tasksIn } from './workspaces'
 import { platform } from './platform'
 
@@ -55,29 +54,14 @@ export interface TrashItem {
 
 /** Deleted tasks, projects and standalone notes (notes-overview D10), newest deletion first. */
 /**
- * A trashed open occurrence record of a series that still repeats: an undone completion or skip, not a
- * deletion, since deleting such a record skips it (series-exceptions D3). `repeating` holds the ids of the
- * live series with a rule.
+ * An occurrence record an Undo put back (undo.ts applyBatch): trashed, open and skipped, a state no
+ * deletion leaves, so it is not a trashed item and the Trash leaves it out.
  */
-export function undoneRecord(task: Task, repeating: ReadonlySet<string>): boolean {
-  return !!task.deleted_at && !task.completed_at && isOccurrenceRecord(task) && repeating.has(task.series_id as string)
+export function undoneRecord(task: Task): boolean {
+  return !!task.deleted_at && !task.completed_at && task.skipped === true && isOccurrenceRecord(task)
 }
 
-/** The ids of the live repeating series among the series of trashed open records, for trashItems. */
-export async function repeatingSeriesOf(tasks: readonly Task[]): Promise<Set<string>> {
-  const ids = [...new Set(tasks.filter((x) => x.deleted_at && !x.completed_at && isOccurrenceRecord(x)).map((x) => x.series_id as string))]
-  const rows = ids.length ? await db.tasks.bulkGet(ids) : []
-  return new Set(rows.filter((r): r is Task => !!r && !r.deleted_at && !!seriesRule(r)).map((r) => r.id))
-}
-
-const NO_SERIES: ReadonlySet<string> = new Set()
-
-/** repeatingSeriesOf, live. */
-export function useRepeatingSeries(tasks: readonly Task[]): ReadonlySet<string> {
-  return useLiveQuery(() => repeatingSeriesOf(tasks), [tasks], NO_SERIES)
-}
-
-export function trashItems(tasks: Iterable<Task>, projects: Iterable<Project>, notes: Iterable<Note> = [], repeating: ReadonlySet<string> = new Set()): TrashItem[] {
+export function trashItems(tasks: Iterable<Task>, projects: Iterable<Project>, notes: Iterable<Note> = []): TrashItem[] {
   const byId = new Map<string, Project>()
   const out: TrashItem[] = []
   for (const p of projects) {
@@ -85,7 +69,7 @@ export function trashItems(tasks: Iterable<Task>, projects: Iterable<Project>, n
     if (p.deleted_at) out.push({ entity: 'project', id: p.id, title: p.name || t('Untitled project'), deletedAt: p.deleted_at, project: p })
   }
   for (const task of tasks) {
-    if (!task.deleted_at || undoneRecord(task, repeating)) continue
+    if (!task.deleted_at || undoneRecord(task)) continue
     const project = task.project_id ? byId.get(task.project_id) : undefined
     out.push({ entity: 'task', id: task.id, title: task.title || t('Untitled'), deletedAt: task.deleted_at, projectName: project ? project.name : t('Inbox') })
   }

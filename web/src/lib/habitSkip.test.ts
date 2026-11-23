@@ -5,7 +5,8 @@ import { db, useDatabase } from './db'
 import { runFilter } from './filter'
 import { habitStats } from './habits'
 import { occurrenceId } from './ids'
-import { applyOps, completeTask, createTask, getDeviceId, resetDeviceId, skipOccurrence, updateTask } from './ops'
+import { applyOps, completeTask, createTask, getDeviceId, resetDeviceId, updateTask } from './ops'
+import { skipOccurrence } from './undoActions'
 import type { Op, Task } from './types'
 
 let n = 0

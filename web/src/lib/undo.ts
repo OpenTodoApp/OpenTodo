@@ -38,9 +38,10 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
   let unreadable = false
   for (const c of changes) {
     if (c.create) {
-      // A new occurrence record goes back open as well as trashed: no live record, so its date is the series'
-      // own again (M5), and the Trash leaves it out (trashItems). A re-tick revives it (recordFields).
-      const open = c.entity === 'task' && isRecordId(c.entityId, c.patch) && 'completed_at' in c.patch ? { completed_at: null } : {}
+      // A new occurrence record goes back trashed, so no live record makes its date an exception (M5), and
+      // marked undone (open and skipped, which no other write leaves in the Trash), so the Trash leaves it
+      // out (trash.ts undoneRecord). A re-tick revives it (recordFields).
+      const open = c.entity === 'task' && isRecordId(c.entityId, c.patch) && 'completed_at' in c.patch ? { completed_at: null, skipped: true } : {}
       if (!c.patch.deleted_at) inverse.push({ entity: c.entity, entityId: c.entityId, patch: { deleted_at: Date.now(), ...open }, created: true })
       continue
     }

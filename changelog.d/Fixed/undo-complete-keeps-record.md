@@ -1,1 +1,1 @@
-- **Undoing the completion of a repeating task no longer leaves that day's occurrence in the Trash.** Undoing a skip also keeps its custom field values.
+- **Undoing the completion of a repeating task no longer leaves that day's occurrence in the Trash.**
