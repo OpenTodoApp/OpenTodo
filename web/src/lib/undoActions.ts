@@ -79,7 +79,8 @@ async function plainEditUndoable(id: string, patch: Partial<Task>, label: string
 
 /**
  * A date move from the keyboard (Month, Plan, Day and Week, a span's ends) or in the timeline
- * (keys and drags), as one step of undo history named "Rescheduled" (OpenSpec change
+ * (keys and drags), as one step of undo history named "Rescheduled", or for a length key that
+ * changes only the estimate "Estimate {to} min" (OpenSpec change
  * undo-calendar-moves). The patch is already in the task's own zone. A field already at that value
  * is left out, and nothing at all records nothing. A date on a parked task takes it out of Someday
  * in the same step, as updateTask does. A repeating task goes through updateTask as before, without
@@ -91,11 +92,18 @@ export async function calendarEditUndoable(id: string, patch: Partial<Task>): Pr
     await updateTask(id, patch)
     return { entry: null, label: '' }
   }
-  const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+  // A due is an object: compared with its keys in one order, so the same dates record nothing.
+  const key = (v: unknown) => JSON.stringify(v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b))) : v ?? null)
+  const same = (a: unknown, b: unknown) => key(a) === key(b)
   const changed: Partial<Task> = Object.fromEntries(Object.entries(patch).filter(([k, v]) => !same((task as unknown as Record<string, unknown>)[k], v)))
   if (!Object.keys(changed).length) return { entry: null, label: '' }
-  if (changed.due && !('start' in changed) && task.start === 'someday') changed.start = null
-  return apply([{ entity: 'task', entityId: id, patch: changed }], t('Rescheduled'))
+  if (changed.due && !('start' in patch) && task.start === 'someday') changed.start = null
+  // The Day and Week length keys change only the estimate: named as the panel's estimate step.
+  const minutes = changed.estimate_minutes
+  const label = Object.keys(changed).length === 1 && minutes !== undefined
+    ? (minutes ? t('Estimate {to} min', { to: String(minutes) }) : t('Estimate removed'))
+    : t('Rescheduled')
+  return apply([{ entity: 'task', entityId: id, patch: changed }], label)
 }
 
 /** Rename one task, as one step of undo history named with both titles (OpenSpec change undo-rename). */

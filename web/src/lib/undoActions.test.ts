@@ -281,6 +281,7 @@ describe('calendarEditUndoable', () => {
     const id = await createTask({ title: 'Pack', due: { date: '2030-01-10', time: '09:00' }, estimate_minutes: 30 })
     const a = await calendarEditUndoable(id, { deadline: '2030-01-12' })
     const b = await calendarEditUndoable(id, { estimate_minutes: 45 })
+    expect(b.label).toBe('Estimate 45 min')
     await undoBatch(b.entry!.id)
     await undoBatch(a.entry!.id)
     const t = (await db.tasks.get(id))!
@@ -291,6 +292,7 @@ describe('calendarEditUndoable', () => {
   it('the same dates record nothing; a repeating task is written as before', async () => {
     const id = await createTask({ title: 'Pack', due: { date: '2030-01-10', time: '09:00' } })
     expect((await calendarEditUndoable(id, { due: { date: '2030-01-10', time: '09:00' } })).entry).toBeNull()
+    expect((await calendarEditUndoable(id, { due: { time: '09:00', date: '2030-01-10' } })).entry).toBeNull()
     const rep = await createTask({ title: 'Bins', due: { date: '2030-01-07' }, recurrence: 'every week' })
     expect((await calendarEditUndoable(rep, { due: { date: '2030-01-08' } })).entry).toBeNull()
     expect((await db.tasks.get(rep))!.due).toEqual({ date: '2030-01-08' })
