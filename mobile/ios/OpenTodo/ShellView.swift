@@ -28,8 +28,8 @@ final class ShellController: NSObject, ObservableObject {
     /// The first load of this launch has already fallen back to the web view's cache, so a
     /// second offline failure is a real failure, not another reason to retry (#1458).
     private var triedCache = false
-    /// The load in flight is the one from the cache (loadFromCache), until it commits or a new load starts.
-    private var loadingFromCache = false
+    /// The navigation of the load from the cache (loadFromCache): its own failure says offline.
+    private var cacheNavigation: WKNavigation?
     private var bridge: Bridge?
     private let refresher = UIRefreshControl()
     /// Whether that control is on, or the page handles the pull itself (pull-to-sync D4).
@@ -174,7 +174,7 @@ final class ShellController: NSObject, ObservableObject {
     func load() {
         flow.started(origin)
         triedCache = false
-        loadingFromCache = false
+        cacheNavigation = nil
         var request = URLRequest(url: origin)
         request.cachePolicy = .useProtocolCachePolicy
         webView.load(request)
@@ -187,10 +187,9 @@ final class ShellController: NSObject, ObservableObject {
     /// still fails, and then the offline screen is shown.
     private func loadFromCache() {
         triedCache = true
-        loadingFromCache = true
         var request = URLRequest(url: origin)
         request.cachePolicy = .returnCacheDataDontLoad
-        webView.load(request)
+        cacheNavigation = webView.load(request)
     }
 
     /// Whether an errored load should fall back to the cache instead of showing the failure:
@@ -212,7 +211,6 @@ final class ShellController: NSObject, ObservableObject {
     /// Opens a path of the web app in the same web view, e.g. `/?task=…` from a widget or a reminder.
     func open(path: String) {
         guard let url = URL(string: path, relativeTo: origin)?.absoluteURL else { return }
-        loadingFromCache = false
         webView.load(URLRequest(url: url))
     }
 
@@ -247,7 +245,7 @@ final class ShellController: NSObject, ObservableObject {
         foreignHost = allowed(url) ? nil : SignInFlow.hostOf(url)
     }
 
-    private func record(_ error: Error) {
+    private func record(_ error: Error, _ navigation: WKNavigation?) {
         let nsError = error as NSError
         if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled { return }
         let kind = Self.kind(of: nsError)
@@ -255,8 +253,8 @@ final class ShellController: NSObject, ObservableObject {
             loadFromCache()
             return
         }
-        let fromCache = loadingFromCache
-        loadingFromCache = false
+        let fromCache = navigation != nil && navigation === cacheNavigation
+        if fromCache { cacheNavigation = nil }
         failure = Failure(kind: Self.shownKind(kind, loadingFromCache: fromCache), detail: nsError.localizedDescription)
         reveal()
     }
@@ -451,7 +449,6 @@ extension ShellController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
         provisional = false
-        loadingFromCache = false
         showSite(webView.url)
         // Another page: the shell's pull to refresh is back until this page takes it over.
         pull.pageLoaded()
@@ -463,12 +460,13 @@ extension ShellController: WKNavigationDelegate {
         showSite(webView.url)
         loaded = true
         failure = nil
+        if navigation === cacheNavigation { cacheNavigation = nil }
         reveal()
         refresher.endRefreshing()
         handOverShareIfNeeded()
     }
 
-    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { record(error) }
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { record(error, navigation) }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         provisional = false
@@ -479,7 +477,7 @@ extension ShellController: WKNavigationDelegate {
         let nsError = error as NSError
         if nsError.domain == "WebKitErrorDomain" && nsError.code == 102 { return }
         loaded = false
-        record(error)
+        record(error, navigation)
     }
 
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { webView.reload() }
