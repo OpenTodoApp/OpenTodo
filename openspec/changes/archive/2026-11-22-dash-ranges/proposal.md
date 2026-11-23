@@ -6,7 +6,8 @@ On a shared grocery list, "3-4 tomatoes" became a task titled "tomatoes" due 4 M
 
 ## What Changes
 
-- Month first, a dashed day and month without a year (`3-4`) is not a date and stays in the title. `3/4`, `3-4-2027` and ISO dates are unchanged.
+- In a quick-add line, month first, a dashed day and month without a year (`3-4`) is not a date and stays in the title, unless "on", "by" or "until" (or the language's equivalent) comes right before it. `3/4`, `3-4-2027` and ISO dates are unchanged.
+- Fields that only take a date (the when-picker's typed field, reminder phrases) read `3-4` as a date as before.
 - Day first (the day-month date format, or a day-first language), nothing changes: `3-4` is 3 April.
 - The TypeScript parser and the Go port change together, with shared vectors for each case.
 

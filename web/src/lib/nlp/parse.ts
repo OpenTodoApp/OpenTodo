@@ -129,6 +129,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     vocabs,
     dayMonthOrder: ctx.dayMonthOrder ?? vocabs[0].dayMonthOrder,
     weekStart: ctx.weekStart,
+    dashRanges: true,
   }
   const bareHourIsTime = vocabs.some((v) => v.hourSuffixH)
   const dismissed = liveDismissals(line, ctx.dismissed)

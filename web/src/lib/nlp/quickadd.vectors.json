@@ -8075,6 +8075,178 @@
    }
   },
   {
+   "name": "A dashed date after \"on\" is a date, month first (dash-ranges)",
+   "line": "Dentist on 3-4",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Dentist",
+    "due": {
+     "date": "2027-03-04"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "A dashed date after \"on\", with a time, month first (dash-ranges)",
+   "line": "Dentist on 3-4 at 9",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Dentist",
+    "due": {
+     "date": "2027-03-04",
+     "time": "09:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "A dashed deadline after \"by\", month first (dash-ranges)",
+   "line": "File taxes by 4-15",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "File taxes",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": "2027-04-15"
+   }
+  },
+  {
+   "name": "A dashed end after \"until\", month first (dash-ranges)",
+   "line": "Water plants every day until 12-31",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Water plants",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every day until 2026-12-31",
+    "reminders": []
+   }
+  },
+  {
+   "name": "A range and a date in one line, month first (dash-ranges)",
+   "line": "Read pages 3-4 tomorrow",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Read pages 3-4",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "An impossible month-first dash stays text (dash-ranges)",
+   "line": "Party 25-12",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Party 25-12",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "English first sets month first: a Dutch dash is text (dash-ranges)",
+   "line": "Verjaardag 3-3",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en",
+     "nl"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Verjaardag 3-3",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
    "name": "Dutch: Belastingaangifte op 1 mei 2027",
    "line": "Belastingaangifte op 1 mei 2027",
    "ctx": {

@@ -14,6 +14,13 @@ export interface DateContext {
   dayMonthOrder: DayMonthOrder
   /** First day of the week, 0 = Sunday … 6 = Saturday (date-time-preferences D5); Monday when absent. */
   weekStart?: number
+  /**
+   * A quick-add line, where "3-4 tomatoes" is a quantity range (dash-ranges D1): month
+   * first, a dashed day and month without a year is then a date only right after a word
+   * that introduces one ("on 3-4", "by 4-15", "until 12-31"). Off for fields that only
+   * take a date (the when-picker), which read it as a date as before.
+   */
+  dashRanges?: boolean
 }
 
 /** A phrase match over the token range [from, to). */
@@ -551,6 +558,16 @@ function resolveMonthDay(today: string, year: number, month: number, day: number
   return nextOccurrence(today, month, day)
 }
 
+/** A phrase that introduces a date ("on", "by", "until", "bis zum") ends right before token j. */
+function dateWordBefore(tokens: readonly Token[], j: number, ctx: DateContext): boolean {
+  for (const v of ctx.vocabs) {
+    for (const [list, key] of [[v.before, 'before'], [v.byWords, 'by'], [v.untilWords, 'untilWords']] as const) {
+      for (let n = 1; n <= 3 && n <= j; n++) if (phraseAt(tokens, j - n, list, `${v.code}:${key}`) === n) return true
+    }
+  }
+  return false
+}
+
 const NUMERIC_RE = /^(\d{1,2})([/.-])(\d{1,2})(?:\2(\d{2}|\d{4}))?\.?$/
 const ISO_RE = /^(\d{4})-(\d{1,2})-(\d{1,2})$/
 
@@ -565,9 +582,10 @@ function numericDateAt(tokens: readonly Token[], j: number, ctx: DateContext): {
   const m = NUMERIC_RE.exec(t.norm)
   if (!m) return null
   const dotted = m[2] === '.'
-  // "3-4 tomatoes" is a range: month-first, a dashed day and month without a year is
-  // never a date ("3/4" and "3-4-2027" are). Day-first languages write "3-3" for a date.
-  if (m[2] === '-' && !m[4] && ctx.dayMonthOrder !== 'DM') return null
+  // "3-4 tomatoes" is a range in a quick-add line: month first, a dashed day and month
+  // without a year is a date only after "on", "by", "until" and the like ("3/4" and
+  // "3-4-2027" always are). Day-first languages write "3-3" for a date (dash-ranges D1).
+  if (m[2] === '-' && !m[4] && ctx.dashRanges && ctx.dayMonthOrder !== 'DM' && !dateWordBefore(tokens, j, ctx)) return null
   // A trailing dot only belongs to the German "12.11." form.
   if (t.norm.endsWith('.') && !dotted) return null
   // "9.30" is a time or a number in month/day locales; dotted dates are D.M only.
