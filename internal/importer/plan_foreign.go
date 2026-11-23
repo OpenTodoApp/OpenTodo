@@ -77,7 +77,7 @@ func (fp *foreignPlan) projects() {
 		}
 		name := strings.TrimSpace(row.Title)
 		pp := &projPlan{name: name, row: i}
-		if id, ok := pl.st.Remembered[row.SourceID]; ok && pl.alive(KindProject, id) {
+		if id, ok := pl.remembered(KindProject, row.SourceID); ok {
 			pp.id = id
 			res.Outcome, res.Reason = OutcomeSkip, ReasonAlreadyImported
 		} else if id, ok := pl.projectByName[strings.ToLower(name)]; ok {
@@ -141,7 +141,7 @@ func (fp *foreignPlan) projectParents() {
 		parent := ""
 		if pr, ok := fp.projBySource[row.ParentSourceID]; ok {
 			parent = pr.id
-		} else if id, ok := pl.st.Remembered[row.ParentSourceID]; ok && pl.alive(KindProject, id) {
+		} else if id, ok := pl.remembered(KindProject, row.ParentSourceID); ok {
 			parent = id
 		}
 		if parent == "" || parent == pp.id {
@@ -191,7 +191,7 @@ func (fp *foreignPlan) sections() {
 			continue
 		}
 		key := sectionKey(projectID, row.Title)
-		if id, ok := pl.st.Remembered[row.SourceID]; ok && pl.alive(KindSection, id) {
+		if id, ok := pl.rememberedWhere(KindSection, row.SourceID, func(e opsync.Entity) bool { return str(e, "project_id") == projectID }); ok {
 			res.Outcome, res.Reason = OutcomeSkip, ReasonAlreadyImported
 			if _, ok := pl.sectionByKey[key]; !ok {
 				pl.sectionByKey[key] = id
@@ -257,7 +257,7 @@ func (fp *foreignPlan) resolve(i int) {
 	}
 	projectID, parentID := fp.taskPlace(i, res)
 	tp.projectID = projectID
-	if id, ok := pl.st.Remembered[row.SourceID]; ok && pl.alive(KindTask, id) {
+	if id, ok := pl.remembered(KindTask, row.SourceID); ok {
 		res.Outcome, res.Reason = OutcomeSkip, ReasonAlreadyImported
 		tp.entityID, tp.projectID = id, str(pl.byKind[KindTask][id], "project_id")
 		return
@@ -329,7 +329,7 @@ func (fp *foreignPlan) taskPlace(i int, res *RowResult) (projectID, parentID str
 					res.Warnings = append(res.Warnings, fmt.Sprintf("parent row %d could not be imported; imported as a top-level task", fp.rows[j].Line))
 				}
 			}
-		} else if id, ok := pl.st.Remembered[row.ParentSourceID]; ok && pl.alive(KindTask, id) {
+		} else if id, ok := pl.remembered(KindTask, row.ParentSourceID); ok {
 			parentID, parentProject = id, str(pl.byKind[KindTask][id], "project_id")
 		} else {
 			res.Warnings = append(res.Warnings, fmt.Sprintf("parent %q not found; imported as a top-level task", displaySource(row.ParentSourceID)))
