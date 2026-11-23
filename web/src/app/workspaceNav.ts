@@ -4,10 +4,10 @@
 // otherwise; opening an entity of another workspace switches first and says so.
 import { useEffect } from 'react'
 import { t } from '../lib/i18n'
-import { onCurrentWorkspaceGone, readWorkspaceState, switchTo, workspaceIdFor, workspaceOfEntity, type PartitionedKind } from '../lib/workspaces'
+import { onCurrentWorkspaceGone, readWorkspaceState, switchTo, workspaceOfEntity, type PartitionedKind } from '../lib/workspaces'
 import { useWorkspaceState } from '../lib/localData'
-import { updateTask } from '../lib/ops'
 import { showBulkToast } from './bulk/toastStore'
+import { moveWithUndo } from './undoable'
 import { focusHeading, pageHeading } from './pageFocus'
 import { navigate, type Route } from './router'
 
@@ -97,7 +97,7 @@ export async function offerMoveToWorkspace(taskId: string): Promise<void> {
   const here = state.list.find((w) => w.id === state.current)
   showBulkToast(t('Added to {name}', { name: here ? workspaceLabel(here.name, here.default) : '' }), null, {
     ttl: 5000,
-    action: { label: t('Move to {name}', { name: workspaceLabel(other.name, other.default) }), run: () => { void updateTask(taskId, { workspace_id: workspaceIdFor(other.id, state.list) }) } },
+    action: { label: t('Move to {name}', { name: workspaceLabel(other.name, other.default) }), run: () => { void moveWithUndo(taskId, null, workspaceLabel(other.name, other.default), other.id) } },
   })
 }
 

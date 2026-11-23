@@ -1,0 +1,1 @@
+- **Moving an Inbox task to another workspace can be undone** from the command palette and from the toast after quick add too, as from the task panel: the Undo toast and Ctrl/Cmd+Z take it back.

@@ -6,7 +6,7 @@
 import { openHabitForm } from '../habits/habitFormStore'
 import { logicalToday } from '../../lib/dates'
 import { createLabel } from '../../lib/labels'
-import { createProject, detachOccurrence, parkTask, skipOccurrence, unparkTask, updateProject, updateTask } from '../../lib/ops'
+import { createProject, detachOccurrence, parkTask, skipOccurrence, unparkTask, updateProject } from '../../lib/ops'
 import { reorderLabel, updateLabel } from '../../lib/labels'
 import { deleteSection, renameSection, reorderSection } from '../../lib/sections'
 import { syncNow } from '../../lib/sync'
@@ -36,7 +36,7 @@ import { switchWorkspace, workspaceLabel } from '../workspaceNav'
 import { viewMenuGroups } from '../ViewsView'
 import type { Entry, Step } from './entries'
 import { runBulk } from '../bulk/BulkActions'
-import { deleteWithUndo } from '../undoable'
+import { deleteWithUndo, moveWithUndo } from '../undoable'
 import { keysOf } from '../../lib/shortcuts'
 import { runGroupDue } from '../task-list/EarlierActions'
 import { hueName } from '../../lib/colourNames'
@@ -273,7 +273,7 @@ export function commands(ctx: PaletteContext): Command[] {
       if (!tk.project_id && !tk.parent_id) {
         for (const w of (ctx.workspaces?.list ?? []).filter((x) => x.id !== ctx.workspaces?.current)) {
           out.push({ id: `task:workspace:${w.id}`, label: t('Move {title} to workspace {name}', { title, name: workspaceLabel(w.name, w.default) }), icon: 'layers',
-            keywords: 'workspace', run: () => updateTask(tk.id, { workspace_id: w.default ? null : w.id }) })
+            keywords: 'workspace', run: () => moveWithUndo(tk.id, null, workspaceLabel(w.name, w.default), w.id).then(() => {}) })
         }
       }
       if (list.openLabels) { const open = list.openLabels; out.push({ id: 'task:labels', label: t('Add labels to {title}', { title }), icon: 'tag', shortcut: keysOf('list.labels'), run: () => open(tk.id) }) }

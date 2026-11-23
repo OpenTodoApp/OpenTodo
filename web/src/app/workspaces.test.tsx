@@ -8,7 +8,10 @@ import type { User, Workspace, WorkspaceEntry } from '../lib/types'
 import { CURRENT_WORKSPACE_KEY, storeWorkspaces, switchTo } from '../lib/workspaces'
 import { click, render, visibleText, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
-import { routeAfterSwitch } from './workspaceNav'
+import { offerMoveToWorkspace, routeAfterSwitch } from './workspaceNav'
+import { bulkToast, hideBulkToast } from './bulk/toastStore'
+import { undoBatch } from '../lib/undo'
+import type { ListState } from './listActions'
 import { Sidebar } from './Sidebar'
 import { commands } from './palette/registry'
 
@@ -121,5 +124,40 @@ describe('tasks follow their workspace', () => {
     await switchTo('w-work')
     const id = await createTask({ title: 'Call' })
     expect((await db.tasks.get(id))?.workspace_id).toBe('w-work')
+  })
+})
+
+// OpenSpec change undo-workspace-move: moving an Inbox task to another workspace is a step of undo history.
+describe('moving an Inbox task to another workspace can be undone', () => {
+  const list = [entry('w-p', { default: true, name: 'Personal' }), entry('w-work', { name: 'Work' })]
+  afterEach(() => hideBulkToast())
+
+  it('the palette command records one step with the Undo toast; undo brings it back', async () => {
+    await storeWorkspaces(list)
+    await switchTo('w-work')
+    const id = await createTask({ title: 'Call the bank' })
+    const task = (await db.tasks.get(id))!
+    const state = { readOnly: () => false, open: () => {}, toggleComplete: () => {} } as unknown as ListState
+    const cmds = commands({ route: { view: 'inbox' }, user, today: '2026-10-22', list: state, task, filterQuery: null, query: '', vimEnabled: false,
+      workspaces: { list, current: 'w-work' }, showShortcuts: () => {}, focusQuickAdd: () => false })
+    await cmds.find((c) => c.id === 'task:workspace:w-p')!.run()
+    expect((await db.tasks.get(id))!.workspace_id ?? null).toBeNull()
+    const steps = await db.assistantUndo.toArray()
+    expect(steps.map((s) => s.label)).toEqual(['Moved to Personal'])
+    expect(bulkToast()?.undoId).toBe(steps[0].id)
+    await undoBatch(steps[0].id)
+    expect((await db.tasks.get(id))!.workspace_id).toBe('w-work')
+  })
+
+  it('the Move action of the quick-add toast records one step too', async () => {
+    await storeWorkspaces(list)
+    await switchTo('w-work')
+    const id = await createTask({ title: 'Call the bank' })
+    await offerMoveToWorkspace(id)
+    await bulkToast()!.action!.run()
+    await waitFor(async () => (await db.assistantUndo.count()) === 1, 'one step')
+    expect((await db.tasks.get(id))!.workspace_id ?? null).toBeNull()
+    await undoBatch((await db.assistantUndo.toArray())[0].id)
+    expect((await db.tasks.get(id))!.workspace_id).toBe('w-work')
   })
 })
