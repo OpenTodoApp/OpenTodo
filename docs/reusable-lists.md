@@ -32,7 +32,7 @@ When you add an item from [quick add](quick-add.md), the list looks for an item 
 
 Either message offers **Add anyway**, which adds a new item as an ordinary add would. The message stays for four seconds.
 
-Typing a few letters lists the ticked items that match, newest first: <kbd>↓</kbd> and <kbd>Enter</kbd>, or a click, brings one back. <kbd>Enter</kbd> alone adds what you typed.
+Typing a few letters, in the list or the phone's add sheet, lists the ticked items that match, newest first: <kbd>↓</kbd> and <kbd>Enter</kbd>, or a click, brings one back. <kbd>Enter</kbd> alone adds what you typed.
 
 Names match when they are the same apart from upper and lower case, accents, spaces at the ends, double spaces and one full stop at the end. So "CAFE" matches "Café", and "milk " matches "Milk". Nothing else matches: "Mlik" is a new item, and "Strasse" does not match "Straße". Subtasks never match.
 

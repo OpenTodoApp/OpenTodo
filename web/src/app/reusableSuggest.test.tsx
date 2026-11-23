@@ -11,6 +11,8 @@ import { tickedMatches } from '../lib/tickedItems'
 import { render, mockFetch, noPublicLinks, type, waitFor } from '../ui/test-utils'
 import { bulkToast, hideBulkToast } from './bulk/toastStore'
 import { TaskListView } from './TaskListView'
+import { QuickAddSheet } from './QuickAddSheet'
+import type { Route } from './router'
 
 beforeEach(() => mockFetch(noPublicLinks))
 afterEach(() => { vi.unstubAllGlobals(); hideBulkToast() })
@@ -156,6 +158,42 @@ describe('suggesting ticked items in a reusable list', () => {
     await waitFor(() => quick.value === 'mil', 'typed')
     expect(options(r.container)).toEqual([])
     await r.unmount()
+  })
+
+  // The phone's add sheet in a reusable list suggests the same items (reusable-suggest-sheet).
+  async function sheet(route: Route, onClose = () => {}) {
+    const r = await render(<QuickAddSheet open onClose={onClose} anchor={{ current: null }} route={route} />)
+    await waitFor(() => !!document.querySelector('[data-quick-add-sheet] textarea'), 'the sheet')
+    const quick = document.querySelector('[data-quick-add-sheet] textarea') as HTMLTextAreaElement
+    await act(async () => { quick.focus() })
+    return { r, quick }
+  }
+
+  it('the add sheet of a reusable list suggests and reopens, and other views suggest nothing', async () => {
+    const { pid, oat } = await groceries()
+    const onClose = vi.fn()
+    const { r, quick } = await sheet({ view: 'project', id: pid }, onClose)
+    await type(quick, 'mil')
+    await waitFor(() => options(document).length === 2, 'suggestions in the sheet')
+    expect(options(document)).toEqual(['Oat milk', 'Milk'])
+    // Under the line, in the sheet's flow, so the sheet grows to show it.
+    expect(document.querySelector('[data-sheet-suggestions] [data-ticked-suggestions]')).toBeTruthy()
+    // Esc closes the list and keeps the sheet open.
+    await key(quick, 'Escape')
+    expect(options(document)).toEqual([])
+    expect(onClose).not.toHaveBeenCalled()
+    await type(quick, 'milk')
+    await waitFor(() => options(document).length === 2, 'back with new text')
+    await key(quick, 'ArrowDown')
+    await key(quick, 'Enter')
+    await waitFor(async () => (await db.tasks.get(oat))!.completed_at === null, 'Oat milk reopened')
+    expect(quick.value).toBe('')
+    await r.unmount()
+    const inbox = await sheet({ view: 'inbox' })
+    await type(inbox.quick, 'mil')
+    await waitFor(() => inbox.quick.value === 'mil', 'typed')
+    expect(options(document)).toEqual([])
+    await inbox.r.unmount()
   })
 
   it('matching ignores case, accents and spaces at the ends, and keeps at most eight', () => {

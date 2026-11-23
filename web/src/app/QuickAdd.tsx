@@ -375,9 +375,9 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
         </span>
         {voice.enabled && <span className={lead}><VoiceButton voice={voice} shortcut={voiceShortcut} /></span>}
         {!hideHint && hints && <span className={`${lead} max-sm:hidden`} data-kbd-hint><span className="ui-kbd" data-quick-add-hint>{keysOf('list.quick-add')}</span></span>}
-        {suggest.list}
-        {paste.offer}
+        {layout !== 'sheet' && suggest.list}{paste.offer}
       </div>
+      {layout === 'sheet' && suggest.list && <div className="px-3 pb-2 [&>ul]:static [&>ul]:mt-0 [&>ul]:w-full" data-sheet-suggestions>{suggest.list}</div>}
       {notes !== null && (
         <NotesLine ref={notesField.ref} value={notes} onChange={notesField.setNotes} onClose={notesField.close}
           className={layout === 'sheet' ? 'px-3 pb-2' : 'pl-5'} size={size} />
