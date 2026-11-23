@@ -1,0 +1,1 @@
+- **A task's menu in Today, grouped by project, always offers "Move under task…" and "Make top-level for today".** These two actions load just after Today opens. A menu opened before they loaded went without them until it was opened again. Now they appear in the open menu as soon as they load.
