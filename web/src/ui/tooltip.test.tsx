@@ -198,6 +198,31 @@ describe('TruncatedText (ux-fixes-phone D2)', () => {
     await r.unmount()
   })
 
+  it('moves back inside the viewport when its own size changes after it opened (a web font arriving)', async () => {
+    let resized: (() => void) | null = null
+    vi.stubGlobal('ResizeObserver', class { constructor(cb: () => void) { resized = cb } observe() {} disconnect() {} })
+    Object.defineProperty(document.documentElement, 'clientWidth', { value: 375, configurable: true })
+    let width = 70
+    const offset = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth')
+    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', { get() { return (this as HTMLElement).getAttribute('role') === 'tooltip' ? width : 0 }, configurable: true })
+    try {
+      const r = await render(<Tooltip label="Formatting"><button>B</button></Tooltip>)
+      const button = r.container.querySelector('button')!
+      button.getBoundingClientRect = () => ({ top: 10, bottom: 42, left: 335, right: 367, width: 32, height: 32, x: 335, y: 10, toJSON() {} })
+      await focus(button, 'focus')
+      // Against the right edge: left = 375 - 70 - 8.
+      expect(tip()!.style.left).toBe('297px')
+      // The font arrives and the tip grows; without a new placement it would run past the edge.
+      width = 82
+      await act(async () => { resized?.() })
+      expect(tip()!.style.left).toBe('285px')
+      await r.unmount()
+    } finally {
+      if (offset) Object.defineProperty(HTMLElement.prototype, 'offsetWidth', offset)
+      delete (document.documentElement as unknown as { clientWidth?: number }).clientWidth
+    }
+  })
+
   it('a disabled Tooltip never opens', async () => {
     const r = await render(<Tooltip label="Rename" disabled><button>Garden</button></Tooltip>)
     const button = r.container.querySelector('button')!

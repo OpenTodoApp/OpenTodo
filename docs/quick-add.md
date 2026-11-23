@@ -52,6 +52,7 @@ On a phone, the add sheet shows plain chips for what it understood, then a row o
 | `p1`–`p4` | Priority, 1 highest, 4 [no priority](priorities.md#no-priority), the default. Typing `p` after a space lists the four levels with [your names for them](priorities.md); only the number is read. | `p1`, `P3` |
 | `+duration` | Estimate in minutes, from 1 minute to 7 days (10080 minutes). Shown on the task row. | `+30`, `+30m`, `+45min`, `+2h`, `+1h30`, `+1.5h` |
 | `spent/estimate` | Time already spent and an estimate (see [Time spent](#time-spent)). | `30m/2h`, `1h/1h30`, `45min/2h` |
+| a link | An `http` or `https` address becomes a [link attachment](attachments.md#add-a-file-or-a-link) of the task and leaves the title; its chip shows the site. A full stop or comma right after it goes too. Up to five per line; a line that is only a link keeps it as the title. The same works while you edit a title, for a link you type in that edit. | `Review the mockup https://example.com/mockup tomorrow` → *Review the mockup*, due tomorrow, with the link attached |
 
 The same works when you edit a title in the task panel: type ` tomorrow p1` after the title and press <kbd>Enter</kbd>, and the date and priority are set with the title left as it was; only what you typed in this edit is read, and **Undo** takes it back.
 

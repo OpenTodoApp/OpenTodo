@@ -38,6 +38,8 @@ func TestSharedVectors(t *testing.T) {
 				Sector *string `json:"sector"`
 				// Deadline is compared when a case states it (quick-add-by-deadline).
 				Deadline *string `json:"deadline"`
+				// Links are compared when a case states them (quick-add-links).
+				Links *[]string `json:"links"`
 			} `json:"expect"`
 		} `json:"cases"`
 	}
@@ -82,6 +84,11 @@ func TestSharedVectors(t *testing.T) {
 				want.Sector = *c.Expect.Sector
 			} else {
 				got.Sector = ""
+			}
+			if c.Expect.Links != nil && len(*c.Expect.Links) > 0 {
+				want.Links = *c.Expect.Links
+			} else if c.Expect.Links == nil {
+				got.Links = nil
 			}
 			if want.Reminders == nil {
 				want.Reminders = []Reminder{}

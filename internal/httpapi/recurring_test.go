@@ -180,3 +180,6 @@ func mustUsers(t *testing.T, e *env) []string {
 	}
 	return out
 }
+
+// occurrenceID is the id of a series' occurrence on date (opsync.OccurrenceID).
+func occurrenceID(seriesID, date string) string { return opsync.OccurrenceID(seriesID, date) }

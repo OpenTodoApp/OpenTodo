@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useTask, useMembershipMap } from '../lib/localData'
-import { updateTask } from '../lib/ops'
+import { assigneeWithUndo } from './undoable'
 import { assigneeOptions, memberName } from '../lib/sharing'
 import { PersonAvatar } from './PersonAvatar'
 import { Tooltip } from '../ui'
@@ -71,7 +71,7 @@ export function AssigneePicker({ taskId, userId, onClose, inline = false }: {
     renderLeading: (p: Person) => (p.id === NONE ? <span className="flex h-6 w-6 items-center justify-center text-faint"><Icon name="circle" /></span> : <PersonAvatar id={p.id} name={p.name} size="sm" />),
     onPick: async (p: Person) => {
       const id = p.id === NONE ? null : p.id
-      if (id !== current) await updateTask(task.id, { assignee_id: id })
+      if (id !== current) await assigneeWithUndo(task.id, id)
     },
     onClose,
   }

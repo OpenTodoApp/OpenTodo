@@ -16,6 +16,9 @@ import { LimitError, TaskNotesError, type Event, type Options, type Reply, type 
 import { isCiphertext, View } from './view'
 import { localDateTime } from './zone'
 
+/** How long an empty file stays held as half saved (engine.go halfSavedHold). */
+const HALF_SAVED_HOLD = 5 * 60_000
+
 export const MAX_FILE_BYTES = 1 << 20
 export const MAX_FILE_LINES = 5000
 export const MAX_TASKS = 20000
@@ -49,6 +52,8 @@ export class Engine {
   retouch = new Set<string>()
   takeOver = false
   pending = new Set<string>()
+  /** The half-saved files among pending, with their first hold time. */
+  held = new Map<string, number>()
   /** Plaintext of ciphertext values: entity\0id\0field\0value → text, null when it does not open. */
   plain: Map<string, string | null>
 
@@ -344,6 +349,42 @@ export class Engine {
     }
   }
 
+  /**
+   * The vault files that look like an editor's first save step (engine.go
+   * halfSaved): empty now, holding text when the last sync wrote them, and not
+   * emptied because all their lines moved to other files. A held file stays
+   * held while it is empty, up to HALF_SAVED_HOLD from its first hold; then it
+   * was emptied on purpose and syncs as it is.
+   */
+  halfSaved(): string[] {
+    const out: string[] = []
+    const empty = hashOf('')
+    const now = this.o.now()
+    for (const p of sortedKeys(this.disk)) {
+      const fs = own(this.st.files, p) ? this.st.files[p] : undefined
+      if (!fs || this.disk.get(p) !== '' || fs.hash === empty) continue
+      if (fs.hash === '' && fs.held && now >= fs.held && now - fs.held < HALF_SAVED_HOLD) this.held.set(p, fs.held)
+      else if (fs.hash !== '' && !this.allMoved(p)) this.held.set(p, now)
+      else continue
+      out.push(p)
+    }
+    return out
+  }
+
+  /** Whether file p had tasks printed in it and every one of them is now in another file. */
+  private allMoved(p: string): boolean {
+    let printed = 0
+    for (const [id, at] of Object.entries(this.st.printed)) {
+      if (at !== p) continue
+      printed++
+      const mark = `🆔 ${id}`
+      let found = false
+      for (const [q, text] of this.disk) if (q !== p && text.includes(mark)) { found = true; break }
+      if (!found) return false
+    }
+    return printed > 0
+  }
+
   /** The app becomes the base, except the rows of files a read-only run or a missing download left pending. */
   saveBase(): void {
     const next = S.clone(this.app)
@@ -411,6 +452,15 @@ export async function sync(o: Options): Promise<Report> {
   const e = new Engine(o, st)
   e.takeOver = taken
   await e.scan()
+  // A file that held text when the sync last wrote it and is empty now is an
+  // editor's first save step (engine.go halfSaved): held once like a file not
+  // downloaded yet, neither read nor written, its base kept.
+  for (const p of e.halfSaved()) {
+    e.disk.delete(p)
+    e.changed.delete(p)
+    e.pending.add(p)
+    e.event('skipped', p, '', `skipped ${p}: it is empty, as while a file is being saved; the next sync reads it`)
+  }
   await e.pull()
   await e.openAll(e.base)
   await e.openAll(e.app)

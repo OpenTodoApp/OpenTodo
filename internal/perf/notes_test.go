@@ -56,6 +56,9 @@ func TestNotesBudgets(t *testing.T) {
 
 	samples := map[string][]float64{}
 	reported := map[string]float64{}
+	// The runner's speed, before the work it scales and after it (perf-relative-budgets D1).
+	ref := newReference(t, t.TempDir())
+	samples[ReferenceID] = append(samples[ReferenceID], ref.measure(t))
 	ctx := context.Background()
 	db, err := store.Open(out)
 	if err != nil {
@@ -209,6 +212,8 @@ func TestNotesBudgets(t *testing.T) {
 	reported["notes-pull-full-seconds"] = took.Seconds()
 	reported["notes-pull-full-mb"] = mb(pulled)
 
+	samples[ReferenceID] = append(samples[ReferenceID], ref.measure(t))
+	reported[ReferenceID] = median(samples[ReferenceID])
 	budgets := loadBudgets(t, filepath.Join(root, "scripts", "perf", "budgets.json"))
 	rep := report(budgets, "server", samples)
 	notes := rep.Metrics[:0]
@@ -225,7 +230,7 @@ func TestNotesBudgets(t *testing.T) {
 		t.Logf("%-24s %10.1f (reported)", k, v)
 	}
 	for _, m := range rep.Metrics {
-		t.Logf("%-22s median %8.1f %-2s budget %6g", m.ID, m.Median, m.Unit, m.Limit)
+		t.Logf("%-22s median %8.1f %-2s budget %6g (here %6.1f)", m.ID, m.Median, m.Unit, m.Limit, m.Scaled)
 		if !m.OK {
 			t.Errorf("%s", m.Failure)
 		}

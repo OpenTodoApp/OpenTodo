@@ -79,7 +79,7 @@ export function TaskDetail({ taskId, initial, userId, projects, labelMap, onClos
 
   return (
     <aside ref={panel} data-detail-for={task.id} data-detail-variant="panel"
-      className={`fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-default bg-surface pb-safe max-lg:pr-safe shadow-3 md:max-w-md lg:relative lg:z-auto lg:w-(--panel-w) lg:max-w-none lg:shadow-none ${entering ? 'panel-enter' : ''}`}>
+      className={`fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-default bg-surface pb-safe max-[56.25rem]:pr-safe shadow-3 md:max-w-md min-[56.25rem]:relative min-[56.25rem]:z-auto min-[56.25rem]:w-(--panel-w) min-[56.25rem]:max-w-none min-[56.25rem]:shadow-none ${entering ? 'panel-enter' : ''}`}>
       <PanelResizeHandle />
       {/* Sticky header (ux-overhaul, web-app "Task panel layout"): the checkbox, the title, the menu, Close. */}
       <div data-panel-header className="border-b border-default pt-[max(0.5rem,var(--safe-top))]">

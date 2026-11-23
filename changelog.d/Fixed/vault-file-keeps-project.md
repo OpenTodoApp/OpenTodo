@@ -1,0 +1,1 @@
+- **A vault file that loses its front matter keeps its project.** Deleting a file's front matter, or emptying the file, made it a new project of the same name and wrote the old one back as `<name> 2.md`. The file now stays its project's file and gets the front matter back.

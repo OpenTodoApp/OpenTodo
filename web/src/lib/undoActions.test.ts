@@ -1,10 +1,12 @@
 // OpenSpec change rule-boards, task 2.3: a drop on a board column as one undoable batch.
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
-import { createTask, resetDeviceId, updateTask } from './ops'
+import { createProject, createTask, resetDeviceId, updateTask } from './ops'
+import { addReminder } from './reminders'
+import { deadlineFireAt } from './reminderTime'
 import type { OnDropRule } from './types'
-import { undoBatch } from './undo'
-import { dropOnPanel, dropUndoable } from './undoActions'
+import { redoBatch, topUndo, undoBatch } from './undo'
+import { assigneeUndoable, deadlineUndoable, dropOnPanel, dropUndoable, estimateUndoable, eveningUndoable, priorityUndoable } from './undoActions'
 
 let n = 0
 beforeEach(() => {
@@ -107,5 +109,151 @@ describe('archiveProjectsUndoable', () => {
     await undoBatch(r.entry!.id)
     for (const id of [home, garden, work]) expect((await db.projects.get(id))?.archived).toBeFalsy()
     expect((await db.projects.get(old))?.archived).toBe(true)
+  })
+})
+
+// OpenSpec change undo-estimate: one task's estimate is one step of history.
+describe('estimateUndoable', () => {
+  it('records one step; undo restores the old estimate', async () => {
+    const id = await createTask({ title: 'Write the report' })
+    await updateTask(id, { estimate_minutes: 30 })
+    const r = await estimateUndoable(id, 90)
+    expect(r.label).toBe('Estimate 90 min')
+    expect((await db.tasks.get(id))!.estimate_minutes).toBe(90)
+    await undoBatch(topUndo(await db.assistantUndo.toArray())!.id)
+    expect((await db.tasks.get(id))!.estimate_minutes).toBe(30)
+  })
+
+  it('removing it is a step too; the same value records nothing', async () => {
+    const id = await createTask({ title: 'Write the report' })
+    await updateTask(id, { estimate_minutes: 30 })
+    expect((await estimateUndoable(id, 30)).entry).toBeNull()
+    expect((await estimateUndoable(id, null)).label).toBe('Estimate removed')
+    expect(await db.assistantUndo.count()).toBe(1)
+  })
+
+  it('a repeating task is written as before, without a step', async () => {
+    const id = await createTask({ title: 'Review', due: { date: '2030-01-07' }, recurrence: 'every week' })
+    expect((await estimateUndoable(id, 45)).entry).toBeNull()
+    expect((await db.tasks.get(id))!.estimate_minutes).toBe(45)
+  })
+})
+
+// OpenSpec change undo-priority: one task's priority is one step of history.
+describe('priorityUndoable', () => {
+  it('records one step named like the bulk action; undo restores the old priority', async () => {
+    const id = await createTask({ title: 'Pay rent', priority: 3 })
+    await priorityUndoable(id, 1)
+    expect((await db.tasks.get(id))!.priority).toBe(1)
+    const step = topUndo(await db.assistantUndo.toArray())
+    expect(step).toMatchObject({ label: 'Priority 1 set on 1 task', count: 1 })
+    await undoBatch(step!.id)
+    expect((await db.tasks.get(id))!.priority).toBe(3)
+  })
+
+  it('a repeating task is written as before (updateTask), without a step', async () => {
+    const id = await createTask({ title: 'Water plants', due: { date: '2030-01-07' }, recurrence: 'every week' })
+    await priorityUndoable(id, 1)
+    expect((await db.tasks.get(id))!.priority).toBe(1)
+    expect(await db.assistantUndo.count()).toBe(0)
+  })
+
+  it('the same priority again records nothing', async () => {
+    const id = await createTask({ title: 'Pay rent', priority: 2 })
+    await priorityUndoable(id, 2)
+    expect(await db.assistantUndo.count()).toBe(0)
+  })
+})
+
+// OpenSpec change undo-deadline: one task's deadline is one step of history.
+describe('deadlineUndoable', () => {
+  it('records one step; undo restores the old deadline, and removing it is a step too', async () => {
+    const id = await createTask({ title: 'File taxes', deadline: '2030-04-15' })
+    const r = await deadlineUndoable(id, '2030-04-30')
+    expect(r.entry).not.toBeNull()
+    expect((await db.tasks.get(id))!.deadline).toBe('2030-04-30')
+    await undoBatch(r.entry!.id)
+    expect((await db.tasks.get(id))!.deadline).toBe('2030-04-15')
+    expect((await deadlineUndoable(id, null)).label).toBe('Deadline removed')
+  })
+
+  it('a deadline reminder follows the deadline, and the restored one after undo', async () => {
+    const id = await createTask({ title: 'File taxes', deadline: '2030-04-15' })
+    const rem = await addReminder(id, { kind: 'deadline', offset_minutes: 0 })
+    const r = await deadlineUndoable(id, '2030-04-30')
+    expect((await db.reminders.get(rem))!.fire_at).toBe(deadlineFireAt('2030-04-30', 0))
+    await undoBatch(r.entry!.id)
+    expect((await db.reminders.get(rem))!.fire_at).toBe(deadlineFireAt('2030-04-15', 0))
+  })
+
+  it('the same deadline records nothing; a repeating task is written as before', async () => {
+    const id = await createTask({ title: 'File taxes', deadline: '2030-04-15' })
+    expect((await deadlineUndoable(id, '2030-04-15')).entry).toBeNull()
+    const rep = await createTask({ title: 'Pay', due: { date: '2030-01-07' }, recurrence: 'every month' })
+    expect((await deadlineUndoable(rep, '2030-01-10')).entry).toBeNull()
+    expect((await db.tasks.get(rep))!.deadline).toBe('2030-01-10')
+    expect(await db.assistantUndo.count()).toBe(0)
+  })
+})
+
+// OpenSpec change undo-assignee: one task's assignee is one step of history.
+describe('assigneeUndoable', () => {
+  it('records one step named for the member; undo and redo, in a shared project', async () => {
+    await db.meta.put({ key: 'userId', value: 'u-me' })
+    const p = await createProject({ name: 'Wedding' })
+    await db.memberships.put({ projectId: p, role: 'owner', ownerId: 'u-me', members: [{ userId: 'u-ana', name: 'Ana', email: 'ana@example.com' }] } as never)
+    const id = await createTask({ title: 'Book the venue', project_id: p })
+    const a = await assigneeUndoable(id, 'u-ana')
+    expect(a.label).toBe('Assigned to Ana')
+    expect((await db.tasks.get(id))!.assignee_id).toBe('u-ana')
+    const b = await assigneeUndoable(id, 'u-me')
+    expect(b.label).toBe('Assigned to you')
+    const c = await assigneeUndoable(id, null)
+    expect(c.label).toBe('Unassigned')
+    await undoBatch(c.entry!.id)
+    expect((await db.tasks.get(id))!.assignee_id).toBe('u-me')
+    await undoBatch(b.entry!.id)
+    expect((await db.tasks.get(id))!.assignee_id).toBe('u-ana')
+    await redoBatch(b.entry!.id)
+    expect((await db.tasks.get(id))!.assignee_id).toBe('u-me')
+    await undoBatch(b.entry!.id)
+    await undoBatch(a.entry!.id)
+    expect((await db.tasks.get(id))!.assignee_id ?? null).toBeNull()
+  })
+
+  it('the same assignee records nothing; a repeating task is written as before', async () => {
+    const id = await createTask({ title: 'Book the venue' })
+    expect((await assigneeUndoable(id, null)).entry).toBeNull()
+    const rep = await createTask({ title: 'Take the bins out', due: { date: '2030-01-07' }, recurrence: 'every week' })
+    expect((await assigneeUndoable(rep, 'u-ana')).entry).toBeNull()
+    expect((await db.tasks.get(rep))!.assignee_id).toBe('u-ana')
+    expect(await db.assistantUndo.count()).toBe(0)
+  })
+})
+
+// OpenSpec change undo-evening: This Evening on one task is one step of history.
+describe('eveningUndoable', () => {
+  it('marks the task, records one step, and undo takes it out again', async () => {
+    const id = await createTask({ title: 'Call mum' })
+    await eveningUndoable(id, true)
+    expect((await db.tasks.get(id))!.evening).toBe(true)
+    const step = topUndo(await db.assistantUndo.toArray())
+    expect(step?.count).toBe(1)
+    await undoBatch(step!.id)
+    expect((await db.tasks.get(id))!.evening).toBeFalsy()
+  })
+
+  it('a task already there records nothing', async () => {
+    const id = await createTask({ title: 'Call mum' })
+    await updateTask(id, { evening: true, day_part: null })
+    await eveningUndoable(id, true)
+    expect(await db.assistantUndo.count()).toBe(0)
+  })
+
+  it('a repeating task is written as before, without a step', async () => {
+    const id = await createTask({ title: 'Read', due: { date: '2030-01-07' }, recurrence: 'every day' })
+    await eveningUndoable(id, true)
+    expect((await db.tasks.get(id))!.evening).toBe(true)
+    expect(await db.assistantUndo.count()).toBe(0)
   })
 })

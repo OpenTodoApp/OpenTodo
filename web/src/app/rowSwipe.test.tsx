@@ -58,7 +58,7 @@ async function inbox(...titles: string[]) {
 }
 const row = (id: string) => document.querySelector<HTMLElement>(`[data-task-id="${id}"]`)!
 /** A touch swipe on a row: the press, the moves, the release, `ms` apart. */
-async function swipe(el: HTMLElement, xs: number[], { y = 0, ms = 120 } = {}) {
+async function swipe(el: HTMLElement, xs: number[], { y = 0, ms = 120, settles = true } = {}) {
   let now = 0
   const clock = vi.spyOn(performance, 'now').mockImplementation(() => now)
   await act(async () => { el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 3, pointerType: 'touch', clientX: 50, clientY: 50 })) })
@@ -69,10 +69,21 @@ async function swipe(el: HTMLElement, xs: number[], { y = 0, ms = 120 } = {}) {
   await act(async () => { window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 3, pointerType: 'touch', clientX: 50 + xs[xs.length - 1], clientY: 50 + y })) })
   clock.mockRestore()
   // The row has slid back (or left): its edge is removed once the return animation ends.
-  await waitFor(() => !document.querySelector('[data-swipe-edge]'), 'the row settled')
+  if (settles) await waitFor(() => !document.querySelector('[data-swipe-edge]'), 'the row settled')
 }
 
 describe('swipe actions on a touch list', () => {
+  it('releasing a short left swipe edits the title immediately', async () => {
+    const [a, b] = await inbox('First task', 'Second task')
+    await swipe(row(b), [-20, -64], { settles: false })
+    const editor = row(b).querySelector<HTMLInputElement>('[data-inline-title]')
+    expect(editor?.value).toBe('Second task')
+    expect(document.activeElement).toBe(editor)
+    expect(row(a).querySelector('[data-inline-title]')).toBeNull()
+    expect(document.querySelector('[data-swipe-edge]')).toBeNull()
+    expect(document.querySelector('[data-testid="row-schedule-sheet"]')).toBeNull()
+    expect(panelTaskId()).toBeNull()
+  })
   it('swipe right completes the task and offers Undo; offline the op waits in the outbox', async () => {
     const [id] = await inbox('Water plants')
     expect(row(id).hasAttribute('data-swipeable')).toBe(true)

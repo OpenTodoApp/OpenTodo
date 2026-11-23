@@ -94,9 +94,15 @@ describe('Markdown source', () => {
     const nodes = Array.from({ length: 3000 }, (_, i) => p(run(`Paragraph ${i} with some words to make it a realistic line of a long note.`)))
     const s = createState(nodes, hooks)
     const text = sourceOf(s.doc).replace('Paragraph 1500 ', 'Paragraph 1500 edited ')
-    const t0 = performance.now()
-    const tr = applySource(s, text)
-    const ms = performance.now() - t0
+    // The fastest of five runs: a stray pause on a busy runner slows one run, a slower
+    // alignment slows them all. applySource leaves the state alone and sourceOf warmed its cache, so every run does the same work.
+    let tr: ReturnType<typeof applySource> = null
+    let ms = Infinity
+    for (let i = 0; i < 5; i++) {
+      const t0 = performance.now()
+      tr = applySource(s, text)
+      ms = Math.min(ms, performance.now() - t0)
+    }
     expect(tr).not.toBeNull()
     expect(modelToPm(pmToModel(s.apply(tr!).doc)).childCount).toBe(3000)
     // The phone profile is about 4× slower than a computer: a quarter of the 50 ms, with room for a busy runner.

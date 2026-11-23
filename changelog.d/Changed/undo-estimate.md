@@ -1,0 +1,1 @@
+- **An estimate change can be undone.** Setting or removing a task's estimate is a step that Ctrl/Cmd+Z takes back, and stretching a block in the calendar now offers Undo like its other edits. A repeating task is not covered yet.

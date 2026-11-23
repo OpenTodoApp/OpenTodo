@@ -157,6 +157,23 @@ describe('filters', () => {
     expect(container.querySelector('[data-note-chip]')).toBeNull()
   })
 
+  it('kind: suggestions come back after the picked kind chip is removed', async () => {
+    await createNote({ title: 'A note' })
+    const { container } = await page()
+    const field = container.querySelector<HTMLInputElement>('[data-note-search]')!
+    await act(async () => field.focus())
+    await type(field, 'kind:')
+    await waitFor(() => !!container.querySelector('[data-note-suggestions]'), 'the kind suggestions')
+    await key(field, 'Enter')
+    await waitFor(() => !!container.querySelector('[data-note-chip="kind"]'), 'the picked kind chip')
+    expect(field.value).toBe('')
+    await click(container.querySelector('[data-note-chip="kind"] button')!)
+    expect(container.querySelector('[data-note-chip]')).toBeNull()
+    await act(async () => field.focus())
+    await type(field, 'kind:')
+    await waitFor(() => !!container.querySelector('[data-note-suggestions]'), 'the kind suggestions again')
+  })
+
   it('Label filter: task notes (with kind:task) and standalone notes with the label, no project notes', async () => {
     await db.labels.put({ id: 'l-ref', name: 'reference', color: '#0aa', position: 0, created_at: 0, deleted_at: null, _clock: {} })
     const p = await createProject({ name: 'House' })

@@ -123,6 +123,14 @@ export const useSyncStatus = status.use
 /** The current sync status outside React (tests, one-off reads). */
 export const syncSnapshot = status.get
 
+/** Listens to the sync status outside the hook (the first copy's skeleton). */
+export const onSyncStatus = status.subscribe
+
+/** Whether this session started sync (startSync, until stopSync). */
+export function syncStarted(): boolean {
+  return started
+}
+
 /** Hide the "changes were not accepted" notice. */
 export function dismissRejected(): void {
   publish({ rejected: null })

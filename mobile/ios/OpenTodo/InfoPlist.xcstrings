@@ -53,6 +53,59 @@
           }
         }
       }
+    },
+    "NSPhotoLibraryAddUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo saves the images you choose to your photo library."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo speichert die Bilder, die du auswählst, in deiner Fotomediathek."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo guarda en tu fototeca las imágenes que eliges."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo enregistre dans votre photothèque les images que vous choisissez."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo salva nella tua libreria foto le immagini che scegli."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O OpenTodo guarda na sua fototeca as imagens que escolher."
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo 会将你选择的图片存储到你的照片图库。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo bewaart de afbeeldingen die je kiest in je fotobibliotheek."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

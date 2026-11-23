@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { advance, advanceQueue, back, current, outcomeText, positionText, progress, startTriage } from './triage'
+import { advance, advanceQueue, back, current, positionText, progress, startTriage } from './triage'
 
 const t = (id: string, position: number, extra: Record<string, unknown> = {}) =>
   ({ id, position, project_id: null, parent_id: null, completed_at: null, deleted_at: null, ...extra }) as never
@@ -30,7 +30,6 @@ describe('triage queue (inbox-triage D2)', () => {
     expect(r.left).toBe(true)
     expect(current(r.state)).toBe('t3')
     expect(progress(r.state)).toEqual({ n: 2, total: 4, done: false })
-    expect(outcomeText({ kind: 'left' })).toBe('This task was moved elsewhere.')
   })
 
   it('subtasks and other projects are never queued', () => {

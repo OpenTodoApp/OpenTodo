@@ -22,6 +22,30 @@ export async function openAttachment(a: Attachment, opts: { download?: boolean }
     if (href) window.open(href, '_blank', 'noopener,noreferrer')
     return
   }
+  // Safari and the Home Screen app allow a new window or a download only inside the
+  // click: past an await it is blocked without a word. A download, or a type the
+  // browser does not show, of a file the server holds is the server's copy, saved by
+  // an anchor clicked now (the device's copy is the same bytes; offline it is used).
+  if (!a.encrypted && a.uploaded_at && !shell() && (opts.download || !isInlineType(a.mime)) && navigator.onLine !== false) {
+    const link = document.createElement('a')
+    link.href = contentUrl(a.id, true)
+    link.download = a.name
+    link.click()
+    return
+  }
+  // A file that opens in a tab gets its tab now, and the tab is sent to the file
+  // once its bytes or address are known.
+  const tab = !opts.download && !shell() && isInlineType(a.mime) ? window.open('about:blank', '_blank') : null
+  if (tab) tab.opener = null
+  try {
+    await openFile(a, opts, tab)
+  } catch (err) {
+    tab?.close()
+    throw err
+  }
+}
+
+async function openFile(a: Attachment, opts: { download?: boolean }, tab: Window | null): Promise<void> {
   const local = await db.attachmentBlobs.get(a.id)
   if (a.encrypted) {
     // The server holds an envelope only: fetch it (or use the local copy) and decrypt here.
@@ -33,34 +57,40 @@ export async function openAttachment(a: Attachment, opts: { download?: boolean }
       if (!res.ok) throw new AttachmentError('invalid', res.status === 404 ? t('This file is missing on the server.') : t('The server answered {status}.', { status: res.status }))
       envelope = await res.blob()
     }
-    openBlob(await decryptFile(key, fileKeyOf(a), envelope, a.mime), a, opts.download)
+    openBlob(await decryptFile(key, fileKeyOf(a), envelope, a.mime), a, opts.download, tab)
     return
   }
   if (local) {
-    openBlob(new Blob([local.blob], { type: a.mime }), a, opts.download)
+    openBlob(new Blob([local.blob], { type: a.mime }), a, opts.download, tab)
     return
   }
   if (shell()) {
     // A phone shell has no tabs (#1654): a new window is blocked or reaches the system
-    // browser without the session, so the file is saved through the shell instead.
+    // browser without the session, so the file is saved through the shell instead. A type
+    // the server serves inline keeps its real type, so the shell can show it first (ios-quick-look).
     const { saveFromServer } = await import('./saveFile')
-    saveFromServer(contentUrl(a.id, true), a.name)
+    saveFromServer(contentUrl(a.id, opts.download || !isInlineType(a.mime)), a.name)
     return
   }
-  window.open(contentUrl(a.id, opts.download), '_blank', 'noopener')
+  if (tab) tab.location.href = contentUrl(a.id, opts.download)
+  else window.open(contentUrl(a.id, opts.download), '_blank', 'noopener')
 }
 
 /** Open bytes held on this device; types the browser should not render are downloaded. */
-function openBlob(blob: Blob, a: Attachment, download?: boolean) {
+function openBlob(blob: Blob, a: Attachment, download: boolean | undefined, tab: Window | null) {
   if (download || !isInlineType(a.mime) || shell()) {
     void import('./saveFile').then((m) => m.saveFile(blob, a.name))
     return
   }
   const href = URL.createObjectURL(blob)
+  setTimeout(() => URL.revokeObjectURL(href), 60_000)
+  if (tab) {
+    tab.location.href = href
+    return
+  }
   const link = document.createElement('a')
   link.href = href
   link.target = '_blank'
   link.rel = 'noopener'
   link.click()
-  setTimeout(() => URL.revokeObjectURL(href), 60_000)
 }

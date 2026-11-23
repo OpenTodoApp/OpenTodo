@@ -19,6 +19,7 @@ import { t } from './i18n'
 import { sha256, uuid } from './ids'
 import { safeUrl } from './share'
 import { createSignal } from './store'
+import { linkChange, parseLink } from './linkAttachment'
 
 /** The longest attachment name the server accepts. */
 export const MAX_NAME = 255
@@ -181,15 +182,7 @@ export async function queueFiles(taskId: AttachParent, files: File[], opts: { co
   return commitFiles(await planFiles(taskId, files, opts))
 }
 
-/** An http(s) address, or null. */
-export function parseLink(text: string): URL | null {
-  try {
-    const u = new URL(text.trim())
-    return u.protocol === 'http:' || u.protocol === 'https:' ? u : null
-  } catch {
-    return null
-  }
-}
+export { parseLink }
 
 /** Attach a link. Returns its id. */
 export async function queueLink(taskId: AttachParent, url: string, name?: string, commentId?: string | null): Promise<string> {
@@ -198,10 +191,7 @@ export async function queueLink(taskId: AttachParent, url: string, name?: string
   const author = await currentUserId()
   if (!author) throw new AttachmentError('signed_out', t('Sign in to add links.'))
   const id = uuid()
-  await mutateMany([{ entity: 'attachment', entityId: id, patch: {
-    ...parentFields(taskId), author_id: author, comment_id: commentId ?? null, name: cleanName(name?.trim() || u.hostname),
-    mime: 'text/uri-list', size: 0, sha256: '', url: u.href, encrypted: false, created_at: Date.now(), uploaded_at: null, deleted_at: null,
-  } }])
+  await mutateMany([linkChange(id, parentFields(taskId), u, author, { name, commentId })])
   return id
 }
 

@@ -149,19 +149,50 @@ final class StoreReadinessTests: XCTestCase {
 }
 
 final class ShareMapTests: XCTestCase {
-    func testPathCarriesTitleTextAndFiles() {
-        XCTAssertEqual(ShareMap.path(title: "Buy milk", text: "and bread", withFiles: false),
-                       "/share?title=Buy%20milk&text=and%20bread")
+    /// The cases both apps read (Android's `ShareMapperTest` too): what a share becomes.
+    private func cases() throws -> [String: Any] {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/share/cases.json")
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
     }
 
-    func testLoneLinkBecomesUrl() {
-        XCTAssertEqual(ShareMap.path(title: nil, text: " https://example.com/x \n", withFiles: false),
-                       "/share?url=https%3A%2F%2Fexample.com%2Fx")
+    /// The decoded query of `/share?…`, as the web app's URLSearchParams reads it.
+    private func query(_ path: String) throws -> [String: String] {
+        let parts = try XCTUnwrap(URLComponents(string: path))
+        XCTAssertEqual(parts.path, "/share")
+        var out: [String: String] = [:]
+        for item in parts.queryItems ?? [] {
+            XCTAssertNil(out[item.name], "\(item.name) appears twice in \(path)")
+            out[item.name] = item.value ?? ""
+        }
+        return out
     }
 
-    func testFilesFlag() {
-        XCTAssertEqual(ShareMap.path(title: nil, text: nil, withFiles: true), "/share?files=1")
-        XCTAssertEqual(ShareMap.path(title: "", text: "  ", withFiles: false), "/share")
+    /// iOS 16's `URL(string:)` refuses anything but ASCII: a share with an é was dropped.
+    func testTheAddressIsASCIIForAnyText() {
+        let path = ShareMap.path(title: "Café ½", text: "日本語 🎉", url: "https://example.com/ü", withFiles: false)
+        XCTAssertTrue(path.unicodeScalars.allSatisfy(\.isASCII), path)
+        XCTAssertNotNil(URLComponents(string: path), path)
+    }
+
+    func testPathsFollowTheSharedCases() throws {
+        let paths = try XCTUnwrap(try cases()["paths"] as? [[String: Any]])
+        XCTAssertFalse(paths.isEmpty)
+        for (i, c) in paths.enumerated() {
+            let got = ShareMap.path(title: c["title"] as? String, text: c["text"] as? String,
+                                    withFiles: try XCTUnwrap(c["withFiles"] as? Bool))
+            XCTAssertEqual(try query(got), try XCTUnwrap(c["expect"] as? [String: String]), "case \(i): \(c)")
+        }
+    }
+
+    func testLimitsFollowTheSharedCases() throws {
+        let accept = try XCTUnwrap(try cases()["accept"] as? [[String: Any]])
+        XCTAssertFalse(accept.isEmpty)
+        for (i, c) in accept.enumerated() {
+            let sizes = try XCTUnwrap(c["sizes"] as? [NSNumber]).map(\.int64Value)
+            XCTAssertEqual(ShareMap.accept(sizes), try XCTUnwrap(c["expect"] as? [Int]), "case \(i): \(sizes)")
+        }
     }
 
     func testASeparateUrlIsCarriedAndBeatsTheText() {
@@ -170,13 +201,6 @@ final class ShareMapTests: XCTestCase {
                        "/share?title=Example&url=https%3A%2F%2Fexample.com%2Fa%3Fb%3D1")
         XCTAssertEqual(ShareMap.path(title: nil, text: "see https://example.com", url: "https://example.com", withFiles: false),
                        "/share?text=see%20https%3A%2F%2Fexample.com&url=https%3A%2F%2Fexample.com")
-    }
-
-    func testAcceptKeepsCountAndSizeLimits() {
-        XCTAssertEqual(ShareMap.accept([Int64](repeating: 1, count: 12)), Array(0..<10))
-        XCTAssertEqual(ShareMap.accept([1, Int64(ShareMap.maxFileBytes) + 1, 2]), [0, 2])
-        let big = Int64(ShareMap.maxTotalBytes / 2) + 1
-        XCTAssertEqual(ShareMap.accept([big, big, 10]), [0, 2])
     }
 
     func testHandoverScriptRepostsUntilReceived() {
@@ -928,6 +952,22 @@ final class DownloadsTests: XCTestCase {
         XCTAssertFalse(Downloads.saves(action: u("https://todo.example.com/today"), server: server, shouldPerformDownload: false))
         XCTAssertFalse(Downloads.saves(action: u("blob:https://todo.example.com/6f1c2a50"), server: server, shouldPerformDownload: false))
         XCTAssertFalse(Downloads.saves(response: u("https://todo.example.com/today"), server: server, isAttachment: false, canShowMIMEType: true))
+    }
+
+    func testImagesAndPDFsAreShownFirst() {
+        XCTAssertTrue(Downloads.previews(mimeType: "image/jpeg", fileName: "IMG_1234.jpg"))
+        XCTAssertTrue(Downloads.previews(mimeType: "image/png", fileName: "download"))
+        XCTAssertTrue(Downloads.previews(mimeType: "image/heic", fileName: "photo.heic"))
+        XCTAssertTrue(Downloads.previews(mimeType: "application/pdf", fileName: "invoice.pdf"))
+        // A decrypted attachment from the page without a type: the name decides.
+        XCTAssertTrue(Downloads.previews(mimeType: nil, fileName: "receipt.png"))
+        // Saved as before: the server's own choice of a plain download, other files, and SVG.
+        XCTAssertFalse(Downloads.previews(mimeType: "application/octet-stream", fileName: "photo.jpg"))
+        XCTAssertFalse(Downloads.previews(mimeType: "text/plain", fileName: "opentodo-recovery-key.txt"))
+        XCTAssertFalse(Downloads.previews(mimeType: "application/json", fileName: "opentodo-export.json"))
+        XCTAssertFalse(Downloads.previews(mimeType: "image/svg+xml", fileName: "logo.svg"))
+        XCTAssertFalse(Downloads.previews(mimeType: nil, fileName: "logo.svg"))
+        XCTAssertFalse(Downloads.previews(mimeType: nil, fileName: "archive"))
     }
 
     func testAnAttachmentIsReadFromTheHeader() {

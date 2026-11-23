@@ -431,6 +431,8 @@ type taskFlags struct {
 	remind  stringList
 	natural bool
 	lang    string
+	// links are the URLs a --natural title named (quick-add-links), attached after the task.
+	links []string
 	// done is --done (today-closed-list D6): log a win, created already completed.
 	done bool
 	// fresh is --new (reusable-lists D6): never reopen an item of a reusable list.
@@ -668,7 +670,7 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		phrases = nil
 		body["completed_at"] = a.Now().UnixMilli()
 	}
-	if err := markReuse(ctx, c, body, f.fresh || f.done); err != nil {
+	if err := markReuse(ctx, c, body, f.fresh || f.done || len(f.links) > 0); err != nil {
 		return err
 	}
 	raw, _, err := c.do(ctx, "POST", "/tasks"+defaultReminderQuery(body, f.noDefault || len(phrases) > 0 || f.done), body, headers)
@@ -682,6 +684,9 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		return err
 	}
 	if err := a.logSpent(ctx, c, created.ID, spent, set["idempotency-key"], *key); err != nil {
+		return err
+	}
+	if err := attachLinks(ctx, c, created.ID, f.links, f.originURL, set["idempotency-key"], *key); err != nil {
 		return err
 	}
 	if g.json {
