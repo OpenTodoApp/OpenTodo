@@ -87,6 +87,9 @@ object SystemSignIn {
     fun outcome(url: String, state: String): Outcome {
         val uri = try { URI(url) } catch (e: Exception) { return Outcome.Invalid }
         if (!uri.scheme.equals(CALLBACK_SCHEME, true) || !uri.host.equals(CALLBACK_HOST, true)) return Outcome.Invalid
+        // A key named twice would leave the choice of value to the parser: never accepted.
+        val names = uri.rawQuery.orEmpty().split('&').filter { it.isNotEmpty() }.map { java.net.URLDecoder.decode(it.substringBefore('='), "UTF-8") }
+        if (listOf("state", "code", "error").any { k -> names.count { it == k } > 1 }) return Outcome.Invalid
         val q = params(uri.rawQuery)
         if (q["state"] != state) return Outcome.Invalid
         q["code"]?.let { if (isToken(it)) return Outcome.Code(it) }
