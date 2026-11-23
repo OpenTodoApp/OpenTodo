@@ -27,6 +27,7 @@ class SignInFlowTest {
             var clock = 1_000_000L
             val f = SignInFlow(doc.getString("server")) { clock }
             val steps = case.getJSONArray("steps")
+            assertTrue("${case.getString("name")} has steps", steps.length() > 0)
             for (j in 0 until steps.length()) {
                 val step = steps.getJSONObject(j)
                 val where = "${case.getString("name")}, step ${j + 1}: $step"
@@ -34,7 +35,12 @@ class SignInFlowTest {
                     step.has("link") || step.has("redirect") || step.has("script") -> {
                         val kind = listOf("link", "redirect", "script").first { step.has(it) }
                         val got = f.decide(step.getString(kind), isRedirect = kind == "redirect", hasGesture = kind == "link")
-                        assertEquals(where, if (step.getString("expect") == "stay") STAY else BROWSER, got)
+                        val expected = when (step.getString("expect")) {
+                            "stay" -> STAY
+                            "browser" -> BROWSER
+                            else -> throw AssertionError("$where: unknown expect")
+                        }
+                        assertEquals(where, expected, got)
                     }
                     step.has("started") -> f.started(step.getString("started"))
                     step.has("end") -> f.end()

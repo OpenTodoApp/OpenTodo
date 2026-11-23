@@ -199,11 +199,15 @@ final class SignInFlowTests: XCTestCase {
             let name = c["name"] as? String ?? "?"
             var clock = Date(timeIntervalSince1970: 1_000_000)
             let f = SignInFlow(server: server) { clock }
-            for (i, step) in (c["steps"] as? [[String: Any]] ?? []).enumerated() {
+            let steps = try XCTUnwrap(c["steps"] as? [[String: Any]], "\(name) has steps")
+            XCTAssertFalse(steps.isEmpty, "\(name) has steps")
+            for (i, step) in steps.enumerated() {
                 let at = "\(name), step \(i + 1): \(step)"
                 if let kind = ["link", "redirect", "script"].first(where: { step[$0] != nil }) {
                     let url = try XCTUnwrap(URL(string: try XCTUnwrap(step[kind] as? String)), at)
-                    let expected: SignInFlow.Decision = step["expect"] as? String == "stay" ? .stay : .browser
+                    let expect = try XCTUnwrap(step["expect"] as? String, at)
+                    XCTAssert(["stay", "browser"].contains(expect), "\(at): unknown expect")
+                    let expected: SignInFlow.Decision = expect == "stay" ? .stay : .browser
                     XCTAssertEqual(f.decide(url, isRedirect: kind == "redirect", hasGesture: kind == "link"), expected, at)
                 } else if let started = step["started"] as? String {
                     f.started(try XCTUnwrap(URL(string: started), at))
