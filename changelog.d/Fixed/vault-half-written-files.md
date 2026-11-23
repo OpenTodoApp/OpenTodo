@@ -1,0 +1,1 @@
+- **Vault files read part way through a save are left alone.** `ot vault` and the Obsidian plugin now treat a file read part way through a save the same as one read empty: they leave it for up to five minutes and then read the finished save. A file whose project id was damaged keeps its project.

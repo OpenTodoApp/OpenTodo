@@ -8,7 +8,7 @@ import { bulkLabel, planComplete, planLabels, planMove, planPriority, planReopen
 import { db, type AssistantUndo } from './db'
 import { formatDate, logicalToday } from './dates'
 import { seriesRule } from './recurring'
-import { getDeviceId, liveSubtree, parkTask, planReminders, updateTask, type Change } from './ops'
+import { getDeviceId, liveSubtree, parkTask, planReminders, planTaskParent, updateTask, type Change } from './ops'
 import type { ReminderPhrase } from './nlp'
 import { currentUserId, memberName, membershipMap } from './sharing'
 import type { FilterContext } from './filter'
@@ -126,6 +126,21 @@ export async function titleUndoable(id: string, title: string): Promise<Undoable
   const clip = (s: string) => (s.length > 50 ? s.slice(0, 49) + '…' : s)
   const from = (await db.tasks.get(id))?.title ?? ''
   return plainEditUndoable(id, { title }, t('Renamed “{from}” → “{to}”', { from: clip(from), to: clip(title) }))
+}
+
+/**
+ * Make one task a subtask of another, or with null a top-level task (Tab and Shift-Tab in a list,
+ * the task panel's Parent task), as one step of undo history named "Subtask of “{task}”" or, at the
+ * top level, "Task updated" (OpenSpec change undo-indent). The same parent records nothing; a parent
+ * that is the task, one of its subtasks or in another project throws (planTaskParent). A
+ * repeating task records its step too: its parent is its own and is not carried to the series.
+ */
+export async function parentUndoable(id: string, parentId: string | null): Promise<UndoableResult> {
+  const change = await planTaskParent(id, parentId)
+  if (!change) return { entry: null, label: '' }
+  const parent = parentId ? await db.tasks.get(parentId) : null
+  const title = parent?.title ?? ''
+  return apply([change], parent ? t('Subtask of “{task}”', { task: title.length > 50 ? title.slice(0, 49) + '…' : title }) : t('Task updated'))
 }
 
 /**

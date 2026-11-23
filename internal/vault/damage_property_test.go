@@ -9,9 +9,10 @@ import (
 
 // A property test for the vault's file reader (after #1799, #1831 and #1833,
 // three fixes for files read half saved or with their front matter lost): a
-// project file read empty or with its front matter lost or damaged, and then
-// saved in full, loses no task and no project, and moves no task to another
-// project, neither at the damaged read nor after the save.
+// project file read empty, cut short at any byte, or with its front matter
+// lost or damaged, and then saved in full, loses no task and no project,
+// moves no task to another project and duplicates nothing, neither at the
+// damaged read nor after the save.
 
 // damage is one way a file can be read: what the reader sees instead of text.
 type damage struct {
@@ -32,6 +33,37 @@ func frontEnd(text string) int {
 
 var damages = []damage{
 	{name: "empty", apply: func(_ *rand.Rand, _ string) string { return "" }},
+	{name: "cut at a byte", apply: func(r *rand.Rand, text string) string {
+		return text[:1+r.Intn(len(text)-1)]
+	}},
+	{name: "cut at a line end", apply: func(r *rand.Rand, text string) string {
+		ends := []int{}
+		for i := 0; i < len(text)-1; i++ {
+			if text[i] == '\n' {
+				ends = append(ends, i+1)
+			}
+		}
+		return text[:ends[r.Intn(len(ends))]]
+	}},
+	{name: "cut inside the front matter", apply: func(r *rand.Rand, text string) string {
+		return text[:1+r.Intn(frontEnd(text)-1)]
+	}},
+	{name: "opentodo-id garbled", apply: func(r *rand.Rand, text string) string {
+		lines := strings.Split(text, "\n")
+		for i, l := range lines {
+			if strings.HasPrefix(l, keyID+":") {
+				lines[i] = keyID + ": " + fmt.Sprintf("%x", r.Int63())
+			}
+		}
+		return strings.Join(lines, "\n")
+	}},
+	{name: "front matter bytes overwritten", apply: func(r *rand.Rand, text string) string {
+		b := []byte(text)
+		for n := 1 + r.Intn(4); n > 0; n-- {
+			b[r.Intn(frontEnd(text))] = "x:-\n #"[r.Intn(6)]
+		}
+		return string(b)
+	}},
 	{name: "front matter removed", apply: func(_ *rand.Rand, text string) string {
 		return text[frontEnd(text):]
 	}},
@@ -49,7 +81,7 @@ var damages = []damage{
 
 func TestDamagedFileReadLosesNothing(t *testing.T) {
 	for di, d := range damages {
-		for seed := int64(1); seed <= 4; seed++ {
+		for seed := int64(1); seed <= 8; seed++ {
 			t.Run(fmt.Sprintf("%s/%d", d.name, seed), func(t *testing.T) {
 				r := rand.New(rand.NewSource(seed*31 + int64(di)))
 				s := newServer(t)
@@ -83,36 +115,36 @@ func TestDamagedFileReadLosesNothing(t *testing.T) {
 				hit := projects[ids[r.Intn(len(ids))]]
 				full := v.read(t, hit)
 				damaged := d.apply(r, full)
-				check := func(when string, trashOK bool) {
+				check := func(when string) {
 					t.Helper()
 					for p := range projects {
-						if got := s.get("projects", p)["deleted_at"]; got != nil {
+						if s.status("/api/v1/projects/"+p) == 404 {
 							t.Fatalf("%s: project %s trashed (file %s read as %q)", when, projects[p], hit, damaged)
 						}
 					}
+					// Nothing is duplicated either: no new project, no new task.
+					if n := len(s.list("projects")); n != len(projects) {
+						t.Fatalf("%s: %d projects, want %d (file %s read as %q)", when, n, len(projects), hit, damaged)
+					}
+					if n := len(s.list("tasks")); n != len(where) {
+						t.Fatalf("%s: %d tasks, want %d (file %s read as %q)", when, n, len(where), hit, damaged)
+					}
 					for tk, p := range where {
 						if s.status("/api/v1/tasks/"+tk) == 404 {
-							if !trashOK {
-								t.Fatalf("%s: task %s gone (file %s read as %q)", when, tk, hit, damaged)
-							}
-							continue
+							t.Fatalf("%s: task %s trashed (file %s read as %q)", when, tk, hit, damaged)
 						}
-						got := s.get("tasks", tk)
-						if got["project_id"] != p {
+						if got := s.get("tasks", tk); got["project_id"] != p {
 							t.Fatalf("%s: task %q moved from %s to %v (file %s read as %q)", when, got["title"], projects[p], got["project_id"], hit, damaged)
-						}
-						if got["deleted_at"] != nil && !trashOK {
-							t.Fatalf("%s: task %q trashed (file %s read as %q)", when, got["title"], hit, damaged)
 						}
 					}
 				}
 				v.write(t, hit, damaged)
 				v.sync(t)
-				check("after the damaged read", false)
+				check("after the damaged read")
 				// The save completes: the file holds its full text again.
 				v.write(t, hit, full)
 				v.sync(t)
-				check("after the full save", false)
+				check("after the full save")
 			})
 		}
 	}

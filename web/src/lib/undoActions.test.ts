@@ -364,6 +364,52 @@ describe('a value this device cannot decrypt', () => {
   })
 })
 
+// OpenSpec change undo-indent (#1748): Tab and Shift-Tab in a list and the panel's Parent task.
+describe('parentUndoable', () => {
+  it('makes a task a subtask as one step named after the parent; undo and redo restore it', async () => {
+    const { parentUndoable } = await import('./undoActions')
+    const project = await createProject({ name: 'Trip' })
+    const flights = await createTask({ title: 'Book flights', project_id: project })
+    const hotel = await createTask({ title: 'Book the hotel', project_id: project })
+    const before = (await db.tasks.get(hotel))!.position
+    const r = await parentUndoable(hotel, flights)
+    expect(r.label).toBe('Subtask of “Book flights”')
+    expect((await db.tasks.get(hotel))!.parent_id).toBe(flights)
+    await undoBatch(r.entry!.id)
+    expect(await db.tasks.get(hotel)).toMatchObject({ parent_id: null, position: before })
+    await redoBatch(r.entry!.id)
+    expect((await db.tasks.get(hotel))!.parent_id).toBe(flights)
+  })
+
+  it('back to the top level is "Task updated"; the same parent records nothing; a bad parent throws and records nothing', async () => {
+    const { parentUndoable } = await import('./undoActions')
+    const project = await createProject({ name: 'Trip' })
+    const other = await createProject({ name: 'Home' })
+    const trip = await createTask({ title: 'Trip', project_id: project })
+    const hotel = await createTask({ title: 'Hotel', project_id: project, parent_id: trip })
+    const away = await createTask({ title: 'Away', project_id: other })
+    expect((await parentUndoable(hotel, trip)).entry).toBeNull()
+    await expect(parentUndoable(trip, hotel)).rejects.toThrow(/descendant/)
+    await expect(parentUndoable(hotel, away)).rejects.toThrow(/same project/)
+    expect(await db.assistantUndo.count()).toBe(0)
+    const r = await parentUndoable(hotel, null)
+    expect(r.label).toBe('Task updated')
+    expect((await db.tasks.get(hotel))!.parent_id).toBeNull()
+    await undoBatch(r.entry!.id)
+    expect((await db.tasks.get(hotel))!.parent_id).toBe(trip)
+  })
+
+  it('a repeating task records its step too (a parent is not carried to the series)', async () => {
+    const { parentUndoable } = await import('./undoActions')
+    const parent = await createTask({ title: 'Chores' })
+    const bins = await createTask({ title: 'Bins', due: { date: '2030-01-07' }, recurrence: 'every week' })
+    const r = await parentUndoable(bins, parent)
+    expect(r.entry).not.toBeNull()
+    await undoBatch(r.entry!.id)
+    expect((await db.tasks.get(bins))!.parent_id ?? null).toBeNull()
+  })
+})
+
 // OpenSpec change undo-project-appearance (#1748): a project's name, colour and icon.
 describe('project name, colour and icon', () => {
   it('a rename is one step named with both names; undo and redo restore it; the same name records nothing', async () => {

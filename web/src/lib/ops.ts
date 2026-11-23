@@ -938,10 +938,15 @@ async function liveTasks(): Promise<Task[]> {
  * another project; the REST API enforces the same rules. The task is placed last
  * among its new siblings. One op per changed field, so the move converges by LWW.
  */
-export async function setTaskParent(id: string, parentId: string | null): Promise<void> {
+/**
+ * The change that makes a task a subtask of `parentId` (null: top level), last among its new
+ * siblings; null when it is already there. Throws for a parent that is the task, one of its
+ * descendants or in another project.
+ */
+export async function planTaskParent(id: string, parentId: string | null): Promise<Change | null> {
   const task = await db.tasks.get(id)
   if (!task || task.deleted_at) throw new Error(LOCAL_ERRORS.taskNotFound)
-  if (parentId === task.parent_id) return
+  if (parentId === (task.parent_id ?? null)) return null
   const all = await liveTasks()
   if (parentId !== null) {
     if (parentId === id) throw new Error(t('a task cannot be its own parent'))
@@ -954,7 +959,7 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
   for (const item of all) {
     if (item.id !== id && item.parent_id === parentId && item.project_id === task.project_id && item.position >= position) position = item.position + 1
   }
-  await mutate('task', id, { parent_id: parentId, position })
+  return { entity: 'task', entityId: id, patch: { parent_id: parentId, position } }
 }
 
 /**

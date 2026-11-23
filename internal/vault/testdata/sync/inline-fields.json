@@ -805,11 +805,27 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "84e4222e275c38f1bdce2e726d6581c312a8c54720c76acf9fd06d511dc78812"
+              "hash": "84e4222e275c38f1bdce2e726d6581c312a8c54720c76acf9fd06d511dc78812",
+              "size": 301,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "4dca984cb5e6eccf",
+                "372cd2c3a21e503e",
+                "1405921a44f10ccf",
+                "84e4222e275c38f1"
+              ]
             },
             "Inbox.md": {
               "project": "",
-              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753"
+              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753",
+              "size": 30,
+              "prefixes": [
+                "9678c3c7e2ff5772"
+              ]
             }
           },
           "printed": {
@@ -1310,11 +1326,27 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "8da1075087e16ebe2bd74ff95dc094f74a9dc2c91e88278c54cf5278aa3a2728"
+              "hash": "8da1075087e16ebe2bd74ff95dc094f74a9dc2c91e88278c54cf5278aa3a2728",
+              "size": 439,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "d685e0a56ac1fd69",
+                "3767dea95b285fc9",
+                "3ada06daad2947e8",
+                "8da1075087e16ebe"
+              ]
             },
             "Inbox.md": {
               "project": "",
-              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753"
+              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753",
+              "size": 30,
+              "prefixes": [
+                "9678c3c7e2ff5772"
+              ]
             }
           },
           "printed": {
