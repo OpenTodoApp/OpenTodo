@@ -7,8 +7,10 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import java.security.SecureRandom
 
 /**
  * The running Focus session outside the app (focus-live-activity D2, D3, D7): one ongoing
@@ -21,6 +23,10 @@ object Focus {
     const val CHANNEL = "focus"
     const val ONGOING_ID = 0x0f0c05
     const val END_ID = 0x0f0c06
+    private const val ACTION_CODE = 0x0f0c07
+    /** The Pause/Resume intent's proof that it comes from this session's notification. */
+    const val EXTRA_TOKEN = "app.opentodo.FOCUS_TOKEN"
+    private val random = SecureRandom()
 
     /** Whether the app is on screen: then the web app shows the end itself, and the alarm stays silent. */
     @Volatile var foreground = false
@@ -41,7 +47,8 @@ object Focus {
         val stored = FocusModel.parse(Prefs(context).focus)
         val owed = stored.endOwedBy(model, System.currentTimeMillis())
         if (model.shown) {
-            Prefs(context).focus = json
+            Prefs(context).focus = model.toJson()
+            if (Prefs(context).focusToken == null) Prefs(context).focusToken = newToken()
             show(context, model)
             arm(context, model)
         } else {
@@ -63,7 +70,27 @@ object Focus {
         context.getSystemService(AlarmManager::class.java).cancel(endAlarm(context))
         NotificationManagerCompat.from(context).cancel(ONGOING_ID)
         Prefs(context).focus = null
+        Prefs(context).focusToken = null
     }
+
+    private fun newToken(): String = ByteArray(16).also { random.nextBytes(it) }.joinToString("") { "%02x".format(it) }
+
+    /** What an `opentodo-open:` intent may load (FocusModel.authorize against the stored session). */
+    fun authorize(context: Context, path: String, intent: Intent?): String {
+        val prefs = Prefs(context)
+        return FocusModel.parse(prefs.focus).authorize(path, intent?.getStringExtra(EXTRA_TOKEN), prefs.focusToken)
+    }
+
+    /** Pause or Resume: the activity at [path], carrying this session's token. */
+    private fun action(context: Context, path: String, token: String): PendingIntent {
+        val intent = Intent(context, MainActivity::class.java).setAction(Intent.ACTION_VIEW)
+            .setData(Uri.parse("opentodo-open:" + Uri.encode(path))).putExtra(EXTRA_TOKEN, token)
+        return PendingIntent.getActivity(context, ACTION_CODE, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+    }
+
+    /** What the lock screen shows of a Focus notification: no task title (focus-live-activity D5). */
+    internal fun publicVersion(context: Context, channel: String, title: String) =
+        NotificationCompat.Builder(context, channel).setSmallIcon(R.drawable.ic_notification).setContentTitle(title).build()
 
     fun title(context: Context, model: FocusModel): String = model.title ?: context.getString(R.string.focus_generic)
 
@@ -85,15 +112,18 @@ object Focus {
             .setOnlyAlertOnce(true)
             .setSilent(true)
             .setContentIntent(Notifier.open(context, FocusModel.OPEN_PATH, ONGOING_ID))
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setPublicVersion(publicVersion(context, CHANNEL, context.getString(R.string.focus_generic)))
         val base = model.end ?: model.countUpFrom
         if (base != null) {
             b.setContentText(label(context, model.label)).setUsesChronometer(true).setChronometerCountDown(model.countsDown).setWhen(base).setShowWhen(true)
         } else {
             b.setContentText(label(context, model.label) + " · " + FocusModel.clockText(model.frozenMs ?: 0)).setShowWhen(false)
         }
-        model.actionPath?.let { path ->
+        val token = Prefs(context).focusToken
+        if (token != null) model.actionPath?.let { path ->
             val text = if (model.state == FocusModel.State.RUNNING) R.string.focus_pause else R.string.focus_resume
-            b.addAction(0, context.getString(text), Notifier.open(context, path, ONGOING_ID + 1))
+            b.addAction(0, context.getString(text), action(context, path, token))
         }
         try { NotificationManagerCompat.from(context).notify(ONGOING_ID, b.build()) } catch (e: SecurityException) { /* notifications refused */ }
     }
@@ -116,6 +146,7 @@ object Focus {
         if (!model.endDue(now)) return arm(context, model)
         NotificationManagerCompat.from(context).cancel(ONGOING_ID)
         Prefs(context).focus = null
+        Prefs(context).focusToken = null
         notifyEnd(context, model, at)
     }
 
@@ -126,6 +157,8 @@ object Focus {
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.getString(if (model.phase == FocusModel.Phase.BREAK) R.string.focus_break_over else R.string.focus_done))
             .apply { model.title?.let { setContentText(it) } }
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setPublicVersion(publicVersion(context, Notifier.CHANNEL, context.getString(R.string.focus_generic)))
             .setWhen(at).setShowWhen(true)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

@@ -81,4 +81,33 @@ class FocusTest {
         assertEquals(context.getString(R.string.focus_paused) + " · 15:00", n!!.notification.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
         assertEquals(listOf(context.getString(R.string.focus_resume)), n!!.notification.actions.map { it.title.toString() })
     }
+
+    @Test fun theLockScreenShowsNoTaskTitle() {
+        Focus.publish(context, running(3_000))
+        var n: StatusBarNotification? = null
+        waitUntil("the Focus notification", 10_000) { n = shown(Focus.ONGOING_ID); n != null }
+        assertEquals(Notification.VISIBILITY_PRIVATE, n!!.notification.visibility)
+        val ongoing = n!!.notification.publicVersion
+        assertEquals(context.getString(R.string.focus_generic), ongoing.extras.getString(Notification.EXTRA_TITLE))
+        assertNull(ongoing.extras.getCharSequence(Notification.EXTRA_TEXT))
+        var end: StatusBarNotification? = null
+        waitUntil("the session-end notification", 30_000) { end = shown(Focus.END_ID); end != null }
+        assertEquals("Write the report", end!!.notification.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+        assertEquals(Notification.VISIBILITY_PRIVATE, end!!.notification.visibility)
+        assertEquals(context.getString(R.string.focus_generic), end!!.notification.publicVersion.extras.getString(Notification.EXTRA_TITLE))
+    }
+
+    @Test fun pauseActsOnlyWithTheSessionsToken() {
+        Focus.publish(context, running(25 * 60_000L))
+        val token = Prefs(context).focusToken
+        assertTrue(token != null && token.length == 32)
+        val forged = android.content.Intent(android.content.Intent.ACTION_VIEW)
+        assertEquals("/focus", Focus.authorize(context, "/focus?action=pause", forged))
+        assertEquals("/focus?action=pause", Focus.authorize(context, "/focus?action=pause", android.content.Intent().putExtra(Focus.EXTRA_TOKEN, token)))
+        // The stored session is the normalized one, and its token goes with it.
+        assertEquals(FocusModel.parse(running(25 * 60_000L)).copy(runningSince = null, plannedEndAt = null), FocusModel.parse(Prefs(context).focus).copy(runningSince = null, plannedEndAt = null))
+        Focus.clear(context)
+        assertNull(Prefs(context).focusToken)
+        assertEquals("/focus", Focus.authorize(context, "/focus?action=pause", android.content.Intent().putExtra(Focus.EXTRA_TOKEN, token)))
+    }
 }

@@ -134,4 +134,36 @@ class FocusModelTest {
         // Before the end nothing is owed, whatever replaces it.
         assertFalse(work.endOwedBy(brk, end - 60_000))
     }
+
+    @Test fun pauseAndResumeNeedTheNotificationsTokenAndTheRightState() {
+        // Any installed app can open the activity: an action without this session's token, or
+        // one that does not fit the state, only opens the Focus screen.
+        val running = check("focus-running.json")
+        val paused = check("focus-paused.json")
+        assertEquals("/focus?action=pause", running.authorize("/focus?action=pause", "t", "t"))
+        assertEquals("/focus", running.authorize("/focus?action=pause", null, "t"))
+        assertEquals("/focus", running.authorize("/focus?action=pause", "guess", "t"))
+        assertEquals("/focus", running.authorize("/focus?action=pause", "t", null))
+        assertEquals("/focus", running.authorize("/focus?action=resume", "t", "t"))
+        assertEquals("/focus?action=resume", paused.authorize("/focus?action=resume", "t", "t"))
+        assertEquals("/focus", paused.authorize("/focus?action=pause", "t", "t"))
+        assertEquals("/focus", FocusModel.NONE.authorize("/focus?action=pause", "t", "t"))
+        assertEquals("/focus", running.authorize("/focus?x=1&action=pause", "t", "t"))
+        // Everything else is untouched: the Focus screen itself, and other addresses.
+        assertEquals("/focus", running.authorize("/focus", null, null))
+        assertEquals("/today?reminder=r1&action=done", running.authorize("/today?reminder=r1&action=done", null, null))
+    }
+
+    @Test fun theStoredSessionIsTheNormalizedOne() {
+        for (name in listOf("focus-running.json", "focus-paused.json", "focus-flowtime.json", "focus-break.json")) {
+            val m = check(name)
+            assertEquals(name, m, FocusModel.parse(m.toJson()))
+        }
+        assertNull(FocusModel.NONE.toJson())
+        // Unknown fields are dropped and the title is capped.
+        val long = "x".repeat(500)
+        val stored = FocusModel.parse("{\"v\":1,\"state\":\"paused\",\"phase\":\"work\",\"title\":\"$long\",\"extra\":\"secret\",\"elapsedMs\":1}").toJson()!!
+        assertFalse(stored.contains("extra"))
+        assertEquals(200, JSONObject(stored).getString("title").length)
+    }
 }

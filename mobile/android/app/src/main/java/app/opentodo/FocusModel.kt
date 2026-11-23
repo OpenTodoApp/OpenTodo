@@ -69,6 +69,36 @@ data class FocusModel(
      */
     fun endOwedBy(next: FocusModel, now: Long): Boolean = endDue(now) && next.notifyAt != notifyAt
 
+    /**
+     * What `opentodo-open:` may load for [path] while this session is stored. Pause and
+     * Resume reach the activity, which other apps can open too, so an address with an action
+     * loads only with the token of this session's notification ([token] against [expected])
+     * and when it fits the state (Pause while running, Resume while paused); otherwise it
+     * opens the Focus screen without acting. Every other address passes unchanged.
+     */
+    fun authorize(path: String, token: String?, expected: String?): String {
+        val q = path.indexOf('?')
+        if (q < 0 || path.substring(0, q) != OPEN_PATH) return path
+        if (path.substring(q + 1).split('&').none { it.startsWith("action=") }) return path
+        val ok = token != null && expected != null && token == expected && path == actionPath
+        return if (ok) path else OPEN_PATH
+    }
+
+    /** The publication as stored: only the fields read here, normalized and capped by [parse]. */
+    fun toJson(): String? {
+        if (!shown) return null
+        val o = JSONObject().put("v", 1).put("state", state.name.lowercase()).put("phase", phase.name.lowercase()).put("elapsedMs", elapsedMs)
+        taskId?.let { o.put("taskId", it) }
+        title?.let { o.put("title", it) }
+        breakKind?.let { o.put("breakKind", it.name.lowercase()) }
+        cycle?.let { o.put("cycle", it) }
+        cycleLength?.let { o.put("cycleLength", it) }
+        runningSince?.let { o.put("runningSince", it) }
+        plannedEndAt?.let { o.put("plannedEndAt", it) }
+        plannedMs?.let { o.put("plannedMs", it) }
+        return o.toString()
+    }
+
     /** The address Pause or Resume opens (focus-live-activity D4); none outside a run. */
     val actionPath: String? get() = when (state) {
         State.RUNNING -> "/focus?action=pause"
