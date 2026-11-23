@@ -167,11 +167,7 @@ type StatusSink interface {
 
 // StatusChanged fans the event out to every sink that implements StatusSink.
 func (m Multi) StatusChanged(ctx context.Context, e StatusChanged) {
-	for _, s := range m {
-		if ss, ok := s.(StatusSink); ok {
-			ss.StatusChanged(ctx, e)
-		}
-	}
+	fan(m, func(s StatusSink) { s.StatusChanged(ctx, e) })
 }
 
 // StatusChanged implements StatusSink.

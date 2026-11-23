@@ -21,4 +21,4 @@
 ## 5. Docs and finish
 
 - [x] 5.1 A new guide `docs/assignment-notifications.md`; `docs/notification-channels.md` lists the status event and `docs/notifications.md` links the guide. Verify: `make docs` and `make docs-check`.
-- [ ] 5.2 Changelog `changelog.d/Added/assignee-notifications.md`; `make check`; archive the change. Verify: `make openspec-validate`.
+- [x] 5.2 Changelog `changelog.d/Added/assignee-notifications.md`; `make check`; archive the change. Verify: `make openspec-validate`.
