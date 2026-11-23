@@ -409,3 +409,33 @@ describe('parentUndoable', () => {
     expect((await db.tasks.get(bins))!.parent_id ?? null).toBeNull()
   })
 })
+
+// OpenSpec change undo-skip (#1748): skipping a repeating task's occurrence is a step.
+describe('skipOccurrence', () => {
+  it('moves a series on as one step named "Occurrence skipped"; undo brings the date back', async () => {
+    const { skipOccurrence } = await import('./undoActions')
+    const id = await createTask({ title: 'Gym', due: { date: '2026-10-12' }, recurrence: 'every monday' })
+    expect(await skipOccurrence(id, { today: '2026-10-12' })).toBe(true)
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-19' })
+    const entry = (await db.assistantUndo.toArray())[0]
+    expect(entry.label).toBe('Occurrence skipped')
+    await undoBatch(entry.id)
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-12' })
+    await redoBatch(entry.id)
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-19' })
+  })
+
+  it('a habit skip and its record undo together; nothing to skip records nothing', async () => {
+    const { skipOccurrence } = await import('./undoActions')
+    const id = await createTask({ title: 'Walk', due: { date: '2026-10-14' }, recurrence: 'every day' })
+    await updateTask(id, { habit: true })
+    const records = () => db.tasks.filter((x) => x.series_id === id && !x.deleted_at).count()
+    expect(await skipOccurrence(id, { today: '2026-10-14' })).toBe(true)
+    expect(await records()).toBe(1)
+    await undoBatch((await db.assistantUndo.toArray())[0].id)
+    expect(await records()).toBe(0)
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-14' })
+    expect(await skipOccurrence(await createTask({ title: 'Plain' }))).toBe(false)
+    expect(await db.assistantUndo.count()).toBe(1)
+  })
+})

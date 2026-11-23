@@ -7,7 +7,8 @@
 import { bulkLabel, planComplete, planLabels, planMove, planPriority, planReopen, planTrash, readTicked, toProposed } from './bulk'
 import { db, type AssistantUndo } from './db'
 import { formatDate, logicalToday } from './dates'
-import { seriesRule } from './recurring'
+import { planSkip, seriesRule } from './recurring'
+import { lineageRows } from './lineageRows'
 import { getDeviceId, liveSubtree, parkTask, planReminders, planTaskParent, updateTask, type Change } from './ops'
 import type { ReminderPhrase } from './nlp'
 import { currentUserId, memberName, membershipMap } from './sharing'
@@ -141,6 +142,20 @@ export async function parentUndoable(id: string, parentId: string | null): Promi
   const parent = parentId ? await db.tasks.get(parentId) : null
   const title = parent?.title ?? ''
   return apply([change], parent ? t('Subtask of “{task}”', { task: title.length > 50 ? title.slice(0, 49) + '…' : title }) : t('Task updated'))
+}
+
+/**
+ * Skip a repeating task's current occurrence: the series moves to the next date, and a habit also
+ * gets its occurrence record marked skipped. One step of undo history named "Occurrence skipped"
+ * (OpenSpec change undo-skip). False, with nothing written, when there is no occurrence to skip.
+ */
+export async function skipOccurrence(id: string, opts: { now?: number; today?: string } = {}): Promise<boolean> {
+  const series = await db.tasks.get(id)
+  const rule = seriesRule(series)
+  const changes = series && rule ? planSkip(series, rule, opts.now ?? Date.now(), opts.today ?? logicalToday(), await lineageRows(id)) : null
+  if (!changes) return false
+  await apply(changes, t('Occurrence skipped'))
+  return true
 }
 
 /** Set (or with null remove) one task's estimate in minutes, as one step of undo history. */

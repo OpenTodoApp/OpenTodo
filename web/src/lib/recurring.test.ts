@@ -3,8 +3,9 @@ import { setDayStart } from './dates'
 import { db, useDatabase } from './db'
 import { occurrenceId } from './ids'
 import {
-  applyOps, completeTask, createTask, deleteTask, detachOccurrence, getDeviceId, resetDeviceId, setRecurrence, setTaskCompleted, skipOccurrence, updateTask,
+  applyOps, completeTask, createTask, deleteTask, detachOccurrence, getDeviceId, resetDeviceId, setRecurrence, setTaskCompleted, updateTask,
 } from './ops'
+import { skipOccurrence } from './undoActions'
 import type { Op, Task } from './types'
 import { check10 } from './testdata/check10'
 
