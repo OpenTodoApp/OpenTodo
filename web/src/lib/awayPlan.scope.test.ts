@@ -32,3 +32,19 @@ describe('an away period and other people\'s work', () => {
     expect(planned({ all: false, projects: [], labels: ['x'] })).toEqual([])
   })
 })
+
+// #1901: the details list each series with its skips and its due once they are, time and zone kept.
+describe('the rows of the preview', () => {
+  it('give each skipped series its count and its next due with its own time and zone, in title order', () => {
+    const list = [
+      daily('Water', { due: { date: '2026-12-01', time: '23:30', tz: 'Europe/London' } }),
+      daily('Bins', { recurrence: 'every week', due: { date: '2026-12-02' } }),
+      daily('Later', { due: { date: '2026-12-09' } }),
+    ]
+    const plan = planAway(list, { all: true }, '2026-12-01', '2026-12-02', (id) => list.filter((t) => t.id === id), () => true, 5, '2026-12-01')
+    expect(plan.rows).toEqual([
+      { id: 'Bins', title: 'Bins', skipped: 1, next: { date: '2026-12-09' } },
+      { id: 'Water', title: 'Water', skipped: 2, next: { date: '2026-12-03', time: '23:30', tz: 'Europe/London' } },
+    ])
+  })
+})
