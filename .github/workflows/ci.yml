@@ -1278,11 +1278,11 @@ jobs:
           gh release upload "$GITHUB_REF_NAME" release/* --clobber
 
   # Google Play (OpenSpec change play-production D1, D2): after the release, the AAB of a
-  # final tag is signed with the upload key and put on Play's internal testing track
-  # (scripts/release/play-upload.mjs); a person promotes it to production in the Play
-  # Console (RELEASING.md). The secrets live in the `release` environment. Release
-  # candidates upload nothing; without the secrets the job warns and succeeds, and the
-  # release never depends on it.
+  # final tag is put on Play's internal testing track (scripts/release/play-upload.mjs),
+  # re-signed with the upload key when one is set; a person promotes it to production in
+  # the Play Console (RELEASING.md). The secrets live in the `release` environment. Release
+  # candidates upload nothing; without the service account the job warns and succeeds, and
+  # the release never depends on it.
   play:
     name: Google Play (internal track)
     # !cancelled() && !failure(): a skipped job upstream (the app builds skip on tags) must not
@@ -1308,7 +1308,7 @@ jobs:
           name: opentodo-android
           path: dist
         continue-on-error: true
-      - name: Sign the AAB with the upload key and upload it
+      - name: Upload the AAB (re-signed with the upload key when one is set)
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           UPLOAD_KEYSTORE_BASE64: ${{ secrets.PLAY_UPLOAD_KEYSTORE_BASE64 }}
@@ -1317,22 +1317,29 @@ jobs:
           UPLOAD_KEY_PASSWORD: ${{ secrets.PLAY_UPLOAD_KEY_PASSWORD }}
         run: |
           aab="dist/opentodo-android-${GITHUB_REF_NAME#v}.aab"
-          if [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ] || [ -z "$UPLOAD_KEYSTORE_BASE64" ]; then
-            echo "::warning::PLAY_SERVICE_ACCOUNT_JSON or PLAY_UPLOAD_KEYSTORE_BASE64 is not set: no Google Play upload for this release"
+          if [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::warning::PLAY_SERVICE_ACCOUNT_JSON is not set: no Google Play upload for this release"
             exit 0
           fi
           if [ ! -f "$aab" ]; then
             echo "::warning::No signed AAB for $GITHUB_REF_NAME: no Google Play upload for this release"
             exit 0
           fi
-          # The release key's signature comes off, the upload key's goes on (Play App Signing
-          # re-signs with the release key, so every source keeps one certificate).
-          upload="$RUNNER_TEMP/upload.aab"
-          cp "$aab" "$upload"
-          zip -q -d "$upload" 'META-INF/*.SF' 'META-INF/*.RSA' 'META-INF/*.EC' 'META-INF/*.DSA' 'META-INF/MANIFEST.MF' || true
-          printf '%s' "$UPLOAD_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
-          jarsigner -keystore "$RUNNER_TEMP/upload.jks" -storepass:env UPLOAD_KEYSTORE_PASSWORD -keypass:env UPLOAD_KEY_PASSWORD "$upload" "$UPLOAD_KEY_ALIAS" > /dev/null
-          rm -f "$RUNNER_TEMP/upload.jks"
+          upload="$aab"
+          if [ -n "$UPLOAD_KEYSTORE_BASE64" ]; then
+            # With an upload key, the release key's signature comes off and the upload key's
+            # goes on (Play App Signing re-signs with the release key, so every source keeps
+            # one certificate). Without one, the release-signed AAB goes up as it is, as Play
+            # accepted for 1.6.0 and 1.7.0.
+            upload="$RUNNER_TEMP/upload.aab"
+            cp "$aab" "$upload"
+            zip -q -d "$upload" 'META-INF/*.SF' 'META-INF/*.RSA' 'META-INF/*.EC' 'META-INF/*.DSA' 'META-INF/MANIFEST.MF' || true
+            trap 'rm -f "$RUNNER_TEMP/upload.jks"' EXIT
+            printf '%s' "$UPLOAD_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+            # jarsigner's output names what is wrong (alias, password) and holds no secret.
+            jarsigner -keystore "$RUNNER_TEMP/upload.jks" -storepass:env UPLOAD_KEYSTORE_PASSWORD -keypass:env UPLOAD_KEY_PASSWORD "$upload" "$UPLOAD_KEY_ALIAS"
+            rm -f "$RUNNER_TEMP/upload.jks"
+          fi
           node scripts/release/play-upload.mjs "$GITHUB_REF_NAME" "$upload"
 
   # TestFlight (OpenSpec change ios-distribution D5, D9): after the release, the iPhone app of a

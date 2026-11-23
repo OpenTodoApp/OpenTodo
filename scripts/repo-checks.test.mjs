@@ -719,7 +719,10 @@ test('the Play upload runs only for final tags, after the release, with its secr
   assert.match(play, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\) \}\}$/m, 'final tags only')
   assert.match(play, /^ {4}environment: release$/m)
   assert.match(play, /node scripts\/release\/play-upload\.mjs "\$GITHUB_REF_NAME"/)
-  assert.match(play, /::warning::PLAY_SERVICE_ACCOUNT_JSON or PLAY_UPLOAD_KEYSTORE_BASE64 is not set/)
+  assert.match(play, /::warning::PLAY_SERVICE_ACCOUNT_JSON is not set/)
+  // Without an upload key the release-signed AAB goes up as it is; with one it is re-signed.
+  assert.match(play, /if \[ -n "\$UPLOAD_KEYSTORE_BASE64" \]; then/)
+  assert.doesNotMatch(play, /-z "\$UPLOAD_KEYSTORE_BASE64"/, 'a missing upload key no longer skips the upload')
   assert.doesNotMatch(play, /production/, 'CI never promotes to production')
   for (const f of workflowFiles()) {
     for (const [id, block] of Object.entries(jobsOf(read(f)))) {
