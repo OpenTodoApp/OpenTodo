@@ -313,7 +313,8 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             intent?.action == Intent.ACTION_VIEW && intent.data?.scheme == SystemSignIn.CALLBACK_SCHEME ->
                 finishSystemSignIn(intent.data.toString(), base)
             intent?.action == Intent.ACTION_VIEW && intent.data?.scheme == "opentodo-open" -> {
-                val path = intent.data?.schemeSpecificPart.orEmpty()
+                // Pause and Resume only with the token of the Focus notification (any app can open this).
+                val path = Focus.authorize(this, intent.data?.schemeSpecificPart.orEmpty(), intent)
                 load(base + if (path.startsWith("/") && !path.startsWith("//")) path else "/")
             }
             web.url == null -> load("$base/")

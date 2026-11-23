@@ -69,6 +69,37 @@ data class FocusModel(
      */
     fun endOwedBy(next: FocusModel, now: Long): Boolean = endDue(now) && next.notifyAt != notifyAt
 
+    /**
+     * What `opentodo-open:` may load for [path] while this session is stored. Pause and
+     * Resume reach the activity, which other apps can open too, so an address with an action
+     * loads only with the token of this session's notification ([token] against [expected])
+     * and when it fits the state (Pause while running, Resume while paused); otherwise it
+     * opens the Focus screen without acting. Every other address passes unchanged.
+     */
+    fun authorize(path: String, token: String?, expected: String?): String {
+        if (token != null && expected != null && token == expected && path == actionPath) return path
+        // Deny by default: the WebView drops tabs and newlines, resolves dot segments and the
+        // web app decodes the query, so the check reads only the letters and digits left once
+        // every escape is decoded. Any spelling that mentions both opens the screen only.
+        val plain = decodedFully(path).filter { it.isLetterOrDigit() }.lowercase()
+        return if (plain.contains("focus") && plain.contains("action")) OPEN_PATH else path
+    }
+
+    /** The publication as stored: only the fields read here, normalized and capped by [parse]. */
+    fun toJson(): String? {
+        if (!shown) return null
+        val o = JSONObject().put("v", 1).put("state", state.name.lowercase()).put("phase", phase.name.lowercase()).put("elapsedMs", elapsedMs)
+        taskId?.let { o.put("taskId", it) }
+        title?.let { o.put("title", it) }
+        breakKind?.let { o.put("breakKind", it.name.lowercase()) }
+        cycle?.let { o.put("cycle", it) }
+        cycleLength?.let { o.put("cycleLength", it) }
+        runningSince?.let { o.put("runningSince", it) }
+        plannedEndAt?.let { o.put("plannedEndAt", it) }
+        plannedMs?.let { o.put("plannedMs", it) }
+        return o.toString()
+    }
+
     /** The address Pause or Resume opens (focus-live-activity D4); none outside a run. */
     val actionPath: String? get() = when (state) {
         State.RUNNING -> "/focus?action=pause"
@@ -111,6 +142,34 @@ data class FocusModel(
                 plannedEndAt = if (state == State.RUNNING) long("plannedEndAt") else null,
                 plannedMs = long("plannedMs"),
             )
+        }
+
+        /**
+         * [s] with every valid percent-escape decoded, again until nothing changes (a few
+         * rounds at most). An invalid escape (`%`, `%zz`) stays as it is, as in the browser,
+         * and does not stop the rest from being decoded.
+         */
+        internal fun decodedFully(s: String): String {
+            var cur = s
+            repeat(5) {
+                val next = decodeOnce(cur)
+                if (next == cur) return cur
+                cur = next
+            }
+            return cur
+        }
+
+        private fun decodeOnce(s: String): String {
+            val out = java.io.ByteArrayOutputStream()
+            val bytes = s.toByteArray(Charsets.UTF_8)
+            var i = 0
+            while (i < bytes.size) {
+                val b = bytes[i]
+                val hi = if (i + 2 < bytes.size && b == '%'.code.toByte()) Character.digit(bytes[i + 1].toInt(), 16) else -1
+                val lo = if (hi >= 0) Character.digit(bytes[i + 2].toInt(), 16) else -1
+                if (hi >= 0 && lo >= 0) { out.write(hi * 16 + lo); i += 3 } else { out.write(b.toInt()); i++ }
+            }
+            return String(out.toByteArray(), Charsets.UTF_8)
         }
 
         /** The frozen time as the screen shows it: `24:59`, `1:05:00` from an hour. */

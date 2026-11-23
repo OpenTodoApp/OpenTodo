@@ -53,6 +53,11 @@ class Prefs(context: Context) {
         get() = p.getString("focus", null)
         set(v) = p.edit().apply { if (v == null) remove("focus") else putString("focus", v) }.apply()
 
+    /** The running session's Pause/Resume token (Focus.EXTRA_TOKEN); none outside a session. */
+    var focusToken: String?
+        get() = p.getString("focusToken", null)
+        set(v) = p.edit().apply { if (v == null) remove("focusToken") else putString("focusToken", v) }.apply()
+
     var widget: String?
         get() = p.getString("widget", null)
         set(v) = p.edit().putString("widget", v).apply()
