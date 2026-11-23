@@ -328,6 +328,70 @@ final class WidgetPublicationTests: XCTestCase {
         XCTAssertFalse(WidgetPublication.publish("{}"))
     }
 
+    private typealias Completed = WidgetPublication.Completed
+
+    private func bridgeFixture(_ name: String) throws -> [String: Any] {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/\(name).json")
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any], name)
+    }
+
+    /// completed-widget D1, D2: the Completed widget's numbers from the shared bridge fixtures
+    /// (Android's BridgeFixtureTest reads them too): the week, and a locked account's count alone.
+    /// The Today payload without `completed` gives no Completed widget.
+    func testTheCompletedWidgetReadsTheSharedPayloads() throws {
+        for name in ["widget-completed", "widget-completed-locked"] {
+            let fixture = try bridgeFixture(name)
+            XCTAssertEqual(fixture["method"] as? String, "publishWidget", name)
+            let want = try XCTUnwrap(fixture["expect"] as? [String: Any], name)
+            let days = try XCTUnwrap(want["days"] as? [[String: Any]], name).map { d in
+                Completed.Day(day: d["day"] as? String ?? "?", done: d["done"] as? Int ?? -1)
+            }
+            let expected = Completed(updatedAt: try XCTUnwrap(want["updatedAt"] as? Double, name), locked: try XCTUnwrap(want["locked"] as? Bool, name),
+                                     today: try XCTUnwrap(want["today"] as? Int, name), days: days)
+            let payload = try XCTUnwrap(fixture["payload"] as? String, name)
+            XCTAssertEqual(Completed.parse(Data(payload.utf8)), expected, name)
+        }
+        XCTAssertNil(Completed.parse(Data(try XCTUnwrap(try bridgeFixture("widget")["payload"] as? String).utf8)))
+    }
+
+    /// The cases of Android's CompletedModelTest.
+    func testTheCompletedModelKeepsOnlyWhatItCanShow() {
+        XCTAssertEqual(Completed.parse(Data(#"{"updatedAt":5,"locked":true,"completed":{"today":3,"days":[{"day":"2026-11-21","done":3}]}}"#.utf8)),
+                       Completed(updatedAt: 5, locked: true, today: 3, days: []))
+        XCTAssertEqual(Completed.parse(Data(#"{"updatedAt":5,"locked":false,"completed":{"today":-1,"days":[{"day":"x","done":2},{"day":"2026-11-21","done":-4}]}}"#.utf8)),
+                       Completed(updatedAt: 5, locked: false, today: 0, days: [.init(day: "2026-11-21", done: 0)]))
+        XCTAssertNil(Completed.parse(Data("not json".utf8)))
+        XCTAssertNil(Completed.parse(nil))
+        // At most the last seven days.
+        let ten = (1...10).map { #"{"day":"2026-11-\#(String(format: "%02d", $0))","done":\#($0)}"# }.joined(separator: ",")
+        XCTAssertEqual(Completed.parse(Data(#"{"completed":{"today":1,"days":[\#(ten)]}}"#.utf8))?.days.map(\.done), [4, 5, 6, 7, 8, 9, 10])
+    }
+
+    func testBarsScaleToTheBusiestDayAndKeepASliver() {
+        XCTAssertEqual(Completed.barLevel(done: 4, max: 4), 100)
+        XCTAssertEqual(Completed.barLevel(done: 2, max: 4), 50)
+        XCTAssertEqual(Completed.barLevel(done: 1, max: 40), 6)
+        XCTAssertEqual(Completed.barLevel(done: 0, max: 4), 0)
+        XCTAssertEqual(Completed.barLevel(done: 0, max: 0), 0)
+    }
+
+    func testWeekdayLettersFollowTheLanguage() {
+        XCTAssertEqual(Completed.weekdayLetter("2026-11-21", locale: Locale(identifier: "en")), "S")
+        XCTAssertEqual(Completed.weekdayLetter("2026-11-23", locale: Locale(identifier: "en")), "M")
+        XCTAssertEqual(Completed.weekdayLetter("2026-11-23", locale: Locale(identifier: "it")), "L")
+        XCTAssertEqual(Completed.weekdayLetter("not a day", locale: Locale(identifier: "en")), "")
+    }
+
+    /// A tap on the Completed widget opens Statistics.
+    @MainActor
+    func testTheCompletedWidgetOpensStatistics() throws {
+        let model = AppModel()
+        model.handle(url: try XCTUnwrap(URL(string: "opentodo://stats")))
+        XCTAssertEqual(model.pendingPath, "/stats")
+    }
+
     /// The web app's publishWidget payloads of the shared bridge fixtures (the Android app's
     /// BridgeFixtureTest reads them too): the list, a locked app and a sign-out. `more` is the
     /// Android widget's own count of rows it has no room for, so it is not read here.

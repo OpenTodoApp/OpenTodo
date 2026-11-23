@@ -22,6 +22,7 @@
 		3BC19BDB6D1E9CE0B9CDCAAA /* Origin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8407A0F4AD2F032D414F19A2 /* Origin.swift */; };
 		A1F3C5E7092B4D6F8A0C1E35 /* SignInFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E4D6F8193C5E7A9B1D2F46 /* SignInFlow.swift */; };
 		3FDFB7915FCF248E011B9902 /* TodayWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CF02FEF6607848477AEECD7 /* TodayWidget.swift */; };
+		76D10063A2FCE59D0D30FE3E /* CompletedWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAF92F0B6FA89500B97B225A /* CompletedWidget.swift */; };
 		405EE73A8C49116F83C05E74 /* ShellDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96393A759F2B87B27D9E7E0A /* ShellDataTests.swift */; };
 		4765AC84702C76D4DCAE3AA1 /* OpenTodoWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 54FD68501123AE1BE87BC42B /* OpenTodoWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		49BDEDE91D605613D757ED93 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DBD2D9F3CA1F7C5D63C9F0FC /* Assets.xcassets */; };
@@ -114,6 +115,7 @@
 		16AF3DC74A2267EFDBC4C931 /* Bridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bridge.swift; sourceTree = "<group>"; };
 		1BC891710726BD12FF8B163B /* OpenTodoUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = OpenTodoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1CF02FEF6607848477AEECD7 /* TodayWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidget.swift; sourceTree = "<group>"; };
+		EAF92F0B6FA89500B97B225A /* CompletedWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedWidget.swift; sourceTree = "<group>"; };
 		219379B0310AFB0EB86C6A8D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		22C4610D50FAF8C9A2F07252 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		2AA01546E9D89832E97D0CC8 /* ShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellView.swift; sourceTree = "<group>"; };
@@ -202,6 +204,7 @@
 				989B6D10753CB9F8A784B420 /* Info.plist */,
 				AE01E13BB37C998C38284ED4 /* OpenTodoWidget.entitlements */,
 				1CF02FEF6607848477AEECD7 /* TodayWidget.swift */,
+				EAF92F0B6FA89500B97B225A /* CompletedWidget.swift */,
 			);
 			path = OpenTodoWidget;
 			sourceTree = "<group>";
@@ -535,6 +538,7 @@
 				4A84DB2EF94F4EDC2A6CBEF4 /* JSON.swift in Sources */,
 				6EF08424DEF31BCC9E483D41 /* Store.swift in Sources */,
 				3FDFB7915FCF248E011B9902 /* TodayWidget.swift in Sources */,
+				76D10063A2FCE59D0D30FE3E /* CompletedWidget.swift in Sources */,
 				754F1F0DA4E9CEC80D381AC0 /* WidgetPublication.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
