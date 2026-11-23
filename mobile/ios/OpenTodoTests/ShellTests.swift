@@ -193,6 +193,37 @@ final class OfflineStartTests: XCTestCase {
             XCTAssertFalse(ShellController.shouldRetryFromCache(kind: other, triedCache: false, loaded: false))
         }
     }
+
+    /// A first start with the server unreachable and nothing stored: the load from the cache
+    /// fails with its own error, and the screen still says the server can't be reached.
+    func testAFailedCacheFallbackSaysTheServerIsUnreachable() {
+        let cacheMiss = ShellController.kind(of: NSError(domain: NSURLErrorDomain, code: NSURLErrorResourceUnavailable))
+        XCTAssertEqual(ShellController.shownKind(cacheMiss, triedCache: true, loaded: false), .offline)
+        for kind: ShellController.Failure.Kind in [.offline, .untrusted, .signIn, .other] {
+            XCTAssertEqual(ShellController.shownKind(kind, triedCache: true, loaded: false), .offline, "after the cache fallback")
+            // Without a fallback, or once a page showed, each failure says what it is.
+            XCTAssertEqual(ShellController.shownKind(kind, triedCache: false, loaded: false), kind)
+            XCTAssertEqual(ShellController.shownKind(kind, triedCache: true, loaded: true), kind)
+        }
+    }
+
+    /// Which errors read as "No connection to your server" and which as a certificate problem.
+    func testLoadErrorsAreSortedIntoWhatTheScreenSays() {
+        func kind(_ code: Int) -> ShellController.Failure.Kind { ShellController.kind(of: NSError(domain: NSURLErrorDomain, code: code)) }
+        for code in [NSURLErrorNotConnectedToInternet, NSURLErrorNetworkConnectionLost, NSURLErrorCannotFindHost,
+                     NSURLErrorCannotConnectToHost, NSURLErrorDNSLookupFailed, NSURLErrorTimedOut,
+                     NSURLErrorDataNotAllowed, NSURLErrorInternationalRoamingOff] {
+            XCTAssertEqual(kind(code), .offline, "\(code)")
+        }
+        for code in [NSURLErrorServerCertificateUntrusted, NSURLErrorServerCertificateHasBadDate, NSURLErrorServerCertificateHasUnknownRoot,
+                     NSURLErrorServerCertificateNotYetValid, NSURLErrorSecureConnectionFailed, NSURLErrorAppTransportSecurityRequiresSecureConnection,
+                     NSURLErrorClientCertificateRejected, NSURLErrorClientCertificateRequired] {
+            XCTAssertEqual(kind(code), .untrusted, "\(code)")
+        }
+        XCTAssertEqual(kind(NSURLErrorCancelled), .cancelled)
+        XCTAssertEqual(kind(NSURLErrorResourceUnavailable), .other)
+        XCTAssertEqual(kind(NSURLErrorBadServerResponse), .other)
+    }
 }
 
 /// The bridge on a real page (ios-bridge-portable): the shell loads a page from a small

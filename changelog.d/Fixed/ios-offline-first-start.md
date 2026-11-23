@@ -1,0 +1,1 @@
+- **The iPhone app says when it can't reach your server on a first start.** With nothing stored yet, it showed "The app could not be loaded"; it now says there is no connection to your server, with Try again, as the Android app does.

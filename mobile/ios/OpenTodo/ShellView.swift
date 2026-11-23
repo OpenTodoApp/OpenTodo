@@ -196,6 +196,14 @@ final class ShellController: NSObject, ObservableObject {
         kind == .offline && !triedCache && !loaded
     }
 
+    /// The failure the screen names. The load from the cache is tried only because the server
+    /// could not be reached; when it fails too (a first start, nothing stored yet), the screen
+    /// says the server is unreachable, as Android's does, not the cache's own error, which
+    /// would show as "The app could not be loaded". Pinned by OfflineStartTests.
+    nonisolated static func shownKind(_ kind: Failure.Kind, triedCache: Bool, loaded: Bool) -> Failure.Kind {
+        triedCache && !loaded ? .offline : kind
+    }
+
     /// Opens a path of the web app in the same web view, e.g. `/?task=…` from a widget or a reminder.
     func open(path: String) {
         guard let url = URL(string: path, relativeTo: origin)?.absoluteURL else { return }
@@ -241,11 +249,11 @@ final class ShellController: NSObject, ObservableObject {
             loadFromCache()
             return
         }
-        failure = Failure(kind: kind, detail: nsError.localizedDescription)
+        failure = Failure(kind: Self.shownKind(kind, triedCache: triedCache, loaded: loaded), detail: nsError.localizedDescription)
         reveal()
     }
 
-    private static func kind(of error: NSError) -> Failure.Kind {
+    nonisolated static func kind(of error: NSError) -> Failure.Kind {
         switch error.code {
         case NSURLErrorServerCertificateUntrusted, NSURLErrorServerCertificateHasBadDate,
              NSURLErrorServerCertificateHasUnknownRoot, NSURLErrorServerCertificateNotYetValid,

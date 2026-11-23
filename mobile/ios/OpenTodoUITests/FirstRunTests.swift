@@ -25,6 +25,18 @@ final class FirstRunTests: XCTestCase {
         return app
     }
 
+    /// native-shells "Offline start": a first start that cannot reach the server says so, with
+    /// Try again, like the Android app. Port 9 on this device answers nothing, and nothing of it
+    /// is stored, so the load from the cache fails too.
+    func testAFirstStartWithTheServerUnreachableSaysSo() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-OPENTODO_RESET", "-OPENTODO_SERVER", "http://localhost:9"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["No connection to your server."].waitForExistence(timeout: 30))
+        XCTAssertTrue(app.buttons["Try again"].exists)
+        attach("first-start-unreachable")
+    }
+
     func testAPublicHttpAddressIsRefusedWithTheHttpsSuggestion() {
         let app = launch()
         let field = app.textFields.firstMatch
