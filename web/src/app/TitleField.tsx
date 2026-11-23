@@ -4,8 +4,9 @@
 // the edit began is never re-read), shows the chips quick add shows, and offers the
 // `#` and `@` suggestions; on commit it hands the caller the plan to apply. With
 // parsing off, or for viewers, it is a plain field.
-import { type FocusEvent, type KeyboardEvent, type Ref, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { type FocusEvent, type KeyboardEvent, type ReactNode, type Ref, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { logicalToday } from '../lib/dates'
+import { useMe } from '../lib/sharing'
 import { dismissChip, type Chip, type LabelRef, loadQuickAddSettings, onQuickAddSettingsChange, type ProjectRef, rebaseDismissed, resolveDayMonthOrder, resolveLanguages, type Span } from '../lib/nlp'
 import { editPlan, parseEdit, type EditPlan } from '../lib/nlp/edit'
 import { composingEnter } from '../lib/composeKey'
@@ -43,13 +44,15 @@ export interface TitleFieldProps {
   initialCaret?: number
   /** Runs first on every key; true when the caller handled it (Shift+Enter in the inline editor). */
   onKeyDownFirst?: (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => boolean
+  /** Explicit save and cancel controls can share the field's focus boundary. */
+  actions?: (commit: () => void) => ReactNode
 }
 
 function nowHHMM(d = new Date()): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-export function TitleField({ title, value, onChange, onCommit, onCancel, projects, labels, readOnly = false, multiline = false, className = '', placeholder, ariaLabel, autoFocus, fieldRef, dataAttrs = {}, initialCaret, onKeyDownFirst }: TitleFieldProps) {
+export function TitleField({ title, value, onChange, onCommit, onCancel, projects, labels, readOnly = false, multiline = false, className = '', placeholder, ariaLabel, autoFocus, fieldRef, dataAttrs = {}, initialCaret, onKeyDownFirst, actions }: TitleFieldProps) {
   const input = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
   const root = useRef<HTMLDivElement>(null)
   // From the field's focus until the edit ends; focus moving to its own chips is still the edit.
@@ -67,6 +70,8 @@ export function TitleField({ title, value, onChange, onCommit, onCancel, project
   const dayParts = dayPartsOn(prefs)
   // The `~deep` tokens only while the account offers energy (task-energy D3).
   const energy = energyLevelsOn(prefs)
+  // Links need an author for their attachment: before the first sign-in they stay text (quick-add-links D2).
+  const signedIn = !!useMe()
 
   const parsed = useMemo(() => {
     if (!parsing || !focused || value === base.current) return null
@@ -74,8 +79,9 @@ export function TitleField({ title, value, onChange, onCommit, onCancel, project
     return parseEdit(base.current, value, {
       today: logicalToday(), now: nowHHMM(), languages: resolveLanguages(settings, langs),
       dayMonthOrder: resolveDayMonthOrder(settings, langs, dtPrefs), weekStart: resolved.weekStart, projects, dismissed, dayParts, energy,
+      links: signedIn, // links typed in this edit become attachments (quick-add-links D5)
     })
-  }, [parsing, focused, value, settings, dtPrefs, resolved, projects, dismissed, dayParts, energy])
+  }, [parsing, focused, value, settings, dtPrefs, resolved, projects, dismissed, dayParts, energy, signedIn])
 
   const change = (next: string) => {
     const clean = multiline ? next.replace(/\n/g, ' ') : next
@@ -150,6 +156,7 @@ export function TitleField({ title, value, onChange, onCommit, onCancel, project
         ? <textarea ref={(el) => { input.current = el }} rows={1} {...common} />
         : <input ref={(el) => { input.current = el }} {...common} />}
       {suggest.list}
+      {actions?.(commit)}
       {focused && (chips.length > 0 || misses.length > 0) && (
         <div className="mt-1 flex flex-wrap items-center gap-1.5 text-meta" role="status" aria-live="polite" data-title-chips>
           <ParseChips chips={chips} misses={misses} projects={projects} labels={labels}

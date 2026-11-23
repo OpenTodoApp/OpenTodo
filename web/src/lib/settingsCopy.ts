@@ -200,6 +200,7 @@ export const SETTINGS_COPY = {
       density: { label: msg('Density'), description: msg('Compact tightens rows, headers and the sidebar; touch targets stay full size.') },
       rows: { label: msg('Task rows'), description: msg('Detailed adds the parent task and a line of dates, priority and labels.') },
       titles: { label: msg('Show full task titles'), description: msg('Long titles wrap in lists, boards and Today instead of ending with an ellipsis.') },
+      deadlineDates: { label: msg('Show deadlines as dates') },
       haptics: { label: msg('Haptic feedback'), description: msg('A short vibration when you complete a task or pick one up with a long press.') },
       completionSound: { label: msg('Task completion sound'), description: msg('Play a short sound when you complete a task.') },
       zoom: { label: msg('Allow pinch zoom'), description: msg('Pinch to zoom the app on this device. Turn it off for a more app-like feel.') },
@@ -317,7 +318,6 @@ export const SETTINGS_COPY = {
       hints: { label: msg('Show shortcut hints'), description: msg('Print the keys in the app itself, not only in tooltips. This device only.') },
       singleKeys: { label: msg('Single-key shortcuts'), description: msg('Letters and symbols alone run commands. Turn off for speech input. This device only.') },
       vim: { label: msg('Vim keybindings'), description: msg('Normal, Insert and Command modes with counts, {kbd}, {kbd2} and {kbd3}. This device only.') },
-      rowClick: { label: msg('Click a task to'), description: msg('Edit the title, open the details or expand the row. This device only.') },
     },
   },
   focus: {
@@ -351,6 +351,9 @@ export const SETTINGS_COPY = {
     rows: {
       device: { label: msg('This device') },
       titles: { label: msg('Include task titles'), description: msg('Off: the push carries only encrypted ids and this device adds the title.') },
+      // assignee-notifications: pushes about other people's changes to tasks assigned to you.
+      assigned: { label: msg('Assigned to me') },
+      status: { label: msg('Completed or reopened') },
       // A native shell's rows (native-shells): no push service, the app schedules reminders.
       shell: { label: msg('Notifications through the app'), description: msg('Reminders are scheduled on this phone and shown without a push service.') },
       shellTitles: { label: msg('Include task titles'), description: msg('Off: reminders read "Reminder" until you open the app. Never with encryption.') },

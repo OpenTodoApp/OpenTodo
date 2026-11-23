@@ -2,7 +2,7 @@
 // to print again, the writes, moves, removals and conflict files (D3, D7, D8).
 import { parseDoc, printDoc, walk, type Doc } from './doc'
 import type { Engine } from './engine'
-import { byteOrder as byOrder, hashOf, own, sortedKeys } from './gojson'
+import { byteOrder as byOrder, hashOf, own, sortedKeys, writtenState } from './gojson'
 import * as S from './store'
 import { KEPT_ENTITIES } from './store'
 import type { FileState } from './types'
@@ -116,7 +116,7 @@ export async function plan(e: Engine, dry: boolean): Promise<void> {
         if (e.disk.has(p) && (e.parsed.has(p) || !e.changed.has(p))) removes.push(p)
       }
     }
-    files[target] = { project: pid, hash: hashOf(out) }
+    files[target] = writtenState(pid, out)
   }
   for (const p of sortedKeys(e.st.files)) {
     const fs = e.st.files[p]
@@ -130,7 +130,11 @@ export async function plan(e: Engine, dry: boolean): Promise<void> {
     } else renames.set(p, conflictName(p))
   }
   for (const p of e.pending) {
-    if (own(files, p)) files[p] = { ...files[p], hash: '' }
+    if (own(files, p)) {
+      const held = e.held.get(p)
+      const { held: _was, ...rest } = files[p]
+      files[p] = held ? { ...rest, hash: '', held } : { ...rest, hash: '' }
+    }
   }
   for (const p of e.skip) {
     delete files[p]

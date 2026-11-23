@@ -1,0 +1,1 @@
+- **The installed web app keeps its checking mode when its stored record can't be read.** If the browser can't read the app's install record for a moment, the app goes on checking its files the same way and reads the record again on the next request.

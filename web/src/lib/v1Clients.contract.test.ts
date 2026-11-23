@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterAll, describe, expect, inject, it } from 'vitest'
-import { call } from '../test/contract'
+import { tokenAccount } from '../test/contract'
 
 const base = inject('serverUrl')
 const otBin = path.resolve(process.env.OT_BIN ?? fileURLToPath(new URL('../../../bin/ot', import.meta.url)))
@@ -19,14 +19,6 @@ const extensionApi = fileURLToPath(new URL('../../../extension/api.js', import.m
 /** The calls that follow belong to `name` in a recording (a no-op without the recorder). */
 async function recordAs(name: string): Promise<void> {
   await fetch(`${base}/__record/client?name=${name}`, { method: 'POST' }).catch(() => undefined)
-}
-
-/** An account and a full-access API token for it. */
-async function tokenAccount(name: string): Promise<string> {
-  const session = { cookie: '' }
-  await call(session, 'POST', '/api/v1/auth/register', { email: `${name}-${Date.now()}@example.com`, name, password: 'client contract password' })
-  const { secret } = await call<{ secret: string }>(session, 'POST', '/api/v1/tokens', { name })
-  return secret
 }
 
 describe('v1 clients against the server', () => {

@@ -3,8 +3,8 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { base64Decode, fingerprint } from './appCode'
-import { answerAfterFailure, checkForUpdate, cachedFile, fetchLazy, pruneCaches, type InstallEnv } from './appInstall'
-import { loadTrust, saveTrust, type TrustRecord } from './appTrust'
+import { answerAfterFailure, checkForUpdate, cachedFile, fetchLazy, pruneCaches, stagingName, type InstallEnv } from './appInstall'
+import { loadTrust, updateTrust, type TrustRecord } from './appTrust'
 import { clearLocalData } from './db'
 
 // The worker's checks (OpenSpec change signed-web-app, tasks 3.1 to 3.3), run
@@ -111,7 +111,7 @@ function server() {
 
 function env(srv: ReturnType<typeof server>, caches = new MemoryCaches(), builtin: Signer[] = ['release', 'recovery'], languages: string[] = []) {
   let record: TrustRecord | null = null
-  const e: InstallEnv & { caches: MemoryCaches; record: () => TrustRecord } = {
+  const e: InstallEnv & { caches: MemoryCaches; record: () => TrustRecord; save: (r: TrustRecord) => Promise<void> } = {
     fetch: srv.fetch,
     caches: caches as unknown as CacheStorage & MemoryCaches,
     builtinKeys: builtin.map((n) => keys[n].spki),
@@ -119,6 +119,11 @@ function env(srv: ReturnType<typeof server>, caches = new MemoryCaches(), builti
     now: () => 1_700_000_000_000,
     load: async () => (record ? structuredClone(record) : null),
     save: async (r: TrustRecord) => { record = structuredClone(r) },
+    update: async (change: (stored: TrustRecord | null) => TrustRecord | null) => {
+      const next = change(record ? structuredClone(record) : null)
+      if (next) record = structuredClone(next)
+      return next
+    },
     record: () => record!,
   } as never
   return e
@@ -184,6 +189,21 @@ describe('updates while reporting (refusal off)', () => {
     srv.requests = []
     return { srv, e }
   }
+
+  it('a report-only check writes nothing when another worker turned refusal on or changed the mode meanwhile', async () => {
+    for (const change of [{ refuse: true }, { mode: 'self-built' }] as Partial<TrustRecord>[]) {
+      const { srv, e } = await installed()
+      const held = e.record()
+      expect(held.refuse).toBe(false)
+      await e.save({ ...held, ...change })
+      const other = e.record()
+      e.load = async () => structuredClone(held)
+      await srv.serve(v2)
+      expect(await checkForUpdate(e)).toEqual({ kind: 'unchanged' })
+      expect(e.record()).toEqual(other)
+      expect((await e.caches.keys()).filter((n) => n.includes('1.4.0'))).toEqual([])
+    }
+  })
 
   it('installs a valid update, keeps the previous set and reuses unchanged files', async () => {
     const { srv, e } = await installed()
@@ -342,6 +362,61 @@ describe('refusal (design D17)', () => {
     srv.list = null
     expect(await checkForUpdate(e)).toMatchObject({ kind: 'refused', check: { cause: 'no-list' } })
   })
+
+  // Two workers at once (an open tab's worker beside the one installing): each write goes
+  // onto the record as stored, and only while it is the one the check started from.
+  it('records a refusal on the record as stored, keeping what another worker wrote meanwhile', async () => {
+    const { srv, e } = await refusing()
+    const held = e.record()
+    await e.save({ ...held, announced: [...held.announced, 'meanwhile'] })
+    e.load = async () => structuredClone(held)
+    await srv.serve({ ...v2, signers: [] })
+    expect(await checkForUpdate(e)).toMatchObject({ kind: 'refused', announce: true, check: { cause: 'unsigned' } })
+    expect(e.record().announced).toContain('meanwhile')
+    expect(e.record().lastCheck).toMatchObject({ cause: 'unsigned', refused: true })
+  })
+
+  it('an install another worker overtook writes nothing and drops its staged set', async () => {
+    const { srv, e } = await refusing()
+    const held = e.record()
+    await srv.serve(v2)
+    await checkForUpdate(e)
+    const other = e.record()
+    expect(other.current?.version).toBe('1.4.0')
+    e.load = async () => structuredClone(held)
+    await srv.serve({ ...v2, version: '1.5.0', files: { ...v2.files, 'index.html': '<div id=root>5</div>' } })
+    expect(await checkForUpdate(e)).toEqual({ kind: 'unchanged' })
+    expect(e.record()).toEqual(other)
+    expect((await e.caches.keys()).filter((n) => n.includes('1.5.0'))).toEqual([])
+  })
+
+  it('an install of the same list again since the check started counts as overtaken (v1, v2, v1)', async () => {
+    const { srv, e } = await refusing()
+    const held = e.record()
+    await srv.serve(v2)
+    await checkForUpdate(e)
+    await srv.serve({ ...v1, version: '1.3.0' })
+    await e.save({ ...e.record(), current: { ...held.current!, cache: stagingName('1.3.0', held.current!.payloadHash, 1_700_000_000_000) }, previous: e.record().current })
+    const again = e.record()
+    expect(again.current?.payloadHash).toBe(held.current?.payloadHash)
+    expect(again.current?.cache).not.toBe(held.current?.cache)
+    e.load = async () => structuredClone(held)
+    await srv.serve({ ...v2, version: '1.5.0', files: { ...v2.files, 'index.html': '<div id=root>5</div>' } })
+    expect(await checkForUpdate(e)).toEqual({ kind: 'unchanged' })
+    expect(e.record()).toEqual(again)
+  })
+
+  it('a check another worker\'s install overtook records nothing and announces nothing', async () => {
+    const { srv, e } = await refusing()
+    const held = e.record()
+    await srv.serve(v2)
+    await checkForUpdate(e)
+    const other = e.record()
+    e.load = async () => structuredClone(held)
+    srv.list = null
+    expect(await checkForUpdate(e)).toMatchObject({ kind: 'refused', announce: false, check: { cause: 'no-list' } })
+    expect(e.record()).toEqual(other)
+  })
 })
 
 describe('lazy files (design D7)', () => {
@@ -397,11 +472,60 @@ describe('lazy files (design D7)', () => {
     expect(await cachedFile(e, e.record(), 'assets/MapView-1.js')).toBeNull()
   })
 
+  it('persist false never writes the record in use back (a stand-in for one that could not be read)', async () => {
+    const { srv, e } = await installed(true)
+    const saves: unknown[] = []
+    const update = e.update
+    e.update = async (change) => { const r = await update(change); if (r) saves.push(r); return r }
+    srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
+    const changed = await fetchLazy(e, e.record(), 'assets/MapView-1.js', false)
+    expect(changed?.response.status).toBe(404)
+    expect(changed?.check).toMatchObject({ cause: 'changed-file' })
+    expect(saves).toEqual([])
+    await fetchLazy(e, e.record(), 'assets/MapView-1.js', true)
+    expect(saves).toHaveLength(1)
+  })
+
+  it('records the check on the record as stored, keeping what another worker wrote meanwhile', async () => {
+    const { srv, e } = await installed()
+    const held = e.record()
+    await e.save({ ...held, announced: ['written meanwhile'] })
+    srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
+    await fetchLazy(e, held, 'assets/MapView-1.js')
+    expect(e.record().announced).toEqual(['written meanwhile'])
+    expect(e.record().lastCheck).toMatchObject({ cause: 'changed-file', path: 'assets/MapView-1.js' })
+  })
+
+  it('records nothing when the same list was installed again since (a new cache)', async () => {
+    const { srv, e } = await installed()
+    const held = e.record()
+    await e.save({ ...held, current: { ...held.current!, cache: stagingName(held.current!.version, held.current!.payloadHash, 1_700_000_000_000) } })
+    const again = e.record()
+    expect(again.current?.cache).not.toBe(held.current?.cache)
+    srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
+    const changed = await fetchLazy(e, held, 'assets/MapView-1.js')
+    expect(changed?.check).toMatchObject({ cause: 'changed-file' })
+    expect(e.record()).toEqual(again)
+  })
+
+  it('never writes an older set back over one another worker installed meanwhile', async () => {
+    const { srv, e } = await installed()
+    const held = e.record()
+    await srv.serve(v2)
+    await checkForUpdate(e)
+    const installed2 = e.record()
+    expect(installed2.current?.version).toBe('1.4.0')
+    srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
+    const changed = await fetchLazy(e, held, 'assets/MapView-1.js')
+    expect(changed?.check).toMatchObject({ cause: 'changed-file' })
+    expect(e.record()).toEqual(installed2)
+  })
+
   it('with refusal on, storage that fails never lets an unchecked file through', async () => {
     const { srv, e } = await installed(true)
     const open = e.caches.open.bind(e.caches)
     e.caches.open = async (name: string) => { const c = await open(name); return Object.assign(Object.create(Object.getPrototypeOf(c)), c, { put: async () => { throw new DOMException('full', 'QuotaExceededError') } }) }
-    e.save = async () => { throw new DOMException('full', 'QuotaExceededError') }
+    e.update = async () => { throw new DOMException('full', 'QuotaExceededError') }
     // An intact file is still served (it was checked), just not stored.
     expect(await text((await fetchLazy(e, e.record(), 'assets/MapView-1.js'))!.response)).toBe('map1')
     e.caches.open = open
@@ -551,8 +675,17 @@ describe('caches', () => {
 describe('the trust record', () => {
   it('survives signing out (clearLocalData clears only the app database)', async () => {
     const record: TrustRecord = { mode: 'signed', keys: ['k'], refuse: true, announced: [] }
-    await saveTrust(record)
+    await updateTrust(() => record)
     await clearLocalData()
     expect(await loadTrust()).toEqual(record)
+  })
+
+  it('updateTrust changes the record as stored, or leaves it', async () => {
+    await updateTrust(() => ({ mode: 'signed', keys: ['k'], refuse: false, announced: ['1.0.0'] }))
+    const next = await updateTrust((stored) => (stored ? { ...stored, refuse: true } : null))
+    expect(next).toMatchObject({ refuse: true, announced: ['1.0.0'] })
+    expect(await loadTrust()).toMatchObject({ refuse: true, announced: ['1.0.0'] })
+    expect(await updateTrust(() => null)).toBeNull()
+    expect(await loadTrust()).toMatchObject({ refuse: true })
   })
 })

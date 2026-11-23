@@ -100,7 +100,7 @@ function MethodList({ title, icon, move, help, groups, empty }: Props) {
                         onMore={(from) => { setSelected(key); bulk.openActions(null, from) }}
                         blockedBy={blocked.get(task.id)} breadcrumb={g.notes?.get(task.id) ?? null}
                         onToggle={() => act(setTaskCompletedWithFeedback(task.id, !task.completed_at))}
-                        onOpen={(e) => { setSelected(key); openFromRow(task.id, e) }}
+                        selectOnClick onOpen={(e, intent) => { setSelected(key); openFromRow(task.id, e, intent) }}
                         onOpenPage={() => openTaskPage(task.id)}
                         {...bulk.rowProps(task)} />
                     )

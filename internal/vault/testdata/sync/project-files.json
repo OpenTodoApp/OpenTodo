@@ -483,7 +483,14 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "1087a64bb47ccca8aa8979cb9e2faeaa3ab17c00581e3d32b50ea100bfb3e60a"
+              "hash": "1087a64bb47ccca8aa8979cb9e2faeaa3ab17c00581e3d32b50ea100bfb3e60a",
+              "size": 54,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8"
+              ]
             },
             "Inbox.md": {
               "project": "",
@@ -491,11 +498,27 @@
             },
             "Work/Launch.md": {
               "project": "p-launch",
-              "hash": "34ce119a85cf4b59985a5e234bc7d6cf020c647e9bccff960aee1b1e80e41ebf"
+              "hash": "34ce119a85cf4b59985a5e234bc7d6cf020c647e9bccff960aee1b1e80e41ebf",
+              "size": 80,
+              "prefixes": [
+                "f52d711103d50a43",
+                "222fa6ecc5c610ef",
+                "8d54c2d2bc841730",
+                "ef279f66099c823b",
+                "27eb1ed65ed87db8",
+                "34ce119a85cf4b59"
+              ]
             },
             "Work/Work.md": {
               "project": "p-work",
-              "hash": "a26864372fa7f1aea1263c0834eebba73d75b88b693593f4dbe21f9ed146fc2e"
+              "hash": "a26864372fa7f1aea1263c0834eebba73d75b88b693593f4dbe21f9ed146fc2e",
+              "size": 54,
+              "prefixes": [
+                "f52d711103d50a43",
+                "311b75839baf6970",
+                "be5b0aa916c741be",
+                "a26864372fa7f1ae"
+              ]
             }
           },
           "printed": {
@@ -1672,11 +1695,29 @@
           "files": {
             "Garden.md": {
               "project": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
-              "hash": "e47b7d07a061fbcfe5a809e3f3a244a3884b3bca50424b7f54b6add72bb7d5c8"
+              "hash": "e47b7d07a061fbcfe5a809e3f3a244a3884b3bca50424b7f54b6add72bb7d5c8",
+              "size": 245,
+              "prefixes": [
+                "f52d711103d50a43",
+                "336ac63eaa309440",
+                "4dee51e5c003b6ec",
+                "63355b0b61d6d93e",
+                "631ab59b1cb69ed8",
+                "6d5d6e288c0797f1",
+                "898b2338472036ab",
+                "e47b7d07a061fbcf"
+              ]
             },
             "Household.md": {
               "project": "p-home",
-              "hash": "1087a64bb47ccca8aa8979cb9e2faeaa3ab17c00581e3d32b50ea100bfb3e60a"
+              "hash": "1087a64bb47ccca8aa8979cb9e2faeaa3ab17c00581e3d32b50ea100bfb3e60a",
+              "size": 54,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8"
+              ]
             },
             "Inbox.md": {
               "project": "",
@@ -1684,11 +1725,27 @@
             },
             "Work/Launch.md": {
               "project": "p-launch",
-              "hash": "34ce119a85cf4b59985a5e234bc7d6cf020c647e9bccff960aee1b1e80e41ebf"
+              "hash": "34ce119a85cf4b59985a5e234bc7d6cf020c647e9bccff960aee1b1e80e41ebf",
+              "size": 80,
+              "prefixes": [
+                "f52d711103d50a43",
+                "222fa6ecc5c610ef",
+                "8d54c2d2bc841730",
+                "ef279f66099c823b",
+                "27eb1ed65ed87db8",
+                "34ce119a85cf4b59"
+              ]
             },
             "Work/Work.md": {
               "project": "p-work",
-              "hash": "a26864372fa7f1aea1263c0834eebba73d75b88b693593f4dbe21f9ed146fc2e"
+              "hash": "a26864372fa7f1aea1263c0834eebba73d75b88b693593f4dbe21f9ed146fc2e",
+              "size": 54,
+              "prefixes": [
+                "f52d711103d50a43",
+                "311b75839baf6970",
+                "be5b0aa916c741be",
+                "a26864372fa7f1ae"
+              ]
             }
           },
           "printed": {
@@ -2253,11 +2310,29 @@
           "files": {
             "Household/Garden.md": {
               "project": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
-              "hash": "e47b7d07a061fbcfe5a809e3f3a244a3884b3bca50424b7f54b6add72bb7d5c8"
+              "hash": "e47b7d07a061fbcfe5a809e3f3a244a3884b3bca50424b7f54b6add72bb7d5c8",
+              "size": 245,
+              "prefixes": [
+                "f52d711103d50a43",
+                "336ac63eaa309440",
+                "4dee51e5c003b6ec",
+                "63355b0b61d6d93e",
+                "631ab59b1cb69ed8",
+                "6d5d6e288c0797f1",
+                "898b2338472036ab",
+                "e47b7d07a061fbcf"
+              ]
             },
             "Household/Household.md": {
               "project": "p-home",
-              "hash": "1087a64bb47ccca8aa8979cb9e2faeaa3ab17c00581e3d32b50ea100bfb3e60a"
+              "hash": "1087a64bb47ccca8aa8979cb9e2faeaa3ab17c00581e3d32b50ea100bfb3e60a",
+              "size": 54,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8"
+              ]
             },
             "Inbox.md": {
               "project": "",
@@ -2265,11 +2340,27 @@
             },
             "Work/Launch.md": {
               "project": "p-launch",
-              "hash": "34ce119a85cf4b59985a5e234bc7d6cf020c647e9bccff960aee1b1e80e41ebf"
+              "hash": "34ce119a85cf4b59985a5e234bc7d6cf020c647e9bccff960aee1b1e80e41ebf",
+              "size": 80,
+              "prefixes": [
+                "f52d711103d50a43",
+                "222fa6ecc5c610ef",
+                "8d54c2d2bc841730",
+                "ef279f66099c823b",
+                "27eb1ed65ed87db8",
+                "34ce119a85cf4b59"
+              ]
             },
             "Work/Work.md": {
               "project": "p-work",
-              "hash": "a26864372fa7f1aea1263c0834eebba73d75b88b693593f4dbe21f9ed146fc2e"
+              "hash": "a26864372fa7f1aea1263c0834eebba73d75b88b693593f4dbe21f9ed146fc2e",
+              "size": 54,
+              "prefixes": [
+                "f52d711103d50a43",
+                "311b75839baf6970",
+                "be5b0aa916c741be",
+                "a26864372fa7f1ae"
+              ]
             }
           },
           "printed": {

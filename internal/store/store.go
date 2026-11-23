@@ -232,6 +232,9 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 	if err := migrateAssistantUsageCached(ctx, db); err != nil {
 		return err
 	}
+	if err := migratePushNotify(ctx, db); err != nil {
+		return err
+	}
 	if err := migrateAuditChain(ctx, db); err != nil {
 		return err
 	}

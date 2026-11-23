@@ -80,6 +80,10 @@ export function NoteSearchField({ text, onText, tokens, onTokens, projects, labe
   const open = !!typing && dismissed !== text && state.options.length > 0
 
   function change(next: string) {
+    // A new edit is a new suggestion: forget an Escape (or a pick, whose close
+    // carries the text as it was before the value moved into a chip), so typing
+    // the same word again offers its values again.
+    setDismissed(null)
     const all = pasted.current
     pasted.current = false
     const done = commitTokens(next, world, all)

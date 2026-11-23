@@ -541,3 +541,16 @@ export const EditingInline: StoryObj = {
   },
 }
 
+/** The title-only editor opened from a row menu, with touch-sized controls. */
+export const EditingInlineCompact: StoryObj = {
+  render: () => {
+    const subtask = task({ id: 't2', title: 'Compare train times', parent_id: 't1' })
+    return (
+      <List>
+        <TaskRow {...base} task={task({ id: 't1', title: 'Plan the autumn trip' })} hasChildren onToggleCollapse={noop} />
+        <TaskRow {...base} task={subtask} depth={1} selected inline={<InlineEditor task={subtask} compact projects={[]} labelMap={new Map()} onDone={noop} />} />
+        <TaskRow {...base} task={task({ id: 't3', title: 'Book the hotel', parent_id: 't1' })} depth={1} />
+      </List>
+    )
+  },
+}

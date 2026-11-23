@@ -6,7 +6,7 @@ import type { PushState, TestOutcome } from '../lib/push'
 import { NotificationsView, PushDelivery, testSummary, type TestPhase } from './NotificationsSettings'
 
 const subscribed: PushState = {
-  supported: true, available: true, permission: 'granted', enabled: true, includeContent: false, needsRenewal: false,
+  supported: true, available: true, permission: 'granted', enabled: true, includeContent: false, notify: { assigned: false, status: false }, needsRenewal: false,
   serviceWorker: true, serverUnreachable: false,
   subscription: { id: 's', deviceId: 'dev', includeContent: false, createdAt: 1, lastOkAt: 1_760_000_000_000, lastError: '', failures: 0, needsRenewal: false },
 }
@@ -100,5 +100,27 @@ describe('NotificationsView', () => {
     const html = view({ ...subscribed, available: false })
     expect(html).toContain('turned off on this server')
     expect(html).not.toContain('role="switch"')
+  })
+})
+
+// assignee-notifications D2: the assignment and status choices, only while push is on here.
+describe('NotificationsView choices', () => {
+  const view = (state: PushState) => renderToStaticMarkup(
+    <NotificationsView state={state} busy={false} message={null} onEnable={() => {}} onIncludeContent={() => {}} onNotify={() => {}} onRenew={() => {}} />,
+  )
+  it('offers Assigned to me and Completed or reopened, off by default, while push is on', () => {
+    const html = view(subscribed)
+    expect(html).toContain('Assigned to me')
+    expect(html).toContain('Completed or reopened')
+    expect(html.match(/aria-checked="true"/g)?.length).toBe(1) // only "This device"
+  })
+  it('shows them as chosen', () => {
+    const html = view({ ...subscribed, notify: { assigned: true, status: true } })
+    expect(html.match(/aria-checked="true"/g)?.length).toBe(3)
+  })
+  it('offers neither while push is off on this device', () => {
+    const html = view({ ...subscribed, enabled: false })
+    expect(html).not.toContain('Assigned to me')
+    expect(html).not.toContain('Completed or reopened')
   })
 })

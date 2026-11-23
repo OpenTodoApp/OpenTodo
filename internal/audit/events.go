@@ -407,11 +407,6 @@ func PasskeyDeleted(actorID, targetID, passkeyID, name string) Event {
 
 // ---- API tokens ----
 
-// TokenCreated records a new API token (never its secret).
-func TokenCreated(userID, tokenID, name string) Event {
-	return ev(TokenCreatedName, Success, userID, "", "token_id", tokenID, "token_name", name)
-}
-
 // TokenCreatedScoped records a new API token with its scope (never its secret).
 func TokenCreatedScoped(userID, tokenID, name, scope string) Event {
 	return ev(TokenCreatedName, Success, userID, "", "token_id", tokenID, "token_name", name, "token_scope", scope)

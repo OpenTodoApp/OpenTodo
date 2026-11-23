@@ -231,7 +231,7 @@ func (e *engine) plan(dry bool) error {
 				}
 			}
 		}
-		files[target] = FileState{Project: pid, Hash: hashOf(out)}
+		files[target] = writtenState(pid, out)
 	}
 	for _, p := range sortedKeys(e.st.Files) {
 		fs := e.st.Files[p]
@@ -250,10 +250,12 @@ func (e *engine) plan(dry bool) error {
 		}
 	}
 	// A file not downloaded yet keeps its project and loses its hash: once it
-	// arrives it is read as changed and printed again.
+	// arrives it is read as changed and printed again. A half-saved one keeps
+	// its first hold time (engine.go halfSaved).
 	for p := range e.pending {
 		if fs, ok := files[p]; ok {
 			fs.Hash = ""
+			fs.Held = e.held[p]
 			files[p] = fs
 		}
 	}

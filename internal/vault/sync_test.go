@@ -361,6 +361,12 @@ func TestLineRemoval(t *testing.T) {
 	}
 	v.write(t, "Home.md", strings.Join(keep, "\n"))
 	s.do("PATCH", "/api/v1/tasks/"+kept, map[string]any{"completed_at": time.Now().UnixMilli()})
+	// The lines removed were the file's last: until the half-saved hold has
+	// passed, the file may be a save in progress, so nothing is trashed yet.
+	if rep := v.sync(t); rep.Trashed != 0 || !hasEvent(rep, "skipped", "Home.md") {
+		t.Fatalf("within the hold: %+v", rep)
+	}
+	v.now = func() time.Time { return time.Now().Add(halfSavedHold + time.Minute) }
 	rep := v.sync(t)
 	if rep.Trashed != 2 {
 		t.Errorf("trashed = %d %+v", rep.Trashed, rep.Events)
@@ -847,5 +853,89 @@ func TestInvalidOpRefusedAlone(t *testing.T) {
 	}
 	if rep := v.sync(t); rep.Updated != 0 || len(rep.Warnings) != 0 {
 		t.Errorf("next sync not idle: %+v", rep)
+	}
+}
+
+// vault-file-keeps-project: a file at a path the vault knows that lost its
+// front matter stays its project's file; its colour and icon stay, and the
+// front matter is written back.
+func TestFrontMatterDeletedKeepsTheProject(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home", "color": "#22c55e", "icon": "house"})
+	s.create("tasks", map[string]any{"title": "Fix the lamp", "project_id": home})
+	v := s.vault(t)
+	text := v.read(t, "Home.md")
+	end := strings.Index(text[3:], "\n---\n")
+	if !strings.HasPrefix(text, "---\n") || end < 0 {
+		t.Fatalf("no front matter:\n%s", text)
+	}
+	v.write(t, "Home.md", strings.TrimLeft(text[3+end+5:], "\n")+"- [ ] Oil the hinge\n")
+	rep := v.sync(t)
+	if rep.Created != 1 {
+		t.Fatalf("report %+v", rep)
+	}
+	projects := s.list("projects")
+	if len(projects) != 1 {
+		t.Fatalf("%d projects, want 1: %+v", len(projects), projects)
+	}
+	if p := s.get("projects", home); p["color"] != "#22c55e" || p["icon"] != "house" {
+		t.Fatalf("project %+v", p)
+	}
+	for _, task := range s.list("tasks") {
+		if task["project_id"] != home || task["deleted_at"] != nil {
+			t.Fatalf("task %+v", task)
+		}
+	}
+	if got := v.read(t, "Home.md"); !strings.Contains(got, "opentodo-id: "+home) || !strings.Contains(got, "Oil the hinge") {
+		t.Fatalf("Home.md:\n%s", got)
+	}
+}
+
+// vault-file-keeps-project D2: an id claims its project before any path does,
+// whatever the order of the files: Home's front matter copied into Zed.md
+// makes Zed.md Home's file (renamed Zed), and Home.md, stripped, is new.
+func TestFrontMatterIDBeatsTheRecordedPath(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home"})
+	s.create("tasks", map[string]any{"title": "Fix the lamp", "project_id": home})
+	v := s.vault(t)
+	text := v.read(t, "Home.md")
+	end := strings.Index(text[3:], "\n---\n")
+	v.write(t, "Zed.md", text[:3+end+5]+"- [ ] Oil the hinge\n")
+	v.write(t, "Home.md", strings.TrimLeft(text[3+end+5:], "\n"))
+	v.sync(t)
+	if p := s.get("projects", home); p["name"] != "Zed" {
+		t.Fatalf("the id's project %+v, want it named Zed", p)
+	}
+	if got := len(s.list("projects")); got != 2 {
+		t.Fatalf("%d projects, want 2", got)
+	}
+}
+
+// vault-file-keeps-project: a folder note and its child both lose their front
+// matter; both keep their projects and the child stays nested.
+func TestFrontMatterDeletedInAFolder(t *testing.T) {
+	s := newServer(t)
+	work := s.create("projects", map[string]any{"name": "Work"})
+	launch := s.create("projects", map[string]any{"name": "Launch", "parent_id": work})
+	s.create("tasks", map[string]any{"title": "Book the room", "project_id": launch})
+	v := s.vault(t)
+	for _, f := range []string{"Work/Work.md", "Work/Launch.md"} {
+		text := v.read(t, f)
+		end := strings.Index(text[3:], "\n---\n")
+		if end < 0 {
+			t.Fatalf("%s has no front matter:\n%s", f, text)
+		}
+		v.write(t, f, strings.TrimLeft(text[3+end+5:], "\n"))
+	}
+	v.sync(t)
+	if got := len(s.list("projects")); got != 2 {
+		t.Fatalf("%d projects, want 2", got)
+	}
+	if p := s.get("projects", launch); p["parent_id"] != work {
+		t.Fatalf("Launch %+v, want it under Work", p)
+	}
+	if text := v.read(t, "Work/Launch.md"); !strings.Contains(text, "opentodo-id: "+launch) {
+		t.Fatalf("Work/Launch.md:\n%s", text)
 	}
 }

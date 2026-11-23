@@ -163,6 +163,34 @@ describe('Formatting toggle on computers', () => {
     await unmount()
   })
 
+  it('The row shows which formatting is on at the caret (formatting-row-pressed, GitHub issue 1477)', async () => {
+    pointer(true)
+    const id = await createTask({ title: 'Plan', description: 'plain **bold**\n\n- [ ] milk' })
+    const { container, unmount } = await open(id)
+    const v = await viewOf(container)
+    v.focus()
+    await waitFor(() => !!row(container), 'the touch row')
+    const pressed = () => [...row(container)!.querySelectorAll('[data-toolbar-item][aria-pressed="true"]')].map((b) => b.getAttribute('aria-label'))
+    const caret = async (text: string) => {
+      let at = -1
+      v.state.doc.descendants((n, pos) => { if (at < 0 && n.isText && n.text?.includes(text)) at = pos + n.text.indexOf(text) + 1 })
+      await act(async () => { v.dispatch(v.state.tr.setSelection(TextSelection.create(v.state.doc, at))) })
+    }
+    await caret('plain')
+    expect(pressed()).toEqual([])
+    await caret('bold')
+    expect(pressed()).toEqual(['Bold'])
+    await caret('milk')
+    expect(pressed()).toEqual(['Checklist'])
+    // Italic on a selection: pressed at once.
+    await caret('plain')
+    await act(async () => { v.dispatch(v.state.tr.setSelection(TextSelection.create(v.state.doc, 1, 6))) })
+    await click(row(container)!.querySelector<HTMLElement>('button[aria-label="Italic"]')!)
+    expect(md(v)).toContain('_plain_')
+    expect(pressed()).toEqual(['Italic'])
+    await unmount()
+  })
+
   it('Storage that throws reads as off, still renders, and the toggle works for the page', async () => {
     pointer(false)
     const broken = { getItem: () => { throw new Error('blocked') }, setItem: () => { throw new Error('blocked') }, removeItem: () => { throw new Error('blocked') } }

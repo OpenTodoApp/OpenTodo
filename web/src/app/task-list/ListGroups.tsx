@@ -88,6 +88,7 @@ export interface RowContext {
   subtaskAddEnds: ReadonlyMap<string, string>
   /** The row being edited in place, and its editor (inline-task-editing). */
   inlineId?: string | null
+  swipeEditTitle?: boolean
   renderInline?: (task: Task) => ReactNode
   /** The one row whose details are shown under it (row-expand D4). */
   expandedId?: string | null
@@ -213,6 +214,7 @@ export function rowRenderer(c: RowContext): RenderRow {
           handlers={c.actions}
           swipe={!!c.swipe && !ghost && !editing && !c.board}
           inline={editing ? c.renderInline?.(r.task) : undefined}
+          swipeEditTitle={c.swipeEditTitle && !c.draggingId}
           edge={c.board ? c.edgeOf?.(r.task) : undefined}
           notes={c.board && !!c.cardNotes}
         />

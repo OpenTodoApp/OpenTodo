@@ -17,7 +17,7 @@ import { useCalendarShowCompleted, useGridPrefs, useLiveProjects } from '../lib/
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import { slotCapacity, slotsByDate, useSlots } from '../lib/slots'
 import { useOnline } from '../lib/online'
-import { updateTask } from '../lib/ops'
+import { calendarEditUndoable } from '../lib/undoActions'
 import { columnEntries, followAnchor, MAX_PLAN_DAYS, MIN_PLAN_DAYS, PLAN_SPANS, planLoad, planSeries, projectedOccurrences, spanDates } from '../lib/plan'
 import { canEditTasks, roleOf } from '../lib/sharing'
 import type { Task } from '../lib/types'
@@ -146,7 +146,8 @@ export function PlanView({ date }: { date?: string }) {
       // A span moves whole (multi-day-tasks D4).
       const whole = spanOf(task) ? moveSpanPatch(task, n) : null
       const due = whole ? whole.due : nudgeDue(task.due, { days: n })
-      await updateTask(id, whole ? { start: whole.start, due: dueFromView(raw.due, due) } : { due: dueFromView(raw.due, due) })
+      // One step of undo history, no toast, as for the other single keyboard edits (undo-calendar-moves).
+      await calendarEditUndoable(id, whole ? { start: whole.start, due: dueFromView(raw.due, due) } : { due: dueFromView(raw.due, due) })
       show(due.date)
     }).catch(reportActionError)
   }, [show])

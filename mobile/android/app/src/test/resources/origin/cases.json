@@ -1,0 +1,41 @@
+{
+  "_comment": "Which addresses are the server's own: the rule both apps use for the bridge, the sign-in flow, downloads and the hidden run. Read by Android's SignInFlowTest (SignInFlow.originOf) and the iOS app's OriginTests (Origin.same and SignInFlow.originOf). `same`: the address against the server; `web`: whether it is an http(s) address with a host at all; `host`: what the site bar shows.",
+  "same": [
+    { "url": "https://todo.example.com/today", "server": "https://todo.example.com", "same": true },
+    { "url": "https://todo.example.com", "server": "https://todo.example.com/", "same": true },
+    { "url": "HTTPS://TODO.Example.COM:443/a?b#c", "server": "https://todo.example.com", "same": true },
+    { "url": "https://todo.example.com/a", "server": "https://todo.example.com:443", "same": true },
+    { "url": "http://localhost:80/", "server": "http://localhost", "same": true },
+    { "url": "http://localhost:8080/today", "server": "http://localhost:8080", "same": true },
+    { "url": "http://192.168.1.4:8080/x", "server": "http://192.168.1.4:8080", "same": true },
+    { "url": "https://[fd00::1]:8443/x", "server": "https://[fd00::1]:8443", "same": true },
+    { "url": "https://xn--bcher-kva.example/x", "server": "https://xn--bcher-kva.example", "same": true },
+    { "url": "http://todo.example.com/a", "server": "https://todo.example.com", "same": false },
+    { "url": "https://todo.example.com:8443/a", "server": "https://todo.example.com", "same": false },
+    { "url": "https://todo.example.com:80/a", "server": "https://todo.example.com", "same": false },
+    { "url": "http://localhost:8081/", "server": "http://localhost:8080", "same": false },
+    { "url": "https://[fd00::1]/x", "server": "https://[fd00::1]:8443", "same": false },
+    { "url": "https://todo.example.com.evil.test/a", "server": "https://todo.example.com", "same": false },
+    { "url": "https://todo.example.com@evil.test/a", "server": "https://todo.example.com", "same": false },
+    { "url": "https://evil.test/?u=https://todo.example.com", "server": "https://todo.example.com", "same": false },
+    { "url": "https://example.com/a", "server": "https://todo.example.com", "same": false },
+    { "url": "https://todo.example.com./a", "server": "https://todo.example.com", "same": false },
+    { "url": "ftp://todo.example.com/a", "server": "https://todo.example.com", "same": false },
+    { "url": "about:blank", "server": "https://todo.example.com", "same": false },
+    { "url": "file:///etc/passwd", "server": "https://todo.example.com", "same": false }
+  ],
+  "web": [
+    { "url": "https://todo.example.com/a", "web": true, "host": "todo.example.com" },
+    { "url": "https://auth.example.com:8443/login", "web": true, "host": "auth.example.com:8443" },
+    { "url": "https://Auth.Example.com:443/login", "web": true, "host": "auth.example.com" },
+    { "url": "http://localhost:8080/", "web": true, "host": "localhost:8080" },
+    { "url": "https://user:secret@auth.example.com/login", "web": true, "host": "auth.example.com" },
+    { "url": "about:blank", "web": false, "host": "" },
+    { "url": "javascript:alert(1)", "web": false, "host": "" },
+    { "url": "mailto:a@example.org", "web": false, "host": "" },
+    { "url": "data:text/html,hi", "web": false, "host": "" },
+    { "url": "blob:https://todo.example.com/6f1c2a50", "web": false, "host": "" },
+    { "url": "intent://scan#Intent;end", "web": false, "host": "" },
+    { "url": "ws://todo.example.com/socket", "web": false, "host": "" }
+  ]
+}

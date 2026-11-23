@@ -95,27 +95,3 @@ export function positionText(state: TriageState, title: string): string {
   const p = progress(state)
   return t('{n} of {total}: {title}', { n: p.n, total: p.total, title })
 }
-
-export type Outcome =
-  | { kind: 'completed' }
-  | { kind: 'trashed' }
-  | { kind: 'scheduled'; date: string }
-  | { kind: 'moved'; project: string }
-  | { kind: 'delegated'; person: string }
-  | { kind: 'someday' }
-  | { kind: 'skipped' }
-  | { kind: 'left' }
-
-/** The words announced for a decision, before the next task is announced. */
-export function outcomeText(o: Outcome): string {
-  switch (o.kind) {
-    case 'completed': return t('Completed.')
-    case 'trashed': return t('Moved to the Trash.')
-    case 'scheduled': return t('Scheduled for {date}.', { date: o.date })
-    case 'moved': return t('Moved to {project}.', { project: o.project })
-    case 'delegated': return t('Assigned to {name}.', { name: o.person })
-    case 'someday': return t('Parked for someday.')
-    case 'skipped': return t('Skipped.')
-    case 'left': return t('This task was moved elsewhere.')
-  }
-}

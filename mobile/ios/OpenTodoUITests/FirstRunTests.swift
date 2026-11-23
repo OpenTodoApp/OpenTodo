@@ -121,13 +121,23 @@ final class FirstRunTests: XCTestCase {
         // clipped" at larger Dynamic Type sizes, but the rows of a SwiftUI Form size themselves to
         // their content and grow with the text size; the manual VoiceOver pass at large text
         // (docs/accessibility/audit-1.0.0.md) checks it on a device.
+        // On a busy CI Mac the audit itself can run out of time (code -56) before it reports
+        // anything; that is not a finding, so it runs once more, and a second timeout fails.
         var found: [String] = []
-        try app.performAccessibilityAudit { issue in
-            let line = "\(issue.auditType) · \(issue.compactDescription) · \(issue.detailedDescription) · \(issue.element?.debugDescription ?? "no element")"
-            print("accessibility audit: \(line)")
-            if issue.auditType == .textClipped, let type = issue.element?.elementType, type == .textField || type == .staticText { return true }
-            found.append(line)
-            return true
+        for attempt in 1...2 {
+            found = []
+            do {
+                try app.performAccessibilityAudit { issue in
+                    let line = "\(issue.auditType) · \(issue.compactDescription) · \(issue.detailedDescription) · \(issue.element?.debugDescription ?? "no element")"
+                    print("accessibility audit: \(line)")
+                    if issue.auditType == .textClipped, let type = issue.element?.elementType, type == .textField || type == .staticText { return true }
+                    found.append(line)
+                    return true
+                }
+                break
+            } catch let error as NSError where error.domain == "com.apple.xcode.xctest.accessibilityAudit" && error.code == -56 && attempt == 1 {
+                print("accessibility audit: ran out of time, running it again")
+            }
         }
         XCTAssertTrue(found.isEmpty, "accessibility audit issues:\n" + found.joined(separator: "\n"))
     }

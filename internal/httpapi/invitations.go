@@ -68,8 +68,8 @@ func (s *Server) handleCreateInvitation(w http.ResponseWriter, r *http.Request) 
 	if in.Send {
 		msg.Vars.Link, msg.Vars.Expiry = link, ttl
 		if err := s.mail.Send(r.Context(), msg); err != nil {
-			if rerr := s.auth.RevokeInvitation(context.WithoutCancel(r.Context()), u.ID, inv.ID); rerr != nil {
-				s.log.Error("revoke unsent invitation", "err", rerr)
+			if rerr := s.auth.DiscardUnsentInvitation(context.WithoutCancel(r.Context()), u.ID, inv.ID); rerr != nil {
+				s.log.Error("discard unsent invitation", "err", rerr)
 			}
 			s.mailSendError(w, err)
 			return

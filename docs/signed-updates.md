@@ -19,7 +19,7 @@ The **App code** row says who signed the code your device runs:
 
 | It says | What it means |
 | --- | --- |
-| **Signed by OpenTodo** | A release key of OpenTodo signed the list. **Verify key** opens the website, which compares the key with the published one. The app sends nothing to the website. |
+| **Signed by OpenTodo** | A release key of OpenTodo signed the list. **Verify key** opens the published keys on the website, to compare with the one shown. The app sends nothing to the website. |
 | **Signed with this server's key** | Whoever built this server signed it with their own key. |
 | **Self-built** | The server was built without a key. Updates are not signature-checked. |
 | **Preview build** | A test build of the next release. Updates are not signature-checked. |

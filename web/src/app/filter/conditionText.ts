@@ -38,6 +38,7 @@ export const KEYWORD_NAME = translatedMap<Keyword>({
   unblocked: msg('Not waiting on another task'),
   available: msg('Available now'),
   habit: msg('Habit'),
+  recurring: msg('Repeats'),
   origin: msg('Has an origin'),
   'no origin': msg('No origin'),
   tracked: msg('Has tracked time'),

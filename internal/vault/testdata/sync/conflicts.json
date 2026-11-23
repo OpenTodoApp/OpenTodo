@@ -613,11 +613,26 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "1405921a44f10ccfc1fda6180d941db346c57feb766cd67614c6f4ae6247a1e3"
+              "hash": "1405921a44f10ccfc1fda6180d941db346c57feb766cd67614c6f4ae6247a1e3",
+              "size": 153,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "4dca984cb5e6eccf",
+                "372cd2c3a21e503e",
+                "1405921a44f10ccf"
+              ]
             },
             "Inbox.md": {
               "project": "",
-              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753"
+              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753",
+              "size": 30,
+              "prefixes": [
+                "9678c3c7e2ff5772"
+              ]
             }
           },
           "printed": {
@@ -924,11 +939,26 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "f6834b6ed4d34e9313363da40d57358ea3c6ac2d532a90159533989ae67e4411"
+              "hash": "f6834b6ed4d34e9313363da40d57358ea3c6ac2d532a90159533989ae67e4411",
+              "size": 161,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "c25bb0fa62d12256",
+                "0d0d015d755708d6",
+                "f6834b6ed4d34e93"
+              ]
             },
             "Inbox.md": {
               "project": "",
-              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753"
+              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753",
+              "size": 30,
+              "prefixes": [
+                "9678c3c7e2ff5772"
+              ]
             }
           },
           "printed": {
@@ -1205,11 +1235,26 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "d5822cf0fdc354a96367b0f03a853ddcbc304c211c1759a5fc0bf49a573dbd59"
+              "hash": "d5822cf0fdc354a96367b0f03a853ddcbc304c211c1759a5fc0bf49a573dbd59",
+              "size": 165,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "c25bb0fa62d12256",
+                "843f9805d8f0ca45",
+                "d5822cf0fdc354a9"
+              ]
             },
             "Inbox.md": {
               "project": "",
-              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753"
+              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753",
+              "size": 30,
+              "prefixes": [
+                "9678c3c7e2ff5772"
+              ]
             }
           },
           "printed": {

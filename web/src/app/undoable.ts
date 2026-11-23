@@ -2,7 +2,7 @@
 // task-list-presentation "Completion feedback", "Single-action undo"): the list,
 // the panel and the calendar call these instead of the plain ops, so every
 // complete, delete, move, date change and park shows the same toast.
-import { completeUndoable, doOnUndoable, dueUndoable, moveUndoable, parkUndoable, rescheduleUndoable, spanUndoable, trashUndoable } from '../lib/undoActions'
+import { assigneeUndoable, calendarEditUndoable, completeUndoable, deadlineUndoable, doOnUndoable, dueUndoable, estimateUndoable, moveUndoable, parkUndoable, rescheduleUndoable, spanUndoable, trashUndoable } from '../lib/undoActions'
 import type { DoOnChoice } from '../lib/dayParts'
 import type { Task } from '../lib/types'
 import { showUndoToast } from './bulk/toastStore'
@@ -55,9 +55,33 @@ export async function rescheduleWithUndo(id: string, due: NonNullable<Task['due'
   if (r.entry) showUndoToast(r.label, r.entry.id)
 }
 
+/** Set or remove one task's deadline in the When editor, with Undo, like its due date beside it. */
+export async function deadlineWithUndo(id: string, deadline: string | null): Promise<void> {
+  const r = await deadlineUndoable(id, deadline)
+  if (r.entry) showUndoToast(r.label, r.entry.id)
+}
+
+/** Assign one task, or with null unassign it, with Undo: in Assigned to me the row leaves the list. */
+export async function assigneeWithUndo(id: string, assignee: string | null): Promise<void> {
+  const r = await assigneeUndoable(id, assignee)
+  if (r.entry) showUndoToast(r.label, r.entry.id)
+}
+
+/** A calendar block's new length (its lower edge), as one change with Undo, like the block's other edits. */
+export async function estimateWithUndo(id: string, minutes: number): Promise<void> {
+  const r = await estimateUndoable(id, minutes)
+  if (r.entry) showUndoToast(r.label, r.entry.id)
+}
+
 /** A span's new range, or a task made a span (multi-day-tasks D4), as one change with Undo. */
 export async function spanWithUndo(id: string, patch: Pick<Partial<Task>, 'start' | 'due' | 'span'>): Promise<void> {
   const r = await spanUndoable(id, patch)
+  if (r.entry) showUndoToast(r.label, r.entry.id)
+}
+
+/** A bar dragged in the timeline: its new dates as one change with Undo, like a drop on a calendar day. */
+export async function calendarEditWithUndo(id: string, patch: Partial<Task>): Promise<void> {
+  const r = await calendarEditUndoable(id, patch)
   if (r.entry) showUndoToast(r.label, r.entry.id)
 }
 

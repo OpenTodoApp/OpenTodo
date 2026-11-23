@@ -1,0 +1,1 @@
+- **Parking a repeating task in Someday ends its repetition again** from Triage, the When editor and the list's park key, as it does everywhere else; before, the task kept its repeat rule without a date. These parks have no Undo for a repeating task.

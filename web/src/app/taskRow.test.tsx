@@ -169,7 +169,7 @@ describe('one row language (rows-v2)', () => {
     } finally { vi.useRealTimers() }
   })
 
-  it('P1 and P2 keep their ring colour, P3 and P4 get the neutral ring', async () => {
+  it('uses the priority outline for P1 to P3 and keeps P4 neutral', async () => {
     const ring = async (priority: Task['priority']) => {
       const r = await row({ priority })
       const cls = r.container.querySelector('[data-check-mark]')!.className
@@ -178,8 +178,7 @@ describe('one row language (rows-v2)', () => {
     }
     expect(await ring(1)).toContain('border-p1')
     expect(await ring(2)).toContain('border-p2')
-    expect(await ring(3)).toContain('border-input')
-    expect(await ring(3)).not.toContain('border-p3')
+    expect(await ring(3)).toContain('border-p3')
     expect(await ring(4)).toContain('border-input')
     expect(await ring(4)).not.toContain('border-p4')
   })

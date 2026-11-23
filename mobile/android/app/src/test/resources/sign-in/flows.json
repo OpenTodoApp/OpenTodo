@@ -1,0 +1,247 @@
+{
+  "_comment": "Sign-in flow rules shared by the Android and iPhone shells (SignInFlowTest.kt, ShellTests.swift SignInFlowTests). Each case runs on a fresh flow for the server. A step is a navigation (link: with a gesture; redirect; script: neither) with the decision it expects, started (the main frame committed this address), end (the person left), inSignIn (expected state), or wait: almostTimeout (the timeout less one clock unit) or timeoutAndMore (the timeout plus one unit).",
+  "server": "https://todo.example.com",
+  "cases": [
+    {
+      "name": "the server always stays",
+      "steps": [
+        {
+          "link": "https://todo.example.com/today",
+          "expect": "stay"
+        },
+        {
+          "link": "https://TODO.example.com:443/?task=1",
+          "expect": "stay"
+        },
+        {
+          "redirect": "https://todo.example.com/",
+          "expect": "stay"
+        },
+        {
+          "inSignIn": false
+        }
+      ]
+    },
+    {
+      "name": "links to other sites open the browser",
+      "steps": [
+        {
+          "link": "https://example.org/outside",
+          "expect": "browser"
+        },
+        {
+          "script": "https://example.org/outside",
+          "expect": "browser"
+        },
+        {
+          "link": "http://todo.example.com/",
+          "expect": "browser"
+        },
+        {
+          "link": "https://todo.example.com:8443/",
+          "expect": "browser"
+        },
+        {
+          "link": "mailto:someone@example.org",
+          "expect": "browser"
+        },
+        {
+          "inSignIn": false
+        }
+      ]
+    },
+    {
+      "name": "a login wall's chain stays, and ends back on the server",
+      "steps": [
+        {
+          "redirect": "https://auth.example.com/login?rd=https://todo.example.com/",
+          "expect": "stay"
+        },
+        {
+          "inSignIn": true
+        },
+        {
+          "started": "https://auth.example.com/login?rd=https://todo.example.com/"
+        },
+        {
+          "link": "https://auth.example.com/login",
+          "expect": "stay"
+        },
+        {
+          "redirect": "https://id.example.net/authorize?client_id=wall",
+          "expect": "stay"
+        },
+        {
+          "started": "https://id.example.net/authorize?client_id=wall"
+        },
+        {
+          "script": "https://auth.example.com/callback?code=1",
+          "expect": "stay"
+        },
+        {
+          "redirect": "https://todo.example.com/",
+          "expect": "stay"
+        },
+        {
+          "started": "https://todo.example.com/"
+        },
+        {
+          "inSignIn": false
+        },
+        {
+          "link": "https://auth.example.com/settings",
+          "expect": "browser"
+        }
+      ]
+    },
+    {
+      "name": "the server's own single sign-on stays (#1188)",
+      "steps": [
+        {
+          "link": "https://todo.example.com/api/v1/auth/oidc/start",
+          "expect": "stay"
+        },
+        {
+          "redirect": "https://sso.example.com/realms/home/protocol/openid-connect/auth?state=x",
+          "expect": "stay"
+        },
+        {
+          "started": "https://sso.example.com/realms/home/protocol/openid-connect/auth?state=x"
+        },
+        {
+          "link": "https://sso.example.com/realms/home/login-actions/authenticate",
+          "expect": "stay"
+        },
+        {
+          "redirect": "https://todo.example.com/api/v1/auth/oidc/callback?code=1&state=x",
+          "expect": "stay"
+        },
+        {
+          "inSignIn": false
+        }
+      ]
+    },
+    {
+      "name": "a link on the sign-in page to another site opens the browser",
+      "steps": [
+        {
+          "redirect": "https://auth.example.com/login",
+          "expect": "stay"
+        },
+        {
+          "started": "https://auth.example.com/login"
+        },
+        {
+          "link": "https://example.org/privacy",
+          "expect": "browser"
+        },
+        {
+          "inSignIn": true
+        },
+        {
+          "link": "https://auth.example.com/reset",
+          "expect": "stay"
+        }
+      ]
+    },
+    {
+      "name": "a redirect from another site does not start a flow",
+      "steps": [
+        {
+          "started": "https://example.org/page"
+        },
+        {
+          "redirect": "https://evil.example.net/",
+          "expect": "browser"
+        },
+        {
+          "inSignIn": false
+        }
+      ]
+    },
+    {
+      "name": "the flow times out, but a late form and the way home still work",
+      "steps": [
+        {
+          "redirect": "https://auth.example.com/login",
+          "expect": "stay"
+        },
+        {
+          "started": "https://auth.example.com/login"
+        },
+        {
+          "wait": "almostTimeout"
+        },
+        {
+          "link": "https://auth.example.com/next",
+          "expect": "stay"
+        },
+        {
+          "wait": "timeoutAndMore"
+        },
+        {
+          "inSignIn": false
+        },
+        {
+          "redirect": "https://id.example.net/authorize",
+          "expect": "browser"
+        },
+        {
+          "script": "https://id.example.net/authorize",
+          "expect": "browser"
+        },
+        {
+          "link": "https://auth.example.com/login",
+          "expect": "stay"
+        },
+        {
+          "redirect": "https://auth.example.com/done",
+          "expect": "stay"
+        },
+        {
+          "inSignIn": false
+        },
+        {
+          "redirect": "https://todo.example.com/",
+          "expect": "stay"
+        },
+        {
+          "started": "https://todo.example.com/"
+        },
+        {
+          "link": "https://auth.example.com/login",
+          "expect": "browser"
+        }
+      ]
+    },
+    {
+      "name": "leaving ends the flow, and the server's wall starts a new one",
+      "steps": [
+        {
+          "redirect": "https://auth.example.com/login",
+          "expect": "stay"
+        },
+        {
+          "started": "https://auth.example.com/login"
+        },
+        {
+          "end": true
+        },
+        {
+          "inSignIn": false
+        },
+        {
+          "script": "https://id.example.net/authorize",
+          "expect": "browser"
+        },
+        {
+          "started": "https://todo.example.com/"
+        },
+        {
+          "redirect": "https://auth.example.com/login",
+          "expect": "stay"
+        }
+      ]
+    }
+  ]
+}

@@ -77,7 +77,7 @@ func (fp *foreignPlan) projects() {
 		}
 		name := strings.TrimSpace(row.Title)
 		pp := &projPlan{name: name, row: i}
-		if id, ok := pl.st.Remembered[row.SourceID]; ok && pl.alive(KindProject, id) {
+		if id, ok := pl.remembered(KindProject, row.SourceID); ok {
 			pp.id = id
 			res.Outcome, res.Reason = OutcomeSkip, ReasonAlreadyImported
 		} else if id, ok := pl.projectByName[strings.ToLower(name)]; ok {
@@ -141,7 +141,7 @@ func (fp *foreignPlan) projectParents() {
 		parent := ""
 		if pr, ok := fp.projBySource[row.ParentSourceID]; ok {
 			parent = pr.id
-		} else if id, ok := pl.st.Remembered[row.ParentSourceID]; ok && pl.alive(KindProject, id) {
+		} else if id, ok := pl.remembered(KindProject, row.ParentSourceID); ok {
 			parent = id
 		}
 		if parent == "" || parent == pp.id {
@@ -191,7 +191,7 @@ func (fp *foreignPlan) sections() {
 			continue
 		}
 		key := sectionKey(projectID, row.Title)
-		if id, ok := pl.st.Remembered[row.SourceID]; ok && pl.alive(KindSection, id) {
+		if id, ok := pl.rememberedWhere(KindSection, row.SourceID, func(e opsync.Entity) bool { return str(e, "project_id") == projectID }); ok {
 			res.Outcome, res.Reason = OutcomeSkip, ReasonAlreadyImported
 			if _, ok := pl.sectionByKey[key]; !ok {
 				pl.sectionByKey[key] = id
@@ -257,7 +257,7 @@ func (fp *foreignPlan) resolve(i int) {
 	}
 	projectID, parentID := fp.taskPlace(i, res)
 	tp.projectID = projectID
-	if id, ok := pl.st.Remembered[row.SourceID]; ok && pl.alive(KindTask, id) {
+	if id, ok := pl.remembered(KindTask, row.SourceID); ok {
 		res.Outcome, res.Reason = OutcomeSkip, ReasonAlreadyImported
 		tp.entityID, tp.projectID = id, str(pl.byKind[KindTask][id], "project_id")
 		return
@@ -281,6 +281,8 @@ func (fp *foreignPlan) resolve(i int) {
 	labelNames, sectionName := fp.taskLabels(row, projectID, res)
 	due := fp.taskDue(row)
 	id := pl.newID()
+	comments := pl.taskComments(id, row.Comments)
+	row.Description = foldComments(row.Description, comments.folded)
 	fields := fp.taskFields(row, projectID, parentID, due)
 	// Label ids are only known once implicit labels are allotted; validate names
 	// as a list first so a bad row does not create labels.
@@ -305,6 +307,8 @@ func (fp *foreignPlan) resolve(i int) {
 	fp.reminderChanges[i] = append(pl.reminders(id, due, row.Reminders, res), pl.links(id, row.Links, res)...)
 	fp.reminderChanges[i] = append(fp.reminderChanges[i], pl.timeEntries(id, row.TimeEntries, res)...)
 	fp.reminderChanges[i] = append(fp.reminderChanges[i], pl.fileAttachments(id, row.Files, res)...)
+	pl.commitComments(comments)
+	fp.reminderChanges[i] = append(fp.reminderChanges[i], comments.changes...)
 }
 
 // taskPlace resolves the project and the parent task of task row i (a subtask
@@ -325,7 +329,7 @@ func (fp *foreignPlan) taskPlace(i int, res *RowResult) (projectID, parentID str
 					res.Warnings = append(res.Warnings, fmt.Sprintf("parent row %d could not be imported; imported as a top-level task", fp.rows[j].Line))
 				}
 			}
-		} else if id, ok := pl.st.Remembered[row.ParentSourceID]; ok && pl.alive(KindTask, id) {
+		} else if id, ok := pl.remembered(KindTask, row.ParentSourceID); ok {
 			parentID, parentProject = id, str(pl.byKind[KindTask][id], "project_id")
 		} else {
 			res.Warnings = append(res.Warnings, fmt.Sprintf("parent %q not found; imported as a top-level task", displaySource(row.ParentSourceID)))
@@ -445,7 +449,7 @@ func (fp *foreignPlan) taskFields(row Row, projectID, parentID string, due *Due)
 
 // changes lists the planned changes in apply order: used implicit labels, the
 // file's projects, used implicit projects, used sections, created custom field
-// definitions, tasks, then their reminders, links and time entries.
+// definitions, tasks, then their reminders, links, time entries and comments.
 func (fp *foreignPlan) changes() []change {
 	pl := fp.pl
 	var out []change

@@ -7,7 +7,7 @@ import { addDaysISO, dueFromView, viewedTask } from '../../lib/dates'
 import { clamp, formatTime as toHHMM, LAST_SLOT, nudgeDue, parseTime, placementStart, SLOT_MINUTES, stepEstimate, stepStart, type GridPrefs } from '../../lib/calendar'
 import type { DayData } from '../../lib/calendarDays'
 import { getTask } from '../../lib/liveData'
-import { updateTask } from '../../lib/ops'
+import { calendarEditUndoable } from '../../lib/undoActions'
 import type { Task } from '../../lib/types'
 import { act, reportActionError } from '../actionError'
 import type { DropTarget } from '../calendarDrag'
@@ -34,7 +34,8 @@ export function useQueuedEdit() {
       const task = viewedTask(raw)
       const patch = fn(task)
       if (!patch) return
-      await updateTask(id, 'due' in patch ? { ...patch, due: dueFromView(raw.due, patch.due ?? null) } : patch)
+      // One step of undo history, no toast (undo-calendar-moves).
+      await calendarEditUndoable(id, 'due' in patch ? { ...patch, due: dueFromView(raw.due, patch.due ?? null) } : patch)
       after?.(task, patch)
     }).catch(reportActionError)
   }, [])

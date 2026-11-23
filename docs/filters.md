@@ -50,7 +50,7 @@ period   := ("this" | "last" | "next") ("week" | "month")
 weekday  := "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday"
 keyword  := "overdue" | "today" | "tomorrow" | "no date" | "no project"
           | "no labels" | "no time" | "no deadline" | "no start" | "completed" | "open" | "subtask"
-          | "someday" | "deferred" | "evening" | "morning" | "afternoon" | "blocked" | "unblocked" | "available" | "habit"
+          | "someday" | "deferred" | "evening" | "morning" | "afternoon" | "blocked" | "unblocked" | "available" | "habit" | "recurring"
           | "origin" | "no origin" | "tracked" | "tracked occurrence" | "energy" | "no energy" | "notes" | "no notes"
           | "sector" | "no sector" | "carried" | "assigned" | "unassigned"
           | "no section"
@@ -102,6 +102,7 @@ text     := word | '"' chars '"'
 | `unblocked` | tasks not waiting for any open task |
 | `available` | tasks you can do now: not blocked, not waiting for an earlier step of a [sequential project or section](project-flows.md), not parked and not starting later. `!available` lists the other open tasks |
 | `habit` | recurring tasks tracked as a [habit](recurring-and-reminders.md#track-a-habit); save `habit` as a view to list every habit with its streak (a [graduated](habit-days.md#graduate-a-habit) habit is in no view) |
+| `recurring` | tasks with a repeat rule, habits and rules that repeat after completion included; save `recurring & open` as a view to review every repeating task, for example before you go [away](away.md) |
 | `no project` | Inbox tasks (no project) |
 | `section: name` | tasks in a [section](tasks-and-projects.md) of that name, in any project, ignoring case (`section: Review`, `section: "In review"`). Projects can each have a section of the same name; all of them match. Two sections are joined with the usual or, as in example 32. An unknown name matches nothing and this device says so. `section:` with no name is an error |
 | `no section` | tasks in no section: not in one, or in one that was deleted or belongs to another project. Combine it with a section by or to list the Backlog and the unsorted at once |

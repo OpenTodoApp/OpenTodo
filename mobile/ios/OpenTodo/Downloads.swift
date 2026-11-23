@@ -1,10 +1,13 @@
 import Foundation
+import QuickLook
 import UIKit
+import UniformTypeIdentifiers
 import WebKit
 
 /// Saving a file (shell-repairs D3, native-shells "Saving files"): WebKit downloads what
 /// the web app saves, from its own data (`blob:`) or from the server, and the system's
-/// export sheet asks where it goes. The rules are pure, so the tests need no web view.
+/// export sheet asks where it goes; an image or a PDF is shown in Quick Look first, whose
+/// share button saves it (ios-quick-look). The rules are pure, so the tests need no web view.
 enum Downloads {
     /// A file is only ever saved from the configured server: its own addresses, and the
     /// object URLs its pages make (`blob:https://todo.example.com/<uuid>`).
@@ -26,6 +29,20 @@ enum Downloads {
         (isAttachment || !canShowMIMEType) && fromServer(url, server: server)
     }
 
+    /// Shown in Quick Look rather than the export sheet: an image or a PDF. The server's type
+    /// decides when it sends one (a type it serves as `application/octet-stream` stays a plain
+    /// save); the name's extension only when there is none. Never SVG, which can carry script.
+    static func previews(mimeType: String?, fileName: String) -> Bool {
+        let type: UTType?
+        if let mime = mimeType, !mime.isEmpty {
+            type = UTType(mimeType: mime)
+        } else {
+            type = UTType(filenameExtension: (fileName as NSString).pathExtension)
+        }
+        guard let type, !type.conforms(to: .svg) else { return false }
+        return type.conforms(to: .image) || type.conforms(to: .pdf)
+    }
+
     /// `Content-Disposition: attachment; filename=…`.
     static func isAttachment(_ response: URLResponse) -> Bool {
         guard let http = response as? HTTPURLResponse,
@@ -33,13 +50,31 @@ enum Downloads {
         return disposition.trimmingCharacters(in: .whitespaces).lowercased().hasPrefix("attachment")
     }
 
-    /// The suggested name reduced to its last path component, so it cannot leave the
-    /// temporary directory; `download` when nothing usable is left.
+    /// The longest name kept, in UTF-16 units, as on Android (FileSave.name).
+    static let maxNameLength = 200
+    /// What the file system takes for one name (NAME_MAX), in UTF-8 bytes.
+    static let maxNameBytes = 255
+
+    /// The suggested name reduced to its last path segment, so it cannot leave the
+    /// temporary directory, without control characters, trimmed, at most `maxNameLength`
+    /// long and `maxNameBytes` in UTF-8; `download` when nothing usable is left. The same rule as
+    /// Android's, pinned by the shared file-name cases.
     static func fileName(_ suggested: String) -> String {
-        let parts = suggested.split(whereSeparator: { $0 == "/" || $0 == "\\" })
-        let name = (parts.last.map(String.init) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let scalars = suggested.unicodeScalars
+        let start = scalars.lastIndex(where: { $0 == "/" || $0 == "\\" }).map { scalars.index(after: $0) } ?? scalars.startIndex
+        var kept = String.UnicodeScalarView()
+        for s in scalars[start...] where !(s.value < 0x20 || (0x7F...0x9F).contains(s.value)) { kept.append(s) }
+        let name = String(kept).trimmingCharacters(in: .whitespacesAndNewlines)
         if name.isEmpty || name == "." || name == ".." { return "download" }
-        return name
+        let units = Array(name.utf16)
+        // Never half of a surrogate pair at a cut.
+        let cut = units.count <= maxNameLength ? units.count
+            : UTF16.isLeadSurrogate(units[maxNameLength - 1]) ? maxNameLength - 1 : maxNameLength
+        var cutScalars = Array(String(decoding: units[..<cut], as: UTF16.self).unicodeScalars)
+        while cutScalars.reduce(0, { $0 + UTF8.width($1) }) > maxNameBytes { cutScalars.removeLast() }
+        var short = String.UnicodeScalarView()
+        short.append(contentsOf: cutScalars)
+        return String(short)
     }
 
     /// Where downloads wait for the export sheet; emptied when the shell starts.
@@ -52,13 +87,14 @@ enum Downloads {
 /// `Downloads.directory`, then the export sheet copies it to where the person chooses.
 /// The temporary file is removed when the sheet ends and when a download fails.
 @MainActor
-final class DownloadSaver: NSObject, WKDownloadDelegate, UIDocumentPickerDelegate {
+final class DownloadSaver: NSObject, WKDownloadDelegate, UIDocumentPickerDelegate, QLPreviewControllerDataSource, QLPreviewControllerDelegate {
     /// The view controller the export sheet is presented from.
     private let presenter: () -> UIViewController?
-    /// Downloads under way, by identity: the download itself (its delegate is weak) and its file.
-    private var running: [ObjectIdentifier: (download: WKDownload, file: URL)] = [:]
-    /// Finished files waiting for the sheet; one sheet at a time.
-    private var finished: [URL] = []
+    /// Downloads under way, by identity: the download itself (its delegate is weak), its file,
+    /// and whether it is shown in Quick Look.
+    private var running: [ObjectIdentifier: (download: WKDownload, file: URL, preview: Bool)] = [:]
+    /// Finished files waiting for the sheet or the preview; one at a time.
+    private var finished: [(file: URL, preview: Bool)] = []
     private var showing: URL?
 
     init(presenter: @escaping () -> UIViewController?) {
@@ -81,13 +117,14 @@ final class DownloadSaver: NSObject, WKDownloadDelegate, UIDocumentPickerDelegat
             return completionHandler(nil)
         }
         let file = folder.appendingPathComponent(Downloads.fileName(suggestedFilename), isDirectory: false)
-        running[ObjectIdentifier(download)] = (download, file)
+        let preview = Downloads.previews(mimeType: response.mimeType, fileName: file.lastPathComponent)
+        running[ObjectIdentifier(download)] = (download, file, preview)
         completionHandler(file)
     }
 
     func downloadDidFinish(_ download: WKDownload) {
         guard let entry = running.removeValue(forKey: ObjectIdentifier(download)) else { return }
-        finished.append(entry.file)
+        finished.append((entry.file, entry.preview))
         showNext()
     }
 
@@ -98,15 +135,36 @@ final class DownloadSaver: NSObject, WKDownloadDelegate, UIDocumentPickerDelegat
 
     private func showNext() {
         guard showing == nil, !finished.isEmpty else { return }
-        let file = finished.removeFirst()
+        let (file, preview) = finished.removeFirst()
         guard let top = presenter() else {
             discard(file)
             return showNext()
         }
         showing = file
+        if preview && QLPreviewController.canPreview(file as NSURL) {
+            let viewer = QLPreviewController()
+            viewer.dataSource = self
+            viewer.delegate = self
+            top.present(viewer, animated: true)
+            return
+        }
         let picker = UIDocumentPickerViewController(forExporting: [file], asCopy: true)
         picker.delegate = self
         top.present(picker, animated: true)
+    }
+
+    // Quick Look: the one file being shown; its share button saves or sends it.
+    func numberOfPreviewItems(in controller: QLPreviewController) -> Int { showing == nil ? 0 : 1 }
+
+    func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem {
+        (showing ?? Downloads.directory) as NSURL
+    }
+
+    /// Viewing only: the preview offers no markup that would change the file.
+    func previewController(_ controller: QLPreviewController, editingModeFor previewItem: QLPreviewItem) -> QLPreviewItemEditingMode { .disabled }
+
+    func previewControllerDidDismiss(_ controller: QLPreviewController) {
+        sheetEnded()
     }
 
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {

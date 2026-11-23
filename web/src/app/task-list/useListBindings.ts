@@ -83,8 +83,9 @@ export interface BindingContext {
   insertAfter: RefObject<string | null>
   listRoot: RefObject<HTMLDivElement | null>
   projectReadOnly: boolean
-  /** A click on a row's title edits it in place when it applies (inline-task-editing D1); true when it did. */
-  startInline?: (id: string, e?: React.MouseEvent) => boolean
+  /** Starts inline editing on a selected title. */
+  startInline?: (id: string, e: React.MouseEvent) => void
+  editTitle: (id: string) => void
   /** The row whose details are shown (row-expand D4): one per list, closed when the list changes. */
   setExpandedId: (update: (id: string | null) => string | null) => void
   /** Opens the row's actions menu for a task at a point: the right-click and a touch hold's release share this rule (useRowMenu owns it for every list). */
@@ -205,14 +206,19 @@ export function useListBindings(c: BindingContext): RowActions {
   return useMemo<RowActions>(() => ({
     toggle: (task) => act(live.current.toggleComplete(task.id, !task.completed_at)),
     toggleCollapse: (id) => live.current.toggleCollapsed(id),
-    open: (id, e) => {
-      if (live.current.startInline?.(id, e)) return
+    open: (id, e, intent) => {
+      if (intent === 'edit') {
+        if (e) live.current.startInline?.(id, e)
+        return
+      }
+      const docked = taskSplitDocks()
       // On the Inbox's split the task is already beside the list: Enter or Space on its row opens its page (inbox-split D1).
-      if (e?.detail === 0 && taskSplitDocks() && panelTaskId() === id) { openTaskPage(id); return }
+      if (e?.detail === 0 && docked && panelTaskId() === id) { openTaskPage(id); return }
       setSelectedId(id)
-      setOpenId(id)
+      if (intent !== 'select' || docked) setOpenId(id)
     },
     openPage: (id) => openTaskPage(id),
+    editTitle: (id) => live.current.editTitle(id),
     tick: (id, range) => {
       const sel = live.current.selection
       if (range) sel.extendTo(id)

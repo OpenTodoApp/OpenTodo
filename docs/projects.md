@@ -45,7 +45,7 @@ Inside a project you can also group tasks into sections and show them as a board
 
 **Pin to sidebar** adds a project, label or saved view to **Favourites**. Reorder it with **Move up**, **Move down** or <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd>. Pins are personal and sync to your devices.
 
-**⋯** on a sidebar project, or a right-click, opens its whole menu. **Rename** is inline in **Projects**, a dialog in **Favourites**.
+**⋯** on a sidebar project, or a right-click, opens its whole menu, **Share project** first. **Rename** is inline in **Projects**, a dialog in **Favourites**.
 
 ## Sub-projects
 

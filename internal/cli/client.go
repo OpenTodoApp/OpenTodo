@@ -526,15 +526,19 @@ func (c *client) meAuth(ctx context.Context) (*user, credential, error) {
 // quickPrefs reports the account's Day parts, Energy levels and Time sectors
 // preferences (GET /api/v1/me day_parts, energy_levels and time_sectors,
 // OpenSpec changes day-parts, task-energy and time-sectors): quick-add parsing
-// follows them.
-func (c *client) quickPrefs(ctx context.Context) (dayParts, energy, sectors bool, err error) {
+// follows them. It also reports the credential's scope (an agent token reads no
+// links, quick-add-links), and the write gate keeps it, so no second /me is read.
+func (c *client) quickPrefs(ctx context.Context) (dayParts, energy, sectors bool, scope string, err error) {
 	var out struct {
-		DayParts bool `json:"day_parts"`
-		Energy   bool `json:"energy_levels"`
-		Sectors  bool `json:"time_sectors"`
+		DayParts bool       `json:"day_parts"`
+		Energy   bool       `json:"energy_levels"`
+		Sectors  bool       `json:"time_sectors"`
+		Auth     credential `json:"auth"`
 	}
-	err = c.getJSON(ctx, "/me", &out)
-	return out.DayParts, out.Energy, out.Sectors, err
+	if err = c.getJSON(ctx, "/me", &out); err == nil && c.gate != nil && !c.gate.scopeKnown {
+		c.gate.cred, c.gate.scopeKnown = out.Auth, true
+	}
+	return out.DayParts, out.Energy, out.Sectors, out.Auth.Scope, err
 }
 
 // normalizeURL accepts "todo.example.com", "http://host:8080/" and friends.
