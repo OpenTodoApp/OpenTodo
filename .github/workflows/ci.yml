@@ -968,11 +968,12 @@ jobs:
         timeout-minutes: 15
         run: |
           sim=$(xcrun simctl list devices available | sed -n 's/^[[:space:]]*//; s/ (.*//; /^iPhone/p' | head -1)
+          # The newest runtime, as xcodebuild's name= chose (iOS 26.2 with Xcode 16.4 in recent runs).
           udid=$(xcrun simctl list devices available -j | jq -r --arg n "$sim" '
             [.devices | to_entries[] | select(.key | test("SimRuntime\\.iOS-"))
              | {v: (.key | capture("iOS-(?<a>[0-9]+)-(?<b>[0-9]+)") | [(.a|tonumber), (.b|tonumber)]), d: .value[]}
              | select(.d.name == $n)] | sort_by(.v) | last | .d.udid')
-          test -n "$udid" && test "$udid" != null
+          [ -n "$udid" ] && [ "$udid" != null ] || { echo "no $sim simulator under an iOS runtime"; exit 1; }
           echo "simulator: $sim ($udid)"
           echo "SIM_ID=$udid" >> "$GITHUB_ENV"
           start=$(date +%s)
