@@ -1,6 +1,7 @@
 import AuthenticationServices
 import ObjectiveC
 import SwiftUI
+import os
 import UIKit
 import WebKit
 
@@ -189,7 +190,16 @@ final class ShellController: NSObject, ObservableObject {
         triedCache = true
         var request = URLRequest(url: origin)
         request.cachePolicy = .returnCacheDataDontLoad
-        cacheNavigation = webView.load(request)
+        let navigation = webView.load(request)
+        cacheNavigation = navigation
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(ShellController.cacheWait * 1_000_000_000))
+            guard let self, let navigation, self.cacheNavigation === navigation else { return }
+            Self.log.notice("the load from the cache did not end")
+            self.cacheNavigation = nil
+            self.webView.stopLoading()
+            self.showOffline()
+        }
     }
 
     /// Whether an errored load should fall back to the cache instead of showing the failure:
@@ -209,19 +219,33 @@ final class ShellController: NSObject, ObservableObject {
     }
 
     /// With nothing stored, WebKit can finish the load from the cache with an empty document
-    /// rather than fail it. The web app's page always has scripts; a document without any
-    /// was not the app, so the screen says the server is unreachable. Pinned by OfflineStartTests.
-    nonisolated static func cacheHeldThePage(scripts: Any?) -> Bool {
-        ((scripts as? NSNumber)?.intValue ?? 0) > 0
+    /// rather than fail it. The web app's page always has scripts, so a document that answers
+    /// it has none was not the app, and the screen says the server is unreachable. No answer
+    /// (the page changed, the content process ended) is not taken for an empty cache.
+    /// Pinned by OfflineStartTests.
+    nonisolated static func cacheWasEmpty(scripts: Any?) -> Bool {
+        (scripts as? NSNumber)?.intValue == 0
     }
+
+    /// How long the load from the cache may take: it reads only the disk, so one that neither
+    /// finished nor failed by then found nothing, and the screen says the server is unreachable.
+    static let cacheWait: TimeInterval = 10
 
     private func checkTheCacheHeldThePage() {
         webView.evaluateJavaScript("document.scripts.length") { [weak self] value, _ in
-            guard let self, !Self.cacheHeldThePage(scripts: value) else { return }
-            self.loaded = false
-            self.failure = Failure(kind: .offline, detail: "")
+            guard let self, Self.cacheWasEmpty(scripts: value) else { return }
+            Self.log.notice("the load from the cache held no page")
+            self.showOffline()
         }
     }
+
+    private func showOffline() {
+        loaded = false
+        failure = Failure(kind: .offline, detail: "")
+        reveal()
+    }
+
+    private static let log = Logger(subsystem: "app.opentodo", category: "shell")
 
     /// Opens a path of the web app in the same web view, e.g. `/?task=…` from a widget or a reminder.
     func open(path: String) {
@@ -265,10 +289,12 @@ final class ShellController: NSObject, ObservableObject {
         if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled { return }
         let kind = Self.kind(of: nsError)
         if Self.shouldRetryFromCache(kind: kind, triedCache: triedCache, loaded: loaded) {
+            Self.log.notice("load failed offline (\(nsError.code, privacy: .public)); trying the cache")
             loadFromCache()
             return
         }
         let fromCache = navigation != nil && navigation === cacheNavigation
+        Self.log.notice("load failed: \(nsError.domain, privacy: .public) \(nsError.code, privacy: .public), from the cache: \(fromCache, privacy: .public)")
         if fromCache { cacheNavigation = nil }
         failure = Failure(kind: Self.shownKind(kind, loadingFromCache: fromCache), detail: nsError.localizedDescription)
         reveal()
@@ -476,6 +502,7 @@ extension ShellController: WKNavigationDelegate {
         loaded = true
         failure = nil
         if navigation === cacheNavigation {
+            Self.log.notice("the load from the cache finished")
             cacheNavigation = nil
             checkTheCacheHeldThePage()
         }
