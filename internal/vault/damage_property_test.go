@@ -115,36 +115,36 @@ func TestDamagedFileReadLosesNothing(t *testing.T) {
 				hit := projects[ids[r.Intn(len(ids))]]
 				full := v.read(t, hit)
 				damaged := d.apply(r, full)
-				check := func(when string, trashOK bool) {
+				check := func(when string) {
 					t.Helper()
 					for p := range projects {
-						if got := s.get("projects", p)["deleted_at"]; got != nil {
+						if s.status("/api/v1/projects/"+p) == 404 {
 							t.Fatalf("%s: project %s trashed (file %s read as %q)", when, projects[p], hit, damaged)
 						}
 					}
+					// Nothing is duplicated either: no new project, no new task.
+					if n := len(s.list("projects")); n != len(projects) {
+						t.Fatalf("%s: %d projects, want %d (file %s read as %q)", when, n, len(projects), hit, damaged)
+					}
+					if n := len(s.list("tasks")); n != len(where) {
+						t.Fatalf("%s: %d tasks, want %d (file %s read as %q)", when, n, len(where), hit, damaged)
+					}
 					for tk, p := range where {
 						if s.status("/api/v1/tasks/"+tk) == 404 {
-							if !trashOK {
-								t.Fatalf("%s: task %s gone (file %s read as %q)", when, tk, hit, damaged)
-							}
-							continue
+							t.Fatalf("%s: task %s trashed (file %s read as %q)", when, tk, hit, damaged)
 						}
-						got := s.get("tasks", tk)
-						if got["project_id"] != p {
+						if got := s.get("tasks", tk); got["project_id"] != p {
 							t.Fatalf("%s: task %q moved from %s to %v (file %s read as %q)", when, got["title"], projects[p], got["project_id"], hit, damaged)
-						}
-						if got["deleted_at"] != nil && !trashOK {
-							t.Fatalf("%s: task %q trashed (file %s read as %q)", when, got["title"], hit, damaged)
 						}
 					}
 				}
 				v.write(t, hit, damaged)
 				v.sync(t)
-				check("after the damaged read", false)
+				check("after the damaged read")
 				// The save completes: the file holds its full text again.
 				v.write(t, hit, full)
 				v.sync(t)
-				check("after the full save", false)
+				check("after the full save")
 			})
 		}
 	}
