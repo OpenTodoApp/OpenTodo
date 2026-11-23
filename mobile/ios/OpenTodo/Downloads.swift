@@ -52,10 +52,12 @@ enum Downloads {
 
     /// The longest name kept, in UTF-16 units, as on Android (FileSave.name).
     static let maxNameLength = 200
+    /// What the file system takes for one name (NAME_MAX), in UTF-8 bytes.
+    static let maxNameBytes = 255
 
     /// The suggested name reduced to its last path segment, so it cannot leave the
-    /// temporary directory, without control characters, trimmed and at most
-    /// `maxNameLength` long; `download` when nothing usable is left. The same rule as
+    /// temporary directory, without control characters, trimmed, at most `maxNameLength`
+    /// long and `maxNameBytes` in UTF-8; `download` when nothing usable is left. The same rule as
     /// Android's, pinned by the shared file-name cases.
     static func fileName(_ suggested: String) -> String {
         let scalars = suggested.unicodeScalars
@@ -65,10 +67,14 @@ enum Downloads {
         let name = String(kept).trimmingCharacters(in: .whitespacesAndNewlines)
         if name.isEmpty || name == "." || name == ".." { return "download" }
         let units = Array(name.utf16)
-        if units.count <= maxNameLength { return name }
-        // Never half of a surrogate pair at the cut.
-        let cut = UTF16.isLeadSurrogate(units[maxNameLength - 1]) ? maxNameLength - 1 : maxNameLength
-        return String(decoding: units[..<cut], as: UTF16.self)
+        // Never half of a surrogate pair at a cut.
+        let cut = units.count <= maxNameLength ? units.count
+            : UTF16.isLeadSurrogate(units[maxNameLength - 1]) ? maxNameLength - 1 : maxNameLength
+        var cutScalars = Array(String(decoding: units[..<cut], as: UTF16.self).unicodeScalars)
+        while cutScalars.reduce(0, { $0 + UTF8.width($1) }) > maxNameBytes { cutScalars.removeLast() }
+        var short = String.UnicodeScalarView()
+        short.append(contentsOf: cutScalars)
+        return String(short)
     }
 
     /// Where downloads wait for the export sheet; emptied when the shell starts.

@@ -1036,6 +1036,7 @@ final class DownloadsTests: XCTestCase {
     func testTheNameFollowsTheSharedCases() throws {
         let cases = try nameCases()
         XCTAssertEqual(try XCTUnwrap(cases["max"] as? Int), Downloads.maxNameLength)
+        XCTAssertEqual(try XCTUnwrap(cases["maxBytes"] as? Int), Downloads.maxNameBytes)
         XCTAssertEqual(Downloads.fileName(""), try XCTUnwrap(cases["fallback"] as? String))
         let names = try XCTUnwrap(cases["names"] as? [[String: Any]])
         XCTAssertFalse(names.isEmpty)
@@ -1054,6 +1055,7 @@ final class DownloadsTests: XCTestCase {
             let name = Downloads.fileName(raw)
             let units = Array(name.utf16)
             XCTAssertEqual(units.count, try XCTUnwrap(c["length"] as? Int), raw)
+            XCTAssertLessThanOrEqual(name.utf8.count, Downloads.maxNameBytes, raw)
             XCTAssertFalse(UTF16.isLeadSurrogate(units[units.count - 1]), raw)
             // What is kept is the start of the last segment.
             let segment = String(raw.split(separator: "/", omittingEmptySubsequences: false).last ?? "")

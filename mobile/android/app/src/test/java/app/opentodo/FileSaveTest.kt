@@ -135,6 +135,7 @@ class FileSaveTest {
             val raw = c.getString("prefix") + c.getString("fill").repeat(c.getInt("times")) + c.getString("suffix")
             val name = FileSave.name(raw)
             assertEquals(raw, c.getInt("length"), name.length)
+            assertTrue(raw, name.toByteArray(Charsets.UTF_8).size <= nameCases.getInt("maxBytes"))
             assertFalse(raw, name.last().isHighSurrogate())
             assertTrue(raw, raw.substringAfterLast('/').startsWith(name))
         }

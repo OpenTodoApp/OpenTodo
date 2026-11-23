@@ -1,1 +1,0 @@
-- **Files saved from the iPhone app get a clean name.** A very long name is shortened instead of the save failing, and invisible control characters are dropped, as in the Android app.
