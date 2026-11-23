@@ -2,32 +2,19 @@
 // #1625, #1628: made in the desktop browser, missing on the phone). Against the
 // real server, as src/lib/sync.contract.test.ts. Run with `npm run test:contract`.
 import { describe, expect, it } from 'vitest'
-import { acceptInvitations, account, call, device, switchTo } from '../test/contract'
+import { account, addMember, call, device, devicesOf, newProject, newSection, synced, switchTo } from '../test/contract'
 import { db } from './db'
 import { enableEncryption, forgetMemoryKeys, unlock } from './e2ee'
 import { mutate } from './ops'
-import { syncNow, syncSnapshot } from './sync'
+import { syncNow } from './sync'
 import { projectsIn, readWorkspaceState, switchTo as switchWorkspace } from './workspaces'
 
 const id = () => crypto.randomUUID()
-
-function newProject(name: string, extra: Record<string, unknown> = {}) {
-  return { name, color: '#3b82f6', position: 1, archived: false, parent_id: null, created_at: Date.now(), deleted_at: null, ...extra }
-}
-
-function newSection(name: string, projectId: string) {
-  return { name, project_id: projectId, position: 1, created_at: Date.now(), deleted_at: null }
-}
 
 /** The project names this device's sidebar lists in its current workspace. */
 async function shownProjects(): Promise<string[]> {
   const [state, projects] = await Promise.all([readWorkspaceState(), db.projects.toArray()])
   return projectsIn(state, projects.filter((p) => !p.deleted_at && !p.archived)).map((p) => p.name)
-}
-
-async function synced(): Promise<void> {
-  await syncNow()
-  expect(syncSnapshot()).toMatchObject({ pending: 0, error: null })
 }
 
 describe('projects and sections made on one device', () => {
@@ -37,8 +24,7 @@ describe('projects and sections made on one device', () => {
 
   it('reach the other device of the account, with their sections', async () => {
     const acct = await mine()
-    const desktop = await device(acct, 'desktop')
-    const phone = await device(acct, 'phone')
+    const [desktop, phone] = await devicesOf(acct, 'desktop', 'phone')
     switchTo(phone)
     await synced() // the phone has synced before the desktop writes
     const project = id()
@@ -75,9 +61,7 @@ describe('projects and sections made on one device', () => {
     const project = id()
     await mutate('project', project, newProject('Shared'))
     await synced()
-    await call(o.session, 'POST', `/api/v1/projects/${project}/members`, { email: editor.email, role: 'editor' })
-    const editorDesktop = await device(editor, 'editor-desktop')
-    await acceptInvitations(editorDesktop)
+    const editorDesktop = await addMember(o, project, editor, 'editor', 'editor-desktop')
     const editorPhone = await device(editor, 'editor-phone')
     await synced()
     expect((await db.projects.get(project))?.name).toBe('Shared')

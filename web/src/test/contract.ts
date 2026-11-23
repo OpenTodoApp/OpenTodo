@@ -2,9 +2,10 @@
 // and signed-in session against the real server (src/test/contractServer.ts).
 // The client code runs unchanged; only `fetch` is routed: relative URLs go to
 // the server and each device's session cookie travels with its requests.
-import { inject } from 'vitest'
+import { expect, inject } from 'vitest'
 import { useDatabase as openDatabase } from '../lib/db' // not a React hook
 import { resetDeviceId } from '../lib/ops'
+import { syncNow, syncSnapshot } from '../lib/sync'
 
 const base = inject('serverUrl')
 const realFetch = globalThis.fetch.bind(globalThis)
@@ -94,6 +95,52 @@ export function switchTo(d: Device): void {
   openDatabase(`contract-${d.name}`)
   resetDeviceId()
   active = d.session
+}
+
+/** Signs a device in to `acct` for each name, in order; the last one is the active device. */
+export async function devicesOf(acct: { email: string; password: string }, ...names: string[]): Promise<Device[]> {
+  const out: Device[] = []
+  for (const name of names) out.push(await device(acct, name))
+  return out
+}
+
+/**
+ * Adds `member` to `project` with `role`, as `owner`, then signs a device of the
+ * member in (it becomes the active device) and accepts the invitation from it.
+ */
+export async function addMember(owner: Device, project: string, member: { email: string; password: string }, role: string, deviceName = 'member'): Promise<Device> {
+  await call(owner.session, 'POST', `/api/v1/projects/${project}/members`, { email: member.email, role })
+  const d = await device(member, deviceName)
+  await acceptInvitations(d)
+  return d
+}
+
+/** A new account and a full-access API token for it (for the clients that use tokens). */
+export async function tokenAccount(name: string): Promise<string> {
+  const session = { cookie: '' }
+  await register(session, { email: `${name}-${Date.now()}@example.com`, name, password: 'client contract password' })
+  const { secret } = await call<{ secret: string }>(session, 'POST', '/api/v1/tokens', { name })
+  return secret
+}
+
+/** Syncs the active device and checks that nothing is left to send and no error is shown. */
+export async function synced(): Promise<void> {
+  await syncNow()
+  expect(syncSnapshot()).toMatchObject({ pending: 0, error: null })
+}
+
+// ---- rows the tests create through mutate() ----
+
+export function newProject(name: string, extra: Record<string, unknown> = {}) {
+  return { name, color: '#3b82f6', position: 1, archived: false, parent_id: null, created_at: Date.now(), deleted_at: null, ...extra }
+}
+
+export function newTask(title: string, projectId: string | null) {
+  return { title, description: '', project_id: projectId, parent_id: null, priority: 4, due: null, labels: [], position: 1, created_at: Date.now(), completed_at: null, deleted_at: null }
+}
+
+export function newSection(name: string, projectId: string) {
+  return { name, project_id: projectId, position: 1, created_at: Date.now(), deleted_at: null }
 }
 
 /** Network on or off for every device (the client sees fetch fail, as in a browser). */
