@@ -101,8 +101,8 @@ export function PublicLinksSection({ projectId, focus = false, onChange }: {
       <h3 id="public-links-heading" className="text-body font-medium text-default">{t('Share with a public link')}</h3>
       <p className="mt-1 text-meta text-muted">{t('Anyone with the link sees this project\'s open tasks without an account: no notes, labels or names. Use it for a shopping list in a group chat.')}</p>
       {offline && <div className="mt-2"><Notice tone="warning">{t('You are offline. Public links live on the server, so creating and revoking them needs a connection.')}</Notice></div>}
-      <form onSubmit={(e) => void create(e)} className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto_auto_auto]">
-        <Field label={t('Name (optional)')}>
+      <form onSubmit={(e) => void create(e)} className="mt-3 grid gap-2 sm:grid-cols-3 sm:items-end">
+        <Field label={t('Name (optional)')} className="sm:col-span-3">
           <Input value={name} maxLength={60} placeholder={t('Group chat')} onChange={(e) => setName(e.target.value)} disabled={disabled} />
         </Field>
         <Field label={t('Rights')}>
@@ -122,7 +122,7 @@ export function PublicLinksSection({ projectId, focus = false, onChange }: {
             {EXPIRY.map((d) => <option key={d ?? 'never'} value={d ?? ''}>{d === null ? t('Never') : t('{n, plural, one {# day} other {# days}}', { n: d })}</option>)}
           </Select>
         </Field>
-        <div className="sm:col-span-4">
+        <div className="sm:col-span-3">
           <Button type="submit" variant="primary" size="sm" busy={busy} disabled={offline}>{t('Create public link')}</Button>
         </div>
       </form>
