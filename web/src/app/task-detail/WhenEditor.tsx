@@ -4,8 +4,9 @@
 // stays out of the app's first load; the row's Schedule popover and the edit bar's
 // Date load it the same way.
 import type { RefObject } from 'react'
+import { recurrenceUndoable } from '../../lib/undoActions'
 import type { WhenSegmentId } from '../../lib/facets'
-import { setRecurrence, unparkTask } from '../../lib/ops'
+import { unparkTask } from '../../lib/ops'
 import type { Task } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
@@ -29,7 +30,7 @@ export default function WhenEditor({ task, readOnly, anchor, segment, onSegment,
     due: task.due ? () => act(setDueWithUndo(task.id, null)) : undefined,
     start: task.start ? () => void unparkTask(task.id) : undefined,
     deadline: task.deadline ? () => act(deadlineWithUndo(task.id, null)) : undefined,
-    repeat: task.recurrence ? () => act(setRecurrence(task.id, null)) : undefined,
+    repeat: task.recurrence ? () => act(recurrenceUndoable(task.id, null)) : undefined,
     sector: task.sector ? () => act(setSectorWithUndo(task.id, '')) : undefined,
   }
   return (

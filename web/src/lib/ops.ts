@@ -1074,19 +1074,41 @@ export function planProjectChange(task: Task, all: Task[], patch: Partial<Omit<T
  * stays behind, so a subtask is always in its parent's project. A move into another
  * sharing scope becomes copy + tombstone and returns the copy's id.
  */
+/** What else a patch writes on its task: un-parking on a date, ending a repetition with no date. */
+function fullPatch(task: Task | undefined, patch: Partial<Omit<Task, 'id' | '_clock'>>): Partial<Omit<Task, 'id' | '_clock'>> {
+  // Scheduling a parked task un-parks it in the same batch (someday-and-evening D3).
+  if (!('start' in patch) && patch.due && task?.start === 'someday') patch = { ...patch, start: null }
+  // A recurrence rule needs a due date; clearing the date ends the repetition.
+  if (patch.due === null && !('recurrence' in patch) && task?.recurrence) patch = { ...patch, recurrence: null }
+  return patch
+}
+
+/** Whether the next edit of task `id` splits the series (This and following, series-split D6). */
+export function editRedirected(id: string): boolean {
+  return redirect?.id === id
+}
+
+/** Whether Also past ones is chosen for the series `id` (series-past-edits). */
+export function pastScopeActive(id: string): boolean {
+  return pastScope?.id === id
+}
+
+/**
+ * The changes updateTask writes for a patch that neither moves the task to another project nor
+ * takes the panel's scope: the task, and for a series the open records still holding the previous
+ * value (series-exceptions D6). Null for a task that is not there.
+ */
+export async function planTaskEdit(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>): Promise<Change[] | null> {
+  const task = await db.tasks.get(id)
+  if (!task) return null
+  const full = fullPatch(task, patch)
+  return [{ entity: 'task', entityId: id, patch: full }, ...(await carried(task, full))]
+}
+
 export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>, opts?: MutateOptions): Promise<string> {
   const redirect = takeRedirect(id)
   if (redirect) return (await redirect(patch)) ?? id
-  // Scheduling a parked task un-parks it in the same batch (someday-and-evening D3).
-  if (!('start' in patch) && patch.due) {
-    const task = await db.tasks.get(id)
-    if (task?.start === 'someday') patch = { ...patch, start: null }
-  }
-  if (patch.due === null && !('recurrence' in patch)) {
-    // A recurrence rule needs a due date; clearing the date ends the repetition.
-    const task = await db.tasks.get(id)
-    if (task?.recurrence) patch = { ...patch, recurrence: null }
-  }
+  patch = fullPatch(await db.tasks.get(id), patch)
   if ('project_id' in patch) {
     const task = await db.tasks.get(id)
     if (task && patch.project_id !== task.project_id) {
@@ -1317,10 +1339,23 @@ export async function setRecurrence(
     await redirect({ recurrence: parsedInput?.canonical ?? null })
     return { ok: true, rule: parsedInput?.canonical ?? null }
   }
-  if (input === null || input.trim() === '') {
-    if (task.recurrence !== null) await mutate('task', id, { recurrence: null })
-    return { ok: true, rule: null }
-  }
+  const plan = planRecurrence(task, input, opts)
+  if (!plan.ok) return plan
+  // Stopping is a plain write; a new rule follows the panel's scope (Also past ones).
+  if (plan.patch && plan.rule === null) await mutate('task', id, plan.patch)
+  else if (plan.patch) await commitEdit(task, plan.patch, [{ entity: 'task', entityId: id, patch: plan.patch }])
+  return { ok: true, rule: plan.rule }
+}
+
+/**
+ * The patch setRecurrence writes on `task` for `input` (null or empty: stop repeating), with no
+ * scope: the rule in the form a 1.0 client reads, and a first date when the task has none. A
+ * null patch when nothing changes.
+ */
+export function planRecurrence(
+  task: Task, input: string | null, opts: { today?: string } = {},
+): { ok: true; rule: string | null; patch: Record<string, unknown> | null } | { ok: false; error: string } {
+  if (input === null || input.trim() === '') return { ok: true, rule: null, patch: task.recurrence !== null ? { recurrence: null } : null }
   const parsed = parseRule(input)
   if (!parsed.ok) return { ok: false, error: parsed.error }
   const patch: Record<string, unknown> = {}
@@ -1329,8 +1364,7 @@ export async function setRecurrence(
   const rule = compatibleRule(parsed.canonical, due)
   if (rule !== task.recurrence) patch.recurrence = rule
   if (!task.due) patch.due = { date: due }
-  if (Object.keys(patch).length) await commitEdit(task, patch, [{ entity: 'task', entityId: id, patch }])
-  return { ok: true, rule }
+  return { ok: true, rule, patch: Object.keys(patch).length ? patch : null }
 }
 
 /** Deleting a task tombstones its whole subtree, one op per task, in one batch. */
