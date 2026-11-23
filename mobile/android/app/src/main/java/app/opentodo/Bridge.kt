@@ -61,6 +61,8 @@ class Bridge(
          * done gets whether it answered RESULT_OK and the app it named. The default starts nothing.
          */
         fun pushLink(done: (Boolean, String?) -> Unit) = done(false, null)
+        /** shell-reveal-on-paint D2: the page has drawn its first frame; the launch screen goes (main thread). */
+        fun painted() {}
     }
 
     private val main = Handler(Looper.getMainLooper())
@@ -121,6 +123,8 @@ class Bridge(
             // Without a screen there is no page to open, and the visible app has no run to end.
             "openAlarmSettings" -> if (host != null) main.post { host.openAlarmSettings() }
             "backgroundDone" -> if (host == null) backgroundDone?.invoke()
+            // shell-reveal-on-paint D2: only the visible app has a launch screen to end.
+            "painted" -> if (host != null) main.post { host.painted() }
             // shell-push D5: only the visible app may start the distributor's link screen (host).
             "pushSubscribe" -> args.optString(0).let { vapid -> main.post { Push.subscribe(context, host, vapid) { answer(it) } } }
             "pushState" -> answer(Push.stateJson(context))
@@ -176,7 +180,7 @@ class Bridge(
             if (!play) caps += "geofences"
             // shell-push D5: also a background run, which reads pushState to notice a new endpoint.
             caps += "push"
-            if (hasScreen) caps += listOf("share", "links", "obsidian-links", "app-links", "system-bars", "microphone", "files", "haptics", "completion-sound")
+            if (hasScreen) caps += listOf("share", "links", "obsidian-links", "app-links", "system-bars", "microphone", "files", "haptics", "completion-sound", "first-paint")
             if (alarmSettings(hasScreen, sdkInt)) caps += "alarm-settings"
             if (hasScreen && biometric) caps += "biometric"
             if (background && !hasScreen) caps += "background"
@@ -245,6 +249,7 @@ class Bridge(
                 playCompletionSound: function () { send('playCompletionSound', []) },
                 openAlarmSettings: function () { send('openAlarmSettings', []) },
                 backgroundDone: function () { send('backgroundDone', []) },
+                painted: function () { send('painted', []) },
                 pushSubscribe: function (key) { return call('pushSubscribe', [String(key)]) },
                 pushState: function () { return call('pushState', []) },
                 pushUnsubscribe: function () { send('pushUnsubscribe', []) }

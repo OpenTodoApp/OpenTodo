@@ -6,9 +6,9 @@
 
 ## 2. iOS shell
 
-- [ ] 2.1 `Bridge.swift` lists `first-paint` in the visible app only, has `painted` in the page script and dispatches it; `BridgeHost` posts `FirstPaint.painted` when interactive; `ShellController` reveals on it. Verified by `ShellDataTests` (fixture, capability lists, reveal on the call) in CI's iOS job
+- [x] 2.1 `Bridge.swift` lists `first-paint` in the visible app only, has `painted` in the page script and dispatches it; `BridgeHost` posts `FirstPaint.painted` when interactive; `ShellController` reveals on it. Verified by `ShellDataTests` (fixture, capability lists, reveal on the call) in CI's iOS job
 - [x] 2.2 `mobile/README.md` bridge table and the shell row; verified by `make docs-check`
 
 ## 3. Check
 
-- [ ] 3.1 `make check`; CI's iOS job builds the app and passes `ShellDataTests`; a device row on the owner's check list (time from the tap to the app, with and without the change)
+- [x] 3.1 `make check`; CI's iOS job builds the app and passes `ShellDataTests`; a device row on the owner's check list (time from the tap to the app, with and without the change)
