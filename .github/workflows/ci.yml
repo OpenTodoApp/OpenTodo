@@ -961,6 +961,15 @@ jobs:
           xcrun simctl list runtimes
       - name: Unit tests, device build and the dependency check (make ios)
         run: make ios
+      # A failed test's screenshots and its accessibility snapshot, which the log does not
+      # carry (open the .xcresult in Xcode): xcodebuild writes the bundle under the derived data.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: ios-test-results
+          path: mobile/ios/build/Logs/Test/*.xcresult
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Archive with the newest Xcode, signed ad hoc (the TestFlight job's first half)
         run: |
           scripts/release/ios-testflight.sh xcode
