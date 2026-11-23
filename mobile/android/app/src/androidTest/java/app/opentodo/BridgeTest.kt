@@ -129,21 +129,20 @@ class BridgeTest {
     @Test fun theHeldWebViewIsHiddenFromTouchAndAccessibility() {
         server.rootPage = "<!doctype html><title>OpenTodo test</title><p style=\"height:100vh\">held</p><img src=\"/slow.png\">" +
             "<script>window.tapped = false; addEventListener('touchstart', function () { window.tapped = true })</script>"
+        val launchedAt = SystemClock.uptimeMillis()
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         lateinit var web: WebView
         scenario.onActivity { web = it.findViewById(R.id.web) }
         server.waitForPath("/slow.png")
         web.waitForJs("typeof window.tapped", "\"boolean\"")
-        // The page neither paints nor loads in time, so only the cap can end the hold.
+        // The page neither paints nor loads in time, so only the cap can end the hold. The hold
+        // starts after launchedAt, so it still holds now.
+        assertTrue("the page was ready too late to tap it while held",
+            SystemClock.uptimeMillis() < launchedAt + LaunchHold.CAP_MS - 1_000)
         scenario.onActivity {
             assertEquals("still held", 0f, web.alpha)
             assertEquals(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS, web.importantForAccessibility)
-            val at = SystemClock.uptimeMillis()
-            for (action in listOf(MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP)) {
-                val e = MotionEvent.obtain(at, at, action, web.width / 2f, web.height / 2f, 0)
-                web.dispatchTouchEvent(e)
-                e.recycle()
-            }
+            tap(web)
         }
         Thread.sleep(300)
         assertEquals("a tap on the held page reached it", "false", web.js("window.tapped"))
@@ -153,6 +152,20 @@ class BridgeTest {
             shown
         }
         scenario.onActivity { assertEquals(View.IMPORTANT_FOR_ACCESSIBILITY_AUTO, web.importantForAccessibility) }
+        // The same tap reaches the shown page, so the "false" above is the block's doing.
+        waitUntil("a tap on the shown page reaches it") {
+            scenario.onActivity { tap(web) }
+            web.js("window.tapped") == "true"
+        }
+    }
+
+    private fun tap(web: WebView) {
+        val at = SystemClock.uptimeMillis()
+        for (action in listOf(MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP)) {
+            val e = MotionEvent.obtain(at, at, action, web.width / 2f, web.height / 2f, 0)
+            web.dispatchTouchEvent(e)
+            e.recycle()
+        }
     }
 
     @Test fun aCallAnswersThroughTheMessageChannel() {
