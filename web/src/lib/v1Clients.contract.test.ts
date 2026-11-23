@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterAll, describe, expect, inject, it } from 'vitest'
-import { call } from '../test/contract'
+import { call, register } from '../test/contract'
 
 const base = inject('serverUrl')
 const otBin = path.resolve(process.env.OT_BIN ?? fileURLToPath(new URL('../../../bin/ot', import.meta.url)))
@@ -24,7 +24,7 @@ async function recordAs(name: string): Promise<void> {
 /** An account and a full-access API token for it. */
 async function tokenAccount(name: string): Promise<string> {
   const session = { cookie: '' }
-  await call(session, 'POST', '/api/v1/auth/register', { email: `${name}-${Date.now()}@example.com`, name, password: 'client contract password' })
+  await register(session, { email: `${name}-${Date.now()}@example.com`, name, password: 'client contract password' })
   const { secret } = await call<{ secret: string }>(session, 'POST', '/api/v1/tokens', { name })
   return secret
 }

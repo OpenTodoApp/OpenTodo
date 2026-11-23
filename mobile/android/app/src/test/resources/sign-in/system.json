@@ -1,0 +1,55 @@
+{
+  "_comment": "Single sign-on in the system browser (app-sso-system-browser): the rules both apps share, read by Android's SystemSignInTest and the iOS app's SystemSignInTests. Outcome `cancelled` (the right state, neither a code nor an error) is `invalid` on iOS, where a closed sheet reports no address at all; either way nothing is loaded.",
+  "server": "https://todo.example.com",
+  "challenge": { "verifier": "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk", "challenge": "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM" },
+  "start": [
+    { "url": "https://todo.example.com/api/v1/auth/oidc/start", "start": true },
+    { "url": "https://todo.example.com/api/v1/auth/oidc/start?mode=link", "start": true },
+    { "url": "https://Todo.Example.com:443/api/v1/auth/oidc/start", "start": true },
+    { "url": "https://todo.example.com/api/v1/auth/oidc/start?app_challenge=x&app_state=y", "start": false },
+    { "url": "https://sso.example.com/api/v1/auth/oidc/start", "start": false },
+    { "url": "http://todo.example.com/api/v1/auth/oidc/start", "start": false },
+    { "url": "https://todo.example.com:8443/api/v1/auth/oidc/start", "start": false },
+    { "url": "https://todo.example.com/api/v1/auth/oidc/callback", "start": false },
+    { "url": "https://todo.example.com/api/v1/auth/oidc/start/x", "start": false }
+  ],
+  "link": [
+    { "url": "https://todo.example.com/api/v1/auth/oidc/start?mode=link", "link": true },
+    { "url": "https://todo.example.com/api/v1/auth/oidc/start?x=1&mode=link", "link": true },
+    { "url": "https://todo.example.com/api/v1/auth/oidc/start", "link": false },
+    { "url": "https://todo.example.com/api/v1/auth/oidc/start?mode=links", "link": false },
+    { "url": "https://todo.example.com/api/v1/auth/oidc/start?mode=login", "link": false }
+  ],
+  "startUrl": [
+    { "challenge": "c", "state": "s", "link": false, "url": "https://todo.example.com/api/v1/auth/oidc/start?app_challenge=c&app_state=s&app_mode=login" },
+    { "challenge": "c", "state": "s", "link": true, "url": "https://todo.example.com/api/v1/auth/oidc/start?app_challenge=c&app_state=s&app_mode=link" }
+  ],
+  "outcome": [
+    { "url": "opentodo://sso?code=abc_-1&state=st", "state": "st", "outcome": "code", "value": "abc_-1" },
+    { "url": "opentodo://sso?state=st&code=abc", "state": "st", "outcome": "code", "value": "abc" },
+    { "url": "OPENTODO://SSO?code=abc&state=st", "state": "st", "outcome": "code", "value": "abc" },
+    { "url": "opentodo://sso?error=oidc_failed&state=st", "state": "st", "outcome": "error", "value": "oidc_failed" },
+    { "url": "opentodo://sso?state=st", "state": "st", "outcome": "cancelled" },
+    { "url": "opentodo://sso?state=other", "state": "st", "outcome": "invalid" },
+    { "url": "opentodo://sso?code=abc&state=other", "state": "st", "outcome": "invalid" },
+    { "url": "opentodo://sso?code=abc", "state": "st", "outcome": "invalid" },
+    { "url": "opentodo://sso?code=&state=st", "state": "st", "outcome": "invalid" },
+    { "url": "opentodo://sso?code=a'b&state=st", "state": "st", "outcome": "invalid" },
+    { "url": "opentodo://sso?code=a'%3Balert(1)&state=st", "state": "st", "outcome": "invalid" },
+    { "url": "opentodo://sso?code=a%20b&state=st", "state": "st", "outcome": "invalid" },
+    { "url": "opentodo://sso?error=a'b&state=st", "state": "st", "outcome": "invalid" },
+    { "url": "opentodo://task/abc?code=abc&state=st", "state": "st", "outcome": "invalid" },
+    { "url": "https://sso/?code=abc&state=st", "state": "st", "outcome": "invalid" }
+  ],
+  "health": [
+    { "body": "{\"status\":\"ok\",\"version\":\"1\",\"app_sso\":true}", "supported": true },
+    { "body": "{\"status\":\"ok\",\"version\":\"1\",\"app_sso\":false}", "supported": false },
+    { "body": "{\"status\":\"ok\",\"version\":\"1\"}", "supported": false },
+    { "body": "not json", "supported": false },
+    { "body": "", "supported": false }
+  ],
+  "errorUrl": [
+    { "code": "signup_closed", "url": "https://todo.example.com/?error=signup_closed" },
+    { "code": "oidc_failed", "url": "https://todo.example.com/?error=oidc_failed" }
+  ]
+}

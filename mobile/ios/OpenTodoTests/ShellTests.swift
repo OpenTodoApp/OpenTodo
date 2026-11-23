@@ -5,114 +5,131 @@ import XCTest
 @testable import OpenTodo
 
 final class ServerAddressTests: XCTestCase {
-    func testPublicHttps() {
-        XCTAssertEqual(ServerAddress.parse("https://todo.example.com"),
-                       .ok(origin: "https://todo.example.com", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("  todo.example.com  "),
-                       .ok(origin: "https://todo.example.com", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("https://todo.example.com/"),
-                       .ok(origin: "https://todo.example.com", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("https://todo.example.com:443"),
-                       .ok(origin: "https://todo.example.com", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("https://todo.example.com:8443/todo"),
-                       .invalid)
-    }
-
-    func testPlainHttpIsLocalOnly() {
-        XCTAssertEqual(ServerAddress.parse("http://192.168.1.4:8080"),
-                       .ok(origin: "http://192.168.1.4:8080", insecure: true))
-        XCTAssertEqual(ServerAddress.parse("http://localhost:8080"),
-                       .ok(origin: "http://localhost:8080", insecure: true))
-        XCTAssertEqual(ServerAddress.parse("http://todo.local"),
-                       .ok(origin: "http://todo.local", insecure: true))
-        XCTAssertEqual(ServerAddress.parse("http://todo.example.com"),
-                       .needsHttps(suggestion: "https://todo.example.com"))
-        XCTAssertEqual(ServerAddress.parse("http://todo.example.com:8080"),
-                       .needsHttps(suggestion: "https://todo.example.com:8080"))
+    /// The rules both shells share: mobile/android/app/src/test/resources/server-address/cases.json,
+    /// which the Android app's ServerAddressTest reads too.
+    private func fixture() throws -> [String: Any] {
+        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/server-address/cases.json")
+        return try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
     }
 
     /// ios-setup-address: what the first-run field turns an address into, which is what it then shows.
-    func testWithoutASchemeTheAddressIsHttps() {
-        XCTAssertEqual(ServerAddress.parse("todo.example.com"), .ok(origin: "https://todo.example.com", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("todo.example.com:8443"), .ok(origin: "https://todo.example.com:8443", insecure: false))
-        // A local address without a scheme is https too: plain http only when typed.
-        XCTAssertEqual(ServerAddress.parse("192.168.1.4:8080"), .ok(origin: "https://192.168.1.4:8080", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("localhost:8080"), .ok(origin: "https://localhost:8080", insecure: false))
+    func testSharedCases() throws {
+        let cases = try XCTUnwrap(try fixture()["parse"] as? [[String: Any]])
+        XCTAssertFalse(cases.isEmpty, "the fixture has cases")
+        for (i, c) in cases.enumerated() {
+            let input = try XCTUnwrap(c["input"] as? String, "case \(i + 1)")
+            let expected: ServerAddress
+            if let origin = c["ok"] as? String {
+                expected = .ok(origin: origin, insecure: try XCTUnwrap(c["insecure"] as? Bool, input))
+            } else if let suggestion = c["needsHttps"] as? String {
+                expected = .needsHttps(suggestion: suggestion)
+            } else if c["invalid"] as? Bool == true {
+                expected = .invalid
+            } else {
+                XCTFail("case \(i + 1): no expected result"); continue
+            }
+            XCTAssertEqual(ServerAddress.parse(input), expected, "\"\(input)\"")
+        }
     }
 
-    func testExplicitHttpIsKeptAndMarkedInsecure() {
-        XCTAssertEqual(ServerAddress.parse("http://192.168.1.4:8080/"), .ok(origin: "http://192.168.1.4:8080", insecure: true))
-        XCTAssertEqual(ServerAddress.parse("http://localhost"), .ok(origin: "http://localhost", insecure: true))
+    func testLocalHosts() throws {
+        let doc = try fixture()
+        let local = try XCTUnwrap(doc["local"] as? [String]), notLocal = try XCTUnwrap(doc["notLocal"] as? [String])
+        XCTAssertFalse(local.isEmpty || notLocal.isEmpty)
+        for host in local { XCTAssertTrue(ServerAddress.isLocal(host), host) }
+        for host in notLocal { XCTAssertFalse(ServerAddress.isLocal(host), host) }
     }
 
-    func testUppercaseSchemeAndHost() {
-        XCTAssertEqual(ServerAddress.parse("HTTPS://Todo.Example.COM"), .ok(origin: "https://todo.example.com", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("Https://todo.example.com:443/"), .ok(origin: "https://todo.example.com", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("HTTP://192.168.1.4:8080"), .ok(origin: "http://192.168.1.4:8080", insecure: true))
-        XCTAssertEqual(ServerAddress.parse("HTTP://todo.example.com"), .needsHttps(suggestion: "https://todo.example.com"))
-    }
-
-    func testTrailingSlashAndPath() {
-        XCTAssertEqual(ServerAddress.parse("todo.example.com/"), .ok(origin: "https://todo.example.com", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("todo.example.com."), .ok(origin: "https://todo.example.com", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("todo.example.com/todo"), .invalid)
-        XCTAssertEqual(ServerAddress.parse("https://todo.example.com/todo/"), .invalid)
-    }
-
-    func testUnicodeHostIsSentInItsAsciiForm() {
-        XCTAssertEqual(ServerAddress.parse("bücher.example"), .ok(origin: "https://xn--bcher-kva.example", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("https://Todo.MÜNCHEN.de:8443/"), .ok(origin: "https://todo.xn--mnchen-3ya.de:8443", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("https://xn--bcher-kva.example"), .ok(origin: "https://xn--bcher-kva.example", insecure: false))
+    func testPunycode() {
         XCTAssertEqual(ServerAddress.punycode("bücher"), "bcher-kva")
         XCTAssertEqual(ServerAddress.punycode("привет"), "b1agh1afp")
         XCTAssertEqual(ServerAddress.punycode("例え"), "r8jz45g")
     }
-
-    func testRefused() {
-        for input in ["", "   ", "todo example.com", "ftp://todo.example.com", "https://", "https://todo.example.com/?a=1",
-                      "https://todo.example.com/#frag", "https://user:pw@todo.example.com", "javascript:alert(1)"] {
-            XCTAssertEqual(ServerAddress.parse(input), .invalid, input)
-        }
-    }
-
-    func testLocalRanges() {
-        for host in ["127.0.0.1", "10.0.0.5", "172.16.0.1", "172.31.255.254", "192.168.0.10", "169.254.1.1",
-                     "::1", "fd00::1", "fe80::1", "todo.local", "localhost", "server.localhost"] {
-            XCTAssertTrue(ServerAddress.isLocal(host), host)
-        }
-        for host in ["172.32.0.1", "8.8.8.8", "todo.example.com", "192.169.0.1"] {
-            XCTAssertFalse(ServerAddress.isLocal(host), host)
-        }
-    }
 }
 
 final class HealthCheckTests: XCTestCase {
-    func testHealthAnswerIsOpenTodo() {
-        let answer = HealthCheck.classify(status: 200, body: Data(#"{"status":"ok","version":"v0.14.0"}"#.utf8))
-        XCTAssertEqual(answer.outcome, .ok)
-        XCTAssertEqual(answer.version, "v0.14.0")
+    /// The cases both apps read (Android's `HealthCheckTest` too): what a health route's answer means.
+    private func cases() throws -> [String: Any] {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/health-check/cases.json")
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
     }
 
-    func testAnythingElseIsNotOpenTodo() {
-        XCTAssertEqual(HealthCheck.classify(status: 200, body: Data(#"{"status":"ok"}"#.utf8)).outcome, .notOpenTodo)
-        XCTAssertEqual(HealthCheck.classify(status: 200, body: Data("hello".utf8)).outcome, .notOpenTodo)
-        XCTAssertEqual(HealthCheck.classify(status: 404, body: Data(#"{"status":"ok","version":"x"}"#.utf8)).outcome, .notOpenTodo)
+    private func outcome(_ name: Any?) throws -> HealthCheck.Outcome {
+        try XCTUnwrap((name as? String).flatMap(HealthCheck.Outcome.init(rawValue:)), "unknown outcome \(String(describing: name))")
+    }
+
+    /// native-shells "Behind a login page": a login wall is not "not an OpenTodo server" (#1877).
+    func testResponsesFollowTheSharedCases() throws {
+        let list = try XCTUnwrap(try cases()["classify"] as? [[String: Any]])
+        XCTAssertFalse(list.isEmpty)
+        for c in list {
+            let name = c["name"] as? String ?? "?"
+            let answer = HealthCheck.classify(status: try XCTUnwrap(c["status"] as? Int),
+                                              body: (c["body"] as? String).map { Data($0.utf8) },
+                                              location: c["location"] as? String,
+                                              contentType: c["contentType"] as? String,
+                                              origin: c["origin"] as? String)
+            XCTAssertEqual(answer.outcome, try outcome(c["outcome"]), name)
+            XCTAssertEqual(answer.version, c["version"] as? String, name)
+        }
     }
 
     /// health-route-alias: `/api/v1/health` first, `/healthz` only when that is not settled.
-    func testRoutesInOrder() async {
+    func testCombineFollowsTheSharedCases() async throws {
         XCTAssertEqual(HealthCheck.paths, ["/api/v1/health", "/healthz"])
-        let ok = HealthCheck.Answer(outcome: .ok, version: "1.0.1")
-        var asked = 0
-        let older = await HealthCheck.combine(HealthCheck.Answer(outcome: .notOpenTodo)) { asked += 1; return HealthCheck.Answer(outcome: .ok, version: "1.0.0") }
-        XCTAssertEqual(older.outcome, .ok)
-        XCTAssertEqual(older.version, "1.0.0")
-        XCTAssertEqual(asked, 1)
-        for first in [ok, HealthCheck.Answer(outcome: .noNetwork), HealthCheck.Answer(outcome: .untrusted)] {
-            let answer = await HealthCheck.combine(first) { asked += 1; return ok }
-            XCTAssertEqual(answer.outcome, first.outcome)
+        let list = try XCTUnwrap(try cases()["combine"] as? [[String: Any]])
+        XCTAssertFalse(list.isEmpty)
+        for c in list {
+            let name = c["name"] as? String ?? "?"
+            let second = try (c["second"] as? String).map { try outcome($0) }
+            var asked = false
+            let answer = await HealthCheck.combine(HealthCheck.Answer(outcome: try outcome(c["first"]))) {
+                asked = true
+                return HealthCheck.Answer(outcome: second ?? .notOpenTodo)
+            }
+            XCTAssertEqual(answer.outcome, try outcome(c["outcome"]), name)
+            XCTAssertEqual(asked, second != nil, "\(name): the second route is asked only when the first does not settle it")
         }
-        XCTAssertEqual(asked, 1)
+    }
+
+    /// The sign-in screen's cookies for the health route: the server's, never another site's.
+    func testCookieHeaderForTheHealthRoute() throws {
+        func cookie(_ name: String, domain: String, path: String = "/", secure: Bool = false) throws -> HTTPCookie {
+            var props: [HTTPCookiePropertyKey: Any] = [.name: name, .value: "v", .domain: domain, .path: path]
+            if secure { props[.secure] = "TRUE" }
+            return try XCTUnwrap(HTTPCookie(properties: props))
+        }
+        let url = try XCTUnwrap(URL(string: "https://todo.example.com/healthz"))
+        let cookies = [try cookie("wall", domain: ".example.com"), try cookie("host", domain: "todo.example.com", secure: true),
+                       try cookie("other", domain: "other.example.org"), try cookie("deep", domain: "todo.example.com", path: "/app")]
+        XCTAssertEqual(HealthCheck.cookieHeader(cookies, for: url), "wall=v; host=v")
+        let plain = try XCTUnwrap(URL(string: "http://todo.example.com/healthz"))
+        XCTAssertEqual(HealthCheck.cookieHeader(cookies, for: plain), "wall=v")
+        XCTAssertNil(HealthCheck.cookieHeader([], for: url))
+    }
+
+    /// The check never follows a redirect, so the sign-in screen's cookies reach the server's
+    /// own routes only, never the redirect's target, even one on the same host (#1881 review).
+    func testTheCheckNeverFollowsARedirectNorTakesItsCookiesThere() async throws {
+        let elsewhere = try await PageServer.start(host: "127.0.0.1")
+        defer { elsewhere.stop() }
+        let server = try await PageServer.start(host: "127.0.0.1")
+        defer { server.stop() }
+        let target = "http://127.0.0.1:\(elsewhere.port)/login"
+        server.route("/api/v1/health", .redirect("302 Found", to: target))
+        server.route("/healthz", .redirect("302 Found", to: target))
+        let cookie = try XCTUnwrap(HTTPCookie(properties: [.name: "wall", .value: "secret", .domain: "127.0.0.1", .path: "/"]))
+        let answer = await HealthCheck.check(origin: "http://127.0.0.1:\(server.port)", cookies: [cookie])
+        XCTAssertEqual(answer.outcome, .loginWall)
+        XCTAssertEqual(server.paths, ["/api/v1/health", "/healthz"])
+        for head in server.requestHeads {
+            XCTAssertTrue(head.lowercased().contains("\r\ncookie: wall=secret"), "the server's own route gets the cookie: \(head)")
+        }
+        XCTAssertEqual(elsewhere.paths, [], "the redirect's target is never asked")
+        XCTAssertEqual(elsewhere.requestHeads, [])
     }
 
     func testErrorClassification() {
@@ -250,12 +267,11 @@ final class SignInFlowTests: XCTestCase {
         }
     }
 
+    /// This app's way of writing an origin (`Origin.signature`): always with its port.
+    /// Which addresses count as the server's own is in OriginTests, on the shared cases.
     func testOrigins() {
         XCTAssertEqual(SignInFlow.originOf(u("https://Todo.Example.com:443/a?b#c")), "https://todo.example.com:443")
         XCTAssertNil(SignInFlow.originOf(u("about:blank")))
-        XCTAssertNil(SignInFlow.originOf(u("mailto:a@example.org")))
-        XCTAssertEqual(SignInFlow.hostOf(u("https://auth.example.com:8443/login")), "auth.example.com:8443")
-        XCTAssertEqual(SignInFlow.hostOf(u("https://auth.example.com/login")), "auth.example.com")
     }
 }
 
@@ -371,6 +387,7 @@ final class PageServer: @unchecked Sendable {
     private let queue = DispatchQueue(label: "PageServer")
     private var routes: [String: Response] = [:]
     private var requested: [String] = []
+    private var heads: [String] = []
     private var sent: [String] = []
     private var starting: CheckedContinuation<Void, Error>?
     private var reported: [String: String]?
@@ -422,6 +439,9 @@ final class PageServer: @unchecked Sendable {
     /// The paths asked for so far, in order.
     var paths: [String] { queue.sync { requested } }
 
+    /// The head of each request (request line and headers), in order.
+    var requestHeads: [String] { queue.sync { heads } }
+
     /// Whether each answer went out ("/ sent", or the send error), in order.
     var answers: [String] { queue.sync { sent } }
 
@@ -462,6 +482,7 @@ final class PageServer: @unchecked Sendable {
                 return
             }
             let target = head.split(separator: " ").dropFirst().first.map(String.init) ?? "/"
+            self.heads.append(head.components(separatedBy: "\r\n\r\n")[0])
             self.answer(connection, target)
         }
     }
@@ -502,54 +523,86 @@ final class PageServer: @unchecked Sendable {
 
 /// app-sso-system-browser: the rules of single sign-on in the system browser.
 final class SystemSignInTests: XCTestCase {
-    private let server = URL(string: "https://todo.example.com")!
+    /// The rules both apps share: sign-in/system.json, which the Android app's SystemSignInTest reads too.
+    private func cases() throws -> [String: Any] {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/sign-in/system.json")
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+    }
 
-    func testChallengeIsS256() {
+    private func each(_ key: String, _ check: ([String: Any]) throws -> Void) throws {
+        let list = try XCTUnwrap(try cases()[key] as? [[String: Any]], key)
+        XCTAssertFalse(list.isEmpty, "the fixture has \(key) cases")
+        for c in list { try check(c) }
+    }
+
+    private func serverURL() throws -> URL { try XCTUnwrap(URL(string: try XCTUnwrap(try cases()["server"] as? String))) }
+
+    private func string(_ c: [String: Any], _ key: String) throws -> String { try XCTUnwrap(c[key] as? String, key) }
+
+    func testChallengeIsS256() throws {
         // RFC 7636, appendix B.
-        XCTAssertEqual(SystemSignIn.challenge(for: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"), "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM")
+        let vector = try XCTUnwrap(try cases()["challenge"] as? [String: String])
+        XCTAssertEqual(SystemSignIn.challenge(for: try XCTUnwrap(vector["verifier"])), vector["challenge"])
         let p = SystemSignIn.pending()
         XCTAssertEqual(p.verifier.count, 43)
         XCTAssertEqual(p.challenge, SystemSignIn.challenge(for: p.verifier))
         XCTAssertNotEqual(p.state, SystemSignIn.pending().state)
     }
 
-    func testOnlyTheServersStartRouteGoesToTheSystemBrowser() {
-        XCTAssertTrue(SystemSignIn.isStart(URL(string: "https://todo.example.com/api/v1/auth/oidc/start")!, server: server))
-        XCTAssertFalse(SystemSignIn.isStart(URL(string: "https://todo.example.com/api/v1/auth/oidc/start?app_challenge=x&app_state=y")!, server: server))
-        XCTAssertFalse(SystemSignIn.isStart(URL(string: "https://sso.example.com/api/v1/auth/oidc/start")!, server: server))
-        XCTAssertFalse(SystemSignIn.isStart(URL(string: "https://todo.example.com/api/v1/auth/oidc/callback")!, server: server))
-        let start = SystemSignIn.startURL(server: server, SystemSignIn.Pending(verifier: "v", challenge: "c", state: "s"))
-        XCTAssertEqual(start.absoluteString, "https://todo.example.com/api/v1/auth/oidc/start?app_challenge=c&app_state=s&app_mode=login")
+    func testOnlyTheServersStartRouteGoesToTheSystemBrowser() throws {
+        let server = try serverURL()
+        try each("start") { c in
+            let address = try string(c, "url")
+            XCTAssertEqual(SystemSignIn.isStart(try XCTUnwrap(URL(string: address)), server: server), c["start"] as? Bool, address)
+        }
+        try each("startUrl") { c in
+            let p = SystemSignIn.Pending(verifier: "v", challenge: try string(c, "challenge"), state: try string(c, "state"))
+            XCTAssertEqual(SystemSignIn.startURL(server: server, p, link: try XCTUnwrap(c["link"] as? Bool)).absoluteString, try string(c, "url"))
+        }
     }
 
-    func testTheModeTheWebAppAskedForIsPassedOn() {
-        XCTAssertTrue(SystemSignIn.isLink(URL(string: "https://todo.example.com/api/v1/auth/oidc/start?mode=link")!))
-        XCTAssertFalse(SystemSignIn.isLink(URL(string: "https://todo.example.com/api/v1/auth/oidc/start")!))
-        XCTAssertFalse(SystemSignIn.isLink(URL(string: "https://todo.example.com/api/v1/auth/oidc/start?mode=links")!))
-        let start = SystemSignIn.startURL(server: server, SystemSignIn.Pending(verifier: "v", challenge: "c", state: "s"), link: true)
-        XCTAssertEqual(start.absoluteString, "https://todo.example.com/api/v1/auth/oidc/start?app_challenge=c&app_state=s&app_mode=link")
+    func testTheModeTheWebAppAskedForIsPassedOn() throws {
+        try each("link") { c in
+            let address = try string(c, "url")
+            XCTAssertEqual(SystemSignIn.isLink(try XCTUnwrap(URL(string: address))), c["link"] as? Bool, address)
+        }
     }
 
-    func testOutcome() {
-        func outcome(_ s: String) -> SystemSignIn.Outcome { SystemSignIn.outcome(of: URL(string: s)!, state: "st") }
-        XCTAssertEqual(outcome("opentodo://sso?code=abc_-1&state=st"), .code("abc_-1"))
-        XCTAssertEqual(outcome("opentodo://sso?error=oidc_failed&state=st"), .error("oidc_failed"))
-        XCTAssertEqual(outcome("opentodo://sso?code=abc&state=other"), .invalid)
-        XCTAssertEqual(outcome("opentodo://sso?code=abc"), .invalid)
-        XCTAssertEqual(outcome("opentodo://task/abc?code=abc&state=st"), .invalid)
-        XCTAssertEqual(outcome("opentodo://sso?code=a'%3Balert(1)&state=st"), .invalid, "only plain tokens reach the page's script")
+    /// `cancelled` in the cases (the right state, neither a code nor an error) is `invalid`
+    /// here: a closed sheet reports no address at all, and either way nothing is loaded.
+    func testOutcome() throws {
+        try each("outcome") { c in
+            let address = try string(c, "url")
+            let want: SystemSignIn.Outcome
+            switch try string(c, "outcome") {
+            case "code": want = .code(try string(c, "value"))
+            case "error": want = .error(try string(c, "value"))
+            case "cancelled", "invalid": want = .invalid
+            case let other: return XCTFail("unknown outcome \(other)")
+            }
+            XCTAssertEqual(SystemSignIn.outcome(of: try XCTUnwrap(URL(string: address), address), state: try string(c, "state")), want, address)
+        }
     }
 
-    func testHealthAnnouncesAppFlows() {
-        XCTAssertTrue(SystemSignIn.supported(healthBody: Data(#"{"status":"ok","version":"1","app_sso":true}"#.utf8)))
-        XCTAssertFalse(SystemSignIn.supported(healthBody: Data(#"{"status":"ok","version":"1"}"#.utf8)))
-        XCTAssertFalse(SystemSignIn.supported(healthBody: Data("not json".utf8)))
+    func testHealthAnnouncesAppFlows() throws {
+        try each("health") { c in
+            let body = try string(c, "body")
+            XCTAssertEqual(SystemSignIn.supported(healthBody: Data(body.utf8)), c["supported"] as? Bool, body)
+        }
+    }
+
+    func testTheErrorAddressCarriesTheCode() throws {
+        let server = try serverURL()
+        try each("errorUrl") { c in
+            XCTAssertEqual(SystemSignIn.errorURL(server: server, code: try string(c, "code")).absoluteString, try string(c, "url"))
+        }
     }
 
     func testRedeemScriptNamesTheRouteAndValues() {
         let script = SystemSignIn.redeemScript(code: "c0de", verifier: "v3r")
         XCTAssertTrue(script.contains("'/api/v1/auth/oidc/app-session'"))
         XCTAssertTrue(script.contains("code: 'c0de', code_verifier: 'v3r'"))
-        XCTAssertEqual(SystemSignIn.errorURL(server: server, code: "signup_closed").absoluteString, "https://todo.example.com/?error=signup_closed")
     }
 }

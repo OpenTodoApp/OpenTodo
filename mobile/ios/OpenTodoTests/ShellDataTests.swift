@@ -18,10 +18,36 @@ final class OriginTests: XCTestCase {
         XCTAssertEqual(Origin.signature(scheme: "https", host: "Todo.Example.com", port: 443), Origin.signature(https))
     }
 
-    func testSameIgnoresPathAndCase() {
-        XCTAssertTrue(Origin.same(URL(string: "https://Todo.Example.com/today")!, URL(string: "https://todo.example.com")!))
-        XCTAssertFalse(Origin.same(URL(string: "https://todo.example.com")!, URL(string: "https://todo.example.com:8443")!))
-        XCTAssertFalse(Origin.same(URL(string: "http://todo.example.com")!, URL(string: "https://todo.example.com")!))
+    /// Which addresses are the server's own: the cases both apps read (Android's SignInFlowTest too).
+    private func cases() throws -> [String: Any] {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/origin/cases.json")
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+    }
+
+    func testTheServersOwnAddressesFollowTheSharedCases() throws {
+        let list = try XCTUnwrap(try cases()["same"] as? [[String: Any]])
+        XCTAssertFalse(list.isEmpty)
+        for c in list {
+            let address = try XCTUnwrap(c["url"] as? String)
+            let url = try XCTUnwrap(URL(string: address), address)
+            let server = try XCTUnwrap(URL(string: try XCTUnwrap(c["server"] as? String)))
+            let same = try XCTUnwrap(c["same"] as? Bool)
+            XCTAssertEqual(Origin.same(url, server), same, address)
+            XCTAssertEqual(SignInFlow.originOf(url).map { $0 == SignInFlow.originOf(server) } ?? false, same, address)
+        }
+    }
+
+    func testWebAddressesAndTheirHostFollowTheSharedCases() throws {
+        let list = try XCTUnwrap(try cases()["web"] as? [[String: Any]])
+        XCTAssertFalse(list.isEmpty)
+        for c in list {
+            let address = try XCTUnwrap(c["url"] as? String)
+            let url = try XCTUnwrap(URL(string: address), address)
+            XCTAssertEqual(SignInFlow.originOf(url) != nil, try XCTUnwrap(c["web"] as? Bool), address)
+            XCTAssertEqual(SignInFlow.hostOf(url), try XCTUnwrap(c["host"] as? String), address)
+        }
     }
 
     func testPageOriginDropsPathAndDefaultPort() {

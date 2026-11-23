@@ -25,6 +25,8 @@ describe('assignee in personal scopes', () => {
     await waitFor(() => !!v.row('assignee'))
     expect((await db.tasks.get(id))!.assignee_id).toBe(ME)
     // undo-assignee: one step of undo history.
+    // applyBatch stores the step just after the write lands, so wait for it rather than read it at once.
+    await waitFor(async () => (await db.assistantUndo.count()) > 0, 'the undo step')
     expect(await db.assistantUndo.count()).toBe(1)
     expect(v.row('assignee').textContent).toContain('You')
     // Assigned to me lists explicitly assigned tasks.
