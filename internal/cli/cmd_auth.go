@@ -43,13 +43,15 @@ func cmdLogin(a *App, ctx context.Context, g *globalFlags, args []string) error 
 	tokenName := "cli@" + a.Hostname
 	if a.dryRun() {
 		// Nothing is prompted or sent: check that the server answers, then
-		// show the three requests a real sign-in makes.
+		// show the requests a real sign-in makes (the second-factor step only
+		// happens for an account with two-factor authentication).
 		c := newClient(serverURL, "")
 		if _, _, err := c.do(ctx, "GET", "/auth/status", nil, nil); err != nil {
 			return err
 		}
 		plan := a.gate.dry
 		plan.add("POST", "/auth/login", map[string]string{"email": strings.TrimSpace(*email), "password": "(prompted, never shown)"}, nil)
+		plan.add("POST", "/auth/mfa", map[string]string{"challenge": "(only with two-factor authentication)", "code": "(prompted, never shown)"}, nil)
 		plan.add("POST", "/tokens", map[string]string{"name": tokenName}, nil)
 		plan.add("POST", "/auth/logout", nil, nil)
 		a.localChange(fmt.Sprintf("store the new token in profile %q of %s", name, a.ConfigPath))
@@ -85,7 +87,9 @@ func cmdLogin(a *App, ctx context.Context, g *globalFlags, args []string) error 
 		// An account with two-factor authentication: the password step answers a
 		// challenge instead of a session, completed with the authenticator's code
 		// or one of the recovery codes (POST /api/v1/auth/mfa).
-		answer, err := a.readLine("Two-factor code (or a recovery code): ")
+		// Read like the password: a recovery code is the stronger secret and should
+		// not stay on screen.
+		answer, err := a.ReadPassword("Two-factor code (or a recovery code): ")
 		if err != nil {
 			return usageErr("reading the two-factor code: %v", err)
 		}

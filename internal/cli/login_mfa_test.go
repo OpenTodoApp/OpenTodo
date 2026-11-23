@@ -132,8 +132,8 @@ func TestLoginWithAWrongTwoFactorCodeStoresNothing(t *testing.T) {
 	defer srv.Close()
 
 	code, out, errb, cfgPath := runLogin(t, srv.URL, "secret-password\n000000\n")
-	if code == 0 {
-		t.Fatalf("login succeeded with a wrong code: %s", out)
+	if code != ExitAuth {
+		t.Fatalf("login with a wrong code: exit %d, want %d (%s)", code, ExitAuth, out)
 	}
 	if strings.Contains(errb, "did not start a session") || !strings.Contains(errb, "not valid") {
 		t.Fatalf("stderr = %q", errb)
@@ -146,5 +146,20 @@ func TestLoginWithAWrongTwoFactorCodeStoresNothing(t *testing.T) {
 		if strings.Contains(string(raw), "ot_") {
 			t.Fatalf("a token was stored: %s", raw)
 		}
+	}
+}
+
+func TestLoginWithoutATwoFactorCodeSendsNothing(t *testing.T) {
+	f := &fakeMFAServer{}
+	srv := httptest.NewServer(f.handler(t))
+	defer srv.Close()
+
+	// Stdin ends after the password: nothing to answer the challenge with.
+	code, _, errb, _ := runLogin(t, srv.URL, "secret-password\n")
+	if code != ExitUsage || !strings.Contains(errb, "two-factor code") {
+		t.Fatalf("exit %d, stderr %q", code, errb)
+	}
+	if f.mfaBody != nil || f.tokens != 0 {
+		t.Fatalf("sent %v, minted %d", f.mfaBody, f.tokens)
 	}
 }

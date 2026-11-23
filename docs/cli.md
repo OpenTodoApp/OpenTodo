@@ -65,7 +65,7 @@ Signed in to https://todo.example.com as you@example.com (profile "default").
 Token "cli@laptop" stored in /home/you/.config/opentodo/config.json.
 ```
 
-`ot login` signs in with your email and password, creates an API token named `cli@<hostname>`, signs the session out again and stores only the token. The password is never echoed and never stored. With [two-factor authentication](two-factor.md) on, it then asks for the code from your authenticator app, or one of your recovery codes. You will see the token in **Settings → Integrations → API tokens** in the web app, where it can also be revoked.
+`ot login` signs in with your email and password, creates an API token named `cli@<hostname>`, signs the session out again and stores only the token. The password is never echoed and never stored. With [two-factor authentication](two-factor.md) on, it then asks for the code from your authenticator app, or one of your recovery codes, without echoing it. You will see the token in **Settings → Integrations → API tokens** in the web app, where it can also be revoked.
 
 Other ways to get credentials in:
 
@@ -553,7 +553,7 @@ ot done 8c2a 91f0 --dry-run --json
 #  "targets":[{"ref":"8c2a","id":"8c2a…","title_preview":"Pay rent","status":"completed"},…]}
 ```
 
-A label that `ot add --label` would create appears as a planned `POST /api/v1/labels`, and the planned task refers to it as `(planned-1)`. `ot login --dry-run` shows the three requests of a sign-in without prompting for the password.
+A label that `ot add --label` would create appears as a planned `POST /api/v1/labels`, and the planned task refers to it as `(planned-1)`. `ot login --dry-run` shows the requests of a sign-in (the two-factor step only applies to an account with two-factor authentication) without prompting for the password.
 
 ### Retry-safe creates
 
