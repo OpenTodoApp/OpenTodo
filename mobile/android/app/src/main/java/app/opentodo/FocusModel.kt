@@ -77,11 +77,11 @@ data class FocusModel(
      * opens the Focus screen without acting. Every other address passes unchanged.
      */
     fun authorize(path: String, token: String?, expected: String?): String {
-        val q = path.indexOf('?')
-        if (q < 0 || path.substring(0, q) != OPEN_PATH) return path
-        if (path.substring(q + 1).split('&').none { it.startsWith("action=") }) return path
-        val ok = token != null && expected != null && token == expected && path == actionPath
-        return if (ok) path else OPEN_PATH
+        if (token != null && expected != null && token == expected && path == actionPath) return path
+        // Deny by default: the web app resolves dot segments and decodes the query, so any
+        // spelling that could still reach `/focus` with an action opens the screen only.
+        val plain = decodedFully(path).lowercase()
+        return if (plain.contains("focus") && plain.contains("action")) OPEN_PATH else path
     }
 
     /** The publication as stored: only the fields read here, normalized and capped by [parse]. */
@@ -141,6 +141,17 @@ data class FocusModel(
                 plannedEndAt = if (state == State.RUNNING) long("plannedEndAt") else null,
                 plannedMs = long("plannedMs"),
             )
+        }
+
+        /** [s] with percent-escapes decoded until nothing changes (a few rounds at most). */
+        internal fun decodedFully(s: String): String {
+            var cur = s
+            repeat(5) {
+                val next = try { java.net.URLDecoder.decode(cur, "UTF-8") } catch (e: Exception) { return cur }
+                if (next == cur) return cur
+                cur = next
+            }
+            return cur
         }
 
         /** The frozen time as the screen shows it: `24:59`, `1:05:00` from an hour. */

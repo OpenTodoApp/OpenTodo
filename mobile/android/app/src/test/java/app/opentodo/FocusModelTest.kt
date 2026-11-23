@@ -149,6 +149,13 @@ class FocusModelTest {
         assertEquals("/focus", paused.authorize("/focus?action=pause", "t", "t"))
         assertEquals("/focus", FocusModel.NONE.authorize("/focus?action=pause", "t", "t"))
         assertEquals("/focus", running.authorize("/focus?x=1&action=pause", "t", "t"))
+        // Spellings the web app still reads as `/focus` with an action: an encoded key or
+        // value, dot segments, other case.
+        for (forged in listOf("/focus?%61ction=pause", "/focus?%2561ction=pause", "/./focus?action=pause", "/x/../focus?action=pause",
+                "/%2E/focus?action=pause", "/focus/?action=pause", "/focus?action=%70ause", "/FOCUS?ACTION=pause", "/focus#?action=pause")) {
+            assertEquals(forged, "/focus", running.authorize(forged, null, "t"))
+            assertEquals(forged, "/focus", running.authorize(forged, "t", "t"))
+        }
         // Everything else is untouched: the Focus screen itself, and other addresses.
         assertEquals("/focus", running.authorize("/focus", null, null))
         assertEquals("/today?reminder=r1&action=done", running.authorize("/today?reminder=r1&action=done", null, null))
