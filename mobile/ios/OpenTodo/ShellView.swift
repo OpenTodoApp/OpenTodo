@@ -64,6 +64,7 @@ final class ShellController: NSObject, ObservableObject {
         bridge.install(into: config.userContentController,
                        app: Version.app,
                        capabilities: Bridge.capabilities(biometric: BiometricKeyStore.available, share: true, haptics: Haptics.available))
+        WebLocation.install(into: config.userContentController, allowing: origin)
         self.webView = WKWebView(frame: .zero, configuration: config)
         self.bridge = bridge
         super.init()

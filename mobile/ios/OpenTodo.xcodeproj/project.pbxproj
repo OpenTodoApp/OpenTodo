@@ -47,6 +47,7 @@
 		D02A9017D75C70840990A6F9 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = C7D944907B9AC239B781669B /* PrivacyInfo.xcprivacy */; };
 		D0780816A603AD0624AA1C6B /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3DEC136C0E25392B8582FB5 /* RootView.swift */; };
 		D49CB798F6CA86EB222544EE /* HealthCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 361FC4E75D8FDF99A05140B8 /* HealthCheck.swift */; };
+		90B377EBC6EFB1399D7C3D5D /* WebLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = E75D64FDE509EA5842DB542F /* WebLocation.swift */; };
 		D8775F2B3AE3CD58BD32000F /* ShellTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7E631346169346BF2C4779E /* ShellTests.swift */; };
 		DE806B63F2F96260D63F47E7 /* ShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DB6E4B7A9C8F16AEB65C781 /* ShareInbox.swift */; };
 		E8272D009EC5D29F2FDC49DC /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 22C4610D50FAF8C9A2F07252 /* Localizable.xcstrings */; };
@@ -121,6 +122,7 @@
 		2F50EA7CC8549E6BF622EBD0 /* OpenTodoTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = OpenTodoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		30808D5A379DF00A50741685 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		361FC4E75D8FDF99A05140B8 /* HealthCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthCheck.swift; sourceTree = "<group>"; };
+		E75D64FDE509EA5842DB542F /* WebLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebLocation.swift; sourceTree = "<group>"; };
 		40389A7CBF63E93B78B6D95B /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		5132F5C96551EA51999C089B /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
 		54FD68501123AE1BE87BC42B /* OpenTodoWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = OpenTodoWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -242,6 +244,7 @@
 				8794599E4D0E39C2DCF26C16 /* BridgeHost.swift */,
 				5D0A71C3E9B24F6881A3C0D7 /* Downloads.swift */,
 				361FC4E75D8FDF99A05140B8 /* HealthCheck.swift */,
+				E75D64FDE509EA5842DB542F /* WebLocation.swift */,
 				219379B0310AFB0EB86C6A8D /* Info.plist */,
 				E17A3C59B0F2486D9C4E8B25 /* InfoPlist.xcstrings */,
 				8D81052402DC912DF25E566D /* JSON.swift */,
@@ -508,6 +511,7 @@
 				1AF4F45D1A7A4F8E955EC260 /* BridgeHost.swift in Sources */,
 				7E3B9A52C1D04F86B2A5E913 /* Downloads.swift in Sources */,
 				D49CB798F6CA86EB222544EE /* HealthCheck.swift in Sources */,
+				90B377EBC6EFB1399D7C3D5D /* WebLocation.swift in Sources */,
 				129207436EC529C5267F6E59 /* JSON.swift in Sources */,
 				A1D5DEAFEAAE605447031B36 /* Notifications.swift in Sources */,
 				12E06B7CA8F6B63FB7795774 /* OpenTodoApp.swift in Sources */,

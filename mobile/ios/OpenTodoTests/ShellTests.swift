@@ -145,6 +145,51 @@ final class HealthCheckTests: XCTestCase {
 
 /// native-shells "Microphone for voice capture": the cases both apps read (Android's
 /// WebMicrophoneTest too), microphone/cases.json.
+/// native-shells "Position for the web app" on iOS: the script that runs at the start of every
+/// frame. JavaScriptCore stands in for the page, with a `navigator` whose geolocation records
+/// a call, and a `setTimeout` that runs its function at once.
+final class WebLocationTests: XCTestCase {
+    private let server = URL(string: "https://todo.example.com")!
+
+    /// What a page at `pageOrigin` gets from `getCurrentPosition` once the script ran:
+    /// "position" from WebKit's own geolocation, or "refused <code>".
+    private func ask(at pageOrigin: String, allowing origin: URL?) throws -> String {
+        let context = try XCTUnwrap(JSContext())
+        var thrown: String?
+        context.exceptionHandler = { _, value in thrown = value?.toString() }
+        context.evaluateScript("""
+        var __answer = 'nothing';
+        var location = { origin: \(JSON.jsString(pageOrigin)) };
+        function setTimeout(f) { f(); }
+        var navigator = { geolocation: { getCurrentPosition: function (ok) { __answer = 'position'; ok({}); } } };
+        """)
+        context.evaluateScript(WebLocation.script(allowing: origin))
+        context.evaluateScript("navigator.geolocation.getCurrentPosition(function () {}, function (e) { __answer = 'refused ' + e.code; });")
+        XCTAssertNil(thrown, pageOrigin)
+        return try XCTUnwrap(context.evaluateScript("__answer")?.toString())
+    }
+
+    func testTheServersPagesKeepWebKitsGeolocation() throws {
+        XCTAssertEqual(try ask(at: "https://todo.example.com", allowing: server), "position")
+        XCTAssertEqual(try ask(at: "https://todo.example.com", allowing: URL(string: "https://TODO.example.com:443/app")!), "position")
+        XCTAssertEqual(try ask(at: "http://192.168.1.20:8080", allowing: URL(string: "http://192.168.1.20:8080")!), "position")
+    }
+
+    /// A sign-in provider, a frame it embeds, a look-alike host, another port or plain http:
+    /// refused at once, so WebKit never asks.
+    func testAnyOtherOriginIsRefusedWithoutAPrompt() throws {
+        for other in ["https://idp.example.org", "https://todo.example.com.evil.test", "https://todo.example.com:8443",
+                      "http://todo.example.com", "null"] {
+            XCTAssertEqual(try ask(at: other, allowing: server), "refused \(WebLocation.refused)", other)
+        }
+    }
+
+    /// The first-run sign-in sheet and the background run: no page gets the position.
+    func testWithoutAServerEveryPageIsRefused() throws {
+        XCTAssertEqual(try ask(at: "https://todo.example.com", allowing: nil), "refused \(WebLocation.refused)")
+    }
+}
+
 final class MediaCaptureTests: XCTestCase {
     func testRequestsFollowTheSharedCases() throws {
         let file = URL(fileURLWithPath: #filePath)
