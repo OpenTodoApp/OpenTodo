@@ -135,6 +135,7 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
     'aria-expanded': shown,
     'aria-controls': shown ? listId : undefined,
     'aria-activedescendant': activeId,
+    'data-claims-escape': shown ? '' : undefined, // Esc closes the list, not the sheet around it
     // The caret moves with typing (input), keys, clicks and selection.
     onInput: track,
     onSelect: track,

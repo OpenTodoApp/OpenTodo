@@ -44,7 +44,7 @@ export function useTickedSuggest({ items, query, enabled, onPick }: { items: rea
 
   const activeId = shown && active >= 0 ? `${listId}-${Math.min(active, matches.length - 1)}` : undefined
   /** The field's combobox state while the list shows; nothing otherwise. */
-  const aria = shown ? { role: 'combobox' as const, 'aria-autocomplete': 'list' as const, 'aria-expanded': true, 'aria-controls': listId, 'aria-activedescendant': activeId } : {}
+  const aria = shown ? { role: 'combobox' as const, 'aria-autocomplete': 'list' as const, 'aria-expanded': true, 'aria-controls': listId, 'aria-activedescendant': activeId, 'data-claims-escape': '' } : {}
 
   const list = shown ? (
     <ul id={listId} role="listbox" aria-label={t('Completed')} data-ticked-suggestions=""
