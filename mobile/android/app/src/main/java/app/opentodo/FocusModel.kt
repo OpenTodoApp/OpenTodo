@@ -78,9 +78,10 @@ data class FocusModel(
      */
     fun authorize(path: String, token: String?, expected: String?): String {
         if (token != null && expected != null && token == expected && path == actionPath) return path
-        // Deny by default: the web app resolves dot segments and decodes the query, so any
-        // spelling that could still reach `/focus` with an action opens the screen only.
-        val plain = decodedFully(path).lowercase()
+        // Deny by default: the WebView drops tabs and newlines, resolves dot segments and the
+        // web app decodes the query, so the check reads only the letters and digits left once
+        // every escape is decoded. Any spelling that mentions both opens the screen only.
+        val plain = decodedFully(path).filter { it.isLetterOrDigit() }.lowercase()
         return if (plain.contains("focus") && plain.contains("action")) OPEN_PATH else path
     }
 
@@ -143,15 +144,32 @@ data class FocusModel(
             )
         }
 
-        /** [s] with percent-escapes decoded until nothing changes (a few rounds at most). */
+        /**
+         * [s] with every valid percent-escape decoded, again until nothing changes (a few
+         * rounds at most). An invalid escape (`%`, `%zz`) stays as it is, as in the browser,
+         * and does not stop the rest from being decoded.
+         */
         internal fun decodedFully(s: String): String {
             var cur = s
             repeat(5) {
-                val next = try { java.net.URLDecoder.decode(cur, "UTF-8") } catch (e: Exception) { return cur }
+                val next = decodeOnce(cur)
                 if (next == cur) return cur
                 cur = next
             }
             return cur
+        }
+
+        private fun decodeOnce(s: String): String {
+            val out = java.io.ByteArrayOutputStream()
+            val bytes = s.toByteArray(Charsets.UTF_8)
+            var i = 0
+            while (i < bytes.size) {
+                val b = bytes[i]
+                val hi = if (i + 2 < bytes.size && b == '%'.code.toByte()) Character.digit(bytes[i + 1].toInt(), 16) else -1
+                val lo = if (hi >= 0) Character.digit(bytes[i + 2].toInt(), 16) else -1
+                if (hi >= 0 && lo >= 0) { out.write(hi * 16 + lo); i += 3 } else { out.write(b.toInt()); i++ }
+            }
+            return String(out.toByteArray(), Charsets.UTF_8)
         }
 
         /** The frozen time as the screen shows it: `24:59`, `1:05:00` from an hour. */

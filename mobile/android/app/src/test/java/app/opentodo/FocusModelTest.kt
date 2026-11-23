@@ -152,10 +152,14 @@ class FocusModelTest {
         // Spellings the web app still reads as `/focus` with an action: an encoded key or
         // value, dot segments, other case.
         for (forged in listOf("/focus?%61ction=pause", "/focus?%2561ction=pause", "/./focus?action=pause", "/x/../focus?action=pause",
-                "/%2E/focus?action=pause", "/focus/?action=pause", "/focus?action=%70ause", "/FOCUS?ACTION=pause", "/focus#?action=pause")) {
+                "/%2E/focus?action=pause", "/focus/?action=pause", "/focus?action=%70ause", "/FOCUS?ACTION=pause", "/focus#?action=pause",
+                // The WebView drops tabs and newlines; an invalid escape does not stop decoding.
+                "/fo\tcus?ac\ntion=pause", "/fo%09cus?ac%0Ation=pause", "/focus?%61ction=pause&%", "/focus?%zz&%2561ction=resume")) {
             assertEquals(forged, "/focus", running.authorize(forged, null, "t"))
             assertEquals(forged, "/focus", running.authorize(forged, "t", "t"))
         }
+        assertEquals("/focus?action=pause", FocusModel.decodedFully("/focus?%2561ction=pause%"))
+        assertEquals("100%", FocusModel.decodedFully("100%"))
         // Everything else is untouched: the Focus screen itself, and other addresses.
         assertEquals("/focus", running.authorize("/focus", null, null))
         assertEquals("/today?reminder=r1&action=done", running.authorize("/today?reminder=r1&action=done", null, null))
