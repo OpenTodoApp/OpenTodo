@@ -7,7 +7,8 @@ import { readFileSync } from 'node:fs'
 import { inventory, inventoryProblems, layoutNames, routerViews } from './inventory.mjs'
 import { rank, score } from './report.mjs'
 import { coverage } from './stories.mjs'
-import { createTrace } from './pageTrace.mjs'
+import { EventEmitter } from 'node:events'
+import { createTrace, markScreen, tracePage, traceOf } from './pageTrace.mjs'
 
 test('the inventory agrees with the router, the layout check and itself', () => {
   assert.deepEqual(inventoryProblems(), [])
@@ -92,5 +93,42 @@ test("a screen that did not open carries the page's last events, oldest dropped"
     '+10ms console.error Failed to fetch dynamically imported module',
     '+20ms navigated http://x/inbox',
     '+30ms request failed http://x/views net::ERR_ABORTED',
+  ])
+})
+
+test('a trace starts at the screen that failed, not at the page before it', () => {
+  let t = 0
+  const trace = createTrace(4, () => t)
+  t = 1; trace.push('console.error', 'from the inbox')
+  t = 2; trace.mark('today')
+  t = 3; trace.push('navigated', 'http://x/today')
+  assert.deepEqual(trace.lines(), ['+2ms screen today', '+3ms navigated http://x/today'])
+  // The mark itself falls out of the ring: what is left is still this screen's.
+  for (t = 4; t < 8; t++) trace.push('console.warning', `w${t}`)
+  assert.deepEqual(trace.lines(), ['+4ms console.warning w4', '+5ms console.warning w5', '+6ms console.warning w6', '+7ms console.warning w7'])
+})
+
+test('a traced page records main-frame navigations, failed documents, errors and warnings only', () => {
+  const page = new EventEmitter()
+  const main = { url: () => 'http://x/inbox' }
+  page.mainFrame = () => main
+  assert.deepEqual(traceOf(page), [])
+  tracePage(page)
+  page.emit('console', { type: () => 'log', text: () => 'before the screen' })
+  page.emit('pageerror', new Error('from the screen before'))
+  markScreen(page, 'inbox')
+  page.emit('framenavigated', { url: () => 'http://x/iframe' })
+  page.emit('framenavigated', main)
+  page.emit('requestfailed', { isNavigationRequest: () => false, url: () => 'http://x/a.png', failure: () => ({ errorText: 'net::ERR_ABORTED' }) })
+  page.emit('requestfailed', { isNavigationRequest: () => true, url: () => 'http://x/inbox', failure: () => ({ errorText: 'net::ERR_ABORTED' }) })
+  page.emit('console', { type: () => 'info', text: () => 'hello' })
+  page.emit('console', { type: () => 'warning', text: () => 'slow' })
+  page.emit('pageerror', new Error('boom'))
+  assert.deepEqual(traceOf(page).map((l) => l.replace(/^\+\d+ms /, '')), [
+    'screen inbox',
+    'navigated http://x/inbox',
+    'request failed http://x/inbox net::ERR_ABORTED',
+    'console.warning slow',
+    'page error boom',
   ])
 })

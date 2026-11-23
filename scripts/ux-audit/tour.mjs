@@ -46,7 +46,7 @@ import { OVERLAYS, chooseLayout, openScreen, screens as layoutScreens } from './
 import { inventory } from './inventory.mjs'
 import { A11Y_RULES, STRICT_RULES, summarize, writeReport } from './report.mjs'
 import { coverage } from './stories.mjs'
-import { tracePage, traceOf } from './pageTrace.mjs'
+import { markScreen, tracePage, traceOf } from './pageTrace.mjs'
 
 const OUT = resolve(process.env.OUT_DIR ?? 'ux-audit-report')
 const BIN = process.env.OPENTODO_BIN ?? 'bin/opentodo'
@@ -222,6 +222,7 @@ async function capture(ctx, anonCtx, page, e, combo, ids) {
   const p = host.anon ? await sizeText(await anonCtx.newPage()) : page
   const shot = `shots/${e.id}-${combo.width}-${combo.theme}-${combo.lang}${TEXT_SIZE === 16 ? '' : `-t${TEXT_SIZE}`}.jpg`
   const out = { id: e.id, width: combo.width, theme: combo.theme, lang: combo.lang, shot, violations: [] }
+  markScreen(p, e.id)
   const load = async (hideToasts = false) => {
     await openScreen(p, base + host.path)
     // A later language: the screens' ready signals are English headings (as in the layout check).
@@ -345,6 +346,7 @@ async function reducedMotion(ids) {
       const p = await ctx.newPage()
       p.on('dialog', (d) => d.dismiss())
       for (const m of moments.filter((x) => x.width === width)) {
+        markScreen(p, m.id)
         try {
           const host = hostOf({ kind: 'screen', layoutCheck: m.screen }, ids)
           await p.goto(base + host.path)

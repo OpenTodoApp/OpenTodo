@@ -5,16 +5,25 @@
 
 const LIMIT = 12
 
-/** A ring of the last `limit` events, each with the milliseconds since the ring was made. */
+/**
+ * A ring of the last `limit` events, each with the milliseconds since the ring was made.
+ * One page serves many screens: `mark` starts a new screen, and `lines` keeps only what
+ * happened since the last mark (the mark included), so earlier screens' events do not read
+ * as this one's cause.
+ */
 export function createTrace(limit = LIMIT, now = () => Date.now()) {
   const t0 = now()
   const events = []
+  let since = 0 // events dropped before the last mark are gone; count them to find it
+  let dropped = 0
+  const push = (kind, text) => {
+    events.push(`+${now() - t0}ms ${kind} ${String(text).replace(/\s+/g, ' ').slice(0, 160)}`)
+    if (events.length > limit) { events.shift(); dropped++ }
+  }
   return {
-    push(kind, text) {
-      events.push(`+${now() - t0}ms ${kind} ${String(text).replace(/\s+/g, ' ').slice(0, 160)}`)
-      if (events.length > limit) events.shift()
-    },
-    lines: () => [...events],
+    push,
+    mark(label) { since = dropped + events.length; push('screen', label) },
+    lines: () => events.slice(Math.max(0, since - dropped)),
   }
 }
 
@@ -31,7 +40,12 @@ export function tracePage(page) {
   return trace
 }
 
-/** The trace of a page passed to tracePage, or none. */
+/** Marks the start of a screen on a page passed to tracePage (createTrace's mark). */
+export function markScreen(page, label) {
+  traces.get(page)?.mark(label)
+}
+
+/** The trace of a page passed to tracePage since its last markScreen, or none. */
 export function traceOf(page) {
   return traces.get(page)?.lines() ?? []
 }
