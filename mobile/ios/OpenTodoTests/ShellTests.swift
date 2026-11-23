@@ -582,7 +582,12 @@ final class SystemSignInTests: XCTestCase {
             case "cancelled", "invalid": want = .invalid
             case let other: return XCTFail("unknown outcome \(other)")
             }
-            XCTAssertEqual(SystemSignIn.outcome(of: try XCTUnwrap(URL(string: address), address), state: try string(c, "state")), want, address)
+            // A link with a bad escape may not even be a URL on iOS: then the app never reads it.
+            guard let url = URL(string: address) else {
+                XCTAssertEqual(want, .invalid, "\(address) is no URL here, so only an invalid outcome fits")
+                return
+            }
+            XCTAssertEqual(SystemSignIn.outcome(of: url, state: try string(c, "state")), want, address)
         }
     }
 
