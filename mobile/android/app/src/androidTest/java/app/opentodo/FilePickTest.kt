@@ -71,12 +71,8 @@ class FilePickTest {
     private fun picked() = Instrumentation.ActivityResult(Activity.RESULT_OK,
         Intent().setData(PickedFileProvider.uri(InstrumentationRegistry.getInstrumentation().context.packageName)))
 
-    /** Read on the main thread, where Espresso records the intents. */
-    private fun pickerOpenings(): Int {
-        var n = 0
-        InstrumentationRegistry.getInstrumentation().runOnMainSync { n = Intents.getIntents().count { it.action == Intent.ACTION_GET_CONTENT } }
-        return n
-    }
+    /** From the test's thread: Espresso reads its recorded intents on the main thread itself. */
+    private fun pickerOpenings(): Int = Intents.getIntents().count { it.action == Intent.ACTION_GET_CONTENT }
 
     /** The picked file read by the page, then sent the way the import sends it, which is where #1606 failed. */
     private fun assertTheFileWasRead(web: WebView) {
