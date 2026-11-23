@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
-### Requirement: Android app on Google Play and F-Droid with one certificate
-The Android app SHALL be published on Google Play production and in the F-Droid main repository. The APKs from Google Play, F-Droid and the GitHub release SHALL carry the same signing certificate, so a user can switch between the three sources without uninstalling. The certificate's SHA-256 SHALL be published in the Android app's documentation.
+### Requirement: Android app on Google Play and F-Droid
+The Android app SHALL be published on Google Play production and in the F-Droid main repository. The APKs from F-Droid and the GitHub release SHALL carry the project's release certificate, so a user can switch between those two without uninstalling. Google Play SHALL deliver the app signed with Play's app signing key. The Android app's documentation SHALL publish both SHA-256 fingerprints, say which source carries which, and say that moving between Google Play and the other sources needs an uninstall.
 
 On a final release tag (no suffix), with the publishing secrets present, CI SHALL upload the signed AAB to Google Play's internal testing track, with release notes taken from that version's CHANGELOG section. CI SHALL never promote a build to production by itself. Without the secrets it SHALL warn and skip the upload, without failing the release. A release candidate SHALL upload nothing.
 
@@ -15,9 +15,13 @@ The F-Droid metadata in the repository SHALL point F-Droid at the GitHub release
 - **WHEN** the tag `v0.20.0-rc.1` is pushed
 - **THEN** nothing is uploaded to Google Play and the F-Droid update check ignores the tag
 
-#### Scenario: Switching from F-Droid to Google Play
-- **WHEN** a user who installed 0.20.0 from F-Droid installs the 0.20.1 update from Google Play
+#### Scenario: Switching from F-Droid to GitHub
+- **WHEN** a user who installed 0.20.0 from F-Droid installs the 0.20.1 APK from the GitHub release
 - **THEN** Android accepts it as an update, and the app keeps its server, local data and fingerprint unlock
+
+#### Scenario: Switching from Google Play to GitHub
+- **WHEN** a user who installed the app from Google Play opens the GitHub release APK
+- **THEN** Android refuses to install it over the Play app, and the documentation's steps (sync, uninstall, install, sign in) apply
 
 #### Scenario: Play secrets missing
 - **WHEN** a final tag is pushed in a fork without the Play secrets
