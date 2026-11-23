@@ -291,6 +291,27 @@ final class ReminderTests: XCTestCase {
         let json = #"[{"id":"a","taskId":"b","fireAt":1700000000000,"title":"Call"}]"#
         XCTAssertEqual(Reminders.parse(json), [Reminders.Handed(id: "a", taskId: "b", fireAt: 1_700_000_000_000, title: "Call")])
     }
+
+    /// The web app's scheduleReminders payloads of the shared bridge fixtures (the Android
+    /// app's BridgeFixtureTest reads them too): with titles, an encrypted account without
+    /// them, and a sign-out that empties the schedule.
+    func testTheSharedBridgePayloadsScheduleAsTheFixtureSays() throws {
+        for name in ["reminders", "reminders-encrypted", "reminders-signed-out"] {
+            let file = URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+                .appendingPathComponent("android/app/src/test/resources/bridge/\(name).json")
+            let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any], name)
+            XCTAssertEqual(fixture["method"] as? String, "scheduleReminders", name)
+            // `now` is a string there (Android reads it with getLong either way).
+            let nowMs = try XCTUnwrap((fixture["now"] as? Double) ?? (fixture["now"] as? String).flatMap(Double.init), name)
+            let want = try XCTUnwrap(fixture["expect"] as? [[String: Any]], name).map { r in
+                Reminders.Handed(id: r["id"] as? String ?? "?", taskId: r["taskId"] as? String ?? "?",
+                                 fireAt: r["fireAt"] as? Double ?? -1, title: r["title"] as? String)
+            }
+            let payload = try XCTUnwrap(fixture["payload"] as? String, name)
+            XCTAssertEqual(Reminders.select(Reminders.parse(payload), now: Date(timeIntervalSince1970: nowMs / 1000)), want, name)
+        }
+    }
 }
 
 final class WidgetPublicationTests: XCTestCase {
