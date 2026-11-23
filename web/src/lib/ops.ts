@@ -9,7 +9,7 @@ import { compatibleRule, firstOccurrence, parseRule } from './recurrence'
 import { deadlineFireAt, relativeFireAt } from './reminderTime'
 import { defaultReminderChanges } from './defaultReminder'
 import { withSectorClears } from './sectorWrites'
-import { planCompletion, planSkip, seriesRule, skipsInstead } from './recurring'
+import { planCompletion, seriesRule, skipsInstead } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { memberSet } from './rotation'
 import { descendants, isDescendant } from './tree'
@@ -1275,27 +1275,6 @@ export async function completeTask(id: string, opts: { now?: number; today?: str
   return recordId
 }
 
-/**
- * Skip the current occurrence of a series: an ordinary due-date change, no record.
- * A habit also writes the occurrence record marked `skipped` (OpenSpec `habits`).
- * Returns false (and writes nothing) when the task is not an open series or the
- * current occurrence is the last one before `until`.
- */
-export async function skipOccurrence(id: string, opts: { now?: number; today?: string } = {}): Promise<boolean> {
-  const now = opts.now ?? Date.now()
-  const today = opts.today ?? logicalToday()
-  await getDeviceId()
-  let ok = false
-  await db.transaction('rw', mutationTables(), async () => {
-    const series = await db.tasks.get(id)
-    const rule = seriesRule(series)
-    const changes = series && rule ? planSkip(series, rule, now, today, await lineageRows(id)) : null
-    if (!changes) return
-    await mutateMany(changes)
-    ok = true
-  })
-  return ok
-}
 
 /**
  * "This occurrence only": write the current occurrence's open record (no rule,
