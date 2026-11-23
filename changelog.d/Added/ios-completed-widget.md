@@ -1,1 +1,0 @@
-- **A Completed widget on the iPhone, beside Today.** It shows how many tasks you completed today and a bar for each of the last 7 days, as on Android; a tap opens Statistics. While an encrypted account is locked it shows today's number only.

@@ -1,1 +1,0 @@
-- **Share from the sidebar.** A project's ⋯ menu in the sidebar now starts with Share project, which opens the same Share dialog as the project's own Share button.

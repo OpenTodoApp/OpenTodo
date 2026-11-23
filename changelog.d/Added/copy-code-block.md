@@ -1,1 +1,0 @@
-- **Copy a code block.** A code block in a note, a task's notes, a project's note, a comment or an answer shows a **Copy** button at its top corner, also while you write: one click, without moving the caret, puts the code on your clipboard as plain text, without the fences and with its indentation kept. A viewer of a note they cannot edit can copy the whole note as Markdown too.

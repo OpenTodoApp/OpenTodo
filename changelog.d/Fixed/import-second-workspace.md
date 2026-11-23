@@ -1,1 +1,0 @@
-- **Importing the same file into a second workspace imports it there.** Tasks, projects and sections an earlier import brought into another workspace are no longer skipped as already imported (#1899).

@@ -1,1 +1,0 @@
-- **New projects from the sidebar start at the top level.** Creating several projects in a row no longer puts each one inside the one before. Pick a parent in the form to make a sub-project.

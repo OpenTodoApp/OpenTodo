@@ -1,1 +1,0 @@
-- **A subtask's menu in Today, grouped by project, shows "Move under task…" and "Make top-level for today" even when opened just after Today opens.** These two actions load after the view opens. A menu opened before they loaded went without them until it was opened again. Now they appear in the open menu as soon as they load.

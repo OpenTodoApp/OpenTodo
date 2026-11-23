@@ -1,1 +1,0 @@
-- **The iPhone app's first-run screen connects by itself when the network returns.** After "No answer from that address" with no network, it checks the address again as soon as the phone is online, as the Android app does.

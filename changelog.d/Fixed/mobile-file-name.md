@@ -1,1 +1,0 @@
-- **Files saved from the phone apps get a name the phone can store.** A long name, for example one in Chinese or Japanese or full of emoji, is shortened instead of the save failing, and the iPhone app drops invisible control characters from it as the Android app already did.

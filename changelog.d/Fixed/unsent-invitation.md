@@ -1,1 +1,0 @@
-- **An invitation whose email could not be sent no longer shows as Revoked.** The invitation screen already said none was created; the list now agrees (#1907).

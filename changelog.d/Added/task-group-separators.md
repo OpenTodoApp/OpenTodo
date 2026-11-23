@@ -1,1 +1,0 @@
-- **Task group separators in wide lists.** A subtle line marks where one task group ends and the next begins in One line and Detailed layouts. A parent and its subtasks stay together.

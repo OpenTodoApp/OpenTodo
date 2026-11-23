@@ -1,1 +1,0 @@
-- **A saved view's condition chip no longer runs under the filter and display buttons with large text.** At 200% text on a phone the chip now shortens with an ellipsis.
