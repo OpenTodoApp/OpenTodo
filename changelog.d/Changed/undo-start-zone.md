@@ -1,0 +1,1 @@
+- **A start date, the Multi-day switch and a time zone can be undone.** In the task panel, setting or clearing a start date, turning Multi-day on or off, and fixing a time to a zone or releasing it are now steps that Ctrl/Cmd+Z takes back. A repeating task is not covered yet.
