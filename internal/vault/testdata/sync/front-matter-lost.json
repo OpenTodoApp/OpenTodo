@@ -505,7 +505,17 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "d363d4b686a2f8840c7ed4af070a2c49ecce8e608d077928209c33f563be6ad8"
+              "hash": "d363d4b686a2f8840c7ed4af070a2c49ecce8e608d077928209c33f563be6ad8",
+              "size": 112,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "71fca3dd4e8a454e",
+                "70b0c1dd19baebad",
+                "0e100cef944c4443",
+                "d363d4b686a2f884"
+              ]
             },
             "Inbox.md": {
               "project": "",
@@ -513,7 +523,16 @@
             },
             "Work.md": {
               "project": "p-work",
-              "hash": "7ded4e1425af2bb67b6ffe556f02893addefeefd6652340b1d99c89408e092fd"
+              "hash": "7ded4e1425af2bb67b6ffe556f02893addefeefd6652340b1d99c89408e092fd",
+              "size": 92,
+              "prefixes": [
+                "f52d711103d50a43",
+                "311b75839baf6970",
+                "be5b0aa916c741be",
+                "a26864372fa7f1ae",
+                "2abe908025ed9668",
+                "7ded4e1425af2bb6"
+              ]
             }
           },
           "printed": {
@@ -1010,7 +1029,18 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "d9501793bec8b6d8d1e73c0ae6ecd3f07d55752827a22c5659ea37dc76442e60"
+              "hash": "d9501793bec8b6d8d1e73c0ae6ecd3f07d55752827a22c5659ea37dc76442e60",
+              "size": 174,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "71fca3dd4e8a454e",
+                "70b0c1dd19baebad",
+                "0e100cef944c4443",
+                "d363d4b686a2f884",
+                "d9501793bec8b6d8"
+              ]
             },
             "Inbox.md": {
               "project": "",
@@ -1018,7 +1048,16 @@
             },
             "Work.md": {
               "project": "p-work",
-              "hash": "7ded4e1425af2bb67b6ffe556f02893addefeefd6652340b1d99c89408e092fd"
+              "hash": "7ded4e1425af2bb67b6ffe556f02893addefeefd6652340b1d99c89408e092fd",
+              "size": 92,
+              "prefixes": [
+                "f52d711103d50a43",
+                "311b75839baf6970",
+                "be5b0aa916c741be",
+                "a26864372fa7f1ae",
+                "2abe908025ed9668",
+                "7ded4e1425af2bb6"
+              ]
             }
           },
           "printed": {
@@ -1335,10 +1374,106 @@
               }
             }
           },
+          "held": {
+            "project": {
+              "p-work": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Work",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400003,
+                  "d": "app"
+                }
+              }
+            },
+            "task": {
+              "t-report": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-work",
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Write the report",
+                  "t": 1793606400004,
+                  "d": "app"
+                }
+              }
+            }
+          },
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "d9501793bec8b6d8d1e73c0ae6ecd3f07d55752827a22c5659ea37dc76442e60"
+              "hash": "d9501793bec8b6d8d1e73c0ae6ecd3f07d55752827a22c5659ea37dc76442e60",
+              "size": 174,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "71fca3dd4e8a454e",
+                "70b0c1dd19baebad",
+                "0e100cef944c4443",
+                "d363d4b686a2f884",
+                "d9501793bec8b6d8"
+              ]
             },
             "Inbox.md": {
               "project": "",
@@ -1347,7 +1482,16 @@
             "Work.md": {
               "project": "p-work",
               "hash": "",
-              "held": 1793610180000
+              "held": 1793610180000,
+              "size": 92,
+              "prefixes": [
+                "f52d711103d50a43",
+                "311b75839baf6970",
+                "be5b0aa916c741be",
+                "a26864372fa7f1ae",
+                "2abe908025ed9668",
+                "7ded4e1425af2bb6"
+              ]
             }
           },
           "printed": {
@@ -1680,7 +1824,18 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "d9501793bec8b6d8d1e73c0ae6ecd3f07d55752827a22c5659ea37dc76442e60"
+              "hash": "d9501793bec8b6d8d1e73c0ae6ecd3f07d55752827a22c5659ea37dc76442e60",
+              "size": 174,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "71fca3dd4e8a454e",
+                "70b0c1dd19baebad",
+                "0e100cef944c4443",
+                "d363d4b686a2f884",
+                "d9501793bec8b6d8"
+              ]
             },
             "Inbox.md": {
               "project": "",
@@ -1688,7 +1843,14 @@
             },
             "Work.md": {
               "project": "p-work",
-              "hash": "a26864372fa7f1aea1263c0834eebba73d75b88b693593f4dbe21f9ed146fc2e"
+              "hash": "a26864372fa7f1aea1263c0834eebba73d75b88b693593f4dbe21f9ed146fc2e",
+              "size": 54,
+              "prefixes": [
+                "f52d711103d50a43",
+                "311b75839baf6970",
+                "be5b0aa916c741be",
+                "a26864372fa7f1ae"
+              ]
             }
           },
           "printed": {
