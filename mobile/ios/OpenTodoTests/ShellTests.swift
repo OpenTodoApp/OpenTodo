@@ -166,20 +166,28 @@ final class BridgeOnAServerTests: XCTestCase {
         // A cold CI simulator can stall WebKit itself: on 2026-11-23 its networking process took
         // 39 s to launch and the page's process stopped answering, with the server's answer to `/`
         // already sent, and the web view stayed at 10 % for the whole wait. That stall, and only
-        // that one (still loading, answer sent), gets one reload. A page that loaded without
+        // that one (still loading, answer sent), gets one fresh load. A page that loaded without
         // reporting, the bridge's own failure, fails at once.
         var report: [String: String]?
         var reloaded = false
         do {
             report = try await server.report(timeout: 45)
         } catch {
+            // Stalled with the answer sent: start the load again (a cancelled load is ignored by
+            // the shell). Still waiting for `/`, as on a slow cold launch: keep waiting, up to the
+            // old 90 s. Neither (the page loaded): only a report that came in just now counts.
+            let wait: TimeInterval
             if shell.webView.isLoading, server.answers.contains("/ sent") {
                 reloaded = true
-                shell.webView.reload()
+                shell.webView.stopLoading()
+                shell.load()
+                wait = 60
+            } else if shell.webView.isLoading {
+                wait = 45
+            } else {
+                wait = 1
             }
-        }
-        if report == nil, reloaded {
-            report = try? await server.report(timeout: 60)
+            report = try? await server.report(timeout: wait)
         }
         guard let page = report else {
             // Says which half failed: the page never asked (`/` missing) or it loaded but did not report.
