@@ -6,7 +6,7 @@ Home Assistant users install the add-on, open `http://192.168.1.10:8080` and ent
 
 ## What Changes
 
-- **A notice under the address field** on the Android app's first-run screen when the address only works on the home network: this device, a private or link-local address, or a `.local` name. It reads "This address only works on your home network." with a link to the guide "Reach OpenTodo from outside your home". It never blocks connecting.
+- **A notice under the address field** on the Android app's first-run screen when the address only works on the home network: this device, a private or link-local address, or a `.local` name. It reads "This address only works on your home network." with a link, "Use OpenTodo away from home", to the guide "Reach OpenTodo from outside your home". It never blocks connecting.
 - Tailscale and CGNAT addresses (`100.64.0.0/10`), names without a dot (Tailscale MagicDNS) and public hosts get no notice.
 
 Out of scope: the iPhone app, and the address rules themselves.
