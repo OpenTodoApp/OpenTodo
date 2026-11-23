@@ -43,9 +43,10 @@ func inviteAddress(w http.ResponseWriter, email string) (string, bool) {
 	return email, true
 }
 
-// lookupInvitee returns the account with email, or nil when there is none.
+// lookupInvitee returns the account with email, or nil when there is none or
+// its address came unconfirmed from single sign-on (auth.InviteeByEmail).
 func (s *Server) lookupInvitee(ctx context.Context, email string) (*auth.User, error) {
-	u, err := s.auth.UserByEmail(ctx, email)
+	u, err := s.auth.InviteeByEmail(ctx, email)
 	if errors.Is(err, auth.ErrNotFound) {
 		return nil, nil
 	}

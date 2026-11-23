@@ -170,6 +170,12 @@ func (s *Service) MatchOrProvision(ctx context.Context, id ExternalIdentity, all
 			}
 			return nil, false, false, err
 		}
+		if assumed {
+			// Until the address is confirmed, add-by-email treats it as unknown.
+			if _, err := tx.ExecContext(ctx, "UPDATE users SET email_assumed = 1 WHERE id = ?", u.ID); err != nil {
+				return nil, false, false, err
+			}
+		}
 		created = true
 	default:
 		return nil, false, false, err

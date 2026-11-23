@@ -8,7 +8,7 @@ Synology SSO Server (DSM 7.4) sends no `email_verified` claim, so every first si
 
 - **A switch in Settings → Single sign-on**, off by default: "Accept a missing email confirmation (new accounts only)". When it is on, an identity token **without** an `email_verified` claim may create a new account under the existing provisioning rules (open sign-up or "Allow new accounts via SSO"). An explicit `email_verified: false` is still refused.
 - **Never a link by email.** Such an identity never links to an existing account. If one has its address, sign-in is refused with `oidc_link_required`, and that account keeps the manual linking step from Settings. This applies to every account, not only the guarded ones.
-- **No confirmation from it.** The new account's address does not count as confirmed. The identity is keyed by issuer and `sub` as today.
+- **No confirmation from it.** The new account's address does not count as confirmed, and the account is marked (`users.email_assumed`). Until the address is confirmed, adding it to a project or workspace treats it as unknown: a placeholder invitation the account never sees. The identity is keyed by issuer and `sub` as today.
 - **Warnings.** The panel shows a warning while the switch is on, and the server logs one at start. Changing the switch is in the audit log like the other SSO settings.
 - **Docs:** `docs/self-hosting/sso.md` gets a Synology SSO Server entry (the switch, or the manual linking path) and a warning to turn the switch on only for a provider the owner controls, where users can't set their own address.
 
@@ -21,4 +21,4 @@ Synology SSO Server (DSM 7.4) sends no `email_verified` claim, so every first si
 ## Impact
 
 - `internal/oidc` (the claim's presence, the setting), `internal/auth/oidc.go` (`MatchOrProvision`), `internal/httpapi/oidc.go` (settings JSON, mapping, start-up warning), `web/src/app/SsoPanel.tsx`, `web/src/lib/types.ts`, the message catalogs, `docs/self-hosting/sso.md`.
-- No schema change: the switch is one more stored SSO setting. No new dependency.
+- One column, `users.email_assumed` (a Go migration step, default 0); the switch is one more stored SSO setting. No new dependency.

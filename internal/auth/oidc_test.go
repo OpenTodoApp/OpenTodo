@@ -278,6 +278,29 @@ func TestOIDCMissingEmailVerifiedCreatesOnly(t *testing.T) {
 	if n := countRows(t, db, "SELECT COUNT(*) FROM users WHERE id = ? AND email_verified_at IS NULL", u.ID); n != 1 {
 		t.Fatal("the created account's address counts as confirmed")
 	}
+	if n := countRows(t, db, "SELECT COUNT(*) FROM users WHERE id = ? AND email_assumed = 1", u.ID); n != 1 {
+		t.Fatal("the created account is not marked as having an assumed address")
+	}
+	// Add-by-email doesn't find it until the address is confirmed.
+	if _, err := s.InviteeByEmail(ctx, "nas.user@example.com"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("invitee lookup before confirmation: %v", err)
+	}
+	if _, err := db.Exec("UPDATE users SET email_verified_at = 1 WHERE id = ?", u.ID); err != nil {
+		t.Fatal(err)
+	}
+	if found, err := s.InviteeByEmail(ctx, "nas.user@example.com"); err != nil || found.ID != u.ID {
+		t.Fatalf("invitee lookup after confirmation: %+v %v", found, err)
+	}
+	if _, err := db.Exec("UPDATE users SET email_verified_at = NULL WHERE id = ?", u.ID); err != nil {
+		t.Fatal(err)
+	}
+	// A local account whose address nobody confirmed is found as before.
+	if _, err := db.Exec("INSERT INTO users(id,email,password_hash,created_at) VALUES('l1','local@example.com','x',1)"); err != nil {
+		t.Fatal(err)
+	}
+	if found, err := s.InviteeByEmail(ctx, "local@example.com"); err != nil || found.ID != "l1" {
+		t.Fatalf("unconfirmed local account: %+v %v", found, err)
+	}
 	// The same subject signs in again.
 	if again, _, _, err := s.MatchOrProvision(ctx, trusted("syn-1", "nas.user@example.com"), true, "Synology"); err != nil || again.ID != u.ID {
 		t.Fatalf("returning = %+v %v", again, err)

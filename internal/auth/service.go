@@ -431,6 +431,22 @@ func (s *Service) UserByEmail(ctx context.Context, email string) (*User, error) 
 	return &u, err
 }
 
+// InviteeByEmail is UserByEmail for adding someone by email to a project or
+// workspace: an account that single sign-on created from an address nobody
+// confirmed (email_assumed) is ErrNotFound until the address is confirmed, so
+// the addition becomes a placeholder invitation it never sees
+// (sso-missing-email-verified).
+func (s *Service) InviteeByEmail(ctx context.Context, email string) (*User, error) {
+	var u User
+	err := s.db.QueryRowContext(ctx, `SELECT id,email,name,role,created_at FROM users
+		WHERE email = ? AND NOT (email_assumed = 1 AND email_verified_at IS NULL)`,
+		strings.TrimSpace(email)).Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	return &u, err
+}
+
 // CreateAccount creates a local account with the given role ("member" or
 // "owner") without consulting the sign-up policy or an invitation. It exists
 // for server-side provisioning (OpenSpec change `demo-mode`: the demo accounts

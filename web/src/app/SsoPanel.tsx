@@ -180,7 +180,7 @@ export function SsoPanelView(p: SsoPanelViewProps & { configuring?: boolean }) {
       } control={!open && <Button ref={opener} variant="secondary" onClick={() => setOpen(true)} aria-expanded={false}>{t('Configure')}</Button>} />
       {s.trustMissingEmailVerified && (
         <div data-testid="sso-trust-warning">
-          <Notice tone="warning">{t('New accounts through {name} can be created without a confirmed email address. Keep this on only if people cannot choose their own address at {name}.', { name })}</Notice>
+          <Notice tone="warning">{t('New accounts through {name} can be created without a confirmed email address. Keep this on only if people cannot choose their own address at {name}. An account created under someone else’s address can be deleted in Users and invitations.', { name })}</Notice>
         </div>
       )}
       {p.notice && !open && <Notice tone="success">{p.notice}</Notice>}

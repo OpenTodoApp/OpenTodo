@@ -241,6 +241,9 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 	if err := migrateEmailVerified(ctx, db); err != nil {
 		return err
 	}
+	if err := migrateEmailAssumed(ctx, db); err != nil {
+		return err
+	}
 	return migrateNotePages(ctx, db)
 }
 

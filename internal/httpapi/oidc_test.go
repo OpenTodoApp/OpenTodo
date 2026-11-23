@@ -691,6 +691,30 @@ func TestOIDCMissingEmailVerifiedSwitch(t *testing.T) {
 		t.Fatalf("created user = %v", u)
 	}
 
+	// Adding its address to a project treats it as unknown: a placeholder
+	// invitation the account never sees, until the address is confirmed.
+	resp, out = o.do("POST", "/api/v1/projects", map[string]any{"name": "Plans"})
+	o.mustStatus(resp, 201, out)
+	project := "/api/v1/projects/" + out["id"].(string)
+	resp, out = o.do("POST", project+"/members", map[string]any{"email": "nas@example.com", "role": "editor"})
+	o.mustStatus(resp, 202, out)
+	if got := myInvitations(member); len(got) != 0 {
+		t.Fatalf("the unconfirmed account sees invitations: %v", got)
+	}
+	var placeholders int
+	if err := o.db.QueryRow("SELECT COUNT(*) FROM member_invitations WHERE email = 'nas@example.com' AND invitee_id IS NULL").Scan(&placeholders); err != nil || placeholders != 1 {
+		t.Fatalf("placeholder invitations = %d %v", placeholders, err)
+	}
+	// Once the address is confirmed the account is found as usual.
+	if _, err := o.db.Exec("UPDATE users SET email_verified_at = 1 WHERE email = 'nas@example.com'"); err != nil {
+		t.Fatal(err)
+	}
+	resp, out = o.do("POST", project+"/members", map[string]any{"email": "nas@example.com", "role": "editor"})
+	o.mustStatus(resp, 202, out)
+	if got := myInvitations(member); len(got) != 1 {
+		t.Fatalf("after confirmation: %v", got)
+	}
+
 	// The owner's address is never linked by an unconfirmed email.
 	o.idp.SetUser(oidctest.User{Subject: "syn-2", Email: "owner@example.com", Name: "Someone"})
 	if resp := o.ssoLogin(o.client("203.0.113.12")); location(resp) != "/?error=oidc_link_required" || hasCookie(resp, sessionCookie) {

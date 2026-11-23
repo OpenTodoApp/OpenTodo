@@ -10785,7 +10785,7 @@
   "New API token": [
     "web/src/app/TokensSection.tsx"
   ],
-  "New accounts through {name} can be created without a confirmed email address. Keep this on only if people cannot choose their own address at {name}.": [
+  "New accounts through {name} can be created without a confirmed email address. Keep this on only if people cannot choose their own address at {name}. An account created under someone else’s address can be deleted in Users and invitations.": [
     "web/src/app/SsoPanel.tsx"
   ],
   "New address": [
