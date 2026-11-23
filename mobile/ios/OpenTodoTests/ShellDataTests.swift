@@ -1,3 +1,4 @@
+import ActivityKit
 import UIKit
 import UserNotifications
 import WebKit
@@ -1269,6 +1270,15 @@ final class FocusActivityTests: XCTestCase {
         let p = try check("focus-break.json")
         XCTAssertTrue(p.isBreak)
         XCTAssertEqual(FocusAttributes.content(p).phase, .shortBreak)
+    }
+
+    /// A run started while the last one's "Session done" still lingers gets its own activity:
+    /// an ended or dismissed one takes no updates.
+    func testOnlyALiveActivityIsReused() {
+        XCTAssertTrue(FocusLive.reusable(.active))
+        XCTAssertTrue(FocusLive.reusable(.stale))
+        XCTAssertFalse(FocusLive.reusable(.ended))
+        XCTAssertFalse(FocusLive.reusable(.dismissed))
     }
 
     func testNoneShowsNothing() throws {

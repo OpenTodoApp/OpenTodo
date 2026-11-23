@@ -35,7 +35,7 @@ final class FocusLive {
         let state = FocusAttributes.content(p)
         if p.state == .done {
             let content = ActivityContent(state: state, staleDate: nil)
-            for a in activities { await a.end(content, dismissalPolicy: .after(Date().addingTimeInterval(Self.doneLinger))) }
+            for a in activities where Self.reusable(a.activityState) { await a.end(content, dismissalPolicy: .after(Date().addingTimeInterval(Self.doneLinger))) }
             return
         }
         // The user's switch in Settings ▸ OpenTodo ▸ Live Activities (D6) is honoured here.
@@ -44,13 +44,22 @@ final class FocusLive {
             return
         }
         let content = ActivityContent(state: state, staleDate: state.end)
-        if let first = activities.first {
+        // An activity that already ended still lingers on the lock screen ("Session done") and
+        // takes no updates: a new run removes it and starts its own.
+        let live = activities.filter { Self.reusable($0.activityState) }
+        for gone in activities where !Self.reusable(gone.activityState) { await gone.end(nil, dismissalPolicy: .immediate) }
+        if let first = live.first {
             await first.update(content)
             // An activity that outlived a killed app is reused; any extra one ends (D7).
-            for extra in activities.dropFirst() { await extra.end(nil, dismissalPolicy: .immediate) }
+            for extra in live.dropFirst() { await extra.end(nil, dismissalPolicy: .immediate) }
         } else {
             _ = try? Activity.request(attributes: FocusAttributes(), content: content, pushType: nil)
         }
+    }
+
+    /// Whether an activity in this state still takes updates: not once it ended or was dismissed.
+    nonisolated static func reusable(_ state: ActivityState) -> Bool {
+        state == .active || state == .stale
     }
 
     /// "Session done" or "Break over" at the planned end, naming the task only when its title
