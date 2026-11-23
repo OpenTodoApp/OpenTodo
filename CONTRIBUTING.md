@@ -62,6 +62,10 @@ What keeps that trustworthy is the same for every contributor, human or not:
 - Translations are never machine-made: a speaker of each language reviews its catalog.
 - Security reports go to a person ([SECURITY.md](SECURITY.md)).
 
+### Replies from the OpenTodo Bot
+
+Replies on issues, pull requests and discussions that end with "— OpenTodo team (automated reply)" are posted by the **OpenTodo Bot** GitHub App for the triage team, usually drafted by an agent and approved by a person. Triage posts one with the **Post reply** workflow (`.github/workflows/post-reply.yml`): **Actions → Post reply → Run workflow**, choose the kind (`issue`, `pr` or `discussion`), give the number and paste the reply. The workflow refuses a number of the wrong kind and an empty reply. It needs the repository variable `BOT_APP_ID` (the app's ID or Client ID) and the secret `BOT_PRIVATE_KEY`; the app needs write access to issues, pull requests and discussions on this repository, and nothing else. Without them the run fails and names what is missing.
+
 You may use AI tools for your contribution. Say so with a `Co-Authored-By` trailer, read and understand every line you submit, and expect the same review as any other pull request. `AGENTS.md` (read by Claude Code through `CLAUDE.md`, and by other agents directly) gives an agent the rules above.
 
 ## Code style

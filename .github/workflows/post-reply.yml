@@ -1,0 +1,92 @@
+# Post reply (owner-approved): Triage posts one comment on an issue, pull request
+# or discussion as the "OpenTodo Bot" GitHub App, run by hand from the Actions tab
+# (CONTRIBUTING.md, "Replies from the OpenTodo Bot"). The token comes from the app
+# (vars.BOT_APP_ID, secrets.BOT_PRIVATE_KEY), not from GITHUB_TOKEN, which gets no
+# permission at all. The reply text only ever reaches the script through env.
+name: Post reply
+
+on:
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: Where to reply
+        required: true
+        type: choice
+        options: [issue, pr, discussion]
+      number:
+        description: The issue, pull request or discussion number
+        required: true
+        type: number
+      body:
+        description: The reply in Markdown (a footer line is added)
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.kind }}-${{ inputs.number }}
+  cancel-in-progress: false
+
+jobs:
+  reply:
+    name: Post the reply
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Check the app is configured
+        env:
+          APP_ID: ${{ vars.BOT_APP_ID }}
+          HAS_KEY: ${{ secrets.BOT_PRIVATE_KEY != '' }}
+        run: |
+          if [ -z "$APP_ID" ] || [ "$HAS_KEY" != "true" ]; then
+            echo "::error::The OpenTodo Bot app is not configured: set the repository variable BOT_APP_ID and the secret BOT_PRIVATE_KEY (CONTRIBUTING.md, Replies from the OpenTodo Bot)"
+            exit 1
+          fi
+      - name: Get a token for the OpenTodo Bot
+        id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          # The App ID works here as well as the Client ID: both name the app in its JWT.
+          client-id: ${{ vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-issues: write
+          permission-pull-requests: write
+          permission-discussions: write
+      - name: Post the reply
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          KIND: ${{ inputs.kind }}
+          NUMBER: ${{ inputs.number }}
+          BODY: ${{ inputs.body }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          case "$NUMBER" in ''|*[!0-9]*) echo "::error::number must be a positive whole number"; exit 1 ;; esac
+          if [ -z "$(printf '%s' "$BODY" | tr -d '[:space:]')" ]; then
+            echo "::error::The reply is empty"
+            exit 1
+          fi
+          text="$(printf '%s\n\n— OpenTodo team (automated reply)' "$BODY")"
+          owner="${REPO%%/*}"
+          name="${REPO#*/}"
+          case "$KIND" in
+            issue|pr)
+              # An issue number that is a pull request (or the other way round) is refused, so a typo can't land elsewhere.
+              is_pr="$(gh api "repos/$REPO/issues/$NUMBER" --jq '.pull_request != null')"
+              if [ "$KIND" = pr ] && [ "$is_pr" != true ]; then echo "::error::#$NUMBER is not a pull request"; exit 1; fi
+              if [ "$KIND" = issue ] && [ "$is_pr" = true ]; then echo "::error::#$NUMBER is a pull request; choose pr"; exit 1; fi
+              url="$(gh api -X POST "repos/$REPO/issues/$NUMBER/comments" -f body="$text" --jq .html_url)"
+              ;;
+            discussion)
+              id="$(gh api graphql -f query='query($owner: String!, $name: String!, $number: Int!) { repository(owner: $owner, name: $name) { discussion(number: $number) { id } } }' \
+                -f owner="$owner" -f name="$name" -F number="$NUMBER" --jq .data.repository.discussion.id)"
+              if [ -z "$id" ] || [ "$id" = null ]; then echo "::error::There is no discussion #$NUMBER"; exit 1; fi
+              url="$(gh api graphql -f query='mutation($id: ID!, $body: String!) { addDiscussionComment(input: {discussionId: $id, body: $body}) { comment { url } } }' \
+                -f id="$id" -f body="$text" --jq .data.addDiscussionComment.comment.url)"
+              ;;
+            *) echo "::error::kind must be issue, pr or discussion"; exit 1 ;;
+          esac
+          echo "Posted: $url"
+          echo "Posted: $url" >> "$GITHUB_STEP_SUMMARY"
