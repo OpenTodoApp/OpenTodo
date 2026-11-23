@@ -1,0 +1,1 @@
+- **Indenting a task can be undone.** Tab and Shift-Tab in a list, and changing a task's Parent task in its panel, are now steps that Ctrl/Cmd+Z takes back.
