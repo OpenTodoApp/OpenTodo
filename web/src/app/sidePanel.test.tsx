@@ -257,10 +257,21 @@ describe('the side panel', () => {
     await r.unmount()
   })
 
-  it('a narrow window keeps the page', async () => {
-    viewport(900)
+  it('from 600 to 899 px a task opens as a sheet over the list (tablet-layouts D2)', async () => {
+    viewport(899)
     const { r } = await list({ view: 'today' })
     expect(emptyPane()).toBeNull()
+    await key(document.body, 'j')
+    await enter()
+    await waitFor(() => !!docked(), 'the task in the sheet')
+    expect(location.pathname).not.toMatch(/^\/task\//)
+    expect(new URLSearchParams(location.search).get('task')).toBe(docked())
+    await r.unmount()
+  })
+
+  it('a phone-width window keeps the task page', async () => {
+    viewport(599)
+    const { r } = await list({ view: 'today' })
     await key(document.body, 'j')
     await enter()
     await waitFor(() => location.pathname.startsWith('/task/'), 'the task page')

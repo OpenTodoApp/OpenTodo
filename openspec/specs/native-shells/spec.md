@@ -344,7 +344,7 @@ The iOS app's first-run screen SHALL show the scheme of the address it will open
 - **THEN** the "OpenTodo for iOS" row shows the server address the app opened, such as `https://todo.example.com`
 
 ### Requirement: Completed widget
-The Android app SHALL offer a **Completed** home-screen widget beside the Today widget, showing the number of tasks the person completed today and a bar per day for the last 7 days, scaled to the busiest of them, with a one-letter weekday under each bar and the time of the last update; a tap SHALL open Statistics. It SHALL read only data the web app published through the bridge with the Today list: today's count and the 7-day series (days and numbers only, never task content), counted by the same rules as Statistics from the same local rows, and stored in the app's private storage. The widget SHALL never make a request of its own. While an encrypted account is locked, the web app SHALL publish today's count alone, and the widget SHALL show that count and say it is locked, without bars. A publication from a web app that publishes no completions SHALL leave the widget asking the person to open the app. The bars SHALL use the theme's accent and track colours as the launcher resolves them for light and dark. The iOS app's Completed widget is a separate follow-up. Completing a task from the widget is out of scope.
+The Android app and the iOS app SHALL each offer a **Completed** home-screen widget beside the Today widget, showing the number of tasks the person completed today and a bar per day for the last 7 days, scaled to the busiest of them, with a one-letter weekday under each bar and the time of the last update; a tap SHALL open Statistics. It SHALL read only data the web app published through the bridge with the Today list: today's count and the 7-day series (days and numbers only, never task content), counted by the same rules as Statistics from the same local rows, and stored in the app's private storage (on iOS, the app group the widget shares with the app). The widget SHALL never make a request of its own. While an encrypted account is locked, the web app SHALL publish today's count alone, and the widget SHALL show that count and say it is locked, without bars. A publication from a web app that publishes no completions SHALL leave the widget asking the person to open the app. The bars SHALL use the theme's accent and track colours as the launcher (on iOS, the system) resolves them for light and dark. Completing a task from the widget is out of scope.
 
 #### Scenario: A day's completions appear
 - **WHEN** the person completes three tasks today and the web app publishes
@@ -454,7 +454,7 @@ A shell that runs the web app in the background MAY offer the bridge capability 
 - **THEN** the run ends at its limit, as before
 
 ### Requirement: Launch screen until the page shows
-A shell SHALL open on a launch screen in the web app's default canvas colour, light or dark with the phone's appearance, and SHALL keep it until the shell has something to show: the page of the server ready to be drawn, a sign-in page, an error screen or a dialog of the shell. Between the launch screen and what follows, the shell SHALL NOT show an empty web view. On Android the launch screen SHALL carry the app's icon. The launch screen SHALL NOT outlast five seconds from the start of the load: after that the shell shows the web view with whatever it has, so a slow server still gets the screens it had. The bar colour and icons the shell remembers from the last run (see "System bars follow the app's theme") SHALL appear together with the page, not over the launch screen. The launch screen SHALL need no dependency and no permission. This is presentation only: it reads and writes no task data, works the same offline (a start from the stored copy ends it like any page), and changes nothing that syncs.
+A shell SHALL open on a launch screen in the web app's default canvas colour, light or dark with the phone's appearance, and SHALL keep it until the shell has something to show: the page of the server ready to be drawn (in a shell that lists `first-paint`, the web app's first drawn frame; otherwise the end of the page's load), a sign-in page, an error screen or a dialog of the shell. Between the launch screen and what follows, the shell SHALL NOT show an empty web view. On Android the launch screen SHALL carry the app's icon. The launch screen SHALL NOT outlast five seconds from the start of the load: after that the shell shows the web view with whatever it has, so a slow server still gets the screens it had. The bar colour and icons the shell remembers from the last run (see "System bars follow the app's theme") SHALL appear together with the page, not over the launch screen. The launch screen SHALL need no dependency and no permission. This is presentation only: it reads and writes no task data, works the same offline (a start from the stored copy ends it like any page), and changes nothing that syncs.
 
 #### Scenario: Cold start on Android
 - **WHEN** the user taps the app's icon on an Android phone in dark mode with a server configured
@@ -462,7 +462,11 @@ A shell SHALL open on a launch screen in the web app's default canvas colour, li
 
 #### Scenario: Cold start on iPhone
 - **WHEN** the user opens the iOS app in light mode with a server configured
-- **THEN** the light canvas colour shows until the page has loaded, and the page follows with no white web view between them
+- **THEN** the light canvas colour shows until the web app has drawn its first frame, and the page follows with no white web view between them
+
+#### Scenario: A page that keeps loading after its first frame
+- **WHEN** the iOS app opens on a web app that has drawn its loading frame while its page has not finished loading
+- **THEN** the launch screen goes with that frame, not when the page finishes loading or five seconds have passed
 
 #### Scenario: A slow server
 - **WHEN** the page has not loaded five seconds after the start
@@ -604,9 +608,45 @@ The iOS shell SHALL NOT show the system's link preview when a link in the web ap
 - **WHEN** the user taps a link to another site in a comment
 - **THEN** it opens in the system browser as before
 
+### Requirement: No native overscroll effect on Android
+The Android shell SHALL NOT draw the platform's overscroll glow or stretch over the page; the page's own scrolling decides what happens at an edge. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: The end of a list
+- **WHEN** a person flings to the end of a long list in the Android app
+- **THEN** no glow or stretch appears
+
 ### Requirement: Haptic kinds for outcomes and selection
 The shells SHALL accept the haptic kinds `warning`, `error` and `selection` besides `tick` and `success`, map each to the platform's own feedback, and play `tick` for a kind they do not know. On a device without haptics, nothing SHALL play. It changes no data, so offline behaviour and convergence are unaffected.
 
 #### Scenario: An older shell
 - **WHEN** the page asks a shell that knows only `tick` and `success` for `selection`
 - **THEN** the shell plays `tick` and reports no error
+
+### Requirement: A status bar tap reaches the page
+The iOS shell SHALL deliver a tap on the status bar to the page as a scroll-to-top event and SHALL list the `scroll-top` capability. The web view itself SHALL NOT scroll in response. Shells without the capability SHALL behave as before. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: A tap on the status bar in the iPhone app
+- **WHEN** a person scrolled far down the Inbox in the iPhone app and taps the status bar
+- **THEN** the page receives one scroll-to-top event and the web view does not move
+
+### Requirement: The web app says when its first frame is drawn
+A shell that keeps its web view hidden until the page shows (the iOS shell) SHALL list the bridge capability `first-paint` in its visible app. The web app SHALL call the bridge method `painted`, without arguments, once per page load, after its first frame with the app's own content (the loading skeleton or a screen) has been drawn, and SHALL NOT call it in a shell that does not list the capability. On that call the shell SHALL show its web view at once, whether or not the page has finished loading. A web app of a server that does not know the method leaves the shell showing it when the page has loaded, as before. The background run SHALL NOT list the capability, and a call from it SHALL show nothing. The bridge version SHALL stay 1, and the call SHALL be part of the shared bridge fixtures. The call hands over no data, works offline and stores nothing.
+
+#### Scenario: The first frame ends the launch screen
+- **WHEN** the iOS app opens and the web app draws its loading skeleton while a script or font of the page is still loading
+- **THEN** the web app calls `painted` and the web view shows with the skeleton, before the page has finished loading
+
+#### Scenario: An older server
+- **WHEN** the iOS app loads the web app of a server that does not know `painted`
+- **THEN** the web view shows when the page has loaded, or after five seconds
+
+#### Scenario: A shell without the capability
+- **WHEN** the web app runs in the Android app or in a browser
+- **THEN** `first-paint` is not listed and `painted` is not called
+
+### Requirement: No keyboard accessory bar in the iOS app
+The iOS shell SHALL NOT show the web view's keyboard accessory bar above the on-screen keyboard. If the platform changes so it cannot be removed, the app SHALL keep working with the bar. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: Editing a title in the iPhone app
+- **WHEN** a person taps a task title to edit it in the iPhone app
+- **THEN** the keyboard opens without the previous, next and Done bar

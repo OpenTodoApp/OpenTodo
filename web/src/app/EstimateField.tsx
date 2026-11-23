@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { formatMinutes, parseDuration } from '../lib/duration'
-import { updateTask } from '../lib/ops'
 import type { Task } from '../lib/types'
 import { estimateFocus } from './signals'
 import { t } from '../lib/i18n'
+import { estimateUndoable } from '../lib/undoActions'
 import { act } from './actionError'
 
 /** The editor's presets (sidebar-brand-and-row-grid D5): four common sizes. */
@@ -45,7 +45,7 @@ export function EstimateField({ task }: { task: Task }) {
 
   const set = (minutes: number | null) => {
     setError(null)
-    if (minutes !== task.estimate_minutes) act(updateTask(task.id, { estimate_minutes: minutes }))
+    if (minutes !== task.estimate_minutes) act(estimateUndoable(task.id, minutes))
     setDraft(minutes ? formatMinutes(minutes) : '')
   }
 

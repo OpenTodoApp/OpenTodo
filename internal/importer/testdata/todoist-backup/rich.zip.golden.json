@@ -8,7 +8,7 @@
     "skip": 0,
     "error": 0,
     "possibleDuplicates": 0,
-    "warnings": 6,
+    "warnings": 5,
     "newProjects": 1,
     "newLabels": 2,
     "newSections": 2,
@@ -20,7 +20,7 @@
     "timeEntries": 0,
     "places": 0,
     "notes": 0,
-    "entities": 27,
+    "entities": 29,
     "written": 0,
     "ops": 0
   },
@@ -139,10 +139,7 @@
       "sourceId": "todoist:4e7ff30d99c0123f:1",
       "kind": "task",
       "title": "Task with comments",
-      "outcome": "create",
-      "warnings": [
-        "comments appended to the description (their authors cannot be kept)"
-      ]
+      "outcome": "create"
     },
     {
       "row": 19,
@@ -260,15 +257,17 @@
     "task id-0016: title=\"Task with duration\" description=\"\" priority=4 created_at=1791979200000 due={\"date\":\"2026-09-20\",\"time\":\"09:00\"} estimate_minutes=45 origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"8510cc79740c3252:1\"} labels=[]",
     "task id-0017: title=\"Task with a day duration\" description=\"\" priority=4 created_at=1791979200000 origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"fe304439f5567bbc:1\"} labels=[]",
     "task id-0018: title=\"Task with two labels\" description=\"\" priority=4 created_at=1791979200000 origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"f8cc827de7376d5c:1\"} labels=[\"id-0005\",\"id-0019\"]",
-    "task id-0020: title=\"Task with comments\" description=\"Comments\\n\\n- Comment 1\\n- Comment 2\" priority=4 created_at=1791979200000 origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"4e7ff30d99c0123f:1\"} labels=[]",
-    "task id-0021: title=\"Task with an unknown date phrase\" description=\"\" priority=4 created_at=1791979200000 origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"a787fe485af29139:1\"} labels=[]",
-    "task id-0022: title=\"Unsectioned task\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"de6f2ce24fe60a42:1\"} labels=[]",
-    "task id-0023: title=\"Parent task\" description=\"\" priority=3 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"03e8e661f2480638:1\"} labels=[] section_id=\"id-0002\"",
-    "task id-0024: title=\"Subtask\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0023\" origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"13f0b1d1ad27aa23:1\"} labels=[] section_id=\"id-0002\"",
-    "task id-0025: title=\"Sub-subtask\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0024\" due={\"date\":\"2026-09-03\"} origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"e9fd7455fa2bc7c7:1\"} labels=[] section_id=\"id-0002\"",
-    "task id-0026: title=\"Second subtask\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0023\" origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"1381ca95f500912f:1\"} labels=[] section_id=\"id-0002\"",
-    "task id-0027: title=\"Task in section 2\" description=\"\" priority=2 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"5621403c48a44b8a:1\"} labels=[] section_id=\"id-0003\"",
+    "task id-0020: title=\"Task with comments\" description=\"\" priority=4 created_at=1791979200000 origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"4e7ff30d99c0123f:1\"} labels=[]",
+    "task id-0023: title=\"Task with an unknown date phrase\" description=\"\" priority=4 created_at=1791979200000 origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"a787fe485af29139:1\"} labels=[]",
+    "task id-0024: title=\"Unsectioned task\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"de6f2ce24fe60a42:1\"} labels=[]",
+    "task id-0025: title=\"Parent task\" description=\"\" priority=3 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"03e8e661f2480638:1\"} labels=[] section_id=\"id-0002\"",
+    "task id-0026: title=\"Subtask\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0025\" origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"13f0b1d1ad27aa23:1\"} labels=[] section_id=\"id-0002\"",
+    "task id-0027: title=\"Sub-subtask\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0026\" due={\"date\":\"2026-09-03\"} origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"e9fd7455fa2bc7c7:1\"} labels=[] section_id=\"id-0002\"",
+    "task id-0028: title=\"Second subtask\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0025\" origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"1381ca95f500912f:1\"} labels=[] section_id=\"id-0002\"",
+    "task id-0029: title=\"Task in section 2\" description=\"\" priority=2 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"todoist\",\"id\":\"5621403c48a44b8a:1\"} labels=[] section_id=\"id-0003\"",
     "reminder id-0011: task_id=\"id-0010\" kind=\"relative\" offset_minutes=-30 fire_at=1792594800000 created_at=1791979200000 delivered_at=null dismissed_at=null",
-    "reminder id-0013: task_id=\"id-0012\" kind=\"absolute\" offset_minutes=null fire_at=1792566000000 created_at=1791979200000 delivered_at=null dismissed_at=null"
+    "reminder id-0013: task_id=\"id-0012\" kind=\"absolute\" offset_minutes=null fire_at=1792566000000 created_at=1791979200000 delivered_at=null dismissed_at=null",
+    "comment id-0021: task_id=\"id-0020\" author_id=\"user-1\" parent_id=null body=\"**Person 1**\\n\\nComment 1\" mentions=[] created_at=1791979200000 edited_at=null deleted_at=null",
+    "comment id-0022: task_id=\"id-0020\" author_id=\"user-1\" parent_id=null body=\"**Person 1**\\n\\nComment 2\" mentions=[] created_at=1791979200001 edited_at=null deleted_at=null"
   ]
 }

@@ -130,7 +130,7 @@ The settings:
 | `server-mcp-search` The MCP `search_tasks` tool (95th percentile) | ms | 200 | 800 |
 | `server-db-size` The database file | MB | 150 | 150 |
 
-`server-list-project` is 170 ms for now, temporarily: the CI runner's floor is about 156 ms (95 to 161 on unchanged code), against 117 ms on a developer machine. It goes back to 150 under #1656 once the runner profile explains the floor.
+**The server's time limits are relative to the runner.** Each run also times a fixed reference workload, SQLite reads and JSON of 2,000 rows, with the same driver as the server (`internal/perf/reference_test.go`). A server limit in ms or s is multiplied by that run's reference time over its baseline (`reference` in `budgets.json`), so a runner twice as slow is allowed twice the time. The absolute limit × 1.5 holds on any runner. Memory and sizes stay absolute. `server-list-project` is 170 ms: its floor is SQLite's cost per row, and the same code read 95 to 161 ms on different runners ([#1656](https://github.com/OpenTodoApp/OpenTodo/issues/1656)).
 
 ### With a year of note history
 
@@ -220,7 +220,8 @@ timing it, so a slow runner cannot make them fail:
   task (`internal/agenttools`).
 
 **Every night** the benchmark times every desktop, phone-profile and server
-metric five times and fails when a median is over its limit; the nightly alert
+metric five times and fails when a median is over its limit (a server time
+limit scaled to the runner, as above); the nightly alert
 names the metric, the median and the limit ("first sync, desktop, 41 s,
 budget 30 s").
 
@@ -233,7 +234,9 @@ budgets.
 
 The app marks a few moments in the browser's own performance timeline
 (`ot:list-ready`, `ot:search-results`, `ot:sync-idle`, `ot:remote-applied`). The
-benchmark reads them there; they are never sent anywhere.
+benchmark reads them there; they are never sent anywhere. `ot:search-results` is
+marked once per typed text, when the search's results show; the notes and filter
+results the search adds after a short pause are outside the `search-keystroke` number.
 
 ## Run the benchmark yourself
 

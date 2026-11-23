@@ -311,7 +311,7 @@ func prefixedTermOf(word string) (prefixedTerm, bool) {
 }
 
 var (
-	simpleKeywords = map[string]bool{"overdue": true, "today": true, "tomorrow": true, "completed": true, "open": true, "subtask": true, "someday": true, "deferred": true, "evening": true, "morning": true, "afternoon": true, "blocked": true, "unblocked": true, "available": true, "habit": true, "origin": true, "energy": true, "notes": true, "sector": true, "carried": true, "assigned": true, "unassigned": true}
+	simpleKeywords = map[string]bool{"overdue": true, "today": true, "tomorrow": true, "completed": true, "open": true, "subtask": true, "someday": true, "deferred": true, "evening": true, "morning": true, "afternoon": true, "blocked": true, "unblocked": true, "available": true, "habit": true, "recurring": true, "origin": true, "energy": true, "notes": true, "sector": true, "carried": true, "assigned": true, "unassigned": true}
 	noKeywords     = map[string]bool{"date": true, "project": true, "labels": true, "time": true, "deadline": true, "start": true, "origin": true, "energy": true, "notes": true, "sector": true, "section": true}
 	weekdays       = map[string]bool{"sunday": true, "monday": true, "tuesday": true, "wednesday": true, "thursday": true, "friday": true, "saturday": true}
 )

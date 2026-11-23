@@ -6,7 +6,9 @@ import android.app.Instrumentation
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.SystemClock
 import android.provider.Settings
+import android.view.MotionEvent
 import android.view.View
 import android.webkit.WebView
 import android.widget.TextView
@@ -20,6 +22,8 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
+import androidx.test.runner.lifecycle.Stage
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -92,8 +96,94 @@ class BridgeTest {
         val (scenario, web) = open()
         waitUntil("the web view shows", timeoutMs = 3_000) {
             var shown = false
-            scenario.onActivity { shown = web.visibility == View.VISIBLE }
+            scenario.onActivity { shown = web.alpha == 1f }
             shown
+        }
+    }
+
+    /**
+     * shell-reveal-on-paint D2: a page that says it has drawn shows at once, while its load is
+     * still held back by an image slower than the cap. Shown before the cap, counted from before
+     * the launch, so neither the end of the load nor the cap can have shown it; the call came
+     * from an animation frame, so the hidden web view runs them.
+     */
+    @Test fun thePagesFirstFrameShowsTheWebViewBeforeItsLoadEnds() {
+        server.rootPage = "<!doctype html><title>OpenTodo test</title><p>first frame</p><img src=\"/slow.png\">" +
+            "<script>requestAnimationFrame(function () { requestAnimationFrame(function () {" +
+            " if (window.opentodoShell && window.opentodoShell.capabilities.indexOf('first-paint') >= 0) window.opentodoShell.painted() }) })</script>"
+        val launchedAt = SystemClock.uptimeMillis()
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        lateinit var web: WebView
+        scenario.onActivity { web = it.findViewById(R.id.web) }
+        server.waitForPath("/slow.png")
+        // The hold starts after launchedAt, so the cap cannot show the web view before this.
+        val beforeTheCap = launchedAt + LaunchHold.CAP_MS - 200 - SystemClock.uptimeMillis()
+        assertTrue("the page was requested too late to tell painted() from the cap", beforeTheCap > 0)
+        waitUntil("the web view shows before the page has loaded", timeoutMs = beforeTheCap) {
+            var shown = false
+            scenario.onActivity { shown = web.alpha == 1f }
+            shown
+        }
+        assertEquals("\"interactive\"", web.js("document.readyState"))
+    }
+
+    /** While the launch screen holds, the transparent page takes no touch and is hidden from accessibility. */
+    @Test fun theHeldWebViewIsHiddenFromTouchAndAccessibility() {
+        server.rootPage = "<!doctype html><title>OpenTodo test</title><p style=\"height:100vh\">held</p><img src=\"/slow.png\">" +
+            "<script>window.tapped = false; addEventListener('touchstart', function () { window.tapped = true })</script>"
+        val launchedAt = SystemClock.uptimeMillis()
+        // Not ActivityScenario.launch: on Android 12 and later the hold keeps the first frame back,
+        // and launch() returns only once a frame is drawn, which is after the hold.
+        val activity = launchWithoutWaiting()
+        val web: WebView = activity.findViewById(R.id.web)
+        val main = InstrumentationRegistry.getInstrumentation()
+        server.waitForPath("/slow.png")
+        web.waitForJs("typeof window.tapped", "\"boolean\"")
+        // The page neither paints nor loads in time, so only the cap can end the hold.
+        assertTrue("the page was ready too late to tap it while held",
+            SystemClock.uptimeMillis() < launchedAt + LaunchHold.CAP_MS - 1_500)
+        main.runOnMainSync {
+            assertEquals("still held", 0f, web.alpha)
+            assertEquals(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS, web.importantForAccessibility)
+            tap(web)
+        }
+        // Long enough for a tap to reach the page, still inside the hold (checked again after).
+        Thread.sleep(1_000)
+        assertEquals("a tap on the held page reached it", "false", web.js("window.tapped"))
+        main.runOnMainSync { assertEquals("held while the tap was checked", 0f, web.alpha) }
+        waitUntil("the cap shows the web view", timeoutMs = LaunchHold.CAP_MS + 3_000) {
+            var shown = false
+            main.runOnMainSync { shown = web.alpha == 1f }
+            shown
+        }
+        main.runOnMainSync { assertEquals(View.IMPORTANT_FOR_ACCESSIBILITY_AUTO, web.importantForAccessibility) }
+        // The same tap reaches the shown page, so the "false" above is the block's doing.
+        waitUntil("a tap on the shown page reaches it") {
+            main.runOnMainSync { tap(web) }
+            web.js("window.tapped") == "true"
+        }
+    }
+
+    /** Starts the app and returns its activity once resumed, without waiting for a drawn frame. */
+    private fun launchWithoutWaiting(): MainActivity {
+        context.startActivity(Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        var activity: MainActivity? = null
+        waitUntil("the app's activity resumes") {
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                activity = ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED)
+                    .filterIsInstance<MainActivity>().firstOrNull { !it.isFinishing } // not the last test's, still going
+            }
+            activity != null
+        }
+        return activity!!
+    }
+
+    private fun tap(web: WebView) {
+        val at = SystemClock.uptimeMillis()
+        for (action in listOf(MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP)) {
+            val e = MotionEvent.obtain(at, at, action, web.width / 2f, web.height / 2f, 0)
+            web.dispatchTouchEvent(e)
+            e.recycle()
         }
     }
 

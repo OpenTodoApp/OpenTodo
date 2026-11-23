@@ -58,7 +58,8 @@ await flow('skip link reaches the content', async () => {
 await flow('quick add with q, a date typed in the line', async () => {
   await p.goto(base + '/today'); await p.locator('[data-task-id]').first().waitFor(); await settle()
   await k('q'); await settle()
-  expect(await p.evaluate(() => document.activeElement?.tagName === 'INPUT' || document.activeElement?.isContentEditable), 'q did not focus the quick add field')
+  // The quick add line is a textarea.
+  expect(await p.evaluate(() => ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName ?? '') || document.activeElement?.isContentEditable), 'q did not focus the quick add field')
   await p.keyboard.type('Keyboard only task today'); await k('Enter'); await settle(); await k('Escape'); await settle()
   await p.locator('[data-task-id]').filter({ hasText: 'Keyboard only task' }).first().waitFor({ timeout: 5000 })
 })

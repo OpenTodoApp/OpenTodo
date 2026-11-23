@@ -63,7 +63,7 @@ describe('the note pane width', () => {
     expect(handle.getAttribute('role')).toBe('separator')
     expect(handle.getAttribute('aria-label')).toBe('Resize the note')
     expect(handle.parentElement).toBe(pane)
-    expect(pane.className).toContain('lg:relative')
+    expect(pane.className).toContain('min-[56.25rem]:relative')
     expect(pane.querySelector('[data-note-column] [data-note-form]')).toBeTruthy()
     expect(root.hasAttribute('data-note-split')).toBe(true)
   })

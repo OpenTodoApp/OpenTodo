@@ -13,7 +13,7 @@ function fixture() {
   const files = {
     'index.html': '<div id=root></div>', 't.html': '<p>task</p>', 'sw.js': 'self.x=1', 'registerSW.js': 'r',
     'assets/index-a1.js': 'main', 'assets/MapView-b2.js': 'map', 'assets/maplibre-gl-worker-c3.js': 'w', 'assets/t-d4.js': 't',
-    'assets/index-a1.css': 'css', 'assets/CREDITS-e5.md': '# c', 'favicon.svg': '<svg/>', 'manifest.webmanifest': '{}', '.gitkeep': '',
+    'assets/index-a1.css': 'css', 'assets/CREDITS-e5.md': '# c', 'assets/lang-de-f6.js': 'de', 'assets/de-g7.js': 'aisles', 'favicon.svg': '<svg/>', 'manifest.webmanifest': '{}', '.gitkeep': '', 'assets/index-a1.js.gz': 'gz',
   }
   for (const [p, body] of Object.entries(files)) {
     mkdirSync(path.dirname(path.join(dist, p)), { recursive: true })
@@ -31,7 +31,7 @@ describe('app-manifest.mjs', () => {
     expect(env).toMatchObject({ format: 1, signatures: [] })
     const m = payloadOf(env)
     expect(m).toMatchObject({ app: 'opentodo-web', version: '1.3.0', refuse: false, keys: [{ spki: 'K', role: 'release' }] })
-    expect(Object.keys(m.files).sort()).toEqual(Object.keys(files).filter((p) => p !== 'manifest.webmanifest' && p !== '.gitkeep').sort())
+    expect(Object.keys(m.files).sort()).toEqual(Object.keys(files).filter((p) => p !== 'manifest.webmanifest' && p !== '.gitkeep' && !p.endsWith('.gz')).sort())
     for (const [p, f] of Object.entries(m.files)) {
       expect(f.sha256).toBe(createHash('sha256').update(files[p]).digest('hex'))
       expect(f.size).toBe(Buffer.byteLength(files[p]))
@@ -41,7 +41,11 @@ describe('app-manifest.mjs', () => {
       'index.html': 'install', 't.html': 'lazy', 'sw.js': 'lazy', 'registerSW.js': 'install',
       'assets/index-a1.js': 'install', 'assets/MapView-b2.js': 'lazy', 'assets/maplibre-gl-worker-c3.js': 'lazy', 'assets/t-d4.js': 'lazy',
       'assets/index-a1.css': 'install', 'assets/CREDITS-e5.md': 'install', 'favicon.svg': 'install',
+      'assets/lang-de-f6.js': 'lazy', 'assets/de-g7.js': 'install',
     })
+    // precache-device-language D2: a catalogue names its language; nothing else does.
+    expect(m.files['assets/lang-de-f6.js'].lang).toBe('de')
+    expect(Object.entries(m.files).filter(([, f]) => f.lang).map(([p]) => p)).toEqual(['assets/lang-de-f6.js'])
   })
 
   it('marks a preview build and defaults the version', () => {

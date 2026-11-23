@@ -109,6 +109,12 @@ export interface Report {
 export interface FileState {
   project: string
   hash: string
+  /** When the file was first held as half saved (unix ms; engine.ts halfSaved), while it stays empty or cut short. */
+  held?: number
+  /** The length in UTF-8 bytes of what was written (state.go FileState.Size). */
+  size?: number
+  /** prefixHash of each prefix of what was written that ends at a line end, in order; none past MAX_PREFIXES lines. */
+  prefixes?: string[]
 }
 
 /** The vault's state file, .opentodo/state.json (version 2, state.go). */
@@ -124,6 +130,8 @@ export interface State {
   backfill_ack?: number
   shared?: string[]
   store: import('./store').Store
+  /** Rows a half-saved file held was printed from (state.go State.Held): its next read merges against them. */
+  held?: import('./store').Store
   files: Record<string, FileState>
   printed: Record<string, string>
   extra?: Record<string, string>

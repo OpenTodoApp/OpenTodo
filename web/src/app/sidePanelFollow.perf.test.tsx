@@ -7,6 +7,7 @@
 // listPerformance.perf.test.tsx.
 /* eslint-disable test-hygiene/no-fixed-wait -- measurement windows of the render budget */
 import 'fake-indexeddb/auto'
+import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useDatabase } from '../lib/db'
 import { applyOps, createProject, resetDeviceId } from '../lib/ops'
@@ -37,6 +38,7 @@ beforeEach(() => {
   useDatabase(`side-panel-follow-${Date.now()}`)
   resetDeviceId()
   localStorage.clear()
+  vi.stubGlobal('innerWidth', 1440)
   mockFetch(noPublicLinks)
   vi.stubGlobal('matchMedia', (q: string) => ({
     matches: /pointer:\s*fine/.test(q) ? true : /pointer:\s*coarse/.test(q) ? false : minWidthPx(q) <= 1440,
@@ -63,7 +65,7 @@ async function seed(count: number, projectId: string) {
 }
 
 describe('the side panel at scale', () => {
-  it(`j and k draw the list once and two rows per press (${ROWS} rows)`, async () => {
+  it(`j, k and a first click update only the affected rows (${ROWS} rows)`, async () => {
     await setTaskOpen('panel')
     const project = await createProject({ name: 'Big' })
     await seed(ROWS, project)
@@ -72,17 +74,24 @@ describe('the side panel at scale', () => {
     await flush(50)
     const docked = () => document.querySelector('[data-detail-variant="panel"]')?.getAttribute('data-detail-for') ?? null
     const rows: number[] = [], lists: number[] = []
-    for (const k of ['j', 'j', 'j', 'k']) {
+    const clickOther = () => act(async () => {
+      const title = r.container.querySelector('[data-task-id="t00005"] [data-row-title]')!
+      const pointer = { bubbles: true, pointerType: 'mouse', pointerId: 1, button: 0 }
+      title.dispatchEvent(new PointerEvent('pointerdown', pointer))
+      title.dispatchEvent(new PointerEvent('pointerup', pointer))
+      title.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }))
+    })
+    for (const select of [...['j', 'j', 'j', 'k'].map((k) => () => key(document.activeElement ?? document.body, k)), clickOther]) {
       const before = docked()
       rowRenders.n = 0
       listRenders.n = 0
-      await key(document.activeElement ?? document.body, k)
+      await select()
       await waitFor(() => docked() !== null && docked() !== before, 'the panel follows', 10_000)
       await flush(20)
       rows.push(rowRenders.n)
       lists.push(listRenders.n)
     }
-    console.info(`[row-click-modes] with the side panel, per j/k press with ${ROWS} rows: row renders ${rows.join(', ')}; list renders ${lists.join(', ')}`)
+    console.info(`[click-selects-title] j/j/j/k and click with ${ROWS} rows: row renders ${rows.join(', ')}; list renders ${lists.join(', ')}`)
     for (const n of rows) expect(n).toBeLessThanOrEqual(4)
     // The first press also opens the panel's first task (the list's click-away starts listening); every later one draws the list once.
     expect(lists[0]).toBeLessThanOrEqual(2)

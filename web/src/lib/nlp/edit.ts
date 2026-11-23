@@ -31,6 +31,8 @@ export interface EditPlan {
   /** Label names typed, in order; resolved (and created) by the caller, then added. */
   labels: string[]
   reminders: ParseResult['reminders']
+  /** URLs typed in this edit, attached as links on commit (quick-add-links D5). */
+  links?: string[]
 }
 
 /** The plan for a parse of an edited title; an empty patch apart from the title when nothing was recognised. */
@@ -48,5 +50,5 @@ export function editPlan(task: Pick<Task, 'title' | 'project_id'>, r: ParseResul
   if (r.estimateMinutes) patch.estimate_minutes = r.estimateMinutes
   if (r.recurrence) patch.recurrence = r.recurrence
   if (r.projectId && r.projectId !== (task.project_id ?? null)) patch.project_id = r.projectId
-  return { patch, labels: r.labels, reminders: r.reminders }
+  return { patch, labels: r.labels, reminders: r.reminders, ...(r.links.length ? { links: r.links } : {}) }
 }

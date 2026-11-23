@@ -1,0 +1,1 @@
+- **Importing a file on Android no longer greys out `.csv` or `.sqlite`.** The app's file picker offered only the types the import field named, which some devices could not match to those extensions, leaving the files unselectable. It now offers every file, so an export from another app can be chosen. (#1606)

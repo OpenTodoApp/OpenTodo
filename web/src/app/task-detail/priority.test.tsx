@@ -69,11 +69,14 @@ describe('priority part', () => {
 
   it('1–4 inside the panel set the priority', async () => {
     const id = await createTask({ title: 'Plan' })
-    const { row, valueButton, unmount } = await open(id)
+    const { container, row, valueButton, unmount } = await open(id)
     valueButton('project').focus()
     await key(document.activeElement!, '3')
     await waitFor(() => visibleText(row('priority')) === 'P3', 'the part reads P3')
     expect((await db.tasks.get(id))!.priority).toBe(3)
+    const ring = container.querySelector('[data-panel-complete] .rounded-full')?.className
+    expect(ring).toContain('border-p3')
+    expect(ring).not.toContain('bg-p3')
     await unmount()
   })
 

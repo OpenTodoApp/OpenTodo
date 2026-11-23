@@ -1,11 +1,13 @@
 import { Icon } from '../ui'
 import { keysOf } from '../lib/shortcuts'
 import { Tooltip } from '../ui'
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { useSeriesRecords } from '../lib/localData'
 import { formatShort, logicalToday, weekday } from '../lib/dates'
 import { habitRule } from '../lib/habits'
-import { detachOccurrence, setRecurrence, skipOccurrence } from '../lib/ops'
+import { detachOccurrence } from '../lib/ops'
+import { skipOccurrence, recurrenceUndoable } from '../lib/undoActions'
 import { firstOccurrence, parseRule, previewOccurrences, RULE_SUGGESTIONS } from '../lib/recurrence'
 import { loadQuickAddSettings, resolveDayMonthOrder, resolveLanguages } from '../lib/nlp'
 import { ruleFromText, type RepeatPhraseContext } from '../lib/nlp/repeatPhrase'
@@ -77,7 +79,7 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
 
   const commit = async () => {
     setNotice(null)
-    const res = await setRecurrence(task.id, read ?? draft)
+    const res = await recurrenceUndoable(task.id, read ?? draft)
     if (!res.ok) setError(res.error)
     else {
       setError(null)
@@ -117,7 +119,7 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
           }}
         />
         {task.recurrence && (
-          <button className="ui-btn ui-btn--ghost ui-btn--md" aria-label={t('Stop repeating')} onClick={() => { setDraft(''); act(setRecurrence(task.id, null)) }}><Icon name="x" /></button>
+          <button className="ui-btn ui-btn--ghost ui-btn--md" aria-label={t('Stop repeating')} onClick={() => { setDraft(''); act(recurrenceUndoable(task.id, null)) }}><Icon name="x" /></button>
         )}
       </div>
       <datalist id="recurrence-suggestions">

@@ -13,6 +13,8 @@ import type { LabelRef, ProjectRef } from '../lib/nlp'
 import { t } from '../lib/i18n'
 import { energyName } from '../lib/energy'
 import { hueFor, Icon } from '../ui'
+import { useTickedItems } from '../lib/tickedItems'
+import { useTickedSuggest } from './quickadd/TickedSuggest'
 
 interface Item { key: string; label: string; secondary?: string; color?: string; level?: number; create?: boolean; run: () => Promise<string> | string }
 
@@ -30,9 +32,15 @@ export interface TokenSuggestOptions {
   enabled: boolean
   /** The account offers energy (task-energy D3): `~` suggests the three levels. */
   energy?: boolean
+  /** A reusable list: its ticked items are suggested by name while no token is (reusable-suggest, #1839). */
+  reuseProjectId?: string | null
+  /** The typed name without its tokens, matched against the ticked items. */
+  tickedQuery?: string
+  /** Adds a ticked item by its exact name, which reopens it. */
+  onTicked?: (title: string) => void
 }
 
-export function useTokenSuggest({ input, value, setValue, projects, labels, enabled, energy = false }: TokenSuggestOptions) {
+export function useTokenSuggest({ input, value, setValue, projects, labels, enabled, energy = false, reuseProjectId, tickedQuery, onTicked }: TokenSuggestOptions) {
   const listId = useId()
   const [caret, setCaret] = useState<number | null>(null)
   const [active, setActive] = useState(0)
@@ -40,6 +48,9 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
   const [closedAt, setClosedAt] = useState<number | null>(null)
   const at: TokenAtCaret | null = enabled && caret !== null ? tokenAtCaret(value, caret, { energy }) : null
   const open = !!at && closedAt !== at.start
+  // Only while the field has focus (caret), and no query at all until two characters are typed.
+  const typed = (tickedQuery ?? value).trim().length >= 2
+  const ticked = useTickedSuggest({ items: useTickedItems(typed ? reuseProjectId : null), query: tickedQuery ?? value, enabled: !open && !!onTicked && caret !== null, onPick: (item) => onTicked?.(item.title) })
 
   const items = useMemo<Item[]>(() => {
     if (!at) return []
@@ -84,7 +95,7 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
 
   /** Runs before the field's own key handling; true when the key was the list's. */
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>): boolean => {
-    if (!open || !items.length) return false
+    if (!open || !items.length) return ticked.onKeyDown(e)
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault()
       setActive((i) => (i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length)
@@ -124,6 +135,7 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
     'aria-expanded': shown,
     'aria-controls': shown ? listId : undefined,
     'aria-activedescendant': activeId,
+    'data-claims-escape': shown ? '' : undefined, // Esc closes the list, not the sheet around it
     // The caret moves with typing (input), keys, clicks and selection.
     onInput: track,
     onSelect: track,
@@ -131,6 +143,7 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
     onClick: track,
     onFocus: track,
     onBlur: () => setCaret(null),
+    ...ticked.aria,
   }
 
   const list = shown ? (
@@ -157,5 +170,5 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
     </ul>
   ) : null
 
-  return { fieldProps, onKeyDown, list, openAt, open: shown }
+  return { fieldProps, onKeyDown, list: list ?? ticked.list, openAt, open: shown }
 }

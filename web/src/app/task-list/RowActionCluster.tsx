@@ -4,15 +4,16 @@
 // inside it. They are real buttons at all times (reachable by Tab, never hover-only);
 // CSS shows them only on a fine pointer from 768 px, and on touch they are not
 // displayed at all, so they are neither tab stops nor heard there. Each writes through
-// the same path as its key: Priority through updateTask, More through the list's
+// the same path as its key: Priority as one undo step, More through the list's
 // actions menu, Schedule through the panel's Do on editor.
-import { lazy, Suspense, useRef, useState, type KeyboardEvent } from 'react'
+import { Suspense, useRef, useState, type KeyboardEvent } from 'react'
+import { lazy } from '../../lib/lazy'
 import { act } from '../actionError'
-import { updateTask } from '../../lib/ops'
 import { priorityShort } from '../../lib/priority'
 import { keysOf } from '../../lib/shortcuts'
 import type { Priority, Task } from '../../lib/types'
 import { t } from '../../lib/i18n'
+import { priorityUndoable } from '../../lib/undoActions'
 import { Icon, IconButton, Menu, MenuItem } from '../../ui'
 import { slotAction, slotLabel, useSlotState } from './slotActions'
 
@@ -74,7 +75,7 @@ export function RowActionCluster({ task, onMore, force = false, editable = true,
         trigger={<Icon name="flag" size="sm" />}
         triggerClassName="ui-btn ui-btn--icon ui-btn--ghost ui-btn--sm">
         {([1, 2, 3, 4] as Priority[]).map((p) => (
-          <MenuItem key={p} label={priorityShort(p)} checked={task.priority === p} onSelect={() => act(updateTask(task.id, { priority: p }))} />
+          <MenuItem key={p} label={priorityShort(p)} checked={task.priority === p} onSelect={() => act(priorityUndoable(task.id, p))} />
         ))}
       </Menu>
       {onMore && <IconButton icon="ellipsis" size="sm" label={t('More actions')} shortcut={keysOf('list.actions')} data-row-action="more" onClick={(e) => onMore(e.currentTarget)} />}

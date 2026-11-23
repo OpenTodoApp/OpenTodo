@@ -1,12 +1,21 @@
 package web
 
 import (
+	"bytes"
+	"compress/gzip"
+	"encoding/base64"
+	"encoding/json"
 	"io"
 	"io/fs"
+	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"testing/fstest"
+
+	"github.com/OpenTodoApp/opentodo/internal/websign"
 )
 
 func TestInjectNoIndex(t *testing.T) {
@@ -190,5 +199,211 @@ func TestThemeCreditsAsText(t *testing.T) {
 	handlerFor(sub, Options{}).ServeHTTP(rec, httptest.NewRequest("GET", "/assets/CREDITS-abc.md", nil))
 	if rec.Code != 200 || rec.Header().Get("Content-Type") != "text/plain; charset=utf-8" || rec.Body.String() != "# Credits\n" {
 		t.Fatalf("status %d, type %q, body %q", rec.Code, rec.Header().Get("Content-Type"), rec.Body.String())
+	}
+}
+
+// The build's gzip copies (OpenSpec change compressed-static-assets): sent when gzip is
+// accepted and the whole file asked for, never for a Range or a client without gzip.
+func TestCompressedAssets(t *testing.T) {
+	js := bytes.Repeat([]byte("const a = 1;\n"), 200)
+	var gz bytes.Buffer
+	zw := gzip.NewWriter(&gz)
+	zw.Write(js)
+	zw.Close()
+	sub := fstest.MapFS{
+		"index.html":           {Data: []byte("<html><head></head></html>")},
+		"assets/main-a1.js":    {Data: js},
+		"assets/main-a1.js.gz": {Data: gz.Bytes()},
+		"assets/font-b2.woff2": {Data: []byte("font")},
+		"assets/only-c3.js.gz": {Data: gz.Bytes()},
+	}
+	h := handlerFor(sub, Options{})
+	get := func(method, target string, hdr map[string]string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(method, target, nil)
+		for k, v := range hdr {
+			req.Header.Set(k, v)
+		}
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		return rec
+	}
+
+	rec := get(http.MethodGet, "/assets/main-a1.js", map[string]string{"Accept-Encoding": "br, gzip;q=0.8"})
+	if rec.Code != http.StatusOK || rec.Header().Get("Content-Encoding") != "gzip" {
+		t.Fatalf("gzip accepted: %d %q", rec.Code, rec.Header().Get("Content-Encoding"))
+	}
+	zr, err := gzip.NewReader(rec.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(zr)
+	if !bytes.Equal(body, js) {
+		t.Fatal("the gzip copy does not decode to the file")
+	}
+	for k, want := range map[string]string{
+		"Vary":           "Accept-Encoding",
+		"Content-Type":   "text/javascript; charset=utf-8",
+		"Content-Length": strconv.Itoa(gz.Len()),
+		"Cache-Control":  "public, max-age=31536000, immutable, no-transform",
+	} {
+		if got := rec.Header().Get(k); got != want {
+			t.Errorf("gzip answer %s = %q, want %q", k, got, want)
+		}
+	}
+
+	head := get(http.MethodHead, "/assets/main-a1.js", map[string]string{"Accept-Encoding": "gzip"})
+	if head.Header().Get("Content-Encoding") != "gzip" || head.Body.Len() != 0 {
+		t.Errorf("HEAD: encoding %q, body %d bytes", head.Header().Get("Content-Encoding"), head.Body.Len())
+	}
+
+	// The file as it is: no gzip, gzip refused, or a byte range (on the raw bytes).
+	for name, hdr := range map[string]map[string]string{
+		"no Accept-Encoding": {},
+		"gzip;q=0":           {"Accept-Encoding": "gzip;q=0, *"},
+		"identity only":      {"Accept-Encoding": "identity"},
+		"a byte range":       {"Accept-Encoding": "gzip", "Range": "bytes=0-9"},
+	} {
+		rec := get(http.MethodGet, "/assets/main-a1.js", hdr)
+		if rec.Header().Get("Content-Encoding") != "" {
+			t.Errorf("%s: Content-Encoding %q", name, rec.Header().Get("Content-Encoding"))
+		}
+		if rec.Header().Get("Vary") != "Accept-Encoding" {
+			t.Errorf("%s: Vary %q", name, rec.Header().Get("Vary"))
+		}
+		want := js
+		if hdr["Range"] != "" {
+			want = js[:10]
+			if rec.Code != http.StatusPartialContent {
+				t.Errorf("%s: status %d", name, rec.Code)
+			}
+		}
+		if !bytes.Equal(rec.Body.Bytes(), want) {
+			t.Errorf("%s: body is not the file", name)
+		}
+	}
+
+	// "*" covers gzip; a file without a copy is sent as it is, with no Vary.
+	if rec := get(http.MethodGet, "/assets/main-a1.js", map[string]string{"Accept-Encoding": "*"}); rec.Header().Get("Content-Encoding") != "gzip" {
+		t.Errorf("*: Content-Encoding %q", rec.Header().Get("Content-Encoding"))
+	}
+	if rec := get(http.MethodGet, "/assets/font-b2.woff2", map[string]string{"Accept-Encoding": "gzip"}); rec.Header().Get("Content-Encoding") != "" || rec.Header().Get("Vary") != "" {
+		t.Errorf("no copy: encoding %q, vary %q", rec.Header().Get("Content-Encoding"), rec.Header().Get("Vary"))
+	}
+
+	// A file the build keeps only compressed: the copy for gzip, else the decoded bytes.
+	if rec := get(http.MethodGet, "/assets/only-c3.js", map[string]string{"Accept-Encoding": "gzip"}); rec.Header().Get("Content-Encoding") != "gzip" || !bytes.Equal(rec.Body.Bytes(), gz.Bytes()) {
+		t.Errorf("gzip-only, gzip: encoding %q", rec.Header().Get("Content-Encoding"))
+	}
+	plain := get(http.MethodGet, "/assets/only-c3.js", nil)
+	if plain.Code != http.StatusOK || plain.Header().Get("Content-Encoding") != "" || !bytes.Equal(plain.Body.Bytes(), js) {
+		t.Errorf("gzip-only, no gzip: %d %q, body is the file: %v", plain.Code, plain.Header().Get("Content-Encoding"), bytes.Equal(plain.Body.Bytes(), js))
+	}
+	for k, want := range map[string]string{
+		"Content-Type":  "text/javascript; charset=utf-8",
+		"Vary":          "Accept-Encoding",
+		"Cache-Control": "public, max-age=31536000, immutable, no-transform",
+	} {
+		if got := plain.Header().Get(k); got != want {
+			t.Errorf("gzip-only, no gzip: %s = %q, want %q", k, got, want)
+		}
+	}
+	part := get(http.MethodGet, "/assets/only-c3.js", map[string]string{"Accept-Encoding": "gzip", "Range": "bytes=0-9"})
+	if part.Code != http.StatusPartialContent || !bytes.Equal(part.Body.Bytes(), js[:10]) || part.Header().Get("Content-Encoding") != "" {
+		t.Errorf("gzip-only, a byte range: %d %q", part.Code, part.Body.String())
+	}
+	if head := get(http.MethodHead, "/assets/only-c3.js", nil); head.Code != http.StatusOK || head.Body.Len() != 0 || head.Header().Get("Content-Length") != strconv.Itoa(len(js)) {
+		t.Errorf("gzip-only, HEAD: %d, %d bytes, length %q", head.Code, head.Body.Len(), head.Header().Get("Content-Length"))
+	}
+	// The compressed form is not a file of its own.
+	for _, target := range []string{"/assets/only-c3.js.gz", "/assets/main-a1.js.gz"} {
+		if rec := get(http.MethodGet, target, map[string]string{"Accept-Encoding": "gzip"}); rec.Code != http.StatusNotFound {
+			t.Errorf("%s: %d, want 404", target, rec.Code)
+		}
+	}
+}
+
+// A client without gzip gets a compressed-only file decoded, but never more than
+// its signed size: a form that decodes to more (a decompression bomb) is refused.
+func TestCompressedAssetDecodeCap(t *testing.T) {
+	gzipOf := func(b []byte) []byte {
+		var buf bytes.Buffer
+		zw, _ := gzip.NewWriterLevel(&buf, gzip.BestCompression)
+		zw.Write(b)
+		zw.Close()
+		return buf.Bytes()
+	}
+	small := bytes.Repeat([]byte("ok();"), 100)
+	payload, _ := json.Marshal(map[string]any{"app": websign.App, "files": map[string]any{
+		"assets/bomb-a1.js": map[string]any{"sha256": "00", "size": 200, "load": "install"},
+		"assets/ok-b2.js":   map[string]any{"sha256": "00", "size": len(small), "load": "install"},
+	}})
+	envelope, _ := json.Marshal(map[string]any{"format": websign.Format, "payload": base64.RawURLEncoding.EncodeToString(payload), "signatures": []any{}})
+	sub := fstest.MapFS{
+		"index.html":           {Data: []byte("<html><head></head></html>")},
+		websign.FileName:       {Data: envelope},
+		"assets/bomb-a1.js.gz": {Data: gzipOf(make([]byte, 64<<20))},
+		"assets/ok-b2.js.gz":   {Data: gzipOf(small)},
+	}
+	h := handlerFor(sub, Options{})
+	get := func(target string) *httptest.ResponseRecorder {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, target, nil))
+		return rec
+	}
+	if rec := get("/assets/bomb-a1.js"); rec.Code != http.StatusInternalServerError || rec.Body.Len() > 1024 {
+		t.Errorf("bomb: %d, %d bytes; want a short 500", rec.Code, rec.Body.Len())
+	}
+	if rec := get("/assets/ok-b2.js"); rec.Code != http.StatusOK || !bytes.Equal(rec.Body.Bytes(), small) {
+		t.Errorf("a file within its signed size: %d", rec.Code)
+	}
+}
+
+// A compressed-only file is decoded once, however many clients without gzip or Range
+// requests ask for it (security read of #1753), and decoded as a browser decodes it:
+// a form of two gzip members is refused, not served as their join.
+func TestCompressedAssetDecodedOnce(t *testing.T) {
+	member := func(b []byte) []byte {
+		var buf bytes.Buffer
+		zw := gzip.NewWriter(&buf)
+		zw.Write(b)
+		zw.Close()
+		return buf.Bytes()
+	}
+	js := bytes.Repeat([]byte("const a = 1;\n"), 200)
+	sub := fstest.MapFS{
+		"index.html":          {Data: []byte("<html><head></head></html>")},
+		"assets/big-a1.js.gz": {Data: member(js)},
+		"assets/two-b2.js.gz": {Data: append(member(js[:100]), member(js[100:])...)},
+	}
+	h := handlerFor(sub, Options{})
+	get := func(target, rng string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, target, nil)
+		if rng != "" {
+			req.Header.Set("Range", rng)
+		}
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		return rec
+	}
+	before := decodeCount.Load()
+	var wg sync.WaitGroup
+	for i := 0; i < 50; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if rec := get("/assets/big-a1.js", "bytes=0-0"); rec.Code != http.StatusPartialContent || rec.Body.String() != "c" {
+				t.Errorf("Range: %d %q", rec.Code, rec.Body.String())
+			}
+		}()
+	}
+	wg.Wait()
+	if rec := get("/assets/big-a1.js", ""); rec.Code != http.StatusOK || !bytes.Equal(rec.Body.Bytes(), js) {
+		t.Errorf("whole file: %d", rec.Code)
+	}
+	if n := decodeCount.Load() - before; n != 1 {
+		t.Errorf("51 requests decoded the file %d times, want once", n)
+	}
+	if rec := get("/assets/two-b2.js", ""); rec.Code != http.StatusInternalServerError {
+		t.Errorf("two gzip members: %d, want 500", rec.Code)
 	}
 }

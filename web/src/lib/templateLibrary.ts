@@ -54,7 +54,8 @@ let cache: Promise<Library> | null = null
 
 /** The library of this release; one lazy chunk, loaded when the template dialog opens. */
 export function loadLibrary(): Promise<Library> {
-  cache ??= import('../generated/templates.json').then((m) => m.default as Library)
+  // A failed load (offline) is forgotten, so the next call fetches again (lazy-retry-online).
+  cache ??= import('../generated/templates.json').then((m) => m.default as Library, (err: unknown) => { cache = null; throw err })
   return cache
 }
 

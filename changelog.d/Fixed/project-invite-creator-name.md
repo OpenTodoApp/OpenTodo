@@ -1,0 +1,1 @@
+- **A project's invite links name a creator who has no name** the same way the workspace invite links and an opened link do.

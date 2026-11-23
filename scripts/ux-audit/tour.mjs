@@ -332,7 +332,7 @@ async function reducedMotion(ids) {
   const moments = MOTION_WIDTHS.flatMap((width) => [
     ...tourable.filter((e) => e.kind === 'overlay' && (e.layoutCheck ?? e.open?.overlay) && e.on && (!e.widths || e.widths.includes(width))
       && (!hostOf(e, ids).widths || hostOf(e, ids).widths.includes(width))).map((e) => ({ id: e.id, width, screen: e.on, act: (p) => openOverlay(p, e, width) })),
-    ...(!ONLY || ONLY.has('today') ? [{ id: 'today', width, screen: 'today', act: (p) => p.locator('[data-task-id]').filter({ hasText: width === 1280 ? 'Get three quotes' : 'Renew passport' }).first().locator('.group\\/check').first().click() }] : []),
+    ...(!ONLY || ONLY.has('today') ? [{ id: 'today', width, screen: 'today', act: (p) => p.locator('[data-task-id]').filter({ hasText: width === 1280 ? 'Pay the electricity bill' : 'Renew passport' }).first().locator('.group\\/check').first().click() }] : []),
     ...(width === 1280 ? DRAGS.filter((d) => !ONLY || ONLY.has(d.screen)).map((d) => ({ id: `${d.screen}-drag`, width, screen: d.screen, act: (p) => drag(p, d) })) : []),
   ])
   for (const width of MOTION_WIDTHS) {
@@ -371,6 +371,8 @@ async function reducedMotion(ids) {
 
 // Each width completes its own task in Today (the account is shared by both passes);
 // 360 px runs last and keeps "Renew passport", which Today's ready check looks for, until then.
+// 1280 px completes a task no opener uses: "Get three quotes" completed there left the 360 px
+// openers of the task panel, the When popover and the location editor without their row.
 const MOTION_WIDTHS = [1280, 360]
 /** The drags M15 watches: a card to the next column, a Plan task to the next day, a Week block down an hour. */
 const DRAGS = [

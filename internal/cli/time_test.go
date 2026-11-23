@@ -180,3 +180,58 @@ func TestAddNaturalSpent(t *testing.T) {
 		t.Fatalf("entries = %s", out)
 	}
 }
+
+// ot add --natural attaches the links of the line (quick-add-links 3.1): once
+// each, never the --origin-url again, and a retry with a key converges.
+func TestAddNaturalLinks(t *testing.T) {
+	h := newHarness(t)
+	h.loginAdmin()
+	line := "Review the mockup https://example.com/mockup https://example.com/brief. tomorrow"
+	h.mustRun("add", "--natural", line, "--origin-url", "https://example.com/brief", "--idempotency-key", "mock-1")
+	id := strings.TrimSpace(h.mustRun("add", "--natural", line, "--origin-url", "https://example.com/brief", "--idempotency-key", "mock-1"))
+	task := h.apiJSON("GET", "/api/v1/tasks/"+id, nil)
+	if task["title"] != "Review the mockup" {
+		t.Fatalf("task = %v", task)
+	}
+	got := h.apiJSON("GET", "/api/v1/tasks/"+id+"/attachments", nil)
+	items, _ := got["attachments"].([]any)
+	if len(items) != 1 || items[0].(map[string]any)["url"] != "https://example.com/mockup" || items[0].(map[string]any)["name"] != "example.com" {
+		t.Fatalf("attachments = %v", got)
+	}
+	// The same link in another spelling, and the origin with a trailing slash, are not attached again.
+	id = strings.TrimSpace(h.mustRun("add", "--natural", "Read https://Example.com/a https://example.com/a https://example.com", "--origin-url", "https://example.com/"))
+	items, _ = h.apiJSON("GET", "/api/v1/tasks/"+id+"/attachments", nil)["attachments"].([]any)
+	if len(items) != 1 || items[0].(map[string]any)["url"] != "https://example.com/a" {
+		t.Fatalf("attachments = %v", items)
+	}
+}
+
+// A line with a link is never matched to an item of a reusable list (quick-add-links D2).
+func TestAddNaturalLinksSkipReuse(t *testing.T) {
+	h := newHarness(t)
+	h.login()
+	h.mustRun("project", "add", "Groceries")
+	h.mustRun("project", "edit", "Groceries", "--reusable")
+	milk := strings.TrimSpace(h.mustRun("add", "Milk", "--project", "Groceries"))
+	h.mustRun("done", milk)
+	other := strings.TrimSpace(h.mustRun("add", "--natural", "Milk https://shop.example/oat #Groceries"))
+	if other == milk || other == "" {
+		t.Fatalf("the link line reused %s", milk)
+	}
+	if got := h.task(milk); got["completed_at"] == nil {
+		t.Fatalf("the ticked item was reopened: %v", got)
+	}
+}
+
+// An agent token cannot attach: its links stay in the title (quick-add-links D3).
+func TestAddNaturalLinksAgentToken(t *testing.T) {
+	h := newHarness(t)
+	h.seedViews()
+	h.enableAgentWrites()
+	_, secret := h.apiToken2("agent")
+	h.setToken(secret)
+	id := strings.TrimSpace(h.mustRun("add", "--natural", "From agent https://a.example/x"))
+	if got := h.task(id); got["title"] != "From agent https://a.example/x" {
+		t.Fatalf("task = %v", got)
+	}
+}

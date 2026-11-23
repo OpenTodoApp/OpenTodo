@@ -5,7 +5,8 @@
 // computed on the device from the local rows, nothing is stored or sent, and the
 // page follows changes from other devices as they sync. Each move's part and the
 // pulse details are lazy chunks.
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { lazy } from '../../lib/lazy'
 import { t } from '../../lib/i18n'
 import { useAllLabels, useReviewRow, useReviewedAt, useUserPrefsRow } from '../../lib/localData'
 import { BENTO_SLOTS, orderedFocusIds, readBento, readFocusStyle } from '../../lib/bento'

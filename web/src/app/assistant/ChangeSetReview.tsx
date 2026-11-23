@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useId, useState, type KeyboardEvent, type RefObject } from 'react'
+import { Suspense, useEffect, useId, useState, type KeyboardEvent, type RefObject } from 'react'
+import { lazy } from '../../lib/lazy'
 import { Kbd } from '../shortcuts/Kbd'
 import type { Review, ReviewItem } from '../../lib/assistant'
 import { editableFields, shapeOf, type ItemEdits, type ProposalShape } from '../../lib/assistantShape'

@@ -2,9 +2,10 @@
 // task of a project with two or more members "Take turns…" (OpenSpec change
 // chore-rotation, design D5), which turns the same anchored popover into the
 // rotation editor. The rotation editor loads on first use.
-import { lazy, Suspense, useState, type RefObject } from 'react'
+import { Suspense, useState, type RefObject } from 'react'
+import { lazy } from '../../lib/lazy'
 import { useMembershipMap } from '../../lib/localData'
-import { updateTask } from '../../lib/ops'
+import { assigneeWithUndo } from '../undoable'
 import { canRotate, memberSet } from '../../lib/rotation'
 import type { Task } from '../../lib/types'
 import { Button, Skeleton, Switch } from '../../ui'
@@ -38,11 +39,11 @@ export function AssigneeEditor({ task, userId, solo, readOnly, anchor, onClose, 
       </FacetEditor>
     )
   }
-  const clear = task.assignee_id ? () => act(updateTask(task.id, { assignee_id: null })) : undefined
+  const clear = task.assignee_id ? () => act(assigneeWithUndo(task.id, null)) : undefined
   return (
     <FacetEditor anchor={anchor} icon="user-check" title={t('Assignee')} onClose={onClose} onClear={clear}>
       {solo && userId
-        ? <Switch label={t('Show in Assigned to me')} checked={task.assignee_id === userId} disabled={readOnly} onChange={(on) => act(updateTask(task.id, { assignee_id: on ? userId : null }))} />
+        ? <Switch label={t('Show in Assigned to me')} checked={task.assignee_id === userId} disabled={readOnly} onChange={(on) => act(assigneeWithUndo(task.id, on ? userId : null))} />
         : <AssigneePicker taskId={task.id} userId={userId ?? ''} onClose={onClose} />}
       {offer && (
         <div className="mt-2 border-t border-default pt-2">

@@ -121,7 +121,7 @@ describe('plan columns', () => {
     const titles = () => [...day(r.container, d).querySelectorAll('[data-plan-task]')].map((b) => b.querySelector('.truncate')!.textContent)
     expect(titles()).toEqual(['Early', 'Late', 'Urgent', 'Someday-ish'])
     const p3 = () => day(r.container, d).querySelector('[data-priority="3"] [data-priority-dot]')!
-    expect(p3().className).toContain('border-input')
+    expect(p3().className).toContain('border-p3')
     expect(day(r.container, d).querySelector('[data-estimate]')!.textContent).toBe('30m')
     await r.unmount()
   })

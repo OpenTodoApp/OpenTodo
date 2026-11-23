@@ -4,6 +4,7 @@
 // null and every caller keeps today's browser behaviour. A method the shell does not
 // list in `capabilities` is never called, so an older shell keeps working for the
 // capabilities both sides know. The bridge comes from the platform port.
+import { resettable } from './moduleState'
 import { platform } from './platform'
 
 /** The bridge version this web app speaks. */
@@ -12,7 +13,7 @@ export const BRIDGE_VERSION = 1
 /** The oldest shell app version this web app expects (bumped when a shell bug needs a forced update). */
 export const MIN_SHELL_APP = '0.10.0'
 
-export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'completion-sound' | 'alarm-settings' | 'background' | 'pull-refresh' | 'push' | 'app-links'
+export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'completion-sound' | 'alarm-settings' | 'background' | 'pull-refresh' | 'first-paint' | 'push' | 'app-links' | 'scroll-top'
 
 /**
  * One location reminder handed to the shell (location-reminders D3): the circle
@@ -126,6 +127,8 @@ export interface OpenTodoShell {
    * own pull to refresh (`pull-refresh`) turns that off until another page loads.
    */
   pullHandled?(): void
+  /** shell-reveal-on-paint D1: the page's first frame with the app's own content is drawn (`first-paint`). */
+  painted?(): void
   /**
    * shell-push D5: registers with the UnifiedPush app the user chose (the visible app
    * may open its link screen) and answers a JSON `ShellPushSubscription`, or `{"error": ShellPushError}`.
@@ -344,6 +347,23 @@ export function takeOverPull(): boolean {
   const s = shell()
   if (!s || !has('pull-refresh') || !s.pullHandled) return false
   s.pullHandled()
+  return true
+}
+
+let paintAnnounced = false
+resettable('shellPaint', () => { paintAnnounced = false })
+
+/**
+ * Tells a shell that lists `first-paint` (one that keeps its web view hidden over its
+ * launch screen) that the page has drawn its first frame, so it shows the web view
+ * without waiting for the page's load (shell-reveal-on-paint D1). Once per page load;
+ * false in a browser, a shell without it, or after the first call.
+ */
+export function announcePainted(): boolean {
+  const s = shell()
+  if (paintAnnounced || !s || !has('first-paint') || !s.painted) return false
+  paintAnnounced = true
+  s.painted()
   return true
 }
 

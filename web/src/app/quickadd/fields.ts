@@ -10,7 +10,7 @@ import type { IconName } from '../../ui'
 export type QuickAddProject = ProjectRef & Partial<Pick<Project, 'color' | 'icon'>>
 
 /** The field a row stands for. */
-export type FieldKind = 'when' | 'project' | 'label' | 'priority' | 'estimate' | 'deadline' | 'recurrence' | 'reminder' | 'spent' | 'energy'
+export type FieldKind = 'when' | 'project' | 'label' | 'priority' | 'estimate' | 'deadline' | 'recurrence' | 'reminder' | 'spent' | 'energy' | 'link'
 
 export interface FieldRow {
   kind: FieldKind
@@ -25,11 +25,11 @@ export const FIELD_TOKEN: Partial<Record<FieldKind, string>> = { project: '#', l
 
 export const FIELD_ICON: Record<FieldKind, IconName> = {
   when: 'calendar-days', project: 'folder', label: 'tag', priority: 'flag', estimate: 'clock',
-  deadline: 'hourglass', recurrence: 'repeat', reminder: 'bell', spent: 'timer', energy: 'zap',
+  deadline: 'hourglass', recurrence: 'repeat', reminder: 'bell', spent: 'timer', energy: 'zap', link: 'link',
 }
 
 const BASE: FieldKind[] = ['when', 'project', 'label', 'priority', 'estimate']
-const EXTRA: FieldKind[] = ['deadline', 'recurrence', 'reminder', 'spent', 'energy']
+const EXTRA: FieldKind[] = ['deadline', 'recurrence', 'reminder', 'spent', 'energy', 'link']
 
 /** The row a chip belongs to: due, someday, evening and the day part are all "When". */
 export function fieldOf(kind: Chip['kind']): FieldKind {

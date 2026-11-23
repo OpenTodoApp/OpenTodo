@@ -59,9 +59,12 @@ enum ShareMap {
         text.range(of: "^https?://\\S+$", options: .regularExpression) != nil
     }
 
+    /// Only ASCII letters, digits and `-._~` stay as they are. `CharacterSet.alphanumerics` is every
+    /// Unicode letter, so an é or a 中 stayed raw and iOS 16's `URL(string:)` refused the address:
+    /// the share was dropped.
+    private static let unreserved = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
+
     private static func enc(_ s: String) -> String {
-        var allowed = CharacterSet.alphanumerics
-        allowed.insert(charactersIn: "-._~")
-        return s.addingPercentEncoding(withAllowedCharacters: allowed) ?? ""
+        s.addingPercentEncoding(withAllowedCharacters: unreserved) ?? ""
     }
 }

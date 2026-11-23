@@ -6,7 +6,7 @@
 // the touch rework); a move before the hold is a swipe or a scroll, never a drag —
 // except on the grip, which never scrolls and drags on movement alone.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { beginDrag, TOUCH_HOLD_MS } from './dnd'
+import { beginDrag, EDGE_STEP, edgeScroller, edgeStep, TOUCH_HOLD_MS } from './dnd'
 
 beforeEach(() => { vi.useFakeTimers() })
 afterEach(() => { vi.useRealTimers() })
@@ -19,6 +19,26 @@ function spies() {
 }
 
 describe('touch: hold, swipe and drag', () => {
+  it('marks the pressed row from the touch until the hold ends: an early release, a lift, a scroll (row-lift-overscroll)', () => {
+    const row = document.createElement('li')
+    const s = spies()
+    beginDrag(press, { label: 'Task', onStart: s.onStart, onDrop: s.onDrop, press: row })
+    expect(row.hasAttribute('data-touch-press')).toBe(true)
+    vi.advanceTimersByTime(250)
+    up(50)
+    expect(row.hasAttribute('data-touch-press')).toBe(false)
+    beginDrag(press, { label: 'Task', onStart: s.onStart, onDrop: s.onDrop, press: row })
+    vi.advanceTimersByTime(TOUCH_HOLD_MS + 10)
+    expect(row.hasAttribute('data-touch-press')).toBe(true)
+    move(80)
+    expect(s.onStart).toHaveBeenCalled()
+    expect(row.hasAttribute('data-touch-press')).toBe(false)
+    up(80)
+    beginDrag({ ...press, pointerType: 'mouse' }, { label: 'Task', onDrop: s.onDrop, press: row })
+    expect(row.hasAttribute('data-touch-press')).toBe(false)
+    up(50)
+  })
+
   it('a hold arms the drag: a move after it lifts, a release without moving opens the row menu', () => {
     const s = spies()
     const onHoldRelease = vi.fn()
@@ -186,5 +206,200 @@ describe('the click after a drag (row-and-cursor D1)', () => {
     expect(row.hasAttribute('data-drop-active')).toBe(false)
     at.mockRestore()
     row.remove()
+  })
+})
+
+// drag-edge-scroll D1, D2 (GitHub issue 1760).
+describe('the page holds still under a held or dragged row (drag-edge-scroll D1)', () => {
+  const touchmove = () => {
+    const ev = new Event('touchmove', { cancelable: true, bubbles: true })
+    window.dispatchEvent(ev)
+    return ev.defaultPrevented
+  }
+
+  it('a press adds no touchmove listener of its own: the standing one, there before the touch, blocks the scroll', () => {
+    const add = vi.spyOn(window, 'addEventListener')
+    const cancel = beginDrag(press, { label: 'Task', onDrop: vi.fn() })
+    expect(add.mock.calls.filter(([type]) => String(type) === 'touchmove')).toEqual([])
+    add.mockRestore()
+    // Before the hold the finger scrolls; once armed, and once lifted, it does not.
+    expect(touchmove()).toBe(false)
+    vi.advanceTimersByTime(TOUCH_HOLD_MS + 10)
+    expect(touchmove()).toBe(true)
+    move(80)
+    expect(touchmove()).toBe(true)
+    up(80)
+    expect(touchmove()).toBe(false)
+    cancel()
+  })
+
+  it('a swipe before the hold, a mouse drag and a cancelled drag leave scrolling alone', () => {
+    beginDrag(press, { label: 'Task', onDrop: vi.fn() })
+    move(80)
+    vi.advanceTimersByTime(TOUCH_HOLD_MS + 10)
+    expect(touchmove()).toBe(false)
+    up(80)
+    beginDrag({ ...press, pointerType: 'mouse' }, { label: 'Task', onDrop: vi.fn() })
+    move(80)
+    expect(touchmove()).toBe(false)
+    up(80)
+    const cancel = beginDrag(press, { label: 'Task', onDrop: vi.fn() })
+    vi.advanceTimersByTime(TOUCH_HOLD_MS + 10)
+    move(80)
+    cancel()
+    expect(touchmove()).toBe(false)
+  })
+})
+
+describe('a drag near a scroller\'s edge scrolls it (drag-edge-scroll D2)', () => {
+  it('the step grows towards the edge and is nothing in the middle', () => {
+    expect(edgeStep(200, 0, 400)).toBe(0)
+    expect(edgeStep(399, 0, 400)).toBe(EDGE_STEP)
+    expect(edgeStep(1, 0, 400)).toBe(-EDGE_STEP)
+    expect(edgeStep(376, 0, 400)).toBeGreaterThan(0)
+    expect(edgeStep(376, 0, 400)).toBeLessThan(EDGE_STEP)
+    expect(edgeStep(120, 100, 500)).toBeLessThan(0)
+    expect(edgeStep(10, 0, 0)).toBe(0)
+  })
+
+  it('a pointer resting at the bottom of the list keeps it scrolling, re-reading the target; it stops at the end and on release', () => {
+    const scroller = document.createElement('div')
+    scroller.setAttribute('data-main-scroller', '')
+    const row = document.createElement('div')
+    row.setAttribute('data-drop-target', 'task:a')
+    scroller.appendChild(row)
+    document.body.appendChild(scroller)
+    let top = 0
+    Object.defineProperty(scroller, 'scrollTop', { get: () => top, set: (v: number) => { top = Math.max(0, Math.min(100, v)) }, configurable: true })
+    scroller.getBoundingClientRect = () => ({ top: 0, bottom: 400, left: 0, right: 300, width: 300, height: 400, x: 0, y: 0, toJSON() {} })
+    Object.defineProperty(scroller, 'clientHeight', { value: 400, configurable: true })
+    Object.defineProperty(scroller, 'scrollHeight', { value: 500, configurable: true })
+    const at = vi.fn(() => row)
+    const doc = document as unknown as { elementFromPoint: unknown }
+    const before = doc.elementFromPoint
+    doc.elementFromPoint = at
+    vi.stubGlobal('innerHeight', 800)
+    try {
+      const onMove = vi.fn()
+      beginDrag({ ...press, pointerType: 'mouse' }, { label: 'Task', onDrop: vi.fn(), onMove })
+      move(50, 395)
+      const moves = onMove.mock.calls.length
+      vi.advanceTimersByTime(50)
+      expect(top).toBeGreaterThan(0)
+      expect(onMove.mock.calls.length).toBeGreaterThan(moves)
+      vi.advanceTimersByTime(1000)
+      expect(top).toBe(100)
+      const settled = onMove.mock.calls.length
+      vi.advanceTimersByTime(100)
+      expect(onMove.mock.calls.length).toBe(settled)
+      move(50, 200)
+      vi.advanceTimersByTime(100)
+      expect(top).toBe(100)
+      move(50, 2)
+      up(50, 2)
+      const after = top
+      vi.advanceTimersByTime(100)
+      expect(top).toBe(after)
+    } finally {
+      doc.elementFromPoint = before
+      vi.unstubAllGlobals()
+      scroller.remove()
+    }
+  })
+})
+
+describe('the scroller near the pointer (drag-edge-scroll D2)', () => {
+  type Box = { top: number; bottom: number; scrollTop: number; scrollHeight: number }
+  function scroller(attr: string, box: Box, parent: HTMLElement = document.body): HTMLElement {
+    const el = document.createElement('div')
+    el.setAttribute(attr, '')
+    el.getBoundingClientRect = () => ({ top: box.top, bottom: box.bottom, left: 0, right: 300, width: 300, height: box.bottom - box.top, x: 0, y: box.top, toJSON() {} })
+    Object.defineProperty(el, 'scrollTop', { get: () => box.scrollTop, set: (v: number) => { box.scrollTop = Math.max(0, Math.min(box.scrollHeight - (box.bottom - box.top), v)) }, configurable: true })
+    Object.defineProperty(el, 'clientHeight', { value: box.bottom - box.top, configurable: true })
+    Object.defineProperty(el, 'scrollHeight', { value: box.scrollHeight, configurable: true })
+    parent.appendChild(el)
+    return el
+  }
+  afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals() })
+
+  it('is found by its box, so a bar floating over its bottom edge does not hide it', () => {
+    vi.stubGlobal('innerHeight', 800)
+    const list = scroller('data-main-scroller', { top: 0, bottom: 800, scrollTop: 0, scrollHeight: 2000 })
+    // The selection bar over the list's bottom edge: the element under the finger is the bar.
+    const bar = document.createElement('div')
+    document.body.appendChild(bar)
+    const doc = document as unknown as { elementFromPoint: unknown }
+    doc.elementFromPoint = () => bar
+    expect(edgeScroller(100, 790)?.el).toBe(list)
+    expect(edgeScroller(100, 790)?.step).toBeGreaterThan(0)
+    expect(edgeScroller(100, 400)).toBeNull()
+    expect(edgeScroller(100, 5)).toBeNull()
+    delete doc.elementFromPoint
+  })
+
+  it('the open phone drawer scrolls, not the inert page behind it; nothing scrolls under a dialog', () => {
+    vi.stubGlobal('innerHeight', 800)
+    const aside = document.createElement('aside')
+    document.body.appendChild(aside)
+    const list = { top: 0, bottom: 800, scrollTop: 0, scrollHeight: 3000 }
+    const page = { top: 0, bottom: 800, scrollTop: 0, scrollHeight: 3000 }
+    const drawer = scroller('data-sidebar-scroll', list, aside)
+    const main = document.createElement('main')
+    main.setAttribute('inert', '')
+    document.body.appendChild(main)
+    scroller('data-main-scroller', page, main)
+    const row = document.createElement('div')
+    drawer.appendChild(row)
+    const doc = document as unknown as { elementFromPoint: unknown }
+    doc.elementFromPoint = () => row
+    expect(edgeScroller(100, 795)?.el).toBe(drawer)
+    // Under a bar over the drawer's edge, still the drawer: the page behind is inert.
+    doc.elementFromPoint = () => document.body
+    expect(edgeScroller(100, 795)?.el).toBe(drawer)
+    const dialog = document.createElement('div')
+    dialog.setAttribute('data-overlay-root', '')
+    document.body.appendChild(dialog)
+    doc.elementFromPoint = () => dialog
+    expect(edgeScroller(100, 795)).toBeNull()
+    delete doc.elementFromPoint
+  })
+
+  it('a fractional position at the end counts as the end, so the outer scroller takes over', () => {
+    vi.stubGlobal('innerHeight', 800)
+    const outer = { top: 0, bottom: 800, scrollTop: 0, scrollHeight: 2000 }
+    const inner = { top: 400, bottom: 800, scrollTop: 199.5, scrollHeight: 600 }
+    const out = scroller('data-main-scroller', outer)
+    scroller('data-main-scroller', inner, out)
+    expect(edgeScroller(100, 795)?.el).toBe(out)
+  })
+
+  it('takes the inner of two nested scrollers while it can move, then the outer one', () => {
+    vi.stubGlobal('innerHeight', 800)
+    const outer = { top: 0, bottom: 800, scrollTop: 0, scrollHeight: 2000 }
+    const inner = { top: 400, bottom: 800, scrollTop: 0, scrollHeight: 600 }
+    const out = scroller('data-main-scroller', outer)
+    const inn = scroller('data-main-scroller', inner, out)
+    expect(edgeScroller(100, 795)?.el).toBe(inn)
+    inner.scrollTop = 200
+    expect(edgeScroller(100, 795)?.el).toBe(out)
+  })
+
+  it('a touch drag held at the bottom edge scrolls with the page held; a cancel stops both', () => {
+    vi.stubGlobal('innerHeight', 800)
+    const box = { top: 0, bottom: 400, scrollTop: 0, scrollHeight: 1000 }
+    scroller('data-main-scroller', box)
+    const blocked = () => { const ev = new Event('touchmove', { cancelable: true }); window.dispatchEvent(ev); return ev.defaultPrevented }
+    const cancel = beginDrag(press, { label: 'Task', onDrop: vi.fn() })
+    vi.advanceTimersByTime(TOUCH_HOLD_MS + 10)
+    move(50, 395)
+    vi.advanceTimersByTime(100)
+    expect(box.scrollTop).toBeGreaterThan(0)
+    expect(blocked()).toBe(true)
+    window.dispatchEvent(new PointerEvent('pointercancel', { pointerId: 9, pointerType: 'touch' }))
+    const at = box.scrollTop
+    vi.advanceTimersByTime(200)
+    expect(box.scrollTop).toBe(at)
+    expect(blocked()).toBe(false)
+    cancel()
   })
 })

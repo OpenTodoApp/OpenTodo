@@ -46,7 +46,7 @@ export function RoutineEmailStopScreen({ token }: { token: string }) {
 /** Every state of the stop page, for tests and stories. */
 export function RoutineEmailStopView({ state, onStop }: { state: StopState; onStop: () => unknown }) {
   return (
-    <main className="flex min-h-full items-center justify-center bg-canvas p-4" data-screen="routine-email-stop">
+    <main className="flex min-h-full items-start justify-center bg-canvas p-4 pt-[max(1rem,var(--safe-top))] sm:items-center" data-screen="routine-email-stop">
       <Card className="w-full max-w-sm space-y-3">
         {state.kind === 'loading' && <p className="text-body text-muted">{t('One moment.')}</p>}
         {state.kind === 'invalid' && <h1 className="text-body font-medium" data-stop-invalid>{t('This link is no longer valid.')}</h1>}

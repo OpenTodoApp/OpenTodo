@@ -1,0 +1,1 @@
+- **The back swipe follows your finger.** Swiping from the left edge of a task, a note or another page with Back now drags the page with you: let go past a third of the way, or flick, and it goes back; otherwise it returns. On a top-level page the menu slides out with your finger. Tablets get the back swipe too. With reduced motion the swipe still works, without following.

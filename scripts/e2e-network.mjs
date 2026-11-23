@@ -89,7 +89,6 @@ async function audit(name, env, mapsOn) {
   step(`${name}: fresh server`)
   const base = await startServer({ OPENTODO_MAPS_TILES_URL: `${fakeBase}/styles/liberty`, OPENTODO_MAPS_GEOCODER_URL: fakeBase, ...env })
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 } })
-  await ctx.addInitScript(() => { try { localStorage.setItem('opentodo.rowClick', 'open') } catch { /* no storage */ } })
   const outside = []
   ctx.on('request', (r) => {
     const u = r.url()
@@ -108,7 +107,7 @@ async function audit(name, env, mapsOn) {
 
   step(`${name}: task panel with its location`)
   await page.goto(`${base}/inbox`)
-  await page.getByRole('button', { name: /^Visit the Colosseum/ }).first().click()
+  await page.getByRole('button', { name: /^Visit the Colosseum/ }).first().press('Enter')
   await page.locator('[data-detail-for]').waitFor()
   if (mapsOn) {
     await page.locator('[data-location-preview] canvas').waitFor({ timeout: 20000 })

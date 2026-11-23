@@ -233,6 +233,22 @@ class BridgeFixtureTest {
         for (m in methods.keys()) assertTrue("$m in the page script", script.contains("$m: function () { send('$m', []) }"))
     }
 
+    /**
+     * shell-reveal-on-paint D2: the web app's call after its first frame. Only the visible app,
+     * which holds a launch screen, lists the capability; the call has no arguments.
+     */
+    @Test fun firstPaintFollowsTheFixture() {
+        val f = fixture("painted.json")
+        assertEquals("first-paint", f.getString("capability"))
+        assertEquals("painted", f.getString("method"))
+        val calls = f.getJSONArray("calls")
+        assertEquals(1, calls.length())
+        assertEquals(0, calls.getJSONArray(0).length())
+        assertTrue(Bridge.capabilityList(play = true, hasScreen = true, background = false, sdkInt = 34, biometric = false).contains("first-paint"))
+        assertFalse(Bridge.capabilityList(play = false, hasScreen = false, background = true, sdkInt = 34, biometric = false).contains("first-paint"))
+        assertTrue(Bridge.script("1.0.0", listOf("first-paint")).contains("painted: function () { send('painted', []) }"))
+    }
+
     @Test fun completionSoundRespectsRingerMode() {
         assertTrue(CompletionSound.allowsSound(android.media.AudioManager.RINGER_MODE_NORMAL))
         assertFalse(CompletionSound.allowsSound(android.media.AudioManager.RINGER_MODE_SILENT))

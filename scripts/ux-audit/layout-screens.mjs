@@ -296,7 +296,8 @@ export const OVERLAYS = {
     const trigger = p.locator('[data-add-button]').filter({ visible: true }).first()
     if (!(await trigger.count())) return null
     await trigger.click()
-    const overlay = p.locator('[data-overlay="sheet"]').filter({ has: p.locator('[data-quick-add-tints]') })
+    // A sheet below 640 px, a dialog from there (the add button shows below 768 px).
+    const overlay = p.locator('[data-overlay]').filter({ has: p.locator('[data-quick-add-tints]') }).last()
     await overlay.locator('textarea').first().fill('Call Ana tomorrow p1')
     await overlay.locator('[data-quick-add-tints] mark').first().waitFor()
     // No trigger: the add button leaves with the tab bar while the sheet is open.
@@ -513,13 +514,19 @@ export const OVERLAYS = {
     await editor.getByRole('combobox').first().waitFor()
     return { overlay: editor, trigger, reopen, kind: 'popover' }
   }])),
-  // A row edited in place (inline-task-editing): a mouse click on the title, from 768 px.
+  // Title editing from the selected row's title or the shared row menu on touch.
   async 'inline-editor'(p, ctx) {
-    if (ctx.width < 768) return null
-    await p.locator('[data-task-id]').filter({ hasText: 'Pick paint colours' }).first().locator('[data-row-title]').click()
+    const task = p.locator('[data-task-id]').filter({ hasText: 'Pick paint colours' }).first()
+    if (ctx.width >= 768 && await p.evaluate(() => matchMedia('(pointer: fine)').matches)) {
+      const title = task.locator('[data-row-title]')
+      if (await task.getAttribute('aria-current') !== 'true') await title.click()
+      await title.click()
+    } else {
+      await task.locator('[data-row-title]').click({ button: 'right' })
+      await p.getByRole('menuitem', { name: 'Edit title' }).click()
+    }
     const editor = p.locator('[data-inline-editor]').first()
-    // A touch screen opens the panel instead (coarse pointer): nothing inline to check there.
-    if (!(await editor.waitFor({ timeout: 3000 }).then(() => true, () => false))) { await p.keyboard.press('Escape'); return null }
+    await editor.waitFor()
     return { overlay: editor, kind: 'inline', after: async () => p.keyboard.press('Escape') }
   },
   // The When popover, one segment at a time (task-panel-facets D3).

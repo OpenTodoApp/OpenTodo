@@ -11,7 +11,7 @@ order: 11
 
 <picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="A task open as its page: the breadcrumb and 2 / 5 at the top, the title, the notes and the subtasks on the left, and its facts on the right under Schedule, Details, Labels and Project."></picture>
 
-Select a task with <kbd>j</kbd> / <kbd>k</kbd> and press <kbd>Enter</kbd>, or double-click it, to open its page. A click edits the title in place ([Click a task to](settings-app.md#general)), and its arrow (or <kbd>Shift</kbd>+<kbd>Enter</kbd>) opens the page. Every change is saved as you make it; there is no Save button.
+On desktop, click to select. Click the selected title or press <kbd>F2</kbd> to edit. <kbd>Enter</kbd> opens details or saves an edit. Double-click opens the page. On a phone, tap the title to open. A short left swipe edits the title on release. A full swipe opens **Schedule**.
 
 ## Moving around
 

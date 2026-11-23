@@ -1,0 +1,1 @@
+- **A Todoist backup's comments arrive as comments.** Each note becomes a comment on its task, in the same order, starting with who wrote it in Todoist and when, instead of a "Comments" list in the description. Past 5,000 in one import, the rest still go into the description, and the preview says so. (#1723)

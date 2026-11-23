@@ -12,7 +12,7 @@ import { click, flush, key, render, spokenText, visibleText, waitFor } from '../
 import { hideBulkToast } from '../bulk/toastStore'
 import { TaskRow } from '../TaskRow'
 import { requestAttach } from './attachRequest'
-import { AttachMenu, AttachmentsRow, pastedName, typeLabel } from './AttachmentsRow'
+import { AttachMenu, AttachmentsRow, CommentAttachments, pastedName, typeLabel } from './AttachmentsRow'
 
 let n = 0
 let task = ''
@@ -84,8 +84,9 @@ describe('AttachmentsRow', () => {
     await waitFor(() => document.activeElement === first, 'focus back on the first file')
     expect(document.activeElement).toBe(first)
     await click(first)
-    await waitFor(() => open.mock.calls.length > 0)
-    expect(open.mock.calls[0][0]).toBe('/api/v1/attachments/a-up/content')
+    // A tab opens within the key press; with none handed back, the file opens in one after.
+    await waitFor(() => open.mock.calls.length > 1)
+    expect(open.mock.calls.map((c) => c[0])).toEqual(['about:blank', '/api/v1/attachments/a-up/content'])
   })
 
   it('pasting an image in the panel attaches it named with the date', async () => {
@@ -238,5 +239,20 @@ describe('AttachmentsRow', () => {
     expect(typeLabel({ mime: 'application/pdf', name: 'a', url: null })).toBe('PDF')
     expect(typeLabel({ mime: 'application/octet-stream', name: 'notes.docx', url: null })).toBe('DOCX')
     expect(typeLabel({ mime: 'text/uri-list', name: 'x', url: 'https://x' })).toBe('Link')
+  })
+})
+
+// Safari and the Home Screen app block a tab opened after an await: a tap on a
+// comment's image opens its tab within the click (lib/attachmentOpen.ts).
+describe('a comment attachment opens within the tap', () => {
+  it('opens the tab before anything is awaited', async () => {
+    const photo = { id: 'c1', name: 'photo.jpg', mime: 'image/jpeg', size: 5, uploaded_at: 1 } as unknown as Parameters<typeof CommentAttachments>[0]['list'][number]
+    const r = await render(<CommentAttachments list={[photo]} />)
+    mounted.push(r)
+    await flush()
+    const opened = vi.spyOn(window, 'open').mockImplementation(() => null)
+    const button = r.container.querySelector('button')!
+    act(() => { button.click() })
+    expect(opened).toHaveBeenCalledWith('about:blank', '_blank')
   })
 })

@@ -5,7 +5,8 @@
 // steps use the ordinary task rows, so the list keys work inside them; the Projects
 // step is the project walk, which owns its keys while it is shown. "Finish review"
 // writes the synced `review` row; the menu opens the Daily check and the Monthly look.
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy } from '../../lib/lazy'
 import { Badge, Button, Card, Dialog, Icon, MenuItem, Notice, PageBody, PageHeader, Skeleton, type IconName } from '../../ui'
 import { useAllLabels, useAllProjects, useProjectPrefsLoaded, useReviewEvery, useReviewRow, useReviewedAt } from '../../lib/localData'
 import { formatInstant } from '../../lib/dates'

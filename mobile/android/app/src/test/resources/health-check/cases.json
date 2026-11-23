@@ -1,0 +1,32 @@
+{
+  "_comment": "The first-run health check's answers, read by both apps: Android's HealthCheckTest and the iOS app's HealthCheckTests. A case is a response to a health route (status, and the body only for a 200, the Location and Content-Type headers, the origin asked) and the outcome it means. A combine case is the first route's outcome, the second route's (null: it must not be asked) and the check's.",
+  "classify": [
+    { "name": "OpenTodo's health answer", "status": 200, "body": "{\"status\":\"ok\",\"version\":\"0.10.0\"}", "outcome": "ok", "version": "0.10.0" },
+    { "name": "no version", "status": 200, "body": "{\"status\":\"ok\"}", "outcome": "notOpenTodo" },
+    { "name": "plain text", "status": 200, "body": "plain text", "outcome": "notOpenTodo" },
+    { "name": "a JSON array", "status": 200, "body": "[1]", "outcome": "notOpenTodo" },
+    { "name": "not found", "status": 404, "outcome": "notOpenTodo" },
+    { "name": "a page that is not found", "status": 404, "contentType": "text/html", "outcome": "notOpenTodo" },
+    { "name": "a redirect with no Location", "status": 301, "outcome": "notOpenTodo" },
+    { "name": "unavailable", "status": 503, "outcome": "notOpenTodo" },
+    { "name": "Pangolin, Authelia, Cloudflare Access: a redirect to the wall's sign-in page elsewhere", "status": 302, "location": "https://pangolin.example.com/auth/resource/1?redirect=x", "origin": "https://todo.example.com", "outcome": "loginWall" },
+    { "name": "oauth2-proxy: a redirect to its sign-in page on the same host", "status": 302, "location": "/oauth2/sign_in?rd=%2Fhealthz", "origin": "https://todo.example.com", "outcome": "loginWall" },
+    { "name": "a 401 with a sign-in page", "status": 401, "contentType": "text/html; charset=utf-8", "origin": "https://todo.example.com", "outcome": "loginWall" },
+    { "name": "a 403 with a sign-in page", "status": 403, "contentType": "text/html", "origin": "https://todo.example.com", "outcome": "loginWall" },
+    { "name": "a 401 in JSON is not a sign-in page", "status": 401, "contentType": "application/json", "origin": "https://todo.example.com", "outcome": "notOpenTodo" },
+    { "name": "a web page instead of the health answer", "status": 200, "body": "<html>Example Domain</html>", "outcome": "webPage" },
+    { "name": "an empty page", "status": 200, "body": "", "contentType": "text/html", "outcome": "webPage" },
+    { "name": "a moved server: http to https", "status": 301, "location": "https://todo.example.com/healthz", "origin": "http://todo.example.com", "outcome": "notOpenTodo" },
+    { "name": "a moved server: another host", "status": 308, "location": "https://www.example.com/healthz/", "origin": "https://todo.example.com", "outcome": "notOpenTodo" },
+    { "name": "a moved server: the other health route", "status": 301, "location": "https://todo.example.com/api/v1/health", "origin": "http://todo.example.com", "outcome": "notOpenTodo" }
+  ],
+  "combine": [
+    { "name": "OpenTodo answers the first route", "first": "ok", "second": null, "outcome": "ok" },
+    { "name": "no network is the same on every route", "first": "noNetwork", "second": null, "outcome": "noNetwork" },
+    { "name": "a refused certificate is the same on every route", "first": "untrusted", "second": null, "outcome": "untrusted" },
+    { "name": "a server before 1.0.1", "first": "notOpenTodo", "second": "ok", "outcome": "ok" },
+    { "name": "a proxy that only lets /healthz through", "first": "loginWall", "second": "ok", "outcome": "ok" },
+    { "name": "a login wall stays a login wall", "first": "loginWall", "second": "notOpenTodo", "outcome": "loginWall" },
+    { "name": "neither answers: the first route's answer stands", "first": "notOpenTodo", "second": "webPage", "outcome": "notOpenTodo" }
+  ]
+}

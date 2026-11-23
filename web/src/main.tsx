@@ -1,24 +1,32 @@
-import { StrictMode } from 'react'
+import { StrictMode, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { App } from './app/App'
 import { ErrorBoundary } from './app/ErrorBoundary'
 import { watchVisualViewport } from './ui'
 import { watchFocusClearance } from './lib/focusClearance'
+import { keepTouchActive } from './lib/touchActive'
 import { bootLanguage, t } from './lib/i18n'
+import { storeCataloguesOnceControlled } from './lib/i18n/catalog'
 import { logUnhandledRejections, watchAppUpdates } from './lib/appUpdate'
-import { has, installShellLinks, shell } from './lib/shell'
+import { announcePainted, has, installShellLinks, shell } from './lib/shell'
 
 // Bottom sheets sit above the on-screen keyboard; the focused field stays visible.
 watchVisualViewport()
 // A focused element never stays under a sticky or fixed bar (accessibility-aa, WCAG 2.2 2.4.11).
 watchFocusClearance()
+// A press shows on iOS too (press-feedback-delay).
+keepTouchActive()
 // On a touch device, shortcut hints show once a hardware keyboard is used (touch-keyboard-hints).
 void import('./lib/keyboardSeen').then((m) => m.watchHardwareKeyboard())
+// No focus ring after a tap: the root says which input moved focus last (touch-input-mode).
+void import('./lib/inputMode').then((m) => m.watchInputMode())
 
 // Open tabs recover after a server upgrade (client-sync-robustness): a missing
 // chunk reloads, a new service worker or database version asks to reload.
 watchAppUpdates()
+// The first visit's catalogue is stored once the worker controls the page (precache-device-language).
+storeCataloguesOnceControlled()
 // A rejected promise nobody handled leaves a trace instead of vanishing.
 logUnhandledRejections()
 // In a native shell, links to other origins open in the system browser (native-shells D5).
@@ -32,11 +40,24 @@ if (has('reminders')) void import('./app/shellExactNotice').then((m) => m.watchE
 if (has('background')) { const search = location.search; void import('./lib/shellBackground').then((m) => m.startBackgroundRun({ search })) }
 // In a native shell, reminders and the widgets' Today list are handed over as they change.
 if (shell()) void import('./lib/shellPublish').then((m) => m.startShellPublishers())
+// status-bar-scroll-top: the iPhone app's status bar tap scrolls the frontmost scroller to the top.
+if (has('scroll-top')) void import('./ui/scrollTop').then((m) => m.listenForScrollTop())
 // The Android app's push subscription follows the registration its UnifiedPush app gave (shell-push D6); a background run does it before it ends.
 if (has('push') && !has('background')) void import('./lib/shellPush').then((m) => m.syncShellPush()).catch(() => undefined)
 // The page's icons and description follow the instance branding: the service
 // worker serves the signed page unchanged (signed-web-app D7).
 void import('./lib/pageBranding').then((m) => m.watchPageBranding())
+// page-transitions D3: forward and back slides, loaded after the first paint (a change before it swaps at once).
+requestAnimationFrame(() => setTimeout(() => void import('./app/pageTransition').then((m) => m.installPageTransitions()), 0))
+
+// shell-reveal-on-paint D1: after React's first commit, the first callback runs before
+// the next frame and the second after it, so the app's own content is on screen.
+function Painted() {
+  useEffect(() => {
+    requestAnimationFrame(() => requestAnimationFrame(() => announcePainted()))
+  }, [])
+  return null
+}
 
 // The last language applied on this device (else the browser's) is loaded before
 // the first render, so there is no flash of English (app-localization D3).
@@ -46,6 +67,8 @@ void bootLanguage().finally(() => {
       <ErrorBoundary>
         <App />
       </ErrorBoundary>
+      {/* Outside the boundary: an app that fails on its first render shows its error screen at once. */}
+      <Painted />
     </StrictMode>,
   )
 })

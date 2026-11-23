@@ -6,6 +6,7 @@ import { originFromUrl } from '../lib/taskOrigin'
 import { allowsAppLink, appLinkActivation, useAppLinkSchemes } from '../lib/appLinks'
 import { t } from '../lib/i18n'
 import { Icon, Tooltip } from '../ui'
+import { CodeBlock } from './CodeBlock'
 
 /** What the app resolves on the device: embedded attachments and links to tasks. */
 export interface MarkdownEmbeds {
@@ -58,7 +59,7 @@ function renderBlock(b: Block, i: number, ctx: Ctx): ReactNode {
     case 'p':
       return <p key={i}>{inl(b.c)}</p>
     case 'pre':
-      return <pre key={i} className="overflow-x-auto rounded-control bg-sunken dark:bg-raised p-2 font-mono text-meta" data-scroll-x data-lang={b.lang}><code>{b.v}</code></pre>
+      return <CodeBlock key={i} text={b.v} lang={b.lang} />
     case 'quote':
       return <blockquote key={i} className="space-y-2 border-l-2 border-input pl-2 text-muted">{b.c.map((x, k) => renderBlock(x, k, ctx))}</blockquote>
     case 'h': {

@@ -16,7 +16,8 @@ resettable('linkedRefsChunk', () => { loaded = null; loading = null })
 
 /** Loads the section's chunk (once); resolves to the section. */
 export function loadLinkedReferences(): Promise<ComponentType<LinkedReferencesProps>> {
-  loading ??= import('./LinkedReferences').then((m) => (loaded = m.default))
+  // A failed load (offline) is forgotten, so the next call fetches again (lazy-retry-online).
+  loading ??= import('./LinkedReferences').then((m) => (loaded = m.default), (err: unknown) => { loading = null; throw err })
   return loading
 }
 

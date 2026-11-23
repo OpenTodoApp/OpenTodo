@@ -43,7 +43,8 @@ export function createResolver(useWorker = typeof Worker !== 'undefined' && impo
       worker.postMessage({ seq: item.seq, req: item.req })
       return
     }
-    local ??= import('./compute')
+    // A failed load (offline) is forgotten, so the next call fetches again (lazy-retry-online).
+    local ??= import('./compute').catch((err: unknown) => { local = null; throw err })
     local.then((m) => new Promise<void>((ok) => setTimeout(() => {
       try { item.resolve(m.compute(item.req)) } catch (e) { item.reject(e as Error) }
       ok()

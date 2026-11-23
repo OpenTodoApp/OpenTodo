@@ -169,7 +169,7 @@ describe('one row language (rows-v2)', () => {
     } finally { vi.useRealTimers() }
   })
 
-  it('P1 and P2 keep their ring colour, P3 and P4 get the neutral ring', async () => {
+  it('uses the priority outline for P1 to P3 and keeps P4 neutral', async () => {
     const ring = async (priority: Task['priority']) => {
       const r = await row({ priority })
       const cls = r.container.querySelector('[data-check-mark]')!.className
@@ -178,8 +178,7 @@ describe('one row language (rows-v2)', () => {
     }
     expect(await ring(1)).toContain('border-p1')
     expect(await ring(2)).toContain('border-p2')
-    expect(await ring(3)).toContain('border-input')
-    expect(await ring(3)).not.toContain('border-p3')
+    expect(await ring(3)).toContain('border-p3')
     expect(await ring(4)).toContain('border-input')
     expect(await ring(4)).not.toContain('border-p4')
   })
@@ -694,7 +693,7 @@ describe('the touch grip', () => {
     const mark = fold.querySelector<HTMLElement>('[data-fold-mark]')!
     expect(mark.className).toContain('pointer-coarse:group-active/fold:bg-selected')
     expect(mark.className).toContain('pointer-events-none')
-    expect(fold.className).toContain('pointer-coarse:active:opacity-100')
+    expect(fold.className).toContain('pointer-coarse:active:animate-none')
     expect(r.container.querySelector('button[aria-label="Complete Task"]')!.className).toContain('pointer-coarse:-m-3')
     // The grip's target ends inside the row, 4 px from its edge.
     expect(r.container.querySelector('[data-row-grip]')!.className).toMatch(/\bme-1\b/)

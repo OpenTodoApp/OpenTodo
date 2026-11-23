@@ -8,6 +8,7 @@
 // sw.ts wires this to the worker's events; the tests run it with fakes.
 import { compareVersions, MANIFEST_PATH, parseList, sha256Hex, verifyList, type ManifestFile, type ParsedList } from './appCode'
 import type { CheckCause, CheckResult, InstalledVersion, TrustMode, TrustRecord } from './appTrust'
+import { uuid } from './ids'
 
 export interface InstallEnv {
   /** A same-origin fetch from the worker (never through its own fetch handler). */
@@ -15,9 +16,12 @@ export interface InstallEnv {
   caches: CacheStorage
   /** The keys built into this worker: the official keys, or an own-key build's key. */
   builtinKeys: readonly string[]
+  /** The device's languages (the worker's navigator.languages), for a list that names no catalogue's language. */
+  languages?: () => readonly string[]
   now: () => number
   load: () => Promise<TrustRecord | null>
-  save: (r: TrustRecord) => Promise<void>
+  /** Changes the record as stored in one transaction (`updateTrust`): null from `change` leaves it. Every write goes through it. */
+  update: (change: (stored: TrustRecord | null) => TrustRecord | null) => Promise<TrustRecord | null>
 }
 
 export type CheckOutcome =
@@ -94,7 +98,28 @@ export function fileResponse(body: BodyInit | null, type: string | null): Respon
 interface StageResult { failure?: { cause: CheckCause; path: string } }
 
 /**
- * Downloads every install file into the staging cache, reusing unchanged files
+ * The languages whose interface catalogue the current set holds: those the
+ * device has used (precache-device-language D3). The cache is the record, so
+ * a first install holds none and a cleared cache forgets them.
+ */
+async function heldLanguages(current: InstalledVersion | undefined, currentCache: Cache | null, languages: readonly string[] = []): Promise<Set<string>> {
+  const held = new Set<string>()
+  if (!current || !currentCache) return held
+  // A list from before catalogues named their language installed every catalogue:
+  // the device's own languages stand in for the ones it used.
+  if (!Object.values(current.files).some((f) => f.lang)) {
+    for (const tag of languages) held.add(tag.toLowerCase().split('-')[0])
+    return held
+  }
+  for (const [path, f] of Object.entries(current.files)) {
+    if (f.lang && !held.has(f.lang) && (await currentCache.match(cacheKey(path)))) held.add(f.lang)
+  }
+  return held
+}
+
+/**
+ * Downloads every install file, and the catalogues of the languages the
+ * current set holds, into the staging cache, reusing unchanged files
  * of the current version. With stopOnFailure (refusal on), the first file that
  * fails stops the download; otherwise every file is stored as served and the
  * first failure is reported. A network error throws Interrupted.
@@ -102,7 +127,8 @@ interface StageResult { failure?: { cause: CheckCause; path: string } }
 async function stage(env: InstallEnv, staging: Cache, files: Record<string, ManifestFile>, current: InstalledVersion | undefined, stopOnFailure: boolean): Promise<StageResult> {
   const result: StageResult = {}
   const currentCache = current ? await env.caches.open(current.cache) : null
-  const queue = Object.keys(files).filter((p) => files[p].load === 'install').sort()
+  const held = await heldLanguages(current, currentCache, env.languages?.() ?? [])
+  const queue = Object.keys(files).filter((p) => files[p].load === 'install' || (files[p].lang !== undefined && held.has(files[p].lang!))).sort()
   const fail = (cause: CheckCause, path: string) => {
     if (!result.failure || path < result.failure.path) result.failure = { cause, path }
   }
@@ -133,7 +159,9 @@ async function stage(env: InstallEnv, staging: Cache, files: Record<string, Mani
  * once, and each stages into its own cache, never one the other deletes.
  */
 export function stagingName(version: string, payloadHash: string, now: number): string {
-  return `${APP_CACHE_PREFIX}${version}-${payloadHash.slice(0, 12)}-${now.toString(36)}`
+  // A random tail after the start time keeps two installs of one list apart, also within
+  // one millisecond; the time still parses (base 36 stops at the dot).
+  return `${APP_CACHE_PREFIX}${version}-${payloadHash.slice(0, 12)}-${now.toString(36)}.${uuid().slice(0, 8)}`
 }
 
 /** A staging cache younger than this may still be filling in another worker. */
@@ -173,12 +201,28 @@ export async function checkForUpdate(env: InstallEnv): Promise<CheckOutcome> {
   const list = res.ok ? parseList(text) : null
   const record = await env.load()
   const now = env.now()
+  // Every write goes onto the record as stored, in one transaction, and only while it is
+  // still the one this check started from: another worker (an open tab's worker beside
+  // the one installing) may have installed or refused meanwhile, and its write stays.
+  // The installed set by its cache, unique per install: a list installed again since has a new one.
+  const unchanged = (stored: TrustRecord | null) => (stored?.current?.cache ?? null) === (record?.current?.cache ?? null)
+    && !!stored?.refuse === !!record?.refuse && stored?.mode === record?.mode
+  /** Records a check on the stored record; answers whether it announces, false when nothing was written. */
+  const recordCheck = async (check: CheckResult, announceKey: string | null): Promise<boolean> => {
+    let announce = false
+    await env.update((stored) => {
+      if (!stored || !unchanged(stored)) return null
+      const next = { ...stored, lastCheck: check }
+      announce = announceKey !== null && announceOnce(next, announceKey)
+      return next
+    })
+    return announce
+  }
   if (!list) {
     // No readable list: a server older than signed-web-app answers 404 (self-built).
     if (!record) return { kind: 'unchanged' }
     const check: CheckResult = { at: now, version: record.current?.version ?? '', passed: false, cause: 'no-list', refused: record.refuse }
-    const announce = record.refuse && announceOnce(record, 'no-list:' + (await sha256Hex(new TextEncoder().encode(text))))
-    await env.save({ ...record, lastCheck: check })
+    const announce = await recordCheck(check, record.refuse ? 'no-list:' + (await sha256Hex(new TextEncoder().encode(text))) : null)
     return record.refuse ? { kind: 'refused', check, announce } : { kind: 'unchanged' }
   }
   const payloadHash = await sha256Hex(list.payload)
@@ -193,9 +237,7 @@ export async function checkForUpdate(env: InstallEnv): Promise<CheckOutcome> {
   const version = list.manifest.version
   if (verdict.cause && refuse) {
     const check: CheckResult = { at: now, version, passed: false, cause: verdict.cause, refused: true }
-    const next = { ...record!, lastCheck: check }
-    const announce = announceOnce(next, listHash)
-    await env.save(next)
+    const announce = await recordCheck(check, listHash)
     return { kind: 'refused', check, announce }
   }
 
@@ -213,9 +255,7 @@ export async function checkForUpdate(env: InstallEnv): Promise<CheckOutcome> {
   if (cause && refuse) {
     await env.caches.delete(cacheName)
     check.refused = true
-    const next = { ...record!, lastCheck: check }
-    const announce = announceOnce(next, listHash)
-    await env.save(next)
+    const announce = await recordCheck(check, listHash)
     return { kind: 'refused', check, announce }
   }
 
@@ -240,8 +280,14 @@ export async function checkForUpdate(env: InstallEnv): Promise<CheckOutcome> {
   const verified = verdict.verified && moves ? { version, payloadHash } : record?.verified
   if (verified) next.verified = verified
   if (record?.current) next.previous = record.current
-  await env.save(next)
-  await pruneCaches(env, next)
+  // The announced lists stay the stored record's own (a refusal recorded meanwhile).
+  const written = await env.update((stored) => (unchanged(stored) ? { ...next, announced: stored?.announced ?? next.announced } : null))
+  if (!written) {
+    // Overtaken: the record another worker wrote stays, and this staged set goes.
+    await env.caches.delete(cacheName)
+    return { kind: 'unchanged' }
+  }
+  await pruneCaches(env, written)
   return { kind: 'installed', version, first, check }
 }
 
@@ -271,23 +317,41 @@ export async function cachedFile(env: Pick<InstallEnv, 'caches'>, record: TrustR
 export type LazyResult = { response: Response; check?: CheckResult }
 
 /**
+ * The answer for a request whose handling threw: 404 for a listed file once
+ * refusal is on, so nothing unchecked is served; null (the network) otherwise,
+ * as report-only serves while it records (D17).
+ */
+export function answerAfterFailure(record: TrustRecord | null, path: string): Response | null {
+  if (!record?.refuse) return null
+  return path in (record.current?.files ?? {}) || path in (record.previous?.files ?? {}) ? new Response('', { status: 404 }) : null
+}
+
+/**
  * A listed file that isn't stored yet (a lazy chunk such as the map): fetched,
  * checked against the current list and stored when it matches (D7). A mismatch
  * is recorded; with refusal on it fails the request, while reporting the
- * served file is used but never stored.
+ * served file is used but never stored. A listed file that could not be
+ * downloaded answers 404: a listed file is only ever served checked, so the
+ * caller never asks the network for it again on its own. `refuse` is the mode
+ * that applies, the record's own unless the caller knows better (a stand-in record).
  */
-export async function fetchLazy(env: InstallEnv, record: TrustRecord, path: string): Promise<LazyResult | null> {
+export async function fetchLazy(env: InstallEnv, record: TrustRecord, path: string, persist = true, refuse = record.refuse): Promise<LazyResult | null> {
   const want = record.current?.files[path] ?? record.previous?.files[path]
   if (!want) return null
   const got = await download(env, path).catch(() => null)
-  if (!got) return null
+  if (!got) return { response: new Response('', { status: 404 }) }
   if (got.body.byteLength === want.size && (await sha256Hex(got.body)) === want.sha256) {
     const holder = record.current?.files[path]?.sha256 === want.sha256 ? record.current : record.previous
-    if (holder) await (await env.caches.open(holder.cache)).put(cacheKey(path), fileResponse(got.body.slice(0), got.type))
+    // A store that fails (storage full) only means the file is fetched again next time: it was checked.
+    if (holder) await env.caches.open(holder.cache).then((c) => c.put(cacheKey(path), fileResponse(got.body.slice(0), got.type))).catch(() => undefined)
     return { response: fileResponse(got.body, got.type) }
   }
-  const check: CheckResult = { at: env.now(), version: record.current?.version ?? '', passed: false, cause: 'changed-file', path, refused: record.refuse }
-  await env.save({ ...record, lastCheck: check })
-  if (record.refuse) return { response: new Response('', { status: 404 }), check }
+  const check: CheckResult = { at: env.now(), version: record.current?.version ?? '', passed: false, cause: 'changed-file', path, refused: refuse }
+  // `persist` false: the record in use stands in for one that could not be read, and
+  // writing it back could replace a newer one.
+  // The check is recorded on the record as stored, and only while it still holds the
+  // set that was checked: another worker may have installed a newer one meanwhile.
+  if (persist) await env.update((stored) => (stored && stored.current?.cache === record.current?.cache ? { ...stored, lastCheck: check } : null)).catch(() => undefined)
+  if (refuse) return { response: new Response('', { status: 404 }), check }
   return { response: fileResponse(got.body, got.type), check }
 }

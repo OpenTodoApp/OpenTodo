@@ -7,7 +7,8 @@
 import { TodayStrip } from './habits/TodayStrip'
 import { CloseDayRow } from './CloseDayRow'
 import { useWithMethod } from './help/MethodLink'
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { lazy } from '../lib/lazy'
 import { ProjectCalendarLayout, useListExtras } from './task-list/listExtras'
 import { t } from '../lib/i18n'
 import { sharedWithSomeoneElse } from '../lib/dayLists'
@@ -30,7 +31,7 @@ import { useDayTotals } from '../lib/timeEntries'
 import { nextViewMode, saveListColumns, saveShowCompleted, saveViewMode, type ProjectViewMode } from '../lib/sections'
 import { parentReadyToComplete } from '../lib/subtasks'
 import type { AccountRole, Label, Task } from '../lib/types'
-import { Button, frameKind, hueFor, MenuGroup, MenuItem, MenuSeparator, PAGE_FRAME, PageHeader, useFinePointer } from '../ui'
+import { Button, DESKTOP_HEADER_QUERY, frameKind, hueFor, MenuGroup, MenuItem, MenuSeparator, PAGE_FRAME, PageHeader, useFinePointer, useMediaQuery } from '../ui'
 import { openAssistantWith, useAssistantStatus } from '../lib/assistantStatus'
 import { act } from './actionError'
 import { AwayHost, AwayMenuItems, useAwayMeta } from './away/AwayMenu'
@@ -47,10 +48,10 @@ import { useActionsOpen } from './bulk/useBulkList'
 import { useCollapsedGroups } from './collapsedGroups'
 import { EarlierActions } from './task-list/EarlierActions'
 import { taskDefaults } from './listActions'
-import { panelTaskId, usePanelHasTask, setPanelTaskId as setOpenId, sidePanelDocks, taskSplitDocks } from './panel'
+import { flushSync } from 'react-dom'
+import { panelTaskId, usePanelHasTask, setPanelTaskId as setOpenId, sidePanelDocks } from './panel'
 import { useClickAway } from './task-list/useClickAway'
 import { InlineEditor } from './task-list/InlineEditor'
-import { useRowClick } from './rowClick'
 import { ProjectHeader } from './ProjectHeader'
 import { LabelMenu } from './LabelsView'
 import { ProjectNote } from './ProjectNote'
@@ -90,6 +91,7 @@ import { closedListOffered } from '../lib/closedListPrefs'
 import { dayPartsOn, setDayParts } from '../lib/dayParts'
 import { readMethodMode } from '../lib/method/mode'
 import { addManyToList, createUnlessReused } from './reuseAdd'
+import { isReusable } from '../lib/reusable'
 
 export { BLOCKED_OPEN_KEY } from '../lib/listGroups'
 
@@ -99,7 +101,7 @@ const HELP_SCREENS: Partial<Record<Route['view'], string>> = {
 }
 
 /** Transient UI of the list: pickers, prompts, quick adds and the actions menu. */
-function useListUi(ticked: ReadonlySet<string>, order: readonly string[]) {
+function useListUi(ticked: ReadonlySet<string>, order: readonly string[], editTitle: ((id: string) => void) | undefined) {
   const actions = useActionsOpen(order.length)
   const [selectMode, setSelectMode] = useState(false)
   const [addingUnder, setAddingUnder] = useState<string | null>(null)
@@ -120,7 +122,7 @@ function useListUi(ticked: ReadonlySet<string>, order: readonly string[]) {
   const openActions = useCallback((picker: string | null = null, from: HTMLElement | null = null) => { actionsFrom.current = from; openActionsMenu(picker) }, [openActionsMenu])
   // The row's menu at the pointer (task-row-context-menu): one state, one selection
   // rule and one focus restore, shared with the filter, saved-view and method lists.
-  const rowMenu = useRowMenu(ticked, order)
+  const rowMenu = useRowMenu(ticked, order, editTitle)
   const ui: ListUi = { pickerFor, setPickerFor, assignFor, setAssignFor, prompt, setPrompt, addingUnder, setAddingUnder, addingBelow, setAddingBelow, setAddingTo, openActions }
   return { ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId, rowMenu }
 }
@@ -153,14 +155,16 @@ const NO_DONE: Map<string, Task[]> = new Map()
 
 /** The personal order for a label page or Today grouped by Project. */
 function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], board: boolean, today: boolean, nest: boolean, taskMap: Map<string, Task>) {
-  const todayModule = useRef<typeof TodayDrop>(undefined)
+  // State, not a ref: the chunk can land after a row menu opened, and the menu then renders
+  // again with the contextual moves.
+  const [todayModule, setTodayModule] = useState<typeof TodayDrop>()
   useEffect(() => {
-    if (today && !todayModule.current) {
+    if (today && !todayModule) {
       void import('./task-list/todayGroupDrop').then(({ applyTodayDrop, todayGroupDrop, contextualMoveItems }) => {
-        todayModule.current = { applyTodayDrop, todayGroupDrop, contextualMoveItems }
+        setTodayModule({ applyTodayDrop, todayGroupDrop, contextualMoveItems })
       })
     }
-  }, [today])
+  }, [today, todayModule])
   const host = useMemo<OrderHost | null>(() => route.view === 'label' ? { entity: 'label', id: route.id }
     : today ? { entity: 'user_prefs', id: USER_PREFS_ID } : null, [route, today])
   const orderRows = useMemo(() => today ? groups.filter(isTodayProjectGroup).flatMap((g) => g.rows.filter((r) => r.depth === 0)) : rows, [today, groups, rows])
@@ -207,15 +211,15 @@ function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], boa
   const todayDrop = useMemo(() => {
     if (!host || !today) return undefined
     const move = async (id: string, drop: import('../lib/viewOrderMove').GroupDrop) =>
-      todayModule.current?.applyTodayDrop(host, latest.current.rows.map((r) => r.task), latest.current.groups, id, drop)
+      todayModule?.applyTodayDrop(host, latest.current.rows.map((r) => r.task), latest.current.groups, id, drop)
     return {
       resolve: (task: Task, target: string | null, y: number, gesture: import('./task-list/projectGroupPlacement').DragDepth) =>
-        todayModule.current?.todayGroupDrop(latest.current.groups, memberships, nest, task, target, y, gesture, latest.current.taskMap) ?? null,
+        todayModule?.todayGroupDrop(latest.current.groups, memberships, nest, task, target, y, gesture, latest.current.taskMap) ?? null,
       move,
-      contextActions: (task: Task) => nest ? todayModule.current?.contextualMoveItems(task, latest.current.groups, memberships, latest.current.taskMap, move) ?? [] : [],
+      contextActions: (task: Task) => nest ? todayModule?.contextualMoveItems(task, latest.current.groups, memberships, latest.current.taskMap, move) ?? [] : [],
       canEdit: (group: ListGroup) => isTodayProjectGroup(group) && canEditTasks(roleOf(group.project, memberships)),
     }
-  }, [host, today, memberships, nest])
+  }, [host, today, memberships, nest, todayModule])
   return useMemo(() => (host ? { reorder, step, edges, groupOf, across, todayDrop } : null), [host, reorder, step, edges, groupOf, across, todayDrop])
 }
 
@@ -260,11 +264,17 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const { summarised, cursorRows } = useCalmUpcoming(route.view === 'upcoming', groups, rows, !!m.display?.laterInFull, collapsedGroups)
   // Bulk selection (bulk-edit D1): ticked rows, separate from the cursor row.
   const { tickRows, selection, ticked, contextIds } = useTickedRows(rows, taskMap, isReadOnly)
-  const { ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId, rowMenu } = useListUi(selection.ticked, ticked)
-  // The open task lives in the shell's panel slot (app-shell D1); the Inbox (inbox-split D1), and every list with the
-  // side panel (task-side-panel D2, D7), keep it there beside the list, set up before the bindings' route reset.
-  // The list reads only whether a task is open: the docked id is read where it is needed, so a panel that
-  // follows the cursor does not draw the list again on every move (row-click-modes D4).
+  const [inline, setInline] = useState<{ id: string; caret?: number; compact?: boolean } | null>(null)
+  const startInline = useCallback((id: string, e?: React.MouseEvent, compact = false) => {
+    const task = taskMap.get(id)
+    if (!task || board || isReadOnly(task)) return
+    setSelectedId(id)
+    setInline({ id, caret: e ? caretFromClick(e) : task.title.length, compact })
+  }, [taskMap, board, isReadOnly])
+  // Mount the input within the menu activation so iOS can show its keyboard.
+  const editTitle = useCallback((id: string) => { flushSync(() => startInline(id, undefined, true)) }, [startInline])
+  const { ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId, rowMenu } = useListUi(selection.ticked, ticked, board || timeline ? undefined : editTitle)
+  // Observe panel presence only so moving the cursor between docked tasks does not redraw the list.
   const panelOpen = usePanelHasTask()
   const inbox = useListSplit({ inbox: route.view === 'inbox', rows, ownRows: m.ownRows, selectedId, setSelectedId, ticking: selection.ticked.size > 0 })
   const quickAddRef = useRef<HTMLTextAreaElement>(null)
@@ -273,34 +283,25 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   useEffect(() => { if (route.view === 'today') void noteTodayOpened() }, [route.view])
   const fine = useFinePointer()
   const listRoot = useRef<HTMLDivElement>(null)
-  // The row being edited in place and where its caret starts (inline-task-editing D1, D2).
-  const [inline, setInline] = useState<{ id: string; caret?: number } | null>(null)
-  const clickPref = useRowClick()
   // A press on empty space clears the selection and closes the panel (inline-task-editing D4), never the side panel (task-side-panel D4).
   useClickAway(listRoot, !!selectedId || panelOpen || !!inline, () => {
+    const focused = document.activeElement
+    if (focused instanceof HTMLElement && listRoot.current?.contains(focused) && focused.closest('[data-inline-editor]')) focused.blur()
     setInline(null)
     setSelectedId(null)
     if (panelTaskId() && !sidePanelDocks()) setOpenId(null)
   })
-  // A click on a title edits it in place: a mouse click (not Enter) with a fine pointer from 768 px,
-  // the "Edit in place" preference, no panel open and no Inbox split (inbox-split D1), a task the user may edit; otherwise the task opens.
-  const startInline = useCallback((id: string, e?: React.MouseEvent) => {
-    const task = taskMap.get(id)
-    const fine = typeof window !== 'undefined' && window.matchMedia?.('(pointer: fine)').matches
-    const wide = typeof window !== 'undefined' && window.innerWidth >= 768
-    if (!e || e.detail === 0 || !task || board || clickPref !== 'edit' || !fine || !wide || panelTaskId() || taskSplitDocks() || isReadOnly(task)) return false
-    setSelectedId(id)
-    setInline({ id, caret: caretFromClick(e) })
-    return true
-  }, [taskMap, board, clickPref, isReadOnly])
   const renderInline = useCallback((task: Task) => (
-    <InlineEditor key={task.id} task={task} caret={inline?.id === task.id ? inline.caret : undefined} projects={m.projects} labelMap={m.labelMap}
+    <InlineEditor key={task.id} task={task} caret={inline?.caret} compact={inline?.compact} projects={m.projects} labelMap={m.labelMap}
       onFollow={(id) => setSelectedId(id)}
       onDone={(details) => {
-        setInline(null)
+        setInline((editing) => editing?.id === task.id ? null : editing)
         if (details) setOpenId(task.id)
-        // Focus back on the row so the keyboard picks up where the editor was.
-        requestAnimationFrame(() => listRoot.current?.querySelector<HTMLButtonElement>(`[data-task-id="${CSS.escape(task.id)}"] [data-row-open]`)?.focus())
+        requestAnimationFrame(() => {
+          if (details || document.activeElement !== document.body) return
+          const row = listRoot.current?.querySelector<HTMLButtonElement>(`[data-task-id="${CSS.escape(task.id)}"] [data-row-open]`)
+          row?.focus({ preventScroll: true })
+        })
       }} />
   ), [inline, m.projects, m.labelMap])
   /** Vim `o` (vim-keybindings): the task the next quick-add entry is placed after, if any. */
@@ -377,10 +378,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   useListShortcuts({
     ...shared, onReorder: m.listDisplay.onReorder, projectId, tree: m.tree, tickRows, treeView: m.treeView, nested: m.nested, projectReadOnly: m.projectReadOnly, projectEditable: m.projectEditable,
     today, userId, acceptPrompt, moveToSection, toggleViewMode, foldColumn: toggleSection,
-    editInline: (id) => { setSelectedId(id); setInline({ id }) }, expandedId, setExpandedId,
+    editInline: startInline, expandedId, setExpandedId,
   })
   // Vim's `o` inserts by project position: only where positions are the order (manual: projectManual).
-  const rowActions = useListBindings({ ...shared, manual: projectManual, setSelectMode, startDrag: drag.startDrag, insertAfter, listRoot, projectReadOnly: m.projectReadOnly, startInline, setExpandedId, openRowMenu: rowMenu.open, draggingId: drag.draggingId })
+  const rowActions = useListBindings({ ...shared, manual: projectManual, setSelectMode, startDrag: drag.startDrag, insertAfter, listRoot, projectReadOnly: m.projectReadOnly, startInline, editTitle, setExpandedId, openRowMenu: rowMenu.open, draggingId: drag.draggingId })
 
   const { edgeOf, boardGroups, queryControl: queryFilter, queryHost, cardNotes } = useListExtras(board, m.queryFilter, projectId ? { mode: viewMode, onChoose: chooseViewMode } : null, projectId, m.currentProject?.name) // Colour by on boards, Upcoming's and each project's query filter (calendar-clarity, project-query-filter)
   const renderRow = useRowRenderer({
@@ -389,6 +390,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     showCheckbox: selectMode || (fine && selection.ticked.size > 0), selectMode, fieldColumns: m.fieldColumns, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
     timeColumn: m.timeColumn, slotsOff: m.slotsOff, rowLayout: m.display?.rowLayout, actions: rowActions, ...useAddLines(rows, ui), edgeOf, cardNotes,
     inlineId: inline?.id ?? null, renderInline, expandedId, swipe: useListSwipe(listRoot, !fine && selection.ticked.size === 0 && !selectMode && !board, rows.length),
+    swipeEditTitle: !useMediaQuery(DESKTOP_HEADER_QUERY) && !timeline,
   })
 
   // The list's own rows: Today's Done today group is not part of them (today-closed-list D6).
@@ -446,7 +448,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             // Sticks under the page header from 768 px, so adding never needs a scroll back up (add-position D4).
             <div ref={quickAddRow} style={{ top: quickAddTop.top, '--below-head-gap': `${quickAddTop.gap}px` } as CSSProperties} className={`mb-3 pb-2 ${STICKY_QUICK_ADD}`} data-quick-add-row>
               {m.projectReadOnly ? <ReadOnlyQuickAdd /> : (
-                <QuickAdd ref={quickAddRef} onAdd={onAdd} onAddMany={onAddMany} projects={m.projects} labels={m.labels} placeholder={placeholderFor(route, currentProject, currentLabel, currentPlace ?? undefined, workspaceName, phone)} voiceShortcut />
+                <QuickAdd ref={quickAddRef} onAdd={onAdd} onAddMany={onAddMany} reuseProjectId={isReusable(currentProject) ? currentProject!.id : null} projects={m.projects} labels={m.labels} placeholder={placeholderFor(route, currentProject, currentLabel, currentPlace ?? undefined, workspaceName, phone)} voiceShortcut />
               )}
             </div>
           )}
@@ -456,6 +458,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             onMenuOpenChange={actions.onOpenChange} startPicker={actions.picker} onDone={selectMode ? () => setSelectMode(false) : undefined} />
           {actions.forCursor && selectedId && ( // `.` with nothing ticked: the same menu for the cursor task.
             <BulkActionsMenu ids={[selectedId]} open onOpenChange={actions.onOpenChange} startPicker={actions.picker} anchor={actionsFrom}
+              editTitle={board || timeline ? undefined : editTitle}
               trigger={<span className="sr-only">{t('Actions')}</span>} triggerClassName="sr-only" />
           )}
           {rowMenu.element}{queryHost}

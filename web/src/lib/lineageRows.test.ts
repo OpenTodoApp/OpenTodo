@@ -4,7 +4,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
 import { lineageRows, lineageScan } from './lineageRows'
-import { completeTask, createTask, getDeviceId, resetDeviceId, skipOccurrence } from './ops'
+import { completeTask, createTask, getDeviceId, resetDeviceId } from './ops'
+import { skipOccurrence } from './undoActions'
 import type { Task } from './types'
 
 let n = 0

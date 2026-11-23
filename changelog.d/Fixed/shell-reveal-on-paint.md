@@ -1,0 +1,1 @@
+- **The phone apps open as soon as the app has drawn.** The iPhone and Android apps no longer wait for the page to finish loading, which could keep the launch colour up for several seconds on every cold start (#1755).

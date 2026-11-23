@@ -44,9 +44,15 @@ type Multi []Sink
 
 // Assigned implements Sink.
 func (m Multi) Assigned(ctx context.Context, e Assigned) {
+	fan(m, func(s Sink) { s.Assigned(ctx, e) })
+}
+
+// fan calls f for every sink of m that implements T (a nil sink implements
+// nothing), in order.
+func fan[T any](m Multi, f func(T)) {
 	for _, s := range m {
-		if s != nil {
-			s.Assigned(ctx, e)
+		if t, ok := s.(T); ok {
+			f(t)
 		}
 	}
 }
@@ -95,11 +101,7 @@ type MentionSink interface {
 
 // Mentioned fans a mention out to every sink that implements MentionSink.
 func (m Multi) Mentioned(ctx context.Context, e Mentioned) {
-	for _, s := range m {
-		if ms, ok := s.(MentionSink); ok {
-			ms.Mentioned(ctx, e)
-		}
-	}
+	fan(m, func(s MentionSink) { s.Mentioned(ctx, e) })
 }
 
 // Mentioned implements MentionSink.
@@ -133,15 +135,43 @@ type UnblockedSink interface {
 
 // Unblocked fans the event out to every sink that implements UnblockedSink.
 func (m Multi) Unblocked(ctx context.Context, e Unblocked) {
-	for _, s := range m {
-		if us, ok := s.(UnblockedSink); ok {
-			us.Unblocked(ctx, e)
-		}
-	}
+	fan(m, func(s UnblockedSink) { s.Unblocked(ctx, e) })
 }
 
 // Unblocked implements UnblockedSink.
 func (Nop) Unblocked(context.Context, Unblocked) {}
+
+// KindStatus: someone else completed or reopened a task assigned to the
+// recipient (OpenSpec change assignee-notifications, design D1).
+const KindStatus = "status"
+
+// StatusChanged is emitted once per task whose completion changed in a
+// committed batch, to its assignee when that is not the batch's author.
+// Completed tells a completion from a reopening.
+type StatusChanged struct {
+	AssigneeID  string `json:"assigneeId"`
+	ActorID     string `json:"actorId"`
+	ActorName   string `json:"actorName"`
+	TaskID      string `json:"taskId"`
+	TaskTitle   string `json:"taskTitle"`
+	ProjectID   string `json:"projectId,omitempty"`
+	ProjectName string `json:"projectName,omitempty"`
+	Completed   bool   `json:"completed"`
+	At          int64  `json:"at"` // Unix ms, server time of the batch
+}
+
+// StatusSink is implemented by sinks that also handle status changes.
+type StatusSink interface {
+	StatusChanged(ctx context.Context, e StatusChanged)
+}
+
+// StatusChanged fans the event out to every sink that implements StatusSink.
+func (m Multi) StatusChanged(ctx context.Context, e StatusChanged) {
+	fan(m, func(s StatusSink) { s.StatusChanged(ctx, e) })
+}
+
+// StatusChanged implements StatusSink.
+func (Nop) StatusChanged(context.Context, StatusChanged) {}
 
 // Task page notification kinds (OpenSpec `task-pages`, design D9).
 const (
@@ -174,11 +204,7 @@ type PageSink interface {
 
 // PageActivity fans the event out to every sink that implements PageSink.
 func (m Multi) PageActivity(ctx context.Context, e PageEvent) {
-	for _, s := range m {
-		if ps, ok := s.(PageSink); ok {
-			ps.PageActivity(ctx, e)
-		}
-	}
+	fan(m, func(s PageSink) { s.PageActivity(ctx, e) })
 }
 
 // PageActivity implements PageSink.
@@ -212,20 +238,12 @@ type RuleSink interface {
 
 // RuleFired fans the event out to every sink that implements RuleSink.
 func (m Multi) RuleFired(ctx context.Context, e RuleEvent) {
-	for _, s := range m {
-		if rs, ok := s.(RuleSink); ok {
-			rs.RuleFired(ctx, e)
-		}
-	}
+	fan(m, func(s RuleSink) { s.RuleFired(ctx, e) })
 }
 
 // RulePaused fans the event out to every sink that implements RuleSink.
 func (m Multi) RulePaused(ctx context.Context, e RuleEvent) {
-	for _, s := range m {
-		if rs, ok := s.(RuleSink); ok {
-			rs.RulePaused(ctx, e)
-		}
-	}
+	fan(m, func(s RuleSink) { s.RulePaused(ctx, e) })
 }
 
 // KindRoutine is a routine's Notify me step (OpenSpec change routines-engine,
@@ -254,11 +272,7 @@ type RoutineSink interface {
 
 // RoutineNotice fans the notice out to every sink that implements RoutineSink.
 func (m Multi) RoutineNotice(ctx context.Context, n RoutineNotice) {
-	for _, s := range m {
-		if rs, ok := s.(RoutineSink); ok {
-			rs.RoutineNotice(ctx, n)
-		}
-	}
+	fan(m, func(s RoutineSink) { s.RoutineNotice(ctx, n) })
 }
 
 // Routine alerts in the bell (OpenSpec change routines-editor, design D11):
@@ -298,20 +312,12 @@ type RoutineProposalSink interface {
 
 // RoutineProposal fans the alert out to every sink that implements RoutineProposalSink.
 func (m Multi) RoutineProposal(ctx context.Context, a RoutineAlert) {
-	for _, s := range m {
-		if rs, ok := s.(RoutineProposalSink); ok {
-			rs.RoutineProposal(ctx, a)
-		}
-	}
+	fan(m, func(s RoutineProposalSink) { s.RoutineProposal(ctx, a) })
 }
 
 // RoutineFailed fans the alert out to every sink that implements RoutineAlertSink.
 func (m Multi) RoutineFailed(ctx context.Context, a RoutineAlert) {
-	for _, s := range m {
-		if rs, ok := s.(RoutineAlertSink); ok {
-			rs.RoutineFailed(ctx, a)
-		}
-	}
+	fan(m, func(s RoutineAlertSink) { s.RoutineFailed(ctx, a) })
 }
 
 // KindRoutinePausedShared: a shared project's routine paused because the
@@ -339,11 +345,7 @@ type RoutinePausedSink interface {
 
 // RoutinePausedShared fans the event out to every sink that implements RoutinePausedSink.
 func (m Multi) RoutinePausedShared(ctx context.Context, e RoutinePausedShared) {
-	for _, s := range m {
-		if rs, ok := s.(RoutinePausedSink); ok {
-			rs.RoutinePausedShared(ctx, e)
-		}
-	}
+	fan(m, func(s RoutinePausedSink) { s.RoutinePausedShared(ctx, e) })
 }
 
 // KindMemberInvitation: someone who shares nothing with the recipient asked to
@@ -374,11 +376,7 @@ type InvitationSink interface {
 
 // MemberInvited fans the event out to every sink that implements InvitationSink.
 func (m Multi) MemberInvited(ctx context.Context, e MemberInvited) {
-	for _, s := range m {
-		if is, ok := s.(InvitationSink); ok {
-			is.MemberInvited(ctx, e)
-		}
-	}
+	fan(m, func(s InvitationSink) { s.MemberInvited(ctx, e) })
 }
 
 // MemberInvited implements InvitationSink.

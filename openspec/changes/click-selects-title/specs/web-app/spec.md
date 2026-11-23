@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Task detail panel
-Opening a task SHALL show it as its own page at `/task/<id>` (see "Task page") for editing title, notes, project, priority, dates and every other task property, with complete, delete and close actions. The page SHALL show every property in its facts column, a property without a value as a quiet action that sets it (see "Task facts column"). A task SHALL open from Enter on a selected row, from a double-click on a row, from Open task in an expanded row, from Open details or `Shift+Enter` in the inline editor, and from a tap on a touch screen or a click below 768 px; with a fine pointer from 768 px a first click on a row only selects it and a second click on its title edits it in place (see `task-list-presentation` "A click selects the row, a second click edits its title"). Only a page that keeps a split SHALL show the task in the shell's panel slot beside its content instead, and only from 1024 px; below that it opens the page too. The pages that keep a split are Process the Inbox, the Inbox itself (see `inbox-triage` "Inbox list and detail"), and, for a user who chose the side panel (`appearance-preferences` "Task opening preference"), the lists of "Task details in a side panel". On the Inbox the task under the cursor shows beside the list, a first click on a title selects the row and shows it there, a second click on the selected row's title edits it in place, and Enter opens its page. Where another capability says the task panel or the detail panel, it means the task page, or the docked panel on a page that keeps a split.
+Opening a task SHALL show it as its own page at `/task/<id>` (see "Task page") for editing title, notes, project, priority, dates and every other task property, with complete, delete and close actions. The page SHALL show every property in its facts column, a property without a value as a quiet action that sets it (see "Task facts column"). A task SHALL open from Enter on a selected row, from a double-click on a row, from Open task in an expanded row, from Open details or `Shift+Enter` in the desktop inline editor, and from a finger tap or a click below 768 px. Fine-pointer selection and editing in eligible lists follow `task-list-presentation` "A click selects the row, a second click edits its title". Enter in an already active inline editor saves the edit and closes the editor, as defined by "Inline title editing". Only a page that keeps a split SHALL show the task in the shell's panel slot beside its content instead, and only from 1024 px; below that it opens the page too. The pages that keep a split are Process the Inbox, the Inbox itself (see `inbox-triage` "Inbox list and detail"), and, for a user who chose the side panel (`appearance-preferences` "Task opening preference"), the lists of "Task details in a side panel". In the Inbox split the task under the cursor shows beside the list and Enter opens its page. Where another capability says the task panel or the detail panel, it means the task page, or the docked panel on a page that keeps a split.
 
 #### Scenario: Open from the list
 - **WHEN** the user presses Enter on a selected task, or taps a task's title on a touch screen
@@ -54,7 +54,7 @@ The panel SHALL be either open or closed. Its state SHALL be kept on the device 
 
 While the panel is open:
 - A first click on a task's row or title (it selects the row), Enter on a selected row whose task is not shown, and moving the cursor (`j`, `k`, the arrow keys) SHALL show that task in the panel. While rows are ticked for a bulk action the panel SHALL keep its task.
-- A second click on the title of the selected row SHALL edit the title in place in the list, as `F2` does, and the panel SHALL keep showing the task (`task-list-presentation` "A click selects the row, a second click edits its title").
+- A separate qualifying click on the selected title, `F2`, or the **Edit title** menu action SHALL edit in place where the list has the inline editor, and the panel SHALL keep showing the task (`task-list-presentation` "Inline title editing").
 - Focus SHALL stay on the list when the panel follows the cursor, after a key and after a click on a row alike; the panel takes focus only when the user moves into it.
 - Following the cursor SHALL cost the list what moving the cursor costs without the panel: one render of the list and of the two rows whose selection changed per move, at any list size.
 - Enter on the row whose task is shown SHALL open the task page.
@@ -64,7 +64,7 @@ The panel SHALL never close by itself. Escape on the list and a click on the emp
 
 While the panel is closed:
 - Moving the cursor SHALL show nothing.
-- A first click on a task's row or title, Enter on a selected row, Open details, a task chosen in the command palette, and a link to a task in a note SHALL open the panel again with that task.
+- A click that selects a different row, a direct tap to open, Enter on a selected row, Open details, a task chosen in the command palette, and a link to a task in a note SHALL open the panel again with that task. Editing the selected title leaves the panel closed.
 
 Below 1024 px, and on the screens not listed (the calendar's Day, Week, Month and Plan, dashboards, the review screens, Close the day), a task SHALL open as its page whatever the preference. Expanding a row's details in place (`task-list-presentation` "Expanded rows") SHALL work as it does without the panel, and the rows SHALL lay out by their own width as the panel narrows the list. The panel SHALL read and edit the task through the same operations as the task page, so it works offline and converges like any edit.
 
@@ -91,6 +91,10 @@ Below 1024 px, and on the screens not listed (the calendar's Day, Week, Month an
 #### Scenario: Reopen with a click or Enter
 - **WHEN** the panel is closed and the user selects a task with `j` and presses Enter
 - **THEN** the panel opens with that task, and a second Enter opens the task's page at `/task/<id>`
+
+#### Scenario: Edit a selected title while the panel is closed
+- **WHEN** the panel is closed, the user selects an editable task with `j`, then clicks its selected title with a fine pointer
+- **THEN** the title becomes editable inline and the panel stays closed
 
 #### Scenario: Escape inside the panel
 - **WHEN** focus is in the panel's Comments tab and the user presses Escape outside a text field

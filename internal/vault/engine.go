@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -133,6 +134,8 @@ type engine struct {
 	// pending are files iCloud has not downloaded yet: only a `.<name>.icloud`
 	// placeholder is on disk. They are neither read nor written.
 	pending map[string]bool
+	// held: the half-saved files among pending, with their first hold time.
+	held map[string]int64
 	// raced are vault files saved while the run went on, and racedTasks the
 	// tasks of task notes saved meanwhile: not written, and their values keep
 	// their base so the next run merges the save.
@@ -391,6 +394,7 @@ func (e *engine) scan() error {
 	}
 	e.disk = disk
 	e.pending = map[string]bool{}
+	e.held = map[string]int64{}
 	for _, p := range sortedKeys(e.st.Files) {
 		if _, ok := disk[p]; ok {
 			continue
@@ -425,7 +429,123 @@ func (e *engine) scan() error {
 		}
 		e.changed[p] = true
 	}
+	e.holdHalfSaved()
 	return nil
+}
+
+// holdHalfSaved holds the half-saved files (halfSaved) like files not
+// downloaded yet: neither read nor written, their base kept, read next sync.
+func (e *engine) holdHalfSaved() {
+	// A file that held text when the sync last wrote it and is empty now, or
+	// cut short of it (cutShort), is an editor's save in progress (the file
+	// cut to nothing, or written part way, before its text). Every
+	// later check would see the same empty file, so read as it is it would trash
+	// the file's tasks and write over the save. It is held like a file not
+	// downloaded yet: neither read nor written, its base kept, read next sync.
+	for _, p := range e.halfSaved() {
+		empty := len(e.disk[p]) == 0
+		delete(e.disk, p)
+		delete(e.changed, p)
+		e.pending[p] = true
+		if empty {
+			e.rep.event("skipped", p, "", "skipped %s: it is empty, as while a file is being saved; the next sync reads it", p)
+		} else {
+			e.rep.event("skipped", p, "", "skipped %s: it ends short of what was written, as while a file is being saved; the next sync reads it", p)
+		}
+	}
+}
+
+// halfSavedHold is how long an empty file stays held as half saved: longer
+// than any editor's two-step save, short enough that a file emptied on
+// purpose syncs as empty soon.
+const halfSavedHold = 5 * time.Minute
+
+// halfSaved lists the vault files that look like an editor's first save step:
+// empty now, holding text when the last sync wrote them, and not emptied
+// because all their lines moved to other files (the Inbox's last line into a
+// project: the moved lines carry their ids). A held file stays held while it
+// is empty, up to halfSavedHold from its first hold (a watch can sync again
+// within the save); then it was emptied on purpose and syncs as it is. A hold
+// time in the future (a clock set back since) ends the hold. Each
+// one's first hold time is recorded in e.held.
+func (e *engine) halfSaved() []string {
+	var out []string
+	empty := hashOf(nil)
+	now := e.o.Now().UnixMilli()
+	for _, p := range sortedKeys(e.disk) {
+		fs, ok := e.st.Files[p]
+		b := e.disk[p]
+		if !ok || fs.Hash == empty || (fs.Hash != "" && fs.Hash == hashOf(b)) {
+			continue
+		}
+		if len(b) != 0 && !cutShort(b, fs) {
+			continue
+		}
+		// An empty file is held unless every task it lost is in another file
+		// (a move); a file cut short only when it lost a task line that is in
+		// no other file, as only then could reading it trash anything.
+		missing, elsewhere := e.lostLines(p, b)
+		if len(b) == 0 && missing > 0 && elsewhere || len(b) != 0 && (missing == 0 || elsewhere) {
+			continue
+		}
+		switch {
+		case fs.Hash == "" && fs.Held != 0 && now >= fs.Held && now-fs.Held < halfSavedHold.Milliseconds():
+			e.held[p] = fs.Held
+		case fs.Hash != "":
+			e.held[p] = now
+		default:
+			continue
+		}
+		out = append(out, p)
+	}
+	return out
+}
+
+// cutShort reports whether b looks like the file fs was written as, cut short
+// by a save in progress: shorter than what was written, and everything up to
+// its last line end a prefix of it that ends at a line end. Past
+// maxPrefixes lines (no prefixes kept), a shorter file without its last line
+// end counts as cut short.
+func cutShort(b []byte, fs FileState) bool {
+	if fs.Size == 0 || len(b) == 0 || len(b) >= fs.Size {
+		return false
+	}
+	if len(fs.Prefixes) == 0 {
+		return b[len(b)-1] != '\n'
+	}
+	k := bytes.LastIndexByte(b, '\n') + 1
+	if k == 0 {
+		return true // cut inside the first line
+	}
+	return slices.Contains(fs.Prefixes, prefixHash(b[:k]))
+}
+
+// lostLines counts the tasks printed in file p that cur (the file now) no
+// longer holds, and reports whether every one of them is in another file
+// (lines cut out of p to move them).
+func (e *engine) lostLines(p string, cur []byte) (missing int, elsewhere bool) {
+	elsewhere = true
+	for id, at := range e.st.Printed {
+		if at != p {
+			continue
+		}
+		mark := []byte(markID + " " + id)
+		if bytes.Contains(cur, mark) {
+			continue
+		}
+		missing++
+		found := false
+		for q, b := range e.disk {
+			if q != p && bytes.Contains(b, mark) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			elsewhere = false
+		}
+	}
+	return missing, elsewhere
 }
 
 // savedSinceRead lists the files the merge read as changed that no longer
@@ -474,7 +594,12 @@ func (e *engine) saveBase() {
 	// edits merge against what they were printed from.
 	pendingFile := map[string]bool{}
 	for p := range e.pending {
-		pendingFile[p] = true
+		// A half-saved file's base is held in State.Held instead (holdRaced):
+		// the store takes the app's values, so a change made in the app while
+		// the file is held still counts as one once the save is read.
+		if _, half := e.held[p]; !half {
+			pendingFile[p] = true
+		}
 	}
 	if e.o.ReadOnly {
 		for p := range e.changed {
@@ -512,7 +637,8 @@ func (e *engine) saveBase() {
 }
 
 // holdRaced keeps, for the next sync, the rows a file or task note saved
-// during this run was printed from (State.Held); the store moves on.
+// during this run, or a half-saved file held, was printed from (State.Held);
+// the store moves on.
 func (e *engine) holdRaced() {
 	hold := func(entity, id string) {
 		row, ok := e.base[entity][id]
@@ -527,13 +653,19 @@ func (e *engine) holdRaced() {
 		}
 		e.st.Held[entity][id] = row
 	}
+	// Files saved during this run, and half-saved files held (halfSaved) for
+	// as long as they stay held.
+	heldFile := func(p string) bool {
+		_, half := e.held[p]
+		return e.raced[p] || half
+	}
 	for id, p := range e.st.Printed {
-		if e.raced[p] {
+		if heldFile(p) {
 			hold("task", id)
 		}
 	}
-	for p := range e.raced {
-		if fs, ok := e.st.Files[p]; ok && fs.Project != "" {
+	for _, p := range sortedKeys(e.st.Files) {
+		if fs := e.st.Files[p]; heldFile(p) && fs.Project != "" {
 			hold("project", fs.Project)
 		}
 	}

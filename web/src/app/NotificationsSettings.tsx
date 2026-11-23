@@ -5,9 +5,10 @@ import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { Switch } from '../ui'
 import type { HueName } from '../ui'
+import type { PushNotify } from '../lib/types'
 import { getDeviceId } from '../lib/ops'
 import {
-  disablePush, enablePush, loadPushState, localTestNotification, PushPermissionError, pushChecklist, sendTestPush, setIncludeContent,
+  disablePush, enablePush, loadPushState, localTestNotification, PushPermissionError, pushChecklist, sendTestPush, setIncludeContent, setPushNotify,
   type ChecklistStep, type PushState, type StepAction, type TestOutcome,
 } from '../lib/push'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -86,6 +87,7 @@ function PushNotificationsSettings() {
     <NotificationsView state={s} busy={busy} message={message}
       onEnable={(on) => void run(on && s ? () => enablePush(s.includeContent) : () => disablePush(), on ? t('Notifications enabled on this device.') : undefined)}
       onIncludeContent={(on) => void run(() => setIncludeContent(on))}
+      onNotify={(notify) => void run(() => setPushNotify(notify))}
       onRenew={() => s && void run(() => enablePush(s.includeContent), t('Notifications re-enabled.'))}
       delivery={s && (
         <PushDelivery
@@ -114,12 +116,13 @@ const PERMISSION: Record<PushState['permission'], { label: string; hue: HueName 
 }
 
 /** Presentational part of Settings → Notifications, rendered without effects for tests and stories. */
-export function NotificationsView({ state: s, busy, message, onEnable, onIncludeContent, onRenew, delivery, now }: {
+export function NotificationsView({ state: s, busy, message, onEnable, onIncludeContent, onNotify, onRenew, delivery, now }: {
   state: PushState | null
   busy: boolean
   message: { kind: 'error' | 'info'; text: string } | null
   onEnable: (on: boolean) => void
   onIncludeContent: (on: boolean) => void
+  onNotify?: (notify: PushNotify) => void
   onRenew: () => void
   delivery?: ReactNode
   now?: number
@@ -155,6 +158,14 @@ export function NotificationsView({ state: s, busy, message, onEnable, onInclude
           )}
           <SettingRow {...rowCopy('notifications', 'titles')}
             control={<Switch checked={s.includeContent} disabled={busy} onChange={onIncludeContent} label={t('Include task titles')} hideLabel />} />
+          {s.enabled && onNotify && (
+            <>
+              <SettingRow {...rowCopy('notifications', 'assigned')}
+                control={<Switch checked={s.notify.assigned} disabled={busy} onChange={(on) => onNotify({ ...s.notify, assigned: on })} label={t('Assigned to me')} hideLabel />} />
+              <SettingRow {...rowCopy('notifications', 'status')}
+                control={<Switch checked={s.notify.status} disabled={busy} onChange={(on) => onNotify({ ...s.notify, status: on })} label={t('Completed or reopened')} hideLabel />} />
+            </>
+          )}
           {delivery && <div className="py-3">{delivery}</div>}
         </>
       )}

@@ -5,7 +5,8 @@
 // web-component-structure the days come from lib/calendarDays, the live reads from
 // lib/liveData, and the columns, agenda, planning list and keys live in ./calendar.
 import { Button, DESKTOP_HEADER_QUERY, MenuItem, PageBody, useMediaQuery } from '../ui'
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { calendarTasks, DEFAULT_BLOCK_MINUTES, formatTime as toHHMM, placementStart, weekDates, type GridPrefs } from '../lib/calendar'
 import { fitInFrame, frameTarget, framesByDate, useFrames, type PlacedFrame } from '../lib/frames'
 import { clampSlotMinutes, slotAt, slotKey, slotName, type SlotView } from '../lib/slots'
@@ -15,10 +16,9 @@ import { CalendarsToggle } from './calendar/CalendarsToggle'
 import { addDaysISO, dueFromView, formatDate, formatShort, viewedTask } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import { getTask, readGridPrefs, useCalendarShowCompleted, useGridPrefs, useLiveProjects } from '../lib/liveData'
-import { updateTask } from '../lib/ops'
 import type { CalendarSubscription, Task } from '../lib/types'
 import { useCalendarDrag, type DragState, type DropTarget } from './calendarDrag'
-import { rescheduleWithUndo, setDueWithUndo, spanWithUndo } from './undoable'
+import { estimateWithUndo, rescheduleWithUndo, setDueWithUndo, spanWithUndo } from './undoable'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { CalendarRangeSwitch } from './CalendarRange'
 import { placement as placementSignal } from './signals'
@@ -194,7 +194,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
       const time = toHHMM(target.start)
       if (task.due?.time !== time || target.estimate !== task.estimate_minutes) act(rescheduleWithUndo(taskId, dueFromView(stored, { date: target.date, time })!, target.estimate))
     } else if (target.estimate !== task.estimate_minutes) {
-      act(updateTask(taskId, { estimate_minutes: target.estimate }))
+      act(estimateWithUndo(taskId, target.estimate))
     }
     setSelectedId(taskId)
   }, [taskMap, rawMap, slotIndex, heldBy, zone])
@@ -325,7 +325,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
 
         {/* Focusable, so the grid scrolls with the keyboard even when no block is in view (axe scrollable-region-focusable). */}
         <div ref={scroller} className="add-room-end relative min-h-0 flex-1 overflow-auto outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
-          data-calendar-scroller data-scroll-x tabIndex={0} role="region" aria-label={mode === 'week' ? t('Week calendar') : t('Day calendar')}>
+          data-calendar-scroller data-main-scroller data-scroll-x tabIndex={0} role="region" aria-label={mode === 'week' ? t('Week calendar') : t('Day calendar')}>
           {mode === 'week' && !wide ? (
             <WeekAgenda days={days} today={today} prefs={prefs} tasks={shown} meetings={meetings} frames={frames} taskMap={taskMap} hueOf={hueOf} projectionHue={projectionHue} deadlines={deadlines} selectedId={selectedId} subMap={feeds.subMap} zone={zone}
               onSelect={select} onOpen={open} onAdd={(d) => chrome.add.add({ date: d })} />

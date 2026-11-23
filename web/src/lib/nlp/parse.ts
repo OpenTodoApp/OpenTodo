@@ -8,10 +8,11 @@ import { matchByTimeAt, matchDateAt, matchDeadlineAt, matchTimeAt, ordinalOutOfR
 import { resolvePhrase, type SectorWord } from '../sectors'
 import { matchRecurrenceAt, type RecurrenceMatch } from './recurrence'
 import { matchReminderAt, type ReminderMatch, type ReminderPhrase } from './reminders'
+import { findLinks, keptLinks, type LinkHit } from './links'
 import { stripSpans, tokenize, type Span, type Token } from './tokenize'
 import { vocabulariesFor, type DayMonthOrder } from './vocab'
 
-export type AttributeKind = 'due' | 'deadline' | 'someday' | 'sector' | 'evening' | 'daypart' | 'project' | 'label' | 'priority' | 'estimate' | 'spent' | 'recurrence' | 'reminder' | 'energy'
+export type AttributeKind = 'due' | 'deadline' | 'someday' | 'sector' | 'evening' | 'daypart' | 'project' | 'label' | 'priority' | 'estimate' | 'spent' | 'recurrence' | 'reminder' | 'energy' | 'link'
 
 /** One recognised attribute; drives a preview chip. `spans` are removed from the title. */
 export interface Chip {
@@ -19,7 +20,7 @@ export interface Chip {
   /** Stable within one parse: kind plus the first span start. */
   key: string
   spans: Span[]
-  /** Resolved value: Due, deadline date, project id, label name, priority, minutes, true (evening), the part (daypart), the canonical rule, a reminder or the energy. */
+  /** Resolved value: Due, deadline date, project id, label name, priority, minutes, true (evening), the part (daypart), the canonical rule, a reminder, the energy or the URL (link). */
   value: Due | string | number | boolean | ReminderPhrase
 }
 
@@ -43,6 +44,8 @@ export interface ParseContext {
   energy?: boolean
   /** The account uses time sectors (time-sectors D8): "this week", "sometime next month" are read. */
   sectors?: boolean
+  /** Read http(s) URLs as link attachments (quick-add-links D1), for the callers that attach them. */
+  links?: boolean
 }
 
 export interface ParseResult {
@@ -70,6 +73,8 @@ export interface ParseResult {
   recurrence: string | null
   /** Reminders as typed; createTask resolves them against the final due (quick-add-recurrence D3). */
   reminders: ReminderPhrase[]
+  /** The URLs to attach, in line order (quick-add-links); empty without `links`. */
+  links: string[]
   /** One chip per attribute in line order (one per label and per reminder). */
   chips: Chip[]
   /** `#tokens` that name no project, or several, in line order; they stay in the title. */
@@ -133,6 +138,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   const bareHourIsTime = vocabs.some((v) => v.hourSuffixH)
   const dismissed = liveDismissals(line, ctx.dismissed)
   const { tokens, quoteSpans } = tokenize(line)
+  const links = ctx.links ? findLinks(line, tokens, dismissed) : new Map<number, LinkHit>()
 
   // A bare month ("September") is replaced by a later complete date phrase (quick-add-month-and-every-other D1).
   let date: { value: string; span: Span; bare?: true } | null = null
@@ -167,7 +173,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   let i = 0
   while (i < tokens.length) {
     const tok = tokens[i]
-    if (tok.quoted) {
+    if (tok.quoted || links.has(i)) {
       i++
       continue
     }
@@ -343,6 +349,8 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   if (estimate) chip('estimate', [estimate.span], estimate.value)
   // The spent chip shares the token's span: dismissing either keeps the whole token as text.
   if (estimate && spent !== null) chip('spent', [estimate.span], spent)
+  const kept = keptLinks(line, chips.flatMap((c) => c.spans), quoteSpans, links)
+  for (const l of kept) chip('link', [l.span], l.url)
   chips.sort((a, b) => a.spans[0].start - b.spans[0].start)
 
   return {
@@ -361,6 +369,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     spentMinutes: spent,
     recurrence: recurrence?.value ?? null,
     reminders: reminders.map((r) => r.value),
+    links: kept.map((l) => l.url),
     chips,
     unmatched,
   }
