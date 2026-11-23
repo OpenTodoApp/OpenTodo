@@ -125,6 +125,8 @@ protocol BridgeActions: AnyObject {
     func bridgedBackgroundDone()
     func bridgedPullHandled()
     func bridgedPainted()
+    /// focus-live-activity D1: the whole Focus session; only the visible app shows it.
+    func bridgedPublishFocus(_ json: String)
 }
 
 /// The bridge, version 1 (native-shells D5): a document-start script that defines
@@ -150,13 +152,14 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
     /// a screen (the background run has none, so it lists nothing a person would see or
     /// feel); `haptics`: the device can play them; `pull-refresh`: the visible app has a
     /// refresh control the page can take over (pull-to-sync D4); `first-paint`: the visible
-    /// app hides its web view until the page has drawn (shell-reveal-on-paint D2). No `files`: WebKit
+    /// app hides its web view until the page has drawn (shell-reveal-on-paint D2); `focus`: the
+    /// visible app shows the Focus session as a Live Activity (focus-live-activity). No `files`: WebKit
     /// downloads what the web app saves (shell-repairs D3). No `alarm-settings`: iOS has
     /// no exact-alarm permission. `background` (shell-reminders-on D4) is only ever
     /// listed without a screen: the run that can be told it is done.
     static func capabilities(biometric: Bool, share: Bool, haptics: Bool = true) -> [String] {
         var caps = ["reminders", "widgets"]
-        if share { caps += ["share", "links", "obsidian-links", AppLink.capability, "system-bars", PullRefresh.capability, FirstPaint.capability, "completion-sound", ScrollTop.capability] }
+        if share { caps += ["share", "links", "obsidian-links", AppLink.capability, "system-bars", PullRefresh.capability, FirstPaint.capability, "completion-sound", ScrollTop.capability, "focus"] }
         if share && haptics { caps.append("haptics") }
         if !share { caps.append("background") }
         if biometric { caps.append("biometric") }
@@ -242,6 +245,9 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
             reply(nil, nil)
         case FirstPaint.method:
             actions.bridgedPainted()
+            reply(nil, nil)
+        case "publishFocus":
+            actions.bridgedPublishFocus(string(0))
             reply(nil, nil)
         default:
             reply(nil, "unknown_method")
@@ -346,7 +352,8 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
             playCompletionSound: function () { call('playCompletionSound', []).catch(function () {}) },
             backgroundDone: function () { call('backgroundDone', []) },
             pullHandled: function () { call('pullHandled') },
-            painted: function () { call('painted') }
+            painted: function () { call('painted') },
+            publishFocus: function (json) { call('publishFocus', [String(json)]) }
           });
         })();
         """

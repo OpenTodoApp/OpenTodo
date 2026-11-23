@@ -12,12 +12,12 @@ Web tasks run `npm test` and `npm run build` in `web/`. iOS tasks run `make ios`
 
 ## 2. iOS
 
-- [ ] 2.1 `NSSupportsLiveActivities` in the app's Info.plist. `FocusActivity.swift` holds the `ActivityAttributes` and content state, and parses the publication with junk refused. Verified by `FocusActivityTests` parsing the shared fixtures (each state, unknown `v` refused, a missing `plannedEndAt` gives a count-up).
-- [ ] 2.2 `publishFocus` in `Bridge.swift`: store the last publication in the App Group. Start, update or end the single activity, honour `areActivitiesEnabled`, end any extra activity, and set `staleDate = plannedEndAt` and the dismissal policy (design D2, D7). `focus` is listed in `capabilities`. Verified by `BridgeTests` (capability list) and `FocusActivityTests` (state-to-content mapping, stale date, at most one activity via a fake activity store).
-- [ ] 2.3 Lock screen and Dynamic Island views (compact, minimal, expanded) in `OpenTodoWidget`, with `Text(timerInterval:countsDown:)`, `Text(_:style: .timer)` and the frozen paused time. "Session done" when stale. A Pause/Resume `Link` to `opentodo://focus?action=…`. Verified by the previews building in `make ios`, and by `AppModelTests` mapping `opentodo://focus?action=pause` to `/focus?action=pause`.
-- [ ] 2.4 The local "Session done"/"Break over" notification at `plannedEndAt`, rescheduled on each publication and cancelled on paused, done and none. Verified by `FocusActivityTests` with a fake notification centre.
-- [ ] 2.5 Cleanup in `AppModel.forgetServer` and on the sign-out reset. Verified by `AppModelTests`.
-- [ ] 2.6 Strings ("Focus session", "Work · %d of %d", "Short break", "Long break", "Paused", "Session done", "Break over", "Pause", "Resume") in the String Catalog in en, de, fr, es, it and pt. Verified by `make i18n-check`.
+- [x] 2.1 `NSSupportsLiveActivities` in the app's Info.plist. `FocusActivity.swift` holds the `ActivityAttributes` and content state, and parses the publication with junk refused. Verified by `FocusActivityTests` parsing the shared fixtures (each state, unknown `v` refused, a missing `plannedEndAt` gives a count-up).
+- [x] 2.2 `publishFocus` in `Bridge.swift`: store the last publication in the App Group. Start, update or end the single activity, honour `areActivitiesEnabled`, end any extra activity, and set `staleDate = plannedEndAt` and the dismissal policy (design D2, D7). `focus` is listed in `capabilities`. Verified by `BridgeTests` (capability list) and `FocusActivityTests` (state-to-content mapping, stale date, at most one activity via a fake activity store).
+- [x] 2.3 Lock screen and Dynamic Island views (compact, minimal, expanded) in `OpenTodoWidget`, with `Text(timerInterval:countsDown:)`, `Text(_:style: .timer)` and the frozen paused time. "Session done" when stale. A Pause/Resume `Link` to `opentodo://focus?action=…`. Verified by the previews building in `make ios`, and by `AppModelTests` mapping `opentodo://focus?action=pause` to `/focus?action=pause`.
+- [x] 2.4 The local "Session done"/"Break over" notification at `plannedEndAt`, rescheduled on each publication and cancelled on paused, done and none. Verified by `FocusActivityTests` with a fake notification centre.
+- [x] 2.5 Cleanup in `AppModel.forgetServer` and on the sign-out reset. Verified by `AppModelTests`.
+- [x] 2.6 Strings ("Focus session", "Work · %d of %d", "Short break", "Long break", "Paused", "Session done", "Break over", "Pause", "Resume") in the String Catalog in en, de, fr, es, it and pt. Verified by `make i18n-check`.
 - [ ] 2.7 Device run: a Pomodoro with the phone locked, Pause from the lock screen, the Dynamic Island on a phone that has one, the stale "Session done", the app killed and reopened. Recorded in the `mobile/README.md` table.
 
 ## 3. Android
@@ -30,7 +30,7 @@ Web tasks run `npm test` and `npm run build` in `web/`. iOS tasks run `make ios`
 
 ## 4. Documentation and release
 
-- [ ] 4.1 `docs/focus.md`: "On the lock screen" (what the iOS and Android apps show, Pause/Resume opening the app, where to turn it off, titles and encrypted accounts, auto-start waiting until the app runs). Verified by `npm run docs:check`.
-- [ ] 4.2 `docs/ios-app.md`, `docs/android-app.md` and `mobile/README.md`: the `focus` capability, the payload and the cleanup. Verified by `npm run docs:check`.
+- [x] 4.1 `docs/focus.md`: "On the lock screen" (what the iOS and Android apps show, Pause/Resume opening the app, where to turn it off, titles and encrypted accounts, auto-start waiting until the app runs). Verified by `npm run docs:check`.
+- [x] 4.2 `docs/ios-app.md`, `docs/android-app.md` and `mobile/README.md`: the `focus` capability, the payload and the cleanup. Verified by `npm run docs:check`.
 - [x] 4.3 CHANGELOG entry under Unreleased. Verified by `make check`.
 - [ ] 4.4 `npm test`, `npm run build`, `make ios`, `make android`, `make openspec-validate`, `make repo-check` and `make check` pass. Verified by their exit codes.

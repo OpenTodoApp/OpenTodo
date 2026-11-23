@@ -63,6 +63,8 @@ targets:
             CFBundleURLSchemes: [opentodo]
         BGTaskSchedulerPermittedIdentifiers: [app.opentodo.refresh]
         UIBackgroundModes: [fetch]
+        # focus-live-activity: the Focus session on the lock screen and in the Dynamic Island.
+        NSSupportsLiveActivities: true
         # No WKAppBoundDomains here (ios-bridge-portable): the key alone, even with a
         # placeholder host, switches off the bridge's script and message handler on
         # every other server. The "App-bound domains" phase adds it to a one-server build.
@@ -117,6 +119,7 @@ targets:
       - path: OpenTodoWidget
       - path: Shared/Localizable.xcstrings
       - path: OpenTodo/WidgetPublication.swift
+      - path: OpenTodo/FocusActivity.swift
       - path: OpenTodo/Store.swift
       - path: OpenTodo/JSON.swift
     info:

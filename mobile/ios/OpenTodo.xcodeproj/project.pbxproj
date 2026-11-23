@@ -57,6 +57,10 @@
 		F5191A0E8249CEE610DA9512 /* OpenTodoShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 6D58C5588CD05D765202A22F /* OpenTodoShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F5E06AABC6A2113125D151CD /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30808D5A379DF00A50741685 /* Store.swift */; };
 		741C63C0C61315944B3111C9 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0198F8B662DFAD6F1E420480 /* PrivacyInfo.xcprivacy */; };
+		9AD13426BA747BA9AAA512E8 /* FocusActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E6B55AE7ACBC0C48BB7DA90 /* FocusActivity.swift */; };
+		F828197F8671C5728F9820EB /* FocusActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E6B55AE7ACBC0C48BB7DA90 /* FocusActivity.swift */; };
+		ACBE646C7682DD2AA720D787 /* FocusLive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35EA0662F8FA2C475C1D16EC /* FocusLive.swift */; };
+		02B6A227C22CAB4187DA4C46 /* FocusActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B2C68C1A2F6EF853EE86E78 /* FocusActivityWidget.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -157,6 +161,9 @@
 		E3DEC136C0E25392B8582FB5 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		F44BDB908FFA6D9D6BFDEFF7 /* OpenTodo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OpenTodo.entitlements; sourceTree = "<group>"; };
 		0198F8B662DFAD6F1E420480 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		0E6B55AE7ACBC0C48BB7DA90 /* FocusActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusActivity.swift; sourceTree = "<group>"; };
+		35EA0662F8FA2C475C1D16EC /* FocusLive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusLive.swift; sourceTree = "<group>"; };
+		1B2C68C1A2F6EF853EE86E78 /* FocusActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusActivityWidget.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -204,6 +211,7 @@
 			isa = PBXGroup;
 			children = (
 				989B6D10753CB9F8A784B420 /* Info.plist */,
+				1B2C68C1A2F6EF853EE86E78 /* FocusActivityWidget.swift */,
 				AE01E13BB37C998C38284ED4 /* OpenTodoWidget.entitlements */,
 				1CF02FEF6607848477AEECD7 /* TodayWidget.swift */,
 				EAF92F0B6FA89500B97B225A /* CompletedWidget.swift */,
@@ -246,6 +254,8 @@
 				16AF3DC74A2267EFDBC4C931 /* Bridge.swift */,
 				8794599E4D0E39C2DCF26C16 /* BridgeHost.swift */,
 				5D0A71C3E9B24F6881A3C0D7 /* Downloads.swift */,
+				0E6B55AE7ACBC0C48BB7DA90 /* FocusActivity.swift */,
+				35EA0662F8FA2C475C1D16EC /* FocusLive.swift */,
 				361FC4E75D8FDF99A05140B8 /* HealthCheck.swift */,
 				E75D64FDE509EA5842DB542F /* WebLocation.swift */,
 				219379B0310AFB0EB86C6A8D /* Info.plist */,
@@ -513,6 +523,8 @@
 				28E6935BE94290233F7E5404 /* Bridge.swift in Sources */,
 				1AF4F45D1A7A4F8E955EC260 /* BridgeHost.swift in Sources */,
 				7E3B9A52C1D04F86B2A5E913 /* Downloads.swift in Sources */,
+				9AD13426BA747BA9AAA512E8 /* FocusActivity.swift in Sources */,
+				ACBE646C7682DD2AA720D787 /* FocusLive.swift in Sources */,
 				D49CB798F6CA86EB222544EE /* HealthCheck.swift in Sources */,
 				90B377EBC6EFB1399D7C3D5D /* WebLocation.swift in Sources */,
 				129207436EC529C5267F6E59 /* JSON.swift in Sources */,
@@ -539,6 +551,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F828197F8671C5728F9820EB /* FocusActivity.swift in Sources */,
+				02B6A227C22CAB4187DA4C46 /* FocusActivityWidget.swift in Sources */,
 				4A84DB2EF94F4EDC2A6CBEF4 /* JSON.swift in Sources */,
 				6EF08424DEF31BCC9E483D41 /* Store.swift in Sources */,
 				3FDFB7915FCF248E011B9902 /* TodayWidget.swift in Sources */,
