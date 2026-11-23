@@ -1,0 +1,1 @@
+- **An assignee change can be undone.** Assigning or unassigning one task in the task panel or with the list's Assign picker now offers Undo. A repeating task is not covered yet.

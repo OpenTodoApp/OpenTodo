@@ -20,6 +20,7 @@ import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
 import { addManyToList, createUnlessReused } from './reuseAdd'
+import { isReusable } from '../lib/reusable'
 
 /** The section menu as data (labels-and-menus 3.1). */
 export function sectionMenuGroups(title: string, o: { first: boolean; last: boolean; layout: 'list' | 'board'; count: number },
@@ -234,7 +235,7 @@ export function SectionQuickAdd({ project, sectionId, sectionName, projects, lab
       if (to?.closest?.('[data-overlay-root]')) return
       if (!e.currentTarget.contains(to) && !(e.target as HTMLInputElement).value) onClose()
     }}>
-      <QuickAdd onAdd={onAdd} onAddMany={onAddMany} projects={projects} labels={labels} hideHint autoFocus placeholder={wide ? t('Add a task to {sectionName}…', { sectionName }) : t('Add a task…')} label={t('Add a task to {sectionName}', { sectionName })} />
+      <QuickAdd onAdd={onAdd} onAddMany={onAddMany} reuseProjectId={isReusable(project) ? project.id : null} projects={projects} labels={labels} hideHint autoFocus placeholder={wide ? t('Add a task to {sectionName}…', { sectionName }) : t('Add a task…')} label={t('Add a task to {sectionName}', { sectionName })} />
     </div>
   )
 }

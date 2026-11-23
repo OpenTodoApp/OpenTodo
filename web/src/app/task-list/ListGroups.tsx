@@ -30,6 +30,7 @@ import type { ListRoute } from './useListModel'
 import { useFullTitles } from '../../lib/fullTitles'
 import { BLOCK_ROWS, BLOCKS_FROM, blockOf, rowBlocks, type RowBlock } from './rowBlocks'
 import { RowBlockContext } from './rowBlockContext'
+import { mapTaskGroups } from './taskGroupSeparators'
 import { keysBetween } from '../../lib/taskDelta'
 
 /** The "Add task below" line (add-below): loaded when it first opens. */
@@ -87,6 +88,7 @@ export interface RowContext {
   subtaskAddEnds: ReadonlyMap<string, string>
   /** The row being edited in place, and its editor (inline-task-editing). */
   inlineId?: string | null
+  swipeEditTitle?: boolean
   renderInline?: (task: Task) => ReactNode
   /** The one row whose details are shown under it (row-expand D4). */
   expandedId?: string | null
@@ -149,10 +151,16 @@ export function useListMotion(groups: ListGroup[], columns: BoardColumn[]) {
 /** Rows that count: everything but the departing ones. */
 export const liveRows = (rows: Row[]): number => rows.reduce((n, r) => n + (r.contextual || isGhost(r.task) ? 0 : 1), 0)
 
+type RenderRow = (r: Row, separator?: boolean) => ReactNode
+
+function renderListRows(rows: readonly Row[], render: RenderRow) {
+  return mapTaskGroups(rows, (r) => r.depth === 0 && !isGhost(r.task), render)
+}
+
 /** One task line (or a board card), inside the columns table when that layout is on (custom-fields). */
-export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
+export function rowRenderer(c: RowContext): RenderRow {
   const tree = c.treeView && !c.board
-  const line = (r: Row) => {
+  const line = (r: Row, groupSeparator?: boolean) => {
     // The row being edited in place is not dragged: a press in its field selects text.
     const editing = !c.board && c.inlineId === r.task.id
     // A departing row (motion-v2 D2) is a picture: no cursor, tick, drag or drop. The row
@@ -164,6 +172,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           task={r.task}
           contextual={r.contextual}
           depth={r.depth}
+          groupSeparator={groupSeparator}
           breadcrumb={r.breadcrumb}
           hasChildren={r.hasChildren}
           collapsed={r.collapsed}
@@ -205,6 +214,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           handlers={c.actions}
           swipe={!!c.swipe && !ghost && !editing && !c.board}
           inline={editing ? c.renderInline?.(r.task) : undefined}
+          swipeEditTitle={c.swipeEditTitle && !c.draggingId}
           edge={c.board ? c.edgeOf?.(r.task) : undefined}
           notes={c.board && !!c.cardNotes}
         />
@@ -241,8 +251,8 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
       </li>
     )
     : null)
-  return (r) => {
-    const row = c.fieldColumns ? <FieldColumnsRow key={r.task.id} task={r.task} defs={c.projectFieldDefs} row={line(r)} /> : line(r)
+  return (r, separator) => {
+    const row = c.fieldColumns ? <FieldColumnsRow key={r.task.id} task={r.task} defs={c.projectFieldDefs} row={line(r, separator)} /> : line(r, separator)
     const add = below(r)
     return add ? [row, add] : row
   }
@@ -347,10 +357,10 @@ const sameContext = (a: RowContext, b: RowContext): boolean => {
  * most of a cursor move. Rows are new objects whenever their task or place
  * changes; anything else that changes clears the cache.
  */
-export function useRowRenderer(c: RowContext): (r: Row) => ReactNode {
+export function useRowRenderer(c: RowContext): RenderRow {
   // A row's words ("You", "Former member") follow the language.
   const language = useLanguageVersion()
-  const cache = useRef<{ c: RowContext | null; language: number; rows: WeakMap<Row, { c: RowContext; el: ReactNode }> }>({ c: null, language, rows: new WeakMap() })
+  const cache = useRef<{ c: RowContext | null; language: number; rows: WeakMap<Row, { c: RowContext; el: ReactNode; separator: boolean }> }>({ c: null, language, rows: new WeakMap() })
   const held = cache.current
   if (!held.c || held.language !== language || !sameContext(held.c, c)) held.rows = new WeakMap()
   held.c = c
@@ -361,9 +371,9 @@ export function useRowRenderer(c: RowContext): (r: Row) => ReactNode {
   // moves its context forward, so nearly every row shares the last one, and a row outside
   // them is kept without a look at its answers (incremental-list-updates D3).
   const changed = new Map<RowContext, ReadonlySet<string> | null>()
-  return (r) => {
+  return (r, separator = false) => {
     const hit = rows.get(r)
-    if (hit) {
+    if (hit && hit.separator === separator) {
       let ids = changed.get(hit.c)
       if (ids === undefined) changed.set(hit.c, (ids = hit.c === c ? EMPTY_IDS : mayChange(hit.c, c)))
       if ((ids && !ids.has(r.task.id)) || sameForRow(hit.c, c, r)) {
@@ -371,8 +381,8 @@ export function useRowRenderer(c: RowContext): (r: Row) => ReactNode {
         return hit.el
       }
     }
-    const el = render(r)
-    rows.set(r, { c, el })
+    const el = render(r, separator)
+    rows.set(r, { c, el, separator })
     return el
   }
 }
@@ -387,7 +397,7 @@ export interface GroupedListProps {
   fieldColumns: boolean
   projectFieldDefs: FieldDef[]
   editable: boolean
-  renderRow: (r: Row) => ReactNode
+  renderRow: RenderRow
   addingTo: string | null
   setAddingTo: (key: string | null) => void
   onToggleSection: (key: string) => void
@@ -452,7 +462,7 @@ export function GroupedList(p: GroupedListProps) {
     // Rows past the limit wait for a later step; the row the cursor is on is drawn at once.
     let drawn = 0
     const render = p.renderRow
-    p = { ...p, renderRow: (r) => (drawn++ < limit || r.task.id === p.reveal ? render(r) : null) }
+    p = { ...p, renderRow: (r, separator) => (drawn++ < limit || r.task.id === p.reveal ? render(r, separator) : null) }
   }
   /** The rows of a group: a list, or a row group of the columns table (custom-fields). */
   const rowList = (children: ReactNode[], extra?: Record<string, string>) => (p.fieldColumns
@@ -649,9 +659,9 @@ function SectionGroup({ g, later, first, last, rowList, project, ...p }: Grouped
         <SectionQuickAdd project={project} sectionId={g.section?.id ?? null} sectionName={g.heading ?? t('No section')} projects={p.projects} labels={p.labels} onClose={() => p.setAddingTo(null)} />
       )}
       {/* Named by its section, so a screen reader says which list of how many tasks it entered (accessibility-aa). */}
-      {rowList(g.rows.map((r) => p.renderRow(r)), { 'aria-label': g.heading ?? t('No section') })}
+      {rowList(renderListRows(g.rows, p.renderRow), { 'aria-label': g.heading ?? t('No section') })}
       {g.count === 0 && p.revealed.has(g.key) && rowList(
-        (p.doneBySection.get(key) ?? []).map((task) => p.renderRow(flatRow(task))),
+        renderListRows((p.doneBySection.get(key) ?? []).map((task) => flatRow(task)), p.renderRow),
         { 'data-revealed-completed': '' },
       )}
       {later && <SectionLater g={later} rowList={rowList} renderRow={p.renderRow} onToggle={() => p.toggleCollapsed(later.openKey!)} />}
@@ -663,11 +673,11 @@ function SectionGroup({ g, later, first, last, rowList, project, ...p }: Grouped
  * A section's deferred and parked tasks after its active ones (later-in-section D1): a quiet
  * folded heading with their count, the section's bar staying the only bar; open, their rows.
  */
-function SectionLater({ g, rowList, renderRow, onToggle }: { g: ListGroup; rowList: RowList; renderRow: (r: Row) => ReactNode; onToggle: () => void }) {
+function SectionLater({ g, rowList, renderRow, onToggle }: { g: ListGroup; rowList: RowList; renderRow: RenderRow; onToggle: () => void }) {
   return (
     <div data-group={g.key} data-section-later>
       <ListGroupHeader title={g.heading ?? ''} count={g.count} collapsed={g.folded} onToggle={onToggle} bar={false} level={3} />
-      {!g.folded && rowList(g.rows.map((r) => renderRow(r)), g.heading ? { 'aria-label': g.heading } : undefined)}
+      {!g.folded && rowList(renderListRows(g.rows, renderRow), g.heading ? { 'aria-label': g.heading } : undefined)}
     </div>
   )
 }
@@ -714,7 +724,7 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
       {g.hint && g.folded === false && <p className="mb-1 px-1 text-meta text-muted" data-group-hint>{g.hint}</p>}
       {g.folded && g.soon?.length ? <WaitingSoonList soon={g.soon} onOpenGroup={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)} /> : null}
       {!(g.heading && g.folded === undefined && collapsed) && events}
-      {!(g.heading && g.folded === undefined && collapsed) && rowList(g.rows.map((r) => renderRow(r)), g.heading ? { 'aria-label': g.heading } : undefined)}
+      {!(g.heading && g.folded === undefined && collapsed) && rowList(renderListRows(g.rows, renderRow), g.heading ? { 'aria-label': g.heading } : undefined)}
       {/* Upcoming's projected occurrences after the day's tasks, outside its count (series-occurrences D4). */}
       {!(g.heading && collapsed) && (g.projected?.length || g.projectedNote) ? <Suspense fallback={null}><ProjectedGroupRows g={g} projects={projects} /></Suspense> : null}
     </section>
@@ -782,14 +792,14 @@ function LogWinAction() {
  * The project's completed tasks at the end of its list (project-completed-section):
  * closed by default, newest first; unchecking one puts it back among the open tasks.
  */
-function CompletedGroup({ c, rowList, renderRow, fieldColumns }: { c: NonNullable<GroupedListProps['completed']>; rowList: RowList; renderRow: (r: Row) => ReactNode; fieldColumns: boolean }) {
+function CompletedGroup({ c, rowList, renderRow, fieldColumns }: { c: NonNullable<GroupedListProps['completed']>; rowList: RowList; renderRow: RenderRow; fieldColumns: boolean }) {
   return (
     <section role={fieldColumns ? 'rowgroup' : undefined} className="mb-4" data-completed-group>
       {/* In a reusable list the ticked items are "Got it" (reusable-lists D7). */}
       {c.gotIt
         ? <ListGroupHeader title={t('Got it', { context: 'list' })} count={c.tasks.length} countLabel={(n) => t('{n, plural, one {# item ticked off} other {# items ticked off}}', { n })} collapsed={!c.open} onToggle={c.onToggle} />
         : <ListGroupHeader title={t('Completed')} count={c.tasks.length} countLabel={(n) => t('{n, plural, one {# completed task} other {# completed tasks}}', { n })} collapsed={!c.open} onToggle={c.onToggle} />}
-      {c.open && rowList(c.tasks.map((task) => renderRow(flatRow(task))))}
+      {c.open && rowList(renderListRows(c.tasks.map((task) => flatRow(task)), renderRow))}
     </section>
   )
 }

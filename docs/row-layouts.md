@@ -16,7 +16,9 @@ Task rows come in two layouts:
 - **One line** (the default): the title, with the date, project, labels, estimate and assignee in columns on the right that give way as the window narrows. A long title wraps onto a second line and ends with **…** after that; rest the pointer on it to read it all, or open the task. A phone shows the same two lines, with the date beside the first, and so do its other lists: Notes, the calendar's day lists, Close the day and search results. To read every title whole, turn on **Settings › Appearance › Theme and density › Show full task titles**.
 - **Detailed**: the title (two lines if it needs them), the parent task's name when the parent isn't shown just above, then one line with the date and time, the **priority** (bars and the letters P1, P2 or P3, or [your name for the level](priorities.md)), the deadline, the start date, the project, the estimate and the assignee, and the labels: as many as fit the row, then **+2** for the rest. Hover or focus the labels to read every name. On a phone or with a large text size the line wraps, so nothing is cut off.
 
-The date stays on the row in both layouts. Priority is never shown by colour alone: a one-line row shows the bars (three for priority 1, two for priority 2, one for priority 3) after the title, and screen readers read "Priority 1".
+The date stays on the row in both layouts. Priority is never shown by colour alone: a one-line row shows the bars (three for priority 1, two for priority 2, one for priority 3) after the title, and screen readers read "Priority 1". Open tasks at P1 and P2 have filled circles, with a stronger fill for P1. The P3 circle has a blue outline and an empty centre. The default P4 circle has a neutral outline.
+
+In wide task lists, a faint line separates each top-level task and its visible subtasks from the next group. Phones and narrow panes hide the lines.
 
 ## For every list
 

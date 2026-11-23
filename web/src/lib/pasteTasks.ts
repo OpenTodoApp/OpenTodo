@@ -33,3 +33,14 @@ export async function addTasksUndoable(inputs: readonly NewTaskInput[], opts: { 
 export function subtaskInputs(parent: { id: string; project_id: string | null }, titles: readonly string[]): NewTaskInput[] {
   return titles.map((title) => ({ title, project_id: parent.project_id, parent_id: parent.id }))
 }
+
+/**
+ * One task from quick add as one recorded step (OpenSpec change undo-task-create): planned
+ * exactly as createTask plans it, applied as one batch, so Ctrl/Cmd-Z or the palette moves it,
+ * its reminders and its time entry to the Trash. No toast: the history alone holds the step.
+ */
+export async function addTaskUndoable(input: NewTaskInput): Promise<string> {
+  const { ids, changes } = await planNewTasks([input], input.placement ?? 'bottom')
+  await applyBatch(changes.map((c) => ({ ...c, create: true })), { source: 'action', label: addedLabel(1) })
+  return ids[0]
+}

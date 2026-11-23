@@ -17,10 +17,12 @@ import android.provider.OpenableColumns
 import android.provider.Settings
 import android.util.Base64
 import android.view.View
+import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.SslErrorHandler
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -245,8 +247,9 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         web.setOnTouchListener(null)
     }
 
+    /** Sets the web view up once per server, then opens the launch intent; [replay] false skips the intent (a rebuilt web view). */
     @SuppressLint("SetJavaScriptEnabled")
-    private fun start() {
+    private fun start(replay: Boolean = true) {
         val server = Prefs(this).server ?: return
         if (!started || origin != server) {
             origin = server
@@ -264,6 +267,11 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
                 allowContentAccess = false
                 setSupportMultipleWindows(false)
                 setGeolocationEnabled(true)
+                // Pinch to zoom in the web view (off by default). The page's viewport still
+                // decides, so the Appearance "Allow pinch zoom" switch (user-scalable=no) turns
+                // it off; the on-screen +/- buttons stay hidden.
+                builtInZoomControls = true
+                displayZoomControls = false
                 userAgentString = "$userAgentString OpenTodoAndroid/${BuildConfig.VERSION_NAME}"
             }
             web.webViewClient = Client()
@@ -275,6 +283,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             Bridge(this, server, this).install(web)
             HiddenRun.schedulePeriodic(this)
         }
+        if (!replay) return
         val share = pendingShare
         pendingShare = null
         handle(share ?: intent)
@@ -442,13 +451,47 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             handler.cancel()
             showError(getString(R.string.error_untrusted))
         }
+
+        override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+            // The web view's render process was killed (usually the system reclaiming memory).
+            // Returning true stops the system from killing the whole app; we replace the dead
+            // view and reload so the app recovers instead of showing a blank page. Local data
+            // lives in IndexedDB on disk and survives, so nothing unsynced is lost.
+            if (view === web && !isDestroyed) rebuildWeb()
+            return true
+        }
+    }
+
+    /** Replaces the web view after its render process died, and reopens the page it showed. */
+    private fun rebuildWeb() {
+        val parent = web.parent as? ViewGroup ?: return
+        val last = web.url
+        val index = parent.indexOfChild(web)
+        val params = web.layoutParams
+        parent.removeView(web)
+        web.destroy()
+        web = WebView(this).apply { layoutParams = params }
+        parent.addView(web, index)
+        // A new web view: re-run the one-time setup (settings, clients, the bridge), then the page
+        // it showed. Not the launch intent: a share or an opentodo-open link would be replayed.
+        started = false
+        start(replay = false)
+        val base = origin ?: return
+        load(RenderRecovery.reloadUrl(last, base))
     }
 
     private inner class Chrome : WebChromeClient() {
         override fun onShowFileChooser(view: WebView, callback: ValueCallback<Array<Uri>>, params: FileChooserParams): Boolean {
             fileCallback?.onReceiveValue(null)
             fileCallback = callback
-            return try { chooser.launch(params.createIntent()); true } catch (e: ActivityNotFoundException) { fileCallback = null; false }
+            // Not params.createIntent(): its type filter (from the input's accept list) greys out
+            // .csv/.sqlite on devices that don't know those extensions. Offer every openable file.
+            val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = FilePick.TYPE
+                putExtra(Intent.EXTRA_ALLOW_MULTIPLE, FilePick.allowMultiple(params.mode))
+            }
+            return try { chooser.launch(intent); true } catch (e: ActivityNotFoundException) { fileCallback = null; false }
         }
 
         override fun onPermissionRequest(request: PermissionRequest) {

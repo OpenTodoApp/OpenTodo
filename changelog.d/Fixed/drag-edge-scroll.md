@@ -1,0 +1,1 @@
+- **Dragging on an iPhone no longer moves the whole list.** Holding a task or a project and moving it used to scroll the page with your finger, so it could only be dropped where it was. A dragged row now also scrolls the list or the sidebar when you hold it near the top or bottom edge, so it can reach places off screen.

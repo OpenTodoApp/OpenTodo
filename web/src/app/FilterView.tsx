@@ -323,10 +323,10 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
 
       {bulk.render(rows.find((r) => r.key === selected)?.task.id ?? null)}
       <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label={t('Filter results')}>
-        <ViewResults groups={groups} layout={display.layout} foldScope="filter" selectedGroup={selected ? selected.slice(0, selected.lastIndexOf(':')) : null} renderTask={(tk, key, shape) => (
+        <ViewResults groups={groups} layout={display.layout} foldScope="filter" selectedGroup={selected ? selected.slice(0, selected.lastIndexOf(':')) : null} renderTask={(tk, key, shape, groupSeparator) => (
           <TaskRow
             key={key}
-            shape={shape}
+            shape={shape} groupSeparator={groupSeparator}
             task={tk}
             project={tk.project_id ? projectMap.get(tk.project_id) : undefined}
             labels={resolveLabels(tk.labels, labelMap)}
@@ -341,7 +341,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
             habit={habits.get(tk.id)}
             breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
             onToggle={() => act(setTaskCompletedWithFeedback(tk.id, !tk.completed_at))}
-            onOpen={(e) => { setSelected(key); openFromRow(tk.id, e) }} onOpenPage={() => openTaskPage(tk.id)}
+            selectOnClick onOpen={(e, intent) => { setSelected(key); openFromRow(tk.id, e, intent) }} onOpenPage={() => openTaskPage(tk.id)}
             expanded={expanded === key}
             onExpand={() => { setSelected(key); setExpanded((cur) => (cur === key ? null : key)) }} score={urgency && shape !== 'card' ? <UrgencyChip of={urgency} task={tk} /> : undefined}
             {...bulk.rowProps(tk)}

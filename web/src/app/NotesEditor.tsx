@@ -36,6 +36,7 @@ import { logicalToday } from '../lib/dates'
 import { EditorToolbar, openCellMenu, useEditorChrome } from './EditorChrome'
 import { FormattingToggle, useFormattingToggle } from './FormattingToggle'
 import type { CommandEnv, LinkPickerEnv } from './editorCommands'
+import { codeViews } from './editorCode'
 import { imageViews } from './editorImage'
 import { refViews } from './editorRef'
 import { openRef } from './RefChip'
@@ -47,6 +48,7 @@ import type { OutlinePlace } from './editor/NoteOutline'
 import { headingStops, useNoteOutline } from './editor/useNoteOutline'
 import { useSourceMode } from './editor/useSourceMode'
 import { IconButton, useMediaQuery } from '../ui'
+import { copyText } from '../lib/clipboard'
 import type { ReactNode } from 'react'
 import { t } from '../lib/i18n'
 import { keysOf } from '../lib/shortcuts'
@@ -264,9 +266,11 @@ function focusAt(v: EditorView, input: true | string) {
   if (typeof input === 'string' && input) v.dispatch(v.state.tr.setSelection(TextSelection.atEnd(v.state.doc)).insertText(input))
 }
 
-export default function NotesEditor({ note, readOnly, autoFocus = false, onEscape, outline: outlinePlace = 'menu' }: {
+export default function NotesEditor({ note, readOnly, autoFocus = false, onEscape, outline: outlinePlace = 'menu', copied, onCopied }: {
   note: NoteTarget
   readOnly: boolean
+  copied?: boolean
+  onCopied?: () => void
   /** The outline (note-outline D2): 'auto' for a column when the `[data-outline-room]` around the note is wide; else the menu. */
   outline?: OutlinePlace
   /** Focus the editor when it mounts (the project note opens in place); a string is also typed at the end (a daily note's first keystroke, daily-notes D3). */
@@ -398,7 +402,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
       // A read-only note's headings take focus from the outline (note-outline D3).
       decorations: (state) => (readOnly ? readOnlyStops(state.doc) : null),
       attributes: { 'aria-label': t('Notes'), 'aria-multiline': 'true', role: 'textbox', class: 'notes-editor' },
-      nodeViews: { ...imageViews(imageParent), ...refViews },
+      nodeViews: { ...imageViews(imageParent), ...refViews, ...codeViews },
       clipboardTextParser: (text) => markdownSlice(text),
       ...(imageParent && !readOnly ? imageHandlers(imageParent) : {}),
       handleClickOn: (_view, _pos, node, nodePos, event) => {
@@ -490,11 +494,9 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
 
   if (unreadable) return <UnreadableNote text={task.description ?? ''} />
   return (
-    // The corner's buttons come before the text in the Tab order, so Shift+Tab from the note reaches them (D2).
     <NotesCorner frame={frame} formatting={formatting.offered || undefined} outlinePlace={outline.place} source={source.on} buttons={[
-        outline.place === 'menu' && outline.element, !coarse && <SourceButton key="source" on={source.on} onToggle={source.toggle} />,
-        formatting.offered && !source.on && <FormattingToggle key="formatting" className="ui-reveal" pressed={formatting.pressed} onToggle={formatting.set} controls={rowId} data-notes-formatting="" />,
-      ]}>
+      readOnly && <CopyNoteButton key="copy" copied={!!copied} onCopied={onCopied} text={note.description ?? ''} />, outline.place === 'menu' && outline.element, !coarse && <SourceButton key="source" on={source.on} onToggle={source.toggle} />, formatting.offered && !source.on && <FormattingToggle key="formatting" className="ui-reveal" pressed={formatting.pressed} onToggle={formatting.set} controls={rowId} data-notes-formatting="" />,
+    ]}>
       {outline.place === 'column' && !source.on && outline.element}
       {!readOnly && !source.on && <EditorToolbar id={rowId} view={view.current} env={env} visible={editing || menuOpen} onMenu={setMenuOpen} always={formatting.open} />}
       <div ref={host} className="notes-host" data-notes-editing={editing || undefined} hidden={source.on} />
@@ -522,6 +524,38 @@ function NotesCorner({ frame, formatting, outlinePlace, source, buttons, childre
       {shown.length > 0 && <div className="notes-corner">{shown}</div>}
       {children}
     </div>
+  )
+}
+
+/**
+ * A viewer's way to take the note's Markdown (copy-code-block D4): the rendered body is
+ * read-only, so this hidden control is its keyboard-reachable copy action. Hidden from
+ * the eye (the corner has no room for another visible button) but in the Tab order,
+ * with its name in the tooltip.
+ */
+function CopyNoteButton({ text, copied, onCopied }: { text: string; copied: boolean; onCopied?: () => void }) {
+  // The refusal is only knowable here; a success is the note's to report (`onCopied` → `copied`).
+  const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    if (!failed) return
+    const id = setTimeout(() => setFailed(false), 2000)
+    return () => clearTimeout(id)
+  }, [failed])
+  const copy = async () => {
+    try {
+      await copyText(text)
+      setFailed(false)
+      onCopied?.()
+    } catch {
+      setFailed(true)
+    }
+  }
+  return (
+    <>
+      <IconButton icon={failed ? 'x' : 'copy'} size="sm" className="note-copy-action touch-target" data-notes-copy=""
+        label={failed ? t('Could not copy') : t('Copy note')} onClick={() => void copy()} />
+      <span className="sr-only" aria-live="polite">{copied ? t('Copied') : failed ? t('Could not copy') : ''}</span>
+    </>
   )
 }
 

@@ -27,7 +27,7 @@ Tasks without a time and all-day events stay in [Today](calendar-events-in-today
 
 ## Use it
 
-- Click a task to open it in the side panel, next to the list you're in.
+- Click a task to select it and show it in the side panel. In a list with inline editing, click the selected title again to edit it while the panel stays open.
 - Click an event to see its details.
 - To move or resize a block, use the Day or Week calendar.
 

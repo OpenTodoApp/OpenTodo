@@ -95,7 +95,7 @@ Every task list (Inbox, Today, Upcoming, Anytime, Someday, Assigned, Completed, 
 ### Requirement: Metadata language
 Row metadata SHALL be one language in every list and on every card. A list row's properties SHALL be at the metadata size in the muted text colour: in the right-hand column of a one-line row, each in its slot (the project with its marker, the labels, the estimate with its icon, the date, the assignee as an avatar named in its tooltip and for assistive technology), and in a narrower row one run of text under the title, its items separated by a middle dot, in this order: the date words with the part of the day as a suffix when the time column does not show it, the project, the labels, the estimate (`1h`, or `35m / 1h` once time was tracked, or `35m` alone without an estimate), the assignee, then the parent's name, the deadline countdown with its hourglass icon when the time column does not already hold it, the start ("Starts 3 Nov", "Started 1 Nov", "Someday"), blocked ("Blocked by 2" with its lock icon), the habit streak with its flame icon, and up to three custom field values and "+n" for the rest. The repeat mark SHALL be the repeat icon beside the title, read as "repeats" (an occurrence: "occurrence"). The marks beside the title (the priority mark, the repeat mark and the counts) SHALL be smaller than the title, with 12 px icons at the metadata size, and SHALL sit on the baseline of the title's first line, whether the title takes one line or two. A card's line SHALL keep one run in the order of the date words, the repeat word with its icon, the deadline, the start, the estimate, blocked, the streak, the field values, the assignee and the project. The origin (the icon for its kind and the external id, else the URL's host; a link opening in a new tab without passing the referrer when it has a URL, never opening the task) SHALL be in the row's trailing group and at the end of a card, except on the Inbox's top-level rows, whose source line names it instead (see `inbox-triage` "Inbox source lines"), and on a narrow row as "The title comes first on a narrow row" says. An imported origin (kind `import`) SHALL NOT show its id anywhere a person sees or hears it (rows, cards, the task's details and panel, its history, search results), since it is the key the importer keeps for duplicate detection: in a row or on a card without a URL it SHALL carry no origin item, and with one its item SHALL be the icon alone, a link named "Imported from <app>"; the task's details, panel and history SHALL read "Imported from <app>" (the app's name, such as Todoist or Microsoft To Do, else the provider as stored), or "Imported" without a provider. Labels SHALL be chips: each a small chip with the label's colour as a dot and its name, at most two shown, then "+n"; the full names in order SHALL be read by assistive technology, shown in a tooltip while the pointer is over the group or it has keyboard focus, and in the task panel. No other item of a row SHALL have a pill background. Counts SHALL use tabular figures, not a monospace face.
 
-Colour SHALL carry meaning only: the priority ring on the checkbox is coloured for P1 and P2 and neutral for P3 and P4; the date text follows one due ladder by how close the task's day is to the user's logical today: a date after tomorrow in the muted tone; tomorrow, as "Tomorrow" or the time under the Tomorrow heading, in the default text tone; today, timed or not, in the accent tone; and a day before today in the danger tone. A heading that implies the day leaves the date text out, so the ladder shows on the parts that remain (a time, "evening", the repeat mark). The ladder is computed on the device from local data and changes with the logical day without a reload; the deadline keeps its neutral, warning and danger tones; the label dot is the label's colour; everything else in the row is the muted colour, and the counts the faint colour. Every colour is a token.
+Colour SHALL carry meaning only: the priority ring on the checkbox uses the priority colour for P1, P2 and P3 and the neutral border for P4; the date text follows one due ladder by how close the task's day is to the user's logical today: a date after tomorrow in the muted tone; tomorrow, as "Tomorrow" or the time under the Tomorrow heading, in the default text tone; today, timed or not, in the accent tone; and a day before today in the danger tone. A heading that implies the day leaves the date text out, so the ladder shows on the parts that remain (a time, "evening", the repeat mark). The ladder is computed on the device from local data and changes with the logical day without a reload; the deadline keeps its neutral, warning and danger tones; the label dot is the label's colour; everything else in the row is the muted colour, and the counts the faint colour. Every colour is a token.
 
 What the view or the group heading already says SHALL be left out, by this table; everything else is shown when set:
 
@@ -141,9 +141,9 @@ A row SHALL never omit a value because of what it is, only because the heading o
 - **WHEN** a task estimated at one hour has 35 minutes tracked
 - **THEN** its row reads `35m / 1h` as one item, with no second item and no glyph, and the number of visible properties is unchanged
 
-#### Scenario: Neutral ring for P3 and P4
+#### Scenario: Rings distinguish the four priorities
 - **WHEN** a list holds a P1, a P2, a P3 and a P4 task
-- **THEN** the P1 and P2 circles carry their priority colours and the P3 and P4 circles carry the neutral ring
+- **THEN** P1 and P2 carry their priority colours and fills, P3 has a blue outline with an empty centre, and P4 has the neutral ring
 
 #### Scenario: Three labels on a row
 - **WHEN** a task carries the labels errand, call and home, in that order
@@ -1220,3 +1220,23 @@ On a touch device, a task row or sidebar row held for a long press SHALL visibly
 #### Scenario: An early release
 - **WHEN** a person holds a row for 250 ms and lifts the finger
 - **THEN** the row settles back and no drag starts
+
+### Requirement: Separators between task groups
+
+The main on-screen task lists in built-in views, projects, labels, and saved and ad hoc filters SHALL draw a decorative hairline in the theme's soft border colour between adjacent visible top-level task groups in One line and Detailed. Within each list section, a top-level task and its visible descendants SHALL form one group. The first group in a section, rows within a group, and rows on phones or in narrow panes SHALL have no separator. The hairline SHALL follow the actual task row width, add no space or focus target, and require no user setting.
+
+#### Scenario: Adjacent tasks in a wide list
+- **WHEN** a wide list section shows two top-level tasks in One line or Detailed
+- **THEN** one hairline separates the two tasks and the section has no leading or trailing hairline
+
+#### Scenario: An expanded parent and its descendants
+- **WHEN** a top-level task shows its nested descendants before the next top-level task in the same section
+- **THEN** one hairline appears after the last visible descendant and before the next top-level task, with no line between the parent and its descendants or between siblings
+
+#### Scenario: A list changes while it is open
+- **WHEN** the visible order changes because a user collapses a parent, changes a filter, or moves a task
+- **THEN** the hairlines follow the current groups and the first task group of each visible section has no leading line
+
+#### Scenario: A narrow pane on a wide screen
+- **WHEN** the task details panel leaves less than 40 rem for a row, or the viewport uses the phone layout
+- **THEN** no hairlines appear, regardless of the chosen row layout

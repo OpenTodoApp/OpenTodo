@@ -4,7 +4,8 @@
 import { getMeta, setMeta } from './db'
 import { assistantBusy, assistantStatus, openAssistantWith } from './assistantStatus'
 import { getDeviceSetup } from './assistantDevice/settings'
-import { createTask, type NewTaskInput } from './ops'
+import type { NewTaskInput } from './ops'
+import { addTaskUndoable } from './pasteTasks'
 
 const KEY = 'assistant.suggestAfterAdd'
 
@@ -58,9 +59,9 @@ export async function suggestAfterAdd(taskId: string): Promise<void> {
   }
 }
 
-/** `createTask` for a line the person typed: the same task, then a suggestion about it when the device asks for one. */
+/** `createTask` for a line the person typed, as one undo step (undo-task-create): the same task, then a suggestion about it when the device asks for one. */
 export async function createTaskThenSuggest(input: NewTaskInput): Promise<string> {
-  const id = await createTask(input)
+  const id = await addTaskUndoable(input)
   void suggestAfterAdd(id)
   return id
 }

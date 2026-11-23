@@ -109,6 +109,8 @@ export interface Report {
 export interface FileState {
   project: string
   hash: string
+  /** When the file was first held as half saved (unix ms; engine.ts halfSaved), while it stays empty. */
+  held?: number
 }
 
 /** The vault's state file, .opentodo/state.json (version 2, state.go). */

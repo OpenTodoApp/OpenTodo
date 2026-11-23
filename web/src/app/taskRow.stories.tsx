@@ -25,18 +25,18 @@ const errand = label('l-errand', 'errand', HEX.orange)
 const deepWork = label('l-deep', 'deep-work', HEX.violet)
 const base = { selected: false, showProject: false, onToggle: noop, onOpen: noop }
 
-function List({ children }: { children: ReactNode }) {
-  return <ul className="max-w-2xl space-y-0.5 rounded-card border border-default bg-surface p-2 shadow-1">{children}</ul>
+function List({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
+  return <ul className={`${wide ? 'max-w-3xl' : 'max-w-2xl'} space-y-0.5 rounded-card border border-default bg-surface p-2 shadow-1`}>{children}</ul>
 }
 
 /** A bare task: the leading slot, the checkbox in the priority ring, the title, no metadata line. */
 export const Plain: StoryObj = {
   render: () => (
-    <List>
+    <List wide>
       <TaskRow {...base} task={task({ id: 't1', title: 'Renew passport' })} />
-      <TaskRow {...base} task={task({ id: 't2', title: 'Call the bank about the card limit', priority: 1 })} />
-      <TaskRow {...base} task={task({ id: 't3', title: 'Plan the autumn trip', priority: 2 })} />
-      <TaskRow {...base} task={task({ id: 't4', title: 'Read the sync protocol draft', priority: 3 })} />
+      <TaskRow {...base} groupSeparator task={task({ id: 't2', title: 'Call the bank about the card limit', priority: 1 })} />
+      <TaskRow {...base} groupSeparator task={task({ id: 't3', title: 'Plan the autumn trip', priority: 2 })} />
+      <TaskRow {...base} groupSeparator task={task({ id: 't4', title: 'Read the sync protocol draft', priority: 3 })} />
     </List>
   ),
 }
@@ -132,11 +132,11 @@ export const LabelsAndProject: StoryObj = {
 /** A project icon and the colour dot fallback in each row layout. */
 export const ProjectIcons: StoryObj = {
   render: () => (
-    <List>
+    <List wide>
       <TaskRow {...base} layout="line" showProject project={workWithIcon} task={task({ id: 't1', title: 'Prepare the demo', project_id: workWithIcon.id })} />
-      <TaskRow {...base} layout="line" showProject project={home} task={task({ id: 't2', title: 'Fix the bike light', project_id: home.id })} />
-      <TaskRow {...base} layout="detailed" showProject project={workWithIcon} task={task({ id: 't3', title: 'Review the demo', project_id: workWithIcon.id })} />
-      <TaskRow {...base} layout="detailed" showProject project={home} task={task({ id: 't4', title: 'Water the plants', project_id: home.id })} />
+      <TaskRow {...base} groupSeparator layout="line" showProject project={home} task={task({ id: 't2', title: 'Fix the bike light', project_id: home.id })} />
+      <TaskRow {...base} groupSeparator layout="detailed" showProject project={workWithIcon} task={task({ id: 't3', title: 'Review the demo', project_id: workWithIcon.id })} />
+      <TaskRow {...base} groupSeparator layout="detailed" showProject project={home} task={task({ id: 't4', title: 'Water the plants', project_id: home.id })} />
     </List>
   ),
 }
@@ -207,13 +207,13 @@ export const WaitingInSequence: StoryObj = {
 /** A subtask tree: the chevron only on rows with children, indented children, a collapsed parent, and a breadcrumb outside the tree. */
 export const SubtaskTree: StoryObj = {
   render: () => (
-    <List>
+    <List wide>
       <TaskRow {...base} hasChildren onToggleCollapse={noop} task={task({ id: 't1', title: 'Plan the autumn trip', priority: 3 })} progress={{ done: 1, total: 2 }} />
       <TaskRow {...base} depth={1} task={task({ id: 't2', title: 'Compare train times', completed_at: 1, parent_id: 't1' })} />
       <TaskRow {...base} depth={1} hasChildren onToggleCollapse={noop} task={task({ id: 't3', title: 'Book the hotel', parent_id: 't1' })} />
       <TaskRow {...base} depth={2} task={task({ id: 't4', title: 'Ask about late check-in', parent_id: 't3' })} />
-      <TaskRow {...base} hasChildren collapsed onToggleCollapse={noop} task={task({ id: 't5', title: 'Prepare the quarterly report' })} progress={{ done: 0, total: 3 }} />
-      <TaskRow {...base} breadcrumb="Plan the autumn trip" task={task({ id: 't6', title: 'Renew passport', parent_id: 't1', due: { date: TODAY } })} />
+      <TaskRow {...base} groupSeparator hasChildren collapsed onToggleCollapse={noop} task={task({ id: 't5', title: 'Prepare the quarterly report' })} progress={{ done: 0, total: 3 }} />
+      <TaskRow {...base} groupSeparator breadcrumb="Plan the autumn trip" task={task({ id: 't6', title: 'Renew passport', parent_id: 't1', due: { date: TODAY } })} />
     </List>
   ),
 }
@@ -541,3 +541,16 @@ export const EditingInline: StoryObj = {
   },
 }
 
+/** The title-only editor opened from a row menu, with touch-sized controls. */
+export const EditingInlineCompact: StoryObj = {
+  render: () => {
+    const subtask = task({ id: 't2', title: 'Compare train times', parent_id: 't1' })
+    return (
+      <List>
+        <TaskRow {...base} task={task({ id: 't1', title: 'Plan the autumn trip' })} hasChildren onToggleCollapse={noop} />
+        <TaskRow {...base} task={subtask} depth={1} selected inline={<InlineEditor task={subtask} compact projects={[]} labelMap={new Map()} onDone={noop} />} />
+        <TaskRow {...base} task={task({ id: 't3', title: 'Book the hotel', parent_id: 't1' })} depth={1} />
+      </List>
+    )
+  },
+}

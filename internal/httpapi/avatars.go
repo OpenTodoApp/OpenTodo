@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/color"
 	"image/jpeg"
 	"image/png"
 	"io"
@@ -17,6 +18,7 @@ import (
 	"strconv"
 
 	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/imgfit"
 )
 
 // Profile pictures (OpenSpec change settings-refresh, design D10). The client
@@ -63,8 +65,14 @@ func decodeAvatar(body []byte) ([]byte, error) {
 	if err != nil {
 		return nil, errors.New("the image could not be read")
 	}
+	return encodeAvatar(img)
+}
+
+// encodeAvatar writes a picture as the stored JPEG, on white: JPEG has no
+// transparency, and a transparent pixel would otherwise turn black.
+func encodeAvatar(img image.Image) ([]byte, error) {
 	var out bytes.Buffer
-	if err := jpeg.Encode(&out, img, &jpeg.Options{Quality: avatarQuality}); err != nil {
+	if err := jpeg.Encode(&out, imgfit.Flatten(img, color.White), &jpeg.Options{Quality: avatarQuality}); err != nil {
 		return nil, err
 	}
 	return out.Bytes(), nil

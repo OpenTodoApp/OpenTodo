@@ -607,8 +607,7 @@
     "web/src/lib/slots.ts"
   ],
   "A small ring marks a day with calendar events.": [
-    "web/src/app/QuarterView.tsx",
-    "web/src/app/YearView.tsx"
+    "web/src/app/calendar/MonthsSpanView.tsx"
   ],
   "A source that no longer exists": [
     "web/src/app/calendar/FramesDialog.tsx"
@@ -2119,8 +2118,7 @@
     "web/src/app/PlanView.tsx"
   ],
   "Arrows move the focused day, {pgup} / {pgdn} a month, {open} opens it in Day. Marks count open tasks, repeating occurrences while shown and every day of a multi-day task.": [
-    "web/src/app/QuarterView.tsx",
-    "web/src/app/YearView.tsx"
+    "web/src/app/calendar/MonthsSpanView.tsx"
   ],
   "As a page": [
     "web/src/app/AppearanceSection.tsx"
@@ -2237,20 +2235,19 @@
   ],
   "Assigned to you": [
     "web/src/app/IssueEditor.tsx",
-    "web/src/app/IssuesPanel.tsx"
+    "web/src/app/IssuesPanel.tsx",
+    "web/src/lib/undoActions.ts"
   ],
   "Assigned to you in these repositories": [
     "web/src/app/IssueEditor.tsx"
   ],
   "Assigned to {name}": [
     "web/src/app/AssigneePicker.tsx",
-    "web/src/app/filter/conditionText.ts"
+    "web/src/app/filter/conditionText.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Assigned to {name}, taking turns": [
     "web/src/app/AssigneePicker.tsx"
-  ],
-  "Assigned to {name}.": [
-    "web/src/lib/triage.ts"
   ],
   "Assignee": [
     "web/src/app/AssigneePicker.tsx",
@@ -2996,6 +2993,7 @@
     "web/src/app/task-detail/Composer.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/ZoneControl.tsx",
+    "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/themes/ImportReport.tsx",
     "web/src/app/themes/ThemeEditor.tsx",
     "web/src/app/themes/ThemePreview.tsx",
@@ -3544,13 +3542,6 @@
   "Clears your tasks from this device after uploading unsynced changes.": [
     "web/src/lib/settingsCopy.ts"
   ],
-  "Click a task to": [
-    "web/src/app/PreferencesPanels.tsx",
-    "web/src/lib/settingsCopy.ts"
-  ],
-  "Click a task to open its panel. The + button adds tasks, projects and more. Made a mistake? Undo is in the toast and Ctrl+Z.": [
-    "web/src/lib/sampleTasks.ts"
-  ],
   "Click to sync now": [
     "web/src/app/SyncStatus.tsx"
   ],
@@ -3909,6 +3900,7 @@
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/notes/NoteRow.tsx",
+    "web/src/app/quickadd/TickedSuggest.tsx",
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-list/ListGroups.tsx",
@@ -3941,9 +3933,6 @@
   ],
   "Completed {instant}": [
     "web/src/app/task-detail/ActivityTab.tsx"
-  ],
-  "Completed.": [
-    "web/src/lib/triage.ts"
   ],
   "Completed: {title}.": [
     "web/src/app/TriageView.tsx"
@@ -4121,9 +4110,11 @@
   ],
   "Copied": [
     "web/src/app/AssistantsPanel.tsx",
+    "web/src/app/CodeBlock.tsx",
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/MembersPanel.tsx",
+    "web/src/app/NotesEditor.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/OAuthClients.tsx",
     "web/src/app/PublicLinksSection.tsx",
@@ -4164,6 +4155,9 @@
   "Copy bookmarklet": [
     "web/src/app/CaptureSettings.tsx"
   ],
+  "Copy code": [
+    "web/src/app/CodeBlock.tsx"
+  ],
   "Copy codes": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
@@ -4189,6 +4183,9 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskActionsMenu.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Copy note": [
+    "web/src/app/NotesEditor.tsx"
   ],
   "Copy recovery key": [
     "web/src/app/EncryptionPanel.tsx"
@@ -4244,6 +4241,8 @@
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
   "Could not copy": [
+    "web/src/app/CodeBlock.tsx",
+    "web/src/app/NotesEditor.tsx",
     "web/src/app/assistant/MessageActions.tsx"
   ],
   "Could not refresh. Replying and ticking are off until the connection is back.": [
@@ -4821,7 +4820,8 @@
     "web/src/app/RemindersField.tsx"
   ],
   "Deadline removed": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Deadline today": [
     "web/src/app/UrgencyChip.tsx"
@@ -4831,6 +4831,7 @@
     "web/src/app/ScheduleSheet.tsx",
     "web/src/app/TimelineView.tsx",
     "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts",
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Deadline {date}, {label}": [
@@ -5451,6 +5452,9 @@
   "Don’t ask again for {scheme}: on this device": [
     "web/src/app/AppLinkConfirm.tsx"
   ],
+  "Double-click a task to open it. The + button adds tasks, projects and more. Made a mistake? Undo is in the toast and Ctrl+Z.": [
+    "web/src/lib/sampleTasks.ts"
+  ],
   "Down": [
     "web/src/app/palette/BarParts.tsx"
   ],
@@ -5725,7 +5729,6 @@
     "web/src/app/habits/HabitForm.tsx"
   ],
   "Edit in place": [
-    "web/src/app/PreferencesPanels.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Edit issue connection": [
@@ -5773,11 +5776,8 @@
   "Edit the query of a saved view; Enter saves it, Esc discards": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Edit the selected task's title in place, with its date, priority, labels and project under it; Enter saves, Esc cancels, Shift+Enter opens the details": [
+  "Edit the selected task's title in place (also click its selected title). Enter saves, Esc cancels, Shift+Enter opens the details": [
     "web/src/lib/shortcuts.ts"
-  ],
-  "Edit the title, open the details or expand the row. This device only.": [
-    "web/src/lib/settingsCopy.ts"
   ],
   "Edit the title. Tab, Enter or a click away saves it and the decision keys work again. Esc restores it": [
     "web/src/lib/shortcuts.ts"
@@ -5790,6 +5790,9 @@
   ],
   "Edit this occurrence alone and move the series on": [
     "web/src/app/RecurrenceField.tsx"
+  ],
+  "Edit title": [
+    "web/src/app/bulk/BulkActions.tsx"
   ],
   "Edit webhook": [
     "web/src/app/WebhooksPanel.tsx"
@@ -6199,7 +6202,8 @@
     "web/src/app/review/BentoSlots.tsx"
   ],
   "Estimate removed": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Estimate {from} min → {to} min": [
     "web/src/lib/assistant.ts"
@@ -6208,7 +6212,8 @@
     "web/src/app/TaskRow.tsx"
   ],
   "Estimate {to} min": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Estimated at 15 minutes or less": [
     "web/src/lib/filters.ts"
@@ -6228,8 +6233,7 @@
   ],
   "Event": [
     "web/src/app/AuditPanel.tsx",
-    "web/src/app/CalendarEvents.tsx",
-    "web/src/app/calendar/TodayAgenda.tsx"
+    "web/src/app/CalendarEvents.tsx"
   ],
   "Events": [
     "web/src/app/CaldavPanel.tsx",
@@ -6496,9 +6500,6 @@
   ],
   "Expand subtasks": [
     "web/src/app/TaskRow.tsx"
-  ],
-  "Expand the row": [
-    "web/src/app/PreferencesPanels.tsx"
   ],
   "Expand {name}": [
     "web/src/app/ProjectsTable.tsx",
@@ -7165,7 +7166,8 @@
     "web/src/app/AssigneePicker.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
-    "web/src/app/task-list/ListGroups.tsx"
+    "web/src/app/task-list/ListGroups.tsx",
+    "web/src/lib/undoActions.ts"
   ],
   "Four views over priority and date: sort work by urgent and important, and drag a card to re-plan it.": [
     "web/src/lib/boardTemplates.ts"
@@ -7535,9 +7537,8 @@
   ],
   "Go to sign-in": [
     "web/src/app/EmailScreens.tsx",
-    "web/src/app/InviteScreen.tsx",
-    "web/src/app/ProjectInviteScreen.tsx",
-    "web/src/app/ResetScreen.tsx"
+    "web/src/app/LinkCard.tsx",
+    "web/src/app/ProjectInviteScreen.tsx"
   ],
   "Go to the Assistant page: the conversation and its skills (when the assistant is on)": [
     "web/src/lib/shortcuts.ts"
@@ -9466,8 +9467,10 @@
   ],
   "Link": [
     "web/src/app/EditorChrome.tsx",
+    "web/src/app/ParseChips.tsx",
     "web/src/app/UnlinkedMentions.tsx",
     "web/src/app/editorCommands.ts",
+    "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/fields.ts",
     "web/src/lib/richtextEditor.ts",
@@ -10606,9 +10609,6 @@
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/lib/assistant.ts"
   ],
-  "Moved to the Trash.": [
-    "web/src/lib/triage.ts"
-  ],
   "Moved to the Trash: {title}.": [
     "web/src/app/TriageView.tsx"
   ],
@@ -10620,9 +10620,6 @@
   ],
   "Moved to {part}": [
     "web/src/lib/undoActions.ts"
-  ],
-  "Moved to {project}.": [
-    "web/src/lib/triage.ts"
   ],
   "Moved to {project}: {title}.": [
     "web/src/app/TriageView.tsx"
@@ -10976,7 +10973,7 @@
     "web/src/lib/sectorNames.ts"
   ],
   "Next quarter": [
-    "web/src/app/QuarterView.tsx",
+    "web/src/app/calendar/MonthsSpanView.tsx",
     "web/src/lib/sectorNames.ts"
   ],
   "Next run:": [
@@ -11008,7 +11005,7 @@
     "web/src/lib/sectorNames.ts"
   ],
   "Next year": [
-    "web/src/app/YearView.tsx"
+    "web/src/app/calendar/MonthsSpanView.tsx"
   ],
   "Next {n} days": [
     "web/src/app/PlanView.tsx"
@@ -12577,10 +12574,8 @@
   ],
   "One moment.": [
     "web/src/app/EmailScreens.tsx",
-    "web/src/app/InviteScreen.tsx",
+    "web/src/app/LinkCard.tsx",
     "web/src/app/ProjectInviteScreen.tsx",
-    "web/src/app/ResetScreen.tsx",
-    "web/src/app/WorkspaceInviteScreen.tsx",
     "web/src/page/RoutineEmailStopScreen.tsx"
   ],
   "One next step|method": [
@@ -12787,7 +12782,6 @@
     "web/src/app/datetime/DateField.tsx"
   ],
   "Open details": [
-    "web/src/app/PreferencesPanels.tsx",
     "web/src/app/task-list/InlineEditor.tsx"
   ],
   "Open in Help": [
@@ -13311,9 +13305,6 @@
   ],
   "Park {title} in Someday": [
     "web/src/app/palette/registry.ts"
-  ],
-  "Parked for someday.": [
-    "web/src/lib/triage.ts"
   ],
   "Parked in Someday: {title}.": [
     "web/src/app/TriageView.tsx"
@@ -13839,7 +13830,7 @@
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Previous quarter": [
-    "web/src/app/QuarterView.tsx"
+    "web/src/app/calendar/MonthsSpanView.tsx"
   ],
   "Previous task": [
     "web/src/app/task-detail/TaskPageView.tsx"
@@ -13849,7 +13840,7 @@
     "web/src/app/PlanView.tsx"
   ],
   "Previous year": [
-    "web/src/app/YearView.tsx"
+    "web/src/app/calendar/MonthsSpanView.tsx"
   ],
   "Primary": [
     "web/src/app/Sidebar.tsx"
@@ -14394,8 +14385,7 @@
     "web/src/app/CalendarView.tsx",
     "web/src/app/MonthView.tsx",
     "web/src/app/PlanView.tsx",
-    "web/src/app/QuarterView.tsx",
-    "web/src/app/YearView.tsx"
+    "web/src/app/calendar/MonthsSpanView.tsx"
   ],
   "Re-enable": [
     "web/src/app/NotificationsSettings.tsx"
@@ -14878,7 +14868,8 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Renamed “{from}” → “{to}”": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Rename…": [
     "web/src/app/locations/PlacesView.tsx"
@@ -15188,17 +15179,11 @@
   "Retry": [
     "web/src/app/App.tsx",
     "web/src/app/EmailScreens.tsx",
-    "web/src/app/InviteScreen.tsx",
-    "web/src/app/ProjectInviteScreen.tsx",
-    "web/src/app/ResetScreen.tsx",
-    "web/src/app/WorkspaceInviteScreen.tsx"
+    "web/src/app/LinkCard.tsx"
   ],
   "Retry now": [
     "web/src/app/EmailScreens.tsx",
-    "web/src/app/InviteScreen.tsx",
-    "web/src/app/ProjectInviteScreen.tsx",
-    "web/src/app/ResetScreen.tsx",
-    "web/src/app/WorkspaceInviteScreen.tsx"
+    "web/src/app/LinkCard.tsx"
   ],
   "Reusable list": [
     "web/src/app/menus/ListModeStep.tsx",
@@ -15595,6 +15580,7 @@
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
+    "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/themes/ThemeEditor.tsx",
     "web/src/app/themes/ThemePreview.tsx",
     "web/src/ui/patterns/SaveBar.tsx"
@@ -15741,9 +15727,6 @@
   "Scheduled for today": [
     "web/src/lib/undoActions.ts",
     "web/src/lib/viewOrderMove.ts"
-  ],
-  "Scheduled for {date}.": [
-    "web/src/lib/triage.ts"
   ],
   "Scheduled for {date}: {title}.": [
     "web/src/app/TriageView.tsx"
@@ -16479,6 +16462,11 @@
   "Show connections of {title}": [
     "web/src/app/palette/registry.ts"
   ],
+  "Show deadlines as dates": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Show details": [
     "web/src/app/TaskRow.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
@@ -16943,9 +16931,6 @@
   "Skipped {day}: the mail server could not be reached for six hours": [
     "web/src/app/DigestCard.tsx"
   ],
-  "Skipped.": [
-    "web/src/lib/triage.ts"
-  ],
   "Skipped: {title}.": [
     "web/src/app/TriageView.tsx"
   ],
@@ -17099,10 +17084,7 @@
   ],
   "Something went wrong": [
     "web/src/app/EmailScreens.tsx",
-    "web/src/app/InviteScreen.tsx",
-    "web/src/app/ProjectInviteScreen.tsx",
-    "web/src/app/ResetScreen.tsx",
-    "web/src/app/WorkspaceInviteScreen.tsx"
+    "web/src/app/LinkCard.tsx"
   ],
   "Something went wrong in the app.": [
     "web/src/app/ErrorBoundary.tsx"
@@ -18346,6 +18328,9 @@
   ],
   "The database kept before that restore is removed from the server for good: <span>{deleting}</span>.": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "The date on task rows instead of the days left": [
+    "web/src/app/settingsIndex.ts"
   ],
   "The demo could not be reached. Check your connection and try again.": [
     "web/src/lib/demo.ts"
@@ -19917,9 +19902,6 @@
     "web/src/app/TaskPage.tsx",
     "web/src/lib/noteOps.ts"
   ],
-  "This task was moved elsewhere.": [
-    "web/src/lib/triage.ts"
-  ],
   "This test sends the inputs to {provider} and uses about {n} tokens. Nothing is written.": [
     "web/src/app/routines/RoutineEditor.tsx"
   ],
@@ -20255,7 +20237,6 @@
     "web/src/app/ParseChips.tsx",
     "web/src/app/PlanView.tsx",
     "web/src/app/PreferencesPanels.tsx",
-    "web/src/app/QuarterView.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TabBar.tsx",
@@ -20263,12 +20244,12 @@
     "web/src/app/TimelineView.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/WorkspaceActivity.tsx",
-    "web/src/app/YearView.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/assistant/blocks/StatsBlock.tsx",
     "web/src/app/assistant/blocks/TimelineBlock.tsx",
     "web/src/app/auditFormat.ts",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/calendar/MonthsSpanView.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/focus/FocusPicker.tsx",
@@ -20394,9 +20375,7 @@
   ],
   "Too many attempts": [
     "web/src/app/EmailScreens.tsx",
-    "web/src/app/InviteScreen.tsx",
-    "web/src/app/ProjectInviteScreen.tsx",
-    "web/src/app/ResetScreen.tsx"
+    "web/src/app/LinkCard.tsx"
   ],
   "Too many attempts. Try again in {n, plural, one {# second} other {# seconds}}.": [
     "web/src/lib/e2ee.ts"
@@ -20801,7 +20780,8 @@
     "web/src/app/filter/conditionText.ts",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
-    "web/src/lib/facets.ts"
+    "web/src/lib/facets.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Unavailable custom field": [
     "web/src/app/views/DisplayOptionsBody.tsx",
@@ -21512,9 +21492,7 @@
   ],
   "Wait a minute, then try again.": [
     "web/src/app/EmailScreens.tsx",
-    "web/src/app/InviteScreen.tsx",
-    "web/src/app/ProjectInviteScreen.tsx",
-    "web/src/app/ResetScreen.tsx"
+    "web/src/app/LinkCard.tsx"
   ],
   "Waiting": [
     "web/src/app/AppearanceSection.tsx",
@@ -22238,10 +22216,7 @@
   ],
   "You seem to be offline": [
     "web/src/app/EmailScreens.tsx",
-    "web/src/app/InviteScreen.tsx",
-    "web/src/app/ProjectInviteScreen.tsx",
-    "web/src/app/ResetScreen.tsx",
-    "web/src/app/WorkspaceInviteScreen.tsx"
+    "web/src/app/LinkCard.tsx"
   ],
   "You sign in with it. A new address applies at once.": [
     "web/src/lib/settingsCopy.ts"
@@ -25370,8 +25345,7 @@
     "web/src/lib/facets.ts"
   ],
   "{n, plural, one {# day with events} other {# days with events}}": [
-    "web/src/app/QuarterView.tsx",
-    "web/src/app/YearView.tsx"
+    "web/src/app/calendar/MonthsSpanView.tsx"
   ],
   "{n, plural, one {# day} other {# days}}": [
     "web/src/app/ProjectsTable.tsx",
@@ -25717,12 +25691,11 @@
   "{n, plural, one {# task} other {# tasks}}": [
     "web/src/app/ClosedListSettings.tsx",
     "web/src/app/PlanView.tsx",
-    "web/src/app/QuarterView.tsx",
     "web/src/app/TemplateDialogs.tsx",
-    "web/src/app/YearView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/calendar/MonthDensityCells.tsx",
     "web/src/app/calendar/MonthWeek.tsx",
+    "web/src/app/calendar/MonthsSpanView.tsx",
     "web/src/app/palette/filterEntries.ts",
     "web/src/app/palette/registry.ts",
     "web/src/app/task-list/EarlierActions.tsx",

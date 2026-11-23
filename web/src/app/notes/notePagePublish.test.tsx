@@ -61,7 +61,8 @@ describe('publishing from a note', () => {
     const item = document.querySelector<HTMLButtonElement>('[data-publish-note-page]')!
     expect(item.textContent).toContain('Publish note page…')
     await click(item)
-    await waitFor(() => !!document.querySelector('[data-page-publish]'), 'the publish dialog')
+    // Ready once the account's encryption state is read: Publish is enabled and the label suggested.
+    await waitFor(() => !!document.querySelector('[data-page-publish]:not([disabled])'), 'the publish dialog, ready')
     expect(document.querySelector<HTMLInputElement>('[data-page-label]')!.value).toBe('babysitter-how-to')
     expect(document.querySelector('[data-page-rights]')).toBeNull()
     await click(document.querySelector('[data-page-publish]')!)
@@ -93,7 +94,8 @@ describe('publishing from a note', () => {
     expect(document.activeElement?.hasAttribute('data-publish-note-page')).toBe(true)
     await key(document.activeElement!, 'Enter')
     await click(document.activeElement!) // Enter on a native button activates it
-    await waitFor(() => !!document.querySelector('[data-page-publish]'), 'the publish dialog')
+    // Ready once the account's encryption state is read: Publish is enabled and the label suggested.
+    await waitFor(() => !!document.querySelector('[data-page-publish]:not([disabled])'), 'the publish dialog, ready')
     const publish = document.querySelector<HTMLButtonElement>('[data-page-publish]')!
     publish.focus()
     await key(publish, 'Enter')

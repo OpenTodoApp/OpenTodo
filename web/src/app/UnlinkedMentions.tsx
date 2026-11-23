@@ -26,6 +26,28 @@ export const MENTIONS_MARK = 'ot:note-mentions'
 /** Rows shown at first, and added by Show more. */
 const PAGE = 50
 
+/**
+ * Runs `fn` in idle time once the frame after this call has painted (unlinked-mentions D1),
+ * after a frame and a timer like the Linked references mark, so the match never runs before
+ * that mark however early the browser has idle time. Returns the cancel.
+ */
+export function afterPaintIdle(fn: () => void): () => void {
+  let frame = 0
+  let timer = 0
+  let idle = 0
+  frame = requestAnimationFrame(() => {
+    timer = window.setTimeout(() => {
+      if (typeof requestIdleCallback === 'function') idle = requestIdleCallback(fn, { timeout: 1000 })
+      else timer = window.setTimeout(fn, 50)
+    }, 0)
+  })
+  return () => {
+    cancelAnimationFrame(frame)
+    clearTimeout(timer)
+    if (idle && typeof cancelIdleCallback === 'function') cancelIdleCallback(idle)
+  }
+}
+
 /** The mentions of `kind:id`, worked out after paint and again when a note changes; null until the first pass. */
 export function useMentions(kind: LinkKind, id: string): Mention[] | null {
   const live = useLinkIndex()
@@ -34,13 +56,7 @@ export function useMentions(kind: LinkKind, id: string): Mention[] | null {
   useEffect(() => {
     if (!live) return
     // After Linked references are painted (their mark is set a frame after paint), in idle time (D1).
-    const later = (fn: () => void) => {
-      if (typeof requestIdleCallback === 'function') { const h = requestIdleCallback(fn, { timeout: 1000 }); return () => cancelIdleCallback(h) }
-      let t = 0
-      const f = requestAnimationFrame(() => { t = window.setTimeout(fn, 50) })
-      return () => { cancelAnimationFrame(f); clearTimeout(t) }
-    }
-    return later(() => {
+    return afterPaintIdle(() => {
       const rows = linkRows()
       const target = resolve(kind, id)
       if (!rows || !target) return setMentions([])

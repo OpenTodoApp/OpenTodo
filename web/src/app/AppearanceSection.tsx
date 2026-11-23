@@ -29,6 +29,7 @@ import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { hapticsPrefOn, setHapticsPref } from '../lib/haptics'
 import { completionSoundOn, setCompletionSound } from '../lib/completionSoundPref'
 import { canPlayCompletionSound } from './completionSound'
+import { deadlineDatesOn, setDeadlineDates } from '../lib/deadlineDates'
 import { fullTitlesOn, setFullTitles } from '../lib/fullTitles'
 import { canVibrate } from './motion'
 import { canSetZoom, setAllowZoom, useAllowZoom } from '../lib/touchZoom'
@@ -65,6 +66,8 @@ export interface AppearanceViewProps {
   rows?: { value: RowLayout; onChange: (r: RowLayout) => void }
   /** Full task titles (full-task-titles D1): wrap titles instead of cutting them. */
   titles?: { on: boolean; onChange: (on: boolean) => void }
+  /** Deadlines as dates (deadline-dates D1): the date in rows instead of the countdown. */
+  deadlineDates?: { on: boolean; onChange: (on: boolean) => void }
   /** The haptics switch, only on a device that can vibrate (appearance-preferences "Haptic feedback preference"). */
   haptics?: { on: boolean; onChange: (on: boolean) => void }
   completionSound?: { on: boolean; onChange: (on: boolean) => void }
@@ -124,7 +127,7 @@ function TilePreview() {
 
 const TILE = 'flex w-28 shrink-0 snap-start flex-col gap-2 rounded-card border bg-surface p-2 text-left outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-auto'
 
-export function AppearanceView({ value, onMode, onAccent, custom, onDensity, rows, titles, haptics, completionSound, zoom, themes }: AppearanceViewProps) {
+export function AppearanceView({ value, onMode, onAccent, custom, onDensity, rows, titles, deadlineDates, haptics, completionSound, zoom, themes }: AppearanceViewProps) {
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([])
   const [picking, setPicking] = useState(false)
   const customRef = useRef<HTMLButtonElement | null>(null)
@@ -194,6 +197,10 @@ export function AppearanceView({ value, onMode, onAccent, custom, onDensity, row
       {titles && (
         <SettingRow id="appearance-titles" {...rowCopy('appearance', 'titles')} htmlFor="appearance-titles-switch"
           control={<Switch id="appearance-titles-switch" checked={titles.on} onChange={titles.onChange} label={t('Show full task titles')} hideLabel />} />
+      )}
+      {deadlineDates && (
+        <SettingRow id="appearance-deadline-dates" {...rowCopy('appearance', 'deadlineDates')} htmlFor="appearance-deadline-dates-switch"
+          control={<Switch id="appearance-deadline-dates-switch" checked={deadlineDates.on} onChange={deadlineDates.onChange} label={t('Show deadlines as dates')} hideLabel />} />
       )}
       {haptics && (
         <SettingRow id="appearance-haptics" {...rowCopy('appearance', 'haptics')} htmlFor="appearance-haptics-switch"
@@ -350,6 +357,7 @@ export function AppearanceSection({ author = '' }: { author?: string }) {
     onDensity={(d) => act(setAppearance('density', d))}
     rows={{ value: accountRowLayout(row), onChange: (r) => act(setAccountRowLayout(r)) }}
     titles={{ on: fullTitlesOn(row), onChange: (on) => act(setFullTitles(on)) }}
+    deadlineDates={{ on: deadlineDatesOn(row), onChange: (on) => act(setDeadlineDates(on)) }}
     haptics={canVibrate() ? { on: hapticsPrefOn(row), onChange: (on) => act(setHapticsPref(on)) } : undefined}
     completionSound={canPlayCompletionSound() ? { on: completionSoundOn(row), onChange: (on) => act(setCompletionSound(on)) } : undefined}
     zoom={canSetZoom() ? { on: allowZoom, onChange: setAllowZoom } : undefined} />

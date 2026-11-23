@@ -1,14 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useEffect, useRef, useState } from 'react'
-import { TextSelection } from 'prosemirror-state'
+import { EditorState, TextSelection } from 'prosemirror-state'
 import { EditorView } from 'prosemirror-view'
 import { parseMarkdown } from '../lib/richtext'
-import { createState } from '../lib/richtextEditor'
+import { createState, schema } from '../lib/richtextEditor'
 import { EditorToolbar, useEditorChrome } from './EditorChrome'
 import type { CommandEnv } from './editorCommands'
+import { codeViews } from './editorCode'
 import { imageViews } from './editorImage'
 import { FormattingToggle } from './FormattingToggle'
 import { IconButton } from '../ui'
+import { Markdown } from './Markdown'
 import { PendingUntil } from './stories/pendingUntil'
 
 // The rich-text editor of notes and comments (OpenSpec change editor-everywhere):
@@ -132,3 +134,25 @@ function SourceNote({ readOnly = false }: { readOnly?: boolean }) {
 }
 export const SourceMode: StoryObj = { render: () => <SourceNote /> }
 export const SourceModeReadOnly: StoryObj = { render: () => <SourceNote readOnly /> }
+
+/** A code block in rendered Markdown (copy-code-block D3): its Copy button in a bar above the code. */
+export const RenderedCodeBlock: StoryObj = { render: () => <div className="max-w-md bg-canvas p-4"><Markdown source={'Copy the command:\n\n```bash\nmake dev\n```'} /></div> }
+
+/**
+ * A code block in the notes editor (editor-copy-code-block D1): the same block and the
+ * same Copy button, inside a real editor, so the two look alike side by side.
+ */
+export const EditorCodeBlock: StoryObj = { render: () => <div className="max-w-md bg-canvas p-4"><CodeNote /></div> }
+
+function CodeNote() {
+  const host = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const doc = schema.node('doc', null, [
+      schema.node('paragraph', null, [schema.text('Copy the command:')]),
+      schema.node('code_block', { lang: 'bash' }, [schema.text('make dev')]),
+    ])
+    const view = new EditorView(host.current as HTMLDivElement, { state: EditorState.create({ doc }), nodeViews: codeViews })
+    return () => view.destroy()
+  }, [])
+  return <div className="notes-frame space-y-1"><div ref={host} /></div>
+}

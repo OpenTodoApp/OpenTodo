@@ -18,6 +18,8 @@ function onKey(e: KeyboardEvent) {
   if (e.key !== 'Escape' || e.isComposing) return
   const top = stack[stack.length - 1]
   if (!top) return
+  // A field whose own suggestion list is open closes that list first (data-claims-escape).
+  if (e.target instanceof Element && e.target.closest('[data-claims-escape]')) return
   // Capture phase on window: the topmost overlay wins over every other Escape
   // handler (detail panel, list selection) and nothing behind it reacts.
   e.preventDefault()
@@ -113,7 +115,14 @@ export function inertBehind(panel: Element | null): () => void {
 
 // ------------------------------------------------------------------ focus
 
-interface Focusable { focus(opts?: FocusOptions): void; isConnected?: boolean }
+interface Focusable { focus(opts?: FocusOptions): void; isConnected?: boolean; getAttribute?: (name: string) => string | null }
+
+/**
+ * A trigger that is unmounted while its overlay is open (the phone's tab bar and add
+ * button, which leave the screen under every sheet) carries `data-focus-key`: when it
+ * is gone at close, focus goes to the element with the same key once it is back.
+ */
+const FOCUS_KEY = 'data-focus-key'
 
 /**
  * Remembers where focus should go back to when an overlay closes: the trigger when
@@ -131,12 +140,30 @@ export function captureFocus(
   // The overlay's own autofocused field is not where focus goes back to.
   const usable = active && active !== doc?.body && !(inside && inside(active))
   const back = trigger ?? (usable ? active : lastPressed) ?? null
+  const key = back?.getAttribute?.(FOCUS_KEY) ?? null
   return () => {
     const now = doc?.activeElement
     const free = !now || now === doc?.body || (inside ? inside(now) : false)
     if (!free) return
-    if (back && back.isConnected !== false && typeof back.focus === 'function') back.focus({ preventScroll: true })
+    if (back && back.isConnected !== false && typeof back.focus === 'function') {
+      back.focus({ preventScroll: true })
+      return
+    }
+    if (key && typeof document !== 'undefined') refocusByKey(key)
   }
+}
+
+// The keyed trigger comes back with the next render after the last overlay closed:
+// looked for over a few frames, and focused only while nothing else took focus.
+function refocusByKey(key: string, tries = 3): void {
+  requestAnimationFrame(() => {
+    const now = document.activeElement
+    if (now && now !== document.body) return
+    const el = document.querySelector<HTMLElement>(`[${FOCUS_KEY}="${CSS.escape(key)}"]`)
+    // Not a control that is out of reach (the add button moved away while scrolling).
+    if (el && el.tabIndex >= 0 && !el.closest('[aria-hidden="true"], [inert]')) el.focus({ preventScroll: true })
+    else if (tries > 1) refocusByKey(key, tries - 1)
+  })
 }
 
 // Safari (and touch taps) do not focus a pressed button, so the element that opened

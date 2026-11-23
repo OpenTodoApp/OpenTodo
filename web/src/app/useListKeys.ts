@@ -2,7 +2,7 @@
 // handlers for j / k, Enter, c, 1–4, Shift+L, Delete, e, d, n, Shift+N, Shift+E, → / ←
 // and Esc (the shortcut registry names them; the shell's dispatcher resolves the keys).
 import { useEffect, useRef } from 'react'
-import { parkTask, unparkTask, updateTask } from '../lib/ops'
+import { parkTask, unparkTask } from '../lib/ops'
 import { setTaskCompletedWithFeedback } from './completionSound'
 import type { Priority, Task } from '../lib/types'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus } from './signals'
@@ -16,7 +16,7 @@ import { toggleTracking } from '../lib/timeEntries'
 import { panelTaskId, sidePanelDocks } from './panel'
 import { closeSidePanelFrom, useSidePanel } from './sidePanel'
 import { openTaskPage } from './taskTrail'
-import { dayPartFields } from '../lib/dayParts'
+import { eveningUndoable, priorityUndoable } from '../lib/undoActions'
 
 export interface KeyRow {
   key: string
@@ -140,7 +140,7 @@ export function useListKeys(opts: ListKeys): void {
       const priority = Number(chord.key) as Priority
       if (b?.ticked.length) { act(runBulk(b.ticked, { kind: 'priority', priority })); return }
       if (!row) return false
-      act(updateTask(row.id, { priority }))
+      act(priorityUndoable(row.id, priority))
     },
     'list.labels': () => {
       if (b?.ticked.length) { b.openActions('labels'); return }
@@ -161,7 +161,7 @@ export function useListKeys(opts: ListKeys): void {
     'list.blocked-by': openWith(blockedByFocus),
     // Park or un-park (someday-and-evening D5).
     'list.park': () => { if (!row) return false; act(row.start === 'someday' ? unparkTask(row.id) : parkTask(row.id)) },
-    'list.evening': () => { if (!row) return false; act(updateTask(row.id, dayPartFields(row.evening ? null : 'evening'))) },
+    'list.evening': () => { if (!row) return false; act(eveningUndoable(row.id, !row.evening)) },
     ...o.extra,
   }, { paused: o.paused })
 }

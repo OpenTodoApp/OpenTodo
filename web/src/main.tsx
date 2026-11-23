@@ -7,6 +7,7 @@ import { watchVisualViewport } from './ui'
 import { watchFocusClearance } from './lib/focusClearance'
 import { keepTouchActive } from './lib/touchActive'
 import { bootLanguage, t } from './lib/i18n'
+import { storeCataloguesOnceControlled } from './lib/i18n/catalog'
 import { logUnhandledRejections, watchAppUpdates } from './lib/appUpdate'
 import { announcePainted, has, installShellLinks, shell } from './lib/shell'
 
@@ -24,6 +25,8 @@ void import('./lib/inputMode').then((m) => m.watchInputMode())
 // Open tabs recover after a server upgrade (client-sync-robustness): a missing
 // chunk reloads, a new service worker or database version asks to reload.
 watchAppUpdates()
+// The first visit's catalogue is stored once the worker controls the page (precache-device-language).
+storeCataloguesOnceControlled()
 // A rejected promise nobody handled leaves a trace instead of vanishing.
 logUnhandledRejections()
 // In a native shell, links to other origins open in the system browser (native-shells D5).

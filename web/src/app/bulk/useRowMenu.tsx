@@ -28,7 +28,7 @@ export interface RowMenu {
   dismiss: () => void
 }
 
-export function useRowMenu(ticked: ReadonlySet<string>, order: readonly string[]): RowMenu {
+export function useRowMenu(ticked: ReadonlySet<string>, order: readonly string[], editTitle?: (id: string) => void): RowMenu {
   const [menu, setMenu] = useState<OpenMenu | null>(null)
   // The latest menu, read by the close handler without re-creating it every render.
   const latest = useRef<OpenMenu | null>(null)
@@ -65,6 +65,7 @@ export function useRowMenu(ticked: ReadonlySet<string>, order: readonly string[]
 
   const element = menu ? (
     <BulkActionsMenu ids={menu.ids} open onOpenChange={(v) => { if (!v) close() }}
+      editTitle={menu.ids.length === 1 && !ticked.has(menu.ids[0]) ? editTitle : undefined}
       trigger={<span className="sr-only" />} triggerClassName="sr-only"
       triggerProps={{ style: { position: 'fixed', left: menu.x, top: menu.y } }} />
   ) : null

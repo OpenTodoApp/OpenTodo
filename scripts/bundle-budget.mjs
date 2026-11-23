@@ -5,7 +5,7 @@
 // lazy chunks such as the help bundle, the map and the locales are not counted). Fails when
 // either is over its budget in web/bundle-budget.json.
 //
-//   node scripts/bundle-budget.mjs           check (CI: after `npm run build` in the Web build job)
+//   node scripts/bundle-budget.mjs           check (CI: scripts/ci-web-build.sh, after `npm run build`)
 //   node scripts/bundle-budget.mjs --json    print the sizes as JSON
 //
 // To raise a budget on purpose, run it, set the new numbers in web/bundle-budget.json with a
