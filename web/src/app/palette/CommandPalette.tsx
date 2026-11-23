@@ -185,8 +185,9 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
     onClose: () => { if (keepOpen.current) keepOpen.current = false; else onClose() },
   })
   useResetOnChange([state.query], () => setTyped(state.query))
-  // The results for the text typed so far are on screen (performance-10k D4).
-  useEffect(() => { if (state.query.trim()) perfMark(SEARCH_RESULTS) }, [state.query, state.options])
+  // The results for the text typed so far are on screen (performance-10k D4): once per typed
+  // text, so the notes and filter results the debounced query adds later are outside the number.
+  useEffect(() => { if (state.query.trim()) perfMark(SEARCH_RESULTS) }, [state.query])
   // The prefixes switch mode as the first character of an empty field (modes.ts).
   const field = { ...state, setQuery: (next: SetStateAction<string>) => {
     const v = typeof next === 'function' ? next(state.query) : next

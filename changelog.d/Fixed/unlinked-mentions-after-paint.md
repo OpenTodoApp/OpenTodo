@@ -1,0 +1,1 @@
+- **Unlinked mentions wait for Linked references.** Opening a note, task or project could start looking for unlinked mentions, in idle time, before Linked references had been painted. The search now starts only after they are on screen, as the performance budget asks.
