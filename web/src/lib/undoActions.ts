@@ -59,16 +59,6 @@ export async function completeUndoable(id: string, completed: boolean, opts: { n
   return { ...result, completed: completed && !task.completed_at && !!result.entry }
 }
 
-/**
- * Whether one of these fields holds ciphertext this device cannot decrypt (OpenSpec e2ee): the row then
- * shows a placeholder, and an undo would write that placeholder back over every device's value. Such an
- * edit is written as before, without a step.
- */
-function undecryptable(task: Task, fields: readonly string[]): boolean {
-  const raw = (task as { _e2ee?: { raw?: Record<string, unknown> } })._e2ee?.raw
-  return !!raw && fields.some((f) => raw[f] !== undefined)
-}
-
 /** Whether two field values are the same: an object (a due, a location) compared with its keys in one order. */
 function sameValue(a: unknown, b: unknown): boolean {
   const key = (v: unknown) => JSON.stringify(v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([x], [y]) => x.localeCompare(y))) : v ?? null)
@@ -84,7 +74,7 @@ function sameValue(a: unknown, b: unknown): boolean {
  */
 async function plainEditUndoable(id: string, patch: Partial<Task>, label: string): Promise<UndoableResult> {
   const task = await db.tasks.get(id)
-  if (!task || task.recurrence || undecryptable(task, Object.keys(patch))) {
+  if (!task || task.recurrence) {
     await updateTask(id, patch)
     return { entry: null, label: '' }
   }
@@ -114,7 +104,7 @@ export function originRemovedUndoable(id: string): Promise<UndoableResult> {
  */
 export async function calendarEditUndoable(id: string, patch: Partial<Task>): Promise<UndoableResult> {
   const task = await db.tasks.get(id)
-  if (!task || task.recurrence || undecryptable(task, Object.keys(patch))) {
+  if (!task || task.recurrence) {
     await updateTask(id, patch)
     return { entry: null, label: '' }
   }

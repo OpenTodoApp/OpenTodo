@@ -327,8 +327,7 @@ describe('parkUndoable', () => {
   })
 })
 
-// A value this device cannot decrypt (OpenSpec e2ee): an edit records no step, so an undo never writes
-// the placeholder back over the real value on every device (undo-panel-extras).
+// Undo skips steps for fields this device can't decrypt (OpenSpec e2ee): the change is written, no step is kept.
 describe('a value this device cannot decrypt', () => {
   it('a rename, a location and a due are written as before, without a step', async () => {
     const { locationUndoable, titleUndoable } = await import('./undoActions')
@@ -341,5 +340,26 @@ describe('a value this device cannot decrypt', () => {
     await db.tasks.update(id, { _e2ee: { wire: {}, raw: { due: 'v1.z' } } } as never)
     expect((await calendarEditUndoable(id, { due: { date: '2030-01-11' } })).entry).toBeNull()
     expect(await db.assistantUndo.count()).toBe(0)
+  })
+
+  it('a title edit with attributes and a plain date change are written, without a step', async () => {
+    const { dueUndoable, titleEditUndoable } = await import('./undoActions')
+    const id = await createTask({ title: 'Secret' })
+    await db.tasks.update(id, { title: '[Cannot decrypt]', _e2ee: { wire: {}, raw: { title: 'v1.x' } } } as never)
+    expect((await titleEditUndoable(id, { title: 'Call Ana', priority: 1 })).entry).toBeNull()
+    const t = (await db.tasks.get(id))!
+    expect(t.title).toBe('Call Ana')
+    expect(t.priority).toBe(1)
+    await db.tasks.update(id, { _e2ee: { wire: {}, raw: { due: 'v1.z' } } } as never)
+    expect((await dueUndoable(id, { date: '2030-02-01' })).entry).toBeNull()
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2030-02-01' })
+    expect(await db.assistantUndo.count()).toBe(0)
+  })
+
+  it('a readable field of the same row still records its step', async () => {
+    const { dueUndoable } = await import('./undoActions')
+    const id = await createTask({ title: 'Secret' })
+    await db.tasks.update(id, { _e2ee: { wire: {}, raw: { title: 'v1.x' } } } as never)
+    expect((await dueUndoable(id, { date: '2030-02-01' })).entry).not.toBeNull()
   })
 })
