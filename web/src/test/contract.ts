@@ -2,9 +2,10 @@
 // and signed-in session against the real server (src/test/contractServer.ts).
 // The client code runs unchanged; only `fetch` is routed: relative URLs go to
 // the server and each device's session cookie travels with its requests.
-import { inject } from 'vitest'
+import { expect, inject } from 'vitest'
 import { useDatabase as openDatabase } from '../lib/db' // not a React hook
 import { resetDeviceId } from '../lib/ops'
+import { syncNow, syncSnapshot } from '../lib/sync'
 
 const base = inject('serverUrl')
 const realFetch = globalThis.fetch.bind(globalThis)
@@ -120,6 +121,12 @@ export async function tokenAccount(name: string): Promise<string> {
   await register(session, { email: `${name}-${Date.now()}@example.com`, name, password: 'client contract password' })
   const { secret } = await call<{ secret: string }>(session, 'POST', '/api/v1/tokens', { name })
   return secret
+}
+
+/** Syncs the active device and checks that nothing is left to send and no error is shown. */
+export async function synced(): Promise<void> {
+  await syncNow()
+  expect(syncSnapshot()).toMatchObject({ pending: 0, error: null })
 }
 
 // ---- rows the tests create through mutate() ----
