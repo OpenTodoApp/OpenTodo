@@ -6,7 +6,7 @@
 import { openHabitForm } from '../habits/habitFormStore'
 import { logicalToday } from '../../lib/dates'
 import { createLabel } from '../../lib/labels'
-import { createProject, detachOccurrence, parkTask, skipOccurrence, unparkTask, updateProject } from '../../lib/ops'
+import { createProject, detachOccurrence, skipOccurrence, unparkTask, updateProject } from '../../lib/ops'
 import { reorderLabel, updateLabel } from '../../lib/labels'
 import { deleteSection, renameSection, reorderSection } from '../../lib/sections'
 import { syncNow } from '../../lib/sync'
@@ -36,7 +36,7 @@ import { switchWorkspace, workspaceLabel } from '../workspaceNav'
 import { viewMenuGroups } from '../ViewsView'
 import type { Entry, Step } from './entries'
 import { runBulk } from '../bulk/BulkActions'
-import { deleteWithUndo, moveWithUndo } from '../undoable'
+import { deleteWithUndo, moveWithUndo, parkWithUndo } from '../undoable'
 import { keysOf } from '../../lib/shortcuts'
 import { runGroupDue } from '../task-list/EarlierActions'
 import { hueName } from '../../lib/colourNames'
@@ -259,7 +259,7 @@ export function commands(ctx: PaletteContext): Command[] {
         { id: 'task:defer', label: t('Defer {title}', { title }), icon: 'calendar-days', shortcut: keysOf('list.defer'), keywords: 'start later', run: () => { deferFocus.request(tk.id); list.open(tk.id) } },
         tk.start === 'someday'
           ? { id: 'task:unpark', label: t('Bring back {title} from Someday', { title }), icon: 'archive', shortcut: keysOf('list.park'), run: () => unparkTask(tk.id) }
-          : { id: 'task:park', label: t('Park {title} in Someday', { title }), icon: 'archive', shortcut: keysOf('list.park'), run: () => parkTask(tk.id) },
+          : { id: 'task:park', label: t('Park {title} in Someday', { title }), icon: 'archive', shortcut: keysOf('list.park'), run: () => parkWithUndo(tk.id) },
         { id: 'task:evening', label: tk.evening ? t('Remove {title} from This Evening', { title }) : t('Mark {title} for This Evening', { title }), icon: 'moon', shortcut: keysOf('list.evening'), run: () => eveningUndoable(tk.id, !tk.evening) },
         // Day parts (day-parts D4): the parts the task is not in, while the account uses them.
         ...(ctx.dayParts ? ([...DAY_PARTS, null] as const).filter((part) => dayPartOf(tk) !== part).map((part): Command => ({
