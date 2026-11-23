@@ -9,7 +9,7 @@ import { db, type AssistantUndo } from './db'
 import { formatDate, logicalToday } from './dates'
 import { planSkip, seriesRule } from './recurring'
 import { lineageRows } from './lineageRows'
-import { getDeviceId, liveSubtree, parkTask, planReminders, planTaskParent, updateTask, type Change } from './ops'
+import { editTakesScope, getDeviceId, liveSubtree, parkTask, planRecurrence, planReminders, planTaskEdit, planTaskParent, setRecurrence, updateTask, type Change } from './ops'
 import type { ReminderPhrase } from './nlp'
 import { currentUserId, memberName, membershipMap } from './sharing'
 import type { FilterContext } from './filter'
@@ -69,6 +69,38 @@ function sameValue(a: unknown, b: unknown): boolean {
 }
 
 /**
+ * A repeating task's edit of all its occurrences as one step (OpenSpec change undo-series-edits):
+ * the changes updateTask plans, the series and the open records still holding the previous value,
+ * applied as one batch, so Undo takes them all back and leaves every other record alone. An edit
+ * that takes the panel's scope (This and following, which splits the series and has no Undo; Also
+ * past ones, which records its own step) goes through updateTask as before.
+ */
+async function seriesEditUndoable(id: string, patch: Partial<Task>, label: string): Promise<UndoableResult> {
+  if (editTakesScope(id)) {
+    await updateTask(id, patch)
+    return { entry: null, label: '' }
+  }
+  const changes = await planTaskEdit(id, patch)
+  if (!changes) return { entry: null, label: '' }
+  return apply(changes, label)
+}
+
+/**
+ * Set a task's repeat rule, or with null stop it, as one step named "Task updated" (undo-series-edits):
+ * the patch setRecurrence plans. Undo restores the previous rule (and no date when the change set
+ * the first one); the records the old rule made are left as they are. Under the panel's scope the
+ * change goes through setRecurrence as before.
+ */
+export async function recurrenceUndoable(id: string, input: string | null, opts: { today?: string } = {}): ReturnType<typeof setRecurrence> {
+  const task = await db.tasks.get(id)
+  if (!task || editTakesScope(id)) return setRecurrence(id, input, opts)
+  const plan = planRecurrence(task, input, opts)
+  if (!plan.ok) return plan
+  if (plan.patch) await apply([{ entity: 'task', entityId: id, patch: plan.patch }], t('Task updated'))
+  return { ok: true, rule: plan.rule }
+}
+
+/**
  * One task's fields that updateTask writes as they are (no date, start or project rules), as
  * one step of undo history (OpenSpec change undo-estimate). Planned from the one row; a field
  * already at that value is left out and nothing at all records nothing. A repeating task goes
@@ -77,12 +109,13 @@ function sameValue(a: unknown, b: unknown): boolean {
  */
 async function plainEditUndoable(id: string, patch: Partial<Task>, label: string): Promise<UndoableResult> {
   const task = await db.tasks.get(id)
-  if (!task || task.recurrence) {
+  if (!task) {
     await updateTask(id, patch)
     return { entry: null, label: '' }
   }
   const changed = Object.fromEntries(Object.entries(patch).filter(([k, v]) => !sameValue((task as unknown as Record<string, unknown>)[k], v)))
-  if (!Object.keys(changed).length) return { entry: null, label: '' }
+  if (!Object.keys(changed).length && !editTakesScope(id)) return { entry: null, label: '' }
+  if (task.recurrence) return seriesEditUndoable(id, editTakesScope(id) ? patch : changed, label)
   return apply([{ entity: 'task', entityId: id, patch: changed }], label)
 }
 
@@ -108,10 +141,11 @@ export function originRemovedUndoable(id: string): Promise<UndoableResult> {
  */
 export async function calendarEditUndoable(id: string, patch: Partial<Task>): Promise<UndoableResult> {
   const task = await db.tasks.get(id)
-  if (!task || task.recurrence) {
+  if (!task) {
     await updateTask(id, patch)
     return { entry: null, label: '' }
   }
+  if (task.recurrence) return seriesEditUndoable(id, patch, t('Rescheduled'))
   const changed: Partial<Task> = Object.fromEntries(Object.entries(patch).filter(([k, v]) => !sameValue((task as unknown as Record<string, unknown>)[k], v)))
   if (!Object.keys(changed).length) return { entry: null, label: '' }
   if (changed.due && !('start' in patch) && task.start === 'someday') changed.start = null
@@ -212,10 +246,10 @@ export function estimateUndoable(id: string, minutes: number | null): Promise<Un
  */
 export async function priorityUndoable(id: string, priority: Task['priority']): Promise<void> {
   const task = await db.tasks.get(id)
-  // A series' edit carries to its occurrences and follows the panel's scope (This and following,
-  // Also past ones), which updateTask plans: a repeating task keeps that path, without a step.
-  if (!task || task.recurrence) {
-    await updateTask(id, { priority })
+  if (!task) return
+  // A series' edit carries to its open records and follows the panel's scope (undo-series-edits).
+  if (task.recurrence) {
+    if (task.priority !== priority || editTakesScope(id)) await seriesEditUndoable(id, { priority }, bulkLabel({ kind: 'priority', priority }, 1))
     return
   }
   // The one row, not readTicked's whole table: a key press stays cheap on a large account.
@@ -464,11 +498,13 @@ export async function eveningUndoable(id: string, evening: boolean): Promise<voi
   const part: DayPart | null = evening ? 'evening' : null
   const fields = dayPartFields(part)
   const task = await db.tasks.get(id)
-  if (!task || task.recurrence) {
-    await updateTask(id, fields)
+  if (!task) return
+  const same = dayPartOf(task) === part && (task.day_part ?? null) === fields.day_part
+  if (task.recurrence) {
+    if (!same || editTakesScope(id)) await seriesEditUndoable(id, fields, movedTo(part))
     return
   }
-  if (dayPartOf(task) === part && (task.day_part ?? null) === fields.day_part) return
+  if (same) return
   await apply([{ entity: 'task', entityId: id, patch: { ...fields } }], movedTo(part))
 }
 

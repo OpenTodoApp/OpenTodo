@@ -132,10 +132,12 @@ describe('estimateUndoable', () => {
     expect(await db.assistantUndo.count()).toBe(1)
   })
 
-  it('a repeating task is written as before, without a step', async () => {
+  it('a repeating task records its step too (undo-series-edits)', async () => {
     const id = await createTask({ title: 'Review', due: { date: '2030-01-07' }, recurrence: 'every week' })
-    expect((await estimateUndoable(id, 45)).entry).toBeNull()
+    const r = await estimateUndoable(id, 45)
     expect((await db.tasks.get(id))!.estimate_minutes).toBe(45)
+    await undoBatch(r.entry!.id)
+    expect((await db.tasks.get(id))!.estimate_minutes ?? null).toBeNull()
   })
 })
 
@@ -151,11 +153,11 @@ describe('priorityUndoable', () => {
     expect((await db.tasks.get(id))!.priority).toBe(3)
   })
 
-  it('a repeating task is written as before (updateTask), without a step', async () => {
+  it('a repeating task records its step too (undo-series-edits)', async () => {
     const id = await createTask({ title: 'Water plants', due: { date: '2030-01-07' }, recurrence: 'every week' })
     await priorityUndoable(id, 1)
     expect((await db.tasks.get(id))!.priority).toBe(1)
-    expect(await db.assistantUndo.count()).toBe(0)
+    expect(topUndo(await db.assistantUndo.toArray())).toMatchObject({ label: 'Priority 1 set on 1 task' })
   })
 
   it('the same priority again records nothing', async () => {
@@ -186,13 +188,14 @@ describe('deadlineUndoable', () => {
     expect((await db.reminders.get(rem))!.fire_at).toBe(deadlineFireAt('2030-04-15', 0))
   })
 
-  it('the same deadline records nothing; a repeating task is written as before', async () => {
+  it('the same deadline records nothing; a repeating task records its step', async () => {
     const id = await createTask({ title: 'File taxes', deadline: '2030-04-15' })
     expect((await deadlineUndoable(id, '2030-04-15')).entry).toBeNull()
     const rep = await createTask({ title: 'Pay', due: { date: '2030-01-07' }, recurrence: 'every month' })
-    expect((await deadlineUndoable(rep, '2030-01-10')).entry).toBeNull()
+    const r = await deadlineUndoable(rep, '2030-01-10')
     expect((await db.tasks.get(rep))!.deadline).toBe('2030-01-10')
-    expect(await db.assistantUndo.count()).toBe(0)
+    await undoBatch(r.entry!.id)
+    expect((await db.tasks.get(rep))!.deadline ?? null).toBeNull()
   })
 })
 
@@ -221,13 +224,14 @@ describe('assigneeUndoable', () => {
     expect((await db.tasks.get(id))!.assignee_id ?? null).toBeNull()
   })
 
-  it('the same assignee records nothing; a repeating task is written as before', async () => {
+  it('the same assignee records nothing; a repeating task records its step', async () => {
     const id = await createTask({ title: 'Book the venue' })
     expect((await assigneeUndoable(id, null)).entry).toBeNull()
     const rep = await createTask({ title: 'Take the bins out', due: { date: '2030-01-07' }, recurrence: 'every week' })
-    expect((await assigneeUndoable(rep, 'u-ana')).entry).toBeNull()
+    const r = await assigneeUndoable(rep, 'u-ana')
     expect((await db.tasks.get(rep))!.assignee_id).toBe('u-ana')
-    expect(await db.assistantUndo.count()).toBe(0)
+    await undoBatch(r.entry!.id)
+    expect((await db.tasks.get(rep))!.assignee_id ?? null).toBeNull()
   })
 })
 
@@ -250,11 +254,12 @@ describe('eveningUndoable', () => {
     expect(await db.assistantUndo.count()).toBe(0)
   })
 
-  it('a repeating task is written as before, without a step', async () => {
+  it('a repeating task records its step too (undo-series-edits)', async () => {
     const id = await createTask({ title: 'Read', due: { date: '2030-01-07' }, recurrence: 'every day' })
     await eveningUndoable(id, true)
     expect((await db.tasks.get(id))!.evening).toBe(true)
-    expect(await db.assistantUndo.count()).toBe(0)
+    await undoBatch(topUndo(await db.assistantUndo.toArray())!.id)
+    expect(!!(await db.tasks.get(id))!.evening).toBe(false)
   })
 })
 
@@ -289,14 +294,15 @@ describe('calendarEditUndoable', () => {
     expect(t.estimate_minutes).toBe(30)
   })
 
-  it('the same dates record nothing; a repeating task is written as before', async () => {
+  it('the same dates record nothing; a repeating task records its step', async () => {
     const id = await createTask({ title: 'Pack', due: { date: '2030-01-10', time: '09:00' } })
     expect((await calendarEditUndoable(id, { due: { date: '2030-01-10', time: '09:00' } })).entry).toBeNull()
     expect((await calendarEditUndoable(id, { due: { time: '09:00', date: '2030-01-10' } })).entry).toBeNull()
     const rep = await createTask({ title: 'Bins', due: { date: '2030-01-07' }, recurrence: 'every week' })
-    expect((await calendarEditUndoable(rep, { due: { date: '2030-01-08' } })).entry).toBeNull()
+    const r = await calendarEditUndoable(rep, { due: { date: '2030-01-08' } })
     expect((await db.tasks.get(rep))!.due).toEqual({ date: '2030-01-08' })
-    expect(await db.assistantUndo.count()).toBe(0)
+    await undoBatch(r.entry!.id)
+    expect((await db.tasks.get(rep))!.due).toEqual({ date: '2030-01-07' })
   })
 
   it('a date on a parked task takes it out of Someday in the same step', async () => {
@@ -499,5 +505,75 @@ describe('undoing an action on one occurrence', () => {
     const back = (await db.tasks.get(rec.id))!
     expect(back).toMatchObject({ skipped: false, deleted_at: null })
     expect(back.fields?.[field]).toBe('Park')
+  })
+})
+
+// OpenSpec change undo-series-edits (#1748): a repeating task's all-occurrences edits and rule
+// changes are steps; the open records an edit carries to come back too; past records are left alone.
+describe('repeating tasks', () => {
+  async function series() {
+    const { actOnOccurrence } = await import('./occurrenceActions')
+    const { completeTask } = await import('./ops')
+    const id = await createTask({ title: 'Water', due: { date: '2026-10-12' }, recurrence: 'every day', priority: 4 })
+    // A past occurrence done, and an open one moved to a later time of its day (an exception record).
+    await completeTask(id, { today: '2026-10-12' })
+    const moved = await actOnOccurrence(id, '2026-10-14', { kind: 'move', due: { date: '2026-10-14', time: '18:00' } }, { today: '2026-10-13' })
+    return { id, moved: moved! }
+  }
+
+  it('a rename is one step that also takes back the open record it carried to', async () => {
+    const { titleUndoable } = await import('./undoActions')
+    const { id, moved } = await series()
+    const r = await titleUndoable(id, 'Water the plants')
+    expect(r.entry).not.toBeNull()
+    expect((await db.tasks.get(moved))!.title).toBe('Water the plants')
+    await undoBatch(r.entry!.id)
+    expect((await db.tasks.get(id))!.title).toBe('Water')
+    expect((await db.tasks.get(moved))!.title).toBe('Water')
+  })
+
+  it('a priority change is a step', async () => {
+    const { id } = await series()
+    await priorityUndoable(id, 1)
+    expect((await db.tasks.get(id))!.priority).toBe(1)
+    const entry = (await db.assistantUndo.toArray()).at(-1)!
+    await undoBatch(entry.id)
+    expect((await db.tasks.get(id))!.priority).toBe(4)
+  })
+
+  it('a rule change is a step, and its undo leaves the past records as they were', async () => {
+    const { recurrenceUndoable } = await import('./undoActions')
+    const { id } = await series()
+    const records = async () => (await db.tasks.filter((x) => x.series_id === id).toArray()).map((x) => ({ id: x.id, completed_at: x.completed_at, due: x.due, deleted_at: x.deleted_at, title: x.title })).sort((a, b) => a.id.localeCompare(b.id))
+    const before = await records()
+    const r = await recurrenceUndoable(id, 'every week')
+    expect(r.ok).toBe(true)
+    expect((await db.tasks.get(id))!.recurrence).toBe('every week')
+    const entry = (await db.assistantUndo.toArray()).at(-1)!
+    expect(entry.label).toBe('Task updated')
+    await undoBatch(entry.id)
+    expect((await db.tasks.get(id))!.recurrence).toBe('every day')
+    expect(await records()).toEqual(before)
+  })
+
+  it('stopping a repetition is a step', async () => {
+    const { recurrenceUndoable } = await import('./undoActions')
+    const { id } = await series()
+    await recurrenceUndoable(id, null)
+    expect((await db.tasks.get(id))!.recurrence ?? null).toBeNull()
+    await undoBatch((await db.assistantUndo.toArray()).at(-1)!.id)
+    expect((await db.tasks.get(id))!.recurrence).toBe('every day')
+  })
+
+  it('an edit under This and following keeps its own path, without a step', async () => {
+    const { titleUndoable } = await import('./undoActions')
+    const { redirectNextEdit } = await import('./ops')
+    const { id } = await series()
+    const count = await db.assistantUndo.count()
+    let redirected = false
+    redirectNextEdit(id, async () => { redirected = true; return null })
+    expect((await titleUndoable(id, 'From now on')).entry).toBeNull()
+    expect(redirected).toBe(true)
+    expect(await db.assistantUndo.count()).toBe(count)
   })
 })

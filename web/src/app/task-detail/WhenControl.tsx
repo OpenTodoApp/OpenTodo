@@ -10,7 +10,7 @@ import { useSeriesRecords } from '../../lib/localData'
 import { Suspense, type KeyboardEvent, type RefObject, useEffect, useRef, useState, type ReactNode } from 'react'
 import { lazy } from '../../lib/lazy'
 import { dueFromView, localDueOf, logicalToday, quickChoices, weekday } from '../../lib/dates'
-import { setRecurrence } from '../../lib/ops'
+
 import { parseRule } from '../../lib/recurrence'
 import { ruleWords } from '../../lib/recurrenceWords'
 import type { WhenSegmentId } from '../../lib/facets'
@@ -22,7 +22,7 @@ import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { RecurrenceField } from '../RecurrenceField'
 import { RemindersField } from '../RemindersField'
 import { deadlineWithUndo, doOnWithUndo, parkWithUndo, setDueWithUndo } from '../undoable'
-import { calendarEditUndoable } from '../../lib/undoActions'
+import { calendarEditUndoable, recurrenceUndoable } from '../../lib/undoActions'
 import { ZoneControl } from './ZoneControl'
 import { useViewerZone } from '../useViews'
 import { t } from '../../lib/i18n'
@@ -249,7 +249,7 @@ function RepeatPresets({ task, onOpen }: { task: Task; onOpen?: (id: string) => 
         {presets.map((p) => (
           <button key={p.id} type="button" role="radio" aria-checked={current === p.id} data-preset={p.id}
             className={`flex min-h-8 items-center gap-2 rounded-control px-2 text-left text-body ${current === p.id ? 'bg-selected font-medium text-strong' : 'text-default hover:bg-sunken dark:hover:bg-raised'}`}
-            onClick={() => act(setRecurrence(task.id, p.rule))}>
+            onClick={() => act(recurrenceUndoable(task.id, p.rule))}>
             <Icon name={current === p.id ? 'check' : 'repeat'} size="xs" className={current === p.id ? '' : 'text-faint'} />{p.label}
           </button>
         ))}
