@@ -48,7 +48,7 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
   const placeholders = (['project', 'label'] as const).filter((k) => !set.has(k))
   return (
     <div data-quick-add-sheet-bar>
-      {date?.open && <LineDatePicker id={date.id} due={date.due} onPick={date.pick} />}
+      {date?.open && <LineDatePicker id={date.id} due={date.due} onPick={date.pick} onKeyDown={date.escape} />}
       <div className="flex gap-1.5 overflow-x-auto px-3 pb-3 pt-1 [scrollbar-width:none]" role="group" aria-label={t('Understood')} data-scroll-x>
         {chips.map((c) => {
           const project = c.kind === 'project' ? projects.find((p) => p.id === c.value) : undefined

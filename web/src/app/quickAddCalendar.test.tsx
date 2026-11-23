@@ -9,7 +9,7 @@ import { addDaysISO, todayISO } from '../lib/dates'
 import { db, useDatabase } from '../lib/db'
 import { saveQuickAddSettings } from '../lib/nlp/settings'
 import { resetDeviceId } from '../lib/ops'
-import { click, render, type, waitFor } from '../ui/test-utils'
+import { click, key, render, type, waitFor } from '../ui/test-utils'
 import { QuickAdd } from './QuickAdd'
 
 let n = 0
@@ -63,11 +63,63 @@ describe('the calendar in quick add on the web', () => {
     await r.unmount()
   })
 
-  it('recognition off: no calendar button, and the When row opens nothing', async () => {
+  it('the palette: Tab on the highlighted When row opens it; Clear removes the date; Escape closes only the picker', async () => {
+    const escape = vi.fn()
+    const r = await render(<QuickAdd layout="palette" placeholder="Add a task" onAdd={vi.fn()} escape={{ label: 'Close', run: escape }} />)
+    await type(field(), 'Call the plumber tomorrow')
+    await key(field(), 'ArrowDown')
+    await key(field(), 'Tab')
+    await waitFor(() => !!q('[data-line-date-picker]'), 'the picker')
+    await click(q('[data-line-date-clear]')!)
+    await waitFor(() => field().value === 'Call the plumber', 'the date removed')
+    const esc = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
+    const bubbled = vi.fn()
+    document.addEventListener('keydown', bubbled)
+    await act(async () => { field().dispatchEvent(esc) })
+    document.removeEventListener('keydown', bubbled)
+    await waitFor(() => !q('[data-line-date-picker]'), 'the picker closed')
+    expect(bubbled).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(field())
+    await r.unmount()
+  })
+
+  it('a someday or this-week When row is replaced by the picked day, not kept in the title', async () => {
+    const onAdd = vi.fn()
+    const r = await render(<QuickAdd layout="palette" placeholder="Add a task" onAdd={onAdd} escape={{ label: 'Close', run: () => {} }} />)
+    await type(field(), 'Call the plumber someday')
+    await click(q('[data-field-row="when"]')!)
+    await waitFor(() => !!q('[data-line-date-picker]'), 'the picker')
+    await click(q('[data-choice="tomorrow"]')!)
+    await waitFor(() => field().value === 'Call the plumber tomorrow', 'someday replaced')
+    await act(async () => { field().form!.requestSubmit() })
+    await waitFor(() => onAdd.mock.calls.length > 0, 'the task added')
+    expect(onAdd.mock.calls[0][0].title).toBe('Call the plumber')
+    await r.unmount()
+  })
+
+  it('a pick on an empty line leaves the caret in front of the date, for the title', async () => {
+    const r = await render(<QuickAdd layout="line" placeholder="Add a task" onAdd={vi.fn()} />)
+    await click(q('[data-quick-add-calendar]')!)
+    await waitFor(() => !!q('[data-line-date-picker]'), 'the picker')
+    await click(q('[data-choice="tomorrow"]')!)
+    await waitFor(() => field().value === 'tomorrow' && field().selectionStart === 0, 'the caret in front')
+    // Escape on the line closes the picker too.
+    await key(field(), 'Escape')
+    await waitFor(() => !q('[data-line-date-picker]'), 'the picker closed')
+    await r.unmount()
+  })
+
+  it('recognition off: no calendar button, and the palette When row opens nothing', async () => {
     saveQuickAddSettings({ enabled: false, languages: null })
     const r = await render(<QuickAdd layout="line" placeholder="Add a task" onAdd={vi.fn()} />)
     await type(field(), 'Call the plumber')
     expect(q('[data-quick-add-calendar]')).toBeNull()
     await r.unmount()
+    const p = await render(<QuickAdd layout="palette" placeholder="Add a task" onAdd={vi.fn()} escape={{ label: 'Close', run: () => {} }} />)
+    await type(field(), 'Call the plumber')
+    const row = q('[data-field-row="when"]')
+    if (row) await click(row)
+    expect(q('[data-line-date-picker]')).toBeNull()
+    await p.unmount()
   })
 })

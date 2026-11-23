@@ -77,7 +77,6 @@ function parseLine(value: string, ctx: Omit<ParseContext, 'dismissed'> | null, d
   return { parsed: parse(value, { ...ctx, dismissed: refuse.reduce(dismissChip, dismissed) }), refused: true }
 }
 
-/** The note under a win whose line asked to repeat or remind. */
 /** Quick add in a list: the understood chips and the title as it will be saved. */
 function LinePreview({ title, emptyTitle, ...chips }: ParseChipsProps & { title?: string; emptyTitle: boolean }) {
   return (
@@ -95,6 +94,7 @@ function LinePreview({ title, emptyTitle, ...chips }: ParseChipsProps & { title?
   )
 }
 
+/** The note under a win whose line asked to repeat or remind. */
 function WinRefused() {
   return (
     <p className="flex items-center gap-1.5 px-4 pb-2 text-meta text-muted" data-win-refused>
@@ -254,6 +254,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
     const r = typeof target === 'string' ? { kind: target } : target
     setRow(null)
     if (r.kind === 'when' && webCalendar) lineDate.show() // the calendar opens; a set date's words are still selected below
+    else lineDate.hide()
     if (r.kind === 'when' && webCalendar && !r.chip) return caretTo(valueRef.current.length)
     if (r.chip) {
       const { start, end } = chipRange(r.chip)
@@ -356,6 +357,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
           onPaste={paste.onPaste}
           onKeyDown={(e) => {
             if (composingEnter(e)) { e.preventDefault(); return }
+            if (lineDate.escape(e)) return
             if (suggest.onKeyDown(e)) return
             if (palette && fieldKeys(e)) return
             if (e.key === 'Enter') {
@@ -398,7 +400,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
         {!hideHint && hints && <span className={`${lead} max-sm:hidden`} data-kbd-hint><span className="ui-kbd" data-quick-add-hint>{keysOf('list.quick-add')}</span></span>}
         {layout !== 'sheet' && suggest.list}{paste.offer}
       </div>
-      {layout === 'line' && webCalendar && lineDate.open && <LineDatePicker id={lineDate.id} due={lineDate.due} onPick={lineDate.pick} />}
+      {layout === 'line' && webCalendar && lineDate.open && <LineDatePicker id={lineDate.id} due={lineDate.due} onPick={lineDate.pick} onKeyDown={lineDate.escape} />}
       {layout === 'sheet' && suggest.list && <div className="px-3 pb-2 [&>ul]:static [&>ul]:mt-0 [&>ul]:w-full" data-sheet-suggestions>{suggest.list}</div>}
       {notes !== null && (
         <NotesLine ref={notesField.ref} value={notes} onChange={notesField.setNotes} onClose={notesField.close}
@@ -411,7 +413,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
           {misses.length > 0 && <div className="flex flex-wrap gap-1.5 px-4 pb-2 text-meta"><ParseChips chips={[]} misses={misses} projects={projects} labels={labels} onDismiss={dismiss} onMiss={(m) => suggest.openAt(m.span.end)} /></div>}
           {refused && <WinRefused />}
         </div>
-        {webCalendar && lineDate.open && <LineDatePicker id={lineDate.id} due={lineDate.due} onPick={lineDate.pick} />}
+        {webCalendar && lineDate.open && <LineDatePicker id={lineDate.id} due={lineDate.due} onPick={lineDate.pick} onKeyDown={lineDate.escape} />}
         <QuickAddFooter title={parsed ? parsed.title : null} empty={emptyTitle} escape={escape} />
       </>}
       {layout === 'sheet' && (
