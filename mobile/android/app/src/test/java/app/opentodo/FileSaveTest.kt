@@ -110,6 +110,36 @@ class FileSaveTest {
         assertFalse(FileSave.name("/" + "x".repeat(199) + "\uD83D\uDE00").last().isHighSurrogate())
     }
 
+    /** The name rules both apps read (the iOS app's DownloadsTests too). */
+    private val nameCases: JSONObject by lazy {
+        JSONObject(javaClass.classLoader!!.getResource("file-name/cases.json")!!.readText())
+    }
+
+    @Test fun theNameFollowsTheSharedCases() {
+        assertEquals(FileSave.FALLBACK_NAME, nameCases.getString("fallback"))
+        val names = nameCases.getJSONArray("names")
+        assertTrue(names.length() > 0)
+        for (i in 0 until names.length()) {
+            val c = names.getJSONObject(i)
+            assertEquals(c.getString("raw"), c.getString("name"), FileSave.name(c.getString("raw")))
+        }
+    }
+
+    @Test fun aLongNameIsCutLikeOnIos() {
+        val max = nameCases.getInt("max")
+        assertEquals(max, FileSave.name("x".repeat(max + 1)).length)
+        val long = nameCases.getJSONArray("long")
+        assertTrue(long.length() > 0)
+        for (i in 0 until long.length()) {
+            val c = long.getJSONObject(i)
+            val raw = c.getString("prefix") + c.getString("fill").repeat(c.getInt("times")) + c.getString("suffix")
+            val name = FileSave.name(raw)
+            assertEquals(raw, c.getInt("length"), name.length)
+            assertFalse(raw, name.last().isHighSurrogate())
+            assertTrue(raw, raw.substringAfterLast('/').startsWith(name))
+        }
+    }
+
     @Test fun theTypeIsAMimeTypeOrTheFallback() {
         assertEquals("text/plain", FileSave.type("text/plain;charset=utf-8"))
         assertEquals("application/json", FileSave.type(" Application/JSON "))

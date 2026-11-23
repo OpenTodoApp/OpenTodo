@@ -1025,12 +1025,39 @@ final class DownloadsTests: XCTestCase {
         XCTAssertFalse(Downloads.isAttachment(URLResponse(url: url, mimeType: "text/plain", expectedContentLength: 2, textEncodingName: nil)))
     }
 
-    func testTheNameIsItsLastPathComponent() {
-        XCTAssertEqual(Downloads.fileName("opentodo-recovery-key.txt"), "opentodo-recovery-key.txt")
-        XCTAssertEqual(Downloads.fileName("../../Library/Cookies/Cookies.binarycookies"), "Cookies.binarycookies")
-        XCTAssertEqual(Downloads.fileName("/etc/passwd"), "passwd")
-        XCTAssertEqual(Downloads.fileName("a\\b\\export.json"), "export.json")
-        XCTAssertEqual(Downloads.fileName("exports/"), "exports")
-        for empty in ["", " ", "/", "..", ".", "a/..", "../"] { XCTAssertEqual(Downloads.fileName(empty), "download", empty) }
+    /// The name rules both apps read (Android's FileSaveTest too).
+    private func nameCases() throws -> [String: Any] {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/file-name/cases.json")
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+    }
+
+    func testTheNameFollowsTheSharedCases() throws {
+        let cases = try nameCases()
+        XCTAssertEqual(try XCTUnwrap(cases["max"] as? Int), Downloads.maxNameLength)
+        XCTAssertEqual(Downloads.fileName(""), try XCTUnwrap(cases["fallback"] as? String))
+        let names = try XCTUnwrap(cases["names"] as? [[String: Any]])
+        XCTAssertFalse(names.isEmpty)
+        for c in names {
+            let raw = try XCTUnwrap(c["raw"] as? String)
+            XCTAssertEqual(Downloads.fileName(raw), try XCTUnwrap(c["name"] as? String), raw.debugDescription)
+        }
+    }
+
+    func testALongNameIsCutLikeOnAndroid() throws {
+        let long = try XCTUnwrap(try nameCases()["long"] as? [[String: Any]])
+        XCTAssertFalse(long.isEmpty)
+        for c in long {
+            let fill = try XCTUnwrap(c["fill"] as? String)
+            let raw = try XCTUnwrap(c["prefix"] as? String) + String(repeating: fill, count: try XCTUnwrap(c["times"] as? Int)) + (try XCTUnwrap(c["suffix"] as? String))
+            let name = Downloads.fileName(raw)
+            let units = Array(name.utf16)
+            XCTAssertEqual(units.count, try XCTUnwrap(c["length"] as? Int), raw)
+            XCTAssertFalse(UTF16.isLeadSurrogate(units[units.count - 1]), raw)
+            // What is kept is the start of the last segment.
+            let segment = String(raw.split(separator: "/", omittingEmptySubsequences: false).last ?? "")
+            XCTAssertTrue(segment.utf16.starts(with: units), raw)
+        }
     }
 }

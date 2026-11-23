@@ -1,0 +1,42 @@
+{
+  "_comment": "The name a shell gives a file the page saves or downloads (shell-repairs D2 and D3): the last path segment, without control characters (U+0000 to U+001F and U+007F to U+009F), trimmed, at most `max` UTF-16 units and never half of a surrogate pair at the cut; `fallback` when nothing usable is left. Read by Android's FileSaveTest (FileSave.name) and the iOS app's DownloadsTests (Downloads.fileName). `long`: the name is `prefix`, then `fill` repeated `times`, then `suffix`; `length` is what is kept, in UTF-16 units.",
+  "fallback": "download",
+  "max": 200,
+  "names": [
+    { "raw": "opentodo-recovery-key.txt", "name": "opentodo-recovery-key.txt" },
+    { "raw": "../../etc/passwd", "name": "passwd" },
+    { "raw": "../../Library/Cookies/Cookies.binarycookies", "name": "Cookies.binarycookies" },
+    { "raw": "/etc/passwd", "name": "passwd" },
+    { "raw": "C:\\Users\\me\\key.txt", "name": "key.txt" },
+    { "raw": "a\\b/export.json", "name": "export.json" },
+    { "raw": "a\u0000\nb\u007f.txt", "name": "ab.txt" },
+    { "raw": "report\u0085\u009f.pdf", "name": "report.pdf" },
+    { "raw": "\tnotes.md\r\n", "name": "notes.md" },
+    { "raw": "  Aufgaben März.csv ", "name": "Aufgaben März.csv" },
+    { "raw": "a/ b ", "name": "b" },
+    { "raw": "Résumé 📄.pdf", "name": "Résumé 📄.pdf" },
+    { "raw": ".hidden", "name": ".hidden" },
+    { "raw": "", "name": "download" },
+    { "raw": "   ", "name": "download" },
+    { "raw": "/", "name": "download" },
+    { "raw": "a/", "name": "download" },
+    { "raw": "exports/", "name": "download" },
+    { "raw": "dir\\", "name": "download" },
+    { "raw": ".", "name": "download" },
+    { "raw": "..", "name": "download" },
+    { "raw": " . ", "name": "download" },
+    { "raw": "../..", "name": "download" },
+    { "raw": "a/..", "name": "download" },
+    { "raw": "../", "name": "download" },
+    { "raw": "\u0001", "name": "download" },
+    { "raw": "x/\u0000\u001f", "name": "download" }
+  ],
+  "long": [
+    { "prefix": "", "fill": "x", "times": 500, "suffix": ".txt", "length": 200 },
+    { "prefix": "", "fill": "x", "times": 200, "suffix": "", "length": 200 },
+    { "prefix": "", "fill": "x", "times": 196, "suffix": ".txt", "length": 200 },
+    { "prefix": "/", "fill": "x", "times": 199, "suffix": "😀", "length": 199 },
+    { "prefix": "", "fill": "x", "times": 198, "suffix": "😀", "length": 200 },
+    { "prefix": "../", "fill": "ä", "times": 300, "suffix": "", "length": 200 }
+  ]
+}
