@@ -3,6 +3,7 @@ package importer
 import (
 	"context"
 	"errors"
+	"os"
 	"strings"
 	"testing"
 
@@ -212,5 +213,68 @@ func TestReimportIntoAnotherWorkspace(t *testing.T) {
 		if r.Kind == KindTask && r.Reason != ReasonAlreadyImported {
 			t.Fatalf("third preview row = %+v", r)
 		}
+	}
+}
+
+// #1899 with source ids on projects and sections (a Todoist backup), and a
+// target project re-imported with no workspace named (an API call).
+func TestReimportTodoistIntoAnotherWorkspace(t *testing.T) {
+	h := newHarness(t)
+	work := h.workspace(h.uid, "Work")
+	data, err := os.ReadFile("testdata/todoist-backup/rich.zip")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if job := h.run(string(data), Options{}); job.Status != StatusDone {
+		t.Fatalf("first import = %+v", job)
+	}
+	before := map[string]int{"project": len(h.list("project", false)), "section": len(h.list("section", false)), "task": len(h.list("task", false))}
+	plan, err := h.svc.Preview(context.Background(), h.uid, data, Options{Workspace: work})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, r := range plan.Rows {
+		if r.Reason == ReasonAlreadyImported {
+			t.Fatalf("row %s (%s) skipped as already imported in another workspace", r.SourceID, r.Kind)
+		}
+	}
+	if job := h.run(string(data), Options{Workspace: work}); job.Status != StatusDone {
+		t.Fatalf("second import = %+v", job)
+	}
+	for kind, n := range before {
+		if got := len(h.list(kind, false)); got != 2*n {
+			t.Errorf("%d %ss after the second import, want %d", got, kind, 2*n)
+		}
+	}
+	// Every section the second import made sits under a project in Work.
+	want := `"` + work + `"`
+	work0 := map[string]bool{}
+	for _, p := range h.list("project", false) {
+		if wsOf(p) == want {
+			work0[str(p, "id")] = true
+		}
+	}
+	inWork := 0
+	for _, sec := range h.list("section", false) {
+		if work0[str(sec, "project_id")] {
+			inWork++
+		}
+	}
+	if inWork != before["section"] {
+		t.Errorf("%d sections under Work's projects, want %d", inWork, before["section"])
+	}
+}
+
+func TestReimportIntoTargetProjectWithoutWorkspace(t *testing.T) {
+	h := newHarness(t)
+	work := h.workspace(h.uid, "Work")
+	h.write("web", 1_000, "project", "wp", map[string]any{"name": "Site", "position": 1, "workspace_id": work})
+	csv := "id,title\n1,Buy milk\n"
+	if job := h.run(csv, Options{TargetProject: "wp"}); job.Status != StatusDone {
+		t.Fatalf("first import = %+v", job)
+	}
+	plan, _ := h.svc.Preview(context.Background(), h.uid, []byte(csv), Options{TargetProject: "wp", Duplicates: "import"})
+	if r := plan.Rows[0]; r.Outcome != OutcomeSkip || r.Reason != ReasonAlreadyImported {
+		t.Fatalf("second preview row = %+v", r)
 	}
 }

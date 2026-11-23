@@ -239,7 +239,8 @@ func (s *Service) loadState(ctx context.Context, uid, profile string) (*State, e
 		*dst = list
 	}
 	rows, err := s.db.QueryContext(ctx, `SELECT i.source_id, i.entity_id FROM import_items i JOIN import_jobs j ON j.id = i.job_id
-		WHERE j.user_id = ? AND j.profile = ? AND j.undone_at IS NULL AND i.source_id != '' AND i.action = 'created'`, uid, profile)
+		WHERE j.user_id = ? AND j.profile = ? AND j.undone_at IS NULL AND i.source_id != '' AND i.action = 'created'
+		ORDER BY j.created_at DESC, j.id`, uid, profile)
 	if err != nil {
 		return nil, err
 	}

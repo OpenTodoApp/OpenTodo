@@ -191,7 +191,7 @@ func (fp *foreignPlan) sections() {
 			continue
 		}
 		key := sectionKey(projectID, row.Title)
-		if id, ok := pl.remembered(KindSection, row.SourceID); ok {
+		if id, ok := pl.rememberedWhere(KindSection, row.SourceID, func(e opsync.Entity) bool { return str(e, "project_id") == projectID }); ok {
 			res.Outcome, res.Reason = OutcomeSkip, ReasonAlreadyImported
 			if _, ok := pl.sectionByKey[key]; !ok {
 				pl.sectionByKey[key] = id
