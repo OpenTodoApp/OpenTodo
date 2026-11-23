@@ -41,21 +41,27 @@ export async function call<T = unknown>(session: Session | null, method: string,
 
 let accounts = 0
 
-/** A new account on the server (sign-up is open on the contract server). */
-export async function account(name = 'Contract'): Promise<{ email: string; password: string; id: string }> {
-  const email = `contract-${Date.now()}-${++accounts}@example.com`
-  const password = 'contract test password'
-  const session = { cookie: '' }
-  // The server allows 10 sign-ups a minute from one address, for the whole run: past that, wait for the window.
+/**
+ * Signs up through POST /api/v1/auth/register as `session`. The server allows 10
+ * sign-ups a minute from one address for the whole run: past that, this waits for the window.
+ */
+export async function register(session: Session, body: { email: string; name: string; password: string }): Promise<{ user: { id: string } }> {
   for (let attempt = 0; ; attempt++) {
     try {
-      const res = await call<{ user: { id: string } }>(session, 'POST', '/api/v1/auth/register', { email, name, password })
-      return { email, password, id: res.user.id }
+      return await call<{ user: { id: string } }>(session, 'POST', '/api/v1/auth/register', body)
     } catch (err) {
       if (attempt >= 14 || !String(err).includes('HTTP 429')) throw err
       await new Promise((r) => setTimeout(r, 5000))
     }
   }
+}
+
+/** A new account on the server (sign-up is open on the contract server). */
+export async function account(name = 'Contract'): Promise<{ email: string; password: string; id: string }> {
+  const email = `contract-${Date.now()}-${++accounts}@example.com`
+  const password = 'contract test password'
+  const res = await register({ cookie: '' }, { email, name, password })
+  return { email, password, id: res.user.id }
 }
 
 /**
