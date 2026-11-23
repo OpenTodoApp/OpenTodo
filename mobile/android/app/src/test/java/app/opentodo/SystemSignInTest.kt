@@ -1,19 +1,33 @@
 package app.opentodo
 
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 
 /** app-sso-system-browser: the rules of single sign-on in the system browser. */
 class SystemSignInTest {
-    private val server = "https://todo.example.com"
+    /** The rules both apps share: sign-in/system.json, which the iPhone app's SystemSignInTests read too. */
+    private val cases: JSONObject by lazy {
+        val url = javaClass.classLoader!!.getResource("sign-in/system.json")
+        assertNotNull("missing sign-in/system.json", url)
+        JSONObject(url!!.readText())
+    }
+
+    private fun each(key: String, check: (JSONObject) -> Unit) {
+        val list = cases.getJSONArray(key)
+        assertTrue("the fixture has $key cases", list.length() > 0)
+        for (i in 0 until list.length()) check(list.getJSONObject(i))
+    }
 
     @Test fun challengeIsS256() {
         // RFC 7636, appendix B.
-        assertEquals("E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM", SystemSignIn.challenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"))
+        val vector = cases.getJSONObject("challenge")
+        assertEquals(vector.getString("challenge"), SystemSignIn.challenge(vector.getString("verifier")))
         val p = SystemSignIn.pending()
         assertEquals(43, p.verifier.length)
         assertEquals(SystemSignIn.challenge(p.verifier), p.challenge)
@@ -21,20 +35,37 @@ class SystemSignInTest {
     }
 
     @Test fun onlyTheServersStartRouteGoesToTheBrowser() {
-        assertTrue(SystemSignIn.isStart("https://todo.example.com/api/v1/auth/oidc/start", server))
-        assertFalse(SystemSignIn.isStart("https://todo.example.com/api/v1/auth/oidc/start?app_challenge=x&app_state=y", server))
-        assertFalse(SystemSignIn.isStart("https://sso.example.com/api/v1/auth/oidc/start", server))
-        assertFalse(SystemSignIn.isStart("https://todo.example.com/api/v1/auth/oidc/callback", server))
-        assertEquals("https://todo.example.com/api/v1/auth/oidc/start?app_challenge=c&app_state=s&app_mode=login",
-            SystemSignIn.startUrl(server, SystemSignIn.Pending("v", "c", "s")))
+        val server = cases.getString("server")
+        each("start") { assertEquals(it.getString("url"), it.getBoolean("start"), SystemSignIn.isStart(it.getString("url"), server)) }
+        each("startUrl") {
+            val p = SystemSignIn.Pending("v", it.getString("challenge"), it.getString("state"))
+            assertEquals(it.getString("url"), SystemSignIn.startUrl(server, p, link = it.getBoolean("link")))
+        }
     }
 
     @Test fun theModeTheWebAppAskedForIsPassedOn() {
-        assertTrue(SystemSignIn.isLink("https://todo.example.com/api/v1/auth/oidc/start?mode=link"))
-        assertFalse(SystemSignIn.isLink("https://todo.example.com/api/v1/auth/oidc/start"))
-        assertFalse(SystemSignIn.isLink("https://todo.example.com/api/v1/auth/oidc/start?mode=links"))
-        assertEquals("https://todo.example.com/api/v1/auth/oidc/start?app_challenge=c&app_state=s&app_mode=link",
-            SystemSignIn.startUrl(server, SystemSignIn.Pending("v", "c", "s"), link = true))
+        each("link") { assertEquals(it.getString("url"), it.getBoolean("link"), SystemSignIn.isLink(it.getString("url"))) }
+    }
+
+    @Test fun outcome() {
+        each("outcome") {
+            val want = when (it.getString("outcome")) {
+                "code" -> SystemSignIn.Outcome.Code(it.getString("value"))
+                "error" -> SystemSignIn.Outcome.Error(it.getString("value"))
+                "cancelled" -> SystemSignIn.Outcome.Cancelled
+                "invalid" -> SystemSignIn.Outcome.Invalid
+                else -> fail("unknown outcome ${it.getString("outcome")}")
+            }
+            assertEquals(it.getString("url"), want, SystemSignIn.outcome(it.getString("url"), it.getString("state")))
+        }
+    }
+
+    @Test fun healthAnnouncesAppFlows() {
+        each("health") { assertEquals(it.getString("body"), it.getBoolean("supported"), SystemSignIn.supported(it.getString("body"))) }
+    }
+
+    @Test fun theErrorAddressCarriesTheCode() {
+        each("errorUrl") { assertEquals(it.getString("url"), SystemSignIn.errorUrl(cases.getString("server"), it.getString("code"))) }
     }
 
     @Test fun theSignInOpensInANamedBrowser() {
@@ -51,29 +82,9 @@ class SystemSignInTest {
         assertNull(SystemSignIn.browserFor(null, listOf("com.example.plain", "com.example.other"), emptySet()))
     }
 
-    @Test fun outcome() {
-        fun outcome(s: String) = SystemSignIn.outcome(s, "st")
-        assertEquals(SystemSignIn.Outcome.Code("abc_-1"), outcome("opentodo://sso?code=abc_-1&state=st"))
-        assertEquals(SystemSignIn.Outcome.Error("oidc_failed"), outcome("opentodo://sso?error=oidc_failed&state=st"))
-        assertEquals(SystemSignIn.Outcome.Cancelled, outcome("opentodo://sso?state=st"))
-        assertEquals(SystemSignIn.Outcome.Invalid, outcome("opentodo://sso?state=other"))
-        assertEquals("a malformed code is not a cancel", SystemSignIn.Outcome.Invalid, outcome("opentodo://sso?code=a'b&state=st"))
-        assertEquals(SystemSignIn.Outcome.Invalid, outcome("opentodo://sso?code=abc&state=other"))
-        assertEquals(SystemSignIn.Outcome.Invalid, outcome("opentodo://sso?code=abc"))
-        assertEquals(SystemSignIn.Outcome.Invalid, outcome("opentodo://task/abc?code=abc&state=st"))
-        assertEquals("only plain tokens reach the page's script", SystemSignIn.Outcome.Invalid, outcome("opentodo://sso?code=a'%3Balert(1)&state=st"))
-    }
-
-    @Test fun healthAnnouncesAppFlows() {
-        assertTrue(SystemSignIn.supported("""{"status":"ok","version":"1","app_sso":true}"""))
-        assertFalse(SystemSignIn.supported("""{"status":"ok","version":"1"}"""))
-        assertFalse(SystemSignIn.supported("not json"))
-    }
-
     @Test fun redeemScriptNamesTheRouteAndValues() {
         val script = SystemSignIn.redeemScript("c0de", "v3r")
         assertTrue(script.contains("'/api/v1/auth/oidc/app-session'"))
         assertTrue(script.contains("code: 'c0de', code_verifier: 'v3r'"))
-        assertEquals("https://todo.example.com/?error=signup_closed", SystemSignIn.errorUrl(server, "signup_closed"))
     }
 }
