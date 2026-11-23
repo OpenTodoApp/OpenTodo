@@ -23,10 +23,21 @@ import (
 const appSSOContinuePath = "/api/v1/auth/oidc/app-continue"
 
 // appContinueText is the page in the mail texts' languages (mail.LangFrom);
-// a language without its own falls back to English, as mail does.
-var appContinueText = map[string]struct{ Title, Lead, Continue, Cancel string }{
-	"en": {"Continue to the OpenTodo app", "Continue to the OpenTodo app as %s?", "Continue", "Cancel"},
-	"de": {"Weiter zur OpenTodo-App", "Als %s in der OpenTodo-App weitermachen?", "Weiter", "Abbrechen"},
+// a language without its own falls back to English, as mail does. The page
+// names the server and the account, and not who started the flow: any app
+// can start one, so it must not claim to be OpenTodo's. {host} is the
+// server's host, {who} the account.
+type appContinueWords struct{ Title, Lead, Continue, Cancel string }
+
+var appContinueText = map[string]struct{ Login, Link appContinueWords }{
+	"en": {
+		Login: appContinueWords{"Sign in on this device", "Sign in to {host} as {who} on this device?", "Sign in", "Cancel"},
+		Link:  appContinueWords{"Link a sign-in", "Link {who} to your account on {host}, on this device?", "Link", "Cancel"},
+	},
+	"de": {
+		Login: appContinueWords{"Auf diesem Gerät anmelden", "Auf diesem Gerät als {who} bei {host} anmelden?", "Anmelden", "Abbrechen"},
+		Link:  appContinueWords{"Anmeldung verknüpfen", "{who} auf diesem Gerät mit deinem Konto bei {host} verknüpfen?", "Verknüpfen", "Abbrechen"},
+	},
 }
 
 const appContinueStyle = `body{font:16px/1.5 system-ui,sans-serif;margin:0;padding:48px 24px;color:#1c1c1e;background:#fff}` +
@@ -54,12 +65,21 @@ var appContinuePage = template.Must(template.New("continue").Parse(`<!doctype ht
 <button type="submit" name="action" value="continue" autofocus>{{.Continue}}</button></form></main></body></html>
 `))
 
-// showAppContinue answers the callback of an app flow with the confirmation page.
-func (s *Server) showAppContinue(w http.ResponseWriter, r *http.Request, ticket string, claims *oidc.Claims) {
+// showAppContinue answers the callback of an app flow with the confirmation
+// page, for a sign-in or, with link, for linking the identity.
+func (s *Server) showAppContinue(w http.ResponseWriter, r *http.Request, ticket string, claims *oidc.Claims, link bool) {
 	lang := mail.LangFrom(r.Header.Get("Accept-Language"))
-	text, ok := appContinueText[lang]
+	texts, ok := appContinueText[lang]
 	if !ok {
-		lang, text = "en", appContinueText["en"]
+		lang, texts = "en", appContinueText["en"]
+	}
+	text := texts.Login
+	if link {
+		text = texts.Link
+	}
+	host := s.publicOrigin(r)
+	if u, err := url.Parse(host); err == nil && u.Host != "" {
+		host = u.Host
 	}
 	// The provider's verified email, else the name it gives: an address it has
 	// not verified could be anyone's, so it never names the account.
@@ -81,7 +101,7 @@ func (s *Server) showAppContinue(w http.ResponseWriter, r *http.Request, ticket 
 	h.Set("X-Content-Type-Options", "nosniff")
 	h.Set("X-Frame-Options", "DENY")
 	err := appContinuePage.Execute(w, map[string]any{
-		"Lang": lang, "Title": text.Title, "Lead": strings.Replace(text.Lead, "%s", who, 1),
+		"Lang": lang, "Title": text.Title, "Lead": strings.NewReplacer("{host}", host, "{who}", who).Replace(text.Lead),
 		"Continue": text.Continue, "Cancel": text.Cancel, "Ticket": ticket, "Action": appSSOContinuePath,
 	})
 	if err != nil {

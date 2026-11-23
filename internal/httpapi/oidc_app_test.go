@@ -15,8 +15,9 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/oidc/oidctest"
 )
 
-// appPKCE is the app's side of an app flow: a verifier, its challenge, a state.
-type appPKCE struct{ verifier, challenge, state string }
+// appPKCE is the app's side of an app flow: a verifier, its challenge, a
+// state, and the mode it asks for ("" sends none, a sign-in).
+type appPKCE struct{ verifier, challenge, state, mode string }
 
 func newAppPKCE(state string) appPKCE {
 	v := strings.Repeat("v", 20) + state + strings.Repeat("x", 43-len(state))
@@ -48,6 +49,9 @@ var ticketField = regexp.MustCompile(`name="ticket" value="([^"]+)"`)
 func (o *oidcEnv) appConfirmation(sheet *env, p appPKCE) string {
 	o.t.Helper()
 	q := url.Values{"app_challenge": {p.challenge}, "app_state": {p.state}}
+	if p.mode != "" {
+		q.Set("app_mode", p.mode)
+	}
 	resp := raw(sheet, o.srv.URL+"/api/v1/auth/oidc/start?"+q.Encode())
 	if resp.StatusCode != http.StatusFound {
 		o.t.Fatalf("app start = %d", resp.StatusCode)
@@ -82,8 +86,14 @@ func (o *oidcEnv) appConfirmation(sheet *env, p appPKCE) string {
 	if want := "style-src 'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'"; !strings.Contains(csp, want) {
 		o.t.Fatalf("the page's style does not match its policy %q", csp)
 	}
-	if !regexp.MustCompile(`Als [a-z]+@example\.com in der OpenTodo-App weitermachen\?`).MatchString(html) || strings.Contains(html, "<script") || strings.Contains(html, "code=") {
-		o.t.Fatalf("confirmation page:\n%s", html)
+	// The page names the server and the account, never the app: another app may have started the flow.
+	host := mustURL(o.srv.URL).Host
+	want := "Auf diesem Gerät als [a-z]+@example\\.com bei " + regexp.QuoteMeta(host) + " anmelden\\?"
+	if p.mode == "link" {
+		want = "[a-z]+@example\\.com auf diesem Gerät mit deinem Konto bei " + regexp.QuoteMeta(host) + " verknüpfen\\?"
+	}
+	if !regexp.MustCompile(want).MatchString(html) || strings.Contains(html, "OpenTodo") || strings.Contains(html, "<script") || strings.Contains(html, "code=") {
+		o.t.Fatalf("confirmation page (want %q):\n%s", want, html)
 	}
 	m := ticketField.FindStringSubmatch(html)
 	if m == nil {
@@ -157,7 +167,7 @@ func TestOIDCAppFlowAsksBeforeTheHandOff(t *testing.T) {
 	}
 	body, _ := io.ReadAll(page.Body)
 	page.Body.Close()
-	if !strings.Contains(string(body), "as Mallory?") || strings.Contains(string(body), "boss@example.com") {
+	if !strings.Contains(string(body), " as Mallory on this device?") || strings.Contains(string(body), "boss@example.com") {
 		t.Fatalf("unverified email on the page:\n%s", body)
 	}
 }
@@ -233,7 +243,9 @@ func TestOIDCAppFlowRefusals(t *testing.T) {
 	sheet := o.client("203.0.113.20")
 
 	// Malformed app parameters.
-	for _, q := range []string{"app_challenge=short&app_state=s", "app_challenge=" + newAppPKCE("s").challenge, "app_state=s"} {
+	ok := newAppPKCE("s").challenge
+	for _, q := range []string{"app_challenge=short&app_state=s", "app_challenge=" + ok, "app_state=s",
+		"app_challenge=" + ok + "&app_state=s&app_mode=admin", "app_mode=link"} {
 		resp, out := sheet.do("GET", "/api/v1/auth/oidc/start?"+q, nil)
 		if resp.StatusCode != 400 || errCode(out) != "invalid_request" {
 			t.Fatalf("start ?%s = %d %v", q, resp.StatusCode, out)
@@ -283,6 +295,7 @@ func TestOIDCAppFlowLinksFromASignedInWebView(t *testing.T) {
 	resp, out := login(sheet, "owner@example.com", "correct horse battery")
 	sheet.mustStatus(resp, 200, out)
 	p := newAppPKCE("app-state-6")
+	p.mode = "link"
 	code := o.appAuthorize(sheet, p).Query().Get("code")
 
 	resp, out = redeem(o.env, code, p.verifier)
@@ -293,5 +306,43 @@ func TestOIDCAppFlowLinksFromASignedInWebView(t *testing.T) {
 	o.mustStatus(resp, 200, out)
 	if ids := out["identities"].([]any); len(ids) != 1 {
 		t.Fatalf("identities = %v", ids)
+	}
+}
+
+// The mode the app started the flow in decides, not the web view's session: a
+// sign-in flow redeemed by a signed-in web view never links the identity to
+// that account, and a link flow without a session links nothing.
+func TestOIDCAppFlowModeComesFromTheStart(t *testing.T) {
+	o := newOIDCEnv(t, false)
+	o.configure(nil)
+	o.idp.SetUser(oidctest.User{Subject: "owner-sub", Email: "owner@example.com", EmailVerified: true})
+	sheet := o.client("203.0.113.40")
+
+	// o.env is the owner's signed-in web view; the flow was started as a sign-in.
+	p := newAppPKCE("app-state-7")
+	code := o.appAuthorize(sheet, p).Query().Get("code")
+	resp, out := redeem(o.env, code, p.verifier)
+	if location(resp) == "/settings/account/security?linked=1" {
+		t.Fatalf("a sign-in flow linked: %d %q %v", resp.StatusCode, location(resp), out)
+	}
+	resp, out = o.do("GET", "/api/v1/me/identities", nil)
+	o.mustStatus(resp, 200, out)
+	if ids := out["identities"].([]any); len(ids) != 0 {
+		t.Fatalf("identities after a sign-in flow = %v", ids)
+	}
+
+	// A link flow redeemed by a web view with no session links nothing and signs nobody in.
+	p = newAppPKCE("app-state-8")
+	p.mode = "link"
+	code = o.appAuthorize(sheet, p).Query().Get("code")
+	webView := o.client("203.0.113.41")
+	resp, out = redeem(webView, code, p.verifier)
+	if hasCookie(resp, sessionCookie) || location(resp) == "/settings/account/security?linked=1" {
+		t.Fatalf("link without a session = %d %q %v", resp.StatusCode, location(resp), out)
+	}
+	resp, out = o.do("GET", "/api/v1/me/identities", nil)
+	o.mustStatus(resp, 200, out)
+	if ids := out["identities"].([]any); len(ids) != 0 {
+		t.Fatalf("identities after a link flow without a session = %v", ids)
 	}
 }

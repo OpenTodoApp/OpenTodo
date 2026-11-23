@@ -139,7 +139,7 @@ func (s *Server) handleOIDCStart(w http.ResponseWriter, r *http.Request) {
 	}
 	f := s.oidc.States().New(mode, userID, c.Issuer)
 	if app != nil {
-		f.AppChallenge, f.AppState = app.challenge, app.state
+		f.AppChallenge, f.AppState, f.AppLink = app.challenge, app.state, app.link
 	}
 	s.setStateCookie(w, r, s.oidc.States().Encode(f), int(oidc.FlowTTL.Seconds()))
 	w.Header().Set("Cache-Control", "no-store")
@@ -203,12 +203,12 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	if f.AppChallenge != "" {
 		// Held until the person confirms on the page that names the account (design D6).
-		ticket := s.oidc.Handoffs().Hold(oidc.Handoff{Claims: *claims, IDToken: raw, Issuer: f.Issuer, Challenge: f.AppChallenge, AppState: f.AppState})
+		ticket := s.oidc.Handoffs().Hold(oidc.Handoff{Claims: *claims, IDToken: raw, Issuer: f.Issuer, Challenge: f.AppChallenge, AppState: f.AppState, Link: f.AppLink})
 		if ticket == "" {
 			fail("rate_limited")
 			return
 		}
-		s.showAppContinue(w, r, ticket, claims)
+		s.showAppContinue(w, r, ticket, claims, f.AppLink)
 		return
 	}
 	if f.Mode == oidc.ModeLink {
@@ -289,21 +289,31 @@ func (s *Server) finishOIDCLogin(w http.ResponseWriter, r *http.Request, c oidc.
 	redirectTo(w, r, "/", nil)
 }
 
-// appSSORequest is the app's part of an app flow.
-type appSSORequest struct{ challenge, state string }
+// appSSORequest is the app's part of an app flow. link: the app started it
+// from Settings to link an identity to its web view's account (app_mode=link);
+// otherwise it signs in.
+type appSSORequest struct {
+	challenge, state string
+	link             bool
+}
 
-// parseAppSSO reads the app's challenge and state from the start route's
-// query: nil when there are none, an error message when they are malformed.
+// parseAppSSO reads the app's challenge, state and mode from the start
+// route's query: nil when there are none, an error message when they are
+// malformed.
 func parseAppSSO(q url.Values) (*appSSORequest, string) {
 	req := &appSSORequest{challenge: q.Get("app_challenge"), state: q.Get("app_state")}
+	mode := q.Get("app_mode")
 	switch {
-	case req.challenge == "" && req.state == "":
+	case req.challenge == "" && req.state == "" && mode == "":
 		return nil, ""
 	case !mcpoauth.ValidChallenge(req.challenge):
 		return nil, "app_challenge must be an S256 code challenge"
 	case req.state == "" || len(req.state) > mcpoauth.MaxState:
 		return nil, "app_state is required, at most 512 bytes"
+	case mode != "" && mode != "login" && mode != "link":
+		return nil, "app_mode must be login or link"
 	}
+	req.link = mode == "link"
 	return req, ""
 }
 
@@ -314,9 +324,10 @@ func toApp(w http.ResponseWriter, r *http.Request, f *oidc.FlowState, q url.Valu
 	redirectTo(w, r, appSSORedirect, q)
 }
 
-// handleOIDCAppSession redeems an app flow's code from the app's web view. It
-// finishes like the callback of a flow run in that web view: with a session
-// there it links the identity to that account, without one it signs in.
+// handleOIDCAppSession redeems an app flow's code from the app's web view, in
+// the mode the app started the flow in: a link flow links the identity to the
+// account signed in on that web view (and needs one), a sign-in flow signs in.
+// A session alone never turns a sign-in into a link.
 func (s *Server) handleOIDCAppSession(w http.ResponseWriter, r *http.Request) {
 	if !s.oidcLimiter.allow(clientIP(r)) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again later")
@@ -351,8 +362,13 @@ func (s *Server) handleOIDCAppSession(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "oidc_state_invalid", oidc.ErrStateInvalid.Error())
 		return
 	}
-	if _, sess, _, err := s.authenticateSession(r); err == nil && sess != nil {
-		s.finishOIDCLink(w, r, c, sess.User.ID, identityOf(&h.Claims), h.Claims.Picture)
+	if h.Link {
+		userID := ""
+		if _, sess, _, err := s.authenticateSession(r); err == nil && sess != nil {
+			userID = sess.User.ID
+		}
+		// Without a session finishOIDCLink refuses: sign in again, then link.
+		s.finishOIDCLink(w, r, c, userID, identityOf(&h.Claims), h.Claims.Picture)
 		return
 	}
 	s.finishOIDCLogin(w, r, c, identityOf(&h.Claims), h.IDToken, h.Claims.Picture)

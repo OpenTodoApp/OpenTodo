@@ -35,6 +35,16 @@
         <intent>
             <action android:name="org.unifiedpush.android.distributor.REGISTER" />
         </intent>
+        <!-- app-sso-system-browser: the browsers, and which of them offer Custom Tabs, so that
+             single sign-on opens in one named browser, never in whatever app handles https. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
     </queries>
 
     <application

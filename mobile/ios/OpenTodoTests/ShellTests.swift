@@ -527,7 +527,15 @@ final class SystemSignInTests: XCTestCase {
         XCTAssertFalse(SystemSignIn.isStart(URL(string: "https://sso.example.com/api/v1/auth/oidc/start")!, server: server))
         XCTAssertFalse(SystemSignIn.isStart(URL(string: "https://todo.example.com/api/v1/auth/oidc/callback")!, server: server))
         let start = SystemSignIn.startURL(server: server, SystemSignIn.Pending(verifier: "v", challenge: "c", state: "s"))
-        XCTAssertEqual(start.absoluteString, "https://todo.example.com/api/v1/auth/oidc/start?app_challenge=c&app_state=s")
+        XCTAssertEqual(start.absoluteString, "https://todo.example.com/api/v1/auth/oidc/start?app_challenge=c&app_state=s&app_mode=login")
+    }
+
+    func testTheModeTheWebAppAskedForIsPassedOn() {
+        XCTAssertTrue(SystemSignIn.isLink(URL(string: "https://todo.example.com/api/v1/auth/oidc/start?mode=link")!))
+        XCTAssertFalse(SystemSignIn.isLink(URL(string: "https://todo.example.com/api/v1/auth/oidc/start")!))
+        XCTAssertFalse(SystemSignIn.isLink(URL(string: "https://todo.example.com/api/v1/auth/oidc/start?mode=links")!))
+        let start = SystemSignIn.startURL(server: server, SystemSignIn.Pending(verifier: "v", challenge: "c", state: "s"), link: true)
+        XCTAssertEqual(start.absoluteString, "https://todo.example.com/api/v1/auth/oidc/start?app_challenge=c&app_state=s&app_mode=link")
     }
 
     func testOutcome() {

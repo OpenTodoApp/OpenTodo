@@ -53,8 +53,31 @@ object SystemSignIn {
     fun challenge(verifier: String): String =
         b64(MessageDigest.getInstance("SHA-256").digest(verifier.toByteArray(Charsets.US_ASCII)))
 
-    /** The start route with the app's challenge and state, opened in the browser. */
-    fun startUrl(server: String, p: Pending): String = "$server$START_PATH?app_challenge=${p.challenge}&app_state=${p.state}"
+    /**
+     * Whether the web app asked to link an identity to its signed-in account (Settings, a
+     * re-authentication: `mode=link` on the start route) rather than to sign in.
+     */
+    fun isLink(url: String): Boolean = try { params(URI(url).rawQuery)["mode"] == "link" } catch (e: Exception) { false }
+
+    /** The start route with the app's challenge, state and mode, opened in the browser. */
+    fun startUrl(server: String, p: Pending, link: Boolean = false): String =
+        "$server$START_PATH?app_challenge=${p.challenge}&app_state=${p.state}&app_mode=${if (link) "link" else "login"}"
+
+    /** The service a browser offers when it supports Custom Tabs. */
+    const val CUSTOM_TABS_SERVICE = "android.support.customtabs.action.CustomTabsService"
+
+    /**
+     * The browser the sign-in opens in, by package name, so no other app that handles https
+     * links can take the start address with this sign-in's state and challenge. The default
+     * browser when it supports Custom Tabs, else the first browser that does (the rule of
+     * CustomTabsClient.getPackageName), else the default browser as it is. Null when there is no
+     * default browser either: never the chooser. [browsers] keeps the system's order.
+     */
+    fun browserFor(defaultBrowser: String?, browsers: List<String>, customTabs: Set<String>): String? = when {
+        defaultBrowser != null && defaultBrowser in customTabs -> defaultBrowser
+        browsers.any { it in customTabs } -> browsers.first { it in customTabs }
+        else -> defaultBrowser
+    }
 
     /**
      * Reads `opentodo://sso?state=…&code=…` (or `&error=…`, or the state alone after Cancel);

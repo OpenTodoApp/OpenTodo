@@ -45,6 +45,9 @@ type FlowState struct {
 	// of signing in the browser that ran the flow.
 	AppChallenge string `json:"ac,omitempty"`
 	AppState     string `json:"as,omitempty"`
+	// AppLink: the app started the flow to link an identity to the account
+	// signed in on its web view (Settings), not to sign in.
+	AppLink bool `json:"al,omitempty"`
 }
 
 // StateCodec signs, verifies and consumes flow states.

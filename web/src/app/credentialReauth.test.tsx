@@ -116,7 +116,7 @@ describe('enrolment on a session that did not sign in recently', () => {
     await waitFor(() => !!document.querySelector('[data-testid="reauth-dialog"] a'), 'provider link')
     const link = document.querySelector<HTMLAnchorElement>('[data-testid="reauth-dialog"] a')!
     expect(link.textContent).toBe('Confirm with Home SSO instead')
-    expect(link.getAttribute('href')).toBe('/api/v1/auth/oidc/start')
+    expect(link.getAttribute('href')).toBe('/api/v1/auth/oidc/start?mode=link')
     // Close the prompt so the next test starts without one in flight.
     await click([...document.querySelectorAll('[data-testid="reauth-dialog"] button')].find((b) => b.textContent === 'Cancel')!)
     await r.unmount()
@@ -131,7 +131,7 @@ describe('provider link refused for an older sign-in', () => {
     const r = await mount(<LinkedAccountsPanel />)
     await confirmPassword()
     await waitFor(() => assign.mock.calls.length > 0, 'navigation to the provider')
-    expect(assign).toHaveBeenCalledWith('/api/v1/auth/oidc/start')
+    expect(assign).toHaveBeenCalledWith('/api/v1/auth/oidc/start?mode=link')
     await waitFor(() => r.container.textContent?.includes('Linking Home SSO needs a recent sign-in.') ?? false, 'explanation')
     await r.unmount()
   })

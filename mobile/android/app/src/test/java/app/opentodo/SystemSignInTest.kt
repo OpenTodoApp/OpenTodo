@@ -3,6 +3,7 @@ package app.opentodo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -24,8 +25,30 @@ class SystemSignInTest {
         assertFalse(SystemSignIn.isStart("https://todo.example.com/api/v1/auth/oidc/start?app_challenge=x&app_state=y", server))
         assertFalse(SystemSignIn.isStart("https://sso.example.com/api/v1/auth/oidc/start", server))
         assertFalse(SystemSignIn.isStart("https://todo.example.com/api/v1/auth/oidc/callback", server))
-        assertEquals("https://todo.example.com/api/v1/auth/oidc/start?app_challenge=c&app_state=s",
+        assertEquals("https://todo.example.com/api/v1/auth/oidc/start?app_challenge=c&app_state=s&app_mode=login",
             SystemSignIn.startUrl(server, SystemSignIn.Pending("v", "c", "s")))
+    }
+
+    @Test fun theModeTheWebAppAskedForIsPassedOn() {
+        assertTrue(SystemSignIn.isLink("https://todo.example.com/api/v1/auth/oidc/start?mode=link"))
+        assertFalse(SystemSignIn.isLink("https://todo.example.com/api/v1/auth/oidc/start"))
+        assertFalse(SystemSignIn.isLink("https://todo.example.com/api/v1/auth/oidc/start?mode=links"))
+        assertEquals("https://todo.example.com/api/v1/auth/oidc/start?app_challenge=c&app_state=s&app_mode=link",
+            SystemSignIn.startUrl(server, SystemSignIn.Pending("v", "c", "s"), link = true))
+    }
+
+    @Test fun theSignInOpensInANamedBrowser() {
+        val tabs = setOf("com.android.chrome", "org.mozilla.firefox")
+        // The default browser, when it has Custom Tabs.
+        assertEquals("org.mozilla.firefox", SystemSignIn.browserFor("org.mozilla.firefox", listOf("com.android.chrome", "org.mozilla.firefox"), tabs))
+        // A default without Custom Tabs gives way to the first browser that has them.
+        assertEquals("com.android.chrome", SystemSignIn.browserFor("com.example.plain", listOf("com.example.plain", "com.android.chrome", "org.mozilla.firefox"), tabs))
+        // No default (the chooser would ask): still a named browser with Custom Tabs.
+        assertEquals("org.mozilla.firefox", SystemSignIn.browserFor(null, listOf("com.example.plain", "org.mozilla.firefox"), tabs))
+        // No browser with Custom Tabs: the default browser by name.
+        assertEquals("com.example.plain", SystemSignIn.browserFor("com.example.plain", listOf("com.example.plain"), emptySet()))
+        // Neither: nothing, so the app never falls back to the chooser.
+        assertNull(SystemSignIn.browserFor(null, listOf("com.example.plain", "com.example.other"), emptySet()))
     }
 
     @Test fun outcome() {

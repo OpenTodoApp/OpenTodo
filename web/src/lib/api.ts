@@ -746,6 +746,14 @@ export function auditExportUrl(filters: AuditFilters = {}): string {
  */
 export const OIDC_START_URL = '/api/v1/auth/oidc/start'
 
+/**
+ * The same route from Settings or a re-authentication, where a session exists.
+ * A browser decides by that session alone; the Android and iPhone apps run the
+ * provider step in the system browser, which has none, so `mode=link` tells
+ * them to start the flow as a link (OpenSpec app-sso-system-browser D3).
+ */
+export const OIDC_LINK_URL = `${OIDC_START_URL}?mode=link`
+
 /** True for failures that mean "no server reachable" rather than a server answer. */
 export function isNetworkError(err: unknown): boolean {
   return !(err instanceof ApiError)

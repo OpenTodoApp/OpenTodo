@@ -140,11 +140,18 @@ enum SystemSignIn {
         base64URL(Data(SHA256.hash(data: Data(verifier.utf8))))
     }
 
-    /// The start route with the app's challenge and state, opened in the sheet.
-    static func startURL(server: URL, _ p: Pending) -> URL {
+    /// Whether the web app asked to link an identity to its signed-in account (Settings, a
+    /// re-authentication: `mode=link` on the start route) rather than to sign in.
+    static func isLink(_ url: URL) -> Bool {
+        URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "mode" }?.value == "link"
+    }
+
+    /// The start route with the app's challenge, state and mode, opened in the sheet.
+    static func startURL(server: URL, _ p: Pending, link: Bool = false) -> URL {
         var c = URLComponents(url: server, resolvingAgainstBaseURL: false)!
         c.path = startPath
-        c.queryItems = [URLQueryItem(name: "app_challenge", value: p.challenge), URLQueryItem(name: "app_state", value: p.state)]
+        c.queryItems = [URLQueryItem(name: "app_challenge", value: p.challenge), URLQueryItem(name: "app_state", value: p.state),
+                        URLQueryItem(name: "app_mode", value: link ? "link" : "login")]
         return c.url!
     }
 

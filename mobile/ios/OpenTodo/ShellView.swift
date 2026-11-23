@@ -316,7 +316,7 @@ extension ShellController: ASWebAuthenticationPresentationContextProviding {
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
                 if supported {
-                    self.presentSystemSignIn()
+                    self.presentSystemSignIn(link: SystemSignIn.isLink(start))
                 } else {
                     self.webViewStart = true
                     self.webView.load(URLRequest(url: start))
@@ -325,9 +325,9 @@ extension ShellController: ASWebAuthenticationPresentationContextProviding {
         }.resume()
     }
 
-    private func presentSystemSignIn() {
+    private func presentSystemSignIn(link: Bool) {
         let pending = SystemSignIn.pending()
-        let session = ASWebAuthenticationSession(url: SystemSignIn.startURL(server: origin, pending),
+        let session = ASWebAuthenticationSession(url: SystemSignIn.startURL(server: origin, pending, link: link),
                                                  callbackURLScheme: SystemSignIn.callbackScheme) { [weak self] url, _ in
             DispatchQueue.main.async { self?.finishSystemSignIn(url, pending) }
         }

@@ -43,6 +43,7 @@ type Handoff struct {
 	Issuer    string // the configured issuer the flow ran against
 	Challenge string // the app's S256 challenge
 	AppState  string // the app's state, sent back with the code
+	Link      bool   // the app started it to link the identity, not to sign in
 	expires   time.Time
 	ticket    string // while held: the confirmation page's ticket
 }

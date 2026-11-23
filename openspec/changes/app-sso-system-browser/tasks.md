@@ -1,6 +1,6 @@
 ## 1. Server
 
-- [x] 1.1 App parameters on the start route (`app_challenge`, `app_state`), kept in the signed flow state; an app flow never links. Verified by `TestOIDCAppFlowRefusals` (malformed parameters).
+- [x] 1.1 App parameters on the start route (`app_challenge`, `app_state`, `app_mode`), kept in the signed flow state and the hand-off; only a link flow links, and a sign-in flow never does, whatever session the web view has. Verified by `TestOIDCAppFlowRefusals` (malformed parameters) and `TestOIDCAppFlowModeComesFromTheStart`.
 - [x] 1.2 In-memory hand-off store: single use, two minutes, bound to the challenge, bounded. Verified by `go test ./internal/oidc -run Handoff`.
 - [x] 1.3 Callback of an app flow: hand the identity over to `opentodo://sso` with a code, or an error code. Verified by `TestOIDCAppFlowSignsInTheWebView` and `TestOIDCAppFlowRefusals`.
 - [x] 1.4 `POST /api/v1/auth/oidc/app-session`: verifier, same-origin check, sign-in or link with the callback's rules. Verified by `TestOIDCAppFlowSignsInTheWebView`, `TestOIDCAppFlowRefusals`, `TestOIDCAppFlowLinksFromASignedInWebView`, `TestRouteMatrix`.

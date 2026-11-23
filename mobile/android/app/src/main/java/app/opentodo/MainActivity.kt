@@ -300,16 +300,32 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         io.execute {
             val supported = SystemSignIn.askServer(base)
             runOnUiThread {
-                if (!supported) { load(start); return@runOnUiThread }
+                // No browser to name (none installed, none default): the old way, in the web view.
+                val browser = if (supported) signInBrowser() else null
+                if (browser == null) { load(start); return@runOnUiThread }
                 val p = SystemSignIn.pending()
                 // A Custom Tab where the browser has them, without the AndroidX browser library:
                 // the session extra is all the protocol asks for; other browsers open a page.
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(SystemSignIn.startUrl(base, p)))
+                // Sent to that one browser: another app handling https links never sees it.
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(SystemSignIn.startUrl(base, p, SystemSignIn.isLink(start))))
                     .addCategory(Intent.CATEGORY_BROWSABLE)
+                    .setPackage(browser)
                     .putExtras(Bundle().apply { putBinder("android.support.customtabs.extra.SESSION", null) })
                 try { startActivity(intent); ssoPending = p } catch (e: ActivityNotFoundException) { load(start) }
             }
         }
+    }
+
+    /** The browser single sign-on opens in (SystemSignIn.browserFor), by package name, or null. */
+    private fun signInBrowser(): String? {
+        val pm = packageManager
+        val view = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com/")).addCategory(Intent.CATEGORY_BROWSABLE)
+        // "android" is the chooser: there is no default browser.
+        val default = pm.resolveActivity(view, PackageManager.MATCH_DEFAULT_ONLY)?.activityInfo?.packageName
+            ?.takeIf { it != "android" && it != packageName }
+        val browsers = pm.queryIntentActivities(view, PackageManager.MATCH_ALL).map { it.activityInfo.packageName }.distinct().filter { it != packageName }
+        val tabs = browsers.filter { pm.resolveService(Intent(SystemSignIn.CUSTOM_TABS_SERVICE).setPackage(it), 0) != null }.toSet()
+        return SystemSignIn.browserFor(default, browsers, tabs)
     }
 
     /**
