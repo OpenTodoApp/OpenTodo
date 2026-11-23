@@ -1,3 +1,4 @@
+import Network
 import SwiftUI
 import WebKit
 
@@ -14,6 +15,8 @@ struct SetupView: View {
     @State private var signInTarget: SignInTarget?
     @State private var signInOffer: SignInTarget?
     @FocusState private var editing: Bool
+    /// A check that found no network runs again by itself when the network returns.
+    @StateObject private var networkReturn = NetworkWait()
 
     /// The address as typed so far; Connect is active only while it is well-formed (ios-setup-address).
     private var parsed: ServerAddress { ServerAddress.parse(address) }
@@ -87,6 +90,7 @@ struct SetupView: View {
             }
             .navigationTitle("OpenTodo")
             .onAppear { if address.isEmpty { address = Prefs.shared.serverOrigin ?? "" } }
+            .onDisappear { networkReturn.stop() }
             .sheet(item: $signInTarget) { target in
                 SignInSheet(origin: target.origin) {
                     signInTarget = nil
@@ -110,6 +114,7 @@ struct SetupView: View {
     }
 
     private func connect() async {
+        networkReturn.stop()
         message = nil
         suggestion = nil
         signInOffer = nil
@@ -130,6 +135,12 @@ struct SetupView: View {
                 openServer(origin, insecure: insecure)
             case .noNetwork:
                 message = String(localized: "No answer from that address. Check the address and your connection.")
+                // The first start needs a connection: try again by itself when the network
+                // returns, for the address still in the field (as Android's SetupActivity does).
+                networkReturn.start {
+                    guard case let .ok(now, _) = parsed, now == origin, !checking else { return }
+                    Task { await connect() }
+                }
             case .notOpenTodo:
                 message = String(localized: "That address does not answer like an OpenTodo server.")
             case .untrusted:
@@ -213,6 +224,9 @@ final class SignInController: NSObject, ObservableObject, WKNavigationDelegate, 
         self.host = server.map(SignInFlow.hostOf) ?? origin
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default()
+        // Signing in never needs the position: every page here is refused (see WebLocation
+        // for the one way around it).
+        WebLocation.install(into: config.userContentController, allowing: nil)
         self.webView = WKWebView(frame: .zero, configuration: config)
         super.init()
         webView.navigationDelegate = self
@@ -301,5 +315,60 @@ final class SignInController: NSObject, ObservableObject, WKNavigationDelegate, 
                 }
             }
         }
+    }
+}
+
+/// The network coming back, as Android's SetupActivity watches for it: from no network to a
+/// network. When a network is up from the start, the server itself is unreachable, so nothing
+/// retries in a loop. The steps are pure, so the tests need no network.
+struct NetworkReturn {
+    enum Step: Equatable { case wait, retry, stop }
+    private var sawOffline = false
+
+    /// The next step for a path update: `satisfied` is whether a network is up.
+    mutating func update(satisfied: Bool) -> Step {
+        if !satisfied { sawOffline = true; return .wait }
+        return sawOffline ? .retry : .stop
+    }
+}
+
+/// Watches the network for one retry of the first-run check (NetworkReturn decides).
+@MainActor
+final class NetworkWait: ObservableObject {
+    private var monitor: NWPathMonitor?
+    private var steps = NetworkReturn()
+    private var retry: (() -> Void)?
+
+    func start(_ retry: @escaping () -> Void) {
+        stop()
+        let monitor = NWPathMonitor()
+        steps = NetworkReturn()
+        self.retry = retry
+        monitor.pathUpdateHandler = { [weak self] path in
+            let satisfied = path.status == .satisfied
+            Task { @MainActor in self?.update(satisfied: satisfied, from: monitor) }
+        }
+        self.monitor = monitor
+        monitor.start(queue: .main)
+    }
+
+    private func update(satisfied: Bool, from source: NWPathMonitor) {
+        guard monitor === source else { return }
+        switch steps.update(satisfied: satisfied) {
+        case .wait: break
+        case .retry:
+            let then = retry
+            stop()
+            then?()
+        case .stop: stop()
+        }
+    }
+
+    func stop() {
+        // The handler holds its monitor: let go of both.
+        monitor?.pathUpdateHandler = nil
+        monitor?.cancel()
+        monitor = nil
+        retry = nil
     }
 }

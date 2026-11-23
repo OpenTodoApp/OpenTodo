@@ -49,6 +49,25 @@ final class ServerAddressTests: XCTestCase {
     }
 }
 
+/// native-shells "Offline start": the first-run check that found no network runs again when the
+/// network returns, as Android's SetupActivity does, and never in a loop while a network is up.
+final class NetworkReturnTests: XCTestCase {
+    private func steps(_ updates: [Bool]) -> [NetworkReturn.Step] {
+        var watch = NetworkReturn()
+        return updates.map { watch.update(satisfied: $0) }
+    }
+
+    func testTheCheckRunsAgainWhenTheNetworkReturns() {
+        XCTAssertEqual(steps([false, true]), [.wait, .retry])
+        XCTAssertEqual(steps([false, false, true]), [.wait, .wait, .retry])
+    }
+
+    /// A network already up: the server itself is unreachable, so the watch ends without a retry.
+    func testWithANetworkUpNothingRetries() {
+        XCTAssertEqual(steps([true]), [.stop])
+    }
+}
+
 final class HealthCheckTests: XCTestCase {
     /// The cases both apps read (Android's `HealthCheckTest` too): what a health route's answer means.
     private func cases() throws -> [String: Any] {
@@ -140,6 +159,104 @@ final class HealthCheckTests: XCTestCase {
         XCTAssertEqual(HealthCheck.classify(untrusted), .untrusted)
         let wrapped = NSError(domain: "x", code: 1, userInfo: [NSUnderlyingErrorKey: untrusted])
         XCTAssertEqual(HealthCheck.classify(wrapped), .untrusted)
+    }
+}
+
+/// native-shells "Position for the web app" on iOS: the script that runs at the start of every
+/// document WebKit gives the app's scripts. JavaScriptCore stands in for the page: a `Navigator`
+/// whose prototype carries a configurable `geolocation` accessor, as WebKit's WebIDL attribute
+/// is, that records a call, and a `setTimeout` that runs its function at once.
+final class WebLocationTests: XCTestCase {
+    private let server = URL(string: "https://todo.example.com")!
+
+    /// A document as WebKit makes it: `Navigator.prototype.geolocation` is a configurable
+    /// accessor that, like WebKit's native one, returns the geolocation of whichever navigator
+    /// it is called on (its internal slot, `__slot` here), so a getter of another realm works too.
+    /// `script`: whether WebKit ran the app's scripts in it, which it does not in a frame's
+    /// first empty document. A realm of a frame shares the machine, as frames of one page do.
+    private func page(at pageOrigin: String, allowing origin: URL?, script: Bool = true,
+                      sharing machine: JSVirtualMachine? = nil) throws -> JSContext {
+        let made: JSContext? = if let machine { JSContext(virtualMachine: machine) } else { JSContext() }
+        let context = try XCTUnwrap(made)
+        context.exceptionHandler = { _, value in XCTFail("script threw: \(value?.toString() ?? "?")") }
+        context.evaluateScript("""
+        var __answer = 'nothing';
+        var location = { origin: \(JSON.jsString(pageOrigin)) };
+        function setTimeout(f) { f(); }
+        var __webkit = { getCurrentPosition: function (ok) { __answer = 'position'; ok({}); } };
+        function Navigator() {}
+        Object.defineProperty(Navigator.prototype, 'geolocation', { get: function () { return this.__slot; }, configurable: true });
+        var navigator = new Navigator();
+        Object.defineProperty(navigator, '__slot', { value: __webkit });
+        """)
+        if script { context.evaluateScript(WebLocation.script(allowing: origin)) }
+        return context
+    }
+
+    /// The page's frame `frame`: its `Navigator.prototype` getter, handed to the page as
+    /// `frameGetter`, as `iframe.contentWindow.Navigator.prototype` would give it.
+    private func handFrameGetter(of frame: JSContext, to page: JSContext) {
+        page.setObject(frame.evaluateScript("Object.getOwnPropertyDescriptor(Navigator.prototype, 'geolocation').get"),
+                       forKeyedSubscript: "frameGetter" as NSString)
+    }
+
+    /// What `getCurrentPosition` answers, asked through `expression` (the page's geolocation).
+    private func ask(_ context: JSContext, through expression: String = "navigator.geolocation") throws -> String {
+        context.evaluateScript("__answer = 'nothing'; (\(expression)).getCurrentPosition(function () {}, function (e) { __answer = 'refused ' + e.code; });")
+        return try XCTUnwrap(context.evaluateScript("__answer")?.toString())
+    }
+
+    /// The script steps aside on the server's own page (written as the address the app uses);
+    /// WebKit then answers it, on https or localhost (it gives no position to a plain-http page).
+    func testTheServersPagesKeepWebKitsGeolocation() throws {
+        XCTAssertEqual(try ask(try page(at: "https://todo.example.com", allowing: server)), "position")
+        XCTAssertEqual(try ask(try page(at: "https://todo.example.com", allowing: URL(string: "https://TODO.example.com:443/app")!)), "position")
+    }
+
+    /// A sign-in provider, a look-alike host, another port, plain http or an opaque origin:
+    /// refused at once, so WebKit is never asked, also when the page goes to the prototype's
+    /// getter for the original.
+    func testAnyOtherOriginIsRefusedWithoutAPrompt() throws {
+        for other in ["https://idp.example.org", "https://todo.example.com.evil.test", "https://todo.example.com:8443",
+                      "http://todo.example.com", "null"] {
+            let context = try page(at: other, allowing: server)
+            XCTAssertEqual(try ask(context), "refused \(WebLocation.refused)", other)
+            XCTAssertEqual(try ask(context, through: "Object.getOwnPropertyDescriptor(Navigator.prototype, 'geolocation').get.call(navigator)"),
+                           "refused \(WebLocation.refused)", "\(other): the prototype's getter")
+            context.evaluateScript("try { Object.defineProperty(Navigator.prototype, 'geolocation', { get: function () { return __webkit; } }); } catch (e) {}")
+            XCTAssertEqual(try ask(context), "refused \(WebLocation.refused)", "\(other): defined back")
+        }
+    }
+
+    /// The first-run sign-in sheet and the background run: no page gets the position.
+    func testWithoutAServerEveryPageIsRefused() throws {
+        XCTAssertEqual(try ask(try page(at: "https://todo.example.com", allowing: nil)), "refused \(WebLocation.refused)")
+    }
+
+    /// Another realm's getter called on the page's navigator (`iframe.contentWindow.Navigator
+    /// .prototype` geolocation getter `.call(navigator)`): refused when WebKit ran the script in
+    /// that frame, which it does for every frame that loads a document.
+    func testAFramesGetterIsRefusedWhereTheScriptRan() throws {
+        for other in ["https://idp.example.org", "https://todo.example.com:8443"] {
+            let top = try page(at: other, allowing: server)
+            let frame = try page(at: other, allowing: server, sharing: top.virtualMachine)
+            handFrameGetter(of: frame, to: top)
+            XCTAssertEqual(try ask(top, through: "frameGetter.call(navigator)"), "refused \(WebLocation.refused)", other)
+        }
+    }
+
+    /// Known limit (OpenSpec ios-web-location): WebKit runs no app script in a frame's first
+    /// empty document (an `iframe` without `src`), so its getter, called on the page's own
+    /// navigator, still reaches WebKit's geolocation. This pins the limit the proposal and the
+    /// spec name; when it no longer holds, this test fails and they are updated with it.
+    func testKnownLimitAnEmptyFramesGetterReachesWebKit() throws {
+        let top = try page(at: "https://idp.example.org", allowing: server)
+        let blank = try page(at: "https://idp.example.org", allowing: server, script: false, sharing: top.virtualMachine)
+        handFrameGetter(of: blank, to: top)
+        XCTAssertEqual(try ask(top), "refused \(WebLocation.refused)")
+        XCTAssertEqual(try ask(top, through: "frameGetter.call(navigator)"), "position")
+        // And the empty frame's own geolocation, the first known limit.
+        XCTAssertEqual(try ask(blank), "position")
     }
 }
 

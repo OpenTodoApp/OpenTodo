@@ -1,0 +1,1 @@
+- **Edits of repeating tasks can be undone.** Ctrl/Cmd+Z now takes back a rename, a new priority, deadline, estimate, assignee, date or location, and a changed or stopped repeat rule, on the task and the days it carried to. An edit made with This and following has no Undo.

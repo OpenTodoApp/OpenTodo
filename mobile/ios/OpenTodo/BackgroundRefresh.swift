@@ -122,6 +122,9 @@ final class HiddenRun: NSObject, WKNavigationDelegate, WKUIDelegate {
         let host = BridgeHost(interactive: false, backgroundDone: { [weak self] in self?.done() })
         Bridge(origin: origin, actions: host)
             .install(into: config.userContentController, app: Version.app, capabilities: Bridge.backgroundCapabilities)
+        // No screen: the background run refuses the page's requests for the position (as
+        // everywhere, except through a frame's first empty document; see WebLocation).
+        WebLocation.install(into: config.userContentController, allowing: nil)
         let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844), configuration: config)
         webView.navigationDelegate = self
         webView.uiDelegate = self
