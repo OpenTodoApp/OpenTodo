@@ -14,6 +14,8 @@ const ids = Object.values(index.entries).filter((e) => e.type === 'story' && !e.
 const RELOAD = new Set<string>([
   'screens-task-list--inbox-split-selected', // the selected task in the split differs after an in-place theme change
   'screens-task-list--project-side-panel-selected', // the selected task in the side panel differs after an in-place theme change
+  'foundations-colours--default', // reads the token values it lists when it mounts
+  'screens-expanded-row--today-expanded', // expands its row once, by script, when it mounts
 ])
 
 // One page per worker (ci-speed): a story loads once per width, and its dark capture changes
