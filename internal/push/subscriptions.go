@@ -24,11 +24,14 @@ type Subscription struct {
 	P256DH         string // base64url, uncompressed P-256 point
 	Auth           string // base64url, 16 bytes
 	IncludeContent bool
-	CreatedAt      int64
-	UpdatedAt      int64
-	LastOKAt       *int64
-	LastError      string
-	Failures       int
+	// Notify holds the device's choices for assignment and status pushes
+	// (assignee-notifications D2).
+	Notify    Notify
+	CreatedAt int64
+	UpdatedAt int64
+	LastOKAt  *int64
+	LastError string
+	Failures  int
 }
 
 // RenewAfterFailures is the number of consecutive failed sends after which the
@@ -66,6 +69,7 @@ type PublicSubscription struct {
 	ID             string `json:"id"`
 	DeviceID       string `json:"deviceId"`
 	IncludeContent bool   `json:"includeContent"`
+	Notify         Notify `json:"notify"`
 	CreatedAt      int64  `json:"createdAt"`
 	LastOKAt       *int64 `json:"lastOkAt"`
 	LastError      string `json:"lastError"`
@@ -75,7 +79,7 @@ type PublicSubscription struct {
 
 // Public strips the endpoint and keys.
 func (s *Subscription) Public() PublicSubscription {
-	return PublicSubscription{ID: s.ID, DeviceID: s.DeviceID, IncludeContent: s.IncludeContent, CreatedAt: s.CreatedAt,
+	return PublicSubscription{ID: s.ID, DeviceID: s.DeviceID, IncludeContent: s.IncludeContent, Notify: s.Notify, CreatedAt: s.CreatedAt,
 		LastOKAt: s.LastOKAt, LastError: s.LastError, Failures: s.Failures, NeedsRenewal: s.Failures >= RenewAfterFailures}
 }
 
@@ -89,6 +93,16 @@ type SubscriptionInput struct {
 		Auth   string `json:"auth"`
 	} `json:"keys"`
 	IncludeContent bool `json:"includeContent"`
+	// Notify is optional: absent keeps the device's stored choices (both off
+	// for a new subscription), so a client that does not know it changes nothing.
+	Notify *Notify `json:"notify"`
+}
+
+// Notify is a device's choice of assignment and status pushes, both off by
+// default (assignee-notifications D2).
+type Notify struct {
+	Assigned bool `json:"assigned"`
+	Status   bool `json:"status"`
 }
 
 // ErrInvalidSubscription wraps every validation failure of a SubscriptionInput.
@@ -133,16 +147,17 @@ func (in *SubscriptionInput) Validate(allowHTTP bool) error {
 	return nil
 }
 
-const subColumns = `id,user_id,device_id,endpoint,p256dh,auth,include_content,created_at,updated_at,last_ok_at,last_error,failures`
+const subColumns = `id,user_id,device_id,endpoint,p256dh,auth,include_content,notify_assigned,notify_status,created_at,updated_at,last_ok_at,last_error,failures`
 
 func scanSub(sc interface{ Scan(...any) error }) (*Subscription, error) {
 	var s Subscription
 	var last sql.NullInt64
-	var include int
-	if err := sc.Scan(&s.ID, &s.UserID, &s.DeviceID, &s.Endpoint, &s.P256DH, &s.Auth, &include, &s.CreatedAt, &s.UpdatedAt, &last, &s.LastError, &s.Failures); err != nil {
+	var include, assigned, status int
+	if err := sc.Scan(&s.ID, &s.UserID, &s.DeviceID, &s.Endpoint, &s.P256DH, &s.Auth, &include, &assigned, &status, &s.CreatedAt, &s.UpdatedAt, &last, &s.LastError, &s.Failures); err != nil {
 		return nil, err
 	}
 	s.IncludeContent = include != 0
+	s.Notify = Notify{Assigned: assigned != 0, Status: status != 0}
 	if last.Valid {
 		v := last.Int64
 		s.LastOKAt = &v
@@ -171,9 +186,16 @@ func (s *Service) Upsert(ctx context.Context, userID, sessionHash string, in Sub
 	if err != nil {
 		return nil, false, err
 	}
+	notify := Notify{}
+	if existing != nil {
+		notify = existing.Notify
+	}
+	if in.Notify != nil {
+		notify = *in.Notify
+	}
 	if existing == nil {
 		id := ids.New()
-		if err := s.insertCapped(ctx, userID, id, session, include, now, in); err != nil {
+		if err := s.insertCapped(ctx, userID, id, session, include, notify, now, in); err != nil {
 			return nil, false, err
 		}
 		sub, err := s.subscription(ctx, userID, id)
@@ -183,11 +205,11 @@ func (s *Service) Upsert(ctx context.Context, userID, sessionHash string, in Sub
 	// had disabled it. A new endpoint is a new subscription as far as the push
 	// service is concerned, so it starts clean.
 	same := existing.Endpoint == in.Endpoint && existing.P256DH == in.Keys.P256DH && existing.Auth == in.Keys.Auth
-	q := `UPDATE push_subscriptions SET session_hash=?, endpoint=?, p256dh=?, auth=?, include_content=?, updated_at=?`
+	q := `UPDATE push_subscriptions SET session_hash=?, endpoint=?, p256dh=?, auth=?, include_content=?, notify_assigned=?, notify_status=?, updated_at=?`
 	if !same || existing.Disabled(s.now()) {
 		q += `, last_ok_at=NULL, last_error='', failures=0`
 	}
-	if _, err := s.db.ExecContext(ctx, q+` WHERE id=?`, session, in.Endpoint, in.Keys.P256DH, in.Keys.Auth, include, now, existing.ID); err != nil {
+	if _, err := s.db.ExecContext(ctx, q+` WHERE id=?`, session, in.Endpoint, in.Keys.P256DH, in.Keys.Auth, include, boolInt(notify.Assigned), boolInt(notify.Status), now, existing.ID); err != nil {
 		return nil, false, fmt.Errorf("update push subscription: %w", err)
 	}
 	sub, err := s.subscription(ctx, userID, existing.ID)
@@ -196,14 +218,14 @@ func (s *Service) Upsert(ctx context.Context, userID, sessionHash string, in Sub
 
 // insertCapped stores a new subscription and, in the same transaction, removes
 // the account's least recently registered ones beyond MaxSubscriptionsPerUser.
-func (s *Service) insertCapped(ctx context.Context, userID, id string, session any, include int, now int64, in SubscriptionInput) error {
+func (s *Service) insertCapped(ctx context.Context, userID, id string, session any, include int, notify Notify, now int64, in SubscriptionInput) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("store push subscription: %w", err)
 	}
 	defer tx.Rollback()
-	if _, err := tx.ExecContext(ctx, `INSERT INTO push_subscriptions(id,user_id,device_id,session_hash,endpoint,p256dh,auth,include_content,created_at,updated_at)
-		VALUES(?,?,?,?,?,?,?,?,?,?)`, id, userID, in.DeviceID, session, in.Endpoint, in.Keys.P256DH, in.Keys.Auth, include, now, now); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO push_subscriptions(id,user_id,device_id,session_hash,endpoint,p256dh,auth,include_content,notify_assigned,notify_status,created_at,updated_at)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`, id, userID, in.DeviceID, session, in.Endpoint, in.Keys.P256DH, in.Keys.Auth, include, boolInt(notify.Assigned), boolInt(notify.Status), now, now); err != nil {
 		return fmt.Errorf("store push subscription: %w", err)
 	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM push_subscriptions WHERE user_id = ? AND id NOT IN
@@ -281,4 +303,11 @@ func (s *Service) RecordFailure(ctx context.Context, id, msg string) error {
 func (s *Service) removeGone(ctx context.Context, id string) error {
 	_, err := s.db.ExecContext(ctx, `DELETE FROM push_subscriptions WHERE id=?`, id)
 	return err
+}
+
+func boolInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
 }

@@ -277,5 +277,6 @@ func (b *applyBatch) finish(guard WriteGuard) (ApplyResult, error) {
 	s.emitAssignments(post, b.userID, b.nowMs, changes)
 	s.emitMentions(post, b.userID, b.nowMs, changes)
 	s.emitUnblocked(post, b.userID, b.nowMs, changes)
+	s.emitStatus(post, b.userID, b.nowMs, changes)
 	return res, nil
 }

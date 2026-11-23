@@ -7858,5 +7858,9 @@
   "The filter language of saved views, for example search: milk & p1 or @errand.": "已保存视图的筛选语法，例如 search: milk & p1 或 @errand。",
   "Filter {name}": "筛选“{name}”",
   "Show deadlines as dates": "将最后期限显示为日期",
-  "The date on task rows instead of the days left": "在任务行中显示日期，而不是剩余天数"
+  "The date on task rows instead of the days left": "在任务行中显示日期，而不是剩余天数",
+  "{name} assigned you a task": "{name} 给你分配了一项任务",
+  "{name} completed a task": "{name} 完成了一项任务",
+  "{name} reopened a task": "{name} 重新打开了一项任务",
+  "Completed or reopened": "已完成或重新打开"
 }

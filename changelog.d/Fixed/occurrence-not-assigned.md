@@ -1,0 +1,1 @@
+- **Completing a teammate's repeating task no longer tells them a task was assigned to them.** The day's record copies the assignee, which the bell and delivery channels took for an assignment.

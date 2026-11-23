@@ -18,7 +18,7 @@ import type {
   SpeechSettingsInput,
   ConfigWarning,
   AppPassword, CaldavSetting, EmailDigest, EmailDigestInput, EmailInbox,
-  AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, StorageStatus, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
+  AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, StorageStatus, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushNotify, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
   MemberInvitation, PendingAnswer,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput, IssueActionResult, IssueConnection, IssueConnectionInput,
   CalendarConnection, CalendarConnectionPatch, CalendarSyncRun, SyncScope, GoogleClientSetting, MicrosoftClientSetting,
@@ -378,7 +378,7 @@ export const api = {
     request<{ publicKey: string; subscription?: PushSubscriptionStatus | null }>(
       'GET', `/api/v1/push/vapid-key${device ? `?device=${encodeURIComponent(device)}` : ''}`,
     ),
-  pushSubscribe: (body: { deviceId: string; endpoint: string; keys: { p256dh: string; auth: string }; includeContent: boolean }) =>
+  pushSubscribe: (body: { deviceId: string; endpoint: string; keys: { p256dh: string; auth: string }; includeContent: boolean; notify?: PushNotify }) =>
     request<{ subscription: PushSubscriptionStatus }>('POST', '/api/v1/push/subscriptions', body),
   pushUnsubscribe: (id: string) => request<void>('DELETE', `/api/v1/push/subscriptions/${encodeURIComponent(id)}`),
   pushTest: (deviceId: string) => request<PushTestResponse>('POST', '/api/v1/push/test', { deviceId }),

@@ -141,6 +141,38 @@ func (m Multi) Unblocked(ctx context.Context, e Unblocked) {
 // Unblocked implements UnblockedSink.
 func (Nop) Unblocked(context.Context, Unblocked) {}
 
+// KindStatus: someone else completed or reopened a task assigned to the
+// recipient (OpenSpec change assignee-notifications, design D1).
+const KindStatus = "status"
+
+// StatusChanged is emitted once per task whose completion changed in a
+// committed batch, to its assignee when that is not the batch's author.
+// Completed tells a completion from a reopening.
+type StatusChanged struct {
+	AssigneeID  string `json:"assigneeId"`
+	ActorID     string `json:"actorId"`
+	ActorName   string `json:"actorName"`
+	TaskID      string `json:"taskId"`
+	TaskTitle   string `json:"taskTitle"`
+	ProjectID   string `json:"projectId,omitempty"`
+	ProjectName string `json:"projectName,omitempty"`
+	Completed   bool   `json:"completed"`
+	At          int64  `json:"at"` // Unix ms, server time of the batch
+}
+
+// StatusSink is implemented by sinks that also handle status changes.
+type StatusSink interface {
+	StatusChanged(ctx context.Context, e StatusChanged)
+}
+
+// StatusChanged fans the event out to every sink that implements StatusSink.
+func (m Multi) StatusChanged(ctx context.Context, e StatusChanged) {
+	fan(m, func(s StatusSink) { s.StatusChanged(ctx, e) })
+}
+
+// StatusChanged implements StatusSink.
+func (Nop) StatusChanged(context.Context, StatusChanged) {}
+
 // Task page notification kinds (OpenSpec `task-pages`, design D9).
 const (
 	// KindPageReplied: a guest replied on one of the recipient's task pages.

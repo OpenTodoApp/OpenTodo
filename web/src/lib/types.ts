@@ -1155,12 +1155,20 @@ export interface PushSubscriptionStatus {
   id: string
   deviceId: string
   includeContent: boolean
+  /** Assignment and status pushes this device opted in to (assignee-notifications D2); absent from an older server. */
+  notify?: PushNotify
   createdAt: number
   lastOkAt: number | null
   lastError: string
   failures: number
   /** The push service failed repeatedly: the device should re-enable notifications. */
   needsRenewal: boolean
+}
+
+/** A device's choice of assignment and status pushes, both off by default. */
+export interface PushNotify {
+  assigned: boolean
+  status: boolean
 }
 
 /** Answer of POST /api/v1/push/test (OpenSpec `push-test-delivery`). */

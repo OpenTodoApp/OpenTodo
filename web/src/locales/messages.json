@@ -2220,11 +2220,13 @@
   "Assigned to me": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/NotificationChannelEditor.tsx",
+    "web/src/app/NotificationsSettings.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TaskListView.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts"
   ],
   "Assigned to someone": [
@@ -3919,6 +3921,11 @@
   "Completed occurrence of {title}": [
     "web/src/app/task-detail/TaskHead.tsx"
   ],
+  "Completed or reopened": [
+    "web/src/app/NotificationChannelEditor.tsx",
+    "web/src/app/NotificationsSettings.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Completed per day": [
     "web/src/app/method/loop/PulseDetails.tsx"
   ],
@@ -4752,7 +4759,8 @@
     "web/src/lib/review.ts"
   ],
   "Day skipped": [
-    "web/src/lib/occurrenceActions.ts"
+    "web/src/lib/occurrenceActions.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Day {n} of {m}": [
     "web/src/app/TaskRow.tsx",
@@ -9757,7 +9765,8 @@
     "web/src/app/LocationRemindersSettings.tsx"
   ],
   "Location removed": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Locations": [
     "web/src/app/Sidebar.tsx",
@@ -10071,6 +10080,7 @@
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/ShareDialog.tsx",
     "web/src/app/WorkspacesSettings.tsx",
+    "web/src/app/menus/useProjectMenu.tsx",
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
@@ -12223,7 +12233,8 @@
     "web/src/lib/occurrenceActions.ts"
   ],
   "Occurrence skipped": [
-    "web/src/lib/occurrenceActions.ts"
+    "web/src/lib/occurrenceActions.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Of": [
     "web/src/lib/rules/sentence.ts"
@@ -14068,6 +14079,7 @@
     "web/src/app/TimelineView.tsx"
   ],
   "Project updated": [
+    "web/src/app/menus/projectAppearance.tsx",
     "web/src/lib/webhooks.ts"
   ],
   "Project walk: add a next action to the project": [
@@ -14952,6 +14964,7 @@
   ],
   "Repeats": [
     "web/src/app/ParseChips.tsx",
+    "web/src/app/filter/conditionText.ts",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
@@ -16355,7 +16368,8 @@
     "web/src/app/WelcomeDialog.tsx"
   ],
   "Share project": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/ProjectHeader.tsx",
+    "web/src/app/menus/useProjectMenu.tsx"
   ],
   "Share the current project: add members by email, change roles, remove, leave, transfer": [
     "web/src/lib/shortcuts.ts"
@@ -17535,7 +17549,8 @@
     "web/src/lib/push.ts"
   ],
   "Subtask of “{task}”": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Subtask shown for context": [
     "web/src/app/TaskRow.tsx"
@@ -26006,11 +26021,17 @@
   "{name} answered about <task>{title}</task>": [
     "web/src/app/Briefing.tsx"
   ],
+  "{name} assigned you a task": [
+    "web/public/push-sw.js"
+  ],
   "{name} can sign in again.": [
     "web/src/app/UsersPanel.tsx"
   ],
   "{name} cleared": [
     "web/src/lib/assistant.ts"
+  ],
+  "{name} completed a task": [
+    "web/public/push-sw.js"
   ],
   "{name} failed · {why}": [
     "web/src/lib/rules/inbox.ts"
@@ -26066,6 +26087,9 @@
   ],
   "{name} ran {n} times": [
     "web/src/lib/rules/inbox.ts"
+  ],
+  "{name} reopened a task": [
+    "web/public/push-sw.js"
   ],
   "{name} replied": [
     "web/src/app/Briefing.tsx"

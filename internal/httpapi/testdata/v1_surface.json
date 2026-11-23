@@ -6053,7 +6053,10 @@
         "subscription.includeContent": "boolean",
         "subscription.lastError": "string",
         "subscription.lastOkAt": "number|null",
-        "subscription.needsRenewal": "boolean"
+        "subscription.needsRenewal": "boolean",
+        "subscription.notify": "object",
+        "subscription.notify.assigned": "boolean",
+        "subscription.notify.status": "boolean"
       },
       "statuses": [
         "200"
@@ -10217,7 +10220,10 @@
         "includeContent": "boolean",
         "keys": "object",
         "keys.auth": "string",
-        "keys.p256dh": "string"
+        "keys.p256dh": "string",
+        "notify": "object|null?",
+        "notify.assigned": "boolean",
+        "notify.status": "boolean"
       },
       "response": {
         "subscription": "object",
@@ -10228,7 +10234,10 @@
         "subscription.includeContent": "boolean",
         "subscription.lastError": "string",
         "subscription.lastOkAt": "number|null",
-        "subscription.needsRenewal": "boolean"
+        "subscription.needsRenewal": "boolean",
+        "subscription.notify": "object",
+        "subscription.notify.assigned": "boolean",
+        "subscription.notify.status": "boolean"
       }
     },
     "POST /api/v1/push/test": {
@@ -10249,6 +10258,9 @@
         "subscription.lastError": "string",
         "subscription.lastOkAt": "number|null",
         "subscription.needsRenewal": "boolean",
+        "subscription.notify": "object",
+        "subscription.notify.assigned": "boolean",
+        "subscription.notify.status": "boolean",
         "testId": "string"
       },
       "statuses": [
