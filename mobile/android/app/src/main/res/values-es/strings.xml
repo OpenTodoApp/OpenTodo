@@ -54,4 +54,15 @@
     <string name="setup_sign_in">Iniciar sesión aquí</string>
     <string name="error_sign_in">Tu servidor está detrás de una página de inicio de sesión y el inicio de sesión no continuó en la app. Vuelve a iniciar sesión aquí.</string>
     <string name="save_failed">No se pudo guardar el archivo.</string>
+    <string name="channel_focus">Foco</string>
+    <string name="focus_generic">Sesión de foco</string>
+    <string name="focus_work">Trabajo</string>
+    <string name="focus_work_of">Trabajo · %1$d de %2$d</string>
+    <string name="focus_short_break">Descanso corto</string>
+    <string name="focus_long_break">Descanso largo</string>
+    <string name="focus_paused">En pausa</string>
+    <string name="focus_pause">Pausar</string>
+    <string name="focus_resume">Reanudar</string>
+    <string name="focus_done">Sesión terminada</string>
+    <string name="focus_break_over">Descanso terminado</string>
 </resources>

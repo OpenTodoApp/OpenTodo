@@ -11,7 +11,8 @@
     "haptics",
     "completion-sound",
     "alarm-settings",
-    "first-paint"
+    "first-paint",
+    "focus"
   ],
   "backgroundOnly": [
     "background"

@@ -1,0 +1,19 @@
+{
+  "description": "Nothing runs (sign-out, lock of an encrypted account, nothing stored, or the session left): the shell ends the activity or the notification, cancels the alarm and forgets the stored state.",
+  "method": "publishFocus",
+  "payload": "{\"v\":1,\"state\":\"none\"}",
+  "now": 1792670400000,
+  "expect": {
+    "state": "none",
+    "title": null,
+    "phase": null,
+    "breakKind": null,
+    "cycle": null,
+    "cycleLength": null,
+    "countsDown": false,
+    "end": null,
+    "countUpFrom": null,
+    "frozenMs": null,
+    "notifyAt": null
+  }
+}

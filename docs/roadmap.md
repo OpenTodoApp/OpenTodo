@@ -70,7 +70,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | --- | --- | --- |
 | `ios-distribution` | The iPhone app in TestFlight and the App Store | In progress (14 of 28) |
 | `apple-shortcuts` | Siri, Shortcuts, the Action Button and iOS widgets | Planned |
-| `focus-live-activity` | Focus as a Live Activity and in the Dynamic Island | Planned |
+| `focus-live-activity` | Focus as a Live Activity and in the Dynamic Island | In progress (10 of 21) |
 | `focus-session-readable` | The running Focus session readable by the shells and agents | Shipped in 0.20 |
 | `obsidian-origin` | An `obsidian` origin that links a task back to its note | Shipped in 0.19 |
 | `view-project-drops` | In views grouped by project, drop a task into another project's group to move it, or onto a task to nest it | Shipped in 1.5 |

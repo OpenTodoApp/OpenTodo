@@ -186,7 +186,13 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         if (started) handle(intent) else if (isShare(intent)) pendingShare = intent
     }
 
+    override fun onResume() {
+        super.onResume()
+        Focus.foreground = true
+    }
+
     override fun onPause() {
+        Focus.foreground = false
         completionSound.release()
         // A login wall's or provider's session cookie survives the app being closed.
         CookieManager.getInstance().flush()
@@ -307,7 +313,8 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             intent?.action == Intent.ACTION_VIEW && intent.data?.scheme == SystemSignIn.CALLBACK_SCHEME ->
                 finishSystemSignIn(intent.data.toString(), base)
             intent?.action == Intent.ACTION_VIEW && intent.data?.scheme == "opentodo-open" -> {
-                val path = intent.data?.schemeSpecificPart.orEmpty()
+                // Pause and Resume only with the token of the Focus notification (any app can open this).
+                val path = Focus.authorize(this, intent.data?.schemeSpecificPart.orEmpty(), intent)
                 load(base + if (path.startsWith("/") && !path.startsWith("//")) path else "/")
             }
             web.url == null -> load("$base/")
@@ -707,6 +714,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         web.clearHistory()
         Scheduler.clear(this)
         Geofences.clear(this)
+        Focus.clear(this)
         NotificationManagerCompat.from(this).cancelAll()
         WidgetStore.clear(this)
         BiometricKeyStore.forget(this)

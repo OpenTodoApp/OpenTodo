@@ -48,6 +48,16 @@ class Prefs(context: Context) {
         get() = p.getString("push", null)
         set(v) = p.edit().apply { if (v == null) remove("push") else putString("push", v) }.apply()
 
+    /** The last Focus session the web app published (focus-live-activity D7), only while one runs or is paused. */
+    var focus: String?
+        get() = p.getString("focus", null)
+        set(v) = p.edit().apply { if (v == null) remove("focus") else putString("focus", v) }.apply()
+
+    /** The running session's Pause/Resume token (Focus.EXTRA_TOKEN); none outside a session. */
+    var focusToken: String?
+        get() = p.getString("focusToken", null)
+        set(v) = p.edit().apply { if (v == null) remove("focusToken") else putString("focusToken", v) }.apply()
+
     var widget: String?
         get() = p.getString("widget", null)
         set(v) = p.edit().putString("widget", v).apply()

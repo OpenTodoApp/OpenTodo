@@ -13,7 +13,7 @@ export const BRIDGE_VERSION = 1
 /** The oldest shell app version this web app expects (bumped when a shell bug needs a forced update). */
 export const MIN_SHELL_APP = '0.10.0'
 
-export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'completion-sound' | 'alarm-settings' | 'background' | 'pull-refresh' | 'first-paint' | 'push' | 'app-links' | 'scroll-top'
+export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'completion-sound' | 'alarm-settings' | 'background' | 'pull-refresh' | 'first-paint' | 'push' | 'app-links' | 'scroll-top' | 'focus'
 
 /**
  * One location reminder handed to the shell (location-reminders D3): the circle
@@ -138,7 +138,35 @@ export interface OpenTodoShell {
   pushState?(): Promise<string> | string
   /** shell-push D5: unregisters from the UnifiedPush app and deletes the keys. */
   pushUnsubscribe?(): void
+  /** focus-live-activity D1: the whole Focus session as a JSON `ShellFocus`; the shell replaces what it shows. */
+  publishFocus?(json: string): void
 }
+
+/**
+ * The Focus session handed to a shell with `focus` (focus-live-activity D1): the
+ * whole state on every change. `elapsedMs` is the time before the current stretch,
+ * `runningSince` is set only while it runs, and `plannedEndAt` only for a running
+ * timed phase. The title only under the include-titles rule, never when encrypted.
+ */
+export interface ShellFocus {
+  v: 1
+  state: 'running' | 'paused' | 'done' | 'none'
+  taskId?: string
+  title?: string
+  mode?: 'pomodoro' | 'flowtime' | 'countdown'
+  phase?: 'work' | 'break'
+  breakKind?: 'short' | 'long'
+  cycle?: number
+  cycleLength?: number
+  phaseStartedAt?: number
+  runningSince?: number
+  elapsedMs?: number
+  plannedEndAt?: number
+  plannedMs?: number
+}
+
+/** What the shell is handed when no session runs (sign-out, lock, nothing stored). */
+export const NO_FOCUS: ShellFocus = { v: 1, state: 'none' }
 
 /** What a shell with `push` hands over (shell-push D5): a Web Push subscription. The private key stays on the phone. */
 export interface ShellPushSubscription {
@@ -279,6 +307,25 @@ export function forgetShellData(): void {
   if (has('widgets')) s.publishWidget?.(JSON.stringify({ updatedAt: Date.now(), locked: true, count: 0, overdue: 0, tasks: [] }))
   if (has('biometric')) s.biometricForget?.()
   if (has('push')) s.pushUnsubscribe?.()
+  if (has('focus')) publishFocus(NO_FOCUS, true)
+}
+
+let focusSent: string | null = null
+resettable('shellFocus', () => { focusSent = null })
+
+/**
+ * Hands the Focus session to a shell that lists `focus`; an unchanged state is not
+ * handed again unless `fresh` (the first publication of a page load). False in a
+ * browser or a shell without it.
+ */
+export function publishFocus(state: ShellFocus, fresh = false): boolean {
+  const s = shell()
+  if (!s || !has('focus') || !s.publishFocus) return false
+  const json = JSON.stringify(state)
+  if (!fresh && json === focusSent) return true
+  focusSent = json
+  s.publishFocus(json)
+  return true
 }
 
 /**
