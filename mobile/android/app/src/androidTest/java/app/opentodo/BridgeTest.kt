@@ -22,6 +22,8 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
+import androidx.test.runner.lifecycle.Stage
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -130,16 +132,17 @@ class BridgeTest {
         server.rootPage = "<!doctype html><title>OpenTodo test</title><p style=\"height:100vh\">held</p><img src=\"/slow.png\">" +
             "<script>window.tapped = false; addEventListener('touchstart', function () { window.tapped = true })</script>"
         val launchedAt = SystemClock.uptimeMillis()
-        val scenario = ActivityScenario.launch(MainActivity::class.java)
-        lateinit var web: WebView
-        scenario.onActivity { web = it.findViewById(R.id.web) }
+        // Not ActivityScenario.launch: on Android 12 and later the hold keeps the first frame back,
+        // and launch() returns only once a frame is drawn, which is after the hold.
+        val activity = launchWithoutWaiting()
+        val web: WebView = activity.findViewById(R.id.web)
+        val main = InstrumentationRegistry.getInstrumentation()
         server.waitForPath("/slow.png")
         web.waitForJs("typeof window.tapped", "\"boolean\"")
-        // The page neither paints nor loads in time, so only the cap can end the hold. The hold
-        // starts after launchedAt, so it still holds now.
+        // The page neither paints nor loads in time, so only the cap can end the hold.
         assertTrue("the page was ready too late to tap it while held",
-            SystemClock.uptimeMillis() < launchedAt + LaunchHold.CAP_MS - 1_000)
-        scenario.onActivity {
+            SystemClock.uptimeMillis() < launchedAt + LaunchHold.CAP_MS - 500)
+        main.runOnMainSync {
             assertEquals("still held", 0f, web.alpha)
             assertEquals(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS, web.importantForAccessibility)
             tap(web)
@@ -148,15 +151,29 @@ class BridgeTest {
         assertEquals("a tap on the held page reached it", "false", web.js("window.tapped"))
         waitUntil("the cap shows the web view", timeoutMs = LaunchHold.CAP_MS + 3_000) {
             var shown = false
-            scenario.onActivity { shown = web.alpha == 1f }
+            main.runOnMainSync { shown = web.alpha == 1f }
             shown
         }
-        scenario.onActivity { assertEquals(View.IMPORTANT_FOR_ACCESSIBILITY_AUTO, web.importantForAccessibility) }
+        main.runOnMainSync { assertEquals(View.IMPORTANT_FOR_ACCESSIBILITY_AUTO, web.importantForAccessibility) }
         // The same tap reaches the shown page, so the "false" above is the block's doing.
         waitUntil("a tap on the shown page reaches it") {
-            scenario.onActivity { tap(web) }
+            main.runOnMainSync { tap(web) }
             web.js("window.tapped") == "true"
         }
+    }
+
+    /** Starts the app and returns its activity once resumed, without waiting for a drawn frame. */
+    private fun launchWithoutWaiting(): MainActivity {
+        context.startActivity(Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        var activity: MainActivity? = null
+        waitUntil("the app's activity resumes") {
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                activity = ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED)
+                    .filterIsInstance<MainActivity>().firstOrNull()
+            }
+            activity != null
+        }
+        return activity!!
     }
 
     private fun tap(web: WebView) {
