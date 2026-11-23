@@ -127,11 +127,20 @@ export async function reseed(seed: () => Promise<void>): Promise<void> {
 // The seeds that ran for the story now mounted, one entry per withSeed (a meta's and a
 // story's both run, the story's last). A re-render of that story (a new theme global) runs
 // its loaders again under the mounted tree, which keeps its state: seeding again there would
-// empty the side panel and the database it shows. When the seeded tree unmounts (another
+// empty the side panel and the database it shows. The record is what the loaders hand to the
+// story's SeedMarks, and it is kept while any of them is mounted: a theme change that reshapes
+// the frame unmounts the old copy and mounts the new ones (two side by side) in one commit,
+// cleanups first, so the new copies record it again. When the last copy unmounts (another
 // story, a remount), the record goes, and the next render seeds afresh.
-let seedsRun: { id: string; done: Set<object> } | null = null
-function SeedMark({ id }: { id: string }) {
-  useEffect(() => () => { if (seedsRun?.id === id) seedsRun = null }, [id])
+type SeedRun = { id: string; done: Set<object> }
+let seedsRun: SeedRun | null = null
+let marks = 0
+function SeedMark({ run }: { run: SeedRun }) {
+  useEffect(() => {
+    seedsRun = run
+    marks++
+    return () => { if (--marks === 0 && seedsRun === run) seedsRun = null }
+  }, [run])
   return null
 }
 /**
@@ -142,12 +151,12 @@ function SeedMark({ id }: { id: string }) {
  */
 export function withSeed(seed: () => Promise<void>): Pick<StoryObj, 'loaders' | 'decorators'> {
   const token = {}
-  const guard: Decorator = (Story, ctx) => (ctx.loaded?.seeded ? <><SeedMark id={ctx.id} /><Story /></> : <div aria-busy="true" />)
+  const guard: Decorator = (Story, ctx) => (ctx.loaded?.seeded ? <><SeedMark run={ctx.loaded.seedRun as SeedRun} /><Story /></> : <div aria-busy="true" />)
   return {
     loaders: [async (ctx) => {
       if (seedsRun?.id !== ctx.id) seedsRun = { id: ctx.id, done: new Set() }
       if (!seedsRun.done.has(token)) { await reseed(seed); seedsRun.done.add(token) }
-      return { seeded: true }
+      return { seeded: true, seedRun: seedsRun }
     }],
     decorators: [guard],
   }
