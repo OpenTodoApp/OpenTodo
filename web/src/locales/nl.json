@@ -7858,5 +7858,8 @@
   "The filter language of saved views, for example search: milk & p1 or @errand.": "De filtertaal van opgeslagen weergaven, bijvoorbeeld search: milk & p1 of @errand.",
   "Filter {name}": "“{name}” filteren",
   "Show deadlines as dates": "Deadlines als datum tonen",
-  "The date on task rows instead of the days left": "De datum in taakregels in plaats van de resterende dagen"
+  "The date on task rows instead of the days left": "De datum in taakregels in plaats van de resterende dagen",
+  "{name} assigned you a task": "{name} heeft je een taak toegewezen",
+  "{name} completed a task": "{name} heeft een taak voltooid",
+  "{name} reopened a task": "{name} heeft een taak opnieuw geopend"
 }

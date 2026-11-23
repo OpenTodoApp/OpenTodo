@@ -7858,5 +7858,8 @@
   "The filter language of saved views, for example search: milk & p1 or @errand.": "Kayıtlı görünümlerin filtre dili, örneğin search: milk & p1 veya @errand.",
   "Filter {name}": "“{name}” filtrele",
   "Show deadlines as dates": "Son teslim tarihlerini tarih olarak göster",
-  "The date on task rows instead of the days left": "Görev satırlarında kalan günler yerine tarih"
+  "The date on task rows instead of the days left": "Görev satırlarında kalan günler yerine tarih",
+  "{name} assigned you a task": "{name} sana bir görev atadı",
+  "{name} completed a task": "{name} bir görevi tamamladı",
+  "{name} reopened a task": "{name} bir görevi yeniden açtı"
 }

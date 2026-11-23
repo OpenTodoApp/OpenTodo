@@ -14,7 +14,7 @@
 
 ## 4. Web
 
-- [ ] 4.1 `push-sw.js`: `assigned` and `status` payloads, texts in every maintained language pinned to the catalogs, tag per task, click opens the task, nothing shown with the app in front. Verify: `npx vitest run src/lib/pushWorker.test.ts`.
+- [x] 4.1 `push-sw.js`: `assigned` and `status` payloads, texts in every maintained language pinned to the catalogs, tag per task, click opens the task, nothing shown with the app in front. Verify: `npx vitest run src/lib/pushWorker.test.ts`.
 - [ ] 4.2 `push.ts` and Settings → Notifications: the two choices, shown while push is on, re-registering the subscription; the channel editor lists the `status` event. Verify: `npx vitest run src/app/notificationsSettings` and `npm run build`.
 - [ ] 4.3 Strings extracted and translated in every maintained catalog. Verify: `node scripts/i18n/extract.mjs --write` and `make i18n-check`.
 

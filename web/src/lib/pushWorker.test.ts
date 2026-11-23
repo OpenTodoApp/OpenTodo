@@ -364,8 +364,45 @@ describe('Done on a reminder notification (reminder-done-action)', () => {
   })
 })
 
+// assignee-notifications D4: an assignment or a status change by someone else.
+describe('service worker task pushes', () => {
+  it('an assignment names who did it, shows the local title, and a click opens the task', async () => {
+    const { taskId } = await setup()
+    const sw = loadWorker()
+    await dispatch(sw, 'push', pushEvent({ type: 'assigned', taskId, actorName: 'Ben' }))
+    expect(sw.shown).toHaveLength(1)
+    expect(sw.shown[0].title).toBe('Ben assigned you a task')
+    expect(sw.shown[0].options.body).toBe('Call the dentist')
+    expect(sw.shown[0].options.tag).toBe(`task:${taskId}`)
+    await dispatch(sw, 'notificationclick', { notification: { data: sw.shown[0].options.data, close: () => undefined } })
+    expect(sw.opened).toEqual([`/?task=${taskId}`])
+  })
+
+  it('a status push says completed or reopened and prefers the pushed title', async () => {
+    const sw = loadWorker()
+    await dispatch(sw, 'push', pushEvent({ type: 'status', taskId: 'not-here', actorName: 'Ben', completed: true, title: 'Book the venue' }))
+    await dispatch(sw, 'push', pushEvent({ type: 'status', taskId: 'not-here', actorName: 'Ben', completed: false }))
+    expect(sw.shown.map((x) => [x.title, x.options.body])).toEqual([['Ben completed a task', 'Book the venue'], ['Ben reopened a task', '']])
+  })
+
+  it('shows nothing while the app is in front', async () => {
+    const sw = loadWorker({ windows: [{ focused: true }] })
+    await dispatch(sw, 'push', pushEvent({ type: 'assigned', taskId: 't1', actorName: 'Ben' }))
+    expect(sw.shown).toEqual([])
+  })
+
+  it('is in the stored language', async () => {
+    await setUserPref('language', 'de')
+    db.close()
+    await db.open()
+    const sw = loadWorker()
+    await dispatch(sw, 'push', pushEvent({ type: 'assigned', taskId: 't1', actorName: 'Ben' }))
+    expect(sw.shown[0].title).toBe('Ben hat dir eine Aufgabe zugewiesen')
+  })
+})
+
 describe('service worker texts in the stored language (app-localization D9)', () => {
-  const KEYS = { reminder: 'Reminder', due: 'Due {date}', tiny: '{tiny} is enough', generic: 'You have a reminder', done: 'Done|task', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.' } as const
+  const KEYS = { reminder: 'Reminder', due: 'Due {date}', tiny: '{tiny} is enough', generic: 'You have a reminder', done: 'Done|task', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.', assigned: '{name} assigned you a task', completed: '{name} completed a task', reopened: '{name} reopened a task' } as const
   type Texts = Partial<Record<keyof typeof KEYS, string>>
   function worker(code = source): Record<string, unknown> {
     const self: Record<string, unknown> = { addEventListener: () => undefined }

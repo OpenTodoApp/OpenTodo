@@ -7858,5 +7858,8 @@
   "The filter language of saved views, for example search: milk & p1 or @errand.": "Die Filtersprache der gespeicherten Ansichten, zum Beispiel search: milk & p1 oder @errand.",
   "Filter {name}": "„{name}“ filtern",
   "Show deadlines as dates": "Fristen als Datum anzeigen",
-  "The date on task rows instead of the days left": "Das Datum in Aufgabenzeilen statt der verbleibenden Tage"
+  "The date on task rows instead of the days left": "Das Datum in Aufgabenzeilen statt der verbleibenden Tage",
+  "{name} assigned you a task": "{name} hat dir eine Aufgabe zugewiesen",
+  "{name} completed a task": "{name} hat eine Aufgabe erledigt",
+  "{name} reopened a task": "{name} hat eine Aufgabe wieder geöffnet"
 }
