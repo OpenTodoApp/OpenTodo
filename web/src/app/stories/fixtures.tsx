@@ -129,10 +129,17 @@ export async function reseed(seed: () => Promise<void>): Promise<void> {
  * first child of the root); the decorator keeps the story from rendering ahead of
  * the loader. Spread into a story or a meta: `{ ...withSeed(seedToday), render }`.
  */
+let seededStory: string | null = null
 export function withSeed(seed: () => Promise<void>): Pick<StoryObj, 'loaders' | 'decorators'> {
   const guard: Decorator = (Story, ctx) => (ctx.loaded?.seeded ? <Story /> : <div aria-busy="true" />)
   return {
-    loaders: [async () => { await reseed(seed); return { seeded: true } }],
+    // A re-render of the same story (new theme or width globals) runs its loaders again. The
+    // mounted tree keeps its state, so seeding again under it would empty the side panel and
+    // the database the story already shows; seed when a story starts, not on its re-renders.
+    loaders: [async (ctx) => {
+      if (seededStory !== ctx.id) { await reseed(seed); seededStory = ctx.id }
+      return { seeded: true }
+    }],
     decorators: [guard],
   }
 }
