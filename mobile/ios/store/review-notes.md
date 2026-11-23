@@ -19,8 +19,8 @@ Accounts are created on each person's own server, by the person who runs it. The
 What the app adds to the web page:
 - Reminders scheduled on the phone as local notifications, with Snooze and Dismiss
 - A share extension: links, text, photos and files from other apps become a new task
-- A Today widget, and a Completed widget with how many tasks were completed today and in the last seven days
-- Location while the app is in use, only for the server's own pages: "Use my location" fills a task's location; any other page (a sign-in provider's, for one) is refused without asking
+- A Today widget, and a Completed widget with today's count and a bar per day for the last seven days
+- Location while the app is in use, only for the server's own pages: "Use my location" fills a task's location; requests from any other page (a sign-in provider's, for one) are refused without asking
 - Face ID or Touch ID unlock of an end-to-end encrypted account (the key stays in the Keychain)
 - Microphone (voice notes) and camera (photos for a task) only when the person uses them
 
