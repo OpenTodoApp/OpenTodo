@@ -1083,12 +1083,14 @@ function fullPatch(task: Task | undefined, patch: Partial<Omit<Task, 'id' | '_cl
   return patch
 }
 
-/**
- * Whether the next edit of task `id` takes the panel's scope path: a This and following split
- * (series-split D6) or Also past ones (series-past-edits). Undo leaves those to their own path.
- */
-export function editTakesScope(id: string): boolean {
-  return redirect?.id === id || pastScope?.id === id
+/** Whether the next edit of task `id` splits the series (This and following, series-split D6). */
+export function editRedirected(id: string): boolean {
+  return redirect?.id === id
+}
+
+/** Whether Also past ones is chosen for the series `id` (series-past-edits). */
+export function pastScopeActive(id: string): boolean {
+  return pastScope?.id === id
 }
 
 /**

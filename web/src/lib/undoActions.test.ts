@@ -1,5 +1,5 @@
 // OpenSpec change rule-boards, task 2.3: a drop on a board column as one undoable batch.
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from './db'
 import { createProject, createTask, resetDeviceId, updateTask } from './ops'
 import { addReminder } from './reminders'
@@ -574,6 +574,42 @@ describe('repeating tasks', () => {
     redirectNextEdit(id, async () => { redirected = true; return null })
     expect((await titleUndoable(id, 'From now on')).entry).toBeNull()
     expect(redirected).toBe(true)
+    expect(await db.assistantUndo.count()).toBe(count)
+  })
+
+  it('under Also past ones, an edit that reaches no past record is still a step', async () => {
+    const { estimateUndoable } = await import('./undoActions')
+    const { setPastScope } = await import('./ops')
+    const { id } = await series()
+    const committed = vi.fn()
+    setPastScope({ id, committed })
+    try {
+      const r = await estimateUndoable(id, 30)
+      expect(r.entry).not.toBeNull()
+      expect(committed).not.toHaveBeenCalled()
+      await undoBatch(r.entry!.id)
+      expect((await db.tasks.get(id))!.estimate_minutes ?? null).toBeNull()
+    } finally { setPastScope(null) }
+  })
+
+  it('under Also past ones, a rename that reaches the past records its own step', async () => {
+    const { titleUndoable } = await import('./undoActions')
+    const { setPastScope } = await import('./ops')
+    const { id } = await series()
+    const committed = vi.fn()
+    setPastScope({ id, committed })
+    try {
+      expect((await titleUndoable(id, 'Water the plants')).entry).toBeNull()
+      expect(committed).toHaveBeenCalledOnce()
+      const done = await db.tasks.filter((x) => x.series_id === id && !!x.completed_at).toArray()
+      expect(done.map((x) => x.title)).toEqual(['Water the plants'])
+    } finally { setPastScope(null) }
+  })
+
+  it('a calendar move to where the series already is records nothing', async () => {
+    const { id } = await series()
+    const count = await db.assistantUndo.count()
+    expect((await calendarEditUndoable(id, { due: (await db.tasks.get(id))!.due })).entry).toBeNull()
     expect(await db.assistantUndo.count()).toBe(count)
   })
 })
