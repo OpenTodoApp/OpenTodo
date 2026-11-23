@@ -31,6 +31,7 @@ class FakeServer(https: okhttp3.tls.HandshakeCertificates? = null) {
                 val path = request.path ?: "/"
                 paths += path
                 return when {
+                    path == "/pick-file" -> html(PICK_FILE_PAGE)
                     path == "/api/v1/health" || path == "/healthz" -> MockResponse().setHeader("Content-Type", "application/json").setBody("""{"status":"ok","version":"0.0.0-test"}""")
                     path.startsWith("/share") -> html(SHARE_PAGE)
                     else -> html("<!doctype html><title>OpenTodo test</title><p id=path>$path</p><a id=out href=\"https://example.org/outside\">out</a>")
@@ -54,6 +55,12 @@ class FakeServer(https: okhttp3.tls.HandshakeCertificates? = null) {
     private fun html(body: String) = MockResponse().setHeader("Content-Type", "text/html; charset=utf-8").setBody(body)
 
     companion object {
+        /** A file input over the whole page; `window.picked` is the picked file's name and text, or why it could not be read. */
+        private const val PICK_FILE_PAGE = "<!doctype html><title>OpenTodo test</title>" +
+            "<input type=file id=f style=\"position:fixed;left:0;top:0;width:100vw;height:100vh\"><script>window.picked='';" +
+            "document.getElementById('f').onchange=function(e){var x=e.target.files[0];if(!x){window.picked='no file';return}" +
+            "x.text().then(function(t){window.picked=x.name+': '+t},function(err){window.picked='unreadable: '+err.name})}</script>"
+
         /** Counts the files of the message and says it took them, as ShareCapture does. */
         private const val SHARE_PAGE = "<!doctype html><title>Share</title><script>" +
             "window.__files=-1;window.addEventListener('message',function(e){if(e.origin!==location.origin||!e.data||e.data.type!=='opentodo-files')return;" +
