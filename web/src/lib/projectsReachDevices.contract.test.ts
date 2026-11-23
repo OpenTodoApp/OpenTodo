@@ -81,6 +81,8 @@ describe('projects and sections made on one device', () => {
     const editorPhone = await device(editor, 'editor-phone')
     await synced()
     expect((await db.projects.get(project))?.name).toBe('Shared')
+    const ownerPhone = await device(owner, 'owner-phone')
+    await synced() // both phones have synced before the editor writes
 
     // The editor adds a section from the desktop; the editor's phone and the owner see it.
     const section = id()
@@ -91,7 +93,7 @@ describe('projects and sections made on one device', () => {
     switchTo(editorPhone)
     await synced()
     expect(await db.sections.get(section)).toMatchObject({ name: 'From the editor', project_id: project })
-    await device(owner, 'owner-phone')
+    switchTo(ownerPhone)
     await synced()
     expect(await db.sections.get(section)).toMatchObject({ name: 'From the editor', project_id: project })
     expect(await shownProjects()).toContain('Shared')
@@ -99,6 +101,8 @@ describe('projects and sections made on one device', () => {
 
   it('in another workspace reach the other device, shown once it switches to that workspace', async () => {
     const acct = await mine()
+    const phone = await device(acct, 'phone')
+    await synced() // the phone has synced before the workspace and its project exist
     const desktop = await device(acct, 'desktop')
     const work = await call<{ id: string }>(desktop.session, 'POST', '/api/v1/workspaces', { name: 'Work' })
     await synced()
@@ -110,7 +114,7 @@ describe('projects and sections made on one device', () => {
     await synced()
     expect(await shownProjects()).toEqual(['Work project'])
 
-    await device(acct, 'phone')
+    switchTo(phone)
     await synced()
     expect(await db.projects.get(project)).toMatchObject({ name: 'Work project', workspace_id: work.id })
     expect(await db.sections.get(section)).toMatchObject({ name: 'Work section', project_id: project })
@@ -125,7 +129,6 @@ describe('projects and sections made on one device', () => {
     const passphrase = 'correct horse battery staple'
     const phone = await device(acct, 'phone')
     await synced()
-    forgetMemoryKeys()
     const desktop = await device(acct, 'desktop')
     await synced()
     await enableEncryption(passphrase, { iterations: 600_000 })
@@ -138,6 +141,7 @@ describe('projects and sections made on one device', () => {
     // What the server holds is not the names.
     const server = JSON.stringify(await call(desktop.session, 'GET', '/api/v1/export'))
     expect(server).not.toContain('Secret project')
+    expect(server).not.toContain('Secret section')
 
     forgetMemoryKeys()
     switchTo(phone)
