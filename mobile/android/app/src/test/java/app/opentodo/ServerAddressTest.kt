@@ -33,4 +33,12 @@ class ServerAddressTest {
         for (i in 0 until local.length()) assertTrue(local.getString(i), ServerAddress.isLocal(local.getString(i)))
         for (i in 0 until notLocal.length()) assertFalse(notLocal.getString(i), ServerAddress.isLocal(notLocal.getString(i)))
     }
+
+    @Test fun homeOnlyAddresses() {
+        for (a in listOf("http://192.168.1.10:8080", "10.0.0.4", "http://172.20.1.1", "homeassistant.local:8080", "http://localhost:8080", "https://[fd00::1]"))
+            assertTrue(a, ServerAddress.homeOnly(a))
+        // Tailscale and CGNAT addresses, MagicDNS names and public hosts work away from home.
+        for (a in listOf("http://100.101.102.103:8080", "https://homeassistant.tail1234.ts.net", "homeassistant", "todo.example.com", "http://todo.example.com", "", "not an address"))
+            assertFalse(a, ServerAddress.homeOnly(a))
+    }
 }

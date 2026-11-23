@@ -10,6 +10,8 @@
     <string name="setup_refused">Dit adres kan niet worden gebruikt. Voer een adres in zoals todo.example.com.</string>
     <string name="setup_needs_https">Dit adres heeft een beveiligde verbinding (https) nodig.</string>
     <string name="setup_insecure">Dit adres ligt in je lokale netwerk en is niet versleuteld: anderen in hetzelfde netwerk zouden kunnen meelezen. Tik opnieuw om toch te verbinden.</string>
+    <string name="setup_home_only">Dit adres werkt alleen op je thuisnetwerk.</string>
+    <string name="setup_home_only_link">OpenTodo buitenshuis gebruiken</string>
     <string name="setup_no_network">Geen verbinding. De eerste start heeft het netwerk nodig; dit scherm probeert het opnieuw zodra het terug is.</string>
     <string name="setup_not_opentodo">Dit adres antwoordt niet zoals een OpenTodo-server. Controleer het adres.</string>
     <string name="setup_untrusted">Deze telefoon vertrouwt het certificaat van de server niet. Vraag de persoon die de server beheert, of installeer hun certificeringsinstantie in de Android-instellingen.</string>

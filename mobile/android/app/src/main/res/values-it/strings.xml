@@ -10,6 +10,8 @@
     <string name="setup_refused">Questo indirizzo non si può usare. Inserisci un indirizzo come todo.example.com.</string>
     <string name="setup_needs_https">Questo indirizzo richiede una connessione sicura (https).</string>
     <string name="setup_insecure">Questo indirizzo è nella tua rete locale e non è cifrato: altri sulla stessa rete potrebbero leggere ciò che invii. Tocca di nuovo per collegarti comunque.</string>
+    <string name="setup_home_only">Questo indirizzo funziona solo sulla rete di casa.</string>
+    <string name="setup_home_only_link">Usare OpenTodo fuori casa</string>
     <string name="setup_no_network">Nessuna connessione. Il primo avvio richiede la rete; questa schermata riprova quando torna.</string>
     <string name="setup_not_opentodo">Questo indirizzo non risponde come un server OpenTodo. Controlla l’indirizzo.</string>
     <string name="setup_untrusted">Questo telefono non si fida del certificato del server. Chiedi a chi gestisce il server, oppure installa la sua autorità di certificazione nelle impostazioni di Android.</string>

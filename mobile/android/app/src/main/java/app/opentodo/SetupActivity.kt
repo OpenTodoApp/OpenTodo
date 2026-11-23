@@ -1,9 +1,13 @@
 package app.opentodo
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.Network
+import android.net.Uri
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.webkit.CookieManager
@@ -26,6 +30,7 @@ class SetupActivity : AppCompatActivity() {
     private lateinit var alternative: Button
     private lateinit var message: TextView
     private lateinit var progress: ProgressBar
+    private lateinit var homeOnly: View
     private val io = Executors.newSingleThreadExecutor()
     private var confirmedInsecure: String? = null
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
@@ -49,9 +54,17 @@ class SetupActivity : AppCompatActivity() {
         alternative = findViewById(R.id.alternative)
         message = findViewById(R.id.message)
         progress = findViewById(R.id.progress)
+        homeOnly = findViewById(R.id.home_only)
+        findViewById<View>(R.id.home_only_link).setOnClickListener { openOutsideHomeGuide() }
+        address.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) { showHomeOnly() }
+        })
         connect.setOnClickListener { submit() }
         address.setOnEditorActionListener { _, id, _ -> if (id == EditorInfo.IME_ACTION_GO) { submit(); true } else false }
         Prefs(this).server?.let { address.setText(it) }
+        showHomeOnly()
         signInOrigin = savedInstanceState?.getString(STATE_SIGN_IN)
         oldWebView()?.let { say(getString(R.string.setup_old_webview, it)) }
     }
@@ -74,6 +87,16 @@ class SetupActivity : AppCompatActivity() {
         stopWaitingForNetwork()
         io.shutdown()
         super.onDestroy()
+    }
+
+    /** A notice, never a refusal: an address that only works at home still connects. */
+    private fun showHomeOnly() {
+        homeOnly.visibility = if (ServerAddress.homeOnly(address.text.toString())) View.VISIBLE else View.GONE
+    }
+
+    private fun openOutsideHomeGuide() {
+        val view = Intent(Intent.ACTION_VIEW, Uri.parse(OUTSIDE_HOME_GUIDE)).addCategory(Intent.CATEGORY_BROWSABLE)
+        try { startActivity(view) } catch (e: ActivityNotFoundException) { /* no browser: the notice stays */ }
     }
 
     private fun say(text: String?, offer: String? = null) {
@@ -168,5 +191,6 @@ class SetupActivity : AppCompatActivity() {
          */
         const val MIN_WEBVIEW_MAJOR = 111
         private const val STATE_SIGN_IN = "signInOrigin"
+        const val OUTSIDE_HOME_GUIDE = "https://open-todo.app/docs/self-hosting/home-assistant-addon/#reach-opentodo-from-outside-your-home"
     }
 }

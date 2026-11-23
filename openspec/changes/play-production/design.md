@@ -23,7 +23,7 @@ This change is mostly process. The decisions are about keys, tracks and making a
 
 ## Decisions
 
-**D1. One certificate across all three sources: our key in Play App Signing.**
+**D1. One certificate across all three sources: our key in Play App Signing.** *Superseded on 26 October 2026: Play's key upgrade gave Play its own app signing key (SHA-256 `e2669a53…c83932`). Now GitHub and F-Droid carry the release certificate (`ff2eacdf…72befa`), Play carries its own, and moving between Play and the other two needs an uninstall. Both fingerprints are published in `docs/android-app.md`. The rest of this decision is kept as it was decided.*
 Play App Signing stores the key that signs what users install. It can generate that key, or take the developer's own.
 - **Chosen: upload the existing release key** (the one behind `ANDROID_KEYSTORE_BASE64`) as the app signing key, with the PEPK tool, once, by the owner.
 - Register a **separate upload key** (`PLAY_UPLOAD_KEYSTORE_BASE64`). CI signs the AAB with it. If it ever leaks, Google can reset it without a new app identity.
