@@ -26902,6 +26902,10 @@
                 "keys": {
                   "auth": "example",
                   "p256dh": "example"
+                },
+                "notify": {
+                  "assigned": false,
+                  "status": false
                 }
               },
               "schema": {
@@ -26929,13 +26933,29 @@
                       "p256dh"
                     ],
                     "type": "object"
+                  },
+                  "notify": {
+                    "properties": {
+                      "assigned": {
+                        "type": "boolean"
+                      },
+                      "status": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "assigned",
+                      "status"
+                    ],
+                    "type": "object"
                   }
                 },
                 "required": [
                   "deviceId",
                   "endpoint",
                   "includeContent",
-                  "keys"
+                  "keys",
+                  "notify"
                 ],
                 "type": "object"
               }
@@ -26956,7 +26976,11 @@
                     "includeContent": false,
                     "lastError": "example",
                     "lastOkAt": 1794906000000,
-                    "needsRenewal": false
+                    "needsRenewal": false,
+                    "notify": {
+                      "assigned": false,
+                      "status": false
+                    }
                   }
                 },
                 "schema": {
@@ -26989,6 +27013,17 @@
                         },
                         "needsRenewal": {
                           "type": "boolean"
+                        },
+                        "notify": {
+                          "properties": {
+                            "assigned": {
+                              "type": "boolean"
+                            },
+                            "status": {
+                              "type": "boolean"
+                            }
+                          },
+                          "type": "object"
                         }
                       },
                       "type": "object"
@@ -27093,7 +27128,11 @@
                     "includeContent": false,
                     "lastError": "example",
                     "lastOkAt": 1794906000000,
-                    "needsRenewal": false
+                    "needsRenewal": false,
+                    "notify": {
+                      "assigned": false,
+                      "status": false
+                    }
                   },
                   "testId": "00000000-0000-4000-8000-000000000001"
                 },
@@ -27136,6 +27175,17 @@
                         },
                         "needsRenewal": {
                           "type": "boolean"
+                        },
+                        "notify": {
+                          "properties": {
+                            "assigned": {
+                              "type": "boolean"
+                            },
+                            "status": {
+                              "type": "boolean"
+                            }
+                          },
+                          "type": "object"
                         }
                       },
                       "type": "object"
@@ -27185,7 +27235,11 @@
                     "includeContent": false,
                     "lastError": "example",
                     "lastOkAt": 1794906000000,
-                    "needsRenewal": false
+                    "needsRenewal": false,
+                    "notify": {
+                      "assigned": false,
+                      "status": false
+                    }
                   }
                 },
                 "schema": {
@@ -27221,6 +27275,17 @@
                         },
                         "needsRenewal": {
                           "type": "boolean"
+                        },
+                        "notify": {
+                          "properties": {
+                            "assigned": {
+                              "type": "boolean"
+                            },
+                            "status": {
+                              "type": "boolean"
+                            }
+                          },
+                          "type": "object"
                         }
                       },
                       "type": "object"
