@@ -80,7 +80,7 @@ func (s *Service) createLink(ctx context.Context, k linkKind, creator *User, tar
 	now := s.clock()
 	inv := &inviteLink{
 		ID: ids.New(), TargetID: targetID, Role: role, Email: bound,
-		CreatedBy: creator.ID, CreatedByName: creator.Name,
+		CreatedBy: creator.ID, CreatedByName: displayName(creator.Name),
 		CreatedAt: now.UnixMilli(), ExpiresAt: now.Add(ttl).UnixMilli(),
 	}
 	tx, err := s.db.BeginTx(ctx, nil)
