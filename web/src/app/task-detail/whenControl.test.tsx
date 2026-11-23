@@ -160,6 +160,9 @@ describe('WhenControl', () => {
       await key(input, 'Enter')
       await queued(id, from)
       expect(await queuedFields(id, from)).toEqual({ recurrence: 'every 3 days after completion' })
+      // The field resets its text and clears its error when the stored rule changes, so wait for
+      // that before typing, or the late reset wipes the refusal below.
+      await waitFor(() => input.value === 'every 3 days after completion', 'the field shows the second rule')
       // Words that are no rule in any active language keep the previous rule.
       await type(input, 'elke blursdag')
       await key(input, 'Enter')
