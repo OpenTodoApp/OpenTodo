@@ -1,0 +1,1 @@
+- **The iPhone app can be set up with a server behind a login page.** When the address answers with a sign-in page (Authelia, Authentik, Pangolin, Cloudflare Access, oauth2-proxy and similar), the first-run screen says so and offers **Sign in here**, as the Android app does. You sign in inside the app, and it connects as soon as you're through.

@@ -1004,6 +1004,65 @@
         }
       }
     },
+    "Sign in here": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hier anmelden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar sesión aquí"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se connecter ici"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi qui"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrar aqui"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buradan oturum açın"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在这里登录"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hier aanmelden"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się tutaj"
+          }
+        }
+      }
+    },
     "Snooze 10 min": {
       "extractionState": "manual",
       "localizations": {
@@ -1417,6 +1476,65 @@
         }
       }
     },
+    "This address answers with a web page, not like an OpenTodo server. If your server is behind a login page, sign in to it here; otherwise check the address.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Adresse antwortet mit einer Webseite, nicht wie ein OpenTodo-Server. Liegt dein Server hinter einer Anmeldeseite, melde dich hier an; sonst prüfe die Adresse."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta dirección responde con una página web, no como un servidor OpenTodo. Si tu servidor está detrás de una página de inicio de sesión, inicia sesión aquí; si no, revisa la dirección."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette adresse répond avec une page web, pas comme un serveur OpenTodo. Si votre serveur est derrière une page de connexion, connectez-vous ici ; sinon vérifiez l’adresse."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo indirizzo risponde con una pagina web, non come un server OpenTodo. Se il server è dietro una pagina di accesso, accedi qui; altrimenti controlla l’indirizzo."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este endereço responde com uma página web, não como um servidor OpenTodo. Se o servidor estiver atrás de uma página de login, entre aqui; caso contrário, verifique o endereço."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu adres bir OpenTodo sunucusu gibi değil, bir web sayfasıyla yanıt veriyor. Sunucunuz bir giriş sayfasının arkasındaysa buradan oturum açın; değilse adresi kontrol edin."
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这个地址返回的是网页，而不像 OpenTodo 服务器。如果服务器位于登录页之后，请在这里登录；否则请检查地址。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit adres antwoordt met een webpagina, niet zoals een OpenTodo-server. Zit je server achter een aanmeldpagina, meld je hier aan; controleer anders het adres."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten adres odpowiada stroną internetową, a nie jak serwer OpenTodo. Jeśli twój serwer jest za stroną logowania, zaloguj się tutaj; w przeciwnym razie sprawdź adres."
+          }
+        }
+      }
+    },
     "This connection is not encrypted.": {
       "extractionState": "manual",
       "localizations": {
@@ -1531,6 +1649,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tak wygląda przypomnienie."
+          }
+        }
+      }
+    },
+    "This server is behind a login page. Sign in to it here; the app connects as soon as you're through.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Server liegt hinter einer Anmeldeseite. Melde dich hier an; die App verbindet sich, sobald du durch bist."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este servidor está detrás de una página de inicio de sesión. Inicia sesión aquí; la app se conecta en cuanto entres."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce serveur est derrière une page de connexion. Connectez-vous ici ; l’app se connecte dès que c’est fait."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo server è dietro una pagina di accesso. Accedi qui; l’app si collega appena hai finito."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este servidor está atrás de uma página de login. Entre aqui; o app se conecta assim que você passar."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu sunucu bir giriş sayfasının arkasında. Buradan oturum açın; geçiş yaptığınızda uygulama hemen bağlanır."
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此服务器位于登录页之后。在这里登录；通过后应用会立即连接。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze server zit achter een aanmeldpagina. Meld je hier aan; de app maakt verbinding zodra je binnen bent."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten serwer jest za stroną logowania. Zaloguj się tutaj; aplikacja połączy się, gdy tylko przejdziesz dalej."
           }
         }
       }

@@ -87,32 +87,66 @@ final class ServerAddressTests: XCTestCase {
 }
 
 final class HealthCheckTests: XCTestCase {
-    func testHealthAnswerIsOpenTodo() {
-        let answer = HealthCheck.classify(status: 200, body: Data(#"{"status":"ok","version":"v0.14.0"}"#.utf8))
-        XCTAssertEqual(answer.outcome, .ok)
-        XCTAssertEqual(answer.version, "v0.14.0")
+    /// The cases both apps read (Android's `HealthCheckTest` too): what a health route's answer means.
+    private func cases() throws -> [String: Any] {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/health-check/cases.json")
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
     }
 
-    func testAnythingElseIsNotOpenTodo() {
-        XCTAssertEqual(HealthCheck.classify(status: 200, body: Data(#"{"status":"ok"}"#.utf8)).outcome, .notOpenTodo)
-        XCTAssertEqual(HealthCheck.classify(status: 200, body: Data("hello".utf8)).outcome, .notOpenTodo)
-        XCTAssertEqual(HealthCheck.classify(status: 404, body: Data(#"{"status":"ok","version":"x"}"#.utf8)).outcome, .notOpenTodo)
+    private func outcome(_ name: Any?) throws -> HealthCheck.Outcome {
+        try XCTUnwrap((name as? String).flatMap(HealthCheck.Outcome.init(rawValue:)), "unknown outcome \(String(describing: name))")
+    }
+
+    /// native-shells "Behind a login page": a login wall is not "not an OpenTodo server" (#1877).
+    func testResponsesFollowTheSharedCases() throws {
+        let list = try XCTUnwrap(try cases()["classify"] as? [[String: Any]])
+        XCTAssertFalse(list.isEmpty)
+        for c in list {
+            let name = c["name"] as? String ?? "?"
+            let answer = HealthCheck.classify(status: try XCTUnwrap(c["status"] as? Int),
+                                              body: (c["body"] as? String).map { Data($0.utf8) },
+                                              location: c["location"] as? String,
+                                              contentType: c["contentType"] as? String,
+                                              origin: c["origin"] as? String)
+            XCTAssertEqual(answer.outcome, try outcome(c["outcome"]), name)
+            XCTAssertEqual(answer.version, c["version"] as? String, name)
+        }
     }
 
     /// health-route-alias: `/api/v1/health` first, `/healthz` only when that is not settled.
-    func testRoutesInOrder() async {
+    func testCombineFollowsTheSharedCases() async throws {
         XCTAssertEqual(HealthCheck.paths, ["/api/v1/health", "/healthz"])
-        let ok = HealthCheck.Answer(outcome: .ok, version: "1.0.1")
-        var asked = 0
-        let older = await HealthCheck.combine(HealthCheck.Answer(outcome: .notOpenTodo)) { asked += 1; return HealthCheck.Answer(outcome: .ok, version: "1.0.0") }
-        XCTAssertEqual(older.outcome, .ok)
-        XCTAssertEqual(older.version, "1.0.0")
-        XCTAssertEqual(asked, 1)
-        for first in [ok, HealthCheck.Answer(outcome: .noNetwork), HealthCheck.Answer(outcome: .untrusted)] {
-            let answer = await HealthCheck.combine(first) { asked += 1; return ok }
-            XCTAssertEqual(answer.outcome, first.outcome)
+        let list = try XCTUnwrap(try cases()["combine"] as? [[String: Any]])
+        XCTAssertFalse(list.isEmpty)
+        for c in list {
+            let name = c["name"] as? String ?? "?"
+            let second = try (c["second"] as? String).map { try outcome($0) }
+            var asked = false
+            let answer = await HealthCheck.combine(HealthCheck.Answer(outcome: try outcome(c["first"]))) {
+                asked = true
+                return HealthCheck.Answer(outcome: second ?? .notOpenTodo)
+            }
+            XCTAssertEqual(answer.outcome, try outcome(c["outcome"]), name)
+            XCTAssertEqual(asked, second != nil, "\(name): the second route is asked only when the first does not settle it")
         }
-        XCTAssertEqual(asked, 1)
+    }
+
+    /// The sign-in screen's cookies for the health route: the server's, never another site's.
+    func testCookieHeaderForTheHealthRoute() throws {
+        func cookie(_ name: String, domain: String, path: String = "/", secure: Bool = false) throws -> HTTPCookie {
+            var props: [HTTPCookiePropertyKey: Any] = [.name: name, .value: "v", .domain: domain, .path: path]
+            if secure { props[.secure] = "TRUE" }
+            return try XCTUnwrap(HTTPCookie(properties: props))
+        }
+        let url = try XCTUnwrap(URL(string: "https://todo.example.com/healthz"))
+        let cookies = [try cookie("wall", domain: ".example.com"), try cookie("host", domain: "todo.example.com", secure: true),
+                       try cookie("other", domain: "other.example.org"), try cookie("deep", domain: "todo.example.com", path: "/app")]
+        XCTAssertEqual(HealthCheck.cookieHeader(cookies, for: url), "wall=v; host=v")
+        let plain = try XCTUnwrap(URL(string: "http://todo.example.com/healthz"))
+        XCTAssertEqual(HealthCheck.cookieHeader(cookies, for: plain), "wall=v")
+        XCTAssertNil(HealthCheck.cookieHeader([], for: url))
     }
 
     func testErrorClassification() {
