@@ -6,7 +6,7 @@ import { addReminder } from './reminders'
 import { deadlineFireAt } from './reminderTime'
 import type { OnDropRule } from './types'
 import { redoBatch, topUndo, undoBatch } from './undo'
-import { assigneeUndoable, calendarEditUndoable, deadlineUndoable, parkUndoable, dropOnPanel, dropUndoable, estimateUndoable, eveningUndoable, priorityUndoable } from './undoActions'
+import { assigneeUndoable, calendarEditUndoable, deadlineUndoable, dropOnPanel, dropUndoable, estimateUndoable, eveningUndoable, parkUndoable, priorityUndoable } from './undoActions'
 
 let n = 0
 beforeEach(() => {
