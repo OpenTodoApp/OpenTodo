@@ -5,6 +5,7 @@
 // October" never change), no network, sequential ids, a known date-time format,
 // and realistic titles. Stories that take plain props use `withClock` only.
 import type { Decorator, StoryObj } from '@storybook/react-vite'
+import { useEffect } from 'react'
 import { db, setMeta } from '../../lib/db'
 import { setDateTime } from '../../lib/dates'
 import { createFrame } from '../../lib/frames'
@@ -123,21 +124,29 @@ export async function reseed(seed: () => Promise<void>): Promise<void> {
   await queue
 }
 
+// The seeds that ran for the story now mounted, one entry per withSeed (a meta's and a
+// story's both run, the story's last). A re-render of that story (a new theme global) runs
+// its loaders again under the mounted tree, which keeps its state: seeding again there would
+// empty the side panel and the database it shows. When the seeded tree unmounts (another
+// story, a remount), the record goes, and the next render seeds afresh.
+let seedsRun: { id: string; done: Set<object> } | null = null
+function SeedMark({ id }: { id: string }) {
+  useEffect(() => () => { if (seedsRun?.id === id) seedsRun = null }, [id])
+  return null
+}
 /**
  * Seed the database before a story renders. The seed runs as a Storybook loader,
  * so the story root stays empty until the data is there (the gates wait for the
  * first child of the root); the decorator keeps the story from rendering ahead of
  * the loader. Spread into a story or a meta: `{ ...withSeed(seedToday), render }`.
  */
-let seededStory: string | null = null
 export function withSeed(seed: () => Promise<void>): Pick<StoryObj, 'loaders' | 'decorators'> {
-  const guard: Decorator = (Story, ctx) => (ctx.loaded?.seeded ? <Story /> : <div aria-busy="true" />)
+  const token = {}
+  const guard: Decorator = (Story, ctx) => (ctx.loaded?.seeded ? <><SeedMark id={ctx.id} /><Story /></> : <div aria-busy="true" />)
   return {
-    // A re-render of the same story (new theme or width globals) runs its loaders again. The
-    // mounted tree keeps its state, so seeding again under it would empty the side panel and
-    // the database the story already shows; seed when a story starts, not on its re-renders.
     loaders: [async (ctx) => {
-      if (seededStory !== ctx.id) { await reseed(seed); seededStory = ctx.id }
+      if (seedsRun?.id !== ctx.id) seedsRun = { id: ctx.id, done: new Set() }
+      if (!seedsRun.done.has(token)) { await reseed(seed); seedsRun.done.add(token) }
       return { seeded: true }
     }],
     decorators: [guard],
