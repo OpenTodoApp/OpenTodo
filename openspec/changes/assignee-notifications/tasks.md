@@ -5,12 +5,12 @@
 ## 2. Push
 
 - [x] 2.1 Columns added by a Go step (`store.migratePushNotify`; ALTER TABLE cannot be repeated); `SubscriptionInput.Notify` and `PublicSubscription.Notify`; stored on insert and update. Verify: `go test ./internal/push ./internal/httpapi -run Push` (default off, round trip, 400 on an invalid `notify`, 401 without a session).
-- [ ] 2.2 `push.Service` implements `Assigned` and `StatusChanged`: only opted-in, enabled subscriptions; title only with titles opted in and never a placeholder; bounded background sends. Verify: `go test ./internal/push -run Notify`.
-- [ ] 2.3 Register the push service as a sink in `internal/tenant/services/build.go`. Verify: `go test ./internal/tenant/...` and `go test ./...`.
+- [x] 2.2 `push.Service` implements `Assigned` and `StatusChanged`: only opted-in, enabled subscriptions; title only with titles opted in and never a placeholder; bounded background sends. Verify: `go test ./internal/push -run Notify`.
+- [x] 2.3 Register the push service as a sink in `internal/tenant/services/build.go`. Verify: `go test ./internal/tenant/...` and `go test ./...`.
 
 ## 3. Channels
 
-- [ ] 3.1 `channels.EventStatus` in `Events` (not in the default set) and `Service.StatusChanged`. Verify: `go test ./internal/channels`.
+- [x] 3.1 `channels.EventStatus` in `Events` (not in the default set) and `Service.StatusChanged`. Verify: `go test ./internal/channels`.
 
 ## 4. Web
 

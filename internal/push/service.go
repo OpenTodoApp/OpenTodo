@@ -86,6 +86,10 @@ type Service struct {
 	// zone is the user's time zone (nil: UTC), for the logical day an away
 	// period is read on (away-periods D4).
 	zone func(ctx context.Context, uid string) *time.Location
+
+	// senders bounds the background sends of assignment and status pushes
+	// (assignee-notifications D3).
+	senders chan struct{}
 }
 
 // DueReminder is a firing as the scheduler hands it to other consumers. Title
@@ -126,7 +130,7 @@ func (s *Service) awayQuiet(ctx context.Context, uid string, now time.Time) (boo
 // New wires a Service. Keys are created on first need, not here.
 func New(db *sql.DB, syncSvc *opsync.Service, dataDir string, o Options) *Service {
 	s := &Service{db: db, sync: syncSvc, dataDir: dataDir, subject: o.Subject, client: o.Client, allowHTTP: o.AllowHTTP, now: o.Now, log: o.Log,
-		userBudget: UserSendBudget}
+		userBudget: UserSendBudget, senders: make(chan struct{}, notifySenders)}
 	if s.subject == "" {
 		s.subject = DefaultSubject
 	}
