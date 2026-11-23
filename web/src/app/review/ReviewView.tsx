@@ -269,10 +269,12 @@ function StepIntro({ step, steps }: { step: StepId; steps: ReviewSteps }) {
     case 'projects':
       // The keys only with "Show shortcut hints" on, as keycaps (issue 1935); the walk's
       // buttons and its Review every… menu name them too.
+      // No space after full-width punctuation (Chinese).
+      const question = t('One project at a time: is it still alive, and is its next step clear?')
       return (
         <p className="mb-3 text-body text-muted" data-step-intro>
-          {t('One project at a time: is it still alive, and is its next step clear?')}
-          {hints && <span data-kbd-hint>{' '}{t.rich('{r} marks it reviewed, {q} adds a next action, {e} sets how often it comes up.', { r: <Kbd k="r" />, q: <Kbd k="q" />, e: <Kbd k="e" /> })}</span>}
+          {question}
+          {hints && <span data-kbd-hint>{/[。？！]$/.test(question) ? '' : ' '}{t.rich('{r} marks it reviewed, {q} adds a next action, {e} sets how often it comes up.', { r: <Kbd k="r" />, q: <Kbd k="q" />, e: <Kbd k="e" /> })}</span>}
         </p>
       )
     case 'someday':
