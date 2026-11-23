@@ -14,7 +14,7 @@ const WEBP = Buffer.from('UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==', 'ba
 
 const ROADMAP = `# Roadmap
 
-## The road to 1.0
+## Milestones
 
 ### [0.21 "Horizons"](https://example.com/milestone/5)
 
@@ -73,7 +73,7 @@ beforeEach(() => {
 afterEach(() => rmSync(root, { recursive: true, force: true }))
 
 describe('roadmap page', () => {
-  it('reads the milestone tables of the road to 1.0 only', () => {
+  it('reads the tables of the Milestones section only', () => {
     const m = parseRoadmap(ROADMAP)
     expect(m.map((x) => x.title)).toEqual(['0.21 "Horizons"', '1.0 "Trust"'])
     expect(m[0].changes[0]).toEqual({ name: 'time-sectors', what: 'This week, without a fake due date' })
