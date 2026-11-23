@@ -1,16 +1,16 @@
 // The Away dialog (OpenSpec change away-periods, design D2, D4): the period, what
 // it covers, whether reminders pause, and what it will do before Set away. Loaded
 // on first use from Today's menu or the palette.
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useEffect, useId, useMemo, useState } from 'react'
 import { awayDays, MAX_AWAY_DAYS } from '../../lib/away'
 import type { AwayInput } from '../../lib/awayActions'
 import type { AwaySeriesRow } from '../../lib/awayPlan'
-import { addDaysISO, formatDate } from '../../lib/dates'
+import { addDaysISO, formatDueLong } from '../../lib/dates'
 import { t } from '../../lib/i18n'
 import { useLabels, useProjects } from '../../lib/localData'
 import { Combobox, Dialog, Field, LabelChip, SegmentedControl, Switch } from '../../ui'
 import { showUndoToast } from '../bulk/toastStore'
-import { useToday } from '../useViews'
+import { useToday, useViewerZone } from '../useViews'
 
 type Pick = { id: string; name: string; color: string; kind: 'project' | 'label' }
 
@@ -33,6 +33,8 @@ export default function AwayDialog({ onDone }: { onDone: () => void }) {
   const [quiet, setQuiet] = useState(true)
   const [preview, setPreview] = useState<{ occurrences: number; series: number; rows: AwaySeriesRow[] } | null>(null)
   const [details, setDetails] = useState(false)
+  const detailsId = useId()
+  const zone = useViewerZone()
   const [busy, setBusy] = useState(false)
   const projects = useProjects()
   const labels = useLabels()
@@ -106,18 +108,18 @@ export default function AwayDialog({ onDone }: { onDone: () => void }) {
         <div className="flex items-baseline justify-between gap-2">
           <p role="status" className={`text-meta ${error ? 'text-danger' : 'text-muted'}`} data-away-preview>{line}</p>
           {!error && !!preview?.rows.length && (
-            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta shrink-0" aria-expanded={details}
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta shrink-0" aria-expanded={details} aria-controls={detailsId}
               onClick={() => setDetails((d) => !d)} data-away-show-details>{details ? t('Hide details') : t('Show details')}</button>
           )}
         </div>
         {details && !error && !!preview?.rows.length && (
           // Which repeating tasks the period skips (#1901), updated with the dates and the scope.
-          <ul className="max-h-60 divide-y divide-subtle overflow-y-auto overscroll-contain rounded-control border border-subtle" data-away-details>
+          <ul id={detailsId} className="max-h-60 divide-y divide-subtle overflow-y-auto overscroll-contain rounded-control border border-subtle" data-away-details>
             {preview.rows.map((row) => (
               <li key={row.id} className="flex items-baseline justify-between gap-3 px-2 py-1.5" data-away-series={row.id}>
                 <span className="min-w-0 truncate text-body">{row.title}</span>
                 <span className="shrink-0 text-meta text-muted">
-                  {t('{n} skipped', { n: String(row.skipped) })}{row.next ? ` · ${t('Due {date}', { date: formatDate(row.next, 'long') })}` : ''}
+                  {t('{n} skipped', { n: String(row.skipped) })}{row.next ? ` · ${t('Due {date}', { date: formatDueLong(row.next, zone) })}` : ''}
                 </span>
               </li>
             ))}

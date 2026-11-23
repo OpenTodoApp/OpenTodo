@@ -43,8 +43,8 @@ export interface SeriesSkips {
   changes: Change[]
   /** How many occurrences are skipped. */
   skipped: number
-  /** The series' due date once the skips are written (the preview's details, #1901). */
-  next?: string | null
+  /** The series' due once the skips are written, time and zone kept (the preview's details, #1901). */
+  next?: Task['due']
 }
 
 /** Folds a change into `rows` (the working copy the next step plans from). */
@@ -80,12 +80,13 @@ export function planSeriesAway(series: Task, from: string, to: string, rows: rea
     const due = series.due?.date
     if (!due || due < from || due > to) return { changes: [], skipped: 0 }
     const after = addDaysISO(to, 1)
-    changes.push({ entity: 'task', entityId: series.id, patch: moveDates(series, after, today) })
+    const moved = moveDates(series, after, today)
+    changes.push({ entity: 'task', entityId: series.id, patch: moved })
     const recordId = occurrenceId(series.id, due)
     if (series.habit && !work.has(recordId)) {
       changes.unshift({ entity: 'task', entityId: recordId, patch: { ...occurrenceFields(series, due, now, today), completed_at: now, skipped: true } })
     }
-    return { changes, skipped: 1, next: after }
+    return { changes, skipped: 1, next: (moved.due as Task['due']) ?? null }
   }
   let skipped = 0
   // `on`: the day the plan reads as today. A later date before today is planned from
@@ -114,7 +115,7 @@ export function planSeriesAway(series: Task, from: string, to: string, rows: rea
     for (const d of later) skip(d, on)
     if (current < from || own.has(current) || !skip(current, on)) break
   }
-  return { changes: merged(changes), skipped, next: (work.get(series.id) as Task).due?.date ?? null }
+  return { changes: merged(changes), skipped, next: (work.get(series.id) as Task).due ?? null }
 }
 
 export interface AwayPlan {
@@ -130,8 +131,8 @@ export interface AwaySeriesRow {
   id: string
   title: string
   skipped: number
-  /** Its due date once the skips are written. */
-  next: string | null
+  /** Its due once the skips are written, in the task's own zone. */
+  next: Task['due']
 }
 
 /**
