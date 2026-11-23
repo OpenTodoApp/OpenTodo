@@ -54,6 +54,14 @@ data class FocusModel(
     /** When the session-end notification fires: the planned end of a running timed phase only. */
     val notifyAt: Long? get() = end
 
+    /**
+     * Whether this stored session's end notification is still owed at [now]: its planned end
+     * has passed (within the alarm's second of slack). The web app reaches the end on its own
+     * clock and publishes `done`, often before an inexact alarm fires; the end must not be
+     * lost then (focus-live-activity D3). A session stopped early is not due.
+     */
+    fun endDue(now: Long): Boolean = notifyAt?.let { it <= now + 1_000 } ?: false
+
     /** The address Pause or Resume opens (focus-live-activity D4); none outside a run. */
     val actionPath: String? get() = when (state) {
         State.RUNNING -> "/focus?action=pause"

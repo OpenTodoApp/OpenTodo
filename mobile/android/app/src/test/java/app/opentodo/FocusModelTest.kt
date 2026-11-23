@@ -37,6 +37,9 @@ class FocusModelTest {
         assertEquals(name, want.longOrNull("notifyAt"), m.notifyAt)
         assertEquals(name, want.intOrNull("cycle"), m.cycle)
         assertEquals(name, want.intOrNull("cycleLength"), m.cycleLength)
+        // `none` names no phase.
+        if (!want.isNull("phase")) assertEquals(name, want.getString("phase"), m.phase.name.lowercase())
+        assertEquals(name, if (want.isNull("breakKind")) null else want.getString("breakKind"), m.breakKind?.name?.lowercase())
         return m
     }
 
@@ -99,5 +102,21 @@ class FocusModelTest {
         assertTrue(Bridge.capabilityList(play = true, hasScreen = true, background = false, sdkInt = 34, biometric = false).contains("focus"))
         assertFalse(Bridge.capabilityList(play = false, hasScreen = false, background = true, sdkInt = 34, biometric = false).contains("focus"))
         assertTrue(Bridge.script("1.0.0", listOf("focus")).contains("publishFocus: function (json) { send('publishFocus', [String(json)]) }"))
+    }
+
+    @Test fun aDonePublicationAfterThePlannedEndStillOwesTheEnd() {
+        // focus-live-activity D3: the web app publishes `done` on its own clock, often before an
+        // inexact alarm; the stored running session's end is then still due.
+        val running = check("focus-running.json")
+        val end = running.notifyAt!!
+        assertTrue(running.endDue(end))
+        assertTrue(running.endDue(end + 60_000))
+        assertTrue(running.endDue(end - 500))
+        // Stopped early: nothing is owed.
+        assertFalse(running.endDue(end - 60_000))
+        // Paused, Flowtime and none have no planned end to announce.
+        assertFalse(check("focus-paused.json").endDue(Long.MAX_VALUE / 2))
+        assertFalse(check("focus-flowtime.json").endDue(Long.MAX_VALUE / 2))
+        assertFalse(FocusModel.NONE.endDue(Long.MAX_VALUE / 2))
     }
 }

@@ -36,6 +36,14 @@ object Focus {
     /** Replaces what is shown with [json], and the end alarm. */
     fun publish(context: Context, json: String) {
         val model = FocusModel.parse(json)
+        if (model.state == FocusModel.State.DONE) {
+            // The web app got to the planned end before the alarm: show the end now.
+            val stored = FocusModel.parse(Prefs(context).focus)
+            val now = System.currentTimeMillis()
+            clear(context)
+            if (stored.endDue(now)) notifyEnd(context, stored, stored.notifyAt!!)
+            return
+        }
         if (!model.shown) return clear(context)
         Prefs(context).focus = json
         show(context, model)
@@ -105,9 +113,14 @@ object Focus {
         val now = System.currentTimeMillis()
         // A publication since the alarm was armed moved the end, or nothing runs any more.
         val at = model.notifyAt ?: return
-        if (at > now + 1_000) return arm(context, model)
+        if (!model.endDue(now)) return arm(context, model)
         NotificationManagerCompat.from(context).cancel(ONGOING_ID)
         Prefs(context).focus = null
+        notifyEnd(context, model, at)
+    }
+
+    /** "Session done" or "Break over", unless the app is on screen and shows the end itself. */
+    private fun notifyEnd(context: Context, model: FocusModel, at: Long) {
         if (foreground || !Scheduler.notificationsAllowed(context)) return
         val n = NotificationCompat.Builder(context, Notifier.CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
