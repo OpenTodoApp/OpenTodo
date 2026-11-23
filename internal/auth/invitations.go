@@ -175,6 +175,30 @@ func (s *Service) RevokeInvitation(ctx context.Context, actorID, id string) erro
 	return tx.Commit()
 }
 
+// DiscardUnsentInvitation removes an invitation whose email could not be sent,
+// so it is not left in the list as revoked when the inviter was told none was
+// created (#1907). Its link was never handed out; the audit keeps its
+// invitation.created and records invitation.revoked. An accepted or unknown
+// invitation is left alone.
+func (s *Service) DiscardUnsentInvitation(ctx context.Context, actorID, id string) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx, "DELETE FROM invitations WHERE id = ? AND accepted_at IS NULL", id)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return nil
+	}
+	if err := s.audit.RecordTx(ctx, tx, audit.InvitationRevoked(actorID, id)); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
 // PreviewInvitation resolves a secret to the information an invitee may see.
 // Every failure mode (unknown, expired, revoked, accepted) is ErrInvitationInvalid.
 func (s *Service) PreviewInvitation(ctx context.Context, secret string) (*InvitationPreview, error) {
