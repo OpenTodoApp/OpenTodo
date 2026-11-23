@@ -25,7 +25,7 @@ Release candidates (`-rc` versions) are only on GitHub, never in the stores.
 
 **Between GitHub and F-Droid** you can switch without uninstalling: both carry the same certificate, so install the app from the other source over the one you have, and Android treats it as an update. The server, your offline copy, reminders, widgets and fingerprint unlock stay. Install a version at least as new as the one on the phone; Android refuses to go back to an older one. Afterwards, updates come from where you installed last (in F-Droid you may need to tap **Update** once).
 
-**Between Google Play and GitHub or F-Droid** you have to uninstall first: Google Play signs the app with its own key, so Android won't install one over the other. Uninstalling deletes the app's data on the phone, including changes not yet synced and the fingerprint unlock key. So open the app with a connection first and let it sync, then uninstall, install from the other source, enter your server's address and sign in again. Your tasks are on the server and come back; turn on fingerprint unlock again in Settings.
+**Between Google Play and GitHub or F-Droid** you have to uninstall first: Google Play signs the app with its own key, so Android won't install one over the other. Uninstalling deletes the app's data on the phone, including changes not yet synced and the fingerprint unlock key. So open the app with a connection first and let it sync, save any shared files you haven't saved yet, and turn off **Deliver instantly through UnifiedPush** if you use it. Then uninstall, install from the other source, enter your server's address and sign in again. Your tasks and reminders are on the server and come back. Unlock with your passphrase if your account is encrypted, allow notifications again, turn fingerprint unlock, UnifiedPush and location reminders back on, and add your widgets again.
 
 ### Check what you installed
 
@@ -47,6 +47,8 @@ On a computer with the Android SDK's build tools, check a downloaded APK, or one
 apksigner verify --print-certs opentodo-android-0.20.0.apk
 # Signer #1 certificate SHA-256 digest: ff2eacdf7e79712e44fdd9d2e3110891e712c170ea516bd3fbbecc291072befa
 ```
+
+The app from Google Play gives the `e2669a53…` digest instead. Pulled from the phone it comes as several APKs; check `base.apk`.
 
 Any other fingerprint means the APK was not signed for the OpenTodo project: don't install it.
 
@@ -129,7 +131,7 @@ The UnifiedPush app and its server see an encrypted message, its size and its ti
 - Your position stays on the phone. A location reminder never sends it to your server or anyone else, never passes it to the app's pages and never logs it; the app keeps only the point it last picked the places from, in its private storage.
 - A notification offers **Done** and **Dismiss**; a crossing fires at most once an hour per reminder.
 - Sign-out, locking an encrypted account and **Change server** remove every watched place.
-- **Only the app from GitHub or F-Droid has location reminders for now.** The Google Play version leaves them out, and doesn't ask for your location at all, until Google has approved the background-location use; there the setting reads "Location reminders come to the Google Play version later". To use them now, install the app from GitHub or F-Droid over the Play one ([switching keeps everything](#switching-between-google-play-f-droid-and-github)).
+- **Only the app from GitHub has location reminders for now** (and F-Droid's, once it is there). The Google Play version leaves them out, and doesn't ask for your location at all, until Google has approved the background-location use; there the setting reads "Location reminders come to the Google Play version later". To use them now, uninstall the Play version and install the app from GitHub ([how](#switching-between-google-play-f-droid-and-github)).
 
 ## A task's location
 
