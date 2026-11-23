@@ -62,6 +62,13 @@ data class FocusModel(
      */
     fun endDue(now: Long): Boolean = notifyAt?.let { it <= now + 1_000 } ?: false
 
+    /**
+     * Whether replacing this stored session with [next] at [now] must announce this one's end
+     * first: its end passed and [next] is not the same run (`done`, `none`, or a phase that
+     * started on its own, such as an automatic break).
+     */
+    fun endOwedBy(next: FocusModel, now: Long): Boolean = endDue(now) && next.notifyAt != notifyAt
+
     /** The address Pause or Resume opens (focus-live-activity D4); none outside a run. */
     val actionPath: String? get() = when (state) {
         State.RUNNING -> "/focus?action=pause"

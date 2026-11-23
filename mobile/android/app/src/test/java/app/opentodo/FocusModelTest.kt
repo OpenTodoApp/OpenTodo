@@ -119,4 +119,19 @@ class FocusModelTest {
         assertFalse(check("focus-flowtime.json").endDue(Long.MAX_VALUE / 2))
         assertFalse(FocusModel.NONE.endDue(Long.MAX_VALUE / 2))
     }
+
+    @Test fun aPhaseThatStartsOnItsOwnAfterTheEndStillAnnouncesIt() {
+        // "Start breaks automatically": the work phase ends straight into a running break,
+        // with no `done` in between; the work session's end is still owed.
+        val work = check("focus-running.json")
+        val brk = check("focus-break.json")
+        val end = work.notifyAt!!
+        assertTrue(work.endOwedBy(brk, end + 1_000))
+        assertTrue(work.endOwedBy(FocusModel.parse("{\"v\":1,\"state\":\"done\",\"phase\":\"work\"}"), end))
+        assertTrue(work.endOwedBy(FocusModel.NONE, end))
+        // The same run published again (another title) is left to its alarm.
+        assertFalse(work.endOwedBy(work, end + 1_000))
+        // Before the end nothing is owed, whatever replaces it.
+        assertFalse(work.endOwedBy(brk, end - 60_000))
+    }
 }
