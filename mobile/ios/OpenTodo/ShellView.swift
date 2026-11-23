@@ -479,6 +479,40 @@ extension ShellController: WKUIDelegate {
         if let url = action.request.url, Bridge.safeExternal(url.absoluteString) { UIApplication.shared.open(url) }
         return nil
     }
+
+    /// Voice capture (native-shells "Microphone for voice capture"): the microphone for a page
+    /// of the server, without WebKit's own prompt; anything else refused without a prompt.
+    /// iOS still asks once for the app's microphone (NSMicrophoneUsageDescription).
+    func webView(_ webView: WKWebView, requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+                 initiatedByFrame frame: WKFrameInfo, type: WKMediaCaptureType,
+                 decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+        let kind: MediaCapture.Kind
+        switch type {
+        case .microphone: kind = .microphone
+        case .camera: kind = .camera
+        default: kind = .cameraAndMicrophone
+        }
+        // `origin` is the top-level page's; the asking frame's is its own security origin.
+        // Both must be the server: an embedded frame of another site never gets the microphone.
+        let top = Origin.signature(scheme: origin.protocol, host: origin.host, port: origin.port)
+        let asking = frame.securityOrigin
+        let requester = Origin.signature(scheme: asking.protocol, host: asking.host, port: asking.port)
+        decisionHandler(MediaCapture.grants(server: self.origin, top: top, requester: requester, kind: kind) ? .grant : .deny)
+    }
+}
+
+/// Which capture request the web view grants: the microphone alone, to a page of the server.
+/// WebKit decides a request as a whole, so one that also asks for the camera is refused (the
+/// Android shell can grant its microphone part). Both apps read `microphone/cases.json`.
+enum MediaCapture {
+    enum Kind { case microphone, camera, cameraAndMicrophone }
+
+    /// `top`: the top-level page's origin, `requester`: the asking frame's, both as
+    /// `Origin.signature` writes them. Both must be the server's.
+    static func grants(server: URL, top: String, requester: String, kind: Kind) -> Bool {
+        let own = Origin.signature(server)
+        return kind == .microphone && !(server.host ?? "").isEmpty && top == own && requester == own
+    }
 }
 
 struct ShellView: View {

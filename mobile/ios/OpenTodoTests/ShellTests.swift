@@ -142,6 +142,41 @@ final class HealthCheckTests: XCTestCase {
     }
 }
 
+/// native-shells "Microphone for voice capture": the cases both apps read (Android's
+/// WebMicrophoneTest too), microphone/cases.json.
+final class MediaCaptureTests: XCTestCase {
+    func testRequestsFollowTheSharedCases() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/microphone/cases.json")
+        let doc = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        let server = try XCTUnwrap(URL(string: try XCTUnwrap(doc["server"] as? String)))
+        let cases = try XCTUnwrap(doc["cases"] as? [[String: Any]])
+        XCTAssertFalse(cases.isEmpty)
+        for c in cases {
+            let name = c["name"] as? String ?? "?"
+            let origin = try XCTUnwrap(URL(string: try XCTUnwrap(c["origin"] as? String)), name)
+            // The asking frame: the page itself unless the case names an embedded one.
+            let frame = try XCTUnwrap(URL(string: (c["frame"] as? String) ?? (c["origin"] as? String ?? "")), name)
+            let audio = try XCTUnwrap(c["audio"] as? Bool, name), video = try XCTUnwrap(c["video"] as? Bool, name)
+            guard audio || video else { continue }
+            let kind: MediaCapture.Kind = audio && video ? .cameraAndMicrophone : audio ? .microphone : .camera
+            XCTAssertEqual(MediaCapture.grants(server: server, top: Origin.signature(origin), requester: Origin.signature(frame), kind: kind),
+                           try XCTUnwrap(c["whole"] as? Bool, name), name)
+        }
+    }
+
+    /// The security origin WebKit reports has port 0 for the scheme's default one.
+    func testTheServerAsWebKitReportsIt() throws {
+        let server = try XCTUnwrap(URL(string: "https://todo.example.com"))
+        let own = Origin.signature(scheme: "https", host: "todo.example.com", port: 0)
+        XCTAssertTrue(MediaCapture.grants(server: server, top: own, requester: own, kind: .microphone))
+        let other = Origin.signature(scheme: "https", host: "todo.example.com", port: 8443)
+        XCTAssertFalse(MediaCapture.grants(server: server, top: own, requester: other, kind: .microphone))
+        XCTAssertFalse(MediaCapture.grants(server: server, top: other, requester: own, kind: .microphone))
+    }
+}
+
 /// The offline start of the portable build (#1458): the first load falls back to the web
 /// view's cache once on an offline failure, so a cached app opens when the server is down.
 @MainActor
