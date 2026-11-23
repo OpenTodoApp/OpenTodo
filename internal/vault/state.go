@@ -1,6 +1,7 @@
 package vault
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -185,8 +186,39 @@ type FileState struct {
 	Project string `json:"project"`
 	Hash    string `json:"hash"`
 	// Held is when the file was first held as half saved (unix ms; engine.go
-	// halfSaved), while it stays empty.
+	// halfSaved), while it stays empty or cut short.
 	Held int64 `json:"held,omitempty"`
+	// Size is the length of the bytes written, and Prefixes the prefixHash of
+	// each prefix of them that ends at a line end, in order (none past
+	// maxPrefixes lines): together they tell a file cut short while it is
+	// saved (engine.go cutShort).
+	Size     int      `json:"size,omitempty"`
+	Prefixes []string `json:"prefixes,omitempty"`
+}
+
+// maxPrefixes caps FileState.Prefixes; a longer file is told cut short by
+// its missing last line end alone.
+const maxPrefixes = 5000
+
+// prefixHash is the hash kept for one prefix of a written file: the first 8
+// bytes of its SHA-256, in hex (the states in testdata/sync pin it for both
+// engines).
+func prefixHash(b []byte) string {
+	sum := sha256.Sum256(b)
+	return hex.EncodeToString(sum[:8])
+}
+
+// writtenState is the FileState of bytes b written for project pid.
+func writtenState(pid string, b []byte) FileState {
+	fs := FileState{Project: pid, Hash: hashOf(b), Size: len(b)}
+	if bytes.Count(b, []byte("\n")) <= maxPrefixes {
+		for i, c := range b {
+			if c == '\n' {
+				fs.Prefixes = append(fs.Prefixes, prefixHash(b[:i+1]))
+			}
+		}
+	}
+	return fs
 }
 
 // NewState makes the state of a new vault with a fresh device id.

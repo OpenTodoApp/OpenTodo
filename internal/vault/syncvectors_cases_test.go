@@ -375,6 +375,66 @@ var vxCases = []vxDef{
 			r.sync(vxOpts{name: "work emptied"})
 			r.sync(vxOpts{name: "work still empty past the hold", advance: 6 * time.Minute})
 		}},
+	{name: "cut-short", desc: "a file read cut short of what was written, at a line end and then mid-line, is held and its tasks kept; a task the app completes meanwhile stays completed; the full save is read next",
+		run: func(r *vxRec) {
+			home(r)
+			r.sync(vxOpts{name: "init", init: true, device: "vault:vectors"})
+			saved := r.read("Home.md")
+			at := strings.Index(saved, "- [ ] Pay rent")
+			r.write("Home.md", saved[:at])
+			r.put("task", "t-call", map[string]any{"completed_at": ms("2026-11-02 09:00")})
+			r.sync(vxOpts{name: "cut at a line end"})
+			r.write("Home.md", saved[:at+9])
+			r.sync(vxOpts{name: "cut mid-line"})
+			r.write("Home.md", saved+"- [ ] Oil the hinge\n")
+			r.sync(vxOpts{name: "the save lands"})
+			r.sync(vxOpts{name: "idle"})
+		}},
+	{name: "end-deleted", desc: "the last lines of a file deleted on purpose are held as a save in progress, then trashed once the hold has passed, not before",
+		run: func(r *vxRec) {
+			home(r)
+			r.sync(vxOpts{name: "init", init: true, device: "vault:vectors"})
+			saved := r.read("Home.md")
+			r.write("Home.md", saved[:strings.Index(saved, "- [ ] Call the plumber")])
+			r.sync(vxOpts{name: "last line deleted"})
+			r.sync(vxOpts{name: "still within the hold", advance: 4 * time.Minute})
+			r.sync(vxOpts{name: "past the hold", advance: 2 * time.Minute})
+		}},
+	{name: "cut-in-front-matter", desc: "a file read cut inside its front matter is held; its tasks and project stay; the full save is read next",
+		run: func(r *vxRec) {
+			home(r)
+			r.sync(vxOpts{name: "init", init: true, device: "vault:vectors"})
+			saved := r.read("Home.md")
+			r.write("Home.md", saved[:20])
+			r.sync(vxOpts{name: "cut in the front matter"})
+			r.write("Home.md", saved)
+			r.sync(vxOpts{name: "the save lands"})
+		}},
+	{name: "front-matter-damaged", desc: "a file at a known path whose opentodo-id is damaged (not an id) keeps its project and gets its id back; no project is made; a well-formed id of no project here makes a new project",
+		run: func(r *vxRec) {
+			r.project("p-home", "Home", map[string]any{"color": "#22c55e"})
+			r.task("t-water", "Water the plants", "p-home", nil)
+			r.task("t-rent", "Pay rent", "p-home", map[string]any{"position": 2000})
+			r.project("p-work", "Work", map[string]any{"position": 2000})
+			r.task("t-report", "Write the report", "p-work", nil)
+			r.sync(vxOpts{name: "init", init: true, device: "vault:vectors"})
+			r.replace("Home.md", "opentodo-id: p-home", "opentodo-id: p-hxme")
+			r.sync(vxOpts{name: "id damaged"})
+			r.sync(vxOpts{name: "idle"})
+			// A well-formed id of no project here (a file from another account) is a new project, as before.
+			r.replace("Work.md", "opentodo-id: p-work", "opentodo-id: 0b5d2c1e-7a3f-4c2b-9e1d-5f6a7b8c9d0e")
+			r.sync(vxOpts{name: "a foreign id"})
+		}},
+	{name: "trailing-prose-removed", desc: "prose deleted at the end of a file, with every task line kept, is read at once, not held",
+		run: func(r *vxRec) {
+			home(r)
+			r.sync(vxOpts{name: "init", init: true, device: "vault:vectors"})
+			r.write("Home.md", r.read("Home.md")+"\nSome notes about the house.\nAnd a second line.\n")
+			r.sync(vxOpts{name: "prose added"})
+			text := r.read("Home.md")
+			r.write("Home.md", text[:strings.Index(text, "And a second line.")])
+			r.sync(vxOpts{name: "last prose line deleted"})
+		}},
 	{name: "time-zone", desc: "completion dates and conflict times are the machine's local dates",
 		setup: func(c *vxCase) { c.Loc = "Pacific/Auckland" },
 		run: func(r *vxRec) {

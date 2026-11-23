@@ -128,7 +128,11 @@ func (e *engine) mapFiles(m *mergeRun) {
 			}
 			e.fileOf[p] = pre.ID
 			e.projectEdits(m, p, pre)
-		case pre.ID == "" && e.st.Files[p].Project != "":
+		case e.st.Files[p].Project != "" && (pre.ID == "" || e.app.Get("project", pre.ID) == nil && !wellFormedID(pre.ID)):
+			// No id, or one that is not an id at all (a damaged front matter):
+			// the path the last sync wrote decides, below. A well-formed id the
+			// account does not have (a file from another account) is a new
+			// project, as before.
 			known = append(known, p)
 		default:
 			if pre.ID != "" {
@@ -137,15 +141,22 @@ func (e *engine) mapFiles(m *mergeRun) {
 			fresh = append(fresh, p)
 		}
 	}
-	// A file without `opentodo-id` at a path the last sync wrote for a live
-	// project stays that project's file (an emptied file, deleted front
-	// matter), after every id has claimed its project. Matched by its path, it
+	// A file without `opentodo-id`, or with an id the account does not have,
+	// at a path the last sync wrote for a live project stays that project's
+	// file (an emptied file, deleted or damaged front matter), after every id
+	// has claimed its project. Matched by its path, it
 	// carries no front-matter edits.
 	for _, p := range known {
 		pid := e.st.Files[p].Project
 		if claimed[pid] || e.app.Get("project", pid) == nil || !m.av.projectLive(pid) {
+			if id := front[p].ID; id != "" {
+				e.rep.warn("%s: the project id %s is not in the account; the file becomes a new project", p, short(id))
+			}
 			fresh = append(fresh, p)
 			continue
+		}
+		if id := front[p].ID; id != "" {
+			e.rep.warn("%s: the project id %s is not in the account; the file keeps the project it was written for", p, short(id))
 		}
 		claimed[pid] = true
 		e.fileOf[p] = pid
@@ -541,6 +552,12 @@ func (e *engine) removedLines(m *mergeRun) {
 		trash(id)
 	}
 }
+
+// appIDRe is the form of every id the app makes (internal/ids).
+var appIDRe = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
+
+// wellFormedID reports whether s has the form of an id the app makes.
+func wellFormedID(s string) bool { return appIDRe.MatchString(s) }
 
 func sameProj(a, b map[string]string) bool {
 	if len(a) != len(b) {
