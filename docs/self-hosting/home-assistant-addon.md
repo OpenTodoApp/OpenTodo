@@ -53,23 +53,23 @@ On a plain http address tasks, projects, sync, sharing and attachments work. Ins
 | [Cloudflare Tunnel](#cloudflare-tunnel) | yes, on Cloudflare DNS | none | anyone with the address |
 | [NGINX Proxy Manager and DuckDNS](#nginx-proxy-manager-and-duckdns) | no (a free DuckDNS name) | 80 and 443 | anyone with the address |
 
-Two options decide whether it works well. **`base_url`** is the https address people open: without it, single sign-on sends people back to the wrong address (the provider rejects the redirect URI), passkeys are not offered and emailed links (invitations, password resets) are not sent. **`trusted_proxies`** tells OpenTodo which proxy reports the visitor's real address: without it, every visitor can look like one address and shares one sign-in limit, so a few wrong passwords lock everyone out for a while.
+Two options matter. **`base_url`** is the https address people open: without it, passkeys are not offered, emailed links (invitations, password resets) are not sent, and the single sign-on redirect address follows whatever is in the browser, which may not match the one registered with your provider. **`trusted_proxies`** says which proxies OpenTodo believes about the visitor's address. Empty trusts proxies on your own network, which covers all three recipes below. A proxy that isn't believed makes every visitor look like the proxy, so they share one per-address limit of 10 failed sign-ins a minute.
 
 ### Tailscale
 
 1. Install the **Tailscale** add-on from the add-on store, start it and open its Web UI to sign in to your tailnet.
 2. Install the Tailscale app on your phone and sign in to the same tailnet.
-3. In the Tailscale admin console, find your Home Assistant machine's name, such as `homeassistant`. With MagicDNS on (the default), open `http://homeassistant:8080` on the phone, or the machine's `100.x.y.z` address.
+3. In the Tailscale admin console, find your Home Assistant machine's name, such as `homeassistant`. With MagicDNS on (the default), open `http://homeassistant:8080` on the phone, or `http://100.x.y.z:8080` with the machine's Tailscale address.
 
 Leave `base_url` and `trusted_proxies` empty: the phone talks to OpenTodo directly, over Tailscale's encrypted connection.
 
-For https (the installed app, passkeys, push), turn on **HTTPS Certificates** in the admin console's DNS page, then serve port 8080 with Tailscale. The add-on's own sharing option only serves Home Assistant, so run this once in the Advanced SSH & Web Terminal add-on (protection mode off):
+For https (the installed app, passkeys, push), turn on **HTTPS Certificates** in the admin console's DNS page, then serve port 8080 with Tailscale. The add-on's `share_homeassistant` option serves Home Assistant itself, so run this once in the Advanced SSH & Web Terminal add-on (protection mode off):
 
 ```sh
-docker exec addon_a0d7b954_tailscale tailscale serve --bg --https=8443 http://127.0.0.1:8080
+docker exec addon_a0d7b954_tailscale /opt/tailscale serve --bg --https=8443 http://127.0.0.1:8080
 ```
 
-Then set `base_url` to `https://homeassistant.<your-tailnet>.ts.net:8443` (the full name is in the admin console) and open that address from now on. `trusted_proxies` stays empty.
+Then set `base_url` to `https://homeassistant.<your-tailnet>.ts.net:8443` (the full name is in the admin console) and open that address from now on. `trusted_proxies` stays empty. If you also share Home Assistant with `share_on_port: 8443`, pick another port here, such as 10000.
 
 ### Cloudflare Tunnel
 
@@ -85,7 +85,7 @@ Needs a domain whose DNS is on Cloudflare.
    ```
 
 3. Restart the Cloudflared add-on; it creates the DNS record.
-4. In OpenTodo's add-on options set `base_url` to `https://todo.example.com` and `trusted_proxies` to `cloudflare`, then restart OpenTodo.
+4. In OpenTodo's add-on options set `base_url` to `https://todo.example.com`, then restart OpenTodo. `trusted_proxies` can stay empty, since the add-on connects from your own network; `cloudflare` works too.
 
 ### NGINX Proxy Manager and DuckDNS
 
