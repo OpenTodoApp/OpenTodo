@@ -84,12 +84,16 @@ object Scheduler {
 object Notifier {
     const val CHANNEL = "reminders"
 
-    private fun channel(context: Context) {
+    private fun channel(context: Context) = ensureChannel(context)
+
+    /** The reminders channel, which the Focus session-end notification shares (focus-live-activity D3). */
+    internal fun ensureChannel(context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(NotificationChannel(CHANNEL, context.getString(R.string.channel_reminders), NotificationManager.IMPORTANCE_HIGH))
     }
 
-    private fun open(context: Context, path: String, code: Int): PendingIntent {
+    /** Opens the app at [path] (MainActivity reads `opentodo-open:`). */
+    internal fun open(context: Context, path: String, code: Int): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).setAction(Intent.ACTION_VIEW).setData(Uri.parse("opentodo-open:" + Uri.encode(path)))
         return PendingIntent.getActivity(context, code, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     }
@@ -211,11 +215,13 @@ class BootReceiver : BroadcastReceiver() {
         when (intent.action) {
             Intent.ACTION_BOOT_COMPLETED -> {
                 Scheduler.rearm(context)
+                Focus.rearm(context)
                 Geofences.rearm(context)
                 HiddenRun.schedulePeriodic(context)
             }
             AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED -> {
                 Scheduler.rearm(context)
+                Focus.rearm(context)
                 HiddenRun.schedulePeriodic(context)
             }
             Intent.ACTION_MY_PACKAGE_REPLACED -> Geofences.rearm(context)

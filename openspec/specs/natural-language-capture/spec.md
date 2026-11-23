@@ -527,11 +527,27 @@ An ordinal weekday date SHALL get the ordinary due chip and SHALL be dismissable
 - **THEN** the task is created locally with the resolved date and project, survives a reload, and uploads on the next successful sync
 
 ### Requirement: Numeric dates follow the date format
-Numeric dates SHALL be read in the order of the user's date format (OpenSpec `date-time-preferences`): `day-month` reads day first, `month-day` month first, and `iso` and `system` keep the order of the language the line is parsed in. There SHALL be no separate quick-add choice of numeric order; an order stored by an earlier version on a device SHALL be ignored. "next week" and the "next <weekday>" rule SHALL use weeks that start on the user's preferred first day of the week. The date format is a synced preference, so every device reads the same line the same way, offline included.
+Numeric dates SHALL be read in the order of the user's date format (OpenSpec `date-time-preferences`): `day-month` reads day first, `month-day` month first, and `iso` and `system` keep the order of the language the line is parsed in. In a quick-add line, while the order is month first, a day and month joined by a dash without a year (`3-4`) SHALL NOT be a date and SHALL stay in the title, since it is a quantity range there, unless a word that introduces a date comes right before it (the language's "on", "by" and "until" words: `on 3-4`, `by 4-15`, `until 12-31`). With a slash or a year (`3/4`, `3-4-2027`) it SHALL be a date; while the order is day first a dashed day and month SHALL be a date as before; and a field that only takes a date or time (the when-picker's typed field, a reminder phrase) SHALL read a dashed day and month as a date in either order. The order is the first language's when the date format does not set one, so with English first `Verjaardag 3-3` is text. There SHALL be no separate quick-add choice of numeric order; an order stored by an earlier version on a device SHALL be ignored. "next week" and the "next <weekday>" rule SHALL use weeks that start on the user's preferred first day of the week. The date format is a synced preference, so every device reads the same line the same way, offline included.
 
 #### Scenario: Numeric date follows the date format
 - **WHEN** the browser language is English (US), the date format is `day-month`, today is 2026-10-09, and the user enters `Pay rent 3/11`
 - **THEN** the task is due `2026-11-03`
+
+#### Scenario: A range on a shopping list
+- **WHEN** the date format is `month-day`, today is 2026-10-09, and the user enters `Buy 3-4 tomatoes`, then `Pay rent 3/4`
+- **THEN** the first task is titled `Buy 3-4 tomatoes` with no due date, and the second is due `2027-03-04`
+
+#### Scenario: After on, by and until
+- **WHEN** the date format is `month-day`, today is 2026-10-09, and the user enters `Dentist on 3-4 at 9`, then `File taxes by 4-15`, then `Water plants every day until 12-31`
+- **THEN** the first is due `2027-03-04` at 09:00, the second has the deadline `2027-04-15`, and the third repeats every day until `2026-12-31`
+
+#### Scenario: The when-picker reads a dash as a date
+- **WHEN** the date format is `month-day`, today is 2026-10-14, and the user types `3-4 3pm` in a task's date field
+- **THEN** the field reads 4 March 2027 at 15:00
+
+#### Scenario: A dash day first
+- **WHEN** the date format is `day-month`, today is 2026-10-09, and the user enters `Pay rent 3-4`
+- **THEN** the task is due `2027-04-03`
 
 #### Scenario: An old device order is ignored
 - **WHEN** a device still holds a quick-add numeric order of month-day from an earlier version, the date format is `day-month`, and the user enters `Pay rent 3/11` on 2026-10-09
@@ -823,3 +839,46 @@ In quick add, and while a task title is being edited, Enter SHALL NOT create the
 #### Scenario: Enter after composition
 - **WHEN** composition has ended and the user presses Enter on a quick-add line
 - **THEN** the task is created as it is for a line typed without an input method, including while the device is offline
+
+### Requirement: Links in quick add
+In every quick add (the list's line, the phone's sheet, the capture screen, the command bar's Add mode and each line of a multi-line paste), a whitespace-separated token that starts with `http://` or `https://` and names a host SHALL be recognised as a link token, on by default: tinted in the field, previewed as a dismissible chip reading its host without `www.`, and on save written as a link attachment of the new task, named after its host, and removed from the title. Trailing `.`, `,`, `;`, `:`, `!`, `?` and an unbalanced closing bracket SHALL not be part of the URL and SHALL leave the title with it. Dismissal, double quotes and the per-device parsing switch SHALL apply as to every token. At most five links per line SHALL become attachments, and the others SHALL stay in the title. A line whose title would otherwise be empty SHALL keep the URL as its title with no chip. A link equal to the task's origin URL, or one the task already has, SHALL not be attached again, and the links SHALL be listed in the order typed. A line with a link SHALL never reuse an item of a reusable list. On a device with no signed-in account yet, links SHALL not be read, so they stay in the title where they were typed. The task and its link attachments SHALL be written as one local operation set, visible at once, uploaded together and converging like any attachment; one Undo SHALL remove them all. The task panel's title field and the inline title editor SHALL read links typed during the current edit the same way and, on commit, attach them to the edited task in the same undoable change; text that was in the title when the edit began SHALL never be read. Routines SHALL not parse links. `POST /api/v1/quick-add/parse` SHALL report the links as `fields.links` (the URLs in line order) with chips of kind `link` reading the host, and `ot add` SHALL attach them like the app (named after the host, compared with the scheme and host case, a default port and an empty path normalised), matching the shared quick-add vectors; with an agent token, which may not attach, `ot add` SHALL keep them in the title.
+
+#### Scenario: A link becomes an attachment
+- **WHEN** the user enters `Review the mockup https://example.com/mockup tomorrow` in Today's quick add
+- **THEN** a task "Review the mockup" due tomorrow is created with one link attachment to `https://example.com/mockup` named "example.com", and a chip read `example.com` before saving
+
+#### Scenario: Dismissed link stays in the title
+- **WHEN** the user dismisses the link chip, or presses Backspace twice with the caret at the end of `Read https://example.com/post`
+- **THEN** the task is titled `Read https://example.com/post` and has no attachment
+
+#### Scenario: Quoted link is text
+- **WHEN** the user enters `Note "https://example.com" for later`
+- **THEN** the title is `Note https://example.com for later` and no attachment is created
+
+#### Scenario: Sentence punctuation
+- **WHEN** the user enters `Read the spec at https://example.com/a(b).`
+- **THEN** the attachment's URL is `https://example.com/a(b)` and the title is `Read the spec at`
+
+#### Scenario: Offline
+- **WHEN** the device is offline and the user enters `Book https://example.com/hotel #Trip`
+- **THEN** the task appears in Trip with its link attachment at once, both survive a reload, and both upload in the next successful sync
+
+#### Scenario: Only a link
+- **WHEN** the user enters `https://example.com/article`
+- **THEN** no chip is shown and the task is titled `https://example.com/article` with no attachment
+
+#### Scenario: Other schemes
+- **WHEN** the user enters `Open javascript:alert(1) ftp://example.com/f`
+- **THEN** no link chip is shown and the whole line is the title
+
+#### Scenario: A link typed while editing a title
+- **WHEN** a task is titled "Call the bank" and the user appends ` https://bank.example/contact` in the panel title and presses Enter
+- **THEN** the title is "Call the bank", the task has a link attachment to `https://bank.example/contact`, and one Undo removes both changes
+
+#### Scenario: A link already in the title stays
+- **WHEN** a task is titled "Read https://example.com/post" and the user appends ` today` in the panel title and commits
+- **THEN** the title is "Read https://example.com/post", the task is due today and has no new attachment
+
+#### Scenario: A routine keeps its URL
+- **WHEN** a routine creates a task from the line `Pay https://bank.example/bill`
+- **THEN** the task is titled `Pay https://bank.example/bill` and has no attachment

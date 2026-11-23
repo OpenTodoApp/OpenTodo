@@ -1,3 +1,4 @@
+import AuthenticationServices
 import ObjectiveC
 import SwiftUI
 import UIKit
@@ -44,6 +45,10 @@ final class ShellController: NSObject, ObservableObject {
     private(set) var revealed = false
     /// The bars the web app asked for last; their icons come with the web view.
     private var bars: SystemBars?
+    /// Single sign-on running in the system browser (app-sso-system-browser).
+    private var authSession: ASWebAuthenticationSession?
+    /// The next navigation to the start route stays in the web view: the server is older.
+    private var webViewStart = false
     /// Takes the status bar tap for the page (status-bar-scroll-top).
     let scrollTopDecoy = ScrollTopDecoy()
 
@@ -59,6 +64,7 @@ final class ShellController: NSObject, ObservableObject {
         bridge.install(into: config.userContentController,
                        app: Version.app,
                        capabilities: Bridge.capabilities(biometric: BiometricKeyStore.available, share: true, haptics: Haptics.available))
+        WebLocation.install(into: config.userContentController, allowing: origin)
         self.webView = WKWebView(frame: .zero, configuration: config)
         self.bridge = bridge
         super.init()
@@ -301,6 +307,60 @@ extension ShellController {
     }
 }
 
+extension ShellController: ASWebAuthenticationPresentationContextProviding {
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        webView.window ?? ASPresentationAnchor()
+    }
+
+    /// OpenTodo's own single sign-on: in the system browser when the server announces it
+    /// (`app_sso`), otherwise in the web view as before.
+    func beginSystemSignIn(_ start: URL) {
+        guard authSession == nil else { return }
+        var request = URLRequest(url: origin.appendingPathComponent("api/v1/health"), timeoutInterval: 10)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        URLSession.shared.dataTask(with: request) { data, response, _ in
+            let supported = SystemSignIn.opensSheet(healthStatus: (response as? HTTPURLResponse)?.statusCode, healthBody: data)
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                if supported {
+                    self.presentSystemSignIn(link: SystemSignIn.isLink(start))
+                } else {
+                    self.webViewStart = true
+                    self.webView.load(URLRequest(url: start))
+                }
+            }
+        }.resume()
+    }
+
+    private func presentSystemSignIn(link: Bool) {
+        let pending = SystemSignIn.pending()
+        let session = ASWebAuthenticationSession(url: SystemSignIn.startURL(server: origin, pending, link: link),
+                                                 callbackURLScheme: SystemSignIn.callbackScheme) { [weak self] url, _ in
+            DispatchQueue.main.async { self?.finishSystemSignIn(url, pending) }
+        }
+        session.presentationContextProvider = self
+        authSession = session
+        if !session.start() { authSession = nil }
+    }
+
+    /// The sheet closed. A code is redeemed by the page of the server showing, so the session
+    /// cookie lands in the web view; an error code shows on the sign-in screen; a closed
+    /// sheet leaves the screen as it was.
+    private func finishSystemSignIn(_ url: URL?, _ pending: SystemSignIn.Pending) {
+        authSession = nil
+        // The code and its verifier go only to a page of the server (SystemSignIn.finish).
+        let onServer = webView.url.map { Origin.same($0, origin) } ?? false
+        switch SystemSignIn.finish(url, state: pending.state, onServer: onServer) {
+        case .redeem(let code):
+            webView.evaluateJavaScript(SystemSignIn.redeemScript(code: code, verifier: pending.verifier))
+        case .showError(let code):
+            webView.load(URLRequest(url: SystemSignIn.errorURL(server: origin, code: code)))
+        case .stay:
+            break
+        }
+    }
+}
+
 extension ShellController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
@@ -314,6 +374,15 @@ extension ShellController: WKNavigationDelegate {
             if scheme == "blob" || scheme == "data" { return decisionHandler(.cancel) }
         }
         let mainFrame = action.targetFrame.map { $0.isMainFrame }
+        if mainFrame == true, SystemSignIn.isStart(url, server: origin) {
+            if webViewStart {
+                webViewStart = false
+            } else {
+                decisionHandler(.cancel)
+                beginSystemSignIn(url)
+                return
+            }
+        }
         switch Self.route(url, mainFrame: mainFrame, type: action.navigationType, provisional: provisional && mainFrame == true,
                           onSignInPage: foreignHost != nil, flow: flow, server: origin) {
         case .allow:
@@ -405,6 +474,40 @@ extension ShellController: WKUIDelegate {
                  for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
         if let url = action.request.url, Bridge.safeExternal(url.absoluteString) { UIApplication.shared.open(url) }
         return nil
+    }
+
+    /// Voice capture (native-shells "Microphone for voice capture"): the microphone for a page
+    /// of the server, without WebKit's own prompt; anything else refused without a prompt.
+    /// iOS still asks once for the app's microphone (NSMicrophoneUsageDescription).
+    func webView(_ webView: WKWebView, requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+                 initiatedByFrame frame: WKFrameInfo, type: WKMediaCaptureType,
+                 decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+        let kind: MediaCapture.Kind
+        switch type {
+        case .microphone: kind = .microphone
+        case .camera: kind = .camera
+        default: kind = .cameraAndMicrophone
+        }
+        // `origin` is the top-level page's; the asking frame's is its own security origin.
+        // Both must be the server: an embedded frame of another site never gets the microphone.
+        let top = Origin.signature(scheme: origin.protocol, host: origin.host, port: origin.port)
+        let asking = frame.securityOrigin
+        let requester = Origin.signature(scheme: asking.protocol, host: asking.host, port: asking.port)
+        decisionHandler(MediaCapture.grants(server: self.origin, top: top, requester: requester, kind: kind) ? .grant : .deny)
+    }
+}
+
+/// Which capture request the web view grants: the microphone alone, to a page of the server.
+/// WebKit decides a request as a whole, so one that also asks for the camera is refused (the
+/// Android shell can grant its microphone part). Both apps read `microphone/cases.json`.
+enum MediaCapture {
+    enum Kind { case microphone, camera, cameraAndMicrophone }
+
+    /// `top`: the top-level page's origin, `requester`: the asking frame's, both as
+    /// `Origin.signature` writes them. Both must be the server's.
+    static func grants(server: URL, top: String, requester: String, kind: Kind) -> Bool {
+        let own = Origin.signature(server)
+        return kind == .microphone && !(server.host ?? "").isEmpty && top == own && requester == own
     }
 }
 

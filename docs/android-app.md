@@ -76,11 +76,11 @@ If your server sits behind a login wall, such as Pangolin (with Pocket ID or its
 
 - **First start**: when the check meets the wall, the screen says the server is behind a login page. Tap **Sign in here**, sign in on the wall's page, and the app connects as soon as you're through. If the screen instead says the address answers with a web page, the wall may show its page directly; **Sign in here** works the same way.
 - **Later**: when the wall asks again (its session expired), its sign-in page opens inside the app. A bar above it names the site you are signing in on, since the app has no address bar; the **×** in the bar, or back, returns to your server. If a sign-in can't continue in the app (for example a page left open for a long time), the app says so and offers **Sign in here** to start again.
-- **Single sign-on**: OpenTodo's own **Sign in with …** button (see [Single sign-on](self-hosting/sso.md)) works the same way: the provider's page opens in the app and sends you back signed in.
+- **Single sign-on**: OpenTodo's own **Sign in with …** button (see [Single sign-on](self-hosting/sso.md)) opens the provider's page in a Custom Tab of your browser, asks you to confirm with **Continue**, and brings you back to the app signed in, so providers that refuse sign-in inside apps, such as Google, work too. Close the tab to cancel. With a server older than this, the provider's page opens inside the app instead.
 
 Only pages the sign-in leads through stay in the app; a link to another site on a sign-in page (a privacy policy, a help page) opens in your browser, like every other link. The wall's session cookie is kept, so you sign in again only when the wall's session ends. Give the wall a long session (a "remember me" option, or a longer session lifetime) so that happens rarely: while the session has expired, the app's hourly background refresh of reminders and widgets doesn't get through and simply waits until you next open the app.
 
-**Providers that refuse apps.** Some identity providers refuse to sign in inside an app's web view; Google, for example, shows "Error 403: disallowed_useragent". The app can't work around this yet. Sign in to OpenTodo with a password or a passkey instead (set a password in **Settings → Account → Security** if your account is SSO-only), or use a provider that allows it in front of the wall, or let the wall bypass the app's paths (next section).
+**Walls whose provider refuses apps.** A login wall's sign-in page stays inside the app, and some identity providers refuse to sign in inside an app's web view; Google, for example, shows "Error 403: disallowed_useragent". The app can't work around this for a wall (OpenTodo's own single sign-on uses the browser instead, above). Sign in to OpenTodo with a password or a passkey instead (set a password in **Settings → Account → Security** if your account is SSO-only), or use a provider that allows it in front of the wall, or let the wall bypass the app's paths (next section).
 
 ### Bypassing the wall instead
 
@@ -142,6 +142,10 @@ The app opens on its icon over the app's background colour, light or dark with t
 ## Back
 
 Back closes what is open (a dialog, a sheet, a task), then goes back through the app, and leaves the app only from the screen it started on.
+
+## Focus in the notifications
+
+While a [Focus](focus.md#outside-the-app) session runs or is paused, a quiet notification shows the task, the phase (**Work · 2 of 4**, **Short break**, **Paused**) and a clock that Android keeps running by itself. A tap opens the Focus screen; **Pause** and **Resume** open the app and pause or resume the session there, so its time entry stops and starts as on the screen. At the planned end the notification gives way to **Session done** or **Break over**, on time when the app may set exact alarms and up to a few minutes late otherwise. With **Start breaks automatically** on, the break starts once you next open the app. The task's name follows the task names switch in **Settings → Notifications**, and an encrypted account shows **Focus session**. Turn the notification off with the **Focus** category in Android's notification settings for OpenTodo. Signing out and **Change server** remove it.
 
 ## Haptic feedback
 

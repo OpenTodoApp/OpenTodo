@@ -5,7 +5,7 @@
 // navigate and open tasks of a shared project, never change them: every handler
 // that writes checks `writable` (or the task's own read-only state) first.
 import type { Dispatch, RefObject, SetStateAction } from 'react'
-import { detachOccurrence, setTaskParent, skipOccurrence, unparkTask } from '../../lib/ops'
+import { detachOccurrence, unparkTask } from '../../lib/ops'
 import type { ListColumn, ListRow } from '../../lib/listGroups'
 import { moveTaskBy, type Step } from '../../lib/move'
 import { duplicateTask } from '../../lib/templates'
@@ -24,7 +24,7 @@ import { isActivationTarget, isTypingTarget, useShortcutScope } from '../shortcu
 import { deleteWithUndo, parkWithUndo } from '../undoable'
 import type { ListRoute } from './useListModel'
 import { t } from '../../lib/i18n'
-import { eveningUndoable, priorityUndoable } from '../../lib/undoActions'
+import { eveningUndoable, parentUndoable, priorityUndoable, skipOccurrence } from '../../lib/undoActions'
 import { announceOnBoard } from '../BoardView'
 import type { AddingBelow } from './belowLine'
 
@@ -115,7 +115,7 @@ export function useListShortcuts(c: ShortcutContext) {
       if (prev.depth < r.depth) return
       if (prev.depth === r.depth && prev.parent === r.parent) {
         c.toggleCollapsed(prev.task.id, false)
-        act(setTaskParent(r.task.id, prev.task.id))
+        act(parentUndoable(r.task.id, prev.task.id))
         return
       }
     }
@@ -123,7 +123,7 @@ export function useListShortcuts(c: ShortcutContext) {
   const outdent = (r: ListRow) => {
     if (!c.tree || r.parent === null) return
     const grandparent = c.tree.nodes.get(r.parent)?.parent ?? null
-    act(setTaskParent(r.task.id, grandparent))
+    act(parentUndoable(r.task.id, grandparent))
   }
   const openFor = (focus: { request(id: string): void }) => () => {
     if (!row || !writable) return false

@@ -18,7 +18,7 @@ import type {
   SpeechSettingsInput,
   ConfigWarning,
   AppPassword, CaldavSetting, EmailDigest, EmailDigestInput, EmailInbox,
-  AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, StorageStatus, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
+  AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, StorageStatus, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushNotify, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
   MemberInvitation, PendingAnswer,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput, IssueActionResult, IssueConnection, IssueConnectionInput,
   CalendarConnection, CalendarConnectionPatch, CalendarSyncRun, SyncScope, GoogleClientSetting, MicrosoftClientSetting,
@@ -378,7 +378,7 @@ export const api = {
     request<{ publicKey: string; subscription?: PushSubscriptionStatus | null }>(
       'GET', `/api/v1/push/vapid-key${device ? `?device=${encodeURIComponent(device)}` : ''}`,
     ),
-  pushSubscribe: (body: { deviceId: string; endpoint: string; keys: { p256dh: string; auth: string }; includeContent: boolean }) =>
+  pushSubscribe: (body: { deviceId: string; endpoint: string; keys: { p256dh: string; auth: string }; includeContent: boolean; notify?: PushNotify }) =>
     request<{ subscription: PushSubscriptionStatus }>('POST', '/api/v1/push/subscriptions', body),
   pushUnsubscribe: (id: string) => request<void>('DELETE', `/api/v1/push/subscriptions/${encodeURIComponent(id)}`),
   pushTest: (deviceId: string) => request<PushTestResponse>('POST', '/api/v1/push/test', { deviceId }),
@@ -745,6 +745,14 @@ export function auditExportUrl(filters: AuditFilters = {}): string {
  * route links the provider to the signed-in account instead.
  */
 export const OIDC_START_URL = '/api/v1/auth/oidc/start'
+
+/**
+ * The same route from Settings or a re-authentication, where a session exists.
+ * A browser decides by that session alone; the Android and iPhone apps run the
+ * provider step in the system browser, which has none, so `mode=link` tells
+ * them to start the flow as a link (OpenSpec app-sso-system-browser D3).
+ */
+export const OIDC_LINK_URL = `${OIDC_START_URL}?mode=link`
 
 /** True for failures that mean "no server reachable" rather than a server answer. */
 export function isNetworkError(err: unknown): boolean {

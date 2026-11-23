@@ -201,6 +201,7 @@ func TestQuickAddParseSharedVectors(t *testing.T) {
 				Recurrence      *string             `json:"recurrence"`
 				Reminders       []quickadd.Reminder `json:"reminders"`
 				DayPart         *string             `json:"dayPart"`
+				Links           *[]string           `json:"links"`
 			} `json:"expect"`
 		} `json:"cases"`
 	}
@@ -212,6 +213,9 @@ func TestQuickAddParseSharedVectors(t *testing.T) {
 	}
 	for _, c := range file.Cases {
 		t.Run(c.Name, func(t *testing.T) {
+			if c.Expect.Links != nil && !c.Ctx.Links {
+				t.Skip("the route always reads links (quick-add-links D4)")
+			}
 			a := parseAccountData{ctx: c.Ctx, lang: "en", labels: map[string]string{}, names: map[string]string{}}
 			got := parseLine(c.Line, a, c.Ctx.Today, c.Ctx.Now)
 			f := got.Fields
@@ -224,6 +228,12 @@ func TestQuickAddParseSharedVectors(t *testing.T) {
 				}
 			} else if d, _ := f["due"].(map[string]string); d["date"] != c.Expect.Due.Date || d["time"] != c.Expect.Due.Time {
 				t.Fatalf("due %v, want %+v", f["due"], c.Expect.Due)
+			}
+			if c.Expect.Links != nil {
+				got, _ := f["links"].([]string)
+				if strings.Join(got, " ") != strings.Join(*c.Expect.Links, " ") {
+					t.Fatalf("links %v, want %v", f["links"], *c.Expect.Links)
+				}
 			}
 			if want := deref(c.Expect.DayPart); asString(f["day_part"]) != want {
 				t.Fatalf("day_part %v, want %q", f["day_part"], want)
@@ -263,4 +273,25 @@ func TestQuickAddParseSharedVectors(t *testing.T) {
 func asString(v any) string {
 	s, _ := v.(string)
 	return s
+}
+
+// A link becomes fields.links and a chip reading its host (quick-add-links D4).
+func TestQuickAddParseLinks(t *testing.T) {
+	e := ownerEnv(t)
+	c := e.bearerClient()
+	resp, out := c.do("POST", parsePath, parseBody("Review the mockup https://www.example.com/mockup. tomorrow"), bearer(e.token("read"))...)
+	c.mustStatus(resp, 200, out)
+	f := out["fields"].(map[string]any)
+	if out["title"] != "Review the mockup" || len(f["links"].([]any)) != 1 || f["links"].([]any)[0] != "https://www.example.com/mockup" {
+		t.Fatalf("title %v, fields %v", out["title"], f)
+	}
+	for _, raw := range out["chips"].([]any) {
+		if ch := raw.(map[string]any); ch["kind"] == "link" {
+			if ch["text"] != "example.com" || ch["start"] != float64(18) || ch["end"] != float64(49) {
+				t.Fatalf("link chip = %v", ch)
+			}
+			return
+		}
+	}
+	t.Fatalf("no link chip in %v", out["chips"])
 }

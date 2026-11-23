@@ -296,6 +296,124 @@
         }
       }
     },
+    "Completed": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erledigt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completadas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminées"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completate"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afgerond"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ukończone"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Concluídas"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamamlanan"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已完成"
+          }
+        }
+      }
+    },
+    "Completed per day: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erledigt pro Tag: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completadas por día: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminées par jour : %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completate per giorno: %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afgerond per dag: %@"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ukończone dziennie: %@"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Concluídas por dia: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Günlük tamamlanan: %@"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每天完成：%@"
+          }
+        }
+      }
+    },
     "Connect": {
       "extractionState": "manual",
       "localizations": {
@@ -473,6 +591,65 @@
         }
       }
     },
+    "How many tasks you completed this week": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wie viele Aufgaben du diese Woche erledigt hast"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuántas tareas completaste esta semana"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Combien de tâches vous avez terminées cette semaine"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quante attività hai completato questa settimana"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoeveel taken je deze week hebt afgerond"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ile zadań ukończyłeś w tym tygodniu"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quantas tarefas concluíste esta semana"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu hafta kaç görev tamamladığın"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本周完成了多少任务"
+          }
+        }
+      }
+    },
     "Locked. Open OpenTodo to see your tasks.": {
       "extractionState": "manual",
       "localizations": {
@@ -528,6 +705,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zablokowane. Otwórz OpenTodo, aby zobaczyć zadania."
+          }
+        }
+      }
+    },
+    "Locked: today’s count only": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesperrt: nur die Zahl von heute"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bloqueado: solo el número de hoy"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verrouillé : seulement le nombre du jour"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bloccato: solo il numero di oggi"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vergrendeld: alleen het aantal van vandaag"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zablokowane: tylko dzisiejsza liczba"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bloqueado: só o número de hoje"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kilitli: yalnızca bugünün sayısı"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已锁定：仅显示今天的数量"
           }
         }
       }
@@ -1004,6 +1240,65 @@
         }
       }
     },
+    "Sign in here": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hier anmelden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar sesión aquí"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se connecter ici"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi qui"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrar aqui"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buradan oturum açın"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在这里登录"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hier aanmelden"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się tutaj"
+          }
+        }
+      }
+    },
     "Snooze 10 min": {
       "extractionState": "manual",
       "localizations": {
@@ -1417,6 +1712,65 @@
         }
       }
     },
+    "This address answers with a web page, not like an OpenTodo server. If your server is behind a login page, sign in to it here; otherwise check the address.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Adresse antwortet mit einer Webseite, nicht wie ein OpenTodo-Server. Liegt dein Server hinter einer Anmeldeseite, melde dich hier an; sonst prüfe die Adresse."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta dirección responde con una página web, no como un servidor OpenTodo. Si tu servidor está detrás de una página de inicio de sesión, inicia sesión aquí; si no, revisa la dirección."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette adresse répond avec une page web, pas comme un serveur OpenTodo. Si votre serveur est derrière une page de connexion, connectez-vous ici ; sinon vérifiez l’adresse."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo indirizzo risponde con una pagina web, non come un server OpenTodo. Se il server è dietro una pagina di accesso, accedi qui; altrimenti controlla l’indirizzo."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este endereço responde com uma página web, não como um servidor OpenTodo. Se o servidor estiver atrás de uma página de login, entre aqui; caso contrário, verifique o endereço."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu adres bir OpenTodo sunucusu gibi değil, bir web sayfasıyla yanıt veriyor. Sunucunuz bir giriş sayfasının arkasındaysa buradan oturum açın; değilse adresi kontrol edin."
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这个地址返回的是网页，而不像 OpenTodo 服务器。如果服务器位于登录页之后，请在这里登录；否则请检查地址。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit adres antwoordt met een webpagina, niet zoals een OpenTodo-server. Zit je server achter een aanmeldpagina, meld je hier aan; controleer anders het adres."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten adres odpowiada stroną internetową, a nie jak serwer OpenTodo. Jeśli twój serwer jest za stroną logowania, zaloguj się tutaj; w przeciwnym razie sprawdź adres."
+          }
+        }
+      }
+    },
     "This connection is not encrypted.": {
       "extractionState": "manual",
       "localizations": {
@@ -1531,6 +1885,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tak wygląda przypomnienie."
+          }
+        }
+      }
+    },
+    "This server is behind a login page. Sign in to it here; the app connects as soon as you're through.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Server liegt hinter einer Anmeldeseite. Melde dich hier an; die App verbindet sich, sobald du durch bist."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este servidor está detrás de una página de inicio de sesión. Inicia sesión aquí; la app se conecta en cuanto entres."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce serveur est derrière une page de connexion. Connectez-vous ici ; l’app se connecte dès que c’est fait."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo server è dietro una pagina di accesso. Accedi qui; l’app si collega appena hai finito."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este servidor está atrás de uma página de login. Entre aqui; o app se conecta assim que você passar."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu sunucu bir giriş sayfasının arkasında. Buradan oturum açın; geçiş yaptığınızda uygulama hemen bağlanır."
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此服务器位于登录页之后。在这里登录；通过后应用会立即连接。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze server zit achter een aanmeldpagina. Meld je hier aan; de app maakt verbinding zodra je binnen bent."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten serwer jest za stroną logowania. Zaloguj się tutaj; aplikacja połączy się, gdy tylko przejdziesz dalej."
           }
         }
       }

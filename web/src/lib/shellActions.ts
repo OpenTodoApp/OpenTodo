@@ -4,24 +4,30 @@
 // from the quick-add widget, which prefills quick add without saving anything. Every
 // reminder notification offers `done` (location-reminders D2, reminder-done-action),
 // which completes the reminder's task; the push worker opens the same address for
-// Done when no window of the app is open.
+// Done when no window of the app is open. A shell with `focus` opens
+// `/focus?action=pause|resume` from its Live Activity or ongoing notification
+// (focus-live-activity D4), applied as Space applies it.
 import { db } from './db'
 import { completeTask } from './ops'
+import { pauseSession, resumeSession } from './focus/session'
 import { dismissReminder, snoozeReminder } from './reminders'
 
 export type ReminderAction = 'snooze' | 'dismiss' | 'done'
+export type FocusAction = 'pause' | 'resume'
 
 export type ShellUrlAction =
   | { kind: 'reminder'; id: string; action: ReminderAction }
   | { kind: 'add'; text: string }
+  | { kind: 'focus'; action: FocusAction }
   | null
 
 /** Reads the action a shell put in the address, or null. */
-export function shellUrlAction(search: string): ShellUrlAction {
+export function shellUrlAction(search: string, pathname = '/'): ShellUrlAction {
   const p = new URLSearchParams(search)
   const id = p.get('reminder')
   const action = p.get('action')
   if (id && (action === 'snooze' || action === 'dismiss' || action === 'done')) return { kind: 'reminder', id, action }
+  if (pathname === '/focus' && !id && (action === 'pause' || action === 'resume')) return { kind: 'focus', action }
   // `add` may be empty: the widget's button opens quick add (Android widgets hold no text field).
   const add = p.get('add')
   if (add != null) return { kind: 'add', text: add.slice(0, 500) }
@@ -43,6 +49,15 @@ export async function applyReminderAction(id: string, action: ReminderAction, no
   }
 }
 
+/**
+ * Pause or Resume from the shell, through the same transitions as Space; a session
+ * already in that state (a stale notification) is left alone and nothing is written.
+ */
+export async function applyFocusAction(action: FocusAction, now = Date.now()): Promise<void> {
+  if (action === 'pause') await pauseSession(now)
+  else await resumeSession(now)
+}
+
 let pendingAdd: string | null = null
 let applied = 0
 
@@ -60,7 +75,7 @@ export function takeQuickAddPrefill(): string | null {
 
 /** Handles the shell's address action, if any, and removes it from the address. Returns what it did. */
 export async function handleShellUrl(openQuickAdd: () => boolean, loc: Location = location, hist: History = history): Promise<ShellUrlAction> {
-  const action = shellUrlAction(loc.search)
+  const action = shellUrlAction(loc.search, loc.pathname)
   if (!action) return null
   const p = new URLSearchParams(loc.search)
   for (const k of ['reminder', 'action', 'add']) p.delete(k)
@@ -69,6 +84,7 @@ export async function handleShellUrl(openQuickAdd: () => boolean, loc: Location 
   if (action.kind === 'reminder') {
     try { await applyReminderAction(action.id, action.action) } finally { applied++ }
   }
+  else if (action.kind === 'focus') await applyFocusAction(action.action)
   else {
     pendingAdd = action.text
     if (!openQuickAdd()) pendingAdd = null

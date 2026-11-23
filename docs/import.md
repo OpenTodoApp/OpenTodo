@@ -87,7 +87,7 @@ Todoist exports one project as CSV from the project's menu, and keeps backups of
 | `DATE` with `DATE_LANG` | the due date (and time); recurring dates become a rule, see below |
 | `DURATION` in minutes | the estimate |
 | `REMINDER_OFFSET` / `REMINDER_DATE` | a relative or absolute reminder (an absolute one in the row's `TIMEZONE`) |
-| `note` row | appended to the task's description under "Comments" (with a warning) |
+| `note` row | a comment on the task above it, written by you, in the file's order; the comment starts with the original author and time (`**Pete** · 2023-11-01 16:08 UTC`), then the note. Without `AUTHOR` or a readable `DATE` that part is left out, and without both the comment is the note alone. Past 5,000 comments in one import the note goes into the task's description under "Comments" instead; a note too long for a comment (64 KB) keeps its first line and has its text cut to fit; the preview says how many of each, once |
 | `DEADLINE` | the task's [deadline](tasks-and-projects.md#deadlines), read with `DEADLINE_LANG` like `DATE`; a value that cannot be read is kept as a "Deadline: …" line in the description (with a warning) |
 | `RESPONSIBLE` | dropped with a warning |
 | the row itself | the task's [origin](capture.md#where-a-task-came-from), `{kind: "import", provider: "todoist", id}` with the source id the importer remembers for duplicates (`origin: todoist`) |

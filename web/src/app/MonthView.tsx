@@ -12,7 +12,7 @@ import { getTask, useMembershipMap, useProjects } from '../lib/localData'
 import { beginDrag } from '../lib/dnd'
 import { formatMinutes } from '../lib/duration'
 import { addMonthsISO, stackedMonths, visibleRows } from '../lib/month'
-import { updateTask } from '../lib/ops'
+import { calendarEditUndoable } from '../lib/undoActions'
 import { canEditTasks, roleOf } from '../lib/sharing'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import { slotsByDate, useSlots } from '../lib/slots'
@@ -186,7 +186,8 @@ export function MonthView({ date }: { date?: string }) {
       // A span moves whole, start and due by the same days (multi-day-tasks D4).
       const whole = spanOf(task) ? moveSpanPatch(task, n) : null
       const due = whole ? whole.due : nudgeDue(task.due, { days: n })
-      await updateTask(id, whole ? { start: whole.start, due: dueFromView(raw.due, due) } : { due: dueFromView(raw.due, due) })
+      // One step of undo history, no toast, as for the other single keyboard edits (undo-calendar-moves).
+      await calendarEditUndoable(id, whole ? { start: whole.start, due: dueFromView(raw.due, due) } : { due: dueFromView(raw.due, due) })
       setFocused(due.date)
       reveal(due.date)
     }).catch(reportActionError)

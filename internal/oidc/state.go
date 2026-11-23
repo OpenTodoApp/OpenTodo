@@ -40,6 +40,14 @@ type FlowState struct {
 	UserID   string `json:"u,omitempty"` // link mode: the account that started it
 	Issuer   string `json:"i"`           // the issuer the flow was started against
 	Expires  int64  `json:"e"`           // Unix milliseconds
+	// App flow (app-sso-system-browser): the OpenTodo app's PKCE challenge and
+	// state. The callback then hands the verified identity to the app instead
+	// of signing in the browser that ran the flow.
+	AppChallenge string `json:"ac,omitempty"`
+	AppState     string `json:"as,omitempty"`
+	// AppLink: the app started the flow to link an identity to the account
+	// signed in on its web view (Settings), not to sign in.
+	AppLink bool `json:"al,omitempty"`
 }
 
 // StateCodec signs, verifies and consumes flow states.

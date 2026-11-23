@@ -3616,7 +3616,8 @@
   "One page": "Jedna strona",
   "One per device, so you can revoke a lost phone without touching the others. They only work for CalDAV.": "Jedno na urządzenie, aby można było unieważnić zgubiony telefon bez naruszania pozostałych. Działają tylko z CalDAV.",
   "One per line": "Po jednym w wierszu",
-  "One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action, e sets how often it comes up.": "Jeden projekt naraz: czy nadal jest aktualny i czy jego następny krok jest jasny? r oznacza go jako przejrzany, q dodaje następny krok, e ustawia, jak często się pojawia.",
+  "One project at a time: is it still alive, and is its next step clear?": "Jeden projekt naraz: czy nadal jest aktualny i czy jego następny krok jest jasny?",
+  "{r} marks it reviewed, {q} adds a next action, {e} sets how often it comes up.": "{r} oznacza go jako przejrzany, {q} dodaje następny krok, {e} ustawia, jak często się pojawia.",
   "One step at a time, in list order": "Krok po kroku, w kolejności listy",
   "One task, a timer, a break when you need one": "Jedno zadanie, minutnik, przerwa, gdy jej potrzebujesz",
   "One task, or one task per line": "Jedno zadanie albo jedno zadanie w wierszu",
@@ -7854,5 +7855,11 @@
   "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "Znikną z paska bocznego razem ze swoimi podprojektami. Możesz je przywrócić z archiwum w Ustawienia → Dane.",
   "Archived {projects}": "Zarchiwizowano: {projects}",
   "The filter language of saved views, for example search: milk & p1 or @errand.": "Język filtrów zapisanych widoków, np. search: milk & p1 albo @errand.",
-  "Filter {name}": "Filtruj „{name}”"
+  "Filter {name}": "Filtruj „{name}”",
+  "Show deadlines as dates": "Pokazuj terminy jako daty",
+  "The date on task rows instead of the days left": "Data w wierszach zadań zamiast pozostałych dni",
+  "{name} assigned you a task": "{name} przypisał(a) ci zadanie",
+  "{name} completed a task": "{name} ukończył(a) zadanie",
+  "{name} reopened a task": "{name} ponownie otworzył(a) zadanie",
+  "Completed or reopened": "Ukończone lub ponownie otwarte"
 }

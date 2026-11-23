@@ -9,7 +9,8 @@ import { addDaysISO, daysBetweenISO, formatDate, viewedTask, formatDateRange, mo
 import { isBlocked } from '../lib/dependencies'
 import { getTask } from '../lib/localData'
 import { beginDrag } from '../lib/dnd'
-import { updateTask } from '../lib/ops'
+import { calendarEditUndoable } from '../lib/undoActions'
+import { calendarEditWithUndo } from './undoable'
 import { axis, dayOffset, edges, shiftDates, spanOf, type Span, type Zoom } from '../lib/timeline'
 import type { Task } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -145,7 +146,7 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
   }, [ax.from, px, today])
 
   const write = useCallback((id: string, patch: Partial<Task>) => {
-    if (Object.keys(patch).length) act(updateTask(id, patch))
+    if (Object.keys(patch).length) act(calendarEditWithUndo(id, patch))
   }, [])
   // Keyboard edits run one after another on the freshest row, so three quick
   // presses move a task three days even before the view has re-rendered.
@@ -155,7 +156,8 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
       const item = await getTask(id)
       if (!item || item.deleted_at) return
       const patch = fn(item)
-      if (patch && Object.keys(patch).length) await updateTask(id, patch)
+      // One step of undo history, no toast, as for the other single keyboard edits (undo-calendar-moves).
+      if (patch && Object.keys(patch).length) await calendarEditUndoable(id, patch)
     }).catch(reportActionError)
   }, [])
 

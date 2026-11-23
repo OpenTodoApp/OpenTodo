@@ -5,6 +5,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from '../../lib/db'
 import { createTask, resetDeviceId } from '../../lib/ops'
+import { undoBatch } from '../../lib/undo'
 import type { Label, Project, Section, Task, User, View } from '../../lib/types'
 import type { ListState } from '../listActions'
 import { render } from '../../ui/test-utils'
@@ -155,5 +156,27 @@ describe('Pin note (notes-home D4)', () => {
     expect(commands({ ...base, note: { id: 'n1', pinned: true } }).find((c) => c.id === 'note:unpin')!.label).toBe('Unpin note')
     // Run routine on this note… while a note is open (notes-in-routines).
     expect(commands({ ...base, note: { id: 'n1', pinned: false } }).some((c) => c.id === 'note:run-routine')).toBe(true)
+  })
+})
+
+// OpenSpec change undo-row-schedule: the palette's Park in Someday is one step of undo history with the toast.
+describe('Park in Someday from the palette', () => {
+  it('records one step named Moved to Someday, with the Undo toast', async () => {
+    useDatabase(`registry-park-${Date.now()}`)
+    resetDeviceId()
+    const id = await createTask({ title: 'Paint the shed', due: { date: '2026-10-20' } })
+    const task = (await db.tasks.get(id))!
+    const list = { readOnly: () => false, open: () => {}, toggleComplete: () => {} } as unknown as ListState
+    await commands({ ...ctx, project: undefined, view: undefined, label: undefined, section: undefined, route: { view: 'inbox' }, list, task })
+      .find((x) => x.id === 'task:park')!.run()
+    expect((await db.tasks.get(id))!.start).toBe('someday')
+    const steps = await db.assistantUndo.toArray()
+    expect(steps.map((s) => s.label)).toEqual(['Moved to Someday'])
+    expect(bulkToast()?.undoId).toBe(steps[0].id)
+    await undoBatch(steps[0].id)
+    const back = (await db.tasks.get(id))!
+    expect(back.start ?? null).toBeNull()
+    expect(back.due).toEqual({ date: '2026-10-20' })
+    hideBulkToast()
   })
 })

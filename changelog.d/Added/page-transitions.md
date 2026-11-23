@@ -1,1 +1,0 @@
-- **Pages slide like a native app.** Opening a project, a task, a note or a settings section slides the new page in from the side, going back slides it out, and switching between Inbox, Today and the other destinations cross-fades. The sidebar and the bars stay still. Reduced motion and the no-motion display change pages at once.

@@ -1,1 +1,0 @@
-- **The sidebar's group headings no longer run under their buttons with large text.** At 200% text on a phone, "Projects" shortens with an ellipsis and All, search and + stay whole.

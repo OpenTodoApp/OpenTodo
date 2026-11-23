@@ -55,7 +55,7 @@ function SidebarProjectMenu({ project, within, edges, movable, onRename, classNa
   const { move, first, last } = useRowMoves(project, within, edges, movable)
   return (
     <>
-      <ActionMenu label={t('Menu for project {name}', { name: project.name })} title={project.name} groups={[...menu.groups, ...rowMoveGroups(move, first, last)]}
+      <ActionMenu label={t('Menu for project {name}', { name: project.name })} title={project.name} groups={[{ items: [menu.shareItem] }, ...menu.groups, ...rowMoveGroups(move, first, last)]}
         header={menu.swatches} width="sm:w-72" open={open} onOpenChange={setOpen}
         triggerClassName={`touch-target rounded-control px-1.5 py-0.5 text-faint hover:bg-sunken dark:hover:bg-raised ${className}`} />
       {menu.dialogs}

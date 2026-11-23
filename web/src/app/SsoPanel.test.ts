@@ -102,7 +102,7 @@ describe('LinkedAccountsView', () => {
     expect(html).toContain('sso.example.com')
     expect(html).toContain('used just now')
     expect(html).toContain('aria-label="Actions for me@example.com"')
-    expect(html).toContain('href="/api/v1/auth/oidc/start"')
+    expect(html).toContain('href="/api/v1/auth/oidc/start?mode=link"')
     expect(html).toContain('Link Home SSO')
   })
 
@@ -114,14 +114,14 @@ describe('LinkedAccountsView', () => {
   it('is read-only offline', () => {
     const html = linked({ online: false })
     expect(html).toContain('Offline')
-    expect(html).not.toContain('href="/api/v1/auth/oidc/start"')
+    expect(html).not.toContain('href="/api/v1/auth/oidc/start?mode=link"')
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Link Home SSO/)
   })
 
   it('shows an empty state with the link action when nothing is linked', () => {
     const html = linked({ identities: [] })
     expect(html).toContain('Nothing linked yet')
-    expect(html).toContain('href="/api/v1/auth/oidc/start"')
+    expect(html).toContain('href="/api/v1/auth/oidc/start?mode=link"')
   })
 
   it('shows notices and errors from the link flow', () => {

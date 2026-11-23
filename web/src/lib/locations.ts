@@ -9,7 +9,8 @@ import { api, type MapResult } from './api'
 import { db, getMeta, setMeta } from './db'
 import { currentLanguage, t } from './i18n'
 import { uuid } from './ids'
-import { mutate, mutateMany, updateTask } from './ops'
+import { mutate, mutateMany } from './ops'
+import { locationUndoable } from './undoActions'
 import { USER_PREFS_ID } from './userPrefs'
 import type { Geo, Place, Task, TaskLocation, UserPrefs } from './types'
 
@@ -141,9 +142,12 @@ export function openInMapsHref(lat: number, lon: number, phone: boolean): string
 
 // ---- writes ----
 
-/** Sets or clears a task's location as one edit (one whole value, design D1). */
+/**
+ * Sets or clears a task's location as one edit (one whole value, design D1) and one step of undo
+ * history (undo-panel-extras); a repeating task is written as before, without a step.
+ */
 export async function setTaskLocation(taskId: string, location: TaskLocation | null): Promise<void> {
-  await updateTask(taskId, { location })
+  await locationUndoable(taskId, location)
 }
 
 /** Creates a place; returns its id. */

@@ -112,6 +112,7 @@ type Service struct {
 	client  *http.Client
 	now     func() time.Time
 	states  *StateCodec
+	handoff *Handoffs
 
 	mu       sync.Mutex
 	provider *Provider
@@ -133,11 +134,14 @@ func New(store *settings.Store, dataDir string, o Options) *Service {
 		o.Now = time.Now
 	}
 	return &Service{store: store, secrets: settings.NewSecretsFile(dataDir, "oidc"), env: o.Env,
-		client: o.Client, now: o.Now, states: NewStateCodec(o.Now)}
+		client: o.Client, now: o.Now, states: NewStateCodec(o.Now), handoff: NewHandoffs(o.Now)}
 }
 
 // States returns the flow-state codec.
 func (s *Service) States() *StateCodec { return s.states }
+
+// Handoffs returns the identities waiting for the OpenTodo app to collect them.
+func (s *Service) Handoffs() *Handoffs { return s.handoff }
 
 // Client is the outbound HTTP client (for the code exchange).
 func (s *Service) Client() *http.Client { return s.client }

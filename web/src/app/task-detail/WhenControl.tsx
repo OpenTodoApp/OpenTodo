@@ -10,7 +10,7 @@ import { useSeriesRecords } from '../../lib/localData'
 import { Suspense, type KeyboardEvent, type RefObject, useEffect, useRef, useState, type ReactNode } from 'react'
 import { lazy } from '../../lib/lazy'
 import { dueFromView, localDueOf, logicalToday, quickChoices, weekday } from '../../lib/dates'
-import { setRecurrence, unparkTask, updateTask } from '../../lib/ops'
+
 import { parseRule } from '../../lib/recurrence'
 import { ruleWords } from '../../lib/recurrenceWords'
 import type { WhenSegmentId } from '../../lib/facets'
@@ -21,7 +21,8 @@ import { TimeField } from '../datetime/TimeField'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { RecurrenceField } from '../RecurrenceField'
 import { RemindersField } from '../RemindersField'
-import { doOnWithUndo, parkWithUndo, setDueWithUndo } from '../undoable'
+import { deadlineWithUndo, doOnWithUndo, parkWithUndo, setDueWithUndo } from '../undoable'
+import { calendarEditUndoable, recurrenceUndoable } from '../../lib/undoActions'
 import { ZoneControl } from './ZoneControl'
 import { useViewerZone } from '../useViews'
 import { t } from '../../lib/i18n'
@@ -173,7 +174,8 @@ function MultiDaySwitch({ task, readOnly, root }: { task: Task; readOnly: boolea
   const turn = async (on: boolean) => {
     const patch = on ? multiDayOnPatch(task) : { span: false }
     if (!patch) return
-    await updateTask(task.id, patch)
+    // One step of undo history, no toast, as for the panel's other single edits (undo-start-zone).
+    await calendarEditUndoable(task.id, patch)
     if (on) root.current?.querySelector<HTMLElement>('[data-when-segment="start"] input:not([disabled])')?.focus()
   }
   return (
@@ -247,7 +249,7 @@ function RepeatPresets({ task, onOpen }: { task: Task; onOpen?: (id: string) => 
         {presets.map((p) => (
           <button key={p.id} type="button" role="radio" aria-checked={current === p.id} data-preset={p.id}
             className={`flex min-h-8 items-center gap-2 rounded-control px-2 text-left text-body ${current === p.id ? 'bg-selected font-medium text-strong' : 'text-default hover:bg-sunken dark:hover:bg-raised'}`}
-            onClick={() => act(setRecurrence(task.id, p.rule))}>
+            onClick={() => act(recurrenceUndoable(task.id, p.rule))}>
             <Icon name={current === p.id ? 'check' : 'repeat'} size="xs" className={current === p.id ? '' : 'text-faint'} />{p.label}
           </button>
         ))}
@@ -318,7 +320,7 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
           chosen={task.start === 'someday' ? 'someday' : undefined} emptyText={t('No start date')}
           validate={(iso) => (local && iso > local.date ? t('The start must be on or before the due date.') : null)}
           onChoice={(c) => { if (c.date === 'someday') act(parkWithUndo(task.id)) }}
-          onChange={(start) => (start ? act(updateTask(task.id, { start })) : void unparkTask(task.id))} />
+          onChange={(start) => act(calendarEditUndoable(task.id, { start: start ?? null }))} />
         {task.due && <MultiDaySwitch task={task} readOnly={readOnly} root={root} />}
       </Segment>}
 
@@ -328,7 +330,7 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
 
       {shows('deadline') && <Segment id="deadline" icon="hourglass" label={t('Deadline')} bare={!!segment}>
         <DatePicker label={t('Deadline')} value={task.deadline ?? null} choices={quickChoices('deadline')} emptyText={t('No deadline')}
-          onChange={(deadline) => act(updateTask(task.id, { deadline }))} />
+          onChange={(deadline) => act(deadlineWithUndo(task.id, deadline))} />
       </Segment>}
 
       {shows('repeat') && <Segment id="repeat" icon="repeat" label={t('Repeat')} bare={!!segment}>

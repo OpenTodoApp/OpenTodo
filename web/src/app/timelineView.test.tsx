@@ -7,6 +7,7 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
+import { undoBatch } from '../lib/undo'
 import { completeTask, createProject, createTask, resetDeviceId, updateTask } from '../lib/ops'
 import type { Task } from '../lib/types'
 import { loadViewMode, nextViewMode, saveViewMode } from '../lib/sections'
@@ -149,6 +150,16 @@ describe('timeline', () => {
     await key(document.body, 'ArrowRight', { shiftKey: true })
     await waitFor(async () => (await db.tasks.get(id))!.deadline === '2026-11-14', 'deadline set')
     expect((await db.tasks.get(id))!.deadline).toBe('2026-11-14')
+    // Each key press is one step of undo history (undo-calendar-moves). The test clock stands
+    // still, so the steps are told apart by what each one puts back.
+    await waitFor(async () => (await db.assistantUndo.count()) === 4, 'four steps')
+    const steps = await db.assistantUndo.toArray()
+    expect(steps.map((s) => s.label)).toEqual(['Rescheduled', 'Rescheduled', 'Rescheduled', 'Rescheduled'])
+    const restoring = (field: string, value: unknown) => steps.find((s) => field in s.inverse[0].patch && JSON.stringify(s.inverse[0].patch[field] ?? null) === JSON.stringify(value))!
+    await undoBatch(restoring('deadline', null).id)
+    expect((await db.tasks.get(id))!.deadline ?? null).toBeNull()
+    await undoBatch(restoring('due', { date: '2026-11-12', time: '09:00' }).id)
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-11-12', time: '09:00' })
     await r.unmount()
   })
 
@@ -178,6 +189,16 @@ describe('timeline', () => {
     t = (await db.tasks.get(id))!
     expect(t.deadline).toBe('2026-11-16')
     expect(t.due).toEqual({ date: '2026-11-12', time: '09:00' })
+    // Each drop is one step of undo history with the toast (undo-calendar-moves).
+    await waitFor(async () => (await db.assistantUndo.count()) === 2, 'two steps')
+    const steps = await db.assistantUndo.toArray()
+    expect(steps.map((s) => s.label)).toEqual(['Rescheduled', 'Rescheduled'])
+    for (const s of steps.filter((s) => 'deadline' in s.inverse[0].patch)) await undoBatch(s.id)
+    for (const s of steps.filter((s) => !('deadline' in s.inverse[0].patch))) await undoBatch(s.id)
+    t = (await db.tasks.get(id))!
+    expect(t.start).toBe('2026-11-03')
+    expect(t.due).toEqual({ date: '2026-11-10', time: '09:00' })
+    expect(t.deadline ?? null).toBeNull()
     await r.unmount()
   })
 

@@ -3376,7 +3376,8 @@
   "One page": "一页",
   "One per device, so you can revoke a lost phone without touching the others. They only work for CalDAV.": "每台设备一个密码，这样你可以在手机丢失时吊销其权限而不影响其他设备。它们仅适用于 CalDAV。",
   "One per line": "每行一个",
-  "One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action, e sets how often it comes up.": "一次只看一个项目：它仍在推进吗？下一步清楚吗？按 r 标记为已回顾，按 q 添加下一步行动，按 e 设置回顾频率。",
+  "One project at a time: is it still alive, and is its next step clear?": "一次只看一个项目：它仍在推进吗？下一步清楚吗？",
+  "{r} marks it reviewed, {q} adds a next action, {e} sets how often it comes up.": "按 {r} 标记为已回顾，按 {q} 添加下一步行动，按 {e} 设置回顾频率。",
   "One step at a time, in list order": "按列表顺序，一次一步",
   "One task, a timer, a break when you need one": "一项任务、一个计时器，并在需要时休息一下",
   "One task, or one task per line": "一项任务，或每行一项任务",
@@ -7854,5 +7855,11 @@
   "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "它们将连同子项目一起从侧边栏移出。你可以在“设置 → 数据”中取消归档。",
   "Archived {projects}": "已归档{projects}",
   "The filter language of saved views, for example search: milk & p1 or @errand.": "已保存视图的筛选语法，例如 search: milk & p1 或 @errand。",
-  "Filter {name}": "筛选“{name}”"
+  "Filter {name}": "筛选“{name}”",
+  "Show deadlines as dates": "将最后期限显示为日期",
+  "The date on task rows instead of the days left": "在任务行中显示日期，而不是剩余天数",
+  "{name} assigned you a task": "{name} 给你分配了一项任务",
+  "{name} completed a task": "{name} 完成了一项任务",
+  "{name} reopened a task": "{name} 重新打开了一项任务",
+  "Completed or reopened": "已完成或重新打开"
 }

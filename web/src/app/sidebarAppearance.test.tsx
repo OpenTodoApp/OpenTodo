@@ -1,14 +1,14 @@
 // @vitest-environment happy-dom
 import 'fake-indexeddb/auto'
 import { act } from 'react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { setFavourite } from '../lib/favourites'
 import { createLabel, LABEL_PALETTE } from '../lib/labels'
 import { createProject, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
 import { HUES } from '../ui'
-import { click, key, render, type, waitFor } from '../ui/test-utils'
+import { click, key, mockFetch, render, type, waitFor } from '../ui/test-utils'
 import { Sidebar } from './Sidebar'
 import { resetSidebarLayout } from './sidebarLayout'
 
@@ -26,6 +26,7 @@ beforeEach(async () => {
   localStorage.clear()
   resetSidebarLayout()
 })
+afterEach(() => { vi.unstubAllGlobals() })
 
 async function openMenu(root: ParentNode, group: string, name: string) {
   const trigger = () => root.querySelector(`[data-sidebar-group="${group}"] button[aria-label="Menu for project ${name}"]`)
@@ -48,7 +49,8 @@ async function startProject(root: ParentNode) {
 
 describe('sidebar project appearance (#1127)', () => {
   it.each(['Projects', 'Favourites'])('renames, icons and recolours an existing project from %s', async (group) => {
-    const id = await createProject({ name: 'Work' })
+    // Red, so that picking blue is always a change (an automatic colour can be blue).
+    const id = await createProject({ name: 'Work', color: HUES.find((h) => h.name === 'red')!.hex })
     await setFavourite('project', id, true)
     const { container } = await sidebar()
     await openMenu(container, group, 'Work')
@@ -83,6 +85,24 @@ describe('sidebar project appearance (#1127)', () => {
     await click(blueSwatch()!)
     await waitFor(async () => (await db.projects.get(id))?.color === blue)
     expect(await db.projects.count()).toBe(1)
+    // Each is one step of undo history (undo-project-appearance, #1748).
+    // applyBatch stores the step just after the write lands, so wait for it.
+    await waitFor(async () => (await db.assistantUndo.count()) === 3, 'three undo steps')
+    const labels = (await db.assistantUndo.toArray()).map((e) => e.label)
+    expect(labels).toEqual(expect.arrayContaining(['Renamed “Work” → “Studio”', 'Project updated', 'Colour blue']))
+  })
+
+  // #1905: Share… in the sidebar's project menu opens the project's Share dialog.
+  it('offers Share project in the sidebar menu and opens the Share dialog', async () => {
+    await createProject({ name: 'Trip' })
+    // The dialog reads the project's members and links from the server.
+    mockFetch(() => ({}))
+    const { container } = await sidebar()
+    await openMenu(container, 'Projects', 'Trip')
+    const share = () => item('share')
+    expect(share()?.textContent).toContain('Share project')
+    await click(share()!)
+    await waitFor(() => !!document.querySelector('[role="dialog"][aria-label="Share Trip"]'), 'the Share dialog')
   })
 
   it('cancels an inline draft on Escape and saves a later draft when leaving the field', async () => {

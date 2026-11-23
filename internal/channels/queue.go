@@ -61,6 +61,16 @@ func (s *Service) Unblocked(ctx context.Context, e notify.Unblocked) {
 		taskID: e.TaskID, taskTitle: e.TaskTitle, at: e.At})
 }
 
+// StatusChanged implements notify.StatusSink.
+func (s *Service) StatusChanged(ctx context.Context, e notify.StatusChanged) {
+	key, with := txtCompleted, txtCompletedBy
+	if !e.Completed {
+		key, with = txtReopened, txtReopenedBy
+	}
+	s.emit(ctx, e.AssigneeID, fmt.Sprintf("status:%s:%s:%d", e.TaskID, key, e.At), event{kind: EventStatus, key: key, withKey: with,
+		taskID: e.TaskID, taskTitle: e.TaskTitle, actorName: e.ActorName, at: e.At})
+}
+
 // PageActivity implements notify.PageSink.
 func (s *Service) PageActivity(ctx context.Context, e notify.PageEvent) {
 	key, with := txtPageReplied, txtPageRepliedBy

@@ -11,6 +11,7 @@ import { dayPartOf } from '../../lib/dayParts'
 import { undoBatch } from '../../lib/undo'
 import { createTask, mutate } from '../../lib/ops'
 import { applyLanguagePreference } from '../../lib/i18n'
+import { ruleWords } from '../../lib/recurrenceWords'
 import { USER_PREFS_ID } from '../../lib/userPrefs'
 import { click, key, render, type, waitFor } from '../../ui/test-utils'
 import { setupTaskDetailTests } from './taskDetail.testkit'
@@ -76,6 +77,12 @@ describe('WhenControl', () => {
     await key(date, 'Enter')
     await queued(id, from)
     expect(await queuedFields(id, from)).toEqual({ start: '2026-10-16' })
+    // One step of undo history, no toast (undo-start-zone): undo takes the start away again.
+    await waitFor(async () => (await db.assistantUndo.count()) === 1, 'one step')
+    const steps = await db.assistantUndo.toArray()
+    expect(steps.map((s) => s.label)).toEqual(['Rescheduled'])
+    await undoBatch(steps[0].id)
+    expect((await db.tasks.get(id))!.start ?? null).toBeNull()
 
     from = await mark()
     await click([...seg('start').querySelectorAll('button')].find((b) => b.textContent?.includes('Someday'))!)
@@ -154,6 +161,10 @@ describe('WhenControl', () => {
       await key(input, 'Enter')
       await queued(id, from)
       expect(await queuedFields(id, from)).toEqual({ recurrence: 'every 3 days after completion' })
+      // The field resets its text and clears its error when the live task's rule changes. Wait for the
+      // live task to arrive (the words above render from it in the same pass) before typing, or a late
+      // reset wipes the typed words or the refusal below.
+      await waitFor(() => seg('repeat').querySelector('[data-rule-words]')?.textContent === ruleWords('every 3 days after completion'), 'the live task shows the second rule')
       // Words that are no rule in any active language keep the previous rule.
       await type(input, 'elke blursdag')
       await key(input, 'Enter')
@@ -227,7 +238,12 @@ describe('WhenControl', () => {
     const timeLine = (seg: (n: string) => HTMLElement) => seg('due').querySelector<HTMLElement>('[data-due-time]')
     /** The task ops queued after `from` were one batch (one timestamp). */
     const oneBatch = async (id: string, from: number) => new Set((await db.outbox.toArray()).slice(from).filter((o) => o.entityId === id).map((o) => o.ts)).size === 1
-    const undoLast = async () => { await undoBatch((await db.assistantUndo.toArray()).at(-1)!.id) }
+    // The step is stored after the write lands, so wait for this task's due step rather than reading the newest entry.
+    const undoLast = async (id: string) => {
+      const step = async () => (await db.assistantUndo.toArray()).find((u) => u.inverse.some((c) => c.entityId === id && !c.created && 'due' in c.patch))
+      await waitFor(async () => !!(await step()), 'the undo step')
+      await undoBatch((await step())!.id)
+    }
     const partsOn = () => mutate('user_prefs', USER_PREFS_ID, { day_parts: 'on' })
     afterEach(() => mutate('user_prefs', USER_PREFS_ID, { day_parts: '' }))
 
@@ -290,7 +306,7 @@ describe('WhenControl', () => {
       expect(await queuedFields(id, from)).toEqual({ due: { date: '2026-10-14' }, day_part: 'morning', evening: false })
       expect(await oneBatch(id, from)).toBe(true)
       await waitFor(() => checked(seg) === 'morning' && !timeLine(seg), 'Morning selected, the time line gone')
-      await undoLast()
+      await undoLast(id)
       await waitFor(async () => (await db.tasks.get(id))?.due?.time === '14:00', 'undone')
       expect(await db.tasks.get(id)).toMatchObject({ day_part: null, evening: false })
       await waitFor(() => checked(seg) === 'time', 'Time selected again')
@@ -356,7 +372,7 @@ describe('WhenControl', () => {
       await waitFor(async () => (await db.tasks.get(id))?.day_part === 'afternoon', 'Afternoon written')
       expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-15' })
       await waitFor(() => !timeLine(seg), 'the time line gone')
-      await undoLast()
+      await undoLast(id)
       await waitFor(async () => (await db.tasks.get(id))?.due?.time === '19:30', 'undone')
       expect(dayPartOf((await db.tasks.get(id))!)).toBeNull()
       await unmount()
@@ -398,7 +414,7 @@ describe('WhenControl', () => {
       expect(await queuedFields(id, from)).toEqual({ due: { date: '2026-10-15', time: '15:00' }, day_part: null, evening: false })
       expect(await oneBatch(id, from)).toBe(true)
       await waitFor(() => checked(seg) === 'time' && timeLine(seg)?.querySelector('input')?.value === '15:00', 'Time selected with 15:00')
-      await undoLast()
+      await undoLast(id)
       await waitFor(async () => (await db.tasks.get(id))?.evening === true, 'undone')
       expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-20' })
       await unmount()
@@ -441,6 +457,9 @@ describe('WhenControl', () => {
       await queued(id, from)
       await waitFor(async () => (await db.tasks.get(id))?.span === true, 'the flag')
       expect(await queuedFields(id, from)).toEqual({ start: '2026-11-04', span: true })
+      // One step of undo history (undo-start-zone).
+      await waitFor(async () => (await db.assistantUndo.count()) === 1, 'one step')
+      expect((await db.assistantUndo.toArray()).map((s) => s.label)).toEqual(['Rescheduled'])
       const ops = (await db.outbox.toArray()).slice(from).filter((o) => o.entityId === id)
       expect(new Set(ops.map((o) => o.ts)).size).toBe(1)
       await waitFor(() => document.activeElement === seg('start').querySelector('input'), 'the start date focused')

@@ -1,0 +1,19 @@
+{
+  "description": "The same session paused now (no title: the titles option is off or the account is encrypted, so the shell reads \"Focus session\"): \"Paused\", the time left frozen, no notification.",
+  "method": "publishFocus",
+  "payload": "{\"v\":1,\"state\":\"paused\",\"taskId\":\"call\",\"mode\":\"pomodoro\",\"phase\":\"work\",\"cycle\":1,\"cycleLength\":4,\"phaseStartedAt\":1792669800000,\"elapsedMs\":600000,\"plannedMs\":1500000}",
+  "now": 1792670400000,
+  "expect": {
+    "state": "paused",
+    "title": null,
+    "phase": "work",
+    "breakKind": null,
+    "cycle": 1,
+    "cycleLength": 4,
+    "countsDown": false,
+    "end": null,
+    "countUpFrom": null,
+    "frozenMs": 900000,
+    "notifyAt": null
+  }
+}

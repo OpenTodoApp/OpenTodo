@@ -1,7 +1,7 @@
 import { HUES, IconPicker, TOUCH_GRID, hueFor } from '../../ui'
 import { hueName } from '../../lib/colourNames'
 import { t } from '../../lib/i18n'
-import { updateProject } from '../../lib/ops'
+import { projectEditUndoable, projectRenameUndoable } from '../../lib/undoActions'
 import type { Project } from '../../lib/types'
 import { act } from '../actionError'
 import type { ActionItem } from './ActionMenu'
@@ -9,7 +9,7 @@ import { iconPickerSpec } from './stylePickers'
 
 export async function renameProject(project: Project, value: string) {
   const name = value.trim()
-  if (name && name !== project.name) await updateProject(project.id, { name })
+  if (name && name !== project.name) await projectRenameUndoable(project.id, name)
 }
 
 export function projectRenameItem(rename: () => unknown): ActionItem {
@@ -27,7 +27,7 @@ export function ProjectIconPicker({ icon, color, onPick, onClose }: {
 }
 
 export function projectIconItem(project: Project): ActionItem {
-  const pick = (icon: string | null) => act(updateProject(project.id, { icon }))
+  const pick = (icon: string | null) => act(projectEditUndoable(project.id, { icon }, t('Project updated')))
   return { kind: 'step', id: 'icon', label: t('Icon'), icon: 'image', step: {
     title: t('Icon'),
     render: (done, back) => <ProjectIconPicker icon={project.icon} color={project.color} onClose={back}
@@ -64,5 +64,5 @@ export function ColourSwatches({ color, onPick, onDefault, menu = false }: {
 }
 
 export function setProjectColour(project: Project, color: string) {
-  act(updateProject(project.id, { color }))
+  act(projectEditUndoable(project.id, { color }, t('Colour {name}', { name: hueName(hueFor(color)) })))
 }

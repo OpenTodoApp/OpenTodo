@@ -6,6 +6,7 @@
 // parsing off, or for viewers, it is a plain field.
 import { type FocusEvent, type KeyboardEvent, type ReactNode, type Ref, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { logicalToday } from '../lib/dates'
+import { useMe } from '../lib/sharing'
 import { dismissChip, type Chip, type LabelRef, loadQuickAddSettings, onQuickAddSettingsChange, type ProjectRef, rebaseDismissed, resolveDayMonthOrder, resolveLanguages, type Span } from '../lib/nlp'
 import { editPlan, parseEdit, type EditPlan } from '../lib/nlp/edit'
 import { composingEnter } from '../lib/composeKey'
@@ -69,6 +70,8 @@ export function TitleField({ title, value, onChange, onCommit, onCancel, project
   const dayParts = dayPartsOn(prefs)
   // The `~deep` tokens only while the account offers energy (task-energy D3).
   const energy = energyLevelsOn(prefs)
+  // Links need an author for their attachment: before the first sign-in they stay text (quick-add-links D2).
+  const signedIn = !!useMe()
 
   const parsed = useMemo(() => {
     if (!parsing || !focused || value === base.current) return null
@@ -76,8 +79,9 @@ export function TitleField({ title, value, onChange, onCommit, onCancel, project
     return parseEdit(base.current, value, {
       today: logicalToday(), now: nowHHMM(), languages: resolveLanguages(settings, langs),
       dayMonthOrder: resolveDayMonthOrder(settings, langs, dtPrefs), weekStart: resolved.weekStart, projects, dismissed, dayParts, energy,
+      links: signedIn, // links typed in this edit become attachments (quick-add-links D5)
     })
-  }, [parsing, focused, value, settings, dtPrefs, resolved, projects, dismissed, dayParts, energy])
+  }, [parsing, focused, value, settings, dtPrefs, resolved, projects, dismissed, dayParts, energy, signedIn])
 
   const change = (next: string) => {
     const clean = multiline ? next.replace(/\n/g, ' ') : next

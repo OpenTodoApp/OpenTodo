@@ -12,6 +12,7 @@ import { msg, t, translatedMap } from '../lib/i18n'
 import { ruleWords } from '../lib/recurrenceWords'
 import { energyChipLabel, isEnergy } from '../lib/energy'
 import { isNoPriority, priorityName, priorityShort } from '../lib/priority'
+import { linkHost } from '../lib/nlp/links'
 
 // Chip colours come from palette hues (design-system tokens), so both themes follow.
 export const CHIP_HUE: Record<Chip['kind'], HueName> = {
@@ -23,6 +24,7 @@ export const CHIP_HUE: Record<Chip['kind'], HueName> = {
   daypart: 'indigo',
   project: 'slate',
   label: 'cyan',
+  link: 'slate',
   priority: 'orange',
   estimate: 'green',
   spent: 'lime',
@@ -90,12 +92,14 @@ export function chipText(chip: Chip, projects: readonly ProjectRef[], labels: re
       return formatMinutes(chip.value as number)
     case 'energy':
       return isEnergy(chip.value) ? energyChipLabel(chip.value) : String(chip.value)
+    case 'link':
+      return linkHost(String(chip.value))
     case 'spent':
       return t('Spent {duration}', { duration: (chip.value as number) < 60 ? t('{n} min', { n: chip.value as number }) : formatMinutes(chip.value as number) })
   }
 }
 
-const KIND_NAME = translatedMap<Chip['kind']>({ due: msg('Due'), deadline: msg('Deadline'), someday: msg('Someday'), sector: msg('Time sector'), evening: msg('Evening'), daypart: msg('Part of the day'), project: msg('Project'), label: msg('Label'), priority: msg('Priority'), estimate: msg('Estimate'), spent: msg('Time spent'), recurrence: msg('Repeats'), reminder: msg('Reminder'), energy: msg('Energy') })
+const KIND_NAME = translatedMap<Chip['kind']>({ due: msg('Due'), deadline: msg('Deadline'), someday: msg('Someday'), sector: msg('Time sector'), evening: msg('Evening'), daypart: msg('Part of the day'), project: msg('Project'), label: msg('Label'), priority: msg('Priority'), estimate: msg('Estimate'), spent: msg('Time spent'), recurrence: msg('Repeats'), reminder: msg('Reminder'), energy: msg('Energy'), link: msg('Link') })
 
 
 export interface ParseChipsProps {

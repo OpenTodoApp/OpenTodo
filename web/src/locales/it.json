@@ -3349,7 +3349,8 @@
   "One page": "Una pagina",
   "One per device, so you can revoke a lost phone without touching the others. They only work for CalDAV.": "Una per dispositivo, così puoi revocare un telefono perso senza toccare gli altri. Funzionano solo per CalDAV.",
   "One per line": "Una per riga",
-  "One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action, e sets how often it comes up.": "Un progetto alla volta: è ancora vivo, e il prossimo passo è chiaro? r lo segna come rivisto, q aggiunge una prossima azione, e sceglie ogni quanto torna.",
+  "One project at a time: is it still alive, and is its next step clear?": "Un progetto alla volta: è ancora vivo, e il prossimo passo è chiaro?",
+  "{r} marks it reviewed, {q} adds a next action, {e} sets how often it comes up.": "{r} lo segna come rivisto, {q} aggiunge una prossima azione, {e} sceglie ogni quanto torna.",
   "One step at a time, in list order": "Un passo alla volta, nell’ordine dell’elenco",
   "One task, a timer, a break when you need one": "Un’attività, un timer, una pausa quando serve",
   "One task, or one task per line": "Un’attività, o un’attività per riga",
@@ -7854,5 +7855,11 @@
   "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "Lasciano la barra laterale con i loro sottoprogetti. Puoi estrarli dall’archivio da Impostazioni → Dati.",
   "Archived {projects}": "Archiviato: {projects}",
   "The filter language of saved views, for example search: milk & p1 or @errand.": "Il linguaggio dei filtri delle viste salvate, per esempio search: milk & p1 o @errand.",
-  "Filter {name}": "Filtra «{name}»"
+  "Filter {name}": "Filtra «{name}»",
+  "Show deadlines as dates": "Mostra i termini come date",
+  "The date on task rows instead of the days left": "La data nelle righe delle attività invece dei giorni rimanenti",
+  "{name} assigned you a task": "{name} ti ha assegnato un’attività",
+  "{name} completed a task": "{name} ha completato un’attività",
+  "{name} reopened a task": "{name} ha riaperto un’attività",
+  "Completed or reopened": "Completata o riaperta"
 }

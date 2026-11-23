@@ -46,6 +46,7 @@ import { OVERLAYS, chooseLayout, openScreen, screens as layoutScreens } from './
 import { inventory } from './inventory.mjs'
 import { A11Y_RULES, STRICT_RULES, summarize, writeReport } from './report.mjs'
 import { coverage } from './stories.mjs'
+import { markScreen, tracePage, traceOf } from './pageTrace.mjs'
 
 const OUT = resolve(process.env.OUT_DIR ?? 'ux-audit-report')
 const BIN = process.env.OPENTODO_BIN ?? 'bin/opentodo'
@@ -221,6 +222,7 @@ async function capture(ctx, anonCtx, page, e, combo, ids) {
   const p = host.anon ? await sizeText(await anonCtx.newPage()) : page
   const shot = `shots/${e.id}-${combo.width}-${combo.theme}-${combo.lang}${TEXT_SIZE === 16 ? '' : `-t${TEXT_SIZE}`}.jpg`
   const out = { id: e.id, width: combo.width, theme: combo.theme, lang: combo.lang, shot, violations: [] }
+  markScreen(p, e.id)
   const load = async (hideToasts = false) => {
     await openScreen(p, base + host.path)
     // A later language: the screens' ready signals are English headings (as in the layout check).
@@ -247,7 +249,7 @@ async function capture(ctx, anonCtx, page, e, combo, ids) {
     if (!A11Y_ONLY) await p.screenshot({ path: join(OUT, shot), type: 'jpeg', quality: 55 })
     out.violations = await measure(p, e, combo, overlay)
   } catch (err) {
-    out.violations = [{ rule: 'NAV', element: e.id, value: err.message.split('\n')[0].slice(0, 200), limit: 'opens' }]
+    out.violations = [{ rule: 'NAV', element: e.id, value: err.message.split('\n')[0].slice(0, 200), limit: 'opens', trace: traceOf(p) }]
     await p.screenshot({ path: join(OUT, shot), type: 'jpeg', quality: 55 }).catch(() => {})
   }
   // Escape first: an open overlay would take the click that restores the layout.
@@ -281,6 +283,7 @@ async function runCombo(combo, ids) {
     const anonCtx = await browser.newContext(opts)
     const ctx = await browser.newContext({ ...opts, storageState: ids.storageState })
     for (const c of [anonCtx, ctx]) {
+      c.on('page', tracePage)
       await c.addInitScript(LAYOUT_SHIFT_INIT)
       await c.addInitScript((code) => { try { localStorage.setItem('opentodo.lang', code) } catch { /* storage blocked */ } }, combo.lang)
     }
@@ -339,9 +342,11 @@ async function reducedMotion(ids) {
       const touch = width < 1280
       const ctx = await browser.newContext({ viewport: { width, height: HEIGHTS[width] ?? 900 }, hasTouch: touch, isMobile: touch, reducedMotion: 'reduce', storageState: ids.storageState, bypassCSP: true, locale: 'en-GB', timezoneId: 'UTC' })
       await ctx.addInitScript((code) => { try { localStorage.setItem('opentodo.lang', code) } catch { /* storage blocked */ } }, 'en')
+      ctx.on('page', tracePage)
       const p = await ctx.newPage()
       p.on('dialog', (d) => d.dismiss())
       for (const m of moments.filter((x) => x.width === width)) {
+        markScreen(p, m.id)
         try {
           const host = hostOf({ kind: 'screen', layoutCheck: m.screen }, ids)
           await p.goto(base + host.path)
@@ -354,7 +359,7 @@ async function reducedMotion(ids) {
           await p.waitForTimeout(400)
           out.push(...(await p.evaluate(motionSeen)).map((v) => ({ ...v, id: m.id, width })))
         } catch (err) {
-          out.push({ rule: 'NAV', id: m.id, width, element: m.id, value: err.message.split('\n')[0].slice(0, 200), limit: 'opens' })
+          out.push({ rule: 'NAV', id: m.id, width, element: m.id, value: err.message.split('\n')[0].slice(0, 200), limit: 'opens', trace: traceOf(p) })
         }
         await p.keyboard.press('Escape').catch(() => {})
         if (m.screen === 'board') await backToList(p).catch(() => {})
@@ -471,7 +476,11 @@ if (STRICT && !A11Y_ONLY && strictFailures.length) {
 const a11yFailures = captures.flatMap((c) => c.violations.filter((v) => A11Y_RULES.includes(v.rule)).map((v) => ({ ...v, at: `${c.id} ${c.width}px ${c.theme} ${c.lang}` })))
 if (A11Y && a11yFailures.length) {
   console.error(`\n✗ accessibility gate: ${a11yFailures.length} findings`)
-  for (const f of a11yFailures) console.error(`  ${f.at}  ${f.rule} ${f.value}: ${f.element}${f.detail ? ` (${f.detail})` : ''}`)
+  for (const f of a11yFailures) {
+    console.error(`  ${f.at}  ${f.rule} ${f.value}: ${f.element}${f.detail ? ` (${f.detail})` : ''}`)
+    // A screen that did not open: what the page did on its own just before (pageTrace.mjs).
+    for (const line of f.trace ?? []) console.error(`      ${line}`)
+  }
   process.exit(1)
 }
 process.exit(0)

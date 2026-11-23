@@ -28,7 +28,7 @@ The [Obsidian plugin](obsidian.md#sync-a-folder) syncs a folder with the same ru
 
 ## The files
 
-`Inbox.md` holds tasks without a project; each project is `<name>.md`, or the folder note `<name>/<name>.md` beside its sub-projects. Renaming a file renames the project, moving it into a folder nests it, a new `.md` file is a new project. A deleted file is written again. A file that loses its front matter, or that you empty, stays its project's file and gets the front matter back; an emptied file's tasks go once it has stayed empty for five minutes.
+`Inbox.md` holds tasks without a project; each project is `<name>.md`, or the folder note `<name>/<name>.md` beside its sub-projects. Renaming a file renames the project, moving it into a folder nests it, a new `.md` file is a new project. A deleted file is written again. A file that loses its front matter, whose `opentodo-id` is damaged, or that you empty, stays its project's file and gets the front matter back. A file read empty, or cut short of what the last sync wrote with task lines missing, is taken for a save in progress and left alone for up to five minutes. So the tasks of a file you empty, or of task lines you delete at its end, go once it has stayed that way for five minutes.
 
 <!-- fixture: Home.md -->
 ```markdown

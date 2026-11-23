@@ -710,15 +710,15 @@ CI SHALL run the tests of the built web app (the precache and deny list of the s
 - **THEN** they fail instead of being skipped
 
 ### Requirement: Tiered CI
-CI SHALL run in tiers. The path tier SHALL run the repository checks and, when a change touches code, the web, server and image checks and one server binary; the browser layout and end-to-end checks in one engine at every width when it changes the web app, the server or their scripts; the workbench accessibility and visual checks and the accessibility gate on real screens when it changes the web app's sources or the workbench; the Android, iOS, extension and skill jobs only when their own files change; and a change to the docs alone SHALL run the repository checks and the docs website check. A change to the CI workflow or its path filter SHALL turn on every job of the path tier (on a pull request or a push to the default branch, every job of their fast tier; the queue runs the rest). The merge queue SHALL run the whole path tier for what the queued change adds, and its result SHALL be the check that lets a change reach the default branch. A pull request, draft or not, SHALL run the path tier without the browser layout and end-to-end, workbench, real-screen accessibility, Android and iOS jobs, which the merge queue runs before the change lands. A push to the default branch SHALL run the path tier for what it changed since the commit before, without the browser layout and end-to-end, workbench, real-screen accessibility, Android and iOS jobs, which the merge queue ran on the same tree; the image, its publishing and the CI result SHALL still run on it. A release tag, the nightly run and a run by hand without a base SHALL run every job and every engine, width, language and platform, and a release SHALL publish only after all of them succeeded; a job skipped by a tier SHALL never be the reason a pull request or a queued change fails.
+CI SHALL run in tiers. The path tier SHALL run the repository checks and, when a change touches code, the web, server and image checks and one server binary; the browser layout and end-to-end checks in one engine at every width when it changes the web app, the server or their scripts; the workbench accessibility and visual checks and the accessibility gate on real screens when it changes the web app's sources or the workbench; the Android, iOS, extension and skill jobs only when their own files change; and a change to the docs alone SHALL run the repository checks and the docs website check, and outside pull requests the site bundle. A change to the CI workflow or its path filter SHALL turn on every job of the path tier (on a pull request or a push to the default branch, every job of their fast tier; the queue runs the rest). The merge queue SHALL run the whole path tier for what the queued change adds, and its result SHALL be the check that lets a change reach the default branch. A pull request, draft or not, SHALL run the path tier without the browser layout and end-to-end, workbench, real-screen accessibility, Android, iOS, binary and site bundle jobs, which the merge queue runs before the change lands. A push to the default branch SHALL run the path tier for what it changed since the commit before, without the browser layout and end-to-end, workbench, real-screen accessibility, Android and iOS jobs, which the merge queue ran on the same tree; the image, its publishing and the CI result SHALL still run on it. A release tag, the nightly run and a run by hand without a base SHALL run every job and every engine, width, language and platform, and a release SHALL publish only after all of them succeeded; a job skipped by a tier SHALL never be the reason a pull request or a queued change fails.
 
 #### Scenario: A server-only pull request
 - **WHEN** a pull request changes only `internal/sync`
-- **THEN** CI on the pull request runs the checks, web, server, image and one binary, and skips the layout and end-to-end, workbench, accessibility, Android, iOS, extension and skill jobs
+- **THEN** CI on the pull request runs the checks, web, server and image, and skips the binary, layout and end-to-end, workbench, accessibility, Android, iOS, extension and skill jobs
 
 #### Scenario: The queue runs the heavy jobs
 - **WHEN** that pull request enters the merge queue
-- **THEN** the queue's run also runs the single Chromium layout and end-to-end job, and the change reaches the default branch only if every job of that run passed
+- **THEN** the queue's run also runs the single Chromium layout and end-to-end job and the linux/amd64 binary, and the change reaches the default branch only if every job of that run passed
 
 #### Scenario: A failure only the queue finds
 - **WHEN** a pull request changes `web/src` so that a workbench screenshot differs, and enters the merge queue
@@ -814,3 +814,14 @@ The release gates SHALL run for `x.y.z`. For a candidate, a value of the release
 
 - **WHEN** the tag `v1.0.0-rc.1` is pushed and the release job succeeds
 - **THEN** the GitHub release is a pre-release with the candidate's section as its notes, and the Helm chart, Google Play, Claude plugin and Obsidian plugin jobs do not run
+
+### Requirement: A pull request waits for few runners
+On a pull request, the web app SHALL be built inside the server job, the only job of a pull request that needs it, instead of in a job of its own, so a pull request's longest chain is changed paths → server. Everywhere else the web app SHALL be built once in its own job and shared with the jobs that read its output (the image builds its own in its Dockerfile). Both SHALL run the same build, bundle budget and tests of the built app.
+
+#### Scenario: A code pull request
+- **WHEN** a pull request changes `web/src`
+- **THEN** CI on the pull request runs no web build job, the server job builds the web app, checks the bundle budget and tests the built app before its Go steps, and a failure there fails the server job
+
+#### Scenario: The queue shares one build
+- **WHEN** that pull request enters the merge queue
+- **THEN** the web build job runs once, and the server, layout, accessibility and binary jobs use its output

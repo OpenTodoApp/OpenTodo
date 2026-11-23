@@ -14,6 +14,7 @@ import { setTodayLimit } from '../lib/closedListPrefs'
 import { setListDisplay } from '../lib/listDisplay'
 import { USER_PREFS_ID } from '../lib/userPrefs'
 import { undoBatch } from '../lib/undo'
+import { undoEntry } from '../test/undoEntry'
 import { click, mockFetch, noPublicLinks, render, visibleText, waitFor } from '../ui/test-utils'
 import { bulkToast } from './bulk/toastStore'
 import { slotItem } from './bulk/BulkActions'
@@ -114,8 +115,9 @@ describe('slots and Waiting for a slot (3.1, 3.2)', () => {
     expect(await db.tasks.get(child)).toMatchObject({ parent_id: null, project_id: project, due: { date: TODAY } })
     expect(meta()).toContain('1 of 1')
     expect(visibleText(group('waiting')!.querySelector('[data-group-count]')!)).toBe('1')
-    const entry = (await db.assistantUndo.toArray()).find((e) => e.inverse.some((c) => c.entityId === child))
-    await act(async () => { await undoBatch(entry!.id) })
+    // applyBatch stores the step just after the write lands, so wait for it rather than read it at once.
+    const entry = await undoEntry((e) => e.inverse.some((c) => c.entityId === child))
+    await act(async () => { await undoBatch(entry.id) })
     await waitFor(() => !group('waiting') && !!row('Unschedulable until promoted'))
     expect(await db.tasks.get(child)).toMatchObject({ parent_id: parent, due: null })
   })
