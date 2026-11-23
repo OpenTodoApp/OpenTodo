@@ -17,8 +17,10 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// app_sign_in tells the OpenTodo app this server has its sign-in routes
-	// (app-sign-in), whatever the version string of a dev build.
-	writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "version": s.version, "app_sign_in": true})
+	// (app-sign-in), whatever the version string of a dev build; app_sso tells
+	// the Android and iPhone apps that single sign-on can run in the system
+	// browser and be redeemed in their web view (app-sso-system-browser D4).
+	writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "version": s.version, "app_sign_in": true, "app_sso": true})
 }
 
 func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {

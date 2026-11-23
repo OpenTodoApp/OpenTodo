@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 /// Which main-frame navigations stay in the web view (native-shells "Sign-in flows stay
@@ -96,5 +97,124 @@ final class SignInFlow {
     static func hostOf(_ url: URL) -> String {
         guard originOf(url) != nil else { return "" }
         return Origin.pageOrigin(url).components(separatedBy: "://").last ?? ""
+    }
+}
+
+/// OpenTodo's own single sign-on in the system browser (app-sso-system-browser). Providers
+/// such as Google refuse sign-in in an app's web view, so the start route opens in an
+/// `ASWebAuthenticationSession` with the app's own PKCE pair; the server sends back a
+/// single-use code on `opentodo://sso`, which the web view redeems with the verifier from a
+/// page of the server, where the session cookie belongs. A server that does not announce
+/// `app_sso` in its health answer keeps the old way: the provider's pages in the web view.
+/// No WebKit types, so the rules are unit tested on their own.
+enum SystemSignIn {
+    static let startPath = "/api/v1/auth/oidc/start"
+    static let redeemPath = "/api/v1/auth/oidc/app-session"
+    static let callbackScheme = "opentodo"
+    static let callbackHost = "sso"
+
+    /// What the app keeps while the sheet is open.
+    struct Pending: Equatable {
+        let verifier: String
+        let challenge: String
+        let state: String
+    }
+
+    /// The answer the sheet brought back.
+    enum Outcome: Equatable { case code(String), error(String), invalid }
+
+    /// A navigation of the web view to the server's start route, not yet an app flow.
+    static func isStart(_ url: URL, server: URL) -> Bool {
+        guard Origin.same(url, server), url.path == startPath else { return false }
+        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        return !items.contains { $0.name == "app_challenge" }
+    }
+
+    /// A fresh verifier, its S256 challenge and a state.
+    static func pending() -> Pending {
+        let verifier = randomToken()
+        return Pending(verifier: verifier, challenge: challenge(for: verifier), state: randomToken())
+    }
+
+    static func challenge(for verifier: String) -> String {
+        base64URL(Data(SHA256.hash(data: Data(verifier.utf8))))
+    }
+
+    /// Whether the web app asked to link an identity to its signed-in account (Settings, a
+    /// re-authentication: `mode=link` on the start route) rather than to sign in.
+    static func isLink(_ url: URL) -> Bool {
+        URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "mode" }?.value == "link"
+    }
+
+    /// The start route with the app's challenge, state and mode, opened in the sheet.
+    static func startURL(server: URL, _ p: Pending, link: Bool = false) -> URL {
+        var c = URLComponents(url: server, resolvingAgainstBaseURL: false)!
+        c.path = startPath
+        c.queryItems = [URLQueryItem(name: "app_challenge", value: p.challenge), URLQueryItem(name: "app_state", value: p.state),
+                        URLQueryItem(name: "app_mode", value: link ? "link" : "login")]
+        return c.url!
+    }
+
+    /// Reads `opentodo://sso?state=…&code=…` (or `&error=…`); anything else, or another
+    /// state, is invalid. Codes and error codes are plain tokens, so they go into the page's
+    /// script and address as they are.
+    static func outcome(of url: URL, state: String) -> Outcome {
+        guard url.scheme?.lowercased() == callbackScheme, url.host?.lowercased() == callbackHost,
+              let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
+              items.first(where: { $0.name == "state" })?.value == state else { return .invalid }
+        if let code = items.first(where: { $0.name == "code" })?.value, isToken(code) { return .code(code) }
+        if let error = items.first(where: { $0.name == "error" })?.value, isToken(error) { return .error(error) }
+        return .invalid
+    }
+
+    /// The script the web view runs on a page of the server: redeem the code, then go where
+    /// the server's answer leads (the app, or the sign-in screen with an error code).
+    static func redeemScript(code: String, verifier: String) -> String {
+        """
+        (async () => {
+          try {
+            const r = await fetch('\(redeemPath)', { method: 'POST', credentials: 'same-origin',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code: '\(code)', code_verifier: '\(verifier)' }) });
+            if (r.redirected) { location.replace(r.url); return; }
+            let e = 'oidc_failed';
+            try { e = (await r.json()).error.code || e; } catch (_) {}
+            location.replace('/?error=' + encodeURIComponent(e));
+          } catch (_) { location.replace('/?error=oidc_failed'); }
+        })();
+        """
+    }
+
+    /// The sign-in screen showing an error code the sheet brought back.
+    static func errorURL(server: URL, code: String) -> URL {
+        var c = URLComponents(url: server, resolvingAgainstBaseURL: false)!
+        c.path = "/"
+        c.queryItems = [URLQueryItem(name: "error", value: code)]
+        return c.url!
+    }
+
+    /// Whether a health answer announces app flows.
+    static func supported(healthBody: Data) -> Bool {
+        let json = (try? JSONSerialization.jsonObject(with: healthBody)) as? [String: Any]
+        return json?["app_sso"] as? Bool == true
+    }
+
+    static func isToken(_ s: String) -> Bool {
+        !s.isEmpty && s.count <= 512 && s.unicodeScalars.allSatisfy {
+            CharacterSet.alphanumerics.contains($0) && $0.isASCII || $0 == "-" || $0 == "_"
+        }
+    }
+
+    private static func randomToken() -> String {
+        var bytes = [UInt8](repeating: 0, count: 32)
+        guard SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes) == errSecSuccess else {
+            fatalError("no system randomness")
+        }
+        return base64URL(Data(bytes))
+    }
+
+    private static func base64URL(_ d: Data) -> String {
+        d.base64EncodedString().replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
     }
 }
