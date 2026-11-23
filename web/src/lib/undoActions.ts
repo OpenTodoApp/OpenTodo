@@ -77,6 +77,35 @@ async function plainEditUndoable(id: string, patch: Partial<Task>, label: string
   return apply([{ entity: 'task', entityId: id, patch: changed }], label)
 }
 
+/**
+ * A date move from the keyboard (Month, Plan, Day and Week, a span's ends) or in the timeline
+ * (keys and drags), as one step of undo history named "Rescheduled", or for a length key that
+ * changes only the estimate "Estimate {to} min" (OpenSpec change
+ * undo-calendar-moves). The patch is already in the task's own zone. A field already at that value
+ * is left out, and nothing at all records nothing. A date on a parked task takes it out of Someday
+ * in the same step, as updateTask does. A repeating task goes through updateTask as before, without
+ * a step, so the move carries to its series.
+ */
+export async function calendarEditUndoable(id: string, patch: Partial<Task>): Promise<UndoableResult> {
+  const task = await db.tasks.get(id)
+  if (!task || task.recurrence) {
+    await updateTask(id, patch)
+    return { entry: null, label: '' }
+  }
+  // A due is an object: compared with its keys in one order, so the same dates record nothing.
+  const key = (v: unknown) => JSON.stringify(v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b))) : v ?? null)
+  const same = (a: unknown, b: unknown) => key(a) === key(b)
+  const changed: Partial<Task> = Object.fromEntries(Object.entries(patch).filter(([k, v]) => !same((task as unknown as Record<string, unknown>)[k], v)))
+  if (!Object.keys(changed).length) return { entry: null, label: '' }
+  if (changed.due && !('start' in patch) && task.start === 'someday') changed.start = null
+  // The Day and Week length keys change only the estimate: named as the panel's estimate step.
+  const minutes = changed.estimate_minutes
+  const label = Object.keys(changed).length === 1 && minutes !== undefined
+    ? (minutes ? t('Estimate {to} min', { to: String(minutes) }) : t('Estimate removed'))
+    : t('Rescheduled')
+  return apply([{ entity: 'task', entityId: id, patch: changed }], label)
+}
+
 /** Rename one task, as one step of undo history named with both titles (OpenSpec change undo-rename). */
 export async function titleUndoable(id: string, title: string): Promise<UndoableResult> {
   // Each title clipped to 50 characters, as the assistant names the same change.

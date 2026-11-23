@@ -6,7 +6,7 @@ import { addReminder } from './reminders'
 import { deadlineFireAt } from './reminderTime'
 import type { OnDropRule } from './types'
 import { redoBatch, topUndo, undoBatch } from './undo'
-import { assigneeUndoable, deadlineUndoable, dropOnPanel, dropUndoable, estimateUndoable, eveningUndoable, priorityUndoable } from './undoActions'
+import { assigneeUndoable, calendarEditUndoable, deadlineUndoable, dropOnPanel, dropUndoable, estimateUndoable, eveningUndoable, priorityUndoable } from './undoActions'
 
 let n = 0
 beforeEach(() => {
@@ -255,5 +255,57 @@ describe('eveningUndoable', () => {
     await eveningUndoable(id, true)
     expect((await db.tasks.get(id))!.evening).toBe(true)
     expect(await db.assistantUndo.count()).toBe(0)
+  })
+})
+
+// OpenSpec change undo-calendar-moves: a date move from the keyboard (Month, Plan, Day and Week)
+// or in the timeline is one step of history.
+describe('calendarEditUndoable', () => {
+  it('records one step named Rescheduled; undo restores start and due, redo moves again', async () => {
+    const id = await createTask({ title: 'Pack', start: '2030-01-03', due: { date: '2030-01-10', time: '09:00' } })
+    const r = await calendarEditUndoable(id, { start: '2030-01-04', due: { date: '2030-01-11', time: '09:00' } })
+    expect(r.label).toBe('Rescheduled')
+    expect(r.entry).not.toBeNull()
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2030-01-11', time: '09:00' })
+    await undoBatch(r.entry!.id)
+    let t = (await db.tasks.get(id))!
+    expect(t.start).toBe('2030-01-03')
+    expect(t.due).toEqual({ date: '2030-01-10', time: '09:00' })
+    await redoBatch(r.entry!.id)
+    t = (await db.tasks.get(id))!
+    expect(t.start).toBe('2030-01-04')
+    expect(t.due).toEqual({ date: '2030-01-11', time: '09:00' })
+  })
+
+  it('a deadline and an estimate are steps too', async () => {
+    const id = await createTask({ title: 'Pack', due: { date: '2030-01-10', time: '09:00' }, estimate_minutes: 30 })
+    const a = await calendarEditUndoable(id, { deadline: '2030-01-12' })
+    const b = await calendarEditUndoable(id, { estimate_minutes: 45 })
+    expect(b.label).toBe('Estimate 45 min')
+    await undoBatch(b.entry!.id)
+    await undoBatch(a.entry!.id)
+    const t = (await db.tasks.get(id))!
+    expect(t.deadline ?? null).toBeNull()
+    expect(t.estimate_minutes).toBe(30)
+  })
+
+  it('the same dates record nothing; a repeating task is written as before', async () => {
+    const id = await createTask({ title: 'Pack', due: { date: '2030-01-10', time: '09:00' } })
+    expect((await calendarEditUndoable(id, { due: { date: '2030-01-10', time: '09:00' } })).entry).toBeNull()
+    expect((await calendarEditUndoable(id, { due: { time: '09:00', date: '2030-01-10' } })).entry).toBeNull()
+    const rep = await createTask({ title: 'Bins', due: { date: '2030-01-07' }, recurrence: 'every week' })
+    expect((await calendarEditUndoable(rep, { due: { date: '2030-01-08' } })).entry).toBeNull()
+    expect((await db.tasks.get(rep))!.due).toEqual({ date: '2030-01-08' })
+    expect(await db.assistantUndo.count()).toBe(0)
+  })
+
+  it('a date on a parked task takes it out of Someday in the same step', async () => {
+    const id = await createTask({ title: 'Paint the shed', start: 'someday' })
+    const r = await calendarEditUndoable(id, { due: { date: '2030-01-10' } })
+    expect((await db.tasks.get(id))!.start ?? null).toBeNull()
+    await undoBatch(r.entry!.id)
+    const t = (await db.tasks.get(id))!
+    expect(t.start).toBe('someday')
+    expect(t.due ?? null).toBeNull()
   })
 })
