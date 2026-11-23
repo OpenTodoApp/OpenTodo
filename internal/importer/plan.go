@@ -488,11 +488,6 @@ func (pl *planner) nextPosition() int64 {
 	return pl.position
 }
 
-func (pl *planner) alive(kind, id string) bool {
-	e := pl.byKind[kind][id]
-	return e != nil && !e.Deleted()
-}
-
 // resolveProject returns the project id ("" for the Inbox), a display name, and
 // whether the row named a project itself.
 func (pl *planner) resolveProject(row Row, bySource, byFileName map[string]*projPlan, res *RowResult) (string, string, bool) {
