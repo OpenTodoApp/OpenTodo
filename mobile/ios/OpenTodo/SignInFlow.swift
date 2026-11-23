@@ -123,6 +123,35 @@ enum SystemSignIn {
     /// The answer the sheet brought back.
     enum Outcome: Equatable { case code(String), error(String), invalid }
 
+    /// What the app does when the sheet closes.
+    enum Finish: Equatable {
+        /// Run the redeem script on the server's page showing now.
+        case redeem(String)
+        /// The sign-in screen with this error code.
+        case showError(String)
+        /// The screen stays as it was.
+        case stay
+    }
+
+    /// Where the start route opens: the sheet when the server's health answer (its status and
+    /// body) announces app flows; the web view otherwise, as before app flows.
+    static func opensSheet(healthStatus: Int?, healthBody: Data?) -> Bool {
+        healthStatus == 200 && healthBody.map(supported(healthBody:)) == true
+    }
+
+    /// The step after the sheet closed (`url` nil: closed without an answer). A code is redeemed
+    /// only from a page of the server showing (`onServer`); anywhere else (a login wall, an error
+    /// page) it is dropped and the sign-in screen says it failed. An error code shows on the
+    /// sign-in screen; anything else changes nothing.
+    static func finish(_ url: URL?, state: String, onServer: Bool) -> Finish {
+        guard let url else { return .stay }
+        switch outcome(of: url, state: state) {
+        case .code(let code): return onServer ? .redeem(code) : .showError("oidc_failed")
+        case .error(let code): return .showError(code)
+        case .invalid: return .stay
+        }
+    }
+
     /// A navigation of the web view to the server's start route, not yet an app flow.
     static func isStart(_ url: URL, server: URL) -> Bool {
         guard Origin.same(url, server), url.path == startPath else { return false }

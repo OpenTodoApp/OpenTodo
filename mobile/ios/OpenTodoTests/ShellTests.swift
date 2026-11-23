@@ -1,3 +1,4 @@
+import JavaScriptCore
 import Network
 import UIKit
 import WebKit
@@ -644,5 +645,83 @@ final class SystemSignInTests: XCTestCase {
         let script = SystemSignIn.redeemScript(code: "c0de", verifier: "v3r")
         XCTAssertTrue(script.contains("'/api/v1/auth/oidc/app-session'"))
         XCTAssertTrue(script.contains("code: 'c0de', code_verifier: 'v3r'"))
+    }
+
+    /// What each app does around those rules: sign-in/finish.json, which the Android app's SystemSignInTest reads too.
+    private func finishCases() throws -> [String: Any] {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/sign-in/finish.json")
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+    }
+
+    func testTheStartRouteOpensTheSheetOnlyWhenTheServerAnnouncesIt() throws {
+        // The sheet is always there: the cases where a browser could take the sign-in.
+        let list = try XCTUnwrap(try finishCases()["begin"] as? [[String: Any]]).filter { $0["browser"] as? Bool == true }
+        XCTAssertTrue(list.contains { $0["opens"] as? String == "browser" })
+        XCTAssertTrue(list.contains { $0["opens"] as? String == "webView" })
+        for c in list {
+            let status = c["status"] as? Int
+            let body = (c["body"] as? String).map { Data($0.utf8) }
+            let opens = SystemSignIn.opensSheet(healthStatus: status, healthBody: body) ? "browser" : "webView"
+            XCTAssertEqual(opens, c["opens"] as? String, c["case"] as? String ?? "")
+        }
+    }
+
+    func testWhatTheAppDoesWhenTheSheetCloses() throws {
+        let fixture = try finishCases()
+        let state = try XCTUnwrap(fixture["state"] as? String)
+        let list = try XCTUnwrap(fixture["finish"] as? [[String: Any]])
+        XCTAssertFalse(list.isEmpty)
+        for c in list {
+            let url = try (c["url"] as? String).map { try XCTUnwrap(URL(string: $0), $0) }
+            let step: String
+            switch SystemSignIn.finish(url, state: state, onServer: try XCTUnwrap(c["onServer"] as? Bool)) {
+            case .redeem(let code): step = "redeem:\(code)"
+            case .showError(let code): step = "error:\(code)"
+            case .stay: step = "stay"
+            }
+            XCTAssertEqual(step, c["ios"] as? String, c["case"] as? String ?? "")
+        }
+    }
+
+    /// The redeem script, run as it is against each answer of the server (an expired code
+    /// included): the address it replaces the page with. JavaScriptCore stands in for the page,
+    /// with `fetch` and `location` of its own; the Android app gives the same script (its test).
+    func testTheRedeemScriptLeadsWhereTheServersAnswerSays() throws {
+        let redeem = try XCTUnwrap(try finishCases()["redeem"] as? [String: Any])
+        let code = try XCTUnwrap(redeem["code"] as? String)
+        let verifier = try XCTUnwrap(redeem["verifier"] as? String)
+        let script = SystemSignIn.redeemScript(code: code, verifier: verifier)
+        XCTAssertEqual(script, redeem["script"] as? String)
+        let answers = try XCTUnwrap(redeem["answers"] as? [[String: Any]])
+        XCTAssertFalse(answers.isEmpty)
+        for answer in answers {
+            let name = answer["case"] as? String ?? ""
+            let context = try XCTUnwrap(JSContext())
+            var thrown: String?
+            context.exceptionHandler = { _, value in thrown = value?.toString() }
+            let json = try XCTUnwrap(String(data: JSONSerialization.data(withJSONObject: answer), encoding: .utf8))
+            context.evaluateScript("""
+            var __replaced = null, __request = null, __answer = \(json);
+            var location = { replace: function (u) { __replaced = u; } };
+            function fetch(url, init) {
+              __request = { url: url, method: init.method, credentials: init.credentials, body: JSON.parse(init.body) };
+              if (__answer.throws) return Promise.reject(new TypeError('Failed to fetch'));
+              return Promise.resolve({ redirected: !!__answer.redirectedTo, url: __answer.redirectedTo || url, status: __answer.status,
+                json: function () { return new Promise(function (ok) { ok(JSON.parse(__answer.body)); }); } });
+            }
+            """)
+            context.evaluateScript(script)
+            // Promise jobs run when a script returns; a few more turns for the awaits.
+            for _ in 0..<5 { context.evaluateScript("0") }
+            XCTAssertNil(thrown, name)
+            XCTAssertEqual(context.evaluateScript("__replaced")?.toString(), answer["location"] as? String, name)
+            XCTAssertEqual(context.evaluateScript("__request && __request.url")?.toString(), SystemSignIn.redeemPath, name)
+            XCTAssertEqual(context.evaluateScript("__request && __request.method")?.toString(), "POST", name)
+            XCTAssertEqual(context.evaluateScript("__request && __request.credentials")?.toString(), "same-origin", name)
+            XCTAssertEqual(context.evaluateScript("__request && __request.body.code")?.toString(), code, name)
+            XCTAssertEqual(context.evaluateScript("__request && __request.body.code_verifier")?.toString(), verifier, name)
+        }
     }
 }

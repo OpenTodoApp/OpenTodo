@@ -317,11 +317,11 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     /** OpenTodo's own single sign-on: in a Custom Tab when the server announces it, otherwise in the web view as before. */
     private fun beginSystemSignIn(start: String, base: String) {
         io.execute {
-            val supported = SystemSignIn.askServer(base)
+            val (status, body) = SystemSignIn.askServer(base)
             runOnUiThread {
                 // No browser to name (none installed, none default): the old way, in the web view.
-                val browser = if (supported) signInBrowser() else null
-                if (browser == null) { load(start); return@runOnUiThread }
+                val browser = if (SystemSignIn.supported(body)) signInBrowser() else null
+                if (!SystemSignIn.opensBrowser(status, body, browser)) { load(start); return@runOnUiThread }
                 val p = SystemSignIn.pending()
                 // A Custom Tab where the browser has them, without the AndroidX browser library:
                 // the session extra is all the protocol asks for; other browsers open a page.
@@ -358,17 +358,13 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         val outcome = if (p == null) SystemSignIn.Outcome.Invalid else SystemSignIn.outcome(callback, p.state)
         // Only the answer to this sign-in ends it: another app opening opentodo://sso with any
         // other state leaves the pending sign-in as it was.
-        if (outcome != SystemSignIn.Outcome.Invalid) ssoPending = null
-        when (outcome) {
-            is SystemSignIn.Outcome.Code -> {
-                val script = SystemSignIn.redeemScript(outcome.code, p!!.verifier)
-                if (SignInFlow.originOf(web.url ?: "") == base) web.evaluateJavascript(script, null)
-                else { pendingRedeemScript = script; load("$base/") }
-            }
-            is SystemSignIn.Outcome.Error -> load(SystemSignIn.errorUrl(base, outcome.code))
-            // Cancel on the confirmation page: the sign-in is over and the screen stays as it was.
-            SystemSignIn.Outcome.Cancelled -> if (web.url == null) load("$base/")
-            SystemSignIn.Outcome.Invalid -> if (web.url == null) load("$base/")
+        if (SystemSignIn.ends(outcome)) ssoPending = null
+        when (val next = SystemSignIn.finish(outcome, SignInFlow.originOf(web.url ?: "") == base)) {
+            is SystemSignIn.Finish.Redeem -> web.evaluateJavascript(SystemSignIn.redeemScript(next.code, p!!.verifier), null)
+            is SystemSignIn.Finish.RedeemAfterLoad -> { pendingRedeemScript = SystemSignIn.redeemScript(next.code, p!!.verifier); load("$base/") }
+            is SystemSignIn.Finish.ShowError -> load(SystemSignIn.errorUrl(base, next.code))
+            // Cancel on the confirmation page, or another sign-in's answer: the screen stays as it was.
+            SystemSignIn.Finish.Stay -> if (web.url == null) load("$base/")
         }
     }
 
