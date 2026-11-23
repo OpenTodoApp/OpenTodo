@@ -1,0 +1,40 @@
+{
+  "_comment": "Single sign-on in the system browser (app-sso-system-browser), around the rules of system.json: where the start route opens, what the app does when the browser comes back, and where the redeem script leads. Read by Android's SystemSignInTest (SystemSignIn.opensBrowser, finish, ends) and the iOS app's SystemSignInTests (SystemSignIn.opensSheet, finish). `begin`: the server's health answer (`status` null: none) and whether a browser can take the sign-in (iOS always has its sheet, so it reads the cases with `browser` true). `finish`: the address the browser came back with (`url` null: the iOS sheet closed without one), whether a page of the server shows, and the step on each app: `redeem:<code>` runs the redeem script there, `redeemAfterLoad:<code>` loads the server first (Android), `error:<code>` shows the sign-in screen with that code, `stay` changes nothing; `ends`: whether Android's pending sign-in is over (only an answer with its state ends it). `redeem`: the server's answer to the redeem request (`throws`: no answer at all) and the address the script then replaces the page with; `script` is the script both apps give for `code` and `verifier`, which the iOS tests run against each answer. Error answers are the server's own (writeError): an expired, used or foreign code is oidc_state_invalid.",
+  "state": "st",
+  "begin": [
+    { "case": "the server announces app flows", "status": 200, "body": "{\"status\":\"ok\",\"version\":\"1\",\"app_sso\":true}", "browser": true, "opens": "browser" },
+    { "case": "a server without app_sso", "status": 200, "body": "{\"status\":\"ok\",\"version\":\"1.5.0\"}", "browser": true, "opens": "webView" },
+    { "case": "app_sso turned off", "status": 200, "body": "{\"status\":\"ok\",\"version\":\"1\",\"app_sso\":false}", "browser": true, "opens": "webView" },
+    { "case": "a proxy answers for the server", "status": 200, "body": "<html>login</html>", "browser": true, "opens": "webView" },
+    { "case": "an error status, whatever the body", "status": 503, "body": "{\"app_sso\":true}", "browser": true, "opens": "webView" },
+    { "case": "a redirect, not followed", "status": 302, "body": "", "browser": true, "opens": "webView" },
+    { "case": "no answer", "status": null, "body": null, "browser": true, "opens": "webView" },
+    { "case": "no browser to take it (Android)", "status": 200, "body": "{\"status\":\"ok\",\"app_sso\":true}", "browser": false, "opens": "webView" }
+  ],
+  "finish": [
+    { "case": "a code, on the server's page", "url": "opentodo://sso?code=abc&state=st", "onServer": true, "android": "redeem:abc", "ios": "redeem:abc", "ends": true },
+    { "case": "a code, while another page shows", "url": "opentodo://sso?code=abc&state=st", "onServer": false, "android": "redeemAfterLoad:abc", "ios": "error:oidc_failed", "ends": true },
+    { "case": "a code for another sign-in (state mismatch)", "url": "opentodo://sso?code=abc&state=other", "onServer": true, "android": "stay", "ios": "stay", "ends": false },
+    { "case": "another sign-in's Cancel", "url": "opentodo://sso?state=other", "onServer": true, "android": "stay", "ios": "stay", "ends": false },
+    { "case": "a code without a state", "url": "opentodo://sso?code=abc", "onServer": true, "android": "stay", "ios": "stay", "ends": false },
+    { "case": "Cancel on the confirmation page", "url": "opentodo://sso?state=st", "onServer": true, "android": "stay", "ios": "stay", "ends": true },
+    { "case": "the sheet closed without an answer (iOS)", "url": null, "onServer": true, "android": null, "ios": "stay" },
+    { "case": "the provider refused", "url": "opentodo://sso?error=oidc_failed&state=st", "onServer": true, "android": "error:oidc_failed", "ios": "error:oidc_failed", "ends": true },
+    { "case": "sign-ups closed, while another page shows", "url": "opentodo://sso?error=signup_closed&state=st", "onServer": false, "android": "error:signup_closed", "ios": "error:signup_closed", "ends": true },
+    { "case": "an error for another sign-in", "url": "opentodo://sso?error=oidc_failed&state=other", "onServer": true, "android": "stay", "ios": "stay", "ends": false }
+  ],
+  "redeem": {
+    "code": "abc",
+    "verifier": "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+    "script": "(async () => {\n  try {\n    const r = await fetch('/api/v1/auth/oidc/app-session', { method: 'POST', credentials: 'same-origin',\n      headers: { 'Content-Type': 'application/json' },\n      body: JSON.stringify({ code: 'abc', code_verifier: 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk' }) });\n    if (r.redirected) { location.replace(r.url); return; }\n    let e = 'oidc_failed';\n    try { e = (await r.json()).error.code || e; } catch (_) {}\n    location.replace('/?error=' + encodeURIComponent(e));\n  } catch (_) { location.replace('/?error=oidc_failed'); }\n})();",
+    "answers": [
+      { "case": "signed in: the server's redirect is followed", "status": 200, "redirectedTo": "/", "body": "<!doctype html><title>OpenTodo</title>", "location": "/" },
+      { "case": "linked from Settings", "status": 200, "redirectedTo": "/settings/account/security?linked=1", "body": "<!doctype html><title>OpenTodo</title>", "location": "/settings/account/security?linked=1" },
+      { "case": "an expired or already used code", "status": 400, "body": "{\"error\":{\"code\":\"oidc_state_invalid\",\"message\":\"state invalid\"}}", "location": "/?error=oidc_state_invalid" },
+      { "case": "too many attempts", "status": 429, "body": "{\"error\":{\"code\":\"rate_limited\",\"message\":\"too many attempts, try again later\"}}", "location": "/?error=rate_limited" },
+      { "case": "a page that is not JSON", "status": 502, "body": "<html>Bad Gateway</html>", "location": "/?error=oidc_failed" },
+      { "case": "JSON without an error code", "status": 500, "body": "{\"message\":\"boom\"}", "location": "/?error=oidc_failed" },
+      { "case": "no answer at all", "throws": true, "location": "/?error=oidc_failed" }
+    ]
+  }
+}

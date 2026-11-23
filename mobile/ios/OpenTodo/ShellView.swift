@@ -318,7 +318,7 @@ extension ShellController: ASWebAuthenticationPresentationContextProviding {
         var request = URLRequest(url: origin.appendingPathComponent("api/v1/health"), timeoutInterval: 10)
         request.cachePolicy = .reloadIgnoringLocalCacheData
         URLSession.shared.dataTask(with: request) { data, response, _ in
-            let supported = (response as? HTTPURLResponse)?.statusCode == 200 && data.map(SystemSignIn.supported(healthBody:)) == true
+            let supported = SystemSignIn.opensSheet(healthStatus: (response as? HTTPURLResponse)?.statusCode, healthBody: data)
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
                 if supported {
@@ -347,19 +347,14 @@ extension ShellController: ASWebAuthenticationPresentationContextProviding {
     /// sheet leaves the screen as it was.
     private func finishSystemSignIn(_ url: URL?, _ pending: SystemSignIn.Pending) {
         authSession = nil
-        guard let url else { return }
-        switch SystemSignIn.outcome(of: url, state: pending.state) {
-        case .code(let code):
-            // The code and its verifier go only to a page of the server. Anywhere else (a login
-            // wall, an error page) the code is dropped and the sign-in screen says it failed.
-            guard let page = webView.url, Origin.same(page, origin) else {
-                webView.load(URLRequest(url: SystemSignIn.errorURL(server: origin, code: "oidc_failed")))
-                return
-            }
+        // The code and its verifier go only to a page of the server (SystemSignIn.finish).
+        let onServer = webView.url.map { Origin.same($0, origin) } ?? false
+        switch SystemSignIn.finish(url, state: pending.state, onServer: onServer) {
+        case .redeem(let code):
             webView.evaluateJavaScript(SystemSignIn.redeemScript(code: code, verifier: pending.verifier))
-        case .error(let code):
+        case .showError(let code):
             webView.load(URLRequest(url: SystemSignIn.errorURL(server: origin, code: code)))
-        case .invalid:
+        case .stay:
             break
         }
     }

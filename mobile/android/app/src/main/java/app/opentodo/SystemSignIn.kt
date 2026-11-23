@@ -35,7 +35,41 @@ object SystemSignIn {
         object Invalid : Outcome()
     }
 
+    /** What the app does when the browser comes back with an [Outcome]. */
+    sealed class Finish {
+        /** Run the redeem script on the server's page showing now. */
+        data class Redeem(val code: String) : Finish()
+        /** Load the server first, then run the redeem script there (no page of the server shows). */
+        data class RedeemAfterLoad(val code: String) : Finish()
+        /** The sign-in screen with this error code. */
+        data class ShowError(val code: String) : Finish()
+        /** The screen stays as it was. */
+        object Stay : Finish()
+    }
+
     private val random = SecureRandom()
+
+    /**
+     * Where the start route opens: the browser when the server's health answer (its status
+     * and body) announces app flows and a browser can take the sign-in; the web view otherwise,
+     * as before app flows.
+     */
+    fun opensBrowser(healthStatus: Int?, healthBody: String?, browser: String?): Boolean =
+        healthStatus == 200 && supported(healthBody) && browser != null
+
+    /**
+     * The step after the browser came back: a code is redeemed only from a page of the server
+     * ([onServer], or after loading one), an error code shows on the sign-in screen, and Cancel or
+     * an answer to another sign-in changes nothing.
+     */
+    fun finish(outcome: Outcome, onServer: Boolean): Finish = when (outcome) {
+        is Outcome.Code -> if (onServer) Finish.Redeem(outcome.code) else Finish.RedeemAfterLoad(outcome.code)
+        is Outcome.Error -> Finish.ShowError(outcome.code)
+        Outcome.Cancelled, Outcome.Invalid -> Finish.Stay
+    }
+
+    /** Whether the [Outcome] ends the pending sign-in: only an answer with its state does. */
+    fun ends(outcome: Outcome): Boolean = outcome != Outcome.Invalid
 
     /** A navigation of the web view to the server's start route, not yet an app flow. */
     fun isStart(url: String, server: String): Boolean {
@@ -127,14 +161,17 @@ object SystemSignIn {
     fun supported(healthBody: String?): Boolean =
         try { JSONObject(healthBody ?: "").optBoolean("app_sso", false) } catch (e: Exception) { false }
 
-    /** Asks the server (on a background thread) whether it announces app flows. */
-    fun askServer(server: String): Boolean = try {
+    /** The server's health answer (on a background thread): its status and body, or nulls when there is none. */
+    fun askServer(server: String): Pair<Int?, String?> = try {
         val conn = URL("$server/api/v1/health").openConnection() as HttpURLConnection
         conn.connectTimeout = 10_000
         conn.readTimeout = 10_000
         conn.useCaches = false
-        try { conn.responseCode == 200 && supported(conn.inputStream.bufferedReader().readText()) } finally { conn.disconnect() }
-    } catch (e: Exception) { false }
+        try {
+            val status = conn.responseCode
+            status to (if (status == 200) conn.inputStream.bufferedReader().readText() else null)
+        } finally { conn.disconnect() }
+    } catch (e: Exception) { null to null }
 
     fun isToken(s: String): Boolean =
         s.isNotEmpty() && s.length <= 512 && s.all { it in 'A'..'Z' || it in 'a'..'z' || it in '0'..'9' || it == '-' || it == '_' }

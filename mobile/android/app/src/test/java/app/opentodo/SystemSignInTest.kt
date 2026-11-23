@@ -87,4 +87,55 @@ class SystemSignInTest {
         assertTrue(script.contains("'/api/v1/auth/oidc/app-session'"))
         assertTrue(script.contains("code: 'c0de', code_verifier: 'v3r'"))
     }
+
+    /** What each app does around those rules: sign-in/finish.json, which the iPhone app's SystemSignInTests read too. */
+    private val finishCases: JSONObject by lazy {
+        val url = javaClass.classLoader!!.getResource("sign-in/finish.json")
+        assertNotNull("missing sign-in/finish.json", url)
+        JSONObject(url!!.readText())
+    }
+
+    private fun finishEach(key: String, check: (JSONObject) -> Unit) {
+        val list = finishCases.getJSONArray(key)
+        assertTrue("the fixture has $key cases", list.length() > 0)
+        for (i in 0 until list.length()) check(list.getJSONObject(i))
+    }
+
+    @Test fun theStartRouteOpensInTheBrowserOnlyWhenTheServerAnnouncesIt() {
+        var both = 0
+        finishEach("begin") {
+            val status = if (it.isNull("status")) null else it.getInt("status")
+            val body = if (it.isNull("body")) null else it.getString("body")
+            val browser = if (it.getBoolean("browser")) "com.android.chrome" else null
+            val opens = if (SystemSignIn.opensBrowser(status, body, browser)) "browser" else "webView"
+            assertEquals(it.getString("case"), it.getString("opens"), opens)
+            if (opens == "browser") both++
+        }
+        assertTrue("a case opens the browser", both > 0)
+    }
+
+    @Test fun whatTheAppDoesWhenTheBrowserComesBack() {
+        val state = finishCases.getString("state")
+        var checked = 0
+        finishEach("finish") {
+            if (it.isNull("android")) return@finishEach
+            val outcome = SystemSignIn.outcome(it.getString("url"), state)
+            val step = when (val next = SystemSignIn.finish(outcome, it.getBoolean("onServer"))) {
+                is SystemSignIn.Finish.Redeem -> "redeem:${next.code}"
+                is SystemSignIn.Finish.RedeemAfterLoad -> "redeemAfterLoad:${next.code}"
+                is SystemSignIn.Finish.ShowError -> "error:${next.code}"
+                SystemSignIn.Finish.Stay -> "stay"
+            }
+            assertEquals(it.getString("case"), it.getString("android"), step)
+            assertEquals(it.getString("case"), it.getBoolean("ends"), SystemSignIn.ends(outcome))
+            checked++
+        }
+        assertTrue(checked > 0)
+    }
+
+    /** The script the iOS tests run against each of the server's answers (an expired code included): the same text here. */
+    @Test fun theRedeemScriptIsTheOneBothAppsRun() {
+        val r = finishCases.getJSONObject("redeem")
+        assertEquals(r.getString("script"), SystemSignIn.redeemScript(r.getString("code"), r.getString("verifier")))
+    }
 }
