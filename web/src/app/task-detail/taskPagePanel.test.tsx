@@ -53,7 +53,8 @@ describe('publishing from the panel', () => {
     const id = await createTask({ title: 'Paint the fence' })
     const r = await open(id)
     await click((await menuItem(r, '[data-publish-page]'))!)
-    await waitFor(() => !!document.querySelector('[data-page-publish]'), 'the publish dialog')
+    // Ready once the account's encryption state is read: Publish is enabled and the label suggested.
+    await waitFor(() => !!document.querySelector('[data-page-publish]:not([disabled])'), 'the publish dialog, ready')
     expect(document.querySelector<HTMLInputElement>('[data-page-label]')!.value).toBe('paint-the-fence')
     await click(document.querySelector('[data-page-rights="tick"]')!)
     await click(document.querySelector('[data-page-publish]')!)
