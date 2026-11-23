@@ -238,7 +238,12 @@ describe('WhenControl', () => {
     const timeLine = (seg: (n: string) => HTMLElement) => seg('due').querySelector<HTMLElement>('[data-due-time]')
     /** The task ops queued after `from` were one batch (one timestamp). */
     const oneBatch = async (id: string, from: number) => new Set((await db.outbox.toArray()).slice(from).filter((o) => o.entityId === id).map((o) => o.ts)).size === 1
-    const undoLast = async () => { await undoBatch((await db.assistantUndo.toArray()).at(-1)!.id) }
+    // The step is stored after the write lands, so wait for this task's due step rather than reading the newest entry.
+    const undoLast = async (id: string) => {
+      const step = async () => (await db.assistantUndo.toArray()).find((u) => u.inverse.some((c) => c.entityId === id && !c.created && 'due' in c.patch))
+      await waitFor(async () => !!(await step()), 'the undo step')
+      await undoBatch((await step())!.id)
+    }
     const partsOn = () => mutate('user_prefs', USER_PREFS_ID, { day_parts: 'on' })
     afterEach(() => mutate('user_prefs', USER_PREFS_ID, { day_parts: '' }))
 
@@ -301,7 +306,7 @@ describe('WhenControl', () => {
       expect(await queuedFields(id, from)).toEqual({ due: { date: '2026-10-14' }, day_part: 'morning', evening: false })
       expect(await oneBatch(id, from)).toBe(true)
       await waitFor(() => checked(seg) === 'morning' && !timeLine(seg), 'Morning selected, the time line gone')
-      await undoLast()
+      await undoLast(id)
       await waitFor(async () => (await db.tasks.get(id))?.due?.time === '14:00', 'undone')
       expect(await db.tasks.get(id)).toMatchObject({ day_part: null, evening: false })
       await waitFor(() => checked(seg) === 'time', 'Time selected again')
@@ -367,7 +372,7 @@ describe('WhenControl', () => {
       await waitFor(async () => (await db.tasks.get(id))?.day_part === 'afternoon', 'Afternoon written')
       expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-15' })
       await waitFor(() => !timeLine(seg), 'the time line gone')
-      await undoLast()
+      await undoLast(id)
       await waitFor(async () => (await db.tasks.get(id))?.due?.time === '19:30', 'undone')
       expect(dayPartOf((await db.tasks.get(id))!)).toBeNull()
       await unmount()
@@ -409,7 +414,7 @@ describe('WhenControl', () => {
       expect(await queuedFields(id, from)).toEqual({ due: { date: '2026-10-15', time: '15:00' }, day_part: null, evening: false })
       expect(await oneBatch(id, from)).toBe(true)
       await waitFor(() => checked(seg) === 'time' && timeLine(seg)?.querySelector('input')?.value === '15:00', 'Time selected with 15:00')
-      await undoLast()
+      await undoLast(id)
       await waitFor(async () => (await db.tasks.get(id))?.evening === true, 'undone')
       expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-20' })
       await unmount()
