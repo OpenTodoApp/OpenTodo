@@ -959,6 +959,19 @@ jobs:
         run: |
           xcodebuild -version
           xcrun simctl list runtimes
+      # Measurement: between the end of the build and the first test, `make ios` waits 1.5 to
+      # 9 minutes in silence. This boots the simulator `make ios` picks (the Makefile's rule)
+      # and prints how long it took; xcodebuild then finds it booted.
+      - name: Boot the simulator, timed
+        timeout-minutes: 15
+        run: |
+          sim=$(xcrun simctl list devices available | sed -n 's/^[[:space:]]*//; s/ (.*//; /^iPhone/p' | head -1)
+          udid=$(xcrun simctl list devices available | grep -m1 -F "    $sim (" | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/')
+          echo "simulator: $sim ($udid)"
+          start=$(date +%s)
+          xcrun simctl boot "$udid" || true
+          xcrun simctl bootstatus "$udid" -b > /dev/null
+          echo "booted in $(( $(date +%s) - start )) s"
       - name: Unit tests, device build and the dependency check (make ios)
         run: make ios
       # A failed test's screenshots and its accessibility snapshot, which the log does not
