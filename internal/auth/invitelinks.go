@@ -26,12 +26,9 @@ type linkKind struct {
 	table, col, prefix string
 	roles              []string
 	roleErr            error
-	// listNames shows a creator without a name by their display name in the
-	// list, as a resolved link always does.
-	listNames bool
-	created   func(actorID, inviteID, targetID, role, boundEmail string) audit.Event
-	revoked   func(actorID, inviteID, targetID string) audit.Event
-	accepted  func(userID, creatorID, inviteID, targetID, role string) audit.Event
+	created            func(actorID, inviteID, targetID, role, boundEmail string) audit.Event
+	revoked            func(actorID, inviteID, targetID string) audit.Event
+	accepted           func(userID, creatorID, inviteID, targetID, role string) audit.Event
 }
 
 // The table and column names are constants: they are the only text put into
@@ -41,7 +38,7 @@ var (
 		roles: []string{"viewer", "editor", "admin"}, roleErr: ErrInvalidProjectRole,
 		created: audit.ProjectInviteCreated, revoked: audit.ProjectInviteRevoked, accepted: audit.ProjectInviteAccepted}
 	workspaceLinks = linkKind{table: "workspace_invites", col: "workspace_id", prefix: WorkspaceInviteSecretPrefix,
-		roles: []string{"member", "admin"}, roleErr: ErrInvalidWorkspaceRole, listNames: true,
+		roles: []string{"member", "admin"}, roleErr: ErrInvalidWorkspaceRole,
 		created: audit.WorkspaceInviteCreated, revoked: audit.WorkspaceInviteRevoked, accepted: audit.WorkspaceInviteAccepted}
 )
 
@@ -109,7 +106,8 @@ func (s *Service) createLink(ctx context.Context, k linkKind, creator *User, tar
 }
 
 // listLinks returns the pending (unspent, unrevoked, unexpired) links of
-// targetID, newest first.
+// targetID, newest first. A creator without a name is shown by their display
+// name, as when the link is opened.
 func (s *Service) listLinks(ctx context.Context, k linkKind, targetID string) ([]inviteLink, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT i.id, i.`+k.col+`, i.role, i.email, i.created_by, c.name, i.created_at, i.expires_at
 		FROM `+k.table+` i JOIN users c ON c.id = i.created_by
@@ -125,9 +123,7 @@ func (s *Service) listLinks(ctx context.Context, k linkKind, targetID string) ([
 		if err := rows.Scan(&inv.ID, &inv.TargetID, &inv.Role, &inv.Email, &inv.CreatedBy, &inv.CreatedByName, &inv.CreatedAt, &inv.ExpiresAt); err != nil {
 			return nil, err
 		}
-		if k.listNames {
-			inv.CreatedByName = displayName(inv.CreatedByName)
-		}
+		inv.CreatedByName = displayName(inv.CreatedByName)
 		out = append(out, inv)
 	}
 	return out, rows.Err()
