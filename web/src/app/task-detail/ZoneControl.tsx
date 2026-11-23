@@ -5,7 +5,7 @@
 // change is one ordinary due edit through updateTask; `z` toggles as before.
 import { useMemo, useRef, useState } from 'react'
 import { dueToInstant, fixDueToZone, isKnownZone, localDueOf, releaseDue, setDueZone, zoneCity } from '../../lib/dates'
-import { updateTask } from '../../lib/ops'
+import { calendarEditUndoable } from '../../lib/undoActions'
 import type { Due, Task } from '../../lib/types'
 import { Button, Popover } from '../../ui'
 import { Tooltip } from '../../ui'
@@ -86,7 +86,8 @@ export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = 
   const [candidate, setCandidate] = useState<string | null>(null)
   const chip = useRef<HTMLButtonElement>(null)
 
-  const write = (next: Due | null) => { if (next) act(updateTask(task.id, { due: next })) }
+  // One step of undo history, no toast, as for the panel's other single edits (undo-start-zone).
+  const write = (next: Due | null) => { if (next) act(calendarEditUndoable(task.id, { due: next })) }
   const toggleZone = () => {
     if (!due?.time) return
     write(zoned ? releaseDue(due, zone) : fixDueToZone(due, zone))
