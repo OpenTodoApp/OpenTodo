@@ -120,6 +120,14 @@ func commentBody(c Comment) string {
 // The name is the file's, so nothing in it may read as markup, a mention or a link.
 var markdownEscaper = strings.NewReplacer(`\`, `\\`, `*`, `\*`, `_`, `\_`, "`", "\\`", `[`, `\[`, `]`, `\]`, `<`, `\<`, `>`, `\>`, `~`, `\~`, `@`, `\@`, `:`, `\:`)
 
+// withCommentsNote adds the file-level note on comments to notes, when there is one.
+func (pl *planner) withCommentsNote(notes []string) []string {
+	if note := pl.commentsNote(); note != "" {
+		return append(notes, note)
+	}
+	return notes
+}
+
 // commentsNote is the file-level note for comments that went into descriptions
 // or were cut to fit.
 func (pl *planner) commentsNote() string {

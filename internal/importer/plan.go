@@ -370,9 +370,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 	} else {
 		p.changes = pl.planForeign(parsed.Rows)
 		pl.stampWorkspace(p.changes)
-		if note := pl.commentsNote(); note != "" {
-			p.Notes = append(p.Notes, note)
-		}
+		p.Notes = pl.withCommentsNote(p.Notes)
 	}
 	for i := range pl.results {
 		r := &pl.results[i]
