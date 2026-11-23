@@ -56,7 +56,7 @@ export interface ProjectSummary {
 
 type HealthTask = Pick<Task, 'id' | 'title' | 'project_id' | 'completed_at' | 'deleted_at' | 'due' | 'series_id' | '_clock'>
   & Partial<Pick<Task, 'deadline' | 'skipped' | 'sample' | 'start'>>
-type HealthProject = Pick<Project, 'id' | 'parent_id' | 'archived' | 'deleted_at' | '_clock'> & Partial<Pick<Project, 'flow_mode' | 'status'>>
+type HealthProject = Pick<Project, 'id' | 'parent_id' | 'archived' | 'deleted_at' | '_clock'> & Partial<Pick<Project, 'flow_mode' | 'status' | 'reusable'>>
 
 export interface HealthInput {
   projects: readonly HealthProject[]

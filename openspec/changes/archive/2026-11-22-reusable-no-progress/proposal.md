@@ -23,9 +23,10 @@ ROADMAP.md: none (follows `reusable-lists`).
 ### Modified Capabilities
 
 - `project-organization`: "Project progress on the project page" leaves reusable lists out.
+- `statistics`: "Areas in project health" says a reusable list shows no progress either, so the All projects cell stays empty.
 
 ## Impact
 
 - Web: `web/src/lib/progress.ts`, `web/src/app/ProjectHeader.tsx`, `web/src/lib/projectHealth.ts`.
-- Docs: `changelog.d/Changed/reusable-no-progress.md`.
+- Docs: `docs/all-projects.md`, `docs/reusable-lists.md`; `changelog.d/Changed/reusable-no-progress.md`.
 - Size: a few lines.

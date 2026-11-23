@@ -16,6 +16,7 @@ Some lists come back every week: groceries, the pharmacy, packing. Make such a p
 - Adding an item that is already there brings it back instead of creating a second one.
 - Ticked items stay at the end of the list, in a **Got it** group, on every member's devices.
 - New items can [sort themselves into aisles](reusable-list-aisles.md).
+- It shows no "% done": a list you restock is never finished.
 
 ## Turn it on
 

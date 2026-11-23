@@ -6,5 +6,5 @@
 
 ## 2. Docs and checks
 
-- [x] 2.1 `changelog.d/Changed/reusable-no-progress.md`. Verify: `make docs-check`.
+- [x] 2.1 `docs/all-projects.md`, `docs/reusable-lists.md`, `changelog.d/Changed/reusable-no-progress.md`; the statistics delta. Verify: `make docs-check`.
 - [x] 2.2 Typecheck, `make web-lint`, `make openspec-validate`.
