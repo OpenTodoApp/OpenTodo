@@ -12,9 +12,9 @@ import (
 // starts with the original author's name and time, so nothing reads as the
 // importer's own words. An import creates at most MaxComments comments; a
 // comment past the cap goes into the task's description under "Comments" as
-// before. A note too long for a comment body with that first line is posted
-// without it, and one too long even alone is cut to fit, ending in "…". The
-// preview says once how many were added to descriptions or cut.
+// before. A note too long for a comment body keeps that first line and has its
+// text cut to fit, ending in "…". The preview says once how many were added to
+// descriptions or cut.
 
 // commentPlan is the outcome of one task's comments.
 type commentPlan struct {
@@ -44,25 +44,25 @@ func (pl *planner) taskComments(taskID string, list []Comment) commentPlan {
 			}
 		}
 		// The description has the same bound as a comment body, so a long note is never
-		// folded into it: it loses its first line, then is cut to fit.
+		// folded into it: it keeps its first line, and its text is cut to fit.
 		fs := fields(commentBody(c))
 		if validateFields(KindComment, id, fs) != nil {
-			fs = fields(c.Text)
-			if validateFields(KindComment, id, fs) != nil {
-				fs = fields(cutToFit(c.Text, func(body string) bool { return validateFields(KindComment, id, fields(body)) == nil }))
-				cp.large++
-			}
+			cut := cutToFit(c.Text, func(text string) bool {
+				return validateFields(KindComment, id, fields(commentBody(Comment{Author: c.Author, At: c.At, Text: text}))) == nil
+			})
+			fs = fields(commentBody(Comment{Author: c.Author, At: c.At, Text: cut}))
+			cp.large++
 		}
 		cp.changes = append(cp.changes, change{entity: KindComment, id: id, fields: fs, created: true})
 	}
 	return cp
 }
 
-// cutToFit is the longest prefix of text, cut at a rune boundary and ending in
-// "…", that fits.
+// cutToFit is the longest proper prefix of text, cut at a rune boundary and
+// ending in "…", that fits (text does not).
 func cutToFit(text string, fits func(string) bool) string {
-	lo, hi := 0, len(text)
-	for lo < hi { // the longest byte length whose cut fits
+	lo, hi := 0, len(text)-1
+	for lo < hi { // the longest byte length below len(text) whose cut fits
 		mid := (lo + hi + 1) / 2
 		if fits(cutAt(text, mid)) {
 			lo = mid
@@ -74,7 +74,7 @@ func cutToFit(text string, fits func(string) bool) string {
 }
 
 func cutAt(text string, n int) string {
-	for n > 0 && !utf8.RuneStart(text[n]) {
+	for n > 0 && n < len(text) && !utf8.RuneStart(text[n]) {
 		n--
 	}
 	return text[:n] + "…"
@@ -125,11 +125,20 @@ var markdownEscaper = strings.NewReplacer(`\`, `\\`, `*`, `\*`, `_`, `\_`, "`", 
 func (pl *planner) commentsNote() string {
 	var parts []string
 	if n := pl.commentsCapped; n > 0 {
-		parts = append(parts, fmt.Sprintf("%d %s added to %s description instead, as an import creates at most 5,000 comments",
-			n, plural(n, "note was", "notes were"), plural(n, "its task's", "their tasks'")))
+		parts = append(parts, fmt.Sprintf("%d %s added to %s description instead, as an import creates at most %s comments",
+			n, plural(n, "note was", "notes were"), plural(n, "its task's", "their tasks'"), thousands(MaxComments)))
 	}
 	if n := pl.commentsLarge; n > 0 {
 		parts = append(parts, fmt.Sprintf("%d %s cut to fit, as %s too long for a comment", n, plural(n, "comment was", "comments were"), plural(n, "it was", "they were")))
 	}
 	return strings.Join(parts, "; ")
+}
+
+// thousands writes n with a comma between each group of three digits (5000 is "5,000").
+func thousands(n int) string {
+	s := fmt.Sprint(n)
+	for i := len(s) - 3; i > 0; i -= 3 {
+		s = s[:i] + "," + s[i:]
+	}
+	return s
 }

@@ -108,29 +108,33 @@ func TestTodoistNotesPastTheCap(t *testing.T) {
 	}
 }
 
-// A note too long for a comment body with its first line is posted without it; one too
-// long even alone is cut to fit. Neither goes into the description, which has the same bound.
+// A note too long for a comment body keeps its first line and is cut to fit. It never goes
+// into the description, which has the same bound.
 func TestTodoistLongNotes(t *testing.T) {
 	nearly := strings.Repeat("x", opsync.MaxValueBytes-30)
 	huge := strings.Repeat("é", opsync.MaxValueBytes)
+	// Its last character is longer as JSON than "…": dropping it alone makes the body fit.
+	amp := strings.Repeat("x", opsync.MaxValueBytes-18) + "&"
 	csv := todoistNotesHeader + "task,Long,,4,1,,,,,\n" +
 		"note," + nearly + ",,,,Pete (1),,2023-11-01T16:08:26Z,,\n" +
 		"note," + huge + ",,,,Pete (1),,,,\n" +
+		"note," + amp + ",,,,Pete (1),,,,\n" +
 		"note,Short,,,,Pete (1),,,,\n"
 	p := todoistNotesPlan(t, csv)
 	comments := changesOf(p, KindComment)
-	if len(comments) != 3 {
+	if len(comments) != 4 {
 		t.Fatalf("comments = %d", len(comments))
 	}
-	if b := fieldString(comments[0], "body"); b != nearly {
-		t.Fatalf("first body has %d bytes, want the note alone", len(b))
+	for i, head := range []string{"**Pete** · 2023-11-01 16:08 UTC\n\n", "**Pete**\n\n", "**Pete**\n\n"} {
+		b := fieldString(comments[i], "body")
+		text := strings.TrimSuffix(strings.TrimPrefix(b, head), "…")
+		if !strings.HasPrefix(b, head) || !strings.HasSuffix(b, "…") || !utf8.ValidString(b) || text == "" ||
+			!strings.HasPrefix([]string{nearly, huge, amp}[i], text) {
+			t.Fatalf("comment %d is not its header and a cut of the note (%d bytes)", i, len(b))
+		}
 	}
-	cut := fieldString(comments[1], "body")
-	if !strings.HasSuffix(cut, "…") || !strings.HasPrefix(huge, strings.TrimSuffix(cut, "…")) || !utf8.ValidString(cut) {
-		t.Fatalf("second body is not a cut of the note (%d bytes)", len(cut))
-	}
-	if b := fieldString(comments[2], "body"); b != "**Pete**\n\nShort" {
-		t.Fatalf("third body = %q", b)
+	if b := fieldString(comments[3], "body"); b != "**Pete**\n\nShort" {
+		t.Fatalf("last body = %q", b)
 	}
 	if d := fieldString(changesOf(p, KindTask)[0], "description"); d != "" {
 		t.Fatalf("description has %d bytes", len(d))
@@ -141,7 +145,7 @@ func TestTodoistLongNotes(t *testing.T) {
 			notes = append(notes, n)
 		}
 	}
-	if len(notes) != 1 || notes[0] != "1 comment was cut to fit, as it was too long for a comment" {
+	if len(notes) != 1 || notes[0] != "3 comments were cut to fit, as they were too long for a comment" {
 		t.Fatalf("notes = %q", p.Notes)
 	}
 }

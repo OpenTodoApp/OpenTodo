@@ -9,7 +9,7 @@
 - Each `note` row of a Todoist CSV (a single project file or the backup ZIP) becomes a comment on the task right above it, authored by the importing account, in the file's order.
 - The comment's body starts with the original author and time, `**Pete** · 2023-11-01 16:08 UTC`, then a blank line and the note. The author comes from `AUTHOR` without its trailing account id (`Pete (14148749)` is Pete); the time from `DATE`, an ISO 8601 instant, written in UTC. Without an author or a readable date that part is left out; without both the comment is the note alone.
 - The task's description no longer gets a "Comments" block for these notes.
-- One import creates at most 5,000 comments. A note past that goes into the description under "Comments" as before. A note too long for a comment body (64 KB) is posted without its first line, or cut to fit and ending in "…" when it is too long even alone. The preview carries one note saying how many.
+- One import creates at most 5,000 comments. A note past that goes into the description under "Comments" as before. A note too long for a comment body (64 KB) keeps its first line, and its text is cut to fit and ends in "…". The preview carries one note saying how many.
 - An import's comments do not count against the per-account comment limit (60 a minute): the per-import cap bounds them instead. Device and REST writes are limited as before.
 - Undo removes the comments the import created; importing the same backup again adds none (its tasks are skipped as already imported, and so are their comments).
 
