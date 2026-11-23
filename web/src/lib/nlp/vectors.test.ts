@@ -5,7 +5,7 @@ import vectors from './quickadd.vectors.json'
 interface Case {
   name: string
   line: string
-  ctx: { today: string; now: string; languages: string[]; projects: { id: string; name: string }[]; dayParts?: boolean; energy?: boolean; sectors?: boolean; weekStart?: number; links?: boolean }
+  ctx: { today: string; now: string; languages: string[]; projects: { id: string; name: string }[]; dayParts?: boolean; energy?: boolean; sectors?: boolean; weekStart?: number; dayMonthOrder?: 'DM' | 'MD'; links?: boolean }
   expect: Record<string, unknown>
 }
 
