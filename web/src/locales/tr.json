@@ -7183,7 +7183,6 @@
   "unknown file format; update the app": "bilinmeyen dosya biçimi; uygulamayı güncelleyin",
   "unknown passkey": "bilinmeyen geçiş anahtarı",
   "unknown pattern \"{word}\"": "bilinmeyen desen \"{word}\"",
-  "unread changes": "okunmamış değişiklikler",
   "unread updates": "okunmamış güncellemeler",
   "unscheduled": "planlanmamış",
   "unsupported key derivation {kdf}; update the app": "desteklenmeyen anahtar türetme {kdf}; uygulamayı güncelleyin",
@@ -7863,5 +7862,6 @@
   "{name} assigned you a task": "{name} sana bir görev atadı",
   "{name} completed a task": "{name} bir görevi tamamladı",
   "{name} reopened a task": "{name} bir görevi yeniden açtı",
-  "Completed or reopened": "Tamamlandı veya yeniden açıldı"
+  "Completed or reopened": "Tamamlandı veya yeniden açıldı",
+  "Unread changes": "Okunmamış değişiklikler"
 }

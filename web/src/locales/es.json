@@ -6580,7 +6580,6 @@
   "unknown file format; update the app": "formato de archivo desconocido; actualiza la app",
   "unknown passkey": "llave de acceso desconocida",
   "unknown pattern \"{word}\"": "patrón desconocido «{word}»",
-  "unread changes": "cambios sin leer",
   "unread updates": "novedades sin leer",
   "unscheduled": "sin programar",
   "unsupported key derivation {kdf}; update the app": "derivación de clave {kdf} no compatible; actualiza la app",
@@ -7863,5 +7862,6 @@
   "{name} assigned you a task": "{name} te asignó una tarea",
   "{name} completed a task": "{name} completó una tarea",
   "{name} reopened a task": "{name} reabrió una tarea",
-  "Completed or reopened": "Completada o reabierta"
+  "Completed or reopened": "Completada o reabierta",
+  "Unread changes": "Cambios sin leer"
 }

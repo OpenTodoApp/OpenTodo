@@ -6747,7 +6747,6 @@
   "unknown file format; update the app": "onbekend bestandsformaat; werk de app bij",
   "unknown passkey": "onbekende passkey",
   "unknown pattern \"{word}\"": "onbekend patroon “{word}”",
-  "unread changes": "ongelezen wijzigingen",
   "unread updates": "ongelezen updates",
   "unscheduled": "ongepland",
   "unsupported key derivation {kdf}; update the app": "niet-ondersteunde sleutelafleiding {kdf}; werk de app bij",
@@ -7863,5 +7862,6 @@
   "{name} assigned you a task": "{name} heeft je een taak toegewezen",
   "{name} completed a task": "{name} heeft een taak voltooid",
   "{name} reopened a task": "{name} heeft een taak opnieuw geopend",
-  "Completed or reopened": "Voltooid of opnieuw geopend"
+  "Completed or reopened": "Voltooid of opnieuw geopend",
+  "Unread changes": "Ongelezen wijzigingen"
 }
