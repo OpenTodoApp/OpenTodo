@@ -16,6 +16,7 @@ Some lists come back every week: groceries, the pharmacy, packing. Make such a p
 - Adding an item that is already there brings it back instead of creating a second one.
 - Ticked items stay at the end of the list, in a **Got it** group, on every member's devices.
 - New items can [sort themselves into aisles](reusable-list-aisles.md).
+- It shows no "% done": a list you restock is never finished.
 
 ## Turn it on
 
@@ -25,12 +26,12 @@ Turning it off changes no items; completed tasks follow your **Show completed ta
 
 ## Adding an item that is already there
 
-When you add an item from [quick add](quick-add.md), the list looks for an item with the same name:
+When you add an item from [quick add](quick-add.md), the list looks for one with the same name:
 
 - **A ticked item** is reopened where it is, in its section, with its notes and labels. A date, priority or label you typed with it is added. The message reads "Milk is back on the list", with **Undo**.
 - **An open item** is left as it is and flashes once. The message reads "Milk is already on the list".
 
-Either message offers **Add anyway**, which adds a new item as an ordinary add would. The message stays for four seconds.
+Either message stays for four seconds and offers **Add anyway**, which adds a new item.
 
 Typing a few letters, in the list or the phone's add sheet, lists the ticked items that match, newest first: <kbd>↓</kbd> and <kbd>Enter</kbd>, or a click, brings one back. <kbd>Enter</kbd> alone adds what you typed.
 

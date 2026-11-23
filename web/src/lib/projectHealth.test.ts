@@ -57,6 +57,18 @@ describe('project health rules', () => {
   })
 })
 
+describe('reusable lists (reusable-no-progress)', () => {
+  it('show no progress, and still count toward a folded parent', () => {
+    const s = summary([project('food'), project('groceries', { parent_id: 'food', reusable: true })],
+      [task('a', 'groceries'), done('b', 'groceries'), done('c', 'groceries')])
+    expect(s.get('groceries')!.progress).toBeNull()
+    expect(s.get('groceries')!.done).toBe(2)
+    expect(s.get('groceries')!.area).toBe(false)
+    // Like an area's, its tasks still count in a folded parent's figures.
+    expect(s.get('food')!.progress).toBeCloseTo(2 / 3)
+  })
+})
+
 describe('areas (project-flow-modes, statistics "Areas in project health")', () => {
   it('A quiet area is fine: On track, no progress', () => {
     const s = summary([project('home', { flow_mode: 'area' })], [task('a', 'home', { _clock: clock(NOW - 30 * DAY) }), done('b', 'home', { _clock: clock(NOW - 30 * DAY) })]).get('home')!

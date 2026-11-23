@@ -453,7 +453,7 @@ When the Projects view has loaded and contains no projects, it SHALL show the sh
 - **THEN** the empty state is absent and the projects table renders as before
 
 ### Requirement: Project progress on the project page
-A project's page SHALL show the project's progress beside its title as a progress ring and a whole percentage ("40%", read "40% done"); on a phone the line under the title SHALL read "40% done". The figure SHALL be the project's own tasks at every level of subtask, by the rule of statistics "Project health": completed tasks over completed and open tasks (deferred and someday ones included), a recurring series counted once through its open task, and deleted, skipped and start guide sample tasks left out; it SHALL equal the All projects table's progress for the project's unfolded row. A project whose flow is Area, and a project with no counted task, SHALL show no progress. The figure SHALL be worked out on the device from local rows, offline too, with no request, no write and nothing stored, and SHALL update live after a local write or a sync, so two synced devices show the same figure.
+A project's page SHALL show the project's progress beside its title as a progress ring and a whole percentage ("40%", read "40% done"); on a phone the line under the title SHALL read "40% done". The figure SHALL be the project's own tasks at every level of subtask, by the rule of statistics "Project health": completed tasks over completed and open tasks (deferred and someday ones included), a recurring series counted once through its open task, and deleted, skipped and start guide sample tasks left out; it SHALL equal the All projects table's progress for the project's unfolded row. A project whose flow is Area, a reusable list (reusable-lists "Reusable list mode"), which is restocked rather than finished, and a project with no counted task SHALL show no progress, on its page and in its All projects row; a reusable list's tasks still count in a folded parent's figures, as an area's do. The figure SHALL be worked out on the device from local rows, offline too, with no request, no write and nothing stored, and SHALL update live after a local write or a sync, so two synced devices show the same figure.
 
 #### Scenario: Beside the title
 - **WHEN** "Website launch" has three completed tasks and two open ones
@@ -470,6 +470,10 @@ A project's page SHALL show the project's progress beside its title as a progres
 #### Scenario: An area or an empty project
 - **WHEN** the user opens an area, or a project with no task yet
 - **THEN** no progress shows beside its title
+
+#### Scenario: A grocery list for the next trip
+- **WHEN** a reusable "Groceries" list holds fifteen items ticked off on the last trip and ten added for this one
+- **THEN** no progress shows beside its title or in its All projects row, and turning the mode off shows "60%"
 
 ### Requirement: Drop a task on Today
 A task dragged from a list or a board SHALL be droppable on the Today entry of the sidebar. While the pointer is over it, Today SHALL show the drop ring and the list SHALL not show a drop line. Dropping SHALL plan the task for today by the rule of a drop on a day group in Upcoming (`upcoming-drag`): the do-on date moves to today and keeps its time, a span moves whole, the deadline stays and a deferred task becomes due today, through the operation log, and a toast SHALL read "Scheduled for today" with Undo. When the dragged task is part of the bulk selection, every selected task SHALL be planned as one batch, and tasks already planned for today SHALL write nothing. Dropping a task the user may not edit, or pressing Escape, SHALL change nothing. The change SHALL apply locally at once, work offline through the outbox and converge per field like any date edit.
