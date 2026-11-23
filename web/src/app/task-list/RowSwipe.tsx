@@ -1,6 +1,6 @@
 // The row side of swipe actions (OpenSpec change phone-v2, design D3, D4): the hook
-// that moves a touch row with the finger and fires complete (right) or schedule
-// (left), the tinted edge it uncovers, the Schedule sheet, and the one-time cue.
+// that moves a touch row with the finger, its revealed edge, the Schedule sheet,
+// and the one-time cue.
 // Moves are applied to the row's children directly, so a gesture re-renders the
 // row once (when it locks a direction), not on every pixel.
 import { type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
@@ -9,10 +9,10 @@ import { addDaysISO, formatDate, formatTime, logicalToday, quickChoices } from '
 import { addTaskToSlot, liveSlots, slotName, useSlots } from '../../lib/slots'
 import { runSlot } from '../calendar/slotActions'
 import { t } from '../../lib/i18n'
-import { parkTask, updateTask } from '../../lib/ops'
 import type { Task } from '../../lib/types'
 import { Dialog, Icon } from '../../ui'
 import { act } from '../actionError'
+import { calendarEditWithUndo, parkWithUndo } from '../undoable'
 import { DateField } from '../datetime/DateField'
 import { prefersReducedMotion, tick } from '../motion'
 import { beginSwipe, revealed, SWIPE, type SwipeDir } from '../rowSwipe'
@@ -33,25 +33,28 @@ function place(row: HTMLElement, offset: number, animate: boolean) {
     edge.style.transition = animate ? `width ${SWIPE.returnMs}ms var(--ease-calm)` : ''
     edge.style.width = `${Math.abs(offset)}px`
     edge.toggleAttribute('data-revealed', revealed(offset))
+    edge.toggleAttribute('data-full-swipe', offset <= -SWIPE.commit)
   }
 }
 
 export interface RowSwipe {
   /** Compose into the row's onPointerDown (before the drag's). */
   onPointerDown: (e: ReactPointerEvent<HTMLElement>) => void
-  /** The tinted edge while a swipe runs, and the Schedule sheet when it is open. */
+  /** The tinted edge while a swipe runs. */
   layers: ReactNode
 }
 
 /**
- * Swipe right completes (reopens a done task), swipe left opens the Schedule sheet.
+ * Swipe right completes (or reopens). On eligible phone rows, a short left swipe
+ * edits the title on release and a full left swipe opens Schedule.
  * `enabled` is false on a fine pointer, read-only rows, while anything is ticked, in
  * the Trash, on cards and while the inline editor is open (design D3).
  */
-export function useRowSwipe({ task, enabled, onComplete, force, rowEl }: {
+export function useRowSwipe({ task, enabled, onComplete, onEditTitle, force, rowEl }: {
   task: Task
   enabled: boolean
   onComplete: () => void
+  onEditTitle?: () => void
   /** Stories: hold the row at this offset (positive: the complete edge, negative: schedule). */
   force?: number
   rowEl?: RefObject<HTMLElement | null>
@@ -63,15 +66,15 @@ export function useRowSwipe({ task, enabled, onComplete, force, rowEl }: {
     el.style.overflow = 'hidden'
     place(el, force, false)
   }, [force, rowEl, dir])
-  const row = useRef<HTMLElement | null>(null)
+  const canEdit = enabled && !!onEditTitle
   // A long press that ticked the row turns swipes off mid-gesture; the lock reads the latest value.
   const live = useRef(enabled)
   live.current = enabled
   const onPointerDown = useCallback((e: ReactPointerEvent<HTMLElement>) => {
     if (!enabled) return
     const el = e.currentTarget
-    row.current = el
     beginSwipe(e, {
+      titleOnLeft: canEdit,
       canStart: () => live.current,
       onLock: (d) => { el.style.overflow = 'hidden'; setDir(d) },
       onMove: (offset) => place(el, offset, false),
@@ -83,23 +86,22 @@ export function useRowSwipe({ task, enabled, onComplete, force, rowEl }: {
         else setTimeout(done, SWIPE.returnMs)
         if (fire === 'right') onComplete()
         if (fire === 'left') openRowSchedule(task.id)
+        if (fire === 'edit-title' && live.current) onEditTitle?.()
       },
     })
-  }, [enabled, onComplete, task.id])
+  }, [canEdit, enabled, onComplete, onEditTitle, task.id])
   const doneTask = !!task.completed_at
-  const layers = (
-    <>
-      {dir && (
-        <span aria-hidden="true" {...{ [EDGE]: dir }}
-          // The icon over its word, so both fit from the reveal distance (64 px) on.
-          className={`group/edge pointer-events-none absolute inset-y-0 flex w-0 flex-col items-center justify-center gap-0.5 overflow-hidden px-1 text-hint font-medium ${dir === 'right' ? 'left-0 bg-success-soft text-on-success-soft' : 'right-0 bg-accent-soft text-on-accent-soft'}`}>
-          <Icon name={dir === 'right' ? (doneTask ? 'rotate-ccw' : 'check') : 'calendar-days'} size="sm" />
-          <span className="whitespace-nowrap opacity-0 transition-opacity duration-(--duration-ui) group-data-revealed/edge:opacity-100">
-            {dir === 'right' ? (doneTask ? t('Reopen') : t('Complete')) : t('Schedule')}
-          </span>
-        </span>
-      )}
-    </>
+  const layers = dir && (
+    <span aria-hidden="true" {...{ [EDGE]: dir }}
+      // The icon over its word, so both fit from the reveal distance (64 px) on.
+      className={`group/edge pointer-events-none absolute inset-y-0 flex w-0 flex-col items-center justify-center gap-0.5 overflow-hidden px-1 text-hint font-medium ${dir === 'right' ? 'left-0 bg-success-soft text-on-success-soft' : 'right-0 bg-accent-soft text-on-accent-soft'}`}>
+      {dir === 'left' && canEdit && <Icon name="pencil" size="sm" className="group-data-[full-swipe]/edge:hidden" />}
+      <Icon name={dir === 'right' ? (doneTask ? 'rotate-ccw' : 'check') : 'calendar-days'} size="sm"
+        className={dir === 'left' && canEdit ? 'hidden group-data-[full-swipe]/edge:block' : undefined} />
+      <span className={`whitespace-nowrap opacity-0 transition-opacity duration-(--duration-ui) ${dir === 'left' && canEdit ? 'hidden group-data-[full-swipe]/edge:block' : ''} group-data-revealed/edge:opacity-100`}>
+        {dir === 'right' ? (doneTask ? t('Reopen') : t('Complete')) : t('Schedule')}
+      </span>
+    </span>
   )
   return { onPointerDown, layers }
 }
@@ -119,11 +121,14 @@ export function RowScheduleHost() {
 
 type Choice = { id: string; label: string; apply: () => Promise<void> }
 
-/** The day a choice sets: the task keeps its time, a parked task comes back. */
+/**
+ * The day a choice sets: the task keeps its time, a parked task comes back. One step of undo
+ * history with the Undo toast, as a drop on a calendar day (undo-row-schedule).
+ */
 async function schedule(task: Task, date: string): Promise<void> {
   const patch: Partial<Task> = { due: task.due ? { ...task.due, date } : { date } }
   if (task.start === 'someday') patch.start = null
-  await updateTask(task.id, patch)
+  await calendarEditWithUndo(task.id, patch)
 }
 
 /** The Schedule sheet of a left swipe and of the touch row menu: five choices (design D3). */
@@ -135,7 +140,7 @@ export function RowScheduleSheet({ task, onClose }: { task: Task; onClose: () =>
     { id: 'today', label: t('Today'), apply: () => schedule(task, today) },
     { id: 'tomorrow', label: t('Tomorrow'), apply: () => schedule(task, addDaysISO(today, 1)) },
     { id: 'next-week', label: t('Next week'), apply: () => schedule(task, nextWeek) },
-    { id: 'someday', label: t('Someday'), apply: () => parkTask(task.id) },
+    { id: 'someday', label: t('Someday'), apply: () => parkWithUndo(task.id) },
   ]
   // Slots of today and of the task's day (calendar-slots D10): "Add to Admin 16:00".
   const slots = useSlots()

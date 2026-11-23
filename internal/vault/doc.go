@@ -25,7 +25,10 @@ type Doc struct {
 	// vault does not know, kept in Front as written.
 	Status        string
 	UnknownStatus string
-	Blocks        []*Block
+	// byPath: the file was matched to its project by its path, not by an
+	// `opentodo-id` (merge.go mapFiles); it carries no front-matter edits.
+	byPath bool
+	Blocks []*Block
 }
 
 // Block is the part of a file before the first section heading (Section "")

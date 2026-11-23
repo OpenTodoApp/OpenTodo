@@ -1,0 +1,1 @@
+- **Routines on a device run the moment it connects.** A device opted in to run routines missed the runs the server sent right as its stream connected; they waited until it reconnected or were missed.

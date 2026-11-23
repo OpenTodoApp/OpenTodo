@@ -37,11 +37,20 @@ export async function merge(e: Engine): Promise<void> {
 }
 
 /** Matches each changed file to its project and applies renames, moves and front-matter edits. */
+/** The form of every id the app makes (merge.go wellFormedID). */
+const APP_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+
+function wellFormedID(id: string): boolean {
+  return APP_ID.test(id)
+}
+
 function mapFiles(e: Engine, m: MergeRun): void {
   const paths = sortedKeys(Object.fromEntries([...e.changed].map((p) => [p, true])))
   paths.sort((a, b) => slashes(a) - slashes(b))
   const claimed = new Set<string>()
   const fresh: string[] = []
+  const known: string[] = []
+  const knownID = new Map<string, string>()
   for (const p of paths) {
     const pre = parseDoc(e.disk.get(p)!, () => false)
     if (p === INBOX_FILE) e.fileOf.set(p, '')
@@ -53,11 +62,34 @@ function mapFiles(e: Engine, m: MergeRun): void {
       }
       e.fileOf.set(p, pre.id)
       projectEdits(e, m, p, pre)
+    } else if (own(e.st.files, p) && e.st.files[p].project !== '' && (pre.id === '' || (S.get(e.app, 'project', pre.id) === undefined && !wellFormedID(pre.id)))) {
+      // No id, or one that is not an id at all (a damaged front matter): the
+      // path the last sync wrote decides, below. A well-formed id the account
+      // does not have (a file from another account) is a new project, as before.
+      knownID.set(p, pre.id)
+      known.push(p)
     } else {
       if (pre.id !== '') e.warn(`${p}: the project id ${short(pre.id)} is not in the account; the file becomes a new project`)
       fresh.push(p)
     }
   }
+  // A file without opentodo-id, or with an id the account does not have, at a
+  // path the last sync wrote for a live project stays that project's file
+  // (merge.go mapFiles), after every id has claimed its project. Matched by its path, it carries no front-matter edits.
+  for (const p of known) {
+    const pid = e.st.files[p].project
+    const id = knownID.get(p) ?? ''
+    if (claimed.has(pid) || S.get(e.app, 'project', pid) === undefined || !m.av.projectLive(pid)) {
+      if (id !== '') e.warn(`${p}: the project id ${short(id)} is not in the account; the file becomes a new project`)
+      fresh.push(p)
+      continue
+    }
+    if (id !== '') e.warn(`${p}: the project id ${short(id)} is not in the account; the file keeps the project it was written for`)
+    claimed.add(pid)
+    e.fileOf.set(p, pid)
+    projectEdits(e, m, p, { ...parseDoc('', () => false), id: pid }, true)
+  }
+  fresh.sort((a, b) => paths.indexOf(a) - paths.indexOf(b))
   for (const p of fresh) newProject(e, p)
   for (const p of paths) {
     if (e.skip.has(p)) continue
@@ -110,7 +142,7 @@ function projectCycle(e: Engine, pid: string, parent: string): boolean {
 }
 
 /** A renamed file renames its project, a moved one moves it, edited front matter sets its colour, icon, flow and status. */
-function projectEdits(e: Engine, m: MergeRun, p: string, d: Doc): void {
+function projectEdits(e: Engine, m: MergeRun, p: string, d: Doc, byPath = false): void {
   const pid = d.id
   if (S.get(e.base, 'project', pid) === undefined) return
   const b = () => e.body('project', pid)
@@ -138,6 +170,7 @@ function projectEdits(e: Engine, m: MergeRun, p: string, d: Doc): void {
       e.event('project', p, '', `moved project ${goQuote(m.av.text('project', pid, 'name'))}`)
     }
   }
+  if (byPath) return // no front matter to read edits from
   const baseRow = S.get(e.base, 'project', pid)
   const appRow = S.get(e.app, 'project', pid)
   if (d.color !== S.str(baseRow, 'color') && d.color !== '' && S.str(appRow, 'color') === S.str(baseRow, 'color')) {

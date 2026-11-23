@@ -1,7 +1,7 @@
 {
  "reason": "Every drag, resize and swipe of the web app and the way to do the same with one click or tap, without dragging (WCAG 2.2 2.5.7 Dragging movements, 2.5.1 Pointer gestures; OpenSpec change accessibility-aa D3). An element that starts one carries data-drag-id; web/src/lib/a11y/dragAlternatives.test.ts checks this map against the source. An alternative is a menu item (`item`: its id in that file's menu) or a control (`contains`: a text the file must hold). The task panel opens with a click on any task; its When control and facets set a task's dates, time, duration, section and parent.",
  "sources": [
-  { "id": "task-row", "what": "A list or board row: reorder within its list, move to another section or board column, drop on a row to make it a subtask or between rows at a level chosen by moving sideways, drop on a sidebar project or label; on touch, swipe to complete or schedule. In Today grouped by project, a contextual subtask can be moved under another task or scheduled as a top-level task for today.", "alternatives": [
+  { "id": "task-row", "what": "A list or board row: reorder within its list, move to another section or board column, drop on a row to make it a subtask or between rows at a level chosen by moving sideways, or drop on a sidebar project or label. On touch, swipe to complete, schedule or edit the title in eligible lists. In Today grouped by project, a contextual subtask can be moved under another task or scheduled as a top-level task for today.", "alternatives": [
    { "file": "web/src/app/bulk/BulkActions.tsx", "item": "move-up" },
    { "file": "web/src/app/bulk/BulkActions.tsx", "item": "move-down" },
    { "file": "web/src/app/bulk/BulkActions.tsx", "item": "move-top" },
@@ -10,6 +10,7 @@
    { "file": "web/src/app/bulk/BulkActions.tsx", "item": "labels" },
    { "file": "web/src/app/bulk/BulkActions.tsx", "item": "complete" },
    { "file": "web/src/app/bulk/BulkActions.tsx", "item": "schedule" },
+   { "file": "web/src/app/bulk/BulkActions.tsx", "item": "edit-title" },
    { "file": "web/src/app/task-detail/Facets.tsx", "item": "parent" },
    { "file": "web/src/app/task-list/todayGroupDrop.ts", "item": "today-reparent-context" },
    { "file": "web/src/app/task-list/todayGroupDrop.ts", "item": "today-promote-context" }

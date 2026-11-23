@@ -1,8 +1,8 @@
 // Actions over a registered list (vim-keybindings, design D3). Lives in the lazy
 // Vim chunk; the main bundle only carries the ListState registry.
-import { updateTask } from '../../lib/ops'
 import { moveTaskBy } from '../../lib/move'
 import type { Task } from '../../lib/types'
+import { priorityUndoable } from '../../lib/undoActions'
 import { listState, type ListActions, type ListState } from '../listActions'
 import { runBulk } from '../bulk/BulkActions'
 import { deleteWithUndo } from '../undoable'
@@ -63,7 +63,7 @@ export function makeListActions(s: ListState): ListActions {
     },
     async setPrioritySelected(p) {
       const { task } = selectedRow()
-      if (writable(task)) await updateTask(task.id, { priority: p })
+      if (writable(task)) await priorityUndoable(task.id, p)
     },
     async moveSelectedBy(n) {
       const { task } = selectedRow()

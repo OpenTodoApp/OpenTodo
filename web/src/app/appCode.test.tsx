@@ -22,7 +22,10 @@ describe('the App code row', () => {
     expect(html).toContain('Signed by OpenTodo')
     expect(html).toContain('AECA 03A5 FC4A 754F')
     expect(html).toContain('href="https://open-todo.app/security#app-signing"')
-    expect(html).toContain(`href="https://open-todo.app/security/verify#${FP}"`)
+    // Verify key opens the published fingerprints that exist today (#1778): the docs'
+    // key table, until the website's /security/verify page ships (signed-web-app 5.5).
+    expect(html).toContain('href="https://open-todo.app/docs/security/signed-app#the-keys"')
+    expect(html).not.toContain('/security/verify')
     expect(html).toContain('Version 1.3.0')
     expect(html).not.toContain('This server runs')
     expect(html).not.toContain('data-app-code-check')

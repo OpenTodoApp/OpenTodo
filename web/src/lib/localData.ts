@@ -489,11 +489,6 @@ export function useAttachmentBlobs(rows: readonly Pick<Attachment, 'id'>[]): Map
   }, [rows], NO_BLOBS)
 }
 
-/** Whether this device holds the file of an attachment. */
-export async function hasAttachmentBlob(id: string): Promise<boolean> {
-  return !!(await db.attachmentBlobs.get(id))
-}
-
 // ---- notifications, calendar, meta ----
 
 const NO_NOTIFICATIONS: AppNotification[] = []

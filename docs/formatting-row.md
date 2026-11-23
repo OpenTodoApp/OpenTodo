@@ -11,7 +11,7 @@ order: 15
 
 <picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="The task panel with formatted notes under the title and the comments below."></picture>
 
-The formatting row is a row of buttons above a note or a comment: **Bold**, **Italic**, **Link**, **Bullet list**, **Checklist** and **More**, which holds the rest of what the editor can do (see [Format notes and comments](formatting.md)). A button in the row keeps your selection, and you keep typing in the text after it. **Bullet list** on a checklist takes its checkboxes away and keeps the lines. In a list, **More** also holds **Indent** and **Outdent**, which do what <kbd>Tab</kbd> and <kbd>Shift</kbd>+<kbd>Tab</kbd> do.
+The formatting row is a row of buttons above a note or a comment: **Bold**, **Italic**, **Link**, **Bullet list**, **Checklist** and **More**, which holds the rest of what the editor can do (see [Format notes and comments](formatting.md)). A button in the row keeps your selection, and you keep typing in the text after it. A button is highlighted while its formatting applies where the cursor is: **Bold** in bold text, **Checklist** in a checklist. **Bullet list** on a checklist takes its checkboxes away and keeps the lines. In a list, **More** also holds **Indent** and **Outdent**, which do what <kbd>Tab</kbd> and <kbd>Shift</kbd>+<kbd>Tab</kbd> do.
 
 ## On a phone
 

@@ -4,6 +4,7 @@ import (
 	"crypto/ecdh"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -239,5 +240,33 @@ func TestRestDueChangeMovesRelativeReminders(t *testing.T) {
 	at, _ := dueInstantMs(&d, time.FixedZone("", 7200))
 	if d.Date == "2026-10-12" || int64(rel["fire_at"].(float64)) != at-30*60_000 {
 		t.Fatalf("after roll: due %+v, fire_at %v", d, rel["fire_at"])
+	}
+}
+
+// assignee-notifications 2.1: a device's assignment and status choices are off
+// by default, stored with the subscription and returned with it.
+func TestPushSubscribeNotifyChoices(t *testing.T) {
+	e, _ := pushEnv(t, false)
+	resp, out := e.do("POST", "/api/v1/push/subscriptions", subscriptionBody("phone"))
+	e.mustStatus(resp, 201, out)
+	if n := out["subscription"].(map[string]any)["notify"]; fmt.Sprint(n) != "map[assigned:false status:false]" {
+		t.Fatalf("default notify = %v", n)
+	}
+	b := subscriptionBody("phone")
+	b["notify"] = map[string]any{"assigned": true}
+	resp, out = e.do("POST", "/api/v1/push/subscriptions", b)
+	e.mustStatus(resp, 200, out)
+	if n := out["subscription"].(map[string]any)["notify"]; fmt.Sprint(n) != "map[assigned:true status:false]" {
+		t.Fatalf("notify = %v", n)
+	}
+	b["notify"] = "yes"
+	resp, out = e.do("POST", "/api/v1/push/subscriptions", b)
+	e.mustStatus(resp, 400, out)
+	if errCode(out) != "bad_request" {
+		t.Fatalf("invalid notify: code %q", errCode(out))
+	}
+	var assigned, status int
+	if err := e.db.QueryRow(`SELECT notify_assigned, notify_status FROM push_subscriptions`).Scan(&assigned, &status); err != nil || assigned != 1 || status != 0 {
+		t.Fatalf("stored = %d %d %v", assigned, status, err)
 	}
 }

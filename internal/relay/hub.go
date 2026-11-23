@@ -104,6 +104,8 @@ type Stream struct {
 	done        chan struct{}
 	once        sync.Once
 	lastSeen    time.Time
+	// runs: the routine runs queued on this stream, never queued twice (h.mu).
+	runs map[string]bool
 	// Roles: what the stream may be sent (an AI connector's calls, routine runs).
 	Roles Roles
 }

@@ -15,6 +15,7 @@ beforeEach(() => {
 })
 
 const control = () => document.querySelector<HTMLInputElement>('#objectives-switch')
+const shown = () => control()!.getAttribute('aria-checked') ?? String(control()!.checked)
 
 describe('Objectives switch', () => {
   it('is off by default, writes one op when turned on and never touches an objective', async () => {
@@ -22,11 +23,14 @@ describe('Objectives switch', () => {
       { id: 'o2', entity: 'objective', entityId: 'ob1', field: 'period', value: '2026-Q4', ts: 1, device: 'other' }])
     const r = await render(<HowYouWorkSection />)
     await waitFor(() => !!control())
-    expect(control()!.getAttribute('aria-checked') ?? String(control()!.checked)).toBe('false')
+    expect(shown()).toBe('false')
     await click(control()!)
     await waitFor(async () => (await db.userPrefs.get('me'))?.objectives === 'on')
+    // The switch flips from its rendered state: click again only once the live row has reached it.
+    await waitFor(() => shown() === 'true')
     await click(control()!)
     await waitFor(async () => (await db.userPrefs.get('me'))?.objectives === '')
+    await waitFor(() => shown() === 'false')
     const ops = await db.outbox.toArray()
     expect(ops.map((o) => [o.entity, o.field, o.value])).toEqual([['user_prefs', 'objectives', 'on'], ['user_prefs', 'objectives', '']])
     expect(await db.objectives.get('ob1')).toMatchObject({ title: 'Ship 1.0', period: '2026-Q4' })

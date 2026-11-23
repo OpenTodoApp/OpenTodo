@@ -11,7 +11,7 @@ import { EmptyState } from '../ui'
 import { ListRow } from '../ui'
 import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
-import { api, ApiError, OIDC_START_URL, promptReauth } from '../lib/api'
+import { api, ApiError, OIDC_LINK_URL, promptReauth } from '../lib/api'
 import { errorText } from '../lib/errorText'
 import { useAction } from '../lib/useAction'
 import { useOnline } from '../lib/online'
@@ -263,7 +263,7 @@ export function LinkedAccountsPanel() {
   useEffect(() => {
     if (callbackError !== 'reauth_required') return
     void promptReauth().then((ok) => {
-      if (ok) location.assign(OIDC_START_URL)
+      if (ok) location.assign(OIDC_LINK_URL)
     })
   }, [callbackError])
 
@@ -323,7 +323,7 @@ export function LinkedAccountsView(p: LinkedAccountsViewProps) {
   const disabled = !p.online || p.busy
   const link = p.provider.enabled && (disabled
     ? <Button variant="secondary" disabled>{t('Link {name}', { name })}</Button>
-    : <a className="ui-btn ui-btn--secondary ui-btn--md" href={OIDC_START_URL}>{t('Link {name}', { name })}</a>)
+    : <a className="ui-btn ui-btn--secondary ui-btn--md" href={OIDC_LINK_URL}>{t('Link {name}', { name })}</a>)
   return (
     <SettingsSection {...cardCopy('linked', { variant: p.provider.enabled ? 'on' : 'off', values: { name } })} testId="linked-accounts">
       {!p.online && <Notice>{noticeCopy('linked', 'offline')}</Notice>}

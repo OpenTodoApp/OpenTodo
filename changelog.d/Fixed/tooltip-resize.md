@@ -1,0 +1,1 @@
+- **Tooltips stay inside the window.** A tooltip near the edge of the screen that opened before its font had loaded could run past the edge once the text widened. It now moves back in when its size changes.

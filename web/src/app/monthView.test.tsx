@@ -6,6 +6,7 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
+import { undoBatch } from '../lib/undo'
 import { createTask, resetDeviceId } from '../lib/ops'
 import { click, flush, key, minWidthPx, render, type, waitFor } from '../ui/test-utils'
 import { addMonthsISO, MonthView } from './MonthView'
@@ -86,6 +87,12 @@ describe('month grid', () => {
     await key(document.body, 'ArrowDown')
     await waitFor(() => location.pathname === '/month/2026-12-03')
     expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-12-03', time: '14:30' })
+    // One step of undo history (undo-calendar-moves): undo puts it back on 26 November.
+    await waitFor(async () => (await db.assistantUndo.count()) === 1, 'one step')
+    const steps = await db.assistantUndo.toArray()
+    expect(steps.map((s) => s.label)).toEqual(['Rescheduled'])
+    await undoBatch(steps[0].id)
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-11-26', time: '14:30' })
     await r.unmount()
   })
 

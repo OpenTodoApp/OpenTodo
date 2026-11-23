@@ -15,7 +15,6 @@ import { useStartView, useViews } from './useViews'
 import { setVimEnabled, useVimEnabled } from './vim/prefs'
 import { setShortcutHints, useShortcutHints } from './shortcuts/hints'
 import { setSingleKeys, useSingleKeys } from './shortcuts/singleKeys'
-import { type RowClick, setRowClick, useRowClick } from './rowClick'
 import { Kbd } from './shortcuts/Kbd'
 import { resolveLanguage, t } from '../lib/i18n'
 import { act } from './actionError'
@@ -143,26 +142,15 @@ export function KeyboardSection() {
   const vim = useVimEnabled()
   const hints = useShortcutHints()
   const singleKeys = useSingleKeys()
-  const click = useRowClick()
-  return <KeyboardView vim={vim} onVim={setVimEnabled} hints={hints} onHints={setShortcutHints} singleKeys={singleKeys} onSingleKeys={setSingleKeys} click={click} onClick={setRowClick} />
+  return <KeyboardView vim={vim} onVim={setVimEnabled} hints={hints} onHints={setShortcutHints} singleKeys={singleKeys} onSingleKeys={setSingleKeys} />
 }
 
-export function KeyboardView({ vim, onVim, hints = false, onHints = () => {}, singleKeys = true, onSingleKeys = () => {}, click = 'edit', onClick = () => {} }: {
+export function KeyboardView({ vim, onVim, hints = false, onHints = () => {}, singleKeys = true, onSingleKeys = () => {} }: {
   vim: boolean; onVim: (on: boolean) => void; hints?: boolean; onHints?: (on: boolean) => void
   singleKeys?: boolean; onSingleKeys?: (on: boolean) => void
-  /** "Click a task to" (inline-task-editing D6, row-click-modes D1), this device only. */
-  click?: RowClick; onClick?: (v: RowClick) => void
 }) {
   return (
     <SettingsSection {...cardCopy('keyboard')}>
-      <SettingRow {...rowCopy('keyboard', 'rowClick')} id="row-click"
-        control={(
-          <Select id="row-click-select" className="sm:w-56" value={click} onChange={(e) => onClick(e.target.value as RowClick)} aria-label={t('Click a task to')} data-row-click>
-            <option value="edit">{t('Edit in place')}</option>
-            <option value="open">{t('Open details')}</option>
-            <option value="expand">{t('Expand the row')}</option>
-          </Select>
-        )} />
       <SettingRow {...rowCopy('keyboard', 'hints')} id="shortcut-hints"
         control={<span data-hints-switch><Switch checked={hints} onChange={onHints} label={t('Show shortcut hints (this device)')} hideLabel /></span>} />
       <SettingRow {...rowCopy('keyboard', 'singleKeys')} id="single-keys"

@@ -839,15 +839,39 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "1405921a44f10ccfc1fda6180d941db346c57feb766cd67614c6f4ae6247a1e3"
+              "hash": "1405921a44f10ccfc1fda6180d941db346c57feb766cd67614c6f4ae6247a1e3",
+              "size": 153,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "4dca984cb5e6eccf",
+                "372cd2c3a21e503e",
+                "1405921a44f10ccf"
+              ]
             },
             "Inbox.md": {
               "project": "",
-              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753"
+              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753",
+              "size": 30,
+              "prefixes": [
+                "9678c3c7e2ff5772"
+              ]
             },
             "Shared.md": {
               "project": "p-shared",
-              "hash": "023c20e433465e57195459ffe5efbe813d6326111275205439d3fd013ac0a16a"
+              "hash": "023c20e433465e57195459ffe5efbe813d6326111275205439d3fd013ac0a16a",
+              "size": 84,
+              "prefixes": [
+                "f52d711103d50a43",
+                "f2aa23352c594919",
+                "3bc81bcb82b76258",
+                "bd98312b4881359b",
+                "aa41c7734086fe28",
+                "023c20e433465e57"
+              ]
             }
           },
           "printed": {
@@ -1519,15 +1543,43 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "9fbd099c31323cd0a3b91957c8c34bcd826e6b113f54f35a00223ea66fed0321"
+              "hash": "9fbd099c31323cd0a3b91957c8c34bcd826e6b113f54f35a00223ea66fed0321",
+              "size": 252,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "f273b24a5b28b37d",
+                "584597164ce21afb",
+                "9763baf2eb55adac",
+                "5f3af243bcb669c0",
+                "c8587a5cb42939bc",
+                "64d6b1cd1ecedb6c",
+                "9fbd099c31323cd0"
+              ]
             },
             "Inbox.md": {
               "project": "",
-              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753"
+              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753",
+              "size": 30,
+              "prefixes": [
+                "9678c3c7e2ff5772"
+              ]
             },
             "Shared.md": {
               "project": "p-shared",
-              "hash": "023c20e433465e57195459ffe5efbe813d6326111275205439d3fd013ac0a16a"
+              "hash": "023c20e433465e57195459ffe5efbe813d6326111275205439d3fd013ac0a16a",
+              "size": 84,
+              "prefixes": [
+                "f52d711103d50a43",
+                "f2aa23352c594919",
+                "3bc81bcb82b76258",
+                "bd98312b4881359b",
+                "aa41c7734086fe28",
+                "023c20e433465e57"
+              ]
             }
           },
           "printed": {

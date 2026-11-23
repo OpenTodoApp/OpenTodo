@@ -7,6 +7,7 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from '../lib/db'
+import { undoBatch } from '../lib/undo'
 import { setDateTime } from '../lib/dates'
 import { createTask, resetDeviceId } from '../lib/ops'
 import { flush, key, render, minWidthPx, waitFor } from '../ui/test-utils'
@@ -58,7 +59,7 @@ async function inbox(...titles: string[]) {
 }
 const row = (id: string) => document.querySelector<HTMLElement>(`[data-task-id="${id}"]`)!
 /** A touch swipe on a row: the press, the moves, the release, `ms` apart. */
-async function swipe(el: HTMLElement, xs: number[], { y = 0, ms = 120 } = {}) {
+async function swipe(el: HTMLElement, xs: number[], { y = 0, ms = 120, settles = true } = {}) {
   let now = 0
   const clock = vi.spyOn(performance, 'now').mockImplementation(() => now)
   await act(async () => { el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 3, pointerType: 'touch', clientX: 50, clientY: 50 })) })
@@ -69,10 +70,21 @@ async function swipe(el: HTMLElement, xs: number[], { y = 0, ms = 120 } = {}) {
   await act(async () => { window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 3, pointerType: 'touch', clientX: 50 + xs[xs.length - 1], clientY: 50 + y })) })
   clock.mockRestore()
   // The row has slid back (or left): its edge is removed once the return animation ends.
-  await waitFor(() => !document.querySelector('[data-swipe-edge]'), 'the row settled')
+  if (settles) await waitFor(() => !document.querySelector('[data-swipe-edge]'), 'the row settled')
 }
 
 describe('swipe actions on a touch list', () => {
+  it('releasing a short left swipe edits the title immediately', async () => {
+    const [a, b] = await inbox('First task', 'Second task')
+    await swipe(row(b), [-20, -64], { settles: false })
+    const editor = row(b).querySelector<HTMLInputElement>('[data-inline-title]')
+    expect(editor?.value).toBe('Second task')
+    expect(document.activeElement).toBe(editor)
+    expect(row(a).querySelector('[data-inline-title]')).toBeNull()
+    expect(document.querySelector('[data-swipe-edge]')).toBeNull()
+    expect(document.querySelector('[data-testid="row-schedule-sheet"]')).toBeNull()
+    expect(panelTaskId()).toBeNull()
+  })
   it('swipe right completes the task and offers Undo; offline the op waits in the outbox', async () => {
     const [id] = await inbox('Water plants')
     expect(row(id).hasAttribute('data-swipeable')).toBe(true)
@@ -101,6 +113,25 @@ describe('swipe actions on a touch list', () => {
     await waitFor(() => !document.querySelector('[data-testid="row-schedule-sheet"]'))
     await waitFor(async () => (await db.tasks.get(id))!.due?.date === '2026-10-15', 'the new due date')
     expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-15' })
+    // One step of undo history with the Undo toast (undo-row-schedule).
+    await waitFor(() => !!document.querySelector('[data-bulk-toast] [data-toast-undo]'))
+    const steps = await db.assistantUndo.toArray()
+    expect(steps.map((s) => s.label)).toEqual(['Rescheduled'])
+    await undoBatch(steps[0].id)
+    expect((await db.tasks.get(id))!.due ?? null).toBeNull()
+  })
+
+  it('Someday in the Schedule sheet parks the task as one step with Undo', async () => {
+    const [id] = await inbox('Paint the shed')
+    await swipe(row(id), [-20, -60, -110])
+    await waitFor(() => !!document.querySelector('[data-testid="row-schedule-sheet"]'))
+    await act(async () => { document.querySelector<HTMLButtonElement>('[data-schedule-choice="someday"]')!.click() })
+    await waitFor(async () => (await db.tasks.get(id))!.start === 'someday', 'parked')
+    await waitFor(() => !!document.querySelector('[data-bulk-toast] [data-toast-undo]'))
+    const steps = await db.assistantUndo.toArray()
+    expect(steps.map((s) => s.label)).toEqual(['Moved to Someday'])
+    await undoBatch(steps[0].id)
+    expect((await db.tasks.get(id))!.start ?? null).toBeNull()
   })
 
   it('a diagonal move scrolls: the row does not move and nothing fires', async () => {

@@ -64,7 +64,7 @@ func allConstructors() []Event {
 		MFAChallengeFailed("u", "wrong_code"),
 		PasskeyRegistered("u", "pk1", "YubiKey"),
 		PasskeyDeleted("u", "u", "pk1", "YubiKey"),
-		TokenCreated("u", "t1", "laptop script"),
+		TokenCreatedScoped("u", "t1", "laptop script", "read"),
 		TokenRevoked("u", "t1", "laptop script"),
 		AppPasswordCreated("u", "a1", "iPhone"),
 		AppPasswordRevoked("u", "a1", "iPhone"),

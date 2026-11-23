@@ -370,7 +370,7 @@ function haptics() {
  * has a screen" from `links`, so no background run may list anything of visibleOnly.
  */
 function capabilities() {
-  const visibleOnly = ['share', 'links', 'obsidian-links', 'app-links', 'system-bars', 'microphone', 'files', 'haptics', 'completion-sound', 'alarm-settings', 'focus']
+  const visibleOnly = ['share', 'links', 'obsidian-links', 'app-links', 'system-bars', 'microphone', 'files', 'haptics', 'completion-sound', 'alarm-settings', 'first-paint', 'focus']
   const backgroundOnly = ['background']
   const both = ['reminders', 'widgets', 'push']
   const called: string[] = []
@@ -384,7 +384,7 @@ function capabilities() {
   return {
     description: 'Capabilities by kind of run (shell-reminders-on): visibleOnly is listed only by the app a person sees (biometric and geofences depend on the device and the store build and are not listed here), backgroundOnly only by a background run, both by either. methods names the capability each new method needs; expect is what the web app does in each run.',
     visibleOnly, backgroundOnly, both,
-    methods: { openAlarmSettings: 'alarm-settings', backgroundDone: 'background', playCompletionSound: 'completion-sound' },
+    methods: { openAlarmSettings: 'alarm-settings', backgroundDone: 'background', playCompletionSound: 'completion-sound', painted: 'first-paint' },
     expect: { visible, background, called },
   }
 }

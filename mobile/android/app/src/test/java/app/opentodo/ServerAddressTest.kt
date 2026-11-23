@@ -1,42 +1,36 @@
 package app.opentodo
 
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/** The address rules both shells share: server-address/cases.json, which the iPhone app's ServerAddressTests read too. */
 class ServerAddressTest {
-    private fun ok(input: String) = ServerAddress.parse(input) as ServerAddress.Result.Ok
+    private val doc = JSONObject(javaClass.classLoader!!.getResource("server-address/cases.json")!!.readText(Charsets.UTF_8))
 
-    @Test fun httpsByDefault() {
-        assertEquals(ServerAddress.Result.Ok("https://todo.example.com", false), ServerAddress.parse("todo.example.com"))
-        assertEquals("https://todo.example.com", ok(" https://Todo.Example.com/ ").origin)
-        assertEquals("https://todo.example.com:8443", ok("https://todo.example.com:8443").origin)
-        assertEquals("https://todo.example.com", ok("https://todo.example.com:443").origin)
-    }
-
-    @Test fun publicHttpIsRefusedWithTheHttpsOffer() {
-        assertEquals(ServerAddress.Result.NeedsHttps("https://todo.example.com"), ServerAddress.parse("http://todo.example.com"))
-        assertEquals(ServerAddress.Result.NeedsHttps("https://todo.example.com:8080"), ServerAddress.parse("http://todo.example.com:8080"))
-        assertEquals(ServerAddress.Result.NeedsHttps("https://8.8.8.8"), ServerAddress.parse("http://8.8.8.8"))
-    }
-
-    @Test fun localHttpIsAcceptedWithAWarning() {
-        for (a in listOf("http://192.168.1.4:8080", "http://10.0.0.2", "http://172.20.1.1", "http://127.0.0.1:8080", "http://localhost:8080", "http://nas.local", "http://[::1]:8080", "http://[fd00::1]")) {
-            val r = ServerAddress.parse(a)
-            assertTrue("$a -> $r", r is ServerAddress.Result.Ok && r.insecure)
+    @Test fun sharedCases() {
+        val cases = doc.getJSONArray("parse")
+        assertTrue("the fixture has cases", cases.length() > 0)
+        for (i in 0 until cases.length()) {
+            val c = cases.getJSONObject(i)
+            val input = c.getString("input")
+            val expected = when {
+                c.has("ok") -> ServerAddress.Result.Ok(c.getString("ok"), c.getBoolean("insecure"))
+                c.has("needsHttps") -> ServerAddress.Result.NeedsHttps(c.getString("needsHttps"))
+                c.optBoolean("invalid") -> ServerAddress.Result.Invalid
+                else -> throw AssertionError("case ${i + 1}: no expected result")
+            }
+            assertEquals("\"$input\"", expected, ServerAddress.parse(input))
         }
-        assertEquals("http://192.168.1.4:8080", ok("http://192.168.1.4:8080").origin)
-        assertEquals("http://[::1]:8080", ok("http://[::1]:8080").origin)
     }
 
-    @Test fun notLocal() {
-        for (h in listOf("172.32.0.1", "192.169.0.1", "11.0.0.1", "example.com", "local.example.com", "fe00::1", "256.1.1.1")) assertFalse(h, ServerAddress.isLocal(h))
-    }
-
-    @Test fun invalid() {
-        for (a in listOf("", "   ", "ftp://todo.example.com", "https://todo.example.com/app", "https://user@todo.example.com", "https://todo.example.com/?x=1", "https://todo.example.com/#a", "https://", "todo example.com", "javascript:alert(1)")) {
-            assertEquals(a, ServerAddress.Result.Invalid, ServerAddress.parse(a))
-        }
+    @Test fun localHosts() {
+        val local = doc.getJSONArray("local")
+        val notLocal = doc.getJSONArray("notLocal")
+        assertTrue(local.length() > 0 && notLocal.length() > 0)
+        for (i in 0 until local.length()) assertTrue(local.getString(i), ServerAddress.isLocal(local.getString(i)))
+        for (i in 0 until notLocal.length()) assertFalse(notLocal.getString(i), ServerAddress.isLocal(notLocal.getString(i)))
     }
 }

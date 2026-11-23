@@ -11,6 +11,7 @@ import { Icon, IconButton, useMediaQuery } from '../ui'
 import { InboxEmptyPane } from './InboxEmptyPane'
 import { closeTaskPanel, followTask, panelTaskId, type PanelWidthStore, setPanelTaskId, setPanelWidth, setTaskSplit, sidePanelDocks, SPLIT_QUERY, TASK_PANEL_WIDTH, useSidePanelOpen } from './panel'
 import { openTaskPage } from './taskTrail'
+import type { RowClickIntent } from './rowClick'
 
 /** Whether this account opens tasks in the side panel (the synced preference, D1); the screen width is not considered. */
 export function useSidePanelChosen(): boolean {
@@ -51,7 +52,8 @@ export function useSidePanel({ on, selectedTaskId, ticking, hasRows, inboxCount 
  * views, Next, Waiting): a keyboard activation of the row the side panel already shows
  * opens its page, as Enter does (D4); anything else opens the task the usual way.
  */
-export function openFromRow(id: string, e?: { detail: number }): void {
+export function openFromRow(id: string, e?: { detail: number }, intent?: RowClickIntent): void {
+  if (intent === 'edit' || (intent === 'select' && !sidePanelDocks())) return
   if (e?.detail === 0 && sidePanelDocks() && panelTaskId() === id) openTaskPage(id)
   else setPanelTaskId(id)
 }

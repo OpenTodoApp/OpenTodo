@@ -686,7 +686,18 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "62c4dc4e75c6e644017a2c11fd6d5eacdfe287496e55c558df7cafc6a4f5625e"
+              "hash": "62c4dc4e75c6e644017a2c11fd6d5eacdfe287496e55c558df7cafc6a4f5625e",
+              "size": 135,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "e003d675dd6308f5",
+                "6960cf20cec31424",
+                "62c4dc4e75c6e644"
+              ]
             },
             "Inbox.md": {
               "project": "",
@@ -694,7 +705,16 @@
             },
             "Shared.md": {
               "project": "p-shared",
-              "hash": "b049965c78400bb0006ec8d6e2d3a79aa5b139ae950b71fcaa5fd21f081e5e3f"
+              "hash": "b049965c78400bb0006ec8d6e2d3a79aa5b139ae950b71fcaa5fd21f081e5e3f",
+              "size": 87,
+              "prefixes": [
+                "f52d711103d50a43",
+                "f2aa23352c594919",
+                "3bc81bcb82b76258",
+                "bd98312b4881359b",
+                "aa41c7734086fe28",
+                "b049965c78400bb0"
+              ]
             }
           },
           "printed": {
@@ -1320,7 +1340,19 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "82c362643fb6bfdf9c450189828ca1b78d6ffb594194a7732eb2f97f5d89185e"
+              "hash": "82c362643fb6bfdf9c450189828ca1b78d6ffb594194a7732eb2f97f5d89185e",
+              "size": 208,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "d31ad70c2b9a3f15",
+                "a2463e0c9084a5b0",
+                "21eebd0cd6be442b",
+                "82c362643fb6bfdf"
+              ]
             },
             "Inbox.md": {
               "project": "",
@@ -1328,7 +1360,16 @@
             },
             "Shared.md": {
               "project": "p-shared",
-              "hash": "972f9000d85e6af91c041f516fdf0fc890f8e45c85b0a67808fbd7790f6b497c"
+              "hash": "972f9000d85e6af91c041f516fdf0fc890f8e45c85b0a67808fbd7790f6b497c",
+              "size": 94,
+              "prefixes": [
+                "f52d711103d50a43",
+                "f2aa23352c594919",
+                "3bc81bcb82b76258",
+                "bd98312b4881359b",
+                "aa41c7734086fe28",
+                "972f9000d85e6af9"
+              ]
             }
           },
           "printed": {

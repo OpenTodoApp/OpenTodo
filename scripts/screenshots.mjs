@@ -41,7 +41,7 @@ const at = (n, hhmm) => new Date(`${iso(n)}T${hhmm}:00Z`).getTime()
 const NOW = at(0, '08:40')
 const mk = async (o = {}, time = NOW) => {
   const c = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1.5, colorScheme: 'light', timezoneId: 'UTC', locale: 'en-GB', ...o })
-  await c.addInitScript(() => { try { localStorage.setItem('opentodo.rowClick', 'open'); localStorage.setItem('opentodo.swipe-cue', '1') } catch {} })  // no first-run swipe hint on phone shots  // click opens the panel, as these flows expect (inline-task-editing)
+  await c.addInitScript(() => { try { localStorage.setItem('opentodo.swipe-cue', '1') } catch {} })  // no first-run swipe hint on phone shots
   await c.clock.setFixedTime(time)
   // The owner's "Set up the assistant" line on Today (assistant-skills) is off-topic in product shots.
   await c.addInitScript(() => {
@@ -258,7 +258,7 @@ async function toSection(p, name) {
   })
   await settle(p, 300)
 }
-const openTask = async (p, title) => { await row(p, title).click(); await detail(p).waitFor(); await settle(p, 400) }
+const openTask = async (p, title) => { await row(p, title).press('Enter'); await detail(p).waitFor(); await settle(p, 400) }
 
 // ------------------------------------------------------------------ shots
 console.log('· capturing')

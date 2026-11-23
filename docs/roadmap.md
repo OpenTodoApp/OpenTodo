@@ -68,7 +68,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 
 | Change | What | Status |
 | --- | --- | --- |
-| `ios-distribution` | The iPhone app in TestFlight and the App Store | In progress (11 of 24) |
+| `ios-distribution` | The iPhone app in TestFlight and the App Store | In progress (14 of 28) |
 | `apple-shortcuts` | Siri, Shortcuts, the Action Button and iOS widgets | Planned |
 | `focus-live-activity` | Focus as a Live Activity and in the Dynamic Island | In progress (18 of 21) |
 | `focus-session-readable` | The running Focus session readable by the shells and agents | Shipped in 0.20 |
@@ -78,7 +78,8 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `today-context-subtasks` | Show undated and later subtasks as context in Today, with explicit moves in project groups | Shipped in 1.6 |
 | `board-completed-column` | Show completed tasks on a project board: a Completed column at the end; drop a card there to complete it | Shipped in 1.5 |
 | `completed-view-review` | Completed for reviews: narrow to projects, group by project, search, and done rows without a strikethrough | Shipped in 1.5 |
-| `click-selects-title` | One click rule in every list: a first click selects the row (and shows it beside the list), a second click edits its title, `a` adds a subtask after a click; "Click a task to" goes | Planned |
+| `click-selects-title` | One click rule in every list: a first click selects the row (and shows it beside the list), a second click edits its title, `a` adds a subtask after a click; "Click a task to" goes | In progress (12 of 14) |
+| `quick-add-links` | A link typed or pasted into quick add becomes a link attachment, with a chip like a date's | Shipped |
 | `away-periods` | Away: mark a period, also after the fact, that skips the repeating occurrences in it in one Undo, keeps streaks and pauses reminders | Shipped in 1.6 |
 | `workspace-activity` | A workspace Activity page for retrospectives: every project, a date range, several kinds at once, tracked time, filters remembered on the device | Shipped in 1.6 |
 | `caldav-push` | Push to calendar apps: a change on any device wakes a subscribed CalDAV client (WebDAV-Push), off until the owner turns it on | Shipped in 1.6 |
@@ -204,6 +205,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `loop-guided-dashboard` | The Loop home names the next step and why. A stepper shows only the moves with work, and each move opens in place | Shipped in 1.4 |
 | `project-icons-in-ui` | Project icons appear at existing project marks across the app and beside tinted project group names | Shipped in 1.5 |
 | `task-group-separators` | Wide One line and Detailed lists show a faint separator between top-level task groups | Shipped in 1.6 |
+| `p3-completion-outline` | Open P3 tasks use an empty blue completion circle | Shipped |
 
 ## Habits area
 

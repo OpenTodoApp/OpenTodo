@@ -16,7 +16,7 @@ export type LinkState<P> =
 
 export function LinkCard({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="flex min-h-full items-center justify-center bg-canvas p-6">
+    <div className="flex min-h-full items-start justify-center bg-canvas p-6 pt-[max(1.5rem,var(--safe-top))] sm:items-center">
       <div className="w-full max-w-sm space-y-3 rounded-card border border-default bg-surface p-6 shadow-1">
         <div className="flex items-center gap-3">
           <InstanceMark size={32} />
@@ -32,7 +32,7 @@ export function LinkCard({ title, children }: { title: string; children: ReactNo
 /** The card of a project's or a workspace's invite link: the page's main landmark, its title the h1. */
 export function InviteCard({ title, children }: { title: ReactNode; children: ReactNode }) {
   return (
-    <div className="flex min-h-full items-center justify-center bg-canvas p-4 sm:p-6">
+    <div className="flex min-h-full items-start justify-center bg-canvas p-4 sm:p-6 pt-[max(1rem,var(--safe-top))] sm:items-center">
       <main className="w-full max-w-sm space-y-3 rounded-card border border-default bg-surface p-5 shadow-1 sm:p-6">
         <div className="flex items-center gap-3">
           <InstanceMark size={32} />

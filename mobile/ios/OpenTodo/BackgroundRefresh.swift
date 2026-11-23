@@ -59,7 +59,7 @@ enum BackgroundRefresh {
 /// The web app in a web view that is never shown: enough to let the app publish its
 /// reminders and Today list, no screen and no prompts.
 @MainActor
-final class HiddenRun: NSObject, WKNavigationDelegate {
+final class HiddenRun: NSObject, WKNavigationDelegate, WKUIDelegate {
     /// One web view for every run: it shares the cookie and storage store with the shown
     /// app anyway, so a new one each hour would only cost memory beside the live screen.
     private static var cached: HiddenRun?
@@ -122,8 +122,12 @@ final class HiddenRun: NSObject, WKNavigationDelegate {
         let host = BridgeHost(interactive: false, backgroundDone: { [weak self] in self?.done() })
         Bridge(origin: origin, actions: host)
             .install(into: config.userContentController, app: Version.app, capabilities: Bridge.backgroundCapabilities)
+        // No screen: the background run refuses the page's requests for the position (as
+        // everywhere, except through a frame's first empty document; see WebLocation).
+        WebLocation.install(into: config.userContentController, allowing: nil)
         let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844), configuration: config)
         webView.navigationDelegate = self
+        webView.uiDelegate = self
         return webView
     }
 
@@ -137,6 +141,13 @@ final class HiddenRun: NSObject, WKNavigationDelegate {
     func done() {
         guard committed else { return }
         finish?(true)
+    }
+
+    /// No screen, so no capture of any kind, and nobody is asked.
+    func webView(_ webView: WKWebView, requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+                 initiatedByFrame frame: WKFrameInfo, type: WKMediaCaptureType,
+                 decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+        decisionHandler(.deny)
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {

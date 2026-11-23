@@ -833,6 +833,8 @@ func (k *compiler) keyword(w string) Pred {
 		return func(t Row) bool { return str(t, "parent_id") != "" }
 	case "habit":
 		return func(t Row) bool { return string(t["habit"]) == "true" }
+	case "recurring": // a repeat rule, habits and after-completion rules too (#1900)
+		return func(t Row) bool { return str(t, "recurrence") != "" }
 	case "origin":
 		return func(t Row) bool { ok, _ := originOf(t); return ok }
 	case "no origin":

@@ -53,6 +53,112 @@
           }
         }
       }
+    },
+    "NSLocationWhenInUseUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo verwendet deinen Standort nur, wenn du bei einer Aufgabe „Meinen Standort verwenden“ wählst."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo uses your location only when you choose Use my location for a task."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo usa tu ubicación solo cuando eliges «Usar mi ubicación» en una tarea."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo utilise votre position uniquement lorsque vous choisissez « Utiliser ma position » pour une tâche."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo usa la tua posizione solo quando scegli «Usa la mia posizione» per un'attività."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo gebruikt je locatie alleen als je bij een taak ‘Mijn locatie gebruiken’ kiest."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O OpenTodo usa a sua localização apenas quando escolhe «Usar a minha localização» numa tarefa."
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅当你为任务选择“使用我的位置”时，OpenTodo 才会使用你的位置。"
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryAddUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo saves the images you choose to your photo library."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo speichert die Bilder, die du auswählst, in deiner Fotomediathek."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo guarda en tu fototeca las imágenes que eliges."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo enregistre dans votre photothèque les images que vous choisissez."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo salva nella tua libreria foto le immagini che scegli."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O OpenTodo guarda na sua fototeca as imagens que escolher."
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo 会将你选择的图片存储到你的照片图库。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo bewaart de afbeeldingen die je kiest in je fotobibliotheek."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

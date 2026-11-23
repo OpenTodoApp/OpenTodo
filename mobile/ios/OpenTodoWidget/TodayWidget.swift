@@ -118,5 +118,6 @@ struct OpenTodoWidgets: WidgetBundle {
     var body: some Widget {
         TodayWidget()
         FocusActivityWidget()
+        CompletedWidget()
     }
 }

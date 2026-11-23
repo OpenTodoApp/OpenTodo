@@ -73,6 +73,9 @@ final class AppModel: ObservableObject {
         case "focus":
             // focus-live-activity D4: the Live Activity's tap, Pause and Resume.
             pendingPath = FocusLink.path(action: query.first { $0.name == "action" }?.value)
+        case "stats":
+            // The Completed widget opens Statistics, as on Android.
+            pendingPath = "/stats"
         default:
             break
         }

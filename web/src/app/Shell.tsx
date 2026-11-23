@@ -1,17 +1,16 @@
 import { useHabitsEnabled } from '../lib/habitPrefs'
 import { resettable } from '../lib/moduleState'
 import { useHabitForm } from './habits/habitFormStore'
-import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, Skeleton, TruncatedText, trapTab, useMediaQuery, useOverlay, pageBar, usePageBar, useOverlayDepth } from '../ui'
+import { DESKTOP_HEADER_QUERY, IconButton, PageActions, PageBarTitle, Skeleton, TruncatedText, trapTab, useMediaQuery, useOverlay, pageBar, usePageBar, useOverlayDepth } from '../ui'
 import { useCommandBar } from './palette/useCommandBar'
 import { Suspense, useEffect, useRef, useState, type ComponentType, type RefObject } from 'react'
 import { lazy } from '../lib/lazy'
 import type { User } from '../lib/types'
 import { openStartView } from './startView'
 import { describeRejected } from '../lib/sharing'
-import { keysOf } from '../lib/shortcuts'
 import { useSyncStatus } from '../lib/sync'
 import { canonicalPath, navigate, offersQuickAdd, useRoute } from './router'
-import { SIDEBAR_COLLAPSED_REM, SIDEBAR_DEFAULT_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
+import { SIDEBAR_COLLAPSED_REM, SIDEBAR_DEFAULT_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth } from './sidebarLayout'
 import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
 import { PlacesView } from './locations/PlacesView'
@@ -32,13 +31,14 @@ import { WelcomeDialog } from './WelcomeDialog'
 import { ArchivePrompt } from './ArchivePrompt'
 import { notificationsOpen, sidebarFind } from './signals'
 import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
-import { closePanelIfStale, panelTaskId, usePanel } from './panel'
+import { closePanelIfStale, panelTaskId, usePanel, usePanelCovering } from './panel'
 import { currentAddress, openTaskPage, settleTrail } from './taskTrail'
 import { AddButton, TAB_BAR_HEIGHT_REM, TabBar } from './TabBar'
 import { PHONE_BAR_FRAME, PHONE_BAR_LINE, hasPhoneChrome } from './phoneFrame'
 import { usePhoneChrome } from './useScrollDirection'
 import { onQuickAddSheetRequest, QuickAddSheet, requestQuickAddSheet } from './QuickAddSheet'
 import { PanelHost } from './PanelHost'
+import { useRoomFold } from './useRoomFold'
 import { TaskPage } from './TaskPage'
 import { logicalToday, watchViewerZone } from '../lib/dates'
 import { useUserPrefsRow } from '../lib/localData'
@@ -275,7 +275,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   useEffect(() => { const off = onQuickAddSheetRequest(() => setAddOpen(true)); void handleShellUrl(requestQuickAddSheet); return off }, []) // and a native shell's address actions (native-shells)
   const addButton = useRef<HTMLButtonElement>(null)
   const sheetOpen = useOverlayDepth() > 0
-  const panelOpen = !!usePanel()
+  const [panelOpen, panelCoversPage] = [!!usePanel(), usePanelCovering()]
   const phoneChrome = !sheetOpen && !panelOpen && hasPhoneChrome(route)
   // The add button's room at the end of the page: only where the button is.
   const addRoom = phoneChrome && offersQuickAdd(route)
@@ -283,6 +283,9 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   // scopes"); the shell owns the `global` scope: the palette, `g` navigation, the
   // cheat sheet, the sidebar toggle and the assistant.
   useShortcutDispatcher()
+  const frame = useRef<HTMLElement>(null)
+  // Folded to icons while a docked panel needs the room (tablet-layouts D2).
+  const { sidebar, toggle: toggleSidebar } = useRoomFold(frame)
   const go = (r: Parameters<typeof navigate>[0]) => () => navigate(r)
   // Off means off (habits-home D2, daily-notes D5): `g Shift+H` and `g j` do nothing unless Habits or Daily notes is on.
   const habitsOn = useHabitsEnabled(), dailyOn = useUserPrefsRow()?.daily_notes === true
@@ -302,7 +305,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     // `[` collapses the sidebar to icons from 1024 px (app-shell "Resizable sidebar"); the calendar's and the timeline's own `[` win there.
     'global.sidebar': () => {
       if (!window.matchMedia?.('(min-width: 64rem)').matches) return false
-      toggleSidebarCollapsed()
+      toggleSidebar()
     },
     'global.assistant': () => {
       if (!showLauncher(assistantStatus())) return false
@@ -310,8 +313,6 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     },
   })
 
-  const sidebar = useSidebarLayout()
-  useHeaderSidebarToggle(sidebar.collapsed)
   const openPalette = palette.openSearch
   const vim = useVimEnabled()
   const [vimHelp, setVimHelp] = useState<HelpSection | null>(null)
@@ -319,7 +320,6 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const connections = useConnectionsRequest()
   // Page changes are announced (assistive-tech-semantics): the tab title names the
   // page and a navigation moves focus to its heading; the skip link jumps there too.
-  const frame = useRef<HTMLElement>(null)
   const content = useRef<HTMLDivElement>(null)
   usePageFocus(route, frame, content)
   // The phone's bottom chrome: the tab bar minimises while scrolling down, the toast sits above it (phone-v2 D5, D6).
@@ -332,15 +332,15 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       {drawer.open && <DrawerOverlay panel={drawer.drawer} onClose={() => setSidebarOpen(false)} />}
       <aside {...drawer.aside} data-sidebar data-sidebar-width={sidebar.collapsed ? 'collapsed' : sidebar.width}
         style={{ '--sidebar-w': `${sidebar.collapsed ? SIDEBAR_COLLAPSED_REM : sidebar.width}rem` } as React.CSSProperties}
-        className={`fixed inset-y-0 left-0 z-[45] flex w-80 max-w-[85vw] max-md:[&_[data-sidebar-item]]:min-h-12 transform max-md:border-r max-md:border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)] md:[--sidebar-bg:var(--color-canvas)] md:pointer-fine:[--sidebar-bg:var(--color-sidebar)] max-md:pl-safe transition-transform md:static md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-[45] flex w-80 max-w-[85vw] max-md:[&_[data-sidebar-item]]:min-h-12 transform max-md:border-r max-md:border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)] md:[--sidebar-bg:var(--color-canvas)] md:pointer-fine:[--sidebar-bg:var(--color-sidebar)] max-md:pl-safe transition-transform md:static md:h-full md:min-h-0 md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="min-w-0 flex-1">
-          <Sidebar route={route} user={user} onSearch={openPalette} onShortcuts={() => setShowHelp(true)} onFeedback={() => { setSidebarOpen(false); openFeedback() }} onSignOut={onLogout} onAssistant={showLauncher(assistant) ? openAssistant : undefined} collapsed={sidebar.collapsed} onToggleCollapse={toggleSidebarCollapsed} />
+          <Sidebar route={route} user={user} onSearch={openPalette} onShortcuts={() => setShowHelp(true)} onFeedback={() => { setSidebarOpen(false); openFeedback() }} onSignOut={onLogout} onAssistant={showLauncher(assistant) ? openAssistant : undefined} collapsed={sidebar.collapsed} onToggleCollapse={toggleSidebar} />
         </div>
         {!sidebar.collapsed && <SidebarResizer width={sidebar.width} />}
       </aside>
       {/* From 768 px the page is one inset content surface on the canvas: 8 px from the window, the surface radius, one hairline (precision-shell D1). */}
-      <main ref={frame} className="flex min-w-0 flex-1 flex-col md:!pb-0 md:mt-[max(0.5rem,var(--safe-top))] md:mb-2 md:mr-2 md:overflow-hidden md:rounded-surface md:border md:border-default md:bg-surface" data-app-frame data-phone-chrome={phoneChrome || undefined} inert={drawer.open || undefined}
+      <main ref={frame} className="flex min-w-0 flex-1 flex-col md:!pb-0 md:mt-[max(0.5rem,var(--safe-top))] md:mb-2 md:mr-2 md:overflow-hidden md:rounded-surface md:border md:border-default md:bg-surface" data-app-frame data-phone-chrome={phoneChrome || undefined} inert={drawer.open || panelCoversPage || undefined}
         style={phoneChrome ? { paddingBottom: `calc(${TAB_BAR_HEIGHT_REM}rem + var(--safe-bottom))` } : undefined}>
         {/* Below 768 px: the bar with the menu button, the page's title and its actions (app-shell "No desktop top bar"). */}
         <PhoneBar onMenu={() => setSidebarOpen(true)} /><PullHost scroller={content} />
@@ -519,10 +519,3 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
   )
 }
 
-/** Registers the sidebar toggle every page header shows (precision-shell D2). */
-function useHeaderSidebarToggle(collapsed: boolean) {
-  useEffect(() => {
-    setSidebarToggle({ collapsed, toggle: toggleSidebarCollapsed, shortcut: keysOf('global.sidebar') })
-    return () => setSidebarToggle(null)
-  }, [collapsed])
-}

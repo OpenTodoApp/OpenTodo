@@ -350,18 +350,3 @@ func (d *DAV) get(ctx context.Context, href string) (int, string, error) {
 	}
 	return resp.Status, resp.Header.Get("ETag"), nil
 }
-
-// masterEvent parses a calendar object and returns its first event that is
-// not an override.
-func masterEvent(data []byte) (calfeed.Event, bool) {
-	cal, err := calfeed.ParseCalendar(data)
-	if err != nil {
-		return calfeed.Event{}, false
-	}
-	for _, ev := range cal.Events {
-		if ev.RecurrenceID == "" {
-			return ev, true
-		}
-	}
-	return calfeed.Event{}, false
-}

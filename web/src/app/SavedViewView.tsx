@@ -337,7 +337,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                 collapsed={nested.get(key)?.collapsed}
                 onToggleCollapse={nested.get(key)?.hasChildren ? () => toggleCollapsed(tk.id) : undefined}
                 onToggle={() => act(setTaskCompletedWithFeedback(tk.id, !tk.completed_at))}
-                onOpen={(e) => { setSelected(key); openFromRow(tk.id, e) }}
+                selectOnClick onOpen={(e, intent) => { setSelected(key); openFromRow(tk.id, e, intent) }}
                 onOpenPage={() => openTaskPage(tk.id)}
                 onExpand={() => { setSelected(key); setExpanded((cur) => (cur === key ? null : key)) }}
                 {...bulk.rowProps(tk)}

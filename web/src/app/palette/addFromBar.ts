@@ -11,7 +11,7 @@ import { createTaskThenSuggest } from '../../lib/assistantSuggest'
 import { createTask } from '../../lib/ops'
 import { addTasksUndoable } from '../../lib/pasteTasks'
 import { preferredPlacement } from '../../lib/userPrefs'
-import { canEditTasks, membershipMap, roleOf } from '../../lib/sharing'
+import { canEditTasks, currentUserId, membershipMap, roleOf } from '../../lib/sharing'
 import { dayPartsPreferred } from '../../lib/dayParts'
 import { timeSectorsPreferred } from '../../lib/sectorPrefs'
 import { energyLevelsPreferred } from '../../lib/energy'
@@ -114,6 +114,8 @@ export async function lineToInput(line: string, projects: readonly ProjectRef[],
     energy: await energyLevelsPreferred(),
     // Sector phrases only while the account uses time sectors (time-sectors D8).
     sectors: await timeSectorsPreferred(),
+    // Links become link attachments, as in quick add (quick-add-links), once signed in.
+    links: !!(await currentUserId()),
   })
   return parsed.title ? toTaskInput(parsed, { labels, createLabel: createLabelByName }) : { title: line }
 }

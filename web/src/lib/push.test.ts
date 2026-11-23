@@ -91,7 +91,7 @@ describe('sendTestPush', () => {
 })
 
 const healthy: PushState = {
-  supported: true, available: true, permission: 'granted', enabled: true, includeContent: false, needsRenewal: false,
+  supported: true, available: true, permission: 'granted', enabled: true, includeContent: false, notify: { assigned: false, status: false }, needsRenewal: false,
   serviceWorker: true, serverUnreachable: false,
   subscription: { id: 's', deviceId: 'dev', includeContent: false, createdAt: 1, lastOkAt: 1_760_000_000_000, lastError: '', failures: 0, needsRenewal: false },
 }
@@ -139,5 +139,21 @@ describe('pushChecklist', () => {
     const s = step(pushChecklist(healthy, { kind: 'accepted_not_seen', testId: 't' }, true, { ua: MAC }), 'test')
     expect(s.status).toBe('fail')
     expect(s.detail).toMatch(/System Settings → Notifications/)
+  })
+})
+
+// assignee-notifications D2: the device's choices come from its subscription on
+// the server, else from what this device stored.
+describe('push notify choices', () => {
+  it('reads them from the subscription, and an older server without them means off', async () => {
+    vi.useRealTimers()
+    const { loadPushState, setPushNotify } = await import('./push')
+    answer(200, { publicKey: 'k', subscription: { id: 's', deviceId: 'd', includeContent: false, notify: { assigned: true, status: false }, createdAt: 1, lastOkAt: null, lastError: '', failures: 0, needsRenewal: false } })
+    expect((await loadPushState()).notify).toEqual({ assigned: true, status: false })
+    answer(200, { publicKey: 'k', subscription: { id: 's', deviceId: 'd', includeContent: false, createdAt: 1, lastOkAt: null, lastError: '', failures: 0, needsRenewal: false } })
+    expect((await loadPushState()).notify).toEqual({ assigned: false, status: false })
+    // Push off on this device: the choice is kept for when it is turned on.
+    answer(200, { publicKey: 'k', subscription: null })
+    expect((await setPushNotify({ assigned: false, status: true })).notify).toEqual({ assigned: false, status: true })
   })
 })

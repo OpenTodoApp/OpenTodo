@@ -14,6 +14,8 @@ export const SWIPE = {
   reveal: 64,
   /** The action fires on release. */
   commit: 96,
+  /** Minimum left travel to edit the title in an eligible list. */
+  title: 48,
   /** Or a release this fast (px per ms) past `reveal`. */
   flick: 0.5,
   /** Released or returned under this, nothing happens. */
@@ -27,6 +29,7 @@ export const SWIPE = {
 } as const
 
 export type SwipeDir = 'right' | 'left'
+type SwipeAction = SwipeDir | 'edit-title'
 
 /** Whether a move so far takes the row ('swipe'), belongs to the list ('scroll'), or is undecided. */
 export function lockOf(dx: number, dy: number): 'swipe' | 'scroll' | null {
@@ -41,8 +44,12 @@ export function offsetOf(dx: number): number {
 }
 
 /** What a release does: fire the action in the swipe's direction, or spring back. */
-export function releaseOf(dx: number, velocity: number): SwipeDir | null {
+export function releaseOf(dx: number, velocity: number, titleOnLeft = false): SwipeAction | null {
   const d = Math.abs(dx)
+  if (titleOnLeft && dx < 0) {
+    if (d >= SWIPE.commit) return 'left'
+    return d >= SWIPE.title ? 'edit-title' : null
+  }
   if (d < SWIPE.cancel) return null
   if (d >= SWIPE.commit || (d > SWIPE.reveal && Math.abs(velocity) > SWIPE.flick)) return dx > 0 ? 'right' : 'left'
   return null
@@ -52,6 +59,8 @@ export function releaseOf(dx: number, velocity: number): SwipeDir | null {
 export const revealed = (dx: number): boolean => Math.abs(dx) >= SWIPE.reveal
 
 export interface SwipeHandlers {
+  /** A short left swipe edits the title on this row. */
+  titleOnLeft?: boolean
   /** Asked when the move locks: false leaves the row alone (a hold already selected it). */
   canStart?: () => boolean
   /** The gesture took the row, in this direction (once per gesture; the direction may flip). */
@@ -59,7 +68,7 @@ export interface SwipeHandlers {
   /** Every move while the row is taken: the clamped offset. */
   onMove: (offset: number) => void
   /** The release: the action to fire, or null for a return. */
-  onEnd: (fire: SwipeDir | null) => void
+  onEnd: (fire: SwipeAction | null) => void
 }
 
 /**
@@ -105,7 +114,7 @@ export function beginSwipe(e: { pointerId: number; pointerType: string; clientX:
     stop()
     if (state !== 'swipe') return
     swallowClick()
-    h.onEnd(releaseOf(dx, velocity))
+    h.onEnd(releaseOf(dx, velocity, h.titleOnLeft))
   }
   const cancel = (ev: PointerEvent) => {
     if (ev.pointerId !== e.pointerId) return

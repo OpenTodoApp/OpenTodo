@@ -4,7 +4,7 @@
 // and drives src/lib/sync.ts, ops.ts and db.ts as the app does.
 // Run with `npm run test:contract` (needs ../bin/opentodo).
 import { describe, expect, it } from 'vitest'
-import { acceptInvitations, account, call, device, setOffline, switchTo } from '../test/contract'
+import { account, addMember, call, device, devicesOf, newProject, newTask, setOffline, switchTo } from '../test/contract'
 import { db } from './db'
 import { hlcLast, hlcSeed, MAX_FUTURE_SKEW_MS } from './hlc'
 import { mutate } from './ops'
@@ -16,19 +16,10 @@ interface Exported {
   tasks: { id: string; title: string; completed_at: number | null; priority: number }[]
 }
 
-function newProject(name: string) {
-  return { name, color: '#3b82f6', position: 1, archived: false, parent_id: null, created_at: Date.now(), deleted_at: null }
-}
-
-function newTask(title: string, projectId: string | null) {
-  return { title, description: '', project_id: projectId, parent_id: null, priority: 4, due: null, labels: [], position: 1, created_at: Date.now(), completed_at: null, deleted_at: null }
-}
-
 describe('sync client against the server', () => {
   it('two devices of one account converge on creates, edits and completion', async () => {
     const acct = await account()
-    const a = await device(acct, 'a')
-    const b = await device(acct, 'b')
+    const [a, b] = await devicesOf(acct, 'a', 'b')
     const project = id()
     const task = id()
 
@@ -54,8 +45,7 @@ describe('sync client against the server', () => {
 
   it('edits made offline on two devices converge on the later one everywhere', async () => {
     const acct = await account()
-    const a = await device(acct, 'a')
-    const b = await device(acct, 'b')
+    const [a, b] = await devicesOf(acct, 'a', 'b')
     const task = id()
     switchTo(a)
     await mutate('task', task, newTask('Original', null))
@@ -115,9 +105,7 @@ describe('sync client against the server', () => {
     await mutate('project', project, newProject('Shared'))
     await mutate('task', task, newTask('Owner wrote this', project))
     await syncNow()
-    await call(o.session, 'POST', `/api/v1/projects/${project}/members`, { email: viewer.email, role: 'viewer' })
-
-    await acceptInvitations(await device(viewer, 'viewer'))
+    await addMember(o, project, viewer, 'viewer', 'viewer')
     await syncNow()
     expect((await db.tasks.get(task))?.title).toBe('Owner wrote this')
     await mutate('task', task, { title: 'Viewer tried this' })
@@ -132,8 +120,7 @@ describe('sync client against the server', () => {
 
   it('a device that was offline sends its queue and pulls what it missed when it reconnects', async () => {
     const acct = await account()
-    const a = await device(acct, 'a')
-    const b = await device(acct, 'b')
+    const [a, b] = await devicesOf(acct, 'a', 'b')
     const mine = id()
     const theirs = id()
     switchTo(b)

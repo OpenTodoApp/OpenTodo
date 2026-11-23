@@ -13,7 +13,7 @@ The OpenTodo app for iPhone and iPad opens your own OpenTodo server, like the [i
 
 ## Install it
 
-The official app is in the App Store: [OpenTodo for iPhone and iPad](https://apps.apple.com/us/app/opentodo/id6832200428). It is the first release, so expect some rough edges, and [say what to improve](feedback-and-support.md). New builds go to testers through TestFlight, Apple's app for testing, before they reach the App Store.
+The official app is in the App Store: [OpenTodo for iPhone and iPad](https://apps.apple.com/us/app/opentodo/id6832200428). It is the first release, so expect some rough edges, and [say what to improve](feedback-and-support.md). New builds go to testers through TestFlight, Apple's app for testing, and every OpenTodo release is sent to Apple's App Store review the same day: the App Store update arrives once Apple approves it, usually within a few days.
 
 As the copyright holder, the author of OpenTodo allows distributing its iOS app through Apple's App Store and TestFlight. You can still build the app yourself from source ([Building it](#building-it)).
 
@@ -30,9 +30,9 @@ To point the app at another server later, long-press its icon and choose **Chang
 
 ### Single sign-on and login walls
 
-OpenTodo's own **Sign in with …** button (see [Single sign-on](self-hosting/sso.md)) signs in inside the app: the provider's page opens in the app and sends you back signed in. A bar above the provider's page names the site you are signing in on, since the app has no address bar; the **×** in the bar, or swiping back, returns to your server. A login wall in front of the server (Pangolin, Authelia, Authentik's proxy, Cloudflare Access, oauth2-proxy) works the same way once the app is connected: when the wall asks again, its sign-in page opens in the app. If a sign-in can't continue in the app (for example a page left open for a long time), the app says so and offers **Sign in here** to start again.
+OpenTodo's own **Sign in with …** button (see [Single sign-on](self-hosting/sso.md)) opens the provider's page in Safari's sign-in sheet (iOS asks first whether OpenTodo may use your server's address to sign in) asks you to confirm with **Continue**, and brings you back to the app signed in, so providers that refuse sign-in inside apps, such as Google, work too. Close the sheet to cancel. A login wall in front of the server (Pangolin, Authelia, Authentik's proxy, Cloudflare Access, oauth2-proxy) is different: once the app is connected, when the wall asks again, its sign-in page opens inside the app, with a bar above it that names the site you are signing in on (the app has no address bar); the **×** in the bar, or swiping back, returns to your server. If a sign-in can't continue in the app (for example a page left open for a long time), the app says so and offers **Sign in here** to start again.
 
-Only pages the sign-in leads through stay in the app; a link to another site on a sign-in page (a privacy policy, a help page) opens in Safari, like every other link. The app's first-run check does not pass a login wall: let the wall bypass `/api/v1/health` and `/healthz` (the [Android guide](android-app.md#bypassing-the-wall-instead) lists the paths). The hourly background refresh never follows the wall's redirect; while its session has expired, the refresh waits until you next open the app. Some providers refuse to sign in inside an app's web view (Google answers "Error 403: disallowed_useragent"); with those, sign in with a password or a passkey. An app built for one server with app-bound domains (see [Building it](#building-it)) can only show the pages of the hosts it declares, so add the provider's host to `OPENTODO_APP_BOUND_HOST` too.
+Only pages the sign-in leads through stay in the app; a link to another site on a sign-in page (a privacy policy, a help page) opens in Safari, like every other link. The app's first-run check does not pass a login wall: let the wall bypass `/api/v1/health` and `/healthz` (the [Android guide](android-app.md#bypassing-the-wall-instead) lists the paths). The hourly background refresh never follows the wall's redirect; while its session has expired, the refresh waits until you next open the app. A wall that signs in with a provider that refuses apps (Google answers "Error 403: disallowed_useragent") needs a password, a passkey or a bypass for the app's paths. An app built for one server with app-bound domains (see [Building it](#building-it)) can only show the pages of the hosts it declares, so add the provider's host to `OPENTODO_APP_BOUND_HOST` too.
 
 ## Reminders
 
@@ -72,7 +72,7 @@ Pulling a page down from its top [syncs now](offline-and-sync.md#the-sync-status
 
 ## Saving files
 
-Whatever the app saves opens the system's save dialog, where you choose a place in Files: the recovery key and recovery codes, an export, a theme, an attachment. Cancel and nothing is saved.
+An image or a PDF attached to a task opens in the system's preview: the share button saves it to Photos or Files, or sends it. Everything else the app saves opens the system's save dialog, where you choose a place in Files: the recovery key and recovery codes, an export, a theme, any other attachment. Cancel and nothing is saved.
 
 ## Focus on the lock screen
 

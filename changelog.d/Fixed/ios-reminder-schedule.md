@@ -1,0 +1,1 @@
+- **Reminders in the iPhone app are more robust.** A single entry the app couldn't read no longer stops every other reminder from being scheduled. A reminder handed over a few seconds after its time still shows, once, as in the Android app.

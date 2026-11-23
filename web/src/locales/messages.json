@@ -2220,11 +2220,13 @@
   "Assigned to me": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/NotificationChannelEditor.tsx",
+    "web/src/app/NotificationsSettings.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TaskListView.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts"
   ],
   "Assigned to someone": [
@@ -2235,20 +2237,19 @@
   ],
   "Assigned to you": [
     "web/src/app/IssueEditor.tsx",
-    "web/src/app/IssuesPanel.tsx"
+    "web/src/app/IssuesPanel.tsx",
+    "web/src/lib/undoActions.ts"
   ],
   "Assigned to you in these repositories": [
     "web/src/app/IssueEditor.tsx"
   ],
   "Assigned to {name}": [
     "web/src/app/AssigneePicker.tsx",
-    "web/src/app/filter/conditionText.ts"
+    "web/src/app/filter/conditionText.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Assigned to {name}, taking turns": [
     "web/src/app/AssigneePicker.tsx"
-  ],
-  "Assigned to {name}.": [
-    "web/src/lib/triage.ts"
   ],
   "Assignee": [
     "web/src/app/AssigneePicker.tsx",
@@ -2994,6 +2995,7 @@
     "web/src/app/task-detail/Composer.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/ZoneControl.tsx",
+    "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/themes/ImportReport.tsx",
     "web/src/app/themes/ThemeEditor.tsx",
     "web/src/app/themes/ThemePreview.tsx",
@@ -3542,13 +3544,6 @@
   "Clears your tasks from this device after uploading unsynced changes.": [
     "web/src/lib/settingsCopy.ts"
   ],
-  "Click a task to": [
-    "web/src/app/PreferencesPanels.tsx",
-    "web/src/lib/settingsCopy.ts"
-  ],
-  "Click a task to open its panel. The + button adds tasks, projects and more. Made a mistake? Undo is in the toast and Ctrl+Z.": [
-    "web/src/lib/sampleTasks.ts"
-  ],
   "Click to sync now": [
     "web/src/app/SyncStatus.tsx"
   ],
@@ -3907,6 +3902,7 @@
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/notes/NoteRow.tsx",
+    "web/src/app/quickadd/TickedSuggest.tsx",
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-list/ListGroups.tsx",
@@ -3925,6 +3921,11 @@
   "Completed occurrence of {title}": [
     "web/src/app/task-detail/TaskHead.tsx"
   ],
+  "Completed or reopened": [
+    "web/src/app/NotificationChannelEditor.tsx",
+    "web/src/app/NotificationsSettings.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Completed per day": [
     "web/src/app/method/loop/PulseDetails.tsx"
   ],
@@ -3939,9 +3940,6 @@
   ],
   "Completed {instant}": [
     "web/src/app/task-detail/ActivityTab.tsx"
-  ],
-  "Completed.": [
-    "web/src/lib/triage.ts"
   ],
   "Completed: {title}.": [
     "web/src/app/TriageView.tsx"
@@ -4761,7 +4759,8 @@
     "web/src/lib/review.ts"
   ],
   "Day skipped": [
-    "web/src/lib/occurrenceActions.ts"
+    "web/src/lib/occurrenceActions.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Day {n} of {m}": [
     "web/src/app/TaskRow.tsx",
@@ -4829,7 +4828,8 @@
     "web/src/app/RemindersField.tsx"
   ],
   "Deadline removed": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Deadline today": [
     "web/src/app/UrgencyChip.tsx"
@@ -4839,6 +4839,7 @@
     "web/src/app/ScheduleSheet.tsx",
     "web/src/app/TimelineView.tsx",
     "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts",
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Deadline {date}, {label}": [
@@ -5459,6 +5460,9 @@
   "Don’t ask again for {scheme}: on this device": [
     "web/src/app/AppLinkConfirm.tsx"
   ],
+  "Double-click a task to open it. The + button adds tasks, projects and more. Made a mistake? Undo is in the toast and Ctrl+Z.": [
+    "web/src/lib/sampleTasks.ts"
+  ],
   "Down": [
     "web/src/app/palette/BarParts.tsx"
   ],
@@ -5733,7 +5737,6 @@
     "web/src/app/habits/HabitForm.tsx"
   ],
   "Edit in place": [
-    "web/src/app/PreferencesPanels.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Edit issue connection": [
@@ -5781,11 +5784,8 @@
   "Edit the query of a saved view; Enter saves it, Esc discards": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Edit the selected task's title in place, with its date, priority, labels and project under it; Enter saves, Esc cancels, Shift+Enter opens the details": [
+  "Edit the selected task's title in place (also click its selected title). Enter saves, Esc cancels, Shift+Enter opens the details": [
     "web/src/lib/shortcuts.ts"
-  ],
-  "Edit the title, open the details or expand the row. This device only.": [
-    "web/src/lib/settingsCopy.ts"
   ],
   "Edit the title. Tab, Enter or a click away saves it and the decision keys work again. Esc restores it": [
     "web/src/lib/shortcuts.ts"
@@ -5798,6 +5798,9 @@
   ],
   "Edit this occurrence alone and move the series on": [
     "web/src/app/RecurrenceField.tsx"
+  ],
+  "Edit title": [
+    "web/src/app/bulk/BulkActions.tsx"
   ],
   "Edit webhook": [
     "web/src/app/WebhooksPanel.tsx"
@@ -6207,7 +6210,8 @@
     "web/src/app/review/BentoSlots.tsx"
   ],
   "Estimate removed": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Estimate {from} min → {to} min": [
     "web/src/lib/assistant.ts"
@@ -6216,7 +6220,8 @@
     "web/src/app/TaskRow.tsx"
   ],
   "Estimate {to} min": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Estimated at 15 minutes or less": [
     "web/src/lib/filters.ts"
@@ -6503,9 +6508,6 @@
   ],
   "Expand subtasks": [
     "web/src/app/TaskRow.tsx"
-  ],
-  "Expand the row": [
-    "web/src/app/PreferencesPanels.tsx"
   ],
   "Expand {name}": [
     "web/src/app/ProjectsTable.tsx",
@@ -7172,7 +7174,8 @@
     "web/src/app/AssigneePicker.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
-    "web/src/app/task-list/ListGroups.tsx"
+    "web/src/app/task-list/ListGroups.tsx",
+    "web/src/lib/undoActions.ts"
   ],
   "Four views over priority and date: sort work by urgent and important, and drag a card to re-plan it.": [
     "web/src/lib/boardTemplates.ts"
@@ -9472,8 +9475,10 @@
   ],
   "Link": [
     "web/src/app/EditorChrome.tsx",
+    "web/src/app/ParseChips.tsx",
     "web/src/app/UnlinkedMentions.tsx",
     "web/src/app/editorCommands.ts",
+    "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/fields.ts",
     "web/src/lib/richtextEditor.ts",
@@ -9760,7 +9765,8 @@
     "web/src/app/LocationRemindersSettings.tsx"
   ],
   "Location removed": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Locations": [
     "web/src/app/Sidebar.tsx",
@@ -10074,6 +10080,7 @@
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/ShareDialog.tsx",
     "web/src/app/WorkspacesSettings.tsx",
+    "web/src/app/menus/useProjectMenu.tsx",
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
@@ -10612,9 +10619,6 @@
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/lib/assistant.ts"
   ],
-  "Moved to the Trash.": [
-    "web/src/lib/triage.ts"
-  ],
   "Moved to the Trash: {title}.": [
     "web/src/app/TriageView.tsx"
   ],
@@ -10626,9 +10630,6 @@
   ],
   "Moved to {part}": [
     "web/src/lib/undoActions.ts"
-  ],
-  "Moved to {project}.": [
-    "web/src/lib/triage.ts"
   ],
   "Moved to {project}: {title}.": [
     "web/src/app/TriageView.tsx"
@@ -12232,7 +12233,8 @@
     "web/src/lib/occurrenceActions.ts"
   ],
   "Occurrence skipped": [
-    "web/src/lib/occurrenceActions.ts"
+    "web/src/lib/occurrenceActions.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Of": [
     "web/src/lib/rules/sentence.ts"
@@ -12791,7 +12793,6 @@
     "web/src/app/datetime/DateField.tsx"
   ],
   "Open details": [
-    "web/src/app/PreferencesPanels.tsx",
     "web/src/app/task-list/InlineEditor.tsx"
   ],
   "Open in Help": [
@@ -13315,9 +13316,6 @@
   ],
   "Park {title} in Someday": [
     "web/src/app/palette/registry.ts"
-  ],
-  "Parked for someday.": [
-    "web/src/lib/triage.ts"
   ],
   "Parked in Someday: {title}.": [
     "web/src/app/TriageView.tsx"
@@ -14081,6 +14079,7 @@
     "web/src/app/TimelineView.tsx"
   ],
   "Project updated": [
+    "web/src/app/menus/projectAppearance.tsx",
     "web/src/lib/webhooks.ts"
   ],
   "Project walk: add a next action to the project": [
@@ -14881,7 +14880,8 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Renamed “{from}” → “{to}”": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Rename…": [
     "web/src/app/locations/PlacesView.tsx"
@@ -14964,6 +14964,7 @@
   ],
   "Repeats": [
     "web/src/app/ParseChips.tsx",
+    "web/src/app/filter/conditionText.ts",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
@@ -15592,6 +15593,7 @@
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
+    "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/themes/ThemeEditor.tsx",
     "web/src/app/themes/ThemePreview.tsx",
     "web/src/ui/patterns/SaveBar.tsx"
@@ -15738,9 +15740,6 @@
   "Scheduled for today": [
     "web/src/lib/undoActions.ts",
     "web/src/lib/viewOrderMove.ts"
-  ],
-  "Scheduled for {date}.": [
-    "web/src/lib/triage.ts"
   ],
   "Scheduled for {date}: {title}.": [
     "web/src/app/TriageView.tsx"
@@ -16369,7 +16368,8 @@
     "web/src/app/WelcomeDialog.tsx"
   ],
   "Share project": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/ProjectHeader.tsx",
+    "web/src/app/menus/useProjectMenu.tsx"
   ],
   "Share the current project: add members by email, change roles, remove, leave, transfer": [
     "web/src/lib/shortcuts.ts"
@@ -16475,6 +16475,11 @@
   ],
   "Show connections of {title}": [
     "web/src/app/palette/registry.ts"
+  ],
+  "Show deadlines as dates": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Show details": [
     "web/src/app/TaskRow.tsx",
@@ -16939,9 +16944,6 @@
   ],
   "Skipped {day}: the mail server could not be reached for six hours": [
     "web/src/app/DigestCard.tsx"
-  ],
-  "Skipped.": [
-    "web/src/lib/triage.ts"
   ],
   "Skipped: {title}.": [
     "web/src/app/TriageView.tsx"
@@ -17547,7 +17549,8 @@
     "web/src/lib/push.ts"
   ],
   "Subtask of “{task}”": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Subtask shown for context": [
     "web/src/app/TaskRow.tsx"
@@ -18340,6 +18343,9 @@
   ],
   "The database kept before that restore is removed from the server for good: <span>{deleting}</span>.": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "The date on task rows instead of the days left": [
+    "web/src/app/settingsIndex.ts"
   ],
   "The demo could not be reached. Check your connection and try again.": [
     "web/src/lib/demo.ts"
@@ -19911,9 +19917,6 @@
     "web/src/app/TaskPage.tsx",
     "web/src/lib/noteOps.ts"
   ],
-  "This task was moved elsewhere.": [
-    "web/src/lib/triage.ts"
-  ],
   "This test sends the inputs to {provider} and uses about {n} tokens. Nothing is written.": [
     "web/src/app/routines/RoutineEditor.tsx"
   ],
@@ -20792,7 +20795,8 @@
     "web/src/app/filter/conditionText.ts",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
-    "web/src/lib/facets.ts"
+    "web/src/lib/facets.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Unavailable custom field": [
     "web/src/app/views/DisplayOptionsBody.tsx",
@@ -26017,11 +26021,17 @@
   "{name} answered about <task>{title}</task>": [
     "web/src/app/Briefing.tsx"
   ],
+  "{name} assigned you a task": [
+    "web/public/push-sw.js"
+  ],
   "{name} can sign in again.": [
     "web/src/app/UsersPanel.tsx"
   ],
   "{name} cleared": [
     "web/src/lib/assistant.ts"
+  ],
+  "{name} completed a task": [
+    "web/public/push-sw.js"
   ],
   "{name} failed · {why}": [
     "web/src/lib/rules/inbox.ts"
@@ -26077,6 +26087,9 @@
   ],
   "{name} ran {n} times": [
     "web/src/lib/rules/inbox.ts"
+  ],
+  "{name} reopened a task": [
+    "web/public/push-sw.js"
   ],
   "{name} replied": [
     "web/src/app/Briefing.tsx"

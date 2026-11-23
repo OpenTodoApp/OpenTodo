@@ -124,7 +124,8 @@ describe('opening the panel moves nothing (list-stays-still D1)', () => {
     expect(css).toMatch(/@media \(min-width: 90rem\)\s*\{\s*:root\s*\{\s*--panel-w:\s*30rem;\s*\}\s*\}/)
     const sources = import.meta.glob(['../../app/PanelFrame.tsx', '../../app/task-detail/TaskDetail.tsx'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>
     for (const [path, src] of Object.entries(sources)) {
-      expect(src, path).toContain('lg:w-(--panel-w)')
+      // Docked from 900 px (tablet-layouts D2).
+      expect(src, path).toContain('min-[56.25rem]:w-(--panel-w)')
       expect(src, path).not.toMatch(/min-\[1440px\]:w-|lg:w-\[26rem\]/)
     }
   })

@@ -1,6 +1,6 @@
 import { Dialog } from '../ui'
 import { type FormEvent, useEffect, useRef, useState } from 'react'
-import { api, ApiError, OIDC_START_URL, setReauthHandler } from '../lib/api'
+import { api, ApiError, OIDC_LINK_URL, setReauthHandler } from '../lib/api'
 import { t } from '../lib/i18n'
 
 // Step-up re-authentication (OpenSpec `mfa-totp`). Sensitive actions answer
@@ -55,7 +55,7 @@ export function ReauthDialogView(p: ReauthDialogViewProps) {
         </form>
         {p.provider && (
           <p className="mt-3 text-meta text-muted">
-            <a className="text-accent underline" href={OIDC_START_URL}>{t('Confirm with {provider} instead', { provider: p.provider })}</a>
+            <a className="text-accent underline" href={OIDC_LINK_URL}>{t('Confirm with {provider} instead', { provider: p.provider })}</a>
           </p>
         )}
     </Dialog>

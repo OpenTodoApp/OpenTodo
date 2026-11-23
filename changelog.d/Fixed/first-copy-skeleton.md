@@ -1,0 +1,1 @@
+- **A new device no longer shows empty lists before its first sync.** Signing in on a phone or browser that held nothing showed "Nothing planned" and empty lists for a moment, then jumped as the tasks arrived; the lists now keep their loading rows until the first copy is in.

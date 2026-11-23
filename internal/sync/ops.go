@@ -912,6 +912,11 @@ var Schema = map[string]map[string]Field{
 		// with an ellipsis; clients read an empty or unknown value as off and
 		// keep the stored value. Settings, never content.
 		"full_titles": {Kind: kString, Default: `""`},
+		// Deadlines as dates (OpenSpec change deadline-dates, design D1): "on" makes
+		// task rows show a deadline as its date ("Nov 28") instead of the countdown
+		// ("5d"), in the same tone; clients read an empty or unknown value as off and
+		// keep the stored value. Settings, never content.
+		"deadline_dates": {Kind: kString, Default: `""`},
 		// Today's grouping (builtin-view-options D1, D2): "day" (Time of day),
 		// "project", "priority", "label" or "none". Earlier, Blocked, Waiting for
 		// a slot and Done today keep their place. Clients read empty, unknown or unavailable

@@ -14,7 +14,8 @@ export default defineConfig({
     globalSetup: ['./src/test/contractServer.ts'],
     // One server, one account per test: files run one after another.
     fileParallelism: false,
-    testTimeout: 60_000,
+    // A sign-up past the server's limit waits for its one-minute window (src/test/contract.ts).
+    testTimeout: 120_000,
     env: { TZ: 'UTC' },
   },
 })
