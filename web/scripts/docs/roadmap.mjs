@@ -17,14 +17,14 @@ export const END = '<!-- roadmap:end -->'
 
 const stripLinks = (s) => s.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
 
-/** The milestones of ROADMAP.md's "The road to 1.0": [{ title, changes: [{ name, what }] }]. */
+/** The milestones of ROADMAP.md's "Milestones" section: [{ title, changes: [{ name, what }] }]. */
 export function parseRoadmap(text) {
   const out = []
   let inPlan = false
   let current = null
   for (const line of text.split('\n')) {
     const h2 = /^## (.*)$/.exec(line)
-    if (h2) { inPlan = /road to 1\.0/i.test(h2[1]); current = null; continue }
+    if (h2) { inPlan = /^milestones$/i.test(h2[1].trim()); current = null; continue }
     if (!inPlan) continue
     const h3 = /^### (.*)$/.exec(line)
     if (h3) { current = { title: stripLinks(h3[1]).trim(), changes: [] }; out.push(current); continue }
