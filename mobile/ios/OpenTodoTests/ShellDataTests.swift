@@ -786,21 +786,52 @@ final class AppModelTests: XCTestCase {
 
     /// shell-repairs D6: Done, Snooze and Dismiss build the addresses of the shared bridge
     /// fixture (the Android app's too), which the web app reads.
-    func testReminderActionsBuildTheFixturesAddresses() throws {
+    private func actionsFixture() throws -> [String: Any] {
         let file = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent("android/app/src/test/resources/bridge/actions.json")
-        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
-        let cases = try XCTUnwrap(fixture["reminderActions"] as? [[String: String]])
-        // Plain ids only: Android writes a space as "+", this shell as "%20"; the web app reads both.
-        let plain = cases.filter { $0["id"] == "abc" }
-        XCTAssertEqual(Set(plain.compactMap { $0["action"] }), Set(Notifications.actions))
-        let model = AppModel()
-        for c in plain {
-            let id = try XCTUnwrap(c["id"])
-            model.show(reminder: id, action: c["action"])
-            XCTAssertEqual(model.pendingPath, c["path"])
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+    }
+
+    /// A query as the web app reads it (URLSearchParams): names and values, a `+` a space.
+    private func query(_ path: String) -> [[String]] {
+        guard path.hasPrefix("/?") else { return [] }
+        return path.dropFirst(2).split(separator: "&", omittingEmptySubsequences: false).map { pair in
+            pair.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false).map {
+                $0.replacingOccurrences(of: "+", with: " ").removingPercentEncoding ?? "\u{FFFD}"
+            }
         }
+    }
+
+    func testReminderActionsBuildTheFixturesAddresses() throws {
+        let cases = try XCTUnwrap(try actionsFixture()["reminderActions"] as? [[String: String]])
+        XCTAssertEqual(Set(cases.filter { $0["id"] == "abc" }.compactMap { $0["action"] }), Set(Notifications.actions))
+        let model = AppModel()
+        for c in cases {
+            let id = try XCTUnwrap(c["id"])
+            let path = try XCTUnwrap(c["path"])
+            model.show(reminder: id, action: c["action"])
+            let built = try XCTUnwrap(model.pendingPath)
+            // Android writes a space as "+", this shell as "%20": the same query for the web app,
+            // and the same address for every id without a space.
+            XCTAssertEqual(query(built), query(path), id)
+            if !id.contains(" ") { XCTAssertEqual(built, path, id) }
+        }
+    }
+
+    /// A tap on a reminder and the quick-add widget open the fixture's addresses too.
+    func testTaskAndQuickAddAddressesFollowTheFixture() throws {
+        let fixture = try actionsFixture()
+        let tasks = try XCTUnwrap(fixture["taskPaths"] as? [[String: String]])
+        XCTAssertFalse(tasks.isEmpty)
+        let model = AppModel()
+        for t in tasks {
+            model.show(task: try XCTUnwrap(t["taskId"]))
+            XCTAssertEqual(model.pendingPath, t["path"])
+        }
+        let quickAdd = try XCTUnwrap(fixture["quickAdd"] as? [String: String])
+        model.show(add: "")
+        XCTAssertEqual(model.pendingPath, quickAdd["path"])
     }
 
     func testDoneOpensTheReminderWithDone() {
