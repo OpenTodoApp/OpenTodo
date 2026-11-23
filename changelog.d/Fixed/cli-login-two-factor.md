@@ -1,0 +1,1 @@
+- **`ot login` works for accounts with two-factor authentication.** After the password it asks for the authenticator code, or a recovery code, instead of stopping with "server did not start a session".

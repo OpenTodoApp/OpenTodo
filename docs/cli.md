@@ -65,7 +65,7 @@ Signed in to https://todo.example.com as you@example.com (profile "default").
 Token "cli@laptop" stored in /home/you/.config/opentodo/config.json.
 ```
 
-`ot login` signs in with your email and password, creates an API token named `cli@<hostname>`, signs the session out again and stores only the token. The password is never echoed and never stored. You will see the token in **Settings → Integrations → API tokens** in the web app, where it can also be revoked.
+`ot login` signs in with your email and password, creates an API token named `cli@<hostname>`, signs the session out again and stores only the token. The password is never echoed and never stored. With [two-factor authentication](two-factor.md) on, it then asks for the code from your authenticator app, or one of your recovery codes. You will see the token in **Settings → Integrations → API tokens** in the web app, where it can also be revoked.
 
 Other ways to get credentials in:
 

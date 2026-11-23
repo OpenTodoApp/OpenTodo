@@ -173,7 +173,7 @@ func (c *client) do(ctx context.Context, method, path string, body any, headers 
 		return nil, resp.StatusCode, c.unreachable(err)
 	}
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		if path == "/auth/login" {
+		if path == "/auth/login" || path == "/auth/mfa" {
 			for _, ck := range resp.Cookies() {
 				if ck.Name == "opentodo_session" {
 					c.cookie = ck
