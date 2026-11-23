@@ -46,8 +46,16 @@ export async function account(name = 'Contract'): Promise<{ email: string; passw
   const email = `contract-${Date.now()}-${++accounts}@example.com`
   const password = 'contract test password'
   const session = { cookie: '' }
-  const res = await call<{ user: { id: string } }>(session, 'POST', '/api/v1/auth/register', { email, name, password })
-  return { email, password, id: res.user.id }
+  // The server allows 10 sign-ups a minute from one address, for the whole run: past that, wait for the window.
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await call<{ user: { id: string } }>(session, 'POST', '/api/v1/auth/register', { email, name, password })
+      return { email, password, id: res.user.id }
+    } catch (err) {
+      if (attempt >= 14 || !String(err).includes('HTTP 429')) throw err
+      await new Promise((r) => setTimeout(r, 5000))
+    }
+  }
 }
 
 /**
