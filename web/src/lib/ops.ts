@@ -938,11 +938,6 @@ async function liveTasks(): Promise<Task[]> {
  * another project; the REST API enforces the same rules. The task is placed last
  * among its new siblings. One op per changed field, so the move converges by LWW.
  */
-export async function setTaskParent(id: string, parentId: string | null): Promise<void> {
-  const change = await planTaskParent(id, parentId)
-  if (change) await mutate('task', id, change.patch)
-}
-
 /**
  * The change that makes a task a subtask of `parentId` (null: top level), last among its new
  * siblings; null when it is already there. Throws for a parent that is the task, one of its

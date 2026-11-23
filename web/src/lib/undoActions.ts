@@ -132,7 +132,7 @@ export async function titleUndoable(id: string, title: string): Promise<Undoable
  * Make one task a subtask of another, or with null a top-level task (Tab and Shift-Tab in a list,
  * the task panel's Parent task), as one step of undo history named "Subtask of “{task}”" or, at the
  * top level, "Task updated" (OpenSpec change undo-indent). The same parent records nothing; a parent
- * that is the task, one of its subtasks or in another project throws, as setTaskParent does. A
+ * that is the task, one of its subtasks or in another project throws (planTaskParent). A
  * repeating task records its step too: its parent is its own and is not carried to the series.
  */
 export async function parentUndoable(id: string, parentId: string | null): Promise<UndoableResult> {

@@ -2,9 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, getMeta, useDatabase } from './db'
 import {
   applyOps, archiveProject, createProject, createSubtask, createTask, deleteProject, deleteTask, getDeviceId, moveProject, mutate,
-  createTasks, mutateMany, planTasks, PlaintextTooLongError, resetDeviceId, setTaskCompleted, setTaskParent, updateProject, updateTask,
+  createTasks, mutateMany, planTasks, PlaintextTooLongError, resetDeviceId, setTaskCompleted, updateProject, updateTask,
 } from './ops'
 import { compareByPosition } from './ordering'
+import { parentUndoable } from './undoActions'
 import { inboxTasks } from './inbox'
 import { HLC_META, hlcLast, wins } from './hlc'
 import { parentReadyToComplete } from './subtasks'
@@ -345,23 +346,23 @@ describe('subtasks', () => {
     expect(t.completed_at).toBeNull()
   })
 
-  it('setTaskParent rejects self, a descendant and a different-project parent', async () => {
+  it('parentUndoable rejects self, a descendant and a different-project parent', async () => {
     const { db, trip, flights, hotel, compare } = await tree()
     const other = await createTask({ title: 'Elsewhere', project_id: 'home' })
-    await expect(setTaskParent(trip, trip)).rejects.toThrow()
-    await expect(setTaskParent(trip, compare)).rejects.toThrow(/descendant/)
-    await expect(setTaskParent(hotel, other)).rejects.toThrow(/same project/)
+    await expect(parentUndoable(trip, trip)).rejects.toThrow()
+    await expect(parentUndoable(trip, compare)).rejects.toThrow(/descendant/)
+    await expect(parentUndoable(hotel, other)).rejects.toThrow(/same project/)
     expect((await db.tasks.get(trip))?.parent_id).toBeNull()
     expect((await db.tasks.get(hotel))?.parent_id).toBe(trip)
     // A legal move places the task last among its new siblings.
-    await setTaskParent(hotel, flights)
+    await parentUndoable(hotel, flights)
     const moved = (await db.tasks.get(hotel))!
     expect(moved.parent_id).toBe(flights)
-    await setTaskParent(compare, trip)
+    await parentUndoable(compare, trip)
     const c = (await db.tasks.get(compare))!
     expect(c.parent_id).toBe(trip)
     expect(c.position).toBeGreaterThan((await db.tasks.get(flights))!.position)
-    await setTaskParent(compare, null)
+    await parentUndoable(compare, null)
     expect((await db.tasks.get(compare))?.parent_id).toBeNull()
   })
 

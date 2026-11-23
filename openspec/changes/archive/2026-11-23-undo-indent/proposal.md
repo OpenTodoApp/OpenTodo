@@ -6,7 +6,7 @@
 
 ## What Changes
 
-- `planTaskParent` (in `ops.ts`) plans the change `setTaskParent` writes, with the same checks; `setTaskParent` writes it as before.
+- `planTaskParent` (in `ops.ts`) replaces `setTaskParent`: it plans the same change with the same checks, and writes nothing.
 - `parentUndoable` records it as one step: "Subtask of “{task}”" with the new parent's title, or "Task updated" at the top level (both existing strings). No toast, as for the panel's other single edits.
 - Tab and Shift-Tab in a list and the panel's Parent task use it. The same parent records nothing; a refused parent throws as before.
 - A repeating task records its step too: `setTaskParent` never carried a parent to the series.

@@ -8,7 +8,8 @@ import { PanelBoundary } from './PanelBoundary'
 import { lazy } from '../lib/lazy'
 import { Suspense } from 'react'
 import { useDatabase } from '../lib/db'
-import { createTask, resetDeviceId, setTaskParent } from '../lib/ops'
+import { createTask, resetDeviceId } from '../lib/ops'
+import { parentUndoable } from '../lib/undoActions'
 import { flush, render, waitFor } from '../ui/test-utils'
 
 function Broken(): never {
@@ -91,7 +92,7 @@ describe('failed actions', () => {
     hideBulkToast()
     const id = await createTask({ title: 'Plan' })
     // Before: `void setTaskParent(...).catch(() => undefined)` showed nothing.
-    runAction(setTaskParent(id, id))
+    runAction(parentUndoable(id, id))
     await waitFor(() => !!bulkToast(), 'the toast')
     expect(bulkToast()?.label).toBe('a task cannot be its own parent')
     expect(bulkToast()?.undoId).toBeNull()
