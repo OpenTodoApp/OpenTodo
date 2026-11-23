@@ -484,7 +484,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               contextualDrag={!!drag.draggingId && contextIds.has(drag.draggingId)}
               editable={m.projectEditable} renderRow={renderRow} addingTo={addingTo} setAddingTo={ui.setAddingTo} onToggleSection={toggleSection}
               doneBySection={m.showCompleted ? NO_DONE : m.doneBySection} revealed={revealed}
-              completed={m.showCompleted && projectId ? { tasks: m.completedTasks, open: m.completedOpen, onToggle: () => m.toggleCollapsed(completedOpenKey(projectId)), gotIt: m.reusable } : undefined} toggleCollapsed={m.toggleCollapsed} collapsedGroups={collapsedGroups} projects={m.projects} labels={m.labels}
+              completed={m.showCompleted && projectId ? { tasks: m.completedTasks, open: m.completedOpen, onToggle: () => m.toggleCollapsed(completedOpenKey(projectId)) } : undefined} toggleCollapsed={m.toggleCollapsed} collapsedGroups={collapsedGroups} projects={m.projects} labels={m.labels}
               earlierActions={route.view === 'today' || m.upcomingToday ? earlierActions : undefined}
               eventsFor={upcomingCal.eventsFor} summarised={summarised}
               onReveal={(key) => setRevealed((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n })} />

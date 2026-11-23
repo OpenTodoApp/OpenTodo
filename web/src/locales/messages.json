@@ -7652,9 +7652,6 @@
   "Got it": [
     "web/src/app/assistant/DisclosureNotice.tsx"
   ],
-  "Got it|list": [
-    "web/src/app/task-list/ListGroups.tsx"
-  ],
   "Graduate": [
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/habits/HabitSection.tsx"
@@ -25403,9 +25400,6 @@
   ],
   "{n, plural, one {# item changed} other {# items changed}}": [
     "web/src/app/auditFormat.ts"
-  ],
-  "{n, plural, one {# item ticked off} other {# items ticked off}}": [
-    "web/src/app/task-list/ListGroups.tsx"
   ],
   "{n, plural, one {# item written by AI} other {# items written by AI}}": [
     "web/src/lib/rules/inbox.ts"
