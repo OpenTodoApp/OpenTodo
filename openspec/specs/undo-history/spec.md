@@ -196,6 +196,21 @@ Choosing Today, Tomorrow, Next week or a picked day in the phone's Schedule shee
 - **WHEN** a person parks a weekly task in Someday
 - **THEN** it is parked and stops repeating, as before, and no step is added
 
+### Requirement: Moving an Inbox task to another workspace is a step
+Moving one task without a project to another workspace's Inbox, from the command palette's "Move to workspace" command or from the "Move to …" action of the toast shown after quick add, SHALL record one step in the undo history named "Moved to {workspace}" and SHALL show the Undo toast, as the task panel's move does. The toast SHALL offer the move only while the task has no project and no parent. Undoing it SHALL bring the task back to the workspace it was in, and redoing it SHALL move it again. The change SHALL be written locally first, offline too, as an ordinary op that converges through sync.
+
+#### Scenario: Undo a palette move
+- **WHEN** a person moves an Inbox task of Work to Personal with the command palette and then presses Ctrl/Cmd-Z with no field focused
+- **THEN** the task is in Work's Inbox again
+
+#### Scenario: The toast after quick add
+- **WHEN** a person adds a task with quick add, chooses "Move to Personal" on the toast, and then chooses Undo
+- **THEN** the task is back in the workspace it was added to
+
+#### Scenario: A task with a project
+- **WHEN** a person adds a task with quick add into a project
+- **THEN** the toast offers no move to another workspace
+
 ### Requirement: The panel's Start date, Multi-day switch and time zone are steps
 Setting or clearing one task's start date in the task panel, turning its Multi-day switch on or off, and fixing its time to a time zone or releasing it SHALL each record one step in the undo history named "Rescheduled", and SHALL NOT show the Undo toast, like the panel's other single edits. Undoing the step SHALL restore the values the task had before it, and redoing it SHALL apply them again. A change to the values a task already has SHALL record nothing. A repeating task SHALL be written as before, carried to its series and following the task panel's scope, and SHALL NOT record a step. The change SHALL be written locally first, offline too, as an ordinary op that converges through sync.
 

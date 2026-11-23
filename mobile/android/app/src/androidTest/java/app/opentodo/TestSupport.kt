@@ -23,6 +23,8 @@ import java.util.concurrent.TimeUnit
 class FakeServer(https: okhttp3.tls.HandshakeCertificates? = null) {
     val server = MockWebServer()
     val paths = CopyOnWriteArrayList<String>()
+    /** The page at `/` instead of the plain one, for a test that needs its own (shell-reveal-on-paint). */
+    @Volatile var rootPage: String? = null
 
     init {
         https?.let { server.useHttps(it.sslSocketFactory(), false) }
@@ -34,6 +36,9 @@ class FakeServer(https: okhttp3.tls.HandshakeCertificates? = null) {
                     path == "/pick-file" -> html(PICK_FILE_PAGE)
                     path == "/api/v1/health" || path == "/healthz" -> MockResponse().setHeader("Content-Type", "application/json").setBody("""{"status":"ok","version":"0.0.0-test"}""")
                     path.startsWith("/share") -> html(SHARE_PAGE)
+                    path == "/" && rootPage != null -> html(rootPage!!)
+                    // An image that takes longer than the launch screen's cap: the page's load never ends in time.
+                    path == "/slow.png" -> MockResponse().setHeader("Content-Type", "image/png").setBodyDelay(30, java.util.concurrent.TimeUnit.SECONDS).setBody("x")
                     else -> html("<!doctype html><title>OpenTodo test</title><p id=path>$path</p><a id=out href=\"https://example.org/outside\">out</a>")
                 }
             }

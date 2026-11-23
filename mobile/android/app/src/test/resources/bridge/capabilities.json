@@ -10,7 +10,8 @@
     "files",
     "haptics",
     "completion-sound",
-    "alarm-settings"
+    "alarm-settings",
+    "first-paint"
   ],
   "backgroundOnly": [
     "background"
@@ -23,7 +24,8 @@
   "methods": {
     "openAlarmSettings": "alarm-settings",
     "backgroundDone": "background",
-    "playCompletionSound": "completion-sound"
+    "playCompletionSound": "completion-sound",
+    "painted": "first-paint"
   },
   "expect": {
     "visible": {
