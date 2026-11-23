@@ -6,8 +6,9 @@
 
 ## What Changes
 
-- `skipOccurrence` moves from `ops.ts` to `undoActions.ts`, with the same signature and result. It plans the skip as before (`planSkip`) and applies it as one step named "Occurrence skipped", a string that already exists in every locale. No toast.
-- A habit's skip, which also writes the occurrence record marked skipped, is one step with it. Undo removes the record and puts the date back.
+- `skipOccurrence` moves from `ops.ts` to `undoActions.ts`, with the same signature and result. It plans the skip as before (`planSkip`) and applies it as one step named "Occurrence skipped", or "Day skipped" for a habit as the calendar's skip is. Both strings already exist in every locale. No toast.
+- A habit's skip also writes the occurrence record marked skipped, in the same step. Undo writes that record back as the untouched open occurrence, as `actOnOccurrenceUndoable` does, and never moves it to the Trash (series-exceptions D3: a purged id could never be written again).
+- Skips run one after the other, so a skip key held down plans each skip from the last one's result, as the transaction around the old write did.
 - The list's skip key, the command palette, the task panel and the repeat field use it, as do the tests that skip.
 
 ## Out of scope

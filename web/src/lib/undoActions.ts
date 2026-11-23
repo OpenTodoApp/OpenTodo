@@ -16,6 +16,7 @@ import type { FilterContext } from './filter'
 import { planRule, ruleParts, type RuleNames } from './rules'
 import type { Project, Task, View } from './types'
 import { applyBatch } from './undo'
+import type { ProposedChange } from './assistantTypes'
 import { compileView } from './views'
 import { t } from './i18n'
 import { uuid } from './ids'
@@ -165,15 +166,35 @@ export async function projectRenameUndoable(id: string, name: string): Promise<U
 
 /**
  * Skip a repeating task's current occurrence: the series moves to the next date, and a habit also
- * gets its occurrence record marked skipped. One step of undo history named "Occurrence skipped"
- * (OpenSpec change undo-skip). False, with nothing written, when there is no occurrence to skip.
+ * gets its occurrence record marked skipped. One step of undo history named "Occurrence skipped",
+ * or "Day skipped" for a habit as the calendar's skip is (OpenSpec change undo-skip). Undo never
+ * trashes the habit's record: it writes back the untouched open occurrence on its date, as
+ * actOnOccurrenceUndoable does (series-exceptions D3). Skips run one after the other, so a key
+ * held down plans each from the last one's result. False, with nothing written, when there is no
+ * occurrence to skip.
  */
-export async function skipOccurrence(id: string, opts: { now?: number; today?: string } = {}): Promise<boolean> {
+export function skipOccurrence(id: string, opts: { now?: number; today?: string } = {}): Promise<boolean> {
+  const run = () => skipNow(id, opts)
+  const next = skipQueue.then(run, run)
+  skipQueue = next.catch(() => undefined)
+  return next
+}
+let skipQueue: Promise<unknown> = Promise.resolve()
+
+async function skipNow(id: string, opts: { now?: number; today?: string }): Promise<boolean> {
   const series = await db.tasks.get(id)
   const rule = seriesRule(series)
   const changes = series && rule ? planSkip(series, rule, opts.now ?? Date.now(), opts.today ?? logicalToday(), await lineageRows(id)) : null
-  if (!changes) return false
-  await apply(changes, t('Occurrence skipped'))
+  if (!series || !changes) return false
+  await getDeviceId()
+  const proposed: ProposedChange[] = []
+  for (const c of changes) {
+    const local = (await db.tasks.get(c.entityId)) as unknown as Record<string, unknown> | undefined
+    // A new record's undo state is the open occurrence: its own fields, not completed, not skipped.
+    const from = local ?? { ...c.patch, completed_at: null, skipped: false }
+    proposed.push({ entity: c.entity, entityId: c.entityId, patch: c.patch, base: Object.fromEntries(Object.keys(c.patch).map((f) => [f, from[f] ?? null])) })
+  }
+  await applyBatch(proposed, { source: 'action', label: series.habit ? t('Day skipped') : t('Occurrence skipped') })
   return true
 }
 
