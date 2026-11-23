@@ -10,6 +10,8 @@
     <string name="setup_refused">Bu adres kullanılamıyor. todo.example.com gibi bir adres girin.</string>
     <string name="setup_needs_https">Bu adres güvenli bir bağlantı (https) gerektiriyor.</string>
     <string name="setup_insecure">Bu adres yerel ağınızda ve şifreli değil: aynı ağdaki diğer kişiler gönderdiklerinizi okuyabilir. Yine de bağlanmak için tekrar dokunun.</string>
+    <string name="setup_home_only">Bu adres yalnızca ev ağında çalışır.</string>
+    <string name="setup_home_only_link">OpenTodo\'yu ev dışında kullanın</string>
     <string name="setup_no_network">Bağlantı yok. İlk başlangıç ağ gerektirir; bağlantı geri geldiğinde bu ekran yeniden dener.</string>
     <string name="setup_not_opentodo">Bu adres bir OpenTodo sunucusu gibi yanıt vermiyor. Adresi kontrol edin.</string>
     <string name="setup_untrusted">Bu telefon sunucunun sertifikasına güvenmiyor. Sunucuyu yöneten kişiye danışın veya sertifika yetkilisini Android ayarlarından yükleyin.</string>
