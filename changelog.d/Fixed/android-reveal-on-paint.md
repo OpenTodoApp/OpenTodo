@@ -1,1 +1,0 @@
-- **The Android app opens as soon as the app has drawn**, as the iPhone app does. It no longer waits for the page to finish loading.

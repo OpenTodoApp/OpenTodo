@@ -1,1 +1,0 @@
-- **Ticked items are suggested in the phone's add sheet too.** In a reusable list, typing a few letters in the sheet the add button opens lists the matching ticked items; pick one to put it back.
