@@ -606,6 +606,23 @@ describe('repeating tasks', () => {
     } finally { setPastScope(null) }
   })
 
+  it('undo leaves a record done since the edit as it is', async () => {
+    const { titleUndoable } = await import('./undoActions')
+    const { actOnOccurrence } = await import('./occurrenceActions')
+    const { id, moved } = await series()
+    const r = await titleUndoable(id, 'Water the plants')
+    await actOnOccurrence(id, '2026-10-14', { kind: 'complete' }, { today: '2026-10-14' })
+    expect((await db.tasks.get(moved))!.completed_at).toBeTruthy()
+    await undoBatch(r.entry!.id)
+    expect((await db.tasks.get(id))!.title).toBe('Water')
+    expect((await db.tasks.get(moved))!.title).toBe('Water the plants')
+  })
+
+  it('a length key on a series is named as the estimate step', async () => {
+    const { id } = await series()
+    expect((await calendarEditUndoable(id, { estimate_minutes: 45 })).label).toBe('Estimate 45 min')
+  })
+
   it('a calendar move to where the series already is records nothing', async () => {
     const { id } = await series()
     const count = await db.assistantUndo.count()

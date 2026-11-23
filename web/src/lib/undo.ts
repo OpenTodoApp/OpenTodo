@@ -56,7 +56,9 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
     if (c.entity === 'task' && 'energy' in patch && patch.energy === null) patch.energy = ''
     // Likewise task.sector (time-sectors): a task stored before it has none, which is ''.
     if (c.entity === 'task' && 'sector' in patch && patch.sector === null) patch.sector = ''
-    inverse.push({ entity: c.entity, entityId: c.entityId, patch, ...(Object.keys(prev).length ? { prev } : {}) })
+    // An open occurrence record the batch edits without finishing it: Undo leaves it once it is done or skipped (undo-series-edits).
+    const open = c.entity === 'task' && !!local?.series_id && !local.completed_at && !local.skipped && !('completed_at' in c.patch) && !('skipped' in c.patch)
+    inverse.push({ entity: c.entity, entityId: c.entityId, patch, ...(Object.keys(prev).length ? { prev } : {}), ...(open ? { open } : {}) })
   }
   const batch: Change[] = changes.map((c) => ({ entity: c.entity, entityId: c.entityId, patch: { ...c.patch } }))
   // Default reminders join the batch here, so one Undo removes them with the dates
@@ -262,6 +264,8 @@ async function reverse(entry: AssistantUndo, src: Reversal): Promise<{ restored:
         Object.assign(patch, inv.patch, { deleted_at: Date.now() })
         for (const f of Object.keys(patch)) now[f] = norm(readField(row, f))
       }
+    } else if (inv.open && row && (row.completed_at || row.skipped)) {
+      skippedHere = true
     } else {
       for (const [f, v] of Object.entries(inv.patch)) {
         const applied = src.clocks.find((c) => c.entityId === inv.entityId && c.entity === inv.entity && c.field === f)

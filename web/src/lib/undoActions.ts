@@ -162,15 +162,15 @@ export async function calendarEditUndoable(id: string, patch: Partial<Task>): Pr
     await updateTask(id, patch)
     return { entry: null, label: '' }
   }
-  if (task.recurrence) return seriesEditUndoable(id, patch, t('Rescheduled'))
   const changed = changedFields(task, patch)
-  if (!Object.keys(changed).length) return { entry: null, label: '' }
-  if (changed.due && !('start' in patch) && task.start === 'someday') changed.start = null
   // The Day and Week length keys change only the estimate: named as the panel's estimate step.
   const minutes = changed.estimate_minutes
   const label = Object.keys(changed).length === 1 && minutes !== undefined
     ? (minutes ? t('Estimate {to} min', { to: String(minutes) }) : t('Estimate removed'))
     : t('Rescheduled')
+  if (task.recurrence) return seriesEditUndoable(id, patch, label)
+  if (!Object.keys(changed).length) return { entry: null, label: '' }
+  if (changed.due && !('start' in patch) && task.start === 'someday') changed.start = null
   return apply([{ entity: 'task', entityId: id, patch: changed }], label)
 }
 

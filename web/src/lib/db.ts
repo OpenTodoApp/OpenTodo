@@ -93,7 +93,9 @@ export interface AssistantUndo {
   /** Field values to restore, per entity. */
   inverse: { entity: string; entityId: string; patch: Record<string, unknown>; created?: boolean; /** A default reminder the batch added (default-reminders): undone with it, not counted. */ followUp?: boolean;
     /** The clock each field held right before this write, so a reversal refreshes only a batch whose write it sat directly on top of (#1488 D4); absent on batches from before the fix. */
-    prev?: Record<string, { ts: number; device: string }> }[]
+    prev?: Record<string, { ts: number; device: string }>
+    /** An open occurrence record the batch edited (undo-series-edits): left as it is if it was done or skipped since. */
+    open?: boolean }[]
   /** The clock each applied field got, to skip fields changed again since. */
   clocks: { entity: string; entityId: string; field: string; ts: number; device: string }[]
   /**
