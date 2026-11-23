@@ -26,12 +26,13 @@ final class FirstRunTests: XCTestCase {
     }
 
     /// native-shells "Offline start": a first start that cannot reach the server says so, with
-    /// Try again, like the Android app. Port 9 on this device answers nothing, and nothing of it
-    /// is stored, so the load from the cache fails too.
+    /// Try again, like the Android app. A `.invalid` name never resolves (RFC 6761), so the load
+    /// fails at once as a network failure, and nothing of it is stored, so the load from the cache
+    /// fails too. (A local port is not reliable: on the CI runner, http://localhost:9 left a blank page and no failure.)
     func testAFirstStartWithTheServerUnreachableSaysSo() {
         let app = XCUIApplication()
         app.launchArguments = ["-OPENTODO_RESET"]
-        app.launchEnvironment["OPENTODO_SERVER"] = "http://localhost:9"
+        app.launchEnvironment["OPENTODO_SERVER"] = "https://opentodo-offline-start.invalid"
         app.launch()
         XCTAssertTrue(app.staticTexts["No connection to your server."].waitForExistence(timeout: 30))
         XCTAssertTrue(app.buttons["Try again"].exists)
