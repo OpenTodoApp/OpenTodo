@@ -1,1 +1,0 @@
-- **Bring back a ticked item with a few letters.** In a reusable list, quick add now lists the ticked items that match what you type, newest first. Press Down and Enter, or click one, to put it back on the list.

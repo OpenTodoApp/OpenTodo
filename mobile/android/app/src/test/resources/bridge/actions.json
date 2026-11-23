@@ -51,5 +51,18 @@
   ],
   "quickAdd": {
     "path": "/?add="
-  }
+  },
+  "focusOpen": {
+    "path": "/focus"
+  },
+  "focusActions": [
+    {
+      "action": "pause",
+      "path": "/focus?action=pause"
+    },
+    {
+      "action": "resume",
+      "path": "/focus?action=resume"
+    }
+  ]
 }

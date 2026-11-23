@@ -61,6 +61,8 @@
     {"query": "evening", "ids": ["t6"]},
     {"query": "morning", "ids": ["t8"]},
     {"query": "habit", "ids": ["t6"]},
+    {"query": "recurring", "ids": ["t8"]},
+    {"query": "recurring & #Home", "ids": []},
     {"query": "subtask", "ids": ["t9"]},
     {"query": "completed", "ids": ["t4"]},
     {"query": "completed = this week", "ids": ["t4"]},

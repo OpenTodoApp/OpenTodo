@@ -27,7 +27,7 @@ Each app has a guide with its export steps. **Last verified** is the day the imp
 
 | App | Format id | What comes with you | What stays behind | Last verified |
 | --- | --- | --- | --- | --- |
-| [Todoist](todoist.md) | `todoist-backup` | projects, sections, subtasks, labels, priorities, descriptions, estimates, due dates and times, recurring dates, reminders, deadlines; comments in the description | assignees | 2026-10-14, Todoist web (backup format of that date) |
+| [Todoist](todoist.md) | `todoist-backup` | projects, sections, subtasks, labels, priorities, descriptions, estimates, due dates and times, recurring dates, reminders, deadlines, comments | assignees | 2026-10-14, Todoist web (backup format of that date) |
 | [TickTick](ticktick.md) | `ticktick-csv` | folders and lists, board columns, tasks, subtasks, checklists, tags, priorities, dates, reminders, repeats, completed and abandoned tasks | attachments, habits, focus records, comments | 2026-10-14, TickTick 7.2 |
 | [Things 3](things.md) | `things-db` | areas, projects, headings, to-dos, checklists, tags, notes, dates and reminder times, deadlines, Someday, This Evening, repeats, completed and canceled items | trashed items | 2026-10-14, Things 3 (database version 29) |
 | [OmniFocus](omnifocus.md) | `omnifocus-csv` | projects, actions and action groups, tags, due, defer and planned dates, estimates, flags, notes | repeat rules, folders, attachments, review intervals (not in the CSV) | 2026-11-03, OmniFocus 2 export and the OmniFocus 4.7 layout |

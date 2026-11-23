@@ -50,13 +50,31 @@ enum Downloads {
         return disposition.trimmingCharacters(in: .whitespaces).lowercased().hasPrefix("attachment")
     }
 
-    /// The suggested name reduced to its last path component, so it cannot leave the
-    /// temporary directory; `download` when nothing usable is left.
+    /// The longest name kept, in UTF-16 units, as on Android (FileSave.name).
+    static let maxNameLength = 200
+    /// What the file system takes for one name (NAME_MAX), in UTF-8 bytes.
+    static let maxNameBytes = 255
+
+    /// The suggested name reduced to its last path segment, so it cannot leave the
+    /// temporary directory, without control characters, trimmed, at most `maxNameLength`
+    /// long and `maxNameBytes` in UTF-8; `download` when nothing usable is left. The same rule as
+    /// Android's, pinned by the shared file-name cases.
     static func fileName(_ suggested: String) -> String {
-        let parts = suggested.split(whereSeparator: { $0 == "/" || $0 == "\\" })
-        let name = (parts.last.map(String.init) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let scalars = suggested.unicodeScalars
+        let start = scalars.lastIndex(where: { $0 == "/" || $0 == "\\" }).map { scalars.index(after: $0) } ?? scalars.startIndex
+        var kept = String.UnicodeScalarView()
+        for s in scalars[start...] where !(s.value < 0x20 || (0x7F...0x9F).contains(s.value)) { kept.append(s) }
+        let name = String(kept).trimmingCharacters(in: .whitespacesAndNewlines)
         if name.isEmpty || name == "." || name == ".." { return "download" }
-        return name
+        let units = Array(name.utf16)
+        // Never half of a surrogate pair at a cut.
+        let cut = units.count <= maxNameLength ? units.count
+            : UTF16.isLeadSurrogate(units[maxNameLength - 1]) ? maxNameLength - 1 : maxNameLength
+        var cutScalars = Array(String(decoding: units[..<cut], as: UTF16.self).unicodeScalars)
+        while cutScalars.reduce(0, { $0 + UTF8.width($1) }) > maxNameBytes { cutScalars.removeLast() }
+        var short = String.UnicodeScalarView()
+        short.append(contentsOf: cutScalars)
+        return String(short)
     }
 
     /// Where downloads wait for the export sheet; emptied when the shell starts.

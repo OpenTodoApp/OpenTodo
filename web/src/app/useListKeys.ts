@@ -2,7 +2,7 @@
 // handlers for j / k, Enter, c, 1–4, Shift+L, Delete, e, d, n, Shift+N, Shift+E, → / ←
 // and Esc (the shortcut registry names them; the shell's dispatcher resolves the keys).
 import { useEffect, useRef } from 'react'
-import { parkTask, unparkTask } from '../lib/ops'
+import { unparkTask } from '../lib/ops'
 import { setTaskCompletedWithFeedback } from './completionSound'
 import type { Priority, Task } from '../lib/types'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus } from './signals'
@@ -11,7 +11,7 @@ import { registerListState } from './listActions'
 import type { BulkList } from './bulk/useBulkList'
 import { runBulk, trashTicked } from './bulk/BulkActions'
 import { act } from './actionError'
-import { deleteWithUndo } from './undoable'
+import { deleteWithUndo, parkWithUndo } from './undoable'
 import { toggleTracking } from '../lib/timeEntries'
 import { panelTaskId, sidePanelDocks } from './panel'
 import { closeSidePanelFrom, useSidePanel } from './sidePanel'
@@ -160,7 +160,7 @@ export function useListKeys(opts: ListKeys): void {
     'list.defer': openWith(deferFocus),
     'list.blocked-by': openWith(blockedByFocus),
     // Park or un-park (someday-and-evening D5).
-    'list.park': () => { if (!row) return false; act(row.start === 'someday' ? unparkTask(row.id) : parkTask(row.id)) },
+    'list.park': () => { if (!row) return false; act(row.start === 'someday' ? unparkTask(row.id) : parkWithUndo(row.id)) },
     'list.evening': () => { if (!row) return false; act(eveningUndoable(row.id, !row.evening)) },
     ...o.extra,
   }, { paused: o.paused })

@@ -9,7 +9,7 @@ import { lazy } from '../../lib/lazy'
 import { facetsOf, type FacetId, type FacetPart, type WhenSegmentId } from '../../lib/facets'
 import { removeLabel } from '../../lib/labels'
 import { priorityAccessibleName, priorityShort } from '../../lib/priority'
-import { createProject, updateTask } from '../../lib/ops'
+import { createProject } from '../../lib/ops'
 import { INBOX_KEY, itemKeywords, NONE_KEY, sectionSource, type PickerItem } from '../../lib/pickerSources'
 import { moveTaskToSection } from '../../lib/sections'
 import { keysOf } from '../../lib/shortcuts'
@@ -40,6 +40,7 @@ import { act, reportActionError } from '../actionError'
 import { energyLevelsOn, energyOf, setTaskEnergy } from '../../lib/energy'
 import { useUserPrefsRow } from '../../lib/localData'
 import { estimateUndoable, eveningUndoable, priorityUndoable } from '../../lib/undoActions'
+import { assigneeWithUndo } from '../undoable'
 import { EnergyChoice } from './EnergyChoice'
 
 export const PRIORITIES: { p: Priority; cls: string }[] = [
@@ -302,7 +303,7 @@ function AddMenu({ task, userId, m }: { task: Task; userId?: string; m: Properti
       { id: 'labels', label: t('Labels'), icon: 'tag', shortcut: keysOf('list.labels') },
     ] },
     { title: t('Who'), offers: [
-      { id: 'assignee', label: solo ? t('Show in Assigned to me') : t('Assignee'), icon: 'user-check', shortcut: solo ? undefined : keysOf('list.assign'), when: !!userId, run: solo && userId ? () => act(updateTask(task.id, { assignee_id: userId })) : undefined },
+      { id: 'assignee', label: solo ? t('Show in Assigned to me') : t('Assignee'), icon: 'user-check', shortcut: solo ? undefined : keysOf('list.assign'), when: !!userId, run: solo && userId ? () => act(assigneeWithUndo(task.id, userId)) : undefined },
       { id: 'blocked-by', label: t('Blocked by'), icon: 'lock', shortcut: keysOf('list.blocked-by') },
     ] },
   ]

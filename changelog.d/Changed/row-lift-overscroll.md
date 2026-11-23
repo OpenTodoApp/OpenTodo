@@ -1,1 +1,0 @@
-- **A held row rises before it moves.** On a phone or a tablet, a task or sidebar row lifts during a long press, so you can see the drag or the menu coming, and settles back if you let go early. The Android app no longer draws its glow or stretch at the end of a list.

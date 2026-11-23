@@ -20,6 +20,7 @@ import { t } from '../lib/i18n'
 import { takeQuickAddPrefill } from '../lib/shellActions'
 import { useMemo, useState } from 'react'
 import { addManyToList, addToList } from './reuseAdd'
+import { isReusable } from '../lib/reusable'
 
 // An empty view's "Add a task" on a touch device opens this sheet (lean-chrome D7,
 // task-list-presentation "Empty views"): the Shell registers the opener; without a
@@ -58,6 +59,9 @@ export function QuickAddSheet({ open, onClose, anchor, route, userId }: {
     if (rest.due || rest.deadline) delete defaults.start
     return { ...defaults, ...rest, labels: [...new Set([...viewLabels, ...(typed ?? [])])] }
   }
+  // In a reusable list, its ticked items are suggested while typing, as in the list's own line (reusable-suggest-sheet).
+  const listId = route.view === 'project' ? route.id : null
+  const reuseProjectId = listId && isReusable(projects.find((p) => p.id === listId)) ? listId : null
   // A count of adds, so the status line announces "Added" again for each one.
   const [added, setAdded] = useState(0)
   const onAdd = async (input: QuickAddInput) => {
@@ -77,7 +81,7 @@ export function QuickAddSheet({ open, onClose, anchor, route, userId }: {
     <Popover open={open} onClose={onClose} anchor={anchor} label={t('Add a task')} side="top" align="end" width="sm:w-96" className="pt-3 pb-0">
       <div data-quick-add-sheet>
         <span className="sr-only" role="status" aria-live="polite" data-sheet-added>{added > 0 && <span key={added}>{t('Added')}</span>}</span>
-        <QuickAdd layout="sheet" autoFocus hideHint initialValue={prefill ?? undefined} placeholder={t('Add a task…')} label={t('Add a task')} projects={projects} labels={labels} onAdd={onAdd} onAddMany={onAddMany} />
+        <QuickAdd layout="sheet" autoFocus hideHint initialValue={prefill ?? undefined} placeholder={t('Add a task…')} label={t('Add a task')} reuseProjectId={reuseProjectId} projects={projects} labels={labels} onAdd={onAdd} onAddMany={onAddMany} />
       </div>
     </Popover>
   )

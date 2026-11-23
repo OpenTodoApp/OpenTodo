@@ -2054,6 +2054,7 @@
       "listed"
     ],
     "oidc_state_invalid": [
+      "400",
       "listed"
     ],
     "other_workspace": [
@@ -4822,6 +4823,7 @@
       "policy": "public",
       "response": {
         "app_sign_in": "boolean",
+        "app_sso": "boolean",
         "status": "string",
         "version": "string"
       },
@@ -6051,7 +6053,10 @@
         "subscription.includeContent": "boolean",
         "subscription.lastError": "string",
         "subscription.lastOkAt": "number|null",
-        "subscription.needsRenewal": "boolean"
+        "subscription.needsRenewal": "boolean",
+        "subscription.notify": "object",
+        "subscription.notify.assigned": "boolean",
+        "subscription.notify.status": "boolean"
       },
       "statuses": [
         "200"
@@ -8334,6 +8339,16 @@
         "200"
       ]
     },
+    "POST /api/v1/auth/oidc/app-continue": {
+      "policy": "public"
+    },
+    "POST /api/v1/auth/oidc/app-session": {
+      "policy": "public",
+      "request": {
+        "code": "string",
+        "code_verifier": "string"
+      }
+    },
     "POST /api/v1/auth/passkey": {
       "policy": "public",
       "request": {
@@ -10205,7 +10220,10 @@
         "includeContent": "boolean",
         "keys": "object",
         "keys.auth": "string",
-        "keys.p256dh": "string"
+        "keys.p256dh": "string",
+        "notify": "object|null?",
+        "notify.assigned": "boolean",
+        "notify.status": "boolean"
       },
       "response": {
         "subscription": "object",
@@ -10216,7 +10234,10 @@
         "subscription.includeContent": "boolean",
         "subscription.lastError": "string",
         "subscription.lastOkAt": "number|null",
-        "subscription.needsRenewal": "boolean"
+        "subscription.needsRenewal": "boolean",
+        "subscription.notify": "object",
+        "subscription.notify.assigned": "boolean",
+        "subscription.notify.status": "boolean"
       }
     },
     "POST /api/v1/push/test": {
@@ -10237,6 +10258,9 @@
         "subscription.lastError": "string",
         "subscription.lastOkAt": "number|null",
         "subscription.needsRenewal": "boolean",
+        "subscription.notify": "object",
+        "subscription.notify.assigned": "boolean",
+        "subscription.notify.status": "boolean",
         "testId": "string"
       },
       "statuses": [

@@ -613,11 +613,26 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "1405921a44f10ccfc1fda6180d941db346c57feb766cd67614c6f4ae6247a1e3"
+              "hash": "1405921a44f10ccfc1fda6180d941db346c57feb766cd67614c6f4ae6247a1e3",
+              "size": 153,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "4dca984cb5e6eccf",
+                "372cd2c3a21e503e",
+                "1405921a44f10ccf"
+              ]
             },
             "Inbox.md": {
               "project": "",
-              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753"
+              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753",
+              "size": 30,
+              "prefixes": [
+                "9678c3c7e2ff5772"
+              ]
             }
           },
           "printed": {
@@ -899,11 +914,25 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "4570daa701f8a1f142d08f24356fee0d346490b0967cf894356fa028f8b1b48b"
+              "hash": "4570daa701f8a1f142d08f24356fee0d346490b0967cf894356fa028f8b1b48b",
+              "size": 126,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "4dca984cb5e6eccf",
+                "4570daa701f8a1f1"
+              ]
             },
             "Inbox.md": {
               "project": "",
-              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753"
+              "hash": "9678c3c7e2ff57729a627207c8e7af5eb983add643805f556f4a1c6506fe4753",
+              "size": 30,
+              "prefixes": [
+                "9678c3c7e2ff5772"
+              ]
             }
           },
           "printed": {

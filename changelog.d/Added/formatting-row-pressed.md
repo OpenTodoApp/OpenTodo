@@ -1,1 +1,0 @@
-- **The formatting row shows which formatting is on.** Bold, Italic, Link, Bullet list and Checklist light up while they apply where the cursor is, also for screen readers.

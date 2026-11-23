@@ -18,6 +18,9 @@ type dateCtx struct {
 	vocabs        []*Vocab
 	dayMonthOrder string
 	weekStart     int
+	// dashRanges marks a quick-add line, where "3-4 tomatoes" is a quantity range
+	// (dash-ranges D1); off for a phrase that only takes a date (ParseReminder).
+	dashRanges bool
 }
 
 type dateMatch struct {
@@ -664,6 +667,21 @@ var (
 	numericRE = regexp.MustCompile(`^(\d{1,2})([/.-])(\d{1,2})(?:([/.-])(\d{2}|\d{4}))?(\.?)$`)
 )
 
+// dateWordBefore reports whether a phrase that introduces a date ("on", "by",
+// "until", "bis zum") ends right before token j.
+func dateWordBefore(tokens []token, j int, ctx *dateCtx) bool {
+	for _, v := range ctx.vocabs {
+		for _, list := range [][]string{v.Before, v.ByWords, v.UntilWords} {
+			for n := 1; n <= 3 && n <= j; n++ {
+				if phraseAt(tokens, j-n, list) == n {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 func numericDateAt(tokens []token, j int, ctx *dateCtx) (string, int, bool) {
 	t := tok(tokens, j)
 	if t == nil {
@@ -683,6 +701,12 @@ func numericDateAt(tokens []token, j int, ctx *dateCtx) (string, int, bool) {
 		return "", 0, false
 	}
 	dotted := m[2] == "."
+	// "3-4 tomatoes" is a range in a quick-add line: month first, a dashed day and month
+	// without a year is a date only after "on", "by", "until" and the like ("3/4" and
+	// "3-4-2027" always are). Day-first languages write "3-3" for a date (dash-ranges D1).
+	if m[2] == "-" && m[5] == "" && ctx.dashRanges && ctx.dayMonthOrder != "DM" && !dateWordBefore(tokens, j, ctx) {
+		return "", 0, false
+	}
 	if strings.HasSuffix(t.norm, ".") && !dotted {
 		return "", 0, false
 	}

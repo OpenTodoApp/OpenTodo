@@ -47,6 +47,9 @@ const (
 	EventMentioned = "mentioned"
 	EventUnblocked = "unblocked"
 	EventPage      = "page"
+	// EventStatus: someone else completed or reopened a task assigned to the
+	// user (assignee-notifications D5); not in a new channel's defaults.
+	EventStatus = "status"
 	// EventRoutine is a routine's Notify me step (routines-engine "Routine
 	// notices through channels").
 	EventRoutine    = "routine"
@@ -60,7 +63,7 @@ const (
 )
 
 // Events lists the event names in display order.
-var Events = []string{EventReminder, EventAssigned, EventMentioned, EventUnblocked, EventPage, EventRoutine}
+var Events = []string{EventReminder, EventAssigned, EventMentioned, EventUnblocked, EventStatus, EventPage, EventRoutine}
 
 var (
 	// ErrNotFound: no channel with this id belongs to the caller.

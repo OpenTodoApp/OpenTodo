@@ -282,3 +282,17 @@ describe('actions (2.5, 3.3, 4.2)', () => {
     await waitFor(async () => (await priority()) === 1, 'priority 1 re-applied')
   })
 })
+
+// #1748 (OpenSpec change undo-indent): Tab makes the row a subtask, and Ctrl+Z takes it back out.
+describe('indent and undo', () => {
+  it('Tab nests the selected task under the one above; Ctrl+Z restores it', async () => {
+    const { ids } = await inbox('One', 'Two')
+    const parent = async () => (await db.tasks.get(ids[1]))!.parent_id ?? null
+    await key(document.body, 'j'); await key(document.body, 'j')
+    await key(document.body, 'Tab')
+    await waitFor(async () => (await parent()) === ids[0], 'Two under One')
+    await waitFor(async () => (await db.assistantUndo.count()) === 1, 'the step recorded')
+    await key(document.body, 'z', { ctrlKey: true })
+    await waitFor(async () => (await parent()) === null, 'Two at the top level again')
+  })
+})

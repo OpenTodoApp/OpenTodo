@@ -14,25 +14,45 @@ final class Reminders {
     static let maxPending = 64
 
     /// One handed-over reminder, as `web/src/lib/shell.ts` `ShellReminder` sends it.
-    struct Handed: Decodable, Equatable {
+    struct Handed: Equatable {
         let id: String
         let taskId: String
         let fireAt: Double
         let title: String?
     }
 
-    /// The schedule the shell applies: due in the future, earliest first, at most `limit`.
+    /// A reminder handed over up to this late still fires, at once (ms).
+    static let grace: Double = 60_000
+    /// The furthest ahead a reminder is armed (ms); the web app hands over 7 days.
+    static let horizon: Double = 8 * 24 * 60 * 60 * 1000
+
+    /// The schedule the shell applies: from a minute ago (a late hand-over still fires) to the
+    /// horizon, one per id (the first), earliest first, at most `limit`. The rule of Android's
+    /// `ReminderSchedule.parse`; both apps read the cases in `reminders/schedule.json`.
     static func select(_ handed: [Handed], now: Date = Date(), limit: Int? = nil) -> [Handed] {
-        handed
-            .filter { $0.fireAt / 1000 > now.timeIntervalSince1970 }
+        let at = now.timeIntervalSince1970 * 1000
+        var seen = Set<String>()
+        return handed
+            .filter { $0.fireAt >= at - grace && $0.fireAt <= at + horizon }
+            .filter { seen.insert($0.id).inserted }
             .sorted { $0.fireAt < $1.fireAt }
             .prefix(limit ?? maxPending)
             .map { $0 }
     }
 
+    /// Each entry on its own: one the shell cannot read is left out, never the whole schedule.
     static func parse(_ json: String) -> [Handed] {
-        guard let data = json.data(using: .utf8) else { return [] }
-        return (try? JSONDecoder().decode([Handed].self, from: data)) ?? []
+        guard let data = json.data(using: .utf8),
+              let list = (try? JSONSerialization.jsonObject(with: data)) as? [Any] else { return [] }
+        return list.compactMap { item in
+            guard let o = item as? [String: Any],
+                  let id = o["id"] as? String, (1...100).contains(id.count),
+                  let taskId = o["taskId"] as? String, (1...100).contains(taskId.count),
+                  let number = o["fireAt"] as? NSNumber, number.doubleValue >= 0
+            else { return nil }
+            let title = (o["title"] as? String).map { String($0.prefix(200)) }
+            return Handed(id: id, taskId: taskId, fireAt: number.doubleValue, title: title?.isEmpty == false ? title : nil)
+        }
     }
 
     func registerCategory() {
@@ -101,6 +121,9 @@ final class Reminders {
             guard granted else { return "denied" }
         }
         registerCategory()
+        // What already showed, and when: a late reminder handed over again must not alert twice,
+        // but the same reminder snoozed to a later time must (Android's `wasShown`, same minute).
+        let delivered = await center.deliveredNotifications().map { ($0.request.identifier, $0.date) }
         for reminder in chosen {
             let content = UNMutableNotificationContent()
             content.title = reminder.title ?? String(localized: "OpenTodo reminder")
@@ -108,9 +131,18 @@ final class Reminders {
             content.sound = .default
             content.categoryIdentifier = Self.categoryIdentifier
             content.userInfo = ["reminder": reminder.id, "task": reminder.taskId]
+            let identifier = Self.identifierPrefix + reminder.id
             let fireDate = Date(timeIntervalSince1970: reminder.fireAt / 1000)
-            let trigger = UNCalendarNotificationTrigger(dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: fireDate), repeats: false)
-            let request = UNNotificationRequest(identifier: Self.identifierPrefix + reminder.id, content: content, trigger: trigger)
+            let trigger: UNNotificationTrigger
+            if fireDate.timeIntervalSinceNow <= 1 {
+                // Handed over late (within `grace`): now, unless it already showed.
+                let shown = delivered.contains { $0.0 == identifier && abs($0.1.timeIntervalSince(fireDate)) < Self.grace / 1000 }
+                if shown { continue }
+                trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+            } else {
+                trigger = UNCalendarNotificationTrigger(dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: fireDate), repeats: false)
+            }
+            let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
             try? await center.add(request)
         }
         return "granted"

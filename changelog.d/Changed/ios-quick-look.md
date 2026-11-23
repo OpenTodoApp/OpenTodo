@@ -1,1 +1,0 @@
-- **On iPhone and iPad, an image or a PDF attached to a task opens in the system's preview.** Its share button saves it to Photos or Files or sends it; other files still open the save dialog.

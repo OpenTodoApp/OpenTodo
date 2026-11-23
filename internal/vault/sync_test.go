@@ -361,6 +361,12 @@ func TestLineRemoval(t *testing.T) {
 	}
 	v.write(t, "Home.md", strings.Join(keep, "\n"))
 	s.do("PATCH", "/api/v1/tasks/"+kept, map[string]any{"completed_at": time.Now().UnixMilli()})
+	// The lines removed were the file's last: until the half-saved hold has
+	// passed, the file may be a save in progress, so nothing is trashed yet.
+	if rep := v.sync(t); rep.Trashed != 0 || !hasEvent(rep, "skipped", "Home.md") {
+		t.Fatalf("within the hold: %+v", rep)
+	}
+	v.now = func() time.Time { return time.Now().Add(halfSavedHold + time.Minute) }
 	rep := v.sync(t)
 	if rep.Trashed != 2 {
 		t.Errorf("trashed = %d %+v", rep.Trashed, rep.Events)

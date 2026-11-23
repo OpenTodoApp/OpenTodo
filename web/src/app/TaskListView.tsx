@@ -156,14 +156,16 @@ const NO_DONE: Map<string, Task[]> = new Map()
 
 /** The personal order for a label page or Today grouped by Project. */
 function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], board: boolean, today: boolean, nest: boolean, taskMap: Map<string, Task>) {
-  const todayModule = useRef<typeof TodayDrop>(undefined)
+  // State, not a ref: the chunk can land after a row menu opened, and the menu then renders
+  // again with the contextual moves.
+  const [todayModule, setTodayModule] = useState<typeof TodayDrop>()
   useEffect(() => {
-    if (today && !todayModule.current) {
+    if (today && !todayModule) {
       void import('./task-list/todayGroupDrop').then(({ applyTodayDrop, todayGroupDrop, contextualMoveItems }) => {
-        todayModule.current = { applyTodayDrop, todayGroupDrop, contextualMoveItems }
+        setTodayModule({ applyTodayDrop, todayGroupDrop, contextualMoveItems })
       })
     }
-  }, [today])
+  }, [today, todayModule])
   const host = useMemo<OrderHost | null>(() => route.view === 'label' ? { entity: 'label', id: route.id }
     : today ? { entity: 'user_prefs', id: USER_PREFS_ID } : null, [route, today])
   const orderRows = useMemo(() => today ? groups.filter(isTodayProjectGroup).flatMap((g) => g.rows.filter((r) => r.depth === 0)) : rows, [today, groups, rows])
@@ -210,15 +212,15 @@ function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], boa
   const todayDrop = useMemo(() => {
     if (!host || !today) return undefined
     const move = async (id: string, drop: import('../lib/viewOrderMove').GroupDrop) =>
-      todayModule.current?.applyTodayDrop(host, latest.current.rows.map((r) => r.task), latest.current.groups, id, drop)
+      todayModule?.applyTodayDrop(host, latest.current.rows.map((r) => r.task), latest.current.groups, id, drop)
     return {
       resolve: (task: Task, target: string | null, y: number, gesture: import('./task-list/projectGroupPlacement').DragDepth) =>
-        todayModule.current?.todayGroupDrop(latest.current.groups, memberships, nest, task, target, y, gesture, latest.current.taskMap) ?? null,
+        todayModule?.todayGroupDrop(latest.current.groups, memberships, nest, task, target, y, gesture, latest.current.taskMap) ?? null,
       move,
-      contextActions: (task: Task) => nest ? todayModule.current?.contextualMoveItems(task, latest.current.groups, memberships, latest.current.taskMap, move) ?? [] : [],
+      contextActions: (task: Task) => nest ? todayModule?.contextualMoveItems(task, latest.current.groups, memberships, latest.current.taskMap, move) ?? [] : [],
       canEdit: (group: ListGroup) => isTodayProjectGroup(group) && canEditTasks(roleOf(group.project, memberships)),
     }
-  }, [host, today, memberships, nest])
+  }, [host, today, memberships, nest, todayModule])
   return useMemo(() => (host ? { reorder, step, edges, groupOf, across, todayDrop } : null), [host, reorder, step, edges, groupOf, across, todayDrop])
 }
 

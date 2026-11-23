@@ -1,1 +1,0 @@
-- **A transparent profile picture keeps its background.** A PNG with transparency, uploaded or taken from the sign-in provider, was stored with black where it was transparent; it is now white.

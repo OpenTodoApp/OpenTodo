@@ -7,7 +7,7 @@ import { openHabitForm } from '../habits/habitFormStore'
 import { keysOf } from '../../lib/shortcuts'
 import { openHelp } from '../../lib/helpRequest'
 import { duplicateTask } from '../../lib/templates'
-import { updateTask } from '../../lib/ops'
+import { originRemovedUndoable } from '../../lib/undoActions'
 import { t } from '../../lib/i18n'
 import { Icon, Menu, MenuGroup, MenuItem, MenuSeparator } from '../../ui'
 import { act } from '../actionError'
@@ -49,7 +49,7 @@ export function TaskActionsMenu({ m, page, readOnly, onOpen }: { m: TaskDetailMo
       {!readOnly && <MenuItem label={t('Attach')} icon="paperclip" description={t('Or paste or drop files on the task')} onSelect={() => requestAttach(task.id)} />}
       {!readOnly && <MenuItem label={t('Add a link…')} icon="link" onSelect={() => requestAttach(task.id, 'link')} />}
       {/* The origin's Remove lives here; its row opens the source (task-panel-facets). */}
-      {!readOnly && task.origin && <MenuItem label={t('Remove origin')} icon="x" onSelect={() => act(updateTask(task.id, { origin: null }))} />}
+      {!readOnly && task.origin && <MenuItem label={t('Remove origin')} icon="x" onSelect={() => act(originRemovedUndoable(task.id))} />}
       {/* The assistant's skills on this task (assistant-skills, assistant-in-context), while it is available. */}
       {!readOnly && m.assistantAvailable && (
         <MenuGroup label={t('Assistant')}>

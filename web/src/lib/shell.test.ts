@@ -1,6 +1,6 @@
 // The native shell bridge (OpenSpec change native-shells, "The bridge is optional and versioned").
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { allowMicrophone, biometricRead, biometricStore, has, needsLightIcons, olderThan, openExternal, publishWidget, scheduleReminders, setSystemBars, shell, shellOutdated, testNotification, type OpenTodoShell } from './shell'
+import { allowMicrophone, biometricRead, biometricStore, has, needsLightIcons, NO_FOCUS, olderThan, openExternal, publishFocus, publishWidget, scheduleReminders, setSystemBars, shell, shellOutdated, testNotification, type OpenTodoShell } from './shell'
 
 const g = globalThis as unknown as { window?: { opentodoShell?: OpenTodoShell } }
 
@@ -47,6 +47,21 @@ describe('shell bridge', () => {
     expect(publish).not.toHaveBeenCalled()
     expect(await scheduleReminders([{ id: 'r', taskId: 't', fireAt: 5 }])).toBe('granted')
     expect(schedule).toHaveBeenCalledWith(JSON.stringify([{ id: 'r', taskId: 't', fireAt: 5 }]))
+  })
+
+  it('hands the Focus session only to a shell that lists focus, once per change', () => {
+    const publish = vi.fn()
+    install({ bridge: 1, platform: 'ios', app: '1.7.0', capabilities: ['reminders'], publishFocus: publish })
+    expect(publishFocus(NO_FOCUS)).toBe(false)
+    expect(publish).not.toHaveBeenCalled()
+    install({ bridge: 1, platform: 'ios', app: '1.7.0', capabilities: ['focus'], publishFocus: publish })
+    const paused = { v: 1, state: 'paused', taskId: 't', elapsedMs: 5 } as const
+    expect(publishFocus(paused)).toBe(true)
+    expect(publishFocus(paused)).toBe(true)
+    expect(publish).toHaveBeenCalledOnce()
+    publishFocus(paused, true)
+    expect(publish).toHaveBeenCalledTimes(2)
+    expect(publish).toHaveBeenLastCalledWith(JSON.stringify(paused))
   })
 
   it('reports the permission the shell answers, and biometric results', async () => {

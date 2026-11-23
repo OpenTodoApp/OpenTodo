@@ -88,6 +88,33 @@ describe('The dialog', () => {
     await r.unmount()
   })
 
+  // #1901: which repeating tasks the period skips, with each one's next due date.
+  it('Show details lists each repeating task with its skips and next due date, and follows the scope', async () => {
+    const water = await createTask({ title: 'Water plants', due: { date: '2026-11-25' }, recurrence: 'every day' })
+    await createTask({ title: 'Bins', due: { date: '2026-11-27' }, recurrence: 'every friday' })
+    await createTask({ title: 'Tax report', due: { date: '2026-12-15' }, recurrence: 'every month' })
+    const r = await render(<TaskListView route={{ view: 'today' }} />)
+    await waitFor(() => !!header(), 'the header')
+    await openMenu()
+    await click(document.querySelector('[data-away-item]')!)
+    await waitFor(() => !!document.querySelector('[data-away-preview]')?.textContent?.includes('Skips 8 occurrences of 2 repeating tasks'), 'the preview')
+    expect(document.querySelector('[data-away-details]')).toBeNull()
+    await click(document.querySelector('[data-away-show-details]')!)
+    const rows = () => [...document.querySelectorAll('[data-away-details] [data-away-series]')].map((e) => e.textContent)
+    await waitFor(() => rows().length === 2, 'two rows')
+    expect(rows()).toEqual(['Bins1 skipped · Due Fri, Dec 4', 'Water plants7 skipped · Due Wed, Dec 2'])
+    expect(document.querySelector(`[data-away-series="${water}"]`)).not.toBeNull()
+    // A shorter period updates the list.
+    const toField = document.querySelector<HTMLInputElement>('[data-away-to]')!
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(toField, '2026-11-26')
+    toField.dispatchEvent(new Event('input', { bubbles: true }))
+    await waitFor(() => rows().length === 1, 'one row')
+    expect(rows()[0]).toContain('Water plants2 skipped')
+    await click(document.querySelector('[data-away-show-details]')!)
+    await waitFor(() => !document.querySelector('[data-away-details]'), 'details hidden')
+    await r.unmount()
+  })
+
   it('refuses a period whose last day comes first', async () => {
     const r = await render(<TaskListView route={{ view: 'today' }} />)
     await waitFor(() => !!header(), 'the header')

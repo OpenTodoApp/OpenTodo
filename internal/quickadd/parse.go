@@ -99,7 +99,9 @@ type Mark struct {
 
 // ParseMarked is Parse plus the spans of what it recognised.
 func ParseMarked(line string, ctx Context) (Result, []Mark) {
-	p := &parser{line: line, ctx: ctx, dctx: newCtx(ctx)}
+	dctx := newCtx(ctx)
+	dctx.dashRanges = true // a quick-add line (dash-ranges D1)
+	p := &parser{line: line, ctx: ctx, dctx: dctx}
 	for _, v := range p.dctx.vocabs {
 		p.bareHourIsTime = p.bareHourIsTime || v.HourSuffixH
 	}

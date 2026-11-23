@@ -1,1 +1,0 @@
-- **Sharing a file that is too large no longer stops the task from saving.** If you tapped Save the moment the share screen opened, before it had read the server's size limit, the task failed to save. Now it saves without the file the limit refuses.

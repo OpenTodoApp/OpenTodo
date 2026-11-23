@@ -6,9 +6,9 @@
 import { createLabel, LabelExistsError } from '../lib/labels'
 import { findLabel, type LabelRef } from '../lib/nlp'
 import type { EditPlan } from '../lib/nlp/edit'
-import { setRecurrence, updateTask } from '../lib/ops'
+import { setRecurrence } from '../lib/ops'
 import type { Task } from '../lib/types'
-import { titleEditUndoable } from '../lib/undoActions'
+import { titleEditUndoable, titleUndoable } from '../lib/undoActions'
 import { showUndoToast } from './bulk/toastStore'
 import { moveWithUndo } from './undoable'
 import { t } from '../lib/i18n'
@@ -56,7 +56,8 @@ export async function commitTitleEdit(task: Task, plan: EditPlan, labels: readon
   const extras = plan.labels.length + plan.reminders.length + (plan.links?.length ?? 0)
   if (!fields.length && !extras) return task.id
   if (fields.length === 1 && plan.patch.title && !extras) {
-    await updateTask(task.id, { title: plan.patch.title })
+    // One step of undo history; no toast, as for the panel's other single edits (undo-rename).
+    await titleUndoable(task.id, plan.patch.title)
     return task.id
   }
   return applyTitleEdit(task, plan, labels, projectName)

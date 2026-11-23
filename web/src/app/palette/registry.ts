@@ -6,7 +6,7 @@
 import { openHabitForm } from '../habits/habitFormStore'
 import { logicalToday } from '../../lib/dates'
 import { createLabel } from '../../lib/labels'
-import { createProject, detachOccurrence, parkTask, skipOccurrence, unparkTask, updateProject, updateTask } from '../../lib/ops'
+import { createProject, detachOccurrence, unparkTask } from '../../lib/ops'
 import { reorderLabel, updateLabel } from '../../lib/labels'
 import { deleteSection, renameSection, reorderSection } from '../../lib/sections'
 import { syncNow } from '../../lib/sync'
@@ -28,6 +28,7 @@ import { reviewEveryPicker, setMaintenance } from '../menus/reviewMenu'
 import { inMaintenance } from '../../lib/reviewCadence'
 import { requestTemplateDialog } from '../TemplateDialogs'
 import { visibleSections } from '../settingsSections'
+import { renameProject, setProjectColour } from '../menus/projectAppearance'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus, logWinRequest, openReplan, placeInDay, sidebarFind } from '../signals'
 import { setVimEnabled } from '../vim/prefs'
 import { requestNewWorkspace } from '../NewWorkspaceDialog'
@@ -36,14 +37,14 @@ import { switchWorkspace, workspaceLabel } from '../workspaceNav'
 import { viewMenuGroups } from '../ViewsView'
 import type { Entry, Step } from './entries'
 import { runBulk } from '../bulk/BulkActions'
-import { deleteWithUndo } from '../undoable'
+import { deleteWithUndo, moveWithUndo, parkWithUndo } from '../undoable'
 import { keysOf } from '../../lib/shortcuts'
 import { runGroupDue } from '../task-list/EarlierActions'
 import { hueName } from '../../lib/colourNames'
 import { t, msg, translatedList } from '../../lib/i18n'
 import { customPriorityName, isNoPriority } from '../../lib/priority'
 import { DAY_PARTS, dayPartName, dayPartOf } from '../../lib/dayParts'
-import { dayPartUndoable, eveningUndoable, priorityUndoable, sectorUndoable } from '../../lib/undoActions'
+import { dayPartUndoable, eveningUndoable, priorityUndoable, sectorUndoable, skipOccurrence } from '../../lib/undoActions'
 import { sectorChoices } from '../../lib/sectorNames'
 import { runGiveBackSlot, runTakeSlot, type SlotState } from '../task-list/slotActions'
 import { requestFrames } from '../calendar/framesRequest'
@@ -259,7 +260,7 @@ export function commands(ctx: PaletteContext): Command[] {
         { id: 'task:defer', label: t('Defer {title}', { title }), icon: 'calendar-days', shortcut: keysOf('list.defer'), keywords: 'start later', run: () => { deferFocus.request(tk.id); list.open(tk.id) } },
         tk.start === 'someday'
           ? { id: 'task:unpark', label: t('Bring back {title} from Someday', { title }), icon: 'archive', shortcut: keysOf('list.park'), run: () => unparkTask(tk.id) }
-          : { id: 'task:park', label: t('Park {title} in Someday', { title }), icon: 'archive', shortcut: keysOf('list.park'), run: () => parkTask(tk.id) },
+          : { id: 'task:park', label: t('Park {title} in Someday', { title }), icon: 'archive', shortcut: keysOf('list.park'), run: () => parkWithUndo(tk.id) },
         { id: 'task:evening', label: tk.evening ? t('Remove {title} from This Evening', { title }) : t('Mark {title} for This Evening', { title }), icon: 'moon', shortcut: keysOf('list.evening'), run: () => eveningUndoable(tk.id, !tk.evening) },
         // Day parts (day-parts D4): the parts the task is not in, while the account uses them.
         ...(ctx.dayParts ? ([...DAY_PARTS, null] as const).filter((part) => dayPartOf(tk) !== part).map((part): Command => ({
@@ -273,7 +274,7 @@ export function commands(ctx: PaletteContext): Command[] {
       if (!tk.project_id && !tk.parent_id) {
         for (const w of (ctx.workspaces?.list ?? []).filter((x) => x.id !== ctx.workspaces?.current)) {
           out.push({ id: `task:workspace:${w.id}`, label: t('Move {title} to workspace {name}', { title, name: workspaceLabel(w.name, w.default) }), icon: 'layers',
-            keywords: 'workspace', run: () => updateTask(tk.id, { workspace_id: w.default ? null : w.id }) })
+            keywords: 'workspace', run: () => moveWithUndo(tk.id, null, workspaceLabel(w.name, w.default), w.id).then(() => {}) })
         }
       }
       if (list.openLabels) { const open = list.openLabels; out.push({ id: 'task:labels', label: t('Add labels to {title}', { title }), icon: 'tag', shortcut: keysOf('list.labels'), run: () => open(tk.id) }) }
@@ -294,11 +295,11 @@ export function commands(ctx: PaletteContext): Command[] {
     const p = ctx.project
     const name = p.row.name
     out.push(...fromMenu(t('Project “{name}”', { name }), projectMenuGroups(p.row, p, {
-      rename: () => prompt(t('Rename project'), t('Project name'), name, (v) => updateProject(p.row.id, { name: v.trim() })),
+      rename: () => prompt(t('Rename project'), t('Project name'), name, (v) => renameProject(p.row, v)),
       pin: () => setFavourite('project', p.row.id, !p.pinned),
     }), 'project'))
     if (p.role !== 'viewer') {
-      out.push(...HUES.map((h): Command => ({ id: `project:colour:${h.name}`, label: t('Project “{name}”: Colour {colour}', { name, colour: hueName(h.name) }), icon: 'palette', menuLabel: t('Colour {name}', { name: hueName(h.name) }), run: () => updateProject(p.row.id, { color: h.hex }) })))
+      out.push(...HUES.map((h): Command => ({ id: `project:colour:${h.name}`, label: t('Project “{name}”: Colour {colour}', { name, colour: hueName(h.name) }), icon: 'palette', menuLabel: t('Colour {name}', { name: hueName(h.name) }), run: () => setProjectColour(p.row, h.hex) })))
     }
     // Set project flow (project-flow-modes D7): in every mode, for the owner and admins.
     if (p.role === 'owner' || p.role === 'admin') {

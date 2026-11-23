@@ -1,1 +1,0 @@
-- **Sharing text with accents or other scripts to the iPhone app works on iOS 16.** A share whose title or text held a letter such as é, ü or 中 opened nothing on iOS 16; it now opens the capture screen like any other share.

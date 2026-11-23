@@ -1,1 +1,0 @@
-- **Server performance budgets follow the runner.** The nightly benchmark also times a fixed reference workload, and scales the server time limits by it, so a slow CI runner no longer fails a budget the code meets. The published limit × 1.5 still holds on any runner (#1656).

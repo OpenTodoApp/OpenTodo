@@ -1,1 +1,0 @@
-- **A routine run reaches a device once.** A routine that ran just as a device opened its routines stream was sent to it twice, and the device ran it twice.

@@ -3351,7 +3351,8 @@
   "One page": "Une page",
   "One per device, so you can revoke a lost phone without touching the others. They only work for CalDAV.": "Un par appareil, pour révoquer un téléphone perdu sans toucher aux autres. Ils ne fonctionnent que pour CalDAV.",
   "One per line": "Une par ligne",
-  "One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action, e sets how often it comes up.": "Un projet à la fois : est-il toujours vivant, et sa prochaine étape est-elle claire ? r le marque passé en revue, q ajoute une prochaine action, e choisit à quel rythme il revient.",
+  "One project at a time: is it still alive, and is its next step clear?": "Un projet à la fois : est-il toujours vivant, et sa prochaine étape est-elle claire ?",
+  "{r} marks it reviewed, {q} adds a next action, {e} sets how often it comes up.": "{r} le marque passé en revue, {q} ajoute une prochaine action, {e} choisit à quel rythme il revient.",
   "One step at a time, in list order": "Une étape à la fois, dans l’ordre de la liste",
   "One task, a timer, a break when you need one": "Une tâche, un minuteur, une pause quand il en faut une",
   "One task, or one task per line": "Une tâche, ou une tâche par ligne",
@@ -7858,5 +7859,9 @@
   "Filter {name}": "Filtrer « {name} »",
   "Show deadlines as dates": "Afficher les dates limites comme dates",
   "The date on task rows instead of the days left": "La date sur les lignes de tâches au lieu des jours restants",
+  "{name} assigned you a task": "{name} t’a attribué une tâche",
+  "{name} completed a task": "{name} a terminé une tâche",
+  "{name} reopened a task": "{name} a rouvert une tâche",
+  "Completed or reopened": "Terminée ou rouverte",
   "Unread changes": "Modifications non lues"
 }

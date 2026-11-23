@@ -234,7 +234,9 @@ budgets.
 
 The app marks a few moments in the browser's own performance timeline
 (`ot:list-ready`, `ot:search-results`, `ot:sync-idle`, `ot:remote-applied`). The
-benchmark reads them there; they are never sent anywhere.
+benchmark reads them there; they are never sent anywhere. `ot:search-results` is
+marked once per typed text, when the search's results show; the notes and filter
+results the search adds after a short pause are outside the `search-keystroke` number.
 
 ## Run the benchmark yourself
 

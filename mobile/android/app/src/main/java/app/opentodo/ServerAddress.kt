@@ -1,5 +1,6 @@
 package app.opentodo
 
+import java.net.IDN
 import java.net.URI
 
 /**
@@ -20,6 +21,7 @@ object ServerAddress {
         var text = input.trim()
         if (text.isEmpty() || text.any { it.isWhitespace() }) return Result.Invalid
         if (!text.contains("://")) text = "https://$text"
+        text = asciiHost(text) ?: return Result.Invalid
         val uri = try { URI(text) } catch (e: Exception) { return Result.Invalid }
         val scheme = uri.scheme?.lowercase() ?: return Result.Invalid
         val host = uri.host?.lowercase()?.removeSuffix(".") ?: return Result.Invalid
@@ -28,6 +30,7 @@ object ServerAddress {
         val path = uri.rawPath ?: ""
         if (path.isNotEmpty() && path != "/") return Result.Invalid
         val port = uri.port
+        if (port != -1 && port !in 1..65535) return Result.Invalid
         val defaultPort = if (scheme == "https") 443 else 80
         val hostPart = if (host.contains(':') && !host.startsWith("[")) "[$host]" else host
         val origin = "$scheme://$hostPart" + if (port == -1 || port == defaultPort) "" else ":$port"
@@ -35,6 +38,24 @@ object ServerAddress {
         if (isLocal(host)) return Result.Ok(origin, insecure = true)
         val httpsPort = if (port == -1 || port == 80) "" else ":$port"
         return Result.NeedsHttps("https://$hostPart$httpsPort")
+    }
+
+    /**
+     * The address with a host typed in Unicode (`bücher.example`) in the ASCII form the network
+     * uses (`xn--bcher-kva.example`), which `URI` cannot read otherwise; `null` when the host cannot
+     * be encoded. Anything else is left for `URI` to judge. Mirrors `ServerAddress.asciiHost` on iOS.
+     */
+    fun asciiHost(text: String): String? {
+        val schemeEnd = text.indexOf("://").takeIf { it >= 0 }?.plus(3) ?: return text
+        val rest = text.substring(schemeEnd)
+        val end = rest.indexOfFirst { it in "/?#" }.takeIf { it >= 0 } ?: rest.length
+        val authority = rest.substring(0, end)
+        if (authority.all { it.code < 128 } || '@' in authority || '[' in authority) return text
+        val colon = authority.lastIndexOf(':')
+        val host = if (colon >= 0) authority.substring(0, colon) else authority
+        val port = if (colon >= 0) authority.substring(colon) else ""
+        val ascii = try { IDN.toASCII(host) } catch (e: IllegalArgumentException) { return null }
+        return text.substring(0, schemeEnd) + ascii + port + rest.substring(end)
     }
 
     /** This device, private IPv4 ranges, IPv6 loopback, unique-local and link-local, and `.local` names. */

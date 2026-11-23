@@ -1,0 +1,106 @@
+{
+  "_comment": "The reminder schedule the web app hands a shell (native-shells \"Reminders scheduled on the device\") and what the shell arms from it, read by Android's ReminderScheduleTest and the iOS app's ReminderTests. `now` is the time of the hand-over (ms). Each app then keeps at most its own number (Android 500, iOS 64, the system's limit).",
+  "now": 1800000000000,
+  "cases": [
+    {
+      "name": "valid entries, earliest first, one per id, within the window",
+      "handed": "[{\"id\": \"r2\", \"taskId\": \"t2\", \"fireAt\": 1800007200000}, {\"id\": \"r1\", \"taskId\": \"t1\", \"fireAt\": 1800003600000, \"title\": \"Call the plumber\"}, {\"id\": \"old\", \"taskId\": \"t3\", \"fireAt\": 1799996400000}, {\"id\": \"far\", \"taskId\": \"t4\", \"fireAt\": 1800777600000}, {\"id\": \"r1\", \"taskId\": \"t1\", \"fireAt\": 1800010800000}, {\"taskId\": \"t5\", \"fireAt\": 1800003600000}, {\"id\": \"r7\", \"taskId\": \"t7\", \"fireAt\": 1800003600001, \"title\": null}]",
+      "armed": [
+        {
+          "id": "r1",
+          "fireAt": 1800003600000,
+          "title": "Call the plumber"
+        },
+        {
+          "id": "r7",
+          "fireAt": 1800003600001,
+          "title": null
+        },
+        {
+          "id": "r2",
+          "fireAt": 1800007200000,
+          "title": null
+        }
+      ]
+    },
+    {
+      "name": "an entry that cannot be read does not take the others with it",
+      "handed": "[{\"id\": \"r6\", \"taskId\": \"t6\", \"fireAt\": \"soon\"}, {\"id\": \"r1\", \"taskId\": \"t1\", \"fireAt\": 1800003600000}, \"not an object\", {\"id\": \"r9\", \"taskId\": \"t9\", \"fireAt\": -1}]",
+      "armed": [
+        {
+          "id": "r1",
+          "fireAt": 1800003600000,
+          "title": null
+        }
+      ]
+    },
+    {
+      "name": "a late hand-over still fires: up to a minute ago",
+      "handed": "[{\"id\": \"late\", \"taskId\": \"t\", \"fireAt\": 1799999970000}, {\"id\": \"gone\", \"taskId\": \"t\", \"fireAt\": 1799999939000}, {\"id\": \"edge\", \"taskId\": \"t\", \"fireAt\": 1799999940000}]",
+      "armed": [
+        {
+          "id": "edge",
+          "fireAt": 1799999940000,
+          "title": null
+        },
+        {
+          "id": "late",
+          "fireAt": 1799999970000,
+          "title": null
+        }
+      ]
+    },
+    {
+      "name": "up to eight days ahead",
+      "handed": "[{\"id\": \"week\", \"taskId\": \"t\", \"fireAt\": 1800604800000}, {\"id\": \"eight\", \"taskId\": \"t\", \"fireAt\": 1800691200000}, {\"id\": \"nine\", \"taskId\": \"t\", \"fireAt\": 1800691200001}]",
+      "armed": [
+        {
+          "id": "week",
+          "fireAt": 1800604800000,
+          "title": null
+        },
+        {
+          "id": "eight",
+          "fireAt": 1800691200000,
+          "title": null
+        }
+      ]
+    },
+    {
+      "name": "ids and task ids of 1 to 100 characters; an empty title is none; a title is cut at 200",
+      "handed": "[{\"id\": \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\", \"taskId\": \"t\", \"fireAt\": 1800003600000}, {\"id\": \"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\", \"taskId\": \"t\", \"fireAt\": 1800003600000}, {\"id\": \"\", \"taskId\": \"t\", \"fireAt\": 1800003600000}, {\"id\": \"e\", \"taskId\": \"\", \"fireAt\": 1800003600000}, {\"id\": \"blank\", \"taskId\": \"t\", \"fireAt\": 1800007200000, \"title\": \"\"}, {\"id\": \"long\", \"taskId\": \"t\", \"fireAt\": 1800010800000, \"title\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]",
+      "armed": [
+        {
+          "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "fireAt": 1800003600000,
+          "title": null
+        },
+        {
+          "id": "blank",
+          "fireAt": 1800007200000,
+          "title": null
+        },
+        {
+          "id": "long",
+          "fireAt": 1800010800000,
+          "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    },
+    {
+      "name": "not a list",
+      "handed": "not json",
+      "armed": []
+    },
+    {
+      "name": "an object",
+      "handed": "{}",
+      "armed": []
+    },
+    {
+      "name": "empty",
+      "handed": "[]",
+      "armed": []
+    }
+  ]
+}

@@ -1,0 +1,184 @@
+package app.opentodo
+
+import org.json.JSONObject
+
+/**
+ * The Focus session the web app hands over (focus-live-activity D1, bridge v1
+ * `publishFocus`), and what the ongoing notification shows of it. Pure, so the rules are
+ * unit-tested against the shared bridge fixtures without a device.
+ */
+data class FocusModel(
+    val state: State,
+    val taskId: String?,
+    val title: String?,
+    val phase: Phase,
+    val breakKind: BreakKind?,
+    val cycle: Int?,
+    val cycleLength: Int?,
+    val runningSince: Long?,
+    val elapsedMs: Long,
+    val plannedEndAt: Long?,
+    val plannedMs: Long?,
+) {
+    enum class State { RUNNING, PAUSED, DONE, NONE }
+    enum class Phase { WORK, BREAK }
+    enum class BreakKind { SHORT, LONG }
+
+    /** The line under the title: "Work · 2 of 4", "Work", "Short break", "Long break" or "Paused". */
+    sealed class Label {
+        data class Work(val cycle: Int?, val of: Int?) : Label()
+        object ShortBreak : Label()
+        object LongBreak : Label()
+        object Paused : Label()
+    }
+
+    val shown: Boolean get() = state == State.RUNNING || state == State.PAUSED
+
+    val label: Label get() = when {
+        state == State.PAUSED -> Label.Paused
+        phase == Phase.BREAK -> if (breakKind == BreakKind.LONG) Label.LongBreak else Label.ShortBreak
+        else -> Label.Work(cycle, cycleLength)
+    }
+
+    /** The system chronometer counts down to [end] for a running timed phase. */
+    val countsDown: Boolean get() = state == State.RUNNING && plannedEndAt != null
+
+    val end: Long? get() = if (state == State.RUNNING) plannedEndAt else null
+
+    /** A running Flowtime session counts up from here: the time worked before the stretch included. */
+    val countUpFrom: Long? get() = if (state == State.RUNNING && plannedEndAt == null && runningSince != null) runningSince - elapsedMs else null
+
+    /** While paused the clock is frozen: the time left of a timed phase, the time worked otherwise. */
+    val frozenMs: Long? get() = if (state != State.PAUSED) null else if (plannedMs != null) (plannedMs - elapsedMs).coerceAtLeast(0) else elapsedMs
+
+    /** When the session-end notification fires: the planned end of a running timed phase only. */
+    val notifyAt: Long? get() = end
+
+    /**
+     * Whether this stored session's end notification is still owed at [now]: its planned end
+     * has passed (within the alarm's second of slack). The web app reaches the end on its own
+     * clock and publishes `done`, often before an inexact alarm fires; the end must not be
+     * lost then (focus-live-activity D3). A session stopped early is not due.
+     */
+    fun endDue(now: Long): Boolean = notifyAt?.let { it <= now + 1_000 } ?: false
+
+    /**
+     * Whether replacing this stored session with [next] at [now] must announce this one's end
+     * first: its end passed and [next] is not the same run (`done`, `none`, or a phase that
+     * started on its own, such as an automatic break).
+     */
+    fun endOwedBy(next: FocusModel, now: Long): Boolean = endDue(now) && next.notifyAt != notifyAt
+
+    /**
+     * What `opentodo-open:` may load for [path] while this session is stored. Pause and
+     * Resume reach the activity, which other apps can open too, so an address with an action
+     * loads only with the token of this session's notification ([token] against [expected])
+     * and when it fits the state (Pause while running, Resume while paused); otherwise it
+     * opens the Focus screen without acting. Every other address passes unchanged.
+     */
+    fun authorize(path: String, token: String?, expected: String?): String {
+        if (token != null && expected != null && token == expected && path == actionPath) return path
+        // Deny by default: the WebView drops tabs and newlines, resolves dot segments and the
+        // web app decodes the query, so the check reads only the letters and digits left once
+        // every escape is decoded. Any spelling that mentions both opens the screen only.
+        val plain = decodedFully(path).filter { it.isLetterOrDigit() }.lowercase()
+        return if (plain.contains("focus") && plain.contains("action")) OPEN_PATH else path
+    }
+
+    /** The publication as stored: only the fields read here, normalized and capped by [parse]. */
+    fun toJson(): String? {
+        if (!shown) return null
+        val o = JSONObject().put("v", 1).put("state", state.name.lowercase()).put("phase", phase.name.lowercase()).put("elapsedMs", elapsedMs)
+        taskId?.let { o.put("taskId", it) }
+        title?.let { o.put("title", it) }
+        breakKind?.let { o.put("breakKind", it.name.lowercase()) }
+        cycle?.let { o.put("cycle", it) }
+        cycleLength?.let { o.put("cycleLength", it) }
+        runningSince?.let { o.put("runningSince", it) }
+        plannedEndAt?.let { o.put("plannedEndAt", it) }
+        plannedMs?.let { o.put("plannedMs", it) }
+        return o.toString()
+    }
+
+    /** The address Pause or Resume opens (focus-live-activity D4); none outside a run. */
+    val actionPath: String? get() = when (state) {
+        State.RUNNING -> "/focus?action=pause"
+        State.PAUSED -> "/focus?action=resume"
+        else -> null
+    }
+
+    companion object {
+        const val OPEN_PATH = "/focus"
+        val NONE = FocusModel(State.NONE, null, null, Phase.WORK, null, null, null, null, 0, null, null)
+
+        /** A publication; anything malformed or of an unknown version reads as none, so nothing stale stays shown. */
+        fun parse(json: String?): FocusModel {
+            val o = try { JSONObject(json ?: return NONE) } catch (e: Exception) { return NONE }
+            if (o.optInt("v", 0) != 1) return NONE
+            val state = when (o.optString("state")) {
+                "running" -> State.RUNNING
+                "paused" -> State.PAUSED
+                "done" -> State.DONE
+                else -> return NONE
+            }
+            fun long(key: String): Long? = if (o.has(key) && !o.isNull(key)) o.optLong(key, -1).takeIf { it >= 0 } else null
+            fun int(key: String): Int? = if (o.has(key) && !o.isNull(key)) o.optInt(key, -1).takeIf { it in 1..99 } else null
+            fun str(key: String, max: Int): String? = if (o.has(key) && !o.isNull(key)) o.optString(key).take(max).ifEmpty { null } else null
+            val phase = if (o.optString("phase") == "break") Phase.BREAK else Phase.WORK
+            val breakKind = when (o.optString("breakKind")) { "long" -> BreakKind.LONG; "short" -> BreakKind.SHORT; else -> null }
+            val runningSince = long("runningSince")
+            // A running session needs to know since when; without it nothing can be drawn.
+            if (state == State.RUNNING && runningSince == null) return NONE
+            return FocusModel(
+                state = state,
+                taskId = str("taskId", 100),
+                title = str("title", 200),
+                phase = phase,
+                breakKind = if (phase == Phase.BREAK) breakKind ?: BreakKind.SHORT else null,
+                cycle = int("cycle"),
+                cycleLength = int("cycleLength"),
+                runningSince = if (state == State.RUNNING) runningSince else null,
+                elapsedMs = long("elapsedMs") ?: 0,
+                plannedEndAt = if (state == State.RUNNING) long("plannedEndAt") else null,
+                plannedMs = long("plannedMs"),
+            )
+        }
+
+        /**
+         * [s] with every valid percent-escape decoded, again until nothing changes (a few
+         * rounds at most). An invalid escape (`%`, `%zz`) stays as it is, as in the browser,
+         * and does not stop the rest from being decoded.
+         */
+        internal fun decodedFully(s: String): String {
+            var cur = s
+            repeat(5) {
+                val next = decodeOnce(cur)
+                if (next == cur) return cur
+                cur = next
+            }
+            return cur
+        }
+
+        private fun decodeOnce(s: String): String {
+            val out = java.io.ByteArrayOutputStream()
+            val bytes = s.toByteArray(Charsets.UTF_8)
+            var i = 0
+            while (i < bytes.size) {
+                val b = bytes[i]
+                val hi = if (i + 2 < bytes.size && b == '%'.code.toByte()) Character.digit(bytes[i + 1].toInt(), 16) else -1
+                val lo = if (hi >= 0) Character.digit(bytes[i + 2].toInt(), 16) else -1
+                if (hi >= 0 && lo >= 0) { out.write(hi * 16 + lo); i += 3 } else { out.write(b.toInt()); i++ }
+            }
+            return String(out.toByteArray(), Charsets.UTF_8)
+        }
+
+        /** The frozen time as the screen shows it: `24:59`, `1:05:00` from an hour. */
+        fun clockText(ms: Long): String {
+            val total = (ms.coerceAtLeast(0) / 1000)
+            val h = total / 3600
+            val m = (total % 3600) / 60
+            val s = total % 60
+            return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%d:%02d".format(m, s)
+        }
+    }
+}

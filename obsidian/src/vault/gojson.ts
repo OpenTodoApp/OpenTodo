@@ -123,6 +123,29 @@ export function utf8(s: string): Uint8Array {
   return enc.encode(s)
 }
 
+/** The hash kept for one prefix of a written file (state.go prefixHash): the first 8 bytes of its SHA-256, in hex. */
+export function prefixHash(text: string): string {
+  return hex(sha256(utf8(text)).slice(0, 8))
+}
+
+/** FileState.prefixes is not kept past this many lines (state.go maxPrefixes). */
+export const MAX_PREFIXES = 5000
+
+/** The state of text written for project pid (state.go writtenState). */
+export function writtenState(project: string, text: string): { project: string; hash: string; size?: number; prefixes?: string[] } {
+  const fs: { project: string; hash: string; size?: number; prefixes?: string[] } = { project, hash: hashOf(text) }
+  const size = utf8(text).length
+  if (size > 0) fs.size = size
+  let lines = 0
+  for (let i = 0; i < text.length; i++) if (text[i] === '\n') lines++
+  if (lines > 0 && lines <= MAX_PREFIXES) {
+    const prefixes: string[] = []
+    for (let i = 0; i < text.length; i++) if (text[i] === '\n') prefixes.push(prefixHash(text.slice(0, i + 1)))
+    fs.prefixes = prefixes
+  }
+  return fs
+}
+
 /** The hash the state keeps for a file's bytes (hashOf). */
 export function hashOf(text: string): string {
   return hex(sha256(utf8(text)))

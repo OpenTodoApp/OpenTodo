@@ -1,1 +1,0 @@
-- **Switching between lists is instant again.** Since page transitions, tapping a saved view, Today, the Inbox, a project or a Notes page showed the new list a moment late, behind an animation. Those switches now change at once; opening a task, Settings and its pages, and going back from them, still slide.

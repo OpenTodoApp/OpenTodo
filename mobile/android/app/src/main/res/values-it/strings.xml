@@ -54,4 +54,15 @@
     <string name="setup_sign_in">Accedi qui</string>
     <string name="error_sign_in">Il server è dietro una pagina di accesso e l’accesso non è proseguito nell’app. Accedi di nuovo qui.</string>
     <string name="save_failed">Non è stato possibile salvare il file.</string>
+    <string name="channel_focus">Focus</string>
+    <string name="focus_generic">Sessione di focus</string>
+    <string name="focus_work">Lavoro</string>
+    <string name="focus_work_of">Lavoro · %1$d di %2$d</string>
+    <string name="focus_short_break">Pausa breve</string>
+    <string name="focus_long_break">Pausa lunga</string>
+    <string name="focus_paused">In pausa</string>
+    <string name="focus_pause">Metti in pausa</string>
+    <string name="focus_resume">Riprendi</string>
+    <string name="focus_done">Sessione finita</string>
+    <string name="focus_break_over">Pausa finita</string>
 </resources>

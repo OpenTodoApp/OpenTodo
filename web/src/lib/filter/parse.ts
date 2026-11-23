@@ -226,7 +226,7 @@ export function tokenize(src: string): Token[] {
 
 // ---- AST ----
 
-export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'morning' | 'afternoon' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'available' | 'habit' | 'origin' | 'no origin' | 'tracked' | 'tracked occurrence' | 'energy' | 'no energy' | 'notes' | 'no notes' | 'sector' | 'no sector' | 'carried' | 'assigned' | 'unassigned' | 'no section'
+export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'morning' | 'afternoon' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'available' | 'habit' | 'recurring' | 'origin' | 'no origin' | 'tracked' | 'tracked occurrence' | 'energy' | 'no energy' | 'notes' | 'no notes' | 'sector' | 'no sector' | 'carried' | 'assigned' | 'unassigned' | 'no section'
 
 /**
  * today = 0, tomorrow = 1, yesterday = -1, `N days` = N, `N days ago` = -N.
@@ -280,7 +280,7 @@ export type FieldValueExpr =
   | { type: 'date'; date: DateExpr }
 
 export const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
-const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening', 'morning', 'afternoon', 'blocked', 'unblocked', 'available', 'habit', 'origin', 'energy', 'notes', 'sector', 'carried', 'assigned', 'unassigned'])
+const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening', 'morning', 'afternoon', 'blocked', 'unblocked', 'available', 'habit', 'recurring', 'origin', 'energy', 'notes', 'sector', 'carried', 'assigned', 'unassigned'])
 const NO_KEYWORDS = ['date', 'project', 'labels', 'time', 'deadline', 'start', 'origin', 'energy', 'notes', 'sector', 'section'] as const
 /** Words that start a date expression in a field term's value; a number starts one only before a unit. */
 const DATE_STARTS = new Set(['today', 'tomorrow', 'yesterday', 'this', 'last', 'next'])

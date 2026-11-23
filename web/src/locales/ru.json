@@ -3615,7 +3615,8 @@
   "One page": "Одна страница",
   "One per device, so you can revoke a lost phone without touching the others. They only work for CalDAV.": "Отдельный для каждого устройства, чтобы можно было отозвать потерянный телефон, не затрагивая остальные. Работают только для CalDAV.",
   "One per line": "По одному на строку",
-  "One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action, e sets how often it comes up.": "По одному проекту: жив ли он ещё и ясен ли следующий шаг? r отмечает его просмотренным, q добавляет следующее действие, e задаёт, как часто он появляется.",
+  "One project at a time: is it still alive, and is its next step clear?": "По одному проекту: жив ли он ещё и ясен ли следующий шаг?",
+  "{r} marks it reviewed, {q} adds a next action, {e} sets how often it comes up.": "{r} отмечает его просмотренным, {q} добавляет следующее действие, {e} задаёт, как часто он появляется.",
   "One step at a time, in list order": "По одному шагу, в порядке списка",
   "One task, a timer, a break when you need one": "Одна задача, таймер и перерыв, когда он нужен",
   "One task, or one task per line": "Одна задача или по задаче на строку",
@@ -7858,5 +7859,9 @@
   "Filter {name}": "Фильтр «{name}»",
   "Show deadlines as dates": "Показывать крайние сроки датами",
   "The date on task rows instead of the days left": "Дата в строках задач вместо оставшихся дней",
+  "Completed or reopened": "Выполнена или открыта снова",
+  "{name} assigned you a task": "{name} назначил(а) вам задачу",
+  "{name} completed a task": "{name} выполнил(а) задачу",
+  "{name} reopened a task": "{name} снова открыл(а) задачу",
   "Unread changes": "Непрочитанные изменения"
 }

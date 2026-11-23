@@ -31,7 +31,7 @@ import { WelcomeDialog } from './WelcomeDialog'
 import { ArchivePrompt } from './ArchivePrompt'
 import { notificationsOpen, sidebarFind } from './signals'
 import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
-import { closePanelIfStale, panelTaskId, usePanel } from './panel'
+import { closePanelIfStale, panelTaskId, usePanel, usePanelCovering } from './panel'
 import { currentAddress, openTaskPage, settleTrail } from './taskTrail'
 import { AddButton, TAB_BAR_HEIGHT_REM, TabBar } from './TabBar'
 import { PHONE_BAR_FRAME, PHONE_BAR_LINE, hasPhoneChrome } from './phoneFrame'
@@ -275,7 +275,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   useEffect(() => { const off = onQuickAddSheetRequest(() => setAddOpen(true)); void handleShellUrl(requestQuickAddSheet); return off }, []) // and a native shell's address actions (native-shells)
   const addButton = useRef<HTMLButtonElement>(null)
   const sheetOpen = useOverlayDepth() > 0
-  const panelOpen = !!usePanel()
+  const [panelOpen, panelCoversPage] = [!!usePanel(), usePanelCovering()]
   const phoneChrome = !sheetOpen && !panelOpen && hasPhoneChrome(route)
   // The add button's room at the end of the page: only where the button is.
   const addRoom = phoneChrome && offersQuickAdd(route)
@@ -340,7 +340,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         {!sidebar.collapsed && <SidebarResizer width={sidebar.width} />}
       </aside>
       {/* From 768 px the page is one inset content surface on the canvas: 8 px from the window, the surface radius, one hairline (precision-shell D1). */}
-      <main ref={frame} className="flex min-w-0 flex-1 flex-col md:!pb-0 md:mt-[max(0.5rem,var(--safe-top))] md:mb-2 md:mr-2 md:overflow-hidden md:rounded-surface md:border md:border-default md:bg-surface" data-app-frame data-phone-chrome={phoneChrome || undefined} inert={drawer.open || undefined}
+      <main ref={frame} className="flex min-w-0 flex-1 flex-col md:!pb-0 md:mt-[max(0.5rem,var(--safe-top))] md:mb-2 md:mr-2 md:overflow-hidden md:rounded-surface md:border md:border-default md:bg-surface" data-app-frame data-phone-chrome={phoneChrome || undefined} inert={drawer.open || panelCoversPage || undefined}
         style={phoneChrome ? { paddingBottom: `calc(${TAB_BAR_HEIGHT_REM}rem + var(--safe-bottom))` } : undefined}>
         {/* Below 768 px: the bar with the menu button, the page's title and its actions (app-shell "No desktop top bar"). */}
         <PhoneBar onMenu={() => setSidebarOpen(true)} /><PullHost scroller={content} />

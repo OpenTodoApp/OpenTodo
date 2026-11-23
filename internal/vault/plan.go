@@ -231,7 +231,7 @@ func (e *engine) plan(dry bool) error {
 				}
 			}
 		}
-		files[target] = FileState{Project: pid, Hash: hashOf(out)}
+		files[target] = writtenState(pid, out)
 	}
 	for _, p := range sortedKeys(e.st.Files) {
 		fs := e.st.Files[p]

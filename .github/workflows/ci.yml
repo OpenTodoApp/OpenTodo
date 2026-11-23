@@ -807,7 +807,12 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # The emulator snapshot (about 2 GB) is saved only by a run on main (the nightly run, or
+      # one started by hand; pushes to main skip this job): a cache saved by a merge-queue run
+      # belongs to that run's own ref, which no other run can read, and a few of those fill the
+      # repository's cache quota and evict main's copy, so every queue run missed and built
+      # the snapshot again. Saved after the tests booted from it, as the post-job save did.
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: avd-cache
         with:
           path: |
@@ -836,6 +841,14 @@ jobs:
           disable-animations: true
           working-directory: mobile/android
           script: ./gradlew --no-daemon :app:connectedDebugAndroidTest
+      - name: Keep the emulator snapshot (main only)
+        if: success() && steps.avd-cache.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-34-google_apis-x86_64-v1
       - name: Failed instrumented tests
         if: failure()
         run: |
@@ -959,8 +972,37 @@ jobs:
         run: |
           xcodebuild -version
           xcrun simctl list runtimes
+      # Measurement: between the end of the build and the first test, `make ios` waits 1.5 to
+      # 9 minutes in silence. This boots the simulator the tests run on and prints how long it
+      # took: the Makefile's iPhone under the newest runtime that has it, which is the one
+      # `name=` chose (xcodebuild takes the latest OS), handed to `make ios` by its id so both
+      # use the same device.
+      - name: Boot the simulator, timed
+        timeout-minutes: 15
+        run: |
+          sim=$(xcrun simctl list devices available | sed -n 's/^[[:space:]]*//; s/ (.*//; /^iPhone/p' | head -1)
+          # The newest runtime, as xcodebuild's name= chose (iOS 26.2 with Xcode 16.4 in recent runs).
+          udid=$(xcrun simctl list devices available -j | jq -r --arg n "$sim" '
+            [.devices | to_entries[] | select(.key | test("SimRuntime\\.iOS-"))
+             | {v: (.key | capture("iOS-(?<a>[0-9]+)-(?<b>[0-9]+)") | [(.a|tonumber), (.b|tonumber)]), d: .value[]}
+             | select(.d.name == $n)] | sort_by(.v) | last | .d.udid')
+          [ -n "$udid" ] && [ "$udid" != null ] || { echo "no $sim simulator under an iOS runtime"; exit 1; }
+          echo "simulator: $sim ($udid)"
+          echo "SIM_ID=$udid" >> "$GITHUB_ENV"
+          start=$(date +%s)
+          xcrun simctl bootstatus "$udid" -b > /dev/null
+          echo "booted in $(( $(date +%s) - start )) s"
       - name: Unit tests, device build and the dependency check (make ios)
         run: make ios
+      # A failed test's screenshots and its accessibility snapshot, which the log does not
+      # carry (open the .xcresult in Xcode): xcodebuild writes the bundle under the derived data.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: ios-test-results
+          path: mobile/ios/build/Logs/Test/*.xcresult
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Archive with the newest Xcode, signed ad hoc (the TestFlight job's first half)
         run: |
           scripts/release/ios-testflight.sh xcode

@@ -78,6 +78,11 @@ func (s *Service) emitAssigned(ctx context.Context, at int64, changes []Change, 
 		if !ok {
 			continue
 		}
+		// A new occurrence record copies its series' assignee: nobody was
+		// assigned anything (the series' own change carries a turn).
+		if _, record := c.Fields["series_id"]; record {
+			continue
+		}
 		author, turn := who(c)
 		assignee := idValue(fc.To)
 		if assignee == "" || assignee == author {
@@ -90,17 +95,24 @@ func (s *Service) emitAssigned(ctx context.Context, at int64, changes []Change, 
 		}
 		e := notify.Assigned{AssigneeID: assignee, ActorID: author, ActorName: actorName, TaskID: c.EntityID, At: at, Turn: turn}
 		e.TaskTitle = s.stringField(ctx, c.ScopeID, "task", c.EntityID, "title")
-		e.ProjectID = idValue(json.RawMessage(s.rawField(ctx, c.ScopeID, "task", c.EntityID, "project_id")))
-		if e.ProjectID == "" {
-			if pid, ok := strings.CutPrefix(c.ScopeID, "project:"); ok {
-				e.ProjectID = pid
-			}
-		}
-		if e.ProjectID != "" {
-			e.ProjectName = s.stringField(ctx, c.ScopeID, "project", e.ProjectID, "name")
-		}
+		e.ProjectID, e.ProjectName = s.taskProject(ctx, c.ScopeID, c.EntityID)
 		s.sinks.Assigned(ctx, e)
 	}
+}
+
+// taskProject is the project of a task for notification text: its id and
+// name, both "" for a task in the Inbox.
+func (s *Service) taskProject(ctx context.Context, scope, taskID string) (id, name string) {
+	id = idValue(json.RawMessage(s.rawField(ctx, scope, "task", taskID, "project_id")))
+	if id == "" {
+		if pid, ok := strings.CutPrefix(scope, "project:"); ok {
+			id = pid
+		}
+	}
+	if id != "" {
+		name = s.stringField(ctx, scope, "project", id, "name")
+	}
+	return id, name
 }
 
 func (s *Service) userName(ctx context.Context, id string) string {

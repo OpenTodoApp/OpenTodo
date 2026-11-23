@@ -75,6 +75,8 @@ describe('the Time sectors source', () => {
     expect(t.due).toEqual({ date: '2026-10-28' })
     expect(t.sector).toBe('')
     await waitFor(() => !group('this-week')?.querySelector(`[data-tray-task="${draft}"]`), 'it leaves the list')
+    // applyBatch stores the step just after the write lands, so wait for it rather than read it at once.
+    await waitFor(async () => (await db.assistantUndo.count()) > 0, 'the undo step')
     const entry = (await db.assistantUndo.toArray()).at(-1)!
     await undoBatch(entry.id)
     await waitFor(async () => (await db.tasks.get(draft))?.sector === '2026-W44', 'undone')

@@ -2220,11 +2220,13 @@
   "Assigned to me": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/NotificationChannelEditor.tsx",
+    "web/src/app/NotificationsSettings.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TaskListView.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts"
   ],
   "Assigned to someone": [
@@ -2235,14 +2237,16 @@
   ],
   "Assigned to you": [
     "web/src/app/IssueEditor.tsx",
-    "web/src/app/IssuesPanel.tsx"
+    "web/src/app/IssuesPanel.tsx",
+    "web/src/lib/undoActions.ts"
   ],
   "Assigned to you in these repositories": [
     "web/src/app/IssueEditor.tsx"
   ],
   "Assigned to {name}": [
     "web/src/app/AssigneePicker.tsx",
-    "web/src/app/filter/conditionText.ts"
+    "web/src/app/filter/conditionText.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Assigned to {name}, taking turns": [
     "web/src/app/AssigneePicker.tsx"
@@ -3917,6 +3921,11 @@
   "Completed occurrence of {title}": [
     "web/src/app/task-detail/TaskHead.tsx"
   ],
+  "Completed or reopened": [
+    "web/src/app/NotificationChannelEditor.tsx",
+    "web/src/app/NotificationsSettings.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Completed per day": [
     "web/src/app/method/loop/PulseDetails.tsx"
   ],
@@ -4750,7 +4759,8 @@
     "web/src/lib/review.ts"
   ],
   "Day skipped": [
-    "web/src/lib/occurrenceActions.ts"
+    "web/src/lib/occurrenceActions.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Day {n} of {m}": [
     "web/src/app/TaskRow.tsx",
@@ -5600,6 +5610,7 @@
   "Due {date}": [
     "web/public/push-sw.js",
     "web/src/app/TriageView.tsx",
+    "web/src/app/away/AwayDialog.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/lib/assistant.ts"
   ],
@@ -7164,7 +7175,8 @@
     "web/src/app/AssigneePicker.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
-    "web/src/app/task-list/ListGroups.tsx"
+    "web/src/app/task-list/ListGroups.tsx",
+    "web/src/lib/undoActions.ts"
   ],
   "Four views over priority and date: sort work by urgent and important, and drag a card to re-plan it.": [
     "web/src/lib/boardTemplates.ts"
@@ -7924,6 +7936,7 @@
   ],
   "Hide details": [
     "web/src/app/TaskRow.tsx",
+    "web/src/app/away/AwayDialog.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -9754,7 +9767,8 @@
     "web/src/app/LocationRemindersSettings.tsx"
   ],
   "Location removed": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Locations": [
     "web/src/app/Sidebar.tsx",
@@ -10068,6 +10082,7 @@
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/ShareDialog.tsx",
     "web/src/app/WorkspacesSettings.tsx",
+    "web/src/app/menus/useProjectMenu.tsx",
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
@@ -12220,7 +12235,8 @@
     "web/src/lib/occurrenceActions.ts"
   ],
   "Occurrence skipped": [
-    "web/src/lib/occurrenceActions.ts"
+    "web/src/lib/occurrenceActions.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Of": [
     "web/src/lib/rules/sentence.ts"
@@ -12600,7 +12616,7 @@
   "One per line": [
     "web/src/app/routines/wordPicker.tsx"
   ],
-  "One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action, e sets how often it comes up.": [
+  "One project at a time: is it still alive, and is its next step clear?": [
     "web/src/app/review/ReviewView.tsx"
   ],
   "One step at a time, in list order": [
@@ -14065,6 +14081,7 @@
     "web/src/app/TimelineView.tsx"
   ],
   "Project updated": [
+    "web/src/app/menus/projectAppearance.tsx",
     "web/src/lib/webhooks.ts"
   ],
   "Project walk: add a next action to the project": [
@@ -14865,7 +14882,8 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Renamed “{from}” → “{to}”": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Rename…": [
     "web/src/app/locations/PlacesView.tsx"
@@ -14948,6 +14966,7 @@
   ],
   "Repeats": [
     "web/src/app/ParseChips.tsx",
+    "web/src/app/filter/conditionText.ts",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
@@ -16351,7 +16370,8 @@
     "web/src/app/WelcomeDialog.tsx"
   ],
   "Share project": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/ProjectHeader.tsx",
+    "web/src/app/menus/useProjectMenu.tsx"
   ],
   "Share the current project: add members by email, change roles, remove, leave, transfer": [
     "web/src/lib/shortcuts.ts"
@@ -16465,6 +16485,7 @@
   ],
   "Show details": [
     "web/src/app/TaskRow.tsx",
+    "web/src/app/away/AwayDialog.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -17050,6 +17071,7 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Someone": [
+    "web/public/push-sw.js",
     "web/src/app/FeedView.tsx",
     "web/src/app/MemberInvitations.tsx",
     "web/src/app/NotificationBell.tsx",
@@ -17531,7 +17553,8 @@
     "web/src/lib/push.ts"
   ],
   "Subtask of “{task}”": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Subtask shown for context": [
     "web/src/app/TaskRow.tsx"
@@ -20776,7 +20799,8 @@
     "web/src/app/filter/conditionText.ts",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
-    "web/src/lib/facets.ts"
+    "web/src/lib/facets.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Unavailable custom field": [
     "web/src/app/views/DisplayOptionsBody.tsx",
@@ -26001,11 +26025,17 @@
   "{name} answered about <task>{title}</task>": [
     "web/src/app/Briefing.tsx"
   ],
+  "{name} assigned you a task": [
+    "web/public/push-sw.js"
+  ],
   "{name} can sign in again.": [
     "web/src/app/UsersPanel.tsx"
   ],
   "{name} cleared": [
     "web/src/lib/assistant.ts"
+  ],
+  "{name} completed a task": [
+    "web/public/push-sw.js"
   ],
   "{name} failed · {why}": [
     "web/src/lib/rules/inbox.ts"
@@ -26061,6 +26091,9 @@
   ],
   "{name} ran {n} times": [
     "web/src/lib/rules/inbox.ts"
+  ],
+  "{name} reopened a task": [
+    "web/public/push-sw.js"
   ],
   "{name} replied": [
     "web/src/app/Briefing.tsx"
@@ -26285,7 +26318,8 @@
     "web/src/app/themes/TokenList.tsx"
   ],
   "{n} skipped": [
-    "web/src/app/ImportScreen.tsx"
+    "web/src/app/ImportScreen.tsx",
+    "web/src/app/away/AwayDialog.tsx"
   ],
   "{n} this week": [
     "web/src/app/method/loop/PulseDetails.tsx"
@@ -26389,6 +26423,9 @@
   ],
   "{rule}, {n, plural, one {# time} other {# times}}": [
     "web/src/lib/recurrenceWords.ts"
+  ],
+  "{r} marks it reviewed, {q} adds a next action, {e} sets how often it comes up.": [
+    "web/src/app/review/ReviewView.tsx"
   ],
   "{secret} (stored; type to replace)": [
     "web/src/app/SsoPanel.tsx"

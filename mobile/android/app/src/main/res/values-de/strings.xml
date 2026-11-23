@@ -54,4 +54,15 @@
     <string name="setup_sign_in">Hier anmelden</string>
     <string name="error_sign_in">Dein Server liegt hinter einer Anmeldeseite, und die Anmeldung ging in der App nicht weiter. Melde dich hier erneut an.</string>
     <string name="save_failed">Die Datei konnte nicht gespeichert werden.</string>
+    <string name="channel_focus">Fokus</string>
+    <string name="focus_generic">Fokussitzung</string>
+    <string name="focus_work">Arbeit</string>
+    <string name="focus_work_of">Arbeit · %1$d von %2$d</string>
+    <string name="focus_short_break">Kurze Pause</string>
+    <string name="focus_long_break">Lange Pause</string>
+    <string name="focus_paused">Pausiert</string>
+    <string name="focus_pause">Pausieren</string>
+    <string name="focus_resume">Fortsetzen</string>
+    <string name="focus_done">Sitzung beendet</string>
+    <string name="focus_break_over">Pause vorbei</string>
 </resources>

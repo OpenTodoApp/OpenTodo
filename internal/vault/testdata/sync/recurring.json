@@ -357,7 +357,12 @@
           "files": {
             "Inbox.md": {
               "project": "",
-              "hash": "609d09b805b790670a3362f55c96f856574514fc508c4a561bac096b3ae222b8"
+              "hash": "609d09b805b790670a3362f55c96f856574514fc508c4a561bac096b3ae222b8",
+              "size": 163,
+              "prefixes": [
+                "d4f3dab763be7875",
+                "609d09b805b79067"
+              ]
             }
           },
           "printed": {
@@ -1019,7 +1024,12 @@
           "files": {
             "Inbox.md": {
               "project": "",
-              "hash": "610cf7ac3b086e62642d12bb11e692b7eb2e3a61b7fadee575bbce562be1a8d5"
+              "hash": "610cf7ac3b086e62642d12bb11e692b7eb2e3a61b7fadee575bbce562be1a8d5",
+              "size": 163,
+              "prefixes": [
+                "daae17960121521b",
+                "610cf7ac3b086e62"
+              ]
             }
           },
           "printed": {
@@ -1343,7 +1353,12 @@
           "files": {
             "Inbox.md": {
               "project": "",
-              "hash": "610cf7ac3b086e62642d12bb11e692b7eb2e3a61b7fadee575bbce562be1a8d5"
+              "hash": "610cf7ac3b086e62642d12bb11e692b7eb2e3a61b7fadee575bbce562be1a8d5",
+              "size": 163,
+              "prefixes": [
+                "daae17960121521b",
+                "610cf7ac3b086e62"
+              ]
             }
           },
           "printed": {

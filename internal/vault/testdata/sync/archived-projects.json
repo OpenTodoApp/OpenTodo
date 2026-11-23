@@ -491,7 +491,16 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "a98a8eb6fa120144d18456b4af8579141fa2d355468c0fd590e99acaf608edac"
+              "hash": "a98a8eb6fa120144d18456b4af8579141fa2d355468c0fd590e99acaf608edac",
+              "size": 74,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "a98a8eb6fa120144"
+              ]
             },
             "Inbox.md": {
               "project": "",
@@ -499,7 +508,16 @@
             },
             "Work.md": {
               "project": "p-work",
-              "hash": "71560703d52a54d11fa4f1a668eac14c5ab23a62a0b7f80a0a8eeda051b030b6"
+              "hash": "71560703d52a54d11fa4f1a668eac14c5ab23a62a0b7f80a0a8eeda051b030b6",
+              "size": 77,
+              "prefixes": [
+                "f52d711103d50a43",
+                "311b75839baf6970",
+                "be5b0aa916c741be",
+                "a26864372fa7f1ae",
+                "2abe908025ed9668",
+                "71560703d52a54d1"
+              ]
             }
           },
           "printed": {

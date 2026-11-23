@@ -11,7 +11,7 @@ import { defaultReminderChanges } from './defaultReminder'
 import { withSectorClears } from './sectorWrites'
 import type { ProposedChange } from './assistantTypes'
 import type { Entity } from './types'
-import { uuid } from './ids'
+import { occurrenceId, uuid } from './ids'
 
 export const UNDO_KEEP = 20
 
@@ -29,16 +29,24 @@ export interface BatchOptions {
 export async function applyBatch(changes: ProposedChange[], opts: BatchOptions): Promise<AssistantUndo | null> {
   if (changes.length === 0) return null
   // A `fields` map becomes one `fields.<id>` entry per value, each with its own clock (custom-fields).
-  changes = unfoldFieldPatches(changes as Change[]).map((u, i) => ({ ...changes[i], patch: u.patch }))
+  // Its base (an occurrence record's state before the action) is unfolded the same way, so each value's undo is its own.
+  changes = unfoldFieldPatches(changes as Change[]).map((u, i) => ({ ...changes[i], patch: u.patch, ...(changes[i].base ? { base: unfoldBase(changes[i].base!) } : {}) }))
   // Dating a sectored task clears its sector here, so one Undo restores it (time-sectors D2).
   changes = await withSectorClears(changes)
   const inverse: AssistantUndo['inverse'] = []
+  // A field this device cannot decrypt (OpenSpec e2ee): the change is written, but no step is kept.
+  let unreadable = false
   for (const c of changes) {
     if (c.create) {
-      if (!c.patch.deleted_at) inverse.push({ entity: c.entity, entityId: c.entityId, patch: { deleted_at: Date.now() }, created: true })
+      // A new occurrence record goes back trashed, so no live record makes its date an exception (M5), and
+      // marked undone (open and skipped, which no other write leaves in the Trash), so the Trash leaves it
+      // out (trash.ts undoneRecord). A re-tick revives it (recordFields).
+      const open = c.entity === 'task' && isRecordId(c.entityId, c.patch) && 'completed_at' in c.patch ? { completed_at: null, skipped: true } : {}
+      if (!c.patch.deleted_at) inverse.push({ entity: c.entity, entityId: c.entityId, patch: { deleted_at: Date.now(), ...open }, created: true })
       continue
     }
-    const local = (await tableOf(c.entity).get(c.entityId)) as (Record<string, unknown> & { _clock?: Record<string, FieldClock> }) | undefined
+    const local = (await tableOf(c.entity).get(c.entityId)) as (Record<string, unknown> & { _clock?: Record<string, FieldClock>; _e2ee?: { raw?: Record<string, unknown> } }) | undefined
+    if (local?._e2ee?.raw && Object.keys(c.patch).some((f) => local._e2ee!.raw![f] !== undefined)) unreadable = true
     const patch: Record<string, unknown> = {}
     // The clock each field held before this batch overwrote it (#1488 D4), so a later reversal
     // refreshes only the batches this one sat directly on top of.
@@ -52,7 +60,9 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
     if (c.entity === 'task' && 'energy' in patch && patch.energy === null) patch.energy = ''
     // Likewise task.sector (time-sectors): a task stored before it has none, which is ''.
     if (c.entity === 'task' && 'sector' in patch && patch.sector === null) patch.sector = ''
-    inverse.push({ entity: c.entity, entityId: c.entityId, patch, ...(Object.keys(prev).length ? { prev } : {}) })
+    // An open occurrence record the batch edits without finishing it: Undo leaves it once it is done or skipped (undo-series-edits).
+    const open = c.entity === 'task' && !!local?.series_id && !local.completed_at && !local.skipped && !('completed_at' in c.patch) && !('skipped' in c.patch)
+    inverse.push({ entity: c.entity, entityId: c.entityId, patch, ...(Object.keys(prev).length ? { prev } : {}), ...(open ? { open } : {}) })
   }
   const batch: Change[] = changes.map((c) => ({ entity: c.entity, entityId: c.entityId, patch: { ...c.patch } }))
   // Default reminders join the batch here, so one Undo removes them with the dates
@@ -69,6 +79,7 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
     }
   }
   await mutateMany(batch, opts.origin ? { origin: opts.origin } : undefined)
+  if (unreadable) return null
   const clocks: AssistantUndo['clocks'] = []
   for (const c of [...changes, ...switched]) {
     if (c.create) continue
@@ -87,6 +98,20 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
   const all = await db.assistantUndo.orderBy('created_at').reverse().primaryKeys()
   if (all.length > UNDO_KEEP) await db.assistantUndo.bulkDelete(all.slice(UNDO_KEEP))
   return entry
+}
+
+/** Whether a created task is a series' occurrence record: its id is the one the series and date name (not a copy). */
+function isRecordId(id: string, patch: Record<string, unknown>): boolean {
+  const { series_id: series, occurrence_date: date } = patch
+  return typeof series === 'string' && typeof date === 'string' && id === occurrenceId(series, date)
+}
+
+/** A base's `fields` object as one `fields.<id>` entry per value, as unfoldFieldPatches does for the patch. */
+function unfoldBase(base: Record<string, unknown>): Record<string, unknown> {
+  const fields = base.fields
+  if (!fields || typeof fields !== 'object' || Array.isArray(fields)) return base
+  const { fields: _, ...rest } = base
+  return { ...rest, ...Object.fromEntries(Object.entries(fields).map(([id, v]) => [`fields.${id}`, v])) }
 }
 
 type FieldClock = { ts: number; device: string }
@@ -249,6 +274,8 @@ async function reverse(entry: AssistantUndo, src: Reversal): Promise<{ restored:
         Object.assign(patch, inv.patch, { deleted_at: Date.now() })
         for (const f of Object.keys(patch)) now[f] = norm(readField(row, f))
       }
+    } else if (inv.open && row && (row.completed_at || row.skipped)) {
+      skippedHere = true
     } else {
       for (const [f, v] of Object.entries(inv.patch)) {
         const applied = src.clocks.find((c) => c.entityId === inv.entityId && c.entity === inv.entity && c.field === f)
@@ -264,7 +291,7 @@ async function reverse(entry: AssistantUndo, src: Reversal): Promise<{ restored:
     if (skippedHere && inv.entity !== 'review' && !inv.followUp) skipped.push(String(row?.title ?? row?.name ?? `a ${inv.entity}`))
     if (Object.keys(patch).length) {
       batch.push({ entity: inv.entity as Entity, entityId: inv.entityId, patch })
-      back.push({ entity: inv.entity, entityId: inv.entityId, patch: now, ...(inv.followUp ? { followUp: true } : {}) })
+      back.push({ entity: inv.entity, entityId: inv.entityId, patch: now, ...(inv.followUp ? { followUp: true } : {}), ...(inv.open ? { open: true } : {}) })
     }
     if (inv.followUp && Object.keys(patch).length) followUps++
   }
