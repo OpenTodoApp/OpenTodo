@@ -21,7 +21,7 @@ Open Today's menu (**⋯**) and choose **Away…**, or type *away* in the comman
 - **Everything** covers every repeating task of your own. **Only** covers the ones in the projects, or with the labels, you choose. Your time away never moves someone else's work: a task assigned to someone else is never covered, and one in a shared project only when you choose that project under **Only**.
 - **Pause reminders** (on by default) holds every reminder and the email digest while the period lasts.
 
-Before anything changes, the dialog says what it will do, for example *Skips 23 occurrences of 6 repeating tasks*. Choose **Set away**. **Undo** in the message that follows puts every occurrence back.
+Before anything changes, the dialog says what it will do, for example *Skips 23 occurrences of 6 repeating tasks*. **Show details** lists each of those repeating tasks, with how many of its occurrences are skipped and when it is due afterwards, so you can check anything you would rather keep before you choose. Choose **Set away**. **Undo** in the message that follows puts every occurrence back.
 
 It works offline; your other devices catch up when they sync.
 

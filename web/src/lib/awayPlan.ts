@@ -43,6 +43,8 @@ export interface SeriesSkips {
   changes: Change[]
   /** How many occurrences are skipped. */
   skipped: number
+  /** The series' due date once the skips are written (the preview's details, #1901). */
+  next?: string | null
 }
 
 /** Folds a change into `rows` (the working copy the next step plans from). */
@@ -83,7 +85,7 @@ export function planSeriesAway(series: Task, from: string, to: string, rows: rea
     if (series.habit && !work.has(recordId)) {
       changes.unshift({ entity: 'task', entityId: recordId, patch: { ...occurrenceFields(series, due, now, today), completed_at: now, skipped: true } })
     }
-    return { changes, skipped: 1 }
+    return { changes, skipped: 1, next: after }
   }
   let skipped = 0
   // `on`: the day the plan reads as today. A later date before today is planned from
@@ -112,7 +114,7 @@ export function planSeriesAway(series: Task, from: string, to: string, rows: rea
     for (const d of later) skip(d, on)
     if (current < from || own.has(current) || !skip(current, on)) break
   }
-  return { changes: merged(changes), skipped }
+  return { changes: merged(changes), skipped, next: (work.get(series.id) as Task).due?.date ?? null }
 }
 
 export interface AwayPlan {
@@ -120,6 +122,16 @@ export interface AwayPlan {
   /** Occurrences skipped, and of how many series (the preview, D2). */
   occurrences: number
   series: number
+  /** Each series with skips, in title order: what the preview's details list (#1901). */
+  rows: AwaySeriesRow[]
+}
+
+export interface AwaySeriesRow {
+  id: string
+  title: string
+  skipped: number
+  /** Its due date once the skips are written. */
+  next: string | null
 }
 
 /**
@@ -134,6 +146,7 @@ export function planAway(
   const changes: Change[] = []
   let occurrences = 0
   let series = 0
+  const rows: AwaySeriesRow[] = []
   for (const task of tasks) {
     if (!isOpenSeries(task) || !covers(scope, task, whose) || !canEdit(task)) continue
     const s = planSeriesAway(task, from, to, rowsOf(task.id), now, today)
@@ -141,6 +154,8 @@ export function planAway(
     changes.push(...s.changes)
     occurrences += s.skipped
     series++
+    rows.push({ id: task.id, title: task.title, skipped: s.skipped, next: s.next ?? null })
   }
-  return { changes, occurrences, series }
+  rows.sort((a, b) => a.title.localeCompare(b.title))
+  return { changes, occurrences, series, rows }
 }
