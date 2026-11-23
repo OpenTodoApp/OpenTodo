@@ -807,10 +807,11 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      # The emulator snapshot (about 2 GB) is saved only by runs on main (the nightly run and
-      # pushes): a cache saved by a pull request or merge-queue run belongs to that run's own
-      # ref, which no other run can read, and a few of those fill the repository's cache quota
-      # and evict main's copy, so every queue run missed and built the snapshot again.
+      # The emulator snapshot (about 2 GB) is saved only by a run on main (the nightly run, or
+      # one started by hand; pushes to main skip this job): a cache saved by a merge-queue run
+      # belongs to that run's own ref, which no other run can read, and a few of those fill the
+      # repository's cache quota and evict main's copy, so every queue run missed and built
+      # the snapshot again. Saved after the tests booted from it, as the post-job save did.
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: avd-cache
         with:
@@ -829,14 +830,6 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "AVD snapshot created"
-      - name: Keep the emulator snapshot (main only)
-        if: steps.avd-cache.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-34-google_apis-x86_64-v1
       - name: Instrumented tests (emulator)
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
@@ -848,6 +841,14 @@ jobs:
           disable-animations: true
           working-directory: mobile/android
           script: ./gradlew --no-daemon :app:connectedDebugAndroidTest
+      - name: Keep the emulator snapshot (main only)
+        if: success() && steps.avd-cache.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-34-google_apis-x86_64-v1
       - name: Failed instrumented tests
         if: failure()
         run: |
