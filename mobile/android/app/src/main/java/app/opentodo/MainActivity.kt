@@ -231,6 +231,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     }
 
     /** The launch screen goes: the root gets its colour and the bars asked for meanwhile, and the web view shows. */
+    @SuppressLint("ClickableViewAccessibility") // Clears the hold's touch block; it handles no click.
     private fun reveal() {
         val h = hold ?: return
         if (isDestroyed) return
