@@ -470,6 +470,8 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
           case 'open': return (task) => task.completed_at === null
           case 'subtask': return (task) => task.parent_id !== null
           case 'habit': return (task) => task.habit === true
+          // A repeat rule, habits and after-completion rules too (#1900).
+          case 'recurring': return (task) => !!task.recurrence
           case 'origin': return (task) => originOf(task) !== null
           case 'no origin': return (task) => originOf(task) === null
           case 'energy': return (task) => energyOf(task) !== null

@@ -110,6 +110,17 @@ The grammar SHALL include a custom field term `name cmp value` and `no name` (Op
 - **WHEN** a habit was skipped yesterday and the user enters `completed`
 - **THEN** yesterday's skipped record is not listed, while a day the habit was done is
 
+### Requirement: Recurring term
+`recurring` SHALL match tasks that have a repeat rule, habits and rules that repeat after completion included. An occurrence record of a series has no rule of its own and SHALL NOT match. Like every keyword it combines with the other terms, and the server and the device SHALL evaluate it alike.
+
+#### Scenario: Every repeating task in one view
+- **WHEN** the user saves `recurring & open` as a view
+- **THEN** the view lists every open task with a repeat rule across projects, habits included, and no plain task
+
+#### Scenario: Combined with a project
+- **WHEN** the user enters `recurring & #Home`
+- **THEN** only the repeating tasks of "Home" are listed
+
 ### Requirement: Client-side live evaluation
 Queries SHALL be evaluated on the device from local data and SHALL never require a network request. Results SHALL update live as local or synced changes arrive. Evaluation of a query over a few thousand tasks SHALL complete fast enough to keep typing responsive, and the client SHALL debounce evaluation while the user types.
 
