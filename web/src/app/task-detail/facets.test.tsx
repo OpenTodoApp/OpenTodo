@@ -7,6 +7,7 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
+import { undoBatch } from '../../lib/undo'
 import { createProject, createTask } from '../../lib/ops'
 import { click, key, type, visibleText } from '../../ui/test-utils'
 import { open, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
@@ -197,6 +198,10 @@ describe('origin', () => {
     await waitFor(async () => (await db.tasks.get(id))!.origin === null, 'the origin cleared')
     await waitFor(() => !row('origin'), 'the part removed')
     expect((await db.tasks.get(id))!.description).toBe('https://example.org/post')
+    // One step of undo history (undo-panel-extras): undo puts the origin back.
+    await waitFor(async () => (await db.assistantUndo.count()) === 1, 'one step')
+    await undoBatch((await db.assistantUndo.toArray())[0].id)
+    expect((await db.tasks.get(id))!.origin).toEqual(origin)
     opened.mockRestore()
     await unmount()
   })

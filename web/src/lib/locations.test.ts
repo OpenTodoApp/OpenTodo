@@ -53,6 +53,24 @@ describe('task locations', () => {
     expect(locationOf(await db.tasks.get(id))).toBeNull()
   })
 
+  // OpenSpec change undo-panel-extras: setting and clearing a location are steps of undo history.
+  it('setting and clearing a location are steps; undo brings the old value back; the same value records nothing', async () => {
+    const id = await createTask({ title: 'Post the parcel' })
+    const { db } = await import('./db')
+    const { undoBatch } = await import('./undo')
+    await setTaskLocation(id, makeLocation({ name: 'Post office', lat: 45.46, lon: 9.19 }))
+    await setTaskLocation(id, makeLocation({ name: 'Post office', lat: 45.46, lon: 9.19 }))
+    await setTaskLocation(id, null)
+    const steps = await db.assistantUndo.toArray()
+    expect(steps.map((s) => s.label).sort()).toEqual(['Location removed', 'Task updated'])
+    await undoBatch(steps.find((s) => s.label === 'Location removed')!.id)
+    expect(locationOf(await db.tasks.get(id))).toEqual({ name: 'Post office', lat: 45.46, lon: 9.19 })
+    const rep = await createTask({ title: 'Gym', due: { date: '2030-01-07' }, recurrence: 'every week' })
+    await setTaskLocation(rep, { name: 'Gym' })
+    expect(locationOf(await db.tasks.get(rep))).toEqual({ name: 'Gym' })
+    expect(await db.assistantUndo.count()).toBe(2)
+  })
+
   it('converges whole: the newer write wins with all of its members', async () => {
     const id = await createTask({ title: 'Meet' })
     const { db } = await import('./db')
