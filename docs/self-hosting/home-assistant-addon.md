@@ -41,7 +41,65 @@ Everything else (email, push notifications, single sign-on, maps) is in OpenTodo
 
 ## https
 
-On a plain http address tasks, projects, sync, sharing and attachments work. Installing the app on a phone, working offline, push notifications, passkeys and end-to-end encryption need https, because browsers only allow them there. Give OpenTodo its own https address with a reverse proxy (the NGINX Proxy Manager add-on, Caddy, or a Cloudflare Tunnel) pointing at port 8080, set `base_url` to it, and set `trusted_proxies` to the proxy. More in [Running with Docker](docker.md#behind-a-reverse-proxy).
+On a plain http address tasks, projects, sync, sharing and attachments work. Installing the app on a phone, working offline, push notifications, passkeys and end-to-end encryption need https, because browsers only allow them there. The recipes below give OpenTodo an https address.
+
+## Reach OpenTodo from outside your home
+
+`http://192.168.x.x:8080` and `homeassistant.local` only work on your home network. Pick one way to reach OpenTodo from anywhere:
+
+| | Domain needed | Open ports | Who can reach it |
+| --- | --- | --- | --- |
+| [Tailscale](#tailscale) | no | none | only your devices with Tailscale |
+| [Cloudflare Tunnel](#cloudflare-tunnel) | yes, on Cloudflare DNS | none | anyone with the address |
+| [NGINX Proxy Manager and DuckDNS](#nginx-proxy-manager-and-duckdns) | no (a free DuckDNS name) | 80 and 443 | anyone with the address |
+
+Two options decide whether it works well. **`base_url`** is the https address people open: without it, single sign-on sends people back to the wrong address (the provider rejects the redirect URI), passkeys are not offered and emailed links (invitations, password resets) are not sent. **`trusted_proxies`** tells OpenTodo which proxy reports the visitor's real address: without it, every visitor can look like one address and shares one sign-in limit, so a few wrong passwords lock everyone out for a while.
+
+### Tailscale
+
+1. Install the **Tailscale** add-on from the add-on store, start it and open its Web UI to sign in to your tailnet.
+2. Install the Tailscale app on your phone and sign in to the same tailnet.
+3. In the Tailscale admin console, find your Home Assistant machine's name, such as `homeassistant`. With MagicDNS on (the default), open `http://homeassistant:8080` on the phone, or the machine's `100.x.y.z` address.
+
+Leave `base_url` and `trusted_proxies` empty: the phone talks to OpenTodo directly, over Tailscale's encrypted connection.
+
+For https (the installed app, passkeys, push), turn on **HTTPS Certificates** in the admin console's DNS page, then serve port 8080 with Tailscale. The add-on's own sharing option only serves Home Assistant, so run this once in the Advanced SSH & Web Terminal add-on (protection mode off):
+
+```sh
+docker exec addon_a0d7b954_tailscale tailscale serve --bg --https=8443 http://127.0.0.1:8080
+```
+
+Then set `base_url` to `https://homeassistant.<your-tailnet>.ts.net:8443` (the full name is in the admin console) and open that address from now on. `trusted_proxies` stays empty.
+
+### Cloudflare Tunnel
+
+Needs a domain whose DNS is on Cloudflare.
+
+1. Install the community **Cloudflared** add-on and connect it to your Cloudflare account as its documentation says.
+2. On its **Configuration** tab, add OpenTodo under `additional_hosts`, with your Home Assistant machine's local address:
+
+   ```yaml
+   additional_hosts:
+     - hostname: todo.example.com
+       service: http://192.168.1.10:8080
+   ```
+
+3. Restart the Cloudflared add-on; it creates the DNS record.
+4. In OpenTodo's add-on options set `base_url` to `https://todo.example.com` and `trusted_proxies` to `cloudflare`, then restart OpenTodo.
+
+### NGINX Proxy Manager and DuckDNS
+
+1. Install the **Duck DNS** add-on, create a free name such as `mytodo.duckdns.org` on duckdns.org and put its token and domain in the add-on's options. It keeps the name pointing at your home.
+2. On your router, forward ports 80 and 443 to your Home Assistant machine (80 is only for the certificate check).
+3. Install the **NGINX Proxy Manager** add-on and open its Web UI. Add a **Proxy Host**: domain `mytodo.duckdns.org`, scheme `http`, forward to your Home Assistant machine's local address, port `8080`. On the **SSL** tab request a new Let's Encrypt certificate and turn on **Force SSL**.
+4. In OpenTodo's add-on options set `base_url` to `https://mytodo.duckdns.org` and restart. Leave `trusted_proxies` empty: the proxy runs on your own network, which OpenTodo trusts already.
+
+### Before you expose it
+
+- Create the owner account before opening OpenTodo to the internet, or set `setup_token` first.
+- Keep `allow_signup` off and invite people from **Settings → People**.
+- Turn on two-factor authentication in **Settings → Account → Security**, and require it for every account there.
+- Only ever share the https address. Tailscale is the safest choice: nobody outside your tailnet can reach OpenTodo at all.
 
 ## Updates
 
