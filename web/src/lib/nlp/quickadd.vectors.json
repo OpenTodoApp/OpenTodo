@@ -1,5 +1,5 @@
 {
- "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes) and day-parts (ctx.dayParts; dayPart and evening are compared when a case states them) and task-energy (ctx.energy; energy, \"\" for none, is compared when a case states it) and time-sectors (ctx.sectors and ctx.weekStart; sector, \"\" for none, is compared when a case states it) and quick-add-month-and-every-other (bare months, \"every other\") and quick-add-by-deadline (\"by\" words; deadline, \"\" for none, is compared when a case states it) and quick-add-weekday-recurrence (every other weekday, week intervals on a weekday, start phrases, connectors) and recurrence-1-0-compatible (a rule on one weekday whose due date falls on it is every N weeks). and more-languages (Dutch: half hours, 's middags, guarded weekday abbreviations, a weekday before a date; Polish: inflected weekdays and months). Every scenario of its spec deltas is a case.",
+ "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes) and day-parts (ctx.dayParts; dayPart and evening are compared when a case states them) and task-energy (ctx.energy; energy, \"\" for none, is compared when a case states it) and time-sectors (ctx.sectors and ctx.weekStart; sector, \"\" for none, is compared when a case states it) and quick-add-month-and-every-other (bare months, \"every other\") and quick-add-by-deadline (\"by\" words; deadline, \"\" for none, is compared when a case states it) and quick-add-weekday-recurrence (every other weekday, week intervals on a weekday, start phrases, connectors) and recurrence-1-0-compatible (a rule on one weekday whose due date falls on it is every N weeks). and more-languages (Dutch: half hours, 's middags, guarded weekday abbreviations, a weekday before a date; Polish: inflected weekdays and months). Every scenario of its spec deltas is a case. And quick-add-links (ctx.links; links, [] for none, is compared when a case states it).",
  "cases": [
   {
    "name": "Water plants every Monday",
@@ -10014,6 +10014,417 @@
     "spentMinutes": null,
     "recurrence": "every tuesday, thursday",
     "reminders": []
+   }
+  },
+  {
+   "name": "link: becomes an attachment",
+   "line": "Review the mockup https://example.com/mockup tomorrow",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "Review the mockup",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": [
+     "https://example.com/mockup"
+    ]
+   }
+  },
+  {
+   "name": "link: sentence punctuation leaves with it",
+   "line": "Read the spec at https://example.com/a(b).",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "Read the spec at",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": [
+     "https://example.com/a(b)"
+    ]
+   }
+  },
+  {
+   "name": "link: an unbalanced bracket is not the URL's",
+   "line": "Docs https://example.com/x) here",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "Docs here",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": [
+     "https://example.com/x"
+    ]
+   }
+  },
+  {
+   "name": "link: a token that does not start with it stays",
+   "line": "See (https://example.com/x) please",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "See (https://example.com/x) please",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": []
+   }
+  },
+  {
+   "name": "link: quoted is text",
+   "line": "Note \"https://example.com\" again",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "Note https://example.com again",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": []
+   }
+  },
+  {
+   "name": "link: a line that is only a link keeps it",
+   "line": "https://example.com/article",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "https://example.com/article",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": []
+   }
+  },
+  {
+   "name": "link: a link and a date only keep the link as title",
+   "line": "https://example.com/a tomorrow",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "https://example.com/a",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": []
+   }
+  },
+  {
+   "name": "link: other schemes stay",
+   "line": "Open javascript:alert(1) ftp://example.com/f",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "Open javascript:alert(1) ftp://example.com/f",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": []
+   }
+  },
+  {
+   "name": "link: no host is no link",
+   "line": "Try https:///path please",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "Try https:///path please",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": []
+   }
+  },
+  {
+   "name": "link: five at most",
+   "line": "Links https://a.example/1 https://a.example/2 https://a.example/3 https://a.example/4 https://a.example/5 https://a.example/6",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "Links https://a.example/6",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": [
+     "https://a.example/1",
+     "https://a.example/2",
+     "https://a.example/3",
+     "https://a.example/4",
+     "https://a.example/5"
+    ]
+   }
+  },
+  {
+   "name": "link: with a project and a label",
+   "line": "Book https://example.com/hotel #Home @trip",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "Book",
+    "due": null,
+    "projectId": "p-home",
+    "labels": [
+     "trip"
+    ],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": [
+     "https://example.com/hotel"
+    ]
+   }
+  },
+  {
+   "name": "link: any letter case",
+   "line": "Check HTTPS://Example.com/Page",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "Check",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": [
+     "HTTPS://Example.com/Page"
+    ]
+   }
+  },
+  {
+   "name": "link: not read without ctx.links",
+   "line": "Read https://example.com/post",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Read https://example.com/post",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": []
    }
   }
  ]

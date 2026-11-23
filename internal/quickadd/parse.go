@@ -24,6 +24,9 @@ type Context struct {
 	// Sectors reads the time sector phrases (OpenSpec change time-sectors, D8):
 	// the account's Time sectors switch.
 	Sectors bool `json:"sectors,omitempty"`
+	// Links reads http(s) URLs as link attachments (quick-add-links D1), for the
+	// callers that attach them; routines leave it off.
+	Links bool `json:"links,omitempty"`
 }
 
 // Due is a floating due date with an optional time.
@@ -56,6 +59,9 @@ type Result struct {
 	SpentMinutes int        `json:"spentMinutes,omitempty"`
 	Recurrence   string     `json:"recurrence,omitempty"`
 	Reminders    []Reminder `json:"reminders"`
+	// Links are the URLs to attach, in line order (quick-add-links), only with
+	// Context.Links; nil when the line has none.
+	Links []string `json:"links,omitempty"`
 }
 
 func spanOf(line string, tokens []token, from, to int) Span {
@@ -85,7 +91,7 @@ func Parse(line string, ctx Context) Result {
 // Mark is one recognised attribute and the span of the line it came from, in
 // line order: the chips a client previews (OpenSpec change extension-v2, D1).
 // Kind is date, time, deadline, evening, daypart, someday, project, label,
-// priority, energy, estimate, recurrence or reminder.
+// priority, energy, estimate, recurrence, reminder or link.
 type Mark struct {
 	Kind string
 	Span Span
@@ -101,6 +107,9 @@ func ParseMarked(line string, ctx Context) (Result, []Mark) {
 	}
 	var quotes []Span
 	p.tokens, quotes = tokenize(line)
+	if ctx.Links {
+		p.links = findLinks(line, p.tokens)
+	}
 	for i := 0; i < len(p.tokens); {
 		i = p.step(i)
 	}
@@ -140,6 +149,9 @@ func (p *parser) marks(r Result) []Mark {
 	add("recurrence", p.rec.span, p.rec.set)
 	for _, m := range p.reminders {
 		add("reminder", m.span, true)
+	}
+	for _, l := range p.links {
+		add("link", l.span, true)
 	}
 	sort.SliceStable(out, func(a, b int) bool { return out[a].Span.Start < out[b].Span.Start })
 	return out
@@ -189,6 +201,8 @@ type parser struct {
 		value Reminder
 		span  Span
 	}
+	// links are the link tokens by index (quick-add-links D1).
+	links map[int]found
 }
 
 func (p *parser) span(from, to int) Span { return spanOf(p.line, p.tokens, from, to) }
@@ -196,7 +210,7 @@ func (p *parser) span(from, to int) Span { return spanOf(p.line, p.tokens, from,
 // step reads what starts at token i and returns the index of the next token
 // to read.
 func (p *parser) step(i int) int {
-	if p.tokens[i].quoted {
+	if _, link := p.links[i]; link || p.tokens[i].quoted {
 		return i + 1
 	}
 	if next, ok := p.attribute(i); ok {
@@ -481,6 +495,7 @@ func (p *parser) result(quotes []Span) Result {
 	}
 	sort.Slice(remove, func(a, b int) bool { return remove[a].Start < remove[b].Start })
 	out.Title = stripSpans(p.line, remove, quotes)
+	out.Title, out.Links = p.withLinks(out.Title, remove, quotes)
 	return out
 }
 

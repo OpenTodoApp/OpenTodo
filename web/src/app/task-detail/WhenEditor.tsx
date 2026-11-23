@@ -5,11 +5,11 @@
 // Date load it the same way.
 import type { RefObject } from 'react'
 import type { WhenSegmentId } from '../../lib/facets'
-import { setRecurrence, unparkTask, updateTask } from '../../lib/ops'
+import { setRecurrence, unparkTask } from '../../lib/ops'
 import type { Task } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
-import { setDueWithUndo } from '../undoable'
+import { deadlineWithUndo, setDueWithUndo } from '../undoable'
 import { FacetEditor } from './FacetEditor'
 import { setSectorWithUndo } from './SectorChoice'
 import { useSectorSegment, WhenControl, WhenSegmentPicker } from './WhenControl'
@@ -28,7 +28,7 @@ export default function WhenEditor({ task, readOnly, anchor, segment, onSegment,
   const clear: Partial<Record<WhenSegmentId, () => void>> = {
     due: task.due ? () => act(setDueWithUndo(task.id, null)) : undefined,
     start: task.start ? () => void unparkTask(task.id) : undefined,
-    deadline: task.deadline ? () => act(updateTask(task.id, { deadline: null })) : undefined,
+    deadline: task.deadline ? () => act(deadlineWithUndo(task.id, null)) : undefined,
     repeat: task.recurrence ? () => act(setRecurrence(task.id, null)) : undefined,
     sector: task.sector ? () => act(setSectorWithUndo(task.id, '')) : undefined,
   }

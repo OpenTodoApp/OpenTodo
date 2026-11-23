@@ -6,7 +6,7 @@
 // every device converges by last-writer-wins.
 import { bulkLabel, planComplete, planLabels, planMove, planPriority, planReopen, planTrash, readTicked, toProposed } from './bulk'
 import { db, type AssistantUndo } from './db'
-import { logicalToday } from './dates'
+import { formatDate, logicalToday } from './dates'
 import { seriesRule } from './recurring'
 import { getDeviceId, liveSubtree, planReminders, updateTask, type Change } from './ops'
 import type { ReminderPhrase } from './nlp'
@@ -18,6 +18,8 @@ import { applyBatch } from './undo'
 import { compileView } from './views'
 import { t } from './i18n'
 import { uuid } from './ids'
+import { linkChanges } from './linkAttachment'
+import { originOf } from './taskOrigin'
 import { labelKey } from './labels'
 import { descendants } from './tree'
 import { dayPartFields, dayPartName, dayPartOf, doOnPatch, type DayPart, type DoOnChoice } from './dayParts'
@@ -58,6 +60,29 @@ export async function completeUndoable(id: string, completed: boolean, opts: { n
 }
 
 /**
+ * One task's fields that updateTask writes as they are (no date, start or project rules), as
+ * one step of undo history (OpenSpec change undo-estimate). Planned from the one row; a field
+ * already at that value is left out and nothing at all records nothing. A repeating task goes
+ * through updateTask as before, so the change carries to its series and follows the panel's
+ * scope, without a step.
+ */
+async function plainEditUndoable(id: string, patch: Partial<Task>, label: string): Promise<UndoableResult> {
+  const task = await db.tasks.get(id)
+  if (!task || task.recurrence) {
+    await updateTask(id, patch)
+    return { entry: null, label: '' }
+  }
+  const changed = Object.fromEntries(Object.entries(patch).filter(([k, v]) => ((task as unknown as Record<string, unknown>)[k] ?? null) !== (v ?? null)))
+  if (!Object.keys(changed).length) return { entry: null, label: '' }
+  return apply([{ entity: 'task', entityId: id, patch: changed }], label)
+}
+
+/** Set (or with null remove) one task's estimate in minutes, as one step of undo history. */
+export function estimateUndoable(id: string, minutes: number | null): Promise<UndoableResult> {
+  return plainEditUndoable(id, { estimate_minutes: minutes }, minutes ? t('Estimate {to} min', { to: String(minutes) }) : t('Estimate removed'))
+}
+
+/**
  * Set one task's priority as one step of undo history (OpenSpec change undo-priority): the bulk
  * action's plan and words for one task, no toast. A task already at that priority records nothing.
  * A repeating task is written as before, through updateTask.
@@ -73,6 +98,11 @@ export async function priorityUndoable(id: string, priority: Task['priority']): 
   // The one row, not readTicked's whole table: a key press stays cheap on a large account.
   const changes = planPriority([task], priority)
   if (changes.length) await apply(changes, bulkLabel({ kind: 'priority', priority }, 1))
+}
+
+/** Set (or with null remove) one task's deadline, as one step of undo history (OpenSpec change undo-deadline). */
+export function deadlineUndoable(id: string, deadline: string | null): Promise<UndoableResult> {
+  return plainEditUndoable(id, { deadline }, deadline ? t('Deadline {date}', { date: formatDate(deadline, 'long') }) : t('Deadline removed'))
 }
 
 /** Move one task and its subtasks to the Trash. */
@@ -397,13 +427,18 @@ export async function dropOnPanel(taskId: string, view: Pick<View, 'name' | 'que
  * and any reminders, written as one undoable batch. Recurrence and project moves go
  * through their own helpers before this (they plan series and scopes).
  */
-export async function titleEditUndoable(id: string, patch: Partial<Task>, reminders: ReminderPhrase[] = []): Promise<UndoableResult> {
+export async function titleEditUndoable(id: string, patch: Partial<Task>, reminders: ReminderPhrase[] = [], links: string[] = []): Promise<UndoableResult> {
   const task = (await readTicked([id])).tasks[0]
   if (!task) return { entry: null, label: '' }
   const due = 'due' in patch ? patch.due ?? null : task.due
   const changes: Change[] = []
   if (Object.keys(patch).length) changes.push({ entity: 'task', entityId: id, patch })
   changes.push(...planReminders(id, due, reminders))
+  // Links typed in the edit become link attachments in the same change (quick-add-links D5).
+  if (links.length) {
+    const existing = (await db.attachments.where('task_id').equals(id).toArray()).flatMap((a) => (a.url && !a.deleted_at && !a.comment_id ? [a.url] : []))
+    changes.push(...linkChanges(id, links, await currentUserId(), { origin: originOf(task)?.url, existing, id: uuid }))
+  }
   if (!changes.length) return { entry: null, label: '' }
   return apply(changes, t('Task updated'))
 }

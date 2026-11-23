@@ -3898,6 +3898,7 @@
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/notes/NoteRow.tsx",
+    "web/src/app/quickadd/TickedSuggest.tsx",
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-list/ListGroups.tsx",
@@ -4817,7 +4818,8 @@
     "web/src/app/RemindersField.tsx"
   ],
   "Deadline removed": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Deadline today": [
     "web/src/app/UrgencyChip.tsx"
@@ -4825,8 +4827,10 @@
   "Deadline {date}": [
     "web/src/app/ParseChips.tsx",
     "web/src/app/ScheduleSheet.tsx",
+    "web/src/app/TaskRow.tsx",
     "web/src/app/TimelineView.tsx",
     "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts",
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Deadline {date}, {label}": [
@@ -6197,7 +6201,8 @@
     "web/src/app/review/BentoSlots.tsx"
   ],
   "Estimate removed": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Estimate {from} min → {to} min": [
     "web/src/lib/assistant.ts"
@@ -6206,7 +6211,8 @@
     "web/src/app/TaskRow.tsx"
   ],
   "Estimate {to} min": [
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Estimated at 15 minutes or less": [
     "web/src/lib/filters.ts"
@@ -9459,8 +9465,10 @@
   ],
   "Link": [
     "web/src/app/EditorChrome.tsx",
+    "web/src/app/ParseChips.tsx",
     "web/src/app/UnlinkedMentions.tsx",
     "web/src/app/editorCommands.ts",
+    "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/fields.ts",
     "web/src/lib/richtextEditor.ts",
@@ -16451,6 +16459,11 @@
   "Show connections of {title}": [
     "web/src/app/palette/registry.ts"
   ],
+  "Show deadlines as dates": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Show details": [
     "web/src/app/TaskRow.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
@@ -18312,6 +18325,9 @@
   ],
   "The database kept before that restore is removed from the server for good: <span>{deleting}</span>.": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "The date on task rows instead of the days left": [
+    "web/src/app/settingsIndex.ts"
   ],
   "The demo could not be reached. Check your connection and try again.": [
     "web/src/lib/demo.ts"
