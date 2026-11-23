@@ -6,7 +6,7 @@ import { useAllProjects, useDeletedTasks, useMembershipMap, useMeta } from '../l
 import { mutate, restoreProject, restoreTask } from '../lib/ops'
 import { useNoteRows } from '../lib/noteRows'
 import { canDeleteProject, canEditTasks, roleOf } from '../lib/sharing'
-import { emptyTrash, PENDING_PURGES_KEY, purgeItems, remainingDays, RETENTION_KEY, trashItems, type PurgeRequest, type TrashItem } from '../lib/trash'
+import { emptyTrash, PENDING_PURGES_KEY, purgeItems, remainingDays, RETENTION_KEY, useRepeatingSeries, trashItems, type PurgeRequest, type TrashItem } from '../lib/trash'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { useShortcutScope } from './shortcuts'
 import { t } from '../lib/i18n'
@@ -28,7 +28,8 @@ export function TrashView() {
   const notes = useMemo(() => noteRows.filter((n) => !!n.deleted_at), [noteRows])
   const retention = useMeta<number>(RETENTION_KEY, 30)
   const pending = useMeta<PurgeRequest[]>(PENDING_PURGES_KEY, NO_PURGES)
-  const items = useMemo(() => trashItems(tasks, projects, notes), [tasks, projects, notes])
+  const repeating = useRepeatingSeries(tasks)
+  const items = useMemo(() => trashItems(tasks, projects, notes, repeating), [tasks, projects, notes, repeating])
   const memberMap = useMembershipMap()
   const pendingKeys = useMemo(() => new Set(pending.map((p) => `${p.entity}:${p.id}`)), [pending])
   const taskById = useMemo(() => new Map(tasks.map((tk) => [tk.id, tk])), [tasks])

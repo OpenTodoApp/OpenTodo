@@ -437,3 +437,55 @@ describe('project name, colour and icon', () => {
     expect(await db.projects.get(id)).toMatchObject({ color: '#2563eb', icon: 'house' })
   })
 })
+
+// Undoing a series completion: the day's record goes back open and out of sight (no live record, so the
+// date is the series' own again), never into the Trash list; ticking again completes that same day.
+describe('undoing a series completion', () => {
+  it('leaves no live record and nothing in the Trash, and a tick after it completes the same day', async () => {
+    const { completeUndoable } = await import('./undoActions')
+    const { repeatingSeriesOf, trashItems } = await import('./trash')
+    const id = await createTask({ title: 'Bins', due: { date: '2026-10-12' }, recurrence: 'every monday' })
+    const records = () => db.tasks.filter((x) => x.series_id === id).toArray()
+    const r = await completeUndoable(id, true, { today: '2026-10-12' })
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-19' })
+    await undoBatch(r.entry!.id)
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-12' })
+    const [rec] = await records()
+    expect(rec.deleted_at).toBeGreaterThan(0)
+    expect(rec.completed_at).toBeNull()
+    const all = await db.tasks.toArray()
+    expect(trashItems(all, [], [], await repeatingSeriesOf(all))).toEqual([])
+    await redoBatch(r.entry!.id)
+    expect((await records())[0]).toMatchObject({ deleted_at: null })
+    expect((await records())[0].completed_at).toBeGreaterThan(0)
+    await undoBatch(r.entry!.id)
+
+    await completeUndoable(id, true, { today: '2026-10-12' })
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-19' })
+    expect((await records()).map((x) => [x.occurrence_date, !!x.completed_at, !!x.deleted_at])).toEqual([['2026-10-12', true, false]])
+  })
+
+  it('keeps a trashed completed occurrence in the Trash', async () => {
+    const { completeUndoable } = await import('./undoActions')
+    const { repeatingSeriesOf, trashItems } = await import('./trash')
+    const { deleteTask } = await import('./ops')
+    const id = await createTask({ title: 'Bins', due: { date: '2026-10-12' }, recurrence: 'every monday' })
+    await completeUndoable(id, true, { today: '2026-10-12' })
+    const [rec] = await db.tasks.filter((x) => x.series_id === id).toArray()
+    await deleteTask(rec.id)
+    const all = await db.tasks.toArray()
+    expect(trashItems(all, [], [], await repeatingSeriesOf(all)).map((x) => x.id)).toEqual([rec.id])
+  })
+
+  it('keeps a trashed open occurrence of a series that no longer repeats in the Trash', async () => {
+    const { actOnOccurrence } = await import('./occurrenceActions')
+    const { repeatingSeriesOf, trashItems } = await import('./trash')
+    const { deleteTask } = await import('./ops')
+    const id = await createTask({ title: 'Bins', due: { date: '2026-10-12' }, recurrence: 'every monday' })
+    const rec = (await actOnOccurrence(id, '2026-10-19', { kind: 'edit', patch: { title: 'Bins (late)' } }, { today: '2026-10-12' }))!
+    await updateTask(id, { recurrence: null })
+    await deleteTask(rec)
+    const all = await db.tasks.toArray()
+    expect(trashItems(all, [], [], await repeatingSeriesOf(all)).map((x) => x.id)).toEqual([rec])
+  })
+})

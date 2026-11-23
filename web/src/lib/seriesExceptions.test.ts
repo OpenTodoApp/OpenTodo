@@ -3,7 +3,7 @@ import { db, useDatabase } from './db'
 import { nameId, occurrenceId } from './ids'
 import { actOnOccurrence, actOnOccurrenceUndoable } from './occurrenceActions'
 import { occurrencesInRange } from './occurrences'
-import { applyOps, completeTask, createTask, deleteTask, getDeviceId, mutate, resetDeviceId, updateTask } from './ops'
+import { applyOps, completeTask, createProject, createTask, deleteTask, getDeviceId, mutate, resetDeviceId, updateTask } from './ops'
 import { relativeFireAt } from './reminderTime'
 import { seriesUpkeep } from './seriesRepair'
 import { undoBatch } from './undo'
@@ -74,6 +74,18 @@ describe('acting on one occurrence', () => {
     expect(r?.entry).toBeTruthy()
     await undoBatch(r!.entry!.id)
     expect(await db.tasks.get(occurrenceId(id, '2026-10-19'))).toMatchObject({ completed_at: null, skipped: false, deleted_at: null, due: { date: '2026-10-19' } })
+  })
+
+  it('an Undo of a skip keeps the series\' custom field values on the occurrence', async () => {
+    await fresh()
+    const { createField, setFieldValue } = await import('./fields')
+    const project = await createProject({ name: 'Home' })
+    const id = await createTask({ title: 'Bins', due: { date: '2026-10-12' }, recurrence: 'every monday', project_id: project })
+    const field = await createField(project, { name: 'Where', type: 'text' })
+    await setFieldValue(id, field, 'Kerb')
+    const r = await actOnOccurrenceUndoable(id, '2026-10-19', { kind: 'skip' }, { today: TODAY })
+    await undoBatch(r!.entry!.id)
+    expect((await db.tasks.get(occurrenceId(id, '2026-10-19')))?.fields?.[field]).toBe('Kerb')
   })
 
   it('deleting an open occurrence writes the skip, not a deletion', async () => {
