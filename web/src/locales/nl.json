@@ -467,6 +467,7 @@
   "Allow calendar sync on this server": "Agendasynchronisatie op deze server toestaan",
   "Allow delivery channels on this server": "Afleverkanalen op deze server toestaan",
   "Allow issue connections on this server": "Issue-koppelingen op deze server toestaan",
+  "Pick a date": "Kies een datum",
   "Allow new accounts via SSO": "Nieuwe accounts via SSO toestaan",
   "Allow notifications first.": "Sta eerst meldingen toe.",
   "Allow plain http (the password is sent unencrypted; only on a trusted network)": "Plain http toestaan (het wachtwoord wordt onversleuteld verstuurd; alleen op een vertrouwd netwerk)",

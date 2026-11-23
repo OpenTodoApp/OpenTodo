@@ -16,14 +16,14 @@ import {
 } from '../lib/nlp'
 import { useDictation } from './useDictation'
 import { useTokenSuggest } from './TokenSuggest'
-import { ParseChips } from './ParseChips'
+import { ParseChips, type ParseChipsProps } from './ParseChips'
 import { QuickAddTint } from './QuickAddTint'
 import { composingEnter } from '../lib/composeKey'
 import { t, preferredLanguages } from '../lib/i18n'
 import { chipRange, type FieldKind, fieldRows, type FieldRow, type QuickAddProject, startToken } from './quickadd/fields'
 import { FieldRows, QuickAddFooter } from './quickadd/FieldRows'
 import { SheetBar } from './quickadd/SheetBar'
-import { useLineDate } from './quickadd/LineDatePicker'
+import { LineDateButton, LineDatePicker, useLineDate } from './quickadd/LineDatePicker'
 import { usePasteOffer } from './quickadd/PasteOffer'
 import { NotesLine, useNotesField } from './quickadd/NotesLine'
 import { VoiceButton, VoiceNotice } from './quickadd/VoiceParts'
@@ -78,6 +78,23 @@ function parseLine(value: string, ctx: Omit<ParseContext, 'dismissed'> | null, d
 }
 
 /** The note under a win whose line asked to repeat or remind. */
+/** Quick add in a list: the understood chips and the title as it will be saved. */
+function LinePreview({ title, emptyTitle, ...chips }: ParseChipsProps & { title?: string; emptyTitle: boolean }) {
+  return (
+    <div id="quick-add-preview" role="status" aria-live="polite" className="empty:hidden">
+      {(chips.chips.length > 0 || (chips.misses?.length ?? 0) > 0) && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-9 text-meta">
+          <ParseChips {...chips} />
+          <span className="text-muted" data-testid="quick-add-title">
+            <span className="sr-only">{t('Title:')}{' '}</span>
+            {emptyTitle ? <em>{t('Type a title')}</em> : <span className="inline-flex items-center gap-1"><Icon name="arrow-right" size="xs" />{title}</span>}
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function WinRefused() {
   return (
     <p className="flex items-center gap-1.5 px-4 pb-2 text-meta text-muted" data-win-refused>
@@ -211,7 +228,8 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
   // Unmatched #tokens are explained once the caret has left them (natural-language-capture "Unmatched tokens are explained").
   const misses = (parsed?.unmatched ?? []).filter((m) => !suggest.open || caretOutside(inputRef.current, m.span))
 
-  const lineDate = useLineDate({ input: inputRef, value, chips, context, change }) // the sheet's date tool (phone-quickadd-date-picker)
+  const lineDate = useLineDate({ input: inputRef, value, chips, context, change }) // the date picker (phone-quickadd-date-picker, quick-add-calendar)
+  const webCalendar = layout !== 'sheet' && settings.enabled // on the web: the When row and the line's calendar button
   const voice = useDictation({
     inputRef, getText: () => valueRef.current, setText: change, settings, projects, labels, shortcut: voiceShortcut,
   })
@@ -235,6 +253,8 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
   function edit(target: FieldRow | FieldKind) {
     const r = typeof target === 'string' ? { kind: target } : target
     setRow(null)
+    if (r.kind === 'when' && webCalendar) lineDate.show() // the calendar opens; a set date's words are still selected below
+    if (r.kind === 'when' && webCalendar && !r.chip) return caretTo(valueRef.current.length)
     if (r.chip) {
       const { start, end } = chipRange(r.chip)
       caretTo(start, end)
@@ -373,10 +393,12 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
           aria-describedby={chips.length ? 'quick-add-preview' : undefined}
         />
         </span>
+        {layout === 'line' && webCalendar && <span className={lead}><LineDateButton date={lineDate} /></span>}
         {voice.enabled && <span className={lead}><VoiceButton voice={voice} shortcut={voiceShortcut} /></span>}
         {!hideHint && hints && <span className={`${lead} max-sm:hidden`} data-kbd-hint><span className="ui-kbd" data-quick-add-hint>{keysOf('list.quick-add')}</span></span>}
         {layout !== 'sheet' && suggest.list}{paste.offer}
       </div>
+      {layout === 'line' && webCalendar && lineDate.open && <LineDatePicker id={lineDate.id} due={lineDate.due} onPick={lineDate.pick} />}
       {layout === 'sheet' && suggest.list && <div className="px-3 pb-2 [&>ul]:static [&>ul]:mt-0 [&>ul]:w-full" data-sheet-suggestions>{suggest.list}</div>}
       {notes !== null && (
         <NotesLine ref={notesField.ref} value={notes} onChange={notesField.setNotes} onClose={notesField.close}
@@ -389,6 +411,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
           {misses.length > 0 && <div className="flex flex-wrap gap-1.5 px-4 pb-2 text-meta"><ParseChips chips={[]} misses={misses} projects={projects} labels={labels} onDismiss={dismiss} onMiss={(m) => suggest.openAt(m.span.end)} /></div>}
           {refused && <WinRefused />}
         </div>
+        {webCalendar && lineDate.open && <LineDatePicker id={lineDate.id} due={lineDate.due} onPick={lineDate.pick} />}
         <QuickAddFooter title={parsed ? parsed.title : null} empty={emptyTitle} escape={escape} />
       </>}
       {layout === 'sheet' && (
@@ -398,19 +421,8 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
             notes={notesAllowed ? { open: notes !== null, start: notesField.open } : undefined} date={settings.enabled ? lineDate : undefined} />
         </div>
       )}
-      {layout === 'line' && <div id="quick-add-preview" role="status" aria-live="polite" className="empty:hidden">
-        {(chips.length > 0 || misses.length > 0) && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-9 text-meta">
-            <ParseChips chips={chips} misses={misses} projects={projects} labels={labels} highlight={highlight}
-              line={lineInfo}
-              onDismiss={dismiss} onMiss={(m) => suggest.openAt(m.span.end)} />
-            <span className="text-muted" data-testid="quick-add-title">
-              <span className="sr-only">{t('Title:')}{' '}</span>
-              {emptyTitle ? <em>{t('Type a title')}</em> : <span className="inline-flex items-center gap-1"><Icon name="arrow-right" size="xs" />{parsed?.title}</span>}
-            </span>
-          </div>
-        )}
-      </div>}
+      {layout === 'line' && <LinePreview chips={chips} misses={misses} projects={projects} labels={labels} highlight={highlight} line={lineInfo}
+        onDismiss={dismiss} onMiss={(m) => suggest.openAt(m.span.end)} title={parsed?.title} emptyTitle={emptyTitle} />}
     </form>
   )
 })

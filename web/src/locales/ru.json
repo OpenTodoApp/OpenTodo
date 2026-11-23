@@ -495,6 +495,7 @@
   "Allow calendar sync on this server": "Разрешить синхронизацию календаря на этом сервере",
   "Allow delivery channels on this server": "Разрешить каналы доставки на этом сервере",
   "Allow issue connections on this server": "Разрешить подключения к трекерам задач на этом сервере",
+  "Pick a date": "Выбрать дату",
   "Allow new accounts via SSO": "Разрешить новые аккаунты через SSO",
   "Allow notifications first.": "Сначала разрешите уведомления.",
   "Allow plain http (the password is sent unencrypted; only on a trusted network)": "Разрешить обычный http (пароль передаётся без шифрования; только в доверенной сети)",

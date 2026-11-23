@@ -1,4 +1,6 @@
-// The phone sheet's date tool (OpenSpec change phone-quickadd-date-picker): under the
+// The date tool of the phone's sheet (OpenSpec change phone-quickadd-date-picker), also
+// opened on the web from the palette's When row and the line's calendar button
+// (quick-add-calendar): under the
 // line, the quick dates, the month and a row of times. A pick writes the date into the
 // line as words the parser reads (lineDue, D1, D3), replacing the line's date rather
 // than adding a second; Clear removes it. Due only (D2). Taps keep the focus in the
@@ -11,6 +13,8 @@ import { withDue } from '../../lib/nlp/lineDue'
 import type { Due } from '../../lib/types'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { CalendarGrid } from '../datetime/DateField'
+import { Icon } from '../../ui'
+import { FIELD_ICON } from './fields'
 
 const TIMES = ['09:00', '12:00', '17:00', '20:00']
 
@@ -43,7 +47,7 @@ export function useLineDate({ input, value, chips, context, change }: {
       el.setSelectionRange(line.length, line.length)
     })
   }
-  return { id, open, due, pick, toggle: () => setOpen((o) => !o) }
+  return { id, open, due, pick, show: () => setOpen(true), toggle: () => setOpen((o) => !o) }
 }
 
 const option = (on: boolean) =>
@@ -79,5 +83,16 @@ export function LineDatePicker({ id, due, onPick, today = logicalToday() }: { id
           onChange={(e) => { if (e.target.value) setTime(e.target.value) }} data-line-date-time />
       </div>
     </div>
+  )
+}
+
+/** Quick add in a list: the calendar button beside the field (quick-add-calendar). It keeps the focus in the line. */
+export function LineDateButton({ date }: { date: LineDate }) {
+  return (
+    <button type="button" data-quick-add-calendar onMouseDown={(e) => e.preventDefault()} onClick={date.toggle}
+      aria-label={t('Pick a date')} aria-expanded={date.open} aria-controls={date.id}
+      className={`inline-flex h-7 w-7 items-center justify-center rounded-control hover:bg-hover hover:text-default ${date.open ? 'bg-selected text-default' : 'text-faint'}`}>
+      <Icon name={FIELD_ICON.when} size={16} />
+    </button>
   )
 }

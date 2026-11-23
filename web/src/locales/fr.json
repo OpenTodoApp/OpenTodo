@@ -451,6 +451,7 @@
   "Allow calendar sync on this server": "Autoriser la synchronisation de calendrier sur ce serveur",
   "Allow delivery channels on this server": "Autoriser les canaux d’envoi sur ce serveur",
   "Allow issue connections on this server": "Autoriser les connexions de tickets sur ce serveur",
+  "Pick a date": "Choisir une date",
   "Allow new accounts via SSO": "Autoriser les nouveaux comptes via SSO",
   "Allow notifications first.": "Autorise d’abord les notifications.",
   "Allow plain http (the password is sent unencrypted; only on a trusted network)": "Autoriser le http simple (le mot de passe est envoyé en clair ; uniquement sur un réseau de confiance)",

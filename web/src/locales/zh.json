@@ -460,6 +460,7 @@
   "Allow calendar sync on this server": "在此服务器上允许日历同步",
   "Allow delivery channels on this server": "在此服务器上允许通知渠道",
   "Allow issue connections on this server": "在此服务器上允许议题连接",
+  "Pick a date": "选择日期",
   "Allow new accounts via SSO": "允许通过 SSO 创建新账户",
   "Allow notifications first.": "请先允许通知权限。",
   "Allow plain http (the password is sent unencrypted; only on a trusted network)": "允许明文 HTTP（密码将不加密发送；仅在受信任的网络中使用）",

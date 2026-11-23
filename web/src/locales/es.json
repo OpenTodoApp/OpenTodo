@@ -451,6 +451,7 @@
   "Allow calendar sync on this server": "Permitir la sincronización de calendario en este servidor",
   "Allow delivery channels on this server": "Permitir canales de envío en este servidor",
   "Allow issue connections on this server": "Permitir conexiones de incidencias en este servidor",
+  "Pick a date": "Elegir una fecha",
   "Allow new accounts via SSO": "Permitir cuentas nuevas mediante SSO",
   "Allow notifications first.": "Primero permite las notificaciones.",
   "Allow plain http (the password is sent unencrypted; only on a trusted network)": "Permitir http sin cifrar (la contraseña se envía sin cifrar; solo en una red de confianza)",

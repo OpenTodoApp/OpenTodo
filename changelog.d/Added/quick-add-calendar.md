@@ -1,0 +1,1 @@
+- **Pick a date from a calendar in quick add on the web.** A calendar button beside a list's add field, and the **When** row of the command bar, open the same calendar as the phone's add sheet: quick dates, the month, times and Clear. The picked day goes into the line as words, so it works exactly like a typed date.

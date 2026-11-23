@@ -495,6 +495,7 @@
   "Allow calendar sync on this server": "Zezwól na synchronizację kalendarza na tym serwerze",
   "Allow delivery channels on this server": "Zezwól na kanały dostarczania na tym serwerze",
   "Allow issue connections on this server": "Zezwól na połączenia ze zgłoszeniami na tym serwerze",
+  "Pick a date": "Wybierz datę",
   "Allow new accounts via SSO": "Zezwól na nowe konta przez SSO",
   "Allow notifications first.": "Najpierw zezwól na powiadomienia.",
   "Allow plain http (the password is sent unencrypted; only on a trusted network)": "Zezwól na zwykłe http (hasło jest wysyłane bez szyfrowania; tylko w zaufanej sieci)",

@@ -497,6 +497,7 @@
   "Allow calendar sync on this server": "Bu sunucuda takvim eşitlemesine izin ver",
   "Allow delivery channels on this server": "Bu sunucuda iletim kanallarına izin ver",
   "Allow issue connections on this server": "Bu sunucuda sorun bağlantılarına izin ver",
+  "Pick a date": "Tarih seç",
   "Allow new accounts via SSO": "SSO üzerinden yeni hesaplara izin ver",
   "Allow notifications first.": "Önce bildirimlere izin verin.",
   "Allow plain http (the password is sent unencrypted; only on a trusted network)": "Düz http’ye izin ver (parola şifrelenmeden gönderilir; yalnızca güvenilir bir ağda)",
