@@ -68,6 +68,9 @@ final class AppModel: ObservableObject {
             pendingPath = ShareInbox.read().map { ShareMap.path(title: $0.title, text: $0.text, url: $0.url, withFiles: !$0.files.isEmpty) } ?? "/share"
         case "add":
             show(add: query.first { $0.name == "text" }?.value ?? "")
+        case "stats":
+            // The Completed widget opens Statistics, as on Android.
+            pendingPath = "/stats"
         default:
             break
         }
