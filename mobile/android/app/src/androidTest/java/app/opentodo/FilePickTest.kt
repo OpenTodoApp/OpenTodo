@@ -49,7 +49,8 @@ class FilePickTest {
         resetApp()
     }
 
-    @Test fun aPickedFileCanBeReadByThePage() {
+    /** The shell on the server's page whose file input covers the screen, ready for a tap. */
+    private fun openPickPage(): WebView {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         lateinit var web: WebView
         scenario.onActivity { web = it.findViewById(R.id.web) }
@@ -64,19 +65,57 @@ class FilePickTest {
             scenario.onActivity { shown = web.visibility == View.VISIBLE && web.alpha == 1f }
             shown
         }
+        return web
+    }
+
+    private fun picked() = Instrumentation.ActivityResult(Activity.RESULT_OK,
+        Intent().setData(PickedFileProvider.uri(InstrumentationRegistry.getInstrumentation().context.packageName)))
+
+    private fun pickerOpenings() = Intents.getIntents().count { it.action == Intent.ACTION_GET_CONTENT }
+
+    /** The picked file read by the page, then sent the way the import sends it, which is where #1606 failed. */
+    private fun assertTheFileWasRead(web: WebView) {
+        web.waitForJs("window.picked", "\"${PickedFileProvider.NAME}: ${PickedFileProvider.BODY}\"")
+        web.waitForJs("window.uploaded", "\"sent\"")
+        assertEquals("one upload: ${server.uploads}", 1, server.uploads.size)
+        val body = server.uploads[0]
+        assertTrue("the upload names the file: $body", body.contains("filename=\"${PickedFileProvider.NAME}\""))
+        assertTrue("the upload carries its bytes: $body", body.contains(PickedFileProvider.BODY))
+    }
+
+    @Test fun aPickedFileCanBeReadByThePage() {
+        val web = openPickPage()
         Intents.init()
         try {
-            intending(hasAction(Intent.ACTION_GET_CONTENT))
-                .respondWith(Instrumentation.ActivityResult(Activity.RESULT_OK, Intent().setData(PickedFileProvider.uri(InstrumentationRegistry.getInstrumentation().context.packageName))))
+            intending(hasAction(Intent.ACTION_GET_CONTENT)).respondWith(picked())
             // The input covers the page: a real tap, which a file input needs to open its picker.
             onView(withId(R.id.web)).perform(click())
-            web.waitForJs("window.picked", "\"${PickedFileProvider.NAME}: ${PickedFileProvider.BODY}\"")
-            // And it reaches the server the way the import sends it, which is where #1606 failed.
-            web.waitForJs("window.uploaded", "\"sent\"")
-            assertEquals("one upload: ${server.uploads}", 1, server.uploads.size)
-            val body = server.uploads[0]
-            assertTrue("the upload names the file: $body", body.contains("filename=\"${PickedFileProvider.NAME}\""))
-            assertTrue("the upload carries its bytes: $body", body.contains(PickedFileProvider.BODY))
+            assertTheFileWasRead(web)
+        } finally {
+            Intents.release()
+        }
+    }
+
+    /**
+     * Backing out of Android's picker answers the page's chooser with nothing. Left unanswered,
+     * the web view would never open the picker again: the next tap must open it and the file
+     * picked then must reach the server.
+     */
+    @Test fun afterACancelledPickThePickerOpensAgain() {
+        val web = openPickPage()
+        Intents.init()
+        try {
+            intending(hasAction(Intent.ACTION_GET_CONTENT)).respondWith(Instrumentation.ActivityResult(Activity.RESULT_CANCELED, null))
+            onView(withId(R.id.web)).perform(click())
+            waitUntil("the picker opened") { pickerOpenings() == 1 }
+            // Nothing picked: no file reached the page or the server.
+            assertEquals("\"\"", web.js("window.picked"))
+            assertEquals(0, server.uploads.size)
+            // The newest stub answers: this time a file is picked.
+            intending(hasAction(Intent.ACTION_GET_CONTENT)).respondWith(picked())
+            onView(withId(R.id.web)).perform(click())
+            waitUntil("the picker opened again") { pickerOpenings() == 2 }
+            assertTheFileWasRead(web)
         } finally {
             Intents.release()
         }
