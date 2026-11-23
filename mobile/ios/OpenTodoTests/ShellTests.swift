@@ -182,96 +182,46 @@ final class BridgeOnAServerTests: XCTestCase {
 }
 
 /// The navigation rule of the web view (native-shells "Sign-in flows stay in the shell"),
-/// the cases of the Android app's SignInFlowTest.
+/// on the cases it shares with the Android app's SignInFlowTest (sign-in/flows.json).
 final class SignInFlowTests: XCTestCase {
-    private let server = URL(string: "https://todo.example.com")!
-    private var now = Date(timeIntervalSince1970: 1_000_000)
-    private lazy var flow = SignInFlow(server: server) { [unowned self] in self.now }
-
     private func u(_ s: String) -> URL { URL(string: s)! }
-    private func link(_ s: String) -> SignInFlow.Decision { flow.decide(u(s), isRedirect: false, hasGesture: true) }
-    private func redirect(_ s: String) -> SignInFlow.Decision { flow.decide(u(s), isRedirect: true, hasGesture: false) }
-    private func script(_ s: String) -> SignInFlow.Decision { flow.decide(u(s), isRedirect: false, hasGesture: false) }
 
-    func testTheServerAlwaysStays() {
-        XCTAssertEqual(link("https://todo.example.com/today"), .stay)
-        XCTAssertEqual(link("https://TODO.example.com:443/?task=1"), .stay)
-        XCTAssertEqual(redirect("https://todo.example.com/"), .stay)
-        XCTAssertFalse(flow.inSignIn)
-    }
-
-    func testLinksToOtherSitesOpenTheBrowser() {
-        XCTAssertEqual(link("https://example.org/outside"), .browser)
-        XCTAssertEqual(script("https://example.org/outside"), .browser)
-        XCTAssertEqual(link("http://todo.example.com/"), .browser)
-        XCTAssertEqual(link("https://todo.example.com:8443/"), .browser)
-        XCTAssertEqual(link("mailto:someone@example.org"), .browser)
-        XCTAssertFalse(flow.inSignIn)
-    }
-
-    func testLoginWallChain() {
-        XCTAssertEqual(redirect("https://auth.example.com/login?rd=https://todo.example.com/"), .stay)
-        XCTAssertTrue(flow.inSignIn)
-        flow.started(u("https://auth.example.com/login?rd=https://todo.example.com/"))
-        XCTAssertEqual(link("https://auth.example.com/login"), .stay)
-        XCTAssertEqual(redirect("https://id.example.net/authorize?client_id=wall"), .stay)
-        flow.started(u("https://id.example.net/authorize?client_id=wall"))
-        XCTAssertEqual(script("https://auth.example.com/callback?code=1"), .stay)
-        XCTAssertEqual(redirect("https://todo.example.com/"), .stay)
-        flow.started(u("https://todo.example.com/"))
-        XCTAssertFalse(flow.inSignIn)
-        XCTAssertEqual(link("https://auth.example.com/settings"), .browser)
-    }
-
-    /// Issue #1188: OpenTodo's own single sign-on, a same-origin link to the start route, then the server's redirect.
-    func testSingleSignOn() {
-        XCTAssertEqual(link("https://todo.example.com/api/v1/auth/oidc/start"), .stay)
-        XCTAssertEqual(redirect("https://sso.example.com/realms/home/protocol/openid-connect/auth?state=x"), .stay)
-        flow.started(u("https://sso.example.com/realms/home/protocol/openid-connect/auth?state=x"))
-        XCTAssertEqual(link("https://sso.example.com/realms/home/login-actions/authenticate"), .stay)
-        XCTAssertEqual(redirect("https://todo.example.com/api/v1/auth/oidc/callback?code=1&state=x"), .stay)
-        XCTAssertFalse(flow.inSignIn)
-    }
-
-    func testALinkOnTheSignInPageToAnotherSiteOpensTheBrowser() {
-        _ = redirect("https://auth.example.com/login")
-        flow.started(u("https://auth.example.com/login"))
-        XCTAssertEqual(link("https://example.org/privacy"), .browser)
-        XCTAssertTrue(flow.inSignIn)
-        XCTAssertEqual(link("https://auth.example.com/reset"), .stay)
-    }
-
-    func testARedirectFromAnotherSiteDoesNotStartAFlow() {
-        flow.started(u("https://example.org/page"))
-        XCTAssertEqual(redirect("https://evil.example.net/"), .browser)
-        XCTAssertFalse(flow.inSignIn)
-    }
-
-    func testTheFlowTimesOut() {
-        _ = redirect("https://auth.example.com/login")
-        flow.started(u("https://auth.example.com/login"))
-        now += SignInFlow.timeout - 1
-        XCTAssertEqual(link("https://auth.example.com/next"), .stay)
-        now += SignInFlow.timeout + 1
-        XCTAssertFalse(flow.inSignIn)
-        XCTAssertEqual(redirect("https://id.example.net/authorize"), .browser)
-        XCTAssertEqual(script("https://id.example.net/authorize"), .browser)
-        XCTAssertEqual(link("https://auth.example.com/login"), .stay)
-        XCTAssertEqual(redirect("https://auth.example.com/done"), .stay)
-        XCTAssertFalse(flow.inSignIn)
-        XCTAssertEqual(redirect("https://todo.example.com/"), .stay)
-        flow.started(u("https://todo.example.com/"))
-        XCTAssertEqual(link("https://auth.example.com/login"), .browser)
-    }
-
-    func testLeavingEndsTheFlow() {
-        _ = redirect("https://auth.example.com/login")
-        flow.started(u("https://auth.example.com/login"))
-        flow.end()
-        XCTAssertFalse(flow.inSignIn)
-        XCTAssertEqual(script("https://id.example.net/authorize"), .browser)
-        flow.started(u("https://todo.example.com/"))
-        XCTAssertEqual(redirect("https://auth.example.com/login"), .stay)
+    /// The rules both shells share: sign-in/flows.json, which the Android app's SignInFlowTest reads too.
+    func testSharedCases() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/sign-in/flows.json")
+        let doc = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        let server = try XCTUnwrap(URL(string: try XCTUnwrap(doc["server"] as? String)))
+        let cases = try XCTUnwrap(doc["cases"] as? [[String: Any]])
+        XCTAssertFalse(cases.isEmpty, "the fixture has cases")
+        for c in cases {
+            let name = c["name"] as? String ?? "?"
+            var clock = Date(timeIntervalSince1970: 1_000_000)
+            let f = SignInFlow(server: server) { clock }
+            for (i, step) in (c["steps"] as? [[String: Any]] ?? []).enumerated() {
+                let at = "\(name), step \(i + 1): \(step)"
+                if let kind = ["link", "redirect", "script"].first(where: { step[$0] != nil }) {
+                    let url = try XCTUnwrap(URL(string: try XCTUnwrap(step[kind] as? String)), at)
+                    let expected: SignInFlow.Decision = step["expect"] as? String == "stay" ? .stay : .browser
+                    XCTAssertEqual(f.decide(url, isRedirect: kind == "redirect", hasGesture: kind == "link"), expected, at)
+                } else if let started = step["started"] as? String {
+                    f.started(try XCTUnwrap(URL(string: started), at))
+                } else if step["end"] != nil {
+                    f.end()
+                } else if let inSignIn = step["inSignIn"] as? Bool {
+                    XCTAssertEqual(f.inSignIn, inSignIn, at)
+                } else if let wait = step["wait"] as? String {
+                    switch wait {
+                    case "almostTimeout": clock += SignInFlow.timeout - 1
+                    case "timeoutAndMore": clock += SignInFlow.timeout + 1
+                    default: XCTFail("\(at): unknown wait")
+                    }
+                } else {
+                    XCTFail("\(at): unknown step")
+                }
+            }
+        }
     }
 
     func testOrigins() {
