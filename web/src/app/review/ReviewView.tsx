@@ -28,6 +28,8 @@ import { navigate } from '../router'
 import { TaskRow } from '../TaskRow'
 import { useListKeys } from '../useListKeys'
 import { t } from '../../lib/i18n'
+import { Kbd } from '../shortcuts/Kbd'
+import { useShortcutHints } from '../shortcuts/hints'
 import { act } from '../actionError'
 import { ProjectWalk } from './ProjectWalk'
 import { ReviewProgress } from './ReviewProgress'
@@ -243,6 +245,7 @@ function MindSweep({ projects, labels }: { projects: Project[]; labels: ReturnTy
 }
 
 function StepIntro({ step, steps }: { step: StepId; steps: ReviewSteps }) {
+  const hints = useShortcutHints()
   switch (step) {
     case 'clear':
       return (
@@ -264,7 +267,14 @@ function StepIntro({ step, steps }: { step: StepId; steps: ReviewSteps }) {
     case 'waiting':
       return <p className="mb-3 text-body text-muted">{steps.waiting.length ? t('Assigned to someone else or blocked by another task. Open one to follow up in its comments.') : t('Nothing is waiting.')}</p>
     case 'projects':
-      return <p className="mb-3 text-body text-muted">{t('One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action, e sets how often it comes up.')}</p>
+      // The keys only with "Show shortcut hints" on, as keycaps (issue 1935); the walk's
+      // buttons and its Review every… menu name them too.
+      return (
+        <p className="mb-3 text-body text-muted" data-step-intro>
+          {t('One project at a time: is it still alive, and is its next step clear?')}
+          {hints && <span data-kbd-hint>{' '}{t.rich('{r} marks it reviewed, {q} adds a next action, {e} sets how often it comes up.', { r: <Kbd k="r" />, q: <Kbd k="q" />, e: <Kbd k="e" /> })}</span>}
+        </p>
+      )
     case 'someday':
       return <p className="mb-3 text-body text-muted">{steps.someday.length ? t('Anything you now want to do? n brings a task back from Someday, c completes it, Delete trashes it.') : t('Nothing is parked in Someday.')}</p>
     default:

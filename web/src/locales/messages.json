@@ -5610,6 +5610,7 @@
   "Due {date}": [
     "web/public/push-sw.js",
     "web/src/app/TriageView.tsx",
+    "web/src/app/away/AwayDialog.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/lib/assistant.ts"
   ],
@@ -7935,6 +7936,7 @@
   ],
   "Hide details": [
     "web/src/app/TaskRow.tsx",
+    "web/src/app/away/AwayDialog.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -12614,7 +12616,7 @@
   "One per line": [
     "web/src/app/routines/wordPicker.tsx"
   ],
-  "One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action, e sets how often it comes up.": [
+  "One project at a time: is it still alive, and is its next step clear?": [
     "web/src/app/review/ReviewView.tsx"
   ],
   "One step at a time, in list order": [
@@ -16483,6 +16485,7 @@
   ],
   "Show details": [
     "web/src/app/TaskRow.tsx",
+    "web/src/app/away/AwayDialog.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -17068,6 +17071,7 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Someone": [
+    "web/public/push-sw.js",
     "web/src/app/FeedView.tsx",
     "web/src/app/MemberInvitations.tsx",
     "web/src/app/NotificationBell.tsx",
@@ -26314,7 +26318,8 @@
     "web/src/app/themes/TokenList.tsx"
   ],
   "{n} skipped": [
-    "web/src/app/ImportScreen.tsx"
+    "web/src/app/ImportScreen.tsx",
+    "web/src/app/away/AwayDialog.tsx"
   ],
   "{n} this week": [
     "web/src/app/method/loop/PulseDetails.tsx"
@@ -26418,6 +26423,9 @@
   ],
   "{rule}, {n, plural, one {# time} other {# times}}": [
     "web/src/lib/recurrenceWords.ts"
+  ],
+  "{r} marks it reviewed, {q} adds a next action, {e} sets how often it comes up.": [
+    "web/src/app/review/ReviewView.tsx"
   ],
   "{secret} (stored; type to replace)": [
     "web/src/app/SsoPanel.tsx"
