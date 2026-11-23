@@ -5,6 +5,7 @@
 // trash, project moves across sharing scopes) so a batch behaves like the keys.
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { ProposedChange } from './assistantTypes'
+import { occurrenceId } from './ids'
 import { addDaysISO, logicalToday, weekStartOf } from './dates'
 import { db, tableOf } from './db'
 import { memberSet } from './rotation'
@@ -150,10 +151,19 @@ export async function toProposed(changes: Change[], memberships?: Map<string, Me
     const row = (await tableOf(c.entity).get(c.entityId)) as unknown as Record<string, unknown> | undefined
     const project = (c.entity === 'task' ? (c.patch.project_id ?? row?.project_id ?? null) : null) as string | null
     const shared = !!memberships && !!project && memberships.has(project)
-    const base = row ? Object.fromEntries(Object.keys(c.patch).map((f) => [f, row[f] ?? null])) : undefined
+    // A new occurrence record (completing a series): its undo writes back the open occurrence,
+    // never a tombstone (series-exceptions D3), as actOnOccurrenceUndoable does.
+    const from = row ?? (isNewOccurrenceRecord(c) ? { ...c.patch, completed_at: null, completed_by: null, skipped: false } : undefined)
+    const base = from ? Object.fromEntries(Object.keys(c.patch).map((f) => [f, from[f] ?? null])) : undefined
     out.push({ entity: c.entity, entityId: c.entityId, patch: c.patch, ...(base ? { base } : { create: true }), ...(shared ? { shared } : {}) })
   }
   return out
+}
+
+/** A task change that writes a series' occurrence record: its id is the one the series and date name. */
+function isNewOccurrenceRecord(c: Change): boolean {
+  const { series_id: series, occurrence_date: date } = c.patch
+  return c.entity === 'task' && typeof series === 'string' && typeof date === 'string' && c.entityId === occurrenceId(series, date)
 }
 
 /** Live rows of the ticked ids (in the given order) and every live task, read together. */

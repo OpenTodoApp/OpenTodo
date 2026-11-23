@@ -437,3 +437,26 @@ describe('project name, colour and icon', () => {
     expect(await db.projects.get(id)).toMatchObject({ color: '#2563eb', icon: 'house' })
   })
 })
+
+// series-exceptions D3: an Undo never trashes an occurrence record; it writes back the open occurrence.
+describe('undoing a series completion', () => {
+  it('writes the occurrence record back open, never into the Trash, with the series\' custom field values', async () => {
+    const { completeUndoable } = await import('./undoActions')
+    const { createField, setFieldValue } = await import('./fields')
+    const project = await createProject({ name: 'Home' })
+    const id = await createTask({ title: 'Bins', due: { date: '2026-10-12' }, recurrence: 'every monday', project_id: project })
+    const field = await createField(project, { name: 'Where', type: 'text' })
+    await setFieldValue(id, field, 'Kerb')
+    const r = await completeUndoable(id, true, { today: '2026-10-12' })
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-19' })
+    const records = () => db.tasks.filter((x) => x.series_id === id).toArray()
+    expect((await records())[0].completed_at).toBeGreaterThan(0)
+    await undoBatch(r.entry!.id)
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-12' })
+    const [rec] = await records()
+    expect(rec).toMatchObject({ completed_at: null, deleted_at: null })
+    expect(rec.fields?.[field]).toBe('Kerb')
+    await redoBatch(r.entry!.id)
+    expect((await records())[0].completed_at).toBeGreaterThan(0)
+  })
+})

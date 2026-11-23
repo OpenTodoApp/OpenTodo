@@ -1,0 +1,1 @@
+- **Undoing the completion of a repeating task keeps that day's occurrence.** It no longer appears in the Trash, and its custom field values come back as they were.
