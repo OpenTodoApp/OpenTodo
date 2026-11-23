@@ -2,8 +2,10 @@ package auth
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"testing"
+	"time"
 )
 
 const testIssuer = "https://sso.example.com"
@@ -262,7 +264,7 @@ func TestUnlinkRules(t *testing.T) {
 func TestOIDCMissingEmailVerifiedCreatesOnly(t *testing.T) {
 	ctx := context.Background()
 	s, db := newService(t, false)
-	mustOwner(t, s)
+	owner := mustOwner(t, s)
 	trusted := func(sub, email string) ExternalIdentity {
 		id := ext(sub, email, false)
 		id.TrustMissingEmailVerified = true
@@ -290,6 +292,24 @@ func TestOIDCMissingEmailVerifiedCreatesOnly(t *testing.T) {
 	}
 	if found, err := s.InviteeByEmail(ctx, "nas.user@example.com"); err != nil || found.ID != u.ID {
 		t.Fatalf("invitee lookup after confirmation: %+v %v", found, err)
+	}
+	if _, err := db.Exec("UPDATE users SET email_verified_at = NULL WHERE id = ?", u.ID); err != nil {
+		t.Fatal(err)
+	}
+	// An invite link bound to that address doesn't take it either until it is confirmed.
+	_, secret, err := s.CreateProjectInvite(ctx, owner, "p1", "editor", "nas.user@example.com", time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+	join := func(context.Context, *sql.Tx, string, string, string, string) ([]string, error) { return nil, nil }
+	if _, _, err := s.AcceptProjectInvite(ctx, secret, u, join); !errors.Is(err, ErrInvitationEmailMismatch) {
+		t.Fatalf("bound link before confirmation: %v", err)
+	}
+	if _, err := db.Exec("UPDATE users SET email_verified_at = 1 WHERE id = ?", u.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := s.AcceptProjectInvite(ctx, secret, u, join); err != nil {
+		t.Fatalf("bound link after confirmation: %v", err)
 	}
 	if _, err := db.Exec("UPDATE users SET email_verified_at = NULL WHERE id = ?", u.ID); err != nil {
 		t.Fatal(err)
