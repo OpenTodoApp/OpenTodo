@@ -456,13 +456,13 @@ describe('undoing a series completion', () => {
     const all = await db.tasks.toArray()
     expect(trashItems(all, [])).toEqual([])
     await redoBatch(r.entry!.id)
-    expect((await records())[0]).toMatchObject({ deleted_at: null })
+    expect((await records())[0]).toMatchObject({ deleted_at: null, skipped: false })
     expect((await records())[0].completed_at).toBeGreaterThan(0)
     await undoBatch(r.entry!.id)
 
     await completeUndoable(id, true, { today: '2026-10-12' })
     expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-19' })
-    expect((await records()).map((x) => [x.occurrence_date, !!x.completed_at, !!x.deleted_at])).toEqual([['2026-10-12', true, false]])
+    expect((await records()).map((x) => [x.occurrence_date, !!x.completed_at, !!x.deleted_at, x.skipped])).toEqual([['2026-10-12', true, false, false]])
   })
 
   it('keeps a trashed completed occurrence in the Trash', async () => {
