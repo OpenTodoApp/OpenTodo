@@ -49,6 +49,25 @@ final class ServerAddressTests: XCTestCase {
     }
 }
 
+/// native-shells "Offline start": the first-run check that found no network runs again when the
+/// network returns, as Android's SetupActivity does, and never in a loop while a network is up.
+final class NetworkReturnTests: XCTestCase {
+    private func steps(_ updates: [Bool]) -> [NetworkReturn.Step] {
+        var watch = NetworkReturn()
+        return updates.map { watch.update(satisfied: $0) }
+    }
+
+    func testTheCheckRunsAgainWhenTheNetworkReturns() {
+        XCTAssertEqual(steps([false, true]), [.wait, .retry])
+        XCTAssertEqual(steps([false, false, true]), [.wait, .wait, .retry])
+    }
+
+    /// A network already up: the server itself is unreachable, so the watch ends without a retry.
+    func testWithANetworkUpNothingRetries() {
+        XCTAssertEqual(steps([true]), [.stop])
+    }
+}
+
 final class HealthCheckTests: XCTestCase {
     /// The cases both apps read (Android's `HealthCheckTest` too): what a health route's answer means.
     private func cases() throws -> [String: Any] {
