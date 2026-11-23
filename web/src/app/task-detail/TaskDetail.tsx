@@ -5,7 +5,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { roleOf } from '../../lib/sharing'
 import type { Label, Project, Task } from '../../lib/types'
-import { focusInto, IconButton, playExit, useMediaQuery } from '../../ui'
+import { focusInto, IconButton, overlayDepth, playExit, useMediaQuery } from '../../ui'
 import { navigate } from '../router'
 import { ProjectMark } from '../ProjectMark'
 import { panelTaskId, setPanelCovering } from '../panel'
@@ -77,8 +77,9 @@ export function TaskDetail({ taskId, initial, userId, projects, labelMap, onClos
   useEffect(() => {
     const el = panel.current
     if (!covers || !shown || !el) return
-    setPanelCovering(true)
-    focusInto(el)
+    setPanelCovering(true, el)
+    // A picker or menu opened from the panel keeps focus (a window narrowed with it open).
+    if (overlayDepth() === 0) focusInto(el)
     return () => setPanelCovering(false)
   }, [covers, shown])
   // The pinned bottom of the panel: the comment composer renders here while the

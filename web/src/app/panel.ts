@@ -165,7 +165,7 @@ export function splitEmptyPane(): (() => ReactNode) | null {
 function dock(id: string): void {
   if (occupant?.kind === 'task' && occupant.id === id) return
   // Opening from closed: where focus goes back to if the panel ends up covering the page.
-  if (!occupant) focusBack = captureFocus()
+  if (!occupant) rememberOpener()
   occupant = { kind: 'task', id, path: currentPath() }
   syncQuery(id)
   emit()
@@ -205,6 +205,7 @@ export function closeTaskPanel(): void {
 
 /** Show something other than a task in the slot (project activity, history, the planning list). */
 export function openPanel(key: string, render: () => ReactNode): void {
+  if (!occupant) rememberOpener()
   occupant = { kind: 'custom', key, path: currentPath(), render }
   syncQuery(null)
   emit()
@@ -216,6 +217,7 @@ export function closePanel(): void {
   occupant = null
   const back = coveredSinceOpen ? focusBack : null
   focusBack = null
+  focusFrom = null
   coveredSinceOpen = false
   syncQuery(null)
   emit()
@@ -318,8 +320,25 @@ let covering = false
  * or resizing while it is open keeps it.
  */
 let focusBack: (() => void) | null = null
+let focusFrom: Element | null = null
 let coveredSinceOpen = false
-export function setPanelCovering(on: boolean): void {
+function rememberOpener(): void {
+  if (typeof document === 'undefined') return
+  const active = document.activeElement
+  focusFrom = active && active !== document.body ? active : null
+  focusBack = captureFocus()
+}
+/**
+ * The panel `el` starts or stops covering the page. Opened from a dialog or a menu that has
+ * closed since, the remembered opener is gone or inside that overlay: the element focus went
+ * back to (its trigger) is the one to return to.
+ */
+export function setPanelCovering(on: boolean, el?: Element): void {
+  if (on && typeof document !== 'undefined') {
+    const active = document.activeElement
+    const stale = !focusFrom || !focusFrom.isConnected || !!focusFrom.closest('[data-overlay], [data-overlay-root]')
+    if (stale && active && active !== document.body && !el?.contains(active)) rememberOpener()
+  }
   if (on) coveredSinceOpen = true
   if (covering === on) return
   covering = on
@@ -340,6 +359,7 @@ export function resetPanel(): void {
   projection = null
   covering = false
   focusBack = null
+  focusFrom = null
   coveredSinceOpen = false
   emit()
 }
