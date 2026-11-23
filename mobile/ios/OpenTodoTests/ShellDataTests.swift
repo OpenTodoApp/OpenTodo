@@ -302,8 +302,7 @@ final class ReminderTests: XCTestCase {
                 .appendingPathComponent("android/app/src/test/resources/bridge/\(name).json")
             let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any], name)
             XCTAssertEqual(fixture["method"] as? String, "scheduleReminders", name)
-            // `now` is a string there (Android reads it with getLong either way).
-            let nowMs = try XCTUnwrap((fixture["now"] as? Double) ?? (fixture["now"] as? String).flatMap(Double.init), name)
+            let nowMs = try XCTUnwrap(fixture["now"] as? Double, name)
             let want = try XCTUnwrap(fixture["expect"] as? [[String: Any]], name).map { r in
                 Reminders.Handed(id: r["id"] as? String ?? "?", taskId: r["taskId"] as? String ?? "?",
                                  fireAt: r["fireAt"] as? Double ?? -1, title: r["title"] as? String)
