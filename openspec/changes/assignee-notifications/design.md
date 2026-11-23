@@ -29,7 +29,7 @@ Two columns on `push_subscriptions`, `notify_assigned` and `notify_status`, defa
 
 ## Data model impact
 
-Migration `0075_push_notify.sql` adds `notify_assigned INTEGER NOT NULL DEFAULT 0` and `notify_status INTEGER NOT NULL DEFAULT 0` to `push_subscriptions` (device state, outside the op log and the export). No op field changes.
+A Go migration step (`store.migratePushNotify`, as ALTER TABLE ADD COLUMN cannot be repeated) adds `notify_assigned INTEGER NOT NULL DEFAULT 0` and `notify_status INTEGER NOT NULL DEFAULT 0` to `push_subscriptions` (device state, outside the op log and the export). No op field changes.
 
 ## Size
 

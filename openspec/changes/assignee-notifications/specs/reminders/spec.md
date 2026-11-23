@@ -41,4 +41,4 @@ A device with push enabled MAY opt in, per device, to two further pushes, both o
 
 #### Scenario: Invalid choices
 - **WHEN** the posted `notify` is not an object of booleans
-- **THEN** the response is 400 with code `invalid_input` and nothing is stored
+- **THEN** the response is 400 with code `bad_request` and the stored subscription is unchanged
