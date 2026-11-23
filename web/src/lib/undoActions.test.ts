@@ -618,6 +618,18 @@ describe('repeating tasks', () => {
     expect((await db.tasks.get(moved))!.title).toBe('Water the plants')
   })
 
+  it('redo leaves a record done since the undo as it is', async () => {
+    const { titleUndoable } = await import('./undoActions')
+    const { actOnOccurrence } = await import('./occurrenceActions')
+    const { id, moved } = await series()
+    const r = await titleUndoable(id, 'Water the plants')
+    await undoBatch(r.entry!.id)
+    await actOnOccurrence(id, '2026-10-14', { kind: 'complete' }, { today: '2026-10-14' })
+    await redoBatch(r.entry!.id)
+    expect((await db.tasks.get(id))!.title).toBe('Water the plants')
+    expect((await db.tasks.get(moved))!.title).toBe('Water')
+  })
+
   it('a length key on a series is named as the estimate step', async () => {
     const { id } = await series()
     expect((await calendarEditUndoable(id, { estimate_minutes: 45 })).label).toBe('Estimate 45 min')

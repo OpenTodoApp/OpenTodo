@@ -104,7 +104,7 @@ export interface AssistantUndo {
    * undo, so redo replays only what the undo actually changed and nothing changed since.
    */
   redo?: {
-    inverse: { entity: string; entityId: string; patch: Record<string, unknown>; created?: boolean; followUp?: boolean; prev?: Record<string, { ts: number; device: string }> }[]
+    inverse: { entity: string; entityId: string; patch: Record<string, unknown>; created?: boolean; followUp?: boolean; prev?: Record<string, { ts: number; device: string }>; open?: boolean }[]
     clocks: { entity: string; entityId: string; field: string; ts: number; device: string }[]
   }
   undone_at?: number

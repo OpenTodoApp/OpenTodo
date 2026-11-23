@@ -281,7 +281,7 @@ async function reverse(entry: AssistantUndo, src: Reversal): Promise<{ restored:
     if (skippedHere && inv.entity !== 'review' && !inv.followUp) skipped.push(String(row?.title ?? row?.name ?? `a ${inv.entity}`))
     if (Object.keys(patch).length) {
       batch.push({ entity: inv.entity as Entity, entityId: inv.entityId, patch })
-      back.push({ entity: inv.entity, entityId: inv.entityId, patch: now, ...(inv.followUp ? { followUp: true } : {}) })
+      back.push({ entity: inv.entity, entityId: inv.entityId, patch: now, ...(inv.followUp ? { followUp: true } : {}), ...(inv.open ? { open: true } : {}) })
     }
     if (inv.followUp && Object.keys(patch).length) followUps++
   }
