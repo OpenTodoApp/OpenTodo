@@ -1,0 +1,96 @@
+{
+  "_comment": "Which microphone and camera requests a shell's web view grants (native-shells \"Microphone for voice capture\"), read by Android's WebMicrophoneTest and the iOS app's MediaCaptureTests. `origin`: the top-level page; `frame`: the asking frame when it is an embedded one. `grant`: what Android grants of the request (it can grant the microphone alone). `whole`: whether iOS grants the request, which WebKit decides as a whole, so a request that also asks for the camera is refused there.",
+  "server": "https://todo.example.com",
+  "cases": [
+    {
+      "name": "the server's page asks for the microphone",
+      "origin": "https://todo.example.com",
+      "audio": true,
+      "video": false,
+      "grant": "audio",
+      "whole": true
+    },
+    {
+      "name": "the same origin written with its default port",
+      "origin": "https://todo.example.com:443",
+      "audio": true,
+      "video": false,
+      "grant": "audio",
+      "whole": true
+    },
+    {
+      "name": "the same origin in capitals",
+      "origin": "https://Todo.Example.com",
+      "audio": true,
+      "video": false,
+      "grant": "audio",
+      "whole": true
+    },
+    {
+      "name": "the server's page asks for the camera and the microphone",
+      "origin": "https://todo.example.com",
+      "audio": true,
+      "video": true,
+      "grant": "audio",
+      "whole": false
+    },
+    {
+      "name": "the server's page asks for the camera alone",
+      "origin": "https://todo.example.com",
+      "audio": false,
+      "video": true,
+      "grant": "none",
+      "whole": false
+    },
+    {
+      "name": "a sign-in provider's page",
+      "origin": "https://accounts.example.com",
+      "audio": true,
+      "video": false,
+      "grant": "none",
+      "whole": false
+    },
+    {
+      "name": "the server's host over plain http",
+      "origin": "http://todo.example.com",
+      "audio": true,
+      "video": false,
+      "grant": "none",
+      "whole": false
+    },
+    {
+      "name": "the server's host on another port",
+      "origin": "https://todo.example.com:8443",
+      "audio": true,
+      "video": false,
+      "grant": "none",
+      "whole": false
+    },
+    {
+      "name": "a host that only starts with the server's",
+      "origin": "https://todo.example.com.evil.test",
+      "audio": true,
+      "video": false,
+      "grant": "none",
+      "whole": false
+    },
+    {
+      "name": "another site's frame embedded in the server's page",
+      "origin": "https://todo.example.com",
+      "frame": "https://widgets.example.org",
+      "audio": true,
+      "video": false,
+      "grant": "none",
+      "whole": false
+    },
+    {
+      "name": "the server's own frame inside a sign-in provider's page",
+      "origin": "https://accounts.example.com",
+      "frame": "https://todo.example.com",
+      "audio": true,
+      "video": false,
+      "grant": "audio",
+      "whole": false
+    }
+  ]
+}
