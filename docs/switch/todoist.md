@@ -46,7 +46,7 @@ The full mapping is in [Import formats](../import.md#todoist-todoist-csv-todoist
 
 ## What does not
 
-- **Comments past 5,000** in one import, and a comment too long to post, are added to the task's description under "Comments" instead. The preview says how many.
+- **Comments past 5,000** in one import are added to the task's description under "Comments" instead. A comment too long to post (64 KB) is posted without its first line, or cut to fit when it is too long even alone. The preview says how many.
 - A **deadline** that cannot be read is kept as a "Deadline: …" line in the description, with a warning.
 - **Assignees** are dropped; invite people and [share the project](../sharing.md) instead.
 - Dates or rules OpenTodo cannot read leave the task without a due date, with a warning that quotes them.

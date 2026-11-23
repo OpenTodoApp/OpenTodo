@@ -4,14 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"unicode/utf8"
 )
 
 // Comments of a foreign file (OpenSpec change todoist-notes-comments). Each
 // becomes a comment of its task authored by the importing account; its body
 // starts with the original author's name and time, so nothing reads as the
 // importer's own words. An import creates at most MaxComments comments; a
-// comment past the cap, or too long for a comment body, goes into the task's
-// description under "Comments" as before, and the preview says so once.
+// comment past the cap goes into the task's description under "Comments" as
+// before. A note too long for a comment body with that first line is posted
+// without it, and one too long even alone is cut to fit, ending in "…". The
+// preview says once how many were added to descriptions or cut.
 
 // commentPlan is the outcome of one task's comments.
 type commentPlan struct {
@@ -31,21 +34,50 @@ func (pl *planner) taskComments(taskID string, list []Comment) commentPlan {
 			continue
 		}
 		id := pl.newID()
-		fields := []field{
-			{"task_id", raw(taskID)}, {"author_id", raw(pl.st.UserID)}, {"parent_id", json.RawMessage("null")},
-			{"body", raw(commentBody(c))}, {"mentions", raw([]string{})},
-			// One millisecond apart, so the comments keep the file's order.
-			{"created_at", raw(pl.now + int64(pl.commentCount+len(cp.changes)))},
-			{"edited_at", json.RawMessage("null")}, {"deleted_at", json.RawMessage("null")},
+		fields := func(body string) []field {
+			return []field{
+				{"task_id", raw(taskID)}, {"author_id", raw(pl.st.UserID)}, {"parent_id", json.RawMessage("null")},
+				{"body", raw(body)}, {"mentions", raw([]string{})},
+				// One millisecond apart, so the comments keep the file's order.
+				{"created_at", raw(pl.now + int64(pl.commentCount+len(cp.changes)))},
+				{"edited_at", json.RawMessage("null")}, {"deleted_at", json.RawMessage("null")},
+			}
 		}
-		if validateFields(KindComment, id, fields) != nil {
-			cp.folded = append(cp.folded, c.Text)
-			cp.large++
-			continue
+		// The description has the same bound as a comment body, so a long note is never
+		// folded into it: it loses its first line, then is cut to fit.
+		fs := fields(commentBody(c))
+		if validateFields(KindComment, id, fs) != nil {
+			fs = fields(c.Text)
+			if validateFields(KindComment, id, fs) != nil {
+				fs = fields(cutToFit(c.Text, func(body string) bool { return validateFields(KindComment, id, fields(body)) == nil }))
+				cp.large++
+			}
 		}
-		cp.changes = append(cp.changes, change{entity: KindComment, id: id, fields: fields, created: true})
+		cp.changes = append(cp.changes, change{entity: KindComment, id: id, fields: fs, created: true})
 	}
 	return cp
+}
+
+// cutToFit is the longest prefix of text, cut at a rune boundary and ending in
+// "…", that fits.
+func cutToFit(text string, fits func(string) bool) string {
+	lo, hi := 0, len(text)
+	for lo < hi { // the longest byte length whose cut fits
+		mid := (lo + hi + 1) / 2
+		if fits(cutAt(text, mid)) {
+			lo = mid
+		} else {
+			hi = mid - 1
+		}
+	}
+	return cutAt(text, lo)
+}
+
+func cutAt(text string, n int) string {
+	for n > 0 && !utf8.RuneStart(text[n]) {
+		n--
+	}
+	return text[:n] + "…"
 }
 
 // commitComments counts the comments of a task that is created.
@@ -85,20 +117,19 @@ func commentBody(c Comment) string {
 	return strings.Join(head, " · ") + "\n\n" + c.Text
 }
 
-var markdownEscaper = strings.NewReplacer(`\`, `\\`, `*`, `\*`, `_`, `\_`, "`", "\\`", `[`, `\[`, `]`, `\]`, `<`, `\<`, `>`, `\>`, `~`, `\~`)
+// The name is the file's, so nothing in it may read as markup, a mention or a link.
+var markdownEscaper = strings.NewReplacer(`\`, `\\`, `*`, `\*`, `_`, `\_`, "`", "\\`", `[`, `\[`, `]`, `\]`, `<`, `\<`, `>`, `\>`, `~`, `\~`, `@`, `\@`, `:`, `\:`)
 
-// commentsNote is the file-level note for comments that went into descriptions.
+// commentsNote is the file-level note for comments that went into descriptions
+// or were cut to fit.
 func (pl *planner) commentsNote() string {
-	n := pl.commentsCapped + pl.commentsLarge
-	if n == 0 {
-		return ""
+	var parts []string
+	if n := pl.commentsCapped; n > 0 {
+		parts = append(parts, fmt.Sprintf("%d %s added to %s description instead, as an import creates at most 5,000 comments",
+			n, plural(n, "note was", "notes were"), plural(n, "its task's", "their tasks'")))
 	}
-	why := fmt.Sprintf("an import creates at most %d comments", MaxComments)
-	switch {
-	case pl.commentsCapped == 0:
-		why = "they are too long for a comment"
-	case pl.commentsLarge > 0:
-		why += ", and some are too long for a comment"
+	if n := pl.commentsLarge; n > 0 {
+		parts = append(parts, fmt.Sprintf("%d %s cut to fit, as %s too long for a comment", n, plural(n, "comment was", "comments were"), plural(n, "it was", "they were")))
 	}
-	return fmt.Sprintf("%d %s added to the task's description instead: %s", n, plural(n, "comment is", "comments are"), why)
+	return strings.Join(parts, "; ")
 }

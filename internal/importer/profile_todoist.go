@@ -98,7 +98,8 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 	var stack []string // source ids of the open parents by indent level
 	section := ""
 	seen := map[string]int{}
-	var last *Row
+	// The task row right above, as an index: a later append can move out.Rows.
+	last := -1
 	if err := r.eachRecord(col, &out.Rows, func(line int, rec []string, get func(string) string) error {
 		switch strings.ToLower(get("TYPE")) {
 		case "":
@@ -109,7 +110,7 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 			}
 		case "section":
 			section = get("CONTENT")
-			last = nil // notes belong to the task right above them
+			last = -1 // notes belong to the task right above them
 			stack = stack[:0]
 			if opts.Sections == "section" && projectSource != "" && section != "" {
 				out.Rows = append(out.Rows, Row{Line: line, Kind: KindSection, SourceID: "todoist:section:" + projectID + ":" + section,
@@ -117,8 +118,8 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 			}
 		case "note":
 			// A note is a comment of the task right above it (todoist-notes-comments).
-			if text := get("CONTENT"); last != nil && text != "" {
-				last.Comments = append(last.Comments, Comment{Author: todoistAuthor(get("AUTHOR")), At: todoistNoteTime(get("DATE")), Text: text})
+			if text := get("CONTENT"); last >= 0 && text != "" {
+				out.Rows[last].Comments = append(out.Rows[last].Comments, Comment{Author: todoistAuthor(get("AUTHOR")), At: todoistNoteTime(get("DATE")), Text: text})
 			}
 		case "task":
 			row := Row{Line: line, Kind: KindTask, ProjectSourceID: projectSource, SectionName: section}
@@ -153,7 +154,7 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 			row.SourceID = fmt.Sprintf("todoist:%s:%d", hex.EncodeToString(sum[:8]), seen[key])
 			row.Origin = importedOrigin("todoist", row.SourceID)
 			out.Rows = append(out.Rows, row)
-			last = &out.Rows[len(out.Rows)-1]
+			last = len(out.Rows) - 1
 			stack = append(stack, row.SourceID)
 		default:
 			out.Rows = append(out.Rows, Row{Line: line, Kind: KindTask, Err: fmt.Sprintf("unknown row type %q", get("TYPE"))})

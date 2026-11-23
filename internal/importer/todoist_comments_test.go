@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
@@ -102,33 +103,62 @@ func TestTodoistNotesPastTheCap(t *testing.T) {
 			notes = append(notes, n)
 		}
 	}
-	if len(notes) != 1 || !strings.Contains(notes[0], "2 comments") || !strings.Contains(notes[0], fmt.Sprint(MaxComments)) {
+	if len(notes) != 1 || notes[0] != "2 notes were added to their tasks' description instead, as an import creates at most 5,000 comments" {
 		t.Fatalf("notes = %q", p.Notes)
 	}
 }
 
-// A note too long for a comment body (MaxValueBytes) goes into the description.
-func TestTodoistLongNoteFallsBack(t *testing.T) {
-	long := strings.Repeat("x", opsync.MaxValueBytes-30)
+// A note too long for a comment body with its first line is posted without it; one too
+// long even alone is cut to fit. Neither goes into the description, which has the same bound.
+func TestTodoistLongNotes(t *testing.T) {
+	nearly := strings.Repeat("x", opsync.MaxValueBytes-30)
+	huge := strings.Repeat("é", opsync.MaxValueBytes)
 	csv := todoistNotesHeader + "task,Long,,4,1,,,,,\n" +
-		"note," + long + ",,,,Pete (1),,2023-11-01T16:08:26Z,,\n" +
+		"note," + nearly + ",,,,Pete (1),,2023-11-01T16:08:26Z,,\n" +
+		"note," + huge + ",,,,Pete (1),,,,\n" +
 		"note,Short,,,,Pete (1),,,,\n"
 	p := todoistNotesPlan(t, csv)
 	comments := changesOf(p, KindComment)
-	if len(comments) != 1 || fieldString(comments[0], "body") != "**Pete**\n\nShort" {
-		t.Fatalf("comments = %+v", comments)
+	if len(comments) != 3 {
+		t.Fatalf("comments = %d", len(comments))
 	}
-	if d := fieldString(changesOf(p, KindTask)[0], "description"); d != "Comments\n\n- "+long {
+	if b := fieldString(comments[0], "body"); b != nearly {
+		t.Fatalf("first body has %d bytes, want the note alone", len(b))
+	}
+	cut := fieldString(comments[1], "body")
+	if !strings.HasSuffix(cut, "…") || !strings.HasPrefix(huge, strings.TrimSuffix(cut, "…")) || !utf8.ValidString(cut) {
+		t.Fatalf("second body is not a cut of the note (%d bytes)", len(cut))
+	}
+	if b := fieldString(comments[2], "body"); b != "**Pete**\n\nShort" {
+		t.Fatalf("third body = %q", b)
+	}
+	if d := fieldString(changesOf(p, KindTask)[0], "description"); d != "" {
 		t.Fatalf("description has %d bytes", len(d))
 	}
-	found := 0
+	var notes []string
 	for _, n := range p.Notes {
-		if strings.Contains(n, "too long") {
-			found++
+		if strings.Contains(n, "cut to fit") {
+			notes = append(notes, n)
 		}
 	}
-	if found != 1 {
+	if len(notes) != 1 || notes[0] != "1 comment was cut to fit, as it was too long for a comment" {
 		t.Fatalf("notes = %q", p.Notes)
+	}
+}
+
+// A note after a row the profile cannot read still belongs to the task above it.
+func TestTodoistNoteAfterAnUnknownRow(t *testing.T) {
+	p := todoistNotesPlan(t, todoistNotesHeader+"task,A,,4,1,,,,,\nbogus,x,,,,,,,,\nnote,Kept,,,,Pete (1),,,,\n")
+	if c := changesOf(p, KindComment); len(c) != 1 || fieldString(c[0], "body") != "**Pete**\n\nKept" {
+		t.Fatalf("comments = %+v", c)
+	}
+}
+
+// An author's name never reads as a mention or a link.
+func TestTodoistAuthorIsPlainText(t *testing.T) {
+	p := todoistNotesPlan(t, todoistNotesHeader+"task,A,,4,1,,,,,\nnote,Hi,,,,@bob https://x.example (7),,,,\n")
+	if b := fieldString(changesOf(p, KindComment)[0], "body"); b != "**\\@bob https\\://x.example**\n\nHi" {
+		t.Fatalf("body = %q", b)
 	}
 }
 
