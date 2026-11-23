@@ -1,1 +1,0 @@
-- **A task added with quick add can be undone.** Press Ctrl/Cmd+Z, or choose Undo in the command palette, to move it and its reminders to the Trash.

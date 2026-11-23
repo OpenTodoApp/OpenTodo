@@ -1,1 +1,0 @@
-- **A task's location and Remove origin can be undone.** Setting or clearing a location, and removing a task's origin, are now steps that Ctrl/Cmd+Z takes back. A repeating task is not covered yet.

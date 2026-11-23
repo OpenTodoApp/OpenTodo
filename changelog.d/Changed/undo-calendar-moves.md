@@ -1,1 +1,0 @@
-- **Moving a task in the calendar with the keyboard can be undone.** Each arrow press in Month, Plan, Day and Week, and each move in the timeline (keys and drags), is now a step that Ctrl/Cmd+Z takes back. A repeating task is not covered yet.

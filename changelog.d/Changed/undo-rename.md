@@ -1,1 +1,0 @@
-- **Renaming a task can be undone.** Changing only a task's title is now a step that Ctrl/Cmd+Z takes back, from the list, the task panel or Triage. A repeating task is not covered yet.

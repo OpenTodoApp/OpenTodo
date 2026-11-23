@@ -1,1 +1,0 @@
-- **A project's rename, colour and icon can be undone.** Ctrl/Cmd+Z takes back renaming a project or choosing its colour or icon.

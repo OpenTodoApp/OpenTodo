@@ -1,1 +1,0 @@
-- **A deadline change can be undone.** Setting or removing a deadline in the task panel now offers Undo, like the due date beside it. A repeating task is not covered yet.
