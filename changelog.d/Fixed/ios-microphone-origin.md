@@ -1,1 +1,0 @@
-- **In the iPhone app, only your server's pages can use the microphone.** Dictation on your server's pages no longer shows an extra prompt from the web view. A sign-in page or any other site in the app is refused without a prompt, and the camera is never granted from such a request, as in the Android app.

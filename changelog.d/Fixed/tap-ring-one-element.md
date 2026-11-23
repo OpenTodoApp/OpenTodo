@@ -1,1 +1,0 @@
-- **The first tap after typing no longer stalls a long list.** On a phone, the first tap after using a keyboard restyled the whole page before it answered. With 2,000 tasks in a list, the first completion took 250 to 400 ms instead of about 100. Now only the tapped element changes.

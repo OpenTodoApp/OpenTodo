@@ -1,1 +1,0 @@
-- **Deadlines as dates.** Turn on **Settings › Appearance › Theme and density › Show deadlines as dates** to see a deadline's date on task rows, such as "Nov 28", instead of the days left. It keeps the countdown's colours.

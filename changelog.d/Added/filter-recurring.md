@@ -1,1 +1,0 @@
-- **A `recurring` filter.** `recurring` matches every task with a repeat rule, habits included, so `recurring & open` saved as a view lists all your repeating tasks across projects.

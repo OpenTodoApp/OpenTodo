@@ -1,1 +1,0 @@
-- **Tablets keep the list beside the task.** On a tablet in landscape the task docks beside the list from 900 px wide, the sidebar folds while the list would get too narrow, and in portrait or a split view the task opens as a sheet over the list. Turning the tablet keeps the open task and where you were in the list.

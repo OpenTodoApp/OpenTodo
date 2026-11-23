@@ -1,1 +1,0 @@
-- **The public link form in the Share dialog lines up.** The name has a row of its own, so its label stays on one line and its placeholder shows in full, and the three choices share the row below it (#1902).
