@@ -119,7 +119,9 @@ func (s *Service) newApplyBatch(ctx context.Context, tx *sql.Tx, userID string, 
 		return nil, err
 	}
 	rs := newResolver(ctx, tx, acc, ops)
-	rs.allowComment = func() bool { return s.commentLimiter.allow(userID) }
+	if ctx.Value(commentLimitKey{}) == nil {
+		rs.allowComment = func() bool { return s.commentLimiter.allow(userID) }
+	}
 	rs.attachmentLimit = attachmentLimit
 	b := &applyBatch{s: s, ctx: ctx, tx: tx, userID: userID, strict: strict, nowMs: nowMs,
 		refuseSkew: ctx.Value(skewKey{}) != nil, acc: acc, rs: rs,

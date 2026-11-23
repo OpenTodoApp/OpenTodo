@@ -482,7 +482,9 @@ func (s *Service) writeBatch(ctx context.Context, uid string, job *Job, batch []
 			ops = append(ops, opsync.Op{ID: s.newID(), Entity: c.entity, EntityID: c.id, Field: f.name, Value: f.value, TS: ts, Device: Device})
 		}
 	}
-	res, err := s.sync.Apply(ctx, uid, ops)
+	// The plan's comments are bounded by MaxComments, not by the per-account
+	// comment limit (todoist-notes-comments D3).
+	res, err := s.sync.Apply(opsync.WithoutCommentLimit(ctx), uid, ops)
 	if err != nil {
 		return err
 	}
@@ -591,7 +593,7 @@ func scanJob(sc scanner) (*Job, error) {
 }
 
 // Undo tombstones every entity the job created (projects, tasks, labels,
-// sections, reminders, views), through the op log, and marks the job undone.
+// sections, reminders, views, comments), through the op log, and marks the job undone.
 // Entities the job only updated are left alone. Like deleting in the app, open
 // tasks the user later added to an undone project move to the Inbox, leave an
 // undone section, and ids of undone labels are removed from the user's other
@@ -612,7 +614,7 @@ func (s *Service) Undo(ctx context.Context, uid, id string) (*Job, error) {
 	if err != nil {
 		return nil, err
 	}
-	undoKinds := []string{KindAttachment, KindTimeEntry, KindReminder, KindTask, KindNote, KindField, KindSection, KindProject, KindLabel, KindView, KindRule, KindPlace, KindTheme, KindObjective, KindMemory}
+	undoKinds := []string{KindComment, KindAttachment, KindTimeEntry, KindReminder, KindTask, KindNote, KindField, KindSection, KindProject, KindLabel, KindView, KindRule, KindPlace, KindTheme, KindObjective, KindMemory}
 	created := map[string]map[string]bool{}
 	for _, k := range undoKinds {
 		created[k] = map[string]bool{}

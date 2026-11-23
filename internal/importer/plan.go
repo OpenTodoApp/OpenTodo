@@ -260,6 +260,11 @@ type planner struct {
 	exportedBy     string
 	foreignEntries int
 
+	// commentCount is the comments the plan creates; commentsCapped and
+	// commentsLarge count those that went into descriptions instead
+	// (todoist-notes-comments).
+	commentCount, commentsCapped, commentsLarge int
+
 	// createdBySource maps a project row's source id to the id of the project this
 	// import creates (for view hints).
 	createdBySource map[string]string
@@ -365,6 +370,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 	} else {
 		p.changes = pl.planForeign(parsed.Rows)
 		pl.stampWorkspace(p.changes)
+		p.Notes = pl.withCommentsNote(p.Notes)
 	}
 	for i := range pl.results {
 		r := &pl.results[i]
