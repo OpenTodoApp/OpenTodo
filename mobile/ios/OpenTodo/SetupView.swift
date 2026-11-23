@@ -224,6 +224,9 @@ final class SignInController: NSObject, ObservableObject, WKNavigationDelegate, 
         self.host = server.map(SignInFlow.hostOf) ?? origin
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default()
+        // Signing in never needs the position: every page here is refused (see WebLocation
+        // for the one way around it).
+        WebLocation.install(into: config.userContentController, allowing: nil)
         self.webView = WKWebView(frame: .zero, configuration: config)
         super.init()
         webView.navigationDelegate = self

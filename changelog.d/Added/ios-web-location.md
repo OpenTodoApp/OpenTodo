@@ -1,0 +1,1 @@
+- **"Use my location" works in the iPhone app.** Choosing it in a task's location asks iOS once for the app's location while you use it, then fills in where you are, as in the Android app (on a server reached over https). The app turns away requests from other sites' pages, such as a sign-in provider's.
