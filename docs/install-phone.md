@@ -13,9 +13,11 @@ order: 21
 
 Sign in once in the browser first, at your server's `https://` address; then add the app to your home screen. The general picture, and the steps for computers, are in [Installing the app](install-app.md).
 
+Away from home, see [Reach OpenTodo from outside](self-hosting/home-assistant-addon.md#reach-opentodo-from-outside-your-home).
+
 Once installed, the round **+** at the bottom right adds a task, and the menu button at the top left opens a drawer with your projects, labels and views. A menu or sheet from the bottom closes with a drag down, its **X** or a tap outside. A picker's keyboard waits until you tap its field.
 
-On Settings the round **+** is hidden, because that page has no quick-add action and the button would cover the rows; it returns on the next list. The installed app opens on a splash in the dark canvas colour (a manifest has one splash colour, and a bright flash in dark mode is worse than a dark one before a light app), and its status bar uses the same colour as the app's bar from the first frame.
+On Settings the round **+** is hidden; it returns on the next list. The installed app opens on a splash in the dark canvas colour (a manifest has one splash colour, and a bright flash in dark mode is worse than a dark one before a light app), and its status bar uses the same colour as the app's bar from the first frame.
 
 ## iPhone and iPad
 
