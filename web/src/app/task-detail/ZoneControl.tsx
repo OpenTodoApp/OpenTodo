@@ -2,7 +2,8 @@
 // a chip reading "Floating" or "New York · UTC−4" that opens a small panel which
 // explains both modes, fixes the due to the viewer's zone or releases it, and fixes
 // it to any IANA zone with a preview of how it reads in the viewer's zone. Every
-// change is one ordinary due edit through updateTask; `z` toggles as before.
+// change is one due edit and one step of undo history (calendarEditUndoable,
+// undo-start-zone); `z` toggles as before.
 import { useMemo, useRef, useState } from 'react'
 import { dueToInstant, fixDueToZone, isKnownZone, localDueOf, releaseDue, setDueZone, zoneCity } from '../../lib/dates'
 import { calendarEditUndoable } from '../../lib/undoActions'

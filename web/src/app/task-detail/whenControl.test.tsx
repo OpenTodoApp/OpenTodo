@@ -77,6 +77,7 @@ describe('WhenControl', () => {
     await queued(id, from)
     expect(await queuedFields(id, from)).toEqual({ start: '2026-10-16' })
     // One step of undo history, no toast (undo-start-zone): undo takes the start away again.
+    await waitFor(async () => (await db.assistantUndo.count()) === 1, 'one step')
     const steps = await db.assistantUndo.toArray()
     expect(steps.map((s) => s.label)).toEqual(['Rescheduled'])
     await undoBatch(steps[0].id)
@@ -447,6 +448,7 @@ describe('WhenControl', () => {
       await waitFor(async () => (await db.tasks.get(id))?.span === true, 'the flag')
       expect(await queuedFields(id, from)).toEqual({ start: '2026-11-04', span: true })
       // One step of undo history (undo-start-zone).
+      await waitFor(async () => (await db.assistantUndo.count()) === 1, 'one step')
       expect((await db.assistantUndo.toArray()).map((s) => s.label)).toEqual(['Rescheduled'])
       const ops = (await db.outbox.toArray()).slice(from).filter((o) => o.entityId === id)
       expect(new Set(ops.map((o) => o.ts)).size).toBe(1)
