@@ -105,9 +105,10 @@ ios:
 	@command -v xcodebuild >/dev/null 2>&1 || { echo "make ios needs Xcode 16 or newer (see docs/ios-app.md)"; exit 1; }
 	@sim=$${SIM:-$$(xcrun simctl list devices available 2>/dev/null | sed -n 's/^[[:space:]]*//; s/ (.*//; /^iPhone/p' | head -1)}; \
 	  test -n "$$sim" || { echo "make ios needs an iOS simulator runtime (Xcode > Settings > Components)"; exit 1; }; \
-	  echo "  simulator: $$sim"; \
+	  dest="name=$$sim"; if [ -n "$$SIM_ID" ]; then dest="id=$$SIM_ID"; fi; \
+	  echo "  simulator: $$sim ($$dest)"; \
 	  cd mobile/ios && xcodebuild -project OpenTodo.xcodeproj -scheme OpenTodo -configuration Debug \
-	    -derivedDataPath build -destination "platform=iOS Simulator,name=$$sim" \
+	    -derivedDataPath build -destination "platform=iOS Simulator,$$dest" \
 	    OPENTODO_VERSION=$(IOS_VERSION) CURRENT_PROJECT_VERSION=$(IOS_BUILD) test || exit 1
 	cd mobile/ios && xcodebuild -project OpenTodo.xcodeproj -scheme OpenTodo -configuration Release \
 	  -derivedDataPath build -sdk iphoneos -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO \
