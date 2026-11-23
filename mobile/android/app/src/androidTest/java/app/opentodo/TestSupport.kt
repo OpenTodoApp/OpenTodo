@@ -23,6 +23,8 @@ import java.util.concurrent.TimeUnit
 class FakeServer(https: okhttp3.tls.HandshakeCertificates? = null) {
     val server = MockWebServer()
     val paths = CopyOnWriteArrayList<String>()
+    /** The bodies posted to `/import-upload`, as the import sends a picked file (#1606). */
+    val uploads = CopyOnWriteArrayList<String>()
     /** The page at `/` instead of the plain one, for a test that needs its own (shell-reveal-on-paint). */
     @Volatile var rootPage: String? = null
 
@@ -34,6 +36,10 @@ class FakeServer(https: okhttp3.tls.HandshakeCertificates? = null) {
                 paths += path
                 return when {
                     path == "/pick-file" -> html(PICK_FILE_PAGE)
+                    path == "/import-upload" && request.method == "POST" -> {
+                        uploads += request.body.readUtf8()
+                        MockResponse().setHeader("Content-Type", "application/json").setBody("{}")
+                    }
                     path == "/api/v1/health" || path == "/healthz" -> MockResponse().setHeader("Content-Type", "application/json").setBody("""{"status":"ok","version":"0.0.0-test"}""")
                     path.startsWith("/share") -> html(SHARE_PAGE)
                     path == "/" && rootPage != null -> html(rootPage!!)
@@ -64,7 +70,13 @@ class FakeServer(https: okhttp3.tls.HandshakeCertificates? = null) {
         private const val PICK_FILE_PAGE = "<!doctype html><title>OpenTodo test</title>" +
             "<input type=file id=f style=\"position:fixed;left:0;top:0;width:100vw;height:100vh\"><script>window.picked='';" +
             "document.getElementById('f').onchange=function(e){var x=e.target.files[0];if(!x){window.picked='no file';return}" +
-            "x.text().then(function(t){window.picked=x.name+': '+t},function(err){window.picked='unreadable: '+err.name})}</script>"
+            // Read, then sent as the import sends it (web/src/lib/api.ts upload(): the bytes read
+            // first, posted as multipart with the options part). One read after the other: each
+            // read opens the picked address again.
+            "x.text().then(function(t){window.picked=x.name+': '+t;return x.arrayBuffer()},function(err){window.picked='unreadable: '+err.name;throw err})" +
+            ".then(function(b){var f=new FormData();f.append('options','{}');f.append('file',new Blob([b],{type:x.type}),x.name);" +
+            "return fetch('/import-upload',{method:'POST',body:f,credentials:'same-origin'})})" +
+            ".then(function(r){window.uploaded=r.ok?'sent':'status '+r.status},function(err){window.uploaded='failed: '+err.name})}</script>"
 
         /** Counts the files of the message and says it took them, as ShareCapture does. */
         private const val SHARE_PAGE = "<!doctype html><title>Share</title><script>" +
