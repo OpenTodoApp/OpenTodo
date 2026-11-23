@@ -5,7 +5,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { roleOf } from '../../lib/sharing'
 import type { Label, Project, Task } from '../../lib/types'
-import { captureFocus, focusInto, IconButton, playExit, useMediaQuery } from '../../ui'
+import { focusInto, IconButton, playExit, useMediaQuery } from '../../ui'
 import { navigate } from '../router'
 import { ProjectMark } from '../ProjectMark'
 import { panelTaskId, setPanelCovering } from '../panel'
@@ -71,19 +71,15 @@ export function TaskDetail({ taskId, initial, userId, projects, labelMap, onClos
   }, [])
   // Below 48 rem the panel is as wide as the page, a sheet over the list (tablet-layouts): while
   // it is on screen the page behind it is inert (setPanelCovering), so focus moves into the
-  // panel, and goes back to where it was (the row) once the page is usable again.
+  // panel; closing it puts focus back where it was when the panel opened (panel.ts).
   const covers = !useMediaQuery('(min-width: 48rem)')
   const shown = !!m.task
   useEffect(() => {
     const el = panel.current
     if (!covers || !shown || !el) return
-    const restore = captureFocus(null, document, (n) => n instanceof Node && el.contains(n))
     setPanelCovering(true)
     focusInto(el)
-    return () => {
-      setPanelCovering(false)
-      requestAnimationFrame(restore)
-    }
+    return () => setPanelCovering(false)
   }, [covers, shown])
   // The pinned bottom of the panel: the comment composer renders here while the
   // Comments tab is shown, so it is in view without scrolling (ux-overhaul).

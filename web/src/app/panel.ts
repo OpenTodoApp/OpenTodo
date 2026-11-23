@@ -11,6 +11,7 @@ import { type ReactNode, useSyncExternalStore } from 'react'
 import type { Task } from '../lib/types'
 import { openTaskPage } from './taskTrail'
 import { resettable } from '../lib/moduleState'
+import { captureFocus } from '../ui'
 import { readString, writeString } from '../lib/deviceStorage'
 
 export type PanelOccupant =
@@ -163,6 +164,8 @@ export function splitEmptyPane(): (() => ReactNode) | null {
 
 function dock(id: string): void {
   if (occupant?.kind === 'task' && occupant.id === id) return
+  // Opening from closed: where focus goes back to if the panel ends up covering the page.
+  if (!occupant) focusBack = captureFocus()
   occupant = { kind: 'task', id, path: currentPath() }
   syncQuery(id)
   emit()
@@ -211,8 +214,13 @@ export function closePanel(): void {
   projection = null
   if (!occupant) return
   occupant = null
+  const back = coveredSinceOpen ? focusBack : null
+  focusBack = null
+  coveredSinceOpen = false
   syncQuery(null)
   emit()
+  // After the page behind it is usable again: back to the row or button that opened it.
+  if (back) requestAnimationFrame(back)
 }
 
 /** Close a panel opened for another page (the shell calls this on every route change). */
@@ -304,7 +312,15 @@ export function usePanelHandlers(): PanelHandlers {
  * failed to render never leaves the page inert.
  */
 let covering = false
+/**
+ * Where focus goes back to when a panel that covered the page closes: captured once, when the
+ * slot opens from closed (the row or button that opened it), so switching tasks in the panel
+ * or resizing while it is open keeps it.
+ */
+let focusBack: (() => void) | null = null
+let coveredSinceOpen = false
 export function setPanelCovering(on: boolean): void {
+  if (on) coveredSinceOpen = true
   if (covering === on) return
   covering = on
   emit()
@@ -323,6 +339,8 @@ export function resetPanel(): void {
   sideOpen = null
   projection = null
   covering = false
+  focusBack = null
+  coveredSinceOpen = false
   emit()
 }
 resettable('panel', resetPanel)
