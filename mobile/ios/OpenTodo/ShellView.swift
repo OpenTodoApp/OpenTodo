@@ -250,6 +250,8 @@ final class ShellController: NSObject, ObservableObject {
     /// Opens a path of the web app in the same web view, e.g. `/?task=…` from a widget or a reminder.
     func open(path: String) {
         guard let url = URL(string: path, relativeTo: origin)?.absoluteURL else { return }
+        // It replaces a load from the cache still under way, whose wait then ends with it.
+        cacheNavigation = nil
         webView.load(URLRequest(url: url))
     }
 
@@ -286,7 +288,10 @@ final class ShellController: NSObject, ObservableObject {
 
     private func record(_ error: Error, _ navigation: WKNavigation?) {
         let nsError = error as NSError
-        if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled { return }
+        if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled {
+            if navigation != nil && navigation === cacheNavigation { cacheNavigation = nil }
+            return
+        }
         let kind = Self.kind(of: nsError)
         if Self.shouldRetryFromCache(kind: kind, triedCache: triedCache, loaded: loaded) {
             Self.log.notice("load failed offline (\(nsError.code, privacy: .public)); trying the cache")
