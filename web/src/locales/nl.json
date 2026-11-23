@@ -7856,5 +7856,7 @@
   "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "Ze verdwijnen met hun subprojecten uit de zijbalk. Je kunt ze terughalen uit het archief via Instellingen → Gegevens.",
   "Archived {projects}": "{projects} gearchiveerd",
   "The filter language of saved views, for example search: milk & p1 or @errand.": "De filtertaal van opgeslagen weergaven, bijvoorbeeld search: milk & p1 of @errand.",
-  "Filter {name}": "“{name}” filteren"
+  "Filter {name}": "“{name}” filteren",
+  "Show deadlines as dates": "Deadlines als datum tonen",
+  "The date on task rows instead of the days left": "De datum in taakregels in plaats van de resterende dagen"
 }

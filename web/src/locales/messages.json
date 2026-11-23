@@ -4827,6 +4827,7 @@
   "Deadline {date}": [
     "web/src/app/ParseChips.tsx",
     "web/src/app/ScheduleSheet.tsx",
+    "web/src/app/TaskRow.tsx",
     "web/src/app/TimelineView.tsx",
     "web/src/lib/assistant.ts",
     "web/src/lib/undoActions.ts",
@@ -16458,6 +16459,11 @@
   "Show connections of {title}": [
     "web/src/app/palette/registry.ts"
   ],
+  "Show deadlines as dates": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Show details": [
     "web/src/app/TaskRow.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
@@ -18319,6 +18325,9 @@
   ],
   "The database kept before that restore is removed from the server for good: <span>{deleting}</span>.": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "The date on task rows instead of the days left": [
+    "web/src/app/settingsIndex.ts"
   ],
   "The demo could not be reached. Check your connection and try again.": [
     "web/src/lib/demo.ts"
