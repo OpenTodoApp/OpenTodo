@@ -350,3 +350,31 @@ func TestOIDCMissingEmailVerifiedCreatesOnly(t *testing.T) {
 		t.Fatalf("no email: %v", err)
 	}
 }
+
+// TestUnconfirmedRecipient (sso-missing-email-verified): the mail check matches an
+// account created through the switch by id or by address, until it is confirmed.
+func TestUnconfirmedRecipient(t *testing.T) {
+	ctx := context.Background()
+	s, db := newService(t, false)
+	mustOwner(t, s)
+	id := ext("syn-1", "Alice@Corp.example", false)
+	id.TrustMissingEmailVerified = true
+	u, _, _, err := s.MatchOrProvision(ctx, id, true, "Synology")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct{ user, address string }{{u.ID, ""}, {"", "alice@corp.example"}, {"", " ALICE@corp.example "}} {
+		if got, err := s.Unconfirmed(ctx, tc.user, tc.address); err != nil || !got {
+			t.Fatalf("%+v: %v %v", tc, got, err)
+		}
+	}
+	if got, _ := s.Unconfirmed(ctx, "", "owner@example.com"); got {
+		t.Fatal("the owner counts as unconfirmed")
+	}
+	if _, err := db.Exec("UPDATE users SET email_verified_at = 1 WHERE id = ?", u.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := s.Unconfirmed(ctx, u.ID, "alice@corp.example"); got {
+		t.Fatal("still unconfirmed after confirmation")
+	}
+}

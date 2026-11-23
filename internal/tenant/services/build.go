@@ -244,7 +244,7 @@ func openMail(cfg config.Config, o Options, db *sql.DB, authSvc *auth.Service, s
 		ehlo = cfg.BaseURL.Hostname()
 	}
 	mailSvc := mail.New(settings.New(db), cfg.DataDir, mail.Options{Env: cfg.SMTP, Audit: authSvc.Audit(), Log: log,
-		E2EE: e2ee.NewStore(db), Transport: &mail.Transport{LocalName: ehlo}})
+		E2EE: e2ee.NewStore(db), Recipients: authSvc, Transport: &mail.Transport{LocalName: ehlo}})
 	digestSvc := digest.New(db, syncSvc, mailSvc, digest.Options{Origin: cfg.Origin(), Log: log, Now: o.Now})
 	return mailSvc, digestSvc
 }
