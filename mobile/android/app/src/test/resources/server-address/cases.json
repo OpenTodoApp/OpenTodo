@@ -24,6 +24,7 @@
     { "input": "http://localhost", "ok": "http://localhost", "insecure": true },
     { "input": "http://localhost:8080", "ok": "http://localhost:8080", "insecure": true },
     { "input": "http://todo.local", "ok": "http://todo.local", "insecure": true },
+    { "input": "http://nas.local", "ok": "http://nas.local", "insecure": true },
     { "input": "http://[::1]:8080", "ok": "http://[::1]:8080", "insecure": true },
     { "input": "http://[fd00::1]", "ok": "http://[fd00::1]", "insecure": true },
 
@@ -47,6 +48,8 @@
     { "input": "https://todo.example.com/todo/", "invalid": true },
     { "input": "https://todo.example.com/?x=1", "invalid": true },
     { "input": "https://todo.example.com/#a", "invalid": true },
+    { "input": "https://todo.example.com/?a=1", "invalid": true },
+    { "input": "https://todo.example.com/#frag", "invalid": true },
     { "input": "https://user@todo.example.com", "invalid": true },
     { "input": "https://user:pw@todo.example.com", "invalid": true },
     { "input": "https://todo.example.com:0", "invalid": true },

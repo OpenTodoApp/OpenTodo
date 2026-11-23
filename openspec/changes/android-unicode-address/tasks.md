@@ -1,6 +1,6 @@
 ## 1. Fixture
 
-- [x] 1.1 `server-address/cases.json` holds every address case of the Android and iPhone suites, with the local and non-local hosts; checked against a Java port of the Android rules (48 cases)
+- [x] 1.1 `server-address/cases.json` holds every address case of the Android and iPhone suites, with the local and non-local hosts; checked against a Java port of the Android rules (51 cases)
 
 ## 2. Android shell
 
