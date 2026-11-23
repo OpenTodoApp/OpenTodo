@@ -5,84 +5,46 @@ import XCTest
 @testable import OpenTodo
 
 final class ServerAddressTests: XCTestCase {
-    func testPublicHttps() {
-        XCTAssertEqual(ServerAddress.parse("https://todo.example.com"),
-                       .ok(origin: "https://todo.example.com", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("  todo.example.com  "),
-                       .ok(origin: "https://todo.example.com", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("https://todo.example.com/"),
-                       .ok(origin: "https://todo.example.com", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("https://todo.example.com:443"),
-                       .ok(origin: "https://todo.example.com", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("https://todo.example.com:8443/todo"),
-                       .invalid)
-    }
-
-    func testPlainHttpIsLocalOnly() {
-        XCTAssertEqual(ServerAddress.parse("http://192.168.1.4:8080"),
-                       .ok(origin: "http://192.168.1.4:8080", insecure: true))
-        XCTAssertEqual(ServerAddress.parse("http://localhost:8080"),
-                       .ok(origin: "http://localhost:8080", insecure: true))
-        XCTAssertEqual(ServerAddress.parse("http://todo.local"),
-                       .ok(origin: "http://todo.local", insecure: true))
-        XCTAssertEqual(ServerAddress.parse("http://todo.example.com"),
-                       .needsHttps(suggestion: "https://todo.example.com"))
-        XCTAssertEqual(ServerAddress.parse("http://todo.example.com:8080"),
-                       .needsHttps(suggestion: "https://todo.example.com:8080"))
+    /// The rules both shells share: mobile/android/app/src/test/resources/server-address/cases.json,
+    /// which the Android app's ServerAddressTest reads too.
+    private func fixture() throws -> [String: Any] {
+        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/server-address/cases.json")
+        return try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
     }
 
     /// ios-setup-address: what the first-run field turns an address into, which is what it then shows.
-    func testWithoutASchemeTheAddressIsHttps() {
-        XCTAssertEqual(ServerAddress.parse("todo.example.com"), .ok(origin: "https://todo.example.com", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("todo.example.com:8443"), .ok(origin: "https://todo.example.com:8443", insecure: false))
-        // A local address without a scheme is https too: plain http only when typed.
-        XCTAssertEqual(ServerAddress.parse("192.168.1.4:8080"), .ok(origin: "https://192.168.1.4:8080", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("localhost:8080"), .ok(origin: "https://localhost:8080", insecure: false))
+    func testSharedCases() throws {
+        let cases = try XCTUnwrap(try fixture()["parse"] as? [[String: Any]])
+        XCTAssertFalse(cases.isEmpty, "the fixture has cases")
+        for (i, c) in cases.enumerated() {
+            let input = try XCTUnwrap(c["input"] as? String, "case \(i + 1)")
+            let expected: ServerAddress
+            if let origin = c["ok"] as? String {
+                expected = .ok(origin: origin, insecure: try XCTUnwrap(c["insecure"] as? Bool, input))
+            } else if let suggestion = c["needsHttps"] as? String {
+                expected = .needsHttps(suggestion: suggestion)
+            } else if c["invalid"] as? Bool == true {
+                expected = .invalid
+            } else {
+                XCTFail("case \(i + 1): no expected result"); continue
+            }
+            XCTAssertEqual(ServerAddress.parse(input), expected, "\"\(input)\"")
+        }
     }
 
-    func testExplicitHttpIsKeptAndMarkedInsecure() {
-        XCTAssertEqual(ServerAddress.parse("http://192.168.1.4:8080/"), .ok(origin: "http://192.168.1.4:8080", insecure: true))
-        XCTAssertEqual(ServerAddress.parse("http://localhost"), .ok(origin: "http://localhost", insecure: true))
+    func testLocalHosts() throws {
+        let doc = try fixture()
+        let local = try XCTUnwrap(doc["local"] as? [String]), notLocal = try XCTUnwrap(doc["notLocal"] as? [String])
+        XCTAssertFalse(local.isEmpty || notLocal.isEmpty)
+        for host in local { XCTAssertTrue(ServerAddress.isLocal(host), host) }
+        for host in notLocal { XCTAssertFalse(ServerAddress.isLocal(host), host) }
     }
 
-    func testUppercaseSchemeAndHost() {
-        XCTAssertEqual(ServerAddress.parse("HTTPS://Todo.Example.COM"), .ok(origin: "https://todo.example.com", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("Https://todo.example.com:443/"), .ok(origin: "https://todo.example.com", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("HTTP://192.168.1.4:8080"), .ok(origin: "http://192.168.1.4:8080", insecure: true))
-        XCTAssertEqual(ServerAddress.parse("HTTP://todo.example.com"), .needsHttps(suggestion: "https://todo.example.com"))
-    }
-
-    func testTrailingSlashAndPath() {
-        XCTAssertEqual(ServerAddress.parse("todo.example.com/"), .ok(origin: "https://todo.example.com", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("todo.example.com."), .ok(origin: "https://todo.example.com", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("todo.example.com/todo"), .invalid)
-        XCTAssertEqual(ServerAddress.parse("https://todo.example.com/todo/"), .invalid)
-    }
-
-    func testUnicodeHostIsSentInItsAsciiForm() {
-        XCTAssertEqual(ServerAddress.parse("bücher.example"), .ok(origin: "https://xn--bcher-kva.example", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("https://Todo.MÜNCHEN.de:8443/"), .ok(origin: "https://todo.xn--mnchen-3ya.de:8443", insecure: false))
-        XCTAssertEqual(ServerAddress.parse("https://xn--bcher-kva.example"), .ok(origin: "https://xn--bcher-kva.example", insecure: false))
+    func testPunycode() {
         XCTAssertEqual(ServerAddress.punycode("bücher"), "bcher-kva")
         XCTAssertEqual(ServerAddress.punycode("привет"), "b1agh1afp")
         XCTAssertEqual(ServerAddress.punycode("例え"), "r8jz45g")
-    }
-
-    func testRefused() {
-        for input in ["", "   ", "todo example.com", "ftp://todo.example.com", "https://", "https://todo.example.com/?a=1",
-                      "https://todo.example.com/#frag", "https://user:pw@todo.example.com", "javascript:alert(1)"] {
-            XCTAssertEqual(ServerAddress.parse(input), .invalid, input)
-        }
-    }
-
-    func testLocalRanges() {
-        for host in ["127.0.0.1", "10.0.0.5", "172.16.0.1", "172.31.255.254", "192.168.0.10", "169.254.1.1",
-                     "::1", "fd00::1", "fe80::1", "todo.local", "localhost", "server.localhost"] {
-            XCTAssertTrue(ServerAddress.isLocal(host), host)
-        }
-        for host in ["172.32.0.1", "8.8.8.8", "todo.example.com", "192.169.0.1"] {
-            XCTAssertFalse(ServerAddress.isLocal(host), host)
-        }
     }
 }
 

@@ -1,0 +1,1 @@
+- **The Android app accepts a server address with non-English letters.** An address such as `bücher.example` was refused as not an address; the app now opens it in its ASCII form (`xn--bcher-kva.example`), as the iPhone app already did. A port outside 1 to 65535 is now refused.
