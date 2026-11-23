@@ -307,6 +307,32 @@ final class WidgetPublicationTests: XCTestCase {
     func testPublishRefusesWhatItCannotRead() {
         XCTAssertFalse(WidgetPublication.publish("{}"))
     }
+
+    /// The web app's publishWidget payloads of the shared bridge fixtures (the Android app's
+    /// BridgeFixtureTest reads them too): the list, a locked app and a sign-out. `more` is the
+    /// Android widget's own count of rows it has no room for, so it is not read here.
+    func testTheSharedWidgetPayloadsReadAsTheFixtureSays() throws {
+        for name in ["widget", "widget-locked", "widget-signed-out"] {
+            let file = URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+                .appendingPathComponent("android/app/src/test/resources/bridge/\(name).json")
+            let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any], name)
+            XCTAssertEqual(fixture["method"] as? String, "publishWidget", name)
+            let payload = try XCTUnwrap(fixture["payload"] as? String, name)
+            let want = try XCTUnwrap(fixture["expect"] as? [String: Any], name)
+            let rows = try XCTUnwrap(want["rows"] as? [[String: Any]], name)
+            let expected = WidgetPublication.Publication(
+                updatedAt: try XCTUnwrap(want["updatedAt"] as? Double, name),
+                locked: try XCTUnwrap(want["locked"] as? Bool, name),
+                count: try XCTUnwrap(want["count"] as? Int, name),
+                overdue: try XCTUnwrap(want["overdue"] as? Int, name),
+                tasks: try rows.map { r in
+                    WidgetPublication.Task(id: try XCTUnwrap(r["id"] as? String, name), title: r["title"] as? String, time: r["time"] as? String,
+                                           priority: try XCTUnwrap(r["priority"] as? Int, name), overdue: try XCTUnwrap(r["overdue"] as? Bool, name))
+                })
+            XCTAssertEqual(try JSONDecoder().decode(WidgetPublication.Publication.self, from: Data(payload.utf8)), expected, name)
+        }
+    }
 }
 
 final class ShareInboxTests: XCTestCase {
