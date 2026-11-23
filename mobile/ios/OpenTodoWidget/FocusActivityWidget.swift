@@ -23,7 +23,7 @@ struct FocusActivityWidget: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     HStack {
-                        Text(FocusText.title(state)).font(.headline).lineLimit(1)
+                        Text(FocusText.title(state)).font(.headline).lineLimit(1).privacySensitive()
                         Spacer()
                         FocusActionLink(state: state, stale: stale)
                     }
@@ -103,7 +103,7 @@ struct FocusLockScreen: View {
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(FocusText.title(state)).font(.headline).lineLimit(2)
+                Text(FocusText.title(state)).font(.headline).lineLimit(2).privacySensitive()
                 Text(FocusText.phase(state, stale: stale)).font(.subheadline).foregroundStyle(.secondary)
             }
             Spacer()
