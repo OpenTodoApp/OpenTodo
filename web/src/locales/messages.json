@@ -3898,6 +3898,7 @@
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/notes/NoteRow.tsx",
+    "web/src/app/quickadd/TickedSuggest.tsx",
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-list/ListGroups.tsx",
@@ -9463,8 +9464,10 @@
   ],
   "Link": [
     "web/src/app/EditorChrome.tsx",
+    "web/src/app/ParseChips.tsx",
     "web/src/app/UnlinkedMentions.tsx",
     "web/src/app/editorCommands.ts",
+    "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/fields.ts",
     "web/src/lib/richtextEditor.ts",
