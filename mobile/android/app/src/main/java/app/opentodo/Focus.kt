@@ -36,18 +36,18 @@ object Focus {
     /** Replaces what is shown with [json], and the end alarm. */
     fun publish(context: Context, json: String) {
         val model = FocusModel.parse(json)
-        if (model.state == FocusModel.State.DONE) {
-            // The web app got to the planned end before the alarm: show the end now.
-            val stored = FocusModel.parse(Prefs(context).focus)
-            val now = System.currentTimeMillis()
+        // The web app got past the planned end before the alarm (done, or a phase that started
+        // on its own): the replaced session's end is shown now, not lost with its alarm.
+        val stored = FocusModel.parse(Prefs(context).focus)
+        val owed = stored.endOwedBy(model, System.currentTimeMillis())
+        if (model.shown) {
+            Prefs(context).focus = json
+            show(context, model)
+            arm(context, model)
+        } else {
             clear(context)
-            if (stored.endDue(now)) notifyEnd(context, stored, stored.notifyAt!!)
-            return
         }
-        if (!model.shown) return clear(context)
-        Prefs(context).focus = json
-        show(context, model)
-        arm(context, model)
+        if (owed) notifyEnd(context, stored, stored.notifyAt!!)
     }
 
     /** After a reboot or a change of the exact-alarm permission: the stored session is shown and armed again. */
