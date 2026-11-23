@@ -3,6 +3,7 @@ package push
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -38,11 +39,7 @@ func (f *fakePushService) taskPayloads(t *testing.T, want int) []TaskPayload {
 }
 
 // settle waits until no background send is running.
-func settle(s *Service) {
-	for i := 0; i < 500 && len(s.senders) > 0; i++ {
-		time.Sleep(10 * time.Millisecond)
-	}
-}
+func settle(s *Service) { s.inflight.Wait() }
 
 func TestNotifyOnlyOptedInDevices(t *testing.T) {
 	e := newTestEnv(t)
@@ -154,5 +151,60 @@ func TestTurnIsNotPushed(t *testing.T) {
 	settle(s)
 	if got := f.taskPayloads(t, 0); len(got) != 0 {
 		t.Fatalf("turn pushed: %+v", got)
+	}
+}
+
+// A task's status pushes to one recipient pause for five minutes after one was
+// sent; another task or recipient is not held back.
+func TestStatusPushCooldown(t *testing.T) {
+	e := newTestEnv(t)
+	ctx := context.Background()
+	s := e.service()
+	f := newFakePush(t)
+	in := f.input("laptop", false)
+	in.Notify = &Notify{Status: true}
+	if _, _, err := s.Upsert(ctx, "u1", "", in); err != nil {
+		t.Fatal(err)
+	}
+	ev := notify.StatusChanged{AssigneeID: "u1", ActorName: "Ben", TaskID: "t1", Completed: true}
+	for i := 0; i < 5; i++ {
+		ev.Completed = i%2 == 0
+		s.StatusChanged(ctx, ev)
+	}
+	s.StatusChanged(ctx, notify.StatusChanged{AssigneeID: "u1", ActorName: "Ben", TaskID: "t2", Completed: true})
+	settle(s)
+	if got := f.taskPayloads(t, 2); len(got) != 2 {
+		t.Fatalf("within the cooldown: %+v", got)
+	}
+	*e.clock = e.clock.Add(statusCooldown)
+	s.StatusChanged(ctx, ev)
+	settle(s)
+	if got := f.taskPayloads(t, 3); len(got) != 3 {
+		t.Fatalf("after the cooldown: %+v", got)
+	}
+}
+
+// An email address never travels as the actor's name.
+func TestActorEmailIsNotPushed(t *testing.T) {
+	e := newTestEnv(t)
+	ctx := context.Background()
+	s := e.service()
+	f := newFakePush(t)
+	in := f.input("laptop", false)
+	in.Notify = &Notify{Assigned: true}
+	if _, _, err := s.Upsert(ctx, "u1", "", in); err != nil {
+		t.Fatal(err)
+	}
+	s.Assigned(ctx, notify.Assigned{AssigneeID: "u1", ActorName: "ben@example.com", TaskID: "t1"})
+	got := f.taskPayloads(t, 1)
+	settle(s)
+	if len(got) != 1 || got[0].ActorName != "" {
+		t.Fatalf("payload = %+v", got)
+	}
+	f.mu.Lock()
+	raw := f.raws[0]
+	f.mu.Unlock()
+	if strings.Contains(raw, "@") {
+		t.Fatalf("raw payload carries an address: %s", raw)
 	}
 }

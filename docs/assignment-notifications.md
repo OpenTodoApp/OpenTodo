@@ -27,6 +27,7 @@ Each device decides for itself, and both are off until you turn them on. Clickin
 - Never for your own changes.
 - Not while your [away period](away.md) pauses reminders.
 - With OpenTodo open in front, you see it in the [bell](notifications.md#the-bell) instead.
+- At most one about the same task every five minutes, however often it's ticked and unticked.
 - They are best effort: one that can't be delivered right away is not sent later.
 
 The task's title is in the notification when that device has the task, or when **Include task titles** is on. With [end-to-end encryption](e2ee.md), the title never travels with the push.

@@ -33,6 +33,7 @@ function loadWorker(opts: { windows?: { focused: boolean }[]; maxActions?: numbe
   }))
   const self = {
     crypto: globalThis.crypto,
+    location: { origin: 'https://todo.example.com' },
     Notification: opts.maxActions === undefined ? undefined : { maxActions: opts.maxActions },
     navigator: badge ? { setAppBadge: async (n: number) => { badge.push(n) }, clearAppBadge: async () => { badge.push('clear') } } : {},
     addEventListener: (type: string, fn: (ev: unknown) => void) => (scope.listeners[type] = fn),
@@ -385,6 +386,21 @@ describe('service worker task pushes', () => {
     expect(sw.shown.map((x) => [x.title, x.options.body])).toEqual([['Ben completed a task', 'Book the venue'], ['Ben reopened a task', '']])
   })
 
+  it('names "Someone" without an actor name and keeps a name with $& literal', async () => {
+    const sw = loadWorker()
+    await dispatch(sw, 'push', pushEvent({ type: 'assigned', taskId: 't1' }))
+    await dispatch(sw, 'push', pushEvent({ type: 'assigned', taskId: 't2', actorName: 'A$&B' }))
+    expect(sw.shown.map((x) => x.title)).toEqual(['Someone assigned you a task', 'A$&B assigned you a task'])
+  })
+
+  it('a click opens only an address of this app', async () => {
+    const sw = loadWorker()
+    for (const url of ['//evil.example/x', 'https://evil.example/', '/?task=t1']) {
+      await dispatch(sw, 'notificationclick', { notification: { data: { url }, close: () => undefined } })
+    }
+    expect(sw.opened).toEqual(['/?task=t1'])
+  })
+
   it('shows nothing while the app is in front', async () => {
     const sw = loadWorker({ windows: [{ focused: true }] })
     await dispatch(sw, 'push', pushEvent({ type: 'assigned', taskId: 't1', actorName: 'Ben' }))
@@ -402,7 +418,7 @@ describe('service worker task pushes', () => {
 })
 
 describe('service worker texts in the stored language (app-localization D9)', () => {
-  const KEYS = { reminder: 'Reminder', due: 'Due {date}', tiny: '{tiny} is enough', generic: 'You have a reminder', done: 'Done|task', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.', assigned: '{name} assigned you a task', completed: '{name} completed a task', reopened: '{name} reopened a task' } as const
+  const KEYS = { reminder: 'Reminder', due: 'Due {date}', tiny: '{tiny} is enough', generic: 'You have a reminder', done: 'Done|task', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.', assigned: '{name} assigned you a task', completed: '{name} completed a task', reopened: '{name} reopened a task', someone: 'Someone' } as const
   type Texts = Partial<Record<keyof typeof KEYS, string>>
   function worker(code = source): Record<string, unknown> {
     const self: Record<string, unknown> = { addEventListener: () => undefined }
@@ -466,7 +482,7 @@ describe('focus session notifications (focus-mode D12)', () => {
     const self = { clients: { matchAll: async () => [win], openWindow: async (url: string) => scope.opened.push(url) } }
     const code = source.replace("const DB_NAME = 'opentodo'", `const DB_NAME = ${JSON.stringify(db.name)}`)
     const listeners: Record<string, (ev: unknown) => void> = {}
-    new Function('self', 'fetch', 'indexedDB', code)({ ...self, crypto: globalThis.crypto, registration: {}, addEventListener: (type: string, fn: (ev: unknown) => void) => (listeners[type] = fn) }, undefined, globalThis.indexedDB)
+    new Function('self', 'fetch', 'indexedDB', code)({ ...self, crypto: globalThis.crypto, location: { origin: 'https://todo.example.com' }, registration: {}, addEventListener: (type: string, fn: (ev: unknown) => void) => (listeners[type] = fn) }, undefined, globalThis.indexedDB)
     await dispatch({ ...scope, listeners }, 'notificationclick', { notification: { data: { url: '/focus' }, close: () => undefined }, action: '' })
     expect(navigated).toEqual(['/focus'])
     expect(scope.opened).toEqual([])

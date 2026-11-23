@@ -589,7 +589,7 @@ In the Android app, when the shell lists the `push` capability (OpenSpec `native
 - **THEN** the row is not shown: the iPhone app has no push, and a browser keeps its own push switch
 
 ### Requirement: Assignment and status pushes
-A device with push enabled MAY opt in, per device, to two further pushes, both off until the user turns them on: **Assigned to me**, when someone else assigns a task to the user, and **Completed or reopened**, when someone else completes or reopens a task assigned to the user. A skipped occurrence, a task created already completed and a rotating task's turn passing are none of these. The server SHALL send such a push after the change has committed, only to the user's subscriptions that opted in to that event, never for a change the user made, and not while the user's away period pauses reminders. The payload SHALL carry the task id, the name of who made the change and, for a status push, whether the task was completed or reopened; it SHALL carry the task title only when the device opted in to "include task titles", and never an encrypted title or the description. The notification SHALL name who made the change, show the task's title when the payload or the device's local store has it, be in the language stored on the device, and open the task when clicked. While the app is in front on the device, no system notification SHALL be shown for these pushes. They are best effort: one that cannot be sent is not retried. The choices are stored with the device's push subscription (`POST /api/v1/push/subscriptions` takes `notify: {assigned, status}`; a request without it keeps them), outside the op log and the export, and are removed with it.
+A device with push enabled MAY opt in, per device, to two further pushes, both off until the user turns them on: **Assigned to me**, when someone else assigns a task to the user, and **Completed or reopened**, when someone else completes or reopens a task assigned to the user. A skipped occurrence, a task created already completed and a rotating task's turn passing are none of these. The server SHALL send such a push after the change has committed, only to the user's subscriptions that opted in to that event, never for a change the user made, and not while the user's away period pauses reminders. The payload SHALL carry the task id, the name of who made the change and, for a status push, whether the task was completed or reopened; it SHALL carry the task title only when the device opted in to "include task titles", and never an encrypted title or the description. The notification SHALL name who made the change, show the task's title when the payload or the device's local store has it, be in the language stored on the device, and open the task when clicked. While the app is in front on the device, no system notification SHALL be shown for these pushes. They are best effort: one that cannot be sent is not retried. A task's status pushes to one person SHALL pause for 5 minutes after one was sent. The name in a payload SHALL never be an email address; a device shows "Someone" when there is no name. The choices are stored with the device's push subscription (`POST /api/v1/push/subscriptions` takes `notify: {assigned, status}`; a request without it keeps them), outside the op log and the export, and are removed with it.
 
 #### Scenario: Assigned while the app is closed
 - **WHEN** Ben assigns "Book the venue" to Ana and Ana's laptop has push enabled with "Assigned to me" on
@@ -622,6 +622,14 @@ A device with push enabled MAY opt in, per device, to two further pushes, both o
 #### Scenario: Re-registering without the choices
 - **WHEN** Ana's device opted in to "Assigned to me" and an older version of the app re-registers its subscription without `notify`
 - **THEN** the device still receives assignment pushes
+
+#### Scenario: Toggled again and again
+- **WHEN** Ben completes and reopens a task assigned to Ana five times within a minute
+- **THEN** Ana's device gets one status push for that task
+
+#### Scenario: No name on the account
+- **WHEN** Ben's account has no name, only an email address, and he assigns Ana a task
+- **THEN** the payload carries no address and the notification reads "Someone assigned you a task"
 
 #### Scenario: Away
 - **WHEN** Ana's away period pauses reminders today and Ben assigns her a task

@@ -3,6 +3,7 @@ package push
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	gosync "sync"
 	"time"
 
@@ -22,7 +23,43 @@ import (
 const (
 	notifySenders = 32
 	notifyTimeout = 15 * time.Second
+	// statusCooldown is how long a task's status pushes to one recipient
+	// pause after one was sent, so toggling a task done and open again and
+	// again does not flood the senders.
+	statusCooldown = 5 * time.Minute
+	// cooldownCap bounds the cooldown table; older entries are dropped first.
+	cooldownCap = 10_000
 )
+
+// statusCooldowns remembers when each (task, recipient) last got a status push.
+type statusCooldowns struct {
+	mu   gosync.Mutex
+	last map[string]time.Time
+}
+
+// allow reports whether a status push for key may go now, and if so records it.
+func (c *statusCooldowns) allow(key string, now time.Time) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.last == nil {
+		c.last = map[string]time.Time{}
+	}
+	if t, ok := c.last[key]; ok && now.Sub(t) < statusCooldown {
+		return false
+	}
+	if len(c.last) >= cooldownCap {
+		for k, t := range c.last {
+			if now.Sub(t) >= statusCooldown {
+				delete(c.last, k)
+			}
+		}
+		if len(c.last) >= cooldownCap {
+			c.last = map[string]time.Time{}
+		}
+	}
+	c.last[key] = now
+	return true
+}
 
 // TaskPayload is the JSON pushed for an assignment or a status change. Title is
 // present only when the device opted in to titles and the title is readable.
@@ -45,14 +82,19 @@ func (s *Service) Assigned(ctx context.Context, e notify.Assigned) {
 		TaskPayload{Type: "assigned", TaskID: e.TaskID, ActorName: e.ActorName}, e.TaskTitle)
 }
 
-// StatusChanged implements notify.StatusSink.
+// StatusChanged implements notify.StatusSink. A task's status pushes to one
+// recipient pause for statusCooldown after one is sent.
 func (s *Service) StatusChanged(ctx context.Context, e notify.StatusChanged) {
+	if !s.cooldowns.allow(e.TaskID+"\x00"+e.AssigneeID, s.now()) {
+		return
+	}
 	completed := e.Completed
 	s.notifyTask(ctx, e.AssigneeID, func(n Notify) bool { return n.Status },
 		TaskPayload{Type: "status", TaskID: e.TaskID, ActorName: e.ActorName, Completed: &completed}, e.TaskTitle)
 }
 
 func (s *Service) notifyTask(ctx context.Context, uid string, wants func(Notify) bool, p TaskPayload, title string) {
+	p.ActorName = actorName(p.ActorName)
 	select {
 	case s.senders <- struct{}{}:
 	default:
@@ -60,7 +102,9 @@ func (s *Service) notifyTask(ctx context.Context, uid string, wants func(Notify)
 		return
 	}
 	ctx = context.WithoutCancel(ctx)
+	s.inflight.Add(1)
 	go func() {
+		defer s.inflight.Done()
 		defer func() { <-s.senders }()
 		ctx, cancel := context.WithTimeout(ctx, notifyTimeout)
 		defer cancel()
@@ -106,4 +150,14 @@ func (s *Service) sendTask(ctx context.Context, uid string, wants func(Notify) b
 		}(sub)
 	}
 	wg.Wait()
+}
+
+// actorName is the name a push may carry: a person's name, never their email
+// address (the server falls back to the address for an account without a
+// name); "" lets the device say "Someone".
+func actorName(name string) string {
+	if strings.Contains(name, "@") {
+		return ""
+	}
+	return name
 }

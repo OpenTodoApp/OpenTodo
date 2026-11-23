@@ -89,7 +89,9 @@ type Service struct {
 
 	// senders bounds the background sends of assignment and status pushes
 	// (assignee-notifications D3).
-	senders chan struct{}
+	senders   chan struct{}
+	cooldowns statusCooldowns
+	inflight  sync.WaitGroup // the background sends, waited for in tests
 }
 
 // DueReminder is a firing as the scheduler hands it to other consumers. Title
