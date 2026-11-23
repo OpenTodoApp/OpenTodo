@@ -149,6 +149,27 @@ final class HealthCheckTests: XCTestCase {
         XCTAssertNil(HealthCheck.cookieHeader([], for: url))
     }
 
+    /// The check never follows a redirect, so the sign-in screen's cookies reach the server's
+    /// own routes only, never the redirect's target, even one on the same host (#1881 review).
+    func testTheCheckNeverFollowsARedirectNorTakesItsCookiesThere() async throws {
+        let elsewhere = try await PageServer.start(host: "127.0.0.1")
+        defer { elsewhere.stop() }
+        let server = try await PageServer.start(host: "127.0.0.1")
+        defer { server.stop() }
+        let target = "http://127.0.0.1:\(elsewhere.port)/login"
+        server.route("/api/v1/health", .redirect("302 Found", to: target))
+        server.route("/healthz", .redirect("302 Found", to: target))
+        let cookie = try XCTUnwrap(HTTPCookie(properties: [.name: "wall", .value: "secret", .domain: "127.0.0.1", .path: "/"]))
+        let answer = await HealthCheck.check(origin: "http://127.0.0.1:\(server.port)", cookies: [cookie])
+        XCTAssertEqual(answer.outcome, .loginWall)
+        XCTAssertEqual(server.paths, ["/api/v1/health", "/healthz"])
+        for head in server.requestHeads {
+            XCTAssertTrue(head.lowercased().contains("\r\ncookie: wall=secret"), "the server's own route gets the cookie: \(head)")
+        }
+        XCTAssertEqual(elsewhere.paths, [], "the redirect's target is never asked")
+        XCTAssertEqual(elsewhere.requestHeads, [])
+    }
+
     func testErrorClassification() {
         let offline = NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotConnectToHost)
         XCTAssertEqual(HealthCheck.classify(offline), .noNetwork)
@@ -405,6 +426,7 @@ final class PageServer: @unchecked Sendable {
     private let queue = DispatchQueue(label: "PageServer")
     private var routes: [String: Response] = [:]
     private var requested: [String] = []
+    private var heads: [String] = []
     private var sent: [String] = []
     private var starting: CheckedContinuation<Void, Error>?
     private var reported: [String: String]?
@@ -456,6 +478,9 @@ final class PageServer: @unchecked Sendable {
     /// The paths asked for so far, in order.
     var paths: [String] { queue.sync { requested } }
 
+    /// The head of each request (request line and headers), in order.
+    var requestHeads: [String] { queue.sync { heads } }
+
     /// Whether each answer went out ("/ sent", or the send error), in order.
     var answers: [String] { queue.sync { sent } }
 
@@ -496,6 +521,7 @@ final class PageServer: @unchecked Sendable {
                 return
             }
             let target = head.split(separator: " ").dropFirst().first.map(String.init) ?? "/"
+            self.heads.append(head.components(separatedBy: "\r\n\r\n")[0])
             self.answer(connection, target)
         }
     }

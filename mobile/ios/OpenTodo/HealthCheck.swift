@@ -24,7 +24,8 @@ enum HealthCheck {
         config.timeoutIntervalForResource = 15
         // text/html too: some login walls answer a client that takes no page with a bare 401.
         config.httpAdditionalHeaders = ["Accept": "application/json, text/html;q=0.5"]
-        // The only cookies sent are the sign-in screen's, given to `check(origin:cookies:)`.
+        // The only cookies sent are the sign-in screen's, given to `check(origin:cookies:)`,
+        // and never to a redirect's target: redirects are not followed (`NoRedirects`).
         config.httpShouldSetCookies = false
         config.httpCookieAcceptPolicy = .never
         return URLSession(configuration: config, delegate: NoRedirects(), delegateQueue: nil)
@@ -42,9 +43,10 @@ enum HealthCheck {
     /// The health routes, in the order they are asked (health-route-alias).
     static let paths = ["/api/v1/health", "/healthz"]
 
-    /// `cookies`: a `Cookie` header from the sign-in screen's web view, so a login wall the
-    /// person got through in the app lets the check through too.
-    static func check(origin: String, cookies: String? = nil) async -> Answer {
+    /// `cookies`: the sign-in screen's web view's cookies, so a login wall the person got
+    /// through in the app lets the check through too. Each route gets the ones a browser
+    /// would send it (`cookieHeader`).
+    static func check(origin: String, cookies: [HTTPCookie] = []) async -> Answer {
         await combine(await check(origin: origin, path: paths[0], cookies: cookies)) {
             await check(origin: origin, path: paths[1], cookies: cookies)
         }
@@ -63,10 +65,10 @@ enum HealthCheck {
         }
     }
 
-    private static func check(origin: String, path: String, cookies: String?) async -> Answer {
+    private static func check(origin: String, path: String, cookies: [HTTPCookie]) async -> Answer {
         guard let url = URL(string: origin + path) else { return Answer(outcome: .notOpenTodo) }
         var request = URLRequest(url: url)
-        if let cookies, !cookies.isEmpty { request.setValue(cookies, forHTTPHeaderField: "Cookie") }
+        if let header = cookieHeader(cookies, for: url) { request.setValue(header, forHTTPHeaderField: "Cookie") }
         do {
             let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse else { return Answer(outcome: .notOpenTodo) }

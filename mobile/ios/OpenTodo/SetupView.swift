@@ -35,6 +35,11 @@ struct SetupView: View {
                         .focused($editing)
                         .onChange(of: editing) { focused in if !focused { showScheme() } }
                         .onSubmit { Task { await connect() } }
+                        // "Sign in here" belongs to the address it was offered for: an edit takes it away.
+                        .onChange(of: address) { _ in
+                            if case let .ok(origin, _) = parsed, origin == signInOffer?.origin { return }
+                            signInOffer = nil
+                        }
                 } header: {
                     // The system's grey header and footer are small text below 4.5:1 (the
                     // accessibility audit in FirstRunTests); both are in the full text colour.
@@ -230,7 +235,10 @@ final class SignInController: NSObject, ObservableObject, WKNavigationDelegate {
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         guard let url = action.request.url, let flow, let server else { return decisionHandler(.cancel) }
         let scheme = (url.scheme ?? "").lowercased()
-        if scheme == "about" || scheme == "data" || scheme == "blob" { return decisionHandler(.allow) }
+        let local = scheme == "about" || scheme == "data" || scheme == "blob"
+        // A page of its own making only in a frame: in the main frame, with no site to show in
+        // the title, it could pass for anything.
+        if local { return decisionHandler(action.targetFrame.map { !$0.isMainFrame } == true ? .allow : .cancel) }
         guard let frame = action.targetFrame else {
             // A new window: the system browser, as in the app.
             if Bridge.safeExternal(url.absoluteString) { UIApplication.shared.open(url) }
@@ -268,14 +276,13 @@ final class SignInController: NSObject, ObservableObject, WKNavigationDelegate {
 
     /// Through the wall when the health check passes with the web view's cookies.
     private func checkThrough() {
-        guard !done, let server else { return }
+        guard !done, server != nil else { return }
         if checking { recheck = true; return }
         checking = true
         webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { [weak self] cookies in
-            let header = HealthCheck.cookieHeader(cookies, for: server.appendingPathComponent("healthz"))
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                let answer = await HealthCheck.check(origin: self.origin, cookies: header)
+                let answer = await HealthCheck.check(origin: self.origin, cookies: cookies)
                 self.checking = false
                 if answer.outcome == .ok, !self.done {
                     self.done = true
