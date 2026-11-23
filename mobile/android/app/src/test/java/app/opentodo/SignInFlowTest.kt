@@ -67,12 +67,36 @@ class SignInFlowTest {
         assertFalse(SignInFlow.hiddenRunStays("https://auth.example.com/login", server))
     }
 
+    /** This app's way of writing an origin: no default port, an IPv6 host in brackets. */
     @Test fun origins() {
         assertEquals("https://todo.example.com", SignInFlow.originOf("https://Todo.Example.com:443/a?b#c"))
         assertEquals("http://localhost:8080", SignInFlow.originOf("http://localhost:8080/"))
         assertEquals("http://[::1]:8080", SignInFlow.originOf("http://[::1]:8080/x"))
         assertNull(SignInFlow.originOf("about:blank"))
-        assertNull(SignInFlow.originOf("javascript:alert(1)"))
-        assertEquals("auth.example.com:8443", SignInFlow.hostOf("https://auth.example.com:8443/login"))
+    }
+
+    /** Which addresses are the server's own: origin/cases.json, which the iPhone app's OriginTests read too. */
+    private val originCases: JSONObject by lazy { JSONObject(javaClass.classLoader!!.getResource("origin/cases.json")!!.readText()) }
+
+    @Test fun theServersOwnAddressesFollowTheSharedCases() {
+        val list = originCases.getJSONArray("same")
+        assertTrue("the fixture has cases", list.length() > 0)
+        for (i in 0 until list.length()) {
+            val c = list.getJSONObject(i)
+            val url = c.getString("url")
+            val target = SignInFlow.originOf(url)
+            assertEquals(url, c.getBoolean("same"), target != null && target == SignInFlow.originOf(c.getString("server")))
+        }
+    }
+
+    @Test fun webAddressesAndTheirHostFollowTheSharedCases() {
+        val list = originCases.getJSONArray("web")
+        assertTrue("the fixture has cases", list.length() > 0)
+        for (i in 0 until list.length()) {
+            val c = list.getJSONObject(i)
+            val url = c.getString("url")
+            assertEquals(url, c.getBoolean("web"), SignInFlow.originOf(url) != null)
+            assertEquals(url, c.getString("host"), SignInFlow.hostOf(url))
+        }
     }
 }

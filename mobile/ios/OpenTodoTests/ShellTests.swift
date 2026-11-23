@@ -212,12 +212,11 @@ final class SignInFlowTests: XCTestCase {
         }
     }
 
+    /// This app's way of writing an origin (`Origin.signature`): always with its port.
+    /// Which addresses count as the server's own is in OriginTests, on the shared cases.
     func testOrigins() {
         XCTAssertEqual(SignInFlow.originOf(u("https://Todo.Example.com:443/a?b#c")), "https://todo.example.com:443")
         XCTAssertNil(SignInFlow.originOf(u("about:blank")))
-        XCTAssertNil(SignInFlow.originOf(u("mailto:a@example.org")))
-        XCTAssertEqual(SignInFlow.hostOf(u("https://auth.example.com:8443/login")), "auth.example.com:8443")
-        XCTAssertEqual(SignInFlow.hostOf(u("https://auth.example.com/login")), "auth.example.com")
     }
 }
 
