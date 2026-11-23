@@ -119,3 +119,20 @@ describe('the Public badge', () => {
     await off.unmount()
   })
 })
+
+// #1902: the name gets a row of its own (its label on one line, its placeholder in full); the three
+// choices share the row under it, Rights taking the room left by the two short ones.
+describe('the public link form layout', () => {
+  it('puts the name on its own row and the three choices on one row', async () => {
+    await render(<ShareDialog project={project} userId="u1" cached={undefined} onClose={() => {}} />)
+    await waitFor(() => document.querySelector('[data-testid="public-links"]') !== null)
+    const form = document.querySelector('[data-testid="public-links"] form')!
+    expect([...form.classList]).toContain('sm:grid-cols-[minmax(0,1fr)_auto_auto]')
+    const fieldOf = (control: Element) => [...form.children].find((c) => c.contains(control))!
+    const name = fieldOf(form.querySelector('input')!)
+    expect(name.classList.contains('sm:col-span-3')).toBe(true)
+    const choices = [...form.querySelectorAll('select')].map(fieldOf)
+    expect(choices).toHaveLength(3)
+    for (const c of choices) expect([...c.classList].some((x) => x.startsWith('sm:col-span'))).toBe(false)
+  })
+})
