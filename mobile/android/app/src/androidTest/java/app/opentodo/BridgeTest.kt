@@ -141,14 +141,16 @@ class BridgeTest {
         web.waitForJs("typeof window.tapped", "\"boolean\"")
         // The page neither paints nor loads in time, so only the cap can end the hold.
         assertTrue("the page was ready too late to tap it while held",
-            SystemClock.uptimeMillis() < launchedAt + LaunchHold.CAP_MS - 500)
+            SystemClock.uptimeMillis() < launchedAt + LaunchHold.CAP_MS - 1_500)
         main.runOnMainSync {
             assertEquals("still held", 0f, web.alpha)
             assertEquals(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS, web.importantForAccessibility)
             tap(web)
         }
-        Thread.sleep(300)
+        // Long enough for a tap to reach the page, still inside the hold (checked again after).
+        Thread.sleep(1_000)
         assertEquals("a tap on the held page reached it", "false", web.js("window.tapped"))
+        main.runOnMainSync { assertEquals("held while the tap was checked", 0f, web.alpha) }
         waitUntil("the cap shows the web view", timeoutMs = LaunchHold.CAP_MS + 3_000) {
             var shown = false
             main.runOnMainSync { shown = web.alpha == 1f }
@@ -169,7 +171,7 @@ class BridgeTest {
         waitUntil("the app's activity resumes") {
             InstrumentationRegistry.getInstrumentation().runOnMainSync {
                 activity = ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED)
-                    .filterIsInstance<MainActivity>().firstOrNull()
+                    .filterIsInstance<MainActivity>().firstOrNull { !it.isFinishing } // not the last test's, still going
             }
             activity != null
         }
