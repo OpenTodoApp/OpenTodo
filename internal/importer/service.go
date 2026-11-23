@@ -229,7 +229,7 @@ func (s *Service) prepare(ctx context.Context, uid string, data []byte, opts Opt
 }
 
 func (s *Service) loadState(ctx context.Context, uid, profile string) (*State, error) {
-	st := &State{Remembered: map[string]string{}, UserID: uid}
+	st := &State{Remembered: map[string][]string{}, UserID: uid}
 	for kind, dst := range map[string]*[]opsync.Entity{KindProject: &st.Projects, KindLabel: &st.Labels, KindTask: &st.Tasks,
 		KindSection: &st.Sections, KindReminder: &st.Reminders, KindView: &st.Views, KindRule: &st.Rules, KindUserPrefs: &st.UserPrefs, KindAttachment: &st.Attachments, KindTimeEntry: &st.TimeEntries, KindPlace: &st.Places, KindField: &st.Fields, KindReview: &st.Review, KindProjectPrefs: &st.ProjectPrefs, KindNote: &st.Notes, KindTheme: &st.Themes, KindObjective: &st.Objectives, KindMemory: &st.Memory} {
 		list, err := s.sync.List(ctx, uid, kind, true)
@@ -249,7 +249,7 @@ func (s *Service) loadState(ctx context.Context, uid, profile string) (*State, e
 		if err := rows.Scan(&src, &id); err != nil {
 			return nil, err
 		}
-		st.Remembered[src] = id
+		st.Remembered[src] = append(st.Remembered[src], id)
 	}
 	return st, rows.Err()
 }

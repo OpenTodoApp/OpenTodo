@@ -170,3 +170,47 @@ func TestOwnExportIntoOneWorkspace(t *testing.T) {
 		}
 	}
 }
+
+// #1899: what an earlier import brought into one workspace is not "already
+// imported" when the same file goes into another; it is in the target again.
+func TestReimportIntoAnotherWorkspace(t *testing.T) {
+	h := newHarness(t)
+	work := h.workspace(h.uid, "Work")
+	csv := "id,title,project,section,parent_id\n1,Buy milk,Errands,Shop,\n2,Oat milk,Errands,Shop,1\n3,Call Bob,,,\n"
+	if job := h.run(csv, Options{}); job.Status != StatusDone {
+		t.Fatalf("first import = %+v", job)
+	}
+	plan, err := h.svc.Preview(context.Background(), h.uid, []byte(csv), Options{Workspace: work})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, r := range plan.Rows {
+		if r.Reason == ReasonAlreadyImported {
+			t.Fatalf("row %s skipped as already imported in another workspace: %+v", r.SourceID, r)
+		}
+	}
+	if job := h.run(csv, Options{Workspace: work}); job.Status != StatusDone {
+		t.Fatalf("second import = %+v", job)
+	}
+	want := `"` + work + `"`
+	var inWork int
+	for _, p := range h.list("project", false) {
+		if str(p, "name") == "Errands" && wsOf(p) == want {
+			inWork++
+		}
+	}
+	if inWork != 1 {
+		t.Fatalf("Errands in Work = %d, want 1", inWork)
+	}
+	tasks := h.list("task", false)
+	if len(tasks) != 6 {
+		t.Fatalf("%d tasks, want each of the 3 in both workspaces", len(tasks))
+	}
+	// The same file into Work again: now it is already imported there.
+	plan, _ = h.svc.Preview(context.Background(), h.uid, []byte(csv), Options{Workspace: work})
+	for _, r := range plan.Rows {
+		if r.Kind == KindTask && r.Reason != ReasonAlreadyImported {
+			t.Fatalf("third preview row = %+v", r)
+		}
+	}
+}

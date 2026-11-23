@@ -114,6 +114,28 @@ func (pl *planner) inTarget(kind string, e opsync.Entity) bool {
 	return p.Own(str(e, "workspace_id")) == pl.st.Workspace
 }
 
+// remembered is the entity an earlier import created for source id src that
+// is live and in the import's target workspace: what went into another
+// workspace is not already imported into this one (#1899). A section is in
+// the workspace of its project.
+func (pl *planner) remembered(kind, src string) (string, bool) {
+	for _, id := range pl.st.Remembered[src] {
+		e := pl.byKind[kind][id]
+		if e == nil || e.Deleted() {
+			continue
+		}
+		if kind == KindSection {
+			if p := pl.st.Partition; p != nil && p.Project(str(e, "project_id")) != pl.st.Workspace {
+				continue
+			}
+		} else if !pl.inTarget(kind, e) {
+			continue
+		}
+		return id, true
+	}
+	return "", false
+}
+
 // fingerprintPlace is the project part of a duplicate fingerprint: a task
 // without a project is matched only inside its workspace.
 func fingerprintPlace(projectID, workspace string) string {
