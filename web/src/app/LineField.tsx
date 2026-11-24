@@ -15,8 +15,8 @@ export function LineField({ value, onValue, className = '', onKeyDown, ref, ...r
   return (
     <span className="grid min-w-0 flex-1 grid-cols-1 *:col-start-1 *:row-start-1">
       {/* The copy takes the field's classes, so it wraps the same text at the same width; index.css gives it the field's text size on a touch screen.
-          Empty, it holds the placeholder, so a hint that wraps on a phone is shown whole, not cut off (issue 1980). */}
-      <span aria-hidden="true" data-line-field-copy className={`invisible line-clamp-5 whitespace-pre-wrap break-words ${className}`}>{value || rest.placeholder}{'​'}</span>
+          Empty, it holds the placeholder, up to two lines, so a hint that wraps on a phone is not cut off mid-line (issue 1980). */}
+      <span aria-hidden="true" data-line-field-copy className={`invisible ${value ? 'line-clamp-5' : 'line-clamp-2'} whitespace-pre-wrap break-words ${className}`}>{value || rest.placeholder}{'​'}</span>
       <textarea
         {...rest}
         ref={ref}

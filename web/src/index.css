@@ -1553,7 +1553,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    line with the other controls, inside the row. Screens only: a printed
    page is narrower than 768 px too, and keeps the column (print-lists). */
 @media screen and (width < 48rem) {
-  .row-pad, :root[data-density="compact"] .row-pad { padding-block: 0; }
+  .row-pad:not([data-add-line]), :root[data-density="compact"] .row-pad:not([data-add-line]) { padding-block: 0; } /* An add line keeps its padding: its field is the bordered box (issue 1980). */
   .row-pad > [data-row-open] { min-height: 2.75rem; padding-block: 0.75rem; }
   .row-pad > :is([data-leading-slot], [data-row-controls], [data-row-time], [data-row-expand], [data-row-grip]) { margin-top: 0.75rem; }
   .row-pad > [data-row-time]:empty, :is([data-add-line], [data-subtask-add-line]) [data-row-time] { display: none; }

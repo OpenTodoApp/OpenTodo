@@ -128,7 +128,7 @@ export function AddLine({ depth, timeColumn = false, placeholder, label, add, on
     // keeps to the field's first line when the title wraps: its box is one line of the field
     // (30 px; 44 px on a touch screen, where a field is at least 44 px tall and its padding
     // keeps one line in the middle, as the one-line input had it).
-    <form data-add-line onSubmit={(e) => act(submit(e))} className="flex items-start gap-2 py-2 pr-2" style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 2}rem` }}>
+    <form data-add-line onSubmit={(e) => act(submit(e))} className="row-pad flex items-start gap-2 pr-2" style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 2}rem` }}>
       <span aria-hidden className="flex h-7.5 w-5 shrink-0 items-center justify-center text-accent pointer-coarse:h-11">+</span>
       {timeColumn && <span aria-hidden data-row-time="" className="w-(--row-time-w) shrink-0" />}
       <LineField
