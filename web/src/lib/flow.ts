@@ -244,6 +244,16 @@ export class FlowState {
   }
 }
 
+/**
+ * In a checklist whose subtasks go one at a time (subtask-flow): each open, not-skipped
+ * subtask after the first, by id, with the subtask it waits for. The same first step as
+ * the flow state offers, from the checklist's own rows.
+ */
+export function subtaskWaits<T extends FlowTask>(items: readonly T[]): Map<string, T> {
+  const cand = items.filter((t) => open(t) && !skipped(t)).sort(compareByPosition)
+  return new Map(cand.slice(1).map((t) => [t.id, cand[0]]))
+}
+
 /** The flow state of every task. Compute once per view and ask it per row. */
 export function availability(input: FlowInput): FlowState {
   return new FlowState(input)

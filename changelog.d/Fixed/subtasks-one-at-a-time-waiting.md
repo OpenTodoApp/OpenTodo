@@ -1,0 +1,1 @@
+- **One at a time shows the waiting subtasks in the checklist.** With One at a time on, a task's subtask checklist looked the same as before. Now the later open subtasks are dimmed and read "After" the step they wait for, as they do in lists, and the mark moves on as each step is done.

@@ -58,4 +58,18 @@ describe('subtask flow (issue 1046)', () => {
     expect(toggle()?.disabled).toBe(true)
     await shown.unmount()
   })
+
+  // GitHub issue 1953: the checklist itself shows which step is offered and which wait.
+  it('dims the later open subtasks and reads them "After" the first open one', async () => {
+    const { parent, items } = await parentWith(3)
+    const done = { ...items[0], completed_at: 1 }
+    const r = await view({ ...parent, flow_mode: 'sequential' }, [done, items[1], items[2]])
+    const marks = () => [...document.querySelectorAll('[data-subtask-row]')].map((li) => li.querySelector('[data-waits]')?.textContent ?? null)
+    expect(marks()).toEqual([null, null, 'After Step 2Waits for the previous step: Step 2'])
+    expect(document.querySelector('[data-subtask-row] [data-waits]')?.closest('[data-subtask-row]')?.querySelector('[data-waiting]')).not.toBeNull()
+    await r.unmount()
+    const off = await view(parent, items)
+    expect(document.querySelector('[data-waits]')).toBeNull()
+    await off.unmount()
+  })
 })
