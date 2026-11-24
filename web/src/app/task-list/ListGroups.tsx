@@ -220,7 +220,7 @@ export function rowRenderer(c: RowContext): RenderRow {
         />
         {c.addingUnder === r.task.id && !c.board && (
           <li>
-            <SubtaskInput parent={r.task} depth={r.depth + 1} onClose={c.onCloseSubtask} />
+            <SubtaskInput parent={r.task} depth={r.depth + 1} timeColumn={c.timeColumn} onClose={c.onCloseSubtask} />
           </li>
         )}
         {/* The "Add a subtask" lines under a parent's last visible subtask (quick-subtask-add): hidden
@@ -246,7 +246,7 @@ export function rowRenderer(c: RowContext): RenderRow {
     ? (
       <li key={ADD_BELOW_KEY}>
         <Suspense fallback={null}>
-          <SiblingInput anchor={c.addingBelow.anchor} after={c.addingBelow.after} depth={c.addingBelow.depth} onAdded={c.onAddedBelow} onClose={c.onCloseSubtask} />
+          <SiblingInput anchor={c.addingBelow.anchor} after={c.addingBelow.after} depth={c.addingBelow.depth} timeColumn={c.timeColumn} onAdded={c.onAddedBelow} onClose={c.onCloseSubtask} />
         </Suspense>
       </li>
     )

@@ -199,7 +199,7 @@ A write tool SHALL run only when MCP is enabled, the owner allowed assistant wri
 - **THEN** the response is 401 `unauthorized`
 
 ### Requirement: Write tools
-When allowed, `tools/list` SHALL add `create_tasks`, `update_tasks`, `complete_tasks`, `reopen_tasks`, `move_tasks`, `schedule_tasks`, `create_project`, `update_project`, `archive_projects`, `set_favourite`, `create_sections`, `update_sections`, `reorder_sections`, `create_label`, `update_labels`, `add_comment`, `add_reminders`, `update_reminders`, `remove_reminders`, `start_timer`, `stop_timer`, `log_time`, `update_time_entries`, `log_habit` and `trash_tasks`. No tool SHALL purge or delete projects, sections, labels, custom field definitions or time entries, define custom fields, assign people, or change sharing, members, tokens, settings, webhooks, backups or imports. `trash_tasks` SHALL accept only tasks created by the same token. `update_project` SHALL accept a project `id` and any of `name`, `color` (`#rrggbb`), `icon` (a name from the icon catalogue, or null for none), `parent_id` (a project id or null, refused when it would make a project its own ancestor), `position`, and the note as described in "Project note in write tools"; it SHALL NOT accept `archived` or `deleted`, which only `archive_projects` (archive) and no tool (delete) change. `set_favourite` SHALL add a project to the user's Favourites, at the end, or remove it, keeping the order of the other entries. `create_sections` SHALL create sections in one project with a `name` and optional `color`, `icon` and `position`; `update_sections` SHALL change a section's `name`, `color`, `icon` or `position`; `reorder_sections` SHALL give the listed sections of one project positions in the given order, before any section it does not list. Results reflect synced data; changes are written as operations, work for devices that are offline (they apply on their next sync) and converge with offline device edits by last-writer-wins per field.
+When allowed, `tools/list` SHALL add `create_tasks`, `update_tasks`, `complete_tasks`, `reopen_tasks`, `move_tasks`, `schedule_tasks`, `create_project`, `update_project`, `archive_projects`, `set_favourite`, `create_sections`, `update_sections`, `reorder_sections`, `create_label`, `update_labels`, `add_comment`, `add_reminders`, `update_reminders`, `remove_reminders`, `start_timer`, `stop_timer`, `log_time`, `update_time_entries`, `log_habit` and `trash_tasks`. No tool SHALL purge or delete projects, sections, labels, custom field definitions or time entries, define custom fields, or change sharing, members, tokens, settings, webhooks, backups or imports. A task's assignee SHALL be set only as "Assignee in write tools" says. `trash_tasks` SHALL accept only tasks created by the same token. `update_project` SHALL accept a project `id` and any of `name`, `color` (`#rrggbb`), `icon` (a name from the icon catalogue, or null for none), `parent_id` (a project id or null, refused when it would make a project its own ancestor), `position`, and the note as described in "Project note in write tools"; it SHALL NOT accept `archived` or `deleted`, which only `archive_projects` (archive) and no tool (delete) change. `set_favourite` SHALL add a project to the user's Favourites, at the end, or remove it, keeping the order of the other entries. `create_sections` SHALL create sections in one project with a `name` and optional `color`, `icon` and `position`; `update_sections` SHALL change a section's `name`, `color`, `icon` or `position`; `reorder_sections` SHALL give the listed sections of one project positions in the given order, before any section it does not list. Results reflect synced data; changes are written as operations, work for devices that are offline (they apply on their next sync) and converge with offline device edits by last-writer-wins per field.
 
 #### Scenario: Create tasks
 - **WHEN** an allowed assistant calls `create_tasks` with two items for project "Garden", one due tomorrow with priority 2
@@ -1483,3 +1483,30 @@ The registry SHALL offer the read tool `find_free_time` with `from`, `to` (at mo
 #### Scenario: Without a token
 - **WHEN** an MCP request without a token calls `find_free_time`
 - **THEN** the request is refused as unauthenticated like every MCP request
+
+### Requirement: Assignee in write tools
+`create_tasks` items and `update_tasks` updates SHALL accept `assignee`: a person named by account id, email or name (email and name ignoring case), or `me` for the user, or `null` to unassign. It SHALL be resolved only among the people the task can be assigned to under `task-assignment` "Assignee field": the current members of the task's shared project, or the user alone for a task in the Inbox or an unshared project. A person outside that set, or a name two members share, SHALL be refused with a JSON-RPC `-32602` error naming `assignee`, and nothing in the call SHALL be written. A viewer SHALL be refused with the tool error `forbidden`, as for any change they cannot make (`task-assignment` "Assignment permissions"). The assignment SHALL be written as the ordinary `assignee_id` operation, checked again by the sync path at receipt like a REST or device write, so it notifies the assignee, works for devices that are offline (they apply it on their next sync) and converges with offline device edits by last-writer-wins.
+
+#### Scenario: Assign by name
+- **WHEN** an allowed assistant calls `update_tasks` on a task of the shared project "House" with `assignee: "sam rivera"`, and Sam Rivera is a member
+- **THEN** the task is assigned to Sam on every member's devices after sync and Sam is notified
+
+#### Scenario: Create assigned
+- **WHEN** an allowed assistant calls `create_tasks` with an item in "House" and `assignee: "sam@example.com"`
+- **THEN** the new task is assigned to Sam
+
+#### Scenario: Unassign
+- **WHEN** an allowed assistant calls `update_tasks` with `assignee: null` on a task assigned to Sam
+- **THEN** the task is unassigned on every member's devices after sync
+
+#### Scenario: Someone outside the project
+- **WHEN** an allowed assistant calls `update_tasks` with `assignee` naming an account that is not a member of the task's project, by id or by email
+- **THEN** the response is a JSON-RPC `-32602` error naming `assignee` and the task keeps its assignee
+
+#### Scenario: Viewer
+- **WHEN** an assistant connected by a viewer of "House" calls `update_tasks` with an `assignee` on one of its tasks
+- **THEN** the result is the tool error `forbidden` and nothing changes
+
+#### Scenario: Personal task
+- **WHEN** an allowed assistant sets `assignee` on an Inbox task to another account
+- **THEN** the response is a JSON-RPC `-32602` error naming `assignee`, and `assignee: "me"` assigns it to the user

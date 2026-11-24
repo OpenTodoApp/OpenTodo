@@ -15,6 +15,8 @@ import { resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
 import { belowLine } from './task-list/belowLine'
+import SiblingInput from './task-list/SiblingInput'
+import { SubtaskInput } from './task-list/TaskListRow'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', createdAt: 0 } as User
 
@@ -180,5 +182,38 @@ describe('the items', () => {
     // The new task is not listed yet.
     expect(belowLine(rows, { anchor: 'a', last: 'x' })?.at).toBeNull()
     expect(belowLine(rows, null)).toBeNull()
+  })
+})
+
+// GitHub issue 1980: the lines are laid out like a row edited in place.
+describe('the line\'s layout', () => {
+  const parent = { id: 'p1', title: 'Plan the trip' } as Task
+
+  it('an empty line\'s hidden copy holds the placeholder, two lines at most; typed text, five', async () => {
+    const r = await render(<SubtaskInput parent={parent} depth={1} onClose={() => {}} />)
+    const field = document.querySelector<HTMLTextAreaElement>('[data-add-line] textarea')!
+    const copy = document.querySelector<HTMLElement>('[data-add-line] [data-line-field-copy]')!
+    expect(copy.textContent).toBe(`${field.placeholder}​`)
+    expect(copy.className).toContain('line-clamp-2')
+    await type(field, 'Book the train')
+    expect(copy.textContent).toBe('Book the train​')
+    expect(copy.className).toContain('line-clamp-5')
+    await r.unmount()
+  })
+
+  it('reserves the time column only in a list that has one, for both lines, with the row\'s padding', async () => {
+    for (const timeColumn of [false, true]) {
+      const r = await render(<>
+        <SubtaskInput parent={parent} depth={1} timeColumn={timeColumn} onClose={() => {}} />
+        <SiblingInput anchor={parent} after={parent.id} depth={0} timeColumn={timeColumn} onAdded={() => {}} onClose={() => {}} />
+      </>)
+      const lines = [...document.querySelectorAll('[data-add-line]')]
+      expect(lines).toHaveLength(2)
+      for (const line of lines) {
+        expect(line.querySelectorAll('[data-row-time]')).toHaveLength(timeColumn ? 1 : 0)
+        expect(line.classList.contains('row-pad')).toBe(true)
+      }
+      await r.unmount()
+    }
   })
 })

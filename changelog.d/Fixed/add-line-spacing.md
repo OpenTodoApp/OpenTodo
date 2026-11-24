@@ -1,0 +1,1 @@
+- **The "Add task below" and "Add a subtask" lines in a list have room to breathe.** While you type the new title, the line keeps a row's spacing, its field starts where task titles start, and a long hint on a phone wraps instead of being cut off.

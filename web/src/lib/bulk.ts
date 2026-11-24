@@ -10,6 +10,7 @@ import { db, tableOf } from './db'
 import { memberSet } from './rotation'
 import { getDeviceId, planCompletePlain, planProjectChange, type Change } from './ops'
 import { planCompletion, seriesRule, skipsInstead } from './recurring'
+import { refusedSeries, withNotMoved } from './seriesDates'
 import { assignableIn, canEditTask, currentUserId, membershipMap, scopeOf } from './sharing'
 import { descendants } from './tree'
 import type { Membership, Priority, Task } from './types'
@@ -206,7 +207,13 @@ export async function applyBulk(ids: readonly string[], action: BulkAction, opts
       break
     }
     case 'priority': changes = planPriority(tasks, action.priority); label = bulkLabel(action, tasks.length); break
-    case 'due': changes = planDue(tasks, action.pick, today); label = bulkLabel(action, tasks.length); break
+    case 'due': {
+      // A series is never put on one of its own records (#1971): left as it is and counted.
+      const kept = refusedSeries(planDue(tasks, action.pick, today), all)
+      changes = kept.changes
+      label = withNotMoved(kept.changes.length ? bulkLabel(action, kept.changes.length) : '', kept.refused)
+      break
+    }
     case 'label': changes = planLabels(tasks, action.labelId, action.add); label = bulkLabel(action, changes.length); break
     case 'trash': changes = planTrash(tasks, all, now); label = bulkLabel(action, tasks.length); break
   }
@@ -235,12 +242,14 @@ export function groupDueLabel(pick: Exclude<DuePick, null>, moved: number, total
 export async function applyGroupDue(ids: readonly string[], pick: Exclude<DuePick, null>, opts: { today?: string } = {}): Promise<BulkResult> {
   const today = opts.today ?? logicalToday()
   await getDeviceId()
-  const { tasks } = await readTicked(ids)
+  const { tasks, all } = await readTicked(ids)
   const memberships = await membershipMap()
   const editable = tasks.filter((task) => canEditTask(task, memberships))
-  const label = groupDueLabel(pick, editable.length, tasks.length)
-  const entry = editable.length ? await applyBatch(await toProposed(planDue(editable, pick, today)), { source: 'bulk', label }) : null
-  return { undoId: entry?.id ?? null, label, count: editable.length }
+  // A series is never put on one of its own records (#1971): counted with the tasks left as they are.
+  const { changes } = refusedSeries(planDue(editable, pick, today), all)
+  const label = groupDueLabel(pick, changes.length, tasks.length)
+  const entry = changes.length ? await applyBatch(await toProposed(changes), { source: 'bulk', label }) : null
+  return { undoId: entry?.id ?? null, label, count: changes.length }
 }
 
 /**
