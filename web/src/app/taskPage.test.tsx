@@ -268,6 +268,49 @@ describe('the task page', () => {
     await r.unmount()
   })
 
+  /** A project of three with a subtask under the second (the list shows it under its parent), opened from the second's page. */
+  async function onSubtaskPage() {
+    const { project, ids } = await projectOfThree()
+    const sub = await createTask({ title: 'Oil the hinges', project_id: project, parent_id: ids[1] })
+    navigate({ view: 'project', id: project })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => r.container.textContent!.includes('Fix the gate'))
+    await click(rowOpen('Fix the gate'))
+    await waitFor(() => location.pathname === `/task/${ids[1]}` && position() === '2 / 4')
+    const row = () => [...page()!.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent === 'Oil the hinges')
+    await waitFor(() => !!row(), 'the subtask row')
+    await click(row()!)
+    await waitFor(() => location.pathname === `/task/${sub}` && title() === 'Oil the hinges' && position() === '3 / 4')
+    return { project, ids, sub, r }
+  }
+
+  it('Esc on the parent after Back from its subtask returns to the list in one step', async () => {
+    const { project, ids, r } = await onSubtaskPage()
+    await act(async () => history.back())
+    await waitFor(() => location.pathname === `/task/${ids[1]}` && title() === 'Fix the gate' && position() === '2 / 4', 'Back shows the parent')
+    await key(document.body, 'Escape')
+    await waitFor(() => location.pathname === `/project/${project}` && !page())
+    await waitFor(() => document.querySelector('[data-task-id][aria-current]')?.getAttribute('data-task-id') === ids[1])
+    await act(async () => history.back())
+    await waitFor(() => location.pathname === '/', 'Back goes to the page before the list')
+    await r.unmount()
+  })
+
+  it('j and k on a subtask opened from its parent keep the place in the list, and Esc still returns in one step', async () => {
+    const { project, ids, sub, r } = await onSubtaskPage()
+    await key(document.body, 'j')
+    await waitFor(() => location.pathname === `/task/${ids[2]}` && position() === '4 / 4')
+    await key(document.body, 'k')
+    await waitFor(() => location.pathname === `/task/${sub}` && position() === '3 / 4')
+    await key(document.body, 'k')
+    await waitFor(() => location.pathname === `/task/${ids[1]}` && position() === '2 / 4')
+    await key(document.body, 'Escape')
+    await waitFor(() => location.pathname === `/project/${project}` && !page())
+    await act(async () => history.back())
+    await waitFor(() => location.pathname === '/', 'Back goes to the page before the list')
+    await r.unmount()
+  })
+
   it('an older ?task= link opens the page over the page in the address, and Esc goes back there', async () => {
     const id = await createTask({ title: 'Renew the passport', due: { date: '2099-01-02' } })
     navigate({ view: 'upcoming' })
