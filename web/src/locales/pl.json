@@ -495,6 +495,7 @@
   "Allow calendar sync on this server": "Zezwól na synchronizację kalendarza na tym serwerze",
   "Allow delivery channels on this server": "Zezwól na kanały dostarczania na tym serwerze",
   "Allow issue connections on this server": "Zezwól na połączenia ze zgłoszeniami na tym serwerze",
+  "Pick a date": "Wybierz datę",
   "Allow new accounts via SSO": "Zezwól na nowe konta przez SSO",
   "Accept new accounts without a confirmed email": "Akceptuj nowe konta bez potwierdzonego adresu e-mail",
   "For providers that send no email confirmation, such as Synology SSO Server. Such a sign-in can create an account but never links to an existing one. Turn on only for a provider you control, where people cannot choose their own address.": "Dla dostawców, którzy nie przesyłają potwierdzenia adresu e-mail, np. Synology SSO Server. Takie logowanie może utworzyć konto, ale nigdy nie łączy go z istniejącym. Włącz tylko dla dostawcy, którego kontrolujesz i u którego nikt nie może sam wybrać swojego adresu.",

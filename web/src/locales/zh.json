@@ -460,6 +460,7 @@
   "Allow calendar sync on this server": "在此服务器上允许日历同步",
   "Allow delivery channels on this server": "在此服务器上允许通知渠道",
   "Allow issue connections on this server": "在此服务器上允许议题连接",
+  "Pick a date": "选择日期",
   "Allow new accounts via SSO": "允许通过 SSO 创建新账户",
   "Accept new accounts without a confirmed email": "接受没有已验证邮箱的新账户",
   "For providers that send no email confirmation, such as Synology SSO Server. Such a sign-in can create an account but never links to an existing one. Turn on only for a provider you control, where people cannot choose their own address.": "适用于不发送邮箱验证信息的身份提供商，例如 Synology SSO Server。这类登录可以创建账户，但绝不会关联到已有账户。仅在你自己管理、且用户无法自行设置邮箱地址的提供商上开启。",

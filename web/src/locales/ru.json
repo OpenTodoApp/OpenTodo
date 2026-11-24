@@ -495,6 +495,7 @@
   "Allow calendar sync on this server": "Разрешить синхронизацию календаря на этом сервере",
   "Allow delivery channels on this server": "Разрешить каналы доставки на этом сервере",
   "Allow issue connections on this server": "Разрешить подключения к трекерам задач на этом сервере",
+  "Pick a date": "Выбрать дату",
   "Allow new accounts via SSO": "Разрешить новые аккаунты через SSO",
   "Accept new accounts without a confirmed email": "Разрешать новые аккаунты без подтверждённой почты",
   "For providers that send no email confirmation, such as Synology SSO Server. Such a sign-in can create an account but never links to an existing one. Turn on only for a provider you control, where people cannot choose their own address.": "Для провайдеров, которые не передают подтверждение почты, например Synology SSO Server. Такой вход может создать аккаунт, но никогда не привязывается к существующему. Включайте только для провайдера, которым вы управляете и где никто не может выбрать свой адрес сам.",

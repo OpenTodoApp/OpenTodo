@@ -451,6 +451,7 @@
   "Allow calendar sync on this server": "Autoriser la synchronisation de calendrier sur ce serveur",
   "Allow delivery channels on this server": "Autoriser les canaux d’envoi sur ce serveur",
   "Allow issue connections on this server": "Autoriser les connexions de tickets sur ce serveur",
+  "Pick a date": "Choisir une date",
   "Allow new accounts via SSO": "Autoriser les nouveaux comptes via SSO",
   "Accept new accounts without a confirmed email": "Accepter les nouveaux comptes sans e-mail confirmé",
   "For providers that send no email confirmation, such as Synology SSO Server. Such a sign-in can create an account but never links to an existing one. Turn on only for a provider you control, where people cannot choose their own address.": "Pour les fournisseurs qui n’envoient pas de confirmation de l’adresse e-mail, comme Synology SSO Server. Une telle connexion peut créer un compte, mais ne le lie jamais à un compte existant. À activer uniquement pour un fournisseur que vous contrôlez, où personne ne peut choisir sa propre adresse.",

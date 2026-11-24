@@ -13568,6 +13568,9 @@
   "Pick": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "Pick a date": [
+    "web/src/app/quickadd/LineDatePicker.tsx"
+  ],
   "Pick a date and time.": [
     "web/src/app/RemindersField.tsx"
   ],
