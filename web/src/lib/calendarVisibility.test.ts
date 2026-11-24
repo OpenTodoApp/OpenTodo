@@ -36,26 +36,36 @@ describe('readCalendarsHidden', () => {
 })
 
 describe('calendarsHiddenValue', () => {
-  it('drops stale workspaces and calendars, sorts, and stores "" for nothing', () => {
-    const value = calendarsHiddenValue({ personal: ['work', 'gone', 'family', 'work'], deleted: ['work'] }, ['personal', 'work'], ['work', 'family'])
-    expect(value).toBe(JSON.stringify({ personal: ['family', 'work'] }))
-    expect(calendarsHiddenValue({ personal: ['gone'] }, ['personal'], ['work'])).toBe('')
-    // A device without a workspace list keeps every key.
-    expect(calendarsHiddenValue({ '': ['work'] }, [], ['work'])).toBe(JSON.stringify({ '': ['work'] }))
+  it('prunes only the changed workspace, sorts, and stores "" for nothing', () => {
+    const value = calendarsHiddenValue({ personal: ['work', 'gone', 'family', 'work'], other: ['unseen-cal'] }, 'personal', ['work', 'family'])
+    expect(value).toBe(JSON.stringify({ other: ['unseen-cal'], personal: ['family', 'work'] }))
+    expect(calendarsHiddenValue({ personal: ['gone'] }, 'personal', ['work'])).toBe('')
   })
 })
 
 describe('setCalendarHidden', () => {
-  it('writes one op with the pruned value, and showing again clears it', async () => {
-    const at = { workspace: 'personal', workspaces: ['personal', 'work'], calendars: ['work', 'family'] }
-    const stale = { calendars_hidden: JSON.stringify({ deleted: ['work'], personal: ['gone'] }) }
-    await setCalendarHidden(stale, at, 'work', true)
+  it('writes one op, pruning the current workspace only, and showing again clears it', async () => {
+    const at = { workspace: 'personal', calendars: ['work', 'family'] }
+    await setCalendarHidden({ calendars_hidden: JSON.stringify({ personal: ['gone'] }) }, at, 'work', true)
     const row = await db.userPrefs.get(USER_PREFS_ID)
     expect(row?.calendars_hidden).toBe(JSON.stringify({ personal: ['work'] }))
     const ops = (await db.outbox.toArray()).filter((o) => o.entity === 'user_prefs' && o.field === 'calendars_hidden')
     expect(ops).toHaveLength(1)
     await setCalendarHidden(row, at, 'work', false)
     expect((await db.userPrefs.get(USER_PREFS_ID))?.calendars_hidden).toBe('')
+  })
+
+  it("keeps another workspace's hides that this device has not seen", async () => {
+    // The laptop knows a workspace and a calendar this device has not synced yet.
+    const stored = { calendars_hidden: JSON.stringify({ 'ws-new': ['cal-new'], personal: ['work'] }) }
+    await setCalendarHidden(stored, { workspace: 'personal', calendars: ['work', 'family'] }, 'family', true)
+    expect((await db.userPrefs.get(USER_PREFS_ID))?.calendars_hidden).toBe(JSON.stringify({ personal: ['family', 'work'], 'ws-new': ['cal-new'] }))
+  })
+
+  it('writes nothing before the workspace is known', async () => {
+    await setCalendarHidden(null, { workspace: '', calendars: ['work'] }, 'work', true)
+    expect(await db.userPrefs.get(USER_PREFS_ID)).toBeUndefined()
+    expect(await db.outbox.count()).toBe(0)
   })
 })
 
@@ -64,7 +74,7 @@ describe('free time', () => {
     await db.calendarSubscriptions.put({ id: 'work', name: 'Work', color: '#2563eb', enabled: true, lastSuccessAt: Date.now() })
     await db.calendarEvents.put({ id: 'ev1', subscriptionId: 'work', uid: 'u1', summary: 'Standup', location: '', start: { date: '2026-10-14', time: '10:00' }, end: { date: '2026-10-14', time: '11:00' }, allDay: false, free: false })
     await setMeta('calendar.grid', { startHour: 9, endHour: 12, dayLength: 180 })
-    await setCalendarHidden(null, { workspace: 'personal', workspaces: ['personal'], calendars: ['work'] }, 'work', true)
+    await setCalendarHidden(null, { workspace: 'personal', calendars: ['work'] }, 'work', true)
     const out = await findFreeTime(await loadSnapshot(), { from: '2026-10-14', timezone: 'UTC' }, Date.UTC(2026, 9, 13, 12))
     expect(out.days[0].free).toEqual([{ start: '09:00', end: '10:00', minutes: 60 }, { start: '11:00', end: '12:00', minutes: 60 }])
   })

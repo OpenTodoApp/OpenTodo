@@ -35,32 +35,33 @@ export function hiddenIn(hidden: HiddenCalendars, workspaceId: string): Readonly
 }
 
 /**
- * The value to store: workspaces not in `workspaces` (when the device lists any) and
- * calendars not in `calendars` dropped, keys and ids sorted, "" when nothing is hidden.
+ * The value to store after changing `workspace`: only its ids are pruned against
+ * `calendars` (the calendars this device knows). Other workspaces' entries are copied
+ * unchanged, so hides made on a device that knows a workspace or calendar this one has
+ * not seen survive. Keys sorted, "" when nothing is hidden.
  */
-export function calendarsHiddenValue(hidden: HiddenCalendars, workspaces: readonly string[], calendars: readonly string[]): string {
-  const ws = new Set(workspaces)
+export function calendarsHiddenValue(hidden: HiddenCalendars, workspace: string, calendars: readonly string[]): string {
   const cals = new Set(calendars)
-  const out: Record<string, string[]> = {}
+  const out: Record<string, readonly string[]> = {}
   for (const key of Object.keys(hidden).sort()) {
-    if (ws.size > 0 && !ws.has(key)) continue
-    const ids = [...new Set(hidden[key].filter((id) => cals.has(id)))].sort()
+    const ids = key === workspace ? [...new Set(hidden[key].filter((id) => cals.has(id)))].sort() : hidden[key]
     if (ids.length > 0) out[key] = ids
   }
   return Object.keys(out).length > 0 ? JSON.stringify(out) : ''
 }
 
-/** Hides or shows one calendar in one workspace, pruning stale ids (one op). */
-export function setCalendarHidden(
+/** Hides or shows one calendar in one workspace, pruning that workspace's stale ids (one op). Nothing is written before the workspace is known. */
+export async function setCalendarHidden(
   row: Partial<UserPrefs> | null | undefined,
-  at: { workspace: string; workspaces: readonly string[]; calendars: readonly string[] },
+  at: { workspace: string; calendars: readonly string[] },
   calendarId: string,
   hide: boolean,
 ): Promise<void> {
+  if (!at.workspace) return
   const hidden = readCalendarsHidden(row)
   const ids = new Set(hidden[at.workspace] ?? [])
   if (hide) ids.add(calendarId)
   else ids.delete(calendarId)
-  const value = calendarsHiddenValue({ ...hidden, [at.workspace]: [...ids] }, at.workspaces, at.calendars)
+  const value = calendarsHiddenValue({ ...hidden, [at.workspace]: [...ids] }, at.workspace, at.calendars)
   return mutate('user_prefs', USER_PREFS_ID, { calendars_hidden: value })
 }

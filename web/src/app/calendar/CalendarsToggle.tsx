@@ -10,7 +10,7 @@ import { setShowEvents } from '../../lib/calendarFeeds'
 import { setCalendarHidden } from '../../lib/calendarVisibility'
 import { t } from '../../lib/i18n'
 import { useHiddenCalendars } from '../../lib/liveData'
-import { currentUserPrefsRow, useWorkspaceState } from '../../lib/localData'
+import { currentUserPrefsRow } from '../../lib/localData'
 import type { CalendarSubscription } from '../../lib/types'
 import { DESKTOP_HEADER_QUERY, hueFor, Icon, Menu, MenuItem, MenuSeparator, useMediaQuery } from '../../ui'
 import { act } from '../actionError'
@@ -22,7 +22,8 @@ export function CalendarsToggle({ shown, subs, menu = false }: { shown: boolean;
     return (
       <>
         <MenuItem label={t('Calendars')} icon="calendar-range" checked={shown} data-calendars-toggle onSelect={() => act(setShowEvents(!shown))} />
-        <CalendarRows subs={subs} />
+        <MenuSeparator />
+        <CalendarRows subs={subs} shown={shown} />
       </>
     )
   }
@@ -32,21 +33,21 @@ export function CalendarsToggle({ shown, subs, menu = false }: { shown: boolean;
       trigger={<><Icon name="calendar-range" size="sm" />{t('Calendars')}</>}>
       <MenuItem label={t('Show calendar events')} checked={shown} keepOpen data-calendars-toggle onSelect={() => act(setShowEvents(!shown))} />
       <MenuSeparator />
-      <CalendarRows subs={subs} />
+      <CalendarRows subs={subs} shown={shown} />
     </Menu>
   )
 }
 
-/** One checkable row per enabled calendar, by name, for the current workspace. */
-function CalendarRows({ subs }: { subs: readonly CalendarSubscription[] }) {
+/**
+ * One checkable row per enabled calendar, by name, for the current workspace: unchecked
+ * and disabled while the device switch is off, and disabled until the workspace is known.
+ */
+function CalendarRows({ subs, shown }: { subs: readonly CalendarSubscription[]; shown: boolean }) {
   const { workspace, hidden } = useHiddenCalendars()
-  const workspaces = useWorkspaceState().list
   const rows = useMemo(() => subs.filter((s) => s.enabled).sort((a, b) => a.name.localeCompare(b.name)), [subs])
-  const toggle = (id: string) => act(setCalendarHidden(currentUserPrefsRow(), {
-    workspace, workspaces: workspaces.map((w) => w.id), calendars: subs.map((s) => s.id),
-  }, id, !hidden.has(id)))
+  const toggle = (id: string) => act(setCalendarHidden(currentUserPrefsRow(), { workspace, calendars: subs.map((s) => s.id) }, id, !hidden.has(id)))
   return rows.map((s) => (
-    <MenuItem key={s.id} label={s.name} checked={!hidden.has(s.id)} keepOpen data-calendar-row={s.id} onSelect={() => toggle(s.id)}
+    <MenuItem key={s.id} label={s.name} checked={shown && !hidden.has(s.id)} disabled={!shown || !workspace} keepOpen data-calendar-row={s.id} onSelect={() => toggle(s.id)}
       marker={<span className="block h-2.5 w-2.5 rounded-full bg-hue-solid" data-hue={hueFor(s.color)} aria-hidden />} />
   ))
 }

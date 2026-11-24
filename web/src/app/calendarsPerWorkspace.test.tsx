@@ -97,23 +97,25 @@ describe('the Calendars menu', () => {
     expect(menuRow('cal-holidays')!.getAttribute('aria-checked')).toBe('true')
     await click(document.querySelector('[role="menu"] [data-calendars-toggle]')!)
     await waitFor(() => !shown(r.container, 'dinner') && !shown(r.container, 'fair'), 'all hidden on this device')
+    await waitFor(() => menuRow('cal-family')!.hasAttribute('disabled'), 'rows disabled')
+    expect(menuRow('cal-family')!.getAttribute('aria-checked')).toBe('false')
     await click(document.querySelector('[role="menu"] [data-calendars-toggle]')!)
     await waitFor(() => shown(r.container, 'dinner') && shown(r.container, 'fair'), 'shown again')
     expect(shown(r.container, 'standup')).toBe(false)
     await r.unmount()
   })
 
-  it('follows a value synced from another device, ignoring stale ids', async () => {
+  it("follows a value synced from another device, ignoring stale ids and keeping other workspaces' hides", async () => {
     const r = await render(<CalendarView mode="day" date={DAY} />)
     await waitFor(() => shown(r.container, 'standup'), 'the event')
     await applyOps([{ id: 'o2', entity: 'user_prefs', entityId: USER_PREFS_ID, field: 'calendars_hidden', value: JSON.stringify({ personal: ['cal-work', 'cal-gone'], gone: ['cal-family'] }), ts: Date.now(), device: 'laptop' }] as never)
     await waitFor(() => !shown(r.container, 'standup'), 'hidden by the other device')
     expect(shown(r.container, 'dinner')).toBe(true)
-    // The next write drops the deleted calendar and workspace.
     await openMenu(r.container)
     await click(menuRow('cal-family')!)
     await waitFor(() => !shown(r.container, 'dinner'), 'Family hidden')
-    expect((await db.userPrefs.get(USER_PREFS_ID))?.calendars_hidden).toBe(JSON.stringify({ personal: ['cal-family', 'cal-work'] }))
+    // The next write drops the deleted calendar from this workspace and keeps the workspace this device does not list.
+    expect((await db.userPrefs.get(USER_PREFS_ID))?.calendars_hidden).toBe(JSON.stringify({ gone: ['cal-family'], personal: ['cal-family', 'cal-work'] }))
     await r.unmount()
   })
 
@@ -132,6 +134,8 @@ describe('the Calendars menu', () => {
     await waitFor(() => menuRow('cal-work') !== null, 'the rows')
     const labels = [...document.querySelectorAll('[role="menu"] [role="menuitemcheckbox"]')].map((i) => i.textContent)
     expect(labels.slice(labels.indexOf('Calendars'), labels.indexOf('Calendars') + 3)).toEqual(['Calendars', 'Family', 'Work'])
+    const toggle = document.querySelector('[role="menu"] [data-calendars-toggle]')!
+    expect(toggle.nextElementSibling?.getAttribute('role')).toBe('separator')
     await click(menuRow('cal-work')!)
     await waitFor(() => !shown(r.container, 'standup'), 'Work hidden')
     await r.unmount()
