@@ -73,6 +73,9 @@ text     := word | '"' chars '"'
 - A bare name (`@errand`, `#Work`) runs until whitespace, a double quote, or one of the operator characters `& | ! ( ) < > =`. Any other character, including `#`, `-`, `/`, `.` and non-Latin letters, is part of the name.
 - Put names with spaces or operator characters in double quotes: `#"Client A"`, `@"follow up"`. Inside quotes, `\"` is a literal quote and `\\` a literal backslash.
 - Keywords, comparison words, weekday names, label names and project names all ignore case: `#work`, `#Work` and `#WORK` are the same.
+- In a label, project or section name, `*` stands for any run of characters, none included: `@home*` matches "home" and "home-office", `#*Client*` every project with "client" in its name, and `section: "In *"` "In review" and "In progress". `##Work*` adds the sub-projects of every match. A new label or project that fits is picked up the next time the query runs. A pattern that fits no name warns like an unknown name.
+- In those names, quoted or not, a backslash escapes: `\*` is a literal star and `\\` a literal backslash, so `@to\*do` is the label "to*do" and `@C:\\*` every label starting with "C:\". Any other backslash is just a backslash (`@a\b`). A name that is exactly the name of a label, project or section always means that one: `@to*do` is the label "to*do" while it exists, so a query saved before wildcards keeps its meaning. Picking a name in the builder writes it with its escapes.
+- Wildcards belong to filter queries only. The `label` argument of the MCP tool `list_tasks` takes one label's exact name or id (or its plural), never a pattern: `label: "to*do"` is the label "to*do". For a pattern, use a filter in the app.
 
 ## Terms
 
@@ -450,4 +453,10 @@ section: Review | section: Backlog
 
 ```filter
 tracked occurrence > 30m & no date
+```
+
+### 34. Every backlog project, including the ones added later
+
+```filter
+##backlog* & p1
 ```

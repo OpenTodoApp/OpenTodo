@@ -27,11 +27,12 @@ type restoreEnv struct {
 	dir       string
 	free      int64 // -1: unknown
 	restarted bool
+	inPlace   bool
 }
 
 func newRestoreEnv(t *testing.T) *restoreEnv {
 	t.Helper()
-	re := &restoreEnv{dir: t.TempDir(), free: -1}
+	re := &restoreEnv{dir: t.TempDir(), free: -1, inPlace: true}
 	db, err := store.Open(re.dir)
 	if err != nil {
 		t.Fatal(err)
@@ -42,7 +43,7 @@ func newRestoreEnv(t *testing.T) *restoreEnv {
 	re.bk = backup.New(db, re.dir, backup.Options{Version: "test", Log: set.Log, FreeSpace: func(string) (int64, bool) {
 		return re.free, re.free >= 0
 	}})
-	re.bk.SetRestartFunc(func() { re.restarted = true })
+	re.bk.SetRestartFunc(func() bool { re.restarted = true; return re.inPlace })
 	set.Backups = re.bk
 	h := New(set, nil)
 	srv := httptest.NewServer(h)
@@ -290,8 +291,8 @@ func TestRestoreConfirmRoute(t *testing.T) {
 	}
 	resp, out = confirm(map[string]any{"id": id, "confirm": "RESTORE"})
 	re.mustStatus(resp, 202, out)
-	if !re.restarted {
-		t.Fatal("no restart requested")
+	if !re.restarted || out["status"] != "restarting" {
+		t.Fatalf("no restart requested: %v", out)
 	}
 	if _, err := os.Stat(filepath.Join(re.dir, backup.PendingRestoreFile)); err != nil {
 		t.Fatal("pending marker missing")
@@ -299,6 +300,24 @@ func TestRestoreConfirmRoute(t *testing.T) {
 	// Once confirmed, no backup can start (the process is about to restart).
 	resp, out = re.do("POST", "/api/v1/backups/run", nil)
 	re.mustStatus(resp, 409, out)
+}
+
+// TestRestoreConfirmRestartRequired (#1961): a server that cannot start itself
+// again says so in the confirmation, so the page does not wait forever.
+func TestRestoreConfirmRestartRequired(t *testing.T) {
+	re := newRestoreEnv(t)
+	re.inPlace = false
+	name := re.archive("")
+	resp, out := re.do("POST", "/api/v1/backups/restore/prepare", map[string]any{"source": map[string]string{"archive": name}})
+	re.mustStatus(resp, 200, out)
+	resp, out = re.do("POST", "/api/v1/backups/restore", map[string]any{"id": out["id"], "confirm": "RESTORE"})
+	re.mustStatus(resp, 202, out)
+	if !re.restarted || out["status"] != "restart_required" {
+		t.Fatalf("confirm without an in-place restart: %v", out)
+	}
+	if _, err := os.Stat(filepath.Join(re.dir, backup.PendingRestoreFile)); err != nil {
+		t.Fatal("pending marker missing: the next start would not apply the restore")
+	}
 }
 
 func TestRestoreConfirmDuringBackup(t *testing.T) {

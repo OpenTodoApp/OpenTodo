@@ -45,7 +45,7 @@ type Service struct {
 	// Web restore (staging.go): the one staged restore and the restart hook.
 	restoreMu sync.Mutex
 	stagedID  string
-	restart   func()
+	restart   func() bool
 	// freeSpace reports free bytes on a filesystem; tests replace it.
 	freeSpace func(dir string) (int64, bool)
 	// sameFS reports whether two directories share a filesystem; tests replace it.

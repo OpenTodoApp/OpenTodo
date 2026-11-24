@@ -462,6 +462,10 @@ var Schema = map[string]map[string]Field{
 		// (reminder_check.go refuses the mixes). Not content: the place is in
 		// the task's encrypted location.
 		"radius_m": {Kind: kRadius, Default: `null`},
+		// An urgent reminder (OpenSpec change ios-urgent-alarms, design D1): the
+		// iPhone app rings it as an alarm (AlarmKit) where it can; everywhere
+		// else it fires as an ordinary reminder. Not content.
+		"urgent": {Kind: kBool, Default: `false`},
 	},
 	// comment: a threaded markdown comment on a task (OpenSpec change
 	// `comments-and-activity`, design D1). It lives in its task's scope; Apply

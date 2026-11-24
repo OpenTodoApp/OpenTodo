@@ -3,7 +3,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { lazy } from '../lib/lazy'
 import { useReminderRows } from '../lib/localData'
 import { addDaysISO, localDueOf, todayISO } from '../lib/dates'
-import { addReminder, deleteReminder, dismissReminder, rearmReminder, snoozeReminder, sortReminders, updateReminder, type ReminderInput } from '../lib/reminders'
+import { addReminder, deleteReminder, dismissReminder, rearmReminder, setReminderUrgent, snoozeReminder, sortReminders, updateReminder, type ReminderInput } from '../lib/reminders'
 import { isLocationKind, radiusOf, reminderPoint, useGeofencesHere, type LocationKind } from '../lib/geofences'
 import { locationLabel, shownLocation, usePlaceRows } from '../lib/locations'
 import { FiresOnPhone, LocationMenuGroup, locationReminderName, radiusText } from './LocationReminders'
@@ -127,7 +127,7 @@ export function RemindersField({ task, onAddLocation }: { task: Task; onAddLocat
           return (
             <li key={r.id} data-reminder-id={r.id}
               className={`inline-flex max-w-full items-center gap-1 rounded-full border border-default py-0.5 pl-2.5 pr-0.5 text-body ${isDismissed(r) ? 'text-faint' : 'text-default'}`}>
-              <Icon name="bell" className={fired && !isDismissed(r) ? 'text-accent' : 'text-faint'} />
+              <Icon name={r.urgent ? 'alarm-clock' : 'bell'} className={fired && !isDismissed(r) ? 'text-accent' : 'text-faint'} />
               <span className="min-w-0 truncate">
                 {r.kind !== 'absolute' ? <>{name} <span className="text-meta text-muted" data-testid="reminder-time">{when}</span></> : <span data-testid="reminder-time">{when}</span>}
                 {state && <span className="text-meta text-muted"> · {state}</span>}
@@ -136,6 +136,8 @@ export function RemindersField({ task, onAddLocation }: { task: Task; onAddLocat
                 <MenuItem label={t('Edit')} icon="pencil" onSelect={() => setEditing(r.id)} />
                 {fired && !isDismissed(r) && <MenuItem label={t('Snooze 10 minutes')} icon="clock" onSelect={() => void run(() => snoozeReminder(r.id, '10m'))} />}
                 {fired && !isDismissed(r) && <MenuItem label={t('Dismiss')} icon="check" onSelect={() => void run(() => dismissReminder(r.id))} />}
+                {/* ios-urgent-alarms D2: rings as an alarm in the iPhone app, an ordinary reminder elsewhere. */}
+                <MenuItem label={t('Urgent')} checked={r.urgent === true} onSelect={() => void run(() => setReminderUrgent(r.id, r.urgent !== true))} />
                 <MenuSeparator />
                 <MenuItem label={t('Delete reminder')} icon="trash-2" danger onSelect={() => void run(() => deleteReminder(r.id))} />
               </Menu>
