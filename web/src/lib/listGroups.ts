@@ -105,6 +105,12 @@ export interface ListGroup {
   laterOf?: string
   /** Upcoming's projected occurrences of the day, after its rows and outside its count (series-occurrences D4). */
   projected?: Projection[]
+  /** A sub-project's row in its parent's Sub-projects group (subproject-inline D1); its rows are its own open tasks while it is open. */
+  subProject?: string
+  /** The sub-project's depth below the group (subproject-inline D3). */
+  depth?: number
+  /** A bar a dragged task drops on to move to this project (subproject-inline D5: the Tasks bar). */
+  dropProject?: string
   /** On the last day with projections: "Repeating tasks shown up to <date>". */
   projectedNote?: string
 }
@@ -441,6 +447,22 @@ export interface GroupInput {
   /** Upcoming starts with Today's own groups, then Tomorrow onwards (upcoming-start-with-today D2). */
   upcomingToday?: boolean
   todayContextFilter?: { me: string | null; matches: (task: Task) => boolean }
+  /** A project's list layout with sub-projects (subproject-inline): the Sub-projects group and the tasks of the open ones. */
+  subProjectList?: SubProjectList
+}
+
+/** A project's sub-projects as its list shows them (subproject-inline D1). */
+export interface SubProjectList {
+  /** The direct, non-archived sub-projects, as tree nodes. */
+  children: readonly TreeNode<Project>[]
+  /** Each project's open tasks with those of its whole subtree. */
+  counts: ReadonlyMap<string, number>
+  /** No grouping and no columns layout: the rows offer their arrow (D6). */
+  offered: boolean
+  /** The open tasks of each open sub-project, after the view's filters. */
+  tasks: ReadonlyMap<string, readonly Task[]>
+  /** Live sections, for an open sub-project's section order. */
+  sections: readonly Section[]
 }
 
 /**
@@ -551,7 +573,7 @@ function markSubtaskAdds(rows: ListRow[]): void {
 
 /** The list's groups, in render order: one pass, linear in the number of tasks, then each row's subtree ends marked. */
 export function listGroups(p: GroupInput): ListGroup[] {
-  const groups = listGroupsInner(p)
+  const groups = [...subProjectGroups(p), ...listGroupsInner(p)]
   for (const g of groups) markSubtaskAdds(g.rows)
   return groups
 }
@@ -612,7 +634,7 @@ function listGroupsInner(p: GroupInput): ListGroup[] {
     const openKey = tasksFoldedKey(p.projectId)
     const folded = p.collapsed.has(openKey)
     return [{
-      key: 'all', heading: t('Tasks'), count: flattenTree(p.tree.roots).length, folded, openKey,
+      key: 'all', heading: t('Tasks'), count: flattenTree(p.tree.roots).length, folded, openKey, dropProject: p.projectId,
       rows: folded ? [] : flattenTree(sortedRoots(p.tree.roots, order), isCollapsed).map(toRow),
     }, ...later()]
   }
@@ -622,6 +644,56 @@ function listGroupsInner(p: GroupInput): ListGroup[] {
 
 /** In the per-device collapse set while a project's Tasks group is folded (subprojects-above-tasks). */
 export const tasksFoldedKey = (projectId: string) => `project:${projectId}:tasks:folded`
+
+/** The key of a project's Sub-projects bar group (subproject-inline D1). */
+export const SUB_PROJECTS = 'sub-projects'
+/** In the per-device collapse set while a project's Sub-projects group is folded. */
+export const subProjectsFoldedKey = (projectId: string) => `project:${projectId}:sub-projects:folded`
+/** In the same set while a sub-project is open in its parent's list; folded by default (subproject-inline D2). */
+export const inlineOpenKey = (projectId: string) => `project:${projectId}:inline:open`
+
+/** A sub-project row offers its arrow when the list offers it and the sub-project has something to show (D2). */
+const offersArrow = (s: Pick<SubProjectList, 'offered' | 'counts'>, n: TreeNode<Project>): boolean => s.offered && ((s.counts.get(n.id) ?? 0) > 0 || n.children.length > 0)
+
+/** Whether a sub-project is open in its parent's list on this device. */
+export const isInlineOpen = (s: Pick<SubProjectList, 'offered' | 'counts'>, n: TreeNode<Project>, collapsed: ReadonlySet<string>): boolean => offersArrow(s, n) && collapsed.has(inlineOpenKey(n.id))
+
+/**
+ * The Sub-projects bar, then a group per shown sub-project (subproject-inline D1, D3): an
+ * open one holds its own open tasks, in its section order (the view's sort when one is
+ * chosen), and is followed by its own sub-projects one depth further in.
+ */
+function subProjectGroups(p: GroupInput): ListGroup[] {
+  const s = p.subProjectList
+  if (!s?.children.length || !p.projectId) return []
+  const foldKey = subProjectsFoldedKey(p.projectId)
+  const folded = p.collapsed.has(foldKey)
+  const out: ListGroup[] = [{ key: SUB_PROJECTS, heading: t('Sub-projects'), count: s.children.length, folded, openKey: foldKey, rows: [] }]
+  if (folded) return out
+  const order = displayOrder(p.display, undefined, p.projects, p.fields, p.score)
+  const toRow = nodeRow(p)
+  const walk = (nodes: readonly TreeNode<Project>[], depth: number) => {
+    for (const n of nodes) {
+      const open = isInlineOpen(s, n, p.collapsed)
+      out.push({
+        key: `sub-project:${n.id}`, heading: n.item.name, named: true, subProject: n.id, depth, count: s.counts.get(n.id) ?? 0, folded: !open,
+        ...(offersArrow(s, n) ? { openKey: inlineOpenKey(n.id) } : {}),
+        rows: open ? flattenTree(blockRoots(n.id, s.tasks.get(n.id) ?? [], s.sections, order), (id) => p.collapsed.has(id)).map(toRow) : [],
+      })
+      if (open) walk(n.children, depth + 1)
+    }
+  }
+  walk(s.children, 0)
+  return out
+}
+
+/** An open sub-project's top-level tasks: in the view's sort, else section by section (No section first) without their bars. */
+function blockRoots(projectId: string, tasks: readonly Task[], sections: readonly Section[], order: ((a: Task, b: Task) => number) | null): TreeNode<Task>[] {
+  const { roots } = buildTaskTree(tasks as Task[])
+  if (order) return sortedRoots(roots, order)
+  const byId = new Map(roots.map((n) => [n.id, n]))
+  return groupBySection(projectId, roots.map((n) => n.item), sections as Section[]).flatMap((g) => g.tasks.map((task) => byId.get(task.id)!))
+}
 
 /** In the per-device collapse set when a section's Later group is open; folded by default (later-in-section D2). */
 export const laterOpenKey = (projectId: string, sectionKey: string) => `project:${projectId}:later:${sectionKey}:open`
@@ -868,7 +940,8 @@ export function sectionOfRows(board: boolean, columns: readonly ListColumn[], gr
   if (board) for (const c of columns) for (const task of c.cards) m.set(task.id, c.key)
   else for (const g of groups) {
     const key = g.section !== undefined ? g.section?.id ?? '' : g.laterOf
-    if (key !== undefined) for (const r of g.rows) if (r.parent === null) m.set(r.task.id, key)
+    // An open sub-project's rows keep their own section (subproject-inline D5).
+    for (const r of g.rows) if (r.parent === null && (g.subProject || key !== undefined)) m.set(r.task.id, g.subProject ? r.task.section_id ?? '' : key!)
   }
   return m
 }

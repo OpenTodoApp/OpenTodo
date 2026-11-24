@@ -4,7 +4,7 @@
 import { type CSSProperties, Fragment, isValidElement, Suspense, type ReactElement, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { lazy } from '../../lib/lazy'
 import { t, useLanguageVersion } from '../../lib/i18n'
-import { BLOCKED_OPEN_KEY, earlierCollapsed, flatRow, type ListGroup, type ListRow as Row } from '../../lib/listGroups'
+import { BLOCKED_OPEN_KEY, earlierCollapsed, flatRow, SUB_PROJECTS, type ListGroup, type ListRow as Row } from '../../lib/listGroups'
 import type { DropAt } from '../listDrop'
 import { memberName } from '../../lib/sharing'
 import type { Progress } from '../../lib/subtasks'
@@ -21,6 +21,8 @@ import { sectionTarget, type BoardColumn } from '../BoardView'
 import { groupKey, setGroupCollapsed } from '../collapsedGroups'
 import { FieldColumnsRow, FieldColumnsTable } from '../FieldColumns'
 import { SectionHeader, SectionQuickAdd } from '../Sections'
+import { SubProjectsGroup } from '../SubProjects'
+import { taskDrop } from '../taskDrop'
 import { departures$, ghostMemory, isGhost, listCommitted, markGhost, registerList, withGhosts } from '../motion'
 import type { FlowView } from '../../lib/useFlow'
 import { TaskListRow, SubtaskInput, SubtaskAddLine, type RowActions } from './TaskListRow'
@@ -420,6 +422,8 @@ export interface GroupedListProps {
   reveal?: string | null
   /** A tree list's positions among siblings, written as ARIA on its rows (SiblingAria). */
   siblingPos?: ReadonlyMap<string, { pos: number; size: number }>
+  /** Whether the person may edit tasks of a project: its sub-project row takes a dropped task (subproject-inline D5). */
+  canEdit?: (projectId: string) => boolean
 }
 
 /** Rows drawn in the first frame of a list, and added in each later idle moment. */
@@ -468,18 +472,24 @@ export function GroupedList(p: GroupedListProps) {
   const rowList = (children: ReactNode[], extra?: Record<string, string>) => (p.fieldColumns
     ? <div role="rowgroup" {...extra}>{flatRows(children)}</div>
     : <RowList extra={extra}>{flatRows(children)}</RowList>)
+  // The Sub-projects group leads a project's list, its open sub-projects' rows inside it (subproject-inline D1).
+  const lead = p.groups[0]?.key === SUB_PROJECTS ? p.groups.filter((g) => g.key === SUB_PROJECTS || g.subProject) : null
+  const groups = lead ? p.groups.slice(lead.length) : p.groups
+  const subs = lead && <SubProjectsGroup key={SUB_PROJECTS} groups={lead} projects={p.projects} toggle={p.toggleCollapsed} canEdit={p.canEdit ?? (() => false)}
+    rows={(g) => rowList(renderListRows(g.rows, p.renderRow), { 'aria-label': g.heading ?? '' })} />
   // First and last among the real sections: "No section" is not always there (a project
   // whose every task has a section, as after an import), so its slot is not assumed (GitHub issue 359).
-  const sectionKeys = p.groups.filter((g) => g.section).map((g) => g.key)
+  const sectionKeys = groups.filter((g) => g.section).map((g) => g.key)
   // A section's own Later is drawn inside its section (later-in-section D1).
-  const laterOf = new Map(p.project ? p.groups.flatMap((g) => (g.laterOf !== undefined ? [[g.laterOf, g] as const] : [])) : [])
-  const body = [...p.groups.map((g) => (g.laterOf !== undefined && p.project ? null : g.section !== undefined && p.project
+  const laterOf = new Map(p.project ? groups.flatMap((g) => (g.laterOf !== undefined ? [[g.laterOf, g] as const] : [])) : [])
+  const body = [subs, ...groups.map((g) => (g.laterOf !== undefined && p.project ? null : g.section !== undefined && p.project
     ? <SectionGroup key={g.key} g={g} later={laterOf.get(g.section?.id ?? '')} first={!g.section || g.key === sectionKeys[0]} last={!g.section || g.key === sectionKeys[sectionKeys.length - 1]} rowList={rowList} {...p} project={p.project} />
     : <HeadedGroup key={g.key} g={g} rowList={rowList} {...p} />)),
   p.completed && p.completed.tasks.length > 0 && <CompletedGroup key="completed" c={p.completed} rowList={rowList} renderRow={p.renderRow} fieldColumns={p.fieldColumns} />]
   const aria = p.siblingPos ? <SiblingAria key="aria" positions={p.siblingPos} drawn={Math.min(limit, total)} /> : null
   const estimate = total > ROWS_PER_STEP ? <RowEstimate key="estimate" list={`${p.view}:${p.project?.id ?? ''}`} /> : null
-  return p.fieldColumns ? <FieldColumnsTable defs={p.projectFieldDefs}>{body}{aria}{estimate}</FieldColumnsTable> : <>{body}{aria}{estimate}</>
+  // The columns layout offers no arrow, so the Sub-projects group has no rows and stays outside the table (D6).
+  return p.fieldColumns ? <>{subs}<FieldColumnsTable defs={p.projectFieldDefs}>{body.slice(1)}{aria}{estimate}</FieldColumnsTable></> : <>{body}{aria}{estimate}</>
 }
 
 /** Rows read to estimate the height of the rows not drawn yet. */
@@ -691,7 +701,7 @@ function inTable(table: boolean, header: ReactNode): ReactNode {
 }
 
 /** A date, project, Later or Blocked group; collapsible per device. */
-function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects, fieldColumns, eventsFor, summarised, todayDropTarget, activeTodayDrop, contextualDrag }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
+function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects, fieldColumns, eventsFor, summarised, todayDropTarget, activeTodayDrop, contextualDrag, editable }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
   const events = view === 'upcoming' ? eventsFor?.(g.key) ?? null : null
   if (g.rows.length === 0 && g.folded === undefined && !g.projected?.length && !events) return null
   const project = g.project ? projects.find((pr) => pr.id === g.project) : undefined
@@ -713,11 +723,11 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
     <section className={`${summary && collapsed ? 'mb-1' : 'mb-4'}${g.dropDay ? ' rounded-control data-drop-active:ring-2 data-drop-active:ring-accent' : ''}${activeTodayDrop === g.key ? ' rounded-control ring-2 ring-accent' : ''}`} data-group={g.key} data-day-summary-bar={summary && collapsed ? '' : undefined}
       data-drop-target={todayDropTarget?.(g) ? `today-group:${g.key}` : undefined}
       data-task-drop={g.dropDay ? `day:${g.dropDay}` : undefined}>
-      {g.folded !== undefined ? inTable(fieldColumns, (
+      {g.folded !== undefined ? inTable(fieldColumns, projectDrop(editable ? g.dropProject : undefined, (
         <ListGroupHeader title={g.heading ?? ''} count={g.count} detail={g.folded ? g.detail : undefined} collapsed={g.folded} onToggle={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)}
           actions={view === 'today' && g.key === 'done' ? <LogWinAction /> : undefined}
           actionsAlwaysVisible={g.key === 'done'} />
-      )) : g.heading && inTable(fieldColumns, partDrop(g.dropPart, (
+      ))) : g.heading && inTable(fieldColumns, partDrop(g.dropPart, (
         <ListGroupHeader title={g.heading} count={g.note || (events && liveRows(g.rows) === 0) ? undefined : liveRows(g.rows)} note={activeTodayDrop === g.key ? t('Move to {project}', { project: g.heading }) : g.note} kind={g.named ? 'named' : 'generated'}
           hue={projectHue(project)} icon={project?.icon}
           collapsed={collapsed} onToggle={toggle} detail={summary && collapsed ? <SummaryTitles rows={g.rows} /> : undefined}
@@ -785,6 +795,11 @@ function SummaryTitles({ rows }: { rows: Row[] }) {
 function partDrop(part: ListGroup['dropPart'], header: ReactNode): ReactNode {
   if (!part) return header
   return <div className="rounded-control data-drop-active:ring-2 data-drop-active:ring-accent" data-task-drop={`part:${part}`} data-part-heading={part}>{header}</div>
+}
+
+/** The Tasks bar takes a dragged task back to the project (subproject-inline D5), as a drop on the sidebar's project does. */
+function projectDrop(id: string | undefined, header: ReactNode): ReactNode {
+  return id ? <div className="rounded-control data-drop-active:ring-2 data-drop-active:ring-accent" data-task-drop={taskDrop.project(id)}>{header}</div> : header
 }
 
 /** Today's Done today header action (today-closed-list D6): quick add with "Log as done" on. */

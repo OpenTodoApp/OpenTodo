@@ -109,6 +109,8 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
     const startX = e.clientX
     const startDepth = st.rows.find((r) => r.task.id === task.id)?.depth ?? 0
     const contextual = st.rows.some((r) => r.task.id === task.id && r.contextual)
+    // A project's list with open sub-projects: a task reorders among its own project's rows only (subproject-inline D5).
+    const blocks = !st.reorder && !!st.groups?.some((g) => g.subProject && g.rows.length)
     const step = indentStep()
     const height = host?.offsetHeight ?? 0
     let column: string | null = null
@@ -155,6 +157,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
           if (into && now.across?.canEdit(into.id)) note = t('Move to {project}', { project: into.name })
           else id = null
         }
+        if (id && blocks && now.rows.find((r) => r.task.id === id)?.task.project_id !== task.project_id) id = null
         // The Completed column has no order of its own: a card over it, or a completed card anywhere, goes to the column (board-completed-column D3).
         const doneColumn = now.board && id ? completedMove(now.sectionOfRow, task.id, id) : null
         if (doneColumn !== null) id = null

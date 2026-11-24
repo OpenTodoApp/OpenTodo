@@ -2,11 +2,19 @@
 // Sub-projects as a collapsible group at the top of a project (OpenSpec change
 // ux-overhaul, project-organization "Sub-projects inside a project view").
 import 'fake-indexeddb/auto'
+import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
-import { createProject, createTask, resetDeviceId } from '../lib/ops'
+import { setListDisplay } from '../lib/listDisplay'
+import { saveQueryFilter, projectFilterKey } from '../lib/deviceFilters'
+import { applyOps, createProject, createTask, resetDeviceId } from '../lib/ops'
 import { createSection, saveViewMode } from '../lib/sections'
+import type { Op, Task, User } from '../lib/types'
 import { click, key, render, mockFetch, noPublicLinks, visibleText, waitFor } from '../ui/test-utils'
+import { hideBulkToast } from './bulk/toastStore'
+import { resetPanel } from './panel'
+import { navigate } from './router'
+import { Shell } from './Shell'
 import { SubProjects } from './SubProjects'
 import { TaskListView } from './TaskListView'
 
@@ -49,7 +57,7 @@ describe('sub-projects group', () => {
     await waitFor(() => group.querySelectorAll('[data-sub-project]').length === 0, 'the group folded')
     expect(group.querySelectorAll('[data-sub-project]')).toHaveLength(0)
     expect(group.querySelector('[data-group-toggle]')?.getAttribute('aria-expanded')).toBe('false')
-    expect(JSON.parse(localStorage.getItem('ot.subprojects.collapsed')!)).toEqual([home])
+    expect(JSON.parse(localStorage.getItem('opentodo.collapsed')!)).toContain(`project:${home}:sub-projects:folded`)
     await r.unmount()
 
     // The collapse survives a reload of the view; a leaf project has no group at all.
@@ -99,12 +107,12 @@ describe('sub-projects above the tasks', () => {
     // Top-level tasks are not indented; only the subtask is.
     const depth = (id: string) => r.container.querySelector(`[data-task-id="${id}"]`)!.getAttribute('data-depth')
     expect(depth(paint)).toBe('0')
-    // A sub-project row keeps a task row's columns: the leading slot, then the mark where the checkbox is.
-    const row = r.container.querySelector('[data-sub-project]')!
-    expect(row.children).toHaveLength(4)
+    // A sub-project row keeps a task row's columns: the leading slot (empty: Garden has nothing to show), then the mark where the checkbox is.
+    const row = r.container.querySelector('[data-sub-project-row]')!
+    expect(row.children).toHaveLength(2)
     expect(row.children[0].getAttribute('aria-hidden')).toBe('true')
     expect(row.children[0].className).toContain('w-4')
-    expect(row.children[1].className).toContain('w-5')
+    expect(row.querySelector('[data-sub-project]')!.children[0].className).toContain('w-5')
     // The bar folds the tasks of this project only, on this device.
     await click(r.container.querySelector(`[data-group="all"] [data-group-toggle]`)!)
     await waitFor(() => r.container.querySelector(`[data-task-id="${paint}"]`) === null, 'the tasks folded')
@@ -155,5 +163,188 @@ describe('sub-projects above the tasks', () => {
     expect(r.container.querySelector('[data-sub-projects]')).toBeNull()
     expect(r.container.querySelector('[data-group="all"] [data-group-header]')).toBeNull()
     await r.unmount()
+  })
+})
+
+// A sub-project opened in place inside its parent (OpenSpec change subproject-inline, GitHub issue 1665).
+describe('a sub-project open in place', () => {
+  const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', createdAt: 0 } as User
+  const shell = async (id: string) => { navigate({ view: 'project', id }); return render(<Shell user={user} onLogout={() => {}} />) }
+  const row = (id: string) => document.querySelector<HTMLElement>(`[data-task-id="${id}"]`)
+  const block = (id: string) => document.querySelector<HTMLElement>(`[data-sub-project-block="${id}"]`)
+  const toggle = (id: string) => document.querySelector<HTMLElement>(`[data-sub-project-row="${id}"] [data-sub-project-toggle]`)
+  const toast = () => document.querySelector('[data-bulk-toast]')?.textContent ?? ''
+  const undo = () => click(document.querySelector('[data-bulk-toast] [data-toast-undo]')!)
+  const stored = (id: string) => db.tasks.get(id) as Promise<Task>
+
+  /** Home with its task Paint; Garden (Mow, Weed) holding Beds (Mulch); Kitchen, empty. */
+  async function seed() {
+    const home = await createProject({ name: 'Home' })
+    const garden = await createProject({ name: 'Garden', parent_id: home })
+    const beds = await createProject({ name: 'Beds', parent_id: garden })
+    const kitchen = await createProject({ name: 'Kitchen', parent_id: home })
+    const paint = await createTask({ title: 'Paint', project_id: home })
+    const mow = await createTask({ title: 'Mow', project_id: garden })
+    const weed = await createTask({ title: 'Weed', project_id: garden })
+    const mulch = await createTask({ title: 'Mulch', project_id: beds })
+    return { home, garden, beds, kitchen, paint, mow, weed, mulch }
+  }
+
+  /** Press on `el`, move over `over` and release there: whether it rang and whether a drop line showed. */
+  async function drag(el: Element, over: Element) {
+    document.elementFromPoint = () => over
+    await act(async () => {
+      el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, pointerType: 'mouse', button: 0, clientX: 10, clientY: 10 }))
+      window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, pointerType: 'mouse', clientX: 200, clientY: 120 }))
+    })
+    const active = over.closest('[data-task-drop]')?.hasAttribute('data-drop-active') ?? false
+    const line = !!document.querySelector('[data-drop-indicator]')
+    await act(async () => { window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, pointerType: 'mouse', clientX: 200, clientY: 120 })) })
+    await waitFor(() => !document.querySelector('[data-drag-ghost]'), 'the drag ended')
+    return { active, line }
+  }
+
+  beforeEach(async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
+    await db.meta.put({ key: 'userId', value: 'u1' })
+    resetPanel()
+    hideBulkToast()
+  })
+  afterEach(() => resetPanel())
+
+  it('opens with its arrow, nests its own sub-projects, keeps the choice after a remount, and the name still opens it', async () => {
+    const p = await seed()
+    // The Sub-projects bar's fold from before is read into the list's set once.
+    localStorage.setItem('ot.subprojects.collapsed', JSON.stringify([p.kitchen]))
+    const r = await render(<TaskListView route={{ view: 'project', id: p.home }} />)
+    await waitFor(() => !!row(p.paint) && !!toggle(p.garden))
+    expect(localStorage.getItem('ot.subprojects.collapsed')).toBeNull()
+    expect(JSON.parse(localStorage.getItem('opentodo.collapsed')!)).toEqual([`project:${p.kitchen}:sub-projects:folded`])
+    // Folded by default; an empty sub-project offers no arrow.
+    expect(row(p.mow)).toBeNull()
+    expect(toggle(p.kitchen)).toBeNull()
+    expect(toggle(p.garden)!.getAttribute('aria-expanded')).toBe('false')
+    expect(toggle(p.garden)!.getAttribute('aria-label')).toBe('Expand Garden')
+    await click(toggle(p.garden)!)
+    await waitFor(() => !!block(p.garden)?.querySelector(`[data-task-id="${p.mow}"]`), 'Garden opened')
+    expect(toggle(p.garden)!.getAttribute('aria-expanded')).toBe('true')
+    // Its tasks, then Beds one step in, folded; its count is the subtree's.
+    expect(visibleText(block(p.garden)!.querySelector('[data-sub-project]')!)).toBe('Garden3')
+    const order = [...document.querySelectorAll('[data-sub-project-row], [data-task-id]')].map((el) => el.getAttribute('data-sub-project-row') ?? el.getAttribute('data-task-id'))
+    expect(order).toEqual([p.garden, p.mow, p.weed, p.beds, p.kitchen, p.paint])
+    expect(block(p.beds)!.querySelector('[data-sub-project-row]')!.getAttribute('style')).toContain('padding-left: 2rem')
+    await click(toggle(p.beds)!)
+    await waitFor(() => !!row(p.mulch), 'Beds opened')
+    await r.unmount()
+
+    // Per device and kept: the list opens with both still open.
+    const again = await render(<TaskListView route={{ view: 'project', id: p.home }} />)
+    await waitFor(() => !!row(p.mow) && !!row(p.mulch), 'still open after a remount')
+    expect(JSON.parse(localStorage.getItem('opentodo.collapsed')!)).toEqual(expect.arrayContaining([`project:${p.garden}:inline:open`, `project:${p.beds}:inline:open`]))
+    await click(document.querySelector(`[data-sub-project="${p.garden}"]`)!)
+    expect(location.pathname).toBe(`/project/${p.garden}`)
+    await again.unmount()
+  })
+
+  it('moves the cursor to an opened task, ticks it with x and completes it with Undo; a viewer sees read-only rows', async () => {
+    const p = await seed()
+    localStorage.setItem('opentodo.collapsed', JSON.stringify([`project:${p.garden}:inline:open`]))
+    const r = await shell(p.home)
+    await waitFor(() => !!row(p.mow) && !!row(p.paint))
+    await key(document, 'j')
+    await waitFor(() => row(p.mow)!.hasAttribute('aria-current'), 'the cursor on Mow')
+    // x ticks it for a bulk action, as any row; c completes it, with Undo.
+    await key(document, 'x')
+    await waitFor(() => row(p.mow)!.hasAttribute('data-ticked'), 'Mow ticked')
+    await key(document, 'x')
+    await waitFor(() => !row(p.mow)!.hasAttribute('data-ticked'), 'Mow unticked')
+    await key(document, 'c')
+    await waitFor(async () => !!(await stored(p.mow)).completed_at && toast().includes('Undo'), 'Mow completed')
+    await undo()
+    await waitFor(async () => !(await stored(p.mow)).completed_at && !!block(p.garden)?.querySelector(`[data-task-id="${p.mow}"]`), 'Mow back under Garden')
+    await r.unmount()
+
+    // A viewer of Garden, inside an editable Home: Garden's rows are read-only and take no drop.
+    await db.memberships.put({ projectId: p.garden, role: 'viewer', ownerId: 'someone', members: [] })
+    const v = await shell(p.home)
+    await waitFor(() => !!row(p.mow) && !!row(p.paint))
+    expect(row(p.mow)!.querySelector<HTMLButtonElement>('[data-row-controls] button')!.disabled).toBe(true)
+    expect(row(p.paint)!.querySelector<HTMLButtonElement>('[data-row-controls] button')!.disabled).toBe(false)
+    expect(document.querySelector(`[data-sub-project-row="${p.garden}"]`)!.hasAttribute('data-task-drop')).toBe(false)
+    await key(document, 'j')
+    await waitFor(() => row(p.mow)!.hasAttribute('aria-current'))
+    await key(document, 'x')
+    await key(document, 'c')
+    expect(row(p.mow)!.hasAttribute('data-ticked')).toBe(false)
+    expect((await stored(p.mow)).completed_at ?? null).toBeNull()
+    await v.unmount()
+  })
+
+  it('drops a task on a sub-project row and back on the Tasks bar, with Undo; no drop line on another project\'s row', async () => {
+    const p = await seed()
+    localStorage.setItem('opentodo.collapsed', JSON.stringify([`project:${p.garden}:inline:open`]))
+    const r = await shell(p.home)
+    await waitFor(() => !!row(p.mow) && !!row(p.paint))
+    // Onto Garden's row: it rings, and Paint moves there with an Undo toast.
+    const gardenRow = document.querySelector(`[data-sub-project-row="${p.garden}"]`)!
+    expect(await drag(row(p.paint)!, gardenRow)).toEqual({ active: true, line: false })
+    await waitFor(() => toast().includes('Moved to Garden'))
+    expect((await stored(p.paint)).project_id).toBe(p.garden)
+    await waitFor(() => !!block(p.garden)?.querySelector(`[data-task-id="${p.paint}"]`), 'Paint under Garden')
+    await undo()
+    await waitFor(async () => (await stored(p.paint)).project_id === p.home)
+    // Over a row of another project's block: no drop line, and nothing changes.
+    await waitFor(() => !!document.querySelector(`[data-group="all"] [data-task-id="${p.paint}"]`), 'Paint back under Tasks')
+    expect((await drag(row(p.paint)!, row(p.mow)!)).line).toBe(false)
+    expect((await stored(p.paint)).project_id).toBe(p.home)
+    // Onto the Tasks bar: Garden's Mow comes to Home.
+    hideBulkToast()
+    const bar = document.querySelector(`[data-group="all"] [data-task-drop="project:${p.home}"]`)!
+    expect((await drag(row(p.mow)!, bar)).active).toBe(true)
+    await waitFor(() => toast().includes('Moved to Home'))
+    expect((await stored(p.mow)).project_id).toBe(p.home)
+    await undo()
+    await waitFor(async () => (await stored(p.mow)).project_id === p.garden)
+    await r.unmount()
+  })
+
+  it('applies the view\'s query filter inside and follows a sync from another device', async () => {
+    const p = await seed()
+    await db.tasks.update(p.weed, { priority: 1 })
+    localStorage.setItem('opentodo.collapsed', JSON.stringify([`project:${p.garden}:inline:open`]))
+    await saveQueryFilter(projectFilterKey(p.home), 'p1')
+    const r = await render(<TaskListView route={{ view: 'project', id: p.home }} />)
+    await waitFor(() => !!row(p.weed), 'Weed shown')
+    expect(row(p.mow)).toBeNull()
+    await r.unmount()
+
+    await saveQueryFilter(projectFilterKey(p.home), '')
+    const s = await render(<TaskListView route={{ view: 'project', id: p.home }} />)
+    await waitFor(() => !!row(p.mow))
+    // Another device adds a task to Garden; once it syncs, it is under Garden's row.
+    const id = 'remote-task'
+    const ts = Date.now() + 10_000
+    await applyOps([['title', 'Rake'], ['project_id', p.garden], ['position', 99], ['created_at', ts]].map(([field, value], i) => (
+      { id: `r${i}`, entity: 'task', entityId: id, field, value, ts, device: 'phone' } as Op)))
+    await waitFor(() => !!block(p.garden)?.querySelector(`[data-task-id="${id}"]`), 'the synced task under Garden')
+    await s.unmount()
+  })
+
+  it('offers no arrow with a grouping, on the board or on the timeline', async () => {
+    const p = await seed()
+    await setListDisplay({ kind: 'project', id: p.home }, { groupBy: 'priority' })
+    const r = await render(<TaskListView route={{ view: 'project', id: p.home }} />)
+    await waitFor(() => !!document.querySelector(`[data-sub-project-row="${p.garden}"]`) && !!row(p.paint))
+    expect(toggle(p.garden)).toBeNull()
+    await r.unmount()
+    await setListDisplay({ kind: 'project', id: p.home }, { groupBy: 'section' })
+    for (const mode of ['board', 'timeline'] as const) {
+      await saveViewMode(p.home, mode)
+      const v = await render(<TaskListView route={{ view: 'project', id: p.home }} />)
+      await waitFor(() => v.container.textContent!.includes('Paint'), mode)
+      expect(v.container.querySelector('[data-sub-project-toggle]')).toBeNull()
+      if (mode === 'timeline') expect(v.container.querySelector(`[data-sub-project-row="${p.garden}"]`)).not.toBeNull()
+      await v.unmount()
+    }
   })
 })

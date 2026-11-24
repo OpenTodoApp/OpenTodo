@@ -49,7 +49,7 @@ Inside a project you can also group tasks into sections and show them as a board
 
 ## Sub-projects
 
-Sub-projects work like folders: "Work" can hold "Q4 launch", which can hold more. A project's page lists them. Fold one with its arrow or <kbd>←</kbd> / <kbd>→</kbd>; each device keeps its own folding. The **+** menu next to **Projects** has **Collapse all**, **Expand all** and **Sort by name**; a project's menu has **Sort sub-projects by name**. Each sorts once, with Undo: "2" before "10", "0002" before "0010". The magnifier (<kbd>g</kbd> then <kbd>/</kbd>) finds a project.
+Sub-projects work like folders: "Work" can hold "Q4 launch", which can hold more. A project's page lists them. The arrow before one shows its open tasks and its own sub-projects right there; its name opens it. Those tasks work like the rest of the list (complete, edit, reorder within their project), follow that project's sharing, and use the page's sort and filters. Drag a task onto a sub-project to move it there, or onto **Tasks** to bring it back. Each device remembers which are open. In the sidebar, fold one with its arrow or <kbd>←</kbd> / <kbd>→</kbd>; each device keeps its own folding. The **+** menu next to **Projects** has **Collapse all**, **Expand all** and **Sort by name**; a project's menu has **Sort sub-projects by name**. Each sorts once, with Undo: "2" before "10", "0002" before "0010". The magnifier (<kbd>g</kbd> then <kbd>/</kbd>) finds a project.
 
 ## Duplicate a project or task
 

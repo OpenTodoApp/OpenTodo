@@ -138,6 +138,28 @@ export const ProjectWithSubProjects: StoryObj = {
   render: () => <Column><TaskListView route={{ view: 'project', id: seeded.work }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
 }
 
+/**
+ * A sub-project open in place (subproject-inline, GitHub issue 1665): Hiring's tasks under its
+ * row, its own sub-project Interviews one step in and open too, then Work's own tasks.
+ */
+export const ProjectWithSubProjectsOpen: StoryObj = {
+  ...withSeed(async () => {
+    await seedBase()
+    const p = seeded.work
+    const hiring = await createProject({ name: 'Hiring', color: HEX.orange, parent_id: p })
+    const interviews = await createProject({ name: 'Interviews', color: HEX.violet, parent_id: hiring })
+    await createProject({ name: 'Offsite', color: HEX.teal, parent_id: p })
+    await createTask({ title: 'Post the job ad', project_id: hiring, priority: 2 })
+    const shortlist = await createTask({ title: 'Shortlist the candidates', project_id: hiring })
+    await createSubtask(shortlist, 'Read the cover letters')
+    await createTask({ title: 'Book the interview room', project_id: interviews, due: { date: TOMORROW } })
+    await createTask({ title: 'Send the invoice to Northwind', project_id: p, due: { date: TODAY }, priority: 1 })
+    await createTask({ title: 'Update the budget sheet', project_id: p })
+    try { localStorage.setItem('opentodo.collapsed', JSON.stringify([`project:${hiring}:inline:open`, `project:${interviews}:inline:open`])) } catch { /* story only */ }
+  }),
+  render: () => <Column><TaskListView route={{ view: 'project', id: seeded.work }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
+}
+
 /** Nothing due today: one sentence, Add a task and the Open Upcoming link. */
 export const Empty: StoryObj = {
   ...withSeed(async () => {}),
