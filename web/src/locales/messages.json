@@ -6733,6 +6733,7 @@
     "web/src/app/ShareCapture.tsx"
   ],
   "Files are not attached on this demo instance.": [
+    "web/src/app/QuickAdd.tsx",
     "web/src/app/ShareCapture.tsx"
   ],
   "Files may be up to {bytes} each.": [
@@ -6742,7 +6743,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Files to attach": [
-    "web/src/app/task-detail/Composer.tsx"
+    "web/src/app/quickadd/PendingFiles.tsx"
   ],
   "Filter": [
     "web/src/app/task-list/ListChrome.tsx",
@@ -13438,7 +13439,7 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Pasted image": [
-    "web/src/app/task-detail/AttachmentsRow.tsx"
+    "web/src/lib/pastedFiles.ts"
   ],
   "Path-style addressing (MinIO, Garage and most self-hosted stores)": [
     "web/src/app/BackupsPanel.tsx"
@@ -14798,8 +14799,8 @@
     "web/src/app/ShareDialog.tsx",
     "web/src/app/WorkspaceMembers.tsx",
     "web/src/app/notes/NoteSearchField.tsx",
+    "web/src/app/quickadd/PendingFiles.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
-    "web/src/app/task-detail/Composer.tsx",
     "web/src/app/task-detail/RotationEditor.tsx"
   ],
   "Remove {name} from {group}": [
@@ -26124,6 +26125,9 @@
   ],
   "{name} settings": [
     "web/src/app/WorkspacesSettings.tsx"
+  ],
+  "{name} will be attached": [
+    "web/src/app/QuickAdd.tsx"
   ],
   "{name} · proposal waiting · Review": [
     "web/src/lib/rules/inbox.ts"

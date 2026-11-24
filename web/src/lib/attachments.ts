@@ -115,16 +115,33 @@ export interface PlannedFile {
 }
 
 /**
- * Plan the attachment rows for files (limit checks, digest) without writing
- * anything, so a caller can put them in one batch with its own changes (a
- * comment and its files, a shared task and its files).
+ * The checks a file passes before it is planned, with their messages: signed in,
+ * attachments on, the per-file limit, and the quota with what already waits on the
+ * device. Quick add runs them on paste (quick-add-files D2). Throws an AttachmentError.
  */
-export async function planFiles(taskId: AttachParent, files: File[], opts: { commentId?: string | null; /** For a task in the same batch, not stored yet. */ projectId?: string | null } = {}): Promise<PlannedFile[]> {
+export async function checkFiles(files: readonly File[]): Promise<{ author: string; limits: AttachmentLimits | null }> {
   const author = await currentUserId()
   if (!author) throw new AttachmentError('signed_out', t('Sign in to add files.'))
   const l = await limits()
   if (l && !l.enabled) throw new AttachmentError('disabled', t('Attachments are turned off on this server.'))
   let room = l && l.quota_bytes > 0 ? l.quota_bytes - l.used_bytes - (await pendingBytes()) : Infinity
+  for (const file of files) {
+    if (l && file.size > l.max_file_bytes) {
+      throw new AttachmentError('too_large', t('“{name}” is {size}; files may be at most {max} on this server.', { name: file.name, size: formatBytes(file.size), max: formatBytes(l.max_file_bytes) }))
+    }
+    if (file.size > room) throw new AttachmentError('quota', t('“{name}” would go over your {quota} of attachments.', { name: file.name, quota: formatBytes(l?.quota_bytes ?? 0) }))
+    room -= file.size
+  }
+  return { author, limits: l }
+}
+
+/**
+ * Plan the attachment rows for files (limit checks, digest) without writing
+ * anything, so a caller can put them in one batch with its own changes (a
+ * comment and its files, a shared task and its files).
+ */
+export async function planFiles(taskId: AttachParent, files: File[], opts: { commentId?: string | null; /** For a task in the same batch, not stored yet. */ projectId?: string | null } = {}): Promise<PlannedFile[]> {
+  const { author, limits: l } = await checkFiles(files)
   // An encrypted account's personal tasks get encrypted files (design D8).
   const key = (await encryptsTask(taskId, opts.projectId)) ? await currentKey() : undefined
   if (key === null) throw new AttachmentError('locked', t('Unlock encryption on this device to add files.'))
@@ -132,11 +149,6 @@ export async function planFiles(taskId: AttachParent, files: File[], opts: { com
   // One millisecond apart, so the uploader keeps the order the files were picked in.
   const now = Date.now()
   for (const [i, file] of files.entries()) {
-    if (l && file.size > l.max_file_bytes) {
-      throw new AttachmentError('too_large', t('“{name}” is {size}; files may be at most {max} on this server.', { name: file.name, size: formatBytes(file.size), max: formatBytes(l.max_file_bytes) }))
-    }
-    if (file.size > room) throw new AttachmentError('quota', t('“{name}” would go over your {quota} of attachments.', { name: file.name, quota: formatBytes(l?.quota_bytes ?? 0) }))
-    room -= file.size
     const id = uuid()
     const name = cleanName(file.name)
     const stored = key ? await encryptFile(key, id, file) : file
@@ -160,7 +172,7 @@ export async function planFiles(taskId: AttachParent, files: File[], opts: { com
  * Write planned files together with other changes in one batch. The bytes are
  * stored first, so a row never exists on this device without its file.
  */
-export async function commitFiles(planned: PlannedFile[], before: Change[] = []): Promise<string[]> {
+export async function commitFiles(planned: PlannedFile[], before: Change[] = [], write: (changes: Change[]) => Promise<unknown> = mutateMany): Promise<string[]> {
   try {
     await db.attachmentBlobs.bulkPut(planned.map((p) => p.blob))
   } catch {
@@ -168,13 +180,27 @@ export async function commitFiles(planned: PlannedFile[], before: Change[] = [])
     throw new AttachmentError('unsupported', t('This browser cannot keep files on the device (private browsing?), so they cannot be attached here.'))
   }
   try {
-    await mutateMany([...before, ...planned.map((p) => p.change)])
+    await write([...before, ...planned.map((p) => p.change)])
   } catch (err) {
     await db.attachmentBlobs.bulkDelete(planned.map((p) => p.blob.id))
     throw err
   }
   requestUpload()
   return planned.map((p) => p.blob.id)
+}
+
+/**
+ * New tasks' changes written with the files pasted into quick add (quick-add-files D1):
+ * each input's `files` become attachments of its task (`ids` in input order) in the
+ * same batch, written by the creator's own `write`.
+ */
+export async function withFiles(ids: readonly string[], inputs: readonly { files?: File[]; project_id?: string | null }[], changes: Change[], write: (changes: Change[]) => Promise<unknown>): Promise<void> {
+  const planned: PlannedFile[] = []
+  for (const [i, input] of inputs.entries()) {
+    if (input.files?.length) planned.push(...(await planFiles(ids[i], input.files, { projectId: input.project_id ?? null })))
+  }
+  if (planned.length) await commitFiles(planned, changes, write)
+  else await write(changes)
 }
 
 /** Attach files to a task (or one of the user's comments on it). Returns the new ids. */

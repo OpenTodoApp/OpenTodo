@@ -7870,5 +7870,6 @@
   "{name} assigned you a task": "{name} назначил(а) вам задачу",
   "{name} completed a task": "{name} выполнил(а) задачу",
   "{name} reopened a task": "{name} снова открыл(а) задачу",
-  "Unread changes": "Непрочитанные изменения"
+  "Unread changes": "Непрочитанные изменения",
+  "{name} will be attached": "{name} будет прикреплён"
 }

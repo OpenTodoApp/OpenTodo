@@ -7870,5 +7870,6 @@
   "{name} completed a task": "{name} hat eine Aufgabe erledigt",
   "{name} reopened a task": "{name} hat eine Aufgabe wieder geöffnet",
   "Completed or reopened": "Erledigt oder wieder geöffnet",
-  "Unread changes": "Ungelesene Änderungen"
+  "Unread changes": "Ungelesene Änderungen",
+  "{name} will be attached": "{name} wird angehängt"
 }

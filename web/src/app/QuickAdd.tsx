@@ -1,4 +1,4 @@
-import { type FormEvent, forwardRef, useCallback, type KeyboardEvent, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { type FormEvent, forwardRef, useCallback, type KeyboardEvent, type RefObject, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { useMe } from '../lib/sharing'
 import { keysOf } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
@@ -27,6 +27,7 @@ import { LineDateButton, LineDatePicker, useLineDate } from './quickadd/LineDate
 import { usePasteOffer } from './quickadd/PasteOffer'
 import { NotesLine, useNotesField } from './quickadd/NotesLine'
 import { VoiceButton, VoiceNotice } from './quickadd/VoiceParts'
+import { usePastedFiles } from './quickadd/PendingFiles'
 
 export type { QuickAddInput }
 
@@ -34,6 +35,16 @@ export type { QuickAddInput }
 function caretOutside(el: HTMLTextAreaElement | null, span: Span): boolean {
   const c = el?.selectionStart ?? -1
   return c < span.start || c > span.end
+}
+
+/** Puts the field's caret at `at` (or selects `at`–`end`) once it shows the current text. */
+function caretIn(field: RefObject<HTMLTextAreaElement | null>, at: number, end = at) {
+  requestAnimationFrame(() => {
+    const el = field.current
+    if (!el) return
+    el.focus()
+    el.setSelectionRange(at, end)
+  })
 }
 
 export function nowHHMM(d = new Date()): string {
@@ -181,7 +192,9 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
   logDone?: boolean
   /** Whether Shift+Enter opens the notes field (quick-add-notes D2); off where the screen has its own notes, and in the palette, whose Shift+Enter adds and opens. */
   notes?: boolean
-}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, reuseProjectId, initialValue, formId, hideHint, autoFocus, label, voiceShortcut, layout = 'line', onAddAndOpen, escape, onAddMany, logDone, notes: notesOn = true }, ref) {
+  /** Whether pasted files wait under the field and are attached to the new task (quick-add-files); off where the screen lists files itself. */
+  pasteFiles?: boolean
+}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, reuseProjectId, initialValue, formId, hideHint, autoFocus, label, voiceShortcut, layout = 'line', onAddAndOpen, escape, onAddMany, logDone, notes: notesOn = true, pasteFiles = true }, ref) {
   // The `q` badge is printed only while "Show shortcut hints" is on (keyboard-shortcuts).
   const hints = useShortcutHints()
   const [value, setValue] = useState(initialValue ?? '')
@@ -209,6 +222,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
   // The palette's field rows and the one ↑/↓ highlighted (palette-quick-add D3).
   const rows = useMemo(() => fieldRows(chips), [chips])
   const [row, setRow] = useState<number | null>(null)
+  const pasted = usePastedFiles(inputRef, pasteFiles) // pasted files wait for the task (quick-add-files D2, D3)
 
   function change(raw: string) {
     // A title is one line: a line break pasted or dictated into it becomes a space.
@@ -239,15 +253,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
     setHighlight(null)
   }
 
-  /** Puts the caret at `at` (or selects `at`–`end`) once the field shows the current text. */
-  function caretTo(at: number, end = at) {
-    requestAnimationFrame(() => {
-      const el = inputRef.current
-      if (!el) return
-      el.focus()
-      el.setSelectionRange(at, end)
-    })
-  }
+  const caretTo = (at: number, end = at) => caretIn(inputRef, at, end)
 
   /** Edits a field through the line (D2): a set field's words are selected, an unset one's token is started. */
   function edit(target: FieldRow | FieldKind) {
@@ -277,6 +283,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
     if (!line || (parsed && !parsed.title && !title)) return // only attributes typed so far; wait for a title
     const snapshot = parsed
     const description = notes?.trim()
+    const send = pasted.take() // the pasted files go with the task (quick-add-files D1)
     // Clear first so the next entry can be typed while labels are being created.
     valueRef.current = ''
     setValue('')
@@ -287,7 +294,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
     const typed: QuickAddInput = snapshot ? await toTaskInput(snapshot, { labels, createLabel: createLabelByName }) : { title: line }
     const parsedInput = title ? { ...typed, title } : typed
     const input = description ? { ...parsedInput, description } : parsedInput
-    await (open && onAddAndOpen ? onAddAndOpen(input) : onAdd(input))
+    await send(input, (i) => (open && onAddAndOpen ? onAddAndOpen(i) : onAdd(i)), () => { if (!valueRef.current) change(value) })
   }
 
   // A pasted list (paste-to-tasks D1): offered as one task per line, or pasted as one line.
@@ -296,10 +303,12 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
     kind: 'tasks',
     onConfirm: async (lines) => {
       const inputs = await pastedInputs(lines, context(), labels)
+      if (inputs[0]) inputs[0] = await pasted.attach(inputs[0]) // pasted files go with the first task (quick-add-files D4)
       if (onAddMany) await onAddMany(inputs)
       else for (const input of inputs) await onAdd(input)
       change('')
       setDismissed([])
+      pasted.clear()
     },
     onPasteAsLine: (text) => { change(text); caretTo(text.length) },
   })
@@ -354,7 +363,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
           onChange={(e) => change(e.target.value)}
           onScroll={(e) => { if (tints.current) tints.current.scrollTop = e.currentTarget.scrollTop }}
           {...suggest.fieldProps}
-          onPaste={paste.onPaste}
+          onPaste={(e) => { if (!pasted.onPaste(e)) paste.onPaste(e) }}
           onKeyDown={(e) => {
             if (composingEnter(e)) { e.preventDefault(); return }
             if (lineDate.escape(e)) return
@@ -406,6 +415,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
         <NotesLine ref={notesField.ref} value={notes} onChange={notesField.setNotes} onClose={notesField.close}
           className={layout === 'sheet' ? 'px-3 pb-2' : 'pl-5'} size={size} />
       )}
+      {pasted.view(layout === 'sheet' ? 'px-3 pb-2' : palette ? 'px-4 py-2' : 'pl-5 pt-1.5')}
       {voice.enabled && <VoiceNotice voice={voice} />}
       {palette && <>
         <div id="quick-add-preview" role="status" aria-live="polite">
