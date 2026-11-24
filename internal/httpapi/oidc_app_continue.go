@@ -58,7 +58,7 @@ var appContinueCSP = func() string {
 // trusts its source and escapes only what is executed into it.
 var appContinuePage = template.Must(template.New("continue").Parse(`<!doctype html>
 <html lang="{{.Lang}}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="referrer" content="no-referrer"><title>{{.Title}}</title><style>` + appContinueStyle + `</style></head>
+<meta name="referrer" content="same-origin"><title>{{.Title}}</title><style>` + appContinueStyle + `</style></head>
 <body><main><h1>{{.Title}}</h1><p>{{.Lead}}</p>
 <form method="post" action="{{.Action}}"><input type="hidden" name="ticket" value="{{.Ticket}}">
 <button type="submit" name="action" value="cancel">{{.Cancel}}</button>
@@ -97,7 +97,11 @@ func (s *Server) showAppContinue(w http.ResponseWriter, r *http.Request, ticket 
 	h.Set("Content-Type", "text/html; charset=utf-8")
 	h.Set("Content-Security-Policy", appContinueCSP)
 	h.Set("Cache-Control", "no-store")
-	h.Set("Referrer-Policy", "no-referrer")
+	// same-origin, not no-referrer: under no-referrer a browser posts the form
+	// with Origin: null, which the continue route refuses as cross-site. The
+	// page loads nothing and leaves only for opentodo:, so its address still
+	// goes to no other site.
+	h.Set("Referrer-Policy", "same-origin")
 	h.Set("X-Content-Type-Options", "nosniff")
 	h.Set("X-Frame-Options", "DENY")
 	err := appContinuePage.Execute(w, map[string]any{

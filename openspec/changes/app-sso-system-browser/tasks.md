@@ -7,6 +7,7 @@
 - [x] 1.5 `app_sso` in the health answer; API reference, OpenAPI description and v1 surface. Verified by `TestHealth*`, `TestEveryRouteIsInTheAPIDoc`, `TestOpenAPIDescription`, `TestV1SurfaceIsAdditive`; `go test ./...`.
 
 - [x] 1.6 Confirmation page before the hand-off (design D6): the callback holds the hand-off and shows a page naming the account; `POST /api/v1/auth/oidc/app-continue` releases the code (Continue) or drops it (Cancel); at most three waiting per identity. Verified by `TestOIDCAppFlowAsksBeforeTheHandOff`, `TestHandoffsHeldUntilConfirmed`, `TestHandoffsPerSubject`, `TestRouteMatrix`.
+- [x] 1.7 The confirmation page's referrer policy lets the browser send the server's origin with its own post (#1539). Verified by `TestOIDCAppContinueAsTheBrowserPostsIt`.
 
 ## 2. iPhone
 

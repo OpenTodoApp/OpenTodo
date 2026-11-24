@@ -48,6 +48,31 @@ var ticketField = regexp.MustCompile(`name="ticket" value="([^"]+)"`)
 // returns its ticket.
 func (o *oidcEnv) appConfirmation(sheet *env, p appPKCE) string {
 	o.t.Helper()
+	ticket, _ := o.appConfirmationPage(sheet, p)
+	return ticket
+}
+
+var referrerMeta = regexp.MustCompile(`<meta name="referrer" content="([^"]+)">`)
+
+// formPostOrigin is the Origin a browser sends when a page of origin posts a
+// form to its own origin, under the page's referrer policy (Fetch, "append a
+// request Origin header"): "null" under no-referrer, the origin otherwise. A
+// <meta name="referrer"> overrides the response header.
+func formPostOrigin(page *http.Response, html, origin string) string {
+	policy := page.Header.Get("Referrer-Policy")
+	if m := referrerMeta.FindStringSubmatch(html); m != nil {
+		policy = m[1]
+	}
+	if strings.EqualFold(strings.TrimSpace(policy), "no-referrer") {
+		return "null"
+	}
+	return origin
+}
+
+// appConfirmationPage is appConfirmation that also returns the Origin a
+// browser sends with the page's form post.
+func (o *oidcEnv) appConfirmationPage(sheet *env, p appPKCE) (string, string) {
+	o.t.Helper()
 	q := url.Values{"app_challenge": {p.challenge}, "app_state": {p.state}}
 	if p.mode != "" {
 		q.Set("app_mode", p.mode)
@@ -99,7 +124,7 @@ func (o *oidcEnv) appConfirmation(sheet *env, p appPKCE) string {
 	if m == nil {
 		o.t.Fatalf("no ticket on the page:\n%s", html)
 	}
-	return m[1]
+	return m[1], formPostOrigin(page, html, o.srv.URL)
 }
 
 // appChoose posts the confirmation page's form from sheet with an Origin.
@@ -169,6 +194,34 @@ func TestOIDCAppFlowAsksBeforeTheHandOff(t *testing.T) {
 	page.Body.Close()
 	if !strings.Contains(string(body), " as Mallory on this device?") || strings.Contains(string(body), "boss@example.com") {
 		t.Fatalf("unverified email on the page:\n%s", body)
+	}
+}
+
+// The confirmation page's own post goes through as a browser sends it, with
+// the Origin its referrer policy gives (#1539), while a post with an opaque
+// origin or another site's stays refused and leaves the ticket usable.
+func TestOIDCAppContinueAsTheBrowserPostsIt(t *testing.T) {
+	o := newOIDCEnv(t, false)
+	o.configure(map[string]any{"allowProvision": true})
+	sheet, webView := o.client("203.0.113.40"), o.client("203.0.113.41")
+
+	p := newAppPKCE("app-state-browser")
+	ticket, origin := o.appConfirmationPage(sheet, p)
+	if origin != sheet.srv.URL {
+		t.Fatalf("the page's form would post with Origin %q, want the server's", origin)
+	}
+	for _, refused := range []string{"null", "https://evil.example", "capacitor://localhost", "https://localhost"} {
+		if resp := appChoose(sheet, ticket, "continue", refused); resp.StatusCode != http.StatusForbidden {
+			t.Fatalf("continue with Origin %q = %d", refused, resp.StatusCode)
+		}
+	}
+	resp := appChoose(sheet, ticket, "continue", origin)
+	u := mustURL(location(resp))
+	if resp.StatusCode != http.StatusSeeOther || u.Scheme != "opentodo" || u.Query().Get("code") == "" || u.Query().Get("state") != p.state {
+		t.Fatalf("continue as the browser posts it = %d %q", resp.StatusCode, location(resp))
+	}
+	if resp, out := redeem(webView, u.Query().Get("code"), p.verifier, "Origin", webView.srv.URL, "Sec-Fetch-Site", "same-origin"); resp.StatusCode != http.StatusSeeOther || !hasCookie(resp, sessionCookie) {
+		t.Fatalf("redeem from the web view's page = %d %v", resp.StatusCode, out)
 	}
 }
 
