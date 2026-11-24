@@ -9,7 +9,7 @@ order: 80
 ---
 # Switch from Microsoft To Do
 
-Microsoft has announced that the To Do apps retire on 30 June 2027. To Do has no export button, but Microsoft Graph, the service behind it, lets you read your own lists. A short PowerShell script saves them to one file, `todo.json`, and OpenTodo imports it with a preview first and Undo after. It takes about ten minutes.
+Microsoft has announced that "[Microsoft To Do apps will retire on June 30, 2027](https://support.microsoft.com/en-us/planner/to-do-to-planner)", personal accounts included, and says it will provide a way to export your data before then. Once it publishes that export, we will check it and support it. Until then, To Do has no export button, but Microsoft Graph, the service behind it, lets you read your own lists. A short PowerShell script saves them to one file, `todo.json`, and OpenTodo imports it with a preview first and Undo after. It takes about ten minutes.
 
 ## Export from Microsoft To Do
 
@@ -27,24 +27,26 @@ The script only reads. It asks Microsoft for one permission, **Tasks.Read** (rea
 
 ### On macOS
 
-1. Install PowerShell 7, either with [Homebrew](https://brew.sh) in **Terminal**:
+1. Install PowerShell 7 with the `.pkg` from [PowerShell's releases](https://github.com/PowerShell/PowerShell/releases) (`osx-arm64` for Apple silicon, `osx-x64` for Intel). With [Homebrew](https://brew.sh), run this in **Terminal** instead:
    ```
-   brew install --cask powershell
+   brew install powershell
    ```
-   or with the `.pkg` from [PowerShell's releases](https://github.com/PowerShell/PowerShell/releases) (`osx-arm64` for Apple silicon, `osx-x64` for Intel).
 2. Open **Terminal** and type `pwsh`, then press Return.
 3. Continue with **Run the script** below.
 
 ### Run the script
 
-1. Install Microsoft's sign-in module (once):
+1. Install or update Microsoft's sign-in module. Run it even if you installed the module before: older versions fail for personal accounts with "Invalid JWT access token".
    ```powershell
-   Install-Module Microsoft.Graph.Authentication -Scope CurrentUser
+   Install-Module Microsoft.Graph.Authentication -Scope CurrentUser -Force
    ```
    If it asks whether to trust the repository **PSGallery**, type `A` and press Enter.
-2. Paste the whole script and press Enter:
+2. Paste the whole script and press Enter. The first line is for a personal account (outlook.com, hotmail, live, Microsoft 365 Personal or Family); for a work or school account, change `$true` to `$false`.
    ```powershell
-   Connect-MgGraph -Scopes "Tasks.Read"
+   $personal = $true
+   $signIn = @{ Scopes = "Tasks.Read" }
+   if ($personal) { $signIn.TenantId = "consumers" }
+   Connect-MgGraph @signIn
 
    function Get-All($uri) {
      $items = @()
@@ -69,7 +71,7 @@ The script only reads. It asks Microsoft for one permission, **Tasks.Read** (rea
 3. A Microsoft sign-in opens (a window on Windows, your browser on macOS). Sign in with the account you use in To Do. It asks to let **Microsoft Graph Command Line Tools** read your tasks and task lists and see your basic profile; accept.
 4. The script names each list as it reads it and ends with `Saved … lists to …`. The file is in your home folder: `C:\Users\<you>\todo.json` on Windows, `/Users/<you>/todo.json` on macOS.
 
-The permission stays on your Microsoft account until you remove it under [Apps and services](https://account.live.com/consent/Manage). A tasks file from a Microsoft data export imports the same way when it holds the same task lists. <!-- verify -->
+The permission stays until you remove it: for a personal account in [your Microsoft account's app permissions](https://account.live.com/consent/Manage), for a work or school account in the [My Apps portal](https://myapps.microsoft.com).
 
 ## Import into OpenTodo
 
@@ -93,11 +95,11 @@ Your other devices receive everything on their next sync. Importing the same fil
 | My Day | Not carried over. [Today](../today-and-upcoming.md#plan-your-day-with-today) shows what is due today; a task you add there is due today. |
 | Important (the star) | Priority p1; normal and low importance become p4. The **Important** list is the filter `p1`, which you can [save as a view](../labels-and-filters.md#save-a-filter-as-a-view). |
 | Planned | [Upcoming](../today-and-upcoming.md#plan-your-week-with-upcoming) and the [Calendar](../built-in-views.md) show every dated task. |
-| Assigned to me | Not carried over. <!-- verify --> In OpenTodo, **Assigned to me** lists tasks people assign you in [shared projects](../sharing.md#assign-tasks). |
-| Flagged email | A project **Flagged emails**; each task keeps a link to its email. <!-- verify --> |
+| Assigned to me | Not carried over: it comes from Planner and is not in the exported lists. In OpenTodo, **Assigned to me** lists tasks people assign you in [shared projects](../sharing.md#assign-tasks). |
+| Flagged email | A project **Flagged emails**; each task keeps a link to its email when Microsoft provides one. |
 | Steps | Subtasks; checked steps are completed. |
 | Notes | The task's notes, as plain text: formatting is removed. |
-| Due date | The due date, without a time, as To Do has none. <!-- verify --> |
+| Due date | The due date (in your time zone), without a time, as To Do has none. |
 | Reminder | A reminder at the same moment. A reminder already past is imported dismissed. |
 | Repeat | A [repeat rule](../recurrence.md) for daily, weekly on chosen days, monthly on a day and yearly repeats. "Every 2 weeks on Monday and Friday", "the second Thursday" and repeat end dates are dropped with a warning; OpenTodo can say [`every 2nd thursday`](../recurrence.md#grammar) and [`until …`](../recurrence.md#end-conditions), so set them again. <!-- verify --> |
 | Categories | Labels. |
@@ -113,7 +115,7 @@ The field-by-field mapping is in [Import formats](../import.md#microsoft-to-do-m
 
 - **"Running scripts is disabled on this system."** Run `Set-ExecutionPolicy -Scope Process RemoteSigned` and paste the script again. It applies to this window only.
 - **`Install-Module` fails, or `Connect-MgGraph` is not recognised.** Check that you are in PowerShell 7: `$PSVersionTable.PSVersion` should start with 7. "No match was found" means the PowerShell Gallery could not be reached; try another network, or run `Register-PSRepository -Default` and install again.
-- **No sign-in appears, or it fails.** Replace the first line of the script with `Connect-MgGraph -Scopes "Tasks.Read" -UseDeviceCode`, open the address it prints and enter the code. With a work or school account, "Need admin approval" means your organisation must allow Microsoft Graph Command Line Tools; ask your IT team.
+- **No sign-in appears, or it fails.** Check the first line: `$true` for a personal account, `$false` for work or school. Then replace `Connect-MgGraph @signIn` with `Connect-MgGraph @signIn -UseDeviceCode`, open the address it prints and enter the code. "Invalid JWT access token" means the module is old: run step 1 again, or `Update-Module Microsoft.Graph.Authentication`. With a work or school account, "Need admin approval" means your organisation must allow Microsoft Graph Command Line Tools; ask your IT team.
 - **`Saved 0 lists`, or the preview finds no tasks.** You signed in with another account. Run `Disconnect-MgGraph`, then the script again, and choose the account you use in To Do.
 - **The preview names another format.** Choose **Microsoft To Do** under **Switching from…** and pick the file again.
 - **A large account.** The script can take several minutes; let it finish. A file over the server's upload limit (20 MB unless your server owner changed it) imports fine as a ZIP: compress `todo.json` and choose the ZIP. One import holds up to 50,000 tasks and steps.
