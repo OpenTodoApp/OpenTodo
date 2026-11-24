@@ -40,7 +40,7 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 	for i, it := range list {
 		p := fmt.Sprintf("items[%d].", i)
 		if err := it.only(p, "title", "description", "project_id", "section_id", "parent_id", "priority", "due", "labels", "estimate_minutes", "recurrence", "fields", "origin_url", "origin", "id",
-			"deadline", "start", "evening", "span", "day_part", "energy", "flow_mode", "sector", "blocked_by", "location", "workspace_id", "new",
+			"deadline", "start", "evening", "span", "day_part", "energy", "flow_mode", "sector", "blocked_by", "location", "workspace_id", "new", "assignee",
 			"habit", "habit_tiny", "habit_anchor", "habit_target", "habit_period", "habit_amount", "habit_unit", "habit_step"); err != nil {
 			return Plan{}, err
 		}
@@ -140,7 +140,7 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 				patch[k] = v
 			}
 		}
-		if err := firstErr(snap.planningPatch(p, it, c, patch), habitPatch(p, it, c, patch, nil, r.today0())); err != nil {
+		if err := firstErr(snap.planningPatch(p, it, c, patch), habitPatch(p, it, c, patch, nil, r.today0()), snap.newAssignee(p, c, it, pid, patch)); err != nil {
 			return Plan{}, err
 		}
 		compatibleRecurrence(patch, nil)
@@ -188,7 +188,7 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 	for i, it := range list {
 		p := fmt.Sprintf("updates[%d].", i)
 		if err := it.only(p, "id", "title", "description", "priority", "labels", "estimate_minutes", "recurrence", "fields", "origin_url", "origin",
-			"deadline", "start", "evening", "span", "day_part", "energy", "flow_mode", "sector", "blocked_by", "location", "rotation",
+			"deadline", "start", "evening", "span", "day_part", "energy", "flow_mode", "sector", "blocked_by", "location", "rotation", "assignee",
 			"habit", "habit_tiny", "habit_anchor", "habit_target", "habit_period", "habit_amount", "habit_unit", "habit_step"); err != nil {
 			return Plan{}, err
 		}
@@ -241,9 +241,10 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 			return Plan{}, err
 		}
 		rotation, hasRotation := it["rotation"]
+		assignee, hasAssignee := it["assignee"]
 		hasHabit := it.present("habit") || it.present("habit_tiny") || it.present("habit_anchor") || it.present("habit_target") || it.present("habit_period") ||
 			it.present("habit_amount") || it.present("habit_unit") || it.present("habit_step")
-		if len(patch) == 0 && !it.present("fields") && !hasRotation && !hasHabit {
+		if len(patch) == 0 && !it.present("fields") && !hasRotation && !hasAssignee && !hasHabit {
 			return Plan{}, argErr(p + "nothing to change: give at least one field besides id")
 		}
 		if err := checkPatch(p, "task", id, patch); err != nil {
@@ -259,6 +260,12 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 			return Plan{}, err
 		}
 		compatibleRecurrence(patch, t)
+		// The assignee (mcp-assignee), resolved among the task's project members.
+		if hasAssignee {
+			if err := snap.assigneePatch(p, c, assignee, rawStr(t, "project_id"), patch); err != nil {
+				return Plan{}, err
+			}
+		}
 		// The people who take turns (chore-rotation D6), checked against the task.
 		if hasRotation {
 			if err := snap.rotationPatch(p, rotation, t, patch); err != nil {
