@@ -2,25 +2,26 @@
 // formula stays the stored form (design D1): this file prints a parsed query
 // with the fewest parentheses the grammar needs (D2) and converts between the
 // parse tree and the builder's groups and conditions (D3). Pure, no React.
-import { WEEKDAYS, type DateExpr, type FieldValueExpr, type Node } from './parse'
+import { WEEKDAYS, quoteNameAlways, type DateExpr, type FieldValueExpr, type Node } from './parse'
 
 // ---- printing (D2) ----
 
 /** Characters that end a bare word (the tokenizer's BREAK). */
 const BREAK = /[\s"&|!()<>=]/
 
-function quoteAlways(s: string): string {
-  return `"${s.replace(/["\\]/g, (c) => '\\' + c)}"`
+/** In quotes; a label, project or section `name` keeps its escapes (filter-wildcards, quoteNameAlways). */
+function quoteAlways(s: string, name = false): string {
+  return name ? quoteNameAlways(s) : `"${s.replace(/["\\]/g, (c) => '\\' + c)}"`
 }
 
 /** A bare name unless it contains a break character, is empty, or starts with `#` (which would read as `##`). */
 function quoteName(name: string): string {
-  return BREAK.test(name) || name === '' || name.startsWith('#') ? quoteAlways(name) : name
+  return BREAK.test(name) || name === '' || name.startsWith('#') ? quoteAlways(name, true) : name
 }
 
-/** `search:`, `notes:`, `origin:` and `workspace:` text: bare when it reads back as one word. */
-function quoteText(text: string): string {
-  return BREAK.test(text) || text === '' || text.startsWith('"') ? quoteAlways(text) : text
+/** `search:`, `notes:`, `origin:`, `workspace:` and `section:` text: bare when it reads back as one word. */
+function quoteText(text: string, name = false): string {
+  return BREAK.test(text) || text === '' || text.startsWith('"') ? quoteAlways(text, name) : text
 }
 
 export function formatDate(d: DateExpr): string {
@@ -70,7 +71,7 @@ export function formatLeaf(n: Node): string {
     case 'energy': return `energy: ${n.value}`
     case 'sector': return `sector: ${/^\d/.test(n.value) ? n.value : n.value.replace('-', ' ')}`
     case 'workspace': return `workspace: ${quoteText(n.name)}`
-    case 'section': return `section: ${quoteText(n.name)}`
+    case 'section': return `section: ${quoteText(n.name, true)}`
     // Field names are always quoted: a bare one could be a reserved word.
     case 'field': return `${quoteAlways(n.name)} ${n.op} ${formatFieldValue(n.value)}`
     case 'nofield': return `no ${quoteAlways(n.name)}`

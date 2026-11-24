@@ -7,6 +7,7 @@ import { formatDate, formatMinutes, type Leaf } from '../../lib/filter/builder'
 import { type Cmp, type DateField, type Keyword, type Priority } from '../../lib/filter/parse'
 import { durationMinutes } from '../../lib/time'
 import { nameKey } from '../../lib/fieldNames'
+import { literalName } from '../../lib/filter/names'
 import { ancestors } from '../../lib/tree'
 import type { FieldDef, Label, Project, Section } from '../../lib/types'
 import { msg, t, translatedMap } from '../../lib/i18n'
@@ -232,16 +233,16 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, secti
             {draft.name && <p className="text-meta text-muted">{t('Chosen:')} <NeutralChip>{draft.name}</NeutralChip></p>}
             {draft.kind === 'label' ? (
               <Combobox label={t('Choose a label')} placeholder={t('Search labels')} source={labels.filter((l) => !l.deleted_at)}
-                getKey={(l) => l.id} getLabel={(l) => l.name} rankContext="label" selected={labels.filter((l) => l.name === draft.name).map((l) => l.id)}
-                onPick={(l) => set({ name: l.name })} />
+                getKey={(l) => l.id} getLabel={(l) => l.name} rankContext="label" selected={labels.filter((l) => literalName(l.name) === draft.name).map((l) => l.id)}
+                onPick={(l) => set({ name: literalName(l.name) })} />
             ) : draft.kind === 'section' ? (
               <Combobox label={t('Choose a section')} placeholder={t('Search sections')} source={sectionChoices}
-                getKey={(s) => s.id} getLabel={(s) => s.name} selected={sectionChoices.filter((s) => nameKey(s.name) === nameKey(draft.name)).map((s) => s.id)}
-                onPick={(s) => set({ name: s.name })} />
+                getKey={(s) => s.id} getLabel={(s) => s.name} selected={sectionChoices.filter((s) => nameKey(literalName(s.name)) === nameKey(draft.name)).map((s) => s.id)}
+                onPick={(s) => set({ name: literalName(s.name) })} />
             ) : (
               <Combobox label={t('Choose a project')} placeholder={t('Search projects')} source={projects.filter((p) => !p.deleted_at)}
                 getKey={(p) => p.id} getLabel={(p) => p.name} getPath={(p) => ancestors(p.id, projectMap).reverse().map((a) => a.name)}
-                selected={projects.filter((p) => p.name === draft.name).map((p) => p.id)} onPick={(p) => set({ name: p.name })} />
+                selected={projects.filter((p) => literalName(p.name) === draft.name).map((p) => p.id)} onPick={(p) => set({ name: literalName(p.name) })} />
             )}
             {draft.kind === 'project' && (
               <Switch checked={draft.descendants} onChange={(v) => set({ descendants: v })} label={t('Include sub-projects')} />
