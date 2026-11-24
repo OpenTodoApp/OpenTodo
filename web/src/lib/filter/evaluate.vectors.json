@@ -3,7 +3,9 @@
   "week_start": 1,
   "labels": [
     {"id": "l_err", "name": "errand", "deleted_at": null},
-    {"id": "l_call", "name": "Call", "deleted_at": null}
+    {"id": "l_call", "name": "Call", "deleted_at": null},
+    {"id": "l_star", "name": "to*do", "deleted_at": null},
+    {"id": "l_dash", "name": "to-do", "deleted_at": null}
   ],
   "projects": [
     {"id": "p_home", "name": "Home", "parent_id": null, "deleted_at": null},
@@ -126,6 +128,30 @@
     {"query": "section: Backlog | no section", "ids": ["t1", "t3", "t5", "t6", "t8"]},
     {"query": "!section: Review", "ids": ["t1", "t3", "t5", "t6", "t8"]},
     {"query": "section: Gone", "ids": [], "warnings": 1},
-    {"query": "section: Nowhere", "ids": [], "warnings": 1}
+    {"query": "section: Nowhere", "ids": [], "warnings": 1},
+    {"query": "@*", "ids": ["t1", "t2"]},
+    {"query": "@ERR*", "ids": ["t1"]},
+    {"query": "@*all", "ids": ["t2"]},
+    {"query": "@*a*", "ids": ["t1", "t2"]},
+    {"query": "@er*rand", "ids": ["t1"]},
+    {"query": "@err*rand", "ids": [], "warnings": 1},
+    {"query": "@x*", "ids": [], "warnings": 1},
+    {"query": "@to*do", "ids": []},
+    {"query": "@to\\*do", "ids": []},
+    {"query": "@\"to\\*do\"", "ids": []},
+    {"query": "@to-*", "ids": []},
+    {"query": "@to-\\*", "ids": [], "warnings": 1},
+    {"query": "@\"to-\\*\"", "ids": [], "warnings": 1},
+    {"query": "#W*", "ids": ["t2", "t7", "t8"]},
+    {"query": "##W*", "ids": ["t2", "t3", "t7", "t8"]},
+    {"query": "#*s", "ids": ["t3"]},
+    {"query": "##*o*", "ids": ["t1", "t2", "t3", "t7", "t8", "t9"]},
+    {"query": "#* & !#Home", "ids": ["t2", "t3", "t7", "t8"]},
+    {"query": "#x* | no project", "ids": ["t5", "t6"], "warnings": 1},
+    {"query": "section: rev*", "ids": ["t2", "t7", "t9"]},
+    {"query": "section: \"R*w\"", "ids": ["t2", "t7", "t9"]},
+    {"query": "section: *", "ids": ["t1", "t2", "t7", "t9"]},
+    {"query": "!section: *", "ids": ["t3", "t5", "t6", "t8"]},
+    {"query": "section: G*", "ids": [], "warnings": 1}
   ]
 }

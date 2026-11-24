@@ -73,6 +73,7 @@ text     := word | '"' chars '"'
 - A bare name (`@errand`, `#Work`) runs until whitespace, a double quote, or one of the operator characters `& | ! ( ) < > =`. Any other character, including `#`, `-`, `/`, `.` and non-Latin letters, is part of the name.
 - Put names with spaces or operator characters in double quotes: `#"Client A"`, `@"follow up"`. Inside quotes, `\"` is a literal quote and `\\` a literal backslash.
 - Keywords, comparison words, weekday names, label names and project names all ignore case: `#work`, `#Work` and `#WORK` are the same.
+- In a label, project or section name, `*` stands for any run of characters, none included: `@home*` matches "home" and "home-office", `#*Client*` every project with "client" in its name, and `section: "In *"` "In review" and "In progress". `##Work*` adds the sub-projects of every match. A new label or project that fits is picked up the next time the query runs. Write `\*` for a literal star, quoted or not: `@to\*do` is the label "to*do". A pattern that fits no name warns like an unknown name.
 
 ## Terms
 
@@ -450,4 +451,10 @@ section: Review | section: Backlog
 
 ```filter
 tracked occurrence > 30m & no date
+```
+
+### 34. Every backlog project, including the ones added later
+
+```filter
+##backlog* & p1
 ```

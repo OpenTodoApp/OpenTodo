@@ -331,21 +331,21 @@ func (k *compiler) build(n *Node) (Pred, error) {
 		}
 		return func(t Row) bool { return !p(t) }, nil
 	case KindLabel:
-		ids := k.labels[nameKey(n.Name)]
+		ids := idsNamed(k.labels, n.Name)
 		if ids == nil {
 			k.warn(`No label named "` + n.Name + `"`)
 			return never, nil
 		}
 		return func(t Row) bool { return anyIn(listOf(t["labels"]), ids) }, nil
 	case KindSection:
-		ids := k.sections[nameKey(n.Name)]
+		ids := idsNamed(k.sections, n.Name)
 		if ids == nil {
 			k.warn(`No section named "` + n.Name + `"`)
 			return never, nil
 		}
 		return func(t Row) bool { return k.inSection(t) && slices.Contains(ids, str(t, "section_id")) }, nil
 	case KindProject:
-		ids := k.projects[nameKey(n.Name)]
+		ids := idsNamed(k.projects, n.Name)
 		if ids == nil {
 			k.warn(`No project named "` + n.Name + `"`)
 			return never, nil

@@ -120,12 +120,17 @@ func tokenize(src []rune) ([]token, error) {
 		}
 		return string(src[start:i])
 	}
-	readString := func() (string, error) {
+	// readString reads a quoted text; in a name (filter-wildcards) `\*` stays
+	// escaped: a literal star, not a wildcard.
+	readString := func(name bool) (string, error) {
 		start := i
 		i++
 		var b strings.Builder
 		for i < n && src[i] != '"' {
 			if src[i] == '\\' && i+1 < n {
+				if name && src[i+1] == '*' {
+					b.WriteRune('\\')
+				}
 				i++
 			}
 			b.WriteRune(src[i])
@@ -139,7 +144,7 @@ func tokenize(src []rune) ([]token, error) {
 	}
 	readName := func(what, after string, at int) (string, error) {
 		if i < n && src[i] == '"' {
-			return readString()
+			return readString(true)
 		}
 		name := readBare()
 		if name == "" {
@@ -193,7 +198,7 @@ func tokenize(src []rune) ([]token, error) {
 			continue
 		}
 		if c == '"' {
-			v, err := readString()
+			v, err := readString(false)
 			if err != nil {
 				return nil, err
 			}
@@ -205,7 +210,7 @@ func tokenize(src []rune) ([]token, error) {
 		// (group-mentions), `energy: level` (task-energy) and `notes: text`
 		// (notes-overview): the prefix, then
 		// the rest of the word, or the next bare word or quoted string.
-		readPrefixed := func(prefix string) (string, error) {
+		readPrefixed := func(prefix string, name bool) (string, error) {
 			text := string([]rune(word)[len(prefix):])
 			if text != "" {
 				return text, nil
@@ -214,12 +219,12 @@ func tokenize(src []rune) ([]token, error) {
 				i++
 			}
 			if i < n && src[i] == '"' {
-				return readString()
+				return readString(name)
 			}
 			return readBare(), nil
 		}
 		if term, ok := prefixedTermOf(word); ok {
-			text, err := readPrefixed(term.prefix)
+			text, err := readPrefixed(term.prefix, term.typ == tSection)
 			// `sector: this week`: a relative word is two words (time-sectors).
 			if w := strings.ToLower(text); err == nil && term.typ == tSector && (w == "this" || w == "next") {
 				for i < n && unicode.IsSpace(src[i]) {

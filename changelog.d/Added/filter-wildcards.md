@@ -1,0 +1,1 @@
+- **Wildcards in filters.** A `*` in a label, project or section name stands for any characters, so `@backlog*`, `##project*` or `section: "In *"` follow every matching name, including ones added later. `\*` is a literal star (#1967).
