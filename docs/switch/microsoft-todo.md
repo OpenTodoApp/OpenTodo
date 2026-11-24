@@ -9,7 +9,7 @@ order: 80
 ---
 # Switch from Microsoft To Do
 
-Microsoft has announced that "[Microsoft To Do apps will retire on June 30, 2027](https://support.microsoft.com/en-us/planner/to-do-to-planner)", personal accounts included, and says it will provide a way to export your data before then. Once it publishes that export, we will check it and support it. Until then, To Do has no export button, but Microsoft Graph, the service behind it, lets you read your own lists. A short PowerShell script saves them to one file, `todo.json`, and OpenTodo imports it with a preview first and Undo after. It takes about ten minutes.
+Microsoft has announced that "[Microsoft To Do apps will retire on June 30, 2027](https://support.microsoft.com/en-us/planner/to-do-to-planner)", personal accounts included, and says it will provide a way to export your data before then. Once it publishes that export, we will check it and support it if we can. Until then, To Do has no export button, but Microsoft Graph, the service behind it, lets you read your own lists. A short PowerShell script saves them to one file, `todo.json`, and OpenTodo imports it with a preview first and Undo after. It takes about ten minutes.
 
 ## Export from Microsoft To Do
 
@@ -41,9 +41,10 @@ The script only reads. It asks Microsoft for one permission, **Tasks.Read** (rea
    Install-Module Microsoft.Graph.Authentication -Scope CurrentUser -Force
    ```
    If it asks whether to trust the repository **PSGallery**, type `A` and press Enter.
-2. Paste the whole script and press Enter. The first line is for a personal account (outlook.com, hotmail, live, Microsoft 365 Personal or Family); for a work or school account, change `$true` to `$false`.
+2. Paste the whole script and press Enter. The first line is for a personal account (outlook.com, hotmail, live, Microsoft 365 Personal or Family); for a work or school account, change `$true` to `$false`. If Terminal warns about pasting several lines, choose **Paste anyway**.
    ```powershell
    $personal = $true
+   $ErrorActionPreference = "Stop"
    $signIn = @{ Scopes = "Tasks.Read" }
    if ($personal) { $signIn.TenantId = "consumers" }
    Connect-MgGraph @signIn
@@ -58,18 +59,20 @@ The script only reads. It asks Microsoft for one permission, **Tasks.Read** (rea
      return ,$items
    }
 
-   $lists = Get-All "v1.0/me/todo/lists"
-   foreach ($list in $lists) {
-     Write-Host "Reading $($list.displayName)"
-     $list["tasks"] = Get-All "v1.0/me/todo/lists/$($list.id)/tasks?`$expand=checklistItems,linkedResources"
-   }
-   $out = Join-Path $HOME "todo.json"
-   ConvertTo-Json -InputObject @($lists) -Depth 10 | Set-Content -Encoding utf8 $out
-   Disconnect-MgGraph
-   Write-Host "Saved $($lists.Count) lists to $out"
+   try {
+     $lists = Get-All "v1.0/me/todo/lists"
+     foreach ($list in $lists) {
+       Write-Host "Reading $($list.displayName)"
+       $list["tasks"] = Get-All "v1.0/me/todo/lists/$($list.id)/tasks?`$expand=checklistItems,linkedResources"
+     }
+     $out = Join-Path $HOME "todo.json"
+     ConvertTo-Json -InputObject @($lists) -Depth 10 | Set-Content -Encoding utf8 $out
+     Disconnect-MgGraph
+     Write-Host "Saved $($lists.Count) lists to $out"
+   } catch { Write-Host "Stopped, nothing saved: $_" }
    ```
 3. A Microsoft sign-in opens (a window on Windows, your browser on macOS). Sign in with the account you use in To Do. It asks to let **Microsoft Graph Command Line Tools** read your tasks and task lists and see your basic profile; accept.
-4. The script names each list as it reads it and ends with `Saved … lists to …`. The file is in your home folder: `C:\Users\<you>\todo.json` on Windows, `/Users/<you>/todo.json` on macOS.
+4. The script names each list as it reads it and ends with `Saved … lists to …`. If it ends with `Stopped, nothing saved` instead, see **If something goes wrong** below and run it again. The file is in your home folder: `C:\Users\<you>\todo.json` on Windows, `/Users/<you>/todo.json` on macOS.
 
 The permission stays until you remove it: for a personal account in [your Microsoft account's app permissions](https://account.live.com/consent/Manage), for a work or school account in the [My Apps portal](https://myapps.microsoft.com).
 
@@ -99,9 +102,9 @@ Your other devices receive everything on their next sync. Importing the same fil
 | Flagged email | A project **Flagged emails**; each task keeps a link to its email when Microsoft provides one. |
 | Steps | Subtasks; checked steps are completed. |
 | Notes | The task's notes, as plain text: formatting is removed. |
-| Due date | The due date (in your time zone), without a time, as To Do has none. |
+| Due date | The due date as To Do shows it, without a time (To Do has none). |
 | Reminder | A reminder at the same moment. A reminder already past is imported dismissed. |
-| Repeat | A [repeat rule](../recurrence.md) for daily, weekly on chosen days, monthly on a day and yearly repeats. "Every 2 weeks on Monday and Friday", "the second Thursday" and repeat end dates are dropped with a warning; OpenTodo can say [`every 2nd thursday`](../recurrence.md#grammar) and [`until …`](../recurrence.md#end-conditions), so set them again. <!-- verify --> |
+| Repeat | A [repeat rule](../recurrence.md) for daily, weekly on chosen days, monthly on a day and yearly repeats. "Every 2 weeks on Monday and Friday", "the second Thursday" and repeat end dates are dropped with a warning; set them again as [`every 2 weeks on mon, fri`, `every 2nd thursday`](../recurrence.md#grammar) and [`until …`](../recurrence.md#end-conditions). |
 | Categories | Labels. |
 | Shared lists | Your own projects, with all their tasks; the members are not in the file. [Share the project](../sharing.md#share-a-project) again, or send an [invite link](../sharing.md#invite-with-a-link). |
 | Attachments | Links (such as the email a task came from) become link attachments. Files are not in the file and are dropped with a warning; [attach them](../attachments.md) again. |
