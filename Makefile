@@ -11,7 +11,7 @@ WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 MCP_SKILL_ZIP := dist/opentodo-mcp-skill.zip
 
-.PHONY: assistant-eval news news-check brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian app android ios ios-archive build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check safe-area-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare perf storybook ui-check ui-baselines ui-lint web-lint i18n-check i18n-status repo-check bundle-budget fmt-check ci-checks e2e e2e-signed
+.PHONY: assistant-eval news news-check brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian android ios ios-archive build run dev test test-go test-web test-extension check lint staticcheck deadcode gosec gosec-sarif clean docker openspec-validate layout-check safe-area-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare perf storybook ui-check ui-baselines ui-lint web-lint i18n-check i18n-status repo-check bundle-budget fmt-check ci-checks e2e e2e-signed
 
 all: build
 
@@ -85,18 +85,6 @@ obsidian-review:
 	cd obsidian/review && npm ci --no-audit --no-fund
 	node obsidian/review/review.mjs
 
-## The native app (native-app-foundation): its own install (npm ci in mobile/app, never
-## web's), type-check, lint, the Jest tests with the shared vectors, and the shared
-## module list against the app's import graph (scripts/shared-graph.mjs) and the Dexie
-## surface the SQLite adapter covers (dexie-surface.mjs). Linux
-## is enough; the iOS and Android builds run in CI (app-ios, app-android). Not part of
-## `make check` unless APP=1. See mobile/README.md.
-app:
-	cd mobile/app && npm ci --no-audit --no-fund
-	cd mobile/app && npm run typecheck && npm run lint && npm test -- --ci
-	node mobile/app/scripts/shared-modules.mjs --check
-	node mobile/app/scripts/dexie-surface.mjs --check
-
 ## The Android app (native-shells): unit tests, lint, the AndroidX-only dependency
 ## check, translations, store metadata and a debug APK. Needs JDK 17+ and the
 ## Android SDK (ANDROID_HOME); not part of `make check`. See mobile/README.md.
@@ -117,9 +105,10 @@ ios:
 	@command -v xcodebuild >/dev/null 2>&1 || { echo "make ios needs Xcode 16 or newer (see docs/ios-app.md)"; exit 1; }
 	@sim=$${SIM:-$$(xcrun simctl list devices available 2>/dev/null | sed -n 's/^[[:space:]]*//; s/ (.*//; /^iPhone/p' | head -1)}; \
 	  test -n "$$sim" || { echo "make ios needs an iOS simulator runtime (Xcode > Settings > Components)"; exit 1; }; \
-	  echo "  simulator: $$sim"; \
+	  dest="name=$$sim"; if [ -n "$$SIM_ID" ]; then dest="id=$$SIM_ID"; fi; \
+	  echo "  simulator: $$sim ($$dest)"; \
 	  cd mobile/ios && xcodebuild -project OpenTodo.xcodeproj -scheme OpenTodo -configuration Debug \
-	    -derivedDataPath build -destination "platform=iOS Simulator,name=$$sim" \
+	    -derivedDataPath build -destination "platform=iOS Simulator,$$dest" \
 	    OPENTODO_VERSION=$(IOS_VERSION) CURRENT_PROJECT_VERSION=$(IOS_BUILD) test || exit 1
 	cd mobile/ios && xcodebuild -project OpenTodo.xcodeproj -scheme OpenTodo -configuration Release \
 	  -derivedDataPath build -sdk iphoneos -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO \
@@ -245,8 +234,18 @@ lint:
 ## with the go.mod toolchain (not the minimum Go it asks for), because it must read the
 ## standard library of the Go that compiles the code.
 STATICCHECK_VERSION := v0.8.2
-staticcheck:
+staticcheck: deadcode
 	GOTOOLCHAIN=$$(go env GOVERSION) go run honnef.co/go/tools/cmd/staticcheck@$(STATICCHECK_VERSION) ./...
+
+## Dead Go code, a ratchet at zero: no function may be unreachable from the commands and
+## the tests (`deadcode -test`). The tool exits 0 with findings, so any output fails.
+## Built with the go.mod toolchain like staticcheck; CI runs it through `make staticcheck`.
+## web/node_modules is left out: an npm package may ship Go files (flatted does), which
+## `./...` would otherwise count as ours once `npm ci` has run.
+DEADCODE_VERSION := v0.52.0
+deadcode:
+	@out=$$(GOTOOLCHAIN=$$(go env GOVERSION) go run golang.org/x/tools/cmd/deadcode@$(DEADCODE_VERSION) -test $$(go list ./... | grep -v /node_modules/)) || exit 1; \
+	if [ -n "$$out" ]; then echo "$$out"; echo "deadcode: the functions above are unreachable; delete them"; exit 1; fi
 
 ## gosec, security static analysis of the Go code, pinned like staticcheck. Two rule
 ## classes are left out as false positives for this code base (2026-10 audit): G101
@@ -371,8 +370,7 @@ bundle-budget:
 brand-icons:
 	node scripts/brand-icons.mjs
 
-check: lint web-lint staticcheck test fmt-check ui-lint i18n-check docs-check templates-check news-check openspec-validate deploy-check repo-check
-	@if [ -n "$(APP)" ]; then $(MAKE) app; fi
+check: lint web-lint staticcheck deadcode test fmt-check ui-lint i18n-check docs-check templates-check news-check openspec-validate deploy-check repo-check
 
 ## The parts of `make check` that CI runs in its Checks job (the others run in the web,
 ## server and extension jobs; scripts/repo-checks.test.mjs keeps the two lists whole).

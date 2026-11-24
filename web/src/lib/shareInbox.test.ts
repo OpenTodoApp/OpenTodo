@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto'
 import { describe, expect, it } from 'vitest'
-import { clearInbox, deleteInboxEntry, entryFromForm, entrySize, getInboxEntry, INBOX_MAX_AGE_MS, putInboxEntry, SHARE_MAX_BYTES, shareRequestAllowed, shareRequestVerdict, sweepInbox } from './shareInbox'
+import { clearInbox, deleteInboxEntry, entryFromForm, entrySize, getInboxEntry, INBOX_MAX_AGE_MS, putInboxEntry, SHARE_MAX_BYTES, shareRequestVerdict, sweepInbox } from './shareInbox'
 
 describe('share inbox', () => {
   it('stores a share sheet POST, reads it back and deletes it', async () => {
@@ -28,6 +28,7 @@ describe('share inbox', () => {
 
   it('takes shares only from the share sheet or the app itself, and only up to the cap (encryption-state-integrity)', () => {
     const h = (o: Record<string, string>) => new Headers(o)
+    const shareRequestAllowed = (headers: Headers) => shareRequestVerdict(headers) === 'store'
     expect(shareRequestAllowed(h({ 'Sec-Fetch-Site': 'none' }))).toBe(true)
     expect(shareRequestAllowed(h({ 'Sec-Fetch-Site': 'same-origin' }))).toBe(true)
     // A request without Sec-Fetch-Site is not stored (share-target-fetch-metadata).

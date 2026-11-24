@@ -10,14 +10,20 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { shellGeofences } from './geofences'
-import { backgroundDone, forgetShellData, openAlarmSettings, setSystemBars, shellHaptic, shellVisible, takeOverPull, type OpenTodoShell, type ShellGeofencePayload, type ShellHaptic } from './shell'
+import { announcePainted, backgroundDone, forgetShellData, openAlarmSettings, setSystemBars, shellHaptic, shellVisible, takeOverPull, type OpenTodoShell, type ShellCapability, type ShellGeofencePayload, type ShellHaptic } from './shell'
 import { fileChunks } from './saveFile'
 import { shellUrlAction } from './shellActions'
 import { parsePushState, parsePushSubscription, pushState, pushSubscribe, pushUnsubscribe } from './shellPush'
-import { shellReminders, shellWidget } from './shellPublish'
+import { shellCompleted, shellReminders, shellWidget } from './shellPublish'
+import { focusPayload } from './focus/shellPublish'
+import { FOCUS_DEFAULTS } from './focus/prefs'
+import { finish, idleState, pause, resume, start } from './focus/timer'
 import { openOrigin } from './originOpen'
 import vectors from '../../../internal/origin/testdata/origin_vectors.json'
+import appLinkVectors from '../../../internal/origin/testdata/app_links.vectors.json'
+import { openAppLink, setAppLinkSchemes, trustScheme } from './appLinks'
 import type { Place, Reminder, Task } from './types'
+import { SCROLL_TOP_EVENT } from '../ui/scrollTop'
 
 // Vitest runs in web/ (happy-dom's URL cannot resolve file: addresses).
 const dir = path.resolve(process.cwd(), '../mobile/android/app/src/test/resources/bridge')
@@ -103,7 +109,7 @@ const regionExpect = (p: ShellGeofencePayload) => p.regions.map((r) => ({ id: r.
 interface Fixture {
   description: string
   /** The bridge method and the exact argument string the web app passes. */
-  method: 'scheduleReminders' | 'publishWidget' | 'scheduleGeofences'
+  method: 'scheduleReminders' | 'publishWidget' | 'scheduleGeofences' | 'publishFocus'
   payload: string
   now: number
   expect: unknown
@@ -122,11 +128,55 @@ function captureSignOut(): { reminders: string; widget: string } {
   return { reminders: calls.reminders ?? '', widget: calls.widget ?? '' }
 }
 
+// Completed on three of the last 7 days (two today), one before the week, one open and one trashed.
+const DAY = 24 * HOUR
+const doneTasks: Task[] = [
+  { id: 'd1', completed_at: NOW - HOUR }, { id: 'd2', completed_at: NOW - 2 * HOUR }, { id: 'd3', completed_at: NOW - 2 * DAY },
+  { id: 'd4', completed_at: NOW - 6 * DAY }, { id: 'd5', completed_at: NOW - 9 * DAY }, { id: 'd6', completed_at: null },
+  { id: 'd7', completed_at: NOW - HOUR, deleted_at: NOW },
+].map((x) => ({ title: x.id, project_id: null, due: null, priority: 4, deleted_at: null, created_at: NOW - 30 * DAY, series_id: null, ...x }) as unknown as Task)
+
+/**
+ * focus-live-activity D1, D2: the Focus sessions the web app hands publishFocus,
+ * built by the real builder from real timer states, with what the shell must make
+ * of them: the clock counts down to `end` or up from `countUpFrom`, is frozen at
+ * `frozenMs` while paused, the activity is stale and the session-end notification
+ * fires at `notifyAt`, and nothing is shown for none.
+ */
+function focusFixtures(): Record<string, Fixture> {
+  const pomodoro = { ...FOCUS_DEFAULTS, mode: 'pomodoro' as const }
+  const flow = { ...FOCUS_DEFAULTS, mode: 'flowtime' as const }
+  const t0 = NOW - 10 * 60_000
+  const running = focusPayload(start(idleState('call', 'pomodoro', t0, { cycle: 2, lengthMinutes: 25 }), t0, pomodoro), pomodoro, 'Call the plumber ☎')
+  const paused = focusPayload(pause(start(idleState('call', 'pomodoro', t0), t0, pomodoro), NOW), pomodoro)
+  const flowPaused = pause(start(idleState('plain', 'flowtime', t0 - 20 * 60_000), t0 - 20 * 60_000, flow), t0 - 15 * 60_000)
+  const flowtime = focusPayload(resume(flowPaused, t0), flow, 'Water the plants')
+  const breakState = focusPayload(finish(start(idleState('call', 'pomodoro', t0 - 25 * 60_000), t0 - 25 * 60_000, pomodoro), { ...pomodoro, autoStartBreaks: true }), pomodoro)
+  const show = (p: typeof running) => ({
+    state: p.state, title: p.title ?? null, phase: p.phase ?? null, breakKind: p.breakKind ?? null, cycle: p.cycle ?? null, cycleLength: p.cycleLength ?? null,
+    countsDown: p.state === 'running' && p.plannedEndAt != null,
+    end: p.state === 'running' ? (p.plannedEndAt ?? null) : null,
+    countUpFrom: p.state === 'running' && p.plannedEndAt == null && p.runningSince != null ? p.runningSince - (p.elapsedMs ?? 0) : null,
+    frozenMs: p.state === 'paused' ? (p.plannedMs != null ? p.plannedMs - (p.elapsedMs ?? 0) : (p.elapsedMs ?? 0)) : null,
+    notifyAt: p.state === 'running' ? (p.plannedEndAt ?? null) : null,
+  })
+  const f = (description: string, p: typeof running): Fixture => ({ description, method: 'publishFocus', payload: JSON.stringify(p), now: NOW, expect: show(p) })
+  return {
+    'focus-running.json': f('A Pomodoro work session, second of four, started ten minutes ago, titles allowed: "Call the plumber ☎", "Work · 2 of 4", a clock counting down to end; stale and the "Session done" notification at notifyAt.', running),
+    'focus-paused.json': f('The same session paused now (no title: the titles option is off or the account is encrypted, so the shell reads "Focus session"): "Paused", the time left frozen, no notification.', paused),
+    'focus-flowtime.json': f('Flowtime, paused once for five minutes and running again: a clock counting up from countUpFrom (the time worked before the stretch is included), no planned end, no notification.', flowtime),
+    'focus-break.json': f('A short break started on its own after a work session: "Short break", counting down; the "Break over" notification at notifyAt.', breakState),
+    'focus-none.json': f('Nothing runs (sign-out, lock of an encrypted account, nothing stored, or the session left): the shell ends the activity or the notification, cancels the alarm and forgets the stored state.', focusPayload(null, pomodoro)),
+  }
+}
+
 function fixtures(): Record<string, Fixture> {
   const titled = shellReminders(reminders, tasks, NOW, { titles: true, encrypted: false })
   const untitled = shellReminders(reminders, tasks, NOW, { titles: true, encrypted: true })
   const widget = shellWidget(tasks, TODAY, NOW, false)
   const locked = shellWidget(tasks, TODAY, NOW, true)
+  const completedWidget = { ...widget, completed: shellCompleted(doneTasks, [], [], null, TODAY, false) }
+  const completedLocked = { ...locked, completed: shellCompleted(doneTasks, [], [], null, TODAY, true) }
   const signOut = captureSignOut()
   const signedOutWidget = { ...JSON.parse(signOut.widget), updatedAt: NOW }
   const geo = shellGeofences(locationReminders, placeTasks, places, { titles: true, encrypted: false })
@@ -150,6 +200,16 @@ function fixtures(): Record<string, Fixture> {
       method: 'scheduleGeofences', payload: captureGeofencesSignOut(), now: NOW, expect: { ask: false, regions: [] },
     },
     'geofences-two-cities.json': twoCities(),
+    'widget-completed.json': {
+      description: 'The Completed widget (completed-widget D1): today\'s completions and the last 7 days, oldest first, counted as Statistics counts them. The shell draws a bar per day, scaled to the highest day.',
+      method: 'publishWidget', payload: JSON.stringify(completedWidget), now: NOW,
+      expect: { updatedAt: NOW, locked: false, today: completedWidget.completed.today, days: completedWidget.completed.days },
+    },
+    'widget-completed-locked.json': {
+      description: 'A locked encrypted account: today\'s count only, no days, so the shell shows the number without bars.',
+      method: 'publishWidget', payload: JSON.stringify(completedLocked), now: NOW,
+      expect: { updatedAt: NOW, locked: true, today: completedLocked.completed.today, days: [] },
+    },
     'reminders.json': {
       description: 'The next reminders with titles (titles on, account readable), earliest first.',
       method: 'scheduleReminders', payload: JSON.stringify(titled), now: NOW,
@@ -196,6 +256,9 @@ function actions() {
       { id: 'g-arrive', action: 'done' }, { id: 'g-arrive', action: 'dismiss' }, { id: 'r 1/ü', action: 'done' },
     ].map(({ id, action }) => ({ id, action, path: `/?reminder=${encodeURIComponent(id).replace(/%20/g, '+')}&action=${action}` })),
     quickAdd: { path: '/?add=' },
+    // focus-live-activity D4: a tap on the activity or notification opens focusOpen; Pause and Resume open these.
+    focusOpen: { path: '/focus' },
+    focusActions: (['pause', 'resume'] as const).map((action) => ({ action, path: `/focus?action=${action}` })),
   }
 }
 
@@ -219,6 +282,30 @@ function externalLinks() {
     handed,
     accepted: urls(true),
     refused: [...urls(false), 'javascript:alert(1)', 'file:///etc/passwd', 'obsidian://open?vault=Notes&file=a&vault=Other'],
+  }
+}
+
+/**
+ * app-links D6: what the web app hands openAppLink (the link and the viewer's list
+ * as JSON), captured from the real call, and the shared vectors the shells run
+ * (internal/origin/testdata/app_links.vectors.json).
+ */
+function appLinks() {
+  const handed: { url: string; schemes: string }[] = []
+  window.opentodoShell = {
+    bridge: 1, platform: 'android', app: '0.20.0', capabilities: ['links', 'app-links'],
+    openAppLink: (url, schemes) => void handed.push({ url, schemes }),
+  }
+  setAppLinkSchemes(['zotero', 'obsidian:open'])
+  trustScheme('zotero')
+  openAppLink('zotero://select/items/ABC')
+  setAppLinkSchemes([])
+  localStorage.clear()
+  delete window.opentodoShell
+  return {
+    description: 'Links to other apps (app-links): what the web app hands openAppLink, and the shared vectors. The shell hands a link to the system only when its scheme is on the passed list (allows) and not denied (links).',
+    handed,
+    vectors: appLinkVectors,
   }
 }
 
@@ -262,17 +349,17 @@ function saveFileCalls() {
   }
 }
 
-/** shell-repairs D5: the kinds `haptic` is called with, captured from the real call, and one a shell must ignore. */
+/** shell-repairs D5, haptic-kinds D1: the kinds `haptic` is called with, captured from the real call, and one a shell plays as `tick`. */
 function haptics() {
   const kinds: string[] = []
   window.opentodoShell = { bridge: 1, platform: 'android', app: '1.5.0', capabilities: ['haptics'], haptic: (kind) => void kinds.push(kind) }
-  for (const k of ['tick', 'success'] satisfies ShellHaptic[]) shellHaptic(k)
+  for (const k of ['tick', 'success', 'warning', 'error', 'selection'] satisfies ShellHaptic[]) shellHaptic(k)
   delete window.opentodoShell
   return {
-    description: 'Haptic feedback (shell-repairs D5): the kinds the web app hands haptic. A shell plays its own feedback for each and ignores a kind it does not know, without an error.',
+    description: 'Haptic feedback (shell-repairs D5, haptic-kinds D1): the kinds the web app hands haptic. A shell plays its own feedback for each and plays tick for a kind it does not know, without an error.',
     method: 'haptic' as const,
     kinds,
-    unknown: 'warning',
+    unknown: 'thud',
   }
 }
 
@@ -283,7 +370,7 @@ function haptics() {
  * has a screen" from `links`, so no background run may list anything of visibleOnly.
  */
 function capabilities() {
-  const visibleOnly = ['share', 'links', 'obsidian-links', 'system-bars', 'microphone', 'files', 'haptics', 'alarm-settings']
+  const visibleOnly = ['share', 'links', 'obsidian-links', 'app-links', 'system-bars', 'microphone', 'files', 'haptics', 'completion-sound', 'alarm-settings', 'first-paint', 'focus']
   const backgroundOnly = ['background']
   const both = ['reminders', 'widgets', 'push']
   const called: string[] = []
@@ -297,7 +384,7 @@ function capabilities() {
   return {
     description: 'Capabilities by kind of run (shell-reminders-on): visibleOnly is listed only by the app a person sees (biometric and geofences depend on the device and the store build and are not listed here), backgroundOnly only by a background run, both by either. methods names the capability each new method needs; expect is what the web app does in each run.',
     visibleOnly, backgroundOnly, both,
-    methods: { openAlarmSettings: 'alarm-settings', backgroundDone: 'background' },
+    methods: { openAlarmSettings: 'alarm-settings', backgroundDone: 'background', playCompletionSound: 'completion-sound', painted: 'first-paint' },
     expect: { visible, background, called },
   }
 }
@@ -315,6 +402,25 @@ function pull() {
     description: 'Pull to sync (pull-to-sync D4): a shell with its own pull to refresh lists the capability. The web app calls the method once per page load, without arguments, when it handles the pull itself; the shell then turns its own off until another page loads. A shell without a pull to refresh lists nothing and is not called.',
     capability: 'pull-refresh' as const,
     method: 'pullHandled' as const,
+    calls,
+  }
+}
+
+/** shell-reveal-on-paint D1: the call that tells a shell hiding its web view that the page has drawn, captured from the real call. */
+function painted() {
+  const calls: unknown[][] = []
+  // A shell that does not list the capability is never called.
+  window.opentodoShell = { bridge: 1, platform: 'android', app: '1.6.0', capabilities: ['haptics'], painted: (...args: unknown[]) => void calls.push(args) }
+  announcePainted()
+  window.opentodoShell = { bridge: 1, platform: 'ios', app: '1.6.0', capabilities: ['first-paint'], painted: (...args: unknown[]) => void calls.push(args) }
+  announcePainted()
+  // Once per page load.
+  announcePainted()
+  delete window.opentodoShell
+  return {
+    description: 'First paint (shell-reveal-on-paint D1): a shell that keeps its web view hidden over its launch screen lists the capability. The web app calls the method once per page load, without arguments, after its first frame with its own content is drawn; the shell then shows the web view without waiting for the page to finish loading. A shell without it lists nothing and is not called.',
+    capability: 'first-paint' as const,
+    method: 'painted' as const,
     calls,
   }
 }
@@ -340,14 +446,24 @@ function pushBridge() {
 
 const text = (v: unknown) => JSON.stringify(v, null, 2) + '\n'
 
+/** status-bar-scroll-top D2: the capability, the event the page listens for and the script the iOS shell runs. */
+function scrollTop() {
+  return {
+    description: 'A tap on the status bar (status-bar-scroll-top): a shell that lists the capability runs the script, and the page scrolls its frontmost scroller to the top.',
+    capability: 'scroll-top' satisfies ShellCapability,
+    event: SCROLL_TOP_EVENT,
+    script: `window.dispatchEvent(new CustomEvent('${SCROLL_TOP_EVENT}'))`,
+  }
+}
+
 afterEach(() => {
   delete window.opentodoShell
 })
 
 describe('Android bridge fixtures', () => {
   it('are current (mobile/android/app/src/test/resources/bridge)', () => {
-    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()), 'pull.json': text(pull()), 'push-bridge.json': text(pushBridge()) }
-    for (const [name, f] of Object.entries(fixtures())) want[name] = text(f)
+    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'app-links.json': text(appLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()), 'pull.json': text(pull()), 'painted.json': text(painted()), 'push-bridge.json': text(pushBridge()), 'scroll-top.json': text(scrollTop()) }
+    for (const [name, f] of Object.entries({ ...fixtures(), ...focusFixtures() })) want[name] = text(f)
     if (update) {
       mkdirSync(dir, { recursive: true })
       for (const [name, body] of Object.entries(want)) writeFileSync(path.join(dir, name), body)
@@ -389,5 +505,6 @@ describe('Android bridge fixtures', () => {
     const a = actions()
     for (const r of [...a.reminderActions, ...a.locationActions]) expect(shellUrlAction(new URL(r.path, 'https://x').search)).toEqual({ kind: 'reminder', id: r.id, action: r.action })
     expect(shellUrlAction(new URL(a.quickAdd.path, 'https://x').search)).toEqual({ kind: 'add', text: '' })
+    for (const f of a.focusActions) { const u = new URL(f.path, 'https://x'); expect(shellUrlAction(u.search, u.pathname)).toEqual({ kind: 'focus', action: f.action }) }
   })
 })

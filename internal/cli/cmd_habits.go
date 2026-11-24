@@ -50,22 +50,11 @@ func cmdHabits(a *App, ctx context.Context, g *globalFlags, args []string) error
 	return usageErr("unknown habits command %q (expected list, show or log)", args[0])
 }
 
-// habitsZone is the machine's time zone, so the server's today is the user's.
-func (a *App) habitsZone() string {
-	if z := a.Now().Location().String(); z != "Local" && z != "" {
-		return z
-	}
-	if z := time.Local.String(); z != "Local" {
-		return z
-	}
-	return ""
-}
-
 func (a *App) habitQuery(extra url.Values) string {
 	if extra == nil {
 		extra = url.Values{}
 	}
-	if z := a.habitsZone(); z != "" {
+	if z := a.localZone(); z != "" {
 		extra.Set("timezone", z)
 	}
 	if len(extra) == 0 {
@@ -257,7 +246,7 @@ func habitsLog(a *App, ctx context.Context, g *globalFlags, args []string) error
 	if *note != "" {
 		body["note"] = *note
 	}
-	if z := a.habitsZone(); z != "" {
+	if z := a.localZone(); z != "" {
 		body["timezone"] = z
 	}
 	c, _, err := a.connect(g)

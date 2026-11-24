@@ -13,8 +13,11 @@ import { chipText } from '../ParseChips'
 import { ProjectMark } from '../ProjectMark'
 import { FIELD_ICON, fieldOf, type FieldKind, type QuickAddProject } from './fields'
 import { FIELD_NAME } from './FieldRows'
+import { LineDatePicker, type LineDate } from './LineDatePicker'
 
-const TOOLS: FieldKind[] = ['when', 'priority', 'label', 'estimate', 'project']
+// The tools that start a token the line understands. A date has no token (dates are
+// words, "tomorrow"): its tool opens the date picker instead (phone-quickadd-date-picker).
+const TOOLS: FieldKind[] = ['priority', 'label', 'estimate', 'project']
 const keepFocus = (e: React.MouseEvent) => e.preventDefault()
 
 function chipWords(chip: Chip, projects: readonly ProjectRef[], labels: readonly LabelRef[], line?: { due: Due | null; datedByPhrase: boolean }): string {
@@ -24,7 +27,7 @@ function chipWords(chip: Chip, projects: readonly ProjectRef[], labels: readonly
   return text
 }
 
-export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, canSend, energy = false, notes }: {
+export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, canSend, energy = false, notes, date }: {
   chips: readonly Chip[]
   projects: readonly QuickAddProject[]
   labels: readonly LabelRef[]
@@ -37,12 +40,15 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
   energy?: boolean
   /** The notes field under the line (quick-add-notes D2): the last tool opens it and moves the caret there. */
   notes?: { open: boolean; start: () => void }
+  /** The date tool (phone-quickadd-date-picker): opens the date picker above the chips. */
+  date?: LineDate
 }) {
   const tools: FieldKind[] = energy ? [...TOOLS, 'energy'] : TOOLS
   const set = new Set(chips.map((c) => fieldOf(c.kind)))
   const placeholders = (['project', 'label'] as const).filter((k) => !set.has(k))
   return (
     <div data-quick-add-sheet-bar>
+      {date?.open && <LineDatePicker id={date.id} due={date.due} onPick={date.pick} onKeyDown={date.escape} />}
       <div className="flex gap-1.5 overflow-x-auto px-3 pb-3 pt-1 [scrollbar-width:none]" role="group" aria-label={t('Understood')} data-scroll-x>
         {chips.map((c) => {
           const project = c.kind === 'project' ? projects.find((p) => p.id === c.value) : undefined
@@ -60,14 +66,22 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
             </span>
           )
         })}
+        {/* A tap target for the same action as the toolbar's Project and Label below, so hidden from
+            assistive technology and the tab order: a screen reader met each name twice. */}
         {placeholders.map((k) => (
-          <button key={k} type="button" data-sheet-placeholder={k} onMouseDown={keepFocus} onClick={() => onStart(k)}
+          <button key={k} type="button" data-sheet-placeholder={k} onMouseDown={keepFocus} onClick={() => onStart(k)} aria-hidden="true" tabIndex={-1}
             className="inline-flex h-[1.875rem] shrink-0 items-center gap-1.5 rounded-full border border-dashed border-input px-2.5 text-body text-faint">
             <Icon name={FIELD_ICON[k]} size={14} />{FIELD_NAME[k]}
           </button>
         ))}
       </div>
       <div className="flex items-center gap-1 border-t border-default px-2.5 py-2" role="toolbar" aria-label={t('Add details')}>
+        {date && (
+          <button type="button" data-sheet-tool="when" onMouseDown={keepFocus} onClick={date.toggle} aria-label={FIELD_NAME.when} aria-expanded={date.open} aria-controls={date.id}
+            className={`inline-flex h-[2.375rem] w-[2.375rem] items-center justify-center rounded-control hover:bg-hover hover:text-default ${date.open ? 'bg-selected text-default' : 'text-muted'}`}>
+            <Icon name={FIELD_ICON.when} size={18} />
+          </button>
+        )}
         {tools.map((k) => (
           <button key={k} type="button" data-sheet-tool={k} onMouseDown={keepFocus} onClick={() => onStart(k)} aria-label={FIELD_NAME[k]}
             className="inline-flex h-[2.375rem] w-[2.375rem] items-center justify-center rounded-control text-muted hover:bg-hover hover:text-default">

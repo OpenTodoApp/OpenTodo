@@ -11,6 +11,7 @@ import { getTask, useReviewRow, useUserPrefsRow } from '../../lib/localData'
 import { orderedFocusIds } from '../../lib/bento'
 import { useLiveTasks } from '../../lib/liveTasks'
 import { swRegistration } from '../../lib/push'
+import { has } from '../../lib/shell'
 import { useFocusPrefs, useNoiseVolume, type FocusAlert, type FocusPrefs } from '../../lib/focus/prefs'
 import { nextFocusTask } from '../../lib/focus/select'
 import { completeSession, finishIfDue, noteEntryStopped } from '../../lib/focus/session'
@@ -49,8 +50,13 @@ export function resetFocusNotices(): void {
 }
 resettable('focusNotices', resetFocusNotices)
 
-/** The end of a run while the tab is hidden: one system notification through the service worker, when allowed. */
+/**
+ * The end of a run while the tab is hidden: one system notification through the
+ * service worker, when allowed. A shell that lists `focus` schedules its own at the
+ * planned end (focus-live-activity D3), so none is shown from here.
+ */
 export async function notifyFocusEnd(s: FocusState): Promise<boolean> {
+  if (has('focus')) return false
   if (!s.ended || typeof document === 'undefined' || document.visibilityState !== 'hidden') return false
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return false
   const tag = `focus:${s.ended.runStartedAt}`

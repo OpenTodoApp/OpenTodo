@@ -35,14 +35,16 @@
   // work-in-progress language may have an empty entry, `scripts/i18n/new-language.mjs`
   // adds one).
   const OWN_TEXT = {
-    en: { reminder: 'Reminder', due: 'Due {date}', tiny: '{tiny} is enough', generic: 'You have a reminder', done: 'Done|task', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.' },
-    de: { reminder: 'Erinnerung', due: 'Fällig {date}', tiny: '{tiny} reicht', generic: 'Du hast eine Erinnerung', done: 'Erledigt', snooze: '10 Min. später', dismiss: 'Verwerfen', test: 'Testbenachrichtigung: Push funktioniert auf diesem Gerät.' },
-    fr: { reminder: 'Rappel', due: 'Échéance {date}', tiny: '{tiny} suffit', generic: 'Vous avez un rappel', done: 'Terminé', snooze: 'Reporter de 10 min', dismiss: 'Ignorer', test: 'Notification de test : les notifications push fonctionnent sur cet appareil.' },
-    es: { reminder: 'Recordatorio', due: 'Vence {date}', tiny: 'Con {tiny} basta', generic: 'Tienes un recordatorio', done: 'Hecho', snooze: 'Posponer 10 min', dismiss: 'Descartar', test: 'Notificación de prueba: las notificaciones push funcionan en este dispositivo.' },
-    it: { reminder: 'Promemoria', due: 'Scadenza {date}', tiny: 'Basta {tiny}', generic: 'Hai un promemoria', done: 'Fatto', snooze: 'Posticipa di 10 min', dismiss: 'Ignora', test: 'Notifica di prova: le notifiche push funzionano su questo dispositivo.' },
-    pt: { reminder: 'Lembrete', due: 'Vence {date}', tiny: '{tiny} já basta', generic: 'Você tem um lembrete', done: 'Concluído', snooze: 'Adiar 10 min', dismiss: 'Dispensar', test: 'Notificação de teste: as notificações push funcionam neste dispositivo.' },
-    zh: { reminder: '提醒', due: '{date} 截止', tiny: '{tiny}就够了', generic: '你有一条提醒', done: '完成', snooze: '延后 10 分钟', dismiss: '忽略', test: '测试通知：推送在此设备上正常工作。' },
-    nl: { reminder: 'Herinnering', due: 'Gepland {date}', tiny: '{tiny} is genoeg', generic: 'Je hebt een herinnering', done: 'Voltooid', snooze: '10 min. later', dismiss: 'Sluiten', test: 'Testmelding: push werkt op dit apparaat.' },
+    en: { reminder: 'Reminder', due: 'Due {date}', tiny: '{tiny} is enough', generic: 'You have a reminder', done: 'Done|task', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.', assigned: '{name} assigned you a task', completed: '{name} completed a task', reopened: '{name} reopened a task', someone: 'Someone' },
+    de: { reminder: 'Erinnerung', due: 'Fällig {date}', tiny: '{tiny} reicht', generic: 'Du hast eine Erinnerung', done: 'Erledigt', snooze: '10 Min. später', dismiss: 'Verwerfen', test: 'Testbenachrichtigung: Push funktioniert auf diesem Gerät.', assigned: '{name} hat dir eine Aufgabe zugewiesen', completed: '{name} hat eine Aufgabe erledigt', reopened: '{name} hat eine Aufgabe wieder geöffnet', someone: 'Jemand' },
+    fr: { reminder: 'Rappel', due: 'Échéance {date}', tiny: '{tiny} suffit', generic: 'Tu as un rappel', done: 'Terminé', snooze: 'Reporter de 10 min', dismiss: 'Ignorer', test: 'Notification de test : les notifications push fonctionnent sur cet appareil.', assigned: '{name} t’a attribué une tâche', completed: '{name} a terminé une tâche', reopened: '{name} a rouvert une tâche', someone: 'Quelqu’un' },
+    es: { reminder: 'Recordatorio', due: 'Vence {date}', tiny: 'Con {tiny} basta', generic: 'Tienes un recordatorio', done: 'Hecho', snooze: 'Posponer 10 min', dismiss: 'Descartar', test: 'Notificación de prueba: las notificaciones push funcionan en este dispositivo.', assigned: '{name} te asignó una tarea', completed: '{name} completó una tarea', reopened: '{name} reabrió una tarea', someone: 'Alguien' },
+    it: { reminder: 'Promemoria', due: 'Scadenza {date}', tiny: 'Basta {tiny}', generic: 'Hai un promemoria', done: 'Fatto', snooze: 'Posticipa di 10 min', dismiss: 'Ignora', test: 'Notifica di prova: le notifiche push funzionano su questo dispositivo.', assigned: '{name} ti ha assegnato un’attività', completed: '{name} ha completato un’attività', reopened: '{name} ha riaperto un’attività', someone: 'Qualcuno' },
+    pt: { reminder: 'Lembrete', due: 'Vence {date}', tiny: '{tiny} já basta', generic: 'Você tem um lembrete', done: 'Concluído', snooze: 'Adiar 10 min', dismiss: 'Dispensar', test: 'Notificação de teste: as notificações push funcionam neste dispositivo.', assigned: '{name} atribuiu uma tarefa a você', completed: '{name} concluiu uma tarefa', reopened: '{name} reabriu uma tarefa', someone: 'Alguém' },
+    zh: { reminder: '提醒', due: '{date} 截止', tiny: '{tiny}就够了', generic: '你有一条提醒', done: '完成', snooze: '延后 10 分钟', dismiss: '忽略', test: '测试通知：推送在此设备上正常工作。', assigned: '{name} 给你分配了一项任务', completed: '{name} 完成了一项任务', reopened: '{name} 重新打开了一项任务', someone: '某人' },
+    nl: { reminder: 'Herinnering', due: 'Gepland {date}', tiny: '{tiny} is genoeg', generic: 'Je hebt een herinnering', done: 'Voltooid', snooze: '10 min. later', dismiss: 'Sluiten', test: 'Testmelding: push werkt op dit apparaat.', assigned: '{name} heeft je een taak toegewezen', completed: '{name} heeft een taak voltooid', reopened: '{name} heeft een taak opnieuw geopend', someone: 'Iemand' },
+    tr: { reminder: 'Hatırlatıcı', due: 'Bitiş: {date}', tiny: '{tiny} yeterli', generic: 'Bir hatırlatıcınız var', done: 'Tamamlandı', snooze: '10 dk ertele', dismiss: 'Kapat', test: 'Test bildirimi: bu cihazda anlık bildirimler çalışıyor.', assigned: '{name} sana bir görev atadı', completed: '{name} bir görevi tamamladı', reopened: '{name} bir görevi yeniden açtı', someone: 'Biri' },
+    pl: { reminder: 'Przypomnienie', due: 'Do wykonania {date}', tiny: '{tiny} wystarczy', generic: 'Masz przypomnienie', done: 'Zrobione', snooze: 'Odłóż o 10 min', dismiss: 'Zamknij', test: 'Powiadomienie testowe: powiadomienia push działają na tym urządzeniu.', assigned: '{name} przypisał(a) ci zadanie', completed: '{name} ukończył(a) zadanie', reopened: '{name} ponownie otworzył(a) zadanie', someone: 'Ktoś' },
   }
   self.__opentodoText = OWN_TEXT
   const TEXT = {}
@@ -136,6 +138,20 @@
       }
     } catch {
       return {}
+    }
+  }
+
+  /** The local copy of one task, or undefined. */
+  async function readTask(taskId) {
+    try {
+      const db = await openDB()
+      try {
+        return await req(db.transaction(['tasks'], 'readonly').objectStore('tasks').get(taskId))
+      } finally {
+        db.close()
+      }
+    } catch {
+      return undefined
     }
   }
 
@@ -409,6 +425,26 @@
         for (const w of windows) w.postMessage({ type: 'push:test-received', testId: data.testId, receivedAt: Date.now() })
         return
       }
+      if ((data.type === 'assigned' || data.type === 'status') && data.taskId) {
+        // An assignment or a status change by someone else (assignee-notifications
+        // D4). With the app in front the bell already shows it.
+        const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+        if (windows.some((c) => c.focused || c.visibilityState === 'visible')) return
+        const text = await storedText()
+        const key = data.type === 'assigned' ? 'assigned' : data.completed ? 'completed' : 'reopened'
+        const task = data.title ? undefined : await readTask(data.taskId)
+        const local = task && typeof task.title === 'string' && !task.title.startsWith('enc:') ? task.title : ''
+        // A function replacer keeps "$&" and the like in a name literal.
+        const name = typeof data.actorName === 'string' && data.actorName ? data.actorName : text.someone
+        await self.registration.showNotification(text[key].replace('{name}', () => name), {
+          body: data.title || local,
+          tag: `task:${data.taskId}`,
+          icon: '/pwa-192.png',
+          badge: '/pwa-192.png',
+          data: { url: `/?task=${encodeURIComponent(data.taskId)}` },
+        })
+        return
+      }
       if (data.type !== 'reminder' || !data.reminderId) {
         await updateBadge()
         await self.registration.showNotification('OpenTodo', { body: (await storedText()).generic, icon: '/pwa-192.png' })
@@ -441,6 +477,15 @@
     })())
   })
 
+  /** Whether url resolves to this app's own origin ('//elsewhere' does not). */
+  function sameOrigin(url) {
+    try {
+      return new URL(url, self.location.origin).origin === self.location.origin
+    } catch {
+      return false
+    }
+  }
+
   self.addEventListener('notificationclick', (event) => {
     const n = event.notification
     const d = n.data || {}
@@ -458,13 +503,18 @@
       }
       // A notification the page showed with an address (focus-mode D12, the end of a
       // focus session): bring an open window there, else open one.
-      if (typeof d.url === 'string' && d.url.startsWith('/')) {
+      if (typeof d.url === 'string' && sameOrigin(d.url)) {
         const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
         const w = windows[0]
         if (w && 'navigate' in w) {
-          await w.navigate(d.url)
-          if ('focus' in w) await w.focus()
-          return
+          try {
+            // navigate() refuses a window this worker does not control; open one then.
+            await w.navigate(d.url)
+            if ('focus' in w) await w.focus()
+            return
+          } catch {
+            // fall through
+          }
         }
         await self.clients.openWindow(d.url)
         return

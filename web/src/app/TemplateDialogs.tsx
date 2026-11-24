@@ -2,11 +2,13 @@
 // Duplicate… and Save as template… from the project menu, From a template… from
 // the sidebar, which opens on the template library (template-library). Everything happens on the device: a copy is one batch of ops, a
 // template file is built from local data and downloaded.
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { logicalToday } from '../lib/dates'
 import { projectsAndLabels, useProjects } from '../lib/localData'
 import { useEncryption } from '../lib/e2ee'
 import { mutateMany } from '../lib/ops'
+import { workspaceFields } from '../lib/workspaces'
 import { countTasks, downloadJSON, duplicateProject, fileFromTree, planTree, summarise, TemplateFileError, TemplateTooLargeError, templateFileName, treeFromFile, type TemplateTree, useProjectTree } from '../lib/templates'
 import type { Project } from '../lib/types'
 import { Button, Field, IconButton, Input, Notice, Dialog } from '../ui'
@@ -199,7 +201,7 @@ function TemplateFileForm({ projects, onBack, onClose }: { projects: Project[]; 
     setBusy(true)
     setError(null)
     try {
-      const plan = planTree(tree, { ...(await projectsAndLabels()), parentId, startDay })
+      const plan = planTree(tree, { ...(await projectsAndLabels()), parentId, startDay, workspace: await workspaceFields() })
       await mutateMany(plan.changes)
       onClose()
       if (plan.projectIds[0]) navigate({ view: 'project', id: plan.projectIds[0] })

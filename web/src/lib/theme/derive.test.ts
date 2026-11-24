@@ -73,6 +73,8 @@ describe('derivation from seeds', () => {
     const base = sweepDocument(SWEEP[1])
     expect(deriveTheme({ ...base, type: { family: { local: 'JetBrains Mono' }, list: 14 } })).toMatchObject({ font: expect.stringMatching(/^"JetBrains Mono", ui-sans-serif/), list: 14 })
     expect(deriveTheme({ ...base, type: { family: 'inter', list: 13 } })).not.toHaveProperty('font')
+    expect(deriveTheme({ ...base, titleWeight: 600 })).toMatchObject({ titleWeight: 600 })
+    expect(deriveTheme({ ...base, titleWeight: 400 })).not.toHaveProperty('titleWeight')
   })
 
   it('the sweep exercises the searches: pale accents and middle-band tones move', () => {

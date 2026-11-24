@@ -3,7 +3,7 @@ import { Skeleton } from '../ui'
 import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { api, isNetworkError } from '../lib/api'
+import { api, FileReadError, isNetworkError } from '../lib/api'
 import { errorText } from '../lib/errorText'
 import { useAction } from '../lib/useAction'
 import { useProjectsOfEveryWorkspace, useWorkspaceState } from '../lib/localData'
@@ -404,6 +404,7 @@ function switchFormat(guide: string | null): ImportFormat | '' {
 }
 
 function describe(err: unknown): string {
+  if (err instanceof FileReadError) return t('That file could not be read. Choose it again, or copy it to this device first.')
   return errorText(err, { capitalise: false, offline: t('The server could not be reached. Import needs a connection.') })
 }
 

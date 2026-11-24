@@ -8,6 +8,7 @@ import { addDaysISO, logicalToday } from './dates'
 import { currentLanguage, t } from './i18n'
 import { projectsAndLabels } from './localData'
 import { mutateMany } from './ops'
+import { workspaceFields } from './workspaces'
 import { saveViewMode } from './sections'
 import { planTree, type Plan, type TemplateTree, type TProject, type TTask } from './templates'
 
@@ -53,7 +54,8 @@ let cache: Promise<Library> | null = null
 
 /** The library of this release; one lazy chunk, loaded when the template dialog opens. */
 export function loadLibrary(): Promise<Library> {
-  cache ??= import('../generated/templates.json').then((m) => m.default as Library)
+  // A failed load (offline) is forgotten, so the next call fetches again (lazy-retry-online).
+  cache ??= import('../generated/templates.json').then((m) => m.default as Library, (err: unknown) => { cache = null; throw err })
   return cache
 }
 
@@ -146,7 +148,7 @@ const PALETTE = ['#059669', '#2563eb', '#d97706', '#7c3aed', '#db2777', '#0891b2
  */
 export async function startLibraryTemplate(tpl: LibraryTemplate, opts: { lang?: string; startDay?: string | null; parentId?: string | null } = {}): Promise<Plan> {
   const tree = libraryTree(tpl, opts.lang ?? currentLanguage(), opts.startDay)
-  const plan = planTree(tree, { ...(await projectsAndLabels()), parentId: opts.parentId ?? null, startDay: tree.day })
+  const plan = planTree(tree, { ...(await projectsAndLabels()), parentId: opts.parentId ?? null, startDay: tree.day, workspace: await workspaceFields() })
   await mutateMany(plan.changes)
   if (tpl.layout === 'board' && plan.projectIds[0]) await saveViewMode(plan.projectIds[0], 'board')
   return plan

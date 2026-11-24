@@ -2,7 +2,8 @@
 // and Week overflow item, the command palette's New frame, a frame's Edit and the
 // empty-slot menu of calendar-clarity ask for it here; the shell renders the host,
 // which loads the dialog only when it is first asked for.
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
+import { lazy } from '../../lib/lazy'
 import { createStore } from '../../lib/store'
 import { PanelBoundary } from '../PanelBoundary'
 

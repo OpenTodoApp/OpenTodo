@@ -15,7 +15,7 @@
 // Snapshots are shared and read-only: sort a copy, never the array itself.
 import { useLiveQuery } from 'dexie-react-hooks'
 import { CALENDAR_COMPLETED_META_KEY, GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from './calendar'
-import { db, getMeta, setMeta, type AttachmentBlob } from './db'
+import { db, getMeta, localEpoch, setMeta, type AttachmentBlob } from './db'
 import { rememberFieldNames } from './fieldNames'
 import { applicableFieldsLookup } from './fieldTree'
 import { t } from './i18n'
@@ -221,6 +221,11 @@ export function useSidebarRowsLoaded(): boolean {
 /** The synced user preferences row: undefined while loading, null when there is none yet. */
 export function useUserPrefsRow(): UserPrefs | null | undefined {
   return prefsRow.use()
+}
+
+/** The loaded preference snapshot for actions that must start within a user gesture. */
+export function currentUserPrefsRow(): UserPrefs | null | undefined {
+  return prefsRow.read()
 }
 
 /** This user's review stamp per project (project_prefs.reviewed_at, open-loops-method D4); empty while loading. */
@@ -484,11 +489,6 @@ export function useAttachmentBlobs(rows: readonly Pick<Attachment, 'id'>[]): Map
   }, [rows], NO_BLOBS)
 }
 
-/** Whether this device holds the file of an attachment. */
-export async function hasAttachmentBlob(id: string): Promise<boolean> {
-  return !!(await db.attachmentBlobs.get(id))
-}
-
 // ---- notifications, calendar, meta ----
 
 const NO_NOTIFICATIONS: AppNotification[] = []
@@ -539,8 +539,17 @@ export function useMeta<T>(key: string, fallback: T): T {
 }
 
 /** useMeta, but undefined until the stored value has been read. */
+// The last value read under each meta key in this tab, by the local data's epoch: a screen
+// that mounts again starts from it rather than from "not read yet", and the live read takes
+// over a moment later; nothing read before a sign-out or an account switch is used after it.
+const lastMeta = new Map<string, unknown>()
+
+/** A device meta value, undefined until first read; it starts from the value last read under `key` in this tab (project-query-filter D1). */
 export function useMetaRead<T>(key: string, fallback: T): T | undefined {
-  return useLiveQuery(() => getMeta<T>(key, fallback), [key])
+  const cacheKey = `${localEpoch()}:${key}`
+  const value = useLiveQuery(() => getMeta<T>(key, fallback), [key], lastMeta.get(cacheKey) as T | undefined)
+  if (value !== undefined) lastMeta.set(cacheKey, value)
+  return value
 }
 
 // ---- names for history ----

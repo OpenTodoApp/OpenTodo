@@ -632,19 +632,23 @@ The repository SHALL include a Home Assistant add-on repository in `deploy/homea
 - **THEN** `make check` fails and names the problem
 
 ### Requirement: Legacy image name after the move
-After the repository moved from the user `pixari` to the organization `OpenTodoApp`, CI SHALL keep publishing every image it publishes (its tags and a cosign signature of its digest) also as `ghcr.io/pixari/opentodo`, every Helm chart also under `oci://ghcr.io/pixari/charts`, and the manual `stable` promotion also for the legacy name, for every release up to and including the 0.16 releases and for builds of the main branch until a later release exists. The legacy push SHALL use the repository secret `GHCR_LEGACY_TOKEN` when it is set and the workflow's own token otherwise, and SHALL NOT fail the workflow when the registry refuses it: it SHALL print a warning naming the secret instead. Self-hosting documentation SHALL state the new name and the last release the legacy name receives. The move changes no data, route or configuration, so offline behaviour and convergence are unaffected.
+After the repository moved from the user `pixari` to the organization `OpenTodoApp`, CI published every image it published (its tags and a cosign signature of its digest) also as `ghcr.io/pixari/opentodo`, every Helm chart also under `oci://ghcr.io/pixari/charts`, and the manual `stable` promotion also for the legacy name, for every release up to and including 0.16.0. That window is over: CI SHALL publish images, charts and the `stable` promotion only under `ghcr.io/opentodoapp/opentodo` and `oci://ghcr.io/opentodoapp/charts`, and no release step SHALL need a credential for the legacy names. The manual `stable` promotion SHALL still copy a release published only under the legacy name (0.14.2 and earlier) to the new name first, digest and signatures unchanged. Self-hosting documentation SHALL state the new name and the last release the legacy name received. The move changes no data, route or configuration, so offline behaviour and convergence are unaffected.
 
 #### Scenario: A release in the transition window
-- **WHEN** the tag `v0.15.0` is released
-- **THEN** `ghcr.io/opentodoapp/opentodo:0.15.0` and `ghcr.io/pixari/opentodo:0.15.0` name the same digest, both signed, and `stable` moves under both names
+- **WHEN** the tag `v0.15.0` was released
+- **THEN** `ghcr.io/opentodoapp/opentodo:0.15.0` and `ghcr.io/pixari/opentodo:0.15.0` name the same digest, both signed
 
 #### Scenario: After the window
-- **WHEN** the tag `v0.17.0` is released
-- **THEN** only `ghcr.io/opentodoapp/opentodo` gets it, and `ghcr.io/pixari/opentodo:stable` stays on the last 0.16 release
+- **WHEN** a release after 0.16.0 is tagged
+- **THEN** only `ghcr.io/opentodoapp/opentodo` gets it, and `ghcr.io/pixari/opentodo:stable` stays on the last release it received
 
 #### Scenario: The legacy push is refused
-- **WHEN** the registry refuses the push to `ghcr.io/pixari/opentodo` because neither token may write that package
-- **THEN** the release still succeeds and the run shows a warning that names `GHCR_LEGACY_TOKEN`
+- **WHEN** the packages under `ghcr.io/pixari` refuse every push, or the repository has no credential for them
+- **THEN** a release, the Helm publish and `Promote stable` run as before: none of them pushes to the legacy names or warns about them
+
+#### Scenario: Promoting a release from before the move
+- **WHEN** `Promote stable` runs for 0.14.2, which exists only under `ghcr.io/pixari/opentodo`
+- **THEN** it is first copied to `ghcr.io/opentodoapp/opentodo:0.14.2` with the same digest and its signatures, then `stable` points at it
 
 ### Requirement: Background jobs run when their work is due
 The process that runs the background jobs SHALL start each job when its work is due instead of on a fixed timer, and SHALL wake a job at once when the server queues work for it. Each job SHALL run at most once at a time and independently of the others, so a long backup never delays a delivery. A job that is still due right after it ran SHALL wait a retry pause before it runs again. A job SHALL be asked again for its next due time at least every 30 seconds, and within about 2 seconds after another server process on the same data directory wrote to the database. Upkeep without a deadline (database statistics, delivery log size limits, the rule run log, orphaned secrets) SHALL run at most hourly and only after something changed. No job SHALL start later than the fixed timers it replaces would have started it:
@@ -706,19 +710,31 @@ CI SHALL run the tests of the built web app (the precache and deny list of the s
 - **THEN** they fail instead of being skipped
 
 ### Requirement: Tiered CI
-CI SHALL run in tiers. A pull request SHALL run the repository checks and, when it changes code, the web, server and image checks and one server binary; the browser layout and end-to-end checks in one engine at every width when it changes the web app, the server or their scripts; the workbench accessibility and visual checks when it changes the web app's sources or the workbench; the Android, extension and skill jobs only when their own files change; and a change to the docs alone SHALL run the repository checks and the docs website check. A change to the CI workflow or its path filter SHALL run every pull request tier. A push to the default branch and a release tag SHALL run every job and every engine, width, language and platform, and SHALL publish only after all of them succeeded; a job skipped by a tier SHALL never be the reason a pull request fails.
+CI SHALL run in tiers. The path tier SHALL run the repository checks and, when a change touches code, the web, server and image checks and one server binary; the browser layout and end-to-end checks in one engine at every width when it changes the web app, the server or their scripts; the workbench accessibility and visual checks and the accessibility gate on real screens when it changes the web app's sources or the workbench; the Android, iOS, extension and skill jobs only when their own files change; and a change to the docs alone SHALL run the repository checks and the docs website check, and outside pull requests the site bundle. A change to the CI workflow or its path filter SHALL turn on every job of the path tier (on a pull request or a push to the default branch, every job of their fast tier; the queue runs the rest). The merge queue SHALL run the whole path tier for what the queued change adds, and its result SHALL be the check that lets a change reach the default branch. A pull request, draft or not, SHALL run the path tier without the browser layout and end-to-end, workbench, real-screen accessibility, Android, iOS, binary and site bundle jobs, which the merge queue runs before the change lands. A push to the default branch SHALL run the path tier for what it changed since the commit before, without the browser layout and end-to-end, workbench, real-screen accessibility, Android and iOS jobs, which the merge queue ran on the same tree; the image, its publishing and the CI result SHALL still run on it. A release tag, the nightly run and a run by hand without a base SHALL run every job and every engine, width, language and platform, and a release SHALL publish only after all of them succeeded; a job skipped by a tier SHALL never be the reason a pull request or a queued change fails.
 
 #### Scenario: A server-only pull request
 - **WHEN** a pull request changes only `internal/sync`
-- **THEN** CI runs the checks, web, server, image, one binary and the single Chromium layout and end-to-end job, and skips the workbench, WebKit, translated-layout, other binary, Android, extension and skill jobs
+- **THEN** CI on the pull request runs the checks, web, server and image, and skips the binary, layout and end-to-end, workbench, accessibility, Android, iOS, extension and skill jobs
+
+#### Scenario: The queue runs the heavy jobs
+- **WHEN** that pull request enters the merge queue
+- **THEN** the queue's run also runs the single Chromium layout and end-to-end job and the linux/amd64 binary, and the change reaches the default branch only if every job of that run passed
+
+#### Scenario: A failure only the queue finds
+- **WHEN** a pull request changes `web/src` so that a workbench screenshot differs, and enters the merge queue
+- **THEN** the queue's visual check fails, the change does not reach the default branch, and the failed run carries the report with the new screenshots
+
+#### Scenario: The push after a queue merge
+- **WHEN** a change that touches `web/src` lands on the default branch through the merge queue
+- **THEN** the push run runs the checks, web, server, image and one binary, publishes the image when they pass, reports the CI result, and skips the layout, workbench, accessibility and phone jobs the queue already ran
 
 #### Scenario: A docs-only pull request
 - **WHEN** a pull request changes only files under `docs/`
 - **THEN** CI runs the repository checks (including the docs check) and the docs website check, and nothing else
 
 #### Scenario: The push runs everything
-- **WHEN** that pull request is merged
-- **THEN** the push run runs every layout leg (Chromium and WebKit at each width, German and French), all six binaries and the workbench checks, and the image is published only if every one of them passed
+- **WHEN** a release tag is pushed
+- **THEN** the run runs every layout leg (Chromium and WebKit at each width, German and French), all six binaries and the workbench checks, and the image is published only if every one of them passed
 
 ### Requirement: Nightly failures are reported
 The nightly checks SHALL report their result on the default branch as a GitHub issue labelled `ci-nightly`: a failed or timed-out nightly job SHALL open that issue, or comment on it when it is already open, naming the run and the failed jobs; a night on which every job passes SHALL close it. A first attempt whose only unsuccessful jobs never got a runner (GitHub gave them no hosted runner, so no step ran) SHALL NOT be reported; it SHALL be re-run once, failed and cancelled jobs only, and the re-run's result SHALL be reported as above. A job that failed on a runner SHALL never be re-run automatically, and a second attempt SHALL never be retried. The report and the retry SHALL use only the workflow's own token.
@@ -798,3 +814,14 @@ The release gates SHALL run for `x.y.z`. For a candidate, a value of the release
 
 - **WHEN** the tag `v1.0.0-rc.1` is pushed and the release job succeeds
 - **THEN** the GitHub release is a pre-release with the candidate's section as its notes, and the Helm chart, Google Play, Claude plugin and Obsidian plugin jobs do not run
+
+### Requirement: A pull request waits for few runners
+On a pull request, the web app SHALL be built inside the server job, the only job of a pull request that needs it, instead of in a job of its own, so a pull request's longest chain is changed paths → server. Everywhere else the web app SHALL be built once in its own job and shared with the jobs that read its output (the image builds its own in its Dockerfile). Both SHALL run the same build, bundle budget and tests of the built app.
+
+#### Scenario: A code pull request
+- **WHEN** a pull request changes `web/src`
+- **THEN** CI on the pull request runs no web build job, the server job builds the web app, checks the bundle budget and tests the built app before its Go steps, and a failure there fails the server job
+
+#### Scenario: The queue shares one build
+- **WHEN** that pull request enters the merge queue
+- **THEN** the web build job runs once, and the server, layout, accessibility and binary jobs use its output

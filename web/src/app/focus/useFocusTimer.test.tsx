@@ -122,6 +122,24 @@ describe('the end of a session', () => {
     await r.unmount()
   })
 
+  it('In a shell that lists focus (focus-live-activity D3): the shell owns the notification, none from here', async () => {
+    window.opentodoShell = { bridge: 1, platform: 'android', app: '1.7.0', capabilities: ['focus'], publishFocus: () => undefined }
+    try {
+      const r = await render(<Engine />)
+      await startSession(task, FOCUS_DEFAULTS, Date.now())
+      await waitFor(() => phases().includes('work'), 'the engine sees the session')
+      await setVisibility('hidden')
+      await advance(30 * MIN)
+      await waitFor(async () => (await readFocus())?.phase === 'done', 'done')
+      await waitFor(() => phases().every((p) => p === 'done'), 'the engine sees the end')
+      await flush()
+      expect(shown).toEqual([])
+      await r.unmount()
+    } finally {
+      delete window.opentodoShell
+    }
+  })
+
   it('Two tabs: two engines on one row write one end and show at most one notification', async () => {
     const r1 = await render(<Engine />)
     const r2 = await render(<Engine />)

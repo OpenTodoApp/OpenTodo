@@ -1,6 +1,6 @@
 ---
 title: Security limits
-summary: What OpenTodo does not protect, in one place: what the operator sees, what is unencrypted at rest, backups, host mode, the demo and scale.
+summary: "What OpenTodo does not protect, in one place: what the operator sees, what is unencrypted at rest, backups, host mode, the demo and scale."
 audience: developer
 section: Internals
 specs: []

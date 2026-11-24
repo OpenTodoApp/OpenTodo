@@ -13,6 +13,8 @@
 //   node scripts/release/appstore.mjs notes <version> <build>       "What to test" from CHANGELOG.md
 //   node scripts/release/appstore.mjs processed <version> <build>   wait for Apple's processing (VALID)
 //   node scripts/release/appstore.mjs key-file <path>               ASC_KEY_P8 as a file for altool (mode 600)
+//   node scripts/release/appstore.mjs submit <version> <build> [--dry-run] [--changelog <file>]
+//                                                                   App Store version, What's New, build, review (a final tag)
 //
 // The key comes from ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_P8 (the .p8 file's content), the team
 // from APPLE_TEAM_ID. Nothing secret is stored between runs: `sign` makes an Apple Distribution
@@ -24,6 +26,11 @@
 // is reached, `sign` revokes the oldest one this workflow made (found by its "OpenTodo CI" profiles)
 // and deletes its profiles; a certificate made by hand is never touched. `cleanup` revokes and
 // deletes what `sign` made only for a run that uploaded nothing.
+// `submit` (a final tag only, after processing) makes the App Store version of the marketing
+// version, sets its What's New from CHANGELOG.md, attaches the build and submits it for review,
+// released automatically after approval. It is safe to run again: a version already submitted,
+// in review or approved is left alone, and nothing is created twice. `--dry-run` reads as usual
+// and logs each write instead of making it.
 // Tests: node --test scripts/release/appstore.test.mjs (make repo-check).
 
 import { sign as cryptoSign } from 'node:crypto'
@@ -48,7 +55,14 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 export class AscError extends Error {
   constructor(what, status, errors) {
     const first = errors?.[0] ?? {}
-    super(`${what} failed (${status}${first.code ? ` ${first.code}` : ''}): ${first.detail || first.title || 'no detail'}`)
+    // Every reason Apple gives, with the associated ones (a submission names each missing setting there).
+    const reasons = []
+    for (const e of errors ?? []) {
+      reasons.push(e.detail || e.title || '')
+      for (const list of Object.values(e.meta?.associatedErrors ?? {})) for (const a of list ?? []) reasons.push(a.detail || a.title || '')
+    }
+    const said = [...new Set(reasons.filter(Boolean))].join('; ')
+    super(`${what} failed (${status}${first.code ? ` ${first.code}` : ''}): ${said || 'no detail'}`)
     this.status = status
     this.detail = first.detail || first.title || ''
   }
@@ -383,6 +397,23 @@ export async function cleanup(call, { dir, log = defaultLog }) {
   writeState(dir, { certificateId: null, profileIds: [] })
 }
 
+/**
+ * `submit <version> <build> [--dry-run] [--changelog <file>]`. The workflow runs this script from
+ * its own commit and passes the tag's CHANGELOG.md (ios-distribution D10).
+ */
+export function submitArgs(args) {
+  const [version, build, ...rest] = args
+  let changelog = join(ROOT, 'CHANGELOG.md')
+  let dry = false
+  for (let i = 0; i < rest.length; i++) {
+    if (rest[i] === '--dry-run') dry = true
+    else if (rest[i] === '--changelog' && rest[i + 1]) changelog = rest[++i]
+    else throw new Error('usage: submit <version> <build> [--dry-run] [--changelog <file>]')
+  }
+  if (!version || !build) throw new Error('usage: submit <version> <build> [--dry-run] [--changelog <file>]')
+  return { version, build, changelog, dry }
+}
+
 /** TestFlight's "What to test": the version's CHANGELOG.md section, or a plain line for a build between releases. */
 export function whatToTest(changelog, version, build) {
   try {
@@ -454,6 +485,166 @@ export async function waitForProcessing(call, { version, build, attempts = 90, w
   return null
 }
 
+// ---- App Store submission (a final tag) ----
+
+/** The states in which an App Store version can still be edited and submitted. */
+export const EDITABLE_STATES = new Set(['PREPARE_FOR_SUBMISSION', 'DEVELOPER_REJECTED', 'REJECTED', 'METADATA_REJECTED', 'INVALID_BINARY', 'READY_FOR_REVIEW'])
+/** Versions that reached the App Store: an app with one has What's New on later versions. */
+const RELEASED_STATES = new Set(['READY_FOR_DISTRIBUTION', 'READY_FOR_SALE', 'REPLACED_WITH_NEW_VERSION', 'REMOVED_FROM_SALE', 'DEVELOPER_REMOVED_FROM_SALE'])
+/** Versions on their way to release: Apple takes no new version until they are done. */
+const PENDING_STATES = new Set(['WAITING_FOR_REVIEW', 'IN_REVIEW', 'ACCEPTED', 'PENDING_DEVELOPER_RELEASE', 'PENDING_APPLE_RELEASE', 'PROCESSING_FOR_DISTRIBUTION', 'WAITING_FOR_EXPORT_COMPLIANCE'])
+/** Review submissions not yet submitted (a draft, or one answered with issues) that can take the version. */
+const OPEN_SUBMISSIONS = new Set(['READY_FOR_REVIEW', 'UNRESOLVED_ISSUES'])
+/** Review submissions Apple has; one active per platform. */
+const ACTIVE_SUBMISSIONS = new Set(['WAITING_FOR_REVIEW', 'IN_REVIEW'])
+export const WHATS_NEW_LIMIT = 4000
+export const RELEASE_TYPE = 'AFTER_APPROVAL'
+/** `a` < `b` for marketing versions (`1.5.10` < `1.6.0`); an unreadable one counts as lower. */
+export function versionBelow(a, b) {
+  const pa = String(a ?? '').split('.').map(Number)
+  const pb = String(b ?? '').split('.').map(Number)
+  if (pa.some(Number.isNaN)) return true
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0)
+    if (d) return d < 0
+  }
+  return false
+}
+const versionState = (v) => v?.attributes?.appVersionState ?? v?.attributes?.appStoreState ?? ''
+
+/** A call that reads as usual and only logs what it would write (`submit --dry-run`). */
+export function dryRun(call, log = defaultLog) {
+  return async (what, method, path, body) => {
+    // What a write would have made does not exist: reading it answers as for something new.
+    if (method === 'GET' && path.includes('/dry-run')) return { data: path.includes('/relationships/') ? null : [] }
+    if (method === 'GET') return call(what, method, path, body)
+    log('notice', `dry run: would be ${what} (${method} ${path})`)
+    return { data: { id: `dry-run`, type: body?.data?.type, attributes: { ...(body?.data?.attributes ?? {}) } } }
+  }
+}
+
+/** App Store "What's New": the version's CHANGELOG.md section as plain text, released facts only. */
+export function whatsNew(changelog, version) {
+  return releaseNotes(changelog, version, WHATS_NEW_LIMIT)
+}
+
+/**
+ * Makes the App Store version of `version` ready and submits it for review (OpenSpec change
+ * ios-distribution D10): the version is created, or the one editable version is moved to this
+ * marketing version; it is released after approval; every localization it has gets `notes` as
+ * What's New (Apple has none on an app's first version); the processed build is attached; and
+ * the version goes into a review submission that is then submitted. Idempotent: a version that
+ * is already submitted, in review or approved is left alone, a draft submission is reused, and
+ * a value already set is not written again. Returns what it found or did.
+ */
+export async function submitForReview(call, { version, build, notes, log = defaultLog }) {
+  const app = await findApp(call)
+  if (!app) throw new Error(`no app record for ${BUNDLE_IDS[0].identifier}`)
+  const found = await findBuild(call, app.id, version, build)
+  if (!found) throw new Error(`build ${build} of ${version} is not in App Store Connect`)
+  if (found.attributes?.processingState !== 'VALID') {
+    log('warning', `build ${build} of ${version} is ${String(found.attributes?.processingState ?? 'not processed').toLowerCase()}: nothing was submitted; run the workflow again once Apple has processed it`)
+    return { state: 'build-not-ready' }
+  }
+  // Export compliance as every build answers it: ITSAppUsesNonExemptEncryption is NO (store/export-compliance.md).
+  if (found.attributes?.usesNonExemptEncryption == null) {
+    await call('answering export compliance (no non-exempt encryption)', 'PATCH', `/v1/builds/${found.id}`, { data: { type: 'builds', id: found.id, attributes: { usesNonExemptEncryption: false } } })
+  } else if (found.attributes.usesNonExemptEncryption !== false) {
+    throw new Error(`build ${build} declares non-exempt encryption; store/export-compliance.md says it uses none: check the build before submitting by hand`)
+  }
+
+  const listed = await call('listing the App Store versions', 'GET', `/v1/apps/${app.id}/appStoreVersions?filter[platform]=IOS&limit=200`)
+  const versions = listed.data ?? []
+  const same = versions.find((v) => v.attributes?.versionString === version)
+  let target
+  if (same && !EDITABLE_STATES.has(versionState(same))) {
+    log('notice', `App Store version ${version} is ${versionState(same).toLowerCase().replaceAll('_', ' ')}: nothing to submit`)
+    return { state: 'already-submitted', versionId: same.id, appVersionState: versionState(same) }
+  }
+  if (same) {
+    target = same
+  } else {
+    const pending = versions.find((v) => PENDING_STATES.has(versionState(v)))
+    if (pending) throw new Error(`App Store version ${pending.attributes?.versionString} is ${versionState(pending).toLowerCase().replaceAll('_', ' ')}: Apple takes no new version until it is released or withdrawn; nothing was changed`)
+    // Apple keeps one editable version per platform: an unsubmitted earlier one is moved to this
+    // version. A later one (an older tag run again by hand) is never moved back.
+    const editable = versions.find((v) => EDITABLE_STATES.has(versionState(v)))
+    if (editable && !versionBelow(editable.attributes?.versionString, version)) {
+      throw new Error(`App Store version ${editable.attributes?.versionString} is open for editing and is not older than ${version}: nothing was changed; submit ${version} only after that version is done`)
+    }
+    if (editable) {
+      const res = await call(`moving App Store version ${editable.attributes?.versionString} to ${version}`, 'PATCH', `/v1/appStoreVersions/${editable.id}`, {
+        data: { type: 'appStoreVersions', id: editable.id, attributes: { versionString: version, releaseType: RELEASE_TYPE } },
+      })
+      target = { ...editable, attributes: { ...editable.attributes, ...(res.data?.attributes ?? {}), versionString: version, releaseType: RELEASE_TYPE } }
+    } else {
+      const res = await call(`creating App Store version ${version}`, 'POST', '/v1/appStoreVersions', {
+        data: { type: 'appStoreVersions', attributes: { platform: 'IOS', versionString: version, releaseType: RELEASE_TYPE }, relationships: { app: { data: { type: 'apps', id: app.id } } } },
+      })
+      target = res.data
+    }
+  }
+  if (target.attributes?.releaseType !== RELEASE_TYPE) {
+    await call('releasing the version after approval', 'PATCH', `/v1/appStoreVersions/${target.id}`, { data: { type: 'appStoreVersions', id: target.id, attributes: { releaseType: RELEASE_TYPE } } })
+  }
+
+  // What's New in every localization the version has; the first version of an app has none.
+  const released = versions.some((v) => v.id !== target.id && RELEASED_STATES.has(versionState(v)))
+  const locs = (await call('reading the version\'s localizations', 'GET', `/v1/appStoreVersions/${target.id}/appStoreVersionLocalizations?limit=200`)).data ?? []
+  if (!locs.length && target.id !== 'dry-run') throw new Error(`App Store version ${version} has no localization: set up the listing in App Store Connect first`)
+  if (released) {
+    for (const loc of locs) {
+      if (loc.attributes?.whatsNew === notes) continue
+      await call(`setting What's New (${loc.attributes?.locale})`, 'PATCH', `/v1/appStoreVersionLocalizations/${loc.id}`, { data: { type: 'appStoreVersionLocalizations', id: loc.id, attributes: { whatsNew: notes } } })
+    }
+  } else {
+    log('notice', 'the first App Store version of the app has no What\'s New: left empty')
+  }
+
+  const attached = (await call('reading the version\'s build', 'GET', `/v1/appStoreVersions/${target.id}/relationships/build`)).data
+  if (attached?.id !== found.id) {
+    await call(`attaching build ${build}`, 'PATCH', `/v1/appStoreVersions/${target.id}/relationships/build`, { data: { type: 'builds', id: found.id } })
+  }
+
+  const states = [...OPEN_SUBMISSIONS, ...ACTIVE_SUBMISSIONS].join(',')
+  const subs = (await call('listing the review submissions', 'GET', `/v1/reviewSubmissions?filter[app]=${app.id}&filter[platform]=IOS&filter[state]=${states}&limit=200`)).data ?? []
+  const holds = async (x) => ((await call('reading the submission\'s items', 'GET', `/v1/reviewSubmissions/${x.id}/items?include=appStoreVersion&limit=200`)).data ?? [])
+    .some((i) => i.relationships?.appStoreVersion?.data?.id === target.id)
+  // One active submission per platform: this version's means it is submitted; another's blocks it.
+  const active = subs.find((x) => ACTIVE_SUBMISSIONS.has(x.attributes?.state))
+  if (active) {
+    if (await holds(active)) {
+      log('notice', `App Store version ${version} is already in review submission ${active.id}: nothing to submit`)
+      return { state: 'already-submitted', versionId: target.id, submissionId: active.id }
+    }
+    throw new Error(`review submission ${active.id} is ${active.attributes.state.toLowerCase().replaceAll('_', ' ')} with other items: Apple takes one at a time; nothing was submitted`)
+  }
+  let submission = subs.find((x) => OPEN_SUBMISSIONS.has(x.attributes?.state))
+  if (!submission) {
+    submission = (await call('creating the review submission', 'POST', '/v1/reviewSubmissions', {
+      data: { type: 'reviewSubmissions', attributes: { platform: 'IOS' }, relationships: { app: { data: { type: 'apps', id: app.id } } } },
+    })).data
+  }
+  const items = (await call('reading the submission\'s items', 'GET', `/v1/reviewSubmissions/${submission.id}/items?include=appStoreVersion&limit=200`)).data ?? []
+  // A submission someone filled by hand (other items) is not sent along with this version.
+  const others = items.filter((i) => i.relationships?.appStoreVersion?.data?.id !== target.id)
+  if (others.length) throw new Error(`review submission ${submission.id} holds ${others.length} other item(s): submit or clear it in App Store Connect, then run again`)
+  // A rejected item of this version (a submission answered with issues) is marked resolved before it goes again.
+  for (const i of items) {
+    if (i.relationships?.appStoreVersion?.data?.id === target.id && i.attributes?.state === 'REJECTED') {
+      await call('marking the rejected item resolved', 'PATCH', `/v1/reviewSubmissionItems/${i.id}`, { data: { type: 'reviewSubmissionItems', id: i.id, attributes: { resolved: true } } })
+    }
+  }
+  if (!items.some((i) => i.relationships?.appStoreVersion?.data?.id === target.id)) {
+    await call(`adding version ${version} to the review submission`, 'POST', '/v1/reviewSubmissionItems', {
+      data: { type: 'reviewSubmissionItems', relationships: { reviewSubmission: { data: { type: 'reviewSubmissions', id: submission.id } }, appStoreVersion: { data: { type: 'appStoreVersions', id: target.id } } } },
+    })
+  }
+  await call(`submitting ${version} for review`, 'PATCH', `/v1/reviewSubmissions/${submission.id}`, { data: { type: 'reviewSubmissions', id: submission.id, attributes: { submitted: true } } })
+  log('notice', `OpenTodo ${version} (${build}) is submitted for App Store review and is released after approval`)
+  return { state: 'submitted', versionId: target.id, submissionId: submission.id }
+}
+
 function defaultLog(level, message) {
   console.log(`::${level}::${message}`)
 }
@@ -516,13 +707,23 @@ async function main(argv) {
       await setWhatToTest(call, { version, build, text })
       return
     }
+    case 'submit': {
+      const { version, build, changelog, dry } = submitArgs(args)
+      const v = marketingVersion(version)
+      if (!v) throw new Error(`"${version}" is not a release version`)
+      const notes = whatsNew(readFileSync(changelog, 'utf8'), v.version)
+      const out = await submitForReview(dry ? dryRun(call) : call, { version: v.version, build, notes })
+      // The job summary says what happened (submitted, already-submitted, build-not-ready).
+      if (process.env.GITHUB_OUTPUT) writeFileSync(process.env.GITHUB_OUTPUT, `state=${dry ? 'dry-run' : out.state}\n`, { flag: 'a' })
+      return
+    }
     case 'processed': {
       const [version, build] = args
       await waitForProcessing(call, { version, build })
       return
     }
     default:
-      console.error('usage: node scripts/release/appstore.mjs register|version|build-number|app-id|sign|cleanup|notes|processed …')
+      console.error('usage: node scripts/release/appstore.mjs register|version|build-number|app-id|sign|cleanup|notes|processed|submit …')
       process.exit(2)
   }
 }

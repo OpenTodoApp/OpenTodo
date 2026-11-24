@@ -21,6 +21,40 @@ describe('shell address actions', () => {
     expect(shellUrlAction('?add=Call%20the%20plumber%20tomorrow%209am')).toEqual({ kind: 'add', text: 'Call the plumber tomorrow 9am' })
     expect(shellUrlAction('?add=')).toEqual({ kind: 'add', text: '' })
     expect(shellUrlAction('?task=t1')).toBeNull()
+    // focus-live-activity D4: Pause and Resume, only at /focus.
+    expect(shellUrlAction('?action=pause', '/focus')).toEqual({ kind: 'focus', action: 'pause' })
+    expect(shellUrlAction('?action=resume', '/focus')).toEqual({ kind: 'focus', action: 'resume' })
+    expect(shellUrlAction('?action=pause')).toBeNull()
+    expect(shellUrlAction('?action=stop', '/focus')).toBeNull()
+  })
+
+  it('Pause and Resume from the shell go through the Space transitions; a stale one writes nothing', async () => {
+    const { startSession } = await import('./focus/session')
+    const { readFocus } = await import('./focus/state')
+    const { FOCUS_DEFAULTS } = await import('./focus/prefs')
+    const { setCurrentUserId } = await import('./sharing')
+    await setCurrentUserId('u1')
+    const id = await createTask({ title: 'Write the report' })
+    const t0 = Date.now()
+    await startSession(id, FOCUS_DEFAULTS, t0)
+    const running = async () => (await db.timeEntries.toArray()).filter((e) => !e.deleted_at && e.ended_at == null).length
+    expect(await running()).toBe(1)
+    const replaced: string[] = []
+    const loc = { pathname: '/focus', search: '?action=pause', hash: '' } as Location
+    const hist = { state: null, replaceState: (_s: unknown, _t: string, url: string) => void replaced.push(url) } as unknown as History
+    expect(await handleShellUrl(() => false, loc, hist)).toEqual({ kind: 'focus', action: 'pause' })
+    expect(replaced).toEqual(['/focus'])
+    expect((await readFocus())?.resumedAt).toBeNull()
+    expect(await running()).toBe(0)
+    // Already paused: nothing changes and no op is written.
+    const before = await db.outbox.count()
+    const row = await readFocus()
+    await handleShellUrl(() => false, loc, hist)
+    expect(await readFocus()).toEqual(row)
+    expect(await db.outbox.count()).toBe(before)
+    await handleShellUrl(() => false, { ...loc, search: '?action=resume' } as Location, hist)
+    expect((await readFocus())?.resumedAt).not.toBeNull()
+    expect(await running()).toBe(1)
   })
 
   it('Snooze and Dismiss write the same fields as the push worker', async () => {

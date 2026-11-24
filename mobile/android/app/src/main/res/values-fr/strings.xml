@@ -3,13 +3,15 @@
     <string name="app_name">OpenTodo</string>
     <string name="setup_title">Se connecter à votre serveur</string>
     <string name="setup_intro">Saisissez l’adresse de votre serveur OpenTodo, celle que vous ouvrez dans le navigateur.</string>
-    <string name="setup_hint">todo.example.com</string>
+    <string name="setup_address_label">Adresse du serveur</string>
     <string name="setup_connect">Se connecter</string>
     <string name="setup_connect_anyway">Se connecter quand même</string>
     <string name="setup_try">Essayer %1$s</string>
     <string name="setup_refused">Cette adresse ne peut pas être utilisée. Saisissez une adresse comme todo.example.com.</string>
     <string name="setup_needs_https">Cette adresse demande une connexion sécurisée (https).</string>
     <string name="setup_insecure">Cette adresse est sur votre réseau local et n’est pas chiffrée : d’autres personnes sur le même réseau pourraient lire ce que vous envoyez. Touchez à nouveau pour vous connecter quand même.</string>
+    <string name="setup_home_only">Cette adresse ne fonctionne que sur votre réseau domestique.</string>
+    <string name="setup_home_only_link">Utiliser OpenTodo hors de chez vous</string>
     <string name="setup_no_network">Pas de connexion. Le premier démarrage a besoin du réseau ; cet écran réessaie dès qu’il revient.</string>
     <string name="setup_not_opentodo">Cette adresse ne répond pas comme un serveur OpenTodo. Vérifiez l’adresse.</string>
     <string name="setup_untrusted">Ce téléphone ne fait pas confiance au certificat du serveur. Demandez à la personne qui gère le serveur, ou installez son autorité de certification dans les paramètres Android.</string>
@@ -42,6 +44,10 @@
     <string name="widget_empty">Plus rien pour aujourd’hui.</string>
     <string name="widget_untitled">Tâche</string>
     <string name="widget_more">+ %1$d de plus</string>
+    <string name="widget_completed">Terminées</string>
+    <string name="widget_completed_description">Combien de tâches vous avez terminées cette semaine</string>
+    <string name="widget_completed_locked">Verrouillé : seulement le nombre du jour</string>
+    <string name="widget_completed_days">Terminées par jour : %1$s</string>
     <string name="setup_old_webview">L’Android System WebView de ce téléphone est ancien (version %1$s). Mettez-le à jour depuis votre magasin d’applications pour qu’OpenTodo fonctionne pleinement.</string>
     <string name="site_bar_host">Connexion sur %1$s</string>
     <string name="site_bar_close">Retour à OpenTodo</string>
@@ -50,4 +56,15 @@
     <string name="setup_sign_in">Se connecter ici</string>
     <string name="error_sign_in">Votre serveur est derrière une page de connexion, et la connexion ne s’est pas poursuivie dans l’app. Reconnectez-vous ici.</string>
     <string name="save_failed">Le fichier n’a pas pu être enregistré.</string>
+    <string name="channel_focus">Focus</string>
+    <string name="focus_generic">Session de focus</string>
+    <string name="focus_work">Travail</string>
+    <string name="focus_work_of">Travail · %1$d sur %2$d</string>
+    <string name="focus_short_break">Pause courte</string>
+    <string name="focus_long_break">Pause longue</string>
+    <string name="focus_paused">En pause</string>
+    <string name="focus_pause">Mettre en pause</string>
+    <string name="focus_resume">Reprendre</string>
+    <string name="focus_done">Session terminée</string>
+    <string name="focus_break_over">Pause terminée</string>
 </resources>

@@ -5,12 +5,13 @@
 // the version comes from this server's status while online. What's new (OpenSpec whats-new)
 // loads with this section. The App code row says who signed the code this device
 // runs (signed-web-app).
-import { lazy, Suspense, useState } from 'react'
+import { Suspense, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { Badge, Icon, Notice, SettingRow, SettingsSection } from '../ui'
 import { t } from '../lib/i18n'
 import type { User } from '../lib/types'
 import { navigate } from './router'
-import { CoffeeButton, DISCORD_URL, REPO_URL, WelcomeNote, X_URL } from './WelcomeDialog'
+import { CoffeeButton, DISCORD_URL, REPO_URL, SponsorLink, WelcomeNote, X_URL } from './WelcomeDialog'
 import { openFeedback } from '../lib/feedbackRequest'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { shell, shellOutdated, type OpenTodoShell } from '../lib/shell'
@@ -83,7 +84,7 @@ export function AboutSection({ user }: { user: User }) {
         <WhatsNew serverVersion={version} />
       </Suspense>
       <SettingsSection {...cardCopy('about-support')}>
-        <div className="pt-1"><CoffeeButton className="sm:w-64" /></div>
+        <div className="space-y-2 pt-1 sm:w-64"><CoffeeButton /><SponsorLink /></div>
       </SettingsSection>
       {note && <WelcomeNote onClose={() => setNote(false)} />}
     </>

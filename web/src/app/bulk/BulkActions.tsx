@@ -6,7 +6,8 @@ import { useHabitsEnabled } from '../../lib/habitPrefs'
 import { openHabitForm } from '../habits/habitFormStore'
 import { keysOf } from '../../lib/shortcuts'
 import { Kbd } from '../shortcuts/Kbd'
-import { createContext, lazy, Suspense, useContext, useEffect, useLayoutEffect, useMemo, useState, type RefObject } from 'react'
+import { createContext, Suspense, useContext, useEffect, useLayoutEffect, useMemo, useState, type RefObject } from 'react'
+import { lazy } from '../../lib/lazy'
 import type { Step } from '../../lib/move'
 import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan, useTickedTasks } from '../../lib/bulk'
 import { useAllLabels, useLabelsLoaded, useLiveSections, useProjects, useMembershipMapOrLoading, useReviewRow, useUserPrefsRow } from '../../lib/localData'
@@ -14,9 +15,10 @@ import { DAY_PARTS, dayPartName, dayPartOf, dayPartsOn, type DayPart } from '../
 import { dayPartUndoable, energyUndoable } from '../../lib/undoActions'
 import { ENERGY_LEVELS, energyLevelsOn, energyName, energyOf, type Energy } from '../../lib/energy'
 import { itemKeywords, projectSource, sectionSource, type PickerItem } from '../../lib/pickerSources'
-import { roleOf } from '../../lib/sharing'
+import { canEditTask, roleOf } from '../../lib/sharing'
 import { toggleTracking, useRunningEntry } from '../../lib/timeEntries'
 import { act } from '../actionError'
+import { prepareCompletionSound } from '../completionSound'
 import type { Label, Membership, Priority, Project, Section, Task } from '../../lib/types'
 import { DESKTOP_HEADER_QUERY, Icon, Dialog, useFinePointer, useMediaQuery } from '../../ui'
 import { Tooltip } from '../../ui'
@@ -67,8 +69,10 @@ const bulkConfirm = createStore<ConfirmSpec | null>('bulkConfirm', null)
 /** Apply a bulk action and offer its undo. */
 export async function runBulk(ids: readonly string[], action: BulkAction): Promise<void> {
   if (ids.length === 0) return
+  const cue = prepareCompletionSound(action.kind === 'complete')
   // The rows that stay slide into place; more than the cap update at once (motion-v2 D4).
   const r = await withListTransition(ids.length, () => applyBulk(ids, action))
+  if (r.completed) cue?.()
   // Trash keeps its offer longer and offers the way back: a new offer replaces the
   // previous one, so the shorter window must be enough to undo a big delete.
   if (action.kind === 'trash') showBulkToast(r.label, r.undoId, { ttl: TRASH_TOAST_MS, action: { label: t('Show Trash'), run: () => navigate({ view: 'trash' }) } })
@@ -88,8 +92,6 @@ export function askBulkConfirm(spec: ConfirmSpec): void {
   bulkConfirm.set(spec)
 }
 
-/** The confirmation now asked, if any. */
-export const bulkConfirmSpec = bulkConfirm.get
 export const useBulkConfirm = bulkConfirm.use
 export function clearBulkConfirm(): void {
   bulkConfirm.set(null)
@@ -209,6 +211,7 @@ export interface ListReorder {
   edges: (id: string) => Promise<{ first: boolean; last: boolean } | null>
   /** A tree list (a project, the Inbox): open an inline add line after the task or under it (add-below). */
   add?: { below: (id: string) => void; under: (id: string) => void }
+  contextActions?: (task: Task) => ActionItem[]
 }
 export const ListReorderContext = createContext<ListReorder | null>(null)
 
@@ -254,7 +257,7 @@ function whyItem(why: Urgency | null | undefined): ActionItem[] {
   } }] : []
 }
 
-export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (title: string, plan: Promise<ReviewPlan>) => void; pickDate: () => void; schedule?: () => void; reorder?: ListReorder | null; why?: Urgency | null }, besideRow = false): ActionGroup[] {
+export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (title: string, plan: Promise<ReviewPlan>) => void; pickDate: () => void; schedule?: () => void; editTitle?: (id: string) => void; reorder?: ListReorder | null; why?: Urgency | null }, besideRow = false): ActionGroup[] {
   const n = d.tasks.length
   const reopen = allCompleted(d.tasks)
   const live = d.labels.filter((l) => !l.deleted_at)
@@ -267,10 +270,12 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
   const complete: ActionItem = { kind: 'action', id: 'complete', label: reopen ? t('Reopen') : t('Complete'), icon: 'check', shortcut: keysOf('list.complete'), onSelect: run({ kind: 'complete' }) }
   // On touch, one task's menu starts with the two swipe actions (phone-v2 D3, WCAG 2.2 2.5.7).
   const swipeTwins = n === 1 && a.schedule
+  const editTitle = n === 1 && a.editTitle && d.tasks[0] && canEditTask(d.tasks[0], d.memberships) ? a.editTitle : null
   return [
     ...(swipeTwins ? [{ items: [complete, { kind: 'action', id: 'schedule', label: t('Schedule…'), icon: 'calendar-days', onSelect: a.schedule } as ActionItem] }] : []),
     ...(n === 1 ? [{ items: [...whyItem(a.why), ...slotItem(d.tasks[0], d.slot), ...todayFocusItem(d.tasks[0], d.focus), ...trackingItem(d.tasks[0], d.runningTask, d.memberships), ...focusItem(d.tasks[0], d.memberships), ...makeHabitItem(d.tasks[0], d)] }] : []),
     ...(swipeTwins ? [] : [{ items: [complete] }]),
+    ...(editTitle ? [{ items: [{ kind: 'action' as const, id: 'edit-title', label: t('Edit title'), icon: 'pencil' as const, closeBeforeSelect: true, onSelect: () => editTitle(ids[0]) }] }] : []),
     // Beside a row its own Priority and Schedule buttons already offer these.
     // Priority and Date are one row each (a submenu), so the menu fits on the screen;
     // beside a row its own Priority and Schedule buttons already offer them.
@@ -297,7 +302,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
       } },
     ] },
     { items: [
-      ...(n === 1 ? [...addItems(ids[0], a.reorder, d.edges), ...reorderItem(ids[0], a.reorder, d.edges)] : []),
+      ...(n === 1 ? [...addItems(ids[0], a.reorder, d.edges), ...reorderItem(ids[0], a.reorder, d.edges), ...(a.reorder?.contextActions?.(d.tasks[0]) ?? [])] : []),
       { kind: 'picker', id: 'move', label: t('Move to project'), icon: 'folder-input', picker: {
         title: t('Move to project'), placeholder: t('Find a project…'), source: projectSource(d.projects, { memberships: d.memberships }),
         getKey: itemKey, getLabel: itemLabel, getPath: itemPath, getKeywords: itemKeywords, rankContext: 'project',
@@ -369,7 +374,7 @@ function useBulkData(ids: readonly string[]): Data {
  * The Actions menu for `ids`. `startPicker` opens it straight into a picker
  * ("labels" for `L`, "assign" for Shift+A on a selection).
  */
-export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClassName, triggerProps, startPicker = null, anchor }: {
+export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClassName, triggerProps, startPicker = null, anchor, editTitle }: {
   ids: readonly string[]
   open?: boolean
   onOpenChange?: (open: boolean) => void
@@ -378,6 +383,8 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
   /** Extra attributes on the trigger button (the pointer position of a right-click menu). */
   triggerProps?: React.ComponentProps<typeof ActionMenu>['triggerProps']
   startPicker?: string | null
+  /** The list offers title editing in its single-row menu. */
+  editTitle?: (id: string) => void
   /** Opened from a row's More button: placed there, without the groups the row's own buttons offer. */
   anchor?: RefObject<HTMLElement | null>
 }) {
@@ -398,9 +405,10 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
     review: (title, plan) => { void plan.then((p) => bulkDialog.set({ kind: 'review', title, plan: p })) },
     pickDate: () => bulkDialog.set({ kind: 'date', ids, n }),
     schedule: touch && ids.length === 1 ? () => openRowSchedule(ids[0]) : undefined,
+    editTitle,
     reorder,
     why,
-  }, besideRow), [ids, data, besideRow, touch, n, reorder, why])
+  }, besideRow), [ids, data, besideRow, touch, n, reorder, why, editTitle])
   return (
     <ActionMenu label={t('Actions for {tasks}', { tasks: tasksWord(n) })} title={tasksWord(n)} groups={groups} open={open} pending={!settled && !data.ready} onOpenChange={onOpenChange}
       trigger={trigger} triggerClassName={triggerClassName} triggerProps={triggerProps} startPicker={startPicker} width="sm:w-72" anchor={anchor} />

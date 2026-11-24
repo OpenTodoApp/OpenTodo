@@ -1029,11 +1029,13 @@ export interface UserPrefs extends UserPrefsFields {
   briefing?: string
   /** How a task opens from a list (task-side-panel D1): 'panel' docks it beside the list from 1024 px; '' and anything else read as 'page'. */
   task_open?: string
+  /** Click a task to (click-default D1): 'select' or 'open'; '' and anything else follow the server's default. */
+  row_click?: string
   /** The account's task row layout (row-layouts D1): 'line' or 'detailed'; '' and anything else read as 'line'. */
   row_layout?: string
   /** Today's agenda of calendar events (today-agenda D1): 'shown' shows it; '' and anything else read as hidden. */
   today_events?: string
-  /** Today hides tasks assigned to others (today-assigned-filter): 'mine' hides them; '' and anything else read as off. */
+  /** Was Today's hide of tasks assigned to others (today-assigned-filter); since personal-views-assignee the personal views always hide them, and the field is kept but never read. */
   today_assignees?: string
   /** Upcoming's calendar events (today-agenda): 'shown' lists them on each day; '' and anything else read as hidden. */
   upcoming_events?: string
@@ -1087,6 +1089,7 @@ export interface Review extends ReviewFields {
 export type ActivityKind =
   | 'created' | 'completed' | 'reopened' | 'deleted' | 'restored' | 'rescheduled' | 'assigned' | 'unassigned'
   | 'moved' | 'dependencies' | 'archived' | 'unarchived' | 'edited' | 'commented' | 'comment_edited' | 'comment_deleted'
+  | 'time_tracked' | 'time_changed'
 
 /** One field transition inside an activity event. */
 export interface ActivityChange {
@@ -1105,9 +1108,11 @@ export interface ActivityEvent {
   id: string
   kind: ActivityKind
   actor: string
-  entity: 'task' | 'project' | 'comment'
+  entity: 'task' | 'project' | 'comment' | 'time_entry'
   entityId: string
   taskId?: string
+  /** A time entry's event: the tracked length in whole minutes (workspace-activity D3). */
+  minutes?: number
   ts: number
   opIds: string[]
   changes: ActivityChange[]
@@ -1130,7 +1135,7 @@ export interface ActivityEvent {
 export interface ActivityEntry {
   id: string
   actor: string
-  entity: 'task' | 'project' | 'comment'
+  entity: 'task' | 'project' | 'comment' | 'time_entry'
   entityId: string
   field: string
   value: unknown
@@ -1152,12 +1157,20 @@ export interface PushSubscriptionStatus {
   id: string
   deviceId: string
   includeContent: boolean
+  /** Assignment and status pushes this device opted in to (assignee-notifications D2); absent from an older server. */
+  notify?: PushNotify
   createdAt: number
   lastOkAt: number | null
   lastError: string
   failures: number
   /** The push service failed repeatedly: the device should re-enable notifications. */
   needsRenewal: boolean
+}
+
+/** A device's choice of assignment and status pushes, both off by default. */
+export interface PushNotify {
+  assigned: boolean
+  status: boolean
 }
 
 /** Answer of POST /api/v1/push/test (OpenSpec `push-test-delivery`). */
@@ -1261,6 +1274,8 @@ export interface AuthStatus {
   branding?: { name: string; logoVersion: number }
   /** The version of the instance's themes (theme-instance-default D3), signed in only; absent on older servers. */
   themes?: { version: number }
+  /** What a click on a task does for accounts that have not chosen (click-default D2), signed in only; absent on older servers. */
+  rowClick?: { default: string }
   /** This session's wipe key (revoked-device-wipe D3), signed-in browser sessions only. */
   wipeKey?: string
   /** This cookie's session was revoked: the proof made with its wipe key (revoked-device-wipe D3). */
@@ -1604,6 +1619,8 @@ export interface OidcSettings {
   providerLogout: boolean
   /** The provider's `picture` claim becomes the profile picture at sign-in (oidc-profile-pictures); absent on older servers. */
   syncPictures?: boolean
+  /** A token without an email_verified claim may create a new account, never link one (sso-missing-email-verified); absent on older servers. */
+  trustMissingEmailVerified?: boolean
   /** Paste this into the provider's client configuration. */
   redirectUri: string
   /** False when the redirect URI was derived from the request (set OPENTODO_BASE_URL). */
@@ -1614,7 +1631,7 @@ export interface OidcSettings {
 
 /** A settings change; omitted fields are kept. `clientSecret: ''` removes the secret. */
 export type OidcSettingsInput = Partial<Pick<OidcSettings,
-  'issuer' | 'clientId' | 'clientSecret' | 'displayName' | 'scopes' | 'allowProvision' | 'ssoOnly' | 'providerLogout' | 'syncPictures'>>
+  'issuer' | 'clientId' | 'clientSecret' | 'displayName' | 'scopes' | 'allowProvision' | 'ssoOnly' | 'providerLogout' | 'syncPictures' | 'trustMissingEmailVerified'>>
 
 /** Result of POST /api/v1/settings/oidc/test. */
 export interface OidcTestResult {
@@ -1842,15 +1859,6 @@ export interface WebhookInput {
 // server refused changes for one of its limits (multi-tenant-host); they are kept.
 export type SyncState = 'idle' | 'syncing' | 'reseeding' | 'offline' | 'error' | 'unauthenticated' | 'restricted' | 'locked' | 'limited'
 
-export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_id', 'created_at', 'deleted_at'] as const
-export const TASK_FIELDS = [
-  'title', 'description', 'project_id', 'parent_id', 'priority', 'due', 'labels',
-  'position', 'created_at', 'completed_at', 'deleted_at', 'estimate_minutes', 'recurrence', 'series_id',
-  'assignee_id', 'section_id', 'notes_doc', 'deadline', 'start', 'evening', 'span', 'blocked_by', 'completed_by', 'note_mentions',
-] as const
-export const SECTION_FIELDS = ['name', 'project_id', 'position', 'created_at', 'deleted_at'] as const
-export const LABEL_FIELDS = ['name', 'color', 'position', 'created_at', 'deleted_at'] as const
-
 // ---- backups (owner-only server settings; never synced) ----
 
 export type BackupDestination = 'local' | 's3' | 'webdav'
@@ -2011,7 +2019,7 @@ export const AUDIT_EVENT_NAMES = [
   'calendar_connection.created', 'calendar_connection.updated', 'calendar_connection.deleted',
   'project.agent_access',
   'task_page.published', 'task_page.revoked',
-  'mcp_oauth.client_created', 'mcp_oauth.client_deleted', 'mcp_oauth.granted', 'mcp_oauth.revoked', 'mcp_oauth.refresh_reused',
+  'mcp_oauth.client_created', 'mcp_oauth.client_deleted', 'mcp_oauth.granted', 'mcp_oauth.revoked', 'mcp_oauth.refresh_reused', 'mcp_oauth.disconnected',
 ] as const
 export type AuditEventName = (typeof AUDIT_EVENT_NAMES)[number]
 
@@ -2167,20 +2175,10 @@ export interface ImportJob {
   undoneAt: number | null
 }
 
-export const REMINDER_FIELDS = [
-  'task_id', 'kind', 'offset_minutes', 'fire_at', 'delivered_at', 'dismissed_at', 'created_at', 'deleted_at',
-] as const
-
-export const VIEW_FIELDS = [
-  'name', 'query', 'kind', 'group_by', 'sort_by', 'sort_dir', 'pinned', 'position', 'color', 'panels', 'on_drop',
-  'created_at', 'deleted_at',
-] as const
-
 // ---- project sharing (OpenSpec `project-sharing`) ----
 
 /** A role on a shared project; an unshared project is implicitly the user's own ('owner'). */
 export type ProjectRole = 'owner' | 'admin' | 'editor' | 'viewer'
-export const MEMBER_ROLES: readonly Exclude<ProjectRole, 'owner'>[] = ['viewer', 'editor', 'admin']
 
 export interface ProjectMember {
   userId: string
@@ -2351,8 +2349,6 @@ export interface PurgeCounts {
   /** Time entries of purged tasks (time-tracking; absent on older servers). */
   timeEntries?: number
 }
-
-export const COMMENT_FIELDS = ['task_id', 'parent_id', 'body', 'author_id', 'mentions', 'created_at', 'edited_at', 'deleted_at'] as const
 
 /** Payload of a `mentioned` notification (comments-and-activity); names resolved by the server. */
 export interface MentionedPayload {

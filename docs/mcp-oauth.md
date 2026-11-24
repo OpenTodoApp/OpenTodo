@@ -146,14 +146,17 @@ A code is issued only when you press **Allow** in the consent dialog, so a link
 someone sends you can't connect an app to your account on its own: only allow a
 connection you started yourself. The audit log records
 `mcp_oauth.client_created`, `mcp_oauth.granted`, `mcp_oauth.revoked`,
-`mcp_oauth.refresh_reused` and `mcp_oauth.client_deleted` with the client id, never a secret
+`mcp_oauth.refresh_reused`, `mcp_oauth.disconnected` and `mcp_oauth.client_deleted` with the client id, never a secret
 or token.
 
 ## Ending access
 
-- **Settings → Integrations → API tokens**: delete `MCP: <client name>` to kill
-  the current access token immediately (the client mints a new one on its next
-  refresh).
+- **Settings → Account → Security → Session**: each person sees the apps they
+  connected and can **Disconnect** one. Its refresh token and access token stop
+  working at once (`GET /api/v1/me/oauth-grants`, `DELETE /api/v1/me/oauth-grants/{id}`
+  in the [API](api.md)).
+- **Settings → Integrations → API tokens**: deleting `MCP: <client name>` does the
+  same: the access token stops working and so does the refresh token.
 - **Settings → Integrations → AI assistants → Delete client**: removes the client,
   every grant it held and their access tokens. This is the complete cut-off.
 - The client itself may call `/oauth/revoke` with its own credentials; Gemini does

@@ -10,6 +10,12 @@
     {"id": "p_work", "name": "Work", "parent_id": null, "deleted_at": null},
     {"id": "p_sub", "name": "Reports", "parent_id": "p_work", "deleted_at": null}
   ],
+  "sections": [
+    {"id": "s_back", "name": "Backlog", "project_id": "p_home", "deleted_at": null},
+    {"id": "s_rev_work", "name": "Review", "project_id": "p_work", "deleted_at": null},
+    {"id": "s_rev_home", "name": "review", "project_id": "p_home", "deleted_at": null},
+    {"id": "s_gone", "name": "Gone", "project_id": "p_work", "deleted_at": 5}
+  ],
   "fields": [
     {"id": "f_cost", "name": "Cost", "type": "number", "project_id": "p_work", "deleted_at": null}
   ],
@@ -22,15 +28,15 @@
     {"userId": "u_sam2", "name": "Sam", "email": "sam2@example.com"}
   ],
   "tasks": [
-    {"id": "t1", "title": "Buy oat milk", "description": "at the market", "labels": ["l_err"], "project_id": "p_home", "priority": 1, "due": {"date": "2026-11-04"}, "created_at": 1793779200000, "assignee_id": "u_me"},
-    {"id": "t2", "title": "Call plumber", "labels": ["l_call"], "project_id": "p_work", "priority": 2, "due": {"date": "2026-11-03"}, "deadline": "2026-11-10", "assignee_id": "u_sam1"},
-    {"id": "t3", "title": "Write report", "project_id": "p_sub", "due": {"date": "2026-11-05", "time": "09:00"}, "start": "2026-11-10", "energy": "deep"},
+    {"id": "t1", "title": "Buy oat milk", "description": "at the market", "labels": ["l_err"], "project_id": "p_home", "section_id": "s_back", "priority": 1, "due": {"date": "2026-11-04"}, "created_at": 1793779200000, "assignee_id": "u_me"},
+    {"id": "t2", "title": "Call plumber", "labels": ["l_call"], "project_id": "p_work", "section_id": "s_rev_work", "priority": 2, "due": {"date": "2026-11-03"}, "deadline": "2026-11-10", "assignee_id": "u_sam1"},
+    {"id": "t3", "title": "Write report", "project_id": "p_sub", "section_id": "s_back", "due": {"date": "2026-11-05", "time": "09:00"}, "start": "2026-11-10", "energy": "deep"},
     {"id": "t4", "title": "Old task", "project_id": "p_home", "completed_at": 1793613600000},
     {"id": "t5", "title": "Someday idea", "start": "someday", "origin": {"kind": "url", "url": "https://example.com/a"}},
     {"id": "t6", "title": "Evening walk", "evening": true, "habit": true},
-    {"id": "t7", "title": "Blocked thing", "project_id": "p_work", "blocked_by": ["t2"], "fields.f_cost": 150, "sector": "2026-W45", "assignee_id": "u_sam2"},
-    {"id": "t8", "title": "Morning run", "recurrence": "every day", "project_id": "p_work", "day_part": "morning", "energy": "low", "fields.f_cost": 50, "sector": "2026-W43"},
-    {"id": "t9", "title": "Pick brand", "project_id": "p_home", "parent_id": "t1", "origin": {"kind": "issue", "provider": "github", "url": "https://github.com/o/r/issues/1"}, "sector": "2026-11"},
+    {"id": "t7", "title": "Blocked thing", "project_id": "p_work", "section_id": "s_rev_work", "blocked_by": ["t2"], "fields.f_cost": 150, "sector": "2026-W45", "assignee_id": "u_sam2"},
+    {"id": "t8", "title": "Morning run", "recurrence": "every day", "project_id": "p_work", "section_id": "s_gone", "day_part": "morning", "energy": "low", "fields.f_cost": 50, "sector": "2026-W43"},
+    {"id": "t9", "title": "Pick brand", "project_id": "p_home", "section_id": "s_rev_home", "parent_id": "t1", "origin": {"kind": "issue", "provider": "github", "url": "https://github.com/o/r/issues/1"}, "sector": "2026-11"},
     {"id": "t10", "title": "Gone", "deleted_at": 5}
   ],
   "cases": [
@@ -55,6 +61,8 @@
     {"query": "evening", "ids": ["t6"]},
     {"query": "morning", "ids": ["t8"]},
     {"query": "habit", "ids": ["t6"]},
+    {"query": "recurring", "ids": ["t8"]},
+    {"query": "recurring & #Home", "ids": []},
     {"query": "subtask", "ids": ["t9"]},
     {"query": "completed", "ids": ["t4"]},
     {"query": "completed = this week", "ids": ["t4"]},
@@ -108,6 +116,16 @@
     {"query": "assigned: sam", "ids": ["t2", "t7"]},
     {"query": "assigned: SAM", "ids": ["t2", "t7"]},
     {"query": "assigned: ada@example.com", "ids": ["t1"]},
-    {"query": "assigned: Rowan", "ids": [], "warnings": 1}
+    {"query": "assigned: Rowan", "ids": [], "warnings": 1},
+    {"query": "section: Review", "ids": ["t2", "t7", "t9"]},
+    {"query": "SECTION: review", "ids": ["t2", "t7", "t9"]},
+    {"query": "section: Backlog", "ids": ["t1"]},
+    {"query": "section: Review | section: Backlog", "ids": ["t1", "t2", "t7", "t9"]},
+    {"query": "#Work & section: Review", "ids": ["t2", "t7"]},
+    {"query": "no section", "ids": ["t3", "t5", "t6", "t8"]},
+    {"query": "section: Backlog | no section", "ids": ["t1", "t3", "t5", "t6", "t8"]},
+    {"query": "!section: Review", "ids": ["t1", "t3", "t5", "t6", "t8"]},
+    {"query": "section: Gone", "ids": [], "warnings": 1},
+    {"query": "section: Nowhere", "ids": [], "warnings": 1}
   ]
 }

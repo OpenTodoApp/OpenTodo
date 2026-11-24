@@ -15,7 +15,7 @@ import { useFieldDefs } from './useFields'
 import { resolveLabels } from '../lib/labels'
 import { hasTimeColumn } from '../lib/rowTime'
 import { listSlotsOff } from '../lib/rowSlots'
-import { setTaskCompleted } from '../lib/ops'
+import { setTaskCompletedWithFeedback } from './completionSound'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
 import { habitStatsMap } from '../lib/habits'
 import { compareTasks, createView, groupTasks } from '../lib/views'
@@ -288,7 +288,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
         onAdd={() => document.querySelector<HTMLButtonElement>('[data-filter-panel] [data-add-condition]')?.click()} />
       {filterOpen && (
         <FilterPanel count={count} onClose={() => setFilterOpen(false)} inputRef={inputRef} onClear={() => { setHistIdx(-1); draftWs.clear(); focusQuery() }}
-          builder={<FilterBuilder query={query} onChange={(q) => { setQuery(q); setHistIdx(-1) }} labels={labels} projects={projects} fields={fieldDefs} workspaces={ws.workspaces} members={directory.members} />}
+          builder={<FilterBuilder query={query} onChange={(q) => { setQuery(q); setHistIdx(-1) }} labels={labels} projects={projects} sections={flow.sections} fields={fieldDefs} workspaces={ws.workspaces} members={directory.members} />}
           formula={(
             <input
               ref={inputRef}
@@ -323,10 +323,10 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
 
       {bulk.render(rows.find((r) => r.key === selected)?.task.id ?? null)}
       <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label={t('Filter results')}>
-        <ViewResults groups={groups} layout={display.layout} foldScope="filter" selectedGroup={selected ? selected.slice(0, selected.lastIndexOf(':')) : null} renderTask={(tk, key, shape) => (
+        <ViewResults groups={groups} layout={display.layout} foldScope="filter" selectedGroup={selected ? selected.slice(0, selected.lastIndexOf(':')) : null} renderTask={(tk, key, shape, groupSeparator) => (
           <TaskRow
             key={key}
-            shape={shape}
+            shape={shape} groupSeparator={groupSeparator}
             task={tk}
             project={tk.project_id ? projectMap.get(tk.project_id) : undefined}
             labels={resolveLabels(tk.labels, labelMap)}
@@ -340,8 +340,8 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
             waitsFor={flow.waitsFor(tk.id)}
             habit={habits.get(tk.id)}
             breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
-            onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))}
-            onOpen={(e) => { setSelected(key); openFromRow(tk.id, e) }} onOpenPage={() => openTaskPage(tk.id)}
+            onToggle={() => act(setTaskCompletedWithFeedback(tk.id, !tk.completed_at))}
+            selectOnClick onOpen={(e, intent) => { setSelected(key); openFromRow(tk.id, e, intent) }} onOpenPage={() => openTaskPage(tk.id)}
             expanded={expanded === key}
             onExpand={() => { setSelected(key); setExpanded((cur) => (cur === key ? null : key)) }} score={urgency && shape !== 'card' ? <UrgencyChip of={urgency} task={tk} /> : undefined}
             {...bulk.rowProps(tk)}

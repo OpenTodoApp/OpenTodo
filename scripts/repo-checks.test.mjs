@@ -5,7 +5,7 @@
 // gates (ci-release-gates): pinned actions and images, timeouts, publishing only
 // after every gate, signed and attested artefacts, CI running `make check`.
 // Contributor docs (contributor-docs-and-template-checks): every internal/ package
-// and token scope named in AGENTS.md and docs/architecture.md.
+// and token scope named in docs/contributing/packages.md (the long form of AGENTS.md) and docs/architecture.md.
 // Run: node --test scripts/repo-checks.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -19,8 +19,8 @@ import { checkSurfaceFreeze, surfaceProblems, SURFACE_FILE } from './release/sur
 import { MATRIX_APPS, matrixProblems, parseMatrix, staleRows, checkMatrixFreshness } from './release/switchMatrix.mjs'
 import { readFragments, unreleasedProblems } from './release/fragments.mjs'
 import { gateProblems, latestRelease, tableProblems, verificationProblems, VERIFICATION_TABLES } from './release/verificationTables.mjs'
-import { boundaryProblems, browserGlobals, SHARED_MODULES_FILE } from './shared-boundary.mjs'
-import { hasTypeScript, sharedGraph } from './shared-graph.mjs'
+import { finishedProblems, gitLastTouched, openChanges, staleWarnings, taskCounts } from './openspec-hygiene.mjs'
+import { unguardedHover } from './css-hover.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const read = (p) => readFileSync(path.join(root, p), 'utf8')
@@ -94,19 +94,7 @@ const tiers = [
   [['docs/api.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false', extension: 'false', skill: 'false' }],
   [['openspec/changes/x/proposal.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false' }],
   [['changelog.d/Fixed/x.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false' }],
-  [['.github/workflows/ci.yml'], { ui: 'true', layout: 'true', a11y: 'true', extension: 'true', obsidian: 'true', skill: 'true', mobile: 'true', ios: 'true', app: 'true', app_native: 'false' }],
-  // The native app (native-app-foundation D9): a web-only change runs no app job, a
-  // shared module only the Linux checks, an app change those and the two builds.
-  [['web/src/app/today/TodayView.tsx'], { app: 'false', app_native: 'false' }],
-  [['web/src/app/today/TodayView.tsx', 'web/src/lib/sync.test.ts'], { app: 'false', app_native: 'false' }],
-  [['web/src/lib/sync.ts'], { app: 'true', app_native: 'false', ios: 'false', mobile: 'false' }],
-  [['web/src/generated/opSchema.ts'], { app: 'true', app_native: 'false' }],
-  [['web/src/locales/de.json'], { app: 'true', app_native: 'false' }],
-  [['mobile/app/src/App.tsx'], { code: 'false', docs: 'false', mobile: 'false', ios: 'false', app: 'true', app_native: 'true' }],
-  [['mobile/app/package-lock.json'], { app: 'true', app_native: 'true' }],
-  [['mobile/ios/OpenTodo/Bridge.swift'], { app: 'false', app_native: 'false' }],
-  [['mobile/README.md'], { app: 'false', app_native: 'false' }],
-  [['scripts/shared-graph.mjs'], { app: 'true', app_native: 'false' }],
+  [['.github/workflows/ci.yml'], { ui: 'true', layout: 'true', a11y: 'true', extension: 'true', obsidian: 'true', skill: 'true', mobile: 'true', ios: 'true' }],
   // The accessibility gate on real screens (accessibility-aa D1): the web app and the audit scripts only.
   [['web/src/app/Shell.tsx'], { a11y: 'true' }],
   [['scripts/ux-audit/tour.mjs'], { a11y: 'true', ui: 'false' }],
@@ -264,8 +252,10 @@ test('every workflow has a concurrency group and every job a timeout', () => {
       assert.match(block, /^ {4}timeout-minutes: \d+$/m, `${f}: job ${id} needs timeout-minutes`)
     }
   }
-  // Pull requests cancel superseded runs; main and tags never cancel a run in progress.
-  assert.match(read('.github/workflows/ci.yml'), /cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \}\}/)
+  // Pull requests and pushes to main cancel superseded runs; tags, the nightly and a run by hand never do.
+  const ci = read('.github/workflows/ci.yml')
+  assert.match(ci, /group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.event_name \}\}-\$\{\{ github\.ref \}\}/, 'the nightly never shares a group with a push')
+  assert.match(ci, /cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \|\| \(github\.event_name == 'push' && !startsWith\(github\.ref, 'refs\/tags\/'\)\) \}\}/)
 })
 
 test('base and job images are pinned by digest', () => {
@@ -308,6 +298,29 @@ test('Playwright jobs run in the pinned image at one version', () => {
   }
 })
 
+// CI capacity (ci-pr-fast-tier): the merge queue and a push to main run the path tier for
+// what they change; release tags, the nightly schedule and a run by hand run every job and
+// matrix leg; a pull request skips the browser, workbench, accessibility, phone, binary and
+// site bundle jobs, which the merge queue runs before the change lands.
+test('the full matrix runs on tags, nightly and by hand; pull requests run the fast tier', () => {
+  const ci = read('.github/workflows/ci.yml')
+  assert.match(ci, /^ {2}schedule:\n {4}- cron: "[^"]+"$/m, 'a nightly full run')
+  assert.match(ci, /^ {2}workflow_dispatch:$/m, 'a full run by hand')
+  assert.match(ci, /^ {2}merge_group:$/m, 'the merge queue runs CI')
+  assert.match(ci, /types: \[opened, synchronize, reopened\]/, 'drafts and ready pull requests run the same tier, so marking one ready starts no run')
+  const jobs = jobsOf(ci)
+  assert.match(jobs.changes, /full: \$\{\{ steps\.filter\.outputs\.full \}\}/)
+  assert.match(jobs.changes, /git diff --name-only "\$BEFORE" HEAD > changed\.txt\n\s+cat changed\.txt\n\s+\.\/scripts\/ci-changes\.sh < changed\.txt \| sed -E 's\/\^\(ui\|layout\|a11y\|mobile\|ios\)=true\$\/\\1=false\/' >> "\$GITHUB_OUTPUT"/, 'a push to main is compared with the commit before and skips the heavy jobs the queue ran (ci-pr-fast-tier)')
+  assert.match(jobs.changes, /git diff --name-only "\$QUEUE_BASE" HEAD > changed\.txt\n\s+cat changed\.txt\n\s+\.\/scripts\/ci-changes\.sh < changed\.txt >> "\$GITHUB_OUTPUT"/, 'the merge queue runs the whole path tier')
+  assert.match(jobs.changes, /git diff --name-only "\$BASE"\.\.\.HEAD > changed\.txt\n\s+cat changed\.txt\n(\s+#.*\n)*\s+\.\/scripts\/ci-changes\.sh < changed\.txt \| sed -E 's\/\^\(ui\|layout\|a11y\|mobile\|ios\)=true\$\/\\1=false\/' >> "\$GITHUB_OUTPUT"\n\n/, 'every pull request turns the heavy jobs off, with no condition around it')
+  assert.doesNotMatch(jobs.changes, /DRAFT/, 'a draft is no longer a tier of its own')
+  for (const id of ['layout', 'cli']) assert.match(jobs[id], /fromJSON\(needs\.changes\.outputs\.full != 'true' && /, `${id} runs its full matrix only when full`)
+  assert.doesNotMatch(ci, /fromJSON\(github\.event_name == 'pull_request'/, 'no matrix keys off the event alone')
+  // ci-pr-shorter-chain: the binaries and the site bundle only lengthen a pull request's chain.
+  for (const id of ['cli', 'site-bundle']) assert.match(jobs[id], /^ {4}if: \$\{\{ !cancelled\(\) && (!failure\(\) && )?github\.event_name != 'pull_request' && /m, `${id} runs in the merge queue, not on pull requests`)
+  for (const id of ['cli', 'site-bundle']) assert.doesNotMatch(jobs[id].match(/^ {4}if: .*$/m)[0], /merge_group|github\.event_name == /, `${id} is skipped on no other event`)
+})
+
 test('the image, stable tag and release are published only after every gate', () => {
   const jobs = jobsOf(read('.github/workflows/ci.yml'))
   // claude-plugin publishes the Claude Code marketplace after the release (claude-plugin D5).
@@ -329,7 +342,7 @@ test('the image, stable tag and release are published only after every gate', ()
   assert.ok(needsOf(jobs.release).includes('docker'), 'the release waits for the image')
   // Pull requests never publish; a gate skipped by the pull request tier never blocks
   // publishing, a failed or cancelled one always does (ci-speed).
-  assert.match(jobs.docker, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && github\.event_name != 'pull_request' \}\}$/m, 'pull requests never publish, and a failed gate stops publishing')
+  assert.match(jobs.docker, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && github\.event_name == 'push' \}\}$/m, 'only a push (main or a tag) publishes, and a failed gate stops publishing')
   assert.match(jobs.release, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && startsWith\(github\.ref, 'refs\/tags\/v'\) \}\}$/m, 'a failed gate stops the release')
   assert.match(jobs.docker, /type=raw,value=stable,/, 'stable moves only in the gated publish job')
 })
@@ -376,6 +389,7 @@ const checkElsewhere = {
   test: ['go test ./...', 'npm test', 'make extension', 'make obsidian'],
   'docs-check': ['npm run docs:check'],
   staticcheck: ['make staticcheck'],
+  deadcode: ['make staticcheck'],
   'web-lint': ['npm run lint'],
 }
 
@@ -390,6 +404,7 @@ test('CI runs every part of make check', () => {
   }
   for (const t of ciChecks) assert.ok(makePrereqs('check').includes(t), `ci-checks runs ${t}, which make check must run too`)
   assert.ok(ciChecks.includes('fmt-check'), 'gofmt gate')
+  assert.ok(makePrereqs('staticcheck').includes('deadcode'), 'make staticcheck runs deadcode, so the CI step runs it too')
   assert.match(read('Makefile'), /^fmt-check:\n\t.*gofmt -l /m)
 })
 
@@ -411,8 +426,16 @@ test('browser end-to-end checks run in CI and the race detector nightly', () => 
   assert.match(read('Makefile'), /^e2e: cli\n\tscripts\/e2e\.sh$/m, 'make e2e builds bin/ot and runs scripts/e2e.sh')
   assert.match(read('scripts/e2e.sh'), /e2e-smoke e2e-views e2e-offline/, 'scripts/e2e.sh runs the two-device, saved-view and offline-start scripts')
   // The built service worker and manifest tests run after the build, where they cannot skip.
-  const build = jobsOf(read('.github/workflows/ci.yml'))['web-build'] ?? ''
-  assert.ok(build.indexOf('run: npm run test:built') > build.indexOf('run: npm run build'), 'the web-build job runs npm run test:built after npm run build')
+  const ciJobs = jobsOf(read('.github/workflows/ci.yml'))
+  const script = read('scripts/ci-web-build.sh')
+  assert.ok(script.includes('npm run build') && script.indexOf('npm run test:built') > script.indexOf('npm run build'), 'the CI web build runs npm run test:built after npm run build')
+  assert.ok(needsOf(ciJobs.server ?? '').includes('web-build'), 'the server job waits for web-build where it runs')
+  assert.match(ciJobs['web-build'] ?? '', /run: \.\/scripts\/ci-web-build\.sh/, 'the web-build job runs the CI web build')
+  // ci-pr-server-builds-web: on a pull request the server job builds the web app itself.
+  assert.match(ciJobs['web-build'] ?? '', /^ {4}if: .*github\.event_name != 'pull_request'/m, 'web-build is skipped on pull requests')
+  assert.match(ciJobs.server ?? '', /if: github\.event_name == 'pull_request'\n\s+run: \|\n\s+\(cd web && npm ci --no-audit --no-fund\)\n\s+\.\/scripts\/ci-web-build\.sh\n\s+rm -rf web\/node_modules\n/, 'on a pull request the server job runs the CI web build, then removes node_modules before the Go steps')
+  assert.match(ciJobs.server ?? '', /if: github\.event_name != 'pull_request'\n\s+with:\n\s+name: web-dist/, 'elsewhere it downloads web-dist')
+  assert.match(ciJobs.server ?? '', /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && needs\.web-build\.result != 'cancelled' && /m, 'the server job runs when web-build was skipped, not when it was cancelled')
   // The report-only interface audit runs nightly and on demand, off every critical path (ci-speed).
   const audit = read('.github/workflows/ux-audit.yml')
   assert.match(audit, /^ {2}schedule:\n {4}- cron: /m, 'the interface audit runs nightly')
@@ -521,12 +544,13 @@ function internalPackages(dir = 'internal') {
   return out
 }
 
-test('AGENTS.md names every internal/ package', () => {
-  const agents = read('AGENTS.md')
+// The package map is the long form of AGENTS.md (docs/contributing/packages.md).
+test('the package map names every internal/ package', () => {
+  const agents = read('docs/contributing/packages.md')
   const pkgs = internalPackages()
   assert.ok(pkgs.length > 30, `expected the internal/ packages, found ${pkgs.length}`)
   const missing = pkgs.filter((p) => !agents.includes('`' + p + '`'))
-  assert.deepEqual(missing, [], 'add each package to the Layout section of AGENTS.md as `internal/<path>` with what it does')
+  assert.deepEqual(missing, [], 'add each package to "Where things are" in docs/contributing/packages.md as `internal/<path>` with what it does')
 })
 
 test('docs/architecture.md has a row for every internal/ package', () => {
@@ -539,12 +563,12 @@ test('docs/architecture.md has a row for every internal/ package', () => {
   assert.deepEqual(missing, [], 'add a row (or, for a sub-package, a mention in its parent row) to "Server packages" in docs/architecture.md')
 })
 
-test('AGENTS.md lists every API token scope and does not call the MCP server read-only', () => {
-  const agents = read('AGENTS.md')
+test('the rules in full list every API token scope and do not call the MCP server read-only', () => {
+  const agents = read('docs/contributing/packages.md')
   const scopes = [...read('internal/auth/service.go').matchAll(/^\s*Scope[A-Z]\w*\s*=\s*"([a-z]+)"/gm)].map((m) => m[1])
   assert.ok(scopes.length >= 4, `expected the token scopes, found ${scopes.join(', ')}`)
   const listed = agents.match(/API tokens have a scope (`[a-z]+`(?:\|`[a-z]+`)*)/)
-  assert.ok(listed, 'AGENTS.md names the token scopes as `a`|`b`|...')
+  assert.ok(listed, 'docs/contributing/packages.md names the token scopes as `a`|`b`|...')
   assert.deepEqual(listed[1].split('|').map((s) => s.slice(1, -1)).sort(), [...scopes].sort())
   assert.doesNotMatch(agents, /`internal\/mcp` read-only/, 'the MCP server has write tools (agent tokens)')
   assert.match(agents, /`internal\/mcp`[^;]*write tools/)
@@ -597,10 +621,10 @@ test('the release APK carries no dependency block or commit file', () => {
 })
 
 test('release tags prove the Android build reproducible, and anyone can run it on demand', () => {
-  const android = jobsOf(read('.github/workflows/ci.yml')).android
+  const android = jobsOf(read('.github/workflows/ci.yml'))['android-sign']
   const step = android.split(/\n(?= {6}- )/).find((s) => s.includes('scripts/android-repro.sh'))
-  assert.ok(step, 'the android job runs scripts/android-repro.sh')
-  assert.match(step, /^ {8}if: startsWith\(github\.ref, 'refs\/tags\/v'\)$/m, 'on every release tag')
+  assert.ok(step, 'the android-sign job runs scripts/android-repro.sh')
+  assert.match(android, /^ {4}if: startsWith\(github\.ref, 'refs\/tags\/v'\)$/m, 'on every release tag')
   assert.match(step, /REPRO_CLEAN_CACHE: "1"/, 'the second build has no Gradle cache')
   assert.match(step, /--require-hashes -r scripts\/release\/requirements-repro\.txt/, 'apksigcopier pinned by hash')
   assert.ok(android.indexOf('scripts/android-repro.sh') > android.indexOf('Signed release APK and AAB'), 'after the signed build, before the upload')
@@ -612,14 +636,13 @@ test('release tags prove the Android build reproducible, and anyone can run it o
 })
 
 test('the Play AAB is the build without location, checked on every Android run (play-location-later)', () => {
-  const android = jobsOf(read('.github/workflows/ci.yml')).android
-  const steps = android.split(/\n(?= {6}- )/)
-  const check = steps.find((s) => s.includes('Play AAB without location'))
+  const jobs = jobsOf(read('.github/workflows/ci.yml'))
+  const check = jobs.android.split(/\n(?= {6}- )/).find((s) => s.includes('Play AAB without location'))
   assert.ok(check, 'a step checks the two builds')
   assert.doesNotMatch(check, /^ {8}if:/m, 'on every run, not only tags')
   assert.match(check, /-Popentodo\.play=true :app:bundleRelease\n/)
   assert.match(check, /scripts\/android-store-check\.sh /)
-  const signed = steps.find((s) => s.includes('Signed release APK and AAB'))
+  const signed = jobs['android-sign'].split(/\n(?= {6}- )/).find((s) => s.includes('Signed release APK and AAB'))
   assert.match(signed, /OPENTODO_VERSION="\$version" \.\/gradlew --no-daemon -Popentodo\.play=true :app:bundleRelease\n/, 'the release AAB is the Play build')
   assert.match(signed, /OPENTODO_VERSION="\$version" \.\/gradlew --no-daemon :app:assembleRelease\n/, 'the release APK is the plain build')
   assert.match(signed, /android-store-check\.sh "\.\.\/\.\.\/dist\/opentodo-android-\$version\.aab"/, 'the signed files are checked too')
@@ -651,6 +674,29 @@ test('only web-sign reads the web signing key, on release tags, in the web-signi
   }
 })
 
+// Release keys (Android keystore, plugin deploy keys) are read only by the release-tag
+// jobs that use them, in the `signing` environment the owner approves; moving `stable`
+// by hand runs in the `promote` environment.
+test('only the signing jobs read the release keys, on release tags, in the signing environment', () => {
+  const jobs = jobsOf(read('.github/workflows/ci.yml'))
+  const keys = { 'android-sign': /secrets\.ANDROID_KEYSTORE_BASE64/, 'claude-plugin': /secrets\.CLAUDE_PLUGIN_DEPLOY_KEY/, 'obsidian-plugin': /secrets\.OBSIDIAN_DEPLOY_KEY/ }
+  for (const [id, key] of Object.entries(keys)) {
+    assert.ok(jobs[id], `ci.yml has a ${id} job`)
+    assert.match(jobs[id], key)
+    assert.match(jobs[id], /^ {4}environment: signing$/m, `${id} runs in the signing environment`)
+    assert.match(jobs[id], /^ {4}if: .*startsWith\(github\.ref, 'refs\/tags\/v'\)/m, `${id} runs on release tags only`)
+  }
+  for (const f of workflowFiles()) {
+    for (const [id, block] of Object.entries(jobsOf(read(f)))) {
+      if (/environment: signing|secrets\.(ANDROID_KEY|CLAUDE_PLUGIN_DEPLOY_KEY|OBSIDIAN_DEPLOY_KEY)/.test(block)) {
+        assert.ok(f.endsWith('ci.yml') && id in keys, `${f}: only ${Object.keys(keys).join(', ')} use the signing environment or a release key (${id})`)
+      }
+    }
+  }
+  assert.ok(needsOf(jobs.release).includes('android-sign'), 'the release attaches the signed Android build')
+  assert.match(jobsOf(read('.github/workflows/promote-stable.yml')).promote, /^ {4}environment: promote$/m, 'moving stable by hand waits for the owner')
+})
+
 test('the official web app keys are published, and the test key is never one of them', async () => {
   const { createHash, createPrivateKey, createPublicKey } = await import('node:crypto')
   const official = JSON.parse(read('internal/websign/release-keys.json'))
@@ -673,7 +719,10 @@ test('the Play upload runs only for final tags, after the release, with its secr
   assert.match(play, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\) \}\}$/m, 'final tags only')
   assert.match(play, /^ {4}environment: release$/m)
   assert.match(play, /node scripts\/release\/play-upload\.mjs "\$GITHUB_REF_NAME"/)
-  assert.match(play, /::warning::PLAY_SERVICE_ACCOUNT_JSON or PLAY_UPLOAD_KEYSTORE_BASE64 is not set/)
+  assert.match(play, /::warning::PLAY_SERVICE_ACCOUNT_JSON is not set/)
+  // Without an upload key the release-signed AAB goes up as it is; with one it is re-signed.
+  assert.match(play, /if \[ -n "\$UPLOAD_KEYSTORE_BASE64" \]; then/)
+  assert.doesNotMatch(play, /-z "\$UPLOAD_KEYSTORE_BASE64"/, 'a missing upload key no longer skips the upload')
   assert.doesNotMatch(play, /production/, 'CI never promotes to production')
   for (const f of workflowFiles()) {
     for (const [id, block] of Object.entries(jobsOf(read(f)))) {
@@ -682,9 +731,9 @@ test('the Play upload runs only for final tags, after the release, with its secr
   }
 })
 
-// The iPhone app's TestFlight upload (OpenSpec change ios-distribution D5, D9): final tags after the
-// release and by hand, the App Store Connect key only in the release environment, a registration
-// job of its own, and never any signing material in the repository.
+// The iPhone app's TestFlight upload (OpenSpec change ios-distribution D5, D9, D10): final tags after
+// the release and by hand, the App Store Connect key only in the release environment, a registration
+// job of its own, review submission for final tags only, and never any signing material in the repository.
 test('the TestFlight upload runs for final tags after the release and by hand, with its secrets in the release environment', () => {
   const caller = jobsOf(read('.github/workflows/ci.yml'))['ios-testflight']
   assert.match(caller, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\) \}\}$/m, 'final tags only')
@@ -698,7 +747,20 @@ test('the TestFlight upload runs for final tags after the release and by hand, w
   assert.match(job, /node scripts\/release\/appstore\.mjs register\n[\s\S]*ios-testflight\.sh archive /, 'the bundle IDs are registered before the archive')
   assert.match(job, /^ {8}id: upload$/m, 'the upload step has an id the cleanup reads')
   assert.match(job, /if: always\(\) && steps\.secrets\.outputs\.ready == 'true'\n[\s\S]*?UPLOADED: \$\{\{ steps\.upload\.outcome == 'success' \}\}\n[\s\S]*?if \[ "\$UPLOADED" != "true" \][^\n]*appstore\.mjs cleanup/, 'the keychain always goes; the certificate is revoked only when nothing was uploaded (ITMS-90035)')
-  assert.doesNotMatch(flow, /reviewSubmissions|appStoreVersionSubmissions|betaAppReviewSubmissions/, 'CI never submits for review')
+  // App Store review (D10): a final tag's build only, after Apple processed it, never a release candidate; a hand run is a dry run unless chosen.
+  assert.match(job, /appstore\.mjs processed[\s\S]*?name: Submit for App Store review[\s\S]*?set -- submit /, 'the submission waits for processing')
+  const tools = job.match(/- name: Release scripts of this workflow's commit\n[\s\S]*?(?=\n {6}- |\n {6}# )/)?.[0] ?? ''
+  assert.match(tools, /^ {10}ref: \$\{\{ github\.workflow_sha \}\}$/m, "the submission's scripts are pinned to the workflow's exact commit, never a branch name")
+  assert.match(tools, /^ {10}sparse-checkout: scripts\/release$/m, 'only scripts/release is checked out from the workflow commit')
+  assert.match(tools, /^ {10}path: release-tools$/m, 'the workflow copy sits beside the tag, never over it')
+  assert.match(job, /node release-tools\/scripts\/release\/appstore\.mjs "\$@"/, "submit runs the workflow commit's appstore.mjs")
+  assert.match(job, /set -- submit "\$VERSION" "\$BUILD" --changelog CHANGELOG\.md/, "What's New is the tag's own CHANGELOG.md")
+  assert.equal((job.match(/release-tools\//g) ?? []).length, 1, 'every other step runs the tag')
+  assert.match(job, /^ {8}if: steps\.secrets\.outputs\.ready == 'true' && !contains\(inputs\.ref, '-rc\.'\) && \(inputs\.app_store == 'submit' \|\| inputs\.app_store == 'dry-run' \|\| inputs\.app_store == 'submit-only'\)$/m, 'a release candidate is never submitted')
+  assert.match(flow, /^ {6}app_store:\n {8}description:[^\n]*\n {8}type: choice\n {8}options: \[dry-run, submit, skip, submit-only\]\n {8}default: dry-run$/m, 'a run by hand is a dry run unless submit is chosen')
+  assert.match(job, /id: upload\n {8}if: steps\.secrets\.outputs\.ready == 'true' && inputs\.app_store != 'submit-only'$/m, 'submit-only uploads nothing')
+  assert.ok(job.indexOf('Release tag only') < job.indexOf('Submit for App Store review'), 'the tag check runs first')
+  assert.doesNotMatch(flow, /betaAppReviewSubmissions/, 'CI never submits a TestFlight build to beta review')
   const register = jobsOf(read('.github/workflows/ios-register-ids.yml'))['ios-register-ids']
   assert.ok(register, 'ios-register-ids.yml has an ios-register-ids job')
   assert.match(read('.github/workflows/ios-register-ids.yml'), /^ {2}workflow_dispatch:$/m)
@@ -890,6 +952,18 @@ test('the v1 surface keeps every entry of the snapshot at v1.0.0', (t) => {
   assert.deepEqual(problems, [], 'the v1 surface only grows within 1.x (docs/stability.md)')
 })
 
+test('the surface freeze accepts a listed security narrowing exactly, and nothing else', () => {
+  const tagged = { routes: { 'GET /api/v1/tokens': { policy: 'signed-in' }, 'GET /api/v1/me': { policy: 'signed-in' } } }
+  const allowed = { 'routes › GET /api/v1/tokens › policy': { from: 'signed-in', to: 'signed-in.full-tokens' } }
+  const narrowed = { routes: { 'GET /api/v1/tokens': { policy: 'signed-in.full-tokens' }, 'GET /api/v1/me': { policy: 'signed-in' } } }
+  assert.deepEqual(surfaceProblems(tagged, narrowed, 'v1.0.0', allowed), [])
+  const other = { routes: { 'GET /api/v1/tokens': { policy: 'owner-only' }, 'GET /api/v1/me': { policy: 'signed-in.full-tokens' } } }
+  assert.deepEqual(surfaceProblems(tagged, other, 'v1.0.0', allowed), [
+    'routes › GET /api/v1/me › policy: was "signed-in" at v1.0.0, now "signed-in.full-tokens"',
+    'routes › GET /api/v1/tokens › policy: was "signed-in" at v1.0.0, now "owner-only"',
+  ])
+})
+
 test('the surface freeze names an entry deleted by hand after v1.0.0', () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'surface-freeze-'))
   try {
@@ -974,108 +1048,8 @@ test('a renamed make target fails the contributor pages check, naming the page',
   ])
 })
 
-// ---- the native app's shared-code boundary (native-app-foundation D2, D3) ----
-
-test('the modules the app shares reach their host only through the platform port', () => {
-  const { modules } = JSON.parse(read(SHARED_MODULES_FILE))
-  assert.ok(modules.includes('web/src/lib/sync.ts'))
-  assert.deepEqual(boundaryProblems(root), [])
-})
-
-// The graph needs web's TypeScript: the Changed paths job has no npm install and
-// skips these two; the Web job runs them after npm ci.
-const graphSkip = hasTypeScript() ? false : 'needs web/node_modules (npm ci in web/); the Web job runs it'
-
-test('the shared list holds the whole import graph of the sync path (node scripts/shared-graph.mjs)', { skip: graphSkip }, () => {
-  const { modules } = JSON.parse(read(SHARED_MODULES_FILE))
-  const graph = sharedGraph()
-  assert.ok(graph.includes('web/src/lib/platform.ts') && graph.includes('web/src/lib/deviceStorage.ts'))
-  assert.deepEqual(graph.filter((m) => !modules.includes(m)), [], `add these modules to ${SHARED_MODULES_FILE}`)
-})
-
-test('the import graph follows static, dynamic and type-only imports, and leaves packages and assets out', { skip: graphSkip }, () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'graph-'))
-  try {
-    const lib = path.join(dir, 'web/src/lib')
-    mkdirSync(path.join(lib, 'sub'), { recursive: true })
-    writeFileSync(path.join(lib, 'a.ts'), "import React from 'react'\nimport { b } from './b'\nimport type { C } from './sub'\nimport data from './d.json'\nexport const lazy = () => import('./e')\n")
-    writeFileSync(path.join(lib, 'b.ts'), "export const b = 1 // import './not-code'\n")
-    writeFileSync(path.join(lib, 'sub/index.ts'), 'export type C = number\n')
-    writeFileSync(path.join(lib, 'd.json'), '{}')
-    writeFileSync(path.join(lib, 'e.tsx'), "import { b } from './b'\nexport default b\n")
-    writeFileSync(path.join(lib, 'unused.ts'), 'export {}\n')
-    assert.deepEqual(sharedGraph(['web/src/lib/a.ts'], dir), ['web/src/lib/a.ts', 'web/src/lib/b.ts', 'web/src/lib/e.tsx', 'web/src/lib/sub/index.ts'])
-  } finally {
-    rmSync(dir, { recursive: true, force: true })
-  }
-})
-
-test('a browser global in a shared module fails the boundary check, naming the module, the global and the port', () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'boundary-'))
-  try {
-    const rel = 'web/src/lib/sync.ts'
-    mkdirSync(path.join(dir, 'web/src/lib'), { recursive: true })
-    const src = read(rel)
-    writeFileSync(path.join(dir, rel), `${src}export const hidden = () => document.hidden\n`)
-    assert.deepEqual(boundaryProblems(dir, [rel, 'web/src/lib/gone.ts']), [
-      `${rel}:${src.split('\n').length} uses the browser global document; a module the app shares reaches its host through the platform port (web/src/lib/platform.ts)`,
-      `${SHARED_MODULES_FILE} lists web/src/lib/gone.ts, which does not exist`,
-    ])
-  } finally {
-    rmSync(dir, { recursive: true, force: true })
-  }
-})
-
-test('every module in shared-modules.json runs the app checks on Linux, never an app build', () => {
-  const { modules } = JSON.parse(read(SHARED_MODULES_FILE))
-  for (const m of modules) assert.deepEqual(pick(changes([m]), ['app', 'app_native']), { app: 'true', app_native: 'false' }, m)
-})
-
-// Every package of mobile/app/package.json is pinned exactly and has its reason in
-// DEPENDENCIES.md (native-app-foundation D7), and every line there names a package.
-function appDependencyProblems(pkg, doc) {
-  const problems = []
-  const deps = { ...pkg.dependencies, ...pkg.devDependencies }
-  const listed = new Set([...doc.matchAll(/^- `([^`]+)`: \S/gm)].map((m) => m[1]))
-  for (const [name, version] of Object.entries(deps)) {
-    if (!/^\d+\.\d+\.\d+$/.test(version)) problems.push(`mobile/app/package.json: ${name} ${version} is not pinned to an exact version`)
-    if (!listed.has(name)) problems.push(`mobile/app/DEPENDENCIES.md: ${name} has no line with its reason`)
-  }
-  for (const name of listed) if (!(name in deps)) problems.push(`mobile/app/DEPENDENCIES.md: ${name} is not in package.json`)
-  return problems
-}
-
-test("the app's dependencies are pinned and each has its reason in DEPENDENCIES.md", () => {
-  assert.deepEqual(appDependencyProblems(JSON.parse(read('mobile/app/package.json')), read('mobile/app/DEPENDENCIES.md')), [])
-})
-
-test('a dependency without a reason, or a reason without a dependency, fails naming the package', () => {
-  const pkg = { dependencies: { expo: '58.0.19', 'left-pad': '^1.3.0' }, devDependencies: { jest: '30.5.2' } }
-  const doc = '- `expo`: the SDK.\n- `jest`: the tests.\n- `gone`: was removed.\n'
-  assert.deepEqual(appDependencyProblems(pkg, doc), [
-    'mobile/app/package.json: left-pad ^1.3.0 is not pinned to an exact version',
-    'mobile/app/DEPENDENCIES.md: left-pad has no line with its reason',
-    'mobile/app/DEPENDENCIES.md: gone is not in package.json',
-  ])
-})
-
-test("the app's native projects are generated, never committed (design D8)", () => {
-  const ignore = read('mobile/app/.gitignore')
-  for (const dir of ['/ios/', '/android/', '/node_modules/']) assert.match(ignore, new RegExp(`^${dir}$`, 'm'), `mobile/app/.gitignore ignores ${dir}`)
-})
-
-test('the boundary check ignores comments, strings and properties of the same name', () => {
-  const src = [
-    '// the window of the last sync, a document field',
-    "const s = 'window.open', t = `navigator`, u = \"localStorage\"",
-    '/* indexedDB */ const v = doc.document + x.window',
-    'if (typeof BroadcastChannel !== "undefined") {}',
-  ].join('\n')
-  assert.deepEqual(browserGlobals(src), [{ global: 'BroadcastChannel', line: 4 }])
-})
-
 // A job after the release (1.4.0): GitHub skips a job whose needs chain holds a skipped job unless
-// its condition is explicit, and the app builds are skipped on tags, so every job that needs the
+// its condition is explicit, so every job that needs the
 // release states !cancelled() && !failure() instead of relying on the implicit success().
 test('every job after the release runs even when a job before it was skipped', () => {
   const jobs = jobsOf(read('.github/workflows/ci.yml'))
@@ -1152,4 +1126,37 @@ test('docs screenshots are WebP (docs-screenshot-growth): no PNG or JPEG copies 
     .flatMap((e) => (e.isDirectory() ? walk(`${dir}/${e.name}`) : [`${dir}/${e.name}`]))
   const raster = ['docs/images', 'docs/screenshots'].flatMap(walk).filter((f) => /\.(png|jpe?g)$/i.test(f))
   assert.deepEqual(raster, [], 'encode docs screenshots as WebP (scripts/docs-screenshots.mjs, scripts/screenshots.mjs); README.md embeds only docs/screenshots/demo.gif')
+})
+
+// OpenSpec hygiene: a change with every task ticked is archived, not left open.
+// Stale changes are reported as diagnostics only (a decision, not a fix).
+test('no open OpenSpec change has every task ticked', (t) => {
+  const changes = openChanges(path.join(root, 'openspec/changes'))
+  assert.ok(changes.length > 0, 'openspec/changes has open changes with a tasks.md')
+  assert.deepEqual(finishedProblems(changes), [])
+  for (const w of staleWarnings(changes, gitLastTouched(root))) t.diagnostic(`warning: stale change: ${w}`)
+})
+
+test('the OpenSpec hygiene check finds finished and stale changes', () => {
+  assert.deepEqual(taskCounts('- [x] 1.1 a\n  - [X] 1.2 b\n- [ ] 2.1 c\n[ ] not a task\n'), { done: 2, open: 1 })
+  const changes = [
+    { name: 'done', done: 3, open: 0 },
+    { name: 'empty', done: 0, open: 0 },
+    { name: 'old', done: 1, open: 2 },
+    { name: 'fresh', done: 0, open: 4 },
+    { name: 'shallow', done: 0, open: 1 },
+  ]
+  assert.deepEqual(finishedProblems(changes), ['openspec/changes/done: all 3 tasks are ticked; archive it (/opsx:archive done)'])
+  const dates = { done: '2026-01-01', old: '2026-10-29', fresh: '2026-11-10', shallow: '' }
+  assert.deepEqual(staleWarnings(changes, (n) => dates[n] ?? '', new Date('2026-11-17T12:00:00Z')), [
+    'openspec/changes/old: 1/3 tasks, untouched since 2026-10-29 (19 days)',
+  ])
+})
+
+test('every :hover in the web app\'s CSS needs a pointer that hovers (touch-input-mode)', () => {
+  const css = (dir) => readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory() ? (e.name === 'node_modules' || e.name === 'generated' ? [] : css(`${dir}/${e.name}`)) : e.name.endsWith('.css') ? [`${dir}/${e.name}`] : [])
+  const found = css('web/src').flatMap((f) => unguardedHover(read(f)).map((h) => `${f}:${h.line} ${h.selector}`))
+  assert.deepEqual(found, [], 'wrap these in @media (hover: hover)')
+  assert.deepEqual(unguardedHover('a:hover { x: 1 }\n@media (hover: hover) { b:hover { y: 2 } }\nc { &:hover { z: 3 } }').map((h) => h.line), [1, 3])
 })

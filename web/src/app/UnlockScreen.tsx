@@ -3,7 +3,7 @@ import { biometricUnlockState, disableWithoutKey, enableBiometricUnlock, restore
 import { startMigration } from '../lib/e2eeSync'
 import { FileMigrationPaused, runFileMigration } from '../lib/attachments'
 import { requestSync } from '../lib/sync'
-import { encryptionMessage, LostKeysConfirm } from './EncryptionPanel'
+import { encryptionMessage, LostKeysConfirm } from './encryptionShared'
 import { t } from '../lib/i18n'
 import { useAction } from '../lib/useAction'
 
@@ -31,7 +31,7 @@ export interface UnlockViewProps {
 
 export function UnlockView(p: UnlockViewProps) {
   return (
-    <div className="flex min-h-full items-center justify-center p-4">
+    <div className="flex min-h-full items-start justify-center p-4 pt-[max(1rem,var(--safe-top))] sm:items-center">
       <div className="w-full max-w-md space-y-4 rounded-control border border-default p-6">
         <h1 className="text-h3 font-semibold">{t('Unlock your tasks')}</h1>
         <p className="text-body text-muted">
@@ -133,7 +133,7 @@ export interface RecordMissingViewProps {
 
 export function RecordMissingView(p: RecordMissingViewProps) {
   return (
-    <div className="flex min-h-full items-center justify-center p-4">
+    <div className="flex min-h-full items-start justify-center p-4 pt-[max(1rem,var(--safe-top))] sm:items-center">
       <div className="w-full max-w-md space-y-4 rounded-control border border-default p-6" data-testid="e2ee-record-missing">
         <h1 className="text-h3 font-semibold">{t('Encryption key record missing')}</h1>
         <p className="text-body text-muted">

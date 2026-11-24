@@ -6,9 +6,8 @@ name: Promote stable
 #
 # After the move to OpenTodoApp (deploy/deploy.json `legacy`): a release published only
 # under the legacy name ghcr.io/pixari/opentodo (0.14.2 and earlier) is first copied to
-# ghcr.io/opentodoapp/opentodo with its signatures, digest unchanged. Through the 0.16
-# releases, the legacy name's `stable` moves too (secret GHCR_LEGACY_TOKEN when it is set;
-# a refused push is a warning).
+# ghcr.io/opentodoapp/opentodo with its signatures, digest unchanged. The legacy name's
+# own `stable` is no longer moved (it received releases through 0.16.0).
 on:
   workflow_dispatch:
     inputs:
@@ -30,6 +29,8 @@ jobs:
     name: Point stable at ${{ inputs.version }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Moving `stable` moves every install that follows it, so the owner approves it.
+    environment: promote
     steps:
       - name: Check the version
         env:
@@ -70,13 +71,3 @@ jobs:
           docker buildx imagetools inspect "$IMAGE:$VERSION" >/dev/null
           docker buildx imagetools create -t "$IMAGE:stable" "$IMAGE:$VERSION"
           docker buildx imagetools inspect "$IMAGE:stable"
-      - name: Retag the legacy name
-        env:
-          GHCR_LEGACY_TOKEN: ${{ secrets.GHCR_LEGACY_TOKEN }}
-          IMAGE: ghcr.io/${{ github.repository }}
-          VERSION: ${{ inputs.version }}
-        run: |
-          scripts/legacy-image.sh check "$VERSION" || exit 0
-          scripts/legacy-image.sh login
-          IMAGE=$(printf '%s' "$IMAGE" | tr '[:upper:]' '[:lower:]')
-          scripts/legacy-image.sh image "$IMAGE:$VERSION" stable

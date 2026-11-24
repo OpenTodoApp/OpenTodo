@@ -3,8 +3,10 @@
 // direct subtasks (lib/subtasks.ts, progressMap); a project's is the All projects
 // table's rule (statistics "Project health"), kept once here so the project page and
 // the table cannot drift.
+import { projectFlowOf } from './flow'
+import { isReusable } from './reusable'
 import type { Progress } from './subtasks'
-import type { Task } from './types'
+import type { Project, Task } from './types'
 import { perList } from './taskDelta'
 
 type ProgressTask = Pick<Task, 'project_id' | 'completed_at' | 'deleted_at' | 'series_id'> & Partial<Pick<Task, 'skipped' | 'sample'>>
@@ -19,6 +21,14 @@ export function progressPart(task: ProgressTask): 'done' | 'open' | null {
   if (task.deleted_at || task.skipped || task.sample) return null
   if (task.completed_at !== null) return task.series_id ? null : 'done'
   return 'open'
+}
+
+/**
+ * Whether a project shows its progress. An area never finishes, and a reusable list
+ * is restocked rather than finished (reusable-no-progress): neither has a share to show.
+ */
+export function showsProgress(p: Pick<Project, 'flow_mode' | 'reusable'>): boolean {
+  return projectFlowOf(p) !== 'area' && !isReusable(p)
 }
 
 /** The share done, 0 to 1; null when there is nothing to count. */

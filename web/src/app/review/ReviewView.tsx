@@ -5,11 +5,15 @@
 // steps use the ordinary task rows, so the list keys work inside them; the Projects
 // step is the project walk, which owns its keys while it is shown. "Finish review"
 // writes the synced `review` row; the menu opens the Daily check and the Monthly look.
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy } from '../../lib/lazy'
 import { Badge, Button, Card, Dialog, Icon, MenuItem, Notice, PageBody, PageHeader, Skeleton, type IconName } from '../../ui'
 import { useAllLabels, useAllProjects, useProjectPrefsLoaded, useReviewEvery, useReviewRow, useReviewedAt } from '../../lib/localData'
 import { formatInstant } from '../../lib/dates'
-import { createTask, setTaskCompleted } from '../../lib/ops'
+import { createTask } from '../../lib/ops'
+import { chooseNextAction } from '../method/chooseNext'
+import type { NextChoice } from '../../lib/method/rules'
+import { setTaskCompletedWithFeedback } from '../completionSound'
 import { resolveLabels } from '../../lib/labels'
 import { hasTimeColumn } from '../../lib/rowTime'
 import { listSlotsOff } from '../../lib/rowSlots'
@@ -26,6 +30,8 @@ import { navigate } from '../router'
 import { TaskRow } from '../TaskRow'
 import { useListKeys } from '../useListKeys'
 import { t } from '../../lib/i18n'
+import { Kbd } from '../shortcuts/Kbd'
+import { useShortcutHints } from '../shortcuts/hints'
 import { act } from '../actionError'
 import { ProjectWalk } from './ProjectWalk'
 import { ReviewProgress } from './ReviewProgress'
@@ -105,7 +111,7 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
   const row = (item: Task) => (
     <TaskRow key={item.id} task={item} project={item.project_id ? projectMap.get(item.project_id) : undefined} labels={resolveLabels(item.labels, labelMap)}
       showProject={step !== 'clear'} selected={item.id === selected} timeColumn={timeColumn} slotsOff={slotsOff}
-      onToggle={() => act(setTaskCompleted(item.id, !item.completed_at))}
+      onToggle={() => act(setTaskCompletedWithFeedback(item.id, !item.completed_at))}
       onOpen={() => { setSelected(item.id); setPanelTaskId(item.id) }} />
   )
   const allDone = !!steps && STEP_IDS.every((s) => steps.done[s])
@@ -132,6 +138,13 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
     if (!addTo) return
     await createTask({ ...rest, project_id: addTo.id, labels: typed ?? [] })
     setNotice(t('Added a next action to {name}.', { name: addTo.name }))
+    setAddTo(null)
+  }
+  // An open task of the project chosen as its next action instead (choose-next-action).
+  const addToChoices = addTo ? [...(steps?.walk ?? []), ...(steps?.notDue ?? [])].find((w) => w.project.id === addTo.id)?.choices ?? [] : []
+  const choose = (choice: NextChoice) => {
+    if (!addTo) return
+    act(chooseNextAction(choice, addTo.name))
     setAddTo(null)
   }
 
@@ -181,7 +194,8 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
       {addTo && (
         <Dialog title={t('Add a next action to {name}', { name: addTo.name })} onClose={() => setAddTo(null)}>
           <QuickAdd autoFocus hideHint placeholder={t('What is the next step?')} label={t('Next action for {name}', { name: addTo.name })}
-            projects={projects.filter((p) => !p.deleted_at && !p.archived)} labels={labels} onAdd={add} />
+            projects={projects.filter((p) => !p.deleted_at && !p.archived)} labels={labels} onAdd={add}
+            choices={addToChoices.length ? { items: addToChoices, onPick: choose } : undefined} />
         </Dialog>
       )}
       {pickerFor && (
@@ -241,6 +255,7 @@ function MindSweep({ projects, labels }: { projects: Project[]; labels: ReturnTy
 }
 
 function StepIntro({ step, steps }: { step: StepId; steps: ReviewSteps }) {
+  const hints = useShortcutHints()
   switch (step) {
     case 'clear':
       return (
@@ -262,7 +277,16 @@ function StepIntro({ step, steps }: { step: StepId; steps: ReviewSteps }) {
     case 'waiting':
       return <p className="mb-3 text-body text-muted">{steps.waiting.length ? t('Assigned to someone else or blocked by another task. Open one to follow up in its comments.') : t('Nothing is waiting.')}</p>
     case 'projects':
-      return <p className="mb-3 text-body text-muted">{t('One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action, e sets how often it comes up.')}</p>
+      // The keys only with "Show shortcut hints" on, as keycaps (issue 1935); the walk's
+      // buttons and its Review every… menu name them too.
+      // No space after full-width punctuation (Chinese).
+      const question = t('One project at a time: is it still alive, and is its next step clear?')
+      return (
+        <p className="mb-3 text-body text-muted" data-step-intro>
+          {question}
+          {hints && <span data-kbd-hint>{/[。？！]$/.test(question) ? '' : ' '}{t.rich('{r} marks it reviewed, {q} adds a next action, {e} sets how often it comes up.', { r: <Kbd k="r" />, q: <Kbd k="q" />, e: <Kbd k="e" /> })}</span>}
+        </p>
+      )
     case 'someday':
       return <p className="mb-3 text-body text-muted">{steps.someday.length ? t('Anything you now want to do? n brings a task back from Someday, c completes it, Delete trashes it.') : t('Nothing is parked in Someday.')}</p>
     default:

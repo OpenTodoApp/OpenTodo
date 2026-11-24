@@ -49,6 +49,42 @@ One image, `ghcr.io/opentodoapp/opentodo` (linux/amd64 and linux/arm64), or one 
 
 The binary runs anywhere with `OPENTODO_DATA_DIR=/var/lib/opentodo ./opentodo`; see [Single binary](../../README.md#single-binary). Verify the image or the download before you run it: [Verifying the image and downloads](docker.md#verifying-the-image-and-downloads).
 
+### The binary as a service
+
+On a Linux server with systemd, run the binary as its own user, with its data in `/var/lib/opentodo`, listening only on the machine itself behind your reverse proxy:
+
+```sh
+sudo useradd --system --home /var/lib/opentodo --shell /usr/sbin/nologin opentodo
+sudo install -d -o opentodo -g opentodo -m 700 /var/lib/opentodo
+sudo install -m 755 opentodo-linux-amd64 /usr/local/bin/opentodo
+```
+
+`/etc/systemd/system/opentodo.service`:
+
+```ini
+[Unit]
+Description=OpenTodo
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=opentodo
+Group=opentodo
+Environment=OPENTODO_DATA_DIR=/var/lib/opentodo
+Environment=OPENTODO_ADDR=127.0.0.1:8080
+Environment=OPENTODO_BASE_URL=https://todo.example.com
+ExecStart=/usr/local/bin/opentodo
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/opentodo
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then `sudo systemctl daemon-reload && sudo systemctl enable --now opentodo`, and `journalctl -u opentodo` for the log (the setup code is printed there). To upgrade, replace `/usr/local/bin/opentodo` and `sudo systemctl restart opentodo`.
+
 ## 2. First run
 
 1. Open the server's address. **The first visitor becomes the owner.** On a server reachable from the internet, set `OPENTODO_SETUP_TOKEN` or `OPENTODO_SETUP_CODE=required` before the first start ([The setup code](docker.md#the-setup-code)).
@@ -71,7 +107,7 @@ OpenTodo speaks plain HTTP on port 8080; the proxy terminates TLS. Two settings 
 
 Live updates use a server-sent event stream (`/api/v1/sync/events`): don't buffer it, and keep idle timeouts above 25 s. Details and troubleshooting: [Behind a reverse proxy](docker.md#behind-a-reverse-proxy).
 
-The proxy must pass the app's files through unchanged: installed apps check them against the release's signed file list ([Signed app code](../security/signed-app.md)). Turn off anything that rewrites HTML or JavaScript for this host: Cloudflare's Rocket Loader, Auto Minify and Email Address Obfuscation, nginx `sub_filter`, injected analytics. Check a deployment with `go run github.com/OpenTodoApp/opentodo/cmd/websign@latest verify https://todo.example.com/`. Rolling the server back to an older release leaves installed apps on the newer one; sync keeps working. [Signed updates](../signed-updates.md) explains what people see and what to do.
+The proxy must pass the app's files through unchanged: installed apps check them against the release's signed file list ([Signed app code](../security/signed-app.md)). Turn off anything that rewrites HTML or JavaScript for this host: Cloudflare's Rocket Loader, Auto Minify and Email Address Obfuscation, nginx `sub_filter`, injected analytics. Check a deployment with `go run github.com/OpenTodoApp/opentodo/cmd/websign@latest verify https://todo.example.com/`. The server sends the app's files gzip-compressed itself (with `no-transform`), so the proxy's own compression neither helps nor hurts. Rolling the server back to an older release leaves installed apps on the newer one; sync keeps working. [Signed updates](../signed-updates.md) explains what people see and what to do.
 
 **Caddy** (certificates are automatic):
 
@@ -97,7 +133,7 @@ server {
         proxy_http_version 1.1;
         proxy_buffering off;    # the live-update stream
         proxy_read_timeout 1h;
-        proxy_set_header Host $host;
+        proxy_set_header Host $http_host;   # keeps a port other than 443; $host drops it and sign-in answers 403 bad_origin
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
@@ -147,7 +183,7 @@ A backup you have never restored is a hope. Run this drill once after setting up
    ```sh
    docker run -d --name opentodo-drill -v opentodo-drill:/data -p 127.0.0.1:18091:8080 \
      ghcr.io/opentodoapp/opentodo:stable
-   curl -s http://127.0.0.1:18091/healthz        # {"status":"ok","version":"…"}
+   curl -s http://127.0.0.1:18091/healthz        # {"status":"ok","version":"…","app_sign_in":true}
    curl -s -H "Authorization: Bearer $TOKEN" http://127.0.0.1:18091/api/v1/tasks | jq '.tasks | length'
    ```
 
@@ -167,14 +203,14 @@ Migrations run at start, and a backup is taken before they do. There are no down
 
 | What | Where |
 | --- | --- |
-| Health | `GET /healthz` → `{"status":"ok","version":"…"}`; the image's `HEALTHCHECK` runs `/opentodo healthcheck` |
+| Health | `GET /healthz` → `{"status":"ok","version":"…","app_sign_in":true}` (`app_sign_in`: the [app sign-in](../api.md#app-sign-in) is available); the image's `HEALTHCHECK` runs `/opentodo healthcheck` |
 | Logs | stdout, `slog` text lines; `OPENTODO_LOG_LEVEL=debug` adds one line per API request |
 | Configuration problems | logged at start, and shown to the owner at the top of **Settings** |
 | Backups | **Settings → Server → Backups**: last run, result, next run |
 | Disk | the data directory: `opentodo.db`, `attachments/`, `backups/` (local destination), `cache/maps`; **Settings → Server → Backups → Database storage** shows the database and its compaction |
 | Security events | **Settings → Server → Audit log**, exportable as NDJSON ([Audit log](docker.md#audit-log)) |
 
-Point your uptime monitor at `/healthz`. It needs no credentials and reveals only the version. Behind a proxy that answers `/healthz` itself (Pomerium, Google Cloud Run), use `/api/v1/health`, which gives the same answer ([details](docker.md#proxies-that-answer-healthz-themselves-pomerium-cloud-run)).
+Point your uptime monitor at `/healthz`. It needs no credentials and reveals only the version and whether app sign-in is available. Behind a proxy that answers `/healthz` itself (Pomerium, Google Cloud Run), use `/api/v1/health`, which gives the same answer ([details](docker.md#proxies-that-answer-healthz-themselves-pomerium-cloud-run)).
 
 ## 7. Hardening
 

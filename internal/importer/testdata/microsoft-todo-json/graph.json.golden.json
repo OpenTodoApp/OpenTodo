@@ -1,0 +1,187 @@
+{
+  "format": "microsoft-todo-json",
+  "notes": [
+    "the list \"Family\" is shared in To Do; it is imported as your own project, which you can share again"
+  ],
+  "totals": {
+    "rows": 16,
+    "create": 16,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 3,
+    "newProjects": 3,
+    "newLabels": 2,
+    "newSections": 0,
+    "recurring": 5,
+    "reminders": 0,
+    "deadlines": 0,
+    "attachments": 1,
+    "fields": 0,
+    "timeEntries": 0,
+    "places": 0,
+    "notes": 0,
+    "entities": 19,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": null,
+  "rows": [
+    {
+      "row": 1,
+      "sourceId": "microsoft-todo:list:family",
+      "kind": "project",
+      "title": "Family",
+      "outcome": "create"
+    },
+    {
+      "row": 1,
+      "sourceId": "microsoft-todo:notes",
+      "kind": "task",
+      "title": "Outlook notes",
+      "project": "Family",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "microsoft-todo:waiting",
+      "kind": "task",
+      "title": "Waiting on others",
+      "project": "Family",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "microsoft-todo:deferred",
+      "kind": "task",
+      "title": "Deferred",
+      "project": "Family",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "sourceId": "microsoft-todo:odd-status",
+      "kind": "task",
+      "title": "Odd status",
+      "project": "Family",
+      "outcome": "create",
+      "warnings": [
+        "status \"paused\" not recognised; imported as an open task"
+      ]
+    },
+    {
+      "row": 2,
+      "sourceId": "microsoft-todo:list:repeats",
+      "kind": "project",
+      "title": "Repeats",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "sourceId": "microsoft-todo:fortnight",
+      "kind": "task",
+      "title": "Bins",
+      "project": "Repeats",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "sourceId": "microsoft-todo:fortnight-sunday",
+      "kind": "task",
+      "title": "Church rota",
+      "project": "Repeats",
+      "outcome": "create",
+      "warnings": [
+        "recurrence {\"daysOfWeek\":[\"sunday\",\"monday\"],\"firstDayOfWeek\":\"sunday\",\"index\":\"first\",\"interval\":2,\"type\":\"weekly\"} not supported; imported without a rule"
+      ]
+    },
+    {
+      "row": 7,
+      "sourceId": "microsoft-todo:workday",
+      "kind": "task",
+      "title": "Payroll",
+      "project": "Repeats",
+      "outcome": "create"
+    },
+    {
+      "row": 8,
+      "sourceId": "microsoft-todo:quarterly",
+      "kind": "task",
+      "title": "Quarterly report",
+      "project": "Repeats",
+      "outcome": "create"
+    },
+    {
+      "row": 9,
+      "sourceId": "microsoft-todo:birthday",
+      "kind": "task",
+      "title": "Birthday",
+      "project": "Repeats",
+      "outcome": "create"
+    },
+    {
+      "row": 10,
+      "sourceId": "microsoft-todo:thanksgiving",
+      "kind": "task",
+      "title": "Thanksgiving",
+      "project": "Repeats",
+      "outcome": "create"
+    },
+    {
+      "row": 11,
+      "sourceId": "microsoft-todo:done-repeat",
+      "kind": "task",
+      "title": "Done repeat",
+      "project": "Repeats",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "microsoft-todo:list:flagged",
+      "kind": "project",
+      "title": "Flagged emails",
+      "outcome": "create"
+    },
+    {
+      "row": 12,
+      "sourceId": "microsoft-todo:mail",
+      "kind": "task",
+      "title": "Reply to Sam",
+      "project": "Flagged emails",
+      "outcome": "create",
+      "warnings": [
+        "file attachments dropped (they are not in the file; only links are imported)"
+      ]
+    },
+    {
+      "row": 13,
+      "sourceId": "microsoft-todo:check:step",
+      "kind": "task",
+      "title": "Find the invoice",
+      "project": "Flagged emails",
+      "outcome": "create"
+    }
+  ],
+  "fields": [
+    "label id-0005: name=\"Red category\" created_at=1791979200000",
+    "label id-0006: name=\"Errands\" created_at=1791979200000",
+    "project id-0001: name=\"Family\" archived=false created_at=1791979200000",
+    "project id-0002: name=\"Repeats\" archived=false created_at=1791979200000",
+    "project id-0003: name=\"Flagged emails\" archived=false created_at=1791979200000",
+    "task id-0004: title=\"Outlook notes\" description=\"Bring:\\n\\n- Bread\\n- Milk \\u003c2 litres\\u003e\\n\\nDone.\" priority=4 created_at=1790841600000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"notes\"} labels=[\"id-0005\",\"id-0006\"]",
+    "task id-0007: title=\"Waiting on others\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"waiting\"} labels=[]",
+    "task id-0008: title=\"Deferred\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"deferred\"} labels=[]",
+    "task id-0009: title=\"Odd status\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"odd-status\"} labels=[]",
+    "task id-0010: title=\"Bins\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" due={\"date\":\"2026-11-02\"} recurrence=\"every 2 weeks on monday, thursday until 2027-06-30\" origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"fortnight\"} labels=[]",
+    "task id-0011: title=\"Church rota\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" due={\"date\":\"2026-11-02\"} origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"fortnight-sunday\"} labels=[]",
+    "task id-0012: title=\"Payroll\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" due={\"date\":\"2026-11-30\"} recurrence=\"every last weekday\" origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"workday\"} labels=[]",
+    "task id-0013: title=\"Quarterly report\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" due={\"date\":\"2026-12-01\"} recurrence=\"every 3 months\" origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"quarterly\"} labels=[]",
+    "task id-0014: title=\"Birthday\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" due={\"date\":\"2026-11-04\"} recurrence=\"every year\" origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"birthday\"} labels=[]",
+    "task id-0015: title=\"Thanksgiving\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" due={\"date\":\"2026-11-26\"} recurrence=\"every 4th thursday of november for 5 times\" origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"thanksgiving\"} labels=[]",
+    "task id-0016: title=\"Done repeat\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" due={\"date\":\"2026-10-26\"} origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"done-repeat\"} completed_at=1792972800000 labels=[]",
+    "task id-0017: title=\"Reply to Sam\" description=\"\" priority=4 created_at=1792497600000 project_id=\"id-0003\" origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"mail\",\"url\":\"https://outlook.office365.com/owa/?ItemID=AAMk1\\u0026exvsurl=1\\u0026viewmodel=ReadMessageItem\"} labels=[]",
+    "task id-0019: title=\"Find the invoice\" description=\"\" priority=4 created_at=1792497600000 project_id=\"id-0003\" parent_id=\"id-0017\" completed_at=1792575000000 labels=[]",
+    "attachment id-0018: task_id=\"id-0017\" author_id=\"user-1\" comment_id=null name=\"Invoice\" mime=\"text/uri-list\" size=0 sha256=\"\" url=\"https://outlook.office365.com/owa/?ItemID=AAMk1\\u0026exvsurl=1\\u0026viewmodel=ReadMessageItem\" encrypted=false created_at=1791979200000 uploaded_at=null deleted_at=null"
+  ]
+}

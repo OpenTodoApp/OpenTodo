@@ -1,5 +1,7 @@
+import ActivityKit
 import UIKit
 import UserNotifications
+import WebKit
 import XCTest
 @testable import OpenTodo
 
@@ -17,10 +19,36 @@ final class OriginTests: XCTestCase {
         XCTAssertEqual(Origin.signature(scheme: "https", host: "Todo.Example.com", port: 443), Origin.signature(https))
     }
 
-    func testSameIgnoresPathAndCase() {
-        XCTAssertTrue(Origin.same(URL(string: "https://Todo.Example.com/today")!, URL(string: "https://todo.example.com")!))
-        XCTAssertFalse(Origin.same(URL(string: "https://todo.example.com")!, URL(string: "https://todo.example.com:8443")!))
-        XCTAssertFalse(Origin.same(URL(string: "http://todo.example.com")!, URL(string: "https://todo.example.com")!))
+    /// Which addresses are the server's own: the cases both apps read (Android's SignInFlowTest too).
+    private func cases() throws -> [String: Any] {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/origin/cases.json")
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+    }
+
+    func testTheServersOwnAddressesFollowTheSharedCases() throws {
+        let list = try XCTUnwrap(try cases()["same"] as? [[String: Any]])
+        XCTAssertFalse(list.isEmpty)
+        for c in list {
+            let address = try XCTUnwrap(c["url"] as? String)
+            let url = try XCTUnwrap(URL(string: address), address)
+            let server = try XCTUnwrap(URL(string: try XCTUnwrap(c["server"] as? String)))
+            let same = try XCTUnwrap(c["same"] as? Bool)
+            XCTAssertEqual(Origin.same(url, server), same, address)
+            XCTAssertEqual(SignInFlow.originOf(url).map { $0 == SignInFlow.originOf(server) } ?? false, same, address)
+        }
+    }
+
+    func testWebAddressesAndTheirHostFollowTheSharedCases() throws {
+        let list = try XCTUnwrap(try cases()["web"] as? [[String: Any]])
+        XCTAssertFalse(list.isEmpty)
+        for c in list {
+            let address = try XCTUnwrap(c["url"] as? String)
+            let url = try XCTUnwrap(URL(string: address), address)
+            XCTAssertEqual(SignInFlow.originOf(url) != nil, try XCTUnwrap(c["web"] as? Bool), address)
+            XCTAssertEqual(SignInFlow.hostOf(url), try XCTUnwrap(c["host"] as? String), address)
+        }
     }
 
     func testPageOriginDropsPathAndDefaultPort() {
@@ -98,6 +126,20 @@ final class LaunchScreenTests: XCTestCase {
         XCTAssertEqual(shell.webView.alpha, 1)
     }
 
+    /// ios-keyboard-bar D1: the web view's content view supplies no accessory bar, and
+    /// removing it twice changes nothing.
+    func testTheKeyboardHasNoAccessoryBar() throws {
+        let shell = ShellController(origin: try XCTUnwrap(URL(string: "https://todo.example")))
+        let content = try XCTUnwrap(shell.webView.scrollView.subviews.first { NSStringFromClass(type(of: $0)) == KeyboardBar.className })
+        XCTAssertNil(content.inputAccessoryView)
+        XCTAssertTrue(KeyboardBar.remove(from: shell.webView))
+        XCTAssertEqual(NSStringFromClass(type(of: content)), KeyboardBar.className)
+        // A second web view gets the same class, made once.
+        let other = WKWebView(frame: .zero)
+        XCTAssertTrue(KeyboardBar.remove(from: other))
+        XCTAssertNil(other.scrollView.subviews.first { NSStringFromClass(type(of: $0)) == KeyboardBar.className }?.inputAccessoryView)
+    }
+
     /// Over the launch colour the system chooses the status bar icons; the bars' own come with the page.
     func testTheStatusBarIconsWaitForTheWebView() throws {
         defer { StatusBar.show(lightIcons: nil) }
@@ -134,19 +176,50 @@ final class StoreReadinessTests: XCTestCase {
 }
 
 final class ShareMapTests: XCTestCase {
-    func testPathCarriesTitleTextAndFiles() {
-        XCTAssertEqual(ShareMap.path(title: "Buy milk", text: "and bread", withFiles: false),
-                       "/share?title=Buy%20milk&text=and%20bread")
+    /// The cases both apps read (Android's `ShareMapperTest` too): what a share becomes.
+    private func cases() throws -> [String: Any] {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/share/cases.json")
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
     }
 
-    func testLoneLinkBecomesUrl() {
-        XCTAssertEqual(ShareMap.path(title: nil, text: " https://example.com/x \n", withFiles: false),
-                       "/share?url=https%3A%2F%2Fexample.com%2Fx")
+    /// The decoded query of `/share?…`, as the web app's URLSearchParams reads it.
+    private func query(_ path: String) throws -> [String: String] {
+        let parts = try XCTUnwrap(URLComponents(string: path))
+        XCTAssertEqual(parts.path, "/share")
+        var out: [String: String] = [:]
+        for item in parts.queryItems ?? [] {
+            XCTAssertNil(out[item.name], "\(item.name) appears twice in \(path)")
+            out[item.name] = item.value ?? ""
+        }
+        return out
     }
 
-    func testFilesFlag() {
-        XCTAssertEqual(ShareMap.path(title: nil, text: nil, withFiles: true), "/share?files=1")
-        XCTAssertEqual(ShareMap.path(title: "", text: "  ", withFiles: false), "/share")
+    /// iOS 16's `URL(string:)` refuses anything but ASCII: a share with an é was dropped.
+    func testTheAddressIsASCIIForAnyText() {
+        let path = ShareMap.path(title: "Café ½", text: "日本語 🎉", url: "https://example.com/ü", withFiles: false)
+        XCTAssertTrue(path.unicodeScalars.allSatisfy(\.isASCII), path)
+        XCTAssertNotNil(URLComponents(string: path), path)
+    }
+
+    func testPathsFollowTheSharedCases() throws {
+        let paths = try XCTUnwrap(try cases()["paths"] as? [[String: Any]])
+        XCTAssertFalse(paths.isEmpty)
+        for (i, c) in paths.enumerated() {
+            let got = ShareMap.path(title: c["title"] as? String, text: c["text"] as? String,
+                                    withFiles: try XCTUnwrap(c["withFiles"] as? Bool))
+            XCTAssertEqual(try query(got), try XCTUnwrap(c["expect"] as? [String: String]), "case \(i): \(c)")
+        }
+    }
+
+    func testLimitsFollowTheSharedCases() throws {
+        let accept = try XCTUnwrap(try cases()["accept"] as? [[String: Any]])
+        XCTAssertFalse(accept.isEmpty)
+        for (i, c) in accept.enumerated() {
+            let sizes = try XCTUnwrap(c["sizes"] as? [NSNumber]).map(\.int64Value)
+            XCTAssertEqual(ShareMap.accept(sizes), try XCTUnwrap(c["expect"] as? [Int]), "case \(i): \(sizes)")
+        }
     }
 
     func testASeparateUrlIsCarriedAndBeatsTheText() {
@@ -155,13 +228,6 @@ final class ShareMapTests: XCTestCase {
                        "/share?title=Example&url=https%3A%2F%2Fexample.com%2Fa%3Fb%3D1")
         XCTAssertEqual(ShareMap.path(title: nil, text: "see https://example.com", url: "https://example.com", withFiles: false),
                        "/share?text=see%20https%3A%2F%2Fexample.com&url=https%3A%2F%2Fexample.com")
-    }
-
-    func testAcceptKeepsCountAndSizeLimits() {
-        XCTAssertEqual(ShareMap.accept([Int64](repeating: 1, count: 12)), Array(0..<10))
-        XCTAssertEqual(ShareMap.accept([1, Int64(ShareMap.maxFileBytes) + 1, 2]), [0, 2])
-        let big = Int64(ShareMap.maxTotalBytes / 2) + 1
-        XCTAssertEqual(ShareMap.accept([big, big, 10]), [0, 2])
     }
 
     func testHandoverScriptRepostsUntilReceived() {
@@ -174,15 +240,34 @@ final class ShareMapTests: XCTestCase {
 
 @MainActor
 final class ReminderTests: XCTestCase {
-    func testSelectKeepsFutureRemindersInOrderAndLimitsThem() {
+    /// The cases both apps read (Android's ReminderScheduleTest too): reminders/schedule.json.
+    /// Before them, one entry the decoder could not read dropped the whole schedule.
+    func testTheScheduleFollowsTheSharedCases() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/reminders/schedule.json")
+        let doc = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        let now = Date(timeIntervalSince1970: try XCTUnwrap(doc["now"] as? Double) / 1000)
+        let cases = try XCTUnwrap(doc["cases"] as? [[String: Any]])
+        XCTAssertFalse(cases.isEmpty)
+        for c in cases {
+            let name = c["name"] as? String ?? "?"
+            let want = try XCTUnwrap(c["armed"] as? [[String: Any]], name).map { r in
+                "\(r["id"] as? String ?? "?") at \(r["fireAt"] as? Double ?? -1): \(r["title"] as? String ?? "no title")"
+            }
+            let got = Reminders.select(Reminders.parse(try XCTUnwrap(c["handed"] as? String, name)), now: now).map { r in
+                "\(r.id) at \(r.fireAt): \(r.title ?? "no title")"
+            }
+            XCTAssertEqual(got, want, name)
+        }
+    }
+
+    /// iOS keeps at most 64 pending notifications: the earliest 64.
+    func testSelectKeepsTheEarliestUpToTheLimit() {
         let now = Date(timeIntervalSince1970: 1_000)
-        let handed = [
-            Reminders.Handed(id: "past", taskId: "t", fireAt: 999_000, title: nil),
-            Reminders.Handed(id: "later", taskId: "t", fireAt: 2_000_000, title: nil),
-            Reminders.Handed(id: "soon", taskId: "t", fireAt: 1_500_000, title: "Call"),
-        ]
-        XCTAssertEqual(Reminders.select(handed, now: now).map(\.id), ["soon", "later"])
-        XCTAssertEqual(Reminders.select(handed, now: now, limit: 1).map(\.id), ["soon"])
+        let handed = (0..<70).reversed().map { Reminders.Handed(id: "r\($0)", taskId: "t", fireAt: 2_000_000 + Double($0) * 1000, title: nil) }
+        XCTAssertEqual(Reminders.select(handed, now: now).map(\.id), (0..<64).map { "r\($0)" })
+        XCTAssertEqual(Reminders.select(handed, now: now, limit: 1).map(\.id), ["r0"])
     }
 
     /// shell-reminders-on D2: every combination of status, screen and schedule. Only the
@@ -203,11 +288,29 @@ final class ReminderTests: XCTestCase {
         XCTAssertEqual(Reminders.permission(status: .notDetermined, interactive: false, hasReminders: true), .refuse)
     }
 
-    func testParseIgnoresWhatItCannotRead() {
-        XCTAssertEqual(Reminders.parse("not json").count, 0)
-        XCTAssertEqual(Reminders.parse("[]").count, 0)
+    func testParseKeepsTheTaskAndTheTitle() {
         let json = #"[{"id":"a","taskId":"b","fireAt":1700000000000,"title":"Call"}]"#
-        XCTAssertEqual(Reminders.parse(json).first?.title, "Call")
+        XCTAssertEqual(Reminders.parse(json), [Reminders.Handed(id: "a", taskId: "b", fireAt: 1_700_000_000_000, title: "Call")])
+    }
+
+    /// The web app's scheduleReminders payloads of the shared bridge fixtures (the Android
+    /// app's BridgeFixtureTest reads them too): with titles, an encrypted account without
+    /// them, and a sign-out that empties the schedule.
+    func testTheSharedBridgePayloadsScheduleAsTheFixtureSays() throws {
+        for name in ["reminders", "reminders-encrypted", "reminders-signed-out"] {
+            let file = URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+                .appendingPathComponent("android/app/src/test/resources/bridge/\(name).json")
+            let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any], name)
+            XCTAssertEqual(fixture["method"] as? String, "scheduleReminders", name)
+            let nowMs = try XCTUnwrap(fixture["now"] as? Double, name)
+            let want = try XCTUnwrap(fixture["expect"] as? [[String: Any]], name).map { r in
+                Reminders.Handed(id: r["id"] as? String ?? "?", taskId: r["taskId"] as? String ?? "?",
+                                 fireAt: r["fireAt"] as? Double ?? -1, title: r["title"] as? String)
+            }
+            let payload = try XCTUnwrap(fixture["payload"] as? String, name)
+            XCTAssertEqual(Reminders.select(Reminders.parse(payload), now: Date(timeIntervalSince1970: nowMs / 1000)), want, name)
+        }
     }
 }
 
@@ -224,6 +327,96 @@ final class WidgetPublicationTests: XCTestCase {
 
     func testPublishRefusesWhatItCannotRead() {
         XCTAssertFalse(WidgetPublication.publish("{}"))
+    }
+
+    private typealias Completed = WidgetPublication.Completed
+
+    private func bridgeFixture(_ name: String) throws -> [String: Any] {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/\(name).json")
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any], name)
+    }
+
+    /// completed-widget D1, D2: the Completed widget's numbers from the shared bridge fixtures
+    /// (Android's BridgeFixtureTest reads them too): the week, and a locked account's count alone.
+    /// The Today payload without `completed` gives no Completed widget.
+    func testTheCompletedWidgetReadsTheSharedPayloads() throws {
+        for name in ["widget-completed", "widget-completed-locked"] {
+            let fixture = try bridgeFixture(name)
+            XCTAssertEqual(fixture["method"] as? String, "publishWidget", name)
+            let want = try XCTUnwrap(fixture["expect"] as? [String: Any], name)
+            let days = try XCTUnwrap(want["days"] as? [[String: Any]], name).map { d in
+                Completed.Day(day: d["day"] as? String ?? "?", done: d["done"] as? Int ?? -1)
+            }
+            let expected = Completed(updatedAt: try XCTUnwrap(want["updatedAt"] as? Double, name), locked: try XCTUnwrap(want["locked"] as? Bool, name),
+                                     today: try XCTUnwrap(want["today"] as? Int, name), days: days)
+            let payload = try XCTUnwrap(fixture["payload"] as? String, name)
+            XCTAssertEqual(Completed.parse(Data(payload.utf8)), expected, name)
+        }
+        XCTAssertNil(Completed.parse(Data(try XCTUnwrap(try bridgeFixture("widget")["payload"] as? String).utf8)))
+    }
+
+    /// The cases of Android's CompletedModelTest.
+    func testTheCompletedModelKeepsOnlyWhatItCanShow() {
+        XCTAssertEqual(Completed.parse(Data(#"{"updatedAt":5,"locked":true,"completed":{"today":3,"days":[{"day":"2026-11-21","done":3}]}}"#.utf8)),
+                       Completed(updatedAt: 5, locked: true, today: 3, days: []))
+        XCTAssertEqual(Completed.parse(Data(#"{"updatedAt":5,"locked":false,"completed":{"today":-1,"days":[{"day":"x","done":2},{"day":"2026-11-21","done":-4}]}}"#.utf8)),
+                       Completed(updatedAt: 5, locked: false, today: 0, days: [.init(day: "2026-11-21", done: 0)]))
+        XCTAssertNil(Completed.parse(Data("not json".utf8)))
+        XCTAssertNil(Completed.parse(nil))
+        // At most the last seven days.
+        let ten = (1...10).map { #"{"day":"2026-11-\#(String(format: "%02d", $0))","done":\#($0)}"# }.joined(separator: ",")
+        XCTAssertEqual(Completed.parse(Data(#"{"completed":{"today":1,"days":[\#(ten)]}}"#.utf8))?.days.map(\.done), [4, 5, 6, 7, 8, 9, 10])
+    }
+
+    func testBarsScaleToTheBusiestDayAndKeepASliver() {
+        XCTAssertEqual(Completed.barLevel(done: 4, max: 4), 100)
+        XCTAssertEqual(Completed.barLevel(done: 2, max: 4), 50)
+        XCTAssertEqual(Completed.barLevel(done: 1, max: 40), 6)
+        XCTAssertEqual(Completed.barLevel(done: 0, max: 4), 0)
+        XCTAssertEqual(Completed.barLevel(done: 0, max: 0), 0)
+    }
+
+    func testWeekdayLettersFollowTheLanguage() {
+        XCTAssertEqual(Completed.weekdayLetter("2026-11-21", locale: Locale(identifier: "en")), "S")
+        XCTAssertEqual(Completed.weekdayLetter("2026-11-23", locale: Locale(identifier: "en")), "M")
+        XCTAssertEqual(Completed.weekdayLetter("2026-11-23", locale: Locale(identifier: "it")), "L")
+        XCTAssertEqual(Completed.weekdayLetter("not a day", locale: Locale(identifier: "en")), "")
+    }
+
+    /// A tap on the Completed widget opens Statistics.
+    @MainActor
+    func testTheCompletedWidgetOpensStatistics() throws {
+        let model = AppModel()
+        model.handle(url: try XCTUnwrap(URL(string: "opentodo://stats")))
+        XCTAssertEqual(model.pendingPath, "/stats")
+    }
+
+    /// The web app's publishWidget payloads of the shared bridge fixtures (the Android app's
+    /// BridgeFixtureTest reads them too): the list, a locked app and a sign-out. `more` is the
+    /// Android widget's own count of rows it has no room for, so it is not read here.
+    func testTheSharedWidgetPayloadsReadAsTheFixtureSays() throws {
+        for name in ["widget", "widget-locked", "widget-signed-out"] {
+            let file = URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+                .appendingPathComponent("android/app/src/test/resources/bridge/\(name).json")
+            let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any], name)
+            XCTAssertEqual(fixture["method"] as? String, "publishWidget", name)
+            let payload = try XCTUnwrap(fixture["payload"] as? String, name)
+            let want = try XCTUnwrap(fixture["expect"] as? [String: Any], name)
+            let rows = try XCTUnwrap(want["rows"] as? [[String: Any]], name)
+            let expected = WidgetPublication.Publication(
+                updatedAt: try XCTUnwrap(want["updatedAt"] as? Double, name),
+                locked: try XCTUnwrap(want["locked"] as? Bool, name),
+                count: try XCTUnwrap(want["count"] as? Int, name),
+                overdue: try XCTUnwrap(want["overdue"] as? Int, name),
+                tasks: try rows.map { r in
+                    WidgetPublication.Task(id: try XCTUnwrap(r["id"] as? String, name), title: r["title"] as? String, time: r["time"] as? String,
+                                           priority: try XCTUnwrap(r["priority"] as? Int, name), overdue: try XCTUnwrap(r["overdue"] as? Bool, name))
+                })
+            XCTAssertEqual(try JSONDecoder().decode(WidgetPublication.Publication.self, from: Data(payload.utf8)), expected, name)
+        }
     }
 }
 
@@ -292,9 +485,29 @@ final class BridgeTests: XCTestCase {
         XCTAssertFalse(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 443, mainFrame: true, configured: custom))
     }
 
+    /// WebKit reports the scheme's own default port as 0 in a frame's security origin
+    /// (`WKSecurityOrigin.port`; WebKit keeps no port for it). A server on the standard
+    /// port is the configured origin, so its pages are answered (GitHub issues 1534, 1563,
+    /// 1569, 1574: links, the widget and reminders on every server at https://host).
+    func testTheDefaultPortAsWebKitReportsItIsTheConfiguredOrigin() throws {
+        let server = try XCTUnwrap(URL(string: "https://todo.example.com"))
+        XCTAssertTrue(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 0, mainFrame: true, configured: server))
+        let explicit = try XCTUnwrap(URL(string: "https://todo.example.com:443/today"))
+        XCTAssertTrue(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 0, mainFrame: true, configured: explicit))
+        let local = try XCTUnwrap(URL(string: "http://nas.local"))
+        XCTAssertTrue(Bridge.accepts(scheme: "http", host: "nas.local", port: 0, mainFrame: true, configured: local))
+        // 0 is the default port of the frame's own scheme, never another port.
+        let custom = try XCTUnwrap(URL(string: "https://todo.example.com:8443"))
+        XCTAssertFalse(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 0, mainFrame: true, configured: custom))
+        let onEighty = try XCTUnwrap(URL(string: "https://todo.example.com:80"))
+        XCTAssertFalse(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 0, mainFrame: true, configured: onEighty))
+        XCTAssertFalse(Bridge.accepts(scheme: "http", host: "todo.example.com", port: 0, mainFrame: true, configured: server))
+        XCTAssertFalse(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 0, mainFrame: false, configured: server))
+    }
+
     func testCapabilitiesFollowTheDevice() {
         XCTAssertEqual(Bridge.capabilities(biometric: false, share: true),
-                       ["reminders", "widgets", "share", "links", "obsidian-links", "system-bars", "pull-refresh", "haptics"])
+                       ["reminders", "widgets", "share", "links", "obsidian-links", "app-links", "system-bars", "pull-refresh", "first-paint", "completion-sound", "scroll-top", "focus", "haptics"])
         XCTAssertTrue(Bridge.capabilities(biometric: true, share: true).contains("biometric"))
     }
 
@@ -325,6 +538,7 @@ final class BridgeTests: XCTestCase {
         let both = Set(try XCTUnwrap(fixture["both"] as? [String])).subtracting(["push"])
         let methods = try XCTUnwrap(fixture["methods"] as? [String: String])
         XCTAssertEqual(methods["backgroundDone"], "background")
+        XCTAssertEqual(methods["playCompletionSound"], "completion-sound")
         XCTAssertTrue(backgroundOnly.contains("background"))
         XCTAssertTrue(visibleOnly.contains("links"))
 
@@ -340,7 +554,8 @@ final class BridgeTests: XCTestCase {
                 let visible = Set(Bridge.capabilities(biometric: biometric, share: true, haptics: haptics))
                 XCTAssertTrue(visible.isSuperset(of: both), "\(visible)")
                 XCTAssertTrue(visible.isDisjoint(with: backgroundOnly), "\(visible)")
-                XCTAssertTrue(visible.isSubset(of: visibleOnly.union(both).union(["biometric", "pull-refresh"])), "\(visible)")
+                XCTAssertTrue(visible.isSubset(of: visibleOnly.union(both).union(["biometric", "pull-refresh", FirstPaint.capability, ScrollTop.capability])), "\(visible)")
+                XCTAssertTrue(visible.contains(ScrollTop.capability))
                 XCTAssertTrue(visible.contains("links"))
                 XCTAssertFalse(visible.contains("alarm-settings"))
             }
@@ -379,6 +594,23 @@ final class BridgeTests: XCTestCase {
         XCTAssertFalse(script.contains("saveFile"))
     }
 
+    func testCompletionSoundMatchesWebSamples() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/completion-sound.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        let rate = try XCTUnwrap(fixture["sampleRate"] as? Int)
+        let frames = try XCTUnwrap(fixture["frames"] as? Int)
+        let wave = BridgeHost.completionWave()
+        guard wave.count == 44 + frames * 2 else { return XCTFail("Incorrect WAV length") }
+        XCTAssertEqual(Int(wave[24]) | (Int(wave[25]) << 8) | (Int(wave[26]) << 16) | (Int(wave[27]) << 24), rate)
+        for pair in try XCTUnwrap(fixture["samples"] as? [[Int]]) {
+            let offset = 44 + pair[0] * 2
+            let sample = Int16(bitPattern: UInt16(wave[offset]) | (UInt16(wave[offset + 1]) << 8))
+            XCTAssertLessThanOrEqual(abs(Int(sample) - pair[1]), 1, "frame \(pair[0])")
+        }
+    }
+
     /// shell-repairs D5: the kinds the web app hands over (the shared bridge fixture, with
     /// the Android tests) are played, and any other kind is ignored.
     func testHapticKindsFollowTheBridgeFixture() throws {
@@ -389,9 +621,33 @@ final class BridgeTests: XCTestCase {
         XCTAssertEqual(fixture["method"] as? String, "haptic")
         let kinds = try XCTUnwrap(fixture["kinds"] as? [String])
         XCTAssertEqual(Set(kinds), Set(Haptics.Kind.allCases.map(\.rawValue)))
-        for kind in kinds { XCTAssertNotNil(Haptics.kind(kind), kind) }
+        for kind in kinds { XCTAssertEqual(Haptics.kind(kind).rawValue, kind) }
         let unknown = try XCTUnwrap(fixture["unknown"] as? String)
-        XCTAssertNil(Haptics.kind(unknown), unknown)
+        XCTAssertEqual(Haptics.kind(unknown), .tick, unknown)
+    }
+
+    /// status-bar-scroll-top D1, D2: the capability and the script follow the shared bridge
+    /// fixture, only the visible app lists it, and the decoy tells the page once per tap and
+    /// never scrolls.
+    func testScrollTopFollowsTheBridgeFixture() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/scroll-top.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        XCTAssertEqual(fixture["capability"] as? String, ScrollTop.capability)
+        XCTAssertEqual(fixture["script"] as? String, ScrollTop.script)
+        XCTAssertFalse(Bridge.backgroundCapabilities.contains(ScrollTop.capability))
+
+        let decoy = ScrollTopDecoy()
+        var taps = 0
+        decoy.onTap = { taps += 1 }
+        XCTAssertTrue(decoy.scrollsToTop)
+        XCTAssertFalse(decoy.isUserInteractionEnabled)
+        XCTAssertGreaterThan(decoy.contentSize.height, decoy.bounds.height)
+        let offset = decoy.contentOffset
+        XCTAssertFalse(decoy.scrollViewShouldScrollToTop(decoy))
+        XCTAssertEqual(taps, 1)
+        XCTAssertEqual(decoy.contentOffset, offset)
     }
 
     /// pull-to-sync D4: the capability and the call follow the shared bridge fixture; only
@@ -414,6 +670,38 @@ final class BridgeTests: XCTestCase {
         XCTAssertTrue(script.contains("pullHandled: function () { call('pullHandled') }"))
     }
 
+    /// shell-reveal-on-paint D1, D2: the capability and the call follow the shared bridge
+    /// fixture; only the visible app, which hides its web view, lists the capability.
+    func testFirstPaintFollowsTheBridgeFixture() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/painted.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        XCTAssertEqual(fixture["capability"] as? String, FirstPaint.capability)
+        XCTAssertEqual(fixture["method"] as? String, FirstPaint.method)
+        // One call per page load, without arguments.
+        let calls = try XCTUnwrap(fixture["calls"] as? [[Any]])
+        XCTAssertEqual(calls.count, 1)
+        XCTAssertTrue(calls[0].isEmpty)
+        XCTAssertTrue(Bridge.capabilities(biometric: false, share: true).contains(FirstPaint.capability))
+        XCTAssertFalse(Bridge.capabilities(biometric: true, share: false).contains(FirstPaint.capability))
+        let origin = try XCTUnwrap(URL(string: "https://todo.example.com"))
+        let script = Bridge.script(origin: origin, app: "1.2.3", capabilities: [FirstPaint.capability])
+        XCTAssertTrue(script.contains("painted: function () { call('painted') }"))
+    }
+
+    /// shell-reveal-on-paint D2: the visible app's call shows the web view before the page
+    /// has loaded; a background run's call shows nothing.
+    func testThePagesFirstFrameShowsTheWebView() throws {
+        let shell = ShellController(origin: try XCTUnwrap(URL(string: "https://todo.example")))
+        BridgeHost(interactive: false).bridgedPainted()
+        XCTAssertFalse(shell.revealed)
+        XCTAssertEqual(shell.webView.alpha, 0)
+        BridgeHost(interactive: true).bridgedPainted()
+        XCTAssertTrue(shell.revealed)
+        XCTAssertFalse(shell.loaded)
+    }
+
     /// pull-to-sync D4: the shell's refresh control is on until the page showing takes the
     /// pull over, and on again for the next page (an older web app never takes it).
     func testThePageTakesThePullOverUntilAnotherPageLoads() {
@@ -432,7 +720,10 @@ final class BridgeTests: XCTestCase {
     func testHapticKinds() {
         XCTAssertEqual(Haptics.kind("tick"), .tick)
         XCTAssertEqual(Haptics.kind("success"), .success)
-        for other in ["", "warning", "Tick", "tick ", "error"] { XCTAssertNil(Haptics.kind(other), other) }
+        XCTAssertEqual(Haptics.kind("warning"), .warning)
+        XCTAssertEqual(Haptics.kind("error"), .error)
+        XCTAssertEqual(Haptics.kind("selection"), .selection)
+        for other in ["", "thud", "Tick", "tick "] { XCTAssertEqual(Haptics.kind(other), .tick, other) }
     }
 
     /// shell-repairs D7: the remembered bars decide the status bar icons, and nothing
@@ -464,6 +755,33 @@ final class BridgeTests: XCTestCase {
         XCTAssertTrue(Bridge.safeExternal("mailto:a@example.com"))
         XCTAssertFalse(Bridge.safeExternal("javascript:alert(1)"))
         XCTAssertFalse(Bridge.safeExternal("file:///etc/passwd"))
+    }
+
+    /// app-links D6: the link the web app hands openAppLink opens with its list, and the
+    /// shared vectors (the bridge fixture app-links.json) hold for the shell's rules.
+    func testAppLinksFollowTheBridgeFixture() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/app-links.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        let handed = try XCTUnwrap(fixture["handed"] as? [[String: String]])
+        XCTAssertEqual(handed.count, 1)
+        for call in handed { XCTAssertTrue(AppLink.allows(AppLink.list(call["schemes"] ?? ""), call["url"] ?? "")) }
+        let vectors = try XCTUnwrap(fixture["vectors"] as? [String: Any])
+        for c in try XCTUnwrap(vectors["links"] as? [[String: Any]]) {
+            let url = try XCTUnwrap(c["url"] as? String)
+            XCTAssertEqual(AppLink.scheme(url), c["scheme"] as? String, url)
+        }
+        for c in try XCTUnwrap(vectors["entries"] as? [[String: Any]]) {
+            let entry = try XCTUnwrap(c["entry"] as? String)
+            XCTAssertEqual(AppLink.validEntry(entry), c["ok"] as? Bool, entry)
+        }
+        for c in try XCTUnwrap(vectors["allows"] as? [[String: Any]]) {
+            let list = try XCTUnwrap(c["list"] as? [String]), url = try XCTUnwrap(c["url"] as? String)
+            XCTAssertEqual(AppLink.allows(list, url), c["ok"] as? Bool, "\(list) \(url)")
+        }
+        XCTAssertTrue(Bridge.capabilities(biometric: false, share: true).contains(AppLink.capability))
+        XCTAssertFalse(Bridge.backgroundCapabilities.contains(AppLink.capability))
     }
 
     /// obsidian-origin: the bridge fixture the web app writes (shared with the Android
@@ -579,21 +897,52 @@ final class AppModelTests: XCTestCase {
 
     /// shell-repairs D6: Done, Snooze and Dismiss build the addresses of the shared bridge
     /// fixture (the Android app's too), which the web app reads.
-    func testReminderActionsBuildTheFixturesAddresses() throws {
+    private func actionsFixture() throws -> [String: Any] {
         let file = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent("android/app/src/test/resources/bridge/actions.json")
-        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
-        let cases = try XCTUnwrap(fixture["reminderActions"] as? [[String: String]])
-        // Plain ids only: Android writes a space as "+", this shell as "%20"; the web app reads both.
-        let plain = cases.filter { $0["id"] == "abc" }
-        XCTAssertEqual(Set(plain.compactMap { $0["action"] }), Set(Notifications.actions))
-        let model = AppModel()
-        for c in plain {
-            let id = try XCTUnwrap(c["id"])
-            model.show(reminder: id, action: c["action"])
-            XCTAssertEqual(model.pendingPath, c["path"])
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+    }
+
+    /// A query as the web app reads it (URLSearchParams): names and values, a `+` a space.
+    private func query(_ path: String) -> [[String]] {
+        guard path.hasPrefix("/?") else { return [] }
+        return path.dropFirst(2).split(separator: "&", omittingEmptySubsequences: false).map { pair in
+            pair.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false).map {
+                $0.replacingOccurrences(of: "+", with: " ").removingPercentEncoding ?? "\u{FFFD}"
+            }
         }
+    }
+
+    func testReminderActionsBuildTheFixturesAddresses() throws {
+        let cases = try XCTUnwrap(try actionsFixture()["reminderActions"] as? [[String: String]])
+        XCTAssertEqual(Set(cases.filter { $0["id"] == "abc" }.compactMap { $0["action"] }), Set(Notifications.actions))
+        let model = AppModel()
+        for c in cases {
+            let id = try XCTUnwrap(c["id"])
+            let path = try XCTUnwrap(c["path"])
+            model.show(reminder: id, action: c["action"])
+            let built = try XCTUnwrap(model.pendingPath)
+            // Android writes a space as "+", this shell as "%20": the same query for the web app,
+            // and the same address for every id without a space.
+            XCTAssertEqual(query(built), query(path), id)
+            if !id.contains(" ") { XCTAssertEqual(built, path, id) }
+        }
+    }
+
+    /// A tap on a reminder and the quick-add widget open the fixture's addresses too.
+    func testTaskAndQuickAddAddressesFollowTheFixture() throws {
+        let fixture = try actionsFixture()
+        let tasks = try XCTUnwrap(fixture["taskPaths"] as? [[String: String]])
+        XCTAssertFalse(tasks.isEmpty)
+        let model = AppModel()
+        for t in tasks {
+            model.show(task: try XCTUnwrap(t["taskId"]))
+            XCTAssertEqual(model.pendingPath, t["path"])
+        }
+        let quickAdd = try XCTUnwrap(fixture["quickAdd"] as? [String: String])
+        model.show(add: "")
+        XCTAssertEqual(model.pendingPath, quickAdd["path"])
     }
 
     func testDoneOpensTheReminderWithDone() {
@@ -790,6 +1139,22 @@ final class DownloadsTests: XCTestCase {
         XCTAssertFalse(Downloads.saves(response: u("https://todo.example.com/today"), server: server, isAttachment: false, canShowMIMEType: true))
     }
 
+    func testImagesAndPDFsAreShownFirst() {
+        XCTAssertTrue(Downloads.previews(mimeType: "image/jpeg", fileName: "IMG_1234.jpg"))
+        XCTAssertTrue(Downloads.previews(mimeType: "image/png", fileName: "download"))
+        XCTAssertTrue(Downloads.previews(mimeType: "image/heic", fileName: "photo.heic"))
+        XCTAssertTrue(Downloads.previews(mimeType: "application/pdf", fileName: "invoice.pdf"))
+        // A decrypted attachment from the page without a type: the name decides.
+        XCTAssertTrue(Downloads.previews(mimeType: nil, fileName: "receipt.png"))
+        // Saved as before: the server's own choice of a plain download, other files, and SVG.
+        XCTAssertFalse(Downloads.previews(mimeType: "application/octet-stream", fileName: "photo.jpg"))
+        XCTAssertFalse(Downloads.previews(mimeType: "text/plain", fileName: "opentodo-recovery-key.txt"))
+        XCTAssertFalse(Downloads.previews(mimeType: "application/json", fileName: "opentodo-export.json"))
+        XCTAssertFalse(Downloads.previews(mimeType: "image/svg+xml", fileName: "logo.svg"))
+        XCTAssertFalse(Downloads.previews(mimeType: nil, fileName: "logo.svg"))
+        XCTAssertFalse(Downloads.previews(mimeType: nil, fileName: "archive"))
+    }
+
     func testAnAttachmentIsReadFromTheHeader() {
         let url = u("https://todo.example.com/api/v1/export")
         func response(_ headers: [String: String]) -> URLResponse {
@@ -802,12 +1167,161 @@ final class DownloadsTests: XCTestCase {
         XCTAssertFalse(Downloads.isAttachment(URLResponse(url: url, mimeType: "text/plain", expectedContentLength: 2, textEncodingName: nil)))
     }
 
-    func testTheNameIsItsLastPathComponent() {
-        XCTAssertEqual(Downloads.fileName("opentodo-recovery-key.txt"), "opentodo-recovery-key.txt")
-        XCTAssertEqual(Downloads.fileName("../../Library/Cookies/Cookies.binarycookies"), "Cookies.binarycookies")
-        XCTAssertEqual(Downloads.fileName("/etc/passwd"), "passwd")
-        XCTAssertEqual(Downloads.fileName("a\\b\\export.json"), "export.json")
-        XCTAssertEqual(Downloads.fileName("exports/"), "exports")
-        for empty in ["", " ", "/", "..", ".", "a/..", "../"] { XCTAssertEqual(Downloads.fileName(empty), "download", empty) }
+    /// The name rules both apps read (Android's FileSaveTest too).
+    private func nameCases() throws -> [String: Any] {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/file-name/cases.json")
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+    }
+
+    func testTheNameFollowsTheSharedCases() throws {
+        let cases = try nameCases()
+        XCTAssertEqual(try XCTUnwrap(cases["max"] as? Int), Downloads.maxNameLength)
+        XCTAssertEqual(try XCTUnwrap(cases["maxBytes"] as? Int), Downloads.maxNameBytes)
+        XCTAssertEqual(Downloads.fileName(""), try XCTUnwrap(cases["fallback"] as? String))
+        let names = try XCTUnwrap(cases["names"] as? [[String: Any]])
+        XCTAssertFalse(names.isEmpty)
+        for c in names {
+            let raw = try XCTUnwrap(c["raw"] as? String)
+            XCTAssertEqual(Downloads.fileName(raw), try XCTUnwrap(c["name"] as? String), raw.debugDescription)
+        }
+    }
+
+    func testALongNameIsCutLikeOnAndroid() throws {
+        let long = try XCTUnwrap(try nameCases()["long"] as? [[String: Any]])
+        XCTAssertFalse(long.isEmpty)
+        for c in long {
+            let fill = try XCTUnwrap(c["fill"] as? String)
+            let raw = try XCTUnwrap(c["prefix"] as? String) + String(repeating: fill, count: try XCTUnwrap(c["times"] as? Int)) + (try XCTUnwrap(c["suffix"] as? String))
+            let name = Downloads.fileName(raw)
+            let units = Array(name.utf16)
+            XCTAssertEqual(units.count, try XCTUnwrap(c["length"] as? Int), raw)
+            XCTAssertLessThanOrEqual(name.utf8.count, Downloads.maxNameBytes, raw)
+            XCTAssertFalse(UTF16.isLeadSurrogate(units[units.count - 1]), raw)
+            // What is kept is the start of the last segment.
+            let segment = String(raw.split(separator: "/", omittingEmptySubsequences: false).last ?? "")
+            XCTAssertTrue(segment.utf16.starts(with: units), raw)
+        }
+    }
+}
+
+/// focus-live-activity tasks 2.1 to 2.4: the shared bridge fixtures the web app writes,
+/// parsed here, with what the Live Activity and the session-end notification make of them.
+final class FocusActivityTests: XCTestCase {
+    private func fixture(_ name: String) throws -> [String: Any] {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/\(name)")
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+    }
+
+    private func number(_ o: [String: Any], _ key: String) -> Double? { (o[key] as? NSNumber)?.doubleValue }
+
+    @discardableResult
+    private func check(_ name: String) throws -> FocusPublication {
+        let f = try fixture(name)
+        XCTAssertEqual(f["method"] as? String, "publishFocus", name)
+        let want = try XCTUnwrap(f["expect"] as? [String: Any])
+        let p = FocusPublication.parse(try XCTUnwrap(f["payload"] as? String))
+        XCTAssertEqual(p.state.rawValue, want["state"] as? String, name)
+        XCTAssertEqual(p.title, want["title"] as? String, name)
+        XCTAssertEqual(p.countsDown, want["countsDown"] as? Bool, name)
+        XCTAssertEqual(p.end, number(want, "end"), name)
+        XCTAssertEqual(p.countUpFrom, number(want, "countUpFrom"), name)
+        XCTAssertEqual(p.frozenMs, number(want, "frozenMs"), name)
+        XCTAssertEqual(p.notifyAt, number(want, "notifyAt"), name)
+        XCTAssertEqual(p.cycle, (want["cycle"] as? NSNumber)?.intValue, name)
+        XCTAssertEqual(p.cycleLength, (want["cycleLength"] as? NSNumber)?.intValue, name)
+        return p
+    }
+
+    func testARunningPomodoroCountsDownToItsStaleDate() throws {
+        let p = try check("focus-running.json")
+        let content = FocusAttributes.content(p)
+        XCTAssertEqual(content.phase, .work)
+        XCTAssertEqual(content.cycle, 2)
+        XCTAssertEqual(content.cycleLength, 4)
+        XCTAssertEqual(content.end, Date(timeIntervalSince1970: try XCTUnwrap(p.plannedEndAt) / 1000))
+        XCTAssertNotNil(content.start)
+        XCTAssertLessThanOrEqual(try XCTUnwrap(content.start), try XCTUnwrap(content.end))
+        XCTAssertEqual(content.action, .pause)
+        XCTAssertFalse(content.paused)
+    }
+
+    func testPausedIsFrozenWithoutTitleOrNotification() throws {
+        let p = try check("focus-paused.json")
+        let content = FocusAttributes.content(p)
+        XCTAssertNil(content.title)
+        XCTAssertNil(content.end)
+        XCTAssertEqual(content.frozenSeconds, 15 * 60)
+        XCTAssertEqual(content.action, .resume)
+        XCTAssertNil(p.notifyAt)
+    }
+
+    func testFlowtimeCountsUp() throws {
+        let p = try check("focus-flowtime.json")
+        let content = FocusAttributes.content(p)
+        XCTAssertNil(content.start)
+        XCTAssertEqual(content.countUpFrom, Date(timeIntervalSince1970: try XCTUnwrap(p.countUpFrom) / 1000))
+    }
+
+    func testABreakIsShortAndEndsAsBreakOver() throws {
+        let p = try check("focus-break.json")
+        XCTAssertTrue(p.isBreak)
+        XCTAssertEqual(FocusAttributes.content(p).phase, .shortBreak)
+    }
+
+    /// A run started while the last one's "Session done" still lingers gets its own activity:
+    /// an ended or dismissed one takes no updates.
+    func testOnlyALiveActivityIsReused() {
+        XCTAssertTrue(FocusLive.reusable(.active))
+        XCTAssertTrue(FocusLive.reusable(.stale))
+        XCTAssertFalse(FocusLive.reusable(.ended))
+        XCTAssertFalse(FocusLive.reusable(.dismissed))
+    }
+
+    func testNoneShowsNothing() throws {
+        let p = try check("focus-none.json")
+        XCTAssertFalse(p.shown)
+        XCTAssertNil(p.action)
+    }
+
+    func testMalformedOrUnknownVersionsReadAsNone() {
+        for bad in ["", "not json", "[]", "{}", #"{"v":2,"state":"running","runningSince":1}"#, #"{"v":1,"state":"later"}"#, #"{"v":1,"state":"running"}"#] {
+            XCTAssertEqual(FocusPublication.parse(bad), FocusPublication.none, bad)
+        }
+        XCTAssertFalse(FocusPublication.parse(#"{"v":1,"state":"done","phase":"work"}"#).shown)
+    }
+
+    /// The tap, Pause and Resume open the addresses the web app reads (actions.json).
+    func testTheLinksOpenTheWebAppsAddresses() throws {
+        let actions = try fixture("actions.json")
+        let open = try XCTUnwrap((actions["focusOpen"] as? [String: Any])?["path"] as? String)
+        XCTAssertEqual(FocusLink.path(action: nil), open)
+        let paths = try XCTUnwrap(actions["focusActions"] as? [[String: Any]]).compactMap { $0["path"] as? String }
+        XCTAssertEqual([FocusLink.path(action: "pause"), FocusLink.path(action: "resume")], paths)
+        XCTAssertEqual(FocusLink.path(action: "stop"), open)
+        XCTAssertEqual(FocusLink.url(.pause).absoluteString, "opentodo://focus?action=pause")
+        XCTAssertEqual(Notifications.route(reminder: nil, task: nil, action: UNNotificationDefaultActionIdentifier, focus: true), .focus)
+    }
+
+    @MainActor
+    func testTheAppOpensTheFocusAddresses() {
+        let model = AppModel.shared
+        let before = model.pendingPath
+        model.handle(url: FocusLink.url(.pause))
+        XCTAssertEqual(model.pendingPath, "/focus?action=pause")
+        model.handle(url: FocusLink.open)
+        XCTAssertEqual(model.pendingPath, "/focus")
+        model.pendingPath = before
+    }
+
+    @MainActor
+    func testThePageScriptHasPublishFocus() throws {
+        let origin = try XCTUnwrap(URL(string: "https://todo.example.com"))
+        let script = Bridge.script(origin: origin, app: "1.0.0", capabilities: ["focus"])
+        XCTAssertTrue(script.contains("publishFocus: function (json) { call('publishFocus', [String(json)]) }"))
+        XCTAssertFalse(Bridge.backgroundCapabilities.contains("focus"))
     }
 }

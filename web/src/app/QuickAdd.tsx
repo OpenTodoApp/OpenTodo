@@ -1,4 +1,5 @@
-import { type FormEvent, forwardRef, useCallback, type KeyboardEvent, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { type FormEvent, forwardRef, useCallback, type KeyboardEvent, type RefObject, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { useMe } from '../lib/sharing'
 import { keysOf } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 import { Icon } from '../ui'
@@ -15,16 +16,19 @@ import {
 } from '../lib/nlp'
 import { useDictation } from './useDictation'
 import { useTokenSuggest } from './TokenSuggest'
-import { ParseChips } from './ParseChips'
+import { ParseChips, type ParseChipsProps } from './ParseChips'
 import { QuickAddTint } from './QuickAddTint'
 import { composingEnter } from '../lib/composeKey'
 import { t, preferredLanguages } from '../lib/i18n'
 import { chipRange, type FieldKind, fieldRows, type FieldRow, type QuickAddProject, startToken } from './quickadd/fields'
 import { FieldRows, QuickAddFooter } from './quickadd/FieldRows'
 import { SheetBar } from './quickadd/SheetBar'
+import { LineDateButton, LineDatePicker, useLineDate } from './quickadd/LineDatePicker'
 import { usePasteOffer } from './quickadd/PasteOffer'
 import { NotesLine, useNotesField } from './quickadd/NotesLine'
 import { VoiceButton, VoiceNotice } from './quickadd/VoiceParts'
+import type { NextChoice } from '../lib/method/rules'
+import { usePastedFiles } from './quickadd/PendingFiles'
 
 export type { QuickAddInput }
 
@@ -32,6 +36,16 @@ export type { QuickAddInput }
 function caretOutside(el: HTMLTextAreaElement | null, span: Span): boolean {
   const c = el?.selectionStart ?? -1
   return c < span.start || c > span.end
+}
+
+/** Puts the field's caret at `at` (or selects `at`–`end`) once it shows the current text. */
+function caretIn(field: RefObject<HTMLTextAreaElement | null>, at: number, end = at) {
+  requestAnimationFrame(() => {
+    const el = field.current
+    if (!el) return
+    el.focus()
+    el.setSelectionRange(at, end)
+  })
 }
 
 export function nowHHMM(d = new Date()): string {
@@ -75,6 +89,23 @@ function parseLine(value: string, ctx: Omit<ParseContext, 'dismissed'> | null, d
   return { parsed: parse(value, { ...ctx, dismissed: refuse.reduce(dismissChip, dismissed) }), refused: true }
 }
 
+/** Quick add in a list: the understood chips and the title as it will be saved. */
+function LinePreview({ title, emptyTitle, ...chips }: ParseChipsProps & { title?: string; emptyTitle: boolean }) {
+  return (
+    <div id="quick-add-preview" role="status" aria-live="polite" className="empty:hidden">
+      {(chips.chips.length > 0 || (chips.misses?.length ?? 0) > 0) && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-9 text-meta">
+          <ParseChips {...chips} />
+          <span className="text-muted" data-testid="quick-add-title">
+            <span className="sr-only">{t('Title:')}{' '}</span>
+            {emptyTitle ? <em>{t('Type a title')}</em> : <span className="inline-flex items-center gap-1"><Icon name="arrow-right" size="xs" />{title}</span>}
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** The note under a win whose line asked to repeat or remind. */
 function WinRefused() {
   return (
@@ -96,6 +127,8 @@ function useParseContext(settings: QuickAddSettings, projects: readonly ProjectR
   const energy = energyLevelsOn(prefs)
   // Sector phrases only while the account uses time sectors (time-sectors D8).
   const sectors = timeSectorsOn(prefs)
+  // Links need an author for their attachment: before the first sign-in they stay text (quick-add-links D2).
+  const signedIn = !!useMe()
   return useCallback(() => {
     if (!settings.enabled) return null
     const langs = preferredLanguages()
@@ -109,8 +142,10 @@ function useParseContext(settings: QuickAddSettings, projects: readonly ProjectR
       dayParts,
       energy,
       sectors,
+      // A link typed or pasted becomes a link attachment (quick-add-links).
+      links: signedIn,
     }
-  }, [settings, projects, dtPrefs, resolved, dayParts, energy, sectors])
+  }, [settings, projects, dtPrefs, resolved, dayParts, energy, sectors, signedIn])
 }
 
 /**
@@ -131,6 +166,8 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
   /** Every label (deleted ones are ignored) for resolving and colouring `@name` chips. */
   labels?: readonly LabelRef[]
   onAdd: (input: QuickAddInput) => Promise<void> | void
+  /** A reusable list: quick add suggests its ticked items by name (reusable-suggest, #1839). */
+  reuseProjectId?: string | null
   /** Prefilled line (the capture screen proposes the shared page's title); parsed like typed text. */
   initialValue?: string
   /** Form id, so a button elsewhere can submit it with `form=`. */
@@ -156,7 +193,11 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
   logDone?: boolean
   /** Whether Shift+Enter opens the notes field (quick-add-notes D2); off where the screen has its own notes, and in the palette, whose Shift+Enter adds and opens. */
   notes?: boolean
-}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, initialValue, formId, hideHint, autoFocus, label, voiceShortcut, layout = 'line', onAddAndOpen, escape, onAddMany, logDone, notes: notesOn = true }, ref) {
+  /** A project's open tasks, offered while typing to choose one as its next action instead of adding (choose-next-action). */
+  choices?: { items: readonly NextChoice[]; onPick: (choice: NextChoice) => void }
+  /** Whether pasted files wait under the field and are attached to the new task (quick-add-files); off where the screen lists files itself. */
+  pasteFiles?: boolean
+}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, reuseProjectId, initialValue, formId, hideHint, autoFocus, label, voiceShortcut, layout = 'line', onAddAndOpen, escape, onAddMany, logDone, notes: notesOn = true, choices, pasteFiles = true }, ref) {
   // The `q` badge is printed only while "Show shortcut hints" is on (keyboard-shortcuts).
   const hints = useShortcutHints()
   const [value, setValue] = useState(initialValue ?? '')
@@ -184,6 +225,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
   // The palette's field rows and the one ↑/↓ highlighted (palette-quick-add D3).
   const rows = useMemo(() => fieldRows(chips), [chips])
   const [row, setRow] = useState<number | null>(null)
+  const pasted = usePastedFiles(inputRef, pasteFiles) // pasted files wait for the task (quick-add-files D2, D3)
 
   function change(raw: string) {
     // A title is one line: a line break pasted or dictated into it becomes a space.
@@ -199,10 +241,13 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
 
   // `#` and `@` suggestions (smart-title-tokens D1): a listbox under the field for the token at the caret.
   const energyOn = energyLevelsOn(useUserPrefsRow())
-  const suggest = useTokenSuggest({ input: inputRef, value, setValue: change, projects, labels, enabled: settings.enabled, energy: energyOn })
+  const suggest = useTokenSuggest({ input: inputRef, value, setValue: change, projects, labels, enabled: settings.enabled, energy: energyOn, reuseProjectId, tickedQuery: parsed?.title ?? value, onTicked: (title) => { void add(false, title) },
+    choices: choices && { items: choices.items, onPick: (choice) => { change(''); setDismissed([]); choices.onPick(choice) } } })
   // Unmatched #tokens are explained once the caret has left them (natural-language-capture "Unmatched tokens are explained").
   const misses = (parsed?.unmatched ?? []).filter((m) => !suggest.open || caretOutside(inputRef.current, m.span))
 
+  const lineDate = useLineDate({ input: inputRef, value, chips, context, change }) // the date picker (phone-quickadd-date-picker, quick-add-calendar)
+  const webCalendar = layout !== 'sheet' && settings.enabled // on the web: the When row and the line's calendar button
   const voice = useDictation({
     inputRef, getText: () => valueRef.current, setText: change, settings, projects, labels, shortcut: voiceShortcut,
   })
@@ -212,20 +257,15 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
     setHighlight(null)
   }
 
-  /** Puts the caret at `at` (or selects `at`–`end`) once the field shows the current text. */
-  function caretTo(at: number, end = at) {
-    requestAnimationFrame(() => {
-      const el = inputRef.current
-      if (!el) return
-      el.focus()
-      el.setSelectionRange(at, end)
-    })
-  }
+  const caretTo = (at: number, end = at) => caretIn(inputRef, at, end)
 
   /** Edits a field through the line (D2): a set field's words are selected, an unset one's token is started. */
   function edit(target: FieldRow | FieldKind) {
     const r = typeof target === 'string' ? { kind: target } : target
     setRow(null)
+    if (r.kind === 'when' && webCalendar) lineDate.show() // the calendar opens; a set date's words are still selected below
+    else lineDate.hide()
+    if (r.kind === 'when' && webCalendar && !r.chip) return caretTo(valueRef.current.length)
     if (r.chip) {
       const { start, end } = chipRange(r.chip)
       caretTo(start, end)
@@ -242,12 +282,12 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
     void add(false)
   }
 
-  async function add(open: boolean) {
+  async function add(open: boolean, title?: string) { // `title`: a picked ticked item (reusable-suggest) in place of the typed title, tokens kept
     const line = value.trim()
-    if (!line) return
-    if (parsed && !parsed.title) return // only attributes typed so far; wait for a title
+    if (!line || (parsed && !parsed.title && !title)) return // only attributes typed so far; wait for a title
     const snapshot = parsed
     const description = notes?.trim()
+    const send = pasted.take() // the pasted files go with the task (quick-add-files D1)
     // Clear first so the next entry can be typed while labels are being created.
     valueRef.current = ''
     setValue('')
@@ -255,9 +295,10 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
     setHighlight(null)
     if (notes !== null) notesField.close()
     // Unknown @names become labels first (one op each), then the task references their ids.
-    const parsedInput: QuickAddInput = snapshot ? await toTaskInput(snapshot, { labels, createLabel: createLabelByName }) : { title: line }
+    const typed: QuickAddInput = snapshot ? await toTaskInput(snapshot, { labels, createLabel: createLabelByName }) : { title: line }
+    const parsedInput = title ? { ...typed, title } : typed
     const input = description ? { ...parsedInput, description } : parsedInput
-    await (open && onAddAndOpen ? onAddAndOpen(input) : onAdd(input))
+    await send(input, (i) => (open && onAddAndOpen ? onAddAndOpen(i) : onAdd(i)), () => { if (!valueRef.current) change(value) })
   }
 
   // A pasted list (paste-to-tasks D1): offered as one task per line, or pasted as one line.
@@ -266,10 +307,12 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
     kind: 'tasks',
     onConfirm: async (lines) => {
       const inputs = await pastedInputs(lines, context(), labels)
+      if (inputs[0]) inputs[0] = await pasted.attach(inputs[0]) // pasted files go with the first task (quick-add-files D4)
       if (onAddMany) await onAddMany(inputs)
       else for (const input of inputs) await onAdd(input)
       change('')
       setDismissed([])
+      pasted.clear()
     },
     onPasteAsLine: (text) => { change(text); caretTo(text.length) },
   })
@@ -324,9 +367,10 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
           onChange={(e) => change(e.target.value)}
           onScroll={(e) => { if (tints.current) tints.current.scrollTop = e.currentTarget.scrollTop }}
           {...suggest.fieldProps}
-          onPaste={paste.onPaste}
+          onPaste={(e) => { if (!pasted.onPaste(e)) paste.onPaste(e) }}
           onKeyDown={(e) => {
             if (composingEnter(e)) { e.preventDefault(); return }
+            if (lineDate.escape(e)) return
             if (suggest.onKeyDown(e)) return
             if (palette && fieldKeys(e)) return
             if (e.key === 'Enter') {
@@ -364,15 +408,18 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
           aria-describedby={chips.length ? 'quick-add-preview' : undefined}
         />
         </span>
+        {layout === 'line' && webCalendar && <span className={lead}><LineDateButton date={lineDate} /></span>}
         {voice.enabled && <span className={lead}><VoiceButton voice={voice} shortcut={voiceShortcut} /></span>}
         {!hideHint && hints && <span className={`${lead} max-sm:hidden`} data-kbd-hint><span className="ui-kbd" data-quick-add-hint>{keysOf('list.quick-add')}</span></span>}
-        {suggest.list}
-        {paste.offer}
+        {layout !== 'sheet' && suggest.list}{suggest.live}{paste.offer}
       </div>
+      {layout === 'line' && webCalendar && lineDate.open && <LineDatePicker id={lineDate.id} due={lineDate.due} onPick={lineDate.pick} onKeyDown={lineDate.escape} />}
+      {layout === 'sheet' && suggest.list && <div className="px-3 pb-2 [&>ul]:static [&>ul]:mt-0 [&>ul]:w-full" data-sheet-suggestions>{suggest.list}</div>}
       {notes !== null && (
         <NotesLine ref={notesField.ref} value={notes} onChange={notesField.setNotes} onClose={notesField.close}
           className={layout === 'sheet' ? 'px-3 pb-2' : 'pl-5'} size={size} />
       )}
+      {pasted.view(layout === 'sheet' ? 'px-3 pb-2' : palette ? 'px-4 py-2' : 'pl-5 pt-1.5')}
       {voice.enabled && <VoiceNotice voice={voice} />}
       {palette && <>
         <div id="quick-add-preview" role="status" aria-live="polite">
@@ -380,28 +427,18 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
           {misses.length > 0 && <div className="flex flex-wrap gap-1.5 px-4 pb-2 text-meta"><ParseChips chips={[]} misses={misses} projects={projects} labels={labels} onDismiss={dismiss} onMiss={(m) => suggest.openAt(m.span.end)} /></div>}
           {refused && <WinRefused />}
         </div>
+        {webCalendar && lineDate.open && <LineDatePicker id={lineDate.id} due={lineDate.due} onPick={lineDate.pick} onKeyDown={lineDate.escape} />}
         <QuickAddFooter title={parsed ? parsed.title : null} empty={emptyTitle} escape={escape} />
       </>}
       {layout === 'sheet' && (
         <div id="quick-add-preview" role="status" aria-live="polite">
           {misses.length > 0 && <div className="flex flex-wrap gap-1.5 px-3 pb-2 text-meta"><ParseChips chips={[]} misses={misses} projects={projects} labels={labels} onDismiss={dismiss} onMiss={(m) => suggest.openAt(m.span.end)} /></div>}
           <SheetBar chips={chips} projects={projects} labels={labels} line={lineInfo} onDismiss={dismiss} onStart={edit} canSend={!!value.trim() && !emptyTitle} energy={energyOn && settings.enabled}
-            notes={notesAllowed ? { open: notes !== null, start: notesField.open } : undefined} />
+            notes={notesAllowed ? { open: notes !== null, start: notesField.open } : undefined} date={settings.enabled ? lineDate : undefined} />
         </div>
       )}
-      {layout === 'line' && <div id="quick-add-preview" role="status" aria-live="polite" className="empty:hidden">
-        {(chips.length > 0 || misses.length > 0) && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-9 text-meta">
-            <ParseChips chips={chips} misses={misses} projects={projects} labels={labels} highlight={highlight}
-              line={lineInfo}
-              onDismiss={dismiss} onMiss={(m) => suggest.openAt(m.span.end)} />
-            <span className="text-muted" data-testid="quick-add-title">
-              <span className="sr-only">{t('Title:')}{' '}</span>
-              {emptyTitle ? <em>{t('Type a title')}</em> : <span className="inline-flex items-center gap-1"><Icon name="arrow-right" size="xs" />{parsed?.title}</span>}
-            </span>
-          </div>
-        )}
-      </div>}
+      {layout === 'line' && <LinePreview chips={chips} misses={misses} projects={projects} labels={labels} highlight={highlight} line={lineInfo}
+        onDismiss={dismiss} onMiss={(m) => suggest.openAt(m.span.end)} title={parsed?.title} emptyTitle={emptyTitle} />}
     </form>
   )
 })

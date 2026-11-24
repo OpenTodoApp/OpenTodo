@@ -16,6 +16,7 @@ import { navigate } from '../router'
 import { Shell } from '../Shell'
 import { Sidebar } from '../Sidebar'
 import { setMethodMode } from '../../lib/method/mode'
+import { HINTS_KEY, setShortcutHints } from '../shortcuts/hints'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', createdAt: 0 } as User
 const NOW = new Date(2026, 9, 14, 12, 0) // Wednesday 14 October 2026
@@ -270,6 +271,35 @@ describe('rhythm markers (open-loops-method 5.6)', () => {
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
     await waitFor(() => !!r.container.querySelector('[data-review-due]')?.textContent?.includes('the day is closed'))
     expect(r.container.querySelector('[data-review-due]')!.textContent).toContain('Review due · last weekly review 9 days ago; the day is closed')
+    await r.unmount()
+  })
+})
+
+// Issue 1935: the project walk's introduction names r, q and e. With "Show shortcut
+// hints" off it says only what the step is for; on, the keys are keycaps.
+describe('the project walk introduction and shortcut hints', () => {
+  afterEach(() => { localStorage.removeItem(HINTS_KEY) })
+
+  const intro = () => document.querySelector<HTMLElement>('[data-step-intro]')
+
+  it('names no keys while hints are off', async () => {
+    await createProject({ name: 'Garage' })
+    navigate({ view: 'review', step: 'projects' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!document.querySelector('[data-walk-card]'), 'the walk')
+    expect(intro()!.textContent).toBe('One project at a time: is it still alive, and is its next step clear?')
+    expect(intro()!.querySelector('kbd')).toBeNull()
+    await r.unmount()
+  })
+
+  it('shows r, q and e as keycaps while hints are on', async () => {
+    setShortcutHints(true)
+    await createProject({ name: 'Garage' })
+    navigate({ view: 'review', step: 'projects' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!document.querySelector('[data-walk-card]'), 'the walk')
+    expect([...intro()!.querySelectorAll('kbd')].map((k) => k.textContent)).toEqual(['r', 'q', 'e'])
+    expect(intro()!.textContent).toBe('One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action, e sets how often it comes up.')
     await r.unmount()
   })
 })

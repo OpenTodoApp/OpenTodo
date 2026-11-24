@@ -5,14 +5,14 @@
 // is a drop target: dragging a card onto it, or Shift+← / Shift+→, applies the rule.
 import { blockedMap } from '../lib/dependencies'
 import { beginDrag } from '../lib/dnd'
-import { Badge, Button, EmptyState, Icon, IconButton, PageBody, PageHeader, ReadAs, Tooltip } from '../ui'
+import { Badge, Button, EmptyState, hueFor, Icon, IconButton, PageBody, PageHeader, ReadAs, Tooltip } from '../ui'
 import { groupKey, setGroupCollapsed, useCollapsedGroups } from './collapsedGroups'
 import { useId, useMemo, useRef, useState } from 'react'
 import { resolveLabels } from '../lib/labels'
 import { hasTimeColumn } from '../lib/rowTime'
 import { listSlotsOff } from '../lib/rowSlots'
 import { useLiveSections } from '../lib/localData'
-import { setTaskCompleted } from '../lib/ops'
+import { setTaskCompletedWithFeedback } from './completionSound'
 import { describeRule, type RuleNames } from '../lib/rules'
 import type { Label, Project, Task, View } from '../lib/types'
 import { MAX_PANELS, addPanel, dashboardPanels, evaluateViews, isDashboard, movePanel, removePanel, type PanelState } from '../lib/views'
@@ -117,7 +117,7 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
       else if (f.panel?.kind === 'view') navigate({ view: 'view', id: f.panel.id })
     },
     'dashboard.open-view': () => { const f = focused(); if (f?.panel?.kind !== 'view') return false; navigate({ view: 'view', id: f.panel.id }) },
-    'dashboard.complete': () => { const f = focused(); if (!f || f.cur < 0 || !f.tasks[f.cur]) return false; act(setTaskCompleted(f.tasks[f.cur].id, !f.tasks[f.cur].completed_at)) },
+    'dashboard.complete': () => { const f = focused(); if (!f || f.cur < 0 || !f.tasks[f.cur]) return false; act(setTaskCompletedWithFeedback(f.tasks[f.cur].id, !f.tasks[f.cur].completed_at)) },
     'dashboard.escape': () => {
       if (openId) { setOpenId(null); return }
       if (!focused()) return false
@@ -250,7 +250,7 @@ function Panel({ index, panel, selectedId, tasks, held, names, projectMap, label
         <button type="button" aria-expanded={false} onClick={() => onFold?.(false)} data-panel-strip
           aria-label={t('{name}, {n, plural, one {# open task} other {# open tasks}}, folded', { name: view.name, n: count })}
           className="flex w-full items-center gap-2 rounded-card p-3 text-left outline-none hover:shadow-2 focus-visible:ring-2 focus-visible:ring-focus">
-          <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: view.color }} aria-hidden />
+          <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-hue-solid" data-hue={hueFor(view.color)} aria-hidden />
           <span className="truncate text-body font-semibold">{view.name}</span>{' '}
           <span className="text-body tabular-nums text-faint">{count}</span>
           <span className="flex-1" />
@@ -265,7 +265,7 @@ function Panel({ index, panel, selectedId, tasks, held, names, projectMap, label
       data-drop-target={ruled ? `panel:${view.id}` : undefined} data-has-rule={ruled ? '' : undefined}
       className={`${ring} data-drop-active:ring-2 data-drop-active:ring-accent`}>
       <div className="mb-2 flex items-center gap-2">
-        <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: view.color }} aria-hidden />
+        <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-hue-solid" data-hue={hueFor(view.color)} aria-hidden />
         <h2 className="truncate text-body font-semibold">{view.name}</h2>
         {summary.ok && <span className="text-body text-faint"><ReadAs label={t('{count} open tasks', { count: summary.count })}>{summary.count}</ReadAs></span>}
         {rule && (
@@ -288,7 +288,7 @@ function Panel({ index, panel, selectedId, tasks, held, names, projectMap, label
           {tasks.map((tk) => {
             const row = (
               <TaskRow key={tk.id} task={tk} project={tk.project_id ? projectMap.get(tk.project_id) : undefined} labels={resolveLabels(tk.labels, labelMap)}
-                showProject selected={tk.id === selectedId} timeColumn={timeColumn} slotsOff={slotsOff} blockedBy={blocked.get(tk.id)} onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))} onOpen={() => onOpenTask(tk.id)}
+                showProject selected={tk.id === selectedId} timeColumn={timeColumn} slotsOff={slotsOff} blockedBy={blocked.get(tk.id)} onToggle={() => act(setTaskCompletedWithFeedback(tk.id, !tk.completed_at))} onOpen={() => onOpenTask(tk.id)}
                 onPointerDown={(e) => onDragTask(tk, e)} />
             )
             // A held card (rule-boards D6): shown first, marked, until it matches or changes again.

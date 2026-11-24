@@ -5,7 +5,8 @@
 // as a page on a phone. A viewer of a shared project gets it read-only, without
 // conversions. The title saves on the note editor's cadence (notes-save-cadence):
 // a timed save pushed later, leaving the field pushes at once.
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { lazy } from '../../lib/lazy'
 import { useLabels, useMembershipMap, useProjects, useUserPrefsRow } from '../../lib/localData'
 import { createLabel } from '../../lib/labels'
 import { useNoteRow } from '../../lib/noteRows'
@@ -18,7 +19,7 @@ import { pushPendingNotes } from '../../lib/sync'
 import type { Label, Note } from '../../lib/types'
 import { resettable } from '../../lib/moduleState'
 import { useResetOnChange } from '../../lib/useResetOnChange'
-import { Button, Combobox, Icon, LabelChip, PageBody, PageHeader, Tooltip } from '../../ui'
+import { Button, Combobox, hueFor, Icon, LabelChip, PageBody, PageHeader, Tooltip } from '../../ui'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { LinkedRefs, Markdown } from '../Markdown'
@@ -34,12 +35,14 @@ import { openConnections, useConnected } from '../signals'
 import { useRules } from '../../lib/rules/store'
 import { useOnline } from '../../lib/online'
 import { knownNotePage, subscribeTaskPages, taskPagesVersion } from '../../lib/taskPages'
+import { attachmentsRowChunk, notesEditorChunk } from './noteEditorChunks'
 
-const NotesEditor = lazy(() => import('../NotesEditor'))
+// The editor and a standalone note's files (note-attachments D5) load with chunks of their
+// own; once in, the form renders them without suspending (noteEditorChunks.ts, issue 1580).
+const LazyNotesEditor = lazy(() => notesEditorChunk.load().then((c) => ({ default: c })))
+const LazyAttachmentsRow = lazy(() => attachmentsRowChunk.load().then((c) => ({ default: c })))
 // Publishing a note page (note-public-links): loaded when the dialog opens.
 const NotePageDialog = lazy(() => import('./NotePageDialog'))
-// A standalone note's files (note-attachments D5): the task detail's list, below the text.
-const AttachmentsRow = lazy(() => import('../task-detail/AttachmentsRow').then((m) => ({ default: m.AttachmentsRow })))
 
 /** The note whose body takes the caret when it opens next (a note written from the search field, notes-home D3). */
 let bodyFocus: string | null = null
@@ -125,7 +128,7 @@ function LabelsField({ note, readOnly, labels }: { note: Note; readOnly: boolean
       {!readOnly && (
         <Combobox<Label> label={t('Labels')} placeholder={t('Add label…')} emptyText={t('No labels yet. Type a name and press Enter.')}
           source={labels.filter((l) => !l.deleted_at)} getKey={(l) => l.id} getLabel={(l) => l.name} multiple selected={note.labels ?? []} rankContext="label"
-          renderLeading={(l) => <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ backgroundColor: l.color }} />}
+          renderLeading={(l) => <span aria-hidden="true" className="h-2 w-2 rounded-full bg-hue-solid" data-hue={hueFor(l.color)} />}
           onPick={(l) => act(toggleNoteLabel(note.id, l.id))}
           onCreate={(name) => act((async () => toggleNoteLabel(note.id, await createLabel({ name })))())} />
       )}
@@ -140,14 +143,24 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
   const project = projects.find((p) => p.id === note.project_id)
   const [focusBody] = useState(() => takeBodyFocus(note.id))
   const [initialInput] = useState(() => takePendingInput(note.id))
+  // The first code block's Copy button needs the corner's room (copy-code-block D3); a viewer's Copy note needs none.
+  const hasCode = !!note.description && note.description.split('\n').some((l) => /^ {0,3}(```|~~~)/.test(l))
+  const [copied, setCopied] = useState(false)
   const form = useRef<HTMLDivElement>(null)
   const me = useMe()
   const role = roleOf(note.project_id, useMembershipMap())
+  // Chosen once per form: a form first drawn with the lazy component keeps it, since a
+  // switch to the kept one later would be another component type and remount the editor
+  // (the caret or a composition in progress would be lost).
+  const [NotesEditor] = useState(() => notesEditorChunk.loaded() ?? LazyNotesEditor)
+  const [AttachmentsRow] = useState(() => attachmentsRowChunk.loaded() ?? LazyAttachmentsRow)
   return (
     <div ref={form} className="space-y-4" data-note-form={note.id}>
       <TitleInput note={note} readOnly={readOnly} />
-      <Suspense fallback={<div className="notes-host" aria-busy="true"><div className="notes-editor">{note.description ? <Markdown source={note.description} taskId={noteParent(note.id)} /> : <p className="text-faint">{t('Add notes…')}</p>}</div></div>}>
-        <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} autoFocus={initialInput ?? focusBody} outline="auto" />
+      {/* The rendered body sits in a frame of its own, so its first code block can leave the corner its room; the
+          editor keeps its own frame (the outline's). Only a code block takes room: a viewer's Copy note is absolutely placed. */}
+      <Suspense fallback={<div className="notes-frame" data-corner={hasCode ? '' : undefined} style={hasCode ? { '--notes-corner': '2.25rem' } as React.CSSProperties : undefined}><div className="notes-host" aria-busy="true"><div className="notes-editor">{note.description ? <Markdown source={note.description} taskId={noteParent(note.id)} /> : <p className="text-faint">{t('Add notes…')}</p>}</div></div></div>}>
+        <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} autoFocus={initialInput ?? focusBody} outline="auto" copied={copied} onCopied={() => setCopied(true)} />
       </Suspense>
       {/* Viewers attach too (note-attachments D2); nothing shows until the note has a file. */}
       <Suspense fallback={null}><AttachmentsRow taskId={noteParent(note.id)} note={note} userId={me ?? undefined} role={role} dropTarget={form} /></Suspense>

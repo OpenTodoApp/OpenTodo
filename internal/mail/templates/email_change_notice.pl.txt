@@ -1,0 +1,7 @@
+Twój adres e-mail w OpenTodo jest zmieniany
+
+To powiadomienie o bezpieczeństwie od OpenTodo.
+
+Ktoś zalogowany na konto {{.Email}} na {{.Origin}} poprosił o zmianę adresu e-mail używanego do logowania. Zmiana nastąpi dopiero po otwarciu linku wysłanego na nowy adres.
+
+Jeśli to ty, nie musisz nic robić. Jeśli nie, zaloguj się, zmień hasło i wyloguj się wszędzie albo poproś właściciela serwera o pomoc.

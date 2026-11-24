@@ -5,10 +5,12 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { archiveProject, createProject, createTask, resetDeviceId } from '../lib/ops'
-import { click, key, render, type, waitFor } from '../ui/test-utils'
+import { click, flush, key, render, type, waitFor } from '../ui/test-utils'
 import { AutoArchiveView } from './ProjectsSettings'
 import { ProjectsView } from './ProjectsView'
 import { navigate } from './router'
+import { BulkConfirmHost } from './bulk/BulkConfirmHost'
+import { act } from 'react'
 
 beforeEach(async () => {
   await db.delete()
@@ -247,6 +249,106 @@ describe('All projects table', () => {
     await waitFor(() => names(r.container).length === 3)
     await click(open(work))
     expect(location.pathname).toBe(`/project/${work}`)
+    await r.unmount()
+  })
+})
+
+// OpenSpec change archive-several-projects (GitHub issue 1661).
+describe('Archive several projects at once', () => {
+  const clickWith = (el: Element, init: MouseEventInit) => act(async () => { el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ...init })) })
+
+  it('Ctrl+click and Shift+click tick rows; Archive asks, archives them with their sub-projects in one batch', async () => {
+    const home = await createProject({ name: 'Home' })
+    const garden = await createProject({ name: 'Garden', parent_id: home })
+    const work = await createProject({ name: 'Work' })
+    const keep = await createProject({ name: 'Keep' })
+    await db.outbox.clear()
+    const r = await render(<><ProjectsView /><BulkConfirmHost /></>)
+    await waitFor(() => names(r.container).length === 4)
+    const open = (id: string) => r.container.querySelector(`[data-project-open="${id}"]`)!
+    await clickWith(open(home), { ctrlKey: true })
+    expect(location.pathname).not.toBe(`/project/${home}`)
+    await waitFor(() => !!document.querySelector('[data-selection-bar]'))
+    expect(document.querySelector('[data-selection-bar]')!.textContent).toContain('1 selected')
+    // While the boxes show, the marks become boxes; Shift extends from Home to Work (Garden is between them).
+    expect(r.container.querySelectorAll('[data-project-tick]').length).toBe(4)
+    await clickWith(open(work), { shiftKey: true })
+    await waitFor(() => document.querySelector('[data-selection-bar]')!.textContent!.includes('3 selected'))
+    expect(r.container.querySelector(`[data-projects-row="${keep}"]`)!.hasAttribute('data-ticked')).toBe(false)
+    await click(document.querySelector('[data-projects-archive]')!)
+    await waitFor(() => !!document.querySelector('[role="dialog"], [role="alertdialog"]'))
+    expect(document.querySelector('[role="dialog"], [role="alertdialog"]')!.textContent).toContain('Archive 3 projects?')
+    const confirm = [...document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button, [role="alertdialog"] button')].find((b) => b.textContent === 'Archive')!
+    await click(confirm)
+    await waitFor(async () => (await db.projects.get(work))?.archived === true)
+    for (const id of [home, garden, work]) expect((await db.projects.get(id))?.archived).toBe(true)
+    expect((await db.projects.get(keep))?.archived).toBeFalsy()
+    const stamps = new Set((await db.outbox.toArray()).filter((o) => o.entity === 'project' && o.field === 'archived').map((o) => `${o.ts}|${o.device}`))
+    expect(stamps.size).toBe(1)
+    await waitFor(() => names(r.container).length === 1)
+    expect(document.querySelector('[data-selection-bar]')).toBeNull()
+    await r.unmount()
+  })
+
+  it('Space ticks the focused row, Escape clears; a viewer’s project cannot be ticked', async () => {
+    const { setCurrentUserId, storeMemberships } = await import('../lib/sharing')
+    const mine = await createProject({ name: 'Mine' })
+    const theirs = await createProject({ name: 'Theirs' })
+    setCurrentUserId('me')
+    await storeMemberships([{ projectId: theirs, role: 'viewer', ownerId: 'owner', members: [{ userId: 'owner', email: 'o@example.com', name: 'O', role: 'owner' }, { userId: 'me', email: 'm@example.com', name: 'M', role: 'viewer' }] }] as never)
+    const r = await render(<ProjectsView />)
+    await waitFor(() => names(r.container).length === 2)
+    const open = (id: string) => r.container.querySelector<HTMLElement>(`[data-project-open="${id}"]`)!
+    await key(open(theirs), ' ')
+    expect(document.querySelector('[data-selection-bar]')).toBeNull()
+    await key(open(mine), ' ')
+    await waitFor(() => !!document.querySelector('[data-selection-bar]'))
+    await clickWith(open(theirs), { ctrlKey: true })
+    expect(r.container.querySelector(`[data-projects-row="${theirs}"]`)!.hasAttribute('data-ticked')).toBe(false)
+    await key(open(mine), 'Escape')
+    await waitFor(() => !document.querySelector('[data-selection-bar]'))
+    await r.unmount()
+  })
+})
+
+// Issue 1956: the menu's Alt+Up and Alt+Down work on the table too, and keep focus; a header sort turns the moves off.
+describe('All projects page reordering', () => {
+  it('Alt+Down moves the row among its siblings and keeps focus; not while a header sorts', async () => {
+    const a = await createProject({ name: 'A' })
+    await createProject({ name: 'B' })
+    await createProject({ name: 'C' })
+    const r = await render(<ProjectsView />)
+    await waitFor(() => names(r.container).length === 3)
+    const row = () => r.container.querySelector<HTMLButtonElement>(`[data-project-open="${a}"]`)!
+    await act(async () => row().focus())
+    await key(row(), 'ArrowDown', { altKey: true })
+    await waitFor(() => names(r.container).join() === 'B,A,C', 'A moved down')
+    await waitFor(() => document.activeElement === row(), 'focus stays on A')
+    await key(row(), 'ArrowDown', { altKey: true })
+    await waitFor(() => names(r.container).join() === 'B,C,A', 'A moved down again')
+    await click(r.container.querySelector<HTMLButtonElement>('[data-sort="name"]')!)
+    await waitFor(() => names(r.container).join() === 'A,B,C', 'sorted by name')
+    const before = await db.outbox.count()
+    await key(row(), 'ArrowDown', { altKey: true })
+    expect(await db.outbox.count()).toBe(before)
+    await r.unmount()
+  })
+
+  it('a refused move at the edge leaves no pending refocus for a later refresh', async () => {
+    const a = await createProject({ name: 'A' })
+    const b = await createProject({ name: 'B' })
+    const r = await render(<ProjectsView />)
+    await waitFor(() => names(r.container).length === 2)
+    const rowOf = (id: string) => r.container.querySelector<HTMLButtonElement>(`[data-project-open="${id}"]`)!
+    await act(async () => rowOf(a).focus())
+    const before = await db.outbox.count()
+    await key(rowOf(a), 'ArrowUp', { altKey: true }) // already first: refused
+    await flush()
+    expect(await db.outbox.count()).toBe(before)
+    await act(async () => rowOf(b).focus())
+    await createProject({ name: 'C' })
+    await waitFor(() => names(r.container).length === 3, 'the rows refresh')
+    expect(document.activeElement).toBe(rowOf(b))
     await r.unmount()
   })
 })

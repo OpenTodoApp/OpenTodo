@@ -25,6 +25,7 @@ afterEach(async () => {
   for (const r of mounted.splice(0)) await r.unmount()
   setPendingShare(null)
   vi.unstubAllGlobals()
+  localStorage.clear()
 })
 
 
@@ -76,10 +77,23 @@ describe('shared files', () => {
   it('lists an oversized file as refused with the limit and saves the task without it', async () => {
     await open({ title: 'Video', files: [shared('clip.mp4', 'video/mp4', 'x'.repeat(2000))] })
     await waitFor(() => listedFiles().includes('clip.mp4'))
-    expect(document.querySelector('[data-shared-file="clip.mp4"]')!.textContent).toContain('at most 1000 bytes')
+    // The server's limit is read from the local database after the file is listed: wait for it.
+    await waitFor(() => !!document.querySelector('[data-shared-file="clip.mp4"]')!.textContent?.includes('at most 1000 bytes'), 'the refusal with the limit')
     await save()
     await waitFor(async () => (await db.tasks.count()) === 1)
     expect(await db.attachments.count()).toBe(0)
+  })
+
+  it('a link in the title is attached along with the files (quick-add-links)', async () => {
+    localStorage.setItem('opentodo.quickadd', JSON.stringify({ enabled: true, languages: ['en'], dayMonthOrder: 'auto' }))
+    await open({ title: 'Compare with https://example.com/b', files: [shared('a.png', 'image/png')] })
+    await waitFor(() => listedFiles().includes('a.png'))
+    await waitFor(() => !!document.querySelector('[data-chip="link"]'), 'the link chip')
+    await save()
+    await waitFor(async () => (await db.attachments.count()) === 2, 'the file and the link')
+    const task = (await db.tasks.toArray())[0]
+    expect(task.title).toBe('Compare with')
+    expect((await db.attachments.toArray()).map((a) => a.url ?? a.name).sort()).toEqual(['a.png', 'https://example.com/b'])
   })
 
   it('cancel removes the shared files from the store and writes nothing', async () => {

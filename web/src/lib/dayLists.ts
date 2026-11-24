@@ -21,59 +21,35 @@ export function withoutArchived(tasks: readonly Task[], projects: readonly Pick<
 }
 
 /**
- * Today hides tasks assigned to others (today-assigned-filter) only when the
- * account stored `mine`. `shared` is every project the membership cache knows;
- * a project missing from that cache is treated as not shared.
+ * The personal views (Inbox, Today, Upcoming, Anytime, Someday, Next) leave out a task
+ * assigned to someone else (personal-views-assignee): it is theirs to do, and it stays
+ * in its project, Waiting and the Filter view. `me` is the viewer; without one nothing is left out.
  */
-export interface TodayAssigneeFilter {
-  shared: ReadonlySet<string>
-  me: string | null
+export function assignedToSomeoneElse(task: Pick<Task, 'assignee_id'>, me: string | null | undefined): boolean {
+  return !!me && !!task.assignee_id && task.assignee_id !== me
 }
 
-/** The hide to apply, or null while the option is off or the stored value is anything but `mine`. */
-export function todayAssigneeFilter(
-  row: { today_assignees?: string } | null | undefined,
-  memberships: readonly { projectId: string }[],
-  me: string | null,
-): TodayAssigneeFilter | null {
-  if (row?.today_assignees !== 'mine') return null
-  return { shared: new Set(memberships.map((m) => m.projectId)), me }
-}
-
-/** True when the cache lists a shared project that has a member other than the viewer. */
-export function sharedWithSomeoneElse(memberships: readonly { members: readonly { userId: string }[] }[], me: string | null): boolean {
-  if (!me) return false
-  return memberships.some((m) => (m.members ?? []).some((member) => member.userId !== '' && member.userId !== me))
-}
-
-/** A task Today drops: a known shared project, assigned, and the assignee is not the viewer. Unassigned stays. */
-export function assignedToSomeoneElse(task: Pick<Task, 'project_id' | 'assignee_id'>, filter: TodayAssigneeFilter | null | undefined): boolean {
-  if (!filter?.me || !task.project_id || !filter.shared.has(task.project_id)) return false
-  return !!task.assignee_id && task.assignee_id !== filter.me
-}
-
-/** Today: open tasks due today or earlier (or deadline / start reached), by due then priority. `hide` drops other people's shared tasks. */
-export function todayList(tasks: readonly Task[], today: string, hide?: TodayAssigneeFilter | null): Task[] {
-  return tasks.filter((t) => inToday(t, today) && !assignedToSomeoneElse(t, hide)).sort(compareDueThenPriority)
+/** Today: open tasks due today or earlier (or deadline / start reached), by due then priority, without tasks assigned to someone other than `me`. */
+export function todayList(tasks: readonly Task[], today: string, me?: string | null): Task[] {
+  return tasks.filter((t) => inToday(t, today) && !assignedToSomeoneElse(t, me)).sort(compareDueThenPriority)
 }
 
 /**
  * Upcoming: open, active tasks due after today, and undated ones whose deadline
  * is ahead. Undated tasks sort after dated ones, so a deadline-only task follows
- * the tasks due that day within its group (deadlines D3).
+ * the tasks due that day within its group (deadlines D3). Tasks assigned to someone other than `me` stay out.
  */
-export function upcomingList(tasks: readonly Task[], today: string): Task[] {
-  return tasks.filter((t) => inUpcoming(t, today)).sort(compareDueThenPriority)
+export function upcomingList(tasks: readonly Task[], today: string, me?: string | null): Task[] {
+  return tasks.filter((t) => inUpcoming(t, today) && !assignedToSomeoneElse(t, me)).sort(compareDueThenPriority)
 }
 
 /**
  * Upcoming with Start with Today (OpenSpec change upcoming-start-with-today, D2):
  * Today's list by the date rule, then the Upcoming tasks Today does not already
  * hold (a task due tomorrow whose deadline has passed is Today's), each task once.
- * The "hide tasks assigned to others" option is not applied here.
  */
-export function upcomingWithToday(tasks: readonly Task[], today: string): Task[] {
-  return [...todayList(tasks, today), ...upcomingList(tasks, today).filter((t) => !inToday(t, today))]
+export function upcomingWithToday(tasks: readonly Task[], today: string, me?: string | null): Task[] {
+  return [...todayList(tasks, today, me), ...upcomingList(tasks, today, me).filter((t) => !inToday(t, today))]
 }
 
 /** A project's open tasks (any order; the project list builds its tree and sections from them). */
@@ -114,9 +90,9 @@ export function groupToday(list: readonly Task[], today: string, blocked: { has(
  * The ids of Today's Earlier group (page-rhythm D6), as the list shows it: open tasks
  * of active projects due (or with a deadline) before today, blocked ones left out.
  */
-export function earlierIds(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], today: string, hide?: TodayAssigneeFilter | null): string[] {
+export function earlierIds(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], today: string, me?: string | null): string[] {
   const live = withoutArchived(tasks.filter((t) => !t.deleted_at), projects)
-  return groupToday(todayList(live, today, hide), today, blockedMap(live)).overdue.map((t) => t.id)
+  return groupToday(todayList(live, today, me), today, blockedMap(live)).overdue.map((t) => t.id)
 }
 
 /** Upcoming's list (already sorted) bucketed by its day, in date order. */
@@ -136,8 +112,8 @@ export function groupUpcoming(list: readonly Task[], today?: string): { date: st
  * The next `days` days after `today`, each with the Upcoming tasks listed under
  * it (an empty list on a free day), for the display's columns.
  */
-export function nextDays(tasks: readonly Task[], today: string, days: number): { date: string; tasks: Task[] }[] {
-  const byDate = new Map(groupUpcoming(upcomingList(tasks, today), today).map((g) => [g.date, g.tasks]))
+export function nextDays(tasks: readonly Task[], today: string, days: number, me?: string | null): { date: string; tasks: Task[] }[] {
+  const byDate = new Map(groupUpcoming(upcomingList(tasks, today, me), today).map((g) => [g.date, g.tasks]))
   return Array.from({ length: Math.max(0, days) }, (_, i) => {
     const date = addDaysISO(today, i + 1)
     return { date, tasks: byDate.get(date) ?? [] }

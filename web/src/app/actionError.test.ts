@@ -38,7 +38,7 @@ const REFUSALS: [string, string, () => Promise<unknown>, string][] = [
   [LOCAL_ERRORS.taskNotFound, 'That task is not available any more.', () => restoreTask('missing'), 'Cette tâche n’est plus disponible.'],
   [LOCAL_ERRORS.parentTaskNotFound, 'The parent task is not available any more.', () => createSubtask('missing', 'child'), 'La tâche parente n’est plus disponible.'],
   [LOCAL_ERRORS.timeEntryNotFound, 'That time entry is not available any more.', () => updateTimeEntry('missing', { note: 'x' }), 'Cette entrée de temps n’est plus disponible.'],
-  [LOCAL_ERRORS.reminderTimeRequired, 'Set a time for the reminder first.', async () => addReminder(await createTask({ title: 'a' }), { kind: 'absolute', fire_at: 0 }), 'Définissez d’abord une heure pour le rappel.'],
+  [LOCAL_ERRORS.reminderTimeRequired, 'Set a time for the reminder first.', async () => addReminder(await createTask({ title: 'a' }), { kind: 'absolute', fire_at: 0 }), 'Définis d’abord une heure pour le rappel.'],
   [LOCAL_ERRORS.offsetNotWhole, 'The reminder offset must be whole minutes.', async () => addReminder(await createTask({ title: 'a' }), { kind: 'relative', offset_minutes: 1.5 }), 'Le décalage du rappel doit être un nombre entier de minutes.'],
 ]
 

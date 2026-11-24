@@ -234,7 +234,8 @@ func TestLangFrom(t *testing.T) {
 	for h, want := range map[string]string{"de-CH, fr;q=0.8": "de", "ja": "en", "": "en", "ja, it;q=0.5": "it",
 		"fr;q=0.3, pt-BR;q=0.9": "pt", "es;q=0, en": "en", "EN-gb": "en",
 		"zh-CN": "zh", "zh-Hans": "zh", "zh": "zh", "zh-SG": "zh",
-		"zh-TW": "en", "zh-HK": "en", "zh-Hant": "en", "zh-TW, zh-CN;q=0.8": "zh"} {
+		"zh-TW": "en", "zh-HK": "en", "zh-Hant": "en", "zh-TW, zh-CN;q=0.8": "zh",
+		"tr": "tr", "tr-TR": "tr"} {
 		if got := LangFrom(h); got != want {
 			t.Errorf("LangFrom(%q) = %s, want %s", h, got, want)
 		}
@@ -506,13 +507,15 @@ func TestDigestWordsForLateTasks(t *testing.T) {
 	heading := map[string]string{
 		"en": "Still open from earlier", "de": "Noch offen von früher", "fr": "Encore ouvertes d'avant",
 		"es": "Siguen abiertas de antes", "it": "Ancora aperte da prima", "pt": "Ainda abertas de antes",
-		"zh": "更早仍未完成", "nl": "Nog open van eerder",
+		"zh": "更早仍未完成", "nl": "Nog open van eerder", "tr": "Önceden açık kalanlar", "pl": "Nadal otwarte z wcześniej",
 	}
 	// The old headings, matched as whole lines where the word also names a measurement.
 	old := map[string]*regexp.Regexp{
 		"en": regexp.MustCompile(`(?i)overdue`), "de": regexp.MustCompile(`(?i)überfällig`), "fr": regexp.MustCompile(`(?m)^En retard$`),
 		"es": regexp.MustCompile(`(?i)vencid`), "it": regexp.MustCompile(`(?m)^In ritardo$`), "pt": regexp.MustCompile(`(?m)^Atrasadas$`),
 		"zh": regexp.MustCompile(`逾期`), "nl": regexp.MustCompile(`(?i)achterstallig|verlopen|(?m)^Te laat$`),
+		"tr": regexp.MustCompile(`(?i)gecikmi|vadesi geçmiş`),
+		"pl": regexp.MustCompile(`(?i)zaległ|przetermin`),
 	}
 	for _, lang := range Languages {
 		m := Message{Kind: KindDigest, To: "ana@example.com", Lang: lang, Origin: "https://todo.example.com",
@@ -588,5 +591,53 @@ func TestRoutineMembersMessage(t *testing.T) {
 		if own != "This week" || ownBody == body || strings.Contains(ownBody, stop) {
 			t.Fatalf("%s: Email me rendered as the members' variant", lang)
 		}
+	}
+}
+
+type fakeUnconfirmed map[string]bool
+
+func (f fakeUnconfirmed) Unconfirmed(_ context.Context, userID, address string) (bool, error) {
+	return f[userID] || f[strings.ToLower(address)], nil
+}
+
+// TestSendRefusesUnconfirmedAddress (sso-missing-email-verified): no mail goes to
+// an address single sign-on took unconfirmed, matched by account or by address,
+// except the confirmation of an address itself.
+func TestSendRefusesUnconfirmedAddress(t *testing.T) {
+	fs := &fakeSender{}
+	s, db, _ := newService(t, config.SMTPConfig{}, fs)
+	ctx := context.Background()
+	if _, err := s.Save(ctx, Update{Host: ptr("smtp.example.com"), From: ptr("todo@example.com")}); err != nil {
+		t.Fatal(err)
+	}
+	s.recipients = fakeUnconfirmed{"u-squat": true, "alice@corp.example": true}
+	for _, m := range []Message{
+		{Kind: KindDigest, To: "alice@corp.example", UserID: "u-squat"},
+		{Kind: KindPasswordReset, To: "Alice@Corp.example", Vars: Vars{Link: "x", Expiry: time.Hour}},
+		{Kind: KindMemberInvitation, To: "alice@corp.example", UserID: "u-squat", Vars: Vars{Link: "x", Inviter: "A"}},
+		{Kind: KindEmailChangeNotice, To: "alice@corp.example", UserID: "u-squat"},
+	} {
+		if err := s.Send(ctx, m); !errors.Is(err, ErrUnconfirmed) {
+			t.Fatalf("%s: %v", m.Kind, err)
+		}
+	}
+	if len(fs.sent) != 0 {
+		t.Fatalf("sent %v", fs.sent)
+	}
+	if rows := auditRows(t, db); !strings.Contains(rows[len(rows)-1], "address_unconfirmed") {
+		t.Fatalf("audit = %v", rows)
+	}
+	// Confirming an address, and other people, still get mail.
+	for _, m := range []Message{
+		{Kind: KindEmailChange, To: "alice@corp.example", UserID: "u-squat", Vars: Vars{Link: "x", Expiry: time.Hour}},
+		{Kind: KindVerifySignup, To: "alice@corp.example", Vars: Vars{Link: "x", Expiry: time.Hour}},
+		{Kind: KindPasswordReset, To: "bob@example.com", UserID: "u-bob", Vars: Vars{Link: "x", Expiry: time.Hour}},
+	} {
+		if err := s.Send(ctx, m); err != nil {
+			t.Fatalf("%s: %v", m.Kind, err)
+		}
+	}
+	if len(fs.sent) != 3 {
+		t.Fatalf("sent %v", fs.sent)
 	}
 }

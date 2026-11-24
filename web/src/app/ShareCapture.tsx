@@ -5,15 +5,14 @@
 // the device-local hand-over store (OpenSpec attachments, design D9).
 import { ProjectPickerField } from './ProjectPickerField'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { commitFiles, formatBytes, isImage, planFiles, useAttachmentLimits } from '../lib/attachments'
+import { commitFiles, formatBytes, isImage, limits as readLimits, planFiles, useAttachmentLimits } from '../lib/attachments'
 import { useAllLabels, useProjects } from '../lib/localData'
 import { useDemo } from '../lib/demo'
-import { createTask, planNewTasks, planReminders, planTask } from '../lib/ops'
+import { createTask, planCompanions, planNewTasks, planTask } from '../lib/ops'
 import { addTasksUndoable } from '../lib/pasteTasks'
 import { showBulkToast } from './bulk/toastStore'
 import { captureFiles, type CapturedFile, isEmptyShare, parseShare, proposedDescription, proposedOrigin, proposedTitle, titleFromFiles, type SharePayload } from '../lib/share'
 import { deleteInboxEntry, getInboxEntry, type SharedFile } from '../lib/shareInbox'
-import type { Task } from '../lib/types'
 import { IconButton } from '../ui'
 import { Icon } from '../ui'
 import { InstanceMark, useInstanceName } from './InstanceBrand'
@@ -139,6 +138,13 @@ export function ShareCapture() {
   useShortcutDispatcher()
   useShortcutScope('view', { 'share.escape': () => leave({ view: 'inbox' }) }, { view: 'share' })
 
+  /** The files to attach as the server's limit stands when saving: a Save before the screen read it still leaves out what it refuses. */
+  async function attachable() {
+    const l = await readLimits()
+    if (l?.enabled === false) return []
+    return l ? attach.filter((f) => f.blob.size <= l.max_file_bytes) : attach
+  }
+
   async function save(input: QuickAddInput) {
     if (saving) return
     setSaving(true)
@@ -148,13 +154,14 @@ export function ShareCapture() {
       const project = input.project_id ?? (projectId || null)
       // Where it came from (task-origin): the shared URL and title, in the same batch as the task.
       const task = { ...input, description: description.trim(), project_id: project, origin: proposedOrigin(payload) }
-      if (attach.length) {
+      const toAttach = await attachable()
+      if (toAttach.length) {
         // The task and its files in one batch, locally first; the bytes upload after sync.
         const { id, change } = await planTask(task)
-        const asFiles = await Promise.all(attach.map(async (f) => new File([await f.blob.arrayBuffer()], f.name, { type: f.type })))
+        const asFiles = await Promise.all(toAttach.map(async (f) => new File([await f.blob.arrayBuffer()], f.name, { type: f.type })))
         const planned = await planFiles(id, asFiles, { projectId: project })
-        // Typed reminders ride in the same batch, as createTask writes them (quick-add-recurrence D3).
-        await commitFiles(planned, [change, ...planReminders(id, (change.patch as { due: Task['due'] }).due, input.reminders)])
+        // Typed reminders, time spent and links ride in the same batch, as createTask writes them (quick-add-recurrence D3, quick-add-links D2).
+        await commitFiles(planned, await planCompanions(task, { id, change }, new Date()))
       } else {
         // One mutate: title, parsed attributes, description and project land as one op set, locally first.
         await createTask(task)
@@ -180,9 +187,10 @@ export function ShareCapture() {
       const picked = projectId || null
       const origin = proposedOrigin(payload)
       const tasks = inputs.map((input, i) => ({ ...input, project_id: input.project_id ?? picked, origin, ...(i === 0 ? { description: description.trim() } : {}) }))
-      if (attach.length) {
+      const toAttach = await attachable()
+      if (toAttach.length) {
         const { ids, changes } = await planNewTasks(tasks)
-        const asFiles = await Promise.all(attach.map(async (f) => new File([await f.blob.arrayBuffer()], f.name, { type: f.type })))
+        const asFiles = await Promise.all(toAttach.map(async (f) => new File([await f.blob.arrayBuffer()], f.name, { type: f.type })))
         await commitFiles(await planFiles(ids[0], asFiles, { projectId: tasks[0].project_id }), changes)
       } else {
         const added = await addTasksUndoable(tasks)
@@ -206,7 +214,6 @@ export function ShareCapture() {
           <p className="mb-3 text-body text-muted">{t('Nothing was shared. Type a task to add it anyway.')}</p>
         )}
         {!ready ? <p className="text-body text-muted" role="status">{t('Opening the shared files…')}</p> : (
-        <div className="rounded-control border border-input px-2 focus-within:border-accent focus-within:ring-2 focus-within:ring-focus/30">
           <QuickAdd
             ref={titleRef}
             formId="share-capture"
@@ -219,8 +226,8 @@ export function ShareCapture() {
             onAdd={save}
             onAddMany={saveMany}
             notes={false}
+            pasteFiles={false}
           />
-        </div>
         )}
         <label className="mt-3 block text-body">
           <span className="mb-1 block text-muted">{t('Description')}</span>

@@ -81,6 +81,16 @@ func FromURL(rawURL, title string) (Origin, error) {
 	return o, nil
 }
 
+// FromLink is FromURL that also takes an app link (app-links D5) as a plain url
+// origin, for a person who types the link (`ot add --origin-url`). The agent
+// tools keep FromURL: an assistant never writes a link into another app.
+func FromLink(rawURL, title string) (Origin, error) {
+	if s := strings.TrimSpace(rawURL); IsAppLink(s) {
+		return Origin{Kind: KindURL, URL: s, Title: CutTitle(title)}, nil
+	}
+	return FromURL(rawURL, title)
+}
+
 // CutTitle trims title and cuts it to MaxTitle characters.
 func CutTitle(title string) string {
 	title = strings.TrimSpace(title)

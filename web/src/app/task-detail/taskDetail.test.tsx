@@ -5,7 +5,8 @@ import 'fake-indexeddb/auto'
 import { describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
 import { activeLabels, createLabel } from '../../lib/labels'
-import { archiveProject, createProject, createSubtask, createTask, setTaskCompleted, setTaskParent } from '../../lib/ops'
+import { archiveProject, createProject, createSubtask, createTask, setTaskCompleted } from '../../lib/ops'
+import { parentUndoable } from '../../lib/undoActions'
 import { createSection, moveTaskToSection } from '../../lib/sections'
 import { click, key, type, visibleText } from '../../ui/test-utils'
 import { ME, membership, open, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
@@ -185,7 +186,7 @@ describe('entity pickers (3.1–3.4)', () => {
 
     const parent = await createTask({ title: 'Finished parent' })
     const child = await createTask({ title: 'Child' })
-    await setTaskParent(child, parent)
+    await parentUndoable(child, parent)
     await createTask({ title: 'Another done' }).then((id) => setTaskCompleted(id, true))
     await setTaskCompleted(parent, true)
     const w = await open(child)

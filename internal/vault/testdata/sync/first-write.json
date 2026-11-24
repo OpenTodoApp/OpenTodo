@@ -1207,23 +1207,61 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "7d1a2ba1e63f8c0b3f7190b035f62407ada3960e7ea756a63f7213619050127a"
+              "hash": "7d1a2ba1e63f8c0b3f7190b035f62407ada3960e7ea756a63f7213619050127a",
+              "size": 149,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "71fca3dd4e8a454e",
+                "70b0c1dd19baebad",
+                "0e100cef944c4443",
+                "7d1a2ba1e63f8c0b"
+              ]
             },
             "Inbox.md": {
               "project": "",
-              "hash": "0f20980d741faab41646722a4bf557a595abe21c76bf53b7b246bad58356f6b6"
+              "hash": "0f20980d741faab41646722a4bf557a595abe21c76bf53b7b246bad58356f6b6",
+              "size": 42,
+              "prefixes": [
+                "e19a1800e45e9e7a",
+                "0f20980d741faab4"
+              ]
             },
             "Q4-Q1- plans-.md": {
               "project": "p-odd",
-              "hash": "63bacbae54e5027965df783d4d3583d311ab40bc090073357d4e8265a43c9f84"
+              "hash": "63bacbae54e5027965df783d4d3583d311ab40bc090073357d4e8265a43c9f84",
+              "size": 53,
+              "prefixes": [
+                "f52d711103d50a43",
+                "18d9d3ae43a64745",
+                "db9b3b6092b01f51",
+                "63bacbae54e50279"
+              ]
             },
             "Work/Launch.md": {
               "project": "p-launch",
-              "hash": "4cda7a4b7e597495adbe064f8663ea8fdbbc9093e0c2604a5804fe408605a58c"
+              "hash": "4cda7a4b7e597495adbe064f8663ea8fdbbc9093e0c2604a5804fe408605a58c",
+              "size": 126,
+              "prefixes": [
+                "f52d711103d50a43",
+                "222fa6ecc5c610ef",
+                "8d54c2d2bc841730",
+                "ef279f66099c823b",
+                "27eb1ed65ed87db8",
+                "4cda7a4b7e597495"
+              ]
             },
             "Work/Work.md": {
               "project": "p-work",
-              "hash": "aa2da551b4088e3bc5fa8f1efe3788d104d9f38e0b417cba06d0c021d6004022"
+              "hash": "aa2da551b4088e3bc5fa8f1efe3788d104d9f38e0b417cba06d0c021d6004022",
+              "size": 54,
+              "prefixes": [
+                "f52d711103d50a43",
+                "311b75839baf6970",
+                "62dfdefd4fcf9aec",
+                "aa2da551b4088e3b"
+              ]
             }
           },
           "printed": {
@@ -1695,23 +1733,61 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "7d1a2ba1e63f8c0b3f7190b035f62407ada3960e7ea756a63f7213619050127a"
+              "hash": "7d1a2ba1e63f8c0b3f7190b035f62407ada3960e7ea756a63f7213619050127a",
+              "size": 149,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "71fca3dd4e8a454e",
+                "70b0c1dd19baebad",
+                "0e100cef944c4443",
+                "7d1a2ba1e63f8c0b"
+              ]
             },
             "Inbox.md": {
               "project": "",
-              "hash": "0f20980d741faab41646722a4bf557a595abe21c76bf53b7b246bad58356f6b6"
+              "hash": "0f20980d741faab41646722a4bf557a595abe21c76bf53b7b246bad58356f6b6",
+              "size": 42,
+              "prefixes": [
+                "e19a1800e45e9e7a",
+                "0f20980d741faab4"
+              ]
             },
             "Q4-Q1- plans-.md": {
               "project": "p-odd",
-              "hash": "63bacbae54e5027965df783d4d3583d311ab40bc090073357d4e8265a43c9f84"
+              "hash": "63bacbae54e5027965df783d4d3583d311ab40bc090073357d4e8265a43c9f84",
+              "size": 53,
+              "prefixes": [
+                "f52d711103d50a43",
+                "18d9d3ae43a64745",
+                "db9b3b6092b01f51",
+                "63bacbae54e50279"
+              ]
             },
             "Work/Launch.md": {
               "project": "p-launch",
-              "hash": "4cda7a4b7e597495adbe064f8663ea8fdbbc9093e0c2604a5804fe408605a58c"
+              "hash": "4cda7a4b7e597495adbe064f8663ea8fdbbc9093e0c2604a5804fe408605a58c",
+              "size": 126,
+              "prefixes": [
+                "f52d711103d50a43",
+                "222fa6ecc5c610ef",
+                "8d54c2d2bc841730",
+                "ef279f66099c823b",
+                "27eb1ed65ed87db8",
+                "4cda7a4b7e597495"
+              ]
             },
             "Work/Work.md": {
               "project": "p-work",
-              "hash": "aa2da551b4088e3bc5fa8f1efe3788d104d9f38e0b417cba06d0c021d6004022"
+              "hash": "aa2da551b4088e3bc5fa8f1efe3788d104d9f38e0b417cba06d0c021d6004022",
+              "size": 54,
+              "prefixes": [
+                "f52d711103d50a43",
+                "311b75839baf6970",
+                "62dfdefd4fcf9aec",
+                "aa2da551b4088e3b"
+              ]
             }
           },
           "printed": {

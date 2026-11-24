@@ -60,7 +60,7 @@ Keeps one folder of Markdown files in two-way sync with an account, so that peop
 - **THEN** no file is changed, the command exits with code 4 and names the server URL
 
 ### Requirement: Project files and folders
-Each project SHALL be one Markdown file named after the project (`<name>.md`, with `/`, `\` and characters the file system refuses replaced by `-`; a name clash resolved by a numeric suffix), tasks without a project SHALL be in `Inbox.md`, and a project with live sub-projects SHALL be a folder named after it holding its own file `<name>/<name>.md` and one file or folder per child. A project file SHALL start with front matter holding `opentodo-id`, `opentodo-color` and `opentodo-icon` (when set); other front-matter keys SHALL be preserved. The vault SHALL match files to projects by `opentodo-id`: a renamed file renames the project, a file moved into another project's folder re-parents it, and a `.md` file without `opentodo-id` anywhere in the vault SHALL create a project named after the file (nested under the folder's project) and gain the front matter on the next sync. Archived and trashed projects SHALL have no file; archiving or trashing a project in the app SHALL remove its file on the next sync when the file is unchanged since the last sync, and SHALL rename it `<name>.conflict.md` when it is not. Deleting a file SHALL never archive or trash a project: the file is written again from the app on the next sync and the output says so.
+Each project SHALL be one Markdown file named after the project (`<name>.md`, with `/`, `\` and characters the file system refuses replaced by `-`; a name clash resolved by a numeric suffix), tasks without a project SHALL be in `Inbox.md`, and a project with live sub-projects SHALL be a folder named after it holding its own file `<name>/<name>.md` and one file or folder per child. A project file SHALL start with front matter holding `opentodo-id`, `opentodo-color` and `opentodo-icon` (when set); other front-matter keys SHALL be preserved. The vault SHALL match files to projects by `opentodo-id`: a renamed file renames the project, a file moved into another project's folder re-parents it, a `.md` file without `opentodo-id`, or whose `opentodo-id` is not an id at all (damaged), at a path the last sync wrote for a live project SHALL stay that project's file (its lines merge as the project's lines, missing front matter changes neither colour nor icon, and the front matter, with the project's own id, is written again on the next sync; a damaged id is reported as a warning; a well-formed id of no project of the account still makes a new project), and any other `.md` file without `opentodo-id` anywhere in the vault SHALL create a project named after the file (nested under the folder's project) and gain the front matter on the next sync. Archived and trashed projects SHALL have no file; archiving or trashing a project in the app SHALL remove its file on the next sync when the file is unchanged since the last sync, and SHALL rename it `<name>.conflict.md` when it is not. Deleting a file SHALL never archive or trash a project: the file is written again from the app on the next sync and the output says so. The vault syncs from its local files and state, so these rules apply on its next sync wherever it runs, offline devices included, and its ops converge with every device as any other edit does.
 
 #### Scenario: Rename a file
 - **WHEN** the user renames `Home.md` to `Household.md` and syncs
@@ -69,6 +69,18 @@ Each project SHALL be one Markdown file named after the project (`<name>.md`, wi
 #### Scenario: New file
 - **WHEN** the user creates `Garden.md` with three `- [ ]` lines and syncs
 - **THEN** a project Garden exists with three tasks in that order, and the file now starts with front matter carrying the project's id and each line carries `🆔`
+
+#### Scenario: Front matter deleted from a known file
+- **WHEN** the user deletes the front matter of `Home.md`, keeps its lines and syncs
+- **THEN** no project is created, the lines stay Home's tasks, Home's colour and icon are unchanged, and the file starts with Home's front matter again
+
+#### Scenario: Project id damaged in a known file
+- **WHEN** the `opentodo-id` of `Home.md` is damaged so that it is no longer an id, its lines kept, and the user syncs
+- **THEN** no project is created, the lines stay Home's tasks, the sync warns that the id is not in the account, and the file starts with Home's id again
+
+#### Scenario: File emptied on purpose
+- **WHEN** the user empties `Home.md` and leaves it empty past the half-saved hold, syncing each time
+- **THEN** Home's tasks are trashed, the project Home is unchanged and no other project is created, no `Home 2.md` appears, and `Home.md` holds Home's front matter
 
 #### Scenario: Move a file into a folder
 - **WHEN** the user moves `Garden.md` into `Home/` and syncs
@@ -175,7 +187,7 @@ Comments, attachments and time entries SHALL NOT be written to the file. A task'
 - **THEN** the next write keeps the paragraph, the heading and the bullets exactly, and no section Ideas is created when the heading has no task lines
 
 ### Requirement: Merge and conflict rules
-The vault SHALL keep, per task and project it has written, the last-synced value of every field it maps, and SHALL merge on each sync field by field: a field changed only in the file since the last sync is pushed; a field changed only in the app is written to the file; a field changed on both sides keeps the app's value, and the file's version of that whole line is appended to `<file>.conflict.md` with the field named, listed in the output and by `ot vault status`. A task line removed from a file SHALL trash the task when no field of that task changed in the app since the last sync, and SHALL otherwise keep the task, write its line again and report it. A task trashed or purged in the app SHALL lose its line; a line edited in the file at the same time SHALL go to the conflict file. Files whose content hash matches the last write SHALL be skipped without parsing. The conflict file is never read by the vault.
+The vault SHALL keep, per task and project it has written, the last-synced value of every field it maps, and SHALL merge on each sync field by field: a field changed only in the file since the last sync is pushed; a field changed only in the app is written to the file; a field changed on both sides keeps the app's value, and the file's version of that whole line is appended to `<file>.conflict.md` with the field named, listed in the output and by `ot vault status`. A task line removed from a file SHALL trash the task when no field of that task changed in the app since the last sync, and SHALL otherwise keep the task, write its line again and report it. A task trashed or purged in the app SHALL lose its line; a line edited in the file at the same time SHALL go to the conflict file. Files whose content hash matches the last write SHALL be skipped without parsing. A file read while it is being saved SHALL NOT trash its tasks: a file that held text when the last sync wrote it and is now empty, or cut short of what that sync wrote (shorter, with everything up to its last line end equal to a part of the written text that ends at a line end; for a file of more than 5000 lines, shorter and without its last line end), SHALL be held for up to five minutes from the first sync that sees it so: an empty file unless every task line it lost is in another file, a file cut short only when it lost a task line that is in no other file. A held file is neither read nor written, and a change made in the app meanwhile to a task in it SHALL count as the app's change once the file is read. A file still empty or cut short past the hold SHALL sync as it is, its removed lines trashing their tasks as above. The hold is the vault's own state; offline it holds the same way, and what it pushes afterwards are ordinary ops that converge as any edit does. The conflict file is never read by the vault.
 
 #### Scenario: Different fields on both sides
 - **WHEN** the file changes a task's priority and the app changes its do-on date since the last sync
@@ -200,6 +212,14 @@ The vault SHALL keep, per task and project it has written, the last-synced value
 #### Scenario: Unchanged file skipped
 - **WHEN** ten project files are unchanged since the last write and one app change touches one project
 - **THEN** only that project's file is parsed and written
+
+#### Scenario: Save in progress
+- **WHEN** a sync reads `Home.md` cut short in the middle of an editor's save, a phone completes one of its tasks, and the save finishes before the next sync
+- **THEN** no task is trashed or created by the cut, the task stays completed and its line shows it, and the next sync reads the saved file
+
+#### Scenario: End of a file deleted on purpose
+- **WHEN** the user deletes the last task line of `Home.md` and syncs, and syncs again more than five minutes later
+- **THEN** the first sync holds the file and trashes nothing, and the later sync trashes the task
 
 ### Requirement: Watch mode
 `ot vault watch` SHALL run `sync` once, then keep the folder in sync until stopped: it SHALL open the server's live update stream for its device and sync within two seconds of a wake-up, and SHALL check the files' modification times every two seconds and sync when one changed, waiting until a changed file has been stable for one second. It SHALL fall back to a 30-second poll while the stream is down, SHALL not exit on a failed sync but print the error and retry with backoff, and SHALL exit cleanly on an interrupt with the state file consistent.
@@ -525,3 +545,62 @@ A sync SHALL stop before any write or push, naming the file, when a note's body 
 #### Scenario: Encrypted note
 - **WHEN** an unlocked encrypted account edits a note's file and syncs
 - **THEN** the server receives only ciphertext for the body, and every unlocked device shows the edit
+
+### Requirement: Refused changes
+
+The vault SHALL announce the sync feature `invalid_ops`, so the server refuses an operation it cannot accept on its own and applies the rest of the sync. A sync SHALL report each refused operation as a warning naming the field, the entity and the server's reason, SHALL NOT fail because of it, and SHALL write the file from the server's value of that field. The vault SHALL NOT keep a refused operation to send again.
+
+#### Scenario: A value the server refuses
+
+- **WHEN** a sync pushes a task line whose priority the server refuses as `invalid` together with a new due date
+- **THEN** the sync succeeds with a warning that names the priority and `invalid`, the server holds the new due date and its own priority, the line shows both, and the next sync is idle
+
+### Requirement: Vault sync in the Obsidian plugin
+The OpenTodo plugin for Obsidian SHALL offer, in its settings, to sync one folder inside the Obsidian vault (default `OpenTodo/`) as a vault: on a folder without `.opentodo/` it SHALL do what `ot vault init` does (refusing a folder that holds Markdown files unless the user confirms adopting them), and on a folder with a state file it SHALL continue from it. It SHALL apply the same file format, merge and conflict rules, limits and encrypted-account rules as `ot vault`, read and write the same state file, and exchange as the same kind of device (`vault:<id>`) over the sync route with the plugin's `full` token, so a folder synced by the plugin can later be synced by `ot vault` and the other way round. It SHALL sync when the plugin loads, after a file in the folder has been stable for one second following a change, every 30 seconds while Obsidian is visible, and on the command "Sync vault with OpenTodo now"; it SHALL not sync while Obsidian is closed or in the background, and the settings tab SHALL say so. A failed sync SHALL change no file and no state, be shown with its reason, and be retried with growing intervals. A folder with a TaskNotes folder linked SHALL be refused with a message naming `ot vault`. For the same inputs, the plugin's engine and `ot vault` SHALL push the same operations and write the same bytes, which shared vectors verify.
+
+#### Scenario: Phone-only user
+- **WHEN** a user with Obsidian only on an iPhone turns on vault sync for `OpenTodo/` and the account holds the projects Home and Work
+- **THEN** the folder holds `Home.md`, `Work.md` and `.opentodo/state.json`, and ticking a line in `Home.md` completes the task on every device after the next sync
+
+#### Scenario: App change reaches the phone
+- **WHEN** Obsidian is open on the phone with vault sync on and a task is created in Home on the laptop
+- **THEN** `Home.md` on the phone holds the new line within about 30 seconds
+
+#### Scenario: Offline edit
+- **WHEN** the user edits three lines with no connection and the network returns while Obsidian is visible
+- **THEN** the next sync pushes the three edits and they converge with edits made elsewhere under the field-level last-writer-wins rule
+
+#### Scenario: Same result as ot vault
+- **WHEN** the shared sync vectors run
+- **THEN** for every case the plugin's engine and `ot vault` produce the same pushed operations, the same file bytes, the same conflict files and the same state
+
+#### Scenario: Locked encrypted account
+- **WHEN** the account is encrypted and the plugin is locked
+- **THEN** the sync is skipped with "Unlock OpenTodo to sync the vault", no request is sent and no file changes
+
+#### Scenario: TaskNotes linked
+- **WHEN** the chosen folder's state file has a TaskNotes folder linked
+- **THEN** the plugin refuses to sync it and names `ot vault`
+
+#### Scenario: File not downloaded yet
+- **WHEN** iCloud has not downloaded `Work.md` yet and only its placeholder is present
+- **THEN** the sync skips `Work.md` with a report, and no task of Work is trashed
+
+### Requirement: One syncing device per vault folder
+The vault state file SHALL record which installation syncs the folder (`owner`: its kind, `cli` or `obsidian`, a random installation id and a readable label) and until when (`lease_until`, five minutes after its last sync; `ot vault watch` and the plugin renew it on every cycle). `ot vault sync`, `ot vault watch` and the plugin SHALL refuse to sync a folder whose state names another installation, before any request, with error code `vault_owned` (exit 2 for `ot`) and a message naming the owner's label and whether its lease is still running. Taking over (`--take-over` on `sync` and `watch`, "Take over syncing here" in the plugin) SHALL give the folder a new device id and owner and run a first sync that compares every known line with the server's values, keeping the server's value for any field that differs and writing the file's line to the conflict file, and creating tasks for lines without an id. A state without an owner SHALL be owned by the first installation that syncs it. `--take-over` SHALL appear in `ot schema` and `ot help --json`.
+
+#### Scenario: Replicated folder, two devices
+- **WHEN** `ot vault watch` runs on the laptop for a folder that Obsidian Sync also replicates to the phone, and the phone's plugin has vault sync on for the same folder
+- **THEN** the phone's plugin shows "Synced by laptop" and sends nothing, and an edit made on the phone reaches OpenTodo through the laptop's next sync
+
+#### Scenario: Owner gone
+- **WHEN** the laptop that owned the folder is retired and the user picks "Take over syncing here" on the phone
+- **THEN** the phone syncs the folder from then on as a new vault device, no task is created twice, and any line whose fields differ from the server is listed in the conflict file
+
+#### Scenario: Refused on the command line
+- **WHEN** the user runs `ot vault sync` on a folder the phone's plugin owns
+- **THEN** no request is sent, the exit code is 2, the error code is `vault_owned` and the message names the phone and `--take-over`
+
+#### Scenario: Older state file
+- **WHEN** `ot vault sync` runs on a folder whose state was written before this change
+- **THEN** the sync runs, and the state now names this installation as the owner

@@ -14,6 +14,7 @@ import type { ThemeDocument } from '../../lib/theme/format'
 import { undoBatch } from '../../lib/undo'
 import { click, render, waitFor } from '../../ui/test-utils'
 import { AppearanceSection } from '../AppearanceSection'
+import { undoEntry } from '../../test/undoEntry'
 const currentPath = () => location.pathname
 
 const DOC = (over: Partial<ThemeDocument> = {}): ThemeDocument => ({
@@ -120,7 +121,7 @@ describe('Your themes', () => {
     await waitFor(async () => (await db.userPrefs.get('me'))?.theme_dark === '', 'the side back to its default')
     expect((await db.themes.get('th-d'))?.deleted_at).toBeGreaterThan(0)
     expect((await fields()).sort()).toEqual(['theme.deleted_at', 'user_prefs.theme_dark'])
-    const entry = (await db.assistantUndo.toArray()).pop()!
+    const entry = await undoEntry((e) => e.inverse.some((i) => i.entityId === 'th-d'))
     await undoBatch(entry.id)
     expect((await db.userPrefs.get('me'))?.theme_dark).toBe('user:th-d')
     expect((await db.themes.get('th-d'))?.deleted_at).toBeNull()

@@ -22,7 +22,7 @@ const noop = () => {}
 const label = (id: string, name: string, color: string) => ({ id, name, color, position: 0, created_at: 0, deleted_at: null, _clock: {} })
 
 function Header({ title, done = false, readOnly = false, priority = 4 }: { title: string; done?: boolean; readOnly?: boolean; priority?: 1 | 2 | 3 | 4 }) {
-  const ring = { 1: 'border-p1 bg-p1-soft', 2: 'border-p2 bg-p2-soft', 3: 'border-p3 bg-p3-soft', 4: 'border-p4' }[priority]
+  const ring = { 1: 'border-p1 bg-p1/55', 2: 'border-p2 bg-p2/25', 3: 'border-p3', 4: 'border-p4' }[priority]
   return (
     <div data-panel-header className="flex items-start gap-2 border-b border-default px-4 py-2">
       <span className="flex h-6 shrink-0 items-center">

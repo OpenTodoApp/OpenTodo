@@ -29,7 +29,9 @@ type listOptions struct {
 	inbox, today, upcoming, completed, all bool
 	someday, anytime, blocked, available   bool
 	project                                string
-	limit                                  int
+	// parent is --parent (cli-subtasks D5): only the direct subtasks of a task.
+	parent string
+	limit  int
 	// Completion range (OpenSpec change completed-date-filters, design D6).
 	completedAfter, completedBefore string
 	// todayAll is `ot today --all` (today-closed-list D7): no waiting heading.
@@ -47,6 +49,7 @@ func (o *listOptions) bind(fs *flag.FlagSet) {
 	fs.BoolVar(&o.completed, "completed", false, "completed tasks, most recent first")
 	fs.BoolVar(&o.all, "all", false, "open and completed tasks")
 	fs.StringVar(&o.project, "project", "", "tasks of one project (name or id)")
+	fs.StringVar(&o.parent, "parent", "", "only the direct subtasks of this task (id or unique id prefix)")
 	fs.BoolVar(&o.someday, "someday", false, "open tasks parked in Someday")
 	fs.BoolVar(&o.anytime, "anytime", false, "open tasks with no due date, deadline or start")
 	fs.BoolVar(&o.blocked, "blocked", false, "open tasks waiting for an open task")
@@ -218,7 +221,15 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 		}
 		tasks = completedBetween(all, projects, selected, after, before)
 	} else {
-		tasks = filterTasks(all, projects, view, selected, today)
+		me := ""
+		if view == "today" || view == "upcoming" {
+			u, err := c.me(ctx)
+			if err != nil {
+				return err
+			}
+			me = u.ID
+		}
+		tasks = filterTasks(all, projects, view, selected, today, me)
 	}
 	if planning != "" {
 		var available func(task) bool
@@ -235,6 +246,11 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 	}
 	if wantSector != "" {
 		tasks = filterSector(tasks, wantSector, today)
+	}
+	if o.parent != "" {
+		if tasks, err = filterParent(tasks, all, o.parent); err != nil {
+			return err
+		}
 	}
 	// One workspace's tasks (workspaces); a named project is shown wherever it is.
 	if view != "project" {
@@ -275,7 +291,8 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 		a.renderTasks(waiting, projects, all, today)
 		return nil
 	}
-	a.renderTable(tasks, projects, all, today, scores)
+	rows, titles := listTree(view, byScore, tasks, all)
+	a.renderTable(rows, projects, all, today, scores, titles)
 	return nil
 }
 
@@ -422,6 +439,8 @@ type taskFlags struct {
 	remind  stringList
 	natural bool
 	lang    string
+	// links are the URLs a --natural title named (quick-add-links), attached after the task.
+	links []string
 	// done is --done (today-closed-list D6): log a win, created already completed.
 	done bool
 	// fresh is --new (reusable-lists D6): never reopen an item of a reusable list.
@@ -429,6 +448,10 @@ type taskFlags struct {
 	// edit only (chore-rotation D6): the people who take turns, or none.
 	rotate   string
 	noRotate bool
+	// parent is --parent (cli-subtasks): the parent task, or none on edit.
+	parent string
+	// subtasks is edit's --subtasks (cli-subtasks D3): a new project moves the subtree.
+	subtasks bool
 }
 
 func (f *taskFlags) bind(fs *flag.FlagSet, edit bool) {
@@ -436,7 +459,9 @@ func (f *taskFlags) bind(fs *flag.FlagSet, edit bool) {
 		fs.StringVar(&f.title, "title", "", "new title")
 		fs.StringVar(&f.rotate, "rotate", "", "people who take turns on a recurring task in a shared project, in order: names or emails, comma-separated")
 		fs.BoolVar(&f.noRotate, "no-rotate", false, "stop taking turns")
+		fs.BoolVar(&f.subtasks, "subtasks", false, "when the project changes, move the task's subtasks too")
 	}
+	fs.StringVar(&f.parent, "parent", "", "parent task: id or unique id prefix (edit: `none` moves to the top level)")
 	fs.StringVar(&f.project, "project", "", "project name or id (edit: `none` moves to Inbox)")
 	fs.StringVar(&f.dueWord, "due", "", "YYYY-MM-DD, today, tomorrow or a weekday (edit: `none` clears)")
 	fs.StringVar(&f.clock, "time", "", "due time HH:MM")
@@ -472,8 +497,8 @@ func (f *taskFlags) validateLocal(set map[string]bool) error {
 		}
 	}
 	if set["origin-url"] && !strings.EqualFold(f.originURL, "none") {
-		if _, err := origin.FromURL(f.originURL, ""); err != nil {
-			return usageErr("--origin-url must be an http or https URL, got %q", f.originURL)
+		if _, err := origin.FromLink(f.originURL, ""); err != nil {
+			return usageErr("--origin-url must be an http or https URL or an app link, got %q", f.originURL)
 		}
 	}
 	return nil
@@ -497,7 +522,7 @@ func (f *taskFlags) originValue() any {
 	if strings.EqualFold(f.originURL, "none") {
 		return nil
 	}
-	o, _ := origin.FromURL(f.originURL, "")
+	o, _ := origin.FromLink(f.originURL, "")
 	return o
 }
 
@@ -627,8 +652,14 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		}
 		body["labels"] = ids
 	}
+	if set["parent"] {
+		if err := addParent(ctx, c, f.parent, body); err != nil {
+			return err
+		}
+	}
 	// A task without a project goes to the chosen workspace's Inbox (workspaces).
-	if _, has := body["project_id"]; !has && a.workspaceChoice(g, t) != "" {
+	_, inWorkspace := body["workspace_id"]
+	if _, has := body["project_id"]; !has && !inWorkspace && a.workspaceChoice(g, t) != "" {
 		s, err := a.scope(ctx, c, g, t)
 		if err != nil {
 			return err
@@ -647,7 +678,7 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		phrases = nil
 		body["completed_at"] = a.Now().UnixMilli()
 	}
-	if err := markReuse(ctx, c, body, f.fresh || f.done); err != nil {
+	if err := markReuse(ctx, c, body, f.fresh || f.done || len(f.links) > 0); err != nil {
 		return err
 	}
 	raw, _, err := c.do(ctx, "POST", "/tasks"+defaultReminderQuery(body, f.noDefault || len(phrases) > 0 || f.done), body, headers)
@@ -661,6 +692,9 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		return err
 	}
 	if err := a.logSpent(ctx, c, created.ID, spent, set["idempotency-key"], *key); err != nil {
+		return err
+	}
+	if err := attachLinks(ctx, c, created.ID, f.links, f.originURL, set["idempotency-key"], *key); err != nil {
 		return err
 	}
 	if g.json {
@@ -783,8 +817,8 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if set["rotate"] && set["no-rotate"] {
 		return usageErr("pass --rotate or --no-rotate, not both")
 	}
-	if !set["title"] && !set["priority"] && !set["label"] && !set["note"] && !set["due"] && !set["time"] && !set["project"] && !set["repeat"] && !set["origin-url"] && !set["rotate"] && !set["no-rotate"] && !f.plan.any(set) {
-		return usageErr("nothing to change; pass at least one of --title, --project, --due, --time, --priority, --label, --note, --repeat, --origin-url, --deadline, --start, --evening, --span, --no-span, --part, --energy, --sector, --blocked-by, --location, --rotate, --no-rotate")
+	if !set["title"] && !set["priority"] && !set["label"] && !set["note"] && !set["due"] && !set["time"] && !set["project"] && !set["repeat"] && !set["origin-url"] && !set["rotate"] && !set["no-rotate"] && !set["parent"] && !f.plan.any(set) {
+		return usageErr("nothing to change; pass at least one of --title, --project, --parent, --due, --time, --priority, --label, --note, --repeat, --origin-url, --deadline, --start, --evening, --span, --no-span, --part, --energy, --sector, --blocked-by, --location, --rotate, --no-rotate")
 	}
 	c, _, err := a.connect(g)
 	if err != nil {
@@ -850,18 +884,36 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		}
 		patch["due"] = d.rezone(a.Now().Location())
 	}
+	if set["parent"] {
+		if err := editParent(all, t, f.parent, set["project"], patch); err != nil {
+			return err
+		}
+	}
+	return a.writeEdit(ctx, c, g, pos[0], t, patch, subtreeMoves(all, t, patch, f.subtasks), f.noDefault, set["rotate"])
+}
+
+// writeEdit sends an edit's patch, unless every value is already the current
+// one, then moves the subtree for --subtasks (cli-subtasks D3) and prints the result.
+func (a *App) writeEdit(ctx context.Context, c *client, g *globalFlags, ref string, t *task, patch map[string]any, moves []task, noDefault, rotated bool) error {
 	// Values equal to the current ones send nothing (design D5).
-	if patchIsNoop(t.Raw, patch) {
-		a.target(pos[0], t.ID, t.Title, "unchanged")
+	noop := patchIsNoop(t.Raw, patch)
+	if noop && len(moves) == 0 {
+		a.target(ref, t.ID, t.Title, "unchanged")
 		if g.json {
 			return a.printJSON(t.Raw)
 		}
 		fmt.Fprintf(a.Stdout, "unchanged  %s  %s\n", shortID(t.ID), t.Title)
 		return nil
 	}
-	a.target(pos[0], t.ID, t.Title, "")
-	var raw json.RawMessage
-	if err := c.patchJSON(ctx, "/tasks/"+t.ID+defaultReminderQuery(patch, f.noDefault), patch, &raw); err != nil {
+	raw := t.Raw
+	if !noop {
+		a.target(ref, t.ID, t.Title, "")
+		if err := c.patchJSON(ctx, "/tasks/"+t.ID+defaultReminderQuery(patch, noDefault), patch, &raw); err != nil {
+			return err
+		}
+	}
+	moved, err := a.moveSubtree(ctx, c, moves, patch["project_id"])
+	if err != nil {
 		return err
 	}
 	if g.json {
@@ -873,8 +925,14 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if patch["start"] == "someday" {
 		verb = "parked"
 	}
+	if noop {
+		verb = "unchanged"
+	}
 	fmt.Fprintf(a.Stdout, "%s  %s  %s\n", verb, shortID(updated.ID), updated.Title)
-	if set["rotate"] {
+	for _, m := range moved {
+		fmt.Fprintf(a.Stdout, "moved  %s  %s\n", shortID(m.ID), m.Title)
+	}
+	if rotated {
 		a.printTurns(ctx, c, a.Stdout, raw)
 	}
 	return nil
@@ -934,129 +992,6 @@ func idempotencyHeaders(given bool, key string) (map[string]string, error) {
 		return nil, usageErr("--idempotency-key must be 1 to 128 characters of letters, digits and . _ : -")
 	}
 	return map[string]string{"Idempotency-Key": key}, nil
-}
-
-// ---- done / reopen / rm ----
-
-func cmdDone(a *App, ctx context.Context, g *globalFlags, args []string) error {
-	return setCompleted(a, ctx, g, args, "done", true)
-}
-
-func cmdReopen(a *App, ctx context.Context, g *globalFlags, args []string) error {
-	return setCompleted(a, ctx, g, args, "reopen", false)
-}
-
-func setCompleted(a *App, ctx context.Context, g *globalFlags, args []string, name string, complete bool) error {
-	fs := a.flagSet(name, g)
-	refs, err := a.parse(g, fs, name, args)
-	if err != nil {
-		return a.helpOr(name, err)
-	}
-	if len(refs) == 0 {
-		return usageErr("usage: ot %s <ref>...", name)
-	}
-	c, _, err := a.connect(g)
-	if err != nil {
-		return err
-	}
-	all, err := c.tasks(ctx)
-	if err != nil {
-		return err
-	}
-	targets, refOf, err := resolveTaskRefs(all, refs)
-	if err != nil {
-		return err
-	}
-	var value any
-	status := "reopened"
-	if complete {
-		value = a.Now().UnixMilli()
-		status = "completed"
-	}
-	results := make([]json.RawMessage, 0, len(targets))
-	for _, t := range targets {
-		// Already in the requested state: report it, send nothing (design D5).
-		if (t.CompletedAt != nil) == complete {
-			a.target(refOf[t.ID], t.ID, t.Title, "unchanged")
-			results = append(results, withStatus(t.Raw, refOf[t.ID], "unchanged"))
-			if !g.json {
-				fmt.Fprintf(a.Stdout, "%-8s %s  %s\n", "unchanged", shortID(t.ID), t.Title)
-			}
-			continue
-		}
-		a.target(refOf[t.ID], t.ID, t.Title, status)
-		var raw json.RawMessage
-		if err := c.patchJSON(ctx, "/tasks/"+t.ID, map[string]any{"completed_at": value}, &raw); err != nil {
-			return err
-		}
-		results = append(results, withStatus(raw, refOf[t.ID], status))
-		if !g.json {
-			fmt.Fprintf(a.Stdout, "%-8s %s  %s\n", name, shortID(t.ID), t.Title)
-		}
-	}
-	if g.json {
-		if len(results) == 1 {
-			return a.printJSON(results[0])
-		}
-		return a.printRawList(results)
-	}
-	return nil
-}
-
-func cmdRm(a *App, ctx context.Context, g *globalFlags, args []string) error {
-	fs := a.flagSet("rm", g)
-	yes := fs.Bool("yes", false, "do not ask for confirmation")
-	fs.BoolVar(yes, "y", false, "do not ask for confirmation")
-	refs, err := a.parse(g, fs, "rm", args)
-	if err != nil {
-		return a.helpOr("rm", err)
-	}
-	if len(refs) == 0 {
-		return usageErr("usage: ot rm <ref>... [--yes]")
-	}
-	c, _, err := a.connect(g)
-	if err != nil {
-		return err
-	}
-	all, err := c.tasks(ctx)
-	if err != nil {
-		return err
-	}
-	targets, refOf, err := resolveTaskRefs(all, refs)
-	if err != nil {
-		return err
-	}
-	// Off a terminal or with --json, a.parse already refused without --yes.
-	if !*yes && !a.dryRun() {
-		for _, t := range targets {
-			fmt.Fprintf(a.Stderr, "  %s  %s\n", shortID(t.ID), t.Title)
-		}
-		ok, err := a.confirm(fmt.Sprintf("Delete %d task(s)?", len(targets)))
-		if err != nil {
-			return err
-		}
-		if !ok {
-			return usageErr("aborted")
-		}
-	}
-	results := make([]json.RawMessage, 0, len(targets))
-	for _, t := range targets {
-		a.target(refOf[t.ID], t.ID, t.Title, "deleted")
-		if err := c.delete(ctx, "/tasks/"+t.ID); err != nil {
-			return err
-		}
-		results = append(results, withStatus(t.Raw, refOf[t.ID], "deleted"))
-		if !g.json {
-			fmt.Fprintf(a.Stdout, "deleted  %s  %s\n", shortID(t.ID), t.Title)
-		}
-	}
-	if g.json {
-		if len(results) == 1 {
-			return a.printJSON(results[0])
-		}
-		return a.printRawList(results)
-	}
-	return nil
 }
 
 // inboxTask is the part of a task the Inbox rule reads (internal/inbox).

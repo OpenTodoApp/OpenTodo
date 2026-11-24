@@ -3,13 +3,15 @@
     <string name="app_name">OpenTodo</string>
     <string name="setup_title">Connect to your server</string>
     <string name="setup_intro">Enter the address of your OpenTodo server, the one you open in the browser.</string>
-    <string name="setup_hint">todo.example.com</string>
+    <string name="setup_address_label">Server address</string>
     <string name="setup_connect">Connect</string>
     <string name="setup_connect_anyway">Connect anyway</string>
     <string name="setup_try">Try %1$s</string>
     <string name="setup_refused">This address can\'t be used. Enter an address such as todo.example.com.</string>
     <string name="setup_needs_https">This address needs a secure connection (https).</string>
     <string name="setup_insecure">This address is on your local network and isn\'t encrypted: others on the same network could read what you send. Tap again to connect anyway.</string>
+    <string name="setup_home_only">This address only works on your home network.</string>
+    <string name="setup_home_only_link">Use OpenTodo away from home</string>
     <string name="setup_no_network">No connection. The first start needs the network; this screen tries again when it\'s back.</string>
     <string name="setup_not_opentodo">This address doesn\'t answer like an OpenTodo server. Check the address.</string>
     <string name="setup_untrusted">This phone doesn\'t trust the server\'s certificate. Ask whoever runs the server, or install their certificate authority in Android settings.</string>
@@ -42,6 +44,10 @@
     <string name="widget_empty">Nothing left for today.</string>
     <string name="widget_untitled">Task</string>
     <string name="widget_more">+ %1$d more</string>
+    <string name="widget_completed">Completed</string>
+    <string name="widget_completed_description">How many tasks you completed this week</string>
+    <string name="widget_completed_locked">Locked: today’s count only</string>
+    <string name="widget_completed_days">Completed per day: %1$s</string>
     <string name="setup_old_webview">This phone\'s Android System WebView is old (version %1$s). Update it from your app store so OpenTodo works fully.</string>
     <string name="site_bar_host">Signing in on %1$s</string>
     <string name="site_bar_close">Back to OpenTodo</string>
@@ -50,4 +56,15 @@
     <string name="setup_sign_in">Sign in here</string>
     <string name="error_sign_in">Your server is behind a login page, and signing in didn\'t continue in the app. Sign in again here.</string>
     <string name="save_failed">The file could not be saved.</string>
+    <string name="channel_focus">Focus</string>
+    <string name="focus_generic">Focus session</string>
+    <string name="focus_work">Work</string>
+    <string name="focus_work_of">Work · %1$d of %2$d</string>
+    <string name="focus_short_break">Short break</string>
+    <string name="focus_long_break">Long break</string>
+    <string name="focus_paused">Paused</string>
+    <string name="focus_pause">Pause</string>
+    <string name="focus_resume">Resume</string>
+    <string name="focus_done">Session done</string>
+    <string name="focus_break_over">Break over</string>
 </resources>

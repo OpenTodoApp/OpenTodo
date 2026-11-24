@@ -8,8 +8,10 @@
 import { useMemo } from 'react'
 import { CatalogueIcon, hueFor, Icon, isCatalogueIcon, Menu, MenuItem, MenuSeparator, StatusDot } from '../ui'
 import { t } from '../lib/i18n'
+import { assignedToSomeoneElse } from '../lib/dayLists'
 import { inboxParents, isInboxTask } from '../lib/inbox'
 import { useTasksOfEveryWorkspace } from '../lib/liveTasks'
+import { useMe } from '../lib/sharing'
 import { useSettledValue } from '../lib/useSettledValue'
 import { useProjectsOfEveryWorkspace, useWorkspaceState } from '../lib/localData'
 import { useUnreadCounts } from '../lib/feed'
@@ -56,6 +58,7 @@ function useWorkspaceCounts(): Counts {
   const tasks = useSettledValue(every)
   const today = useToday()
   const unread = useUnreadCounts()
+  const me = useMe()
   return useMemo(() => {
     const out: Counts = new Map(state.list.map((w) => [w.id, { inbox: 0, today: 0, unread: 0 }]))
     if (!tasks || state.list.length === 0) return out
@@ -66,14 +69,14 @@ function useWorkspaceCounts(): Counts {
       const c = out.get(p.taskRow(task))
       if (!c) continue
       if (isInboxTask(task, parents)) c.inbox++
-      if (inToday(task, today)) c.today++
+      if (inToday(task, today) && !assignedToSomeoneElse(task, me)) c.today++
     }
     for (const [pid, n] of unread.byProject) {
       const c = out.get(p.project(pid))
       if (c) c.unread += n
     }
     return out
-  }, [state, projects, tasks, today, unread])
+  }, [state, projects, tasks, today, unread, me])
 }
 
 /** The current workspace and its shown name, for the icon rail's picture and its tooltip. */
@@ -113,6 +116,7 @@ export function WorkspaceControl({ route, collapsed = false }: { route: Route; c
           )
         })}
         <MenuSeparator />
+        <MenuItem icon="activity" label={t('Activity')} onSelect={() => navigate({ view: 'workspace-activity', id: state.current })} data-workspace-activity />
         <MenuItem icon="plus" label={t('New workspace')} onSelect={requestNewWorkspace} data-new-workspace />
         <MenuItem icon="settings" label={t('Manage workspaces')} onSelect={() => navigate({ view: 'settings', section: 'workspaces' })} data-manage-workspaces />
       </Menu>

@@ -6,7 +6,8 @@ import { ConfirmDialog } from '../ui'
 import { ListRow } from '../ui'
 import { Notice } from '../ui'
 import { navigate } from './router'
-import { type FormEvent, lazy, Suspense, useCallback, useEffect, useState } from 'react'
+import { type FormEvent, Suspense, useCallback, useEffect, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useAction } from '../lib/useAction'
 import { useOnline } from '../lib/online'
@@ -14,7 +15,7 @@ import type { MfaPolicy, MfaStatus, TrustedDevice, User } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg, translatedMap, currentLanguage } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
-import { readJSON, writeString } from '../lib/deviceStorage'
+import { cacheMfa, readCachedMfa } from './mfaCache'
 import { relativeTime } from '../lib/dates'
 import { copyText } from '../lib/clipboard'
 
@@ -24,16 +25,6 @@ import { copyText } from '../lib/clipboard'
 // read-only while offline. The secret and recovery codes live in component
 // state only and are never stored.
 
-const STATUS_KEY = 'opentodo.mfa'
-
-export function readCachedMfa(): MfaStatus | null {
-  return readJSON<MfaStatus | null>(STATUS_KEY, null)
-}
-
-export function cacheMfa(st: MfaStatus | null) {
-  // Storage unavailable: the status is fetched again next time.
-  writeString(STATUS_KEY, st ? JSON.stringify(st) : null)
-}
 
 /** Splits a base32 secret into groups of four for typing into an app. */
 export function groupKey(secret: string): string {
@@ -317,7 +308,7 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
 export function EnrolmentGate({ user, onEnrolled, onLogout }: { user: User; onEnrolled: () => void; onLogout: () => void }) {
   const online = useOnline()
   return (
-    <div className="flex min-h-full items-center justify-center bg-canvas p-6">
+    <div className="flex min-h-full items-start justify-center bg-canvas p-6 pt-[max(1.5rem,var(--safe-top))] sm:items-center">
       <div className="w-full max-w-lg space-y-4 rounded-card border border-default bg-surface p-6 shadow-1" data-testid="enrolment-gate">{/* surface-lint-allow: the enrolment gate replaces the page */}
         <div>
           <h1 className="text-h3 font-semibold">{t('Set up two-factor authentication')}</h1>

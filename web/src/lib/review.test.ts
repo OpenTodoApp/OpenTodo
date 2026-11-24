@@ -8,7 +8,7 @@ import { applyOps, createTask, mutate, resetDeviceId, updateTask } from './ops'
 import { compute, periodFor } from './stats'
 import { undoBatch } from './undo'
 import { closeLabel, closeTheDay, seedFocus, tomorrowsTasks, daySummary, planCarryOver, type CarryDecision, type CarryTask } from './closeDay'
-import { areasOf, carryOverOf, closeDay, closedDayOf, reopenDay, dailyDue, dayClosed, yesterdaysNote, finishDailyCheck, finishReview, firstUnfinished, focusTasks, markProjectReviewed, monthlyDue, reviewAgo, reviewDue, reviewSteps, toggleFocus, walkProjects, pausedCount, type ReviewInput } from './review'
+import { areasOf, carryOverOf, closeDay, closedDayOf, reopenDay, dailyDue, dayClosed, yesterdaysNote, finishDailyCheck, finishReview, firstUnfinished, focusTasks, markProjectReviewed, monthlyDue, reviewAgo, reviewDue, reviewSteps, toggleFocus, walkCandidates, pausedCount, type ReviewInput } from './review'
 import { reviewDate, reviewEveryOf, reviewIsDue } from './reviewCadence'
 import type { Membership, Project, Task } from './types'
 import { nextMillisecond } from '../test/clock'
@@ -161,7 +161,7 @@ describe('review steps', () => {
     expect((await db.prefs.get('garage'))?.reviewed_at).toBe(7000)
     const queued = (await db.outbox.toArray()).map(({ entity, entityId, field, value }) => ({ entity, entityId, field, value }))
     expect(queued).toEqual([{ entity: 'project_prefs', entityId: 'garage', field: 'reviewed_at', value: 7000 }])
-    expect(walkProjects(inputOf([], [project('garage')], [], [['garage', 7000]]))[0].reviewedAt).toBe(7000)
+    expect(walkCandidates(inputOf([], [project('garage')], [], [['garage', 7000]]))[0].reviewedAt).toBe(7000)
   })
 
   it('Look ahead lists the next seven days and is always done', () => {
@@ -473,5 +473,16 @@ describe('Close the day (close-the-day 2.1–2.4)', () => {
     const all = [...rows, task('due', { due: { date: '2026-10-15' }, priority: 2 }), task('later', { due: { date: '2026-10-16' } })]
     const decisions = new Map<string, CarryDecision>([['stay', { kind: 'keep' }], ['park', { kind: 'someday' }]])
     expect(tomorrowsTasks(decisions, carry(rows), TODAY, all).map((x) => x.id)).toEqual(['move', 'due'])
+  })
+
+  it('tomorrowsTasks: a task assigned to someone else is not offered; mine and unassigned ones are', () => {
+    const next = { date: '2026-10-15' }
+    const all = [task('theirs', { due: next, assignee_id: 'ana' }), task('mine', { due: next, assignee_id: 'me', priority: 1 }), task('free', { due: next, priority: 2 })]
+    expect(tomorrowsTasks(new Map(), [], TODAY, all, 'me').map((x) => x.id)).toEqual(['mine', 'free'])
+  })
+
+  it('daySummary: a task assigned to someone else is not unfinished; mine and unassigned ones are', () => {
+    const tasks = [task('theirs', { due: { date: TODAY }, assignee_id: 'ana' }), task('mine', { due: { date: TODAY }, assignee_id: 'me' }), task('free', { due: { date: TODAY } })]
+    expect(daySummary(sumInput(tasks), null).unfinished.map((x) => x.task.id).sort()).toEqual(['free', 'mine'])
   })
 })

@@ -8,22 +8,62 @@
 // leaves (web-app "Overlay motion", motion-v2 D5); under reduced motion it only fades.
 import { useEffect, useRef, useState } from 'react'
 import { Icon, Tooltip, ToastRegion, useToastClearance } from '../../ui'
-import { undoBatch, undoTaskCount } from '../../lib/undo'
+import { redoBatch, undoBatch, undoTaskCount, type StepOptions, type UndoResult } from '../../lib/undo'
+import { useUndoHistory } from '../../lib/undoHistory'
 import { cancelDepartures, emphasisMs, noMotion, withListTransition } from '../motion'
-import { ACTION_TOAST_MS, hideBulkToast, updateBulkToast, useBulkToast, useToastTimer, type BulkToast } from './toastStore'
+import { ACTION_TOAST_MS, bulkToast, hideBulkToast, showBulkToast, updateBulkToast, useBulkToast, useToastTimer, type BulkToast } from './toastStore'
 import { useShortcutScope } from '../shortcuts'
 import { t } from '../../lib/i18n'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 
 export const TOAST_MS = 10_000
 
-export async function undoToast(undoId: string): Promise<void> {
+/** A batch's own label without its final full stop, so the feedback adds exactly one. */
+const stepName = (label: string) => label.trim().replace(/[.!?。！？]+$/u, '')
+
+/**
+ * What an undo or redo says it did (undo-history "Descriptive feedback"): the step's name
+ * when the batch recorded one ("Undone: 3 tasks completed."), else how much it restored,
+ * then anything it kept because it changed again since.
+ */
+function stepMessage(r: UndoResult, redo: boolean): string {
+  const base = r.label
+    ? (redo ? t('Redone: {step}.', { step: stepName(r.label) }) : t('Undone: {step}.', { step: stepName(r.label) }))
+    : r.restored === 1 && r.skipped.length === 0
+      ? (redo ? t('Redone.') : t('Undone.'))
+      : (redo ? t('Redone: {n} restored.', { n: r.restored }) : t('Undone: {n} restored.', { n: r.restored }))
+  return r.skipped.length ? `${base} ${t('Kept because they were changed again since: {items}.', { items: r.skipped.join(', ') })}` : base
+}
+
+export async function undoToast(undoId: string, opts: StepOptions = {}): Promise<void> {
   // Undo during a completion sequence keeps the row in place (motion-v2 D2).
   cancelDepartures()
+  // Redoable the instant the undo starts, so Ctrl+Shift+Z fires without waiting for the list
+  // transition or the live query (#1488); the id is known upfront.
+  updateBulkToast({ redoId: undoId })
   // The rows Undo brings back or moves slide into place, up to the cap (motion-v2 D4).
-  const r = await withListTransition(await undoTaskCount(undoId), () => undoBatch(undoId))
-  const base = r.restored === 1 && r.skipped.length === 0 ? t('Undone.') : t('Undone: {n} restored.', { n: r.restored })
-  updateBulkToast({ undoId: null, result: r.skipped.length ? `${base} ${t('Kept because they were changed again since: {items}.', { items: r.skipped.join(', ') })}` : base })
+  const r = await withListTransition(await undoTaskCount(undoId), () => undoBatch(undoId, opts))
+  // A keyboard step that moved on to the next batch offers that batch's redo.
+  if (r.id && r.id !== undoId) updateBulkToast({ redoId: r.id })
+  const message = stepMessage(r, false)
+  // The toast is still up (the button was used): show the result and keep the redo offer.
+  // The toast is gone (a keyboard or palette undo past its deadline): a fresh message with
+  // no button and no new deadline, so the change is never silent (undo-history D7).
+  if (bulkToast()) updateBulkToast({ undoId: null, result: message })
+  else showBulkToast(message, null, { ttl: ACTION_TOAST_MS })
+}
+
+/** Redo (multi-step undo/redo, #1488): re-applies the batch undone last, with the same motion and feedback as Undo. */
+export async function redoToast(redoId: string, opts: StepOptions = {}): Promise<void> {
+  cancelDepartures()
+  // Undoable again the instant the redo starts (and its Undo control returns), so Ctrl+Z fires at once.
+  updateBulkToast({ undoId: redoId, redoId: null })
+  const r = await withListTransition(await undoTaskCount(redoId), () => redoBatch(redoId, opts))
+  if (r.id && r.id !== redoId) updateBulkToast({ undoId: r.id })
+  const message = stepMessage(r, true)
+  // Keep the undo offer on a toast that is still up; otherwise a fresh button-less message.
+  if (bulkToast()) updateBulkToast({ result: message })
+  else showBulkToast(message, null, { ttl: ACTION_TOAST_MS })
 }
 
 const TOAST_CLASS = 'ui-toast pointer-events-auto flex items-center gap-3 rounded-control border border-default bg-surface px-3 py-2 text-body shadow-2'
@@ -70,7 +110,17 @@ export function UndoToast() {
   const leaving = useLeaving(toast)
   const side = useToastClearance(region, !!toast)
   const undoId = toast?.undoId ?? null
-  useShortcutScope('global', { 'global.undo-bulk': () => { if (!undoId) return false; void undoToast(undoId) } }, { enabled: !!undoId })
+  const history = useUndoHistory()
+  // Multi-step undo/redo (#1488): Ctrl/⌘+Z and Ctrl/⌘+Shift+Z (and Ctrl+Y) reach the whole
+  // batch log, not only the batch this toast shows. The toast's undoId/redoId are synchronous
+  // fallbacks, so each direction fires the instant the offer appears, before the live query catches up.
+  // Either may be stale on a fast second press, so the step reads the stack as it stands (`latest`).
+  const undoTop = history.undo?.id ?? undoId
+  const redoTop = history.redo?.id ?? toast?.redoId ?? null
+  useShortcutScope('global', {
+    'global.undo': () => { if (!undoTop) return false; void undoToast(undoTop, { latest: true }) },
+    'global.redo': () => { if (!redoTop) return false; void redoToast(redoTop, { latest: true }) },
+  }, { enabled: !!(undoTop || redoTop) })
   if (!toast) {
     // The toast that just closed fades out; it takes no input.
     return leaving && (

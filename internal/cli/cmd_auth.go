@@ -43,13 +43,15 @@ func cmdLogin(a *App, ctx context.Context, g *globalFlags, args []string) error 
 	tokenName := "cli@" + a.Hostname
 	if a.dryRun() {
 		// Nothing is prompted or sent: check that the server answers, then
-		// show the three requests a real sign-in makes.
+		// show the requests a real sign-in makes (the second-factor step only
+		// happens for an account with two-factor authentication).
 		c := newClient(serverURL, "")
 		if _, _, err := c.do(ctx, "GET", "/auth/status", nil, nil); err != nil {
 			return err
 		}
 		plan := a.gate.dry
 		plan.add("POST", "/auth/login", map[string]string{"email": strings.TrimSpace(*email), "password": "(prompted, never shown)"}, nil)
+		plan.add("POST", "/auth/mfa", map[string]string{"challenge": "(only with two-factor authentication)", "code": "(prompted, never shown)"}, nil)
 		plan.add("POST", "/tokens", map[string]string{"name": tokenName}, nil)
 		plan.add("POST", "/auth/logout", nil, nil)
 		a.localChange(fmt.Sprintf("store the new token in profile %q of %s", name, a.ConfigPath))
@@ -74,10 +76,30 @@ func cmdLogin(a *App, ctx context.Context, g *globalFlags, args []string) error 
 
 	c := newClient(serverURL, "")
 	var login struct {
-		User user `json:"user"`
+		User        user   `json:"user"`
+		MFARequired bool   `json:"mfaRequired"`
+		Challenge   string `json:"challenge"`
 	}
 	if err := c.postJSON(ctx, "/auth/login", map[string]string{"email": *email, "password": password}, &login); err != nil {
 		return err
+	}
+	if login.MFARequired && c.cookie == nil {
+		// An account with two-factor authentication: the password step answers a
+		// challenge instead of a session, completed with the authenticator's code
+		// or one of the recovery codes (POST /api/v1/auth/mfa).
+		// Read like the password: a recovery code is the stronger secret and should
+		// not stay on screen.
+		answer, err := a.ReadPassword("Two-factor code (or a recovery code): ")
+		if err != nil {
+			return usageErr("reading the two-factor code: %v", err)
+		}
+		body, ok := secondFactorBody(login.Challenge, answer)
+		if !ok {
+			return usageErr("a two-factor code or a recovery code is required")
+		}
+		if err := c.postJSON(ctx, "/auth/mfa", body, &login); err != nil {
+			return err
+		}
 	}
 	if c.cookie == nil {
 		return serverErr("server did not start a session (is %s an OpenTodo server?)", serverURL)
@@ -364,4 +386,19 @@ func authLogout(a *App, ctx context.Context, g *globalFlags, args []string) erro
 		fmt.Fprintln(a.Stdout, ". Nothing stored locally for this profile (token came from the environment).")
 	}
 	return nil
+}
+
+// secondFactorBody is the POST /auth/mfa body for what was typed at the
+// two-factor prompt: six digits (spaces allowed) are an authenticator code,
+// anything else a recovery code, sent as typed for the server to normalise.
+func secondFactorBody(challenge, answer string) (map[string]string, bool) {
+	answer = strings.TrimSpace(answer)
+	if answer == "" {
+		return nil, false
+	}
+	digits := strings.NewReplacer(" ", "", "-", "").Replace(answer)
+	if len(digits) == 6 && strings.Trim(digits, "0123456789") == "" {
+		return map[string]string{"challenge": challenge, "code": digits}, true
+	}
+	return map[string]string{"challenge": challenge, "recoveryCode": answer}, true
 }

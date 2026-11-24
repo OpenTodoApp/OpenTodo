@@ -3,13 +3,15 @@
     <string name="app_name">OpenTodo</string>
     <string name="setup_title">Conéctate a tu servidor</string>
     <string name="setup_intro">Escribe la dirección de tu servidor OpenTodo, la que abres en el navegador.</string>
-    <string name="setup_hint">todo.example.com</string>
+    <string name="setup_address_label">Dirección del servidor</string>
     <string name="setup_connect">Conectar</string>
     <string name="setup_connect_anyway">Conectar de todos modos</string>
     <string name="setup_try">Probar %1$s</string>
     <string name="setup_refused">Esta dirección no se puede usar. Escribe una dirección como todo.example.com.</string>
     <string name="setup_needs_https">Esta dirección necesita una conexión segura (https).</string>
     <string name="setup_insecure">Esta dirección está en tu red local y no está cifrada: otras personas en la misma red podrían leer lo que envías. Toca de nuevo para conectar de todos modos.</string>
+    <string name="setup_home_only">Esta dirección solo funciona en la red de tu casa.</string>
+    <string name="setup_home_only_link">Usar OpenTodo fuera de casa</string>
     <string name="setup_no_network">Sin conexión. El primer inicio necesita la red; esta pantalla lo vuelve a intentar cuando vuelva.</string>
     <string name="setup_not_opentodo">Esta dirección no responde como un servidor OpenTodo. Revisa la dirección.</string>
     <string name="setup_untrusted">Este teléfono no confía en el certificado del servidor. Pregunta a quien gestiona el servidor o instala su autoridad de certificación en los ajustes de Android.</string>
@@ -42,6 +44,10 @@
     <string name="widget_empty">No queda nada para hoy.</string>
     <string name="widget_untitled">Tarea</string>
     <string name="widget_more">+ %1$d más</string>
+    <string name="widget_completed">Completadas</string>
+    <string name="widget_completed_description">Cuántas tareas completaste esta semana</string>
+    <string name="widget_completed_locked">Bloqueado: solo el número de hoy</string>
+    <string name="widget_completed_days">Completadas por día: %1$s</string>
     <string name="setup_old_webview">El Android System WebView de este teléfono es antiguo (versión %1$s). Actualízalo desde la tienda de apps para que OpenTodo funcione por completo.</string>
     <string name="site_bar_host">Iniciando sesión en %1$s</string>
     <string name="site_bar_close">Volver a OpenTodo</string>
@@ -50,4 +56,15 @@
     <string name="setup_sign_in">Iniciar sesión aquí</string>
     <string name="error_sign_in">Tu servidor está detrás de una página de inicio de sesión y el inicio de sesión no continuó en la app. Vuelve a iniciar sesión aquí.</string>
     <string name="save_failed">No se pudo guardar el archivo.</string>
+    <string name="channel_focus">Foco</string>
+    <string name="focus_generic">Sesión de foco</string>
+    <string name="focus_work">Trabajo</string>
+    <string name="focus_work_of">Trabajo · %1$d de %2$d</string>
+    <string name="focus_short_break">Descanso corto</string>
+    <string name="focus_long_break">Descanso largo</string>
+    <string name="focus_paused">En pausa</string>
+    <string name="focus_pause">Pausar</string>
+    <string name="focus_resume">Reanudar</string>
+    <string name="focus_done">Sesión terminada</string>
+    <string name="focus_break_over">Descanso terminado</string>
 </resources>

@@ -1,0 +1,71 @@
+{
+  "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users('me')/todo/lists",
+  "value": [
+    {
+      "@odata.etag": "W/\"etag-list-shared\"",
+      "displayName": "Family",
+      "isOwner": false,
+      "isShared": true,
+      "wellknownListName": "none",
+      "id": "family",
+      "tasks": [
+        { "@odata.etag": "W/\"etag-1\"", "id": "notes", "title": "Outlook notes", "importance": "normal", "status": "inProgress",
+          "isReminderOn": false, "hasAttachments": false, "categories": ["Red category", "Errands", "errands"],
+          "createdDateTime": "2026-10-01T08:00:00.0000000Z", "lastModifiedDateTime": "2026-10-02T08:00:00.0000000Z",
+          "body": { "contentType": "html", "content": "<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<style type=\"text/css\" style=\"display:none;\">\r\nP {margin-top:0;margin-bottom:0;}\r\n</style>\r\n<title>Ignored</title>\r\n</head>\r\n<body dir=\"ltr\">\r\n<div>Bring:</div><ul><li>Bread</li><li>Milk &lt;2 litres&gt;</li></ul><!-- a comment --><script>alert(1)</script><div>&nbsp;</div><div>Done.</div>\r\n</body>\r\n</html>\r\n" },
+          "checklistItems": [], "linkedResources": [] },
+        { "id": "waiting", "title": "Waiting on others", "importance": "normal", "status": "waitingOnOthers", "isReminderOn": false,
+          "body": { "contentType": "text", "content": "" } },
+        { "id": "deferred", "title": "Deferred", "importance": "low", "status": "deferred", "isReminderOn": false },
+        { "id": "odd-status", "title": "Odd status", "importance": "normal", "status": "paused", "isReminderOn": false }
+      ]
+    },
+    {
+      "displayName": "Repeats",
+      "isOwner": true,
+      "isShared": false,
+      "wellknownListName": "none",
+      "id": "repeats",
+      "tasks": [
+        { "id": "fortnight", "title": "Bins", "importance": "normal", "status": "notStarted", "isReminderOn": false,
+          "dueDateTime": { "dateTime": "2026-11-02T00:00:00.0000000", "timeZone": "UTC" },
+          "recurrence": { "pattern": { "type": "weekly", "interval": 2, "month": 0, "dayOfMonth": 0, "daysOfWeek": ["monday", "thursday"], "firstDayOfWeek": "sunday", "index": "first" },
+            "range": { "type": "endDate", "startDate": "2026-11-02", "endDate": "2027-06-30", "recurrenceTimeZone": "UTC", "numberOfOccurrences": 0 } } },
+        { "id": "fortnight-sunday", "title": "Church rota", "importance": "normal", "status": "notStarted", "isReminderOn": false,
+          "dueDateTime": { "dateTime": "2026-11-02T00:00:00.0000000", "timeZone": "UTC" },
+          "recurrence": { "pattern": { "type": "weekly", "interval": 2, "daysOfWeek": ["sunday", "monday"], "firstDayOfWeek": "sunday", "index": "first" },
+            "range": { "type": "noEnd", "startDate": "2026-11-02" } } },
+        { "id": "workday", "title": "Payroll", "importance": "normal", "status": "notStarted", "isReminderOn": false,
+          "dueDateTime": { "dateTime": "2026-11-30T00:00:00.0000000", "timeZone": "UTC" },
+          "recurrence": { "pattern": { "type": "relativeMonthly", "interval": 1, "daysOfWeek": ["monday", "tuesday", "wednesday", "thursday", "friday"], "index": "last", "firstDayOfWeek": "sunday" },
+            "range": { "type": "noEnd" } } },
+        { "id": "quarterly", "title": "Quarterly report", "importance": "normal", "status": "notStarted", "isReminderOn": false,
+          "dueDateTime": { "dateTime": "2026-12-01T00:00:00.0000000", "timeZone": "UTC" },
+          "recurrence": { "pattern": { "type": "absoluteMonthly", "interval": 3, "dayOfMonth": 1, "index": "first" }, "range": { "type": "noEnd" } } },
+        { "id": "birthday", "title": "Birthday", "importance": "normal", "status": "notStarted", "isReminderOn": false,
+          "dueDateTime": { "dateTime": "2026-11-04T00:00:00.0000000", "timeZone": "UTC" },
+          "recurrence": { "pattern": { "type": "absoluteYearly", "interval": 1, "month": 11, "dayOfMonth": 4, "index": "first" }, "range": { "type": "noEnd" } } },
+        { "id": "thanksgiving", "title": "Thanksgiving", "importance": "normal", "status": "notStarted", "isReminderOn": false,
+          "dueDateTime": { "dateTime": "2026-11-26T00:00:00.0000000", "timeZone": "UTC" },
+          "recurrence": { "pattern": { "type": "relativeYearly", "interval": 1, "month": 11, "daysOfWeek": ["thursday"], "index": "fourth" }, "range": { "type": "numbered", "numberOfOccurrences": 5 } } },
+        { "id": "done-repeat", "title": "Done repeat", "importance": "normal", "status": "completed", "isReminderOn": false,
+          "completedDateTime": { "dateTime": "2026-10-26T00:00:00.0000000", "timeZone": "UTC" },
+          "dueDateTime": { "dateTime": "2026-10-26T00:00:00.0000000", "timeZone": "UTC" },
+          "recurrence": { "pattern": { "type": "weekly", "interval": 1, "daysOfWeek": ["monday"] }, "range": { "type": "noEnd" } } }
+      ]
+    },
+    {
+      "displayName": "Flagged email",
+      "isOwner": true,
+      "isShared": false,
+      "wellknownListName": "flaggedEmails",
+      "id": "flagged",
+      "tasks": [
+        { "id": "mail", "title": "Reply to Sam", "importance": "normal", "status": "notStarted", "isReminderOn": false, "hasAttachments": true,
+          "createdDateTime": "2026-10-20T12:00:00.0000000Z",
+          "checklistItems": [ { "id": "step", "displayName": "Find the invoice", "isChecked": true, "createdDateTime": "2026-10-20T12:00:00Z", "checkedDateTime": "2026-10-21T09:30:00Z" } ],
+          "linkedResources": [ { "id": "lr", "webUrl": "https://outlook.office365.com/owa/?ItemID=AAMk1&exvsurl=1&viewmodel=ReadMessageItem", "applicationName": "Outlook", "displayName": "Invoice", "externalId": "AAMk1" } ] }
+      ]
+    }
+  ]
+}

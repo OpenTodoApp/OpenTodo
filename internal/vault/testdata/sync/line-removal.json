@@ -627,7 +627,19 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "b1ee0f25bbc0b8e849d985de9c0116fea69747d78425bd6ad8c29f6e8b892879"
+              "hash": "b1ee0f25bbc0b8e849d985de9c0116fea69747d78425bd6ad8c29f6e8b892879",
+              "size": 169,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "88de01b6f5dd053b",
+                "782f8ce87c0cb4b0",
+                "9c95501b08549954",
+                "b1ee0f25bbc0b8e8"
+              ]
             },
             "Inbox.md": {
               "project": "",
@@ -909,7 +921,19 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "478679fa3ec884dc67ab9d1cad07358a72ca38b0efb9d420461838f34e9ca84e"
+              "hash": "478679fa3ec884dc67ab9d1cad07358a72ca38b0efb9d420461838f34e9ca84e",
+              "size": 184,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "88de01b6f5dd053b",
+                "782f8ce87c0cb4b0",
+                "9c95501b08549954",
+                "478679fa3ec884dc"
+              ]
             },
             "Inbox.md": {
               "project": "",
@@ -944,73 +968,36 @@
         }
       ],
       "want": {
-        "pushed": [
-          {
-            "id": "v-1cb2335bd829c82c0326cf18c70ac9ffcdd3aa79",
-            "entity": "task",
-            "entityId": "t-old",
-            "field": "deleted_at",
-            "value": 1793610180000,
-            "ts": 1793610180000,
-            "device": "vault:vectors"
-          },
-          {
-            "id": "v-b0353267232e9517b16fa7e87e3828621a3b0dfb",
-            "entity": "task",
-            "entityId": "t-sub",
-            "field": "deleted_at",
-            "value": 1793610180000,
-            "ts": 1793610180001,
-            "device": "vault:vectors"
-          }
-        ],
+        "pushed": [],
         "files": {
-          "Home.md": "---\nopentodo-id: p-home\nopentodo-color: \"#22c55e\"\n---\n\n- [ ] Water plants 🔺 🆔 t-keep\n",
+          "Home.md": "---\nopentodo-id: p-home\nopentodo-color: \"#22c55e\"\n---\n\n",
           "Inbox.md": ""
         },
         "report": {
-          "written": 1,
+          "written": 0,
           "created": 0,
           "updated": 0,
-          "trashed": 2,
+          "trashed": 0,
           "conflicts": 0,
           "warnings": [],
-          "cursor": 44,
+          "cursor": 42,
           "events": [
             {
-              "kind": "restored",
+              "kind": "skipped",
               "file": "Home.md",
-              "task": "t-keep",
-              "text": "\"Water plants\" changed in the app, so its line was written back to Home.md"
-            },
-            {
-              "kind": "trashed",
-              "file": "Home.md",
-              "task": "t-old",
-              "text": "trashed \"Old idea\""
-            },
-            {
-              "kind": "trashed",
-              "file": "Home.md",
-              "task": "t-sub",
-              "text": "trashed \"Sub idea\""
-            },
-            {
-              "kind": "written",
-              "file": "Home.md",
-              "text": "wrote Home.md"
+              "text": "skipped Home.md: it ends short of what was written, as while a file is being saved; the next sync reads it"
             }
           ],
           "projects": 1,
-          "tasks": 1
+          "tasks": 4
         },
         "state": {
           "version": 2,
           "device": "vault:vectors",
           "profile": "default",
           "server": "https://todo.example.com",
-          "cursor": 44,
-          "clock": 1793610180001,
+          "cursor": 42,
+          "clock": 1793610130001,
           "offset": 0,
           "store": {
             "project": {
@@ -1149,9 +1136,9 @@
                   "d": "app"
                 },
                 "deleted_at": {
-                  "v": 1793610180000,
-                  "t": 1793610180000,
-                  "d": "vault:vectors"
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
                 },
                 "labels": {
                   "v": [],
@@ -1191,9 +1178,225 @@
                   "d": "app"
                 },
                 "deleted_at": {
-                  "v": 1793610180000,
-                  "t": 1793610180001,
-                  "d": "vault:vectors"
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": "t-old",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Sub idea",
+                  "t": 1793606400003,
+                  "d": "app"
+                }
+              }
+            }
+          },
+          "held": {
+            "project": {
+              "p-home": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Home",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                }
+              }
+            },
+            "task": {
+              "t-done": {
+                "completed_at": {
+                  "v": 1793610000000,
+                  "t": 1793610070001,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 3000,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Done thing",
+                  "t": 1793606400005,
+                  "d": "app"
+                }
+              },
+              "t-keep": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Water plants",
+                  "t": 1793606400004,
+                  "d": "app"
+                }
+              },
+              "t-old": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Old idea",
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              },
+              "t-sub": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
                 },
                 "labels": {
                   "v": [],
@@ -1231,7 +1434,20 @@
           "files": {
             "Home.md": {
               "project": "p-home",
-              "hash": "94fc9ec38f9351ac96032f69e6fc3fc301c19aac1a6c48349ff01d9cecaa1425"
+              "hash": "",
+              "held": 1793610180000,
+              "size": 184,
+              "prefixes": [
+                "f52d711103d50a43",
+                "6f0dd9516d5da8c5",
+                "ca26f05c8159f208",
+                "1087a64bb47ccca8",
+                "60d8179fabd554d6",
+                "88de01b6f5dd053b",
+                "782f8ce87c0cb4b0",
+                "9c95501b08549954",
+                "478679fa3ec884dc"
+              ]
             },
             "Inbox.md": {
               "project": "",
@@ -1239,7 +1455,10 @@
             }
           },
           "printed": {
-            "t-keep": "Home.md"
+            "t-done": "Home.md",
+            "t-keep": "Home.md",
+            "t-old": "Home.md",
+            "t-sub": "Home.md"
           },
           "initialized": true
         }

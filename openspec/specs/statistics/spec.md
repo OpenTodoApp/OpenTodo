@@ -258,7 +258,7 @@ The device SHALL work out one health word per live, unarchived project from the 
 - **THEN** they show the same health word and detail for every project, and only the "Updated" phrase may differ by the minute
 
 ### Requirement: Areas in project health
-For a project whose flow is Area (project-flow "Areas"), project health SHALL skip the Quiet rule: an area with open tasks and no Late or Overdue task SHALL read On track however long it has not changed. Its progress SHALL not be computed or shown; the All projects page SHALL show "Area" in its progress cell and SHALL sort areas after projects with a progress when sorting by progress. Late and Overdue SHALL apply as for any project. Like all health, this SHALL be computed on the device, offline, with no write, and SHALL follow a flow change synced from another device without a reload.
+For a project whose flow is Area (project-flow "Areas"), project health SHALL skip the Quiet rule: an area with open tasks and no Late or Overdue task SHALL read On track however long it has not changed. Its progress SHALL not be computed or shown; the All projects page SHALL show "Area" in its progress cell and SHALL sort areas after projects with a progress when sorting by progress. Late and Overdue SHALL apply as for any project. A reusable list (reusable-lists "Reusable list mode") is restocked rather than finished, so its progress SHALL not be shown either: its progress cell SHALL stay empty, it SHALL sort with the projects that have no progress, and its health SHALL follow the rules of any project; its tasks still count in a folded parent's progress. Like all health, this SHALL be computed on the device, offline, with no write, and SHALL follow a flow change synced from another device without a reload.
 
 #### Scenario: A quiet area is fine
 - **WHEN** the area "Home" has open tasks, none overdue or late, and no change for 30 days
@@ -267,6 +267,10 @@ For a project whose flow is Area (project-flow "Areas"), project health SHALL sk
 #### Scenario: Overdue in an area
 - **WHEN** an open task of the area "Home" was due yesterday
 - **THEN** its health is Overdue with the count, as for any project
+
+#### Scenario: A reusable list has no progress
+- **WHEN** the reusable list "Groceries" holds two open items and fifteen ticked off on earlier trips
+- **THEN** its progress cell on the All projects page is empty and its project page shows no progress, while its health is worked out as for any project
 
 ### Requirement: Maintenance in project health
 For a project in maintenance (project-organization "Maintenance status"), project health SHALL keep the Late rule. When Late does not hold and the project has an open task, its health word SHALL be "Maintenance" in place of Overdue, Quiet and On track, with no detail. Its progress SHALL be computed and shown as for any project. When sorting the All projects page by health, Maintenance SHALL rank after On track and before projects with nothing open. Like all health, this SHALL be computed on the device from local rows, offline, with no write, the same on every synced device, and SHALL follow a status change synced from another member without a reload.
@@ -282,3 +286,26 @@ For a project in maintenance (project-organization "Maintenance status"), projec
 #### Scenario: End maintenance
 - **WHEN** another member ends maintenance on "Garden" and this device syncs
 - **THEN** its health reads Overdue again without a reload
+
+### Requirement: Period choice on a phone
+Below 768 px the Statistics screen SHALL have one row between the shell's bar and the tiles. The row SHALL start with one button that shows the chosen period's name and opens this week, this month, this quarter, this year and last week as a menu, the chosen one announced as checked, and SHALL end with the screen's menu. The period button's accessible name SHALL contain the period it shows, it SHALL be the first focusable control of the page, and its menu SHALL follow the menu keyboard model (arrow keys, Enter, Escape returning focus to the button). Choosing a period SHALL update the dashboard and be remembered on the device as before. Both controls SHALL be at least 44 × 44 px on a touch screen, and the row SHALL stay one row at 360 px in every interface language. From 768 px the period chooser SHALL be the radio group of five, as before. The row is device chrome: it reads and writes no task data, sends nothing, and works offline like the rest of the screen; there is nothing to converge.
+
+#### Scenario: A small phone
+- **WHEN** Statistics is opened on a 360 px touch screen with this week chosen
+- **THEN** the row under the bar shows a button reading "This week" and the menu button at its end, and the tiles start directly under that row
+
+#### Scenario: Choose a period by tap
+- **WHEN** the user taps "This week" and chooses This quarter
+- **THEN** the button reads "This quarter", the tiles and panels show the quarter, and opening the menu again shows This quarter checked
+
+#### Scenario: Choose a period by keyboard
+- **WHEN** the user focuses the period button, presses Enter, ArrowDown and Enter
+- **THEN** This month is chosen and focus is back on the period button
+
+#### Scenario: Longer words
+- **WHEN** Statistics is opened at 360 px in German or Italian
+- **THEN** the period button and the menu button share one row and the page does not scroll sideways
+
+#### Scenario: Wider screens
+- **WHEN** Statistics is opened on a 768 px or a 1280 px screen
+- **THEN** the header shows the five periods as a radio group and the arrow keys change the period, as before

@@ -1,6 +1,6 @@
 ---
 title: The Android app
-summary: The OpenTodo app for Android: connect it to your server, reminders without a push service, sharing, widgets and fingerprint unlock.
+summary: "The OpenTodo app for Android: connect it to your server, reminders without a push service, sharing, widgets and fingerprint unlock."
 audience: user
 section: Reference
 specs: []
@@ -13,28 +13,32 @@ The OpenTodo app for Android opens your own OpenTodo server, like the [installed
 
 ## Install the app
 
-**Install from GitHub for now.** The Google Play and F-Droid links below don't open yet: the app is still in Google Play's closed testing and waiting for its first F-Droid build. You can switch to a store later (see below).
-
-The same app comes from three places. Pick the one you already use; all three are signed with the same certificate, so updates from one install over the others.
+The app comes from Google Play or GitHub, and soon from F-Droid. Pick the one you already use:
 
 - **Google Play**: search for **OpenTodo** in the Play Store, or open [play.google.com/store/apps/details?id=app.opentodo](https://play.google.com/store/apps/details?id=app.opentodo). Play updates it by itself.
-- **F-Droid**: search for **OpenTodo** in the F-Droid app, or open [f-droid.org/packages/app.opentodo](https://f-droid.org/packages/app.opentodo/). F-Droid builds every version from the source code and publishes it only when its build matches the project's (see [below](#check-what-you-installed)), so a new version appears there a few days after the release.
+- **F-Droid** (coming: the app is waiting for its first F-Droid build): search for **OpenTodo** in the F-Droid app, or open [f-droid.org/packages/app.opentodo](https://f-droid.org/packages/app.opentodo/). F-Droid builds every version from the source code and publishes it only when its build matches the project's (see [below](#check-what-you-installed)), so a new version appears there a few days after the release.
 - **GitHub**: download `opentodo-android-<version>.apk` from the [latest release](https://github.com/OpenTodoApp/OpenTodo/releases/latest) and open it on the phone (Android asks you to allow installing from your browser or file manager once). You update it the same way; tools such as Obtainium can follow the releases for you.
 
 Release candidates (`-rc` versions) are only on GitHub, never in the stores.
 
 ### Switching between Google Play, F-Droid and GitHub
 
-Because all three carry the same certificate, you can switch without uninstalling: install the app from the other source over the one you have, and Android treats it as an update. The server, your offline copy, reminders, widgets and fingerprint unlock stay. Install a version at least as new as the one on the phone; Android refuses to go back to an older one. Afterwards, updates come from where you installed last (in the Play Store or F-Droid you may need to tap **Update** once).
+**Between GitHub and F-Droid** you can switch without uninstalling: both carry the same certificate, so install the app from the other source over the one you have, and Android treats it as an update. The server, your offline copy, reminders, widgets and fingerprint unlock stay. Install a version at least as new as the one on the phone; Android refuses to go back to an older one. Afterwards, updates come from where you installed last (in F-Droid you may need to tap **Update** once).
 
-Don't uninstall to switch: uninstalling deletes the app's data on the phone, including changes not yet synced and the fingerprint unlock key.
+**Between Google Play and GitHub or F-Droid** you have to uninstall first: Google Play signs the app with its own key, so Android won't install one over the other. Uninstalling deletes the app's data on the phone, including changes not yet synced and the fingerprint unlock key. So open the app with a connection first and let it sync, save any shared files you haven't saved yet, and turn off **Deliver instantly through UnifiedPush** if you use it. Then uninstall, install from the other source, enter your server's address and sign in again. Your tasks and reminders are on the server and come back. Unlock with your passphrase if your account is encrypted, allow notifications again, turn fingerprint unlock, UnifiedPush and location reminders back on, and add your widgets again.
 
 ### Check what you installed
 
-Every APK from Google Play, F-Droid and GitHub is signed with the certificate whose SHA-256 fingerprint is:
+The APK from GitHub and F-Droid is signed with the project's release certificate, whose SHA-256 fingerprint is:
 
 ```
 ff2eacdf7e79712e44fdd9d2e3110891e712c170ea516bd3fbbecc291072befa
+```
+
+The app from Google Play is signed by Google Play's app signing key for OpenTodo, whose SHA-256 fingerprint is:
+
+```
+e2669a539e03370b3bcae306fecf0633ac37592d83bd60c880ca50aeccc83932
 ```
 
 On a computer with the Android SDK's build tools, check a downloaded APK, or one copied from the phone with `adb shell pm path app.opentodo` and `adb pull`:
@@ -44,7 +48,9 @@ apksigner verify --print-certs opentodo-android-0.20.0.apk
 # Signer #1 certificate SHA-256 digest: ff2eacdf7e79712e44fdd9d2e3110891e712c170ea516bd3fbbecc291072befa
 ```
 
-Any other fingerprint means the APK was not signed by the OpenTodo project: don't install it.
+The app from Google Play gives the `e2669a53…` digest instead. Pulled from the phone it comes as several APKs; check `base.apk`.
+
+Any other fingerprint means the APK was not signed for the OpenTodo project: don't install it.
 
 The build is also **reproducible**: building a release's tag from the source gives the same APK apart from the signature, so you can check that the APK is exactly the published code. With a clone of the repository, JDK 17 and the Android SDK:
 
@@ -66,6 +72,8 @@ On first start the app asks for your server's address, the one you open in the b
 - **Certificate not trusted**: the phone doesn't trust the server's certificate. If your server uses its own certificate authority, install it in Android's security settings; the app trusts certificates you installed there.
 - **Address refused**: the app needs `https://`. Plain `http://` works only for addresses on your own network (such as `192.168.1.4:8080` or `nas.local`), after a warning.
 
+An address on your own network also shows **This address only works on your home network**, with a link to [reaching OpenTodo from outside your home](self-hosting/home-assistant-addon.md#reach-opentodo-from-outside-your-home). It is only a notice: the app still connects.
+
 Then sign in as usual. After that first successful open the app keeps a copy of itself on the phone and opens it offline, with the server switched off or the phone in flight mode. That includes a server at a plain http address on your own network.
 
 To use another server, long-press the app icon and choose **Change server**. This removes the current server's data from the phone (the offline copy, scheduled reminders, widget data and fingerprint unlock); changes not yet synced are lost.
@@ -76,11 +84,11 @@ If your server sits behind a login wall, such as Pangolin (with Pocket ID or its
 
 - **First start**: when the check meets the wall, the screen says the server is behind a login page. Tap **Sign in here**, sign in on the wall's page, and the app connects as soon as you're through. If the screen instead says the address answers with a web page, the wall may show its page directly; **Sign in here** works the same way.
 - **Later**: when the wall asks again (its session expired), its sign-in page opens inside the app. A bar above it names the site you are signing in on, since the app has no address bar; the **×** in the bar, or back, returns to your server. If a sign-in can't continue in the app (for example a page left open for a long time), the app says so and offers **Sign in here** to start again.
-- **Single sign-on**: OpenTodo's own **Sign in with …** button (see [Single sign-on](self-hosting/sso.md)) works the same way: the provider's page opens in the app and sends you back signed in.
+- **Single sign-on**: OpenTodo's own **Sign in with …** button (see [Single sign-on](self-hosting/sso.md)) opens the provider's page in a Custom Tab of your browser, asks you to confirm with **Continue**, and brings you back to the app signed in, so providers that refuse sign-in inside apps, such as Google, work too. Close the tab to cancel. With a server older than this, the provider's page opens inside the app instead.
 
 Only pages the sign-in leads through stay in the app; a link to another site on a sign-in page (a privacy policy, a help page) opens in your browser, like every other link. The wall's session cookie is kept, so you sign in again only when the wall's session ends. Give the wall a long session (a "remember me" option, or a longer session lifetime) so that happens rarely: while the session has expired, the app's hourly background refresh of reminders and widgets doesn't get through and simply waits until you next open the app.
 
-**Providers that refuse apps.** Some identity providers refuse to sign in inside an app's web view; Google, for example, shows "Error 403: disallowed_useragent". The app can't work around this yet. Sign in to OpenTodo with a password or a passkey instead (set a password in **Settings → Account → Security** if your account is SSO-only), or use a provider that allows it in front of the wall, or let the wall bypass the app's paths (next section).
+**Walls whose provider refuses apps.** A login wall's sign-in page stays inside the app, and some identity providers refuse to sign in inside an app's web view; Google, for example, shows "Error 403: disallowed_useragent". The app can't work around this for a wall (OpenTodo's own single sign-on uses the browser instead, above). Sign in to OpenTodo with a password or a passkey instead (set a password in **Settings → Account → Security** if your account is SSO-only), or use a provider that allows it in front of the wall, or let the wall bypass the app's paths (next section).
 
 ### Bypassing the wall instead
 
@@ -122,10 +130,14 @@ The UnifiedPush app and its server see an encrypted message, its size and its ti
 
 - The app uses Android's own proximity alerts, with no Google Play services, so it works on phones without Google.
 - It watches at most 19 places, the nearest to where you are, plus one larger circle around that spot; leaving that circle makes it pick the nearest places again.
-- Your position stays on the phone. It is never sent to your server or anyone else, never passed to the app's pages and never logged; the app keeps only the point it last picked the places from, in its private storage.
+- Your position stays on the phone. A location reminder never sends it to your server or anyone else, never passes it to the app's pages and never logs it; the app keeps only the point it last picked the places from, in its private storage.
 - A notification offers **Done** and **Dismiss**; a crossing fires at most once an hour per reminder.
 - Sign-out, locking an encrypted account and **Change server** remove every watched place.
-- **Only the app from GitHub or F-Droid has location reminders for now.** The Google Play version leaves them out, and doesn't ask for your location at all, until Google has approved the background-location use; there the setting reads "Location reminders come to the Google Play version later". To use them now, install the app from GitHub or F-Droid over the Play one ([switching keeps everything](#switching-between-google-play-f-droid-and-github)).
+- **Only the app from GitHub has location reminders for now** (and F-Droid's, once it is there). The Google Play version leaves them out, and doesn't ask for your location at all, until Google has approved the background-location use; there the setting reads "Location reminders come to the Google Play version later". To use them now, uninstall the Play version and install the app from GitHub ([how](#switching-between-google-play-f-droid-and-github)).
+
+## A task's location
+
+**Use my location** in a task's [location](locations-and-places.md) asks Android for your location the first time (precise or approximate both work), and only your server's pages get the position, once per tap; the Google Play version doesn't ask and the editor says the position was not shared. **Open in maps** opens your maps app at the point, or the point on openstreetmap.org in the browser when no maps app is installed.
 
 ## Saving files
 
@@ -139,13 +151,19 @@ The app opens on its icon over the app's background colour, light or dark with t
 
 Back closes what is open (a dialog, a sheet, a task), then goes back through the app, and leaves the app only from the screen it started on.
 
+## Focus in the notifications
+
+While a [Focus](focus.md#outside-the-app) session runs or is paused, a quiet notification shows the task, the phase (**Work · 2 of 4**, **Short break**, **Paused**) and a clock that Android keeps running by itself. A tap opens the Focus screen; **Pause** and **Resume** open the app and pause or resume the session there, so its time entry stops and starts as on the screen. At the planned end the notification gives way to **Session done** or **Break over**, on time when the app may set exact alarms and up to a few minutes late otherwise. With **Start breaks automatically** on, the break starts once you next open the app. The task's name follows the task names switch in **Settings → Notifications**, and an encrypted account shows **Focus session**. Turn the notification off with the **Focus** category in Android's notification settings for OpenTodo. Signing out and **Change server** remove it.
+
 ## Haptic feedback
 
-Completing a task and picking up a row give a short tap, with the phone's own touch feedback and no extra permission. Turn it off in **Settings → Appearance → Haptic feedback**, or for the whole phone in Android's sound and vibration settings.
+Completing a task gives a short tap, and adding a task or picking up a row a light one. Flipping a switch or choosing a segment with your finger gives a click, and a failure message a firmer buzz. It uses the phone's own touch feedback and needs no extra permission. Turn it off in **Settings → Appearance → Haptic feedback**, or for the whole phone in Android's sound and vibration settings.
+
+**Task completion sound** beside it is off by default. To hear a short cue after completing a task in the app, enable it while the phone is in Normal mode. Silent and Vibrate modes stay quiet.
 
 ## Touch
 
-Tapping does not flash, and holding a button or a tab does not select its label. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top does not drag the app. Pinch to zoom works everywhere.
+Tapping does not flash, and holding a button or a tab does not select its label. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top does not drag the app. Pinch to zoom works everywhere, unless you turn it off for this device in **Settings → Appearance → Allow pinch zoom**.
 
 ## Sharing
 
@@ -153,7 +171,7 @@ The app appears in Android's share menu for links, text, photos and files, also 
 
 ## Widgets
 
-Two home-screen widgets: **Today** shows your tasks for today with the time of the last update, and **Quick add** opens the app's quick add. The widgets show what the app last saw; open the app to refresh them. While an encrypted account is locked, the Today widget shows only counts.
+Three home-screen widgets: **Today** shows your tasks for today with the time of the last update, **Completed** shows how many tasks you completed today and a bar for each of the last 7 days (counted as in [Statistics](statistics.md), which a tap opens), and **Quick add** opens the app's quick add. The widgets show what the app last saw; open the app to refresh them. While an encrypted account is locked, the Today widget shows only counts and the Completed widget only today's number.
 
 ## Status and navigation bars
 

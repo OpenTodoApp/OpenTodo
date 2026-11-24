@@ -11,7 +11,7 @@ import { EmptyState } from '../ui'
 import { ListRow } from '../ui'
 import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
-import { api, ApiError, OIDC_START_URL, promptReauth } from '../lib/api'
+import { api, ApiError, OIDC_LINK_URL, promptReauth } from '../lib/api'
 import { errorText } from '../lib/errorText'
 import { useAction } from '../lib/useAction'
 import { useOnline } from '../lib/online'
@@ -37,12 +37,14 @@ export interface SsoForm {
   ssoOnly: boolean
   providerLogout: boolean
   syncPictures: boolean
+  trustMissingEmailVerified: boolean
 }
 
 export function formFrom(s: OidcSettings): SsoForm {
   return {
     issuer: s.issuer, clientId: s.clientId, clientSecret: '', displayName: s.displayName, scopes: s.scopes,
     allowProvision: s.allowProvision, ssoOnly: s.ssoOnly, providerLogout: s.providerLogout, syncPictures: s.syncPictures ?? false,
+    trustMissingEmailVerified: s.trustMissingEmailVerified ?? false,
   }
 }
 
@@ -51,6 +53,7 @@ export function saveInput(s: OidcSettings, f: SsoForm): OidcSettingsInput {
   const locked = (k: string) => s.managedBy[k] === 'env'
   const out: OidcSettingsInput = {
     scopes: f.scopes, allowProvision: f.allowProvision, providerLogout: f.providerLogout, syncPictures: f.syncPictures,
+    trustMissingEmailVerified: f.trustMissingEmailVerified,
   }
   if (!locked('issuer')) out.issuer = f.issuer.trim()
   if (!locked('clientId')) out.clientId = f.clientId.trim()
@@ -158,7 +161,7 @@ export function SsoPanelView(p: SsoPanelViewProps & { configuring?: boolean }) {
         onChange={(e) => p.onChange({ [key]: e.target.value } as Partial<SsoForm>)} autoComplete="off" spellCheck={false} />
     </Field>
   )
-  const toggle = (key: 'allowProvision' | 'ssoOnly' | 'providerLogout' | 'syncPictures', label: string, hint: string) => (
+  const toggle = (key: 'allowProvision' | 'ssoOnly' | 'providerLogout' | 'syncPictures' | 'trustMissingEmailVerified', label: string, hint: string) => (
     <Checkbox checked={f[key]} disabled={disabled || locked(key)} label={<>{label}{locked(key) && <Lock />}</>} description={hint}
       onChange={(e) => {
         if (key === 'ssoOnly' && e.target.checked && !f.ssoOnly) setConfirmSsoOnly(true)
@@ -175,6 +178,11 @@ export function SsoPanelView(p: SsoPanelViewProps & { configuring?: boolean }) {
           {s.ssoOnly && <Badge hue="orange">{t('SSO only')}</Badge>}
         </span>
       } control={!open && <Button ref={opener} variant="secondary" onClick={() => setOpen(true)} aria-expanded={false}>{t('Configure')}</Button>} />
+      {s.trustMissingEmailVerified && (
+        <div data-testid="sso-trust-warning">
+          <Notice tone="warning">{t('New accounts through {name} can be created without a confirmed email address. Keep this on only if people cannot choose their own address at {name}. An account created under someone else’s address can be deleted in Users and invitations.', { name })}</Notice>
+        </div>
+      )}
       {p.notice && !open && <Notice tone="success">{p.notice}</Notice>}
       {open && (
         <div className="space-y-4 py-3" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setOpen(false) } }}>
@@ -199,6 +207,8 @@ export function SsoPanelView(p: SsoPanelViewProps & { configuring?: boolean }) {
           <div className="space-y-3">
             {toggle('allowProvision', t('Allow new accounts via SSO'),
               t('Someone without an account, whose provider confirms their email, gets a member account on first sign-in. Off: only existing accounts (matched by verified email) and open sign-up.'))}
+            {toggle('trustMissingEmailVerified', t('Accept new accounts without a confirmed email'),
+              t('For providers that send no email confirmation, such as Synology SSO Server. Such a sign-in can create an account but never links to an existing one. Turn on only for a provider you control, where people cannot choose their own address.'))}
             {toggle('ssoOnly', t('Require single sign-on (SSO only)'),
               t('Members can sign in only with {name}; passwords and passkeys are refused for them. You keep your password as break-glass: open {path}. API tokens keep working.', { name, path: '/?owner=1' }))}
             {toggle('providerLogout', t('Sign out of {name} too', { name }),
@@ -263,7 +273,7 @@ export function LinkedAccountsPanel() {
   useEffect(() => {
     if (callbackError !== 'reauth_required') return
     void promptReauth().then((ok) => {
-      if (ok) location.assign(OIDC_START_URL)
+      if (ok) location.assign(OIDC_LINK_URL)
     })
   }, [callbackError])
 
@@ -323,7 +333,7 @@ export function LinkedAccountsView(p: LinkedAccountsViewProps) {
   const disabled = !p.online || p.busy
   const link = p.provider.enabled && (disabled
     ? <Button variant="secondary" disabled>{t('Link {name}', { name })}</Button>
-    : <a className="ui-btn ui-btn--secondary ui-btn--md" href={OIDC_START_URL}>{t('Link {name}', { name })}</a>)
+    : <a className="ui-btn ui-btn--secondary ui-btn--md" href={OIDC_LINK_URL}>{t('Link {name}', { name })}</a>)
   return (
     <SettingsSection {...cardCopy('linked', { variant: p.provider.enabled ? 'on' : 'off', values: { name } })} testId="linked-accounts">
       {!p.online && <Notice>{noticeCopy('linked', 'offline')}</Notice>}

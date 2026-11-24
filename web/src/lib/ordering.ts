@@ -23,9 +23,6 @@ export function compareByPosition(a: Positioned, b: Positioned): number {
   return a.position - b.position || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
 }
 
-/** Alias kept for board-view call sites. */
-export const byPosition = compareByPosition
-
 /**
  * Date-sorted views (Today, Upcoming, Assigned, filters): due date and time, then
  * priority, then the manual order as the tie-breaker (manual-ordering, "Position as
@@ -43,13 +40,6 @@ export function positionAtEnd(siblings: Iterable<Positioned>, exceptId?: string,
   let max = -Infinity
   for (const s of siblings) if (s.id !== exceptId && s.position > max) max = s.position
   return max === -Infinity ? fallback : max + GAP
-}
-
-/** A position before every sibling. */
-export function positionAtStart(siblings: Iterable<Positioned>, exceptId?: string, fallback = Date.now()): number {
-  let min = Infinity
-  for (const s of siblings) if (s.id !== exceptId && s.position < min) min = s.position
-  return min === Infinity ? fallback : min - GAP
 }
 
 /**
@@ -128,6 +118,20 @@ function spread(lower: number | null, upper: number | null, n: number, anchor: n
   return out
 }
 
+/** The index in `list` (which holds no moved item) a placement points at; -1 when its anchor is missing. */
+function placementIndex(list: Positioned[], at: Placement): number {
+  let k: number
+  if (typeof at === 'number') k = at
+  else if (at === 'top') k = 0
+  else if (at === 'bottom') k = list.length
+  else if ('before' in at) k = list.findIndex((s) => s.id === at.before)
+  else {
+    const i = list.findIndex((s) => s.id === at.after)
+    k = i < 0 ? -1 : i + 1
+  }
+  return k < 0 ? -1 : Math.max(0, Math.min(list.length, k))
+}
+
 /**
  * Plan the position writes that put `movedId` at `at` in `siblings` (its target
  * list; it may or may not already be in it). The common case is one change: the
@@ -144,39 +148,48 @@ export function planMove<T extends Positioned>(
 ): PositionChange[] | null {
   const sorted = [...siblings].sort(compareByPosition)
   const from = sorted.findIndex((s) => s.id === movedId)
-  const list = from >= 0 ? sorted.filter((s) => s.id !== movedId) : sorted
-  let k: number
-  if (typeof at === 'number') k = at
-  else if (at === 'top') k = 0
-  else if (at === 'bottom') k = list.length
-  else if ('before' in at) k = list.findIndex((s) => s.id === at.before)
-  else {
-    const i = list.findIndex((s) => s.id === at.after)
-    k = i < 0 ? -1 : i + 1
-  }
+  const k = placementIndex(from >= 0 ? sorted.filter((s) => s.id !== movedId) : sorted, at)
   if (k < 0) return null
-  k = Math.max(0, Math.min(list.length, k))
   if (from >= 0 && from === k) return []
-  if (list.length === 0) return [{ id: movedId, position: opts.fallback ?? Date.now() }]
+  return planMoveMany(siblings, [movedId], at, opts)
+}
+
+/**
+ * planMove for a block (OpenSpec change drag-ticked-together): the items `movedIds`
+ * land next to each other at `at`, in that order; any of them may already be in
+ * `siblings`, and `at` names a place among the others. Every moved item gets a
+ * position change, the first one first; the neighbours are renumbered only when
+ * the gap leaves no room. Null when the anchor is one of the moved items or missing.
+ */
+export function planMoveMany<T extends Positioned>(
+  siblings: T[], movedIds: readonly string[], at: Placement, opts: { writable?: (item: T) => boolean; fallback?: number } = {},
+): PositionChange[] | null {
+  const moved = new Set(movedIds)
+  const list = [...siblings].sort(compareByPosition).filter((s) => !moved.has(s.id))
+  const k = placementIndex(list, at)
+  if (k < 0 || movedIds.length === 0) return null
+  const m = movedIds.length
+  if (list.length === 0) return movedIds.map((id, i) => ({ id, position: (opts.fallback ?? Date.now()) + i * GAP }))
 
   const writable = opts.writable ?? (() => true)
-  // Window list[l..r] (inclusive, possibly empty) is renumbered along with the moved item.
+  // Window list[l..r] (inclusive, possibly empty) is renumbered along with the moved items.
   let l = k
   let r = k - 1
   for (;;) {
     const lower = l > 0 ? list[l - 1].position : null
     const upper = r < list.length - 1 ? list[r + 1].position : null
-    const n = r - l + 2
+    const n = r - l + 1 + m
     const pts = spread(lower, upper, n, list[0].position)
     if (pts) {
-      const ordered = [...list.slice(l, k), { id: movedId, position: NaN }, ...list.slice(k, r + 1)]
-      const out: PositionChange[] = []
+      const ordered: Positioned[] = [...list.slice(l, k), ...movedIds.map((id) => ({ id, position: NaN })), ...list.slice(k, r + 1)]
+      const mine: PositionChange[] = []
+      const others: PositionChange[] = []
       ordered.forEach((s, i) => {
-        if (s.id === movedId || s.position !== pts[i]) out.push({ id: s.id, position: pts[i] })
+        if (moved.has(s.id)) mine.push({ id: s.id, position: pts[i] })
+        else if (s.position !== pts[i]) others.push({ id: s.id, position: pts[i] })
       })
-      // The moved item first: its change is the one callers merge container fields into.
-      out.sort((a, b) => (a.id === movedId ? -1 : b.id === movedId ? 1 : 0))
-      return out
+      // The moved items first: their changes are the ones callers merge container fields into.
+      return [...mine, ...others]
     }
     // Grow towards the side with fewer window items first; a side is blocked at an
     // item that must not be rewritten.
@@ -209,11 +222,35 @@ export function planStep<T extends Positioned>(
 }
 
 /**
- * The single position that moves `id` one place up (-1) or down (+1), or null at
- * an edge or when the gap is exhausted (use planStep, which renumbers, instead).
- * Kept for board-view callers and tests.
+ * Name order (OpenSpec change sort-projects-by-name): A to Z in `locale`, numbers
+ * by value ("2" before "10", "0002" before "0010"), case and accents ignored;
+ * equal names keep their order.
  */
-export function positionForStep<T extends Positioned>(siblings: T[], id: string, delta: -1 | 1): number | null {
-  const plan = planStep(siblings, id, delta)
-  return plan && plan.length === 1 ? plan[0].position : null
+export function compareNames(locale?: string): (a: Positioned & { name: string }, b: Positioned & { name: string }) => number {
+  const collator = new Intl.Collator(locale, { numeric: true, sensitivity: 'base' })
+  return (a, b) => collator.compare(a.name.trim(), b.name.trim()) || compareByPosition(a, b)
 }
+
+/**
+ * Plan a one-time sort of `siblings` by name: the writable ones take the places
+ * they hold now, in name order, so items that must not be rewritten stay where
+ * they are. Returns only the items whose position changes.
+ */
+export function planSortByName<T extends Positioned & { name: string }>(
+  siblings: T[], opts: { writable?: (item: T) => boolean; locale?: string } = {},
+): PositionChange[] {
+  const sorted = [...siblings].sort(compareByPosition)
+  const mine = sorted.filter(opts.writable ?? (() => true))
+  let slots = mine.map((s) => s.position)
+  // Equal positions (concurrent inserts) leave no distinct places: renumber, when every item may be.
+  if (slots.some((p, i) => i > 0 && !(p > slots[i - 1]))) {
+    if (mine.length !== sorted.length) return []
+    slots = slots.map((_, i) => slots[0] + i * GAP)
+  }
+  const out: PositionChange[] = []
+  ;[...mine].sort(compareNames(opts.locale)).forEach((s, i) => {
+    if (s.position !== slots[i]) out.push({ id: s.id, position: slots[i] })
+  })
+  return out
+}
+

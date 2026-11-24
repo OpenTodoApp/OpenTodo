@@ -13,7 +13,7 @@ import { cardCopy, noticeCopy, rowCopy } from '../../lib/settingsCopy'
 import type { Profile, User } from '../../lib/types'
 import { Button, Dialog, Field, Input, Notice, SettingRow, SettingsSection } from '../../ui'
 import { PersonAvatar } from '../PersonAvatar'
-import { ACCOUNT_CHANGED_EVENT } from '../UsersPanel'
+import { ACCOUNT_CHANGED_EVENT } from '../accountChanged'
 import { PictureDialog } from './PictureDialog'
 import { readJSON, writeJSON } from '../../lib/deviceStorage'
 

@@ -5,14 +5,15 @@
 // computed on the device from the local rows, nothing is stored or sent, and the
 // page follows changes from other devices as they sync. Each move's part and the
 // pulse details are lazy chunks.
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { lazy } from '../../lib/lazy'
 import { t } from '../../lib/i18n'
 import { useAllLabels, useReviewRow, useReviewedAt, useUserPrefsRow } from '../../lib/localData'
 import { BENTO_SLOTS, orderedFocusIds, readBento, readFocusStyle } from '../../lib/bento'
 import { move as term, RHYTHMS, termName, type MoveId, type RhythmId } from '../../lib/method'
 import { nextGroups } from '../../lib/method/groups'
 import { decided, INBOX_AGE_CAUTION_DAYS, inboxAge, lastDays, nextMove, type NextStep } from '../../lib/method/pulse'
-import { MethodRules } from '../../lib/method/rules'
+import { MethodRules, type NextChoice } from '../../lib/method/rules'
 import { dailyDue, dayClosed, FOCUS_MAX, focusTasks, monthlyDue, reviewAgo, reviewDue } from '../../lib/review'
 import { compute, periodFor, sharedIds } from '../../lib/stats'
 import { qualifies } from '../../lib/triage'
@@ -45,6 +46,8 @@ export interface LoopData {
   /** The open Inbox tasks, newest first (Catch's latest captures). */
   latest: Task[]
   withoutNext: Project[]
+  /** Per project without a next action, the open tasks that may be chosen as one (choose-next-action). */
+  choices: ReadonlyMap<string, NextChoice[]>
   stalled: Project[]
   contexts: { key: string; heading: string; tasks: Task[] }[]
   nextCount: number
@@ -81,6 +84,7 @@ function useLoopData(): LoopData | null {
     const live = input.tasks.filter((x) => !x.deleted_at)
     const inboxTasks = live.filter(qualifies)
     const withoutNext = rules.working.filter((p) => rules.needsNextAction(p.id))
+    const choices = new Map(withoutNext.map((p) => [p.id, rules.nextActionChoices(p.id)]))
     const stalled = rules.working.filter((p) => rules.stalled(p.id, now))
     const contexts = nextGroups(input, labels)
     const nextCount = new Set(contexts.flatMap((g) => g.tasks.map((x) => x.id))).size
@@ -106,7 +110,7 @@ function useLoopData(): LoopData | null {
     const closedAt = review && dayClosed(review, input.today) ? review.closed_at : null
     const latest = [...inboxTasks].sort((a, b) => b.created_at - a.created_at)
     const up = nextMove({ inbox: inboxTasks.length, withoutNext: withoutNext.length, rhythm, nextCount })
-    return { inbox: inboxTasks.length, latest, withoutNext, stalled, contexts, nextCount, rhythms, closedAt, focus, room, pulse, up }
+    return { inbox: inboxTasks.length, latest, withoutNext, choices, stalled, contexts, nextCount, rhythms, closedAt, focus, room, pulse, up }
   }, [input, labels, review, prefs, reviewedAt, weekStart]) // eslint-disable-line react-hooks/exhaustive-deps -- reviewedAt: the walk's stamps change what Place counts
 }
 

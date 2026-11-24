@@ -163,6 +163,16 @@ func (s *Service) release(uid string) {
 	s.mu.Unlock()
 }
 
+// releaseJob frees the user's slot only while it is still this job's, so a job
+// freeing it a second time never frees a newer job's.
+func (s *Service) releaseJob(uid, jobID string) {
+	s.mu.Lock()
+	if s.active[uid] == jobID {
+		delete(s.active, uid)
+	}
+	s.mu.Unlock()
+}
+
 // prepare validates options and builds the plan for a file.
 func (s *Service) prepare(ctx context.Context, uid string, data []byte, opts Options, write bool) (*Plan, error) {
 	if err := opts.Normalize(); err != nil {
@@ -219,7 +229,7 @@ func (s *Service) prepare(ctx context.Context, uid string, data []byte, opts Opt
 }
 
 func (s *Service) loadState(ctx context.Context, uid, profile string) (*State, error) {
-	st := &State{Remembered: map[string]string{}, UserID: uid}
+	st := &State{Remembered: map[string][]string{}, UserID: uid}
 	for kind, dst := range map[string]*[]opsync.Entity{KindProject: &st.Projects, KindLabel: &st.Labels, KindTask: &st.Tasks,
 		KindSection: &st.Sections, KindReminder: &st.Reminders, KindView: &st.Views, KindRule: &st.Rules, KindUserPrefs: &st.UserPrefs, KindAttachment: &st.Attachments, KindTimeEntry: &st.TimeEntries, KindPlace: &st.Places, KindField: &st.Fields, KindReview: &st.Review, KindProjectPrefs: &st.ProjectPrefs, KindNote: &st.Notes, KindTheme: &st.Themes, KindObjective: &st.Objectives, KindMemory: &st.Memory} {
 		list, err := s.sync.List(ctx, uid, kind, true)
@@ -229,7 +239,8 @@ func (s *Service) loadState(ctx context.Context, uid, profile string) (*State, e
 		*dst = list
 	}
 	rows, err := s.db.QueryContext(ctx, `SELECT i.source_id, i.entity_id FROM import_items i JOIN import_jobs j ON j.id = i.job_id
-		WHERE j.user_id = ? AND j.profile = ? AND j.undone_at IS NULL AND i.source_id != '' AND i.action = 'created'`, uid, profile)
+		WHERE j.user_id = ? AND j.profile = ? AND j.undone_at IS NULL AND i.source_id != '' AND i.action = 'created'
+		ORDER BY j.created_at DESC, j.id`, uid, profile)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +250,7 @@ func (s *Service) loadState(ctx context.Context, uid, profile string) (*State, e
 		if err := rows.Scan(&src, &id); err != nil {
 			return nil, err
 		}
-		st.Remembered[src] = id
+		st.Remembered[src] = append(st.Remembered[src], id)
 	}
 	return st, rows.Err()
 }
@@ -293,7 +304,10 @@ func (s *Service) insertJob(ctx context.Context, uid string, j *Job) error {
 	return err
 }
 
-func (s *Service) finish(ctx context.Context, j *Job, status, message string) {
+// finish frees the user's slot, then stores the job's final status: a client
+// that reads it as finished can start the next import straight away.
+func (s *Service) finish(ctx context.Context, uid string, j *Job, status, message string) {
+	s.releaseJob(uid, j.ID)
 	j.Status, j.Message = status, message
 	now := s.now().UnixMilli()
 	j.FinishedAt = &now
@@ -310,7 +324,7 @@ func (s *Service) finish(ctx context.Context, j *Job, status, message string) {
 // failure never leaves half an entity behind.
 func (s *Service) run(uid string, job *Job, plan *Plan) {
 	defer s.wg.Done()
-	defer s.release(uid)
+	defer s.releaseJob(uid, job.ID)
 	ctx := context.Background()
 	tl := newTally()
 	// One summary per job, whatever its outcome (harden-server-edges).
@@ -319,7 +333,7 @@ func (s *Service) run(uid string, job *Job, plan *Plan) {
 			Message: job.Message, Totals: job.Totals, Counts: tl.counts, ProjectIDs: tl.projectIDs()})
 	}()
 	if plan.Options.Errors == "abort" && len(plan.errors) > 0 {
-		s.finish(ctx, job, StatusFailed, "aborted before writing anything: "+plan.errors[0].String())
+		s.finish(ctx, uid, job, StatusFailed, "aborted before writing anything: "+plan.errors[0].String())
 		return
 	}
 	var batch []change
@@ -341,7 +355,7 @@ func (s *Service) run(uid string, job *Job, plan *Plan) {
 		if size+len(c.fields) > opsync.MaxOpsPerRequest {
 			if err := flush(); err != nil {
 				s.log.Error("import: batch failed", "job", job.ID, "err", err)
-				s.finish(ctx, job, StatusFailed, "writing failed after "+fmt.Sprint(job.Totals.Written)+" items: "+err.Error())
+				s.finish(ctx, uid, job, StatusFailed, "writing failed after "+fmt.Sprint(job.Totals.Written)+" items: "+err.Error())
 				return
 			}
 		}
@@ -350,10 +364,10 @@ func (s *Service) run(uid string, job *Job, plan *Plan) {
 	}
 	if err := flush(); err != nil {
 		s.log.Error("import: batch failed", "job", job.ID, "err", err)
-		s.finish(ctx, job, StatusFailed, "writing failed after "+fmt.Sprint(job.Totals.Written)+" items: "+err.Error())
+		s.finish(ctx, uid, job, StatusFailed, "writing failed after "+fmt.Sprint(job.Totals.Written)+" items: "+err.Error())
 		return
 	}
-	s.finish(ctx, job, StatusDone, "")
+	s.finish(ctx, uid, job, StatusDone, "")
 }
 
 // SetBlobs lets own ZIP exports import their attachment files, within the
@@ -469,7 +483,9 @@ func (s *Service) writeBatch(ctx context.Context, uid string, job *Job, batch []
 			ops = append(ops, opsync.Op{ID: s.newID(), Entity: c.entity, EntityID: c.id, Field: f.name, Value: f.value, TS: ts, Device: Device})
 		}
 	}
-	res, err := s.sync.Apply(ctx, uid, ops)
+	// The plan's comments are bounded by MaxComments, not by the per-account
+	// comment limit (todoist-notes-comments D3).
+	res, err := s.sync.Apply(opsync.WithoutCommentLimit(ctx), uid, ops)
 	if err != nil {
 		return err
 	}
@@ -578,7 +594,7 @@ func scanJob(sc scanner) (*Job, error) {
 }
 
 // Undo tombstones every entity the job created (projects, tasks, labels,
-// sections, reminders, views), through the op log, and marks the job undone.
+// sections, reminders, views, comments), through the op log, and marks the job undone.
 // Entities the job only updated are left alone. Like deleting in the app, open
 // tasks the user later added to an undone project move to the Inbox, leave an
 // undone section, and ids of undone labels are removed from the user's other
@@ -599,7 +615,7 @@ func (s *Service) Undo(ctx context.Context, uid, id string) (*Job, error) {
 	if err != nil {
 		return nil, err
 	}
-	undoKinds := []string{KindAttachment, KindTimeEntry, KindReminder, KindTask, KindNote, KindField, KindSection, KindProject, KindLabel, KindView, KindRule, KindPlace, KindTheme, KindObjective, KindMemory}
+	undoKinds := []string{KindComment, KindAttachment, KindTimeEntry, KindReminder, KindTask, KindNote, KindField, KindSection, KindProject, KindLabel, KindView, KindRule, KindPlace, KindTheme, KindObjective, KindMemory}
 	created := map[string]map[string]bool{}
 	for _, k := range undoKinds {
 		created[k] = map[string]bool{}

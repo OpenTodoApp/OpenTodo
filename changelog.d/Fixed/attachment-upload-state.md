@@ -1,1 +1,0 @@
-- **Attachments: an upload puts right a file that is stored but reads as not uploaded.** Its author's next upload marks it uploaded again instead of answering 409.

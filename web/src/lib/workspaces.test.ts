@@ -242,5 +242,75 @@ describe('the partition on this device (task 5.1, 5.6, 5.7)', () => {
     expect(moved).not.toBe(errand)
     expect((await db.labels.get(moved))?.workspace_id).toBe('w-work')
     expect((await db.labels.get(moved))?.name).toBe('errand')
+    // Undo puts it back, not in the Trash (#1660: the move was recorded as a creation).
+    const { undoBatch } = await import('./undo')
+    await undoBatch(r.entry!.id)
+    expect(await db.projects.get(garden)).toMatchObject({ deleted_at: null })
+    expect((await db.projects.get(garden))?.workspace_id ?? null).toBeNull()
+    expect((await db.tasks.get(task))!.labels).toEqual([errand])
+  })
+
+  // #1662: the task's project picker lists every workspace's projects, grouped by
+  // workspace with the current one first; a project of another workspace moves the task
+  // there, and another workspace's "No project" moves it to that workspace's Inbox.
+  it('the project picker offers every workspace, and a pick moves the task across workspaces', async () => {
+    await twoWorkspaces()
+    const { createProject, createTask } = await import('./ops')
+    const home = await createProject({ name: 'Home' })
+    await switchTo('w-work')
+    const launch = await createProject({ name: 'Launch' })
+    await switchTo('w-p')
+    const { projectsByWorkspace, inboxKeyOf } = await import('../app/task-detail/projectsByWorkspace')
+    const state = await import('./workspaces').then((m) => m.readWorkspaceState())
+    const items = projectsByWorkspace(state, await db.projects.toArray(), {})
+    expect(items.map((i) => [i.group, i.label])).toEqual([['Personal', 'No project'], ['Personal', 'Home'], ['Work', 'No project'], ['Work', 'Launch']])
+    expect(items.find((i) => i.group === 'Work' && i.value === null)?.key).toBe(inboxKeyOf('w-work'))
+    const where = async (id: string) => {
+      const [st, projects, tasks] = await Promise.all([import('./workspaces').then((m) => m.readWorkspaceState()), db.projects.toArray(), db.tasks.toArray()])
+      return workspaceOf('task', tasks.find((x) => x.id === id)!, new Partition(st.defaultId, st.list.map((w) => w.id), projects, tasks))
+    }
+    const { moveUndoable } = await import('./undoActions')
+    const { undoBatch } = await import('./undo')
+    // A task in a project of Personal, moved to Work's project.
+    const a = await createTask({ title: 'Brief', project_id: home })
+    await moveUndoable(a, launch, 'Launch')
+    expect(await where(a)).toBe('w-work')
+    // An Inbox task of Personal, moved to Work's Inbox, and back with Undo.
+    const b = await createTask({ title: 'Call' })
+    expect(await where(b)).toBe('w-p')
+    const r = await moveUndoable(b, null, 'Work', Date.now(), 'w-work')
+    expect(r.entry).not.toBeNull()
+    expect(await db.tasks.get(b)).toMatchObject({ project_id: null, workspace_id: 'w-work' })
+    expect(await where(b)).toBe('w-work')
+    await undoBatch(r.entry!.id)
+    expect(await where(b)).toBe('w-p')
+    // The same workspace's Inbox writes nothing.
+    expect((await moveUndoable(b, null, 'Personal', Date.now(), 'w-p')).entry).toBeNull()
+  })
+
+  // #1660: a sub-project follows its root's workspace, so its own workspace_id alone
+  // left it where it was while the menu said it had moved.
+  it('moving a sub-project takes it out of its parent, with its own sub-projects and tasks', async () => {
+    await twoWorkspaces()
+    const { createProject, createTask } = await import('./ops')
+    const clients = await createProject({ name: 'Clients' })
+    const acme = await createProject({ name: 'Acme', parent_id: clients })
+    const launch = await createProject({ name: 'Launch', parent_id: acme })
+    const task = await createTask({ title: 'Brief', project_id: launch })
+    const { moveProjectToWorkspaceUndoable } = await import('./undoActions')
+    const r = await moveProjectToWorkspaceUndoable(acme, 'w-work', 'Work')
+    const where = async () => {
+      const [state, projects, tasks] = await Promise.all([import('./workspaces').then((m) => m.readWorkspaceState()), db.projects.toArray(), db.tasks.toArray()])
+      const part = new Partition(state.defaultId, state.list.map((w) => w.id), projects, tasks)
+      const of = (id: string) => workspaceOf('project', projects.find((p) => p.id === id)!, part)
+      return { clients: of(clients), acme: of(acme), launch: of(launch), task: workspaceOf('task', tasks.find((x) => x.id === task)!, part) }
+    }
+    expect(await where()).toEqual({ clients: 'w-p', acme: 'w-work', launch: 'w-work', task: 'w-work' })
+    expect(await db.projects.get(acme)).toMatchObject({ parent_id: null, workspace_id: 'w-work' })
+    expect((await db.projects.get(launch))?.parent_id).toBe(acme)
+    const { undoBatch } = await import('./undo')
+    await undoBatch(r.entry!.id)
+    expect(await db.projects.get(acme)).toMatchObject({ parent_id: clients })
+    expect((await where()).acme).toBe('w-p')
   })
 })

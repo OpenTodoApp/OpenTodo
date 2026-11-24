@@ -64,11 +64,6 @@ export function matchesFilter(token: string, q: string): boolean {
   return [tokenName(token), englishTokenName(token), token].some((x) => x.toLocaleLowerCase().includes(s))
 }
 
-/** The group of each document token. */
-export const GROUP_OF: Record<string, TokenGroup> = Object.fromEntries(
-  (Object.entries(TOKEN_GROUPS) as [TokenGroup, readonly string[]][]).flatMap(([g, list]) => list.map((tok) => [tok, g])),
-)
-
 /** The seed rows (design D5): the four required, then the optional status hues. */
 export const SEEDS = ['canvas', 'surface', 'text', 'accent'] as const
 export const STATUS_SEEDS = ['success', 'warning', 'danger', 'info'] as const

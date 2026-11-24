@@ -2,7 +2,8 @@
 // and settings-subpages): the cards of a one-page section, or of one sub-page of a
 // section with an overview. Demo instances keep every card and disable the refused
 // ones under one note at the top of the page.
-import { lazy, type ReactNode, Suspense } from 'react'
+import { type ReactNode, Suspense } from 'react'
+import { lazy } from '../lib/lazy'
 import type { User } from '../lib/types'
 import { LearnMore, Notice } from '../ui'
 import { useDemo } from '../lib/demo'
@@ -44,6 +45,7 @@ import { ConfigWarningsNotice } from './ConfigWarnings'
 import { EmailInboxPanel } from './EmailInboxPanel'
 import { BriefingSection, DayPartsSection, FocusSection, KeyboardSection, LanguageSection, StartViewSection } from './PreferencesPanels'
 import { PrioritiesSection } from './PrioritiesSettings'
+import { AppLinksSection } from './AppLinksSettings'
 import { DailyNotesSection } from './DailyNotesSettings'
 // Daily notes (daily-notes): loaded when the page opens.
 import { ClosedListSection } from './ClosedListSettings'
@@ -53,11 +55,13 @@ import { AttachmentSettingsPanel } from './AttachmentSettingsPanel'
 import { OutgoingEmailPanel } from './OutgoingEmailPanel'
 import { MapsServerPanel, MapsUserSection } from './locations/MapsSettings'
 import { AutomationsServerPanel } from './rules/AutomationsSettings'
+import { TaskListsServerPanel } from './TaskListsServerPanel'
 import { SpeechServerPanel } from './SpeechServerPanel'
 import { BrandingPanel } from './BrandingPanel'
 import { YourDataSection } from './DataSettings'
 import { SessionPanel } from './AccountSettings'
 import { AppSessions } from './AppSessions'
+import { ConnectedApps } from './ConnectedApps'
 import { InvitationsPanel } from './MemberInvitations'
 import { ServerArchivePanel } from './ServerArchivePanel'
 import { WorkspacesSettings } from './WorkspacesSettings'
@@ -85,7 +89,7 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
           <LinkedAccountsPanel />
         </DemoDisabled>
       </Anchor>
-      <SessionPanel onLogout={onLogout}><AppSessions /></SessionPanel>
+      <SessionPanel onLogout={onLogout}><AppSessions /><ConnectedApps /></SessionPanel>
     </>
   ),
   'account/activity': () => <Anchor id="sessions"><ActivityPanel /></Anchor>,
@@ -121,6 +125,7 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'integrations/assistant': ({ user, demo, hosted }) => (
     <Anchor id="ai"><DemoDisabled on={demo}><Suspense fallback={null}><AssistantSettingsSection isOwner={user.role === 'owner' && !hosted} /></Suspense></DemoDisabled></Anchor>
   ),
+  'integrations/app-links': () => <AppLinksSection />,
   'integrations/mcp': ({ user, demo, hosted }) => <DemoDisabled on={demo}><AssistantsPanel isOwner={user.role === 'owner' && !hosted} /></DemoDisabled>,
   'people/users': ({ user, demo }) => <><ConfigWarningsNotice user={user} /><DemoDisabled on={demo}><AdministrationSections user={user} /></DemoDisabled></>,
   'people/access-policies': ({ demo }) => <Anchor id="access-policies"><DemoDisabled on={demo}><MfaPolicyPanel /><ProjectInvitePolicyPanel /></DemoDisabled></Anchor>,
@@ -137,6 +142,8 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'server/maps': ({ demo }) => <DemoDisabled on={demo}><MapsServerPanel /></DemoDisabled>,
   // Automation rules (automation-rules D9): the owner's switch; nothing runs on a demo.
   'server/automations': ({ demo }) => <DemoDisabled on={demo}><AutomationsServerPanel /></DemoDisabled>,
+  // Click a task to (click-default D2): the owner's default for accounts that have not chosen.
+  'server/task-lists': ({ demo }) => <DemoDisabled on={demo}><TaskListsServerPanel /></DemoDisabled>,
   // Speech to text (settings-refresh D7): the owner's speech service; never on a demo.
   'server/speech': ({ demo }) => <DemoDisabled on={demo}><SpeechServerPanel /></DemoDisabled>,
   'server/audit': () => <Anchor id="audit-log"><AuditPanel /></Anchor>,

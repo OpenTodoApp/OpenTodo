@@ -103,6 +103,7 @@ func WriteFeed(tasks []FeedTask, opts FeedOptions) []byte {
 func WriteEvent(t FeedTask, opts FeedOptions) []byte {
 	cal := &caldav.Component{Name: "VCALENDAR"}
 	cal.Props = append(cal.Props, caldav.Prop{Name: "VERSION", Value: "2.0"}, caldav.Prop{Name: "PRODID", Value: caldav.ProdID})
+	t.Title = SyncTitle(t, opts.Encrypted)
 	t.RRULE, t.RDates, t.Labels, t.Priority = "", nil, nil, 0
 	ev := taskEvent(cal, map[string]bool{}, t, opts)
 	ev.Props = append(ev.Props, caldav.Prop{Name: "X-OPENTODO-TASK", Value: t.ID})
@@ -132,6 +133,38 @@ func EventTitle(t FeedTask, encrypted bool) string {
 		return e2ee.Placeholder
 	}
 	return t.Title
+}
+
+// RepeatMarker leads the title of a repeating task's event written by
+// calendar sync (OpenSpec change calsync-repeat-marker): the event is only the
+// next occurrence, so the calendar shows no repeat icon of its own.
+const RepeatMarker = "🔁"
+
+// Repeats reports whether a task has a repeat rule.
+func Repeats(t FeedTask) bool { return t.RRULE != "" || len(t.RDates) > 0 }
+
+// Marked reports whether calendar sync marks a task's event as repeating:
+// never for an encrypted account or an encrypted title.
+func Marked(t FeedTask, encrypted bool) bool {
+	return Repeats(t) && !encrypted && !e2ee.IsCiphertext(t.Title)
+}
+
+// SyncTitle is the SUMMARY of the event calendar sync writes for a task: its
+// EventTitle, after RepeatMarker and a space when the task repeats.
+func SyncTitle(t FeedTask, encrypted bool) string {
+	if Marked(t, encrypted) {
+		return RepeatMarker + " " + t.Title
+	}
+	return EventTitle(t, encrypted)
+}
+
+// StripRepeatMarker removes one leading RepeatMarker and the spaces after it.
+func StripRepeatMarker(summary string) string {
+	rest, ok := strings.CutPrefix(strings.TrimLeft(summary, " \t"), RepeatMarker)
+	if !ok {
+		return summary
+	}
+	return strings.TrimLeft(rest, " \t")
 }
 
 // taskEvent builds one task's VEVENT and adds the VTIMEZONE of a zoned due to
@@ -198,7 +231,13 @@ func taskEvent(cal *caldav.Component, zones map[string]bool, t FeedTask, opts Fe
 // a timed one, in its zone when it has one. DTEND of whole days is exclusive.
 func eventTimes(t FeedTask) (caldav.Prop, caldav.Prop) {
 	date := t.Date
-	compact := func(d string) string { return d[:4] + d[5:7] + d[8:10] }
+	// YYYY-MM-DD to YYYYMMDD; anything shorter only loses its dashes, never panics (GitHub issue 1717).
+	compact := func(d string) string {
+		if len(d) < 10 {
+			return strings.ReplaceAll(d, "-", "")
+		}
+		return d[:4] + d[5:7] + d[8:10]
+	}
 	if t.Time == nil || t.Start != "" {
 		first := date
 		if t.Start != "" {

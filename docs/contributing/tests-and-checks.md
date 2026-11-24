@@ -16,8 +16,9 @@ order: 4
 | Target | What it checks |
 | --- | --- |
 | `make lint` | `go vet` and the web type check |
-| `make web-lint` | ESLint: Rules of Hooks, effect dependencies, functions over 250 lines, no fixed waits in tests |
-| `make staticcheck` | Go static analysis |
+| `make web-lint` | ESLint: Rules of Hooks, effect dependencies, functions over 250 lines, no fixed waits in tests; then knip (`npm run knip`, config `web/knip.json`): no unused files, dependencies or duplicate exports, and no more unused exports than the count in `web/scripts/knip.mjs` |
+| `make staticcheck` | Go static analysis, after `make deadcode` |
+| `make deadcode` | no Go function unreachable from the commands and tests (`deadcode -test`) |
 | `make test` | `go test ./...`, the web tests (vitest), the extension and the Obsidian plugin |
 | `make fmt-check` | `gofmt` |
 | `make ui-lint` | design-system rules: tokens, `<Icon>`, no untranslated English in JSX |
@@ -26,7 +27,7 @@ order: 4
 | `make templates-check` | project templates |
 | `make openspec-validate` | every spec and change, strict |
 | `make deploy-check` | the platform templates under `deploy/` |
-| `make repo-check` | repository rules: the migration matrix, shared contracts, budgets, the make targets these pages name, the changelog fragments in `changelog.d/` |
+| `make repo-check` | repository rules: the migration matrix, shared contracts, budgets, the make targets these pages name, the changelog fragments in `changelog.d/`, no open OpenSpec change with every task ticked (stale changes are listed as warnings) |
 
 The Go tests that import the embedded web app need it built once: `make web`.
 
@@ -39,6 +40,10 @@ cd web && npx vitest run -t "keeps the outbox"
 ```
 
 Web tests never reach the network: mock `fetch` with `mockFetch` from `web/src/ui/test-utils.tsx`. Interaction tests opt into `// @vitest-environment happy-dom` and wait with `waitFor`, never a fixed sleep. Module-level state is reset before each test by `resetModuleState()` (`web/src/lib/moduleState.ts`); a module with a top-level `let` registers with `resettable()`.
+
+The notes link grammar (`linksIn`, behind Linked references) is timed in the ordinary web tests by `web/src/lib/notesHotPaths.test.ts`, so a slowdown of it fails on its own pull request rather than only in the nightly [performance budgets](../performance.md). Milliseconds vary too much between CI runners, so it is timed beside a plain line scan of the same 1 MB of generated notes, and the median ratio of seven interleaved pairs is held to its `MAX`. To change a `MAX` on purpose, run the file a few times with `--silent=false`, read the printed ratios, set the new ratio × 1.5 and say why in the pull request.
+
+A client generated from the OpenAPI description must type-check: `web/scripts/openapi-client.test.mjs` generates TypeScript types from `docs/openapi.json` with `openapi-typescript` and runs `tsc` on a small client (`web/scripts/openapi-client/example.ts`: `/me`, tasks, one sync call, the error envelope), so a renamed, removed or loosened field fails the Web job. `openapi-typescript` (pinned exactly) is a devDependency for this test only, never in the bundle or the binary: it is the generator most third-party clients use, so the test sees the description as they do. Its peer range stops at TypeScript 5, so `web/package.json` overrides that one peer to our TypeScript.
 
 The client's sync code also runs against the real server: `npm run test:contract` in `web/`, after `make server`.
 
@@ -58,6 +63,8 @@ Changing the public surface (a route, a field, an error code, an MCP tool, an `o
 
 ## CI tiers
 
-A pull request runs the jobs its paths need (`scripts/ci-changes.sh`): the checks always; for code, the web, server and image jobs and one binary; a Chromium layout and end-to-end job when the app or server changes; Storybook checks for `web/src`; Android, extension and Obsidian jobs for their own directories; the native app's checks for `mobile/app/` and the shared modules it uses, and its iOS and Android builds only for `mobile/app/` ([Work on the native app](native-app.md#ci-lanes)). A change to `web/` also runs the accessibility gate on every real screen.
+CI runs the jobs a change's paths need (`scripts/ci-changes.sh`): the checks always; for code, the web, server and image jobs and one binary; a Chromium layout and end-to-end job when the app or server changes; Storybook checks for `web/src`; Android, iOS, extension and Obsidian jobs for their own directories. A change to `web/` also runs the accessibility gate on every real screen.
 
-A push to `main` or a release tag runs every job: WebKit, German and French layouts, all binaries (not the native app's builds, which run on its pull requests and nightly). Every night CI runs the race detector, the upgrade check, the full accessibility matrix, fuzzing, the native app's builds and the [performance budgets](../performance.md); a failed night opens an issue labelled `ci-nightly`.
+A pull request, draft or not, runs the fast part of that: the checks, web, server, image and the small packages. The merge queue runs all of it, the layout, Storybook, accessibility, phone, binary and site bundle jobs included, and nothing reaches `main` unless that run passes. When one of them fails in the queue, the change leaves the queue; the failed queue run has the reports (for example `ui-check-report-<shard>` with the new screenshots). To run them before queueing, start the CI workflow by hand on your branch with `base: main`.
+
+A push to `main` runs the fast part again and publishes the image; the heavy jobs already ran in the queue on the same code. A newer push cancels the run before it. A run by hand with a `base` branch runs all of them against that branch, like the queue (the UI baselines fold starts one for its own pull request). A release tag, the nightly CI run and a run by hand without one run every job: WebKit, German and French layouts, all binaries. A red nightly on `main` is fixed first, like a red `main`. Every night CI also runs the race detector, the upgrade check, the full accessibility matrix, fuzzing and the [performance budgets](../performance.md); a failed night opens an issue labelled `ci-nightly`.

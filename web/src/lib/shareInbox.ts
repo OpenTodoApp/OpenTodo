@@ -4,8 +4,7 @@
 // screen reads the entry and deletes it on Save or Cancel. A separate IndexedDB
 // database with the raw API, so the service worker needs no Dexie. Each call takes
 // the IndexedDB to use: the worker and the page pass theirs, and sync's sweep asks
-// the platform port (native-app-foundation D3), so the app, which has no share
-// inbox, sweeps nothing.
+// the platform port, so a host without a share inbox sweeps nothing.
 
 export const INBOX_DB = 'opentodo-share'
 const STORE = 'inbox'
@@ -111,11 +110,6 @@ export function shareRequestVerdict(headers: Headers): ShareRequestVerdict {
   const length = Number(headers.get('content-length') ?? '')
   if (Number.isFinite(length) && length > SHARE_MAX_BYTES) return 'refused'
   return site === null ? 'unverified' : 'store'
-}
-
-/** Whether the service worker may store a POST /share (shareRequestVerdict is `store`). */
-export function shareRequestAllowed(headers: Headers): boolean {
-  return shareRequestVerdict(headers) === 'store'
 }
 
 /** The stored size of an entry: its files and its text fields. */

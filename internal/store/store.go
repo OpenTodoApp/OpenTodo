@@ -98,6 +98,15 @@ func DBPath(dataDir string) string { return filepath.Join(dataDir, DBFile) }
 // file only while neither is open (before the tenant opens, or with the server
 // stopped).
 
+// TempInMemory is the DSN parameter every server connection carries: SQLite's
+// temporary storage (statement journals, sorts, transient indices and tables)
+// stays in memory, so no query depends on a writable system temp directory.
+// SQLite otherwise picks the first of TMPDIR, /var/tmp, /usr/tmp and /tmp that
+// passes an access check, and a sandbox that refuses to create files there
+// (the Home Assistant app's AppArmor profile allows only /data and /tmp) made
+// the first share of a large project fail with "unable to open database file".
+const TempInMemory = "_pragma=temp_store(MEMORY)"
+
 // ReaderConns is the size of the reader pool.
 const ReaderConns = 4
 
@@ -106,7 +115,7 @@ const ReaderConns = 4
 // AutoCheckpointPages (checkpoint.go).
 func OpenFile(path string) (*sql.DB, error) {
 	dsn := "file:" + path + "?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(ON)&_pragma=synchronous(NORMAL)" +
-		"&_pragma=wal_autocheckpoint(" + strconv.Itoa(AutoCheckpointPages) + ")&_txlock=immediate"
+		"&_pragma=wal_autocheckpoint(" + strconv.Itoa(AutoCheckpointPages) + ")&_txlock=immediate&" + TempInMemory
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)
@@ -122,7 +131,7 @@ func OpenFile(path string) (*sql.DB, error) {
 // writer (Open) must already have created and migrated. Its connections refuse
 // writes (query_only).
 func OpenReader(dataDir string) (*sql.DB, error) {
-	dsn := "file:" + DBPath(dataDir) + "?_pragma=busy_timeout(5000)&_query_only=1"
+	dsn := "file:" + DBPath(dataDir) + "?_pragma=busy_timeout(5000)&_query_only=1&" + TempInMemory
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("open database reader: %w", err)
@@ -223,10 +232,16 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 	if err := migrateAssistantUsageCached(ctx, db); err != nil {
 		return err
 	}
+	if err := migratePushNotify(ctx, db); err != nil {
+		return err
+	}
 	if err := migrateAuditChain(ctx, db); err != nil {
 		return err
 	}
 	if err := migrateEmailVerified(ctx, db); err != nil {
+		return err
+	}
+	if err := migrateEmailAssumed(ctx, db); err != nil {
 		return err
 	}
 	return migrateNotePages(ctx, db)

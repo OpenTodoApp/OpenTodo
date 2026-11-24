@@ -104,6 +104,14 @@ describe('read tools', () => {
     expect(out.counts).toMatchObject({ overdue: 1, due_today: 2, inbox: 1 })
   })
 
+  it('leaves tasks assigned to someone else out of the day, as Today does (personal-views-assignee)', async () => {
+    const snap = await loadSnapshot()
+    const theirs = { ...snap.byId.get('t2')!, id: 'theirs', assignee_id: 'someone-else' }
+    const out = todaySummary({ ...snap, tasks: [...snap.tasks, theirs] }, {}, NOW, 200)
+    expect(out.counts).toMatchObject({ overdue: 1, due_today: 2 })
+    expect(out.due_today.map((t) => t.id)).not.toContain('theirs')
+  })
+
   it('searches open tasks and lists projects with counts', async () => {
     const snap = await loadSnapshot()
     expect(searchTasks(snap, { query: 'MILK' }, NOW, 200).tasks.map((t) => t.id)).toEqual(['t3'])

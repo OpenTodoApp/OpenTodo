@@ -51,15 +51,23 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_op", "device: server and ids starting with agent:, caldav: or public: are reserved")
 		return
 	}
-	for _, op := range in.Ops {
-		if opsync.ReservedDevice(op.Device) {
-			writeError(w, http.StatusBadRequest, "invalid_op", "op device: server and ids starting with agent:, caldav: or public: are reserved")
-			return
+	// A client that handles a refusal per op (sync-invalid-op-alone D1) gets an op the
+	// server cannot accept refused alone; the others keep the whole-batch 400.
+	var invalid []opsync.Rejection
+	var invalidOps []opsync.Op
+	if in.supports("invalid_ops") && len(in.Ops) <= opsync.MaxOpsPerRequest {
+		in.Ops, invalid, invalidOps = opsync.SplitInvalid(in.Ops)
+	} else {
+		for _, op := range in.Ops {
+			if opsync.ReservedDevice(op.Device) {
+				writeError(w, http.StatusBadRequest, "invalid_op", "op device: server and ids starting with agent:, caldav: or public: are reserved")
+				return
+			}
 		}
 	}
 	uid := userFrom(r.Context()).ID
 	s.recordTZOffset(r.Context(), uid, in.TZOffset)
-	applyCtx := r.Context()
+	applyCtx := opsync.WithInvalidRefused(r.Context(), invalidOps)
 	if in.supports("clock_skew") {
 		applyCtx = opsync.WithClockSkewRefusal(applyCtx)
 	}
@@ -75,6 +83,7 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	res.Rejected = append(invalid, res.Rejected...)
 	if res.Applied > 0 {
 		// Wake the other devices of everyone who can see the change; this one
 		// learns the cursor from the response.

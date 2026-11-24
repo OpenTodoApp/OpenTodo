@@ -62,6 +62,13 @@ describe('parseDateTimeInput', () => {
     ['3pm tomorrow', { date: '2026-10-15', time: '15:00' }],
     ['15:30', { date: null, time: '15:30' }],
   ])('%s', (input, want) => expect(parseDateTimeInput(input, EN)).toEqual(want))
+  // A field that only takes a date has no quantity range to protect (dash-ranges D1).
+  it('reads a dashed date with a time, month first', () => {
+    const md = { ...MD, languages: ['en'] }
+    expect(parseDateTimeInput('3-4 3pm', md)).toEqual({ date: '2027-03-04', time: '15:00' })
+    expect(parseDateTimeInput('3pm 3-4', md)).toEqual({ date: '2027-03-04', time: '15:00' })
+    expect(parseDateTimeInput('3-4', md)).toEqual({ date: '2027-03-04' })
+  })
   it('reads German through its vocabulary', () => {
     expect(parseDateTimeInput('morgen um 15 Uhr', { ...DM, languages: ['de'] })).toEqual({ date: '2026-10-15', time: '15:00' })
   })

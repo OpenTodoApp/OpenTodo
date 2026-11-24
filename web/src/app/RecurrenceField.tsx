@@ -1,16 +1,22 @@
 import { Icon } from '../ui'
 import { keysOf } from '../lib/shortcuts'
 import { Tooltip } from '../ui'
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { useSeriesRecords } from '../lib/localData'
 import { formatShort, logicalToday, weekday } from '../lib/dates'
 import { habitRule } from '../lib/habits'
-import { detachOccurrence, setRecurrence, skipOccurrence } from '../lib/ops'
+import { detachOccurrence } from '../lib/ops'
+import { skipOccurrence, recurrenceUndoable } from '../lib/undoActions'
 import { firstOccurrence, parseRule, previewOccurrences, RULE_SUGGESTIONS } from '../lib/recurrence'
+import { loadQuickAddSettings, resolveDayMonthOrder, resolveLanguages } from '../lib/nlp'
+import { ruleFromText, type RepeatPhraseContext } from '../lib/nlp/repeatPhrase'
+import { ruleWords } from '../lib/recurrenceWords'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { pieceRule, seriesBudget } from '../lib/recurring'
 import { walkOccurrences } from '../lib/occurrences'
 import type { Task } from '../lib/types'
-import { t } from '../lib/i18n'
+import { preferredLanguages, t, useLanguageVersion } from '../lib/i18n'
 import { act } from './actionError'
 // The habit section loads with the first habit (habits-home): none of it is on the first load.
 const HabitSection = lazy(() => import('./habits/HabitSection').then((m) => ({ default: m.HabitSection })))
@@ -24,6 +30,20 @@ const HabitSection = lazy(() => import('./habits/HabitSection').then((m) => ({ d
  * streak and the month history (OpenSpec change habits, design D5), all derived
  * from the records already on the device.
  */
+/**
+ * How the field reads a typed rule (repeat-field-language): the stored English
+ * grammar, then quick add's repeat phrases in the same languages quick add reads.
+ */
+function useRepeatLanguages(today: string): RepeatPhraseContext {
+  const { prefs, resolved } = useDateTimeFormat()
+  const language = useLanguageVersion()
+  return useMemo(() => {
+    const settings = loadQuickAddSettings()
+    const langs = preferredLanguages()
+    return { languages: resolveLanguages(settings, langs), today, dayMonthOrder: resolveDayMonthOrder(settings, langs, prefs), weekStart: resolved.weekStart }
+  }, [today, prefs, resolved, language]) // eslint-disable-line react-hooks/exhaustive-deps -- the interface language decides the languages read
+}
+
 export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: string) => void }) {
   const [draft, setDraft] = useState(task.recurrence ?? '')
   const [error, setError] = useState<string | null>(null)
@@ -40,7 +60,10 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
   const today = logicalToday()
   const budget = useMemo(() => seriesBudget(task, related, task.due?.date, today), [task, related, today])
 
-  const parsed = useMemo(() => (draft.trim() ? parseRule(draft) : null), [draft])
+  const phrases = useRepeatLanguages(today)
+  // The rule the text means: as stored, or as quick add reads it in the user's languages.
+  const read = useMemo(() => ruleFromText(draft, phrases), [draft, phrases])
+  const parsed = useMemo(() => (draft.trim() ? parseRule(read ?? draft) : null), [draft, read])
   const preview = useMemo(() => {
     if (!parsed?.ok) return []
     const due = task.due?.date ?? firstOccurrence(parsed.rule, today)
@@ -49,9 +72,14 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
     return walkOccurrences(pieceRule(parsed.rule, budget), due, today, budget.taken, due, '9999-12-31', (d) => d, budget.except).dates.slice(0, 3)
   }, [parsed, task.due?.date, today, budget])
 
+  const example = useMemo(() => {
+    const words = ruleWords('every weekday', true)
+    return ruleFromText(words, phrases) === 'every weekday' ? words : 'every weekday'
+  }, [phrases])
+
   const commit = async () => {
     setNotice(null)
-    const res = await setRecurrence(task.id, draft)
+    const res = await recurrenceUndoable(task.id, read ?? draft)
     if (!res.ok) setError(res.error)
     else {
       setError(null)
@@ -78,8 +106,8 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
           className="ui-input"
           aria-label={t('Repeat rule')}
           list="recurrence-suggestions"
-          // Rules are English in every language (the grammar is shared with the server), so the example is not translated.
-          placeholder={t('Does not repeat (e.g. {example})', { example: 'every weekday' })}
+          // The example is in the user's language when the field reads it back, else in the stored English.
+          placeholder={t('Does not repeat (e.g. {example})', { example })}
           value={draft}
           maxLength={200}
           aria-invalid={!!error}
@@ -91,7 +119,7 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
           }}
         />
         {task.recurrence && (
-          <button className="ui-btn ui-btn--ghost ui-btn--md" aria-label={t('Stop repeating')} onClick={() => { setDraft(''); act(setRecurrence(task.id, null)) }}><Icon name="x" /></button>
+          <button className="ui-btn ui-btn--ghost ui-btn--md" aria-label={t('Stop repeating')} onClick={() => { setDraft(''); act(recurrenceUndoable(task.id, null)) }}><Icon name="x" /></button>
         )}
       </div>
       <datalist id="recurrence-suggestions">

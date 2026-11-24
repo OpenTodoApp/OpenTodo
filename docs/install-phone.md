@@ -13,9 +13,11 @@ order: 21
 
 Sign in once in the browser first, at your server's `https://` address; then add the app to your home screen. The general picture, and the steps for computers, are in [Installing the app](install-app.md).
 
+Away from home, see [Reach OpenTodo from outside](self-hosting/home-assistant-addon.md#reach-opentodo-from-outside-your-home).
+
 Once installed, the round **+** at the bottom right adds a task, and the menu button at the top left opens a drawer with your projects, labels and views. A menu or sheet from the bottom closes with a drag down, its **X** or a tap outside. A picker's keyboard waits until you tap its field.
 
-On Settings the round **+** is hidden, because that page has no quick-add action and the button would cover the rows; it returns on the next list. The installed app opens on a splash in the dark canvas colour (a manifest has one splash colour, and a bright flash in dark mode is worse than a dark one before a light app), and its status bar uses the same colour as the app's bar from the first frame.
+On Settings the round **+** is hidden; it returns on the next list. The installed app opens on a splash in the dark canvas colour (a manifest has one splash colour, and a bright flash in dark mode is worse than a dark one before a light app), and its status bar uses the same colour as the app's bar from the first frame.
 
 ## iPhone and iPad
 
@@ -41,7 +43,7 @@ After installing, OpenTodo also appears in Android's share menu, so you can send
 
 ## The Android app
 
-Instead of installing from the browser, you can install the **OpenTodo** app from [Google Play](https://play.google.com/store/apps/details?id=app.opentodo), [F-Droid](https://f-droid.org/packages/app.opentodo/) or the [GitHub release](https://github.com/OpenTodoApp/OpenTodo/releases/latest) and enter your server's address on its first screen. All three are the same app with the same signature, so you can switch between them later without losing anything ([how](android-app.md#switching-between-google-play-f-droid-and-github)); until the store listings open, install from GitHub. It works the same and adds reminders without a push service, sharing on phones without Google Play services, home-screen widgets and fingerprint unlock. See [The Android app](android-app.md).
+Instead of installing from the browser, you can install the **OpenTodo** app from [Google Play](https://play.google.com/store/apps/details?id=app.opentodo) or the [GitHub release](https://github.com/OpenTodoApp/OpenTodo/releases/latest), F-Droid soon, and enter your server's address on its first screen ([switching later](android-app.md#switching-between-google-play-f-droid-and-github)). It works the same and adds reminders without a push service, sharing on phones without Google Play services, home-screen widgets and fingerprint unlock. See [The Android app](android-app.md).
 
 ## The iOS app
 

@@ -2,9 +2,7 @@ package importer
 
 import (
 	"crypto/sha256"
-	"encoding/csv"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"io"
 	"path"
@@ -100,57 +98,28 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 	var stack []string // source ids of the open parents by indent level
 	section := ""
 	seen := map[string]int{}
-	var last *Row
-	lastCommented := false
-	for {
-		rec, err := r.Read()
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil {
-			var pe *csv.ParseError
-			if errors.As(err, &pe) {
-				out.Rows = append(out.Rows, Row{Line: pe.StartLine, Kind: KindTask, Err: fmt.Sprintf("unreadable CSV record: %v", pe.Err)})
-				continue
-			}
-			return nil, csvFailure(err, "file")
-		}
-		line, _ := r.FieldPos(0)
-		get := func(c string) string {
-			if i, ok := col[c]; ok && i < len(rec) {
-				return strings.TrimSpace(rec[i])
-			}
-			return ""
-		}
+	// The task row right above, as an index: a later append can move out.Rows.
+	last := -1
+	if err := r.eachRecord(col, &out.Rows, func(line int, rec []string, get func(string) string) error {
 		switch strings.ToLower(get("TYPE")) {
 		case "":
-			continue
+			return nil
 		case "meta":
 			if strings.TrimSpace(get("CONTENT")) == "view_style=board" && projectSource != "" {
 				out.ViewHints = append(out.ViewHints, ViewHint{ProjectSourceID: projectSource, View: "board"})
 			}
 		case "section":
 			section = get("CONTENT")
-			last = nil // notes belong to the task right above them
+			last = -1 // notes belong to the task right above them
 			stack = stack[:0]
 			if opts.Sections == "section" && projectSource != "" && section != "" {
 				out.Rows = append(out.Rows, Row{Line: line, Kind: KindSection, SourceID: "todoist:section:" + projectID + ":" + section,
 					Title: section, ProjectSourceID: projectSource})
 			}
 		case "note":
-			if last != nil {
-				if text := get("CONTENT"); text != "" {
-					// The heading is added once per task (a description that was empty
-					// starts with it, so its position cannot tell).
-					if !lastCommented {
-						last.Description = strings.TrimSpace(last.Description+"\n\nComments") + "\n"
-						lastCommented = true
-					}
-					last.Description += "\n- " + text
-				}
-				if !hasPrefix(last.Warnings, "comments appended") {
-					last.warn("comments appended to the description (their authors cannot be kept)")
-				}
+			// A note is a comment of the task right above it (todoist-notes-comments).
+			if text := get("CONTENT"); last >= 0 && text != "" {
+				out.Rows[last].Comments = append(out.Rows[last].Comments, Comment{Author: todoistAuthor(get("AUTHOR")), At: todoistNoteTime(get("DATE")), Text: text})
 			}
 		case "task":
 			row := Row{Line: line, Kind: KindTask, ProjectSourceID: projectSource, SectionName: section}
@@ -185,16 +154,38 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 			row.SourceID = fmt.Sprintf("todoist:%s:%d", hex.EncodeToString(sum[:8]), seen[key])
 			row.Origin = importedOrigin("todoist", row.SourceID)
 			out.Rows = append(out.Rows, row)
-			last, lastCommented = &out.Rows[len(out.Rows)-1], false
+			last = len(out.Rows) - 1
 			stack = append(stack, row.SourceID)
 		default:
 			out.Rows = append(out.Rows, Row{Line: line, Kind: KindTask, Err: fmt.Sprintf("unknown row type %q", get("TYPE"))})
 		}
 		if len(out.Rows) > MaxRows {
-			return nil, ErrTooManyRows
+			return ErrTooManyRows
 		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 	return out, nil
+}
+
+// todoistAuthorID is the account id Todoist writes after a note's author name.
+var todoistAuthorID = regexp.MustCompile(`\s*\(\d+\)$`)
+
+// todoistAuthor is a note's author name without its account id
+// ("Pete (14148749)" is Pete).
+func todoistAuthor(s string) string {
+	return strings.Join(strings.Fields(todoistAuthorID.ReplaceAllString(strings.TrimSpace(s), "")), " ")
+}
+
+// todoistNoteTime reads a note's DATE, an ISO 8601 instant
+// ("2023-11-01T16:08:26.405000Z"); zero when it is missing or unreadable.
+func todoistNoteTime(s string) time.Time {
+	t, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(s))
+	if err != nil {
+		return time.Time{}
+	}
+	return t.UTC()
 }
 
 // todoistProject reads the project from the file name inside a backup

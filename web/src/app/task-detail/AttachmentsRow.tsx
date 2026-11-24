@@ -8,7 +8,7 @@ import {
   retryUpload, stateOf, useAttachmentLimits, useUploadProgress, type AttachmentState,
 } from '../../lib/attachments'
 import { openAttachment } from '../../lib/attachmentOpen'
-import { hasAttachmentBlob, useAttachmentBlobs, useTask, useTaskAttachments, type AttachmentBlob } from '../../lib/localData'
+import { useAttachmentBlobs, useTask, useTaskAttachments, type AttachmentBlob } from '../../lib/localData'
 import { embeddedIds } from '../../lib/markdown'
 import { useDemo } from '../../lib/demo'
 import type { Attachment, ProjectRole } from '../../lib/types'
@@ -18,25 +18,7 @@ import { Tooltip } from '../../ui'
 import { showBulkToast } from '../bulk/toastStore'
 import { onAttachRequest } from './attachRequest'
 import { t, msg, translatedMap } from '../../lib/i18n'
-
-/** "Pasted image 2026-10-15 14.03.27.png": the name a pasted image gets. */
-export function pastedName(now = new Date(), ext = 'png'): string {
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `${t('Pasted image')} ${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())} ${p(now.getHours())}.${p(now.getMinutes())}.${p(now.getSeconds())}.${ext}`
-}
-
-/** Files on a clipboard or a drop, with pasted images named by date. */
-export function filesFrom(data: DataTransfer | null): File[] {
-  if (!data) return []
-  const out: File[] = []
-  for (const f of Array.from(data.files)) {
-    // A pasted screenshot arrives as "image.png" (or with no name at all).
-    if (f.type.startsWith('image/') && (!f.name || f.name === 'image.png')) {
-      out.push(new File([f], pastedName(new Date(), f.type.split('/')[1]?.replace('jpeg', 'jpg') || 'png'), { type: f.type }))
-    } else out.push(f)
-  }
-  return out
-}
+import { filesFrom } from '../../lib/pastedFiles'
 
 /** "PDF", "PNG", or the name's extension; "Link" for links. */
 export function typeLabel(a: Pick<Attachment, 'mime' | 'name' | 'url'>): string {
@@ -372,10 +354,13 @@ function safeHost(url: string): string {
 /** The attachments of one comment, under its text (design D7): open on activation. */
 export function CommentAttachments({ list }: { list: Attachment[] }) {
   const [note, setNote] = useState<string | null>(null)
+  // Read live, not awaited on the tap: the open must stay inside the click (Safari
+  // blocks a tab opened after an await; lib/attachmentOpen.ts).
+  const blobs = useAttachmentBlobs(list)
   if (list.length === 0) return null
   async function open(a: Attachment) {
     setNote(null)
-    if (!a.url && !(await hasAttachmentBlob(a.id))) {
+    if (!a.url && !blobs.has(a.id)) {
       if (typeof navigator !== 'undefined' && navigator.onLine === false) return setNote(t('Connect to the internet to open this file.'))
       if (!a.uploaded_at) return setNote(t('This file is still uploading.'))
     }

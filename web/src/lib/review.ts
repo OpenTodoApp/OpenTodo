@@ -12,7 +12,7 @@ import { canEditProject, roleOf } from './sharing'
 import { countedTasks, overdueOf, type StatsInput } from './stats'
 import { applyBatch } from './undo'
 import { db, type AssistantUndo } from './db'
-import { MethodRules, waitingTasks, type MethodInput } from './method/rules'
+import { MethodRules, waitingTasks, type MethodInput, type NextChoice } from './method/rules'
 import { qualifies } from './triage'
 import type { Membership, Project, Review, Task } from './types'
 import { isSomeday } from './views'
@@ -47,6 +47,8 @@ export const SWEEP_PROMPTS = [
 export interface WalkProject {
   project: Project
   nextAction: Task | null
+  /** Open tasks that may be chosen as its next action (choose-next-action). */
+  choices: NextChoice[]
   waiting: number
   deferred: number
   stalled: boolean
@@ -106,6 +108,7 @@ export function walkCandidates(input: ReviewInput, rules = new MethodRules(input
     return {
       project,
       nextAction: rules.nextActionOf(project.id),
+      choices: rules.nextActionChoices(project.id),
       waiting: rules.waitingIn(project.id).length,
       deferred: rules.deferredIn(project.id).length,
       stalled: rules.stalled(project.id, input.now),
@@ -117,11 +120,6 @@ export function walkCandidates(input: ReviewInput, rules = new MethodRules(input
       maintenance: inMaintenance(project),
     }
   }).sort((a, b) => a.reviewedAt - b.reviewedAt || a.project.position - b.project.position || a.project.name.localeCompare(b.project.name))
-}
-
-/** The walk's projects (weekly-review "Project walk"): the working projects due for review for this user. */
-export function walkProjects(input: ReviewInput, rules = new MethodRules(input)): WalkProject[] {
-  return walkCandidates(input, rules).filter((w) => w.due)
 }
 
 /** Reviewed in the walk: stamped and not due again yet under its interval. */

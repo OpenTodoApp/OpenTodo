@@ -9,7 +9,7 @@ import { compatibleRule, firstOccurrence, parseRule } from './recurrence'
 import { deadlineFireAt, relativeFireAt } from './reminderTime'
 import { defaultReminderChanges } from './defaultReminder'
 import { withSectorClears } from './sectorWrites'
-import { planCompletion, planSkip, seriesRule, skipsInstead } from './recurring'
+import { planCompletion, seriesRule, skipsInstead } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { memberSet } from './rotation'
 import { descendants, isDescendant } from './tree'
@@ -27,6 +27,7 @@ import { keepProjectWorkspace, keepWorkspaceFor, workspaceFields, type KeepWorks
 import { resettable } from './moduleState'
 import type { AppendRow } from './noteAppends'
 import { LOCAL_ERRORS } from './localErrors'
+import { linkChanges } from './linkAttachment'
 
 let devicePromise: Promise<string> | null = null
 /** The local data epoch the memoised id was read in; a sign-out starts a new one. */
@@ -228,6 +229,7 @@ export async function applyOps(
     for (const r of recorded) {
       if (r.op.entity === 'task') r.taskId = r.op.entityId
       else if (r.op.entity === 'comment') r.taskId = (rows.get(`comment:${r.op.entityId}`) as Comment | undefined)?.task_id || undefined
+      else if (r.op.entity === 'time_entry') r.taskId = (rows.get(`time_entry:${r.op.entityId}`) as TimeEntry | undefined)?.task_id || undefined
     }
     const missing = [...new Set(recorded.map((r) => r.taskId).filter((id): id is string => !!id && !rows.has(`task:${id}`)))]
     const loaded = missing.length ? await db.tasks.bulkGet(missing) : []
@@ -744,6 +746,10 @@ export type NewTaskInput = {
    * task's final due and written in the same batch as the task.
    */
   reminders?: ReminderPhrase[]
+  /** URLs typed in quick add (quick-add-links D2): link attachments written in the same batch as the task. */
+  links?: string[]
+  /** Files pasted into quick add (quick-add-files D1): attachments written in the same batch as the task. */
+  files?: File[]
   /**
    * Created already done (today-closed-list D6, Log a win): `completed_at` is now and
    * `completed_by` the signed-in account, in the creating batch.
@@ -815,12 +821,14 @@ export function planReminders(taskId: string, due: Task['due'], phrases: readonl
   })
 }
 
-/** A planned task with what quick add asked for alongside it: its reminders and the time already spent. */
-async function withCompanions(input: NewTaskInput, planned: { id: string; change: Change }, now: Date): Promise<Change[]> {
+/** A planned task with what quick add asked for alongside it: its reminders, the time already spent and its links. */
+export async function planCompanions(input: NewTaskInput, planned: { id: string; change: Change }, now: Date): Promise<Change[]> {
   const { id, change } = planned
   const changes: Change[] = [change, ...planReminders(id, (change.patch as { due: Task['due'] }).due, input.reminders, now)]
   // Time already spent (quick add `30m/2h`, time-tracking D10): one closed entry ending now.
-  const me = input.spent_minutes ? await currentUserId() : null
+  const me = input.spent_minutes || input.links?.length ? await currentUserId() : null
+  // Links typed in the line (quick-add-links D2): link attachments, not the origin again.
+  changes.push(...linkChanges(id, input.links, me, { origin: input.origin?.url, now: now.getTime(), id: uuid }))
   if (me && input.spent_minutes) {
     const end = now.getTime()
     changes.push({ entity: 'time_entry', entityId: uuid(), patch: {
@@ -832,8 +840,11 @@ async function withCompanions(input: NewTaskInput, planned: { id: string; change
 
 export async function createTask(input: NewTaskInput, now = new Date()): Promise<string> {
   const planned = await planTask(input)
-  // One batch: the task never syncs without its reminders and its time entry.
-  await mutateMany(await withCompanions(input, planned, now))
+  // One batch: the task never syncs without its reminders, its time entry and its files.
+  const changes = await planCompanions(input, planned, now)
+  // attachments.ts imports this module: loaded only for pasted files (quick-add-files D1).
+  if (input.files?.length) await (await import('./attachments')).withFiles([planned.id], [input], changes, mutateMany)
+  else await mutateMany(changes)
   return planned.id
 }
 
@@ -845,7 +856,7 @@ export async function createTask(input: NewTaskInput, now = new Date()): Promise
 export async function planNewTasks(inputs: readonly NewTaskInput[], placement: Placement = 'bottom', now = new Date()): Promise<{ ids: string[]; changes: Change[] }> {
   const planned = await planTasks(inputs, placement)
   const changes: Change[] = []
-  for (const [i, p] of planned.entries()) changes.push(...(await withCompanions(inputs[i], p, now)))
+  for (const [i, p] of planned.entries()) changes.push(...(await planCompanions(inputs[i], p, now)))
   return { ids: planned.map((p) => p.id), changes }
 }
 
@@ -932,10 +943,15 @@ async function liveTasks(): Promise<Task[]> {
  * another project; the REST API enforces the same rules. The task is placed last
  * among its new siblings. One op per changed field, so the move converges by LWW.
  */
-export async function setTaskParent(id: string, parentId: string | null): Promise<void> {
+/**
+ * The change that makes a task a subtask of `parentId` (null: top level), last among its new
+ * siblings; null when it is already there. Throws for a parent that is the task, one of its
+ * descendants or in another project.
+ */
+export async function planTaskParent(id: string, parentId: string | null): Promise<Change | null> {
   const task = await db.tasks.get(id)
   if (!task || task.deleted_at) throw new Error(LOCAL_ERRORS.taskNotFound)
-  if (parentId === task.parent_id) return
+  if (parentId === (task.parent_id ?? null)) return null
   const all = await liveTasks()
   if (parentId !== null) {
     if (parentId === id) throw new Error(t('a task cannot be its own parent'))
@@ -948,7 +964,7 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
   for (const item of all) {
     if (item.id !== id && item.parent_id === parentId && item.project_id === task.project_id && item.position >= position) position = item.position + 1
   }
-  await mutate('task', id, { parent_id: parentId, position })
+  return { entity: 'task', entityId: id, patch: { parent_id: parentId, position } }
 }
 
 /**
@@ -1063,19 +1079,41 @@ export function planProjectChange(task: Task, all: Task[], patch: Partial<Omit<T
  * stays behind, so a subtask is always in its parent's project. A move into another
  * sharing scope becomes copy + tombstone and returns the copy's id.
  */
+/** What else a patch writes on its task: un-parking on a date, ending a repetition with no date. */
+function fullPatch(task: Task | undefined, patch: Partial<Omit<Task, 'id' | '_clock'>>): Partial<Omit<Task, 'id' | '_clock'>> {
+  // Scheduling a parked task un-parks it in the same batch (someday-and-evening D3).
+  if (!('start' in patch) && patch.due && task?.start === 'someday') patch = { ...patch, start: null }
+  // A recurrence rule needs a due date; clearing the date ends the repetition.
+  if (patch.due === null && !('recurrence' in patch) && task?.recurrence) patch = { ...patch, recurrence: null }
+  return patch
+}
+
+/** Whether the next edit of task `id` splits the series (This and following, series-split D6). */
+export function editRedirected(id: string): boolean {
+  return redirect?.id === id
+}
+
+/** Whether Also past ones is chosen for the series `id` (series-past-edits). */
+export function pastScopeActive(id: string): boolean {
+  return pastScope?.id === id
+}
+
+/**
+ * The changes updateTask writes for a patch that neither moves the task to another project nor
+ * takes the panel's scope: the task, and for a series the open records still holding the previous
+ * value (series-exceptions D6). Null for a task that is not there.
+ */
+export async function planTaskEdit(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>): Promise<Change[] | null> {
+  const task = await db.tasks.get(id)
+  if (!task) return null
+  const full = fullPatch(task, patch)
+  return [{ entity: 'task', entityId: id, patch: full }, ...(await carried(task, full))]
+}
+
 export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>, opts?: MutateOptions): Promise<string> {
   const redirect = takeRedirect(id)
   if (redirect) return (await redirect(patch)) ?? id
-  // Scheduling a parked task un-parks it in the same batch (someday-and-evening D3).
-  if (!('start' in patch) && patch.due) {
-    const task = await db.tasks.get(id)
-    if (task?.start === 'someday') patch = { ...patch, start: null }
-  }
-  if (patch.due === null && !('recurrence' in patch)) {
-    // A recurrence rule needs a due date; clearing the date ends the repetition.
-    const task = await db.tasks.get(id)
-    if (task?.recurrence) patch = { ...patch, recurrence: null }
-  }
+  patch = fullPatch(await db.tasks.get(id), patch)
   if ('project_id' in patch) {
     const task = await db.tasks.get(id)
     if (task && patch.project_id !== task.project_id) {
@@ -1264,27 +1302,6 @@ export async function completeTask(id: string, opts: { now?: number; today?: str
   return recordId
 }
 
-/**
- * Skip the current occurrence of a series: an ordinary due-date change, no record.
- * A habit also writes the occurrence record marked `skipped` (OpenSpec `habits`).
- * Returns false (and writes nothing) when the task is not an open series or the
- * current occurrence is the last one before `until`.
- */
-export async function skipOccurrence(id: string, opts: { now?: number; today?: string } = {}): Promise<boolean> {
-  const now = opts.now ?? Date.now()
-  const today = opts.today ?? logicalToday()
-  await getDeviceId()
-  let ok = false
-  await db.transaction('rw', mutationTables(), async () => {
-    const series = await db.tasks.get(id)
-    const rule = seriesRule(series)
-    const changes = series && rule ? planSkip(series, rule, now, today, await lineageRows(id)) : null
-    if (!changes) return
-    await mutateMany(changes)
-    ok = true
-  })
-  return ok
-}
 
 /**
  * "This occurrence only": write the current occurrence's open record (no rule,
@@ -1327,10 +1344,23 @@ export async function setRecurrence(
     await redirect({ recurrence: parsedInput?.canonical ?? null })
     return { ok: true, rule: parsedInput?.canonical ?? null }
   }
-  if (input === null || input.trim() === '') {
-    if (task.recurrence !== null) await mutate('task', id, { recurrence: null })
-    return { ok: true, rule: null }
-  }
+  const plan = planRecurrence(task, input, opts)
+  if (!plan.ok) return plan
+  // Stopping is a plain write; a new rule follows the panel's scope (Also past ones).
+  if (plan.patch && plan.rule === null) await mutate('task', id, plan.patch)
+  else if (plan.patch) await commitEdit(task, plan.patch, [{ entity: 'task', entityId: id, patch: plan.patch }])
+  return { ok: true, rule: plan.rule }
+}
+
+/**
+ * The patch setRecurrence writes on `task` for `input` (null or empty: stop repeating), with no
+ * scope: the rule in the form a 1.0 client reads, and a first date when the task has none. A
+ * null patch when nothing changes.
+ */
+export function planRecurrence(
+  task: Task, input: string | null, opts: { today?: string } = {},
+): { ok: true; rule: string | null; patch: Record<string, unknown> | null } | { ok: false; error: string } {
+  if (input === null || input.trim() === '') return { ok: true, rule: null, patch: task.recurrence !== null ? { recurrence: null } : null }
   const parsed = parseRule(input)
   if (!parsed.ok) return { ok: false, error: parsed.error }
   const patch: Record<string, unknown> = {}
@@ -1339,8 +1369,7 @@ export async function setRecurrence(
   const rule = compatibleRule(parsed.canonical, due)
   if (rule !== task.recurrence) patch.recurrence = rule
   if (!task.due) patch.due = { date: due }
-  if (Object.keys(patch).length) await commitEdit(task, patch, [{ entity: 'task', entityId: id, patch }])
-  return { ok: true, rule }
+  return { ok: true, rule, patch: Object.keys(patch).length ? patch : null }
 }
 
 /** Deleting a task tombstones its whole subtree, one op per task, in one batch. */

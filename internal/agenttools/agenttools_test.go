@@ -3,6 +3,7 @@ package agenttools
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -23,6 +24,7 @@ var update = flag.Bool("update", false, "rewrite golden files")
 
 type fixture struct {
 	t     *testing.T
+	db    *sql.DB
 	sync  *opsync.Service
 	reg   *Registry
 	clock time.Time
@@ -42,7 +44,7 @@ func newFixture(t *testing.T) *fixture {
 			t.Fatal(err)
 		}
 	}
-	f := &fixture{t: t, sync: opsync.NewService(db), clock: time.Date(2026, 10, 12, 10, 0, 0, 0, time.UTC), ts: time.Now().UnixMilli() - 60_000}
+	f := &fixture{t: t, db: db, sync: opsync.NewService(db), clock: time.Date(2026, 10, 12, 10, 0, 0, 0, time.UTC), ts: time.Now().UnixMilli() - 60_000}
 	f.rec = audit.New(db, nil)
 	now := func() time.Time { return f.clock }
 	f.reg = New(f.sync, Options{Now: now, Audit: f.rec, Limits: NewLimiter(now), LocalToday: func() string { return f.clock.Format("2006-01-02") }})

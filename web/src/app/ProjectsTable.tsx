@@ -4,7 +4,7 @@
 // headers sort the rows among their siblings, so the tree stays a tree. The table is
 // its own size container: its columns drop from the end as it narrows, down to the
 // name and the health word on a phone. Arrow keys (and j, k) move between rows,
-// Left and Right fold and unfold, Enter opens. Where the health detail is dropped, the
+// Left and Right fold and unfold, Alt+Up and Alt+Down reorder (not while a header sorts), Enter opens. Where the health detail is dropped, the
 // word says why in a tooltip and on a tap (briefing-links D5).
 import { type KeyboardEvent, type MouseEvent, type RefObject, useEffect, useRef, useState } from 'react'
 import { addDaysISO, describeDue, logicalDay } from '../lib/dates'
@@ -14,7 +14,10 @@ import type { Membership, Project } from '../lib/types'
 import type { TreeNode } from '../lib/tree'
 import { t } from '../lib/i18n'
 import { Avatar, Icon, ProgressRing, ReadAs, ToneText, Tooltip, type IconName, type Tone } from '../ui'
+import type { ProjectTick } from './projectBulk'
 import { ProjectRowMenu } from './ProjectRowMenu'
+import { moveProjectBy } from '../lib/move'
+import { act } from './actionError'
 import { navigate } from './router'
 import { ProjectMark } from './ProjectMark'
 import { MAX_INDENT } from './TaskRow'
@@ -128,22 +131,52 @@ export interface ProjectsTableProps {
   now: number
   canMove: (n: TreeNode<Project>) => boolean
   edges: (n: TreeNode<Project>) => { first: boolean; last: boolean }
+  /** A row's tick for the selection (archive-several-projects), undefined when it cannot be ticked. */
+  tick?: (id: string) => ProjectTick | undefined
+  /** The selection's keys on a row: handled when it took the key, `move` to move the focus. */
+  onSelectKey?: (e: KeyboardEvent, id: string) => { handled: boolean; move?: number }
 }
 
-export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, foldable, onFold, sort, onSort, today, now, canMove, edges }: ProjectsTableProps) {
+export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, foldable, onFold, sort, onSort, today, now, canMove, edges, tick, onSelectKey }: ProjectsTableProps) {
   const dt = useDateTimeFormat()
   const body = useRef<HTMLTableSectionElement>(null)
   const frame = useRef<HTMLDivElement>(null)
   const narrow = useNarrow(frame)
   const opens = () => [...(body.current?.querySelectorAll<HTMLButtonElement>('[data-project-open]') ?? [])]
+  // A row moved with Alt+Up or Alt+Down keeps focus once the reordered rows render (issue 1956).
+  const refocus = useRef<string | null>(null)
+  useEffect(() => {
+    const id = refocus.current
+    refocus.current = null
+    if (id) opens().find((b) => b.dataset.projectOpen === id)?.focus()
+  }, [rows])
   const onKey = (e: KeyboardEvent<HTMLTableSectionElement>) => {
     const target = e.target as HTMLElement
-    if (!target.matches('[data-project-open]') || e.metaKey || e.ctrlKey || e.altKey) return
+    if (!target.matches('[data-project-open]')) return
     const list = opens()
     const i = list.indexOf(target as HTMLButtonElement)
     const go = (j: number) => { e.preventDefault(); list[Math.max(0, Math.min(list.length - 1, j))]?.focus() }
     const id = target.dataset.projectOpen!
+    // The selection's keys first: Space and x tick, Shift+arrows extend, Ctrl+A, Escape.
+    const sel = onSelectKey?.(e, id)
+    if (sel?.handled) {
+      e.preventDefault()
+      e.stopPropagation()
+      if (sel.move) list[i + sel.move]?.focus()
+      return
+    }
     const node = rows.find((n) => n.id === id)
+    // Alt+Up and Alt+Down move the row among its siblings, as its menu says (manual-ordering "Keyboard moves").
+    if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      e.preventDefault()
+      if (!node || !canMove(node)) return
+      const up = e.key === 'ArrowUp'
+      refocus.current = id
+      // A refused move (an edge) renders nothing new: drop the pending refocus, or a later refresh would pull focus back.
+      act(moveProjectBy(id, e.shiftKey ? (up ? 'top' : 'bottom') : up ? -1 : 1).then((moved) => { if (!moved) refocus.current = null }))
+      return
+    }
+    if (e.metaKey || e.ctrlKey || e.altKey) return
     switch (e.key) {
       case 'ArrowDown': case 'j': return go(i + 1)
       case 'ArrowUp': case 'k': return go(i - 1)
@@ -158,10 +191,16 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
         return
     }
   }
-  // A click anywhere on the row opens the project, except on its own controls.
+  // A click opens the project; with Ctrl, ⌘ or Shift, or while the boxes show, it ticks the row instead.
+  const openOrTick = (e: MouseEvent, id: string) => {
+    const tk = tick?.(id)
+    if (tk && (tk.shown || e.ctrlKey || e.metaKey || e.shiftKey)) { e.preventDefault(); tk.onTick(e.shiftKey); return }
+    navigate({ view: 'project', id })
+  }
+  // A click anywhere on the row does the same, except on its own controls.
   const onRowClick = (e: MouseEvent<HTMLTableRowElement>, id: string) => {
     if ((e.target as HTMLElement).closest('button, a, [role="menu"]')) return
-    navigate({ view: 'project', id })
+    openOrTick(e, id)
   }
 
   return (
@@ -184,9 +223,10 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
             const isFolded = foldable && folded.has(n.id)
             const due = s?.nextDue ? describeDue(s.nextDue, today, undefined, dt.resolved) : null
             const members = memberships.get(n.id)?.members ?? []
+            const tk = tick?.(n.id)
             return (
-              <tr key={n.id} data-projects-row={n.id} onClick={(e) => onRowClick(e, n.id)}
-                className="group cursor-pointer border-b border-soft row-hover focus-within:bg-selected">
+              <tr key={n.id} data-projects-row={n.id} data-ticked={tk?.ticked || undefined} onClick={(e) => onRowClick(e, n.id)}
+                className={`group cursor-pointer border-b border-soft ${tk?.ticked ? 'bg-accent-soft' : 'row-hover focus-within:bg-selected'}`}>
                 <td className="min-w-0 py-0">
                   <div className="flex min-h-11 min-w-0 items-center" style={{ paddingLeft: `${Math.min(n.depth, MAX_INDENT) * 1.25}rem` }}>
                     <span className="flex h-8 w-6 shrink-0 items-center justify-center pointer-coarse:h-11 pointer-coarse:w-11">
@@ -198,10 +238,13 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
                         </button>
                       )}
                     </span>
-                    <button type="button" onClick={() => navigate({ view: 'project', id: n.id })} data-project-open={n.id}
-                      aria-expanded={has && foldable ? !isFolded : undefined}
+                    <button type="button" onClick={(e) => openOrTick(e, n.id)} data-project-open={n.id}
+                      aria-expanded={has && foldable ? !isFolded : undefined} aria-pressed={tk?.shown ? tk.ticked : undefined}
                       className={`flex min-w-0 flex-1 items-center gap-2 rounded-control py-1.5 pr-2 text-left text-body font-medium outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus ${dimmed?.has(n.id) ? 'text-faint' : 'text-strong'}`}>
-                      <span className="flex w-5 shrink-0 justify-center"><ProjectMark project={p} /></span>
+                      {/* While the boxes show, a row's box stands where its mark is (as on the Notes page). */}
+                      <span className="flex w-5 shrink-0 justify-center">{tk?.shown
+                        ? <span aria-hidden className={`flex h-4 w-4 items-center justify-center rounded-[4px] border ${tk.ticked ? 'border-accent bg-accent text-on-accent' : 'border-strong'}`} data-project-tick>{tk.ticked && <Icon name="check" size={12} />}</span>
+                        : <ProjectMark project={p} />}</span>
                       <span className="user-text min-w-0 flex-1 truncate">{p.name}</span>
                     </button>
                   </div>

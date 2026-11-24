@@ -23,7 +23,7 @@ export async function builtinDocument(id: string): Promise<ThemeDocument | null>
 
 /** The applied form of a resolved theme. */
 export function toApplied(t: ResolvedTheme, hash: string): AppliedTheme {
-  return { id: t.id, hash, kind: t.kind, tokens: t.tokens, bar: t.bar, ...(t.radius ? { radius: t.radius } : {}), ...(t.font ? { font: t.font } : {}), ...(t.list ? { list: t.list } : {}) }
+  return { id: t.id, hash, kind: t.kind, tokens: t.tokens, bar: t.bar, ...(t.radius ? { radius: t.radius } : {}), ...(t.font ? { font: t.font } : {}), ...(t.list ? { list: t.list } : {}), ...(t.titleWeight ? { titleWeight: t.titleWeight } : {}) }
 }
 
 /** Derives a document in a worker when the browser has one, else here; a failing worker falls back to here. */

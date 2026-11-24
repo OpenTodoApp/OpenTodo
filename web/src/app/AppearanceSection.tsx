@@ -14,21 +14,27 @@
 // and the tiles are not offered (D7).
 import { useHabitsEnabled } from '../lib/habitPrefs'
 import { readMethodMode } from '../lib/method/mode'
-import { type DragEvent, type KeyboardEvent, lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { type DragEvent, type KeyboardEvent, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { cachedCustom, customAccentStyle, type CustomAccentValues, deriveCustom, DENSITIES, type Density, destinationOrder, type DestinationId, FIXED_DESTINATIONS, moveDestination, PROMOTABLE, type Promotable, readAppearance, readSidebarCounts, setAppearance, setCustomAccent, setPromoted, setSidebarCounts, SIDEBAR_COUNTS, type SidebarCounts, THEME_MODES, type Appearance } from '../lib/appearance'
 import { ActionMenu } from './menus/ActionMenu'
 import { useUserPrefsRow } from '../lib/localData'
 import type { ThemeModePref, UserPrefs } from '../lib/types'
-import { Icon, LazyAccentPicker, Popover, SettingRow, SettingsSection, Skeleton, Switch } from '../ui'
+import { Icon, LazyAccentPicker, Popover, Select, SettingRow, SettingsSection, Skeleton, Switch } from '../ui'
 import { ACCENTS, CUSTOM_ACCENT, type ThemeAccent } from '../ui'
 import { t, msg, translatedMap } from '../lib/i18n'
 import { accentName } from '../lib/colourNames'
 import { act } from './actionError'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { hapticsPrefOn, setHapticsPref } from '../lib/haptics'
+import { completionSoundOn, setCompletionSound } from '../lib/completionSoundPref'
+import { canPlayCompletionSound } from './completionSound'
+import { deadlineDatesOn, setDeadlineDates } from '../lib/deadlineDates'
 import { fullTitlesOn, setFullTitles } from '../lib/fullTitles'
 import { canVibrate } from './motion'
+import { canSetZoom, setAllowZoom, useAllowZoom } from '../lib/touchZoom'
 import { readTaskOpen, setTaskOpen, type TaskOpenPref } from '../lib/userPrefs'
+import { readRowClick, ROW_CLICK_LABEL, ROW_CLICK_PREFS, setRowClick, useServerRowClick, type RowClickMode, type RowClickPref } from '../lib/rowClickPref'
 import { accountRowLayout, ROW_LAYOUTS, setAccountRowLayout, type RowLayout } from '../lib/rowLayout'
 import { ROW_LAYOUT_LABEL } from './views/DisplayPanel'
 import { readThemeChoices } from '../lib/theme/choice'
@@ -61,8 +67,13 @@ export interface AppearanceViewProps {
   rows?: { value: RowLayout; onChange: (r: RowLayout) => void }
   /** Full task titles (full-task-titles D1): wrap titles instead of cutting them. */
   titles?: { on: boolean; onChange: (on: boolean) => void }
+  /** Deadlines as dates (deadline-dates D1): the date in rows instead of the countdown. */
+  deadlineDates?: { on: boolean; onChange: (on: boolean) => void }
   /** The haptics switch, only on a device that can vibrate (appearance-preferences "Haptic feedback preference"). */
   haptics?: { on: boolean; onChange: (on: boolean) => void }
+  completionSound?: { on: boolean; onChange: (on: boolean) => void }
+  /** The pinch-zoom switch, only on a touch device (design-system "Fields never zoom the screen on touch", #1386). */
+  zoom?: { on: boolean; onChange: (on: boolean) => void }
   /** The theme of each side (theme-engine D14): the lists to show and writing a choice. */
   themes?: ThemeSettingsProps
 }
@@ -117,7 +128,7 @@ function TilePreview() {
 
 const TILE = 'flex w-28 shrink-0 snap-start flex-col gap-2 rounded-card border bg-surface p-2 text-left outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-auto'
 
-export function AppearanceView({ value, onMode, onAccent, custom, onDensity, rows, titles, haptics, themes }: AppearanceViewProps) {
+export function AppearanceView({ value, onMode, onAccent, custom, onDensity, rows, titles, deadlineDates, haptics, completionSound, zoom, themes }: AppearanceViewProps) {
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([])
   const [picking, setPicking] = useState(false)
   const customRef = useRef<HTMLButtonElement | null>(null)
@@ -188,9 +199,21 @@ export function AppearanceView({ value, onMode, onAccent, custom, onDensity, row
         <SettingRow id="appearance-titles" {...rowCopy('appearance', 'titles')} htmlFor="appearance-titles-switch"
           control={<Switch id="appearance-titles-switch" checked={titles.on} onChange={titles.onChange} label={t('Show full task titles')} hideLabel />} />
       )}
+      {deadlineDates && (
+        <SettingRow id="appearance-deadline-dates" {...rowCopy('appearance', 'deadlineDates')} htmlFor="appearance-deadline-dates-switch"
+          control={<Switch id="appearance-deadline-dates-switch" checked={deadlineDates.on} onChange={deadlineDates.onChange} label={t('Show deadlines as dates')} hideLabel />} />
+      )}
       {haptics && (
         <SettingRow id="appearance-haptics" {...rowCopy('appearance', 'haptics')} htmlFor="appearance-haptics-switch"
           control={<Switch id="appearance-haptics-switch" checked={haptics.on} onChange={haptics.onChange} label={t('Haptic feedback')} hideLabel />} />
+      )}
+      {completionSound && (
+        <SettingRow id="appearance-completion-sound" {...rowCopy('appearance', 'completionSound')} htmlFor="appearance-completion-sound-switch"
+          control={<Switch id="appearance-completion-sound-switch" checked={completionSound.on} onChange={completionSound.onChange} label={t('Task completion sound')} hideLabel />} />
+      )}
+      {zoom && (
+        <SettingRow id="appearance-zoom" {...rowCopy('appearance', 'zoom')} htmlFor="appearance-zoom-switch"
+          control={<Switch id="appearance-zoom-switch" checked={zoom.on} onChange={zoom.onChange} label={t('Allow pinch zoom')} hideLabel />} />
       )}
     </SettingsSection>
   )
@@ -323,6 +346,7 @@ function useCustomValues(hex: string | undefined): CustomAccentValues | null {
 export function AppearanceSection({ author = '' }: { author?: string }) {
   const row = usePrefsRow()
   const value = readAppearance(row)
+  const allowZoom = useAllowZoom()
   const values = useCustomValues(value.custom)
   const catalogue = useCatalogue()
   // The server's default and themes (theme-instance-default): re-rendered when they change.
@@ -334,7 +358,10 @@ export function AppearanceSection({ author = '' }: { author?: string }) {
     onDensity={(d) => act(setAppearance('density', d))}
     rows={{ value: accountRowLayout(row), onChange: (r) => act(setAccountRowLayout(r)) }}
     titles={{ on: fullTitlesOn(row), onChange: (on) => act(setFullTitles(on)) }}
-    haptics={canVibrate() ? { on: hapticsPrefOn(row), onChange: (on) => act(setHapticsPref(on)) } : undefined} />
+    deadlineDates={{ on: deadlineDatesOn(row), onChange: (on) => act(setDeadlineDates(on)) }}
+    haptics={canVibrate() ? { on: hapticsPrefOn(row), onChange: (on) => act(setHapticsPref(on)) } : undefined}
+    completionSound={canPlayCompletionSound() ? { on: completionSoundOn(row), onChange: (on) => act(setCompletionSound(on)) } : undefined}
+    zoom={canSetZoom() ? { on: allowZoom, onChange: setAllowZoom } : undefined} />
 }
 
 export function SidebarSection() {
@@ -352,14 +379,24 @@ export function SidebarSection() {
 /** Settings → Appearance → Task details (task-side-panel D1): the synced choice, written through ops. */
 export function TaskDetailsSection() {
   const row = usePrefsRow()
-  return <TaskDetailsView value={readTaskOpen(row)} onChange={(v) => act(setTaskOpen(v))} />
+  const serverClick = useServerRowClick()
+  return <TaskDetailsView value={readTaskOpen(row)} onChange={(v) => act(setTaskOpen(v))}
+    click={{ value: readRowClick(row), server: serverClick, onChange: (v) => act(setRowClick(v)) }} />
 }
 
-export function TaskDetailsView({ value, onChange }: { value: TaskOpenPref; onChange: (v: TaskOpenPref) => void }) {
+export function TaskDetailsView({ value, onChange, click }: { value: TaskOpenPref; onChange: (v: TaskOpenPref) => void; click?: { value: RowClickPref; server: RowClickMode; onChange: (v: RowClickPref) => void } }) {
   return (
     <SettingsSection {...cardCopy('task-details')}>
       <SettingRow id="task-open" {...rowCopy('task-details', 'open')}
         control={<Segmented label={t('Open tasks')} items={TASK_OPEN} labels={TASK_OPEN_LABEL} value={value} onChange={onChange} testId="task-open" />} />
+      {/* Click a task to (click-default D1): the account's choice, or the server's default. */}
+      {click && (
+        <SettingRow id="row-click" {...rowCopy('task-details', 'click')} htmlFor="row-click-select" control={
+          <Select id="row-click-select" className="sm:w-64" value={click.value} onChange={(e) => click.onChange(e.target.value as RowClickPref)}>
+            {ROW_CLICK_PREFS.map((p) => <option key={p} value={p}>{p ? ROW_CLICK_LABEL[p] : t('Use the server default ({choice})', { choice: ROW_CLICK_LABEL[click.server] })}</option>)}
+          </Select>
+        } />
+      )}
     </SettingsSection>
   )
 }

@@ -7,16 +7,19 @@ import { Icon } from '../../ui'
 import { act } from '../actionError'
 import { isGhost, useDeparture } from '../motion'
 import { MAX_INDENT, TaskRow, type RowMotion, type TaskRowProps } from '../TaskRow'
+import type { RowClickIntent } from '../rowClick'
 import { UrgencyChip, UrgencyContext } from '../useUrgency'
+import { LineField } from '../LineField'
 
 /** The list's row handlers, stable for the life of the list (large-list-performance D1). */
 export interface RowActions {
   toggle: (task: Task) => void
   toggleCollapse: (id: string) => void
-  /** Opens the task: inline (a click, inline-task-editing) or in the panel. */
-  open: (id: string, e?: React.MouseEvent) => void
+  /** Selects, edits, or opens the task according to the row's activation. */
+  open: (id: string, e?: React.MouseEvent, intent?: RowClickIntent) => void
   /** A double-click: the task's page (row-click-modes D2). */
   openPage: (id: string) => void
+  editTitle: (id: string) => void
   tick: (id: string, range: boolean) => void
   drag: (e: React.PointerEvent, task: Task) => void
   /** A press on the row's touch grip: hold selects, hold then move drags (bulk-actions on touch). */
@@ -33,7 +36,7 @@ export interface RowActions {
   contextAt: (task: Task, x: number, y: number, row: HTMLElement) => void
 }
 
-type TaskListRowProps = Omit<TaskRowProps, 'motion' | 'labels' | 'onToggle' | 'onOpen' | 'onOpenPage' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'onGripDown' | 'onGripClick' | 'dropKey' | 'actions' | 'onMore' | 'onExpand'> & {
+type TaskListRowProps = Omit<TaskRowProps, 'motion' | 'labels' | 'onToggle' | 'onOpen' | 'onOpenPage' | 'onEditTitle' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'onGripDown' | 'onGripClick' | 'dropKey' | 'actions' | 'onMore' | 'onExpand'> & {
   labelMap: Map<string, Label>
   /** The row can be picked up (to a sidebar project or label, ux-feedback-2 D4). */
   draggable: boolean
@@ -43,6 +46,7 @@ type TaskListRowProps = Omit<TaskRowProps, 'motion' | 'labels' | 'onToggle' | 'o
   collapsible: boolean
   /** The row can show its details under it (row-expand): list rows, not cards or departing rows. */
   expandable: boolean
+  swipeEditTitle?: boolean
   handlers: RowActions
 }
 
@@ -63,7 +67,7 @@ export function rowMotion(task: Task, departure: ReturnType<typeof useDeparture>
  * rows whose `selected` changed. The row follows its own task's completion sequence,
  * so a click on its checkbox draws this row only (list-rendering-at-scale D7).
  */
-export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable, reorderable, collapsible, expandable, handlers: actions, ...rest }: TaskListRowProps) {
+export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable, reorderable, collapsible, expandable, swipeEditTitle, handlers: actions, ...rest }: TaskListRowProps) {
   const labels = useMemo(() => resolveLabels(task.labels, labelMap), [task.labels, labelMap])
   const departure = useDeparture(task.id)
   // Under the urgency order a top-level row shows its score (urgency-sort D4).
@@ -87,9 +91,11 @@ export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable
       dropKey={reorderable ? `task:${task.id}` : undefined}
       onToggle={() => actions.toggle(task)}
       onToggleCollapse={collapsible ? () => actions.toggleCollapse(task.id) : undefined}
-      onOpen={(e) => actions.open(task.id, e)}
+      selectOnClick
+      onOpen={(e, intent) => actions.open(task.id, e, intent)}
       onOpenPage={() => actions.openPage(task.id)}
-      onTick={(range) => actions.tick(task.id, range)}
+      onEditTitle={swipeEditTitle ? () => actions.editTitle(task.id) : undefined}
+      onTick={rest.contextual ? undefined : (range) => actions.tick(task.id, range)}
       onMore={(from) => actions.more(task.id, from)}
       onExpand={expandable ? () => actions.expand(task.id) : undefined}
       score={urgency && !rest.depth && rest.shape !== 'card' ? <UrgencyChip of={urgency} task={task} /> : undefined}
@@ -102,9 +108,9 @@ export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable
  * leaving it empty) closes it. `add` writes one task from the typed title; `onClose`
  * hears whether Escape asked for the close, so the line can take its focus back.
  */
-export function AddLine({ depth, placeholder, label, add, onClose }: { depth: number; placeholder: string; label: string; add: (title: string) => Promise<unknown>; onClose: (escape: boolean) => void }) {
+export function AddLine({ depth, timeColumn = false, placeholder, label, add, onClose }: { depth: number; timeColumn?: boolean; placeholder: string; label: string; add: (title: string) => Promise<unknown>; onClose: (escape: boolean) => void }) {
   const [value, setValue] = useState('')
-  const ref = useRef<HTMLInputElement>(null)
+  const ref = useRef<HTMLTextAreaElement>(null)
   useEffect(() => {
     ref.current?.focus()
   }, [])
@@ -117,15 +123,21 @@ export function AddLine({ depth, placeholder, label, add, onClose }: { depth: nu
     ref.current?.focus()
   }
   return (
-    <form data-add-line onSubmit={(e) => act(submit(e))} className="flex items-center gap-2 py-1 pr-2" style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 2}rem` }}>
-      <span className="text-accent">+</span>
-      <input
+    // Laid out like a row being edited in place (issue 1980): the row's padding, the "+" in
+    // the checkbox's slot and the field at the title column, time column included. The "+"
+    // keeps to the field's first line when the title wraps: its box is one line of the field
+    // (30 px; 44 px on a touch screen, where a field is at least 44 px tall and its padding
+    // keeps one line in the middle, as the one-line input had it).
+    <form data-add-line onSubmit={(e) => act(submit(e))} className="row-pad flex items-start gap-2 pr-2" style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 2}rem` }}>
+      <span aria-hidden className="flex h-7.5 w-5 shrink-0 items-center justify-center text-accent pointer-coarse:h-11">+</span>
+      {timeColumn && <span aria-hidden data-row-time="" className="w-(--row-time-w) shrink-0" />}
+      <LineField
         ref={ref}
-        className="ui-input py-1"
+        className="ui-input py-1 pointer-coarse:py-[11px]"
         placeholder={placeholder}
         aria-label={label}
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onValue={setValue}
         onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose(true) } }}
         // Left empty, it closes; not when focus went to the line that took its place
         // (the "Add task below" line moves down after each add, a subtask line opens on a click).
@@ -136,8 +148,8 @@ export function AddLine({ depth, placeholder, label, add, onClose }: { depth: nu
 }
 
 /** Inline "Add subtask" line under a row; each entry is the parent's last subtask. */
-export function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: number; onClose: (escape: boolean) => void }) {
-  return <AddLine depth={depth} onClose={onClose} label={t('Add a subtask')} add={(title) => createSubtask(parent.id, title)}
+export function SubtaskInput({ parent, depth, timeColumn, onClose }: { parent: Task; depth: number; timeColumn?: boolean; onClose: (escape: boolean) => void }) {
+  return <AddLine depth={depth} timeColumn={timeColumn} onClose={onClose} label={t('Add a subtask')} add={(title) => createSubtask(parent.id, title)}
     placeholder={parent.title ? t('Add a subtask to {title}…', { title: parent.title }) : t('Add a subtask to this task…')} />
 }
 
@@ -155,7 +167,7 @@ export function SubtaskAddLine({ parent, depth, timeColumn = false, selected, op
   return (
     <div data-subtask-add-line data-line-selected={selected || open || undefined}>
       {open
-        ? <SubtaskInput parent={parent} depth={depth} onClose={(escape) => { if (escape) returnFocus.current = true; onClose() }} />
+        ? <SubtaskInput parent={parent} depth={depth} timeColumn={timeColumn} onClose={(escape) => { if (escape) returnFocus.current = true; onClose() }} />
         : (
           <button
             ref={button}

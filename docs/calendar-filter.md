@@ -1,6 +1,6 @@
 ---
 title: Filter the calendar
-summary: Show only the tasks a query matches in the calendar and in Upcoming, and show one project as a calendar.
+summary: Show only the tasks a query matches in the calendar, in Upcoming and in a project, and show one project as a calendar.
 audience: user
 section: Guides
 specs: [filter-queries, time-blocking]
@@ -14,10 +14,11 @@ When the week is full of everything, narrow it down: to one project, a few label
 
 ## Filter the calendar and Upcoming
 
-**Filter…** shows only the tasks a query matches, in the [filter language](filters.md) of saved views: `##Work` for a project and its sub-projects, `p1`, `@errand | @call`. The label checkboxes under the query write `@label` terms for you. Every change applies at once; a query with a mistake shows the error and keeps the last one that worked.
+**Filter…** shows only the tasks a query matches, in the [filter language](filters.md) of saved views: `search: tile` for words in the title or description, `##Work` for a project and its sub-projects, `p1`, `@errand | @call`. The label checkboxes under the query write `@label` terms for you. Every change applies at once; a query with a mistake shows the error and keeps the last one that worked.
 
 - In the [calendar](calendar-views.md), **Filter…** is in the **More actions** menu. One filter covers Day, Week, Month, Plan and Year. It narrows tasks and their [deadline](deadlines-and-start-dates.md#deadlines) markers; calendar events, frames and the planning list are never filtered. Capacity still counts every task of the day, and its tooltip says how many are hidden by the filter.
 - In [Upcoming](today-and-upcoming.md), **Filter…** is under the duration choices of the header's **Filter** button. Upcoming has a filter of its own.
+- In a project's list, [board](sections-and-boards.md) or timeline, **Filter…** is in the same place, and each project has a filter of its own. On a board every column stays, with only the cards that match.
 - An active filter is one chip in the header, in words (*Project is Work or a sub-project*): click it to change the filter, or its **×** to clear it.
 
 Each filter is remembered on this device across reloads and is never synced. It works offline, from the tasks on your device.

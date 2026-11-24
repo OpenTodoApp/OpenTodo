@@ -108,7 +108,7 @@ When the request to start carries an `Origin` that is not the origin of the redi
 - **THEN** the browser lands on the panel with `calendar-sync=authorization_failed`
 
 ### Requirement: Tasks written to the calendar
-For a connection with a target calendar, the server SHALL write each task of the user's task feed selection (open, visible to the user, with a due date from 30 days back to 365 days ahead) as one event `<task-id>.ics` with the task id as UID: a timed task as an event of its estimate (30 minutes without one) in its zone, or floating; a date-only task as an all-day event only when **Include tasks without a time** is on. A recurring task SHALL be written as its next occurrence. The event SHALL carry the task's notes as its description (none for an encrypted account) and a link to the task's page, `<base URL>/task/<id>`, as its URL (a Microsoft event, which has no URL, ends its text with the link); a change of the notes SHALL rewrite the event, while reading the calendar back SHALL compare only its times and title. Creation SHALL use `If-None-Match: *`, changes and deletions `If-Match` with the stored ETag. Completed, deleted, undated and out-of-window tasks SHALL have their event removed. Offline edits reach the calendar after the device syncs and the next cycle runs.
+For a connection with a target calendar, the server SHALL write each task of the user's task feed selection (open, visible to the user, with a due date from 30 days back to 365 days ahead) as one event `<task-id>.ics` with the task id as UID: a timed task as an event of its estimate (30 minutes without one) in its zone, or floating; a date-only task as an all-day event only when **Include tasks without a time** is on. A recurring task SHALL be written as its next occurrence. The event SHALL carry the task's notes as its description (none for an encrypted account) and a link to the task's page, `<base URL>/task/<id>`, as its URL (a Microsoft event, which has no URL, ends its text with the link); a change of the notes SHALL rewrite the event, while reading the calendar back SHALL compare only its times and title. Creation SHALL use `If-None-Match: *`; when the calendar refuses the task id as UID with 409 (Google keeps a deleted event's UID in its Bin for 30 days), the event SHALL be created once more with the UID `<task-id>-<8 hex digits>` as `<that UID>.ics`, and every later change of it SHALL keep that UID. Changes and deletions `If-Match` with the stored ETag. Completed, deleted, undated and out-of-window tasks SHALL have their event removed. Offline edits reach the calendar after the device syncs and the next cycle runs.
 
 #### Scenario: A timed task
 - **WHEN** a task is due 2026-11-03 at 09:00 in Europe/Berlin with an estimate of 45 minutes
@@ -125,6 +125,10 @@ For a connection with a target calendar, the server SHALL write each task of the
 #### Scenario: Task completed
 - **WHEN** the user completes a task whose event exists
 - **THEN** the next cycle deletes the event
+
+#### Scenario: A task written again after its event went to Google's Bin
+- **WHEN** a task's event was removed because the task was completed, and the task is reopened
+- **THEN** the next cycle creates its event as `<task-id>-<8 hex digits>.ics` with that UID instead of failing with `http_409`, and a later rename of the task rewrites that event
 
 ### Requirement: Calendar changes come back to the task
 For the events it wrote, the server SHALL read changes from the target calendar every 5 minutes and about 20 seconds after the user's own task changes, using `sync-collection` with a sync token where the server supports it and an ETag listing otherwise. A new start, end or all-day state SHALL become the task's due (a timed event's length its estimate); a new title SHALL become the task's title; a deleted event SHALL leave the task without a due date and SHALL never delete or complete it. Every change SHALL be an op applied through the op log with device `calsync:<connection-id>`, so devices converge on it with their next sync like with any other device's edit. Events the server did not write SHALL never change and SHALL never become tasks. No answer the server reads SHALL exceed 4 MB: when the listing of changes would, the server SHALL read back only the events it wrote, by `calendar-multiget` in batches of at most 50, treat an event the calendar no longer has as deleted and a new ETag as a change, and continue from the calendar's current sync token; changed events SHALL be read back in batches of at most 50, a batch whose answer is over 4 MB halved until it fits. Only a single event over 4 MB SHALL stop the cycle with `too_large`.
@@ -363,3 +367,30 @@ A connection SHALL offer to write to one calendar (the default) or to a calendar
 #### Scenario: Moving a task between projects
 - **WHEN** a task with an event in Work's calendar is moved to Home
 - **THEN** the next cycle deletes the event from Work's calendar and writes it to Home's
+
+### Requirement: Repeating tasks marked in the calendar
+An event that calendar sync writes for a repeating task (one with a repeat rule) SHALL be titled `🔁` followed by one space and the task's title, for CalDAV, Google and Microsoft connections alike. An event for a task that does not repeat SHALL keep the task's title unchanged, as SHALL every event of an encrypted account. When the server reads such an event back, it SHALL remove one leading `🔁` and the spaces after it before comparing the title or applying it to the task: an unchanged event SHALL change nothing, a renamed event SHALL give the task the new title without the marker, and an event whose marker was deleted in the calendar SHALL change nothing. When a task starts or stops repeating, its event SHALL be rewritten within a cycle. Calendar feeds and CalDAV are unchanged.
+
+#### Scenario: A repeating task in Google Calendar
+- **WHEN** the task "Water the plants", repeating every week and due Saturday at 09:00, is synced to Google Calendar
+- **THEN** the event on Saturday is titled "🔁 Water the plants", and the task's title is still "Water the plants" after the next cycle
+
+#### Scenario: Renamed in the calendar
+- **WHEN** the user renames that event to "🔁 Water the garden" in the calendar
+- **THEN** after the next cycle the task is titled "Water the garden"
+
+#### Scenario: Marker deleted in the calendar
+- **WHEN** the user renames that event to "Water the plants", without the marker
+- **THEN** the task's title does not change
+
+#### Scenario: A one-off task
+- **WHEN** a task titled "🔁 Rotate keys" that does not repeat is synced
+- **THEN** its event is titled "🔁 Rotate keys", and reading it back changes nothing
+
+#### Scenario: A task stops repeating
+- **WHEN** the repeat rule of "Water the plants" is removed
+- **THEN** within a cycle its event is titled "Water the plants"
+
+#### Scenario: Encrypted account
+- **WHEN** an encrypted account syncs a repeating task
+- **THEN** its event is titled "Encrypted item", with no marker

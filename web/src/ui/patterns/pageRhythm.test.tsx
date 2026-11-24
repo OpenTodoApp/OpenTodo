@@ -38,6 +38,16 @@ describe('PageHeader lead line (page-rhythm D1)', () => {
     await r.unmount()
   })
 
+  it('a day page\'s title comes before its top row in reading order, and the top row is drawn first', async () => {
+    stubMedia(1280)
+    const r = await render(<PageHeader kind="day" title="Today" meta="Wednesday" actions={<button>Add</button>} help="today" />)
+    const title = r.container.querySelector('[data-page-title]')!
+    const top = r.container.querySelector('[data-page-top-row]')!
+    expect(title.compareDocumentPosition(top) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(top.className).toContain('order-first')
+    await r.unmount()
+  })
+
   it('a tool page is one compact row: title at the header step, the lead line beside it, then the actions (precision-shell D1)', async () => {
     stubMedia(1280)
     const r = await render(<PageHeader title="Home renovation" meta="2 · owner" actions={<button>Share</button>} help="project" />)
@@ -114,7 +124,8 @@ describe('opening the panel moves nothing (list-stays-still D1)', () => {
     expect(css).toMatch(/@media \(min-width: 90rem\)\s*\{\s*:root\s*\{\s*--panel-w:\s*30rem;\s*\}\s*\}/)
     const sources = import.meta.glob(['../../app/PanelFrame.tsx', '../../app/task-detail/TaskDetail.tsx'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>
     for (const [path, src] of Object.entries(sources)) {
-      expect(src, path).toContain('lg:w-(--panel-w)')
+      // Docked from 900 px (tablet-layouts D2).
+      expect(src, path).toContain('min-[56.25rem]:w-(--panel-w)')
       expect(src, path).not.toMatch(/min-\[1440px\]:w-|lg:w-\[26rem\]/)
     }
   })

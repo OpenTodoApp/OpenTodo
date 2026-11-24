@@ -5,7 +5,7 @@ import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
 import {
-  addObjective, canAdd, carryObjective, dropObjective, followingPeriod, isObjectivePeriod, moveObjective, objectivePeriods,
+  addObjective, canAdd, carryObjective, dropObjective, isObjectivePeriod, moveObjective, objectivePeriods,
   objectivesIn, openCount, previousPeriod, renameObjective, reviewPlan, setObjectiveDone,
 } from './objectives'
 import { applyOps } from './ops'
@@ -30,7 +30,6 @@ describe('periods', () => {
     expect(previousPeriod('2027-Q1')).toBe('2026-Q4')
     expect(previousPeriod('2026-W45')).toBe('2026-W44')
     expect(previousPeriod('2027-W01')).toBe('2026-W53')
-    expect(followingPeriod('2026-Q4')).toBe('2027-Q1')
   })
   it('names this quarter, this week and next week (Monday weeks)', () => {
     expect(objectivePeriods('2026-10-28', 1)).toEqual({ quarter: '2026-Q4', week: '2026-W44', nextWeek: '2026-W45' })

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { LOCAL_RETENTION, mergeOlder } from './activity'
 import { db, useDatabase } from './db'
 import {
-  countUnread, dayOf, ensureFeedBaselines, FEED_BASELINE_KEY, feedEvents, feedKindOf, filterFeed, flushSeen, formatUnread, groupByDay,
+  countUnread, dayOf, isArrangement, ensureFeedBaselines, FEED_BASELINE_KEY, feedEvents, feedKindOf, filterFeed, flushSeen, formatUnread, groupByDay,
   markEventsSeen, seenTimes, unreadCounts,
 } from './feed'
 import { applyOps, resetDeviceId } from './ops'
@@ -97,6 +97,22 @@ describe('unread', () => {
     expect(formatUnread(3)).toBe('3')
   })
 
+  it('a rearrangement is never unread (quiet-unread D1)', async () => {
+    await setup()
+    const mine = created('p1', 'alice', 1500)
+    await applyOps(mine)
+    const task = mine[0].entityId
+    const by = (id: string, field: string, value: unknown, ts: number): Op => ({ id, entity: 'task', entityId: task, field, value, ts, device: 'bob', actor: 'bob' })
+    // Bob drags the task, nests it under another, files it in a section: three events, none unread.
+    await applyOps([by('m1', 'position', 3, 20_000), by('m2', 'parent_id', 'other', 40_000), by('m3', 'position', 1, 40_000), by('m4', 'section_id', 's1', 60_000)])
+    expect(await unreadCounts()).toEqual({ byProject: new Map(), total: 0 })
+    // A rename, even with a drag in the same moment, is.
+    await applyOps([by('m5', 'title', 'Milk', 80_000), by('m6', 'position', 2, 80_000)])
+    expect((await unreadCounts()).byProject.get('p1')).toBe(1)
+    // The drags stay in the feed's history.
+    expect((await feedEvents()).filter((e) => isArrangement(e))).toHaveLength(3)
+  })
+
   it('initial seen time on first sync', async () => {
     await db.memberships.bulkPut([member('p1')])
     await applyOps(created('p1', 'bob', 2000))
@@ -134,7 +150,13 @@ describe('feed', () => {
     const events = await feedEvents()
     expect(events.map((e) => e.kind)).toEqual(['created', 'commented', 'created'])
     expect(events.every((e) => e.projectId)).toBe(true)
-    expect(filterFeed(events, { kind: 'commented' }).map((e) => e.actor)).toEqual(['carol'])
+    expect(filterFeed(events, { kinds: ['commented'] }).map((e) => e.actor)).toEqual(['carol'])
+    // Several kinds: any of them (workspace-activity D4); none chosen is all.
+    expect(filterFeed(events, { kinds: ['commented', 'created'] })).toHaveLength(3)
+    expect(filterFeed(events, { kinds: ['completed', 'time'] })).toHaveLength(0)
+    expect(filterFeed(events, { kinds: [] })).toHaveLength(3)
+    expect(feedKindOf('time_tracked')).toBe('time')
+    expect(feedKindOf('time_changed')).toBe('time')
     expect(filterFeed(events, { project: 'p2' })).toHaveLength(1)
     expect(filterFeed(events, { actor: 'bob' })).toHaveLength(1)
     expect(feedKindOf('reopened')).toBe('completed')

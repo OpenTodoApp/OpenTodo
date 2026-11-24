@@ -16,9 +16,10 @@ import type { AssistantUndo } from './db'
 import type { Task } from './types'
 
 /** The item an add to a reusable list matches, or null (not a reusable list, a subtask, a win, no match). */
-export async function reuseMatchFor(input: Pick<NewTaskInput, 'title' | 'project_id' | 'parent_id' | 'completed'>): Promise<ReuseMatch<Task> | null> {
+export async function reuseMatchFor(input: Pick<NewTaskInput, 'title' | 'project_id' | 'parent_id' | 'completed' | 'links' | 'files'>): Promise<ReuseMatch<Task> | null> {
   const pid = input.project_id
-  if (!pid || input.parent_id || input.completed) return null
+  // A line with a link or a pasted file is an item of its own: they would be lost on a reused one (quick-add-links D2, quick-add-files D5).
+  if (!pid || input.parent_id || input.completed || input.links?.length || input.files?.length) return null
   const project = await db.projects.get(pid)
   if (!project || project.deleted_at || !isReusable(project)) return null
   const tasks = await db.tasks.where('project_id').equals(pid).toArray()

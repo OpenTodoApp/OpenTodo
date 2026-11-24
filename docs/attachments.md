@@ -17,10 +17,10 @@ A task, a comment on it, or a [note](notes.md) can carry files and links: a rece
 
 - **Pick, paste or drop.** Choose **Attach › Choose files…** to pick files, paste an image or a file into the task panel, or drop files onto it (a drop zone appears while you drag).
 - **In the text.** An image pasted into the notes or a comment is attached and shown in place ([details](formatting.md#images)).
-- **Links.** Choose **Attach › Add a link…** and paste an `http` or `https` address. A link is stored as a link: the server never downloads it.
+- **Links.** Paste an `http(s)` address in **Attach › Add a link…** or [quick add](quick-add.md#tokens-any-language). The server never downloads a link.
 - **Offline.** A file added without a connection appears at once, marked "waiting to upload", and uploads after the next sync; other devices show "uploading" until it arrives.
 
-Images show a thumbnail; other files show their name, type and size. **Open** shows the file in a new tab when the browser can display it safely (images, PDF, text, audio, video); anything else, and every encrypted file, is downloaded. You can rename and remove your own attachments; the notice that follows undoes a removal.
+Images show a thumbnail; other files show their name, type and size. **Open** shows the file in a new tab when the browser can display it safely (images, PDF, text, audio, video); anything else, and every encrypted file, is downloaded. In the phone apps, **Open** saves the file. You can rename and remove your own attachments; the notice that follows undoes a removal.
 
 ## Who sees and changes them
 
@@ -28,7 +28,7 @@ Attachments belong to their task or note: everyone who can see it can see its at
 
 ## Limits
 
-The server owner sets a size limit per file (25 MB unless changed) and a total per account (1 GB unless changed) in **Settings → Server → Attachments**, and can turn attachments off. **Settings → Data** shows how much of your total you use. Removing an attachment frees your total at once; the file stays on the server for the Trash retention period (30 days unless changed), then is deleted. Until then any device can undo the removal, if your total still has room. Purging a task or a note from the Trash deletes its files immediately. A note turned into a task or moved to another project keeps its files without uploading them again; encrypted files stay with the original in the Trash when the project is shared.
+The server owner sets a size limit per file (25 MB unless changed) and a total per account (1 GB unless changed) in **Settings → Server → Attachments**, and can turn attachments off. **Settings → Data** shows how much of your total you use. Removing an attachment frees your total at once; the file stays on the server for the Trash retention period (30 days unless changed), then is deleted. Until then any device can undo the removal, if your total still has room. Purging a task or note from the Trash deletes its files immediately. A note turned into a task or moved to another project keeps its files without uploading them again; encrypted files stay with the original in the Trash when the project is shared.
 
 ## Encryption
 

@@ -46,6 +46,6 @@ Archiving merges the delta into `openspec/specs/` and moves the folder to `opens
 - Every new route has an authentication scenario and an error scenario.
 - No write bypasses the op log; no op field is renamed or removed.
 - No new mandatory environment variable, no telemetry, no outbound request the user did not configure.
-- Size: a new dependency is justified, and the web app's first load stays inside `web/bundle-budget.json`.
+- Size: a new dependency says what it replaces and what it weighs, and the web app's first load stays inside `web/bundle-budget.json`.
 - The tasks are done and each one was verified the way it says.
 - The user docs in `docs/` describe the new behaviour.

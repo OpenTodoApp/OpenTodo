@@ -173,7 +173,7 @@ func (c *client) do(ctx context.Context, method, path string, body any, headers 
 		return nil, resp.StatusCode, c.unreachable(err)
 	}
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		if path == "/auth/login" {
+		if path == "/auth/login" || path == "/auth/mfa" {
 			for _, ck := range resp.Cookies() {
 				if ck.Name == "opentodo_session" {
 					c.cookie = ck
@@ -318,8 +318,16 @@ type task struct {
 	// Origin is null, the object or an encrypted account's ciphertext (task-origin).
 	Origin json.RawMessage `json:"origin"`
 	// WorkspaceID is the workspace of a task without a project (workspaces).
-	WorkspaceID *string         `json:"workspace_id"`
-	Raw         json.RawMessage `json:"-"`
+	WorkspaceID *string `json:"workspace_id"`
+	// AssigneeID is the account the task is assigned to, null for no one.
+	AssigneeID *string         `json:"assignee_id"`
+	Raw        json.RawMessage `json:"-"`
+}
+
+// assignedToSomeoneElse reports a task assigned to an account other than me
+// (personal-views-assignee): Today and Upcoming leave it out. Without me nothing is.
+func (t task) assignedToSomeoneElse(me string) bool {
+	return me != "" && t.AssigneeID != nil && *t.AssigneeID != "" && *t.AssigneeID != me
 }
 
 // originLabel is the origin's id or host, "" when there is none or it is encrypted.
@@ -526,15 +534,19 @@ func (c *client) meAuth(ctx context.Context) (*user, credential, error) {
 // quickPrefs reports the account's Day parts, Energy levels and Time sectors
 // preferences (GET /api/v1/me day_parts, energy_levels and time_sectors,
 // OpenSpec changes day-parts, task-energy and time-sectors): quick-add parsing
-// follows them.
-func (c *client) quickPrefs(ctx context.Context) (dayParts, energy, sectors bool, err error) {
+// follows them. It also reports the credential's scope (an agent token reads no
+// links, quick-add-links), and the write gate keeps it, so no second /me is read.
+func (c *client) quickPrefs(ctx context.Context) (dayParts, energy, sectors bool, scope string, err error) {
 	var out struct {
-		DayParts bool `json:"day_parts"`
-		Energy   bool `json:"energy_levels"`
-		Sectors  bool `json:"time_sectors"`
+		DayParts bool       `json:"day_parts"`
+		Energy   bool       `json:"energy_levels"`
+		Sectors  bool       `json:"time_sectors"`
+		Auth     credential `json:"auth"`
 	}
-	err = c.getJSON(ctx, "/me", &out)
-	return out.DayParts, out.Energy, out.Sectors, err
+	if err = c.getJSON(ctx, "/me", &out); err == nil && c.gate != nil && !c.gate.scopeKnown {
+		c.gate.cred, c.gate.scopeKnown = out.Auth, true
+	}
+	return out.DayParts, out.Energy, out.Sectors, out.Auth.Scope, err
 }
 
 // normalizeURL accepts "todo.example.com", "http://host:8080/" and friends.

@@ -31,7 +31,7 @@ export interface TemplateText {
   /** The lines above the document: what the file is, how to use it, where the format is documented. */
   header: string[]
   /** A note for each top-level key. */
-  key: Record<'opentodoTheme' | 'id' | 'name' | 'author' | 'licence' | 'source' | 'kind' | 'bar' | 'notes' | 'shape' | 'type', string>
+  key: Record<'opentodoTheme' | 'id' | 'name' | 'author' | 'licence' | 'source' | 'kind' | 'bar' | 'notes' | 'shape' | 'type' | 'titleWeight', string>
   /** Above the four required seeds, and above the optional status seeds. */
   seeds: string
   statusSeeds: string
@@ -120,8 +120,9 @@ export function themeTemplate(doc: ThemeDocument, resolution: { tokens: Record<s
   const radius = doc.shape?.radius
   out.push(line(I, 'shape', { radius: radius ?? Object.fromEntries(RADIUS_STEPS.map((s) => [s, DEFAULT_RADIUS[s]])) }, text.key.shape, !!doc.shape))
   out.push(line(I, 'type', doc.type ?? { family: 'inter', list: 13 }, text.key.type, !!doc.type))
+  out.push(line(I, 'titleWeight', doc.titleWeight ?? 400, text.key.titleWeight, doc.titleWeight !== undefined))
   // Keys of a newer app's format, kept as they are.
-  const KNOWN = new Set(['$schema', 'opentodoTheme', 'id', 'name', 'author', 'licence', 'source', 'kind', 'seeds', 'tokens', 'bar', 'notes', 'shape', 'type'])
+  const KNOWN = new Set(['$schema', 'opentodoTheme', 'id', 'name', 'author', 'licence', 'source', 'kind', 'seeds', 'tokens', 'bar', 'notes', 'shape', 'type', 'titleWeight'])
   for (const [k, v] of Object.entries(doc)) if (!KNOWN.has(k) && v !== undefined) out.push(line(I, k, v, ''))
   out.push('}')
   return out.join('\n') + '\n'

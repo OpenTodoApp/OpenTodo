@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { watchVisualViewport } from './stack'
+import { KEYBOARD_GAP, keepAboveKeyboard, watchVisualViewport } from './stack'
 
 // A stand-in for window.visualViewport: its size and scale, and the listeners the watcher adds.
 function fakeViewport() {
@@ -39,5 +39,52 @@ describe('the on-screen keyboard (issue #724)', () => {
     vv.set(window.innerHeight - 40, 1.1)
     expect(scrollTo).not.toHaveBeenCalled()
     stop()
+  })
+})
+
+// ios-keyboard-bar D2: the field's own scroller moves; the document stays.
+describe('the focused field above the keyboard', () => {
+  afterEach(() => { document.body.innerHTML = ''; vi.restoreAllMocks() })
+
+  function sheetWith(field: { top: number; height: number }) {
+    document.body.innerHTML = '<div id="sheet" style="overflow-y:auto"><div style="height:2000px"><textarea id="f"></textarea></div></div>'
+    const sheet = document.getElementById('sheet')!
+    const el = document.getElementById('f') as HTMLElement
+    Object.defineProperty(sheet, 'scrollHeight', { value: 2000, configurable: true })
+    Object.defineProperty(sheet, 'clientHeight', { value: 600, configurable: true })
+    vi.spyOn(el, 'getBoundingClientRect').mockImplementation(() => ({ top: field.top - sheet.scrollTop, bottom: field.top + field.height - sheet.scrollTop, height: field.height, left: 0, right: 100, width: 100, x: 0, y: field.top, toJSON: () => ({}) }) as DOMRect)
+    return { sheet, el }
+  }
+
+  it('scrolls the sheet by the shortfall plus the gap, not the document', () => {
+    // A field 40 px tall at 700 px, the keyboard leaves 500 px: its bottom must reach 488.
+    const { sheet, el } = sheetWith({ top: 700, height: 40 })
+    const scrollTo = vi.spyOn(window, 'scrollTo')
+    const into = vi.fn(); el.scrollIntoView = into
+    keepAboveKeyboard(el, { offsetTop: 0, height: 500 })
+    expect(sheet.scrollTop).toBe(740 - (500 - KEYBOARD_GAP))
+    expect(into).not.toHaveBeenCalled()
+    expect(scrollTo).not.toHaveBeenCalled()
+  })
+
+  it('leaves a field that is already in view where it is', () => {
+    const { sheet, el } = sheetWith({ top: 100, height: 40 })
+    keepAboveKeyboard(el, { offsetTop: 0, height: 500 })
+    expect(sheet.scrollTop).toBe(0)
+  })
+
+  it('shows the top of a field taller than the room', () => {
+    const { sheet, el } = sheetWith({ top: 300, height: 900 })
+    keepAboveKeyboard(el, { offsetTop: 0, height: 500 })
+    expect(sheet.scrollTop).toBe(300 - KEYBOARD_GAP)
+  })
+
+  it('with no scroller, falls back to the browser', () => {
+    document.body.innerHTML = '<input id="f">'
+    const el = document.getElementById('f') as HTMLElement
+    vi.spyOn(el, 'getBoundingClientRect').mockReturnValue({ top: 700, bottom: 740, height: 40, left: 0, right: 100, width: 100, x: 0, y: 700, toJSON: () => ({}) } as DOMRect)
+    const into = vi.fn(); el.scrollIntoView = into
+    keepAboveKeyboard(el, { offsetTop: 0, height: 500 })
+    expect(into).toHaveBeenCalledWith({ block: 'nearest' })
   })
 })

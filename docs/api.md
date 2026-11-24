@@ -24,7 +24,7 @@ The whole API is also described as **OpenAPI 3.1**, generated from the server's 
 - **On your server:** `GET /api/v1/openapi.json` (no sign-in; it describes routes, not your data, and its `info.version` is the server's version).
 - **In each release:** `openapi.json` is attached to the [GitHub release](https://github.com/OpenTodoApp/OpenTodo/releases), and the latest is in the repository as [`docs/openapi.json`](https://github.com/OpenTodoApp/OpenTodo/blob/main/docs/openapi.json).
 
-It lists every `/api/v1` route with its parameters, request and response bodies, the [authentication](#authentication) it accepts, and the error envelope shown above. The synced entities (`Task`, `Project`, `Label`, `Note`, …) are shared schemas whose field descriptions come from the op schema. Each operation links to the section of this page that explains it, and `x-opentodo-policy` names its [route policy](#endpoints).
+It lists every `/api/v1` route with its parameters, request and response bodies, the [authentication](#authentication) it accepts, and the error envelope shown above. The synced entities (`Task`, `Project`, `Label`, `Note`, …) are shared schemas whose field descriptions come from the op schema. Each operation links to the section of this page that explains it, and `x-opentodo-policy` names its [route policy](#endpoints). Every request and response body has an example: for tasks, projects, sections, labels, notes, comments and sync what a test server answered, elsewhere one built from the schema.
 
 Use it to:
 
@@ -51,7 +51,7 @@ Two options:
 - **Session cookie** (the web app). Obtained from `auth/register` or `auth/login`. State-changing requests must come from the app's own origin.
 - **Bearer token** (scripts, CLI, AI assistants). Create one in **Settings → Integrations → API tokens** (**New token**, then a name and the access) or via `POST /tokens`, then send `Authorization: Bearer ot_…`.
 
-A token has a **scope**: `full` (the default), `read`, `agent` or `admin`; the OpenTodo app's tokens have the `app` scope, which acts as `full` (see [App sign-in](#app-sign-in)). A `read` token reads everything its account can read but is refused with 403 `insufficient_scope` on every request that can change something: every method other than `GET`, `HEAD` and `OPTIONS`, and `/api/v1/sync` whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are `full`. Give read tokens to anything that only needs to look, such as an AI assistant connected to the [MCP endpoint](mcp.md).
+A token has a **scope**: `full` (the default), `read`, `agent` or `admin`; the OpenTodo app's tokens have the `app` scope, which acts as `full` (see [App sign-in](#app-sign-in)). A `read` token reads everything its account can read, except the lists of the account's API tokens and connected apps, and is refused with 403 `insufficient_scope` on every request that can change something: every method other than `GET`, `HEAD` and `OPTIONS`, and `/api/v1/sync` whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are `full`. Give read tokens to anything that only needs to look, such as an AI assistant connected to the [MCP endpoint](mcp.md).
 
 An `agent` token is for an AI assistant that may make changes. It is the only scope that may call the MCP write tools, and only while the owner's `writes_enabled` and the user's `allow_writes` are both on ([mcp.md](mcp.md#letting-an-assistant-make-changes)). On the REST API it may write only on the [agent content routes](#agent-tokens) (create and edit tasks, projects, sections, labels, comments, reminders and time entries, and log habits) under the same switches and limits; every other write is refused like a `read` token's, including `/api/v1/sync`, `/api/v1/tokens`, every settings route and `/api/v1/me/agent-access` (even `GET`). It is stored as a `read` scope plus a marker, so a server downgraded to a version without `agent` treats it as read-only.
 
@@ -131,7 +131,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/healthz` | none | `{"status":"ok","version":"…","app_sign_in":true}` (`app_sign_in`: the server has [app sign-in](#app-sign-in)); 503 `unhealthy` when the database is unreachable |
+| GET | `/healthz` | none | `{"status":"ok","version":"…","app_sign_in":true,"app_sso":true}` (`app_sign_in`: the server has [app sign-in](#app-sign-in); `app_sso`: the Android and iPhone apps can run [single sign-on in the system browser](#single-sign-on-in-the-apps)); 503 `unhealthy` when the database is unreachable |
 | GET | `/api/v1/health` | none | The same answer as `/healthz`, under the API path, for reverse proxies and platforms that answer `/healthz` themselves (Pomerium, Google Cloud Run). The mobile apps check a server here first, then at `/healthz` |
 | GET | `/api/v1/openapi.json` | none | The [OpenAPI 3.1 description](#openapi-description) of this server's API: `application/json`, gzip when accepted, `ETag` and `Cache-Control: public, max-age=3600`, readable from any site |
 | GET | `/.well-known/security.txt` | none | [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116) text: the OpenTodo project's reporting channels (`Contact`), `Expires` 180 days ahead, `Policy` (SECURITY.md), `Canonical` when `OPENTODO_BASE_URL` is set; see [Security](security/README.md) |
@@ -146,6 +146,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/demo/sandbox` | none | [demo instance](self-hosting/demo.md) only (absent otherwise): `{token}` from `auth/status` → 201 `{user}` + cookie for a new private sandbox. Requires a same-origin `Origin` header; 403 `demo_token` (missing, forged, expired or used token), 403 `bad_origin`, 429 `rate_limited` (5 per address per hour), 503 `demo_busy` |
 | GET | `/api/v1/auth/oidc/start` | none | browser navigation: 302 to the provider (links the identity instead when signed in; linking a new identity needs a fresh session) |
 | GET | `/api/v1/auth/oidc/callback` | none | provider return: 303 to `/` + cookie, or to `/?error=…` |
+| POST | `/api/v1/auth/oidc/app-continue` | none | The confirmation page's form (`ticket`, `action` = `continue` or `cancel`) in the system browser, during [single sign-on in the apps](#single-sign-on-in-the-apps): 303 to `opentodo://sso?code=…&state=…`, or with `cancel` to `opentodo://sso?state=…`; 303 to `/?error=oidc_state_invalid` for an unknown, spent or expired ticket; 403 `bad_origin` from another site |
+| POST | `/api/v1/auth/oidc/app-session` | none | `{code, code_verifier}` from the OpenTodo app's web view, after [single sign-on in the system browser](#single-sign-on-in-the-apps): 303 to `/` + cookie, or the link answers of the callback when the web view is signed in; 400 `oidc_state_invalid` for an unknown, spent, expired or mismatched code; 403 `bad_origin` from another site |
 | GET | `/api/v1/invitations/{token}` | none | preview `{inviterName, email, expiresAt}` or 404 `invitation_invalid`, see [Invitations](#invitations) |
 | GET | `/api/v1/project-invites/{token}` | none | preview `{inviterName, projectName, role, email, expiresAt, canCreateAccount, alreadyMember?}` or 404 `invitation_invalid`, see [Project invite links](#project-invite-links) |
 | POST | `/api/v1/auth/password-reset` | none | `{email}` → always 202 `{ok: true}`; mails a reset link to an active account's address, see [Outgoing email](#outgoing-email); 404 `smtp_disabled` without outgoing email, 409 `base_url_required` without `OPENTODO_BASE_URL` |
@@ -167,9 +169,9 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PUT | `/api/v1/me/email-digest` | session or `full` token | any of `{enabled, weekday, hour, timeZone, language}` → the same shape; demo instances → 403 `demo_restricted` |
 | GET | `/api/v1/me/identities` | yes | `{identities:[…], provider}` |
 | DELETE | `/api/v1/me/identities/{id}` | credential | 204, or 409 `last_credential` |
-| GET | `/api/v1/tokens` | yes | `{tokens:[{id,name,scope,createdAt,lastUsedAt}]}`; `lastUsedAt` is updated at most once a minute |
+| GET | `/api/v1/tokens` | session or `full` token | `{tokens:[{id,name,scope,createdAt,lastUsedAt}]}`; `lastUsedAt` is updated at most once a minute; `read` and `agent` tokens → 403 `insufficient_scope` |
 | POST | `/api/v1/tokens` | credential, fresh | `{name, scope?}` (`full` default, `read`, `agent` or `admin`) → 201 `{token, secret}` (secret shown once); another scope → 400 `invalid_input`; `admin` only from a session (a token gets 403 `session_required`) |
-| DELETE | `/api/v1/tokens/{id}` | yes | 204 |
+| DELETE | `/api/v1/tokens/{id}` | yes | 204; deleting a connected AI app's access token also disconnects the app (its refresh token stops working, recorded as `mcp_oauth.disconnected`) |
 | POST | `/api/v1/me/sign-out-everywhere` | cookie, fresh | → 204 and the session cookie cleared: ends every session of the account (this one too), forgets its remembered browsers and revokes its API tokens and app passwords; recorded as `sessions.revoked`; the other devices remove their local copy on their next `auth/status` (`revoked`); a token gets 403 `session_required` |
 | POST | `/api/v1/passkeys/register/options` | credential, fresh | → `{publicKey}` creation options |
 | POST | `/api/v1/passkeys/register` | credential, fresh | `{name, credential}` → 201 `{passkey}` |
@@ -227,6 +229,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PUT | `/api/v1/comments/{id}/reactions` | yes | `{reactions: [names]}` replaces your own reactions → 200 comment; 400 `invalid_input` naming an unknown name or a duplicate; 404 for an unreadable or deleted comment; `read` and `agent` tokens get 403 `insufficient_scope` |
 | GET | `/api/v1/tasks/{id}/activity`, `/api/v1/projects/{id}/activity` | yes | `{events, more, cursor?}` newest first, derived from the operation log; `?before=<cursor>&limit=<1-200>` (default 50) |
 | GET | `/api/v1/activity` | yes | the activity feed across every shared project you are a member of; `?cursor=&limit=&project=&actor=&kind=`; see [Activity feed](#activity-feed) |
+| GET | `/api/v1/workspaces/{id}/activity` | yes | every actor's events in the workspace's projects and Inbox that you can read; `?cursor=&limit=&from=&to=&project=&actor=&kind=`; see [Workspace activity](#workspace-activity) |
 | GET | `/api/v1/projects/{id}/members` | member | `{projectId, role, ownerId, members:[{userId,name,email,role}], pending?}`; `pending` (owners and admins only) lists the open [invitations](#membership-invitations) `[{id,email,role,invitedBy,createdAt,expiresAt}]`, see [Sharing](#sharing) |
 | POST | `/api/v1/projects/{id}/members` | owner, admin of the project | `{email, role}` → 201 membership (shares the project on first use) when the account already shares a project or workspace with you, otherwise **202 `{pending: true}`**, also for an address without an account: the person is invited and becomes a member when they accept (see [Membership invitations](#membership-invitations)); 400 `invalid_input` for anything but one address; recorded as `project.member_added` or `member_invitation.created`; adding by email is limited to 30 attempts per account per hour, together with workspace members (429 `rate_limited`) |
 | DELETE | `/api/v1/projects/{id}/member-invitations/{invitationId}` | owner, admin of the project | cancel an open invitation → 204; 404 `not_found` |
@@ -272,6 +275,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/tasks/{id}/occurrences/{date}/complete` | yes (not `read`, not `agent`) | complete one occurrence alone, `{completed_at?}` → its record; see [One occurrence alone](#one-occurrence-alone) |
 | POST | `/api/v1/tasks/{id}/occurrences/{date}/skip` | yes (not `read`, not `agent`) | skip one occurrence → its record (the series for a plain series' current occurrence) |
 | PATCH | `/api/v1/tasks/{id}/occurrences/{date}` | yes (not `read`, not `agent`) | move or edit one occurrence alone, with task fields (`due`, `title`, `priority`, `labels`, `estimate_minutes`, `description`, …) → its record |
+| POST | `/api/v1/away` | yes (not `read`, not `agent`) | set an away period, `{from, to, projects?, labels?, pauseReminders?}` → `{away, skipped}`; see [Away](#away) |
+| DELETE | `/api/v1/away` | yes (not `read`, not `agent`) | end the away period now; its skips stay → 204 |
 | POST | `/api/v1/tasks/{id}/split` | yes (not `read`, not `agent`) | change a recurring task from a later occurrence on, `{from, changes}` → the new series; see [This and following](#this-and-following) |
 | POST | `/api/v1/time-entries` | yes (not `read`; `agent` through the [agent routes](#agent-tokens)) | `{taskId}` starts an entry (the running one ends at its start), or `{taskId, startedAt, endedAt, note?}` logs a closed one → 201 |
 | POST | `/api/v1/time-entries/stop` | yes (not `read`; `agent` through the [agent routes](#agent-tokens)) | stop your running entry → the entry; 404 when none runs |
@@ -317,6 +322,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/me/mcp-consent` | session only | `{query, allow}` → `{redirect}`: the registered address with `code` and `state` on allow, with `error=access_denied` otherwise |
 | POST | `/oauth/token` | client secret + PKCE | `authorization_code` (`code`, `redirect_uri`, `code_verifier`) or `refresh_token`; `client_secret_post` or Basic → `{access_token, token_type, expires_in, refresh_token, scope}`; the access token stops working after `expires_in` seconds (3600); a refresh returns a new refresh token and retires the one sent, and an already-used refresh token revokes the grant (`400 invalid_grant`, audited as `mcp_oauth.refresh_reused`); a client registered only for Google's connector addresses gets the same refresh token back |
 | POST | `/oauth/revoke` | client secret | RFC 7009: the client's own refresh token, or the access token one of its grants holds, revokes that grant; any other token is left alone and answered 200; 401 `invalid_client` without the client's credentials |
+| GET | `/api/v1/me/oauth-grants` | session or `full` token | `{grants:[{id, clientId, clientName, scope, workspaces, createdAt, lastUsedAt}]}`: the AI apps you connected that are neither revoked nor expired, most recently used first; `scope` is `read` or `agent`, `workspaces` is empty for every workspace, `lastUsedAt` is null before first use; shown with the sessions in Settings → Account, also while MCP is off; `read` and `agent` tokens → 403 `insufficient_scope` |
+| DELETE | `/api/v1/me/oauth-grants/{id}` | yes | 204: disconnects that app; its refresh token gets `invalid_grant` and its access token 401; another person's, a revoked or an unknown id → 404 `not_found`; demo instances → 403 `demo_restricted`; recorded as `mcp_oauth.disconnected` |
 
 #### Administration (owner and admins)
 
@@ -348,6 +355,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | DELETE | `/api/v1/settings/mcp/clients/{id}` | owner | delete the client, its grants and their access tokens → 204 |
 | GET | `/api/v1/settings/caldav` | yes | `{enabled, url, secure, encryption}` |
 | PUT | `/api/v1/settings/caldav` | owner | `{enabled}` → the same shape |
+| GET | `/api/v1/settings/caldav/push` | yes | `{enabled, available}` |
+| PUT | `/api/v1/settings/caldav/push` | owner | `{enabled}` → the same shape |
 | GET | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` |
 | PUT | `/api/v1/settings/webhooks` | owner, credential | `{allowPrivate}` → `{allowPrivate}` |
 | GET | `/api/v1/audit` | owner | `{events:[…], cursor}` newest first; filters `name`, `actor`, `target`, `outcome`, `from`, `to`, `cursor`, `limit≤200`, see [Audit log](#audit-log) |
@@ -482,14 +491,14 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 {
   "enabled": true, "issuer": "https://sso.example.com/application/o/opentodo", "clientId": "opentodo",
   "clientSecret": "••••a1b2", "clientSecretSet": true, "displayName": "Home SSO", "scopes": "openid email profile",
-  "allowProvision": false, "ssoOnly": false, "providerLogout": false, "syncPictures": false,
+  "allowProvision": false, "ssoOnly": false, "providerLogout": false, "syncPictures": false, "trustMissingEmailVerified": false,
   "redirectUri": "https://todo.example.com/api/v1/auth/oidc/callback", "baseUrlConfigured": true,
   "managedBy": { "issuer": "settings", "clientId": "settings", "clientSecret": "env", "displayName": "settings",
                  "scopes": "settings", "allowProvision": "settings", "ssoOnly": "settings", "providerLogout": "settings" }
 }
 ```
 
-`PUT` takes any subset of `issuer`, `clientId`, `clientSecret`, `displayName`, `scopes`, `allowProvision`, `ssoOnly`, `providerLogout`, `syncPictures` and returns the same shape. With `syncPictures: true` (off by default) a provider sign-in or link whose identity token carries a `picture` claim makes the server fetch that address through the outbound policy (5 seconds, 2 MB, PNG/JPEG/GIF) and store it as the account's [profile picture](#profile), 256×256 JPEG; an uploaded picture is never replaced, a synced or removed address is not fetched again, and a failed fetch changes nothing. A new issuer must be an https URL whose discovery document is reachable and names the same issuer, or the answer is `400 invalid_input` and the previous configuration stays. `clientSecret` is write-only: omit it (or send the masked value back) to keep it, send `""` to remove it. A field set by an `OPENTODO_OIDC_*` variable is reported as `managedBy: "env"` and cannot be changed (`400 invalid_input`). An empty `issuer` turns single sign-on off (links are kept). `PUT` needs a fresh session. `POST /api/v1/settings/oidc/test` with optional `{"issuer":"…"}` runs discovery and answers `{ok, issuer, authorizationHost, tokenHost, endSessionSupported}` or `400 invalid_input`. Changes are recorded as `settings.changed` (the secret as `(changed)`).
+`PUT` takes any subset of `issuer`, `clientId`, `clientSecret`, `displayName`, `scopes`, `allowProvision`, `ssoOnly`, `providerLogout`, `syncPictures`, `trustMissingEmailVerified` and returns the same shape. With `trustMissingEmailVerified: true` (off by default) an identity token that carries no `email_verified` claim at all may create a new account under the provisioning rules; it never links to an existing account (`oidc_link_required`) and never confirms the address, adding that address to a project or workspace answers like an unknown address until it is confirmed, and an explicit `email_verified: false` is still refused ([Providers without email_verified](self-hosting/sso.md#providers-without-email_verified)). With `syncPictures: true` (off by default) a provider sign-in or link whose identity token carries a `picture` claim makes the server fetch that address through the outbound policy (5 seconds, 2 MB, PNG/JPEG/GIF) and store it as the account's [profile picture](#profile), 256×256 JPEG; an uploaded picture is never replaced, a synced or removed address is not fetched again, and a failed fetch changes nothing. A new issuer must be an https URL whose discovery document is reachable and names the same issuer, or the answer is `400 invalid_input` and the previous configuration stays. `clientSecret` is write-only: omit it (or send the masked value back) to keep it, send `""` to remove it. A field set by an `OPENTODO_OIDC_*` variable is reported as `managedBy: "env"` and cannot be changed (`400 invalid_input`). An empty `issuer` turns single sign-on off (links are kept). `PUT` needs a fresh session. `POST /api/v1/settings/oidc/test` with optional `{"issuer":"…"}` runs discovery and answers `{ok, issuer, authorizationHost, tokenHost, endSessionSupported}` or `400 invalid_input`. Changes are recorded as `settings.changed` (the secret as `(changed)`).
 
 **SSO-only mode** (`ssoOnly: true`, effective only while a provider is configured): password and passkey sign-in, and registration through the password form, answer `403 sso_required` for every account except the owner (recorded as `login.failed` with reason `sso_required`). The owner keeps local sign-in as break-glass (the sign-in screen shows the password form at `/?owner=1`). Bearer tokens keep working.
 
@@ -497,17 +506,27 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 
 **Sign-out.** `POST /auth/logout` always deletes the local session. When `providerLogout` is on and the session started through the provider, it answers `200 {"redirect":"https://sso…/end-session?client_id=…&id_token_hint=…&post_logout_redirect_uri=https://todo.example.com/"}` instead of 204, and the web app follows it after clearing local data.
 
+#### Single sign-on in the apps
+
+Providers such as Google refuse sign-in inside an app's web view, so the Android and iPhone apps run the provider step in the system browser (an `ASWebAuthenticationSession` on iPhone, a Custom Tab on Android) and bring the result back to their web view, where the session belongs:
+
+1. When `GET /api/v1/health` answers `"app_sso": true` (otherwise the app keeps the provider's pages in its web view, as with older servers), the app makes a PKCE pair and a state of its own and opens `GET /api/v1/auth/oidc/start?app_challenge=<S256 challenge>&app_state=<state>&app_mode=<login|link>` in the system browser (400 `invalid_request` when one is malformed). `app_mode=link` is for linking the provider to the account signed in on the app's web view (Settings); without it the flow signs in. A session the system browser already has never changes that.
+2. The callback verifies the identity as usual but signs nothing in. It answers with a page in the system browser that names the server and the account ("Sign in to <host> as … on this device?", or for a link "Link … to your account on <host>, on this device?", in the browser's language where there is one, else English) with a confirm button and Cancel. It does not say which app started the flow. The page holds no code and runs no script; its form posts a single-use ticket to `POST /api/v1/auth/oidc/app-continue`. Continue answers `303` to `opentodo://sso?code=<code>&state=<app_state>`, where the code is single-use, valid for two minutes and kept in memory only (a restart aborts a sign-in in flight); Cancel answers `303` to `opentodo://sso?state=<app_state>`, which the app takes as nothing happened. When the provider refused, the callback answers `303` to `opentodo://sso?error=<code>&state=<app_state>` without a page.
+3. The app checks the state and, from a page of the server in its web view, sends `POST /api/v1/auth/oidc/app-session` with `{"code", "code_verifier"}`. A sign-in flow signs in exactly as the callback of a sign-in in that web view would (`303` to `/` + cookie, or `/?error=…`), whatever session the web view has. A link flow (`app_mode=link`) links the identity to the web view's signed-in account as the callback of a link would (`303` to `/settings/account/security?linked=1`, or that page with `?error=…`, for example `reauth_required`), and is refused without a session. A wrong verifier spends the code.
+
+The same address rate limit applies, and the request must come from the server's own pages (`403 bad_origin` otherwise), so another site cannot redeem its own code in someone's web view.
+
 | Code | Status | When |
 | --- | --- | --- |
 | `oidc_disabled` | 404 | `auth/oidc/start` or `callback` while no provider is configured |
-| `oidc_state_invalid` | 400 | callback with a missing, forged, expired or reused state |
+| `oidc_state_invalid` | 400 | callback with a missing, forged, expired or reused state; `auth/oidc/app-session` with an unknown, spent, expired or mismatched code (`auth/oidc/app-continue` with an unknown, spent or expired ticket redirects to `/?error=oidc_state_invalid`) |
 | `identity_taken` | 409 | linking an identity that is linked to another account |
 | `reauth_required` | 403 | linking a new identity from a session that has not signed in or re-authenticated in the last ten minutes |
 | `last_credential` | 409 | unlinking the account's last way to sign in |
 | `sso_required` | 403 | password or passkey sign-in, or password registration, by a non-owner in SSO-only mode |
 | `invalid_input` | 400 | issuer not https, discovery failed or names another issuer, client id missing, scopes without `openid`, changing an environment-managed field |
 | `forbidden` | 403 | `settings/oidc` by a non-owner |
-| `rate_limited` | 429 | more than 20 requests per minute per address to `auth/oidc/start` and `callback` together |
+| `rate_limited` | 429 | more than 20 requests per minute per address to `auth/oidc/start`, `callback`, `app-continue` and `app-session` together |
 
 ### Outgoing email
 
@@ -756,6 +775,15 @@ curl -sS "$OT/api/v1/tasks/<id>/occurrences?from=2026-10-12&to=2026-10-18" -H "A
 # {"series_id":"<id>","rule":"every weekday","capped":false,"occurrences":[{"date":"2026-10-12","time":"18:00","state":"current"},{"date":"2026-10-13","time":"18:00","state":"projected"}, ...]}
 ```
 
+### Away
+
+An away period ([away](away.md)) skips the occurrences of your repeating tasks from `from` to `to` (both included, at most 90 days, past or future) and, unless `pauseReminders` is `false`, holds reminders and the email digest while it lasts:
+
+- `POST /api/v1/away` with `{"from": "2026-11-24", "to": "2026-11-30"}` covers every repeating task of your own; `projects` and `labels` (ids) narrow it to those in the projects or with the labels. A task assigned to someone else is never covered, and one in a shared project only when its project is in `projects`. Each occurrence in the period is skipped as `…/occurrences/{date}/skip` skips it; a task that repeats after completion and is due in the period moves to the day after it. The answer is `{"away": "2026-11-24..2026-11-30 quiet", "skipped": 8}`, the stored period (`user_prefs.away`) and how many occurrences were skipped. Setting the same period again skips nothing more; a new period replaces the stored one. Today is yours: the day in your zone and with your start of day, as reminders read it. The changes are written in batches of at most 1,000 operations, the stored period in the last; when one fails, the earlier skips stay and the period is not stored, and sending it again finishes it. There is no Undo for a period set through the API.
+- `DELETE /api/v1/away` clears the period (`204`). The skips stay; they are ordinary records.
+
+The routes are ordinary task writes (`read` and `agent` tokens and tokens limited to workspaces are refused). Errors: `400 invalid_input` naming `from` or `to` for a malformed date, `from` after `to` or a period over 90 days; `400 too_large` when the period would make more than 20,000 changes, before anything is written (choose projects or labels, or a shorter period); `404 not_found` for a project or label you can't see; `401` without credentials; `403 demo_restricted` on a demo.
+
 ### One occurrence alone
 
 Act on one occurrence of a recurring task as the app does ([one occurrence alone](recurrence.md#one-occurrence-alone)), through the op log:
@@ -793,8 +821,8 @@ curl -sS -X POST "$OT/api/v1/tasks/<study>/split" -H "Authorization: Bearer $TOK
 
 The answer is `{title, fields, chips, unmatched, origin}`:
 
-- `fields` holds only what the line sets, in the form `POST /api/v1/tasks` takes: `due` (`{date, time?}`), `deadline`, `start` (`"someday"`), `evening`, `day_part`, `energy` (only with Energy levels on), `project_id`, `priority`, `estimate_minutes`, `recurrence`; plus `labels` as `[{id?, name}]` (no `id` for a label that does not exist yet: create it with `POST /api/v1/labels` first), `spent_minutes` (post one closed time entry ending now) and `reminders`, each `{kind: "relative", offset_minutes}` or `{kind: "absolute", date, time}` (a floating moment the client turns into `fire_at` in its own zone), to post with `POST /api/v1/reminders` once the task exists.
-- `chips` are the preview chips, `{kind, text, start, end}`, in the account's language; `start` and `end` count UTF-16 code units of the line. Kinds: `due`, `deadline`, `evening`, `daypart`, `energy`, `someday`, `project`, `label`, `priority`, `estimate`, `recurrence`, `reminder`, `unmatched`.
+- `fields` holds only what the line sets, in the form `POST /api/v1/tasks` takes: `due` (`{date, time?}`), `deadline`, `start` (`"someday"`), `evening`, `day_part`, `energy` (only with Energy levels on), `project_id`, `priority`, `estimate_minutes`, `recurrence`; plus `labels` as `[{id?, name}]` (no `id` for a label that does not exist yet: create it with `POST /api/v1/labels` first), `spent_minutes` (post one closed time entry ending now) and `reminders`, each `{kind: "relative", offset_minutes}` or `{kind: "absolute", date, time}` (a floating moment the client turns into `fire_at` in its own zone), to post with `POST /api/v1/reminders` once the task exists; and `links`, the `http` and `https` URLs the line names in order (at most five, sentence punctuation left out), to attach with `POST /api/v1/tasks/{id}/attachments` `{url}` once the task exists. The links leave `title`; a line that would be left without a title keeps them as text.
+- `chips` are the preview chips, `{kind, text, start, end}`, in the account's language; `start` and `end` count UTF-16 code units of the line. Kinds: `due`, `deadline`, `evening`, `daypart`, `energy`, `someday`, `project`, `label`, `priority`, `estimate`, `recurrence`, `reminder`, `link` (its text is the link's host), `unmatched`.
 - `unmatched` lists the `#name` tokens that name no project; they stay in `title`.
 - `origin` is the recognised origin of `url` (an `issue` origin for a GitHub, GitLab, Jira or Linear link, else a `url` origin), or `null` without a `url`. The server makes no request to that address.
 
@@ -1358,6 +1386,7 @@ The server records security-relevant events in its own database (never synced to
 | `mcp_oauth.granted` | success | actor = the user | `oauth_client_id`, `token_scope`; one per authorization, never a code or token. An [app sign-in](#app-sign-in) confirmed in the browser is recorded the same way, with `oauth_client_id` `opentodo-app` and `token_scope` `app` |
 | `mcp_oauth.revoked` | success | actor = the user | `oauth_client_id`; the grant was ended through `/oauth/revoke`, or for `opentodo-app`, the app was signed out (in the app or in the sessions list) |
 | `mcp_oauth.refresh_reused` | failure | actor = the user | `oauth_client_id`; a refresh token the grant had already exchanged was presented again, so the grant and its access token were revoked (MCP clients and `opentodo-app`) |
+| `mcp_oauth.disconnected` | success | actor = the user | `oauth_client_id`, `method` (`connected_apps`: Disconnect in Settings; `api_token`: its access token was deleted under API tokens); the grant and its access token were ended; never a token or the client's name |
 | `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `mcp.writes`, `agent.writes` (actor = the user), `caldav.enabled`, `integrations.issues`, `project_invites.members_create_accounts`, `oidc.*`, `smtp.*` (`smtp.password` only as `set` or empty), `encryption`, `encryption.keys`), `from`, `to` |
 | `export.requested` | success | actor = user | `format` (`json`) |
 | `audit.exported` | success | actor = owner | `format` (`ndjson`), `count` |
@@ -1379,7 +1408,7 @@ The server records security-relevant events in its own database (never synced to
 | `task_page.published` | success | actor = publisher | `task_page_id`, `link_rights` (`view`, `reply` or `tick`); never the secret, the label or a share key |
 | `task_page.revoked` | success | actor = publisher, or owner or admin of the project (also when a page is replaced by a new one) | `task_page_id` |
 | `password.changed` | success | actor = user | |
-| `sessions.revoked` | success | actor = user | `session_count`, `device_count`, `token_count`, `app_password_count`: what "Sign out everywhere" ended |
+| `sessions.revoked` | success | actor = user | `session_count`, `device_count`, `token_count`, `app_password_count`, `oauth_grant_count`: what "Sign out everywhere" ended |
 | `owner.transferred` | success | actor = previous owner, target = new owner | `from` (`owner`), `to` (`admin`): the previous owner's role change |
 | `backup.created` | success or failure | actor = owner for "Back up now", none for scheduled runs | `backup_id` (the run id), `reason` (`run_failed`) on failure |
 | `backup.restored` | success | none after `opentodo restore`; the owner who confirmed a web restore | `backup_id` (the archive file name), recorded on the first start after the restore |
@@ -1692,6 +1721,14 @@ The owner sets the default light and dark theme of the server and offers up to 2
 
 The writes are refused on a demo instance. There is no environment variable for the default theme.
 
+### Click a task to
+
+The owner sets what a click on a task does for accounts that have not chosen (**Settings → Server → Task lists**): `select` (the first click selects the task, a second click on its title edits it) or `open` (a click opens the task). An account's own choice is the synced `user_prefs.row_click` (`select`, `open`, or `""` to follow the server) and always wins. `GET /api/v1/auth/status` carries `"rowClick": {"default": "select"}` for a signed-in caller.
+
+| Route | Does |
+| --- | --- |
+| `PUT /api/v1/settings/row-click` | Owner. `{default}`, `select` or `open` (400 `invalid_input` otherwise); answers `{default}`. Recorded as `settings.changed` (`row_click.default`). Refused on a demo instance |
+
 `GET /api/v1/me` includes `attachments: {enabled, max_file_bytes, quota_bytes, used_bytes}`.
 
 **Downloads** are served with `Content-Security-Policy: default-src 'none'; sandbox`, `X-Content-Type-Options: nosniff`, `Content-Disposition` with the file name, `Cache-Control: private, no-cache` and the digest as `ETag`, so a browser revalidates its copy (304 while signed in) and shows nothing without a session; signing out answers `Clear-Site-Data: "cache"`. Only images (PNG, JPEG, GIF, WebP, AVIF), PDF, plain text, audio and video are served inline with their type; everything else (HTML and SVG included) and every encrypted file is `application/octet-stream` with `attachment`.
@@ -1833,7 +1870,7 @@ Query parameters, all optional:
 - `limit` — 1–200, default 50.
 - `project` — a project id; a project you are not a member of yields no events.
 - `actor` — an account id.
-- `kind` — a feed category: `completed` (completed, reopened), `created`, `commented` (commented, comment_edited, comment_deleted), `assigned` (assigned, unassigned), `rescheduled`, `other` (every other kind).
+- `kind` — one or more feed categories, comma-separated, an event matching any of them: `completed` (completed, reopened), `created`, `commented` (commented, comment_edited, comment_deleted), `assigned` (assigned, unassigned), `rescheduled`, `time` (time_tracked, time_changed), `other` (every other kind).
 
 ```sh
 curl -sS "$OT/api/v1/activity?kind=completed&limit=1" -H "Authorization: Bearer $TOKEN"
@@ -1848,6 +1885,28 @@ curl -sS "$OT/api/v1/activity?cursor=junk" -H "Authorization: Bearer $TOKEN"
 ```
 
 Without credentials the route answers `401 unauthorized`; an unknown `kind`, a malformed cursor or a `limit` outside 1–200 answers `400 invalid_input`. What a user has already seen is not stored by this route: it is the `project_prefs.feed_seen_at` field in the user's personal scope, written through sync like any other op (see [sync](sync.md#project-preferences-and-the-activity-feed)). REST clients may write it with `POST /api/v1/sync` but have no collection route for it.
+
+### Workspace activity
+
+`GET /api/v1/workspaces/{id}/activity` (OpenSpec `workspace-activity`) returns the events of every project of the workspace and of its Inbox, newest first, in the feed's shape and with its cursor, every actor's changes including your own. It reads only scopes you belong to: the shared projects of the workspace you are a member of, and your own projects and Inbox tasks in it. Another member's personal projects and shared projects you are not in never appear, whatever the filters. Inbox events have no `projectId`.
+
+Query parameters, all optional: `cursor`, `limit` and `actor` as in the feed; `kind` as in the feed, comma-separated; `project`, one or more project ids, comma-separated; `from` and `to`, Unix milliseconds, inclusive bounds on the event time.
+
+A time entry's events are `time_tracked` (an entry logged, or a running one stopped) and `time_changed` (an ended entry edited or deleted), on the entry's task, with `minutes`, the entry's length rounded to whole minutes. A running entry has no event until it stops, and the entry's note is never part of an event.
+
+```sh
+curl -sS "$OT/api/v1/workspaces/<workspace>/activity?kind=time&limit=1" -H "Authorization: Bearer $TOKEN"
+# 200 {"events":[
+#   {"id":"…","kind":"time_tracked","actor":"<bob>","actorName":"Bob","entity":"time_entry","entityId":"<entry>","taskId":"<task>",
+#    "taskTitle":"Fix the login page","projectId":"<project>","projectName":"Website","ts":1760090500000,"opIds":["…"],
+#    "changes":[{"field":"ended_at","from":null,"to":1760090500000}],"minutes":42}],
+#  "more":true,"cursor":"1760090500000:…"}
+
+curl -sS "$OT/api/v1/workspaces/<workspace>/activity?from=20&to=10" -H "Authorization: Bearer $TOKEN"
+# 400 {"error":{"code":"invalid_input","message":"from must not be after to"}}
+```
+
+Without credentials the route answers `401 unauthorized`; a workspace you do not belong to answers `404 not_found`, like an unknown one; an unknown `kind`, a malformed `from`, `to` or cursor, `from` after `to` or a `limit` outside 1–200 answers `400 invalid_input`.
 
 ### Import
 
@@ -2018,6 +2077,8 @@ The CalDAV endpoint itself (`/dav/`, `/.well-known/caldav`) speaks WebDAV/CalDAV
 | `DELETE` | `/api/v1/app-passwords/{id}` | owner of the app password | `204`; `404 not_found` for an unknown, foreign or already revoked id. |
 | `GET` | `/api/v1/settings/caldav` | any user | `{"enabled":false,"url":"https://todo.example.com/dav/","secure":true}`; `url` is what calendar apps are configured with, `secure` is false for plain http. |
 | `PUT` | `/api/v1/settings/caldav` | owner | `{"enabled":true}` → the same shape. `400 invalid_input` without a boolean `enabled`, `403 forbidden` for members. Recorded as `settings.changed` (`caldav.enabled`). |
+| `GET` | `/api/v1/settings/caldav/push` | any user | `{"enabled":false,"available":true}`: push to calendar apps (WebDAV-Push, OpenSpec `caldav-push`); `available` is false while web push is off (`OPENTODO_PUSH=off`), when nothing is advertised whatever `enabled` says. |
+| `PUT` | `/api/v1/settings/caldav/push` | owner | `{"enabled":true}` → `{"enabled":true,"available":true}`. `400 invalid_input` without a boolean `enabled`, `403 forbidden` for members, `409 set_by_environment` on a demo. Recorded as `settings.changed` (`caldav.push`). |
 
 App passwords are refused by every `/api/v1` route, and API tokens, passwords and session cookies are refused by `/dav/`. Creating and revoking one records `app_password.created` / `app_password.revoked` in the audit log.
 
@@ -2667,7 +2728,7 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 - Request bodies are limited to 4 MB, except import uploads (`OPENTODO_IMPORT_MAX_MB`, default 20 MB); some routes set a smaller limit. A larger body is refused with 413 `too_large`.
 - A JSON body is exactly one JSON value: anything after it but white space is refused with 400 `bad_request`. A field the route does not define is refused with 400 `bad_request` naming it (`invalid JSON body: unknown field "x"`), except on `POST /api/v1/sync` (ops may carry properties a newer client knows), the push subscription (the browser's `PushSubscription.toJSON()`) and the passkey `credential` (the browser's `PublicKeyCredential.toJSON()`). The entity routes (`/tasks`, `/projects`, …) check their fields themselves and answer 400 `invalid_input` for an unknown one. Error messages describe the problem in plain words, never the server's internal types.
 - Password checks are limited to twice the server's CPU count at a time (at least 2). A sign-in, registration or password change that waits more than a second for one is answered 503 `busy` with `Retry-After`.
-- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey`, the invitation preview, the project invite link preview and accept routes, the password-reset routes, `auth/password-reset` and `auth/verify` share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; `auth/oidc/start` and `auth/oidc/callback` share a window of 20 per minute; failed `/mcp` authentications count toward the login window. Per account: invitation creation 20 per hour, project invite link creation 20 per hour, mutating `/users` requests 60 per hour, `/me/password` 10 per hour, new comments 60 per minute, email-inbox changes 30 per hour, adding people to projects and workspaces by email 30 per hour.
+- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey`, the invitation preview, the project invite link preview and accept routes, the password-reset routes, `auth/password-reset` and `auth/verify` share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; `auth/oidc/start`, `auth/oidc/callback`, `auth/oidc/app-continue` and `auth/oidc/app-session` share a window of 20 per minute; failed `/mcp` authentications count toward the login window. Per account: invitation creation 20 per hour, project invite link creation 20 per hour, mutating `/users` requests 60 per hour, `/me/password` 10 per hour, new comments 60 per minute, email-inbox changes 30 per hour, adding people to projects and workspaces by email 30 per hour.
 
 ### Error codes
 
@@ -2692,7 +2753,8 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `demo_restricted` | 403 | a feature a demo instance (`OPENTODO_DEMO=true`) refuses, before authentication: sign-up, invitations, user administration, password change and resets, tokens, app passwords, CalDAV, passkeys, two-factor, settings writes, backups, webhooks, email inbox, import, encryption, push, membership changes, project invite links (every method), `/mcp`, the assistant (`/api/v1/assistant/*`, `/api/v1/me/assistant*`), automation rules (`/api/v1/rules*`, `/api/v1/me/rules*`, `/api/v1/settings/automations`). See [demo instance](self-hosting/demo.md#what-is-switched-off) |
 | `not_found` | 404 | unknown id, including another account's items, webhooks and deliveries, and items you cannot read; `/api/v1/push/*` with `OPENTODO_PUSH=off` |
 | `conflict` | 409 | starting or undoing an import while another import of yours runs; `POST /backups/run` while a backup is running, or after a restore was confirmed; confirming a restore while a backup runs |
-| `too_large` | 413 | a JSON request body over its limit (4 MB unless the route says otherwise); `/mcp` body over 1 MB; an assistant turn over 256 KB or 40 messages; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows, a CSV field over 1 MiB, a CSV record over 4 MiB or 1,000 fields, or JSON nested over 256 levels |
+| `series_date_taken` | 409 | a write that moves a repeating task's `due` onto a date that already has one of its occurrences (done, skipped or moved); the message names the date and which, and nothing is applied. See [recurrence](recurrence.md#moving-a-series-onto-a-recorded-date) |
+| `too_large` | 413, 400 | 413: a JSON request body over its limit (4 MB unless the route says otherwise); `/mcp` body over 1 MB; an assistant turn over 256 KB or 40 messages; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows, a CSV field over 1 MiB, a CSV record over 4 MiB or 1,000 fields, or JSON nested over 256 levels. 400: an [away period](#away) that would make more than 20,000 changes |
 | `rate_limited` | 429 | too many attempts in the window, see [Behaviour notes](#behaviour-notes) |
 | `demo_limit` | 429 | demo instance: the sandbox used its write budget (600 ops per hour, 5,000 ops and 2 MB of values in total), or the database is above its size limit, on `/sync` or a REST write; nothing of the batch is applied. Demo instances also cap values at 4 KB (32 KB for task notes) with `invalid_input` / `invalid_op` |
 | `internal` | 500 | unexpected server error (details only in the server log) |

@@ -1,0 +1,9 @@
+{{.Inviter}} sizi paylaşılan bir projeye davet etti
+
+Bu, OpenTodo’da paylaşılan bir projeye davetiyedir.
+
+{{.Inviter}}, {{.Email}} adresini {{.Origin}} adresindeki OpenTodo sunucusunda bir projeye {{.Role}} olarak katılmaya davet etti. Katılmak için bu bağlantıyı açın:
+
+{{.Link}}
+
+Bağlantının süresi {{.Expiry}} içinde dolar. {{.Inviter}} adlı kişiyi tanımıyorsanız bu mesajı yoksayabilirsiniz.

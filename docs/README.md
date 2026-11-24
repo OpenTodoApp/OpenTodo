@@ -5,7 +5,7 @@ summary: How to use OpenTodo day to day, run your own server, and connect it to 
 ---
 # OpenTodo documentation
 
-Start with the [README](../README.md) for the feature overview, quick start and configuration table.
+Start with the [README](../README.md) for the feature overview and the quick start. Settings are in the [configuration reference](self-hosting/configuration.md).
 
 ## Using OpenTodo
 
@@ -34,7 +34,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [All projects](all-projects.md) | Every project in a table with its health, progress, open tasks, next due date, people and last change; how health is worked out, sorting, the keyboard and the Archived tab. |
 | &nbsp;&nbsp;↳ [Project notes](project-notes.md) | The note at the top of a project: what it is for, who can edit it, Shift+P, folding long notes, and how the API and history see it. |
 | &nbsp;&nbsp;↳ [Completed tasks in a project](completed-in-projects.md) | Keep a project's completed tasks at the end of its list in a Completed group, for lists you tick off and reuse such as groceries. |
-| &nbsp;&nbsp;↳ [Reusable lists](reusable-lists.md) | Make a project a reusable list for groceries or packing, so adding an item that is already there brings it back and ticked items stay in a Got it group. |
+| &nbsp;&nbsp;↳ [Reusable lists](reusable-lists.md) | Make a project a reusable list for groceries or packing, so adding an item that is already there brings it back and ticked items stay in its Completed group. |
 | &nbsp;&nbsp;↳ [Sort a list into aisles](reusable-list-aisles.md) | Let new items of a reusable list go to aisle sections such as Produce or Dairy and eggs, and reuse items from the API, the command line and AI assistants. |
 | [Views](views.md) | Inbox, Today, Upcoming, Assigned to me, Completed and the calendar, plus views you save yourself, dashboards and the view each device opens on. |
 | &nbsp;&nbsp;↳ [The built-in views](built-in-views.md) | What Inbox, Today, Upcoming, Anytime, Someday, Assigned to me, Calendar, Completed, Filter, Trash and Updates show, their shortcuts, and the duration filter. |
@@ -113,7 +113,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 
 | Page | What it covers |
 | --- | --- |
-| [Quick add syntax](quick-add.md) | Natural-language capture in seven languages, preview chips, voice capture |
+| [Quick add syntax](quick-add.md) | Natural-language capture in nine languages, preview chips, voice capture |
 | [Filter queries](filters.md) | The filter language, the New view page, saved views and their display options, dashboards |
 | [Recurring task rules](recurrence.md) | Rule grammar, how next dates are computed, completing, skipping and detaching |
 | [Reminders reference](reminders.md) | Relative and absolute reminders, snooze, web push and its privacy |

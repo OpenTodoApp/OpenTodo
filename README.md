@@ -1,12 +1,13 @@
-<p align="center">
-  <img src="web/public/pwa-192.png" width="96" height="96" alt="OpenTodo logo">
-</p>
-
-<h1 align="center">OpenTodo</h1>
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand/png/lockup-on-dark-852x192.png">
+    <img src="brand/png/lockup-on-light-852x192.png" width="320" alt="OpenTodo">
+  </picture>
+</h1>
 
 <p align="center"><strong>Plan your day without renting your to-do list.</strong></p>
 
-<p align="center">OpenTodo is a free, open-source to-do app you run on your own server or have hosted for you. It works on your phone and your computer, even offline, shares lists with your family or your team, and keeps your data with you.</p>
+<p align="center">A free, open-source to-do app you run on your own server or have hosted for you. It works on your phone and your computer, even offline, shares lists with your family or your team, and keeps your data with you.</p>
 
 <p align="center">
   <a href="https://demo.open-todo.app"><strong>Try the demo</strong></a> ·
@@ -15,13 +16,17 @@
   <a href="https://open-todo.app"><strong>Website</strong></a>
 </p>
 
+<p align="center"><strong>5 minutes to help shape OpenTodo:</strong> <a href="https://tally.so/r/1W41xQ">take the anonymous survey</a></p>
+
 <p align="center">
   <a href="LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg"></a>
   <a href="https://github.com/OpenTodoApp/OpenTodo/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/OpenTodoApp/OpenTodo/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/OpenTodoApp/OpenTodo/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/OpenTodoApp/OpenTodo?sort=semver"></a>
-  <a href="https://buymeacoffee.com/pixari"><img alt="Buy me a coffee" src="https://img.shields.io/badge/Buy%20me%20a%20coffee-pixari-FFDD00?logo=buymeacoffee&logoColor=black"></a>
-  <a href="https://github.com/sponsors/pixari"><img alt="Sponsor on GitHub" src="https://img.shields.io/badge/sponsor-pixari-EA4AAA?logo=githubsponsors&logoColor=white"></a>
+  <a href="https://github.com/OpenTodoApp/OpenTodo/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/OpenTodoApp/OpenTodo?logo=github"></a>
   <a href="https://discord.gg/mmSsuCRduD"><img alt="Discord" src="https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white"></a>
+  <br>
+  <a href="https://github.com/sponsors/pixari"><img alt="Sponsor on GitHub" src="https://img.shields.io/badge/GitHub%20Sponsors-pixari-EA4AAA?logo=githubsponsors&logoColor=white"></a>
+  <a href="https://buymeacoffee.com/pixari"><img alt="Buy me a coffee" src="https://img.shields.io/badge/Buy%20me%20a%20coffee-pixari-FFDD00?logo=buymeacoffee&logoColor=black"></a>
 </p>
 
 <p align="center">
@@ -30,13 +35,20 @@
 
 <p align="center">
   <a href="https://apps.apple.com/us/app/opentodo/id6832200428"><img src="docs/images/badges/app-store.svg" height="40" alt="Download on the App Store"></a>
+  <a href="https://play.google.com/store/apps/details?id=app.opentodo"><img src="docs/images/badges/google-play.svg" height="40" alt="Get it on Google Play"></a>
 </p>
 
-**New: OpenTodo for iPhone and iPad is in the App Store.** It's the first release, a first step: it connects to your OpenTodo server and adds reminders on the phone, the share sheet, a Today widget and Face ID unlock. Expect some rough edges; [tell us what to improve](https://github.com/OpenTodoApp/OpenTodo/issues/new/choose).
+**New: OpenTodo is in the App Store and on Google Play.** The apps connect to your OpenTodo server and add reminders on the phone, the share sheet, widgets and Face ID or fingerprint unlock. The iPhone app is a first release, so expect some rough edges; [tell us what to improve](https://github.com/OpenTodoApp/OpenTodo/issues/new/choose).
 
-**Ways to run it:** [PikaPods](https://www.pikapods.com/apps/opentodo) (hosted, no server needed) · [Docker](docs/self-hosting/docker.md) · [Umbrel](docs/self-hosting/umbrel.md) (coming soon) · [Unraid](docs/self-hosting/unraid.md) · [Home Assistant](docs/self-hosting/home-assistant-addon.md) · [Kubernetes (Helm)](docs/self-hosting/kubernetes.md) · [Single binary](#single-binary) · [iPhone and iPad app](https://apps.apple.com/us/app/opentodo/id6832200428) (App Store) · [Android app](docs/android-app.md) (APK from GitHub; Google Play and F-Droid coming soon) · [all 20 platforms](docs/self-hosting/README.md)
+**Ways to run it:** [PikaPods](https://www.pikapods.com/apps/opentodo) (hosted, no server needed) · [Docker](docs/self-hosting/docker.md) · [Umbrel](docs/self-hosting/umbrel.md) (coming soon) · [Unraid](docs/self-hosting/unraid.md) · [Home Assistant](docs/self-hosting/home-assistant-addon.md) · [Kubernetes (Helm)](docs/self-hosting/kubernetes.md) · [Single binary](#single-binary) · [iPhone and iPad app](https://apps.apple.com/us/app/opentodo/id6832200428) (App Store) · [Android app](docs/android-app.md) (Google Play or APK from GitHub; F-Droid coming soon) · [all 21 platforms](docs/self-hosting/README.md#1-install)
 
-## How it works
+## Why OpenTodo
+
+- **Local-first.** Every phone and computer keeps a full copy of your tasks. The app reads and writes that copy, so it is fast and works with no connection; changes sync when one is back. [Install the app](docs/install-app.md)
+- **Self-hosted.** One Go binary or one container, one SQLite file, no other service to run. It needs no configuration and idles at about 20 MB of memory.
+- **Open source.** AGPL-3.0, every feature included. No paid tier, no account with us, no telemetry.
+
+## Features
 
 ### 1. Capture
 
@@ -62,15 +74,12 @@ Share a project with your family or your team as viewer, editor or admin. Assign
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/share-dialog-dark.webp"><img src="docs/images/share-dialog-light.webp" width="640" alt="The Share dialog for a project with an email field, a role menu and the member list"></picture>
 
-## Highlights
+### And more
 
 - **Your data stays yours.** Everything lives in one folder on your server. Export it at any time, import it anywhere, and schedule backups, encrypted if you like, to disk, S3 or WebDAV. [Backups](docs/backups.md) · [Import and export](docs/import-export.md)
-- **Works offline on every device.** Each phone and computer keeps a full copy, so the app works with no connection and syncs when it's back. [Install the app](docs/install-app.md)
 - **Bring your tasks.** Import from Todoist, TickTick, Things, Super Productivity, Microsoft To Do, Apple Reminders and more, with a preview and undo. [Import](docs/import.md)
 - **Private by design.** No telemetry, no analytics, no third-party scripts. Turn on end-to-end encryption and the server holds only ciphertext. [Privacy](#privacy) · [Encryption](docs/e2ee.md)
 - **Bring your own AI, if you want it.** Talk to an assistant in the app, or connect the one you already use. Off by default, and every change can be undone. [AI](docs/ai-and-agents.md)
-
-No subscription, no lock-in, no tracking.
 
 **[Explore all features →](https://open-todo.app/features/)**
 
@@ -117,9 +126,21 @@ The image is published for `linux/amd64` and `linux/arm64`. `:stable` is the lat
 
 ### Single binary
 
-Download `opentodo-<os>-<arch>` for Linux, macOS or Windows from the [latest release](https://github.com/OpenTodoApp/OpenTodo/releases/latest) and run it. It serves on port 8080 and keeps its data in `./data`. To build from source: `make build && ./bin/opentodo` (Go 1.26+ and Node 22+).
+Download `opentodo-<os>-<arch>` for Linux, macOS or Windows from the [latest release](https://github.com/OpenTodoApp/OpenTodo/releases/latest) and run it. It serves on port 8080 and keeps its data in `./data`.
 
-**Managed hosting:** [PikaPods](https://www.pikapods.com/apps/opentodo), [Railway](https://railway.com/deploy/opentodo). These links support the project: OpenTodo receives a share when you host through them.
+### From source
+
+With Go 1.27+, Node 22+ and GNU make:
+
+```bash
+git clone https://github.com/OpenTodoApp/OpenTodo.git
+cd OpenTodo
+make run
+```
+
+`make run` builds the web app and the server into `bin/opentodo` and starts it on port 8080. To work on the code, `(cd web && npm ci) && make dev` runs the API on :8080 and the web app with hot reload on <http://localhost:5173>; [your first contribution](docs/contributing/first-contribution.md) takes it from there.
+
+**Managed hosting:** [PikaPods](https://www.pikapods.com/apps/opentodo), [Railway](https://railway.com/deploy/opentodo?referralCode=nbgVDr). These links support the project: OpenTodo receives a share when you host through them.
 
 ### Configuration
 
@@ -138,7 +159,7 @@ Read the docs with screenshots and search at **[open-todo.app/docs](https://open
 - **Start here:** [getting started](docs/getting-started.md) · [all user guides](docs/README.md#using-opentodo)
 - **Self-hosting:** [handbook](docs/self-hosting/README.md) · [configuration](docs/self-hosting/configuration.md) · [backups](docs/backups.md)
 - **Build on it:** [REST API](docs/api.md) · [OpenAPI description](docs/openapi.json) · [CLI](docs/cli.md) · [AI and agents](docs/ai-and-agents.md) · [stability](docs/stability.md)
-- **Project:** [changelog](CHANGELOG.md) · [roadmap](ROADMAP.md) · [security](SECURITY.md)
+- **Project:** [changelog](CHANGELOG.md) · [roadmap](ROADMAP.md) · [security](SECURITY.md) · [contributing](CONTRIBUTING.md)
 
 ## Build your own client
 
@@ -151,10 +172,9 @@ npx openapi-typescript openapi.json -o opentodo.d.ts
 
 The same file is [`docs/openapi.json`](docs/openapi.json) and an asset of every [release](https://github.com/OpenTodoApp/OpenTodo/releases). Sign in with an API token from Settings → Integrations → API tokens; the [API guide](docs/api.md) has the details, and [`ot`](docs/cli.md), the [Obsidian plugin](obsidian/) and the [n8n nodes](https://github.com/OpenTodoApp/n8n-nodes-opentodo) are clients built on it.
 
-<details>
-<summary><strong>Under the hood</strong></summary>
+## Architecture
 
-```
+```text
 ┌───────────────────────── device ─────────────────────────┐      ┌──────────── server ────────────┐
 │ React PWA  ──►  IndexedDB (source of truth)              │      │ Go binary + SQLite             │
 │                 │ every edit = field ops {ts, device}    │ sync │  ops log (append-only)         │
@@ -169,25 +189,38 @@ The same file is [`docs/openapi.json`](docs/openapi.json) and an asset of every 
 - The REST API, CalDAV, email and imports write through the same log, so a task created with `curl` shows up on your phone right away.
 - One Go binary with the web app inside and a single SQLite file. It idles at about 20 MB of memory and runs on a Raspberry Pi.
 
-More in [architecture](docs/architecture.md) and [the sync protocol](docs/sync.md).
+More in [architecture](docs/architecture.md), [the sync protocol](docs/sync.md) and the [architecture tour](docs/contributing/architecture-tour.md), which follows one edit from the click to the other device.
 
-</details>
+## Roadmap
 
-## Help without coding
+The original roadmap is complete, and 1.x only grows: nothing you rely on is removed or renamed ([stability](docs/stability.md)). What is being built now and what comes next is in [ROADMAP.md](ROADMAP.md); what shipped is in the [changelog](CHANGELOG.md).
 
-1. **Star and share.** A star on GitHub helps other people find OpenTodo.
-2. **Leave feedback** in [Discussions](https://github.com/OpenTodoApp/OpenTodo/discussions) or on [Discord](https://discord.gg/mmSsuCRduD).
-3. **Report bugs** in [issues](https://github.com/OpenTodoApp/OpenTodo/issues).
-4. **Review a translation.** The app speaks eight languages; tell us where a word feels wrong ([translating](docs/translating.md)).
-5. **Test it on your devices** and report back in the [call for testers](https://github.com/OpenTodoApp/OpenTodo/issues/9).
-6. **Answer questions** from other people in Discussions and on Discord.
-7. **Sponsor:** [buy me a coffee](https://buymeacoffee.com/pixari) or [GitHub Sponsors](https://github.com/sponsors/pixari).
+## Contributing
 
-To contribute code, read [CONTRIBUTING.md](CONTRIBUTING.md): changes that alter behaviour start as an [OpenSpec](openspec/) change. Security issues go to the address in [SECURITY.md](SECURITY.md).
+Code: start with [your first contribution](docs/contributing/first-contribution.md) (clone to pull request in about 30 minutes) and the rules in [CONTRIBUTING.md](CONTRIBUTING.md). A change of behaviour starts as an [OpenSpec](docs/contributing/openspec.md) change; `make check` runs what CI runs. Security issues go to the address in [SECURITY.md](SECURITY.md).
 
-## Supporters
+Without code:
 
-OpenTodo is free and always will be. If it helps you, you can [buy a coffee](https://buymeacoffee.com/pixari) or [sponsor it](https://github.com/sponsors/pixari); the [support page](https://open-todo.app/support/) says what it costs to run and where the money goes.
+- **Report bugs** in [issues](https://github.com/OpenTodoApp/OpenTodo/issues) and leave feedback in [Discussions](https://github.com/OpenTodoApp/OpenTodo/discussions) or on [Discord](https://discord.gg/mmSsuCRduD).
+- **Review a translation.** The app speaks eleven languages; tell us where a word feels wrong ([translating](docs/translating.md)).
+- **Test it on your devices** and report back in the [call for testers](https://github.com/OpenTodoApp/OpenTodo/issues/9).
+- **Answer questions** from other people in Discussions and on Discord.
+- **Star and share.** A star helps other people find OpenTodo.
+
+## Support OpenTodo
+
+OpenTodo is free and always will be, with no paid tier to fund it. If it helps you, you can help keep it going:
+
+<p>
+  <a href="https://github.com/sponsors/pixari"><img alt="Sponsor on GitHub" src="https://img.shields.io/badge/GitHub%20Sponsors-pixari-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white"></a>
+  <a href="https://buymeacoffee.com/pixari"><img alt="Buy me a coffee" src="https://img.shields.io/badge/Buy%20me%20a%20coffee-pixari-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black"></a>
+</p>
+
+- **[GitHub Sponsors](https://github.com/sponsors/pixari):** monthly or one-time.
+- **[Buy Me a Coffee](https://buymeacoffee.com/pixari):** one-time, no GitHub account needed.
+- **Managed hosting:** [PikaPods](https://www.pikapods.com/apps/opentodo) and [Railway](https://railway.com/deploy/opentodo?referralCode=nbgVDr) pass a share to the project when you host through them.
+
+The [support page](https://open-todo.app/support/) says what it costs to run and where the money goes.
 
 Thank you to everyone who keeps OpenTodo going. Supporters who want to be listed appear here.
 

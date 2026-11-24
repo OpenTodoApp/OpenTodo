@@ -1,1 +1,0 @@
-- **A saved view opens without a pause again.** Its code now loads while the app is idle, so the first visit no longer waits about 300 ms for it (#1450).

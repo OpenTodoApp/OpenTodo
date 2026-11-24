@@ -49,6 +49,8 @@ var weekdayNames = map[string][7]string{
 	"pt": {"dom", "seg", "ter", "qua", "qui", "sex", "sáb"},
 	"zh": {"周日", "周一", "周二", "周三", "周四", "周五", "周六"},
 	"nl": {"zo", "ma", "di", "wo", "do", "vr", "za"},
+	"tr": {"Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"},
+	"pl": {"nd.", "pon.", "wt.", "śr.", "czw.", "pt.", "sob."},
 }
 
 var monthNames = map[string][12]string{
@@ -60,6 +62,8 @@ var monthNames = map[string][12]string{
 	"pt": {"jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"},
 	"zh": {"1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"},
 	"nl": {"jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"},
+	"tr": {"Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"},
+	"pl": {"sty", "lut", "mar", "kwi", "maj", "cze", "lip", "sie", "wrz", "paź", "lis", "gru"},
 }
 
 var digestWords = map[string]struct{ inbox, nothing, more, never string }{
@@ -71,6 +75,8 @@ var digestWords = map[string]struct{ inbox, nothing, more, never string }{
 	"pt": {"Caixa de entrada", "Nada.", "e mais %d", "nunca"},
 	"zh": {"收件箱", "没有。", "以及另外 %d 项", "从未"},
 	"nl": {"Inbox", "Niets.", "en nog %d", "nooit"},
+	"tr": {"Gelen Kutusu", "Yok.", "ve %d tane daha", "hiç"},
+	"pl": {"Skrzynka", "Nic.", "i jeszcze %d", "nigdy"},
 }
 
 // InboxName is the Inbox's name in a shipped language, the word the app uses

@@ -226,11 +226,27 @@ The system SHALL never present a project as its own ancestor. The client SHALL r
 - **THEN** both devices show the project whose parent change has the newer clock at the top level and the other nested beneath it, both projects and all their tasks remain reachable, and no device shows a project nested inside itself
 
 ### Requirement: Sub-projects inside a project view
-A project's view SHALL show a collapsible "Sub-projects" group at the top of its list, using the shared group header, naming each direct non-archived sub-project with its rolled-up open count, each opening that sub-project; the group SHALL be hidden when the project has no sub-projects. The project's own open tasks follow. Quick add in a project view SHALL add to that project only, not to its sub-projects.
+A project's view SHALL show a collapsible "Sub-projects" group at the top of its list, using the shared group header, naming each direct non-archived sub-project with its rolled-up open count, each opening that sub-project; the group SHALL be hidden when the project has no sub-projects. A sub-project row SHALL keep the columns of a task row: its project mark in the column of a task's checkbox and its name where a top-level task's title starts, so the project's own top-level tasks line up with the sub-projects and only subtasks are indented. The project's own open tasks follow the group. In the list layout without sections or a grouping, they SHALL follow under a "Tasks" group header with their open count, which folds per project on this device like the Sub-projects group, so they do not read as part of the Sub-projects group; where sections or a grouping are on, the first section or group header follows the group and no "Tasks" header is added. A project without sub-projects SHALL show no "Tasks" header. The board layout SHALL show no Sub-projects group, since its columns are the project's sections; the timeline layout SHALL show the group above its bars. Quick add in a project view SHALL add to that project only, not to its sub-projects. The group and the header SHALL be derived from local data, so they are correct offline and follow projects and tasks created, moved or archived on other devices after sync.
 
 #### Scenario: Sub-project list
 - **WHEN** the user opens "Home", which has sub-projects "Garden" (3 open tasks, with a sub-project holding 1) and "Kitchen" (0)
 - **THEN** above Home's tasks a "Sub-projects" group lists "Garden 4" and "Kitchen 0", and it stays collapsed on this device once collapsed
+
+#### Scenario: Tasks apart from sub-projects
+- **WHEN** "Home" has the sub-project "Garden" and no sections, and its own tasks "Paint", with the subtask "Buy brushes", and "Tiles"
+- **THEN** the "Sub-projects" group lists "Garden", a "Tasks" header reading 3 follows it, "Paint" and "Tiles" start in the same column as "Garden", with their checkboxes under Garden's mark, and only "Buy brushes" is indented
+
+#### Scenario: Sections head the tasks
+- **WHEN** "Home" has the sub-project "Garden", the section "Kitchen" and a task with no section
+- **THEN** the "Sub-projects" group is followed by the "No section" header and then "Kitchen", and there is no "Tasks" header
+
+#### Scenario: No sub-projects
+- **WHEN** the user opens "Errands", which has no sub-projects
+- **THEN** there is neither a "Sub-projects" group nor a "Tasks" header
+
+#### Scenario: Board
+- **WHEN** the user opens "Home" with sub-projects in the board layout
+- **THEN** the board shows its section columns and no Sub-projects group
 
 #### Scenario: Quick add stays in the parent
 - **WHEN** the user quick-adds a task while viewing "Home"
@@ -453,7 +469,7 @@ When the Projects view has loaded and contains no projects, it SHALL show the sh
 - **THEN** the empty state is absent and the projects table renders as before
 
 ### Requirement: Project progress on the project page
-A project's page SHALL show the project's progress beside its title as a progress ring and a whole percentage ("40%", read "40% done"); on a phone the line under the title SHALL read "40% done". The figure SHALL be the project's own tasks at every level of subtask, by the rule of statistics "Project health": completed tasks over completed and open tasks (deferred and someday ones included), a recurring series counted once through its open task, and deleted, skipped and start guide sample tasks left out; it SHALL equal the All projects table's progress for the project's unfolded row. A project whose flow is Area, and a project with no counted task, SHALL show no progress. The figure SHALL be worked out on the device from local rows, offline too, with no request, no write and nothing stored, and SHALL update live after a local write or a sync, so two synced devices show the same figure.
+A project's page SHALL show the project's progress beside its title as a progress ring and a whole percentage ("40%", read "40% done"); on a phone the line under the title SHALL read "40% done". The figure SHALL be the project's own tasks at every level of subtask, by the rule of statistics "Project health": completed tasks over completed and open tasks (deferred and someday ones included), a recurring series counted once through its open task, and deleted, skipped and start guide sample tasks left out; it SHALL equal the All projects table's progress for the project's unfolded row. A project whose flow is Area, a reusable list (reusable-lists "Reusable list mode"), which is restocked rather than finished, and a project with no counted task SHALL show no progress, on its page and in its All projects row; a reusable list's tasks still count in a folded parent's figures, as an area's do. The figure SHALL be worked out on the device from local rows, offline too, with no request, no write and nothing stored, and SHALL update live after a local write or a sync, so two synced devices show the same figure.
 
 #### Scenario: Beside the title
 - **WHEN** "Website launch" has three completed tasks and two open ones
@@ -470,6 +486,10 @@ A project's page SHALL show the project's progress beside its title as a progres
 #### Scenario: An area or an empty project
 - **WHEN** the user opens an area, or a project with no task yet
 - **THEN** no progress shows beside its title
+
+#### Scenario: A grocery list for the next trip
+- **WHEN** a reusable "Groceries" list holds fifteen items ticked off on the last trip and ten added for this one
+- **THEN** no progress shows beside its title or in its All projects row, and turning the mode off shows "60%"
 
 ### Requirement: Drop a task on Today
 A task dragged from a list or a board SHALL be droppable on the Today entry of the sidebar. While the pointer is over it, Today SHALL show the drop ring and the list SHALL not show a drop line. Dropping SHALL plan the task for today by the rule of a drop on a day group in Upcoming (`upcoming-drag`): the do-on date moves to today and keeps its time, a span moves whole, the deadline stays and a deferred task becomes due today, through the operation log, and a toast SHALL read "Scheduled for today" with Undo. When the dragged task is part of the bulk selection, every selected task SHALL be planned as one batch, and tasks already planned for today SHALL write nothing. Dropping a task the user may not edit, or pressing Escape, SHALL change nothing. The change SHALL apply locally at once, work offline through the outbox and converge per field like any date edit.
@@ -512,3 +532,37 @@ Where a project picker displays a colour dot next to a project name, it SHALL di
 
 - **WHEN** a picker offers No project, Top level or another choice that does not refer to a project
 - **THEN** the option retains its existing symbol and selection behaviour
+
+### Requirement: The sidebar's project menu
+A project's menu in the sidebar, in the Projects tree and in Favourites, SHALL be the project header's menu: the same items for the person's role, with the same handlers, confirmations and dialogs, led by the header's Share button as Share project (Members for a role that only sees the members), which opens the same Share dialog, and followed by Move up and Move down for the row where the person may reorder it. A right-click on a sidebar row that has a menu SHALL open that menu and suppress the browser's own, except in a text field (the inline rename) and over selected text; a right-click raised by touch SHALL be suppressed and left to the touch hold. Archiving or deleting a project from the sidebar SHALL go to the Inbox only when that project's page is open, and leave any other page as it is. The All projects page keeps its own row menu.
+
+#### Scenario: The whole menu from the sidebar
+- **WHEN** the owner right-clicks a project in the sidebar
+- **THEN** its menu opens with Share project and the header's items (Duplicate, Save as template, Fields, Move to, Rename, Icon, Archive, Delete, Activity, History, Routines, Display mode, the colours) and Move up and Move down, and the browser's menu does not appear
+
+#### Scenario: The same role rules
+- **WHEN** an editor of a shared project opens its sidebar menu
+- **THEN** it offers what the header offers an editor, without Rename, Icon, the colours, Archive or Delete
+
+#### Scenario: Share from the sidebar
+- **WHEN** the owner chooses Share project in a sidebar project's menu
+- **THEN** the project's Share dialog opens, as from the header's Share button, and a viewer of a shared project finds Members there instead
+
+#### Scenario: Archive from another page
+- **WHEN** the person is in Today and archives a project from its sidebar menu
+- **THEN** the project is archived after the confirmation and Today stays on screen
+
+#### Scenario: Rename keeps the field's menu
+- **WHEN** the person right-clicks inside the inline rename field of a sidebar project
+- **THEN** no app menu opens and the field's own menu appears
+
+### Requirement: Archive several projects at once
+The All projects table SHALL let the user tick several projects and archive them together. Ctrl or ⌘+click on a row SHALL tick it without opening it; Shift+click and Shift+↑/↓ SHALL extend from the last tick; Space or x on a row SHALL tick or untick it; while anything is ticked, Ctrl+A SHALL tick every listed row and Escape SHALL clear the selection. "Select projects" in the page's menu SHALL show the boxes without ticking anything, for touch screens. While the boxes show, each row's box SHALL stand where its colour mark is and a click on a row SHALL tick it. Only projects the user may archive from the Project menu SHALL be tickable. While projects are ticked, the selection bar SHALL show their count, Archive and Clear. Archive SHALL ask first, naming the count, and SHALL then archive every ticked project with its sub-projects in one batch with one Undo toast; a project already archived or listed twice through its parent SHALL be written once. The selection is device state, never synced, and archiving works offline.
+
+#### Scenario: Archive three projects after an import
+- **WHEN** the user Ctrl+clicks "Home", Shift+clicks "Work" (with "Garden" under "Home" between them) and chooses Archive in the bar, then confirms "Archive 3 projects?"
+- **THEN** Home, Garden and Work are archived in one batch and leave the table, the other projects stay, and the toast offers Undo, which brings all three back
+
+#### Scenario: A viewer's project
+- **WHEN** a project is shared with the user as a viewer and the user presses Space on its row
+- **THEN** nothing is ticked and the selection bar does not appear

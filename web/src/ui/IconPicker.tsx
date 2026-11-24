@@ -7,6 +7,7 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { pickerField, restInOverlay } from './overlay/stack'
 import { CatalogueIcon } from './CatalogueIcon'
+import { hueFor } from './tokens/palette'
 import { Icon, isIconName } from './Icon'
 import { CATALOGUE_NAMES } from './icons/catalogue.names'
 import { categoryLabel, iconTitle, loadCatalogue, searchIcons, type CatalogueEntry, type IconCategory, type LoadedCatalogue, ICON_CATEGORIES, catalogueIfLoaded } from './icons/catalogue'
@@ -169,8 +170,8 @@ export function IconPicker({ value, onPick, onClose, color, noneMark, label = t(
       <div key={key || 'none'} id={optionId(key)} role="option" aria-selected={selected} aria-label={title}
         data-icon-option={key || 'none'} data-active={isActive || undefined}
         onMouseDown={(e) => e.preventDefault()} onMouseEnter={() => setActive(key)} onClick={() => onPick(key === NONE ? null : key)}
-        className={`touch-target flex h-9 w-9 items-center justify-center pointer-coarse:w-auto rounded-control ${isActive ? 'bg-sunken ring-2 ring-focus dark:bg-raised' : ''} ${selected ? 'bg-accent-soft' : ''}`}
-        style={{ color: color ?? undefined }}>
+        data-hue={color ? hueFor(color) : undefined}
+        className={`touch-target flex h-9 w-9 items-center justify-center pointer-coarse:w-auto rounded-control ${color ? 'text-hue-solid' : ''} ${isActive ? 'bg-sunken ring-2 ring-focus dark:bg-raised' : ''} ${selected ? 'bg-accent-soft' : ''}`}>
         {mark}
       </div>
     )

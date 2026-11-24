@@ -108,6 +108,8 @@ export async function startRecorder(target: string): Promise<{ url: string; pair
       return
     }
     if (!path.startsWith('/api/v1/')) return
+    // A sign-up refused by the run's rate limit is retried (src/test/contract.ts register): a fresh replay server would not refuse it.
+    if (up.status === 429) return
     const cookie = sessionOf(req.headers.cookie ?? '')
     const bearer = /^Bearer (\S+)$/.exec(req.headers.authorization ?? '')?.[1]
     const auth = bearer ? label('token', bearer) : cookie ? label('session', cookie) : 'none'

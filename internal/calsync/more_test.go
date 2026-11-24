@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/OpenTodoApp/opentodo/internal/calfeed"
 	"github.com/OpenTodoApp/opentodo/internal/calsync/calsynctest"
 	"github.com/OpenTodoApp/opentodo/internal/config"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
@@ -250,4 +251,52 @@ func TestEventSnapshotZones(t *testing.T) {
 	if s := EventSnapshot(ev, Snapshot{Date: "2026-10-21", Time: "09:00"}, nil); !s.AllDay || s.Date != "2026-10-23" || string(s.Due()) != `{"date":"2026-10-23"}` {
 		t.Fatalf("all-day = %+v %s", s, s.Due())
 	}
+}
+
+// A shown calendar that cannot be read (Google's virtual Week Numbers/Holidays
+// answer 409 to a calendar-query) must not stop the whole cycle: it is skipped
+// and the rest keeps syncing (#1627).
+func TestShownCalendarUnreadableIsSkipped(t *testing.T) {
+	h := newHarness(t)
+	h.srv.AddCalendar("family", &calsynctest.Calendar{Name: "Family", Color: "#FF0000"})
+	h.srv.Put("family", "bday.ics", event("bday", "Birthday", "DTSTART:20261022T180000Z", "DTEND:20261022T200000Z", h.clock))
+	// A virtual calendar that answers 409 to every calendar-query.
+	h.srv.AddCalendar("holidays", &calsynctest.Calendar{Name: "Holidays", Color: "#00AA00", QueryStatus: http.StatusConflict})
+	h.task("alice", "t1", map[string]any{"title": "Plan", "due": map[string]string{"date": "2026-10-21", "time": "09:00"}})
+	c := h.connect(false)
+	reads := []string{h.srv.CalendarURL("family"), h.srv.CalendarURL("holidays")}
+	if _, err := h.w.Store.Update(h.ctx, "alice", c.ID, Patch{ReadURLs: &reads}); err != nil {
+		t.Fatal(err)
+	}
+	// Before #1627 this cycle failed with http_409 on the holidays calendar and
+	// stopped all sync; h.cycle fatals on a cycle error.
+	h.cycle(h.conn(c.ID))
+	// The readable shown calendar still shows, and the task still reached the target.
+	events, err := h.w.Feeds.EventsOf(h.ctx, "alice", "2026-10-20", "2026-10-25", false, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, e := range events {
+		names = append(names, e.Summary)
+	}
+	// The readable shown calendar shows; the 409 calendar is skipped, not fatal.
+	// (The task's own event on the target is a task, not a shown event.)
+	if strings.Join(names, ",") != "Birthday" {
+		t.Fatalf("events = %v; the readable shown calendar must show and the 409 one be skipped", names)
+	}
+	// The task was still written to the target calendar: a bad shown calendar did not stop task sync.
+	if got := h.srv.Members("work"); len(got) != 1 {
+		t.Fatalf("target members = %v; the task should have synced to the target despite the bad shown calendar", got)
+	}
+}
+
+// masterEvent parses a calendar object and returns its event that is not an
+// override (remote.master).
+func masterEvent(data []byte) (calfeed.Event, bool) {
+	cal, err := calfeed.ParseCalendar(data)
+	if err != nil {
+		return calfeed.Event{}, false
+	}
+	return remote{Events: cal.Events}.master()
 }

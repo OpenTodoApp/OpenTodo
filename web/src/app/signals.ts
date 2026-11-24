@@ -6,6 +6,8 @@
 import { useEffect, useState, type ComponentType } from 'react'
 import { localDate } from '../lib/dates'
 import { createStore } from '../lib/store'
+import { resettable } from '../lib/moduleState'
+import { onTestTeardown } from '../lib/testTeardown'
 import type { Task } from '../lib/types'
 import { navigate, routePath } from './router'
 import { openTaskPage } from './taskTrail'
@@ -137,6 +139,15 @@ export function openConnections(kind: ConnectionKind, id: string): void {
 export const closeConnections = (): void => connections.set(null)
 export const useConnectionsRequest = connections.use
 
+// The probe sits in the Linked references chunk, which already holds the link index.
+// Loaded once; a test ends only once it has arrived, since the chunk pulls in the whole
+// Linked references graph and must not finish loading after the test environment is gone.
+let probeChunk: Promise<typeof import('./LinkedReferences').watchConnected> | null = null
+// A failed load (offline) is forgotten, so the next call fetches again (lazy-retry-online).
+const loadProbe = () => (probeChunk ??= import('./LinkedReferences').then(({ watchConnected }) => watchConnected, (err: unknown) => { probeChunk = null; throw err }))
+onTestTeardown(() => probeChunk?.catch(() => {}))
+resettable('connectionsProbe', () => { probeChunk = null })
+
 /** Whether the item links to, or is linked from, something this device can read (false until known). */
 export function useConnected(kind: ConnectionKind, id: string | undefined): boolean {
   const [on, setOn] = useState('')
@@ -145,8 +156,7 @@ export function useConnected(kind: ConnectionKind, id: string | undefined): bool
     if (!id) return
     let stop: (() => void) | undefined
     let live = true
-    // The probe sits in the Linked references chunk, which already holds the link index.
-    void import('./LinkedReferences').then((m) => { if (live) stop = m.watchConnected(kind, id, (v) => setOn(v ? key : '')) })
+    void loadProbe().then((watch) => { if (live) stop = watch(kind, id, (v) => setOn(v ? key : '')) })
     return () => { live = false; stop?.() }
   }, [kind, id, key])
   return !!key && on === key

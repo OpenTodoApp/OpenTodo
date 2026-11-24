@@ -34,6 +34,12 @@
             "value": "%lld hoje"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün %lld"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -44,6 +50,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld vandaag"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dziś"
           }
         }
       }
@@ -81,6 +93,12 @@
             "value": "%lld hoje · %lld atrasadas"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün %lld · %lld gecikmiş"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -91,6 +109,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld vandaag · %lld verouderd"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dziś · %lld po terminie"
+          }
+        }
+      }
+    },
+    "Break over": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause vorbei"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descanso terminado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause terminée"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausa finita"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pauze voorbij"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koniec przerwy"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausa terminada"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mola bitti"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "休息结束"
           }
         }
       }
@@ -128,6 +211,12 @@
             "value": "Cancelar"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İptal"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -138,6 +227,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Annuleren"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anuluj"
           }
         }
       }
@@ -175,6 +270,12 @@
             "value": "Mudar de servidor?"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunucu değiştirilsin mi?"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -185,6 +286,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Server wijzigen?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmienić serwer?"
           }
         }
       }
@@ -222,6 +329,12 @@
             "value": "As alterações que ainda não chegaram ao servidor perdem-se. As suas tarefas ficam no servidor."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunucuya ulaşmayan değişiklikler kaybolur. Görevleriniz sunucuda kalır."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -232,6 +345,130 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wijzigingen die de server nog niet hebben bereikt, gaan verloren. Je taken blijven op de server."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmiany, które nie dotarły do serwera, zostaną utracone. Twoje zadania pozostaną na serwerze."
+          }
+        }
+      }
+    },
+    "Completed": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erledigt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completadas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminées"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completate"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afgerond"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ukończone"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Concluídas"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamamlanan"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已完成"
+          }
+        }
+      }
+    },
+    "Completed per day: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erledigt pro Tag: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completadas por día: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminées par jour : %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completate per giorno: %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afgerond per dag: %@"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ukończone dziennie: %@"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Concluídas por dia: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Günlük tamamlanan: %@"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每天完成：%@"
           }
         }
       }
@@ -269,6 +506,12 @@
             "value": "Conectar"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bağlan"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -279,6 +522,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Verbinden"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połącz"
           }
         }
       }
@@ -316,6 +565,12 @@
             "value": "Dispensar"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapat"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -326,6 +581,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sluiten"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zamknij"
           }
         }
       }
@@ -374,6 +635,136 @@
             "state": "translated",
             "value": "Voltooid"
           }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamamlandı"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrobione"
+          }
+        }
+      }
+    },
+    "Focus session": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fokussitzung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sesión de foco"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session de focus"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sessione di focus"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Focussessie"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sesja skupienia"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sessão de foco"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odak oturumu"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "专注时段"
+          }
+        }
+      }
+    },
+    "How many tasks you completed this week": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wie viele Aufgaben du diese Woche erledigt hast"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuántas tareas completaste esta semana"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Combien de tâches vous avez terminées cette semaine"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quante attività hai completato questa settimana"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoeveel taken je deze week hebt afgerond"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ile zadań ukończyłeś w tym tygodniu"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quantas tarefas concluíste esta semana"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu hafta kaç görev tamamladığın"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本周完成了多少任务"
+          }
         }
       }
     },
@@ -410,6 +801,12 @@
             "value": "Bloqueado. Abra o OpenTodo para ver as suas tarefas."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kilitli. Görevlerinizi görmek için OpenTodo’yu açın."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -420,6 +817,130 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vergrendeld. Open OpenTodo om je taken te zien."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zablokowane. Otwórz OpenTodo, aby zobaczyć zadania."
+          }
+        }
+      }
+    },
+    "Locked: today’s count only": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesperrt: nur die Zahl von heute"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bloqueado: solo el número de hoy"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verrouillé : seulement le nombre du jour"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bloccato: solo il numero di oggi"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vergrendeld: alleen het aantal van vandaag"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zablokowane: tylko dzisiejsza liczba"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bloqueado: só o número de hoje"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kilitli: yalnızca bugünün sayısı"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已锁定：仅显示今天的数量"
+          }
+        }
+      }
+    },
+    "Long break": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lange Pause"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descanso largo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause longue"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausa lunga"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lange pauze"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Długa przerwa"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausa longa"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzun mola"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "长休息"
           }
         }
       }
@@ -457,6 +978,12 @@
             "value": "Sem resposta nesse endereço. Verifique o endereço e a ligação."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu adresten yanıt alınamadı. Adresi ve bağlantınızı kontrol edin."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -467,6 +994,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Geen antwoord van dat adres. Controleer het adres en je verbinding."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak odpowiedzi z tego adresu. Sprawdź adres i połączenie."
           }
         }
       }
@@ -504,6 +1037,12 @@
             "value": "Sem ligação ao seu servidor."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunucunuza bağlantı yok."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -514,6 +1053,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Geen verbinding met je server."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak połączenia z twoim serwerem."
           }
         }
       }
@@ -551,6 +1096,12 @@
             "value": "Não resta nada para hoje."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün için başka görev kalmadı."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -561,6 +1112,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Voor vandaag is er niets meer open."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na dziś nic nie zostało."
           }
         }
       }
@@ -598,6 +1155,12 @@
             "value": "Abra o OpenTodo para preencher este widget."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu widget’ı doldurmak için OpenTodo’yu açın."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -608,6 +1171,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open OpenTodo om deze widget te vullen."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz OpenTodo, aby wypełnić ten widżet."
           }
         }
       }
@@ -645,6 +1214,12 @@
             "value": "Lembrete do OpenTodo"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo hatırlatıcısı"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -655,6 +1230,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "OpenTodo-melding"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie OpenTodo"
           }
         }
       }
@@ -692,6 +1273,12 @@
             "value": "O OpenTodo corre no seu próprio servidor. Introduza o endereço que usa no navegador."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo kendi sunucunuzda çalışır. Tarayıcıda kullandığınız adresi girin."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -702,6 +1289,130 @@
           "stringUnit": {
             "state": "translated",
             "value": "OpenTodo draait op je eigen server. Voer het adres in dat je in de browser gebruikt."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo działa na twoim własnym serwerze. Wpisz adres, którego używasz w przeglądarce."
+          }
+        }
+      }
+    },
+    "Pause": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mettre en pause"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metti in pausa"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pauzeren"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymaj"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausar"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duraklat"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂停"
+          }
+        }
+      }
+    },
+    "Paused": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausiert"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En pausa"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En pause"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In pausa"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gepauzeerd"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymano"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausado"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duraklatıldı"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已暂停"
           }
         }
       }
@@ -739,6 +1450,12 @@
             "value": "Remover o servidor e os seus dados"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunucuyu ve verilerini kaldır"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -749,6 +1466,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "Server en gegevens verwijderen"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń serwer i jego dane"
+          }
+        }
+      }
+    },
+    "Resume": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fortsetzen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reanudar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reprendre"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riprendi"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hervatten"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wznów"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retomar"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sürdür"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "继续"
           }
         }
       }
@@ -786,6 +1568,12 @@
             "value": "Endereço do servidor"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunucu adresi"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -796,6 +1584,189 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serveradres"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adres serwera"
+          }
+        }
+      }
+    },
+    "Session done": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sitzung beendet"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sesión terminada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session terminée"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sessione finita"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sessie beëindigd"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sesja zakończona"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sessão terminada"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oturum bitti"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "专注时段已完成"
+          }
+        }
+      }
+    },
+    "Short break": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kurze Pause"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descanso corto"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause courte"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausa breve"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Korte pauze"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Krótka przerwa"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausa curta"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kısa mola"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "短休息"
+          }
+        }
+      }
+    },
+    "Sign in here": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hier anmelden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar sesión aquí"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se connecter ici"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi qui"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrar aqui"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buradan oturum açın"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在这里登录"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hier aanmelden"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się tutaj"
           }
         }
       }
@@ -833,6 +1804,12 @@
             "value": "Adiar 10 min"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10 dk ertele"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -843,6 +1820,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "10 min. later"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odłóż o 10 min"
           }
         }
       }
@@ -880,6 +1863,12 @@
             "value": "Tarefa"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görev"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -890,6 +1879,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Taak"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadanie"
           }
         }
       }
@@ -927,6 +1922,12 @@
             "value": "Esse endereço não responde como um servidor OpenTodo."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu adres bir OpenTodo sunucusu gibi yanıt vermiyor."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -937,6 +1938,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dat adres antwoordt niet zoals een OpenTodo-server."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten adres nie odpowiada jak serwer OpenTodo."
           }
         }
       }
@@ -974,6 +1981,12 @@
             "value": "Esse endereço não serve."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kullanılabilir bir adres değil."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -984,6 +1997,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dat is geen bruikbaar adres."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tego adresu nie można użyć."
           }
         }
       }
@@ -1021,6 +2040,12 @@
             "value": "O certificado desse servidor não é de confiança."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu sunucunun sertifikasına güvenilmiyor."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -1031,6 +2056,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Het certificaat van die server wordt niet vertrouwd."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Certyfikat tego serwera nie jest zaufany."
           }
         }
       }
@@ -1068,6 +2099,12 @@
             "value": "Não foi possível carregar a app."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygulama yüklenemedi."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -1078,6 +2115,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "De app kon niet worden geladen."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się wczytać aplikacji."
           }
         }
       }
@@ -1115,6 +2158,12 @@
             "value": "Este dispositivo não confia no certificado desse servidor."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu cihaz sunucunun sertifikasına güvenmiyor."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -1125,6 +2174,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "Het certificaat van die server wordt op dit apparaat niet vertrouwd."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To urządzenie nie ufa certyfikatowi tego serwera."
+          }
+        }
+      }
+    },
+    "This address answers with a web page, not like an OpenTodo server. If your server is behind a login page, sign in to it here; otherwise check the address.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Adresse antwortet mit einer Webseite, nicht wie ein OpenTodo-Server. Liegt dein Server hinter einer Anmeldeseite, melde dich hier an; sonst prüfe die Adresse."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta dirección responde con una página web, no como un servidor OpenTodo. Si tu servidor está detrás de una página de inicio de sesión, inicia sesión aquí; si no, revisa la dirección."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette adresse répond avec une page web, pas comme un serveur OpenTodo. Si votre serveur est derrière une page de connexion, connectez-vous ici ; sinon vérifiez l’adresse."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo indirizzo risponde con una pagina web, non come un server OpenTodo. Se il server è dietro una pagina di accesso, accedi qui; altrimenti controlla l’indirizzo."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este endereço responde com uma página web, não como um servidor OpenTodo. Se o servidor estiver atrás de uma página de login, entre aqui; caso contrário, verifique o endereço."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu adres bir OpenTodo sunucusu gibi değil, bir web sayfasıyla yanıt veriyor. Sunucunuz bir giriş sayfasının arkasındaysa buradan oturum açın; değilse adresi kontrol edin."
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这个地址返回的是网页，而不像 OpenTodo 服务器。如果服务器位于登录页之后，请在这里登录；否则请检查地址。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit adres antwoordt met een webpagina, niet zoals een OpenTodo-server. Zit je server achter een aanmeldpagina, meld je hier aan; controleer anders het adres."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten adres odpowiada stroną internetową, a nie jak serwer OpenTodo. Jeśli twój serwer jest za stroną logowania, zaloguj się tutaj; w przeciwnym razie sprawdź adres."
           }
         }
       }
@@ -1162,6 +2276,12 @@
             "value": "Esta conexão não é criptografada."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu bağlantı şifreli değil."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -1172,6 +2292,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Deze verbinding is niet versleuteld."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To połączenie nie jest szyfrowane."
           }
         }
       }
@@ -1209,6 +2335,12 @@
             "value": "É assim que um lembrete aparece."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hatırlatıcılar bu şekilde görünür."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -1219,6 +2351,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zo ziet een melding eruit."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tak wygląda przypomnienie."
+          }
+        }
+      }
+    },
+    "This server is behind a login page. Sign in to it here; the app connects as soon as you're through.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Server liegt hinter einer Anmeldeseite. Melde dich hier an; die App verbindet sich, sobald du durch bist."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este servidor está detrás de una página de inicio de sesión. Inicia sesión aquí; la app se conecta en cuanto entres."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce serveur est derrière une page de connexion. Connectez-vous ici ; l’app se connecte dès que c’est fait."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo server è dietro una pagina di accesso. Accedi qui; l’app si collega appena hai finito."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este servidor está atrás de uma página de login. Entre aqui; o app se conecta assim que você passar."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu sunucu bir giriş sayfasının arkasında. Buradan oturum açın; geçiş yaptığınızda uygulama hemen bağlanır."
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此服务器位于登录页之后。在这里登录；通过后应用会立即连接。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze server zit achter een aanmeldpagina. Meld je hier aan; de app maakt verbinding zodra je binnen bent."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten serwer jest za stroną logowania. Zaloguj się tutaj; aplikacja połączy się, gdy tylko przejdziesz dalej."
           }
         }
       }
@@ -1256,6 +2453,12 @@
             "value": "Este servidor tem de ser alcançado por https."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu sunucuya https üzerinden erişilmelidir."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -1266,6 +2469,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Deze server is alleen via https bereikbaar."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z tym serwerem trzeba łączyć się przez https."
           }
         }
       }
@@ -1303,6 +2512,12 @@
             "value": "Hoje"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -1313,6 +2528,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vandaag"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dziś"
           }
         }
       }
@@ -1350,6 +2571,12 @@
             "value": "Tarefas de hoje e atrasadas do seu próprio servidor."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kendi sunucunuzdan bugünkü ve gecikmiş görevler."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -1360,6 +2587,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Taken van vandaag en verouderd, van je eigen server."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzisiejsze i zaległe zadania z twojego własnego serwera."
           }
         }
       }
@@ -1397,6 +2630,12 @@
             "value": "Tentar de novo"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekrar dene"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -1407,6 +2646,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Opnieuw proberen"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spróbuj ponownie"
           }
         }
       }
@@ -1444,6 +2689,12 @@
             "value": "Atualizado %@"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güncellendi: %@"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -1454,6 +2705,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bijgewerkt %@"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaktualizowano %@"
           }
         }
       }
@@ -1491,6 +2748,12 @@
             "value": "Usar %@"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ kullan"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -1501,6 +2764,130 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ gebruiken"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Użyj %@"
+          }
+        }
+      }
+    },
+    "Work": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arbeit"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trabajo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Travail"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lavoro"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Werk"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Praca"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trabalho"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İş"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作"
+          }
+        }
+      }
+    },
+    "Work · %lld of %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arbeit · %lld von %lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trabajo · %lld de %lld"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Travail · %lld sur %lld"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lavoro · %lld di %lld"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Werk · %lld van %lld"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Praca · %lld z %lld"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trabalho · %lld de %lld"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İş · %lld / %lld"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作 · %lld / %lld"
           }
         }
       }

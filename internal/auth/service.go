@@ -57,7 +57,7 @@ type Token struct {
 // settings that hold secrets). It is stored like an agent token: a `read` row
 // plus a marker row in api_token_admin.
 //
-// An `app` token (OpenSpec change native-app-foundation, design D5) is an
+// An `app` token (OpenSpec change app-sign-in) is an
 // access token of the OpenTodo app, minted only by the app sign-in exchange. It
 // is accepted wherever a `full` token is and refused like one on the
 // credential and administration routes. It is stored as a `full` row plus a
@@ -431,6 +431,33 @@ func (s *Service) UserByEmail(ctx context.Context, email string) (*User, error) 
 	return &u, err
 }
 
+// InviteeByEmail is UserByEmail for adding someone by email to a project or
+// workspace: an account that single sign-on created from an address nobody
+// confirmed (email_assumed) is ErrNotFound until the address is confirmed, so
+// the addition becomes a placeholder invitation it never sees
+// (sso-missing-email-verified).
+func (s *Service) InviteeByEmail(ctx context.Context, email string) (*User, error) {
+	var u User
+	err := s.db.QueryRowContext(ctx, `SELECT id,email,name,role,created_at FROM users
+		WHERE email = ? AND NOT (email_assumed = 1 AND email_verified_at IS NULL)`,
+		strings.TrimSpace(email)).Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	return &u, err
+}
+
+// Unconfirmed reports whether userID, or the account with address, was created
+// by single sign-on from an address nobody confirmed (email_assumed, address not
+// yet confirmed): no mail goes there but a confirmation (mail.RecipientChecker,
+// sso-missing-email-verified).
+func (s *Service) Unconfirmed(ctx context.Context, userID, address string) (bool, error) {
+	var n int
+	err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users WHERE email_assumed = 1 AND email_verified_at IS NULL
+		AND (id = ? OR email = ?)`, userID, normalizeEmail(address)).Scan(&n)
+	return n > 0, err
+}
+
 // CreateAccount creates a local account with the given role ("member" or
 // "owner") without consulting the sign-up policy or an invitation. It exists
 // for server-side provisioning (OpenSpec change `demo-mode`: the demo accounts
@@ -784,8 +811,25 @@ func (s *Service) DeleteToken(ctx context.Context, userID, tokenID string) error
 		return err
 	}
 	defer tx.Rollback()
+	if err := s.deleteTokenTx(ctx, tx, userID, tokenID); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// DeleteTokenTx deletes userID's token on the caller's transaction, for a
+// change that must end the token in the same commit (revoking an OAuth grant).
+// A token that is already gone is not an error.
+func (s *Service) DeleteTokenTx(ctx context.Context, tx *sql.Tx, userID, tokenID string) error {
+	if err := s.deleteTokenTx(ctx, tx, userID, tokenID); err != nil && !errors.Is(err, ErrNotFound) {
+		return err
+	}
+	return nil
+}
+
+func (s *Service) deleteTokenTx(ctx context.Context, tx *sql.Tx, userID, tokenID string) error {
 	var name string
-	err = tx.QueryRowContext(ctx, "SELECT name FROM api_tokens WHERE id = ? AND user_id = ?", tokenID, userID).Scan(&name)
+	err := tx.QueryRowContext(ctx, "SELECT name FROM api_tokens WHERE id = ? AND user_id = ?", tokenID, userID).Scan(&name)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrNotFound
 	}
@@ -795,10 +839,7 @@ func (s *Service) DeleteToken(ctx context.Context, userID, tokenID string) error
 	if _, err := tx.ExecContext(ctx, "DELETE FROM api_tokens WHERE id = ? AND user_id = ?", tokenID, userID); err != nil {
 		return err
 	}
-	if err := s.audit.RecordTx(ctx, tx, audit.TokenRevoked(userID, tokenID, name)); err != nil {
-		return err
-	}
-	return tx.Commit()
+	return s.audit.RecordTx(ctx, tx, audit.TokenRevoked(userID, tokenID, name))
 }
 
 func hashToken(secret string) string {

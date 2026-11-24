@@ -96,12 +96,14 @@ async function save(name, theme, png, card) {
 }
 
 // ------------------------------------------------------------------ helpers
-const HIDE = `[data-testid="demo-banner"]{display:none!important} *,*::before,*::after{caret-color:transparent!important;transition:none!important;animation:none!important}`
+// The demo's 9:30 reminder fires once a run passes that time of day; its card
+// would sit over every later shot, so no capture depends on the hour it runs at.
+const HIDE = `[data-testid="demo-banner"]{display:none!important} [role="alertdialog"][aria-label^="Reminder:"]{display:none!important} *,*::before,*::after{caret-color:transparent!important;transition:none!important;animation:none!important}`
 async function context(theme, opts = {}) {
   const c = await browser.newContext({ viewport: DESKTOP, deviceScaleFactor: 1.25, colorScheme: theme, timezoneId: 'UTC', locale: 'en-GB', ...opts })
   await c.addInitScript((css) => { addEventListener('DOMContentLoaded', () => { const s = document.createElement('style'); s.textContent = css; document.head.append(s) }) }, HIDE)
   // A click on a title edits it in place (inline-task-editing); the scenes open the panel.
-  await c.addInitScript(() => { try { localStorage.setItem('opentodo.rowClick', 'open'); localStorage.setItem('opentodo.swipe-cue', '1') } catch { /* no storage */ } })
+  await c.addInitScript(() => { try { localStorage.setItem('opentodo.swipe-cue', '1') } catch { /* no storage */ } })
   return c
 }
 const settle = (p, ms = 600) => p.waitForTimeout(ms)
@@ -142,7 +144,7 @@ async function toggleTodayEvents(p) {
   await p.locator('[data-page-header] button[aria-label="More actions"]').first().click()
   await p.locator('[data-today-events-toggle]').click(); await settle(p, 300)
 }
-async function openTask(p, title) { await row(p, title).click(); await detail(p).waitFor(); await settle(p, 500) }
+async function openTask(p, title) { await row(p, title).press('Enter'); await detail(p).waitFor(); await settle(p, 500) }
 /** Clip around one element, with padding, clamped to the viewport. */
 async function clipOf(p, locator, pad = 12, extra = {}) {
   const b = await locator.boundingBox()
@@ -454,6 +456,21 @@ const shots = [
     await p.keyboard.press('Control+Shift+M'); await p.keyboard.press('Escape')
     await p.evaluate((nid) => fetch(`/api/v1/notes/${nid}`, { method: 'DELETE' }), p.sourceNote).catch(() => {})
   } },
+  // A code block's Copy button (copy-code-block): a project note whose text holds a code
+  // block, as a viewer reads it (the rendered Markdown, not the editor), the pointer on the block.
+  { name: 'copy-code-block', server: D, async run(p) {
+    const note = '## Deploy\n\nRun it from the repository root, then open **localhost:8080**:\n\n```bash\nmake dev\n```'
+    await go(p, demoBase, '/inbox', () => p.getByRole('combobox', { name: 'Add a task' }).waitFor())
+    await p.evaluate(async (d) => { const j = await (await fetch('/api/v1/projects')).json(); const home = j.projects.find((x) => x.name === 'Home renovation'); await fetch(`/api/v1/projects/${home.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ description: d }) }) }, note)
+    await p.reload()
+    await go(p, demoBase, '/inbox', () => p.getByRole('combobox', { name: 'Add a task' }).waitFor())
+    await openProject(p, 'Home renovation')
+    await p.locator('[data-project-note] [data-code-copy]').first().waitFor()
+    await settle(p, 600)
+    await p.locator('[data-project-note] [data-code-block]').first().hover(); await settle(p, 400)
+  }, async after(p) {
+    await p.evaluate(async () => { const j = await (await fetch('/api/v1/projects')).json(); const home = j.projects.find((x) => x.name === 'Home renovation'); await fetch(`/api/v1/projects/${home.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ description: '' }) }) }).catch(() => {})
+  } },
   // Several notes at once (notes-bulk-actions): three new notes ticked, the Actions menu open; removed after.
   { name: 'notes-bulk', server: D, async run(p) {
     await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
@@ -632,6 +649,16 @@ const shots = [
   } },
   // Priority names (priority-names): three levels named in Settings → General → Priorities, then Home renovation
   // grouped by priority under those names. Names and grouping sync, so the scene puts both back.
+  { name: 'app-links', server: D, async run(p) {
+    // Links to other apps (app-links): two schemes added through the page, as a person adds them.
+    await go(p, demoBase, '/settings/integrations/app-links', () => p.locator('[data-app-link-input]').waitFor())
+    for (const scheme of ['zotero', 'obsidian:open']) {
+      if (await p.locator(`[data-app-link-remove="${scheme}"]`).count()) continue
+      await p.locator('[data-app-link-input]').fill(scheme); await p.locator('[data-app-link-add]').click()
+      await p.locator(`[data-app-link-remove="${scheme}"]`).waitFor()
+    }
+    await p.mouse.move(900, 600); await settle(p, 500)
+  } },
   { name: 'priorities', server: D, async run(p) {
     await go(p, demoBase, '/settings/general/priorities', () => p.locator('[data-priority-name="1"]').waitFor())
     for (const [n, name] of [[1, 'Must'], [2, 'Should'], [3, 'Could']]) await p.locator(`[data-priority-name="${n}"]`).fill(name)
@@ -741,6 +768,16 @@ const shots = [
     if (!r.ok()) throw new Error(`PATCH habit → ${r.status()} ${await r.text()}`)
     await go(p, plainBase, `/habits/${read}`, () => p.locator('[data-habit-numbers]').waitFor()); await settle(p, 400)
   }, async after(p, { ctx }) { if (++habitShots % 2 === 0) await habitsScene(ctx, true) } },
+  // Away (away-periods): the dialog over the three daily habits, from Today's menu.
+  { name: 'away', server: P, async run(p, { ctx }) {
+    await habitsScene(ctx)
+    await go(p, plainBase, '/today', () => p.getByRole('combobox', { name: 'Add a task' }).waitFor())
+    await p.locator('[data-page-header] button[aria-label="More actions"]').click()
+    await p.locator('[data-away-item]').click()
+    const dialog = p.getByTestId('away')
+    await dialog.locator('[data-away-preview]', { hasText: /Skips/ }).waitFor(); await settle(p, 400)
+    return clipOf(p, dialog, 16)
+  }, async after(p, { ctx }) { await p.keyboard.press('Escape'); if (++habitShots % 2 === 0) await habitsScene(ctx, true) } },
   // Targets and amounts (habit-targets): Gym three times a week, Water eight glasses.
   { name: 'habit-targets', server: P, async run(p, { ctx }) {
     await targetsScene(ctx)
@@ -889,6 +926,11 @@ const shots = [
     return { x, y: 0, width: vp.width - x, height: Math.min(vp.height, b.y + b.height + 24) }
   }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'activity', server: D, card: true, async run(p) { await go(p, demoBase, '/activity', () => p.getByRole('heading', { level: 1, name: 'Updates' }).waitFor()) } },
+  { name: 'workspace-activity', server: D, async run(p) {
+    // Opened from the workspace menu (workspace-activity D1).
+    await go(p, demoBase, '/inbox'); await p.locator('[data-workspace-trigger]').click(); await p.locator('[data-workspace-activity]').click()
+    await p.getByRole('heading', { level: 1, name: /activity$/ }).waitFor(); await p.mouse.move(900, 400); await settle(p, 800)
+  } },
   { name: 'history', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Pick paint colours')
     // History is a tab of the panel (task-detail-redesign); expand the newest version.

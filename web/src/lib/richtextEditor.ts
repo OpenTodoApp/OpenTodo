@@ -18,13 +18,16 @@ import { type Mark, type MarkType, type Node as PMNode, Schema, Slice, Fragment 
 import { liftListItem, sinkListItem, splitListItem, wrapInList } from 'prosemirror-schema-list'
 import { type Command, EditorState, Plugin, PluginKey, type Transaction } from 'prosemirror-state'
 import { tableNodes } from 'prosemirror-tables'
+import { Decoration, type EditorView } from 'prosemirror-view'
 import type * as Y from 'yjs'
 import { LINK_REL, safeHref } from './markdown'
+import { APP_HREF, canOpenAppLink, isAppLink } from './appLinks'
 import { MAX_DOC_CHARS, parseMarkdown, toModel, updateBody, type Marks, type RNode, type Run } from './richtext'
 import { msg, translatedList } from './i18n'
 import { suggestPlugin, type SuggestBridge } from './editorSuggest'
 import { refOf, titleOf } from './noteLinks'
 import { tablePlugins, tableShiftTab, tableTab } from './editorTables'
+import { bareLinksPlugin } from './editorBareLinks'
 
 // ---- schema ----
 
@@ -104,9 +107,21 @@ export const schema = new Schema({
     },
     link: {
       attrs: { href: {} }, inclusive: false,
-      parseDOM: [{ tag: 'a[href]', getAttrs: (d) => ({ href: (d as HTMLElement).getAttribute('href') ?? '' }) }],
-      // A link to a task of this app (Make subtask) keeps its relative address.
-      toDOM: (m) => ['a', { href: safeHref(m.attrs.href as string) ?? (/^\?task=[\w-]+$/.test(m.attrs.href as string) ? m.attrs.href : undefined), title: m.attrs.href, rel: LINK_REL, target: '_blank' }, 0],
+      parseDOM: [
+        { tag: `a[${APP_HREF}]`, priority: 55, getAttrs: (d) => ({ href: (d as HTMLElement).getAttribute(APP_HREF) ?? '' }) },
+        { tag: 'a[href]', getAttrs: (d) => ({ href: (d as HTMLElement).getAttribute('href') ?? '' }) },
+      ],
+      // A link to a task of this app (Make subtask) keeps its relative address. A
+      // link into another app never has one (app-links D3): its address is in
+      // data-app-href, and it opens only through openAppLink (NotesEditor), as a
+      // link for a viewer who allowed its scheme and as text for anyone else.
+      toDOM: (m) => {
+        const href = m.attrs.href as string
+        if (isAppLink(href)) {
+          return ['a', { [APP_HREF]: href, title: href, 'data-app-link': canOpenAppLink(href) ? 'open' : 'text' }, 0]
+        }
+        return ['a', { href: safeHref(href) ?? (/^\?task=[\w-]+$/.test(href) ? href : undefined), title: href, rel: LINK_REL, target: '_blank' }, 0]
+      },
     },
     strong: { parseDOM: [{ tag: 'strong' }, { tag: 'b' }], toDOM: () => ['strong', 0] },
     em: { parseDOM: [{ tag: 'em' }, { tag: 'i' }], toDOM: () => ['em', 0] },
@@ -343,6 +358,28 @@ function checkItems(tr: Transaction): Transaction {
   return tr
 }
 
+/**
+ * Bullet list: in a check list it takes the checkboxes away, so a check list becomes a
+ * bullet list again (GitHub issue 1477); anywhere else it wraps the selection as before.
+ */
+export const wrapInBulletList: Command = (state, dispatch) => {
+  const d = listDepth(state)
+  const list = d >= 0 ? state.selection.$from.node(d) : null
+  let checked = false
+  list?.forEach((item) => { if (item.attrs.checked !== null) checked = true })
+  if (!list || list.type !== schema.nodes.bullet_list || !checked) return wrapInList(schema.nodes.bullet_list)(state, dispatch)
+  if (dispatch) {
+    const tr = state.tr
+    let pos = state.selection.$from.start(d)
+    list.forEach((item) => {
+      if (item.attrs.checked !== null) tr.setNodeMarkup(pos, undefined, { checked: null })
+      pos += item.nodeSize
+    })
+    dispatch(tr)
+  }
+  return true
+}
+
 /** Make the selection a check list: wrap it in a bullet list, then add checkboxes. */
 export const wrapInCheckList: Command = (state, dispatch) => {
   if (listDepth(state) >= 0) {
@@ -490,6 +527,62 @@ export interface EditorHooks {
 
 const isEmpty = (doc: PMNode) => doc.childCount === 1 && doc.firstChild?.type === schema.nodes.paragraph && doc.firstChild.content.size === 0
 
+// The formatting row's pressed controls (formatting-row-pressed D1): a view's
+// listeners hear every update, a selection move as much as an edit.
+const viewListeners = new WeakMap<EditorView, Set<() => void>>()
+
+/** Calls `fn` after each update of `view`; returns the unsubscribe. */
+export function onViewUpdate(view: EditorView, fn: () => void): () => void {
+  let set = viewListeners.get(view)
+  if (!set) viewListeners.set(view, (set = new Set()))
+  set.add(fn)
+  return () => { set.delete(fn) }
+}
+
+function viewUpdates(): Plugin {
+  const notify = (view: EditorView) => { for (const fn of viewListeners.get(view) ?? []) fn() }
+  // A new state with new plugins (the composer's reset after posting) builds this view
+  // again without an update, so creation tells the listeners too.
+  return new Plugin({ view: (view) => { queueMicrotask(() => notify(view)); return { update: notify } } })
+}
+
+/** Which of the row's formatting applies at the selection: a mark on all of the
+ *  selected text (or stored at the caret), and the list the caret's item is in. */
+export function formattingAt(state: EditorState): Set<string> {
+  const { marks, nodes } = schema
+  const { empty, $from, ranges } = state.selection
+  // Every range: a table's cell selection is one per cell, not the span between its corners.
+  const on = (type: MarkType) => empty ? !!type.isInSet(state.storedMarks ?? $from.marks())
+    : ranges.every((r) => rangeAll(state, r.$from.pos, r.$to.pos, type)) && ranges.some((r) => hasText(state, r.$from.pos, r.$to.pos))
+  const out = new Set<string>()
+  if (on(marks.strong)) out.add('bold')
+  if (on(marks.em)) out.add('italic')
+  if (on(marks.link)) out.add('link')
+  for (let d = $from.depth; d > 0; d--) {
+    const node = $from.node(d)
+    if (node.type !== nodes.list_item) continue
+    const list = $from.node(d - 1)
+    if (list.type === nodes.bullet_list) out.add(node.attrs.checked === null ? 'bullet' : 'checklist')
+    break
+  }
+  return out
+}
+
+// Every text node of [from, to) carries the mark (a selection over plain text and bold is not bold).
+function rangeAll(state: EditorState, from: number, to: number, type: MarkType): boolean {
+  let all = true
+  state.doc.nodesBetween(from, to, (node) => {
+    if (node.isText && !type.isInSet(node.marks)) all = false
+  })
+  return all
+}
+
+function hasText(state: EditorState, from: number, to: number): boolean {
+  let seen = false
+  state.doc.nodesBetween(from, to, (node) => { if (node.isText) seen = true })
+  return seen
+}
+
 /** Marks the editor `is-empty` (with data-placeholder) so CSS can show a hint. */
 function placeholder(text: string): Plugin {
   return new Plugin({
@@ -590,9 +683,11 @@ export function plugins(hooks: EditorHooks): Plugin[] {
     sizeLimit(hooks.size),
     ...(hooks.suggest ? [suggestPlugin(hooks.suggest)] : []),
     linkSpacePlugin(),
+    bareLinksPlugin(),
     rules(),
     ...tablePlugins(),
     trailingParagraph(),
+    viewUpdates(),
     keymap({
       'Mod-z': undoAndTell, 'Mod-Shift-z': redo, 'Mod-y': redo,
       'Mod-b': toggleMark(marks.strong), 'Mod-i': toggleMark(marks.em), 'Mod-Shift-x': toggleMark(marks.strike),
@@ -600,7 +695,7 @@ export function plugins(hooks: EditorHooks): Plugin[] {
       'Mod-Alt-0': setBlockType(nodes.paragraph),
       'Mod-Alt-1': setBlockType(nodes.heading, { level: 1 }), 'Mod-Alt-2': setBlockType(nodes.heading, { level: 2 }),
       'Mod-Alt-3': setBlockType(nodes.heading, { level: 3 }),
-      'Mod-Shift-8': wrapInList(nodes.bullet_list), 'Mod-Shift-7': wrapInList(nodes.ordered_list), 'Mod-Shift-9': wrapInCheckList,
+      'Mod-Shift-8': wrapInBulletList, 'Mod-Shift-7': wrapInList(nodes.ordered_list), 'Mod-Shift-9': wrapInCheckList,
       'Mod-Enter': toggleCheck,
       'Mod-Shift-Enter': hooks.makeSubtask ?? (() => false),
       'Mod-Shift-o': () => hooks.outline?.() ?? false,
@@ -633,13 +728,14 @@ export function createState(nodes: RNode[], hooks: EditorHooks): EditorState {
 
 /**
  * Pasted plain text is read as Markdown, so pasting a formatted note keeps its
- * structure. A pasted web address (an image's too) becomes a link, never an
- * embed: the app loads nothing from other sites (editor-everywhere D5).
+ * structure. A pasted web address (an image's too) stays the bare address, which
+ * reads as a link (bare-links D2), never an embed: the app loads nothing from other
+ * sites (editor-everywhere D5).
  */
 export function markdownSlice(text: string): Slice {
   const url = text.trim()
   if (/^https?:\/\/\S+$/i.test(url) && safeHref(url)) {
-    return new Slice(Fragment.from(schema.text(url, [schema.marks.link.create({ href: url })])), 0, 0)
+    return new Slice(Fragment.from(schema.text(url)), 0, 0)
   }
   const doc = modelToPm(parseMarkdown(text))
   return new Slice(Fragment.from(doc.content), 1, 1)
@@ -657,4 +753,28 @@ export function insertBlocks(state: EditorState, nodes: PMNode[]): Transaction {
   let tr = state.tr
   for (const n of [...nodes].reverse()) tr = tr.replaceSelectionWith(n)
   return tr
+}
+
+/**
+ * In a read-only note, the app links the viewer may open take focus as links, so
+ * Enter opens them (app-links D3); an editable note keeps the caret's rules.
+ */
+export function appLinkStops(doc: PMNode): Decoration[] {
+  const out: Decoration[] = []
+  doc.descendants((node, pos) => {
+    const href = node.isText ? node.marks.find((m) => m.type.name === 'link')?.attrs.href : undefined
+    if (typeof href === 'string' && isAppLink(href) && canOpenAppLink(href)) out.push(Decoration.inline(pos, pos + node.nodeSize, { tabindex: '0', role: 'link' }))
+  })
+  return out
+}
+
+/** The address of the link at a DOM node of the editor, read from the document, never from the page. */
+export function linkHrefAt(view: EditorView, el: Node): string {
+  try {
+    const $pos = view.state.doc.resolve(view.posAtDOM(el, 0))
+    const mark = [...$pos.marks(), ...($pos.nodeAfter?.marks ?? [])].find((m) => m.type.name === 'link')
+    return typeof mark?.attrs.href === 'string' ? mark.attrs.href : ''
+  } catch {
+    return ''
+  }
 }

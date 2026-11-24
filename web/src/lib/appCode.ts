@@ -17,7 +17,8 @@ export interface Envelope {
   signatures: { key: string; sig: string }[]
 }
 
-export interface ManifestFile { sha256: string; size: number; load: 'install' | 'lazy' }
+/** One listed file. `lang`: an interface catalogue's language (precache-device-language D2). */
+export interface ManifestFile { sha256: string; size: number; load: 'install' | 'lazy'; lang?: string }
 
 export interface AppManifest {
   app: string

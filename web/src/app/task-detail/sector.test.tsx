@@ -47,6 +47,8 @@ describe('the Sector segment', () => {
     expect(ops.map((o) => o.field).sort()).toEqual(['due', 'sector', 'start'])
     await waitFor(() => !view.editor(), 'the popover closed')
     await waitFor(() => !!view.row('sector') && visibleText(view.row('sector')).includes('This week'), 'the When line')
+    // applyBatch stores the step just after the write lands, so wait for it rather than read it at once.
+    await waitFor(async () => (await db.assistantUndo.count()) > 0, 'the undo step')
     const entry = (await db.assistantUndo.toArray()).at(-1)!
     await undoBatch(entry.id)
     await waitFor(async () => (await task(id)).sector === '', 'undone')

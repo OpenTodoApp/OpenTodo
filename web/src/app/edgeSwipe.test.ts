@@ -2,7 +2,7 @@
 // The menu's edge swipe (OpenSpec change edge-swipe-menu): a right swipe from the
 // left edge opens the phone menu; anything else leaves it, and rows ignore the edge.
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { edgeSwipeAction, watchEdgeSwipe, watchesEdge } from './edgeSwipe'
+import { edgeCommits, edgeSwipeAction, watchEdgeSwipe, watchesEdge } from './edgeSwipe'
 import { beginSwipe, SWIPE } from './rowSwipe'
 
 const ptr = (type: string, x: number, y = 300, pointerType = 'touch') =>
@@ -69,5 +69,51 @@ describe('edge swipe', () => {
     expect(watchesEdge({ shell: true, standalone: true, ios: true })).toBe(true)
     expect(watchesEdge({ shell: false, standalone: false, ios: true })).toBe(true)
     expect(watchesEdge({ shell: false, standalone: true, ios: false })).toBe(true)
+  })
+})
+
+// swipe-back-follows D3: a third of the width, or a flick past the reveal distance.
+describe('the commit rule over widths', () => {
+  it('a fifth of the way, slowly, stays; a third goes, on a phone, a tablet and a wide tablet', () => {
+    for (const w of [360, 768, 1024]) {
+      expect(edgeCommits(w / 5, 0.1, w), `${w}: a fifth`).toBe(false)
+      expect(edgeCommits(Math.ceil(w / 3), 0.1, w), `${w}: a third`).toBe(true)
+    }
+  })
+
+  it('a flick goes back on a 1024 px tablet though the finger moved less than a third (the scenario "A flick on a tablet")', () => {
+    expect(edgeCommits(120, 0.9, 1024)).toBe(true)
+    expect(edgeCommits(40, 0.9, 1024)).toBe(false)
+  })
+})
+
+describe('a follower', () => {
+  it('moves with the finger and settles once: committed past a third, back under it', () => {
+    const moves: number[] = []
+    const settled: [boolean, number][] = []
+    const open = vi.fn()
+    const follower = { move: (dx: number) => void moves.push(dx), settle: (c: boolean, dx: number) => void settled.push([c, dx]) }
+    // A slow drag: 100 ms between the events, so no step is a flick.
+    let t = 0
+    vi.spyOn(performance, 'now').mockImplementation(() => (t += 100))
+    stop = watchEdgeSwipe(open, () => true, { width: () => 390, follow: () => follower })
+    swipe([[5, 300], [30, 302], [80, 303], [100, 304]])
+    expect(moves).toEqual([25, 75, 95])
+    expect(settled).toEqual([[false, 95]])
+    expect(open).not.toHaveBeenCalled()
+    swipe([[5, 300], [30, 302], [90, 303], [140, 304]])
+    expect(settled.at(-1)).toEqual([true, 135])
+    expect(open).toHaveBeenCalledTimes(1)
+  vi.restoreAllMocks()
+  })
+
+  it('a cancelled touch springs back', () => {
+    const settled: boolean[] = []
+    stop = watchEdgeSwipe(() => {}, () => true, { width: () => 390, follow: () => ({ move() {}, settle: (c) => void settled.push(c) }) })
+    ptr('pointerdown', 5)
+    ptr('pointermove', 60)
+    ptr('pointermove', 200)
+    window.dispatchEvent(new PointerEvent('pointercancel', { pointerId: 1, pointerType: 'touch' }))
+    expect(settled).toEqual([false])
   })
 })

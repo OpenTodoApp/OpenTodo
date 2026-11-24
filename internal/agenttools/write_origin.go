@@ -48,6 +48,11 @@ func originPatch(p string, it args, allowNull bool) (json.RawMessage, bool, erro
 		if err != nil {
 			return nil, false, argErr(p + err.Error())
 		}
+		if o.Kind == origin.KindURL && origin.IsAppLink(o.URL) {
+			// An assistant never writes a link into another app (app-links D5);
+			// an obsidian origin keeps its own rules.
+			return nil, false, argErr(p + "origin.url: must be an http or https URL")
+		}
 		return raw(o), true, nil
 	}
 	return nil, false, nil

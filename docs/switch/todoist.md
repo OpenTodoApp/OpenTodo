@@ -9,7 +9,7 @@ order: 10
 ---
 # Switch from Todoist
 
-Your projects, sections, subtasks, labels, priorities, due dates and recurring tasks come with you. It takes a few minutes, and you can undo the whole import with one click.
+Your projects, sections, subtasks, labels, priorities, due dates, recurring tasks and comments come with you. It takes a few minutes, and you can undo the whole import with one click.
 
 ## Export from Todoist
 
@@ -36,16 +36,17 @@ Projects that were boards in Todoist open as boards on this device. Your other d
 - Priorities: Todoist's red flag is p1, as you saw it.
 - Labels written in tasks (`@errands`), removed from the title.
 - Descriptions and estimates (task durations in minutes).
-- Due dates and times, in the language you used Todoist in (English, German, French, Italian, Spanish or Portuguese). Dates without a year take the year of the backup.
+- Due dates and times, in the language you used Todoist in (English, German, French, Italian, Spanish, Portuguese, Dutch or Chinese). Dates without a year take the year of the backup.
 - Recurring dates such as `every monday` or `jeden Montag`, when OpenTodo's [recurrence rules](../recurrence.md) can express them.
 - Reminders with a time or an offset.
 - Deadlines, as the task's [deadline](../deadlines-and-start-dates.md#deadlines), read in the same language as due dates.
+- Comments, as comments on their task, in the same order. They are posted under your name, and each starts with who wrote it in Todoist and when (`**Pete** · 2023-11-01 16:08 UTC`).
 
 The full mapping is in [Import formats](../import.md#todoist-todoist-csv-todoist-backup).
 
 ## What does not
 
-- **Comments** are added to the task's description under "Comments", because their authors cannot be kept.
+- **Comments past 5,000** in one import are added to the task's description under "Comments" instead. A comment too long to post (64 KB) keeps its author and time and has its text cut to fit. The preview says how many of each.
 - A **deadline** that cannot be read is kept as a "Deadline: …" line in the description, with a warning.
 - **Assignees** are dropped; invite people and [share the project](../sharing.md) instead.
 - Dates or rules OpenTodo cannot read leave the task without a due date, with a warning that quotes them.

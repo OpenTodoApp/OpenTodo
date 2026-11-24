@@ -19,6 +19,7 @@ import { t } from './i18n'
 import { sha256, uuid } from './ids'
 import { safeUrl } from './share'
 import { createSignal } from './store'
+import { linkChange, parseLink } from './linkAttachment'
 
 /** The longest attachment name the server accepts. */
 export const MAX_NAME = 255
@@ -114,16 +115,33 @@ export interface PlannedFile {
 }
 
 /**
- * Plan the attachment rows for files (limit checks, digest) without writing
- * anything, so a caller can put them in one batch with its own changes (a
- * comment and its files, a shared task and its files).
+ * The checks a file passes before it is planned, with their messages: signed in,
+ * attachments on, the per-file limit, and the quota with what already waits on the
+ * device. Quick add runs them on paste (quick-add-files D2). Throws an AttachmentError.
  */
-export async function planFiles(taskId: AttachParent, files: File[], opts: { commentId?: string | null; /** For a task in the same batch, not stored yet. */ projectId?: string | null } = {}): Promise<PlannedFile[]> {
+export async function checkFiles(files: readonly File[]): Promise<{ author: string; limits: AttachmentLimits | null }> {
   const author = await currentUserId()
   if (!author) throw new AttachmentError('signed_out', t('Sign in to add files.'))
   const l = await limits()
   if (l && !l.enabled) throw new AttachmentError('disabled', t('Attachments are turned off on this server.'))
   let room = l && l.quota_bytes > 0 ? l.quota_bytes - l.used_bytes - (await pendingBytes()) : Infinity
+  for (const file of files) {
+    if (l && file.size > l.max_file_bytes) {
+      throw new AttachmentError('too_large', t('“{name}” is {size}; files may be at most {max} on this server.', { name: file.name, size: formatBytes(file.size), max: formatBytes(l.max_file_bytes) }))
+    }
+    if (file.size > room) throw new AttachmentError('quota', t('“{name}” would go over your {quota} of attachments.', { name: file.name, quota: formatBytes(l?.quota_bytes ?? 0) }))
+    room -= file.size
+  }
+  return { author, limits: l }
+}
+
+/**
+ * Plan the attachment rows for files (limit checks, digest) without writing
+ * anything, so a caller can put them in one batch with its own changes (a
+ * comment and its files, a shared task and its files).
+ */
+export async function planFiles(taskId: AttachParent, files: File[], opts: { commentId?: string | null; /** For a task in the same batch, not stored yet. */ projectId?: string | null } = {}): Promise<PlannedFile[]> {
+  const { author, limits: l } = await checkFiles(files)
   // An encrypted account's personal tasks get encrypted files (design D8).
   const key = (await encryptsTask(taskId, opts.projectId)) ? await currentKey() : undefined
   if (key === null) throw new AttachmentError('locked', t('Unlock encryption on this device to add files.'))
@@ -131,11 +149,6 @@ export async function planFiles(taskId: AttachParent, files: File[], opts: { com
   // One millisecond apart, so the uploader keeps the order the files were picked in.
   const now = Date.now()
   for (const [i, file] of files.entries()) {
-    if (l && file.size > l.max_file_bytes) {
-      throw new AttachmentError('too_large', t('“{name}” is {size}; files may be at most {max} on this server.', { name: file.name, size: formatBytes(file.size), max: formatBytes(l.max_file_bytes) }))
-    }
-    if (file.size > room) throw new AttachmentError('quota', t('“{name}” would go over your {quota} of attachments.', { name: file.name, quota: formatBytes(l?.quota_bytes ?? 0) }))
-    room -= file.size
     const id = uuid()
     const name = cleanName(file.name)
     const stored = key ? await encryptFile(key, id, file) : file
@@ -159,7 +172,7 @@ export async function planFiles(taskId: AttachParent, files: File[], opts: { com
  * Write planned files together with other changes in one batch. The bytes are
  * stored first, so a row never exists on this device without its file.
  */
-export async function commitFiles(planned: PlannedFile[], before: Change[] = []): Promise<string[]> {
+export async function commitFiles(planned: PlannedFile[], before: Change[] = [], write: (changes: Change[]) => Promise<unknown> = mutateMany): Promise<string[]> {
   try {
     await db.attachmentBlobs.bulkPut(planned.map((p) => p.blob))
   } catch {
@@ -167,7 +180,7 @@ export async function commitFiles(planned: PlannedFile[], before: Change[] = [])
     throw new AttachmentError('unsupported', t('This browser cannot keep files on the device (private browsing?), so they cannot be attached here.'))
   }
   try {
-    await mutateMany([...before, ...planned.map((p) => p.change)])
+    await write([...before, ...planned.map((p) => p.change)])
   } catch (err) {
     await db.attachmentBlobs.bulkDelete(planned.map((p) => p.blob.id))
     throw err
@@ -176,25 +189,26 @@ export async function commitFiles(planned: PlannedFile[], before: Change[] = [])
   return planned.map((p) => p.blob.id)
 }
 
+/**
+ * New tasks' changes written with the files pasted into quick add (quick-add-files D1):
+ * each input's `files` become attachments of its task (`ids` in input order) in the
+ * same batch, written by the creator's own `write`.
+ */
+export async function withFiles(ids: readonly string[], inputs: readonly { files?: File[]; project_id?: string | null }[], changes: Change[], write: (changes: Change[]) => Promise<unknown>): Promise<void> {
+  const planned: PlannedFile[] = []
+  for (const [i, input] of inputs.entries()) {
+    if (input.files?.length) planned.push(...(await planFiles(ids[i], input.files, { projectId: input.project_id ?? null })))
+  }
+  if (planned.length) await commitFiles(planned, changes, write)
+  else await write(changes)
+}
+
 /** Attach files to a task (or one of the user's comments on it). Returns the new ids. */
 export async function queueFiles(taskId: AttachParent, files: File[], opts: { commentId?: string | null } = {}): Promise<string[]> {
   return commitFiles(await planFiles(taskId, files, opts))
 }
 
-/** Attach one file. Returns its id. */
-export async function queueFile(taskId: string, file: File, commentId?: string | null): Promise<string> {
-  return (await queueFiles(taskId, [file], { commentId }))[0]
-}
-
-/** An http(s) address, or null. */
-export function parseLink(text: string): URL | null {
-  try {
-    const u = new URL(text.trim())
-    return u.protocol === 'http:' || u.protocol === 'https:' ? u : null
-  } catch {
-    return null
-  }
-}
+export { parseLink }
 
 /** Attach a link. Returns its id. */
 export async function queueLink(taskId: AttachParent, url: string, name?: string, commentId?: string | null): Promise<string> {
@@ -203,10 +217,7 @@ export async function queueLink(taskId: AttachParent, url: string, name?: string
   const author = await currentUserId()
   if (!author) throw new AttachmentError('signed_out', t('Sign in to add links.'))
   const id = uuid()
-  await mutateMany([{ entity: 'attachment', entityId: id, patch: {
-    ...parentFields(taskId), author_id: author, comment_id: commentId ?? null, name: cleanName(name?.trim() || u.hostname),
-    mime: 'text/uri-list', size: 0, sha256: '', url: u.href, encrypted: false, created_at: Date.now(), uploaded_at: null, deleted_at: null,
-  } }])
+  await mutateMany([linkChange(id, parentFields(taskId), u, author, { name, commentId })])
   return id
 }
 
@@ -401,6 +412,13 @@ export async function attachmentCounts(): Promise<Map<string, number>> {
   const commentIds = [...new Set(rows.map((a) => a.comment_id).filter((c): c is string => !!c))]
   const deadComments = new Set((await db.comments.bulkGet(commentIds)).filter((c) => !c || c.deleted_at).map((c, i) => c?.id ?? commentIds[i]))
   for (const a of rows) if (!a.note_id && (!a.comment_id || !deadComments.has(a.comment_id))) out.set(a.task_id, (out.get(a.task_id) ?? 0) + 1)
+  return out
+}
+
+/** Live attachments per standalone note (note-attachments), for the paperclip in the notes list. */
+export async function noteAttachmentCounts(): Promise<Map<string, number>> {
+  const out = new Map<string, number>()
+  for (const a of await db.attachments.filter((x) => !x.deleted_at && !!x.note_id).toArray()) out.set(a.note_id as string, (out.get(a.note_id as string) ?? 0) + 1)
   return out
 }
 

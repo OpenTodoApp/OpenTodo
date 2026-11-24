@@ -100,17 +100,41 @@ describe('SyncStatus in error state', () => {
   })
 })
 
+// #1941: a routine sync with nothing pending keeps the quiet dot, so the footer does
+// not switch between words and the dot on every sync.
+describe('SyncStatus while a routine sync runs', () => {
+  it('shows the pulsing dot alone, before, during and after the sync, and keeps the words in its name', async () => {
+    const r = await render(<SyncStatus />)
+    const button = () => document.querySelector<HTMLElement>('[data-sync-status]')!
+    for (const state of ['idle', 'syncing', 'idle', 'syncing']) {
+      setState({ state, lastSyncedAt: Date.now() })
+      await waitFor(() => button().dataset.syncStatus === state, state)
+      expect(button().querySelector('.ui-whole')).toBeNull()
+      expect(button().textContent).toBe('')
+    }
+    expect(button().querySelector('.animate-pulse')).toBeTruthy()
+    expect(button().getAttribute('aria-label')).toMatch(/^Syncing…/)
+    // With changes pending the words stay "1 pending" through the sync and after it.
+    for (const state of ['idle', 'syncing', 'idle']) {
+      setState({ state, pending: 1 })
+      await waitFor(() => button().dataset.syncStatus === state, `${state} with a pending change`)
+      expect(button().textContent).toBe('1 pending')
+    }
+    await r.unmount()
+  })
+})
+
 // touch-sidebar-names: on touch the dot is the state; words show whole or not at all.
 describe('SyncStatus words on touch', () => {
   const words = () => document.querySelector('[data-sync-status] .ui-whole')
 
-  it('a running sync shows no words on touch, and keeps them in its name', async () => {
+  it('a running sync with a change pending keeps "1 pending" on touch too', async () => {
     const r = await render(<SyncStatus />)
-    setState({ state: 'syncing' })
+    setState({ state: 'syncing', pending: 1 })
     await waitFor(() => words() !== null, 'the words')
-    expect(words()!.textContent).toBe('Syncing…')
-    expect(words()!.className).toContain('pointer-coarse:hidden')
-    expect(document.querySelector('[data-sync-status]')!.getAttribute('aria-label')).toMatch(/^Syncing…/)
+    expect(words()!.textContent).toBe('1 pending')
+    expect(words()!.className).not.toContain('pointer-coarse:hidden')
+    expect(document.querySelector('[data-sync-status]')!.getAttribute('aria-label')).toMatch(/^1 pending/)
     await r.unmount()
   })
 

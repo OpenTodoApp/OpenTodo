@@ -184,7 +184,6 @@ export async function deleteRule(id: string): Promise<void> {
 }
 
 const NO_RULES: Rule[] = []
-const NO_TITLES = new Map<string, string>()
 
 /** The live rules of this device, in order (the Rules page). */
 export function useRules(): Rule[] {
@@ -198,9 +197,4 @@ export function useRule(id: string | undefined): Rule | null | undefined {
     const r = await db.rules.get(id)
     return r && !r.deleted_at ? r : null
   }, [id], undefined)
-}
-
-/** Titles of the live tasks among ids (a rule's history): a deleted task has none. */
-export function useTaskTitles(ids: readonly string[]): Map<string, string> {
-  return useLiveQuery(async () => new Map((await db.tasks.bulkGet([...ids])).flatMap((x) => (x && !x.deleted_at ? [[x.id, x.title] as const] : []))), [ids.join()], NO_TITLES)
 }

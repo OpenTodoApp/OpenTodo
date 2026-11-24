@@ -32,6 +32,10 @@ export interface QuickAddInput {
   reminders?: ReminderPhrase[]
   /** The notes typed under the line (quick-add-notes D2); never parsed. */
   description?: string
+  /** URLs to attach as links (quick-add-links D2). */
+  links?: string[]
+  /** Files pasted into the field (quick-add-files D1), attached to the new task. */
+  files?: File[]
 }
 
 /** The slice of a label the resolver needs. */
@@ -114,6 +118,7 @@ export async function toTaskInput(
   if (r.energy) out.energy = r.energy
   if (r.estimateMinutes) out.estimate_minutes = r.estimateMinutes
   if (r.spentMinutes) out.spent_minutes = r.spentMinutes
+  if (r.links.length) out.links = r.links
   return out
 }
 

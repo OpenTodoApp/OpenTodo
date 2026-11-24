@@ -297,7 +297,7 @@ The person turned on end-to-end encryption and does not trust the server, its op
 - `internal/outbound`. Addresses are resolved, filtered and pinned. Loopback, private, link-local, CGNAT, ULA, multicast, NAT64 and 6to4 embeddings and metadata addresses are refused. With "allow private networks" on, metadata, link-local and `0.0.0.0/8` stay refused.
 - Redirects are not followed, or followed at most 3 times with every hop re-checked. No environment proxy is used.
 - Size and time limits:
-  - calendar feeds: 2 MiB, 200,000 content lines, 5,000 occurrences, an expansion work budget and 5 seconds;
+  - calendar feeds: 32 MiB read as it arrives (one event at a time, at most 1 MiB and 5,000 content lines each, at most 4 MiB of events kept), 5,000 occurrences, an expansion work budget and 5 seconds;
   - issues: 2 MiB, 10 pages;
   - calendar sync: 4 MiB, 3 redirects, never to another site;
   - email: 10 MiB, MIME depth 12, 500 parts.
@@ -498,7 +498,7 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
 
 ### App sign-in
 
-- **Code:** `internal/mcpoauth/app.go`, `internal/httpapi/app_sign_in.go`, `internal/auth/appsessions.go`, `web/src/app/AppSignIn.tsx` (OpenSpec `native-app-foundation`, design D5).
+- **Code:** `internal/mcpoauth/app.go`, `internal/httpapi/app_sign_in.go`, `internal/auth/appsessions.go`, `web/src/app/AppSignIn.tsx` (OpenSpec `app-sign-in`).
 - **How it works:** the OpenTodo app opens `/app/sign-in` in the system's authentication sheet. The server's own sign-in runs in it, then a confirmation; Confirm is a same-origin POST from a session, never a token, so a link alone grants nothing. The server then redirects to `opentodo://signed-in` with a code, and the app exchanges the code and its PKCE verifier at `POST /api/v1/app/token`.
 - **Controls:**
   - **PKCE (S256 only).** The code is bound to the challenge and the `state`, single-use, and valid for 60 seconds. The first exchange attempt uses it up, right or wrong, so a code tried without the verifier is gone for everyone.

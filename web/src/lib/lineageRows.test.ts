@@ -1,11 +1,11 @@
 // The rows a series' planning reads come by index (db.ts v31: `series_id`,
 // `split_from.series`), never from a scan of every task: completing a repeating task in
-// a large account read the whole tasks table (performance-10k; the native app's budget,
-// native-app-foundation 5.4).
+// a large account read the whole tasks table (performance-10k).
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
 import { lineageRows, lineageScan } from './lineageRows'
-import { completeTask, createTask, getDeviceId, resetDeviceId, skipOccurrence } from './ops'
+import { completeTask, createTask, getDeviceId, resetDeviceId } from './ops'
+import { skipOccurrence } from './undoActions'
 import type { Task } from './types'
 
 let n = 0

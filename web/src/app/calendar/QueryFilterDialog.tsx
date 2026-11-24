@@ -1,4 +1,5 @@
-// Filter… of the Calendar and of Upcoming (OpenSpec change calendar-clarity, design D4):
+// Filter… of the Calendar, of Upcoming (OpenSpec change calendar-clarity, design D4) and of
+// a project (project-query-filter):
 // a query in the filter language and label checkboxes that write its `@label` clause.
 // Every valid edit applies at once (the calendar behind follows); an invalid one shows
 // the parser's error here and keeps the last valid filter active. Loaded lazily.
@@ -37,9 +38,9 @@ export default function QueryFilterDialog({ title, query, ctx, onApply, onClose 
   return (
     <Dialog title={title} onClose={onClose} size="md" testId="query-filter">
       <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); if (!error) onClose() }}>
-        <Field label={t('Query')} description={error ? undefined : t('The filter language of saved views, for example ##Work & p1 or @errand.')} error={error ?? undefined}>
+        <Field label={t('Query')} description={error ? undefined : t('The filter language of saved views, for example search: milk & p1 or @errand.')} error={error ?? undefined}>
           <Input autoFocus value={draft} onChange={(e) => edit(e.target.value)} spellCheck={false} autoComplete="off" data-query-filter-input
-            placeholder="##Work & p1" />
+            placeholder="search: milk & p1" />
         </Field>
         {labels.length > 0 && (
           <fieldset aria-labelledby={groupId} disabled={!split} className="space-y-1">

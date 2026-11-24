@@ -3,13 +3,15 @@
     <string name="app_name">OpenTodo</string>
     <string name="setup_title">Verbind met je server</string>
     <string name="setup_intro">Voer het adres van je OpenTodo-server in, het adres dat je in de browser opent.</string>
-    <string name="setup_hint">todo.example.com</string>
+    <string name="setup_address_label">Serveradres</string>
     <string name="setup_connect">Verbinden</string>
     <string name="setup_connect_anyway">Toch verbinden</string>
     <string name="setup_try">%1$s proberen</string>
     <string name="setup_refused">Dit adres kan niet worden gebruikt. Voer een adres in zoals todo.example.com.</string>
     <string name="setup_needs_https">Dit adres heeft een beveiligde verbinding (https) nodig.</string>
     <string name="setup_insecure">Dit adres ligt in je lokale netwerk en is niet versleuteld: anderen in hetzelfde netwerk zouden kunnen meelezen. Tik opnieuw om toch te verbinden.</string>
+    <string name="setup_home_only">Dit adres werkt alleen op je thuisnetwerk.</string>
+    <string name="setup_home_only_link">OpenTodo buitenshuis gebruiken</string>
     <string name="setup_no_network">Geen verbinding. De eerste start heeft het netwerk nodig; dit scherm probeert het opnieuw zodra het terug is.</string>
     <string name="setup_not_opentodo">Dit adres antwoordt niet zoals een OpenTodo-server. Controleer het adres.</string>
     <string name="setup_untrusted">Deze telefoon vertrouwt het certificaat van de server niet. Vraag de persoon die de server beheert, of installeer hun certificeringsinstantie in de Android-instellingen.</string>
@@ -42,6 +44,10 @@
     <string name="widget_empty">Voor vandaag is er niets meer open.</string>
     <string name="widget_untitled">Taak</string>
     <string name="widget_more">+ %1$d meer</string>
+    <string name="widget_completed">Afgerond</string>
+    <string name="widget_completed_description">Hoeveel taken je deze week hebt afgerond</string>
+    <string name="widget_completed_locked">Vergrendeld: alleen het aantal van vandaag</string>
+    <string name="widget_completed_days">Afgerond per dag: %1$s</string>
     <string name="setup_old_webview">De Android System WebView van deze telefoon is oud (versie %1$s). Werk deze bij in de app store, zodat OpenTodo volledig werkt.</string>
     <string name="site_bar_host">Aangemeld bij %1$s</string>
     <string name="site_bar_close">Terug naar OpenTodo</string>
@@ -50,4 +56,15 @@
     <string name="setup_sign_in">Hier aanmelden</string>
     <string name="error_sign_in">Je server zit achter een aanmeldpagina, en de aanmelding ging in de app niet verder. Meld je hier opnieuw aan.</string>
     <string name="save_failed">Het bestand kon niet worden opgeslagen.</string>
+    <string name="channel_focus">Focus</string>
+    <string name="focus_generic">Focussessie</string>
+    <string name="focus_work">Werk</string>
+    <string name="focus_work_of">Werk · %1$d van %2$d</string>
+    <string name="focus_short_break">Korte pauze</string>
+    <string name="focus_long_break">Lange pauze</string>
+    <string name="focus_paused">Gepauzeerd</string>
+    <string name="focus_pause">Pauzeren</string>
+    <string name="focus_resume">Hervatten</string>
+    <string name="focus_done">Sessie beëindigd</string>
+    <string name="focus_break_over">Pauze voorbij</string>
 </resources>

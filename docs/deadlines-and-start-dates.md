@@ -17,7 +17,7 @@ The due date is when you plan to work on a task. Two more dates say when it must
 
 A **deadline** is the day a task must be finished by, and the two are separate: you can plan a report for Tuesday that is due to your boss on Friday. Moving or clearing the due date never changes the deadline, and you may even plan a task after its deadline; the countdown then turns red.
 
-A task with a deadline shows a countdown on its row, next to an hourglass: `3d` for three days to go, `Today` on the day, and `2d over` once it has passed. It turns amber in the last week and red on the day and after. Hover it to see the full date. The countdown follows the calendar on your device, so it moves on at midnight even offline.
+A task with a deadline shows a countdown by an hourglass: `3d` to go, `Today` on the day, `2d over` once passed. It turns amber in the last week and red from the day on. Hover it for the full date, or turn on **Settings › Appearance › Theme and density › Show deadlines as dates**. It follows your device's calendar, so it moves on at midnight even offline.
 
 On the [calendar](calendar-views.md#open-the-calendar), a deadline shows on its day with an amber diamond: a chip in the Day and Week strip under the day's name, a row at the end of a Month day, and a row at the end of a Plan column. When the task is planned on its deadline day, the diamond sits on the task instead. Click one to open the task. They never count toward the day's capacity.
 
@@ -28,7 +28,7 @@ Deadlines also bring tasks into [Today and Upcoming](views.md#plan-your-day-with
 Not every task is for now. **Start**, in the panel's **When** editor, says when a task becomes relevant:
 
 - **No start date**, the default: the task is in your lists as usual. **Clear** in the editor brings a task back to it.
-- **A start date** defers the task until that day: it disappears from Today, Upcoming, Anytime and the counts, and its project lists it under **Later** (folded in its section, if any) with a **Starts 21 Oct** chip. Subtasks go with it. A deferred task without a project leaves the Inbox; without a due date it is listed in Upcoming on its start day ([where planned tasks go](today-and-upcoming.md#where-planned-tasks-go)). On its start day it appears in Today with a **Started** chip and stays there until you deal with it. The start date can't be after the due date.
+- **A start date** defers the task until that day: it disappears from Today, Upcoming, Anytime and the counts, and its project lists it under **Later** (folded in its section, if any) with a **Starts 21 Oct** chip (a [multi-day task](tasks-that-span-days.md) stays in its section). Subtasks go with it. A deferred task without a project leaves the Inbox; undated, it is in Upcoming on its start day ([where planned tasks go](today-and-upcoming.md#where-planned-tasks-go)). On its start day it appears in Today with a **Started** chip and stays there until you deal with it. The start date can't be after the due date.
 - **Someday** parks the task: it moves to the [Someday view](views.md#park-ideas-in-someday) and its project's Later group, and its due date is cleared (a repeating task stops repeating). Giving it a due date or a start date brings it back.
 
 A due date or a deadline that has come always shows the task in Today, even if it is deferred or parked. See also [time sectors](time-sectors.md).

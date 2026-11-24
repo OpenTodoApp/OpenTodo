@@ -57,6 +57,10 @@
         if (t.list !== 14 && t.list !== 15) return null
         shape.push('--ot-text-list:' + t.list / 16 + 'rem')
       }
+      if (t.titleWeight !== undefined) {
+        if (t.titleWeight !== 500 && t.titleWeight !== 600 && t.titleWeight !== 700) return null
+        shape.push('--ot-title-weight:' + t.titleWeight)
+      }
       var css = 'html:root[data-ot-theme]:not([data-contrast="high"]){' + colours.join(';') + ';color-scheme:' + side + '}'
       if (shape.length) css += 'html:root[data-ot-theme]{' + shape.join(';') + '}'
       return { id: t.id, bar: t.bar, css: css }

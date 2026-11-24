@@ -12,7 +12,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
 
-// App sign-in (OpenSpec change native-app-foundation, design D5): the OpenTodo
+// App sign-in (OpenSpec change app-sign-in): the OpenTodo
 // app signs in through the system browser with an authorization code and PKCE.
 // Its codes (app_sign_in_code) belong to the built-in public client
 // AppClientID; its grants are one per device in app_sign_in_grant, and their

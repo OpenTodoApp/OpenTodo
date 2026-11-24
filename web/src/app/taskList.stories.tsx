@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
-import { createSubtask, createTask } from '../lib/ops'
+import { createProject, createSubtask, createTask } from '../lib/ops'
 import { setTodayLimit } from '../lib/closedListPrefs'
-import { seedBase, seeded, seedProjectWithSections, seedToday, storyUser, TODAY, TOMORROW, withSeed } from './stories/fixtures'
+import { setListDisplay } from '../lib/listDisplay'
+import { HEX, seedBase, seeded, seedProjectWithSections, seedToday, storyUser, TODAY, TOMORROW, withSeed } from './stories/fixtures'
 import { db } from '../lib/db'
 import { setTaskOpen } from '../lib/userPrefs'
 import { PANEL_WIDTH_KEY, SIDE_PANEL_CLOSED_KEY } from './panel'
@@ -28,6 +29,26 @@ function Column({ children }: { children: ReactNode }) {
 export const TodayGrouped: StoryObj = {
   ...withSeed(seedToday),
   render: () => <Column><TaskListView route={{ view: 'today' }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
+}
+
+async function seedTodayContext(rowLayout: 'line' | 'detailed' = 'line') {
+  await seedBase()
+  const parent = await createTask({ title: 'Prepare the release', project_id: seeded.work, due: { date: TODAY } })
+  await createTask({ title: 'Check the build', project_id: seeded.work, parent_id: parent, due: { date: TODAY } })
+  await createTask({ title: 'Write the release notes', project_id: seeded.work, parent_id: parent })
+  await createTask({ title: 'Send the announcement', project_id: seeded.work, parent_id: parent, due: { date: TOMORROW } })
+  await createTask({ title: 'Plan the weekend', project_id: seeded.home, due: { date: TODAY } })
+  await setListDisplay({ kind: 'today' }, { subtasks: true, groupBy: 'project', rowLayout })
+}
+
+export const TodayContextualSubtasks: StoryObj = {
+  ...withSeed(() => seedTodayContext()),
+  render: () => <Column><TaskListView route={{ view: 'today' }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
+}
+
+export const TodayContextualSubtasksDetailed: StoryObj = {
+  ...withSeed(() => seedTodayContext('detailed')),
+  render: TodayContextualSubtasks.render,
 }
 
 /** Earlier tasks planned for the last days of the week before today. */
@@ -95,6 +116,26 @@ export const ProjectLaterWithSubtasks: StoryObj = {
     await createSubtask(fence, 'Sand the boards')
   }),
   render: () => <Column><TaskListView route={{ view: 'project', id: seeded.home }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
+}
+
+/**
+ * A project with sub-projects (subprojects-above-tasks, GitHub issue 1981): the Sub-projects
+ * group on top, its rows in a task row's columns, then the project's own tasks under a Tasks bar,
+ * at the top level, a subtask indented under its parent.
+ */
+export const ProjectWithSubProjects: StoryObj = {
+  ...withSeed(async () => {
+    await seedBase()
+    const p = seeded.work
+    const hiring = await createProject({ name: 'Hiring', color: HEX.orange, parent_id: p })
+    await createTask({ title: 'Post the job ad', project_id: hiring })
+    await createTask({ title: 'Write the release notes', project_id: seeded.website })
+    await createTask({ title: 'Send the invoice to Northwind', project_id: p, due: { date: TODAY }, priority: 1 })
+    const offsite = await createTask({ title: 'Plan the team offsite', project_id: p })
+    await createSubtask(offsite, 'Book the venue')
+    await createTask({ title: 'Update the budget sheet', project_id: p })
+  }),
+  render: () => <Column><TaskListView route={{ view: 'project', id: seeded.work }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
 }
 
 /** Nothing due today: one sentence, Add a task and the Open Upcoming link. */

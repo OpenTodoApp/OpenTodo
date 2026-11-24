@@ -43,9 +43,15 @@ targets:
         # input; without these two the system kills the app on the first request.
         NSMicrophoneUsageDescription: Record a voice note and send it to the server for transcription.
         NSCameraUsageDescription: Take a photo to attach to a task or a note.
+        # "Use my location" in a task's location (WebLocation): WebKit asks iOS for the position
+        # only with this; pages of other origins are refused. Translated in OpenTodo/InfoPlist.xcstrings.
+        NSLocationWhenInUseUsageDescription: OpenTodo uses your location only when you choose Use my location for a task.
         # Unlocking an encrypted account with the key in the keychain (BiometricKeyStore):
         # without it iOS refuses the Face ID prompt. Translated in OpenTodo/InfoPlist.xcstrings.
         NSFaceIDUsageDescription: OpenTodo uses Face ID to unlock your encrypted tasks on this iPhone.
+        # Saving an image from Quick Look's share button (Downloads, ios-quick-look): adding to
+        # Photos only, never reading them. Without it that choice ends the app. Translated in InfoPlist.xcstrings.
+        NSPhotoLibraryAddUsageDescription: OpenTodo saves the images you choose to your photo library.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         UIApplicationShortcutItems:
@@ -57,6 +63,8 @@ targets:
             CFBundleURLSchemes: [opentodo]
         BGTaskSchedulerPermittedIdentifiers: [app.opentodo.refresh]
         UIBackgroundModes: [fetch]
+        # focus-live-activity: the Focus session on the lock screen and in the Dynamic Island.
+        NSSupportsLiveActivities: true
         # No WKAppBoundDomains here (ios-bridge-portable): the key alone, even with a
         # placeholder host, switches off the bridge's script and message handler on
         # every other server. The "App-bound domains" phase adds it to a one-server build.
@@ -111,6 +119,7 @@ targets:
       - path: OpenTodoWidget
       - path: Shared/Localizable.xcstrings
       - path: OpenTodo/WidgetPublication.swift
+      - path: OpenTodo/FocusActivity.swift
       - path: OpenTodo/Store.swift
       - path: OpenTodo/JSON.swift
     info:

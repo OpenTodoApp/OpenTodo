@@ -66,6 +66,7 @@ Do it in exactly these steps:
 		Tools:       []string{"list_tasks", "search_tasks", "get_task", "schedule_tasks", "update_tasks"},
 		Instructions: `Plan the user's open work over the next 7 days, starting today.
 - Read what is due, overdue and in the Inbox with list_tasks (views today, upcoming and inbox), and what the user mentions with search_tasks.
+- Leave out tasks assigned to someone else (assignee_id set to another person): they are theirs to plan.
 - Call schedule_tasks with a date (YYYY-MM-DD) in the next 7 days for every task you plan: overdue and high-priority tasks first, then the rest. Keep dates that are already set unless the day is over-full or the date has passed.
 - Never set a due date to null and never remove a date.
 - A task that can only begin later in the week gets a start date (update_tasks start) instead of a due date; never give a do-on date only to keep a task visible. Leave tasks parked in Someday alone unless the user names them, and plan nothing that is blocked by an open task.
@@ -197,6 +198,7 @@ Do it in exactly these steps:
 		Tools:       []string{"today_summary", "list_tasks", "get_task", "find_free_time"},
 		Instructions: `Give the user a short briefing on today.
 - Read today with today_summary and list_tasks (view today); check what is overdue and what is due in the next 3 days.
+- Leave out tasks from list_tasks that are assigned to someone else (assignee_id set to another person); today_summary already does.
 - Show today's agenda with show_calendar for today, the deadlines of the next 7 days with show_deadlines when there are any, and how the user is doing with show_stats.
 - Then say in at most four short lines: how full the day is, the one or two tasks that matter most, and anything overdue or due soon to decide on.
 - Change nothing.`,

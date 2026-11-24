@@ -73,7 +73,7 @@ const row = (p, title) => p.getByRole('button', { name: new RegExp('^' + esc(tit
 const detail = (p) => p.locator('[data-detail-for]')
 const quickAddInput = (p) => p.locator('textarea[aria-label="Add a task"]').first()
 async function go(p, path, ready) { await p.goto(base + path); if (ready) await ready(); await settle(p, 800) }
-async function openTask(p, title) { await row(p, title).click(); await detail(p).waitFor(); await settle(p, 500) }
+async function openTask(p, title) { await row(p, title).press('Enter'); await detail(p).waitFor(); await settle(p, 500) }
 /** Focus the quick add field: the inline field where there is one, else the sheet opened with `q`. */
 async function focusQuickAdd(p) {
   const inline = quickAddInput(p)
@@ -129,6 +129,7 @@ const screens = [
   { name: 'calendar-week', entry: 'week', async run(p) { await go(p, '/week', () => p.getByRole('region', { name: 'Week calendar' }).waitFor()) } },
   { name: 'calendar-month', entry: 'month', async run(p) { await go(p, '/month', () => p.locator('[data-month-grid]').waitFor()) } },
   { name: 'calendar-plan', entry: 'plan', async run(p) { await go(p, '/plan', () => p.locator('[data-plan-grid], [data-plan-agenda]').waitFor()) } },
+  { name: 'calendar-quarter', entry: 'quarter', async run(p) { await go(p, '/quarter', () => p.locator('[data-quarter-grid]').waitFor()) } },
   { name: 'task-panel', entry: 'task-panel', async run(p, { ids }) {
     await go(p, `/project/${ids.home}`, h1(p, 'Home renovation')); await openTask(p, 'Get three quotes for the kitchen')
   } },

@@ -3,7 +3,8 @@
 // attachments, and links to tasks, notes and projects that read as the item's
 // current title (a done task struck through), or as muted text when the item is
 // missing, in the Trash or out of reach.
-import { lazy, Suspense, type ReactNode } from 'react'
+import { Suspense, type ReactNode } from 'react'
+import { lazy } from '../lib/lazy'
 import { useEmbeddedImage } from '../lib/embeds'
 import { t } from '../lib/i18n'
 import { linkedReferencesLoaded, loadLinkedReferences, type LinkedReferencesProps } from './linkedRefsChunk'

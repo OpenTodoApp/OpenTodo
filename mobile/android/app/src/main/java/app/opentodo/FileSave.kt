@@ -80,6 +80,8 @@ class FileSave(private val dir: File) {
         const val FALLBACK_NAME = "download"
         const val FALLBACK_TYPE = "application/octet-stream"
         private const val MAX_NAME = 200
+        /** What a file system takes for one name (NAME_MAX), in UTF-8 bytes. */
+        private const val MAX_NAME_BYTES = 255
         private val MIME = Regex("^[a-z0-9!#$&^_.+-]+/[a-z0-9!#$&^_.+-]+$")
 
         /** The chunk of a payload, or null for a malformed one. */
@@ -96,16 +98,21 @@ class FileSave(private val dir: File) {
 
         /**
          * The name the save dialog proposes: the last path segment, without control characters,
-         * at most [MAX_NAME] characters; [FALLBACK_NAME] when nothing is left.
+         * at most [MAX_NAME] characters and [MAX_NAME_BYTES] UTF-8 bytes; [FALLBACK_NAME] when
+         * nothing is left. The iOS app's Downloads.fileName follows the same rule (file-name/cases.json).
          */
         fun name(raw: String?): String {
             val segment = (raw ?: "").substringAfterLast('/').substringAfterLast('\\')
             val clean = segment.filterNot { Character.isISOControl(it) }.trim()
             if (clean.isEmpty() || clean == "." || clean == "..") return FALLBACK_NAME
-            if (clean.length <= MAX_NAME) return clean
-            // Never half of a surrogate pair at the cut.
-            val cut = if (Character.isHighSurrogate(clean[MAX_NAME - 1])) MAX_NAME - 1 else MAX_NAME
-            return clean.substring(0, cut)
+            // Never half of a surrogate pair at a cut.
+            val cut = if (clean.length <= MAX_NAME) clean.length
+            else if (Character.isHighSurrogate(clean[MAX_NAME - 1])) MAX_NAME - 1 else MAX_NAME
+            var name = clean.substring(0, cut)
+            while (name.toByteArray(Charsets.UTF_8).size > MAX_NAME_BYTES) {
+                name = name.substring(0, name.offsetByCodePoints(name.length, -1))
+            }
+            return name
         }
 
         /** The MIME type without its parameters, or [FALLBACK_TYPE] for none or a malformed one. */

@@ -18,7 +18,7 @@ The **You** group of [Settings](settings.md) holds your account and how the app 
 
 - **Profile**: your initials, name, email and role, and [how you work](#how-you-work).
 - **Security**:
-  - **Session**: **Sign out here** removes your tasks from this device; changes not yet sent are uploaded first, and the app asks you to confirm. **Sign out everywhere** signs out every device and revokes your API tokens and app passwords.
+  - **Session**: **Sign out here** removes your tasks from this device; changes not yet sent are uploaded first, and the app asks you to confirm. **Sign out everywhere** signs out every device and revokes tokens, app passwords and connected AI apps.
   - **Password**: **Change password** opens the form. See [Account security](account-security.md#change-your-password).
   - **Two-factor authentication**: a code from your phone on top of your password. The badge shows whether it's on, and the card warns when only a few recovery codes remain. See [Two-factor authentication](two-factor.md).
   - **Passkeys**: sign in with your fingerprint, face or device PIN. See [Account security](account-security.md#sign-in-with-a-passkey).
@@ -41,7 +41,8 @@ Three pages, **Theme and density**, **Sidebar** and **Task details**. These choi
 - **Density**: **Comfortable** (the default) or **Compact**, which makes task rows, group headers and the sidebar tighter. On a touch screen every target stays full size in both.
 - **Task rows**: [one line or detailed](row-layouts.md).
 - **Show full task titles**: long titles wrap instead of ending with **…**.
-- **Haptic feedback**: on a phone or tablet that can vibrate, a short tick when you complete a task or pick one up with the row's grip. On by default. Computers without vibration do not show the switch.
+- **Haptic feedback**: a tick on completion, drags, switches and failures. On by default where supported.
+- **Task completion sound**: one short cue per completion action, off by default. Phone apps respect Silent mode.
 - **Open tasks** (Task details): **As a page** (the default) or **In a side panel** beside every list, from 1024 px wide. See [The task page](task-panel.md#open-tasks-beside-the-list).
 - **Sidebar**: numbers on every list or only on Inbox and Today, the order of the main destinations, and which **More** destinations sit next to them. See [Sidebar counts and order](sidebar-counts-and-order.md).
 

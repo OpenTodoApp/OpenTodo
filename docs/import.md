@@ -1,6 +1,6 @@
 ---
 title: Import formats
-summary: Every import format in detail: your own export, CSV and other apps' JSON exports, mapping rules, duplicates and undo.
+summary: "Every import format in detail: your own export, CSV and other apps' JSON exports, mapping rules, duplicates and undo."
 audience: user
 section: Reference
 specs: [data-import]
@@ -87,12 +87,12 @@ Todoist exports one project as CSV from the project's menu, and keeps backups of
 | `DATE` with `DATE_LANG` | the due date (and time); recurring dates become a rule, see below |
 | `DURATION` in minutes | the estimate |
 | `REMINDER_OFFSET` / `REMINDER_DATE` | a relative or absolute reminder (an absolute one in the row's `TIMEZONE`) |
-| `note` row | appended to the task's description under "Comments" (with a warning) |
+| `note` row | a comment on the task above it, written by you, in the file's order; the comment starts with the original author and time (`**Pete** · 2023-11-01 16:08 UTC`), then the note. Without `AUTHOR` or a readable `DATE` that part is left out, and without both the comment is the note alone. Past 5,000 comments in one import the note goes into the task's description under "Comments" instead; a note too long for a comment (64 KB) keeps its first line and has its text cut to fit; the preview says how many of each, once |
 | `DEADLINE` | the task's [deadline](tasks-and-projects.md#deadlines), read with `DEADLINE_LANG` like `DATE`; a value that cannot be read is kept as a "Deadline: …" line in the description (with a warning) |
 | `RESPONSIBLE` | dropped with a warning |
 | the row itself | the task's [origin](capture.md#where-a-task-came-from), `{kind: "import", provider: "todoist", id}` with the source id the importer remembers for duplicates (`origin: todoist`) |
 
-`DATE` is the text Todoist showed, in the language named by `DATE_LANG` (English, German, French, Italian, Spanish or Portuguese): `Oct 21`, `21 Okt.`, `21 de octubre de 2027 15:00`, `tomorrow`, `every monday`, `jeden Montag`, `alle 2 Wochen`. A date without a year takes the year of the export (the newest file time in the backup, otherwise the day you import). A recurring date becomes a rule whose first date is the next occurrence. A date that cannot be read leaves the task without a due date and adds a warning quoting it.
+`DATE` is the text Todoist showed, in the language named by `DATE_LANG` (English, German, French, Italian, Spanish, Portuguese, Dutch or Chinese): `Oct 21`, `21 Okt.`, `21 de octubre de 2027 15:00`, `11月21日 下午3点`, `tomorrow`, `every monday`, `jeden Montag`, `alle 2 Wochen`, `每周五`, `每3个月`. Chinese is read in Simplified and Traditional characters, with or without spaces. A date without a year takes the year of the export (the newest file time in the backup, otherwise the day you import). A recurring date becomes a rule whose first date is the next occurrence. A date that cannot be read leaves the task without a due date and adds a warning quoting it.
 
 ### TickTick (`ticktick-csv`)
 
@@ -144,7 +144,7 @@ The file is read from a private copy on the server, read-only, using only Things
 | Things | Becomes |
 | --- | --- |
 | area | a parent project |
-| project | a project inside its area |
+| project | a project inside its area; a completed or canceled one is [archived](archived-projects.md) |
 | heading | a section of its project |
 | to-do | a task in its project (or area, or your Inbox) |
 | checklist item | a subtask; checked items are completed |
@@ -267,17 +267,17 @@ Microsoft To Do has no export. The [Microsoft To Do guide](switch/microsoft-todo
 
 | Microsoft To Do | Becomes |
 | --- | --- |
-| list | a project (`Tasks`, the default list, goes to your Inbox or the target project; flagged emails go to a project "Flagged emails") |
-| `title`, `body` | the title and the description (HTML becomes plain text) |
+| list | a project (`Tasks`, the default list, goes to your Inbox or the target project; flagged emails go to a project "Flagged emails"); a shared list (`isShared`) becomes your own project, with a note in the preview |
+| `title`, `body` | the title and the description (HTML becomes plain text: the head, styles, scripts and comments go, list items become `- ` lines) |
 | `importance` high | p1 |
 | `categories` | labels |
-| `status` completed, `completedDateTime` | completed, at that time |
-| `checklistItems` | subtasks; checked items are completed |
-| `dueDateTime`, `startDateTime` | the due date and start date as shown in To Do (To Do has no due times) |
+| `status` completed, `completedDateTime` | completed, at that time; `notStarted`, `inProgress`, `waitingOnOthers` and `deferred` are open tasks, any other status an open task with a warning |
+| `checklistItems` | subtasks with their creation time; checked items are completed at `checkedDateTime` |
+| `dueDateTime`, `startDateTime` | the due date and start date, without a time (To Do has none). Graph usually returns the day's local midnight converted to UTC (15 April at UTC+2 is `2023-04-14T22:00` UTC), so the value is converted into the import's time zone and rounded to the nearest midnight; a value at exactly midnight, in any zone, is the written day |
 | `reminderDateTime` with `isReminderOn` | a reminder at that moment; Windows time zone names are converted, an unknown one drops the reminder with a warning |
-| `recurrence` daily, weekly, monthly on a day, yearly | a recurrence rule; an end date or count, and "the second Thursday" patterns, are dropped with a warning |
-| `linkedResources` | link attachments (a single link also becomes the origin's link) |
-| file attachments | dropped with a warning (not in the file) |
+| `recurrence` | a rule with the same dates: daily, weekly on days, monthly on a day or on the first to fourth or last weekday ("every 2nd thursday", "every last weekday"), yearly on a date or on the nth weekday of a month, each with its interval where the rule has one, and the range's end date (`until`) or count (`for N times`). Other patterns, such as two weekdays of the month, are dropped with a warning; a completed task keeps no rule |
+| `linkedResources` | link attachments (a single link also becomes the origin's link); one without `webUrl` is dropped with a warning |
+| file attachments (`hasAttachments`) | dropped with a warning: the guide's script does not download them |
 | `id` | the task's origin, `{kind: "import", provider: "microsoft-todo", id: <id>}` |
 
 ### Apple Reminders (`apple-reminders-json`)

@@ -145,3 +145,74 @@ describe('after a pull (M5, D12)', () => {
     expect(await seriesUpkeep(ops, { today: TODAY, encrypted: true })).toContainEqual({ entity: 'task', entityId: rec, patch: { title: 'Journal', description: 'Three lines' } })
   })
 })
+
+// OpenSpec change series-move-onto-exception (#1971): a weekly series due Sunday
+// 6 December, whose 29 November is done, moved back to 29 November.
+describe('moving a series onto one of its records', () => {
+  const NOW = '2026-11-24'
+  async function sunday() {
+    await fresh()
+    const id = await createTask({ title: 'Plan the week', due: { date: '2026-11-29', time: '08:00' }, start: '2026-11-29', recurrence: 'every sunday' })
+    await completeTask(id, { today: NOW })
+    expect(await db.tasks.get(id)).toMatchObject({ due: { date: '2026-12-06', time: '08:00' }, start: '2026-12-06' })
+    return id
+  }
+
+  it('a plain due write there is undone by the repair after the pull, and the start drifts a week', async () => {
+    const id = await sunday()
+    await mutate('task', id, { due: { date: '2026-11-29', time: '08:00' } })
+    const changes = await seriesUpkeep([{ id: 'x', entity: 'task', entityId: id, field: 'due', value: null, ts: 0, device: 'self' }], { today: NOW, encrypted: false })
+    expect(changes).toEqual([{ entity: 'task', entityId: id, patch: { due: { date: '2026-12-06', time: '08:00' }, start: '2026-12-13' } }])
+  })
+
+  it('the date change is refused with the reason, and nothing is written', async () => {
+    const id = await sunday()
+    const { dueUndoable } = await import('./undoActions')
+    await db.outbox.clear()
+    const r = await dueUndoable(id, { date: '2026-11-29', time: '08:00' })
+    expect(r).toMatchObject({ entry: null, refused: true })
+    expect(r.label).toMatch(/: already done$/)
+    expect(await db.tasks.get(id)).toMatchObject({ due: { date: '2026-12-06', time: '08:00' }, start: '2026-12-06' })
+    expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('a typed date with a time is refused the same way', async () => {
+    const id = await sunday()
+    const { doOnUndoable } = await import('./undoActions')
+    const r = await doOnUndoable(id, { date: '2026-11-29', time: '08:00' })
+    expect(r.refused).toBe(true)
+    expect((await db.tasks.get(id))?.due).toEqual({ date: '2026-12-06', time: '08:00' })
+  })
+
+  it('names a skipped or moved occurrence, and a free date still moves the series', async () => {
+    const id = await sunday()
+    await actOnOccurrence(id, '2026-12-13', { kind: 'skip' }, { today: NOW })
+    await actOnOccurrence(id, '2026-12-20', { kind: 'move', due: { date: '2026-12-20', time: '10:00' } }, { today: NOW })
+    const { dueUndoable } = await import('./undoActions')
+    expect((await dueUndoable(id, { date: '2026-12-13', time: '08:00' })).label).toMatch(/was skipped$/)
+    expect((await dueUndoable(id, { date: '2026-12-20', time: '08:00' })).label).toMatch(/was moved$/)
+    const ok = await dueUndoable(id, { date: '2026-11-22', time: '08:00' })
+    expect(ok.refused).toBeUndefined()
+    expect(ok.label).toBe('Date changed')
+    expect(await db.tasks.get(id)).toMatchObject({ due: { date: '2026-11-22', time: '08:00' }, start: '2026-11-22' })
+  })
+
+  it('a day drop, a drop on Today and the bulk Due leave the series and count it as not moved', async () => {
+    const id = await sunday()
+    const other = await createTask({ title: 'Call Ana', due: { date: '2026-12-01' } })
+    const { dayDropUndoable, todayDropUndoable } = await import('./undoActions')
+    const { applyBulk } = await import('./bulk')
+    const one = await dayDropUndoable([id], '2026-11-29', NOW)
+    expect(one).toMatchObject({ entry: null, refused: true })
+    expect(one.label).toMatch(/: already done$/)
+    const both = await dayDropUndoable([id, other], '2026-11-29', NOW)
+    expect(both.entry).not.toBeNull()
+    expect(both.label).toBe('Date changed · 1 not moved')
+    expect((await db.tasks.get(other))?.due).toEqual({ date: '2026-11-29' })
+    // Done on today's date too: today is the 29th.
+    expect((await todayDropUndoable([id], '2026-11-29')).refused).toBe(true)
+    const bulk = await applyBulk([id, other], { kind: 'due', pick: '2026-11-29' }, { today: NOW })
+    expect(bulk.label).toBe('1 task rescheduled · 1 not moved')
+    expect(await db.tasks.get(id)).toMatchObject({ due: { date: '2026-12-06', time: '08:00' }, start: '2026-12-06' })
+  })
+})

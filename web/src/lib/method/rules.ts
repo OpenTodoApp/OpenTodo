@@ -6,7 +6,7 @@
 // internal/digest/testdata/next_action_fixture.json and must agree.
 import { openBlockers } from '../dependencies'
 import { availability, projectFlowOf, type FlowState } from '../flow'
-import { byPosition } from '../ordering'
+import { compareByPosition, positionBetween } from '../ordering'
 import { effectiveSection } from '../sections'
 import { canEditTasks, roleOf } from '../sharing'
 import type { Label, Membership, Project, Section, Task } from '../types'
@@ -30,6 +30,24 @@ export interface MethodInput {
 }
 
 const open = (t: Task): boolean => !t.deleted_at && !t.completed_at
+
+/**
+ * An open task the user may choose as its project's next action (OpenSpec change
+ * choose-next-action): what the write must do to make it the first actionable task.
+ */
+export interface NextChoice {
+  id: string
+  title: string
+  /** The start cleared by the choice (Someday or a later date, as the Someday step's promote does), or null. */
+  clearStart: string | null
+  /**
+   * When the current next action comes before it: the place just above that task, in
+   * that task's section. Null when clearing the start is enough.
+   */
+  moveTo: { position: number; section_id: string | null } | null
+  /** The section it moves into, when that is another one ('' for no section), else null. */
+  toSection: string | null
+}
 
 /** Live, unarchived projects in which the user may edit tasks: the ones the method works on. */
 export function workingProjects(input: Pick<MethodInput, 'projects' | 'memberships'>): Project[] {
@@ -96,15 +114,38 @@ export class MethodRules {
 
   /** The project's open top-level tasks in list order: no section first, then sections in order, manual order within. */
   inListOrder(projectId: string): Task[] {
-    const sections = (this.input.sections ?? []).filter((s) => s.project_id === projectId && !s.deleted_at).sort(byPosition)
+    const sections = (this.input.sections ?? []).filter((s) => s.project_id === projectId && !s.deleted_at).sort(compareByPosition)
     const rank = new Map<string, number>(sections.map((s, i) => [s.id, i + 1]))
     const sectionRank = (t: Task) => rank.get(effectiveSection(t, this.sectionMap) ?? '') ?? 0
-    return [...(this.openTop.get(projectId) ?? [])].sort((a, b) => sectionRank(a) - sectionRank(b) || byPosition(a, b))
+    return [...(this.openTop.get(projectId) ?? [])].sort((a, b) => sectionRank(a) - sectionRank(b) || compareByPosition(a, b))
   }
 
   /** The project's next action: its first actionable task in list order, or null. */
   nextActionOf(projectId: string): Task | null {
     return this.inListOrder(projectId).find((t) => this.actionable(t)) ?? null
+  }
+
+  /**
+   * The project's open top-level tasks the user may choose as its next action, in list
+   * order: all but the current next action, and none that is blocked or assigned to
+   * someone else, which no write of the user's own would make actionable.
+   */
+  nextActionChoices(projectId: string): NextChoice[] {
+    const list = this.inListOrder(projectId)
+    const at = list.findIndex((t) => this.actionable(t))
+    const next = at >= 0 ? list[at] : null
+    const sectionOf = (t: Task) => effectiveSection(t, this.sectionMap)
+    return list.filter((t) => t !== next && !this.blocked(t) && !this.delegated(t)).map((t) => {
+      let moveTo: NextChoice['moveTo'] = null
+      let toSection: string | null = null
+      if (next && list.indexOf(t) > at) {
+        // Just above the next action, after the open task before it in its section.
+        const prev = list.slice(0, at).reverse().find((x) => sectionOf(x) === sectionOf(next))
+        moveTo = { position: positionBetween(prev?.position ?? null, next.position), section_id: next.section_id }
+        if (sectionOf(t) !== sectionOf(next)) toSection = this.sectionMap.get(sectionOf(next) ?? '')?.name ?? ''
+      }
+      return { id: t.id, title: t.title, clearStart: isSomeday(t) || isDeferred(t, this.input.today) ? t.start! : null, moveTo, toSection }
+    })
   }
 
   /** The project's open top-level tasks that wait (blocked or delegated). */

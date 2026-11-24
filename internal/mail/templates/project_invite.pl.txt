@@ -1,0 +1,9 @@
+{{.Inviter}} zaprasza cię do udostępnionego projektu
+
+To zaproszenie do udostępnionego projektu w OpenTodo.
+
+{{.Inviter}} zaprasza {{.Email}} do projektu jako {{.Role}} na serwerze OpenTodo pod adresem {{.Origin}}. Aby dołączyć, otwórz ten link:
+
+{{.Link}}
+
+Link wygasa za {{.Expiry}}. Jeśli nie znasz {{.Inviter}}, możesz zignorować tę wiadomość.

@@ -25,8 +25,10 @@ const (
 
 // Outcomes recorded in last_outcome besides a failed stage.
 const (
-	OutcomeSent      = "sent"
-	OutcomeSkipped   = "skipped"
+	OutcomeSent    = "sent"
+	OutcomeSkipped = "skipped"
+	// OutcomeAway: not sent, the user was away with reminders paused (away-periods D4).
+	OutcomeAway      = "away"
 	OutcomeEncrypted = "encrypted_account"
 	OutcomeLimited   = "rate_limited"
 )
@@ -63,6 +65,16 @@ type Service struct {
 	origin string
 	log    *slog.Logger
 	now    func() time.Time
+	// zone is the user's own time zone as their devices report it, for the
+	// logical day of an away period, as reminders read it (away-periods D4);
+	// false when none was reported, and then the digest's zone counts.
+	zone func(ctx context.Context, uid string) (*time.Location, bool)
+}
+
+// SetUserZone installs the user's reported time zone, the one reminders read,
+// for the logical day of an away period.
+func (s *Service) SetUserZone(f func(ctx context.Context, uid string) (*time.Location, bool)) {
+	s.zone = f
 }
 
 // New wires the digest over the database, the sync service and outgoing email.
@@ -219,6 +231,15 @@ func (s *Service) handle(ctx context.Context, st Settings, act action, date stri
 		return false, err
 	}
 	stub := mail.Message{Kind: mail.KindDigest, To: to, UserID: st.UserID, Lang: st.Lang}
+	if act == actSend {
+		// Away with reminders paused: no digest for that date, nor later (away-periods D4).
+		if away, err := s.awayQuiet(ctx, st, now); err != nil || away {
+			if err != nil {
+				return false, err
+			}
+			return false, s.store.MarkOutcome(ctx, st.UserID, OutcomeAway, date)
+		}
+	}
 	if act == actSkip {
 		s.mail.RecordFailure(ctx, stub, OutcomeSkipped)
 		return false, s.store.MarkOutcome(ctx, st.UserID, OutcomeSkipped, date)
@@ -258,7 +279,9 @@ func (s *Service) handle(ctx context.Context, st Settings, act action, date stri
 		return false, derr
 	case errors.Is(err, mail.ErrRateLimited):
 		return false, s.store.MarkOutcome(octx, st.UserID, OutcomeLimited, "")
-	case errors.Is(err, mail.ErrDisabled):
+	case errors.Is(err, mail.ErrDisabled), errors.Is(err, mail.ErrUnconfirmed):
+		// Unconfirmed: the address came from single sign-on without confirmation
+		// (sso-missing-email-verified); the digest waits until it is confirmed.
 		return false, nil
 	}
 	stage := mail.StageSend
@@ -268,6 +291,26 @@ func (s *Service) handle(ctx context.Context, st Settings, act action, date stri
 	}
 	// Retried at the next pass until the window closes (mail.Send audited it).
 	return false, s.store.MarkOutcome(octx, st.UserID, stage, "")
+}
+
+// awayQuiet reports whether the user's away period pauses reminders on their
+// logical today at now, in the zone the user's devices reported (SetUserZone,
+// the one reminders read), else the digest's own.
+func (s *Service) awayQuiet(ctx context.Context, st Settings, now time.Time) (bool, error) {
+	prefs, err := s.sync.Get(ctx, st.UserID, "user_prefs", "me")
+	if err != nil || prefs == nil {
+		return false, err
+	}
+	loc, err := time.LoadLocation(st.TimeZone)
+	if err != nil {
+		loc = time.UTC
+	}
+	if s.zone != nil {
+		if reported, ok := s.zone(ctx, st.UserID); ok {
+			loc = reported
+		}
+	}
+	return opsync.QuietOn(str(prefs, "away"), LogicalDay(now, loc, DayStart(str(prefs, "day_start")))), nil
 }
 
 // recipient is the account's address and whether it may receive mail

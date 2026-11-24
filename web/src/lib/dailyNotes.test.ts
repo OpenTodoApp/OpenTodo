@@ -3,9 +3,9 @@
 // one note per day, the template text once, and a trashed day brought back.
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { setDateTime, setDayStart } from './dates'
+import { logicalToday, setDateTime, setDayStart } from './dates'
 import { db, useDatabase } from './db'
-import { dailyDraft, dailyNoteId, dailyNotesOn, dailyTemplateOf, dailyToday, ensureDailyNote, isDay, planDailyNote, shiftDay } from './dailyNotes'
+import { dailyDraft, dailyNoteId, dailyTemplateOf, ensureDailyNote, isDay, planDailyNote, shiftDay } from './dailyNotes'
 import { createNote } from './noteOps'
 import { createProject, mutate, resetDeviceId } from './ops'
 import { setCurrentUserId } from './sharing'
@@ -28,9 +28,9 @@ describe('the day and its id', () => {
 
   it('"Day start": at 01:30 with the day starting at 04:00 it is still yesterday', () => {
     setDayStart(4 * 60)
-    expect(dailyToday(new Date(2026, 10, 13, 1, 30).getTime())).toBe('2026-11-12')
+    expect(logicalToday(undefined, new Date(2026, 10, 13, 1, 30).getTime())).toBe('2026-11-12')
     setDayStart(0)
-    expect(dailyToday(new Date(2026, 10, 13, 1, 30).getTime())).toBe('2026-11-13')
+    expect(logicalToday(undefined, new Date(2026, 10, 13, 1, 30).getTime())).toBe('2026-11-13')
   })
 
   it('moves between days and checks dates', () => {
@@ -39,11 +39,6 @@ describe('the day and its id', () => {
     expect(isDay('2026-11-12')).toBe(true)
     expect(isDay('2026-02-30')).toBe(false)
     expect(isDay('12/11/2026')).toBe(false)
-  })
-
-  it('is off until turned on', () => {
-    expect(dailyNotesOn(null)).toBe(false)
-    expect(dailyNotesOn({ daily_notes: true })).toBe(true)
   })
 })
 

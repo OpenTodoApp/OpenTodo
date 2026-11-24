@@ -35,7 +35,12 @@ type ExternalIdentity struct {
 	Subject       string
 	Email         string
 	EmailVerified bool
-	Name          string
+	// TrustMissingEmailVerified: the token carries no email_verified claim at
+	// all and the owner switched on trusting that (sso-missing-email-verified).
+	// The email may then create a new account, but never links to an existing
+	// one and never confirms an address.
+	TrustMissingEmailVerified bool
+	Name                      string
 }
 
 // Identity is the public view of a linked identity.
@@ -89,7 +94,10 @@ func identityUser(ctx context.Context, q rowQuerier, issuer, subject string) (*U
 //  3. otherwise a member account is created when open sign-up or allowProvision allows it;
 //  4. otherwise ErrSignupClosed.
 //
-// An absent or unverified email never links or provisions (ErrEmailUnverified).
+// An absent or unverified email never links or provisions (ErrEmailUnverified),
+// except that TrustMissingEmailVerified lets an email the provider did not mark
+// at all provision a new account (step 3); it never links (step 2 refuses it
+// with ErrLinkRequiresSession).
 // created reports a new account; linked reports a new link.
 func (s *Service) MatchOrProvision(ctx context.Context, id ExternalIdentity, allowProvision bool, provider string) (u *User, created, linked bool, err error) {
 	if id.Issuer == "" || id.Subject == "" {
@@ -112,7 +120,8 @@ func (s *Service) MatchOrProvision(ctx context.Context, id ExternalIdentity, all
 		}
 		return u, false, false, tx.Commit()
 	}
-	if email == "" || !id.EmailVerified {
+	assumed := !id.EmailVerified && id.TrustMissingEmailVerified
+	if email == "" || (!id.EmailVerified && !assumed) {
 		return nil, false, false, ErrEmailUnverified
 	}
 	if _, err := mail.ParseAddress(email); err != nil {
@@ -123,6 +132,10 @@ func (s *Service) MatchOrProvision(ctx context.Context, id ExternalIdentity, all
 		Scan(&existing.ID, &existing.Email, &existing.Name, &existing.Role, &existing.CreatedAt)
 	switch {
 	case err == nil:
+		if assumed {
+			// An address the provider never confirmed links only from Settings.
+			return nil, false, false, ErrLinkRequiresSession
+		}
 		guarded, gerr := linkGuarded(ctx, tx, &existing)
 		if gerr != nil {
 			return nil, false, false, gerr
@@ -156,6 +169,12 @@ func (s *Service) MatchOrProvision(ctx context.Context, id ExternalIdentity, all
 				return nil, false, false, ErrEmailTaken
 			}
 			return nil, false, false, err
+		}
+		if assumed {
+			// Until the address is confirmed, add-by-email treats it as unknown.
+			if _, err := tx.ExecContext(ctx, "UPDATE users SET email_assumed = 1 WHERE id = ?", u.ID); err != nil {
+				return nil, false, false, err
+			}
 		}
 		created = true
 	default:

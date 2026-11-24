@@ -40,6 +40,8 @@ class Bridge(
         fun biometricStore(key: ByteArray, done: (Boolean) -> Unit)
         fun biometricRead(done: (ByteArray?) -> Unit)
         fun openExternal(url: String)
+        /** app-links D6: a link into another app the page's list allows (checked by the bridge). */
+        fun openAppLink(url: String) {}
         /** theme-engine D8: colour the status and navigation bars (main thread). */
         fun setSystemBars(bars: SystemBars) {}
         /** location-reminders D4: fine (with coarse) location; done(true) when either is granted. */
@@ -53,11 +55,14 @@ class Bridge(
         fun saveFile(json: String, done: (String) -> Unit) = done(FileSave.FAILED)
         /** shell-repairs D5: the platform's feedback for a `HapticFeedbackConstants` value (main thread). */
         fun haptic(constant: Int) {}
+        fun playCompletionSound() {}
         /**
          * shell-push D5: the link activity of the user's UnifiedPush distributor (main thread);
          * done gets whether it answered RESULT_OK and the app it named. The default starts nothing.
          */
         fun pushLink(done: (Boolean, String?) -> Unit) = done(false, null)
+        /** shell-reveal-on-paint D2: the page has drawn its first frame; the launch screen goes (main thread). */
+        fun painted() {}
     }
 
     private val main = Handler(Looper.getMainLooper())
@@ -99,6 +104,8 @@ class Bridge(
             "scheduleGeofences" -> scheduleGeofences(args.optString(0, ""), answer)
             "testNotification" -> answer(Notifier.test(context))
             "publishWidget" -> WidgetStore.publish(context, args.optString(0, ""))
+            // focus-live-activity D1: the whole session each time; only the visible app has a session to show.
+            "publishFocus" -> if (host != null) Focus.publish(context, args.optString(0, ""))
             "biometricStore" -> {
                 val key = try { android.util.Base64.decode(args.optString(0), android.util.Base64.NO_WRAP) } catch (e: IllegalArgumentException) { null }
                 if (host == null || key == null || key.size != 32) answer(false) else host.biometricStore(key) { ok -> key.fill(0); answer(ok) }
@@ -108,13 +115,18 @@ class Bridge(
             }
             "biometricForget" -> BiometricKeyStore.forget(context)
             "openExternal" -> args.optString(0).takeIf { externalLink(it) }?.let { host?.openExternal(it) }
+            // app-links D6: only a scheme on the viewer's list the page passes, never a denied one.
+            "openAppLink" -> args.optString(0).takeIf { AppLink.allows(AppLink.list(args.optString(1, "[]")), it) }?.let { url -> main.post { host?.openAppLink(url) } }
             "requestMicrophone" -> if (host == null) answer(false) else host.requestMicrophone { answer(it) }
             "saveFile" -> if (host == null) answer(FileSave.FAILED) else host.saveFile(args.optString(0)) { answer(it) }
-            // An unknown kind is ignored, and so is every kind without a screen.
-            "haptic" -> if (host != null) Haptic.constant(args.optString(0), Build.VERSION.SDK_INT)?.let { c -> main.post { host.haptic(c) } }
+            // An unknown kind plays tick (haptic-kinds D1); without a screen nothing plays.
+            "haptic" -> if (host != null) Haptic.constant(args.optString(0), Build.VERSION.SDK_INT).let { c -> main.post { host.haptic(c) } }
+            "playCompletionSound" -> if (host != null && args.length() == 0) main.post { host.playCompletionSound() }
             // Without a screen there is no page to open, and the visible app has no run to end.
             "openAlarmSettings" -> if (host != null) main.post { host.openAlarmSettings() }
             "backgroundDone" -> if (host == null) backgroundDone?.invoke()
+            // shell-reveal-on-paint D2: only the visible app has a launch screen to end.
+            "painted" -> if (host != null) main.post { host.painted() }
             // shell-push D5: only the visible app may start the distributor's link screen (host).
             "pushSubscribe" -> args.optString(0).let { vapid -> main.post { Push.subscribe(context, host, vapid) { answer(it) } } }
             "pushState" -> answer(Push.stateJson(context))
@@ -170,7 +182,7 @@ class Bridge(
             if (!play) caps += "geofences"
             // shell-push D5: also a background run, which reads pushState to notice a new endpoint.
             caps += "push"
-            if (hasScreen) caps += listOf("share", "links", "obsidian-links", "system-bars", "microphone", "files", "haptics")
+            if (hasScreen) caps += listOf("share", "links", "obsidian-links", "app-links", "system-bars", "microphone", "files", "haptics", "completion-sound", "first-paint", "focus")
             if (alarmSettings(hasScreen, sdkInt)) caps += "alarm-settings"
             if (hasScreen && biometric) caps += "biometric"
             if (background && !hasScreen) caps += "background"
@@ -193,7 +205,9 @@ class Bridge(
             return "$scheme://$h" + if (port == -1 || port == def) "" else ":$port"
         }
 
+        /** http(s), mailto and tel, and a `geo:` point for the maps app (android-location-and-map). */
         fun safeExternal(url: String): Boolean {
+            if (WebLocation.mapLink(url)) return true
             val scheme = Uri.parse(url).scheme?.lowercase()
             return scheme == "https" || scheme == "http" || scheme == "mailto" || scheme == "tel"
         }
@@ -225,16 +239,20 @@ class Bridge(
                 scheduleGeofences: function (json) { return call('scheduleGeofences', [String(json)]) },
                 testNotification: function () { return call('testNotification', []) },
                 publishWidget: function (json) { send('publishWidget', [String(json)]) },
+                publishFocus: function (json) { send('publishFocus', [String(json)]) },
                 biometricStore: function (key) { return call('biometricStore', [String(key)]) },
                 biometricRead: function () { return call('biometricRead', []) },
                 biometricForget: function () { send('biometricForget', []) },
                 openExternal: function (url) { send('openExternal', [String(url)]) },
+                openAppLink: function (url, schemes) { send('openAppLink', [String(url), String(schemes)]) },
                 setSystemBars: function (json) { send('setSystemBars', [String(json)]) },
                 requestMicrophone: function () { return call('requestMicrophone', []) },
                 saveFile: function (json) { return call('saveFile', [String(json)]) },
                 haptic: function (kind) { send('haptic', [String(kind)]) },
+                playCompletionSound: function () { send('playCompletionSound', []) },
                 openAlarmSettings: function () { send('openAlarmSettings', []) },
                 backgroundDone: function () { send('backgroundDone', []) },
+                painted: function () { send('painted', []) },
                 pushSubscribe: function (key) { return call('pushSubscribe', [String(key)]) },
                 pushState: function () { return call('pushState', []) },
                 pushUnsubscribe: function () { send('pushUnsubscribe', []) }

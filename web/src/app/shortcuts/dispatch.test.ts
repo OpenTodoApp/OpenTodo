@@ -9,7 +9,7 @@ import { chordsOf, SHORTCUTS, type Shortcut, type ShortcutScope } from '../../li
 import { isCharacterKey, setSingleKeys } from './singleKeys'
 import { armGPrefix, clearPrefix, dispatch, holdPrefix, installShortcutDispatcher, isActivationTarget, isPrefixPending, pendingContinuations, pendingPrefix, registerShortcutScope, resetShortcutScopes, type ScopeFrame, subscribePrefix } from './dispatch'
 
-type Mods = Partial<{ ctrlKey: boolean; metaKey: boolean; altKey: boolean; shiftKey: boolean }>
+type Mods = Pick<KeyboardEventInit, 'ctrlKey' | 'metaKey' | 'altKey' | 'shiftKey' | 'code' | 'isComposing'>
 
 function press(key: string, mods: Mods = {}, target: EventTarget = document.body): KeyboardEvent {
   const e = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...mods })
@@ -374,5 +374,139 @@ describe('single-key shortcuts turned off (accessibility-aa, WCAG 2.2 2.1.4)', (
     expect(isCharacterKey(c('arrowup', { alt: true }))).toBe(false)
     expect(isCharacterKey(c('escape'))).toBe(false)
     expect(isCharacterKey(c(' '))).toBe(false)
+  })
+})
+
+describe('keyboard layouts', () => {
+  it.each([
+    ['a', 'KeyA'],
+    ['a', 'KeyQ'], // French AZERTY
+    ['α', 'KeyA'], // Greek
+    ['ф', 'KeyA'], // Russian
+    ['ش', 'KeyA'], // Arabic
+    ['ש', 'KeyA'], // Hebrew
+  ])('runs Add subtask for %s from %s', (key, code) => {
+    const add = vi.fn()
+    registerShortcutScope({ scope: 'list', handlers: { 'list.add-subtask': add } })
+    press(key, { code })
+    expect(add).toHaveBeenCalledTimes(1)
+  })
+
+  it('matches a modified Greek letter and retains both steps of a Russian sequence', () => {
+    const search = vi.fn()
+    const today = vi.fn()
+    registerShortcutScope({ scope: 'global', handlers: { 'global.palette': search, 'go.today': today } })
+    press('κ', { code: 'KeyK', ctrlKey: true })
+    expect(search).toHaveBeenCalledTimes(1)
+    press('п', { code: 'KeyG' })
+    expect(pendingPrefix().map((chord) => chord.key)).toEqual(['g'])
+    press('е', { code: 'KeyT' })
+    expect(today).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([['&', '1'], ['é', '2'], ['"', '3'], ["'", '4']])('passes the matched priority for AZERTY %s', (key, digit) => {
+    const digits: string[] = []
+    registerShortcutScope({
+      scope: 'list',
+      handlers: { 'list.priority': (_event, _entry, chord) => { digits.push(chord.key) } },
+    })
+    press(key, { code: 'Digit' + digit })
+    expect(digits).toEqual([digit])
+  })
+
+  it('prefers a typed symbol across scopes and leaves punctuation on a letter key alone', () => {
+    const sidebar = vi.fn()
+    const priority = vi.fn()
+    const quickAdd = vi.fn()
+    const editQuery = vi.fn()
+    registerShortcutScope({ scope: 'global', handlers: { 'global.sidebar': sidebar, 'list.quick-add': quickAdd } })
+    registerShortcutScope({ scope: 'list', handlers: { 'list.priority': priority } })
+    press('[', { code: 'Digit1' })
+    expect(sidebar).toHaveBeenCalledTimes(1)
+    expect(priority).not.toHaveBeenCalled()
+    expect(press('/', { code: 'KeyQ' }).defaultPrevented).toBe(false)
+    registerShortcutScope({ scope: 'list', handlers: { 'view.edit-query': editQuery } })
+    press('/', { code: 'KeyQ' })
+    expect(editQuery).toHaveBeenCalledTimes(1)
+    expect(quickAdd).not.toHaveBeenCalled()
+  })
+
+  it('preserves AltGraph input and keeps the modifiers of a fallback press', () => {
+    const add = vi.fn()
+    const skip = vi.fn()
+    registerShortcutScope({ scope: 'list', handlers: { 'list.add-subtask': add, 'list.skip': skip } })
+    const altGraph = new KeyboardEvent('keydown', { key: 'α', code: 'KeyA' })
+    Object.defineProperty(altGraph, 'getModifierState', { value: (modifier: string) => modifier === 'AltGraph' })
+    expect(dispatch(altGraph)).toBe(false)
+    press('Κ', { code: 'KeyK', shiftKey: true })
+    expect(skip).toHaveBeenCalledTimes(1)
+    expect(add).not.toHaveBeenCalled()
+  })
+
+  it('keeps localized bare keys out of typing, composition and disabled shortcuts', () => {
+    const add = vi.fn()
+    registerShortcutScope({ scope: 'list', handlers: { 'list.add-subtask': add } })
+    const input = document.createElement('input')
+    document.body.append(input)
+    expect(press('α', { code: 'KeyA' }, input).defaultPrevented).toBe(false)
+    input.remove()
+    expect(press('α', { code: 'KeyA', isComposing: true }).defaultPrevented).toBe(false)
+    setSingleKeys(false)
+    try {
+      expect(press('α', { code: 'KeyA' }).defaultPrevented).toBe(false)
+    } finally {
+      setSingleKeys(true)
+    }
+    expect(add).not.toHaveBeenCalled()
+  })
+})
+
+describe('undo and redo guards (#1488)', () => {
+  const scope = (): (() => void) => registerShortcutScope({ scope: 'global', handlers: { 'global.undo': () => { ran.push('undo') }, 'global.redo': () => { ran.push('redo') } } })
+  let ran: string[] = []
+  beforeEach(() => { ran = [] })
+
+  it('Ctrl+Y redoes', () => {
+    const off = scope()
+    press('y', { ctrlKey: true })
+    expect(ran).toEqual(['redo'])
+    off()
+  })
+
+  it('a control that handled the key first (preventDefault) stops the dispatcher', () => {
+    const off = scope()
+    const el = document.createElement('div')
+    document.body.append(el)
+    el.addEventListener('keydown', (e) => e.preventDefault())
+    press('z', { ctrlKey: true }, el)
+    expect(ran).toEqual([])
+    el.remove()
+    off()
+  })
+
+  it('does not undo while typing in a text field', () => {
+    const off = scope()
+    const input = document.createElement('input')
+    document.body.append(input)
+    input.focus()
+    press('z', { ctrlKey: true }, input)
+    expect(ran).toEqual([])
+    input.remove()
+    off()
+  })
+
+  it('does not undo or redo behind an open dialog', () => {
+    const off = scope()
+    const dialog = document.createElement('div')
+    dialog.setAttribute('role', 'dialog')
+    document.body.append(dialog)
+    press('z', { ctrlKey: true })
+    press('y', { ctrlKey: true })
+    expect(ran).toEqual([])
+    dialog.remove()
+    // With the dialog gone, undo fires again.
+    press('z', { ctrlKey: true })
+    expect(ran).toEqual(['undo'])
+    off()
   })
 })

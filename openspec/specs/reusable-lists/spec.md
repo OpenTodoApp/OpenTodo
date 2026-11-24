@@ -1,7 +1,7 @@
 # reusable-lists Specification
 
 ## Purpose
-Lets a project be a reusable list, such as groceries or packing: adding an item already on it reopens that item instead of duplicating it, ticked items stay in a Got it group on every device, duplicates two devices added converge on one item, and new items can be sorted into aisle sections. Defines the title matching the web client and the server share and the reuse flag of the task API.
+Lets a project be a reusable list, such as groceries or packing: adding an item already on it reopens that item instead of duplicating it, ticked items stay in its Completed group on every device, duplicates two devices added converge on one item, and new items can be sorted into aisle sections. Defines the title matching the web client and the server share and the reuse flag of the task API.
 
 ## Requirements
 
@@ -48,11 +48,11 @@ In a reusable list, adding a task from quick add whose title normalizes equal to
 - **THEN** both produce the same normalized title and the same chosen match for every vector
 
 ### Requirement: Ticked items stay in a reusable list
-A reusable list SHALL end with a completed group headed "Got it" and its count on every device, whatever the device's "Show completed tasks" preference, most recently completed first, closed by default with its open state remembered per device. Unticking an item in the group SHALL reopen it. The Project menu SHALL NOT offer "Show completed tasks" in a reusable list, and the line "n completed tasks hidden" SHALL NOT appear there.
+A reusable list SHALL end with a completed group headed "Completed" with its count, like any project's, on every device, whatever the device's "Show completed tasks" preference, most recently completed first, closed by default with its open state remembered per device. Unticking an item in the group SHALL reopen it. The Project menu SHALL NOT offer "Show completed tasks" in a reusable list, and the line "n completed tasks hidden" SHALL NOT appear there.
 
 #### Scenario: Partner's phone
 - **WHEN** Alice ticks off Eggs in the shared reusable "Groceries" and Bob, who never changed any display preference, opens it after sync
-- **THEN** Bob's list ends with "Got it 1" holding Eggs
+- **THEN** Bob's list ends with "Completed 1" holding Eggs
 
 ### Requirement: Duplicate items converge
 When a device that may edit a reusable list holds two or more live, open, top-level tasks of that project whose titles normalize equal, and none of them has notes, subtasks, comments, attachments, reminders, time entries or a recurrence rule, the device SHALL tombstone all of them except the one with the smallest id, as ordinary deletions shown in the activity log as a merged duplicate and restorable from the Trash. Because every device chooses the same survivor, devices SHALL converge on one item without coordination. A task that carries any of those things SHALL never be tombstoned this way. Viewers' devices SHALL NOT perform it.
@@ -102,3 +102,22 @@ While a reusable list has "Sort into aisles" on, the user SHALL be offered to ad
 #### Scenario: Encrypted account
 - **WHEN** an account with end-to-end encryption posts a ciphertext title with `reuse: true`
 - **THEN** a new task is created with status 201 and `"reused": "unavailable"`, and a device that later sees two qualifying duplicates collapses them
+
+### Requirement: Ticked items are suggested while typing
+In a reusable list's quick add (the list's line, a section's add row, and the phone's add sheet opened in the list), while the field has focus and no token suggestion is open, typing two or more characters SHALL list the items an add would reopen whose name contains what was typed (without its tokens), with the name matching of an add (case, accents and spaces at the ends ignored): one per name, the one "Adding an existing item reopens it" picks, none for a name with an open item and no occurrence records, the most recently ticked first, at most eight. No item SHALL be chosen until an arrow key moves into the list (hovering only highlights), so Enter SHALL still add what was typed. Enter on a chosen item, or a click, SHALL add the line with that item's exact name in place of the typed one, which reopens it as "Adding an existing item reopens it" says, with the line's tokens and notes applied, and clears the field; Esc SHALL close the list and keep the text, until the field is emptied. Open items, items of other projects and other projects' quick add SHALL get no suggestions. It SHALL work offline, from the device's own rows.
+
+#### Scenario: A few letters bring an item back
+- **WHEN** "Milk" and "Oat milk" are ticked in Groceries, "Oat milk" last, and the person types "mil" in its quick add, presses ↓ and Enter
+- **THEN** the list showed "Oat milk" then "Milk", "Oat milk" is reopened in its place with "Oat milk is back on the list" and Undo, and the field is empty
+
+#### Scenario: Enter alone still adds
+- **WHEN** the person types "mil" and presses Enter without moving into the list
+- **THEN** a new item "mil" is added, as before
+
+#### Scenario: An ordinary project
+- **WHEN** the person types "mil" in the quick add of a project that is not a reusable list
+- **THEN** no ticked items are suggested
+
+#### Scenario: The phone's add sheet
+- **WHEN** the person opens the add sheet with the floating add button in Groceries, types "mil", presses ↓ and Enter
+- **THEN** the sheet listed "Oat milk" then "Milk", "Oat milk" is reopened, the field is empty and the sheet stays open; in the Inbox the sheet suggests nothing

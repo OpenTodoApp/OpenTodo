@@ -168,18 +168,18 @@ func keyMatchesAlg(k JWK, alg string) bool {
 
 // Claims are the identity-token claims OpenTodo reads.
 type Claims struct {
-	Issuer            string   `json:"iss"`
-	Subject           string   `json:"sub"`
-	Audience          audience `json:"aud"`
-	AuthorizedParty   string   `json:"azp"`
-	Expiry            numeric  `json:"exp"`
-	IssuedAt          numeric  `json:"iat"`
-	NotBefore         numeric  `json:"nbf"`
-	Nonce             string   `json:"nonce"`
-	Email             string   `json:"email"`
-	EmailVerified     flexBool `json:"email_verified"`
-	Name              string   `json:"name"`
-	PreferredUsername string   `json:"preferred_username"`
+	Issuer            string    `json:"iss"`
+	Subject           string    `json:"sub"`
+	Audience          audience  `json:"aud"`
+	AuthorizedParty   string    `json:"azp"`
+	Expiry            numeric   `json:"exp"`
+	IssuedAt          numeric   `json:"iat"`
+	NotBefore         numeric   `json:"nbf"`
+	Nonce             string    `json:"nonce"`
+	Email             string    `json:"email"`
+	EmailVerified     ClaimBool `json:"email_verified"`
+	Name              string    `json:"name"`
+	PreferredUsername string    `json:"preferred_username"`
 	// Picture is the profile picture URL of the `profile` scope (OpenID Connect
 	// Core 5.1), used only when the owner turned on "Use profile pictures from
 	// the provider" (issue #233).
@@ -225,19 +225,30 @@ func (n *numeric) UnmarshalJSON(b []byte) error {
 }
 
 // flexBool accepts true/false and, as some providers send, "true"/"false".
-type flexBool bool
+// ClaimBool is a boolean claim that may be absent. Present tells a token
+// without the claim (Synology SSO Server sends no email_verified) from one that
+// says false (sso-missing-email-verified); JSON null counts as absent. Some
+// providers send the string "true".
+type ClaimBool struct {
+	Present bool
+	Value   bool
+}
 
-func (f *flexBool) UnmarshalJSON(b []byte) error {
+func (f *ClaimBool) UnmarshalJSON(b []byte) error {
+	if string(b) == "null" {
+		*f = ClaimBool{}
+		return nil
+	}
 	var v bool
 	if err := json.Unmarshal(b, &v); err == nil {
-		*f = flexBool(v)
+		*f = ClaimBool{Present: true, Value: v}
 		return nil
 	}
 	var s string
 	if err := json.Unmarshal(b, &s); err != nil {
 		return errors.New("email_verified must be a boolean")
 	}
-	*f = flexBool(s == "true")
+	*f = ClaimBool{Present: true, Value: s == "true"}
 	return nil
 }
 

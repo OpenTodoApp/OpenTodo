@@ -286,10 +286,12 @@ func (s *Service) Deactivate(ctx context.Context, actorID, targetID string) (*Ad
 			{`INSERT INTO user_status(user_id, deactivated_at) VALUES(?, ?)
 				ON CONFLICT(user_id) DO UPDATE SET deactivated_at = excluded.deactivated_at`, []any{target.ID, now}},
 			{"DELETE FROM api_tokens WHERE user_id = ?", []any{target.ID}},
-			// Signed-in apps too (native-app-foundation); their access tokens went above.
+			// Signed-in apps too (app-sign-in); their access tokens went above.
 			{"DELETE FROM app_sign_in_grant WHERE user_id = ?", []any{target.ID}},
 			// CalDAV app passwords are revoked too (OpenSpec `caldav`).
 			{"UPDATE app_passwords SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL", []any{now, target.ID}},
+			// Their calendar apps' push subscriptions go with them (caldav-push).
+			{"DELETE FROM dav_push_subscriptions WHERE user_id = ?", []any{target.ID}},
 			{"UPDATE invitations SET revoked_at = ? WHERE created_by = ? AND accepted_at IS NULL AND revoked_at IS NULL", []any{now, target.ID}},
 			// Project invite links too (OpenSpec `project-invite-links`).
 			{"UPDATE project_invites SET revoked_at = ? WHERE created_by = ? AND accepted_at IS NULL AND revoked_at IS NULL", []any{now, target.ID}},
@@ -599,7 +601,7 @@ func (s *Service) ChangePassword(ctx context.Context, userID, current, next, kee
 	if _, err := tx.ExecContext(ctx, "DELETE FROM sessions WHERE user_id = ? AND token_hash <> ?", userID, keepSessionHash); err != nil {
 		return err
 	}
-	// Signed-in apps sign in again, like other devices (native-app-foundation).
+	// Signed-in apps sign in again, like other devices (app-sign-in).
 	if err := endAppSessionsTx(ctx, tx, userID); err != nil {
 		return err
 	}
@@ -620,7 +622,7 @@ func (s *Service) SignOutEverywhere(ctx context.Context, userID string) error {
 	}
 	defer tx.Rollback()
 	now := s.clock().UnixMilli()
-	counts := make([]int64, 4)
+	counts := make([]int64, 5)
 	// Its devices remove their local copy on next contact (revoked-device-wipe).
 	if counts[0], err = s.revokeSessionsTx(ctx, tx, userID); err != nil {
 		return fmt.Errorf("sign out everywhere: %w", err)
@@ -633,6 +635,9 @@ func (s *Service) SignOutEverywhere(ctx context.Context, userID string) error {
 		// The app's access tokens go with the API tokens; its grants follow below.
 		{"DELETE FROM api_tokens WHERE user_id = ?", []any{userID}},
 		{"UPDATE app_passwords SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL", []any{now, userID}},
+		// Connected AI apps (MCP OAuth): their access tokens went with the API tokens;
+		// revoking the grant stops the refresh token from minting another.
+		{"UPDATE mcp_oauth_grant SET revoked_at = ?, token_id = '' WHERE user_id = ? AND revoked_at = 0", []any{now, userID}},
 	} {
 		res, err := tx.ExecContext(ctx, st.q, st.args...)
 		if err != nil {
@@ -640,10 +645,14 @@ func (s *Service) SignOutEverywhere(ctx context.Context, userID string) error {
 		}
 		counts[i+1], _ = res.RowsAffected()
 	}
+	// The revoked app passwords' push subscriptions go with them (caldav-push).
+	if _, err := tx.ExecContext(ctx, `DELETE FROM dav_push_subscriptions WHERE user_id = ?`, userID); err != nil {
+		return fmt.Errorf("sign out everywhere: %w", err)
+	}
 	if err := endAppSessionsTx(ctx, tx, userID); err != nil {
 		return fmt.Errorf("sign out everywhere: %w", err)
 	}
-	if err := s.audit.RecordTx(ctx, tx, audit.SignedOutEverywhere(userID, counts[0], counts[1], counts[2], counts[3])); err != nil {
+	if err := s.audit.RecordTx(ctx, tx, audit.SignedOutEverywhere(userID, counts[0], counts[1], counts[2], counts[3], counts[4])); err != nil {
 		return err
 	}
 	return tx.Commit()

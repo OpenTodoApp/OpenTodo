@@ -7,11 +7,11 @@ import { nextWaiting, waitingTimeSensitive } from './closedList'
 import { formatDateHeading, formatTime, type ResolvedDateTime } from './dates'
 import type { Projection } from './occurrences'
 import { inboxTasks, isInboxTask, isPlaced, type InboxParentOf } from './inbox'
-import { assignedToSomeoneElse, groupToday, groupUpcoming, projectOpenList, todayList, upcomingList, upcomingWithToday, withoutArchived, type TodayAssigneeFilter } from './dayLists'
+import { assignedToSomeoneElse, groupToday, groupUpcoming, projectOpenList, todayList, upcomingList, upcomingWithToday, withoutArchived } from './dayLists'
 import { appendTo, groupBy } from './collections'
 import { t } from './i18n'
 import { logbookHeading, type LogbookGroup } from './logbook'
-import { byPosition, compareByPosition, compareDueThenPriority } from './ordering'
+import { compareByPosition, compareDueThenPriority } from './ordering'
 import { effectiveSection, groupBySection } from './sections'
 import { breadcrumbOf, buildTaskTree } from './subtasks'
 import { effectiveParents, flattenTree, type Tree, type TreeNode } from './tree'
@@ -21,6 +21,7 @@ import { compareManual } from './viewOrder'
 import type { ListDisplay } from './listDisplay'
 import type { DayPart } from './dayParts'
 import { linkedPlaceId } from './locations'
+import { spanOf } from './span'
 import { locateById, noteChanges, patchOrdered, patchSorted, type TaskChange } from './taskDelta'
 
 /** The list views TaskListView renders, as the router names them. */
@@ -31,6 +32,8 @@ export type ListScope =
 /** One rendered line: a task with its place in the (possibly flat) tree. */
 export interface ListRow {
   task: Task
+  /** A visible subtask outside Today membership. */
+  contextual?: true
   depth: number
   /** Effective tree parent in this view; null at the top level. */
   parent: string | null
@@ -63,7 +66,7 @@ export interface RowImplied {
 
 /** Sets what a group's heading implies on each of its rows (a new row object only when there is something to imply). */
 function withImplied(rows: ListRow[], implied: RowImplied | undefined): ListRow[] {
-  return implied ? rows.map((r) => ({ ...r, implied })) : rows
+  return implied ? rows.map((r) => ({ ...r, implied: r.contextual ? { project: implied.project } : implied })) : rows
 }
 
 export interface ListGroup {
@@ -169,8 +172,10 @@ export function flatRow(task: Task, breadcrumb: string | null = null): ListRow {
 /**
  * The tasks a list view holds, in its order (archived projects stay out of cross-project views).
  * `upcomingToday`: Upcoming starts with Today's tasks (upcoming-start-with-today D2).
+ * `userId` is the viewer: Today, Upcoming, Someday and Anytime leave out tasks assigned to
+ * someone else (personal-views-assignee), and Assigned to me lists theirs.
  */
-export function tasksForView(scope: ListScope, allTasks: readonly Task[], projects: readonly Project[], today: string, userId?: string, upcomingToday = false, hide?: TodayAssigneeFilter | null): Task[] {
+export function tasksForView(scope: ListScope, allTasks: readonly Task[], projects: readonly Project[], today: string, userId?: string, upcomingToday = false): Task[] {
   // Tasks of archived projects stay out of the cross-project views (lib/dayLists, shared with the display).
   const all = withoutArchived(allTasks as Task[], projects as Project[], scope.view === 'project' ? scope.id : undefined)
   switch (scope.view) {
@@ -178,14 +183,14 @@ export function tasksForView(scope: ListScope, allTasks: readonly Task[], projec
       // Not placed, and no placed parent (lib/inbox, inbox-means-unplaced).
       return inboxTasks(all, allTasks)
     case 'today':
-      return todayList(all, today, hide)
+      return todayList(all, today, userId)
     case 'upcoming':
-      return upcomingToday ? upcomingWithToday(all, today) : upcomingList(all, today)
+      return upcomingToday ? upcomingWithToday(all, today, userId) : upcomingList(all, today, userId)
     // Someday and Anytime (someday-and-evening D5), grouped by project in listGroups.
     case 'someday':
-      return all.filter((task) => !task.completed_at && isSomeday(task)).sort(byPosition)
+      return all.filter((task) => !task.completed_at && isSomeday(task) && !assignedToSomeoneElse(task, userId)).sort(compareByPosition)
     case 'anytime':
-      return all.filter((task) => inAnytime(task, today)).sort(byPosition)
+      return all.filter((task) => inAnytime(task, today) && !assignedToSomeoneElse(task, userId)).sort(compareByPosition)
     case 'completed':
       // The logbook pages through every completion (completed-date-filters D4);
       // a habit's skipped occurrence record is not a completion (habits D6).
@@ -193,10 +198,10 @@ export function tasksForView(scope: ListScope, allTasks: readonly Task[], projec
     case 'project':
       return projectOpenList(all, scope.id)
     case 'label':
-      return all.filter((task) => !task.completed_at && task.labels.includes(scope.id)).sort(byPosition)
+      return all.filter((task) => !task.completed_at && task.labels.includes(scope.id)).sort(compareByPosition)
     // A place's open tasks (task-locations "Places page"): those whose location links to it.
     case 'place':
-      return all.filter((task) => !task.completed_at && linkedPlaceId(task) === scope.id).sort(byPosition)
+      return all.filter((task) => !task.completed_at && linkedPlaceId(task) === scope.id).sort(compareByPosition)
     case 'assigned':
       return all.filter((task) => !task.completed_at && !!userId && task.assignee_id === userId).sort(compareDueThenPriority)
   }
@@ -217,7 +222,7 @@ export interface ViewPatchContext {
  * placement or parent changed while it has subtasks): worked out in full.
  */
 export function patchViewTasks(prev: Task[], changes: readonly TaskChange[], scope: ListScope, projects: readonly Project[], today: string, ctx: ViewPatchContext,
-  userId?: string, upcomingToday = false, hide?: TodayAssigneeFilter | null): Task[] | null {
+  userId?: string, upcomingToday = false): Task[] | null {
   const hidden = new Set(projects.filter((p) => p.archived).map((p) => p.id))
   const keepProject = scope.view === 'project' ? scope.id : undefined
   // withoutArchived's rule, a task at a time. inbox-rule-ok: tasks of archived projects, not the Inbox.
@@ -234,21 +239,21 @@ export function patchViewTasks(prev: Task[], changes: readonly TaskChange[], sco
       return linked(prev, patchSorted(prev, changes, (task) => shown(task) && isInboxTask(task, ctx.parentOf)))
     }
     case 'today':
-      return patchOrdered(prev, changes, (task) => shown(task) && inToday(task, today) && !assignedToSomeoneElse(task, hide), compareDueThenPriority)
+      return patchOrdered(prev, changes, (task) => shown(task) && inToday(task, today) && !assignedToSomeoneElse(task, userId), compareDueThenPriority)
     case 'upcoming':
-      return upcomingToday ? null : patchOrdered(prev, changes, (task) => shown(task) && inUpcoming(task, today), compareDueThenPriority)
+      return upcomingToday ? null : patchOrdered(prev, changes, (task) => shown(task) && inUpcoming(task, today) && !assignedToSomeoneElse(task, userId), compareDueThenPriority)
     case 'someday':
-      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && isSomeday(task), byPosition)
+      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && isSomeday(task) && !assignedToSomeoneElse(task, userId), compareByPosition)
     case 'anytime':
-      return patchOrdered(prev, changes, (task) => shown(task) && inAnytime(task, today), byPosition)
+      return patchOrdered(prev, changes, (task) => shown(task) && inAnytime(task, today) && !assignedToSomeoneElse(task, userId), compareByPosition)
     case 'completed':
       return patchOrdered(prev, changes, (task) => shown(task) && !!task.completed_at && !task.skipped, byDone)
     case 'project':
       return linked(prev, patchSorted(prev, changes, (task) => shown(task) && !task.completed_at && task.project_id === scope.id))
     case 'label':
-      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && task.labels.includes(scope.id), byPosition)
+      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && task.labels.includes(scope.id), compareByPosition)
     case 'place':
-      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && linkedPlaceId(task) === scope.id, byPosition)
+      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && linkedPlaceId(task) === scope.id, compareByPosition)
     case 'assigned':
       return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && !!userId && task.assignee_id === userId, compareDueThenPriority)
   }
@@ -350,7 +355,9 @@ export function splitLater(tasks: readonly Task[], today: string): { active: Tas
   }
   const active: Task[] = []
   const later: Task[] = []
-  for (const task of tasks) (inLater(rootOf(task.id), today) ? later : active).push(task)
+  // A task drawn as a span is placed in time, not hidden until then: it stays with its section (spans-stay-in-sections).
+  const deferred = (root: Task) => inLater(root, today) && !spanOf(root)
+  for (const task of tasks) (deferred(rootOf(task.id)) ? later : active).push(task)
   return { active, later }
 }
 
@@ -388,6 +395,11 @@ export interface GroupInput {
   /** A project's timeline: deferred tasks keep the one Later group at the end (later-in-section D4). */
   timeline?: boolean
   tree: Tree<Task> | null
+  /**
+   * A project view that shows its "Sub-projects" group (subprojects-above-tasks): its own tasks,
+   * when no section or grouping heads them, are a "Tasks" group that folds per project on this device.
+   */
+  subProjects?: boolean
   today: string
   resolved: ResolvedDateTime
   /** Collapsed tree rows, and BLOCKED_OPEN_KEY when Today's Blocked group is open. */
@@ -425,6 +437,7 @@ export interface GroupInput {
   doneToday?: readonly Task[]
   /** Upcoming starts with Today's own groups, then Tomorrow onwards (upcoming-start-with-today D2). */
   upcomingToday?: boolean
+  todayContextFilter?: { me: string | null; matches: (task: Task) => boolean }
 }
 
 /**
@@ -470,10 +483,43 @@ function dayOrder(p: GroupInput, d: ListDisplay | undefined): ((a: Task, b: Task
  * with Nest subtasks, a subtask under its parent when both are in the group, the order
  * sorting the top-level rows and subtasks keeping their manual order.
  */
-function dayRows(p: GroupInput, list: Task[], order: ((a: Task, b: Task) => number) | null, nest: boolean, row: (task: Task) => ListRow): ListRow[] {
+function dayRows(p: GroupInput, list: Task[], order: ((a: Task, b: Task) => number) | null, nest: boolean, row: (task: Task) => ListRow,
+  context?: ReadonlyMap<string, Task[]>): ListRow[] {
   if (!nest) return (order ? [...list].sort(order) : list).map(row)
-  const roots = buildTaskTree(list).roots.sort((a, b) => (order ?? compareDueThenPriority)(a.item, b.item))
-  return flattenTree(roots, (id) => p.collapsed.has(id)).map(nodeRow(p))
+  const { roots, nodes } = buildTaskTree(list)
+  const contextual = context?.size ? appendTodayContext(nodes, context) : null
+  roots.sort((a, b) => (order ?? compareDueThenPriority)(a.item, b.item))
+  const toRow = nodeRow(p)
+  return flattenTree(roots, (id) => p.collapsed.has(id)).map((node) =>
+    contextual?.has(node.id) ? { ...toRow(node), contextual: true } : toRow(node))
+}
+
+function todayContextChildren(p: GroupInput): Map<string, Task[]> {
+  const children = new Map<string, Task[]>()
+  for (const task of p.taskMap.values()) {
+    if (!task.parent_id || task.deleted_at || task.completed_at || task.habit_graduated_at != null) continue
+    if (isSomeday(task) || inToday(task, p.today)) continue
+    if (task.project_id && p.projectMap.get(task.project_id)?.archived) continue
+    if (assignedToSomeoneElse(task, p.todayContextFilter?.me) || p.todayContextFilter?.matches(task) === false) continue
+    appendTo(children, task.parent_id, task)
+  }
+  return children
+}
+
+/** Add leaves after building the regular tree so a contextual task cannot adopt a Today row. */
+function appendTodayContext(nodes: Map<string, TreeNode<Task>>, context: ReadonlyMap<string, Task[]>): Set<string> {
+  const added = new Set<string>()
+  for (const parent of nodes.values()) {
+    const children = context.get(parent.id)
+    if (!children?.length) continue
+    for (const task of children) {
+      if (nodes.has(task.id)) continue
+      parent.children.push({ item: task, id: task.id, parent: parent.id, depth: parent.depth + 1, children: [] })
+      added.add(task.id)
+    }
+    parent.children.sort((a, b) => compareByPosition(a.item, b.item))
+  }
+  return added
 }
 
 /**
@@ -558,9 +604,21 @@ function listGroupsInner(p: GroupInput): ListGroup[] {
     return laterOf ? out : [...out, ...later()]
   }
   // Project and Inbox: one depth-first pass over the built tree (linear in task count).
+  if (p.tree && p.subProjects && p.view === 'project' && p.projectId && p.tree.roots.length) {
+    // Folded, its rows leave the list, so the cursor and the keys never reach a hidden task.
+    const openKey = tasksFoldedKey(p.projectId)
+    const folded = p.collapsed.has(openKey)
+    return [{
+      key: 'all', heading: t('Tasks'), count: flattenTree(p.tree.roots).length, folded, openKey,
+      rows: folded ? [] : flattenTree(sortedRoots(p.tree.roots, order), isCollapsed).map(toRow),
+    }, ...later()]
+  }
   if (p.tree) return [{ key: 'all', heading: null, rows: flattenTree(sortedRoots(p.tree.roots, order), isCollapsed).map(toRow) }, ...later()]
   return flatGroups(p)
 }
+
+/** In the per-device collapse set while a project's Tasks group is folded (subprojects-above-tasks). */
+export const tasksFoldedKey = (projectId: string) => `project:${projectId}:tasks:folded`
 
 /** In the per-device collapse set when a section's Later group is open; folded by default (later-in-section D2). */
 export const laterOpenKey = (projectId: string, sectionKey: string) => `project:${projectId}:later:${sectionKey}:open`
@@ -653,6 +711,8 @@ function todayGroups(p: GroupInput, row: (task: Task) => ListRow, inUpcoming = f
   const manual = d?.sortBy === 'position'
   const order = manual ? null : dayOrder(p, d)
   const rows = (list: Task[]) => dayRows(p, list, order, !!d?.subtasks, row)
+  const context = !inUpcoming && d?.subtasks ? todayContextChildren(p) : undefined
+  const dayTree = (list: Task[]) => dayRows(p, list, order, !!d?.subtasks, row, context)
   const g: ListGroup[] = []
   // In Upcoming the part headings take no drops: a drop there would change the part and leave the date (D3).
   const drop = (part: DayPart | 'none') => (parts && !inUpcoming ? { dropPart: part } : {})
@@ -663,16 +723,16 @@ function todayGroups(p: GroupInput, row: (task: Task) => ListRow, inUpcoming = f
     // Another grouping lays out only the day's own tasks (D3); Earlier, Blocked, Waiting and Done keep their place.
     const own = new Set([...day, ...morning, ...afternoon, ...evening])
     const rank = manual && !inUpcoming ? compareManual(p.manualOrder ?? new Map(), compareDueThenPriority) : null
-    const projectRows = rank && d ? (list: Task[]) => dayRows(p, list, d.sortDir === 'desc' ? (a, b) => rank(b, a) : rank, !!d.subtasks, row) : rows
+    const projectRows = rank && d ? (list: Task[]) => dayRows(p, list, d.sortDir === 'desc' ? (a, b) => rank(b, a) : rank, !!d.subtasks, row, context) : dayTree
     g.push(...chosenTodayGroups(p, listed.filter((x) => own.has(x)), groupBy, earlier.length > 0, inUpcoming, projectRows))
   } else {
     const others = earlier.length || morning.length || afternoon.length || evening.length
     // With day parts on an empty Today group is left out, unless the list would be empty without it.
     // In Upcoming the group is named, since Tomorrow follows, and left out when empty (D2).
-    if (inUpcoming ? day.length : !parts || day.length || !others) g.push({ key: 'today', heading: others || inUpcoming ? t('Today') : null, rows: withImplied(rows(day), { date: p.today }), ...drop('none') })
-    if (morning.length) g.push({ key: 'morning', heading: t('Morning'), rows: withImplied(rows(morning), { date: p.today, part: 'morning' }), ...drop('morning') })
-    if (afternoon.length) g.push({ key: 'afternoon', heading: t('Afternoon'), rows: withImplied(rows(afternoon), { date: p.today, part: 'afternoon' }), ...drop('afternoon') })
-    if (evening.length) g.push({ key: 'evening', heading: t('This Evening'), rows: withImplied(rows(evening), { date: p.today, evening: true }), ...drop('evening') })
+    if (inUpcoming ? day.length : !parts || day.length || !others) g.push({ key: 'today', heading: others || inUpcoming ? t('Today') : null, rows: withImplied(dayTree(day), { date: p.today }), ...drop('none') })
+    if (morning.length) g.push({ key: 'morning', heading: t('Morning'), rows: withImplied(dayTree(morning), { date: p.today, part: 'morning' }), ...drop('morning') })
+    if (afternoon.length) g.push({ key: 'afternoon', heading: t('Afternoon'), rows: withImplied(dayTree(afternoon), { date: p.today, part: 'afternoon' }), ...drop('afternoon') })
+    if (evening.length) g.push({ key: 'evening', heading: t('This Evening'), rows: withImplied(dayTree(evening), { date: p.today, evening: true }), ...drop('evening') })
   }
   if (waiting.length) {
     const folded = !p.collapsed.has(BLOCKED_OPEN_KEY)
@@ -745,7 +805,7 @@ const sameAdds = (a: ListRow['subtaskAdds'], b: ListRow['subtaskAdds']): boolean
 export const sameRow = (a: ListRow, b: ListRow): boolean =>
   a.task === b.task && a.depth === b.depth && a.parent === b.parent && a.hasChildren === b.hasChildren
   && a.collapsed === b.collapsed && a.breadcrumb === b.breadcrumb && sameImplied(a.implied, b.implied)
-  && sameAdds(a.subtaskAdds, b.subtaskAdds)
+  && a.contextual === b.contextual && sameAdds(a.subtaskAdds, b.subtaskAdds)
 
 const sameValue = (a: unknown, b: unknown): boolean =>
   Object.is(a, b) || (Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => Object.is(v, b[i])))

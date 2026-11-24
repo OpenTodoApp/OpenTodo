@@ -2,6 +2,18 @@
 
 The add-on's version is the OpenTodo release it runs. A version with a fourth number, such as `0.12.0.1`, changes only the add-on and runs the same OpenTodo release. OpenTodo's own changes are in its [changelog](https://github.com/OpenTodoApp/OpenTodo/blob/main/CHANGELOG.md).
 
+## 1.8.0
+
+- OpenTodo [1.8.0](https://github.com/OpenTodoApp/OpenTodo/releases/tag/v1.8.0): a better Microsoft To Do import, and single sign-on with providers that send no email confirmation (opt-in).
+
+## 1.7.0
+
+- OpenTodo [1.7.0](https://github.com/OpenTodoApp/OpenTodo/releases/tag/v1.7.0).
+
+## 1.6.0
+
+- OpenTodo [1.6.0](https://github.com/OpenTodoApp/OpenTodo/releases/tag/v1.6.0), with security fixes.
+
 ## 1.5.0
 
 - OpenTodo [1.5.0](https://github.com/OpenTodoApp/OpenTodo/releases/tag/v1.5.0), built with Go 1.27.4 (a security fix).

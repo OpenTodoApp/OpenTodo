@@ -121,6 +121,29 @@ func SeriesBudget(id string, row Entity, tasks []Entity, exceptDate, today strin
 	return b
 }
 
+// ExceptionOn is why the series id (stored row row) cannot be due on date
+// (OpenSpec changes series-move-onto-exception and server-series-move; web
+// exceptionOn): the state of the record that makes date an exception of its
+// lineage (RecordOpen for a moved occurrence, RecordDone, RecordSkipped), or ""
+// when the date is free, the task is not an open series or its rule repeats
+// after completion. tasks holds the lineage's pieces and at least the records on
+// date (every task will do).
+func ExceptionOn(id string, row Entity, date string, tasks []Entity) string {
+	s, ok := openSeries(id, row)
+	if !ok || s.rule.AfterCompletion() || !s.budget(tasks, "", "").Except[date] {
+		return ""
+	}
+	for _, p := range lineageOf(id, row, tasks) {
+		for _, r := range RecordsOf(p.id, tasks) {
+			if r.Date == date {
+				return r.State
+			}
+		}
+	}
+	// An earlier piece completed on that date.
+	return RecordDone
+}
+
 // seriesRow is an open, live series with a parseable rule.
 type seriesRow struct {
 	id   string

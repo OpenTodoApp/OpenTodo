@@ -4,16 +4,18 @@
 // sheet on phones) with Clear and Done; the When parts share one popover that shows
 // one segment at a time. The Add menu offers what is not set, grouped by facet.
 // Every editor writes exactly the operation its chip wrote (usePropertiesModel).
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { lazy } from '../../lib/lazy'
 import { facetsOf, type FacetId, type FacetPart, type WhenSegmentId } from '../../lib/facets'
 import { removeLabel } from '../../lib/labels'
 import { priorityAccessibleName, priorityShort } from '../../lib/priority'
-import { createProject, updateTask } from '../../lib/ops'
+import { createProject } from '../../lib/ops'
 import { INBOX_KEY, itemKeywords, NONE_KEY, sectionSource, type PickerItem } from '../../lib/pickerSources'
 import { moveTaskToSection } from '../../lib/sections'
 import { keysOf } from '../../lib/shortcuts'
 import { originOf } from '../../lib/taskOrigin'
 import { openOrigin, originLink } from '../../lib/originOpen'
+import { useAppLinkSchemes } from '../../lib/appLinks'
 import { copyText } from '../../lib/clipboard'
 import type { Label, Priority, Project, Task } from '../../lib/types'
 import { isZoned, zoneCity } from '../../lib/dates'
@@ -35,9 +37,10 @@ import { usePropertiesModel, type PropertiesModel } from './usePropertiesModel'
 import type { Optional } from './usePropertyEditing'
 import { t } from '../../lib/i18n'
 import { act, reportActionError } from '../actionError'
-import { dayPartFields } from '../../lib/dayParts'
 import { energyLevelsOn, energyOf, setTaskEnergy } from '../../lib/energy'
 import { useUserPrefsRow } from '../../lib/localData'
+import { estimateUndoable, eveningUndoable, priorityUndoable } from '../../lib/undoActions'
+import { assigneeWithUndo } from '../undoable'
 import { EnergyChoice } from './EnergyChoice'
 
 export const PRIORITIES: { p: Priority; cls: string }[] = [
@@ -80,6 +83,7 @@ export function useFacetParts(props: PropertiesProps, m: PropertiesModel, reveal
   const { task, parent } = props
   const dt = useDateTimeFormat()
   const origin = originOf(task)
+  useAppLinkSchemes() // an app link origin opens for this viewer's list (app-links D5)
   const shownLocation = useShownLocation(task)
   const facets = facetsOf(task, {
     local: m.local,
@@ -198,10 +202,10 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
         <div className="space-y-2">
           {childCount > 0 && <p className="text-meta text-muted">{t('{n, plural, one {Moving this task moves its subtask too.} other {Moving this task moves its subtasks too.}}', { n: childCount })}</p>}
           <ComboboxPanel<PickerItem> label={t('Project')} placeholder={t('Find or create a project…')} source={m.projectItems}
-            getKey={itemKey} getLabel={itemLabel} getPath={itemPath} getSecondary={itemMeta} getKeywords={itemKeywords}
+            getKey={itemKey} getLabel={itemLabel} getPath={itemPath} getSecondary={itemMeta} getKeywords={itemKeywords} getGroup={(i) => i.group}
             pinned={m.projectPins} selected={[m.currentProject?.key ?? INBOX_KEY]} rankContext="task.project"
             renderLeading={(i) => (i.project ? <ProjectMark project={i.project} /> : <Icon name="inbox" className="text-faint" />)}
-            onPick={async (i) => { await m.moveTo(i.value); onClose() }}
+            onPick={async (i) => { await m.moveTo(i.value, i.workspace); onClose() }}
             onCreate={async (name) => { const pid = await createProject({ name: name.trim() }); await m.moveTo(pid); onClose() }}
             onClose={onClose} />
         </div>
@@ -233,12 +237,12 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
           {PRIORITIES.map(({ p, cls }) => (
             <button key={p} type="button" aria-pressed={task.priority === p} aria-label={priorityAccessibleName(p)}
               className={`min-w-11 max-w-full truncate rounded-control border px-2.5 py-1 text-meta ${cls} ${task.priority === p ? 'bg-sunken font-semibold dark:bg-raised' : 'border-dashed hover:bg-sunken dark:hover:bg-raised'}`}
-              onClick={() => { act(updateTask(task.id, { priority: p })); onClose() }}>{priorityShort(p)}</button>
+              onClick={() => { act(priorityUndoable(task.id, p)); onClose() }}>{priorityShort(p)}</button>
           ))}
         </div>
       ))
     case 'estimate':
-      return frame('clock', t('Estimate'), <EstimateField task={task} />, task.estimate_minutes !== null ? () => act(updateTask(task.id, { estimate_minutes: null })) : undefined)
+      return frame('clock', t('Estimate'), <EstimateField task={task} />, task.estimate_minutes !== null ? () => act(estimateUndoable(task.id, null)) : undefined)
     case 'energy':
       return frame('zap', t('Energy'), <EnergyChoice task={task} onChosen={onClose} />, energyOf(task) ? () => act(setTaskEnergy(task.id, null)) : undefined)
     case 'labels':
@@ -289,7 +293,7 @@ function AddMenu({ task, userId, m }: { task: Task; userId?: string; m: Properti
     { title: t('When'), offers: [
       { id: 'deadline', label: t('Deadline'), icon: 'hourglass', shortcut: keysOf('list.deadline') },
       { id: 'when', label: t('Start'), icon: 'calendar-range', shortcut: keysOf('list.defer') },
-      { id: 'evening', label: t('This Evening'), icon: 'moon', shortcut: keysOf('list.evening'), run: () => act(updateTask(task.id, dayPartFields('evening'))) },
+      { id: 'evening', label: t('This Evening'), icon: 'moon', shortcut: keysOf('list.evening'), run: () => act(eveningUndoable(task.id, true)) },
       { id: 'reminders', label: t('Reminder'), icon: 'alarm-clock' },
       { id: 'repeat', label: t('Repeat'), icon: 'repeat' },
     ] },
@@ -299,7 +303,7 @@ function AddMenu({ task, userId, m }: { task: Task; userId?: string; m: Properti
       { id: 'labels', label: t('Labels'), icon: 'tag', shortcut: keysOf('list.labels') },
     ] },
     { title: t('Who'), offers: [
-      { id: 'assignee', label: solo ? t('Show in Assigned to me') : t('Assignee'), icon: 'user-check', shortcut: solo ? undefined : keysOf('list.assign'), when: !!userId, run: solo && userId ? () => act(updateTask(task.id, { assignee_id: userId })) : undefined },
+      { id: 'assignee', label: solo ? t('Show in Assigned to me') : t('Assignee'), icon: 'user-check', shortcut: solo ? undefined : keysOf('list.assign'), when: !!userId, run: solo && userId ? () => act(assigneeWithUndo(task.id, userId)) : undefined },
       { id: 'blocked-by', label: t('Blocked by'), icon: 'lock', shortcut: keysOf('list.blocked-by') },
     ] },
   ]

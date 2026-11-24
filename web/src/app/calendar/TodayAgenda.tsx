@@ -3,7 +3,7 @@
 // Today's list when the account turned it on (D1, D5). Read-only: every event opens the
 // calendar's details popover (D6). The per-device "Calendars" toggle of the grid does
 // not apply here; disabled subscriptions never show (D4).
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, type ReactNode } from 'react'
 import { allDayEvents, eventBlocks, formatTime as toHHMM, type EventBlock } from '../../lib/calendar'
 import { cachedWindow, covers, eventsStatus, refreshEvents, STALE_MS, type DayRange } from '../../lib/calendarFeeds'
 import { formatTime as formatWallTime } from '../../lib/dates'
@@ -13,8 +13,8 @@ import { useUserPrefsRow } from '../../lib/localData'
 import { useOnline } from '../../lib/online'
 import type { CalendarEvent, CalendarSubscription } from '../../lib/types'
 import { todayEventsShown } from '../../lib/userPrefs'
-import { hueFor, Popover } from '../../ui'
-import { EventDetails } from '../CalendarEvents'
+import { hueFor } from '../../ui'
+import { useEventDetails } from '../CalendarEvents'
 import { CalendarStatus } from './CalendarStatus'
 import { useNowMinutes } from './useNowMinutes'
 import { resettable } from '../../lib/moduleState'
@@ -94,20 +94,17 @@ export function AgendaEvent({ ev, sub, zone, className, data, children, extra }:
   /** Hidden text after the visible content (WCAG 2.5.3 Label in Name). */
   extra: (string | false | undefined)[]
 }) {
-  const ref = useRef<HTMLButtonElement>(null)
-  const [open, setOpen] = useState(false)
+  const details = useEventDetails(ev, sub, zone)
   const rest = extra.filter(Boolean).join(', ')
   return (
     <>
-      <button ref={ref} type="button" aria-haspopup="dialog" aria-expanded={open} data-hue={hueFor(sub?.color)} {...data}
-        onClick={() => setOpen((o) => !o)}
+      <button ref={details.ref} type="button" aria-haspopup="dialog" aria-expanded={details.open} data-hue={hueFor(sub?.color)} {...data}
+        onClick={details.toggle}
         className={`${className} min-w-0 text-left focus-visible:outline-2 focus-visible:outline-focus`}>
         {children}
         {rest && <span className="sr-only">{`, ${rest}`}</span>}
       </button>
-      <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || t('Event')} width="sm:w-72" className="p-3" align="start">
-        <EventDetails ev={ev} sub={sub} zone={zone} />
-      </Popover>
+      {details.popover}
     </>
   )
 }

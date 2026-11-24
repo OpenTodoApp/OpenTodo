@@ -10,7 +10,7 @@ order: 36
 
 OpenTodo is one container with one data folder and no required settings. On [Railway](https://railway.com) it runs as one service from the released image, with a volume on `/data` and https on its `up.railway.app` address.
 
-Deploy it from the template: [railway.com/deploy/opentodo](https://railway.com/deploy/opentodo). It's new; if something here doesn't match what you see, please [open an issue](https://github.com/OpenTodoApp/OpenTodo/issues).
+Deploy it from the template: [railway.com/deploy/opentodo](https://railway.com/deploy/opentodo?referralCode=nbgVDr). This link supports the project: OpenTodo receives a share when you deploy through it. It's new; if something here doesn't match what you see, please [open an issue](https://github.com/OpenTodoApp/OpenTodo/issues).
 
 **If the first deploy keeps restarting** with `OPENTODO_BASE_URL must be an absolute URL, got "https://"` (or, from the next release, `OPENTODO_BASE_URL has no host name`), the service has no public address yet: open its **Settings → Networking**, choose **Generate Domain** with port **8080**, then **Deployments → Redeploy**.
 
@@ -46,7 +46,7 @@ Add the domain under the service's **Settings → Networking → Custom Domain**
 
 ## Updates
 
-The service uses the `stable` image, which every release moves. To update, redeploy the service (**Deployments → Redeploy**): Railway pulls the image again. Migrations run on start and there are no down-migrations, so back up first. To stay on one release line, set the image to `ghcr.io/opentodoapp/opentodo:1.5`, or to one version such as `1.5.0`, in the service's **Settings → Source**.
+The service uses the `stable` image, which every release moves. To update, redeploy the service (**Deployments → Redeploy**): Railway pulls the image again. Migrations run on start and there are no down-migrations, so back up first. To stay on one release line, set the image to `ghcr.io/opentodoapp/opentodo:1.8`, or to one version such as `1.8.0`, in the service's **Settings → Source**.
 
 ## Data and backups
 

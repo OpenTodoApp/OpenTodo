@@ -16,6 +16,9 @@ var (
 	ErrDisabled    = errors.New("mail: outgoing email is not configured")
 	ErrRateLimited = errors.New("mail: sending limit reached")
 	ErrEncrypted   = errors.New("mail: the recipient's account is encrypted")
+	// ErrUnconfirmed: the recipient's address came unconfirmed from single
+	// sign-on and may belong to someone else (sso-missing-email-verified).
+	ErrUnconfirmed = errors.New("mail: the recipient's address is not confirmed")
 )
 
 // Sender delivers one assembled message (the SMTP transport, or a fake in tests).
@@ -28,27 +31,40 @@ type EncryptionChecker interface {
 	Enabled(ctx context.Context, userID string) (bool, error)
 }
 
+// RecipientChecker reports whether an account (by id) or an address belongs to
+// an account whose address single sign-on took without confirmation.
+type RecipientChecker interface {
+	Unconfirmed(ctx context.Context, userID, address string) (bool, error)
+}
+
+// confirmsAddress are the kinds that confirm an address: the only mail an
+// unconfirmed address may get.
+var confirmsAddress = map[Kind]bool{KindVerifySignup: true, KindEmailChange: true}
+
 // Options configure a Service; zero values are production defaults.
 type Options struct {
-	Env       config.SMTPConfig
-	Audit     *audit.Recorder
-	Log       *slog.Logger
-	E2EE      EncryptionChecker
-	Transport Sender
-	Now       func() time.Time
+	Env   config.SMTPConfig
+	Audit *audit.Recorder
+	Log   *slog.Logger
+	E2EE  EncryptionChecker
+	// Recipients refuses mail to unconfirmed single sign-on addresses; nil checks nothing.
+	Recipients RecipientChecker
+	Transport  Sender
+	Now        func() time.Time
 }
 
 // Service is the configuration plus the send path every message takes.
 type Service struct {
-	settings  *settings.Store
-	secrets   *settings.SecretsFile
-	env       config.SMTPConfig
-	audit     *audit.Recorder
-	log       *slog.Logger
-	e2ee      EncryptionChecker
-	transport Sender
-	now       func() time.Time
-	limiter   *Limiter
+	settings   *settings.Store
+	secrets    *settings.SecretsFile
+	env        config.SMTPConfig
+	audit      *audit.Recorder
+	log        *slog.Logger
+	e2ee       EncryptionChecker
+	recipients RecipientChecker
+	transport  Sender
+	now        func() time.Time
+	limiter    *Limiter
 }
 
 // New wires a Service over the settings store and <dataDir>/secrets/smtp.json.
@@ -63,7 +79,7 @@ func New(store *settings.Store, dataDir string, o Options) *Service {
 		o.Transport = &Transport{}
 	}
 	return &Service{settings: store, secrets: settings.NewSecretsFile(dataDir, "smtp"), env: o.Env, audit: o.Audit,
-		log: o.Log, e2ee: o.E2EE, transport: o.Transport, now: o.Now, limiter: NewLimiter(o.Now)}
+		log: o.Log, e2ee: o.E2EE, recipients: o.Recipients, transport: o.Transport, now: o.Now, limiter: NewLimiter(o.Now)}
 }
 
 // SecretsPath is the password file (for docs and tests).
@@ -122,6 +138,16 @@ func (s *Service) send(ctx context.Context, m Message, limited bool) error {
 	}
 	kind := string(m.Kind)
 	fail := func(reason string) { s.record(ctx, audit.EmailFailed(m.ActorID, m.UserID, kind, m.To, reason)) }
+	if s.recipients != nil && !confirmsAddress[m.Kind] {
+		unconfirmed, err := s.recipients.Unconfirmed(ctx, m.UserID, m.To)
+		if err != nil {
+			return err
+		}
+		if unconfirmed {
+			fail("address_unconfirmed")
+			return ErrUnconfirmed
+		}
+	}
 	if carriesContent[m.Kind] && m.UserID != "" && s.e2ee != nil {
 		on, err := s.e2ee.Enabled(ctx, m.UserID)
 		if err != nil {

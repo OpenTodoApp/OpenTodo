@@ -29,6 +29,8 @@ object WidgetStore {
         val m = AppWidgetManager.getInstance(context)
         val ids = m.getAppWidgetIds(ComponentName(context, TodayWidget::class.java))
         if (ids.isNotEmpty()) TodayWidget.draw(context, m, ids)
+        val done = m.getAppWidgetIds(ComponentName(context, CompletedWidget::class.java))
+        if (done.isNotEmpty()) CompletedWidget.draw(context, m, done)
     }
 
     fun open(context: Context, path: String, code: Int): PendingIntent {

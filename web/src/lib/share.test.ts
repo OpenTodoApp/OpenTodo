@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  TEXT_MAX, TITLE_MAX, TRUNCATED_NOTE, bookmarklet, isEmptyShare, lastUrlIn, parseShare, proposedDescription, proposedOrigin, proposedTitle, safeUrl, shareUrl,
+  TEXT_MAX, TITLE_MAX, TRUNCATED_NOTE, bookmarklet, isEmptyShare, lastUrlIn, parseShare, proposedDescription, proposedOrigin, proposedTitle, safeUrl,
 } from './share'
 
 const q = (o: Record<string, string>) => new URLSearchParams(o).toString()
@@ -84,15 +84,7 @@ describe('parseShare', () => {
   })
 })
 
-describe('shareUrl and bookmarklet', () => {
-  it('builds the /share URL that parseShare reads back', () => {
-    const u = shareUrl('https://todo.example/', { url: 'https://example.org/a?b=c&d', title: 'T & more', text: 'sel' })
-    expect(u.startsWith('https://todo.example/share?')).toBe(true)
-    const p = parseShare(new URL(u).search)
-    expect(p).toEqual({ title: 'T & more', text: 'sel', url: 'https://example.org/a?b=c&d' })
-    expect(shareUrl('https://todo.example', {})).toBe('https://todo.example/share')
-  })
-
+describe('bookmarklet', () => {
   it('opens a named popup on the given origin and carries no credential', () => {
     const b = bookmarklet('https://todo.example')
     expect(b.startsWith('javascript:')).toBe(true)

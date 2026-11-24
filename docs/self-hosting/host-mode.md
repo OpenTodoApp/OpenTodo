@@ -1,6 +1,6 @@
 ---
 title: Host mode (many servers in one process)
-summary: For operators of a hosted OpenTodo service: one process serves many independent tenants by host name, opened on demand, with one scheduler, per-tenant limits and an operator interface.
+summary: "For operators of a hosted OpenTodo service: one process serves many independent tenants by host name, opened on demand, with one scheduler, per-tenant limits and an operator interface."
 audience: admin
 specs: [multi-tenant-host]
 screens: []

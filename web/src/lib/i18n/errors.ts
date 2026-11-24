@@ -152,6 +152,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   reauth_required: msg('Confirm your password or a code to continue.'),
   reset_invalid: msg('This password reset link is not valid.'),
   scope_change: msg('This change would move the item out of its project’s sharing.'),
+  series_date_taken: msg('That date of this repeating task is already done, skipped or moved.'),
   self_action: msg('You cannot do this to your own account.'),
   session_required: msg('This needs a signed-in browser session, not an API token.'),
   set_by_environment: msg('A server variable sets this; change it in the server configuration.'),

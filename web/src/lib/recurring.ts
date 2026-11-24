@@ -79,11 +79,6 @@ export function recordsOf(seriesId: string, tasks: Iterable<Task>): OccurrenceRe
   return out
 }
 
-/** The exception dates of a series: the dates of its records, whatever their state (M4). */
-export function exceptionDates(seriesId: string, tasks: Iterable<Task>): Set<string> {
-  return new Set(recordsOf(seriesId, tasks).map((r) => r.date))
-}
-
 export interface Budget {
   /** Occurrences used before the series' current one: done and open records of the lineage, and earlier pieces' remaining occurrences. */
   taken: number
@@ -137,6 +132,25 @@ export function seriesBudget(series: Task | string, tasks: Iterable<Task>, excep
   return { taken, done, except, own, end: pieces ? pieceEnd(pieces, at) : null }
 }
 
+/**
+ * Why a series cannot be due on `date` (series-move-onto-exception): the state of the
+ * record that makes the date an exception of its lineage, or null when the date is
+ * free. A series written onto an exception date is moved on by the repair (planRepair),
+ * so a date change there is refused instead of confirmed and then undone (#1971).
+ */
+export function exceptionOn(series: Task, date: string, tasks: Iterable<Task>): RecordState | null {
+  const rule = seriesRule(series)
+  if (!rule || rule.afterCompletion) return null
+  const list = [...tasks]
+  if (!seriesBudget(series, list).except.has(date)) return null
+  for (const { task } of lineageOf(series, list)) {
+    const r = recordsOf(task.id, list).find((x) => x.date === date)
+    if (r) return r.state
+  }
+  // An earlier piece completed on that date.
+  return 'done'
+}
+
 /** What an earlier piece still has to come within its range: its current occurrence and the walk to its end. */
 function remainingOf(piece: Task, end: string | null, used: number, except: ReadonlySet<string>, today: string): number {
   const rule = seriesRule(piece)
@@ -159,14 +173,6 @@ function remainingOf(piece: Task, end: string | null, used: number, except: Read
 /** The series' rule within its piece of the lineage: `until` no later than the day before the next piece starts. */
 export function pieceRule(rule: Rule, budget: Pick<Budget, 'end'>): Rule {
   return bounded(rule, budget.end)
-}
-
-/**
- * Completed occurrence records of a series, leaving out the one of `exceptDate`. The
- * `for N times` count converges with the records themselves, without a separate counter.
- */
-export function completedOccurrences(seriesId: string, tasks: Iterable<Task>, exceptDate?: string): number {
-  return seriesBudget(seriesId, tasks, exceptDate).done
 }
 
 // ---- dates ----

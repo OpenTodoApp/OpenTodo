@@ -5,6 +5,7 @@ Russian and Polish have many self-hosting readers and no OpenTodo interface. No 
 ## What Changes
 
 - Russian (`ru`, Русский) and Polish (`pl`, Polski) web catalogs, complete, listed as community languages: Settings lists them after the maintained languages with the community caption, and anything outside the web app (emails, channel messages, the native shells, the extension, quick add) stays English.
+- Update (#1413): Polish arrived as a complete translation on every surface with a maintainer (nkkfs) and replaces the Polish draft as a maintained language; Russian stays a community machine draft.
 - The localization spec allows a machine draft for these two catalogs, as it does for Simplified Chinese, with a review by a speaker afterwards. The translation guide says the same, and its maintainer table lists both as machine drafts looking for a reviewer.
 
 ## Capabilities

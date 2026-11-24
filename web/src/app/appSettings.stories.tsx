@@ -18,7 +18,7 @@ const noop = () => {}
 const now = 1_760_000_060_000
 
 const push: PushState = {
-  supported: true, available: true, permission: 'granted', enabled: true, includeContent: false, needsRenewal: false,
+  supported: true, available: true, permission: 'granted', enabled: true, includeContent: false, notify: { assigned: false, status: false }, needsRenewal: false,
   serviceWorker: true, serverUnreachable: false,
   subscription: { id: 's', deviceId: 'dev', includeContent: false, createdAt: 1, lastOkAt: now - 3_600_000, lastError: '', failures: 0, needsRenewal: false },
 }
@@ -46,7 +46,7 @@ export const Preferences: StoryObj = {
 // Language (app-localization): System first, naming what it resolves to; the failure when a catalog cannot load.
 export const Language: StoryObj = { render: () => <LanguageView value="system" system="English" onChange={noop} /> }
 // A community language (more-languages D4): listed after the maintained ones, with its caption once picked.
-export const LanguageCommunity: StoryObj = { render: () => <LanguageView value={'pl' as never} system="English" languages={SHIPPED} onChange={noop} /> }
+export const LanguageCommunity: StoryObj = { render: () => <LanguageView value="ru" system="English" languages={SHIPPED} onChange={noop} /> }
 export const LanguageUnavailable: StoryObj = { render: () => <LanguageView value="de" system="English" status="failed" onChange={noop} /> }
 // Date and time (date-time-preferences): a fixed day so the week strip is stable.
 const dayMonth = { date_format: 'day-month', time_format: '24h', week_start: 'sun' } as const

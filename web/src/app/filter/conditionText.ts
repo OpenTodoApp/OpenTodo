@@ -24,6 +24,7 @@ export const KEYWORD_NAME = translatedMap<Keyword>({
   'no deadline': msg('No deadline'),
   'no start': msg('No start date'),
   'no project': msg('No project'),
+  'no section': msg('No section'),
   'no labels': msg('No labels'),
   someday: msg('Someday'),
   deferred: msg('Starts later'),
@@ -37,6 +38,7 @@ export const KEYWORD_NAME = translatedMap<Keyword>({
   unblocked: msg('Not waiting on another task'),
   available: msg('Available now'),
   habit: msg('Habit'),
+  recurring: msg('Repeats'),
   origin: msg('Has an origin'),
   'no origin': msg('No origin'),
   tracked: msg('Has tracked time'),
@@ -122,6 +124,7 @@ export function conditionText(leaf: Leaf): string {
     case 'energy': return t('Energy is {level}', { level: energyName(leaf.value) })
     case 'sector': return t('Time sector is {name}', { name: (SECTOR_WORDS as readonly string[]).includes(leaf.value) ? sectorWordName(leaf.value as SectorWord) : leaf.value })
     case 'workspace': return t('Workspace is {name}', { name: leaf.name })
+    case 'section': return t('Section is {name}', { name: leaf.name })
     case 'tracked': return compareText(leaf.occurrence ? t('Tracked time in this occurrence') : t('Tracked time'), leaf.op, formatMinutes(leaf.minutes))
     case 'field': return compareText(leaf.name, leaf.op, fieldValueWords(leaf.value))
     case 'nofield': return t('{name} is empty', { name: leaf.name })

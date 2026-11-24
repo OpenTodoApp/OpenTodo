@@ -13,9 +13,8 @@ Thanks for helping build a task manager people can own. This page is the rules; 
 | [Add a language](docs/contributing/add-a-language.md) | Every file a new interface language touches |
 | [Add an importer](docs/contributing/add-an-importer.md) | Profile, signature, sanitiser, fixtures and goldens, switch guide, matrix row |
 | [Add a shared contract](docs/contributing/add-a-shared-contract.md) | Logic that must match in Go and TypeScript |
-| [Work on the native app](docs/contributing/native-app.md) | `mobile/app` without a Mac, `make app`, the shared library, its CI lanes |
 
-Reference: [Architecture](docs/architecture.md), [Sync protocol](docs/sync.md), [Design system](docs/design-system.md), [Translating](docs/translating.md), [Shared contracts](docs/contracts.md). `AGENTS.md` is the same ground in the dense form AI agents read.
+Reference: [Architecture](docs/architecture.md), [Sync protocol](docs/sync.md), [Design system](docs/design-system.md), [Translating](docs/translating.md), [Shared contracts](docs/contracts.md). `AGENTS.md` is the short form AI agents read on every task; [Packages and rules in full](docs/contributing/packages.md) is its long form.
 
 ## Ground rules
 
@@ -24,7 +23,7 @@ Reference: [Architecture](docs/architecture.md), [Sync protocol](docs/sync.md), 
 - **Additive data model.** Adding fields is fine. Renaming or removing an op field is a breaking change and needs a migration plan in the design.
 - **The v1 surface only grows.** Routes, fields, error codes, MCP tools and `ot` flags are kept within 1.x ([stability](docs/stability.md)).
 - **Private by default.** No telemetry, no third-party scripts or fonts, no outbound request the user did not configure.
-- **Small footprint.** A new dependency justifies its size. The server stays one static binary; the web app's first load has a budget.
+- **Small footprint, sensible dependencies.** Use a library when it makes our code simpler or smaller (AGPL-compatible licence, no network calls of its own) and say what it costs in size. The server stays one static binary; the web app's first load has a budget.
 
 ## Workflow
 
@@ -62,6 +61,10 @@ What keeps that trustworthy is the same for every contributor, human or not:
 - An agent opens, reviews and merges the maintainer's own pull requests and dependency updates once CI is green. Pull requests from other contributors get a review, often drafted by an agent. Once a contributor has addressed every point of the review and CI is green, the maintainer or an agent working for him merges it. An agent never pushes to a contributor's branch.
 - Translations are never machine-made: a speaker of each language reviews its catalog.
 - Security reports go to a person ([SECURITY.md](SECURITY.md)).
+
+### Replies from the OpenTodo Bot
+
+Replies on issues, pull requests and discussions that end with "— OpenTodo team (automated reply)" are posted by the **OpenTodo Bot** GitHub App for the triage team, usually drafted by an agent and approved by a person. Triage posts one with the **Post reply** workflow (`.github/workflows/post-reply.yml`): **Actions → Post reply → Run workflow**, choose the kind (`issue`, `pr` or `discussion`), give the number and paste the reply. The workflow refuses a number of the wrong kind and an empty reply. It needs the repository variable `BOT_APP_ID` (the app's ID or Client ID) and the secret `BOT_PRIVATE_KEY`; the app needs write access to issues, pull requests and discussions on this repository, and nothing else. Without them the run fails and names what is missing.
 
 You may use AI tools for your contribution. Say so with a `Co-Authored-By` trailer, read and understand every line you submit, and expect the same review as any other pull request. `AGENTS.md` (read by Claude Code through `CLAUDE.md`, and by other agents directly) gives an agent the rules above.
 

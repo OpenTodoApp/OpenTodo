@@ -37,6 +37,10 @@ export interface PickerItem {
   shared?: boolean
   /** Extra words the search matches, not shown ("inbox" for "No project"). */
   keywords?: string
+  /** Projects of several workspaces: the workspace's name, as the option's group heading. */
+  group?: string
+  /** Projects of several workspaces: the workspace the option belongs to (its "No project" moves there). */
+  workspace?: string
 }
 
 /** The search words of an item, for a combobox's getKeywords. */

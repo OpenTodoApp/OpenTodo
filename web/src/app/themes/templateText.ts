@@ -38,6 +38,7 @@ export function templateText(from: string): TemplateText {
       notes: t('Shown in the theme\'s details.'),
       shape: t('Corner radii in pixels, 0 to 20.'),
       type: t('family: inter, system, serif or mono, or an installed font by name; list: the list text size, 13, 14 or 15.'),
+      titleWeight: t('How heavy task titles are: 400, 500, 600 or 700.'),
     },
     seeds: t('Base colours: every other colour follows from these.'),
     statusSeeds: t('Status colours: optional. A line that starts with // is derived.'),

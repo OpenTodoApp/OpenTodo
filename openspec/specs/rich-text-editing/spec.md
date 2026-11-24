@@ -168,7 +168,7 @@ Dropping or pasting an image into the editor, or choosing Image from the slash m
 
 #### Scenario: Web image stays a link
 - **WHEN** the user pastes `https://example.org/photo.jpg`
-- **THEN** the note gets a link to that address, no image is loaded, and no request is made to example.org
+- **THEN** the note keeps the bare address, which reads as a link, no image is loaded, and no request is made to example.org
 
 ### Requirement: Checklist items become subtasks
 On a check-list line, or a selection holding check-list lines, in a task's notes the editor SHALL offer Make subtask (slash menu, context menu and a key combination registered in the shortcut registry); it SHALL create one subtask of the task per check-list line with the line's text as title, the task's project, and the line's checked state as completion. In a project's note and in a standalone note the same command, the same key and the same menus SHALL offer Make tasks: one task per check-list line, its line read with quick-add syntax (a date, a priority, labels), in the project of the note (a standalone note without a project: the Inbox of the note's workspace), with the line's checked state as completion. Either command SHALL replace each line with a paragraph holding a link to its task, and SHALL be one change that Undo reverts in one step, the tasks and the note together. Lines of the selection that are not check-list lines, and lines that already hold only a link to a task, SHALL be left as they are; one command SHALL turn at most 50 lines and say so when the selection holds more. The link SHALL show the task's current title and done state when the task is on the device, and the stored text otherwise, so the note's Linked references and the task's Linked references connect the two. The tasks and the note change SHALL be written as local operations in one batch, offline included, and SHALL converge like any task creation and note edit: a concurrent edit of the same note on another device merges with the replaced lines. Viewers of a shared project SHALL not be offered either command. The commands SHALL not be offered in comments.
@@ -427,3 +427,94 @@ While Habits is on, in a project note or a standalone note, **Make habits** (the
 #### Scenario: Offline
 - **WHEN** the device is offline and the user makes two habits from a note
 - **THEN** both exist at once and reach the other devices on the next sync
+
+### Requirement: Bare addresses read as links
+In the rich-text editor, an `http(s)` address in a note's text, outside code and outside a link, SHALL read as a link that Ctrl/Cmd-click opens in a new tab, by the same rule the read-only views use, while the note SHALL keep the address as typed. A pasted plain-text address SHALL stay text, and a pasted link whose text is its own address (a trailing slash aside) SHALL be kept as the bare address; a pasted link with other text SHALL stay a link.
+
+#### Scenario: Typed address
+- **WHEN** the user types `see https://example.com today` in a note
+- **THEN** the address reads as a link that Ctrl/Cmd-click opens, and the note's Markdown is `see https://example.com today`
+
+#### Scenario: Pasted link from another app
+- **WHEN** the user pastes a link whose text is `https://example.com` and whose address is `https://example.com/`
+- **THEN** the note holds the bare address `https://example.com` and shows it as a link
+
+#### Scenario: Address in code
+- **WHEN** a note has `https://example.com` inside inline code or a code block
+- **THEN** it does not read as a link
+
+### Requirement: Copying a code block
+Every fenced code block SHALL have a Copy button in its top end corner, on every surface that shows one: rendered notes, comments, answers and public pages, and the rich-text editor where notes and comments are written. Activating it SHALL put the block's text on the clipboard as plain text, without the fence lines, with its own indentation and with no trailing newline, and SHALL announce that it was copied, or that it could not be copied when the browser refuses the clipboard. The button SHALL behave the same in the editor as in rendered text: activating it SHALL NOT move the caret or change the selection, and SHALL NOT write to the note. A note the reader may not edit SHALL also offer a **Copy note** action, reachable with the keyboard, that copies the note's Markdown. Nothing about either is stored or synced.
+
+#### Scenario: Copy a command
+- **WHEN** a note shows a code block containing `docker compose up -d` and the user activates its Copy button
+- **THEN** the clipboard holds `docker compose up -d` and the button announces "Copied"
+
+#### Scenario: Copy a command while editing the note
+- **WHEN** the task page shows the notes in the editor, the caret is in the title's paragraph, and the user activates the Copy button of a code block in the notes
+- **THEN** the clipboard holds the block's text without its fences or trailing newline, the button announces "Copied", and the caret is still in the paragraph it was in
+
+#### Scenario: The editor and the rendered text agree
+- **WHEN** the same fenced block is copied once in the editor and once in a comment that renders it
+- **THEN** the clipboard holds the same text both times
+
+#### Scenario: The block stays writable
+- **WHEN** the caret is in a code block in the editor and the user types
+- **THEN** the characters reach the block's text, as they do in any other block, and the block still shows its Copy button
+
+#### Scenario: Indentation is kept
+- **WHEN** a code block holds a Python snippet whose body lines are indented
+- **THEN** the copied text keeps the indentation of every line
+
+#### Scenario: A viewer copies
+- **WHEN** a viewer of a shared project opens a note whose text holds a code block
+- **THEN** the code block shows its Copy button and the viewer can copy it
+
+#### Scenario: Copy a whole note from the keyboard
+- **WHEN** a viewer of a shared project moves through the note's controls with the Tab key and activates **Copy note**
+- **THEN** the clipboard holds the note's Markdown and the action announces that it was copied
+
+#### Scenario: Clipboard refused
+- **WHEN** the browser refuses both the Clipboard API and the fallback
+- **THEN** the button announces that it could not copy, and the text stays on screen to select
+
+### Requirement: A checklist becomes a bullet list again
+Bullet list (the formatting row, the `/` menu and `Ctrl+Shift+8`) run with the caret or the selection in a checklist SHALL remove the checkbox of every item of that list, checked or not, and keep each item's text, its order and its nested lists. Outside a checklist it SHALL wrap the selection in a bullet list as before.
+
+#### Scenario: Back to bullets
+- **WHEN** a note holds the checklist "buy milk" (checked) and "bread", and the user taps Bullet list with the caret in "buy milk"
+- **THEN** the note reads `- buy milk` and `- bread`
+
+#### Scenario: A plain line
+- **WHEN** the caret is in the paragraph "eggs" and the user taps Bullet list
+- **THEN** the note reads `- eggs`
+
+### Requirement: Indent and Outdent without a keyboard
+The editor SHALL offer **Indent** and **Outdent** as commands in the formatting row's More menu and in the `/` menu, doing what Tab and Shift-Tab do in a list: Indent SHALL nest the line under the line above it, and Outdent SHALL move it one level out, out of the list from the top level. Indent SHALL be offered only on a list line with a line above it in the same list, and Outdent only on a list line.
+
+#### Scenario: Nest and bring back
+- **WHEN** the caret is in "paint", the second line of the bullet list "fence", "paint", and the user chooses Indent from More
+- **THEN** the note reads `- fence` with `- paint` nested under it, and choosing Outdent brings it back to `- fence` and `- paint`
+
+#### Scenario: Not offered where nothing would move
+- **WHEN** the caret is in the first line of a list, or in a paragraph outside a list
+- **THEN** Indent is not offered, and in the paragraph Outdent is not offered either
+
+### Requirement: Links open by touch
+On a touch screen, a tap on a link in the notes editor SHALL open the link instead of placing the caret: a web or mail address in a new tab (in the native apps, the system browser), and a link to a note, task or project in the app, as Ctrl or Cmd and a click does with a mouse. A tap SHALL be one finger that lifts within 500 ms and within 10 px of where it touched, on the same link. A finger that moves or stays down, two fingers, and mouse, pen and keyboard input SHALL keep the editor's other rules, and a tap on text that is not a link SHALL still start editing. Only addresses the editor renders as links SHALL open (http, https and mailto, and the app's `?note=`, `?task=` and `?project=` addresses).
+
+#### Scenario: Tap a web link
+- **WHEN** the user taps the link "the ferry" (https://example.com/ferry) in a task's notes on a phone
+- **THEN** the address opens in a new tab, or in the phone's browser in the apps, and the notes are not put into editing
+
+#### Scenario: Tap a link to a project
+- **WHEN** the user taps a link to the project "Lisbon" in a task's notes on a phone
+- **THEN** the project opens in the app
+
+#### Scenario: Scroll over a link
+- **WHEN** the user's finger lands on a link and moves 30 px before lifting
+- **THEN** nothing opens and the editor handles the touch as before
+
+#### Scenario: A mouse click
+- **WHEN** the user clicks a link in the notes with a mouse, without Ctrl or Cmd
+- **THEN** the caret is placed in the link and nothing opens

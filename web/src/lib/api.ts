@@ -1,6 +1,6 @@
 import { errorMessage } from './i18n/errors'
 import { t } from './i18n/catalog'
-import { fetchWithTimeout, NetworkError, RequestTimeoutError, timeouts } from './http'
+import { fetchWithTimeout, FileReadError, NetworkError, RequestTimeoutError, timeouts } from './http'
 import type { Branding } from './branding'
 import type { AssistantSkill } from './assistantSkills'
 import type { AgentAccess, ApiToken, McpConsentInfo, McpOAuthClient, McpOAuthClients, McpOAuthTarget, McpStatus, TokenScope } from './assistants'
@@ -18,7 +18,7 @@ import type {
   SpeechSettingsInput,
   ConfigWarning,
   AppPassword, CaldavSetting, EmailDigest, EmailDigestInput, EmailInbox,
-  AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, StorageStatus, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
+  AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, StorageStatus, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushNotify, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
   MemberInvitation, PendingAnswer,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput, IssueActionResult, IssueConnection, IssueConnectionInput,
   CalendarConnection, CalendarConnectionPatch, CalendarSyncRun, SyncScope, GoogleClientSetting, MicrosoftClientSetting,
@@ -28,7 +28,7 @@ import type {
 } from './types'
 import { createSignal } from './store'
 
-export { fetchWithTimeout, isTransientNetworkError, NetworkError, RequestTimeoutError, setRequestTimeouts, transferTimeoutMs } from './http'
+export { fetchWithTimeout, FileReadError, isTransientNetworkError, NetworkError, RequestTimeoutError, setRequestTimeouts, transferTimeoutMs } from './http'
 
 export class ApiError extends Error {
   /** The server's own message (English, a machine contract). */
@@ -109,7 +109,8 @@ function reauthenticate(): Promise<boolean> {
 interface RequestOptions { signal?: AbortSignal }
 
 /** Sync protocol additions this client supports (POST /api/v1/sync `features`). */
-export const SYNC_FEATURES = ['clock_skew', 'backfill_ack']
+// `invalid_ops` (sync-invalid-op-alone D1): an op the server cannot accept is refused alone.
+export const SYNC_FEATURES = ['clock_skew', 'backfill_ack', 'invalid_ops']
 /**
  * Sent while the device copies the account for the first time (cursor 0 until
  * the last page): the server leaves out note history the copy never needs
@@ -144,9 +145,20 @@ async function send<T>(method: string, path: string, body?: unknown, opts: Reque
 
 /** Multipart upload for the import routes: the file plus the options as one JSON part. */
 async function upload<T>(path: string, file: Blob, filename: string, options: ImportOptions): Promise<T> {
+  // Read the bytes before the request. A file the system picker handed over (a content://
+  // URI on Android) can fail to stream while fetch sends it; the browser then rejects fetch
+  // with a TypeError that looks like a dropped connection, so the screen says "offline"
+  // when the real trouble is reading the file (#1606). Reading it here reports that as a
+  // file problem and sends a body already in memory.
+  let bytes: ArrayBuffer
+  try {
+    bytes = await file.arrayBuffer()
+  } catch (err) {
+    throw new FileReadError(err)
+  }
   const form = new FormData()
   form.append('options', JSON.stringify(options))
-  form.append('file', file, filename)
+  form.append('file', new Blob([bytes], { type: file.type }), filename)
   const res = await fetchWithTimeout(path, { method: 'POST', body: form, credentials: 'same-origin', timeoutMs: timeouts.transfer })
   return parse<T>(res)
 }
@@ -354,12 +366,19 @@ export const api = {
     const s = q.toString()
     return request<ActivityPage>('GET', `/api/v1/activity${s ? `?${s}` : ''}`)
   },
+  // A workspace's activity (workspace-activity): every actor's events in its projects and Inbox the caller can read.
+  workspaceActivity: (id: string, opts: { cursor?: string; project?: string; actor?: string; kind?: string; from?: number; to?: number } = {}) => {
+    const q = new URLSearchParams()
+    for (const k of ['cursor', 'project', 'actor', 'kind', 'from', 'to'] as const) if (opts[k] !== undefined && opts[k] !== '') q.set(k, String(opts[k]))
+    const s = q.toString()
+    return request<ActivityPage>('GET', `/api/v1/workspaces/${encodeURIComponent(id)}/activity${s ? `?${s}` : ''}`)
+  },
   // Web push (OpenSpec change `reminders`). 404 when the operator turned push off.
   pushKey: (device?: string) =>
     request<{ publicKey: string; subscription?: PushSubscriptionStatus | null }>(
       'GET', `/api/v1/push/vapid-key${device ? `?device=${encodeURIComponent(device)}` : ''}`,
     ),
-  pushSubscribe: (body: { deviceId: string; endpoint: string; keys: { p256dh: string; auth: string }; includeContent: boolean }) =>
+  pushSubscribe: (body: { deviceId: string; endpoint: string; keys: { p256dh: string; auth: string }; includeContent: boolean; notify?: PushNotify }) =>
     request<{ subscription: PushSubscriptionStatus }>('POST', '/api/v1/push/subscriptions', body),
   pushUnsubscribe: (id: string) => request<void>('DELETE', `/api/v1/push/subscriptions/${encodeURIComponent(id)}`),
   pushTest: (deviceId: string) => request<PushTestResponse>('POST', '/api/v1/push/test', { deviceId }),
@@ -404,6 +423,8 @@ export const api = {
   deleteEncryptionKeys: () => request<void>('DELETE', '/api/v1/encryption/keys'),
   purgeEncryptionHistory: () => request<{ purged: number; notice: string }>('POST', '/api/v1/encryption/purge-history'),
   caldavSwitch: ownerSwitch<CaldavSetting>('caldav'),
+  // Push to calendar apps (OpenSpec change caldav-push); available is false without web push.
+  caldavPushSwitch: ownerSwitch<{ enabled: boolean; available: boolean }>('caldav/push'),
   listAppPasswords: () => request<{ appPasswords: AppPassword[] }>('GET', '/api/v1/app-passwords'),
   createAppPassword: (name: string, scope?: SyncScope, events = false) =>
     request<{ appPassword: AppPassword; secret: string }>('POST', '/api/v1/app-passwords', { name, ...(scope ? { scope } : {}), ...(events ? { events: true } : {}) }),
@@ -537,6 +558,8 @@ export const api = {
   putThemeDefault: (d: { light: string; dark: string }) => request<unknown>('PUT', '/api/v1/settings/themes/default', d),
   putInstanceTheme: (id: string, doc: unknown) => request<unknown>('PUT', `/api/v1/settings/themes/instance/${encodeURIComponent(id)}`, doc),
   deleteInstanceTheme: (id: string) => request<unknown>('DELETE', `/api/v1/settings/themes/instance/${encodeURIComponent(id)}`),
+  // The server's "Click a task to" default (click-default D2); members read it in auth/status.
+  putRowClickDefault: (value: 'select' | 'open') => request<{ default: string }>('PUT', '/api/v1/settings/row-click', { default: value }),
   // Calendar feeds (OpenSpec calendar-feeds).
   calendarFeedsSwitch: ownerSwitch('calendar-feeds'),
   calendarSubscriptions: () => request<{ subscriptions: CalendarSubscription[] }>('GET', '/api/v1/calendar-feeds/subscriptions'),
@@ -724,6 +747,14 @@ export function auditExportUrl(filters: AuditFilters = {}): string {
  * route links the provider to the signed-in account instead.
  */
 export const OIDC_START_URL = '/api/v1/auth/oidc/start'
+
+/**
+ * The same route from Settings or a re-authentication, where a session exists.
+ * A browser decides by that session alone; the Android and iPhone apps run the
+ * provider step in the system browser, which has none, so `mode=link` tells
+ * them to start the flow as a link (OpenSpec app-sso-system-browser D3).
+ */
+export const OIDC_LINK_URL = `${OIDC_START_URL}?mode=link`
 
 /** True for failures that mean "no server reachable" rather than a server answer. */
 export function isNetworkError(err: unknown): boolean {

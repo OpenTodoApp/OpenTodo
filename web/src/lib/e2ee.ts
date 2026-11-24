@@ -473,7 +473,7 @@ export async function decryptChanges<T extends { field: string; from: unknown; t
   })))
 }
 
-type ActivityLike = { entity: 'task' | 'project' | 'comment'; entityId: string; taskId?: string; taskTitle?: string; changes: { field: string; from: unknown; to: unknown }[] }
+type ActivityLike = { entity: 'task' | 'project' | 'comment' | 'time_entry'; entityId: string; taskId?: string; taskTitle?: string; changes: { field: string; from: unknown; to: unknown }[] }
 
 /** Decrypt the values and resolved task titles of a page of server activity events. */
 export async function decryptActivityPage<P extends { events: ActivityLike[] }>(page: P): Promise<P> {

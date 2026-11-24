@@ -1,5 +1,5 @@
 {
- "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes) and day-parts (ctx.dayParts; dayPart and evening are compared when a case states them) and task-energy (ctx.energy; energy, \"\" for none, is compared when a case states it) and time-sectors (ctx.sectors and ctx.weekStart; sector, \"\" for none, is compared when a case states it) and quick-add-month-and-every-other (bare months, \"every other\") and quick-add-by-deadline (\"by\" words; deadline, \"\" for none, is compared when a case states it) and quick-add-weekday-recurrence (every other weekday, week intervals on a weekday, start phrases, connectors) and recurrence-1-0-compatible (a rule on one weekday whose due date falls on it is every N weeks). and more-languages (Dutch: half hours, 's middags, guarded weekday abbreviations, a weekday before a date). Every scenario of its spec deltas is a case.",
+ "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes) and day-parts (ctx.dayParts; dayPart and evening are compared when a case states them) and task-energy (ctx.energy; energy, \"\" for none, is compared when a case states it) and time-sectors (ctx.sectors and ctx.weekStart; sector, \"\" for none, is compared when a case states it) and quick-add-month-and-every-other (bare months, \"every other\") and quick-add-by-deadline (\"by\" words; deadline, \"\" for none, is compared when a case states it) and quick-add-weekday-recurrence (every other weekday, week intervals on a weekday, start phrases, connectors) and recurrence-1-0-compatible (a rule on one weekday whose due date falls on it is every N weeks). and more-languages (Dutch: half hours, 's middags, guarded weekday abbreviations, a weekday before a date; Polish: inflected weekdays and months). Every scenario of its spec deltas is a case. And quick-add-links (ctx.links; links, [] for none, is compared when a case states it).",
  "cases": [
   {
    "name": "Water plants every Monday",
@@ -7953,6 +7953,300 @@
    }
   },
   {
+   "name": "A dashed range is not a date, month first (dash-ranges)",
+   "line": "Buy 3-4 tomatoes",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Buy 3-4 tomatoes",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "A dashed range at the start is not a date (dash-ranges)",
+   "line": "4-5 scoops of pinto beans",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "4-5 scoops of pinto beans",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "A dashed date with a year is a date, month first (dash-ranges)",
+   "line": "Pay rent 3-4-2027",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Pay rent",
+    "due": {
+     "date": "2027-03-04"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "A slashed date is still a date, month first (dash-ranges)",
+   "line": "Pay rent 3/4",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Pay rent",
+    "due": {
+     "date": "2027-03-04"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "A dashed date is a date, day first (dash-ranges)",
+   "line": "Pay rent 3-4",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [],
+    "dayMonthOrder": "DM"
+   },
+   "expect": {
+    "title": "Pay rent",
+    "due": {
+     "date": "2027-04-03"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "A dashed date after \"on\" is a date, month first (dash-ranges)",
+   "line": "Dentist on 3-4",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Dentist",
+    "due": {
+     "date": "2027-03-04"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "A dashed date after \"on\", with a time, month first (dash-ranges)",
+   "line": "Dentist on 3-4 at 9",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Dentist",
+    "due": {
+     "date": "2027-03-04",
+     "time": "09:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "A dashed deadline after \"by\", month first (dash-ranges)",
+   "line": "File taxes by 4-15",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "File taxes",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": "2027-04-15"
+   }
+  },
+  {
+   "name": "A dashed end after \"until\", month first (dash-ranges)",
+   "line": "Water plants every day until 12-31",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Water plants",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every day until 2026-12-31",
+    "reminders": []
+   }
+  },
+  {
+   "name": "A range and a date in one line, month first (dash-ranges)",
+   "line": "Read pages 3-4 tomorrow",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Read pages 3-4",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "An impossible month-first dash stays text (dash-ranges)",
+   "line": "Party 25-12",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Party 25-12",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "English first sets month first: a Dutch dash is text (dash-ranges)",
+   "line": "Verjaardag 3-3",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en",
+     "nl"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Verjaardag 3-3",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
    "name": "Dutch: Belastingaangifte op 1 mei 2027",
    "line": "Belastingaangifte op 1 mei 2027",
    "ctx": {
@@ -9172,6 +9466,965 @@
     "spentMinutes": null,
     "recurrence": "every last sunday of march",
     "reminders": []
+   }
+  },
+  {
+   "name": "Polish: Podlać kwiaty dziś",
+   "line": "Podlać kwiaty dziś",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Podlać kwiaty",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Polish: Zadzwonić dziś wieczorem",
+   "line": "Zadzwonić dziś wieczorem",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Zadzwonić",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "dayPart": null,
+    "evening": true
+   }
+  },
+  {
+   "name": "Polish: Zapłacić czynsz jutro",
+   "line": "Zapłacić czynsz jutro",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Zapłacić czynsz",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Polish: Impreza pojutrze",
+   "line": "Impreza pojutrze",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Impreza",
+    "due": {
+     "date": "2026-10-11"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Polish: Spotkanie w piątek",
+   "line": "Spotkanie w piątek",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Spotkanie",
+    "due": {
+     "date": "2026-10-16"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Polish: Dentysta w środę o 15:00",
+   "line": "Dentysta w środę o 15:00",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Dentysta",
+    "due": {
+     "date": "2026-10-14",
+     "time": "15:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Polish: Zadzwonić do mamy jutro o 9:30",
+   "line": "Zadzwonić do mamy jutro o 9:30",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Zadzwonić do mamy",
+    "due": {
+     "date": "2026-10-10",
+     "time": "09:30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Polish: Raport 12 listopada",
+   "line": "Raport 12 listopada",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Raport",
+    "due": {
+     "date": "2026-11-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Polish: Wysłać fakturę 3 grudnia o 14:00",
+   "line": "Wysłać fakturę 3 grudnia o 14:00",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Wysłać fakturę",
+    "due": {
+     "date": "2026-12-03",
+     "time": "14:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Polish: Siłownia codziennie",
+   "line": "Siłownia codziennie",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Siłownia",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every day",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Polish: Przegląd co poniedziałek",
+   "line": "Przegląd co poniedziałek",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Przegląd",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Polish: Sprzątanie co drugi tydzień",
+   "line": "Sprzątanie co drugi tydzień",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Sprzątanie",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Polish: Faktura za 3 dni",
+   "line": "Faktura za 3 dni",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Faktura",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Polish: Odpisać na maile jutro przypomnij mi 1 godzinę wcześniej",
+   "line": "Odpisać na maile jutro przypomnij mi 1 godzinę wcześniej",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Odpisać na maile",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [
+     {
+      "kind": "offset",
+      "minutes": -60
+     }
+    ]
+   }
+  },
+  {
+   "name": "Polish: Zadzwonić do mamy",
+   "line": "Zadzwonić do mamy",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Zadzwonić do mamy",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Polish: Raport każdego pierwszego poniedziałku miesiąca",
+   "line": "Raport każdego pierwszego poniedziałku miesiąca",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Raport",
+    "due": {
+     "date": "2026-11-02"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 1st monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Polish: Wniosek do piątku",
+   "line": "Wniosek do piątku",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Wniosek",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": "2026-10-16"
+   }
+  },
+  {
+   "name": "Polish: Bieganie co wtorek i czwartek o 7:00",
+   "line": "Bieganie co wtorek i czwartek o 7:00",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Bieganie",
+    "due": {
+     "date": "2026-10-13",
+     "time": "07:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every tuesday, thursday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "link: becomes an attachment",
+   "line": "Review the mockup https://example.com/mockup tomorrow",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "Review the mockup",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": [
+     "https://example.com/mockup"
+    ]
+   }
+  },
+  {
+   "name": "link: sentence punctuation leaves with it",
+   "line": "Read the spec at https://example.com/a(b).",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "Read the spec at",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": [
+     "https://example.com/a(b)"
+    ]
+   }
+  },
+  {
+   "name": "link: an unbalanced bracket is not the URL's",
+   "line": "Docs https://example.com/x) here",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "Docs here",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": [
+     "https://example.com/x"
+    ]
+   }
+  },
+  {
+   "name": "link: a token that does not start with it stays",
+   "line": "See (https://example.com/x) please",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "See (https://example.com/x) please",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": []
+   }
+  },
+  {
+   "name": "link: quoted is text",
+   "line": "Note \"https://example.com\" again",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "Note https://example.com again",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": []
+   }
+  },
+  {
+   "name": "link: a line that is only a link keeps it",
+   "line": "https://example.com/article",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "https://example.com/article",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": []
+   }
+  },
+  {
+   "name": "link: a link and a date only keep the link as title",
+   "line": "https://example.com/a tomorrow",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "https://example.com/a",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": []
+   }
+  },
+  {
+   "name": "link: other schemes stay",
+   "line": "Open javascript:alert(1) ftp://example.com/f",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "Open javascript:alert(1) ftp://example.com/f",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": []
+   }
+  },
+  {
+   "name": "link: no host is no link",
+   "line": "Try https:///path please",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "Try https:///path please",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": []
+   }
+  },
+  {
+   "name": "link: five at most",
+   "line": "Links https://a.example/1 https://a.example/2 https://a.example/3 https://a.example/4 https://a.example/5 https://a.example/6",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "Links https://a.example/6",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": [
+     "https://a.example/1",
+     "https://a.example/2",
+     "https://a.example/3",
+     "https://a.example/4",
+     "https://a.example/5"
+    ]
+   }
+  },
+  {
+   "name": "link: with a project and a label",
+   "line": "Book https://example.com/hotel #Home @trip",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "Book",
+    "due": null,
+    "projectId": "p-home",
+    "labels": [
+     "trip"
+    ],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": [
+     "https://example.com/hotel"
+    ]
+   }
+  },
+  {
+   "name": "link: any letter case",
+   "line": "Check HTTPS://Example.com/Page",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "links": true
+   },
+   "expect": {
+    "title": "Check",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": [
+     "HTTPS://Example.com/Page"
+    ]
+   }
+  },
+  {
+   "name": "link: not read without ctx.links",
+   "line": "Read https://example.com/post",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Read https://example.com/post",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "links": []
    }
   }
  ]

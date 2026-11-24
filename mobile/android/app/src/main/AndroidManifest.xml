@@ -11,6 +11,9 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- The web view opens no microphone without it: getUserMedia fails at once, with
+         the permission granted (GitHub issue 1582). Granted at install, no prompt. -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <!-- A phone without a microphone can still install the app; dictation is then unavailable. -->
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <!-- Location reminders (location-reminders D4): platform proximity alerts only; the position stays on the phone. -->
@@ -31,6 +34,16 @@
         </intent>
         <intent>
             <action android:name="org.unifiedpush.android.distributor.REGISTER" />
+        </intent>
+        <!-- app-sso-system-browser: the browsers, and which of them offer Custom Tabs, so that
+             single sign-on opens in one named browser, never in whatever app handles https. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
         </intent>
     </queries>
 
@@ -54,6 +67,15 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- app-sso-system-browser: single sign-on returns from the browser with a single-use
+                 code. Any app may open this address; only a sign-in this app started, with its
+                 state and its PKCE verifier, is redeemed. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="opentodo" android:host="sso" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
@@ -82,6 +104,7 @@
             android:windowSoftInputMode="adjustResize" />
 
         <receiver android:name=".AlarmReceiver" android:exported="false" />
+        <receiver android:name=".FocusEndReceiver" android:exported="false" />
         <receiver android:name=".NotificationActionReceiver" android:exported="false" />
         <receiver android:name=".GeofenceReceiver" android:exported="false" />
         <!-- shell-push D2: the distributor's answers and messages. Exported, as UnifiedPush needs
@@ -115,6 +138,12 @@
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_quick_add" />
+        </receiver>
+        <receiver android:name=".CompletedWidget" android:exported="false" android:label="@string/widget_completed">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_completed" />
         </receiver>
     </application>
 </manifest>

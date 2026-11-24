@@ -7,14 +7,32 @@ import { isContentField } from '../../../web/src/lib/e2eeEnvelope'
 import type { Entity } from '../../../web/src/lib/types'
 import { nameId } from '../../../web/src/lib/ids'
 import { isTaskLine, type Doc } from './doc'
-import { goJSON, hashOf, opID, own, short, sortedKeys, utf8 } from './gojson'
+import { goJSON, hashOf, opID, own, prefixHash, short, sortedKeys, utf8 } from './gojson'
 import { merge } from './merge'
 import { plan } from './plan'
 import { checkOwner, loadState, LEASE_MS, randomDevice, saveState, takeOver } from './state'
 import * as S from './store'
-import { LimitError, TaskNotesError, type Event, type Options, type Reply, type Report, type Request, type State } from './types'
+import { LimitError, TaskNotesError, type Event, type FileState, type Options, type Reply, type Report, type Request, type State } from './types'
 import { isCiphertext, View } from './view'
 import { localDateTime } from './zone'
+
+/** How long an empty file stays held as half saved (engine.go halfSavedHold). */
+const HALF_SAVED_HOLD = 5 * 60_000
+
+/**
+ * Whether text looks like the file fs was written as, cut short by a save in
+ * progress (engine.go cutShort): shorter than what was written, and everything
+ * up to its last line end a prefix of it that ends at a line end. With no
+ * prefixes kept, a shorter file without its last line end counts as cut short.
+ */
+function cutShort(text: string, fs: FileState): boolean {
+  const size = utf8(text).length
+  if (!fs.size || size === 0 || size >= fs.size) return false
+  if (!fs.prefixes || fs.prefixes.length === 0) return !text.endsWith('\n')
+  const k = text.lastIndexOf('\n') + 1
+  if (k === 0) return true
+  return fs.prefixes.includes(prefixHash(text.slice(0, k)))
+}
 
 export const MAX_FILE_BYTES = 1 << 20
 export const MAX_FILE_LINES = 5000
@@ -22,7 +40,7 @@ export const MAX_TASKS = 20000
 export const MAX_NOTE_BYTES = 64 << 10
 
 /** The protocol additions the vault handles. */
-const FEATURES = ['clock_skew', 'backfill_ack']
+const FEATURES = ['clock_skew', 'backfill_ack', 'invalid_ops']
 
 /** A pending value of a field: what the Go engine keeps in its map[string]any bodies. */
 export type Body = Map<string, unknown>
@@ -49,12 +67,24 @@ export class Engine {
   retouch = new Set<string>()
   takeOver = false
   pending = new Set<string>()
+  /** The half-saved files among pending, with their first hold time. */
+  held = new Map<string, number>()
   /** Plaintext of ciphertext values: entity\0id\0field\0value → text, null when it does not open. */
   plain: Map<string, string | null>
 
   constructor(public o: Options, st: State) {
     this.st = st
+    // Files held half saved last sync merge against what they were printed
+    // from; the app's newer values stay in the store (engine.go Sync).
     this.base = st.store
+    if (st.held && Object.keys(st.held).length > 0) {
+      this.base = S.clone(st.store)
+      for (const [entity, rows] of Object.entries(st.held)) {
+        this.base[entity] ??= {}
+        for (const [id, row] of Object.entries(rows)) this.base[entity][id] = row
+      }
+    }
+    delete st.held
     this.app = S.clone(st.store)
     this.startCursor = st.cursor
     this.plain = o.plain ?? new Map<string, string | null>()
@@ -344,10 +374,61 @@ export class Engine {
     }
   }
 
+  /**
+   * The vault files that look like an editor's first save step (engine.go
+   * halfSaved): empty now, holding text when the last sync wrote them, and not
+   * emptied because all their lines moved to other files. A held file stays
+   * held while it is empty, up to HALF_SAVED_HOLD from its first hold; then it
+   * was emptied on purpose and syncs as it is.
+   */
+  halfSaved(): string[] {
+    const out: string[] = []
+    const empty = hashOf('')
+    const now = this.o.now()
+    for (const p of sortedKeys(this.disk)) {
+      const fs = own(this.st.files, p) ? this.st.files[p] : undefined
+      const text = this.disk.get(p)!
+      if (!fs || fs.hash === empty || (fs.hash !== '' && fs.hash === hashOf(text))) continue
+      if (text !== '' && !cutShort(text, fs)) continue
+      // An empty file is held unless every task it lost is in another file (a
+      // move); a file cut short only when it lost a task line that is in no
+      // other file (engine.go halfSaved).
+      const [missing, elsewhere] = this.lostLines(p, text)
+      if ((text === '' && missing > 0 && elsewhere) || (text !== '' && (missing === 0 || elsewhere))) continue
+      if (fs.hash === '' && fs.held && now >= fs.held && now - fs.held < HALF_SAVED_HOLD) this.held.set(p, fs.held)
+      else if (fs.hash !== '') this.held.set(p, now)
+      else continue
+      out.push(p)
+    }
+    return out
+  }
+
+  /**
+   * The tasks printed in file p that cur (the file now) no longer holds, and
+   * whether every one of them is in another file (engine.go lostLines).
+   */
+  private lostLines(p: string, cur: string): [number, boolean] {
+    let missing = 0
+    let elsewhere = true
+    for (const [id, at] of Object.entries(this.st.printed)) {
+      if (at !== p) continue
+      const mark = `🆔 ${id}`
+      if (cur.includes(mark)) continue
+      missing++
+      let found = false
+      for (const [q, text] of this.disk) if (q !== p && text.includes(mark)) { found = true; break }
+      if (!found) elsewhere = false
+    }
+    return [missing, elsewhere]
+  }
+
   /** The app becomes the base, except the rows of files a read-only run or a missing download left pending. */
   saveBase(): void {
     const next = S.clone(this.app)
-    const pendingFile = new Set(this.pending)
+    // A half-saved file's base is held in st.held instead (engine.go saveBase,
+    // holdRaced): the store takes the app's values, so a change made in the app
+    // while the file is held still counts as one once the save is read.
+    const pendingFile = new Set([...this.pending].filter((p) => !this.held.has(p)))
     if (this.o.readOnly) for (const p of this.changed) pendingFile.add(p)
     const keep = (entity: string, id: string) => {
       const row = S.get(this.base, entity, id)
@@ -361,6 +442,20 @@ export class Engine {
       if (fs && fs.project !== '') keep('project', fs.project)
     }
     this.st.store = next
+    const held: S.Store = {}
+    const hold = (entity: string, id: string) => {
+      const row = S.get(this.base, entity, id)
+      if (row === undefined) return
+      held[entity] ??= {}
+      held[entity][id] = row
+    }
+    for (const id of Object.keys(this.st.printed)) if (this.held.has(this.st.printed[id])) hold('task', id)
+    for (const p of sortedKeys(this.st.files)) {
+      const fs = this.st.files[p]
+      if (this.held.has(p) && fs.project !== '') hold('project', fs.project)
+    }
+    if (Object.keys(held).length > 0) this.st.held = held
+    else delete this.st.held
   }
 
   /** The tasks the vault prints: open tasks of live projects and the Inbox, and completed ones that keep their line. */
@@ -411,6 +506,17 @@ export async function sync(o: Options): Promise<Report> {
   const e = new Engine(o, st)
   e.takeOver = taken
   await e.scan()
+  // A file that held text when the sync last wrote it and is empty now, or cut
+  // short of it, is an editor's save in progress (engine.go halfSaved): held
+  // like a file not downloaded yet, neither read nor written, its base kept.
+  for (const p of e.halfSaved()) {
+    const empty = e.disk.get(p) === ''
+    e.disk.delete(p)
+    e.changed.delete(p)
+    e.pending.add(p)
+    if (empty) e.event('skipped', p, '', `skipped ${p}: it is empty, as while a file is being saved; the next sync reads it`)
+    else e.event('skipped', p, '', `skipped ${p}: it ends short of what was written, as while a file is being saved; the next sync reads it`)
+  }
   await e.pull()
   await e.openAll(e.base)
   await e.openAll(e.app)

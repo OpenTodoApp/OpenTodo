@@ -4,10 +4,13 @@ import (
 	"archive/zip"
 	"bytes"
 	"errors"
+	"fmt"
 	"image"
+	"image/color"
 	"image/jpeg"
 	"image/png"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -15,6 +18,7 @@ import (
 	"strconv"
 
 	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/imgfit"
 )
 
 // Profile pictures (OpenSpec change settings-refresh, design D10). The client
@@ -61,8 +65,14 @@ func decodeAvatar(body []byte) ([]byte, error) {
 	if err != nil {
 		return nil, errors.New("the image could not be read")
 	}
+	return encodeAvatar(img)
+}
+
+// encodeAvatar writes a picture as the stored JPEG, on white: JPEG has no
+// transparency, and a transparent pixel would otherwise turn black.
+func encodeAvatar(img image.Image) ([]byte, error) {
 	var out bytes.Buffer
-	if err := jpeg.Encode(&out, img, &jpeg.Options{Quality: avatarQuality}); err != nil {
+	if err := jpeg.Encode(&out, imgfit.Flatten(img, color.White), &jpeg.Options{Quality: avatarQuality}); err != nil {
 		return nil, err
 	}
 	return out.Bytes(), nil
@@ -204,16 +214,27 @@ func (s *Server) removeAvatar(userID string) {
 }
 
 // exportAvatar adds the account's picture to its export archive as profile/picture.jpg.
-func (s *Server) exportAvatar(zw *zip.Writer, userID string) {
+// exportAvatar adds the account's profile picture to the zip export. No picture is
+// no entry; a picture that exists but cannot be read or written is an error, so the
+// export is aborted rather than finished without it (client-data-safety).
+func (s *Server) exportAvatar(zw *zip.Writer, userID string) error {
 	path := s.avatarPath(userID)
 	if path == "" {
-		return
+		return nil
 	}
 	data, err := os.ReadFile(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
 	if err != nil {
-		return
+		return fmt.Errorf("read profile picture: %w", err)
 	}
-	if fw, err := zw.CreateHeader(&zip.FileHeader{Name: "profile/picture.jpg", Method: zip.Store}); err == nil {
-		_, _ = fw.Write(data)
+	fw, err := zw.CreateHeader(&zip.FileHeader{Name: "profile/picture.jpg", Method: zip.Store})
+	if err != nil {
+		return fmt.Errorf("profile picture entry: %w", err)
 	}
+	if _, err := fw.Write(data); err != nil {
+		return fmt.Errorf("write profile picture: %w", err)
+	}
+	return nil
 }

@@ -81,8 +81,21 @@ export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 40
     return () => window.removeEventListener('keydown', onKey, true)
   }, [open, hide])
 
+  // Placed when it opens, and again whenever its own size changes: a tip that opened
+  // before the web font arrived grows with it, and against the viewport's edge its
+  // first place would leave it running past that edge.
   useLayoutEffect(() => {
     if (!open) { setPos(null); return }
+    const t = tip.current
+    if (!t) return
+    place()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => place())
+    ro.observe(t)
+    return () => ro.disconnect()
+  }, [open, side]) // eslint-disable-line react-hooks/exhaustive-deps -- place reads the refs and the side
+
+  function place() {
     const a = anchor.current, t = tip.current
     if (!a || !t) return
     const r = a.getBoundingClientRect()
@@ -101,7 +114,7 @@ export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 40
     if (side === 'top' && top < 0) top = r.bottom + GAP
     const left = Math.max(8, Math.min(vw - w - 8, r.left + r.width / 2 - w / 2))
     setPos({ top: Math.max(0, top), left })
-  }, [open, side])
+  }
 
   const child = children
   const described = [child.props['aria-describedby'] as string | undefined, open ? id : undefined].filter(Boolean).join(' ') || undefined

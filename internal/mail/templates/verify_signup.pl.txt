@@ -1,0 +1,9 @@
+Potwierdź konto OpenTodo
+
+To potwierdzenie rejestracji od OpenTodo.
+
+Ktoś zarejestrował się na {{.Origin}} adresem {{.Email}}. Aby utworzyć konto, otwórz ten link i naciśnij przycisk na stronie:
+
+{{.Link}}
+
+Link wygasa za {{.Expiry}}. Jeśli to nie ty się rejestrujesz, możesz zignorować tę wiadomość: konto nie zostanie utworzone.

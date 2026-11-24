@@ -1,6 +1,6 @@
 ---
 title: Reusable lists
-summary: Make a project a reusable list for groceries or packing, so adding an item that is already there brings it back and ticked items stay in a Got it group.
+summary: Make a project a reusable list for groceries or packing, so adding an item that is already there brings it back and ticked items stay in its Completed group.
 audience: user
 section: Guides
 specs: [reusable-lists]
@@ -9,13 +9,14 @@ order: 19
 ---
 # Reusable lists
 
-<picture><source srcset="images/reusable-list-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/reusable-list-light.webp" alt="The Groceries project as a reusable list: open items in the Produce, Bakery, Dairy and eggs and Drinks sections, and at the end a Got it group, opened, holding the ticked-off Milk and Butter."></picture>
+<picture><source srcset="images/reusable-list-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/reusable-list-light.webp" alt="The Groceries project as a reusable list: open items in the Produce, Bakery, Dairy and eggs and Drinks sections, and at the end a Completed group, opened, holding the ticked-off Milk and Butter."></picture>
 
 Some lists come back every week: groceries, the pharmacy, packing. Make such a project a **reusable list**:
 
 - Adding an item that is already there brings it back instead of creating a second one.
-- Ticked items stay at the end of the list, in a **Got it** group, on every member's devices.
+- Ticked items stay at the end of the list, in its **Completed** group, on every member's devices.
 - New items can [sort themselves into aisles](reusable-list-aisles.md).
+- It shows no "% done": a list you restock is never finished.
 
 ## Turn it on
 
@@ -25,12 +26,14 @@ Turning it off changes no items; completed tasks follow your **Show completed ta
 
 ## Adding an item that is already there
 
-When you add an item from [quick add](quick-add.md), the list looks for an item with the same name:
+When you add an item from [quick add](quick-add.md), the list looks for one with the same name:
 
 - **A ticked item** is reopened where it is, in its section, with its notes and labels. A date, priority or label you typed with it is added. The message reads "Milk is back on the list", with **Undo**.
 - **An open item** is left as it is and flashes once. The message reads "Milk is already on the list".
 
-Either message offers **Add anyway**, which adds a new item as an ordinary add would. The message stays for four seconds.
+Either message stays for four seconds and offers **Add anyway**, which adds a new item.
+
+Typing a few letters, in the list or the phone's add sheet, lists the ticked items that match, newest first: <kbd>↓</kbd> and <kbd>Enter</kbd>, or a click, brings one back. <kbd>Enter</kbd> alone adds what you typed.
 
 Names match when they are the same apart from upper and lower case, accents, spaces at the ends, double spaces and one full stop at the end. So "CAFE" matches "Café", and "milk " matches "Milk". Nothing else matches: "Mlik" is a new item, and "Strasse" does not match "Straße". Subtasks never match.
 
@@ -38,9 +41,9 @@ When you paste several lines, each line follows the same rule, and one message c
 
 This works offline: the list is matched on your device.
 
-## Ticked items: Got it
+## Ticked items: Completed
 
-A reusable list always ends with a **Got it** group holding its ticked items, newest first, on every device. The board and the timeline show open items only. The group starts closed; click its heading to open it. Untick an item there, or add it again, and it is back on the list. The Project menu has no **Show completed tasks** here.
+A reusable list always ends with a **Completed** group holding its ticked items, newest first, on every device. The board and the timeline show open items only. The group starts closed; click its heading to open it. Untick an item there, or add it again, and it is back on the list. The Project menu has no **Show completed tasks** here.
 
 ## When two people add the same item
 

@@ -113,7 +113,8 @@ describe('actions (2.5, 3.3, 4.2)', () => {
     expect(document.querySelector('[data-bulk-toast]')!.textContent).toContain('3 tasks completed')
     expect(new Set((await db.outbox.toArray()).map((o) => o.ts)).size).toBe(1)
     await act(async () => { (document.querySelector('[data-bulk-toast] button') as HTMLButtonElement).click() })
-    await waitFor(() => document.querySelector('[data-bulk-toast]')!.textContent!.includes('Undone: 3 restored'))
+    // The feedback names the step it undid (undo-history "Descriptive feedback").
+    await waitFor(() => !!document.querySelector('[data-bulk-toast]')?.textContent?.includes('Undone: 3 tasks completed.'))
     for (const id of ids) expect((await db.tasks.get(id))!.completed_at).toBeNull()
   })
 
@@ -262,5 +263,36 @@ describe('actions (2.5, 3.3, 4.2)', () => {
     await key(document.body, 'z', { ctrlKey: true })
     await waitFor(() => document.querySelector('[data-bulk-toast]')!.textContent!.includes('Undone'), 'Undone in the toast')
     await waitFor(async () => (await priority()) === 4, 'priority 4 back')
+  })
+
+  // #1488: redo reaches the batch log, not only the toast; Ctrl+Shift+Z re-applies the undo.
+  it('Ctrl+Shift+Z redoes the change undone last', async () => {
+    const { ids } = await inbox('One', 'Two')
+    const priority = async () => (await db.tasks.get(ids[0]))!.priority
+    await key(document.body, 'j'); await key(document.body, 'x')
+    await waitFor(() => bar() === '1 selected', 'one row ticked')
+    await key(document.body, '1')
+    await waitFor(async () => (await priority()) === 1, 'priority 1 stored')
+    await waitFor(() => !!document.querySelector('[data-bulk-toast]'), 'the undo offer')
+    await key(document.body, 'z', { ctrlKey: true })
+    await waitFor(() => document.querySelector('[data-bulk-toast]')?.textContent?.includes('Undone') ?? false, 'Undone in the toast')
+    await waitFor(async () => (await priority()) === 4, 'undone to 4')
+    await key(document.body, 'z', { ctrlKey: true, shiftKey: true })
+    await waitFor(() => document.querySelector('[data-bulk-toast]')?.textContent?.includes('Redone') ?? false, 'Redone in the toast')
+    await waitFor(async () => (await priority()) === 1, 'priority 1 re-applied')
+  })
+})
+
+// #1748 (OpenSpec change undo-indent): Tab makes the row a subtask, and Ctrl+Z takes it back out.
+describe('indent and undo', () => {
+  it('Tab nests the selected task under the one above; Ctrl+Z restores it', async () => {
+    const { ids } = await inbox('One', 'Two')
+    const parent = async () => (await db.tasks.get(ids[1]))!.parent_id ?? null
+    await key(document.body, 'j'); await key(document.body, 'j')
+    await key(document.body, 'Tab')
+    await waitFor(async () => (await parent()) === ids[0], 'Two under One')
+    await waitFor(async () => (await db.assistantUndo.count()) === 1, 'the step recorded')
+    await key(document.body, 'z', { ctrlKey: true })
+    await waitFor(async () => (await parent()) === null, 'Two at the top level again')
   })
 })

@@ -1,6 +1,6 @@
 ---
 title: Command-line client
-summary: The ot command: install, sign in, add and complete tasks, JSON output, exit codes, dry runs and safe use by AI agents.
+summary: "The ot command: install, sign in, add and complete tasks, JSON output, exit codes, dry runs and safe use by AI agents."
 audience: developer
 section: Integrations
 specs: [cli-client]
@@ -19,7 +19,7 @@ Command names, flags, exit codes and the `--json` output are part of the v1 surf
 
 ## Install
 
-Release assets are published for linux, macOS and Windows on amd64 and arm64 (`ot-<os>-<arch>`, with `SHA256SUMS`); download one, make it executable and put it on your `PATH`. Or build from source (Go 1.26+, no other dependency):
+Release assets are published for linux, macOS and Windows on amd64 and arm64 (`ot-<os>-<arch>`, with `SHA256SUMS`); download one, make it executable and put it on your `PATH`. Or build from source (Go 1.27+, no other dependency):
 
 ```bash
 go install github.com/OpenTodoApp/opentodo/cmd/ot@latest   # into $(go env GOPATH)/bin; or @vX.Y.Z for a release
@@ -65,7 +65,7 @@ Signed in to https://todo.example.com as you@example.com (profile "default").
 Token "cli@laptop" stored in /home/you/.config/opentodo/config.json.
 ```
 
-`ot login` signs in with your email and password, creates an API token named `cli@<hostname>`, signs the session out again and stores only the token. The password is never echoed and never stored. You will see the token in **Settings → Integrations → API tokens** in the web app, where it can also be revoked.
+`ot login` signs in with your email and password, creates an API token named `cli@<hostname>`, signs the session out again and stores only the token. The password is never echoed and never stored. With [two-factor authentication](two-factor.md) on, it then asks for the code from your authenticator app, or one of your recovery codes, without echoing it. You will see the token in **Settings → Integrations → API tokens** in the web app, where it can also be revoked.
 
 Other ways to get credentials in:
 
@@ -109,7 +109,8 @@ ot today --all                 # with a Today limit: every task, no "Waiting for
 ot inbox                       # the Inbox: no project and no date
 ot upcoming                    # due after today
 ot list                        # every open task, soonest first
-ot list --project Home         # one project (name or id)
+ot list --project Home         # one project (name or id), subtasks under their parent
+ot list --parent 3f1d          # the direct subtasks of a task
 ot list --completed            # most recently completed first
 ot list --all --limit 20       # open and completed
 ot list --completed-after 2026-10-05 --completed-before 2026-10-12   # completed that week
@@ -158,6 +159,7 @@ ot edit bins --no-rotate                             # stop taking turns
 | Flag | Meaning |
 | --- | --- |
 | `--project <name-or-id>` | Project; `none` (edit) takes the task out of its project (into the Inbox while it has no date) |
+| `--parent <ref>` | Make the task a [subtask](#subtasks) of an open task, by id or unique id prefix; `none` (edit) moves it back to the top level |
 | `--due <when>` | `YYYY-MM-DD`, `today`, `tomorrow` or an English weekday name (next occurrence; `monday` on a Monday means next week); `none` (edit) clears the date |
 | `--time HH:MM` | Due time, 24-hour; with `ot add` and no `--due` the date is today |
 | `--priority 1..4` | 1 is highest, 4 is the default |
@@ -178,7 +180,7 @@ ot edit bins --no-rotate                             # stop taking turns
 | `--blocked-by <ref>` | Repeatable: a task this one waits for, by id or unique id prefix (an ambiguous prefix exits 1 listing the candidates, before any write). With `ot edit` the list is replaced; `none` clears it |
 | `--location <where>` | A saved location's name (case-insensitive) or id, sent with its current name, address and coordinates; or `lat,lon`; `none` (edit) clears it. An unknown name exits 1 before any write |
 | `--remind <phrase>` | `ot add` only, repeatable: a reminder without the reminder word, either an offset (`"30 min before"`, `"1 day before"`, `"2 hours after"`) or a moment (`"at 9"`, `"tomorrow at 9"`, `"20 Oct at 9"`). It is resolved like a quick-add reminder: relative to the task's due time (09:00 for a date-only due), or absolute in your local time zone when the task has no due date. An offset on an undated task waits for a due date, and the command says so |
-| `--natural` | `ot add` only: read the title like the app's [quick add](quick-add.md): dates and times, `#project`, `@label`, `p1`–`p4`, `+30m`, `30m/2h` (time spent and an estimate), `every …` rules and `remind me …` reminders, in seven languages, and `~deep`, `~medium`, `~low` while your account has Energy levels on. Explicit flags win over what the line says; an unknown `#name` stays in the title |
+| `--natural` | `ot add` only: read the title like the app's [quick add](quick-add.md): dates and times, `#project`, `@label`, `p1`–`p4`, `+30m`, `30m/2h` (time spent and an estimate), `every …` rules and `remind me …` reminders, in nine languages, and `~deep`, `~medium`, `~low` while your account has Energy levels on; an `http` or `https` address is attached to the task as a link and leaves the title. Explicit flags win over what the line says; an unknown `#name` stays in the title |
 | `--done` | `ot add` only: [log a win](today-limit.md#log-a-win), a task created already completed now by you in the one request, so it counts in Completed and your statistics like any completion. `--repeat` and `--remind` are usage errors with it (a win does not repeat or remind), and with `--natural` a rule or reminder phrase in the title is left out |
 | `--lang <codes>` | Languages for `--natural` and `--remind`, e.g. `de,en`. Default: the language of `LC_ALL`, `LC_MESSAGES` or `LANG`; English is always active |
 | `--no-default-reminder` | `ot add` and `ot edit`: add no [default reminder](default-reminders.md). Without it, a command that sets a due date asks the server for your default reminder (`?default_reminder=true`); `--remind` (or a `remind me …` phrase with `--natural`) also leaves it out, since you chose your own. With an `agent` token the server always applies your defaults |
@@ -201,14 +203,37 @@ A `<ref>` is a full task id or an id prefix that matches exactly one non-deleted
 
 A task that is already in the requested state (`ot done` on a completed task, `ot reopen` on an open one) is reported as `unchanged`, keeps its completion time and nothing is sent; the command still exits 0. `ot edit` with values equal to the current ones sends nothing either.
 
+### Subtasks
+
+```bash
+ot add "Book hotel" --parent 3f1d          # a subtask, in its parent's project
+ot edit 8c2a --parent 3f1d                 # put an existing task under another one
+ot edit 8c2a --parent none                 # back to the top level
+ot list --parent 3f1d --json               # the direct subtasks of 3f1d
+ot done 3f1d --subtasks                    # complete it and its open subtasks
+ot rm 3f1d --subtasks                      # delete it and its subtasks
+ot edit 3f1d --project Work --subtasks     # move it and its subtasks
+```
+
+`--parent` takes an open task by id or unique id prefix. Without `--project`, `ot add` puts the subtask in its parent's project (or its Inbox). A completed parent, or a `--project` that is not the parent's, exits 2 before any request. With `ot edit`, a parent in another project moves the task to that project in the same request. The server refuses a deleted parent and a parent that is the task itself or one of its subtasks (exit 1, `invalid_input`), and nothing changes.
+
+`ot done`, `ot rm` and `ot edit` change only the tasks you name, as the [REST API](api.md#subtasks) does. Add `--subtasks` for what the app does:
+- `ot done --subtasks` completes the open subtasks at every depth;
+- `ot rm --subtasks` deletes all of them;
+- `ot edit --subtasks`, when the edit changes the project, moves them too.
+
+Each task is its own request: the subtasks before the task for `done` and `rm`, after it for `edit`. `--dry-run` lists them all, and `ot rm` asks once for the whole list. `ot reopen` reopens only the tasks named, like the app.
+
+`ot list --project` and `ot list --inbox` print each subtask under its parent, indented, and add the parent's progress (`Plan trip 1/3`: one of its three direct subtasks done). A subtask whose parent isn't listed, because it is completed for example, is printed at the top level. Other lists stay flat, and `--json` keeps the position order with `parent_id` on every task. `ot list --parent <ref>` lists the direct subtasks of a task and combines with the other list flags (`--all` adds the completed ones).
+
 ### One task's details
 
 ```bash
-ot task show 8c2a          # title, due date, deadline, location and reminders
-ot task show 8c2a --json   # {"task": {…}, "reminders": [{…}]}
+ot task show 8c2a          # title, due date, deadline, location, parent, subtasks and reminders
+ot task show 8c2a --json   # {"task": {…}, "reminders": [{…}], "subtasks": [{…}]}
 ```
 
-`ot task show <ref>` prints a task with its due date, deadline, location and your reminders, one per line: "30 minutes before the due time", "At 2026-10-13 09:00", and [location reminders](location-reminders.md) as "When I arrive at Post office (150 m)" or "When I leave Home (300 m)". It only reads, so a `read` token will do. Location reminders are created in the app or through [`POST /api/v1/reminders`](api.md#reminders-and-push), not with `ot`.
+`ot task show <ref>` prints a task with its due date, deadline, location, its parent path (`Parent: Plan trip › Book hotel`), its subtasks with their progress, and your reminders, one per line: "30 minutes before the due time", "At 2026-10-13 09:00", and [location reminders](location-reminders.md) as "When I arrive at Post office (150 m)" or "When I leave Home (300 m)". It only reads, so a `read` token will do. Location reminders are created in the app or through [`POST /api/v1/reminders`](api.md#reminders-and-push), not with `ot`.
 
 ### Repeating tasks ahead
 
@@ -528,7 +553,7 @@ ot done 8c2a 91f0 --dry-run --json
 #  "targets":[{"ref":"8c2a","id":"8c2a…","title_preview":"Pay rent","status":"completed"},…]}
 ```
 
-A label that `ot add --label` would create appears as a planned `POST /api/v1/labels`, and the planned task refers to it as `(planned-1)`. `ot login --dry-run` shows the three requests of a sign-in without prompting for the password.
+A label that `ot add --label` would create appears as a planned `POST /api/v1/labels`, and the planned task refers to it as `(planned-1)`. `ot login --dry-run` shows the requests of a sign-in (the two-factor step only applies to an account with two-factor authentication) without prompting for the password.
 
 ### Retry-safe creates
 

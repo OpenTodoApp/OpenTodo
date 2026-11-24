@@ -1,5 +1,6 @@
 // Resolve Playwright locally (npm i / npx -p) or from a global install (npm i -g playwright).
 import { diagnoser } from './e2e-diagnose.mjs'
+import { untilOfflineReady } from './e2e-sw.mjs'
 const { chromium } = await import('playwright').catch(async () => {
   const { createRequire } = await import('node:module')
   const { execSync } = await import('node:child_process')
@@ -12,7 +13,6 @@ const base = process.env.OPENTODO_URL ?? 'http://127.0.0.1:8080'
 const shots = process.argv[2]
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {})
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, colorScheme: 'light' })
-await ctx.addInitScript(() => { try { localStorage.setItem('opentodo.rowClick', 'open') } catch {} })  // click opens the panel, as these flows expect (inline-task-editing)
 const page = await ctx.newPage()
 const errors = []
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message))
@@ -98,7 +98,7 @@ for (const t of ['Get three quotes for the kitchen today p1', 'Pick paint colour
 await row(page, 'Order new taps').waitFor()
 
 step('task detail: notes')
-await row(page, 'Get three quotes for the kitchen').click()
+await row(page, 'Get three quotes for the kitchen').press('Enter')
 // Quick add reads today and tomorrow in the browser's zone.
 const iso = await page.evaluate(() => new Date().toLocaleDateString('sv'))
 const tomorrow = await page.evaluate(() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toLocaleDateString('sv') })
@@ -158,7 +158,6 @@ if (failed.length) throw new Error('server state mismatch: ' + failed.join(', ')
 
 step('second device: fresh context sees the same data')
 const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 } })
-await ctx2.addInitScript(() => { try { localStorage.setItem('opentodo.rowClick', 'open') } catch {} })  // click opens the panel, as these flows expect (inline-task-editing)
 const p2 = await ctx2.newPage()
 watchNavigations(p2)
 await p2.goto(base)
@@ -170,10 +169,15 @@ await p2.locator('aside').getByRole('button', { name: /^Home renovation/ }).clic
 await row(p2, 'Pick paint colours').waitFor()
 
 step('offline edit on device 2, then reconnect')
+// Offline only once device 2's service worker holds the app (issue 1746).
+await untilOfflineReady(p2, { label: 'device 2' })
 await ctx2.setOffline(true)
-await p2.getByRole('combobox', { name: 'Add a task' }).fill('Added while offline')
-await p2.getByRole('combobox', { name: 'Add a task' }).press('Enter')
-await row(p2, 'Added while offline').waitFor()
+// On a failure the report keeps device 2's navigations, errors and open requests (e2e-diagnose.mjs).
+await diagnosed(p2, 'offline-add', async () => {
+  await p2.getByRole('combobox', { name: 'Add a task' }).fill('Added while offline')
+  await p2.getByRole('combobox', { name: 'Add a task' }).press('Enter')
+  await row(p2, 'Added while offline').waitFor()
+})
 await p2.waitForFunction(() => /Offline/.test(document.body.innerText), null, { timeout: 5000 })
 await snap(p2, 'offline')
 await ctx2.setOffline(false)
@@ -190,9 +194,9 @@ await snap(page, 'project')
 step('co-editing a note: device 1 shows device 2\'s paragraph after its pause (notes-save-cadence)')
 // Device 2 types and stops with the editor still focused: the note is pushed 3 s after
 // its last save, and device 1 (live channel connected) merges it into its open editor.
-await row(page, 'Pick paint colours').click()
+await row(page, 'Pick paint colours').press('Enter')
 await detail(page).getByRole('textbox', { name: 'Notes' }).waitFor()
-await row(p2, 'Pick paint colours').click()
+await row(p2, 'Pick paint colours').press('Enter')
 const notes2 = detail(p2).getByRole('textbox', { name: 'Notes' })
 await notes2.click()
 await p2.keyboard.type('Sample the greens in daylight.', { delay: 15 })

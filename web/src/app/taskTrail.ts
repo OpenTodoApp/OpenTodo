@@ -65,17 +65,27 @@ export function currentAddress(): string {
   return typeof location === 'undefined' ? '/' : `${location.pathname}${location.search}`
 }
 
+/** What a task page's history entry carries: the trail's depth, and how many task pages were pushed over its first. */
+interface PageEntry { taskTrail?: number; taskStep?: number }
+
 /**
  * Open a task as a page. From a list: remember the list and push the page. From the
- * task page (a subtask, the parent, the next task): replace the page, keeping the trail,
- * so Esc still returns to the list in one step. `origin` names the list to return to
- * when the task is opened from somewhere that is not one.
+ * task page, keeping the trail: the next or previous task (`step`) replaces the page,
+ * any other task (a subtask, the parent) is pushed over it so Back returns to it
+ * (GitHub issue 1952); Esc still returns to the list in one step. `origin` names the
+ * list to return to when the task is opened from somewhere that is not one.
  */
-export function openTaskPage(id: string, origin?: { from: string; label?: string }): void {
+export function openTaskPage(id: string, origin?: { from: string; label?: string }, step = false): void {
   const here = currentAddress()
   if (TASK_PATH.test(here)) {
     if (origin) trail = { from: origin.from, label: origin.label ?? '', ids: [], scroll: 0, list: true, depth: 0 }
-    navigate({ view: 'task', id }, { replace: true })
+    const was = (history.state ?? {}) as PageEntry
+    navigate({ view: 'task', id }, { replace: step })
+    // Stamp the new entry with how far it sits above the trail's first page, for Esc.
+    const depth = trail?.depth ?? 0
+    if (depth > 0 && was.taskTrail === depth && currentAddress() !== here && location.pathname === `/task/${id}`) {
+      history.replaceState({ ...(history.state ?? {}), taskTrail: depth, taskStep: (was.taskStep ?? 0) + (step ? 0 : 1) }, '')
+    }
     emit()
     return
   }
@@ -112,7 +122,7 @@ export function trailNeighbour(id: string, step: 1 | -1): string | null {
 export function stepTask(id: string, step: 1 | -1): boolean {
   const next = trailNeighbour(id, step)
   if (!next) return false
-  openTaskPage(next)
+  openTaskPage(next, undefined, true)
   return true
 }
 
@@ -128,11 +138,13 @@ export function leaveTaskPage(id: string, fallback: () => void): void {
   if (t.list) selectTask.set(id)
   trail = null
   emit()
-  // The page was pushed over the list and only replaced since, or we are on its stamped entry with only an
-  // overlay's released markers above it: going back is the list's own entry.
-  const onPage = typeof history !== 'undefined' && t.depth > 0 &&
-    (history.length === t.depth || (history.state as { taskTrail?: number } | null)?.taskTrail === t.depth)
-  if (onPage) history.back()
+  // We are on a stamped entry, or the page was pushed over the list and only replaced since: the list's own
+  // entry is behind it, past the task pages pushed over the first (a subtask, the parent) and any overlay's
+  // released markers above them.
+  const entry = typeof history === 'undefined' ? null : (history.state as PageEntry | null)
+  const stamped = entry?.taskTrail === t.depth
+  const onPage = typeof history !== 'undefined' && t.depth > 0 && (stamped || history.length === t.depth)
+  if (onPage) history.go(-1 - (stamped ? entry?.taskStep ?? 0 : 0))
   else navigate(parseRoute(t.from))
 }
 

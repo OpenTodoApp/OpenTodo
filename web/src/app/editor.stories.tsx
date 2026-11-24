@@ -1,14 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useEffect, useRef, useState } from 'react'
-import { TextSelection } from 'prosemirror-state'
+import { EditorState, TextSelection } from 'prosemirror-state'
 import { EditorView } from 'prosemirror-view'
 import { parseMarkdown } from '../lib/richtext'
-import { createState } from '../lib/richtextEditor'
+import { createState, schema } from '../lib/richtextEditor'
 import { EditorToolbar, useEditorChrome } from './EditorChrome'
 import type { CommandEnv } from './editorCommands'
+import { codeViews } from './editorCode'
 import { imageViews } from './editorImage'
 import { FormattingToggle } from './FormattingToggle'
 import { IconButton } from '../ui'
+import { Markdown } from './Markdown'
+import { PendingUntil } from './stories/pendingUntil'
 
 // The rich-text editor of notes and comments (OpenSpec change editor-everywhere):
 // a note with a quote, a table, an image whose attachment is gone and a mention;
@@ -82,14 +85,20 @@ function Editor({ text, slash = false, toolbar = false }: { text: string; slash?
       nodeViews: imageViews(null),
     })
     setView(v)
-    if (slash) {
+    let live = true
+    // The menu is placed at the caret once, when it opens: open it after the web font is in,
+    // or the text reflows under a menu placed with the fallback font's widths.
+    if (slash) void document.fonts.load('1em "OpenTodo Inter"').then(() => document.fonts.ready).then(() => {
+      if (!live) return
       v.focus()
       const end = v.state.doc.child(0).nodeSize - 1
       const tr = v.state.tr.insertText(' /', end)
       v.dispatch(tr.setSelection(TextSelection.create(tr.doc, end + 2)))
-    }
-    const t = setTimeout(() => setReady(true), 50)
+    })
+    // With the slash menu, settled once its rows are drawn (PendingUntil below); else after a frame.
+    const t = slash ? undefined : setTimeout(() => setReady(true), 50)
     return () => {
+      live = false
       clearTimeout(t)
       v.destroy()
     }
@@ -99,7 +108,7 @@ function Editor({ text, slash = false, toolbar = false }: { text: string; slash?
       {toolbar && <EditorToolbar view={view} env={env} visible coarse onMenu={() => {}} />}
       <div ref={host} className="notes-host" data-notes-editing />
       {chrome.overlays}
-      {!ready && <span data-story-pending />}
+      {slash ? <PendingUntil selector='[data-suggest="slash"] [role="option"]' /> : !ready && <span data-story-pending />}
     </div>
   )
 }
@@ -125,3 +134,25 @@ function SourceNote({ readOnly = false }: { readOnly?: boolean }) {
 }
 export const SourceMode: StoryObj = { render: () => <SourceNote /> }
 export const SourceModeReadOnly: StoryObj = { render: () => <SourceNote readOnly /> }
+
+/** A code block in rendered Markdown (copy-code-block D3): its Copy button in a bar above the code. */
+export const RenderedCodeBlock: StoryObj = { render: () => <div className="max-w-md bg-canvas p-4"><Markdown source={'Copy the command:\n\n```bash\nmake dev\n```'} /></div> }
+
+/**
+ * A code block in the notes editor (editor-copy-code-block D1): the same block and the
+ * same Copy button, inside a real editor, so the two look alike side by side.
+ */
+export const EditorCodeBlock: StoryObj = { render: () => <div className="max-w-md bg-canvas p-4"><CodeNote /></div> }
+
+function CodeNote() {
+  const host = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const doc = schema.node('doc', null, [
+      schema.node('paragraph', null, [schema.text('Copy the command:')]),
+      schema.node('code_block', { lang: 'bash' }, [schema.text('make dev')]),
+    ])
+    const view = new EditorView(host.current as HTMLDivElement, { state: EditorState.create({ doc }), nodeViews: codeViews })
+    return () => view.destroy()
+  }, [])
+  return <div className="notes-frame space-y-1"><div ref={host} /></div>
+}

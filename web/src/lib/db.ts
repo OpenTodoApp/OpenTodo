@@ -91,9 +91,22 @@ export interface AssistantUndo {
   /** How many changes were applied, for the summary. */
   count: number
   /** Field values to restore, per entity. */
-  inverse: { entity: string; entityId: string; patch: Record<string, unknown>; created?: boolean; /** A default reminder the batch added (default-reminders): undone with it, not counted. */ followUp?: boolean }[]
+  inverse: { entity: string; entityId: string; patch: Record<string, unknown>; created?: boolean; /** A default reminder the batch added (default-reminders): undone with it, not counted. */ followUp?: boolean;
+    /** The clock each field held right before this write, so a reversal refreshes only a batch whose write it sat directly on top of (#1488 D4); absent on batches from before the fix. */
+    prev?: Record<string, { ts: number; device: string }>
+    /** An open occurrence record the batch edited (undo-series-edits): left as it is if it was done or skipped since. */
+    open?: boolean }[]
   /** The clock each applied field got, to skip fields changed again since. */
   clocks: { entity: string; entityId: string; field: string; ts: number; device: string }[]
+  /**
+   * Redo payload (undo-redo-history, #1488): once this batch is undone, the values to put
+   * back on redo (what the fields held before the undo) and the clock each got from the
+   * undo, so redo replays only what the undo actually changed and nothing changed since.
+   */
+  redo?: {
+    inverse: { entity: string; entityId: string; patch: Record<string, unknown>; created?: boolean; followUp?: boolean; prev?: Record<string, { ts: number; device: string }>; open?: boolean }[]
+    clocks: { entity: string; entityId: string; field: string; ts: number; device: string }[]
+  }
   undone_at?: number
   /** Who applied it (bulk-edit D5; `action` is one task's own action, ux-overhaul); rows without it come from the assistant. */
   source?: 'assistant' | 'bulk' | 'action'
@@ -594,6 +607,17 @@ export async function getMeta<T>(key: string, fallback: T): Promise<T> {
 
 export async function setMeta(key: string, value: unknown): Promise<void> {
   await db.meta.put({ key, value })
+}
+
+/**
+ * Whether this device holds any synced data or queued ops. With no recorded
+ * account (a `userId` marker), such data has no known owner and must not be
+ * handed to whoever signs in next (client-data-safety).
+ */
+export async function hasLocalData(): Promise<boolean> {
+  if ((await db.outbox.count()) > 0) return true
+  for (const t of entityTables()) if ((await t.count()) > 0) return true
+  return false
 }
 
 /** Wipe every local table; used on logout so the next account starts clean. */

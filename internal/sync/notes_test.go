@@ -3,6 +3,7 @@ package sync
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -218,6 +219,50 @@ func TestBodyVersionCheck(t *testing.T) {
 	}
 	if text := PlainText("two\n", got.Appends); text != "two\n\nfirst\n\nsecond" {
 		t.Fatalf("plain text %q", text)
+	}
+}
+
+// #1656: a listed project's tasks read their body fields by id, in chunks, and
+// answer exactly what the read of the whole kind answers for them.
+func TestBodyInfosOfListedIDs(t *testing.T) {
+	f := newSharing(t)
+	var ops []Op
+	ids := make([]string, 0, 1200)
+	for i := range 1200 {
+		id := fmt.Sprintf("t%04d", i)
+		ids = append(ids, id)
+		if i%3 == 0 {
+			ops = append(ops, f.op("task", id, "description", fmt.Sprintf("%q", "notes "+id)))
+		}
+		if i%7 == 0 {
+			ops = append(ops, f.op("task", id, "appends.a", `"later"`))
+		}
+		ops = append(ops, f.op("task", id, "title", `"T"`))
+	}
+	for len(ops) > 0 {
+		n := min(len(ops), 900)
+		f.apply("alice", "A", ops[:n]...)
+		ops = ops[n:]
+	}
+	all, err := f.s.BodyInfos(f.ctx, "alice", "task", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	some := ids[100:1150] // three chunks of ids
+	got, err := f.s.BodyInfosOf(f.ctx, "alice", "task", some)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range some {
+		if !reflect.DeepEqual(got[id], all[id]) {
+			t.Fatalf("%s: %+v, the whole read %+v", id, got[id], all[id])
+		}
+	}
+	if _, ok := got[ids[0]]; ok {
+		t.Fatal("an id that was not asked for was read")
+	}
+	if none, _ := f.s.BodyInfosOf(f.ctx, "alice", "task", []string{}); len(none) != 0 {
+		t.Fatalf("no ids: %d infos", len(none))
 	}
 }
 

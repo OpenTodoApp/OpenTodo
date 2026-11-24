@@ -47,7 +47,20 @@ func (e *env) routineDevice(device, caps string) (*stream, cipher.AEAD) {
 	return st, aead
 }
 
-func nextRoutine(t *testing.T, st *stream, aead cipher.AEAD) relay.RoutineRun {
+// nextRoutine reads the routine.run request for runID. Requests for other runs are
+// skipped: the stream also delivers the runs that waited when it opened, which
+// under load can repeat a run already sent (DispatchWaiting runs in the background).
+func nextRoutine(t *testing.T, st *stream, aead cipher.AEAD, runID string) relay.RoutineRun {
+	t.Helper()
+	for {
+		run := readRoutine(t, st, aead)
+		if run.RunID == runID {
+			return run
+		}
+	}
+}
+
+func readRoutine(t *testing.T, st *stream, aead cipher.AEAD) relay.RoutineRun {
 	t.Helper()
 	ev, ok := st.next(t, "routine", 5*time.Second)
 	if !ok {
@@ -120,7 +133,7 @@ func TestRoutineDeviceRunOverRelay(t *testing.T) {
 	if run := out["run"].(map[string]any); run["outcome"] != "waiting_device" || run["device_id"] != "laptop" {
 		t.Fatalf("dispatch: %v", run)
 	}
-	req := nextRoutine(t, st, aead)
+	req := nextRoutine(t, st, aead, "r-1")
 	if req.RuleID != id || req.Op != relay.OpRoutineRun {
 		t.Fatalf("request %+v", req)
 	}
@@ -162,7 +175,7 @@ func TestRoutineDeviceRunOverRelay(t *testing.T) {
 	// The routine changes while a run waits: 409 routine_changed.
 	resp, out = e.do("POST", "/api/v1/rules/"+id+"/run", map[string]any{"run_id": "r-2"})
 	e.mustStatus(resp, 200, out)
-	req = nextRoutine(t, st, aead)
+	req = nextRoutine(t, st, aead, "r-2")
 	resp, out = e.do("PATCH", "/api/v1/rules/"+id, map[string]any{"steps": []any{map[string]any{"id": "a", "kind": "create_tasks", "in": map[string]any{"title": map[string]any{"literal": "Bread"}}}}})
 	e.mustStatus(resp, 200, out)
 	resp, out = e.do("POST", "/api/v1/me/rules/runs/"+req.RunID+"/commit", commit)

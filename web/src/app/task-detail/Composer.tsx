@@ -5,15 +5,16 @@
 // Expanded, the field is the notes' rich-text editor (editor-everywhere D1, D2),
 // loaded lazily; until it arrives it is a plain text field holding the same text.
 import { flushSync } from 'react-dom'
-import { forwardRef, type KeyboardEvent, lazy, Suspense, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, type KeyboardEvent, Suspense, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { lazy } from '../../lib/lazy'
 import { Kbd } from '../shortcuts/Kbd'
 import { planFiles, type PlannedFile } from '../../lib/attachments'
 import { mentionAt, mentionCandidates, mentionsInBody, mentionToken, type MentionTarget } from '../../lib/comments'
 import { MentionOption } from './MentionOption'
 import { uuid } from '../../lib/ids'
 import { Button, ComposerFrame, IconButton, Popover } from '../../ui'
-import { Icon } from '../../ui'
-import { filesFrom } from './AttachmentsRow'
+import { filesFrom } from '../../lib/pastedFiles'
+import { PendingFiles } from '../quickadd/PendingFiles'
 import { t } from '../../lib/i18n'
 import { readString, writeString } from '../../lib/deviceStorage'
 import { FormattingToggle, useFormattingToggle } from '../FormattingToggle'
@@ -254,16 +255,7 @@ export const Composer = forwardRef<HTMLElement | null, ComposerProps>(function C
         } : undefined}
       />
   )
-  const fileList = files.length > 0 && (
-    <ul aria-label={t('Files to attach')} className="mt-1 flex flex-wrap gap-1">
-      {files.map((f, i) => (
-        <li key={`${f.name}-${i}`} className="flex max-w-full items-center gap-1 rounded-control bg-sunken py-0.5 pl-2 text-meta text-default">
-          <Icon name="paperclip" size="xs" className="text-faint" /><span className="min-w-0 truncate">{f.name}</span>
-          <IconButton icon="x" size="sm" label={t('Remove {name}', { name: f.name })} onClick={() => setFiles((list) => list.filter((_, j) => j !== i))} />
-        </li>
-      ))}
-    </ul>
-  )
+  const fileList = files.length > 0 && <PendingFiles files={files} className="mt-1" onRemove={(i) => setFiles((list) => list.filter((_, j) => j !== i))} />
   // The shared frame (task-full-page D6): the field, then attach on the left, the keys and Send on the right.
   const tools = (
     // The controls keep the field's focus and selection: a press never moves focus.

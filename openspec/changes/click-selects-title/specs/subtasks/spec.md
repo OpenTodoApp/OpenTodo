@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Create subtasks
-The user SHALL be able to add a subtask from an "Add subtask" input in the parent's detail panel, by pressing `a` with a task selected in a list, by choosing Add subtask in the task's row menu in a project or the Inbox, and from a check-list line in the parent's notes with Make subtask (`rich-text-editing`). `a` SHALL open the add-subtask line under the selected row in the list layout of the Inbox, Today, Upcoming, Anytime, Someday, Completed, Assigned to me, projects, labels and places, however the row was selected (a click, `j`/`k`, the arrow keys) and whatever the task opening preference, since a click selects the row without editing its title (`task-list-presentation` "A click selects the row, a second click edits its title"); `a` typed while a title or another field is being edited SHALL stay text in that field. A new subtask SHALL inherit the parent's project, default to priority 4 and no due date, and SHALL appear beneath its parent immediately, including offline; one made from a checked line SHALL be created completed.
+The user SHALL be able to add a subtask from an "Add subtask" input in the parent's detail panel, by pressing `a` with a task selected in a list, by choosing Add subtask in the task's row menu in a project or the Inbox, from the "Add a subtask" line at the end of the parent's visible subtasks in a list that shows them ("Add-subtask line in lists"), and from a check-list line in the parent's notes with Make subtask (`rich-text-editing`). `a` SHALL open the add-subtask line under the selected writable row in the list layout of the Inbox, Today, Upcoming, Anytime, Someday, Completed, Assigned to me, projects, labels and places, whether selection came from a qualifying click, `j`/`k` or the arrow keys. This applies with either task-opening preference (`task-list-presentation` "A click selects the row, a second click edits its title"). `a` typed while a title or another field is being edited SHALL stay text in that field. A new subtask SHALL inherit the parent's project, default to priority 4 and no due date, and SHALL appear beneath its parent immediately, including offline. It synchronizes when the device reconnects and converges through the existing creation operation. One made from a checked line SHALL be created completed.
 
 #### Scenario: Add from the detail panel
 - **WHEN** the user types "Book hotel" in the "Add subtask" input of "Plan trip" and presses Enter
@@ -22,6 +22,10 @@ The user SHALL be able to add a subtask from an "Add subtask" input in the paren
 #### Scenario: Add from the row menu
 - **WHEN** the user presses and holds "Plan trip" on a phone, chooses Add subtask, types "Book hotel" and sends it
 - **THEN** "Book hotel" appears under "Plan trip" and the line stays open for the next subtask
+
+#### Scenario: Add from the list's add line
+- **WHEN** "Plan trip" shows its subtasks in a project and the user types "Book hotel" in the "Add a subtask" line under them and presses Enter
+- **THEN** "Book hotel" appears indented under "Plan trip", above the line, and the input stays focused for the next entry
 
 #### Scenario: From a checked line
 - **WHEN** the user chooses Make subtask on the checked line "Pack charger" in the notes of "Plan trip"

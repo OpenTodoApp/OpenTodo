@@ -5,6 +5,8 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"io"
+	"strings"
 )
 
 // Shape limits (OpenSpec change `importer-field-limits`). The file size limit
@@ -82,6 +84,40 @@ func csvFailure(err error, what string) error {
 		return le
 	}
 	return &FileError{fmt.Sprintf("cannot read the CSV %s: %v", what, err)}
+}
+
+// eachRecord reads r to its end and skips blank records. A record encoding/csv
+// cannot parse becomes an error row appended to bad. fn gets every other record
+// with its line and get, which returns a trimmed cell by its column in col ("" when
+// the record has no such cell); an error from fn stops the reading.
+func (r *csvReader) eachRecord(col map[string]int, bad *[]Row, fn func(line int, rec []string, get func(string) string) error) error {
+	for {
+		rec, err := r.Read()
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		if err != nil {
+			var pe *csv.ParseError
+			if errors.As(err, &pe) {
+				*bad = append(*bad, Row{Line: pe.StartLine, Kind: KindTask, Err: fmt.Sprintf("unreadable CSV record: %v", pe.Err)})
+				continue
+			}
+			return csvFailure(err, "file")
+		}
+		if allBlank(rec) {
+			continue
+		}
+		line, _ := r.FieldPos(0)
+		get := func(c string) string {
+			if i, ok := col[c]; ok && i < len(rec) {
+				return strings.TrimSpace(rec[i])
+			}
+			return ""
+		}
+		if err := fn(line, rec, get); err != nil {
+			return err
+		}
+	}
 }
 
 // checkJSONDepth refuses a JSON text nested deeper than MaxJSONDepth. It scans

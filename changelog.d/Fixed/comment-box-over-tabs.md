@@ -1,0 +1,1 @@
+- **The comment box stays whole while you scroll a task's page.** With the comment box open, scrolling back up drew the Comments, Activity, History and Time tabs across it, most visibly in the iPhone app. The open box now covers the thread scrolling under it, tabs included. (#1939)

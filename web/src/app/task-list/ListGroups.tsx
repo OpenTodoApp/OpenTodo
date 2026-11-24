@@ -1,7 +1,8 @@
 // The list body (OpenSpec change web-component-structure): rows, the grouped list
 // with its headers and section groups, and the logbook's "Show more". The board and
 // the timeline have their own bodies (BoardView, TimelineView).
-import { type CSSProperties, Fragment, isValidElement, lazy, Suspense, type ReactElement, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, Fragment, isValidElement, Suspense, type ReactElement, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { lazy } from '../../lib/lazy'
 import { t, useLanguageVersion } from '../../lib/i18n'
 import { BLOCKED_OPEN_KEY, earlierCollapsed, flatRow, type ListGroup, type ListRow as Row } from '../../lib/listGroups'
 import type { DropAt } from '../listDrop'
@@ -29,6 +30,7 @@ import type { ListRoute } from './useListModel'
 import { useFullTitles } from '../../lib/fullTitles'
 import { BLOCK_ROWS, BLOCKS_FROM, blockOf, rowBlocks, type RowBlock } from './rowBlocks'
 import { RowBlockContext } from './rowBlockContext'
+import { mapTaskGroups } from './taskGroupSeparators'
 import { keysBetween } from '../../lib/taskDelta'
 
 /** The "Add task below" line (add-below): loaded when it first opens. */
@@ -86,6 +88,7 @@ export interface RowContext {
   subtaskAddEnds: ReadonlyMap<string, string>
   /** The row being edited in place, and its editor (inline-task-editing). */
   inlineId?: string | null
+  swipeEditTitle?: boolean
   renderInline?: (task: Task) => ReactNode
   /** The one row whose details are shown under it (row-expand D4). */
   expandedId?: string | null
@@ -146,12 +149,18 @@ export function useListMotion(groups: ListGroup[], columns: BoardColumn[]) {
 }
 
 /** Rows that count: everything but the departing ones. */
-export const liveRows = (rows: Row[]): number => rows.reduce((n, r) => n + (isGhost(r.task) ? 0 : 1), 0)
+export const liveRows = (rows: Row[]): number => rows.reduce((n, r) => n + (r.contextual || isGhost(r.task) ? 0 : 1), 0)
+
+type RenderRow = (r: Row, separator?: boolean) => ReactNode
+
+function renderListRows(rows: readonly Row[], render: RenderRow) {
+  return mapTaskGroups(rows, (r) => r.depth === 0 && !isGhost(r.task), render)
+}
 
 /** One task line (or a board card), inside the columns table when that layout is on (custom-fields). */
-export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
+export function rowRenderer(c: RowContext): RenderRow {
   const tree = c.treeView && !c.board
-  const line = (r: Row) => {
+  const line = (r: Row, groupSeparator?: boolean) => {
     // The row being edited in place is not dragged: a press in its field selects text.
     const editing = !c.board && c.inlineId === r.task.id
     // A departing row (motion-v2 D2) is a picture: no cursor, tick, drag or drop. The row
@@ -161,7 +170,9 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
       <Fragment key={r.task.id}>
         <TaskListRow
           task={r.task}
+          contextual={r.contextual}
           depth={r.depth}
+          groupSeparator={groupSeparator}
           breadcrumb={r.breadcrumb}
           hasChildren={r.hasChildren}
           collapsed={r.collapsed}
@@ -185,8 +196,8 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           timeColumn={c.timeColumn}
           slotsOff={c.slotsOff}
           layout={c.rowLayout}
-          draggable={!ghost && !editing && ((c.view === 'label' && c.ownOrder) || !c.isReadOnly(r.task))}
-          reorderable={!ghost && c.manual && (c.view !== 'today' || (!!r.implied?.project && !c.isReadOnly(r.task)))}
+          draggable={!ghost && !editing && (!r.contextual || !!c.ownOrder) && ((c.view === 'label' && c.ownOrder) || !c.isReadOnly(r.task))}
+          reorderable={!r.contextual && !ghost && c.manual && (c.view !== 'today' || (!!r.implied?.project && !c.isReadOnly(r.task)))}
           collapsible={tree}
           expandable={!c.board && !ghost}
           // No row shows its details while a drag runs, so drop zones are one-line rows (row-expand D4).
@@ -203,19 +214,13 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           handlers={c.actions}
           swipe={!!c.swipe && !ghost && !editing && !c.board}
           inline={editing ? c.renderInline?.(r.task) : undefined}
+          swipeEditTitle={c.swipeEditTitle && !c.draggingId}
           edge={c.board ? c.edgeOf?.(r.task) : undefined}
           notes={c.board && !!c.cardNotes}
         />
         {c.addingUnder === r.task.id && !c.board && (
           <li>
-            <SubtaskInput parent={r.task} depth={r.depth + 1} onClose={c.onCloseSubtask} />
-          </li>
-        )}
-        {c.addingBelow?.at === r.task.id && c.onAddedBelow && !c.board && (
-          <li>
-            <Suspense fallback={null}>
-              <SiblingInput anchor={c.addingBelow.anchor} after={c.addingBelow.after} depth={c.addingBelow.depth} onAdded={c.onAddedBelow} onClose={c.onCloseSubtask} />
-            </Suspense>
+            <SubtaskInput parent={r.task} depth={r.depth + 1} timeColumn={c.timeColumn} onClose={c.onCloseSubtask} />
           </li>
         )}
         {/* The "Add a subtask" lines under a parent's last visible subtask (quick-subtask-add): hidden
@@ -233,7 +238,32 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
       </Fragment>
     )
   }
-  return (r) => (c.fieldColumns ? <FieldColumnsRow key={r.task.id} task={r.task} defs={c.projectFieldDefs} row={line(r)} /> : line(r))
+  // The "Add task below" line is the row's sibling with one key of its own, not part of
+  // the row: as it moves under each task it adds, React moves the same field and its focus
+  // instead of drawing a new one (issue 1551: iOS kept lower case for a field focused from
+  // code after the Enter). The row list flattens it into place (flatRows).
+  const below = (r: Row) => (c.addingBelow?.at === r.task.id && c.onAddedBelow && !c.board
+    ? (
+      <li key={ADD_BELOW_KEY}>
+        <Suspense fallback={null}>
+          <SiblingInput anchor={c.addingBelow.anchor} after={c.addingBelow.after} depth={c.addingBelow.depth} timeColumn={c.timeColumn} onAdded={c.onAddedBelow} onClose={c.onCloseSubtask} />
+        </Suspense>
+      </li>
+    )
+    : null)
+  return (r, separator) => {
+    const row = c.fieldColumns ? <FieldColumnsRow key={r.task.id} task={r.task} defs={c.projectFieldDefs} row={line(r, separator)} /> : line(r, separator)
+    const add = below(r)
+    return add ? [row, add] : row
+  }
+}
+
+/** The key of the "Add task below" line, the same under whichever row it is drawn. */
+const ADD_BELOW_KEY = 'add-below'
+
+/** A group's rows with a row's "Add task below" line taken out of its pair, so it is their sibling. */
+function flatRows(children: ReactNode[]): ReactNode[] {
+  return children.some(Array.isArray) ? children.flatMap((n) => (Array.isArray(n) ? n : [n])) : children
 }
 
 /**
@@ -327,10 +357,10 @@ const sameContext = (a: RowContext, b: RowContext): boolean => {
  * most of a cursor move. Rows are new objects whenever their task or place
  * changes; anything else that changes clears the cache.
  */
-export function useRowRenderer(c: RowContext): (r: Row) => ReactNode {
+export function useRowRenderer(c: RowContext): RenderRow {
   // A row's words ("You", "Former member") follow the language.
   const language = useLanguageVersion()
-  const cache = useRef<{ c: RowContext | null; language: number; rows: WeakMap<Row, { c: RowContext; el: ReactNode }> }>({ c: null, language, rows: new WeakMap() })
+  const cache = useRef<{ c: RowContext | null; language: number; rows: WeakMap<Row, { c: RowContext; el: ReactNode; separator: boolean }> }>({ c: null, language, rows: new WeakMap() })
   const held = cache.current
   if (!held.c || held.language !== language || !sameContext(held.c, c)) held.rows = new WeakMap()
   held.c = c
@@ -341,9 +371,9 @@ export function useRowRenderer(c: RowContext): (r: Row) => ReactNode {
   // moves its context forward, so nearly every row shares the last one, and a row outside
   // them is kept without a look at its answers (incremental-list-updates D3).
   const changed = new Map<RowContext, ReadonlySet<string> | null>()
-  return (r) => {
+  return (r, separator = false) => {
     const hit = rows.get(r)
-    if (hit) {
+    if (hit && hit.separator === separator) {
       let ids = changed.get(hit.c)
       if (ids === undefined) changed.set(hit.c, (ids = hit.c === c ? EMPTY_IDS : mayChange(hit.c, c)))
       if ((ids && !ids.has(r.task.id)) || sameForRow(hit.c, c, r)) {
@@ -351,8 +381,8 @@ export function useRowRenderer(c: RowContext): (r: Row) => ReactNode {
         return hit.el
       }
     }
-    const el = render(r)
-    rows.set(r, { c, el })
+    const el = render(r, separator)
+    rows.set(r, { c, el, separator })
     return el
   }
 }
@@ -360,13 +390,14 @@ export function useRowRenderer(c: RowContext): (r: Row) => ReactNode {
 export interface GroupedListProps {
   todayDropTarget?: (group: ListGroup) => boolean
   activeTodayDrop?: string | null
+  contextualDrag?: boolean
   groups: ListGroup[]
   view: ListRoute['view']
   project?: Project
   fieldColumns: boolean
   projectFieldDefs: FieldDef[]
   editable: boolean
-  renderRow: (r: Row) => ReactNode
+  renderRow: RenderRow
   addingTo: string | null
   setAddingTo: (key: string | null) => void
   onToggleSection: (key: string) => void
@@ -378,7 +409,7 @@ export interface GroupedListProps {
   projects: Project[]
   labels: Label[]
   /** The project's Completed group at the end of the list (project-completed-section). */
-  completed?: { tasks: Task[]; open: boolean; onToggle: () => void; gotIt?: boolean }
+  completed?: { tasks: Task[]; open: boolean; onToggle: () => void }
   /** The always-visible actions of Today's Earlier group, for its task ids (page-rhythm D6). */
   earlierActions?: (ids: readonly string[]) => ReactNode
   /** Upcoming's calendar events for a day, drawn above its tasks and outside the count. */
@@ -431,12 +462,12 @@ export function GroupedList(p: GroupedListProps) {
     // Rows past the limit wait for a later step; the row the cursor is on is drawn at once.
     let drawn = 0
     const render = p.renderRow
-    p = { ...p, renderRow: (r) => (drawn++ < limit || r.task.id === p.reveal ? render(r) : null) }
+    p = { ...p, renderRow: (r, separator) => (drawn++ < limit || r.task.id === p.reveal ? render(r, separator) : null) }
   }
   /** The rows of a group: a list, or a row group of the columns table (custom-fields). */
   const rowList = (children: ReactNode[], extra?: Record<string, string>) => (p.fieldColumns
-    ? <div role="rowgroup" {...extra}>{children}</div>
-    : <RowList extra={extra}>{children}</RowList>)
+    ? <div role="rowgroup" {...extra}>{flatRows(children)}</div>
+    : <RowList extra={extra}>{flatRows(children)}</RowList>)
   // First and last among the real sections: "No section" is not always there (a project
   // whose every task has a section, as after an import), so its slot is not assumed (GitHub issue 359).
   const sectionKeys = p.groups.filter((g) => g.section).map((g) => g.key)
@@ -628,9 +659,9 @@ function SectionGroup({ g, later, first, last, rowList, project, ...p }: Grouped
         <SectionQuickAdd project={project} sectionId={g.section?.id ?? null} sectionName={g.heading ?? t('No section')} projects={p.projects} labels={p.labels} onClose={() => p.setAddingTo(null)} />
       )}
       {/* Named by its section, so a screen reader says which list of how many tasks it entered (accessibility-aa). */}
-      {rowList(g.rows.map((r) => p.renderRow(r)), { 'aria-label': g.heading ?? t('No section') })}
+      {rowList(renderListRows(g.rows, p.renderRow), { 'aria-label': g.heading ?? t('No section') })}
       {g.count === 0 && p.revealed.has(g.key) && rowList(
-        (p.doneBySection.get(key) ?? []).map((task) => p.renderRow(flatRow(task))),
+        renderListRows((p.doneBySection.get(key) ?? []).map((task) => flatRow(task)), p.renderRow),
         { 'data-revealed-completed': '' },
       )}
       {later && <SectionLater g={later} rowList={rowList} renderRow={p.renderRow} onToggle={() => p.toggleCollapsed(later.openKey!)} />}
@@ -642,17 +673,25 @@ function SectionGroup({ g, later, first, last, rowList, project, ...p }: Grouped
  * A section's deferred and parked tasks after its active ones (later-in-section D1): a quiet
  * folded heading with their count, the section's bar staying the only bar; open, their rows.
  */
-function SectionLater({ g, rowList, renderRow, onToggle }: { g: ListGroup; rowList: RowList; renderRow: (r: Row) => ReactNode; onToggle: () => void }) {
+function SectionLater({ g, rowList, renderRow, onToggle }: { g: ListGroup; rowList: RowList; renderRow: RenderRow; onToggle: () => void }) {
   return (
     <div data-group={g.key} data-section-later>
       <ListGroupHeader title={g.heading ?? ''} count={g.count} collapsed={g.folded} onToggle={onToggle} bar={false} level={3} />
-      {!g.folded && rowList(g.rows.map((r) => renderRow(r)), g.heading ? { 'aria-label': g.heading } : undefined)}
+      {!g.folded && rowList(renderListRows(g.rows, renderRow), g.heading ? { 'aria-label': g.heading } : undefined)}
     </div>
   )
 }
 
+/**
+ * A group bar inside the columns table (custom-fields) is a row of its own, one cell wide,
+ * since a table holds only row groups and rows (subprojects-above-tasks: the Tasks and Later bars).
+ */
+function inTable(table: boolean, header: ReactNode): ReactNode {
+  return table ? <div role="row" data-group-row><div role="cell">{header}</div></div> : header
+}
+
 /** A date, project, Later or Blocked group; collapsible per device. */
-function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects, eventsFor, summarised, todayDropTarget, activeTodayDrop }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
+function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects, fieldColumns, eventsFor, summarised, todayDropTarget, activeTodayDrop, contextualDrag }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
   const events = view === 'upcoming' ? eventsFor?.(g.key) ?? null : null
   if (g.rows.length === 0 && g.folded === undefined && !g.projected?.length && !events) return null
   const project = g.project ? projects.find((pr) => pr.id === g.project) : undefined
@@ -674,20 +713,26 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
     <section className={`${summary && collapsed ? 'mb-1' : 'mb-4'}${g.dropDay ? ' rounded-control data-drop-active:ring-2 data-drop-active:ring-accent' : ''}${activeTodayDrop === g.key ? ' rounded-control ring-2 ring-accent' : ''}`} data-group={g.key} data-day-summary-bar={summary && collapsed ? '' : undefined}
       data-drop-target={todayDropTarget?.(g) ? `today-group:${g.key}` : undefined}
       data-task-drop={g.dropDay ? `day:${g.dropDay}` : undefined}>
-      {g.folded !== undefined ? (
+      {g.folded !== undefined ? inTable(fieldColumns, (
         <ListGroupHeader title={g.heading ?? ''} count={g.count} detail={g.folded ? g.detail : undefined} collapsed={g.folded} onToggle={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)}
           actions={view === 'today' && g.key === 'done' ? <LogWinAction /> : undefined}
           actionsAlwaysVisible={g.key === 'done'} />
-      ) : g.heading && partDrop(g.dropPart, (
+      )) : g.heading && inTable(fieldColumns, partDrop(g.dropPart, (
         <ListGroupHeader title={g.heading} count={g.note || (events && liveRows(g.rows) === 0) ? undefined : liveRows(g.rows)} note={activeTodayDrop === g.key ? t('Move to {project}', { project: g.heading }) : g.note} kind={g.named ? 'named' : 'generated'}
           hue={projectHue(project)} icon={project?.icon}
           collapsed={collapsed} onToggle={toggle} detail={summary && collapsed ? <SummaryTitles rows={g.rows} /> : undefined}
           actions={earlier ? earlierActions?.(g.rows.filter((r) => !isGhost(r.task)).map((r) => r.task.id)) : undefined} actionsAlwaysVisible={earlier} />
-      ))}
+      )))}
+      {contextualDrag && todayDropTarget?.(g) && (
+        <div data-promote-context="" data-drop-target={`today-context-promote:${g.key}`}
+          className="my-1 rounded-control border border-dashed border-strong px-3 py-2 text-meta text-muted data-drop-active:border-accent data-drop-active:bg-accent-soft">
+          {t('Make top-level for today')}
+        </div>
+      )}
       {g.hint && g.folded === false && <p className="mb-1 px-1 text-meta text-muted" data-group-hint>{g.hint}</p>}
       {g.folded && g.soon?.length ? <WaitingSoonList soon={g.soon} onOpenGroup={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)} /> : null}
       {!(g.heading && g.folded === undefined && collapsed) && events}
-      {!(g.heading && g.folded === undefined && collapsed) && rowList(g.rows.map((r) => renderRow(r)), g.heading ? { 'aria-label': g.heading } : undefined)}
+      {!(g.heading && g.folded === undefined && collapsed) && rowList(renderListRows(g.rows, renderRow), g.heading ? { 'aria-label': g.heading } : undefined)}
       {/* Upcoming's projected occurrences after the day's tasks, outside its count (series-occurrences D4). */}
       {!(g.heading && collapsed) && (g.projected?.length || g.projectedNote) ? <Suspense fallback={null}><ProjectedGroupRows g={g} projects={projects} /></Suspense> : null}
     </section>
@@ -755,14 +800,11 @@ function LogWinAction() {
  * The project's completed tasks at the end of its list (project-completed-section):
  * closed by default, newest first; unchecking one puts it back among the open tasks.
  */
-function CompletedGroup({ c, rowList, renderRow, fieldColumns }: { c: NonNullable<GroupedListProps['completed']>; rowList: RowList; renderRow: (r: Row) => ReactNode; fieldColumns: boolean }) {
+function CompletedGroup({ c, rowList, renderRow, fieldColumns }: { c: NonNullable<GroupedListProps['completed']>; rowList: RowList; renderRow: RenderRow; fieldColumns: boolean }) {
   return (
     <section role={fieldColumns ? 'rowgroup' : undefined} className="mb-4" data-completed-group>
-      {/* In a reusable list the ticked items are "Got it" (reusable-lists D7). */}
-      {c.gotIt
-        ? <ListGroupHeader title={t('Got it', { context: 'list' })} count={c.tasks.length} countLabel={(n) => t('{n, plural, one {# item ticked off} other {# items ticked off}}', { n })} collapsed={!c.open} onToggle={c.onToggle} />
-        : <ListGroupHeader title={t('Completed')} count={c.tasks.length} countLabel={(n) => t('{n, plural, one {# completed task} other {# completed tasks}}', { n })} collapsed={!c.open} onToggle={c.onToggle} />}
-      {c.open && rowList(c.tasks.map((task) => renderRow(flatRow(task))))}
+      <ListGroupHeader title={t('Completed')} count={c.tasks.length} countLabel={(n) => t('{n, plural, one {# completed task} other {# completed tasks}}', { n })} collapsed={!c.open} onToggle={c.onToggle} />
+      {c.open && rowList(renderListRows(c.tasks.map((task) => flatRow(task)), renderRow))}
     </section>
   )
 }

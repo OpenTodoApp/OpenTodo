@@ -1,12 +1,13 @@
 // Spans in the Month (OpenSpec change multi-day-tasks, design D3, D4, D8): the
 // selection of the spans, the cells without them, the selection order, the keys of a
 // selected span's ends, the trailing end of a date-only row and the bars of a week row.
-import { lazy, type MutableRefObject, Suspense, useMemo } from 'react'
+import { type MutableRefObject, Suspense, useMemo } from 'react'
+import { lazy } from '../../lib/lazy'
 import { dueFromView, viewedTask } from '../../lib/dates'
 import { getTask } from '../../lib/localData'
 import { cellTasks } from '../../lib/month'
 import type { Projection } from '../../lib/occurrences'
-import { updateTask } from '../../lib/ops'
+import { calendarEditUndoable } from '../../lib/undoActions'
 import { spanEntries, type DaySpan } from '../../lib/calendarDays'
 import type { Task } from '../../lib/types'
 import { act, reportActionError } from '../actionError'
@@ -50,7 +51,7 @@ export function monthSpanKeys(c: { selected: Task | undefined; viewed: ReadonlyM
       if (!raw || raw.deleted_at || raw.completed_at) return
       const patch = spanKeyPatch(viewedTask(raw), end, days)
       if (!patch) return
-      await updateTask(id, patch.due ? { ...patch, due: dueFromView(raw.due, patch.due) } : patch)
+      await calendarEditUndoable(id, patch.due ? { ...patch, due: dueFromView(raw.due, patch.due) } : patch)
       const at = end === 'first' ? patch.start : patch.due?.date
       if (at) c.focus(at)
     }).catch(reportActionError)

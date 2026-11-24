@@ -1,6 +1,6 @@
 ---
 title: Performance budgets
-summary: How fast OpenTodo is with 10,000 tasks: the budgets for the app, phones and the server, the test account, how they are checked and the latest results.
+summary: "How fast OpenTodo is with 10,000 tasks: the budgets for the app, phones and the server, the test account, how they are checked and the latest results."
 audience: developer
 section: Internals
 specs: [performance-budgets]
@@ -107,7 +107,7 @@ The settings:
 | `saved-view` A saved view of eight clauses, to the list | ms | 100 | 300 | — | — |
 | `complete-task` Completing a task in the 2,000-row list, from the click to the paint that shows the tick, as INP measures it (95th percentile) | ms | 100 | 200 | 150 | 150 |
 | `cursor-move` Moving the cursor with j or k, to the next frame (95th percentile) | ms | 50 | 150 | — | — |
-| `first-sync` First sync of a new device, sign-in to all 10,000 tasks on it | s | 30 | 75 | 90 | 90 |
+| `first-sync` First sync of a new device, sign-in to all 10,000 tasks on it, starting on the Inbox | s | 30 | 75 | 90 | 90 |
 | `first-sync-long-task` Longest main-thread task during that sync | ms | 200 | — | — | — |
 | `remote-edit` An edit on another device, painted here | ms | 1,000 | — | — | — |
 | `js-heap` JavaScript heap after the session | MB | 150 | 150 | — | — |
@@ -121,38 +121,16 @@ The settings:
 | `server-start` Start to healthy | ms | 2,000 | 8,000 |
 | `server-idle-rss` Memory when idle | MB | 60 | 240 |
 | `server-pull-rss` Peak memory during one device's first sync | MB | 150 | 600 |
-| `server-export-rss` Peak memory during the JSON export | MB | 200 | 800 |
+| `server-export-rss` Peak memory during the JSON export | MB | 110 | 440 |
 | `server-pull-page` A sync page of 1,000 operations (95th percentile) | ms | 80 | 320 |
 | `server-push` A push of 100 operations (95th percentile) | ms | 100 | 400 |
-| `server-list-project` `GET /api/v1/tasks?project_id=` of the 2,000-task project (95th percentile) | ms | 150 | 600 |
+| `server-list-project` `GET /api/v1/tasks?project_id=` of the 2,000-task project (95th percentile) | ms | 170 | 600 |
 | `server-get-task` `GET /api/v1/tasks/{id}` (95th percentile) | ms | 10 | 40 |
 | `server-export` The full JSON export | ms | 3,000 | 12,000 |
 | `server-mcp-search` The MCP `search_tasks` tool (95th percentile) | ms | 200 | 800 |
 | `server-db-size` The database file | MB | 150 | 150 |
 
-### The native app
-
-The app in `mobile/app`, with the same account in its own database on the device.
-**Simulator** is the nightly measurement, on an iPhone simulator on GitHub's macOS
-runner; **iPhone, native app** is measured by hand on a phone before the app
-replaces the current one.
-
-| Metric | Unit | Simulator | iPhone, native app |
-| --- | --- | --- | --- |
-| `app-cold-start` Cold start with the data on the device, to the Today list | ms | — | 1,000 |
-| `app-js-to-today` From the app's code starting to the Today list | ms | 800 | — |
-| `app-inbox` Open Inbox | ms | 300 | 300 |
-| `app-pull-page` Apply a sync page of 500 changes | ms | 400 | 400 |
-| `app-pull-frame` Longest frame while that page applies | ms | 50 | 50 |
-| `app-complete-task` Complete a task, to the frame without it (95th percentile) | ms | 50 | 50 |
-| `app-native-memory` The app's memory after the session | MB | — | 180 |
-| `app-memory-growth` Memory over the empty app after the session | MB | 100 | — |
-
-Two budgets are split because a simulator cannot judge them. A simulator spends
-one to two seconds between the launch and the app's first line of code, whatever
-the app does, so there the budget covers what the app controls: from its code
-starting to the Today list. An empty app already takes about 245 MB on a
-simulator, so there the budget is how much the session adds.
+**The server's time limits are relative to the runner.** Each run also times a fixed reference workload, SQLite reads and JSON of 2,000 rows, with the same driver as the server (`internal/perf/reference_test.go`). A server limit in ms or s is multiplied by that run's reference time over its baseline (`reference` in `budgets.json`), so a runner twice as slow is allowed twice the time. The absolute limit × 1.5 holds on any runner. Memory and sizes stay absolute. `server-list-project` is 170 ms: its floor is SQLite's cost per row, and the same code read 95 to 161 ms on different runners ([#1656](https://github.com/OpenTodoApp/OpenTodo/issues/1656)).
 
 ### With a year of note history
 
@@ -242,7 +220,8 @@ timing it, so a slow runner cannot make them fail:
   task (`internal/agenttools`).
 
 **Every night** the benchmark times every desktop, phone-profile and server
-metric five times and fails when a median is over its limit; the nightly alert
+metric five times and fails when a median is over its limit (a server time
+limit scaled to the runner, as above); the nightly alert
 names the metric, the median and the limit ("first sync, desktop, 41 s,
 budget 30 s").
 
@@ -255,7 +234,9 @@ budgets.
 
 The app marks a few moments in the browser's own performance timeline
 (`ot:list-ready`, `ot:search-results`, `ot:sync-idle`, `ot:remote-applied`). The
-benchmark reads them there; they are never sent anywhere.
+benchmark reads them there; they are never sent anywhere. `ot:search-results` is
+marked once per typed text, when the search's results show; the notes and filter
+results the search adds after a short pause are outside the `search-keystroke` number.
 
 ## Run the benchmark yourself
 
@@ -275,19 +256,3 @@ Reference-device results are to be recorded per release in `docs/performance/`.
 No release has a record yet, 1.0 included: its budgets were measured in CI only,
 and the first real-device record comes after 1.0
 ([#990](https://github.com/OpenTodoApp/OpenTodo/issues/990)).
-
-### The native app: first runs
-
-The `app-perf` job (nightly until the native app was paused on 2026-11-13, now run by hand) measures the React Native app in `mobile/app` against
-[its budgets](#the-native-app) on an iPhone 16 simulator on GitHub's macOS runner,
-and fails when one is exceeded. The first runs (2026-11-11):
-
-| Metric | Budget | Measured (two runs) |
-| --- | --- | --- |
-| Cold start to Today drawn | 1,000 ms on a phone | 1,406–2,539 ms on the simulator, of which 1.0–1.9 s passes before any of the app's code runs |
-| From the app's code starting to Today drawn | 800 ms | 329–622 ms, of which the database and Today take 125–206 ms |
-| Opening Inbox | 300 ms | 30–50 ms |
-| A 500-change sync page | 400 ms | 74–135 ms |
-| Longest frame while it applies | 50 ms | 18 ms |
-| Completing a task, to the frame without it | 50 ms | 45 ms (334 ms before repeating tasks stopped reading every task) |
-| Memory over the empty app | 100 MB | 30–34 MB (46–88 MB once the session also completes twenty tasks) |

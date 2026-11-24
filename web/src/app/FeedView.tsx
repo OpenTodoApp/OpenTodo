@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { describeEvent, guestActorLabel, isPending, mergeOlder, usePendingOpIds } from '../lib/activity'
 import { isNetworkError } from '../lib/api'
 import { useAllProjects, useProjectsLoaded, useTasksByIdRead, useMembershipMap } from '../lib/localData'
-import { dayOf, FEED_KINDS, fetchFeed, filterFeed, groupByDay, markEventsSeen, seenTimes, type FeedKind, useSharedProjectIds, useFeedEvents } from '../lib/feed'
+import { countsAsUnread, dayOf, fetchFeed, filterFeed, groupByDay, markEventsSeen, seenTimes, type FeedKind, useSharedProjectIds, useFeedEvents } from '../lib/feed'
 import { useOnline } from '../lib/online'
 import { memberName, useCurrentUserId } from '../lib/sharing'
 import type { ActivityEvent } from '../lib/types'
@@ -14,6 +14,7 @@ import { hueFor, PageBody, PageHeader, Skeleton } from '../ui'
 import { Tooltip } from '../ui'
 import { t } from '../lib/i18n'
 import { ProjectMark } from './ProjectMark'
+import { KindsMenu } from './KindsMenu'
 
 /**
  * The activity feed (OpenSpec `activity-feed`): every shared project's recent
@@ -45,7 +46,7 @@ export function FeedView() {
 
   const [project, setProject] = useState('')
   const [actor, setActor] = useState('')
-  const [kind, setKind] = useState<FeedKind | ''>('')
+  const [kinds, setKinds] = useState<FeedKind[]>([])
   const [older, setOlder] = useState<ActivityEvent[]>([])
   const [cursor, setCursor] = useState<string | undefined>()
   const [more, setMore] = useState(true)
@@ -57,7 +58,7 @@ export function FeedView() {
     setOlder([])
     setCursor(undefined)
     setMore(true)
-  }, [project, actor, kind])
+  }, [project, actor, kinds])
 
   // Opening the feed (and anything arriving while it is open) marks each listed
   // project seen up to its newest event; markSeen debounces and never goes back.
@@ -67,7 +68,7 @@ export function FeedView() {
 
   const projectById = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const all = useMemo(() => mergeOlder(local ?? [], older), [local, older])
-  const filter = useMemo(() => ({ project, actor, kind }), [project, actor, kind])
+  const filter = useMemo(() => ({ project, actor, kinds }), [project, actor, kinds])
   const shown = useMemo(() => filterFeed(all, filter), [all, filter])
   const groups = useMemo(() => groupByDay(shown), [shown])
 
@@ -106,7 +107,7 @@ export function FeedView() {
   async function loadOlder() {
     setState('loading')
     try {
-      const page = await fetchFeed({ cursor, project, actor, kind })
+      const page = await fetchFeed({ cursor, project, actor, kinds })
       setOlder((prev) => [...prev, ...page.events])
       setCursor(page.cursor)
       setMore(page.more)
@@ -121,7 +122,7 @@ export function FeedView() {
   const today = dayOf(Date.now())
   const yesterday = dayOf(Date.now() - 86_400_000)
   const dayLabel = (d: string) => (d === today ? t('Today') : d === yesterday ? t('Yesterday') : dt.formatDate(d, d.slice(0, 4) === today.slice(0, 4) ? 'heading' : 'long'))
-  const isNew = (e: ActivityEvent) => !!seenAtOpen && !!e.projectId && e.actor !== me && e.ts > (seenAtOpen.get(e.projectId) ?? Number.POSITIVE_INFINITY)
+  const isNew = (e: ActivityEvent) => !!seenAtOpen && !!e.projectId && countsAsUnread(e, me ?? null) && e.ts > (seenAtOpen.get(e.projectId) ?? Number.POSITIVE_INFINITY)
 
   return (
     <PageBody width="list">
@@ -140,18 +141,15 @@ export function FeedView() {
             {actors.map((a) => <option key={a} value={a}>{name(a)}</option>)}
           </select>
         </label>
-        <label className="flex items-center gap-1 text-meta text-muted">
+        <span className="flex items-center gap-1 text-meta text-muted">
           {t('Kind')}
-          <select className="ui-input w-40 py-0.5 text-meta" value={kind} onChange={(e) => setKind(e.target.value as FeedKind | '')} aria-label={t('Filter feed by kind')}>
-            <option value="">{t('All changes')}</option>
-            {FEED_KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
-          </select>
-        </label>
+          <KindsMenu kinds={kinds} onChange={setKinds} label={t('Kind')} />
+        </span>
       </PageHeader>
       {loading ? <Skeleton shape="row" count={6} label={t('Loading activity')} /> : shared.length === 0 ? (
         <p className="py-12 text-center text-body text-faint">{t('Share a project to see what others change here.')}</p>
       ) : shown.length === 0 && local ? (
-        <p className="py-12 text-center text-body text-faint">{project || actor || kind ? t('No activity matches these filters.') : t('No activity on this device yet.')}</p>
+        <p className="py-12 text-center text-body text-faint">{project || actor || kinds.length ? t('No activity matches these filters.') : t('No activity on this device yet.')}</p>
       ) : null}
       <div className="space-y-4">
         {!loading && groups.map((g) => (

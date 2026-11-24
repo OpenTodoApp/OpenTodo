@@ -308,3 +308,65 @@ func TestLinkWithoutBodyIsRewrittenOnce(t *testing.T) {
 		}
 	})
 }
+
+// GitHub issue 1573: Google keeps a deleted event in its Bin for 30 days and
+// refuses a new event with its UID (409). A task whose event was removed, by
+// OpenTodo or in the calendar, and that is written again gets a new UID instead
+// of failing every cycle; later changes rewrite that same event.
+func TestUIDInTheBinGetsANewEvent(t *testing.T) {
+	h := newHarness(t)
+	h.srv.KeepDeletedUIDs = true
+	h.task("alice", "t1", map[string]any{"title": "Call Ana", "due": map[string]string{"date": "2026-11-03", "time": "09:00"}})
+	h.task("alice", "t2", map[string]any{"title": "Plan", "due": map[string]string{"date": "2026-11-03", "time": "11:00"}})
+	c := h.connect(false)
+	h.cycle(c)
+	// t1 done: its event goes to the Bin. t2's event deleted in the calendar: t2 is unscheduled.
+	h.edit("alice", "t1", map[string]any{"completed_at": h.clock.UnixMilli()})
+	h.srv.Delete("work", "t2.ics")
+	if n := h.cycle(h.conn(c.ID)); n.Removed != 1 || n.Unscheduled != 1 {
+		t.Fatalf("counts = %+v", n)
+	}
+	// t1 reopened, t2 dated again: both are written again.
+	h.edit("alice", "t1", map[string]any{"completed_at": nil})
+	h.edit("alice", "t2", map[string]any{"due": map[string]string{"date": "2026-11-05", "time": "10:00"}})
+	n, err := h.w.Cycle(h.ctx, h.conn(c.ID))
+	if err != nil || n.Written != 2 {
+		t.Fatalf("cycle = %+v, %v", n, err)
+	}
+	members := h.srv.Members("work")
+	if len(members) != 2 {
+		t.Fatalf("members = %v", members)
+	}
+	for _, m := range members {
+		if !strings.HasPrefix(m, "t1-") && !strings.HasPrefix(m, "t2-") {
+			t.Fatalf("member %q kept the binned address", m)
+		}
+		if uid := strings.TrimSuffix(m, ".ics"); !strings.Contains(h.srv.Get("work", m), "UID:"+uid+"\r\n") {
+			t.Fatalf("%s:\n%s", m, h.srv.Get("work", m))
+		}
+	}
+	// A later change rewrites the same event, UID kept; a move in the calendar moves the task.
+	h.edit("alice", "t1", map[string]any{"title": "Call Ana back"})
+	h.cycle(h.conn(c.ID))
+	var t1 string
+	for _, m := range h.srv.Members("work") {
+		if strings.HasPrefix(m, "t1-") {
+			t1 = m
+		}
+	}
+	if body := h.srv.Get("work", t1); !strings.Contains(body, "SUMMARY:Call Ana back") || !strings.Contains(body, "UID:"+strings.TrimSuffix(t1, ".ics")) {
+		t.Fatalf("%s:\n%s", t1, body)
+	}
+	if len(h.srv.Members("work")) != 2 {
+		t.Fatalf("members = %v", h.srv.Members("work"))
+	}
+	h.clock = h.clock.Add(time.Minute)
+	h.srv.Put("work", t1, event(strings.TrimSuffix(t1, ".ics"), "Call Ana back", "DTSTART:20261104T140000", "DTEND:20261104T143000", h.clock))
+	h.clock = h.clock.Add(time.Minute)
+	if n := h.cycle(h.conn(c.ID)); n.Moved != 1 {
+		t.Fatalf("counts = %+v", n)
+	}
+	if d := due(h.get("alice", "t1")); d["date"] != "2026-11-04" || d["time"] != "14:00" {
+		t.Fatalf("due = %v", d)
+	}
+}

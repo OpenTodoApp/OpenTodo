@@ -18,13 +18,17 @@ order: 17
 The active projects form a table, with sub-projects indented under their parent. For each project you see:
 
 - its **Health** (see below);
-- its **Progress**: completed tasks out of all its tasks, where a repeating task counts once. An [area](project-flows.md) never finishes, so it reads **Area** instead, and sorting by progress puts areas after the projects that have one;
+- its **Progress**: completed tasks out of all its tasks, where a repeating task counts once. An [area](project-flows.md) never finishes, so it reads **Area** instead, and sorting by progress puts areas after the projects that have one. A [reusable list](reusable-lists.md)'s cell is empty;
 - how many tasks are **Open**;
 - the **Next due** date, in red when it has passed;
 - the **People** a shared project is shared with;
 - when it was last **Updated**.
 
 A folded project includes its sub-projects in these figures; an unfolded one counts only its own tasks, as in the sidebar. **Collapse all** and **Expand all** are in the page's **⋯** menu. Select a row to open the project.
+
+## Archive several at once
+
+Tick rows with <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+click, <kbd>Shift</kbd>+click or <kbd>Space</kbd> (on a phone, **Select projects** in **⋯**), then choose **Archive**: they go with their sub-projects, with one **Undo**.
 
 ## Health
 

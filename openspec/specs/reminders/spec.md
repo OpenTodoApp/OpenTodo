@@ -137,7 +137,7 @@ Snoozing a reminder SHALL set a new firing time (10 minutes, 1 hour, or tomorrow
 - **THEN** after sync every device shows the reminder snoozed, because the later edit wins per field, and it fires once more at the snoozed time
 
 ### Requirement: Notification settings
-Settings SHALL offer, per device, enabling and disabling push notifications, the "include task titles" option, and a test notification. Enabling SHALL request the browser permission and register the subscription; disabling SHALL remove the subscription on the server. Signing out SHALL remove the device's subscription. On a device running in a native shell with the `reminders` capability (OpenSpec `native-shells`), the same switch SHALL enable and disable the shell's device-scheduled reminders instead of a push subscription, the test action SHALL show a notification through the shell and report that outcome, and "include task titles" SHALL govern the titles handed to the shell; no push subscription SHALL be created on such a device.
+Settings SHALL offer, per device, enabling and disabling push notifications, the "include task titles" option, and a test notification. Enabling SHALL request the browser permission and register the subscription; disabling SHALL remove the subscription on the server. Signing out SHALL remove the device's subscription. On a device running in a native shell with the `reminders` capability (OpenSpec `native-shells`), the same switch SHALL enable and disable the shell's device-scheduled reminders instead of a push subscription, the test action SHALL show a notification through the shell and report that outcome, and "include task titles" SHALL govern the titles handed to the shell; no push subscription SHALL be created on such a device. In such a shell both settings SHALL be on until the user turns them off: a device where the switch was never touched is handed the coming reminders, with their titles unless the account is end-to-end encrypted, and a device where the user turned either off SHALL stay off across updates. The settings are per device, stored on the device, and never synced. The words Settings uses for the phone's own settings SHALL name the platform the app runs on.
 
 #### Scenario: Enable on this device
 - **WHEN** the user enables notifications and grants the browser permission
@@ -162,6 +162,18 @@ Settings SHALL offer, per device, enabling and disabling push notifications, the
 #### Scenario: Android permission refused
 - **WHEN** the user refuses Android's notification permission
 - **THEN** the setting stays off, Settings explains where to allow notifications for the app, and reminders are still delivered in-app
+
+#### Scenario: Fresh install of an app
+- **WHEN** the user opens Settings → Notifications in a newly installed Android or iOS app
+- **THEN** notifications through the app and task titles both read On, without the user having turned them on
+
+#### Scenario: Turned off before the update
+- **WHEN** a user who turned notifications through the app off updates the app and the server
+- **THEN** the setting still reads Off and no reminder is handed to the phone
+
+#### Scenario: Wording on iPhone
+- **WHEN** iOS refuses notifications for the app
+- **THEN** the explanation names the iPhone's Settings, not Android's
 
 ### Requirement: Reminders in the Trash and archived projects
 A reminder SHALL not be delivered, in the app, by push, through a notification channel or by a native shell's device-scheduled notifications, while its task is deleted or while the task's project or any ancestor project is deleted or archived. Suppression SHALL not record delivery or dismissal, so after a restore or unarchiving a reminder fires at its time, and one whose time passed meanwhile is delivered once on the next check. Devices SHALL apply the rule from local data offline; it converges because it derives from synced deletion times and archived flags. The web app and the server SHALL apply the same rule, pinned by shared vectors.
@@ -517,3 +529,124 @@ A system notification of a reminder SHALL offer **Done** first, then **Snooze 10
 #### Scenario: Two buttons only
 - **WHEN** the browser shows at most two notification buttons
 - **THEN** the notification shows **Done** and **Snooze 10 min**
+
+### Requirement: Compact in-app reminder on touch
+On a device whose pointer is coarse, and in a window narrower than 640 px, the in-app notification of "In-app delivery" SHALL be one compact card: the task's name on one line, which opens the task; the reminder's time on one line; and one row with two actions, "Snooze" and "Dismiss", each at least 44 px high and wide on touch. "Snooze" SHALL open the three snooze choices of "Snooze and dismiss" (10 minutes, 1 hour, tomorrow at 09:00) as a menu, a bottom sheet below 640 px, reachable by tap and by keyboard (Enter opens it, the arrow keys move, Enter chooses); Escape in the menu SHALL close the menu only, and Escape on the card SHALL dismiss the reminder. When several reminders are due, the card SHALL show the one that fired first and the number of the others, and the next SHALL take its place when the first is answered. The card SHALL be announced as before (an alert named "Reminder" and the task's name) and SHALL sit in the toast stack of `app-shell` "Notices are toasts", clear of the tab bar and the floating add button like every toast. After an answer, focus that was in the card SHALL move to the next card, or, when none is left, back to the element that had it before the reminder took it. With a fine pointer on a window of 640 px or more the card SHALL keep its three snooze buttons and Dismiss, one card per due reminder up to four. This is presentation only: the answers are the reminder operations of "Snooze and dismiss", written locally, queued offline and converging by last-writer-wins.
+
+#### Scenario: A due reminder on a phone
+- **WHEN** a reminder for "Renew passport" is due and the app is open on a 360 px touch screen
+- **THEN** one card shows "Renew passport", the reminder's time, and "Snooze" and "Dismiss" on one row, each 44 px high
+
+#### Scenario: Snooze from the sheet
+- **WHEN** the user taps Snooze on the card on a phone and then "1 hour"
+- **THEN** the sheet closes, the reminder's firing time is one hour from now as one reminder operation, and the card leaves
+
+#### Scenario: Snooze by keyboard on a tablet
+- **WHEN** focus is on the card's Snooze button at 768 px and the user presses Enter, Arrow Down, Enter
+- **THEN** the menu opens with focus on "Snooze 10 min", and the reminder is snoozed by one hour
+
+#### Scenario: Escape in the menu
+- **WHEN** the snooze menu is open and the user presses Escape
+- **THEN** the menu closes, focus is on Snooze, and the reminder is neither snoozed nor dismissed
+
+#### Scenario: Several due reminders
+- **WHEN** four reminders are due on a phone
+- **THEN** one card shows the one that fired first with "+3 more reminders", and after it is dismissed the next one shows with "+2 more reminders" and focus on its Snooze button
+
+#### Scenario: Offline
+- **WHEN** the device is offline and the user snoozes a reminder from the compact card
+- **THEN** the reminder fires again on this device at the new time, and the change uploads on reconnect
+
+#### Scenario: A mouse on a wide window
+- **WHEN** two reminders are due at 1280 px with a mouse
+- **THEN** two cards show, each with "Snooze 10 min", "1 hour", "Tomorrow 09:00" and "Dismiss"
+
+### Requirement: Push delivery setting in the Android app
+In the Android app, when the shell lists the `push` capability (OpenSpec `native-shells`) and the server offers push, Settings → Notifications SHALL offer delivery through UnifiedPush, next to the device's notification switch and off until the user turns it on. Turning it on SHALL let the user choose the UnifiedPush app and SHALL subscribe the device on the server with task titles included or not as the device's "include task titles" option says; turning it off SHALL remove the subscription and the registration. The row SHALL say plainly when no UnifiedPush app is installed and SHALL then offer no switch. With notifications through the app turned off on the device, push delivery SHALL be off too. The setting is per device, stored on the device, and never synced; a failed subscription SHALL leave it off with the reason, and reminders scheduled on the phone SHALL be unaffected either way.
+
+#### Scenario: Turn it on
+- **WHEN** the user turns on delivery through UnifiedPush and chooses a UnifiedPush app
+- **THEN** the device is subscribed on the server, the setting reads On after a reload, and the next due reminder arrives with the app closed
+
+#### Scenario: No UnifiedPush app
+- **WHEN** the Android app can use UnifiedPush but none is installed
+- **THEN** the row says a UnifiedPush app is needed and offers no switch that would fail
+
+#### Scenario: The server does not offer push
+- **WHEN** push is turned off on the server
+- **THEN** the row is not shown, and reminders scheduled on the phone work as before
+
+#### Scenario: Offline
+- **WHEN** the user turns it on without a connection to the server
+- **THEN** the setting stays off and says the server could not be reached, and nothing is registered
+
+#### Scenario: Titles
+- **WHEN** "include task titles" is off on the device
+- **THEN** the device is subscribed without content and a pushed reminder shows the generic text
+
+#### Scenario: iPhone and browsers
+- **WHEN** the app runs on an iPhone, or in a browser
+- **THEN** the row is not shown: the iPhone app has no push, and a browser keeps its own push switch
+
+### Requirement: Assignment and status pushes
+A device with push enabled MAY opt in, per device, to two further pushes, both off until the user turns them on: **Assigned to me**, when someone else assigns a task to the user, and **Completed or reopened**, when someone else completes or reopens a task assigned to the user. A skipped occurrence, a task created already completed and a rotating task's turn passing are none of these. The server SHALL send such a push after the change has committed, only to the user's subscriptions that opted in to that event, never for a change the user made, and not while the user's away period pauses reminders. The payload SHALL carry the task id, the name of who made the change and, for a status push, whether the task was completed or reopened; it SHALL carry the task title only when the device opted in to "include task titles", and never an encrypted title or the description. The notification SHALL name who made the change, show the task's title when the payload or the device's local store has it, be in the language stored on the device, and open the task when clicked. While the app is in front on the device, no system notification SHALL be shown for these pushes. They are best effort: one that cannot be sent is not retried. A task's status pushes to one person SHALL pause for 5 minutes after one was sent. The name in a payload SHALL never be an email address; a device shows "Someone" when there is no name. The choices are stored with the device's push subscription (`POST /api/v1/push/subscriptions` takes `notify: {assigned, status}`; a request without it keeps them), outside the op log and the export, and are removed with it.
+
+#### Scenario: Assigned while the app is closed
+- **WHEN** Ben assigns "Book the venue" to Ana and Ana's laptop has push enabled with "Assigned to me" on
+- **THEN** the laptop shows "Ben assigned you a task" with "Book the venue", and clicking it opens that task
+
+#### Scenario: Not opted in
+- **WHEN** Ana's phone has push enabled but "Assigned to me" off and Ben assigns her a task
+- **THEN** no push is sent to the phone, and the bell still shows the assignment
+
+#### Scenario: Completed by a teammate
+- **WHEN** Ben completes a task assigned to Ana and her device opted in to "Completed or reopened"
+- **THEN** the device shows "Ben completed a task", and reopening it later shows "Ben reopened a task"
+
+#### Scenario: Own change
+- **WHEN** Ana completes a task assigned to herself
+- **THEN** no status push is sent to any of her devices
+
+#### Scenario: Titles not opted in
+- **WHEN** the device opted in to "Assigned to me" without "include task titles"
+- **THEN** the payload carries no title, and the notification shows the title read from the device's local store when it has the task
+
+#### Scenario: Encrypted account
+- **WHEN** the task's title is end-to-end encrypted and the device opted in to titles
+- **THEN** the payload carries no title
+
+#### Scenario: A skipped occurrence
+- **WHEN** Ben skips an occurrence of a repeating task assigned to Ana
+- **THEN** no status push is sent
+
+#### Scenario: Re-registering without the choices
+- **WHEN** Ana's device opted in to "Assigned to me" and an older version of the app re-registers its subscription without `notify`
+- **THEN** the device still receives assignment pushes
+
+#### Scenario: Toggled again and again
+- **WHEN** Ben completes and reopens a task assigned to Ana five times within a minute
+- **THEN** Ana's device gets one status push for that task
+
+#### Scenario: No name on the account
+- **WHEN** Ben's account has no name, only an email address, and he assigns Ana a task
+- **THEN** the payload carries no address and the notification reads "Someone assigned you a task"
+
+#### Scenario: Away
+- **WHEN** Ana's away period pauses reminders today and Ben assigns her a task
+- **THEN** no assignment push is sent to her devices
+
+#### Scenario: Choices need push on this device
+- **WHEN** push is off on this device
+- **THEN** Settings does not offer "Assigned to me" or "Completed or reopened"
+
+#### Scenario: Subscribing with the choices
+- **WHEN** an authenticated device posts its subscription with `notify: {"assigned": true}`
+- **THEN** the response carries `notify: {"assigned": true, "status": false}` and the device receives assignment pushes
+
+#### Scenario: Unauthenticated subscription
+- **WHEN** the subscription request carries no valid session or token
+- **THEN** the response is 401 with code `unauthenticated` and nothing is stored
+
+#### Scenario: Invalid choices
+- **WHEN** the posted `notify` is not an object of booleans
+- **THEN** the response is 400 with code `bad_request` and the stored subscription is unchanged

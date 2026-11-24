@@ -679,6 +679,77 @@ func turnUsage(t assistant.Tokens, monthTotal, turnCap int64, own bool) map[stri
 		"month_total": monthTotal, "cap": turnCap, "own_key": own}
 }
 
+// assistantAccess runs the checks every assistant call starts with, in this order:
+// the assistant is enabled, the account is not end-to-end encrypted (never, on-device
+// mode or not: assistant-on-device; encrypted says why), the assistant is active, and
+// the member consented to the provider their call uses: their own provider, model and
+// key, or the owner's (assistant-member-provider); consentWhen ends its message.
+func (s *Server) assistantAccess(w http.ResponseWriter, r *http.Request, encrypted, consentWhen string) (assistant.Settings, *auth.User, assistant.Route, bool) {
+	ctx := r.Context()
+	set := s.assistantSettings(ctx)
+	if !set.Enabled {
+		writeError(w, http.StatusNotFound, "not_found", "the assistant is not enabled on this server")
+		return set, nil, assistant.Route{}, false
+	}
+	u := userFrom(ctx)
+	if enc, err := s.keys().Enabled(ctx, u.ID); err != nil {
+		s.internal(w, err)
+		return set, nil, assistant.Route{}, false
+	} else if enc {
+		writeError(w, http.StatusConflict, "encryption_enabled", encrypted)
+		return set, nil, assistant.Route{}, false
+	}
+	if !set.Active() {
+		writeError(w, http.StatusNotFound, "not_found", "the assistant is not enabled on this server")
+		return set, nil, assistant.Route{}, false
+	}
+	route, err := s.assistant.Store.Resolve(ctx, u.ID, set)
+	if err != nil {
+		s.internal(w, err)
+		return set, nil, assistant.Route{}, false
+	}
+	consent, err := s.assistant.Store.Consent(ctx, u.ID)
+	if err != nil {
+		s.internal(w, err)
+		return set, nil, assistant.Route{}, false
+	}
+	if !consent.Valid(route.Provider) {
+		writeError(w, http.StatusForbidden, "consent_required", "read which data is sent to "+assistant.ProviderLabel(route.Provider)+" and accept "+consentWhen)
+		return set, nil, assistant.Route{}, false
+	}
+	return set, u, route, true
+}
+
+// assistantSlot refuses a call over the month's token allowance (calls on the member's
+// own key are outside it unless the owner counts them: cap_member_keys) and takes the
+// member's one call at a time; the caller defers release. capped says whether the
+// call counts toward the allowance.
+func (s *Server) assistantSlot(w http.ResponseWriter, ctx context.Context, userID string, set assistant.Settings, route assistant.Route) (usage assistant.Usage, capped bool, release func(), ok bool) {
+	usage, err := s.assistant.Store.Usage(ctx, userID, set.MonthlyTokenCap)
+	if err != nil {
+		s.internal(w, err)
+		return usage, false, nil, false
+	}
+	capped = set.MonthlyTokenCap > 0 && (!route.Own || set.CapMemberKeys)
+	if capped && usage.Counted(set.CapMemberKeys) >= set.MonthlyTokenCap {
+		writeErrorWith(w, http.StatusTooManyRequests, "assistant_quota",
+			fmt.Sprintf("you have used this month's assistant allowance of %d tokens; it resets on %s", set.MonthlyTokenCap, usage.ResetsAt),
+			map[string]any{"resets_at": usage.ResetsAt})
+		return usage, false, nil, false
+	}
+	release, err = s.assistant.Acquire(userID)
+	switch {
+	case errors.Is(err, assistant.ErrTurnInProgress):
+		writeError(w, http.StatusConflict, "turn_in_progress", "another answer is still being written; wait for it or stop it first")
+		return usage, false, nil, false
+	case errors.Is(err, assistant.ErrBusy):
+		w.Header().Set("Retry-After", "5")
+		writeError(w, http.StatusServiceUnavailable, "assistant_busy", "the assistant is busy on this server; try again in a few seconds")
+		return usage, false, nil, false
+	}
+	return usage, capped, release, true
+}
+
 // ---- the turn ----
 
 type turnRequest struct {
@@ -697,38 +768,9 @@ type turnRequest struct {
 
 func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	set := s.assistantSettings(ctx)
-	if !set.Enabled {
-		writeError(w, http.StatusNotFound, "not_found", "the assistant is not enabled on this server")
-		return
-	}
-	u := userFrom(ctx)
-	// Never for an encrypted account, on-device mode or not (assistant-on-device).
-	if enc, err := s.keys().Enabled(ctx, u.ID); err != nil {
-		s.internal(w, err)
-		return
-	} else if enc {
-		writeError(w, http.StatusConflict, "encryption_enabled", "the assistant cannot read end-to-end encrypted tasks; your tasks never leave your devices unencrypted")
-		return
-	}
-	if !set.Active() {
-		writeError(w, http.StatusNotFound, "not_found", "the assistant is not enabled on this server")
-		return
-	}
-	// The member's own provider, model and key, or the owner's provider
-	// (assistant-member-provider); consent must name the provider used.
-	route, err := s.assistant.Store.Resolve(ctx, u.ID, set)
-	if err != nil {
-		s.internal(w, err)
-		return
-	}
-	consent, err := s.assistant.Store.Consent(ctx, u.ID)
-	if err != nil {
-		s.internal(w, err)
-		return
-	}
-	if !consent.Valid(route.Provider) {
-		writeError(w, http.StatusForbidden, "consent_required", "read which data is sent to "+assistant.ProviderLabel(route.Provider)+" and accept before the first message")
+	set, u, route, ok := s.assistantAccess(w, r,
+		"the assistant cannot read end-to-end encrypted tasks; your tasks never leave your devices unencrypted", "before the first message")
+	if !ok {
 		return
 	}
 	in, skill, zone, ok := s.readTurn(w, r)
@@ -739,28 +781,8 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, "images_unsupported", "the model in use here does not read photos; send the message without them")
 		return
 	}
-	usage, err := s.assistant.Store.Usage(ctx, u.ID, set.MonthlyTokenCap)
-	if err != nil {
-		s.internal(w, err)
-		return
-	}
-	// Turns on the member's own key are outside the cap unless the owner
-	// counts them (cap_member_keys).
-	capped := set.MonthlyTokenCap > 0 && (!route.Own || set.CapMemberKeys)
-	if capped && usage.Counted(set.CapMemberKeys) >= set.MonthlyTokenCap {
-		writeErrorWith(w, http.StatusTooManyRequests, "assistant_quota",
-			fmt.Sprintf("you have used this month's assistant allowance of %d tokens; it resets on %s", set.MonthlyTokenCap, usage.ResetsAt),
-			map[string]any{"resets_at": usage.ResetsAt})
-		return
-	}
-	release, err := s.assistant.Acquire(u.ID)
-	switch {
-	case errors.Is(err, assistant.ErrTurnInProgress):
-		writeError(w, http.StatusConflict, "turn_in_progress", "another answer is still being written; wait for it or stop it first")
-		return
-	case errors.Is(err, assistant.ErrBusy):
-		w.Header().Set("Retry-After", "5")
-		writeError(w, http.StatusServiceUnavailable, "assistant_busy", "the assistant is busy on this server; try again in a few seconds")
+	usage, capped, release, ok := s.assistantSlot(w, ctx, u.ID, set, route)
+	if !ok {
 		return
 	}
 	defer release()

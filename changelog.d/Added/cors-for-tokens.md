@@ -1,1 +1,0 @@
-- **Call the API from your own web pages.** List their origins in `OPENTODO_CORS_ORIGINS` (for example `https://dash.example.com`) and a page there can call `/api/v1/` with an API token: a `read` token suits a dashboard. Off by default; a signed-in browser's session is never shared with those pages ([HTTP API](docs/api.md#calling-the-api-from-another-site)).

@@ -178,11 +178,19 @@ The `row_detail` field of the user's appearance preferences SHALL remain in the 
 - **THEN** one op for `density` is queued and none for `row_detail`
 
 ### Requirement: Haptic feedback preference
-Each user SHALL have a `haptics` preference, `on` or `off`, defaulting to `on`, synced like the other appearance preferences as an additive field and editable offline, converging by last-writer-wins. With it on, a device that can vibrate SHALL give a short tick (at most 15 ms) when a task is completed and when a long press lifts a task for dragging; with it off, or on a device that cannot vibrate, nothing SHALL vibrate. The switch SHALL appear in Settings → Appearance only on devices that can vibrate; a client that receives an unknown value SHALL treat it as `on` and keep the stored value.
+Each user SHALL have a `haptics` preference, `on` or `off`, defaulting to `on`, synced like the other appearance preferences as an additive field and editable offline, converging by last-writer-wins. With it on, a device that can vibrate SHALL give a short tick (at most 15 ms) when a task is completed, when a task is created, and when a long press lifts a task for dragging; with it off, or on a device that cannot vibrate, nothing SHALL vibrate. A tick SHALL mark a deliberate moment and SHALL NOT fire on an ordinary tap such as opening or scrolling, so the feedback stays meaningful. The switch SHALL appear in Settings → Appearance only on devices that can vibrate; a client that receives an unknown value SHALL treat it as `on` and keep the stored value.
 
 #### Scenario: Complete on a phone
 - **WHEN** the preference is on and the user completes a task on a phone whose browser supports vibration
 - **THEN** the device ticks once as the check mark fills, and does not tick again when the row leaves
+
+#### Scenario: Create on a phone
+- **WHEN** the preference is on and the user adds a task with quick add on a phone that can vibrate
+- **THEN** the device ticks once as the task is created, and does not tick again while typing
+
+#### Scenario: An ordinary tap does not tick
+- **WHEN** the preference is on and the user taps a row to open a task
+- **THEN** the device does not tick, since opening is not one of the deliberate moments
 
 #### Scenario: Turned off on one device
 - **WHEN** the user turns haptics off on their phone while offline and later opens a tablet
@@ -345,7 +353,7 @@ A device SHALL remember the derived values of the custom accent with the rest of
 ### Requirement: Full task titles preference
 Each user SHALL have a full task titles preference, off by default, stored as the additive field `full_titles` of the user's preferences (`"on"`, else off). It SHALL be written as an operation on the user's personal data like the density, so it is editable offline, applies at once on the editing device, reaches the user's other devices with sync and converges by last-writer-wins. A client SHALL treat an empty or unknown value as off and keep the stored value unchanged.
 
-While it is on, every task title in list rows (in both row layouts), on board cards and in Today SHALL be shown in full, wrapped onto as many lines as it takes, at every width, instead of ending with an ellipsis after two lines (one on a phone row); the phone row's end cell SHALL stay on the title's first line. The calendar's compact rows and other one-line mentions of a task keep their shapes. A long list SHALL keep its scroll height close to the real one with the taller rows, so End and the scroll bar reach the last task.
+While it is on, every task title in list rows (in both row layouts), on board cards and in Today SHALL be shown in full, wrapped onto as many lines as it takes, at every width, instead of ending with an ellipsis after two lines; the phone row's end cell SHALL stay on the title's first line, as it does with the preference off. The calendar's compact rows and other one-line mentions of a task keep their shapes. A long list SHALL keep its scroll height close to the real one with the taller rows, so End and the scroll bar reach the last task.
 
 Settings → Appearance SHALL offer it as the switch "Show full task titles" after the task rows choice, announced with its state to assistive technology. Searching settings for "full task titles", "truncate" or "wrap" SHALL find it.
 
@@ -359,7 +367,7 @@ Settings → Appearance SHALL offer it as the switch "Show full task titles" aft
 
 #### Scenario: Off by default
 - **WHEN** a user who never changed the preference opens the same project
-- **THEN** the title ends with an ellipsis after one line on the phone and after two lines on a desktop, and resting the pointer on it shows the whole title
+- **THEN** the title ends with an ellipsis after two lines on the phone and on a desktop, and resting the pointer on it shows the whole title
 
 #### Scenario: Offline on two devices
 - **WHEN** the user turns the preference on while offline on a phone and the laptop syncs later

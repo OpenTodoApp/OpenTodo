@@ -1,5 +1,8 @@
 {
   "$comment": "The official keys of the signed web app (OpenSpec change signed-web-app, design D3 and D17). keys: the public halves (DER SubjectPublicKeyInfo, base64) of the release key and the offline recovery key, added by the maintainer when he creates them (tasks 0.2); their fingerprints are also in SECURITY.md and docs/security/signed-app.md, and scripts/repo-checks.test.mjs keeps them equal. refuse: false while checks only report; a release that sets it to true turns refusal on for every device that installs it, for good. Until a key is listed, CI cannot sign and builds read Self-built.",
   "refuse": false,
-  "keys": []
+  "keys": [
+    { "spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE077S1B8R8AEWHxkNDi+qruc/Jcv3yuM+TtjKhTjhwyEeJZZWYVXYQjoAKbio3TZA3E3whpmdHwtkcIE9U7I2yQ==", "role": "release" },
+    { "spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAELBU/+XrgzAtDnGcvsk7Q/KWn/AewYAmTgg5bP/ApW38MH+bQmI3k5Gi8sngBbW82feTN11eLUcgBTMswqmkV9Q==", "role": "recovery" }
+  ]
 }

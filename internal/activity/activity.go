@@ -6,11 +6,12 @@
 //
 // The rule:
 //
-//  1. Only task, project and comment ops count; others are ignored, and so are
+//  1. Only task, project, comment and time_entry ops count; others are ignored, and so are
 //     opaque document fields (Opaque: task.notes_doc, collaborative-rich-text),
 //     whose readable projection (description) travels in the same batch, a
 //     task's note_mentions (they travel with that edit) and a comment's
-//     reactions.<account> (editor-everywhere).
+//     reactions.<account> (editor-everywhere) and a time entry's note
+//     (workspace-activity D3: it may be encrypted and never reaches an event).
 //  2. Ops are ordered by (ts, device), keeping input (seq) order for ties, which
 //     is the order last-writer-wins resolves them in.
 //  3. Each op's old value is the previous value of the same field in that order
@@ -87,6 +88,9 @@ type Event struct {
 	TS       int64    `json:"ts"`
 	OpIDs    []string `json:"opIds"`
 	Changes  []Change `json:"changes"`
+	// Minutes is the tracked length of a time entry's event, rounded to whole
+	// minutes (workspace-activity D3); absent for every other event.
+	Minutes *int64 `json:"minutes,omitempty"`
 	// Device is set only for a public link's ticks (public:<link-id>,
 	// OpenSpec `public-links` D6) and a task page's guest writes
 	// (page:<page-id>, task-pages D5): those form their own groups and read
@@ -113,9 +117,13 @@ const (
 	KindCommented      = "commented"
 	KindCommentEdited  = "comment_edited"
 	KindCommentDeleted = "comment_deleted"
+	// KindTimeTracked: a time entry was logged or a running one ended;
+	// KindTimeChanged: an ended entry was edited or deleted (workspace-activity D3).
+	KindTimeTracked = "time_tracked"
+	KindTimeChanged = "time_changed"
 )
 
-var counted = map[string]bool{"task": true, "project": true, "comment": true}
+var counted = map[string]bool{"task": true, "project": true, "comment": true, "time_entry": true}
 
 // Opaque lists "entity.field" pairs that never appear in events: encoded
 // documents (internal/sync DocFields). Kept here because sync imports activity.
@@ -127,29 +135,34 @@ var Opaque = map[string]bool{"task.notes_doc": true, "project.notes_doc": true, 
 // edit whose description projection already makes the event.
 func quiet(op Op) bool {
 	return Opaque[op.Entity+"."+op.Field] || (op.Entity == "task" && op.Field == "note_mentions") ||
-		(op.Entity == "comment" && strings.HasPrefix(op.Field, "reactions.")) || strings.HasPrefix(op.Field, "appends.")
+		(op.Entity == "comment" && strings.HasPrefix(op.Field, "reactions.")) || strings.HasPrefix(op.Field, "appends.") ||
+		(op.Entity == "time_entry" && op.Field == "note")
 }
 
 type group struct {
 	ev      Event
 	order   []string
 	changes map[string]*Change
+	// start and end are a time entry's started_at and ended_at after the
+	// group's last op.
+	start, end json.RawMessage
 }
 
 // Derive applies the rule to ops (given in seq order) and returns the events
 // oldest first. prior optionally supplies old values keyed by Key.
 func Derive(ops []Op, prior map[string]json.RawMessage) []Event {
 	list := make([]Op, 0, len(ops))
-	commentTask := map[string]string{}
+	// parentTask maps a comment or a time entry to its task.
+	parentTask := map[string]string{}
 	for _, op := range ops {
 		if !counted[op.Entity] || quiet(op) {
 			continue
 		}
 		list = append(list, op)
-		if op.Entity == "comment" && op.Field == "task_id" {
+		if (op.Entity == "comment" || op.Entity == "time_entry") && op.Field == "task_id" {
 			var t string
 			_ = json.Unmarshal(op.Value, &t)
-			commentTask[op.EntityID] = t
+			parentTask[op.Entity+":"+op.EntityID] = t
 		}
 	}
 	sort.SliceStable(list, func(i, j int) bool {
@@ -159,6 +172,15 @@ func Derive(ops []Op, prior map[string]json.RawMessage) []Event {
 		return list[i].Device < list[j].Device
 	})
 	last := map[string]json.RawMessage{}
+	value := func(fk string) json.RawMessage {
+		if v, ok := last[fk]; ok {
+			return v
+		}
+		if v, ok := prior[fk]; ok {
+			return v
+		}
+		return json.RawMessage("null")
+	}
 	open := map[string]*group{}
 	var groups []*group
 	for _, op := range list {
@@ -190,10 +212,14 @@ func Derive(ops []Op, prior map[string]json.RawMessage) []Event {
 			g.order = append(g.order, op.Field)
 		}
 		c.To = compact(op.Value)
+		if op.Entity == "time_entry" {
+			g.start = value(Key(op.Entity, op.EntityID, "started_at"))
+			g.end = value(Key(op.Entity, op.EntityID, "ended_at"))
+		}
 	}
 	out := make([]Event, 0, len(groups))
 	for _, g := range groups {
-		ev, keep := finish(g, commentTask)
+		ev, keep := finish(g, parentTask)
 		if keep {
 			out = append(out, ev)
 		}
@@ -204,7 +230,7 @@ func Derive(ops []Op, prior map[string]json.RawMessage) []Event {
 // Key identifies a field of an entity for prior values.
 func Key(entity, id, field string) string { return entity + ":" + id + ":" + field }
 
-func finish(g *group, commentTask map[string]string) (Event, bool) {
+func finish(g *group, parentTask map[string]string) (Event, bool) {
 	ev := g.ev
 	fields := append([]string(nil), g.order...)
 	sort.Strings(fields)
@@ -220,7 +246,7 @@ func finish(g *group, commentTask map[string]string) (Event, bool) {
 	isNull := func(f string) bool { return string(g.changes[f].To) == "null" }
 	switch ev.Entity {
 	case "comment":
-		ev.TaskID = commentTask[ev.EntityID]
+		ev.TaskID = parentTask["comment:"+ev.EntityID]
 		switch {
 		case has("created_at") || has("author_id") || has("task_id"):
 			ev.Kind = KindCommented
@@ -230,6 +256,8 @@ func finish(g *group, commentTask map[string]string) (Event, bool) {
 			ev.Kind = KindCommentEdited
 		}
 		ev.Changes = []Change{}
+	case "time_entry":
+		return finishTime(ev, g, changed, parentTask)
 	default:
 		if ev.Entity == "task" {
 			ev.TaskID = ev.EntityID
@@ -257,6 +285,33 @@ func finish(g *group, commentTask map[string]string) (Event, bool) {
 	}
 	if !changed && ev.Kind != KindCreated && ev.Kind != KindCommented {
 		return ev, false
+	}
+	return ev, true
+}
+
+// finishTime classifies a time entry's group (workspace-activity D3): a
+// running entry has no event; logging an ended entry or ending a running one is
+// time_tracked; any other change, deletion included, is time_changed.
+func finishTime(ev Event, g *group, changed bool, parentTask map[string]string) (Event, bool) {
+	ev.TaskID = parentTask["time_entry:"+ev.EntityID]
+	var start, end *int64
+	_ = json.Unmarshal(g.start, &start)
+	_ = json.Unmarshal(g.end, &end)
+	if end == nil || !changed {
+		return ev, false
+	}
+	if start != nil {
+		m := (*end - *start + 30000) / 60000
+		if m < 0 {
+			m = 0
+		}
+		ev.Minutes = &m
+	}
+	ended := g.changes["ended_at"]
+	if g.changes["created_at"] != nil || (ended != nil && string(ended.From) == "null") {
+		ev.Kind = KindTimeTracked
+	} else {
+		ev.Kind = KindTimeChanged
 	}
 	return ev, true
 }

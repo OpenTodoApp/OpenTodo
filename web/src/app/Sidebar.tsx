@@ -1,6 +1,6 @@
 import { useHabitsEnabled } from '../lib/habitPrefs'
 import { useWorkspaceFilter } from './useWorkspaceFilter'
-import { Button, Icon, type IconName, MenuItem, MenuSeparator, pushOverlay, ReadAs, SIDEBAR_GROUP_ACTION, SIDEBAR_HEADING, SidebarGroup, SidebarGroupAction, SidebarHeader, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
+import { Button, hueFor, Icon, type IconName, MenuItem, MenuSeparator, pushOverlay, ReadAs, SIDEBAR_GROUP_ACTION, SIDEBAR_HEADING, SidebarGroup, SidebarGroupAction, SidebarHeader, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
 import { ProjectMark } from './ProjectMark'
 // ProjectHeader imports through this re-export to preserve the entry chunk split (see the bundle budget).
 export { ProjectMark } from './ProjectMark'
@@ -11,7 +11,8 @@ import { useShortcutHints } from './shortcuts/hints'
 const GO_KEYS: Record<string, string> = Object.fromEntries(SHORTCUTS.filter((s) => s.id.startsWith('go.')).map((s) => [s.id.slice(3), s.keys[0]]))
 import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
-import { type FormEvent, Fragment, type KeyboardEvent, lazy, type ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, Fragment, type KeyboardEvent, type ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { orderDestinations, readAppearance, readSidebarCounts, type DestinationId, type Promotable } from '../lib/appearance'
 import { useAssistantStatus } from '../lib/assistantStatus'
 import { readCalendarMode } from '../lib/calendarMode'
@@ -27,13 +28,13 @@ import { flattenTree } from '../lib/tree'
 import type { Label, Project, Review, Task, User, View } from '../lib/types'
 import { useTrackedTotals } from '../lib/timeEntries'
 import { evaluateViews, isDashboard } from '../lib/views'
-import { todayAssigneeFilter, type TodayAssigneeFilter } from '../lib/dayLists'
 import { LabelRow, NewLabelForm, useLabelData, useLabelDrag } from './LabelsView'
 import { ViewMark, ViewMenu } from './ViewsView'
 import { FavouritesGroup } from './FavouritesGroup'
 import { ProjectRowMenu } from './ProjectRowMenu'
 import { SidebarAppearance } from './sidebarAppearanceLazy'
 import { renameProject } from './menus/projectAppearance'
+import { sortProjectsByName } from './menus/projectMenu'
 import { useFavourites } from './useFavourites'
 import { useAssigneeDirectory, useToday, useViewerZone, useViews } from './useViews'
 import { MAX_INDENT } from './TaskRow'
@@ -41,7 +42,7 @@ import { navigate, type Route } from './router'
 import { taskIndexOf, useLiveTasks, useOpenTasks } from '../lib/liveTasks'
 import { useSettledValue } from '../lib/useSettledValue'
 import { beginDrag } from '../lib/dnd'
-import { holdForRowMenu } from './rowMenuHold'
+import { contextForRowMenu, holdForRowMenu } from './rowMenuHold'
 import { moveProjectBy, moveProjectTo } from '../lib/move'
 import { canEditProject, canEditTasks, roleOf } from '../lib/sharing'
 import { taskDrop } from './taskDrop'
@@ -235,15 +236,14 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   // Re-read every minute, so the counts move to the new day at midnight.
   const today = useToday()
   // The same Today number the app icon badge shows (app-icon-badge).
-  const hide = useMemo(() => todayAssigneeFilter(prefsRow, [...memberMap.values()], user.id), [prefsRow, memberMap, user.id])
   // Worked out from the rows each write changed (incremental-list-updates D2); deferred and
   // parked tasks are not counted (someday-and-evening D2). The Inbox looks up parents among every live task.
   const live = liveTasks ?? openTasks
-  const countsOf = useRef(new Derived<SidebarCounts, [string, string, TodayAssigneeFilter | null, string]>(
-    (tasks, today, _zone, hide, userId) => sidebarCounts(tasks, today, hide, userId, lookups(tasks)),
-    (prev, changes, tasks, today, _zone, hide, userId) => patchSidebarCounts(prev, changes, tasks, today, hide, userId, lookups(tasks)),
+  const countsOf = useRef(new Derived<SidebarCounts, [string, string, string]>(
+    (tasks, today, _zone, userId) => sidebarCounts(tasks, today, userId, lookups(tasks)),
+    (prev, changes, tasks, today, _zone, userId) => patchSidebarCounts(prev, changes, tasks, today, userId, lookups(tasks)),
   )).current
-  const own = countsOf.get(live, today, zone, hide, user.id)
+  const own = countsOf.get(live, today, zone, user.id)
   const counts = useMemo(() => ({ inbox: own.inbox.size, today: own.today, assigned: own.assigned, byProject: rollUpCounts(own.own, tree, collapsed_) }), [own, tree, collapsed_])
 
   // Navigating to a sub-project reveals it: its ancestors leave the collapsed set.
@@ -320,7 +320,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   }
 
   function startAdding() {
-    setParentId(route.view === 'project' && tree.nodes.has(route.id) ? route.id : '')
+    setParentId('') // Top level: nested only by picking a parent (new-project-top-level, #1759)
     setGroupOpen('projects', true)
     setAdding(true)
   }
@@ -402,8 +402,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   }
 
   const item = (r: Route, label: string, icon: IconName, count?: number, badge?: ReactNode, tip?: string) => {
-    // Day, Week, Month and Plan are one Calendar destination (ux-overhaul, planner-view).
-    const calendar = (v: string) => v === 'day' || v === 'week' || v === 'month' || v === 'plan' || v === 'year'
+    // Day, Week, Month, Quarter, Plan and Year are one Calendar destination (ux-overhaul, planner-view).
+    const calendar = (v: string) => v === 'day' || v === 'week' || v === 'month' || v === 'quarter' || v === 'plan' || v === 'year'
     // A Loop home address with a move open (/loop/<move>) is still the Loop home.
     // All notes and Graph: the Notes page's two modes, a note open beside them or not (notes-graph-page D1).
     const active = calendar(r.view) ? calendar(route.view) : r.view === 'loop' ? route.view === 'loop' : r.view === 'notes' && route.view === 'notes' ? (r.day ? route.day === r.day : !route.day && !!r.graph === !!route.graph) : JSON.stringify(r) === JSON.stringify(route)
@@ -461,7 +461,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
           )}
         </nav>}
       </div>
-      <div ref={scroller} className={`ui-scroller min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-scroll onPointerDown={holdForRowMenu}>
+      <div ref={scroller} className={`ui-scroller relative min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-scroll onPointerDown={holdForRowMenu} onContextMenu={contextForRowMenu}>
       {space === 'notes' ? <Suspense fallback={null}><NotesSidebar route={route} collapsed={collapsed} /></Suspense> : <>
       {finding && !collapsed && (
         <div className="pt-3" data-sidebar-find>
@@ -484,14 +484,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
       {groupsReady && (finding || groupShown(shownRows.length)) && <SidebarGroup title={t('Projects')} collapsible open={isOpen('projects')} onToggle={() => toggleGroup('projects')} count={projects.length} collapsed={collapsed} actions={(<>
         <SidebarGroupAction active={route.view === 'projects'} onClick={() => navigate({ view: 'projects' })} aria-label={t('All projects')}>{t('All')}</SidebarGroupAction>
         <SidebarGroupAction ref={findOpener} onClick={() => (finding ? closeFind() : openFind())} aria-label={t('Find in the sidebar')} aria-pressed={finding} active={finding}><Icon name="search" size="xs" /></SidebarGroupAction>
-        <Menu kind="menu" label={t('Add or fold projects')} title={t('Projects')} trigger={<Icon name="plus" size="xs" />}
-          triggerClassName={SIDEBAR_GROUP_ACTION} width="sm:w-56">
-          <MenuItem label={t('New project')} icon="plus" onSelect={startAdding} />
-          <MenuItem label={t('From a template…')} icon="copy" onSelect={requestTemplateDialog} />
-          <MenuSeparator />
-          <MenuItem label={t('Collapse all')} icon="chevrons-down-up" onSelect={() => void collapseAllProjects(projects)} />
-          <MenuItem label={t('Expand all')} icon="chevrons-up-down" onSelect={() => void expandAllProjects()} />
-        </Menu>
+        <ProjectsGroupMenu projects={projects} sortable={tree.roots.filter((n) => movable(n.id)).length > 1} onNew={startAdding} />
       </>)}>
         <ul role="tree">
           {shownRows.map((n, i) => {
@@ -545,7 +538,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
                   leading={<ProjectMark project={p} />}
                   badge={<>
                     {sharedIds.has(n.id) && <span className="text-faint"><Icon name="users" size={14} /><span className="sr-only">{t('Shared project')}</span></span>}
-                    {unread.byProject.get(n.id) ? <UnreadBadge n={unread.byProject.get(n.id) as number} label={t('unread changes')} /> : null}
+                    {unread.byProject.get(n.id) ? <StatusDot label={t('Unread changes')} data-unread /> : null}
                   </>}
                   count={count} countMode={countsAll ? 'swap' : projectCountMode} countLabel={openTasksLabel(count)}
                   aria-description={count && isCollapsed && has ? t('Open tasks including sub-projects') : undefined}
@@ -576,7 +569,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
             <div key={v.id} data-menu-row className={`group flex items-center${countsAll ? ' ui-swap-row' : ''}`}>
               <SidebarItem data-view-id={v.id} active={active} collapsed={collapsed} onClick={() => navigate({ view: 'view', id: v.id })} label={v.name}
                 data-find-active={isActiveMatch('view', v.id) || undefined} className={isActiveMatch('view', v.id) ? 'ring-2 ring-focus' : undefined}
-                leading={<span style={{ color: v.color }}><ViewMark view={v} /></span>}
+                leading={<span data-hue={v.color ? hueFor(v.color) : undefined} className={v.color ? 'text-hue-solid' : undefined}><ViewMark view={v} /></span>}
                 count={!isDashboard(v) && c && c.ok ? c.count : undefined} countMode={countsAll ? 'swap' : 'hidden'} countLabel={openTasksLabel(c && c.ok ? c.count : undefined)}
                 badge={!isDashboard(v) && c && !c.ok ? <span className="text-meta text-danger"><ReadAs label={c.error}>!</ReadAs></span> : undefined} />
               {!collapsed && <ViewMenu view={v} className={countsAll ? 'ui-swap-menu' : 'hover-reveal'} />}
@@ -590,6 +583,21 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
       {!collapsed && !drawer && <SidebarSchedule />}
       <SidebarFooter route={route} user={user} collapsed={collapsed} onSearch={onSearch} onShortcuts={onShortcuts} onFeedback={onFeedback} onAssistant={onAssistant} onToggleCollapse={onToggleCollapse} onSignOut={onSignOut} />
     </div>
+  )
+}
+
+/** The Projects header's menu: add, fold, and sort the top level by name once (sort-projects-by-name). */
+function ProjectsGroupMenu({ projects, sortable, onNew }: { projects: Project[]; sortable: boolean; onNew: () => void }) {
+  return (
+    <Menu kind="menu" label={t('Add or fold projects')} title={t('Projects')} trigger={<Icon name="plus" size="xs" />}
+      triggerClassName={SIDEBAR_GROUP_ACTION} width="sm:w-56">
+      <MenuItem label={t('New project')} icon="plus" onSelect={onNew} />
+      <MenuItem label={t('From a template…')} icon="copy" onSelect={requestTemplateDialog} />
+      <MenuSeparator />
+      <MenuItem label={t('Collapse all')} icon="chevrons-down-up" onSelect={() => void collapseAllProjects(projects)} />
+      <MenuItem label={t('Expand all')} icon="chevrons-up-down" onSelect={() => void expandAllProjects()} />
+      {sortable && <MenuItem label={t('Sort by name')} icon="list-ordered" onSelect={() => sortProjectsByName(null)} />}
+    </Menu>
   )
 }
 

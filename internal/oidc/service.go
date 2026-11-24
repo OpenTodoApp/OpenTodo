@@ -32,6 +32,9 @@ const (
 	KeySSOOnly        = "oidc.sso_only"
 	KeyProviderLogout = "oidc.provider_logout"
 	KeySyncPictures   = "oidc.sync_pictures"
+	// KeyTrustMissingEmailVerified: a token without an email_verified claim may
+	// create a new account (sso-missing-email-verified). Off by default.
+	KeyTrustMissingEmailVerified = "oidc.trust_missing_email_verified"
 	// KeyClientSecret names the secret in audit events and the secrets file.
 	KeyClientSecret = "oidc.client_secret"
 )
@@ -63,6 +66,10 @@ type Config struct {
 	// sign-in, unless the person uploaded one (issue #233). Off by default: it
 	// makes the server fetch an address named by the provider.
 	SyncPictures bool
+	// TrustMissingEmailVerified: a token that carries no email_verified claim
+	// at all (Synology SSO Server) may create a new account; it never links an
+	// existing one (sso-missing-email-verified). Off by default.
+	TrustMissingEmailVerified bool
 	// ManagedBy maps each field name (issuer, clientId, clientSecret,
 	// displayName, ssoOnly, ...) to "env" or "settings".
 	ManagedBy map[string]string
@@ -91,6 +98,8 @@ type Update struct {
 	SSOOnly        *bool
 	ProviderLogout *bool
 	SyncPictures   *bool
+	// TrustMissingEmailVerified: see Config.
+	TrustMissingEmailVerified *bool
 }
 
 // Change is one setting that an Update changed, for the audit log. Secret
@@ -112,6 +121,7 @@ type Service struct {
 	client  *http.Client
 	now     func() time.Time
 	states  *StateCodec
+	handoff *Handoffs
 
 	mu       sync.Mutex
 	provider *Provider
@@ -133,11 +143,14 @@ func New(store *settings.Store, dataDir string, o Options) *Service {
 		o.Now = time.Now
 	}
 	return &Service{store: store, secrets: settings.NewSecretsFile(dataDir, "oidc"), env: o.Env,
-		client: o.Client, now: o.Now, states: NewStateCodec(o.Now)}
+		client: o.Client, now: o.Now, states: NewStateCodec(o.Now), handoff: NewHandoffs(o.Now)}
 }
 
 // States returns the flow-state codec.
 func (s *Service) States() *StateCodec { return s.states }
+
+// Handoffs returns the identities waiting for the OpenTodo app to collect them.
+func (s *Service) Handoffs() *Handoffs { return s.handoff }
 
 // Client is the outbound HTTP client (for the code exchange).
 func (s *Service) Client() *http.Client { return s.client }
@@ -193,7 +206,11 @@ func (s *Service) Config(ctx context.Context) (Config, error) {
 	if c.SyncPictures, err = s.getBool(ctx, KeySyncPictures); err != nil {
 		return c, err
 	}
+	if c.TrustMissingEmailVerified, err = s.getBool(ctx, KeyTrustMissingEmailVerified); err != nil {
+		return c, err
+	}
 	c.ManagedBy["allowProvision"], c.ManagedBy["providerLogout"], c.ManagedBy["syncPictures"] = "settings", "settings", "settings"
+	c.ManagedBy["trustMissingEmailVerified"] = "settings"
 	if s.env.SSOOnly != nil {
 		c.SSOOnly, c.ManagedBy["ssoOnly"] = *s.env.SSOOnly, "env"
 	} else {
@@ -320,6 +337,9 @@ func (s *Service) Save(ctx context.Context, u Update) ([]Change, error) {
 	if u.SyncPictures != nil {
 		next.SyncPictures = *u.SyncPictures
 	}
+	if u.TrustMissingEmailVerified != nil {
+		next.TrustMissingEmailVerified = *u.TrustMissingEmailVerified
+	}
 	if next.Issuer != "" {
 		if next.ClientID == "" {
 			return nil, &ErrInvalidConfig{Msg: "clientId is required when an issuer is set"}
@@ -355,6 +375,7 @@ func (s *Service) Save(ctx context.Context, u Update) ([]Change, error) {
 		setBool(KeySSOOnly, s.env.SSOOnly != nil, cur.SSOOnly, next.SSOOnly),
 		setBool(KeyProviderLogout, false, cur.ProviderLogout, next.ProviderLogout),
 		setBool(KeySyncPictures, false, cur.SyncPictures, next.SyncPictures),
+		setBool(KeyTrustMissingEmailVerified, false, cur.TrustMissingEmailVerified, next.TrustMissingEmailVerified),
 	); err != nil {
 		return nil, err
 	}

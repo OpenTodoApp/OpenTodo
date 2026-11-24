@@ -25,7 +25,7 @@ Where the browser supports app badges, the installed app's icon SHALL show the n
 - **THEN** the badge goes up at once, and the change syncs later as usual
 
 ### Requirement: The badge while the app is closed
-While the app runs it SHALL keep, on the device, the Today count of each of the next seven days as its local data stands, holding dates and numbers only. When a push arrives and no window of the app is visible, the service worker SHALL set the badge to the stored count of the current logical day (the day start included), clear it at zero, and leave it alone when no count is stored for that day. Push payloads SHALL NOT carry a count or any new field.
+While the app runs it SHALL keep, on the device, the count of each of the next seven days that the chosen **Count** gives (Today or Earlier) as its local data stands, holding dates and numbers only. When a push arrives and no window of the app is visible, the service worker SHALL set the badge to the stored count of the current logical day (the day start included), clear it at zero, and leave it alone when no count is stored for that day. Push payloads SHALL NOT carry a count or any new field.
 
 #### Scenario: A morning reminder
 - **WHEN** yesterday the app knew of two tasks due today and one overdue, and a reminder push arrives this morning with the app closed
@@ -36,10 +36,10 @@ While the app runs it SHALL keep, on the device, the Today count of each of the 
 - **THEN** the badge is not changed
 
 ### Requirement: Per-device switch
-Settings → Notifications SHALL offer **Show today's count** under **App icon badge**, on by default, kept on this device only and never synced, and shown only where the browser supports app badges. While notification permission is not granted it SHALL say that iPhone and iPad show the badge only once notifications are allowed. Turning it off SHALL clear the badge and the stored counts at once; signing out SHALL do the same.
+Settings → Notifications SHALL offer **Count** under **App icon badge** with three choices: **Today** (the default) counts today's open tasks as described above; **Earlier** counts only the tasks in Today's Earlier group (due before today, or with a deadline before today and not planned for today), with the same Hide tasks assigned to others; **Off** shows no badge. The choice SHALL be kept on this device only and never synced, and shown only where the browser supports app badges; a device that had the badge turned off before this choice existed SHALL read Off, any other Today. While notification permission is not granted and the choice is not Off it SHALL say that iPhone and iPad show the badge only once notifications are allowed. Choosing Off SHALL clear the badge and the stored counts at once; signing out SHALL do the same. Changing the choice SHALL set the badge and the stored counts of the next days at once.
 
 #### Scenario: Turned off
-- **WHEN** the person turns off Show today's count
+- **WHEN** the person chooses Off
 - **THEN** the badge disappears, and later changes and pushes do not set it
 
 #### Scenario: Unsupported browser
@@ -49,3 +49,7 @@ Settings → Notifications SHALL offer **Show today's count** under **App icon b
 #### Scenario: Sign-out
 - **WHEN** the person signs out
 - **THEN** the badge is cleared and no count stays on the device
+
+#### Scenario: Earlier only
+- **WHEN** Today lists one overdue task, one due today and one whose deadline is today, and the person chooses Earlier
+- **THEN** the icon shows 1, and with the app closed a push the next morning sets it to 3, the two of yesterday now being overdue too

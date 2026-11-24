@@ -206,8 +206,8 @@ func openMCPSettings(ctx context.Context, cfg config.Config, hosted *Hosted, db 
 	return mcpSettings, nil
 }
 
-// openPush builds reminders' web push to subscribed devices
-// (docs/reminders.md). On unless OPENTODO_PUSH=off (nil then); the VAPID key
+// openPush builds web push to subscribed devices: reminders
+// (docs/reminders.md) and assignment and status pushes (docs/assignment-notifications.md). On unless OPENTODO_PUSH=off (nil then); the VAPID key
 // pair is created under the data directory on first use. In-app reminders work
 // either way.
 func openPush(cfg config.Config, o Options, db *sql.DB, syncSvc *opsync.Service, log *slog.Logger) *push.Service {
@@ -222,7 +222,11 @@ func openPush(cfg config.Config, o Options, db *sql.DB, syncSvc *opsync.Service,
 	if o.PushOptions != nil {
 		o.PushOptions(&po)
 	}
-	return push.New(db, syncSvc, cfg.DataDir, po)
+	p := push.New(db, syncSvc, cfg.DataDir, po)
+	// Assignment and status pushes to the devices that opted in
+	// (assignee-notifications D3).
+	syncSvc.AddSink(p)
+	return p
 }
 
 // openMail builds outgoing email (docs/self-hosting/outgoing-email.md): never
@@ -240,7 +244,7 @@ func openMail(cfg config.Config, o Options, db *sql.DB, authSvc *auth.Service, s
 		ehlo = cfg.BaseURL.Hostname()
 	}
 	mailSvc := mail.New(settings.New(db), cfg.DataDir, mail.Options{Env: cfg.SMTP, Audit: authSvc.Audit(), Log: log,
-		E2EE: e2ee.NewStore(db), Transport: &mail.Transport{LocalName: ehlo}})
+		E2EE: e2ee.NewStore(db), Recipients: authSvc, Transport: &mail.Transport{LocalName: ehlo}})
 	digestSvc := digest.New(db, syncSvc, mailSvc, digest.Options{Origin: cfg.Origin(), Log: log, Now: o.Now})
 	return mailSvc, digestSvc
 }

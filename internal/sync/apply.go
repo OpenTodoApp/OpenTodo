@@ -15,6 +15,13 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	if err := s.checkReach(ctx, userID, ops); err != nil {
 		return ApplyResult{}, err
 	}
+	// Ops refused as invalid before the batch get their fields' server values back
+	// like any refused op (invalid-op-ends D1); never for a request limited to
+	// workspaces, whose reach those ops were not checked against.
+	pre, _ := ctx.Value(invalidKey{}).([]Op)
+	if reachOf(ctx) != nil {
+		pre = nil
+	}
 	if r := reachOf(ctx); r != nil {
 		defer r.stale()
 	}
@@ -57,6 +64,10 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 			return b.res, err
 		}
 	}
+	if err := b.checkSeriesMoves(); err != nil {
+		return b.res, err
+	}
+	b.refused = append(b.refused, pre...)
 	return b.finish(guard)
 }
 
@@ -99,8 +110,13 @@ type applyBatch struct {
 	// with a changed value the author's device must adopt.
 	refused, rewritten []Op
 	storedBytes        int64 // value bytes of the stored ops, for the write guard
-	newestTS           int64 // the newest stored timestamp, for the server clock
-	res                ApplyResult
+	// creates and dueMoves (strict only): the tasks the batch creates and the
+	// existing tasks whose due it writes (series_move_check.go).
+	creates  map[string]bool
+	dueMoves map[string]*seriesMove
+	splits   map[string]map[string]string // per scope: piece -> the series it continues
+	newestTS int64                        // the newest stored timestamp, for the server clock
+	res      ApplyResult
 }
 
 // newApplyBatch loads the author's access and prepares the resolver, the purge
@@ -111,12 +127,22 @@ func (s *Service) newApplyBatch(ctx context.Context, tx *sql.Tx, userID string, 
 		return nil, err
 	}
 	rs := newResolver(ctx, tx, acc, ops)
-	rs.allowComment = func() bool { return s.commentLimiter.allow(userID) }
+	if ctx.Value(commentLimitKey{}) == nil {
+		rs.allowComment = func() bool { return s.commentLimiter.allow(userID) }
+	}
 	rs.attachmentLimit = attachmentLimit
 	b := &applyBatch{s: s, ctx: ctx, tx: tx, userID: userID, strict: strict, nowMs: nowMs,
 		refuseSkew: ctx.Value(skewKey{}) != nil, acc: acc, rs: rs,
 		pc:      &purgeChecker{ctx: ctx, q: tx, acc: acc, cache: map[string]bool{}},
-		tracker: newChangeTracker(userID), touched: map[string]bool{}}
+		tracker: newChangeTracker(userID), touched: map[string]bool{},
+		creates: map[string]bool{}, dueMoves: map[string]*seriesMove{}}
+	if strict {
+		for _, op := range ops {
+			if op.Entity == "task" && op.Field == "created_at" {
+				b.creates[op.EntityID] = true
+			}
+		}
+	}
 	if s.quota != nil && ctx.Value(guardKey{}) == nil {
 		if b.admit, err = s.quota.Admit(ctx, tx); err != nil {
 			return nil, err
@@ -209,6 +235,9 @@ func (b *applyBatch) store(op Op, scope string) error {
 			return err
 		}
 	}
+	if err := b.noteDueWrite(op, scope); err != nil {
+		return err
+	}
 	stored, err := writeOp(b.ctx, b.tx, b.userID, op, scope, b.nowMs, b.tracker)
 	if err != nil {
 		return err
@@ -267,5 +296,6 @@ func (b *applyBatch) finish(guard WriteGuard) (ApplyResult, error) {
 	s.emitAssignments(post, b.userID, b.nowMs, changes)
 	s.emitMentions(post, b.userID, b.nowMs, changes)
 	s.emitUnblocked(post, b.userID, b.nowMs, changes)
+	s.emitStatus(post, b.userID, b.nowMs, changes)
 	return res, nil
 }

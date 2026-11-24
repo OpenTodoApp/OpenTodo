@@ -59,7 +59,8 @@ describe('measurement points', () => {
     expect(count(SEARCH_RESULTS)).toBe(0)
     for (const [i, text] of ['z', 'ze', 'zep'].entries()) {
       await type(field(), text)
-      await flush(100)
+      // Longer than the palette's 150 ms debounce, so a second mark for the same text is seen.
+      await flush(300)
       expect(count(SEARCH_RESULTS)).toBe(i + 1)
     }
     await r.unmount()

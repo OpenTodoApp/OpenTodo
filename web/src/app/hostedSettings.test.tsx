@@ -41,7 +41,7 @@ describe('hosted settings', () => {
     await waitFor(() => r.container.querySelectorAll('[data-settings-subpage]').length > 0, 'the overview')
     // The overview lists Download your data and none of the operator's pages.
     expect([...r.container.querySelectorAll('[data-settings-subpage]')].map((a) => a.getAttribute('data-settings-subpage')))
-      .toEqual(['download', 'branding', 'maps', 'automations', 'audit'])
+      .toEqual(['download', 'branding', 'maps', 'task-lists', 'automations', 'audit'])
     await r.unmount()
     const download = await render(<SettingsView user={owner} onLogout={() => {}} section="server" page="download" />)
     await waitFor(() => !!download.container.querySelector('[data-testid="server-archive"]'), 'the archive download')

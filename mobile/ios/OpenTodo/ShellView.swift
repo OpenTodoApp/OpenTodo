@@ -1,3 +1,5 @@
+import AuthenticationServices
+import ObjectiveC
 import SwiftUI
 import UIKit
 import WebKit
@@ -23,6 +25,9 @@ final class ShellController: NSObject, ObservableObject {
     let flow: SignInFlow
     /// A main-frame navigation started and not yet committed: a policy decision now is its redirect.
     private var provisional = false
+    /// The first load of this launch has already fallen back to the web view's cache, so a
+    /// second offline failure is a real failure, not another reason to retry (#1458).
+    private var triedCache = false
     private var bridge: Bridge?
     private let refresher = UIRefreshControl()
     /// Whether that control is on, or the page handles the pull itself (pull-to-sync D4).
@@ -31,14 +36,21 @@ final class ShellController: NSObject, ObservableObject {
     /// Receives the files the web app saves (shell-repairs D3); made with the first one.
     private var saver: DownloadSaver?
     private var barsObserver: NSObjectProtocol?
+    private var paintObserver: NSObjectProtocol?
     /// The name of the launch screen's colour in the asset catalog (`UILaunchScreen` in Info.plist).
     static let launchColor = "LaunchBackground"
     /// The longest the launch colour stays before the web view shows whatever it has.
     static let revealCap: TimeInterval = 5
-    /// The web view shows: a page has loaded, a load failed, or the cap passed (shell-first-paint).
+    /// The web view shows: the page drew its first frame or loaded, a load failed, or the cap passed (shell-first-paint).
     private(set) var revealed = false
     /// The bars the web app asked for last; their icons come with the web view.
     private var bars: SystemBars?
+    /// Single sign-on running in the system browser (app-sso-system-browser).
+    private var authSession: ASWebAuthenticationSession?
+    /// The next navigation to the start route stays in the web view: the server is older.
+    private var webViewStart = false
+    /// Takes the status bar tap for the page (status-bar-scroll-top).
+    let scrollTopDecoy = ScrollTopDecoy()
 
     init(origin: URL) {
         self.origin = origin
@@ -52,11 +64,13 @@ final class ShellController: NSObject, ObservableObject {
         bridge.install(into: config.userContentController,
                        app: Version.app,
                        capabilities: Bridge.capabilities(biometric: BiometricKeyStore.available, share: true, haptics: Haptics.available))
+        WebLocation.install(into: config.userContentController, allowing: origin)
         self.webView = WKWebView(frame: .zero, configuration: config)
         self.bridge = bridge
         super.init()
-        // Hidden over the launch colour until a page has loaded (shell-first-paint): the app
-        // goes from its launch screen to the page with no empty web view between them.
+        // Hidden over the launch colour until the page has drawn its first frame, or has loaded
+        // (shell-first-paint, shell-reveal-on-paint): the app goes from its launch screen to the
+        // page with no empty web view between them.
         webView.alpha = 0
         Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(ShellController.revealCap * 1_000_000_000))
@@ -75,6 +89,13 @@ final class ShellController: NSObject, ObservableObject {
         // The default adjustment would also inset the scroll view, shrinking 100dvh by the top and
         // bottom insets and leaving the bar colour as a band under the tab bar.
         webView.scrollView.contentInsetAdjustmentBehavior = .never
+        // A tap on the status bar goes to the page (status-bar-scroll-top D1): the web view's
+        // scroll view gives it up, and the decoy takes it and tells the page.
+        webView.scrollView.scrollsToTop = false
+        scrollTopDecoy.onTap = { [weak self] in self?.webView.evaluateJavaScript(ScrollTop.script) }
+        webView.addSubview(scrollTopDecoy)
+        // No previous, next and Done bar above the keyboard (ios-keyboard-bar D1).
+        KeyboardBar.remove(from: webView)
         // Pull to refresh: the gesture every iOS person tries when a page looks stale. A web app
         // with its own pull to sync takes it over (pull-to-sync D4); an older one keeps this reload.
         refresher.addTarget(self, action: #selector(pulledToRefresh), for: .valueChanged)
@@ -84,6 +105,10 @@ final class ShellController: NSObject, ObservableObject {
                 self?.pull.handledByPage()
                 self?.applyPull()
             }
+        }
+        // The web app has drawn its first frame (shell-reveal-on-paint D2): no need to wait for its load.
+        paintObserver = NotificationCenter.default.addObserver(forName: FirstPaint.painted, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.reveal() }
         }
         // The last bars the app asked for, before the page draws (theme-engine D8).
         if let json = Prefs.shared.systemBars, let bars = SystemBars.parse(json) { apply(bars) }
@@ -147,9 +172,29 @@ final class ShellController: NSObject, ObservableObject {
 
     func load() {
         flow.started(origin)
+        triedCache = false
         var request = URLRequest(url: origin)
         request.cachePolicy = .useProtocolCachePolicy
         webView.load(request)
+    }
+
+    /// Opens the app from the web view's own cache, without the network. The portable build
+    /// (the App Store one) has no service worker, so when the server is unreachable at launch
+    /// this is its offline start: the cached page boots and reads its IndexedDB, and the web
+    /// app syncs once the server answers again (#1458). A first-ever launch with nothing cached
+    /// still fails, and then the offline screen is shown.
+    private func loadFromCache() {
+        triedCache = true
+        var request = URLRequest(url: origin)
+        request.cachePolicy = .returnCacheDataDontLoad
+        webView.load(request)
+    }
+
+    /// Whether an errored load should fall back to the cache instead of showing the failure:
+    /// only an offline failure of the first load of this launch, and only once. Pinned by
+    /// ShellTests.testOfflineFirstLoadFallsBackToTheCacheOnce.
+    static func shouldRetryFromCache(kind: Failure.Kind, triedCache: Bool, loaded: Bool) -> Bool {
+        kind == .offline && !triedCache && !loaded
     }
 
     /// Opens a path of the web app in the same web view, e.g. `/?task=…` from a widget or a reminder.
@@ -192,7 +237,12 @@ final class ShellController: NSObject, ObservableObject {
     private func record(_ error: Error) {
         let nsError = error as NSError
         if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled { return }
-        failure = Failure(kind: Self.kind(of: nsError), detail: nsError.localizedDescription)
+        let kind = Self.kind(of: nsError)
+        if Self.shouldRetryFromCache(kind: kind, triedCache: triedCache, loaded: loaded) {
+            loadFromCache()
+            return
+        }
+        failure = Failure(kind: kind, detail: nsError.localizedDescription)
         reveal()
     }
 
@@ -257,6 +307,60 @@ extension ShellController {
     }
 }
 
+extension ShellController: ASWebAuthenticationPresentationContextProviding {
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        webView.window ?? ASPresentationAnchor()
+    }
+
+    /// OpenTodo's own single sign-on: in the system browser when the server announces it
+    /// (`app_sso`), otherwise in the web view as before.
+    func beginSystemSignIn(_ start: URL) {
+        guard authSession == nil else { return }
+        var request = URLRequest(url: origin.appendingPathComponent("api/v1/health"), timeoutInterval: 10)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        URLSession.shared.dataTask(with: request) { data, response, _ in
+            let supported = SystemSignIn.opensSheet(healthStatus: (response as? HTTPURLResponse)?.statusCode, healthBody: data)
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                if supported {
+                    self.presentSystemSignIn(link: SystemSignIn.isLink(start))
+                } else {
+                    self.webViewStart = true
+                    self.webView.load(URLRequest(url: start))
+                }
+            }
+        }.resume()
+    }
+
+    private func presentSystemSignIn(link: Bool) {
+        let pending = SystemSignIn.pending()
+        let session = ASWebAuthenticationSession(url: SystemSignIn.startURL(server: origin, pending, link: link),
+                                                 callbackURLScheme: SystemSignIn.callbackScheme) { [weak self] url, _ in
+            DispatchQueue.main.async { self?.finishSystemSignIn(url, pending) }
+        }
+        session.presentationContextProvider = self
+        authSession = session
+        if !session.start() { authSession = nil }
+    }
+
+    /// The sheet closed. A code is redeemed by the page of the server showing, so the session
+    /// cookie lands in the web view; an error code shows on the sign-in screen; a closed
+    /// sheet leaves the screen as it was.
+    private func finishSystemSignIn(_ url: URL?, _ pending: SystemSignIn.Pending) {
+        authSession = nil
+        // The code and its verifier go only to a page of the server (SystemSignIn.finish).
+        let onServer = webView.url.map { Origin.same($0, origin) } ?? false
+        switch SystemSignIn.finish(url, state: pending.state, onServer: onServer) {
+        case .redeem(let code):
+            webView.evaluateJavaScript(SystemSignIn.redeemScript(code: code, verifier: pending.verifier))
+        case .showError(let code):
+            webView.load(URLRequest(url: SystemSignIn.errorURL(server: origin, code: code)))
+        case .stay:
+            break
+        }
+    }
+}
+
 extension ShellController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
@@ -270,6 +374,15 @@ extension ShellController: WKNavigationDelegate {
             if scheme == "blob" || scheme == "data" { return decisionHandler(.cancel) }
         }
         let mainFrame = action.targetFrame.map { $0.isMainFrame }
+        if mainFrame == true, SystemSignIn.isStart(url, server: origin) {
+            if webViewStart {
+                webViewStart = false
+            } else {
+                decisionHandler(.cancel)
+                beginSystemSignIn(url)
+                return
+            }
+        }
         switch Self.route(url, mainFrame: mainFrame, type: action.navigationType, provisional: provisional && mainFrame == true,
                           onSignInPage: foreignHost != nil, flow: flow, server: origin) {
         case .allow:
@@ -362,6 +475,40 @@ extension ShellController: WKUIDelegate {
         if let url = action.request.url, Bridge.safeExternal(url.absoluteString) { UIApplication.shared.open(url) }
         return nil
     }
+
+    /// Voice capture (native-shells "Microphone for voice capture"): the microphone for a page
+    /// of the server, without WebKit's own prompt; anything else refused without a prompt.
+    /// iOS still asks once for the app's microphone (NSMicrophoneUsageDescription).
+    func webView(_ webView: WKWebView, requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+                 initiatedByFrame frame: WKFrameInfo, type: WKMediaCaptureType,
+                 decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+        let kind: MediaCapture.Kind
+        switch type {
+        case .microphone: kind = .microphone
+        case .camera: kind = .camera
+        default: kind = .cameraAndMicrophone
+        }
+        // `origin` is the top-level page's; the asking frame's is its own security origin.
+        // Both must be the server: an embedded frame of another site never gets the microphone.
+        let top = Origin.signature(scheme: origin.protocol, host: origin.host, port: origin.port)
+        let asking = frame.securityOrigin
+        let requester = Origin.signature(scheme: asking.protocol, host: asking.host, port: asking.port)
+        decisionHandler(MediaCapture.grants(server: self.origin, top: top, requester: requester, kind: kind) ? .grant : .deny)
+    }
+}
+
+/// Which capture request the web view grants: the microphone alone, to a page of the server.
+/// WebKit decides a request as a whole, so one that also asks for the camera is refused (the
+/// Android shell can grant its microphone part). Both apps read `microphone/cases.json`.
+enum MediaCapture {
+    enum Kind { case microphone, camera, cameraAndMicrophone }
+
+    /// `top`: the top-level page's origin, `requester`: the asking frame's, both as
+    /// `Origin.signature` writes them. Both must be the server's.
+    static func grants(server: URL, top: String, requester: String, kind: Kind) -> Bool {
+        let own = Origin.signature(server)
+        return kind == .microphone && !(server.host ?? "").isEmpty && top == own && requester == own
+    }
 }
 
 struct ShellView: View {
@@ -436,6 +583,69 @@ struct SiteBar: View {
         .padding(.trailing, 4)
         .background(.bar)
         .accessibilityElement(children: .contain)
+    }
+}
+
+/// The one scroll view iOS hands a status bar tap to (status-bar-scroll-top D1): 1 × 1
+/// No keyboard accessory bar (ios-keyboard-bar D1): WebKit's content view supplies the
+/// previous, next and Done bar through `inputAccessoryView`. The view is given a subclass
+/// of its own class, made once, that supplies none. Done stays reachable through the
+/// keyboard's return key and a tap outside. Guarded: without the content view, or if the
+/// class cannot be made, nothing changes and the bar stays.
+enum KeyboardBar {
+    static let className = "OpenTodoContentViewWithoutBar"
+
+    /// Removes the bar from this web view; returns whether it did.
+    @discardableResult
+    static func remove(from webView: WKWebView) -> Bool {
+        guard let content = webView.scrollView.subviews.first(where: { NSStringFromClass(type(of: $0)).hasPrefix("WKContent") })
+            ?? webView.scrollView.subviews.first(where: { NSStringFromClass(type(of: $0)) == className })
+        else { return false }
+        if NSStringFromClass(type(of: content)) == className { return true }
+        guard let subclass = subclass(of: type(of: content)) else { return false }
+        object_setClass(content, subclass)
+        return true
+    }
+
+    private static func subclass(of base: AnyClass) -> AnyClass? {
+        if let made = NSClassFromString(className) { return made }
+        guard let made = objc_allocateClassPair(base, className, 0) else { return nil }
+        let getter = #selector(getter: UIResponder.inputAccessoryView)
+        guard let method = class_getInstanceMethod(base, getter) else {
+            objc_disposeClassPair(made)
+            return nil
+        }
+        let none: @convention(block) (AnyObject) -> UIView? = { _ in nil }
+        class_addMethod(made, getter, imp_implementationWithBlock(none), method_getTypeEncoding(method))
+        objc_registerClassPair(made)
+        return made
+    }
+}
+
+/// point, taller in content than its frame and scrolled off its top, so it always counts as
+/// scrollable; its delegate tells the page and declines, so it never moves. It takes no
+/// touches and is not on the accessibility tree.
+final class ScrollTopDecoy: UIScrollView, UIScrollViewDelegate {
+    var onTap: () -> Void = {}
+
+    init() {
+        super.init(frame: CGRect(x: 0, y: 0, width: 1, height: 1))
+        contentSize = CGSize(width: 1, height: 3)
+        contentOffset = CGPoint(x: 0, y: 1)
+        scrollsToTop = true
+        isUserInteractionEnabled = false
+        showsVerticalScrollIndicator = false
+        backgroundColor = .clear
+        isAccessibilityElement = false
+        accessibilityElementsHidden = true
+        delegate = self
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
+        onTap()
+        return false
     }
 }
 

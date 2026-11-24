@@ -200,7 +200,10 @@ export const SETTINGS_COPY = {
       density: { label: msg('Density'), description: msg('Compact tightens rows, headers and the sidebar; touch targets stay full size.') },
       rows: { label: msg('Task rows'), description: msg('Detailed adds the parent task and a line of dates, priority and labels.') },
       titles: { label: msg('Show full task titles'), description: msg('Long titles wrap in lists, boards and Today instead of ending with an ellipsis.') },
+      deadlineDates: { label: msg('Show deadlines as dates') },
       haptics: { label: msg('Haptic feedback'), description: msg('A short vibration when you complete a task or pick one up with a long press.') },
+      completionSound: { label: msg('Task completion sound'), description: msg('Play a short sound when you complete a task.') },
+      zoom: { label: msg('Allow pinch zoom'), description: msg('Pinch to zoom the app on this device. Turn it off for a more app-like feel.') },
     },
   },
   sidebar: {
@@ -224,6 +227,8 @@ export const SETTINGS_COPY = {
     learnMore: 'settings/appearance',
     rows: {
       open: { label: msg('Open tasks'), description: msg('The side panel needs a window at least 1024 px wide; phones open the page.') },
+      // click-default D1: the synced user_prefs.row_click, or the server's default.
+      click: { label: msg('Click a task to') },
     },
   },
 
@@ -315,7 +320,6 @@ export const SETTINGS_COPY = {
       hints: { label: msg('Show shortcut hints'), description: msg('Print the keys in the app itself, not only in tooltips. This device only.') },
       singleKeys: { label: msg('Single-key shortcuts'), description: msg('Letters and symbols alone run commands. Turn off for speech input. This device only.') },
       vim: { label: msg('Vim keybindings'), description: msg('Normal, Insert and Command modes with counts, {kbd}, {kbd2} and {kbd3}. This device only.') },
-      rowClick: { label: msg('Click a task to'), description: msg('Edit the title, open the details or expand the row. This device only.') },
     },
   },
   focus: {
@@ -349,6 +353,9 @@ export const SETTINGS_COPY = {
     rows: {
       device: { label: msg('This device') },
       titles: { label: msg('Include task titles'), description: msg('Off: the push carries only encrypted ids and this device adds the title.') },
+      // assignee-notifications: pushes about other people's changes to tasks assigned to you.
+      assigned: { label: msg('Assigned to me') },
+      status: { label: msg('Completed or reopened') },
       // A native shell's rows (native-shells): no push service, the app schedules reminders.
       shell: { label: msg('Notifications through the app'), description: msg('Reminders are scheduled on this phone and shown without a push service.') },
       shellTitles: { label: msg('Include task titles'), description: msg('Off: reminders read "Reminder" until you open the app. Never with encryption.') },
@@ -384,7 +391,7 @@ export const SETTINGS_COPY = {
     icon: 'bell',
     description: msg('The installed app\'s icon shows how many of today\'s tasks are open.'),
     learnMore: 'app-icon-badge',
-    rows: { show: { label: msg('Show today\'s count'), description: msg('This device only. The count matches Today in the sidebar.') } },
+    rows: { count: { label: msg('Count'), description: msg('This device only.') } },
     notices: { permission: msg('On iPhone and iPad the badge appears only once notifications are allowed.') },
   },
   // Settings → Notifications → Delivery channels (notification-channels).
@@ -545,6 +552,10 @@ export const SETTINGS_COPY = {
       },
       address: { label: msg('Server address') },
       user: { label: msg('User name'), description: msg('Sign in with an app password, never your account password.') },
+      push: {
+        label: msg('Push to calendar apps'),
+        description: msg('Apps such as DAVx⁵ sync right after a change, through their own push service.'),
+      },
     },
     notices: {
       offline: msg('CalDAV status is available when you are online.'),
@@ -580,6 +591,15 @@ export const SETTINGS_COPY = {
     description: msg('Maps and address search from the provider below, always through this server.'),
     learnMore: 'locations',
   },
+  // click-default D2: what a click on a task does for accounts that have not chosen.
+  'task-lists-server': {
+    title: msg('Task lists'),
+    icon: 'list-checks',
+    learnMore: 'settings/server',
+    rows: {
+      click: { label: msg('Click a task to') },
+    },
+  },
   // Automation rules (automation-rules D9): the owner's switch for every account.
   'speech-server': {
     title: msg('Speech to text'),
@@ -604,6 +624,19 @@ export const SETTINGS_COPY = {
     learnMore: 'settings/priorities',
     notices: {
       tooLong: msg('At most {n} characters'),
+    },
+  },
+  // Settings → Integrations → Links to other apps (app-links): the person's schemes, synced user_prefs.
+  'app-links': {
+    title: msg('Links to other apps'),
+    icon: 'external-link',
+    description: msg('Links to these apps open after you confirm. Other links stay text.'),
+    learnMore: 'settings/app-links',
+    notices: {
+      denied: msg('This kind of link can never open'),
+      invalid: msg('Use the app’s scheme, like zotero'),
+      duplicate: msg('Already on the list'),
+      full: msg('At most {n} apps'),
     },
   },
   // Settings → General → Notes (daily-notes): one note per day, synced user_prefs.
@@ -1025,13 +1058,6 @@ export function noticeCopy<I extends SettingsCopyId>(id: I, key: NoticesOf<I>, o
   const text = pickText(n, opts.variant, `${id}.notices.${key}`)
   if (text === undefined) throw new Error(`settings copy ${id}: no notice ${key}`)
   return t(text, opts.values)
-}
-
-/** A choice card's option label and line, translated. */
-export function optionCopy(id: SettingsCopyId, option: string): { label: string; description: string } {
-  const o = entry(id).options?.[option]
-  if (!o) throw new Error(`settings copy ${id}: no option ${option}`)
-  return { label: t(o.label), description: t(o.description) }
 }
 
 /** Every entry of the table, flattened, for the copy lint: where, kind and the English text. */

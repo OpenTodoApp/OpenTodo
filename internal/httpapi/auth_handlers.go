@@ -17,8 +17,10 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// app_sign_in tells the OpenTodo app this server has its sign-in routes
-	// (native-app-foundation D11), whatever the version string of a dev build.
-	writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "version": s.version, "app_sign_in": true})
+	// (app-sign-in), whatever the version string of a dev build; app_sso tells
+	// the Android and iPhone apps that single sign-on can run in the system
+	// browser and be redeemed in their web view (app-sso-system-browser D4).
+	writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "version": s.version, "app_sign_in": true, "app_sso": true})
 }
 
 func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
@@ -79,6 +81,8 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		out["minClientVersion"] = MinClientVersion
 		// The instance themes' version (theme-instance-default D3): devices read them again when it grows.
 		out["themes"] = map[string]int64{"version": s.themesVersion(r)}
+		// What a click on a task does for accounts that have not chosen (click-default D2).
+		out["rowClick"] = map[string]string{"default": s.rowClickDefault(r)}
 	}
 	if err := s.deviceRevocation(r, out, sess, u == nil && viaCookie); err != nil {
 		s.internal(w, err)
@@ -499,7 +503,10 @@ func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDeleteToken(w http.ResponseWriter, r *http.Request) {
-	err := s.auth.DeleteToken(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"))
+	userID, id := userFrom(r.Context()).ID, r.PathValue("id")
+	// A connected app's access token: its grant ends with it (connected-apps-list).
+	grant, lookup := s.mcpOAuth.GrantByToken(r.Context(), id)
+	err := s.auth.DeleteToken(r.Context(), userID, id)
 	if errors.Is(err, auth.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "not_found", "token not found")
 		return
@@ -508,6 +515,7 @@ func (s *Server) handleDeleteToken(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	s.endGrantOfToken(r.Context(), userID, grant, lookup)
 	w.WriteHeader(http.StatusNoContent)
 }
 

@@ -51,6 +51,20 @@ describe('SsoPanelView', () => {
     expect(disabledCount(html)).toBe(0)
   })
 
+  it('offers the missing email confirmation switch and warns while it is on (sso-missing-email-verified)', () => {
+    const off = panel()
+    expect(off).toContain('Accept new accounts without a confirmed email')
+    expect(off).not.toContain('data-testid="sso-trust-warning"')
+    const s: OidcSettings = { ...settings, trustMissingEmailVerified: true }
+    for (const configuring of [false, true]) {
+      const html = panel({ settings: s, configuring })
+      expect(html).toContain('data-testid="sso-trust-warning"')
+      expect(html).toContain('without a confirmed email address')
+    }
+    expect(saveInput(s, { ...formFrom(s), trustMissingEmailVerified: false }).trustMissingEmailVerified).toBe(false)
+    expect(formFrom({ ...settings, trustMissingEmailVerified: undefined }).trustMissingEmailVerified).toBe(false)
+  })
+
   it('warns when the redirect URI comes from the request', () => {
     expect(panel({ settings: { ...settings, baseUrlConfigured: false } })).toContain('set OPENTODO_BASE_URL')
   })
@@ -102,7 +116,7 @@ describe('LinkedAccountsView', () => {
     expect(html).toContain('sso.example.com')
     expect(html).toContain('used just now')
     expect(html).toContain('aria-label="Actions for me@example.com"')
-    expect(html).toContain('href="/api/v1/auth/oidc/start"')
+    expect(html).toContain('href="/api/v1/auth/oidc/start?mode=link"')
     expect(html).toContain('Link Home SSO')
   })
 
@@ -114,14 +128,14 @@ describe('LinkedAccountsView', () => {
   it('is read-only offline', () => {
     const html = linked({ online: false })
     expect(html).toContain('Offline')
-    expect(html).not.toContain('href="/api/v1/auth/oidc/start"')
+    expect(html).not.toContain('href="/api/v1/auth/oidc/start?mode=link"')
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Link Home SSO/)
   })
 
   it('shows an empty state with the link action when nothing is linked', () => {
     const html = linked({ identities: [] })
     expect(html).toContain('Nothing linked yet')
-    expect(html).toContain('href="/api/v1/auth/oidc/start"')
+    expect(html).toContain('href="/api/v1/auth/oidc/start?mode=link"')
   })
 
   it('shows notices and errors from the link flow', () => {

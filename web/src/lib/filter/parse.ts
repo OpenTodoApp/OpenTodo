@@ -38,6 +38,7 @@ export type Token =
   | { type: 'search'; text: string; pos: number; raw: string }
   | { type: 'origin'; value: string; pos: number; raw: string }
   | { type: 'assigned'; name: string; pos: number; raw: string }
+  | { type: 'section'; name: string; pos: number; raw: string }
   | { type: 'energy'; value: 'deep' | 'medium' | 'low'; pos: number; raw: string }
   | { type: 'sector'; value: string; pos: number; raw: string }
   | { type: 'workspace'; name: string; pos: number; raw: string }
@@ -182,6 +183,13 @@ export function tokenize(src: string): Token[] {
       out.push({ type: 'assigned', name, pos, raw: src.slice(pos, i) })
       continue
     }
+    // `section: Review`: a section of that name in any project (section-filter).
+    if (/^section:/i.test(word)) {
+      const name = readPrefixed('section:')
+      if (!name) throw new FilterSyntaxError(t('Expected a section name after "section:" at position {pos}', { pos: pos + 1 }), pos, ['section name'])
+      out.push({ type: 'section', name, pos, raw: src.slice(pos, i) })
+      continue
+    }
     // `energy: deep|medium|low`, case ignored, quotes allowed (task-energy D5).
     if (/^energy:/i.test(word)) {
       const value = readPrefixed('energy:').toLowerCase()
@@ -218,7 +226,7 @@ export function tokenize(src: string): Token[] {
 
 // ---- AST ----
 
-export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'morning' | 'afternoon' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'available' | 'habit' | 'origin' | 'no origin' | 'tracked' | 'tracked occurrence' | 'energy' | 'no energy' | 'notes' | 'no notes' | 'sector' | 'no sector' | 'carried' | 'assigned' | 'unassigned'
+export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'morning' | 'afternoon' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'available' | 'habit' | 'recurring' | 'origin' | 'no origin' | 'tracked' | 'tracked occurrence' | 'energy' | 'no energy' | 'notes' | 'no notes' | 'sector' | 'no sector' | 'carried' | 'assigned' | 'unassigned' | 'no section'
 
 /**
  * today = 0, tomorrow = 1, yesterday = -1, `N days` = N, `N days ago` = -N.
@@ -249,6 +257,8 @@ export type Node =
   | { kind: 'origin'; value: string }
   /** `assigned: name`: the assignee is the viewer (`me`) or has that name or email (today-assigned-filter). */
   | { kind: 'assigned'; name: string }
+  /** `section: name`: the task sits in a section with that name, in its own project (section-filter). */
+  | { kind: 'section'; name: string; pos: number }
   /** `energy: value`: the task's energy equals value (task-energy D5). */
   | { kind: 'energy'; value: 'deep' | 'medium' | 'low' }
   /** `sector: value`: the task's time sector is that period, or the viewer's period a relative word names (time-sectors). */
@@ -270,8 +280,8 @@ export type FieldValueExpr =
   | { type: 'date'; date: DateExpr }
 
 export const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
-const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening', 'morning', 'afternoon', 'blocked', 'unblocked', 'available', 'habit', 'origin', 'energy', 'notes', 'sector', 'carried', 'assigned', 'unassigned'])
-const NO_KEYWORDS = ['date', 'project', 'labels', 'time', 'deadline', 'start', 'origin', 'energy', 'notes', 'sector'] as const
+const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening', 'morning', 'afternoon', 'blocked', 'unblocked', 'available', 'habit', 'recurring', 'origin', 'energy', 'notes', 'sector', 'carried', 'assigned', 'unassigned'])
+const NO_KEYWORDS = ['date', 'project', 'labels', 'time', 'deadline', 'start', 'origin', 'energy', 'notes', 'sector', 'section'] as const
 /** Words that start a date expression in a field term's value; a number starts one only before a unit. */
 const DATE_STARTS = new Set(['today', 'tomorrow', 'yesterday', 'this', 'last', 'next'])
 const DATE_UNITS = new Set(['days', 'week', 'weeks', 'month', 'months'])
@@ -368,9 +378,6 @@ export function parse(src: string): Node | null {
   function parseTerm(prev: Token | undefined): Node {
     const tok = peek()!
     switch (tok.type) {
-      case 'label':
-        i++
-        return { kind: 'label', name: tok.name, pos: tok.pos }
       case 'project':
         i++
         return { kind: 'project', name: tok.name, descendants: tok.descendants, pos: tok.pos }
@@ -389,9 +396,11 @@ export function parse(src: string): Node | null {
       case 'sector':
         i++
         return tok.type === 'energy' ? { kind: 'energy', value: tok.value } : { kind: 'sector', value: tok.value }
+      case 'label':
       case 'workspace':
+      case 'section':
         i++
-        return { kind: 'workspace', name: tok.name, pos: tok.pos }
+        return { kind: tok.type, name: tok.name, pos: tok.pos }
       case 'word':
         return parseWordTerm(tok)
       case 'string':
@@ -683,6 +692,8 @@ export function printQuery(n: Node): string {
       return `sector: ${n.value.includes('-W') || /^\d/.test(n.value) ? n.value : n.value.replace('-', ' ')}`
     case 'workspace':
       return `workspace: ${quote(n.name)}`
+    case 'section':
+      return `section: ${quote(n.name)}`
     case 'field':
       // Field names are always quoted: a bare one could collide with a reserved word.
       return `${quoteAlways(n.name)} ${n.op} ${printFieldValue(n.value)}`

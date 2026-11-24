@@ -27,6 +27,8 @@ const GO_EDGES = [
   '!notes', '"Notes" = 3', 'no "Notes"', 'notes: "a & b"',
   'assigned', 'unassigned', '!assigned', 'assigned: me', 'assigned:me', 'assigned: "Sam Lee"', 'ASSIGNED: sam',
   'today & (assigned: me | unassigned)', '"assigned" = x',
+  'section: Review', 'section:Review', 'section: "In review"', 'SECTION: backlog', 'no section', '!section: Review',
+  'section: Review | section: Backlog', 'section: Backlog | no section', '#Work & section: Review', '"section" = x',
   'paid = false', 'cost >= -2.5', 'status = Ordered', 'due_by <= 3 days', '"due" = 2026-10-16', 'no idea', 'kitchen = this week',
   // Nesting the parser keeps (it flattens only a & b & c, not (a & b) & c).
   '(a = 1 & p1) & p2', '(p1 | p2) | p3', '!(p1 & p2)', '!(p1 | p2) & !p3', 'tracked', 'tracked > 1h', 'tracked <= 90', 'tracked >= 1h30', 'tracked occurrence', 'tracked occurrence > 1h', '!tracked occurrence & p1',
@@ -69,7 +71,7 @@ function randomTree(r: () => number, depth: number): Node {
     () => ({ kind: 'project', name: pick(NAMES), descendants: r() < 0.5, pos: 0 }),
     () => ({ kind: 'priority', value: pick([1, 2, 3, 4] as const) }),
     () => ({ kind: 'date', field: pick(['due', 'created', 'deadline', 'start', 'completed'] as const), op: pick(CMPS), date: pick(dates) }),
-    () => ({ kind: 'keyword', keyword: pick(['overdue', 'today', 'tomorrow', 'no date', 'no project', 'no labels', 'no time', 'no deadline', 'no start', 'someday', 'deferred', 'evening', 'morning', 'afternoon', 'completed', 'open', 'subtask', 'blocked', 'unblocked', 'available', 'habit', 'origin', 'no origin', 'tracked'] as const) }),
+    () => ({ kind: 'keyword', keyword: pick(['overdue', 'today', 'tomorrow', 'no date', 'no project', 'no labels', 'no time', 'no deadline', 'no start', 'someday', 'deferred', 'evening', 'morning', 'afternoon', 'completed', 'open', 'subtask', 'blocked', 'unblocked', 'available', 'habit', 'recurring', 'origin', 'no origin', 'tracked'] as const) }),
     () => ({ kind: 'search', text: pick(NAMES) }),
     () => ({ kind: 'origin', value: pick(['github', 'url', 'my tracker']) }),
     () => ({ kind: 'tracked', op: pick(CMPS), minutes: pick([0, 30, 60, 90, 125, 600]) }),

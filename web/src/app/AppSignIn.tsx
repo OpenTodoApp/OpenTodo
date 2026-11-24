@@ -1,5 +1,5 @@
 // The confirmation of an OpenTodo app sign-in (OpenSpec change
-// native-app-foundation, design D5). /app/sign-in sends the signed-in browser
+// app-sign-in). /app/sign-in sends the signed-in browser
 // of the app's sign-in sheet to the consent host (`?oauth_consent=` with the
 // app's client id), which shows this; only Confirm asks the server for a code,
 // which the app receives at its own address.

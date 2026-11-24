@@ -293,6 +293,12 @@ func TestContentPolicyAndLanguages(t *testing.T) {
 	if got := e.render("nl", "", false).Body; got != "Er is een geplande datum bereikt" || strings.Contains(got, "Call the plumber") {
 		t.Fatalf("Dutch: %q", got)
 	}
+	if got := e.render("tr", "", false).Body; got != "Bir hatırlatıcının zamanı geldi" || strings.Contains(got, "A reminder is due") || strings.Contains(got, "Call the plumber") {
+		t.Fatalf("Turkish: %q", got)
+	}
+	if got := e.render("pl", "", false).Body; got != "Czas na przypomnienie" || strings.Contains(got, "A reminder is due") || strings.Contains(got, "Call the plumber") {
+		t.Fatalf("Polish: %q", got)
+	}
 	if got := e.render("xx", "", false).Body; got != "A reminder is due" {
 		t.Fatalf("fallback: %q", got)
 	}
@@ -634,5 +640,38 @@ func TestRoutineFailedToChannels(t *testing.T) {
 	}
 	if m := e.render("en", "", false); m.Body != "A routine failed" {
 		t.Fatalf("titles off: %+v", m)
+	}
+}
+
+// assignee-notifications 3.1: a completion or reopening by someone else reaches
+// a channel with the status event, worded for each; a channel without it gets
+// nothing, and status is not in a new channel's defaults.
+func TestStatusReachesChannelsWithTheEvent(t *testing.T) {
+	h := newHarness(t)
+	ctx := context.Background()
+	h.create("u1", ntfyInput(h.recv.srv.URL, EventStatus))
+	h.create("u1", ntfyInput(h.recv.srv.URL, EventAssigned))
+	h.svc.StatusChanged(ctx, notify.StatusChanged{AssigneeID: "u1", ActorID: "u2", ActorName: "Ben", TaskID: "t1", TaskTitle: "Bins", Completed: true, At: 10})
+	h.svc.StatusChanged(ctx, notify.StatusChanged{AssigneeID: "u1", ActorID: "u2", ActorName: "Ben", TaskID: "t1", TaskTitle: "Bins", At: 20})
+	h.drain()
+	reqs := h.recv.all()
+	if len(reqs) != 2 {
+		t.Fatalf("requests: %d", len(reqs))
+	}
+	// Each event is delivered on its own, so the two can arrive in either order.
+	got := map[any]bool{}
+	for _, r := range reqs {
+		var m map[string]any
+		_ = json.Unmarshal(r.body, &m)
+		got[m["message"]] = true
+	}
+	if !got["A task assigned to you was completed"] || !got["A task assigned to you was reopened"] {
+		t.Fatalf("messages: %v", got)
+	}
+	ch := h.create("u1", Input{Kind: ptr(KindNtfy), URL: ptr(h.recv.srv.URL), Topic: ptr("d")})
+	for _, ev := range ch.Events {
+		if ev == EventStatus {
+			t.Fatalf("status is a default event: %v", ch.Events)
+		}
 	}
 }

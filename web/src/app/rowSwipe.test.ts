@@ -27,6 +27,12 @@ describe('the gesture table', () => {
     expect(releaseOf(dx, v)).toBe(out)
   })
 
+  it.each([[-47, 0, null], [-48, 0, 'edit-title'], [-80, -2, 'edit-title'], [-96, 0, 'left'], [80, 2, 'right']] as const)(
+    'release with title editing: dx %i at %s px/ms → %s', (dx, v, out) => {
+      expect(releaseOf(dx, v, true)).toBe(out)
+    },
+  )
+
   it('the return takes the ui duration', () => {
     expect(SWIPE.returnMs).toBe(120)
   })

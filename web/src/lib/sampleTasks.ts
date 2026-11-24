@@ -9,7 +9,9 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { planTrash, toProposed } from './bulk'
 import { logicalToday } from './dates'
 import { db } from './db'
+import { useLiveTasks } from './liveTasks'
 import { getDeviceId, mutateMany, planTask, type Change } from './ops'
+import { perList } from './taskDelta'
 import type { Task } from './types'
 import { applyBatch } from './undo'
 import { msg, t } from './i18n'
@@ -24,7 +26,7 @@ export const SAMPLE_TITLES = [
   msg('Open me: I have a subtask'),
 ] as const
 export const SAMPLE_SUBTASK = msg('Subtasks tick off on their own row')
-export const SAMPLE_NOTE = msg('Click a task to open its panel. The + button adds tasks, projects and more. Made a mistake? Undo is in the toast and Ctrl+Z.')
+export const SAMPLE_NOTE = msg('Double-click a task to open it. The + button adds tasks, projects and more. Made a mistake? Undo is in the toast and Ctrl+Z.')
 
 /**
  * Creates the three sample tasks (and the third's subtask) in the Inbox as ONE batch,
@@ -51,15 +53,22 @@ export async function createSampleTasks(today = logicalToday()): Promise<string[
   return ids
 }
 
-/** The live tasks still marked sample, open or completed. */
-export async function liveSampleTasks(): Promise<Task[]> {
-  return db.tasks.filter((task) => !task.deleted_at && isSample(task)).toArray()
-}
-
 /** Whether any live sample task exists (the "Remove sample tasks" actions show while it does). */
 export function useHasSampleTasks(): boolean {
-  return useLiveQuery(async () => !!(await db.tasks.filter((task) => !task.deleted_at && isSample(task)).first()), [], false)
+  const tasks = useLiveTasks()
+  return !!tasks && holdsSample(tasks)
 }
+
+/**
+ * Whether a snapshot holds a live sample task, once per snapshot and patched from the
+ * rows a write changed. A query of the table found no sample by reading every row,
+ * again after each write: on a new device's first sync of 10,000 tasks that kept the
+ * Inbox, whose menu asks, three times slower than Today (inbox-first-sync).
+ */
+export const holdsSample = perList<boolean>(
+  (tasks) => tasks.some((task) => isSample(task) && !task.deleted_at),
+  (prev, changes) => (changes.some((c) => (c.after && isSample(c.after)) || (c.before && isSample(c.before))) ? null : prev),
+)
 
 /** Whether a sample task was ever created on this account (trashed ones included): the offer is made once. */
 export function useSampleOfferTaken(): boolean | undefined {

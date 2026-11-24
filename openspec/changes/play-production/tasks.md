@@ -17,7 +17,8 @@ Android tasks are verified with `make android` (JDK 17 and the Android SDK) and 
 
 ## 2. Signing and Google Play upload
 
-- [ ] 2.1 Owner, once: enrol the app in Play App Signing with the existing release key (PEPK export), and register a separate upload key. Store `PLAY_UPLOAD_KEYSTORE_BASE64` (plus its password and alias) and `PLAY_SERVICE_ACCOUNT_JSON` (permission "Release apps to testing tracks" only) in a `release` environment that requires approval. Verified by the Play Console showing "Signing by Google Play: your key" with the release certificate's SHA-256.
+- [x] 2.1 Owner, once: enrol the app in Play App Signing with the existing release key (PEPK export), and register a separate upload key. Store `PLAY_UPLOAD_KEYSTORE_BASE64` (plus its password and alias) and `PLAY_SERVICE_ACCOUNT_JSON` (permission "Release apps to testing tracks" only) in a `release` environment that requires approval. Verified by the Play Console showing "Signing by Google Play: your key" with the release certificate's SHA-256.
+  - Done, then changed: the app was enrolled with the release key and an upload key, and Play's key upgrade of 26 October 2026 replaced the app signing key with Play's own (`e2669a53…c83932`, see design D1).
 - [x] 2.2 CI signs the AAB with the upload key and the APK with the release key, and publishes the release certificate's SHA-256 in the job summary. Verified by `apksigner verify --print-certs` in the job matching the documented fingerprint.
   - Done: the signing step prints the certificate's SHA-256 (`apksigner verify --print-certs`) to the job summary and fails in `OpenTodoApp/OpenTodo` when it differs from `AllowedAPKSigningKeys` in the F-Droid metadata (a fork gets a warning). The `play` job (environment `release`) strips the release signature from the AAB and signs it with the upload key (`jarsigner`). The v0.19.0 release APK shows `ff2eacdf…72befa`, now in `docs/android-app.md`.
 - [x] 2.3 `scripts/release/play-upload.mjs` (Node, no dependency, the service account's JWT signed with `node:crypto`): open an edit, upload the AAB, set the internal track with the CHANGELOG notes for the version cut to 500 characters, and commit. Final tags only. Missing secrets give `::warning::` and skip. Verified by `scripts/release/play-upload.test.mjs` against a fake Play API (`node --test`: the order of calls, the notes cut, the skip without secrets, no call for an `-rc` tag), added to `make repo-check`.
@@ -29,7 +30,8 @@ Android tasks are verified with `make android` (JDK 17 and the Android SDK) and 
 
 - [ ] 3.1 Owner: answer owner questions 1 and 2 in design D6 (account type, developer verification), and record the answers there. Verified by the design file.
 - [ ] 3.2 If the account is a personal one created after November 2023: run the closed test with at least 12 testers for 14 days, recruited through #9, before applying for production. Verified by the Play Console's production access status.
-- [ ] 3.3 Owner: create the production listing from `fastlane/metadata/android/<locale>/` (the texts and images F-Droid also reads), the data-safety answers and the screenshots, promote the first internal build to production with a staged rollout, and register `app.opentodo` and the certificate for developer verification. Verified by the public Play listing URL answering.
+- [x] 3.3 Owner: create the production listing from `fastlane/metadata/android/<locale>/` (the texts and images F-Droid also reads), the data-safety answers and the screenshots, promote the first internal build to production with a staged rollout, and register `app.opentodo` and the certificate for developer verification. Verified by the public Play listing URL answering.
+  - Done: 1.6.0 is in production and `play.google.com/store/apps/details?id=app.opentodo` answers.
 
 ## 4. F-Droid
 
@@ -39,11 +41,11 @@ Android tasks are verified with `make android` (JDK 17 and the Android SDK) and 
 
 ## 5. Documentation and release flow
 
-- [x] 5.1 `docs/android-app.md`: install from Google Play, F-Droid or the GitHub release; that all three share one certificate (with its SHA-256) and how to switch; how to verify an APK with `scripts/android-repro.sh`. `docs/install-phone.md` links the real listings. Verified by `npm run docs:check`.
+- [x] 5.1 `docs/android-app.md`: install from Google Play, F-Droid or the GitHub release; that all three share one certificate (with its SHA-256) and how to switch (since D1 was superseded: two certificates, both published, and an uninstall between Play and the others); how to verify an APK with `scripts/android-repro.sh`. `docs/install-phone.md` links the real listings. Verified by `npm run docs:check`.
   - Done: "Install the app", "Switching between Google Play, F-Droid and GitHub" and "Check what you installed" in `docs/android-app.md` (certificate, `apksigner`, `scripts/android-repro.sh`); `docs/install-phone.md` links the three sources. Both say the store links open once listed. `make docs-check` passes.
 - [x] 5.2 `RELEASING.md`: the Play promotion step (internal → staged production) and the F-Droid check (the new version appears after its build matched). `deploy/README.md`: the store table gains Google Play and F-Droid. Verified by `npm run docs:check`.
   - Done: RELEASING.md section 3 (APK, reproducibility, internal track) and section 4 steps 3 (staged production rollout) and 4 (F-Droid check); the "After a release" table of `deploy/README.md` gains Google Play and F-Droid. `make docs-check` passes.
-- [x] 5.3 `ROADMAP.md` "Native shells" row 1 marked shipped, and a CHANGELOG entry under Unreleased: the Android app on Google Play and F-Droid, reproducible builds, one certificate. Verified by `make check`.
+- [x] 5.3 `ROADMAP.md` "Native shells" row 1 marked shipped, and a CHANGELOG entry under Unreleased: the Android app on Google Play and F-Droid, reproducible builds, one certificate (two since Play's key upgrade, D1). Verified by `make check`.
   - Adapted while owner tasks stay open: the ROADMAP rows say **In progress** (not shipped), and the CHANGELOG entry covers only what ships now (reproducible builds, the certificate, the F-Droid metadata, the internal-track upload), "refs #603".
 - [x] 5.4 `make android`, `make openspec-validate`, `make repo-check` and `make check` pass. Verified by their exit codes.
   - Done: `make android` passed (Temurin 17.0.21+9 in the SDK image, 86 tasks); `make openspec-validate`, `make repo-check` (97 tests), `make docs-check` and `make deploy-check` pass locally; the full `make check` runs in CI on the pull request. Also measured: Ubuntu's OpenJDK 17.0.20.1 builds the same APK as Temurin (apksigcopier match), which is what F-Droid's Debian JDK needs.

@@ -11,7 +11,7 @@ import { hasTimeColumn } from '../../lib/rowTime'
 import { listSlotsOff } from '../../lib/rowSlots'
 import { useAllLabels, useReviewRow, useReviewedAt } from '../../lib/localData'
 import { oldSomeday } from '../../lib/method/rules'
-import { setTaskCompleted } from '../../lib/ops'
+import { setTaskCompletedWithFeedback } from '../completionSound'
 import { areasOf, finishMonthlyLook, monthlyDue } from '../../lib/review'
 import { compute, periodFor, sharedIds } from '../../lib/stats'
 import { Badge, Button, Dialog, PageBody, PageHeader, Skeleton } from '../../ui'
@@ -101,7 +101,7 @@ export function MonthlyLook() {
               <ul>
                 {data.someday.map((task) => (
                   <TaskRow key={task.id} task={task} project={task.project_id ? projectMap.get(task.project_id) : undefined} labels={resolveLabels(task.labels, labelMap)}
-                    showProject selected={task.id === selected} timeColumn={timeColumn} slotsOff={slotsOff} onToggle={() => act(setTaskCompleted(task.id, !task.completed_at))}
+                    showProject selected={task.id === selected} timeColumn={timeColumn} slotsOff={slotsOff} onToggle={() => act(setTaskCompletedWithFeedback(task.id, !task.completed_at))}
                     onOpen={() => { setSelected(task.id); setPanelTaskId(task.id) }} />
                 ))}
               </ul>

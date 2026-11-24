@@ -199,7 +199,7 @@ A write tool SHALL run only when MCP is enabled, the owner allowed assistant wri
 - **THEN** the response is 401 `unauthorized`
 
 ### Requirement: Write tools
-When allowed, `tools/list` SHALL add `create_tasks`, `update_tasks`, `complete_tasks`, `reopen_tasks`, `move_tasks`, `schedule_tasks`, `create_project`, `update_project`, `archive_projects`, `set_favourite`, `create_sections`, `update_sections`, `reorder_sections`, `create_label`, `update_labels`, `add_comment`, `add_reminders`, `update_reminders`, `remove_reminders`, `start_timer`, `stop_timer`, `log_time`, `update_time_entries`, `log_habit` and `trash_tasks`. No tool SHALL purge or delete projects, sections, labels, custom field definitions or time entries, define custom fields, assign people, or change sharing, members, tokens, settings, webhooks, backups or imports. `trash_tasks` SHALL accept only tasks created by the same token. `update_project` SHALL accept a project `id` and any of `name`, `color` (`#rrggbb`), `icon` (a name from the icon catalogue, or null for none), `parent_id` (a project id or null, refused when it would make a project its own ancestor), `position`, and the note as described in "Project note in write tools"; it SHALL NOT accept `archived` or `deleted`, which only `archive_projects` (archive) and no tool (delete) change. `set_favourite` SHALL add a project to the user's Favourites, at the end, or remove it, keeping the order of the other entries. `create_sections` SHALL create sections in one project with a `name` and optional `color`, `icon` and `position`; `update_sections` SHALL change a section's `name`, `color`, `icon` or `position`; `reorder_sections` SHALL give the listed sections of one project positions in the given order, before any section it does not list. Results reflect synced data; changes are written as operations, work for devices that are offline (they apply on their next sync) and converge with offline device edits by last-writer-wins per field.
+When allowed, `tools/list` SHALL add `create_tasks`, `update_tasks`, `complete_tasks`, `reopen_tasks`, `move_tasks`, `schedule_tasks`, `create_project`, `update_project`, `archive_projects`, `set_favourite`, `create_sections`, `update_sections`, `reorder_sections`, `create_label`, `update_labels`, `add_comment`, `add_reminders`, `update_reminders`, `remove_reminders`, `start_timer`, `stop_timer`, `log_time`, `update_time_entries`, `log_habit` and `trash_tasks`. No tool SHALL purge or delete projects, sections, labels, custom field definitions or time entries, define custom fields, or change sharing, members, tokens, settings, webhooks, backups or imports. A task's assignee SHALL be set only as "Assignee in write tools" says. `trash_tasks` SHALL accept only tasks created by the same token. `update_project` SHALL accept a project `id` and any of `name`, `color` (`#rrggbb`), `icon` (a name from the icon catalogue, or null for none), `parent_id` (a project id or null, refused when it would make a project its own ancestor), `position`, and the note as described in "Project note in write tools"; it SHALL NOT accept `archived` or `deleted`, which only `archive_projects` (archive) and no tool (delete) change. `set_favourite` SHALL add a project to the user's Favourites, at the end, or remove it, keeping the order of the other entries. `create_sections` SHALL create sections in one project with a `name` and optional `color`, `icon` and `position`; `update_sections` SHALL change a section's `name`, `color`, `icon` or `position`; `reorder_sections` SHALL give the listed sections of one project positions in the given order, before any section it does not list. Results reflect synced data; changes are written as operations, work for devices that are offline (they apply on their next sync) and converge with offline device edits by last-writer-wins per field.
 
 #### Scenario: Create tasks
 - **WHEN** an allowed assistant calls `create_tasks` with two items for project "Garden", one due tomorrow with priority 2
@@ -1405,3 +1405,108 @@ Over MCP, a token limited to chosen workspaces SHALL see and change only those w
 #### Scenario: Encrypted account
 - **WHEN** an assistant calls `get_habit` on an end-to-end encrypted account with no opted-in device online
 - **THEN** the numbers and day states are returned, and the title and notes read "[encrypted]"
+
+### Requirement: Connected apps in Settings
+
+The server SHALL list a signed-in person's own OAuth grants that are neither revoked nor expired at `GET /api/v1/me/oauth-grants`, each with the client's registered name, when it was connected, its last use, its scope (`read` or `agent`) and its workspace limit, and never a token, to a session, a `full` or an `admin` token; `read` and `agent` tokens SHALL be refused with 403 `insufficient_scope`, as on `/api/v1/me/agent-access`. `DELETE /api/v1/me/oauth-grants/{id}` SHALL revoke one of the caller's grants and delete its current access token in the same request, record `mcp_oauth.disconnected`, and answer 404 for another person's, a revoked or an unknown grant. Both routes SHALL work while the owner's MCP switch is off; the delete SHALL be refused on a demo instance. Settings → Account → Security → Session SHALL list the connected apps next to the signed-in OpenTodo apps, each with Disconnect behind a confirmation. Grants are server state outside the op log: nothing syncs, and a device that is offline sees the list only once it is online again.
+
+#### Scenario: A person sees their own connected apps
+
+- **WHEN** a signed-in person who connected Gemini with the `agent` scope requests `GET /api/v1/me/oauth-grants`
+- **THEN** the answer lists Gemini with its scope, when it was connected and when it was last used, and lists no other person's grants
+
+#### Scenario: Disconnecting ends the app's access
+
+- **WHEN** the person disconnects the app and confirms
+- **THEN** its access token is refused with 401 and its refresh token with `invalid_grant`, the app is no longer listed, and `mcp_oauth.disconnected` is recorded with the client id
+
+#### Scenario: Another person's grant
+
+- **WHEN** a person sends `DELETE /api/v1/me/oauth-grants/{id}` for a grant of another person
+- **THEN** the answer is 404 `not_found` and that grant keeps working
+
+#### Scenario: Authentication required
+
+- **WHEN** either route is called without a session or token
+- **THEN** the answer is 401
+
+#### Scenario: Demo instance
+
+- **WHEN** a demo visitor sends `DELETE /api/v1/me/oauth-grants/{id}`
+- **THEN** the answer is 403 `demo_restricted`
+
+#### Scenario: A read or agent token cannot list connected apps
+
+- **WHEN** a `read` or an `agent` token is presented on `GET /api/v1/me/oauth-grants`
+- **THEN** the answer is 403 `insufficient_scope`, while a session and a `full` token get the list
+
+### Requirement: Deleting an app's access token ends its grant
+
+Deleting the access token of one of the person's grants with `DELETE /api/v1/tokens/{id}` SHALL also revoke that grant, so its refresh token cannot mint another access token, and SHALL record `mcp_oauth.disconnected`. Deleting an ordinary API token SHALL leave every grant unchanged.
+
+#### Scenario: The refresh after the token was deleted
+
+- **WHEN** a person deletes `MCP: Gemini` under Settings → Integrations → API tokens and Gemini then refreshes
+- **THEN** the refresh is refused with `invalid_grant` and Gemini is no longer listed among the connected apps
+
+#### Scenario: An ordinary token
+
+- **WHEN** a person deletes an API token they created themselves
+- **THEN** no grant is revoked
+
+### Requirement: Read tools name sections and match labels
+`list_projects` and `opentodo://projects` SHALL carry each project's live sections in board order, each with its id, `flow_mode` and name marked as untrusted text, and SHALL leave the list out for a project without sections. `search_tasks` SHALL also match a task that carries a label whose name holds the query, or whose name the query is with a trailing `s` or `es`, ignoring case and a leading `#` or `@`. `list_tasks`' `label` SHALL, when no label has that name or id, find the labels whose name the argument is with a trailing `s` or `es`. Encrypted names SHALL never match. The rule SHALL only add matches and SHALL never stem a word otherwise. The on-device assistant's read tools SHALL apply the same rule, pinned by shared vectors. These are reads of synced data: they work on whatever a device has synced, change nothing and need no convergence.
+
+#### Scenario: A board column is named
+- **WHEN** an assistant calls `list_projects` for an account whose project "Website launch" has the sections "To do" and "In progress"
+- **THEN** the project carries both sections in order with their ids, and the id of "In progress" can be passed to `show_board`
+
+#### Scenario: A plural finds a label
+- **WHEN** an assistant calls `search_tasks` with `query: "errands"` and three open tasks carry the label "errand"
+- **THEN** the result holds those three tasks
+
+#### Scenario: Other words are not stemmed
+- **WHEN** an assistant calls `search_tasks` with `query: "commissioni"` and tasks carry the label "commissione"
+- **THEN** the label does not match
+
+### Requirement: Find free time
+The registry SHALL offer the read tool `find_free_time` with `from`, `to` (at most 14 days apart), `min_minutes` and `timezone`. It SHALL return the free slots of each day within the user's working day, after removing calendar events, frames, slots and timed tasks, leaving out projects kept away from assistants. It is listed and callable like the other read tools, for MCP clients and the in-app assistant.
+
+#### Scenario: Free slots over MCP
+- **WHEN** an MCP client with a read token calls `find_free_time` for tomorrow with `min_minutes` 60
+- **THEN** the result lists tomorrow's free slots of at least an hour, each with start, end and minutes
+
+#### Scenario: Range too long
+- **WHEN** a caller asks for a range of 30 days
+- **THEN** the tool returns an `invalid_arguments` error naming the 14-day limit
+
+#### Scenario: Without a token
+- **WHEN** an MCP request without a token calls `find_free_time`
+- **THEN** the request is refused as unauthenticated like every MCP request
+
+### Requirement: Assignee in write tools
+`create_tasks` items and `update_tasks` updates SHALL accept `assignee`: a person named by account id, email or name (email and name ignoring case), or `me` for the user, or `null` to unassign. It SHALL be resolved only among the people the task can be assigned to under `task-assignment` "Assignee field": the current members of the task's shared project, or the user alone for a task in the Inbox or an unshared project. A person outside that set, or a name two members share, SHALL be refused with a JSON-RPC `-32602` error naming `assignee`, and nothing in the call SHALL be written. A viewer SHALL be refused with the tool error `forbidden`, as for any change they cannot make (`task-assignment` "Assignment permissions"). The assignment SHALL be written as the ordinary `assignee_id` operation, checked again by the sync path at receipt like a REST or device write, so it notifies the assignee, works for devices that are offline (they apply it on their next sync) and converges with offline device edits by last-writer-wins.
+
+#### Scenario: Assign by name
+- **WHEN** an allowed assistant calls `update_tasks` on a task of the shared project "House" with `assignee: "sam rivera"`, and Sam Rivera is a member
+- **THEN** the task is assigned to Sam on every member's devices after sync and Sam is notified
+
+#### Scenario: Create assigned
+- **WHEN** an allowed assistant calls `create_tasks` with an item in "House" and `assignee: "sam@example.com"`
+- **THEN** the new task is assigned to Sam
+
+#### Scenario: Unassign
+- **WHEN** an allowed assistant calls `update_tasks` with `assignee: null` on a task assigned to Sam
+- **THEN** the task is unassigned on every member's devices after sync
+
+#### Scenario: Someone outside the project
+- **WHEN** an allowed assistant calls `update_tasks` with `assignee` naming an account that is not a member of the task's project, by id or by email
+- **THEN** the response is a JSON-RPC `-32602` error naming `assignee` and the task keeps its assignee
+
+#### Scenario: Viewer
+- **WHEN** an assistant connected by a viewer of "House" calls `update_tasks` with an `assignee` on one of its tasks
+- **THEN** the result is the tool error `forbidden` and nothing changes
+
+#### Scenario: Personal task
+- **WHEN** an allowed assistant sets `assignee` on an Inbox task to another account
+- **THEN** the response is a JSON-RPC `-32602` error naming `assignee`, and `assignee: "me"` assigns it to the user

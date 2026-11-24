@@ -1,0 +1,1 @@
+- **Paste a screenshot or a file into quick add.** While you type a new task, a pasted image or file waits under the line, can be removed with its **×**, and is attached to the task when you add it, offline too. The usual size and storage limits apply, and text and links paste as before ([#1951](https://github.com/OpenTodoApp/OpenTodo/issues/1951)).

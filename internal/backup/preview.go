@@ -77,7 +77,7 @@ func countDB(path string) (Counts, error) {
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		return c, err
 	}
-	db, err := sql.Open("sqlite", "file:"+path+"?mode=ro&_pragma=busy_timeout(5000)")
+	db, err := sql.Open("sqlite", "file:"+path+"?mode=ro&_pragma=busy_timeout(5000)&"+store.TempInMemory)
 	if err != nil {
 		return c, err
 	}

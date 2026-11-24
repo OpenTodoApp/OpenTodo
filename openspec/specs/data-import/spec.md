@@ -351,7 +351,7 @@ The server SHALL accept a ZIP archive whose entries are files of one supported f
 - **THEN** the server answers 401 and does not read the archive
 
 ### Requirement: Todoist structure
-A Todoist export SHALL map each project file to a project, section rows to sections, and task rows to tasks nested by their indent level into subtasks. Note rows SHALL be appended to their task's description under a "Comments" heading, because their authors cannot be kept.
+A Todoist export SHALL map each project file to a project, section rows to sections, and task rows to tasks nested by their indent level into subtasks. Note rows SHALL become comments on the task right above them ("Todoist notes as comments").
 
 #### Scenario: Nested tasks and sections
 - **WHEN** a Todoist CSV contains a section row followed by a task at indent 1 and a task at indent 2
@@ -443,7 +443,7 @@ The server SHALL accept the `main.sqlite` file of a Things 3 database, alone or 
 - **THEN** the preview is refused with a 400 error, and nothing is written
 
 ### Requirement: Things structure
-A Things database SHALL map areas to parent projects, projects to projects, headings to sections, to-dos to tasks, checklist items to subtasks, tags to labels and notes to the description. Trashed items SHALL be skipped.
+A Things database SHALL map areas to parent projects, projects to projects, headings to sections, to-dos to tasks, checklist items to subtasks, tags to labels and notes to the description. A completed or canceled project SHALL become an archived project, with a warning. Trashed items SHALL be skipped.
 
 #### Scenario: Area with a project and headings
 - **WHEN** a Things area "Work" holds a project "Launch" with headings "Prepare" and "Ship"
@@ -608,7 +608,7 @@ An Asana row SHALL keep `Name` as the title, `Notes` as the description, `Tags` 
 - **THEN** the task is imported without a due date and the row warns quoting the value
 
 ### Requirement: Microsoft To Do structure
-Microsoft To Do has no export of its own. The `microsoft-todo-json` format SHALL read a JSON document holding the Microsoft Graph To Do shape, as written by the script in the switch guide: an array (or a `value` array) of `todoTaskList` objects, each with `displayName`, `wellknownListName` and a `tasks` array of `todoTask` objects (`id`, `title`, `body`, `importance`, `status`, `dueDateTime`, `startDateTime`, `completedDateTime`, `createdDateTime`, `reminderDateTime`, `recurrence`, `categories`, `checklistItems`, `linkedResources`). It SHALL be recognised by the presence of `wellknownListName` or of a task with `importance` and `dueDateTime`. Each list SHALL become a project (the `defaultList` SHALL go to the target project, Inbox by default; the `flaggedEmails` list SHALL become a project "Flagged emails"), each task a task, each checklist item a subtask. The guide SHALL also say that the Outlook data export's tasks file is read when it holds the same objects.
+Microsoft To Do has no export of its own. The `microsoft-todo-json` format SHALL read a JSON document holding the Microsoft Graph To Do shape, as written by the script in the switch guide: an array (or a `value` array) of `todoTaskList` objects, each with `displayName`, `wellknownListName` and a `tasks` array of `todoTask` objects (`id`, `title`, `body`, `importance`, `status`, `dueDateTime`, `startDateTime`, `completedDateTime`, `createdDateTime`, `reminderDateTime`, `recurrence`, `categories`, `checklistItems`, `linkedResources`). It SHALL be recognised by the presence of `wellknownListName` or of a task with `importance` and `dueDateTime`. Each list SHALL become a project (the `defaultList` SHALL go to the target project, Inbox by default; the `flaggedEmails` list SHALL become a project "Flagged emails"; `none`, `unknownFutureValue` and any other value SHALL become a project of the list's name), each task a task, each checklist item a subtask with its `createdDateTime`. A list with `isShared` true SHALL add a preview note saying it is imported as the user's own project. The switch guide SHALL name this PowerShell and Microsoft Graph export as the way to get the data out of To Do today, and SHALL say that once Microsoft publishes its own To Do export, OpenTodo checks that file and supports it if it can. The import writes through operations like every other import, so offline devices converge on the imported entities when they next sync.
 
 #### Scenario: Lists and checklist items
 - **WHEN** the file has a list "Home" with a task "Fix tap" holding two `checklistItems`, one `isChecked`
@@ -622,12 +622,28 @@ Microsoft To Do has no export of its own. The `microsoft-todo-json` format SHALL
 - **WHEN** a JSON array of objects has neither `wellknownListName` nor tasks with `importance`
 - **THEN** it is not detected as `microsoft-todo-json` and the generic JSON profiles decide as before
 
+#### Scenario: Shared list
+- **WHEN** a list "Family" has `isShared` true
+- **THEN** the project "Family" is created and the preview notes that the list is shared in To Do and is imported as the user's own project
+
+#### Scenario: The guide names the way out
+- **WHEN** a Microsoft To Do user opens the Microsoft To Do switch guide
+- **THEN** it gives the PowerShell script that reads the lists through Microsoft Graph as today's export, says that Microsoft's own export will be checked and supported if it can be once Microsoft publishes it, and claims no other file is read
+
 ### Requirement: Microsoft To Do attributes and dates
-A To Do task SHALL keep its `title`, its `body.content` as the description (HTML converted to plain text), `importance` `high` as p1, `normal` as p4 and `low` as p4, `status` `completed` with `completedDateTime` as the completion, `categories` as labels, a `linkedResources` entry with a `webUrl` as a link attachment (and, when it is the only one, as the task's origin URL), and `dueDateTime` as a floating due date: Graph writes due dates as midnight in the `timeZone` the object names, so the date part SHALL be taken in that zone and no time set; a `reminderDateTime` SHALL become an absolute reminder at that instant in its named zone. `recurrence` (`pattern` and `range`) SHALL become a rule where the grammar expresses it (daily, weekly on days, monthly on a day, yearly) and otherwise a warning. `startDateTime` SHALL become the start date. Attachments other than links SHALL be dropped with a warning.
+A To Do task SHALL keep its `title`, its `body.content` as the description (HTML converted to plain text: comments and the head, style, script and template elements are removed with their content, list items become `- ` lines, other tags are removed and entities decoded last), `importance` `high` as p1, `normal` as p4 and `low` as p4, `status` `completed` with `completedDateTime` as the completion, `categories` as labels, a `linkedResources` entry with a `webUrl` as a link attachment (and, when it is the only one, as the task's origin URL) and one without `webUrl` dropped with a warning, and `dueDateTime` and `startDateTime` as floating dates without a time: To Do stores the local midnight of the chosen day and Graph usually returns it converted to UTC (15 April at UTC+2 is `2023-04-14T22:00:00` UTC), so a value at exactly midnight, in whatever zone it names (UTC included), SHALL be taken as the written day, and any other value SHALL be converted from its `timeZone` into the import's time zone and rounded to the nearest midnight there; a zone the server does not know SHALL fall back to the written date; a `reminderDateTime` SHALL become an absolute reminder at that instant in its named zone. The statuses `notStarted`, `inProgress`, `waitingOnOthers` and `deferred` SHALL be open tasks; any other status SHALL be an open task with a warning. `recurrence` (`pattern` and `range`) SHALL become the rule that gives the same dates where the grammar expresses it: `daily`, `weekly` on days, `absoluteMonthly`, `relativeMonthly` on one weekday or on Monday to Friday, `absoluteYearly` and `relativeYearly`, each with its `interval` where the grammar has one, and a range of type `endDate` as `until` and `numbered` as `for N times`; any other pattern SHALL be a warning and no rule, and a range end the rule cannot carry SHALL be dropped with a warning, keeping the rule. A completed task SHALL carry no rule, since To Do keeps the repeat on the open task it created. `startDateTime` SHALL become the start date. Attachments other than links SHALL be dropped with a warning.
 
 #### Scenario: Due date in a named zone
 - **WHEN** a task has `dueDateTime` `{dateTime: "2026-11-03T00:00:00.0000000", timeZone: "Pacific Standard Time"}`
 - **THEN** the task is due on 2026-11-03 without a time, whatever the import's time zone
+
+#### Scenario: Due date returned in UTC
+- **WHEN** a task has `dueDateTime` `{dateTime: "2023-04-14T22:00:00.0000000", timeZone: "UTC"}` and the import's time zone is Europe/Berlin (or UTC)
+- **THEN** the task is due on 2023-04-15 without a time
+
+#### Scenario: Midnight UTC east of UTC+12
+- **WHEN** a task has `dueDateTime` `{dateTime: "2026-11-03T00:00:00.0000000", timeZone: "UTC"}` and the import's time zone is Pacific/Auckland or Pacific/Kiritimati
+- **THEN** the task is due on 2026-11-03 without a time
 
 #### Scenario: Weekly recurrence
 - **WHEN** a task's `recurrence.pattern` is `{type: "weekly", interval: 1, daysOfWeek: ["monday", "wednesday"]}`
@@ -636,6 +652,30 @@ A To Do task SHALL keep its `title`, its `body.content` as the description (HTML
 #### Scenario: Reminder kept
 - **WHEN** a task has `reminderDateTime` `{dateTime: "2026-11-03T09:00:00.0000000", timeZone: "W. Europe Standard Time"}` and `isReminderOn` true
 - **THEN** the task has an absolute reminder at 09:00 Central European Time on that day
+
+#### Scenario: Nth weekday of the month
+- **WHEN** a task due 2026-11-12 has `recurrence.pattern` `{type: "relativeMonthly", interval: 1, daysOfWeek: ["thursday"], index: "second"}`
+- **THEN** the task gets the rule `every 2nd thursday` and the row has no warning
+
+#### Scenario: Every two weeks until a date
+- **WHEN** a task due 2026-11-02 has `pattern` `{type: "weekly", interval: 2, daysOfWeek: ["monday", "thursday"]}` and `range` `{type: "endDate", endDate: "2027-06-30"}`
+- **THEN** the task gets the rule `every 2 weeks on monday, thursday until 2027-06-30`
+
+#### Scenario: Pattern the grammar cannot say
+- **WHEN** a task's pattern is `{type: "relativeMonthly", daysOfWeek: ["monday", "friday"], index: "first"}`
+- **THEN** the task is imported without a rule and the row warns quoting the pattern
+
+#### Scenario: Outlook HTML body
+- **WHEN** a task's `body` is `{contentType: "html"}` holding a document with a `<style>` block, a comment, a `<script>` element and a list
+- **THEN** the description holds the visible text with the list items as `- ` lines, and none of the CSS, the comment or the script
+
+#### Scenario: Outlook status
+- **WHEN** a task has `status` `waitingOnOthers`
+- **THEN** it is imported as an open task without a warning, and a task with `status` `paused` is an open task with a warning naming the status
+
+#### Scenario: Completed repeating task
+- **WHEN** a task has `status` `completed` and a daily `recurrence`
+- **THEN** it is imported completed and without a rule
 
 ### Requirement: Apple Reminders file
 Apple Reminders has no export of its own. The `apple-reminders-json` format SHALL read the JSON the switch guide's Shortcut writes: an array of objects with `list`, `title`, `notes`, `dueDate`, `isCompleted`, `completionDate`, `creationDate`, `priority`, `flagged`, `tags`, `url`, `identifier`, `parent` and `subtasks` (an array of the same shape), recognised by the presence of `identifier` and `isCompleted` on every object. Each distinct `list` SHALL become a project ("Reminders", the default list, SHALL go to the target project), each object a task, `subtasks` and `parent` references subtasks. The switch guide SHALL say first that a CalDAV connection to the server moves the same data without a file, and present the Shortcut for people who want a one-time copy.
@@ -959,3 +999,26 @@ The import screen SHALL offer, with Switch from: Todoist, a field for a Todoist 
 #### Scenario: A wrong token
 - **WHEN** the token is mistyped
 - **THEN** the screen says Todoist did not accept it, and nothing is imported
+
+### Requirement: Todoist notes as comments
+Each `note` row of a Todoist CSV, read alone or from the backup ZIP, SHALL become a comment on the task right above it, authored by the importing account, in the file's order, and SHALL NOT be added to the task's description. The comment's body SHALL start with a line naming the note's original author in bold and its time in UTC, `**<author>** · <YYYY-MM-DD HH:MM> UTC`, then a blank line and the note's text. The author SHALL be the `AUTHOR` column without its trailing account id (`Pete (14148749)` is `Pete`) and the time the `DATE` column, an ISO 8601 instant. A missing author SHALL leave only the time, a missing or unreadable date only the author, and with neither the body SHALL be the note's text alone. One import SHALL create at most 5,000 comments; a note past that SHALL be appended to its task's description under a "Comments" heading instead. A note whose comment body would exceed the size limit of a comment body SHALL keep its first line, and its text SHALL be cut to fit at a character boundary and end in "…". The preview SHALL carry one file-level note with the count of notes added to descriptions and of comments cut. An import's comments SHALL NOT count against the per-account comment creation limit, and every other writer's comments SHALL. Undo SHALL remove the comments the import created, and importing the same file again SHALL create none. The comments are written as ops through the op log, so they reach every device on its next sync, offline devices included, and converge like any comment. This applies to the Todoist CSV only: the Todoist API import, other apps' exports and the own export keep their behaviour.
+
+#### Scenario: Notes become comments with their author and time
+- **WHEN** a Todoist task row is followed by a note by `Pete (14148749)` dated `2023-11-01T16:08:26.405000Z` and a second note without a date, and the import is committed
+- **THEN** the task has two comments by the importing account, in that order, the first starting with `**Pete** · 2023-11-01 16:08 UTC` and the second with `**Pete**`, each followed by a blank line and the note, and the task's description has no "Comments" heading
+
+#### Scenario: More notes than one import creates
+- **WHEN** a Todoist backup has 5,002 notes
+- **THEN** the first 5,000 become comments, the last two are appended to their task's description under "Comments", and the preview has one note saying that 2 notes were added to their tasks' description
+
+#### Scenario: A note too long for a comment
+- **WHEN** a note is larger than a comment body may be
+- **THEN** it becomes a comment with its first line and its text cut to fit, ending in "…", the task's description is unchanged, the task's other notes become comments, and the preview has one note saying that 1 comment was cut to fit
+
+#### Scenario: Not limited like a device
+- **WHEN** a Todoist backup with 100 notes is imported while the account's comment limit is 60 a minute
+- **THEN** all 100 comments are created, and a device of the account can still create its 60 comments in that minute and is refused the 61st with reason `rate_limited`
+
+#### Scenario: Importing again and undoing
+- **WHEN** the same backup is imported a second time, and the first import is then undone
+- **THEN** the second import creates no comment, and Undo removes the comments the first one created

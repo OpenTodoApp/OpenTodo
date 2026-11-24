@@ -1,6 +1,6 @@
 ---
 title: Use AI with OpenTodo
-summary: Three ways to bring an AI assistant to your tasks: the assistant in the app, an assistant you already use over MCP, or a coding agent with the ot command. Which to pick and what each can touch.
+summary: "Three ways to bring an AI assistant to your tasks: the assistant in the app, an assistant you already use over MCP, or a coding agent with the ot command. Which to pick and what each can touch."
 audience: user
 section: Guides
 specs: [in-app-assistant, mcp-server, cli-client]
@@ -33,6 +33,10 @@ Each of them sees every [workspace](workspaces.md) you belong to and can be told
 ## What every option has in common
 
 Every option is off until someone says yes, can reach only tasks (with their [custom field](custom-fields.md) values and [tracked time](time-tracking.md), which an assistant over MCP or `ot` can log and time but never delete or rewrite when you tracked it), projects, labels, comments and your reminders, records every change in history where you can undo it, has limits on how much it may change, treats text in tasks as data rather than instructions, and respects end-to-end encryption. The details are in [What AI assistants can and can't do](ai-limits.md).
+
+## See and disconnect connected apps
+
+Apps you connected by signing in, such as Gemini, ChatGPT or Claude, are listed in **Settings → Account → Security → Session**, next to your signed-in OpenTodo apps, with when you connected each, when it was last used, whether it can make changes and which workspaces it can reach. **Disconnect** ends its access at once; connect it again to use it.
 
 ## Privacy
 

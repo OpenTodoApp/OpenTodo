@@ -16,7 +16,6 @@ import { useOnline } from '../../lib/online'
 import type { Catalogue } from '../../lib/rules/catalogue'
 import { draftNamesOf, editorDraftOf, MAX_DRAFT_TEXT, type DraftAnswer } from '../../lib/rules/describe'
 import { Button, Field, IconButton, Notice, Textarea } from '../../ui'
-import { navigate } from '../router'
 import { useRoutineNames } from './data'
 import { openDescribedDraft } from './routineNav'
 
@@ -132,6 +131,3 @@ export function DescribePanel({ mode, catalogue, onClose }: { mode: Exclude<Desc
     </section>
   )
 }
-
-/** Where to set the assistant up (the palette's hint when Describe it is not offered). */
-export const openAssistantSetup = () => navigate({ view: 'settings', section: 'integrations', page: 'assistant' })

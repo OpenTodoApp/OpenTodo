@@ -6,13 +6,15 @@ import type { Project } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { Icon, Tooltip } from '../../ui'
 import { TitleField } from '../TitleField'
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
+import { lazy } from '../../lib/lazy'
 
 // The scope control and the occurrence's actions load with the first repeating task opened.
 const OccurrenceScope = lazy(() => import('./OccurrenceScope'))
 import type { TaskDetailModel } from './useTaskDetail'
 
-const RING: Record<number, string> = { 1: 'border-p1 bg-p1-soft', 2: 'border-p2 bg-p2-soft', 3: 'border-p3 bg-p3-soft', 4: 'border-p4 bg-p4-soft' }
+// P1 and P2 fill the circle as a row's does (rowTone PRIORITY_RING, priority-ring-fill).
+const RING: Record<number, string> = { 1: 'border-p1 bg-p1/55', 2: 'border-p2 bg-p2/25', 3: 'border-p3', 4: 'border-p4 bg-p4-soft' }
 
 /**
  * The checkbox and the title; `page` sets the title at the page's size and wraps it freely.

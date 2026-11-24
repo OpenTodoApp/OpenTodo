@@ -38,7 +38,13 @@ const (
 	txtPageRepliedBy  = "page_replied_by"
 	txtPageDoneBy     = "page_completed_by"
 	txtPageReopenedBy = "page_reopened_by"
-	txtRoutine        = "routine"
+	// A task assigned to the recipient completed or reopened by someone else
+	// (assignee-notifications D5).
+	txtCompleted   = "status_completed"
+	txtReopened    = "status_reopened"
+	txtCompletedBy = "status_completed_by"
+	txtReopenedBy  = "status_reopened_by"
+	txtRoutine     = "routine"
 	// A rotating chore's turn passed to the recipient (chore-rotation D5).
 	txtTurn     = "turn"
 	txtTurnWith = "turn_with"
@@ -56,6 +62,8 @@ const (
 // texts holds every message in the app languages. {name} is the actor.
 var texts = map[string]map[string]string{
 	"en": {
+		txtCompleted: "A task assigned to you was completed", txtReopened: "A task assigned to you was reopened",
+		txtCompletedBy: "{name} completed this task", txtReopenedBy: "{name} reopened this task",
 		txtTurn: "It's your turn on a task", txtTurnWith: "It's your turn",
 		txtRoutine:       "A routine sent you a notice",
 		txtRoutineFailed: "A routine failed", txtRoutineFailedWith: "It did not finish. Open the run to see why.",
@@ -68,6 +76,8 @@ var texts = map[string]map[string]string{
 		txtTestTitle: "Test from OpenTodo", txtTestBody: "This channel works.", txtGuest: "A guest",
 	},
 	"de": {
+		txtCompleted: "Eine dir zugewiesene Aufgabe wurde erledigt", txtReopened: "Eine dir zugewiesene Aufgabe wurde wieder geöffnet",
+		txtCompletedBy: "{name} hat diese Aufgabe erledigt", txtReopenedBy: "{name} hat diese Aufgabe wieder geöffnet",
 		txtTurn: "Du bist bei einer Aufgabe an der Reihe", txtTurnWith: "Du bist an der Reihe",
 		txtRoutine:       "Eine Routine hat dir eine Nachricht geschickt",
 		txtRoutineFailed: "Eine Routine ist fehlgeschlagen", txtRoutineFailedWith: "Sie wurde nicht beendet. Öffne den Lauf, um den Grund zu sehen.",
@@ -80,6 +90,8 @@ var texts = map[string]map[string]string{
 		txtTestTitle: "Test von OpenTodo", txtTestBody: "Dieser Kanal funktioniert.", txtGuest: "Ein Gast",
 	},
 	"fr": {
+		txtCompleted: "Une tâche qui vous est attribuée a été terminée", txtReopened: "Une tâche qui vous est attribuée a été rouverte",
+		txtCompletedBy: "{name} a terminé cette tâche", txtReopenedBy: "{name} a rouvert cette tâche",
 		txtTurn: "C’est votre tour pour une tâche", txtTurnWith: "C’est votre tour",
 		txtRoutine:       "Une routine vous a envoyé un avis",
 		txtRoutineFailed: "Une routine a échoué", txtRoutineFailedWith: "Elle ne s’est pas terminée. Ouvrez l’exécution pour voir pourquoi.",
@@ -92,6 +104,8 @@ var texts = map[string]map[string]string{
 		txtTestTitle: "Test d’OpenTodo", txtTestBody: "Ce canal fonctionne.", txtGuest: "Un invité",
 	},
 	"es": {
+		txtCompleted: "Se completó una tarea asignada a ti", txtReopened: "Se reabrió una tarea asignada a ti",
+		txtCompletedBy: "{name} completó esta tarea", txtReopenedBy: "{name} reabrió esta tarea",
 		txtTurn: "Te toca una tarea", txtTurnWith: "Te toca a ti",
 		txtRoutine:       "Una rutina te envió un aviso",
 		txtRoutineFailed: "Una rutina falló", txtRoutineFailedWith: "No terminó. Abre la ejecución para ver por qué.",
@@ -104,6 +118,8 @@ var texts = map[string]map[string]string{
 		txtTestTitle: "Prueba de OpenTodo", txtTestBody: "Este canal funciona.", txtGuest: "Un invitado",
 	},
 	"it": {
+		txtCompleted: "Un’attività assegnata a te è stata completata", txtReopened: "Un’attività assegnata a te è stata riaperta",
+		txtCompletedBy: "{name} ha completato questa attività", txtReopenedBy: "{name} ha riaperto questa attività",
 		txtTurn: "Tocca a te per un’attività", txtTurnWith: "Tocca a te",
 		txtRoutine:       "Una routine ti ha inviato un avviso",
 		txtRoutineFailed: "Una routine non è riuscita", txtRoutineFailedWith: "Non è stata completata. Apri l’esecuzione per vedere perché.",
@@ -116,6 +132,8 @@ var texts = map[string]map[string]string{
 		txtTestTitle: "Prova da OpenTodo", txtTestBody: "Questo canale funziona.", txtGuest: "Un ospite",
 	},
 	"pt": {
+		txtCompleted: "Uma tarefa atribuída a você foi concluída", txtReopened: "Uma tarefa atribuída a você foi reaberta",
+		txtCompletedBy: "{name} concluiu esta tarefa", txtReopenedBy: "{name} reabriu esta tarefa",
 		txtTurn: "É a sua vez em uma tarefa", txtTurnWith: "É a sua vez",
 		txtRoutine:       "Uma rotina enviou um aviso para você",
 		txtRoutineFailed: "Uma rotina falhou", txtRoutineFailedWith: "Ela não terminou. Abra a execução para ver o motivo.",
@@ -128,6 +146,8 @@ var texts = map[string]map[string]string{
 		txtTestTitle: "Teste do OpenTodo", txtTestBody: "Este canal funciona.", txtGuest: "Um convidado",
 	},
 	"zh": {
+		txtCompleted: "分配给你的一项任务已完成", txtReopened: "分配给你的一项任务已重新打开",
+		txtCompletedBy: "{name} 完成了这项任务", txtReopenedBy: "{name} 重新打开了这项任务",
 		txtTurn: "轮到你处理一项任务", txtTurnWith: "轮到你了",
 		txtRoutine:       "一个例程给你发来一条通知",
 		txtRoutineFailed: "一个例程失败了", txtRoutineFailedWith: "它没有完成。打开这次运行以查看原因。",
@@ -140,6 +160,8 @@ var texts = map[string]map[string]string{
 		txtTestTitle: "来自 OpenTodo 的测试", txtTestBody: "这个频道可以正常使用。", txtGuest: "一位访客",
 	},
 	"nl": {
+		txtCompleted: "Een taak die aan jou is toegewezen is voltooid", txtReopened: "Een taak die aan jou is toegewezen is opnieuw geopend",
+		txtCompletedBy: "{name} heeft deze taak voltooid", txtReopenedBy: "{name} heeft deze taak opnieuw geopend",
 		txtTurn: "Jij bent aan de beurt bij een taak", txtTurnWith: "Jij bent aan de beurt",
 		txtRoutine:       "Een routine heeft je een bericht gestuurd",
 		txtRoutineFailed: "Een routine is mislukt", txtRoutineFailedWith: "Deze is niet voltooid. Open de uitvoering om te zien waarom.",
@@ -150,6 +172,34 @@ var texts = map[string]map[string]string{
 		txtUnblockedWith: "Kan beginnen", txtPageRepliedBy: "{name} heeft gereageerd op de taakpagina",
 		txtPageDoneBy: "{name} heeft de taak op de pagina voltooid", txtPageReopenedBy: "{name} heeft de taak op de pagina opnieuw geopend",
 		txtTestTitle: "Test van OpenTodo", txtTestBody: "Dit kanaal werkt.", txtGuest: "Een gast",
+	},
+	"tr": {
+		txtCompleted: "Sana atanan bir görev tamamlandı", txtReopened: "Sana atanan bir görev yeniden açıldı",
+		txtCompletedBy: "{name} bu görevi tamamladı", txtReopenedBy: "{name} bu görevi yeniden açtı",
+		txtTurn: "Bir görevde sıra sende", txtTurnWith: "Sıra sende",
+		txtRoutine:       "Bir rutin sana bildirim gönderdi",
+		txtRoutineFailed: "Bir rutin başarısız oldu", txtRoutineFailedWith: "Tamamlanamadı. Nedenini görmek için çalıştırmayı aç.",
+		txtReminder: "Bir hatırlatıcının zamanı geldi", txtAssigned: "Sana bir görev atandı", txtMentioned: "Senden bahsedildi",
+		txtUnblocked: "Sana atanan bir görev başlamaya hazır", txtPageReplied: "Bir misafir görev sayfasına yanıt verdi",
+		txtPageDone: "Bir misafir bir görev sayfasını tamamladı", txtPageReopened: "Bir misafir bir görev sayfasını yeniden açtı",
+		txtReminderWith: "Hatırlatıcı", txtAssignedBy: "{name} bu görevi sana atadı", txtMentionedBy: "{name} senden bahsetti",
+		txtUnblockedWith: "Başlamaya hazır", txtPageRepliedBy: "{name} görev sayfasına yanıt verdi",
+		txtPageDoneBy: "{name} görevi sayfasında tamamladı", txtPageReopenedBy: "{name} görevi sayfasında yeniden açtı",
+		txtTestTitle: "OpenTodo’dan test", txtTestBody: "Bu kanal çalışıyor.", txtGuest: "Bir misafir",
+	},
+	"pl": {
+		txtCompleted: "Przypisane do ciebie zadanie zostało ukończone", txtReopened: "Przypisane do ciebie zadanie zostało ponownie otwarte",
+		txtCompletedBy: "{name} ukończył(a) to zadanie", txtReopenedBy: "{name} ponownie otworzył(a) to zadanie",
+		txtTurn: "Twoja kolej przy zadaniu", txtTurnWith: "Twoja kolej",
+		txtRoutine:       "Rutyna wysłała ci komunikat",
+		txtRoutineFailed: "Rutyna nie powiodła się", txtRoutineFailedWith: "Nie została ukończona. Otwórz uruchomienie, aby zobaczyć dlaczego.",
+		txtReminder: "Czas na przypomnienie", txtAssigned: "Przypisano ci zadanie", txtMentioned: "Wspomniano o tobie",
+		txtUnblocked: "Przypisane do ciebie zadanie jest gotowe do rozpoczęcia", txtPageReplied: "Gość odpowiedział na stronie zadania",
+		txtPageDone: "Gość ukończył stronę zadania", txtPageReopened: "Gość ponownie otworzył stronę zadania",
+		txtReminderWith: "Przypomnienie", txtAssignedBy: "{name} przypisał(a) ci to zadanie", txtMentionedBy: "{name} wspomniał(a) o tobie",
+		txtUnblockedWith: "Gotowe do rozpoczęcia", txtPageRepliedBy: "{name} odpowiedział(a) na stronie zadania",
+		txtPageDoneBy: "{name} ukończył(a) zadanie na jego stronie", txtPageReopenedBy: "{name} ponownie otworzył(a) zadanie na jego stronie",
+		txtTestTitle: "Test z OpenTodo", txtTestBody: "Ten kanał działa.", txtGuest: "Gość",
 	},
 }
 

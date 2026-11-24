@@ -15,7 +15,7 @@ import { checkLinesIn, linesToLinks, mentionIds, sameIds } from '../lib/editorNo
 import { planLineHabits, planLineTasks, type NoteTaskHome } from '../lib/noteTasks'
 import { foldNote, mutateMany, saveNote, type Change, type PushTiming } from '../lib/ops'
 import { activeBody, activeBodyName, decodeDoc, docBytes, encodeDoc, MAX_DOC_CHARS, renderMarkdown, toModel, WARN_DOC_CHARS } from '../lib/richtext'
-import { applyBody, createState, insertBlocks, linkSpaceKey, markdownSlice, pmToModel, remoteKey, schema, writeBody, type EditorHooks } from '../lib/richtextEditor'
+import { appLinkStops, applyBody, createState, insertBlocks, linkHrefAt, linkSpaceKey, markdownSlice, pmToModel, remoteKey, schema, writeBody, type EditorHooks } from '../lib/richtextEditor'
 import { pushPendingNotes } from '../lib/sync'
 import { useMe } from '../lib/timeEntries'
 import type { Suggest } from '../lib/editorSuggest'
@@ -25,7 +25,10 @@ import { habitRowsOf, habitStats } from '../lib/habits'
 import { useHabitsEnabled } from '../lib/habitPrefs'
 import { useMembershipMap, useProjects } from '../lib/localData'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
-import { hrefOf } from '../lib/noteLinks'
+import { hrefOf, refOf } from '../lib/noteLinks'
+import { linkTaps } from '../lib/linkTap'
+import { safeHref } from '../lib/markdown'
+import { APP_HREF, isAppLink, openAppLink } from '../lib/appLinks'
 import { planNote } from '../lib/noteOps'
 import { useNoteRows } from '../lib/noteRows'
 import type { Clock, Task } from '../lib/types'
@@ -33,16 +36,19 @@ import { logicalToday } from '../lib/dates'
 import { EditorToolbar, openCellMenu, useEditorChrome } from './EditorChrome'
 import { FormattingToggle, useFormattingToggle } from './FormattingToggle'
 import type { CommandEnv, LinkPickerEnv } from './editorCommands'
+import { codeViews } from './editorCode'
 import { imageViews } from './editorImage'
 import { refViews } from './editorRef'
+import { openRef } from './RefChip'
 import { LinkDialog } from './LinkDialog'
 import { Markdown } from './Markdown'
 import { useMentionTargets } from './useMentionTargets'
-import { filesFrom } from './task-detail/AttachmentsRow'
+import { filesFrom } from '../lib/pastedFiles'
 import type { OutlinePlace } from './editor/NoteOutline'
 import { headingStops, useNoteOutline } from './editor/useNoteOutline'
 import { useSourceMode } from './editor/useSourceMode'
 import { IconButton, useMediaQuery } from '../ui'
+import { copyText } from '../lib/clipboard'
 import type { ReactNode } from 'react'
 import { t } from '../lib/i18n'
 import { keysOf } from '../lib/shortcuts'
@@ -260,9 +266,11 @@ function focusAt(v: EditorView, input: true | string) {
   if (typeof input === 'string' && input) v.dispatch(v.state.tr.setSelection(TextSelection.atEnd(v.state.doc)).insertText(input))
 }
 
-export default function NotesEditor({ note, readOnly, autoFocus = false, onEscape, outline: outlinePlace = 'menu' }: {
+export default function NotesEditor({ note, readOnly, autoFocus = false, onEscape, outline: outlinePlace = 'menu', copied, onCopied }: {
   note: NoteTarget
   readOnly: boolean
+  copied?: boolean
+  onCopied?: () => void
   /** The outline (note-outline D2): 'auto' for a column when the `[data-outline-room]` around the note is wide; else the menu. */
   outline?: OutlinePlace
   /** Focus the editor when it mounts (the project note opens in place); a string is also typed at the end (a daily note's first keystroke, daily-notes D3). */
@@ -392,9 +400,9 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
       state: createState(toModel(activeBody(doc)), hooks),
       editable: () => !readOnly,
       // A read-only note's headings take focus from the outline (note-outline D3).
-      decorations: (state) => (readOnly ? headingStops(state.doc) : null),
+      decorations: (state) => (readOnly ? readOnlyStops(state.doc) : null),
       attributes: { 'aria-label': t('Notes'), 'aria-multiline': 'true', role: 'textbox', class: 'notes-editor' },
-      nodeViews: { ...imageViews(imageParent), ...refViews },
+      nodeViews: { ...imageViews(imageParent), ...refViews, ...codeViews },
       clipboardTextParser: (text) => markdownSlice(text),
       ...(imageParent && !readOnly ? imageHandlers(imageParent) : {}),
       handleClickOn: (_view, _pos, node, nodePos, event) => {
@@ -405,16 +413,8 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
         v.dispatch(v.state.tr.setNodeMarkup(nodePos, undefined, { checked: !node.attrs.checked }))
         return true
       },
-      handleDOMEvents: {
-        click: (_view, event) => {
-          // Ctrl/Cmd-click opens a link (plain clicks place the caret).
-          const a = (event.target as HTMLElement).closest('a')
-          if (a && (event.metaKey || event.ctrlKey) && a.getAttribute('href')) {
-            window.open(a.getAttribute('href') as string, '_blank', 'noopener,noreferrer')
-            return true
-          }
-          return false
-        },
+      handleDOMEvents: { ...linkTapHandlers(),
+        ...linkClicks(),
         contextmenu: (pv, event) => !readOnly && openCellMenu(pv, event, chrome.openTableMenu),
         focus: () => {
           setEditing(true)
@@ -460,7 +460,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
   }, [taskId, unreadable]) // eslint-disable-line react-hooks/exhaustive-deps -- one editor per task; later notes_doc/readOnly values arrive through the merge effect
 
   useEffect(() => {
-    view.current?.setProps({ editable: () => !readOnly, decorations: (state) => (readOnly ? headingStops(state.doc) : null) })
+    view.current?.setProps({ editable: () => !readOnly, decorations: (state) => (readOnly ? readOnlyStops(state.doc) : null) })
   }, [readOnly])
 
   // A newer stored document (a remote merge, or our own save coming back) is
@@ -494,11 +494,9 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
 
   if (unreadable) return <UnreadableNote text={task.description ?? ''} />
   return (
-    // The corner's buttons come before the text in the Tab order, so Shift+Tab from the note reaches them (D2).
     <NotesCorner frame={frame} formatting={formatting.offered || undefined} outlinePlace={outline.place} source={source.on} buttons={[
-        outline.place === 'menu' && outline.element, !coarse && <SourceButton key="source" on={source.on} onToggle={source.toggle} />,
-        formatting.offered && !source.on && <FormattingToggle key="formatting" className="ui-reveal" pressed={formatting.pressed} onToggle={formatting.set} controls={rowId} data-notes-formatting="" />,
-      ]}>
+      readOnly && <CopyNoteButton key="copy" copied={!!copied} onCopied={onCopied} text={note.description ?? ''} />, outline.place === 'menu' && outline.element, !coarse && <SourceButton key="source" on={source.on} onToggle={source.toggle} />, formatting.offered && !source.on && <FormattingToggle key="formatting" className="ui-reveal" pressed={formatting.pressed} onToggle={formatting.set} controls={rowId} data-notes-formatting="" />,
+    ]}>
       {outline.place === 'column' && !source.on && outline.element}
       {!readOnly && !source.on && <EditorToolbar id={rowId} view={view.current} env={env} visible={editing || menuOpen} onMenu={setMenuOpen} always={formatting.open} />}
       <div ref={host} className="notes-host" data-notes-editing={editing || undefined} hidden={source.on} />
@@ -529,6 +527,38 @@ function NotesCorner({ frame, formatting, outlinePlace, source, buttons, childre
   )
 }
 
+/**
+ * A viewer's way to take the note's Markdown (copy-code-block D4): the rendered body is
+ * read-only, so this hidden control is its keyboard-reachable copy action. Hidden from
+ * the eye (the corner has no room for another visible button) but in the Tab order,
+ * with its name in the tooltip.
+ */
+function CopyNoteButton({ text, copied, onCopied }: { text: string; copied: boolean; onCopied?: () => void }) {
+  // The refusal is only knowable here; a success is the note's to report (`onCopied` → `copied`).
+  const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    if (!failed) return
+    const id = setTimeout(() => setFailed(false), 2000)
+    return () => clearTimeout(id)
+  }, [failed])
+  const copy = async () => {
+    try {
+      await copyText(text)
+      setFailed(false)
+      onCopied?.()
+    } catch {
+      setFailed(true)
+    }
+  }
+  return (
+    <>
+      <IconButton icon={failed ? 'x' : 'copy'} size="sm" className="note-copy-action touch-target" data-notes-copy=""
+        label={failed ? t('Could not copy') : t('Copy note')} onClick={() => void copy()} />
+      <span className="sr-only" aria-live="polite">{copied ? t('Copied') : failed ? t('Could not copy') : ''}</span>
+    </>
+  )
+}
+
 /** The size warning and a failed save under the note. */
 function NoteStatus({ size, error }: { size: string | null; error: string | null }) {
   return (
@@ -539,6 +569,75 @@ function NoteStatus({ size, error }: { size: string | null; error: string | null
   )
 }
 
+/**
+ * What a tap on a link does (touch-note-links): a link to a note, task or project
+ * opens it in the app, a web or mail address in a new tab (in the apps, the system
+ * browser); any other address does nothing, as it renders as no link.
+ */
+/** The editor's touch handlers: a tap on a link opens it; the caret and the keyboard stay away. */
+function linkTapHandlers() {
+  const taps = linkTaps()
+  return {
+    touchstart: (pv: EditorView, event: TouchEvent) => { if (pv.editable) taps.start(event); return false },
+    touchend: (pv: EditorView, event: TouchEvent) => {
+      const a = pv.editable ? taps.end(event) : null
+      if (!a) return false
+      event.preventDefault()
+      openTapped(pv, a)
+      return true
+    },
+  }
+}
+
+/** What takes focus in a read-only note: its headings (the outline) and the app links the viewer may open. */
+function readOnlyStops(doc: import('prosemirror-model').Node) {
+  return headingStops(doc).add(doc, appLinkStops(doc))
+}
+
+/**
+ * Clicks on links: Ctrl/Cmd-click opens one (a plain click places the caret). An
+ * app link has no href to follow (app-links D3): in a read-only note a plain click
+ * opens it, and a middle click, or Enter on one with focus, asks first as a click
+ * does. Its address is read from the note, never from the page (linkHrefAt), and
+ * whether the note is read-only from the view as it is now.
+ */
+function linkClicks() {
+  const appLink = (pv: EditorView, event: Event) => {
+    const a = (event.target as HTMLElement).closest?.(`a[${APP_HREF}]`)
+    return a ? linkHrefAt(pv, a) : ''
+  }
+  const open = (event: Event, href: string) => { event.preventDefault(); openAppLink(href); return true }
+  return {
+    click: (pv: EditorView, event: MouseEvent) => {
+      const a = (event.target as HTMLElement).closest('a')
+      if (!a) return false
+      const app = a.hasAttribute(APP_HREF)
+      const href = app ? linkHrefAt(pv, a) : a.getAttribute('href') ?? ''
+      if (!href || !(event.metaKey || event.ctrlKey || (app && !pv.editable))) return false
+      event.preventDefault()
+      openHref(href)
+      return true
+    },
+    auxclick: (pv: EditorView, event: MouseEvent) => { const href = appLink(pv, event); return event.button === 1 && !!href && open(event, href) },
+    keydown: (pv: EditorView, event: KeyboardEvent) => { const href = !pv.editable && event.key === 'Enter' ? appLink(pv, event) : ''; return !!href && open(event, href) },
+  }
+}
+
+function openTapped(pv: EditorView, a: HTMLAnchorElement): void {
+  const href = a.hasAttribute(APP_HREF) ? linkHrefAt(pv, a) : a.getAttribute('href') ?? ''
+  const ref = refOf(href)
+  if (ref) return openRef(ref.kind, ref.id)
+  const web = safeHref(href)
+  if (web) window.open(web, '_blank', 'noopener,noreferrer')
+  else if (isAppLink(href)) openAppLink(href)
+}
+
+/** A Ctrl/Cmd-clicked link: an app link through its confirmation (app-links), anything else in a new tab. */
+function openHref(href: string): void {
+  if (isAppLink(href)) openAppLink(href)
+  else window.open(href, '_blank', 'noopener,noreferrer')
+}
+
 /** The link dialog of Mod-k, answering the editor's question. */
 function LinkAsk({ ask, onDone }: { ask: { current: string; answer: (href: string | null) => void }; onDone: () => void }) {
   return <LinkDialog current={ask.current} onSubmit={(href) => { ask.answer(href); onDone() }} onCancel={() => { ask.answer(null); onDone() }} />
@@ -546,7 +645,7 @@ function LinkAsk({ ask, onDone }: { ask: { current: string; answer: (href: strin
 
 /** Markdown beside the Formatting toggle on a fine pointer (note-markdown-source D4): the source, or back to rich text. */
 function SourceButton({ on, onToggle }: { on: boolean; onToggle: () => void }) {
-  return <IconButton icon="code" size="sm" label={t('Markdown')} aria-pressed={on} shortcut={keysOf('editor.source')} className="ui-reveal source-toggle" onClick={onToggle} data-notes-source-toggle="" />
+  return <IconButton icon="code" size="sm" label={t('Show Markdown source')} aria-pressed={on} shortcut={keysOf('editor.source')} className="ui-reveal source-toggle" onClick={onToggle} data-notes-source-toggle="" />
 }
 
 /** Images belong to the task or the standalone note (note-attachments); a project's notes have none. */

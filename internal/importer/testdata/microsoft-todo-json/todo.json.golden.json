@@ -91,8 +91,8 @@
     "task id-0003: title=\"Task one\" description=\"Body one\\nSecond paragraph \\u0026 more\" priority=1 created_at=1791616364123 due={\"date\":\"2026-11-03\"} recurrence=\"every monday, wednesday\" origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"AAMkADAwATM3ZmYAZS0wMDACLTAwAAoARgAAA1\",\"url\":\"https://outlook.example.com/mail/item/1\"} labels=[\"id-0004\"]",
     "task id-0007: title=\"Task two\" description=\"\" priority=4 created_at=1790762400000 origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"AAMkADAwATM3ZmYAZS0wMDACLTAwAAoARgAAA2\"} completed_at=1790899200000 labels=[]",
     "task id-0008: title=\"Task three\" description=\"Plain body\" priority=4 created_at=1791741600000 project_id=\"id-0001\" start=\"2026-10-28\" origin={\"kind\":\"import\",\"provider\":\"microsoft-todo\",\"id\":\"AAMkADAwATM3ZmYAZS0wMDACLTAwAAoARgAAA3\"} labels=[]",
-    "task id-0009: title=\"Step one\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0008\" completed_at=1791792000000 labels=[]",
-    "task id-0010: title=\"Step two\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0008\" labels=[]",
+    "task id-0009: title=\"Step one\" description=\"\" priority=4 created_at=1791741600000 project_id=\"id-0001\" parent_id=\"id-0008\" completed_at=1791792000000 labels=[]",
+    "task id-0010: title=\"Step two\" description=\"\" priority=4 created_at=1791741600000 project_id=\"id-0001\" parent_id=\"id-0008\" labels=[]",
     "reminder id-0005: task_id=\"id-0003\" kind=\"absolute\" offset_minutes=null fire_at=1793692800000 created_at=1791979200000 delivered_at=null dismissed_at=null",
     "attachment id-0006: task_id=\"id-0003\" author_id=\"user-1\" comment_id=null name=\"Link one\" mime=\"text/uri-list\" size=0 sha256=\"\" url=\"https://outlook.example.com/mail/item/1\" encrypted=false created_at=1791979200000 uploaded_at=null deleted_at=null"
   ]

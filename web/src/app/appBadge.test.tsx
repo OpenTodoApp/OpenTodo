@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { render, waitFor } from '../ui/test-utils'
 import { AppBadgeView } from './AppBadge'
-import { BADGE_KEY, BADGE_META, badgeCounts, badgeSupported, clearBadge, setBadgeEnabled, showBadge, todayCount, useAppBadge, type BadgeRow } from '../lib/appBadge'
+import { BADGE_KEY, BADGE_META, badgeCounts, badgeSupported, clearBadge, setBadgeMode, showBadge, todayCount, useAppBadge, type BadgeRow } from '../lib/appBadge'
 import { db, useDatabase } from '../lib/db'
 import type { Task } from '../lib/types'
 
@@ -53,6 +53,18 @@ describe('the count', () => {
     const counts = badgeCounts(tasks, TODAY, 3)
     expect(counts).toEqual({ '2026-11-01': 4, '2026-11-02': 5, '2026-11-03': 5 })
   })
+
+  it('leaves out a task assigned to someone else, as Today does', () => {
+    const theirs = { ...tasks[0], id: 'theirs', assignee_id: 'other' }
+    expect(todayCount([...tasks, theirs], TODAY, 'me')).toBe(4)
+    expect(todayCount([...tasks, theirs], TODAY)).toBe(5)
+  })
+
+  // Issue 1548 (badge-overdue): Earlier counts Today's Earlier group (overdueInToday) only.
+  it('Earlier: only Today\'s Earlier group, and today\'s open tasks count as overdue tomorrow', () => {
+    expect(todayCount(tasks, TODAY, null, 'overdue')).toBe(1)
+    expect(badgeCounts(tasks, TODAY, 3, null, 'overdue')).toEqual({ '2026-11-01': 1, '2026-11-02': 3, '2026-11-03': 4 })
+  })
 })
 
 describe('the Badging API', () => {
@@ -94,14 +106,24 @@ describe('useAppBadge', () => {
   it('turned off: clears the badge, forgets the counts and stops setting it', async () => {
     const { calls } = stubNavigator()
     await db.meta.put({ key: BADGE_META, value: { dayStart: 0, counts: { [TODAY]: 2 } } })
-    setBadgeEnabled(false)
+    setBadgeMode('off')
     expect(localStorage.getItem(BADGE_KEY)).toBe('off')
     await waitFor(async () => (await db.meta.get(BADGE_META)) === undefined, 'row removed')
     await render(<Badge list={tasks} today={TODAY} />)
     expect(calls).toEqual(['clear'])
-    setBadgeEnabled(true)
+    setBadgeMode('today')
     expect(localStorage.getItem(BADGE_KEY)).toBeNull()
     await waitFor(() => calls.includes(4), 'on again')
+  })
+
+  it('Earlier: the badge and the stored counts follow the Earlier group', async () => {
+    const { calls } = stubNavigator()
+    setBadgeMode('overdue')
+    expect(localStorage.getItem(BADGE_KEY)).toBe('overdue')
+    await render(<Badge list={tasks} today={TODAY} />)
+    await waitFor(() => calls.at(-1) === 1, 'badge 1')
+    await waitFor(async () => ((await db.meta.get(BADGE_META))?.value as BadgeRow | undefined)?.counts[TODAY] === 1, 'stored overdue count')
+    setBadgeMode('today')
   })
 
   it('sign-out clears the badge and the stored counts', async () => {
@@ -115,9 +137,18 @@ describe('useAppBadge', () => {
 
 describe('the setting', () => {
   it('asks for notifications when they are not allowed', () => {
-    const html = renderToStaticMarkup(<AppBadgeView on permission="default" onChange={() => {}} />)
+    const html = renderToStaticMarkup(<AppBadgeView mode="today" permission="default" onChange={() => {}} />)
     expect(html).toContain('App icon badge')
     expect(html).toContain('only once notifications are allowed')
-    expect(renderToStaticMarkup(<AppBadgeView on permission="granted" onChange={() => {}} />)).not.toContain('only once notifications are allowed')
+    expect(renderToStaticMarkup(<AppBadgeView mode="today" permission="granted" onChange={() => {}} />)).not.toContain('only once notifications are allowed')
+    expect(renderToStaticMarkup(<AppBadgeView mode="off" permission="default" onChange={() => {}} />)).not.toContain('only once notifications are allowed')
+  })
+
+  it('offers Today, Earlier and Off, with the chosen one checked', () => {
+    const html = renderToStaticMarkup(<AppBadgeView mode="overdue" permission="granted" onChange={() => {}} />)
+    const options = [...html.matchAll(/data-segment="(\w+)"[^>]*aria-checked="(true|false)"|aria-checked="(true|false)"[^>]*data-segment="(\w+)"/g)]
+    expect(html).toMatch(/Today[\s\S]*Earlier[\s\S]*Off/)
+    expect(options.length).toBe(3)
+    expect(html).toMatch(/aria-checked="true"[^>]*data-segment="overdue"|data-segment="overdue"[^>]*aria-checked="true"/)
   })
 })

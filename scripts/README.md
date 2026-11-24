@@ -72,6 +72,16 @@ node scripts/e2e-offline.mjs
 
 The unit tests of the built service worker and manifest (`web/src/lib/serviceWorker.test.ts`, `web/src/ui/workbench.test.ts`) skip without a build; `npm run test:built` (in `web/`, after `npm run build`) runs them with `REQUIRE_BUILT=1`, which fails instead of skipping. CI runs it after the web build.
 
+## `e2e-language.mjs`
+
+The device's language only (OpenSpec change `precache-device-language`), run by `make e2e`: a browser set to German registers the owner on a **fresh** server and opens the app. Once the built service worker controls the page, its caches must hold the German interface catalogue and no other, and an offline reload must still show German.
+
+```bash
+make build
+OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
+node scripts/e2e-language.mjs
+```
+
 ## `e2e-revoked.mjs`
 
 A revoked device (OpenSpec change `revoked-device-wipe`), run by `make e2e`: two browser contexts are two devices of the owner on a **fresh** server. The phone receives a task and queues one offline; the laptop signs out everywhere. When the phone reconnects and reloads it must show "This device was signed out and its data was removed.", its IndexedDB must hold no task and no queued change, and its session cookie must be gone.
@@ -182,7 +192,7 @@ OPENTODO_BIN=bin/opentodo node scripts/docs-screenshots.mjs store-today,store-up
 
 ## `screenshots.mjs`
 
-Seeds a fresh server with realistic demo data (three accounts, shared projects, sections, subtasks, comments, reminders, saved views, settings) and captures the website's screenshots (`docs/screenshots/site/*.webp`, shipped in the site bundle as `shots/`), keeping any that look the same as before (`scripts/same-image.mjs`). Run it against an **empty** data directory; see [`website/README.md`](../website/README.md#refresh-the-screenshots) for the full recipe.
+Seeds a fresh server with realistic demo data (three accounts, shared projects, sections, subtasks, comments, reminders, saved views, settings) and captures the website's screenshots (`docs/screenshots/site/*.webp`, shipped in the site bundle as `shots/`), keeping any that look the same as before (`scripts/same-image.mjs`). Run it against an **empty** data directory; the website, now in [its own repository](https://github.com/OpenTodoApp/OpenTodoWebsite), gets them through the site bundle.
 
 ## `release-notes.sh`
 

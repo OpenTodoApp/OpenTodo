@@ -73,6 +73,7 @@ function partsOf(ev: ActivityEvent): Part[] {
     case 'rescheduled': return [{ order: 3, noun: msg('due date') }]
     case 'moved': return [{ order: 4, verb: msg('moved the task') }]
     case 'assigned': case 'unassigned': return [{ order: 6, noun: msg('assignee') }]
+    case 'time_tracked': case 'time_changed': return [{ order: 7, verb: msg('tracked time') }]
     default: {
       const parts: Part[] = []
       for (const c of ev.changes) {

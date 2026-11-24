@@ -6,9 +6,9 @@
 import { createLabel, LabelExistsError } from '../lib/labels'
 import { findLabel, type LabelRef } from '../lib/nlp'
 import type { EditPlan } from '../lib/nlp/edit'
-import { setRecurrence, updateTask } from '../lib/ops'
+import { setRecurrence } from '../lib/ops'
 import type { Task } from '../lib/types'
-import { titleEditUndoable } from '../lib/undoActions'
+import { titleEditUndoable, titleUndoable } from '../lib/undoActions'
 import { showUndoToast } from './bulk/toastStore'
 import { moveWithUndo } from './undoable'
 import { t } from '../lib/i18n'
@@ -40,7 +40,7 @@ export async function applyTitleEdit(task: Task, plan: EditPlan, labels: readonl
     }
     if (ids.length !== task.labels.length) patch.labels = ids
   }
-  const r = await titleEditUndoable(id, patch, plan.reminders)
+  const r = await titleEditUndoable(id, patch, plan.reminders, plan.links)
   if (recurrence) await setRecurrence(id, recurrence)
   if (r.entry) showUndoToast(r.label, r.entry.id)
   return id
@@ -53,9 +53,11 @@ export async function applyTitleEdit(task: Task, plan: EditPlan, labels: readonl
  */
 export async function commitTitleEdit(task: Task, plan: EditPlan, labels: readonly LabelRef[], projectName?: (id: string) => string): Promise<string> {
   const fields = Object.keys(plan.patch)
-  if (!fields.length && !plan.labels.length && !plan.reminders.length) return task.id
-  if (fields.length === 1 && plan.patch.title && !plan.labels.length && !plan.reminders.length) {
-    await updateTask(task.id, { title: plan.patch.title })
+  const extras = plan.labels.length + plan.reminders.length + (plan.links?.length ?? 0)
+  if (!fields.length && !extras) return task.id
+  if (fields.length === 1 && plan.patch.title && !extras) {
+    // One step of undo history; no toast, as for the panel's other single edits (undo-rename).
+    await titleUndoable(task.id, plan.patch.title)
     return task.id
   }
   return applyTitleEdit(task, plan, labels, projectName)

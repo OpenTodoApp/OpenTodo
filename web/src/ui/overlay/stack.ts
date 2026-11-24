@@ -18,6 +18,8 @@ function onKey(e: KeyboardEvent) {
   if (e.key !== 'Escape' || e.isComposing) return
   const top = stack[stack.length - 1]
   if (!top) return
+  // A field whose own suggestion list is open closes that list first (data-claims-escape).
+  if (e.target instanceof Element && e.target.closest('[data-claims-escape]')) return
   // Capture phase on window: the topmost overlay wins over every other Escape
   // handler (detail panel, list selection) and nothing behind it reacts.
   e.preventDefault()
@@ -113,7 +115,14 @@ export function inertBehind(panel: Element | null): () => void {
 
 // ------------------------------------------------------------------ focus
 
-interface Focusable { focus(opts?: FocusOptions): void; isConnected?: boolean }
+interface Focusable { focus(opts?: FocusOptions): void; isConnected?: boolean; getAttribute?: (name: string) => string | null }
+
+/**
+ * A trigger that is unmounted while its overlay is open (the phone's tab bar and add
+ * button, which leave the screen under every sheet) carries `data-focus-key`: when it
+ * is gone at close, focus goes to the element with the same key once it is back.
+ */
+const FOCUS_KEY = 'data-focus-key'
 
 /**
  * Remembers where focus should go back to when an overlay closes: the trigger when
@@ -131,12 +140,30 @@ export function captureFocus(
   // The overlay's own autofocused field is not where focus goes back to.
   const usable = active && active !== doc?.body && !(inside && inside(active))
   const back = trigger ?? (usable ? active : lastPressed) ?? null
+  const key = back?.getAttribute?.(FOCUS_KEY) ?? null
   return () => {
     const now = doc?.activeElement
     const free = !now || now === doc?.body || (inside ? inside(now) : false)
     if (!free) return
-    if (back && back.isConnected !== false && typeof back.focus === 'function') back.focus({ preventScroll: true })
+    if (back && back.isConnected !== false && typeof back.focus === 'function') {
+      back.focus({ preventScroll: true })
+      return
+    }
+    if (key && typeof document !== 'undefined') refocusByKey(key)
   }
+}
+
+// The keyed trigger comes back with the next render after the last overlay closed:
+// looked for over a few frames, and focused only while nothing else took focus.
+function refocusByKey(key: string, tries = 3): void {
+  requestAnimationFrame(() => {
+    const now = document.activeElement
+    if (now && now !== document.body) return
+    const el = document.querySelector<HTMLElement>(`[${FOCUS_KEY}="${CSS.escape(key)}"]`)
+    // Not a control that is out of reach (the add button moved away while scrolling).
+    if (el && el.tabIndex >= 0 && !el.closest('[aria-hidden="true"], [inert]')) el.focus({ preventScroll: true })
+    else if (tries > 1) refocusByKey(key, tries - 1)
+  })
 }
 
 // Safari (and touch taps) do not focus a pressed button, so the element that opened
@@ -257,10 +284,38 @@ export function useFinePointer(): boolean {
   return useSyncExternalStore(mediaSubscriber(FINE), () => window.matchMedia(FINE).matches, () => false)
 }
 
+/** Room kept between the focused field and the keyboard (ios-keyboard-bar D2). */
+export const KEYBOARD_GAP = 12
+
+/** The nearest ancestor that scrolls vertically, else null (the document). */
+function scrollerOf(el: HTMLElement): HTMLElement | null {
+  for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+    const y = getComputedStyle(p).overflowY
+    if ((y === 'auto' || y === 'scroll') && p.scrollHeight > p.clientHeight) return p
+  }
+  return null
+}
+
+/**
+ * Keeps the focused field visible above the keyboard (ios-keyboard-bar D2): its own
+ * scroller (a sheet, a panel, the page) moves by the shortfall plus KEYBOARD_GAP, so the
+ * document behind a sheet stays still. A field taller than the room shows its top.
+ */
+export function keepAboveKeyboard(el: HTMLElement, vv: { offsetTop: number; height: number }): void {
+  const r = el.getBoundingClientRect()
+  const top = vv.offsetTop + KEYBOARD_GAP
+  const bottom = vv.offsetTop + vv.height - KEYBOARD_GAP
+  const by = r.height > bottom - top ? r.top - top : r.bottom > bottom ? r.bottom - bottom : r.top < top ? r.top - top : 0
+  if (!by) return
+  const scroller = scrollerOf(el)
+  if (scroller) scroller.scrollTop += by
+  else el.scrollIntoView({ block: 'nearest' })
+}
+
 /**
  * The on-screen keyboard (design D2): publishes how much of the layout viewport it
- * covers as `--vv-bottom`, so bottom sheets sit above it, and scrolls the focused
- * field back into view when the keyboard opens. Installed once at startup.
+ * covers as `--vv-bottom`, so bottom sheets sit above it, and keeps the focused field
+ * above it (keepAboveKeyboard) when it opens or changes height. Installed once at startup.
  */
 export function watchVisualViewport(): () => void {
   const vv = typeof window === 'undefined' ? undefined : window.visualViewport
@@ -278,10 +333,7 @@ export function watchVisualViewport(): () => void {
     if (keyboard && !open && fits && vv.scale <= 1.01 && (window.scrollX || window.scrollY)) window.scrollTo(0, 0)
     keyboard = open
     const el = document.activeElement as HTMLElement | null
-    if (el && el.matches?.('input, textarea, select, [contenteditable="true"]')) {
-      const r = el.getBoundingClientRect()
-      if (r.bottom > vv.offsetTop + vv.height || r.top < vv.offsetTop) el.scrollIntoView({ block: 'nearest' })
-    }
+    if (el && el.matches?.('input, textarea, select, [contenteditable="true"]')) keepAboveKeyboard(el, vv)
   }
   vv.addEventListener('resize', update)
   vv.addEventListener('scroll', update)

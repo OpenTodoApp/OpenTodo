@@ -45,11 +45,11 @@ Inside a project you can also group tasks into sections and show them as a board
 
 **Pin to sidebar** adds a project, label or saved view to **Favourites**. Reorder it with **Move up**, **Move down** or <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd>. Pins are personal and sync to your devices.
 
-Owners and admins can edit name, icon and colour from **⋯**. **Rename** is inline in **Projects** and opens a dialog in **Favourites**.
+**⋯** on a sidebar project, or a right-click, opens its whole menu, **Share project** first. **Rename** is inline in **Projects**, a dialog in **Favourites**.
 
 ## Sub-projects
 
-Sub-projects work like folders: "Work" can hold "Q4 launch", which can hold more. A project's page lists its sub-projects at the bottom with their counts. Fold a project in the sidebar with its small arrow or <kbd>←</kbd> / <kbd>→</kbd>; each device remembers its own folding and starts with the top level only. **Collapse all** and **Expand all** are in the **+** menu next to **Projects**, and the magnifier there (<kbd>g</kbd> then <kbd>/</kbd>) finds a project.
+Sub-projects work like folders: "Work" can hold "Q4 launch", which can hold more. A project's page lists them. Fold one with its arrow or <kbd>←</kbd> / <kbd>→</kbd>; each device keeps its own folding. The **+** menu next to **Projects** has **Collapse all**, **Expand all** and **Sort by name**; a project's menu has **Sort sub-projects by name**. Each sorts once, with Undo: "2" before "10", "0002" before "0010". The magnifier (<kbd>g</kbd> then <kbd>/</kbd>) finds a project.
 
 ## Duplicate a project or task
 

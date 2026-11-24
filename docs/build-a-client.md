@@ -1,6 +1,6 @@
 ---
 title: Build your own OpenTodo client
-summary: Build a third-party OpenTodo client: REST only, push-only sync or full offline, covering tokens, idempotency, device ids, the outbox and rate limits.
+summary: "Build a third-party OpenTodo client: REST only, push-only sync or full offline, covering tokens, idempotency, device ids, the outbox and rate limits."
 audience: developer
 section: Integrations
 specs: []
@@ -203,6 +203,7 @@ Persist `last` with the outbox. `clock_skew` is the feature that makes the serve
 | `push_only` | The server applies the ops and returns no pulled page | Any push-only client |
 | `clock_skew` | Ops stamped too far ahead are **refused** with reason `clock_skew` and a `serverTime`, instead of being silently clamped | Any client that can correct and resend its clock |
 | `backfill_ack` | Each catch-up page carries `backfillSeq`, echoed as `backfillAck`; lost pages are resent | Full sync only |
+| `invalid_ops` | An op the server cannot accept is refused alone in `rejected`, and the rest is applied: `unknown_field` for an entity or field this server does not know, `invalid` for a value it refuses or a reserved device (the answer then carries the field's server value) | Every client; keep an `unknown_field` op and offer it again until the field is written again, drop an `invalid` one like any refused op |
 | `latest_docs` | A first copy leaves out superseded note history | Full sync only |
 
 The Obsidian plugin sends `["push_only", "clock_skew"]` and nothing else. A server older than `push_only` ignores the feature and answers an ordinary page; a push-only client discards it.

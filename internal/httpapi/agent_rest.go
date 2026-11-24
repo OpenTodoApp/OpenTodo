@@ -412,8 +412,9 @@ func agentCreateTaskCalls(body map[string]json.RawMessage) ([]agenttools.ToolCal
 // agentPatchTaskCalls splits a task PATCH into the matching tools: field edits
 // (update_tasks), project and section (move_tasks), due (schedule_tasks, which
 // replaces the whole due as REST does), completion (complete_tasks or
-// reopen_tasks) and the Trash (trash_tasks, own creations only). Fields with no
-// tool (assignee_id, parent_id, position, restoring from the Trash) are refused.
+// reopen_tasks) and the Trash (trash_tasks, own creations only). Other fields
+// (assignee_id, parent_id, position, restoring from the Trash) are refused on
+// this route; MCP's update_tasks takes the assignee as assignee.
 func agentPatchTaskCalls(id string, body map[string]json.RawMessage, existing opsync.Entity) ([]agenttools.ToolCall, string) {
 	update := map[string]json.RawMessage{}
 	var calls []agenttools.ToolCall
@@ -509,7 +510,7 @@ func (s *Server) writeAgentError(w http.ResponseWriter, err error) {
 			status, code = http.StatusForbidden, "insufficient_scope"
 		case "not_found":
 			status = http.StatusNotFound
-		case "encryption_enabled", "timer_running", "conflict":
+		case "encryption_enabled", "timer_running", "conflict", opsync.ReasonSeriesDateTaken:
 			status = http.StatusConflict
 		case "rate_limited", "write_limit":
 			status = http.StatusTooManyRequests

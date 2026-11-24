@@ -78,6 +78,26 @@ export function findMatch<T extends ReusableTask>(projectId: string, title: stri
 }
 
 /**
+ * The items an add would reopen (reusable-suggest): for every name with no open
+ * item, the completed item `findMatch` picks for it, most recently completed first
+ * (ties to the smaller id). One item per name, so a suggestion reopens exactly itself.
+ */
+export function reopenableItems<T extends ReusableTask>(projectId: string, tasks: readonly T[]): T[] {
+  const open = new Set<string>()
+  const done = new Map<string, T>()
+  for (const t of tasks) {
+    if (!candidate(t, projectId)) continue
+    const key = normalizeTitle(t.title)
+    if (!key) continue
+    if (t.completed_at == null) { open.add(key); continue }
+    const best = done.get(key)
+    if (!best || t.completed_at > (best.completed_at ?? 0) || (t.completed_at === best.completed_at && byId(t, best) < 0)) done.set(key, t)
+  }
+  return [...done].filter(([key]) => !open.has(key)).map(([, t]) => t)
+    .sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0) || byId(a, b))
+}
+
+/**
  * The ids a device tombstones to collapse duplicates (D4): among the project's
  * live, open, top-level items, every group of two or more with the same
  * normalized title where none has notes, subtasks, a recurrence rule or

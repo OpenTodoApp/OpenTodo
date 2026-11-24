@@ -31,6 +31,7 @@ afterEach(() => { vi.unstubAllGlobals(); resetPanel(); resetTaskTrail() })
 
 const page = () => document.querySelector<HTMLElement>('[data-detail-variant="page"]')
 const rowOpen = (title: string) => [...document.querySelectorAll<HTMLElement>('[data-task-id] button.min-w-0')].find((b) => b.textContent?.includes(title))!
+const title = () => page()?.querySelector<HTMLTextAreaElement>('[aria-label="Title"]')?.value
 const position = () => document.querySelector('[data-task-position] [aria-hidden]')?.textContent
 
 async function projectOfThree() {
@@ -75,6 +76,9 @@ describe('the task page', () => {
     await key(document.body, 'j')
     await waitFor(() => location.pathname === `/task/${ids[2]}` && position() === '3 / 3')
     expect(document.querySelector<HTMLButtonElement>('[data-task-next]')!.disabled).toBe(true)
+    // Previous before Next, in reading order as on screen.
+    const prev = document.querySelector('[data-task-prev]')!
+    expect(prev.compareDocumentPosition(document.querySelector('[data-task-next]')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     // At the end of the list j does nothing.
     await key(document.body, 'j')
     expect(location.pathname).toBe(`/task/${ids[2]}`)
@@ -236,6 +240,74 @@ describe('the task page', () => {
     expect(location.pathname).toBe(`/task/${gather}`)
     await key(document.body, 'u')
     await waitFor(() => location.pathname === `/task/${budget}`)
+    await r.unmount()
+  })
+
+  it('Back from a subtask opened on its parent’s page returns to the parent; Esc from it returns to the list (GitHub issue 1952)', async () => {
+    const project = await createProject({ name: 'Work' })
+    const budget = await createTask({ title: 'Draft the budget', project_id: project })
+    const gather = await createTask({ title: 'Gather numbers', project_id: project, parent_id: budget })
+    navigate({ view: 'project', id: project })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => r.container.textContent!.includes('Draft the budget'))
+    await click(rowOpen('Draft the budget'))
+    await waitFor(() => location.pathname === `/task/${budget}` && !!page())
+    const subtask = () => [...page()!.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent === 'Gather numbers')
+    await waitFor(() => !!subtask(), 'the subtask row')
+    await click(subtask()!)
+    await waitFor(() => location.pathname === `/task/${gather}` && title() === 'Gather numbers')
+    await act(async () => history.back())
+    await waitFor(() => location.pathname === `/task/${budget}` && title() === 'Draft the budget', 'Back shows the parent')
+    await act(async () => history.forward())
+    await waitFor(() => location.pathname === `/task/${gather}` && title() === 'Gather numbers', 'forward to the subtask')
+    await key(document.body, 'Escape')
+    await waitFor(() => location.pathname === `/project/${project}` && !page())
+    // Esc went back to the list's own entry: Back leaves the list rather than reopening a task.
+    await act(async () => history.back())
+    await waitFor(() => location.pathname === '/', 'Back goes to the page before the list')
+    await r.unmount()
+  })
+
+  /** A project of three with a subtask under the second (the list shows it under its parent), opened from the second's page. */
+  async function onSubtaskPage() {
+    const { project, ids } = await projectOfThree()
+    const sub = await createTask({ title: 'Oil the hinges', project_id: project, parent_id: ids[1] })
+    navigate({ view: 'project', id: project })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => r.container.textContent!.includes('Fix the gate'))
+    await click(rowOpen('Fix the gate'))
+    await waitFor(() => location.pathname === `/task/${ids[1]}` && position() === '2 / 4')
+    const row = () => [...page()!.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent === 'Oil the hinges')
+    await waitFor(() => !!row(), 'the subtask row')
+    await click(row()!)
+    await waitFor(() => location.pathname === `/task/${sub}` && title() === 'Oil the hinges' && position() === '3 / 4')
+    return { project, ids, sub, r }
+  }
+
+  it('Esc on the parent after Back from its subtask returns to the list in one step', async () => {
+    const { project, ids, r } = await onSubtaskPage()
+    await act(async () => history.back())
+    await waitFor(() => location.pathname === `/task/${ids[1]}` && title() === 'Fix the gate' && position() === '2 / 4', 'Back shows the parent')
+    await key(document.body, 'Escape')
+    await waitFor(() => location.pathname === `/project/${project}` && !page())
+    await waitFor(() => document.querySelector('[data-task-id][aria-current]')?.getAttribute('data-task-id') === ids[1])
+    await act(async () => history.back())
+    await waitFor(() => location.pathname === '/', 'Back goes to the page before the list')
+    await r.unmount()
+  })
+
+  it('j and k on a subtask opened from its parent keep the place in the list, and Esc still returns in one step', async () => {
+    const { project, ids, sub, r } = await onSubtaskPage()
+    await key(document.body, 'j')
+    await waitFor(() => location.pathname === `/task/${ids[2]}` && position() === '4 / 4')
+    await key(document.body, 'k')
+    await waitFor(() => location.pathname === `/task/${sub}` && position() === '3 / 4')
+    await key(document.body, 'k')
+    await waitFor(() => location.pathname === `/task/${ids[1]}` && position() === '2 / 4')
+    await key(document.body, 'Escape')
+    await waitFor(() => location.pathname === `/project/${project}` && !page())
+    await act(async () => history.back())
+    await waitFor(() => location.pathname === '/', 'Back goes to the page before the list')
     await r.unmount()
   })
 

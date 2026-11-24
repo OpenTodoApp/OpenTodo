@@ -169,7 +169,7 @@ describe('one row language (rows-v2)', () => {
     } finally { vi.useRealTimers() }
   })
 
-  it('P1 and P2 keep their ring colour, P3 and P4 get the neutral ring', async () => {
+  it('uses the priority outline for P1 to P3 and keeps P4 neutral', async () => {
     const ring = async (priority: Task['priority']) => {
       const r = await row({ priority })
       const cls = r.container.querySelector('[data-check-mark]')!.className
@@ -178,8 +178,7 @@ describe('one row language (rows-v2)', () => {
     }
     expect(await ring(1)).toContain('border-p1')
     expect(await ring(2)).toContain('border-p2')
-    expect(await ring(3)).toContain('border-input')
-    expect(await ring(3)).not.toContain('border-p3')
+    expect(await ring(3)).toContain('border-p3')
     expect(await ring(4)).toContain('border-input')
     expect(await ring(4)).not.toContain('border-p4')
   })
@@ -369,7 +368,7 @@ describe('one row language (rows-v2)', () => {
     const r = await row({ project_id: project.id }, { showProject: true, project })
     const cell = r.container.querySelector('[data-row-cell="project"]')!
     expect(cell.querySelector('svg')).toBeNull()
-    expect(cell.querySelector<HTMLElement>('.rounded-full')?.style.backgroundColor).toBe(project.color)
+    expect(cell.querySelector<HTMLElement>('.rounded-full.bg-hue-solid')?.dataset.hue).toBe('red')
     expect(spokenText(cell)).toBe(project.name)
     await r.unmount()
   })
@@ -694,7 +693,7 @@ describe('the touch grip', () => {
     const mark = fold.querySelector<HTMLElement>('[data-fold-mark]')!
     expect(mark.className).toContain('pointer-coarse:group-active/fold:bg-selected')
     expect(mark.className).toContain('pointer-events-none')
-    expect(fold.className).toContain('pointer-coarse:active:opacity-100')
+    expect(fold.className).toContain('pointer-coarse:active:animate-none')
     expect(r.container.querySelector('button[aria-label="Complete Task"]')!.className).toContain('pointer-coarse:-m-3')
     // The grip's target ends inside the row, 4 px from its edge.
     expect(r.container.querySelector('[data-row-grip]')!.className).toMatch(/\bme-1\b/)
@@ -715,8 +714,15 @@ describe('the touch grip', () => {
     const css = (await import('../index.css?raw')).default
     // The row body is unselectable on a coarse pointer — the source of the Android
     // word-selection — with form controls exempt so the inline editor still selects.
-    expect(css).toMatch(/li\[data-task-id\] \{ -webkit-user-select: none; user-select: none; \}/)
+    // The callout is off with it (#1346): without `-webkit-touch-callout: none` iOS's
+    // long-press recognizer fires on the body and cancels the drag's pointer mid-hold,
+    // so a hold on the row body often selected text or did nothing instead of dragging,
+    // while the grip (a button, already callout-off) worked. Keep both on the one rule.
+    expect(css).toMatch(/li\[data-task-id\] \{ -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; \}/)
     expect(css).toMatch(/li\[data-task-id\] :is\(input, textarea, \[contenteditable="true"\]\) \{ -webkit-user-select: text; user-select: text; \}/)
+    // The reading text inside an expanded row keeps its callout, so a link in notes still
+    // offers its long-press menu.
+    expect(css).toMatch(/li\[data-task-id\] \[data-row-details\] \{ -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; \}/)
     // The box is drawn by the app, not the platform: no native control's sizing or offset.
     expect(css).toMatch(/\.row-tick \{\s*appearance: none;/)
     expect(css).toMatch(/\.row-tick:checked \{[^}]*--ot-accent/)

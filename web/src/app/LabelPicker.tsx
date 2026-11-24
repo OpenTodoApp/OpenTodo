@@ -1,7 +1,7 @@
 import { useLabels, useTask } from '../lib/localData'
 import { addLabel, createLabel, toggleLabel } from '../lib/labels'
 import type { Label } from '../lib/types'
-import { Combobox, ComboboxPanel, LabelChip as UiLabelChip } from '../ui'
+import { Combobox, ComboboxPanel, hueFor, LabelChip as UiLabelChip } from '../ui'
 import { t } from '../lib/i18n'
 import { messageOf } from '../lib/errorText'
 import { useAction } from '../lib/useAction'
@@ -31,7 +31,7 @@ export function LabelPicker({ taskId, onClose, inline = false }: { taskId: strin
     selected: task?.labels ?? [],
     rankContext: 'label',
     emptyText: t('No labels yet. Type a name and press Enter.'),
-    renderLeading: (l: Label) => <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ backgroundColor: l.color }} />,
+    renderLeading: (l: Label) => <span aria-hidden="true" className="h-2 w-2 rounded-full bg-hue-solid" data-hue={hueFor(l.color)} />,
     onPick: (l: Label) => run(() => toggleLabel(taskId, l.id)),
     onCreate: (name: string) => run(async () => addLabel(taskId, await createLabel({ name }))),
     onClose,

@@ -15,7 +15,7 @@ When the Inbox has piled up, select **Process** in its header (or press <kbd>P</
 
 ## The Inbox beside its tasks
 
-On a screen at least 1024 px wide the Inbox keeps the selected task beside the list: move with <kbd>j</kbd> and <kbd>k</kbd> or click a row and its details follow, ready to edit. <kbd>Enter</kbd> opens the task as its page; <kbd>Esc</kbd> clears the selection. From 1440 px the space beside the list reads **No task selected** while nothing is selected; on a narrower screen the list takes the whole width until you select a task. Each row says where its task came from and when, such as "From email · 3 d ago" or "From a calendar app · 2 h ago". **Process** is the header's main button, also <kbd>P</kbd>, and the header says how many tasks are left to sort.
+From 1024 px, click or use <kbd>j</kbd> and <kbd>k</kbd> to select a task and show its details beside the Inbox. Click its title again or press <kbd>F2</kbd> to edit in the list. <kbd>a</kbd> adds a subtask, <kbd>Enter</kbd> opens details as a page, and <kbd>Esc</kbd> clears selection. From 1440 px the panel also appears with no selection. Rows show their source and age, such as "From email · 3 d ago". The header shows the number left to sort.
 
 ## Decide each task
 

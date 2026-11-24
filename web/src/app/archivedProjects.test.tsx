@@ -29,7 +29,7 @@ describe('ArchivedProjectsList', () => {
     expect(html).toContain('In Home · 2 open tasks')
     expect(html).toContain('1 open task<')
     expect(html).toContain('data-icon="briefcase" aria-hidden="true"')
-    expect(html).toMatch(/rounded-full[^>]*background-color:#16a34a/)
+    expect(html).toMatch(/data-hue="green"[^>]*rounded-full bg-hue-solid/)
     expect(html).not.toMatch(/<button[^>]*disabled/)
   })
 

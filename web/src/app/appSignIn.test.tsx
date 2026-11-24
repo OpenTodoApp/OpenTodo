@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-// The OpenTodo app's sign-in (OpenSpec change native-app-foundation, design D5):
+// The OpenTodo app's sign-in (OpenSpec change app-sign-in):
 // the confirmation names the device and only Confirm asks for a code; the
 // signed-in apps are listed with the sessions and can be signed out.
 import { afterEach, describe, expect, it, vi } from 'vitest'

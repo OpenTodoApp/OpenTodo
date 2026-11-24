@@ -459,7 +459,7 @@ The client SHALL offer a page header primitive (title in the page title size, op
 - **THEN** the design-system check fails naming the file
 
 ### Requirement: Tooltip primitive
-The client SHALL offer one tooltip that opens on hover after 400 ms and on focus at once, shows a label and an optional shortcut, closes on Escape and blur, is announced as the control's description, and does not open on touch (the accessible name still applies). Icon-only buttons SHALL use it by default, including a button that opens a menu. The native `title` attribute SHALL not be used in screens; a lint SHALL fail on it.
+The client SHALL offer one tooltip that opens on hover after 400 ms and on keyboard focus at once, shows a label and an optional shortcut, closes on Escape and blur, is announced as the control's description, and does not open on touch (the accessible name still applies). Focus SHALL open the tooltip only when the page's last input before it was a key press, or when there has been no press yet; focus that follows a press of a finger, a mouse or a pen SHALL NOT open it, whether it arrives while the press is held, after it is released, or later when a closing surface returns focus to the control. On a device whose primary pointer is coarse, a key press SHALL count only when an on-screen keyboard cannot make it (a key outside a text field, a chord with Ctrl, Alt or Meta, Tab or Escape). A control's accessible name SHALL NOT depend on its tooltip. Icon-only buttons SHALL use it by default, including a button that opens a menu. The native `title` attribute SHALL not be used in screens; a lint SHALL fail on it. This is presentation only: it reads and writes no data and behaves the same offline.
 
 #### Scenario: Keyboard user sees the hint
 - **WHEN** a keyboard user focuses the notifications button
@@ -472,6 +472,22 @@ The client SHALL offer one tooltip that opens on hover after 400 ms and on focus
 #### Scenario: Native title in a screen
 - **WHEN** a change adds `title=` to a button under the app folder
 - **THEN** the lint fails naming the file and line
+
+#### Scenario: Tap on a phone
+- **WHEN** the user taps the sync dot in the drawer on a 360 px touch screen, or holds a finger on it and lifts it
+- **THEN** the button has focus and no tooltip appears, at once or later
+
+#### Scenario: Focus returned after a tap
+- **WHEN** the user taps a button that opens a sheet and closes the sheet with a tap, so focus returns to the button
+- **THEN** no tooltip appears
+
+#### Scenario: Click, then Tab
+- **WHEN** a mouse user clicks an icon button, then presses Tab and Shift+Tab
+- **THEN** the click shows no tooltip and the focus that returns with Shift+Tab shows it at once
+
+#### Scenario: Keyboard attached to a tablet
+- **WHEN** the user of a touch tablet with a keyboard presses Tab until an icon button has focus
+- **THEN** its tooltip appears at once
 
 ### Requirement: Skeleton primitive
 The client SHALL offer a skeleton block in the row, line and card shapes, with a subtle shimmer that is still under reduced motion, used wherever local data is awaited.
@@ -1110,7 +1126,7 @@ The derivation of a custom accent (OpenSpec `appearance-preferences` "Custom acc
 - **THEN** the eight built-in themes pass the distance check from the danger and priority-1 colours without any hue turn
 
 ### Requirement: Fields never zoom the screen on touch
-On a touch screen every text input, text area, select and editable area, and the text inside an editable area, SHALL be at least 16 px, so focusing it never makes the browser zoom in. The desktop sizes SHALL stay as they are, and the app SHALL never turn off zoom: pinch zoom stays available. When the on-screen keyboard closes, a document the browser left scrolled SHALL return to its place unless the person has zoomed in. The layout check SHALL fail on any such field under 16 px on any screen or overlay.
+On a touch screen every text input, text area, select and editable area, and the text inside an editable area, SHALL be at least 16 px, so focusing it never makes the browser zoom in. The desktop sizes SHALL stay as they are, and the app SHALL never turn off pinch zoom: pinch zoom stays available on every screen. On a device whose primary pointer is coarse, a double tap SHALL NOT zoom the page: every element SHALL allow panning and pinch zoom but not double-tap zoom, except where an element turns touch gestures off itself (a drag handle, a sheet grip, the notes graph). When the on-screen keyboard closes, a document the browser left scrolled SHALL return to its place unless the person has zoomed in. The layout check SHALL fail on any such field under 16 px on any screen or overlay.
 
 #### Scenario: Quick add on an iPhone
 - **WHEN** a person taps the quick add field in the installed app on an iPhone
@@ -1123,6 +1139,18 @@ On a touch screen every text input, text area, select and editable area, and the
 #### Scenario: A small field fails the check
 - **WHEN** a field with 13 px text is on a screen in the layout check's touch emulation
 - **THEN** the check fails naming the screen, the field and its size
+
+#### Scenario: Turning off pinch zoom on a phone
+- **WHEN** a person turns off "Allow pinch zoom" in Appearance on their phone
+- **THEN** pinch zoom no longer zooms the app on that device, their other devices keep it, and fields are still at least 16 px so focusing one does not zoom
+
+#### Scenario: A double tap on a row
+- **WHEN** a person taps a task row twice quickly on a phone
+- **THEN** the page does not zoom in, and a pinch still zooms it
+
+#### Scenario: Drag handles keep their gestures
+- **WHEN** a person drags a task by its handle on a phone
+- **THEN** the drag works as before, because the handle's own `touch-action: none` overrides the base rule
 
 ### Requirement: Brand assets outside the app
 Every file that shows the OpenTodo mark outside the running app SHALL be generated from the brand source by the brand script and recorded in its stamp, never made by hand: the deploy catalogues' icons and logos in every format a store asks for (including a JPEG logo and a wide logo of about 250 × 100 for the Home Assistant add-on), the AI assistant plugin's icon, and the brand kit's store images, including a 1024 × 500 Google Play feature graphic without an alpha channel. A test SHALL fail on an image named as an icon or a logo under the web app's public folder, the extension, the Obsidian plugin, the native shells, the deploy templates or the README screenshots that the script does not write. The docs pages' social image SHALL be the brand kit's default social card, a file the same site bundle ships.
@@ -1221,3 +1249,141 @@ The design system SHALL offer a number input: a text field that accepts whole or
 #### Scenario: Story in both themes
 - **WHEN** the number input story is shown in light and in dark at 1280 and 375 px
 - **THEN** the unit, the range error and the No limit choice are visible and the accessibility gate passes
+
+### Requirement: Icon and colour pickers on touch
+On a touch screen (a coarse pointer) every icon of the icon picker, "No icon" included, and every colour swatch of the palette swatches and of the colour picker SHALL be a target of at least 44 × 44 px, and no two of them SHALL overlap. The icon grid SHALL hold as many columns of at least 44 px as its width allows, all the same width, and the palette swatches SHALL be laid out by the same rule, so swatches above an icon grid stand in its columns. The arrow keys SHALL move through the icon grid as it is drawn: Up and Down by one drawn row, whatever the number of columns. In a phone's sheet the picker's search field SHALL sit inside the sheet with the same inset on both sides, its left edge in line with the sheet's title, and the sheet SHALL NOT scroll sideways. The search field SHALL stay unfocused when the picker opens by touch, as "A sheet keeps the on-screen keyboard down until a field is asked for" requires. With a fine pointer the pickers SHALL keep their layout: 36 px icon cells in eight columns and 20 px palette swatches. This is presentation only: it reads and writes no data and behaves the same offline; what a pick writes is unchanged and converges as before.
+
+#### Scenario: A new project's appearance on a small phone
+- **WHEN** the user opens Appearance in the sidebar's new project form on a 360 px touch screen
+- **THEN** the icons are seven to a row, each 44 × 44 px, the swatches stand in the same seven columns, and the "Search icons" field starts 16 px from the left edge and ends 16 px from the right
+
+#### Scenario: A larger phone
+- **WHEN** the same sheet is open on a 390 px touch screen
+- **THEN** the icons are seven to a row, each at least 44 px wide and 44 px high, with the same gap between every two neighbours
+
+#### Scenario: The icon step of a menu
+- **WHEN** the user opens a project's menu on a 360 px touch screen and chooses Icon…
+- **THEN** the field and the grid have the same edges as in the new project's sheet, and the field is not focused
+
+#### Scenario: Arrow keys on a narrower grid
+- **WHEN** the grid is drawn seven columns wide and the user presses Down in the search field on the first icon of a category
+- **THEN** the active icon is the one drawn under it, the eighth of that category
+
+#### Scenario: The theme editor's colour picker
+- **WHEN** the user opens a colour of a theme on a 360 px touch screen
+- **THEN** the swatches are six to a row and each is at least 44 × 44 px
+
+#### Scenario: With a mouse
+- **WHEN** the user opens Appearance in the new project form on a 1280 px screen with a mouse
+- **THEN** the icons are 36 px cells in eight columns and the swatches 20 px, where they were before
+
+### Requirement: Designed pressed states on touch
+On a touch screen (a coarse main pointer) the controls a phone uses most SHALL show a pressed colour from the design tokens while a finger is on them, and SHALL return to their resting look at release:
+
+- **The selected surface** for a tab of the tab bar, a row of the drawer or sidebar, a menu item, and a task row's own controls: the checkbox, Show details, the subtask chevron and the grip. A destructive menu item SHALL take the soft danger colour instead.
+- **The darker accent** (the accent's hover colour) for the floating add button.
+- **The selected-row surface** for a task row, while the finger is on the row's body (the part that opens the task). A press on a control inside the row SHALL tint that control and not the row, and the tint of a hold that arms the row's menu SHALL replace the pressed one.
+
+A control with a designed pressed state SHALL NOT also dim: the generic dim ("Touch behaves like an app") is the fallback for every control without one. The pressed colour SHALL appear without a transition, so it is the same when the system asks for reduced motion. The colour of a row control's 44 px target SHALL stay within 28 px around its glyph, so it never covers the title or the control beside it. A disabled control SHALL show no pressed state.
+
+The colours SHALL come from the theme's tokens, so light, dark, high-contrast and custom themes each show their own. With a mouse or trackpad as the main pointer nothing SHALL change: hover, focus and pressed states stay as they were. This is presentation only: nothing is stored or synced, and it is the same offline.
+
+#### Scenario: Pressing a tab
+- **WHEN** a person puts a finger on Today in the tab bar on a phone
+- **THEN** the tab shows the selected surface at full opacity while the finger is down, and its resting look when the finger lifts
+
+#### Scenario: Pressing the add button
+- **WHEN** a person puts a finger on the add button on a phone
+- **THEN** the button shows the darker accent at full opacity, not a dimmed accent
+
+#### Scenario: Pressing a menu item
+- **WHEN** a menu is open as a sheet on a phone and a person puts a finger on Delete
+- **THEN** the item shows the soft danger colour, and any other item shows the selected surface
+
+#### Scenario: Pressing a row's body
+- **WHEN** a person puts a finger on a task's title in the Inbox on a phone
+- **THEN** the whole row shows the selected-row surface and the title keeps its full opacity
+
+#### Scenario: Pressing a row's checkbox
+- **WHEN** a person puts a finger on a task's checkbox on a phone
+- **THEN** a 28 px circle of the selected surface shows around the checkbox, the title beside it is not covered, and the row is not tinted
+
+#### Scenario: A control without a designed state
+- **WHEN** a person puts a finger on a label chip on a phone
+- **THEN** the chip dims while the finger is down, as before
+
+#### Scenario: A mouse is unchanged
+- **WHEN** a person presses a tab, a menu item or a row with a mouse in a 360 px window
+- **THEN** the control looks as it did before this change
+
+### Requirement: Touch behaves like an app
+On a touch screen (a coarse main pointer: the Android and iOS apps, the installed web app, a phone's or tablet's browser) the app SHALL behave as an app made for touch:
+
+- **No browser tap highlight.** Tapping a control SHALL NOT paint the browser's highlight over it; the control's own pressed state is the only feedback, and every control has one: a control without a pressed colour of its own SHALL dim while a finger is on it.
+- **Chrome is not text.** A long press SHALL NOT select text in, or lift the system callout from, the app's chrome: every button, tab, menu item, option, switch and disclosure, every navigation landmark (the tab bar, the sidebar's lists, breadcrumbs), the phone bar, the sidebar and a page's header.
+- **Content stays text.** Everything else SHALL stay selectable and copyable: the title in the task view, notes, comments, descriptions, the links inside them, and every text field and editable area, including one inside chrome (a title being renamed in a header). The expanded row's notes and facts line stay selectable as before.
+- **The page does not move.** The page itself SHALL NOT bounce, show the pull glow or trigger the browser's pull to reload. Scrolling inside lists, sheets, menus and the drawer SHALL be unchanged, the containment of sheets and the drawer SHALL still hold, and a scroller SHALL still receive every touch event when it is at its top or end.
+- **Zoom stays.** The app SHALL NOT turn off pinch zoom or text scaling: no `user-scalable=no`, no `maximum-scale`, and no `touch-action` on the page that blocks pinch.
+
+With a mouse or trackpad as the main pointer, selection, callouts and the browser's overscroll (such as a swipe back in history) SHALL stay as they were. This is presentation only: nothing is stored or synced, and it is the same offline. The layout check SHALL fail on any screen or overlay where the page does not end the overscroll chain, zoom is turned off, a visible control or navigation can be text-selected, or a visible field, editable area or comment cannot.
+
+#### Scenario: Long press on a tab
+- **WHEN** a person holds a finger on Upcoming in the tab bar on a phone
+- **THEN** no word is selected, no callout or selection handles appear, and lifting the finger opens Upcoming
+
+#### Scenario: Copying from a comment
+- **WHEN** a person holds a finger on a word in a comment or in a task's notes on a phone
+- **THEN** the word is selected with the system's handles and Copy, as in any text
+
+#### Scenario: The task's title
+- **WHEN** a task is open on a phone and the person holds a finger on its title
+- **THEN** the title's text can be selected and copied
+
+#### Scenario: Pulling the list past its top
+- **WHEN** the Inbox is at its top on a phone and the person drags down
+- **THEN** the app's bars stay where they are, no glow or bounce of the page shows, and the browser does not reload the app
+
+#### Scenario: A sheet still scrolls by itself
+- **WHEN** a long sheet is open on a phone and the person scrolls it to its end and keeps dragging
+- **THEN** the sheet stops and the list behind it does not scroll
+
+#### Scenario: Pinch zoom
+- **WHEN** a person pinches out on any screen on a phone
+- **THEN** the screen zooms in
+
+#### Scenario: A mouse is unchanged
+- **WHEN** the app is open at 1280 px with a mouse
+- **THEN** a button's label and a page's title can be selected by dragging as before, and the browser's own overscroll gestures work
+
+#### Scenario: A selectable control fails the check
+- **WHEN** a button on a screen of the layout check's touch emulation can be text-selected
+- **THEN** the check fails naming the screen and the button
+
+### Requirement: Pressed feedback waits for a tap
+On a touch device the pressed look of a control SHALL appear only after the finger has rested on it for 60 ms, SHALL NOT appear when the touch turns into a scroll within that time, and SHALL be shown only on the innermost interactive element under the finger, not on the rows or cards that contain it. Lifting the finger SHALL remove it at once. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: A scroll that starts on a row
+- **WHEN** a person puts a finger on a task row and starts scrolling within 60 ms
+- **THEN** the row never shows its pressed look
+
+#### Scenario: A button inside a row
+- **WHEN** a person presses the completion circle of a row and holds it for 100 ms
+- **THEN** the circle shows its pressed look and the row does not
+
+### Requirement: Hover and focus follow the input in use
+A hover look SHALL only apply on a device whose pointer can hover. A focus ring SHALL be drawn when focus comes from a keyboard, a mouse or a trackpad, or from assistive technology, and SHALL NOT be drawn when focus comes from a tap. A field focused by a tap SHALL still show that it is focused by its border and caret. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: A tap on a switch
+- **WHEN** a person taps a switch on a phone
+- **THEN** the switch changes and no focus ring or hover look stays on it
+
+#### Scenario: Tab after taps
+- **WHEN** a person who has been tapping presses Tab on an iPad's hardware keyboard
+- **THEN** the focused control shows its focus ring
+
+### Requirement: Haptics for switches, segments, failures and lifts
+With haptics on, a switch flipped by touch and a segment chosen by touch SHALL play `selection`, a failure toast SHALL play `error`, and lifting a row to drag it SHALL play `tick`. Keyboard changes and changes made by the app itself SHALL NOT play anything. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: A switch by keyboard
+- **WHEN** a person flips the "Show full task titles" switch with Space on a hardware keyboard
+- **THEN** no haptic plays

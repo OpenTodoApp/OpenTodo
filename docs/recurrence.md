@@ -17,6 +17,12 @@ of test vectors (`web/src/lib/recurrence.vectors.json`; the projected occurrence
 their own, `web/src/lib/occurrences.vectors.json`), so every device and the
 REST API compute the same dates. Every example on this page is one of those vectors.
 
+The app shows a rule in your interface language (`every 2nd tuesday` reads "Every month on
+the second Tuesday", or "Jeden Monat am zweiten Dienstag" in German). The stored rule is
+the English phrase described here. A task's Repeat field takes that phrase in every language,
+and also the repeat phrases quick add reads in [its languages](quick-add.md): "elke maandag"
+is stored as `every monday`.
+
 ## Grammar
 
 ```
@@ -203,6 +209,22 @@ A device can move the series before it sees another device's record and leave it
 standing on an exception date. Any device that may edit the task then moves it to
 the next free date after the next sync; every device computes the same date. The
 server does the same before it completes a series.
+
+### Moving a series onto a recorded date
+
+For the same reason a series is never moved onto one of its exceptions.
+Picking a date that is already done, skipped or moved, in When, by dragging the
+series or with the Due action on a selection, leaves the series where it is: the
+toast says why, or counts it as not moved when other tasks moved with it.
+Changing the date in When moves the series' start and deadline by the same number
+of days.
+
+The server applies the same rule to the [API](api.md), [`ot edit --due`](cli.md)
+and [assistants](mcp.md): such a change is refused with `409 series_date_taken`,
+and the whole request fails, other tasks in it included (the app moves the
+others); the message names the date and whether it is done, skipped or moved. Any other date, earlier ones included, still moves the series.
+Devices syncing changes they made offline are never refused; the repair above
+settles them.
 
 ### Counting with records
 

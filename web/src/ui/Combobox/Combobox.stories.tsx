@@ -56,15 +56,20 @@ function Projects() {
 }
 
 function Async() {
+  // data-story-pending until the first answer is drawn: the 400 ms answer otherwise raced
+  // the capture, so a busy runner drew the results and a quiet one the search in progress.
+  const [answered, setAnswered] = useState(false)
   const source = async (q: string, signal: AbortSignal) => {
     await new Promise((r) => setTimeout(r, 400))
     if (signal.aborted) return { items: [] }
+    requestAnimationFrame(() => requestAnimationFrame(() => setAnswered(true)))
     return { items: TASKS.filter((t) => t.name.toLowerCase().includes(q.toLowerCase())).slice(0, 50) }
   }
   return (
     <div className="max-w-sm">
       <ComboboxPanel label="Parent task" placeholder="Search tasks" source={source} getKey={(t) => t.id} getLabel={(t) => t.name}
         emptyText="No tasks match. Try fewer words." onPick={() => {}} />
+      {!answered && <span data-story-pending />}
     </div>
   )
 }

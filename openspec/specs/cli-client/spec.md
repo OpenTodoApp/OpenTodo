@@ -29,7 +29,7 @@ The client SHALL read a configuration file from the platform's user configuratio
 - **THEN** the command exits with code 2 and a message listing the available workspaces (`ot workspaces` prints the same list, with `--json`)
 
 ### Requirement: Sign-in creates an API token
-`ot login <server-url>` SHALL prompt for email and password (never echoing the password), obtain a session, create an API token named `cli@<hostname>`, discard the session and store only the token in the selected profile. `ot auth set-token` SHALL store a token obtained elsewhere, `ot auth status` SHALL show the server, the signed-in account and the token name, and `ot auth logout` SHALL revoke the stored token on the server and remove it locally.
+`ot login <server-url>` SHALL prompt for email and password (never echoing the password), obtain a session (completing the two-factor challenge with a code or a recovery code when the account has one), create an API token named `cli@<hostname>`, discard the session and store only the token in the selected profile. `ot auth set-token` SHALL store a token obtained elsewhere, `ot auth status` SHALL show the server, the signed-in account and the token name, and `ot auth logout` SHALL revoke the stored token on the server and remove it locally.
 
 #### Scenario: Successful login
 - **WHEN** valid credentials are entered
@@ -42,6 +42,14 @@ The client SHALL read a configuration file from the platform's user configuratio
 #### Scenario: Revoked token
 - **WHEN** the stored token has been revoked and any command is run
 - **THEN** the command exits with code 3 and suggests `ot login`
+
+#### Scenario: Two-factor authentication
+- **WHEN** the account has two-factor authentication and the password is right
+- **THEN** `ot login` asks for the authenticator code or a recovery code, completes the challenge with it, and creates and stores the token as for any other login
+
+#### Scenario: Wrong two-factor code
+- **WHEN** the code entered at the two-factor prompt is wrong
+- **THEN** the command exits with code 3, prints the server's error message and stores nothing
 
 ### Requirement: List tasks
 `ot list` SHALL print open tasks sorted like the web views, with `--inbox` (the Inbox tasks of OpenSpec `project-organization`: no project and not scheduled), `--today` (due today or earlier, overdue first), `--upcoming`, `--project <name-or-id>`, `--completed` and `--all` filters, plus `--limit`. Human output SHALL show an id prefix, priority, due date and time, project and title; dates SHALL be evaluated in the local time zone. Aliases `ot today`, `ot inbox` and `ot upcoming` SHALL exist.
@@ -59,7 +67,7 @@ The client SHALL read a configuration file from the platform's user configuratio
 - **THEN** only the undated task is printed
 
 ### Requirement: Add and edit tasks
-`ot add <title>` SHALL create a task with optional `--project`, `--due`, `--time`, `--priority 1..4`, repeatable `--label`, `--note`, `--repeat <rule>`, repeatable `--remind <phrase>`, `--origin-url <url>`, `--deadline <date>`, `--start <date|someday>`, `--evening`, repeatable `--blocked-by <ref>` and `--location <where>`, and print its id. `ot edit <ref>` SHALL change the same fields except `--remind`; `none` (or `--note ""`, `--evening=false`) clears one, and `--blocked-by` on edit replaces the whole list. `--due`, `--deadline` and `--start` SHALL accept `YYYY-MM-DD`, `today`, `tomorrow` and weekdays, `--start` also `someday`; a value that is not one of these SHALL exit with code 2 before any request. `--blocked-by` SHALL take a task id or an unambiguous id prefix of a task the account can see and send the resolved ids; `--location` SHALL take the name or id of one of the account's saved locations (sent as a link to it with its current values), a `lat,lon` pair (sent as coordinates), or `none`, and an unknown name SHALL exit with code 1 naming it before the task is written. `--repeat` SHALL send the canonical rule; `--remind` SHALL resolve a phrase like `30 min before` against the due date. `--origin-url` SHALL accept only an `http` or `https` URL, derive the provider and issue id for a recognised host on the client, and send the origin with the task; `ot list` and its siblings SHALL carry `origin` in `--json` output and print the origin's id or host as a column of the table when any listed task has one.
+`ot add <title>` SHALL create a task with optional `--project`, `--due`, `--time`, `--priority 1..4`, repeatable `--label`, `--note`, `--repeat <rule>`, repeatable `--remind <phrase>`, `--origin-url <url>`, `--deadline <date>`, `--start <date|someday>`, `--evening`, repeatable `--blocked-by <ref>` and `--location <where>`, and print its id. `ot edit <ref>` SHALL change the same fields except `--remind`; `none` (or `--note ""`, `--evening=false`) clears one, and `--blocked-by` on edit replaces the whole list. `--due`, `--deadline` and `--start` SHALL accept `YYYY-MM-DD`, `today`, `tomorrow` and weekdays, `--start` also `someday`; a value that is not one of these SHALL exit with code 2 before any request. `--blocked-by` SHALL take a task id or an unambiguous id prefix of a task the account can see and send the resolved ids; `--location` SHALL take the name or id of one of the account's saved locations (sent as a link to it with its current values), a `lat,lon` pair (sent as coordinates), or `none`, and an unknown name SHALL exit with code 1 naming it before the task is written. `--repeat` SHALL send the canonical rule; `--remind` SHALL resolve a phrase like `30 min before` against the due date. `--origin-url` SHALL accept only an `http` or `https` URL or an app link (OpenSpec `app-links`), derive the provider and issue id for a recognised host on the client, and send the origin with the task (an app link as `kind: "url"`); `ot list` and its siblings SHALL carry `origin` in `--json` output and print the origin's id, host or app (an app link's scheme, capitalised) as a column of the table when any listed task has one.
 
 #### Scenario: Add with attributes
 - **WHEN** the user runs `ot add "Call the plumber" --project Home --due tomorrow --time 09:00 --priority 2`
@@ -102,8 +110,12 @@ The client SHALL read a configuration file from the platform's user configuratio
 - **THEN** the task's origin is `{kind: "url", url: "https://example.org/post"}`
 
 #### Scenario: Unsafe origin URL
-- **WHEN** `--origin-url ftp://files.example/x` is given
+- **WHEN** `--origin-url javascript:alert(1)` is given
 - **THEN** the command exits with code 2 before any request is sent
+
+#### Scenario: Link into another app
+- **WHEN** the user runs `ot add "Read the paper" --origin-url zotero://select/items/ABC`
+- **THEN** the task's origin is `{kind: "url", url: "zotero://select/items/ABC"}` (OpenSpec `app-links`), and the list's origin column reads "Zotero"
 
 #### Scenario: Clear the origin
 - **WHEN** the user runs `ot edit 8c2a --origin-url none`
@@ -554,3 +566,66 @@ The commands SHALL honour `--dry-run`, read-only mode and the JSON exit codes li
 #### Scenario: Limit reached
 - **WHEN** the current week already has five open objectives and the user runs `ot objectives add "One more" --week`
 - **THEN** the command exits non-zero with the message for `too_many_objectives`, and nothing is created
+
+### Requirement: Subtasks in the CLI
+`ot add` SHALL accept `--parent <ref>`, a task ref (full id or unique id prefix of a live task), and create the task as a subtask of it. Without `--project`, the task SHALL take the parent's project, or the parent's workspace when the parent has no project. A completed parent, or a `--project` that differs from the parent's project, SHALL exit with the usage error code and send nothing.
+
+`ot edit` SHALL accept `--parent <ref>` to make a task a subtask of another task and `--parent none` to bring it back to the top level. When the parent is in another project, the same patch SHALL move the task to that project. A parent the server refuses (deleted, the task itself or one of its descendants) SHALL exit with the server's error and leave the task unchanged.
+
+`ot list` SHALL accept `--parent <ref>` and list only the direct subtasks of that task, in position order, combined with the other list flags.
+
+The writes go through the REST API, so they apply and converge like any other client write. `ot` is online-only, so an unreachable server changes nothing.
+
+#### Scenario: Add a subtask
+- **WHEN** the user runs `ot add "Book hotel" --parent 3f2a` and `3f2a` is the open task "Plan trip" in Travel
+- **THEN** "Book hotel" is created in Travel with `parent_id` set to "Plan trip"'s id
+
+#### Scenario: Project contradicts the parent
+- **WHEN** the user runs `ot add "Book hotel" --parent 3f2a --project Work` and "Plan trip" is in Travel
+- **THEN** the command exits with the usage error code and no request is sent
+
+#### Scenario: Move back to the top level
+- **WHEN** the user runs `ot edit <hotel-id> --parent none`
+- **THEN** "Book hotel" has no parent and is listed at the top level of Travel
+
+#### Scenario: Cycle refused
+- **WHEN** the user runs `ot edit 3f2a --parent <hotel-id>` while "Book hotel" is a subtask of "Plan trip"
+- **THEN** the command exits with the server's `invalid_input` error and "Plan trip" keeps no parent
+
+#### Scenario: List the subtasks of a task
+- **WHEN** the user runs `ot list --parent 3f2a --json`
+- **THEN** the output holds the open direct subtasks of "Plan trip" and nothing else
+
+### Requirement: Subtask cascades in the CLI
+`ot done`, `ot rm` and `ot edit` SHALL accept `--subtasks`. With it, `ot done` SHALL also complete every open descendant of each task, and `ot rm` SHALL also delete every live descendant. `ot edit` SHALL give every live descendant the task's new project when the edit changes the project. Each descendant SHALL be written with its own request, before the task itself for `done` and `rm` and after it for `edit`. Every write SHALL be listed by `--dry-run`. Without `--subtasks`, the commands SHALL change only the tasks named, as before. `ot rm --subtasks` SHALL ask for confirmation listing every task it deletes.
+
+#### Scenario: Complete a parent and its subtasks
+- **WHEN** the user runs `ot done 3f2a --subtasks` and "Plan trip" has two open subtasks and one completed one
+- **THEN** the two open subtasks and "Plan trip" are completed and the completed one is unchanged
+
+#### Scenario: Default unchanged
+- **WHEN** the user runs `ot done 3f2a` without `--subtasks`
+- **THEN** only "Plan trip" is completed
+
+#### Scenario: Dry run of a cascade
+- **WHEN** the user runs `ot rm 3f2a --subtasks --dry-run --json`
+- **THEN** the plan lists one delete request per descendant and one for "Plan trip", and nothing is deleted
+
+### Requirement: Subtask tree in CLI output
+In `ot list --project` and `ot list --inbox`, the table SHALL print each subtask right after its parent, its title indented two spaces per level. A parent's title SHALL be followed by the number of completed and live direct subtasks (`2/5`). A subtask whose parent isn't listed SHALL be printed at the top level. Other views SHALL stay flat, and the `--json` output of `ot list` SHALL keep its order and shape.
+
+`ot task show` SHALL print the parent path and the direct subtasks with their progress. `ot task show --json` SHALL add a `subtasks` array of the live direct subtasks, empty when there are none.
+
+`--parent` SHALL complete open tasks in the shell completion, and `ot schema` SHALL list `--parent` and `--subtasks` on the commands that take them.
+
+#### Scenario: Nested project list
+- **WHEN** the user runs `ot list --project Travel` and "Plan trip" has the open subtasks "Book hotel" and "Flights", one of two done
+- **THEN** "Plan trip 1/2" is followed by "  Book hotel" and "  Flights"
+
+#### Scenario: Parent not listed
+- **WHEN** "Plan trip" is completed and its subtask "Insurance" is open, and the user runs `ot list --project Travel`
+- **THEN** "Insurance" is printed at the top level
+
+#### Scenario: Show a parent
+- **WHEN** the user runs `ot task show 3f2a --json`
+- **THEN** the output holds `task`, `reminders` and `subtasks`, with "Book hotel" and "Flights" in `subtasks`

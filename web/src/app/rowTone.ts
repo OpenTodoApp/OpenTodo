@@ -4,11 +4,15 @@
 import { addDaysISO } from '../lib/dates'
 import type { Tone } from '../ui'
 
-/** The priority ring of an open task: P1 and P2 in their colours, P3 and P4 the neutral ring. */
+/**
+ * The priority ring of an open task: coloured for P1 to P3, neutral for P4.
+ * P1 and P2 also fill the circle, P1 more than P2 (OpenSpec change priority-ring-fill), so the
+ * levels differ in lightness and not by hue alone: red and orange look alike to many people.
+ */
 export const PRIORITY_RING: Record<number, string> = {
-  1: 'border-p1 bg-p1-soft',
-  2: 'border-p2 bg-p2-soft',
-  3: 'border-input',
+  1: 'border-p1 bg-p1/55',
+  2: 'border-p2 bg-p2/25',
+  3: 'border-p3',
   4: 'border-input',
 }
 

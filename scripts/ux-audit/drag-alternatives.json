@@ -1,7 +1,7 @@
 {
  "reason": "Every drag, resize and swipe of the web app and the way to do the same with one click or tap, without dragging (WCAG 2.2 2.5.7 Dragging movements, 2.5.1 Pointer gestures; OpenSpec change accessibility-aa D3). An element that starts one carries data-drag-id; web/src/lib/a11y/dragAlternatives.test.ts checks this map against the source. An alternative is a menu item (`item`: its id in that file's menu) or a control (`contains`: a text the file must hold). The task panel opens with a click on any task; its When control and facets set a task's dates, time, duration, section and parent.",
  "sources": [
-  { "id": "task-row", "what": "A list or board row: reorder within its list, move to another section or board column, drop on a row to make it a subtask or between rows at a level chosen by moving sideways, drop on a sidebar project or label; on touch, swipe to complete or schedule.", "alternatives": [
+  { "id": "task-row", "what": "A list or board row: reorder within its list, move to another section or board column, drop on a row to make it a subtask or between rows at a level chosen by moving sideways, or drop on a sidebar project or label. On touch, swipe to complete, schedule or edit the title in eligible lists. In Today grouped by project, a contextual subtask can be moved under another task or scheduled as a top-level task for today.", "alternatives": [
    { "file": "web/src/app/bulk/BulkActions.tsx", "item": "move-up" },
    { "file": "web/src/app/bulk/BulkActions.tsx", "item": "move-down" },
    { "file": "web/src/app/bulk/BulkActions.tsx", "item": "move-top" },
@@ -10,7 +10,10 @@
    { "file": "web/src/app/bulk/BulkActions.tsx", "item": "labels" },
    { "file": "web/src/app/bulk/BulkActions.tsx", "item": "complete" },
    { "file": "web/src/app/bulk/BulkActions.tsx", "item": "schedule" },
-   { "file": "web/src/app/task-detail/Facets.tsx", "item": "parent" }
+   { "file": "web/src/app/bulk/BulkActions.tsx", "item": "edit-title" },
+   { "file": "web/src/app/task-detail/Facets.tsx", "item": "parent" },
+   { "file": "web/src/app/task-list/todayGroupDrop.ts", "item": "today-reparent-context" },
+   { "file": "web/src/app/task-list/todayGroupDrop.ts", "item": "today-promote-context" }
   ] },
   { "id": "compact-row", "what": "A task in the Plan, the month and the calendar's lanes: drag to another day or time.", "alternatives": [
    { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" },
@@ -69,7 +72,7 @@
   { "id": "sidebar-project", "what": "A project in the sidebar: reorder among its siblings, or drop on another to nest it.", "alternatives": [
    { "file": "web/src/app/ProjectRowMenu.tsx", "item": "up" },
    { "file": "web/src/app/ProjectRowMenu.tsx", "item": "down" },
-   { "file": "web/src/app/ProjectHeader.tsx", "item": "move" }
+   { "file": "web/src/app/menus/projectMenu.tsx", "item": "move" }
   ] },
   { "id": "label", "what": "A label's handle in the sidebar and on Labels: reorder.", "alternatives": [
    { "file": "web/src/app/LabelsView.tsx", "item": "up" },
@@ -109,6 +112,8 @@
  "notDrags": [
   { "file": "web/src/app/shortcuts/Spotlight.tsx", "contains": "if (e.target === e.currentTarget) { e.preventDefault(); cancel() }", "reason": "A press on the spotlight's backdrop closes it; nothing is dragged." },
   { "file": "web/src/app/habits/HabitRow.tsx", "contains": "{down}", "reason": "A long press on a habit's check button logs the tiny version; nothing moves, and the button's menu and Shift+Space do the same with one tap or key (habits-home)." },
-  { "file": "web/src/app/Sidebar.tsx", "contains": "{holdForRowMenu}", "reason": "A touch hold on a sidebar row opens the row's menu; nothing moves, and the row's menu button (shown on keyboard focus and with a mouse) opens the same menu with one press (touch-sidebar-names)." }
+  { "file": "web/src/app/Sidebar.tsx", "contains": "{holdForRowMenu}", "reason": "A touch hold on a sidebar row opens the row's menu; nothing moves, and the row's menu button (shown on keyboard focus and with a mouse) opens the same menu with one press (touch-sidebar-names)." },
+  { "file": "web/src/ui/Switch.tsx", "contains": "{press.down}", "reason": "It only notes whether the press is a touch, so a switch flipped by a finger plays the selection haptic; nothing moves (haptic-kinds D2)." },
+  { "file": "web/src/ui/SegmentedControl.tsx", "contains": "{press.down}", "reason": "It only notes whether the press is a touch, so a segment chosen by a finger plays the selection haptic; nothing moves (haptic-kinds D2)." }
  ]
 }

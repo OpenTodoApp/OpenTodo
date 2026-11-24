@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 )
 
 // Attachments (OpenSpec change `attachments`, design D1, D3). An attachment is the
@@ -108,8 +107,17 @@ func (r *resolver) resolveAttachment(op Op) (scope, reason string, err error) {
 		return "", "", err
 	}
 	if st.found {
-		if st.scope == "" {
-			return "", ReasonForbidden, nil
+		if reason, done := r.existingAuthored(op, st.scope, st.author, map[string]string{"task_id": st.task, "author_id": st.author}); done {
+			if reason == "" && op.Field == "deleted_at" {
+				// A restore from the Trash counts against the author's quota again.
+				if over, err := r.restoreOverQuota(op, st); err != nil || over {
+					return "", ReasonQuotaExceeded, err
+				}
+			}
+			if reason != "" {
+				return "", reason, nil
+			}
+			return st.scope, "", nil
 		}
 		switch {
 		case op.Field == "uploaded_at":
@@ -121,27 +129,18 @@ func (r *resolver) resolveAttachment(op Op) (scope, reason string, err error) {
 				if st.author != r.acc.userID {
 					return "", ReasonForbidden, nil
 				}
-				if stored, err := r.storedAttachmentField(st.scope, op.EntityID, "uploaded_at"); err != nil || stored != "null" {
+				if stored, err := r.storedField(st.scope, "attachment", op.EntityID, "uploaded_at"); err != nil || (stored != nil && !IsNull(stored)) {
 					return "", ReasonForbidden, err
 				}
-			}
-		case op.Field == "deleted_at":
-			role := r.acc.roleIn(st.scope)
-			if st.author != r.acc.userID && role != RoleOwner && role != RoleAdmin {
-				return "", ReasonForbidden, nil
-			}
-			if over, err := r.restoreOverQuota(op, st); err != nil || over {
-				return "", ReasonQuotaExceeded, err
 			}
 		case op.Field == "name":
 			if st.author != r.acc.userID {
 				return "", ReasonForbidden, nil
 			}
 		case attachmentImmutable[op.Field]:
-			// Only a repeat of the stored value is harmless (task and author are the
-			// ones the lookup knows); anything else would rewrite a fixed field.
-			if !(op.Field == "task_id" && idValue(op.Value) == st.task) && !(op.Field == "author_id" && idValue(op.Value) == st.author) &&
-				!(op.Field == "note_id" && st.task == "" && idValue(op.Value) != "" && r.storedAttachmentNote(st.scope, op.EntityID) == idValue(op.Value)) {
+			// Fixed at creation (task and author were checked above): only a repeat of a
+			// standalone note's own note_id is harmless.
+			if !(op.Field == "note_id" && st.task == "" && idValue(op.Value) != "" && r.storedAttachmentNote(st.scope, op.EntityID) == idValue(op.Value)) {
 				return "", ReasonForbidden, nil
 			}
 		}
@@ -225,20 +224,6 @@ func (r *resolver) resolveAttachment(op Op) (scope, reason string, err error) {
 }
 
 // storedAttachmentNote is the note_id stored for an attachment in scope ("" when none).
-// storedAttachmentField is the stored JSON value of one field of an attachment in
-// its scope ("null" when it has none).
-func (r *resolver) storedAttachmentField(scope, id, field string) (string, error) {
-	var v sql.NullString
-	err := r.tx.QueryRowContext(r.ctx, `SELECT value FROM scope_fields WHERE scope_id = ? AND entity = 'attachment' AND entity_id = ? AND field = ?`, scope, id, field).Scan(&v)
-	if errors.Is(err, sql.ErrNoRows) || (err == nil && (!v.Valid || v.String == "")) {
-		return "null", nil
-	}
-	if err != nil {
-		return "", fmt.Errorf("read attachment %s: %w", field, err)
-	}
-	return v.String, nil
-}
-
 func (r *resolver) storedAttachmentNote(scope, id string) string {
 	var v sql.NullString
 	_ = r.tx.QueryRowContext(r.ctx, `SELECT value FROM scope_fields WHERE scope_id = ? AND entity = 'attachment' AND entity_id = ? AND field = 'note_id'`, scope, id).Scan(&v)

@@ -1,1 +1,0 @@
-- In Today grouped by project, reorder tasks in a personal manual order, move them between project groups, or nest them with **Nest subtasks** on. ([#1211](https://github.com/OpenTodoApp/OpenTodo/issues/1211))

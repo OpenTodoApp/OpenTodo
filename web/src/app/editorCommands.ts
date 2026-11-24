@@ -3,13 +3,13 @@
 // menu, so every action is reachable from the keyboard and works the same in
 // the notes and in the comment composer. Lazy chunk only.
 import { setBlockType, toggleMark, wrapIn } from 'prosemirror-commands'
-import { wrapInList } from 'prosemirror-schema-list'
+import { liftListItem, sinkListItem, wrapInList } from 'prosemirror-schema-list'
 import type { Command } from 'prosemirror-state'
 import type { EditorView } from 'prosemirror-view'
 import { formatDate } from '../lib/dates'
 import { checkLinesIn } from '../lib/editorNotes'
 import { insertTable, isInTable, TABLE_COMMANDS } from '../lib/editorTables'
-import { linkCommand, schema, wrapInCheckList } from '../lib/richtextEditor'
+import { linkCommand, schema, wrapInBulletList, wrapInCheckList } from '../lib/richtextEditor'
 import { logicalToday } from '../lib/dates'
 import type { Suggest } from '../lib/editorSuggest'
 import type { LinkCandidate } from '../lib/linkPicker'
@@ -111,9 +111,12 @@ export function editorCommands(): EditorCommand[] {
     { id: 'h1', label: t('Heading 1'), icon: 'heading-1', keywords: 'title h1', run: exec(setBlockType(nodes.heading, { level: 1 })) },
     { id: 'h2', label: t('Heading 2'), icon: 'heading-2', keywords: 'h2', run: exec(setBlockType(nodes.heading, { level: 2 })) },
     { id: 'h3', label: t('Heading 3'), icon: 'heading-3', keywords: 'h3', run: exec(setBlockType(nodes.heading, { level: 3 })) },
-    { id: 'bullet', label: t('Bullet list'), icon: 'list', keywords: 'ul unordered', run: exec(wrapInList(nodes.bullet_list)) },
+    { id: 'bullet', label: t('Bullet list'), icon: 'list', keywords: 'ul unordered', run: exec(wrapInBulletList) },
     { id: 'numbered', label: t('Numbered list'), icon: 'list-ordered', keywords: 'ol ordered', run: exec(wrapInList(nodes.ordered_list)) },
     { id: 'checklist', label: t('Checklist'), icon: 'list-checks', keywords: 'todo check task', run: exec(wrapInCheckList) },
+    // Tab and Shift-Tab without a keyboard (GitHub issue 1477): only where the line can move.
+    { id: 'indent', label: t('Indent'), icon: 'arrow-right', keywords: 'tab nest sink', available: (view) => sinkListItem(nodes.list_item)(view.state), run: exec(sinkListItem(nodes.list_item)) },
+    { id: 'outdent', label: t('Outdent'), icon: 'arrow-left', keywords: 'shift tab lift unnest', available: (view) => liftListItem(nodes.list_item)(view.state), run: exec(liftListItem(nodes.list_item)) },
     { id: 'table', label: t('Table'), icon: 'table', keywords: 'grid', available: (view) => !isInTable(view.state), run: exec(insertTable(2, 2)) },
     ...tableCommands(),
     { id: 'quote', label: t('Quote'), icon: 'text-quote', keywords: 'blockquote', run: exec(wrapIn(nodes.blockquote)) },

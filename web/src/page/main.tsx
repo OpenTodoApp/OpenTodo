@@ -3,7 +3,8 @@
 // served for a routine email's stop link (/routine-emails/<secret>,
 // routines-shared-email D5): no app shell, no local database, no service worker. The language follows the guest's
 // browser and is not stored, so the page leaves nothing behind but the typed name.
-import { lazy, StrictMode, Suspense } from 'react'
+import { StrictMode, Suspense } from 'react'
+import { lazy } from '../lib/lazy'
 import { createRoot } from 'react-dom/client'
 import '../index.css'
 import { setDateLocale } from '../lib/dates'

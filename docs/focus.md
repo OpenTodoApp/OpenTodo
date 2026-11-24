@@ -58,6 +58,10 @@ The keys show in the tooltips, and under the buttons with **Show shortcut hints*
 
 Each stretch of work is a [time entry](time-tracking.md) on the task; breaks are never logged. The entries sync and carry the timer and session, to [show elsewhere](focus-elsewhere.md). The running timer stays on this device and counts from the clock, so a reload or a laptop that slept still shows the right time.
 
+## Outside the app
+
+The [Android app](android-app.md#focus-in-the-notifications) shows a running session in its notifications, the [iPhone app](ios-app.md#focus-on-the-lock-screen) on the lock screen.
+
 ## Settings
 
 **Settings → General → Focus timer** holds the timer, the lengths, the auto-starts, and the [break reminder, sound, presets and noise](focus-options.md), for all your devices.

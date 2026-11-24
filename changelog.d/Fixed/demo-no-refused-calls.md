@@ -1,1 +1,0 @@
-- **The demo no longer asks for what it refuses.** The app skips the assistant status and the task-page list on a demo instance, so a visitor's browser console stays free of 403 errors.

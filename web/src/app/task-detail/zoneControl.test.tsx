@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from '../../lib/db'
 import { setDateTime } from '../../lib/dates'
 import { createTask, resetDeviceId } from '../../lib/ops'
+import { undoBatch } from '../../lib/undo'
 import { recordPick } from '../../lib/pickRank'
 import type { Task } from '../../lib/types'
 import { click, key, render, type, waitFor } from '../../ui/test-utils'
@@ -93,6 +94,11 @@ describe('ZoneControl', () => {
     await key(document.body, 'z')
     await waitFor(async () => !(await db.tasks.get(t.id))!.due?.tz, 'the zone released')
     expect((await db.tasks.get(t.id))!.due).toEqual({ date: '2026-11-02', time: '09:00' })
+    // Each is one step of undo history (undo-start-zone): undoing the release fixes it again.
+    await waitFor(async () => (await db.assistantUndo.count()) === 2, 'two steps')
+    const release = (await db.assistantUndo.toArray()).find((s) => (s.inverse[0].patch.due as { tz?: string } | null)?.tz)!
+    await undoBatch(release.id)
+    expect((await db.tasks.get(t.id))!.due).toEqual({ date: '2026-11-02', time: '09:00', tz: BERLIN })
     await view.unmount()
   })
 

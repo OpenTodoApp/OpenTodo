@@ -3,7 +3,7 @@
 // scheduled on the device", "Widgets", and external links in "The bridge is optional").
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { installShellLinks, type OpenTodoShell } from './shell'
-import { shellReminders, shellWidget } from './shellPublish'
+import { shellCompleted, shellReminders, shellWidget } from './shellPublish'
 import type { Reminder, Task } from './types'
 
 const NOW = Date.UTC(2026, 9, 22, 12, 0)
@@ -76,6 +76,34 @@ describe('the widgets\' Today list', () => {
   it('a locked encrypted account publishes counts only', () => {
     const w = shellWidget(tasks, today, NOW, true)
     expect(w).toMatchObject({ locked: true, count: 2, tasks: [] })
+  })
+
+  it('leaves out a task assigned to someone else, mine and unassigned ones stay', () => {
+    const shared = [...tasks, task('theirs', { due: { date: today }, assignee_id: 'ana' }), task('mine', { due: { date: today }, assignee_id: 'me' })]
+    const w = shellWidget(shared, today, NOW, false, 'me')
+    expect(w.count).toBe(3)
+    expect(w.tasks.map((r) => r.id).sort()).toEqual(['late', 'mine', 'now'])
+  })
+})
+
+describe('the Completed widget (completed-widget D1)', () => {
+  const today = '2026-10-22'
+  const DAY = 24 * HOUR
+  const done = (id: string, at: number | null, extra: Partial<Task> = {}) => task(id, { completed_at: at, created_at: NOW - 30 * DAY, series_id: null, ...extra } as Partial<Task>)
+  const tasks = [done('a', NOW - HOUR), done('b', NOW - 2 * HOUR), done('c', NOW - 3 * DAY), done('d', NOW - 8 * DAY), done('e', null), done('f', NOW - HOUR, { deleted_at: NOW } as Partial<Task>)]
+
+  it('counts today and each of the last 7 days, oldest first, as Statistics does', () => {
+    const c = shellCompleted(tasks, [], [], null, today, false)
+    expect(c.today).toBe(2)
+    expect(c.days).toHaveLength(7)
+    expect(c.days![0].day).toBe('2026-10-16')
+    expect(c.days![6]).toEqual({ day: today, done: 2 })
+    expect(c.days!.find((d) => d.day === '2026-10-19')!.done).toBe(1)
+    expect(c.days!.reduce((n, d) => n + d.done, 0)).toBe(3)
+  })
+
+  it('a locked encrypted account publishes today\'s count only', () => {
+    expect(shellCompleted(tasks, [], [], null, today, true)).toEqual({ today: 2 })
   })
 })
 

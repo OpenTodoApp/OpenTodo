@@ -1,25 +1,58 @@
 package app.opentodo
 
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Test
+import java.net.URLDecoder
 
+/**
+ * What a share becomes: the cases in src/test/resources/share/cases.json, which the iOS
+ * app's ShareMapTests read too, so both apps map a share the same way.
+ */
 class ShareMapperTest {
-    @Test fun textAndLinks() {
-        assertEquals("/share?url=https%3A%2F%2Fexample.com%2Fa", ShareMapper.path(null, "https://example.com/a", false))
-        assertEquals("/share?title=Recipe&text=Look+at+https%3A%2F%2Fexample.com", ShareMapper.path("Recipe", "Look at https://example.com", false))
-        assertEquals("/share?text=Buy+milk", ShareMapper.path("  ", " Buy milk ", false))
+    private val cases: JSONObject by lazy {
+        val url = javaClass.classLoader!!.getResource("share/cases.json")
+        assertNotNull("missing share/cases.json", url)
+        JSONObject(url!!.readText())
     }
 
-    @Test fun files() {
-        assertEquals("/share?files=1", ShareMapper.path(null, null, true))
-        assertEquals("/share?text=Two+photos&files=1", ShareMapper.path(null, "Two photos", true))
+    private fun JSONObject.stringOrNull(key: String): String? = if (isNull(key)) null else getString(key)
+
+    /** The decoded query of `/share?…`, as the web app's URLSearchParams reads it. */
+    private fun query(path: String): Map<String, String> {
+        assertEquals("/share", path.substringBefore('?'))
+        val q = path.substringAfter('?', "")
+        if (q.isEmpty()) return emptyMap()
+        val pairs = q.split('&').map {
+            val (k, v) = it.split('=', limit = 2)
+            URLDecoder.decode(k, "UTF-8") to URLDecoder.decode(v, "UTF-8")
+        }
+        assertEquals("a parameter appears twice in $path", pairs.size, pairs.map { it.first }.toSet().size)
+        return pairs.toMap()
     }
 
-    @Test fun limitsBeforeHandOver() {
-        val mb = 1024L * 1024
-        assertEquals(listOf(0, 1), ShareMapper.accept(listOf(2 * mb, 3 * mb)))
-        // Unknown size, too large, and over the total are left out.
-        assertEquals(listOf(1, 3), ShareMapper.accept(listOf(-1, 15 * mb, 21 * mb, 5 * mb, 6 * mb)))
+    @Test fun pathsFollowTheSharedCases() {
+        val paths = cases.getJSONArray("paths")
+        for (i in 0 until paths.length()) {
+            val c = paths.getJSONObject(i)
+            val want = c.getJSONObject("expect").let { e -> e.keys().asSequence().associateWith { e.getString(it) } }
+            val got = ShareMapper.path(c.stringOrNull("title"), c.stringOrNull("text"), c.getBoolean("withFiles"))
+            assertEquals("case $i: $c", want, query(got))
+        }
+    }
+
+    @Test fun limitsFollowTheSharedCases() {
+        val accept = cases.getJSONArray("accept")
+        for (i in 0 until accept.length()) {
+            val c = accept.getJSONObject(i)
+            val sizes = c.getJSONArray("sizes").let { a -> (0 until a.length()).map { a.getLong(it) } }
+            val want = c.getJSONArray("expect").let { a -> (0 until a.length()).map { a.getInt(it) } }
+            assertEquals("case $i: $sizes", want, ShareMapper.accept(sizes))
+        }
+    }
+
+    @Test fun atMostTenFiles() {
         assertEquals(ShareMapper.MAX_FILES, ShareMapper.accept(List(15) { 1024L }).size)
     }
 }

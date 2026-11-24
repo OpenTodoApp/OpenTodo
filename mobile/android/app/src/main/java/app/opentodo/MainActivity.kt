@@ -17,9 +17,12 @@ import android.provider.OpenableColumns
 import android.provider.Settings
 import android.util.Base64
 import android.view.View
+import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.webkit.CookieManager
+import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.SslErrorHandler
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -67,11 +70,15 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     private var mainFrameFailed = false
     private var pendingShare: Intent? = null
     private var pendingFilesScript: String? = null
+    /** Single sign-on running in the browser (app-sso-system-browser), and its redeem script for the next server page. */
+    private var ssoPending: SystemSignIn.Pending? = null
+    private var pendingRedeemScript: String? = null
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var permissionDone: ((Boolean) -> Unit)? = null
     private val io = Executors.newSingleThreadExecutor()
     /** Files the app saves (shell-repairs D2): the bridge's chunks, the server's downloads, the save dialog. */
     private val saver = FileSaver(this)
+    private val completionSound = CompletionSound()
     /** The launch screen stays until the page can be drawn (shell-first-paint); null once it went. */
     private var hold: LaunchHold? = null
     /** The bars asked for while the launch screen is up: they come with the page. */
@@ -117,6 +124,8 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // The browser may outlive this process: the sign-in it runs still comes back to it.
+        savedInstanceState?.getStringArray(STATE_SSO)?.let { ssoPending = SystemSignIn.Pending(it[0], it[1], it[2]) }
         setContentView(R.layout.activity_main)
         web = findViewById(R.id.web)
         errorView = findViewById(R.id.error)
@@ -167,12 +176,24 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        ssoPending?.let { outState.putStringArray(STATE_SSO, arrayOf(it.verifier, it.challenge, it.state)) }
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (started) handle(intent) else if (isShare(intent)) pendingShare = intent
     }
 
+    override fun onResume() {
+        super.onResume()
+        Focus.foreground = true
+    }
+
     override fun onPause() {
+        Focus.foreground = false
+        completionSound.release()
         // A login wall's or provider's session cookie survives the app being closed.
         CookieManager.getInstance().flush()
         super.onPause()
@@ -195,12 +216,19 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
      * and later the system's splash screen stays as long as the first frame is held back
      * ([firstFrame]: only at a cold start, when that splash screen is showing).
      */
+    @SuppressLint("ClickableViewAccessibility")
     private fun holdLaunchScreen(firstFrame: Boolean) {
         val h = LaunchHold(SystemClock.uptimeMillis())
         hold = h
         val root = findViewById<View>(R.id.root)
         root.background = null
-        web.visibility = View.INVISIBLE
+        // Transparent, not INVISIBLE: an invisible web view is a hidden page, which runs no
+        // animation frame, so the web app could never say it has drawn (shell-reveal-on-paint D2).
+        web.alpha = 0f
+        // A transparent view still takes touches and accessibility focus: nobody can tap or
+        // hear the page under the launch screen before it shows.
+        web.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+        web.setOnTouchListener { _, _ -> true }
         if (firstFrame && Build.VERSION.SDK_INT >= 31) {
             root.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
                 override fun onPreDraw(): Boolean {
@@ -221,6 +249,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     }
 
     /** The launch screen goes: the root gets its colour and the bars asked for meanwhile, and the web view shows. */
+    @SuppressLint("ClickableViewAccessibility") // Clears the hold's touch block; it handles no click.
     private fun reveal() {
         val h = hold ?: return
         if (isDestroyed) return
@@ -229,11 +258,14 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         findViewById<View>(R.id.root).setBackgroundResource(R.color.background)
         heldBars?.let { setSystemBars(it) }
         heldBars = null
-        web.visibility = View.VISIBLE
+        web.alpha = 1f
+        web.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
+        web.setOnTouchListener(null)
     }
 
+    /** Sets the web view up once per server, then opens the launch intent; [replay] false skips the intent (a rebuilt web view). */
     @SuppressLint("SetJavaScriptEnabled")
-    private fun start() {
+    private fun start(replay: Boolean = true) {
         val server = Prefs(this).server ?: return
         if (!started || origin != server) {
             origin = server
@@ -250,6 +282,12 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
                 allowFileAccess = false
                 allowContentAccess = false
                 setSupportMultipleWindows(false)
+                setGeolocationEnabled(true)
+                // Pinch to zoom in the web view (off by default). The page's viewport still
+                // decides, so the Appearance "Allow pinch zoom" switch (user-scalable=no) turns
+                // it off; the on-screen +/- buttons stay hidden.
+                builtInZoomControls = true
+                displayZoomControls = false
                 userAgentString = "$userAgentString OpenTodoAndroid/${BuildConfig.VERSION_NAME}"
             }
             web.webViewClient = Client()
@@ -261,6 +299,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             Bridge(this, server, this).install(web)
             HiddenRun.schedulePeriodic(this)
         }
+        if (!replay) return
         val share = pendingShare
         pendingShare = null
         handle(share ?: intent)
@@ -271,11 +310,68 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         when {
             intent?.action == ACTION_CHANGE_SERVER -> { if (web.url == null) load("$base/"); confirmChangeServer() }
             isShare(intent) -> share(intent!!)
+            intent?.action == Intent.ACTION_VIEW && intent.data?.scheme == SystemSignIn.CALLBACK_SCHEME ->
+                finishSystemSignIn(intent.data.toString(), base)
             intent?.action == Intent.ACTION_VIEW && intent.data?.scheme == "opentodo-open" -> {
-                val path = intent.data?.schemeSpecificPart.orEmpty()
+                // Pause and Resume only with the token of the Focus notification (any app can open this).
+                val path = Focus.authorize(this, intent.data?.schemeSpecificPart.orEmpty(), intent)
                 load(base + if (path.startsWith("/") && !path.startsWith("//")) path else "/")
             }
             web.url == null -> load("$base/")
+        }
+    }
+
+    /** OpenTodo's own single sign-on: in a Custom Tab when the server announces it, otherwise in the web view as before. */
+    private fun beginSystemSignIn(start: String, base: String) {
+        io.execute {
+            val (status, body) = SystemSignIn.askServer(base)
+            runOnUiThread {
+                // No browser to name (none installed, none default): the old way, in the web view.
+                val browser = if (SystemSignIn.supported(body)) signInBrowser() else null
+                if (!SystemSignIn.opensBrowser(status, body, browser)) { load(start); return@runOnUiThread }
+                val p = SystemSignIn.pending()
+                // A Custom Tab where the browser has them, without the AndroidX browser library:
+                // the session extra is all the protocol asks for; other browsers open a page.
+                // Sent to that one browser: another app handling https links never sees it.
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(SystemSignIn.startUrl(base, p, SystemSignIn.isLink(start))))
+                    .addCategory(Intent.CATEGORY_BROWSABLE)
+                    .setPackage(browser)
+                    .putExtras(Bundle().apply { putBinder("android.support.customtabs.extra.SESSION", null) })
+                try { startActivity(intent); ssoPending = p } catch (e: ActivityNotFoundException) { load(start) }
+            }
+        }
+    }
+
+    /** The browser single sign-on opens in (SystemSignIn.browserFor), by package name, or null. */
+    private fun signInBrowser(): String? {
+        val pm = packageManager
+        val view = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com/")).addCategory(Intent.CATEGORY_BROWSABLE)
+        val browsers = pm.queryIntentActivities(view, PackageManager.MATCH_ALL).map { it.activityInfo.packageName }.distinct().filter { it != packageName }
+        // Without a default browser this resolves to the chooser ("android", or a maker's own
+        // screen), which is no browser: only a package that handles the address counts.
+        val default = pm.resolveActivity(view, PackageManager.MATCH_DEFAULT_ONLY)?.activityInfo?.packageName
+            ?.takeIf { it in browsers }
+        val tabs = browsers.filter { pm.resolveService(Intent(SystemSignIn.CUSTOM_TABS_SERVICE).setPackage(it), 0) != null }.toSet()
+        return SystemSignIn.browserFor(default, browsers, tabs)
+    }
+
+    /**
+     * The browser came back. A code is redeemed by a page of the server, so the session cookie
+     * lands in the web view; an error code shows on the sign-in screen; anything else (another
+     * app's link, a sign-in this app did not start) changes nothing.
+     */
+    private fun finishSystemSignIn(callback: String, base: String) {
+        val p = ssoPending
+        val outcome = if (p == null) SystemSignIn.Outcome.Invalid else SystemSignIn.outcome(callback, p.state)
+        // Only the answer to this sign-in ends it: another app opening opentodo://sso with any
+        // other state leaves the pending sign-in as it was.
+        if (SystemSignIn.ends(outcome)) ssoPending = null
+        when (val next = SystemSignIn.finish(outcome, SignInFlow.originOf(web.url ?: "") == base)) {
+            is SystemSignIn.Finish.Redeem -> web.evaluateJavascript(SystemSignIn.redeemScript(next.code, p!!.verifier), null)
+            is SystemSignIn.Finish.RedeemAfterLoad -> { pendingRedeemScript = SystemSignIn.redeemScript(next.code, p!!.verifier); load("$base/") }
+            is SystemSignIn.Finish.ShowError -> load(SystemSignIn.errorUrl(base, next.code))
+            // Cancel on the confirmation page, or another sign-in's answer: the screen stays as it was.
+            SystemSignIn.Finish.Stay -> if (web.url == null) load("$base/")
         }
     }
 
@@ -341,6 +437,11 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             val url = request.url
             // The main frame stays on the server, and on another origin only inside a sign-in
             // flow (a login wall, single sign-on: SignInFlow); everything else opens outside.
+            val base = origin
+            if (request.isForMainFrame && base != null && SystemSignIn.isStart(url.toString(), base)) {
+                beginSystemSignIn(url.toString(), base)
+                return true
+            }
             val f = flow
             val stays = if (request.isForMainFrame && f != null) f.decide(url.toString(), request.isRedirect, request.hasGesture()) == SignInFlow.Decision.STAY
             else Bridge.originOf(url) == origin
@@ -393,6 +494,12 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             CookieManager.getInstance().flush()
             if (cameFromSignIn) { cameFromSignIn = false; view.clearHistory() }
             if (!mainFrameFailed && !serveOffline) scheduleShellRefresh()
+            // The code and its verifier go only to a page of the server that loaded: a login
+            // wall on another origin returned above, and a failed load drops them.
+            pendingRedeemScript?.let {
+                pendingRedeemScript = null
+                if (!mainFrameFailed && SignInFlow.originOf(url) == origin) view.evaluateJavascript(it, null)
+            }
             val script = pendingFilesScript ?: return
             if (Uri.parse(url).path == "/share") {
                 pendingFilesScript = null
@@ -428,13 +535,47 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             handler.cancel()
             showError(getString(R.string.error_untrusted))
         }
+
+        override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+            // The web view's render process was killed (usually the system reclaiming memory).
+            // Returning true stops the system from killing the whole app; we replace the dead
+            // view and reload so the app recovers instead of showing a blank page. Local data
+            // lives in IndexedDB on disk and survives, so nothing unsynced is lost.
+            if (view === web && !isDestroyed) rebuildWeb()
+            return true
+        }
+    }
+
+    /** Replaces the web view after its render process died, and reopens the page it showed. */
+    private fun rebuildWeb() {
+        val parent = web.parent as? ViewGroup ?: return
+        val last = web.url
+        val index = parent.indexOfChild(web)
+        val params = web.layoutParams
+        parent.removeView(web)
+        web.destroy()
+        web = WebView(this).apply { layoutParams = params }
+        parent.addView(web, index)
+        // A new web view: re-run the one-time setup (settings, clients, the bridge), then the page
+        // it showed. Not the launch intent: a share or an opentodo-open link would be replayed.
+        started = false
+        start(replay = false)
+        val base = origin ?: return
+        load(RenderRecovery.reloadUrl(last, base))
     }
 
     private inner class Chrome : WebChromeClient() {
         override fun onShowFileChooser(view: WebView, callback: ValueCallback<Array<Uri>>, params: FileChooserParams): Boolean {
             fileCallback?.onReceiveValue(null)
             fileCallback = callback
-            return try { chooser.launch(params.createIntent()); true } catch (e: ActivityNotFoundException) { fileCallback = null; false }
+            // Not params.createIntent(): its type filter (from the input's accept list) greys out
+            // .csv/.sqlite on devices that don't know those extensions. Offer every openable file.
+            val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = FilePick.TYPE
+                putExtra(Intent.EXTRA_ALLOW_MULTIPLE, FilePick.allowMultiple(params.mode))
+            }
+            return try { chooser.launch(intent); true } catch (e: ActivityNotFoundException) { fileCallback = null; false }
         }
 
         override fun onPermissionRequest(request: PermissionRequest) {
@@ -455,6 +596,15 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
 
         override fun onPermissionRequestCanceled(request: PermissionRequest) {
             if (webMic === request) webMic = null
+        }
+
+        // "Use my location" (android-location-and-map): the server's page gets the position once
+        // Android allows location; any other origin, and the Play build, are refused without a
+        // prompt. Never retained, so the web view asks again and a later refusal in the
+        // system settings holds.
+        override fun onGeolocationPermissionsShowPrompt(requestOrigin: String?, callback: GeolocationPermissions.Callback) {
+            if (!WebLocation.allowed(BuildConfig.PLAY_BUILD, origin, requestOrigin)) { callback.invoke(requestOrigin, false, false); return }
+            requestLocationPermission { granted -> callback.invoke(requestOrigin, granted, false) }
         }
     }
 
@@ -564,6 +714,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         web.clearHistory()
         Scheduler.clear(this)
         Geofences.clear(this)
+        Focus.clear(this)
         NotificationManagerCompat.from(this).cancelAll()
         WidgetStore.clear(this)
         BiometricKeyStore.forget(this)
@@ -594,6 +745,8 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     /** Fine and coarse together (Android 12 lets the user choose approximate). */
     override fun requestLocationPermission(done: (Boolean) -> Unit) {
         if (Geofences.foreground(this)) return done(true)
+        // A second request while Android is asking (the page and location reminders) waits for the same answer.
+        locationDone?.let { first -> locationDone = { granted -> first(granted); done(granted) }; return }
         locationDone = done
         locationPermission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
     }
@@ -667,6 +820,18 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         if (::web.isInitialized) web.performHapticFeedback(constant)
     }
 
+    override fun playCompletionSound() {
+        if (hasWindowFocus()) completionSound.play(this)
+    }
+
+    /**
+     * shell-reveal-on-paint D2: the web app has drawn its first frame, so the launch screen goes
+     * without waiting for the page's load. The load and the cap still end it for an older web app.
+     */
+    override fun painted() {
+        if (!mainFrameFailed) reveal()
+    }
+
     /** One link screen at a time; a device where nothing answers the link has no distributor to ask. */
     override fun pushLink(done: (Boolean, String?) -> Unit) {
         if (pushLinkDone != null || isFinishing || isDestroyed) return done(false, null)
@@ -681,10 +846,20 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
 
     override fun openExternal(url: String) {
         if (!Bridge.externalLink(url)) return
-        try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)) } catch (e: ActivityNotFoundException) { /* nothing can open it */ }
+        try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)) } catch (e: ActivityNotFoundException) {
+            // A `geo:` point without a maps app opens on openstreetmap.org; anything else, nothing can open.
+            val map = WebLocation.fallback(url) ?: return
+            try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(map)).addCategory(Intent.CATEGORY_BROWSABLE)) } catch (e2: ActivityNotFoundException) { /* no browser either */ }
+        }
+    }
+
+    /** app-links D6: the bridge checked the scheme against the viewer's list; the system picks the app. */
+    override fun openAppLink(url: String) {
+        try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)) } catch (e: ActivityNotFoundException) { /* no app for it */ }
     }
 
     companion object {
         const val ACTION_CHANGE_SERVER = "app.opentodo.CHANGE_SERVER"
+        private const val STATE_SSO = "sso_pending"
     }
 }

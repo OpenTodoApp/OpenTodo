@@ -218,11 +218,11 @@ When a series moves to its next occurrence (by completion, skip or detaching), a
 - **THEN** its due date and rule are cleared in one batch, as clearing the due date does, and no next occurrence is scheduled
 
 ### Requirement: Repeat presets
-The Repeat segment of the When popover SHALL show the current rule in words when one is set, then the presets Every day, Every weekday, Every week on the due date's weekday, Every month on the due date's day, Every year on the due date's day and month, and Custom…, which opens the full rule editor in place. A preset SHALL write the same rule the full editor writes for it. Without a due date, the presets SHALL name today's weekday and day. Offline, a preset SHALL apply at once and converge like any other rule edit.
+The Repeat segment of the When popover SHALL show the current rule in words when one is set (see "A rule reads in the interface language"), then the presets Every day, Every weekday, Every week on the due date's weekday, Every month on the due date's day, Every year on the due date's day and month, and Custom…, which opens the full rule editor in place. A preset SHALL write the same rule the full editor writes for it. Without a due date, the presets SHALL name today's weekday and day. Offline, a preset SHALL apply at once and converge like any other rule edit.
 
 #### Scenario: Weekly preset
 - **WHEN** a task is due Thursday 2026-10-22 and the user chooses "Every week on Thursday"
-- **THEN** the task repeats weekly on Thursday, and the segment reads "every week on Thursday" above the presets
+- **THEN** the task repeats weekly on Thursday, and the segment reads "Every week on Thursday" above the presets
 
 #### Scenario: Custom rule
 - **WHEN** the user chooses Custom…
@@ -331,7 +331,7 @@ Acting on one occurrence of a series alone SHALL write that occurrence's record:
 - **THEN** it is read as the record of 5 October and counts towards `for N times` as before
 
 ### Requirement: Exceptions come from the records
-The exception dates of a series SHALL be the occurrence dates of its records, whatever their state. No projection SHALL be drawn on an exception date, and moving the series to its next occurrence (by completion, skip or "This occurrence only") SHALL go to the first occurrence date after the current one that is not an exception. No list of exceptions SHALL be stored on the series. A device that may edit a series and finds it due on one of its exception dates SHALL write the series' due date, and the deadline and start that move with it, to the next date that is not an exception; the server SHALL apply the same rule before it completes a series. Because the value is a function of synced rows, devices that repair concurrently SHALL converge.
+The exception dates of a series SHALL be the occurrence dates of its records, whatever their state. No projection SHALL be drawn on an exception date, and moving the series to its next occurrence (by completion, skip or "This occurrence only") SHALL go to the first occurrence date after the current one that is not an exception. No list of exceptions SHALL be stored on the series. A device that may edit a series and finds it due on one of its exception dates SHALL write the series' due date, and the deadline and start that move with it, to the next date that is not an exception; the server SHALL apply the same rule before it completes a series. Because the value is a function of synced rows, devices that repair concurrently SHALL converge. A date change in the app that would put a series with a calendar rule on one of its exception dates (When, a drag in Day, Week, Month, Plan or Upcoming, a drop on Today, Triage, the re-plan and the bulk and group Due actions) SHALL leave that series as it is: changing one task, it SHALL write nothing and SHALL say in a toast, instead of "Date changed", that the date is already done, was skipped or was moved; changing several, it SHALL change the others and the toast SHALL add how many were not moved. A date change in When that moves a series SHALL move its start and deadline by the same number of days as the due date. The check SHALL read the rows on the device, offline included, so there is nothing to converge. A write the server applies on its own behalf (the REST API and the `ot` CLI through it, the assistant tools over MCP and `/api/v1/agent`) that leaves an existing series with a calendar rule due on another date than before, and on one of its exception dates, SHALL be refused as a whole with nothing stored: the REST API SHALL answer `409 series_date_taken` with a message naming the date and whether it is already done, was skipped or was moved, the CLI SHALL print that message, and the assistant tools SHALL answer a tool error with that code, the date and the record's state. The server SHALL judge the rows as the write leaves them, so a write that also removes the record of that date SHALL be accepted. Ops a device sends through sync SHALL never be refused for this, so a device's offline edits converge through the repair.
 
 #### Scenario: Completed early, then the series rolls past it
 - **WHEN** a series with `every mon, wed, fri` is due Monday the 12th, the user completes Wednesday the 14th early, and later completes Monday
@@ -348,6 +348,34 @@ The exception dates of a series SHALL be the occurrence dates of its records, wh
 #### Scenario: Viewer does not repair
 - **WHEN** a viewer of a shared project receives a series due on one of its exception dates
 - **THEN** the viewer's device writes nothing, and the series moves when a member who may edit it syncs
+
+#### Scenario: Moved back onto a done occurrence
+- **WHEN** a series with `every sunday` at 08:00 is due 6 December with its start on 6 December, 29 November is done, and the user picks 29 November in When with All occurrences selected
+- **THEN** nothing is written, the toast says 29 November is already done, and the series stays due 6 December with its start on 6 December
+
+#### Scenario: Moved to a free earlier date
+- **WHEN** the same series is moved to 22 November, which has no record
+- **THEN** the series is due 22 November with its start on 22 November, and the toast says "Date changed"
+
+#### Scenario: Several tasks dropped on a done occurrence
+- **WHEN** the same series and a task "Call Ana" are dropped together on 29 November in Upcoming
+- **THEN** "Call Ana" is due 29 November, the series stays due 6 December, and the toast says "Date changed · 1 not moved"
+
+#### Scenario: The API moves a series onto a done occurrence
+- **WHEN** the same series is due 6 December and a script sends `PATCH /api/v1/tasks/{id}` with `due` 29 November and a new title
+- **THEN** the answer is `409 series_date_taken` saying 29 November is already done, and the series keeps its date and its title
+
+#### Scenario: An assistant moves a series onto a skipped occurrence
+- **WHEN** 13 December of the same series was skipped and an assistant calls `schedule_tasks` with that date
+- **THEN** the tool answers the error `series_date_taken` naming 13 December as skipped, and nothing is written
+
+#### Scenario: The API moves a series to a free date
+- **WHEN** a script moves the same series to 22 November, which has no record
+- **THEN** the series is due 22 November
+
+#### Scenario: A device syncs a move made offline
+- **WHEN** a device that was offline sends through sync a change that put the series on 29 November
+- **THEN** the server stores it, and the next device that may edit the series moves it to the next free date
 
 ### Requirement: Act on one occurrence
 For a series with a calendar rule, anyone who may edit it SHALL be able to complete, skip or move any occurrence from the current one on, and edit its fields alone, offline: from a projection's menu (Open, Complete this occurrence, Skip this occurrence, Move to…), by dragging a projection in Day, Week, Month or Plan (moves that occurrence only, offered with Undo), and from the occurrence panel. Completing a future occurrence SHALL write a done record and leave the series on its current date; skipping it SHALL write a skipped record; moving or editing it SHALL write an open record. "Delete this occurrence" and deleting an open record SHALL write the skip, never a deletion. Undo of a skip SHALL turn the record into an open occurrence on its date. Acting on the current occurrence SHALL also move the series to its next free date. A projection of a completion-relative series, and any projection for a viewer, SHALL offer Open only. A projection's menu SHALL open with the context key, `Shift+F10` and a long press.
@@ -530,3 +558,61 @@ Every writer of a rule (quick add, the repeat field, REST, the AI assistant tool
 #### Scenario: Several weekdays
 - **WHEN** a task due Monday 2026-11-02 gets the rule `every 3 weeks on monday, thursday`
 - **THEN** the stored rule is `every 3 weeks on monday, thursday`
+
+### Requirement: A rule reads in the interface language
+Wherever the web app shows a task's repeat rule as text (the Repeat segment of the When popover, the task's facts line, the Repeats chip of quick add and a proposed change in the assistant's review), it SHALL show the rule in words of the interface language, built from the parsed rule: the interval or pattern, then "after completion", the end date in the user's date format or the number of times when the rule has them. On its own line the rule SHALL start with a capital letter where the language has one; after other words (the facts line, the chip) it SHALL start small. Weekday and month names SHALL be those of the interface language, and an ordinal SHALL agree with its weekday where the language requires it. The stored rule SHALL stay the canonical English form and the Repeat field SHALL keep showing and accepting that form; a rule the app cannot parse SHALL be shown as stored. The words SHALL be derived on the device, offline included, and SHALL be written nowhere, so there is nothing to converge beyond the rule itself.
+
+#### Scenario: Dutch
+- **WHEN** the interface language is Dutch and a task's rule is `every 3 days after completion`
+- **THEN** the Repeat segment reads "Om de 3 dagen na voltooiing", the task's facts line "om de 3 dagen na voltooiing", and the stored rule is unchanged
+
+#### Scenario: Ordinal weekday
+- **WHEN** the interface language is Italian and a task's rule is `every last sunday`
+- **THEN** the rule reads "Ogni mese l’ultima domenica"
+
+#### Scenario: Several weekdays every other week
+- **WHEN** the interface language is English and a task's rule is `every 2 weeks on monday, thursday`
+- **THEN** the rule reads "Every 2 weeks on Monday and Thursday"
+
+#### Scenario: Ends
+- **WHEN** the interface language is English and a task's rule is `every week for 10 times`
+- **THEN** the rule reads "Every week, 10 times"
+
+#### Scenario: Quick add
+- **WHEN** the interface language is German and the user types "Filter wechseln jeden Montag" in quick add
+- **THEN** the Repeats chip reads "jede Woche am Montag" and the task is created with the rule `every monday`
+
+#### Scenario: A rule of a newer version
+- **WHEN** a task's stored rule does not parse on this device
+- **THEN** the rule is shown as stored
+
+#### Scenario: Offline
+- **WHEN** the device is offline and the user changes the interface language
+- **THEN** every rule reads in the new language, and nothing is written or uploaded
+
+### Requirement: The Repeat field reads the user's languages
+The task's Repeat field SHALL accept a rule written in the stored English grammar, in every interface language, and SHALL also accept a repeat phrase in the languages quick add reads on the device (the device's chosen quick-add languages, else the interface language and the browser's languages, English always), read with the same vocabulary and rules as quick add. Either way the canonical English rule SHALL be what is stored. A text SHALL be accepted only when all of it is one rule: a phrase with other words around it, a phrase with a start date, and a phrase the grammar cannot express SHALL be refused with the existing message and the previous rule kept. While a rule is typed in the user's language the preview of the next occurrences SHALL show as for an English rule. After a change the field SHALL show the stored rule, and the rule in words of the interface language SHALL show above the presets. Reading SHALL happen on the device, offline included, and the write SHALL be the ordinary rule edit, converging as it does.
+
+#### Scenario: Dutch
+- **WHEN** the interface language is Dutch and the user types `elke vrijdag` in a task's Repeat field and presses Enter
+- **THEN** the task's rule is `every friday`, the field shows `every friday` and the line above reads "Elke week op vrijdag"
+
+#### Scenario: After completion
+- **WHEN** the interface language is Dutch and the user types `elke 3 dagen na voltooiing`
+- **THEN** the preview shows the next three dates, and Enter stores `every 3 days after completion`
+
+#### Scenario: English still works
+- **WHEN** the interface language is German and the user types `every 2nd tuesday`
+- **THEN** the rule is stored as `every 2nd tuesday`, as before
+
+#### Scenario: Not a rule
+- **WHEN** the user types `elke blursdag`, or `Filter vervangen elke vrijdag`, or `every day from monday`
+- **THEN** the field says it is not a rule it understands, and the task keeps its previous rule
+
+#### Scenario: A language that is not active
+- **WHEN** the device reads only German and English and the user types `elke vrijdag`
+- **THEN** the text is refused
+
+#### Scenario: Offline
+- **WHEN** the device is offline and the user types `jeden Montag` in the Repeat field
+- **THEN** the rule `every monday` applies at once and is uploaded when the network returns

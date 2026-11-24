@@ -7,7 +7,7 @@ import { openAssistantWith, useAssistantStatus } from '../../lib/assistantStatus
 import { useSubtasks, useTask, useMembershipMapOrLoading } from '../../lib/localData'
 import { useParentChain } from '../../lib/taskPath'
 import { markTaskNotificationsRead } from '../../lib/notifications'
-import { skipOccurrence, updateTask } from '../../lib/ops'
+
 import { roleOf } from '../../lib/sharing'
 import { progressOf } from '../../lib/subtasks'
 import type { EditPlan } from '../../lib/nlp/edit'
@@ -22,6 +22,7 @@ import { completeWithUndo, deleteWithUndo } from '../undoable'
 import { useTaskPageStatus } from './taskPageStatus'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 import { copyText } from '../../lib/clipboard'
+import { priorityUndoable, skipOccurrence } from '../../lib/undoActions'
 
 /** The panel and page title grow with the text up to this many lines, then scroll. */
 export const TITLE_LINES = 8
@@ -117,9 +118,9 @@ export function useTaskDetail({ taskId, initial, readOnly, projects, labelMap, o
   // The `panel` scope while focus is inside (keyboard-shortcuts "Innermost scope
   // wins"): 1–4 set the open task's priority, y tracks time, Shift+K skips its occurrence.
   useShortcutScope('panel', {
-    'panel.priority': (e) => {
+    'panel.priority': (_event, _shortcut, chord) => {
       if (!task || readOnly) return false
-      act(updateTask(task.id, { priority: Number(e.key) as Priority }))
+      act(priorityUndoable(task.id, Number(chord.key) as Priority))
     },
     'panel.track': () => {
       if (!task || readOnly || task.deleted_at) return false

@@ -1,0 +1,12 @@
+{{.Subject}}
+
+{{.Text}}
+
+--
+Tę wiadomość wysłała twoja rutyna „{{.Routine}}” w OpenTodo pod adresem {{.Origin}}.
+
+Zobacz to uruchomienie:
+
+{{.Link}}
+
+Otrzymujesz tę wiadomość, ponieważ twoja rutyna ma krok Wyślij mi e-mail i wysyła go na {{.Email}}. Aby to zatrzymać, wyłącz rutynę albo usuń ten krok na stronie Rutyny.

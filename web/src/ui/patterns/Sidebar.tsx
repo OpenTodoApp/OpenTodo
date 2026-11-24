@@ -52,7 +52,7 @@ export const SidebarItem = forwardRef<HTMLButtonElement, SidebarItemProps>(funct
   const quiet = countMode === 'hover' ? ' ui-reveal' : countMode === 'hidden' ? ' sr-only' : countMode === 'swap' ? ' ui-swap-count' : ''
   const button = (
     <button ref={ref} type={type} aria-current={active ? 'page' : undefined} data-sidebar-item data-depth={depth} data-tone={active ? 'active' : 'quiet'}
-      className={`flex min-h-9 w-full min-w-0 items-center gap-2 rounded-control py-1.5 text-left text-body press-selected pointer-fine:min-h-8 pointer-fine:py-1 ${collapsed ? 'justify-center px-0' : 'px-2'} ${active ? ACTIVE : IDLE}${className ? ` ${className}` : ''}`}
+      className={`flex min-h-9 w-full min-w-0 items-center gap-2 rounded-control py-1.5 text-left text-body transition-[transform,box-shadow] duration-(--duration-emphasis) ease-calm press-selected pointer-fine:min-h-8 pointer-fine:py-1 ${collapsed ? 'justify-center px-0' : 'px-2'} ${active ? ACTIVE : IDLE}${className ? ` ${className}` : ''}`}
       {...rest}>
       {icon ? <span className="flex w-5 shrink-0 justify-center" aria-hidden="true"><Icon name={icon} /></span> : leading ? <span className="flex w-5 shrink-0 items-center justify-center">{leading}</span> : null}
       <span className={collapsed ? 'sr-only' : 'min-w-0 flex-1 truncate'}>{label}</span>
@@ -105,20 +105,21 @@ export function SidebarGroup({ title, collapsible = false, open = true, onToggle
   // "Projects, 12 items" in every state; the visible number only while closed.
   const spoken = count !== undefined ? <span className="sr-only">{`, ${t('{n, plural, one {# item} other {# items}}', { n: count })}`}</span> : null
   const heading = collapsible ? (
-    <button type="button" className="flex min-h-6 items-center gap-1 rounded-chip uppercase hover:text-muted focus-visible:text-muted" onClick={onToggle} aria-expanded={open}>
-      <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${open ? 'rotate-90' : ''}`} />{title}
+    <button type="button" className="flex min-h-6 min-w-0 items-center gap-1 rounded-chip uppercase hover:text-muted focus-visible:text-muted" onClick={onToggle} aria-expanded={open}>
+      <Icon name="chevron-right" size="xs" className={`shrink-0 transition-transform duration-(--duration-ui) ${open ? 'rotate-90' : ''}`} /><span className="truncate">{title}</span>
       {!open && count !== undefined && <span data-group-count aria-hidden="true" className="ml-0.5 font-medium normal-case tracking-normal tabular-nums">{count}</span>}
       {spoken}
       {!open && badge}
     </button>
-  ) : <span className="flex min-h-6 items-center">{title}{spoken}</span>
+  ) : <span className="flex min-h-6 min-w-0 items-center"><span className="truncate">{title}</span>{spoken}</span>
   return (
     <nav aria-label={label ?? title} data-sidebar-group={title} data-testid={testId}>
       {/* The heading sticks to the top of the sidebar's scroller while its rows scroll (app-shell "Sticky sidebar group headers"); the top padding, not a margin, keeps the column's colour behind it (--sidebar-bg, set by the shell: sidebar-v2 D8). The actions show on hover and focus (D5). */}
       {!collapsed && (
         <div data-sidebar-group-header className={`${tight ? 'pt-2' : 'pt-5 pointer-fine:pt-4'} sticky top-0 z-10 flex items-center justify-between bg-(--sidebar-bg,var(--color-canvas)) px-2 pb-1 ${SIDEBAR_HEADING}`}>
           {heading}
-          {actions && <span className="ui-reveal flex items-center gap-1 normal-case" data-group-actions>{actions}</span>}
+          {/* The title gives way to the actions (it truncates), so at 200% text they never sit on it (accessibility pass). */}
+          {actions && <span className="ui-reveal flex shrink-0 items-center gap-1 normal-case" data-group-actions>{actions}</span>}
         </div>
       )}
       {(!collapsible || open || collapsed) && <div className="space-y-0.5">{children}</div>}

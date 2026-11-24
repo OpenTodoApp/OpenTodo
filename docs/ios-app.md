@@ -1,6 +1,6 @@
 ---
 title: The iOS app
-summary: The OpenTodo app for iPhone and iPad, from the App Store or built from source: connect it to your server, reminders without push, sharing, widgets and Face ID unlock.
+summary: "The OpenTodo app for iPhone and iPad, from the App Store or built from source: connect it to your server, reminders without push, sharing, widgets and Face ID unlock."
 audience: user
 section: Reference
 specs: []
@@ -13,7 +13,7 @@ The OpenTodo app for iPhone and iPad opens your own OpenTodo server, like the [i
 
 ## Install it
 
-The official app is in the App Store: [OpenTodo for iPhone and iPad](https://apps.apple.com/us/app/opentodo/id6832200428). It is the first release, so expect some rough edges, and [say what to improve](feedback-and-support.md). New builds go to testers through TestFlight, Apple's app for testing, before they reach the App Store.
+The official app is in the App Store: [OpenTodo for iPhone and iPad](https://apps.apple.com/us/app/opentodo/id6832200428). It is the first release, so expect some rough edges, and [say what to improve](feedback-and-support.md). New builds go to testers through TestFlight, Apple's app for testing, and every OpenTodo release is sent to Apple's App Store review the same day: the App Store update arrives once Apple approves it, usually within a few days.
 
 As the copyright holder, the author of OpenTodo allows distributing its iOS app through Apple's App Store and TestFlight. You can still build the app yourself from source ([Building it](#building-it)).
 
@@ -30,9 +30,9 @@ To point the app at another server later, long-press its icon and choose **Chang
 
 ### Single sign-on and login walls
 
-OpenTodo's own **Sign in with …** button (see [Single sign-on](self-hosting/sso.md)) signs in inside the app: the provider's page opens in the app and sends you back signed in. A bar above the provider's page names the site you are signing in on, since the app has no address bar; the **×** in the bar, or swiping back, returns to your server. A login wall in front of the server (Pangolin, Authelia, Authentik's proxy, Cloudflare Access, oauth2-proxy) works the same way once the app is connected: when the wall asks again, its sign-in page opens in the app. If a sign-in can't continue in the app (for example a page left open for a long time), the app says so and offers **Sign in here** to start again.
+OpenTodo's own **Sign in with …** button (see [Single sign-on](self-hosting/sso.md)) opens the provider's page in Safari's sign-in sheet (iOS asks first whether OpenTodo may use your server's address to sign in) asks you to confirm with **Continue**, and brings you back to the app signed in, so providers that refuse sign-in inside apps, such as Google, work too. Close the sheet to cancel. A login wall in front of the server (Pangolin, Authelia, Authentik's proxy, Cloudflare Access, oauth2-proxy) is different: once the app is connected, when the wall asks again, its sign-in page opens inside the app, with a bar above it that names the site you are signing in on (the app has no address bar); the **×** in the bar, or swiping back, returns to your server. If a sign-in can't continue in the app (for example a page left open for a long time), the app says so and offers **Sign in here** to start again.
 
-Only pages the sign-in leads through stay in the app; a link to another site on a sign-in page (a privacy policy, a help page) opens in Safari, like every other link. The app's first-run check does not pass a login wall: let the wall bypass `/api/v1/health` and `/healthz` (the [Android guide](android-app.md#bypassing-the-wall-instead) lists the paths). The hourly background refresh never follows the wall's redirect; while its session has expired, the refresh waits until you next open the app. Some providers refuse to sign in inside an app's web view (Google answers "Error 403: disallowed_useragent"); with those, sign in with a password or a passkey. An app built for one server with app-bound domains (see [Building it](#building-it)) can only show the pages of the hosts it declares, so add the provider's host to `OPENTODO_APP_BOUND_HOST` too.
+Only pages the sign-in leads through stay in the app; a link to another site on a sign-in page (a privacy policy, a help page) opens in Safari, like every other link. The app's first-run check does not pass a login wall: let the wall bypass `/api/v1/health` and `/healthz` (the [Android guide](android-app.md#bypassing-the-wall-instead) lists the paths). The hourly background refresh never follows the wall's redirect; while its session has expired, the refresh waits until you next open the app. A wall that signs in with a provider that refuses apps (Google answers "Error 403: disallowed_useragent") needs a password, a passkey or a bypass for the app's paths. An app built for one server with app-bound domains (see [Building it](#building-it)) can only show the pages of the hosts it declares, so add the provider's host to `OPENTODO_APP_BOUND_HOST` too.
 
 ## Reminders
 
@@ -50,7 +50,7 @@ The app opens on its background colour, light or dark with the phone, and shows 
 
 ## Offline
 
-The app from TestFlight or the App Store opens any server, and iOS gives such an app no service worker, so it needs the network to start and says so when there is none. For an offline start, use the [installed web app](install-phone.md#iphone-and-ipad), or build the app for your one server: set `OPENTODO_APP_BOUND_HOST=todo.example.com` when you build, and it gets the whole installed-web-app treatment, the service worker, the precache and an offline start.
+The app from TestFlight or the App Store opens any server, and iOS gives such an app no service worker. When the server is unreachable at launch, the app opens from its last copy in the web view's cache and reads the tasks it already holds, and syncs once the server answers again; the first launch, before the app has loaded once, still needs the network, and says so when there is none. For a full offline start with the precache, use the [installed web app](install-phone.md#iphone-and-ipad), or build the app for your one server: set `OPENTODO_APP_BOUND_HOST=todo.example.com` when you build, and it gets the whole installed-web-app treatment, the service worker, the precache and an offline start.
 
 ## Sharing into OpenTodo
 
@@ -72,15 +72,21 @@ Pulling a page down from its top [syncs now](offline-and-sync.md#the-sync-status
 
 ## Saving files
 
-Whatever the app saves opens the system's save dialog, where you choose a place in Files: the recovery key and recovery codes, an export, a theme, an attachment. Cancel and nothing is saved.
+An image or a PDF attached to a task opens in the system's preview: the share button saves it to Photos or Files, or sends it. Everything else the app saves opens the system's save dialog, where you choose a place in Files: the recovery key and recovery codes, an export, a theme, any other attachment. Cancel and nothing is saved.
+
+## Focus on the lock screen
+
+While a [Focus](focus.md#outside-the-app) session runs or is paused, a Live Activity on the lock screen and in the Dynamic Island shows the task, the phase (**Work · 2 of 4**, **Short break**, **Paused**) and a clock that iOS keeps running by itself. A tap opens the Focus screen; **Pause** and **Resume** open the app and pause or resume the session there. When the planned end passes it reads **Session done** or **Break over**, and a notification arrives at that moment if notifications are allowed. With **Start breaks automatically** on, the break starts once you next open the app. The task's name follows the task names switch in **Settings → Notifications**, and an encrypted account shows **Focus session**. Turn it off in iOS **Settings → OpenTodo → Live Activities**. Signing out and **Change server** remove it.
 
 ## Haptic feedback
 
-Completing a task gives the phone's success tap and picking up a row a light one. Turn it off in **Settings → Appearance → Haptic feedback**.
+Completing a task gives the phone's success tap, and adding a task or picking up a row a light one. Flipping a switch or choosing a segment with your finger gives a selection click, and a failure message the error tap. Turn it off in **Settings → Appearance → Haptic feedback**.
+
+**Task completion sound** beside it is off by default. When enabled, it plays a short cue after completing a task in the foreground. The iPhone stays quiet in Silent mode.
 
 ## Touch
 
-Tapping does not flash, holding a button or a tab does not select its label, and holding a link does not lift a preview of it. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top no longer drags or reloads the app. Pinch to zoom works everywhere.
+Tapping does not flash, holding a button or a tab does not select its label, and holding a link does not lift a preview of it. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top no longer drags or reloads the app. Pinch to zoom works everywhere, unless you turn it off for this device in **Settings → Appearance → Allow pinch zoom**. Tap the status bar to scroll back to the top of a list, a note or the calendar, or of an open sheet or panel.
 
 ## Face ID unlock
 
