@@ -9,7 +9,7 @@ order: 15
 ---
 # Keep open subtasks
 
-<picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="A project list with the task panel open on the right, showing the task's title, its notes and its properties."></picture>
+<picture><source srcset="images/keep-open-subtasks-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/keep-open-subtasks-light.webp" alt="Settings, General, Tasks with one switch, Complete subtasks with parent, turned on."></picture>
 
 Completing a task completes its open subtasks too. To finish a task but keep a follow-up open, turn off **Complete subtasks with parent** in **Settings → General → Tasks**. The choice belongs to your account, so your other devices follow once they sync.
 
@@ -21,6 +21,6 @@ With the switch off, completing a task completes only that task. Its open subtas
 
 They stay in the completed task's **Subtasks**, with their state, where you can still open, edit, complete or delete them. Reopen the task and they're back everywhere, reminders included. **Undo** after completing reopens what the completion completed, either way.
 
-Open subtasks of tasks completed earlier are kept the same way, for example when an AI assistant or the API completed only the parent. Open that task to find them.
+Open subtasks of tasks completed earlier are kept the same way, for example when an older app or the API completed only the parent. Open that task to find them.
 
 See [Notes, subtasks and dependencies](notes-and-subtasks.md) for how subtasks work.

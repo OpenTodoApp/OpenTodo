@@ -90,7 +90,7 @@ A task with at least one non-deleted subtask SHALL show its progress as "complet
 - **THEN** its parent's ring, count and percentage update at once
 
 ### Requirement: Completing a parent
-Completing a parent SHALL also complete every open descendant, one completion operation per task, so the result converges on every device, unless the account chose to keep open subtasks: the synced preference `user_prefs.complete_subtasks` is empty by default (complete them) and `keep` completes only the parent; an unknown value reads as empty. Settings → General → Tasks SHALL offer the choice as one switch, "Complete subtasks with parent", on by default, with no helper text; the client SHALL NOT ask on each completion. The choice SHALL apply on every device after sync and offline as soon as it is made, and converge last-writer-wins. A bulk completion SHALL follow the same choice. Undo of a completion SHALL reopen every task that completion wrote. Reopening a parent SHALL reopen only the parent. Completing the last open subtask SHALL not complete the parent automatically but SHALL offer a one-key action to complete it. Under concurrent edits, a subtask added to a parent that was completed on another device SHALL remain open and SHALL be kept ("Kept subtasks").
+Completing a parent SHALL also complete every open descendant, one completion operation per task, so the result converges on every device, unless the account chose to keep open subtasks: the synced preference `user_prefs.complete_subtasks` is empty by default (complete them) and `keep` completes only the parent; an unknown value reads as empty. Settings → General → Tasks SHALL offer the choice as one switch, "Complete subtasks with parent", on by default, with no helper text; the client SHALL NOT ask on each completion. The choice SHALL apply on every device after sync and offline as soon as it is made, and converge last-writer-wins. A bulk completion SHALL follow the same choice, and so SHALL every other completion the account makes: Close the day, a repeating task whose series ends, automation rules and routines, the agent tools (MCP, the REST agent routes and the in-app assistant on the device), `ot done` (whose `--subtasks=false` completes only the task), and a public link or task page (with its owner's choice). The REST collection route `PATCH /api/v1/tasks/{id}` SHALL keep completing only the task it names (API 1.x). Undo of a completion SHALL reopen every task that completion wrote. Reopening a parent SHALL reopen only the parent. Completing the last open subtask SHALL not complete the parent automatically but SHALL offer a one-key action to complete it. Under concurrent edits, a subtask added to a parent that was completed on another device SHALL remain open and SHALL be kept ("Kept subtasks").
 
 #### Scenario: Complete the parent
 - **WHEN** the user completes "Plan trip" while two of its subtasks are open, with the default choice
@@ -103,6 +103,10 @@ Completing a parent SHALL also complete every open descendant, one completion op
 #### Scenario: Undo either way
 - **WHEN** the user completes "Plan trip" with either choice and activates Undo
 - **THEN** "Plan trip" and every subtask the completion completed are open again, and nothing is kept
+
+#### Scenario: An assistant completes a parent
+- **WHEN** an AI assistant completes "Plan trip" through MCP while "Book hotel" is open, with the default choice
+- **THEN** both are completed in one batch; with "Complete subtasks with parent" off, only "Plan trip" is, and "Book hotel" is kept
 
 #### Scenario: Choice offline
 - **WHEN** the device is offline and the user turns the switch off

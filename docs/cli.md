@@ -210,15 +210,15 @@ ot add "Book hotel" --parent 3f1d          # a subtask, in its parent's project
 ot edit 8c2a --parent 3f1d                 # put an existing task under another one
 ot edit 8c2a --parent none                 # back to the top level
 ot list --parent 3f1d --json               # the direct subtasks of 3f1d
-ot done 3f1d --subtasks                    # complete it and its open subtasks
+ot done 3f1d                               # complete it and its open subtasks (unless you keep them)
+ot done 3f1d --subtasks=false              # complete only the task
 ot rm 3f1d --subtasks                      # delete it and its subtasks
 ot edit 3f1d --project Work --subtasks     # move it and its subtasks
 ```
 
 `--parent` takes an open task by id or unique id prefix. Without `--project`, `ot add` puts the subtask in its parent's project (or its Inbox). A completed parent, or a `--project` that is not the parent's, exits 2 before any request. With `ot edit`, a parent in another project moves the task to that project in the same request. The server refuses a deleted parent and a parent that is the task itself or one of its subtasks (exit 1, `invalid_input`), and nothing changes.
 
-`ot done`, `ot rm` and `ot edit` change only the tasks you name, as the [REST API](api.md#subtasks) does. Add `--subtasks` for what the app does:
-- `ot done --subtasks` completes the open subtasks at every depth;
+`ot done` completes the open subtasks at every depth too, as the app does, unless you [keep open subtasks](keep-open-subtasks.md); `--subtasks` always completes them and `--subtasks=false` never does. `ot rm` and `ot edit` change only the tasks you name, as the [REST API](api.md#subtasks) does. Add `--subtasks` for what the app does:
 - `ot rm --subtasks` deletes all of them;
 - `ot edit --subtasks`, when the edit changes the project, moves them too.
 

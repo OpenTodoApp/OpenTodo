@@ -11,7 +11,7 @@ import { db } from './db'
 import { isEnabled } from './e2ee'
 import { logicalToday } from './dates'
 import { lineageRows, lineageScan } from './lineageRows'
-import { mutateMany, type Change } from './ops'
+import { keepsSubtasksNow, liveSubtree, mutateMany, planCompletePlain, type Change } from './ops'
 import { isOccurrenceRecord } from './recurring'
 import { planRepair } from './seriesPlan'
 import { membershipMap, roleOf } from './sharing'
@@ -49,6 +49,7 @@ export async function seriesUpkeep(ops: readonly Op[], opts: { today?: string; n
   const encrypted = opts.encrypted ?? (await isEnabled())
   const out: Change[] = []
   const done = new Set<string>()
+  let keep: boolean | undefined
   const scanned = await lineageScan(touched.map((t) => t.id))
   for (const t of touched) {
     if (done.has(t.id)) continue
@@ -60,7 +61,12 @@ export async function seriesUpkeep(ops: readonly Op[], opts: { today?: string; n
       if (done.has(s.id)) continue
       done.add(s.id)
       if (roleOf(s.project_id, memberships) === 'viewer') continue
-      out.push(...planRepair(s, rows, today, now))
+      const repair = planRepair(s, rows, today, now)
+      out.push(...repair)
+      // A series that ended completes like a plain task: its open subtasks too, unless kept (keep-open-subtasks D4).
+      if (repair.some((c) => c.patch.completed_at) && !(keep ??= await keepsSubtasksNow())) {
+        out.push(...planCompletePlain(s.id, await liveSubtree(s.id), now).filter((c) => c.entityId !== s.id))
+      }
       if (!encrypted) continue
       for (const r of rows) {
         if (r.series_id === s.id && isOccurrenceRecord(r)) {

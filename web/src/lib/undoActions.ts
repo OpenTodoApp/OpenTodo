@@ -646,7 +646,7 @@ export async function dropOnPanel(taskId: string, view: Pick<View, 'name' | 'que
   const task = tasks[0]
   if (!task) return { entry: null, label: '', taskId, matches: false, changed: false }
   const memberships = await membershipMap()
-  const changes = planRule(task, all, view.on_drop, { now, today, labels: ctx.names.labels, memberships, me: await currentUserId() })
+  const changes = planRule(task, all, view.on_drop, { now, today, labels: ctx.names.labels, memberships, me: await currentUserId(), keep: await keepsSubtasksNow() })
   const column = view.name
   if (changes.length === 0) {
     return { entry: null, label: t('{task} already matches {column}', { task: task.title || t('Untitled'), column }), taskId, matches: true, changed: false }

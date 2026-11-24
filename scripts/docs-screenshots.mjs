@@ -649,6 +649,11 @@ const shots = [
   } },
   // Priority names (priority-names): three levels named in Settings → General → Priorities, then Home renovation
   // grouped by priority under those names. Names and grouping sync, so the scene puts both back.
+  // Keep open subtasks (keep-open-subtasks): Settings → General → Tasks with its one switch.
+  { name: 'keep-open-subtasks', server: D, async run(p) {
+    await go(p, demoBase, '/settings/general/tasks', () => p.locator('#tasks-complete-subtasks-switch').waitFor())
+    await p.mouse.move(900, 600); await settle(p, 500)
+  } },
   { name: 'app-links', server: D, async run(p) {
     // Links to other apps (app-links): two schemes added through the page, as a person adds them.
     await go(p, demoBase, '/settings/integrations/app-links', () => p.locator('[data-app-link-input]').waitFor())

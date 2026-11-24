@@ -176,6 +176,17 @@
         "completed_at": null,
         "created_at": 1,
         "deleted_at": null,
+        "id": "kept",
+        "labels": [],
+        "parent_id": "t3",
+        "priority": 4,
+        "project_id": null,
+        "title": "Kept follow-up"
+      },
+      {
+        "completed_at": null,
+        "created_at": 1,
+        "deleted_at": null,
         "due": {
           "date": "2026-11-10"
         },
@@ -230,6 +241,51 @@
           "is_error": false,
           "not_found": 5,
           "shown": "tasks"
+        }
+      ]
+    },
+    {
+      "name": "a kept subtask is shown by id",
+      "calls": [
+        {
+          "name": "show_tasks",
+          "args": {
+            "ids": [
+              "kept",
+              "t3"
+            ]
+          }
+        },
+        {
+          "name": "show_task",
+          "args": {
+            "id": "kept"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "tasks",
+          "ids": [
+            "kept",
+            "t3"
+          ]
+        },
+        {
+          "kind": "task",
+          "id": "kept"
+        }
+      ],
+      "results": [
+        {
+          "count": 2,
+          "is_error": false,
+          "shown": "tasks"
+        },
+        {
+          "count": 1,
+          "is_error": false,
+          "shown": "task"
         }
       ]
     },

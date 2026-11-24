@@ -27,6 +27,7 @@ import { inToday } from './views'
 import { entryDay, minutesOf } from './time'
 import type { ActivityEvent, Comment, Geo, Note, Place, Project, Section, Task } from './types'
 import { readDayStart } from './userPrefs'
+import { dropKept } from './subtasks'
 
 /** The block's tasks in order: a row, or null for one that is gone (deleted, or not on this device). */
 export function useBlockTasks(ids: readonly string[]): (Task | null)[] | undefined {
@@ -53,7 +54,7 @@ export function useDatedTasks(days: readonly string[]): Task[] | undefined {
   const key = days.join()
   return useLiveQuery(async () => {
     const want = new Set(days)
-    return db.tasks.filter((tk) => !tk.deleted_at && !!tk.due && want.has(localDueOf(tk.due)!.date)).toArray()
+    return dropKept(await db.tasks.filter((tk) => !tk.deleted_at && !!tk.due && want.has(localDueOf(tk.due)!.date)).toArray())
   }, [key])
 }
 
@@ -265,7 +266,7 @@ export function useFreeTime(block: Extract<AssistantBlock, { kind: 'free_time' }
   return useLiveQuery(async () => {
     const [events, frames, slots, tasks, grid] = await Promise.all([
       db.calendarEvents.toArray(), db.frames.toArray(), db.slots.toArray(),
-      db.tasks.filter((tk) => !tk.deleted_at && !tk.completed_at && !!tk.due?.time).toArray(), getMeta<unknown>(GRID_PREFS_META_KEY, null),
+      db.tasks.filter((tk) => !tk.deleted_at && !tk.completed_at && !!tk.due?.time).toArray().then(dropKept), getMeta<unknown>(GRID_PREFS_META_KEY, null),
     ])
     const prefs = normalizeGridPrefs(grid)
     const zone = viewerZone()
@@ -283,7 +284,7 @@ export function useFreeTime(block: Extract<AssistantBlock, { kind: 'free_time' }
 export function useDeadlines(block: Extract<AssistantBlock, { kind: 'deadlines' }>): Task[] | undefined {
   return useLiveQuery(async () => {
     const gone = new Set((await db.projects.toArray()).filter((p) => p.deleted_at).map((p) => p.id))
-    const rows = await db.tasks.filter((tk) => !tk.deleted_at && !tk.completed_at && !!tk.deadline && tk.deadline >= block.from && tk.deadline <= block.to && !(tk.project_id && gone.has(tk.project_id))).toArray()
+    const rows = await dropKept(await db.tasks.filter((tk) => !tk.deleted_at && !tk.completed_at && !!tk.deadline && tk.deadline >= block.from && tk.deadline <= block.to && !(tk.project_id && gone.has(tk.project_id))).toArray())
     return rows.sort((a, b) => (a.deadline! < b.deadline! ? -1 : a.deadline! > b.deadline! ? 1 : a.title.localeCompare(b.title)))
   }, [block.from, block.to])
 }

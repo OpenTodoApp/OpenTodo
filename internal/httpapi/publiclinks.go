@@ -318,6 +318,16 @@ func (s *Server) handlePublicTick(w http.ResponseWriter, r *http.Request) {
 		}
 		if ok {
 			ops = append(ops, deviceOps("task", recordID, record, ts, device)...)
+		} else {
+			// Its open subtasks complete with it unless the owner keeps them (keep-open-subtasks D4).
+			kids, err := s.sync.CompletionCascade(ctx, l.CreatedBy, in.TaskID, body, task)
+			if err != nil {
+				s.internal(w, err)
+				return
+			}
+			for _, kid := range kids {
+				ops = append(ops, deviceOps("task", kid, map[string]json.RawMessage{"completed_at": body["completed_at"], "completed_by": body["completed_by"]}, ts, device)...)
+			}
 		}
 	}
 	ops = append(ops, deviceOps("task", in.TaskID, body, ts, device)...)

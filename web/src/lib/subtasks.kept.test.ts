@@ -108,6 +108,41 @@ describe('completing a parent', () => {
     expect(await listed()).toEqual([hotel, other, trip].sort())
   })
 
+  it('bulk reopen brings kept subtasks back with no write of their own', async () => {
+    const { applyBulk } = await import('./bulk')
+    await setKeepOpenSubtasks(true)
+    const trip = await createTask({ title: 'Plan trip' })
+    const hotel = await createSubtask(trip, 'Book hotel')
+    await setTaskCompleted(trip, true)
+    expect(await listed()).toEqual([trip])
+    const before = await db.tasks.get(hotel)
+    await applyBulk([trip], { kind: 'complete' })
+    expect((await db.tasks.get(trip))!.completed_at).toBeNull()
+    expect(await db.tasks.get(hotel)).toEqual(before)
+    expect(await listed()).toEqual([hotel, trip].sort())
+  })
+
+  it('a repeating parent rolls forward either way and keeps nothing', async () => {
+    await setKeepOpenSubtasks(true)
+    const bins = await createTask({ title: 'Bins', due: { date: '2026-10-12' }, recurrence: 'every monday' })
+    const bag = await createSubtask(bins, 'Buy bags')
+    const { completeTask } = await import('./ops')
+    await completeTask(bins, { today: '2026-10-12' })
+    expect((await db.tasks.get(bins))!.completed_at).toBeNull()
+    expect((await db.tasks.get(bag))!.completed_at).toBeNull()
+    expect(await listed()).toContain(bag)
+  })
+
+  it('close the day: Done follows the preference', async () => {
+    const { planCarryOver } = await import('./closeDay')
+    const all = [row('p', { due: { date: '2026-10-12' } } as Partial<Task>), row('c', { parent_id: 'p' })]
+    const decisions = new Map([['p', { kind: 'done' as const }]])
+    const carry = [{ task: all[0], editable: true }]
+    const ids = (keep: boolean) => planCarryOver(decisions, carry, '2026-10-12', all, 9, undefined, keep).map((c) => c.entityId).sort()
+    expect(ids(false)).toEqual(['c', 'p'])
+    expect(ids(true)).toEqual(['p'])
+  })
+
   it('makes an earlier orphan (an open child of a completed parent) kept', async () => {
     const trip = await createTask({ title: 'Plan trip' })
     const hotel = await createSubtask(trip, 'Book hotel')

@@ -212,6 +212,9 @@ type world struct {
 	trackedOcc map[string]int
 	changed    map[string]string
 	encrypted  bool
+	// keep is user_prefs.complete_subtasks "keep": a completion leaves the open
+	// subtasks open (keep-open-subtasks D4).
+	keep bool
 	// projectRows and labelNames serve routine steps (routines-engine).
 	projectRows map[string]opsync.Entity
 	labelNames  map[string]bool
@@ -248,6 +251,7 @@ func (e *Engine) load(ctx context.Context, uid string) (*world, error) {
 	}
 	if prefs, err := e.Sync.Get(ctx, uid, "user_prefs", "me"); err == nil && prefs != nil {
 		w.dayStart = str(prefs, "day_start")
+		w.keep = str(prefs, "complete_subtasks") == "keep"
 		switch str(prefs, "week_start") {
 		case "sun":
 			w.weekStart = time.Sunday

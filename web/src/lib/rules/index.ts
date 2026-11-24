@@ -18,6 +18,8 @@ export interface RuleContext {
   labels: readonly Pick<Label, 'id' | 'deleted_at'>[]
   memberships: Map<string, Membership>
   me: string | null
+  /** Completing leaves open subtasks open (user_prefs.complete_subtasks "keep", keep-open-subtasks D4). */
+  keep?: boolean
 }
 
 const inDays = (v: unknown): v is { in_days: number } =>
@@ -115,7 +117,7 @@ export function planRule(task: Task, all: Task[], rule: OnDropRule | RuleActions
   if (r.deadline) take([{ entity: 'task', entityId: task.id, patch: { deadline: r.deadline === 'clear' ? null : addDays(ctx.today, r.deadline.in_days) } }])
   if (r.assignee) take([{ entity: 'task', entityId: task.id, patch: { assignee_id: r.assignee === 'me' ? ctx.me : null } }])
   const tree = all.map((x) => (x.id === task.id ? cur : x))
-  if (r.state === 'complete' && !cur.completed_at) take(planComplete([cur], tree, ctx.now, ctx.today))
+  if (r.state === 'complete' && !cur.completed_at) take(planComplete([cur], tree, ctx.now, ctx.today, undefined, ctx.keep))
   else if (r.state === 'reopen' && cur.completed_at) take(planReopen([cur]))
   if (r.section) {
     const target = { projectId: r.section.project_id, sectionId: r.section.section_id }

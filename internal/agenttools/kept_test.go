@@ -84,3 +84,31 @@ func openCount(t *testing.T, out map[string]any) int {
 	}
 	return -1
 }
+
+// TestCompleteTasksCascade (keep-open-subtasks D4): complete_tasks completes a
+// task's open subtasks at every depth by default, and only the task while the
+// user keeps open subtasks.
+func TestCompleteTasksCascade(t *testing.T) {
+	f := newFixture(t)
+	c := agent("u1")
+	f.task("u1", "trip", "Plan trip", nil)
+	f.task("u1", "hotel", "Book hotel", map[string]any{"parent_id": "trip"})
+	f.task("u1", "prices", "Compare prices", map[string]any{"parent_id": "hotel"})
+	f.task("u1", "visa", "Visa", map[string]any{"parent_id": "trip", "completed_at": 5})
+	f.mustCall(c, "complete_tasks", map[string]any{"ids": []string{"trip"}})
+	for _, id := range []string{"trip", "hotel", "prices"} {
+		if num(f.entity("u1", "task", id), "completed_at") == 0 {
+			t.Fatalf("%s not completed", id)
+		}
+	}
+	if num(f.entity("u1", "task", "visa"), "completed_at") != 5 {
+		t.Fatal("a completed subtask was written again")
+	}
+
+	f.mustCall(c, "reopen_tasks", map[string]any{"ids": []string{"trip", "hotel", "prices"}})
+	f.put("u1", "user_prefs", "me", map[string]any{"complete_subtasks": "keep"})
+	f.mustCall(c, "complete_tasks", map[string]any{"ids": []string{"trip"}})
+	if num(f.entity("u1", "task", "trip"), "completed_at") == 0 || num(f.entity("u1", "task", "hotel"), "completed_at") != 0 {
+		t.Fatal("keep: only the parent should be completed")
+	}
+}

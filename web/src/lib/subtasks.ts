@@ -102,7 +102,7 @@ export async function parentReadyToComplete(taskId: string): Promise<Task | null
 }
 
 /** The fields the kept rule reads (keep-open-subtasks D2). */
-export type KeptRow = Pick<Task, 'id' | 'parent_id' | 'completed_at' | 'deleted_at'>
+export interface KeptRow { id: string; parent_id?: string | null; completed_at?: number | null; deleted_at?: number | null }
 
 /** Whether completing a parent leaves its open subtasks open (user_prefs.complete_subtasks "keep"; anything else completes them). */
 export function keepsOpenSubtasks(row: { complete_subtasks?: string } | null | undefined): boolean {
@@ -162,4 +162,10 @@ export async function keptAmong(tasks: Iterable<KeptRow>): Promise<Set<string>> 
     if (isKept(task, (id) => cache.get(id))) out.add(task.id)
   }
   return out
+}
+
+/** `rows` read from the database without the kept ones (keptAmong). */
+export async function dropKept<T extends KeptRow>(rows: T[]): Promise<T[]> {
+  const kept = await keptAmong(rows)
+  return kept.size ? rows.filter((r) => !kept.has(r.id)) : rows
 }

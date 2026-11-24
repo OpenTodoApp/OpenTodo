@@ -312,6 +312,8 @@ func blockRows() map[string][]map[string]any {
 			{"id": "orphan", "title": "In a deleted project", "project_id": "old", "priority": 4, "labels": []string{}, "created_at": 1, "deleted_at": nil, "completed_at": nil},
 			{"id": "run", "title": "Run", "project_id": nil, "priority": 4, "labels": []string{}, "created_at": 1, "deleted_at": nil, "completed_at": nil,
 				"recurrence": "every day", "habit": true, "due": map[string]any{"date": "2026-11-10"}},
+			// A kept subtask (keep-open-subtasks D5): out of lists, still shown by id like get_task.
+			{"id": "kept", "title": "Kept follow-up", "project_id": nil, "parent_id": "t3", "priority": 4, "labels": []string{}, "created_at": 1, "deleted_at": nil, "completed_at": nil},
 			{"id": "secret-habit", "title": "Meditate", "project_id": "private", "priority": 4, "labels": []string{}, "created_at": 1, "deleted_at": nil, "completed_at": nil,
 				"recurrence": "every day", "habit": true, "due": map[string]any{"date": "2026-11-10"}},
 		},
@@ -336,6 +338,7 @@ var blockCalls = []struct {
 	calls []blockCall
 }{
 	{"tasks keep live visible ids in order", []blockCall{{"show_tasks", map[string]any{"ids": []string{"t2", "nope", "t1", "gone", "hidden", "orphan", "t3", "t1"}, "title": " Overdue "}}}},
+	{"a kept subtask is shown by id", []blockCall{{"show_tasks", map[string]any{"ids": []string{"kept", "t3"}}}, {"show_task", map[string]any{"id": "kept"}}}},
 	{"no id found shows nothing", []blockCall{{"show_tasks", map[string]any{"ids": []string{"hidden", "gone"}}}}},
 	{"kept-away project reads as not found", []blockCall{{"show_project", map[string]any{"id": "private"}}, {"show_project", map[string]any{"id": "work"}}}},
 	{"notes", []blockCall{{"show_note", map[string]any{"id": "n2"}}, {"show_note", map[string]any{"id": "n1"}}}},

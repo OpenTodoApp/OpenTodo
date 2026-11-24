@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/OpenTodoApp/opentodo/internal/kept"
 	"math"
 	"slices"
 	"sort"
@@ -76,20 +75,6 @@ type snapshot struct {
 	// completed ancestor, left out of lists, search and counts, still in their
 	// parent's subtasks and reachable by id (built on first use, reset by apply).
 	kept map[string]bool
-}
-
-// isKept reports whether t is a kept subtask (internal/kept).
-func (snap *snapshot) isKept(t opsync.Entity) bool {
-	if snap.kept == nil {
-		snap.kept = kept.OfRows(snap.tasks)
-	}
-	return snap.kept[rawStr(t, "id")]
-}
-
-// listed reports whether t belongs in a list of open work or a count: visible
-// (archived projects as asked) and not kept.
-func (snap *snapshot) listed(t opsync.Entity, includeArchived bool) bool {
-	return snap.visible(t, includeArchived) && !snap.isKept(t)
 }
 
 // keptAway resolves which of the user's projects are kept away from AI

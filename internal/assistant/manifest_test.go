@@ -177,6 +177,7 @@ var planCalls = []struct {
 	{"schedule unknown task", "schedule_tasks", map[string]any{"ids": []string{"nope"}, "due": map[string]any{"date": "2026-10-16"}}},
 	{"schedule bad date", "schedule_tasks", map[string]any{"ids": []string{"t1"}, "due": map[string]any{"date": "2026-02-30"}}},
 	{"complete", "complete_tasks", map[string]any{"ids": []string{"t3", "t4"}, "timezone": "UTC"}},
+	{"complete with its open subtask", "complete_tasks", map[string]any{"ids": []string{"t1"}, "timezone": "UTC"}},
 	{"complete recurring", "complete_tasks", map[string]any{"ids": []string{"t5"}, "timezone": "UTC"}},
 	{"reopen", "reopen_tasks", map[string]any{"ids": []string{"t4", "t3"}}},
 	{"move to a section", "move_tasks", map[string]any{"ids": []string{"t3"}, "project_id": "p1", "section_id": "s1"}},

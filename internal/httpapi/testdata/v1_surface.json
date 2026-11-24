@@ -5140,6 +5140,7 @@
         "encryption.enabled": "boolean",
         "encryption.keyVersion": "number",
         "energy_levels": "boolean",
+        "keep_open_subtasks": "boolean",
         "maps": "boolean",
         "mfa": "object|null",
         "mfa.enrolled": "boolean",

@@ -20,7 +20,7 @@ The parent's detail reads its subtasks from the database (`useSubtasks`), not fr
 
 ## D4. Completion and undo
 
-`planCompletePlain(id, all, now, keep)` adds the open descendants only when `keep` is false; `completePlain` and the bulk complete read the preference first. Undo already reverses every change of the batch it recorded, so the cascade path reopens the parent and its subtasks, and the keep path reopens the parent alone, which also ends the subtasks' kept state.
+`planCompletePlain(id, all, now, keep)` adds the open descendants only when `keep` is false; `completePlain`, the bulk complete, Close the day, the on-drop rules, a series that ends (`seriesUpkeep`) and the on-device assistant's `complete_tasks` read the preference first. On the server `sync.KeepsOpenSubtasks` reads it: `complete_tasks` adds the open descendants from its snapshot, the rules engine and routines skip their existing cascade when it is set, public links and task pages use `sync.CompletionCascade`, and `ot done` cascades by default unless `GET /api/v1/me` says `keep_open_subtasks`. The REST collection `PATCH` stays as in API 1.x (only the named task). Undo already reverses every change of the batch it recorded, so the cascade path reopens the parent and its subtasks, and the keep path reopens the parent alone, which also ends the subtasks' kept state.
 
 ## D5. The server
 
