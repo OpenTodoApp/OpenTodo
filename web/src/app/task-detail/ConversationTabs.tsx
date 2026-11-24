@@ -2,6 +2,7 @@
 // D5; web-app "Comments, activity and history tabs"). The last tab is remembered on
 // this device; Shift+C switches to Comments and focuses the composer. History is
 // a separate chunk, loaded when its tab is first opened.
+import { useFeature } from '../../lib/features'
 import { Skeleton } from '../../ui'
 import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { lazy } from '../../lib/lazy'
@@ -108,6 +109,9 @@ export function ConversationTabs({ task, userId, readOnly, onOpen, composerHost,
   }, [tab])
 
   useEffect(() => { setFocusComment(null); setMinHeight(undefined) }, [task.id])
+  // No Time tab while the current workspace has Time tracking off (workspace-feature-switches D4).
+  const tracking = useFeature('time-tracking')
+  useEffect(() => { if (!tracking && tab === 'time') setTabState('comments') }, [tracking, tab, setTabState])
 
   // Shift+C (outside text fields) shows Comments and focuses the composer (`panel.comment`); `c` completes the selected task.
   useShortcutScope('panel', { 'panel.comment': () => { setTab('comments'); setFocusComposer((n) => n + 1) } })
@@ -133,9 +137,9 @@ export function ConversationTabs({ task, userId, readOnly, onOpen, composerHost,
           { id: 'comments', label: t('Comments'), count, icon: 'message-circle', name: count != null ? t('Comments, {n}', { n: count }) : t('Comments') },
           { id: 'activity', label: t('Activity'), icon: 'activity', name: t('Activity') },
           { id: 'history', label: t('History'), icon: 'history', name: t('History') },
-          { id: 'time', label: hasEntries ? t('Time · {duration}', { duration: formatMinutes(tracked) }) : t('Time', { context: 'tracking' }), icon: 'timer',
+          ...(tracking ? [{ id: 'time', label: hasEntries ? t('Time · {duration}', { duration: formatMinutes(tracked) }) : t('Time', { context: 'tracking' }), icon: 'timer' as const,
             word: t('Time', { context: 'tracking' }), value: hasEntries ? formatMinutes(tracked) : undefined,
-            name: hasEntries ? t('Time, {duration}', { duration: spokenMinutes(tracked) }) : t('Time', { context: 'tracking' }) },
+            name: hasEntries ? t('Time, {duration}', { duration: spokenMinutes(tracked) }) : t('Time', { context: 'tracking' }) }] : []),
         ]}>
         {tab === 'comments' && <CommentsTab ref={composerRef} task={task} userId={userId} focusComment={focusComment} composerHost={composerHost} expand={focusComposer} />}
         {tab === 'activity' && (
@@ -146,7 +150,7 @@ export function ConversationTabs({ task, userId, readOnly, onOpen, composerHost,
             <HistoryTab taskId={task.id} readOnly={readOnly} onRestored={(id) => id !== task.id && onOpen?.(id)} />
           </Suspense>
         )}
-        {tab === 'time' && <TimeTab task={task} readOnly={readOnly} />}
+        {tab === 'time' && tracking && <TimeTab task={task} readOnly={readOnly} />}
       </Tabs>
     </section>
   )

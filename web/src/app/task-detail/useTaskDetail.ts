@@ -2,6 +2,7 @@
 // design D5): the live task and its relatives, the title draft that a change from
 // another device does not overwrite, the actions of the header menu, task pages'
 // publish state, and the `panel` keys (1–4, y, Shift+K) while focus is inside.
+import { useFeature } from '../../lib/features'
 import { type RefObject, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { openAssistantWith, useAssistantStatus } from '../../lib/assistantStatus'
 import { useSubtasks, useTask, useMembershipMapOrLoading } from '../../lib/localData'
@@ -115,6 +116,8 @@ export function useTaskDetail({ taskId, initial, readOnly, projects, labelMap, o
     void markTaskNotificationsRead(taskId)
   }, [taskId])
 
+  // Time tracking off in the current workspace: `y` does nothing (workspace-feature-switches D4).
+  const tracking = useFeature('time-tracking')
   // The `panel` scope while focus is inside (keyboard-shortcuts "Innermost scope
   // wins"): 1–4 set the open task's priority, y tracks time, Shift+K skips its occurrence.
   useShortcutScope('panel', {
@@ -123,7 +126,7 @@ export function useTaskDetail({ taskId, initial, readOnly, projects, labelMap, o
       act(priorityUndoable(task.id, Number(chord.key) as Priority))
     },
     'panel.track': () => {
-      if (!task || readOnly || task.deleted_at) return false
+      if (!task || readOnly || task.deleted_at || !tracking) return false
       act(toggleTracking(task.id, { canStart: !task.completed_at }))
     },
     'panel.skip': () => {

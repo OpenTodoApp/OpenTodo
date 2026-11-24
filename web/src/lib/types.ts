@@ -2256,6 +2256,12 @@ export interface Workspace {
   default: boolean
   role: WorkspaceRole
   ownerId: string
+  /**
+   * The features the owner and admins switched off, as `{id: false}`
+   * (workspace-feature-switches D2); a missing key, or no map from an older
+   * server, is on. Read with featureOn() in lib/features.ts.
+   */
+  features?: Record<string, boolean>
 }
 
 /** A member of a workspace, by name only (the directory is shown to every member). */

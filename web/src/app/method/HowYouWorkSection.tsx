@@ -6,6 +6,7 @@
 // device, writing nothing until a step of the guide writes.
 import { useState } from 'react'
 import { useDemo } from '../../lib/demo'
+import { useFeatures } from '../../lib/features'
 import { setHabitsOn, useHabitsEnabled } from '../../lib/habitPrefs'
 import { t } from '../../lib/i18n'
 import { useUserPrefsRow } from '../../lib/localData'
@@ -70,6 +71,8 @@ export function HowYouWorkSection() {
   const prefs = useUserPrefsRow()
   // The start guide never opens on a demo instance, so it is not offered there.
   const demo = useDemo()
+  // A feature the current workspace has off has no personal row here (workspace-feature-switches D3).
+  const on = useFeatures()
   return (
     // Copy: SETTINGS_COPY['how-you-work']; no Learn more, "Learn the method" is the line's link (settings-copy D7).
     <SettingsSection {...cardCopy('how-you-work')} testId="how-you-work">
@@ -80,10 +83,10 @@ export function HowYouWorkSection() {
       <DailyFocusRows style={readFocusStyle(prefs)} order={readBentoOrder(prefs)}
         onStyle={(s) => act(setFocusStyle(s))} onOrder={(o) => act(setBentoOrder(o))} />
       {/* Off by default in every mode; off hides the Plan's strip and the review's section, never an objective (plan-objectives D8). */}
-      <SettingRow {...rowCopy('how-you-work', 'objectives')} id="objectives" htmlFor="objectives-switch"
-        control={<span data-objectives-switch><Switch id="objectives-switch" checked={objectivesOn(prefs)} onChange={(on) => act(setObjectivesOn(on))} label={t('Objectives')} hideLabel /></span>} />
+      {on('weekly-review') && <SettingRow {...rowCopy('how-you-work', 'objectives')} id="objectives" htmlFor="objectives-switch"
+        control={<span data-objectives-switch><Switch id="objectives-switch" checked={objectivesOn(prefs)} onChange={(on) => act(setObjectivesOn(on))} label={t('Objectives')} hideLabel /></span>} />}
       {/* Not decided by default (habits-home D1): on while the account has a habit; off hides every habit control, never a habit. */}
-      <HabitsRow />
+      {on('habits') && <HabitsRow />}
       {/* Off by default in every mode; turning it off hides the choice, never a value (task-energy D3). */}
       <SettingRow {...rowCopy('how-you-work', 'energy')} id="energy-levels" htmlFor="energy-levels-switch"
         control={<span data-energy-levels-switch><Switch id="energy-levels-switch" checked={energyLevelsOn(prefs)} onChange={(on) => act(setEnergyLevels(on))} label={t('Energy levels')} hideLabel /></span>} />

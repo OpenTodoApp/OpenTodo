@@ -1370,7 +1370,7 @@ The server records security-relevant events in its own database (never synced to
 | `project_invite.created` | success | actor = creator | `project_invite_id`, `shared_project_id`, `project_role`, `invited_email` (bound email, if any) |
 | `project_invite.revoked` | success | actor = project owner or admin | `project_invite_id`, `shared_project_id` |
 | `project_invite.accepted` | success | actor = the account that joined (new or existing), target = the link's creator | `project_invite_id`, `shared_project_id`, `project_role` |
-| `workspace.created`, `workspace.renamed`, `workspace.deleted` | success | actor = owner or admin (the server owner when an account deletion removed it) | `workspace` (id; `renamed` also covers icon and colour, never a value) |
+| `workspace.created`, `workspace.renamed`, `workspace.deleted` | success | actor = owner or admin (the server owner when an account deletion removed it) | `workspace` (id; `renamed` also covers icon, colour and features, never a value) |
 | `workspace.transferred` | success | actor = previous owner (the deleting owner at account deletion), target = new owner | `workspace` |
 | `workspace.member_added`, `workspace.member_role_changed`, `workspace.member_removed` | success | actor = owner or admin (the member when leaving), target = member | `workspace`, `workspace_role` or `from`, `to` |
 | `workspace.group_created`, `workspace.group_deleted` | success | actor = owner or admin | `workspace`, `group` (ids, never names) |
@@ -1567,8 +1567,8 @@ Every route needs a session or a `full` or `admin` token (`read` and `agent` tok
 | Method | Path | Body → answer |
 | --- | --- | --- |
 | `GET` | `/api/v1/workspaces` | → `{workspaces: [workspace]}` |
-| `POST` | `/api/v1/workspaces` | `{name, icon?, color?}` → 201 workspace; 20 owned per account (409 `limit_reached`) |
-| `GET`, `PATCH`, `DELETE` | `/api/v1/workspaces/{id}` | `PATCH {name?, icon?, color?}` (owner, admin); `DELETE` (owner) → 204, 409 `workspace_not_empty` while it has projects or other members |
+| `POST` | `/api/v1/workspaces` | `{name, icon?, color?, features?}` → 201 workspace; 20 owned per account (409 `limit_reached`) |
+| `GET`, `PATCH`, `DELETE` | `/api/v1/workspaces/{id}` | `PATCH {name?, icon?, color?, features?}` (owner, admin); `DELETE` (owner) → 204, 409 `workspace_not_empty` while it has projects or other members |
 | `POST` | `/api/v1/workspaces/{id}/leave`, `…/transfer` | leave → 204 (the owner: 409 `owner_must_transfer`); transfer `{userId}` (owner, to a member) → 200 |
 | `GET`, `POST` | `/api/v1/workspaces/{id}/members` | `POST {email, role: member\|admin}` (admins add members) → 201 when the account already shares a project or workspace with you, otherwise 202 `{pending: true}` with or without an account ([invitations](#membership-invitations)); `GET` → 200 `{members, pending?}` (`pending` for the owner and admins) |
 | `DELETE` | `/api/v1/workspaces/{id}/member-invitations/{invitationId}` | cancel an open invitation (owner, admin) → 204 |
@@ -1581,8 +1581,11 @@ A workspace:
 
 ```json
 {"id": "…", "name": "Family", "icon": "house", "color": "#3b82f6", "default": false, "role": "owner", "ownerId": "…",
+ "features": {"habits": false},
  "members": [{"userId": "…", "name": "Alice", "role": "owner"}], "groups": [{"id": "…", "name": "Adults", "members": ["…"]}]}
 ```
+
+**Features** (OpenSpec `workspace-feature-switches`) are the workspace's switches for `notes`, `calendar`, `habits`, `time-tracking`, `focus`, `routines`, `weekly-review` and `locations`: `false` where the owner or an admin switched one off, a missing key (and `{}`, every workspace's start) on. `PATCH {features: {"habits": false}}` merges key by key, so other keys keep their value; an unknown id answers 400 `invalid_input` naming it. A switch only hides the feature in the apps for that workspace: every route, sync, the CLI, MCP, the export and CalDAV keep working on its data. The change wakes every member's devices.
 
 Members carry names, never emails. Limits are 409 `limit_reached` naming the limit; a hosted server may lower them per tenant. An end-to-end encrypted account can create, rename and delete its workspaces and move things between them, but adding members, creating groups or links, and granting groups answer 409 `encryption_enabled`.
 

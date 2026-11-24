@@ -4,6 +4,7 @@
 // lib/liveData), the keyboard (useListShortcuts), drag (useListDrag), the bindings to
 // the panel and the Vim layer (useListBindings), and the bodies for the list, the
 // board and the timeline.
+import { useFeature } from '../lib/features'
 import { TodayStrip } from './habits/TodayStrip'
 import { CloseDayRow } from './CloseDayRow'
 import { useWithMethod } from './help/MethodLink'
@@ -414,8 +415,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const methodMove = route.view === 'inbox' ? 'catch' as const : route.view === 'someday' ? 'place' as const : undefined
   // Today's planned and tracked totals sit in the header's meta, not a new row (time-tracking D4).
   const listedTasks = useMemo(() => (route.view === 'today' ? m.ownRows.map((r) => r.task) : []), [route.view, m.ownRows])
-  const totals = useDayTotals(listedTasks, today, route.view === 'today')
-  const todayMeta /* with the closed list's "3 of 5 · 4 done" (today-closed-list D1, D6) and "Away until Friday" (away-periods D4) */ = [m.dt.formatDate(today, 'heading'), useAwayMeta(today, route.view === 'today'), closedListMeta(m.closed), dayTotalsText(totals.planned, totals.tracked)].filter(Boolean).join(' · ')
+  const totals = useDayTotals(listedTasks, today, route.view === 'today'), tracking = useFeature('time-tracking') // the totals belong to Time tracking (workspace-feature-switches D4)
+  const todayMeta /* with the closed list's "3 of 5 · 4 done" (today-closed-list D1, D6) and "Away until Friday" (away-periods D4) */ = [m.dt.formatDate(today, 'heading'), useAwayMeta(today, route.view === 'today'), closedListMeta(m.closed), tracking ? dayTotalsText(totals.planned, totals.tracked) : null].filter(Boolean).join(' · ')
   const meta = useWithMethod(methodMove, route.view === 'today' ? todayMeta : route.view === 'label' ? rows.length : route.view === 'inbox' ? inbox.meta : undefined)
   const methodSubtitle = useWithMethod(methodMove, undefined)
   const title = listTitle(route.view, currentProject?.name, currentLabel?.name, currentPlace?.name)

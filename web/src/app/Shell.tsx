@@ -1,3 +1,6 @@
+import { useFeatures } from '../lib/features'
+import { FeatureOff } from './FeatureOff'
+import { ROUTE_FEATURES } from './screens'
 import { useHabitsEnabled } from '../lib/habitPrefs'
 import { resettable } from '../lib/moduleState'
 import { useHabitForm } from './habits/habitFormStore'
@@ -286,7 +289,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const frame = useRef<HTMLElement>(null)
   // Folded to icons while a docked panel needs the room (tablet-layouts D2).
   const { sidebar, toggle: toggleSidebar } = useRoomFold(frame)
-  const go = (r: Parameters<typeof navigate>[0]) => () => navigate(r)
+  const on = useFeatures(), go = (r: Parameters<typeof navigate>[0]) => () => (on(ROUTE_FEATURES[r.view]) ? navigate(r) : false) // off in the workspace: the key does nothing (workspace-feature-switches D4)
   // Off means off (habits-home D2, daily-notes D5): `g Shift+H` and `g j` do nothing unless Habits or Daily notes is on.
   const habitsOn = useHabitsEnabled(), dailyOn = useUserPrefsRow()?.daily_notes === true
   const habitForm = useHabitForm()
@@ -298,7 +301,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     // Weekly review and Statistics (stats-and-review).
     'go.review': go({ view: 'review' }), 'go.stats': go({ view: 'stats' }), 'go.next': go({ view: 'next' }), 'go.waiting': go({ view: 'waiting' }), 'go.daily': go({ view: 'review', step: 'daily' }), 'go.loop': go({ view: 'loop' }),
     'go.focus': go({ view: 'focus' }), 'go.notes': go({ view: 'notes' }), 'go.close': go({ view: 'review', step: 'close' }),
-    'go.habits': () => (habitsOn ? navigate({ view: 'habits' }) : false), 'go.dailyNote': () => (dailyOn ? navigate({ view: 'notes', day: logicalToday() }) : false),
+    'go.habits': () => (habitsOn ? navigate({ view: 'habits' }) : false), 'go.dailyNote': () => (dailyOn && on('notes') ? navigate({ view: 'notes', day: logicalToday() }) : false),
     // `g /` (sidebar-groups): the sidebar's find field; the rail expands and the drawer opens first.
     'go.find': () => sidebarFind.request('open'),
     'global.help': () => setShowHelp((v) => !v),
@@ -353,7 +356,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${addRoom ? 'max-md:pb-(--add-room)' : ''} ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
           {/* One screen failing (a render bug, a chunk gone after an upgrade) leaves the shell usable (client-sync-robustness). */}
           <PanelBoundary resetKey={route}>
-          {route.view === 'help' ? (
+          {!on(ROUTE_FEATURES[route.view]) ? <FeatureOff id={ROUTE_FEATURES[route.view]!} /> : route.view === 'help' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading help…')}</p>}><HelpView page={route.page} q={route.q} /></Suspense>
           ) : route.view === 'settings' ? (
             <Suspense fallback={SCREEN_LOADING}><SettingsView user={user} onLogout={onLogout} section={route.section} page={route.page} anchor={route.anchor} /></Suspense>

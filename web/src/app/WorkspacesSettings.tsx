@@ -4,7 +4,8 @@
 // Members, Groups and Invites (D3). Below 768 px the list opens a workspace as
 // its own view with Back. Workspaces are server data: every control waits for a
 // connection, the lists come from the cache.
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { Badge, Button, Icon, Notice, Tabs, useMediaQuery } from '../ui'
 import { useDemo } from '../lib/demo'
 import { useEncryption } from '../lib/e2ee'
@@ -91,7 +92,10 @@ function WorkspaceListItem({ ws, current, onOpen }: { ws: Workspace; current: bo
   )
 }
 
-type TabId = 'general' | 'members' | 'groups' | 'invites'
+type TabId = 'general' | 'features' | 'members' | 'groups' | 'invites'
+
+/** The Features tab, loaded when it opens (workspace-feature-switches D5). */
+const WorkspaceFeatures = lazy(() => import('./WorkspaceFeatures'))
 
 function WorkspaceDetail({ ws, user, online, encrypted, onBack }: { ws: Workspace; user: User; online: boolean; encrypted: boolean; onBack?: () => void }) {
   const members = useWorkspaceMembers().filter((m) => m.workspaceId === ws.id)
@@ -101,11 +105,15 @@ function WorkspaceDetail({ ws, user, online, encrypted, onBack }: { ws: Workspac
   useEffect(() => { if (onBack) headingRef.current?.focus() }, []) // eslint-disable-line react-hooks/exhaustive-deps -- once per opened workspace
   const canManage = manages(ws.role) && !ws.default
   const shared = online && !encrypted
-  const tabs = ws.default ? [] : [
+  // Every workspace has General and Features; the default one has no members, groups or invites.
+  const tabs = [
     { id: 'general', label: t('General') },
-    { id: 'members', label: t('Members'), count: members.length },
-    { id: 'groups', label: t('Groups') },
-    ...(canManage ? [{ id: 'invites', label: t('Invites') }] : []),
+    { id: 'features', label: t('Features') },
+    ...(ws.default ? [] : [
+      { id: 'members', label: t('Members'), count: members.length },
+      { id: 'groups', label: t('Groups') },
+      ...(canManage ? [{ id: 'invites', label: t('Invites') }] : []),
+    ]),
   ]
   const general = <WorkspaceGeneral ws={ws} members={members} user={user} online={online} />
   return (
@@ -123,18 +131,15 @@ function WorkspaceDetail({ ws, user, online, encrypted, onBack }: { ws: Workspac
         </div>
         {ws.default && <Badge>{t('Default')}</Badge>}
       </header>
-      {ws.default
-        ? general
-        : (
-          <Tabs tabs={tabs} value={tab} onChange={(v) => setTab(v as TabId)} label={t('{name} settings', { name: ws.name })}>
-            <div className="pt-4">
-              {tab === 'general' && general}
-              {tab === 'members' && <WorkspaceMembers ws={ws} members={members} user={user} canManage={canManage} online={shared} />}
-              {tab === 'groups' && <WorkspaceGroups ws={ws} members={members} canManage={canManage} online={shared} />}
-              {tab === 'invites' && canManage && <WorkspaceInvites ws={ws} online={shared} />}
-            </div>
-          </Tabs>
-        )}
+      <Tabs tabs={tabs} value={tab} onChange={(v) => setTab(v as TabId)} label={t('{name} settings', { name: ws.name })}>
+        <div className="pt-4">
+          {tab === 'general' && general}
+          {tab === 'features' && <Suspense fallback={null}><WorkspaceFeatures ws={ws} online={online} /></Suspense>}
+          {tab === 'members' && !ws.default && <WorkspaceMembers ws={ws} members={members} user={user} canManage={canManage} online={shared} />}
+          {tab === 'groups' && !ws.default && <WorkspaceGroups ws={ws} members={members} canManage={canManage} online={shared} />}
+          {tab === 'invites' && canManage && <WorkspaceInvites ws={ws} online={shared} />}
+        </div>
+      </Tabs>
     </section>
   )
 }

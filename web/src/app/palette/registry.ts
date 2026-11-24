@@ -56,6 +56,8 @@ import type { History } from '../../lib/undoHistory'
 import { assistantStatus, openAssistantWith } from '../../lib/assistantStatus'
 import { connectedNow } from '../../lib/noteLinks'
 import { openConnections } from '../signals'
+import { COMMAND_FEATURES, type FeatureId } from '../../lib/features'
+import { ROUTE_FEATURES } from '../screens'
 
 /** What the registry needs to know about the screen the palette was opened on. */
 export interface PaletteContext {
@@ -99,6 +101,8 @@ export interface PaletteContext {
   missedBlocks?: number
   /** The undo and redo this device can do (multi-step undo/redo, #1488): the Undo/Redo commands when each is possible. */
   history?: History
+  /** The current workspace's feature switches (workspace-feature-switches D4); absent reads as every feature on. */
+  features?: (id: FeatureId | null | undefined) => boolean
 }
 
 interface Command {
@@ -217,6 +221,8 @@ function connectionsCommand(kind: 'task' | 'project' | 'note', id: string, title
 /** Every command available in this context, in registry order. */
 export function commands(ctx: PaletteContext): Command[] {
   const out: Command[] = []
+  // A feature the current workspace has off offers none of its commands (workspace-feature-switches D4).
+  const on = ctx.features ?? (() => true)
   // With tasks ticked, the task commands act on the selection (bulk-edit 6.3).
   const ticked = ctx.list?.ticked?.() ?? []
   if (ticked.length > 0 && ctx.list) {
@@ -408,7 +414,7 @@ export function commands(ctx: PaletteContext): Command[] {
     // Routines (routines-engine "Run a routine from the palette"): the open task goes along.
     { id: 'routine:run', label: t('Run routine…'), icon: 'zap', keywords: 'routine rule automation run now', run: async () => (await import('./routineCommand')).runRoutineStep(ctx.task) },
     { id: 'new:slot', label: t('New slot'), icon: 'layers', keywords: 'slot calendar batch small tasks admin errands checklist add create', run: () => act(newSlotNow()) },
-    ...ROUTES.map((r): Command => ({ id: `go:${r.route.view}${'step' in r.route && r.route.step ? `:${r.route.step}` : ''}`, label: r.label, icon: r.icon, shortcut: r.shortcut, keywords: r.keywords, run: () => navigate(r.route) })),
+    ...ROUTES.filter((r) => on(ROUTE_FEATURES[r.route.view])).map((r): Command => ({ id: `go:${r.route.view}${'step' in r.route && r.route.step ? `:${r.route.step}` : ''}`, label: r.label, icon: r.icon, shortcut: r.shortcut, keywords: r.keywords, run: () => navigate(r.route) })),
     ...(ctx.user ? visibleSections(ctx.user) : []).map((s): Command => ({ id: `go:settings:${s.id}`, label: t('Open Settings: {section}', { section: s.label }), icon: s.icon, run: () => navigate({ view: 'settings', section: s.id }) })),
     // Workspaces (workspaces D6): one switch command per other workspace and New workspace; no keys.
     ...(ctx.workspaces?.list ?? []).filter((w) => w.id !== ctx.workspaces?.current).map((w): Command => ({
@@ -460,7 +466,7 @@ export function commands(ctx: PaletteContext): Command[] {
     const q = ctx.query.trim()
     out.push({ id: 'app:help-search', label: t('Search Help for “{query}”', { query: q }), icon: 'search', run: () => navigate({ view: 'help', q }) })
   }
-  return out
+  return out.filter((c) => on(COMMAND_FEATURES[c.id]))
 }
 
 /** Commands as palette entries. */

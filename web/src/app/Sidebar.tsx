@@ -62,6 +62,8 @@ import { SidebarSchedule } from './calendar/SidebarSchedule'
 import { useResetOnChange } from '../lib/useResetOnChange'
 import { useShownSpace } from '../lib/sidebarSpace'
 import { SpaceSwitch } from './SpaceSwitch'
+import { useFeatures, type FeatureId } from '../lib/features'
+import { ROUTE_FEATURES } from './screens'
 
 /** The Notes space's groups (notes-space D1), loaded when the space is first shown. */
 const NotesSidebar = lazy(() => import('./notes/NotesSidebar'))
@@ -170,8 +172,11 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   onToggleCollapse?: () => void
 }) {
   const workspace = useCurrentWorkspace()
-  // The space follows the screen where it belongs to one, else stays as chosen (notes-space D3).
-  const space = useShownSpace(route.view)
+  // What the current workspace switched off leaves the sidebar (workspace-feature-switches D4).
+  const on = useFeatures()
+  // The space follows the screen where it belongs to one, else stays as chosen (notes-space D3); without Notes it is Tasks.
+  const shownSpace = useShownSpace(route.view)
+  const space = on('notes') ? shownSpace : 'tasks'
   const hints = useShortcutHints()
   const assistant = useAssistantStatus()
   const moreAsMenu = useMediaQuery(MORE_MENU_QUERY)
@@ -426,14 +431,14 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   const { text: reviewText, marker: reviewDot } = reviewMarker(review, method, today)
   // Each More destination once, as data: an item in the inline group, or a menu item
   // (with its badge as the item's description) in the desktop menu.
-  const moreEntries = moreEntriesOf({ shared: sharedIds.size > 0, reviewDot, reviewText, unreadBadge, unreadTotal: unread.total, ask: !!assistant?.available, habits: habitsOn })
+  const moreEntries = moreEntriesOf({ shared: sharedIds.size > 0, reviewDot, reviewText, unreadBadge, unreadTotal: unread.total, ask: !!assistant?.available, habits: habitsOn, on })
   const first = method === 'first', calendarMode = readCalendarMode()
-  const moreList = first ? firstModeMore(moreEntries, calendarMode) : moreEntries
+  const moreList = first ? firstModeMore(moreEntries, calendarMode).filter((m) => routeOn(m.route, on)) : moreEntries
   const more = moreList.map((m) => ({ ...m, node: item(m.route, m.label, m.icon, undefined, m.badge, m.tip) }))
   const primaryExtra = first ? [] : more.filter((m) => m.id !== 'ask' && promoted.includes(m.id as Promotable))
   // The phone drawer lists only what the tab bar lacks (phone-v2 D7): Calendar, or the method's destinations.
   const rest = more.filter((m) => !primaryExtra.includes(m) && !(drawer && TAB_BAR_VIEWS.has(m.route.view)))
-  const primary = orderedPrimary([...primaryDestinations(first, calendarMode, counts, reviewDot, reviewText).map((d) => ({ id: d.id, node: item(d.route, d.label, d.icon, d.count, d.badge, d.tip), view: d.route.view })),
+  const primary = orderedPrimary([...primaryDestinations(first, calendarMode, counts, reviewDot, reviewText).filter((d) => routeOn(d.route, on)).map((d) => ({ id: d.id, node: item(d.route, d.label, d.icon, d.count, d.badge, d.tip), view: d.route.view })),
     ...primaryExtra.map((m) => ({ id: m.id, node: m.node, view: m.route.view }))], first ? null : prefsRow?.sidebar_order ?? '', drawer)
 
   return (
@@ -447,7 +452,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
         {/* The header row is the workspace control (sidebar-v2 D1, workspaces D6); search beside it, in the rail's footer when collapsed. */}
         <SidebarHeader left={<WorkspaceControl route={route} />} rail={<WorkspaceMark workspace={workspace.workspace} size={24} />} railLabel={workspace.name}
           collapsed={collapsed} onSearch={onSearch} searchLabel={t('Search and commands')} searchShortcut={keysOf('global.palette')} />
-        <SpaceSwitch space={space} collapsed={collapsed} />
+        {on('notes') && <SpaceSwitch space={space} collapsed={collapsed} />}
         {space === 'notes' ? (
           <nav className="space-y-0.5" aria-label={t('Notes')} data-sidebar-primary>
             {item({ view: 'notes', graph: false }, t('All notes'), 'notebook-pen')}{prefsRow?.daily_notes === true && item({ view: 'notes', day: logicalToday() }, t('Today\'s note'), 'calendar-days') /* daily-notes D5: under All notes */}
@@ -580,7 +585,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
       </>}
       </div>
       {/* The day's schedule (sidebar-schedule, issue 536): pinned above the footer, outside the scroller; not in the rail or the phone drawer. */}
-      {!collapsed && !drawer && <SidebarSchedule />}
+      {!collapsed && !drawer && on('calendar') && <SidebarSchedule />}
       <SidebarFooter route={route} user={user} collapsed={collapsed} onSearch={onSearch} onShortcuts={onShortcuts} onFeedback={onFeedback} onAssistant={onAssistant} onToggleCollapse={onToggleCollapse} onSignOut={onSignOut} />
     </div>
   )
@@ -689,11 +694,18 @@ function UnreadBadge({ n, label }: { n: number; label: string }) {
 
 /** More as a menu (sidebar-compact-desktop): one row after the primary destinations, its badge on the row, each destination a menu item. */
 // Each More destination once, as data: an item in the inline group, or a menu item.
-type MoreEntry = { id: Promotable | 'ask' | 'review' | 'stats' | 'upcoming' | 'calendar' | 'places' | 'rules'; route: Route; label: string; icon: IconName; badge?: ReactNode; note?: string; tip?: string }
+export type MoreEntry = { id: Promotable | 'ask' | 'review' | 'stats' | 'upcoming' | 'calendar' | 'places' | 'rules'; route: Route; label: string; icon: IconName; badge?: ReactNode; note?: string; tip?: string }
 
-/** The More group's destinations, each once, as data (app-shell "Sidebar structure"). */
-function moreEntriesOf(o: { shared: boolean; reviewDot: ReactNode; reviewText: string; unreadBadge: ReactNode; unreadTotal: number; ask: boolean; habits: boolean }): MoreEntry[] {
-  return [
+/** Whether a destination's route is on in the current workspace (workspace-feature-switches D4). */
+const routeOn = (r: Route, on: (id: FeatureId | null) => boolean) => on(ROUTE_FEATURES[r.view])
+
+/**
+ * The More group's destinations, each once, as data (app-shell "Sidebar structure"),
+ * without those of features the current workspace has off (`on`, all on when absent).
+ */
+export function moreEntriesOf(o: { shared: boolean; reviewDot: ReactNode; reviewText: string; unreadBadge: ReactNode; unreadTotal: number; ask: boolean; habits: boolean; on?: (id: FeatureId | null) => boolean }): MoreEntry[] {
+  const on = o.on ?? (() => true)
+  const all: MoreEntry[] = [
     // The Open Loops views (open-loops-method D7, D9), in every mode.
     { id: 'loop', route: { view: 'loop' }, label: t('Loop home'), icon: 'rotate-ccw' },
     { id: 'next', route: { view: 'next' }, label: t('Next', { context: 'method' }), icon: 'arrow-right' },
@@ -718,6 +730,7 @@ function moreEntriesOf(o: { shared: boolean; reviewDot: ReactNode; reviewText: s
     { id: 'filter', route: { view: 'filter' }, label: t('New view'), icon: 'filter' },
     ...(o.ask ? [{ id: 'ask' as const, route: { view: 'ask' } as Route, label: t('Assistant'), icon: 'message-circle' as IconName }] : []),
   ]
+  return all.filter((m) => routeOn(m.route, on))
 }
 
 /**

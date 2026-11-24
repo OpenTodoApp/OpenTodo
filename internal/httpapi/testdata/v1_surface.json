@@ -4167,6 +4167,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -4188,6 +4189,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -4209,6 +4211,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -4236,6 +4239,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -7207,6 +7211,7 @@
         "workspaces": "array",
         "workspaces[].color": "string",
         "workspaces[].default": "boolean",
+        "workspaces[].features": "object",
         "workspaces[].groups": "array",
         "workspaces[].groups[].id": "string",
         "workspaces[].groups[].members": "array",
@@ -7230,6 +7235,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -8136,12 +8142,14 @@
       "policy": "signed-in.full-tokens",
       "request": {
         "color": "string|null?",
+        "features": "object?",
         "icon": "string|null?",
         "name": "string|null?"
       },
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -8166,6 +8174,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -8190,6 +8199,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -10926,6 +10936,7 @@
         "workspaces": "array",
         "workspaces[].color": "string",
         "workspaces[].default": "boolean",
+        "workspaces[].features": "object",
         "workspaces[].groups": "array",
         "workspaces[].groups[].id": "string",
         "workspaces[].groups[].members": "array",
@@ -11432,12 +11443,14 @@
       "policy": "signed-in.full-tokens",
       "request": {
         "color": "string|null?",
+        "features": "object?",
         "icon": "string|null?",
         "name": "string|null?"
       },
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -11501,6 +11514,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -11526,6 +11540,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -11553,6 +11568,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -12156,6 +12172,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",

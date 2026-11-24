@@ -7876,5 +7876,9 @@
   "Click a task to": "Щелчок по задаче",
   "Select, then edit the title": "Выбрать, затем изменить название",
   "Task lists": "Списки задач",
-  "Use the server default ({choice})": "Как на сервере ({choice})"
+  "Use the server default ({choice})": "Как на сервере ({choice})",
+  "Features": "Функции",
+  "Only the owner and admins can change these.": "Изменять это могут только владелец и администраторы.",
+  "Time tracking": "Учёт времени",
+  "{feature} is off in this workspace.": "{feature}: выключено в этом рабочем пространстве."
 }

@@ -36088,6 +36088,7 @@
                     {
                       "color": "",
                       "default": true,
+                      "features": {},
                       "groups": [],
                       "icon": "",
                       "id": "00000000-0000-4000-8000-000000000010",
@@ -36275,6 +36276,9 @@
                           },
                           "default": {
                             "type": "boolean"
+                          },
+                          "features": {
+                            "type": "object"
                           },
                           "groups": {
                             "items": {
@@ -42751,6 +42755,7 @@
                     {
                       "color": "#3b82f6",
                       "default": false,
+                      "features": {},
                       "groups": [
                         {
                           "id": "00000000-0000-4000-8000-000000000001",
@@ -42785,6 +42790,9 @@
                           },
                           "default": {
                             "type": "boolean"
+                          },
+                          "features": {
+                            "type": "object"
                           },
                           "groups": {
                             "items": {
@@ -42864,7 +42872,7 @@
         "x-opentodo-policy": "signed-in"
       },
       "post": {
-        "description": "`{name, icon?, color?}` → 201 workspace; 20 owned per account (409 `limit_reached`)\n\nRefuses read and agent tokens.",
+        "description": "`{name, icon?, color?, features?}` → 201 workspace; 20 owned per account (409 `limit_reached`)\n\nRefuses read and agent tokens.",
         "externalDocs": {
           "url": "https://open-todo.app/docs/api/#workspaces"
         },
@@ -42874,6 +42882,7 @@
             "application/json": {
               "example": {
                 "color": "#3b82f6",
+                "features": {},
                 "icon": "example",
                 "name": "Ada"
               },
@@ -42884,6 +42893,9 @@
                       "string",
                       "null"
                     ]
+                  },
+                  "features": {
+                    "type": "object"
                   },
                   "icon": {
                     "type": [
@@ -42911,6 +42923,7 @@
                 "example": {
                   "color": "#3b82f6",
                   "default": false,
+                  "features": {},
                   "groups": [
                     {
                       "id": "00000000-0000-4000-8000-000000000001",
@@ -42940,6 +42953,9 @@
                     },
                     "default": {
                       "type": "boolean"
+                    },
+                    "features": {
+                      "type": "object"
                     },
                     "groups": {
                       "items": {
@@ -43016,7 +43032,7 @@
     },
     "/api/v1/workspaces/{id}": {
       "delete": {
-        "description": "`PATCH {name?, icon?, color?}` (owner, admin); `DELETE` (owner) → 204, 409 `workspace_not_empty` while it has projects or other members\n\nRefuses read and agent tokens.",
+        "description": "`PATCH {name?, icon?, color?, features?}` (owner, admin); `DELETE` (owner) → 204, 409 `workspace_not_empty` while it has projects or other members\n\nRefuses read and agent tokens.",
         "externalDocs": {
           "url": "https://open-todo.app/docs/api/#workspaces"
         },
@@ -43038,6 +43054,7 @@
                 "example": {
                   "color": "#3b82f6",
                   "default": false,
+                  "features": {},
                   "groups": [
                     {
                       "id": "00000000-0000-4000-8000-000000000001",
@@ -43077,6 +43094,9 @@
                     },
                     "default": {
                       "type": "boolean"
+                    },
+                    "features": {
+                      "type": "object"
                     },
                     "groups": {
                       "items": {
@@ -43178,7 +43198,7 @@
         "x-opentodo-policy": "signed-in.full-tokens"
       },
       "get": {
-        "description": "`PATCH {name?, icon?, color?}` (owner, admin); `DELETE` (owner) → 204, 409 `workspace_not_empty` while it has projects or other members",
+        "description": "`PATCH {name?, icon?, color?, features?}` (owner, admin); `DELETE` (owner) → 204, 409 `workspace_not_empty` while it has projects or other members",
         "externalDocs": {
           "url": "https://open-todo.app/docs/api/#workspaces"
         },
@@ -43200,6 +43220,7 @@
                 "example": {
                   "color": "#3b82f6",
                   "default": false,
+                  "features": {},
                   "groups": [
                     {
                       "id": "00000000-0000-4000-8000-000000000001",
@@ -43239,6 +43260,9 @@
                     },
                     "default": {
                       "type": "boolean"
+                    },
+                    "features": {
+                      "type": "object"
                     },
                     "groups": {
                       "items": {
@@ -43340,7 +43364,7 @@
         "x-opentodo-policy": "signed-in"
       },
       "patch": {
-        "description": "`PATCH {name?, icon?, color?}` (owner, admin); `DELETE` (owner) → 204, 409 `workspace_not_empty` while it has projects or other members\n\nRefuses read and agent tokens.",
+        "description": "`PATCH {name?, icon?, color?, features?}` (owner, admin); `DELETE` (owner) → 204, 409 `workspace_not_empty` while it has projects or other members\n\nRefuses read and agent tokens.",
         "externalDocs": {
           "url": "https://open-todo.app/docs/api/#workspaces"
         },
@@ -43360,6 +43384,7 @@
             "application/json": {
               "example": {
                 "color": "#3b82f6",
+                "features": {},
                 "icon": "example",
                 "name": "Ada"
               },
@@ -43370,6 +43395,9 @@
                       "string",
                       "null"
                     ]
+                  },
+                  "features": {
+                    "type": "object"
                   },
                   "icon": {
                     "type": [
@@ -43397,6 +43425,7 @@
                 "example": {
                   "color": "#3b82f6",
                   "default": false,
+                  "features": {},
                   "groups": [
                     {
                       "id": "00000000-0000-4000-8000-000000000001",
@@ -43436,6 +43465,9 @@
                     },
                     "default": {
                       "type": "boolean"
+                    },
+                    "features": {
+                      "type": "object"
                     },
                     "groups": {
                       "items": {
@@ -43880,6 +43912,7 @@
                 "example": {
                   "color": "#3b82f6",
                   "default": false,
+                  "features": {},
                   "groups": [
                     {
                       "id": "00000000-0000-4000-8000-000000000001",
@@ -43919,6 +43952,9 @@
                     },
                     "default": {
                       "type": "boolean"
+                    },
+                    "features": {
+                      "type": "object"
                     },
                     "groups": {
                       "items": {
@@ -44071,6 +44107,7 @@
                 "example": {
                   "color": "#3b82f6",
                   "default": false,
+                  "features": {},
                   "groups": [
                     {
                       "id": "00000000-0000-4000-8000-000000000001",
@@ -44110,6 +44147,9 @@
                     },
                     "default": {
                       "type": "boolean"
+                    },
+                    "features": {
+                      "type": "object"
                     },
                     "groups": {
                       "items": {
@@ -44251,6 +44291,7 @@
                 "example": {
                   "color": "#3b82f6",
                   "default": false,
+                  "features": {},
                   "groups": [
                     {
                       "id": "00000000-0000-4000-8000-000000000001",
@@ -44290,6 +44331,9 @@
                     },
                     "default": {
                       "type": "boolean"
+                    },
+                    "features": {
+                      "type": "object"
                     },
                     "groups": {
                       "items": {
@@ -44429,6 +44473,7 @@
                 "example": {
                   "color": "#3b82f6",
                   "default": false,
+                  "features": {},
                   "groups": [
                     {
                       "id": "00000000-0000-4000-8000-000000000001",
@@ -44468,6 +44513,9 @@
                     },
                     "default": {
                       "type": "boolean"
+                    },
+                    "features": {
+                      "type": "object"
                     },
                     "groups": {
                       "items": {
@@ -44868,6 +44916,7 @@
                 "example": {
                   "color": "#3b82f6",
                   "default": false,
+                  "features": {},
                   "groups": [
                     {
                       "id": "00000000-0000-4000-8000-000000000001",
@@ -44907,6 +44956,9 @@
                     },
                     "default": {
                       "type": "boolean"
+                    },
+                    "features": {
+                      "type": "object"
                     },
                     "groups": {
                       "items": {
@@ -45206,6 +45258,7 @@
                 "example": {
                   "color": "#3b82f6",
                   "default": false,
+                  "features": {},
                   "groups": [
                     {
                       "id": "00000000-0000-4000-8000-000000000001",
@@ -45245,6 +45298,9 @@
                     },
                     "default": {
                       "type": "boolean"
+                    },
+                    "features": {
+                      "type": "object"
                     },
                     "groups": {
                       "items": {
@@ -45385,6 +45441,7 @@
                 "example": {
                   "color": "#3b82f6",
                   "default": false,
+                  "features": {},
                   "groups": [
                     {
                       "id": "00000000-0000-4000-8000-000000000001",
@@ -45424,6 +45481,9 @@
                     },
                     "default": {
                       "type": "boolean"
+                    },
+                    "features": {
+                      "type": "object"
                     },
                     "groups": {
                       "items": {
@@ -45576,6 +45636,7 @@
                 "example": {
                   "color": "#3b82f6",
                   "default": false,
+                  "features": {},
                   "groups": [
                     {
                       "id": "00000000-0000-4000-8000-000000000001",
@@ -45615,6 +45676,9 @@
                     },
                     "default": {
                       "type": "boolean"
+                    },
+                    "features": {
+                      "type": "object"
                     },
                     "groups": {
                       "items": {
@@ -45761,6 +45825,7 @@
                 "example": {
                   "color": "#3b82f6",
                   "default": false,
+                  "features": {},
                   "groups": [
                     {
                       "id": "00000000-0000-4000-8000-000000000001",
@@ -45800,6 +45865,9 @@
                     },
                     "default": {
                       "type": "boolean"
+                    },
+                    "features": {
+                      "type": "object"
                     },
                     "groups": {
                       "items": {

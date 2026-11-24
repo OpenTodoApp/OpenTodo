@@ -99,15 +99,18 @@ func (s *Service) WorkspaceLimitsInEffect() WorkspaceLimits {
 // Workspace is one of the caller's workspaces with its directory, as the sync
 // response and the REST routes show it.
 type Workspace struct {
-	ID      string            `json:"id"`
-	Name    string            `json:"name"`
-	Icon    string            `json:"icon"`
-	Color   string            `json:"color"`
-	Default bool              `json:"default"`
-	Role    string            `json:"role"`
-	OwnerID string            `json:"ownerId"`
-	Members []WorkspacePerson `json:"members"`
-	Groups  []Group           `json:"groups"`
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Icon    string `json:"icon"`
+	Color   string `json:"color"`
+	Default bool   `json:"default"`
+	Role    string `json:"role"`
+	OwnerID string `json:"ownerId"`
+	// Features maps feature ids to false where the workspace has them off; a
+	// missing key is on (workspace-feature-switches D2). Never nil.
+	Features map[string]bool   `json:"features"`
+	Members  []WorkspacePerson `json:"members"`
+	Groups   []Group           `json:"groups"`
 }
 
 // WorkspacePerson is a member of a workspace, by name only (design D8).
@@ -159,7 +162,7 @@ func (s *Service) Workspaces(ctx context.Context, userID string) ([]Workspace, e
 // workspacesAll is Workspaces without the request's reach.
 func (s *Service) workspacesAll(ctx context.Context, userID string) ([]Workspace, error) {
 	q := s.reader()
-	rows, err := q.QueryContext(ctx, `SELECT w.id, w.kind, w.owner_id, w.name, w.icon, w.color, m.role FROM workspace_members m
+	rows, err := q.QueryContext(ctx, `SELECT w.id, w.kind, w.owner_id, w.name, w.icon, w.color, w.features, m.role FROM workspace_members m
 		JOIN workspaces w ON w.id = m.workspace_id AND w.deleted_at IS NULL WHERE m.user_id = ? ORDER BY w.id`, userID)
 	if err != nil {
 		return nil, err
@@ -169,11 +172,13 @@ func (s *Service) workspacesAll(ctx context.Context, userID string) ([]Workspace
 	for rows.Next() {
 		var w Workspace
 		var kind string
-		if err := rows.Scan(&w.ID, &kind, &w.OwnerID, &w.Name, &w.Icon, &w.Color, &w.Role); err != nil {
+		var features sql.NullString
+		if err := rows.Scan(&w.ID, &kind, &w.OwnerID, &w.Name, &w.Icon, &w.Color, &features, &w.Role); err != nil {
 			rows.Close()
 			return nil, err
 		}
 		w.Default = kind == "default"
+		w.Features = parseFeatures(features)
 		w.Members, w.Groups = []WorkspacePerson{}, []Group{}
 		index[w.ID] = len(out)
 		out = append(out, w)
@@ -186,7 +191,7 @@ func (s *Service) workspacesAll(ctx context.Context, userID string) ([]Workspace
 		// An account created outside the server's account paths (tests, or
 		// before the next start's backfill) still reads its default workspace.
 		w := Workspace{ID: def, Name: store.DefaultWorkspaceName, Default: true, Role: WorkspaceOwner, OwnerID: userID,
-			Members: []WorkspacePerson{}, Groups: []Group{}}
+			Features: map[string]bool{}, Members: []WorkspacePerson{}, Groups: []Group{}}
 		out = append(out, w)
 		sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
 		for i := range out {
@@ -307,6 +312,9 @@ type WorkspaceInput struct {
 	Name  *string `json:"name"`
 	Icon  *string `json:"icon"`
 	Color *string `json:"color"`
+	// Features switches features on or off, merged key by key into the stored
+	// map (workspace-feature-switches D2); on create, the starting switches.
+	Features map[string]bool `json:"features,omitempty"`
 }
 
 var colorRe = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
@@ -328,7 +336,7 @@ func (in WorkspaceInput) check() error {
 	if in.Color != nil && *in.Color != "" && !colorRe.MatchString(*in.Color) {
 		return fmt.Errorf("%w: color must be #rrggbb or empty", ErrInvalidInput)
 	}
-	return nil
+	return checkFeatures(in.Features)
 }
 
 // CreateWorkspace creates a workspace owned by the actor.
@@ -358,6 +366,10 @@ func (s *Service) CreateWorkspace(ctx context.Context, actorID string, in Worksp
 	id := ids.New()
 	if _, err := tx.ExecContext(ctx, `INSERT INTO workspaces(id,kind,owner_id,name,icon,color,created_at) VALUES(?,'created',?,?,?,?,?)`,
 		id, actorID, strings.TrimSpace(*in.Name), deref(in.Icon), deref(in.Color), now); err != nil {
+		return Workspace{}, err
+	}
+	// A new workspace may start with some features off; without them it stores NULL, every feature on.
+	if err := mergeFeatures(ctx, tx, id, in.Features); err != nil {
 		return Workspace{}, err
 	}
 	if _, err := tx.ExecContext(ctx, `INSERT INTO workspace_members(workspace_id,user_id,role,added_by,created_at) VALUES(?,?,'owner',?,?)`, id, actorID, actorID, now); err != nil {
@@ -473,7 +485,8 @@ func workspaceRole(ctx context.Context, q querier, wsID, userID string) (string,
 
 func canManage(role string) bool { return role == WorkspaceOwner || role == WorkspaceAdmin }
 
-// UpdateWorkspace renames a workspace or changes its icon or colour (owner and admins).
+// UpdateWorkspace renames a workspace, changes its icon or colour, or switches
+// its features (owner and admins).
 func (s *Service) UpdateWorkspace(ctx context.Context, actorID, wsID string, in WorkspaceInput) (DirectoryChange, error) {
 	if err := in.check(); err != nil {
 		return DirectoryChange{}, err
@@ -494,7 +507,7 @@ func (s *Service) UpdateWorkspace(ctx context.Context, actorID, wsID string, in 
 				return DirectoryChange{}, err
 			}
 		}
-		return DirectoryChange{}, nil
+		return DirectoryChange{}, mergeFeatures(ctx, tx, ws.id, in.Features)
 	})
 }
 

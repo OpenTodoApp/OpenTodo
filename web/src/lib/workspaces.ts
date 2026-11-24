@@ -138,7 +138,7 @@ function sameRows<T extends { id: string }>(stored: readonly T[], next: readonly
 }
 
 export async function storeWorkspaces(entries: readonly WorkspaceEntry[]): Promise<string[]> {
-  const workspaces: Workspace[] = entries.map(({ id, name, icon, color, default: isDefault, role, ownerId }) => ({ id, name, icon: icon ?? '', color: color ?? '', default: !!isDefault, role, ownerId }))
+  const workspaces: Workspace[] = entries.map(({ id, name, icon, color, default: isDefault, role, ownerId, features }) => ({ id, name, icon: icon ?? '', color: color ?? '', default: !!isDefault, role, ownerId, features: features ?? {} }))
   const members: WorkspaceMember[] = entries.flatMap((w) => (w.members ?? []).map((m) => ({ id: `${w.id}\u0000${m.userId}`, workspaceId: w.id, userId: m.userId, name: m.name, role: m.role })))
   const groups: WorkspaceGroup[] = entries.flatMap((w) => (w.groups ?? []).map((g) => ({ id: g.id, workspaceId: w.id, name: g.name, members: g.members ?? [] })))
   let gone: string[] = []

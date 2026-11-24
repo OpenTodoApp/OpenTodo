@@ -111,12 +111,42 @@ describe('Settings → Workspaces', () => {
     await m.unmount()
   })
 
-  it('the default workspace shows General only', async () => {
+  it('the default workspace shows General and Features only', async () => {
     await seed([entry('w-p', { default: true, name: 'Personal' })])
     await switchTo('w-p')
     const r = await render(<WorkspacesSettings user={user} />)
     await waitFor(() => !!r.container.querySelector('[data-default-workspace-note]'))
-    expect(r.container.querySelector('[role="tablist"]')).toBeNull()
+    expect([...r.container.querySelectorAll('[role="tab"]')].map((b) => b.textContent)).toEqual(['General', 'Features'])
+    await r.unmount()
+  })
+
+  // workspace-feature-switches D5: one switch per feature, written as one key.
+  it('Features: the owner switches Habits off with one PATCH', async () => {
+    await seed([entry('w-p', { default: true, name: 'Personal' }), family({ features: { focus: false } })])
+    await switchTo('w-fam')
+    const r = await render(<WorkspacesSettings user={user} />)
+    await openTab(r.container, 'Features')
+    await waitFor(() => !!r.container.querySelector('[data-feature-switch="habits"] [role="switch"]'))
+    const sw = (id: string) => r.container.querySelector<HTMLButtonElement>(`[data-feature-switch="${id}"] [role="switch"]`)!
+    expect(r.container.querySelectorAll('[data-feature-switch]')).toHaveLength(8)
+    expect(sw('focus').getAttribute('aria-checked')).toBe('false')
+    expect(sw('habits').getAttribute('aria-checked')).toBe('true')
+    expect(r.container.querySelector('[data-features-read-only]')).toBeNull()
+    await click(sw('habits'))
+    await waitFor(() => calls.some(([m]) => m === 'PATCH'))
+    expect(calls.find(([m]) => m === 'PATCH')).toEqual(['PATCH', '/api/v1/workspaces/w-fam', { features: { habits: false } }])
+    await r.unmount()
+  })
+
+  it('Features: a member sees the switches disabled with one line', async () => {
+    await seed([entry('w-p', { default: true, name: 'Personal' }), family({ role: 'member' })])
+    await switchTo('w-fam')
+    const r = await render(<WorkspacesSettings user={user} />)
+    await openTab(r.container, 'Features')
+    await waitFor(() => !!r.container.querySelector('[data-features-read-only]'))
+    const switches = [...r.container.querySelectorAll<HTMLButtonElement>('[data-feature-switch] [role="switch"]')]
+    expect(switches).toHaveLength(8)
+    expect(switches.every((b) => b.disabled)).toBe(true)
     await r.unmount()
   })
 

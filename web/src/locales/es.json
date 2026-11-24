@@ -7876,5 +7876,9 @@
   "Click a task to": "Al hacer clic en una tarea",
   "Select, then edit the title": "Seleccionar y luego editar el título",
   "Task lists": "Listas de tareas",
-  "Use the server default ({choice})": "Usar el predeterminado del servidor ({choice})"
+  "Use the server default ({choice})": "Usar el predeterminado del servidor ({choice})",
+  "Features": "Funciones",
+  "Only the owner and admins can change these.": "Solo el propietario y los administradores pueden cambiarlas.",
+  "Time tracking": "Registro de tiempo",
+  "{feature} is off in this workspace.": "{feature} está desactivado en este espacio de trabajo."
 }

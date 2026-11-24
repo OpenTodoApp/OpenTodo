@@ -7876,5 +7876,9 @@
   "Click a task to": "Klik op een taak om",
   "Select, then edit the title": "Selecteren, dan de titel bewerken",
   "Task lists": "Takenlijsten",
-  "Use the server default ({choice})": "Serverstandaard gebruiken ({choice})"
+  "Use the server default ({choice})": "Serverstandaard gebruiken ({choice})",
+  "Features": "Functies",
+  "Only the owner and admins can change these.": "Alleen de eigenaar en beheerders kunnen dit wijzigen.",
+  "Time tracking": "Tijdregistratie",
+  "{feature} is off in this workspace.": "{feature} staat uit in deze werkruimte."
 }

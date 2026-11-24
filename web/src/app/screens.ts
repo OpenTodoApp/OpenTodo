@@ -6,6 +6,7 @@
 // a guide.
 //
 // This module has no runtime imports: the docs build loads it directly in Node.
+import type { FeatureId } from '../lib/features'
 import type { Route } from './router'
 
 /**
@@ -67,6 +68,24 @@ export const ROUTE_SCREENS: Record<Route['view'], string | null> = {
   public: null,
   share: null,
   help: null,
+}
+
+/**
+ * The workspace feature each route belongs to (workspace-feature-switches D4), or
+ * null for a route that is always on. While the current workspace has the feature
+ * off, the shell shows its off state instead, and the sidebar, the palette and the
+ * `g` keys leave the route out. TypeScript fails when a route is added without an entry.
+ */
+export const ROUTE_FEATURES: Record<Route['view'], FeatureId | null> = {
+  inbox: null, today: null, upcoming: null, someday: null, anytime: null,
+  day: 'calendar', week: 'calendar', month: 'calendar', quarter: 'calendar', plan: 'calendar', year: 'calendar',
+  completed: null, assigned: null, project: null, task: null, label: null, labels: null,
+  places: 'locations', place: 'locations', rules: 'routines',
+  projects: null, filter: null, views: null, view: null, settings: null, 'theme-editor': null, import: null, triage: null, trash: null,
+  feed: null, 'workspace-activity': null, ask: null, display: null,
+  review: 'weekly-review', stats: 'weekly-review', habits: 'habits',
+  next: null, waiting: null, loop: null, focus: 'focus', notes: 'notes',
+  invite: null, 'project-invite': null, 'workspace-invite': null, reset: null, 'confirm-email': null, forgot: null, verify: null, public: null, share: null, help: null,
 }
 
 /**

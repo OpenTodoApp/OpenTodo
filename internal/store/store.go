@@ -244,7 +244,10 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 	if err := migrateEmailAssumed(ctx, db); err != nil {
 		return err
 	}
-	return migrateNotePages(ctx, db)
+	if err := migrateNotePages(ctx, db); err != nil {
+		return err
+	}
+	return migrateWorkspaceFeatures(ctx, db)
 }
 
 type migration struct {

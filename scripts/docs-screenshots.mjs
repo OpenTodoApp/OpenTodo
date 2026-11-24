@@ -1158,6 +1158,17 @@ const shots = [
     await p.getByRole('button', { name: /^Family/ }).first().click(); await p.getByRole('tab', { name: /^Members/ }).click()
     await p.locator('#workspace-members').waitFor(); await settle(p, 600)
   } },
+  // The Features tab of a shared workspace (workspace-feature-switches D5).
+  { name: 'workspace-features', server: P, async run(p) {
+    // Family keeps its time to itself: Time tracking off, the rest on.
+    const head = { Origin: plainBase, 'Content-Type': 'application/json' }
+    const { workspaces } = await (await p.request.fetch(plainBase + '/api/v1/workspaces', { headers: head })).json()
+    const family = workspaces.find((w) => w.name === 'Family')
+    await p.request.fetch(plainBase + `/api/v1/workspaces/${family.id}`, { method: 'PATCH', headers: head, data: JSON.stringify({ features: { 'time-tracking': false } }) })
+    await go(p, plainBase, '/settings/workspaces', () => p.getByRole('heading', { name: 'Workspaces', level: 1 }).waitFor())
+    await p.getByRole('button', { name: /^Family/ }).first().click(); await p.getByRole('tab', { name: /^Features/ }).click()
+    await p.locator('[data-feature-switch="locations"]').waitFor(); await settle(p, 600)
+  } },
   // A reusable list sorting into aisles (reusable-lists): made for these two scenes and
   // deleted after the last one, so no other screenshot shows it.
   { name: 'reusable-list', server: P, async run(p, { ctx }) {

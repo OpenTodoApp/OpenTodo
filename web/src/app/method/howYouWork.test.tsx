@@ -123,3 +123,21 @@ describe('Formatting button (notes-toolbar-desktop D4)', () => {
     await r.unmount()
   })
 })
+
+// workspace-feature-switches D3: the workspace gates, the personal row hides, the preference stays.
+describe('A feature the current workspace has off', () => {
+  it('hides the Habits and Objectives rows and keeps the stored preferences', async () => {
+    const { storeWorkspaces, switchTo } = await import('../../lib/workspaces')
+    const ws = (id: string, extra = {}) => ({ id, name: id, icon: '', color: '', default: false, role: 'owner' as const, ownerId: 'u1', members: [], groups: [], ...extra })
+    await db.userPrefs.put({ id: 'me', objectives: 'on', habits: 'on' } as never)
+    await storeWorkspaces([ws('w-p', { default: true }), ws('w-fam', { features: { habits: false, 'weekly-review': false } })])
+    const r = await render(<HowYouWorkSection />)
+    await waitFor(() => !!document.querySelector('[data-objectives-switch]') && !!document.querySelector('[data-habits-switch]'))
+    await switchTo('w-fam')
+    await waitFor(() => !document.querySelector('[data-objectives-switch]') && !document.querySelector('[data-habits-switch]'))
+    expect(document.querySelector('[data-energy-levels-switch]')).not.toBeNull()
+    const prefs = await db.userPrefs.get('me')
+    expect([prefs?.objectives, prefs?.habits]).toEqual(['on', 'on'])
+    await r.unmount()
+  })
+})
