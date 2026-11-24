@@ -9,8 +9,11 @@ import { type FormEvent, useRef, useState } from 'react'
 import { createSubtask } from '../../lib/ops'
 import type { Task } from '../../lib/types'
 import { t } from '../../lib/i18n'
-import { Icon, MoveHandle, ReadAs, Switch } from '../../ui'
+import { Icon, MoveHandle, ReadAs, Switch, ToneText } from '../../ui'
 import { taskFlowOf } from '../../lib/flow'
+import { useFlowView } from '../../lib/useFlow'
+import { useLiveTasks } from '../../lib/liveTasks'
+import { useToday } from '../useViews'
 import { flowUndoable } from '../../lib/undoActions'
 import { showUndoToast } from '../bulk/toastStore'
 import { addTasksUndoable, subtaskInputs } from '../../lib/pasteTasks'
@@ -39,6 +42,9 @@ export function Subtasks({ task, items, progress, readOnly, boxed = false, add =
   const inOrder = taskFlowOf(task) === 'sequential'
   // Where subtasks are listed with their add line, in every mode: it is about what the page shows.
   const flow = add && items.length > 1 && (inOrder || !readOnly)
+  // A subtask waiting in sequence (its parent's One at a time, or a parent or project step before it)
+  // is dimmed and reads "After <step>", as in lists (project-flow).
+  const flowView = useFlowView(useLiveTasks(), useToday())
   // Two open subtasks or more can change places, where the task itself can still be worked on.
   const order = useSubtaskOrder(task, items)
   const movable = add && !readOnly && !task.completed_at && items.filter((c) => !c.completed_at).length > 1
@@ -70,7 +76,9 @@ export function Subtasks({ task, items, progress, readOnly, boxed = false, add =
         </div>
       )}
       <ul className={`empty:hidden ${boxed ? 'pb-1' : ''}`} aria-label={t('Subtasks')} {...order.listProps}>
-        {order.list.map((c, i) => (
+        {order.list.map((c, i) => {
+          const after = c.completed_at ? null : flowView.waitsFor(c.id)
+          return (
           <li key={c.id} ref={(el) => { order.rows.current[i] = el }} data-subtask-row={c.id} className={`${row}${order.dragging === c.id ? ' bg-sunken dark:bg-raised' : ''}`}>
             <button
               type="button"
@@ -85,13 +93,19 @@ export function Subtasks({ task, items, progress, readOnly, boxed = false, add =
                 {c.completed_at && <Icon name="check" size={10} />}
               </span>
             </button>
-            <button type="button" className={`min-w-0 flex-1 truncate text-left text-body ${c.completed_at ? 'text-faint line-through' : 'text-default'}`} onClick={() => onOpen?.(c.id)}>
+            <button type="button" className={`min-w-0 flex-1 truncate text-left text-body ${c.completed_at ? 'text-faint line-through' : after ? 'text-muted' : 'text-default'}`} onClick={() => onOpen?.(c.id)} data-waiting={after ? '' : undefined}>
               {c.title || <span className="italic text-faint">{t('Untitled')}</span>}
             </button>
+            {after && (
+              <ToneText icon="list-ordered" data-waits="" className="max-w-[45%] shrink" label={t('Waits for the previous step: {title}', { title: after })}>
+                {t('After {title}', { title: after })}
+              </ToneText>
+            )}
             {/* Shown with the row under a mouse, always on a touch screen (hover-reveal). */}
             {movable && !c.completed_at && <MoveHandle className="hover-reveal" data-drag-id="subtask" {...order.handle(c)} />}
           </li>
-        ))}
+          )
+        })}
       </ul>
       <span role="status" aria-live="polite" className="sr-only">{order.announce}</span>
       {!readOnly && add && <div className={boxed ? 'border-t border-soft px-2' : undefined}><AddSubtask parent={task} /></div>}
