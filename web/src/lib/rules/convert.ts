@@ -19,9 +19,11 @@ type Names = {
   projects: readonly Pick<Project, 'id' | 'name' | 'deleted_at'>[]
 }
 
-/** The one live item a term names; none for a wildcard name, which a rule cannot hold (filter-wildcards). */
-const byName = <T extends { name: string; deleted_at: number | null }>(list: readonly T[], name: string): T | undefined =>
-  wildcardParts(name) ? undefined : list.find((x) => !x.deleted_at && x.name.toLowerCase() === unescapeName(name).toLowerCase())
+/** The one live item a term names, the name as written first (as idsNamed); none for a pattern, which a rule cannot hold (filter-wildcards). */
+function byName<T extends { name: string; deleted_at: number | null }>(list: readonly T[], name: string): T | undefined {
+  const find = (want: string) => list.find((x) => !x.deleted_at && x.name.toLowerCase() === want.toLowerCase())
+  return find(name) ?? (wildcardParts(name) ? undefined : find(unescapeName(name)))
+}
 
 /** One term of an `and` as a partial condition, or null when a rule cannot use it. */
 function term(n: Node, names: Names): RuleCondition | null {

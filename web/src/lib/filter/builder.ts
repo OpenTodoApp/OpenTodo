@@ -2,16 +2,16 @@
 // formula stays the stored form (design D1): this file prints a parsed query
 // with the fewest parentheses the grammar needs (D2) and converts between the
 // parse tree and the builder's groups and conditions (D3). Pure, no React.
-import { WEEKDAYS, type DateExpr, type FieldValueExpr, type Node } from './parse'
+import { WEEKDAYS, quoteNameAlways, type DateExpr, type FieldValueExpr, type Node } from './parse'
 
 // ---- printing (D2) ----
 
 /** Characters that end a bare word (the tokenizer's BREAK). */
 const BREAK = /[\s"&|!()<>=]/
 
-/** In quotes; `name` keeps a label, project or section name's `\*` one escape (filter-wildcards). */
+/** In quotes; a label, project or section `name` keeps its escapes (filter-wildcards, quoteNameAlways). */
 function quoteAlways(s: string, name = false): string {
-  return `"${s.replace(name ? /\\(?!\*)|"/g : /["\\]/g, (c) => '\\' + c)}"`
+  return name ? quoteNameAlways(s) : `"${s.replace(/["\\]/g, (c) => '\\' + c)}"`
 }
 
 /** A bare name unless it contains a break character, is empty, or starts with `#` (which would read as `##`). */

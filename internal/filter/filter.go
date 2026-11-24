@@ -120,15 +120,15 @@ func tokenize(src []rune) ([]token, error) {
 		}
 		return string(src[start:i])
 	}
-	// readString reads a quoted text; in a name (filter-wildcards) `\*` stays
-	// escaped: a literal star, not a wildcard.
+	// readString reads a quoted text; in a name (filter-wildcards) `\*` and
+	// `\\` stay escaped, as in a bare name.
 	readString := func(name bool) (string, error) {
 		start := i
 		i++
 		var b strings.Builder
 		for i < n && src[i] != '"' {
 			if src[i] == '\\' && i+1 < n {
-				if name && src[i+1] == '*' {
+				if name && (src[i+1] == '*' || src[i+1] == '\\') {
 					b.WriteRune('\\')
 				}
 				i++

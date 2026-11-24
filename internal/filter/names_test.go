@@ -7,34 +7,49 @@ import (
 	"testing"
 )
 
-// TestWildcardVectors: testdata/wildcards.json is shared with
+// TestWildcardVectors: web/src/lib/filter/wildcards.vectors.json is shared with
 // web/src/lib/filter/names.test.ts (filter-wildcards).
 func TestWildcardVectors(t *testing.T) {
-	raw, err := os.ReadFile("testdata/wildcards.json")
+	raw, err := os.ReadFile("../../web/src/lib/filter/wildcards.vectors.json")
 	if err != nil {
 		t.Fatal(err)
 	}
-	var cases []struct {
-		Pattern, Name string
-		Match         bool
+	var v struct {
+		Matches []struct {
+			Pattern, Name string
+			Match         bool
+		}
+		// Literals: a real name as the web app writes it (Query), which must
+		// read back as that name and not as Other.
+		Literals []struct{ Name, Query, Other string }
 	}
-	if err := json.Unmarshal(raw, &cases); err != nil {
+	if err := json.Unmarshal(raw, &v); err != nil {
 		t.Fatal(err)
 	}
-	if len(cases) < 30 {
-		t.Fatalf("only %d cases", len(cases))
+	if len(v.Matches) < 40 || len(v.Literals) < 7 {
+		t.Fatalf("only %d matches and %d literals", len(v.Matches), len(v.Literals))
 	}
-	for _, c := range cases {
+	for _, c := range v.Matches {
 		got := idsNamed(map[string][]string{nameKey(c.Name): {"x"}}, c.Pattern) != nil
 		if got != c.Match {
 			t.Errorf("%q against %q: %v, want %v", c.Pattern, c.Name, got, c.Match)
 		}
 	}
+	for _, c := range v.Literals {
+		n, err := ParseQuery(c.Query)
+		if err != nil || n.Kind != KindLabel {
+			t.Fatalf("%q: %+v %v", c.Query, n, err)
+		}
+		got := idsNamed(map[string][]string{nameKey(c.Name): {"name"}, nameKey(c.Other): {"other"}}, n.Name)
+		if len(got) != 1 || got[0] != "name" {
+			t.Errorf("%q: %v, want only %q", c.Query, got, c.Name)
+		}
+	}
 }
 
-// TestWildcardTokens: a quoted name keeps `\*` escaped, other quoted text does not.
+// TestWildcardTokens: a quoted name keeps `\*` and `\\` escaped, other quoted text does not.
 func TestWildcardTokens(t *testing.T) {
-	for q, want := range map[string]string{`@"to\*do"`: `to\*do`, `@to\*do`: `to\*do`, `#"Client *"`: "Client *", `##W*`: "W*", `section: "R\*"`: `R\*`, `section: R*`: "R*"} {
+	for q, want := range map[string]string{`@"to\*do"`: `to\*do`, `@to\*do`: `to\*do`, `@"a\\*"`: `a\\*`, `@"x\"y"`: `x"y`, `#"Client *"`: "Client *", `##W*`: "W*", `section: "R\*"`: `R\*`, `section: R*`: "R*"} {
 		n, err := ParseQuery(q)
 		if err != nil {
 			t.Fatalf("%q: %v", q, err)

@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: Wildcard names
-In a label (`@`), project (`#`, `##`) or section (`section:`) term, bare or quoted, each `*` SHALL match any run of characters, none included, ignoring case as names do; the term SHALL match every live item whose name fits, resolved every time the query runs, so an item created or renamed later is included. `\*` SHALL be a literal star in a bare or a quoted name, and a picker that inserts a real name SHALL escape its stars. `##` with a pattern SHALL add the sub-projects of every project that fits. A pattern that fits no live name SHALL match no task and the device SHALL warn, as for an unknown name; the server SHALL still accept the query. Patterns SHALL be matched without building a regular expression, in time linear in the name for each piece of the pattern. Evaluation SHALL stay on the device from local data, offline included; a query is plain text, so a saved view converges like any other. The TypeScript and Go evaluators SHALL share their wildcard queries and list the same tasks for them.
+In a label (`@`), project (`#`, `##`) or section (`section:`) term, bare or quoted, each `*` SHALL match any run of characters, none included, ignoring case as names do; the term SHALL match every live item whose name fits, resolved every time the query runs, so an item created or renamed later is included. In those names, bare or quoted, `\*` SHALL be a literal star and `\\` a literal backslash, any other backslash being itself, and a picker that inserts a real name SHALL escape its backslashes and stars. A name that is exactly the name of a live item SHALL mean that item only, before any wildcard reading, so a query saved before wildcards keeps its meaning without a migration. `##` with a pattern SHALL add the sub-projects of every project that fits. A pattern that fits no live name SHALL match no task and the device SHALL warn, as for an unknown name; the server SHALL still accept the query. Patterns SHALL be matched without building a regular expression, in time linear in the name for each piece of the pattern. Evaluation SHALL stay on the device from local data, offline included; a query is plain text, so a saved view converges like any other. The TypeScript and Go evaluators SHALL share their wildcard queries and list the same tasks for them.
 
 #### Scenario: Prefix picks up a new label
 - **WHEN** labels "backlog-quick" and "backlog-delayed" exist, the user saves `@backlog*` as a view and later creates "Backlog-later"
@@ -19,7 +19,15 @@ In a label (`@`), project (`#`, `##`) or section (`section:`) term, bare or quot
 
 #### Scenario: Literal star
 - **WHEN** labels "to*do" and "to-do" exist and the user enters `@to\*do`
-- **THEN** only tasks carrying "to*do" are listed, while `@to*do` lists tasks carrying either
+- **THEN** only tasks carrying "to*do" are listed, while `@T*DO` lists tasks carrying either
+
+#### Scenario: A saved query keeps its meaning
+- **WHEN** a view saved before wildcards reads `@to*do`, and labels "to*do" and "to-do" exist
+- **THEN** the view lists only the tasks carrying "to*do", and lists those carrying "to-do" too only once no label is named "to*do"
+
+#### Scenario: A backslash before a wildcard
+- **WHEN** labels "C:\temp" and "C:temp" exist and the user enters `@C:\\*`
+- **THEN** only tasks carrying "C:\temp" are listed
 
 #### Scenario: No match
 - **WHEN** no label name starts with "x" and the user enters `@x*`
@@ -27,7 +35,7 @@ In a label (`@`), project (`#`, `##`) or section (`section:`) term, bare or quot
 
 #### Scenario: Picking a name with a star
 - **WHEN** the user ticks the label "to*do" in a calendar filter's label list
-- **THEN** the query reads `@to\*do`
+- **THEN** the query reads `@to\*do`, and a label named "a\b" is written `@a\\b`
 
 #### Scenario: Both evaluators
 - **WHEN** the shared wildcard queries are run by the Go and the TypeScript evaluators

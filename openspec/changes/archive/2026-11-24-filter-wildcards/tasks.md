@@ -4,7 +4,7 @@
 
 - [x] 1.1 Matcher in TypeScript (`web/src/lib/filter/names.ts`), the tokenizer's `\*` in quoted names and the printers (`parse.ts`, `builder.ts`), used by `evaluate.ts`. Verify: `cd web && npx vitest run src/lib/filter`.
 - [x] 1.2 Matcher in Go (`internal/filter/names.go`) and the tokenizer (`filter.go`), used by `evaluate.go`. Verify: `go test ./internal/filter`.
-- [x] 1.3 Shared vectors: wildcard queries in `web/src/lib/filter/evaluate.vectors.json`, the matcher fixture `internal/filter/testdata/wildcards.json` (escapes, no match, overlap, operator characters) and the formatted queries in `internal/filter/testdata/formatted.txt`. Verify: the same two commands.
+- [x] 1.3 Shared vectors: wildcard queries in `web/src/lib/filter/evaluate.vectors.json`, the matcher and literal-name fixture `web/src/lib/filter/wildcards.vectors.json` (escapes, backslashes, no match, overlap, operator characters; read by the Go test so the Docker web build needs nothing outside web/) and the formatted queries in `internal/filter/testdata/formatted.txt`. Verify: the same two commands.
 
 ## 2. Pickers and rules
 

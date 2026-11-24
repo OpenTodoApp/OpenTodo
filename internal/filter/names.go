@@ -3,30 +3,38 @@ package filter
 import "strings"
 
 // Wildcard names (OpenSpec change filter-wildcards): in a label, project or
-// section term, `*` matches any run of characters, none included, and `\*` is
-// a literal star. Matched without regular expressions, so a name cannot inject
-// one; web/src/lib/filter/names.ts is the same code in TypeScript.
+// section term, `*` matches any run of characters, none included; `\*` is a
+// literal star and `\\` a literal backslash (any other backslash is itself).
+// A name that is exactly a live item's name means that item, so a query saved
+// before wildcards keeps its meaning. Matched without regular expressions, so
+// a name cannot inject one; web/src/lib/filter/names.ts is the same code in
+// TypeScript.
 
-// wildcardParts returns the pieces between a name's wildcards, in lower case,
-// or nil when the name has none.
-func wildcardParts(name string) []string {
-	s := []rune(strings.TrimSpace(name))
-	parts := []string{""}
+// pieces reads a term's name as the pieces between its wildcards, escapes
+// resolved: one piece when it has none.
+func pieces(name string) []string {
+	s := []rune(name)
+	var parts []string
 	var b strings.Builder
 	for i := 0; i < len(s); i++ {
 		switch {
 		case s[i] == '*':
-			parts[len(parts)-1] = b.String()
+			parts = append(parts, b.String())
 			b.Reset()
-			parts = append(parts, "")
-		case s[i] == '\\' && i+1 < len(s) && s[i+1] == '*':
+		case s[i] == '\\' && i+1 < len(s) && (s[i+1] == '*' || s[i+1] == '\\'):
 			i++
-			b.WriteRune('*')
+			b.WriteRune(s[i])
 		default:
 			b.WriteRune(s[i])
 		}
 	}
-	parts[len(parts)-1] = b.String()
+	return append(parts, b.String())
+}
+
+// wildcardParts returns the pieces between a name's wildcards, in lower case,
+// or nil when the name has none.
+func wildcardParts(name string) []string {
+	parts := pieces(strings.TrimSpace(name))
 	if len(parts) < 2 {
 		return nil
 	}
@@ -56,10 +64,15 @@ func fitsParts(key string, parts []string) bool {
 }
 
 // idsNamed returns the ids a term's name picks from ids by name key, or nil.
+// The name exactly as written wins (`@to*do` is the label "to*do" while it
+// exists), then the pattern, then the name with its escapes resolved.
 func idsNamed(byName map[string][]string, name string) []string {
+	if ids := byName[nameKey(name)]; ids != nil {
+		return ids
+	}
 	parts := wildcardParts(name)
 	if parts == nil {
-		return byName[nameKey(strings.ReplaceAll(name, `\*`, "*"))]
+		return byName[nameKey(strings.Join(pieces(name), "*"))]
 	}
 	var ids []string
 	for key, list := range byName {

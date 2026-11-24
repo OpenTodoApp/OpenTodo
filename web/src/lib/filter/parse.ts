@@ -89,13 +89,13 @@ export function tokenize(src: string): Token[] {
   }
   const readString = (name = false): string => {
     // src[i] is the opening quote. Backslash escapes the next character (\" and \\);
-    // in a name, `\*` stays escaped: a literal star, not a wildcard (filter-wildcards).
+    // in a name, `\*` and `\\` stay escaped, as in a bare name (filter-wildcards).
     const start = i
     i++
     let s = ''
     while (i < n && src[i] !== '"') {
       if (src[i] === '\\' && i + 1 < n) {
-        if (name && src[i + 1] === '*') s += '\\'
+        if (name && (src[i + 1] === '*' || src[i + 1] === '\\')) s += '\\'
         i++
       }
       s += src[i++]
@@ -631,9 +631,13 @@ function quote(name: string): string {
   return BREAK.test(name) || name === '' ? quoteAlways(name) : name
 }
 
-/** A label, project or section name: its `\*` stays one escape (filter-wildcards). */
+/** A label, project or section name: its `\*` and `\\` stay escapes, a lone `\` is doubled (filter-wildcards). */
 function quoteName(name: string): string {
-  return BREAK.test(name) || name === '' ? `"${name.replace(/\\(?!\*)|"/g, (c) => '\\' + c)}"` : name
+  return BREAK.test(name) || name === '' ? quoteNameAlways(name) : name
+}
+
+export function quoteNameAlways(name: string): string {
+  return `"${name.replace(/\\[\\*]|\\|"/g, (m) => (m.length === 2 ? m : '\\' + m))}"`
 }
 
 function quoteAlways(s: string): string {
