@@ -122,14 +122,17 @@ All routes sit behind the calendar sync switch (404 `calendar_sync_disabled` whi
 
 ```
 PATCH /api/v1/calendar-sync/connections/{id}
-  body gains:  {"edit_events": true}            // off by default
-  view gains:  "edit_events": false, and calendars[].caps {create, update, delete}
+  body gains:  {"edit_events": true, "assistant_edits": true}   // both off by default (D12)
+  view gains:  "edit_events": false, "assistant_edits": false,
+               and calendars[].caps {create, update, delete}
 
 GET /api/v1/calendar-feeds/events?from=&to=      // request unchanged
   each event gains:  "rev": "a41c9d03e2b7f610",
                      "access": {"update": true, "delete": true}
                      // or {"update": false, "delete": false, "reason": "recurring"}
-                     // "access" is absent for ICS feed events
+                     "changedBy": {"kind": "assistant", "name": "Claude"}
+                     // only while an assistant's edit can be undone (D12)
+                     // "access" and "changedBy" are absent for ICS feed events
   managed subscriptions[] gain: "connectionId", "calendarUrl", "caps", "editEvents"
 
 PATCH /api/v1/calendar-sync/connections/{id}/events/{eventId}
@@ -142,7 +145,10 @@ PATCH /api/v1/calendar-sync/connections/{id}/events/{eventId}
   }
   200: {"event": <the event as the events route serves it: new id, rev, access>,
         "replaces": "<old id>"}
-  // all-day: start and end are dates, end exclusive; a point without "tz" is floating
+  // body: JSON of at most 4 KB (413 too_large above), unknown members refused
+  // date "YYYY-MM-DD"; time "HH:MM", 24-hour, 00:00 to 23:59; tz an IANA zone name
+  // all-day: start and end are dates without time or tz, end exclusive;
+  // a timed point without "tz" is floating
 
 DELETE /api/v1/calendar-sync/connections/{id}/events/{eventId}?rev=a41c9d03e2b7f610
   204
@@ -167,8 +173,9 @@ Errors (the standard `{error:{code,message}}` envelope):
 | 404 | `not_found` | the connection or event is not the caller's, or the event is not cached |
 | 403 | `event_edits_off` | the connection's `edit_events` is off |
 | 403 | `calendar_read_only` | the calendar's cap forbids it, or the remote answered 403 |
-| 422 | `event_not_editable` | locked; the message names the reason (`recurring`, `has_guests`, `not_organizer`, `no_etag`); for an undo, no undo is kept for the event |
-| 400 | `invalid_input` | malformed body, `start` without `end`, end not after start, unknown `tz`, empty or over-long `summary`, nothing to change (the field is named) |
+| 422 | `event_not_editable` | locked; the message names the reason (`recurring`, `has_guests`, `not_organizer`, `no_etag`) |
+| 413 | `too_large` | a PATCH body over 4 KB |
+| 400 | `invalid_input` | malformed body, unknown member, `start` without `end`, end not after start, unknown `tz`, empty or over-long `summary`, nothing to change (the field is named) |
 | 409 | `event_changed` | `rev` is not the stored one, or the remote answered 412; nothing was written |
 | 404 | `event_gone` | the remote answered 404; the cached row is dropped and devices are woken |
 | 429 | `rate_limited` | more than 600 event writes an hour per user (a `calsync.event` limiter, like `calsyncLimiter`) |
@@ -230,9 +237,9 @@ var (
 )
 ```
 
-**No redirects on writes.** Every event write (`PUT`, `PATCH`, `DELETE`) is sent once and never follows a redirect: DAV writes go through a new `DAV.DoOnce` (the body of `Do` without the redirect loop), where any 3xx answer is `&Error{Reason: ReasonRedirect}`; `Graph.do` already refuses redirects. The writer maps it to `502 calendar_unreachable` with the reason `redirect_refused`, and nothing is cached. Why: `Do` re-sends the method and body to the redirect target, so a calendar server, or something in front of it, could turn one conditional write into a write elsewhere; for an edit of someone's calendar the safe answer is to stop. Reads (`Read`, the pre-read of `Update`) keep `Do`'s same-site redirects, like the cycle. `event_dav_test.go` and `event_graph_test.go` answer each write method with 301, 302, 307 and 308 and check that one request was sent, the error is `redirect_refused` and the cached row is unchanged.
+**No redirects on writes.** Every event write (`PUT`, `PATCH`, `DELETE`) is sent once and never follows a redirect: DAV writes go through a new `DAV.DoOnce` (the body of `Do` without the redirect loop), where any 3xx answer is `&Error{Reason: ReasonRedirect}`. `DoOnce` keeps everything else of `Do`: the connection's outbound client (`d.HTTP`, built on `ob.Dialer`, which refuses private addresses unless the owner allowed them), `ob.ValidateURL` and the per-request `sameSite` check before credentials are added, so an event href on another host or a private address is refused before anything is sent; `Graph.do` already refuses redirects. The writer maps it to `502 calendar_unreachable` with the reason `redirect_refused`, and nothing is cached. Why: `Do` re-sends the method and body to the redirect target, so a calendar server, or something in front of it, could turn one conditional write into a write elsewhere; for an edit of someone's calendar the safe answer is to stop. Reads (`Read`, the pre-read of `Update`) keep `Do`'s same-site redirects, like the cycle. `event_dav_test.go` and `event_graph_test.go` answer each write method with 301, 302, 307 and 308 and check that one request was sent, the error is `redirect_refused` and the cached row is unchanged; a stored href on another host, and one on a private address, are refused with no request sent and so no credentials.
 
-**DAV** (`internal/calsync/event_dav.go`; a new `DAV.getObject` returns the body and ETag beside `DAV.get`). `Update` reads the resource, compares its ETag with `ref.ETag` (a mismatch is `ErrEventChanged` without writing), parses it with `caldav.Parse` into the component tree and locks it if the master holds `ATTENDEE`, `RRULE`, `RDATE` or `EXDATE`, an `ORGANIZER` that is not the account's, or the object holds an override. It edits **only** `SUMMARY`, `DTSTART` and `DTEND` (a `DURATION` is replaced by `DTEND`), bumps `SEQUENCE`, sets `DTSTAMP` and `LAST-MODIFIED`, adds a `VTIMEZONE` with `caldav.VTimezone` when a new `TZID` needs one, re-encodes the **whole VCALENDAR** with `Component.Encode` (unknown properties, alarms, `X-` properties and other components survive; the new `SUMMARY` is a property value, which the encoder escapes and folds, and with control characters removed first (D4) it cannot end the property line) and PUTs it with `If-Match: ref.ETag`. A server that answers 2xx without an ETag header is read once more for it. 412 gives `ErrEventChanged`, 404 `ErrEventGone`, 403 `ErrCalendarRO`. `Delete` sends `DELETE` with `If-Match`. `DAV.Do` already keeps credentials on the account's host.
+**DAV** (`internal/calsync/event_dav.go`; a new `DAV.getObject` returns the body and ETag beside `DAV.get`). `Update` reads the resource, compares its ETag with `ref.ETag` (a mismatch is `ErrEventChanged` without writing), parses it with `caldav.Parse` into the component tree and locks it if the master holds `ATTENDEE`, `RRULE`, `RDATE` or `EXDATE`, an `ORGANIZER` that is not the account's, or the object holds an override. It edits **only** `SUMMARY`, `DTSTART` and `DTEND` (a `DURATION` is replaced by `DTEND`), bumps `SEQUENCE`, sets `DTSTAMP` and `LAST-MODIFIED`, adds a `VTIMEZONE` with `caldav.VTimezone` when a new `TZID` needs one, re-encodes the **whole VCALENDAR** with `Component.Encode` (unknown properties, alarms, `X-` properties and other components survive). `caldav.Prop.Value` holds the value as it is written, already escaped (`internal/caldav/ical.go`), and `Component.Encode` only folds lines, so the writer sets `Value = caldav.EscapeText(CleanSummary(s))`: control characters are removed first (D4), then `\`, `;`, `,` and newlines are escaped, and the value cannot end the property line and PUTs it with `If-Match: ref.ETag`. A server that answers 2xx without an ETag header is read once more for it. 412 gives `ErrEventChanged`, 404 `ErrEventGone`, 403 `ErrCalendarRO`. `Delete` sends `DELETE` with `If-Match`. `DAV.Do` already keeps credentials on the account's host.
 
 **Graph** (`internal/calsync/event_graph.go`): `PATCH /me/events/{id}` (sent once, no redirect) with `If-Match: <@odata.etag>` and only the changed members of `{subject, start, end, isAllDay}` (times with helpers beside `graphTimes` in `graph_events.go`, zones through `zoned.WindowsName`, a zone without a Windows id written as the same instant in UTC, as for tasks); `DELETE` with `If-Match`; `Read` is a `GET` with `$select=id,subject,start,end,isAllDay,showAs,type,isOrganizer,attendees,location`. 412 gives `ErrEventChanged`, 404 `ErrEventGone`, 403 `ErrCalendarRO`. Throttling reuses `Graph.do`'s `Retry-After` handling.
 
@@ -240,7 +247,7 @@ var (
 
 **Side effects.** Events with guests or another organiser are locked (D2), so no write sends an invitation update or changes someone else's meeting.
 
-**A title cannot add properties.** `event_dav_test.go` sends summaries holding `\r\nATTENDEE:mailto:x@example.com`, `\nEND:VEVENT\nBEGIN:VEVENT`, a lone `\r`, U+2028 and 600 characters, and checks that each PUT body parses to the same properties and components as the object it replaced, with only `SUMMARY` and the bookkeeping properties changed, or that the request was refused with `400 invalid_input` before any write.
+**A title cannot add properties.** `event_dav_test.go` sends summaries holding `\r\nATTENDEE:mailto:x@example.com`, `\nEND:VEVENT\nBEGIN:VEVENT`, a lone `\r`, U+2028 and 600 characters, and checks that each PUT body parses to the same properties and components as the object it replaced, with only `SUMMARY` and the bookkeeping properties changed, or that the request was refused with `400 invalid_input` before any write. Round-trip vectors: summaries holding `\`, `;`, `,` and the two characters `\n` are written as `\\`, `\;`, `\,` and `\\n`, and read back with `caldav.Parse` and `caldav.UnescapeText` as exactly the text sent.
 
 ### D6. Web data layer
 

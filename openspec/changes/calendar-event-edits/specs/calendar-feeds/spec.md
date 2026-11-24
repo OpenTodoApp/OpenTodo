@@ -1,3 +1,8 @@
+## RENAMED Requirements
+
+- FROM: `### Requirement: Events are read-only and can be hidden`
+- TO: `### Requirement: Subscribed and locked events are read-only and can be hidden`
+
 ## MODIFIED Requirements
 
 ### Requirement: Events served to devices
@@ -27,7 +32,7 @@
 - **WHEN** the response holds an event of an ICS subscription
 - **THEN** it has no `rev` and no `access`
 
-### Requirement: Events are read-only and can be hidden
+### Requirement: Subscribed and locked events are read-only and can be hidden
 Event blocks, chips, rows and marks of subscribed (ICS) calendars SHALL NOT be movable, resizable, completable or drop targets. The same holds for events of connected calendars unless their `access.update` or `access.delete` is true (see `calendar-event-edits`); no event SHALL be completable, and Month and Year rows and marks SHALL stay read-only. Blocks, chips and rows SHALL be reachable with the keyboard for reading. A per-device toolbar toggle, shown in Day, Week, Plan, Month and Year while the user has a calendar, SHALL hide and show them in all of these views, kept across reloads and never synced.
 
 #### Scenario: Only the task moves
