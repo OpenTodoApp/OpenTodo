@@ -9,7 +9,7 @@ order: 80
 ---
 # Switch from Microsoft To Do
 
-Microsoft has announced that "[Microsoft To Do apps will retire on June 30, 2027](https://support.microsoft.com/en-us/planner/to-do-to-planner)", personal accounts included, and says it will provide a way to export your data before then. Once it publishes that export, we will check it and support it if we can. Until then, To Do has no export button, but Microsoft Graph, the service behind it, lets you read your own lists. A short PowerShell script saves them to one file, `todo.json`, and OpenTodo imports it with a preview first and Undo after. It takes about ten minutes.
+Microsoft To Do has no export button, but Microsoft Graph, the service behind it, lets you read your own lists. A short PowerShell script saves them to one file, `todo.json`, and OpenTodo imports it with a preview first and Undo after. It takes about ten minutes. If Microsoft publishes an export of its own, we will check it and support it if we can.
 
 ## Export from Microsoft To Do
 
