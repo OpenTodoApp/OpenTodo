@@ -35,7 +35,10 @@ type snapshot struct {
 	people   map[string]string // account id → display name
 	// members maps a shared project id onto its current members (chore-rotation).
 	members map[string]map[string]bool
-	shared  map[string]opsync.ProjectAccess
+	// memberRows keeps each shared project's members with their names and
+	// emails, for an assignee named by email or name (mcp-assignee).
+	memberRows map[string][]opsync.Member
+	shared     map[string]opsync.ProjectAccess
 	// sectionProject maps a section id onto its project id (write validation).
 	sectionProject map[string]string
 	// sectionRows are the live section rows, for the flow of their tasks (project-flow-modes).
@@ -214,7 +217,9 @@ func (r *Registry) loadWith(ctx context.Context, userID string, tasks taskReader
 		if err != nil {
 			return nil, err
 		}
+		snap.memberRows = make(map[string][]opsync.Member, len(ms))
 		for _, m := range ms {
+			snap.memberRows[m.ProjectID] = m.Members
 			snap.members[m.ProjectID] = map[string]bool{}
 			for _, mem := range m.Members {
 				snap.members[m.ProjectID][mem.UserID] = true

@@ -47,6 +47,7 @@ For context you may also read the resources `opentodo://views/today`, `opentodo:
    - `evening: true`: This Evening of its day.
    - `blocked_by`: ids of tasks it waits for.
    - `location`, `estimate_minutes`, `labels`, `priority` (1 is highest, 4 the default).
+   - `assignee`: who does it in a shared project, a member's name, email or account id, or `me`; `null` unassigns. Someone outside the project is refused.
    `create_tasks` takes these on each item; `update_tasks` changes them on existing tasks; `move_tasks` changes project or section; `complete_tasks` and `reopen_tasks` complete and reopen.
 5. **Make creates retry-safe.** Pass a `client_request_id` you derive from the request to `create_tasks`, `create_project`, `create_label` and `create_sections`. If a call times out, retry with the same value: you get the same ids back instead of duplicates.
 6. **Prefer completing to deleting.** Use `complete_tasks` for finished work. `trash_tasks` moves tasks to the Trash, where the user can restore them, and only accepts tasks created with this same token. Nothing is ever deleted permanently.

@@ -2791,6 +2791,7 @@
       "arguments": {
         "client_request_id": "string?",
         "items": "array",
+        "items[].assignee": "string|null?",
         "items[].blocked_by": "array?",
         "items[].day_part": "string|null?",
         "items[].deadline": "string|null?",
@@ -3365,6 +3366,7 @@
     "update_tasks": {
       "arguments": {
         "updates": "array",
+        "updates[].assignee": "string|null?",
         "updates[].blocked_by": "array?",
         "updates[].day_part": "string|null?",
         "updates[].deadline": "string|null?",
