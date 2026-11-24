@@ -2,8 +2,11 @@ package backup
 
 import (
 	"context"
+	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/OpenTodoApp/opentodo/internal/store"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
@@ -33,5 +36,30 @@ func TestRestoreForgetsFocusSession(t *testing.T) {
 		if n := count(t, e.dir, "SELECT COUNT(*) FROM "+table+" WHERE field = 'date_format' AND value = '\"iso\"'"); n != 1 {
 			t.Fatalf("%s lost date_format (%d rows)", table, n)
 		}
+	}
+}
+
+// TestForgetFocusSessionsErrors: a database without the sync tables has nothing
+// to forget, while any other failure is returned and stops the restore.
+func TestForgetFocusSessionsErrors(t *testing.T) {
+	db, err := store.OpenFile(filepath.Join(t.TempDir(), "bare.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err := forgetFocusSessions(db); err != nil {
+		t.Fatalf("bare database: %v", err)
+	}
+	for _, q := range []string{
+		`CREATE TABLE scope_fields (entity TEXT, field TEXT, value TEXT)`,
+		`INSERT INTO scope_fields VALUES ('user_prefs', 'focus_run', '"x"')`,
+		`CREATE TRIGGER refuse BEFORE UPDATE ON scope_fields BEGIN SELECT RAISE(ABORT, 'disk says no'); END`,
+	} {
+		if _, err := db.Exec(q); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := forgetFocusSessions(db); err == nil || !strings.Contains(err.Error(), "disk says no") {
+		t.Fatalf("err = %v, want the failure returned", err)
 	}
 }

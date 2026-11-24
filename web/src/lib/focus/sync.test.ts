@@ -4,7 +4,7 @@ import { hlcSeedOffset, serverNow } from '../hlc'
 import { applyOps, createTask, getDeviceId, mutate, resetDeviceId } from '../ops'
 import { setCurrentUserId } from '../sharing'
 import { FOCUS_DEFAULTS } from './prefs'
-import { adoptSession, breakSession, finishIfDue, pauseSession, resumeSession, startSession, stopSession } from './session'
+import { adoptSession, breakSession, finishIfDue, pauseSession, resumeSession, settlePending, startSession, stopSession } from './session'
 import { adoptRun, parseRun, readFocus, runRecord } from './state'
 import { plannedEnd, remaining } from './timer'
 import { focusPayload } from './shellPublish'
@@ -197,6 +197,42 @@ describe('one session on every device', () => {
     expect(await readFocus()).toMatchObject({ taskId: anna, rev: phone?.rev, remote: true })
     expect(await runOps()).toEqual([])
     expect(await db.timeEntries.count()).toBe(before)
+  })
+
+  it('Offline auto-start: the next phase runs on the laptop unpublished, and the next successful sync publishes it while still its own', async () => {
+    const auto = { ...FOCUS_DEFAULTS, autoStartWork: true }
+    await startSession(report, auto, at(0))
+    await finishIfDue(auto, at(25))
+    await breakSession(auto, at(25))
+    await db.outbox.clear()
+    expect(await finishIfDue(auto, at(30))).toMatchObject({ phase: 'work', startedAt: at(30), pending: true })
+    expect(await runOps()).toEqual([])
+    expect((await readFocus())?.entryId).toBeTruthy()
+    await settlePending()
+    const s = await readFocus()
+    expect(s).toMatchObject({ phase: 'work', pending: false, remote: false })
+    expect(await storedRev()).toBe(s?.rev)
+    expect(await runOps()).toHaveLength(1)
+  })
+
+  it('Offline auto-start that lost: the next sync brings a newer session, which is adopted and the phase\'s entry ended', async () => {
+    const auto = { ...FOCUS_DEFAULTS, autoStartWork: true }
+    await startSession(report, auto, at(0))
+    await finishIfDue(auto, at(25))
+    await breakSession(auto, at(25))
+    await sync('A', 'B')
+    await startSession(anna, FOCUS_DEFAULTS, at(27))
+    const phone = await readFocus()
+    await on('A')
+    await db.outbox.clear()
+    await finishIfDue(auto, at(30))
+    const stretch = (await readFocus())?.entryId
+    expect(stretch).toBeTruthy()
+    await pull('B', 'A')
+    await settlePending()
+    expect(await readFocus()).toMatchObject({ taskId: anna, rev: phone?.rev, remote: true, pending: false })
+    expect(await runOps()).toEqual([])
+    expect((await entry(stretch))?.ended_at).not.toBeNull()
   })
 
   it.each([3, -3])('Clock %i minutes off on the phone: both devices read the same time left, and its pause counts true minutes', async (minutes) => {

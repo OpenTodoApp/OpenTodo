@@ -60,6 +60,8 @@ export interface FocusState {
   rev?: string
   /** The last published change came from another device (D4): the session is shown here silently. */
   remote?: boolean
+  /** An auto-started phase kept on the device until a sync succeeds, then published if still current (D3). */
+  pending?: boolean
 }
 
 const MIN = 60_000

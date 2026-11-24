@@ -19,8 +19,9 @@ export const FOCUS_ROW = 'current'
  * `local`: a write the device derives on its own (a run's end, a pause because
  * the entry stopped elsewhere), never published (D3). `ifCurrent`: write only
  * while the stored record is still the row's own (D3, an auto-started phase).
+ * `pending`: a local write to publish after the next successful sync (D3).
  */
-export interface FocusWrite { local?: boolean; ifCurrent?: boolean }
+export interface FocusWrite { local?: boolean; ifCurrent?: boolean; pending?: boolean }
 
 /** The stored state, or null when this device never ran a session. */
 export async function readFocus(): Promise<FocusState | null> {
@@ -92,8 +93,8 @@ async function write(fn: (row: FocusState | undefined) => FocusState | null, opt
       if (stored && stored.rev !== row?.rev) return null
     }
     const out: FocusState = opts.local
-      ? { ...next, id: FOCUS_ROW, rev: row?.rev, remote: row?.remote }
-      : { ...next, id: FOCUS_ROW, rev: uuid(), remote: false }
+      ? { ...next, id: FOCUS_ROW, rev: row?.rev, remote: row?.remote, ...(opts.pending ? { pending: true } : {}) }
+      : { ...next, id: FOCUS_ROW, rev: uuid(), remote: false, pending: false }
     await db.focus.put(out)
     if (!opts.local) await mutate('user_prefs', USER_PREFS_ID, { focus_run: runRecord(out) })
     return out
@@ -141,7 +142,7 @@ export function adoptRun(): Promise<{ prev: FocusState | null; next: FocusState 
     const row = await db.focus.get(FOCUS_ROW)
     if (!r || row?.rev === r.rev) return null
     const base = row ?? idleState(r.taskId, r.mode, r.startedAt)
-    const next: FocusState = { ...base, ...r, id: FOCUS_ROW, pausedReason: null, remindedAtMs: base.startedAt === r.startedAt ? base.remindedAtMs : 0, remote: true }
+    const next: FocusState = { ...base, ...r, id: FOCUS_ROW, pausedReason: null, remindedAtMs: base.startedAt === r.startedAt ? base.remindedAtMs : 0, remote: true, pending: false }
     await db.focus.put(next)
     return { prev: row ?? null, next }
   })

@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -422,12 +423,8 @@ func stampRestored(path, marker string) (string, error) {
 		pendingRestoreKey, marker, time.Now().UnixMilli()); err != nil {
 		return "", err
 	}
-	// A Focus session from the past never comes back (sync-focus-sessions D6):
-	// the stored value and its ops become the default "", which no client
-	// adopts, so the person's devices keep the session they run now. A bare
-	// database without the sync tables has nothing to forget.
-	for _, table := range []string{"scope_fields", "ops"} {
-		_, _ = db.Exec(`UPDATE ` + table + ` SET value = '""' WHERE entity = 'user_prefs' AND field = 'focus_run'`)
+	if err := forgetFocusSessions(db); err != nil {
+		return "", err
 	}
 	// Runs that were in progress when the snapshot was taken did not finish in
 	// this timeline.
@@ -625,4 +622,20 @@ func writeFileAtomic(path string, data []byte) error {
 		return err
 	}
 	return os.Rename(tmp.Name(), path)
+}
+
+// forgetFocusSessions makes a restored database forget the Focus sessions that
+// ran when it was backed up (sync-focus-sessions D6): the stored value and its
+// ops become the default "", which no client adopts, so the person's devices
+// keep the session they run now. A database without the sync tables (or an
+// older shape of them) has nothing to forget; any other failure stops the
+// restore.
+func forgetFocusSessions(db *sql.DB) error {
+	for _, table := range []string{"scope_fields", "ops"} {
+		_, err := db.Exec(`UPDATE ` + table + ` SET value = '""' WHERE entity = 'user_prefs' AND field = 'focus_run'`)
+		if err != nil && !strings.Contains(err.Error(), "no such table") && !strings.Contains(err.Error(), "no such column") {
+			return fmt.Errorf("forget focus sessions in %s: %w", table, err)
+		}
+	}
+	return nil
 }

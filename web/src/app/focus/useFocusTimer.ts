@@ -17,7 +17,8 @@ import { swRegistration } from '../../lib/push'
 import { has } from '../../lib/shell'
 import { useFocusPrefs, useNoiseVolume, type FocusAlert, type FocusPrefs } from '../../lib/focus/prefs'
 import { nextFocusTask } from '../../lib/focus/select'
-import { adoptSession, completeSession, finishIfDue, noteEntryStopped } from '../../lib/focus/session'
+import { adoptSession, completeSession, finishIfDue, noteEntryStopped, settlePending } from '../../lib/focus/session'
+import { useSyncStatus } from '../../lib/sync'
 import { useEntryRunning } from '../../lib/focus/live'
 import { useFocusState } from '../../lib/focus/state'
 import { serverNow } from '../../lib/hlc'
@@ -168,6 +169,11 @@ export function useFocusTimer(): { state: FocusState | null | undefined; prefs: 
   useEffect(() => {
     if (run) void adoptSession()
   }, [run])
+  // An auto-started phase kept offline is published after the next successful sync (D3).
+  const synced = useSyncStatus().lastSyncedAt
+  useEffect(() => {
+    if (synced) void settlePending()
+  }, [synced])
   const due = isDue(state, now)
   useEffect(() => {
     if (due) void finishIfDue(prefs, now)

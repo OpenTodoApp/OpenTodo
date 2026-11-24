@@ -12,7 +12,7 @@ import { reportEntryFailure } from './failures'
 import type { FocusPrefs } from './prefs'
 import { adoptRun, isCurrent, readFocus, transitionFocus, writeFocus, type FocusWrite } from './state'
 import { serverNow } from '../hlc'
-import { syncNow, syncStarted } from '../sync'
+import { syncNow, syncSnapshot, syncStarted } from '../sync'
 import { complete, continuousWork, finish, idleState, inRun, isDue, isRunning, pause, plannedEnd, resume, start, stopWork, takeBreak, type FocusState } from './timer'
 import type { EntryFocus } from '../timeEntries'
 
@@ -40,6 +40,8 @@ export function entryFocus(s: FocusState): EntryFocus {
 /** Starts the entry of a running work stretch and records its id on the row; an entry the row no longer wants is stopped again. Returns whether it was kept. */
 async function attachEntry(s: FocusState, at: number, opts?: FocusWrite): Promise<boolean> {
   if (s.phase !== 'work' || s.resumedAt === null) return false
+  // A run another device replaced gets no entry at all, not one stopped at once.
+  if (opts?.ifCurrent && !(await isCurrent())) return false
   let id: string | null = null
   try {
     const focus = entryFocus(s)
@@ -59,8 +61,19 @@ async function attachEntry(s: FocusState, at: number, opts?: FocusWrite): Promis
 
 /** When the entry of the row being replaced by `next` ended: the pause, the end of its run, or the start of the new run (D5). */
 function replacedAt(prev: FocusState, next: FocusState): number {
-  if (next.startedAt === prev.startedAt) return (prev.resumedAt ?? next.startedAt) + next.accumulatedMs - prev.accumulatedMs
-  return next.ended?.runStartedAt === prev.startedAt ? next.ended.at : next.startedAt
+  const at = next.startedAt === prev.startedAt ? (prev.resumedAt ?? next.startedAt) + next.accumulatedMs - prev.accumulatedMs
+    : next.ended?.runStartedAt === prev.startedAt ? next.ended.at : next.startedAt
+  // A stretch started after the other device's change (offline on both) ran here until now.
+  return at < (prev.resumedAt ?? at) ? serverNow() : at
+}
+
+/** Pulls now when sync runs; whether an exchange completed (D3). */
+async function pulled(): Promise<boolean> {
+  if (!syncStarted()) return false
+  const before = syncSnapshot().lastSyncedAt
+  await syncNow().catch(() => undefined)
+  const after = syncSnapshot().lastSyncedAt
+  return after !== null && after !== before
 }
 
 /**
@@ -130,9 +143,22 @@ export async function finishIfDue(prefs: FocusPrefs, now = serverNow()): Promise
   if (!isDue(row, now)) return null
   const next = await step((r) => (isDue(r, now) ? finish(r, prefs) : null), (_, n) => n.ended?.at ?? now, { local: true })
   if (next?.phase !== 'work' || next.remote) return next
-  if (syncStarted()) await syncNow().catch(() => undefined)
-  if ((await isCurrent()) && (await attachEntry(next, next.startedAt, { ifCurrent: true }))) return readFocus()
+  // Without a pull the phase stays on the device, pending, until a sync succeeds (settlePending).
+  const opts: FocusWrite = (await pulled()) ? { ifCurrent: true } : { ifCurrent: true, local: true, pending: true }
+  if (await attachEntry(next, next.startedAt, opts)) return readFocus()
   return (await adoptSession()) ?? readFocus()
+}
+
+/**
+ * After a successful sync: an auto-started phase kept on the device is published
+ * while the stored record is still its own; otherwise the newer session is
+ * adopted and the phase's entry ended (D3, D5).
+ */
+export async function settlePending(): Promise<void> {
+  const row = await readFocus()
+  if (!row?.pending) return
+  if (await transitionFocus(row.startedAt, (r) => (r.pending ? { ...r } : null), { ifCurrent: true })) return
+  await adoptSession()
 }
 
 /** Flowtime's Done (and a work session ended by hand): the done state with the time worked. */

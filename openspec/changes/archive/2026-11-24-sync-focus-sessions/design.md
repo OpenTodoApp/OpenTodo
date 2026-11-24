@@ -40,7 +40,7 @@ Published: start, pause, resume, stop (Flowtime's Done), break, extend, complete
 
 The local-only transitions are functions of synced data (the record, the preferences, the entry, the task), so every device computes them on its own. Publishing them would be ticking writes and could undo a newer change: a laptop waking from sleep would otherwise write the end of an old run over the session the phone started while it slept.
 
-When a run ends on its own, every device that notices stops its entry at the planned end (the same value, idempotent). Starting the next phase on its own ("Start the next session automatically") attaches a new entry only on the owning device (D4), so two devices never start two entries for one stretch. Recording that entry is published, so the owner first pulls (when sync runs) and then writes only while the stored record is still the run's own, checked in the write's transaction; otherwise it starts no entry (or stops the one it started) and adopts the newer session. A laptop that slept through a break therefore never writes over a session started elsewhere meanwhile.
+When a run ends on its own, every device that notices stops its entry at the planned end (the same value, idempotent). Starting the next phase on its own ("Start the next session automatically") attaches a new entry only on the owning device (D4), so two devices never start two entries for one stretch. Recording that entry is published, so the owner first pulls and checks, before starting the entry and again in the write's transaction, that the stored record is still the run's own; otherwise it starts no entry and adopts the newer session. When the pull did not succeed (offline) the phase and its entry stay on the device, marked pending, and the next successful sync publishes them only if the record is still the run's own, else adopts the newer session and ends the phase's entry. A laptop that slept through a break therefore never writes over a session started elsewhere meanwhile.
 
 ### D4. The device that made the last change owns the session
 
@@ -64,7 +64,6 @@ Every Focus clock and action time is `serverNow()` (`web/src/lib/hlc.ts`): the l
 
 - The server now knows that a session is paused and how much time was left (focus-mode said nothing leaves the device). It is the user's own server, the value holds no content, and the issue asks for exactly this sync. The time entry already told the server about running work.
 - A change made on a device whose clock runs far ahead wins over later changes elsewhere, as for every other op (the hybrid logical clock limits it to the skew the server accepts). The session's own times use server time (D7), so the time left reads the same everywhere.
-- An owner that wakes offline after a break and auto-starts work publishes it when it reconnects; if a newer session was started elsewhere, last-writer-wins keeps the later write, as for any offline edit.
 - If the owning device is closed, the other devices show the end silently. Pausing and resuming on the device at hand moves the sound there.
 
 ## Data model impact
