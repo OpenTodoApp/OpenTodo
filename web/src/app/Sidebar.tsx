@@ -153,9 +153,11 @@ function useViewCounts(views: View[], today: string, labels: Label[], projects: 
   return useMemo(() => evaluateViews(views, { today, labels, projects, tasks: counted, sections, fields, ...tracked, ...directory, ...ws }, 0), [views, today, labels, projects, counted, sections, fields, tracked, directory, ws])
 }
 
-export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssistant, onSignOut, collapsed = false, onToggleCollapse }: {
+export function Sidebar({ route, user, onSearch, onAddTask, onShortcuts, onFeedback, onAssistant, onSignOut, collapsed = false, onToggleCollapse }: {
   route: Route
   user: User
+  /** Add task (add-task-button D1): what `q` does here. */
+  onAddTask?: () => void
   /** Opens the search and command palette (the footer's Search item). */
   onSearch?: () => void
   /** Opens the keyboard cheat sheet (`?`). */
@@ -448,6 +450,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
         <SidebarHeader left={<WorkspaceControl route={route} />} rail={<WorkspaceMark workspace={workspace.workspace} size={24} />} railLabel={workspace.name}
           collapsed={collapsed} onSearch={onSearch} searchLabel={t('Search and commands')} searchShortcut={keysOf('global.palette')} />
         <SpaceSwitch space={space} collapsed={collapsed} />
+        {/* Add task (add-task-button D1): above the destinations in the Tasks space; the phone drawer leaves it to the add button. */}
+        {space === 'tasks' && !drawer && onAddTask && <AddTaskItem collapsed={collapsed} hint={hints} onClick={onAddTask} />}
         {space === 'notes' ? (
           <nav className="space-y-0.5" aria-label={t('Notes')} data-sidebar-primary>
             {item({ view: 'notes', graph: false }, t('All notes'), 'notebook-pen')}{prefsRow?.daily_notes === true && item({ view: 'notes', day: logicalToday() }, t('Today\'s note'), 'calendar-days') /* daily-notes D5: under All notes */}
@@ -787,6 +791,21 @@ function primaryDestinations(first: boolean, calendarMode: Route['view'], counts
         { id: 'review', route: { view: 'review' }, label: t('Review'), icon: 'clipboard-check', badge: reviewDot, tip: reviewText },
       ]
     : [inbox, today, { id: 'upcoming', route: { view: 'upcoming' }, label: t('Upcoming'), icon: 'calendar-days' }, { id: 'calendar', route: { view: calendarMode } as Route, label: t('Calendar'), icon: 'calendar-range' }]
+}
+
+/** The sidebar's Add task (add-task-button D1): the phone add button's accent mark, the row's quiet tone and the `q` key. The label is a node, so the item does not add a second tooltip in the rail. */
+function AddTaskItem({ collapsed, hint, onClick }: { collapsed: boolean; hint: boolean; onClick: () => void }) {
+  const key = keysOf('list.quick-add')
+  const label = t('Add task')
+  const mark = <span className="flex size-[1.125rem] items-center justify-center rounded-full bg-accent text-on-accent"><Icon name="plus" size={12} /></span>
+  return (
+    <div className="mb-0.5" data-add-task>
+      <Tooltip label={label} shortcut={key} side="right">
+        <SidebarItem leading={mark} label={<>{label}</>} collapsed={collapsed} onClick={onClick} aria-keyshortcuts={key}
+          badge={hint ? <kbd className="ui-kbd" data-kbd-hint>{key}</kbd> : undefined} data-add-task-button />
+      </Tooltip>
+    </div>
+  )
 }
 
 function MoreMenu({ entries, active, collapsed, hints, extra }: {

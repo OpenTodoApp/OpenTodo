@@ -9,7 +9,7 @@ order: 10
 ---
 # Quick add syntax
 
-Type one line in the quick-add box (press `q` in any task view) and OpenTodo picks out the due date and time, project, labels, priority and estimate:
+Type one line in the quick-add box (press `q` in any task view, or click **Add task** at the top of the sidebar) and OpenTodo picks out the due date and time, project, labels, priority and estimate:
 
 ```
 Meeting with Sarah next Wed at 3pm #work @call p1 +30m
@@ -21,7 +21,7 @@ Everything runs in your browser. The parser needs no network, sends nothing anyw
 
 ## Preview chips
 
-As you type, each thing OpenTodo recognises shows up as a chip under the input and is tinted in the line itself (underlined in high contrast), and the title preview (`→ Meeting with Sarah`) shows what will be saved. Nothing is hidden: if there is no chip, the text stays in the title. The same line works in the list, the phone's add sheet and the [command bar](#in-the-command-bar)'s Add mode, and gives the same task everywhere. The command bar lists what it understood as one row per field, with the token that sets each one; the phone's sheet shows plain chips, a date button that opens a small calendar, and buttons (priority, label, estimate, project) that start a token for you. To pick a day rather than type it, open the calendar: the calendar button beside a list's add field, the **When** row in the command bar, or the date button on the phone. The picked day goes into the line as words (`tomorrow 17:00`, `Fri 28 Nov`), replacing any date already there, so it works exactly like a typed one.
+As you type, each thing OpenTodo recognises shows up as a chip under the input and is tinted in the line itself (underlined in high contrast), and the title preview (`→ Meeting with Sarah`) shows what will be saved. Nothing is hidden: if there is no chip, the text stays in the title. The same line works in the list, the phone's add sheet and the [command bar](#in-the-command-bar)'s Add mode, and gives the same task everywhere. The command bar lists what it understood as one row per field, with the token that sets each one; the phone's sheet shows plain chips, a date button that opens a small calendar, and buttons (priority, label, estimate, project) that start a token for you. Beside a list's add field, the priority, project and label buttons do the same: each starts its token and lists the choices, and a field the line already sets has its words selected. To pick a day rather than type it, open the calendar: the calendar button beside a list's add field, the **When** row in the command bar, or the date button on the phone. The picked day goes into the line as words (`tomorrow 17:00`, `Fri 28 Nov`), replacing any date already there, so it works exactly like a typed one.
 
 | To… | Do this |
 | --- | --- |
@@ -168,7 +168,7 @@ Accents are optional (`manana`, `nachsten`, `fevrier` work too). Two-letter Germ
 
 ## Views and defaults
 
-Quick add still takes the view's context for anything the line does not set: today in Today, tomorrow in Upcoming, the current project in a project view, the current label in a label view. Anything the line does set wins, so `Plan trip next Monday #travel` typed in Today goes to *Travel* on Monday. Labels add up instead: `@call` typed in the *errand* label view gives the task both labels, so it stays in the view you added it from. A task added in **Someday** is parked, unless the line sets a date (`Read Proust tomorrow` is due tomorrow instead).
+Quick add, and **Add task** in the sidebar, which opens it, still takes the view's context for anything the line does not set: today in Today, tomorrow in Upcoming, the current project in a project view, the current label in a label view. Anything the line does set wins, so `Plan trip next Monday #travel` typed in Today goes to *Travel* on Monday. Labels add up instead: `@call` typed in the *errand* label view gives the task both labels, so it stays in the view you added it from. A task added in **Someday** is parked, unless the line sets a date (`Read Proust tomorrow` is due tomorrow instead).
 
 ## Where new tasks go
 
