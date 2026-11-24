@@ -7867,5 +7867,6 @@
   "{name} completed a task": "{name} concluiu uma tarefa",
   "{name} reopened a task": "{name} reabriu uma tarefa",
   "Completed or reopened": "Concluída ou reaberta",
-  "Unread changes": "Alterações não lidas"
+  "Unread changes": "Alterações não lidas",
+  "{name} will be attached": "{name} será anexado"
 }

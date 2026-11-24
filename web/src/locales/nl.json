@@ -7867,5 +7867,6 @@
   "{name} completed a task": "{name} heeft een taak voltooid",
   "{name} reopened a task": "{name} heeft een taak opnieuw geopend",
   "Completed or reopened": "Voltooid of opnieuw geopend",
-  "Unread changes": "Ongelezen wijzigingen"
+  "Unread changes": "Ongelezen wijzigingen",
+  "{name} will be attached": "{name} wordt bijgevoegd"
 }

@@ -7867,5 +7867,6 @@
   "{name} completed a task": "{name} bir görevi tamamladı",
   "{name} reopened a task": "{name} bir görevi yeniden açtı",
   "Completed or reopened": "Tamamlandı veya yeniden açıldı",
-  "Unread changes": "Okunmamış değişiklikler"
+  "Unread changes": "Okunmamış değişiklikler",
+  "{name} will be attached": "{name} eklenecek"
 }

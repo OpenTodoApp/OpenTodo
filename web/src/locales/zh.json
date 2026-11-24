@@ -7867,5 +7867,6 @@
   "{name} completed a task": "{name} 完成了一项任务",
   "{name} reopened a task": "{name} 重新打开了一项任务",
   "Completed or reopened": "已完成或重新打开",
-  "Unread changes": "未读更改"
+  "Unread changes": "未读更改",
+  "{name} will be attached": "将附加 {name}"
 }

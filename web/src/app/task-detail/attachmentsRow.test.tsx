@@ -12,7 +12,8 @@ import { click, flush, key, render, spokenText, visibleText, waitFor } from '../
 import { hideBulkToast } from '../bulk/toastStore'
 import { TaskRow } from '../TaskRow'
 import { requestAttach } from './attachRequest'
-import { AttachMenu, AttachmentsRow, CommentAttachments, pastedName, typeLabel } from './AttachmentsRow'
+import { AttachMenu, AttachmentsRow, CommentAttachments, typeLabel } from './AttachmentsRow'
+import { pastedName } from '../../lib/pastedFiles'
 
 let n = 0
 let task = ''
