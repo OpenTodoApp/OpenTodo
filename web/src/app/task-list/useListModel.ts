@@ -17,8 +17,9 @@ import { useListDisplay } from './useListDisplay'
 import { orderRank } from '../../lib/viewOrder'
 import { useAccountRowLayout } from '../../lib/rowLayout'
 import { useUserPrefsRow } from '../../lib/localData'
-import { upcomingStartsWithToday } from '../../lib/userPrefs'
+import { othersTasksShown, upcomingStartsWithToday } from '../../lib/userPrefs'
 import { dayPartsOn } from '../../lib/dayParts'
+import { assignedToSomeoneElse } from '../../lib/dayLists'
 import { useClosedList, useWaitingNow } from './useClosedList'
 import { NO_TASKS, taskIndexOf, useLiveTasks } from '../../lib/liveTasks'
 import { Derived } from '../../lib/taskDelta'
@@ -155,15 +156,17 @@ export function useListModel(route: ListRoute, userId?: string) {
   // Upcoming's Start with Today (upcoming-start-with-today D1): the account's synced choice.
   const accountPrefs = useUserPrefsRow()
   const upcomingToday = route.view === 'upcoming' && upcomingStartsWithToday(accountPrefs)
+  // Show tasks assigned to others (others-tasks-toggle D2): the personal lists list them too.
+  const othersShown = othersTasksShown(accountPrefs)
   // A view's tasks follow the rows a write changed (incremental-list-updates D2); a zone change re-groups zoned dues (absolute-datetimes).
-  const viewOf = useRef(new Derived<Task[], [string, string, readonly Project[], string, string, string | undefined, boolean]>(
-    (tasks, _view, _id, projects, today, _zone, userId, upcomingToday) => tasksForView(routeRef.current, tasks, projects, today, userId, upcomingToday),
-    (prev, changes, tasks, _view, _id, projects, today, _zone, userId, upcomingToday) => patchViewTasks(prev, changes, routeRef.current, projects, today,
-      { parentOf: (id) => taskIndexOf(tasks).get(id), hasChildren: (id) => liveProgress(tasks).has(id) }, userId, upcomingToday),
+  const viewOf = useRef(new Derived<Task[], [string, string, readonly Project[], string, string, string | undefined, boolean, boolean]>(
+    (tasks, _view, _id, projects, today, _zone, userId, upcomingToday, othersShown) => tasksForView(routeRef.current, tasks, projects, today, userId, upcomingToday, othersShown),
+    (prev, changes, tasks, _view, _id, projects, today, _zone, userId, upcomingToday, othersShown) => patchViewTasks(prev, changes, routeRef.current, projects, today,
+      { parentOf: (id) => taskIndexOf(tasks).get(id), hasChildren: (id) => liveProgress(tasks).has(id) }, userId, upcomingToday, othersShown),
   )).current
   const routeRef = useRef(route)
   routeRef.current = route
-  const viewTasks = viewOf.get(allTasks, route.view, 'id' in route ? route.id : '', projects, today, zone, userId, upcomingToday)
+  const viewTasks = viewOf.get(allTasks, route.view, 'id' in route ? route.id : '', projects, today, zone, userId, upcomingToday, othersShown)
   // The last day Upcoming lists, before its filters, so calendar events stay when a filter hides the tasks.
   // viewTasks already recomputes when the zone changes, so this follows it.
   const upcomingThrough = useMemo(() => {
@@ -239,8 +242,8 @@ export function useListModel(route: ListRoute, userId?: string) {
   const todayDisplay = useStableDisplay(upcomingToday ? displayOf({ kind: 'today' }) : undefined)
   const todayContextFilter = useMemo(() => {
     const byDuration = duration && filterKey ? durationPredicate(duration) : null
-    return { me: userId ?? null, matches: (task: Task) => (!todayHabits || !task.habit) && (!byDuration || byDuration(task)) }
-  }, [userId, todayHabits, duration, filterKey])
+    return { me: othersShown ? null : userId ?? null, matches: (task: Task) => (!todayHabits || !task.habit) && (!byDuration || byDuration(task)) }
+  }, [userId, othersShown, todayHabits, duration, filterKey])
   // Nest subtasks (D5): the rows are a tree, with the collapse toggle and Left and Right.
   const nested = (route.view === 'today' || route.view === 'upcoming') && !!(display?.subtasks || todayDisplay?.subtasks)
   // The header's display button and the switch to manual order; a project's board and timeline have their own layout.
@@ -257,8 +260,10 @@ export function useListModel(route: ListRoute, userId?: string) {
   // Today grouped by part of the day (day-parts D3): the account's synced choice.
   const dayParts = dayPartsOn(accountPrefs)
   // Today's closed list (today-closed-list): slots from the whole of Today, before the duration filter;
-  // Upcoming's Start with Today fills them from the same Today tasks (upcoming-start-with-today D3).
-  const todayTasks = useMemo(() => (upcomingToday ? viewTasks.filter((x) => inToday(x, today)) : viewTasks), [upcomingToday, viewTasks, today])
+  // Upcoming's Start with Today fills them from the same Today tasks (upcoming-start-with-today D3);
+  // a task assigned to someone else never takes a slot (others-tasks-toggle D2).
+  const todayTasks = useMemo(() => (upcomingToday || othersShown
+    ? viewTasks.filter((x) => (!upcomingToday || inToday(x, today)) && !assignedToSomeoneElse(x, userId)) : viewTasks), [upcomingToday, othersShown, viewTasks, today, userId])
   const closed = useClosedList(route.view === 'today' || upcomingToday, todayTasks, allTasks, today, flow, blocked)
   // The waiting tasks' times are read against the minute (today-waiting-time-passed D3).
   const waitingNow = useWaitingNow(closed.fill.waiting.length > 0)

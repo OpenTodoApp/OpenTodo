@@ -173,9 +173,11 @@ export function flatRow(task: Task, breadcrumb: string | null = null): ListRow {
  * The tasks a list view holds, in its order (archived projects stay out of cross-project views).
  * `upcomingToday`: Upcoming starts with Today's tasks (upcoming-start-with-today D2).
  * `userId` is the viewer: Today, Upcoming, Someday and Anytime leave out tasks assigned to
- * someone else (personal-views-assignee), and Assigned to me lists theirs.
+ * someone else (personal-views-assignee) unless `othersShown` (others-tasks-toggle D2), and
+ * Assigned to me lists theirs.
  */
-export function tasksForView(scope: ListScope, allTasks: readonly Task[], projects: readonly Project[], today: string, userId?: string, upcomingToday = false): Task[] {
+export function tasksForView(scope: ListScope, allTasks: readonly Task[], projects: readonly Project[], today: string, userId?: string, upcomingToday = false, othersShown = false): Task[] {
+  const me = othersShown ? undefined : userId
   // Tasks of archived projects stay out of the cross-project views (lib/dayLists, shared with the display).
   const all = withoutArchived(allTasks as Task[], projects as Project[], scope.view === 'project' ? scope.id : undefined)
   switch (scope.view) {
@@ -183,14 +185,14 @@ export function tasksForView(scope: ListScope, allTasks: readonly Task[], projec
       // Not placed, and no placed parent (lib/inbox, inbox-means-unplaced).
       return inboxTasks(all, allTasks)
     case 'today':
-      return todayList(all, today, userId)
+      return todayList(all, today, me)
     case 'upcoming':
-      return upcomingToday ? upcomingWithToday(all, today, userId) : upcomingList(all, today, userId)
+      return upcomingToday ? upcomingWithToday(all, today, me) : upcomingList(all, today, me)
     // Someday and Anytime (someday-and-evening D5), grouped by project in listGroups.
     case 'someday':
-      return all.filter((task) => !task.completed_at && isSomeday(task) && !assignedToSomeoneElse(task, userId)).sort(compareByPosition)
+      return all.filter((task) => !task.completed_at && isSomeday(task) && !assignedToSomeoneElse(task, me)).sort(compareByPosition)
     case 'anytime':
-      return all.filter((task) => inAnytime(task, today) && !assignedToSomeoneElse(task, userId)).sort(compareByPosition)
+      return all.filter((task) => inAnytime(task, today) && !assignedToSomeoneElse(task, me)).sort(compareByPosition)
     case 'completed':
       // The logbook pages through every completion (completed-date-filters D4);
       // a habit's skipped occurrence record is not a completion (habits D6).
@@ -222,7 +224,8 @@ export interface ViewPatchContext {
  * placement or parent changed while it has subtasks): worked out in full.
  */
 export function patchViewTasks(prev: Task[], changes: readonly TaskChange[], scope: ListScope, projects: readonly Project[], today: string, ctx: ViewPatchContext,
-  userId?: string, upcomingToday = false): Task[] | null {
+  userId?: string, upcomingToday = false, othersShown = false): Task[] | null {
+  const me = othersShown ? undefined : userId
   const hidden = new Set(projects.filter((p) => p.archived).map((p) => p.id))
   const keepProject = scope.view === 'project' ? scope.id : undefined
   // withoutArchived's rule, a task at a time. inbox-rule-ok: tasks of archived projects, not the Inbox.
@@ -239,13 +242,13 @@ export function patchViewTasks(prev: Task[], changes: readonly TaskChange[], sco
       return linked(prev, patchSorted(prev, changes, (task) => shown(task) && isInboxTask(task, ctx.parentOf)))
     }
     case 'today':
-      return patchOrdered(prev, changes, (task) => shown(task) && inToday(task, today) && !assignedToSomeoneElse(task, userId), compareDueThenPriority)
+      return patchOrdered(prev, changes, (task) => shown(task) && inToday(task, today) && !assignedToSomeoneElse(task, me), compareDueThenPriority)
     case 'upcoming':
-      return upcomingToday ? null : patchOrdered(prev, changes, (task) => shown(task) && inUpcoming(task, today) && !assignedToSomeoneElse(task, userId), compareDueThenPriority)
+      return upcomingToday ? null : patchOrdered(prev, changes, (task) => shown(task) && inUpcoming(task, today) && !assignedToSomeoneElse(task, me), compareDueThenPriority)
     case 'someday':
-      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && isSomeday(task) && !assignedToSomeoneElse(task, userId), compareByPosition)
+      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && isSomeday(task) && !assignedToSomeoneElse(task, me), compareByPosition)
     case 'anytime':
-      return patchOrdered(prev, changes, (task) => shown(task) && inAnytime(task, today) && !assignedToSomeoneElse(task, userId), compareByPosition)
+      return patchOrdered(prev, changes, (task) => shown(task) && inAnytime(task, today) && !assignedToSomeoneElse(task, me), compareByPosition)
     case 'completed':
       return patchOrdered(prev, changes, (task) => shown(task) && !!task.completed_at && !task.skipped, byDone)
     case 'project':

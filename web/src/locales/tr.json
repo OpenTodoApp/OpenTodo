@@ -325,6 +325,7 @@
   "Add a subtask": "Alt görev ekle",
   "Make top-level for today": "Bugün için üst düzey görev yap",
   "Move under task…": "Bir görevin altına taşı…",
+  "Show tasks assigned to others": "Başkalarına atanan görevleri göster",
   "Subtask shown for context": "Bağlam için gösterilen alt görev",
   "Add a subtask to the selected task": "Seçili göreve alt görev ekle",
   "Add a subtask to this task": "Bu göreve alt görev ekle",
