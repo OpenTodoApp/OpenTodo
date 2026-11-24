@@ -165,7 +165,7 @@ const ROUTES: RouteCommand[] = translatedList<RouteCommand, 'label'>([
  */
 export const COMMAND_FEATURES: Readonly<Record<string, FeatureId>> = {
   'go:daily-note': 'notes',
-  'new:frame': 'calendar', 'new:slot': 'calendar', 'replan:day': 'calendar', 'task:take-slot': 'calendar', 'task:give-back-slot': 'calendar',
+  'new:frame': 'calendar', 'new:slot': 'calendar', 'replan:day': 'calendar',
   'go:habits': 'habits', 'habit:new': 'habits',
   'task:focus': 'focus',
   'routine:run': 'routines', 'routine:describe': 'routines', 'routine:describe-setup': 'routines', 'note:run-routine': 'routines',

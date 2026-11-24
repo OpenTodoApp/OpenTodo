@@ -94,7 +94,7 @@ describe('featureOn', () => {
 describe('nothing of a feature that is off stays visible', () => {
   const more = (on: ReturnType<typeof allBut>) => moreEntriesOf({ shared: true, reviewDot: null, reviewText: '', unreadBadge: null, unreadTotal: 0, ask: true, habits: true, on })
   const seenOn = new Set(more(allBut(null)).map((m) => ROUTE_FEATURES[m.route.view]))
-  // Today with a limit: the selected task's slot command (gated with Calendar, like New slot).
+  // Today with a limit: the selected task's slot command, a Today slot that no feature gates.
   const withSlot = (features: PaletteContext['features']) => ({ ...ctx(features), slot: 'waiting' as const })
 
   for (const f of FEATURES) {
@@ -106,10 +106,14 @@ describe('nothing of a feature that is off stays visible', () => {
     })
   }
 
+  it('keeps Today\'s slot commands with Calendar off: they are the Today limit, not calendar slots', () => {
+    expect(commands(withSlot(allBut('calendar'))).map((c) => c.id)).toContain('task:take-slot')
+  })
+
   it('offers the gated destinations and commands while everything is on', () => {
     for (const f of ['habits', 'focus', 'routines', 'reviews', 'locations'] as const) expect(seenOn.has(f)).toBe(true)
     const ids = commands(withSlot(allBut(null))).map((c) => c.id)
-    for (const id of ['go:notes', 'go:daily-note', 'go:day', 'new:frame', 'go:habits', 'task:focus', 'go:rules', 'routine:run', 'go:review', 'go:stats', 'go:places', 'task:location', 'replan:day', 'note:run-routine', 'task:take-slot']) {
+    for (const id of ['go:notes', 'go:daily-note', 'go:day', 'new:frame', 'go:habits', 'task:focus', 'go:rules', 'routine:run', 'go:review', 'go:stats', 'go:places', 'task:location', 'replan:day', 'note:run-routine']) {
       expect(ids).toContain(id)
     }
   })
