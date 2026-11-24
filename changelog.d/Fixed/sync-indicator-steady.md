@@ -1,0 +1,1 @@
+- **The sync indicator stays steady.** A routine sync with nothing waiting no longer flashes "Syncing…" beside the dot; the dot pulses instead, and the words stay in its tooltip.
