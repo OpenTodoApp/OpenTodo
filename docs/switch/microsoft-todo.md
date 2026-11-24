@@ -55,13 +55,13 @@ No PowerShell? In [Graph Explorer](https://developer.microsoft.com/graph/graph-e
 - Titles, notes (as plain text) and steps, as subtasks.
 - Important tasks become p1; categories become labels.
 - Due and start dates as To Do shows them, reminders at their moment, completed tasks with their time.
-- Repeats every few days, on weekdays, on a day of the month or once a year.
+- Repeats every few days, on weekdays, on a day of the month, on a weekday such as the second Thursday, or once a year, with their end date or number of times.
 - Linked resources (such as the email a task came from) become link attachments.
 
 The full mapping is in [Import formats](../import.md#microsoft-to-do-microsoft-todo-json).
 
 ## What does not
 
-- Repeats like "the second Thursday of the month", and repeat end dates, are dropped with a warning.
+- Repeats on two or more weekdays of the month are dropped with a warning.
 - File attachments are not in the file; they are dropped with a warning.
 - Shared lists come as your own projects; [share them again](../sharing.md).

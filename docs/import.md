@@ -267,17 +267,17 @@ Microsoft To Do has no export. The [Microsoft To Do guide](switch/microsoft-todo
 
 | Microsoft To Do | Becomes |
 | --- | --- |
-| list | a project (`Tasks`, the default list, goes to your Inbox or the target project; flagged emails go to a project "Flagged emails") |
-| `title`, `body` | the title and the description (HTML becomes plain text) |
+| list | a project (`Tasks`, the default list, goes to your Inbox or the target project; flagged emails go to a project "Flagged emails"); a shared list (`isShared`) becomes your own project, with a note in the preview |
+| `title`, `body` | the title and the description (HTML becomes plain text: the head, styles, scripts and comments go, list items become `- ` lines) |
 | `importance` high | p1 |
 | `categories` | labels |
-| `status` completed, `completedDateTime` | completed, at that time |
-| `checklistItems` | subtasks; checked items are completed |
-| `dueDateTime`, `startDateTime` | the due date and start date as shown in To Do (To Do has no due times) |
+| `status` completed, `completedDateTime` | completed, at that time; `notStarted`, `inProgress`, `waitingOnOthers` and `deferred` are open tasks, any other status an open task with a warning |
+| `checklistItems` | subtasks with their creation time; checked items are completed at `checkedDateTime` |
+| `dueDateTime`, `startDateTime` | the due date and start date, without a time (To Do has none). Graph usually returns the day's local midnight converted to UTC (15 April at UTC+2 is `2023-04-14T22:00` UTC), so the value is converted into the import's time zone and rounded to the nearest midnight; a midnight in a named zone other than UTC is that day as it is |
 | `reminderDateTime` with `isReminderOn` | a reminder at that moment; Windows time zone names are converted, an unknown one drops the reminder with a warning |
-| `recurrence` daily, weekly, monthly on a day, yearly | a recurrence rule; an end date or count, and "the second Thursday" patterns, are dropped with a warning |
-| `linkedResources` | link attachments (a single link also becomes the origin's link) |
-| file attachments | dropped with a warning (not in the file) |
+| `recurrence` | a rule with the same dates: daily, weekly on days, monthly on a day or on the first to fourth or last weekday ("every 2nd thursday", "every last weekday"), yearly on a date or on the nth weekday of a month, each with its interval where the rule has one, and the range's end date (`until`) or count (`for N times`). Other patterns, such as two weekdays of the month, are dropped with a warning; a completed task keeps no rule |
+| `linkedResources` | link attachments (a single link also becomes the origin's link); one without `webUrl` is dropped with a warning |
+| file attachments (`hasAttachments`) | dropped with a warning: the guide's script does not download them |
 | `id` | the task's origin, `{kind: "import", provider: "microsoft-todo", id: <id>}` |
 
 ### Apple Reminders (`apple-reminders-json`)

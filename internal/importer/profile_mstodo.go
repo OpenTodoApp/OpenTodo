@@ -7,6 +7,7 @@ import (
 	"html"
 	"io"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -103,6 +104,32 @@ func graphTime(v any) (time.Time, bool, error) {
 	return time.Time{}, true, fmt.Errorf("date-time %q not understood", s)
 }
 
+// graphDay reads a due or start dateTimeTimeZone as a floating date. To Do
+// stores the local midnight of the chosen day and Graph returns it converted,
+// usually to UTC: 15 April at UTC+2 comes back as 2023-04-14T22:00 UTC. A
+// midnight in a named zone other than UTC is that local day as it is. Anything
+// else is converted to the import's zone and, since it is a midnight somewhere,
+// rounded to the nearest midnight there: exact when the import's zone is the
+// account's, and right for any zone within 12 hours of it. A zone the server
+// does not know falls back to the written date.
+func graphDay(d obj, loc *time.Location) (string, bool) {
+	t, ok, err := graphTime(map[string]any(d))
+	if err != nil || !ok {
+		if s := d.str("dateTime"); len(s) >= 10 && validDate(s[:10]) {
+			return s[:10], true
+		}
+		return "", false
+	}
+	if t.Location() != time.UTC && t.Hour() == 0 && t.Minute() == 0 && t.Second() == 0 {
+		return t.Format("2006-01-02"), true
+	}
+	t = t.In(loc)
+	if t.Hour() >= 12 {
+		t = t.AddDate(0, 0, 1)
+	}
+	return t.Format("2006-01-02"), true
+}
+
 func graphZone(zone string) (*time.Location, error) {
 	if zone == "" || strings.EqualFold(zone, "UTC") || strings.EqualFold(zone, "tzone://Microsoft/Utc") {
 		return time.UTC, nil
@@ -119,14 +146,30 @@ func graphZone(zone string) (*time.Location, error) {
 }
 
 var (
-	htmlBreak = regexp.MustCompile(`(?i)<\s*(br|/p|/div|/li)\s*/?>`)
+	htmlComment = regexp.MustCompile(`(?s)<!--.*?(?:-->|$)`)
+	htmlHidden  = []*regexp.Regexp{
+		regexp.MustCompile(`(?is)<\s*head\b.*?(?:<\s*/\s*head\s*>|$)`),
+		regexp.MustCompile(`(?is)<\s*style\b.*?(?:<\s*/\s*style\s*>|$)`),
+		regexp.MustCompile(`(?is)<\s*script\b.*?(?:<\s*/\s*script\s*>|$)`),
+		regexp.MustCompile(`(?is)<\s*template\b.*?(?:<\s*/\s*template\s*>|$)`),
+	}
+	htmlItem  = regexp.MustCompile(`(?i)<\s*li\b[^>]*>`)
+	htmlBreak = regexp.MustCompile(`(?i)<\s*(br|/p|/div|/ul|/ol|/h[1-6]|/tr)\s*/?>`)
 	htmlTag   = regexp.MustCompile(`<[^>]*>`)
 	blankRuns = regexp.MustCompile(`\n{3,}`)
 )
 
-// htmlToText turns an HTML body into plain text: breaks become new lines, tags
-// go, entities are decoded.
+// htmlToText turns an HTML body (Outlook writes a whole document, with a head
+// and a style block) into plain text: comments and the head, style, script and
+// template elements go with their content, list items become "- " lines,
+// breaks become new lines, every other tag goes and entities are decoded last.
+// The result is only ever stored and shown as text, never as HTML.
 func htmlToText(s string) string {
+	s = htmlComment.ReplaceAllString(s, "")
+	for _, re := range htmlHidden {
+		s = re.ReplaceAllString(s, "")
+	}
+	s = htmlItem.ReplaceAllString(s, "\n- ")
 	s = htmlBreak.ReplaceAllString(s, "\n")
 	s = htmlTag.ReplaceAllString(s, "")
 	s = html.UnescapeString(s)
@@ -171,6 +214,9 @@ func (msTodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 			}
 			out.Rows = append(out.Rows, prow)
 		}
+		if lo.boolean("isShared") {
+			out.Notes = append(out.Notes, fmt.Sprintf("the list %q is shared in To Do; it is imported as your own project, which you can share again", firstNonEmpty(name, "Tasks")))
+		}
 		for ti, t := range asList(lo["tasks"]) {
 			n++
 			o := asObj(t)
@@ -203,6 +249,9 @@ func (msTodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 				if at, err := parseTimestamp(co.str("checkedDateTime"), loc); err == nil && sub.Completed {
 					sub.CompletedAt = at
 				}
+				if at, err := parseTimestamp(co.str("createdDateTime"), loc); err == nil {
+					sub.CreatedAt = at
+				}
 				out.Rows = append(out.Rows, sub)
 			}
 			if len(out.Rows) > MaxRows {
@@ -230,28 +279,32 @@ func msTodoTask(row *Row, o obj, loc *time.Location) {
 	default:
 		row.warn("importance %q not recognised; imported as p4", o.str("importance"))
 	}
-	if strings.EqualFold(o.str("status"), "completed") {
+	// To Do shows two states; Outlook's other task statuses (inProgress,
+	// waitingOnOthers, deferred) are open tasks too.
+	switch status := o.str("status"); strings.ToLower(status) {
+	case "completed":
 		row.Completed = true
 		if t, ok, err := graphTime(o["completedDateTime"]); ok && err == nil {
 			row.CompletedAt = t.UnixMilli()
 		}
+	case "", "notstarted", "inprogress", "waitingonothers", "deferred":
+	default:
+		row.warn("status %q not recognised; imported as an open task", status)
 	}
 	if at, err := parseTimestamp(o.str("createdDateTime"), loc); err == nil {
 		row.CreatedAt = at
 	}
 	row.Labels = dedupeNames(o.names("categories"))
-	// Graph writes due and start dates as midnight in the zone it names: the date
-	// part is the day, whatever the import's zone.
 	if d := asObj(o["dueDateTime"]); d != nil {
-		if s := d.str("dateTime"); len(s) >= 10 && validDate(s[:10]) {
-			row.Due = &Due{Date: s[:10]}
+		if day, ok := graphDay(d, loc); ok {
+			row.Due = &Due{Date: day}
 		} else {
-			row.warn("due date %q not understood; imported without a due date", s)
+			row.warn("due date %q not understood; imported without a due date", d.str("dateTime"))
 		}
 	}
 	if d := asObj(o["startDateTime"]); d != nil {
-		if s := d.str("dateTime"); len(s) >= 10 && validDate(s[:10]) {
-			row.Start = s[:10]
+		if day, ok := graphDay(d, loc); ok {
+			row.Start = day
 		}
 	}
 	if o.boolean("isReminderOn") {
@@ -263,24 +316,34 @@ func msTodoTask(row *Row, o obj, loc *time.Location) {
 			row.Reminders = append(row.Reminders, Reminder{Absolute: true, At: t.UnixMilli()})
 		}
 	}
-	if rec := asObj(o["recurrence"]); rec != nil {
-		rule, err := msTodoRecurrence(asObj(rec["pattern"]))
-		if err != nil {
-			row.warn("recurrence %s not supported; imported without a rule", err)
-		} else {
-			row.Recurrence = rule
+	// A completed task is a past occurrence: To Do moved the repeat to the open
+	// task it created when this one was completed.
+	if rec := asObj(o["recurrence"]); rec != nil && !row.Completed {
+		due := ""
+		if row.Due != nil {
+			due = row.Due.Date
 		}
-		if rng := asObj(rec["range"]); rng != nil {
-			switch rng.str("type") {
-			case "endDate", "numbered":
-				row.warn("recurrence end dropped (rules repeat without an end)")
+		rule, endDropped, err := msTodoRecurrence(asObj(rec["pattern"]), asObj(rec["range"]), due)
+		switch {
+		case err != nil:
+			row.warn("recurrence %s not supported; imported without a rule", err)
+		default:
+			row.Recurrence = rule
+			if endDropped {
+				row.warn("recurrence end dropped (the rule cannot say it)")
 			}
 		}
 	}
 	links := asList(o["linkedResources"])
 	for _, lr := range links {
 		lo := asObj(lr)
-		if lo == nil || lo.str("webUrl") == "" {
+		if lo == nil {
+			continue
+		}
+		if lo.str("webUrl") == "" {
+			// webUrl is optional: a resource known only by its app's externalId
+			// has no address to open.
+			row.warn("linked resource %q dropped (it has no web address)", firstNonEmpty(lo.str("displayName"), firstNonEmpty(lo.str("applicationName"), lo.str("externalId"))))
 			continue
 		}
 		row.addLink(firstNonEmpty(lo.str("displayName"), lo.str("applicationName")), lo.str("webUrl"))
@@ -297,57 +360,131 @@ func msTodoTask(row *Row, o obj, loc *time.Location) {
 	}
 }
 
-// msTodoRecurrence maps a Graph recurrencePattern onto the rule grammar where it
-// can say the same thing: daily, weekly (on days), monthly on a day, yearly.
-func msTodoRecurrence(p obj) (string, error) {
+// msTodoRecurrence maps a Graph patternedRecurrence onto the rule grammar by
+// way of the iCalendar rule it stands for, so the grammar's own RRULE reader
+// decides what it can say exactly: daily, weekly (on days), monthly on a day or
+// on the nth weekday, yearly on a date or on the nth weekday of a month, each
+// with its interval where the grammar has one, and the range's end date or
+// count. due anchors patterns that only restate the due date. endDropped
+// reports a rule kept without the range's end, which it could not say.
+func msTodoRecurrence(p, rng obj, due string) (rule string, endDropped bool, err error) {
+	unsupported := func() (string, bool, error) {
+		b, _ := json.Marshal(p)
+		return "", false, fmt.Errorf("%s", b)
+	}
 	if p == nil {
-		return "", fmt.Errorf("(no pattern)")
+		return "", false, fmt.Errorf("(no pattern)")
 	}
-	interval := 1
-	if s := p.str("interval"); s != "" {
-		if n, err := strconv.Atoi(s); err == nil && n > 0 {
-			interval = n
+	var parts []string
+	if n, err := strconv.Atoi(p.str("interval")); err == nil && n > 1 {
+		parts = append(parts, "INTERVAL="+strconv.Itoa(n))
+	}
+	var days []string
+	for _, d := range p.names("daysOfWeek") {
+		code, ok := graphDays[strings.ToLower(d)]
+		if !ok {
+			return unsupported()
 		}
+		days = append(days, code)
 	}
-	every := func(unit string) string {
-		if interval == 1 {
-			return "every " + unit
+	index, ok := graphIndex[strings.ToLower(p.str("index"))]
+	if !ok {
+		index = "1" // Graph's default, "first"
+	}
+	month, _ := strconv.Atoi(p.str("month"))
+	dayOfMonth, _ := strconv.Atoi(p.str("dayOfMonth"))
+	// A relative pattern names one weekday (BYDAY=2TH), or Monday to Friday
+	// for the nth weekday of the month (BYDAY=MO,…,FR;BYSETPOS=2).
+	relative := func() (string, bool) {
+		switch {
+		case len(days) == 1:
+			return "BYDAY=" + index + days[0], true
+		case isWorkweek(days):
+			return "BYDAY=" + strings.Join(days, ",") + ";BYSETPOS=" + index, true
 		}
-		return fmt.Sprintf("every %d %ss", interval, unit)
+		return "", false
 	}
-	var text string
 	switch strings.ToLower(p.str("type")) {
 	case "daily":
-		text = every("day")
+		parts = append(parts, "FREQ=DAILY")
 	case "weekly":
-		days := p.names("daysOfWeek")
-		switch {
-		case interval == 1 && len(days) > 0:
-			text = "every " + strings.ToLower(strings.Join(days, ", "))
-		case len(days) <= 1:
-			text = every("week")
+		parts = append(parts, "FREQ=WEEKLY")
+		if len(days) > 0 {
+			// Graph counts the weeks of an interval from firstDayOfWeek, the
+			// grammar from Monday: with Sunday among several days they differ.
+			wkst := strings.ToLower(p.str("firstDayOfWeek"))
+			if len(parts) > 1 && len(days) > 1 && wkst != "" && wkst != "monday" && slices.Contains(days, "SU") {
+				return unsupported()
+			}
+			parts = append(parts, "BYDAY="+strings.Join(days, ","))
 		}
 	case "absolutemonthly":
-		day, _ := strconv.Atoi(p.str("dayOfMonth"))
-		switch {
-		case interval == 1 && day >= 1 && day <= 31:
-			text = fmt.Sprintf("every %d%s", day, ordinal(day))
-		default:
-			text = every("month")
+		if dayOfMonth < 1 || dayOfMonth > 31 {
+			return unsupported()
 		}
+		parts = append(parts, "FREQ=MONTHLY", "BYMONTHDAY="+strconv.Itoa(dayOfMonth))
+	case "relativemonthly":
+		by, ok := relative()
+		if !ok {
+			return unsupported()
+		}
+		parts = append(parts, "FREQ=MONTHLY", by)
 	case "absoluteyearly":
-		text = every("year")
+		if month < 1 || month > 12 || dayOfMonth < 1 || dayOfMonth > 31 {
+			return unsupported()
+		}
+		parts = append(parts, "FREQ=YEARLY", "BYMONTH="+strconv.Itoa(month), "BYMONTHDAY="+strconv.Itoa(dayOfMonth))
+	case "relativeyearly":
+		by, ok := relative()
+		if !ok || month < 1 || month > 12 {
+			return unsupported()
+		}
+		parts = append(parts, "FREQ=YEARLY", "BYMONTH="+strconv.Itoa(month), by)
+	default:
+		return unsupported()
 	}
-	if text == "" {
-		b, _ := json.Marshal(p)
-		return "", fmt.Errorf("%s", b)
+	end := ""
+	if rng != nil {
+		switch strings.ToLower(rng.str("type")) {
+		case "enddate":
+			if d := rng.str("endDate"); validDate(d) {
+				end = ";UNTIL=" + strings.ReplaceAll(d, "-", "")
+			}
+		case "numbered":
+			if n, err := strconv.Atoi(rng.str("numberOfOccurrences")); err == nil && n > 0 {
+				end = ";COUNT=" + strconv.Itoa(n)
+			}
+		}
 	}
-	rule, err := recurrence.Canonicalize(text)
-	if err != nil {
-		b, _ := json.Marshal(p)
-		return "", fmt.Errorf("%s", b)
+	base := strings.Join(parts, ";")
+	if end != "" {
+		if r, ok := recurrence.FromRRULE(base+end, due); ok {
+			return r.Canonical(), false, nil
+		}
 	}
-	return rule, nil
+	r, ok := recurrence.FromRRULE(base, due)
+	if !ok {
+		return unsupported()
+	}
+	return r.Canonical(), end != "", nil
+}
+
+var graphDays = map[string]string{"monday": "MO", "tuesday": "TU", "wednesday": "WE", "thursday": "TH",
+	"friday": "FR", "saturday": "SA", "sunday": "SU"}
+
+var graphIndex = map[string]string{"first": "1", "second": "2", "third": "3", "fourth": "4", "last": "-1"}
+
+// isWorkweek reports whether days are Monday to Friday, each once.
+func isWorkweek(days []string) bool {
+	if len(days) != 5 {
+		return false
+	}
+	for _, d := range []string{"MO", "TU", "WE", "TH", "FR"} {
+		if !slices.Contains(days, d) {
+			return false
+		}
+	}
+	return true
 }
 
 func ordinal(n int) string {
