@@ -10,26 +10,12 @@ import { formatInstant } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { InviteCard as Card, LinkStateCard } from './LinkCard'
 import { roleName } from '../lib/roleNames'
-import { readString, removeItem, writeString } from '../lib/deviceStorage'
+import { rememberPendingInvite, takePendingInvite } from './pendingInvite'
 
 // Screen behind /invite/p/<token> (OpenSpec `project-invite-links`): previews a
 // project invite link, lets a signed-in person join, and offers a visitor
 // sign-in (then join) or, when the link allows it, a new account that joins in
 // the same step. The preview is never cached; offline, the screen waits.
-
-/** sessionStorage key holding a link whose visitor went to sign in (the provider round trip leaves the page). */
-export const PENDING_PROJECT_INVITE = 'opentodo.pendingProjectInvite'
-
-export function rememberPendingInvite(token: string) {
-  writeString(PENDING_PROJECT_INVITE, token, 'session') // storage blocked: sign-in still works, the link must be opened again
-}
-
-/** Reads and clears a remembered link. */
-export function takePendingInvite(): string | null {
-  const item = readString(PENDING_PROJECT_INVITE, 'session')
-  if (item) removeItem(PENDING_PROJECT_INVITE, 'session')
-  return item
-}
 
 export type ProjectInviteState =
   | { kind: 'loading' }

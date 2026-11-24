@@ -10,7 +10,7 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
 import { currentKey, UNDECRYPTABLE } from '../lib/e2ee'
 import { decryptValue } from '../lib/crypto'
-import { InvitationAnswer, InvitationText } from './MemberInvitations'
+import { InvitationAnswer, InvitationText } from './InvitationAnswer'
 
 /**
  * A routine's Notify me. A routine that ran on a device of an encrypted account

@@ -1,5 +1,5 @@
-import { Suspense, useCallback, useEffect, useState } from 'react'
-import { lazy } from '../lib/lazy'
+import { type ReactNode, Suspense, useCallback, useEffect, useState } from 'react'
+import { lazy, preloadable } from '../lib/lazy'
 import { Skeleton } from '../ui'
 import { AppearanceProvider } from './AppearanceProvider'
 import { DateTimePrefsProvider } from './DateTimePrefsProvider'
@@ -11,17 +11,13 @@ import { api, onEnrolmentRequired } from '../lib/api'
 import { consumeRestored, RESTORED_NOTICE } from '../lib/restore'
 import { requestPersistentStorage } from '../lib/db'
 import { adoptProfile, loadEncryptionState, useEncryption } from '../lib/e2ee'
-import { RecordMissingScreen, UnlockScreen } from './UnlockScreen'
 import { setCurrentUserId } from '../lib/sharing'
 import { onSignOutElsewhere, setSyncAccount, startSync, stopSync, useSyncStatus } from '../lib/sync'
 import { startRelay } from '../lib/relay'
 import { RelayConfirm } from './RelayConfirm'
-import { AppBadgeSync } from './AppBadge'
+import { AppBadgeSync } from './AppBadgeSync'
 import type { AuthStatus, User } from '../lib/types'
-import { AuthScreen } from './AuthScreen'
-import { InviteScreen } from './InviteScreen'
-import { ProjectInviteScreen, takePendingInvite } from './ProjectInviteScreen'
-import { WorkspaceInviteScreen } from './WorkspaceInviteScreen'
+import { takePendingInvite } from './pendingInvite'
 import { ResetScreen } from './ResetScreen'
 import { setOutgoingEmail } from '../lib/outgoingEmail'
 import { setServerRowClick } from '../lib/rowClickPref'
@@ -29,7 +25,7 @@ import { ACCOUNT_CHANGED_EVENT } from './accountChanged'
 import { ReauthHost } from './ReauthDialog'
 import { ENROLMENT_EVENT } from './SyncStatus'
 import { cacheMfa } from './mfaCache'
-import { navigate, useRoute } from './router'
+import { navigate, type Route, useRoute } from './router'
 import { Shell } from './Shell'
 import { PhoneFrameSkeleton } from './phoneFrame'
 import { DEMO_LIMIT_NOTICE, expireSandboxIfGone, sandboxErrorMessage, setDemo, startSandbox, useDemo } from '../lib/demo'
@@ -37,6 +33,7 @@ import { setHosted } from '../lib/hosted'
 import { setBranding } from '../lib/branding'
 import { rememberServerVersion } from '../lib/serverVersion'
 import { PanelBoundary } from './PanelBoundary'
+import { RecordMissingScreen, UnlockScreen } from './UnlockScreen'
 import { UpdateBanner } from './UpdateBanner'
 import { DemoBanner } from './DemoBanner'
 import { useOauthAuthorizeReturn } from './oauthReturn'
@@ -56,6 +53,11 @@ const ForgotScreen = lazy(() => import('./EmailScreens').then((m) => ({ default:
 const VerifyScreen = lazy(() => import('./EmailScreens').then((m) => ({ default: m.VerifyScreen })))
 const ConfirmEmailScreen = lazy(() => import('./EmailScreens').then((m) => ({ default: m.ConfirmEmailScreen })))
 const ShareCapture = lazy(() => import('./ShareCapture').then((m) => ({ default: m.ShareCapture })))
+// Signed in, the first load carries neither the sign-in screen nor the invite screens.
+const AuthScreen = preloadable(() => import('./AuthScreen').then((m) => ({ default: m.AuthScreen })))
+const InviteScreen = lazy(() => import('./InviteScreen').then((m) => ({ default: m.InviteScreen })))
+const ProjectInviteScreen = lazy(() => import('./ProjectInviteScreen').then((m) => ({ default: m.ProjectInviteScreen })))
+const WorkspaceInviteScreen = lazy(() => import('./WorkspaceInviteScreen').then((m) => ({ default: m.WorkspaceInviteScreen })))
 const DisplayScreen = lazy(() => import('./display/DisplayScreen').then((m) => ({ default: m.DisplayScreen })))
 
 type Phase =
@@ -94,6 +96,16 @@ function useRefreshOnEvent(event: string, refresh: () => void, subscribe?: (agai
       off?.()
     }
   }, [event, refresh, subscribe])
+}
+
+// Cold start (task-list-presentation "Skeleton loading"): rows in the row's shape until the local database answers.
+// On a phone that was signed in, with the bar and the tab bar in their places (shell-first-paint).
+function ColdStart({ route }: { route: Route }) {
+  return (
+    <PhoneFrameSkeleton route={route} signedIn={localStorage.getItem('opentodo.user') !== null}>
+      <div className="w-full max-w-[62rem] px-4 py-5 md:max-w-[64rem] md:px-8"><Skeleton shape="row" count={8} label={t('Loading your tasks')} /></div>
+    </PhoneFrameSkeleton>
+  )
 }
 
 export function App() {
@@ -139,6 +151,8 @@ export function App() {
         // device's key: the local copy goes (revoked-device-wipe D4).
         if (await wipeIfRevoked(status, wipeRevokedDevice)) setSignInNotice(t(REVOKED_NOTICE))
         const hadSession = localStorage.getItem('opentodo.user') !== null
+        // A stored session that expired: the sign-in screen is fetched while the rest settles.
+        if (hadSession) AuthScreen.preload().catch(() => undefined)
         localStorage.removeItem('opentodo.user')
         cacheMfa(null)
         // A demo sandbox that is gone takes its local copy with it (the sign-out path).
@@ -158,6 +172,8 @@ export function App() {
 
   useEffect(() => {
     void refresh()
+    // No account on this device: the sign-in screen is fetched while the status is.
+    if (localStorage.getItem('opentodo.user') === null) AuthScreen.preload().catch(() => undefined)
   }, [refresh])
 
   // A signed-out visit to a client's /oauth/authorize comes back here with the
@@ -217,20 +233,17 @@ export function App() {
     </AppearanceProvider>
   )
 
+  // A sign-in or invite screen from its own chunk: the cold-start skeleton while it loads, and a chunk error stays in its boundary.
+  function authScreen(node: ReactNode) {
+    return <PanelBoundary><Suspense fallback={<ColdStart route={route} />}>{node}</Suspense></PanelBoundary>
+  }
+
   // The screen for the current phase and route; ReauthHost above serves all of them.
   function screen() {
     // A public link (public-links) needs no account and never syncs: it renders
     // before the sign-in state is even known.
     if (route.view === 'public') return <Suspense fallback={null}><PublicListScreen token={route.token} /></Suspense>
-    if (phase.kind === 'loading') {
-      // Cold start (task-list-presentation "Skeleton loading"): rows in the row's shape until the local database answers.
-      // On a phone that was signed in, with the bar and the tab bar in their places (shell-first-paint).
-      return (
-        <PhoneFrameSkeleton route={route} signedIn={localStorage.getItem('opentodo.user') !== null}>
-          <div className="w-full max-w-[62rem] px-4 py-5 md:max-w-[64rem] md:px-8"><Skeleton shape="row" count={8} label={t('Loading your tasks')} /></div>
-        </PhoneFrameSkeleton>
-      )
-    }
+    if (phase.kind === 'loading') return <ColdStart route={route} />
     if (route.view === 'reset') {
       return (
         <ResetScreen
@@ -274,7 +287,7 @@ export function App() {
       // The invite link works for anonymous visitors, offline visitors (it waits for
       // the network) and signed-in users (who are asked to sign out first).
       return (
-        <InviteScreen
+        authScreen(<InviteScreen
           token={route.token}
           user={phase.kind === 'ready' || phase.kind === 'restricted' ? phase.user : null}
           status={phase.kind === 'anonymous' ? phase.status : null}
@@ -283,24 +296,24 @@ export function App() {
             void refresh()
           }}
           onLogout={() => void logout()}
-        />
+        />)
       )
     }
     if (route.view === 'workspace-invite') {
-      return <WorkspaceInviteScreen token={route.token} user={phase.kind === 'ready' ? phase.user : null}
-        status={phase.kind === 'anonymous' ? phase.status : null} onAuthenticated={() => void refresh()} />
+      return authScreen(<WorkspaceInviteScreen token={route.token} user={phase.kind === 'ready' ? phase.user : null}
+        status={phase.kind === 'anonymous' ? phase.status : null} onAuthenticated={() => void refresh()} />)
     }
     if (route.view === 'project-invite') {
       // Project invite links (OpenSpec `project-invite-links`) work signed in
       // (join) and signed out (sign in, or create an account when allowed).
       return (
-        <ProjectInviteScreen
+        authScreen(<ProjectInviteScreen
           token={route.token}
           user={phase.kind === 'ready' ? phase.user : null}
           status={phase.kind === 'anonymous' ? phase.status : null}
           onAuthenticated={() => void refresh()}
           onLogout={() => void logout()}
-        />
+        />)
       )
     }
     if (phase.kind === 'offline-unknown') {
@@ -318,7 +331,7 @@ export function App() {
     if (phase.kind === 'anonymous') {
       // On /share the payload waits in memory; after sign-in the route is still /share.
       const notice = route.view === 'share' ? t('Sign in to add the shared page to OpenTodo. It is kept on this screen until then.') : signInNotice
-      return <AuthScreen status={phase.status} notice={notice} onAuthenticated={() => void refresh()} />
+      return authScreen(<AuthScreen status={phase.status} notice={notice} onAuthenticated={() => void refresh()} />)
     }
     // The server lost the key record of an encrypted account (encryption-state-integrity).
     if (enc.enabled && enc.recordMissing) {
