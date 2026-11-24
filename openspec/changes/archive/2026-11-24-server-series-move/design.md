@@ -12,7 +12,7 @@ Every server write (REST, the agent tools behind MCP and `/api/v1/agent`, rules,
 
 **D3. Same rule, shared vectors.** `ExceptionOn(id, row, date, tasks)` ports `exceptionOn`: "" for a task that is not an open series or repeats after completion, else the state of the lineage record on that date, or done for an earlier piece that completed there. The fixture gains `exception_on` cases (done, skipped, moved, a free earlier date, a legacy record, a rule after completion, a completed task, a record of an earlier piece, an earlier piece completed on its last date) run by both `series.fixture.test.ts` and `series_fixture_test.go`.
 
-**D4. The rows read.** Inside the transaction, from `scope_fields` of the series' scope (a lineage stays in one scope, `checkSplitFrom`): the series, the tasks with a `split_from` and the series they name, and for each piece of the lineage only the record of the date, found by its derived id (`OccurrenceID`). It runs only for a strict write that changes a series' due date.
+**D4. The rows read.** Inside the transaction, from `scope_fields` of the series' scope (a lineage stays in one scope, `checkSplitFrom`): the `split_from` values of the scope, read once per batch, from which only the series of this lineage (every series whose chain reaches the same root) are loaded, and for each of them only the record of the date, found by its derived id (`OccurrenceID`). A record is by definition the task with that id (`IsRecordOf`, web `isRecordOf`), so no other query can find one: a record written before `occurrence_date` whose due was later edited stands for no date, on the web as here (two fixture cases). It runs only for a strict write that changes a series' due date. A refused strict batch fails as a whole, other tasks included, where the app moves the others.
 
 **D5. Saying why.** `SeriesDateMessage` is the one sentence: "task.due: the occurrence of 2026-11-29 is already done, so this recurring task cannot move there; choose another date". REST (`applyREST`, every route) answers it as `409 series_date_taken`; `/api/v1/agent` maps the tool code to 409; the MCP tool error carries the code, the sentence and `items[0].date` and `.state`. `ot` prints the server's message as for any refused write. The web client gets a translated message for the code like every other server code.
 
@@ -26,4 +26,4 @@ No screen changes.
 
 ## Size
 
-No dependency; one query per piece and one scan of `split_from` per refused-or-accepted series date change.
+No dependency; per batch and scope one scan of `split_from`, then per moved series one query per series of its own lineage and one per record lookup.

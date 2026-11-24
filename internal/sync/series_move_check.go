@@ -69,7 +69,7 @@ func (b *applyBatch) checkSeriesMoves() error {
 		if s, ok := openSeries(id, row); !ok || s.rule.AfterCompletion() {
 			continue
 		}
-		tasks, err := b.rs.lineageOn(m.scope, id, row, due.Date)
+		tasks, err := b.lineageOn(m.scope, id, row, due.Date)
 		if err != nil {
 			return err
 		}
@@ -130,36 +130,80 @@ func (r *resolver) taskRow(scope, id string) (Entity, error) {
 	return e, rows.Err()
 }
 
-// lineageOn reads the rows ExceptionOn needs for the series id (row) on date:
-// the pieces of split series in scope (a lineage stays in one scope,
-// checkSplitFrom) and, for each piece of its lineage, the record of date,
-// found by its derived id.
-func (r *resolver) lineageOn(scope, id string, row Entity, date string) ([]Entity, error) {
-	rows, err := r.tx.QueryContext(r.ctx, `SELECT entity_id, value FROM scope_fields WHERE scope_id = ? AND entity = 'task' AND field = 'split_from' AND value != 'null'`, scope)
+// scopeSplits is every task of scope with a split_from, mapped to the series
+// it continues, read once per batch and scope (after the batch's writes: the
+// check runs last).
+func (b *applyBatch) scopeSplits(scope string) (map[string]string, error) {
+	if m, ok := b.splits[scope]; ok {
+		return m, nil
+	}
+	rows, err := b.tx.QueryContext(b.ctx, `SELECT entity_id, value FROM scope_fields WHERE scope_id = ? AND entity = 'task' AND field = 'split_from' AND value != 'null'`, scope)
 	if err != nil {
 		return nil, err
 	}
-	want := map[string]bool{}
-	if s, ok := DecodeSplitFrom(row["split_from"]); ok {
-		want[s.Series] = true
-	}
+	defer rows.Close()
+	m := map[string]string{}
 	for rows.Next() {
 		var pid, value string
 		if err := rows.Scan(&pid, &value); err != nil {
-			rows.Close()
 			return nil, err
 		}
 		if s, ok := DecodeSplitFrom(json.RawMessage(value)); ok {
-			want[pid], want[s.Series] = true, true
+			m[pid] = s.Series
 		}
 	}
-	rows.Close()
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	delete(want, id)
+	if b.splits == nil {
+		b.splits = map[string]map[string]string{}
+	}
+	b.splits[scope] = m
+	return m, nil
+}
+
+// lineageIDs are the ids of the series id's lineage among splits (piece ->
+// the series it continues): every series whose chain of split_from reaches
+// the same root as id's, the root included. A series never split is alone.
+func lineageIDs(id string, splits map[string]string) []string {
+	rootOf := func(cur string) string {
+		for seen := map[string]bool{}; !seen[cur]; {
+			seen[cur] = true
+			parent, ok := splits[cur]
+			if !ok {
+				break
+			}
+			cur = parent
+		}
+		return cur
+	}
+	root := rootOf(id)
+	out := map[string]bool{root: true, id: true}
+	for pid := range splits {
+		if !out[pid] && rootOf(pid) == root {
+			out[pid] = true
+		}
+	}
+	return sortedKeys(out)
+}
+
+// lineageOn reads the rows ExceptionOn needs for the series id (row) on date:
+// the series of its own lineage (a lineage stays in one scope, checkSplitFrom)
+// and, for each, the record of date, found by its derived id. A record is the
+// task with id OccurrenceID(series, its date) (IsRecordOf), so no other task
+// can stand for date: one written before occurrence_date whose due was edited
+// stands for no date, on the web as here.
+func (b *applyBatch) lineageOn(scope, id string, row Entity, date string) ([]Entity, error) {
+	splits, err := b.scopeSplits(scope)
+	if err != nil {
+		return nil, err
+	}
+	r := b.rs
 	tasks := []Entity{row}
-	for _, pid := range sortedKeys(want) {
+	for _, pid := range lineageIDs(id, splits) {
+		if pid == id {
+			continue
+		}
 		t, err := r.taskRow(scope, pid)
 		if err != nil {
 			return nil, err

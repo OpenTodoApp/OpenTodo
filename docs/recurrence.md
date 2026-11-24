@@ -221,8 +221,8 @@ of days.
 
 The server applies the same rule to the [API](api.md), [`ot edit --due`](cli.md)
 and [assistants](mcp.md): such a change is refused with `409 series_date_taken`,
-nothing is written, and the message names the date and whether it is done,
-skipped or moved. Any other date, earlier ones included, still moves the series.
+and the whole request fails, other tasks in it included (the app moves the
+others); the message names the date and whether it is done, skipped or moved. Any other date, earlier ones included, still moves the series.
 Devices syncing changes they made offline are never refused; the repair above
 settles them.
 

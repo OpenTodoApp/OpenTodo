@@ -114,7 +114,8 @@ type applyBatch struct {
 	// existing tasks whose due it writes (series_move_check.go).
 	creates  map[string]bool
 	dueMoves map[string]*seriesMove
-	newestTS int64 // the newest stored timestamp, for the server clock
+	splits   map[string]map[string]string // per scope: piece -> the series it continues
+	newestTS int64                        // the newest stored timestamp, for the server clock
 	res      ApplyResult
 }
 

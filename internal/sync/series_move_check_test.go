@@ -3,6 +3,7 @@ package sync
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -137,5 +138,97 @@ func TestStrictSeriesMoveOntoEarlierPieceRecord(t *testing.T) {
 	}
 	if msg := SeriesDateMessage(rej); msg != "task.due: the occurrence of 2026-10-12 was skipped, so this recurring task cannot move there; choose another date" {
 		t.Fatalf("message = %q", msg)
+	}
+}
+
+func TestLineageIDsWalksOnlyTheSeriesChain(t *testing.T) {
+	// s <- a <- b and s <- a2 are one lineage; x <- y is another.
+	splits := map[string]string{"a": "s", "b": "a", "a2": "s", "y": "x"}
+	for id, want := range map[string]string{"s": "a a2 b s", "b": "a a2 b s", "y": "x y", "lone": "lone"} {
+		if got := strings.Join(lineageIDs(id, splits), " "); got != want {
+			t.Errorf("lineageIDs(%s) = %q, want %q", id, got, want)
+		}
+	}
+}
+
+func TestStrictSeriesMoveFindsRecordTwoPiecesBack(t *testing.T) {
+	ctx := context.Background()
+	s := newTestService(t)
+	rec, other := OccurrenceID("s", "2026-10-12"), OccurrenceID("x", "2026-10-11")
+	if res, err := s.Apply(ctx, "u1", []Op{
+		op("s1", "task", "s", "recurrence", `"every day until 2026-10-13"`, 100, "A"),
+		op("s2", "task", "s", "due", `{"date":"2026-10-13"}`, 100, "A"),
+		op("s3", "task", "s", "completed_at", `null`, 100, "A"),
+		op("a1", "task", "a", "recurrence", `"every day until 2026-10-15"`, 100, "A"),
+		op("a2", "task", "a", "due", `{"date":"2026-10-14"}`, 100, "A"),
+		op("a3", "task", "a", "completed_at", `null`, 100, "A"),
+		op("a4", "task", "a", "split_from", `{"series":"s","date":"2026-10-14"}`, 100, "A"),
+		op("b1", "task", "b", "recurrence", `"every day"`, 100, "A"),
+		op("b2", "task", "b", "due", `{"date":"2026-10-17"}`, 100, "A"),
+		op("b3", "task", "b", "completed_at", `null`, 100, "A"),
+		op("b4", "task", "b", "split_from", `{"series":"a","date":"2026-10-16"}`, 100, "A"),
+		op("r1", "task", rec, "series_id", `"s"`, 100, "A"),
+		op("r2", "task", rec, "occurrence_date", `"2026-10-12"`, 100, "A"),
+		op("r3", "task", rec, "completed_at", `5`, 100, "A"),
+		// An unrelated lineage in the same scope, with a record of the 11th.
+		op("x1", "task", "x", "recurrence", `"every day"`, 100, "A"),
+		op("x2", "task", "x", "due", `{"date":"2026-10-20"}`, 100, "A"),
+		op("x3", "task", "x", "completed_at", `null`, 100, "A"),
+		op("y1", "task", "y", "recurrence", `"every day"`, 100, "A"),
+		op("y2", "task", "y", "due", `{"date":"2026-10-21"}`, 100, "A"),
+		op("y3", "task", "y", "completed_at", `null`, 100, "A"),
+		op("y4", "task", "y", "split_from", `{"series":"x","date":"2026-10-21"}`, 100, "A"),
+		op("q1", "task", other, "series_id", `"x"`, 100, "A"),
+		op("q2", "task", other, "occurrence_date", `"2026-10-11"`, 100, "A"),
+		op("q3", "task", other, "completed_at", `5`, 100, "A"),
+	}); err != nil || len(res.Rejected) != 0 {
+		t.Fatalf("seed = %+v, %v", res, err)
+	}
+	var rej *RejectedError
+	if _, err := s.ApplyStrict(ctx, "u1", []Op{op("m1", "task", "b", "due", `{"date":"2026-10-12"}`, 200, "server")}); !errors.As(err, &rej) || rej.Detail != "2026-10-12 done" {
+		t.Fatalf("err = %v, want the root's done record found from the second piece", err)
+	}
+	// The other lineage's record does not take the date.
+	if _, err := s.ApplyStrict(ctx, "u1", []Op{op("m2", "task", "b", "due", `{"date":"2026-10-11"}`, 200, "server")}); err != nil {
+		t.Fatalf("another lineage's date refused: %v", err)
+	}
+}
+
+func TestStrictSeriesMoveRefusesTheWholeBatch(t *testing.T) {
+	ctx := context.Background()
+	s := newTestService(t)
+	seriesWithRecord(t, s, RecordDone)
+	if _, err := s.Apply(ctx, "u1", []Op{op("c1", "task", "call", "title", `"Call Ana"`, 100, "A")}); err != nil {
+		t.Fatal(err)
+	}
+	_, err := s.ApplyStrict(ctx, "u1", []Op{
+		op("m1", "task", "call", "due", `{"date":"2026-11-29"}`, 200, "server"),
+		op("m2", "task", "s", "due", `{"date":"2026-11-29"}`, 200, "server"),
+		op("m3", "task", "new", "title", `"New"`, 200, "server"),
+		op("m4", "task", "new", "created_at", `200`, 200, "server"),
+	})
+	var rej *RejectedError
+	if !errors.As(err, &rej) || rej.Reason != ReasonSeriesDateTaken || rej.Op.EntityID != "s" {
+		t.Fatalf("err = %v, want the series refused", err)
+	}
+	if got := dueDateOf(t, s, "call"); got != "" {
+		t.Fatalf("Call Ana due = %q, want nothing written", got)
+	}
+	if e, _ := s.Get(ctx, "u1", "task", "new"); e != nil {
+		t.Fatalf("new task = %v, want nothing written", e)
+	}
+}
+
+func TestStrictSeriesMoveThatLosesIsNotRefused(t *testing.T) {
+	ctx := context.Background()
+	s := newTestService(t)
+	seriesWithRecord(t, s, RecordDone)
+	// Older than the stored due: kept in the log, but the series keeps its date.
+	res, err := s.ApplyStrict(ctx, "u1", []Op{op("old", "task", "s", "due", `{"date":"2026-11-29"}`, 50, "server")})
+	if err != nil || res.Applied != 1 {
+		t.Fatalf("losing op = %+v, %v", res, err)
+	}
+	if got := dueDateOf(t, s, "s"); got != "2026-12-06" {
+		t.Fatalf("due = %s, want 6 December", got)
 	}
 }
