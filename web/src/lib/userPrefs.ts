@@ -120,7 +120,7 @@ export function othersTasksShown(row: Partial<UserPrefs> | null | undefined): bo
 
 /** Shows or hides tasks assigned to others in the personal lists; an ordinary op, so it works offline and syncs. */
 export function setOthersTasksShown(shown: boolean): Promise<void> {
-  return mutate('user_prefs', USER_PREFS_ID, { today_assignees: shown ? 'all' : '' })
+  return mutate('user_prefs', USER_PREFS_ID, { today_assignees: shown ? 'all' : 'mine' })
 }
 
 /** Upcoming's calendar events (today-agenda): off unless the account chose "shown". */

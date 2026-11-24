@@ -121,7 +121,7 @@ describe('today_assignees (others-tasks-toggle D1)', () => {
     expect(othersTasksShown(await db.userPrefs.get('me'))).toBe(true)
     await setOthersTasksShown(false)
     const queued = (await db.outbox.toArray()).map(({ field, value }) => ({ field, value }))
-    expect(queued).toEqual([{ field: 'today_assignees', value: 'all' }, { field: 'today_assignees', value: '' }])
+    expect(queued).toEqual([{ field: 'today_assignees', value: 'all' }, { field: 'today_assignees', value: 'mine' }])
     const clock = (await db.userPrefs.get('me'))!._clock.today_assignees
     await applyOps([{ id: 'p', entity: 'user_prefs', entityId: 'me', field: 'today_assignees', value: 'all', ts: clock.ts + 1, device: 'phone' }])
     expect(othersTasksShown(await db.userPrefs.get('me'))).toBe(true)
