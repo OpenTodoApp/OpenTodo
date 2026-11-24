@@ -1,4 +1,7 @@
 {
+  "Text size": "Размер текста",
+  "Larger": "Очень большой",
+  "Largest": "Максимальный",
   "Allow pinch zoom": "Разрешить масштабирование щипком",
   "Pinch to zoom the app on this device. Turn it off for a more app-like feel.": "Масштабируйте приложение щипком на этом устройстве. Отключите для ощущения нативного приложения.",
   "\"after completion\" only applies to day, week, month and year intervals": "«после выполнения» работает только с интервалами в днях, неделях, месяцах и годах",
@@ -7879,5 +7882,10 @@
   "Task lists": "Списки задач",
   "Use the server default ({choice})": "Как на сервере ({choice})",
   "Complete subtasks with parent": "Завершать подзадачи вместе",
-  "Or keep open subtasks when a task is completed": "Или оставлять открытые подзадачи при завершении задачи"
+  "Or keep open subtasks when a task is completed": "Или оставлять открытые подзадачи при завершении задачи",
+  "Features": "Функции",
+  "Only the owner and admins can change these.": "Изменять это могут только владелец и администраторы.",
+  "Time tracking": "Учёт времени",
+  "{feature} is off in this workspace.": "{feature}: выключено в этом рабочем пространстве.",
+  "Workspace features changed": "Функции рабочего пространства изменены"
 }

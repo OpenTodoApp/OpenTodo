@@ -2813,6 +2813,7 @@
     "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/shortcuts/Spotlight.tsx",
     "web/src/app/task-list/ListChrome.tsx",
+    "web/src/lib/features.ts",
     "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts"
   ],
@@ -4893,6 +4894,7 @@
     "web/src/app/calendar/FramesDialog.tsx"
   ],
   "Default": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/app/WorkspacesSettings.tsx",
     "web/src/app/themes/EditorSections.tsx"
   ],
@@ -6682,6 +6684,10 @@
   "Favourites": [
     "web/src/app/FavouritesGroup.tsx"
   ],
+  "Features": [
+    "web/src/app/WorkspaceFeatures.tsx",
+    "web/src/app/WorkspacesSettings.tsx"
+  ],
   "Feed URL": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -7058,6 +7064,7 @@
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/focus/FocusView.tsx",
+    "web/src/lib/features.ts",
     "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts"
   ],
@@ -7822,6 +7829,7 @@
     "web/src/app/habits/TodayStrip.tsx",
     "web/src/app/method/HowYouWorkSection.tsx",
     "web/src/app/review/ReviewHabits.tsx",
+    "web/src/lib/features.ts",
     "web/src/lib/rules/sentence.ts",
     "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts"
@@ -9209,13 +9217,20 @@
     "web/src/app/QuickAddSettings.tsx"
   ],
   "Large": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/lib/bentoSlots.ts"
   ],
   "Large · 90 min or more": [
     "web/src/lib/bentoSlots.ts"
   ],
+  "Larger": [
+    "web/src/app/AppearanceSection.tsx"
+  ],
   "Larger files are refused before they are sent.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Largest": [
+    "web/src/app/AppearanceSection.tsx"
   ],
   "Last 100 deliveries": [
     "web/src/app/WebhooksPanel.tsx"
@@ -9780,7 +9795,8 @@
   ],
   "Locations": [
     "web/src/app/Sidebar.tsx",
-    "web/src/app/locations/PlacesView.tsx"
+    "web/src/app/locations/PlacesView.tsx",
+    "web/src/lib/features.ts"
   ],
   "Lock this device": [
     "web/src/app/EncryptionPanel.tsx"
@@ -11926,6 +11942,7 @@
     "web/src/app/settingsSections.ts",
     "web/src/app/task-detail/TaskNotes.tsx",
     "web/src/app/themes/EditorSections.tsx",
+    "web/src/lib/features.ts",
     "web/src/lib/rules/sentence.ts",
     "web/src/lib/shortcuts.ts"
   ],
@@ -12702,6 +12719,9 @@
   ],
   "Only the owner and admins can change the name, colour and icon.": [
     "web/src/app/WorkspaceGeneral.tsx"
+  ],
+  "Only the owner and admins can change these.": [
+    "web/src/app/WorkspaceFeatures.tsx"
   ],
   "Only the owner or an admin can restore it": [
     "web/src/app/ArchivedProjects.tsx"
@@ -15291,6 +15311,7 @@
     "web/src/app/routines/ProposalReview.tsx"
   ],
   "Reviews": [
+    "web/src/lib/features.ts",
     "web/src/lib/shortcuts.ts"
   ],
   "Reviews paused": [
@@ -15414,6 +15435,7 @@
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/RoutinesView.tsx",
     "web/src/app/routines/Starters.tsx",
+    "web/src/lib/features.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Routines of {project}": [
@@ -17458,6 +17480,7 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Stop": [
+    "web/src/app/FeatureOff.tsx",
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/assistant/AssistantComposer.tsx",
     "web/src/app/assistant/ComposerCapture.tsx",
@@ -18118,6 +18141,9 @@
   ],
   "Text on soft warning": [
     "web/src/app/themes/tokenNames.ts"
+  ],
+  "Text size": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Text to send": [
     "web/src/app/RelayConfirm.tsx"
@@ -20147,6 +20173,9 @@
     "web/src/lib/activity.ts",
     "web/src/lib/feed.ts"
   ],
+  "Time tracking": [
+    "web/src/lib/features.ts"
+  ],
   "Time zone": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
@@ -20659,6 +20688,7 @@
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Turn on": [
+    "web/src/app/FeatureOff.tsx",
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/VoiceSettings.tsx"
   ],
@@ -22005,6 +22035,9 @@
     "web/src/app/auditFormat.ts"
   ],
   "Workspace deleted": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "Workspace features changed": [
     "web/src/app/auditFormat.ts"
   ],
   "Workspace invite link created": [
@@ -25153,6 +25186,9 @@
   ],
   "{estimate} in {length}": [
     "web/src/lib/slots.ts"
+  ],
+  "{feature} is off in this workspace.": [
+    "web/src/app/FeatureOff.tsx"
   ],
   "{fg} now {ratio} to 1 on {bg}": [
     "web/src/app/themes/ContrastPanel.tsx"

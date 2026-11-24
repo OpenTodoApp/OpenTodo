@@ -1,4 +1,7 @@
 {
+  "Text size": "Tekstgrootte",
+  "Larger": "Groter",
+  "Largest": "Grootst",
   "Allow pinch zoom": "Knijpzoomen toestaan",
   "Pinch to zoom the app on this device. Turn it off for a more app-like feel.": "Zoom in de app met je vingers op dit apparaat. Zet uit voor een app-achtiger gevoel.",
   "\"after completion\" only applies to day, week, month and year intervals": "„Na voltooiing” geldt alleen voor intervallen in dagen, weken, maanden en jaren",
@@ -7879,5 +7882,10 @@
   "Task lists": "Takenlijsten",
   "Use the server default ({choice})": "Serverstandaard gebruiken ({choice})",
   "Complete subtasks with parent": "Subtaken mee afronden",
-  "Or keep open subtasks when a task is completed": "Of open subtaken behouden wanneer een taak wordt afgerond"
+  "Or keep open subtasks when a task is completed": "Of open subtaken behouden wanneer een taak wordt afgerond",
+  "Features": "Functies",
+  "Only the owner and admins can change these.": "Alleen de eigenaar en beheerders kunnen dit wijzigen.",
+  "Time tracking": "Tijdregistratie",
+  "{feature} is off in this workspace.": "{feature} staat uit in deze werkruimte.",
+  "Workspace features changed": "Functies van de werkruimte gewijzigd"
 }

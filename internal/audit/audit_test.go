@@ -50,7 +50,7 @@ func allConstructors() []Event {
 		AgentWrite("u", "create_tasks", "t", "Desk assistant", 0).Failed("writes_disabled_by_user"),
 		RelayEnabled("u", "device-1", "Laptop"),
 		RelayDisabled("u", "device-1", "Laptop", "locked"),
-		WorkspaceCreated("u", "w"), WorkspaceRenamed("u", "w"), WorkspaceDeleted("u", "w"), WorkspaceTransferred("u", "v", "w"),
+		WorkspaceCreated("u", "w"), WorkspaceRenamed("u", "w"), WorkspaceFeaturesChanged("u", "w", "habits=off"), WorkspaceDeleted("u", "w"), WorkspaceTransferred("u", "v", "w"),
 		WorkspaceMemberAdded("u", "v", "w", "member"), WorkspaceMemberRoleChanged("u", "v", "w", "member", "admin"), WorkspaceMemberRemoved("u", "v", "w"),
 		WorkspaceGroupCreated("u", "w", "g"), WorkspaceGroupDeleted("u", "w", "g"),
 		WorkspaceGroupMemberAdded("u", "v", "w", "g"), WorkspaceGroupMemberRemoved("u", "v", "w", "g"),

@@ -1,0 +1,1 @@
+- **Text size.** **Settings → Appearance → Text size** makes all of the app's text larger on this device, in four steps from Default to Largest, and rows, sheets and the editor wrap to fit instead of zooming. In the iPhone and Android apps, Default follows the phone's own text size (#1414).

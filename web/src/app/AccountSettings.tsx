@@ -3,11 +3,11 @@
 // which the sidebar loads, does not carry them (app-sign-in).
 import { type ReactNode, useState } from 'react'
 import { Button } from '../ui'
-import { ConfirmDialog } from '../ui'
-import { SettingRow, SettingsSection } from '../ui'
+import { ConfirmDialog, SettingRow, SettingsSection } from '../ui'
 import { api } from '../lib/api'
 import { t } from '../lib/i18n'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
+import { SignOutDialog } from './SignOutDialog'
 
 /**
  * Ends every session of the account on the server (route-authorization-policy),
@@ -16,18 +16,6 @@ import { cardCopy, rowCopy } from '../lib/settingsCopy'
 async function signOutEverywhere(): Promise<void> {
   await import('../lib/sync').then((m) => m.syncNow()).catch(() => undefined)
   await api.signOutEverywhere()
-}
-
-/**
- * "Sign out of this device?" (web-app "Settings"; quiet-sidebar D5): the same
- * confirmation from Settings → Account and from the account menu in the sidebar.
- */
-export function SignOutDialog({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
-  return (
-    <ConfirmDialog title={t('Sign out of this device?')} confirmLabel={t('Sign out')}
-      consequence={t('Unsynced changes are uploaded first when you are online, then the local copy of your tasks is cleared from this device. Your data stays on your server.')}
-      onConfirm={onConfirm} onCancel={onCancel} />
-  )
 }
 
 /**

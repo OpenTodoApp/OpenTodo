@@ -1,4 +1,7 @@
 {
+  "Text size": "Metin boyutu",
+  "Larger": "Daha büyük",
+  "Largest": "En büyük",
   "Allow pinch zoom": "Parmakla yakınlaştırmaya izin ver",
   "Pinch to zoom the app on this device. Turn it off for a more app-like feel.": "Bu cihazda uygulamayı parmakla yakınlaştırın. Daha uygulama gibi hissettirmesi için kapatın.",
   "\"after completion\" only applies to day, week, month and year intervals": "“tamamlandıktan sonra” yalnızca gün, hafta, ay ve yıl aralıkları için geçerlidir",
@@ -7879,5 +7882,10 @@
   "Task lists": "Görev listeleri",
   "Use the server default ({choice})": "Sunucu varsayılanını kullan ({choice})",
   "Complete subtasks with parent": "Alt görevleri de tamamla",
-  "Or keep open subtasks when a task is completed": "Ya da bir görev tamamlandığında açık alt görevleri koru"
+  "Or keep open subtasks when a task is completed": "Ya da bir görev tamamlandığında açık alt görevleri koru",
+  "Features": "Özellikler",
+  "Only the owner and admins can change these.": "Bunları yalnızca sahip ve yöneticiler değiştirebilir.",
+  "Time tracking": "Zaman takibi",
+  "{feature} is off in this workspace.": "{feature} bu çalışma alanında kapalı.",
+  "Workspace features changed": "Çalışma alanı özellikleri değiştirildi"
 }

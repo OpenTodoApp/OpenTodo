@@ -197,6 +197,7 @@ export const SETTINGS_COPY = {
       mode: { label: msg('Mode'), description: msg("System follows your device's light or dark setting.") },
       themes: { label: msg('Theme') },
       theme: { label: msg('Accent') },
+      textSize: { label: msg('Text size') },
       density: { label: msg('Density'), description: msg('Compact tightens rows, headers and the sidebar; touch targets stay full size.') },
       rows: { label: msg('Task rows'), description: msg('Detailed adds the parent task and a line of dates, priority and labels.') },
       titles: { label: msg('Show full task titles'), description: msg('Long titles wrap in lists, boards and Today instead of ending with an ellipsis.') },

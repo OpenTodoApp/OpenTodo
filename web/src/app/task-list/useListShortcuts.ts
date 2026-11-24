@@ -4,6 +4,7 @@
 // returns false when it does not apply, so the key keeps its default. A viewer may
 // navigate and open tasks of a shared project, never change them: every handler
 // that writes checks `writable` (or the task's own read-only state) first.
+import { useFeature } from '../../lib/features'
 import type { Dispatch, RefObject, SetStateAction } from 'react'
 import { detachOccurrence, unparkTask } from '../../lib/ops'
 import type { ListColumn, ListRow } from '../../lib/listGroups'
@@ -107,6 +108,10 @@ export function useListShortcuts(c: ShortcutContext) {
   const row = idx >= 0 ? rows[idx] : undefined
   // A viewer may navigate and open tasks of a shared project, never change them.
   const writable = !!row && !isReadOnly(row.task)
+  // `y` does nothing while the current workspace has Time tracking off (workspace-feature-switches D4).
+  const tracking = useFeature('time-tracking')
+  // Placing in the Day view is the Calendar's time blocking.
+  const calendar = useFeature('calendar')
 
   const indent = (r: ListRow, at: number) => {
     // The previous visible sibling: scan upwards at the same depth, stopping at an ancestor.
@@ -265,11 +270,11 @@ export function useListShortcuts(c: ShortcutContext) {
       }))
     },
     // Placement mode in the Day view (OpenSpec `time-blocking`).
-    'list.schedule': () => { if (!row || !writable || row.task.completed_at) return false; placeInDay(row.task, c.today) },
+    'list.schedule': () => { if (!row || !writable || row.task.completed_at || !calendar) return false; placeInDay(row.task, c.today) },
     'list.estimate': () => { if (!row || !writable) return false; estimateFocus.request(row.task.id); setOpenId(row.task.id) },
     'list.edit-inline': () => { if (!row || !writable || c.board || !c.editInline) return false; c.editInline(row.task.id) },
     // Start or stop tracking (time-tracking D5); a completed task offers no start.
-    'list.track': () => { if (!row || !writable) return false; act(toggleTracking(row.task.id, { canStart: !row.task.completed_at })) },
+    'list.track': () => { if (!row || !writable || !tracking) return false; act(toggleTracking(row.task.id, { canStart: !row.task.completed_at })) },
     'list.deadline': openFor(deadlineFocus),
     'list.defer': openFor(deferFocus),
     'list.blocked-by': openFor(blockedByFocus),

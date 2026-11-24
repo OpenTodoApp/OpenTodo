@@ -163,7 +163,7 @@ Completing a task gives a short tap, and adding a task or picking up a row a lig
 
 ## Touch
 
-Tapping does not flash, and holding a button or a tab does not select its label. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top does not drag the app. Pinch to zoom works everywhere, unless you turn it off for this device in **Settings → Appearance → Allow pinch zoom**.
+Tapping does not flash, and holding a button or a tab does not select its label. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top does not drag the app. Pinch to zoom works everywhere, unless you turn it off for this device in **Settings → Appearance → Allow pinch zoom**. The app's text follows the phone's font size, set in the phone's display or accessibility settings (the place varies by maker); **Settings → Appearance → Text size** in the app overrides it.
 
 ## Sharing
 

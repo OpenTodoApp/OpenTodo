@@ -3,7 +3,8 @@
 import { describe, expect, it } from 'vitest'
 import { currentDateTime } from './dates'
 import { isDeferred } from './views'
-import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, keepGroups, laterOpenKey, listGroups, patchViewTasks, sectionBuckets, sectionOfRows, siblingPositions, splitLater, tasksForView, type GroupInput, type ListGroup } from './listGroups'
+import { buildProjectTree } from './projects'
+import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, inlineOpenKey, subProjectsFoldedKey, type SubProjectList, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, keepGroups, laterOpenKey, listGroups, patchViewTasks, sectionBuckets, sectionOfRows, siblingPositions, splitLater, tasksForView, type GroupInput, type ListGroup } from './listGroups'
 import { defaultListDisplay, type ListDisplay } from './listDisplay'
 import { setPriorityNames } from './priority'
 import { buildTaskTree } from './subtasks'
@@ -869,5 +870,63 @@ describe('built-in view options (builtin-view-options)', () => {
     expect(next[0]).toBe(first[0])
     expect(next[1]).not.toBe(first[1])
     expect(next[1].rows[0]).toBe(first[1].rows[0])
+  })
+})
+
+// A project's sub-projects open in place (OpenSpec change subproject-inline).
+describe('sub-projects in the list', () => {
+  const home = project('home', 1)
+  const tree = buildProjectTree([home, project('garden', 1, { parent_id: 'home' }), project('beds', 1, { parent_id: 'garden' }), project('kitchen', 2, { parent_id: 'home' })])
+  const mow = task({ title: 'Mow', project_id: 'garden', position: 2 })
+  const edge = task({ title: 'Edge', project_id: 'garden', parent_id: mow.id })
+  const weed = task({ title: 'Weed', project_id: 'garden', position: 1, section_id: 's1' })
+  const mulch = task({ title: 'Mulch', project_id: 'beds' })
+  const paint = task({ title: 'Paint', project_id: 'home' })
+  const list = (over: Partial<SubProjectList> = {}): SubProjectList => ({
+    children: tree.nodes.get('home')!.children, counts: new Map([['garden', 4], ['beds', 1], ['kitchen', 0]]), offered: true,
+    tasks: new Map([['garden', [weed, mow, edge]], ['beds', [mulch]]]), sections: [section('s1', 'garden', 1)], ...over,
+  })
+  const groups = (open: string[], over: Partial<GroupInput> = {}, sub?: Partial<SubProjectList>) => listGroups(input({
+    view: 'project', projectId: 'home', tasks: [paint], tree: buildTaskTree([paint]), subProjects: true,
+    collapsed: new Set(open.map(inlineOpenKey)), subProjectList: list(sub), ...over,
+  }))
+  const outline = (gs: ListGroup[]) => gs.map((g) => `${g.key}${g.depth ? `@${g.depth}` : ''}${g.rows.length ? `:${titles(g).join(',')}` : ''}`)
+
+  it('leads with the Sub-projects bar and a folded group per sub-project, the arrow only where there is something to show', () => {
+    const gs = groups([])
+    expect(outline(gs)).toEqual(['sub-projects', 'sub-project:garden', 'sub-project:kitchen', 'all:Paint'])
+    expect(gs[0]).toMatchObject({ heading: 'Sub-projects', count: 2, folded: false, openKey: subProjectsFoldedKey('home') })
+    expect(gs[1]).toMatchObject({ subProject: 'garden', heading: 'GARDEN', count: 4, depth: 0, folded: true, openKey: inlineOpenKey('garden') })
+    // Kitchen has no open task and no sub-project: no arrow.
+    expect(gs[2].openKey).toBeUndefined()
+    // The Tasks bar takes a dropped task back to the project.
+    expect(gs[3]).toMatchObject({ heading: 'Tasks', dropProject: 'home' })
+  })
+
+  it("shows an open sub-project's tasks in section order with their subtasks, then its sub-projects one depth in", () => {
+    expect(outline(groups(['garden']))).toEqual(['sub-projects', 'sub-project:garden:Mow,Edge,Weed', 'sub-project:beds@1', 'sub-project:kitchen', 'all:Paint'])
+    const gs = groups(['garden', 'beds'])
+    expect(outline(gs)).toEqual(['sub-projects', 'sub-project:garden:Mow,Edge,Weed', 'sub-project:beds@1:Mulch', 'sub-project:kitchen', 'all:Paint'])
+    // The subtask stays under its parent; each block is a tree of its own.
+    expect(gs[1].rows.map((r) => [r.task.title, r.depth, r.parent])).toEqual([['Mow', 0, null], ['Edge', 1, mow.id], ['Weed', 0, null]])
+    // A nested sub-project open under a folded one shows nothing.
+    expect(outline(groups(['beds']))).toEqual(['sub-projects', 'sub-project:garden', 'sub-project:kitchen', 'all:Paint'])
+    // Its rows keep their own sections for a drop beside them.
+    expect([...sectionOfRows(false, [], gs)].filter(([id]) => id !== paint.id)).toEqual([[mow.id, ''], [weed.id, 's1'], [mulch.id, '']])
+  })
+
+  it('folds everything with the bar, and offers no arrow under a grouping or the columns layout', () => {
+    expect(outline(groups(['garden'], { collapsed: new Set([subProjectsFoldedKey('home'), inlineOpenKey('garden')]) }))).toEqual(['sub-projects', 'all:Paint'])
+    const off = groups(['garden'], {}, { offered: false })
+    expect(outline(off)).toEqual(['sub-projects', 'sub-project:garden', 'sub-project:kitchen', 'all:Paint'])
+    expect(off[1].openKey).toBeUndefined()
+    // None for a leaf project.
+    expect(groups([], {}, { children: [] }).some((g) => g.key === 'sub-projects')).toBe(false)
+  })
+
+  it("applies the view's sort inside a block and shows only the tasks it is given (the view's filters)", () => {
+    const display = { groupBy: 'none', sortBy: 'title', sortDir: 'desc', rowLayout: 'line' } as ListDisplay
+    expect(titles(groups(['garden'], { display })[1])).toEqual(['Weed', 'Mow', 'Edge'])
+    expect(titles(groups(['garden'], {}, { tasks: new Map([['garden', [weed]]]) })[1])).toEqual(['Weed'])
   })
 })

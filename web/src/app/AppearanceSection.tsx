@@ -16,7 +16,8 @@ import { useHabitsEnabled } from '../lib/habitPrefs'
 import { readMethodMode } from '../lib/method/mode'
 import { type DragEvent, type KeyboardEvent, Suspense, useEffect, useRef, useState } from 'react'
 import { lazy } from '../lib/lazy'
-import { cachedCustom, customAccentStyle, type CustomAccentValues, deriveCustom, DENSITIES, type Density, destinationOrder, type DestinationId, FIXED_DESTINATIONS, moveDestination, PROMOTABLE, type Promotable, readAppearance, readSidebarCounts, setAppearance, setCustomAccent, setPromoted, setSidebarCounts, SIDEBAR_COUNTS, type SidebarCounts, THEME_MODES, type Appearance } from '../lib/appearance'
+import { useFeatures } from '../lib/features'
+import { cachedCustom, customAccentStyle, type CustomAccentValues, deriveCustom, DENSITIES, type Density, destinationOrder, destinationsIn, type DestinationId, FIXED_DESTINATIONS, moveDestination, PROMOTABLE, type Promotable, readAppearance, readSidebarCounts, setAppearance, setCustomAccent, setPromoted, setSidebarCounts, SIDEBAR_COUNTS, type SidebarCounts, THEME_MODES, type Appearance } from '../lib/appearance'
 import { ActionMenu } from './menus/ActionMenu'
 import { useUserPrefsRow } from '../lib/localData'
 import type { ThemeModePref, UserPrefs } from '../lib/types'
@@ -33,6 +34,7 @@ import { deadlineDatesOn, setDeadlineDates } from '../lib/deadlineDates'
 import { fullTitlesOn, setFullTitles } from '../lib/fullTitles'
 import { canVibrate } from './motion'
 import { canSetZoom, setAllowZoom, useAllowZoom } from '../lib/touchZoom'
+import { setTextSize, TEXT_SIZES, type TextSize, useTextSize } from '../lib/textSize'
 import { readTaskOpen, setTaskOpen, type TaskOpenPref } from '../lib/userPrefs'
 import { readRowClick, ROW_CLICK_LABEL, ROW_CLICK_PREFS, setRowClick, useServerRowClick, type RowClickMode, type RowClickPref } from '../lib/rowClickPref'
 import { accountRowLayout, ROW_LAYOUTS, setAccountRowLayout, type RowLayout } from '../lib/rowLayout'
@@ -46,6 +48,7 @@ import { effectiveSide } from '../lib/appearance'
 
 const MODE_LABEL = translatedMap<ThemeModePref>({ system: msg('System'), light: msg('Light'), dark: msg('Dark') })
 const DENSITY_LABEL = translatedMap<Density>({ comfortable: msg('Comfortable'), compact: msg('Compact') })
+const TEXT_SIZE_LABEL = translatedMap<TextSize>({ default: msg('Default'), large: msg('Large'), larger: msg('Larger'), largest: msg('Largest') })
 const TASK_OPEN: readonly TaskOpenPref[] = ['page', 'panel']
 const TASK_OPEN_LABEL = translatedMap<TaskOpenPref>({ page: msg('As a page'), panel: msg('In a side panel') })
 
@@ -74,6 +77,8 @@ export interface AppearanceViewProps {
   completionSound?: { on: boolean; onChange: (on: boolean) => void }
   /** The pinch-zoom switch, only on a touch device (design-system "Fields never zoom the screen on touch", #1386). */
   zoom?: { on: boolean; onChange: (on: boolean) => void }
+  /** This device's text size (text-size, #1414): Default follows the device. */
+  textSize?: { value: TextSize; onChange: (v: TextSize) => void }
   /** The theme of each side (theme-engine D14): the lists to show and writing a choice. */
   themes?: ThemeSettingsProps
 }
@@ -128,7 +133,7 @@ function TilePreview() {
 
 const TILE = 'flex w-28 shrink-0 snap-start flex-col gap-2 rounded-card border bg-surface p-2 text-left outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-auto'
 
-export function AppearanceView({ value, onMode, onAccent, custom, onDensity, rows, titles, deadlineDates, haptics, completionSound, zoom, themes }: AppearanceViewProps) {
+export function AppearanceView({ value, onMode, onAccent, custom, onDensity, rows, titles, deadlineDates, haptics, completionSound, zoom, textSize, themes }: AppearanceViewProps) {
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([])
   const [picking, setPicking] = useState(false)
   const customRef = useRef<HTMLButtonElement | null>(null)
@@ -187,6 +192,13 @@ export function AppearanceView({ value, onMode, onAccent, custom, onDensity, row
           </Popover>
         )}
       </div>
+      {textSize && (
+        <SettingRow id="appearance-text-size" {...rowCopy('appearance', 'textSize')} htmlFor="appearance-text-size-select" control={
+          <Select id="appearance-text-size-select" className="sm:w-48" value={textSize.value} onChange={(e) => textSize.onChange(e.target.value as TextSize)}>
+            {TEXT_SIZES.map((v) => <option key={v} value={v}>{TEXT_SIZE_LABEL[v]}</option>)}
+          </Select>
+        } />
+      )}
       {onDensity && (
         <SettingRow id="appearance-density" {...rowCopy('appearance', 'density')}
           control={<Segmented label={t('Density')} items={DENSITIES} labels={DENSITY_LABEL} value={value.density ?? 'comfortable'} onChange={onDensity} testId="appearance-density" />} />
@@ -347,6 +359,7 @@ export function AppearanceSection({ author = '' }: { author?: string }) {
   const row = usePrefsRow()
   const value = readAppearance(row)
   const allowZoom = useAllowZoom()
+  const textSize = useTextSize()
   const values = useCustomValues(value.custom)
   const catalogue = useCatalogue()
   // The server's default and themes (theme-instance-default): re-rendered when they change.
@@ -361,7 +374,8 @@ export function AppearanceSection({ author = '' }: { author?: string }) {
     deadlineDates={{ on: deadlineDatesOn(row), onChange: (on) => act(setDeadlineDates(on)) }}
     haptics={canVibrate() ? { on: hapticsPrefOn(row), onChange: (on) => act(setHapticsPref(on)) } : undefined}
     completionSound={canPlayCompletionSound() ? { on: completionSoundOn(row), onChange: (on) => act(setCompletionSound(on)) } : undefined}
-    zoom={canSetZoom() ? { on: allowZoom, onChange: setAllowZoom } : undefined} />
+    zoom={canSetZoom() ? { on: allowZoom, onChange: setAllowZoom } : undefined}
+    textSize={{ value: textSize, onChange: setTextSize }} />
 }
 
 export function SidebarSection() {
@@ -371,9 +385,11 @@ export function SidebarSection() {
   const value = readAppearance(row)
   // Off means off (habits-home D2): no Habits destination to arrange while Habits is not on.
   const habits = useHabitsEnabled()
+  // Nor a destination of a feature the current workspace has off (workspace-feature-switches D4).
+  const on = useFeatures()
   return <SidebarView promoted={value.sidebar ?? []} arranged={readMethodMode(row) === 'first'} onPromote={(id, on) => act(setPromoted(row, id, on))}
     counts={readSidebarCounts(row)} onCounts={(v) => act(setSidebarCounts(v))}
-    order={destinationOrder(row).filter((id) => habits || id !== 'habits')} onMove={loaded ? (id, delta) => moveDestination(row, id, delta) : undefined} />
+    order={destinationsIn(destinationOrder(row), on).filter((id) => habits || id !== 'habits')} onMove={loaded ? (id, delta) => moveDestination(row, id, delta) : undefined} />
 }
 
 /** Settings → Appearance → Task details (task-side-panel D1): the synced choice, written through ops. */

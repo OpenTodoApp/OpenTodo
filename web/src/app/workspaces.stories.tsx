@@ -15,7 +15,7 @@ async function seedDirectory(current: 'ws-family' | 'ws-club'): Promise<void> {
   await seedInbox()
   await storeWorkspaces([
     { id: 'ws-personal', name: 'Personal', icon: '', color: '', default: true, role: 'owner', ownerId: storyUser.id, members: [me], groups: [] },
-    { id: 'ws-family', name: 'Family', icon: 'house', color: '#22c55e', default: false, role: 'owner', ownerId: storyUser.id,
+    { id: 'ws-family', name: 'Family', icon: 'house', color: '#22c55e', default: false, role: 'owner', ownerId: storyUser.id, features: { 'time-tracking': false },
       members: [me, { userId: 'u-bob', name: 'Bob Okafor', role: 'admin' }, { userId: 'u-chen', name: 'Chen Wei', role: 'member' }],
       groups: [{ id: 'g-adults', name: 'Adults', members: [storyUser.id, 'u-bob'] }, { id: 'g-kids', name: 'Kids', members: ['u-chen'] }] },
     { id: 'ws-club', name: 'Book club', icon: '', color: '#8b5cf6', default: false, role: 'member', ownerId: 'u-mara',
@@ -91,6 +91,18 @@ export const SettingsGroupEditor: StoryObj = {
 export const SettingsInvites: StoryObj = {
   ...withSeed(() => seedDirectory('ws-family')),
   render: () => <Scripted steps={[openFamily, tabNamed('invites')]} />,
+}
+
+/** Family's Features tab (workspace-feature-switches D5): one switch per feature, Time tracking off. */
+export const SettingsFeatures: StoryObj = {
+  ...withSeed(() => seedDirectory('ws-family')),
+  render: () => <Scripted steps={[openFamily, tabNamed('features')]} />,
+}
+
+/** Book club's Features tab for a member: the switches disabled under one line. */
+export const SettingsFeaturesMember: StoryObj = {
+  ...withSeed(() => seedDirectory('ws-club')),
+  render: () => <Scripted steps={['?[data-workspace-row="ws-club"]:not([aria-current])', tabNamed('features')]} />,
 }
 
 const membership: Membership = {

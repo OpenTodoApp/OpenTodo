@@ -1,4 +1,7 @@
 {
+  "Text size": "文字大小",
+  "Larger": "更大",
+  "Largest": "最大",
   "Allow pinch zoom": "允许双指缩放",
   "Pinch to zoom the app on this device. Turn it off for a more app-like feel.": "在此设备上用双指缩放应用。关闭后更有原生应用的感觉。",
   "\"after completion\" only applies to day, week, month and year intervals": "“完成后”仅适用于按天、周、月和年的重复间隔",
@@ -7879,5 +7882,10 @@
   "Task lists": "任务列表",
   "Use the server default ({choice})": "使用服务器默认（{choice}）",
   "Complete subtasks with parent": "同时完成子任务",
-  "Or keep open subtasks when a task is completed": "或在完成任务时保留未完成的子任务"
+  "Or keep open subtasks when a task is completed": "或在完成任务时保留未完成的子任务",
+  "Features": "功能",
+  "Only the owner and admins can change these.": "只有所有者和管理员可以更改这些设置。",
+  "Time tracking": "时间记录",
+  "{feature} is off in this workspace.": "此工作区已关闭{feature}。",
+  "Workspace features changed": "工作区功能已更改"
 }

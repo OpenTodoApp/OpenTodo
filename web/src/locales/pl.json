@@ -1,4 +1,7 @@
 {
+  "Text size": "Rozmiar tekstu",
+  "Larger": "Większe",
+  "Largest": "Największe",
   "Allow pinch zoom": "Zezwalaj na przybliżanie gestem",
   "Pinch to zoom the app on this device. Turn it off for a more app-like feel.": "Przybliżaj aplikację gestem na tym urządzeniu. Wyłącz, aby bardziej przypominała aplikację.",
   "\"after completion\" only applies to day, week, month and year intervals": "\"after completion\" działa tylko z interwałami dni, tygodni, miesięcy i lat",
@@ -7879,5 +7882,10 @@
   "Task lists": "Listy zadań",
   "Use the server default ({choice})": "Domyślny dla serwera ({choice})",
   "Complete subtasks with parent": "Ukończ też podzadania",
-  "Or keep open subtasks when a task is completed": "Lub zachowaj otwarte podzadania po ukończeniu zadania"
+  "Or keep open subtasks when a task is completed": "Lub zachowaj otwarte podzadania po ukończeniu zadania",
+  "Features": "Funkcje",
+  "Only the owner and admins can change these.": "Tylko właściciel i administratorzy mogą to zmienić.",
+  "Time tracking": "Śledzenie czasu",
+  "{feature} is off in this workspace.": "{feature}: wyłączone w tym obszarze roboczym.",
+  "Workspace features changed": "Zmieniono funkcje obszaru roboczego"
 }

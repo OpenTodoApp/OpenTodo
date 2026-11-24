@@ -4,6 +4,7 @@
 // its own action in a quiet tone ("Set a deadline", "Add a place"), so nothing hides
 // behind an Add menu. Every row opens the same popover editor as the panel's facet
 // parts (Facets.tsx), anchored to the row, and writes the same operation.
+import { useFeature } from '../../lib/features'
 import { useMemo, useState, type ReactNode } from 'react'
 import type { FacetPart } from '../../lib/facets'
 import { t } from '../../lib/i18n'
@@ -66,6 +67,8 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
 
   // Energy is offered while unset only with Energy levels on; a value is always shown (task-energy D3).
   const energyOn = energyLevelsOn(useUserPrefsRow())
+  // Locations off in the current workspace: a set location still shows, none is offered (workspace-feature-switches D4).
+  const locationsOn = useFeature('locations')
   const sectorsOn = useTimeSectors()
   const due = text('due')
   const partWord = dayPartWord(dayPartOf(task))
@@ -86,7 +89,7 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
     ...(userId ? [{ id: 'assignee', label: t('Assignee'), icon: 'user-check' as const, value: text('assignee'), empty: m.solo ? t('Assign to me') : t('Assign') }] : []),
     { id: 'blocked-by', label: t('Blocked by'), icon: 'lock', value: text('blocked-by'), empty: t('Add a blocker') },
     { id: 'blocks', label: t('Blocks'), icon: 'arrow-right', value: text('blocks'), empty: '', onlySet: true },
-    { id: 'location', label: t('Location'), icon: 'map-pin', value: text('location'), empty: t('Add a place') },
+    { id: 'location', label: t('Location'), icon: 'map-pin', value: text('location'), empty: t('Add a place'), onlySet: !locationsOn },
   ]
   const where: Fact[] = [
     { id: 'project', label: t('Project'), icon: 'folder', empty: '',
