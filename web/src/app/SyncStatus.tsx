@@ -68,9 +68,10 @@ export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
   const liveTitle = s.live ? t('Live updates connected') : t('Live updates disconnected; checking every 30 s')
   const lastSynced = s.lastSyncedAt ? t('Last synced {time}', { time: dt.formatInstant(s.lastSyncedAt, 'time') }) : t('Click to sync now')
   // Quiet (ux-overhaul, app-shell "Sync status is quiet"): the text is visible only
-  // while something needs attention (offline, error, pending, locked…); when synced
-  // the dot alone shows and the text lives in the tooltip and the accessible name.
-  const quiet = s.state === 'idle' && s.pending === 0 && !stale
+  // while something needs attention (offline, error, pending, locked…); when synced or
+  // syncing the dot alone shows (it pulses while syncing) and the text lives in the
+  // tooltip and the accessible name, so a routine sync does not flash words (#1941).
+  const quiet = (s.state === 'idle' || s.state === 'syncing') && s.pending === 0 && !stale
   // A sync error is not tooltip-only (compact mode and touch have no hover): the
   // pill keeps its label in compact mode too, so the red dot is always named.
   const failed = s.state === 'error' && !!s.error

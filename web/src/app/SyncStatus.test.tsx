@@ -100,13 +100,31 @@ describe('SyncStatus in error state', () => {
   })
 })
 
+// #1941: a routine sync with nothing pending keeps the quiet dot, so the footer does
+// not switch between words and the dot on every sync.
+describe('SyncStatus while a routine sync runs', () => {
+  it('shows the pulsing dot alone, before, during and after the sync, and keeps the words in its name', async () => {
+    const r = await render(<SyncStatus />)
+    const button = () => document.querySelector<HTMLElement>('[data-sync-status]')!
+    for (const state of ['idle', 'syncing', 'idle', 'syncing']) {
+      setState({ state, lastSyncedAt: Date.now() })
+      await waitFor(() => button().dataset.syncStatus === state, state)
+      expect(button().querySelector('.ui-whole')).toBeNull()
+      expect(button().textContent).toBe('')
+    }
+    expect(button().querySelector('.animate-pulse')).toBeTruthy()
+    expect(button().getAttribute('aria-label')).toMatch(/^Syncing…/)
+    await r.unmount()
+  })
+})
+
 // touch-sidebar-names: on touch the dot is the state; words show whole or not at all.
 describe('SyncStatus words on touch', () => {
   const words = () => document.querySelector('[data-sync-status] .ui-whole')
 
   it('a running sync shows no words on touch, and keeps them in its name', async () => {
     const r = await render(<SyncStatus />)
-    setState({ state: 'syncing' })
+    setState({ state: 'syncing', pending: 1 })
     await waitFor(() => words() !== null, 'the words')
     expect(words()!.textContent).toBe('Syncing…')
     expect(words()!.className).toContain('pointer-coarse:hidden')
