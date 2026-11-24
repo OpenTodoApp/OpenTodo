@@ -101,12 +101,12 @@ export function LineDatePicker({ id, due, onPick, onKeyDown, today = logicalToda
   )
 }
 
-/** Quick add in a list: the calendar button beside the field (quick-add-calendar). It keeps the focus in the line. */
+/** Quick add in a list: the calendar button beside the field (quick-add-calendar). It keeps the focus in the line; a set date shows in the default tone, like the other field buttons (add-task-button D2). */
 export function LineDateButton({ date }: { date: LineDate }) {
   return (
     <button type="button" data-quick-add-calendar onMouseDown={(e) => e.preventDefault()} onClick={date.toggle}
       aria-label={t('Pick a date')} aria-expanded={date.open} aria-controls={date.id}
-      className={`inline-flex h-7 w-7 items-center justify-center rounded-control hover:bg-hover hover:text-default ${date.open ? 'bg-selected text-default' : 'text-faint'}`}>
+      className={`inline-flex h-7 w-7 items-center justify-center rounded-control hover:bg-hover hover:text-default ${date.open ? 'bg-selected text-default' : date.due ? 'text-default' : 'text-faint'}`} data-set={date.due ? '' : undefined}>
       <Icon name={FIELD_ICON.when} size={16} />
     </button>
   )
