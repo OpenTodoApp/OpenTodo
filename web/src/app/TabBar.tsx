@@ -32,7 +32,7 @@ function useTabBarRoom(bar: { current: HTMLElement | null }): void {
     const publish = () => root.setProperty('--tab-bar-h', `${el.getBoundingClientRect().height}px`)
     publish()
     const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(publish) : null
-    observer?.observe(el)
+    observer?.observe(el, { box: 'border-box' })
     return () => { observer?.disconnect(); root.removeProperty('--tab-bar-h') }
   }, [bar])
 }
