@@ -1,1 +1,0 @@
-- **A complete guide for leaving Microsoft To Do.** The Microsoft To Do switch guide now walks through the export on Windows and macOS step by step, shows where each To Do feature lives in OpenTodo, and says what to do when a step fails.

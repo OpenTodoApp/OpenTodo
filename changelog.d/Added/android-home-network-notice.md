@@ -1,1 +1,0 @@
-- **The Android app says when an address only works at home.** On the first-run screen, an address such as `192.168.1.10:8080` or `homeassistant.local` shows "This address only works on your home network" with a link to the guide for reaching OpenTodo from outside. It still connects. Tailscale addresses get no notice.
