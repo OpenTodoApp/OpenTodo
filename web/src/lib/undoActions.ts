@@ -7,14 +7,15 @@
 import { bulkLabel, planComplete, planLabels, planMove, planPriority, planReopen, planTrash, readTicked, toProposed } from './bulk'
 import { db, type AssistantUndo } from './db'
 import { formatDate, logicalToday } from './dates'
-import { exceptionOn, planSkip, seriesRule } from './recurring'
+import { planSkip, seriesRule } from './recurring'
+import { duePatch, refusedSeries, seriesDateRefusal, withNotMoved } from './seriesDates'
 import { lineageRows } from './lineageRows'
 import { editRedirected, getDeviceId, liveSubtree, parkTask, pastScopeActive, planRecurrence, planReminders, planTaskEdit, planTaskParent, setRecurrence, updateTask, type Change } from './ops'
 import type { ReminderPhrase } from './nlp'
 import { currentUserId, memberName, membershipMap } from './sharing'
 import type { FilterContext } from './filter'
 import { planRule, ruleParts, type RuleNames } from './rules'
-import type { Project, Task, View } from './types'
+import type { Due, Project, Task, View } from './types'
 import { applyBatch } from './undo'
 import type { ProposedChange } from './assistantTypes'
 import { compileView } from './views'
@@ -44,6 +45,19 @@ async function apply(changes: Change[], label: string): Promise<UndoableResult> 
   await getDeviceId()
   const entry = await applyBatch(await toProposed(changes, await membershipMap()), { source: 'action', label })
   return { entry, label }
+}
+
+/**
+ * Apply date changes without those that would put a series on one of its own records
+ * (series-move-onto-exception, #1971): the label counts them as not moved, and a single
+ * refused change says why.
+ */
+async function applyDates(changes: Change[], all: Task[], label: (n: number) => string): Promise<UndoableResult & { refused?: true }> {
+  const kept = refusedSeries(changes, all)
+  if (!kept.refused) return apply(changes, label(changes.length))
+  if (kept.changes.length) return apply(kept.changes, withNotMoved(label(kept.changes.length), kept.refused))
+  const only = changes.length === 1 ? await seriesDateRefusal(changes[0].entityId, changes[0].patch.due as Due) : null
+  return { entry: null, label: only ?? withNotMoved('', kept.refused), refused: true }
 }
 
 /** Complete (subtree, or a series rolling forward) or reopen one task. */
@@ -383,20 +397,20 @@ export async function moveTasksUndoable(ids: readonly string[], target: TaskTarg
 }
 
 /** Put tasks on a day as a drop on the calendar does (upcoming-drag): one batch with Undo; tasks already there write nothing. */
-export async function dayDropUndoable(ids: readonly string[], date: string, today = logicalToday()): Promise<UndoableResult> {
-  const { tasks } = await readTicked(ids)
+export async function dayDropUndoable(ids: readonly string[], date: string, today = logicalToday()): Promise<UndoableResult & { refused?: true }> {
+  const { tasks, all } = await readTicked(ids)
   const changes = planDayDrop(tasks, date, today)
   // Already on that day: Upcoming keeps its date order, so the drop says why nothing moved (#1507).
   if (!changes.length) return { entry: null, label: t('Lists sorted by date or priority keep their order.') }
-  return apply(changes, changes.length === 1 ? t('Date changed') : t('{n, plural, one {# task moved} other {# tasks moved}}', { n: changes.length }))
+  return applyDates(changes, all, (n) => (n === 1 ? t('Date changed') : t('{n, plural, one {# task moved} other {# tasks moved}}', { n })))
 }
 
 /** Plan tasks for today, dropped on the sidebar's Today (drop-on-today): the rule of a day drop, one batch with Undo. */
-export async function todayDropUndoable(ids: readonly string[], today = logicalToday()): Promise<UndoableResult> {
-  const { tasks } = await readTicked(ids)
+export async function todayDropUndoable(ids: readonly string[], today = logicalToday()): Promise<UndoableResult & { refused?: true }> {
+  const { tasks, all } = await readTicked(ids)
   const changes = planDayDrop(tasks, today, today)
   if (!changes.length) return { entry: null, label: '' }
-  return apply(changes, changes.length === 1 ? t('Scheduled for today') : t('{n, plural, one {# task scheduled for today} other {# tasks scheduled for today}}', { n: changes.length }))
+  return applyDates(changes, all, (n) => (n === 1 ? t('Scheduled for today') : t('{n, plural, one {# task scheduled for today} other {# tasks scheduled for today}}', { n })))
 }
 
 /** Set a project's or a section's flow (project-flow-modes): one op, with Undo. */
@@ -448,44 +462,36 @@ export async function projectStatusUndoable(projectId: string, status: 'active' 
  */
 export async function replanUndoable(proposal: ReplanProposal, opts: { today: string; choice: UnfitChoice; stored: ReadonlyMap<string, Task['due']>; zone?: string }): Promise<UndoableResult> {
   const ids = [...proposal.moves, ...(opts.choice === 'tomorrow' ? proposal.unfit : [])].map((m) => m.id)
-  const { tasks } = await readTicked(ids)
-  const { changes, skipped } = replanChanges(proposal, { ...opts, live: new Map(tasks.map((tk) => [tk.id, tk])), memberships: await membershipMap() })
-  const label = skipped > 0
+  const { tasks, all } = await readTicked(ids)
+  const planned = replanChanges(proposal, { ...opts, live: new Map(tasks.map((tk) => [tk.id, tk])), memberships: await membershipMap() })
+  const { skipped } = planned
+  const { changes, refused } = refusedSeries(planned.changes, all)
+  const moved = skipped > 0
     ? t('{moved} moved · {skipped} changed meanwhile', { moved: changes.length, skipped })
     : t('{n, plural, one {# task moved} other {# tasks moved}}', { n: changes.length })
+  const label = withNotMoved(moved, refused)
   return changes.length ? apply(changes, label) : { entry: null, label }
-}
-
-/**
- * Why a series may not be moved to `due` (series-move-onto-exception, #1971): one of its
- * records already stands on that date, so the repair would move the series straight
- * back. Null when the date is free or the task is not a series.
- */
-export async function seriesDateRefusal(id: string, due: Task['due'] | undefined): Promise<string | null> {
-  if (!due) return null
-  const task = await db.tasks.get(id)
-  if (!task || !seriesRule(task) || task.due?.date === due.date) return null
-  const state = exceptionOn(task, due.date, await lineageRows(id))
-  if (!state) return null
-  const date = formatDate(due.date, 'long')
-  if (state === 'done') return t('{date} is already done', { date })
-  return state === 'skipped' ? t('{date} was skipped', { date }) : t('{date} already has its own occurrence', { date })
 }
 
 /** Set or clear the due of one task (the value is already in the task's own zone); a series is never moved onto one of its records. */
 export async function dueUndoable(id: string, due: Task['due']): Promise<UndoableResult & { refused?: true }> {
   const refused = await seriesDateRefusal(id, due)
   if (refused) return { entry: null, label: refused, refused: true }
-  return apply([{ entity: 'task', entityId: id, patch: { due } }], due ? t('Date changed') : t('Date removed'))
+  // A series' start and deadline move with its due, as when it moves on (#1971).
+  return apply([{ entity: 'task', entityId: id, patch: duePatch(await db.tasks.get(id), due) }], due ? t('Date changed') : t('Date removed'))
 }
 
 /** A new start that keeps the end: the due and the estimate in one change (the calendar block's upper edge, GitHub issue 355). */
-export async function rescheduleUndoable(id: string, due: NonNullable<Task['due']>, estimate: number): Promise<UndoableResult> {
+export async function rescheduleUndoable(id: string, due: NonNullable<Task['due']>, estimate: number): Promise<UndoableResult & { refused?: true }> {
+  const refused = await seriesDateRefusal(id, due)
+  if (refused) return { entry: null, label: refused, refused: true }
   return apply([{ entity: 'task', entityId: id, patch: { due, estimate_minutes: estimate } }], t('Rescheduled'))
 }
 
 /** A span moved or resized, or a task made a span (multi-day-tasks D4): start, due and the flag in one change. */
-export async function spanUndoable(id: string, patch: Pick<Partial<Task>, 'start' | 'due' | 'span'>): Promise<UndoableResult> {
+export async function spanUndoable(id: string, patch: Pick<Partial<Task>, 'start' | 'due' | 'span'>): Promise<UndoableResult & { refused?: true }> {
+  const refused = await seriesDateRefusal(id, patch.due)
+  if (refused) return { entry: null, label: refused, refused: true }
   return apply([{ entity: 'task', entityId: id, patch }], t('Rescheduled'))
 }
 
@@ -554,7 +560,7 @@ export async function doOnUndoable(id: string, choice: DoOnChoice, zone?: string
   const refused = await seriesDateRefusal(id, patch.due)
   if (refused) return { entry: null, label: refused, refused: true }
   const label = 'part' in choice ? movedTo(choice.part) : t('Date changed')
-  return apply([{ entity: 'task', entityId: id, patch }], label)
+  return apply([{ entity: 'task', entityId: id, patch: patch.due ? { ...patch, ...duePatch(task, patch.due) } : patch }], label)
 }
 
 /** Set (or with null clear) the energy of the ticked tasks (task-energy D6): one batch, with Undo. */

@@ -211,8 +211,11 @@ the next free date after the next sync; every device computes the same date. The
 server does the same before it completes a series.
 
 For the same reason the app does not move a series onto one of its exceptions.
-Picking a date that is already done, skipped or moved, in When or by dragging the
-series, changes nothing and the toast says why. Pick another date.
+Picking a date that is already done, skipped or moved, in When, by dragging the
+series or with the Due action on a selection, leaves the series where it is: the
+toast says why, or counts it as not moved when other tasks moved with it.
+Changing the date in When moves the series' start and deadline by the same number
+of days.
 
 ### Counting with records
 

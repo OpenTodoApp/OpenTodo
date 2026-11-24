@@ -25025,14 +25025,11 @@
   "{count} to process: move, schedule, complete or trash each Inbox task.": [
     "web/src/app/review/ReviewView.tsx"
   ],
-  "{date} already has its own occurrence": [
-    "web/src/lib/undoActions.ts"
-  ],
-  "{date} is already done": [
-    "web/src/lib/undoActions.ts"
+  "{date} was moved": [
+    "web/src/lib/seriesDates.ts"
   ],
   "{date} was skipped": [
-    "web/src/lib/undoActions.ts"
+    "web/src/lib/seriesDates.ts"
   ],
   "{date} · one occurrence of a repeating task": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
@@ -25042,6 +25039,9 @@
   ],
   "{date}, {n, plural, one {# old note version} other {# old note versions}} removed, {bytes} reclaimed": [
     "web/src/app/DatabaseStoragePanel.tsx"
+  ],
+  "{date}: already done": [
+    "web/src/lib/seriesDates.ts"
   ],
   "{date}: {n, plural, one {# task} other {# tasks}}": [
     "web/src/app/method/loop/PulseDetails.tsx"
@@ -26285,6 +26285,9 @@
   ],
   "{n} ms": [
     "web/src/app/routines/RunHistory.tsx"
+  ],
+  "{n} not moved": [
+    "web/src/lib/seriesDates.ts"
   ],
   "{n} of 3 done": [
     "web/src/app/FirstDay.tsx"

@@ -60,7 +60,8 @@ export async function doOnWithUndo(id: string, choice: DoOnChoice, zone?: string
 /** A calendar block's new start with the estimate that keeps its end, as one change. */
 export async function rescheduleWithUndo(id: string, due: NonNullable<Task['due']>, estimate: number): Promise<void> {
   const r = await rescheduleUndoable(id, due, estimate)
-  if (r.entry) showUndoToast(r.label, r.entry.id)
+  if (r.refused) refuse(r.label)
+  else if (r.entry) showUndoToast(r.label, r.entry.id)
 }
 
 /** Set or remove one task's deadline in the When editor, with Undo, like its due date beside it. */
@@ -84,7 +85,8 @@ export async function estimateWithUndo(id: string, minutes: number): Promise<voi
 /** A span's new range, or a task made a span (multi-day-tasks D4), as one change with Undo. */
 export async function spanWithUndo(id: string, patch: Pick<Partial<Task>, 'start' | 'due' | 'span'>): Promise<void> {
   const r = await spanUndoable(id, patch)
-  if (r.entry) showUndoToast(r.label, r.entry.id)
+  if (r.refused) refuse(r.label)
+  else if (r.entry) showUndoToast(r.label, r.entry.id)
 }
 
 /** A bar dragged in the timeline: its new dates as one change with Undo, like a drop on a calendar day. */

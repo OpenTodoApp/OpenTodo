@@ -10,13 +10,14 @@ The spec says nothing about a date change that puts the series on its own except
 
 ## What Changes
 
-- Moving a series' due date (the panel's When, a typed date, a drag in Day, Week, Month or Plan, Triage) onto a date that has one of its records writes nothing and says why in a toast instead of "Date changed": "Sun, 29 Nov is already done", "… was skipped" or "… already has its own occurrence". The series, its start and its deadline stay as they were.
-- Any other date still moves the series as before, earlier dates included.
+- Moving one series' due date (the panel's When, a typed date, a drag in Day, Week, Month, Plan or Upcoming, a drop on Today, Triage) onto a date that has one of its records writes nothing and says why in a toast instead of "Date changed": "Sun, 29 Nov: already done", "… was skipped" or "… was moved". The series, its start and its deadline stay as they were.
+- Moving several tasks at once (a drag of a selection, the bulk and group Due actions, the re-plan) leaves such a series as it is, moves the others, and the toast adds "1 not moved".
+- Any other date still moves the series as before, earlier dates included, and a date change in When now moves the series' start and deadline by the same days, as moving on does, so they no longer drift apart.
 
 ## Out of scope
 
 - Resetting a series to an earlier, completed occurrence (reopening or removing the record). The record can still be reopened from Completed.
 - Marking taken dates inside the date picker.
-- Writes from the API, the CLI or the assistant: the repair still moves such a series on.
+- Writes from the API, the CLI or the assistant: the repair still moves such a series on (a server-side refusal is a follow-up).
 
 No ROADMAP.md item; a bug fix. No new op field, no op log change, no new environment variable.

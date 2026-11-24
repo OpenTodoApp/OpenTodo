@@ -112,7 +112,7 @@ describe('single-action undo', () => {
     await completeWithUndo(await createTask({ title: 'Other' }), true)
     await setDueWithUndo(id, { date: '2026-11-29', time: '08:00' })
     expect(bulkToast()).toBeNull()
-    expect(actionToast()!.label).toMatch(/is already done$/)
+    expect(actionToast()!.label).toMatch(/: already done$/)
     expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-12-06', time: '08:00' })
     hideActionToast()
   })
