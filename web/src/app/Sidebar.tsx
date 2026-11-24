@@ -9,7 +9,7 @@ import { useShortcutHints } from './shortcuts/hints'
 
 /** The `g` key of each destination, from the registry's `go.*` rows. */
 const GO_KEYS: Record<string, string> = Object.fromEntries(SHORTCUTS.filter((s) => s.id.startsWith('go.')).map((s) => [s.id.slice(3), s.keys[0]]))
-import { requestTemplateDialog } from './TemplateDialogs'
+import { requestTemplateDialog } from './TemplateDialogHost'
 import { ProjectPickerField } from './ProjectPickerField'
 import { type FormEvent, Fragment, type KeyboardEvent, type ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { lazy } from '../lib/lazy'

@@ -44,6 +44,8 @@
     <string name="widget_empty">Nothing left for today.</string>
     <string name="widget_untitled">Task</string>
     <string name="widget_more">+ %1$d more</string>
+    <string name="widget_earlier">Earlier</string>
+    <string name="widget_complete">Complete: %1$s</string>
     <string name="widget_completed">Completed</string>
     <string name="widget_completed_description">How many tasks you completed this week</string>
     <string name="widget_completed_locked">Locked: today’s count only</string>
@@ -57,6 +59,7 @@
     <string name="error_sign_in">Your server is behind a login page, and signing in didn\'t continue in the app. Sign in again here.</string>
     <string name="save_failed">The file could not be saved.</string>
     <string name="channel_focus">Focus</string>
+    <string name="channel_sync">Syncing</string>
     <string name="focus_generic">Focus session</string>
     <string name="focus_work">Work</string>
     <string name="focus_work_of">Work · %1$d of %2$d</string>

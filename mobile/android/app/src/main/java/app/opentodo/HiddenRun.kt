@@ -1,7 +1,12 @@
 package app.opentodo
 
 import android.annotation.SuppressLint
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
+import androidx.core.app.NotificationCompat
+import androidx.work.ForegroundInfo
+import androidx.work.OutOfQuotaPolicy
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -34,7 +39,10 @@ class HiddenRunWorker(context: Context, params: WorkerParameters) : CoroutineWor
     @SuppressLint("SetJavaScriptEnabled")
     override suspend fun doWork(): Result {
         val origin = Prefs(applicationContext).server ?: return Result.success()
-        val path = inputData.getString("path")?.takeIf { it.startsWith("/") } ?: "/"
+        // android-widget-list D2: a widget run takes every tick queued so far; a later run of the
+        // chain that finds the queue empty has nothing to do.
+        val path = if (inputData.getBoolean(WIDGET_RUN, false)) WidgetStore.takeCompletePath(applicationContext) ?: return Result.success()
+        else inputData.getString("path")?.takeIf { it.startsWith("/") } ?: "/"
         withContext(Dispatchers.Main) {
             val web = WebView(applicationContext)
             web.settings.javaScriptEnabled = true
@@ -54,7 +62,30 @@ class HiddenRunWorker(context: Context, params: WorkerParameters) : CoroutineWor
         return Result.success()
     }
 
-    companion object { const val LIMIT_MS = 90_000L }
+    /**
+     * An expedited widget run on Android 11 and earlier runs as a foreground service, which needs
+     * a notification: a silent one on a low "Syncing" channel, gone when the run ends. Android 12
+     * and later run expedited work as a job and never ask for it.
+     */
+    override suspend fun getForegroundInfo(): ForegroundInfo {
+        val nm = applicationContext.getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannel(NotificationChannel(SYNC_CHANNEL, applicationContext.getString(R.string.channel_sync), NotificationManager.IMPORTANCE_MIN).apply { setShowBadge(false) })
+        val n = NotificationCompat.Builder(applicationContext, SYNC_CHANNEL)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(applicationContext.getString(R.string.channel_sync))
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .setSilent(true)
+            .setOngoing(true)
+            .build()
+        return ForegroundInfo(SYNC_NOTIFICATION, n)
+    }
+
+    companion object {
+        const val LIMIT_MS = 90_000L
+        const val WIDGET_RUN = "widget"
+        private const val SYNC_CHANNEL = "sync"
+        private const val SYNC_NOTIFICATION = 7301
+    }
 }
 
 /** Waits for the web app's `backgroundDone()`, at most [limitMs]: true when it came, false at the limit. */
@@ -64,6 +95,7 @@ internal suspend fun awaitBackgroundDone(done: Deferred<Unit>, limitMs: Long): B
 object HiddenRun {
     private const val PERIODIC = "refresh"
     private const val PUSHED = "pushed"
+    private const val WIDGET = "widget"
 
     fun schedulePeriodic(context: Context) {
         if (Prefs(context).server == null) return
@@ -77,6 +109,22 @@ object HiddenRun {
     fun enqueueOnce(context: Context, path: String) {
         val req = OneTimeWorkRequestBuilder<HiddenRunWorker>().setInputData(workDataOf("path" to path)).build()
         WorkManager.getInstance(context).enqueue(req)
+    }
+
+    /**
+     * A tap on the Today widget's completion circle (android-widget-list D2): a run that completes
+     * every tick queued when it starts (WidgetStore.takeCompletePath), so quick ticks share one
+     * web view; appended to one chain, so a tick made while a run is going gets the next run, and
+     * each id is sent once. Expedited when the system allows, else as soon as it can. Like a
+     * notification action, applied locally at once and synced when there is a network.
+     */
+    fun enqueueWidgetRun(context: Context) {
+        if (Prefs(context).server == null) return
+        val req = OneTimeWorkRequestBuilder<HiddenRunWorker>()
+            .setInputData(workDataOf(HiddenRunWorker.WIDGET_RUN to true))
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            .build()
+        WorkManager.getInstance(context).enqueueUniqueWork(WIDGET, ExistingWorkPolicy.APPEND_OR_REPLACE, req)
     }
 
     /**

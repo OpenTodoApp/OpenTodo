@@ -46,9 +46,10 @@ class BridgeFixtureTest {
             locked = want.getBoolean("locked"),
             count = want.getInt("count"),
             overdue = want.getInt("overdue"),
+            canComplete = want.getBoolean("canComplete"),
             rows = (0 until rows.length()).map { i ->
                 val r = rows.getJSONObject(i)
-                WidgetModel.Row(r.getString("id"), nullableString(r, "title"), nullableString(r, "time"), r.getInt("priority"), r.getBoolean("overdue"))
+                WidgetModel.Row(r.getString("id"), nullableString(r, "title"), nullableString(r, "time"), nullableString(r, "date"), nullableString(r, "project"), r.getInt("priority"), r.getBoolean("overdue"))
             },
             more = want.getInt("more"),
         )
@@ -206,6 +207,21 @@ class BridgeFixtureTest {
         assertTrue(script, script.contains("\"files\"") && script.contains("\"haptics\""))
     }
 
+    /** text-size D3: the page gets the system font scale as a number, and a bad one reads as 1. */
+    @Test fun thePageScriptHandsTheFontScale() {
+        assertTrue(Bridge.script("1.0.0", listOf("reminders"), textScale = 1.3f).contains("textScale: 1.3,"))
+        assertTrue(Bridge.script("1.0.0", listOf("reminders")).contains("textScale: 1.0,"))
+        assertEquals("1", Bridge.textScaleLiteral(Float.NaN))
+        assertEquals("1", Bridge.textScaleLiteral(0f))
+    }
+
+    /** text-size D3: the system text zoom stays until the page applies the scale; an older page never says so. */
+    @Test fun textZoomWaitsForThePage() {
+        assertTrue(Bridge.script("1.0.0", listOf("reminders")).contains("textScaleApplied: function () { send('textScaleApplied', []) }"))
+        assertEquals(130, Bridge.TextZoom.of(applied = false, system = 130))
+        assertEquals(100, Bridge.TextZoom.of(applied = true, system = 130))
+    }
+
     private fun strings(f: JSONObject, key: String): List<String> = f.getJSONArray(key).let { a -> (0 until a.length()).map { a.getString(it) } }
 
     /**
@@ -329,6 +345,14 @@ class BridgeFixtureTest {
             assertEquals(t.getString("path"), ReminderSchedule.taskPath(t.getString("taskId")))
         }
         assertEquals(f.getJSONObject("quickAdd").getString("path"), ReminderSchedule.QUICK_ADD_PATH)
+        // android-widget-list D2: the Today widget's completion circle.
+        val complete = f.getJSONArray("completePaths")
+        assertTrue(complete.length() > 0)
+        for (i in 0 until complete.length()) {
+            val c = complete.getJSONObject(i)
+            val ids = c.getJSONArray("taskIds").let { a -> (0 until a.length()).map { a.getString(it) } }
+            assertEquals(c.getString("path"), WidgetStore.completePath(ids))
+        }
     }
 
     @Test fun notificationButtonsInTheFixturesOrder() {

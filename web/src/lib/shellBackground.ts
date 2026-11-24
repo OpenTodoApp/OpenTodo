@@ -54,7 +54,8 @@ export async function startBackgroundRun(opts: { now?: () => number; sleep?: (ms
   const now = opts.now ?? Date.now
   const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)))
   const started = now()
-  const wantsAction = shellUrlAction(opts.search ?? location.search)?.kind === 'reminder'
+  const kind = shellUrlAction(opts.search ?? location.search)?.kind
+  const wantsAction = kind === 'reminder' || kind === 'complete'
   const appliedAtStart = reminderActionsApplied()
   for (;;) {
     const snap = syncSnapshot()

@@ -62,7 +62,10 @@ export interface ShellWidgetData {
   locked: boolean
   count: number
   overdue: number
-  tasks: { id: string; title?: string; time?: string; priority: number; overdue: boolean }[]
+  /** `project`: the project's name (none for the Inbox); `date`: an overdue task's due date (android-widget-list D4). */
+  tasks: { id: string; title?: string; time?: string; date?: string; project?: string; priority: number; overdue: boolean }[]
+  /** What the widget may ask of this web app (android-widget-list D3): `complete` opens `/?complete=<id>` in a background run. */
+  actions?: 'complete'[]
   /**
    * The Completed widget (completed-widget D1): how many tasks were completed today and,
    * while the account is readable, on each of the last 7 days (oldest first), counted as
@@ -86,6 +89,10 @@ export interface OpenTodoShell {
    * F-Droid app has them). Absent elsewhere.
    */
   store?: 'play'
+  /** text-size D3: the Android system font scale (1 = 100 %). The iOS shell leaves it to WebKit. */
+  textScale?: number
+  /** text-size D3: the page applies `textScale` itself, so the Android web view stops scaling its text. */
+  textScaleApplied?(): void
   scheduleReminders?(json: string): Promise<ShellPermission> | ShellPermission | void
   testNotification?(): Promise<boolean> | boolean | void
   publishWidget?(json: string): void

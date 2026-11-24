@@ -63,6 +63,8 @@ class Bridge(
         fun pushLink(done: (Boolean, String?) -> Unit) = done(false, null)
         /** shell-reveal-on-paint D2: the page has drawn its first frame; the launch screen goes (main thread). */
         fun painted() {}
+        /** text-size D3: the page applies `textScale` to its root, so the web view's text zoom goes to 100 (main thread). */
+        fun textScaleApplied() {}
     }
 
     private val main = Handler(Looper.getMainLooper())
@@ -89,7 +91,7 @@ class Bridge(
         WebViewCompat.addWebMessageListener(webView, "opentodoNative", rules) { _, message, sourceOrigin, isMainFrame, reply ->
             if (isMainFrame && originOf(sourceOrigin) == origin) handle(message.data ?: return@addWebMessageListener, reply)
         }
-        WebViewCompat.addDocumentStartJavaScript(webView, script(BuildConfig.VERSION_NAME, capabilities(), BuildConfig.PLAY_BUILD), rules)
+        WebViewCompat.addDocumentStartJavaScript(webView, script(BuildConfig.VERSION_NAME, capabilities(), BuildConfig.PLAY_BUILD, context.resources.configuration.fontScale), rules)
         return true
     }
 
@@ -127,6 +129,7 @@ class Bridge(
             "backgroundDone" -> if (host == null) backgroundDone?.invoke()
             // shell-reveal-on-paint D2: only the visible app has a launch screen to end.
             "painted" -> if (host != null) main.post { host.painted() }
+            "textScaleApplied" -> if (host != null) main.post { host.textScaleApplied() }
             // shell-push D5: only the visible app may start the distributor's link screen (host).
             "pushSubscribe" -> args.optString(0).let { vapid -> main.post { Push.subscribe(context, host, vapid) { answer(it) } } }
             "pushState" -> answer(Push.stateJson(context))
@@ -169,6 +172,11 @@ class Bridge(
         else h.requestLocationPermission { if (Geofences.fine(context)) askBackground() else finish() }
     }
 
+    /** The web view's text zoom (text-size D3): the system's until the page applies the font scale itself. */
+    object TextZoom {
+        fun of(applied: Boolean, system: Int): Int = if (applied) 100 else system
+    }
+
     companion object {
         const val VERSION = 1
         private const val MAX_MESSAGE = 2 * 1024 * 1024
@@ -205,6 +213,9 @@ class Bridge(
             return "$scheme://$h" + if (port == -1 || port == def) "" else ":$port"
         }
 
+        /** The font scale as a JavaScript number: finite and positive, else 1 (the page clamps it). */
+        fun textScaleLiteral(scale: Float): String = if (scale.isFinite() && scale > 0f) scale.toString() else "1"
+
         /** http(s), mailto and tel, and a `geo:` point for the maps app (android-location-and-map). */
         fun safeExternal(url: String): Boolean {
             if (WebLocation.mapLink(url)) return true
@@ -219,8 +230,12 @@ class Bridge(
          */
         fun externalLink(url: String): Boolean = safeExternal(url) || ObsidianLink.valid(url)
 
-        /** The page side: `window.opentodoShell`, promise-returning methods over the message channel. */
-        fun script(app: String, caps: List<String>, play: Boolean = false): String = """
+        /**
+         * The page side: `window.opentodoShell`, promise-returning methods over the message channel.
+         * text-size D3: `textScale` is the system font scale, which the page applies to its root
+         * font size (the web view's own text zoom stays at 100); a change recreates the activity.
+         */
+        fun script(app: String, caps: List<String>, play: Boolean = false, textScale: Float = 1f): String = """
             (function () {
               if (window.opentodoShell || !window.opentodoNative) return;
               var nat = window.opentodoNative, seq = 0, waiting = {};
@@ -235,6 +250,7 @@ class Bridge(
               window.opentodoShell = Object.freeze({
                 bridge: $VERSION, platform: 'android', app: ${JSONObject.quote(app)},${if (play) " store: 'play'," else ""}
                 capabilities: Object.freeze(${JSONArray(caps)}),
+                textScale: ${textScaleLiteral(textScale)},
                 scheduleReminders: function (json) { return call('scheduleReminders', [String(json)]) },
                 scheduleGeofences: function (json) { return call('scheduleGeofences', [String(json)]) },
                 testNotification: function () { return call('testNotification', []) },
@@ -253,6 +269,7 @@ class Bridge(
                 openAlarmSettings: function () { send('openAlarmSettings', []) },
                 backgroundDone: function () { send('backgroundDone', []) },
                 painted: function () { send('painted', []) },
+                textScaleApplied: function () { send('textScaleApplied', []) },
                 pushSubscribe: function (key) { return call('pushSubscribe', [String(key)]) },
                 pushState: function () { return call('pushState', []) },
                 pushUnsubscribe: function () { send('pushUnsubscribe', []) }
