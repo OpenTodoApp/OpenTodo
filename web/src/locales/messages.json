@@ -1483,7 +1483,8 @@
     "web/src/app/SsoPanel.tsx"
   ],
   "After {title}": [
-    "web/src/app/TaskRow.tsx"
+    "web/src/app/TaskRow.tsx",
+    "web/src/app/task-detail/Subtasks.tsx"
   ],
   "Afternoon": [
     "web/src/app/ParseChips.tsx",
@@ -21577,7 +21578,8 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Waits for the previous step: {title}": [
-    "web/src/app/TaskRow.tsx"
+    "web/src/app/TaskRow.tsx",
+    "web/src/app/task-detail/Subtasks.tsx"
   ],
   "Waits for {tasks}": [
     "web/src/lib/assistant.ts"
@@ -25022,6 +25024,15 @@
   ],
   "{count} to process: move, schedule, complete or trash each Inbox task.": [
     "web/src/app/review/ReviewView.tsx"
+  ],
+  "{date} already has its own occurrence": [
+    "web/src/lib/undoActions.ts"
+  ],
+  "{date} is already done": [
+    "web/src/lib/undoActions.ts"
+  ],
+  "{date} was skipped": [
+    "web/src/lib/undoActions.ts"
   ],
   "{date} · one occurrence of a repeating task": [
     "web/src/app/task-detail/OccurrenceScope.tsx"

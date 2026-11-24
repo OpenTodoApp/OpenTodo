@@ -6,11 +6,11 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
-import { createProject, createSubtask, createTask, resetDeviceId } from '../lib/ops'
+import { completeTask, createProject, createSubtask, createTask, resetDeviceId } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
 import { click, render, waitFor } from '../ui/test-utils'
 import { TOAST_MS, UndoToast, undoToast } from './bulk/UndoToast'
-import { ACTION_TOAST_MS, bulkToast, hideBulkToast } from './bulk/toastStore'
+import { ACTION_TOAST_MS, actionToast, bulkToast, hideActionToast, hideBulkToast } from './bulk/toastStore'
 import { PanelHost } from './PanelHost'
 import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
@@ -104,6 +104,17 @@ describe('single-action undo', () => {
     await deleteWithUndo(b)
     expect(bulkToast()!.key).not.toBe(first)
     expect(bulkToast()!.label).toBe('Moved to Trash')
+  })
+
+  it('a series moved onto its done occurrence says why and offers no "Date changed" (#1971)', async () => {
+    const id = await createTask({ title: 'Plan the week', due: { date: '2026-11-29', time: '08:00' }, recurrence: 'every sunday' })
+    await completeTask(id, { today: '2026-11-24' })
+    await completeWithUndo(await createTask({ title: 'Other' }), true)
+    await setDueWithUndo(id, { date: '2026-11-29', time: '08:00' })
+    expect(bulkToast()).toBeNull()
+    expect(actionToast()!.label).toMatch(/is already done$/)
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-12-06', time: '08:00' })
+    hideActionToast()
   })
 
   it('the list checkbox shows the toast with Undo, which reopens the row', async () => {

@@ -5,7 +5,7 @@
 import { assigneeUndoable, calendarEditUndoable, completeUndoable, deadlineUndoable, doOnUndoable, dueUndoable, estimateUndoable, moveUndoable, parkUndoable, rescheduleUndoable, spanUndoable, trashUndoable } from '../lib/undoActions'
 import type { DoOnChoice } from '../lib/dayParts'
 import type { Task } from '../lib/types'
-import { showUndoToast } from './bulk/toastStore'
+import { hideBulkToast, showActionToast, showUndoToast } from './bulk/toastStore'
 import { markCompleted, withListTransition, success } from './motion'
 import { prepareCompletionSound } from './completionSound'
 
@@ -38,15 +38,23 @@ export async function moveWithUndo(id: string, projectId: string | null, targetN
   return r.newId
 }
 
+/** A date the change could not keep (a series onto its own record, #1971): the reason replaces the last offer, with no Undo. */
+function refuse(label: string): void {
+  hideBulkToast()
+  showActionToast(label)
+}
+
 export async function setDueWithUndo(id: string, due: Task['due']): Promise<void> {
   const r = await withListTransition(1, () => dueUndoable(id, due))
-  if (r.entry) showUndoToast(r.label, r.entry.id)
+  if (r.refused) refuse(r.label)
+  else if (r.entry) showUndoToast(r.label, r.entry.id)
 }
 
 /** A choice of the Do on time of day row, or a typed date with a time (when-picker D2): one batch with Undo. */
 export async function doOnWithUndo(id: string, choice: DoOnChoice, zone?: string): Promise<void> {
   const r = await withListTransition(1, () => doOnUndoable(id, choice, zone))
-  if (r.entry) showUndoToast(r.label, r.entry.id)
+  if (r.refused) refuse(r.label)
+  else if (r.entry) showUndoToast(r.label, r.entry.id)
 }
 
 /** A calendar block's new start with the estimate that keeps its end, as one change. */

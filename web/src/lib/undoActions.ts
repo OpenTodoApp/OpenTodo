@@ -7,7 +7,7 @@
 import { bulkLabel, planComplete, planLabels, planMove, planPriority, planReopen, planTrash, readTicked, toProposed } from './bulk'
 import { db, type AssistantUndo } from './db'
 import { formatDate, logicalToday } from './dates'
-import { planSkip, seriesRule } from './recurring'
+import { exceptionOn, planSkip, seriesRule } from './recurring'
 import { lineageRows } from './lineageRows'
 import { editRedirected, getDeviceId, liveSubtree, parkTask, pastScopeActive, planRecurrence, planReminders, planTaskEdit, planTaskParent, setRecurrence, updateTask, type Change } from './ops'
 import type { ReminderPhrase } from './nlp'
@@ -456,8 +456,26 @@ export async function replanUndoable(proposal: ReplanProposal, opts: { today: st
   return changes.length ? apply(changes, label) : { entry: null, label }
 }
 
-/** Set or clear the due of one task (the value is already in the task's own zone). */
-export async function dueUndoable(id: string, due: Task['due']): Promise<UndoableResult> {
+/**
+ * Why a series may not be moved to `due` (series-move-onto-exception, #1971): one of its
+ * records already stands on that date, so the repair would move the series straight
+ * back. Null when the date is free or the task is not a series.
+ */
+export async function seriesDateRefusal(id: string, due: Task['due'] | undefined): Promise<string | null> {
+  if (!due) return null
+  const task = await db.tasks.get(id)
+  if (!task || !seriesRule(task) || task.due?.date === due.date) return null
+  const state = exceptionOn(task, due.date, await lineageRows(id))
+  if (!state) return null
+  const date = formatDate(due.date, 'long')
+  if (state === 'done') return t('{date} is already done', { date })
+  return state === 'skipped' ? t('{date} was skipped', { date }) : t('{date} already has its own occurrence', { date })
+}
+
+/** Set or clear the due of one task (the value is already in the task's own zone); a series is never moved onto one of its records. */
+export async function dueUndoable(id: string, due: Task['due']): Promise<UndoableResult & { refused?: true }> {
+  const refused = await seriesDateRefusal(id, due)
+  if (refused) return { entry: null, label: refused, refused: true }
   return apply([{ entity: 'task', entityId: id, patch: { due } }], due ? t('Date changed') : t('Date removed'))
 }
 
@@ -529,10 +547,12 @@ export async function eveningUndoable(id: string, evening: boolean): Promise<voi
  * A choice of the Do on segment's time of day row, or a typed date with a time
  * (when-picker D2, D4): the part or the time with what it clears, one batch with Undo.
  */
-export async function doOnUndoable(id: string, choice: DoOnChoice, zone?: string): Promise<UndoableResult> {
+export async function doOnUndoable(id: string, choice: DoOnChoice, zone?: string): Promise<UndoableResult & { refused?: true }> {
   const task = await db.tasks.get(id)
   const patch = task && doOnPatch(task, choice, zone)
   if (!patch) return { entry: null, label: '' }
+  const refused = await seriesDateRefusal(id, patch.due)
+  if (refused) return { entry: null, label: refused, refused: true }
   const label = 'part' in choice ? movedTo(choice.part) : t('Date changed')
   return apply([{ entity: 'task', entityId: id, patch }], label)
 }

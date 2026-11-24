@@ -1,0 +1,30 @@
+# Spec Delta
+
+## MODIFIED Requirements
+
+### Requirement: Exceptions come from the records
+The exception dates of a series SHALL be the occurrence dates of its records, whatever their state. No projection SHALL be drawn on an exception date, and moving the series to its next occurrence (by completion, skip or "This occurrence only") SHALL go to the first occurrence date after the current one that is not an exception. No list of exceptions SHALL be stored on the series. A device that may edit a series and finds it due on one of its exception dates SHALL write the series' due date, and the deadline and start that move with it, to the next date that is not an exception; the server SHALL apply the same rule before it completes a series. Because the value is a function of synced rows, devices that repair concurrently SHALL converge. A date change in the app that would put a series with a calendar rule on one of its exception dates SHALL write nothing and SHALL say in a toast, instead of "Date changed", that the date is already done, was skipped or already has its own occurrence; the series, its start and its deadline SHALL stay as they were. The check SHALL read the rows on the device, offline included, so there is nothing to converge.
+
+#### Scenario: Completed early, then the series rolls past it
+- **WHEN** a series with `every mon, wed, fri` is due Monday the 12th, the user completes Wednesday the 14th early, and later completes Monday
+- **THEN** the series is due Friday the 16th, and Wednesday is listed once in Completed
+
+#### Scenario: Two exceptions on two offline devices
+- **WHEN** device A skips the occurrence of the 14th and device B moves the occurrence of the 16th, both offline, and both sync
+- **THEN** every device shows neither the 14th nor the 16th as a projection and shows the moved occurrence on its new date
+
+#### Scenario: Repair after a late record
+- **WHEN** device A, offline, completed the 14th early, and device B completed the current occurrence of the 12th and moved the series to the 14th before receiving A's record
+- **THEN** after both sync, the series is due the 16th on every device, written by whichever device repaired first, and Completed holds the 12th and the 14th once each
+
+#### Scenario: Viewer does not repair
+- **WHEN** a viewer of a shared project receives a series due on one of its exception dates
+- **THEN** the viewer's device writes nothing, and the series moves when a member who may edit it syncs
+
+#### Scenario: Moved back onto a done occurrence
+- **WHEN** a series with `every sunday` at 08:00 is due 6 December with its start on 6 December, 29 November is done, and the user picks 29 November in When with All occurrences selected
+- **THEN** nothing is written, the toast says 29 November is already done, and the series stays due 6 December with its start on 6 December
+
+#### Scenario: Moved to a free earlier date
+- **WHEN** the same series is moved to 22 November, which has no record
+- **THEN** the series is due 22 November and the toast says "Date changed"
