@@ -71,11 +71,15 @@ Lets the owner restore the whole server from a backup archive inside the web app
 - **THEN** the response is 401 `unauthorized`
 
 ### Requirement: Confirmed restore applies through a self-restart
-`POST /api/v1/backups/restore` SHALL take a prepared restore id and the confirmation word `RESTORE`. It SHALL require a session that re-authenticated within the fresh window, answer 202, and then restart the server: shut down gracefully, apply the restore before the database reopens, and start again in the same process. The restore SHALL be refused with 409 `conflict` while a backup run is in progress.
+`POST /api/v1/backups/restore` SHALL take a prepared restore id and the confirmation word `RESTORE`. It SHALL require a session that re-authenticated within the fresh window, answer 202, and then restart the server: shut down gracefully, apply the restore before the database reopens, and start again in the same process. Before it stops, the server SHALL check that it can start itself again; the 202 response SHALL carry `status` `restarting` when it can and `restart_required` when it cannot, in which case the server stops and applies the restore on its next start. The restore SHALL be refused with 409 `conflict` while a backup run is in progress.
 
 #### Scenario: Successful web restore
 - **WHEN** the owner re-authenticates, types `RESTORE` and confirms a prepared restore
 - **THEN** the server restarts, its accounts, tokens, projects, tasks and operation log match the archive, a safety copy of the previous database exists, and the log generation is new
+
+#### Scenario: Server cannot restart itself
+- **WHEN** the owner confirms a restore on a server whose executable cannot be resolved (for example a chroot without `/proc/self/exe`) or run
+- **THEN** the response is 202 with `status` `restart_required`, the server stops, logs "restart OpenTodo to finish the restore", and applies the restore when it is started again
 
 #### Scenario: Stale session
 - **WHEN** the confirmation comes from a session that has not re-authenticated within the fresh window
@@ -102,11 +106,15 @@ Lets the owner restore the whole server from a backup archive inside the web app
 - **THEN** the demo deny list refuses it, and the panel shows the demo note instead of the restore section
 
 ### Requirement: Restore state across the restart
-The web app SHALL show restart progress after confirming, poll until the server answers again, and then reload. After the restart, the restore section SHALL report the outcome of the last restore: time, archive, who requested it, and success or the error. A restore that fails while applying SHALL leave the previous database in place, start the server normally and record the failure.
+The web app SHALL show restart progress after confirming, poll until the server answers again, and then reload. When the confirmation says `restart_required`, or the server has not answered within a minute, the screen SHALL stop showing progress and say "Restart OpenTodo to finish the restore.", keep polling, and reload once the server answers. After the restart, the restore section SHALL report the outcome of the last restore: time, archive, who requested it, and success or the error. A restore that fails while applying SHALL leave the previous database in place, start the server normally and record the failure.
 
 #### Scenario: Owner watches the restart
 - **WHEN** the owner confirms a restore
 - **THEN** the screen shows "Restoring and restarting…", then reloads into the restored data once the server answers
+
+#### Scenario: Restart needed by hand
+- **WHEN** the confirmation answers `restart_required`, or the server has not come back within a minute
+- **THEN** the screen shows "Restart OpenTodo to finish the restore." without a spinner, and reloads once someone starts the server and it answers
 
 #### Scenario: Owner's session predates the restore
 - **WHEN** the owner's session was created after the backup was taken

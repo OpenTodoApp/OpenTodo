@@ -188,7 +188,11 @@ runs, or with `opentodo restore` while it is stopped.
 5. The server stops gracefully, applies the restore before it reopens the
    database, and starts again in the same process: no container restart policy
    or shell is needed. The page shows **Restoring and restarting…** and reloads
-   when the server is back, usually within seconds.
+   when the server is back, usually within seconds. Where the server cannot
+   start itself again (for example in a chroot without `/proc/self/exe`), or
+   has not come back within a minute, the page says **Restart OpenTodo to
+   finish the restore.** Start it again by hand: the restore is applied on that
+   start, and the page reloads once the server answers.
 
 Sessions live in the database, so anyone who signed in after the backup was
 taken (possibly you) signs in again; the sign-in screen says that the server

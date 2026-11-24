@@ -193,6 +193,45 @@ describe('preview and confirmation (5.3)', () => {
     await r.unmount()
   })
 
+  async function confirmPrepared() {
+    await waitFor(() => !!byText('Preview'), 'the archive list')
+    await click(byText('Preview')!)
+    await waitFor(() => !!document.querySelector('input[name="restore-confirm"]'), 'the preview')
+    await type(document.querySelector('input[name="restore-confirm"]') as HTMLInputElement, 'RESTORE')
+    await click(byText('Restore and restart')!)
+  }
+  const screen = () => document.querySelector('[data-testid="restore-restarting"]')
+
+  it('a server that cannot restart itself gets a final screen at once (#1961)', async () => {
+    fakeServer({ ...base,
+      'POST /api/v1/backups/restore/prepare': () => [200, staged],
+      'POST /api/v1/backups/restore': () => [202, { status: 'restart_required' }],
+    })
+    const r = await render(<RestoreSection offline={false} />)
+    await confirmPrepared()
+    await waitFor(() => !!screen(), 'the restart notice')
+    expect(screen()!.textContent).toContain('Restart OpenTodo to finish the restore.')
+    expect(screen()!.querySelector('.animate-spin')).toBeNull()
+    await r.unmount()
+  })
+
+  it('a server that does not come back within the wait gets the same final screen (#1961)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true, toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    fakeServer({ ...base,
+      'POST /api/v1/backups/restore/prepare': () => [200, staged],
+      'POST /api/v1/backups/restore': () => [202, { status: 'restarting' }],
+      'GET /healthz': () => [503, { status: 'down' }],
+    })
+    const r = await render(<RestoreSection offline={false} />)
+    await confirmPrepared()
+    await waitFor(() => !!screen(), 'the restart notice')
+    expect(screen()!.textContent).toContain('Restoring and restarting')
+    await vi.advanceTimersByTimeAsync(61_000)
+    await waitFor(() => !!screen()?.textContent?.includes('Restart OpenTodo to finish the restore.'), 'the final screen')
+    expect(screen()!.querySelector('.animate-spin')).toBeNull()
+    await r.unmount()
+  })
+
   it('cancel discards the prepared restore', async () => {
     const calls = fakeServer({ ...base, 'POST /api/v1/backups/restore/prepare': () => [200, staged], [`DELETE /api/v1/backups/restore/${staged.id}`]: () => [204, null] })
     const r = await render(<RestoreSection offline={false} />)

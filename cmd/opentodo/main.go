@@ -121,9 +121,13 @@ func run() error {
 	// One tenant: the data directory, its services and its handler (OpenSpec
 	// `multi-tenant-host` D1). Open applies a pending web restore and holds the
 	// data directory shared until Close.
-	t, err := tenant.Open(ctx, cfg, tenant.Options{Version: version, Log: log, Restart: func() {
+	t, err := tenant.Open(ctx, cfg, tenant.Options{Version: version, Log: log, Restart: func() bool {
+		// Checked before stopping, so the page can say when someone has to
+		// start the server again (#1961).
+		_, err := restartTarget()
 		restartRequested.Store(true)
 		requestRestart()
+		return err == nil
 	}})
 	if err != nil {
 		return err

@@ -143,9 +143,10 @@ func (s *Service) restoreRoot() string { return filepath.Join(s.tmpDir(), "resto
 
 func (s *Service) stagingDir(id string) string { return filepath.Join(s.restoreRoot(), id) }
 
-// SetRestartFunc wires the function that restarts the server after a confirmed
-// restore (cmd/opentodo). Without it, a confirmed restore waits for the next start.
-func (s *Service) SetRestartFunc(f func()) { s.restart = f }
+// SetRestartFunc wires the function that stops the server after a confirmed
+// restore (cmd/opentodo). It reports whether the server starts again on its
+// own; without it, a confirmed restore waits for the next start.
+func (s *Service) SetRestartFunc(f func() bool) { s.restart = f }
 
 // Archives lists the archives in the configured destination, newest first.
 // Objects that are not OpenTodo archives are left out.
@@ -567,27 +568,29 @@ func (s *Service) CancelRestore(id string) {
 }
 
 // ConfirmRestore records the confirmed restore for the next start and asks for
-// the in-place restart. It fails with ErrRunning while a backup runs; once it
-// succeeds, no backup can start until the process restarts.
-func (s *Service) ConfirmRestore(ctx context.Context, id, actorID string) error {
+// the in-place restart. inPlace is false when the server cannot start itself
+// again, so someone has to restart it to finish the restore (#1961). It fails
+// with ErrRunning while a backup runs; once it succeeds, no backup can start
+// until the process restarts.
+func (s *Service) ConfirmRestore(ctx context.Context, id, actorID string) (inPlace bool, err error) {
 	meta, err := s.loadStaged(id)
 	if err != nil || !meta.Restore.Verified {
-		return ErrStagedNotFound
+		return false, ErrStagedNotFound
 	}
 	if !s.runMu.TryLock() {
-		return ErrRunning
+		return false, ErrRunning
 	}
 	marker := pendingMarker{FormatVersion: stagingFormat, ID: id, Source: meta.Restore.Source, Archive: meta.Restore.Archive, ActorID: actorID, RequestedAt: s.now().UnixMilli()}
 	raw, _ := json.Marshal(marker)
 	if err := writeFileAtomic(filepath.Join(s.dataDir, PendingRestoreFile), raw); err != nil {
 		s.runMu.Unlock()
-		return err
+		return false, err
 	}
 	s.log.Info("restore confirmed: restarting to apply it", "archive", marker.Archive, "source", marker.Source)
-	if s.restart != nil {
-		s.restart()
+	if s.restart == nil {
+		return false, nil
 	}
-	return nil
+	return s.restart(), nil
 }
 
 // RestoreState reports the staged restore, the last outcome, safety copies and free space.
