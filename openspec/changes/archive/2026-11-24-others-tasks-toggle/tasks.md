@@ -8,5 +8,5 @@
 
 ## 2. Docs and check
 
-- [x] 2.1 `docs/today-and-upcoming.md`, `docs/roles-and-assignments.md` and the changelog fragment; `make docs` and `make docs-check`
+- [x] 2.1 `docs/roles-and-assignments.md` (the guide pages stay under 600 words) and the changelog fragment; `make docs` and `make docs-check`
 - [x] 2.2 `npm test` and `npm run build` in web/, `make check`

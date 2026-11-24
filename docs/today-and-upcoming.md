@@ -27,7 +27,7 @@ To push a task to later, open it and change **Due**, or press <kbd>s</kbd> to pl
 
 Your appointments can show on Today and on each Upcoming day: [Calendar events in Today](calendar-events-in-today.md). Too many tasks? Set a [Today limit](today-limit.md).
 
-A task assigned to someone else stays in its project and [Waiting](method/place.md#waiting), not here, until you check **Show tasks assigned to others** in the page menu. It never takes one of your Today slots.
+A task assigned to someone else stays in its project and [Waiting](method/place.md#waiting), not here.
 
 At the end of the list, **Close the day** walks you through the evening ritual ([Close the day](method/rhythms.md#close-the-day)); afterwards it reads **Day closed** with the time.
 
