@@ -1033,7 +1033,7 @@ export interface UserPrefsFields {
    * while a session merely runs. One field so a conflict keeps one whole
    * session by last-writer-wins. Ids and times only, never content;
    * clients ignore and keep a value they cannot read, and the importer
-   * drops it.
+   * drops it, a backup restore resets it. Times are server time.
    */
   focus_run?: string
   /**

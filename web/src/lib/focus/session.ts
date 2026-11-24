@@ -10,7 +10,9 @@
 import { focusLogger } from './index'
 import { reportEntryFailure } from './failures'
 import type { FocusPrefs } from './prefs'
-import { readFocus, transitionFocus, writeFocus, type FocusWrite } from './state'
+import { adoptRun, isCurrent, readFocus, transitionFocus, writeFocus, type FocusWrite } from './state'
+import { serverNow } from '../hlc'
+import { syncNow, syncStarted } from '../sync'
 import { complete, continuousWork, finish, idleState, inRun, isDue, isRunning, pause, plannedEnd, resume, start, stopWork, takeBreak, type FocusState } from './timer'
 import type { EntryFocus } from '../timeEntries'
 
@@ -35,9 +37,9 @@ export function entryFocus(s: FocusState): EntryFocus {
   return { mode: s.mode, session: s.mode === 'pomodoro' ? s.cycle : 0, plannedEndAt: plannedEnd(s) }
 }
 
-/** Starts the entry of a running work stretch and records its id on the row; an entry the row no longer wants is stopped again. */
-async function attachEntry(s: FocusState, at: number): Promise<void> {
-  if (s.phase !== 'work' || s.resumedAt === null) return
+/** Starts the entry of a running work stretch and records its id on the row; an entry the row no longer wants is stopped again. Returns whether it was kept. */
+async function attachEntry(s: FocusState, at: number, opts?: FocusWrite): Promise<boolean> {
+  if (s.phase !== 'work' || s.resumedAt === null) return false
   let id: string | null = null
   try {
     const focus = entryFocus(s)
@@ -48,10 +50,31 @@ async function attachEntry(s: FocusState, at: number): Promise<void> {
     console.warn('focus: starting the time entry failed', err)
     reportEntryFailure('start', err)
   }
-  if (!id) return
+  if (!id) return false
   const entry = id
-  const kept = await transitionFocus(s.startedAt, (r) => (r.phase === 'work' && r.resumedAt === s.resumedAt && !r.entryId ? { ...r, entryId: entry } : null))
-  if (!kept) await stopEntry(entry, Date.now())
+  const kept = await transitionFocus(s.startedAt, (r) => (r.phase === 'work' && r.resumedAt === s.resumedAt && !r.entryId ? { ...r, entryId: entry } : null), opts)
+  if (!kept) await stopEntry(entry, serverNow())
+  return !!kept
+}
+
+/** When the entry of the row being replaced by `next` ended: the pause, the end of its run, or the start of the new run (D5). */
+function replacedAt(prev: FocusState, next: FocusState): number {
+  if (next.startedAt === prev.startedAt) return (prev.resumedAt ?? next.startedAt) + next.accumulatedMs - prev.accumulatedMs
+  return next.ended?.runStartedAt === prev.startedAt ? next.ended.at : next.startedAt
+}
+
+/**
+ * Adopts the session another device wrote (sync-focus-sessions D2, D5): a work
+ * stretch this device saw running whose entry the new state no longer runs is
+ * ended when the other device ended it, so an entry that device had not received
+ * yet does not keep counting.
+ */
+export async function adoptSession(): Promise<FocusState | null> {
+  const r = await adoptRun()
+  if (!r) return null
+  const { prev, next } = r
+  if (prev && isRunning(prev) && prev.entryId && prev.entryId !== next.entryId) await stopEntry(prev.entryId, replacedAt(prev, next))
+  return next
 }
 
 /**
@@ -74,7 +97,7 @@ async function step(fn: (s: FocusState) => FocusState | null, stopAt: (prev: Foc
 }
 
 /** Starts a work session on `taskId` (ending whatever ran before, on this task or another). */
-export async function startSession(taskId: string, prefs: FocusPrefs, now = Date.now(), lengthMinutes?: number): Promise<FocusState> {
+export async function startSession(taskId: string, prefs: FocusPrefs, now = serverNow(), lengthMinutes?: number): Promise<FocusState> {
   const prev = await readFocus()
   if (prev && inRun(prev)) await stopEntry(prev.entryId, now)
   const base = prev ? { ...prev, taskId } : idleState(taskId, prefs.mode, now)
@@ -84,11 +107,11 @@ export async function startSession(taskId: string, prefs: FocusPrefs, now = Date
   return next
 }
 
-export function pauseSession(now = Date.now()): Promise<FocusState | null> {
+export function pauseSession(now = serverNow()): Promise<FocusState | null> {
   return step((r) => (isRunning(r) ? pause(r, now) : null), () => now)
 }
 
-export async function resumeSession(now = Date.now()): Promise<FocusState | null> {
+export async function resumeSession(now = serverNow()): Promise<FocusState | null> {
   const next = await step((r) => (inRun(r) && r.resumedAt === null ? resume(r, now) : null), () => null)
   if (next) await attachEntry(next, now)
   return next
@@ -97,29 +120,33 @@ export async function resumeSession(now = Date.now()): Promise<FocusState | null
 /**
  * A running timed run that reached its end: the done state (or the auto-started
  * next phase), the entry stopped at the planned end. Every device derives it from
- * the shared record, so it is never published; an auto-started work phase gets
- * its entry on the owning device only (sync-focus-sessions D3, D4).
+ * the shared record, so it is never published. An auto-started work phase gets
+ * its entry on the owning device only, after a pull and only while the stored
+ * record is still this run's: a device that slept never writes over a session
+ * started elsewhere meanwhile, it adopts it (sync-focus-sessions D3, D4).
  */
-export async function finishIfDue(prefs: FocusPrefs, now = Date.now()): Promise<FocusState | null> {
+export async function finishIfDue(prefs: FocusPrefs, now = serverNow()): Promise<FocusState | null> {
   const row = await readFocus()
   if (!isDue(row, now)) return null
   const next = await step((r) => (isDue(r, now) ? finish(r, prefs) : null), (_, n) => n.ended?.at ?? now, { local: true })
-  if (next?.phase === 'work' && !next.remote) await attachEntry(next, next.startedAt)
-  return next
+  if (next?.phase !== 'work' || next.remote) return next
+  if (syncStarted()) await syncNow().catch(() => undefined)
+  if ((await isCurrent()) && (await attachEntry(next, next.startedAt, { ifCurrent: true }))) return readFocus()
+  return (await adoptSession()) ?? readFocus()
 }
 
 /** Flowtime's Done (and a work session ended by hand): the done state with the time worked. */
-export function stopSession(now = Date.now()): Promise<FocusState | null> {
+export function stopSession(now = serverNow()): Promise<FocusState | null> {
   return step((r) => (r.phase === 'work' ? stopWork(r, now) : null), () => now)
 }
 
 /** `b`: take a break now (from work or the done state), or end the running break. */
-export function breakSession(prefs: FocusPrefs, now = Date.now()): Promise<FocusState | null> {
+export function breakSession(prefs: FocusPrefs, now = serverNow()): Promise<FocusState | null> {
   return step((r) => (r.phase === 'work' || r.phase === 'break' || (r.phase === 'done' && r.ended?.kind === 'work') ? takeBreak(r, now, prefs) : null), () => now)
 }
 
 /** The task was completed (here or on another device): the session ends and `nextTaskId` is shown next. */
-export async function completeSession(taskId: string, nextTaskId: string | null, prefs: FocusPrefs, now = Date.now(), elsewhere = false): Promise<FocusState | null> {
+export async function completeSession(taskId: string, nextTaskId: string | null, prefs: FocusPrefs, now = serverNow(), elsewhere = false): Promise<FocusState | null> {
   const row = await readFocus()
   // Completed elsewhere: every device sees the task go and ends the session itself.
   const opts: FocusWrite = { local: elsewhere }
@@ -134,7 +161,7 @@ export async function completeSession(taskId: string, nextTaskId: string | null,
 }
 
 /** Next task or another task chosen: the run ends without a done state; nothing runs on `taskId` yet. */
-export async function leaveSession(taskId: string | null, prefs: FocusPrefs, now = Date.now()): Promise<void> {
+export async function leaveSession(taskId: string | null, prefs: FocusPrefs, now = serverNow()): Promise<void> {
   const row = await readFocus()
   if (row && inRun(row)) await stopEntry(row.entryId, now)
   if (!taskId) return
@@ -142,7 +169,7 @@ export async function leaveSession(taskId: string | null, prefs: FocusPrefs, now
 }
 
 /** The session's entry was stopped on another device: the session pauses with the reason; Space starts a new entry. */
-export async function noteEntryStopped(entryId: string, now = Date.now()): Promise<FocusState | null> {
+export async function noteEntryStopped(entryId: string, now = serverNow()): Promise<FocusState | null> {
   if (await focusLogger().running(entryId)) return null
   const row = await readFocus()
   if (!row) return null
@@ -150,7 +177,7 @@ export async function noteEntryStopped(entryId: string, now = Date.now()): Promi
 }
 
 /** "Not now" on the break reminder: it comes back after the same length of further continuous work. */
-export async function putOffBreak(now = Date.now()): Promise<void> {
+export async function putOffBreak(now = serverNow()): Promise<void> {
   const row = await readFocus()
   if (!row) return
   await transitionFocus(row.startedAt, (r) => (r.phase === 'work' ? { ...r, remindedAtMs: continuousWork(r, now) } : null), { local: true })
@@ -179,7 +206,7 @@ export type StartFocusResult =
  * bring it back (`resumeLeft`).
  */
 export async function startFocus(taskId: string, prefs: FocusPrefs, opts: { now?: number; lengthMinutes?: number; force?: boolean } = {}): Promise<StartFocusResult> {
-  const now = opts.now ?? Date.now()
+  const now = opts.now ?? serverNow()
   const row = await readFocus()
   if (!opts.force && row && row.taskId === taskId && (inRun(row) || row.phase === 'done')) return { kind: 'here' }
   if (prefs.mode === 'countdown' && opts.lengthMinutes === undefined) return { kind: 'ask' }
@@ -189,7 +216,7 @@ export async function startFocus(taskId: string, prefs: FocusPrefs, opts: { now?
 }
 
 /** Undo of a left session: whatever runs now stops, and the left session comes back as it was (its clock running again, with a new entry, when it ran). */
-export async function resumeLeft(left: LeftSession, now = Date.now()): Promise<FocusState> {
+export async function resumeLeft(left: LeftSession, now = serverNow()): Promise<FocusState> {
   const row = await readFocus()
   if (row && inRun(row)) await stopEntry(row.entryId, now)
   const next: FocusState = { ...left.state, resumedAt: left.running ? now : null, entryId: null, pausedReason: null }
@@ -219,7 +246,7 @@ export function canExtend(s: FocusState | null | undefined, now: number): boolea
  * done state was shown is not logged), and replaces a break that started on its
  * own at the end.
  */
-export async function extendSession(minutes: number, now = Date.now()): Promise<FocusState | null> {
+export async function extendSession(minutes: number, now = serverNow()): Promise<FocusState | null> {
   const row = await readFocus()
   if (!row) return null
   const next = await transitionFocus(row.startedAt, (r) => (canExtend(r, now) ? {

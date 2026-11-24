@@ -17,4 +17,5 @@ You have one [Focus](focus.md) session across your devices. Start it on the lapt
 - **Two changes at once**: if two devices change the session while offline, the later change wins. You never get a mix of the two.
 - **Sound and notifications** come from the device where you last started, paused or resumed the session, and so do the noise, the break reminder and the [lock-screen timer](ios-app.md#focus-on-the-lock-screen). The others stay quiet. To move them to the device in your hand, pause and resume there.
 - **Stays on each device**: the last Countdown length.
-- **Restoring a backup** never brings back an old session.
+- **Restoring** an export or a server backup never brings back an old session.
+- **A wrong clock** on one device does not matter: every device counts on the server's time.

@@ -422,6 +422,13 @@ func stampRestored(path, marker string) (string, error) {
 		pendingRestoreKey, marker, time.Now().UnixMilli()); err != nil {
 		return "", err
 	}
+	// A Focus session from the past never comes back (sync-focus-sessions D6):
+	// the stored value and its ops become the default "", which no client
+	// adopts, so the person's devices keep the session they run now. A bare
+	// database without the sync tables has nothing to forget.
+	for _, table := range []string{"scope_fields", "ops"} {
+		_, _ = db.Exec(`UPDATE ` + table + ` SET value = '""' WHERE entity = 'user_prefs' AND field = 'focus_run'`)
+	}
 	// Runs that were in progress when the snapshot was taken did not finish in
 	// this timeline.
 	_, _ = db.Exec(`UPDATE backup_runs SET status = 'failed', finished_at = started_at, error = 'outcome unknown: this database was restored from the backup taken during this run' WHERE status = 'running'`)

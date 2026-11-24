@@ -447,7 +447,7 @@ The Focus screen's menu SHALL offer "Today's sessions", which opens a sheet (a p
 - **THEN** the sheet lists the sessions from local rows
 
 ### Requirement: Session syncs across the user's devices
-A person SHALL have one Focus session across their devices. Its shared state (the task, the mode, the phase, when the phase started, whether its clock runs and since when, the time accumulated before a pause, the planned length, the Pomodoro cycle position, the break kind, the stretch's time entry and how the last run ended) SHALL be stored as one additive field, `focus_run`, on the user's synced preferences row: it carries ids and times only, no content, reaches only the person's own devices, and is not encrypted. Starting, pausing, resuming, ending, taking or ending a break, extending, completing the task on the device, and choosing or leaving a task SHALL write it, offline included: the device shows the change at once and the op waits in the outbox. Every device SHALL compute the clock from the stored times and SHALL never write while a session merely runs; the end of a timed run, a pause because the entry was stopped elsewhere, the end because the task was completed or trashed elsewhere, and "Not now" on the break reminder SHALL be derived on each device and not written. Concurrent changes SHALL converge by last-writer-wins on the whole field, so every device ends with the later change and never a mix of two sessions. The last Countdown length and the break reminder's "Not now" stay on the device. A client that cannot read the stored value SHALL ignore it and keep it. The device that made the last written change owns the session: only it SHALL play the end sound, show the session end notification, play background noise, show the break reminder and hand the session to a native shell's lock-screen timer; other devices SHALL show the same state silently. The export SHALL carry `focus_run` with the other preferences, an import SHALL not restore it, and sign-out SHALL clear only the device's copy.
+A person SHALL have one Focus session across their devices. Its shared state (the task, the mode, the phase, when the phase started, whether its clock runs and since when, the time accumulated before a pause, the planned length, the Pomodoro cycle position, the break kind, the stretch's time entry and how the last run ended) SHALL be stored as one additive field, `focus_run`, on the user's synced preferences row: it carries ids and times only, no content, reaches only the person's own devices, and is not encrypted. Starting, pausing, resuming, ending, taking or ending a break, extending, completing the task on the device, and choosing or leaving a task SHALL write it, offline included: the device shows the change at once and the op waits in the outbox. Every device SHALL compute the clock from the stored times on the server's clock (its own clock corrected by the offset sync observes), and SHALL never write while a session merely runs; the end of a timed run, a pause because the entry was stopped elsewhere, the end because the task was completed or trashed elsewhere, and "Not now" on the break reminder SHALL be derived on each device and not written. Concurrent changes SHALL converge by last-writer-wins on the whole field, so every device ends with the later change and never a mix of two sessions. The last Countdown length and the break reminder's "Not now" stay on the device. A client that cannot read the stored value SHALL ignore it and keep it. The device that made the last written change owns the session: only it SHALL play the end sound, show the session end notification, play background noise, show the break reminder and hand the session to a native shell's lock-screen timer; other devices SHALL show the same state silently. The export SHALL carry `focus_run` with the other preferences, neither an import nor a server backup restore SHALL bring it back, and sign-out SHALL clear only the device's copy.
 
 #### Scenario: Started on the laptop, seen on the phone
 - **WHEN** the user starts a 25 minute Pomodoro on "Write the report" on the laptop at 10:00 and opens the Focus screen on the phone at 10:10, after sync
@@ -475,15 +475,23 @@ A person SHALL have one Focus session across their devices. Its shared state (th
 
 #### Scenario: Sleeping laptop
 - **WHEN** the laptop sleeps during a session, the user starts another session on the phone, and the laptop wakes after the first session's planned end
-- **THEN** the laptop shows the first session as ended until it syncs, then the phone's session, and the phone's session is not replaced
+- **THEN** the laptop shows the first session as ended until it syncs, then the phone's session, and the phone's session is not replaced, also when the next session would start on its own
 
 #### Scenario: Closed tab
 - **WHEN** the user closes the tab during a session and opens the app again an hour later
 - **THEN** the Focus screen shows the session as ended (a timed session) or as still counting (Flowtime), as the clock says, and offers the done state
 
 #### Scenario: Restore
-- **WHEN** the user imports an export made during a session
-- **THEN** the import restores the preferences without `focus_run`, and no session starts
+- **WHEN** the user imports an export made during a session, or the owner restores a server backup taken during one
+- **THEN** the preferences come back without that session, and the devices keep the session they run now
+
+#### Scenario: Clock off on the phone
+- **WHEN** the phone's clock runs three minutes slow and the laptop's session shows 15:00 left
+- **THEN** the phone shows 15:00 left too, and a pause there counts the minutes the server counts
+
+#### Scenario: Paused before the entry arrived
+- **WHEN** the phone pauses the laptop's session before the laptop's time entry has reached the phone
+- **THEN** the laptop ends its entry at the pause when it receives the paused session
 
 #### Scenario: Older client
 - **WHEN** a client that does not know `focus_run` runs a session

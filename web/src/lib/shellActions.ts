@@ -53,7 +53,7 @@ export async function applyReminderAction(id: string, action: ReminderAction, no
  * Pause or Resume from the shell, through the same transitions as Space; a session
  * already in that state (a stale notification) is left alone and nothing is written.
  */
-export async function applyFocusAction(action: FocusAction, now = Date.now()): Promise<void> {
+export async function applyFocusAction(action: FocusAction, now?: number): Promise<void> {
   if (action === 'pause') await pauseSession(now)
   else await resumeSession(now)
 }

@@ -17,9 +17,10 @@ import { swRegistration } from '../../lib/push'
 import { has } from '../../lib/shell'
 import { useFocusPrefs, useNoiseVolume, type FocusAlert, type FocusPrefs } from '../../lib/focus/prefs'
 import { nextFocusTask } from '../../lib/focus/select'
-import { completeSession, finishIfDue, noteEntryStopped } from '../../lib/focus/session'
+import { adoptSession, completeSession, finishIfDue, noteEntryStopped } from '../../lib/focus/session'
 import { useEntryRunning } from '../../lib/focus/live'
-import { adoptRun, useFocusState } from '../../lib/focus/state'
+import { useFocusState } from '../../lib/focus/state'
+import { serverNow } from '../../lib/hlc'
 import { inRun, isDue, isRunning, type FocusState } from '../../lib/focus/timer'
 import { playTone } from '../../lib/focus/tone'
 import { t } from '../../lib/i18n'
@@ -28,9 +29,9 @@ import { resettable } from '../../lib/moduleState'
 
 /** Now, re-read every second while `active` and whenever the tab is shown or focused. */
 export function useFocusClock(active: boolean): number {
-  const [now, setNow] = useState(() => Date.now())
+  const [now, setNow] = useState(() => serverNow())
   useEffect(() => {
-    const read = () => setNow(Date.now())
+    const read = () => setNow(serverNow())
     read()
     const id = active ? setInterval(read, 1000) : null
     document.addEventListener('visibilitychange', read)
@@ -105,7 +106,7 @@ function useEndEffects(state: FocusState | null | undefined, prefs: FocusPrefs):
     if (document.visibilityState === 'hidden') {
       pendingTone.current = prefs.sound ? prefs.alert : null
       void notifyFocusEnd(state)
-    } else if (prefs.sound && Date.now() - state.ended.at < FRESH_MS) ring(prefs.alert)
+    } else if (prefs.sound && serverNow() - state.ended.at < FRESH_MS) ring(prefs.alert)
   }, [key, state, prefs.sound, prefs.alert])
   useEffect(() => {
     const onVisible = () => {
@@ -165,7 +166,7 @@ export function useFocusTimer(): { state: FocusState | null | undefined; prefs: 
   // The session another device wrote (sync-focus-sessions D2).
   const run = useUserPrefsRow()?.focus_run
   useEffect(() => {
-    if (run) void adoptRun(run)
+    if (run) void adoptSession()
   }, [run])
   const due = isDue(state, now)
   useEffect(() => {

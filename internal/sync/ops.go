@@ -862,7 +862,7 @@ var Schema = map[string]map[string]Field{
 		// while a session merely runs. One field so a conflict keeps one whole
 		// session by last-writer-wins. Ids and times only, never content;
 		// clients ignore and keep a value they cannot read, and the importer
-		// drops it.
+		// drops it, a backup restore resets it. Times are server time.
 		"focus_run": {Kind: kString, Default: `""`},
 		// Today grouped by part of the day (OpenSpec change day-parts, design
 		// D3): "on" groups Today into Morning, Afternoon and This Evening and

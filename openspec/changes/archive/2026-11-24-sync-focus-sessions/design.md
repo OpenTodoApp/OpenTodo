@@ -30,7 +30,7 @@ The value carries ids and timestamps only, no content, so it is not an encrypted
 
 ### D2. The local row stays the working copy; a revision decides what to adopt
 
-Every published transition gives the local row a new random `rev` and adds the previous one to `seen` (the last eight). After the local write the device publishes the record with `mutate('user_prefs', 'me', { focus_run })`. The engine watches the preferences row; a record whose `rev` is neither the row's `rev` nor in `seen` came from another device and is *adopted*: the local row takes the record's fields, keeps its device-only fields, sets `rev` and marks the row `remote`. A record already seen is ignored, so the short window between the local write and the outbox write, or a second quick transition, never rolls the row back.
+Every published transition gives the local row a new random `rev` and writes the row and the record (`mutate('user_prefs', 'me', { focus_run })`) in one Dexie transaction over the mutation tables and `focus`, so no adoption can land between the two. The engine watches the preferences row; adoption runs in a transaction over `focus` and `userPrefs`, re-reads the stored record there, and adopts it when it is readable and its `rev` is not the row's: the local row takes the record's fields, keeps its device-only fields, sets `rev` and marks the row `remote`. Because the row and the record change together, the row always ends on the record the op log chose: a device never stays on its own older write while the others move on.
 
 A revision instead of comparing timestamps: device clocks drift, and the op log has already chosen the winner by its own clock; the device only has to notice that the winner changed.
 
@@ -40,7 +40,7 @@ Published: start, pause, resume, stop (Flowtime's Done), break, extend, complete
 
 The local-only transitions are functions of synced data (the record, the preferences, the entry, the task), so every device computes them on its own. Publishing them would be ticking writes and could undo a newer change: a laptop waking from sleep would otherwise write the end of an old run over the session the phone started while it slept.
 
-When a run ends on its own, every device that notices stops its entry at the planned end (the same value, idempotent). Starting the next phase on its own ("Start the next session automatically") attaches a new entry only on the owning device (D4), so two devices never start two entries for one stretch.
+When a run ends on its own, every device that notices stops its entry at the planned end (the same value, idempotent). Starting the next phase on its own ("Start the next session automatically") attaches a new entry only on the owning device (D4), so two devices never start two entries for one stretch. Recording that entry is published, so the owner first pulls (when sync runs) and then writes only while the stored record is still the run's own, checked in the write's transaction; otherwise it starts no entry (or stops the one it started) and adopts the newer session. A laptop that slept through a break therefore never writes over a session started elsewhere meanwhile.
 
 ### D4. The device that made the last change owns the session
 
@@ -50,22 +50,26 @@ The alternative, every device notifying, rings the laptop and the phone at the s
 
 ### D5. Entries
 
-Pausing, stopping or changing the session on device B stops the entry device A started: the entry is an ordinary synced row, so B's `updateTimeEntry` writes its end. A record that names an entry the device has not received yet must not look like an entry stopped elsewhere, so `timeTrackingLogger.running` reads a missing entry as still running (an own entry is always written locally before the record names it). Two devices that start sessions offline each start an entry; time-tracking's "One running entry per user" repair ends one of them after sync, without anything new here.
+Pausing, stopping or changing the session on device B stops the entry device A started: the entry is an ordinary synced row, so B's `updateTimeEntry` writes its end. A record that names an entry the device has not received yet must not look like an entry stopped elsewhere, so `timeTrackingLogger.running` reads a missing entry as still running (an own entry is always written locally before the record names it). A device that adopts a record replacing a stretch it saw running ends that stretch's entry, if it still runs there, at the moment the other device ended it: the pause (the stretch's resume plus the time the record adds), the end of the run, or the start of the new run. This covers a pause made on a device that had not received the entry yet. Two devices that start sessions offline each start an entry; the loser's is ended the same way when it adopts the winner.
 
 ### D6. Import, export and sign-out
 
-The export carries `focus_run` like every preference. The importer drops it (`internal/importer/profile_opentodo.go`), so restoring a backup never resumes a session from the past. Sign-out still clears the local row; signing in again adopts the account's current record.
+The export carries `focus_run` like every preference. The importer drops it (`internal/importer/profile_opentodo.go`), and a server backup restore resets its stored value and ops to `""` (`internal/backup/restore.go`, before the swap), so neither ever resumes a session from the past; the devices keep the session they run now. Sign-out still clears the local row; signing in again adopts the account's current record.
+
+### D7. Server time
+
+Every Focus clock and action time is `serverNow()` (`web/src/lib/hlc.ts`): the local clock plus the offset the sync tracks from each answer's server time. Not the hybrid logical clock, which is monotonic and may run ahead; the session's times are compared across devices, so they must be wall-clock time on one shared clock. A phone whose clock is three minutes off still reads the laptop's 15:00 left as 15:00. A native shell is handed the times back in device time.
 
 ## Risks / Trade-offs
 
 - The server now knows that a session is paused and how much time was left (focus-mode said nothing leaves the device). It is the user's own server, the value holds no content, and the issue asks for exactly this sync. The time entry already told the server about running work.
-- A change made on a device whose clock runs far ahead wins over later changes elsewhere, as for every other op (the hybrid logical clock limits it to the skew the server accepts).
-- With "Start the next session automatically", the owner records the new work phase's entry on the run, which is published. An owner that wakes after the break's end and before it has pulled a newer session started elsewhere can therefore write over that session once; every device still converges on that one written state, and of the two running entries time-tracking's one-running-entry repair keeps one. Rare (an auto-start setting, a sleeping owner, a new session in between), so it is accepted rather than adding a takeover protocol.
+- A change made on a device whose clock runs far ahead wins over later changes elsewhere, as for every other op (the hybrid logical clock limits it to the skew the server accepts). The session's own times use server time (D7), so the time left reads the same everywhere.
+- An owner that wakes offline after a break and auto-starts work publishes it when it reconnects; if a newer session was started elsewhere, last-writer-wins keeps the later write, as for any offline edit.
 - If the owning device is closed, the other devices show the end silently. Pausing and resuming on the device at hand moves the sound there.
 
 ## Data model impact
 
-One additive field, `user_prefs.focus_run` (`kString`, default `""`), declared in `internal/sync/ops.go` `Schema`, generated into `web/src/generated/opSchema.ts`. The local `FocusState` gains three optional device-side properties (`rev`, `seen`, `remote`); no Dexie version bump, the table is keyed by `id` only.
+One additive field, `user_prefs.focus_run` (`kString`, default `""`), declared in `internal/sync/ops.go` `Schema`, generated into `web/src/generated/opSchema.ts`. The local `FocusState` gains two optional device-side properties (`rev`, `remote`); no Dexie version bump, the table is keyed by `id` only.
 
 ## Interface budget
 

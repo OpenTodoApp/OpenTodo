@@ -58,8 +58,6 @@ export interface FocusState {
   ended: FocusEnded | null
   /** The revision of the shared record this row stands for (sync-focus-sessions D2); absent before the first published write. */
   rev?: string
-  /** Earlier revisions this device wrote or adopted (the last eight): a stored record among them is never adopted again. */
-  seen?: string[]
   /** The last published change came from another device (D4): the session is shown here silently. */
   remote?: boolean
 }
