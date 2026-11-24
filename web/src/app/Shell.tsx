@@ -1,5 +1,4 @@
 import { useFeatures } from '../lib/features'
-import { FeatureOff } from './FeatureOff'
 import { ROUTE_FEATURES } from './screens'
 import { useHabitsEnabled } from '../lib/habitPrefs'
 import { resettable } from '../lib/moduleState'
@@ -67,6 +66,8 @@ import { BreakReminder } from './focus/BreakReminder'
 import { SkipLink, usePageFocus } from './pageFocus'
 import { useDuplicateCollapse } from '../lib/duplicateCollapse'
 
+// A page of a feature the workspace has off (workspace-feature-switches D4), loaded when one is opened.
+const FeatureOff = lazy(() => import('./FeatureOff'))
 // Optional Vim layer (vim-keybindings): its own chunk, fetched only while the
 // per-device switch is on, so the default bundle carries just this boundary.
 const VimLayer = lazy(() => import('./vim/VimLayer'))
@@ -356,7 +357,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${addRoom ? 'max-md:pb-(--add-room)' : ''} ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
           {/* One screen failing (a render bug, a chunk gone after an upgrade) leaves the shell usable (client-sync-robustness). */}
           <PanelBoundary resetKey={route}>
-          {!on(ROUTE_FEATURES[route.view]) ? <FeatureOff id={ROUTE_FEATURES[route.view]!} /> : route.view === 'help' ? (
+          {!on(ROUTE_FEATURES[route.view]) ? <Suspense fallback={null}><FeatureOff id={ROUTE_FEATURES[route.view]!} /></Suspense> : route.view === 'help' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading help…')}</p>}><HelpView page={route.page} q={route.q} /></Suspense>
           ) : route.view === 'settings' ? (
             <Suspense fallback={SCREEN_LOADING}><SettingsView user={user} onLogout={onLogout} section={route.section} page={route.page} anchor={route.anchor} /></Suspense>

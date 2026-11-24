@@ -1,6 +1,6 @@
 ---
 title: Workspace features
-summary: Turn Notes, Calendar, Habits, Time tracking, Focus, Routines, Weekly review and Locations on or off for everyone in a workspace, without losing any data.
+summary: Turn Notes, Calendar, Habits, Time tracking, Focus, Routines, Reviews and Locations on or off for everyone in a workspace, without losing any data.
 audience: user
 section: Guides
 specs: [workspaces]
@@ -9,7 +9,7 @@ order: 72
 ---
 # Workspace features
 
-<picture><source srcset="images/workspace-features-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/workspace-features-light.webp" alt="Settings, Workspaces, Family, the Features tab: Notes, Calendar, Habits, Focus, Routines, Weekly review and Locations switched on, Time tracking off."></picture>
+<picture><source srcset="images/workspace-features-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/workspace-features-light.webp" alt="Settings, Workspaces, Family, the Features tab: Notes, Calendar, Habits, Focus, Routines, Reviews and Locations switched on, Time tracking off."></picture>
 
 A family workspace may not need time tracking, and a team may not want habits. Each workspace, your default one too, can show only the features its people use.
 
@@ -23,7 +23,7 @@ Open **Settings → Workspaces**, pick the workspace and choose the **Features**
 - **Time tracking**, with the planned and tracked totals on Today
 - **Focus**
 - **Routines**
-- **Weekly review**, with Statistics and Objectives
+- **Reviews**: the Daily check, Close the day, the weekly review, Statistics and Objectives
 - **Locations**, with maps
 
 Everything starts on. The owner and admins change the switches for everyone in the workspace, and it needs a connection to your server. Other members see the switches but cannot change them; their devices follow at the next sync.
@@ -34,7 +34,7 @@ Tasks, projects, labels, the Inbox, Today, Upcoming, search, views, sharing, com
 
 While that workspace is open, a feature that is off leaves the sidebar, search and the task menus, and its keys do nothing. Switch to another workspace and it is back.
 
-Nothing is deleted. Tasks keep their locations and time entries, habits keep their days, and turning the feature on again shows everything as it was. A link to the feature's page says it is off, with **Turn on** for the owner and admins.
+Nothing is deleted. Tasks keep their locations and time entries, habits keep their days, and turning the feature on again shows everything as it was. A link to the feature's page says it is off, with **Turn on** for the owner and admins. Off never stops anything: a running timer keeps its **Stop**, and a running Focus session can be stopped from that page. The feature's Settings sections stay.
 
 Your own switches still apply on top: with Habits on in the workspace, you see habits only if **Habits** is on in [How you work](settings-you.md#how-you-work). While a workspace has a feature off, its row there is hidden.
 

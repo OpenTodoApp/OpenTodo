@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Workspace features
-Every workspace SHALL carry `features`, a map from feature id to a boolean, for the eight switchable features `notes`, `calendar`, `habits`, `time-tracking`, `focus`, `routines`, `weekly-review` and `locations`. A missing key, and a workspace that never stored the map (every existing and every new workspace), SHALL read as on. Tasks, projects, labels, the Inbox, Today, Upcoming, search, views, sharing, comments, reminders, recurrence, Completed and Trash SHALL NOT be switchable. The map SHALL be server-side directory data like the name and icon: never an op, written only through `PATCH /api/v1/workspaces/{id}` with a `features` object, merged key by key into the stored map, by the workspace's owner and admins, or given as the starting switches of `POST /api/v1/workspaces`. A key that is not a known feature id SHALL be refused; keys already stored that the server does not know SHALL be kept. The map SHALL be delivered with the workspace in every sync response and REST answer and cached on the device, so the switches apply offline; changing them SHALL need a connection, and the devices of every member SHALL be woken to sync, showing the change without a reload.
+Every workspace SHALL carry `features`, a map from feature id to a boolean, for the eight switchable features `notes`, `calendar`, `habits`, `time-tracking`, `focus`, `routines`, `reviews` and `locations`. A missing key, and a workspace that never stored the map (every existing and every new workspace), SHALL read as on. Tasks, projects, labels, the Inbox, Today, Upcoming, search, views, sharing, comments, reminders, recurrence, Completed and Trash SHALL NOT be switchable. The map SHALL be server-side directory data like the name and icon: never an op, written only through `PATCH /api/v1/workspaces/{id}` with a `features` object, merged key by key into the stored map, by the workspace's owner and admins, or given as the starting switches of `POST /api/v1/workspaces`. A key that is not a known feature id, or a value that is not true or false, SHALL be refused; keys already stored that the server does not know SHALL be kept. Each change SHALL be recorded as its own audit event, `workspace.features_changed`, with the switched ids and never a name. The `reviews` feature covers the Daily check, Close the day, the weekly review, Statistics and Objectives. The map SHALL be delivered with the workspace in every sync response and REST answer and cached on the device, so the switches apply offline; changing them SHALL need a connection, and the devices of every member SHALL be woken to sync, showing the change without a reload.
 
 #### Scenario: Nothing changes at upgrade
 - **WHEN** a server is upgraded and an existing account syncs
@@ -19,6 +19,18 @@ Every workspace SHALL carry `features`, a map from feature id to a boolean, for 
 - **WHEN** an admin sends `{"features":{"habit":false}}`
 - **THEN** the response is 400 `invalid_input` naming `habit`, and nothing is stored
 
+#### Scenario: Null value
+- **WHEN** an admin sends `{"features":{"habits":null}}`
+- **THEN** the response is 400 `invalid_input` naming `habits`, and nothing is stored
+
+#### Scenario: Not a member
+- **WHEN** an account that is not a member of Family sends a `features` change to it
+- **THEN** the response is 404 `not_found`, as for a workspace that does not exist
+
+#### Scenario: Audited
+- **WHEN** the owner switches Focus off
+- **THEN** an audit event `workspace.features_changed` is recorded with the workspace id and `focus=off`, and no `workspace.renamed` event
+
 #### Scenario: A member cannot switch
 - **WHEN** a `member` of Family sends a `features` change
 - **THEN** the response is 403 `forbidden` and nothing changes
@@ -32,7 +44,7 @@ Every workspace SHALL carry `features`, a map from feature id to a boolean, for 
 - **THEN** the cached switches still decide what is shown, and the Features tab's switches are disabled with the line saying workspaces need a connection
 
 ### Requirement: A feature that is off is hidden in its workspace
-While the device's current workspace has a feature off, the app SHALL hide that feature's destinations, its palette commands, its `g` keys and its row and panel controls, and SHALL write nothing: the feature's data SHALL be kept, synced and shown again unchanged when the feature is turned on, and the REST API, the CLI, MCP, the export, CalDAV, reminder delivery, recurrence and routines already running SHALL work on all data whatever the switches say. A feature SHALL show only when the current workspace allows it and the person's own switch, where one exists (Habits, Objectives, maps, Daily notes), is on; personal switches SHALL NOT be migrated, and while the workspace has a feature off its personal row SHALL be hidden in Settings. A direct link to a page of a feature that is off SHALL show one line, "{Feature} is off in this workspace.", with Turn on for the owner and admins while online, and nothing more for other members. A value already set (a task's location) SHALL still show; only the offer to add one is hidden.
+While the device's current workspace has a feature off, the app SHALL hide that feature's destinations, its palette commands, its `g` keys and its row and panel controls, and SHALL write nothing: the feature's data SHALL be kept, synced and shown again unchanged when the feature is turned on, and the REST API, the CLI, MCP, the export, CalDAV, reminder delivery, recurrence and routines already running SHALL work on all data whatever the switches say. A feature SHALL show only when the current workspace allows it and the person's own switch, where one exists (Habits, Objectives, maps, Daily notes), is on; personal switches SHALL NOT be migrated, and while the workspace has a feature off its personal row SHALL be hidden in Settings. A direct link to a page of a feature that is off SHALL show one line, "{Feature} is off in this workspace.", with Turn on for the owner and admins while online, and nothing more for other members. A value already set (a task's location) SHALL still show; only the offer to add one is hidden. Off SHALL hide starting, never stopping: a running time entry keeps its pill with Stop, and a running Focus session's page offers Stop. Settings sections of a feature (Focus, Calendar, Notes, Routines) SHALL stay, so preferences can still be read and changed.
 
 #### Scenario: Habits off in Family
 - **WHEN** Family has Habits off and Bob, who has Habits on, switches to Family
@@ -47,8 +59,20 @@ While the device's current workspace has a feature off, the app SHALL hide that 
 - **THEN** the page reads "Habits is off in this workspace" without a Turn on button; the owner sees Turn on, and choosing it shows the Habits page
 
 #### Scenario: Personal row hidden
-- **WHEN** the current workspace has Weekly review off
+- **WHEN** the current workspace has Reviews off
 - **THEN** Settings → How you work shows no Objectives row, and the stored `objectives` preference is unchanged
+
+#### Scenario: A running entry can still be stopped
+- **WHEN** a time entry is running and a manager switches Time tracking off
+- **THEN** the running pill stays in the sidebar with Stop, and nothing else of time tracking is offered
+
+#### Scenario: A running Focus session can still be stopped
+- **WHEN** a Focus session is running and the current workspace has Focus off
+- **THEN** opening `/focus` shows "Focus is off in this workspace." with Stop, which ends the session
+
+#### Scenario: Settings sections stay
+- **WHEN** the current workspace has Calendar off
+- **THEN** Settings still shows the Calendar section with its preferences
 
 #### Scenario: Other routes unaffected
 - **WHEN** Family has Locations off and an agent reads a task through MCP

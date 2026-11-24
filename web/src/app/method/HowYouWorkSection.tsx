@@ -83,7 +83,7 @@ export function HowYouWorkSection() {
       <DailyFocusRows style={readFocusStyle(prefs)} order={readBentoOrder(prefs)}
         onStyle={(s) => act(setFocusStyle(s))} onOrder={(o) => act(setBentoOrder(o))} />
       {/* Off by default in every mode; off hides the Plan's strip and the review's section, never an objective (plan-objectives D8). */}
-      {on('weekly-review') && <SettingRow {...rowCopy('how-you-work', 'objectives')} id="objectives" htmlFor="objectives-switch"
+      {on('reviews') && <SettingRow {...rowCopy('how-you-work', 'objectives')} id="objectives" htmlFor="objectives-switch"
         control={<span data-objectives-switch><Switch id="objectives-switch" checked={objectivesOn(prefs)} onChange={(on) => act(setObjectivesOn(on))} label={t('Objectives')} hideLabel /></span>} />}
       {/* Not decided by default (habits-home D1): on while the account has a habit; off hides every habit control, never a habit. */}
       {on('habits') && <HabitsRow />}

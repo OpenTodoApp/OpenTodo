@@ -127,13 +127,23 @@ export function sortWorkspaces(list: readonly Workspace[]): Workspace[] {
  * Replaces the cached directory with a sync response's `workspaces` (design D8)
  * and returns the ids of the workspaces that are gone from it.
  */
-/** The same rows by id, field for field (stored rows come back in key order). */
+/**
+ * JSON with the keys of every object sorted, at every level (a key array as the
+ * replacer would also drop nested keys, such as those of `features`).
+ */
+function stable(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(stable).join(',')}]`
+  if (v && typeof v === 'object') return `{${Object.keys(v).filter((k) => (v as Record<string, unknown>)[k] !== undefined).sort().map((k) => `${JSON.stringify(k)}:${stable((v as Record<string, unknown>)[k])}`).join(',')}}`
+  return JSON.stringify(v) ?? 'null'
+}
+
+/** The same rows by id, field for field and at every depth (stored rows come back in key order). */
 function sameRows<T extends { id: string }>(stored: readonly T[], next: readonly T[]): boolean {
   if (stored.length !== next.length) return false
   const byId = new Map(stored.map((r) => [r.id, r]))
   return next.every((r) => {
     const s = byId.get(r.id)
-    return !!s && JSON.stringify(s, Object.keys(s).sort()) === JSON.stringify(r, Object.keys(r).sort())
+    return !!s && stable(s) === stable(r)
   })
 }
 

@@ -701,13 +701,13 @@ function UnreadBadge({ n, label }: { n: number; label: string }) {
 export type MoreEntry = { id: Promotable | 'ask' | 'review' | 'stats' | 'upcoming' | 'calendar' | 'places' | 'rules'; route: Route; label: string; icon: IconName; badge?: ReactNode; note?: string; tip?: string }
 
 /** Whether a destination's route is on in the current workspace (workspace-feature-switches D4). */
-const routeOn = (r: Route, on: (id: FeatureId | null) => boolean) => on(ROUTE_FEATURES[r.view])
+const routeOn = (r: Route, on: (id: FeatureId | null | undefined) => boolean) => on(ROUTE_FEATURES[r.view])
 
 /**
  * The More group's destinations, each once, as data (app-shell "Sidebar structure"),
  * without those of features the current workspace has off (`on`, all on when absent).
  */
-export function moreEntriesOf(o: { shared: boolean; reviewDot: ReactNode; reviewText: string; unreadBadge: ReactNode; unreadTotal: number; ask: boolean; habits: boolean; on?: (id: FeatureId | null) => boolean }): MoreEntry[] {
+export function moreEntriesOf(o: { shared: boolean; reviewDot: ReactNode; reviewText: string; unreadBadge: ReactNode; unreadTotal: number; ask: boolean; habits: boolean; on?: (id: FeatureId | null | undefined) => boolean }): MoreEntry[] {
   const on = o.on ?? (() => true)
   const all: MoreEntry[] = [
     // The Open Loops views (open-loops-method D7, D9), in every mode.

@@ -10,12 +10,12 @@ import { useWorkspaceState } from './localData'
 import type { Workspace } from './types'
 
 /** The switchable features, in Settings order. */
-export const FEATURES = ['notes', 'calendar', 'habits', 'time-tracking', 'focus', 'routines', 'weekly-review', 'locations'] as const
+export const FEATURES = ['notes', 'calendar', 'habits', 'time-tracking', 'focus', 'routines', 'reviews', 'locations'] as const
 export type FeatureId = (typeof FEATURES)[number]
 
 const NAMES: Record<FeatureId, string> = {
   notes: msg('Notes'), calendar: msg('Calendar'), habits: msg('Habits'), 'time-tracking': msg('Time tracking'),
-  focus: msg('Focus'), routines: msg('Routines'), 'weekly-review': msg('Weekly review'), locations: msg('Locations'),
+  focus: msg('Focus'), routines: msg('Routines'), reviews: msg('Reviews'), locations: msg('Locations'),
 }
 
 /** A feature's name in the interface language. */
@@ -48,18 +48,4 @@ export function useFeatures(): (id: FeatureId | null | undefined) => boolean {
     const set = new Set(off.split(','))
     return (id: FeatureId | null | undefined) => !id || !set.has(id)
   }, [off])
-}
-
-/**
- * Palette commands that belong to a feature beyond its Go to commands, which
- * follow their route (design D4). A command id not listed here and not a gated
- * route is always offered.
- */
-export const COMMAND_FEATURES: Readonly<Record<string, FeatureId>> = {
-  'go:daily-note': 'notes',
-  'new:frame': 'calendar', 'new:slot': 'calendar', 'replan:day': 'calendar',
-  'go:habits': 'habits', 'habit:new': 'habits',
-  'task:focus': 'focus',
-  'routine:run': 'routines', 'routine:describe': 'routines', 'routine:describe-setup': 'routines', 'note:run-routine': 'routines',
-  'task:location': 'locations',
 }

@@ -1370,7 +1370,8 @@ The server records security-relevant events in its own database (never synced to
 | `project_invite.created` | success | actor = creator | `project_invite_id`, `shared_project_id`, `project_role`, `invited_email` (bound email, if any) |
 | `project_invite.revoked` | success | actor = project owner or admin | `project_invite_id`, `shared_project_id` |
 | `project_invite.accepted` | success | actor = the account that joined (new or existing), target = the link's creator | `project_invite_id`, `shared_project_id`, `project_role` |
-| `workspace.created`, `workspace.renamed`, `workspace.deleted` | success | actor = owner or admin (the server owner when an account deletion removed it) | `workspace` (id; `renamed` also covers icon, colour and features, never a value) |
+| `workspace.created`, `workspace.renamed`, `workspace.deleted` | success | actor = owner or admin (the server owner when an account deletion removed it) | `workspace` (id; `renamed` also covers icon and colour, never a value) |
+| `workspace.features_changed` | success | actor = owner or admin | `workspace` (id), `setting` (`features`), `to` (the switched ids, such as `habits=off,focus=on`) |
 | `workspace.transferred` | success | actor = previous owner (the deleting owner at account deletion), target = new owner | `workspace` |
 | `workspace.member_added`, `workspace.member_role_changed`, `workspace.member_removed` | success | actor = owner or admin (the member when leaving), target = member | `workspace`, `workspace_role` or `from`, `to` |
 | `workspace.group_created`, `workspace.group_deleted` | success | actor = owner or admin | `workspace`, `group` (ids, never names) |
@@ -1585,7 +1586,7 @@ A workspace:
  "members": [{"userId": "…", "name": "Alice", "role": "owner"}], "groups": [{"id": "…", "name": "Adults", "members": ["…"]}]}
 ```
 
-**Features** (OpenSpec `workspace-feature-switches`) are the workspace's switches for `notes`, `calendar`, `habits`, `time-tracking`, `focus`, `routines`, `weekly-review` and `locations`: `false` where the owner or an admin switched one off, a missing key (and `{}`, every workspace's start) on. `PATCH {features: {"habits": false}}` merges key by key, so other keys keep their value; an unknown id answers 400 `invalid_input` naming it. A switch only hides the feature in the apps for that workspace: every route, sync, the CLI, MCP, the export and CalDAV keep working on its data. The change wakes every member's devices.
+**Features** (OpenSpec `workspace-feature-switches`) are the workspace's switches for `notes`, `calendar`, `habits`, `time-tracking`, `focus`, `routines`, `reviews` and `locations`: `false` where the owner or an admin switched one off, a missing key (and `{}`, every workspace's start) on. `PATCH {features: {"habits": false}}` merges key by key, so other keys keep their value; an unknown id or a `null` answers 400 `invalid_input` naming it. Each change is audited as `workspace.features_changed`. A switch only hides the feature in the apps for that workspace: every route, sync, the CLI, MCP, the export and CalDAV keep working on its data. The change wakes every member's devices.
 
 Members carry names, never emails. Limits are 409 `limit_reached` naming the limit; a hosted server may lower them per tenant. An end-to-end encrypted account can create, rename and delete its workspaces and move things between them, but adding members, creating groups or links, and granting groups answer 409 `encryption_enabled`.
 

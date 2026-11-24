@@ -19,6 +19,6 @@ export function setObjectivesOn(on: boolean): Promise<void> {
 
 /** The account's switch, live (off while loading), gated by the current workspace's Weekly review (workspace-feature-switches D3). */
 export function useObjectivesOn(): boolean {
-  const allowed = useFeature('weekly-review')
+  const allowed = useFeature('reviews')
   return objectivesOn(useUserPrefsRow()) && allowed
 }

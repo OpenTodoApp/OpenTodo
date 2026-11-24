@@ -71,21 +71,16 @@ export const ROUTE_SCREENS: Record<Route['view'], string | null> = {
 }
 
 /**
- * The workspace feature each route belongs to (workspace-feature-switches D4), or
- * null for a route that is always on. While the current workspace has the feature
- * off, the shell shows its off state instead, and the sidebar, the palette and the
- * `g` keys leave the route out. TypeScript fails when a route is added without an entry.
+ * The workspace feature of each gated route (workspace-feature-switches D4); a
+ * route not listed is always on. While the current workspace has the feature off,
+ * the shell shows its off state instead, and the sidebar, the palette and the `g`
+ * keys leave the route out. features.test.tsx classifies every route of
+ * ROUTE_SCREENS, so a new route must be listed here or named always on there.
  */
-export const ROUTE_FEATURES: Record<Route['view'], FeatureId | null> = {
-  inbox: null, today: null, upcoming: null, someday: null, anytime: null,
+export const ROUTE_FEATURES: Partial<Record<Route['view'], FeatureId>> = {
   day: 'calendar', week: 'calendar', month: 'calendar', quarter: 'calendar', plan: 'calendar', year: 'calendar',
-  completed: null, assigned: null, project: null, task: null, label: null, labels: null,
   places: 'locations', place: 'locations', rules: 'routines',
-  projects: null, filter: null, views: null, view: null, settings: null, 'theme-editor': null, import: null, triage: null, trash: null,
-  feed: null, 'workspace-activity': null, ask: null, display: null,
-  review: 'weekly-review', stats: 'weekly-review', habits: 'habits',
-  next: null, waiting: null, loop: null, focus: 'focus', notes: 'notes',
-  invite: null, 'project-invite': null, 'workspace-invite': null, reset: null, 'confirm-email': null, forgot: null, verify: null, public: null, share: null, help: null,
+  review: 'reviews', stats: 'reviews', habits: 'habits', focus: 'focus', notes: 'notes',
 }
 
 /**

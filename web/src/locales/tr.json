@@ -7881,5 +7881,6 @@
   "Features": "Özellikler",
   "Only the owner and admins can change these.": "Bunları yalnızca sahip ve yöneticiler değiştirebilir.",
   "Time tracking": "Zaman takibi",
-  "{feature} is off in this workspace.": "{feature} bu çalışma alanında kapalı."
+  "{feature} is off in this workspace.": "{feature} bu çalışma alanında kapalı.",
+  "Workspace features changed": "Çalışma alanı özellikleri değiştirildi"
 }

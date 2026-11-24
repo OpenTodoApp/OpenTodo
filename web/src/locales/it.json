@@ -7881,5 +7881,6 @@
   "Features": "Funzionalità",
   "Only the owner and admins can change these.": "Solo il proprietario e gli admin possono modificarle.",
   "Time tracking": "Monitoraggio del tempo",
-  "{feature} is off in this workspace.": "{feature} è disattivato in questo spazio di lavoro."
+  "{feature} is off in this workspace.": "{feature} è disattivato in questo spazio di lavoro.",
+  "Workspace features changed": "Funzionalità dello spazio di lavoro modificate"
 }

@@ -15296,6 +15296,7 @@
     "web/src/app/routines/ProposalReview.tsx"
   ],
   "Reviews": [
+    "web/src/lib/features.ts",
     "web/src/lib/shortcuts.ts"
   ],
   "Reviews paused": [
@@ -17466,6 +17467,7 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Stop": [
+    "web/src/app/FeatureOff.tsx",
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/assistant/AssistantComposer.tsx",
     "web/src/app/assistant/ComposerCapture.tsx",
@@ -21725,8 +21727,7 @@
   "Weekly review": [
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/review/MonthlyLook.tsx",
-    "web/src/app/review/ReviewView.tsx",
-    "web/src/lib/features.ts"
+    "web/src/app/review/ReviewView.tsx"
   ],
   "Weekly review and Close the day: the next step": [
     "web/src/lib/shortcuts.ts"
@@ -22013,6 +22014,9 @@
     "web/src/app/auditFormat.ts"
   ],
   "Workspace deleted": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "Workspace features changed": [
     "web/src/app/auditFormat.ts"
   ],
   "Workspace invite link created": [

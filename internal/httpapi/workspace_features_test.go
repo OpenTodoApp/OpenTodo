@@ -53,6 +53,25 @@ func TestWorkspaceFeaturesPatch(t *testing.T) {
 	if resp.StatusCode != 400 {
 		t.Fatalf("non-boolean = %d %v", resp.StatusCode, out)
 	}
+	resp, out = se.alice.do("PATCH", path, map[string]any{"features": map[string]any{"habits": nil}})
+	if resp.StatusCode != 400 || errCode(out) != "invalid_input" {
+		t.Fatalf("null = %d %v", resp.StatusCode, out)
+	}
+	// Someone outside the workspace gets the same 404 as for a missing one.
+	outsider := newClientAt(se.alice, "10.0.0.4")
+	resp, out = outsider.do("POST", "/api/v1/auth/register", map[string]string{"email": "dora@example.com", "name": "dora", "password": "correct horse battery"})
+	outsider.mustStatus(resp, 201, out)
+	resp, out = outsider.do("PATCH", path, map[string]any{"features": map[string]any{"habits": true}})
+	if resp.StatusCode != 404 || errCode(out) != "not_found" {
+		t.Fatalf("non-member = %d %v", resp.StatusCode, out)
+	}
+	// A features change is its own audit event, ids only; it is not a rename.
+	if n := inviteRows(t, se.alice, "SELECT COUNT(*) FROM audit_events WHERE name = 'workspace.features_changed' AND details LIKE '%focus=off%'"); n != 1 {
+		t.Fatalf("features_changed events with focus=off = %d", n)
+	}
+	if n := inviteRows(t, se.alice, "SELECT COUNT(*) FROM audit_events WHERE name = 'workspace.renamed'"); n != 0 {
+		t.Fatalf("renamed events = %d, want 0", n)
+	}
 	anon := newClientAt(se.alice, "10.0.7.9")
 	resp, out = anon.do("PATCH", path, map[string]any{"features": map[string]any{"habits": true}})
 	if resp.StatusCode != 401 || errCode(out) != "unauthorized" {

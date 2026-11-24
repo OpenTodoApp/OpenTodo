@@ -314,3 +314,18 @@ describe('the partition on this device (task 5.1, 5.6, 5.7)', () => {
     expect((await where()).acme).toBe('w-p')
   })
 })
+
+// workspace-feature-switches review: a change to `features` alone is stored (the
+// comparison once dropped nested keys, so `features` always read as {}).
+describe('storeWorkspaces and features', () => {
+  it('stores a features-only change', async () => {
+    useDatabase(`ws-${Math.random()}`)
+    const ws = (features: Record<string, boolean>): WorkspaceEntry => ({ id: 'w1', name: 'Family', icon: '', color: '', default: true, role: 'owner', ownerId: 'u1', members: [], groups: [], features })
+    await storeWorkspaces([ws({ habits: false })])
+    expect((await db.workspaces.get('w1'))?.features).toEqual({ habits: false })
+    await storeWorkspaces([ws({ habits: false, focus: false })])
+    expect((await db.workspaces.get('w1'))?.features).toEqual({ habits: false, focus: false })
+    await storeWorkspaces([ws({})])
+    expect((await db.workspaces.get('w1'))?.features).toEqual({})
+  })
+})

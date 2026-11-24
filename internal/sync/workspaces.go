@@ -314,7 +314,8 @@ type WorkspaceInput struct {
 	Color *string `json:"color"`
 	// Features switches features on or off, merged key by key into the stored
 	// map (workspace-feature-switches D2); on create, the starting switches.
-	Features map[string]bool `json:"features,omitempty"`
+	// A null value is refused: a switch is true or false.
+	Features map[string]*bool `json:"features,omitempty"`
 }
 
 var colorRe = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)

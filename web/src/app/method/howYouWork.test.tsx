@@ -130,7 +130,7 @@ describe('A feature the current workspace has off', () => {
     const { storeWorkspaces, switchTo } = await import('../../lib/workspaces')
     const ws = (id: string, extra = {}) => ({ id, name: id, icon: '', color: '', default: false, role: 'owner' as const, ownerId: 'u1', members: [], groups: [], ...extra })
     await db.userPrefs.put({ id: 'me', objectives: 'on', habits: 'on' } as never)
-    await storeWorkspaces([ws('w-p', { default: true }), ws('w-fam', { features: { habits: false, 'weekly-review': false } })])
+    await storeWorkspaces([ws('w-p', { default: true }), ws('w-fam', { features: { habits: false, 'reviews': false } })])
     const r = await render(<HowYouWorkSection />)
     await waitFor(() => !!document.querySelector('[data-objectives-switch]') && !!document.querySelector('[data-habits-switch]'))
     await switchTo('w-fam')

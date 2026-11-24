@@ -16,14 +16,14 @@ import (
 
 // WorkspaceFeatures are the switchable feature ids, in Settings order. The web's
 // web/src/lib/features.ts lists the same ids (TestWorkspaceFeaturesMatchWeb).
-var WorkspaceFeatures = []string{"notes", "calendar", "habits", "time-tracking", "focus", "routines", "weekly-review", "locations"}
+var WorkspaceFeatures = []string{"notes", "calendar", "habits", "time-tracking", "focus", "routines", "reviews", "locations"}
 
 // ValidWorkspaceFeature reports whether id is a known feature id.
 func ValidWorkspaceFeature(id string) bool { return slices.Contains(WorkspaceFeatures, id) }
 
-// checkFeatures refuses keys that are not known ids, naming the first one in
-// sorted order, so a typo never stores silently.
-func checkFeatures(in map[string]bool) error {
+// checkFeatures refuses keys that are not known ids and null values, naming the
+// first such key in sorted order, so a typo never stores silently.
+func checkFeatures(in map[string]*bool) error {
 	keys := make([]string, 0, len(in))
 	for k := range in {
 		keys = append(keys, k)
@@ -32,6 +32,9 @@ func checkFeatures(in map[string]bool) error {
 	for _, k := range keys {
 		if !ValidWorkspaceFeature(k) {
 			return fmt.Errorf("%w: features: unknown feature %q", ErrInvalidInput, k)
+		}
+		if in[k] == nil {
+			return fmt.Errorf("%w: features: %q must be true or false", ErrInvalidInput, k)
 		}
 	}
 	return nil
@@ -50,7 +53,7 @@ func parseFeatures(raw sql.NullString) map[string]bool {
 // mergeFeatures writes the changed keys into the workspace's stored map in the
 // caller's transaction: per key, so two managers switching different features
 // both keep their change, and keys the server does not know stay.
-func mergeFeatures(ctx context.Context, tx *sql.Tx, wsID string, change map[string]bool) error {
+func mergeFeatures(ctx context.Context, tx *sql.Tx, wsID string, change map[string]*bool) error {
 	if len(change) == 0 {
 		return nil
 	}
@@ -60,7 +63,7 @@ func mergeFeatures(ctx context.Context, tx *sql.Tx, wsID string, change map[stri
 	}
 	stored := parseFeatures(raw)
 	for k, v := range change {
-		stored[k] = v
+		stored[k] = *v
 	}
 	b, err := json.Marshal(stored)
 	if err != nil {

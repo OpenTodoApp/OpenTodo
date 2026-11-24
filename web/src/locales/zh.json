@@ -7881,5 +7881,6 @@
   "Features": "功能",
   "Only the owner and admins can change these.": "只有所有者和管理员可以更改这些设置。",
   "Time tracking": "时间记录",
-  "{feature} is off in this workspace.": "此工作区已关闭{feature}。"
+  "{feature} is off in this workspace.": "此工作区已关闭{feature}。",
+  "Workspace features changed": "工作区功能已更改"
 }

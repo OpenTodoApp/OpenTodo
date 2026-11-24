@@ -56,7 +56,7 @@ import type { History } from '../../lib/undoHistory'
 import { assistantStatus, openAssistantWith } from '../../lib/assistantStatus'
 import { connectedNow } from '../../lib/noteLinks'
 import { openConnections } from '../signals'
-import { COMMAND_FEATURES, type FeatureId } from '../../lib/features'
+import type { FeatureId } from '../../lib/features'
 import { ROUTE_FEATURES } from '../screens'
 
 /** What the registry needs to know about the screen the palette was opened on. */
@@ -157,6 +157,20 @@ const ROUTES: RouteCommand[] = translatedList<RouteCommand, 'label'>([
   { label: msg('Import data'), route: { view: 'import' }, icon: 'upload', shortcut: keysOf('go.import') },
   { label: msg('Go to Settings'), route: { view: 'settings' }, icon: 'settings', shortcut: keysOf('go.settings') },
 ], 'label')
+
+/**
+ * Palette commands that belong to a workspace feature beyond its Go to commands,
+ * which follow their route (workspace-feature-switches D4). A command not listed
+ * here and not on a gated route is always offered.
+ */
+export const COMMAND_FEATURES: Readonly<Record<string, FeatureId>> = {
+  'go:daily-note': 'notes',
+  'new:frame': 'calendar', 'new:slot': 'calendar', 'replan:day': 'calendar', 'task:take-slot': 'calendar', 'task:give-back-slot': 'calendar',
+  'go:habits': 'habits', 'habit:new': 'habits',
+  'task:focus': 'focus',
+  'routine:run': 'routines', 'routine:describe': 'routines', 'routine:describe-setup': 'routines', 'note:run-routine': 'routines',
+  'task:location': 'locations',
+}
 
 const prompt = (title: string, label: string, initial: string, onSubmit: (v: string) => unknown): Step => ({ kind: 'prompt', title, label, initial, onSubmit })
 
