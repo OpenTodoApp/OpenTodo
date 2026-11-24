@@ -2407,7 +2407,8 @@
         "kind": "reminder_kind",
         "offset_minutes": "offset_minutes",
         "radius_m": "radius",
-        "task_id": "id"
+        "task_id": "id",
+        "urgent": "bool"
       },
       "review": {
         "carry_over": "string",
@@ -3560,7 +3561,8 @@
       "kind": "reminder_kind",
       "offset_minutes": "offset_minutes",
       "radius_m": "radius",
-      "task_id": "id"
+      "task_id": "id",
+      "urgent": "bool"
     },
     "review": {
       "carry_over": "string",
@@ -6102,7 +6104,8 @@
         "reminders[].kind": "reminder_kind",
         "reminders[].offset_minutes": "offset_minutes",
         "reminders[].radius_m": "radius",
-        "reminders[].task_id": "id"
+        "reminders[].task_id": "id",
+        "reminders[].urgent": "bool"
       }
     },
     "GET /api/v1/reminders/{id}": {
@@ -6117,7 +6120,8 @@
         "kind": "reminder_kind",
         "offset_minutes": "offset_minutes",
         "radius_m": "radius",
-        "task_id": "id"
+        "task_id": "id",
+        "urgent": "bool"
       }
     },
     "GET /api/v1/routine-emails/{token}": {
@@ -7840,7 +7844,8 @@
         "kind": "reminder_kind?",
         "offset_minutes": "offset_minutes?",
         "radius_m": "radius?",
-        "task_id": "id?"
+        "task_id": "id?",
+        "urgent": "bool?"
       },
       "response": {
         "created_at": "number",
@@ -7852,7 +7857,8 @@
         "kind": "reminder_kind",
         "offset_minutes": "offset_minutes",
         "radius_m": "radius",
-        "task_id": "id"
+        "task_id": "id",
+        "urgent": "bool"
       }
     },
     "PATCH /api/v1/rules/{id}": {
@@ -10320,7 +10326,8 @@
         "kind": "reminder_kind?",
         "offset_minutes": "offset_minutes?",
         "radius_m": "radius?",
-        "task_id": "id"
+        "task_id": "id",
+        "urgent": "bool?"
       },
       "response": {
         "created_at": "number",
@@ -10332,7 +10339,8 @@
         "kind": "reminder_kind",
         "offset_minutes": "offset_minutes",
         "radius_m": "radius",
-        "task_id": "id"
+        "task_id": "id",
+        "urgent": "bool"
       }
     },
     "POST /api/v1/routine-emails/{token}/stop": {
