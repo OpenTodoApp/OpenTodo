@@ -3,7 +3,7 @@
 ## 1. The project view
 
 - [x] 1.1 `SubProjects` rows take a task row's empty leading slot, so the mark is in the checkbox column; the row hover token; 44 px on touch. Verify: `subProjects.test.tsx` ("puts the tasks under their own Tasks bar…") checks the row's columns; `npm test -- subProjects` in web/.
-- [x] 1.2 `GroupedList` draws a "Tasks" bar with the open count, folding per project, above the project's headerless `all` group when `useHasSubProjects` is true; none with sections, a grouping or no sub-projects; the board shows no group. Verify (also the per-project fold): the three tests in `subProjects.test.tsx` "sub-projects above the tasks"; `npm test` in web/.
+- [x] 1.2 `listGroups` makes the project's `all` group a "Tasks" group with the open count when `useHasSubProjects` is true, folded per project with no rows while folded; none with sections, a grouping or no sub-projects; the board shows no group. Verify (also the per-project fold, and that `j` and Enter reach no folded task): the three tests in `subProjects.test.tsx` "sub-projects above the tasks"; `npm test` in web/.
 
 ## 2. Look and checks
 

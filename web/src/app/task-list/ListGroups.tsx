@@ -21,7 +21,6 @@ import { sectionTarget, type BoardColumn } from '../BoardView'
 import { groupKey, setGroupCollapsed } from '../collapsedGroups'
 import { FieldColumnsRow, FieldColumnsTable } from '../FieldColumns'
 import { SectionHeader, SectionQuickAdd } from '../Sections'
-import { useHasSubProjects } from '../SubProjects'
 import { departures$, ghostMemory, isGhost, listCommitted, markGhost, registerList, withGhosts } from '../motion'
 import type { FlowView } from '../../lib/useFlow'
 import { TaskListRow, SubtaskInput, SubtaskAddLine, type RowActions } from './TaskListRow'
@@ -457,10 +456,6 @@ const countRows = (groups: readonly ListGroup[]) => groups.reduce((n, g) => n + 
 
 /** The list's groups: section groups of a project (headings are drop targets), or headed groups. */
 export function GroupedList(p: GroupedListProps) {
-  // A project showing its "Sub-projects" group above the list (subprojects-above-tasks): its own
-  // tasks, when no bar of theirs follows the group (no sections, no grouping), take a "Tasks" bar,
-  // folding per project on this device: the headerless group, named and keyed when drawn.
-  const tasksBar = useHasSubProjects(p.view === 'project' ? p.project?.id ?? null : null)
   const total = countRows(p.groups)
   const limit = useRowLimit(`${p.view}:${p.project?.id ?? ''}`, total)
   if (limit < total) {
@@ -480,7 +475,7 @@ export function GroupedList(p: GroupedListProps) {
   const laterOf = new Map(p.project ? p.groups.flatMap((g) => (g.laterOf !== undefined ? [[g.laterOf, g] as const] : [])) : [])
   const body = [...p.groups.map((g) => (g.laterOf !== undefined && p.project ? null : g.section !== undefined && p.project
     ? <SectionGroup key={g.key} g={g} later={laterOf.get(g.section?.id ?? '')} first={!g.section || g.key === sectionKeys[0]} last={!g.section || g.key === sectionKeys[sectionKeys.length - 1]} rowList={rowList} {...p} project={p.project} />
-    : <HeadedGroup key={g.key} g={tasksBar && p.project && g.key === 'all' && !g.heading ? { ...g, key: `tasks:${p.project.id}`, heading: t('Tasks') } : g} rowList={rowList} {...p} />)),
+    : <HeadedGroup key={g.key} g={g} rowList={rowList} {...p} />)),
   p.completed && p.completed.tasks.length > 0 && <CompletedGroup key="completed" c={p.completed} rowList={rowList} renderRow={p.renderRow} fieldColumns={p.fieldColumns} />]
   const aria = p.siblingPos ? <SiblingAria key="aria" positions={p.siblingPos} drawn={Math.min(limit, total)} /> : null
   const estimate = total > ROWS_PER_STEP ? <RowEstimate key="estimate" list={`${p.view}:${p.project?.id ?? ''}`} /> : null

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import { createSection, saveViewMode } from '../lib/sections'
-import { click, render, mockFetch, noPublicLinks, visibleText, waitFor } from '../ui/test-utils'
+import { click, key, render, mockFetch, noPublicLinks, visibleText, waitFor } from '../ui/test-utils'
 import { SubProjects } from './SubProjects'
 import { TaskListView } from './TaskListView'
 
@@ -89,13 +89,13 @@ describe('sub-projects above the tasks', () => {
     await createTask({ title: 'Tiles', project_id: home })
 
     const r = await render(<TaskListView route={{ view: 'project', id: home }} />)
-    await waitFor(() => r.container.querySelector('[data-group^="tasks:"] [data-group-header]') !== null, 'the Tasks bar')
+    await waitFor(() => r.container.querySelector('[data-group="all"] [data-group-header]') !== null, 'the Tasks bar')
     const order = outline(r.container)
     expect(order[0]).toBe('sub-projects')
     expect(order[1]).toBe('bar:Tasks')
     expect(order.slice(2).every((o) => o.startsWith('task:'))).toBe(true)
     // The bar counts the open rows below it.
-    expect(visibleText(r.container.querySelector('[data-group^="tasks:"] [data-group-header] [data-group-count]')!)).toBe('3')
+    expect(visibleText(r.container.querySelector('[data-group="all"] [data-group-header] [data-group-count]')!)).toBe('3')
     // Top-level tasks are not indented; only the subtask is.
     const depth = (id: string) => r.container.querySelector(`[data-task-id="${id}"]`)!.getAttribute('data-depth')
     expect(depth(paint)).toBe('0')
@@ -106,8 +106,15 @@ describe('sub-projects above the tasks', () => {
     expect(row.children[0].className).toContain('w-4')
     expect(row.children[1].className).toContain('w-5')
     // The bar folds the tasks of this project only, on this device.
-    await click(r.container.querySelector(`[data-group="tasks:${home}"] [data-group-toggle]`)!)
+    await click(r.container.querySelector(`[data-group="all"] [data-group-toggle]`)!)
     await waitFor(() => r.container.querySelector(`[data-task-id="${paint}"]`) === null, 'the tasks folded')
+    // Folded tasks leave the list: j selects none of them, so Enter opens nothing.
+    expect(r.container.querySelector('[data-empty-state]')).toBeNull()
+    const before = location.pathname
+    await key(document, 'j')
+    await key(document, 'Enter')
+    expect(r.container.querySelector('[aria-current]')).toBeNull()
+    expect(location.pathname).toBe(before)
     await r.unmount()
     const errands = await createProject({ name: 'Errands' })
     await createProject({ name: 'Post', parent_id: errands })
@@ -122,7 +129,7 @@ describe('sub-projects above the tasks', () => {
     await createTask({ title: 'Post office', project_id: leaf })
     const a = await render(<TaskListView route={{ view: 'project', id: leaf }} />)
     await waitFor(() => a.container.textContent!.includes('Post office'))
-    expect(a.container.querySelector('[data-group^="tasks:"] [data-group-header]')).toBeNull()
+    expect(a.container.querySelector('[data-group="all"] [data-group-header]')).toBeNull()
     await a.unmount()
 
     const home = await createProject({ name: 'Home' })
@@ -132,7 +139,7 @@ describe('sub-projects above the tasks', () => {
     await createTask({ title: 'Tiles', project_id: home, section_id: s })
     const b = await render(<TaskListView route={{ view: 'project', id: home }} />)
     await waitFor(() => b.container.textContent!.includes('Tiles') && b.container.querySelector('[data-sub-projects]') !== null)
-    expect(b.container.querySelector('[data-group^="tasks:"] [data-group-header]')).toBeNull()
+    expect(b.container.querySelector('[data-group="all"] [data-group-header]')).toBeNull()
     expect(outline(b.container).slice(0, 3)).toEqual(['sub-projects', 'bar:No section', 'task:Paint'])
     await b.unmount()
   })
@@ -146,7 +153,7 @@ describe('sub-projects above the tasks', () => {
     const r = await render(<TaskListView route={{ view: 'project', id: home }} />)
     await waitFor(() => r.container.textContent!.includes('Paint') && r.container.textContent!.includes('Doing'))
     expect(r.container.querySelector('[data-sub-projects]')).toBeNull()
-    expect(r.container.querySelector('[data-group^="tasks:"] [data-group-header]')).toBeNull()
+    expect(r.container.querySelector('[data-group="all"] [data-group-header]')).toBeNull()
     await r.unmount()
   })
 })

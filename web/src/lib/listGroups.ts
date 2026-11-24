@@ -393,6 +393,11 @@ export interface GroupInput {
   /** A project's timeline: deferred tasks keep the one Later group at the end (later-in-section D4). */
   timeline?: boolean
   tree: Tree<Task> | null
+  /**
+   * A project view that shows its "Sub-projects" group (subprojects-above-tasks): its own tasks,
+   * when no section or grouping heads them, are a "Tasks" group that folds per project on this device.
+   */
+  subProjects?: boolean
   today: string
   resolved: ResolvedDateTime
   /** Collapsed tree rows, and BLOCKED_OPEN_KEY when Today's Blocked group is open. */
@@ -597,9 +602,21 @@ function listGroupsInner(p: GroupInput): ListGroup[] {
     return laterOf ? out : [...out, ...later()]
   }
   // Project and Inbox: one depth-first pass over the built tree (linear in task count).
+  if (p.tree && p.subProjects && p.view === 'project' && p.projectId && p.tree.roots.length) {
+    // Folded, its rows leave the list, so the cursor and the keys never reach a hidden task.
+    const openKey = tasksFoldedKey(p.projectId)
+    const folded = p.collapsed.has(openKey)
+    return [{
+      key: 'all', heading: t('Tasks'), count: flattenTree(p.tree.roots).length, folded, openKey,
+      rows: folded ? [] : flattenTree(sortedRoots(p.tree.roots, order), isCollapsed).map(toRow),
+    }, ...later()]
+  }
   if (p.tree) return [{ key: 'all', heading: null, rows: flattenTree(sortedRoots(p.tree.roots, order), isCollapsed).map(toRow) }, ...later()]
   return flatGroups(p)
 }
+
+/** In the per-device collapse set while a project's Tasks group is folded (subprojects-above-tasks). */
+export const tasksFoldedKey = (projectId: string) => `project:${projectId}:tasks:folded`
 
 /** In the per-device collapse set when a section's Later group is open; folded by default (later-in-section D2). */
 export const laterOpenKey = (projectId: string, sectionKey: string) => `project:${projectId}:later:${sectionKey}:open`

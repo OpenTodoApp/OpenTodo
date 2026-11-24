@@ -17899,7 +17899,7 @@
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/app/review/StatsView.tsx",
-    "web/src/app/task-list/ListGroups.tsx",
+    "web/src/lib/listGroups.ts",
     "web/src/lib/rules/sentence.ts"
   ],
   "Tasks and fields": [

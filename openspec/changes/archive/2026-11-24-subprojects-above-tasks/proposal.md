@@ -27,7 +27,7 @@ None.
 
 ## Impact
 
-- Web: `web/src/app/SubProjects.tsx` (the rows' leading slot, `useHasSubProjects`), `web/src/app/task-list/ListGroups.tsx` (the Tasks bar on the project's headerless group); "Tasks" is an existing message.
+- Web: `web/src/app/SubProjects.tsx` (the rows' leading slot, `useHasSubProjects`), `web/src/lib/listGroups.ts` (the Tasks group, folded by a per-project key), `web/src/app/task-list/useListModel.ts`, `web/src/app/TaskListView.tsx` (no empty state while it is folded); "Tasks" is an existing message.
 - Tests: `web/src/app/subProjects.test.tsx`; the story `Screens/Task list/Project With Sub Projects` and its baselines.
 - Docs: `changelog.d/Fixed/subprojects-above-tasks.md`.
 - Size: a few lines; the first load stays within `web/bundle-budget.json`.

@@ -43,6 +43,7 @@ import { useResetOnChange } from '../../lib/useResetOnChange'
 import { useUpcomingGroups } from './upcomingProjections'
 import { isReusable } from '../../lib/reusable'
 import { scoreOf, useUrgencyOf } from '../useUrgency'
+import { useHasSubProjects } from '../SubProjects'
 
 export type ListRoute = Extract<Route, ListScope>
 
@@ -276,13 +277,15 @@ export function useListModel(route: ListRoute, userId?: string) {
     return done && todayHabits ? done.filter((x) => !(x.series_id && taskMap.get(x.series_id)?.habit)) : done
   }, [route.view, closed.doneToday, todayHabits, taskMap])
   // A write keeps every group and row it did not change (list-rendering-at-scale D6).
+  // The project shows its Sub-projects group: its own tasks take a Tasks group (subprojects-above-tasks).
+  const subProjects = useHasSubProjects(route.view === 'project' ? route.id : null)
   const keptGroups = useRef<ListGroup[] | null>(null)
   const groups = useMemo<ListGroup[]>(() => (keptGroups.current = keepGroups(keptGroups.current, listGroups({
-    view: route.view, tasks, laterTasks, projectId, timeline: layout.timeline, tree, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
+    view: route.view, tasks, laterTasks, projectId, timeline: layout.timeline, tree, subProjects, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
     projects, projectMap, fields: sortFields, score, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday,
     upcomingToday, todayDisplay, todayContextFilter,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }))), [dt.resolved, tree, tasks, laterTasks, projectId, layout.timeline, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, score, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday, todayDisplay, todayContextFilter])
+  }))), [dt.resolved, tree, subProjects, tasks, laterTasks, projectId, layout.timeline, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, score, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday, todayDisplay, todayContextFilter])
   // Upcoming's projected occurrences (series-occurrences D4): off by default, per device; never rows.
   const projectedGroups = useUpcomingGroups(route.view === 'upcoming', groups, { allTasks, projects, today, zone, duration: filterKey ? duration : null, queryTest, resolved: dt.resolved })
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
