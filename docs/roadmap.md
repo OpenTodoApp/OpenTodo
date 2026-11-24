@@ -34,7 +34,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `location-reminders` | Reminders when you arrive at or leave a place. Shipped on Android; iOS follows | In progress (16 of 18) |
 | `mobile-native-feel` | The phone apps made to feel native: the plan and the order, one change per step | In progress (5 of 15) |
 | `tablet-shells` | iPad and Android tablets: hardware keyboard shortcuts, a trackpad pointer, split view and resizable windows | Planned |
-| `app-sso-system-browser` | Single sign-on in the apps through the system browser, for providers that refuse an embedded web view | In progress (12 of 14) |
+| `app-sso-system-browser` | Single sign-on in the apps through the system browser, for providers that refuse an embedded web view | In progress (13 of 15) |
 | `android-home-network-notice` | The Android app says when the server address only works at home | In progress (2 of 3) |
 | `android-reveal-on-paint` | The Android app shows the web app at its first drawn frame, as the iPhone app does | In progress (3 of 4) |
 | `android-unicode-address` | A server address typed in Unicode works in the Android app; both apps share one set of address cases | In progress (3 of 4) |
