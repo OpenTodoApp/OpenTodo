@@ -28,7 +28,8 @@ const stored = () => page.evaluate(async () => {
   const out = new Set()
   for (const name of await caches.keys()) {
     for (const req of await (await caches.open(name)).keys()) {
-      const m = /\/assets\/lang-([a-z]{2,3}(?:-[A-Za-z]+)?)-/.exec(new URL(req.url).pathname)
+      // The hash is 8 characters and can itself hold a '-' (lang-it-CjXr-l4V.js).
+      const m = /\/assets\/lang-([a-z]{2,3}(?:-[A-Za-z]+)?)-[\w-]{8}\.js$/.exec(new URL(req.url).pathname)
       if (m) out.add(m[1])
     }
   }
