@@ -47,7 +47,7 @@ export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
     : t('Not synced yet')
   const map = stale ? { dot: 'bg-warning', text: staleText } : {
     idle: { dot: 'bg-success', text: s.pending > 0 ? t('{n} pending', { n: s.pending }) : t('Synced') },
-    syncing: { dot: 'bg-info animate-pulse', text: t('Syncing…') },
+    syncing: { dot: 'bg-info animate-pulse', text: s.pending > 0 ? t('{n} pending', { n: s.pending }) : t('Syncing…') },
     reseeding: { dot: 'bg-info animate-pulse', text: t('Re-syncing after restore…') },
     offline: { dot: 'bg-faint', text: s.pending > 0 ? t('Offline · {n} pending', { n: s.pending }) : t('Offline') },
     error: { dot: 'bg-danger', text: t('Sync error') },
@@ -92,9 +92,9 @@ export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
       className={`flex min-h-9 min-w-0 items-center gap-2 rounded-control text-meta text-muted hover:bg-sunken dark:hover:bg-raised pointer-coarse:w-full ${compact ? 'justify-center px-0' : 'px-2 py-1'}`}
     >
       <span className={`h-2 w-2 shrink-0 rounded-full ${map.dot}`} />
-      {/* On touch the dot is the state (touch-sidebar-names): a running sync shows no words, so the row does not
-          change with every sync, and the other states show theirs only where they fit whole. */}
-      {(!quiet && !compact || failed) && <span className={`ui-whole min-w-0 truncate${s.state === 'syncing' ? ' pointer-coarse:hidden' : ''}`}><span>{map.text}</span></span>}
+      {/* Words show only where they fit whole (touch-sidebar-names); a sync with changes pending keeps
+          "{n} pending", so the row does not change with every sync (#1941). */}
+      {(!quiet && !compact || failed) && <span className="ui-whole min-w-0 truncate"><span>{map.text}</span></span>}
     </button>
   )
   return (
