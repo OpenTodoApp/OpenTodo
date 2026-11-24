@@ -49,7 +49,7 @@ type Options struct {
 	Log     *slog.Logger
 	// Restart is called when a restore confirmed in the web app needs the
 	// tenant to be closed and opened again (backup-restore-web D1).
-	Restart func()
+	Restart func() bool
 	// Hosted is set when a host serves this tenant (multi-tenant-host D2, D4).
 	Hosted *Hosted
 	// PushOptions adjusts web push before it is built (tests point it at a

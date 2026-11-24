@@ -24,7 +24,7 @@ func init() {
 		def: func(Caller) Definition {
 			return writeDef("update_calendar_event", "Change a calendar event",
 				"Move or rename one event of a connected calendar (see list_calendar_events): send its connection_id, id and rev, and a new summary, or start and end "+
-					"together (dates only with all_day true). The change is written to the user's calendar only when access.update is true, and the user can undo it. "+
+					"together (dates only with all_day true). The change is written to the user's calendar only when access.update is true; the result says when the user can undo it. "+
 					"Repeating events, events with guests or organised by someone else, and subscribed calendars cannot be changed. There is no tool that deletes events.",
 				object([]string{"connection_id", "event_id", "rev"}, map[string]any{
 					"connection_id": map[string]any{"type": "string", "description": "The event's connection_id."},
@@ -93,6 +93,10 @@ func planUpdateEvent(r *Registry, ctx context.Context, c Caller, a args, _ Chang
 			}
 			return nil, 0, err
 		}
-		return map[string]any{"event": ev, "undo": "the user can undo this change from the event in OpenTodo's calendar"}, 1, nil
+		out := map[string]any{"event": ev}
+		if ev.Undoable {
+			out["undo"] = "the user can undo this change from the event in OpenTodo's calendar"
+		}
+		return out, 1, nil
 	}}, nil
 }

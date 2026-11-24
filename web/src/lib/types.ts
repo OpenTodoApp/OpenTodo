@@ -846,6 +846,8 @@ export interface Reminder extends ReminderFields {
   deleted_at: number | null
   /** Metres, 100–5,000, only on the location kinds (absent on rows from older clients). */
   radius_m?: number | null
+  /** Rings as an alarm in the iPhone app (ios-urgent-alarms); absent on rows from older clients. */
+  urgent?: boolean
   _clock: Clock
 }
 
@@ -1035,7 +1037,7 @@ export interface UserPrefs extends UserPrefsFields {
   row_layout?: string
   /** Today's agenda of calendar events (today-agenda D1): 'shown' shows it; '' and anything else read as hidden. */
   today_events?: string
-  /** Was Today's hide of tasks assigned to others (today-assigned-filter); since personal-views-assignee the personal views always hide them, and the field is kept but never read. */
+  /** The personal lists show tasks assigned to others (others-tasks-toggle D1): 'all' shows them; '', 'mine' and anything else read as hidden. */
   today_assignees?: string
   /** Upcoming's calendar events (today-agenda): 'shown' lists them on each day; '' and anything else read as hidden. */
   upcoming_events?: string
@@ -1406,6 +1408,8 @@ export interface EventCommand {
   /** A delete waits 8 s so Undo can cancel it. */
   notBefore: number
   sending?: boolean
+  /** When `sending` was set: a claim older than a few minutes (a closed tab, a crash) is taken again. */
+  sentAt?: number
   /** Failed while online (5xx, 429, calendar unreachable, no answer): shown with Retry and Discard, never retried alone. */
   failed?: string
 }

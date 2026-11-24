@@ -39,6 +39,8 @@ type EventItem struct {
 	Free         bool         `json:"free"`
 	Access       *EventAccess `json:"access,omitempty"`
 	Untrusted    EventText    `json:"untrusted_text"`
+	// Undoable says the change can be undone by the user (an edit kept its undo).
+	Undoable bool `json:"-"`
 }
 
 // EventUpdate is a call of update_calendar_event.

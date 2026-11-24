@@ -6,7 +6,7 @@ import { dueUndoable, skipOccurrence } from './undoActions'
 import { undoBatch } from './undo'
 import { applyBulk } from './bulk'
 import { dueInstant, isDelivered, isDismissed, offsetLabel, relativeFireAt, snoozeUntil } from './reminderTime'
-import { addReminder, deleteReminder, dismissReminder, followSharedDueChanges, snoozeReminder, updateReminder } from './reminders'
+import { addReminder, deleteReminder, dismissReminder, followSharedDueChanges, setReminderUrgent, snoozeReminder, updateReminder } from './reminders'
 import type { Op } from './types'
 
 let n = 0
@@ -39,7 +39,7 @@ describe('reminder entity', () => {
     expect(new Set(states).size).toBe(1)
     expect(JSON.parse(states[0])).toEqual({
       id: 'r1', task_id: 't1', kind: 'relative', offset_minutes: -60, fire_at: 1000,
-      delivered_at: null, dismissed_at: 50, created_at: 0, deleted_at: 99, radius_m: null,
+      delivered_at: null, dismissed_at: 50, created_at: 0, deleted_at: 99, radius_m: null, urgent: false,
     })
   })
 
@@ -73,6 +73,12 @@ describe('reminder helpers', () => {
     await db.outbox.clear()
     await dismissReminder(id, 1234)
     expect((await db.outbox.toArray()).map((o) => [o.field, o.value])).toEqual([['dismissed_at', 1234]])
+
+    // ios-urgent-alarms D1: one field, the firing and delivery state untouched.
+    await db.outbox.clear()
+    await setReminderUrgent(id, true)
+    expect((await db.outbox.toArray()).map((o) => [o.field, o.value])).toEqual([['urgent', true]])
+    expect(await db.reminders.get(id)).toMatchObject({ urgent: true, fire_at: local('2026-10-11', '09:00'), dismissed_at: 1234 })
 
     await db.outbox.clear()
     await deleteReminder(id, 5678)

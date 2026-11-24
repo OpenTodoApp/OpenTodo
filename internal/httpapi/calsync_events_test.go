@@ -1,11 +1,14 @@
 package httpapi
 
 import (
+	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/OpenTodoApp/opentodo/internal/calsync"
 	"github.com/OpenTodoApp/opentodo/internal/calsync/calsynctest"
 )
 
@@ -291,4 +294,19 @@ func TestCalendarEventAuthorization(t *testing.T) {
 func errField(out map[string]any) any {
 	e, _ := out["error"].(map[string]any)
 	return e["field"]
+}
+
+// TestEventErrorCodesMatchCalsync: eventError writes each code as a literal
+// (for the error-code scanner); every calsync code comes back as itself.
+func TestEventErrorCodesMatchCalsync(t *testing.T) {
+	s := &Server{}
+	for _, c := range []string{calsync.CodeNotFound, calsync.CodeGone, calsync.CodeEditsOff, calsync.CodeAssistantEditsOff, calsync.CodeReadOnly,
+		calsync.CodeNotEditable, calsync.CodeInvalid, calsync.CodeChanged, calsync.CodeUnreachable} {
+		rec := httptest.NewRecorder()
+		s.eventError(rec, &calsync.EventError{Code: c})
+		var body struct{ Error struct{ Code string } }
+		if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil || body.Error.Code != c || rec.Code < 400 || rec.Code == 500 {
+			t.Errorf("%s answered %d %s (%v)", c, rec.Code, rec.Body, err)
+		}
+	}
 }

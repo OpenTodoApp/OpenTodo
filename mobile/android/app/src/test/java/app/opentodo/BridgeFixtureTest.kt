@@ -61,6 +61,9 @@ class BridgeFixtureTest {
 
     @Test fun signOutEmptiesTheSchedule() = checkReminders("reminders-signed-out.json")
 
+    /** ios-urgent-alarms D2: Android reads an urgent reminder as an ordinary one. */
+    @Test fun urgentRemindersAreOrdinaryReminders() = checkReminders("reminders-urgent.json")
+
     @Test fun widget() = checkWidget("widget.json")
 
     @Test fun lockedWidget() = checkWidget("widget-locked.json")

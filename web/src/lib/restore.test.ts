@@ -73,6 +73,14 @@ describe('waiting for the restart (5.4)', () => {
     expect(fetchFn).toHaveBeenCalledTimes(60)
   })
 
+  it('stops polling when the page goes away', async () => {
+    const c = clock()
+    const ctl = new AbortController()
+    const fetchFn = vi.fn(async (_path: string, init?: RequestInit) => { expect(init?.signal).toBe(ctl.signal); ctl.abort(); throw new DOMException('aborted', 'AbortError') })
+    await expect(waitForRestart({ fetchFn: fetchFn as unknown as typeof fetch, budgetMs: Infinity, signal: ctl.signal, ...c })).resolves.toBe(false)
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+  })
+
   it('the restored note is shown once after the reload', () => {
     markRestoring()
     expect(consumeRestored()).toBe(true)

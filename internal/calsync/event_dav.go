@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/caldav"
@@ -30,7 +31,7 @@ func (e *davEvents) Update(ctx context.Context, ref EventRef, edit EventEdit, no
 	if err := writeAnswer(resp.Status); err != nil {
 		return EventState{}, err
 	}
-	if resp.Header.Get("ETag") != ref.ETag {
+	if !sameETag(resp.Header.Get("ETag"), ref.ETag) {
 		return EventState{}, ErrEventChanged
 	}
 	root, err := caldav.Parse(resp.Body)
@@ -202,4 +203,9 @@ func addTimezone(root *caldav.Component, p calfeed.Point, allDay bool) {
 	if tz := caldav.VTimezone(p.Zone, at.Format("2006-01-02"), at.Format("15:04")); tz != nil {
 		root.Children = append([]*caldav.Component{tz}, root.Children...)
 	}
+}
+
+// sameETag compares two ETags weakly: a server may answer W/"x" for "x".
+func sameETag(a, b string) bool {
+	return strings.TrimPrefix(a, "W/") == strings.TrimPrefix(b, "W/")
 }

@@ -11,8 +11,8 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSPr
 import { lazy } from '../lib/lazy'
 import { ProjectCalendarLayout, useListExtras } from './task-list/listExtras'
 import { t } from '../lib/i18n'
-import { useMembershipMap, useUserPrefsRow } from '../lib/localData'
-import { briefingHidden, preferredPlacement, setBriefingShown, setTodayEventsShown, setUpcomingEventsShown, setUpcomingStartsWithToday, upcomingStartsWithToday, USER_PREFS_ID } from '../lib/userPrefs'
+import { useMembershipMap, useMemberships, useUserPrefsRow } from '../lib/localData'
+import { briefingHidden, othersTasksShown, preferredPlacement, setBriefingShown, setOthersTasksShown, setTodayEventsShown, setUpcomingEventsShown, setUpcomingStartsWithToday, upcomingStartsWithToday, USER_PREFS_ID } from '../lib/userPrefs'
 import { useMarkProjectSeen } from '../lib/feed'
 import { completedOpenKey, flatRow, isTodayProjectGroup, sectionOfRows, type ListGroup, type ListRow } from '../lib/listGroups'
 import { moveTaskBy, taskStepEdges, type Step } from '../lib/move'
@@ -20,7 +20,7 @@ import type { ViewPlacement } from '../lib/viewOrder'
 import type { OrderHost } from '../lib/viewOrderMove'
 import { dropInView, reorderInView, stepInView } from './viewOrderActions'
 import type * as TodayDrop from './task-list/todayGroupDrop'
-import { canEditTasks, roleOf } from '../lib/sharing'
+import { canEditTasks, roleOf, useMe } from '../lib/sharing'
 import { LOGBOOK_PAGE } from '../lib/logbook'
 import { isNarrowed, setCompletedDisplay } from '../lib/completedDisplay'
 import { createTaskThenSuggest } from '../lib/assistantSuggest'
@@ -572,6 +572,14 @@ function ListHeader({ route, title, label, meta, subtitle, briefing, actions, ph
     <MenuItem icon="calendar-range" label={upcomingEvents ? t('Hide calendar events') : t('Show calendar events')} data-upcoming-events-toggle
       onSelect={() => act(setUpcomingEventsShown(!upcomingEvents))} />
   )
+  // Show tasks assigned to others (others-tasks-toggle D3): the personal lists, in a shared workspace; checked while on.
+  const me = useMe()
+  const shared = useMemberships().some((ms) => (ms.members ?? []).some((u) => !!me && !!u.userId && u.userId !== me))
+  const othersShown = othersTasksShown(prefs)
+  const othersItem = shared && (day || route.view === 'anytime' || route.view === 'someday') && (
+    <MenuItem icon="eye" label={t('Show tasks assigned to others')} checked={othersShown} data-others-tasks-toggle
+      onSelect={() => act(setOthersTasksShown(!othersShown))} />
+  )
   // Brief me (assistant-in-context): the brief-today skill, from Today while the assistant is available.
   const assistantAvailable = !!useAssistantStatus()?.available
   const briefItem = route.view === 'today' && assistantAvailable && (
@@ -580,7 +588,7 @@ function ListHeader({ route, title, label, meta, subtitle, briefing, actions, ph
     </MenuGroup>
   )
   const phoneItems = route.view !== 'inbox' && route.view !== 'label' && items.length > 0 ? <PhoneMenuItems items={items} /> : null
-  const own = phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{startItem}{route.view === 'upcoming' && <ProjectionsMenuItem surface="upcoming" />}{upcomingItem}{agendaItem}{partsItem}{closedItems}{route.view === 'today' && <><ReplanTodayItem /><AwayMenuItems /></>}{briefItem}</> : briefItem || null
+  const own = phoneItems || toggle || othersItem ? <>{phoneItems}{phoneItems && (toggle || othersItem) && <MenuSeparator />}{toggle}{othersItem}{startItem}{route.view === 'upcoming' && <ProjectionsMenuItem surface="upcoming" />}{upcomingItem}{agendaItem}{partsItem}{closedItems}{route.view === 'today' && <><ReplanTodayItem /><AwayMenuItems /></>}{briefItem}</> : briefItem || null
   // Print… ends every list's menu (print-lists); the Inbox and a label have their own menu.
   return (
     <>

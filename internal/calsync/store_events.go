@@ -81,22 +81,6 @@ func (s *Store) SetAddresses(ctx context.Context, id string, addrs []string) err
 	return tx.Commit()
 }
 
-// SetCaps records the capabilities of one calendar of a connection (all false
-// after the account refused a write, until the next discovery).
-func (s *Store) SetCaps(ctx context.Context, id, calendarURL string, caps Caps) error {
-	c, err := s.ByID(ctx, id)
-	if err != nil {
-		return err
-	}
-	for i := range c.Calendars {
-		if c.Calendars[i].URL == calendarURL {
-			c.Calendars[i].Caps = &caps
-		}
-	}
-	_, err = s.db.ExecContext(ctx, `UPDATE calsync_connections SET calendars = ? WHERE id = ?`, jsonText(nonNilCals(c.Calendars)), id)
-	return err
-}
-
 // UndoTTL is how long an assistant's edit can be undone.
 const UndoTTL = 30 * 24 * time.Hour
 

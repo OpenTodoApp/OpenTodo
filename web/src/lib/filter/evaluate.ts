@@ -3,6 +3,7 @@
 // every compile, so renames are picked up and deleted names degrade to a warning
 // plus an empty match instead of an error (design D3).
 import { nameKey } from '../fieldNames'
+import { idsNamed } from './names'
 import { blockedMap } from '../dependencies'
 import { currentDateTime, currentDayStart, localDueOf } from '../dates'
 import { descendants } from '../tree'
@@ -329,7 +330,7 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
         return (task) => !p(task)
       }
       case 'label': {
-        const ids = labelsByName.get(nameKey(n.name))
+        const ids = idsNamed(labelsByName, n.name)
         if (!ids) {
           warn(t('No label named "{name}"', { name: n.name }))
           return NEVER
@@ -343,7 +344,7 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
         return (task) => task.labels.some((id) => set.has(id))
       }
       case 'project': {
-        const ids = projectsByName.get(nameKey(n.name))
+        const ids = idsNamed(projectsByName, n.name)
         if (!ids) {
           warn(t('No project named "{name}"', { name: n.name }))
           return NEVER
@@ -353,7 +354,7 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
         return (task) => task.project_id !== null && set.has(task.project_id)
       }
       case 'section': {
-        const ids = sectionsByName.get(nameKey(n.name))
+        const ids = idsNamed(sectionsByName, n.name)
         if (!ids) {
           warn(t('No section named "{name}"', { name: n.name }))
           return NEVER

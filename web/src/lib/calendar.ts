@@ -2,7 +2,7 @@
 // Week views, the drag layer and the keyboard handlers only turn pixels and keys into
 // minutes through these, and every write they produce is an ordinary `due` or
 // `estimate_minutes` edit (design D1, D5).
-import { addDaysISO, localDueOf } from './dates'
+import { addDaysISO, daysBetweenISO, localDueOf } from './dates'
 import { formatMinutes, MAX_ESTIMATE_MINUTES } from './duration'
 import type { CalendarEvent, CalendarWhen, Due, Project, Task } from './types'
 import { spanClip, spanOf } from './span'
@@ -153,6 +153,12 @@ export function eventBlocks(events: readonly CalendarEvent[], date: string, zone
     if (b) out.push(b)
   }
   return out.sort(byStart)
+}
+
+/** A timed event's whole length in minutes, across midnight and unclipped; null for all-day events. */
+export function eventLength(ev: CalendarEvent, zone?: string): number | null {
+  const s = timedSpan(ev, zone)
+  return s && daysBetweenISO(s.start.date, s.end.date) * DAY_MINUTES + s.end.minutes - s.start.minutes
 }
 
 const byStart = (a: EventBlock, b: EventBlock) => a.start - b.start || b.end - a.end

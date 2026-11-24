@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { refreshAfterChange, setShowEvents } from '../lib/calendarFeeds'
 import { db, setMeta, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
-import { createTask, resetDeviceId } from '../lib/ops'
+import { applyOps, createTask, resetDeviceId } from '../lib/ops'
 import type { CalendarEvent, CalendarSubscription } from '../lib/types'
 import { setCurrentUserId } from '../lib/sharing'
 import { setTodayEventsShown, todayEventsShown } from '../lib/userPrefs'
@@ -141,8 +141,9 @@ describe('the option', () => {
     expect(todayEventsShown({ today_events: 'shown' })).toBe(true)
   })
 
-  it('leaves out a task assigned to someone else, with no option to show it, and keeps mine and unassigned ones', async () => {
+  async function sharedToday(prefs: Record<string, unknown> = {}) {
     await setCurrentUserId('me')
+    if (Object.keys(prefs).length) await db.userPrefs.put({ id: 'me', ...prefs, _clock: {} } as never)
     await db.memberships.put({
       projectId: 'shared', role: 'editor', ownerId: 'me',
       members: [
@@ -154,13 +155,57 @@ describe('the option', () => {
     await createTask({ title: 'Ada task', due: { date: '2026-10-22' }, project_id: 'shared', assignee_id: 'me' })
     await createTask({ title: 'Anyone task', due: { date: '2026-10-22' }, project_id: 'shared' })
     const r = await openToday('me')
+    return r
+  }
+  const others = () => document.querySelector<HTMLElement>('[data-others-tasks-toggle]')
+
+  // others-tasks-toggle (issue 1979): the checkable item shows its state, hides and shows, and follows sync.
+  it('leaves out a task assigned to someone else until Show tasks assigned to others is checked, and keeps mine and unassigned ones', async () => {
+    const r = await sharedToday()
     await waitFor(() => r.container.textContent?.includes('Anyone task') === true)
     expect(r.container.textContent).toContain('Ada task')
     expect(r.container.textContent).toContain('Write the report')
     expect(r.container.textContent).not.toContain('Sam task')
     await click(menu())
+    await waitFor(() => !!others())
+    expect(others()!.getAttribute('role')).toBe('menuitemcheckbox')
+    expect(others()!.getAttribute('aria-checked')).toBe('false')
+    await click(others()!)
+    await waitFor(() => r.container.textContent?.includes('Sam task') === true)
+    expect(r.container.textContent).toContain('Ada task')
+    expect(r.container.textContent).toContain('Anyone task')
+    expect((await db.outbox.toArray()).filter((o) => o.entity === 'user_prefs').map((o) => [o.field, o.value])).toEqual([['today_assignees', 'all']])
+    await flush()
+    await click(menu())
+    await waitFor(() => others()?.getAttribute('aria-checked') === 'true')
+    await click(others()!)
+    await waitFor(() => r.container.textContent?.includes('Sam task') === false)
+    expect(r.container.textContent).toContain('Ada task')
+    expect(r.container.textContent).toContain('Anyone task')
+    // Another device's choice arrives by sync and shows them again, with no write here.
+    const clock = (await db.userPrefs.get('me'))!._clock.today_assignees
+    await applyOps([{ id: 'remote', entity: 'user_prefs', entityId: 'me', field: 'today_assignees', value: 'all', ts: clock.ts + 1, device: 'phone' }])
+    await waitFor(() => r.container.textContent?.includes('Sam task') === true)
+    expect((await db.outbox.toArray()).filter((o) => o.entity === 'user_prefs')).toHaveLength(2)
+    await r.unmount()
+  })
+
+  it('a shown task assigned to someone else does not take one of Today\'s slots', async () => {
+    const r = await sharedToday({ today_assignees: 'all', today_limit: 1 })
+    await waitFor(() => r.container.textContent?.includes('Waiting for a slot') === true)
+    const listed = [...r.container.querySelectorAll('[data-task-id]')].map((x) => x.textContent ?? '')
+    expect(listed.some((x) => x.includes('Sam task'))).toBe(true)
+    // One of the three own tasks holds the slot; the other two wait, folded.
+    expect(listed.filter((x) => /Ada task|Anyone task|Write the report/.test(x))).toHaveLength(1)
+    await r.unmount()
+  })
+
+  it('is not offered without someone else in a shared project', async () => {
+    await setCurrentUserId('me')
+    const r = await openToday('me')
+    await click(menu())
     await waitFor(() => !!document.querySelector('[data-briefing-toggle]'))
-    expect(document.querySelector('[data-today-assignees-toggle]')).toBeNull()
+    expect(others()).toBeNull()
     await r.unmount()
   })
 })

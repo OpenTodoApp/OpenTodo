@@ -361,7 +361,7 @@ ot calendar event edit 3f2a --title "Planning" [--end DATETHH:MM] [--all-day] [-
 ot calendar event delete 3f2a [--yes]
 ```
 
-`edit` and `delete` find the event by id or id prefix within 45 days of today, or of `--on`. A timed event keeps its time zone. Changing and deleting need a full token: a `read` or `agent` token is refused before anything is sent (exit 5), as are `event_edits_off` and `calendar_read_only`; `event_changed` (the event changed in your calendar since), `event_not_editable`, `event_gone` and `calendar_unreachable` exit 1. `--json` prints the [`calendar_event`](#machine-readable-help-ot-schema) objects; titles are written by people.
+`edit` and `delete` find the event by id or id prefix within 45 days of today, or of `--on`. Times you type are wall-clock times in the event's own time zone, the one `ot calendar` prints beside them, not your computer's; a floating event stays floating. Changing and deleting need a full token: a `read` or `agent` token is refused before anything is sent (exit 5), as are `event_edits_off` and `calendar_read_only`; `event_changed` (the event changed in your calendar since), `event_not_editable`, `event_gone` and `calendar_unreachable` exit 1. `--json` prints the [`calendar_event`](#machine-readable-help-ot-schema) objects; titles are written by people.
 
 ## Calendar frames
 

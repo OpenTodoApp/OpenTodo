@@ -207,6 +207,42 @@ describe('event outbox (calendar-event-edits 4.4)', () => {
     expect(await db.eventOutbox.count()).toBe(0)
   })
 
+  it('a command left sending by a closed tab or a crash is sent again; a fresh claim is left alone (review fixes)', async () => {
+    await editEvent(ev, at('10:00', '10:30'))
+    const [cmd] = await db.eventOutbox.toArray()
+    online = true
+    updateCalendarEvent.mockResolvedValue({ event: { ...ev, id: 'e2', rev: 'r2', ...at('10:00', '10:30') }, replaces: 'e1' })
+    // Another tab claimed it just now: this tab does not send it too.
+    await db.eventOutbox.put({ ...cmd, sending: true, sentAt: Date.now() })
+    await flushEventEdits()
+    expect(updateCalendarEvent).not.toHaveBeenCalled()
+    // Persisted as sending before a reload (no claim time, or an old one): sent once.
+    await db.eventOutbox.put({ ...cmd, sending: true, sentAt: undefined })
+    await flushEventEdits()
+    expect(updateCalendarEvent).toHaveBeenCalledTimes(1)
+    expect(await db.eventOutbox.count()).toBe(0)
+    expect((await db.calendarEvents.get('e2'))!.rev).toBe('r2')
+  })
+
+  it('two tabs flushing at once send a command once', async () => {
+    await editEvent(ev, at('10:00', '10:30'))
+    online = true
+    updateCalendarEvent.mockResolvedValue({ event: { ...ev, id: 'e2', rev: 'r2', ...at('10:00', '10:30') }, replaces: 'e1' })
+    // A second tab is a second database connection to the same outbox.
+    const other = new Dexie(db.name)
+    await other.open()
+    const claims = await Promise.all([0, 1].map(() => other.transaction('rw', 'eventOutbox', async () => {
+      const [c] = await other.table('eventOutbox').toArray()
+      if (!c || c.sending) return false
+      await other.table('eventOutbox').put({ ...c, sending: true, sentAt: Date.now() })
+      return true
+    })))
+    other.close()
+    expect(claims.filter(Boolean)).toHaveLength(1)
+    await flushEventEdits()
+    expect(updateCalendarEvent).not.toHaveBeenCalled()
+  })
+
   it('refuses an event without a connection or a rev', async () => {
     await expect(editEvent({ ...ev, id: 'e7', subscriptionId: 'feed' }, { summary: 'x' })).rejects.toThrow()
   })

@@ -160,18 +160,37 @@ export function flushEventEdits(): Promise<void> {
 let again = false
 resettable('calendarEventEdits', () => { flushing = null; again = false; notice = () => {} })
 
+/** A claim older than this was left by a closed tab or a crash, and is taken again. */
+export const STALE_SEND_MS = 2 * 60_000
+
 async function sendDue(): Promise<void> {
   for (;;) {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) return
-    const due = (await db.eventOutbox.where('notBefore').belowOrEqual(Date.now()).toArray()).filter((c) => !c.sending && !c.failed)
-    if (!due.length) return
-    if (!(await sendOne(due[0]))) return
+    const cmd = await claimDue()
+    if (!cmd) return
+    if (!(await sendOne(cmd))) return
   }
 }
 
-/** One command; false stops the loop (offline). */
+/**
+ * Take the oldest due command for this tab: checked and marked in one transaction, so two
+ * tabs never send the same command (IndexedDB runs read-write transactions on a store one at
+ * a time, across tabs). A command marked sending long ago is due again.
+ */
+function claimDue(): Promise<EventCommand | null> {
+  return db.transaction('rw', [db.eventOutbox], async () => {
+    const now = Date.now()
+    const due = (await db.eventOutbox.where('notBefore').belowOrEqual(now).toArray())
+      .filter((c) => !c.failed && (!c.sending || (c.sentAt ?? 0) <= now - STALE_SEND_MS))
+    if (!due.length) return null
+    const cmd = { ...due[0], sending: true, sentAt: now }
+    await db.eventOutbox.put(cmd)
+    return cmd
+  })
+}
+
+/** One command this tab claimed; false stops the loop (offline). */
 async function sendOne(cmd: EventCommand): Promise<boolean> {
-  await db.eventOutbox.update(cmd.key, { sending: true })
   try {
     if ('delete' in cmd.patch) {
       await api.deleteCalendarEvent(cmd.connectionId, cmd.eventId, cmd.rev)

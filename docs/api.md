@@ -1303,7 +1303,7 @@ curl -sS -X POST "$OT/api/v1/backups/restore/uploads" -b cookies.txt \
 
 Errors: 422 `passphrase_required` / `passphrase_invalid`, 409 `newer_schema` (names both versions), 400 `integrity` (the failed check; staged files are removed), 400 `invalid_input` with `field: "source"` (a path or a name that is not an archive; no destination is contacted), 404 `not_found`, 502 `destination_error`, 507 `insufficient_storage`, 429 `rate_limited` (the re-authentication limit, against passphrase guessing). Only one restore is staged at a time; preparing another replaces it, and an unconfirmed one expires after 30 minutes.
 
-**Confirm** — `POST /api/v1/backups/restore` with `{"id": "3f9c…", "confirm": "RESTORE"}` → 202 `{"status": "restarting"}`. The server shuts down gracefully, applies the restore before the database reopens (safety copy `opentodo.db.pre-restore-<ts>`, new log generation) and starts again in the same process; poll `GET /healthz`. Errors: 400 `invalid_input` with `field: "confirm"`, 404 `not_found` (unknown or expired id), 409 `conflict` (a backup is running), 403 `reauth_required` (re-authenticate first) and 403 `session_required` for any API token: only a signed-in owner can restore.
+**Confirm** — `POST /api/v1/backups/restore` with `{"id": "3f9c…", "confirm": "RESTORE"}` → 202 `{"status": "restarting"}`. The server shuts down gracefully, applies the restore before the database reopens (safety copy `opentodo.db.pre-restore-<ts>`, new log generation) and starts again in the same process; poll `GET /healthz`. When the server cannot start itself again (for example in a chroot without `/proc/self/exe`), the answer is 202 `{"status": "restart_required"}`: the server stops with exit status 75 and must be started again by hand or by its supervisor; the pending restore is applied on that next start. Errors: 400 `invalid_input` with `field: "confirm"`, 404 `not_found` (unknown or expired id), 409 `conflict` (a backup is running), 403 `reauth_required` (re-authenticate first) and 403 `session_required` for any API token: only a signed-in owner can restore.
 
 **State** — `GET /api/v1/backups/restore` → `{"staged": {…} | null, "last": {"source", "archive", "actorId", "requestedAt", "finishedAt", "ok", "error"?, "safetyCopy"?} | null, "safetyCopies": [{"name", "size", "createdAt"}], "undoAvailable": true, "freeBytes": 51539607552, "uploadLimit": 51400000000}`. `freeBytes` and `uploadLimit` are -1 where the platform cannot tell. A restore that failed while applying left the previous database in place; `last.error` says why.
 
@@ -2024,7 +2024,7 @@ An event may be changed when its connection's `edit_events` is on, its calendar'
  "allDay": false}
 ```
 
-`rev` is required; send `summary`, or `start` and `end` together, or both. Dates are `YYYY-MM-DD`, times 24-hour `HH:MM`, zones IANA names; a time without `tz` is floating; an all-day pair holds dates only, its end exclusive. Control characters are removed from `summary`, which must then hold 1 to 500 characters. The answer is `200 {"event": {...}, "replaces": "<old id>"}`: the event as the calendar now holds it, with its new `id` (a move changes it), `rev` and `access`. Only the title, start and end are written (a CalDAV object is written back whole, its other properties kept), conditional on the version (`If-Match`), sent once and never to a redirect.
+`rev` is required; send `summary`, or `start` and `end` together, or both. Dates are `YYYY-MM-DD`, times 24-hour `HH:MM`, zones IANA names; a time without `tz` keeps the zone of a zoned event and stays floating for a floating one; an all-day pair holds dates only, its end exclusive. Control characters are removed from `summary`, which must then hold 1 to 500 characters. The answer is `200 {"event": {...}, "replaces": "<old id>"}`: the event as the calendar now holds it, with its new `id` (a move changes it), `rev` and `access`. Only the title, start and end are written (a CalDAV object is written back whole, its other properties kept), conditional on the version (`If-Match`), sent once and never to a redirect.
 
 `DELETE …/events/{eventId}?rev=…` answers `204`.
 
@@ -2918,7 +2918,8 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `encrypted` | 409 | applying a routine's AI proposal of an end-to-end encrypted account through the API; apply it in the app |
 | `calendar_sync_disabled` | 404 | any `/api/v1/calendar-sync` route while the owner has not enabled [calendar sync](#calendar-sync) |
 | `event_edits_off` | 403 | changing an event of a connection whose `edit_events` is off ([Calendar events](#calendar-events)) |
-| `calendar_read_only` | 403 | changing or deleting an event of a calendar whose capabilities forbid it, or that the calendar refused (its capabilities are then all false until the next discovery) |
+| `assistant_edits_off` | 403 | an assistant changing an event of a connection whose `assistant_edits` is off ([Calendar events](#calendar-events)) |
+| `calendar_read_only` | 403 | changing or deleting an event of a calendar whose capabilities forbid it, or that the calendar refused (that event is then locked until the calendar next changes) |
 | `event_not_editable` | 422 | a repeating event, one with guests, one someone else organised or one without a version; the message names the reason |
 | `event_changed` | 409 | the `rev` sent is not the event's, or the calendar refused the write because the event changed (412); nothing was written |
 | `event_gone` | 404 | the calendar no longer holds the event; the cached copy is dropped |

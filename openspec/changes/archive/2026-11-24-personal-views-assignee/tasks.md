@@ -13,4 +13,4 @@
 ## 3. Docs and check
 
 - [x] 3.1 `docs/today-and-upcoming.md` and the changelog fragment; `make docs` and `make docs-check`
-- [ ] 3.2 `npm test` and `npm run build` in web/, `go test ./...`, `make check`
+- [x] 3.2 `npm test` and `npm run build` in web/, `go test ./...`, `make check`

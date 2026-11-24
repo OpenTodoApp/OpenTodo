@@ -96,15 +96,13 @@ func (e calendarEventEditor) Update(ctx context.Context, c agenttools.Caller, u 
 		Assistant: &calsync.Assistant{TokenID: c.TokenID, TokenName: c.TokenName}})
 	var ee *calsync.EventError
 	if errors.As(err, &ee) {
-		m := eventMessage[ee.Code]
-		if ee.Reason != "" {
-			m += ": " + ee.Reason
-		}
-		return agenttools.EventItem{}, &agenttools.ToolError{Code: ee.Code, Message: m}
+		return agenttools.EventItem{}, &agenttools.ToolError{Code: ee.Code, Message: eventText(ee)}
 	}
 	if err != nil {
 		return agenttools.EventItem{}, err
 	}
 	e.s.audit.Record(ctx, audit.CalendarEventChanged(c.UserID, u.ConnectionID, res.Provider, "updated", c.TokenID))
-	return eventItem(&res.Event, map[string]bool{u.ConnectionID: true}), nil
+	item := eventItem(&res.Event, map[string]bool{u.ConnectionID: true})
+	item.Undoable = res.Event.ChangedBy != nil
+	return item, nil
 }

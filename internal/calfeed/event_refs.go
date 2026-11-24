@@ -100,6 +100,13 @@ func (s *Store) ReplaceManagedEvent(ctx context.Context, subID, uid, instance st
 	return tx.Commit()
 }
 
+// LockManagedEvent marks one cached event as not changeable, for reason,
+// until the calendar is next read with changes (its refs are then rewritten).
+func (s *Store) LockManagedEvent(ctx context.Context, eventID, reason string) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE calendar_event_remote SET locked = ? WHERE event_id = ?`, reason, eventID)
+	return err
+}
+
 // PointWhen is a point shaped like a task's due.
 func PointWhen(p Point) When {
 	d, t, z := pointParts(p)

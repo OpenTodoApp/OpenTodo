@@ -1,7 +1,7 @@
 // Events of connected calendars as grid items (OpenSpec change calendar-event-edits D7): the
 // changeable ones by their block id, their place in the day, their keyboard targets and the
 // drag ghost. Pure, so the view, the keys and the tests share it.
-import { DAY_MINUTES, SLOT_MINUTES } from '../../lib/calendar'
+import { DAY_MINUTES, eventLength, SLOT_MINUTES } from '../../lib/calendar'
 import type { DayData } from '../../lib/calendarDays'
 import { addDaysISO } from '../../lib/dates'
 import type { CalendarEvent } from '../../lib/types'
@@ -19,7 +19,8 @@ export function gridEvents(days: readonly DayData[]): Map<string, GridEvent> {
   const out = new Map<string, GridEvent>()
   for (const d of days) {
     for (const [id, b] of d.events) {
-      if (!out.has(id) && b.event.access?.update) out.set(id, { ev: b.event, place: { date: d.date, start: b.start, end: b.end } })
+      if (out.has(id) || !b.event.access?.update) continue
+      out.set(id, { ev: b.event, place: { date: d.date, start: b.start, end: b.end, length: eventLength(b.event) ?? b.end - b.start } })
     }
   }
   return out

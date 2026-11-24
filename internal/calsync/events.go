@@ -80,6 +80,33 @@ func WhenOf(start, end calfeed.When, allDay bool) (EventWhen, error) {
 	return EventWhen{Start: a, End: b, AllDay: allDay}, nil
 }
 
+// InZone gives a floating timed change the zone of the event it changes: a
+// start and end sent without tz keep the event's zone instead of turning it
+// floating. All-day and already zoned changes are kept as sent.
+func (e EventWhen) InZone(tz *string) (EventWhen, error) {
+	if e.AllDay || e.Start.Zone != "" || tz == nil || *tz == "" {
+		return e, nil
+	}
+	a, err := pointIn(e.Start.T, *tz)
+	if err != nil {
+		return e, err
+	}
+	b, err := pointIn(e.End.T, *tz)
+	if err != nil {
+		return e, err
+	}
+	if !b.T.After(a.T) {
+		return e, errors.New("the end must be after the start")
+	}
+	return EventWhen{Start: a, End: b}, nil
+}
+
+// pointIn reads a floating wall time (kept as UTC) in zone tz.
+func pointIn(wall time.Time, tz string) (calfeed.Point, error) {
+	date, clock := wall.Format(time.DateOnly), wall.Format("15:04")
+	return pointOf(calfeed.When{Date: date, Time: &clock, TZ: &tz}, false)
+}
+
 func pointOf(w calfeed.When, allDay bool) (calfeed.Point, error) {
 	d, err := time.Parse(time.DateOnly, w.Date)
 	if err != nil {

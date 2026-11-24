@@ -126,18 +126,22 @@ func TestGraphEventRefusals(t *testing.T) {
 		t.Fatalf("403 = %v", err)
 	}
 	if got := f.row("Plain").Access; got.Update || got.Reason != CodeReadOnly {
-		t.Fatalf("caps after a 403 = %+v", got)
+		t.Fatalf("access after a 403 = %+v", got)
 	}
 	f.ms.SetCanEdit("cal-work", true)
-	if err := f.w.Rediscover(f.ctx, f.conn(f.c.ID)); err != nil {
-		t.Fatal(err)
+	// The lock is the event's alone: another event of the calendar is still
+	// editable, and is the one that goes missing here.
+	f.add(graphtest.Event{Subject: "Other"})
+	other := f.row("Other")
+	if other.Access == nil || !other.Access.Update {
+		t.Fatalf("one 403 locked the calendar's other events: %+v", other.Access)
 	}
 	for _, e := range f.ms.ByTask("") {
-		if e.Subject == "Plain" {
+		if e.Subject == "Other" {
 			f.ms.Delete(e.ID)
 		}
 	}
-	if _, err := f.edit(f.row("Plain"), EventEdit{Summary: &name}); code(err) != CodeGone+":" {
+	if _, err := f.edit(other, EventEdit{Summary: &name}); code(err) != CodeGone+":" {
 		t.Fatalf("404 = %v", err)
 	}
 }

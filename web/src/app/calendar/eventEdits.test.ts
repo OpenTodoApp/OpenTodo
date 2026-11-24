@@ -78,6 +78,27 @@ describe('drops and keys (calendar-event-edits 5.1, 5.2, 5.4)', () => {
   })
 })
 
+describe('events the grid clips (review fixes)', () => {
+  const floating = (start: string, endDate: string, end: string) => ev({ start: { date: '2026-11-12', time: start }, end: { date: endDate, time: end } })
+  const grid = (e: CalendarEvent, from: number, to: number) =>
+    gridEvents([{ date: '2026-11-12', events: new Map([['event:e1', { id: 'event:e1', start: from, end: to, event: e }]]) } as never]).get('event:e1')!
+  it('a move of an event across midnight keeps its whole length', () => {
+    const g = grid(floating('22:00', '2026-11-13', '02:00'), 22 * 60, 24 * 60)
+    expect(g.place.length).toBe(240)
+    expect(eventChangeFor(g.ev, { type: 'slot', date: '2026-11-12', start: 21 * 60 }, g.place, 'Europe/Berlin')).toEqual({
+      start: { date: '2026-11-12', time: '21:00' }, end: { date: '2026-11-13', time: '01:00' }, allDay: false,
+    })
+  })
+  it('a clipped block is not resized, and an event without length is not stretched to a slot', () => {
+    const night = grid(floating('22:00', '2026-11-13', '02:00'), 22 * 60, 24 * 60)
+    expect(eventChangeFor(night.ev, { type: 'resize', estimate: 60 }, night.place, 'Europe/Berlin')).toBeNull()
+    expect(eventChangeFor(night.ev, { type: 'resize-start', date: '2026-11-12', start: 21 * 60, estimate: 180 }, night.place, 'Europe/Berlin')).toBeNull()
+    const zero = grid(floating('10:00', '2026-11-12', '10:00'), 600, 615)
+    expect(zero.place.length).toBe(0)
+    expect(eventChangeFor(zero.ev, { type: 'slot', date: '2026-11-12', start: 660 }, zero.place, 'Europe/Berlin')).toBeNull()
+  })
+})
+
 describe('the popover editor (calendar-event-edits 5.3)', () => {
   it('Save makes the same change a drag makes', () => {
     const p = editorPatch(ev(), { title: 'Standup', date: '2026-11-12', start: '15:00', end: '15:30' }, 'Europe/Berlin')

@@ -74,6 +74,14 @@ func (w *Worker) editLocked(ctx context.Context, req EditRequest) (*EventResult,
 	if err != nil {
 		return nil, err
 	}
+	if req.Edit.When != nil && !row.AllDay {
+		// A time sent without tz keeps the event's zone (review fixes).
+		when, err := req.Edit.When.InZone(row.Start.TZ)
+		if err != nil {
+			return nil, refuse(CodeInvalid, err.Error())
+		}
+		req.Edit.When = &when
+	}
 	writer, err := w.eventWriter(ctx, c)
 	if err != nil {
 		return nil, unreachable(err)
@@ -215,7 +223,7 @@ func (w *Worker) resolve(ctx context.Context, userID, connID, eventID, rev strin
 }
 
 // writeFailed maps a writer's error and keeps the cache in step: a gone
-// event is dropped, a refused write makes the calendar read-only.
+// event is dropped, a refused write locks the event.
 func (w *Worker) writeFailed(ctx context.Context, c *Connection, row calfeed.EventRow, err error) error {
 	var lock *lockedError
 	switch {
@@ -231,9 +239,12 @@ func (w *Worker) writeFailed(ctx context.Context, c *Connection, row calfeed.Eve
 		}
 		return refuse(CodeGone, "")
 	case errors.Is(err, ErrCalendarRO):
-		if serr := w.Store.SetCaps(ctx, c.ID, row.Ref.CalendarURL, Caps{}); serr != nil {
+		// Only this event is locked: one refusal does not make the whole
+		// calendar read-only, and the next read of the calendar clears it.
+		if serr := w.Feeds.LockManagedEvent(ctx, row.ID, CodeReadOnly); serr != nil {
 			return serr
 		}
+		w.notify(c.UserID)
 		return refuse(CodeReadOnly, "")
 	}
 	return unreachable(err)

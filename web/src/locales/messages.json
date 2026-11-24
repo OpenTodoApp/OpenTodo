@@ -2297,6 +2297,9 @@
   "Assistants may make changes": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Assistants may not edit this connection’s events.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "Assistants of every member stop seeing this project, its sub-projects and their tasks.": [
     "web/src/app/AgentAccessRow.tsx"
   ],
@@ -15167,6 +15170,9 @@
   "Response": [
     "web/src/app/WebhooksPanel.tsx"
   ],
+  "Restart OpenTodo to finish the restore.": [
+    "web/src/app/RestoreSection.tsx"
+  ],
   "Restore": [
     "web/src/app/ArchivedProjects.tsx",
     "web/src/app/TrashView.tsx",
@@ -16636,6 +16642,9 @@
   ],
   "Show tasks as": [
     "web/src/app/CaldavPanel.tsx"
+  ],
+  "Show tasks assigned to others": [
+    "web/src/app/TaskListView.tsx"
   ],
   "Show text": [
     "web/src/app/task-detail/HistoryTab.tsx"
@@ -18922,6 +18931,9 @@
   "The server did not answer like a CalDAV server.": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
+  "The server did not start again on its own. This page reloads when it is back.": [
+    "web/src/app/RestoreSection.tsx"
+  ],
   "The server does not have enough disk space.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -18939,9 +18951,6 @@
   ],
   "The server is on a private network the server owner has not allowed.": [
     "web/src/app/CalendarSyncPanel.tsx"
-  ],
-  "The server is still restarting. If this takes more than a few minutes, check the server log. This page reloads when it is back.": [
-    "web/src/app/RestoreSection.tsx"
   ],
   "The server is unreachable. Backups need a connection.": [
     "web/src/app/BackupsPanel.tsx"
@@ -21364,6 +21373,9 @@
   ],
   "Urgency {score}, show why": [
     "web/src/app/UrgencyChip.tsx"
+  ],
+  "Urgent": [
+    "web/src/app/RemindersField.tsx"
   ],
   "Urgent and important": [
     "web/src/lib/boardTemplates.ts"

@@ -16,11 +16,15 @@ import { gridEvents, withEvents } from './eventGrid'
 
 onEventNotice(showActionToast)
 
-/** Where an event's block sits in the viewer's day: the column's date and its minutes. */
+/**
+ * Where an event's block sits in the viewer's day: the column's date and its minutes, and the
+ * event's whole length (the block is clipped at midnight and at least a slot high).
+ */
 export interface EventPlace {
   date: string
   start: number
   end: number
+  length?: number
 }
 
 /** A wall date and minutes past it as {date, time}, carrying past midnight. */
@@ -42,7 +46,10 @@ export function eventChangeFor(ev: CalendarEvent, target: DropTarget, place: Eve
     return { start: { date: target.date }, end: { date: addDaysISO(target.date, days) }, allDay: true }
   }
   const tz = ev.allDay ? zone : ev.start.tz
-  const length = place ? place.end - place.start : 60
+  const length = place ? place.length ?? place.end - place.start : 60
+  // A clipped block (an event across midnight, or one without length) is not the event: only a
+  // move, which keeps the whole length, changes it from the grid.
+  const whole = !place || length === place.end - place.start
   const point = (date: string, minutes: number): CalendarWhen => {
     const p = eventPointIn(tz, wallAt(date, minutes), zone)
     return p.tz ? { date: p.date, time: p.time, tz: p.tz } : { date: p.date, time: p.time }
@@ -51,7 +58,7 @@ export function eventChangeFor(ev: CalendarEvent, target: DropTarget, place: Eve
   let start: number
   let end: number
   if (target.type === 'slot') [date, start, end] = [target.date, target.start, target.start + length]
-  else if (!place) return null
+  else if (!place || !whole) return null
   else if (target.type === 'resize') [date, start, end] = [place.date, place.start, place.start + target.estimate]
   else [date, start, end] = [target.date, target.start, target.start + target.estimate]
   if (end <= start) return null

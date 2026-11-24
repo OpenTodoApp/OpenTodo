@@ -60,8 +60,7 @@ Specified or named, not started.
 | `routines-shared-notify` | A "members" recipient for Notify me in shared routines, mutable per routine | [#741](https://github.com/OpenTodoApp/OpenTodo/issues/741) |
 | [`telegram-channel`](openspec/changes/telegram-channel/) | Telegram as a notification channel (postponed by the owner on 2026-11-10) |  |
 | `desktop-shell` | Desktop app for macOS and Windows: the embedded server plus a window, a tray icon and native notifications | |
-
-Push to the iPhone app needs a relay the project would run, or an app signed by whoever runs the server; not planned.
+| [`ios-push-relay`](openspec/changes/ios-push-relay/) | Reminders on time in the iPhone app through a push relay run by the project: content-free wake-ups, off until the owner and the user turn it on | [#1377](https://github.com/OpenTodoApp/OpenTodo/issues/1377) |
 
 ### [0.17 "Calm constraints"](https://github.com/OpenTodoApp/OpenTodo/milestone/1)
 

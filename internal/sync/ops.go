@@ -462,6 +462,10 @@ var Schema = map[string]map[string]Field{
 		// (reminder_check.go refuses the mixes). Not content: the place is in
 		// the task's encrypted location.
 		"radius_m": {Kind: kRadius, Default: `null`},
+		// An urgent reminder (OpenSpec change ios-urgent-alarms, design D1): the
+		// iPhone app rings it as an alarm (AlarmKit) where it can; everywhere
+		// else it fires as an ordinary reminder. Not content.
+		"urgent": {Kind: kBool, Default: `false`},
 	},
 	// comment: a threaded markdown comment on a task (OpenSpec change
 	// `comments-and-activity`, design D1). It lives in its task's scope; Apply
@@ -805,10 +809,10 @@ var Schema = map[string]map[string]Field{
 		// design D1): "shown" or "hidden"; clients read an empty or unknown
 		// value as hidden and keep the stored value.
 		"today_events": {Kind: kString, Default: `""`},
-		// Today hid tasks assigned to others (OpenSpec change
-		// today-assigned-filter) while "mine"; since personal-views-assignee
-		// the personal views always do, and clients keep but never read it.
-		// Settings, never content.
+		// Show tasks assigned to others in the personal lists (OpenSpec change
+		// others-tasks-toggle): "all" shows them; clients read empty, "mine"
+		// (today-assigned-filter's hide) and unknown values as hidden and keep
+		// the stored value. Settings, never content.
 		"today_assignees": {Kind: kString, Default: `""`},
 		// Upcoming's calendar events, one agenda per day (OpenSpec
 		// today-agenda): "shown" or "hidden"; clients read an empty or

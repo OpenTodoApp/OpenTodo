@@ -168,6 +168,44 @@ func TestEditEventMoveKeepsEverythingElse(t *testing.T) {
 	}
 }
 
+// A time sent without tz keeps the event's zone (review fixes): a zoned event
+// never turns floating because a client left tz out.
+func TestEditEventWithoutZoneKeepsTheEventsZone(t *testing.T) {
+	f := newEditFix(t)
+	f.add("standup.ics", plain)
+	r := f.row("standup")
+	res, err := f.edit(r, EventEdit{When: when(t, "2026-11-12", "11:00", "11:45", "")}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Event.Start.TZ == nil || *res.Event.Start.TZ != "Europe/Berlin" || *res.Event.Start.Time != "11:00" || *res.Event.End.Time != "11:45" {
+		t.Fatalf("result = %+v %+v", res.Event.Start, res.Event.End)
+	}
+	if got := props(t, f.srv.Get("home", "standup.ics"))["VCALENDAR/VEVENT.DTSTART"]; got != "DTSTART;TZID=Europe/Berlin:20261112T110000|" {
+		t.Fatalf("written %q", got)
+	}
+	// A floating event stays floating.
+	f.add("float.ics", strings.NewReplacer("UID:standup", "UID:float", "DTSTART;TZID=Europe/Berlin:", "DTSTART:", "DTEND;TZID=Europe/Berlin:", "DTEND:").Replace(plain))
+	res, err = f.edit(f.row("float"), EventEdit{When: when(t, "2026-11-12", "12:00", "12:30", "")}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Event.Start.TZ != nil {
+		t.Fatalf("a floating event got a zone: %+v", res.Event.Start)
+	}
+}
+
+func TestSameETagIsWeak(t *testing.T) {
+	for _, c := range []struct {
+		a, b string
+		want bool
+	}{{`"x"`, `"x"`, true}, {`W/"x"`, `"x"`, true}, {`"x"`, `W/"x"`, true}, {`"x"`, `"y"`, false}, {`W/"x"`, `W/"y"`, false}} {
+		if got := sameETag(c.a, c.b); got != c.want {
+			t.Errorf("sameETag(%s, %s) = %v", c.a, c.b, got)
+		}
+	}
+}
+
 func TestEditEventRenameAndDuration(t *testing.T) {
 	f := newEditFix(t)
 	f.add("d.ics", strings.Replace(plain, "DTEND;TZID=Europe/Berlin:20261112T093000", "DURATION:PT45M", 1))
@@ -185,8 +223,8 @@ func TestEditEventRenameAndDuration(t *testing.T) {
 		t.Fatal(err)
 	}
 	got = props(t, f.srv.Get("home", "d.ics"))
-	if got["VCALENDAR/VEVENT.DURATION"] != "" || got["VCALENDAR/VEVENT.DTEND"] != "DTEND:20261113T090000|" || got["VCALENDAR/VEVENT.DTSTART"] != "DTSTART:20261113T080000|" {
-		t.Fatalf("DURATION must become DTEND and a floating time stay floating: %v", got)
+	if got["VCALENDAR/VEVENT.DURATION"] != "" || got["VCALENDAR/VEVENT.DTEND"] != "DTEND;TZID=Europe/Berlin:20261113T090000|" || got["VCALENDAR/VEVENT.DTSTART"] != "DTSTART;TZID=Europe/Berlin:20261113T080000|" {
+		t.Fatalf("DURATION must become DTEND and a time without tz keep the event's zone: %v", got)
 	}
 }
 
@@ -316,7 +354,18 @@ func TestEditEventConflictGoneAndReadOnly(t *testing.T) {
 		t.Fatalf("read-only = %v", err)
 	}
 	if got := f.row("standup").Access; got.Update || got.Reason != CodeReadOnly {
-		t.Fatalf("caps after a 403 = %+v", got)
+		t.Fatalf("access after a 403 = %+v", got)
+	}
+	// Only that event is locked: the calendar keeps its capabilities, and
+	// the next read of the calendar with changes clears the lock.
+	if c := f.conn(f.c.ID); !c.Calendars[0].CapsOf().Update {
+		t.Fatal("one 403 made the whole calendar read-only")
+	}
+	f.srv.SetReadOnly("home", false)
+	f.srv.Put("home", "t.ics", strings.Replace(plain, "Standup", "Standup again", 1))
+	f.cycle(f.conn(f.c.ID))
+	if got := f.row("standup").Access; !got.Update {
+		t.Fatalf("access after the next cycle = %+v", got)
 	}
 }
 

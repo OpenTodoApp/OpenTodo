@@ -131,14 +131,6 @@ func (s *Server) answerEvent(w http.ResponseWriter, r *http.Request, res *calsyn
 	writeJSON(w, http.StatusOK, map[string]any{"event": res.Event, "replaces": res.Replaces})
 }
 
-// eventStatus is the HTTP status of each refusal code (D4).
-var eventStatus = map[string]int{
-	calsync.CodeNotFound: http.StatusNotFound, calsync.CodeGone: http.StatusNotFound,
-	calsync.CodeEditsOff: http.StatusForbidden, calsync.CodeAssistantEditsOff: http.StatusForbidden, calsync.CodeReadOnly: http.StatusForbidden,
-	calsync.CodeNotEditable: http.StatusUnprocessableEntity, calsync.CodeInvalid: http.StatusBadRequest,
-	calsync.CodeChanged: http.StatusConflict, calsync.CodeUnreachable: http.StatusBadGateway,
-}
-
 // eventMessage is the message of each refusal code; the reason is appended.
 var eventMessage = map[string]string{
 	calsync.CodeNotFound:          "calendar event not found",
@@ -152,17 +144,47 @@ var eventMessage = map[string]string{
 	calsync.CodeUnreachable:       "the calendar could not be reached",
 }
 
+// eventText is the message of a refusal, with its reason.
+func eventText(e *calsync.EventError) string {
+	if e.Reason != "" {
+		return eventMessage[e.Code] + ": " + e.Reason
+	}
+	return eventMessage[e.Code]
+}
+
+// eventError answers a refusal with its status (D4). Each code is written out
+// as a literal so the error-code scanner and the OpenAPI description see it
+// (TestEventErrorCodesMatchCalsync keeps them equal to calsync's).
 func (s *Server) eventError(w http.ResponseWriter, err error) {
 	var e *calsync.EventError
-	switch {
-	case errors.As(err, &e):
-		msg := eventMessage[e.Code]
-		if e.Reason != "" {
-			msg += ": " + e.Reason
-		}
-		writeError(w, eventStatus[e.Code], e.Code, msg)
-	case errors.Is(err, context.Canceled):
-		writeError(w, http.StatusBadGateway, calsync.CodeUnreachable, "the calendar could not be reached: timeout")
+	if errors.Is(err, context.Canceled) {
+		writeError(w, http.StatusBadGateway, "calendar_unreachable", "the calendar could not be reached: timeout")
+		return
+	}
+	if !errors.As(err, &e) {
+		s.internal(w, err)
+		return
+	}
+	msg := eventText(e)
+	switch e.Code {
+	case calsync.CodeNotFound:
+		writeError(w, http.StatusNotFound, "not_found", msg)
+	case calsync.CodeGone:
+		writeError(w, http.StatusNotFound, "event_gone", msg)
+	case calsync.CodeEditsOff:
+		writeError(w, http.StatusForbidden, "event_edits_off", msg)
+	case calsync.CodeAssistantEditsOff:
+		writeError(w, http.StatusForbidden, "assistant_edits_off", msg)
+	case calsync.CodeReadOnly:
+		writeError(w, http.StatusForbidden, "calendar_read_only", msg)
+	case calsync.CodeNotEditable:
+		writeError(w, http.StatusUnprocessableEntity, "event_not_editable", msg)
+	case calsync.CodeInvalid:
+		writeError(w, http.StatusBadRequest, "invalid_input", msg)
+	case calsync.CodeChanged:
+		writeError(w, http.StatusConflict, "event_changed", msg)
+	case calsync.CodeUnreachable:
+		writeError(w, http.StatusBadGateway, "calendar_unreachable", msg)
 	default:
 		s.internal(w, err)
 	}

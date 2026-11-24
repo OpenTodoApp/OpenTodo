@@ -543,7 +543,7 @@ export const api = {
   prepareRestore: (source: RestoreSource, passphrase?: string) =>
     request<StagedRestore>('POST', '/api/v1/backups/restore/prepare', { source, ...(passphrase ? { passphrase } : {}) }),
   cancelRestore: (id: string) => request<void>('DELETE', `/api/v1/backups/restore/${encodeURIComponent(id)}`),
-  confirmRestore: (id: string) => request<{ status: string }>('POST', '/api/v1/backups/restore', { id, confirm: 'RESTORE' }),
+  confirmRestore: (id: string) => request<{ status: 'restarting' | 'restart_required' }>('POST', '/api/v1/backups/restore', { id, confirm: 'RESTORE' }),
   deleteSafetyCopy: (name: string) => request<void>('DELETE', `/api/v1/backups/restore/safety-copies/${encodeURIComponent(name)}`),
   uploadRestoreArchive: (file: Blob, onProgress?: (fraction: number) => void) => uploadArchive(file, onProgress),
   // Attachments (OpenSpec attachments D4). Metadata is ops; only the bytes and the
