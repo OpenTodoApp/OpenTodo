@@ -60,7 +60,8 @@ describe('addresses', () => {
     window.dispatchEvent(new PopStateEvent('popstate'))
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => location.pathname === '/updates')
-    expect(r.container.querySelector('h1')?.textContent).toBe('Updates')
+    // The Updates screen loads from its own chunk.
+    await waitFor(() => r.container.querySelector('h1')?.textContent === 'Updates')
     await r.unmount()
   })
 })

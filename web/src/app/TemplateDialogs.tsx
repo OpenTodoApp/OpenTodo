@@ -2,7 +2,7 @@
 // Duplicate… and Save as template… from the project menu, From a template… from
 // the sidebar, which opens on the template library (template-library). Everything happens on the device: a copy is one batch of ops, a
 // template file is built from local data and downloaded.
-import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { lazy } from '../lib/lazy'
 import { logicalToday } from '../lib/dates'
 import { projectsAndLabels, useProjects } from '../lib/localData'
@@ -22,17 +22,6 @@ import { ProjectPickerField } from './ProjectPickerField'
 import { navigate } from './router'
 import { t } from '../lib/i18n'
 import { messageOf } from '../lib/errorText'
-import { createStore } from '../lib/store'
-
-// "From a template…" can be opened from elsewhere (the Import screen's hint).
-const templateRequested = createStore('templateRequests', 0)
-/** Ask the sidebar to open the From a template dialog. */
-export function requestTemplateDialog(): void {
-  templateRequested.update((n) => n + 1)
-}
-/** How many times the dialog was asked for (tests). */
-export const templateRequests = templateRequested.get
-export const useTemplateRequests = templateRequested.use
 
 function Summary({ tree }: { tree: TemplateTree }) {
   const s = summarise(tree)
@@ -244,13 +233,4 @@ function TemplateFileForm({ projects, onBack, onClose }: { projects: Project[]; 
       </div>
     </form>
   )
-}
-
-/** Opens the From a template dialog whenever requestTemplateDialog() is called. */
-export function TemplateDialogHost() {
-  const requests = useTemplateRequests()
-  const [open, setOpen] = useState(false)
-  const [seen, setSeen] = useState(requests)
-  useEffect(() => { if (requests !== seen) { setSeen(requests); setOpen(true) } }, [requests, seen])
-  return useMemo(() => (open ? <TemplateDialog onClose={() => setOpen(false)} /> : null), [open])
 }

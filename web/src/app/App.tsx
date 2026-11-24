@@ -1,5 +1,5 @@
 import { Suspense, useCallback, useEffect, useState } from 'react'
-import { lazy } from '../lib/lazy'
+import { lazy, preloadable } from '../lib/lazy'
 import { Skeleton } from '../ui'
 import { AppearanceProvider } from './AppearanceProvider'
 import { DateTimePrefsProvider } from './DateTimePrefsProvider'
@@ -10,17 +10,13 @@ import { api, onEnrolmentRequired } from '../lib/api'
 import { consumeRestored, RESTORED_NOTICE } from '../lib/restore'
 import { requestPersistentStorage } from '../lib/db'
 import { adoptProfile, loadEncryptionState, useEncryption } from '../lib/e2ee'
-import { RecordMissingScreen, UnlockScreen } from './UnlockScreen'
 import { setCurrentUserId } from '../lib/sharing'
 import { onSignOutElsewhere, setSyncAccount, startSync, stopSync, useSyncStatus } from '../lib/sync'
 import { startRelay } from '../lib/relay'
 import { RelayConfirm } from './RelayConfirm'
-import { AppBadgeSync } from './AppBadge'
+import { AppBadgeSync } from './AppBadgeSync'
 import type { AuthStatus, User } from '../lib/types'
-import { AuthScreen } from './AuthScreen'
-import { InviteScreen } from './InviteScreen'
-import { ProjectInviteScreen, takePendingInvite } from './ProjectInviteScreen'
-import { WorkspaceInviteScreen } from './WorkspaceInviteScreen'
+import { takePendingInvite } from './pendingInvite'
 import { ResetScreen } from './ResetScreen'
 import { setOutgoingEmail } from '../lib/outgoingEmail'
 import { setServerRowClick } from '../lib/rowClickPref'
@@ -55,6 +51,13 @@ const ForgotScreen = lazy(() => import('./EmailScreens').then((m) => ({ default:
 const VerifyScreen = lazy(() => import('./EmailScreens').then((m) => ({ default: m.VerifyScreen })))
 const ConfirmEmailScreen = lazy(() => import('./EmailScreens').then((m) => ({ default: m.ConfirmEmailScreen })))
 const ShareCapture = lazy(() => import('./ShareCapture').then((m) => ({ default: m.ShareCapture })))
+// Signed in, the first load carries none of the sign-in, unlock and invite screens.
+const AuthScreen = preloadable(() => import('./AuthScreen').then((m) => ({ default: m.AuthScreen })))
+const UnlockScreen = lazy(() => import('./UnlockScreen').then((m) => ({ default: m.UnlockScreen })))
+const RecordMissingScreen = lazy(() => import('./UnlockScreen').then((m) => ({ default: m.RecordMissingScreen })))
+const InviteScreen = lazy(() => import('./InviteScreen').then((m) => ({ default: m.InviteScreen })))
+const ProjectInviteScreen = lazy(() => import('./ProjectInviteScreen').then((m) => ({ default: m.ProjectInviteScreen })))
+const WorkspaceInviteScreen = lazy(() => import('./WorkspaceInviteScreen').then((m) => ({ default: m.WorkspaceInviteScreen })))
 const DisplayScreen = lazy(() => import('./display/DisplayScreen').then((m) => ({ default: m.DisplayScreen })))
 
 type Phase =
@@ -156,6 +159,8 @@ export function App() {
 
   useEffect(() => {
     void refresh()
+    // No account on this device: the sign-in screen is fetched while the status is.
+    if (localStorage.getItem('opentodo.user') === null) AuthScreen.preload().catch(() => undefined)
   }, [refresh])
 
   // A signed-out visit to a client's /oauth/authorize comes back here with the
@@ -272,7 +277,7 @@ export function App() {
       // The invite link works for anonymous visitors, offline visitors (it waits for
       // the network) and signed-in users (who are asked to sign out first).
       return (
-        <InviteScreen
+        <Suspense fallback={null}><InviteScreen
           token={route.token}
           user={phase.kind === 'ready' || phase.kind === 'restricted' ? phase.user : null}
           status={phase.kind === 'anonymous' ? phase.status : null}
@@ -281,24 +286,24 @@ export function App() {
             void refresh()
           }}
           onLogout={() => void logout()}
-        />
+        /></Suspense>
       )
     }
     if (route.view === 'workspace-invite') {
-      return <WorkspaceInviteScreen token={route.token} user={phase.kind === 'ready' ? phase.user : null}
-        status={phase.kind === 'anonymous' ? phase.status : null} onAuthenticated={() => void refresh()} />
+      return <Suspense fallback={null}><WorkspaceInviteScreen token={route.token} user={phase.kind === 'ready' ? phase.user : null}
+        status={phase.kind === 'anonymous' ? phase.status : null} onAuthenticated={() => void refresh()} /></Suspense>
     }
     if (route.view === 'project-invite') {
       // Project invite links (OpenSpec `project-invite-links`) work signed in
       // (join) and signed out (sign in, or create an account when allowed).
       return (
-        <ProjectInviteScreen
+        <Suspense fallback={null}><ProjectInviteScreen
           token={route.token}
           user={phase.kind === 'ready' ? phase.user : null}
           status={phase.kind === 'anonymous' ? phase.status : null}
           onAuthenticated={() => void refresh()}
           onLogout={() => void logout()}
-        />
+        /></Suspense>
       )
     }
     if (phase.kind === 'offline-unknown') {
@@ -316,15 +321,15 @@ export function App() {
     if (phase.kind === 'anonymous') {
       // On /share the payload waits in memory; after sign-in the route is still /share.
       const notice = route.view === 'share' ? t('Sign in to add the shared page to OpenTodo. It is kept on this screen until then.') : signInNotice
-      return <AuthScreen status={phase.status} notice={notice} onAuthenticated={() => void refresh()} />
+      return <Suspense fallback={null}><AuthScreen status={phase.status} notice={notice} onAuthenticated={() => void refresh()} /></Suspense>
     }
     // The server lost the key record of an encrypted account (encryption-state-integrity).
     if (enc.enabled && enc.recordMissing) {
-      return <RecordMissingScreen unlocked={enc.unlocked} onLogout={() => void logout()} />
+      return <Suspense fallback={null}><RecordMissingScreen unlocked={enc.unlocked} onLogout={() => void logout()} /></Suspense>
     }
     // Encrypted account without the key on this device (OpenSpec e2ee, design D5).
     if (enc.enabled && !enc.unlocked) {
-      return <UnlockScreen onLogout={() => void logout()} />
+      return <Suspense fallback={null}><UnlockScreen onLogout={() => void logout()} /></Suspense>
     }
     if (route.view === 'share') {
       return <Suspense fallback={null}><ShareCapture /></Suspense>
