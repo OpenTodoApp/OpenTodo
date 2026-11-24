@@ -1071,7 +1071,6 @@
     "web/src/app/MonthView.tsx",
     "web/src/app/QuickAdd.tsx",
     "web/src/app/QuickAddSheet.tsx",
-    "web/src/app/TabBar.tsx",
     "web/src/app/calendar/PlanAgenda.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/palette/BarParts.tsx"
@@ -1189,6 +1188,7 @@
     "web/src/app/NotificationChannelEditor.tsx"
   ],
   "Add details": [
+    "web/src/app/quickadd/LineTools.tsx",
     "web/src/app/quickadd/SheetBar.tsx"
   ],
   "Add details, or send as it is…": [
@@ -1289,6 +1289,8 @@
     "web/src/app/task-detail/Subtasks.tsx"
   ],
   "Add task": [
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/TabBar.tsx",
     "web/src/app/quickadd/SheetBar.tsx"
   ],
   "Add task below": [
@@ -4887,6 +4889,7 @@
     "web/src/app/calendar/FramesDialog.tsx"
   ],
   "Default": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/app/WorkspacesSettings.tsx",
     "web/src/app/themes/EditorSections.tsx"
   ],
@@ -9206,13 +9209,20 @@
     "web/src/app/QuickAddSettings.tsx"
   ],
   "Large": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/lib/bentoSlots.ts"
   ],
   "Large · 90 min or more": [
     "web/src/lib/bentoSlots.ts"
   ],
+  "Larger": [
+    "web/src/app/AppearanceSection.tsx"
+  ],
   "Larger files are refused before they are sent.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Largest": [
+    "web/src/app/AppearanceSection.tsx"
   ],
   "Last 100 deliveries": [
     "web/src/app/WebhooksPanel.tsx"
@@ -18107,6 +18117,9 @@
   "Text on soft warning": [
     "web/src/app/themes/tokenNames.ts"
   ],
+  "Text size": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Text to send": [
     "web/src/app/RelayConfirm.tsx"
   ],
@@ -18129,6 +18142,9 @@
     "web/src/app/ReauthDialog.tsx"
   ],
   "That date is not a coming occurrence of this repeating task.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
+  "That date of this repeating task is already done, skipped or moved.": [
     "web/src/lib/i18n/errors.ts"
   ],
   "That day’s daily note, created from your Daily notes settings when needed": [
@@ -26707,8 +26723,5 @@
   ],
   "⤼ Skip": [
     "web/src/app/RecurrenceField.tsx"
-  ],
-  "That date of this repeating task is already done, skipped or moved.": [
-    "web/src/lib/i18n/errors.ts"
   ]
 }

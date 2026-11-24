@@ -288,6 +288,10 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
                 // it off; the on-screen +/- buttons stay hidden.
                 builtInZoomControls = true
                 displayZoomControls = false
+                // text-size D3: the page scales its own root font size by the system font
+                // scale it gets through the bridge, so everything reflows; the web view
+                // must not enlarge the text a second time.
+                textZoom = 100
                 userAgentString = "$userAgentString OpenTodoAndroid/${BuildConfig.VERSION_NAME}"
             }
             web.webViewClient = Client()

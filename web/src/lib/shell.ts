@@ -84,6 +84,8 @@ export interface OpenTodoShell {
    * F-Droid app has them). Absent elsewhere.
    */
   store?: 'play'
+  /** text-size D3: the Android system font scale (1 = 100 %). The iOS shell leaves it to WebKit. */
+  textScale?: number
   scheduleReminders?(json: string): Promise<ShellPermission> | ShellPermission | void
   testNotification?(): Promise<boolean> | boolean | void
   publishWidget?(json: string): void

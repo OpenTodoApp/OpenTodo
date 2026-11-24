@@ -68,6 +68,34 @@ describe('appearance.js', () => {
   })
 })
 
+// text-size D2, task 1.2: the text size is on the root before the app module runs.
+describe('appearance.js text size', () => {
+  const setShell = (s: unknown) => { (window as unknown as { opentodoShell?: unknown }).opentodoShell = s }
+  beforeEach(() => setShell(undefined))
+
+  it('applies a stored step without an appearance cache', () => {
+    localStorage.setItem('opentodo.textSize', 'largest')
+    boot()
+    expect(prop('--ot-text-scale')).toBe('1.5')
+  })
+
+  it('leaves Default and unknown values at the browser size', () => {
+    localStorage.setItem('opentodo.textSize', 'huge')
+    boot()
+    expect(prop('--ot-text-scale')).toBe('')
+  })
+
+  it("follows the Android shell's font scale under Default, clamped, and a step overrides it", () => {
+    setShell({ platform: 'android', textScale: 3 })
+    boot()
+    expect(prop('--ot-text-scale')).toBe('2')
+    localStorage.setItem('opentodo.textSize', 'large')
+    root().removeAttribute('style')
+    boot()
+    expect(prop('--ot-text-scale')).toBe('1.125')
+  })
+})
+
 // theme-engine D5, task 5.3: a cached theme is on the root before the app module runs.
 describe('appearance.js with a cached theme', () => {
   const palette = (kind: 'light' | 'dark'): AppliedTheme => toApplied(deriveTheme({

@@ -89,7 +89,7 @@ class Bridge(
         WebViewCompat.addWebMessageListener(webView, "opentodoNative", rules) { _, message, sourceOrigin, isMainFrame, reply ->
             if (isMainFrame && originOf(sourceOrigin) == origin) handle(message.data ?: return@addWebMessageListener, reply)
         }
-        WebViewCompat.addDocumentStartJavaScript(webView, script(BuildConfig.VERSION_NAME, capabilities(), BuildConfig.PLAY_BUILD), rules)
+        WebViewCompat.addDocumentStartJavaScript(webView, script(BuildConfig.VERSION_NAME, capabilities(), BuildConfig.PLAY_BUILD, context.resources.configuration.fontScale), rules)
         return true
     }
 
@@ -205,6 +205,9 @@ class Bridge(
             return "$scheme://$h" + if (port == -1 || port == def) "" else ":$port"
         }
 
+        /** The font scale as a JavaScript number: finite and positive, else 1 (the page clamps it). */
+        fun textScaleLiteral(scale: Float): String = if (scale.isFinite() && scale > 0f) scale.toString() else "1"
+
         /** http(s), mailto and tel, and a `geo:` point for the maps app (android-location-and-map). */
         fun safeExternal(url: String): Boolean {
             if (WebLocation.mapLink(url)) return true
@@ -219,8 +222,12 @@ class Bridge(
          */
         fun externalLink(url: String): Boolean = safeExternal(url) || ObsidianLink.valid(url)
 
-        /** The page side: `window.opentodoShell`, promise-returning methods over the message channel. */
-        fun script(app: String, caps: List<String>, play: Boolean = false): String = """
+        /**
+         * The page side: `window.opentodoShell`, promise-returning methods over the message channel.
+         * text-size D3: `textScale` is the system font scale, which the page applies to its root
+         * font size (the web view's own text zoom stays at 100); a change recreates the activity.
+         */
+        fun script(app: String, caps: List<String>, play: Boolean = false, textScale: Float = 1f): String = """
             (function () {
               if (window.opentodoShell || !window.opentodoNative) return;
               var nat = window.opentodoNative, seq = 0, waiting = {};
@@ -235,6 +242,7 @@ class Bridge(
               window.opentodoShell = Object.freeze({
                 bridge: $VERSION, platform: 'android', app: ${JSONObject.quote(app)},${if (play) " store: 'play'," else ""}
                 capabilities: Object.freeze(${JSONArray(caps)}),
+                textScale: ${textScaleLiteral(textScale)},
                 scheduleReminders: function (json) { return call('scheduleReminders', [String(json)]) },
                 scheduleGeofences: function (json) { return call('scheduleGeofences', [String(json)]) },
                 testNotification: function () { return call('testNotification', []) },

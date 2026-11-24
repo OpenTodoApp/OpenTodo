@@ -46,4 +46,6 @@ Three pages, **Theme and density**, **Sidebar** and **Task details**. These choi
 - **Open tasks** (Task details): **As a page** (the default) or **In a side panel** beside every list, from 1024 px wide. See [The task page](task-panel.md#open-tasks-beside-the-list).
 - **Sidebar**: numbers on every list or only on Inbox and Today, the order of the main destinations, and which **More** destinations sit next to them. See [Sidebar counts and order](sidebar-counts-and-order.md).
 
+**Text size** belongs to this device only: **Default**, **Large**, **Larger** or **Largest** makes all of the app's text larger, and rows, sheets and the editor wrap to fit instead of zooming. **Default** is your device's own text size: Dynamic Type in the iPhone app, the font size in Android's settings in the Android app, the browser's text size elsewhere.
+
 Mode, theme and accent apply at once and never change other people's app. Priority colours (P1 to P4), warnings and errors, and the colours of your projects, labels and views keep their meaning in every theme. The installed app's title bar follows the theme; its splash screen stays neutral. Every theme meets the same contrast rules in light and dark.

@@ -203,6 +203,14 @@ class BridgeFixtureTest {
         assertTrue(script, script.contains("\"files\"") && script.contains("\"haptics\""))
     }
 
+    /** text-size D3: the page gets the system font scale as a number, and a bad one reads as 1. */
+    @Test fun thePageScriptHandsTheFontScale() {
+        assertTrue(Bridge.script("1.0.0", listOf("reminders"), textScale = 1.3f).contains("textScale: 1.3,"))
+        assertTrue(Bridge.script("1.0.0", listOf("reminders")).contains("textScale: 1.0,"))
+        assertEquals("1", Bridge.textScaleLiteral(Float.NaN))
+        assertEquals("1", Bridge.textScaleLiteral(0f))
+    }
+
     private fun strings(f: JSONObject, key: String): List<String> = f.getJSONArray(key).let { a -> (0 until a.length()).map { a.getString(it) } }
 
     /**
