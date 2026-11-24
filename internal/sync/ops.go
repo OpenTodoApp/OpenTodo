@@ -989,6 +989,12 @@ var Schema = map[string]map[string]Field{
 		"daily_notes":         {Kind: kBool, Default: `false`},
 		"daily_notes_project": {Kind: kString, Default: `""`}, "daily_notes_template": {Kind: kString, Default: `""`},
 		"app_link_schemes": {Kind: kString, Default: `""`, Content: true}, // app-links D1: schemes that open in other apps, a JSON array, read only on the person's devices
+		// Calendars hidden per workspace (OpenSpec change calendars-per-workspace,
+		// design D1): a JSON object from workspace id to the ids of the calendars
+		// (subscriptions and calendar sync calendars) hidden there; "" hides none.
+		// A hide-list, so new calendars and workspaces show. Clients read a
+		// malformed value as none hidden and ignore unknown ids. Not content.
+		"calendars_hidden": {Kind: kString, Default: `""`},
 		// The away period (OpenSpec change away-periods, design D3): "" or
 		// "YYYY-MM-DD..YYYY-MM-DD", inclusive, followed by " quiet" when
 		// reminders and the digest are paused. One value, so two devices never

@@ -32,13 +32,13 @@ The agenda sits between the quick add and your first task:
 
 Click an event, or Tab to it and press Enter, to see its time, location and calendar. Events are read-only, as everywhere in OpenTodo; edit them in their own calendar app.
 
-On a day without events, nothing is shown. Events of a calendar you disabled under **Settings → Integrations → Calendar feeds** never show. The **Calendars** button of Day and Week, which hides events on one device, doesn't change Today.
+On a day without events, nothing is shown. Events of a calendar you disabled under **Settings → Integrations → Calendar feeds** never show. A calendar you unticked under the **Calendars** button of Day and Week stays hidden here in that workspace; **Show calendar events** in that menu, which hides every calendar on one device, doesn't change Today.
 
 ## In Upcoming
 
 Upcoming has the same choice, in its own **More actions** menu, next to **Show repeating occurrences**. It is off until you turn it on, saved with your account, and separate from Today's choice.
 
-Each day then lists that day's events above its tasks: all-day events as chips, then timed events with the time, title, colour and location. They stay read-only, and they are not part of the day's task count. A day that only has events still gets its heading, through the last day Upcoming lists (up to 92 days ahead). Upcoming's filter does not hide them. Hiding calendars with the **Calendars** button hides them here too. Offline, the list ends with **Calendars as of** and the time of the last refresh.
+Each day then lists that day's events above its tasks: all-day events as chips, then timed events with the time, title, colour and location. They stay read-only, and they are not part of the day's task count. A day that only has events still gets its heading, through the last day Upcoming lists (up to 92 days ahead). Upcoming's filter does not hide them. Calendars hidden with the **Calendars** button are hidden here too. Offline, the list ends with **Calendars as of** and the time of the last refresh.
 
 ## Offline
 

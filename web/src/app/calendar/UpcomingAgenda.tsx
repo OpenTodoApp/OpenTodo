@@ -1,13 +1,14 @@
 // Upcoming's calendar events (today-agenda): the same read-only agenda as Today, one
 // per day, above that day's tasks. Off until the account turns it on. The device's
-// Calendars toggle hides them; a disabled subscription never shows. The list's
+// Calendars switch hides them; a disabled subscription, or a calendar hidden in the
+// workspace (calendars-per-workspace), never shows. The list's
 // filters do not apply, and events are not tasks, so they stay out of the day's count.
 import { useEffect, useMemo, type ReactNode } from 'react'
 import { allDayEvents, eventBlocks, type EventBlock } from '../../lib/calendar'
 import { cachedWindow, covers, eventsStatus, refreshEvents, STALE_MS, type DayRange } from '../../lib/calendarFeeds'
 import { addDaysISO, formatDateHeading, type ResolvedDateTime } from '../../lib/dates'
 import { t } from '../../lib/i18n'
-import { useCachedEventsWindow, useCalendarEvents, useCalendarSubscriptions, useShowEvents } from '../../lib/liveData'
+import { useCachedEventsWindow, useShowEvents, useVisibleCalendarEvents } from '../../lib/liveData'
 import { useUserPrefsRow } from '../../lib/localData'
 import type { ListGroup } from '../../lib/listGroups'
 import { resettable } from '../../lib/moduleState'
@@ -89,8 +90,7 @@ export interface UpcomingAgendaState {
  */
 export function useUpcomingAgenda(active: boolean, today: string, through: string | null, zone?: string): UpcomingAgendaState {
   const shown = upcomingEventsShown(useUserPrefsRow())
-  const events = useCalendarEvents()
-  const subs = useCalendarSubscriptions()
+  const { subs, subMap, events } = useVisibleCalendarEvents()
   const win = useCachedEventsWindow()
   const grid = useShowEvents()
   const range = useMemo(() => (active ? upcomingEventsRange(today, through) : null), [active, today, through])
@@ -101,13 +101,11 @@ export function useUpcomingAgenda(active: boolean, today: string, through: strin
     if (ask && from && to) void askForUpcoming({ from, to })
   }, [ask, from, to])
   return useMemo(() => {
-    const subMap = new Map(subs.map((s) => [s.id, s]))
     const days = new Map<string, DayEvents>()
     if (shown && grid && range) {
-      const enabled = events.filter((e) => subMap.get(e.subscriptionId)?.enabled !== false)
       for (let date = range.from; date <= range.to; date = addDaysISO(date, 1)) {
-        const allDay = allDayEvents(enabled, date)
-        const timed = eventBlocks(enabled, date, zone)
+        const allDay = allDayEvents(events, date)
+        const timed = eventBlocks(events, date, zone)
         if (allDay.length > 0 || timed.length > 0) days.set(date, { allDay, timed })
       }
     }
@@ -119,7 +117,7 @@ export function useUpcomingAgenda(active: boolean, today: string, through: strin
       fetchedAt: win?.fetchedAt,
       hasEvents: days.size > 0,
     }
-  }, [active, shown, grid, range, events, subs, win, zone])
+  }, [active, shown, grid, range, events, subs, subMap, win, zone])
 }
 
 /** One day's agenda, above that day's tasks. Nothing when the day has no events. */

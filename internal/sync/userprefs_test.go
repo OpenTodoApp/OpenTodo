@@ -267,3 +267,21 @@ func TestPriorityNamesConvergePerLevel(t *testing.T) {
 		}
 	}
 }
+
+// TestCalendarsHiddenIsAPersonalPref (calendars-per-workspace D1): the per-workspace
+// hide-list is one string field of user_prefs, applied like any other and kept
+// in its author's scope.
+func TestCalendarsHiddenIsAPersonalPref(t *testing.T) {
+	f := newSharing(t)
+	f.add("alice", "bob", RoleEditor)
+	value := `"{\"ws-personal\":[\"sub-work\"]}"`
+	if res := f.apply("alice", "A", f.op("user_prefs", "me", "calendars_hidden", value)); res.Applied != 1 || len(res.Rejected) != 0 {
+		t.Fatalf("calendars_hidden = %+v", res)
+	}
+	if got := f.field("alice", "user_prefs", "me", "calendars_hidden"); got != value {
+		t.Fatalf("alice reads %s", got)
+	}
+	if got := f.field("bob", "user_prefs", "me", "calendars_hidden"); got == value {
+		t.Fatalf("bob sees alice's calendars: %s", got)
+	}
+}
