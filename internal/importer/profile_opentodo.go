@@ -122,9 +122,7 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 			}
 			if kind == KindUserPrefs {
 				row.Title = "Preferences"
-				// The apps a person's links may open are chosen by the person who
-				// clicks, never restored by an import (app-links D1).
-				delete(e, "app_link_schemes")
+				dropUnrestored(e)
 			}
 			if kind == KindReview {
 				row.Title = "Last weekly review"
@@ -255,4 +253,16 @@ func countFileAttachments(list []map[string]json.RawMessage) int {
 		}
 	}
 	return n
+}
+
+// unrestored are the preference fields an import never brings back: the apps a
+// person's links may open are chosen by the person who clicks (app-links D1),
+// and a restore never resumes a Focus session from the past
+// (sync-focus-sessions D6).
+var unrestored = []string{"app_link_schemes", "focus_run"}
+
+func dropUnrestored(e map[string]json.RawMessage) {
+	for _, f := range unrestored {
+		delete(e, f)
+	}
 }

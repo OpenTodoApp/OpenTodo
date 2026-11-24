@@ -6,6 +6,9 @@
 // (only while the tab is visible; a tab that saw the end hidden plays it when shown), the system
 // notification (hidden tab, permission granted, tagged per run so two tabs show
 // one), and the end of the session when its task is completed or trashed elsewhere.
+// It also adopts the session another of the person's devices wrote; the sound,
+// the notification and the noise are left to the device that made the last
+// change (sync-focus-sessions D2, D4).
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { getTask, useReviewRow, useUserPrefsRow } from '../../lib/localData'
 import { orderedFocusIds } from '../../lib/bento'
@@ -16,7 +19,7 @@ import { useFocusPrefs, useNoiseVolume, type FocusAlert, type FocusPrefs } from 
 import { nextFocusTask } from '../../lib/focus/select'
 import { completeSession, finishIfDue, noteEntryStopped } from '../../lib/focus/session'
 import { useEntryRunning } from '../../lib/focus/live'
-import { useFocusState } from '../../lib/focus/state'
+import { adoptRun, useFocusState } from '../../lib/focus/state'
 import { inRun, isDue, isRunning, type FocusState } from '../../lib/focus/timer'
 import { playTone } from '../../lib/focus/tone'
 import { t } from '../../lib/i18n'
@@ -97,7 +100,8 @@ function useEndEffects(state: FocusState | null | undefined, prefs: FocusPrefs):
     if (seen.current === null) { seen.current = key; return }
     if (key === seen.current) return
     seen.current = key
-    if (!state?.ended) return
+    // Only the device that made the last change rings (sync-focus-sessions D4).
+    if (!state?.ended || state.remote) return
     if (document.visibilityState === 'hidden') {
       pendingTone.current = prefs.sound ? prefs.alert : null
       void notifyFocusEnd(state)
@@ -138,7 +142,7 @@ function useTaskGone(state: FocusState | null | undefined, prefs: FocusPrefs, no
  */
 function useNoise(state: FocusState | null | undefined, prefs: FocusPrefs): void {
   const volume = useNoiseVolume()
-  const kind = prefs.noise !== 'off' && state?.phase === 'work' && isRunning(state) ? prefs.noise : null
+  const kind = prefs.noise !== 'off' && state?.phase === 'work' && isRunning(state) && !state.remote ? prefs.noise : null
   const loaded = useRef(false)
   useEffect(() => {
     if (!kind && !loaded.current) return
@@ -158,6 +162,11 @@ export function useFocusTimer(): { state: FocusState | null | undefined; prefs: 
   const state = useFocusState()
   const prefs = useFocusPrefs()
   const now = useFocusClock(isRunning(state))
+  // The session another device wrote (sync-focus-sessions D2).
+  const run = useUserPrefsRow()?.focus_run
+  useEffect(() => {
+    if (run) void adoptRun(run)
+  }, [run])
   const due = isDue(state, now)
   useEffect(() => {
     if (due) void finishIfDue(prefs, now)

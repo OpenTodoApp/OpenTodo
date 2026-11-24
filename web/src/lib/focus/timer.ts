@@ -2,7 +2,8 @@
 // pure functions over it, each taking `now`. Nothing counts ticks: elapsed time is
 // always computed from the clock, so a hidden or throttled tab, a laptop that
 // slept or a reload reads the right value, and every scenario is a table over a
-// fake clock. The record lives in the device's local store (state.ts).
+// fake clock. The record lives in the device's local store and its shared part
+// syncs to the person's other devices (state.ts).
 import { t } from '../i18n'
 import type { FocusMode, FocusPrefs } from './prefs'
 
@@ -55,6 +56,12 @@ export interface FocusState {
   /** Continuous work at which the break reminder was put off ("Not now"); 0 when it never was. */
   remindedAtMs: number
   ended: FocusEnded | null
+  /** The revision of the shared record this row stands for (sync-focus-sessions D2); absent before the first published write. */
+  rev?: string
+  /** Earlier revisions this device wrote or adopted (the last eight): a stored record among them is never adopted again. */
+  seen?: string[]
+  /** The last published change came from another device (D4): the session is shown here silently. */
+  remote?: boolean
 }
 
 const MIN = 60_000

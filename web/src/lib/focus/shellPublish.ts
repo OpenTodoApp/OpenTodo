@@ -13,9 +13,13 @@ import { focusPrefs, type FocusPrefs } from './prefs'
 import { readFocus } from './state'
 import { inRun, plannedEnd, type FocusState } from './timer'
 
-/** The payload for a stored state; `title` only when the caller may hand it over. */
+/**
+ * The payload for a stored state; `title` only when the caller may hand it over.
+ * A session another device owns is not handed over, so its end is notified once,
+ * by the owner (sync-focus-sessions D4).
+ */
 export function focusPayload(s: FocusState | null, prefs: Pick<FocusPrefs, 'longBreakEvery'>, title?: string): ShellFocus {
-  if (!s || (!inRun(s) && s.phase !== 'done')) return NO_FOCUS
+  if (!s || s.remote || (!inRun(s) && s.phase !== 'done')) return NO_FOCUS
   const done = s.phase === 'done'
   const phase = done ? (s.ended?.kind === 'break' ? 'break' : 'work') : (s.phase as 'work' | 'break')
   const end = plannedEnd(s)

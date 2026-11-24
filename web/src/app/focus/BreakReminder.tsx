@@ -14,9 +14,9 @@ import { act } from '../actionError'
 import { keepFocus } from '../ReminderToasts'
 import { useFocusTimer } from './useFocusTimer'
 
-/** Whether the reminder is due: on, a work stretch running, and the continuous work past the length (again, after "Not now"). */
+/** Whether the reminder is due: on, a work stretch running on the device that owns it (sync-focus-sessions D4), and the continuous work past the length (again, after "Not now"). */
 export function breakDue(state: FocusState | null | undefined, prefs: FocusPrefs, now: number): boolean {
-  if (!state || prefs.breakAfterMinutes <= 0 || state.phase !== 'work' || !isRunning(state)) return false
+  if (!state || state.remote || prefs.breakAfterMinutes <= 0 ||state.phase !== 'work' || !isRunning(state)) return false
   const length = prefs.breakAfterMinutes * 60_000
   return continuousWork(state, now) >= state.remindedAtMs + length
 }
