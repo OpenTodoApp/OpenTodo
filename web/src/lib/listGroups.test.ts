@@ -83,6 +83,33 @@ describe('tasksForView', () => {
       expect(patchViewTasks(gone!, [{ id: row.id, before: away, after: row }], { view }, [shared], TODAY, ctx, 'me')?.map((t) => t.title), view).toEqual(['Mine'])
     }
   })
+
+  // Issue 1979 (others-tasks-toggle D2): Show tasks assigned to others.
+  it('while shown, the personal views list tasks assigned to someone else too; own, unassigned and Assigned to me do not change', () => {
+    const shared = project('p', 1)
+    const kinds = { today: { due: { date: TODAY } }, upcoming: { due: { date: '2026-10-15' } }, someday: { start: 'someday' }, anytime: {} } as const
+    const all = Object.entries(kinds).flatMap(([kind, over]) => [
+      task({ title: `${kind} theirs`, project_id: 'p', assignee_id: 'other', ...over }),
+      task({ title: `${kind} mine`, project_id: 'p', assignee_id: 'me', ...over }),
+      task({ title: `${kind} anyone`, project_id: 'p', ...over }),
+    ])
+    for (const view of Object.keys(kinds) as (keyof typeof kinds)[]) {
+      expect(tasksForView({ view }, all, [shared], TODAY, 'me', false, true).map((t) => t.title).sort(), view).toEqual([`${view} anyone`, `${view} mine`, `${view} theirs`])
+      expect(tasksForView({ view }, all, [shared], TODAY, 'me', false, false).map((t) => t.title).sort(), view).toEqual([`${view} anyone`, `${view} mine`])
+    }
+    expect(tasksForView({ view: 'upcoming' }, all, [shared], TODAY, 'me', true, true).map((t) => t.title).sort())
+      .toEqual(['today anyone', 'today mine', 'today theirs', 'upcoming anyone', 'upcoming mine', 'upcoming theirs'])
+    expect(tasksForView({ view: 'assigned' }, all, [shared], TODAY, 'me', false, true).map((t) => t.title).sort()).toEqual(['anytime mine', 'someday mine', 'today mine', 'upcoming mine'])
+  })
+
+  it('while shown, a task reassigned to someone else stays in the personal views', () => {
+    const shared = project('p', 1)
+    const mine = task({ title: 'Mine', project_id: 'p', assignee_id: 'me', due: { date: TODAY } })
+    const away = { ...mine, assignee_id: 'other' }
+    const ctx = { parentOf: () => undefined, hasChildren: () => false }
+    const before = tasksForView({ view: 'today' }, [mine], [shared], TODAY, 'me', false, true)
+    expect(patchViewTasks(before, [{ id: mine.id, before: mine, after: away }], { view: 'today' }, [shared], TODAY, ctx, 'me', false, true)?.map((t) => t.title)).toEqual(['Mine'])
+  })
 })
 
 describe('listGroups', () => {

@@ -52,6 +52,8 @@ export interface ShellReminder {
   taskId: string
   fireAt: number
   title?: string
+  /** Only on an urgent reminder, which the iPhone app rings as an alarm (ios-urgent-alarms D3). */
+  urgent?: true
 }
 
 /** The Today list the widgets show; titles only while the account is readable. */

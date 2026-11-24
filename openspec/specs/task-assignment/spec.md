@@ -234,39 +234,55 @@ The REST task representation SHALL include `rotation`, and `PATCH /api/v1/tasks/
 - **WHEN** a client sets a rotation on a task without a recurrence
 - **THEN** the response is 400 `invalid_rotation`
 
-### Requirement: Today hides tasks assigned to others
-Today's menu SHALL offer "Hide tasks assigned to others" and, while the option is on, "Show tasks assigned to others" in its place. On a phone the item SHALL be in the bar's overflow. The item SHALL be offered only while the device knows a shared project with a member other than the viewer; otherwise it SHALL not be offered and a stored value SHALL be kept. The option SHALL be off by default and SHALL be a synced preference of the account (`user_prefs.today_assignees`, empty or `mine`), written as one operation locally first: it SHALL work offline, reach the account's other devices with sync and converge by last-writer-wins. An empty or unknown stored value SHALL read as off and SHALL not be rewritten.
+### Requirement: Personal views hide tasks assigned to others
+The personal views SHALL show the work the viewer can act on: Inbox, Today, Upcoming (with Start with Today too), Anytime, Someday and Next SHALL leave out a task whose assignee is an account other than the viewer, and SHALL keep a task assigned to the viewer and a task with no assignee. The same rule SHALL apply to what is derived from those views: the sidebar's Today count, the app icon badge and its stored counts for the next days, the day-page briefing on Today and Upcoming, Today's Earlier tasks in the command palette, Today's limit and its slots, Close the day, the display of Today and Upcoming, the widgets of the native shells, and the MCP and in-app assistant's `today_summary`. A project's own list, Assigned to me, Waiting, labels, places, saved views and the Filter view (whose `assigned` terms decide), the calendar views and Completed SHALL be unchanged and list such a task. The rule SHALL be derived from local task rows and the viewer's account id, so it is right offline, follows a reassignment on any device as soon as it syncs, and matches another device once both hold the same tasks.
 
-While the option is off, Today lists every task its date rule includes. While it is on, Today SHALL omit a task whose project the device knows is shared and whose assignee is an account other than the viewer, and SHALL keep a task with no assignee and a task assigned to the viewer. A task in the Inbox or in a project the device does not know as shared SHALL stay, whatever its assignee. The sidebar's Today count, the app icon badge and the day-page briefing's count of Today's tasks SHALL use that same set. Upcoming, project lists and Assigned to me SHALL be unchanged. The list is derived from local tasks, the local membership cache and the local preference, so it is right offline and matches another device once both hold the same tasks, members and preference.
+The menu of Today, Upcoming, Anytime and Someday SHALL offer a checkable item "Show tasks assigned to others", announced as checked or not and showing a check while on, so the menu shows the current state. On a phone it SHALL be in the bar's overflow. It SHALL be offered only while the device knows a shared project with a member other than the viewer; otherwise it SHALL not be offered and a stored value SHALL be kept. While it is on, the lists of Today, Upcoming (with Start with Today too), Anytime and Someday SHALL also list tasks assigned to others. Next and everything derived from the views (the counts, the badge, the briefing, the palette, Today's limit, Close the day, the display, the widgets and `today_summary`) SHALL keep the rule, so they count the viewer's own work, and a task assigned to someone else SHALL never take one of Today's slots. The option SHALL be a synced preference of the account, `user_prefs.today_assignees`: `all` turns it on; empty, `mine` and any other value read as off and SHALL not be rewritten. Choosing the item SHALL write one operation locally first: it SHALL work offline, reach the account's other devices with sync and converge by last-writer-wins.
 
-#### Scenario: Off until turned on
-- **WHEN** a shared project has a task due today assigned to another member and the viewer has never set the option
-- **THEN** Today lists that task, and the menu offers "Hide tasks assigned to others"
+#### Scenario: Shared workspace
+- **WHEN** a shared project has, due today, a task assigned to the viewer, an unassigned task and a task assigned to Sam
+- **THEN** Today lists the first two, the sidebar Today count and the icon badge count two, and the project's list shows all three
 
-#### Scenario: Hide someone else's task
-- **WHEN** the viewer turns the option on, Today holds a task assigned to them, an unassigned task and a task in a shared project assigned to someone else, and the device is offline
-- **THEN** the someone else's task leaves Today at once, the other two stay, the sidebar Today count and the icon badge drop by one, and the choice is queued as one operation
+#### Scenario: Reassigned while offline
+- **WHEN** the viewer, offline, reassigns a task in Upcoming to Sam
+- **THEN** it leaves Upcoming at once, stays in its project, and is listed in Waiting under Sam
 
-#### Scenario: A personal task stays
-- **WHEN** the option is on and a task in a project with no other member is due today
-- **THEN** Today lists it
+#### Scenario: Given back
+- **WHEN** Sam assigns that task back to the viewer on another device and the change syncs
+- **THEN** it returns to Upcoming without any write on the viewer's device
 
-#### Scenario: Solo account
+#### Scenario: Someday and Anytime
+- **WHEN** a shared project has a task parked in Someday and a task with no dates, both assigned to Sam
+- **THEN** neither Someday nor Anytime lists them for the viewer, and both list them for Sam
+
+#### Scenario: Off by default
+- **WHEN** the viewer opens Today's menu in a shared workspace and has never set the option
+- **THEN** "Show tasks assigned to others" is offered unchecked, and Today does not list a task assigned to Sam
+
+#### Scenario: Show them offline
+- **WHEN** the device is offline and the viewer checks "Show tasks assigned to others" while Today holds a task assigned to the viewer, an unassigned task and a task assigned to Sam
+- **THEN** Today lists all three at once, the item shows a check, Upcoming, Anytime and Someday list Sam's tasks too, the sidebar Today count is unchanged, and the choice is queued as one operation
+
+#### Scenario: Hide them again
+- **WHEN** the option is on and the viewer unchecks the item in Upcoming's menu
+- **THEN** Sam's tasks leave Today, Upcoming, Anytime and Someday, and the viewer's own and unassigned tasks stay
+
+#### Scenario: Another device follows
+- **WHEN** the viewer turned the option on on their phone and the laptop syncs
+- **THEN** the laptop's Today lists Sam's task and its menu shows the item checked, without a write on the laptop
+
+#### Scenario: Slots stay the viewer's
+- **WHEN** Today's limit is 3, the option is on, and Today holds three of the viewer's tasks and one of Sam's
+- **THEN** the viewer's three tasks hold the slots and Sam's task is listed without taking one
+
+#### Scenario: No option to show them
 - **WHEN** the viewer is a member of no shared project
-- **THEN** Today's menu has no item for the option, and a stored `mine` is kept and not rewritten
+- **THEN** no list's menu offers to show tasks assigned to others, and a stored `all` is kept and not rewritten
 
-#### Scenario: Phone
-- **WHEN** the viewer has a shared project and opens Today's menu on a phone
-- **THEN** the item is in the bar's overflow
+#### Scenario: My subtask of someone else's task
+- **WHEN** a task due today is assigned to Sam and has two subtasks due today, one assigned to the viewer and one with no assignee
+- **THEN** Today leaves out Sam's task and lists both subtasks as top-level rows
 
-#### Scenario: The other device follows
-- **WHEN** the viewer turns the option on and another device syncs
-- **THEN** that device's Today omits the same tasks
-
-#### Scenario: Unknown value
-- **WHEN** a newer client stores a value this version does not know in `today_assignees`
-- **THEN** Today lists every task its date rule includes and the stored value is left as it is
-
-#### Scenario: Upcoming is not Today
-- **WHEN** the option is on and a shared project's task assigned to someone else is due tomorrow
-- **THEN** Upcoming lists it
+#### Scenario: Assistant summary
+- **WHEN** an assistant calls `today_summary` while a task assigned to Sam is overdue
+- **THEN** that task is neither in `overdue` nor in `counts.overdue`, and its project's open count still includes it

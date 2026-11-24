@@ -16602,6 +16602,9 @@
   "Show tasks as": [
     "web/src/app/CaldavPanel.tsx"
   ],
+  "Show tasks assigned to others": [
+    "web/src/app/TaskListView.tsx"
+  ],
   "Show text": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
@@ -21305,6 +21308,9 @@
   ],
   "Urgency {score}, show why": [
     "web/src/app/UrgencyChip.tsx"
+  ],
+  "Urgent": [
+    "web/src/app/RemindersField.tsx"
   ],
   "Urgent and important": [
     "web/src/lib/boardTemplates.ts"
