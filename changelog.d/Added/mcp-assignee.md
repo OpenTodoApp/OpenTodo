@@ -1,1 +1,0 @@
-- **Assistants can assign tasks over MCP.** `create_tasks` and `update_tasks` take `assignee`: a member of the task's shared project by name, email or account id, or `me`; `null` unassigns. Someone outside the project and viewers are refused, as in the app ([#1977](https://github.com/OpenTodoApp/OpenTodo/issues/1977)).
