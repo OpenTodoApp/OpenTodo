@@ -12,9 +12,9 @@ import type { DragDepth } from './projectGroupPlacement'
 
 export function useDayOrderDrop(host: OrderHost | null, parts: boolean, ticked: ReadonlySet<string>,
   latest: RefObject<{ rows: ListRow[]; groups: readonly ListGroup[] }>, memberships: Map<string, Membership>) {
-  const [mod, setMod] = useState<typeof DayOrderDrop>()
+  const [mod, setMod] = useState<Pick<typeof DayOrderDrop, 'dayOrderDrop' | 'applyDayOrderDrop'>>()
   useEffect(() => {
-    if (host && !mod) void import('./dayOrderDrop').then((m) => setMod(() => m))
+    if (host && !mod) void import('./dayOrderDrop').then(({ dayOrderDrop, applyDayOrderDrop }) => setMod({ dayOrderDrop, applyDayOrderDrop }))
   }, [host, mod])
   return useMemo(() => {
     if (!host) return undefined
