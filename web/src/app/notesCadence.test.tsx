@@ -70,7 +70,7 @@ const QUIET_ROUNDS = 20
  * Let the work the fake clock started finish: rounds of the event loop until IndexedDB
  * has been idle for QUIET_ROUNDS rounds, at most `rounds`. A fixed 200 rounds twice a
  * tick spun on nothing for most of the 10-minute session, which took it past the test
- * timeout on a loaded machine.
+ * timeout on a loaded machine. It watches IndexedDB only: the api.sync mock answers at once.
  */
 async function settle(rounds = 200): Promise<void> {
   await act(async () => {

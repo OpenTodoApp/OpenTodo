@@ -4,8 +4,8 @@
 //
 // Measured as this thread's CPU time, not wall-clock time: another process taking the
 // core (parallel test workers, a busy runner) stops the clock instead of adding to it.
-// Each theme's cost is the median of five runs, and the budget holds for the median
-// theme of the sweep, so a garbage collection or a cache-cold run does not decide it.
+// Each theme's cost is the median of five runs, so a garbage collection or a cache-cold
+// run does not decide it; the average of those costs over the sweep stays under 5 ms.
 // It runs in the perf suite (`npm run test:perf`), alone, never beside the unit suite.
 import { describe, expect, it } from 'vitest'
 import { deriveTheme } from './derive'
@@ -18,7 +18,7 @@ const cpuMs = () => {
 const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[xs.length >> 1]
 
 describe('deriving a theme', () => {
-  it('takes under 5 ms of CPU for the median theme of the sweep', () => {
+  it('takes under 5 ms of CPU a theme, on average over the sweep', () => {
     const docs = SWEEP.map(sweepDocument)
     for (const d of docs.slice(0, 20)) deriveTheme(d)
     const costs = docs.map((d) => median(Array.from({ length: 5 }, () => {
@@ -26,7 +26,7 @@ describe('deriving a theme', () => {
       deriveTheme(d)
       return cpuMs() - t0
     })))
-    const each = median(costs)
+    const each = costs.reduce((a, b) => a + b, 0) / costs.length
     expect(each, `${each.toFixed(2)} ms a theme`).toBeLessThan(5)
     // 1,200 derivations: a few seconds of CPU, which a busy machine spreads over many
     // more of wall-clock time. The budget is the CPU time above; this ceiling only

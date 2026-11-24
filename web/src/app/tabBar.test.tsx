@@ -200,6 +200,7 @@ describe('the tab bar while the list scrolls', () => {
     await scrollTo(100)
     expect(bar()!.getAttribute('data-minimised')).toBe('true')
     // Restored by the quiet timer (600 ms), with no further scroll; not a moment before.
+    expect(RESTORE_AFTER_MS).toBe(600)
     await elapse(RESTORE_AFTER_MS - 1)
     expect(bar()!.getAttribute('data-minimised')).toBe('true')
     await elapse(1)
