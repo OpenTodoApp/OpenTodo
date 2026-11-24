@@ -14,7 +14,9 @@ import { t } from '../lib/i18n'
 import { useMembershipMap, useMemberships, useUserPrefsRow } from '../lib/localData'
 import { briefingHidden, othersTasksShown, preferredPlacement, setBriefingShown, setOthersTasksShown, setTodayEventsShown, setUpcomingEventsShown, setUpcomingStartsWithToday, upcomingStartsWithToday, USER_PREFS_ID } from '../lib/userPrefs'
 import { useMarkProjectSeen } from '../lib/feed'
-import { completedOpenKey, flatRow, isTodayProjectGroup, sectionOfRows, type ListGroup, type ListRow } from '../lib/listGroups'
+import { completedOpenKey, dayOrderRows, dayOrderSiblings, flatRow, isTodayProjectGroup, sectionOfRows, type ListGroup, type ListRow } from '../lib/listGroups'
+import { useDayOrderDrop } from './task-list/useDayOrderDrop'
+import type { TodayListDrop } from './task-list/useListDrag'
 import { moveTaskBy, taskStepEdges, type Step } from '../lib/move'
 import type { ViewPlacement } from '../lib/viewOrder'
 import type { OrderHost } from '../lib/viewOrderMove'
@@ -151,9 +153,21 @@ function useTickedRows(rows: ListRow[], taskMap: Map<string, Task>, isReadOnly: 
 
 /** With the Completed group on (project-completed-section), sections offer no "n completed" of their own. */
 const NO_DONE: Map<string, Task[]> = new Map()
+const NO_TICKED: ReadonlySet<string> = new Set()
 
-/** The personal order for a label page or Today grouped by Project. */
-function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], board: boolean, today: boolean, nest: boolean, taskMap: Map<string, Task>) {
+/** The day order's page (day-manual-order): Today under a grouping other than Project, or Upcoming. */
+interface DayOrderPage { page: 'today' | 'upcoming'; parts: boolean; ticked: ReadonlySet<string> }
+
+/** The day order Today (under any grouping but Project) and Upcoming share, and the rows it places. */
+function useDayOrderPage(route: ListRoute, groupBy: string | undefined, parts: boolean, ticked: ReadonlySet<string>, groups: readonly ListGroup[]) {
+  const page = route.view === 'upcoming' ? 'upcoming' as const : route.view === 'today' && groupBy !== 'project' ? 'today' as const : null
+  const dayOrder = useMemo<DayOrderPage | null>(() => (page ? { page, parts, ticked } : null), [page, parts, ticked])
+  const dayOrderIds = useMemo(() => (page ? new Set(dayOrderRows(groups).map((r) => r.task.id)) : undefined), [page, groups])
+  return { dayOrder, dayOrderIds }
+}
+
+/** The personal order for a label page, Today grouped by Project (`today`), or the day order of Today and Upcoming (`day`). */
+function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], board: boolean, today: boolean, nest: boolean, taskMap: Map<string, Task>, day: DayOrderPage | null) {
   // State, not a ref: the chunk can land after a row menu opened, and the menu then renders
   // again with the contextual moves.
   const [todayModule, setTodayModule] = useState<typeof TodayDrop>()
@@ -164,31 +178,34 @@ function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], boa
       })
     }
   }, [today, todayModule])
+  const page = day?.page
   const host = useMemo<OrderHost | null>(() => route.view === 'label' ? { entity: 'label', id: route.id }
-    : today ? { entity: 'user_prefs', id: USER_PREFS_ID } : null, [route, today])
-  const orderRows = useMemo(() => today ? groups.filter(isTodayProjectGroup).flatMap((g) => g.rows.filter((r) => r.depth === 0)) : rows, [today, groups, rows])
+    : today ? { entity: 'user_prefs', id: USER_PREFS_ID, page: 'today' } : page ? { entity: 'user_prefs', id: USER_PREFS_ID, page } : null, [route, today, page])
+  const orderRows = useMemo(() => today ? groups.filter(isTodayProjectGroup).flatMap((g) => g.rows.filter((r) => r.depth === 0)) : page ? dayOrderRows(groups) : rows, [today, page, groups, rows])
   const latest = useRef({ rows: orderRows, groups, taskMap })
   latest.current = { rows: orderRows, groups, taskMap }
   const memberships = useMembershipMap()
+  const dayDrop = useDayOrderDrop(page ? host : null, !!day?.parts, day?.ticked ?? NO_TICKED, latest, memberships)
   const groupOf = useMemo(() => new Map(groups.flatMap((g) => g.rows.map((r) => [r.task.id, g.key] as const))), [groups])
   const reorder = useCallback((id: string, at: ViewPlacement) => {
     if (host) act(reorderInView(host, latest.current.rows.map((r) => r.task), id, at))
   }, [host])
   const siblingsOf = useCallback((id: string) => {
+    if (page) return dayOrderSiblings(latest.current.groups, id)
     const group = latest.current.groups.find((g) => g.rows.some((r) => r.task.id === id))
     if (!group || (today && (!isTodayProjectGroup(group) || !canEditTasks(roleOf(group.project, memberships))))) return []
     return group.rows.filter((r) => !today || (r.depth === 0 && !r.task.completed_at)).map((r) => r.task)
-  }, [today, memberships])
+  }, [today, page, memberships])
   const step = useCallback((id: string, how: Step) => {
     if (!host) return Promise.resolve(false)
     return stepInView(host, latest.current.rows.map((r) => r.task), siblingsOf(id), id, how)
   }, [host, siblingsOf])
   const edges = useCallback<ListReorder['edges']>(async (id) => {
-    if (!today) return { first: false, last: false }
+    if (!today && !page) return { first: false, last: false }
     const siblings = siblingsOf(id)
     const i = siblings.findIndex((task) => task.id === id)
     return i < 0 ? null : { first: i === 0, last: i === siblings.length - 1 }
-  }, [today, siblingsOf])
+  }, [today, page, siblingsOf])
   // Grouped by Project in the List layout (view-project-drops D1): a drop in another project's group moves the task there.
   const byProject = !board && groups.some((g) => g.project)
   const across = useMemo(() => {
@@ -207,18 +224,19 @@ function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], boa
       },
     }
   }, [host, today, byProject, memberships])
-  const todayDrop = useMemo(() => {
+  const projectDrop = useMemo(() => {
     if (!host || !today) return undefined
     const move = async (id: string, drop: import('../lib/viewOrderMove').GroupDrop) =>
       todayModule?.applyTodayDrop(host, latest.current.rows.map((r) => r.task), latest.current.groups, id, drop)
     return {
       resolve: (task: Task, target: string | null, y: number, gesture: import('./task-list/projectGroupPlacement').DragDepth) =>
         todayModule?.todayGroupDrop(latest.current.groups, memberships, nest, task, target, y, gesture, latest.current.taskMap) ?? null,
-      move,
+      move: (id: string, drop: TodayListDrop) => ('kind' in drop ? Promise.resolve(undefined) : move(id, drop)),
       contextActions: (task: Task) => nest ? todayModule?.contextualMoveItems(task, latest.current.groups, memberships, latest.current.taskMap, move) ?? [] : [],
       canEdit: (group: ListGroup) => isTodayProjectGroup(group) && canEditTasks(roleOf(group.project, memberships)),
     }
   }, [host, today, memberships, nest, todayModule])
+  const todayDrop = projectDrop ?? dayDrop
   return useMemo(() => (host ? { reorder, step, edges, groupOf, across, todayDrop } : null), [host, reorder, step, edges, groupOf, across, todayDrop])
 }
 
@@ -316,8 +334,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // The checkbox's completion path, defined below; the board's Completed column completes through it.
   const toggleCompleteRef = useRef<(id: string, completed: boolean) => Promise<void>>(async () => {})
   const { toggleSection, moveToSection } = useBoardMoves(projectId, collapsedSections, sectionMap, toggleCompleteRef)
-  // Manual ordering (manual-ordering): projects (editors and above) and the Inbox by positions; a label page by its own order (view-manual-order).
-  const projectManual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox', ownOrder = useOwnOrder(route, rows, upcomingCal.groups, board, route.view === 'today' && m.display?.groupBy === 'project', m.nested, taskMap), manual = projectManual || !!ownOrder, listReorder = useListReorder(manual, ownOrder, m.listDisplay.onReorder, useListAdd(projectManual && m.treeView && !board, ui, m.toggleCollapsed))
+  // Manual ordering (manual-ordering): projects (editors and above) and the Inbox by positions; a label page by its own order (view-manual-order); Today and Upcoming by the day order (day-manual-order).
+  const { dayOrder, dayOrderIds } = useDayOrderPage(route, m.display?.groupBy, m.dayParts, selection.ticked, upcomingCal.groups), projectManual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox', ownOrder = useOwnOrder(route, rows, upcomingCal.groups, board, route.view === 'today' && m.display?.groupBy === 'project', m.nested, taskMap, dayOrder), manual = projectManual || !!ownOrder, listReorder = useListReorder(manual, ownOrder, m.listDisplay.onReorder, useListAdd(projectManual && m.treeView && !board, ui, m.toggleCollapsed))
   const sectionOfRow = useMemo(() => sectionOfRows(board, dataColumns, upcomingCal.groups), [board, dataColumns, upcomingCal.groups])
   const drag = useListDrag({ manual, onReorder: ownOrder ? undefined : m.listDisplay.onReorder, source: { rows, groups: upcomingCal.groups, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked, onHold: (task) => { if (!contextIds.has(task.id)) holdSelect(task.id, selection, setSelectMode) }, openRowMenu: rowMenu.open, reorder: ownOrder?.reorder, groupOf: ownOrder?.groupOf, across: ownOrder?.across, readOnly: isReadOnly, today: ownOrder?.todayDrop }, moveToSection, onDropped: setSelectedId, onDragStart: rowMenu.dismiss })
   // The view supplies defaults; attributes typed in the quick-add line override them.
@@ -386,7 +404,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const { edgeOf, boardGroups, queryControl: queryFilter, queryHost, cardNotes } = useListExtras(board, m.queryFilter, projectId ? { mode: viewMode, onChoose: chooseViewMode } : null, projectId, m.currentProject?.name) // Colour by on boards, Upcoming's and each project's query filter (calendar-clarity, project-query-filter)
   const renderRow = useRowRenderer({
     view: route.view, labelId: route.view === 'label' ? route.id : undefined, userId, projectMap: m.projectMap, labelMap: m.labelMap, memberMap: m.memberMap, selectedId, progress: m.progress, blocked: m.blocked, flow: m.flow,
-    habits: m.habits, isReadOnly, board, manual, ownOrder: !!ownOrder, treeView: m.treeView || m.nested, dropAt: drag.dropAt, draggingId: drag.draggingId, ticked: selection.ticked,
+    habits: m.habits, isReadOnly, board, manual, ownOrder: !!ownOrder, dayOrderIds, treeView: m.treeView || m.nested, dropAt: drag.dropAt, draggingId: drag.draggingId, ticked: selection.ticked,
     showCheckbox: selectMode || (fine && selection.ticked.size > 0), selectMode, fieldColumns: m.fieldColumns, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
     timeColumn: m.timeColumn, slotsOff: m.slotsOff, rowLayout: m.display?.rowLayout, actions: rowActions, ...useAddLines(rows, ui), edgeOf, cardNotes,
     inlineId: inline?.id ?? null, renderInline, expandedId, swipe: useListSwipe(listRoot, !fine && selection.ticked.size === 0 && !selectMode && !board, rows.length),

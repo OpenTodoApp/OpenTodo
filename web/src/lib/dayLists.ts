@@ -1,10 +1,10 @@
 // The Today, Upcoming and project lists as pure functions (OpenSpec change
 // `display-mode`, design D3): the list screen (TaskListView) and the display
 // (app/display) both call these, so a display can never disagree with the list.
-import { addDaysISO, currentDayStart, logicalDay } from './dates'
+import { addDaysISO, compareDue, currentDayStart, localDueOf, logicalDay } from './dates'
 import { blockedMap } from './dependencies'
 import { placedPart } from './dayParts'
-import { compareDueThenPriority } from './ordering'
+import { compareByPosition, compareDueThenPriority } from './ordering'
 import type { Project, Task } from './types'
 import { inToday, inUpcoming, overdueInToday, upcomingDate } from './views'
 
@@ -68,6 +68,29 @@ export interface TodayGroups {
   evening: Task[]
   /** Blocked tasks (task-dependencies D7), kept apart at the end. */
   blocked: Task[]
+}
+
+/** Each part's place in a day, as Time of day lays them out: no part first (day-manual-order D4). */
+const PART_RANK = { none: 0, morning: 1, afternoon: 2, evening: 3 } as const
+
+/** A task's place in its day while day parts are on: its stored part, else the part of its due time, else none. */
+export function partRank(task: Pick<Task, 'evening' | 'day_part' | 'due'>): number {
+  return PART_RANK[placedPart(task) ?? 'none']
+}
+
+/**
+ * Due date order with the part of the day (day-parts "Part of the day in the due order"):
+ * the date, then the part, then the time and the usual tie-breaks. `desc` reverses the
+ * date, part and time, as Due date descending does, and keeps the tie-breaks ascending.
+ */
+export function compareDueWithParts(desc = false): (a: Task, b: Task) => number {
+  const sign = desc ? -1 : 1
+  return (a, b) => {
+    const da = a.due ? localDueOf(a.due).date : null
+    const db = b.due ? localDueOf(b.due).date : null
+    if (da === null || db === null || da !== db) return (da === null || db === null ? 1 : sign) * compareDue(a.due, b.due) || compareDueThenPriority(a, b)
+    return sign * (partRank(a) - partRank(b) || compareDue(a.due, b.due)) || a.priority - b.priority || compareByPosition(a, b)
+  }
 }
 
 /**

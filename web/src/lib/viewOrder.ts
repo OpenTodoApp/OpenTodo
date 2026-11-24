@@ -34,7 +34,7 @@ export function compareUnplaced(a: OrderTask, b: OrderTask): number {
 }
 
 /** Manual order ascending: placed tasks in the stored order, then the rest by the fallback. */
-export function compareManual(rank: ReadonlyMap<string, number>, unplaced = compareUnplaced): (a: OrderTask, b: OrderTask) => number {
+export function compareManual<T extends OrderTask>(rank: ReadonlyMap<string, number>, unplaced: (a: T, b: T) => number = compareUnplaced): (a: T, b: T) => number {
   return (a, b) => {
     const ra = rank.get(a.id)
     const rb = rank.get(b.id)
@@ -46,7 +46,7 @@ export function compareManual(rank: ReadonlyMap<string, number>, unplaced = comp
 }
 
 /** The page's task ids in manual order ascending, each once. */
-export function manualSequence(tasks: readonly OrderTask[], rank: ReadonlyMap<string, number>, unplaced = compareUnplaced): string[] {
+export function manualSequence<T extends OrderTask>(tasks: readonly T[], rank: ReadonlyMap<string, number>, unplaced: (a: T, b: T) => number = compareUnplaced): string[] {
   const seen = new Set<string>()
   const unique = tasks.filter((task) => !seen.has(task.id) && !!seen.add(task.id))
   return unique.sort(compareManual(rank, unplaced)).map((task) => task.id)

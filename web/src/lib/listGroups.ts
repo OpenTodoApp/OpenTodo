@@ -7,7 +7,7 @@ import { nextWaiting, waitingTimeSensitive } from './closedList'
 import { formatDateHeading, formatTime, type ResolvedDateTime } from './dates'
 import type { Projection } from './occurrences'
 import { inboxTasks, isInboxTask, isPlaced, type InboxParentOf } from './inbox'
-import { assignedToSomeoneElse, groupToday, groupUpcoming, projectOpenList, todayList, upcomingList, upcomingWithToday, withoutArchived } from './dayLists'
+import { assignedToSomeoneElse, compareDueWithParts, groupToday, partRank, groupUpcoming, projectOpenList, todayList, upcomingList, upcomingWithToday, withoutArchived } from './dayLists'
 import { appendTo, groupBy } from './collections'
 import { t } from './i18n'
 import { logbookHeading, type LogbookGroup } from './logbook'
@@ -92,6 +92,8 @@ export interface ListGroup {
   dropPart?: DayPart | 'none'
   /** Upcoming (upcoming-drag): the day a task dropped anywhere on the group moves to. */
   dropDay?: string
+  /** A group of the day order (day-manual-order D2): its rows take a drop line, and a line in it writes this. */
+  daySlot?: DaySlot
   /** One line under an open folded group's heading (today-closed-list: the Waiting hint). */
   hint?: string
   /**
@@ -109,7 +111,36 @@ export interface ListGroup {
   projectedNote?: string
 }
 
+/**
+ * What a line in a group of Today or Upcoming writes besides the place (day-manual-order D2):
+ * Upcoming's day (`date`; with day parts on, `byPart`: the part of the row beside the line),
+ * Today's part of the day (`part`, null for none), or nothing (Priority, Label, None).
+ */
+export interface DaySlot {
+  date?: string
+  part?: DayPart | null
+  byPart?: true
+}
+
 export const isTodayProjectGroup = (group: ListGroup) => !!group.project || group.key === 'day:inbox'
+
+/** A row the day order moves (day-manual-order D2): a top-level, non-contextual row of a group with a day slot. */
+export const dayOrderMovable = (r: ListRow) => r.depth === 0 && !r.contextual
+
+/** The day order's rows on the page, in display order: the sequence a move is planned against. */
+export function dayOrderRows(groups: readonly ListGroup[]): ListRow[] {
+  return groups.filter((g) => g.daySlot).flatMap((g) => g.rows.filter(dayOrderMovable))
+}
+
+/** The tasks a keyboard step moves among (D2): the task's group; in Upcoming with day parts on, its part of that day. */
+export function dayOrderSiblings(groups: readonly ListGroup[], id: string): Task[] {
+  const group = groups.find((g) => g.daySlot && g.rows.some((r) => r.task.id === id && dayOrderMovable(r)))
+  if (!group) return []
+  const tasks = group.rows.filter((r) => dayOrderMovable(r) && !r.task.completed_at).map((r) => r.task)
+  if (!group.daySlot?.byPart) return tasks
+  const part = partRank(tasks.find((x) => x.id === id)!)
+  return tasks.filter((x) => partRank(x) === part)
+}
 
 /** A waiting task with a time today: its due time in the user's zone, null for a deadline today without one; `passed` once that time is before now (today-waiting-time-passed). */
 export interface WaitingSoon {
@@ -427,9 +458,9 @@ export interface GroupInput {
   todayDisplay?: ListDisplay
   /** Labels, for grouping by label. */
   labels?: readonly Label[]
-  /** A label page's own manual order (view-manual-order): the rank of each placed task. */
+  /** A label page's own manual order (view-manual-order), or Today's and Upcoming's day order (day-manual-order): the rank of each placed task. */
   manualOrder?: ReadonlyMap<string, number>
-  /** Today: the account groups it by part of the day (day-parts D3). */
+  /** Today: the account groups it by part of the day (day-parts D3); Today and Upcoming order a day by part (day-manual-order D4). */
   dayParts?: boolean
   /**
    * Today with a limit (today-closed-list D1, D2): the limit, and the tasks waiting for
@@ -476,9 +507,21 @@ function nodeRow(p: GroupInput): (n: TreeNode<Task>) => ListRow {
   })
 }
 
-/** Today's and Upcoming's chosen order (builtin-view-options D2), or null for their own: due, then priority. */
-function dayOrder(p: GroupInput, d: ListDisplay | undefined): ((a: Task, b: Task) => number) | null {
-  return !d || (d.sortBy === 'due' && d.sortDir === 'asc') ? null : displayOrder(d, undefined, p.projects, p.fields, p.score)
+/**
+ * Today's and Upcoming's chosen order (builtin-view-options D2), or null for their own: due, then
+ * priority. While day parts are on, Due date ranks a day's tasks by part (day-manual-order D4).
+ * Manual order is the shared day order, the rest by Due date (D1); `rank` absent, Today's default.
+ */
+function dayOrder(p: GroupInput, d: ListDisplay | undefined, rank?: ReadonlyMap<string, number>): ((a: Task, b: Task) => number) | null {
+  const parts = !!p.dayParts
+  if (d?.sortBy === 'position' && rank) {
+    const asc = compareManual(rank, parts ? compareDueWithParts() : compareDueThenPriority)
+    return d.sortDir === 'desc' ? (a, b) => asc(b, a) : asc
+  }
+  if (d && d.sortBy !== 'due' && d.sortBy !== 'position') return displayOrder(d, undefined, p.projects, p.fields, p.score)
+  const desc = d?.sortBy === 'due' && d.sortDir === 'desc'
+  if (parts) return compareDueWithParts(desc)
+  return desc ? displayOrder(d, undefined) : null
 }
 
 /**
@@ -663,9 +706,12 @@ function flatGroups(p: GroupInput): ListGroup[] {
     // Start with Today (upcoming-start-with-today D2): Today's own groups, then Tomorrow onwards.
     const lead = p.upcomingToday ? p.tasks.filter((x) => inToday(x, p.today)) : []
     const ahead = lead.length ? p.tasks.filter((x) => !inToday(x, p.today)) : p.tasks
-    // Upcoming's own order and nesting apply from Tomorrow on (builtin-view-options D4).
-    const order = dayOrder(p, p.display)
-    const days = groupUpcoming(ahead, p.today).map(({ date, tasks: list }): ListGroup => ({ key: date, heading: formatDateHeading(date, p.today, p.resolved), rows: withImplied(dayRows(p, list, order, !!p.display?.subtasks, row), { date }), dropDay: date }))
+    // Upcoming's own order and nesting apply from Tomorrow on (builtin-view-options D4);
+    // with day parts on, Manual order keeps a day in part order too (day-manual-order D4).
+    const chosen = dayOrder(p, p.display, p.manualOrder ?? new Map())
+    const order = chosen && p.dayParts && p.display?.sortBy === 'position' ? (a: Task, b: Task) => partRank(a) - partRank(b) || chosen(a, b) : chosen
+    const slot = (date: string): DaySlot => (p.dayParts ? { date, byPart: true } : { date })
+    const days = groupUpcoming(ahead, p.today).map(({ date, tasks: list }): ListGroup => ({ key: date, heading: formatDateHeading(date, p.today, p.resolved), rows: withImplied(dayRows(p, list, order, !!p.display?.subtasks, row), { date }), dropDay: date, daySlot: slot(date) }))
     // Today's day groups take a drop for today (upcoming-drag); Earlier, Blocked and Waiting do not.
     const onToday = new Set(['today', 'morning', 'afternoon', 'evening'])
     const leadGroups = p.upcomingToday ? todayGroups({ ...p, tasks: lead, doneToday: undefined }, row, true).map((g) => (onToday.has(g.key) ? { ...g, dropDay: p.today } : g)) : []
@@ -711,23 +757,25 @@ function todayGroups(p: GroupInput, row: (task: Task) => ListRow, inUpcoming = f
   // Today's display options (builtin-view-options D3), also for Upcoming's Today groups (D4):
   // the order applies within Earlier, the day's groups and Blocked.
   const d = inUpcoming ? p.todayDisplay : p.display
-  const manual = d?.sortBy === 'position'
-  const order = manual ? null : dayOrder(p, d)
-  const rows = (list: Task[]) => dayRows(p, list, order, !!d?.subtasks, row)
+  // Manual order is the day order (day-manual-order D1) in the day's own groups; Earlier and Blocked keep Today's default.
+  const order = dayOrder(p, d, p.manualOrder ?? new Map())
+  const outer = d?.sortBy === 'position' ? dayOrder(p, undefined) : order
+  const rows = (list: Task[]) => dayRows(p, list, outer, !!d?.subtasks, row)
   const context = !inUpcoming && d?.subtasks ? todayContextChildren(p) : undefined
   const dayTree = (list: Task[]) => dayRows(p, list, order, !!d?.subtasks, row, context)
   const g: ListGroup[] = []
   // In Upcoming the part headings take no drops: a drop there would change the part and leave the date (D3).
-  const drop = (part: DayPart | 'none') => (parts && !inUpcoming ? { dropPart: part } : {})
+  // In Today a line in a part writes that part (day-manual-order D2).
+  const drop = (part: DayPart | 'none') => (inUpcoming ? {} : {
+    ...(parts ? { dropPart: part } : {}), daySlot: { part: part === 'none' ? null : part },
+  })
   // Earlier and Blocked imply nothing: how late a task is stays visible on its row (calm-rows D3, page-rhythm D5).
   if (earlier.length) g.push({ key: 'earlier', heading: t('Earlier'), rows: rows(earlier) })
   const groupBy = d?.groupBy ?? 'day'
   if (groupBy !== 'day') {
     // Another grouping lays out only the day's own tasks (D3); Earlier, Blocked, Waiting and Done keep their place.
     const own = new Set([...day, ...morning, ...afternoon, ...evening])
-    const rank = manual && !inUpcoming ? compareManual(p.manualOrder ?? new Map(), compareDueThenPriority) : null
-    const projectRows = rank && d ? (list: Task[]) => dayRows(p, list, d.sortDir === 'desc' ? (a, b) => rank(b, a) : rank, !!d.subtasks, row, context) : dayTree
-    g.push(...chosenTodayGroups(p, listed.filter((x) => own.has(x)), groupBy, earlier.length > 0, inUpcoming, projectRows))
+    g.push(...chosenTodayGroups(p, listed.filter((x) => own.has(x)), groupBy, earlier.length > 0, inUpcoming, dayTree))
   } else {
     const others = earlier.length || morning.length || afternoon.length || evening.length
     // With day parts on an empty Today group is left out, unless the list would be empty without it.
@@ -748,6 +796,7 @@ function todayGroups(p: GroupInput, row: (task: Task) => ListRow, inUpcoming = f
  * The day's own tasks under a grouping chosen for Today (builtin-view-options D3): the
  * headings and order of a saved view's grouping, each task once; None is one group, named
  * Today when Earlier is above it. The headings take no drops, and a row shows its part of the day.
+ * Under Project the order host's project drops apply (today-project-drops); the others order within their group.
  */
 function chosenTodayGroups(p: GroupInput, tasks: Task[], groupBy: ListDisplay['groupBy'], afterEarlier: boolean, inUpcoming: boolean, rows: (list: Task[]) => ListRow[]): ListGroup[] {
   const implied: RowImplied = { date: p.today }
@@ -757,10 +806,12 @@ function chosenTodayGroups(p: GroupInput, tasks: Task[], groupBy: ListDisplay['g
       key: `day:${x.key}`, heading: x.heading, rows: withImplied(rows(x.tasks), groupBy === 'project' ? { ...implied, project: true } : implied),
       ...(named(x.key) ? { named: true as const } : {}),
       ...(groupBy === 'project' && named(x.key) ? { project: x.key } : {}),
+      // A line stays within a priority or label group (day-manual-order D2); projects take project drops.
+      ...(groupBy !== 'project' && !inUpcoming ? { daySlot: {} } : {}),
     }))
   }
   if (inUpcoming ? !tasks.length : !tasks.length && afterEarlier) return []
-  return [{ key: 'day:all', heading: afterEarlier || inUpcoming ? t('Today') : null, rows: withImplied(rows(tasks), implied) }]
+  return [{ key: 'day:all', heading: afterEarlier || inUpcoming ? t('Today') : null, rows: withImplied(rows(tasks), implied), ...(inUpcoming ? {} : { daySlot: {} }) }]
 }
 
 /** Today's Waiting for a slot and Done today groups (today-closed-list D1, D6): folded unless opened on this device. */
@@ -812,6 +863,10 @@ export const sameRow = (a: ListRow, b: ListRow): boolean =>
 
 const sameValue = (a: unknown, b: unknown): boolean =>
   Object.is(a, b) || (Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => Object.is(v, b[i])))
+  || (isFlat(a) && isFlat(b) && Object.keys(a).length === Object.keys(b).length && Object.keys(a).every((k) => Object.is(a[k], b[k])))
+
+/** A small record such as a group's day slot, compared field by field. */
+const isFlat = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v) && Object.getPrototypeOf(v) === Object.prototype
 
 /**
  * The groups of a new derivation with everything that did not change kept from the

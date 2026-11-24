@@ -1,6 +1,6 @@
 ---
 title: Arrange Today, Upcoming and the Inbox
-summary: Group Today by project, priority or label, order Upcoming's days or the Inbox your way, nest subtasks under their parent, and Reset back to the default.
+summary: Group Today by project, priority or label, order Today, Upcoming's days or the Inbox your way, nest subtasks under their parent, and Reset back to the default.
 audience: user
 section: Guides
 specs: [builtin-view-options, list-display-options]
@@ -16,7 +16,7 @@ order: 22
 
 | View | Group by | Order by | Nest subtasks |
 | --- | --- | --- | --- |
-| **Today** | **Time of day**, Project, Priority, Label or None | **Due date**, Priority, Created, Deadline, Title or a number or date [custom field](custom-fields.md) | Off |
+| **Today** | **Time of day**, Project, Priority, Label or None | **Due date**, Priority, Created, Deadline, Title, Manual order or a number or date [custom field](custom-fields.md) | Off |
 | **Upcoming** | One group per day | Within each day, as in Today | Off |
 | **Inbox** | **None**, Due date, Priority or Label | **Manual order**, Priority, Due date, Created, Deadline, Title or [Urgency](urgency-order.md) | Always under their parent |
 
@@ -27,8 +27,12 @@ With **Group by Project**, headers show configured icons, including in saved vie
 ## What stays in place
 
 - **Today:** grouping applies to today's own tasks. **Earlier** stays first with **Move all to today** and **Reschedule…**. **Blocked**, **Waiting for a slot** and **Done today** stay at the end. Grouping preserves [slots](today-limit.md) and shows the [part of the day](day-parts.md) on each row outside Time of day.
-- **Upcoming:** drag between days to reschedule. With [Start with Today](upcoming-with-today.md), Upcoming's options apply from Tomorrow on.
+- **Upcoming:** drag onto another day to reschedule. With [Start with Today](upcoming-with-today.md), Upcoming's options apply from Tomorrow on.
 - **Inbox:** grouping and order apply to top-level tasks. Drag or <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd> switches to **Manual order**. **Process** keeps that order.
+
+## Arrange your day by hand
+
+Today and Upcoming share one **Manual order**: drag a task or press <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd>, and drop it into another day or part of the day. See [Arrange your day by hand](arrange-your-day.md).
 
 ## Nest subtasks
 

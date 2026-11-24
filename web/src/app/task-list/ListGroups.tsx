@@ -57,6 +57,8 @@ export interface RowContext {
   manual: boolean
   /** The list has its own order (a label page, view-manual-order): every row can be picked up to place it. */
   ownOrder?: boolean
+  /** Today and Upcoming (day-manual-order D2): the rows of the day order, which take a drop line and can be placed, also by a viewer. */
+  dayOrderIds?: ReadonlySet<string>
   treeView: boolean
   dropAt: DropAt | null
   draggingId: string | null
@@ -196,8 +198,8 @@ export function rowRenderer(c: RowContext): RenderRow {
           timeColumn={c.timeColumn}
           slotsOff={c.slotsOff}
           layout={c.rowLayout}
-          draggable={!ghost && !editing && (!r.contextual || !!c.ownOrder) && ((c.view === 'label' && c.ownOrder) || !c.isReadOnly(r.task))}
-          reorderable={!r.contextual && !ghost && c.manual && (c.view !== 'today' || (!!r.implied?.project && !c.isReadOnly(r.task)))}
+          draggable={!ghost && !editing && (!r.contextual || !!c.ownOrder) && ((c.view === 'label' && c.ownOrder) || !!c.dayOrderIds?.has(r.task.id) || !c.isReadOnly(r.task))}
+          reorderable={!r.contextual && !ghost && c.manual && ((c.view !== 'today' && c.view !== 'upcoming') || !!c.dayOrderIds?.has(r.task.id) || (!!r.implied?.project && !c.isReadOnly(r.task)))}
           collapsible={tree}
           expandable={!c.board && !ghost}
           // No row shows its details while a drag runs, so drop zones are one-line rows (row-expand D4).

@@ -1129,10 +1129,14 @@ export interface UserPrefsFields {
   today_group_by?: string
   /**
    * Today's order (builtin-view-options D2): "due", "priority", "created",
-   * "deadline", "title" or "field:<id>"; empty or unknown reads as "due".
+   * "deadline", "title", "position" (the day order) or "field:<id>"; empty or
+   * unknown reads as "due".
    */
   today_sort_by?: string
-  /** Task IDs placed by hand in Today's project groups, in personal order. */
+  /**
+   * Task IDs placed by hand in the day order Today and Upcoming share
+   * (day-manual-order), in personal order; whole-list last-writer-wins.
+   */
   today_manual_order?: string[]
   /** Today's order direction: "asc" or "desc"; empty or unknown reads as "asc". */
   today_sort_dir?: string
@@ -1149,7 +1153,8 @@ export interface UserPrefsFields {
   today_subtasks?: string
   /**
    * Upcoming's order within each day (builtin-view-options D2, D4): the
-   * same values as today_sort_by; empty or unknown reads as "due".
+   * same values as today_sort_by ("position": the shared day order); empty
+   * or unknown reads as "due".
    */
   upcoming_sort_by?: string
   /** Upcoming's order direction: "asc" or "desc"; empty or unknown reads as "asc". */

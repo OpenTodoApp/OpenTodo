@@ -3,7 +3,9 @@
 // view, applied locally first, so a move works offline, converges as one
 // last-writer-wins value and can be undone. A plain reorder writes no task row;
 // a drop across project groups or onto a task (view-project-drops) moves the
-// task in the same batch.
+// task in the same batch. Today and Upcoming share the user's day order
+// (day-manual-order D1); a line in another day or part writes the date or the
+// part in the same batch (D2).
 import { db } from './db'
 import { getDeviceId } from './ops'
 import { t } from './i18n'
@@ -20,18 +22,30 @@ import { isDescendant } from './tree'
 import { compareDueThenPriority, planMove as planPosition, positionAtEnd, type Placement } from './ordering'
 import { keepWorkspaceFor } from './workspaces'
 import type { Change } from './ops'
+import { compareDueWithParts } from './dayLists'
+import { dayPartFields, dayPartName, dayPartOf, dayPartsOn, type DayPart } from './dayParts'
+import { dayDropPatch } from './dayDrop'
+import { refusedSeries, seriesDateRefusal } from './seriesDates'
 
-/** The row whose personal order the page shows. */
+/** The row whose personal order the page shows; the day order's page names the sort a first move switches. */
 export interface OrderHost {
   entity: 'label' | 'view' | 'user_prefs'
   id: string
+  /** user_prefs: Today (default) or Upcoming, which share the day order (day-manual-order D1). */
+  page?: 'today' | 'upcoming'
 }
 
+type DayPage = NonNullable<OrderHost['page']>
+
+/** The sort fields of the day order's page. */
+const sortFields = (page: DayPage) => ({ by: `${page}_sort_by`, dir: `${page}_sort_dir` })
+
 /** The stored values a row without the fields reads as (the op schema's defaults). */
-const BASE: Record<OrderHost['entity'], Record<string, unknown>> = {
-  label: { manual_order: [], sort_by: '', sort_dir: '' },
-  view: { manual_order: [], sort_by: 'due', sort_dir: 'asc' },
-  user_prefs: { today_manual_order: [], today_sort_by: '', today_sort_dir: '' },
+function baseOf(host: OrderHost): Record<string, unknown> {
+  if (host.entity === 'label') return { manual_order: [], sort_by: '', sort_dir: '' }
+  if (host.entity === 'view') return { manual_order: [], sort_by: 'due', sort_dir: 'asc' }
+  const f = sortFields(host.page ?? 'today')
+  return { today_manual_order: [], [f.by]: '', [f.dir]: '' }
 }
 
 type OrderRow = { manual_order?: string[]; today_manual_order?: UserPrefs['today_manual_order'] }
@@ -50,11 +64,14 @@ function storedOrder(row: OrderRow): string[] {
 /** The order patch that places `moved` next to an anchor (null when nothing changes). */
 async function orderPatch(host: OrderHost, row: OrderRow, tasks: readonly Task[], moved: string, at: ViewPlacement, previousId?: string): Promise<Record<string, unknown> | null> {
   const today = host.entity === 'user_prefs'
-  const shown = today ? listDisplayOf('today', row) : host.entity === 'label' ? listDisplayOf('label', row) : viewOptions(row as View)
+  const page = host.page ?? 'today'
+  const shown = today ? listDisplayOf(page, row) : host.entity === 'label' ? listDisplayOf('label', row) : viewOptions(row as View)
   const manual = shown.sortBy === 'position' && shown.sortDir === 'asc'
   const stored = storedOrder(row).map((id) => today && id === previousId ? moved : id)
   const visible = today && previousId && previousId !== moved ? tasks.map((task) => task.id === previousId ? { ...task, id: moved } : task) : tasks
-  const seq = today && !manual ? [...new Set(visible.map((task) => task.id))] : manualSequence(visible, orderRank(stored), today ? compareDueThenPriority : undefined)
+  // The day order's unplaced tasks follow Due date, by part while day parts are on (day-manual-order D4).
+  const unplaced = dayPartsOn(row as Partial<UserPrefs>) ? compareDueWithParts() : compareDueThenPriority
+  const seq = today && !manual ? [...new Set(visible.map((task) => task.id))] : today ? manualSequence(visible, orderRank(stored), unplaced) : manualSequence(visible, orderRank(stored))
   const anchor = 'before' in at ? at.before : at.after
   if (today && (anchor === moved || !seq.includes(moved) || !seq.includes(anchor))) return null
   // Ids the page does not show now: an open task keeps its place; a deleted, completed or unknown one is dropped.
@@ -78,7 +95,7 @@ async function orderPatch(host: OrderHost, row: OrderRow, tasks: readonly Task[]
   if (!next && manual) return null
   const patch: Record<string, unknown> = {}
   if (next) patch[today ? 'today_manual_order' : 'manual_order'] = next
-  if (!manual) Object.assign(patch, today ? { today_sort_by: 'position', today_sort_dir: 'asc' } : { sort_by: 'position', sort_dir: 'asc' })
+  if (!manual) Object.assign(patch, today ? { [sortFields(page).by]: 'position', [sortFields(page).dir]: 'asc' } : { sort_by: 'position', sort_dir: 'asc' })
   return patch
 }
 
@@ -89,12 +106,69 @@ async function orderPatch(host: OrderHost, row: OrderRow, tasks: readonly Task[]
  */
 export async function moveInViewOrder(host: OrderHost, tasks: readonly Task[], moved: string, at: ViewPlacement): Promise<UndoableResult | null> {
   const row = await hostRow(host)
-  if (!row || (host.entity === 'user_prefs' && listDisplayOf('today', row).groupBy !== 'project')) return null
+  if (!row) return null
   const patch = await orderPatch(host, row, tasks, moved, at)
   if (!patch) return null
   await getDeviceId()
   const label = t('Order changed')
-  const entry = await applyBatch([{ entity: host.entity, entityId: host.id, patch, base: BASE[host.entity] }], { source: 'action', label })
+  const entry = await applyBatch([{ entity: host.entity, entityId: host.id, patch, base: baseOf(host) }], { source: 'action', label })
+  return { entry, label }
+}
+
+/** A line in another group of Today or Upcoming (day-manual-order D2): the place, and the date or part it writes. */
+export interface DayDrop {
+  kind: 'day'
+  at: ViewPlacement
+  /** Upcoming: the line's day, when it is not the task's. */
+  date?: string
+  /** The line's part of the day, when it is not the task's (null: none). */
+  part?: DayPart | null
+}
+
+const movedToPart = (part: DayPart | null) => (part ? t('Moved to {part}', { part: dayPartName(part) }) : t('Moved to Any time'))
+
+/**
+ * Place `moved` at a line of Today or Upcoming and give it the line's day or part, in one
+ * batch with one Undo (day-manual-order D2): the date as a drop on that day writes it
+ * (time, zone and span kept), the part as `dayPartFields` (any due time kept). The order
+ * is personal, so a viewer may place a task; the date and the part need the right to edit
+ * it. A series' date already taken by one of its records is refused, as in a day drop.
+ * Null when nothing changes or the drop is refused.
+ */
+export async function dropInDay(host: OrderHost, tasks: readonly Task[], moved: string, drop: DayDrop, today = logicalToday()): Promise<UndoableResult | null> {
+  const row = await hostRow(host)
+  if (!row || host.entity !== 'user_prefs') return null
+  const { tasks: picked, all } = await readTicked([moved])
+  const task = picked[0]
+  if (!task || task.completed_at) return null
+  const patch: Record<string, unknown> = {}
+  let label = t('Order changed')
+  if (drop.part !== undefined) {
+    const fields = dayPartFields(drop.part)
+    if (dayPartOf(task) !== drop.part || (task.day_part ?? null) !== fields.day_part) {
+      Object.assign(patch, fields)
+      label = movedToPart(drop.part)
+    }
+  }
+  const dated = drop.date ? dayDropPatch(task, drop.date, today) : null
+  if (dated) {
+    Object.assign(patch, dated)
+    label = t('Date changed')
+  }
+  const memberships = await membershipMap()
+  const writes = Object.keys(patch).length > 0
+  if (writes && !canEditTasks(roleOf(task.project_id ?? null, memberships))) return null
+  const taskChanges: Change[] = writes ? [{ entity: 'task', entityId: moved, patch }] : []
+  if (dated && !refusedSeries(taskChanges, all).changes.length) {
+    return { entry: null, label: await seriesDateRefusal(moved, dated.due) ?? t('Lists sorted by date or priority keep their order.') }
+  }
+  // A task that changes group is pinned at the line even where the sequence already agrees.
+  const order = await orderPatch(host, row, tasks, moved, drop.at, writes ? moved : undefined)
+  if (!order && !writes) return null
+  await getDeviceId()
+  const proposed = writes ? await toProposed(taskChanges, memberships) : []
+  const batch = order ? [...proposed, { entity: host.entity, entityId: host.id, patch: order, base: baseOf(host) }] : proposed
+  const entry = await applyBatch(batch, { source: 'action', label })
   return { entry, label }
 }
 
@@ -195,7 +269,7 @@ export async function dropInViewGroup(host: OrderHost, tasks: readonly Task[], m
   const label = contextDay && parent === null ? t('Scheduled for today')
     : from !== to ? t('Moved to {target}', { target: drop.projectName }) : t('Order changed')
   const proposed = await toProposed(taskChanges, memberships)
-  const batch = order ? [...proposed, { entity: host.entity, entityId: host.id, patch: order, base: BASE[host.entity] }] : proposed
+  const batch = order ? [...proposed, { entity: host.entity, entityId: host.id, patch: order, base: baseOf(host) }] : proposed
   const entry = await applyBatch(batch, { source: 'action', label })
   return { entry, label, id }
 }

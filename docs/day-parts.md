@@ -26,7 +26,7 @@ Turning day parts off puts Today back as it was. Nothing is changed on your task
 ## Give a task a part
 
 - In the task's **When** editor, in **Do on**'s row (see [When on that day](#when-on-that-day)).
-- Drag a task onto the **Morning**, **Afternoon**, **This Evening** or **Today** heading in Today.
+- Drag a task onto the **Morning**, **Afternoon**, **This Evening** or **Today** heading in Today, or [between two tasks](arrange-your-day.md) of another part.
 - The task's **Actions** menu has **Day part**, for one task or a selection.
 - The command palette has **Move to Morning**, **Afternoon**, **Evening** and **Any time** for the selected task.
 

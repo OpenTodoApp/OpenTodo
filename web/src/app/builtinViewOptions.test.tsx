@@ -75,7 +75,7 @@ describe('Today', () => {
     await waitFor(() => titles().length === 4, 'rows')
     await openPanel()
     expect(options('Group by')).toEqual(['Time of day', 'Project', 'Priority', 'Label', 'None'])
-    expect(options('Order by')).toEqual(['Due date', 'Priority', 'Created', 'Deadline', 'Title'])
+    expect(options('Order by')).toEqual(['Due date', 'Priority', 'Created', 'Deadline', 'Title', 'Manual order'])
     expect(panel()!.querySelector<HTMLSelectElement>('select[aria-label="Group by"]')!.value).toBe('day')
     expect(panel()!.querySelector('[data-display-subtasks] [role="switch"]')!.getAttribute('aria-checked')).toBe('false')
     expect(panel()!.querySelector('[data-display-layout]')).toBeNull()
@@ -100,7 +100,7 @@ describe('Today', () => {
     expect(await prefs()).toMatchObject({ today_group_by: '', today_sort_by: '' })
   })
 
-  it('r g p then r g t: by priority, then by time of day, with the panel\'s words; r o m does nothing', async () => {
+  it('r g p then r g t: by priority, then by time of day, with the panel\'s words; r o m is Manual order (day-manual-order)', async () => {
     await createTask({ title: 'Urgent', due: { date: TODAY }, priority: 1 })
     await createTask({ title: 'Someday soon', due: { date: TODAY }, priority: 4 })
     await show('today')
@@ -113,7 +113,7 @@ describe('Today', () => {
     expect(bulkToast()?.label).toBe('Group by: Time of day')
     await waitFor(async () => (await prefs()).today_group_by === 'day', 'stored')
     await keys('r o m')
-    expect((await prefs()).today_sort_by ?? '').toBe('')
+    await waitFor(async () => (await prefs()).today_sort_by === 'position', 'manual order')
   })
 
   it('Nest subtasks lists a subtask under its parent, announced with its level, and Left folds it', async () => {
@@ -142,7 +142,7 @@ describe('Upcoming', () => {
     await waitFor(() => titles().length === 2, 'rows')
     await openPanel()
     expect(panel()!.querySelector('select[aria-label="Group by"]')).toBeNull()
-    expect(options('Order by')).toEqual(['Due date', 'Priority', 'Created', 'Deadline', 'Title'])
+    expect(options('Order by')).toEqual(['Due date', 'Priority', 'Created', 'Deadline', 'Title', 'Manual order'])
     expect(panel()!.querySelector('[data-display-subtasks]')).not.toBeNull()
     await key(document.body, 'Escape')
     const before = titles().join()
