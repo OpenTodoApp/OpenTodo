@@ -54,6 +54,8 @@ import java.util.concurrent.Executors
 /** The app: the configured server in a full-screen web view, with the bridge on that origin only. */
 class MainActivity : AppCompatActivity(), Bridge.Host {
     private lateinit var web: WebView
+    /** The web view's text zoom before any page applied the font scale itself (text-size D3). */
+    private var systemTextZoom = 100
     private lateinit var errorView: View
     private lateinit var errorText: TextView
     private lateinit var siteBar: View
@@ -288,10 +290,10 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
                 // it off; the on-screen +/- buttons stay hidden.
                 builtInZoomControls = true
                 displayZoomControls = false
-                // text-size D3: the page scales its own root font size by the system font
-                // scale it gets through the bridge, so everything reflows; the web view
-                // must not enlarge the text a second time.
-                textZoom = 100
+                // text-size D3: the web view's own text zoom (the system font scale) stays until
+                // the page says it applies the scale itself (textScaleApplied), so an older
+                // server's web app keeps the system text size.
+                systemTextZoom = textZoom
                 userAgentString = "$userAgentString OpenTodoAndroid/${BuildConfig.VERSION_NAME}"
             }
             web.webViewClient = Client()
@@ -473,6 +475,8 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         }
 
         override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
+            // Every page starts with the web view's own text zoom until it applies the scale (text-size D3).
+            view.settings.textZoom = Bridge.TextZoom.of(applied = false, system = systemTextZoom)
             mainFrameFailed = false
             errorView.visibility = View.GONE
             if (url == null) return
@@ -834,6 +838,11 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
      */
     override fun painted() {
         if (!mainFrameFailed) reveal()
+    }
+
+    /** text-size D3: the page scales its root by the system font scale, so the web view must not enlarge text again. */
+    override fun textScaleApplied() {
+        web.settings.textZoom = Bridge.TextZoom.of(applied = true, system = systemTextZoom)
     }
 
     /** One link screen at a time; a device where nothing answers the link has no distributor to ask. */

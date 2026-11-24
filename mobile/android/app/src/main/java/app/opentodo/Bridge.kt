@@ -63,6 +63,8 @@ class Bridge(
         fun pushLink(done: (Boolean, String?) -> Unit) = done(false, null)
         /** shell-reveal-on-paint D2: the page has drawn its first frame; the launch screen goes (main thread). */
         fun painted() {}
+        /** text-size D3: the page applies `textScale` to its root, so the web view's text zoom goes to 100 (main thread). */
+        fun textScaleApplied() {}
     }
 
     private val main = Handler(Looper.getMainLooper())
@@ -127,6 +129,7 @@ class Bridge(
             "backgroundDone" -> if (host == null) backgroundDone?.invoke()
             // shell-reveal-on-paint D2: only the visible app has a launch screen to end.
             "painted" -> if (host != null) main.post { host.painted() }
+            "textScaleApplied" -> if (host != null) main.post { host.textScaleApplied() }
             // shell-push D5: only the visible app may start the distributor's link screen (host).
             "pushSubscribe" -> args.optString(0).let { vapid -> main.post { Push.subscribe(context, host, vapid) { answer(it) } } }
             "pushState" -> answer(Push.stateJson(context))
@@ -167,6 +170,11 @@ class Bridge(
         }
         if (Geofences.fine(context)) askBackground()
         else h.requestLocationPermission { if (Geofences.fine(context)) askBackground() else finish() }
+    }
+
+    /** The web view's text zoom (text-size D3): the system's until the page applies the font scale itself. */
+    object TextZoom {
+        fun of(applied: Boolean, system: Int): Int = if (applied) 100 else system
     }
 
     companion object {
@@ -261,6 +269,7 @@ class Bridge(
                 openAlarmSettings: function () { send('openAlarmSettings', []) },
                 backgroundDone: function () { send('backgroundDone', []) },
                 painted: function () { send('painted', []) },
+                textScaleApplied: function () { send('textScaleApplied', []) },
                 pushSubscribe: function (key) { return call('pushSubscribe', [String(key)]) },
                 pushState: function () { return call('pushState', []) },
                 pushUnsubscribe: function () { send('pushUnsubscribe', []) }

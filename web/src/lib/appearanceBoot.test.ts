@@ -2,7 +2,7 @@
 // The boot script public/appearance.js (theming D7, accent-colour D4, task 3.2): it
 // applies the cached appearance before the app module runs, a custom accent from
 // its cached derived values without deriving, and ignores a malformed cache.
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import script from '../../public/appearance.js?raw'
 import { themeCss, type AppliedTheme } from './theme/apply'
 import { deriveTheme } from './theme/derive'
@@ -93,6 +93,28 @@ describe('appearance.js text size', () => {
     root().removeAttribute('style')
     boot()
     expect(prop('--ot-text-scale')).toBe('1.125')
+  })
+
+  it('tells the Android shell the page applies the scale, so its web view stops its own text zoom', () => {
+    let applied = 0
+    setShell({ platform: 'android', textScale: 1.3, textScaleApplied: () => { applied++ } })
+    boot()
+    expect(applied).toBe(1)
+    expect(prop('--ot-text-scale')).toBe('1.3')
+  })
+
+  it("reads the iOS shell's Dynamic Type body size from a probe it removes again", () => {
+    setShell({ platform: 'ios' })
+    const real = window.getComputedStyle.bind(window)
+    const spy = vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element, p?: string | null) =>
+      (el as HTMLElement).style?.cssText?.includes('-apple-system-body') ? ({ fontSize: '21.25px' } as CSSStyleDeclaration) : real(el, p))
+    try {
+      boot()
+      expect(prop('--ot-text-scale')).toBe('1.25')
+      expect(document.documentElement.querySelector(':scope > span')).toBeNull()
+    } finally {
+      spy.mockRestore()
+    }
   })
 })
 

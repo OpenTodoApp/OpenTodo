@@ -2,7 +2,7 @@
 // Text size per device (text-size, GitHub issue 1414): Default follows the device,
 // the steps override it, the choice stays on the device and lands on the root.
 import { act } from 'react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from '../ui/test-utils'
 import { applyTextScale, clampScale, setTextSize, systemTextScale, TEXT_SIZE_KEY, textScale, useTextScale } from './textSize'
 
@@ -72,6 +72,30 @@ describe('the device setting', () => {
     await act(async () => { setTextSize('default') })
     expect(localStorage.getItem(TEXT_SIZE_KEY)).toBeNull()
     expect(scale()).toBe('')
+    await r.unmount()
+  })
+
+  it('keeps the Dynamic Type scale the boot script applied on the first render in the iOS app', async () => {
+    setShell({ bridge: 1, platform: 'ios', app: '1.0.0', capabilities: [] })
+    const real = window.getComputedStyle.bind(window)
+    const spy = vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element, p?: string | null) =>
+      (el as HTMLElement).style?.cssText?.includes('-apple-system-body') ? ({ fontSize: '25.5px' } as CSSStyleDeclaration) : real(el, p))
+    try {
+      document.documentElement.style.setProperty('--ot-text-scale', '1.5')
+      const r = await render(<Harness />)
+      expect(scale()).toBe('1.5')
+      await r.unmount()
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it('tells the Android shell that the page applies the font scale', async () => {
+    const applied = vi.fn()
+    setShell({ bridge: 1, platform: 'android', app: '1.0.0', capabilities: [], textScale: 1.3, textScaleApplied: applied })
+    const r = await render(<Harness />)
+    expect(applied).toHaveBeenCalled()
+    expect(scale()).toBe('1.3')
     await r.unmount()
   })
 

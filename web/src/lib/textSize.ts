@@ -6,6 +6,7 @@
 // public/appearance.js applies the same before the first frame; keep the two in step.
 import { useEffect, useSyncExternalStore } from 'react'
 import { createStoredValue } from './deviceStorage'
+import { resettable } from './moduleState'
 import { shell } from './shell'
 
 export const TEXT_SIZE_KEY = 'opentodo.textSize'
@@ -61,9 +62,16 @@ function iosProbe(): HTMLElement | null {
   return el
 }
 
+// Made on the first read, so the first render already reads Dynamic Type and keeps the
+// scale appearance.js put on the root instead of writing 1 until the subscription.
 let probe: HTMLElement | null | undefined
-const subscribeSystem = (listener: () => void) => {
+resettable('textSizeProbe', () => { probe?.remove(); probe = undefined })
+const ensureProbe = () => {
   if (probe === undefined) probe = typeof document === 'undefined' ? null : iosProbe()
+  return probe
+}
+const subscribeSystem = (listener: () => void) => {
+  ensureProbe()
   const observer = probe && typeof ResizeObserver === 'function' ? new ResizeObserver(listener) : null
   if (probe && observer) observer.observe(probe)
   document.addEventListener('visibilitychange', listener)
@@ -72,7 +80,7 @@ const subscribeSystem = (listener: () => void) => {
     document.removeEventListener('visibilitychange', listener)
   }
 }
-const readSystem = () => systemTextScale(probe ?? null)
+const readSystem = () => systemTextScale(ensureProbe())
 
 /** Keeps the root font size in step with this device's text size and the system's. */
 export function useTextScale(): void {
@@ -80,4 +88,6 @@ export function useTextScale(): void {
   const system = useSyncExternalStore(subscribeSystem, readSystem, () => 1)
   const scale = textScale(choice, system)
   useEffect(() => { applyTextScale(scale) }, [scale])
+  // The Android shell stops its own text zoom once the page applies the font scale (appearance.js says so first).
+  useEffect(() => { shell()?.textScaleApplied?.() }, [])
 }

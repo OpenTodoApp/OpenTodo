@@ -16,6 +16,8 @@
     var scale = Object.prototype.hasOwnProperty.call(steps, size) ? steps[size] : 1
     var sh = window.opentodoShell
     if (scale === 1 && sh && sh.platform === 'android' && typeof sh.textScale === 'number') scale = sh.textScale
+    // The Android web view keeps its own text zoom until the page says it applies the scale.
+    if (sh && typeof sh.textScaleApplied === 'function') sh.textScaleApplied()
     if (scale === 1 && sh && sh.platform === 'ios') {
       var probe = document.createElement('span')
       probe.style.cssText = 'font:-apple-system-body;position:absolute;visibility:hidden'

@@ -88,6 +88,8 @@ export interface OpenTodoShell {
   store?: 'play'
   /** text-size D3: the Android system font scale (1 = 100 %). The iOS shell leaves it to WebKit. */
   textScale?: number
+  /** text-size D3: the page applies `textScale` itself, so the Android web view stops scaling its text. */
+  textScaleApplied?(): void
   scheduleReminders?(json: string): Promise<ShellPermission> | ShellPermission | void
   testNotification?(): Promise<boolean> | boolean | void
   publishWidget?(json: string): void

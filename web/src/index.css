@@ -237,6 +237,9 @@
   --duration-moment: 400ms;
   --size-row: 36px;
   --ot-text-list: 0.8125rem;
+  /* The list size as the root resolves it (OpenTodo's or a theme's), for the touch-field rule,
+     which redefines --ot-text-list on fields and cannot read its own value (text-size D4). */
+  --ot-field-list: var(--ot-text-list);
   /* The weight of task titles in rows and on cards; a theme may raise it (theme-title-weight). */
   --ot-title-weight: 400;
   --ot-text-hint: 0.71875rem;
@@ -798,7 +801,7 @@ body {
        size (GitHub issues 1051, 1549). */
     [data-quick-add-tints], .quick-add-notes-sizer, [data-line-field-copy] {
       /* At least 16 px, and growing with the text size like the text around it (text-size D4). */
-      --ot-text-hint: max(16px, 0.71875rem); --ot-text-meta: max(16px, 0.78125rem); --ot-text-list: max(16px, 0.8125rem);
+      --ot-text-hint: max(16px, 0.71875rem); --ot-text-meta: max(16px, 0.78125rem); --ot-text-list: max(16px, var(--ot-field-list));
       --ot-text-prose: max(16px, 0.9375rem); --ot-text-h3: max(16px, 0.875rem);
       font-size: max(16px, 1em);
     }
@@ -1859,9 +1862,9 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    --display-scale (set per size on the display's root), so they follow the
    browser's font-size setting: body text is about 20, 24 and 32 px at m, l, xl.
    Day columns stack below 768 px and wrap instead of scrolling sideways. */
-.display-root { --display-scale: 1.6; @apply flex flex-col bg-canvas text-default; min-height: 100%; padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left); font-size: calc(var(--text-prose) * var(--display-scale)); line-height: 1.35; }
-.display-root[data-size="m"] { --display-scale: 1.35; }
-.display-root[data-size="xl"] { --display-scale: 2.15; }
+.display-root { --display-scale: calc(1.6 / var(--ot-text-scale, 1)); @apply flex flex-col bg-canvas text-default; min-height: 100%; padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left); font-size: calc(var(--text-prose) * var(--display-scale)); line-height: 1.35; }
+.display-root[data-size="m"] { --display-scale: calc(1.35 / var(--ot-text-scale, 1)); }
+.display-root[data-size="xl"] { --display-scale: calc(2.15 / var(--ot-text-scale, 1)); }
 .display-clock { @apply font-semibold text-strong; font-size: min(calc(var(--text-display) * var(--display-scale) * 1.5), 16vw); line-height: 1.05; font-variant-numeric: tabular-nums; }
 .display-date { @apply text-muted; font-size: calc(var(--text-h2) * var(--display-scale)); line-height: 1.25; }
 .display-title { @apply font-semibold text-strong; font-size: calc(var(--text-h2) * var(--display-scale)); line-height: 1.2; }
@@ -1872,7 +1875,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 .display-meta { @apply text-muted; font-size: calc(var(--text-meta) * var(--display-scale)); line-height: 1.3; }
 .display-task { font-size: calc(var(--text-prose) * var(--display-scale)); line-height: 1.3; }
 /* A row is at least 56 px tall at size l; its checkbox is a 44 px touch target or larger. */
-.display-row { @apply flex items-center gap-3 rounded-control px-2 py-1 outline-none focus-visible:outline-3 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus; min-height: calc(35px * var(--display-scale)); }
+.display-row { @apply flex items-center gap-3 rounded-control px-2 py-1 outline-none focus-visible:outline-3 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus; min-height: calc(35px * var(--display-scale) * var(--ot-text-scale, 1)); }
 .display-check { @apply flex shrink-0 items-center justify-center rounded-full; width: max(44px, 1.5em); height: max(44px, 1.5em); }
 .display-check-mark { @apply flex items-center justify-center rounded-full border-2; width: 1.1em; height: 1.1em; }
 .display-columns { display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 1fr); align-items: start; }

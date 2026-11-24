@@ -214,6 +214,13 @@ class BridgeFixtureTest {
         assertEquals("1", Bridge.textScaleLiteral(0f))
     }
 
+    /** text-size D3: the system text zoom stays until the page applies the scale; an older page never says so. */
+    @Test fun textZoomWaitsForThePage() {
+        assertTrue(Bridge.script("1.0.0", listOf("reminders")).contains("textScaleApplied: function () { send('textScaleApplied', []) }"))
+        assertEquals(130, Bridge.TextZoom.of(applied = false, system = 130))
+        assertEquals(100, Bridge.TextZoom.of(applied = true, system = 130))
+    }
+
     private fun strings(f: JSONObject, key: String): List<String> = f.getJSONArray(key).let { a -> (0 until a.length()).map { a.getString(it) } }
 
     /**
