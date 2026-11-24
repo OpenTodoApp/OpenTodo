@@ -44,6 +44,8 @@
     <string name="widget_empty">Na dziś nic nie zostało.</string>
     <string name="widget_untitled">Zadanie</string>
     <string name="widget_more">+ jeszcze %1$d</string>
+    <string name="widget_earlier">Wcześniejsze</string>
+    <string name="widget_complete">Ukończ: %1$s</string>
     <string name="widget_completed">Ukończone</string>
     <string name="widget_completed_description">Ile zadań ukończyłeś w tym tygodniu</string>
     <string name="widget_completed_locked">Zablokowane: tylko dzisiejsza liczba</string>
@@ -57,6 +59,7 @@
     <string name="error_sign_in">Twój serwer jest za stroną logowania, a logowanie nie przeszło do aplikacji. Zaloguj się tutaj ponownie.</string>
     <string name="save_failed">Nie udało się zapisać pliku.</string>
     <string name="channel_focus">Skupienie</string>
+    <string name="channel_sync">Synchronizacja</string>
     <string name="focus_generic">Sesja skupienia</string>
     <string name="focus_work">Praca</string>
     <string name="focus_work_of">Praca · %1$d z %2$d</string>

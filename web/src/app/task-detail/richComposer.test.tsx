@@ -7,6 +7,8 @@ import { TextSelection } from 'prosemirror-state'
 import type { EditorView } from 'prosemirror-view'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Comment, ProjectMember } from '../../lib/types'
+import { act } from 'react'
+import { Dialog } from '../../ui'
 import { click, flush, key, render, waitFor } from '../../ui/test-utils'
 import { isTypingTarget } from '../shortcuts/dispatch'
 import { readDraft, setRichComposer, writeDraft } from './Composer'
@@ -31,6 +33,9 @@ async function richView(root: ParentNode, id = 'comment-composer'): Promise<Edit
   await waitFor(() => !!root.querySelector(`[data-rich-composer] #${id}`), 'the rich composer')
   return composerViewOf(root.querySelector(`#${id}`)!)!
 }
+
+/** One animation frame: the composer decides on a blur a frame after it. */
+const nextFrame = () => act(() => new Promise<void>((done) => requestAnimationFrame(() => done())))
 
 async function typeText(v: EditorView, text: string) {
   for (const ch of text) {
@@ -145,6 +150,78 @@ describe('rich composer', () => {
     block.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: document.body }))
     await waitFor(() => !!resting(), 'the resting composer')
     expect(resting()).toBeTruthy()
+    await r.unmount()
+    host.remove()
+  })
+
+  // #2030: More formatting's menu is portalled to the body; focus moving into it is
+  // not leaving the composer, on a phone (a sheet) or a desktop (a panel).
+  for (const phone of [false, true]) {
+    it(`More formatting keeps an empty composer open and applies the pick (${phone ? 'phone' : 'desktop'})`, async () => {
+      vi.stubGlobal('matchMedia', (q: string) => ({ matches: phone ? q.includes('coarse') : q.includes('min-width'), media: q, addEventListener: () => {}, removeEventListener: () => {} }))
+      const host = document.createElement('div')
+      document.body.appendChild(host)
+      const r = await render(<CommentsView {...props()} composerHost={host} />)
+      await click(host.querySelector('[data-composer-resting]')!)
+      const v = await richView(host)
+      v.focus()
+      await flush()
+      const block = host.querySelector('[data-composer-block]')!
+      const more = () => host.querySelector<HTMLElement>('[data-toolbar-more]')
+      // A computer shows the row on request (the Formatting toggle); a phone while the editor has focus.
+      const toggle = host.querySelector<HTMLElement>('[data-composer-formatting]')
+      if (!phone && toggle?.getAttribute('aria-pressed') !== 'true') await click(toggle!)
+      await waitFor(() => !!more(), 'the More button')
+      more()!.focus()
+      await click(more()!)
+      const item = () => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((el) => el.textContent?.includes('Heading'))
+      await waitFor(() => !!item(), 'the More formatting menu')
+      // Focus moved into the portalled menu: the composer counts it as its own.
+      await waitFor(() => !!document.activeElement?.closest('[data-overlay-root]'), 'focus in the menu')
+      await nextFrame()
+      expect(host.querySelector('[data-composer-resting]')).toBeNull()
+      expect(item()).toBeTruthy()
+      await click(item()!)
+      await waitFor(() => !item(), 'the menu to close')
+      await waitFor(() => v.hasFocus(), 'focus back in the editor')
+      await nextFrame()
+      expect(v.hasFocus()).toBe(true)
+      expect(host.querySelector('[data-composer-resting]')).toBeNull()
+      expect(block.isConnected).toBe(true)
+      expect(v.state.doc.firstChild?.type.name).toBe('heading')
+      // Escape closes the menu first and leaves the composer open; then the empty composer rests.
+      v.dispatch(v.state.tr.delete(0, v.state.doc.content.size))
+      writeDraft('t1', '')
+      await click(more()!)
+      await waitFor(() => !!item(), 'the menu again')
+      await key(item()!, 'Escape')
+      await waitFor(() => !item(), 'the menu to close on Escape')
+      expect(host.querySelector('[data-composer-resting]')).toBeNull()
+      v.focus()
+      expect(await press(v, 'Escape')).toBe(true)
+      await waitFor(() => !!host.querySelector('[data-composer-resting]'), 'the resting composer')
+      await r.unmount()
+      host.remove()
+    })
+  }
+
+  it('Another overlay (a dialog, Spotlight) still puts the empty composer to rest (#2030)', async () => {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const Page = ({ dialog }: { dialog: boolean }) => (
+      <>
+        <CommentsView {...props()} composerHost={host} />
+        {dialog && <Dialog title="Elsewhere" onClose={() => {}}><button type="button">Inside the dialog</button></Dialog>}
+      </>
+    )
+    const r = await render(<Page dialog={false} />)
+    await click(host.querySelector('[data-composer-resting]')!)
+    const v = await richView(host)
+    v.focus()
+    await waitFor(() => v.hasFocus(), 'the editor focused')
+    await r.rerender(<Page dialog />)
+    await waitFor(() => !!document.activeElement?.closest('[data-overlay-root]'), 'focus in the dialog')
+    await waitFor(() => !!host.querySelector('[data-composer-resting]'), 'the resting composer')
     await r.unmount()
     host.remove()
   })
