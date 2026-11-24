@@ -1,10 +1,12 @@
 package app.opentodo
 
+import android.app.ActivityOptions
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
+import android.os.Build
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ListView
@@ -36,6 +38,7 @@ class WidgetTest {
         resetApp()
         server = FakeServer()
         Prefs(context).server = server.origin
+        shell("appops set ${context.packageName} SYSTEM_ALERT_WINDOW allow")
         val grant = shell("appwidget grantbind --package ${context.packageName} --user ${android.os.Process.myUserHandle().hashCode()}")
         val manager = AppWidgetManager.getInstance(context)
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
@@ -47,7 +50,21 @@ class WidgetTest {
         }
     }
 
+    /**
+     * Sends a row's tap as a launcher does: the list's template with the row's fill-in, from a
+     * sender that may start activities and opts in to doing so (Android 14). A launcher is in the
+     * foreground and RemoteViews opts in for it; the test process is not, so during the test it
+     * holds the same exemption through the "display over other apps" app-op (set in setUp).
+     */
+    private fun tap(fill: Intent) {
+        val options = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+            ActivityOptions.makeBasic().setPendingIntentBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED).toBundle()
+        else null
+        WidgetAction.template(context).send(context, 0, fill, null, null, null, options)
+    }
+
     @After fun tearDown() {
+        shell("appops set ${context.packageName} SYSTEM_ALERT_WINDOW default")
         WorkManager.getInstance(context).cancelAllWork().result.get()
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             host.deleteAppWidgetId(widgetId)
@@ -125,7 +142,7 @@ class WidgetTest {
         WidgetStore.publish(context, """{"updatedAt":1,"locked":false,"count":2,"actions":["complete"],"tasks":[{"id":"a","title":"Pay rent"},{"id":"b","title":"Call Ana"}]}""")
         waitUntil("the count") { text(R.id.count) == "2" }
         // The row's circle, as the launcher sends it: the list's template with the row's fill-in.
-        WidgetAction.template(context).send(context, 0, WidgetAction.fillComplete("a"))
+        tap(WidgetAction.fillComplete("a"))
         waitUntil("the row hidden") { lines().map { it.text } == listOf("Call Ana") }
         waitUntil("the count") { text(R.id.count) == "1" }
         // One hidden run at the web app's completion address; the shell writes no task data.
@@ -142,7 +159,7 @@ class WidgetTest {
     /** A tap on a row starts the app from the activity template (no broadcast trampoline), at the task. */
     @Test fun aRowTapOpensTheTaskInTheApp() {
         WidgetStore.publish(context, """{"updatedAt":1,"locked":false,"count":1,"actions":["complete"],"tasks":[{"id":"t/1","title":"Pay rent"}]}""")
-        WidgetAction.template(context).send(context, 0, WidgetAction.fillOpen("t/1"))
+        tap(WidgetAction.fillOpen("t/1"))
         assertEquals(ReminderSchedule.taskPath("t/1"), server.waitForPath("/?task="))
         // Opening completes nothing and queues no run.
         assertTrue(WorkManager.getInstance(context).getWorkInfosForUniqueWork("widget").get().isEmpty())
