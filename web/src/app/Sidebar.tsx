@@ -802,7 +802,7 @@ function AddTaskItem({ collapsed, hint, onClick }: { collapsed: boolean; hint: b
     <div className="mb-0.5" data-add-task>
       <Tooltip label={label} shortcut={key} side="right">
         <SidebarItem leading={mark} label={<>{label}</>} collapsed={collapsed} onClick={onClick} aria-keyshortcuts={key}
-          badge={hint ? <kbd className="ui-kbd" data-kbd-hint>{key}</kbd> : undefined} data-add-task-button />
+          badge={hint ? <kbd className="ui-kbd" data-go-hint>{key}</kbd> : undefined} data-add-task-button />
       </Tooltip>
     </div>
   )

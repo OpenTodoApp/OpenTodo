@@ -1,8 +1,8 @@
 // Quick add in a list (OpenSpec change add-task-button, design D2): beside the field, the
 // calendar and one compact button per field a mouse would otherwise type: Priority,
-// Project and Label. Each starts its token at the end of the line (or selects the words
-// that set it) and opens the line's own suggestions, as the phone's tool row does, so
-// the parse stays the one model. A click keeps the focus in the field.
+// Project and Label. Each starts its token at the end of the line and opens the line's own suggestions, as the phone's tool row does, so
+// the parse stays the one model. A set priority or project has its words selected
+// instead; Label always starts a new `@`, since a task takes several labels. A click keeps the focus in the field.
 import type { Chip } from '../../lib/nlp'
 import { t } from '../../lib/i18n'
 import { Icon } from '../../ui'
@@ -21,7 +21,7 @@ export function LineTools({ chips, date, onEdit }: { chips: readonly Chip[]; dat
         const chip = chipIndex >= 0 ? chips[chipIndex] : undefined
         return (
           <button key={kind} type="button" data-quick-add-tool={kind} data-set={chip ? '' : undefined} aria-label={FIELD_NAME[kind]}
-            onMouseDown={(e) => e.preventDefault()} onClick={() => onEdit(chip ? { kind, chip, chipIndex } : { kind })}
+            onMouseDown={(e) => e.preventDefault()} onClick={() => onEdit(chip && kind !== 'label' ? { kind, chip, chipIndex } : { kind })}
             className={`inline-flex h-7 w-7 items-center justify-center rounded-control hover:bg-hover hover:text-default max-sm:hidden ${chip ? 'text-default' : 'text-faint'}`}>
             <Icon name={FIELD_ICON[kind]} size={16} />
           </button>

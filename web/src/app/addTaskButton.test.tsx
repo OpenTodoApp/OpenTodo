@@ -99,12 +99,12 @@ describe('Add task in the sidebar', () => {
     expect(button()!.tagName).toBe('BUTTON')
     expect(button()!.textContent).toContain('Add task')
     expect(button()!.getAttribute('aria-keyshortcuts')).toBe('q')
-    expect(button()!.querySelector('[data-kbd-hint]')).toBeNull()
+    expect(button()!.querySelector('[data-go-hint]')).toBeNull()
     // Above the primary destinations.
     const inbox = document.querySelector('[data-destination="inbox"]')!
     expect(button()!.compareDocumentPosition(inbox) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     await act(async () => { setShortcutHints(true) })
-    await waitFor(() => button()!.querySelector('[data-kbd-hint]')?.textContent === 'q', 'the q hint')
+    await waitFor(() => button()!.querySelector('[data-go-hint]')?.textContent === 'q', 'the q hint')
     await r.unmount()
   })
 

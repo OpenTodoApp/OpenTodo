@@ -84,12 +84,36 @@ describe('field buttons in quick add in a list', () => {
     await r.unmount()
   })
 
-  it('a set field: its button selects the words that set it', async () => {
+  it('a set project: its button selects the words that set it', async () => {
     const r = await render(<QuickAdd layout="line" placeholder="Add a task" projects={projects} labels={labels} onAdd={vi.fn()} />)
     await type(field(), 'Buy primer #Work')
     await waitFor(() => tool('project').hasAttribute('data-set'), 'the button set')
     await click(tool('project'))
     await waitFor(() => field().selectionStart === 11 && field().selectionEnd === 16, '#Work selected')
+    await r.unmount()
+  })
+
+  it('a set label: Label starts another `@`, so a second label can be added', async () => {
+    const onAdd = vi.fn()
+    const r = await render(<QuickAdd layout="line" placeholder="Add a task" projects={projects} labels={[...labels, { id: 'l-home', name: 'home' }]} onAdd={onAdd} />)
+    await type(field(), 'Fix the bike @errands')
+    await waitFor(() => tool('label').hasAttribute('data-set'), 'the button set')
+    await click(tool('label'))
+    await waitFor(() => field().value === 'Fix the bike @errands @', 'a second token started')
+    await pick('l-home')
+    await waitFor(() => field().value.trim() === 'Fix the bike @errands @home', 'the second label written')
+    await submit()
+    await waitFor(() => onAdd.mock.calls.length > 0, 'added')
+    expect(onAdd.mock.calls[0][0].labels).toEqual(['l-errands', 'l-home'])
+    await r.unmount()
+  })
+
+  it('a bare `#` at the end is reused: Project does not write `# #`', async () => {
+    const r = await render(<QuickAdd layout="line" placeholder="Add a task" projects={projects} labels={labels} onAdd={vi.fn()} />)
+    await type(field(), 'Buy primer #')
+    await click(tool('project'))
+    await waitFor(() => q('[data-token-suggestions]')?.getAttribute('data-token-suggestions') === 'project', 'the projects')
+    expect(field().value).toBe('Buy primer #')
     await r.unmount()
   })
 

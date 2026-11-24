@@ -11,4 +11,4 @@
 
 ## 3. Check
 
-- [ ] 3.1 `make check`
+- [x] 3.1 `make check`

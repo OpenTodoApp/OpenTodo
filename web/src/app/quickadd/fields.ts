@@ -48,9 +48,12 @@ export function fieldRows(chips: readonly Chip[]): FieldRow[] {
   ]
 }
 
-/** The line with a field's token started at its end, after one space, and the caret there. */
+/** The line with a field's token started at its end, after one space, and the caret there; a bare token already at the end is reused. */
 export function startToken(value: string, kind: FieldKind): { value: string; caret: number } {
   const head = value.replace(/\s+$/, '')
+  // A bare token already ends the line ("Buy primer #"): reuse it rather than start a second.
+  const token = FIELD_TOKEN[kind]
+  if (token && (head === token || head.endsWith(` ${token}`))) return { value: head, caret: head.length }
   const next = `${head}${head ? ' ' : ''}${FIELD_TOKEN[kind] ?? ''}`
   return { value: next, caret: next.length }
 }
