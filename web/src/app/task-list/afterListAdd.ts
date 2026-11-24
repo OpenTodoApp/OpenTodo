@@ -7,8 +7,8 @@ import { getTask } from '../../lib/liveData'
 import { moveTask } from '../../lib/move'
 import type { Placement } from '../../lib/ops'
 import type { AddedBatch } from '../../lib/pasteTasks'
-import { effectiveSection } from '../../lib/sections'
-import type { Section } from '../../lib/types'
+import { effectiveSection, projectSections } from '../../lib/sections'
+import type { Section, Task } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { addedWhere } from '../addedWhere'
 import { isInboxTask } from '../../lib/inbox'
@@ -16,6 +16,17 @@ import { ACTION_TOAST_MS, showBulkToast } from '../bulk/toastStore'
 import { navigate, type Route } from '../router'
 import { selectTask } from '../signals'
 import { offerMoveToWorkspace } from '../workspaceNav'
+
+/**
+ * The section of an `o` anchor: from the list's sections, or from its own project's when it is
+ * a task of an open sub-project (subproject-inline), whose sections the list does not hold.
+ */
+async function anchorSection(anchor: Task, sections: Map<string, Section>): Promise<string | null> {
+  if (anchor.section_id && !sections.has(anchor.section_id) && anchor.project_id) {
+    sections = new Map((await projectSections(anchor.project_id)).map((x) => [x.id, x]))
+  }
+  return effectiveSection(anchor, sections)
+}
 
 export async function afterListAdd(id: string, c: {
   route: Route
@@ -37,7 +48,7 @@ export async function afterListAdd(id: string, c: {
     if (anchor) {
       await moveTask(id, {
         parent_id: anchor.parent_id,
-        ...(anchor.parent_id === null ? { section_id: effectiveSection(anchor, c.sectionMap()) } : {}),
+        ...(anchor.parent_id === null ? { section_id: await anchorSection(anchor, c.sectionMap()) } : {}),
         at: { after },
       })
     }
@@ -74,12 +85,9 @@ export async function afterListAddMany(added: AddedBatch, c: {
   if (after) {
     const anchor = await getTask(after)
     if (anchor) {
+      const section = anchor.parent_id === null ? await anchorSection(anchor, c.sectionMap()) : null
       for (const id of added.ids) {
-        await moveTask(id, {
-          parent_id: anchor.parent_id,
-          ...(anchor.parent_id === null ? { section_id: effectiveSection(anchor, c.sectionMap()) } : {}),
-          at: { after },
-        })
+        await moveTask(id, { parent_id: anchor.parent_id, ...(anchor.parent_id === null ? { section_id: section } : {}), at: { after } })
         after = id
       }
       c.insertAfter.current = after
