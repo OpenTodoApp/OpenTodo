@@ -64,6 +64,9 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 			return b.res, err
 		}
 	}
+	if err := b.checkSeriesMoves(); err != nil {
+		return b.res, err
+	}
 	b.refused = append(b.refused, pre...)
 	return b.finish(guard)
 }
@@ -107,8 +110,13 @@ type applyBatch struct {
 	// with a changed value the author's device must adopt.
 	refused, rewritten []Op
 	storedBytes        int64 // value bytes of the stored ops, for the write guard
-	newestTS           int64 // the newest stored timestamp, for the server clock
-	res                ApplyResult
+	// creates and dueMoves (strict only): the tasks the batch creates and the
+	// existing tasks whose due it writes (series_move_check.go).
+	creates  map[string]bool
+	dueMoves map[string]*seriesMove
+	splits   map[string]map[string]string // per scope: piece -> the series it continues
+	newestTS int64                        // the newest stored timestamp, for the server clock
+	res      ApplyResult
 }
 
 // newApplyBatch loads the author's access and prepares the resolver, the purge
@@ -126,7 +134,15 @@ func (s *Service) newApplyBatch(ctx context.Context, tx *sql.Tx, userID string, 
 	b := &applyBatch{s: s, ctx: ctx, tx: tx, userID: userID, strict: strict, nowMs: nowMs,
 		refuseSkew: ctx.Value(skewKey{}) != nil, acc: acc, rs: rs,
 		pc:      &purgeChecker{ctx: ctx, q: tx, acc: acc, cache: map[string]bool{}},
-		tracker: newChangeTracker(userID), touched: map[string]bool{}}
+		tracker: newChangeTracker(userID), touched: map[string]bool{},
+		creates: map[string]bool{}, dueMoves: map[string]*seriesMove{}}
+	if strict {
+		for _, op := range ops {
+			if op.Entity == "task" && op.Field == "created_at" {
+				b.creates[op.EntityID] = true
+			}
+		}
+	}
 	if s.quota != nil && ctx.Value(guardKey{}) == nil {
 		if b.admit, err = s.quota.Admit(ctx, tx); err != nil {
 			return nil, err
@@ -218,6 +234,9 @@ func (b *applyBatch) store(op Op, scope string) error {
 		if op.Value, filtered, err = b.rs.filterMentions(scope, op.Value); err != nil {
 			return err
 		}
+	}
+	if err := b.noteDueWrite(op, scope); err != nil {
+		return err
 	}
 	stored, err := writeOp(b.ctx, b.tx, b.userID, op, scope, b.nowMs, b.tracker)
 	if err != nil {

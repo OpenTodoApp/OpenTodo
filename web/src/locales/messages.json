@@ -26707,5 +26707,8 @@
   ],
   "⤼ Skip": [
     "web/src/app/RecurrenceField.tsx"
+  ],
+  "That date of this repeating task is already done, skipped or moved.": [
+    "web/src/lib/i18n/errors.ts"
   ]
 }

@@ -7872,6 +7872,7 @@
   "Completed or reopened": "已完成或重新打开",
   "Unread changes": "未读更改",
   "{name} will be attached": "将附加 {name}",
+  "That date of this repeating task is already done, skipped or moved.": "此重复任务的该日期已完成、已跳过或已移动。",
   "Click a task to": "点击任务时",
   "Select, then edit the title": "先选中，再编辑标题",
   "Task lists": "任务列表",

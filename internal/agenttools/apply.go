@@ -82,6 +82,11 @@ func applyError(err error) error {
 			msg = "an append with this append_id exists already; choose another id; nothing was applied"
 		case opsync.ReasonTooLarge:
 			msg = "the note would become too long; nothing was applied"
+		case opsync.ReasonSeriesDateTaken:
+			// A series moved onto a date with one of its records (server-series-move).
+			date, state := opsync.SeriesDateTaken(rej)
+			item["date"], item["state"] = date, state
+			msg = strings.TrimPrefix(opsync.SeriesDateMessage(rej), "task.due: ") + "; nothing was applied"
 		case opsync.ReasonRateLimited:
 			msg = "too many comments in a short time; nothing was applied"
 			return &ToolError{Code: "rate_limited", Message: msg, Data: map[string]any{"retry_after_seconds": 60, "items": []any{item}}}
