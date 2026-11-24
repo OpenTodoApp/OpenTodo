@@ -486,7 +486,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
       {groupsReady && (finding || groupShown(shownRows.length)) && <SidebarGroup title={t('Projects')} collapsible open={isOpen('projects')} onToggle={() => toggleGroup('projects')} count={projects.length} collapsed={collapsed} actions={(<>
         <SidebarGroupAction active={route.view === 'projects'} onClick={() => navigate({ view: 'projects' })} aria-label={t('All projects')}>{t('All')}</SidebarGroupAction>
         <SidebarGroupAction ref={findOpener} onClick={() => (finding ? closeFind() : openFind())} aria-label={t('Find in the sidebar')} aria-pressed={finding} active={finding}><Icon name="search" size="xs" /></SidebarGroupAction>
-        <ProjectsGroupMenu projects={projects} sortable={tree.roots.length > 1} onNew={startAdding} />
+        <ProjectsGroupMenu projects={projects} sortable={tree.roots.filter((n) => movable(n.id)).length > 1} onNew={startAdding} />
       </>)}>
         <ul role="tree">
           {shownRows.map((n, i) => {
@@ -588,7 +588,6 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   )
 }
 
-/** Replaces the project link while its name is being edited. */
 /** The Projects header's menu: add, fold, and sort the top level by name once (sort-projects-by-name). */
 function ProjectsGroupMenu({ projects, sortable, onNew }: { projects: Project[]; sortable: boolean; onNew: () => void }) {
   return (
@@ -604,6 +603,7 @@ function ProjectsGroupMenu({ projects, sortable, onNew }: { projects: Project[];
   )
 }
 
+/** Replaces the project link while its name is being edited. */
 function ProjectNameEditor({ project, drawer, onDone }: { project: Project; drawer: boolean; onDone: (restoreFocus: boolean) => void }) {
   const [name, setName] = useState(project.name)
   const initial = useRef(project.name)

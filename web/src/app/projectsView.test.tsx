@@ -5,7 +5,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { archiveProject, createProject, createTask, resetDeviceId } from '../lib/ops'
-import { click, key, render, type, waitFor } from '../ui/test-utils'
+import { click, flush, key, render, type, waitFor } from '../ui/test-utils'
 import { AutoArchiveView } from './ProjectsSettings'
 import { ProjectsView } from './ProjectsView'
 import { navigate } from './router'
@@ -331,6 +331,24 @@ describe('All projects page reordering', () => {
     const before = await db.outbox.count()
     await key(row(), 'ArrowDown', { altKey: true })
     expect(await db.outbox.count()).toBe(before)
+    await r.unmount()
+  })
+
+  it('a refused move at the edge leaves no pending refocus for a later refresh', async () => {
+    const a = await createProject({ name: 'A' })
+    const b = await createProject({ name: 'B' })
+    const r = await render(<ProjectsView />)
+    await waitFor(() => names(r.container).length === 2)
+    const rowOf = (id: string) => r.container.querySelector<HTMLButtonElement>(`[data-project-open="${id}"]`)!
+    await act(async () => rowOf(a).focus())
+    const before = await db.outbox.count()
+    await key(rowOf(a), 'ArrowUp', { altKey: true }) // already first: refused
+    await flush()
+    expect(await db.outbox.count()).toBe(before)
+    await act(async () => rowOf(b).focus())
+    await createProject({ name: 'C' })
+    await waitFor(() => names(r.container).length === 3, 'the rows refresh')
+    expect(document.activeElement).toBe(rowOf(b))
     await r.unmount()
   })
 })

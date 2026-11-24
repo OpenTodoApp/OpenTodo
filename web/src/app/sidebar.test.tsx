@@ -547,6 +547,18 @@ describe('tree defaults and bulk toggles (sidebar-groups 2.2)', () => {
     await r.unmount()
   })
 
+  it('offers no Sort by name with fewer than two top-level projects the user may move', async () => {
+    await createProject({ name: 'Mine' })
+    const shared = await createProject({ name: 'Shared' })
+    await db.memberships.put({ projectId: shared, scope: `project:${shared}`, role: 'editor', members: [] } as unknown as Membership)
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => projectRows(r.container).length === 2)
+    await click(groupOf(r.container, 'Projects').querySelector('button[aria-label="Add or fold projects"]')!)
+    await waitFor(() => !!menuItem('Expand all'))
+    expect(menuItem('Sort by name')).toBeFalsy()
+    await r.unmount()
+  })
+
   it('a device that already stored a collapse state keeps it', async () => {
     const ids = await seedTree()
     await setCollapsedProjects(new Set([ids.Home]))

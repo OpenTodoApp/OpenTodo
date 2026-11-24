@@ -55,7 +55,8 @@ export function useProjectMenu(project: Project, o: { userId?: string; rename: (
   const [dialog, setDialog] = useState<'duplicate' | 'template' | 'fields' | null>(null)
   const projects = useProjects()
   const targets = useMemo(() => (active ? moveTargets(project, projects) : []), [active, projects, project])
-  const subCount = useMemo(() => projects.filter((p) => p.parent_id === project.id && !p.deleted_at).length, [projects, project.id])
+  // Live, non-archived sub-projects: the ones the sidebar shows, archives and sorts (sort-projects-by-name).
+  const subCount = useMemo(() => projects.filter((p) => p.parent_id === project.id && !p.deleted_at && !p.archived).length, [projects, project.id])
   const pinned = useIsFavourite('project', project.id)
   const otherWorkspaces = useOtherWorkspaces()
   const mode = useMethodMode()

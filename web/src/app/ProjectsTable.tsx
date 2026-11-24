@@ -172,7 +172,8 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
       if (!node || !canMove(node)) return
       const up = e.key === 'ArrowUp'
       refocus.current = id
-      act(moveProjectBy(id, e.shiftKey ? (up ? 'top' : 'bottom') : up ? -1 : 1))
+      // A refused move (an edge) renders nothing new: drop the pending refocus, or a later refresh would pull focus back.
+      act(moveProjectBy(id, e.shiftKey ? (up ? 'top' : 'bottom') : up ? -1 : 1).then((moved) => { if (!moved) refocus.current = null }))
       return
     }
     if (e.metaKey || e.ctrlKey || e.altKey) return
