@@ -78,7 +78,7 @@ func TestTrelloDueConvertedToZone(t *testing.T) {
 func TestMicrosoftToDoWeeklyAndZone(t *testing.T) {
 	p := parseIn(t, `[{"displayName":"Work","wellknownListName":"none","id":"l1","tasks":[
 		{"id":"t1","title":"Stand-up","importance":"normal","status":"notStarted",
-		 "dueDateTime":{"dateTime":"2026-11-03T23:00:00.0000000","timeZone":"Pacific Standard Time"},
+		 "dueDateTime":{"dateTime":"2026-11-03T00:00:00.0000000","timeZone":"Pacific Standard Time"},
 		 "recurrence":{"pattern":{"type":"weekly","interval":1,"daysOfWeek":["monday","wednesday"]},"range":{"type":"noEnd"}}}]}]`, "Europe/Berlin")
 	if p.Format != "microsoft-todo-json" {
 		t.Fatalf("format %s", p.Format)

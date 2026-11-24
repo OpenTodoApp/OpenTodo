@@ -104,7 +104,7 @@ Your other devices receive everything on their next sync. Importing the same fil
 | Notes | The task's notes, as plain text: formatting is removed. |
 | Due date | The due date as To Do shows it, without a time (To Do has none). |
 | Reminder | A reminder at the same moment. A reminder already past is imported dismissed. |
-| Repeat | A [repeat rule](../recurrence.md) for daily, weekly on chosen days, monthly on a day and yearly repeats. "Every 2 weeks on Monday and Friday", "the second Thursday" and repeat end dates are dropped with a warning; set them again as [`every 2 weeks on mon, fri`, `every 2nd thursday`](../recurrence.md#grammar) and [`until …`](../recurrence.md#end-conditions). |
+| Repeat | A [repeat rule](../recurrence.md) with the same dates: daily, weekly on chosen days (also every few weeks), monthly on a day or on a weekday such as the second Thursday, and yearly, with their end date or number of times. Repeats on two weekdays of the month, every few months on a weekday, or every few weeks on Sunday and other days are dropped with a warning; set them again with the [repeat rules](../recurrence.md#grammar). |
 | Categories | Labels. |
 | Shared lists | Your own projects, with all their tasks; the members are not in the file. [Share the project](../sharing.md#share-a-project) again, or send an [invite link](../sharing.md#invite-with-a-link). |
 | Attachments | Links (such as the email a task came from) become link attachments. Files are not in the file and are dropped with a warning; [attach them](../attachments.md) again. |
