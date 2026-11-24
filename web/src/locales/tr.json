@@ -7873,6 +7873,7 @@
   "Completed or reopened": "Tamamlandı veya yeniden açıldı",
   "Unread changes": "Okunmamış değişiklikler",
   "{name} will be attached": "{name} eklenecek",
+  "That date of this repeating task is already done, skipped or moved.": "Yinelenen görevin bu tarihi zaten yapıldı, atlandı veya taşındı.",
   "Click a task to": "Bir göreve tıklayınca",
   "Select, then edit the title": "Seç, sonra başlığı düzenle",
   "Task lists": "Görev listeleri",

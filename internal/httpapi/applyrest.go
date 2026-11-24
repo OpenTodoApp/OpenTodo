@@ -36,7 +36,8 @@ func refuse(status int, code, message string) func(http.ResponseWriter, *opsync.
 
 // applyREST is applyAs from the server device for a REST request. It answers
 // the error itself and then reports false: a write limit as writeLimited does,
-// an invalid op 400 invalid_input, a refusal listed in reasons as listed, any
+// an invalid op 400 invalid_input, a series moved onto one of its records 409
+// series_date_taken, a refusal listed in reasons as listed, any
 // other refusal as reasons[otherRefusal] or else 403 forbidden with the
 // sentence forbidden, anything else 500.
 func (s *Server) applyREST(w http.ResponseWriter, ctx context.Context, uid string, ops []opsync.Op, forbidden string, reasons refusals) (opsync.ApplyResult, bool) {
@@ -57,6 +58,9 @@ func (s *Server) applyREST(w http.ResponseWriter, ctx context.Context, uid strin
 		writeError(w, http.StatusNotFound, "not_found", "not found")
 	case isRej && rej.Reason == opsync.ReasonReachLimit:
 		writeError(w, http.StatusForbidden, "token_restricted", "this token is limited to other workspaces")
+	// A series moved onto a date with one of its records (server-series-move).
+	case isRej && rej.Reason == opsync.ReasonSeriesDateTaken:
+		writeError(w, http.StatusConflict, "series_date_taken", opsync.SeriesDateMessage(rej))
 	case isRej && reasons[rej.Reason] != nil:
 		reasons[rej.Reason](w, rej)
 	case isRej && reasons[otherRefusal] != nil:

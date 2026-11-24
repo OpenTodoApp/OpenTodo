@@ -46,6 +46,10 @@ describe('startToken', () => {
     expect(startToken('Buy primer', 'project')).toEqual({ value: 'Buy primer #', caret: 12 })
     expect(startToken('Buy primer  ', 'label')).toEqual({ value: 'Buy primer @', caret: 12 })
     expect(startToken('Pay rent', 'priority').value).toBe('Pay rent p')
+    // A bare token already at the end is reused, never doubled (`# #`); a different one is not.
+    expect(startToken('Buy primer #', 'project')).toEqual({ value: 'Buy primer #', caret: 12 })
+    expect(startToken('#', 'project')).toEqual({ value: '#', caret: 1 })
+    expect(startToken('Buy primer @', 'project').value).toBe('Buy primer @ #')
     expect(startToken('Draft', 'estimate').value).toBe('Draft +')
   })
 

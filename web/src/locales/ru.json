@@ -7873,6 +7873,7 @@
   "{name} reopened a task": "{name} снова открыл(а) задачу",
   "Unread changes": "Непрочитанные изменения",
   "{name} will be attached": "{name} будет прикреплён",
+  "That date of this repeating task is already done, skipped or moved.": "Эта дата повторяющейся задачи уже выполнена, пропущена или перенесена.",
   "Click a task to": "Щелчок по задаче",
   "Select, then edit the title": "Выбрать, затем изменить название",
   "Task lists": "Списки задач",

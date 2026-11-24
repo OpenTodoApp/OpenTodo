@@ -1,0 +1,1 @@
+- **The API, `ot` and assistants no longer move a repeating task onto a date that is already done, skipped or moved.** Such a change used to report success and then jump on to the next free date; it is now refused with `409 series_date_taken` and a message naming the date and why, as the app does (#1991).

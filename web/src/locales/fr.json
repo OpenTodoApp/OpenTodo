@@ -7873,6 +7873,7 @@
   "Completed or reopened": "Terminée ou rouverte",
   "Unread changes": "Modifications non lues",
   "{name} will be attached": "{name} sera joint",
+  "That date of this repeating task is already done, skipped or moved.": "Cette date de la tâche récurrente est déjà faite, sautée ou déplacée.",
   "Click a task to": "Cliquer sur une tâche pour",
   "Select, then edit the title": "Sélectionner, puis modifier le titre",
   "Task lists": "Listes de tâches",

@@ -107,7 +107,7 @@ func init() {
 	})
 	register(tool{
 		def: readDef("today_summary", "Today summary",
-			"One-call overview of the user's day: overdue tasks and tasks due today, both without tasks assigned to someone else, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project. today_limit is the user's Today limit (null when off); each listed task has waiting_for_slot, true when that limit keeps it waiting; a waiting task also has time_sensitive, true when it is due today with a time or its deadline is today, a time-sensitive one time_passed, true once its time is before now, and waiting_time_sensitive lists those ids soonest first (the slots stay first come, first served).",
+			"One-call overview of the user's day: overdue tasks and tasks due today, both without tasks assigned to someone else, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project. today_limit is the user's Today limit (null when off); each listed task has waiting_for_slot, true when that limit keeps it waiting; a waiting task also has time_sensitive, true when it is due today with a time or its deadline is today, a time-sensitive one time_passed, true once its time is before now, and waiting_time_sensitive lists those ids soonest first (the slots stay first come, first served). focus is today's focus, the task ids picked for focus_date (the user's today, counted from their day start) in order; set it with set_today_focus.",
 			object(nil, map[string]any{
 				"timezone": timezoneProp,
 			})),
@@ -788,6 +788,9 @@ func (r *Registry) todaySummary(ctx context.Context, userID string, a args) (map
 		},
 		"server_time": r.serverTime(),
 	}
+	// Today's focus (mcp-set-today-focus), in the app's order, and the day it
+	// is for: the account's logical today, as set_today_focus writes it.
+	out["focus"], out["focus_date"] = r.todayFocus(ctx, userID, a, snap)
 	if len(overdue) < len(overdueItems) || len(dueToday) < len(todayItems) {
 		out["truncated"] = true
 	}

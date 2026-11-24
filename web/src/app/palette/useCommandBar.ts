@@ -22,6 +22,8 @@ export function useCommandBar() {
   const [mode, setMode] = useState<'search' | 'add'>('search')
   const [win, setWin] = useState(false)
   const show = (m: 'search' | 'add', asWin = false) => { setMode(m); setWin(asWin); setLoaded(true); setOpen(true) }
+  // `q` and the sidebar's Add task (add-task-button D1): the list's own quick add, with its view's defaults, else the bar in Add mode.
+  const quickAdd = () => { if (!listState()?.focusQuickAdd(null)) show('add') }
   useEffect(() => logWinRequest.subscribe(() => { logWinRequest.take(); show('add', true) }), [])
   const [warm, setWarm] = useState(false)
   // Once the page has been left alone for a moment (no key or press), so the work
@@ -49,12 +51,11 @@ export function useCommandBar() {
     // Global entries reach open dialogs: those keep the key.
     'list.quick-add': () => {
       if (overlayDepth() > 0) return false
-      if (listState()?.focusQuickAdd(null)) return
-      show('add')
+      quickAdd()
     },
   })
   return {
-    open, loaded, mode, win, openSearch: () => show('search'), close: () => setOpen(false),
+    open, loaded, mode, win, openSearch: () => show('search'), quickAdd, close: () => setOpen(false),
     /** Prepare the search index now (PaletteWarmer); false again once it is done. */
     warm: warm && !open, warmed: () => setWarm(false),
   }
