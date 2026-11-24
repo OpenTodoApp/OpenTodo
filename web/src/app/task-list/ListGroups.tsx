@@ -682,8 +682,16 @@ function SectionLater({ g, rowList, renderRow, onToggle }: { g: ListGroup; rowLi
   )
 }
 
+/**
+ * A group bar inside the columns table (custom-fields) is a row of its own, one cell wide,
+ * since a table holds only row groups and rows (subprojects-above-tasks: the Tasks and Later bars).
+ */
+function inTable(table: boolean, header: ReactNode): ReactNode {
+  return table ? <div role="row" data-group-row><div role="cell">{header}</div></div> : header
+}
+
 /** A date, project, Later or Blocked group; collapsible per device. */
-function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects, eventsFor, summarised, todayDropTarget, activeTodayDrop, contextualDrag }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
+function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects, fieldColumns, eventsFor, summarised, todayDropTarget, activeTodayDrop, contextualDrag }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
   const events = view === 'upcoming' ? eventsFor?.(g.key) ?? null : null
   if (g.rows.length === 0 && g.folded === undefined && !g.projected?.length && !events) return null
   const project = g.project ? projects.find((pr) => pr.id === g.project) : undefined
@@ -705,16 +713,16 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
     <section className={`${summary && collapsed ? 'mb-1' : 'mb-4'}${g.dropDay ? ' rounded-control data-drop-active:ring-2 data-drop-active:ring-accent' : ''}${activeTodayDrop === g.key ? ' rounded-control ring-2 ring-accent' : ''}`} data-group={g.key} data-day-summary-bar={summary && collapsed ? '' : undefined}
       data-drop-target={todayDropTarget?.(g) ? `today-group:${g.key}` : undefined}
       data-task-drop={g.dropDay ? `day:${g.dropDay}` : undefined}>
-      {g.folded !== undefined ? (
+      {g.folded !== undefined ? inTable(fieldColumns, (
         <ListGroupHeader title={g.heading ?? ''} count={g.count} detail={g.folded ? g.detail : undefined} collapsed={g.folded} onToggle={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)}
           actions={view === 'today' && g.key === 'done' ? <LogWinAction /> : undefined}
           actionsAlwaysVisible={g.key === 'done'} />
-      ) : g.heading && partDrop(g.dropPart, (
+      )) : g.heading && inTable(fieldColumns, partDrop(g.dropPart, (
         <ListGroupHeader title={g.heading} count={g.note || (events && liveRows(g.rows) === 0) ? undefined : liveRows(g.rows)} note={activeTodayDrop === g.key ? t('Move to {project}', { project: g.heading }) : g.note} kind={g.named ? 'named' : 'generated'}
           hue={projectHue(project)} icon={project?.icon}
           collapsed={collapsed} onToggle={toggle} detail={summary && collapsed ? <SummaryTitles rows={g.rows} /> : undefined}
           actions={earlier ? earlierActions?.(g.rows.filter((r) => !isGhost(r.task)).map((r) => r.task.id)) : undefined} actionsAlwaysVisible={earlier} />
-      ))}
+      )))}
       {contextualDrag && todayDropTarget?.(g) && (
         <div data-promote-context="" data-drop-target={`today-context-promote:${g.key}`}
           className="my-1 rounded-control border border-dashed border-strong px-3 py-2 text-meta text-muted data-drop-active:border-accent data-drop-active:bg-accent-soft">
