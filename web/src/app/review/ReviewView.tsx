@@ -11,6 +11,8 @@ import { Badge, Button, Card, Dialog, Icon, MenuItem, Notice, PageBody, PageHead
 import { useAllLabels, useAllProjects, useProjectPrefsLoaded, useReviewEvery, useReviewRow, useReviewedAt } from '../../lib/localData'
 import { formatInstant } from '../../lib/dates'
 import { createTask } from '../../lib/ops'
+import { chooseNextAction } from '../method/chooseNext'
+import type { NextChoice } from '../../lib/method/rules'
 import { setTaskCompletedWithFeedback } from '../completionSound'
 import { resolveLabels } from '../../lib/labels'
 import { hasTimeColumn } from '../../lib/rowTime'
@@ -138,6 +140,13 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
     setNotice(t('Added a next action to {name}.', { name: addTo.name }))
     setAddTo(null)
   }
+  // An open task of the project chosen as its next action instead (choose-next-action).
+  const addToChoices = addTo ? [...(steps?.walk ?? []), ...(steps?.notDue ?? [])].find((w) => w.project.id === addTo.id)?.choices ?? [] : []
+  const choose = (choice: NextChoice) => {
+    if (!addTo) return
+    act(chooseNextAction(choice, addTo.name))
+    setAddTo(null)
+  }
 
   return (
     <PageBody width="list">
@@ -185,7 +194,8 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
       {addTo && (
         <Dialog title={t('Add a next action to {name}', { name: addTo.name })} onClose={() => setAddTo(null)}>
           <QuickAdd autoFocus hideHint placeholder={t('What is the next step?')} label={t('Next action for {name}', { name: addTo.name })}
-            projects={projects.filter((p) => !p.deleted_at && !p.archived)} labels={labels} onAdd={add} />
+            projects={projects.filter((p) => !p.deleted_at && !p.archived)} labels={labels} onAdd={add}
+            choices={addToChoices.length ? { items: addToChoices, onPick: choose } : undefined} />
         </Dialog>
       )}
       {pickerFor && (

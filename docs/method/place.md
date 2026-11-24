@@ -23,6 +23,10 @@ Give every item one home. When each task lives in exactly one place, you know wh
 
 The full list, with the screen for each, is in [Places](places.md).
 
+## Projects without a next action
+
+The Loop home's **Place** move lists every project without a next action, each with a field. Type the next step and press <kbd>Enter</kbd> to add it. To choose a task the project already holds, such as a Someday task, type a few letters of it (or press <kbd>↓</kbd> in the empty field), move to it with <kbd>↓</kbd> and press <kbd>Enter</kbd>: it leaves Someday or its later start, and **Undo** puts it back. In the weekly review, a task listed after the project's current next action also moves just above it. The weekly review's project walk does the same with <kbd>q</kbd>.
+
 ## Waiting
 
 **Waiting** (<kbd>g</kbd> <kbd>Shift+W</kbd>) lists everything assigned to someone else, grouped by person, and everything blocked by another open task. Look at it in the weekly review and follow up where something has stalled.

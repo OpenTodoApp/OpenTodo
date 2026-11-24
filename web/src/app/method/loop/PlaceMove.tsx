@@ -1,13 +1,16 @@
 // The Place move in place (loop-guided-dashboard D4): every working project without
-// a next action, each with a field that adds one, then the stalled projects and the
-// review's project walk.
+// a next action, each with a field that adds one or chooses one of its open tasks
+// (choose-next-action), then the stalled projects and the review's project walk.
 import { useRef, useState, type FormEvent } from 'react'
 import { t } from '../../../lib/i18n'
+import type { NextChoice } from '../../../lib/method/rules'
 import { createTask } from '../../../lib/ops'
 import type { Project } from '../../../lib/types'
 import { Button, Icon, Input } from '../../../ui'
 import { act } from '../../actionError'
 import { ProjectMark } from '../../ProjectMark'
+import { useTickedSuggest } from '../../quickadd/TickedSuggest'
+import { chooseNextAction, choiceHint } from '../chooseNext'
 import { navigate, routePath } from '../../router'
 import type { MoveProps } from '../LoopHome'
 import { GroupHeading } from './rows'
@@ -22,8 +25,14 @@ function ProjectLink({ project }: { project: Project }) {
   )
 }
 
-function AddNext({ project, onAdded }: { project: Project; onAdded: () => void }) {
+function AddNext({ project, choices, onAdded }: { project: Project; choices: readonly NextChoice[]; onAdded: () => void }) {
   const [title, setTitle] = useState('')
+  const [focused, setFocused] = useState(false)
+  // Typing lists the project's open tasks; ↓ and Enter choose one, Enter alone adds the text.
+  const suggest = useTickedSuggest({
+    kind: 'next', items: choices, query: title, enabled: focused, hintOf: choiceHint,
+    onPick: (choice) => { setTitle(''); act(chooseNextAction(choice, project.name).then(onAdded)) },
+  })
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     const text = title.trim()
@@ -33,9 +42,12 @@ function AddNext({ project, onAdded }: { project: Project; onAdded: () => void }
     onAdded()
   }
   return (
-    <form onSubmit={(e) => void submit(e)} className="min-w-0 flex-1">
+    <form onSubmit={(e) => void submit(e)} className="relative min-w-0 flex-1">
       <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('What is the next step?')}
-        aria-label={t('Next action for {name}', { name: project.name })} enterKeyHint="done" data-loop-add-next={project.id} />
+        aria-label={t('Next action for {name}', { name: project.name })} enterKeyHint="done" data-loop-add-next={project.id}
+        autoComplete="off" onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+        onKeyDown={(e) => { suggest.onKeyDown(e) }} {...suggest.aria} />
+      {suggest.list}{suggest.live}
     </form>
   )
 }
@@ -59,7 +71,7 @@ export default function PlaceMove({ data }: MoveProps) {
           {data.withoutNext.map((p, i) => (
             <li key={p.id} className="flex flex-col gap-1.5 rounded-card px-2 py-1.5 sm:flex-row sm:items-center sm:gap-4" data-loop-project={p.id}>
               <span className="min-w-0 sm:w-56 sm:shrink-0"><ProjectLink project={p} /></span>
-              <AddNext project={p} onAdded={() => focusNext(i)} />
+              <AddNext project={p} choices={data.choices.get(p.id) ?? []} onAdded={() => focusNext(i)} />
             </li>
           ))}
         </ul>

@@ -5,7 +5,7 @@
 // the text. Picking inserts a token the parser resolves to exactly that item. The
 // field keeps focus throughout (the combobox pattern); the hook hands the field its
 // ARIA attributes and a key handler that runs before the field's own.
-import { type KeyboardEvent, type RefObject, useId, useMemo, useState } from 'react'
+import { type KeyboardEvent, type RefObject, useEffect, useId, useMemo, useState } from 'react'
 import { createProject } from '../lib/ops'
 import { energySuggestions, hasExact, insertToken, labelSuggestions, labelToken, PRIORITY_SUGGESTIONS, projectSuggestions, tokenAtCaret, type TokenAtCaret } from '../lib/nlp/suggest'
 import { priorityName } from '../lib/priority'
@@ -13,8 +13,10 @@ import type { LabelRef, ProjectRef } from '../lib/nlp'
 import { t } from '../lib/i18n'
 import { energyName } from '../lib/energy'
 import { hueFor, Icon } from '../ui'
-import { useTickedItems } from '../lib/tickedItems'
+import { useTickedItems, type TickedItem } from '../lib/tickedItems'
+import type { NextChoice } from '../lib/method/rules'
 import { useTickedSuggest } from './quickadd/TickedSuggest'
+import { choiceHint } from './method/chooseNext'
 
 interface Item { key: string; label: string; secondary?: string; color?: string; level?: number; create?: boolean; run: () => Promise<string> | string }
 
@@ -38,9 +40,11 @@ export interface TokenSuggestOptions {
   tickedQuery?: string
   /** Adds a ticked item by its exact name, which reopens it. */
   onTicked?: (title: string) => void
+  /** A project's open tasks to choose as its next action, suggested in place of ticked items (choose-next-action). */
+  choices?: { items: readonly NextChoice[]; onPick: (choice: NextChoice) => void }
 }
 
-export function useTokenSuggest({ input, value, setValue, projects, labels, enabled, energy = false, reuseProjectId, tickedQuery, onTicked }: TokenSuggestOptions) {
+export function useTokenSuggest({ input, value, setValue, projects, labels, enabled, energy = false, reuseProjectId, tickedQuery, onTicked, choices }: TokenSuggestOptions) {
   const listId = useId()
   const [caret, setCaret] = useState<number | null>(null)
   const [active, setActive] = useState(0)
@@ -50,7 +54,10 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
   const open = !!at && closedAt !== at.start
   // Only while the field has focus (caret), and no query at all until two characters are typed.
   const typed = (tickedQuery ?? value).trim().length >= 2
-  const ticked = useTickedSuggest({ items: useTickedItems(typed ? reuseProjectId : null), query: tickedQuery ?? value, enabled: !open && !!onTicked && caret !== null, onPick: (item) => onTicked?.(item.title) })
+  const tickedItems = useTickedItems(typed && !choices ? reuseProjectId : null)
+  const ticked = useTickedSuggest<TickedItem | NextChoice>(choices
+    ? { kind: 'next', items: choices.items, query: tickedQuery ?? value, enabled: !open && caret !== null, onPick: (item) => choices.onPick(item as NextChoice), hintOf: (item) => choiceHint(item as NextChoice) }
+    : { items: tickedItems, query: tickedQuery ?? value, enabled: !open && !!onTicked && caret !== null, onPick: (item) => onTicked?.(item.title) })
 
   const items = useMemo<Item[]>(() => {
     if (!at) return []
@@ -77,6 +84,9 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
     const el = input.current
     setCaret(el ? el.selectionStart : null)
   }
+  // A next-action field focused as it mounts (the walk's dialog) offers its choices before any event.
+  // Only there: any other field would open a token's list on a prefilled line (the palette, the sheet).
+  useEffect(() => { if (choices && input.current && input.current === document.activeElement) track() }, []) // eslint-disable-line react-hooks/exhaustive-deps -- on mount only
 
   const pick = async (item: Item) => {
     if (!at) return
@@ -170,5 +180,5 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
     </ul>
   ) : null
 
-  return { fieldProps, onKeyDown, list: list ?? ticked.list, openAt, open: shown }
+  return { fieldProps, onKeyDown, list: list ?? ticked.list, live: ticked.live, openAt, open: shown }
 }

@@ -27,6 +27,7 @@ import { LineDateButton, LineDatePicker, useLineDate } from './quickadd/LineDate
 import { usePasteOffer } from './quickadd/PasteOffer'
 import { NotesLine, useNotesField } from './quickadd/NotesLine'
 import { VoiceButton, VoiceNotice } from './quickadd/VoiceParts'
+import type { NextChoice } from '../lib/method/rules'
 import { usePastedFiles } from './quickadd/PendingFiles'
 
 export type { QuickAddInput }
@@ -192,9 +193,11 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
   logDone?: boolean
   /** Whether Shift+Enter opens the notes field (quick-add-notes D2); off where the screen has its own notes, and in the palette, whose Shift+Enter adds and opens. */
   notes?: boolean
+  /** A project's open tasks, offered while typing to choose one as its next action instead of adding (choose-next-action). */
+  choices?: { items: readonly NextChoice[]; onPick: (choice: NextChoice) => void }
   /** Whether pasted files wait under the field and are attached to the new task (quick-add-files); off where the screen lists files itself. */
   pasteFiles?: boolean
-}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, reuseProjectId, initialValue, formId, hideHint, autoFocus, label, voiceShortcut, layout = 'line', onAddAndOpen, escape, onAddMany, logDone, notes: notesOn = true, pasteFiles = true }, ref) {
+}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, reuseProjectId, initialValue, formId, hideHint, autoFocus, label, voiceShortcut, layout = 'line', onAddAndOpen, escape, onAddMany, logDone, notes: notesOn = true, choices, pasteFiles = true }, ref) {
   // The `q` badge is printed only while "Show shortcut hints" is on (keyboard-shortcuts).
   const hints = useShortcutHints()
   const [value, setValue] = useState(initialValue ?? '')
@@ -238,7 +241,8 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
 
   // `#` and `@` suggestions (smart-title-tokens D1): a listbox under the field for the token at the caret.
   const energyOn = energyLevelsOn(useUserPrefsRow())
-  const suggest = useTokenSuggest({ input: inputRef, value, setValue: change, projects, labels, enabled: settings.enabled, energy: energyOn, reuseProjectId, tickedQuery: parsed?.title ?? value, onTicked: (title) => { void add(false, title) } })
+  const suggest = useTokenSuggest({ input: inputRef, value, setValue: change, projects, labels, enabled: settings.enabled, energy: energyOn, reuseProjectId, tickedQuery: parsed?.title ?? value, onTicked: (title) => { void add(false, title) },
+    choices: choices && { items: choices.items, onPick: (choice) => { change(''); setDismissed([]); choices.onPick(choice) } } })
   // Unmatched #tokens are explained once the caret has left them (natural-language-capture "Unmatched tokens are explained").
   const misses = (parsed?.unmatched ?? []).filter((m) => !suggest.open || caretOutside(inputRef.current, m.span))
 
@@ -407,7 +411,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
         {layout === 'line' && webCalendar && <span className={lead}><LineDateButton date={lineDate} /></span>}
         {voice.enabled && <span className={lead}><VoiceButton voice={voice} shortcut={voiceShortcut} /></span>}
         {!hideHint && hints && <span className={`${lead} max-sm:hidden`} data-kbd-hint><span className="ui-kbd" data-quick-add-hint>{keysOf('list.quick-add')}</span></span>}
-        {layout !== 'sheet' && suggest.list}{paste.offer}
+        {layout !== 'sheet' && suggest.list}{suggest.live}{paste.offer}
       </div>
       {layout === 'line' && webCalendar && lineDate.open && <LineDatePicker id={lineDate.id} due={lineDate.due} onPick={lineDate.pick} onKeyDown={lineDate.escape} />}
       {layout === 'sheet' && suggest.list && <div className="px-3 pb-2 [&>ul]:static [&>ul]:mt-0 [&>ul]:w-full" data-sheet-suggestions>{suggest.list}</div>}

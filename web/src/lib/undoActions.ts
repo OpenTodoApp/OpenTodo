@@ -33,6 +33,7 @@ import { planSortProjects, planTasksMove, type TaskTarget } from './move'
 import { replanChanges, type ReplanProposal, type UnfitChoice } from './replan'
 import { keepWorkspaceFor, Partition, readWorkspaceState, workspaceIdFor } from './workspaces'
 import { resettable } from './moduleState'
+import type { NextChoice } from './method/rules'
 
 export interface UndoableResult {
   /** The undo entry (null when nothing changed). */
@@ -58,6 +59,22 @@ async function applyDates(changes: Change[], all: Task[], label: (n: number) => 
   if (kept.changes.length) return apply(kept.changes, withNotMoved(label(kept.changes.length), kept.refused))
   const only = changes.length === 1 ? await seriesDateRefusal(changes[0].entityId, changes[0].patch.due as Due) : null
   return { entry: null, label: only ?? withNotMoved('', kept.refused), refused: true }
+}
+
+/**
+ * Choose an open task as its project's next action (OpenSpec change choose-next-action):
+ * one undoable edit that clears a Someday or later start and, when the next action comes
+ * before it, puts it just above that task in that task's section.
+ */
+export async function chooseNextActionUndoable(choice: NextChoice, label: string): Promise<UndoableResult> {
+  const patch: Partial<Task> = {}
+  if (choice.clearStart) patch.start = null
+  if (choice.moveTo) {
+    patch.position = choice.moveTo.position
+    if (choice.toSection !== null) patch.section_id = choice.moveTo.section_id
+  }
+  if (!Object.keys(patch).length) return { entry: null, label }
+  return apply([{ entity: 'task', entityId: choice.id, patch }], label)
 }
 
 /** Complete (subtree, or a series rolling forward) or reopen one task. */
