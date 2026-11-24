@@ -210,12 +210,21 @@ standing on an exception date. Any device that may edit the task then moves it t
 the next free date after the next sync; every device computes the same date. The
 server does the same before it completes a series.
 
-For the same reason the app does not move a series onto one of its exceptions.
+### Moving a series onto a recorded date
+
+For the same reason a series is never moved onto one of its exceptions.
 Picking a date that is already done, skipped or moved, in When, by dragging the
 series or with the Due action on a selection, leaves the series where it is: the
 toast says why, or counts it as not moved when other tasks moved with it.
 Changing the date in When moves the series' start and deadline by the same number
 of days.
+
+The server applies the same rule to the [API](api.md), [`ot edit --due`](cli.md)
+and [assistants](mcp.md): such a change is refused with `409 series_date_taken`,
+and the whole request fails, other tasks in it included (the app moves the
+others); the message names the date and whether it is done, skipped or moved. Any other date, earlier ones included, still moves the series.
+Devices syncing changes they made offline are never refused; the repair above
+settles them.
 
 ### Counting with records
 

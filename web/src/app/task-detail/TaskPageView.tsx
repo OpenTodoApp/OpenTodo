@@ -166,7 +166,9 @@ export function TaskPageView({ taskId, userId, readOnly: viewer, projects, label
           <Subtasks task={task} items={m.children} progress={m.progress} readOnly={locked} boxed onToggle={m.toggle} onOpen={onOpen} />
           <AttachmentsRow taskId={task.id} userId={userId} role={roleOf(task.project_id, m.memberships ?? new Map())} dropTarget={root} />
           <ConversationTabs task={task} userId={userId} readOnly={readOnly} onOpen={onOpen} composerHost={footer} page />
-          <div ref={setFooter} data-panel-footer className="sticky bottom-0 bg-surface pb-3 pt-2 empty:hidden" />
+          {/* Above the sticky tab bar (z 5), under the page header (z 10): pinned over the thread, the
+              composer covers the tab bar scrolling under it instead of being cut by it (GitHub issue 1939). */}
+          <div ref={setFooter} data-panel-footer className="sticky bottom-0 z-[6] bg-surface pb-3 pt-2 empty:hidden" />
         </div>
       </div>
       {m.pageDialog && <TaskPageDialog task={task} status={m.pageStatus ?? null} onClose={() => m.setPageDialog(false)} />}

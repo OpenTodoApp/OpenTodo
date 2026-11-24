@@ -81,6 +81,8 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		out["minClientVersion"] = MinClientVersion
 		// The instance themes' version (theme-instance-default D3): devices read them again when it grows.
 		out["themes"] = map[string]int64{"version": s.themesVersion(r)}
+		// What a click on a task does for accounts that have not chosen (click-default D2).
+		out["rowClick"] = map[string]string{"default": s.rowClickDefault(r)}
 	}
 	if err := s.deviceRevocation(r, out, sess, u == nil && viaCookie); err != nil {
 		s.internal(w, err)

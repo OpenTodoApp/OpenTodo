@@ -229,7 +229,7 @@ describe('opening a section', () => {
     expect(rows(member, 'capture')).toEqual(['quick-add', 'voice', 'browser', 'email'])
     expect(rows(member, 'integrations')).toEqual(['caldav', 'calendar-feeds', 'calendar-sync', 'issues', 'webhooks', 'tokens', 'assistant', 'mcp', 'app-links'])
     expect(rows(owner, 'people')).toEqual(['users', 'access-policies', 'sso'])
-    expect(rows(owner, 'server')).toEqual(['backups', 'attachments', 'outgoing-email', 'branding', 'maps', 'automations', 'speech', 'audit'])
+    expect(rows(owner, 'server')).toEqual(['backups', 'attachments', 'outgoing-email', 'branding', 'maps', 'task-lists', 'automations', 'speech', 'audit'])
     for (const id of ['workspaces', 'about', 'data'] as const) expect(rows(member, id)).toEqual([])
     // The overview shows no card of its pages.
     expect(render(owner, 'integrations')).not.toContain('id="webhooks-heading"')

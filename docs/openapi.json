@@ -220,6 +220,7 @@
                   "run_closed",
                   "scope_change",
                   "self_action",
+                  "series_date_taken",
                   "session_only",
                   "session_required",
                   "set_by_environment",
@@ -3651,6 +3652,9 @@
                   },
                   "passkeyDomain": "example",
                   "passkeysAvailable": false,
+                  "rowClick": {
+                    "default": "example"
+                  },
                   "setupCodeForHost": false,
                   "setupCodeRequired": false,
                   "setupRequired": false,
@@ -3773,6 +3777,14 @@
                     },
                     "passkeysAvailable": {
                       "type": "boolean"
+                    },
+                    "rowClick": {
+                      "properties": {
+                        "default": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
                     },
                     "setupCodeForHost": {
                       "type": "boolean"
@@ -34555,6 +34567,67 @@
         "x-opentodo-policy": "owner-only"
       }
     },
+    "/api/v1/settings/row-click": {
+      "put": {
+        "description": "Owner. `{default}`, `select` or `open` (400 `invalid_input` otherwise); answers `{default}`. Recorded as `settings.changed` (`row_click.default`). Refused on a demo instance\n\nOnly the server's owner.",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#click-a-task-to"
+        },
+        "operationId": "putSettingsRowClick",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "default": "example"
+              },
+              "schema": {
+                "properties": {
+                  "default": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "default": "example"
+                },
+                "schema": {
+                  "properties": {
+                    "default": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Update settings row click",
+        "tags": [
+          "Click a task to"
+        ],
+        "x-opentodo-policy": "owner-only"
+      }
+    },
     "/api/v1/settings/smtp": {
       "get": {
         "description": "the [outgoing email](https://open-todo.app/docs/api/#outgoing-email) configuration without the password\n\nOnly the server's owner. Needs a session or an admin token; full tokens are refused.",
@@ -45912,6 +45985,13 @@
         "url": "https://open-todo.app/docs/api/#calendar-sync"
       },
       "name": "Calendar sync"
+    },
+    {
+      "description": "The owner sets what a click on a task does for accounts that have not chosen (**Settings → Server → Task lists**): `select` (the first click selects the task, a second click on its title edits it) or `open` (a click opens the task). An account's own choice is the synced `user_prefs.row_click` (`select`, `open`, or `\"\"` to follow the server) and always wins. `GET /api/v1/auth/status` carries `\"rowClick\": {\"default\": \"select\"}` for a signed-in caller.",
+      "externalDocs": {
+        "url": "https://open-todo.app/docs/api/#click-a-task-to"
+      },
+      "name": "Click a task to"
     },
     {
       "description": "For an account with end-to-end encryption, a device the user opted in answers the decrypt and encrypt steps of [MCP tool calls](https://open-todo.app/docs/mcp/#encrypted-accounts) (OpenSpec `mcp-device-relay`). The server never holds the key; relayed text exists only in memory during the call and is never stored, logged or audited. Session cookies only (no API tokens); every route is refused on a demo instance.",

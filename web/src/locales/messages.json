@@ -2561,7 +2561,7 @@
   "Backups of the whole server are under <a>Settings → Server</a>.": [
     "web/src/app/DataSettings.tsx"
   ],
-  "Backups, attachments, outgoing email, branding, maps, automations, speech to text and the audit log": [
+  "Backups, attachments, outgoing email, branding, maps, task lists, automations, speech to text and the audit log": [
     "web/src/app/settingsSections.ts"
   ],
   "Bakery": [
@@ -3546,6 +3546,9 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Clears your tasks from this device after uploading unsynced changes.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Click a task to": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Click to sync now": [
@@ -5501,7 +5504,7 @@
     "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
-  "Download your data, branding, maps, automations and the audit log": [
+  "Download your data, branding, maps, task lists, automations and the audit log": [
     "web/src/app/settingsSections.ts"
   ],
   "Download {name}": [
@@ -12803,7 +12806,8 @@
     "web/src/app/datetime/DateField.tsx"
   ],
   "Open details": [
-    "web/src/app/task-list/InlineEditor.tsx"
+    "web/src/app/task-list/InlineEditor.tsx",
+    "web/src/lib/rowClickPref.ts"
   ],
   "Open in Help": [
     "web/src/app/help/HelpPanel.tsx"
@@ -16003,6 +16007,9 @@
   "Select {title}": [
     "web/src/app/TaskRow.tsx"
   ],
+  "Select, then edit the title": [
+    "web/src/lib/rowClickPref.ts"
+  ],
   "Selected": [
     "web/src/ui/AccentPicker.tsx"
   ],
@@ -17838,6 +17845,10 @@
   ],
   "Task details": [
     "web/src/app/PanelHost.tsx",
+    "web/src/app/settingsSections.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Task lists": [
     "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
@@ -21369,6 +21380,9 @@
   ],
   "Use the recovery key instead": [
     "web/src/app/UnlockScreen.tsx"
+  ],
+  "Use the server default ({choice})": [
+    "web/src/app/AppearanceSection.tsx"
   ],
   "Use the server’s assistant": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -26696,5 +26710,8 @@
   ],
   "⤼ Skip": [
     "web/src/app/RecurrenceField.tsx"
+  ],
+  "That date of this repeating task is already done, skipped or moved.": [
+    "web/src/lib/i18n/errors.ts"
   ]
 }

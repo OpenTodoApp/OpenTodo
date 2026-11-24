@@ -121,6 +121,8 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	s.registerBrandingRoutes(mux)
 	// The instance's default theme and themes (OpenSpec `theme-instance-default`).
 	s.registerInstanceThemeRoutes(mux)
+	// The server's "Click a task to" default (OpenSpec `click-default`).
+	s.registerRowClickRoutes(mux)
 	// Database storage and notes compaction (OpenSpec `op-log-compaction`).
 	s.registerStorageRoutes(mux)
 	// Web push (OpenSpec `reminders`): registered only while push is enabled.

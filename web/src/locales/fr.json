@@ -795,7 +795,7 @@
   "Backups": "Sauvegardes",
   "Backups are encrypted with your passphrase. Enter a new one to change it (future backups only).": "Les sauvegardes sont chiffrées avec ta phrase secrète. Saisis-en une nouvelle pour la changer (sauvegardes futures uniquement).",
   "Backups of the whole server are under <a>Settings → Server</a>.": "Les sauvegardes du serveur entier sont dans <a>Réglages → Serveur</a>.",
-  "Backups, attachments, outgoing email, branding, maps, automations, speech to text and the audit log": "Sauvegardes, pièces jointes, e-mail sortant, identité visuelle, cartes, automatisations, parole en texte et journal d’audit",
+  "Backups, attachments, outgoing email, branding, maps, task lists, automations, speech to text and the audit log": "Sauvegardes, pièces jointes, e-mail sortant, identité visuelle, cartes, listes de tâches, automatisations, parole en texte et journal d’audit",
   "Base URL": "URL de base",
   "Base colours": "Couleurs de base",
   "Base colours: every other colour follows from these.": "Couleurs de base : toutes les autres couleurs en découlent.",
@@ -1520,7 +1520,7 @@
   "Download export (JSON)": "Télécharger l’export (JSON)",
   "Download export with files (ZIP)": "Télécharger l’export avec les fichiers (ZIP)",
   "Download your data": "Télécharge tes données",
-  "Download your data, branding, maps, automations and the audit log": "Télécharger tes données, identité visuelle, cartes, automatisations et journal d’audit",
+  "Download your data, branding, maps, task lists, automations and the audit log": "Télécharger tes données, identité visuelle, cartes, listes de tâches, automatisations et journal d’audit",
   "Download {name}": "Télécharger {name}",
   "Do|method": "Agir",
   "Draft": "Rédiger",
@@ -7872,5 +7872,10 @@
   "{name} reopened a task": "{name} a rouvert une tâche",
   "Completed or reopened": "Terminée ou rouverte",
   "Unread changes": "Modifications non lues",
-  "{name} will be attached": "{name} sera joint"
+  "{name} will be attached": "{name} sera joint",
+  "That date of this repeating task is already done, skipped or moved.": "Cette date de la tâche récurrente est déjà faite, sautée ou déplacée.",
+  "Click a task to": "Cliquer sur une tâche pour",
+  "Select, then edit the title": "Sélectionner, puis modifier le titre",
+  "Task lists": "Listes de tâches",
+  "Use the server default ({choice})": "Utiliser le réglage du serveur ({choice})"
 }

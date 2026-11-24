@@ -167,7 +167,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<Sett
   },
   {
     id: 'server', label: msg('Server'), group: 'server', icon: 'upload',
-    description: () => (getHosted() ? t('Download your data, branding, maps, automations and the audit log') : t('Backups, attachments, outgoing email, branding, maps, automations, speech to text and the audit log')),
+    description: () => (getHosted() ? t('Download your data, branding, maps, task lists, automations and the audit log') : t('Backups, attachments, outgoing email, branding, maps, task lists, automations, speech to text and the audit log')),
     visible: owner,
     pages: pages([
       page({ id: 'backups', label: msg('Backups'), icon: 'archive', help: 'settings/backups', visible: ownsServer, demo: [msg('backups')] }),
@@ -176,6 +176,8 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<Sett
       page({ id: 'outgoing-email', label: msg('Outgoing email'), icon: 'mail', help: 'settings/outgoing-email', visible: ownsServer, demo: [msg('outgoing email')] }),
       page({ id: 'branding', label: msg('Branding'), icon: 'palette', help: 'settings/branding' }),
       page({ id: 'maps', label: msg('Maps'), icon: 'map', help: 'settings/server' }),
+      // click-default D2: what a click on a task does for accounts that have not chosen.
+      page({ id: 'task-lists', label: msg('Task lists'), icon: 'list-checks', help: 'settings/server' }),
       page({ id: 'automations', label: msg('Automations'), icon: 'zap', help: 'settings/server' }),
       page({ id: 'speech', label: msg('Speech to text'), icon: 'audio-lines', help: 'settings/server', visible: ownsServer }),
       page({ id: 'audit', label: msg('Audit log'), icon: 'scroll-text', help: 'settings/server', anchors: ['audit-log'] }),

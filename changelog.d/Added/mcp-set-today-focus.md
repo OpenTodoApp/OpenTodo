@@ -1,0 +1,1 @@
+- **Set today's focus from an assistant.** The new MCP tool `set_today_focus` picks up to three of your tasks as today's focus, or clears it, by the same rule as the Daily check and the routine step, Bento slots included; `today_summary` now returns the focus ([#1896](https://github.com/OpenTodoApp/OpenTodo/issues/1896)).

@@ -8,6 +8,7 @@ import { createProject, createTask, resetDeviceId } from '../../lib/ops'
 import { saveViewMode } from '../../lib/sections'
 import { setCurrentUserId } from '../../lib/sharing'
 import { setTaskOpen } from '../../lib/userPrefs'
+import { setRowClick, setServerRowClick } from '../../lib/rowClickPref'
 import { createView } from '../../lib/views'
 import { minWidthPx, mockFetch, noPublicLinks, render, visibleText, waitFor } from '../../ui/test-utils'
 import { FilterView } from '../FilterView'
@@ -250,6 +251,52 @@ describe('click selects before editing', () => {
     const r = await render(<KeyboardView vim={false} onVim={() => {}} />)
     expect(r.container.querySelectorAll('[role="switch"]')).toHaveLength(3)
     expect(r.container.querySelector('[data-row-click]')).toBeNull()
+    await r.unmount()
+  })
+})
+
+describe('Click a task to (click-default)', () => {
+  it('follows the server default "Open details": a click opens the page and never edits', async () => {
+    setServerRowClick('open')
+    const { a, r } = await list()
+    await click(title(a))
+    await waitFor(() => openedTask() === a)
+    expect(editor()).toBeNull()
+    await r.unmount()
+  })
+
+  it('with "Open details" a click shows the task in the side panel, a second click does not edit', async () => {
+    setServerRowClick('open')
+    await setTaskOpen('panel')
+    const { a, b, r } = await list()
+    await click(title(a))
+    await waitFor(() => panel() === a)
+    await click(title(a), { at: 5_000 })
+    expect(editor()).toBeNull()
+    await click(title(b), { at: 9_000 })
+    await waitFor(() => panel() === b)
+    expect(editor()).toBeNull()
+    await r.unmount()
+  })
+
+  it('the account choice "Select, then edit the title" wins over the server default', async () => {
+    setServerRowClick('open')
+    await setRowClick('select')
+    const { a, r } = await list()
+    await click(title(a))
+    expect(row(a).getAttribute('aria-current')).toBe('true')
+    expect(openedTask()).toBeNull()
+    await click(title(a), { at: 5_000 })
+    await waitFor(() => editor()?.value === 'Order the tiles')
+    await r.unmount()
+  })
+
+  it('the account choice "Open details" wins over the server default', async () => {
+    await setRowClick('open')
+    const { a, r } = await list('today')
+    await click(title(a))
+    await waitFor(() => openedTask() === a)
+    expect(editor()).toBeNull()
     await r.unmount()
   })
 })

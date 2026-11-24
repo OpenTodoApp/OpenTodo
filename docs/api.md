@@ -1721,6 +1721,14 @@ The owner sets the default light and dark theme of the server and offers up to 2
 
 The writes are refused on a demo instance. There is no environment variable for the default theme.
 
+### Click a task to
+
+The owner sets what a click on a task does for accounts that have not chosen (**Settings → Server → Task lists**): `select` (the first click selects the task, a second click on its title edits it) or `open` (a click opens the task). An account's own choice is the synced `user_prefs.row_click` (`select`, `open`, or `""` to follow the server) and always wins. `GET /api/v1/auth/status` carries `"rowClick": {"default": "select"}` for a signed-in caller.
+
+| Route | Does |
+| --- | --- |
+| `PUT /api/v1/settings/row-click` | Owner. `{default}`, `select` or `open` (400 `invalid_input` otherwise); answers `{default}`. Recorded as `settings.changed` (`row_click.default`). Refused on a demo instance |
+
 `GET /api/v1/me` includes `attachments: {enabled, max_file_bytes, quota_bytes, used_bytes}`.
 
 **Downloads** are served with `Content-Security-Policy: default-src 'none'; sandbox`, `X-Content-Type-Options: nosniff`, `Content-Disposition` with the file name, `Cache-Control: private, no-cache` and the digest as `ETag`, so a browser revalidates its copy (304 while signed in) and shows nothing without a session; signing out answers `Clear-Site-Data: "cache"`. Only images (PNG, JPEG, GIF, WebP, AVIF), PDF, plain text, audio and video are served inline with their type; everything else (HTML and SVG included) and every encrypted file is `application/octet-stream` with `attachment`.
@@ -2745,6 +2753,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `demo_restricted` | 403 | a feature a demo instance (`OPENTODO_DEMO=true`) refuses, before authentication: sign-up, invitations, user administration, password change and resets, tokens, app passwords, CalDAV, passkeys, two-factor, settings writes, backups, webhooks, email inbox, import, encryption, push, membership changes, project invite links (every method), `/mcp`, the assistant (`/api/v1/assistant/*`, `/api/v1/me/assistant*`), automation rules (`/api/v1/rules*`, `/api/v1/me/rules*`, `/api/v1/settings/automations`). See [demo instance](self-hosting/demo.md#what-is-switched-off) |
 | `not_found` | 404 | unknown id, including another account's items, webhooks and deliveries, and items you cannot read; `/api/v1/push/*` with `OPENTODO_PUSH=off` |
 | `conflict` | 409 | starting or undoing an import while another import of yours runs; `POST /backups/run` while a backup is running, or after a restore was confirmed; confirming a restore while a backup runs |
+| `series_date_taken` | 409 | a write that moves a repeating task's `due` onto a date that already has one of its occurrences (done, skipped or moved); the message names the date and which, and nothing is applied. See [recurrence](recurrence.md#moving-a-series-onto-a-recorded-date) |
 | `too_large` | 413, 400 | 413: a JSON request body over its limit (4 MB unless the route says otherwise); `/mcp` body over 1 MB; an assistant turn over 256 KB or 40 messages; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows, a CSV field over 1 MiB, a CSV record over 4 MiB or 1,000 fields, or JSON nested over 256 levels. 400: an [away period](#away) that would make more than 20,000 changes |
 | `rate_limited` | 429 | too many attempts in the window, see [Behaviour notes](#behaviour-notes) |
 | `demo_limit` | 429 | demo instance: the sandbox used its write budget (600 ops per hour, 5,000 ops and 2 MB of values in total), or the database is above its size limit, on `/sync` or a REST write; nothing of the batch is applied. Demo instances also cap values at 4 KB (32 KB for task notes) with `invalid_input` / `invalid_op` |

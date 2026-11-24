@@ -29,6 +29,7 @@ var notAStep = map[string]string{
 	"reorder_sections":    "order is a person's arrangement, not an automation",
 	"update_sections":     "as reorder_sections",
 	"update_labels":       "labels are created by Create labels; renaming is the person's",
+	"set_today_focus":     "Set today's focus (set_focus) runs the same rule, ruleval.PlanSetFocus, in the engine",
 	// No routine step creates, edits, enables or runs a routine (design D11).
 	"create_routine":      "a routine never makes routines",
 	"update_routine":      "a routine never edits routines",

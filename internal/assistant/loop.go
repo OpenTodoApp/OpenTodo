@@ -432,7 +432,10 @@ var notInApp = map[string]bool{"update_project": true, "set_favourite": true, "c
 	"run_routine": true, "set_routine_enabled": true, "create_routine": true, "update_routine": true, "trash_routine": true,
 	// Objectives are read by external agents only (plan-objectives D7): the
 	// in-app assistant's disclosure does not name them.
-	"list_objectives": true}
+	"list_objectives": true,
+	// Today's focus is set in the Daily check; the review screen does not
+	// describe a focus change (mcp-set-today-focus).
+	"set_today_focus": true}
 
 // withWorkday gives find_free_time the device's working day when the model
 // names none (assistant-time-blocks D2), so its answer matches the block.

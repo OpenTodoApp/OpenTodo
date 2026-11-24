@@ -307,7 +307,7 @@ func TestToolsListByToken(t *testing.T) {
 	e.mustStatus(resp, 201, out)
 	tid := out["id"].(string)
 	read, full := e.token("read"), e.token("full")
-	if n := len(c.toolNames(agentSecret)); n != 56 {
+	if n := len(c.toolNames(agentSecret)); n != 57 {
 		t.Fatalf("agent tools = %d", n)
 	}
 	for name, secret := range map[string]string{"read": read, "full": full} {

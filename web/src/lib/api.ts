@@ -558,6 +558,8 @@ export const api = {
   putThemeDefault: (d: { light: string; dark: string }) => request<unknown>('PUT', '/api/v1/settings/themes/default', d),
   putInstanceTheme: (id: string, doc: unknown) => request<unknown>('PUT', `/api/v1/settings/themes/instance/${encodeURIComponent(id)}`, doc),
   deleteInstanceTheme: (id: string) => request<unknown>('DELETE', `/api/v1/settings/themes/instance/${encodeURIComponent(id)}`),
+  // The server's "Click a task to" default (click-default D2); members read it in auth/status.
+  putRowClickDefault: (value: 'select' | 'open') => request<{ default: string }>('PUT', '/api/v1/settings/row-click', { default: value }),
   // Calendar feeds (OpenSpec calendar-feeds).
   calendarFeedsSwitch: ownerSwitch('calendar-feeds'),
   calendarSubscriptions: () => request<{ subscriptions: CalendarSubscription[] }>('GET', '/api/v1/calendar-feeds/subscriptions'),
