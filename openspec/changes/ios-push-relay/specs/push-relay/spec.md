@@ -7,7 +7,7 @@ The project SHALL provide an open-source push relay (`cmd/opentodo-push-relay`) 
 
 #### Scenario: A wake carries nothing about tasks
 - **WHEN** a server sends a `due` wake for a device with a reminder titled "Call the bank"
-- **THEN** the push the relay sends to Apple contains the fixed alert keys, `mutable-content`, the category and the version, and no title, task id, reminder id, account or server name
+- **THEN** the push the relay sends to Apple contains the fixed alert keys, `mutable-content`, the category and the version, with the default interruption level, and no title, task id, reminder id, account or server name
 
 #### Scenario: A caller tries to add content
 - **WHEN** a wake request carries extra fields such as `title` or `url`
@@ -17,20 +17,20 @@ The project SHALL provide an open-source push relay (`cmd/opentodo-push-relay`) 
 - **WHEN** the relay restarts
 - **THEN** every handle issued before keeps working until it expires, because nothing about it was stored
 
-### Requirement: Registration through a genuine app
-`POST /v1/register` SHALL accept an APNs device token, its environment, a 32-byte wake key and a DeviceCheck token. It SHALL validate the DeviceCheck token with Apple and, when it is valid, answer a handle sealed with the relay's newest sealing key that holds the token, the environment, the wake key and the issue time. The handle SHALL expire 30 days after it was issued. The relay SHALL store nothing about the registration. It SHALL keep up to four sealing keys by id and open handles sealed with any of them.
+### Requirement: Registration seals a device into a handle
+`POST /v1/register` SHALL accept exactly an APNs device token, its environment and a 32-byte wake key, and refuse any other field. It SHALL answer a handle sealed with the relay's newest sealing key, with that key's id bound into the authenticated data, holding the token, the environment, the wake key and the issue time. The handle SHALL expire 30 days after it was issued. The relay SHALL store nothing about the registration and SHALL make no request to anyone to answer it. It SHALL keep up to four sealing keys by id and open handles sealed with any of them.
 
 #### Scenario: Register
-- **WHEN** the user's server posts a valid token, environment, wake key and DeviceCheck token
+- **WHEN** the user's server posts a valid token, environment and wake key
 - **THEN** the relay answers 200 with a handle and its expiry 30 days ahead, and writes nothing to disk or to its log about the request
 
-#### Scenario: No genuine app
-- **WHEN** a registration carries a DeviceCheck token that Apple does not accept, or none
-- **THEN** the relay answers 401 `device-check` and issues no handle
+#### Scenario: Malformed registration
+- **WHEN** a registration carries a token that is not hex, a wake key that is not 32 bytes, or an extra field
+- **THEN** the relay answers 400 `invalid` and issues no handle
 
-#### Scenario: Apple is unavailable
-- **WHEN** Apple's DeviceCheck service cannot be reached
-- **THEN** the relay answers 503 `apple-unavailable` and issues no handle
+#### Scenario: Key id changed
+- **WHEN** someone changes the key id at the front of a valid handle
+- **THEN** the handle no longer opens, and a wake with it gets 401 `signature`
 
 #### Scenario: Sealing key rotated
 - **WHEN** a new sealing key is added and an older one is kept
@@ -60,11 +60,15 @@ The project SHALL provide an open-source push relay (`cmd/opentodo-push-relay`) 
 - **THEN** the relay answers 410 `gone`, so the server can forget the device
 
 ### Requirement: Rate limits protect devices and the key
-The relay SHALL limit, in memory only: per handle, 3 `refresh` an hour and 12 `due` an hour and 100 a day; per source address (IPv6 grouped per /56), 3,000 wakes an hour and 30 registrations an hour; per instance, 50 wakes a second. A request over a limit SHALL get 429 with `Retry-After` and SHALL send nothing. Per-handle counters SHALL be keyed by a salted hash whose salt changes daily. Request bodies SHALL be at most 4 KB.
+The relay SHALL limit, in memory only: per device token, 3 `refresh` an hour, and 4 `due` an hour and 24 a day, whichever handle names it; per source address (IPv6 grouped per /56), 3,000 wakes an hour and 30 registrations an hour; per instance, 50 wakes a second. A request over a limit SHALL get 429 with `Retry-After` and SHALL send nothing. Per-device counters SHALL be keyed by a salted hash whose salt changes daily. Request bodies SHALL be at most 4 KB. The limits SHALL reset when the relay restarts, and the documentation SHALL say so; the reference deployment SHALL be one long-running instance.
 
 #### Scenario: Too many wakes for one device
 - **WHEN** a server sends a fourth `refresh` for the same handle within an hour
 - **THEN** the relay answers 429 with `Retry-After` and Apple receives nothing for it
+
+#### Scenario: Alerts to a known token
+- **WHEN** someone who knows a phone's APNs token registers it again and sends `due` wakes
+- **THEN** the phone receives at most 4 generic alerts in that hour and 24 that day, counted together with its own server's
 
 #### Scenario: One address registers in bulk
 - **WHEN** one address sends its 31st registration within an hour
