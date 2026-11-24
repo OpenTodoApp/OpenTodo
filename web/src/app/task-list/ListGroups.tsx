@@ -21,7 +21,7 @@ import { sectionTarget, type BoardColumn } from '../BoardView'
 import { groupKey, setGroupCollapsed } from '../collapsedGroups'
 import { FieldColumnsRow, FieldColumnsTable } from '../FieldColumns'
 import { SectionHeader, SectionQuickAdd } from '../Sections'
-import { SubProjectsGroup } from '../SubProjects'
+import { SubProjectsGroup, subProjectLead } from '../SubProjects'
 import { taskDrop } from '../taskDrop'
 import { departures$, ghostMemory, isGhost, listCommitted, markGhost, registerList, withGhosts } from '../motion'
 import type { FlowView } from '../../lib/useFlow'
@@ -473,7 +473,7 @@ export function GroupedList(p: GroupedListProps) {
     ? <div role="rowgroup" {...extra}>{flatRows(children)}</div>
     : <RowList extra={extra}>{flatRows(children)}</RowList>)
   // The Sub-projects group leads a project's list, its open sub-projects' rows inside it (subproject-inline D1).
-  const lead = p.groups[0]?.key === SUB_PROJECTS ? p.groups.filter((g) => g.key === SUB_PROJECTS || g.subProject) : null
+  const lead = subProjectLead(p.groups)
   const groups = lead ? p.groups.slice(lead.length) : p.groups
   const subs = lead && <SubProjectsGroup key={SUB_PROJECTS} groups={lead} projects={p.projects} toggle={p.toggleCollapsed} canEdit={p.canEdit ?? (() => false)}
     rows={(g) => rowList(renderListRows(g.rows, p.renderRow), { 'aria-label': g.heading ?? '' })} />
@@ -723,16 +723,16 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
     <section className={`${summary && collapsed ? 'mb-1' : 'mb-4'}${g.dropDay ? ' rounded-control data-drop-active:ring-2 data-drop-active:ring-accent' : ''}${activeTodayDrop === g.key ? ' rounded-control ring-2 ring-accent' : ''}`} data-group={g.key} data-day-summary-bar={summary && collapsed ? '' : undefined}
       data-drop-target={todayDropTarget?.(g) ? `today-group:${g.key}` : undefined}
       data-task-drop={g.dropDay ? `day:${g.dropDay}` : undefined}>
-      {g.folded !== undefined ? inTable(fieldColumns, projectDrop(editable ? g.dropProject : undefined, (
+      {g.folded !== undefined ? inTable(fieldColumns, barDrop(editable && g.dropProject ? taskDrop.project(g.dropProject) : undefined, (
         <ListGroupHeader title={g.heading ?? ''} count={g.count} detail={g.folded ? g.detail : undefined} collapsed={g.folded} onToggle={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)}
           actions={view === 'today' && g.key === 'done' ? <LogWinAction /> : undefined}
           actionsAlwaysVisible={g.key === 'done'} />
-      ))) : g.heading && inTable(fieldColumns, partDrop(g.dropPart, (
+      ))) : g.heading && inTable(fieldColumns, barDrop(g.dropPart && `part:${g.dropPart}`, (
         <ListGroupHeader title={g.heading} count={g.note || (events && liveRows(g.rows) === 0) ? undefined : liveRows(g.rows)} note={activeTodayDrop === g.key ? t('Move to {project}', { project: g.heading }) : g.note} kind={g.named ? 'named' : 'generated'}
           hue={projectHue(project)} icon={project?.icon}
           collapsed={collapsed} onToggle={toggle} detail={summary && collapsed ? <SummaryTitles rows={g.rows} /> : undefined}
           actions={earlier ? earlierActions?.(g.rows.filter((r) => !isGhost(r.task)).map((r) => r.task.id)) : undefined} actionsAlwaysVisible={earlier} />
-      )))}
+      ), g.dropPart))}
       {contextualDrag && todayDropTarget?.(g) && (
         <div data-promote-context="" data-drop-target={`today-context-promote:${g.key}`}
           className="my-1 rounded-control border border-dashed border-strong px-3 py-2 text-meta text-muted data-drop-active:border-accent data-drop-active:bg-accent-soft">
@@ -791,15 +791,14 @@ function SummaryTitles({ rows }: { rows: Row[] }) {
   return <span className="text-faint" data-day-summary>{titles.slice(0, 3).join(', ')}{titles.length > 3 ? '…' : ''}</span>
 }
 
-/** Today's part headings take a dragged task (day-parts D4), resolved by the drag as `drop:part:<part>`. */
-function partDrop(part: ListGroup['dropPart'], header: ReactNode): ReactNode {
-  if (!part) return header
-  return <div className="rounded-control data-drop-active:ring-2 data-drop-active:ring-accent" data-task-drop={`part:${part}`} data-part-heading={part}>{header}</div>
-}
-
-/** The Tasks bar takes a dragged task back to the project (subproject-inline D5), as a drop on the sidebar's project does. */
-function projectDrop(id: string | undefined, header: ReactNode): ReactNode {
-  return id ? <div className="rounded-control data-drop-active:ring-2 data-drop-active:ring-accent" data-task-drop={taskDrop.project(id)}>{header}</div> : header
+/**
+ * A bar that takes a dragged task, resolved by the drag as `drop:<value>`: Today's part
+ * headings (day-parts D4, `part:<part>`) and a project's Tasks bar (subproject-inline D5,
+ * `project:<id>`, as a drop on the sidebar's project).
+ */
+function barDrop(value: string | undefined, header: ReactNode, part?: string): ReactNode {
+  if (!value) return header
+  return <div className="rounded-control data-drop-active:ring-2 data-drop-active:ring-accent" data-task-drop={value} data-part-heading={part}>{header}</div>
 }
 
 /** Today's Done today header action (today-closed-list D6): quick add with "Log as done" on. */

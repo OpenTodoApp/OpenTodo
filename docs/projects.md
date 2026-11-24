@@ -29,6 +29,8 @@ The **Project** menu at the top right of a project lets you:
 - **Archive…** it: it and its sub-projects leave the sidebar, every task kept,
 - **Delete project…**, which moves it to the Trash.
 
+Archive and delete ask first.
+
 <picture><source srcset="images/project-move-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/project-move-light.webp" alt="The Move to step of the project menu: a search field above the possible targets, Top level first, each project shown with the projects it sits in."></picture>
 
 A project shows how much is done next to its title, as [All projects](all-projects.md) does.
@@ -47,7 +49,7 @@ Inside a project you can also group tasks into sections and show them as a board
 
 ## Sub-projects
 
-Sub-projects work like folders: "Work" can hold "Q4 launch". A project's page lists them; the arrow before one shows its tasks in place, per device, and its name opens it. Drop a task on one to move it. In the sidebar, fold one with its arrow or <kbd>←</kbd> / <kbd>→</kbd>. The **+** menu next to **Projects** has **Collapse all**, **Expand all** and **Sort by name**; a project's menu has **Sort sub-projects by name**. Each sorts once, with Undo: "2" before "10". The magnifier (<kbd>g</kbd> then <kbd>/</kbd>) finds a project.
+Sub-projects work like folders: "Work" can hold "Q4 launch". A project's page lists them; the arrow before one shows its tasks in place; its name opens it. Drop a task on one to move it. The sidebar folds them with <kbd>←</kbd> / <kbd>→</kbd>. The **+** menu next to **Projects** has **Collapse all**, **Expand all** and **Sort by name**; a project's menu has **Sort sub-projects by name**. Each sorts once, with Undo: "2" before "10". The magnifier (<kbd>g</kbd> then <kbd>/</kbd>) finds a project.
 
 ## Duplicate a project or task
 

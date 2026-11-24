@@ -4,13 +4,13 @@
 
 The Sub-projects group used to be a component above the list. To put a sub-project's tasks among the list's rows, its rows move into the list model: `listGroups` emits a "Sub-projects" bar group (folded per project on this device, as before), then one group per shown sub-project (`subProject: <id>`, its depth, its rolled-up open count, open or folded), and the project's own groups after them. An open sub-project's group holds its rows; a folded one holds none. Because they are ordinary groups, the cursor (`j`/`k`), `x`, Enter, `.`, inline editing, selection, the row cache (`keepGroups`), the sibling positions and the drag all reach the opened tasks without code of their own, and nothing reaches a folded one.
 
-`GroupedList` draws the bar and the sub-project groups as one `<section data-sub-projects>`, each group headed by the sub-project row of before. The fold state of the bar moves into the device's collapse set as `project:<id>:sub-projects:folded`; the old `ot.subprojects.collapsed` list is read into it once and removed.
+`GroupedList` draws the bar and the sub-project groups as one `<section data-sub-projects>`, each group headed by the sub-project row of before. The fold state of the bar moves into the device's collapse set as `project:<id>:sub-projects:folded`. The old `ot.subprojects.collapsed` list is not carried over: it was only a fold on this device, so at worst a folded bar shows open once. The timeline's group is drawn from the same groups (without the arrow), so there is one path.
 
 Rejected: a separate tree of rows beside the list (every list feature would need a second path), and opening a sub-project in the panel (it is a list, not a task).
 
 ## D2. The arrow
 
-The row's empty 16 px fold slot (kept for the column grid since subprojects-above-tasks) takes a chevron button, the sidebar's: 24 px under a fine pointer, 44 px on touch, named "Expand Garden" or "Collapse Garden", `aria-expanded`. The name keeps opening the sub-project. Open is stored as `project:<child>:inline:open` in `opentodo.collapsed`, so the sub-project is folded by default and each device keeps its own. The arrow is offered only when the sub-project has open tasks or sub-projects. No new chrome: the slot was there.
+The row's empty 16 px fold slot (kept for the column grid since subprojects-above-tasks) takes a chevron button, the sidebar's: 24 px under a fine pointer, 44 px on touch, named "Expand Garden" or "Collapse Garden", `aria-expanded`; with focus on either of the row's buttons, → opens and ← folds, as on a tree. Nested sub-projects are nested lists, so their level is announced. The name keeps opening the sub-project. Open is stored as `project:<child>:inline:open` in `opentodo.collapsed`, so the sub-project is folded by default and each device keeps its own. The arrow is offered only when the sub-project has open tasks or sub-projects. No new chrome: the slot was there.
 
 ## D3. What an open sub-project shows
 
@@ -22,7 +22,7 @@ Rows are read-only by `isReadOnly`, which reads the role in the task's own proje
 
 ## D5. Drag
 
-A task reorders only among the tasks of its own project: over a row of another project the drag shows no drop line and a release changes nothing (`moveTask` checks the parent and section against the task's own project too). A sub-project row carries `data-task-drop="project:<id>"` while the person may edit tasks there: a drop moves the task as a drop on the sidebar's project does (the ring, "Moved to Garden" with Undo). The "Tasks" bar carries the parent's drop target the same way, so a task of a sub-project goes back to the parent. A read-only task takes no such drop, as on the sidebar.
+A task reorders only among the tasks of its own project: over a row of another project the drag shows no drop line and a release changes nothing (`moveTask` checks the parent and section against the task's own project too). A sub-project row carries `data-task-drop="project:<id>"` while the person may edit tasks there: a drop moves the task as a drop on the sidebar's project does (the ring, "Moved to Garden" with Undo). The "Tasks" bar carries the parent's drop target the same way, so a task of a sub-project goes back to the parent; it stays while a sub-project is open, also over a parent with no open tasks. In a parent with sections, a section header takes it into the parent at that section (`planMove` with the project and the section: one batch, one Undo, a copy and tombstones across sharing scopes). A read-only task takes no such drop, as on the sidebar. Ticked tasks of several projects are not placed among rows; the release says "The tasks must be in one project". Quick add's `o` after a task of an open sub-project adds to that sub-project, after it.
 
 ## D6. Scope rules
 
@@ -30,7 +30,7 @@ Quick add adds to the parent (unchanged). With a grouping on (priority, label, d
 
 ## D7. Performance
 
-Rows are worked out only for open sub-projects. A sub-project's open tasks come from an index of open tasks by project (one pass per snapshot, patched from the rows a write changed), and each open sub-project keeps its list with `patchViewTasks`, so a write elsewhere costs a lookup per open sub-project; the block's tree is built from its own tasks only. With every sub-project folded, the list does no more work than before.
+Rows are worked out only for open sub-projects, and each block's rows are kept by its task list (with the sections, the order and the folds) in a WeakMap, so a write to another project costs a lookup per block. A sub-project's open tasks come from an index of open tasks by project (one pass per snapshot, patched from the rows a write changed), and each open sub-project keeps its list with `patchViewTasks`, so a write elsewhere costs a lookup per open sub-project; the block's tree is built from its own tasks only. With every sub-project folded, the list does no more work than before.
 
 ## Data model
 

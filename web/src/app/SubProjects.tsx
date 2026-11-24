@@ -1,15 +1,11 @@
 import { useMemo, type ReactNode } from 'react'
-import { useProjects } from '../lib/localData'
-import { buildProjectTree, rollUpCounts } from '../lib/projects'
-import { SUB_PROJECTS, subProjectsFoldedKey, type ListGroup } from '../lib/listGroups'
+import { SUB_PROJECTS, type ListGroup } from '../lib/listGroups'
 import type { Project } from '../lib/types'
 import { Icon, ListGroupHeader } from '../ui'
 import { navigate } from './router'
 import { ProjectMark } from './ProjectMark'
-import { useLiveOwnOpenCounts } from '../lib/liveTasks'
 import { t } from '../lib/i18n'
 import { taskDrop } from './taskDrop'
-import { useCollapsedRows } from './task-list/collapsedRows'
 
 /**
  * A sub-project's row (project-organization "Sub-projects inside a project view"): a task
@@ -21,8 +17,10 @@ function SubProjectRow({ project, count, depth = 0, open = false, onToggle, drop
   project: Project; count: number; depth?: number; open?: boolean; onToggle?: () => void; drop?: boolean
 }) {
   return (
+    // → opens a folded sub-project and ← folds an open one, from either of its buttons, as on a tree.
     <div className="row-hover flex items-center gap-2 rounded-control px-2 text-body data-drop-active:ring-2 data-drop-active:ring-accent"
-      style={depth ? { paddingLeft: `${depth * 1.5 + 0.5}rem` } : undefined} data-sub-project-row={project.id} data-task-drop={drop ? taskDrop.project(project.id) : undefined}>
+      style={depth ? { paddingLeft: `${depth * 1.5 + 0.5}rem` } : undefined} data-sub-project-row={project.id} data-task-drop={drop ? taskDrop.project(project.id) : undefined}
+      onKeyDown={(e) => { if (onToggle && ((e.key === 'ArrowRight' && !open) || (e.key === 'ArrowLeft' && open))) { e.preventDefault(); e.stopPropagation(); onToggle() } }}>
       <span aria-hidden={onToggle ? undefined : true} className="flex h-6 w-4 shrink-0 items-center justify-center">
         {onToggle && (
           <button type="button" aria-expanded={open} aria-label={open ? t('Collapse {name}', { name: project.name }) : t('Expand {name}', { name: project.name })}
@@ -42,62 +40,54 @@ function SubProjectRow({ project, count, depth = 0, open = false, onToggle, drop
   )
 }
 
+const NO_ROWS = () => null
+const NO_DROP = () => false
+
+/** The Sub-projects bar and the sub-project groups that lead a project's groups (subproject-inline D1), or null. */
+export const subProjectLead = (groups: readonly ListGroup[]): ListGroup[] | null =>
+  groups[0]?.key === SUB_PROJECTS ? groups.filter((g) => g.key === SUB_PROJECTS || g.subProject) : null
+
 /**
  * The "Sub-projects" group at the top of a project view, from the list model (subproject-inline
  * D1): its bar, folded per project on this device, then each shown sub-project's row and, while
- * it is open, its rows one step in (`rows`). Derived from local data, so it is live and correct offline.
+ * it is open, its rows one step in (`rows`) and its own sub-projects as a nested list, so
+ * assistive technology hears the nesting. Derived from local data, so it is live and correct offline.
  */
-export function SubProjectsGroup({ groups, projects, toggle, canEdit, rows }: {
+export function SubProjectsGroup({ groups, projects, toggle, canEdit = NO_DROP, rows = NO_ROWS }: {
   groups: readonly ListGroup[]
   projects: readonly Project[]
   toggle: (key: string) => void
   /** Whether the person may edit tasks of a project: its row then takes a dropped task. */
-  canEdit: (projectId: string) => boolean
-  rows: (g: ListGroup) => ReactNode
+  canEdit?: (projectId: string) => boolean
+  rows?: (g: ListGroup) => ReactNode
 }) {
   const [bar, ...subs] = groups
   const byId = useMemo(() => new Map(projects.map((x) => [x.id, x])), [projects])
+  // The groups are flat in render order, each with its depth: a deeper run is the nested list of the row above it.
+  const level = (from: number, depth: number): [ReactNode[], number] => {
+    const items: ReactNode[] = []
+    let i = from
+    while (i < subs.length && (subs[i].depth ?? 0) >= depth) {
+      const g = subs[i++]
+      let nested: ReactNode[] = []
+      if (i < subs.length && (subs[i].depth ?? 0) > depth) [nested, i] = level(i, depth + 1)
+      const project = byId.get(g.subProject!)
+      if (!project) continue
+      items.push(
+        <li key={g.key} data-sub-project-block={project.id}>
+          <SubProjectRow project={project} count={g.count ?? 0} depth={depth} open={!g.folded} onToggle={g.openKey ? () => toggle(g.openKey!) : undefined} drop={canEdit(project.id)} />
+          {!g.folded && <div style={{ paddingLeft: `${(depth + 1) * 1.5}rem` }}>{rows(g)}</div>}
+          {nested.length > 0 && <ul>{nested}</ul>}
+        </li>,
+      )
+    }
+    return [items, i]
+  }
+  if (!bar) return null
   return (
     <section className="mb-3" aria-label={t('Sub-projects')} data-sub-projects>
       <ListGroupHeader title={bar.heading ?? ''} count={bar.count} collapsed={bar.folded} onToggle={() => toggle(bar.openKey!)} />
-      {subs.length > 0 && (
-        <ul>
-          {subs.map((g) => {
-            const project = byId.get(g.subProject!)
-            return project && (
-              <li key={g.key} data-sub-project-block={project.id}>
-                <SubProjectRow project={project} count={g.count ?? 0} depth={g.depth} open={!g.folded} onToggle={g.openKey ? () => toggle(g.openKey!) : undefined} drop={canEdit(project.id)} />
-                {!g.folded && <div style={{ paddingLeft: `${((g.depth ?? 0) + 1) * 1.5}rem` }}>{rows(g)}</div>}
-              </li>
-            )
-          })}
-        </ul>
-      )}
+      {subs.length > 0 && <ul>{level(0, 0)[0]}</ul>}
     </section>
   )
-}
-
-const NO_ROWS = () => null
-const NO_DROP = () => false
-
-/**
- * The Sub-projects group above a project's timeline (project-organization): its direct,
- * non-archived sub-projects with their subtree counts, no arrow, since the timeline's bars
- * are not list rows (subproject-inline D6). Renders nothing for a leaf project.
- */
-export function SubProjects({ projectId }: { projectId: string }) {
-  const projects = useProjects()
-  const tree = useMemo(() => buildProjectTree(projects), [projects])
-  const children = tree.nodes.get(projectId)?.children
-  const own = useLiveOwnOpenCounts()
-  const counts = useMemo(() => rollUpCounts(own, tree, new Set(tree.nodes.keys())), [own, tree])
-  const { collapsed, toggleCollapsed } = useCollapsedRows()
-  if (!children?.length) return null
-  const key = subProjectsFoldedKey(projectId)
-  const folded = collapsed.has(key)
-  const groups: ListGroup[] = [
-    { key: SUB_PROJECTS, heading: t('Sub-projects'), count: children.length, folded, openKey: key, rows: [] },
-    ...(folded ? [] : children.map((n): ListGroup => ({ key: n.id, heading: n.item.name, subProject: n.id, count: counts.get(n.id) ?? 0, folded: true, rows: [] }))),
-  ]
-  return <SubProjectsGroup groups={groups} projects={projects} toggle={toggleCollapsed} canEdit={NO_DROP} rows={NO_ROWS} />
 }

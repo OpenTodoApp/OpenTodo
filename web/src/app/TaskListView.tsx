@@ -60,7 +60,7 @@ import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import type { Route } from './router'
 import { AddSection } from './Sections'
 import { useSelection } from './selection'
-import { SubProjects } from './SubProjects'
+import { SubProjectsGroup, subProjectLead } from './SubProjects'
 import { TimelineView } from './TimelineView'
 import { completeWithUndo } from './undoable'
 import { useBoardMoves } from './task-list/useBoardMoves'
@@ -277,8 +277,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // Observe panel presence only so moving the cursor between docked tasks does not redraw the list.
   const panelOpen = usePanelHasTask()
   const inbox = useListSplit({ inbox: route.view === 'inbox', rows, ownRows: m.ownRows, selectedId, setSelectedId, ticking: selection.ticked.size > 0 })
-  const quickAddRef = useRef<HTMLTextAreaElement>(null)
-  const quickAddRow = useRef<HTMLDivElement>(null)
+  const quickAddRef = useRef<HTMLTextAreaElement>(null), quickAddRow = useRef<HTMLDivElement>(null)
   // The first-day checklist's "Plan today" (moments-and-onboarding D5): Today opened after the first task.
   useEffect(() => { if (route.view === 'today') void noteTodayOpened() }, [route.view])
   const fine = useFinePointer()
@@ -319,13 +318,14 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // Manual ordering (manual-ordering): projects (editors and above) and the Inbox by positions; a label page by its own order (view-manual-order).
   const projectManual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox', ownOrder = useOwnOrder(route, rows, upcomingCal.groups, board, route.view === 'today' && m.display?.groupBy === 'project', m.nested, taskMap), manual = projectManual || !!ownOrder, listReorder = useListReorder(manual, ownOrder, m.listDisplay.onReorder, useListAdd(projectManual && m.treeView && !board, ui, m.toggleCollapsed))
   const sectionOfRow = useMemo(() => sectionOfRows(board, dataColumns, upcomingCal.groups), [board, dataColumns, upcomingCal.groups])
-  const drag = useListDrag({ manual, onReorder: ownOrder ? undefined : m.listDisplay.onReorder, source: { rows, groups: upcomingCal.groups, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked, onHold: (task) => { if (!contextIds.has(task.id)) holdSelect(task.id, selection, setSelectMode) }, openRowMenu: rowMenu.open, reorder: ownOrder?.reorder, groupOf: ownOrder?.groupOf, across: ownOrder?.across, readOnly: isReadOnly, today: ownOrder?.todayDrop }, moveToSection, onDropped: setSelectedId, onDragStart: rowMenu.dismiss })
+  const drag = useListDrag({ manual, onReorder: ownOrder ? undefined : m.listDisplay.onReorder, source: { rows, groups: upcomingCal.groups, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked, onHold: (task) => { if (!contextIds.has(task.id)) holdSelect(task.id, selection, setSelectMode) }, openRowMenu: rowMenu.open, reorder: ownOrder?.reorder, groupOf: ownOrder?.groupOf, across: ownOrder?.across, readOnly: isReadOnly, today: ownOrder?.todayDrop, project: projectId }, moveToSection, onDropped: setSelectedId, onDragStart: rowMenu.dismiss })
   // The view supplies defaults; attributes typed in the quick-add line override them.
   const withDefaults = useCallback(async (inputs: QuickAddInput[]) => {
     const place = route.view === 'place' ? await getPlace(route.id) : undefined
     return inputs.map(({ labels: typed, ...rest }) => {
       // In Assigned to me a new task is yours (Inbox unless a #project was typed).
       const { labels: viewLabels, ...defaults } = taskDefaults(route, today, userId)
+      if (route.view === 'project' && insertAfter.current) defaults.project_id = taskMap.get(insertAfter.current)?.project_id ?? defaults.project_id // `o` in an open sub-project adds there (subproject-inline)
       // In Someday a line with a date is scheduled, not parked (someday-and-evening); a typed time sector also takes the view's date (time-sectors D2).
       if (rest.due || rest.deadline || rest.sector) { delete defaults.start; if (rest.sector) defaults.due = null }
       return {
@@ -337,7 +337,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         labels: [...new Set([...viewLabels, ...(typed ?? [])])],
       }
     })
-  }, [route, today, userId])
+  }, [route, today, userId, taskMap])
   const onAdd = useCallback(async (input: QuickAddInput) => {
     // Top or bottom (add-position D3); `o` keeps its anchor, so that entry appends before it moves.
     const placement = insertAfter.current ? 'bottom' : await preferredPlacement()
@@ -464,7 +464,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           {rowMenu.element}{queryHost}
 
           {route.view === 'project' && currentProject && <><ProjectNote project={currentProject} phone={phone} /><LinkedRefs kind="project" id={currentProject.id} folded /></>}
-          {route.view === 'project' && timeline && <SubProjects projectId={route.id} />}
+          {timeline && <SubProjectsGroup groups={subProjectLead(taskGroups) ?? []} projects={m.projects} toggle={m.toggleCollapsed} />}
           {m.offerColumns && <ColumnsToggle on={!!m.columnsPref} onToggle={() => projectId && saveListColumns(projectId, !m.columnsPref)} />}
           {own.length === 0 && !upcomingCal.hasEvents && !taskGroups.find((g) => g.key === 'all')?.folded && !(board || m.liveSections.length > 0) && (m.duration || m.queryFilter?.query || completedNarrowed
             ? <FilteredEmpty onClear={() => { m.chooseDuration(null); m.queryFilter?.setQuery(''); m.setCompletedQuery(''); if (completedNarrowed) setCompletedDisplay({ projects: [] }) }} />

@@ -10,12 +10,12 @@ import { saveQueryFilter, projectFilterKey } from '../lib/deviceFilters'
 import { applyOps, createProject, createTask, resetDeviceId } from '../lib/ops'
 import { createSection, saveViewMode } from '../lib/sections'
 import type { Op, Task, User } from '../lib/types'
-import { click, key, render, mockFetch, noPublicLinks, visibleText, waitFor } from '../ui/test-utils'
+import { click, key, render, mockFetch, noPublicLinks, type, visibleText, waitFor } from '../ui/test-utils'
+import { listState } from './listActions'
 import { hideBulkToast } from './bulk/toastStore'
 import { resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
-import { SubProjects } from './SubProjects'
 import { TaskListView } from './TaskListView'
 
 // The project header asks the server for its public links.
@@ -61,21 +61,18 @@ describe('sub-projects group', () => {
     await r.unmount()
 
     // The collapse survives a reload of the view; a leaf project has no group at all.
-    const again = await render(<SubProjects projectId={home} />)
-    await waitFor(() => again.container.querySelector('[data-group-header]') !== null)
-    expect(again.container.querySelector('[data-group-header]')?.getAttribute('data-collapsed')).toBe('true')
-    await click(again.container.querySelector('[data-group-toggle]')!)
+    const again = await render(<TaskListView route={{ view: 'project', id: home }} />)
+    await waitFor(() => again.container.querySelector('[data-sub-projects] [data-group-header]') !== null)
+    expect(again.container.querySelector('[data-sub-projects] [data-group-header]')?.getAttribute('data-collapsed')).toBe('true')
+    await click(again.container.querySelector('[data-sub-projects] [data-group-toggle]')!)
     await waitFor(() => again.container.querySelectorAll('[data-sub-project]').length === 2)
     await click(again.container.querySelector(`[data-sub-project="${kitchen}"]`)!)
     expect(location.pathname).toBe(`/project/${kitchen}`)
     await again.unmount()
 
-    const leaf = await render(<SubProjects projectId={garden} />)
-    // The parent beside it lists its children: the projects are read.
-    const parent = await render(<SubProjects projectId={home} />)
-    await waitFor(() => parent.container.querySelectorAll('[data-sub-project]').length > 0, 'the projects read')
-    await parent.unmount()
-    expect(leaf.container.innerHTML).toBe('')
+    const leaf = await render(<TaskListView route={{ view: 'project', id: garden }} />)
+    await waitFor(() => !!leaf.container.querySelector('[data-page-header]'), 'the leaf project')
+    expect(leaf.container.querySelector('[data-sub-projects]')).toBeNull()
     await leaf.unmount()
   })
 })
@@ -214,12 +211,8 @@ describe('a sub-project open in place', () => {
 
   it('opens with its arrow, nests its own sub-projects, keeps the choice after a remount, and the name still opens it', async () => {
     const p = await seed()
-    // The Sub-projects bar's fold from before is read into the list's set once.
-    localStorage.setItem('ot.subprojects.collapsed', JSON.stringify([p.kitchen]))
     const r = await render(<TaskListView route={{ view: 'project', id: p.home }} />)
     await waitFor(() => !!row(p.paint) && !!toggle(p.garden))
-    expect(localStorage.getItem('ot.subprojects.collapsed')).toBeNull()
-    expect(JSON.parse(localStorage.getItem('opentodo.collapsed')!)).toEqual([`project:${p.kitchen}:sub-projects:folded`])
     // Folded by default; an empty sub-project offers no arrow.
     expect(row(p.mow)).toBeNull()
     expect(toggle(p.kitchen)).toBeNull()
@@ -235,6 +228,15 @@ describe('a sub-project open in place', () => {
     expect(block(p.beds)!.querySelector('[data-sub-project-row]')!.getAttribute('style')).toContain('padding-left: 2rem')
     await click(toggle(p.beds)!)
     await waitFor(() => !!row(p.mulch), 'Beds opened')
+    // Beds is a list nested in Garden's item, so its level is announced.
+    expect(block(p.beds)!.parentElement!.closest('[data-sub-project-block]')).toBe(block(p.garden))
+    // From the keyboard: ← folds Beds, → opens it again.
+    const name = document.querySelector<HTMLElement>(`[data-sub-project="${p.beds}"]`)!
+    name.focus()
+    await key(name, 'ArrowLeft')
+    await waitFor(() => !row(p.mulch), 'Beds folded by ←')
+    await key(name, 'ArrowRight')
+    await waitFor(() => !!row(p.mulch), 'Beds opened by →')
     await r.unmount()
 
     // Per device and kept: the list opens with both still open.
@@ -346,5 +348,69 @@ describe('a sub-project open in place', () => {
       if (mode === 'timeline') expect(v.container.querySelector(`[data-sub-project-row="${p.garden}"]`)).not.toBeNull()
       await v.unmount()
     }
+  })
+
+  it('moves a task of an open sub-project into a parent with sections at the section dropped on, and into an empty parent by its Tasks bar', async () => {
+    const p = await seed()
+    const kitchen = await createSection(p.home, 'Kitchen')
+    localStorage.setItem('opentodo.collapsed', JSON.stringify([`project:${p.garden}:inline:open`]))
+    const r = await shell(p.home)
+    await waitFor(() => !!row(p.mow) && !!document.querySelector(`[data-drop-target="section:${kitchen}"]`))
+    await drag(row(p.mow)!, document.querySelector(`[data-drop-target="section:${kitchen}"]`)!)
+    await waitFor(() => toast().includes('Moved to Home'), 'the move into Home')
+    expect(await stored(p.mow)).toMatchObject({ project_id: p.home, section_id: kitchen })
+    await undo()
+    await waitFor(async () => (await stored(p.mow)).project_id === p.garden && !(await stored(p.mow)).section_id, 'back in Garden by one Undo')
+    await r.unmount()
+
+    // A parent with no open task of its own keeps its Tasks bar while a sub-project is open.
+    const empty = await createProject({ name: 'Errands' })
+    const post = await createProject({ name: 'Post', parent_id: empty })
+    const stamps = await createTask({ title: 'Stamps', project_id: post })
+    localStorage.setItem('opentodo.collapsed', JSON.stringify([`project:${post}:inline:open`]))
+    hideBulkToast()
+    const e = await shell(empty)
+    await waitFor(() => !!row(stamps) && !!document.querySelector(`[data-group="all"] [data-task-drop="project:${empty}"]`), 'the Tasks bar over no tasks')
+    expect((await drag(row(stamps)!, document.querySelector(`[data-group="all"] [data-task-drop="project:${empty}"]`)!)).active).toBe(true)
+    await waitFor(async () => (await stored(stamps)).project_id === empty, 'Stamps in Errands')
+    await e.unmount()
+  })
+
+  it('refuses ticked tasks of several projects among rows, with a word', async () => {
+    const p = await seed()
+    localStorage.setItem('opentodo.collapsed', JSON.stringify([`project:${p.garden}:inline:open`]))
+    const r = await shell(p.home)
+    await waitFor(() => !!row(p.mow) && !!row(p.paint))
+    await key(document, 'j')
+    await key(document, 'x')
+    await key(document, 'j')
+    await key(document, 'j')
+    await key(document, 'x')
+    await waitFor(() => row(p.mow)!.hasAttribute('data-ticked') && row(p.paint)!.hasAttribute('data-ticked'), 'Mow and Paint ticked')
+    const before = (await stored(p.weed)).position
+    await drag(row(p.mow)!, row(p.weed)!)
+    await waitFor(() => toast().includes('The tasks must be in one project'))
+    expect((await stored(p.paint)).project_id).toBe(p.home)
+    expect((await stored(p.weed)).position).toBe(before)
+    await r.unmount()
+  })
+
+  it("adds an `o` entry after a task of an open sub-project to that sub-project", async () => {
+    const p = await seed()
+    localStorage.setItem('opentodo.collapsed', JSON.stringify([`project:${p.garden}:inline:open`]))
+    const r = await render(<TaskListView route={{ view: 'project', id: p.home }} />)
+    await waitFor(() => !!row(p.mow) && !!listState())
+    await act(async () => { listState()!.focusQuickAdd(p.mow) })
+    const quick = r.container.querySelector('textarea[aria-label="Add a task"]') as HTMLTextAreaElement
+    await type(quick, 'Edge the lawn')
+    await act(async () => { quick.form!.requestSubmit() })
+    await waitFor(async () => (await db.tasks.toArray()).some((x) => x.title === 'Edge the lawn'), 'added')
+    const added = (await db.tasks.toArray()).find((x) => x.title === 'Edge the lawn')!
+    expect(added.project_id).toBe(p.garden)
+    await waitFor(() => {
+      const ids = [...block(p.garden)!.querySelectorAll('[data-task-id]')].map((el) => el.getAttribute('data-task-id'))
+      return ids.indexOf(added.id) === ids.indexOf(p.mow) + 1
+    }, 'right after Mow, under Garden')
+    await r.unmount()
   })
 })

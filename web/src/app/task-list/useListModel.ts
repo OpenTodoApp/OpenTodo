@@ -286,7 +286,7 @@ export function useListModel(route: ListRoute, userId?: string) {
   // The project shows its Sub-projects group: its own tasks take a Tasks group (subprojects-above-tasks); in the list layout its
   // sub-projects open in place, without an arrow under a grouping or the columns layout (subproject-inline D1, D6).
   const grouped = !!display?.groupBy && !['section', 'none', 'project', 'day'].includes(display.groupBy)
-  const sub = useSubProjectList(projectId, !board && !layout.timeline, !grouped && !layout.fieldColumns, allTasks, projects, collapsed, keep)
+  const sub = useSubProjectList(projectId, !board, !layout.timeline && !grouped && !layout.fieldColumns, allTasks, projects, collapsed, keep)
   const subProjects = sub.has
   const keptGroups = useRef<ListGroup[] | null>(null)
   const groups = useMemo<ListGroup[]>(() => (keptGroups.current = keepGroups(keptGroups.current, listGroups({

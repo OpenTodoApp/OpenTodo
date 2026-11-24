@@ -629,7 +629,8 @@ function listGroupsInner(p: GroupInput): ListGroup[] {
     return laterOf ? out : [...out, ...later()]
   }
   // Project and Inbox: one depth-first pass over the built tree (linear in task count).
-  if (p.tree && p.subProjects && p.view === 'project' && p.projectId && p.tree.roots.length) {
+  // With a sub-project open the bar stays, also over no tasks: a task dropped on it comes back to the project (subproject-inline D5).
+  if (p.tree && p.subProjects && p.view === 'project' && p.projectId && (p.tree.roots.length || p.subProjectList?.tasks.size)) {
     // Folded, its rows leave the list, so the cursor and the keys never reach a hidden task.
     const openKey = tasksFoldedKey(p.projectId)
     const folded = p.collapsed.has(openKey)
@@ -671,20 +672,35 @@ function subProjectGroups(p: GroupInput): ListGroup[] {
   const out: ListGroup[] = [{ key: SUB_PROJECTS, heading: t('Sub-projects'), count: s.children.length, folded, openKey: foldKey, rows: [] }]
   if (folded) return out
   const order = displayOrder(p.display, undefined, p.projects, p.fields, p.score)
-  const toRow = nodeRow(p)
   const walk = (nodes: readonly TreeNode<Project>[], depth: number) => {
     for (const n of nodes) {
       const open = isInlineOpen(s, n, p.collapsed)
       out.push({
         key: `sub-project:${n.id}`, heading: n.item.name, named: true, subProject: n.id, depth, count: s.counts.get(n.id) ?? 0, folded: !open,
         ...(offersArrow(s, n) ? { openKey: inlineOpenKey(n.id) } : {}),
-        rows: open ? flattenTree(blockRoots(n.id, s.tasks.get(n.id) ?? [], s.sections, order), (id) => p.collapsed.has(id)).map(toRow) : [],
+        rows: open ? blockRows(p, n.id, s.tasks.get(n.id) ?? [], s.sections, order) : [],
       })
       if (open) walk(n.children, depth + 1)
     }
   }
   walk(s.children, 0)
   return out
+}
+
+/** Each open sub-project's rows by its task list, with what else they were made from. */
+const blockRowsOf = new WeakMap<readonly Task[], { from: readonly unknown[]; rows: ListRow[] }>()
+
+/**
+ * An open sub-project's rows, kept while its task list, the sections, the view's order and
+ * the folds are the same objects (D7): a write to another project costs a lookup per block.
+ */
+function blockRows(p: GroupInput, id: string, tasks: readonly Task[], sections: readonly Section[], order: ((a: Task, b: Task) => number) | null): ListRow[] {
+  const from = [id, sections, p.display, p.score, p.fields, p.projects, p.collapsed]
+  const hit = blockRowsOf.get(tasks)
+  if (hit && hit.from.every((x, i) => x === from[i])) return hit.rows
+  const rows = flattenTree(blockRoots(id, tasks, sections, order), (x) => p.collapsed.has(x)).map(nodeRow(p))
+  blockRowsOf.set(tasks, { from, rows })
+  return rows
 }
 
 /** An open sub-project's top-level tasks: in the view's sort, else section by section (No section first) without their bars. */

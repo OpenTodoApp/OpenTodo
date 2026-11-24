@@ -51,7 +51,8 @@ export function useSubProjectList(projectId: string | null, on: boolean, offered
   const own = openCountsByProject(allTasks)
   const counts = useMemo(() => rollUpCounts(own, tree, new Set(tree.nodes.keys())), [own, tree])
   const sections = useLiveSections()
-  const cache = useRef(new Map<string, ReturnType<typeof ownTasks>>()).current
+  // Per open sub-project: its tasks, and the filtered list kept while they and the filters are the same (D7).
+  const cache = useRef(new Map<string, { own: ReturnType<typeof ownTasks>; src?: readonly Task[]; keep?: typeof keep; out?: readonly Task[] }>()).current
   const list = useMemo(() => {
     if (!on || !children.length) return undefined
     const base = { children, counts, offered, sections }
@@ -59,10 +60,11 @@ export function useSubProjectList(projectId: string | null, on: boolean, offered
     const walk = (nodes: readonly ProjectNode[]) => {
       for (const n of nodes) {
         if (!isInlineOpen(base, n, collapsed)) continue
-        let derived = cache.get(n.id)
-        if (!derived) cache.set(n.id, (derived = ownTasks()))
-        const open = derived.get(allTasks, n.id, projects)
-        tasks.set(n.id, keep ? open.filter(keep) : open)
+        let c = cache.get(n.id)
+        if (!c) cache.set(n.id, (c = { own: ownTasks() }))
+        const open = c.own.get(allTasks, n.id, projects)
+        if (c.src !== open || c.keep !== keep) Object.assign(c, { src: open, keep, out: keep ? open.filter(keep) : open })
+        tasks.set(n.id, c.out!)
         walk(n.children)
       }
     }

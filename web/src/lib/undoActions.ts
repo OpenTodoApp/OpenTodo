@@ -356,11 +356,11 @@ export async function moveUndoable(id: string, projectId: string | null, targetN
  * ux-feedback-2, project-organization "Drop a task on a project"): as the Move
  * action does, as one batch; tasks already in that project are left alone.
  */
-export async function moveManyUndoable(ids: readonly string[], projectId: string | null, targetName: string, now = Date.now()): Promise<UndoableResult> {
+export async function moveManyUndoable(ids: readonly string[], projectId: string | null, targetName: string, now = Date.now(), sectionId?: string | null): Promise<UndoableResult> {
   const { tasks, all } = await readTicked(ids)
   const moving = tasks.filter((task) => (task.project_id ?? null) !== projectId)
   if (!moving.length) return { entry: null, label: '' }
-  const changes = planMove(moving, all, { projectId }, await membershipMap(), await currentUserId(), now, await keepWorkspaceFor())
+  const changes = planMove(moving, all, { projectId, ...(sectionId !== undefined ? { sectionId } : {}) }, await membershipMap(), await currentUserId(), now, await keepWorkspaceFor())
   return apply(changes, t('Moved to {target}', { target: targetName }))
 }
 
@@ -385,8 +385,10 @@ export async function dropUndoable(target: string, ids: readonly string[]): Prom
   // The sidebar's Today (drop-on-today): planned for today as a drop on today's day group is.
   if (target === 'today') return todayDropUndoable(ids)
   if (target.startsWith('project:')) {
-    const project = await db.projects.get(target.slice('project:'.length))
-    return project && !project.deleted_at ? moveManyUndoable(ids, project.id, project.name) : null
+    // `project:<id>#<section>`: a section header of the project on screen (subproject-inline D5; '' = No section).
+    const [id, section] = target.slice('project:'.length).split('#')
+    const project = await db.projects.get(id)
+    return project && !project.deleted_at ? moveManyUndoable(ids, project.id, project.name, undefined, section === undefined ? undefined : section || null) : null
   }
   if (target.startsWith('label:')) {
     const label = await db.labels.get(target.slice('label:'.length))
