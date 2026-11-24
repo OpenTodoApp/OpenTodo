@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Edit events option
-A connection SHALL have a setting `edit_events`, off by default and for every connection created before it, which lets the user change and delete the events of its calendars from OpenTodo. `PATCH /api/v1/calendar-sync/connections/{id}` SHALL accept `{"edit_events": true|false}` from a signed-in session or full token of the connection's owner, record it in the audit log as a connection update, and the connection view SHALL report it. Turning it on SHALL NOT change any event, SHALL NOT ask for a new permission and SHALL NOT make the connection sync sooner or later. Turning it off SHALL stop every event write of the connection at once, while writes already queued on devices are refused with `403 event_edits_off`. Deleting the connection SHALL delete the setting. The setting SHALL NOT affect how tasks are written to the target calendar.
+A connection SHALL have a setting `edit_events`, off by default and for every connection created before it, which lets the user change and delete the events of its calendars from OpenTodo. `PATCH /api/v1/calendar-sync/connections/{id}` SHALL accept `{"edit_events": true|false}` from a signed-in session or full token of the connection's owner, record it in the audit log as a connection update, and the connection view SHALL report it. Turning it on SHALL NOT change any event, SHALL NOT ask for a new permission and SHALL NOT make the connection sync sooner or later. Turning it off SHALL stop every event write of the connection at once and turn "Let assistants edit events" off, while writes already queued on devices are refused with `403 event_edits_off`. Deleting the connection SHALL delete the setting. The setting SHALL NOT affect how tasks are written to the target calendar.
 
 #### Scenario: Default
 - **WHEN** a user connects an account, or a server with connections from before this setting upgrades
@@ -27,8 +27,31 @@ A connection SHALL have a setting `edit_events`, off by default and for every co
 - **WHEN** a user PATCHes `{"edit_events": "yes"}`
 - **THEN** the response is a 400 `invalid_input` error and the connection is unchanged
 
+### Requirement: Assistant edits option
+A connection SHALL have a second setting, `assistant_edits` ("Let assistants edit events"), off by default and for every connection created before it, which lets an AI assistant's `update_calendar_event` change the events of its calendars. `PATCH /api/v1/calendar-sync/connections/{id}` SHALL accept `{"assistant_edits": true|false}` from a signed-in session or full token of the connection's owner, record it in the audit log as a connection update, and the connection view SHALL report it. It SHALL take effect only while `edit_events` is on: turning `edit_events` off SHALL turn it off too, and turning it on while `edit_events` is off SHALL answer 400 `invalid_input` naming `assistant_edits`. It SHALL NOT affect the calendar view, the routes or the CLI, and SHALL NOT allow an assistant to delete an event. Deleting the connection SHALL delete the setting.
+
+#### Scenario: Default off
+- **WHEN** a user turns "Edit events in OpenTodo" on
+- **THEN** the connection reports `assistant_edits: false` and an assistant's `update_calendar_event` on its events is refused with `assistant_edits_off`
+
+#### Scenario: Turn it on
+- **WHEN** the user PATCHes `{"assistant_edits": true}` on a connection with `edit_events` on
+- **THEN** the response reports `assistant_edits: true`, the audit log holds a `calendar_connection.updated` event naming `assistant_edits`, and an agent token with writes allowed can move and rename the connection's editable events
+
+#### Scenario: Needs edits on
+- **WHEN** the user PATCHes `{"assistant_edits": true}` on a connection with `edit_events` off
+- **THEN** the response is a 400 `invalid_input` error naming `assistant_edits` and the connection is unchanged
+
+#### Scenario: Turning edits off turns it off
+- **WHEN** the user PATCHes `{"edit_events": false}` on a connection with both settings on
+- **THEN** the connection reports both off
+
+#### Scenario: Unauthenticated
+- **WHEN** the PATCH with `assistant_edits` is sent without credentials
+- **THEN** the response is a 401 `unauthorized` error
+
 ### Requirement: Calendar capabilities
-Each calendar of a connection SHALL report `caps`, `{create, update, delete}`, derived from the permissions the account grants on that calendar: for a CalDAV or Google calendar its `current-user-privilege-set` (`bind` for create, `write-content` for update, `unbind` for delete, `write` or `all` for all three), for a Microsoft calendar its `canEdit` for all three. A calendar saved before capabilities existed SHALL be reported with all three equal to the opposite of `read_only` until it is discovered again. A calendar whose account refuses a write with 403 SHALL be reported with all three false until the next discovery. Capabilities SHALL be served in `GET /api/v1/calendar-sync/connections` and, for shown calendars, on the managed subscriptions of the events route.
+Each calendar of a connection SHALL report `caps`, `{create, update, delete}`, derived from the permissions the account grants on that calendar: for a CalDAV or Google calendar its `current-user-privilege-set` (`bind` for create, `write-content` for update, `unbind` for delete, `write` or `all` for all three), for a Microsoft calendar its `canEdit` for all three. A calendar saved before capabilities existed SHALL be reported with all three equal to the opposite of `read_only` until it is discovered again. A calendar whose account refuses a write with 403 SHALL be reported with all three false until the next discovery. Discovery SHALL also record the account's own calendar addresses (the principal's `calendar-user-address-set`, and a Google account's email), which decide whether the account organised an event. Capabilities SHALL be served in `GET /api/v1/calendar-sync/connections` and, for shown calendars, on the managed subscriptions of the events route.
 
 #### Scenario: Read-only calendar
 - **WHEN** a Google account shares a calendar with the user as "see all event details"

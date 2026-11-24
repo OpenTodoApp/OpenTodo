@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Events can be changed and deleted in the connected calendar
-While calendar sync is on, a signed-in user SHALL move, resize, rename and delete an event of a calendar of one of their connections through `PATCH` and `DELETE /api/v1/calendar-sync/connections/{id}/events/{eventId}`, when the connection's "Edit events in OpenTodo" is on, the calendar's capability allows the change and the event is not locked. The `PATCH` body SHALL carry the `rev` the caller saw and any of `summary`, `start` and `end` together, and `allDay`; it SHALL answer 200 with the event as the calendar now holds it (with its new `id`, `rev` and `access`) and `replaces`, the id it had. The `DELETE` SHALL carry `rev` and answer 204. The server SHALL write to the remote calendar with a precondition on the event's version, keep every property of the remote event it does not change, never send an invitation or update to guests, refresh its cached copy, record an audit event without the title and wake the user's other devices. The route SHALL answer 404 `calendar_sync_disabled` while the owner's switch is off, 403 `demo_restricted` on the public demo, 401 `unauthorized` without credentials, 403 `forbidden` to read and agent tokens, 404 `not_found` for a connection or event that is not the caller's, 403 `event_edits_off`, 403 `calendar_read_only`, 422 `event_not_editable`, 400 `invalid_input`, 404 `event_gone`, 429 `rate_limited` over 600 changes an hour, and 502 `calendar_unreachable` when the calendar fails. An event edit SHALL NOT be an operation: it SHALL NOT appear in the op log, the export or a backup.
+While calendar sync is on, a signed-in user SHALL move, resize, rename and delete an event of a calendar of one of their connections through `PATCH` and `DELETE /api/v1/calendar-sync/connections/{id}/events/{eventId}`, when the connection's "Edit events in OpenTodo" is on, the calendar's capability allows the change and the event is not locked. The `PATCH` body SHALL carry the `rev` the caller saw and any of `summary`, `start` and `end` together, and `allDay`; it SHALL answer 200 with the event as the calendar now holds it (with its new `id`, `rev` and `access`) and `replaces`, the id it had. The `DELETE` SHALL carry `rev` and answer 204. The server SHALL write to the remote calendar with a precondition on the event's version, keep every property of the remote event it does not change, never send an invitation or update to guests, refresh its cached copy, record an audit event without the title and wake the user's other devices. The route SHALL answer 404 `calendar_sync_disabled` while the owner's switch is off, 403 `demo_restricted` on the public demo, 401 `unauthorized` without credentials, 403 `forbidden` to read and agent tokens, 403 `token_restricted` to tokens limited to chosen workspaces, 404 `not_found` for a connection or event that is not the caller's, 403 `event_edits_off`, 403 `calendar_read_only`, 422 `event_not_editable`, 400 `invalid_input`, 404 `event_gone`, 429 `rate_limited` over 600 changes an hour, and 502 `calendar_unreachable` when the calendar fails. Every write to the calendar (`PUT`, `PATCH`, `DELETE`) SHALL be sent once and SHALL NOT follow an HTTP redirect: a 3xx answer SHALL be a 502 `calendar_unreachable` error with the reason `redirect_refused`, with nothing cached. Before any other check the server SHALL remove every control character, U+2028 and U+2029 from `summary` and trim it; the result SHALL be 1 to 500 characters, and a summary SHALL NOT be able to add properties or components to the calendar object. An event edit SHALL NOT be an operation: it SHALL NOT appear in the op log, the export or a backup.
 
 #### Scenario: Move an event
 - **WHEN** a user PATCHes an event of 09:00 to 09:30 on 2026-11-12 with `start` 10:00 and `end` 10:30 the same day and its current `rev`
@@ -43,6 +43,22 @@ While calendar sync is on, a signed-in user SHALL move, resize, rename and delet
 - **WHEN** a read token or an agent token calls either route
 - **THEN** the response is a 403 `forbidden` error
 
+#### Scenario: Token limited to workspaces
+- **WHEN** a full token limited to chosen workspaces calls the events route, a PATCH or a DELETE of an event
+- **THEN** the response is a 403 `token_restricted` error and the calendar is not contacted
+
+#### Scenario: Redirected write
+- **WHEN** the calendar server answers a PUT, PATCH or DELETE of an event with a 301, 302, 307 or 308
+- **THEN** the redirect is not followed, exactly one write request was sent, the response is a 502 `calendar_unreachable` error naming `redirect_refused`, and the cached event is unchanged
+
+#### Scenario: A title cannot add properties
+- **WHEN** a user PATCHes a CalDAV event with a summary holding a line break followed by `ATTENDEE:mailto:x@example.com`, or `END:VEVENT` and `BEGIN:VEVENT` on their own lines
+- **THEN** the control characters are removed, the calendar object written has the same properties and components as before with only the summary and the bookkeeping properties changed, and no attendee or event is added
+
+#### Scenario: Over-long title
+- **WHEN** a user PATCHes a summary of 501 characters, or one made only of control characters
+- **THEN** the response is a 400 `invalid_input` error naming `summary` and nothing is written
+
 #### Scenario: Calendar unreachable
 - **WHEN** the calendar server times out during a write
 - **THEN** the response is a 502 `calendar_unreachable` error naming the reason, nothing is changed in the cache and the connection's other settings are untouched
@@ -52,7 +68,7 @@ While calendar sync is on, a signed-in user SHALL move, resize, rename and delet
 - **THEN** the server sends Graph a `PATCH` with `If-Match` set to the event's `@odata.etag` and only `start` and `end`, and the response holds the event with Graph's new ETag's `rev`
 
 ### Requirement: Which events can be changed
-An event SHALL be changeable only when it belongs to a connected calendar, its connection's "Edit events in OpenTodo" is on, its calendar's capability for the change is true, and it is a single event: not repeating, not an occurrence or exception of a series, without guests, organised by the user for Microsoft calendars, and with a version the calendar reported. Events of subscribed (ICS) calendars SHALL never be changeable. An event OpenTodo wrote for a task SHALL keep behaving as a task and SHALL NOT be served as an editable event. For every event the server serves, `access` SHALL say whether it may be updated or deleted and give the first unmet condition as `reason`: `edits_off`, `calendar_read_only`, `recurring`, `has_guests`, `not_organizer`, `no_etag` or `refresh_pending`. The write routes SHALL check every condition again.
+An event SHALL be changeable only when it belongs to a connected calendar, its connection's "Edit events in OpenTodo" is on, its calendar's capability for the change is true, and it is a single event: not repeating, not an occurrence or exception of a series, without guests, organised by the account (a CalDAV or Google event whose `ORGANIZER` is not one of the account's calendar addresses, and a Microsoft event whose `isOrganizer` is false, are locked), and with a version the calendar reported. Events of subscribed (ICS) calendars SHALL never be changeable. An event OpenTodo wrote for a task SHALL keep behaving as a task and SHALL NOT be served as an editable event. For every event the server serves, `access` SHALL say whether it may be updated or deleted and give the first unmet condition as `reason`: `edits_off`, `calendar_read_only`, `recurring`, `has_guests`, `not_organizer`, `no_etag` or `refresh_pending`. The write routes SHALL check every condition again.
 
 #### Scenario: Repeating event
 - **WHEN** a calendar holds a weekly event
@@ -65,6 +81,14 @@ An event SHALL be changeable only when it belongs to a connected calendar, its c
 #### Scenario: Meeting organised by someone else
 - **WHEN** an Outlook event's `isOrganizer` is false
 - **THEN** it is served with `access.reason: "not_organizer"` and cannot be changed
+
+#### Scenario: CalDAV event organised by someone else
+- **WHEN** a CalDAV event without attendees has `ORGANIZER:mailto:boss@example.com` and the account's calendar addresses are `me@example.com`
+- **THEN** it is served with `access.reason: "not_organizer"`, a PATCH or DELETE answers 422 `event_not_editable` and nothing is written
+
+#### Scenario: CalDAV event organised by the account
+- **WHEN** a CalDAV event without attendees has `ORGANIZER:mailto:ME@example.com` and the account's address is `me@example.com`
+- **THEN** it is editable
 
 #### Scenario: Subscribed calendar
 - **WHEN** a user shows an ICS subscription
@@ -179,11 +203,23 @@ Every pointer edit of an event SHALL have a keyboard equivalent and a one-click 
 - **THEN** the event moves with the same request a drag makes
 
 ### Requirement: Agents and the command line can change events
-The MCP server and the in-app assistant SHALL offer `list_calendar_events`, `update_calendar_event` and `delete_calendar_event` over the same rules as the routes: the read tool to every token that may read, the write tools only when the owner's `mcp.writes` switch and the user's switch are on and the caller uses an `agent` token, with the per-token write limits and the `agent.write` audit event. Their errors SHALL use the route's codes, and the titles they return SHALL be marked as untrusted text. `ot calendar events`, `ot calendar event edit` and `ot calendar event delete` SHALL call the routes with the user's token. The `ot` commands that change events SHALL need a full token.
+The MCP server SHALL offer `list_calendar_events` and `update_calendar_event` and SHALL NOT offer any tool that deletes a calendar event. The read tool SHALL be offered to every token that may read; `update_calendar_event` only when the owner's `mcp.writes` switch and the user's switch are on and the caller uses an `agent` token, with the per-token write limits and the `agent.write` audit event, and it SHALL change an event only when the event's connection has both "Edit events in OpenTodo" and "Let assistants edit events" on, over the same rules as the routes. Tokens limited to chosen workspaces SHALL get `token_restricted` from both tools. The in-app assistant SHALL offer neither tool. Errors SHALL use the route's codes, and the titles the tools return SHALL be marked as untrusted text. `ot calendar events`, `ot calendar event edit` and `ot calendar event delete` SHALL call the routes with the user's token; the commands that change or delete events SHALL need a full token.
 
 #### Scenario: Agent moves an event
-- **WHEN** an agent token with writes allowed calls `update_calendar_event` with an event id, its `rev` and a new `start` and `end`
-- **THEN** the event moves in the calendar, the result holds the new event, and the audit log holds `agent.write` and `calendar_event.changed`
+- **WHEN** an agent token with writes allowed calls `update_calendar_event` with an event id, its `rev` and a new `start` and `end`, on a connection with both options on
+- **THEN** the event moves in the calendar, the result holds the new event and says the change can be undone, and the audit log holds `agent.write` and `calendar_event.changed`
+
+#### Scenario: No delete tool
+- **WHEN** an agent lists the MCP tools, or calls `delete_calendar_event`
+- **THEN** no tool that deletes a calendar event is listed, the call answers that the tool does not exist, and nothing is deleted
+
+#### Scenario: Assistant edits off
+- **WHEN** an agent calls `update_calendar_event` on a connection whose "Edit events in OpenTodo" is on and "Let assistants edit events" is off
+- **THEN** the result is the error `assistant_edits_off`, the calendar is not contacted, and `list_calendar_events` serves the event with `access.update: false` and `reason: "assistant_edits_off"`
+
+#### Scenario: Token limited to workspaces
+- **WHEN** an agent token limited to chosen workspaces calls `list_calendar_events` or `update_calendar_event`
+- **THEN** the result is the error `token_restricted` and the calendar is not contacted
 
 #### Scenario: Writes disabled
 - **WHEN** the owner's `mcp.writes` switch is off
@@ -204,3 +240,26 @@ The MCP server and the in-app assistant SHALL offer `list_calendar_events`, `upd
 #### Scenario: Unauthenticated
 - **WHEN** `ot calendar events` runs without a stored login
 - **THEN** it exits 1 with the 401 `unauthorized` message
+
+### Requirement: An assistant's event edit can be undone
+When `update_calendar_event` changes an event, the server SHALL keep the values it replaced (the title, and the start, end and all-day flag together) with the version its write produced, for 30 days or until the event is changed again by the person, deleted or gone. The events route SHALL mark such an event with `changedBy: "assistant"` and the token's name, and its popover SHALL show who changed it with an Undo button. `POST /api/v1/calendar-sync/connections/{id}/events/{eventId}/undo`, from a signed-in session or a full token of the connection's owner, SHALL restore the kept values with the same conditional write as a `PATCH`, conditional on the version the assistant's write produced, and answer like a `PATCH`. It SHALL answer 409 `event_changed` with nothing written when the event changed since, 404 `not_found` when no undo is kept, and the route errors of the first requirement otherwise (including 401, 403 `forbidden`, 403 `token_restricted` and 403 `demo_restricted`). An undo SHALL be recorded as `calendar_event.changed` with the action `undone`. Undo SHALL NOT need "Let assistants edit events" to be on. The undo is server data: it SHALL NOT be an operation and SHALL NOT be in the export or a backup; devices learn its result from the events route.
+
+#### Scenario: Undo an assistant's move
+- **WHEN** an assistant moved an event from 09:00 to 11:00 and the user presses Undo in its popover
+- **THEN** the calendar holds the event at 09:00 again, written with `If-Match` on the version the assistant's write produced, the popover no longer offers Undo, and the user's other devices show 09:00
+
+#### Scenario: Changed since
+- **WHEN** the event was moved again in the calendar app after the assistant's edit and the user presses Undo
+- **THEN** the response is 409 `event_changed`, nothing is written and the device shows the event as the calendar holds it
+
+#### Scenario: The person's own edit replaces the undo
+- **WHEN** the user moves the event themselves after the assistant's edit
+- **THEN** the event is no longer marked as changed by the assistant and an undo request answers 404 `not_found`
+
+#### Scenario: Undo unauthenticated
+- **WHEN** the undo route is requested without credentials
+- **THEN** the response is a 401 `unauthorized` error
+
+#### Scenario: Undo with a limited token
+- **WHEN** a read token, an agent token or a token limited to chosen workspaces requests the undo
+- **THEN** the response is 403 (`forbidden` or `token_restricted`) and nothing is written
