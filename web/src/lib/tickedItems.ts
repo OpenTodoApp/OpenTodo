@@ -14,7 +14,7 @@ export const TICKED_LIMIT = 8
 const NONE: readonly TickedItem[] = []
 
 /** The ticked items whose name contains `query` (two characters or more), in the given order. */
-export function tickedMatches(items: readonly TickedItem[], query: string): TickedItem[] {
+export function tickedMatches<I extends TickedItem>(items: readonly I[], query: string): I[] {
   const q = normalizeTitle(query)
   if (q.length < 2) return []
   return items.filter((i) => normalizeTitle(i.title).includes(q)).slice(0, TICKED_LIMIT)

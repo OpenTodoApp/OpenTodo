@@ -31,6 +31,20 @@ export interface MethodInput {
 
 const open = (t: Task): boolean => !t.deleted_at && !t.completed_at
 
+/**
+ * An open task the user may choose as its project's next action (OpenSpec change
+ * choose-next-action): what the write must do to make it the first actionable task.
+ */
+export interface NextChoice {
+  id: string
+  title: string
+  /** Someday or a later start: cleared, as the Someday step's promote does. */
+  clearStart: boolean
+  /** Another open task comes first in the project's list: it moves to the top, out of its section. */
+  toTop: boolean
+  inSection: boolean
+}
+
 /** Live, unarchived projects in which the user may edit tasks: the ones the method works on. */
 export function workingProjects(input: Pick<MethodInput, 'projects' | 'memberships'>): Project[] {
   const memberships = input.memberships as Map<string, Membership>
@@ -105,6 +119,23 @@ export class MethodRules {
   /** The project's next action: its first actionable task in list order, or null. */
   nextActionOf(projectId: string): Task | null {
     return this.inListOrder(projectId).find((t) => this.actionable(t)) ?? null
+  }
+
+  /**
+   * The project's open top-level tasks the user may choose as its next action, in list
+   * order: all but the current next action, and none that is blocked or assigned to
+   * someone else, which no write of the user's own would make actionable.
+   */
+  nextActionChoices(projectId: string): NextChoice[] {
+    const list = this.inListOrder(projectId)
+    const next = list.find((t) => this.actionable(t))
+    return list.filter((t) => t !== next && !this.blocked(t) && !this.delegated(t)).map((t) => ({
+      id: t.id,
+      title: t.title,
+      clearStart: isSomeday(t) || isDeferred(t, this.input.today),
+      toTop: t !== list[0],
+      inSection: !!t.section_id,
+    }))
   }
 
   /** The project's open top-level tasks that wait (blocked or delegated). */

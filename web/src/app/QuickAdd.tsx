@@ -27,6 +27,7 @@ import { LineDateButton, LineDatePicker, useLineDate } from './quickadd/LineDate
 import { usePasteOffer } from './quickadd/PasteOffer'
 import { NotesLine, useNotesField } from './quickadd/NotesLine'
 import { VoiceButton, VoiceNotice } from './quickadd/VoiceParts'
+import type { NextChoice } from '../lib/method/rules'
 
 export type { QuickAddInput }
 
@@ -181,7 +182,9 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
   logDone?: boolean
   /** Whether Shift+Enter opens the notes field (quick-add-notes D2); off where the screen has its own notes, and in the palette, whose Shift+Enter adds and opens. */
   notes?: boolean
-}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, reuseProjectId, initialValue, formId, hideHint, autoFocus, label, voiceShortcut, layout = 'line', onAddAndOpen, escape, onAddMany, logDone, notes: notesOn = true }, ref) {
+  /** A project's open tasks, offered while typing to choose one as its next action instead of adding (choose-next-action). */
+  choices?: { items: readonly NextChoice[]; onPick: (choice: NextChoice) => void }
+}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, reuseProjectId, initialValue, formId, hideHint, autoFocus, label, voiceShortcut, layout = 'line', onAddAndOpen, escape, onAddMany, logDone, notes: notesOn = true, choices }, ref) {
   // The `q` badge is printed only while "Show shortcut hints" is on (keyboard-shortcuts).
   const hints = useShortcutHints()
   const [value, setValue] = useState(initialValue ?? '')
@@ -224,7 +227,8 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
 
   // `#` and `@` suggestions (smart-title-tokens D1): a listbox under the field for the token at the caret.
   const energyOn = energyLevelsOn(useUserPrefsRow())
-  const suggest = useTokenSuggest({ input: inputRef, value, setValue: change, projects, labels, enabled: settings.enabled, energy: energyOn, reuseProjectId, tickedQuery: parsed?.title ?? value, onTicked: (title) => { void add(false, title) } })
+  const suggest = useTokenSuggest({ input: inputRef, value, setValue: change, projects, labels, enabled: settings.enabled, energy: energyOn, reuseProjectId, tickedQuery: parsed?.title ?? value, onTicked: (title) => { void add(false, title) },
+    choices: choices && { items: choices.items, onPick: (choice) => { change(''); setDismissed([]); choices.onPick(choice) } } })
   // Unmatched #tokens are explained once the caret has left them (natural-language-capture "Unmatched tokens are explained").
   const misses = (parsed?.unmatched ?? []).filter((m) => !suggest.open || caretOutside(inputRef.current, m.span))
 

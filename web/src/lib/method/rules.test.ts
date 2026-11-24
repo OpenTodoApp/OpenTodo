@@ -46,6 +46,19 @@ describe('method-views scenarios', () => {
     sections: [], memberships: new Map(), me: 'me', today: '2026-10-18',
   })
 
+  it('Choices for the next action (choose-next-action): all open top-level tasks but the next action, none blocked or delegated', () => {
+    const rules = new MethodRules(base([
+      { id: 'wall' }, { id: 'later', start: '2026-11-01', section_id: 's' }, { id: 'idea', start: 'someday' },
+      { id: 'blocked', blocked_by: ['wall'] }, { id: 'ana', assignee_id: 'ana' }, { id: 'sub', parent_id: 'wall' }, { id: 'done', completed_at: 1 },
+    ]))
+    expect(rules.nextActionChoices('p')).toEqual([
+      { id: 'later', title: 't1', clearStart: true, toTop: true, inSection: true },
+      { id: 'idea', title: 't2', clearStart: true, toTop: true, inSection: false },
+    ])
+    // Without a next action, the first open task stays where it is.
+    expect(new MethodRules(base([{ id: 'a', start: 'someday' }, { id: 'b', start: 'someday' }])).nextActionChoices('p').map((c) => [c.id, c.toTop])).toEqual([['a', false], ['b', true]])
+  })
+
   it('First in order, then Blocker completed elsewhere', () => {
     const tasks: Partial<Task>[] = [{ id: 'done', completed_at: 1 }, { id: 'brackets', blocked_by: ['wall'] }, { id: 'wall' }]
     expect(new MethodRules(base(tasks)).nextActionOf('p')?.id).toBe('wall')
