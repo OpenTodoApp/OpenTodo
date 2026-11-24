@@ -7871,5 +7871,6 @@
   "{name} reopened a task": "{name} reabrió una tarea",
   "Completed or reopened": "Completada o reabierta",
   "Unread changes": "Cambios sin leer",
-  "{name} will be attached": "Se adjuntará {name}"
+  "{name} will be attached": "Se adjuntará {name}",
+  "That date of this repeating task is already done, skipped or moved.": "Esa fecha de la tarea recurrente ya está hecha, omitida o movida."
 }

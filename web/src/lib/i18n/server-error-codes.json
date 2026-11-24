@@ -130,6 +130,7 @@
   "run_closed",
   "scope_change",
   "self_action",
+  "series_date_taken",
   "session_only",
   "session_required",
   "set_by_environment",

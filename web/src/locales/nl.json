@@ -7871,5 +7871,6 @@
   "{name} reopened a task": "{name} heeft een taak opnieuw geopend",
   "Completed or reopened": "Voltooid of opnieuw geopend",
   "Unread changes": "Ongelezen wijzigingen",
-  "{name} will be attached": "{name} wordt bijgevoegd"
+  "{name} will be attached": "{name} wordt bijgevoegd",
+  "That date of this repeating task is already done, skipped or moved.": "Die datum van de herhalende taak is al gedaan, overgeslagen of verplaatst."
 }

@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { occurrenceId, pieceId } from './ids'
 import { occurrencesInRange } from './occurrences'
+import { exceptionOn, type RecordState } from './recurring'
 import { hasPast, planPast } from './seriesPast'
 import { planActOn, planCarry, planRepair, type OccurrenceAction } from './seriesPlan'
 import { planEndFrom, planSplit } from './seriesSplit'
 import type { Due, SplitFrom, Task } from './types'
-// Shared with internal/sync (Go): PlanActOn, PlanRepair, PlanSplit and the lineage
-// bounds must agree (series-exceptions D2, series-split D1, D3).
+// Shared with internal/sync (Go): PlanActOn, PlanRepair, PlanSplit, ExceptionOn and
+// the lineage bounds must agree (series-exceptions D2, series-split D1, D3,
+// server-series-move).
 import fixture from './series.fixture.json'
 
 interface FixtureRecord { date: string; state: 'open' | 'done' | 'skipped'; due?: Due; title?: string; legacy?: boolean; series?: string }
@@ -24,7 +26,9 @@ interface FixtureCase {
   carry?: Record<string, unknown>
   carry_past?: Record<string, unknown>
   range?: { from: string; to: string }
+  exception_on?: { date: string }
   expect: {
+    exception?: RecordState | null
     ok?: false
     invalid?: true
     end?: true
@@ -93,6 +97,10 @@ describe('shared series fixture', () => {
         const got = occurrencesInRange(rows.find((t) => t.id === id)!, tasks, c.today, c.range.from, c.range.to).projections.map((p) => p.occurrence)
         expect(got, id).toEqual(dates)
       }
+      return
+    }
+    if (c.exception_on) {
+      expect(exceptionOn(target, c.exception_on.date, tasks)).toBe(c.expect.exception)
       return
     }
     if (c.carry_past) {

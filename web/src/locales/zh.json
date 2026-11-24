@@ -7871,5 +7871,6 @@
   "{name} reopened a task": "{name} 重新打开了一项任务",
   "Completed or reopened": "已完成或重新打开",
   "Unread changes": "未读更改",
-  "{name} will be attached": "将附加 {name}"
+  "{name} will be attached": "将附加 {name}",
+  "That date of this repeating task is already done, skipped or moved.": "此重复任务的该日期已完成、已跳过或已移动。"
 }

@@ -7871,5 +7871,6 @@
   "{name} reopened a task": "{name} hat eine Aufgabe wieder geöffnet",
   "Completed or reopened": "Erledigt oder wieder geöffnet",
   "Unread changes": "Ungelesene Änderungen",
-  "{name} will be attached": "{name} wird angehängt"
+  "{name} will be attached": "{name} wird angehängt",
+  "That date of this repeating task is already done, skipped or moved.": "Dieses Datum der wiederkehrenden Aufgabe ist schon erledigt, übersprungen oder verschoben."
 }
