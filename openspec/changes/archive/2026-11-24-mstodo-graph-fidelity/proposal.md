@@ -20,7 +20,7 @@ Microsoft retires the Microsoft To Do apps on 30 June 2027 and gives personal ac
 - A completed task carries no rule.
 - Each shared list adds a preview note.
 - Checklist items keep their `createdDateTime`.
-- Due and start dates: a midnight in a named zone other than UTC is that day; any other value is converted into the import's time zone and rounded to the nearest midnight.
+- Due and start dates: a value at exactly midnight, in any zone (UTC included), is the written day; any other value is converted into the import's time zone and rounded to the nearest midnight.
 - A linked resource without a `webUrl` warns.
 
 Out of scope: file attachments (Graph needs one request per task, the guide's script does not make it), the PowerShell script and the guide's prose. No new field, op, route, dependency or environment variable. Advances the importers line of `ROADMAP.md`.

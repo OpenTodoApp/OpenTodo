@@ -119,15 +119,37 @@ func TestMicrosoftToDoDueReturnedInUTC(t *testing.T) {
 			t.Errorf("%s: due %+v, start %q; want 2023-04-15 and 2023-04-13", zone, r.Due, r.Start)
 		}
 	}
-	// A date written as midnight UTC stays that date west of UTC.
-	r := taskRow(t, parseIn(t, msTodoTaskJSON(`"status":"notStarted","dueDateTime":{"dateTime":"2026-11-03T00:00:00.0000000","timeZone":"UTC"}`), "America/Los_Angeles"), "Task")
-	if r.Due == nil || r.Due.Date != "2026-11-03" {
-		t.Errorf("midnight UTC in Los Angeles: due %+v", r.Due)
+	// A value at exactly midnight is the written day in any import zone, also
+	// east of UTC+12, where midnight UTC is already the afternoon. Monthly and
+	// yearly rules that restate that day still convert there.
+	for _, c := range []struct{ zone, due, recurrence, want string }{
+		{"America/Los_Angeles", `{"dateTime":"2026-11-03T00:00:00.0000000","timeZone":"UTC"}`, "", ""},
+		{"Pacific/Auckland", `{"dateTime":"2026-11-03T00:00:00.0000000","timeZone":"UTC"}`, "", ""},
+		{"Pacific/Kiritimati", `{"dateTime":"2026-11-03T00:00:00.0000000","timeZone":"UTC"}`, "", ""},
+		{"America/Los_Angeles", `{"dateTime":"2026-11-03T00:00:00.0000000","timeZone":"Tokyo Standard Time"}`, "", ""},
+		{"Pacific/Auckland", `{"dateTime":"2026-11-03T00:00:00.0000000","timeZone":"UTC"}`,
+			`{"pattern":{"type":"absoluteYearly","interval":1,"month":11,"dayOfMonth":3},"range":{"type":"noEnd"}}`, "every year"},
+		{"Pacific/Kiritimati", `{"dateTime":"2026-11-03T00:00:00.0000000","timeZone":"UTC"}`,
+			`{"pattern":{"type":"absoluteMonthly","interval":2,"dayOfMonth":3},"range":{"type":"noEnd"}}`, "every 2 months"},
+	} {
+		fields := `"status":"notStarted","dueDateTime":` + c.due
+		if c.recurrence != "" {
+			fields += `,"recurrence":` + c.recurrence
+		}
+		r := taskRow(t, parseIn(t, msTodoTaskJSON(fields), c.zone), "Task")
+		if r.Due == nil || r.Due.Date != "2026-11-03" || r.Recurrence != c.want || len(r.Warnings) > 0 {
+			t.Errorf("%s %s: due %+v, rule %q, warnings %v", c.zone, c.due, r.Due, r.Recurrence, r.Warnings)
+		}
 	}
-	// A local midnight in a named zone is that day in any import zone.
-	r = taskRow(t, parseIn(t, msTodoTaskJSON(`"status":"notStarted","dueDateTime":{"dateTime":"2026-11-03T00:00:00.0000000","timeZone":"Tokyo Standard Time"}`), "America/Los_Angeles"), "Task")
-	if r.Due == nil || r.Due.Date != "2026-11-03" {
-		t.Errorf("midnight in Tokyo: due %+v", r.Due)
+}
+
+func TestMicrosoftToDoBadInterval(t *testing.T) {
+	for _, interval := range []string{`"two"`, `0`, `-1`, `99999999999999999999`, `1000`} {
+		r := taskRow(t, parseIn(t, msTodoTaskJSON(`"status":"notStarted","dueDateTime":{"dateTime":"2026-11-03T00:00:00","timeZone":"UTC"},
+			"recurrence":{"pattern":{"type":"daily","interval":`+interval+`},"range":{"type":"noEnd"}}`), ""), "Task")
+		if r.Recurrence != "" || !hasWarning(r, "not supported") {
+			t.Errorf("interval %s: rule %q, warnings %v", interval, r.Recurrence, r.Warnings)
+		}
 	}
 }
 

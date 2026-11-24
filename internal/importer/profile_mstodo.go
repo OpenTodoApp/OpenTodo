@@ -107,11 +107,11 @@ func graphTime(v any) (time.Time, bool, error) {
 // graphDay reads a due or start dateTimeTimeZone as a floating date. To Do
 // stores the local midnight of the chosen day and Graph returns it converted,
 // usually to UTC: 15 April at UTC+2 comes back as 2023-04-14T22:00 UTC. A
-// midnight in a named zone other than UTC is that local day as it is. Anything
-// else is converted to the import's zone and, since it is a midnight somewhere,
-// rounded to the nearest midnight there: exact when the import's zone is the
-// account's, and right for any zone within 12 hours of it. A zone the server
-// does not know falls back to the written date.
+// value at exactly midnight, in whatever zone it names (UTC included), is the
+// written day. Anything else is converted to the import's zone and, since it
+// is a midnight somewhere, rounded to the nearest midnight there: exact when
+// the import's zone is the account's, and right for any zone within 12 hours
+// of it. A zone the server does not know falls back to the written date.
 func graphDay(d obj, loc *time.Location) (string, bool) {
 	t, ok, err := graphTime(map[string]any(d))
 	if err != nil || !ok {
@@ -120,7 +120,7 @@ func graphDay(d obj, loc *time.Location) (string, bool) {
 		}
 		return "", false
 	}
-	if t.Location() != time.UTC && t.Hour() == 0 && t.Minute() == 0 && t.Second() == 0 {
+	if t.Hour() == 0 && t.Minute() == 0 && t.Second() == 0 && t.Nanosecond() == 0 {
 		return t.Format("2006-01-02"), true
 	}
 	t = t.In(loc)
@@ -376,8 +376,15 @@ func msTodoRecurrence(p, rng obj, due string) (rule string, endDropped bool, err
 		return "", false, fmt.Errorf("(no pattern)")
 	}
 	var parts []string
-	if n, err := strconv.Atoi(p.str("interval")); err == nil && n > 1 {
-		parts = append(parts, "INTERVAL="+strconv.Itoa(n))
+	if s := p.str("interval"); s != "" {
+		// FromRRULE refuses an interval over the grammar's limit.
+		n, err := strconv.Atoi(s)
+		if err != nil || n < 1 {
+			return unsupported()
+		}
+		if n > 1 {
+			parts = append(parts, "INTERVAL="+strconv.Itoa(n))
+		}
 	}
 	var days []string
 	for _, d := range p.names("daysOfWeek") {
