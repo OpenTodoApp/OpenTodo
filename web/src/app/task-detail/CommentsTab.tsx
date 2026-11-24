@@ -16,7 +16,7 @@ import { memberName, roleOf, useMe } from '../../lib/sharing'
 import type { Attachment, Comment, ProjectRole, Task } from '../../lib/types'
 import { mentionChipsOf, useMentionTargets } from '../useMentionTargets'
 import { PersonAvatar } from '../PersonAvatar'
-import { Button, Icon, IconButton, Menu, MenuItem } from '../../ui'
+import { Button, Icon, IconButton, isAbove, Menu, MenuItem } from '../../ui'
 import { ConfirmDialog } from '../../ui'
 import { useTaskPublished } from './taskPageStatus'
 import { Markdown } from '../Markdown'
@@ -214,11 +214,13 @@ export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(fu
   ) : me ? (
     <div className={composerHost ? 'space-y-1.5' : 'space-y-1.5 border-t border-default pt-3'} data-composer-block
       onBlur={(e) => {
-        // Leaving an empty composer (no draft, no reply) puts it back to rest.
-        const next = e.relatedTarget as Node | null
+        // Leaving an empty composer (no draft, no reply) puts it back to rest. A menu or
+        // picker it opened (More formatting, the table menu) is portalled to the body but
+        // still inside the composer (#2030).
         const block = e.currentTarget
-        if (!composerHost || (next && block.contains(next)) || replyTarget) return
-        afterTap(() => { if (!block.contains(document.activeElement) && !readDraft(taskId).trim()) setOpen(false) })
+        const inside = (node: Node | null) => !!node && (block.contains(node) || isAbove(node, block))
+        if (!composerHost || inside(e.relatedTarget as Node | null) || replyTarget) return
+        afterTap(() => { if (!inside(document.activeElement) && !readDraft(taskId).trim()) setOpen(false) })
       }}>
       {published && <p className="text-meta text-muted" data-page-composer-notice><Icon name="globe" size="xs" /> {t('This task is published: comments you write from now on are visible on its page.')}</p>}
       {replyTarget && (

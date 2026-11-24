@@ -5,7 +5,7 @@
 export { Dialog } from './Dialog'
 export { playExit } from './exit'
 export { Menu } from './Menu'
-export { Popover } from './Popover'
+export { isAbove, Popover } from './Popover'
 export { ToastRegion, useToastClearance } from './Toasts'
 export { place } from './position'
 export { captureFocus, focusArrived, focusInto, overlayDepth, pickerField, pushOverlay, trapTab, useOverlayDepth, useFinePointer, useWide, watchVisualViewport } from './stack'

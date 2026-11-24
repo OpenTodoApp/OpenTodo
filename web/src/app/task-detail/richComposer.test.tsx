@@ -148,6 +148,56 @@ describe('rich composer', () => {
     await r.unmount()
     host.remove()
   })
+
+  // #2030: More formatting's menu is portalled to the body; focus moving into it is
+  // not leaving the composer, on a phone (a sheet) or a desktop (a panel).
+  for (const phone of [false, true]) {
+    it(`More formatting keeps an empty composer open and applies the pick (${phone ? 'phone' : 'desktop'})`, async () => {
+      vi.stubGlobal('matchMedia', (q: string) => ({ matches: phone ? q.includes('coarse') : q.includes('min-width'), media: q, addEventListener: () => {}, removeEventListener: () => {} }))
+      const host = document.createElement('div')
+      document.body.appendChild(host)
+      const r = await render(<CommentsView {...props()} composerHost={host} />)
+      await click(host.querySelector('[data-composer-resting]')!)
+      const v = await richView(host)
+      v.focus()
+      await flush()
+      const block = host.querySelector('[data-composer-block]')!
+      const more = () => host.querySelector<HTMLElement>('[data-toolbar-more]')
+      // A computer shows the row on request (the Formatting toggle); a phone while the editor has focus.
+      const toggle = host.querySelector<HTMLElement>('[data-composer-formatting]')
+      if (!phone && toggle?.getAttribute('aria-pressed') !== 'true') await click(toggle!)
+      await waitFor(() => !!more(), 'the More button')
+      more()!.focus()
+      await click(more()!)
+      const item = () => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((el) => el.textContent?.includes('Heading'))
+      await waitFor(() => !!item(), 'the More formatting menu')
+      // Focus moves into the portalled menu: the composer counts it as inside.
+      item()!.focus()
+      block.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: item()! }))
+      await flush()
+      expect(host.querySelector('[data-composer-resting]')).toBeNull()
+      expect(item()).toBeTruthy()
+      await click(item()!)
+      await waitFor(() => !item(), 'the menu to close')
+      await flush()
+      expect(host.querySelector('[data-composer-resting]')).toBeNull()
+      expect(block.isConnected).toBe(true)
+      expect(v.state.doc.firstChild?.type.name).toBe('heading')
+      // Escape closes the menu first and leaves the composer open; then the empty composer rests.
+      v.dispatch(v.state.tr.delete(0, v.state.doc.content.size))
+      writeDraft('t1', '')
+      await click(more()!)
+      await waitFor(() => !!item(), 'the menu again')
+      await key(item()!, 'Escape')
+      await waitFor(() => !item(), 'the menu to close on Escape')
+      expect(host.querySelector('[data-composer-resting]')).toBeNull()
+      v.focus()
+      expect(await press(v, 'Escape')).toBe(true)
+      await waitFor(() => !!host.querySelector('[data-composer-resting]'), 'the resting composer')
+      await r.unmount()
+      host.remove()
+    })
+  }
 })
 
 describe('reaction bar', () => {
