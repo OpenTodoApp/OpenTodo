@@ -185,7 +185,7 @@ func (h *Host) openTenant(_ context.Context, name string) (*tenant.Tenant, error
 	opts := tenant.Options{Version: h.version, Log: h.log.With("tenant", name), Web: h.web, Now: h.now,
 		// A web restore is refused on a host; should one be confirmed anyway,
 		// closing the tenant applies it on the next open.
-		Restart: func() { go h.pool.evict(name) },
+		Restart: func() bool { go h.pool.evict(name); return true },
 		Hosted: &tenant.Hosted{Name: name, PushSubject: h.hc.URL.Scheme + "://" + h.hc.URL.Host, Quota: q,
 			MaxMembers: lim.Members, Changed: func() { h.markDirty(name) }, AssistantSlots: h.assistantSlots,
 			Workspaces: opsync.WorkspaceLimits{Workspaces: lim.Workspaces, Members: lim.WorkspaceMembers, Groups: lim.WorkspaceGroups, GroupMembers: lim.GroupMembers}}}

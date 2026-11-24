@@ -496,6 +496,12 @@ export interface ReminderFields {
    * the task's encrypted location.
    */
   radius_m?: number | null
+  /**
+   * An urgent reminder (OpenSpec change ios-urgent-alarms, design D1): the
+   * iPhone app rings it as an alarm (AlarmKit) where it can; everywhere
+   * else it fires as an ordinary reminder. Not content.
+   */
+  urgent?: boolean
 }
 
 /**
@@ -1349,7 +1355,7 @@ export const OP_DEFAULTS = {
     name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false, position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], row_layout: '', card_notes: false, subtasks: '', created_at: 0, deleted_at: null, workspace_id: null, icon: null, manual_order: [],
   } satisfies Omit<View, 'id' | '_clock'>,
   reminder: {
-    task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null, created_at: 0, deleted_at: null, radius_m: null,
+    task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null, created_at: 0, deleted_at: null, radius_m: null, urgent: false,
   } satisfies Omit<Reminder, 'id' | '_clock'>,
   comment: {
     task_id: '', parent_id: null, body: '', author_id: '', mentions: [], created_at: 0, edited_at: null, deleted_at: null, guest_name: null, page_id: null, reactions: {},

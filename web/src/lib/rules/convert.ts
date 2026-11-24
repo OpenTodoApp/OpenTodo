@@ -3,6 +3,7 @@
 // a condition read from the client parser's tree; every other term is named as not
 // carried over. Pure: names resolve through the lists the caller passes.
 import { parse, printQuery, type Node } from '../filter'
+import { unescapeName, wildcardParts } from '../filter/names'
 import type { Label, OriginKind, Project, RuleCondition } from '../types'
 
 const ORIGIN_KINDS = ['url', 'email', 'issue', 'import', 'obsidian']
@@ -18,8 +19,11 @@ type Names = {
   projects: readonly Pick<Project, 'id' | 'name' | 'deleted_at'>[]
 }
 
-const byName = <T extends { name: string; deleted_at: number | null }>(list: readonly T[], name: string): T | undefined =>
-  list.find((x) => !x.deleted_at && x.name.toLowerCase() === name.toLowerCase())
+/** The one live item a term names, the name as written first (as idsNamed); none for a pattern, which a rule cannot hold (filter-wildcards). */
+function byName<T extends { name: string; deleted_at: number | null }>(list: readonly T[], name: string): T | undefined {
+  const find = (want: string) => list.find((x) => !x.deleted_at && x.name.toLowerCase() === want.toLowerCase())
+  return find(name) ?? (wildcardParts(name) ? undefined : find(unescapeName(name)))
+}
 
 /** One term of an `and` as a partial condition, or null when a rule cannot use it. */
 function term(n: Node, names: Names): RuleCondition | null {

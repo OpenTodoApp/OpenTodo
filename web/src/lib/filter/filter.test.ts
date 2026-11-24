@@ -70,7 +70,9 @@ describe('tokenize', () => {
   })
 
   it('unescapes \\" and \\\\ in quoted strings', () => {
-    expect(tokenize('@"say \\"hi\\" \\\\ bye"')).toMatchObject([{ type: 'label', name: 'say "hi" \\ bye' }])
+    expect(tokenize('search: "say \\"hi\\" \\\\ bye"')).toMatchObject([{ type: 'search', text: 'say "hi" \\ bye' }])
+    // A name keeps `\\` (one literal backslash) and `\*` escaped for the wildcard reading (filter-wildcards).
+    expect(tokenize('@"say \\"hi\\" \\\\ bye"')).toMatchObject([{ type: 'label', name: 'say "hi" \\\\ bye' }])
   })
 
   it('allows non-operator punctuation and unicode in bare names', () => {

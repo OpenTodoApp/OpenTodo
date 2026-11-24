@@ -105,6 +105,47 @@ describe('RemindersField', () => {
     await unmount()
   })
 
+  it('marks a reminder urgent and back without moving it (ios-urgent-alarms 2.1)', async () => {
+    const id = await createTask({ title: 'Leave for the airport', due: { date: '2026-10-20', time: '06:00' } })
+    const rid = await addReminder(id, { kind: 'relative', offset_minutes: -30 })
+    const before = (await db.reminders.get(rid))!
+    const { container, unmount } = await render(<RemindersField task={(await db.tasks.get(id))!} />)
+    const chip = () => container.querySelector(`[data-reminder-id="${rid}"]`) as HTMLElement | null
+    const menuFor = () => chip()?.querySelector('button[aria-haspopup="menu"]') as HTMLButtonElement | null
+    const urgentItem = () => [...document.querySelectorAll<HTMLElement>('[role="menuitemcheckbox"]')].find((b) => b.textContent?.includes('Urgent'))
+    await waitFor(() => !!menuFor(), 'the reminder chip')
+    expect(chip()!.querySelector('[data-icon="bell"]')).toBeTruthy()
+
+    await click(menuFor()!)
+    await waitFor(() => !!urgentItem(), 'the Urgent item')
+    expect(urgentItem()!.getAttribute('aria-checked')).toBe('false')
+    await click(urgentItem()!)
+    await waitFor(async () => (await db.reminders.get(rid))!.urgent === true, 'the urgent flag')
+    const after = (await db.reminders.get(rid))!
+    expect(after.fire_at).toBe(before.fire_at)
+    expect(after.delivered_at).toBe(before.delivered_at)
+    await waitFor(() => !!chip()?.querySelector('[data-icon="alarm-clock"]'), 'the alarm clock on the chip')
+
+    await waitFor(() => !document.querySelector('[role="menu"]'), 'the menu closed')
+    await click(menuFor()!)
+    await waitFor(() => urgentItem()?.getAttribute('aria-checked') === 'true', 'Urgent checked')
+    await click(urgentItem()!)
+    await waitFor(async () => (await db.reminders.get(rid))!.urgent === false, 'the flag cleared')
+    await unmount()
+  })
+
+  it('offers no Urgent on a location reminder', async () => {
+    const id = await createTask({ title: 'Buy stamps', location: { name: 'Post office', lat: 45.46, lon: 9.19 } })
+    const rid = await addReminder(id, { kind: 'arrive', radius_m: 150 })
+    const { container, unmount } = await render(<RemindersField task={(await db.tasks.get(id))!} />)
+    const menuFor = () => container.querySelector(`[data-reminder-id="${rid}"] button[aria-haspopup="menu"]`) as HTMLButtonElement | null
+    await waitFor(() => !!menuFor(), 'the location chip')
+    await click(menuFor()!)
+    await waitFor(() => document.querySelectorAll('[role="menuitem"]').length > 0, 'the menu')
+    expect(document.querySelector('[role="menuitemcheckbox"]')).toBeNull()
+    await unmount()
+  })
+
   it('offers deadline presets once the task has a deadline and shows the chip (OpenSpec deadlines 5.1)', async () => {
     const plain = await createTask({ title: 'No deadline yet' })
     let r = await render(<RemindersField task={(await db.tasks.get(plain))!} />)

@@ -50,6 +50,8 @@ export interface WaitOptions {
   fetchFn?: typeof fetch
   sleep?: (ms: number) => Promise<void>
   now?: () => number
+  /** Stops polling (the page went away); resolves false. */
+  signal?: AbortSignal
 }
 
 /**
@@ -58,16 +60,18 @@ export interface WaitOptions {
  * request answered by the old process does not count. Resolves false after
  * the budget.
  */
-export async function waitForRestart({ intervalMs = 1000, budgetMs = 60_000, fetchFn = fetch, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), now = Date.now }: WaitOptions = {}): Promise<boolean> {
+export async function waitForRestart({ intervalMs = 1000, budgetMs = 60_000, fetchFn = fetch, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), now = Date.now, signal }: WaitOptions = {}): Promise<boolean> {
   const start = now()
   let wentAway = false
   while (now() - start < budgetMs) {
     await sleep(intervalMs)
+    if (signal?.aborted) return false
     try {
-      const res = await fetchFn('/healthz', { cache: 'no-store' })
+      const res = await fetchFn('/healthz', { cache: 'no-store', signal })
       if (res.ok && (wentAway || now() - start >= 2 * intervalMs)) return true
       if (!res.ok) wentAway = true
     } catch {
+      if (signal?.aborted) return false
       wentAway = true
     }
   }

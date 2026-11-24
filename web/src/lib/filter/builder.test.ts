@@ -33,6 +33,8 @@ const GO_EDGES = [
   // Nesting the parser keeps (it flattens only a & b & c, not (a & b) & c).
   '(a = 1 & p1) & p2', '(p1 | p2) | p3', '!(p1 & p2)', '!(p1 | p2) & !p3', 'tracked', 'tracked > 1h', 'tracked <= 90', 'tracked >= 1h30', 'tracked occurrence', 'tracked occurrence > 1h', '!tracked occurrence & p1',
   '@"x|y" & #"a(b)" & search: "a & b"', 'search: \\', '@a\\b',
+  // Wildcard names (filter-wildcards).
+  '@home*', '@*', '##W* & !#"Client \\*"', '#*Client*', 'section: "In *"', '@to\\*do', '@"to\\* do"', 'section: R\\*',
 ]
 
 const same = (a: Node | null, b: Node | null) => expect(a && stripPositions(a)).toEqual(b && stripPositions(b))

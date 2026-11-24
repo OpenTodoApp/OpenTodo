@@ -1,6 +1,59 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "NSAlarmKitUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo lässt deine dringenden Erinnerungen als Wecker klingeln."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo rings your urgent reminders as alarms."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo hace sonar tus recordatorios urgentes como alarmas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo fait sonner vos rappels urgents comme des alarmes."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo fa suonare i tuoi promemoria urgenti come sveglie."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo laat je dringende herinneringen afgaan als wekker."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O OpenTodo faz tocar os seus lembretes urgentes como alarmes."
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo 会将你的紧急提醒以闹钟方式响铃。"
+          }
+        }
+      }
+    },
     "NSFaceIDUsageDescription": {
       "extractionState": "manual",
       "localizations": {

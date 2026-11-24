@@ -121,6 +121,11 @@ archive)
   short=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")
   bundle=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist")
   [ "$short" = "$version" ] && [ "$bundle" = "$build" ] || die "the app carries $short ($bundle), expected $version ($build)"
+  # ios-urgent-alarms D7: AlarmKit exists from iOS 26 only; linked strongly, the app would not
+  # start on the older iOS versions the deployment target allows.
+  strong=$(otool -l "$app/OpenTodo" | awk '$1 == "cmd" { cmd = $2 } $1 == "name" && cmd == "LC_LOAD_DYLIB" { print $2 }' | grep '/AlarmKit.framework/' || true)
+  [ -z "$strong" ] || die "the app links $strong strongly; it must be weak-linked to start before iOS 26"
+  if otool -l "$app/OpenTodo" | grep -q '/AlarmKit.framework/'; then echo "AlarmKit is weak-linked"; fi
   echo "archived $app: version $short build $bundle, signed ad hoc with its entitlements"
   ;;
 
