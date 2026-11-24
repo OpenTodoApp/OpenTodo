@@ -1,7 +1,6 @@
 package app.opentodo
 
 import java.io.File
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -41,18 +40,22 @@ class WidgetColorTest {
         }
     }
 
-    @Test fun rowsUseTheDayNightWidgetText() {
-        val themes = File(res, "values/themes.xml").readText()
-        val style = themes.substringAfter("<style name=\"WidgetRow\">").substringBefore("</style>")
-        assertTrue(style.contains("<item name=\"android:textColor\">@color/widget_text</item>"))
-        assertNull(TodayWidget.rowColor(false))
-        assertEquals(R.color.overdue, TodayWidget.rowColor(true))
+    /** android-widget-list D1: a row's colours are in its layout, so the launcher resolves them for the theme. */
+    @Test fun rowsUseTheDayNightWidgetColours() {
+        val row = File(res, "layout/widget_today_row.xml").readText()
+        assertTrue(row.contains("android:textColor=\"@color/widget_text\""))
+        assertTrue(row.contains("android:textColor=\"@color/overdue\""))
+        assertTrue(row.contains("android:textColor=\"@color/widget_muted\""))
+        assertTrue(File(res, "drawable/widget_circle.xml").readText().contains("@color/widget_muted"))
+        // No colour is set from code: it would bake in the theme of the moment it was drawn (#966).
+        val code = File("src/main/java/app/opentodo/Widgets.kt").readText()
+        assertNull(Regex("""setTextColor|setColorStateList|getColor\(""").find(code))
     }
 
     @Test fun widgetTextNeverHardCoded() {
-        for (name in listOf("widget_today.xml", "widget_quick_add.xml")) {
+        for (name in listOf("widget_today.xml", "widget_today_row.xml", "widget_today_heading.xml", "widget_quick_add.xml")) {
             val layout = File(res, "layout/$name").readText()
-            assertTrue(name, Regex("""textColor="(?!@color/widget_)""").find(layout) == null)
+            assertTrue(name, Regex("""textColor="(?!@color/widget_|@color/overdue")""").find(layout) == null)
         }
     }
 }

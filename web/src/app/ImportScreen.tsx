@@ -1,6 +1,6 @@
 import { Button, ConfirmDialog, PageBody, PageHeader } from '../ui'
 import { Skeleton } from '../ui'
-import { requestTemplateDialog } from './TemplateDialogs'
+import { requestTemplateDialog } from './TemplateDialogHost'
 import { ProjectPickerField } from './ProjectPickerField'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, FileReadError, isNetworkError } from '../lib/api'

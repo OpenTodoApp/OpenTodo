@@ -1,4 +1,7 @@
 {
+  "Text size": "Tamaño del texto",
+  "Larger": "Más grande",
+  "Largest": "Máximo",
   "Allow pinch zoom": "Permitir zoom con los dedos",
   "Pinch to zoom the app on this device. Turn it off for a more app-like feel.": "Haz zoom en la app con los dedos en este dispositivo. Desactívalo para una sensación más de app.",
   "\"after completion\" only applies to day, week, month and year intervals": "«after completion» solo se aplica a intervalos de días, semanas, meses y años",
@@ -2170,7 +2173,6 @@
   "Hide delivery log": "Ocultar registro de entregas",
   "Hide details": "Ocultar detalles",
   "Hide done today": "Ocultar Hechas hoy",
-  "Hide other calendars on this device": "Ocultar otros calendarios en este dispositivo",
   "Hide sidebar": "Ocultar la barra lateral",
   "Hide successful runs": "Ocultar las ejecuciones correctas",
   "Hide table": "Ocultar tabla",
@@ -4381,7 +4383,6 @@
   "Show on rows": "Mostrar en las filas",
   "Show only the tasks a query matches": "Mostrar solo las tareas que coinciden con una consulta",
   "Show or hide the project activity; Tab reaches the person and kind filters": "Mostrar u ocultar la actividad del proyecto; Tab llega a los filtros de persona y tipo",
-  "Show other calendars on this device": "Mostrar otros calendarios en este dispositivo",
   "Show repeating occurrences": "Mostrar las repeticiones",
   "Show shortcut hints": "Mostrar sugerencias de atajos",
   "Show shortcut hints (this device)": "Mostrar sugerencias de atajos (este dispositivo)",

@@ -163,7 +163,7 @@ Completing a task gives a short tap, and adding a task or picking up a row a lig
 
 ## Touch
 
-Tapping does not flash, and holding a button or a tab does not select its label. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top does not drag the app. Pinch to zoom works everywhere, unless you turn it off for this device in **Settings → Appearance → Allow pinch zoom**.
+Tapping does not flash, and holding a button or a tab does not select its label. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top does not drag the app. Pinch to zoom works everywhere, unless you turn it off for this device in **Settings → Appearance → Allow pinch zoom**. The app's text follows the phone's font size, set in the phone's display or accessibility settings (the place varies by maker); **Settings → Appearance → Text size** in the app overrides it.
 
 ## Sharing
 
@@ -171,7 +171,13 @@ The app appears in Android's share menu for links, text, photos and files, also 
 
 ## Widgets
 
-Three home-screen widgets: **Today** shows your tasks for today with the time of the last update, **Completed** shows how many tasks you completed today and a bar for each of the last 7 days (counted as in [Statistics](statistics.md), which a tap opens), and **Quick add** opens the app's quick add. The widgets show what the app last saw; open the app to refresh them. While an encrypted account is locked, the Today widget shows only counts and the Completed widget only today's number.
+Three home-screen widgets: **Today**, **Completed** and **Quick add**. Long-press the home screen, choose **Widgets** and drag one from OpenTodo; each can be resized.
+
+**Today** lists your tasks for [Today](today-and-upcoming.md) in a list that scrolls: overdue ones under **Earlier** with their date, the rest under **Today**, each with its time and project when it has them. Tap a task to open it, the circle beside it to complete it, and **+** to open quick add. A completed task leaves the widget at once; the app records the completion in the background, as if you had ticked it in the app (a repeating task moves to its next date), and syncs it when the phone is online. Without a connection the completion waits on the phone like any other change. If the completion could not be recorded (an older server, the app could not start in the background, or your session or a [login wall's](#behind-a-login-page-pangolin-authelia-and-others) session has expired), it is not applied and the task comes back after half an hour; open the app, sign in again if it asks, and tick it there. The header shows the number of tasks and when the list was last updated.
+
+**Completed** shows how many tasks you completed today and a bar for each of the last 7 days (counted as in [Statistics](statistics.md), which a tap opens), and **Quick add** opens the app's quick add.
+
+The widgets follow the phone's light or dark mode, and show what the app last saw: it refreshes them while it is open and about once an hour in the background. While an encrypted account is locked, the Today widget shows only counts, without circles, and the Completed widget only today's number.
 
 ## Status and navigation bars
 

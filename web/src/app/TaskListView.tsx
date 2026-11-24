@@ -8,7 +8,7 @@ import { TodayStrip } from './habits/TodayStrip'
 import { CloseDayRow } from './CloseDayRow'
 import { useWithMethod } from './help/MethodLink'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { lazy } from '../lib/lazy'
+import { lazy, preloadable } from '../lib/lazy'
 import { ProjectCalendarLayout, useListExtras } from './task-list/listExtras'
 import { t } from '../lib/i18n'
 import { useMembershipMap, useMemberships, useUserPrefsRow } from '../lib/localData'
@@ -30,7 +30,7 @@ import { useDayTotals } from '../lib/timeEntries'
 import { nextViewMode, saveListColumns, saveShowCompleted, saveViewMode, type ProjectViewMode } from '../lib/sections'
 import { parentReadyToComplete } from '../lib/subtasks'
 import type { AccountRole, Label, Task } from '../lib/types'
-import { Button, DESKTOP_HEADER_QUERY, frameKind, hueFor, MenuGroup, MenuItem, MenuSeparator, PAGE_FRAME, PageHeader, useFinePointer, useMediaQuery } from '../ui'
+import { Button, DESKTOP_HEADER_QUERY, frameKind, hueFor, MenuGroup, MenuItem, MenuSeparator, PAGE_FRAME, PageHeader, Skeleton, useFinePointer, useMediaQuery } from '../ui'
 import { openAssistantWith, useAssistantStatus } from '../lib/assistantStatus'
 import { act } from './actionError'
 import { AwayHost, AwayMenuItems, useAwayMeta } from './away/AwayMenu'
@@ -61,7 +61,6 @@ import type { Route } from './router'
 import { AddSection } from './Sections'
 import { useSelection } from './selection'
 import { SubProjectsGroup, subProjectLead } from './SubProjects'
-import { TimelineView } from './TimelineView'
 import { completeWithUndo } from './undoable'
 import { useBoardMoves } from './task-list/useBoardMoves'
 import { CompleteParentPrompt, EmptyState, FilteredEmpty, HiddenNote, LayoutSwitch, ListPageActions, MissingTarget, type PhoneItem, PhoneMenuItems, phoneGroups, placeholderFor, ReadOnlyQuickAdd, usePhoneListActions, RowPickerDialogs } from './task-list/ListChrome'
@@ -245,6 +244,9 @@ function useListAdd(on: boolean, ui: ListUi, toggleCollapsed: (id: string, force
 }
 
 // The Completed view's controls load with the view (completed-view-review: bundle budget).
+// A project's timeline layout loads with it (fetched ahead by the shell once idle).
+const TimelineView = preloadable(() => import('./TimelineView').then((m) => ({ default: m.TimelineView })))
+export const preloadTimeline = TimelineView.preload
 const CompletedSearch = lazy(() => import('./completed/CompletedBar').then((m) => ({ default: m.CompletedSearch })))
 const CompletedOptions = lazy(() => import('./completed/CompletedBar').then((m) => ({ default: m.CompletedOptions })))
 
@@ -475,8 +477,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             <BoardView project={currentProject} columns={columns} editable={m.projectEditable} addingTo={addingTo} setAddingTo={ui.setAddingTo}
               projects={m.projects} labels={m.labels} renderCard={(task) => renderRow(flatRow(task))} onCurrentColumn={setCurrentColumn} placeholder={drag.placeholder} onFold={toggleSection} />
           ) : timeline && currentProject ? (
-            <TimelineView groups={upcomingCal.groups} today={today} zone={m.zone} editable={m.projectEditable} selectedId={selectedId}
-              onSelect={setSelectedId} onOpen={(id) => { setSelectedId(id); setOpenId(id) }} byId={taskMap} hue={hueFor(currentProject.color)} />
+            <Suspense fallback={<Skeleton shape="row" count={4} />}><TimelineView groups={upcomingCal.groups} today={today} zone={m.zone} editable={m.projectEditable} selectedId={selectedId}
+              onSelect={setSelectedId} onOpen={(id) => { setSelectedId(id); setOpenId(id) }} byId={taskMap} hue={hueFor(currentProject.color)} /></Suspense>
           ) : (
             <GroupedList groups={groups} view={route.view} project={currentProject} fieldColumns={m.fieldColumns} projectFieldDefs={m.projectFieldDefs} siblingPos={(m.treeView || m.nested) && !board ? m.siblingPos : undefined} reveal={selectedId} todayDropTarget={ownOrder?.todayDrop?.canEdit} activeTodayDrop={drag.dropGroup}
               contextualDrag={!!drag.draggingId && contextIds.has(drag.draggingId)}

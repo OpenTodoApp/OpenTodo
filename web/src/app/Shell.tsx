@@ -4,23 +4,18 @@ import { useHabitForm } from './habits/habitFormStore'
 import { DESKTOP_HEADER_QUERY, IconButton, PageActions, PageBarTitle, Skeleton, TruncatedText, trapTab, useMediaQuery, useOverlay, pageBar, usePageBar, useOverlayDepth } from '../ui'
 import { useCommandBar } from './palette/useCommandBar'
 import { Suspense, useEffect, useRef, useState, type ComponentType, type RefObject } from 'react'
-import { lazy } from '../lib/lazy'
+import { lazy, preloadable } from '../lib/lazy'
 import type { User } from '../lib/types'
 import { openStartView } from './startView'
 import { describeRejected } from '../lib/sharing'
 import { useSyncStatus } from '../lib/sync'
 import { canonicalPath, navigate, offersQuickAdd, useRoute } from './router'
 import { SIDEBAR_COLLAPSED_REM, SIDEBAR_DEFAULT_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth } from './sidebarLayout'
-import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
-import { PlacesView } from './locations/PlacesView'
-import { ProjectsView } from './ProjectsView'
 import { ViewsView } from './ViewsView'
 import { Sidebar } from './Sidebar'
-import { TaskListView } from './TaskListView'
+import { preloadTimeline, TaskListView } from './TaskListView'
 import { AskScreen } from './assistant/AskEntry'
-import { TrashView } from './TrashView'
-import { FeedView } from './FeedView'
 import { ReminderToasts } from './ReminderToasts'
 import { WorkspaceHost } from './NewWorkspaceDialog'
 import { AppLinkConfirm } from './AppLinkConfirm'
@@ -46,9 +41,10 @@ import { ActionToasts } from './ActionToasts'
 import { showActionToast } from './bulk/toastStore'
 import { DailyCheckToast } from './method/DailyCheckToast'
 import { PanelBoundary } from './PanelBoundary'
-import { TemplateDialogHost } from './TemplateDialogs'
 import { setCurrentUserId } from '../lib/sharing'
-import { type HelpSection, ShortcutHelp } from './ShortcutHelp'
+import type { HelpSection } from './ShortcutHelp'
+import { TemplateDialogHost } from './TemplateDialogHost'
+import { preloadProjectMenu } from './menus/useProjectMenu'
 import { FeedbackHost } from './FeedbackHost'
 import { openFeedback } from '../lib/feedbackRequest'
 import { Spotlight } from './shortcuts/Spotlight'
@@ -141,6 +137,15 @@ function useIdleLoad(load: () => Promise<unknown>) {
     return () => cancelIdleCallback(h)
   }, [load])
 }
+// Screens and dialogs off the Inbox's first screen: fetched once the app is idle, so a
+// shortcut or a click opens them at once, with the rows skeleton until then.
+const FilterView = preloadable(() => import('./FilterView').then((m) => ({ default: m.FilterView })))
+const PlacesView = preloadable(() => import('./locations/PlacesView').then((m) => ({ default: m.PlacesView })))
+const ProjectsView = preloadable(() => import('./ProjectsView').then((m) => ({ default: m.ProjectsView })))
+const TrashView = preloadable(() => import('./TrashView').then((m) => ({ default: m.TrashView })))
+const FeedView = preloadable(() => import('./FeedView').then((m) => ({ default: m.FeedView })))
+const ShortcutHelp = preloadable(() => import('./ShortcutHelp').then((m) => ({ default: m.ShortcutHelp })))
+const preloadScreens = () => Promise.all([loadSavedView(), FilterView.preload(), PlacesView.preload(), ProjectsView.preload(), TrashView.preload(), FeedView.preload(), ShortcutHelp.preload(), preloadProjectMenu(), preloadTimeline()])
 const ImportScreen = lazy(() => import('./ImportScreen').then((m) => ({ default: m.ImportScreen })))
 
 /** Shown while a screen's chunk is fetched: the page's rows, as the other screens do. */
@@ -201,7 +206,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const drawer = usePhoneDrawer(sidebarOpen)
   useSidebarRequests(setSidebarOpen)
-  useIdleLoad(loadSavedView)
+  useIdleLoad(preloadScreens)
   // A right swipe from the left edge opens the closed phone menu, unless a dialog is open (edge-swipe-menu).
   const drawerClosed = useRef(drawer.closed)
   drawerClosed.current = drawer.closed
@@ -362,19 +367,19 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'labels' ? (
             <LabelsView route={route} />
           ) : route.view === 'places' ? (
-            <PlacesView />
+            <Suspense fallback={SCREEN_LOADING}><PlacesView /></Suspense>
           ) : route.view === 'rules' ? (
             <Suspense fallback={null}>{route.id || route.create ? <RoutinePage route={route} /> : <RoutinesView route={route} />}</Suspense>
           ) : route.view === 'projects' ? (
-            <ProjectsView archived={route.archived} />
+            <Suspense fallback={SCREEN_LOADING}><ProjectsView archived={route.archived} /></Suspense>
           ) : route.view === 'filter' ? (
-            <FilterView key={route.q ?? ''} initialQuery={route.q} />
+            <Suspense fallback={SCREEN_LOADING}><FilterView key={route.q ?? ''} initialQuery={route.q} /></Suspense>
           ) : route.view === 'views' ? (
             <ViewsView />
           ) : route.view === 'view' ? (
             <SavedViewRoute id={route.id} />
           ) : route.view === 'trash' ? (
-            <TrashView />
+            <Suspense fallback={SCREEN_LOADING}><TrashView /></Suspense>
           ) : route.view === 'task' ? (
             <TaskPage id={route.id} user={user} asTask={route.asTask} />
           ) : route.view === 'review' ? (
@@ -395,7 +400,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <Suspense fallback={null}><FocusView id={route.id} /></Suspense>
           ) : route.view === 'notes' ? <Suspense fallback={null}><NotesPage id={route.id} day={route.day} /></Suspense> : route.view === 'triage' ? (
             <Suspense fallback={null}><TriageView /></Suspense>
-          ) : route.view === 'feed' ? <FeedView /> : route.view === 'workspace-activity' ? (
+          ) : route.view === 'feed' ? <Suspense fallback={SCREEN_LOADING}><FeedView /></Suspense> : route.view === 'workspace-activity' ? (
             <Suspense fallback={SCREEN_LOADING}><WorkspaceActivity id={route.id} /></Suspense>
           ) : route.view === 'ask' ? (
             <AskScreen role={user.role} name={user.name} />
@@ -422,8 +427,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       {(addRoom || addOpen) && <AddButton ref={addButton} open={addOpen} away={minimised && !addOpen} note={route.view === 'notes' && !addOpen}
         onClick={() => (route.view === 'notes' && !addOpen ? navigate({ view: 'notes', create: true }) : setAddOpen((v) => !v))} />}
       <QuickAddSheet open={addOpen} onClose={() => setAddOpen(false)} anchor={addButton} route={route} userId={user.id} />
-      {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} vim={vim} extraSections={vim && vimHelp ? [vimHelp] : []}
-        context={{ view: route.view, board: hasScope('board') || hasScope('timeline'), panelOpen: hasScope('panel') || !!panelTaskId() }} />}
+      {showHelp && <PanelBoundary><Suspense fallback={null}><ShortcutHelp onClose={() => setShowHelp(false)} vim={vim} extraSections={vim && vimHelp ? [vimHelp] : []}
+        context={{ view: route.view, board: hasScope('board') || hasScope('timeline'), panelOpen: hasScope('panel') || !!panelTaskId() }} /></Suspense></PanelBoundary>}
       {helpRequest && <PanelBoundary><Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense></PanelBoundary>}
       {/* The Connections dialog (notes-graph D6), its chunk loaded by openConnections. */}
       {connections && <PanelBoundary><connections.Dialog key={`${connections.kind}:${connections.id}`} kind={connections.kind} id={connections.id} onClose={closeConnections} /></PanelBoundary>}

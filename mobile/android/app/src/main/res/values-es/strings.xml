@@ -44,6 +44,8 @@
     <string name="widget_empty">No queda nada para hoy.</string>
     <string name="widget_untitled">Tarea</string>
     <string name="widget_more">+ %1$d más</string>
+    <string name="widget_earlier">De antes</string>
+    <string name="widget_complete">Completar: %1$s</string>
     <string name="widget_completed">Completadas</string>
     <string name="widget_completed_description">Cuántas tareas completaste esta semana</string>
     <string name="widget_completed_locked">Bloqueado: solo el número de hoy</string>
@@ -57,6 +59,7 @@
     <string name="error_sign_in">Tu servidor está detrás de una página de inicio de sesión y el inicio de sesión no continuó en la app. Vuelve a iniciar sesión aquí.</string>
     <string name="save_failed">No se pudo guardar el archivo.</string>
     <string name="channel_focus">Foco</string>
+    <string name="channel_sync">Sincronizando</string>
     <string name="focus_generic">Sesión de foco</string>
     <string name="focus_work">Trabajo</string>
     <string name="focus_work_of">Trabajo · %1$d de %2$d</string>

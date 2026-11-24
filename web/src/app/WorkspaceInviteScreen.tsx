@@ -14,7 +14,7 @@ import { switchTo } from '../lib/workspaces'
 import { Field, Input } from '../ui'
 import { InviteCard as Card, LinkStateCard } from './LinkCard'
 import { AuthScreen } from './AuthScreen'
-import { rememberPendingInvite } from './ProjectInviteScreen'
+import { rememberPendingInvite } from './pendingInvite'
 import { navigate } from './router'
 import { messageOf } from '../lib/errorText'
 

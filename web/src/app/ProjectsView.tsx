@@ -20,7 +20,7 @@ import { NamePrompt } from './NamePrompt'
 import { useProjectBulk } from './projectBulk'
 import { ProjectsTable, type ProjectsSort } from './ProjectsTable'
 import { navigate } from './router'
-import { requestTemplateDialog } from './TemplateDialogs'
+import { requestTemplateDialog } from './TemplateDialogHost'
 import { useToday, useViewerZone } from './useViews'
 
 /** Whether the page was opened at its archived projects (`/projects#archived`, Settings → Data). */

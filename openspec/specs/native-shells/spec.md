@@ -120,11 +120,43 @@ A shell SHALL deliver reminders without a push service: the web app, while it ru
 - **THEN** the shell deletes its schedule and shows no reminder until the device is unlocked again
 
 ### Requirement: Widgets
-The Android shell SHALL offer a Today widget (today's and overdue open tasks: title, time and priority, the count in the header, a tap opening the task) and a quick-add widget (one field opening the app's quick add with the typed text). The widgets SHALL read only data the web app published through the bridge (the Today list while the app runs or during the hourly refresh), stored in the app's private storage, and SHALL show the time of the last update. For an encrypted account the widget SHALL show titles only from a publication made while the device was unlocked, and SHALL show counts only once the device is locked. The widget SHALL never make a request of its own.
+The Android shell SHALL offer a Today widget and a quick-add widget (one field opening the app's quick add with the typed text). The Today widget SHALL show today's and overdue open tasks as a list that scrolls, up to the 50 the web app publishes: a header with the count, a button that opens quick add, and the time of the last update; a heading "Earlier" above the overdue tasks and "Today" above the rest when both exist; and per task the title and, when set, its time, its due date (overdue tasks only) and its project. A tap on a task SHALL open it in the app. When the web app's publication says it can complete tasks, each row SHALL have a completion circle: a tap SHALL hide the task from the widget at once and have the web app complete it through its own operations, in a background run of the app, exactly as completing it in the app does (a repeating task moves to its next occurrence). The shell SHALL never write task data itself. Offline, the completion SHALL be stored on the device as an operation and synced with the next sync; it converges with edits on other devices through the op log like any other completion. A task hidden this way SHALL reappear if no publication confirms the completion within 30 minutes. The web app SHALL apply a completion address only in a background run, never in the visible app. The widgets SHALL read only data the web app published through the bridge (the Today list while the app runs or during the hourly refresh), stored in the app's private storage, and SHALL use the theme's colours in light and dark at every size the launcher allows. For an encrypted account the widget SHALL show titles only from a publication made while the device was unlocked, and SHALL show counts only, without completion circles, once the device is locked. The widget SHALL never make a request of its own.
 
 #### Scenario: Today widget after a change elsewhere
 - **WHEN** a task is completed on the laptop at 09:00 and the phone's app stays closed
 - **THEN** the widget no longer lists it after the next hourly refresh, and the header shows when it was updated
+
+#### Scenario: A long Today list
+- **WHEN** the web app publishes 20 tasks for today, two of them overdue
+- **THEN** the widget lists all 20 in a list that scrolls, the two overdue ones under "Earlier" with their due date, and the rest under "Today"
+
+#### Scenario: Complete a task from the widget
+- **WHEN** the user taps the circle of "Call the plumber" in the Today widget
+- **THEN** the row disappears and the count drops by one at once, and the web app completes the task in a background run, so the laptop shows it completed after the next sync
+
+#### Scenario: Complete a task offline
+- **WHEN** the phone has no network and the user taps a task's circle in the widget
+- **THEN** the completion is stored on the phone as an operation and reaches the server with the next sync, and the widget does not list the task in the meantime
+
+#### Scenario: Complete a repeating task
+- **WHEN** the user taps the circle of a task that repeats every week
+- **THEN** the task moves to its next occurrence, as completing it in the app does
+
+#### Scenario: An older server
+- **WHEN** the web app's publication does not say it can complete tasks
+- **THEN** the widget lists the tasks without completion circles
+
+#### Scenario: A completion address in the visible app
+- **WHEN** another app opens the visible OpenTodo app at an address asking to complete a task
+- **THEN** nothing is completed
+
+#### Scenario: Add from the Today widget
+- **WHEN** the user taps the add button in the Today widget's header
+- **THEN** the app opens with quick add, and a task exists only after the user confirms
+
+#### Scenario: Nothing left
+- **WHEN** the web app publishes no task for today
+- **THEN** the Today widget says there is nothing left for today
 
 #### Scenario: Quick add from the widget
 - **WHEN** the user types "Call the plumber tomorrow 9am" in the quick-add widget
@@ -132,7 +164,7 @@ The Android shell SHALL offer a Today widget (today's and overdue open tasks: ti
 
 #### Scenario: Locked encrypted account
 - **WHEN** the device is locked
-- **THEN** the Today widget shows "3 tasks today" and no title
+- **THEN** the Today widget shows "3 tasks today", no title and no completion circle
 
 ### Requirement: Biometric unlock of an encrypted account
 On a shell with the `biometric` capability and a device with enrolled biometrics, the unlock screen of an encrypted account SHALL offer "Unlock with fingerprint or face next time" after a successful passphrase unlock. Accepting SHALL store the account key in the shell's private storage, encrypted with a hardware-backed key that can only be used after the device's biometric prompt; the key SHALL never leave the device and SHALL never be sent to the server. The next unlock SHALL offer the biometric prompt first and the passphrase as the alternative. The stored key SHALL be deleted on lock, sign-out, server change, passphrase change, encryption turned off, and when the device's biometric enrolment changes.
@@ -650,6 +682,17 @@ The iOS shell SHALL NOT show the web view's keyboard accessory bar above the on-
 #### Scenario: Editing a title in the iPhone app
 - **WHEN** a person taps a task title to edit it in the iPhone app
 - **THEN** the keyboard opens without the previous, next and Done bar
+
+### Requirement: The web app follows the system text size
+A shell SHALL let the web app follow the system text size and SHALL NOT scale the page's text a second time. The Android shell SHALL give the page the system font scale as `opentodoShell.textScale` and SHALL keep its web view's own text zoom on each page until that page calls `textScaleApplied`, then set it to 100 %, so a web app that predates this keeps the system text size; a change of the font scale SHALL reach the page when the app is next shown. The iOS shell SHALL leave Dynamic Type to WebKit, whose system body font follows it, and the page SHALL read it from there. An older shell without `textScale` SHALL leave the page at the browser's text size.
+
+#### Scenario: Android at a large font scale
+- **WHEN** the Android system font scale is 150 % and the app's text size is Default
+- **THEN** the page receives `textScale` 1.5 and lays out at 150 % with its rows reflowed, and text is not enlarged a second time by the web view
+
+#### Scenario: A browser tab
+- **WHEN** the web app runs outside a shell
+- **THEN** there is no system scale and Default is the browser's own text size
 
 ### Requirement: Urgent reminders ring as alarms on iPhone
 The web app SHALL mark each urgent reminder it hands the shell (`urgent: true`, absent otherwise). On iOS 26 and later the iPhone app SHALL schedule an urgent reminder whose firing time is still ahead as a system alarm (AlarmKit) instead of a notification: it SHALL ring at the firing time with the handed-over title or the generic text, offer **Stop** and **Snooze 10 min**, and Snooze SHALL open the app on the reminder's snooze address so the web app moves the reminder through its own operation. Stop SHALL only silence the alarm. The app SHALL ask for the alarm permission only while it is visible and only when it is handed an urgent reminder, never at launch, from a background run or again after the user answered. An urgent reminder SHALL be an ordinary notification when the phone runs an earlier iOS, when alarms are not allowed or not asked yet in a background run, when the app was built without AlarmKit, or when it is handed over at its firing time. Alarms SHALL follow the schedule: a reminder that is no longer urgent, moved, dismissed, completed or deleted SHALL have its alarm cancelled or moved at the next hand-over, and notifications refused or turned off in the app, sign-out and a locked encrypted account SHALL cancel every alarm still ahead. A hand-over SHALL NOT cancel an alarm that is ringing, nor one whose time has passed and that the system still holds: it rings until the user stops or snoozes it. A changed server SHALL cancel every alarm. Nothing here changes task data or needs the network.

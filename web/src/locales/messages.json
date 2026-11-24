@@ -4889,6 +4889,7 @@
     "web/src/app/calendar/FramesDialog.tsx"
   ],
   "Default": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/app/WorkspacesSettings.tsx",
     "web/src/app/themes/EditorSections.tsx"
   ],
@@ -7953,9 +7954,6 @@
   "Hide done today": [
     "web/src/app/task-list/ClosedListActions.tsx"
   ],
-  "Hide other calendars on this device": [
-    "web/src/app/calendar/CalendarsToggle.tsx"
-  ],
   "Hide sidebar": [
     "web/src/ui/patterns/PageHeader.tsx"
   ],
@@ -9208,13 +9206,20 @@
     "web/src/app/QuickAddSettings.tsx"
   ],
   "Large": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/lib/bentoSlots.ts"
   ],
   "Large · 90 min or more": [
     "web/src/lib/bentoSlots.ts"
   ],
+  "Larger": [
+    "web/src/app/AppearanceSection.tsx"
+  ],
   "Larger files are refused before they are sent.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Largest": [
+    "web/src/app/AppearanceSection.tsx"
   ],
   "Last 100 deliveries": [
     "web/src/app/WebhooksPanel.tsx"
@@ -16486,7 +16491,8 @@
     "web/src/app/TaskListView.tsx"
   ],
   "Show calendar events": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/TaskListView.tsx",
+    "web/src/app/calendar/CalendarsToggle.tsx"
   ],
   "Show completed tasks": [
     "web/src/app/ProjectHeader.tsx",
@@ -16571,9 +16577,6 @@
   ],
   "Show or hide the project activity; Tab reaches the person and kind filters": [
     "web/src/lib/shortcuts.ts"
-  ],
-  "Show other calendars on this device": [
-    "web/src/app/calendar/CalendarsToggle.tsx"
   ],
   "Show repeating occurrences": [
     "web/src/app/calendar/projectionSwitches.tsx"
@@ -18114,6 +18117,9 @@
   ],
   "Text on soft warning": [
     "web/src/app/themes/tokenNames.ts"
+  ],
+  "Text size": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Text to send": [
     "web/src/app/RelayConfirm.tsx"

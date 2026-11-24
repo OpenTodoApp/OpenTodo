@@ -133,6 +133,21 @@
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_today" />
         </receiver>
+        <!-- android-widget-list D1, D2: the Today widget's list and its row taps. Not exported: the
+             launcher reaches the service through the system's widget binding (BIND_REMOTEVIEWS),
+             and the row-tap activity only through the widget's own pending intent. The activity
+             draws nothing (Theme.NoDisplay) and leaves no trace in Recents or the back stack. -->
+        <service
+            android:name=".TodayListService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+        <activity
+            android:name=".WidgetActionActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay" />
         <receiver android:name=".QuickAddWidget" android:exported="false" android:label="@string/widget_quick_add">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

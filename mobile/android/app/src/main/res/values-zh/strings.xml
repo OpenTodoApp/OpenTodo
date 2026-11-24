@@ -44,6 +44,8 @@
     <string name="widget_empty">今天没有剩余的事项。</string>
     <string name="widget_untitled">任务</string>
     <string name="widget_more">另外 %1$d 项</string>
+    <string name="widget_earlier">较早</string>
+    <string name="widget_complete">完成：%1$s</string>
     <string name="widget_completed">已完成</string>
     <string name="widget_completed_description">本周完成了多少任务</string>
     <string name="widget_completed_locked">已锁定：仅显示今天的数量</string>
@@ -57,6 +59,7 @@
     <string name="error_sign_in">你的服务器位于登录页之后，而且登录没有在应用中继续。请在这里重新登录。</string>
     <string name="save_failed">文件无法保存。</string>
     <string name="channel_focus">专注</string>
+    <string name="channel_sync">正在同步</string>
     <string name="focus_generic">专注时段</string>
     <string name="focus_work">工作</string>
     <string name="focus_work_of">工作 · %1$d / %2$d</string>
