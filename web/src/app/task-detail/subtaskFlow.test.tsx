@@ -6,7 +6,7 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../../lib/db'
-import { createTask, resetDeviceId } from '../../lib/ops'
+import { createProject, createTask, resetDeviceId, updateProject, updateTask } from '../../lib/ops'
 import type { Task } from '../../lib/types'
 import { render, waitFor } from '../../ui/test-utils'
 import { Subtasks } from './Subtasks'
@@ -60,16 +60,48 @@ describe('subtask flow (issue 1046)', () => {
   })
 
   // GitHub issue 1953: the checklist itself shows which step is offered and which wait.
+  // Each row's visible mark ("After <step>"), or null.
+  const marks = () => [...document.querySelectorAll('[data-subtask-row]')].map((li) => li.querySelector('[data-waits] .truncate > span > [aria-hidden]')?.textContent ?? null)
+  const same = (want: (string | null)[]) => () => JSON.stringify(marks()) === JSON.stringify(want)
+  const sub = (parent: string, title: string) => createTask({ title, parent_id: parent })
+  const kids = async (parent: string) => (await db.tasks.where('parent_id').equals(parent).toArray()).sort((a, b) => a.position - b.position)
+  const checklist = async (id: string) => view(await get(id), await kids(id))
+
   it('dims the later open subtasks and reads them "After" the first open one', async () => {
     const { parent, items } = await parentWith(3)
-    const done = { ...items[0], completed_at: 1 }
-    const r = await view({ ...parent, flow_mode: 'sequential' }, [done, items[1], items[2]])
-    const marks = () => [...document.querySelectorAll('[data-subtask-row]')].map((li) => li.querySelector('[data-waits]')?.textContent ?? null)
-    expect(marks()).toEqual([null, null, 'After Step 2Waits for the previous step: Step 2'])
-    expect(document.querySelector('[data-subtask-row] [data-waits]')?.closest('[data-subtask-row]')?.querySelector('[data-waiting]')).not.toBeNull()
+    await updateTask(parent.id, { flow_mode: 'sequential' })
+    await updateTask(items[0].id, { completed_at: Date.now() })
+    const r = await checklist(parent.id)
+    await waitFor(same([null, null, 'After Step 2']), 'the third step waits for the second')
+    expect(document.querySelector('[data-waiting] ~ [data-waits]')).not.toBeNull()
     await r.unmount()
-    const off = await view(parent, items)
-    expect(document.querySelector('[data-waits]')).toBeNull()
+    await updateTask(parent.id, { flow_mode: '' })
+    const off = await checklist(parent.id)
+    await waitFor(same([null, null, null]), 'no step waits')
     await off.unmount()
+  })
+
+  it('marks the subtasks of a waiting step after the step that holds them', async () => {
+    const top = await createTask({ title: 'Paint the doghouse' })
+    await updateTask(top, { flow_mode: 'sequential' })
+    await sub(top, 'Prepare')
+    const buy = await sub(top, 'Buy supplies')
+    await sub(buy, 'Paint')
+    await sub(buy, 'Roller')
+    const r = await checklist(buy)
+    await waitFor(same(['After Prepare', 'After Prepare']), 'Paint and Roller wait for Prepare')
+    await r.unmount()
+  })
+
+  it('marks the first subtask of a later step in a sequential project', async () => {
+    const project = await createProject({ name: 'Move house' })
+    await updateProject(project, { flow_mode: 'sequential' })
+    await createTask({ title: 'Book van', project_id: project })
+    const pack = await createTask({ title: 'Pack kitchen', project_id: project })
+    await sub(pack, 'Plates')
+    await sub(pack, 'Glasses')
+    const r = await checklist(pack)
+    await waitFor(same(['After Book van', 'After Book van']), 'the step waits for Book van')
+    await r.unmount()
   })
 })
