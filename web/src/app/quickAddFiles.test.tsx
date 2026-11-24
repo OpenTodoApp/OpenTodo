@@ -89,6 +89,53 @@ describe('pasting files into quick add', () => {
     await r.unmount()
   })
 
+  it('spreadsheet rows (text with a picture of them) paste as text and keep the paste-to-tasks offer', async () => {
+    const { r, input } = await setup()
+    expect(await paste(input, [shot()], 'Milk\nEggs\nBread')).toBe(true)
+    await waitFor(() => !!document.querySelector('[data-paste-offer]'), 'the paste-to-tasks offer')
+    expect(pending()).toBeNull()
+    // One row is pasted by the browser as text.
+    await act(async () => { document.querySelector<HTMLButtonElement>('[data-paste-one-line]')!.click() })
+    expect(await paste(input, [shot()], 'Milk')).toBe(false)
+    expect(pending()).toBeNull()
+    await r.unmount()
+  })
+
+  it('a named file pasted with text is still a file', async () => {
+    const { r, input } = await setup()
+    expect(await paste(input, [new File(['%PDF'], 'invoice.pdf', { type: 'application/pdf' })], 'invoice.pdf')).toBe(true)
+    await waitFor(() => !!pending(), 'the pending file')
+    expect(pending()!.textContent).toBe('invoice.pdf')
+    await r.unmount()
+  })
+
+  it('a paste right before Enter goes with that task, not the next one', async () => {
+    const { r, input } = await setup()
+    await type(input, 'Fix the header')
+    const e = new Event('paste', { bubbles: true, cancelable: true })
+    Object.defineProperty(e, 'clipboardData', { value: { files: [shot()], getData: () => '' } })
+    await act(async () => { input.dispatchEvent(e); input.form!.requestSubmit() })
+    await waitFor(async () => (await liveAttachments()).length === 1, 'the attachment')
+    const [task] = await db.tasks.toArray()
+    expect((await liveAttachments())[0].task_id).toBe(task.id)
+    await waitFor(() => !document.querySelector('[role=status].sr-only')?.textContent, 'no file left for the next task')
+    expect(pending()).toBeNull()
+    await r.unmount()
+  })
+
+  it('two quick pastes are checked against each other for the quota', async () => {
+    await setMeta('attachmentLimits', { enabled: true, max_file_bytes: 1000, quota_bytes: 1000, used_bytes: 0 })
+    const { r, input } = await setup()
+    const e1 = new Event('paste', { bubbles: true, cancelable: true })
+    Object.defineProperty(e1, 'clipboardData', { value: { files: [shot(600)], getData: () => '' } })
+    const e2 = new Event('paste', { bubbles: true, cancelable: true })
+    Object.defineProperty(e2, 'clipboardData', { value: { files: [shot(600)], getData: () => '' } })
+    await act(async () => { input.dispatchEvent(e1); input.dispatchEvent(e2) })
+    await waitFor(() => !!r.container.querySelector('[data-quick-add-file-error]'), 'the quota refusal')
+    expect(pending()!.querySelectorAll('li')).toHaveLength(1)
+    await r.unmount()
+  })
+
   it('a file over the limit is refused with the attachment message and nothing waits', async () => {
     const { r, input } = await setup()
     await type(input, 'Fix the header')

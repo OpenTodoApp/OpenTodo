@@ -30,4 +30,4 @@ No chrome above a list's first item: the pending list appears only under a quick
 
 ## Size
 
-No dependency; a few hundred bytes in the main bundle; no change to the container image or memory.
+No dependency; no change to the container image or memory. The first load grows by about 1.5 KB gzip (704.9 to 706.3 KB of the 712 KB budget): the paste handling, the pending list and the shared limit checks are in quick add, which every list draws on its first paint, so loading the list lazily would save little and delay the first chip.

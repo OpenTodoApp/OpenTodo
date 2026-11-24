@@ -303,7 +303,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
     kind: 'tasks',
     onConfirm: async (lines) => {
       const inputs = await pastedInputs(lines, context(), labels)
-      if (inputs[0]) inputs[0] = pasted.attach(inputs[0]) // pasted files go with the first task (quick-add-files D4)
+      if (inputs[0]) inputs[0] = await pasted.attach(inputs[0]) // pasted files go with the first task (quick-add-files D4)
       if (onAddMany) await onAddMany(inputs)
       else for (const input of inputs) await onAdd(input)
       change('')
