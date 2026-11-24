@@ -1,0 +1,19 @@
+{
+  "about": "Kept subtasks (OpenSpec change keep-open-subtasks, design D2): an open, live task with a live completed ancestor at any depth. Read by web/src/lib/subtasks.kept.test.ts and internal/kept/kept_test.go. A task is {id, parent?, done?, deleted?}; kept lists the kept ids, sorted.",
+  "cases": [
+    { "name": "no parents", "tasks": [{ "id": "a" }, { "id": "b", "done": true }], "kept": [] },
+    { "name": "open child of a completed parent", "tasks": [{ "id": "p", "done": true }, { "id": "c", "parent": "p" }], "kept": ["c"] },
+    { "name": "completed child of a completed parent is not kept", "tasks": [{ "id": "p", "done": true }, { "id": "c", "parent": "p", "done": true }], "kept": [] },
+    { "name": "open parent", "tasks": [{ "id": "p" }, { "id": "c", "parent": "p" }], "kept": [] },
+    { "name": "deeper levels", "tasks": [{ "id": "p", "done": true }, { "id": "c", "parent": "p" }, { "id": "g", "parent": "c" }], "kept": ["c", "g"] },
+    { "name": "completed grandparent over an open parent", "tasks": [{ "id": "p", "done": true }, { "id": "c", "parent": "p" }, { "id": "g", "parent": "c" }, { "id": "h", "parent": "c", "done": true }], "kept": ["c", "g"] },
+    { "name": "completed middle level", "tasks": [{ "id": "p" }, { "id": "c", "parent": "p", "done": true }, { "id": "g", "parent": "c" }], "kept": ["g"] },
+    { "name": "deleted completed parent", "tasks": [{ "id": "p", "done": true, "deleted": true }, { "id": "c", "parent": "p" }], "kept": [] },
+    { "name": "deleted open parent ends the walk", "tasks": [{ "id": "p", "done": true }, { "id": "c", "parent": "p", "deleted": true }, { "id": "g", "parent": "c" }], "kept": [] },
+    { "name": "deleted child", "tasks": [{ "id": "p", "done": true }, { "id": "c", "parent": "p", "deleted": true }], "kept": [] },
+    { "name": "missing parent", "tasks": [{ "id": "c", "parent": "gone" }], "kept": [] },
+    { "name": "cycle of open tasks", "tasks": [{ "id": "a", "parent": "b" }, { "id": "b", "parent": "a" }], "kept": [] },
+    { "name": "cycle through a completed task", "tasks": [{ "id": "a", "parent": "b", "done": true }, { "id": "b", "parent": "a" }], "kept": ["b"] },
+    { "name": "self parent", "tasks": [{ "id": "a", "parent": "a" }], "kept": [] }
+  ]
+}

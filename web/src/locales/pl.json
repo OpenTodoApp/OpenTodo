@@ -7879,5 +7879,7 @@
   "Click a task to": "Kliknięcie zadania",
   "Select, then edit the title": "Zaznaczenie, potem edycja tytułu",
   "Task lists": "Listy zadań",
-  "Use the server default ({choice})": "Domyślny dla serwera ({choice})"
+  "Use the server default ({choice})": "Domyślny dla serwera ({choice})",
+  "Complete subtasks with parent": "Ukończ też podzadania",
+  "Or keep open subtasks when a task is completed": "Lub zachowaj otwarte podzadania po ukończeniu zadania"
 }

@@ -13,6 +13,7 @@ import { planCompletion, seriesRule, skipsInstead } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { memberSet } from './rotation'
 import { descendants, isDescendant } from './tree'
+import { keepsOpenSubtasks } from './subtasks'
 import { GAP } from './ordering'
 import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Origin, type Place, type Project, type Rule, type Frame, type CustomTheme, type MemoryItem, type Objective, type Note, type Slot, type TaskLocation, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type TimeEntry, type HabitTally, type UserPrefs, type View } from './types'
 import { recordActivity, type RecordInput } from './activity'
@@ -1221,7 +1222,12 @@ export async function setTaskCompleted(id: string, completed: boolean): Promise<
 }
 
 async function completePlain(id: string, now: number, stops: Change[]): Promise<void> {
-  await mutateMany([...planCompletePlain(id, await liveSubtree(id), now), ...stops])
+  await mutateMany([...planCompletePlain(id, await liveSubtree(id), now, await keepsSubtasksNow()), ...stops])
+}
+
+/** Whether this account keeps open subtasks when a parent is completed (keep-open-subtasks D1): user_prefs.complete_subtasks "keep". */
+export async function keepsSubtasksNow(): Promise<boolean> {
+  return keepsOpenSubtasks(await db.userPrefs.get('me'))
 }
 
 /**
@@ -1255,9 +1261,13 @@ async function trackingStops(taskId: string, now: number): Promise<Change[]> {
     .map((e) => ({ entity: 'time_entry', entityId: e.id, patch: { ended_at: Math.max(now, e.started_at) } }))
 }
 
-/** Completing a plain task completes its open descendants too (bulk-edit D4 shares it). */
-export function planCompletePlain(id: string, all: Task[], now: number): Change[] {
+/**
+ * Completing a plain task completes its open descendants too (bulk-edit D4 shares it),
+ * unless `keep`: then only the task, and its open subtasks are kept (keep-open-subtasks D4).
+ */
+export function planCompletePlain(id: string, all: Task[], now: number, keep = false): Change[] {
   const changes: Change[] = [{ entity: 'task', entityId: id, patch: { completed_at: now } }]
+  if (keep) return changes
   for (const d of descendants(id, all)) {
     const task = all.find((x) => x.id === d)
     if (task && !task.completed_at) changes.push({ entity: 'task', entityId: d, patch: { completed_at: now } })

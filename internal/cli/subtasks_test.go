@@ -243,18 +243,18 @@ func TestSubtaskListNesting(t *testing.T) {
 	if got != want {
 		t.Fatalf("nested list\n got %q\nwant %q\n%s", got, want, out)
 	}
-	// A subtask whose parent isn't listed is printed at the top level.
+	// An open subtask of a completed parent is kept (keep-open-subtasks): not listed.
 	h.mustRun("done", "hotl")
 	out = h.mustRun("list", "--project", "Travel")
-	if !strings.Contains(out, "Travel   Compare prices") {
-		t.Fatalf("orphan not at top level:\n%s", out)
+	if strings.Contains(out, "Compare prices") {
+		t.Fatalf("kept subtask listed:\n%s", out)
 	}
 	// Other views stay flat; --json keeps its order (position).
 	if out := h.mustRun("list"); strings.Contains(out, "  Flights") && strings.Contains(out, "1/") {
 		t.Fatalf("default list nested:\n%s", out)
 	}
 	out = h.mustRun("list", "--project", "Travel", "--json")
-	if got := strings.Join(idsOf(t, out), ","); got != "trip0001,cmpr0001,flig0001,pack0001" {
+	if got := strings.Join(idsOf(t, out), ","); got != "trip0001,flig0001,pack0001" {
 		t.Fatalf("--json order = %s", got)
 	}
 }
@@ -272,6 +272,22 @@ func TestSubtaskListParent(t *testing.T) {
 	}
 	if code, _, _ := h.run("list", "--parent", "nope"); code != ExitUsage {
 		t.Fatalf("unknown parent: exit %d", code)
+	}
+}
+
+// Kept subtasks (keep-open-subtasks D5): with "Plan trip" completed, its open
+// subtasks leave `ot list` and stay under `ot list --parent`.
+func TestSubtaskListKept(t *testing.T) {
+	h := newHarness(t)
+	h.login()
+	h.seedTrip()
+	h.put("task", "trip0001", map[string]any{"title": "Plan trip", "project_id": "trav0001", "position": 1, "completed_at": 1700000000000})
+
+	if got := strings.Join(idsOf(t, h.mustRun("list", "--json")), ","); got != "pack0001,inbx0001" {
+		t.Fatalf("list = %s", got)
+	}
+	if got := strings.Join(idsOf(t, h.mustRun("list", "--parent", "trip", "--json")), ","); got != "hotl0001,flig0001" {
+		t.Fatalf("--parent = %s", got)
 	}
 }
 

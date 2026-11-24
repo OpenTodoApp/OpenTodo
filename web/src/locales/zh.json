@@ -7879,5 +7879,7 @@
   "Click a task to": "点击任务时",
   "Select, then edit the title": "先选中，再编辑标题",
   "Task lists": "任务列表",
-  "Use the server default ({choice})": "使用服务器默认（{choice}）"
+  "Use the server default ({choice})": "使用服务器默认（{choice}）",
+  "Complete subtasks with parent": "同时完成子任务",
+  "Or keep open subtasks when a task is completed": "或在完成任务时保留未完成的子任务"
 }

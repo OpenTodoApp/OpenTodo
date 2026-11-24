@@ -10,7 +10,7 @@ import { formatDate, logicalToday } from './dates'
 import { planSkip, seriesRule } from './recurring'
 import { duePatch, refusedSeries, seriesDateRefusal, withNotMoved } from './seriesDates'
 import { lineageRows } from './lineageRows'
-import { editRedirected, getDeviceId, liveSubtree, parkTask, pastScopeActive, planRecurrence, planReminders, planTaskEdit, planTaskParent, setRecurrence, updateTask, type Change } from './ops'
+import { editRedirected, getDeviceId, keepsSubtasksNow, liveSubtree, parkTask, pastScopeActive, planRecurrence, planReminders, planTaskEdit, planTaskParent, setRecurrence, updateTask, type Change } from './ops'
 import type { ReminderPhrase } from './nlp'
 import { currentUserId, memberName, membershipMap } from './sharing'
 import type { FilterContext } from './filter'
@@ -88,7 +88,7 @@ export async function completeUndoable(id: string, completed: boolean, opts: { n
     : await readTicked([id])
   const task = tasks[0]
   if (!task) return { entry: null, label: '' }
-  const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? logicalToday(), await membershipMap()) : planReopen([task])
+  const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? logicalToday(), await membershipMap(), await keepsSubtasksNow()) : planReopen([task])
   const result = await apply(changes, completed ? t('Task completed') : t('Task reopened'))
   return { ...result, completed: completed && !task.completed_at && !!result.entry }
 }

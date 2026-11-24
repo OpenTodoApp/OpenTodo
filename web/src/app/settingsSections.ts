@@ -103,6 +103,8 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<Sett
       page({ id: 'focus', label: msg('Focus timer'), icon: 'timer', help: 'settings/focus' }),
       // priority-names: the person's names for the four levels.
       page({ id: 'priorities', label: msg('Priorities'), icon: 'flag', help: 'settings/priorities' }),
+      // keep-open-subtasks D1: completing a parent.
+      page({ id: 'tasks', label: msg('Tasks'), icon: 'list-checks', help: 'settings/tasks' }),
       // daily-notes: one note per day.
       page({ id: 'notes', label: msg('Notes'), icon: 'notebook-pen', help: 'settings/notes' }),
       page({ id: 'maps', label: msg('Maps'), icon: 'map', help: 'settings/general' }),

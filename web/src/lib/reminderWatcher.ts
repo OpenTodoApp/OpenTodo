@@ -10,6 +10,7 @@ import { db, getMeta, setMeta } from './db'
 import { isDue } from './reminderTime'
 import type { Project, Reminder, Task } from './types'
 import { USER_PREFS_ID } from './userPrefs'
+import { keptAmong } from './subtasks'
 
 /** How often the watcher looks (the spec allows up to a minute of delay). */
 export const WATCH_INTERVAL_MS = 15_000
@@ -91,6 +92,8 @@ export async function checkReminders(now = Date.now()): Promise<DueReminder[]> {
   const ids = [...new Set(reminders.map((r) => r.task_id))]
   const tasks = new Map<string, Task>()
   for (const t of await db.tasks.bulkGet(ids)) if (t) tasks.set(t.id, t)
+  // A kept subtask's reminder waits until its parent is reopened (keep-open-subtasks D3).
+  for (const id of await keptAmong(tasks.values())) tasks.delete(id)
   const projects = new Map<string, ProjectLink>()
   if ([...tasks.values()].some((t) => t.project_id)) {
     for (const p of await db.projects.toArray()) projects.set(p.id, p)

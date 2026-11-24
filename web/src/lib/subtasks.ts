@@ -100,3 +100,66 @@ export async function parentReadyToComplete(taskId: string): Promise<Task | null
   const open = siblings.some((s) => !s.deleted_at && !s.completed_at)
   return open ? null : parent
 }
+
+/** The fields the kept rule reads (keep-open-subtasks D2). */
+export type KeptRow = Pick<Task, 'id' | 'parent_id' | 'completed_at' | 'deleted_at'>
+
+/** Whether completing a parent leaves its open subtasks open (user_prefs.complete_subtasks "keep"; anything else completes them). */
+export function keepsOpenSubtasks(row: { complete_subtasks?: string } | null | undefined): boolean {
+  return row?.complete_subtasks === 'keep'
+}
+
+/**
+ * Whether `task` is kept (keep-open-subtasks D2): open, not deleted, with a live
+ * (not deleted) completed ancestor at any depth. A missing or deleted ancestor ends
+ * the walk, and so does a cycle. `get` finds a task by id among the tasks held.
+ */
+export function isKept(task: KeptRow, get: (id: string) => KeptRow | undefined): boolean {
+  if (task.completed_at || task.deleted_at || !task.parent_id) return false
+  const seen = new Set<string>([task.id])
+  for (let id: string | null | undefined = task.parent_id; id && !seen.has(id); ) {
+    seen.add(id)
+    const up = get(id)
+    if (!up || up.deleted_at) return false
+    if (up.completed_at) return true
+    id = up.parent_id
+  }
+  return false
+}
+
+/** The ids of the kept tasks among `tasks` (shared vectors: kept.vectors.json, Go internal/kept). */
+export function keptIds(tasks: readonly KeptRow[], get?: (id: string) => KeptRow | undefined): Set<string> {
+  const out = new Set<string>()
+  let find = get
+  for (const task of tasks) {
+    if (task.completed_at || task.deleted_at || !task.parent_id) continue
+    if (!find) {
+      const byId = new Map(tasks.map((x) => [x.id, x]))
+      find = (id) => byId.get(id)
+    }
+    if (isKept(task, find)) out.add(task.id)
+  }
+  return out
+}
+
+/** `tasks` without the kept ones, read from the tasks themselves (the shell's lists and reminders). */
+export function withoutKept<T extends KeptRow>(tasks: readonly T[]): T[] {
+  const kept = keptIds(tasks)
+  return kept.size ? tasks.filter((task) => !kept.has(task.id)) : (tasks as T[])
+}
+
+/** The ids among `tasks` that are kept, reading their ancestors from the database (the reminder watcher reads only a few tasks). */
+export async function keptAmong(tasks: Iterable<KeptRow>): Promise<Set<string>> {
+  const out = new Set<string>()
+  const cache = new Map<string, KeptRow | undefined>()
+  for (const task of tasks) {
+    if (task.completed_at || task.deleted_at || !task.parent_id) continue
+    for (let id: string | null | undefined = task.parent_id, n = 0; id && !cache.has(id) && n < 1000; n++) {
+      const up: Task | undefined = await db.tasks.get(id)
+      cache.set(id, up)
+      id = up?.parent_id
+    }
+    if (isKept(task, (id) => cache.get(id))) out.add(task.id)
+  }
+  return out
+}

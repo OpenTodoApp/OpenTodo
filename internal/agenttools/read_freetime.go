@@ -162,7 +162,7 @@ func (r *Registry) freeTimeSources(ctx context.Context, userID string, in *freet
 		return err
 	}
 	for _, t := range snap.tasks {
-		if !isOpen(t) || !snap.visible(t, true) {
+		if !isOpen(t) || !snap.listed(t, true) {
 			continue
 		}
 		d := zoned.DecodeDue(t["due"])

@@ -651,6 +651,15 @@ export const SETTINGS_COPY = {
       template: { label: msg('Template') },
     },
   },
+  // keep-open-subtasks D1: what completing a parent does to its open subtasks.
+  tasks: {
+    title: msg('Tasks'),
+    icon: 'list-checks',
+    learnMore: 'settings/tasks',
+    rows: {
+      completeSubtasks: { label: msg('Complete subtasks with parent') },
+    },
+  },
   'maps-user': {
     title: msg('Maps'),
     icon: 'map',

@@ -10,6 +10,7 @@ import { db, getMeta, setMeta } from './db'
 import { encryptionSnapshot } from './e2ee'
 import { has, NO_GEOFENCES, scheduleGeofences, type ShellGeofence, type ShellGeofencePayload, type ShellLocationPermission } from './shell'
 import type { Place, Reminder, Task } from './types'
+import { withoutKept } from './subtasks'
 
 /** The per-device switch, off by default (D4). */
 export const META_SHELL_GEOFENCES = 'shell:geofences'
@@ -117,7 +118,7 @@ export async function publishGeofences(mode: 'change' | 'ask' | 'check' = 'chang
   const [reminders, tasks, places, titles] = await Promise.all([
     db.reminders.toArray(), db.tasks.toArray(), db.places.toArray(), getMeta<boolean>(META_INCLUDE, true),
   ])
-  const payload = shellGeofences(reminders, tasks, places, { titles, encrypted: enc.enabled })
+  const payload = shellGeofences(reminders, withoutKept(tasks), places, { titles, encrypted: enc.enabled })
   return scheduleGeofences(mode === 'ask' ? { ...payload, ask: true } : payload, mode === 'check')
 }
 

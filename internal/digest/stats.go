@@ -6,6 +6,7 @@ package digest
 
 import (
 	"encoding/json"
+	"github.com/OpenTodoApp/opentodo/internal/kept"
 	"sort"
 	"strings"
 	"time"
@@ -181,8 +182,14 @@ func (in Input) mine(t Task) bool {
 }
 
 // Counted are the rows statistics see: live, not in a trashed project, not a
-// skipped habit occurrence, not a start guide sample, and the user's.
+// skipped habit occurrence, not a start guide sample, not a kept subtask (open
+// under a completed ancestor, keep-open-subtasks D5), and the user's.
 func (in Input) Counted() []Task {
+	rows := make([]kept.Task, 0, len(in.Tasks))
+	for _, t := range in.Tasks {
+		rows = append(rows, kept.Task{ID: t.ID, ParentID: t.ParentID, Completed: t.CompletedAt != nil && *t.CompletedAt != 0, Deleted: t.Deleted})
+	}
+	keptIDs := kept.IDs(rows)
 	trashed := map[string]bool{}
 	for _, p := range in.Projects {
 		if p.Deleted {
@@ -191,7 +198,7 @@ func (in Input) Counted() []Task {
 	}
 	var out []Task
 	for _, t := range in.Tasks {
-		if t.Deleted || (t.ProjectID != "" && trashed[t.ProjectID]) || t.Skipped || t.Sample || !in.mine(t) {
+		if t.Deleted || (t.ProjectID != "" && trashed[t.ProjectID]) || t.Skipped || t.Sample || keptIDs[t.ID] || !in.mine(t) {
 			continue
 		}
 		out = append(out, t)

@@ -7879,5 +7879,7 @@
   "Click a task to": "Klik op een taak om",
   "Select, then edit the title": "Selecteren, dan de titel bewerken",
   "Task lists": "Takenlijsten",
-  "Use the server default ({choice})": "Serverstandaard gebruiken ({choice})"
+  "Use the server default ({choice})": "Serverstandaard gebruiken ({choice})",
+  "Complete subtasks with parent": "Subtaken mee afronden",
+  "Or keep open subtasks when a task is completed": "Of open subtaken behouden wanneer een taak wordt afgerond"
 }

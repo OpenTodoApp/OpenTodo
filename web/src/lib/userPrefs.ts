@@ -123,6 +123,11 @@ export function setOthersTasksShown(shown: boolean): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { today_assignees: shown ? 'all' : 'mine' })
 }
 
+/** Keeps or completes a parent's open subtasks when it is completed (keep-open-subtasks D1); an ordinary op, so it works offline and syncs. */
+export function setKeepOpenSubtasks(keep: boolean): Promise<void> {
+  return mutate('user_prefs', USER_PREFS_ID, { complete_subtasks: keep ? 'keep' : '' })
+}
+
 /** Upcoming's calendar events (today-agenda): off unless the account chose "shown". */
 export function upcomingEventsShown(row: Partial<UserPrefs> | null | undefined): boolean {
   return row?.upcoming_events === 'shown'

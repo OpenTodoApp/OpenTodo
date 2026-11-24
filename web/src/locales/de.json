@@ -7879,5 +7879,7 @@
   "Click a task to": "Klick auf eine Aufgabe",
   "Select, then edit the title": "Auswählen, dann Titel bearbeiten",
   "Task lists": "Aufgabenlisten",
-  "Use the server default ({choice})": "Serverstandard verwenden ({choice})"
+  "Use the server default ({choice})": "Serverstandard verwenden ({choice})",
+  "Complete subtasks with parent": "Unteraufgaben mit erledigen",
+  "Or keep open subtasks when a task is completed": "Oder offene Unteraufgaben behalten, wenn eine Aufgabe erledigt wird"
 }

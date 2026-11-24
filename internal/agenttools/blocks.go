@@ -141,7 +141,7 @@ func (r *Registry) BlockDeadlines(ctx context.Context, userID, from, to string, 
 	rows := []BlockRow{}
 	for _, t := range snap.tasks {
 		dl := str(t, "deadline")
-		if !snap.visible(t, false) || !isOpen(t) || dl == "" || dl < from || dl > to {
+		if !snap.listed(t, false) || !isOpen(t) || dl == "" || dl < from || dl > to {
 			continue
 		}
 		rows = append(rows, snap.blockRow(t, loc, today))

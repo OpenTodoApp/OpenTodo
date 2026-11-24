@@ -7879,5 +7879,7 @@
   "Click a task to": "Fare clic su un’attività per",
   "Select, then edit the title": "Selezionare, poi modificare il titolo",
   "Task lists": "Elenchi di attività",
-  "Use the server default ({choice})": "Usa il predefinito del server ({choice})"
+  "Use the server default ({choice})": "Usa il predefinito del server ({choice})",
+  "Complete subtasks with parent": "Completa anche le sottoattività",
+  "Or keep open subtasks when a task is completed": "Oppure mantieni aperte le sottoattività quando completi un'attività"
 }

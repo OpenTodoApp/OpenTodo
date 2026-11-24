@@ -789,6 +789,10 @@ var Schema = map[string]map[string]Field{
 		"haptics": {Kind: kString, Default: `""`},
 		// The optional completion sound is enabled only by an explicit "on".
 		"completion_sound": {Kind: kString, Default: `""`},
+		// Completing a parent (OpenSpec change keep-open-subtasks, design D1):
+		// "keep" completes only the parent and leaves its open subtasks open
+		// (kept); empty or any other value completes them too.
+		"complete_subtasks": {Kind: kString, Default: `""`},
 		// The day pages' briefing (OpenSpec change briefing-links, design D4):
 		// "hidden" hides it on Today and Upcoming; clients read an empty or
 		// unknown value as shown.

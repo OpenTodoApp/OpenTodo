@@ -7879,5 +7879,7 @@
   "Click a task to": "Щелчок по задаче",
   "Select, then edit the title": "Выбрать, затем изменить название",
   "Task lists": "Списки задач",
-  "Use the server default ({choice})": "Как на сервере ({choice})"
+  "Use the server default ({choice})": "Как на сервере ({choice})",
+  "Complete subtasks with parent": "Завершать подзадачи вместе",
+  "Or keep open subtasks when a task is completed": "Или оставлять открытые подзадачи при завершении задачи"
 }
