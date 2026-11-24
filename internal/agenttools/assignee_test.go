@@ -60,6 +60,36 @@ func TestAssigneeTools(t *testing.T) {
 	if got := assignee(bins); got != `null` {
 		t.Fatalf("refused calls changed the assignee: %s", got)
 	}
+
+	// A batch with one bad assignee writes nothing.
+	f.task("u1", "lamp", "Lamp", map[string]any{"project_id": "house"})
+	if _, err := f.call(c, "update_tasks", map[string]any{"updates": []any{
+		map[string]any{"id": bins, "assignee": "u2"}, map[string]any{"id": "lamp", "assignee": "mallory"}}}); !isArgErr(err) {
+		t.Fatalf("mixed batch: %v", err)
+	}
+	if got := assignee(bins); got != `null` {
+		t.Fatalf("mixed batch wrote %s", got)
+	}
+
+	// me is the caller even when a member is named Me.
+	if _, err := f.db.Exec(`UPDATE users SET name = 'Me' WHERE id = 'u2'`); err != nil {
+		t.Fatal(err)
+	}
+	f.mustCall(c, "update_tasks", map[string]any{"updates": []any{map[string]any{"id": bins, "assignee": "me"}}})
+	if got := assignee(bins); got != `"u1"` {
+		t.Fatalf("me with a member named Me = %s", got)
+	}
+
+	// A name two members share is refused.
+	if _, err := f.db.Exec(`UPDATE users SET name = 'Alex' WHERE id IN ('u1','u2')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.call(c, "update_tasks", map[string]any{"updates": []any{map[string]any{"id": bins, "assignee": "alex"}}}); !isArgErr(err) {
+		t.Fatalf("shared name: %v", err)
+	}
+	if got := assignee(bins); got != `"u1"` {
+		t.Fatalf("shared name changed the assignee: %s", got)
+	}
 }
 
 // TestAssigneeViewerRefused: a viewer cannot assign, as on REST.

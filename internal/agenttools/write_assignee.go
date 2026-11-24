@@ -44,8 +44,8 @@ func (snap *snapshot) newAssignee(p string, c Caller, it args, pid string, patch
 
 // assignee resolves who among the people the task can be assigned to: the
 // project's current members in a shared project, the caller alone otherwise.
-// An account id matches first, then an email, then a name (both ignoring
-// case), then "me".
+// An account id matches first, then "me" (so a member named Me is never
+// picked for it), then an email, then a name (both ignoring case).
 func (snap *snapshot) assignee(p string, c Caller, pid, who string) (string, error) {
 	if snap.scopeKey(pid) == "personal" {
 		if who == c.UserID || strings.EqualFold(who, "me") {
@@ -58,6 +58,12 @@ func (snap *snapshot) assignee(p string, c Caller, pid, who string) (string, err
 		if m.UserID == who {
 			return m.UserID, nil
 		}
+	}
+	if strings.EqualFold(who, "me") {
+		if snap.members[pid][c.UserID] {
+			return c.UserID, nil
+		}
+		return "", argErr(p + "assignee: you are not a member of the task's project")
 	}
 	for _, m := range members {
 		if m.Email != "" && strings.EqualFold(m.Email, who) {
@@ -75,8 +81,6 @@ func (snap *snapshot) assignee(p string, c Caller, pid, who string) (string, err
 		return named[0], nil
 	case len(named) > 1:
 		return "", argErr(p + "assignee: several members have that name; use their email or account id")
-	case strings.EqualFold(who, "me") && snap.members[pid][c.UserID]:
-		return c.UserID, nil
 	}
 	return "", argErr(p + "assignee: " + who + " is not a member of the task's project")
 }

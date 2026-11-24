@@ -7,5 +7,5 @@
 
 ## 2. Docs and checks
 
-- [x] 2.1 `docs/mcp.md`, `skills/opentodo-mcp/SKILL.md` and its plugin copy; `changelog.d/Fixed/mcp-assignee.md`. Verify: `make docs` and `make docs-check`.
+- [x] 2.1 `docs/mcp.md`, `skills/opentodo-mcp/SKILL.md` and its plugin copy; `changelog.d/Added/mcp-assignee.md`. Verify: `make docs` and `make docs-check`.
 - [x] 2.2 `make openspec-validate` and `go test ./...` pass.
