@@ -35,7 +35,7 @@ Each view works offline, from your device's tasks. Today and Upcoming have [a pa
 | **Review** | Your [weekly review](review-and-statistics.md) | <kbd>g</kbd> <kbd>r</kbd> |
 | **Statistics** | What you [completed and let slip](statistics.md#statistics) | <kbd>g</kbd> <kbd>Shift+S</kbd> |
 
-Today, Upcoming, Anytime and Someday leave out tasks [assigned to someone else](roles-and-assignments.md#assign-tasks).
+Today, Upcoming, Anytime and Someday leave out tasks [assigned to someone else](roles-and-assignments.md#assign-tasks) unless you check **Show tasks assigned to others** in the page menu.
 
 The sidebar keeps Inbox, Today, Upcoming and Calendar at the top; the rest wait in **More**, a menu on a computer. Inbox and Today show open-task counts; a project shows its count on hover or focus. Deferred and parked tasks ([When a task starts](tasks-and-projects.md#when-a-task-starts)) are not counted.
 

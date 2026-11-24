@@ -6733,8 +6733,8 @@
     "web/src/app/ShareCapture.tsx"
   ],
   "Files are not attached on this demo instance.": [
-    "web/src/app/QuickAdd.tsx",
-    "web/src/app/ShareCapture.tsx"
+    "web/src/app/ShareCapture.tsx",
+    "web/src/app/quickadd/PendingFiles.tsx"
   ],
   "Files may be up to {bytes} each.": [
     "web/src/lib/settingsCopy.ts"
@@ -10966,6 +10966,7 @@
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Next action for {name}": [
+    "web/src/app/method/chooseNext.ts",
     "web/src/app/method/loop/PlaceMove.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
@@ -11280,6 +11281,7 @@
   ],
   "No matches": [
     "web/src/app/menus/stylePickers.tsx",
+    "web/src/app/quickadd/TickedSuggest.tsx",
     "web/src/app/routines/pickers.tsx",
     "web/src/ui/Combobox/Combobox.tsx",
     "web/src/ui/Combobox/useCombobox.ts",
@@ -11472,6 +11474,7 @@
     "web/src/app/Sections.tsx",
     "web/src/app/assistant/blocks/BoardBlock.tsx",
     "web/src/app/filter/conditionText.ts",
+    "web/src/app/method/chooseNext.ts",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
@@ -12882,6 +12885,7 @@
   ],
   "Open tasks": [
     "web/src/app/AppearanceSection.tsx",
+    "web/src/app/quickadd/TickedSuggest.tsx",
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
@@ -16581,6 +16585,9 @@
   "Show tasks as": [
     "web/src/app/CaldavPanel.tsx"
   ],
+  "Show tasks assigned to others": [
+    "web/src/app/TaskListView.tsx"
+  ],
   "Show text": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
@@ -17062,6 +17069,7 @@
     "web/src/app/UrgencyChip.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/filter/conditionText.ts",
+    "web/src/app/method/chooseNext.ts",
     "web/src/app/review/CarryOver.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/RowSwipe.tsx",
@@ -17364,6 +17372,7 @@
   ],
   "Starts {date}": [
     "web/src/app/TaskRow.tsx",
+    "web/src/app/method/chooseNext.ts",
     "web/src/lib/assistant.ts"
   ],
   "Starts {from} → {to}": [
@@ -25621,6 +25630,7 @@
     "web/src/app/routines/RunHistory.tsx"
   ],
   "{n, plural, one {# result available} other {# results available}}": [
+    "web/src/app/quickadd/TickedSuggest.tsx",
     "web/src/ui/Combobox/useCombobox.ts",
     "web/src/ui/IconPicker.tsx"
   ],
@@ -26127,7 +26137,7 @@
     "web/src/app/WorkspacesSettings.tsx"
   ],
   "{name} will be attached": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/quickadd/PendingFiles.tsx"
   ],
   "{name} · proposal waiting · Review": [
     "web/src/lib/rules/inbox.ts"

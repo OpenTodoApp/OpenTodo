@@ -299,6 +299,7 @@
   "Add a subtask": "添加子任务",
   "Make top-level for today": "设为今天的顶级任务",
   "Move under task…": "移到另一项任务下…",
+  "Show tasks assigned to others": "显示指派给其他人的任务",
   "Subtask shown for context": "作为上下文显示的子任务",
   "Add a subtask to the selected task": "为所选任务添加子任务",
   "Add a subtask to this task…": "为此任务添加子任务…",
