@@ -1,0 +1,1 @@
+- **The Android Today widget is a list you can tick off.** It scrolls through all of today's tasks, overdue ones under Earlier with their date, each with its time and project. Tap the circle to complete a task without opening the app (it syncs when the phone is online), and **+** to add one. Resize it as you like; it follows light and dark mode.

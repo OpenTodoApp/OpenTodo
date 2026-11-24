@@ -209,7 +209,9 @@ describe('events in the plan', () => {
     await waitFor(() => document.querySelector('[data-event-details]') === null)
 
     // Calendars hidden: no rows, no event minutes.
-    await click(r.container.querySelector('[data-calendars-toggle]')!)
+    await click(r.container.querySelector('[data-calendars-menu]')!)
+    await waitFor(() => document.querySelector('[role="menu"] [data-calendars-toggle]') !== null, 'the Calendars menu')
+    await click(document.querySelector('[role="menu"] [data-calendars-toggle]')!)
     await waitFor(() => day(r.container, '2026-10-13').querySelector('[data-plan-event]') === null)
     expect(day(r.container, '2026-10-13').querySelector('[data-capacity]')!.textContent).toBe('30m / 8h')
     await r.unmount()

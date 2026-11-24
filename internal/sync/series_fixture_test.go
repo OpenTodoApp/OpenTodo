@@ -45,12 +45,17 @@ type seriesFixtureCase struct {
 		Due   json.RawMessage            `json:"due"`
 		Patch map[string]json.RawMessage `json:"patch"`
 	} `json:"act"`
-	Repair bool `json:"repair"`
-	Range  *struct {
+	Repair      bool `json:"repair"`
+	ExceptionOn *struct {
+		Date string `json:"date"`
+	} `json:"exception_on"`
+	Range *struct {
 		From string `json:"from"`
 		To   string `json:"to"`
 	} `json:"range"`
 	Expect struct {
+		// Exception is ExceptionOn's answer, null ("") when the date is free.
+		Exception  *string         `json:"exception"`
 		OK         *bool           `json:"ok"`
 		Invalid    bool            `json:"invalid"`
 		End        bool            `json:"end"`
@@ -180,6 +185,14 @@ func TestSeriesSharedFixture(t *testing.T) {
 			switch {
 			case c.Range != nil:
 				fixtureOccurrences(t, c, byID, tasks)
+			case c.ExceptionOn != nil:
+				want := ""
+				if c.Expect.Exception != nil {
+					want = *c.Expect.Exception
+				}
+				if got := ExceptionOn(target, row, c.ExceptionOn.Date, tasks); got != want {
+					t.Fatalf("ExceptionOn(%s) = %q, want %q", c.ExceptionOn.Date, got, want)
+				}
 			case c.Repair:
 				got, err := PlanRepair(target, row, tasks, c.Today, fixtureNow)
 				if err != nil {

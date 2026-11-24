@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { SHIPPED } from '../locales'
 import { db, useDatabase } from './db'
 import { applyOps, resetDeviceId } from './ops'
-import { DAY_STARTS, hideStartChecklist, readDayStart, readLanguage, readUserPrefs, setUserPref, startChecklistHidden } from './userPrefs'
+import { DAY_STARTS, hideStartChecklist, othersTasksShown, readDayStart, readLanguage, readUserPrefs, setOthersTasksShown, setUserPref, startChecklistHidden } from './userPrefs'
 
 let n = 0
 beforeEach(() => {
@@ -106,5 +106,24 @@ describe('start_checklist (moments-and-onboarding D5)', () => {
     expect(startChecklistHidden(await db.userPrefs.get('me'))).toBe(false)
     await applyOps([{ id: 'h2', entity: 'user_prefs', entityId: 'me', field: 'start_checklist', value: 'hidden', ts: 6, device: 'laptop' }])
     expect(startChecklistHidden(await db.userPrefs.get('me'))).toBe(true)
+  })
+})
+
+describe('today_assignees (others-tasks-toggle D1)', () => {
+  it('only "all" shows them; empty, the old "mine" and unknown values read as hidden', () => {
+    expect(othersTasksShown(undefined)).toBe(false)
+    for (const v of ['', 'mine', 'everyone']) expect(othersTasksShown({ today_assignees: v })).toBe(false)
+    expect(othersTasksShown({ today_assignees: 'all' })).toBe(true)
+  })
+
+  it('showing and hiding again each write one op; a later remote choice wins', async () => {
+    await setOthersTasksShown(true)
+    expect(othersTasksShown(await db.userPrefs.get('me'))).toBe(true)
+    await setOthersTasksShown(false)
+    const queued = (await db.outbox.toArray()).map(({ field, value }) => ({ field, value }))
+    expect(queued).toEqual([{ field: 'today_assignees', value: 'all' }, { field: 'today_assignees', value: 'mine' }])
+    const clock = (await db.userPrefs.get('me'))!._clock.today_assignees
+    await applyOps([{ id: 'p', entity: 'user_prefs', entityId: 'me', field: 'today_assignees', value: 'all', ts: clock.ts + 1, device: 'phone' }])
+    expect(othersTasksShown(await db.userPrefs.get('me'))).toBe(true)
   })
 })

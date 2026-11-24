@@ -220,6 +220,7 @@
                   "run_closed",
                   "scope_change",
                   "self_action",
+                  "series_date_taken",
                   "session_only",
                   "session_required",
                   "set_by_environment",
@@ -652,6 +653,10 @@
           "task_id": {
             "description": "An id: a UUID, or for some entities a name-based id.",
             "type": "string"
+          },
+          "urgent": {
+            "description": "An urgent reminder (OpenSpec change ios-urgent-alarms, design D1): the iPhone app rings it as an alarm (AlarmKit) where it can; everywhere else it fires as an ordinary reminder. Not content.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -27988,6 +27993,9 @@
                   "task_id": {
                     "description": "An id: a UUID, or for some entities a name-based id.",
                     "type": "string"
+                  },
+                  "urgent": {
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -28199,6 +28207,9 @@
                   "task_id": {
                     "description": "An id: a UUID, or for some entities a name-based id.",
                     "type": "string"
+                  },
+                  "urgent": {
+                    "type": "boolean"
                   }
                 },
                 "type": "object"

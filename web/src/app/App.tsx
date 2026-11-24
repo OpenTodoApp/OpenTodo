@@ -6,6 +6,7 @@ import { DateTimePrefsProvider } from './DateTimePrefsProvider'
 import { LanguageProvider } from './LanguageProvider'
 import { useLanguageVersion, t } from '../lib/i18n'
 import { useTouchZoom } from '../lib/touchZoom'
+import { useTextScale } from '../lib/textSize'
 import { api, onEnrolmentRequired } from '../lib/api'
 import { consumeRestored, RESTORED_NOTICE } from '../lib/restore'
 import { requestPersistentStorage } from '../lib/db'
@@ -108,6 +109,7 @@ export function App() {
   // A language change re-renders the whole tree from here (app-localization D3).
   useLanguageVersion()
   useTouchZoom() // keep the page viewport in step with this device's "Allow pinch zoom" setting (#1386)
+  useTextScale() // and its root font size with this device's text size and the system's (#1414)
 
   const refresh = useCallback(async () => {
     try {

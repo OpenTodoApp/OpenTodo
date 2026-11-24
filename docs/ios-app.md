@@ -40,6 +40,10 @@ Your server's reminders arrive as notifications with the task's name, without se
 
 Two limits come from iOS. A WKWebView cannot receive web push, so unlike the [installed web app](push-notifications.md) the app has no immediate push; it refreshes the schedule whenever you open it, and iOS lets it refresh in the background about hourly when it decides to. Reminders that change while the app is closed can therefore arrive late, and notifications further away than seven days are not scheduled at all. If you want push per reminder, use the installed web app on iOS 16.4 or later; both can be on the same phone, and they share the same account.
 
+### Urgent reminders
+
+A reminder marked **Urgent** (in its menu in the task panel, on any device) rings as an alarm on iOS 26 and later: it sounds over silent mode and Focus, fills the lock screen with the task's name (or **OpenTodo reminder** for an encrypted account or with task names off) and keeps ringing until you tap **Stop** or **Snooze 10 min**. Snooze opens the app, which moves the reminder ten minutes for every device; Stop only silences it, and the reminder can still be dismissed in the app. iOS asks to allow alarms the first time the app is handed an urgent reminder while it is open; if you don't allow them, or change it later in iOS **Settings → OpenTodo**, urgent reminders arrive as ordinary notifications. They do too on iOS 18 and earlier, and for a reminder that reaches the phone only at its time. Turning reminders off in **Settings → Notifications**, signing out and **Change server** remove the alarms set for later; an alarm already ringing rings until you stop it, except after **Change server**.
+
 ## Location reminders
 
 [Location reminders](location-reminders.md) do not fire in the iPhone app yet: it does not offer **Location reminders on this phone**, and the reminders say **Fires on your phone**. Watching places with iOS region monitoring (When In Use, then Always) comes in a later version of the app; until then they fire in the [Android app](android-app.md#location-reminders).
@@ -86,7 +90,7 @@ Completing a task gives the phone's success tap, and adding a task or picking up
 
 ## Touch
 
-Tapping does not flash, holding a button or a tab does not select its label, and holding a link does not lift a preview of it. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top no longer drags or reloads the app. Pinch to zoom works everywhere, unless you turn it off for this device in **Settings → Appearance → Allow pinch zoom**. Tap the status bar to scroll back to the top of a list, a note or the calendar, or of an open sheet or panel.
+Tapping does not flash, holding a button or a tab does not select its label, and holding a link does not lift a preview of it. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top no longer drags or reloads the app. Pinch to zoom works everywhere, unless you turn it off for this device in **Settings → Appearance → Allow pinch zoom**. The app's text follows Dynamic Type (**Settings → Accessibility → Display & Text Size → Larger Text** on the iPhone); **Settings → Appearance → Text size** in the app overrides it. Tap the status bar to scroll back to the top of a list, a note or the calendar, or of an open sheet or panel.
 
 ## Face ID unlock
 

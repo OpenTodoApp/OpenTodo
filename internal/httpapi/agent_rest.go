@@ -510,7 +510,7 @@ func (s *Server) writeAgentError(w http.ResponseWriter, err error) {
 			status, code = http.StatusForbidden, "insufficient_scope"
 		case "not_found":
 			status = http.StatusNotFound
-		case "encryption_enabled", "timer_running", "conflict":
+		case "encryption_enabled", "timer_running", "conflict", opsync.ReasonSeriesDateTaken:
 			status = http.StatusConflict
 		case "rate_limited", "write_limit":
 			status = http.StatusTooManyRequests

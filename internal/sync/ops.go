@@ -462,6 +462,10 @@ var Schema = map[string]map[string]Field{
 		// (reminder_check.go refuses the mixes). Not content: the place is in
 		// the task's encrypted location.
 		"radius_m": {Kind: kRadius, Default: `null`},
+		// An urgent reminder (OpenSpec change ios-urgent-alarms, design D1): the
+		// iPhone app rings it as an alarm (AlarmKit) where it can; everywhere
+		// else it fires as an ordinary reminder. Not content.
+		"urgent": {Kind: kBool, Default: `false`},
 	},
 	// comment: a threaded markdown comment on a task (OpenSpec change
 	// `comments-and-activity`, design D1). It lives in its task's scope; Apply
@@ -805,10 +809,10 @@ var Schema = map[string]map[string]Field{
 		// design D1): "shown" or "hidden"; clients read an empty or unknown
 		// value as hidden and keep the stored value.
 		"today_events": {Kind: kString, Default: `""`},
-		// Today hid tasks assigned to others (OpenSpec change
-		// today-assigned-filter) while "mine"; since personal-views-assignee
-		// the personal views always do, and clients keep but never read it.
-		// Settings, never content.
+		// Show tasks assigned to others in the personal lists (OpenSpec change
+		// others-tasks-toggle): "all" shows them; clients read empty, "mine"
+		// (today-assigned-filter's hide) and unknown values as hidden and keep
+		// the stored value. Settings, never content.
 		"today_assignees": {Kind: kString, Default: `""`},
 		// Upcoming's calendar events, one agenda per day (OpenSpec
 		// today-agenda): "shown" or "hidden"; clients read an empty or
@@ -998,6 +1002,12 @@ var Schema = map[string]map[string]Field{
 		"daily_notes":         {Kind: kBool, Default: `false`},
 		"daily_notes_project": {Kind: kString, Default: `""`}, "daily_notes_template": {Kind: kString, Default: `""`},
 		"app_link_schemes": {Kind: kString, Default: `""`, Content: true}, // app-links D1: schemes that open in other apps, a JSON array, read only on the person's devices
+		// Calendars hidden per workspace (OpenSpec change calendars-per-workspace,
+		// design D1): a JSON object from workspace id to the ids of the calendars
+		// (subscriptions and calendar sync calendars) hidden there; "" hides none.
+		// A hide-list, so new calendars and workspaces show. Clients read a
+		// malformed value as none hidden and ignore unknown ids. Not content.
+		"calendars_hidden": {Kind: kString, Default: `""`},
 		// The away period (OpenSpec change away-periods, design D3): "" or
 		// "YYYY-MM-DD..YYYY-MM-DD", inclusive, followed by " quiet" when
 		// reminders and the digest are paused. One value, so two devices never

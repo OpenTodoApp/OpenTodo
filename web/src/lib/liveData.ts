@@ -3,10 +3,13 @@
 // selectors here in the data layer, so components under src/app never query the
 // database themselves. Each hook keeps the query, the default and the dependencies
 // the screen used before, so what it re-renders on is unchanged.
+import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, getMeta } from './db'
 import { cachedWindow, showEvents, type EventsWindow } from './calendarFeeds'
 import { CALENDAR_COMPLETED_META_KEY, DEFAULT_GRID_PREFS, GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from './calendar'
+import { hiddenIn, readCalendarsHidden } from './calendarVisibility'
+import { useUserPrefsRow, useWorkspaceState } from './localData'
 import { compareByPosition } from './ordering'
 import { loadCollapsedSections, loadListColumns, loadShowCompleted, loadViewMode, type ProjectViewMode } from './sections'
 import type { CalendarEvent, CalendarSubscription, ProjectPrefs, Section, Task } from './types'
@@ -19,10 +22,6 @@ const NO_STRINGS: string[] = []
 const NO_EVENTS: CalendarEvent[] = []
 const NO_SUBSCRIPTIONS: CalendarSubscription[] = []
 const NO_TASKS: Task[] = []
-
-
-
-
 
 /** Every section row of a project, deleted ones included (they still resolve a task's section). */
 export function useProjectSectionRows(projectId: string | null): Section[] {
@@ -89,6 +88,36 @@ export function useCalendarEvents(): CalendarEvent[] {
 /** Calendar subscriptions of this account. */
 export function useCalendarSubscriptions(): CalendarSubscription[] {
   return useLiveQuery(() => db.calendarSubscriptions.toArray(), [], NO_SUBSCRIPTIONS)
+}
+
+/** The calendars hidden in the current workspace (calendars-per-workspace D1). */
+export function useHiddenCalendars(): { workspace: string; hidden: ReadonlySet<string> } {
+  const stored = useUserPrefsRow()?.calendars_hidden
+  const workspace = useWorkspaceState().current
+  const hidden = useMemo(() => hiddenIn(readCalendarsHidden({ calendars_hidden: stored }), workspace), [stored, workspace])
+  return { workspace, hidden }
+}
+
+export interface VisibleCalendarEvents {
+  subs: CalendarSubscription[]
+  subMap: Map<string, CalendarSubscription>
+  /** Cached events of enabled calendars not hidden in the current workspace. */
+  events: CalendarEvent[]
+}
+
+/**
+ * The one filter of every view that draws events (calendars-per-workspace D2). Free time
+ * and the assistant read the database themselves, so hidden calendars stay busy there.
+ */
+export function useVisibleCalendarEvents(): VisibleCalendarEvents {
+  const all = useCalendarEvents()
+  const subs = useCalendarSubscriptions()
+  const { hidden } = useHiddenCalendars()
+  return useMemo(() => {
+    const subMap = new Map(subs.map((s) => [s.id, s]))
+    const events = all.filter((e) => subMap.get(e.subscriptionId)?.enabled !== false && !hidden.has(e.subscriptionId))
+    return { subs, subMap, events }
+  }, [all, subs, hidden])
 }
 
 /** Whether this device shows subscribed calendars in the grid (on unless turned off). */

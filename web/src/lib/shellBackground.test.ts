@@ -75,6 +75,13 @@ describe('startBackgroundRun', () => {
     expect(c.at()).toBeGreaterThanOrEqual(BACKGROUND_LIMIT_MS)
   })
 
+  it('waits for the widget\'s completion too (android-widget-list D2)', async () => {
+    const c = clock()
+    await startBackgroundRun({ ...c, search: '?complete=t1' })
+    expect(done).toHaveBeenCalledTimes(1)
+    expect(c.at()).toBeGreaterThanOrEqual(BACKGROUND_LIMIT_MS)
+  })
+
   it('runs once per page', async () => {
     const c = clock()
     await Promise.all([startBackgroundRun({ ...c, search: '' }), startBackgroundRun({ ...c, search: '' })])

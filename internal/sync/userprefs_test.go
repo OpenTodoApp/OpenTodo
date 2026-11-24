@@ -304,3 +304,39 @@ func TestFocusRunConverges(t *testing.T) {
 		}
 	}
 }
+
+// TestCalendarsHiddenIsAPersonalPref (calendars-per-workspace D1): the per-workspace
+// hide-list is one string field of user_prefs, applied like any other and kept
+// in its author's scope.
+func TestCalendarsHiddenIsAPersonalPref(t *testing.T) {
+	f := newSharing(t)
+	f.add("alice", "bob", RoleEditor)
+	value := `"{\"ws-personal\":[\"sub-work\"]}"`
+	if res := f.apply("alice", "A", f.op("user_prefs", "me", "calendars_hidden", value)); res.Applied != 1 || len(res.Rejected) != 0 {
+		t.Fatalf("calendars_hidden = %+v", res)
+	}
+	if got := f.field("alice", "user_prefs", "me", "calendars_hidden"); got != value {
+		t.Fatalf("alice reads %s", got)
+	}
+	if got := f.field("bob", "user_prefs", "me", "calendars_hidden"); got == value {
+		t.Fatalf("bob sees alice's calendars: %s", got)
+	}
+
+	// Two devices write the whole value offline: the later one wins in either order.
+	early := f.op("user_prefs", "me", "calendars_hidden", `"{\"ws-personal\":[\"sub-a\"]}"`)
+	late := f.op("user_prefs", "me", "calendars_hidden", `"{\"ws-work\":[\"sub-b\"]}"`)
+	f.apply("alice", "A2", late)
+	f.apply("alice", "A", early)
+	if got := f.field("alice", "user_prefs", "me", "calendars_hidden"); got != string(late.Value) {
+		t.Fatalf("after concurrent writes alice reads %s, want the later %s", got, late.Value)
+	}
+
+	// A malformed string is stored as written: clients read it as nothing hidden.
+	bad := `"not json"`
+	if res := f.apply("alice", "A", f.op("user_prefs", "me", "calendars_hidden", bad)); res.Applied != 1 || len(res.Rejected) != 0 {
+		t.Fatalf("malformed value = %+v", res)
+	}
+	if got := f.field("alice", "user_prefs", "me", "calendars_hidden"); got != bad {
+		t.Fatalf("alice reads %s, want %s", got, bad)
+	}
+}

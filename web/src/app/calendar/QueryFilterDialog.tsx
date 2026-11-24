@@ -6,6 +6,7 @@
 import { useId, useMemo, useState } from 'react'
 import type { FilterContext } from '../../lib/filter'
 import { splitLabels, withLabels } from '../../lib/filter/labelTerms'
+import { literalName } from '../../lib/filter/names'
 import { t } from '../../lib/i18n'
 import { activeLabels } from '../../lib/labels'
 import { Button, Dialog, Field, hueFor, Input } from '../../ui'
@@ -22,7 +23,9 @@ export default function QueryFilterDialog({ title, query, ctx, onApply, onClose 
   const error = useMemo(() => queryError(draft, ctx), [draft, ctx])
   const labels = useMemo(() => activeLabels([...ctx.labels]), [ctx.labels])
   const split = useMemo(() => splitLabels(draft), [draft])
+  // The clause holds names as a query writes them: a label's own `*` is escaped (filter-wildcards).
   const checked = new Set((split?.names ?? []).map((n) => n.toLocaleLowerCase()))
+  const key = (name: string) => literalName(name).toLocaleLowerCase()
   const groupId = useId()
 
   const edit = (next: string) => {
@@ -30,8 +33,8 @@ export default function QueryFilterDialog({ title, query, ctx, onApply, onClose 
     if (queryError(next, ctx) === null) onApply(next)
   }
   const toggle = (name: string, on: boolean) => {
-    const names = (split?.names ?? []).filter((n) => n.toLocaleLowerCase() !== name.toLocaleLowerCase())
-    const next = withLabels(draft, on ? [...names, name] : names)
+    const names = (split?.names ?? []).filter((n) => n.toLocaleLowerCase() !== key(name))
+    const next = withLabels(draft, on ? [...names, literalName(name)] : names)
     if (next !== null) edit(next)
   }
 
@@ -50,7 +53,7 @@ export default function QueryFilterDialog({ title, query, ctx, onApply, onClose 
               {labels.map((l) => (
                 <li key={l.id}>
                   <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-control px-1 text-body sm:min-h-8 hover:bg-hover">
-                    <input type="checkbox" checked={checked.has(l.name.toLocaleLowerCase())} onChange={(e) => toggle(l.name, e.target.checked)} data-query-filter-label={l.name} />
+                    <input type="checkbox" checked={checked.has(key(l.name))} onChange={(e) => toggle(l.name, e.target.checked)} data-query-filter-label={l.name} />
                     <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-hue-solid" data-hue={hueFor(l.color)} aria-hidden />
                     <span className="min-w-0 truncate">{l.name}</span>
                   </label>

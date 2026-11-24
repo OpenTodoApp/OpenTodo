@@ -2152,6 +2152,10 @@
       "409",
       "listed"
     ],
+    "series_date_taken": [
+      "409",
+      "listed"
+    ],
     "session_only": [
       "403",
       "listed"
@@ -2407,7 +2411,8 @@
         "kind": "reminder_kind",
         "offset_minutes": "offset_minutes",
         "radius_m": "radius",
-        "task_id": "id"
+        "task_id": "id",
+        "urgent": "bool"
       },
       "review": {
         "carry_over": "string",
@@ -2541,6 +2546,7 @@
         "away": "string",
         "bento_order": "string",
         "briefing": "string",
+        "calendars_hidden": "string",
         "completion_sound": "string",
         "daily_notes": "bool",
         "daily_notes_project": "string",
@@ -2702,7 +2708,8 @@
         "items[].id": "string?",
         "items[].kind": "string",
         "items[].offset_minutes": "integer?",
-        "items[].task_id": "string"
+        "items[].task_id": "string",
+        "items[].urgent": "boolean?"
       },
       "kind": "write"
     },
@@ -3222,6 +3229,13 @@
       },
       "kind": "write"
     },
+    "set_today_focus": {
+      "arguments": {
+        "ids": "array",
+        "timezone": "string?"
+      },
+      "kind": "write"
+    },
     "start_timer": {
       "arguments": {
         "client_request_id": "string?",
@@ -3265,6 +3279,8 @@
         "due_today[].tracked_minutes_occurrence": "number",
         "due_today[].untrusted_text": "object",
         "due_today[].waiting_for_slot": "boolean",
+        "focus": "array",
+        "focus_date": "string",
         "overdue": "array",
         "server_time": "string",
         "timezone": "string",
@@ -3337,7 +3353,8 @@
         "updates[].at.time": "string",
         "updates[].at.tz": "string?",
         "updates[].id": "string",
-        "updates[].offset_minutes": "integer?"
+        "updates[].offset_minutes": "integer?",
+        "updates[].urgent": "boolean?"
       },
       "kind": "write"
     },
@@ -3561,7 +3578,8 @@
       "kind": "reminder_kind",
       "offset_minutes": "offset_minutes",
       "radius_m": "radius",
-      "task_id": "id"
+      "task_id": "id",
+      "urgent": "bool"
     },
     "review": {
       "carry_over": "string",
@@ -3688,6 +3706,7 @@
       "away": "string",
       "bento_order": "string",
       "briefing": "string",
+      "calendars_hidden": "string",
       "completion_sound": "string",
       "daily_notes": "bool",
       "daily_notes_project": "string",
@@ -6104,7 +6123,8 @@
         "reminders[].kind": "reminder_kind",
         "reminders[].offset_minutes": "offset_minutes",
         "reminders[].radius_m": "radius",
-        "reminders[].task_id": "id"
+        "reminders[].task_id": "id",
+        "reminders[].urgent": "bool"
       }
     },
     "GET /api/v1/reminders/{id}": {
@@ -6119,7 +6139,8 @@
         "kind": "reminder_kind",
         "offset_minutes": "offset_minutes",
         "radius_m": "radius",
-        "task_id": "id"
+        "task_id": "id",
+        "urgent": "bool"
       }
     },
     "GET /api/v1/routine-emails/{token}": {
@@ -7842,7 +7863,8 @@
         "kind": "reminder_kind?",
         "offset_minutes": "offset_minutes?",
         "radius_m": "radius?",
-        "task_id": "id?"
+        "task_id": "id?",
+        "urgent": "bool?"
       },
       "response": {
         "created_at": "number",
@@ -7854,7 +7876,8 @@
         "kind": "reminder_kind",
         "offset_minutes": "offset_minutes",
         "radius_m": "radius",
-        "task_id": "id"
+        "task_id": "id",
+        "urgent": "bool"
       }
     },
     "PATCH /api/v1/rules/{id}": {
@@ -10322,7 +10345,8 @@
         "kind": "reminder_kind?",
         "offset_minutes": "offset_minutes?",
         "radius_m": "radius?",
-        "task_id": "id"
+        "task_id": "id",
+        "urgent": "bool?"
       },
       "response": {
         "created_at": "number",
@@ -10334,7 +10358,8 @@
         "kind": "reminder_kind",
         "offset_minutes": "offset_minutes",
         "radius_m": "radius",
-        "task_id": "id"
+        "task_id": "id",
+        "urgent": "bool"
       }
     },
     "POST /api/v1/routine-emails/{token}/stop": {

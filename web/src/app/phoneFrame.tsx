@@ -5,8 +5,9 @@
 import type { ReactNode } from 'react'
 import type { Route } from './router'
 
-/** The bar at the top: its height, its padding under the status area, phones only. */
-export const PHONE_BAR_FRAME = 'flex min-h-12 items-center gap-1 pl-2 pr-2 pt-[max(0.25rem,var(--safe-top))] md:hidden'
+/** The bar at the top: its height, its padding under the status area, phones only. A size container, so
+ * its actions can measure its width in the root's rem, which follows the text size (text-size D5). */
+export const PHONE_BAR_FRAME = 'flex min-h-12 items-center gap-1 pl-2 pr-2 pt-[max(0.25rem,var(--safe-top))] md:hidden @container'
 /** Its hairline; a day page's bar has none (precision-phone D1). */
 export const PHONE_BAR_LINE = 'border-b border-soft'
 /** The tab bar: fixed to the bottom, above the safe area, phones only. */

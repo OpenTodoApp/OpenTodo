@@ -16,7 +16,7 @@ import { currentUserId } from './sharing'
 import { compute, sharedIds } from './stats'
 import type { StatProject } from './statsCounted'
 import type { Membership } from './types'
-import type { Reminder, Task } from './types'
+import type { Project, Reminder, Task } from './types'
 
 /** The device's "notifications through the app" switch (Settings → Notifications in a shell). */
 export const META_SHELL_NOTIFICATIONS = 'shell:notifications'
@@ -50,26 +50,36 @@ export function shellReminders(reminders: readonly Reminder[], tasks: readonly T
     if (inQuietProject(task.project_id, projectById)) continue
     const item: ShellReminder = { id: r.id, taskId: r.task_id, fireAt: r.fire_at }
     if (opts.titles && !opts.encrypted && task.title) item.title = task.title
+    if (r.urgent === true) item.urgent = true
     out.push(item)
   }
   return out.sort((a, b) => a.fireAt - b.fireAt)
 }
 
-/** The widgets' Today list: titles only while the account is readable on this device, counts otherwise. */
-export function shellWidget(tasks: readonly Task[], today: string, now: number, locked: boolean, me?: string | null): ShellWidgetData {
+/**
+ * The widgets' Today list: titles, times, the project's name and an overdue task's
+ * date only while the account is readable on this device, counts otherwise.
+ * `actions` tells the shell what it may ask of this web app (android-widget-list D3):
+ * `complete`, the widget's completion circle (`/?complete=<id>` in a background run).
+ */
+export function shellWidget(tasks: readonly Task[], today: string, now: number, locked: boolean, me?: string | null, projects: readonly Pick<Project, 'id' | 'name'>[] = []): ShellWidgetData {
   const list = todayList(tasks.filter((task) => !task.deleted_at && !task.completed_at), today, me)
+  const names = new Map(projects.map((p) => [p.id, p.name]))
   const rows = list.slice(0, WIDGET_MAX).map((task) => {
     const due = localDueOf(task.due)
     const overdue = !!due && due.date < today
+    const project = task.project_id ? names.get(task.project_id) : undefined
     return {
       id: task.id,
       ...(locked ? {} : { title: task.title }),
       ...(due?.time && !locked ? { time: due.time } : {}),
+      ...(overdue && due && !locked ? { date: due.date } : {}),
+      ...(project && !locked ? { project } : {}),
       priority: task.priority,
       overdue,
     }
   })
-  return { updatedAt: now, locked, count: list.length, overdue: rows.filter((r) => r.overdue).length, tasks: locked ? [] : rows }
+  return { updatedAt: now, locked, count: list.length, overdue: rows.filter((r) => r.overdue).length, tasks: locked ? [] : rows, actions: ['complete'] }
 }
 
 /**
@@ -176,7 +186,7 @@ async function publishToday(now = Date.now()): Promise<void> {
   const [tasks, memberships, me, projects] = await Promise.all([db.tasks.toArray(), db.memberships.toArray(), currentUserId(), db.projects.toArray()])
   const today = logicalToday(undefined, now)
   const locked = enc.enabled && !enc.unlocked
-  publishWidget({ ...shellWidget(tasks, today, now, locked, me), completed: shellCompleted(tasks, projects, memberships, me, today, locked) })
+  publishWidget({ ...shellWidget(tasks, today, now, locked, me, projects), completed: shellCompleted(tasks, projects, memberships, me, today, locked) })
 }
 
 let started = false

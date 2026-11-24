@@ -9,7 +9,7 @@ import { isSector, SECTOR_WORDS } from '../sectors'
 //   or      := and ( "|" and )*
 //   and     := not ( "&" not )*
 //   not     := "!" not | "(" or ")" | term
-//   term    := "@" name | "##" name | "#" name | "p1".."p4"
+//   term    := "@" name | "##" name | "#" name | "p1".."p4"   (in a name `*` is a wildcard, `\*` a star: filter-wildcards)
 //            | ("due" | "created" | "deadline" | "start" | "completed") cmp date | keyword | "search:" text
 //            | "origin:" value                        (task origins, OpenSpec task-origin)
 //            | "energy:" ("deep" | "medium" | "low")   (task energy, OpenSpec task-energy)
@@ -87,13 +87,17 @@ export function tokenize(src: string): Token[] {
     while (i < n && !BREAK.test(src[i])) i++
     return src.slice(start, i)
   }
-  const readString = (): string => {
-    // src[i] is the opening quote. Backslash escapes the next character (\" and \\).
+  const readString = (name = false): string => {
+    // src[i] is the opening quote. Backslash escapes the next character (\" and \\);
+    // in a name, `\*` and `\\` stay escaped, as in a bare name (filter-wildcards).
     const start = i
     i++
     let s = ''
     while (i < n && src[i] !== '"') {
-      if (src[i] === '\\' && i + 1 < n) i++
+      if (src[i] === '\\' && i + 1 < n) {
+        if (name && (src[i + 1] === '*' || src[i + 1] === '\\')) s += '\\'
+        i++
+      }
       s += src[i++]
     }
     if (i >= n) throw new FilterSyntaxError(t('Missing closing quote for the text starting at position {pos}', { pos: start + 1 }), start, ['"'])
@@ -101,7 +105,7 @@ export function tokenize(src: string): Token[] {
     return s
   }
   const readName = (what: string, after: string, at: number): string => {
-    if (i < n && src[i] === '"') return readString()
+    if (i < n && src[i] === '"') return readString(true)
     const name = readBare()
     if (!name) throw new FilterSyntaxError((what === 'label' ? t('Expected a label name after "{after}" at position {pos}', { after, pos: at + 1 }) : t('Expected a project name after "{after}" at position {pos}', { after, pos: at + 1 })), at, [`${what} name`])
     return name
@@ -145,11 +149,11 @@ export function tokenize(src: string): Token[] {
     }
     const word = readBare()
     // `search:text`, `search: text` or `search: "several words"`; `origin:` alike (task-origin).
-    const readPrefixed = (prefix: string): string => {
+    const readPrefixed = (prefix: string, name = false): string => {
       const text = word.slice(prefix.length)
       if (text) return text
       while (i < n && isSpace(src[i])) i++
-      return i < n && src[i] === '"' ? readString() : readBare()
+      return i < n && src[i] === '"' ? readString(name) : readBare()
     }
     if (/^search:/i.test(word)) {
       const text = readPrefixed('search:')
@@ -185,7 +189,7 @@ export function tokenize(src: string): Token[] {
     }
     // `section: Review`: a section of that name in any project (section-filter).
     if (/^section:/i.test(word)) {
-      const name = readPrefixed('section:')
+      const name = readPrefixed('section:', true)
       if (!name) throw new FilterSyntaxError(t('Expected a section name after "section:" at position {pos}', { pos: pos + 1 }), pos, ['section name'])
       out.push({ type: 'section', name, pos, raw: src.slice(pos, i) })
       continue
@@ -624,7 +628,16 @@ export function resolveDate(expr: DateExpr, today: string, weekStart = 1): strin
 // ---- printing (tests, debugging, future saved views) ----
 
 function quote(name: string): string {
-  return BREAK.test(name) || name === '' ? `"${name.replace(/["\\]/g, (c) => '\\' + c)}"` : name
+  return BREAK.test(name) || name === '' ? quoteAlways(name) : name
+}
+
+/** A label, project or section name: its `\*` and `\\` stay escapes, a lone `\` is doubled (filter-wildcards). */
+function quoteName(name: string): string {
+  return BREAK.test(name) || name === '' ? quoteNameAlways(name) : name
+}
+
+export function quoteNameAlways(name: string): string {
+  return `"${name.replace(/\\[\\*]|\\|"/g, (m) => (m.length === 2 ? m : '\\' + m))}"`
 }
 
 function quoteAlways(s: string): string {
@@ -669,9 +682,9 @@ export function printQuery(n: Node): string {
     case 'not':
       return `!${printQuery(n.item)}`
     case 'label':
-      return `@${quote(n.name)}`
+      return `@${quoteName(n.name)}`
     case 'project':
-      return `${n.descendants ? '##' : '#'}${quote(n.name)}`
+      return `${n.descendants ? '##' : '#'}${quoteName(n.name)}`
     case 'priority':
       return `p${n.value}`
     case 'date':
@@ -693,7 +706,7 @@ export function printQuery(n: Node): string {
     case 'workspace':
       return `workspace: ${quote(n.name)}`
     case 'section':
-      return `section: ${quote(n.name)}`
+      return `section: ${quoteName(n.name)}`
     case 'field':
       // Field names are always quoted: a bare one could collide with a reserved word.
       return `${quoteAlways(n.name)} ${n.op} ${printFieldValue(n.value)}`
