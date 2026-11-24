@@ -22,13 +22,21 @@ export default function RotationEditor({ task, userId, onBack }: { task: Task; u
   const m = task.project_id ? memberships.get(task.project_id) : undefined
   const stored = useMemo(() => task.rotation ?? [], [task.rotation])
   // The list as last written here, so quick changes build on each other before the
-  // live row catches up; a change from elsewhere replaces it.
+  // live row catches up; a change from elsewhere replaces it. One of this editor's own
+  // writes coming back while a later one is still on its way leaves the list alone, so
+  // an older row never undoes the newer change.
   const storedKey = stored.join('\n')
   const [seen, setSeen] = useState(storedKey)
   const [local, setLocal] = useState<string[]>(stored)
+  const [pending, setPending] = useState<string[]>([])
   if (seen !== storedKey) {
     setSeen(storedKey)
-    setLocal(stored)
+    const own = pending.indexOf(storedKey)
+    if (own >= 0) setPending(pending.slice(own + 1))
+    else {
+      setPending([])
+      setLocal(stored)
+    }
   }
   // While a handle is dragged, the order shown before it is written.
   const [draft, setDraft] = useState<string[] | null>(null)
@@ -53,6 +61,7 @@ export default function RotationEditor({ task, userId, onBack }: { task: Task; u
 
   const save = (next: string[]) => {
     setLocal(next)
+    setPending((p) => [...p, next.join('\n')])
     act(updateTask(task.id, { rotation: next }))
   }
   const move = (id: string, delta: number) => {

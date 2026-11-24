@@ -119,7 +119,7 @@ export function ProjectsView({ archived }: { archived?: boolean }) {
           {!loaded && <Skeleton shape="row" count={5} label={t('Loading the list…')} />}
           {loaded && projects.length > 0 && <ProjectsTable rows={rows} summaries={summaries} memberships={memberMap} dimmed={dimmed}
             folded={folded} foldable={!found} onFold={fold} sort={sort} onSort={onSort} today={today} now={now}
-            canMove={(n) => canEditProject(roleOf(n.id, memberMap))} edges={(n) => siblingEdges(tree, n)}
+            canMove={(n) => !sort && canEditProject(roleOf(n.id, memberMap))} edges={(n) => siblingEdges(tree, n)}
             tick={bulk.tickOf} onSelectKey={bulk.onKey} />}
           {loaded && projects.length === 0 && (
             <EmptyState icon="folder" title={t('No projects yet')}

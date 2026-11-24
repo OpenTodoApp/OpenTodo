@@ -34,6 +34,7 @@ import { FavouritesGroup } from './FavouritesGroup'
 import { ProjectRowMenu } from './ProjectRowMenu'
 import { SidebarAppearance } from './sidebarAppearanceLazy'
 import { renameProject } from './menus/projectAppearance'
+import { sortProjectsByName } from './menus/projectMenu'
 import { useFavourites } from './useFavourites'
 import { useAssigneeDirectory, useToday, useViewerZone, useViews } from './useViews'
 import { MAX_INDENT } from './TaskRow'
@@ -483,14 +484,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
       {groupsReady && (finding || groupShown(shownRows.length)) && <SidebarGroup title={t('Projects')} collapsible open={isOpen('projects')} onToggle={() => toggleGroup('projects')} count={projects.length} collapsed={collapsed} actions={(<>
         <SidebarGroupAction active={route.view === 'projects'} onClick={() => navigate({ view: 'projects' })} aria-label={t('All projects')}>{t('All')}</SidebarGroupAction>
         <SidebarGroupAction ref={findOpener} onClick={() => (finding ? closeFind() : openFind())} aria-label={t('Find in the sidebar')} aria-pressed={finding} active={finding}><Icon name="search" size="xs" /></SidebarGroupAction>
-        <Menu kind="menu" label={t('Add or fold projects')} title={t('Projects')} trigger={<Icon name="plus" size="xs" />}
-          triggerClassName={SIDEBAR_GROUP_ACTION} width="sm:w-56">
-          <MenuItem label={t('New project')} icon="plus" onSelect={startAdding} />
-          <MenuItem label={t('From a template…')} icon="copy" onSelect={requestTemplateDialog} />
-          <MenuSeparator />
-          <MenuItem label={t('Collapse all')} icon="chevrons-down-up" onSelect={() => void collapseAllProjects(projects)} />
-          <MenuItem label={t('Expand all')} icon="chevrons-up-down" onSelect={() => void expandAllProjects()} />
-        </Menu>
+        <ProjectsGroupMenu projects={projects} sortable={tree.roots.filter((n) => movable(n.id)).length > 1} onNew={startAdding} />
       </>)}>
         <ul role="tree">
           {shownRows.map((n, i) => {
@@ -589,6 +583,21 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
       {!collapsed && !drawer && <SidebarSchedule />}
       <SidebarFooter route={route} user={user} collapsed={collapsed} onSearch={onSearch} onShortcuts={onShortcuts} onFeedback={onFeedback} onAssistant={onAssistant} onToggleCollapse={onToggleCollapse} onSignOut={onSignOut} />
     </div>
+  )
+}
+
+/** The Projects header's menu: add, fold, and sort the top level by name once (sort-projects-by-name). */
+function ProjectsGroupMenu({ projects, sortable, onNew }: { projects: Project[]; sortable: boolean; onNew: () => void }) {
+  return (
+    <Menu kind="menu" label={t('Add or fold projects')} title={t('Projects')} trigger={<Icon name="plus" size="xs" />}
+      triggerClassName={SIDEBAR_GROUP_ACTION} width="sm:w-56">
+      <MenuItem label={t('New project')} icon="plus" onSelect={onNew} />
+      <MenuItem label={t('From a template…')} icon="copy" onSelect={requestTemplateDialog} />
+      <MenuSeparator />
+      <MenuItem label={t('Collapse all')} icon="chevrons-down-up" onSelect={() => void collapseAllProjects(projects)} />
+      <MenuItem label={t('Expand all')} icon="chevrons-up-down" onSelect={() => void expandAllProjects()} />
+      {sortable && <MenuItem label={t('Sort by name')} icon="list-ordered" onSelect={() => sortProjectsByName(null)} />}
+    </Menu>
   )
 }
 

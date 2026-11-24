@@ -19,7 +19,7 @@ import type { Due, Project, Task, View } from './types'
 import { applyBatch } from './undo'
 import type { ProposedChange } from './assistantTypes'
 import { compileView } from './views'
-import { t } from './i18n'
+import { currentLanguage, t } from './i18n'
 import { uuid } from './ids'
 import { linkChanges } from './linkAttachment'
 import { originOf } from './taskOrigin'
@@ -29,7 +29,7 @@ import { dayPartFields, dayPartName, dayPartOf, doOnPatch, type DayPart, type Do
 import { energyName, type Energy } from './energy'
 import { sectorPatch } from './sectorWrites'
 import { planDayDrop } from './dayDrop'
-import { planTasksMove, type TaskTarget } from './move'
+import { planSortProjects, planTasksMove, type TaskTarget } from './move'
 import { replanChanges, type ReplanProposal, type UnfitChoice } from './replan'
 import { keepWorkspaceFor, Partition, readWorkspaceState, workspaceIdFor } from './workspaces'
 import { resettable } from './moduleState'
@@ -446,6 +446,13 @@ export async function archiveProjectsUndoable(ids: readonly string[]): Promise<U
   }
   if (changes.length === 0) return { entry: null, label: '' }
   return apply(changes, t('Archived {projects}', { projects: t('{n, plural, one {# project} other {# projects}}', { n: ids.length }) }))
+}
+
+/** Sort the projects under `parent` (null = the top level) by name, as one step with Undo (sort-projects-by-name). */
+export async function sortProjectsUndoable(parent: string | null, locale = currentLanguage()): Promise<UndoableResult> {
+  const changes = await planSortProjects(parent, locale)
+  if (changes.length === 0) return { entry: null, label: '' }
+  return apply(changes, t('Sorted by name'))
 }
 
 /** Put a project in maintenance or end it (project-review-cadence): one shared op, with Undo. */
