@@ -55,6 +55,7 @@ import { AttachmentSettingsPanel } from './AttachmentSettingsPanel'
 import { OutgoingEmailPanel } from './OutgoingEmailPanel'
 import { MapsServerPanel, MapsUserSection } from './locations/MapsSettings'
 import { AutomationsServerPanel } from './rules/AutomationsSettings'
+import { TaskListsServerPanel } from './TaskListsServerPanel'
 import { SpeechServerPanel } from './SpeechServerPanel'
 import { BrandingPanel } from './BrandingPanel'
 import { YourDataSection } from './DataSettings'
@@ -141,6 +142,8 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'server/maps': ({ demo }) => <DemoDisabled on={demo}><MapsServerPanel /></DemoDisabled>,
   // Automation rules (automation-rules D9): the owner's switch; nothing runs on a demo.
   'server/automations': ({ demo }) => <DemoDisabled on={demo}><AutomationsServerPanel /></DemoDisabled>,
+  // Click a task to (click-default D2): the owner's default for accounts that have not chosen.
+  'server/task-lists': ({ demo }) => <DemoDisabled on={demo}><TaskListsServerPanel /></DemoDisabled>,
   // Speech to text (settings-refresh D7): the owner's speech service; never on a demo.
   'server/speech': ({ demo }) => <DemoDisabled on={demo}><SpeechServerPanel /></DemoDisabled>,
   'server/audit': () => <Anchor id="audit-log"><AuditPanel /></Anchor>,

@@ -2590,6 +2590,7 @@
         "reminder_default_timed": "string",
         "routines_hide_successes": "string",
         "routines_seen_at": "number",
+        "row_click": "string",
         "row_detail": "string",
         "row_layout": "string",
         "sidebar_counts": "string",
@@ -3734,6 +3735,7 @@
       "reminder_default_timed": "string",
       "routines_hide_successes": "string",
       "routines_seen_at": "number",
+      "row_click": "string",
       "row_detail": "string",
       "row_layout": "string",
       "sidebar_counts": "string",
@@ -4397,6 +4399,8 @@
         "outgoingEmail.enabled": "boolean",
         "passkeyDomain": "string",
         "passkeysAvailable": "boolean",
+        "rowClick": "object",
+        "rowClick.default": "string",
         "setupCodeForHost": "boolean",
         "setupCodeRequired": "boolean",
         "setupRequired": "boolean",
@@ -11995,6 +11999,18 @@
     },
     "PUT /api/v1/settings/project-invites": {
       "policy": "owner-only"
+    },
+    "PUT /api/v1/settings/row-click": {
+      "policy": "owner-only",
+      "request": {
+        "default": "string|null?"
+      },
+      "response": {
+        "default": "string"
+      },
+      "statuses": [
+        "200"
+      ]
     },
     "PUT /api/v1/settings/smtp": {
       "policy": "owner-only.credential.recent",

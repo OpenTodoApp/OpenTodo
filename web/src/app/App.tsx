@@ -23,6 +23,7 @@ import { ProjectInviteScreen, takePendingInvite } from './ProjectInviteScreen'
 import { WorkspaceInviteScreen } from './WorkspaceInviteScreen'
 import { ResetScreen } from './ResetScreen'
 import { setOutgoingEmail } from '../lib/outgoingEmail'
+import { setServerRowClick } from '../lib/rowClickPref'
 import { ACCOUNT_CHANGED_EVENT } from './accountChanged'
 import { ReauthHost } from './ReauthDialog'
 import { ENROLMENT_EVENT } from './SyncStatus'
@@ -126,6 +127,7 @@ export function App() {
         // first sync, so a new device unlocks before anything is pulled.
         await adoptProfile(status.encryption, status.minClientVersion).catch(() => undefined)
         void import('../lib/theme/instanceSync').then((m) => m.followInstanceThemes(status.themes?.version)) // theme-instance-default D3
+        setServerRowClick(status.rowClick?.default) // click-default D2
         // Ask the browser not to evict the local copy (Safari drops unpersisted
         // storage after weeks without a visit); its answer changes nothing else.
         void requestPersistentStorage()

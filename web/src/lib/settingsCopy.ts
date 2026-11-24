@@ -227,6 +227,8 @@ export const SETTINGS_COPY = {
     learnMore: 'settings/appearance',
     rows: {
       open: { label: msg('Open tasks'), description: msg('The side panel needs a window at least 1024 px wide; phones open the page.') },
+      // click-default D1: the synced user_prefs.row_click, or the server's default.
+      click: { label: msg('Click a task to') },
     },
   },
 
@@ -588,6 +590,15 @@ export const SETTINGS_COPY = {
     icon: 'map',
     description: msg('Maps and address search from the provider below, always through this server.'),
     learnMore: 'locations',
+  },
+  // click-default D2: what a click on a task does for accounts that have not chosen.
+  'task-lists-server': {
+    title: msg('Task lists'),
+    icon: 'list-checks',
+    learnMore: 'settings/server',
+    rows: {
+      click: { label: msg('Click a task to') },
+    },
   },
   // Automation rules (automation-rules D9): the owner's switch for every account.
   'speech-server': {

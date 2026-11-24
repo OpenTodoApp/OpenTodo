@@ -794,7 +794,7 @@
   "Backups": "Backups",
   "Backups are encrypted with your passphrase. Enter a new one to change it (future backups only).": "Os backups são criptografados com sua frase secreta. Digite uma nova para alterá-la (só backups futuros).",
   "Backups of the whole server are under <a>Settings → Server</a>.": "Os backups do servidor inteiro ficam em <a>Configurações → Servidor</a>.",
-  "Backups, attachments, outgoing email, branding, maps, automations, speech to text and the audit log": "Backups, anexos, e-mail de saída, marca, mapas, automações, fala para texto e registro de auditoria",
+  "Backups, attachments, outgoing email, branding, maps, task lists, automations, speech to text and the audit log": "Backups, anexos, e-mail de saída, marca, mapas, listas de tarefas, automações, fala para texto e registro de auditoria",
   "Base URL": "URL base",
   "Base colours": "Cores base",
   "Base colours: every other colour follows from these.": "Cores de base: todas as outras cores derivam destas.",
@@ -1519,7 +1519,7 @@
   "Download export (JSON)": "Baixar exportação (JSON)",
   "Download export with files (ZIP)": "Baixar exportação com arquivos (ZIP)",
   "Download your data": "Baixe seus dados",
-  "Download your data, branding, maps, automations and the audit log": "Baixar seus dados, marca, mapas, automações e registro de auditoria",
+  "Download your data, branding, maps, task lists, automations and the audit log": "Baixar seus dados, marca, mapas, listas de tarefas, automações e registro de auditoria",
   "Download {name}": "Baixar {name}",
   "Do|method": "Fazer",
   "Draft": "Rascunhar",
@@ -7872,5 +7872,9 @@
   "Completed or reopened": "Concluída ou reaberta",
   "Unread changes": "Alterações não lidas",
   "{name} will be attached": "{name} será anexado",
-  "That date of this repeating task is already done, skipped or moved.": "Essa data da tarefa recorrente já foi feita, ignorada ou movida."
+  "That date of this repeating task is already done, skipped or moved.": "Essa data da tarefa recorrente já foi feita, ignorada ou movida.",
+  "Click a task to": "Clicar numa tarefa para",
+  "Select, then edit the title": "Selecionar e depois editar o título",
+  "Task lists": "Listas de tarefas",
+  "Use the server default ({choice})": "Usar a predefinição do servidor ({choice})"
 }

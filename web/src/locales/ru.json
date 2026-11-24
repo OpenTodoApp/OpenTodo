@@ -755,7 +755,7 @@
   "Backups": "Резервные копии",
   "Backups are encrypted with your passphrase. Enter a new one to change it (future backups only).": "Резервные копии шифруются вашей парольной фразой. Введите новую, чтобы изменить её (только для будущих копий).",
   "Backups of the whole server are under <a>Settings → Server</a>.": "Резервные копии всего сервера находятся в <a>Настройки → Сервер</a>.",
-  "Backups, attachments, outgoing email, branding, maps, automations, speech to text and the audit log": "Резервные копии, вложения, исходящая почта, брендинг, карты, автоматизации, распознавание речи и журнал аудита",
+  "Backups, attachments, outgoing email, branding, maps, task lists, automations, speech to text and the audit log": "Резервные копии, вложения, исходящая почта, брендинг, карты, списки задач, автоматизации, распознавание речи и журнал аудита",
   "Bakery": "Пекарня",
   "Base URL": "Базовый URL",
   "Base colours": "Базовые цвета",
@@ -1561,7 +1561,7 @@
   "Download export (JSON)": "Скачать экспорт (JSON)",
   "Download export with files (ZIP)": "Скачать экспорт с файлами (ZIP)",
   "Download your data": "Скачать ваши данные",
-  "Download your data, branding, maps, automations and the audit log": "Скачать ваши данные, оформление, карты, автоматизации и журнал аудита",
+  "Download your data, branding, maps, task lists, automations and the audit log": "Скачать ваши данные, оформление, карты, списки задач, автоматизации и журнал аудита",
   "Download {name}": "Скачать {name}",
   "Do|method": "Сделать",
   "Draft": "Черновик",
@@ -7872,5 +7872,9 @@
   "{name} reopened a task": "{name} снова открыл(а) задачу",
   "Unread changes": "Непрочитанные изменения",
   "{name} will be attached": "{name} будет прикреплён",
-  "That date of this repeating task is already done, skipped or moved.": "Эта дата повторяющейся задачи уже выполнена, пропущена или перенесена."
+  "That date of this repeating task is already done, skipped or moved.": "Эта дата повторяющейся задачи уже выполнена, пропущена или перенесена.",
+  "Click a task to": "Щелчок по задаче",
+  "Select, then edit the title": "Выбрать, затем изменить название",
+  "Task lists": "Списки задач",
+  "Use the server default ({choice})": "Как на сервере ({choice})"
 }

@@ -196,6 +196,32 @@ describe('the tab bar while the list scrolls', () => {
     await r.unmount()
   })
 
+  it('the room under the content follows the bar as it minimises and returns (#1908)', async () => {
+    // The bar's box as the browser lays it out: 56 px tabs, 44 px minimised on a touch screen, 34 px of safe area.
+    const observers: (() => void)[] = []
+    vi.stubGlobal('ResizeObserver', class { constructor(cb: () => void) { observers.push(cb) } observe() {} disconnect() {} })
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const h = this.hasAttribute('data-tab-bar') ? (this.hasAttribute('data-minimised') ? 44 : 56) + 1 + 34 : 0
+      return { height: h, width: 0, top: 0, left: 0, right: 0, bottom: h, x: 0, y: 0, toJSON() {} } as DOMRect
+    })
+    const room = () => document.documentElement.style.getPropertyValue('--tab-bar-h')
+    const resized = async () => { await act(async () => { observers.forEach((cb) => cb()) }) }
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!bar() && !!document.querySelector('#content'), 'the tab bar')
+    expect(document.querySelector<HTMLElement>('main')!.style.paddingBottom).toContain('var(--tab-bar-h')
+    expect(room()).toBe('91px')
+    await scrollTo(60)
+    await resized()
+    expect(room()).toBe('79px')
+    await scrollTo(40)
+    await resized()
+    expect(room()).toBe('91px')
+    await r.unmount()
+    // Without the bar the shell falls back to its full height again.
+    expect(room()).toBe('')
+    rect.mockRestore()
+  })
+
   it('never minimises under reduced motion', async () => {
     reduce = true
     const r = await render(<Shell user={user} onLogout={() => {}} />)

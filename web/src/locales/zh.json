@@ -708,7 +708,7 @@
   "Backups": "备份",
   "Backups are encrypted with your passphrase. Enter a new one to change it (future backups only).": "备份已使用你的口令加密。输入新口令即可更改（仅对今后的备份生效）。",
   "Backups of the whole server are under <a>Settings → Server</a>.": "整个服务器的备份位于<a>设置 → 服务器</a>下。",
-  "Backups, attachments, outgoing email, branding, maps, automations, speech to text and the audit log": "备份、附件、外发邮件、品牌定制、地图、自动化、语音转文字和审计日志",
+  "Backups, attachments, outgoing email, branding, maps, task lists, automations, speech to text and the audit log": "备份、附件、外发邮件、品牌定制、地图、任务列表、自动化、语音转文字和审计日志",
   "Bakery": "烘焙",
   "Base URL": "基础 URL",
   "Base colours": "基础颜色",
@@ -1455,7 +1455,7 @@
   "Download export (JSON)": "下载导出数据 (JSON)",
   "Download export with files (ZIP)": "下载包含文件的导出数据 (ZIP)",
   "Download your data": "下载你的数据",
-  "Download your data, branding, maps, automations and the audit log": "下载你的数据、品牌设置、地图、自动化规则和审计日志",
+  "Download your data, branding, maps, task lists, automations and the audit log": "下载你的数据、品牌设置、地图、任务列表、自动化规则和审计日志",
   "Download {name}": "下载 {name}",
   "Do|method": "执行",
   "Draft": "草稿",
@@ -7872,5 +7872,9 @@
   "Completed or reopened": "已完成或重新打开",
   "Unread changes": "未读更改",
   "{name} will be attached": "将附加 {name}",
-  "That date of this repeating task is already done, skipped or moved.": "此重复任务的该日期已完成、已跳过或已移动。"
+  "That date of this repeating task is already done, skipped or moved.": "此重复任务的该日期已完成、已跳过或已移动。",
+  "Click a task to": "点击任务时",
+  "Select, then edit the title": "先选中，再编辑标题",
+  "Task lists": "任务列表",
+  "Use the server default ({choice})": "使用服务器默认（{choice}）"
 }

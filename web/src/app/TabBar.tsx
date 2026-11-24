@@ -6,9 +6,10 @@
 // and sit above the bottom safe area. While the list scrolls down the bar drops its
 // labels to 40 px of icons and the button slides out (phone-v2 D6). The current tab
 // is marked in the strong text tone, not the accent, as the sidebar marks its current
-// page (precision-phone D3).
+// page (precision-phone D3). The room the shell keeps under the content follows the
+// bar's real height as it minimises and returns (`--tab-bar-h`, issue #1908).
 import { Icon, type IconName } from '../ui'
-import { forwardRef } from 'react'
+import { forwardRef, useLayoutEffect, useRef } from 'react'
 import { tabBarDestinations } from '../lib/appearance'
 import { t, msg, translatedList } from '../lib/i18n'
 import { useUserPrefsRow } from '../lib/localData'
@@ -16,6 +17,25 @@ import { navigate, type Route } from './router'
 import { TAB_BAR_FRAME, TAB_FRAME, TAB_HEIGHT } from './phoneFrame'
 
 export const TAB_BAR_HEIGHT_REM = 3.5
+/** The room under the content: the bar's measured height, the full bar until it is measured. */
+export const TAB_BAR_ROOM = `var(--tab-bar-h, calc(${TAB_BAR_HEIGHT_REM}rem + var(--safe-bottom)))`
+
+/**
+ * Publishes the bar's height, safe area included, as `--tab-bar-h` on the root, frame
+ * by frame while it minimises or returns, so rows stay visible up to its edge.
+ */
+function useTabBarRoom(bar: { current: HTMLElement | null }): void {
+  useLayoutEffect(() => {
+    const el = bar.current
+    if (!el) return
+    const root = document.documentElement.style
+    const publish = () => root.setProperty('--tab-bar-h', `${el.getBoundingClientRect().height}px`)
+    publish()
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(publish) : null
+    observer?.observe(el, { box: 'border-box' })
+    return () => { observer?.disconnect(); root.removeProperty('--tab-bar-h') }
+  }, [bar])
+}
 
 const TABS: { id: string; label: string; icon: IconName; route?: Route }[] = translatedList<{ id: string; label: string; icon: IconName; route?: Route }, 'label'>([
   { id: 'inbox', label: msg('Inbox'), icon: 'inbox', route: { view: 'inbox' } },
@@ -28,8 +48,10 @@ const TAB_BY_ID = Object.fromEntries(TABS.map((item) => [item.id, item]))
 export function TabBar({ route, onSearch, minimised = false }: { route: Route; onSearch: () => void; minimised?: boolean }) {
   // Search is not a destination: it stays last, whatever order the three lists are in.
   const tabs = [...tabBarDestinations(useUserPrefsRow()).map((id) => TAB_BY_ID[id]), TAB_BY_ID.search]
+  const nav = useRef<HTMLElement>(null)
+  useTabBarRoom(nav)
   return (
-    <nav aria-label={t('Primary destinations')} data-tab-bar data-minimised={minimised || undefined}
+    <nav ref={nav} aria-label={t('Primary destinations')} data-tab-bar data-minimised={minimised || undefined}
       className={TAB_BAR_FRAME}>
       {tabs.map((item) => {
         const active = !!item.route && route.view === item.route.view

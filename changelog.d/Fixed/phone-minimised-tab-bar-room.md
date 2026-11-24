@@ -1,0 +1,1 @@
+- **Rows scroll down to the edge of the minimised tab bar on a phone.** While the list scrolled down and the bar shrank to its icons, rows still vanished at the line where the full bar used to end, most visibly in the iOS app.
