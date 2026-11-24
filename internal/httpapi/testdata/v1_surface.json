@@ -3220,6 +3220,13 @@
       },
       "kind": "write"
     },
+    "set_today_focus": {
+      "arguments": {
+        "ids": "array",
+        "timezone": "string?"
+      },
+      "kind": "write"
+    },
     "start_timer": {
       "arguments": {
         "client_request_id": "string?",
@@ -3263,6 +3270,7 @@
         "due_today[].tracked_minutes_occurrence": "number",
         "due_today[].untrusted_text": "object",
         "due_today[].waiting_for_slot": "boolean",
+        "focus": "array",
         "overdue": "array",
         "server_time": "string",
         "timezone": "string",
