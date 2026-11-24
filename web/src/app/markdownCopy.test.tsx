@@ -5,6 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { click, render, waitFor } from '../ui/test-utils'
 import { Markdown } from './Markdown'
+import css from '../index.css?raw'
 
 const realClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard')
 function stubClipboard(writeText: (t: string) => Promise<void>) {
@@ -60,5 +61,15 @@ describe('a code block in rendered Markdown', () => {
     const { container, unmount } = await render(<Markdown source={'```\na\n```\n\n```\nb\n```'} />)
     expect(container.querySelectorAll('[data-code-copy]').length).toBe(2)
     await unmount()
+  })
+
+  // The bar ends at the block's own end corner (copy-code-block D3). Reserving the
+  // note's corner on every bar pushed the button 72 px in from it, on blocks far below
+  // the corner; the room belongs to the note's first block, once.
+  it("keeps the bar at the block's end corner and the corner's room on the note's first block", () => {
+    expect(css).toMatch(/\.md-code__bar \{ @apply flex justify-end px-0\.5 pt-0\.5; \}/)
+    expect(css).toMatch(/\.notes-frame\[data-corner\] \.notes-editor > :first-child:not\(\.md-code\),/)
+    expect(css).toMatch(/\.notes-frame\[data-corner\] \.notes-editor > :first-child\.md-code \.md-code__bar \{ padding-inline-end: var\(--notes-corner\); \}/)
+    expect(css).not.toMatch(/:not\(\.notes-corner\):has\(\.md-code\) \.md-code__bar/)
   })
 })
