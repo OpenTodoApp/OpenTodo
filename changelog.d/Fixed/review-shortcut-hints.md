@@ -1,1 +1,0 @@
-- **The project walk names its keys only with shortcut hints on.** With Show shortcut hints off, the weekly review's project step no longer prints r, q and e as plain letters in its introduction; with hints on they are keycaps, like everywhere else.

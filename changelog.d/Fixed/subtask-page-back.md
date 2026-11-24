@@ -1,1 +1,0 @@
-- **Back from a subtask's page returns to its parent task.** Opening a subtask, the parent or another task from a task page now adds a step to the browser's history, so the browser's Back or the back gesture shows the task you came from instead of the list. Escape still returns to the list in one step.

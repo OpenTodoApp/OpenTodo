@@ -6,6 +6,45 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 Changes since the last release are in [changelog.d/](changelog.d/README.md), one file per change; `make release-prepare` moves them here when a release is cut.
 
+## [1.8.0] - 2026-11-24
+
+Quick add on the web gets a calendar, a running Focus session shows in the Android notifications and on the iPhone's lock screen, and moving a repeating task onto a date that is already done no longer jumps back. Single sign-on also works with providers that send no email confirmation, such as Synology SSO Server, behind an opt-in switch that only creates new accounts. Assistants can assign tasks over MCP, `ot login` works with two-factor authentication, and the Microsoft To Do importer now keeps repeats every few weeks or months and on the nth weekday, due dates on the right day and clean notes, with a step-by-step export guide.
+
+### Upgrade notes
+
+- **Replace the image or the binary and restart; back up first.** No SQL migration: at start the server adds one column to accounts (`users.email_assumed`, for accounts single sign-on created from an unconfirmed address). The step only adds, so 1.7.x still reads the data. No new or changed variable.
+- **The single sign-on switch starts off.** **Accept new accounts without a confirmed email** in **Settings → People → Single sign-on** is only safe when people cannot set their own address at the provider; the server logs a warning at start while it is on.
+- **The Focus notification and Live Activity need the new Android and iPhone apps.**
+
+### Added
+
+- **Single sign-on with providers that send no email confirmation, such as Synology SSO Server.** A new switch in **Settings → People → Single sign-on**, off by default, lets such a sign-in create a new account. It never links to an existing account, and an explicit "not verified" is still refused. The panel and the server log warn while it is on, and the SSO guide explains when it is safe and how to link by hand instead.
+- **Pick a date from a calendar in quick add on the web.** A calendar button beside a list's add field, and the **When** row of the command bar, open the same calendar as the phone's add sheet: quick dates, the month, times and Clear. The picked day goes into the line as words, so it works exactly like a typed date.
+- **A running Focus session shows outside the app: in the Android app's notifications and as a Live Activity on the iPhone's lock screen and Dynamic Island.** The task, the phase and a clock that keeps running with the phone locked, with Pause and Resume, and a "Session done" or "Break over" notification at the end. The task's name follows the task names switch and never shows for an encrypted account.
+- **Assistants can assign tasks over MCP.** `create_tasks` and `update_tasks` take `assignee`: a member of the task's shared project by name, email or account id, or `me`; `null` unassigns. Someone outside the project and viewers are refused, as in the app ([#1977](https://github.com/OpenTodoApp/OpenTodo/issues/1977)).
+- **The Android app says when an address only works at home.** On the first-run screen, an address such as `192.168.1.10:8080` or `homeassistant.local` shows "This address only works on your home network" with a link to the guide for reaching OpenTodo from outside. It still connects. Tailscale addresses get no notice.
+- **Reaching a Home Assistant install from outside your home.** The add-on guide has step-by-step recipes for Tailscale, a Cloudflare Tunnel and NGINX Proxy Manager with DuckDNS, with the `base_url` and `trusted_proxies` each one needs and a short checklist before exposing OpenTodo.
+
+### Changed
+
+- **A step-by-step guide for importing from Microsoft To Do.** The Microsoft To Do switch guide now walks through the export on Windows and macOS step by step, shows where each To Do feature lives in OpenTodo, and says what to do when a step fails.
+- **A shared project shows a dot for unread changes, not a second number.** The count beside a project read like a task count. Reordering or nesting tasks no longer counts as an unread change, and a project's changes count as seen while its list is on screen. The total on **Updates** is unchanged.
+- **A reusable list's ticked items are under "Completed".** The group was headed "Got it", which didn't fit every list; it now reads like any other project's.
+- **A reusable list shows no "% done".** A list you restock, like groceries, is never finished, so its percentage only counted what was ticked off on earlier trips. Areas already worked this way.
+
+### Fixed
+
+- **Moving a repeating task onto a date that is already done no longer says "Date changed" and then jumps back.** The date stays as it was and the toast says the date is already done, was skipped or was moved; dragging or rescheduling several tasks moves the others and counts the series as not moved. Changing a repeating task's date now moves its start and deadline with it, so they no longer drift apart (#1971).
+- **Microsoft To Do imports keep more repeats, the right due dates and clean notes.** Repeats every few weeks on given days, every few months, on the second Thursday or last weekday of the month, on a weekday of a month each year, and their end date or number of times now carry over. A due date Graph returns in UTC lands on the day To Do showed, not the day before. Outlook notes no longer bring their styling code along, Outlook task statuses import as open tasks, and a shared list is named in the preview.
+- **`ot login` works for accounts with two-factor authentication.** After the password it asks for the authenticator code, or a recovery code, instead of stopping with "server did not start a session".
+- **The sync indicator stays steady.** A routine sync with nothing waiting no longer flashes "Syncing…" beside the dot; the dot pulses instead, and the words stay in its tooltip.
+- **The "Add task below" and "Add a subtask" lines in a list have room to breathe.** While you type the new title, the line keeps a row's spacing, its field starts where task titles start, and a long hint on a phone wraps instead of being cut off.
+- **Back from a subtask's page returns to its parent task.** Opening a subtask, the parent or another task from a task page now adds a step to the browser's history, so the browser's Back or the back gesture shows the task you came from instead of the list. Escape still returns to the list in one step.
+- **One at a time shows the waiting subtasks in the checklist.** With One at a time on, a task's subtask checklist looked the same as before. Now the later open subtasks are dimmed and read "After" the step they wait for, as they do in lists, and the mark moves on as each step is done.
+- **"3-4 tomatoes" stays an item, not a date.** Where dates are written month first, quick add read a dashed range like `3-4` or `4-5` as a due date. Now it stays in the title; `3/4` and `3-4-2027` are still dates, and day-first formats are unchanged.
+- **The project walk names its keys only with shortcut hints on.** With Show shortcut hints off, the weekly review's project step no longer prints r, q and e as plain letters in its introduction; with hints on they are keycaps, like everywhere else.
+- **The Android guides say the app is on Google Play.** F-Droid is still coming. Google Play signs the app with its own key, so moving between Play and the GitHub or F-Droid app needs an uninstall: the guide says how without losing changes, and lists both certificate fingerprints.
+
 ## [1.7.0] - 2026-11-23
 
 Sign in with **Google** and other providers that refuse apps now works in the **Android and iPhone apps**, in the system's sign-in sheet. Each device can turn on a **notification when someone assigns you a task**, or completes or reopens one assigned to you. Pages slide like a native app, the back swipe follows your finger, tablets keep the list beside the task, and many more changes can be **undone**. The app downloads about a third as much on first install. On the iPhone, "Use my location" works and a Completed widget joins Today.
@@ -1961,7 +2000,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.8.0...HEAD
+[1.8.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.4.2...v1.5.0

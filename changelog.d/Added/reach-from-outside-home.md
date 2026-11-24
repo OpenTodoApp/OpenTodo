@@ -1,1 +1,0 @@
-- **Reaching a Home Assistant install from outside your home.** The add-on guide has step-by-step recipes for Tailscale, a Cloudflare Tunnel and NGINX Proxy Manager with DuckDNS, with the `base_url` and `trusted_proxies` each one needs and a short checklist before exposing OpenTodo.

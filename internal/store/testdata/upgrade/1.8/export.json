@@ -1,0 +1,307 @@
+{
+  "attachments": [
+    {
+      "author_id": "dff31b50-8534-48c1-856e-d0b0d45da0c1",
+      "comment_id": null,
+      "created_at": 1795517546938,
+      "deleted_at": null,
+      "encrypted": false,
+      "id": "dc2786ee-e41e-4bb0-8efe-823099ef0fc9",
+      "mime": "text/plain",
+      "name": "notes.txt",
+      "sha256": "65bd291e71718822959a61fbd34349420e84e0bb586ed2a551bf9142a229e928",
+      "size": 46,
+      "task_id": "fa5c9ae5-4a81-4d8d-a4fc-db6165f46fc0",
+      "uploaded_at": 1795517546938,
+      "url": null
+    }
+  ],
+  "comments": [
+    {
+      "author_id": "dff31b50-8534-48c1-856e-d0b0d45da0c1",
+      "body": "Use the **sharp** shears.",
+      "created_at": 1795517546927,
+      "deleted_at": null,
+      "edited_at": null,
+      "id": "d3931ba3-5f38-4fda-97de-abca1e987500",
+      "mentions": [],
+      "my_reactions": [],
+      "parent_id": null,
+      "reactions": {
+        "check": [],
+        "eyes": [],
+        "heart": [],
+        "party": [],
+        "question": [],
+        "thumbs_up": []
+      },
+      "task_id": "fa5c9ae5-4a81-4d8d-a4fc-db6165f46fc0"
+    },
+    {
+      "author_id": "dff31b50-8534-48c1-856e-d0b0d45da0c1",
+      "body": "Train or car?",
+      "created_at": 1795517546931,
+      "deleted_at": null,
+      "edited_at": null,
+      "id": "6a48f7a9-474c-4b95-80e2-bb9abe50dad7",
+      "mentions": [],
+      "my_reactions": [],
+      "parent_id": null,
+      "reactions": {
+        "check": [],
+        "eyes": [],
+        "heart": [],
+        "party": [],
+        "question": [],
+        "thumbs_up": []
+      },
+      "task_id": "85615ae2-d7fa-4f43-97a1-754e9fe68111"
+    }
+  ],
+  "encryption": null,
+  "exportedAt": "2026-11-24T10:52:26Z",
+  "fields": [],
+  "format": "opentodo-export",
+  "frames": [],
+  "habit_tallies": [],
+  "labels": [
+    {
+      "color": "#16a34a",
+      "created_at": 1795517546840,
+      "id": "175fe22b-d216-42d7-b148-1d8b30ec5792",
+      "name": "Home",
+      "position": 1795517546840
+    },
+    {
+      "color": "#2563eb",
+      "created_at": 1795517546844,
+      "id": "fec4b151-36bb-40fa-b47c-dba3d00ab1f2",
+      "name": "Work",
+      "position": 1795517546844
+    }
+  ],
+  "memory": [],
+  "notes": [],
+  "objectives": [],
+  "places": [],
+  "project_prefs": [],
+  "projects": [
+    {
+      "aisles": false,
+      "color": "#65a30d",
+      "created_at": 1795517546847,
+      "flow_mode": "",
+      "id": "f505516f-ba94-4f83-98f3-782dd1132b6d",
+      "name": "Garden",
+      "position": 1795517546847,
+      "reusable": false,
+      "status": "active"
+    },
+    {
+      "aisles": false,
+      "color": "#9333ea",
+      "created_at": 1795517546853,
+      "flow_mode": "",
+      "id": "8a69a25c-7a8d-4586-acf2-5cf4a7bf6b0b",
+      "name": "Shared plans",
+      "owner_id": "dff31b50-8534-48c1-856e-d0b0d45da0c1",
+      "position": 1795517546853,
+      "reusable": false,
+      "role": "owner",
+      "status": "active"
+    }
+  ],
+  "reminders": [
+    {
+      "created_at": 1795517546910,
+      "deleted_at": null,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "fire_at": 1795255200000,
+      "id": "08c1633a-8971-4818-accc-81919c075bd6",
+      "kind": "relative",
+      "offset_minutes": 30,
+      "task_id": "ae75b8a8-2faa-4cbf-9356-9f5877801e4b"
+    }
+  ],
+  "review": [],
+  "rules": [],
+  "sections": [
+    {
+      "aisle": null,
+      "color": null,
+      "created_at": 1795517546860,
+      "flow_mode": "",
+      "icon": null,
+      "id": "cf204657-816c-46f3-b627-a0407eb13b06",
+      "name": "To do",
+      "position": 1795517546860,
+      "project_id": "f505516f-ba94-4f83-98f3-782dd1132b6d"
+    },
+    {
+      "aisle": null,
+      "color": null,
+      "created_at": 1795517546864,
+      "flow_mode": "",
+      "icon": null,
+      "id": "c2b9da5c-feaa-41ef-9387-8c56c7817247",
+      "name": "Doing",
+      "position": 1795517546864,
+      "project_id": "f505516f-ba94-4f83-98f3-782dd1132b6d"
+    }
+  ],
+  "slots": [],
+  "tasks": [
+    {
+      "appends": [],
+      "created_at": 1795517546870,
+      "description": "Before the frost.\n\n- gloves\n- shears",
+      "due": {
+        "date": "2026-11-20"
+      },
+      "energy": null,
+      "fields": {},
+      "id": "fa5c9ae5-4a81-4d8d-a4fc-db6165f46fc0",
+      "labels": [
+        "175fe22b-d216-42d7-b148-1d8b30ec5792"
+      ],
+      "origin": null,
+      "position": 1795517546870,
+      "priority": 1,
+      "project_id": "f505516f-ba94-4f83-98f3-782dd1132b6d",
+      "rotation": [],
+      "section_id": "cf204657-816c-46f3-b627-a0407eb13b06",
+      "sector": null,
+      "title": "Prune the roses"
+    },
+    {
+      "appends": [],
+      "created_at": 1795517546874,
+      "due": {
+        "date": "2026-11-21",
+        "time": "09:30"
+      },
+      "energy": null,
+      "fields": {},
+      "id": "ae75b8a8-2faa-4cbf-9356-9f5877801e4b",
+      "labels": [
+        "175fe22b-d216-42d7-b148-1d8b30ec5792",
+        "fec4b151-36bb-40fa-b47c-dba3d00ab1f2"
+      ],
+      "origin": null,
+      "position": 1795517546874,
+      "priority": 2,
+      "project_id": "f505516f-ba94-4f83-98f3-782dd1132b6d",
+      "rotation": [],
+      "section_id": "c2b9da5c-feaa-41ef-9387-8c56c7817247",
+      "sector": null,
+      "title": "Water the raised beds"
+    },
+    {
+      "appends": [],
+      "created_at": 1795517546880,
+      "energy": null,
+      "fields": {},
+      "id": "812a9af4-ca87-4e28-9c40-b75e38485c89",
+      "origin": null,
+      "parent_id": "fa5c9ae5-4a81-4d8d-a4fc-db6165f46fc0",
+      "position": 1795517546880,
+      "priority": 4,
+      "project_id": "f505516f-ba94-4f83-98f3-782dd1132b6d",
+      "rotation": [],
+      "sector": null,
+      "title": "Buy gloves"
+    },
+    {
+      "appends": [],
+      "created_at": 1795517546891,
+      "due": {
+        "date": "2026-11-10"
+      },
+      "energy": null,
+      "fields": {},
+      "id": "48f9cb8c-9cab-45d3-9e91-4e2482ff63a2",
+      "origin": null,
+      "position": 1795517546891,
+      "priority": 3,
+      "recurrence": "every day",
+      "rotation": [],
+      "sector": null,
+      "title": "Check the greenhouse"
+    },
+    {
+      "appends": [],
+      "completed_at": 1762000000000,
+      "completed_by": "dff31b50-8534-48c1-856e-d0b0d45da0c1",
+      "created_at": 1795517546894,
+      "energy": null,
+      "fields": {},
+      "id": "8479d09a-e13a-4143-bde3-2e844d28e08b",
+      "origin": null,
+      "position": 1795517546894,
+      "priority": 4,
+      "rotation": [],
+      "sector": null,
+      "title": "Order seeds"
+    },
+    {
+      "appends": [],
+      "created_at": 1795517546898,
+      "deleted_at": 1795517546907,
+      "energy": null,
+      "fields": {},
+      "id": "0ff8eb9b-e459-4bd2-b356-6293efdcabcf",
+      "origin": null,
+      "position": 1795517546898,
+      "priority": 4,
+      "rotation": [],
+      "sector": null,
+      "title": "Old idea"
+    },
+    {
+      "appends": [],
+      "created_at": 1795517546901,
+      "due": {
+        "date": "2026-12-01"
+      },
+      "energy": null,
+      "fields": {},
+      "id": "85615ae2-d7fa-4f43-97a1-754e9fe68111",
+      "origin": null,
+      "position": 1795517546901,
+      "priority": 2,
+      "project_id": "8a69a25c-7a8d-4586-acf2-5cf4a7bf6b0b",
+      "rotation": [],
+      "sector": null,
+      "title": "Plan the trip"
+    }
+  ],
+  "themes": [],
+  "time_entries": [
+    {
+      "created_at": 1795517546947,
+      "deleted_at": null,
+      "device_id": "server:7109a8cc",
+      "ended_at": 1762001800000,
+      "id": "c269778c-eb73-4b0e-a52a-92f9e6a2fb8e",
+      "note": "",
+      "started_at": 1762000000000,
+      "task_id": "ae75b8a8-2faa-4cbf-9356-9f5877801e4b",
+      "user_id": "dff31b50-8534-48c1-856e-d0b0d45da0c1"
+    }
+  ],
+  "userId": "dff31b50-8534-48c1-856e-d0b0d45da0c1",
+  "user_prefs": [],
+  "version": 1,
+  "views": [],
+  "workspaces": [
+    {
+      "color": "",
+      "default": true,
+      "icon": "",
+      "id": "4bfb572d-c49f-8df6-8ebb-4b22eabd3269",
+      "name": "Personal",
+      "role": "owner"
+    }
+  ]
+}
