@@ -55,8 +55,9 @@ export function useProjectMenu(project: Project, o: { userId?: string; rename: (
   const [dialog, setDialog] = useState<'duplicate' | 'template' | 'fields' | null>(null)
   const projects = useProjects()
   const targets = useMemo(() => (active ? moveTargets(project, projects) : []), [active, projects, project])
-  // Live, non-archived sub-projects: the ones the sidebar shows, archives and sorts (sort-projects-by-name).
-  const subCount = useMemo(() => projects.filter((p) => p.parent_id === project.id && !p.deleted_at && !p.archived).length, [projects, project.id])
+  const subCount = useMemo(() => projects.filter((p) => p.parent_id === project.id && !p.deleted_at).length, [projects, project.id])
+  // The sub-projects a sort orders: live and not archived (sort-projects-by-name).
+  const shownSubs = useMemo(() => projects.filter((p) => p.parent_id === project.id && !p.deleted_at && !p.archived).length, [projects, project.id])
   const pinned = useIsFavourite('project', project.id)
   const otherWorkspaces = useOtherWorkspaces()
   const mode = useMethodMode()
@@ -89,7 +90,7 @@ export function useProjectMenu(project: Project, o: { userId?: string; rename: (
     onSelect: () => openAssistantWith({ skill: 'project-next', text: t('What’s next in “{name}”?', { name: project.name }), send: true }) }] }] : []
   // Every role gets the copies (project-templates D6); editing items follow the role inside projectMenuGroups.
   const groups: ActionGroup[] = [
-    ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks: o.page?.openTasks, pinned, workspaces: otherWorkspaces, mode, reviewEvery },
+    ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, shownSubs, openTasks: o.page?.openTasks, pinned, workspaces: otherWorkspaces, mode, reviewEvery },
       { rename: o.rename, duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template'), fields: () => setDialog('fields'), pin: () => setFavourite('project', project.id, !pinned), left }),
     ...(o.page?.extra ?? []),
     ...assistantGroup,

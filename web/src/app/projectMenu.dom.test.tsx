@@ -53,13 +53,13 @@ describe('project menu', () => {
   // sort-projects-by-name (issue 1956): only a project with two sub-projects or more, and only for who may move them.
   it('offers "Sort sub-projects by name" from two sub-projects, to the owner and admins, and it sorts them with Undo', async () => {
     const ids = (subCount: number, role: 'owner' | 'admin' | 'editor' = 'owner') =>
-      projectMenuGroups(p('home', 'Home'), { role, shared: role !== 'owner', targets: [], subCount }, { rename: () => {} }).flatMap((g) => g.items).map((i) => i.id)
+      projectMenuGroups(p('home', 'Home'), { role, shared: role !== 'owner', targets: [], subCount, shownSubs: subCount }, { rename: () => {} }).flatMap((g) => g.items).map((i) => i.id)
     expect(ids(1)).not.toContain('sort-subprojects')
     expect(ids(2)).toContain('sort-subprojects')
     expect(ids(2, 'admin')).toContain('sort-subprojects')
     expect(ids(2, 'editor')).not.toContain('sort-subprojects')
     await db.projects.bulkPut([{ ...p('b', '10 Beta', 'home'), position: 0 }, { ...p('a', '2 Alpha', 'home'), position: 5 }])
-    const item = projectMenuGroups(p('home', 'Home'), { role: 'owner', shared: false, targets: [], subCount: 3 }, { rename: () => {} })
+    const item = projectMenuGroups(p('home', 'Home'), { role: 'owner', shared: false, targets: [], subCount: 3, shownSubs: 3 }, { rename: () => {} })
       .flatMap((g) => g.items).find((i) => i.id === 'sort-subprojects')
     if (!item || item.kind !== 'action') throw new Error('the sort action')
     await item.onSelect()

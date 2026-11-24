@@ -58,7 +58,7 @@ export function moveTargets(project: Project, projects: Project[]): MoveTarget[]
  * "Pin to sidebar" (sidebar-favourites) is offered to every role: it changes the
  * user's own preferences, never the project.
  */
-export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks?: number; pinned?: boolean; workspaces?: { id: string; name: string }[]; mode?: MethodMode; reviewEvery?: string }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown; fields?: () => unknown; pin?: () => unknown; left?: () => unknown }): ActionGroup[] {
+export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; shownSubs?: number; openTasks?: number; pinned?: boolean; workspaces?: { id: string; name: string }[]; mode?: MethodMode; reviewEvery?: string }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown; fields?: () => unknown; pin?: () => unknown; left?: () => unknown }): ActionGroup[] {
   const { role, targets, subCount, openTasks } = o
   // After an archive or delete: the caller's step (the Inbox for the page of the project), else the Inbox.
   const left = () => { void (a.left ? a.left() : navigate({ view: 'inbox' })) }
@@ -106,8 +106,8 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
         source: o.workspaces, getKey: (w: { id: string }) => w.id, getLabel: (w: { name: string }) => w.name, rankContext: 'project-move-workspace',
         onPick: (w: { id: string; name: string }) => { void moveProjectToWorkspaceUndoable(project.id, w.id, w.name).then((r) => { if (r.entry) showUndoToast(r.label, r.entry.id) }) },
       } }] : []),
-      // A one-time sort of the sub-projects by name, with Undo (sort-projects-by-name).
-      ...(subCount > 1 ? [{ kind: 'action' as const, id: 'sort-subprojects', label: t('Sort sub-projects by name'), icon: 'list-ordered' as const, onSelect: () => sortProjectsByName(project.id) }] : []),
+      // A one-time sort of the shown sub-projects by name, with Undo (sort-projects-by-name); `subCount` also counts archived ones, for archive and delete.
+      ...((o.shownSubs ?? 0) > 1 ? [{ kind: 'action' as const, id: 'sort-subprojects', label: t('Sort sub-projects by name'), icon: 'list-ordered' as const, onSelect: () => sortProjectsByName(project.id) }] : []),
       projectRenameItem(a.rename),
       projectIconItem(project),
       ...(flow ? [flow] : []),

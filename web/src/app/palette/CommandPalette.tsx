@@ -118,7 +118,8 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
       focusQuickAdd: () => list?.focusQuickAdd(null) ?? false,
       project: project && canEditProject(role) ? {
         row: project, role, shared: !!memberships?.get(project.id), targets: moveTargets(project, projects),
-        subCount: projects.filter((p) => p.parent_id === project.id && !p.deleted_at && !p.archived).length,
+        subCount: projects.filter((p) => p.parent_id === project.id).length,
+        shownSubs: projects.filter((p) => p.parent_id === project.id && !p.deleted_at && !p.archived).length,
         openTasks: tasks.filter((task) => task.project_id === project.id && !task.completed_at).length,
         pinned: isFavourite(prefs, 'project', project.id),
         keptAway: agentExclusions.has(project.id),

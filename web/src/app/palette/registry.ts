@@ -67,7 +67,7 @@ export interface PaletteContext {
   /** The selected (or open) task, when the list has one. */
   task?: Task
   /** The project, saved view or label of the current route, and the selected task's section. */
-  project?: { row: Project; role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number; pinned?: boolean; keptAway?: boolean; reviewEvery?: string }
+  project?: { row: Project; role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; shownSubs?: number; openTasks: number; pinned?: boolean; keptAway?: boolean; reviewEvery?: string }
   view?: { row: View; peers: View[]; isStart: boolean }
   label?: { row: Label; labels: Label[]; pinned?: boolean }
   /** The standalone note open on the Notes page (notes-home D4): Pin note or Unpin note. */
