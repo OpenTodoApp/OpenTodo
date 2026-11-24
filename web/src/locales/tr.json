@@ -6122,6 +6122,7 @@
   "Uploads the copy of the key record kept on this device. Your passphrase and recovery key stay the same.": "Bu cihazda tutulan anahtar kaydının kopyasını yükler. Parola ifadeniz ve kurtarma anahtarınız aynı kalır.",
   "Urgency": "Aciliyet",
   "Urgency {score}, show why": "Aciliyet {score}, nedenini göster",
+  "Urgent": "Acil",
   "Urgent and important": "Acil ve önemli",
   "Urgent, not important": "Acil, önemli değil",
   "Usage": "Kullanım",

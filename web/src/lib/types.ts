@@ -846,6 +846,8 @@ export interface Reminder extends ReminderFields {
   deleted_at: number | null
   /** Metres, 100–5,000, only on the location kinds (absent on rows from older clients). */
   radius_m?: number | null
+  /** Rings as an alarm in the iPhone app (ios-urgent-alarms); absent on rows from older clients. */
+  urgent?: boolean
   _clock: Clock
 }
 

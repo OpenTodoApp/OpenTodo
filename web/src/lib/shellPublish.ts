@@ -50,6 +50,7 @@ export function shellReminders(reminders: readonly Reminder[], tasks: readonly T
     if (inQuietProject(task.project_id, projectById)) continue
     const item: ShellReminder = { id: r.id, taskId: r.task_id, fireAt: r.fire_at }
     if (opts.titles && !opts.encrypted && task.title) item.title = task.title
+    if (r.urgent === true) item.urgent = true
     out.push(item)
   }
   return out.sort((a, b) => a.fireAt - b.fireAt)

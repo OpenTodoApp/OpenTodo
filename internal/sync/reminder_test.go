@@ -20,6 +20,9 @@ func TestValidateReminderOps(t *testing.T) {
 		op("r9", "reminder", "rm1", "dismissed_at", `1791000000000`, 1, "A"),
 		op("r10", "reminder", "rm1", "created_at", `1791000000000`, 1, "A"),
 		op("r11", "reminder", "rm1", "deleted_at", `null`, 1, "A"),
+		// ios-urgent-alarms D1: a boolean.
+		op("r12", "reminder", "rm1", "urgent", `true`, 1, "A"),
+		op("r13", "reminder", "rm1", "urgent", `false`, 1, "A"),
 	}
 	for _, o := range valid {
 		if err := Validate(o); err != nil {
@@ -39,6 +42,9 @@ func TestValidateReminderOps(t *testing.T) {
 		op("x10", "reminder", "rm1", "task_id", `""`, 1, "A"),
 		op("x11", "reminder", "rm1", "task_id", `null`, 1, "A"),
 		op("x12", "reminder", "rm1", "title", `"nope"`, 1, "A"),
+		op("x13", "reminder", "rm1", "urgent", `"yes"`, 1, "A"),
+		op("x14", "reminder", "rm1", "urgent", `1`, 1, "A"),
+		op("x15", "reminder", "rm1", "urgent", `null`, 1, "A"),
 	}
 	for _, o := range invalid {
 		if err := Validate(o); !errors.Is(err, ErrInvalidOp) {

@@ -5630,6 +5630,7 @@
   "Uploading {percent}%": "Caricamento {percent}%",
   "Uploading… {round}%": "Caricamento… {round}%",
   "Uploads the copy of the key record kept on this device. Your passphrase and recovery key stay the same.": "Carica la copia del record della chiave conservata su questo dispositivo. La passphrase e la chiave di recupero restano le stesse.",
+  "Urgent": "Urgente",
   "Urgent and important": "Urgente e importante",
   "Urgent, not important": "Urgente, non importante",
   "Usage": "Utilizzo",
