@@ -32,6 +32,8 @@
 //     button keeps empty room for it (phone-fab-scroll-room, GitHub issue 1382),
 //   - on the settings pages that ask for it, two controls overlap or a control touches a
 //     row divider (themes-layout-template),
+//   - on a task's page, the conversation's tab bar paints over the open comment composer
+//     pinned to the bottom (GitHub issue 1939),
 //   - any screen or overlay has a serious or critical axe-core issue (colour contrast,
 //     names, labels, roles), in light and dark (release 0.2.0; first added for the
 //     Help view by user-documentation),
@@ -349,6 +351,11 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       run.step = 'swipe back'
       for (const m of await swipeBack(page, base, width)) await fail(page, 'swipe-back', null, m)
     }
+    // GitHub issue 1939: the open composer, pinned over the thread, covers the tab bar scrolling under it (Chromium, a phone).
+    if (engine === 'chromium' && width === 390 && !ONLY && !OTHER_LANG) {
+      run.step = 'pinned composer'
+      for (const m of await pinnedComposer(page, base)) await fail(page, 'pinned-composer', null, m)
+    }
     for (const e of pageErrors) failures.push(`page error [${tag}]: ${e}`)
   } catch (e) {
     failures.push(`[${tag}] aborted: ${e.message.split('\n')[0]}`)
@@ -455,6 +462,41 @@ async function tabletResize(p, base) {
     problems.push(`could not be checked: ${err.message.split('\n')[0]}`)
   } finally {
     await p.setViewportSize(start)
+  }
+  return problems
+}
+
+// GitHub issue 1939: on a task's page with the comment composer open, the page scrolled
+// back until the conversation's tab bar is under the pinned composer shows the composer
+// there, not the tab bar painted over it. Returns the problems.
+async function pinnedComposer(p, base) {
+  const problems = []
+  try {
+    await openScreen(p, base + '/inbox')
+    const row = p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first()
+    await row.waitFor()
+    await row.locator('[data-row-open]').press('Enter')
+    await p.locator('[data-task-page]').first().waitFor({ timeout: 10000 })
+    await p.locator('[data-panel-footer] [contenteditable], [data-panel-footer] textarea, [data-panel-footer] button').first().click()
+    await p.waitForTimeout(300)
+    const s = await p.evaluate(() => {
+      const scroller = document.getElementById('content')
+      const bar = document.querySelector('[data-conversation] [role=tablist]')?.parentElement
+      const footer = document.querySelector('[data-panel-footer]')
+      if (!scroller || !bar || !footer) return { missing: true }
+      // Scroll back until the bar's place in the flow is just inside the composer's top.
+      scroller.scrollTop -= footer.getBoundingClientRect().top + 8 - bar.getBoundingClientRect().top
+      const b = bar.getBoundingClientRect()
+      const f = footer.getBoundingClientRect()
+      if (b.bottom <= f.top || b.top >= f.bottom) return { apart: true }
+      const y = Math.max(b.top, f.top) + 2
+      return { covered: !!document.elementFromPoint(b.left + 24, y)?.closest('[data-panel-footer]') }
+    })
+    if (s.missing) problems.push('the tab bar or the pinned composer was not found')
+    else if (s.apart) problems.push('the tab bar could not be scrolled under the pinned composer')
+    else if (s.covered === false) problems.push('the conversation\'s tab bar paints over the open composer pinned to the bottom')
+  } catch (err) {
+    problems.push(`could not be checked: ${err.message.split('\n')[0]}`)
   }
   return problems
 }
