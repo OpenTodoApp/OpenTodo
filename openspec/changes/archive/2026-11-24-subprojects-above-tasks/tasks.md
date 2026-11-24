@@ -7,6 +7,6 @@
 
 ## 2. Look and checks
 
-- [ ] 2.1 The story `Screens/Task list/Project With Sub Projects` and its baselines at 375 and 1280 px, light and dark, from the UI baselines workflow (`stories`: `screens-task-list--project`); the other project stories unchanged. Verify: the workflow's artifact holds only the new story's captures.
+- [x] 2.1 The story `Screens/Task list/Project With Sub Projects` and its baselines at 375 and 1280 px, light and dark, from the UI baselines workflow (`stories`: `screens-task-list--project`); the other project stories unchanged. Verify: the workflow's artifact holds only the new story's captures besides the four `screens-task-row--adding-below` ones main already carries (byte-identical, not committed here).
 - [x] 2.2 `changelog.d/Fixed/subprojects-above-tasks.md`. Verify: `make docs-check`.
 - [x] 2.3 Typecheck, lint, `make i18n-check`, `make openspec-validate` and `npm test` in web/. Verify: each passes.
