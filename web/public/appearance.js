@@ -7,6 +7,30 @@
 // mode (or of the system scheme), every name and value checked against fixed
 // patterns, written as the same rule src/lib/theme/apply.ts writes. Never derived here.
 (function () {
+  // The text size (text-size D2, D3), as src/lib/textSize.ts computes it: an explicit
+  // step, else the Android shell's font scale or the iOS shell's Dynamic Type body size
+  // (17 px at the default size), clamped to 0.85 to 2.
+  try {
+    var steps = { large: 1.125, larger: 1.25, largest: 1.5 }
+    var size = localStorage.getItem('opentodo.textSize')
+    var scale = Object.prototype.hasOwnProperty.call(steps, size) ? steps[size] : 1
+    var sh = window.opentodoShell
+    if (scale === 1 && sh && sh.platform === 'android' && typeof sh.textScale === 'number') scale = sh.textScale
+    // The Android web view keeps its own text zoom until the page says it applies the scale.
+    if (sh && typeof sh.textScaleApplied === 'function') sh.textScaleApplied()
+    if (scale === 1 && sh && sh.platform === 'ios') {
+      var probe = document.createElement('span')
+      probe.style.cssText = 'font:-apple-system-body;position:absolute;visibility:hidden'
+      probe.textContent = 'M'
+      document.documentElement.appendChild(probe)
+      scale = parseFloat(getComputedStyle(probe).fontSize) / 17
+      probe.parentNode.removeChild(probe)
+    }
+    scale = isFinite(scale) && scale > 0 ? Math.min(2, Math.max(0.85, scale)) : 1
+    if (scale !== 1) document.documentElement.style.setProperty('--ot-text-scale', String(scale))
+  } catch (e) {
+    // Blocked storage: the default size applies.
+  }
   try {
     var a = JSON.parse(localStorage.getItem('ot.appearance') || 'null')
     var themes = {}

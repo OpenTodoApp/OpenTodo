@@ -4889,6 +4889,7 @@
     "web/src/app/calendar/FramesDialog.tsx"
   ],
   "Default": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/app/WorkspacesSettings.tsx",
     "web/src/app/themes/EditorSections.tsx"
   ],
@@ -9205,13 +9206,20 @@
     "web/src/app/QuickAddSettings.tsx"
   ],
   "Large": [
+    "web/src/app/AppearanceSection.tsx",
     "web/src/lib/bentoSlots.ts"
   ],
   "Large · 90 min or more": [
     "web/src/lib/bentoSlots.ts"
   ],
+  "Larger": [
+    "web/src/app/AppearanceSection.tsx"
+  ],
   "Larger files are refused before they are sent.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Largest": [
+    "web/src/app/AppearanceSection.tsx"
   ],
   "Last 100 deliveries": [
     "web/src/app/WebhooksPanel.tsx"
@@ -18109,6 +18117,9 @@
   ],
   "Text on soft warning": [
     "web/src/app/themes/tokenNames.ts"
+  ],
+  "Text size": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Text to send": [
     "web/src/app/RelayConfirm.tsx"

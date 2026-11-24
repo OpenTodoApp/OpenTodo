@@ -2,13 +2,15 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { FIXED_DESTINATIONS, PROMOTABLE, type Appearance, type DestinationId, type Promotable, type SidebarCounts } from '../lib/appearance'
 import { deriveAccent } from '../lib/accentDerive'
+import type { TextSize } from '../lib/textSize'
 import { AppearanceView, SidebarView } from './AppearanceSection'
 
 function Panel({ initial }: { initial: Appearance }) {
   const [v, setV] = useState(initial)
+  const [size, setSize] = useState<TextSize>('default')
   const values = v.custom ? deriveAccent(v.custom) : null
   return <AppearanceView value={v} onMode={(mode) => setV({ ...v, mode })} onAccent={(accent) => setV({ ...v, accent })}
-    custom={{ values, onPick: (hex) => setV({ ...v, accent: 'custom', custom: hex }) }} />
+    custom={{ values, onPick: (hex) => setV({ ...v, accent: 'custom', custom: hex }) }} textSize={{ value: size, onChange: setSize }} />
 }
 
 // OpenSpec theming D9: checked by the a11y gate in light and dark; no screenshot

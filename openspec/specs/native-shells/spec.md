@@ -683,6 +683,17 @@ The iOS shell SHALL NOT show the web view's keyboard accessory bar above the on-
 - **WHEN** a person taps a task title to edit it in the iPhone app
 - **THEN** the keyboard opens without the previous, next and Done bar
 
+### Requirement: The web app follows the system text size
+A shell SHALL let the web app follow the system text size and SHALL NOT scale the page's text a second time. The Android shell SHALL give the page the system font scale as `opentodoShell.textScale` and SHALL keep its web view's own text zoom on each page until that page calls `textScaleApplied`, then set it to 100 %, so a web app that predates this keeps the system text size; a change of the font scale SHALL reach the page when the app is next shown. The iOS shell SHALL leave Dynamic Type to WebKit, whose system body font follows it, and the page SHALL read it from there. An older shell without `textScale` SHALL leave the page at the browser's text size.
+
+#### Scenario: Android at a large font scale
+- **WHEN** the Android system font scale is 150 % and the app's text size is Default
+- **THEN** the page receives `textScale` 1.5 and lays out at 150 % with its rows reflowed, and text is not enlarged a second time by the web view
+
+#### Scenario: A browser tab
+- **WHEN** the web app runs outside a shell
+- **THEN** there is no system scale and Default is the browser's own text size
+
 ### Requirement: Urgent reminders ring as alarms on iPhone
 The web app SHALL mark each urgent reminder it hands the shell (`urgent: true`, absent otherwise). On iOS 26 and later the iPhone app SHALL schedule an urgent reminder whose firing time is still ahead as a system alarm (AlarmKit) instead of a notification: it SHALL ring at the firing time with the handed-over title or the generic text, offer **Stop** and **Snooze 10 min**, and Snooze SHALL open the app on the reminder's snooze address so the web app moves the reminder through its own operation. Stop SHALL only silence the alarm. The app SHALL ask for the alarm permission only while it is visible and only when it is handed an urgent reminder, never at launch, from a background run or again after the user answered. An urgent reminder SHALL be an ordinary notification when the phone runs an earlier iOS, when alarms are not allowed or not asked yet in a background run, when the app was built without AlarmKit, or when it is handed over at its firing time. Alarms SHALL follow the schedule: a reminder that is no longer urgent, moved, dismissed, completed or deleted SHALL have its alarm cancelled or moved at the next hand-over, and notifications refused or turned off in the app, sign-out and a locked encrypted account SHALL cancel every alarm still ahead. A hand-over SHALL NOT cancel an alarm that is ringing, nor one whose time has passed and that the system still holds: it rings until the user stops or snoozes it. A changed server SHALL cancel every alarm. Nothing here changes task data or needs the network.
 
