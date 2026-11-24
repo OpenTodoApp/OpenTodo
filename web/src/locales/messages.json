@@ -17133,6 +17133,9 @@
     "web/src/app/notes/NotesPage.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
+  "Sort by name": [
+    "web/src/app/Sidebar.tsx"
+  ],
   "Sort direction": [
     "web/src/app/views/DisplayOptionsBody.tsx"
   ],
@@ -17143,11 +17146,17 @@
     "web/src/app/menus/ListModeStep.tsx",
     "web/src/app/menus/listMenu.tsx"
   ],
+  "Sort sub-projects by name": [
+    "web/src/app/menus/projectMenu.tsx"
+  ],
   "Sort {list} by {by}": [
     "web/src/lib/rules/sentence.ts"
   ],
   "Sorted by date (or their own rule): no Alt moves there; in Upcoming, drag a task onto another day to move it": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Sorted by name": [
+    "web/src/lib/undoActions.ts"
   ],
   "Sound": [
     "web/src/lib/settingsCopy.ts"

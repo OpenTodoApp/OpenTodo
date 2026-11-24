@@ -221,3 +221,36 @@ export function planStep<T extends Positioned>(
   return plan && plan.length ? plan : null
 }
 
+/**
+ * Name order (OpenSpec change sort-projects-by-name): A to Z in `locale`, numbers
+ * by value ("2" before "10", "0002" before "0010"), case and accents ignored;
+ * equal names keep their order.
+ */
+export function compareNames(locale?: string): (a: Positioned & { name: string }, b: Positioned & { name: string }) => number {
+  const collator = new Intl.Collator(locale, { numeric: true, sensitivity: 'base' })
+  return (a, b) => collator.compare(a.name.trim(), b.name.trim()) || compareByPosition(a, b)
+}
+
+/**
+ * Plan a one-time sort of `siblings` by name: the writable ones take the places
+ * they hold now, in name order, so items that must not be rewritten stay where
+ * they are. Returns only the items whose position changes.
+ */
+export function planSortByName<T extends Positioned & { name: string }>(
+  siblings: T[], opts: { writable?: (item: T) => boolean; locale?: string } = {},
+): PositionChange[] {
+  const sorted = [...siblings].sort(compareByPosition)
+  const mine = sorted.filter(opts.writable ?? (() => true))
+  let slots = mine.map((s) => s.position)
+  // Equal positions (concurrent inserts) leave no distinct places: renumber, when every item may be.
+  if (slots.some((p, i) => i > 0 && !(p > slots[i - 1]))) {
+    if (mine.length !== sorted.length) return []
+    slots = slots.map((_, i) => slots[0] + i * GAP)
+  }
+  const out: PositionChange[] = []
+  ;[...mine].sort(compareNames(opts.locale)).forEach((s, i) => {
+    if (s.position !== slots[i]) out.push({ id: s.id, position: slots[i] })
+  })
+  return out
+}
+

@@ -7,12 +7,12 @@
 // per-field last-writer-wins (design D3). No new fields, no new routes.
 import { db } from './db'
 import { mutateMany, type Change } from './ops'
-import { compareByPosition, planMove, planMoveMany, planStep, type Placement, type PositionChange } from './ordering'
+import { compareByPosition, planMove, planMoveMany, planSortByName, planStep, type Placement, type PositionChange } from './ordering'
 import { buildProjectTree } from './projects'
 import { effectiveSection } from './sections'
 import { canEditProject, canEditTasks, membershipMap, roleOf } from './sharing'
 import { buildTree, isDescendant, type Tree } from './tree'
-import { keepProjectWorkspace } from './workspaces'
+import { keepProjectWorkspace, projectsIn, readWorkspaceState } from './workspaces'
 import type { Entity, Project, Section, Task } from './types'
 
 /** A keyboard step: one place up or down, or to the top or bottom of the list. */
@@ -221,7 +221,9 @@ interface ProjectContext {
 }
 
 async function projectContext(): Promise<ProjectContext> {
-  const all = await db.projects.filter((p) => !p.deleted_at).toArray()
+  // The current workspace's projects, as the sidebar shows them: a project of another
+  // workspace is never a neighbour a move steps over (issue 1956).
+  const all = projectsIn(await readWorkspaceState(), await db.projects.toArray()).filter((p) => !p.deleted_at)
   const m = await membershipMap()
   // A project's position is a project field: only its owner or an admin may write it
   // (project-sharing role table); other shared projects bound a renumbered window.
@@ -266,4 +268,15 @@ export async function moveProjectBy(id: string, step: Step): Promise<boolean> {
   if (!plan) return false
   await mutateMany(toChanges('project', plan))
   return true
+}
+
+/**
+ * Sort the projects directly under `parent` (null = the top level) by name, once
+ * (sort-projects-by-name): ordinary position writes, so the order stays manual
+ * afterwards. Projects the user may not move keep their places. [] when already sorted.
+ */
+export async function planSortProjects(parent: string | null, locale?: string): Promise<Change[]> {
+  const ctx = await projectContext()
+  if (parent !== null && !ctx.tree.nodes.has(parent)) return []
+  return toChanges('project', planSortByName(projectSiblings(ctx, parent), { writable: ctx.writable, locale }))
 }

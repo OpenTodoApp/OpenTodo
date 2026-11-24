@@ -1,6 +1,6 @@
 // The project menu as data (labels-and-menus D1): its groups and the "Move to" targets,
 // shared by the project header and the sidebar (useProjectMenu) and the command palette.
-import { moveProjectToWorkspaceUndoable } from '../../lib/undoActions'
+import { moveProjectToWorkspaceUndoable, sortProjectsUndoable } from '../../lib/undoActions'
 import { showUndoToast } from '../bulk/toastStore'
 import { archiveProject, deleteProject, moveProject } from '../../lib/ops'
 import { buildProjectTree, descendantIds } from '../../lib/projects'
@@ -19,6 +19,11 @@ import { maintenanceItem, reviewEveryItem } from './reviewMenu'
 import type { MethodMode } from '../../lib/method/mode'
 import { openTaskCount } from '../../lib/liveTasks'
 import { listModeItem } from './listMenu'
+
+/** Sort the projects under `parent` (null = the top level) by name once, with an Undo toast (sort-projects-by-name). */
+export function sortProjectsByName(parent: string | null): void {
+  act(sortProjectsUndoable(parent).then((r) => { if (r.entry) showUndoToast(r.label, r.entry.id) }))
+}
 
 /** A "Move to" target: a project, or the top level (id ''). */
 export interface MoveTarget { id: string; name: string; path: string[] }
@@ -101,6 +106,8 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
         source: o.workspaces, getKey: (w: { id: string }) => w.id, getLabel: (w: { name: string }) => w.name, rankContext: 'project-move-workspace',
         onPick: (w: { id: string; name: string }) => { void moveProjectToWorkspaceUndoable(project.id, w.id, w.name).then((r) => { if (r.entry) showUndoToast(r.label, r.entry.id) }) },
       } }] : []),
+      // A one-time sort of the sub-projects by name, with Undo (sort-projects-by-name).
+      ...(subCount > 1 ? [{ kind: 'action' as const, id: 'sort-subprojects', label: t('Sort sub-projects by name'), icon: 'list-ordered' as const, onSelect: () => sortProjectsByName(project.id) }] : []),
       projectRenameItem(a.rename),
       projectIconItem(project),
       ...(flow ? [flow] : []),

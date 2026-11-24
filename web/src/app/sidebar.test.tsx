@@ -533,6 +533,20 @@ describe('tree defaults and bulk toggles (sidebar-groups 2.2)', () => {
     await r.unmount()
   })
 
+  // sort-projects-by-name (issue 1956): the top-level projects, once, from the Projects header menu.
+  it('Sort by name orders the top-level projects naturally, once', async () => {
+    for (const name of ['10 Lee', 'beta', '2 Kim']) await createProject({ name })
+    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => projectRows(r.container).length === 3)
+    await click(groupOf(r.container, 'Projects').querySelector('button[aria-label="Add or fold projects"]')!)
+    await waitFor(() => !!menuItem('Sort by name'))
+    await click(menuItem('Sort by name'))
+    await waitFor(() => projectRows(r.container).join() === '2 Kim,10 Lee,beta', 'the projects in name order')
+    await createProject({ name: '1 Ito' })
+    await waitFor(() => projectRows(r.container).join() === '2 Kim,10 Lee,beta,1 Ito', 'a new project still goes last')
+    await r.unmount()
+  })
+
   it('a device that already stored a collapse state keeps it', async () => {
     const ids = await seedTree()
     await setCollapsedProjects(new Set([ids.Home]))

@@ -310,3 +310,27 @@ describe('Archive several projects at once', () => {
     await r.unmount()
   })
 })
+
+// Issue 1956: the menu's Alt+Up and Alt+Down work on the table too, and keep focus; a header sort turns the moves off.
+describe('All projects page reordering', () => {
+  it('Alt+Down moves the row among its siblings and keeps focus; not while a header sorts', async () => {
+    const a = await createProject({ name: 'A' })
+    await createProject({ name: 'B' })
+    await createProject({ name: 'C' })
+    const r = await render(<ProjectsView />)
+    await waitFor(() => names(r.container).length === 3)
+    const row = () => r.container.querySelector<HTMLButtonElement>(`[data-project-open="${a}"]`)!
+    await act(async () => row().focus())
+    await key(row(), 'ArrowDown', { altKey: true })
+    await waitFor(() => names(r.container).join() === 'B,A,C', 'A moved down')
+    await waitFor(() => document.activeElement === row(), 'focus stays on A')
+    await key(row(), 'ArrowDown', { altKey: true })
+    await waitFor(() => names(r.container).join() === 'B,C,A', 'A moved down again')
+    await click(r.container.querySelector<HTMLButtonElement>('[data-sort="name"]')!)
+    await waitFor(() => names(r.container).join() === 'A,B,C', 'sorted by name')
+    const before = await db.outbox.count()
+    await key(row(), 'ArrowDown', { altKey: true })
+    expect(await db.outbox.count()).toBe(before)
+    await r.unmount()
+  })
+})
