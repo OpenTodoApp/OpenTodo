@@ -20,7 +20,7 @@ import { cachedCustom, customAccentStyle, type CustomAccentValues, deriveCustom,
 import { ActionMenu } from './menus/ActionMenu'
 import { useUserPrefsRow } from '../lib/localData'
 import type { ThemeModePref, UserPrefs } from '../lib/types'
-import { Icon, LazyAccentPicker, Popover, SettingRow, SettingsSection, Skeleton, Switch } from '../ui'
+import { Icon, LazyAccentPicker, Popover, Select, SettingRow, SettingsSection, Skeleton, Switch } from '../ui'
 import { ACCENTS, CUSTOM_ACCENT, type ThemeAccent } from '../ui'
 import { t, msg, translatedMap } from '../lib/i18n'
 import { accentName } from '../lib/colourNames'
@@ -34,6 +34,7 @@ import { fullTitlesOn, setFullTitles } from '../lib/fullTitles'
 import { canVibrate } from './motion'
 import { canSetZoom, setAllowZoom, useAllowZoom } from '../lib/touchZoom'
 import { readTaskOpen, setTaskOpen, type TaskOpenPref } from '../lib/userPrefs'
+import { readRowClick, ROW_CLICK_LABEL, ROW_CLICK_PREFS, setRowClick, useServerRowClick, type RowClickMode, type RowClickPref } from '../lib/rowClickPref'
 import { accountRowLayout, ROW_LAYOUTS, setAccountRowLayout, type RowLayout } from '../lib/rowLayout'
 import { ROW_LAYOUT_LABEL } from './views/DisplayPanel'
 import { readThemeChoices } from '../lib/theme/choice'
@@ -378,14 +379,24 @@ export function SidebarSection() {
 /** Settings → Appearance → Task details (task-side-panel D1): the synced choice, written through ops. */
 export function TaskDetailsSection() {
   const row = usePrefsRow()
-  return <TaskDetailsView value={readTaskOpen(row)} onChange={(v) => act(setTaskOpen(v))} />
+  const serverClick = useServerRowClick()
+  return <TaskDetailsView value={readTaskOpen(row)} onChange={(v) => act(setTaskOpen(v))}
+    click={{ value: readRowClick(row), server: serverClick, onChange: (v) => act(setRowClick(v)) }} />
 }
 
-export function TaskDetailsView({ value, onChange }: { value: TaskOpenPref; onChange: (v: TaskOpenPref) => void }) {
+export function TaskDetailsView({ value, onChange, click }: { value: TaskOpenPref; onChange: (v: TaskOpenPref) => void; click?: { value: RowClickPref; server: RowClickMode; onChange: (v: RowClickPref) => void } }) {
   return (
     <SettingsSection {...cardCopy('task-details')}>
       <SettingRow id="task-open" {...rowCopy('task-details', 'open')}
         control={<Segmented label={t('Open tasks')} items={TASK_OPEN} labels={TASK_OPEN_LABEL} value={value} onChange={onChange} testId="task-open" />} />
+      {/* Click a task to (click-default D1): the account's choice, or the server's default. */}
+      {click && (
+        <SettingRow id="row-click" {...rowCopy('task-details', 'click')} htmlFor="row-click-select" control={
+          <Select id="row-click-select" className="sm:w-64" value={click.value} onChange={(e) => click.onChange(e.target.value as RowClickPref)}>
+            {ROW_CLICK_PREFS.map((p) => <option key={p} value={p}>{p ? ROW_CLICK_LABEL[p] : t('Use the server default ({choice})', { choice: ROW_CLICK_LABEL[click.server] })}</option>)}
+          </Select>
+        } />
+      )}
     </SettingsSection>
   )
 }

@@ -7871,5 +7871,9 @@
   "{name} reopened a task": "{name} ha riaperto un’attività",
   "Completed or reopened": "Completata o riaperta",
   "Unread changes": "Modifiche non lette",
-  "{name} will be attached": "{name} verrà allegato"
+  "{name} will be attached": "{name} verrà allegato",
+  "Click a task to": "Fare clic su un’attività per",
+  "Select, then edit the title": "Selezionare, poi modificare il titolo",
+  "Task lists": "Elenchi di attività",
+  "Use the server default ({choice})": "Usa il predefinito del server ({choice})"
 }

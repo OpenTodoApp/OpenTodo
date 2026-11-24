@@ -1721,6 +1721,14 @@ The owner sets the default light and dark theme of the server and offers up to 2
 
 The writes are refused on a demo instance. There is no environment variable for the default theme.
 
+### Click a task to
+
+The owner sets what a click on a task does for accounts that have not chosen (**Settings → Server → Task lists**): `select` (the first click selects the task, a second click on its title edits it) or `open` (a click opens the task). An account's own choice is the synced `user_prefs.row_click` (`select`, `open`, or `""` to follow the server) and always wins. `GET /api/v1/auth/status` carries `"rowClick": {"default": "select"}` for a signed-in caller.
+
+| Route | Does |
+| --- | --- |
+| `PUT /api/v1/settings/row-click` | Owner. `{default}`, `select` or `open` (400 `invalid_input` otherwise); answers `{default}`. Recorded as `settings.changed` (`row_click.default`). Refused on a demo instance |
+
 `GET /api/v1/me` includes `attachments: {enabled, max_file_bytes, quota_bytes, used_bytes}`.
 
 **Downloads** are served with `Content-Security-Policy: default-src 'none'; sandbox`, `X-Content-Type-Options: nosniff`, `Content-Disposition` with the file name, `Cache-Control: private, no-cache` and the digest as `ETag`, so a browser revalidates its copy (304 while signed in) and shows nothing without a session; signing out answers `Clear-Site-Data: "cache"`. Only images (PNG, JPEG, GIF, WebP, AVIF), PDF, plain text, audio and video are served inline with their type; everything else (HTML and SVG included) and every encrypted file is `application/octet-stream` with `attachment`.

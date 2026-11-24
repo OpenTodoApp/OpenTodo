@@ -7871,5 +7871,9 @@
   "{name} reopened a task": "{name} heeft een taak opnieuw geopend",
   "Completed or reopened": "Voltooid of opnieuw geopend",
   "Unread changes": "Ongelezen wijzigingen",
-  "{name} will be attached": "{name} wordt bijgevoegd"
+  "{name} will be attached": "{name} wordt bijgevoegd",
+  "Click a task to": "Klik op een taak om",
+  "Select, then edit the title": "Selecteren, dan de titel bewerken",
+  "Task lists": "Takenlijsten",
+  "Use the server default ({choice})": "Serverstandaard gebruiken ({choice})"
 }

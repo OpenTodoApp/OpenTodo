@@ -57,6 +57,7 @@ import { DEADLINE_TONE, ladderTone, PRIORITY_RING } from './rowTone'
 import { RowActionCluster } from './task-list/RowActionCluster'
 import { useDeadlineDates } from '../lib/deadlineDates'
 import { useFullTitles } from '../lib/fullTitles'
+import { rowClickMode } from '../lib/rowClickPref'
 import { useAccountRowLayout, type RowLayout } from '../lib/rowLayout'
 import { DRAG_THRESHOLD, swallowNextClick, trackHold } from '../lib/dnd'
 import { dayPartName, dayPartOf, dayPartWord, type DayPart } from '../lib/dayParts'
@@ -603,7 +604,8 @@ function useRowClicks(selectOnClick: boolean | undefined, selected: boolean | un
   const opened = useRef(-Infinity)
   const press = useRef<{ selected: boolean; pointerId: number } | null>(null)
   const recordPress = (e: React.PointerEvent) => {
-    press.current = selectOnClick && e.button === 0 && (e.pointerType === 'mouse' || e.pointerType === 'pen')
+    // "Click a task to: Open details" (click-default D3): no press is recorded, so the click opens as Enter does.
+    press.current = selectOnClick && e.button === 0 && rowClickMode() === 'select' && (e.pointerType === 'mouse' || e.pointerType === 'pen')
       && window.innerWidth >= 768 && window.matchMedia?.('(pointer: fine)').matches
       ? { selected: !!selected, pointerId: e.pointerId } : null
   }

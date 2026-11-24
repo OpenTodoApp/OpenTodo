@@ -7871,5 +7871,9 @@
   "{name} reopened a task": "{name} a rouvert une tâche",
   "Completed or reopened": "Terminée ou rouverte",
   "Unread changes": "Modifications non lues",
-  "{name} will be attached": "{name} sera joint"
+  "{name} will be attached": "{name} sera joint",
+  "Click a task to": "Cliquer sur une tâche pour",
+  "Select, then edit the title": "Sélectionner, puis modifier le titre",
+  "Task lists": "Listes de tâches",
+  "Use the server default ({choice})": "Utiliser le réglage du serveur ({choice})"
 }

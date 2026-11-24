@@ -7871,5 +7871,9 @@
   "{name} reopened a task": "{name} bir görevi yeniden açtı",
   "Completed or reopened": "Tamamlandı veya yeniden açıldı",
   "Unread changes": "Okunmamış değişiklikler",
-  "{name} will be attached": "{name} eklenecek"
+  "{name} will be attached": "{name} eklenecek",
+  "Click a task to": "Bir göreve tıklayınca",
+  "Select, then edit the title": "Seç, sonra başlığı düzenle",
+  "Task lists": "Görev listeleri",
+  "Use the server default ({choice})": "Sunucu varsayılanını kullan ({choice})"
 }

@@ -11,7 +11,7 @@ order: 11
 
 <picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="A task open as its page: the breadcrumb and 2 / 5 at the top, the title, the notes and the subtasks on the left, and its facts on the right under Schedule, Details, Labels and Project."></picture>
 
-On desktop, click to select. Click the selected title or press <kbd>F2</kbd> to edit. <kbd>Enter</kbd> opens details or saves an edit. Double-click opens the page. On a phone, tap the title to open. A short left swipe edits the title on release. A full swipe opens **Schedule**.
+On desktop, click to select. Click the selected title or press <kbd>F2</kbd> to edit; with [**Click a task to: Open details**](settings-app.md#click-a-task-to) a click opens the task instead. <kbd>Enter</kbd> opens details or saves an edit. Double-click opens the page. On a phone, tap the title to open. A short left swipe edits the title on release. A full swipe opens **Schedule**.
 
 ## Moving around
 
