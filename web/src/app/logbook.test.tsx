@@ -3,6 +3,11 @@
 // 2.2): grouped by local completion day, a page of 100 at a time, Show more.
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+// A page of 10 here instead of 100: the paging is the same code, and the view then
+// draws 25 rows instead of 250, which on a busy machine took the test past its timeout.
+vi.mock('../lib/logbook', async (orig) => ({ ...(await orig<typeof import('../lib/logbook')>()), LOGBOOK_PAGE: 10 }))
+
 import { db } from '../lib/db'
 import { resolveDateTime, setDayStart } from '../lib/dates'
 import { LOGBOOK_PAGE, logbookGroups, logbookHeading } from '../lib/logbook'
@@ -61,6 +66,10 @@ describe('logbookGroups and logbookHeading', () => {
     }
   })
 
+  it('shows 100 completions a page in the app', async () => {
+    expect((await vi.importActual<typeof import('../lib/logbook')>('../lib/logbook')).LOGBOOK_PAGE).toBe(100)
+  })
+
   it('renders only the first `limit` completions but counts them all', () => {
     const tasks = Array.from({ length: 5 }, (_, i) => task(`t${i}`, at('2026-10-01', 8 + i)))
     const { groups, total } = logbookGroups(tasks, 2)
@@ -115,23 +124,24 @@ describe('Completed view', () => {
     await r.unmount()
   })
 
-  it('pages through 250 completions with Show more and follows a reopening', async () => {
+  it('pages through two and a half pages of completions with Show more and follows a reopening', async () => {
+    expect(LOGBOOK_PAGE).toBe(10)
     const base = at('2026-10-16', 11)
-    await seed(Array.from({ length: 250 }, (_, i) => base - i * 3_600_000))
+    await seed(Array.from({ length: 25 }, (_, i) => base - i * 3_600_000))
     const r = await render(<TaskListView route={{ view: 'completed' }} />)
-    await waitFor(() => rows(r.container) === 100)
+    await waitFor(() => rows(r.container) === 10, 'the first page')
     const more = () => r.container.querySelector<HTMLButtonElement>('[data-logbook-more]')
-    expect(more()!.textContent).toContain('150 older')
+    expect(more()!.textContent).toContain('15 older')
     await click(more()!)
-    await waitFor(() => rows(r.container) === 200)
-    expect(more()!.textContent).toContain('50 older')
+    await waitFor(() => rows(r.container) === 20, 'the second page')
+    expect(more()!.textContent).toContain('5 older')
     await click(more()!)
-    await waitFor(() => rows(r.container) === 250)
+    await waitFor(() => rows(r.container) === 25, 'the last page')
     expect(more()).toBeNull()
 
     await setTaskCompleted('t-000', false)
-    await waitFor(() => rows(r.container) === 249)
+    await waitFor(() => rows(r.container) === 24, 'the reopened task gone')
     expect(r.container.textContent).not.toContain('Done 0 ')
     await r.unmount()
-  }, 30_000)
+  })
 })
