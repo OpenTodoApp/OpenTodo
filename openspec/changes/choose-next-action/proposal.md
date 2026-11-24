@@ -7,7 +7,7 @@ GitHub issue #1950 (owner-approved): in Loop home → Place, a project without a
 ## What Changes
 
 - The next-action field in Place, and quick add opened from the project walk (`q`, "Add a next action"), list the project's open tasks whose name contains what is typed, the pattern of the reusable list's ticked items (reusable-suggest). ↓ in the empty field lists them all.
-- Nothing is chosen until an arrow key moves into the list, so Enter alone still adds what was typed, as today. ↓ and Enter (or a click) choose a task instead: it leaves Someday or its later start, and when another open task comes first it moves to the top of the project, out of its section. It is then the project's next action: Place drops the project, the walk's card shows it, and Next lists it.
+- Nothing is chosen until an arrow key moves into the list, so Enter alone still adds what was typed, as today. ↓ and Enter (or a click) choose a task instead: it leaves Someday or its later start, and only when the current next action comes before it, it moves just above that task, into its section. It is then the project's next action: Place drops the project, the walk's card shows it, and Next lists it. Each row says what choosing it changes, and the choice is one undoable step ("Next action for <project>", Undo).
 - One field, no second button: typing a new step and choosing an existing one share the same control.
 
 No new mandatory environment variable, no new op field, route or dependency, and no change to the op log format.
@@ -25,3 +25,4 @@ ROADMAP.md: none (an improvement from an issue).
 ### Modified Capabilities
 
 - `open-loops`: a project's next action can be chosen among its open tasks, in Place and in the project walk.
+- `weekly-review`: the walk's `q` also chooses one of the project's open tasks.

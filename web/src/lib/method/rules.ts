@@ -6,7 +6,7 @@
 // internal/digest/testdata/next_action_fixture.json and must agree.
 import { openBlockers } from '../dependencies'
 import { availability, projectFlowOf, type FlowState } from '../flow'
-import { compareByPosition } from '../ordering'
+import { compareByPosition, positionBetween } from '../ordering'
 import { effectiveSection } from '../sections'
 import { canEditTasks, roleOf } from '../sharing'
 import type { Label, Membership, Project, Section, Task } from '../types'
@@ -38,11 +38,15 @@ const open = (t: Task): boolean => !t.deleted_at && !t.completed_at
 export interface NextChoice {
   id: string
   title: string
-  /** Someday or a later start: cleared, as the Someday step's promote does. */
-  clearStart: boolean
-  /** Another open task comes first in the project's list: it moves to the top, out of its section. */
-  toTop: boolean
-  inSection: boolean
+  /** The start cleared by the choice (Someday or a later date, as the Someday step's promote does), or null. */
+  clearStart: string | null
+  /**
+   * When the current next action comes before it: the place just above that task, in
+   * that task's section. Null when clearing the start is enough.
+   */
+  moveTo: { position: number; section_id: string | null } | null
+  /** The section it moves into, when that is another one ('' for no section), else null. */
+  toSection: string | null
 }
 
 /** Live, unarchived projects in which the user may edit tasks: the ones the method works on. */
@@ -128,14 +132,20 @@ export class MethodRules {
    */
   nextActionChoices(projectId: string): NextChoice[] {
     const list = this.inListOrder(projectId)
-    const next = list.find((t) => this.actionable(t))
-    return list.filter((t) => t !== next && !this.blocked(t) && !this.delegated(t)).map((t) => ({
-      id: t.id,
-      title: t.title,
-      clearStart: isSomeday(t) || isDeferred(t, this.input.today),
-      toTop: t !== list[0],
-      inSection: !!t.section_id,
-    }))
+    const at = list.findIndex((t) => this.actionable(t))
+    const next = at >= 0 ? list[at] : null
+    const sectionOf = (t: Task) => effectiveSection(t, this.sectionMap)
+    return list.filter((t) => t !== next && !this.blocked(t) && !this.delegated(t)).map((t) => {
+      let moveTo: NextChoice['moveTo'] = null
+      let toSection: string | null = null
+      if (next && list.indexOf(t) > at) {
+        // Just above the next action, after the open task before it in its section.
+        const prev = list.slice(0, at).reverse().find((x) => sectionOf(x) === sectionOf(next))
+        moveTo = { position: positionBetween(prev?.position ?? null, next.position), section_id: next.section_id }
+        if (sectionOf(t) !== sectionOf(next)) toSection = this.sectionMap.get(sectionOf(next) ?? '')?.name ?? ''
+      }
+      return { id: t.id, title: t.title, clearStart: isSomeday(t) || isDeferred(t, this.input.today) ? t.start! : null, moveTo, toSection }
+    })
   }
 
   /** The project's open top-level tasks that wait (blocked or delegated). */

@@ -1202,21 +1202,6 @@ export async function unparkTask(id: string): Promise<void> {
 }
 
 /**
- * Make an existing task its project's next action (OpenSpec change choose-next-action):
- * one edit that leaves Someday or a later start and, when another open task comes
- * first, moves it to the top of the project, out of its section.
- */
-export async function chooseNextAction(choice: { id: string; clearStart: boolean; toTop: boolean; inSection: boolean }): Promise<void> {
-  const patch: Partial<Task> = {}
-  if (choice.clearStart) patch.start = null
-  if (choice.toTop) {
-    patch.position = (await topTaskPositions(1))[0]
-    if (choice.inSection) patch.section_id = null
-  }
-  if (Object.keys(patch).length) await updateTask(choice.id, patch)
-}
-
-/**
  * Completing a parent completes every open descendant in one batch; reopening touches
  * only the task. A task with a recurrence rule rolls forward instead (completeTask).
  */

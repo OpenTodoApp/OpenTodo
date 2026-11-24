@@ -4,12 +4,13 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { t } from '../../../lib/i18n'
 import type { NextChoice } from '../../../lib/method/rules'
-import { chooseNextAction, createTask } from '../../../lib/ops'
+import { createTask } from '../../../lib/ops'
 import type { Project } from '../../../lib/types'
 import { Button, Icon, Input } from '../../../ui'
 import { act } from '../../actionError'
 import { ProjectMark } from '../../ProjectMark'
 import { useTickedSuggest } from '../../quickadd/TickedSuggest'
+import { chooseNextAction, choiceHint } from '../chooseNext'
 import { navigate, routePath } from '../../router'
 import type { MoveProps } from '../LoopHome'
 import { GroupHeading } from './rows'
@@ -29,8 +30,8 @@ function AddNext({ project, choices, onAdded }: { project: Project; choices: rea
   const [focused, setFocused] = useState(false)
   // Typing lists the project's open tasks; ↓ and Enter choose one, Enter alone adds the text.
   const suggest = useTickedSuggest({
-    kind: 'next', items: choices, query: title, enabled: focused,
-    onPick: (choice) => { setTitle(''); act(chooseNextAction(choice).then(onAdded)) },
+    kind: 'next', items: choices, query: title, enabled: focused, hintOf: choiceHint,
+    onPick: (choice) => { setTitle(''); act(chooseNextAction(choice, project.name).then(onAdded)) },
   })
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -46,7 +47,7 @@ function AddNext({ project, choices, onAdded }: { project: Project; choices: rea
         aria-label={t('Next action for {name}', { name: project.name })} enterKeyHint="done" data-loop-add-next={project.id}
         autoComplete="off" onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
         onKeyDown={(e) => { suggest.onKeyDown(e) }} {...suggest.aria} />
-      {suggest.list}
+      {suggest.list}{suggest.live}
     </form>
   )
 }

@@ -6,7 +6,11 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
-import { createProject, createTask, parkTask, resetDeviceId } from '../../lib/ops'
+import { createProject, createTask, parkTask, resetDeviceId, updateProject, updateTask } from '../../lib/ops'
+import { createSection } from '../../lib/sections'
+import { undoBatch } from '../../lib/undo'
+import { bulkToast, hideBulkToast } from '../bulk/toastStore'
+import { QuickAdd } from '../QuickAdd'
 import type { User } from '../../lib/types'
 import { click, key, render, type, waitFor } from '../../ui/test-utils'
 import { resetPanel } from '../panel'
@@ -29,13 +33,16 @@ beforeEach(async () => {
   history.replaceState(null, '', '/')
 })
 afterEach(() => {
+  hideBulkToast()
   vi.useRealTimers()
   vi.unstubAllGlobals()
   resetPanel()
 })
 
 const q = <T extends Element = HTMLElement>(sel: string) => document.querySelector<T>(sel)
-const options = () => [...document.querySelectorAll('[data-ticked-suggestions="next"] [role="option"]')].map((o) => o.textContent)
+const options = () => [...document.querySelectorAll('[data-ticked-suggestions="next"] [role="option"] [data-suggestion-title]')].map((o) => o.textContent)
+const hints = () => [...document.querySelectorAll('[data-ticked-suggestions="next"] [role="option"]')].map((o) => o.querySelector('[data-suggestion-hint]')?.textContent ?? null)
+const status = () => q('[data-next-choices-status]')?.textContent ?? ''
 const submit = (field: HTMLInputElement | HTMLTextAreaElement) => act(async () => { field.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
 
 async function kitchen() {
@@ -62,10 +69,16 @@ describe('Place: choosing an open task as the next action', () => {
   it('typing filters the project’s open tasks; ↓ and Enter choose one, which leaves Someday, and the project leaves the list', async () => {
     const { pid, tiler } = await kitchen()
     const { r, field } = await openPlace(pid)
+    // Closed, the field is already a collapsed combobox that pops up a listbox.
+    expect([field.getAttribute('role'), field.getAttribute('aria-expanded'), field.getAttribute('aria-haspopup')]).toEqual(['combobox', 'false', 'listbox'])
+    expect(field.getAttribute('aria-controls')).toBeNull()
     await type(field, 'call')
     await waitFor(() => options().length === 1, 'one match')
     expect(options()).toEqual(['Call the tiler'])
-    expect(field.getAttribute('role')).toBe('combobox')
+    expect(hints()).toEqual(['Someday'])
+    expect(status()).toBe('1 result available')
+    expect(field.getAttribute('aria-expanded')).toBe('true')
+    expect(document.getElementById(field.getAttribute('aria-controls')!)?.getAttribute('aria-label')).toBe('Open tasks')
     expect(field.getAttribute('aria-activedescendant')).toBeNull()
     await key(field, 'ArrowDown')
     expect(field.getAttribute('aria-activedescendant')).toBeTruthy()
@@ -73,6 +86,22 @@ describe('Place: choosing an open task as the next action', () => {
     await waitFor(() => !q(`[data-loop-project="${pid}"]`), 'the project leaves the list')
     expect((await db.tasks.get(tiler))!.start).toBeNull()
     expect((await db.tasks.where('project_id').equals(pid).count())).toBe(2)
+    await r.unmount()
+  })
+
+  it('Undo puts the task back in Someday and the project back in Place', async () => {
+    const { pid, tiler } = await kitchen()
+    const { r, field } = await openPlace(pid)
+    const position = (await db.tasks.get(tiler))!.position
+    await type(field, 'call')
+    await waitFor(() => options().length === 1, 'the match')
+    await key(field, 'ArrowDown')
+    await key(field, 'Enter')
+    await waitFor(() => bulkToast()?.label === 'Next action for Kitchen renovation' && !!bulkToast()?.undoId, 'the toast with Undo')
+    await act(async () => { await undoBatch(bulkToast()!.undoId!) })
+    const back = (await db.tasks.get(tiler))!
+    expect([back.start, back.position]).toEqual(['someday', position])
+    await waitFor(() => !!q(`[data-loop-project="${pid}"]`), 'the project is back')
     await r.unmount()
   })
 
@@ -98,16 +127,27 @@ describe('Place: choosing an open task as the next action', () => {
     expect(options()).toEqual(['Call the tiler', 'Choose tiles'])
     await key(field, 'Escape')
     expect(options()).toEqual([])
+    expect(field.getAttribute('aria-expanded')).toBe('false')
+    await r.unmount()
+  })
+
+  it('on a touch screen, focusing the empty field lists the open tasks with nothing chosen', async () => {
+    const { pid } = await kitchen()
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: false, media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} }))
+    const { r, field } = await openPlace(pid)
+    await waitFor(() => options().length === 2, 'the list')
+    expect(field.getAttribute('aria-activedescendant')).toBeNull()
     await r.unmount()
   })
 })
 
 describe('Project walk: choosing an open task as the next action', () => {
-  async function garage() {
+  async function garage(setup?: (ids: { pid: string; brackets: string }) => Promise<void>) {
     const pid = await createProject({ name: 'Garage' })
     const measure = await createTask({ title: 'Measure wall', project_id: pid })
     const brackets = await createTask({ title: 'Buy shelf brackets', project_id: pid })
-    await parkTask(brackets)
+    if (setup) await setup({ pid, brackets })
+    else await parkTask(brackets)
     navigate({ view: 'inbox' }, { replace: true })
     navigate({ view: 'review', step: 'projects' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
@@ -133,6 +173,47 @@ describe('Project walk: choosing an open task as the next action', () => {
     expect(chosen.start).toBeNull()
     expect(chosen.position).toBeLessThan(before.position)
     expect(await db.tasks.where('project_id').equals(pid).count()).toBe(2)
+    await waitFor(() => bulkToast()?.label === 'Next action for Garage', 'the toast')
+    await r.unmount()
+  })
+
+  it('a task in a section moves just above the next action, into its section, and the row says so', async () => {
+    const { r, input, brackets, measure } = await garage(async ({ pid, brackets }) => {
+      const section = await createSection(pid, 'Shopping')
+      await updateTask(brackets, { section_id: section })
+    })
+    await key(input, 'ArrowDown')
+    expect(options()).toEqual(['Buy shelf brackets'])
+    expect(hints()).toEqual(['No section'])
+    await key(input, 'ArrowDown')
+    await key(input, 'Enter')
+    await waitFor(() => q('[data-walk-next]')?.textContent === 'Buy shelf brackets', 'the chosen next action')
+    const chosen = (await db.tasks.get(brackets))!
+    expect(chosen.section_id).toBeNull()
+    expect(chosen.position).toBeLessThan((await db.tasks.get(measure))!.position)
+    await r.unmount()
+  })
+
+  it('a later start is cleared, and the row says when it would have started', async () => {
+    const { r, input, brackets } = await garage(async ({ brackets }) => { await updateTask(brackets, { start: '2026-12-01' }) })
+    await key(input, 'ArrowDown')
+    expect(options()).toEqual(['Buy shelf brackets'])
+    expect(hints()[0]).toMatch(/^Starts /)
+    await key(input, 'ArrowDown')
+    await key(input, 'Enter')
+    await waitFor(() => q('[data-walk-next]')?.textContent === 'Buy shelf brackets', 'the chosen next action')
+    expect((await db.tasks.get(brackets))!.start).toBeNull()
+    await r.unmount()
+  })
+
+  it('in a sequential project, a task waiting in sequence becomes the next action', async () => {
+    const { r, input } = await garage(async ({ pid }) => { await updateProject(pid, { flow_mode: 'sequential' }) })
+    await key(input, 'ArrowDown')
+    expect(options()).toEqual(['Buy shelf brackets'])
+    expect(hints()).toEqual([null])
+    await key(input, 'ArrowDown')
+    await key(input, 'Enter')
+    await waitFor(() => q('[data-walk-next]')?.textContent === 'Buy shelf brackets', 'the chosen next action')
     await r.unmount()
   })
 
@@ -145,6 +226,16 @@ describe('Project walk: choosing an open task as the next action', () => {
     const titles = (await db.tasks.where('project_id').equals(pid).toArray()).map((t) => t.title).sort()
     expect(titles).toEqual(['Buy shelf brackets', 'Measure wall', 'Sweep the floor'])
     expect((await db.tasks.get(brackets))!.start).toBe('someday')
+    await r.unmount()
+  })
+})
+
+describe('quick add without choices', () => {
+  it('a prefilled, focused line opens no token list on mount (the palette and the sheet)', async () => {
+    const r = await render(<QuickAdd placeholder="Add" autoFocus initialValue="Call #Gar" projects={[{ id: 'p', name: 'Garage' }]} onAdd={() => {}} />)
+    await waitFor(() => !!q('textarea'), 'the field')
+    expect(q('textarea')!.getAttribute('aria-expanded')).toBe('false')
+    expect(q('[data-token-suggestions]')).toBeNull()
     await r.unmount()
   })
 })

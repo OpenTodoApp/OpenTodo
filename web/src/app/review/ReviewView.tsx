@@ -10,7 +10,8 @@ import { lazy } from '../../lib/lazy'
 import { Badge, Button, Card, Dialog, Icon, MenuItem, Notice, PageBody, PageHeader, Skeleton, type IconName } from '../../ui'
 import { useAllLabels, useAllProjects, useProjectPrefsLoaded, useReviewEvery, useReviewRow, useReviewedAt } from '../../lib/localData'
 import { formatInstant } from '../../lib/dates'
-import { chooseNextAction, createTask } from '../../lib/ops'
+import { createTask } from '../../lib/ops'
+import { chooseNextAction } from '../method/chooseNext'
 import type { NextChoice } from '../../lib/method/rules'
 import { setTaskCompletedWithFeedback } from '../completionSound'
 import { resolveLabels } from '../../lib/labels'
@@ -143,8 +144,7 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
   const addToChoices = addTo ? [...(steps?.walk ?? []), ...(steps?.notDue ?? [])].find((w) => w.project.id === addTo.id)?.choices ?? [] : []
   const choose = (choice: NextChoice) => {
     if (!addTo) return
-    const name = addTo.name
-    act(chooseNextAction(choice).then(() => setNotice(t('Added a next action to {name}.', { name }))))
+    act(chooseNextAction(choice, addTo.name))
     setAddTo(null)
   }
 

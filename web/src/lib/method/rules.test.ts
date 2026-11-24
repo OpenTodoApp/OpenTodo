@@ -48,15 +48,37 @@ describe('method-views scenarios', () => {
 
   it('Choices for the next action (choose-next-action): all open top-level tasks but the next action, none blocked or delegated', () => {
     const rules = new MethodRules(base([
-      { id: 'wall' }, { id: 'later', start: '2026-11-01', section_id: 's' }, { id: 'idea', start: 'someday' },
+      { id: 'wall' }, { id: 'later', start: '2026-11-01' }, { id: 'idea', start: 'someday' },
       { id: 'blocked', blocked_by: ['wall'] }, { id: 'ana', assignee_id: 'ana' }, { id: 'sub', parent_id: 'wall' }, { id: 'done', completed_at: 1 },
     ]))
+    // After the next action: just above it, in its section (none here).
     expect(rules.nextActionChoices('p')).toEqual([
-      { id: 'later', title: 't1', clearStart: true, toTop: true, inSection: true },
-      { id: 'idea', title: 't2', clearStart: true, toTop: true, inSection: false },
+      { id: 'later', title: 't1', clearStart: '2026-11-01', moveTo: { position: -1000, section_id: null }, toSection: null },
+      { id: 'idea', title: 't2', clearStart: 'someday', moveTo: { position: -1000, section_id: null }, toSection: null },
     ])
-    // Without a next action, the first open task stays where it is.
-    expect(new MethodRules(base([{ id: 'a', start: 'someday' }, { id: 'b', start: 'someday' }])).nextActionChoices('p').map((c) => [c.id, c.toTop])).toEqual([['a', false], ['b', true]])
+  })
+
+  it('Choices without a next action only leave Someday or a later start: nothing moves', () => {
+    const rules = new MethodRules(base([{ id: 'a', start: 'someday' }, { id: 'b', start: '2026-12-01' }]))
+    expect(rules.nextActionChoices('p').map((c) => [c.id, c.clearStart, c.moveTo])).toEqual([['a', 'someday', null], ['b', '2026-12-01', null]])
+  })
+
+  it('A choice before the next action stays put; one after it moves just above it, between it and the task before it in its section, into its section', () => {
+    const input = base([
+      { id: 'idea', start: 'someday', section_id: 's1', position: 1 }, { id: 'first', section_id: 's1', position: 10 }, { id: 'wall', section_id: 's1', position: 20 },
+      { id: 'paint', section_id: 's2', position: 5 },
+    ])
+    input.sections = [
+      { id: 's1', project_id: 'p', name: 'Build', position: 1, deleted_at: null } as unknown as Section,
+      { id: 's2', project_id: 'p', name: 'Finish', position: 2, deleted_at: null } as unknown as Section,
+    ]
+    const rules = new MethodRules(input)
+    expect(rules.nextActionOf('p')?.id).toBe('first')
+    expect(rules.nextActionChoices('p')).toEqual([
+      { id: 'idea', title: 't0', clearStart: 'someday', moveTo: null, toSection: null },
+      { id: 'wall', title: 't2', clearStart: null, moveTo: { position: 5.5, section_id: 's1' }, toSection: null },
+      { id: 'paint', title: 't3', clearStart: null, moveTo: { position: 5.5, section_id: 's1' }, toSection: 'Build' },
+    ])
   })
 
   it('First in order, then Blocker completed elsewhere', () => {

@@ -1,7 +1,7 @@
 ## 1. Rules and write
 
 - [x] 1.1 `MethodRules.nextActionChoices`: the open top-level tasks but the next action, none blocked or delegated, with what the write must do (vitest `rules.test.ts`)
-- [x] 1.2 `chooseNextAction` in `lib/ops.ts`: one `updateTask` that clears a Someday or later start and moves the task to the top of the project when another comes first (vitest `chooseNextAction.test.tsx`)
+- [x] 1.2 `chooseNextActionUndoable` in `lib/undoActions.ts`: one undoable batch that clears a Someday or later start and, only when the next action comes before it, puts the task just above it in its section; toast "Next action for <project>" with Undo (vitest `chooseNextAction.test.tsx`)
 
 ## 2. Screens
 

@@ -402,7 +402,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
         {layout === 'line' && webCalendar && <span className={lead}><LineDateButton date={lineDate} /></span>}
         {voice.enabled && <span className={lead}><VoiceButton voice={voice} shortcut={voiceShortcut} /></span>}
         {!hideHint && hints && <span className={`${lead} max-sm:hidden`} data-kbd-hint><span className="ui-kbd" data-quick-add-hint>{keysOf('list.quick-add')}</span></span>}
-        {layout !== 'sheet' && suggest.list}{paste.offer}
+        {layout !== 'sheet' && suggest.list}{suggest.live}{paste.offer}
       </div>
       {layout === 'line' && webCalendar && lineDate.open && <LineDatePicker id={lineDate.id} due={lineDate.due} onPick={lineDate.pick} onKeyDown={lineDate.escape} />}
       {layout === 'sheet' && suggest.list && <div className="px-3 pb-2 [&>ul]:static [&>ul]:mt-0 [&>ul]:w-full" data-sheet-suggestions>{suggest.list}</div>}

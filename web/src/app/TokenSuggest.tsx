@@ -16,6 +16,7 @@ import { hueFor, Icon } from '../ui'
 import { useTickedItems, type TickedItem } from '../lib/tickedItems'
 import type { NextChoice } from '../lib/method/rules'
 import { useTickedSuggest } from './quickadd/TickedSuggest'
+import { choiceHint } from './method/chooseNext'
 
 interface Item { key: string; label: string; secondary?: string; color?: string; level?: number; create?: boolean; run: () => Promise<string> | string }
 
@@ -55,7 +56,7 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
   const typed = (tickedQuery ?? value).trim().length >= 2
   const tickedItems = useTickedItems(typed && !choices ? reuseProjectId : null)
   const ticked = useTickedSuggest<TickedItem | NextChoice>(choices
-    ? { kind: 'next', items: choices.items, query: tickedQuery ?? value, enabled: !open && caret !== null, onPick: (item) => choices.onPick(item as NextChoice) }
+    ? { kind: 'next', items: choices.items, query: tickedQuery ?? value, enabled: !open && caret !== null, onPick: (item) => choices.onPick(item as NextChoice), hintOf: (item) => choiceHint(item as NextChoice) }
     : { items: tickedItems, query: tickedQuery ?? value, enabled: !open && !!onTicked && caret !== null, onPick: (item) => onTicked?.(item.title) })
 
   const items = useMemo<Item[]>(() => {
@@ -83,8 +84,9 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
     const el = input.current
     setCaret(el ? el.selectionStart : null)
   }
-  // A field focused as it mounts (a dialog's autoFocus) has a caret before any event.
-  useEffect(() => { if (input.current && input.current === document.activeElement) track() }, []) // eslint-disable-line react-hooks/exhaustive-deps -- on mount only
+  // A next-action field focused as it mounts (the walk's dialog) offers its choices before any event.
+  // Only there: any other field would open a token's list on a prefilled line (the palette, the sheet).
+  useEffect(() => { if (choices && input.current && input.current === document.activeElement) track() }, []) // eslint-disable-line react-hooks/exhaustive-deps -- on mount only
 
   const pick = async (item: Item) => {
     if (!at) return
@@ -178,5 +180,5 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
     </ul>
   ) : null
 
-  return { fieldProps, onKeyDown, list: list ?? ticked.list, openAt, open: shown }
+  return { fieldProps, onKeyDown, list: list ?? ticked.list, live: ticked.live, openAt, open: shown }
 }
