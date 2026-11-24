@@ -11,7 +11,7 @@ order: 17
 
 <picture><source srcset="images/project-list-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/project-list-light.webp" alt="The Home renovation project with its tasks grouped under the sections Planning and In progress."></picture>
 
-Projects keep related tasks together, and projects can sit inside other projects.
+Projects keep related tasks together and can sit inside other projects.
 
 ## Organise with projects
 
@@ -28,8 +28,6 @@ The **Project** menu at the top right of a project lets you:
 - make it a [reusable list](reusable-lists.md) with **List…**,
 - **Archive…** it: it and its sub-projects leave the sidebar, every task kept,
 - **Delete project…**, which moves it to the Trash.
-
-Archive and delete ask first.
 
 <picture><source srcset="images/project-move-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/project-move-light.webp" alt="The Move to step of the project menu: a search field above the possible targets, Top level first, each project shown with the projects it sits in."></picture>
 
@@ -49,13 +47,13 @@ Inside a project you can also group tasks into sections and show them as a board
 
 ## Sub-projects
 
-Sub-projects work like folders: "Work" can hold "Q4 launch", which can hold more. A project's page lists them. The arrow before one shows its open tasks and its own sub-projects right there; its name opens it. Those tasks work like the rest of the list (complete, edit, reorder within their project), follow that project's sharing, and use the page's sort and filters. Drag a task onto a sub-project to move it there, or onto **Tasks** to bring it back. Each device remembers which are open. In the sidebar, fold one with its arrow or <kbd>←</kbd> / <kbd>→</kbd>; each device keeps its own folding. The **+** menu next to **Projects** has **Collapse all**, **Expand all** and **Sort by name**; a project's menu has **Sort sub-projects by name**. Each sorts once, with Undo: "2" before "10", "0002" before "0010". The magnifier (<kbd>g</kbd> then <kbd>/</kbd>) finds a project.
+Sub-projects work like folders: "Work" can hold "Q4 launch". A project's page lists them; the arrow before one shows its tasks in place, per device, and its name opens it. Drop a task on one to move it. In the sidebar, fold one with its arrow or <kbd>←</kbd> / <kbd>→</kbd>. The **+** menu next to **Projects** has **Collapse all**, **Expand all** and **Sort by name**; a project's menu has **Sort sub-projects by name**. Each sorts once, with Undo: "2" before "10". The magnifier (<kbd>g</kbd> then <kbd>/</kbd>) finds a project.
 
 ## Duplicate a project or task
 
 **Duplicate…** in a project's menu makes a copy with the same sections, sub-projects and open tasks. Choose a parent and, optionally, a **Start on** day to shift every due date so the earliest lands on it. Completed tasks, comments, reminders and assignees aren't copied. You can duplicate any project you see; the copy is yours.
 
-To duplicate one task with its open subtasks, select it and press <kbd>Shift</kbd>+<kbd>D</kbd>, or choose **Duplicate** in the task panel's **⋯** menu. The copy appears right below the original and is selected. A copy works offline and syncs to your other devices. To reuse a project later, save it as a [template](import-export.md#templates).
+To duplicate one task with its open subtasks, select it and press <kbd>Shift</kbd>+<kbd>D</kbd>, or choose **Duplicate** in the task panel's **⋯** menu. The copy appears below it, selected, and syncs like any change. To reuse a project later, save it as a [template](import-export.md#templates).
 
 ## When a project is done
 
