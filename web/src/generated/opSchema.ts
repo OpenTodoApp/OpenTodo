@@ -1225,6 +1225,14 @@ export interface UserPrefsFields {
   daily_notes_template?: string
   app_link_schemes?: string
   /**
+   * Calendars hidden per workspace (OpenSpec change calendars-per-workspace,
+   * design D1): a JSON object from workspace id to the ids of the calendars
+   * (subscriptions and calendar sync calendars) hidden there; "" hides none.
+   * A hide-list, so new calendars and workspaces show. Clients read a
+   * malformed value as none hidden and ignore unknown ids. Not content.
+   */
+  calendars_hidden?: string
+  /**
    * The away period (OpenSpec change away-periods, design D3): "" or
    * "YYYY-MM-DD..YYYY-MM-DD", inclusive, followed by " quiet" when
    * reminders and the digest are paused. One value, so two devices never
@@ -1389,7 +1397,7 @@ export const OP_DEFAULTS = {
     feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '', review_every: '', card_notes: false,
   } satisfies Omit<ProjectPrefs, 'id' | '_clock'>,
   user_prefs: {
-    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', theme_accent_custom: '', theme_light: '', theme_dark: '', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', time_sectors: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', completion_sound: '', complete_subtasks: '', briefing: '', task_open: '', row_click: '', row_layout: '', today_events: '', today_assignees: '', upcoming_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', focus_alert: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '', routines_seen_at: 0, routines_hide_successes: '', upcoming_today: '', objectives: '', habits: '', full_titles: '', deadline_dates: '', today_group_by: '', today_sort_by: '', today_manual_order: [], today_sort_dir: '', today_row_layout: '', today_subtasks: '', upcoming_sort_by: '', upcoming_sort_dir: '', upcoming_row_layout: '', upcoming_subtasks: '', upcoming_later: '', inbox_group_by: '', inbox_sort_by: '', inbox_sort_dir: '', inbox_row_layout: '', priority_name_1: '', priority_name_2: '', priority_name_3: '', priority_name_4: '', daily_notes: false, daily_notes_project: '', daily_notes_template: '', app_link_schemes: '', away: '',
+    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', theme_accent_custom: '', theme_light: '', theme_dark: '', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', time_sectors: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', completion_sound: '', complete_subtasks: '', briefing: '', task_open: '', row_click: '', row_layout: '', today_events: '', today_assignees: '', upcoming_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', focus_alert: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '', routines_seen_at: 0, routines_hide_successes: '', upcoming_today: '', objectives: '', habits: '', full_titles: '', deadline_dates: '', today_group_by: '', today_sort_by: '', today_manual_order: [], today_sort_dir: '', today_row_layout: '', today_subtasks: '', upcoming_sort_by: '', upcoming_sort_dir: '', upcoming_row_layout: '', upcoming_subtasks: '', upcoming_later: '', inbox_group_by: '', inbox_sort_by: '', inbox_sort_dir: '', inbox_row_layout: '', priority_name_1: '', priority_name_2: '', priority_name_3: '', priority_name_4: '', daily_notes: false, daily_notes_project: '', daily_notes_template: '', app_link_schemes: '', calendars_hidden: '', away: '',
   } satisfies Omit<UserPrefs, 'id' | '_clock'>,
   objective: {
     title: '', period: '', position: 0, done_at: 0, created_at: 0, deleted_at: null,

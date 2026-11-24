@@ -299,9 +299,9 @@ export function MonthView({ date }: { date?: string }) {
   return (
     <PageBody width="full" className="flex flex-col" data-calendar-page="month">
       <CalendarPageHeader chrome={chrome} title={title} meta={meta}
-        actions={<MonthRange anchor={anchor} date={date} today={today} goTo={goTo} showCompleted={showCompleted} calendars={<CalendarsToggle shown={feeds.eventsShown} count={feeds.subs.length} />} />}
+        actions={<MonthRange anchor={anchor} date={date} today={today} goTo={goTo} showCompleted={showCompleted} calendars={<CalendarsToggle shown={feeds.eventsShown} subs={feeds.subs} />} />}
         overflow={<>
-          <CalendarsToggle shown={feeds.eventsShown} count={feeds.subs.length} menu />
+          <CalendarsToggle shown={feeds.eventsShown} subs={feeds.subs} menu />
           <CalendarCompletedToggle shown={showCompleted} menu />
           {!narrow && <MonthsShownItems count={preferred} />}
           <MenuItem label={planOpen ? t('Hide the planning list') : t('Plan from a list')} icon="list" description={t('Drag tasks onto a day, or press s on one')} onSelect={() => chrome.plan(planOpen, togglePlan)} />

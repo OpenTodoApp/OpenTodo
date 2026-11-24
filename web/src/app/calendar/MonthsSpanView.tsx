@@ -122,9 +122,9 @@ export function MonthsSpanView({ mode, anchor, title, months }: MonthsSpan) {
 
   return (
     <PageBody width="full" className="flex flex-col" data-calendar-page={mode}>
-      <CalendarPageHeader chrome={chrome} title={title} meta={meta} overflow={span.menuToggle ? <><CalendarsToggle shown={feeds.eventsShown} count={feeds.subs.length} menu />{chrome.overflow}</> : chrome.overflow}
+      <CalendarPageHeader chrome={chrome} title={title} meta={meta} overflow={span.menuToggle ? <><CalendarsToggle shown={feeds.eventsShown} subs={feeds.subs} menu />{chrome.overflow}</> : chrome.overflow}
         actions={<>
-          <CalendarsToggle shown={feeds.eventsShown} count={feeds.subs.length} />
+          <CalendarsToggle shown={feeds.eventsShown} subs={feeds.subs} />
           <span className="flex items-center" role="group" aria-label={t('Range')}>
             <Button variant="ghost" size="sm" icon="chevron-left" aria-label={span.prev()} onClick={() => goTo(addMonthsISO(focused, -span.step))} />
             <Button variant="ghost" size="sm" onClick={() => goTo(today)}>{t('Today')}</Button>
