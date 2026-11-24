@@ -38,6 +38,19 @@ describe('reminders handed to the shell', () => {
     expect(shellReminders(rs, tasks, NOW, { titles: false, encrypted: false })[0].title).toBeUndefined()
   })
 
+  it('marks an urgent reminder only, so older shells read the same entries (ios-urgent-alarms D3)', () => {
+    const list = shellReminders([
+      reminder('loud', 'a', NOW + HOUR, { urgent: true }),
+      reminder('quiet', 'a', NOW + 2 * HOUR, { urgent: false }),
+      reminder('old', 'c', NOW + 3 * HOUR),
+    ], tasks, NOW, { titles: false, encrypted: false })
+    expect(list).toEqual([
+      { id: 'loud', taskId: 'a', fireAt: NOW + HOUR, urgent: true },
+      { id: 'quiet', taskId: 'a', fireAt: NOW + 2 * HOUR },
+      { id: 'old', taskId: 'c', fireAt: NOW + 3 * HOUR },
+    ])
+  })
+
   it('none for tasks in a trashed or archived project, or below one (#1234)', () => {
     const projects = [
       { id: 'archived', parent_id: null, deleted_at: null, archived: true },

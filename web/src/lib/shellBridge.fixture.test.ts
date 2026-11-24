@@ -173,6 +173,8 @@ function focusFixtures(): Record<string, Fixture> {
 function fixtures(): Record<string, Fixture> {
   const titled = shellReminders(reminders, tasks, NOW, { titles: true, encrypted: false })
   const untitled = shellReminders(reminders, tasks, NOW, { titles: true, encrypted: true })
+  // ios-urgent-alarms D3: the soon reminder urgent, the later one not.
+  const urgent = shellReminders(reminders.map((r) => (r.id === 'r-soon' ? { ...r, urgent: true } : r)), tasks, NOW, { titles: true, encrypted: false })
   const projects = [{ id: 'home', name: 'Zuhause' }]
   const widget = shellWidget(tasks, TODAY, NOW, false, null, projects)
   const locked = shellWidget(tasks, TODAY, NOW, true, null, projects)
@@ -220,6 +222,11 @@ function fixtures(): Record<string, Fixture> {
       description: 'An end-to-end encrypted account: no titles reach the shell.',
       method: 'scheduleReminders', payload: JSON.stringify(untitled), now: NOW,
       expect: untitled.map((r) => ({ id: r.id, taskId: r.taskId, fireAt: r.fireAt, title: null })),
+    },
+    'reminders-urgent.json': {
+      description: 'An urgent reminder (ios-urgent-alarms D3) carries urgent: true, the others no urgent at all. The iPhone app rings an urgent one as an alarm where it can; every other shell schedules it as an ordinary reminder.',
+      method: 'scheduleReminders', payload: JSON.stringify(urgent), now: NOW,
+      expect: urgent.map((r) => ({ id: r.id, taskId: r.taskId, fireAt: r.fireAt, title: r.title ?? null, urgent: r.urgent === true })),
     },
     'reminders-signed-out.json': {
       description: 'Sign-out: the schedule is emptied.',
