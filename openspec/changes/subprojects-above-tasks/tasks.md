@@ -1,0 +1,12 @@
+# Tasks
+
+## 1. The project view
+
+- [x] 1.1 `SubProjects` rows take a task row's empty leading slot, so the mark is in the checkbox column; the row hover token; 44 px on touch. Verify: `subProjects.test.tsx` ("puts the tasks under their own Tasks bar…") checks the row's columns; `npm test -- subProjects` in web/.
+- [x] 1.2 `GroupedList` draws a "Tasks" bar with the open count, folding per project, above the project's headerless `all` group when `useHasSubProjects` is true; none with sections, a grouping or no sub-projects; the board shows no group. Verify (also the per-project fold): the three tests in `subProjects.test.tsx` "sub-projects above the tasks"; `npm test` in web/.
+
+## 2. Look and checks
+
+- [ ] 2.1 The story `Screens/Task list/Project With Sub Projects` and its baselines at 375 and 1280 px, light and dark, from the UI baselines workflow (`stories`: `screens-task-list--project`); the other project stories unchanged. Verify: the workflow's artifact holds only the new story's captures.
+- [x] 2.2 `changelog.d/Fixed/subprojects-above-tasks.md`. Verify: `make docs-check`.
+- [x] 2.3 Typecheck, lint, `make i18n-check`, `make openspec-validate` and `npm test` in web/. Verify: each passes.
