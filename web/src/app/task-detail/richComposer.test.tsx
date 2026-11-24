@@ -7,6 +7,8 @@ import { TextSelection } from 'prosemirror-state'
 import type { EditorView } from 'prosemirror-view'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Comment, ProjectMember } from '../../lib/types'
+import { act } from 'react'
+import { Dialog } from '../../ui'
 import { click, flush, key, render, waitFor } from '../../ui/test-utils'
 import { isTypingTarget } from '../shortcuts/dispatch'
 import { readDraft, setRichComposer, writeDraft } from './Composer'
@@ -31,6 +33,9 @@ async function richView(root: ParentNode, id = 'comment-composer'): Promise<Edit
   await waitFor(() => !!root.querySelector(`[data-rich-composer] #${id}`), 'the rich composer')
   return composerViewOf(root.querySelector(`#${id}`)!)!
 }
+
+/** One animation frame: the composer decides on a blur a frame after it. */
+const nextFrame = () => act(() => new Promise<void>((done) => requestAnimationFrame(() => done())))
 
 async function typeText(v: EditorView, text: string) {
   for (const ch of text) {
@@ -171,15 +176,16 @@ describe('rich composer', () => {
       await click(more()!)
       const item = () => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((el) => el.textContent?.includes('Heading'))
       await waitFor(() => !!item(), 'the More formatting menu')
-      // Focus moves into the portalled menu: the composer counts it as inside.
-      item()!.focus()
-      block.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: item()! }))
-      await flush()
+      // Focus moved into the portalled menu: the composer counts it as its own.
+      await waitFor(() => !!document.activeElement?.closest('[data-overlay-root]'), 'focus in the menu')
+      await nextFrame()
       expect(host.querySelector('[data-composer-resting]')).toBeNull()
       expect(item()).toBeTruthy()
       await click(item()!)
       await waitFor(() => !item(), 'the menu to close')
-      await flush()
+      await waitFor(() => v.hasFocus(), 'focus back in the editor')
+      await nextFrame()
+      expect(v.hasFocus()).toBe(true)
       expect(host.querySelector('[data-composer-resting]')).toBeNull()
       expect(block.isConnected).toBe(true)
       expect(v.state.doc.firstChild?.type.name).toBe('heading')
@@ -198,6 +204,27 @@ describe('rich composer', () => {
       host.remove()
     })
   }
+
+  it('Another overlay (a dialog, Spotlight) still puts the empty composer to rest (#2030)', async () => {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const Page = ({ dialog }: { dialog: boolean }) => (
+      <>
+        <CommentsView {...props()} composerHost={host} />
+        {dialog && <Dialog title="Elsewhere" onClose={() => {}}><button type="button">Inside the dialog</button></Dialog>}
+      </>
+    )
+    const r = await render(<Page dialog={false} />)
+    await click(host.querySelector('[data-composer-resting]')!)
+    const v = await richView(host)
+    v.focus()
+    await waitFor(() => v.hasFocus(), 'the editor focused')
+    await r.rerender(<Page dialog />)
+    await waitFor(() => !!document.activeElement?.closest('[data-overlay-root]'), 'focus in the dialog')
+    await waitFor(() => !!host.querySelector('[data-composer-resting]'), 'the resting composer')
+    await r.unmount()
+    host.remove()
+  })
 })
 
 describe('reaction bar', () => {

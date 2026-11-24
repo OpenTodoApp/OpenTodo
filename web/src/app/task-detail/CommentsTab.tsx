@@ -16,7 +16,7 @@ import { memberName, roleOf, useMe } from '../../lib/sharing'
 import type { Attachment, Comment, ProjectRole, Task } from '../../lib/types'
 import { mentionChipsOf, useMentionTargets } from '../useMentionTargets'
 import { PersonAvatar } from '../PersonAvatar'
-import { Button, Icon, IconButton, isAbove, Menu, MenuItem } from '../../ui'
+import { Button, Icon, IconButton, Menu, MenuItem } from '../../ui'
 import { ConfirmDialog } from '../../ui'
 import { useTaskPublished } from './taskPageStatus'
 import { Markdown } from '../Markdown'
@@ -105,6 +105,8 @@ export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(fu
 
   // A comment just posted comes into view above the composer (comments "Readable comment presentation").
   const posted = useRef(false)
+  // The overlay root the composer's own menu or dialog last took focus in (#2030).
+  const ownOverlay = useRef<Element | null>(null)
   useEffect(() => {
     if (!posted.current || !me) return
     let newest: Comment | undefined
@@ -213,14 +215,19 @@ export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(fu
     </button>
   ) : me ? (
     <div className={composerHost ? 'space-y-1.5' : 'space-y-1.5 border-t border-default pt-3'} data-composer-block
+      onFocusCapture={(e) => {
+        // Focus in a portal the composer rendered (More formatting, the table menu, the link
+        // dialog): React brings it here, so that overlay is the composer's own (#2030).
+        if (!e.currentTarget.contains(e.target)) ownOverlay.current = e.target.closest('[data-overlay-root]')
+      }}
       onBlur={(e) => {
-        // Leaving an empty composer (no draft, no reply) puts it back to rest. A menu or
-        // picker it opened (More formatting, the table menu) is portalled to the body but
-        // still inside the composer (#2030).
+        // Leaving an empty composer (no draft, no reply) puts it back to rest; moving into
+        // one of its own overlays does not, any other overlay (Spotlight, a dialog) does.
         const block = e.currentTarget
-        const inside = (node: Node | null) => !!node && (block.contains(node) || isAbove(node, block))
-        if (!composerHost || inside(e.relatedTarget as Node | null) || replyTarget) return
-        afterTap(() => { if (!inside(document.activeElement) && !readDraft(taskId).trim()) setOpen(false) })
+        const inside = (node: Node | null) => !!node && (block.contains(node) || !!ownOverlay.current?.contains(node))
+        if (!composerHost || (e.relatedTarget && block.contains(e.relatedTarget)) || replyTarget) return
+        // A frame on: the focus that follows this blur has said whose overlay it is in.
+        afterTap(() => requestAnimationFrame(() => { if (!inside(document.activeElement) && !readDraft(taskId).trim()) setOpen(false) }))
       }}>
       {published && <p className="text-meta text-muted" data-page-composer-notice><Icon name="globe" size="xs" /> {t('This task is published: comments you write from now on are visible on its page.')}</p>}
       {replyTarget && (
