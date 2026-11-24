@@ -71,6 +71,45 @@ describe('shell address actions', () => {
     expect((await db.outbox.toArray()).filter((op) => (op as { entityId?: string; entity_id?: string }).entityId === rid || (op as { entity_id?: string }).entity_id === rid).length).toBeGreaterThanOrEqual(2)
   })
 
+  it('the widget\'s completion is read from the address', () => {
+    expect(shellUrlAction('?complete=t1')).toEqual({ kind: 'complete', id: 't1' })
+    expect(shellUrlAction('?complete=t%2F1')).toEqual({ kind: 'complete', id: 't/1' })
+    expect(shellUrlAction('?complete=')).toBeNull()
+  })
+
+  describe('the widget\'s completion (android-widget-list D2)', () => {
+    const replaced: string[] = []
+    const hist = { state: null, replaceState: (_s: unknown, _t: string, url: string) => void replaced.push(url) } as unknown as History
+    const at = (search: string) => ({ pathname: '/', search, hash: '' }) as Location
+    const shellWith = (capabilities: string[]) => { window.opentodoShell = { bridge: 1, platform: 'android', app: '1.0.0', capabilities } }
+
+    it('completes the task through its op in a background run, once', async () => {
+      shellWith(['reminders', 'widgets', 'background'])
+      try {
+        const id = await createTask({ title: 'Call the plumber' })
+        const before = await db.outbox.count()
+        expect(await handleShellUrl(() => false, at(`?complete=${id}`), hist)).toEqual({ kind: 'complete', id })
+        expect((await db.tasks.get(id))!.completed_at).not.toBeNull()
+        expect(await db.outbox.count()).toBeGreaterThan(before)
+        expect(replaced.at(-1)).toBe('/')
+        // Done already: a second run writes nothing.
+        const after = await db.outbox.count()
+        await handleShellUrl(() => false, at(`?complete=${id}`), hist)
+        expect(await db.outbox.count()).toBe(after)
+      } finally { delete window.opentodoShell }
+    })
+
+    it('the visible app ignores it: any app can open it at an address', async () => {
+      shellWith(['reminders', 'widgets', 'share'])
+      try {
+        const id = await createTask({ title: 'Call the plumber' })
+        await handleShellUrl(() => false, at(`?complete=${id}`), hist)
+        expect((await db.tasks.get(id))!.completed_at).toBeNull()
+        expect(replaced.at(-1)).toBe('/')
+      } finally { delete window.opentodoShell }
+    })
+  })
+
   it('add prefills quick add without creating a task, and leaves the address clean', async () => {
     history.replaceState(null, '', '/?add=Call%20the%20plumber%20tomorrow%209am')
     let opened = 0

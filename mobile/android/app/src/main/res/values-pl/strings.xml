@@ -44,6 +44,8 @@
     <string name="widget_empty">Na dziś nic nie zostało.</string>
     <string name="widget_untitled">Zadanie</string>
     <string name="widget_more">+ jeszcze %1$d</string>
+    <string name="widget_earlier">Wcześniejsze</string>
+    <string name="widget_complete">Ukończ: %1$s</string>
     <string name="widget_completed">Ukończone</string>
     <string name="widget_completed_description">Ile zadań ukończyłeś w tym tygodniu</string>
     <string name="widget_completed_locked">Zablokowane: tylko dzisiejsza liczba</string>

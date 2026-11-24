@@ -44,6 +44,8 @@
     <string name="widget_empty">今天没有剩余的事项。</string>
     <string name="widget_untitled">任务</string>
     <string name="widget_more">另外 %1$d 项</string>
+    <string name="widget_earlier">较早</string>
+    <string name="widget_complete">完成：%1$s</string>
     <string name="widget_completed">已完成</string>
     <string name="widget_completed_description">本周完成了多少任务</string>
     <string name="widget_completed_locked">已锁定：仅显示今天的数量</string>

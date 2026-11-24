@@ -74,8 +74,19 @@ describe('the widgets\' Today list', () => {
   })
 
   it('a locked encrypted account publishes counts only', () => {
-    const w = shellWidget(tasks, today, NOW, true)
+    const w = shellWidget(tasks, today, NOW, true, null, [{ id: 'p1', name: 'Home' }])
     expect(w).toMatchObject({ locked: true, count: 2, tasks: [] })
+  })
+
+  it('names the project and an overdue task\'s date, and says the widget may complete (android-widget-list D3, D4)', () => {
+    const inProject = tasks.map((t) => (t.id === 'late' ? { ...t, project_id: 'p1' } : t))
+    const w = shellWidget(inProject, today, NOW, false, null, [{ id: 'p1', name: 'Home' }])
+    expect(w.actions).toEqual(['complete'])
+    expect(w.tasks.find((r) => r.id === 'late')).toMatchObject({ project: 'Home', date: '2026-10-20', overdue: true })
+    // The Inbox has no project name; a task due today carries no date.
+    const now = w.tasks.find((r) => r.id === 'now')!
+    expect(now.project).toBeUndefined()
+    expect(now.date).toBeUndefined()
   })
 
   it('leaves out a task assigned to someone else, mine and unassigned ones stay', () => {

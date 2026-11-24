@@ -40,7 +40,7 @@ const reminder = (id: string, taskId: string, fireAt: number, extra: Partial<Rem
 
 const tasks = [
   task('call', { title: 'Call the plumber ☎', due: { date: TODAY, time: '09:30' }, priority: 1 }),
-  task('late', { title: 'Überweisung «Miete»', due: { date: '2026-10-20' }, priority: 2 }),
+  task('late', { title: 'Überweisung «Miete»', due: { date: '2026-10-20' }, priority: 2, project_id: 'home' }),
   task('plain', { title: 'Water the plants', due: { date: TODAY } }),
   task('later', { title: 'Not today', due: { date: '2026-10-25' } }),
   task('done', { title: 'Done', due: { date: TODAY }, completed_at: NOW - HOUR }),
@@ -173,8 +173,9 @@ function focusFixtures(): Record<string, Fixture> {
 function fixtures(): Record<string, Fixture> {
   const titled = shellReminders(reminders, tasks, NOW, { titles: true, encrypted: false })
   const untitled = shellReminders(reminders, tasks, NOW, { titles: true, encrypted: true })
-  const widget = shellWidget(tasks, TODAY, NOW, false)
-  const locked = shellWidget(tasks, TODAY, NOW, true)
+  const projects = [{ id: 'home', name: 'Zuhause' }]
+  const widget = shellWidget(tasks, TODAY, NOW, false, null, projects)
+  const locked = shellWidget(tasks, TODAY, NOW, true, null, projects)
   const completedWidget = { ...widget, completed: shellCompleted(doneTasks, [], [], null, TODAY, false) }
   const completedLocked = { ...locked, completed: shellCompleted(doneTasks, [], [], null, TODAY, true) }
   const signOut = captureSignOut()
@@ -225,19 +226,19 @@ function fixtures(): Record<string, Fixture> {
       method: 'scheduleReminders', payload: signOut.reminders, now: NOW, expect: [],
     },
     'widget.json': {
-      description: "The widgets' Today list: overdue first, titles and times while readable.",
+      description: "The widgets' Today list: overdue first, titles, times, the project's name and an overdue task's date while readable, and the completion circle (actions: complete, android-widget-list D3).",
       method: 'publishWidget', payload: JSON.stringify(widget), now: NOW,
-      expect: { updatedAt: NOW, locked: false, count: widget.count, overdue: widget.overdue, rows: widget.tasks.slice(0, 5).map((t) => ({ id: t.id, title: t.title ?? null, time: t.time ?? null, priority: t.priority, overdue: t.overdue })), more: Math.max(0, widget.count - Math.min(5, widget.tasks.length)) },
+      expect: { updatedAt: NOW, locked: false, count: widget.count, overdue: widget.overdue, canComplete: true, rows: widget.tasks.map((t) => ({ id: t.id, title: t.title ?? null, time: t.time ?? null, date: t.date ?? null, project: t.project ?? null, priority: t.priority, overdue: t.overdue })), more: Math.max(0, widget.count - widget.tasks.length) },
     },
     'widget-locked.json': {
-      description: 'A locked encrypted account: counts only, no rows.',
+      description: 'A locked encrypted account: counts only, no rows, so no completion circle.',
       method: 'publishWidget', payload: JSON.stringify(locked), now: NOW,
-      expect: { updatedAt: NOW, locked: true, count: locked.count, overdue: locked.overdue, rows: [], more: locked.count },
+      expect: { updatedAt: NOW, locked: true, count: locked.count, overdue: locked.overdue, canComplete: false, rows: [], more: locked.count },
     },
     'widget-signed-out.json': {
       description: 'Sign-out: an empty, locked widget.',
       method: 'publishWidget', payload: JSON.stringify(signedOutWidget), now: NOW,
-      expect: { updatedAt: NOW, locked: true, count: 0, overdue: 0, rows: [], more: 0 },
+      expect: { updatedAt: NOW, locked: true, count: 0, overdue: 0, canComplete: false, rows: [], more: 0 },
     },
   }
 }
@@ -256,6 +257,8 @@ function actions() {
       { id: 'g-arrive', action: 'done' }, { id: 'g-arrive', action: 'dismiss' }, { id: 'r 1/ü', action: 'done' },
     ].map(({ id, action }) => ({ id, action, path: `/?reminder=${encodeURIComponent(id).replace(/%20/g, '+')}&action=${action}` })),
     quickAdd: { path: '/?add=' },
+    // android-widget-list D2: the Today widget's completion circle, opened in a background run only.
+    completePaths: ['t1', 't/1 ü'].map((taskId) => ({ taskId, path: `/?complete=${encodeURIComponent(taskId).replace(/%20/g, '+')}` })),
     // focus-live-activity D4: a tap on the activity or notification opens focusOpen; Pause and Resume open these.
     focusOpen: { path: '/focus' },
     focusActions: (['pause', 'resume'] as const).map((action) => ({ action, path: `/focus?action=${action}` })),
@@ -505,6 +508,7 @@ describe('Android bridge fixtures', () => {
     const a = actions()
     for (const r of [...a.reminderActions, ...a.locationActions]) expect(shellUrlAction(new URL(r.path, 'https://x').search)).toEqual({ kind: 'reminder', id: r.id, action: r.action })
     expect(shellUrlAction(new URL(a.quickAdd.path, 'https://x').search)).toEqual({ kind: 'add', text: '' })
+    for (const c of a.completePaths) expect(shellUrlAction(new URL(c.path, 'https://x').search)).toEqual({ kind: 'complete', id: c.taskId })
     for (const f of a.focusActions) { const u = new URL(f.path, 'https://x'); expect(shellUrlAction(u.search, u.pathname)).toEqual({ kind: 'focus', action: f.action }) }
   })
 })

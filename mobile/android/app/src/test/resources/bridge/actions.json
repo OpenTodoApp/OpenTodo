@@ -52,6 +52,16 @@
   "quickAdd": {
     "path": "/?add="
   },
+  "completePaths": [
+    {
+      "taskId": "t1",
+      "path": "/?complete=t1"
+    },
+    {
+      "taskId": "t/1 ü",
+      "path": "/?complete=t%2F1+%C3%BC"
+    }
+  ],
   "focusOpen": {
     "path": "/focus"
   },

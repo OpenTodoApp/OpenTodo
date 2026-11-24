@@ -44,6 +44,8 @@
     <string name="widget_empty">No queda nada para hoy.</string>
     <string name="widget_untitled">Tarea</string>
     <string name="widget_more">+ %1$d más</string>
+    <string name="widget_earlier">De antes</string>
+    <string name="widget_complete">Completar: %1$s</string>
     <string name="widget_completed">Completadas</string>
     <string name="widget_completed_description">Cuántas tareas completaste esta semana</string>
     <string name="widget_completed_locked">Bloqueado: solo el número de hoy</string>

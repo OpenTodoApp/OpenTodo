@@ -62,6 +62,11 @@ class Prefs(context: Context) {
         get() = p.getString("widget", null)
         set(v) = p.edit().putString("widget", v).apply()
 
+    /** Completions ticked on the Today widget and not yet confirmed by a publication (WidgetPending): `{taskId: ms}`. */
+    var widgetPending: String?
+        get() = p.getString("widgetPending", null)
+        set(v) = p.edit().apply { if (v == null) remove("widgetPending") else putString("widgetPending", v) }.apply()
+
     /** The last system bars the web app asked for (theme-engine D8), applied at the next launch before the page draws. */
     var systemBars: String?
         get() = p.getString("systemBars", null)

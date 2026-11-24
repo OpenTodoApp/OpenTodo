@@ -64,6 +64,7 @@ internal suspend fun awaitBackgroundDone(done: Deferred<Unit>, limitMs: Long): B
 object HiddenRun {
     private const val PERIODIC = "refresh"
     private const val PUSHED = "pushed"
+    private const val WIDGET = "widget"
 
     fun schedulePeriodic(context: Context) {
         if (Prefs(context).server == null) return
@@ -77,6 +78,17 @@ object HiddenRun {
     fun enqueueOnce(context: Context, path: String) {
         val req = OneTimeWorkRequestBuilder<HiddenRunWorker>().setInputData(workDataOf("path" to path)).build()
         WorkManager.getInstance(context).enqueue(req)
+    }
+
+    /**
+     * A tap on the Today widget's completion circle (android-widget-list D2): one run per tick,
+     * appended to one chain so ticks run one after another and each is applied once. Like a
+     * notification action, applied locally at once and synced when there is a network.
+     */
+    fun enqueueWidgetAction(context: Context, path: String) {
+        if (Prefs(context).server == null) return
+        val req = OneTimeWorkRequestBuilder<HiddenRunWorker>().setInputData(workDataOf("path" to path)).build()
+        WorkManager.getInstance(context).enqueueUniqueWork(WIDGET, ExistingWorkPolicy.APPEND_OR_REPLACE, req)
     }
 
     /**

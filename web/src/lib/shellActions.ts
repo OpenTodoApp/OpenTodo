@@ -6,17 +6,21 @@
 // which completes the reminder's task; the push worker opens the same address for
 // Done when no window of the app is open. A shell with `focus` opens
 // `/focus?action=pause|resume` from its Live Activity or ongoing notification
-// (focus-live-activity D4), applied as Space applies it.
+// (focus-live-activity D4), applied as Space applies it. The Android Today widget's
+// completion circle opens `/?complete=<taskId>` in a background run
+// (android-widget-list D2), applied only there, never in the visible app.
 import { db } from './db'
 import { completeTask } from './ops'
 import { pauseSession, resumeSession } from './focus/session'
 import { dismissReminder, snoozeReminder } from './reminders'
+import { has } from './shell'
 
 export type ReminderAction = 'snooze' | 'dismiss' | 'done'
 export type FocusAction = 'pause' | 'resume'
 
 export type ShellUrlAction =
   | { kind: 'reminder'; id: string; action: ReminderAction }
+  | { kind: 'complete'; id: string }
   | { kind: 'add'; text: string }
   | { kind: 'focus'; action: FocusAction }
   | null
@@ -27,6 +31,8 @@ export function shellUrlAction(search: string, pathname = '/'): ShellUrlAction {
   const id = p.get('reminder')
   const action = p.get('action')
   if (id && (action === 'snooze' || action === 'dismiss' || action === 'done')) return { kind: 'reminder', id, action }
+  const complete = p.get('complete')
+  if (complete) return { kind: 'complete', id: complete }
   if (pathname === '/focus' && !id && (action === 'pause' || action === 'resume')) return { kind: 'focus', action }
   // `add` may be empty: the widget's button opens quick add (Android widgets hold no text field).
   const add = p.get('add')
@@ -50,6 +56,16 @@ export async function applyReminderAction(id: string, action: ReminderAction, no
 }
 
 /**
+ * The widget's completion circle (android-widget-list D2): completes an open task
+ * through completeTask, as a tap in the list does (a repeating task moves to its
+ * next occurrence). A task already completed, deleted or unknown is left alone.
+ */
+export async function applyWidgetComplete(id: string, now = Date.now()): Promise<void> {
+  const task = await db.tasks.get(id)
+  if (task && !task.deleted_at && !task.completed_at) await completeTask(task.id, { now })
+}
+
+/**
  * Pause or Resume from the shell, through the same transitions as Space; a session
  * already in that state (a stale notification) is left alone and nothing is written.
  */
@@ -61,7 +77,7 @@ export async function applyFocusAction(action: FocusAction, now = Date.now()): P
 let pendingAdd: string | null = null
 let applied = 0
 
-/** How many notification actions this page has written; a background run waits for its own (shell-reminders-on D4). */
+/** How many notification and widget actions this page has written; a background run waits for its own (shell-reminders-on D4). */
 export function reminderActionsApplied(): number {
   return applied
 }
@@ -78,11 +94,15 @@ export async function handleShellUrl(openQuickAdd: () => boolean, loc: Location 
   const action = shellUrlAction(loc.search, loc.pathname)
   if (!action) return null
   const p = new URLSearchParams(loc.search)
-  for (const k of ['reminder', 'action', 'add']) p.delete(k)
+  for (const k of ['reminder', 'action', 'add', 'complete']) p.delete(k)
   const query = p.toString()
   hist.replaceState(hist.state, '', `${loc.pathname}${query ? `?${query}` : ''}${loc.hash}`)
   if (action.kind === 'reminder') {
     try { await applyReminderAction(action.id, action.action) } finally { applied++ }
+  }
+  else if (action.kind === 'complete') {
+    // Only in a background run: any app can open the visible app at an address (D2).
+    if (has('background')) try { await applyWidgetComplete(action.id) } finally { applied++ }
   }
   else if (action.kind === 'focus') await applyFocusAction(action.action)
   else {

@@ -44,6 +44,8 @@
     <string name="widget_empty">Bugün için başka görev kalmadı.</string>
     <string name="widget_untitled">Görev</string>
     <string name="widget_more">+ %1$d daha</string>
+    <string name="widget_earlier">Daha önce</string>
+    <string name="widget_complete">Tamamla: %1$s</string>
     <string name="widget_completed">Tamamlanan</string>
     <string name="widget_completed_description">Bu hafta kaç görev tamamladığın</string>
     <string name="widget_completed_locked">Kilitli: yalnızca bugünün sayısı</string>

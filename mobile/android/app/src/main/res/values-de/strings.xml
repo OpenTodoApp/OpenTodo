@@ -44,6 +44,8 @@
     <string name="widget_empty">Für heute ist nichts mehr offen.</string>
     <string name="widget_untitled">Aufgabe</string>
     <string name="widget_more">+ %1$d weitere</string>
+    <string name="widget_earlier">Von früher</string>
+    <string name="widget_complete">Erledigen: %1$s</string>
     <string name="widget_completed">Erledigt</string>
     <string name="widget_completed_description">Wie viele Aufgaben du diese Woche erledigt hast</string>
     <string name="widget_completed_locked">Gesperrt: nur die Zahl von heute</string>

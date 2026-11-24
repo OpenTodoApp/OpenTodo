@@ -8,6 +8,7 @@
     "locked": true,
     "count": 0,
     "overdue": 0,
+    "canComplete": false,
     "rows": [],
     "more": 0
   }

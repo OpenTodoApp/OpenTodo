@@ -44,6 +44,8 @@
     <string name="widget_empty">Voor vandaag is er niets meer open.</string>
     <string name="widget_untitled">Taak</string>
     <string name="widget_more">+ %1$d meer</string>
+    <string name="widget_earlier">Eerder</string>
+    <string name="widget_complete">Voltooien: %1$s</string>
     <string name="widget_completed">Afgerond</string>
     <string name="widget_completed_description">Hoeveel taken je deze week hebt afgerond</string>
     <string name="widget_completed_locked">Vergrendeld: alleen het aantal van vandaag</string>

@@ -44,6 +44,8 @@
     <string name="widget_empty">Nada mais para hoje.</string>
     <string name="widget_untitled">Tarefa</string>
     <string name="widget_more">+ mais %1$d</string>
+    <string name="widget_earlier">De antes</string>
+    <string name="widget_complete">Concluir: %1$s</string>
     <string name="widget_completed">Concluídas</string>
     <string name="widget_completed_description">Quantas tarefas concluíste esta semana</string>
     <string name="widget_completed_locked">Bloqueado: só o número de hoje</string>
