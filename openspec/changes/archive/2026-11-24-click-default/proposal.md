@@ -31,4 +31,4 @@ ROADMAP.md: none (an improvement from an issue); follows `click-selects-title`.
 
 - Server: `internal/sync/ops.go` (`user_prefs.row_click`), `internal/httpapi/row_click.go` (the route and the stored default), `auth_handlers.go` (`rowClick` in the status); `docs/api.md`, the v1 surface and the OpenAPI description.
 - Web: `lib/rowClickPref.ts`, `TaskRow.tsx` (`useRowClicks` records no press under Open details), `AppearanceSection.tsx` (the row), `TaskListsServerPanel.tsx`, `settingsSections.ts`, `settingsPages.tsx`, `lib/settingsCopy.ts`, `App.tsx`; four messages in every catalogue.
-- Docs: `docs/settings-app.md`, `docs/settings-you.md`, `docs/settings-server.md`, `docs/task-panel.md`; `changelog.d/Added/click-default.md`.
+- Docs: `docs/settings-app.md`, `docs/settings-server.md`, `docs/task-panel.md`, `docs/api.md`; `changelog.d/Added/click-default.md`.

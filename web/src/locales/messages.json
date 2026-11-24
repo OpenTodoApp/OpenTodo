@@ -2561,7 +2561,7 @@
   "Backups of the whole server are under <a>Settings → Server</a>.": [
     "web/src/app/DataSettings.tsx"
   ],
-  "Backups, attachments, outgoing email, branding, maps, automations, speech to text and the audit log": [
+  "Backups, attachments, outgoing email, branding, maps, task lists, automations, speech to text and the audit log": [
     "web/src/app/settingsSections.ts"
   ],
   "Bakery": [
@@ -5504,7 +5504,7 @@
     "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
-  "Download your data, branding, maps, automations and the audit log": [
+  "Download your data, branding, maps, task lists, automations and the audit log": [
     "web/src/app/settingsSections.ts"
   ],
   "Download {name}": [

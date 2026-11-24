@@ -7,7 +7,7 @@
 import { createStore } from './store'
 import { msg, translatedMap } from './i18n'
 import { readEnum, writeString } from './deviceStorage'
-import { currentUserPrefsRow, useUserPrefsRow } from './localData'
+import { currentUserPrefsRow } from './localData'
 import { mutate } from './ops'
 import type { UserPrefs } from './types'
 import { USER_PREFS_ID } from './userPrefs'
@@ -41,11 +41,6 @@ export function readRowClick(row: Pick<UserPrefs, 'row_click'> | null | undefine
 /** What a click does now: the account's choice, else the server's default. */
 export function rowClickMode(row: Pick<UserPrefs, 'row_click'> | null | undefined = currentUserPrefsRow()): RowClickMode {
   return readRowClick(row) || serverDefault.get()
-}
-
-/** The account's choice, live. */
-export function useRowClickPref(): RowClickPref {
-  return readRowClick(useUserPrefsRow())
 }
 
 /** Chooses for the account as one synced op; works offline. '' follows the server again. */

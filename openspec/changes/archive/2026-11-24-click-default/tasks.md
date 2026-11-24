@@ -14,5 +14,5 @@
 
 ## 3. Docs and checks
 
-- [x] 3.1 `docs/settings-app.md`, `docs/settings-you.md`, `docs/settings-server.md`, `docs/task-panel.md`; `changelog.d/Added/click-default.md`; `make docs` and `make docs-check`
+- [x] 3.1 `docs/settings-app.md`, `docs/settings-server.md`, `docs/task-panel.md`; `changelog.d/Added/click-default.md`; `make docs` and `make docs-check`
 - [x] 3.2 `npm test`, `npm run typecheck` and `npm run build` in web/, `make bundle-budget`, `make openspec-validate`, `go test ./...`

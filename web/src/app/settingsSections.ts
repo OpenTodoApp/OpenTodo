@@ -167,7 +167,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<Sett
   },
   {
     id: 'server', label: msg('Server'), group: 'server', icon: 'upload',
-    description: () => (getHosted() ? t('Download your data, branding, maps, automations and the audit log') : t('Backups, attachments, outgoing email, branding, maps, automations, speech to text and the audit log')),
+    description: () => (getHosted() ? t('Download your data, branding, maps, task lists, automations and the audit log') : t('Backups, attachments, outgoing email, branding, maps, task lists, automations, speech to text and the audit log')),
     visible: owner,
     pages: pages([
       page({ id: 'backups', label: msg('Backups'), icon: 'archive', help: 'settings/backups', visible: ownsServer, demo: [msg('backups')] }),
