@@ -108,7 +108,7 @@ export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable
  * leaving it empty) closes it. `add` writes one task from the typed title; `onClose`
  * hears whether Escape asked for the close, so the line can take its focus back.
  */
-export function AddLine({ depth, placeholder, label, add, onClose }: { depth: number; placeholder: string; label: string; add: (title: string) => Promise<unknown>; onClose: (escape: boolean) => void }) {
+export function AddLine({ depth, timeColumn = false, placeholder, label, add, onClose }: { depth: number; timeColumn?: boolean; placeholder: string; label: string; add: (title: string) => Promise<unknown>; onClose: (escape: boolean) => void }) {
   const [value, setValue] = useState('')
   const ref = useRef<HTMLTextAreaElement>(null)
   useEffect(() => {
@@ -123,11 +123,14 @@ export function AddLine({ depth, placeholder, label, add, onClose }: { depth: nu
     ref.current?.focus()
   }
   return (
-    // The "+" keeps to the field's first line when the title wraps: its box is one line of
-    // the field (30 px; 44 px on a touch screen, where a field is at least 44 px tall and
-    // its padding keeps one line in the middle, as the one-line input had it).
-    <form data-add-line onSubmit={(e) => act(submit(e))} className="flex items-start gap-2 py-1 pr-2" style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 2}rem` }}>
-      <span className="flex h-7.5 items-center text-accent pointer-coarse:h-11">+</span>
+    // Laid out like a row being edited in place (issue 1980): the row's padding, the "+" in
+    // the checkbox's slot and the field at the title column, time column included. The "+"
+    // keeps to the field's first line when the title wraps: its box is one line of the field
+    // (30 px; 44 px on a touch screen, where a field is at least 44 px tall and its padding
+    // keeps one line in the middle, as the one-line input had it).
+    <form data-add-line onSubmit={(e) => act(submit(e))} className="row-pad flex items-start gap-2 pr-2" style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 2}rem` }}>
+      <span aria-hidden className="flex h-7.5 w-5 shrink-0 items-center justify-center text-accent pointer-coarse:h-11">+</span>
+      {timeColumn && <span aria-hidden data-row-time="" className="w-(--row-time-w) shrink-0" />}
       <LineField
         ref={ref}
         className="ui-input py-1 pointer-coarse:py-[11px]"
@@ -145,8 +148,8 @@ export function AddLine({ depth, placeholder, label, add, onClose }: { depth: nu
 }
 
 /** Inline "Add subtask" line under a row; each entry is the parent's last subtask. */
-export function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: number; onClose: (escape: boolean) => void }) {
-  return <AddLine depth={depth} onClose={onClose} label={t('Add a subtask')} add={(title) => createSubtask(parent.id, title)}
+export function SubtaskInput({ parent, depth, timeColumn, onClose }: { parent: Task; depth: number; timeColumn?: boolean; onClose: (escape: boolean) => void }) {
+  return <AddLine depth={depth} timeColumn={timeColumn} onClose={onClose} label={t('Add a subtask')} add={(title) => createSubtask(parent.id, title)}
     placeholder={parent.title ? t('Add a subtask to {title}…', { title: parent.title }) : t('Add a subtask to this task…')} />
 }
 
@@ -164,7 +167,7 @@ export function SubtaskAddLine({ parent, depth, timeColumn = false, selected, op
   return (
     <div data-subtask-add-line data-line-selected={selected || open || undefined}>
       {open
-        ? <SubtaskInput parent={parent} depth={depth} onClose={(escape) => { if (escape) returnFocus.current = true; onClose() }} />
+        ? <SubtaskInput parent={parent} depth={depth} timeColumn={timeColumn} onClose={(escape) => { if (escape) returnFocus.current = true; onClose() }} />
         : (
           <button
             ref={button}

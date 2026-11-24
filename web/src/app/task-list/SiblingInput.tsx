@@ -7,7 +7,7 @@ import { t } from '../../lib/i18n'
 import type { Task } from '../../lib/types'
 import { AddLine } from './TaskListRow'
 
-export default function SiblingInput({ anchor, after, depth, onAdded, onClose }: { anchor: Task; after: string; depth: number; onAdded: (anchor: string, id: string) => void; onClose: () => void }) {
-  return <AddLine depth={depth} onClose={onClose} label={t('Add task below')} add={async (title) => onAdded(anchor.id, await createTaskAfter(anchor, after, title))}
+export default function SiblingInput({ anchor, after, depth, timeColumn, onAdded, onClose }: { anchor: Task; after: string; depth: number; timeColumn?: boolean; onAdded: (anchor: string, id: string) => void; onClose: () => void }) {
+  return <AddLine depth={depth} timeColumn={timeColumn} onClose={onClose} label={t('Add task below')} add={async (title) => onAdded(anchor.id, await createTaskAfter(anchor, after, title))}
     placeholder={anchor.title ? t('Add a task below {title}…', { title: anchor.title }) : t('Add a task below this one…')} />
 }

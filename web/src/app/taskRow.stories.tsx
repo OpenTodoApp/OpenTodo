@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { InlineEditor } from './task-list/InlineEditor'
+import { AddLine } from './task-list/TaskListRow'
 import { type CSSProperties, type ReactNode, useLayoutEffect } from 'react'
 import { setDateTime } from '../lib/dates'
 import { applyFullTitles } from '../lib/fullTitles'
@@ -539,6 +540,18 @@ export const EditingInline: StoryObj = {
       </List>
     )
   },
+}
+
+/** The "Add task below" line (add-below): spaced like a row edited in place, the "+" in the checkbox's slot and the field at the title column. */
+export const AddingBelow: StoryObj = {
+  render: () => (
+    <List>
+      <TaskRow {...base} task={task({ id: 't1', title: 'Renew passport' })} />
+      <TaskRow {...base} selected task={task({ id: 't2', title: 'Call the bank about the card limit' })} />
+      <li><AddLine depth={0} label="Add task below" placeholder="Add a task below Call the bank about the card limit…" add={async () => {}} onClose={noop} /></li>
+      <TaskRow {...base} task={task({ id: 't3', title: 'Plan the autumn trip' })} />
+    </List>
+  ),
 }
 
 /** The title-only editor opened from a row menu, with touch-sized controls. */
