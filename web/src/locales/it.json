@@ -600,6 +600,7 @@
   "Show as graph": "Mostra come grafo",
   "Show as list": "Mostra come elenco",
   "Show notes as": "Mostra le note come",
+  "Show tasks assigned to others": "Mostra le attività assegnate ad altri",
   "Shown after the link’s secret. The server can read it, so keep the note’s content out of it.": "Compare dopo il segreto del link. Il server può leggerla, quindi non metterci il contenuto della nota.",
   "Statistics, {date} – {date2}": "Statistiche, {date} – {date2}",
   "Subtask shown for context": "Sottoattività mostrata per contesto",

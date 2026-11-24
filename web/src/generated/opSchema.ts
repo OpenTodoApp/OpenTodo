@@ -958,10 +958,10 @@ export interface UserPrefsFields {
    */
   today_events?: string
   /**
-   * Today hid tasks assigned to others (OpenSpec change
-   * today-assigned-filter) while "mine"; since personal-views-assignee
-   * the personal views always do, and clients keep but never read it.
-   * Settings, never content.
+   * Show tasks assigned to others in the personal lists (OpenSpec change
+   * others-tasks-toggle): "all" shows them; clients read empty, "mine"
+   * (today-assigned-filter's hide) and unknown values as hidden and keep
+   * the stored value. Settings, never content.
    */
   today_assignees?: string
   /**
