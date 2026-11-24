@@ -10,9 +10,9 @@
 
 - [x] 2.1 `lib/rowClickPref.ts`: the account's choice, the server's default from `auth/status` mirrored on the device, the account's choice winning, one synced op (vitest `src/lib/rowClickPref.test.ts`)
 - [x] 2.2 `useRowClicks` records no press under Open details: a click opens the page or the side panel and never edits; the account's choice wins over the server's (vitest `src/app/task-list/clickSelects.test.tsx`)
-- [x] 2.3 Settings → Appearance → Task details "Click a task to" and Settings → Server → Task lists (vitest `src/app/rowClickSettings.test.tsx`, `src/app/settingsSections.test.tsx`); every catalogue (`make i18n-check`)
+- [x] 2.3 Settings → Appearance → Task details "Click a task to" and Settings → Server → Task lists (vitest `src/app/rowClickSettings.test.tsx`, `src/app/settingsSections.test.tsx`, `src/app/hostedSettings.test.tsx`; story baseline `settings-navigation--task-details-page`); every catalogue (`make i18n-check`)
 
 ## 3. Docs and checks
 
 - [x] 3.1 `docs/settings-app.md`, `docs/settings-you.md`, `docs/settings-server.md`, `docs/task-panel.md`; `changelog.d/Added/click-default.md`; `make docs` and `make docs-check`
-- [ ] 3.2 `npm test`, `npm run typecheck` and `npm run build` in web/, `make bundle-budget`, `make openspec-validate`, `go test ./...`
+- [x] 3.2 `npm test`, `npm run typecheck` and `npm run build` in web/, `make bundle-budget`, `make openspec-validate`, `go test ./...`
