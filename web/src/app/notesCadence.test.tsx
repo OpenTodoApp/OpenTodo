@@ -7,7 +7,7 @@
 import { act } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { EditorView } from 'prosemirror-view'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Op, Task } from '../lib/types'
 
 const uploads: Op[][] = []
@@ -47,9 +47,39 @@ class FakeEventSource {
 // Node's setImmediate stays real: fake-indexeddb and promise chains settle on it
 // without moving the fake clock.
 const { setImmediate: nextTask } = globalThis as unknown as { setImmediate: (fn: () => void) => void }
+// IndexedDB transactions started and still open, counted at the prototype.
+let started = 0
+let open = 0
+const transaction = IDBDatabase.prototype.transaction
+beforeAll(() => {
+  IDBDatabase.prototype.transaction = function (this: IDBDatabase, ...args: Parameters<IDBDatabase['transaction']>) {
+    const tx = transaction.apply(this, args)
+    started++
+    open++
+    let done = false
+    const end = () => { if (!done) { done = true; open-- } }
+    tx.addEventListener('complete', end)
+    tx.addEventListener('abort', end)
+    return tx
+  }
+})
+afterAll(() => { IDBDatabase.prototype.transaction = transaction })
+/** Quiet rounds of the event loop (no transaction open, none started) that end a settle. */
+const QUIET_ROUNDS = 20
+/**
+ * Let the work the fake clock started finish: rounds of the event loop until IndexedDB
+ * has been idle for QUIET_ROUNDS rounds, at most `rounds`. A fixed 200 rounds twice a
+ * tick spun on nothing for most of the 10-minute session, which took it past the test
+ * timeout on a loaded machine.
+ */
 async function settle(rounds = 200): Promise<void> {
   await act(async () => {
-    for (let i = 0; i < rounds; i++) await new Promise<void>((r) => nextTask(r))
+    let quiet = 0
+    for (let i = 0; i < rounds && quiet < QUIET_ROUNDS; i++) {
+      const before = started
+      await new Promise<void>((r) => nextTask(r))
+      quiet = open === 0 && started === before ? quiet + 1 : 0
+    }
   })
 }
 async function until(cond: () => boolean | Promise<boolean>, what: string): Promise<void> {
@@ -228,7 +258,10 @@ describe('count check (2.2)', () => {
     expect(pushedDocs().length).toBeLessThanOrEqual(pauses + minutes + 1)
     // The previous cadence pushed after every pause: about one per word, 400 here.
     expect(pushedDocs().length).toBeLessThan(40)
-  })
+    // About 300 bursts of typing, each a save and a settle of the database: a few
+    // seconds alone, several times that with every core busy. The fake clock makes
+    // the result independent of that time; the ceiling only has to catch a hang.
+  }, 90_000)
 })
 
 describe('comment composer (2.3)', () => {

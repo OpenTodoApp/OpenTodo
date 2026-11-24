@@ -9,10 +9,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { applyOps, createTask, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
-import { click, flush, key, render, minWidthPx, waitFor } from '../ui/test-utils'
+import { click, key, render, minWidthPx, waitFor } from '../ui/test-utils'
 import { openTaskPanel, resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
+import { RESTORE_AFTER_MS } from './useScrollDirection'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 let width = 390
@@ -151,20 +152,33 @@ describe('the tab bar while the list scrolls', () => {
       addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
     })) as typeof window.matchMedia
   })
+  afterEach(() => { vi.restoreAllMocks() })
   const content = () => document.querySelector<HTMLElement>('#content')!
+  // The bar comes back on a 600 ms timer (RESTORE_AFTER_MS). On real timers it raced
+  // every assertion after a scroll: a loaded worker that took 600 ms from the scroll
+  // to the assertion saw the bar restored already. So once the shell is up, setTimeout
+  // is faked and the test moves the clock itself (the teardown puts real timers back;
+  // IndexedDB settles on setImmediate, which stays real).
+  async function renderScrolling() {
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!bar() && !!document.querySelector('#content'), 'the tab bar')
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    return r
+  }
+  const elapse = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms) })
+  // Dispatched inside act, so React commits the bar's new state before this returns
+  // (outside act the update was left to the scheduler and could land after the assertion).
   async function scrollTo(y: number) {
     const el = content()
     Object.defineProperty(el, 'scrollHeight', { value: 3000, configurable: true })
     Object.defineProperty(el, 'clientHeight', { value: 600, configurable: true })
     el.scrollTop = y
-    el.dispatchEvent(new Event('scroll'))
-    await flush()
+    await act(async () => { el.dispatchEvent(new Event('scroll')) })
   }
   const add = () => document.querySelector('[data-add-button]')!
 
   it('scrolling down more than 24 px drops the labels and slides the add button out; scrolling up restores both', async () => {
-    const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!bar() && !!document.querySelector('#content'), 'the tab bar')
+    const r = await renderScrolling()
     await scrollTo(10)
     expect(bar()!.hasAttribute('data-minimised')).toBe(false)
     await scrollTo(60)
@@ -182,12 +196,13 @@ describe('the tab bar while the list scrolls', () => {
   })
 
   it('comes back 600 ms after the scroll stops, and at the end of the list', async () => {
-    const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!bar() && !!document.querySelector('#content'), 'the tab bar')
+    const r = await renderScrolling()
     await scrollTo(100)
     expect(bar()!.getAttribute('data-minimised')).toBe('true')
-    // Restored by the quiet timer (600 ms), with no further scroll.
-    await waitFor(() => !bar()!.hasAttribute('data-minimised'), 'the bar back after the scroll stopped')
+    // Restored by the quiet timer (600 ms), with no further scroll; not a moment before.
+    await elapse(RESTORE_AFTER_MS - 1)
+    expect(bar()!.getAttribute('data-minimised')).toBe('true')
+    await elapse(1)
     expect(bar()!.hasAttribute('data-minimised')).toBe(false)
     await scrollTo(200)
     expect(bar()!.getAttribute('data-minimised')).toBe('true')
@@ -198,16 +213,23 @@ describe('the tab bar while the list scrolls', () => {
 
   it('the room under the content follows the bar as it minimises and returns (#1908)', async () => {
     // The bar's box as the browser lays it out: 56 px tabs, 44 px minimised on a touch screen, 34 px of safe area.
-    const observers: (() => void)[] = []
-    vi.stubGlobal('ResizeObserver', class { constructor(cb: () => void) { observers.push(cb) } observe() {} disconnect() {} })
-    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+    // Only the observers watching the bar are called back, as a browser would.
+    const observers: { cb: () => void; targets: Element[] }[] = []
+    vi.stubGlobal('ResizeObserver', class {
+      entry: { cb: () => void; targets: Element[] }
+      constructor(cb: () => void) { this.entry = { cb, targets: [] }; observers.push(this.entry) }
+      observe(el: Element) { this.entry.targets.push(el) }
+      unobserve() {}
+      disconnect() { this.entry.targets = [] }
+    })
+    // Restored by the describe's afterEach, also when an assertion fails half-way.
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
       const h = this.hasAttribute('data-tab-bar') ? (this.hasAttribute('data-minimised') ? 44 : 56) + 1 + 34 : 0
       return { height: h, width: 0, top: 0, left: 0, right: 0, bottom: h, x: 0, y: 0, toJSON() {} } as DOMRect
     })
     const room = () => document.documentElement.style.getPropertyValue('--tab-bar-h')
-    const resized = async () => { await act(async () => { observers.forEach((cb) => cb()) }) }
-    const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!bar() && !!document.querySelector('#content'), 'the tab bar')
+    const resized = async () => { await act(async () => { observers.filter((o) => o.targets.includes(bar()!)).forEach((o) => o.cb()) }) }
+    const r = await renderScrolling()
     expect(document.querySelector<HTMLElement>('main')!.style.paddingBottom).toContain('var(--tab-bar-h')
     expect(room()).toBe('91px')
     await scrollTo(60)
@@ -219,13 +241,11 @@ describe('the tab bar while the list scrolls', () => {
     await r.unmount()
     // Without the bar the shell falls back to its full height again.
     expect(room()).toBe('')
-    rect.mockRestore()
   })
 
   it('never minimises under reduced motion', async () => {
     reduce = true
-    const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!bar() && !!document.querySelector('#content'), 'the tab bar')
+    const r = await renderScrolling()
     await scrollTo(100)
     await scrollTo(300)
     expect(bar()!.hasAttribute('data-minimised')).toBe(false)
