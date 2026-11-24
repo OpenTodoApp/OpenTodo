@@ -593,3 +593,51 @@ func TestRoutineMembersMessage(t *testing.T) {
 		}
 	}
 }
+
+type fakeUnconfirmed map[string]bool
+
+func (f fakeUnconfirmed) Unconfirmed(_ context.Context, userID, address string) (bool, error) {
+	return f[userID] || f[strings.ToLower(address)], nil
+}
+
+// TestSendRefusesUnconfirmedAddress (sso-missing-email-verified): no mail goes to
+// an address single sign-on took unconfirmed, matched by account or by address,
+// except the confirmation of an address itself.
+func TestSendRefusesUnconfirmedAddress(t *testing.T) {
+	fs := &fakeSender{}
+	s, db, _ := newService(t, config.SMTPConfig{}, fs)
+	ctx := context.Background()
+	if _, err := s.Save(ctx, Update{Host: ptr("smtp.example.com"), From: ptr("todo@example.com")}); err != nil {
+		t.Fatal(err)
+	}
+	s.recipients = fakeUnconfirmed{"u-squat": true, "alice@corp.example": true}
+	for _, m := range []Message{
+		{Kind: KindDigest, To: "alice@corp.example", UserID: "u-squat"},
+		{Kind: KindPasswordReset, To: "Alice@Corp.example", Vars: Vars{Link: "x", Expiry: time.Hour}},
+		{Kind: KindMemberInvitation, To: "alice@corp.example", UserID: "u-squat", Vars: Vars{Link: "x", Inviter: "A"}},
+		{Kind: KindEmailChangeNotice, To: "alice@corp.example", UserID: "u-squat"},
+	} {
+		if err := s.Send(ctx, m); !errors.Is(err, ErrUnconfirmed) {
+			t.Fatalf("%s: %v", m.Kind, err)
+		}
+	}
+	if len(fs.sent) != 0 {
+		t.Fatalf("sent %v", fs.sent)
+	}
+	if rows := auditRows(t, db); !strings.Contains(rows[len(rows)-1], "address_unconfirmed") {
+		t.Fatalf("audit = %v", rows)
+	}
+	// Confirming an address, and other people, still get mail.
+	for _, m := range []Message{
+		{Kind: KindEmailChange, To: "alice@corp.example", UserID: "u-squat", Vars: Vars{Link: "x", Expiry: time.Hour}},
+		{Kind: KindVerifySignup, To: "alice@corp.example", Vars: Vars{Link: "x", Expiry: time.Hour}},
+		{Kind: KindPasswordReset, To: "bob@example.com", UserID: "u-bob", Vars: Vars{Link: "x", Expiry: time.Hour}},
+	} {
+		if err := s.Send(ctx, m); err != nil {
+			t.Fatalf("%s: %v", m.Kind, err)
+		}
+	}
+	if len(fs.sent) != 3 {
+		t.Fatalf("sent %v", fs.sent)
+	}
+}

@@ -329,6 +329,7 @@ func (s *Server) initLimiters() {
 func (s *Server) wireServices() {
 	setTrustedProxies(s.cfg.TrustedProxies, s.cfg.TrustCloudflare)
 	s.announceSetupCode()
+	s.warnSSOTrust()
 	if err := s.loadIdempotencySalt(context.Background()); err != nil {
 		// Without a stored salt keyed ids still derive per user; they are only
 		// guessable by someone who knows the user id and the key.

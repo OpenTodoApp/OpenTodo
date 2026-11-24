@@ -279,7 +279,9 @@ func (s *Service) handle(ctx context.Context, st Settings, act action, date stri
 		return false, derr
 	case errors.Is(err, mail.ErrRateLimited):
 		return false, s.store.MarkOutcome(octx, st.UserID, OutcomeLimited, "")
-	case errors.Is(err, mail.ErrDisabled):
+	case errors.Is(err, mail.ErrDisabled), errors.Is(err, mail.ErrUnconfirmed):
+		// Unconfirmed: the address came from single sign-on without confirmation
+		// (sso-missing-email-verified); the digest waits until it is confirmed.
 		return false, nil
 	}
 	stage := mail.StageSend

@@ -25,3 +25,5 @@ export const Offline: StoryObj = { render: () => <SsoPanelView {...base} online=
 export const WithError: StoryObj = { render: () => <SsoPanelView {...base} configuring error="discovery failed: the issuer did not answer." /> }
 const noBase = { ...settings, baseUrlConfigured: false, ssoOnly: true }
 export const NoBaseUrl: StoryObj = { render: () => <SsoPanelView {...base} configuring settings={noBase} form={formFrom(noBase)} /> }
+const trusting = { ...settings, allowProvision: true, trustMissingEmailVerified: true }
+export const MissingEmailConfirmation: StoryObj = { render: () => <SsoPanelView {...base} configuring settings={trusting} form={formFrom(trusting)} /> }

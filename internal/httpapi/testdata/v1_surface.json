@@ -6561,7 +6561,8 @@
         "redirectUri": "string",
         "scopes": "string",
         "ssoOnly": "boolean",
-        "syncPictures": "boolean"
+        "syncPictures": "boolean",
+        "trustMissingEmailVerified": "boolean"
       },
       "statuses": [
         "200"
@@ -11962,7 +11963,8 @@
         "providerLogout": "boolean|null?",
         "scopes": "string|null?",
         "ssoOnly": "boolean|null?",
-        "syncPictures": "boolean|null?"
+        "syncPictures": "boolean|null?",
+        "trustMissingEmailVerified": "boolean|null?"
       },
       "response": {
         "allowProvision": "boolean",
@@ -11978,7 +11980,8 @@
         "redirectUri": "string",
         "scopes": "string",
         "ssoOnly": "boolean",
-        "syncPictures": "boolean"
+        "syncPictures": "boolean",
+        "trustMissingEmailVerified": "boolean"
       },
       "statuses": [
         "200"

@@ -51,6 +51,20 @@ describe('SsoPanelView', () => {
     expect(disabledCount(html)).toBe(0)
   })
 
+  it('offers the missing email confirmation switch and warns while it is on (sso-missing-email-verified)', () => {
+    const off = panel()
+    expect(off).toContain('Accept new accounts without a confirmed email')
+    expect(off).not.toContain('data-testid="sso-trust-warning"')
+    const s: OidcSettings = { ...settings, trustMissingEmailVerified: true }
+    for (const configuring of [false, true]) {
+      const html = panel({ settings: s, configuring })
+      expect(html).toContain('data-testid="sso-trust-warning"')
+      expect(html).toContain('without a confirmed email address')
+    }
+    expect(saveInput(s, { ...formFrom(s), trustMissingEmailVerified: false }).trustMissingEmailVerified).toBe(false)
+    expect(formFrom({ ...settings, trustMissingEmailVerified: undefined }).trustMissingEmailVerified).toBe(false)
+  })
+
   it('warns when the redirect URI comes from the request', () => {
     expect(panel({ settings: { ...settings, baseUrlConfigured: false } })).toContain('set OPENTODO_BASE_URL')
   })

@@ -84,11 +84,11 @@ func (s *Server) showAppContinue(w http.ResponseWriter, r *http.Request, ticket 
 	// The provider's verified email, else the name it gives: an address it has
 	// not verified could be anyone's, so it never names the account.
 	who := ""
-	if bool(claims.EmailVerified) {
+	if claims.EmailVerified.Value {
 		who = strings.TrimSpace(claims.Email)
 	}
 	if who == "" {
-		who = strings.TrimSpace(identityOf(claims).Name)
+		who = strings.TrimSpace(identityOf(claims, oidc.Config{}).Name)
 	}
 	if who == "" {
 		who = claims.Subject

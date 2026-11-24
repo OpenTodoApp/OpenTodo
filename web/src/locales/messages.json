@@ -826,6 +826,9 @@
   "Accept invitation": [
     "web/src/app/AuthScreen.tsx"
   ],
+  "Accept new accounts without a confirmed email": [
+    "web/src/app/SsoPanel.tsx"
+  ],
   "Accept the assistant’s updated terms to use this": [
     "web/src/lib/rules/catalogue.ts"
   ],
@@ -7129,6 +7132,9 @@
   "For example: every Friday at five, make tasks in Errands from my Groceries note.": [
     "web/src/app/routines/DescribeIt.tsx"
   ],
+  "For providers that send no email confirmation, such as Synology SSO Server. Such a sign-in can create an account but never links to an existing one. Turn on only for a provider you control, where people cannot choose their own address.": [
+    "web/src/app/SsoPanel.tsx"
+  ],
   "For scripts, the ot command and AI assistants. Sent as {header}.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -10778,6 +10784,9 @@
   ],
   "New API token": [
     "web/src/app/TokensSection.tsx"
+  ],
+  "New accounts through {name} can be created without a confirmed email address. Keep this on only if people cannot choose their own address at {name}. An account created under someone else’s address can be deleted in Users and invitations.": [
+    "web/src/app/SsoPanel.tsx"
   ],
   "New address": [
     "web/src/app/EmailInboxPanel.tsx"

@@ -2,8 +2,10 @@ package auth
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"testing"
+	"time"
 )
 
 const testIssuer = "https://sso.example.com"
@@ -253,5 +255,126 @@ func TestUnlinkRules(t *testing.T) {
 	}
 	if err := s.UnlinkIdentity(ctx, m, ids[0].ID, true, "SSO"); err != nil {
 		t.Fatalf("unlink with another identity left: %v", err)
+	}
+}
+
+// TestOIDCMissingEmailVerifiedCreatesOnly (sso-missing-email-verified): with the
+// owner's switch, a token without email_verified may create a new account, but
+// never links to an existing one and never confirms the address.
+func TestOIDCMissingEmailVerifiedCreatesOnly(t *testing.T) {
+	ctx := context.Background()
+	s, db := newService(t, false)
+	owner := mustOwner(t, s)
+	trusted := func(sub, email string) ExternalIdentity {
+		id := ext(sub, email, false)
+		id.TrustMissingEmailVerified = true
+		return id
+	}
+
+	// A new address: an account is created when provisioning allows it, its
+	// address unconfirmed.
+	u, created, linked, err := s.MatchOrProvision(ctx, trusted("syn-1", "Nas.User@example.com"), true, "Synology")
+	if err != nil || !created || !linked || u.Email != "nas.user@example.com" {
+		t.Fatalf("create = %+v created=%v linked=%v err=%v", u, created, linked, err)
+	}
+	if n := countRows(t, db, "SELECT COUNT(*) FROM users WHERE id = ? AND email_verified_at IS NULL", u.ID); n != 1 {
+		t.Fatal("the created account's address counts as confirmed")
+	}
+	if n := countRows(t, db, "SELECT COUNT(*) FROM users WHERE id = ? AND email_assumed = 1", u.ID); n != 1 {
+		t.Fatal("the created account is not marked as having an assumed address")
+	}
+	// Add-by-email doesn't find it until the address is confirmed.
+	if _, err := s.InviteeByEmail(ctx, "nas.user@example.com"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("invitee lookup before confirmation: %v", err)
+	}
+	if _, err := db.Exec("UPDATE users SET email_verified_at = 1 WHERE id = ?", u.ID); err != nil {
+		t.Fatal(err)
+	}
+	if found, err := s.InviteeByEmail(ctx, "nas.user@example.com"); err != nil || found.ID != u.ID {
+		t.Fatalf("invitee lookup after confirmation: %+v %v", found, err)
+	}
+	if _, err := db.Exec("UPDATE users SET email_verified_at = NULL WHERE id = ?", u.ID); err != nil {
+		t.Fatal(err)
+	}
+	// An invite link bound to that address doesn't take it either until it is confirmed.
+	_, secret, err := s.CreateProjectInvite(ctx, owner, "p1", "editor", "nas.user@example.com", time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+	join := func(context.Context, *sql.Tx, string, string, string, string) ([]string, error) { return nil, nil }
+	if _, _, err := s.AcceptProjectInvite(ctx, secret, u, join); !errors.Is(err, ErrInvitationEmailMismatch) {
+		t.Fatalf("bound link before confirmation: %v", err)
+	}
+	if _, err := db.Exec("UPDATE users SET email_verified_at = 1 WHERE id = ?", u.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := s.AcceptProjectInvite(ctx, secret, u, join); err != nil {
+		t.Fatalf("bound link after confirmation: %v", err)
+	}
+	if _, err := db.Exec("UPDATE users SET email_verified_at = NULL WHERE id = ?", u.ID); err != nil {
+		t.Fatal(err)
+	}
+	// A local account whose address nobody confirmed is found as before.
+	if _, err := db.Exec("INSERT INTO users(id,email,password_hash,created_at) VALUES('l1','local@example.com','x',1)"); err != nil {
+		t.Fatal(err)
+	}
+	if found, err := s.InviteeByEmail(ctx, "local@example.com"); err != nil || found.ID != "l1" {
+		t.Fatalf("unconfirmed local account: %+v %v", found, err)
+	}
+	// The same subject signs in again.
+	if again, _, _, err := s.MatchOrProvision(ctx, trusted("syn-1", "nas.user@example.com"), true, "Synology"); err != nil || again.ID != u.ID {
+		t.Fatalf("returning = %+v %v", again, err)
+	}
+	// Without provisioning or open sign-up nothing is created.
+	if _, _, _, err := s.MatchOrProvision(ctx, trusted("syn-2", "other@example.com"), false, "Synology"); !errors.Is(err, ErrSignupClosed) {
+		t.Fatalf("closed: %v", err)
+	}
+	// An existing account, even an unguarded member with a confirmed address,
+	// is never linked by an unconfirmed email.
+	if _, err := db.Exec("INSERT INTO users(id,email,password_hash,created_at,email_verified_at) VALUES('m1','member@example.com','x',1,1)"); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, _, err := s.MatchOrProvision(ctx, trusted("syn-3", "member@example.com"), true, "Synology"); !errors.Is(err, ErrLinkRequiresSession) {
+		t.Fatalf("existing account by email: %v", err)
+	}
+	if n := countRows(t, db, "SELECT COUNT(*) FROM identities WHERE user_id = 'm1'"); n != 0 {
+		t.Fatalf("identities linked to the member: %d", n)
+	}
+	// Without the trust flag (switch off, or a provider that says false: the
+	// HTTP layer sets the flag only for a missing claim) nothing is created.
+	if _, _, _, err := s.MatchOrProvision(ctx, ext("syn-4", "fresh@example.com", false), true, "Synology"); !errors.Is(err, ErrEmailUnverified) {
+		t.Fatalf("without the switch: %v", err)
+	}
+	// No email at all is still refused.
+	if _, _, _, err := s.MatchOrProvision(ctx, trusted("syn-5", ""), true, "Synology"); !errors.Is(err, ErrEmailUnverified) {
+		t.Fatalf("no email: %v", err)
+	}
+}
+
+// TestUnconfirmedRecipient (sso-missing-email-verified): the mail check matches an
+// account created through the switch by id or by address, until it is confirmed.
+func TestUnconfirmedRecipient(t *testing.T) {
+	ctx := context.Background()
+	s, db := newService(t, false)
+	mustOwner(t, s)
+	id := ext("syn-1", "Alice@Corp.example", false)
+	id.TrustMissingEmailVerified = true
+	u, _, _, err := s.MatchOrProvision(ctx, id, true, "Synology")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct{ user, address string }{{u.ID, ""}, {"", "alice@corp.example"}, {"", " ALICE@corp.example "}} {
+		if got, err := s.Unconfirmed(ctx, tc.user, tc.address); err != nil || !got {
+			t.Fatalf("%+v: %v %v", tc, got, err)
+		}
+	}
+	if got, _ := s.Unconfirmed(ctx, "", "owner@example.com"); got {
+		t.Fatal("the owner counts as unconfirmed")
+	}
+	if _, err := db.Exec("UPDATE users SET email_verified_at = 1 WHERE id = ?", u.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := s.Unconfirmed(ctx, u.ID, "alice@corp.example"); got {
+		t.Fatal("still unconfirmed after confirmation")
 	}
 }

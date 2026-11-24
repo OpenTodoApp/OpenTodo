@@ -54,3 +54,23 @@ func migrateEmailVerified(ctx context.Context, db *sql.DB) error {
 	}
 	return tx.Commit()
 }
+
+// migrateEmailAssumed adds users.email_assumed (sso-missing-email-verified): 1
+// for an account that single sign-on created from an address its provider never
+// marked as verified, under the owner's switch. While its address is not
+// confirmed (email_verified_at NULL), adding that address to a project or
+// workspace treats it as unknown. A Go step for the same reason as
+// migrateEmailVerified.
+func migrateEmailAssumed(ctx context.Context, db *sql.DB) error {
+	var has int
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pragma_table_info('users') WHERE name = 'email_assumed'`).Scan(&has); err != nil {
+		return err
+	}
+	if has > 0 {
+		return nil
+	}
+	if _, err := db.ExecContext(ctx, `ALTER TABLE users ADD COLUMN email_assumed INTEGER NOT NULL DEFAULT 0`); err != nil {
+		return fmt.Errorf("add users.email_assumed: %w", err)
+	}
+	return nil
+}

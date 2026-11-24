@@ -249,6 +249,17 @@ func (s *Service) acceptLink(ctx context.Context, k linkKind, secret string, use
 	if err != nil {
 		return nil, nil, err
 	}
+	if inv.Email != nil {
+		// An address single sign-on took unconfirmed doesn't match a bound link
+		// until it is confirmed (sso-missing-email-verified).
+		var assumed bool
+		if err := tx.QueryRowContext(ctx, `SELECT email_assumed = 1 AND email_verified_at IS NULL FROM users WHERE id = ?`, user.ID).Scan(&assumed); err != nil {
+			return nil, nil, err
+		}
+		if assumed {
+			return nil, nil, ErrInvitationEmailMismatch
+		}
+	}
 	audience, err := s.joinLink(ctx, k, tx, inv, user.ID, now, join)
 	if err != nil {
 		return nil, nil, err

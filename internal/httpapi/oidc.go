@@ -212,16 +212,19 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if f.Mode == oidc.ModeLink {
-		s.finishOIDCLink(w, r, c, f.UserID, identityOf(claims), claims.Picture)
+		s.finishOIDCLink(w, r, c, f.UserID, identityOf(claims, c), claims.Picture)
 		return
 	}
-	s.finishOIDCLogin(w, r, c, identityOf(claims), raw, claims.Picture)
+	s.finishOIDCLogin(w, r, c, identityOf(claims, c), raw, claims.Picture)
 }
 
-// identityOf is the account-side view of verified claims.
-func identityOf(claims *oidc.Claims) auth.ExternalIdentity {
+// identityOf is the account-side view of verified claims. A token without any
+// email_verified claim is trusted for new accounts only when the owner switched
+// that on (sso-missing-email-verified).
+func identityOf(claims *oidc.Claims, c oidc.Config) auth.ExternalIdentity {
 	id := auth.ExternalIdentity{Issuer: claims.Issuer, Subject: claims.Subject, Email: claims.Email,
-		EmailVerified: bool(claims.EmailVerified), Name: claims.Name}
+		EmailVerified: claims.EmailVerified.Value, Name: claims.Name,
+		TrustMissingEmailVerified: c.TrustMissingEmailVerified && !claims.EmailVerified.Present}
 	if id.Name == "" {
 		id.Name = claims.PreferredUsername
 	}
@@ -372,10 +375,10 @@ func (s *Server) handleOIDCAppSession(w http.ResponseWriter, r *http.Request) {
 		// the app's redeem script could only take back to the start page.
 		r.Header.Set("Accept", "text/html")
 		// Without a session finishOIDCLink refuses: sign in again, then link.
-		s.finishOIDCLink(w, r, c, userID, identityOf(&h.Claims), h.Claims.Picture)
+		s.finishOIDCLink(w, r, c, userID, identityOf(&h.Claims, c), h.Claims.Picture)
 		return
 	}
-	s.finishOIDCLogin(w, r, c, identityOf(&h.Claims), h.IDToken, h.Claims.Picture)
+	s.finishOIDCLogin(w, r, c, identityOf(&h.Claims, c), h.IDToken, h.Claims.Picture)
 }
 
 // finishOIDCLink links the identity to the account that started the flow
@@ -446,20 +449,21 @@ func (s *Server) providerLogoutURL(r *http.Request, idToken string) string {
 
 func (s *Server) oidcSettingsJSON(r *http.Request, c oidc.Config) map[string]any {
 	return map[string]any{
-		"enabled":           c.Enabled(),
-		"issuer":            c.Issuer,
-		"clientId":          c.ClientID,
-		"clientSecret":      oidc.MaskSecret(c.ClientSecret),
-		"clientSecretSet":   c.ClientSecret != "",
-		"displayName":       c.DisplayName,
-		"scopes":            c.Scopes,
-		"allowProvision":    c.AllowProvision,
-		"ssoOnly":           c.SSOOnly,
-		"providerLogout":    c.ProviderLogout,
-		"syncPictures":      c.SyncPictures,
-		"redirectUri":       s.oidcRedirectURI(r),
-		"baseUrlConfigured": s.cfg.BaseURL != nil,
-		"managedBy":         c.ManagedBy,
+		"enabled":                   c.Enabled(),
+		"issuer":                    c.Issuer,
+		"clientId":                  c.ClientID,
+		"clientSecret":              oidc.MaskSecret(c.ClientSecret),
+		"clientSecretSet":           c.ClientSecret != "",
+		"displayName":               c.DisplayName,
+		"scopes":                    c.Scopes,
+		"allowProvision":            c.AllowProvision,
+		"ssoOnly":                   c.SSOOnly,
+		"providerLogout":            c.ProviderLogout,
+		"syncPictures":              c.SyncPictures,
+		"trustMissingEmailVerified": c.TrustMissingEmailVerified,
+		"redirectUri":               s.oidcRedirectURI(r),
+		"baseUrlConfigured":         s.cfg.BaseURL != nil,
+		"managedBy":                 c.ManagedBy,
 	}
 }
 
@@ -475,15 +479,16 @@ func (s *Server) handleGetOIDCSettings(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handlePutOIDCSettings(w http.ResponseWriter, r *http.Request) {
 	u := userFrom(r.Context())
 	var in struct {
-		Issuer         *string `json:"issuer"`
-		ClientID       *string `json:"clientId"`
-		ClientSecret   *string `json:"clientSecret"`
-		DisplayName    *string `json:"displayName"`
-		Scopes         *string `json:"scopes"`
-		AllowProvision *bool   `json:"allowProvision"`
-		SSOOnly        *bool   `json:"ssoOnly"`
-		ProviderLogout *bool   `json:"providerLogout"`
-		SyncPictures   *bool   `json:"syncPictures"`
+		Issuer                    *string `json:"issuer"`
+		ClientID                  *string `json:"clientId"`
+		ClientSecret              *string `json:"clientSecret"`
+		DisplayName               *string `json:"displayName"`
+		Scopes                    *string `json:"scopes"`
+		AllowProvision            *bool   `json:"allowProvision"`
+		SSOOnly                   *bool   `json:"ssoOnly"`
+		ProviderLogout            *bool   `json:"providerLogout"`
+		SyncPictures              *bool   `json:"syncPictures"`
+		TrustMissingEmailVerified *bool   `json:"trustMissingEmailVerified"`
 	}
 	if err := readJSON(r, &in); err != nil {
 		badBody(w, err)
@@ -495,7 +500,7 @@ func (s *Server) handlePutOIDCSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	changes, err := s.oidc.Save(r.Context(), oidc.Update{Issuer: in.Issuer, ClientID: in.ClientID, ClientSecret: in.ClientSecret,
 		DisplayName: in.DisplayName, Scopes: in.Scopes, AllowProvision: in.AllowProvision, SSOOnly: in.SSOOnly, ProviderLogout: in.ProviderLogout,
-		SyncPictures: in.SyncPictures})
+		SyncPictures: in.SyncPictures, TrustMissingEmailVerified: in.TrustMissingEmailVerified})
 	var cfgErr *oidc.ErrInvalidConfig
 	if errors.As(err, &cfgErr) {
 		writeError(w, http.StatusBadRequest, "invalid_input", cfgErr.Error())
@@ -589,4 +594,19 @@ func (s *Server) ssoRequired(w http.ResponseWriter, r *http.Request, u *auth.Use
 	s.audit.Record(r.Context(), audit.LoginFailed(u.ID, u.Email, "sso_required"))
 	writeError(w, http.StatusForbidden, "sso_required", auth.ErrSSORequired.Error())
 	return true
+}
+
+// warnSSOTrust logs at start while the owner trusts tokens without an
+// email_verified claim (sso-missing-email-verified): anyone who can choose
+// their address at that provider can create an account with it.
+func (s *Server) warnSSOTrust() {
+	if s.oidc == nil {
+		return
+	}
+	c, err := s.oidc.Config(context.Background())
+	if err != nil || !c.Enabled() || !c.TrustMissingEmailVerified {
+		return
+	}
+	s.log.Warn("single sign-on accepts a missing email confirmation for new accounts: only safe when people cannot set their own address at the provider",
+		"provider", c.Name(), "setting", oidc.KeyTrustMissingEmailVerified)
 }
