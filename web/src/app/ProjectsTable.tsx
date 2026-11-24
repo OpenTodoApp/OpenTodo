@@ -4,7 +4,7 @@
 // headers sort the rows among their siblings, so the tree stays a tree. The table is
 // its own size container: its columns drop from the end as it narrows, down to the
 // name and the health word on a phone. Arrow keys (and j, k) move between rows,
-// Left and Right fold and unfold, Enter opens. Where the health detail is dropped, the
+// Left and Right fold and unfold, Alt+Up and Alt+Down reorder (not while a header sorts), Enter opens. Where the health detail is dropped, the
 // word says why in a tooltip and on a tap (briefing-links D5).
 import { type KeyboardEvent, type MouseEvent, type RefObject, useEffect, useRef, useState } from 'react'
 import { addDaysISO, describeDue, logicalDay } from '../lib/dates'
@@ -16,6 +16,8 @@ import { t } from '../lib/i18n'
 import { Avatar, Icon, ProgressRing, ReadAs, ToneText, Tooltip, type IconName, type Tone } from '../ui'
 import type { ProjectTick } from './projectBulk'
 import { ProjectRowMenu } from './ProjectRowMenu'
+import { moveProjectBy } from '../lib/move'
+import { act } from './actionError'
 import { navigate } from './router'
 import { ProjectMark } from './ProjectMark'
 import { MAX_INDENT } from './TaskRow'
@@ -141,6 +143,13 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
   const frame = useRef<HTMLDivElement>(null)
   const narrow = useNarrow(frame)
   const opens = () => [...(body.current?.querySelectorAll<HTMLButtonElement>('[data-project-open]') ?? [])]
+  // A row moved with Alt+Up or Alt+Down keeps focus once the reordered rows render (issue 1956).
+  const refocus = useRef<string | null>(null)
+  useEffect(() => {
+    const id = refocus.current
+    refocus.current = null
+    if (id) opens().find((b) => b.dataset.projectOpen === id)?.focus()
+  }, [rows])
   const onKey = (e: KeyboardEvent<HTMLTableSectionElement>) => {
     const target = e.target as HTMLElement
     if (!target.matches('[data-project-open]')) return
@@ -156,8 +165,18 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
       if (sel.move) list[i + sel.move]?.focus()
       return
     }
-    if (e.metaKey || e.ctrlKey || e.altKey) return
     const node = rows.find((n) => n.id === id)
+    // Alt+Up and Alt+Down move the row among its siblings, as its menu says (manual-ordering "Keyboard moves").
+    if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      e.preventDefault()
+      if (!node || !canMove(node)) return
+      const up = e.key === 'ArrowUp'
+      refocus.current = id
+      // A refused move (an edge) renders nothing new: drop the pending refocus, or a later refresh would pull focus back.
+      act(moveProjectBy(id, e.shiftKey ? (up ? 'top' : 'bottom') : up ? -1 : 1).then((moved) => { if (!moved) refocus.current = null }))
+      return
+    }
+    if (e.metaKey || e.ctrlKey || e.altKey) return
     switch (e.key) {
       case 'ArrowDown': case 'j': return go(i + 1)
       case 'ArrowUp': case 'k': return go(i - 1)

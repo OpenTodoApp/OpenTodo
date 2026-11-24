@@ -88,6 +88,20 @@ describe('field badges', () => {
 })
 
 describe('columns layout', () => {
+  it('A group bar in the table is a row of its own (subprojects-above-tasks: the Tasks bar, the Later bar)', async () => {
+    const { pid, id } = await kitchen()
+    await createProject({ name: 'Pantry', parent_id: pid })
+    await createTask({ title: 'Paint later', project_id: pid, start: '2099-01-01' })
+    const r = await render(<TaskListView route={{ view: 'project', id: pid }} />)
+    await waitFor(() => !!r.container.querySelector('[data-columns-toggle]'))
+    await click(r.container.querySelector('[data-columns-toggle]')!)
+    await waitFor(() => !!r.container.querySelector(`[data-columns-row="${id}"]`) && !!r.container.querySelector('[role="table"] [data-group-header]'))
+    const axe = (await import('axe-core')).default
+    const res = await axe.run(r.container.querySelector('[role="table"]')!, { runOnly: ['aria-required-children', 'aria-required-parent'] })
+    expect(res.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([])
+    await r.unmount()
+  })
+
   it('Switch to columns: header cells and per-type cells, remembered per project on this device', async () => {
     const { pid, id } = await kitchen()
     const r = await render(<TaskListView route={{ view: 'project', id: pid }} />)

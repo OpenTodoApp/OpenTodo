@@ -748,6 +748,8 @@ export type NewTaskInput = {
   reminders?: ReminderPhrase[]
   /** URLs typed in quick add (quick-add-links D2): link attachments written in the same batch as the task. */
   links?: string[]
+  /** Files pasted into quick add (quick-add-files D1): attachments written in the same batch as the task. */
+  files?: File[]
   /**
    * Created already done (today-closed-list D6, Log a win): `completed_at` is now and
    * `completed_by` the signed-in account, in the creating batch.
@@ -838,8 +840,11 @@ export async function planCompanions(input: NewTaskInput, planned: { id: string;
 
 export async function createTask(input: NewTaskInput, now = new Date()): Promise<string> {
   const planned = await planTask(input)
-  // One batch: the task never syncs without its reminders and its time entry.
-  await mutateMany(await planCompanions(input, planned, now))
+  // One batch: the task never syncs without its reminders, its time entry and its files.
+  const changes = await planCompanions(input, planned, now)
+  // attachments.ts imports this module: loaded only for pasted files (quick-add-files D1).
+  if (input.files?.length) await (await import('./attachments')).withFiles([planned.id], [input], changes, mutateMany)
+  else await mutateMany(changes)
   return planned.id
 }
 

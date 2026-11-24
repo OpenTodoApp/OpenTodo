@@ -226,6 +226,7 @@ export function ShareCapture() {
             onAdd={save}
             onAddMany={saveMany}
             notes={false}
+            pasteFiles={false}
           />
         )}
         <label className="mt-3 block text-body">

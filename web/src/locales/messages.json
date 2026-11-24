@@ -6733,6 +6733,7 @@
     "web/src/app/ShareCapture.tsx"
   ],
   "Files are not attached on this demo instance.": [
+    "web/src/app/QuickAdd.tsx",
     "web/src/app/ShareCapture.tsx"
   ],
   "Files may be up to {bytes} each.": [
@@ -6742,7 +6743,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Files to attach": [
-    "web/src/app/task-detail/Composer.tsx"
+    "web/src/app/quickadd/PendingFiles.tsx"
   ],
   "Filter": [
     "web/src/app/task-list/ListChrome.tsx",
@@ -13438,7 +13439,7 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Pasted image": [
-    "web/src/app/task-detail/AttachmentsRow.tsx"
+    "web/src/lib/pastedFiles.ts"
   ],
   "Path-style addressing (MinIO, Garage and most self-hosted stores)": [
     "web/src/app/BackupsPanel.tsx"
@@ -14798,8 +14799,8 @@
     "web/src/app/ShareDialog.tsx",
     "web/src/app/WorkspaceMembers.tsx",
     "web/src/app/notes/NoteSearchField.tsx",
+    "web/src/app/quickadd/PendingFiles.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
-    "web/src/app/task-detail/Composer.tsx",
     "web/src/app/task-detail/RotationEditor.tsx"
   ],
   "Remove {name} from {group}": [
@@ -17127,6 +17128,9 @@
     "web/src/app/notes/NotesPage.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
+  "Sort by name": [
+    "web/src/app/Sidebar.tsx"
+  ],
   "Sort direction": [
     "web/src/app/views/DisplayOptionsBody.tsx"
   ],
@@ -17137,11 +17141,17 @@
     "web/src/app/menus/ListModeStep.tsx",
     "web/src/app/menus/listMenu.tsx"
   ],
+  "Sort sub-projects by name": [
+    "web/src/app/menus/projectMenu.tsx"
+  ],
   "Sort {list} by {by}": [
     "web/src/lib/rules/sentence.ts"
   ],
   "Sorted by date (or their own rule): no Alt moves there; in Upcoming, drag a task onto another day to move it": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Sorted by name": [
+    "web/src/lib/undoActions.ts"
   ],
   "Sound": [
     "web/src/lib/settingsCopy.ts"
@@ -17893,6 +17903,7 @@
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/app/review/StatsView.tsx",
+    "web/src/lib/listGroups.ts",
     "web/src/lib/rules/sentence.ts"
   ],
   "Tasks and fields": [
@@ -26114,6 +26125,9 @@
   ],
   "{name} settings": [
     "web/src/app/WorkspacesSettings.tsx"
+  ],
+  "{name} will be attached": [
+    "web/src/app/QuickAdd.tsx"
   ],
   "{name} · proposal waiting · Review": [
     "web/src/lib/rules/inbox.ts"

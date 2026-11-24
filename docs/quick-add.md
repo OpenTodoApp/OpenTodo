@@ -205,6 +205,12 @@ All the tasks of one paste are saved together, offline too, and a note says *7 t
 
 A paste into a box that already holds text goes in as text: OpenTodo assumes you are in the middle of a line. Up to 100 lines are added at once; for a longer list the question says so and offers [Import](import-export.md) and **Paste as one line**. Pasting works the same in a section's add row, the command bar's Add mode, the phone's add sheet, the [share screen](capture.md) and a calendar day's add dialog. To paste several subtasks, see [Break a task into subtasks](notes-and-subtasks.md#break-a-task-into-subtasks).
 
+## Paste a file
+
+Paste a screenshot or a file while you type a task, and it waits under the line with its name and a remove button (**×**). Adding the task saves it with the file [attached](attachments.md), in one step that **Undo** takes back. Nothing goes into the title; text and [links](#tokens-any-language) paste as before. Several pastes add several files; a [pasted list](#paste-a-list) gives them to its first task.
+
+The [usual limits](attachments.md#limits) apply: a file over the server's size limit or your storage is not taken, and the line says why. Offline, the task and its file appear at once and the file uploads after the next sync. This works in every quick add except the [share screen](capture.md), which lists shared files itself.
+
 ## Voice
 
 Quick add can also be dictated. Voice capture is **off by default** and is switched on per device in **Settings → Capture → Voice capture**; it is not synced, so turning it on for your phone leaves your laptop as it is. Browsers without speech recognition (Firefox, for example) show the switch disabled with an explanation, and quick add has no microphone button there.

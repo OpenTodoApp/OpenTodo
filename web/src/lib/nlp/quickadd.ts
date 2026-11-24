@@ -34,6 +34,8 @@ export interface QuickAddInput {
   description?: string
   /** URLs to attach as links (quick-add-links D2). */
   links?: string[]
+  /** Files pasted into the field (quick-add-files D1), attached to the new task. */
+  files?: File[]
 }
 
 /** The slice of a label the resolver needs. */

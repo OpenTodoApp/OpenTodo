@@ -4530,9 +4530,12 @@
   "Something went wrong. Is the server reachable?": "Qualcosa è andato storto. Il server è raggiungibile?",
   "Something you will recognise later, such as the device or script.": "Qualcosa che riconoscerai in seguito, come il dispositivo o lo script.",
   "Sort": "Ordina",
+  "Sort by name": "Ordina per nome",
   "Sort direction": "Direzione dell’ordinamento",
   "Sort first": "Ordina prima",
+  "Sort sub-projects by name": "Ordina i sottoprogetti per nome",
   "Sort {list} by {by}": "Ordina {list} per {by}",
+  "Sorted by name": "Ordinato per nome",
   "Sorted by date (or their own rule): no Alt moves there; in Upcoming, drag a task onto another day to move it": "Ordinate per data (o secondo una regola propria): lì Alt non sposta le attività; nella vista In programma, trascina un’attività su un altro giorno per spostarla",
   "Sound": "Suono",
   "Short": "Breve",
@@ -7867,5 +7870,6 @@
   "{name} completed a task": "{name} ha completato un’attività",
   "{name} reopened a task": "{name} ha riaperto un’attività",
   "Completed or reopened": "Completata o riaperta",
-  "Unread changes": "Modifiche non lette"
+  "Unread changes": "Modifiche non lette",
+  "{name} will be attached": "{name} verrà allegato"
 }

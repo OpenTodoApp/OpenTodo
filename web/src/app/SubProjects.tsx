@@ -16,17 +16,28 @@ function writeCollapsed(set: Set<string>): void {
   writeJSON(KEY, [...set]) // device state only
 }
 
+/** The project's direct, non-archived sub-projects, from local data. */
+function useSubProjectTree(projectId: string) {
+  const projects = useProjects()
+  const tree = useMemo(() => buildProjectTree(projects), [projects])
+  return { tree, children: tree.nodes.get(projectId)?.children ?? [] }
+}
+
+/** Whether a project view shows the "Sub-projects" group, so its own tasks take a "Tasks" bar (subprojects-above-tasks). */
+export function useHasSubProjects(projectId: string | null): boolean {
+  return useSubProjectTree(projectId ?? '').children.length > 0
+}
+
 /**
  * "Sub-projects" group at the top of a project view (project-organization
  * "Sub-projects inside a project view"): each direct, non-archived sub-project
  * with the open-task total of its whole subtree, under the shared group header,
- * collapsible per device. Derived from local data, so it is live and correct
- * offline. Renders nothing for a leaf project.
+ * collapsible per device. A row keeps a task row's columns (subprojects-above-tasks):
+ * the project mark in the checkbox column, the name where a title starts.
+ * Derived from local data, so it is live and correct offline. Renders nothing for a leaf project.
  */
 export function SubProjects({ projectId }: { projectId: string }) {
-  const projects = useProjects()
-  const tree = useMemo(() => buildProjectTree(projects), [projects])
-  const children = tree.nodes.get(projectId)?.children ?? []
+  const { tree, children } = useSubProjectTree(projectId)
   // Each project's own open tasks, worked out from the rows each write changed (incremental-list-updates D2), then rolled up.
   const own = useLiveOwnOpenCounts()
   const counts = useMemo(() => rollUpCounts(own, tree, new Set(tree.nodes.keys())), [own, tree])
@@ -48,7 +59,9 @@ export function SubProjects({ projectId }: { projectId: string }) {
           {children.map((n) => (
             <li key={n.id}>
               <button type="button" onClick={() => navigate({ view: 'project', id: n.id })} data-sub-project={n.id}
-                className="flex min-h-9 w-full items-center gap-2 rounded-control px-2 py-1.5 text-left text-body hover:bg-sunken dark:hover:bg-raised">
+                className="row-hover flex min-h-9 w-full items-center gap-2 rounded-control px-2 py-1.5 text-left text-body pointer-coarse:min-h-11">
+                {/* A task row's leading slot: the mark sits in the checkbox column, the name on the title's. */}
+                <span aria-hidden="true" className="w-4 shrink-0" />
                 <span className="flex w-5 shrink-0 items-center justify-center"><ProjectMark project={n.item} /></span>
                 <span className="min-w-0 flex-1 truncate">{n.item.name}</span>
                 <span className="text-meta tabular-nums text-faint">{counts.get(n.id) ?? 0}<span className="sr-only"> {t('Open tasks including sub-projects')}</span></span>

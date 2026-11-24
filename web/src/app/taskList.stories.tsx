@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
-import { createSubtask, createTask } from '../lib/ops'
+import { createProject, createSubtask, createTask } from '../lib/ops'
 import { setTodayLimit } from '../lib/closedListPrefs'
 import { setListDisplay } from '../lib/listDisplay'
-import { seedBase, seeded, seedProjectWithSections, seedToday, storyUser, TODAY, TOMORROW, withSeed } from './stories/fixtures'
+import { HEX, seedBase, seeded, seedProjectWithSections, seedToday, storyUser, TODAY, TOMORROW, withSeed } from './stories/fixtures'
 import { db } from '../lib/db'
 import { setTaskOpen } from '../lib/userPrefs'
 import { PANEL_WIDTH_KEY, SIDE_PANEL_CLOSED_KEY } from './panel'
@@ -116,6 +116,26 @@ export const ProjectLaterWithSubtasks: StoryObj = {
     await createSubtask(fence, 'Sand the boards')
   }),
   render: () => <Column><TaskListView route={{ view: 'project', id: seeded.home }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
+}
+
+/**
+ * A project with sub-projects (subprojects-above-tasks, GitHub issue 1981): the Sub-projects
+ * group on top, its rows in a task row's columns, then the project's own tasks under a Tasks bar,
+ * at the top level, a subtask indented under its parent.
+ */
+export const ProjectWithSubProjects: StoryObj = {
+  ...withSeed(async () => {
+    await seedBase()
+    const p = seeded.work
+    const hiring = await createProject({ name: 'Hiring', color: HEX.orange, parent_id: p })
+    await createTask({ title: 'Post the job ad', project_id: hiring })
+    await createTask({ title: 'Write the release notes', project_id: seeded.website })
+    await createTask({ title: 'Send the invoice to Northwind', project_id: p, due: { date: TODAY }, priority: 1 })
+    const offsite = await createTask({ title: 'Plan the team offsite', project_id: p })
+    await createSubtask(offsite, 'Book the venue')
+    await createTask({ title: 'Update the budget sheet', project_id: p })
+  }),
+  render: () => <Column><TaskListView route={{ view: 'project', id: seeded.work }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
 }
 
 /** Nothing due today: one sentence, Add a task and the Open Upcoming link. */

@@ -4531,9 +4531,12 @@
   "Something went wrong. Is the server reachable?": "Un problème est survenu. Le serveur est-il joignable ?",
   "Something you will recognise later, such as the device or script.": "Quelque chose que tu reconnaîtras plus tard, comme l’appareil ou le script.",
   "Sort": "Trier",
+  "Sort by name": "Trier par nom",
   "Sort direction": "Sens du tri",
   "Sort first": "Trier d’abord",
+  "Sort sub-projects by name": "Trier les sous-projets par nom",
   "Sort {list} by {by}": "Trier {list} par {by}",
+  "Sorted by name": "Trié par nom",
   "Sorted by date (or their own rule): no Alt moves there; in Upcoming, drag a task onto another day to move it": "Triées par date (ou selon leur propre règle) : pas de déplacement avec Alt ; dans À venir, glisse une tâche sur un autre jour pour la déplacer",
   "Sound": "Son",
   "Short": "Court",
@@ -7867,5 +7870,6 @@
   "{name} completed a task": "{name} a terminé une tâche",
   "{name} reopened a task": "{name} a rouvert une tâche",
   "Completed or reopened": "Terminée ou rouverte",
-  "Unread changes": "Modifications non lues"
+  "Unread changes": "Modifications non lues",
+  "{name} will be attached": "{name} sera joint"
 }

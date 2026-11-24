@@ -5,7 +5,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { archiveProject, createProject, createTask, resetDeviceId } from '../lib/ops'
-import { click, key, render, type, waitFor } from '../ui/test-utils'
+import { click, flush, key, render, type, waitFor } from '../ui/test-utils'
 import { AutoArchiveView } from './ProjectsSettings'
 import { ProjectsView } from './ProjectsView'
 import { navigate } from './router'
@@ -307,6 +307,48 @@ describe('Archive several projects at once', () => {
     expect(r.container.querySelector(`[data-projects-row="${theirs}"]`)!.hasAttribute('data-ticked')).toBe(false)
     await key(open(mine), 'Escape')
     await waitFor(() => !document.querySelector('[data-selection-bar]'))
+    await r.unmount()
+  })
+})
+
+// Issue 1956: the menu's Alt+Up and Alt+Down work on the table too, and keep focus; a header sort turns the moves off.
+describe('All projects page reordering', () => {
+  it('Alt+Down moves the row among its siblings and keeps focus; not while a header sorts', async () => {
+    const a = await createProject({ name: 'A' })
+    await createProject({ name: 'B' })
+    await createProject({ name: 'C' })
+    const r = await render(<ProjectsView />)
+    await waitFor(() => names(r.container).length === 3)
+    const row = () => r.container.querySelector<HTMLButtonElement>(`[data-project-open="${a}"]`)!
+    await act(async () => row().focus())
+    await key(row(), 'ArrowDown', { altKey: true })
+    await waitFor(() => names(r.container).join() === 'B,A,C', 'A moved down')
+    await waitFor(() => document.activeElement === row(), 'focus stays on A')
+    await key(row(), 'ArrowDown', { altKey: true })
+    await waitFor(() => names(r.container).join() === 'B,C,A', 'A moved down again')
+    await click(r.container.querySelector<HTMLButtonElement>('[data-sort="name"]')!)
+    await waitFor(() => names(r.container).join() === 'A,B,C', 'sorted by name')
+    const before = await db.outbox.count()
+    await key(row(), 'ArrowDown', { altKey: true })
+    expect(await db.outbox.count()).toBe(before)
+    await r.unmount()
+  })
+
+  it('a refused move at the edge leaves no pending refocus for a later refresh', async () => {
+    const a = await createProject({ name: 'A' })
+    const b = await createProject({ name: 'B' })
+    const r = await render(<ProjectsView />)
+    await waitFor(() => names(r.container).length === 2)
+    const rowOf = (id: string) => r.container.querySelector<HTMLButtonElement>(`[data-project-open="${id}"]`)!
+    await act(async () => rowOf(a).focus())
+    const before = await db.outbox.count()
+    await key(rowOf(a), 'ArrowUp', { altKey: true }) // already first: refused
+    await flush()
+    expect(await db.outbox.count()).toBe(before)
+    await act(async () => rowOf(b).focus())
+    await createProject({ name: 'C' })
+    await waitFor(() => names(r.container).length === 3, 'the rows refresh')
+    expect(document.activeElement).toBe(rowOf(b))
     await r.unmount()
   })
 })
