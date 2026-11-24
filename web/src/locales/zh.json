@@ -7880,5 +7880,10 @@
   "Click a task to": "点击任务时",
   "Select, then edit the title": "先选中，再编辑标题",
   "Task lists": "任务列表",
-  "Use the server default ({choice})": "使用服务器默认（{choice}）"
+  "Use the server default ({choice})": "使用服务器默认（{choice}）",
+  "Features": "功能",
+  "Only the owner and admins can change these.": "只有所有者和管理员可以更改这些设置。",
+  "Time tracking": "时间记录",
+  "{feature} is off in this workspace.": "此工作区已关闭{feature}。",
+  "Workspace features changed": "工作区功能已更改"
 }

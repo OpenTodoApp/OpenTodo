@@ -7,6 +7,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { api, type MapResult } from './api'
 import { db, getMeta, setMeta } from './db'
+import { useFeature } from './features'
 import { currentLanguage, t } from './i18n'
 import { uuid } from './ids'
 import { mutate, mutateMany } from './ops'
@@ -255,14 +256,17 @@ export function setMapsPref(on: boolean): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { maps: on ? 'on' : 'off' })
 }
 
-/** Whether this device shows maps and offers address search: the server's switch and the user's. */
+/**
+ * Whether this device shows maps and offers address search: the server's switch,
+ * the user's, and the current workspace's Locations (workspace-feature-switches D3).
+ */
 export function useMapsOn(): boolean {
-  return (
-    useLiveQuery(async () => {
-      const [available, prefs] = await Promise.all([getMeta<boolean>(MAPS_KEY, false), db.userPrefs.get(USER_PREFS_ID)])
-      return available && mapsPrefOn(prefs)
-    }, [], false) ?? false
-  )
+  const allowed = useFeature('locations')
+  const on = useLiveQuery(async () => {
+    const [available, prefs] = await Promise.all([getMeta<boolean>(MAPS_KEY, false), db.userPrefs.get(USER_PREFS_ID)])
+    return available && mapsPrefOn(prefs)
+  }, [], false) ?? false
+  return allowed && on
 }
 
 // ---- search ----

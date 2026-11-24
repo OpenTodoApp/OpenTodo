@@ -6,6 +6,7 @@
 // a guide.
 //
 // This module has no runtime imports: the docs build loads it directly in Node.
+import type { FeatureId } from '../lib/features'
 import type { Route } from './router'
 
 /**
@@ -67,6 +68,19 @@ export const ROUTE_SCREENS: Record<Route['view'], string | null> = {
   public: null,
   share: null,
   help: null,
+}
+
+/**
+ * The workspace feature of each gated route (workspace-feature-switches D4); a
+ * route not listed is always on. While the current workspace has the feature off,
+ * the shell shows its off state instead, and the sidebar, the palette and the `g`
+ * keys leave the route out. features.test.tsx classifies every route of
+ * ROUTE_SCREENS, so a new route must be listed here or named always on there.
+ */
+export const ROUTE_FEATURES: Partial<Record<Route['view'], FeatureId>> = {
+  day: 'calendar', week: 'calendar', month: 'calendar', quarter: 'calendar', plan: 'calendar', year: 'calendar',
+  places: 'locations', place: 'locations', rules: 'routines',
+  review: 'reviews', stats: 'reviews', habits: 'habits', focus: 'focus', notes: 'notes',
 }
 
 /**

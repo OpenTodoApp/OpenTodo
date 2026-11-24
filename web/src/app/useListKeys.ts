@@ -1,6 +1,7 @@
 // Keyboard handling shared by the Filter view and saved views: the `list` scope
 // handlers for j / k, Enter, c, 1–4, Shift+L, Delete, e, d, n, Shift+N, Shift+E, → / ←
 // and Esc (the shortcut registry names them; the shell's dispatcher resolves the keys).
+import { useFeature } from '../lib/features'
 import { useEffect, useRef } from 'react'
 import { unparkTask } from '../lib/ops'
 import { setTaskCompletedWithFeedback } from './completionSound'
@@ -49,6 +50,8 @@ export interface ListKeys {
 }
 
 export function useListKeys(opts: ListKeys): void {
+  // `y` does nothing while the current workspace has Time tracking off (workspace-feature-switches D4).
+  const tracking = useFeature('time-tracking')
   const ref = useRef(opts)
   ref.current = opts
   // The Filter view and saved views expose their list to the command palette too
@@ -155,7 +158,7 @@ export function useListKeys(opts: ListKeys): void {
     },
     'list.estimate': openWith(estimateFocus),
     // Start or stop tracking (time-tracking D5); a completed task offers no start.
-    'list.track': () => { if (!row) return false; act(toggleTracking(row.id, { canStart: !row.completed_at })) },
+    'list.track': () => { if (!row || !tracking) return false; act(toggleTracking(row.id, { canStart: !row.completed_at })) },
     'list.deadline': openWith(deadlineFocus),
     'list.defer': openWith(deferFocus),
     'list.blocked-by': openWith(blockedByFocus),

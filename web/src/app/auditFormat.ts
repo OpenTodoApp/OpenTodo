@@ -67,6 +67,7 @@ export const AUDIT_LABELS = translatedMap<AuditEventName>({
   'account.avatar_changed': msg('Profile picture changed'),
   'workspace.created': msg('Workspace created'),
   'workspace.renamed': msg('Workspace changed'),
+  'workspace.features_changed': msg('Workspace features changed'),
   'workspace.deleted': msg('Workspace deleted'),
   'workspace.transferred': msg('Workspace transferred'),
   'workspace.member_added': msg('Workspace member added'),

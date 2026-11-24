@@ -1,6 +1,7 @@
 // The Objectives switch (OpenSpec change plan-objectives, design D8): the synced
 // user_prefs.objectives, "on" or off ('' and any unknown value). Off hides the
 // Plan's strip and the review's section; objectives themselves are kept.
+import { useFeature } from './features'
 import { useUserPrefsRow } from './localData'
 import { mutate } from './ops'
 import type { UserPrefs } from './types'
@@ -16,7 +17,8 @@ export function setObjectivesOn(on: boolean): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { objectives: on ? 'on' : '' })
 }
 
-/** The account's switch, live (off while loading). */
+/** The account's switch, live (off while loading), gated by the current workspace's Weekly review (workspace-feature-switches D3). */
 export function useObjectivesOn(): boolean {
-  return objectivesOn(useUserPrefsRow())
+  const allowed = useFeature('reviews')
+  return objectivesOn(useUserPrefsRow()) && allowed
 }

@@ -7880,5 +7880,10 @@
   "Click a task to": "Fare clic su un’attività per",
   "Select, then edit the title": "Selezionare, poi modificare il titolo",
   "Task lists": "Elenchi di attività",
-  "Use the server default ({choice})": "Usa il predefinito del server ({choice})"
+  "Use the server default ({choice})": "Usa il predefinito del server ({choice})",
+  "Features": "Funzionalità",
+  "Only the owner and admins can change these.": "Solo il proprietario e gli admin possono modificarle.",
+  "Time tracking": "Monitoraggio del tempo",
+  "{feature} is off in this workspace.": "{feature} è disattivato in questo spazio di lavoro.",
+  "Workspace features changed": "Funzionalità dello spazio di lavoro modificate"
 }

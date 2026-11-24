@@ -4,6 +4,7 @@
 // General (synced as user_prefs.maps).
 import { useEffect, useState } from 'react'
 import { api, isNetworkError, type MapsSetting } from '../../lib/api'
+import { useFeature } from '../../lib/features'
 import { refreshMapsAvailable, setMapsPref, useMapsPref } from '../../lib/locations'
 import { cardCopy } from '../../lib/settingsCopy'
 import { Button, Field, Input, Notice, SettingsSection, Switch } from '../../ui'
@@ -71,6 +72,9 @@ export function MapsServerPanel() {
 /** Settings → General → Maps: this user's switch, synced to every device. */
 export function MapsUserSection() {
   const on = useMapsPref()
+  // Nothing to switch while the current workspace has Locations off (workspace-feature-switches D3).
+  const allowed = useFeature('locations')
+  if (!allowed) return null
   return (
     <SettingsSection {...cardCopy('maps-user')} id="maps">
       <div className="mt-3">

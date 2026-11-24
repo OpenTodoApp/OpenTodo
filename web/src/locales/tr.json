@@ -7880,5 +7880,10 @@
   "Click a task to": "Bir göreve tıklayınca",
   "Select, then edit the title": "Seç, sonra başlığı düzenle",
   "Task lists": "Görev listeleri",
-  "Use the server default ({choice})": "Sunucu varsayılanını kullan ({choice})"
+  "Use the server default ({choice})": "Sunucu varsayılanını kullan ({choice})",
+  "Features": "Özellikler",
+  "Only the owner and admins can change these.": "Bunları yalnızca sahip ve yöneticiler değiştirebilir.",
+  "Time tracking": "Zaman takibi",
+  "{feature} is off in this workspace.": "{feature} bu çalışma alanında kapalı.",
+  "Workspace features changed": "Çalışma alanı özellikleri değiştirildi"
 }

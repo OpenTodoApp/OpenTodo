@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/OpenTodoApp/opentodo/internal/audit"
@@ -155,8 +156,27 @@ func (s *Server) handleUpdateWorkspace(w http.ResponseWriter, r *http.Request) {
 		s.directoryError(w, err)
 		return
 	}
-	s.audit.Record(r.Context(), audit.WorkspaceRenamed(actor, id))
+	if in.Name != nil || in.Icon != nil || in.Color != nil {
+		s.audit.Record(r.Context(), audit.WorkspaceRenamed(actor, id))
+	}
+	if len(in.Features) > 0 {
+		s.audit.Record(r.Context(), audit.WorkspaceFeaturesChanged(actor, id, featureChanges(in.Features)))
+	}
 	s.respondWorkspace(w, r, http.StatusOK, id, ch)
+}
+
+// featureChanges names the switched features for the audit, sorted: "focus=on,habits=off".
+func featureChanges(in map[string]*bool) string {
+	parts := make([]string, 0, len(in))
+	for k, v := range in {
+		state := "off"
+		if v != nil && *v {
+			state = "on"
+		}
+		parts = append(parts, k+"="+state)
+	}
+	sort.Strings(parts)
+	return strings.Join(parts, ",")
 }
 
 func (s *Server) handleDeleteWorkspace(w http.ResponseWriter, r *http.Request) {

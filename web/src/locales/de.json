@@ -7880,5 +7880,10 @@
   "Click a task to": "Klick auf eine Aufgabe",
   "Select, then edit the title": "Auswählen, dann Titel bearbeiten",
   "Task lists": "Aufgabenlisten",
-  "Use the server default ({choice})": "Serverstandard verwenden ({choice})"
+  "Use the server default ({choice})": "Serverstandard verwenden ({choice})",
+  "Features": "Funktionen",
+  "Only the owner and admins can change these.": "Nur der Eigentümer und Admins können das ändern.",
+  "Time tracking": "Zeiterfassung",
+  "{feature} is off in this workspace.": "{feature} ist in diesem Arbeitsbereich aus.",
+  "Workspace features changed": "Funktionen des Arbeitsbereichs geändert"
 }
