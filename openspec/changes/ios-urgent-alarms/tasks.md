@@ -9,15 +9,15 @@ Web tasks run `npm test` and `npm run build` in `web/`. Server tasks run `go tes
 
 ## 2. Web app
 
-- [ ] 2.1 `RemindersField`: a checkable **Urgent** item in a time reminder's menu and the `alarm-clock` icon on an urgent chip; none on location reminders. Verified by the `RemindersField` tests.
-- [ ] 2.2 `shellReminders` adds `urgent: true` to an urgent entry only; `ShellReminder` gains `urgent?`. Verified by `shellNotifications.test.ts`.
+- [ ] 2.1 `RemindersField`: a checkable **Urgent** item in a time reminder's menu and the `alarm-clock` icon on an urgent chip; none on location reminders. Verified by `remindersField.test.tsx`.
+- [ ] 2.2 `shellReminders` adds `urgent: true` to an urgent entry only; `ShellReminder` gains `urgent?`. Verified by `shellPublish.test.ts`.
 - [ ] 2.3 Shared bridge fixture `reminders-urgent.json` produced by the web code. Verified by `shellBridge.fixture.test.ts`.
 - [ ] 2.4 Translations of "Urgent" in every shipped catalog. Verified by `make i18n-check`.
 
 ## 3. iOS
 
-- [ ] 3.1 `Reminders.Handed.urgent`, parsed from the hand-over; `Reminders.split` (alarm or notification), `Alarms.route` (the permission rule), `Alarms.alarmID` and `Alarms.changes` as pure functions. Verified by `ReminderTests` and `AlarmTests` in `make ios`, reading `reminders-urgent.json`.
-- [ ] 3.2 `Alarms.swift`: AlarmKit behind `#if canImport(AlarmKit)` and `@available(iOS 26.0, *)`: authorization, list, cancel, schedule with the title, Stop and Snooze 10 min; `SnoozeReminderIntent` opening `/?reminder=<id>&action=snooze`. `Reminders.apply` arms alarms after the notification permission and cancels them when it is refused, `Reminders.clear` cancels every alarm. Verified by `make ios` on Xcode 16.4 and `make ios-archive` on Xcode 26 in the CI `ios` job.
+- [ ] 3.1 `Reminders.Handed.urgent`, parsed from the hand-over; `Alarms.candidates` (alarm or notification), `Alarms.route` (the permission rule), `Alarms.alarmID` and `Alarms.changes` as pure functions. Verified by `ReminderTests` and `AlarmTests` in `make ios`, reading `reminders-urgent.json`.
+- [ ] 3.2 `AlarmKitScheduler` in `Reminders.swift`: AlarmKit behind `#if canImport(AlarmKit)` and `@available(iOS 26.0, *)`: authorization, list, cancel, schedule with the title, Stop and Snooze 10 min; `SnoozeReminderIntent` opening `/?reminder=<id>&action=snooze`. `Reminders.apply` arms alarms after the notification permission and cancels them when it is refused, `Reminders.clear` cancels every alarm. Verified by `make ios` on Xcode 16.4 and `make ios-archive` on Xcode 26 in the CI `ios` job.
 - [ ] 3.3 `NSAlarmKitUsageDescription` in `project.yml` and the Info.plist, translated in `InfoPlist.xcstrings`. Verified by `make i18n-check` and the CI `ios` job.
 - [ ] 3.4 `scripts/release/ios-testflight.sh archive` refuses a binary that links AlarmKit strongly. Verified by the CI `ios` job's archive step.
 - [ ] 3.5 Device run on an iPhone with iOS 26: the permission prompt with the first urgent reminder, an alarm with the phone locked, Snooze 10 min, Stop, clearing Urgent, sign-out; and an iPhone on iOS 18 getting a notification. Recorded in the `mobile/README.md` table.

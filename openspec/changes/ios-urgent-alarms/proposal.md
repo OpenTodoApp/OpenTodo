@@ -38,5 +38,5 @@ None.
 - **Data model, op schema:** `reminder.urgent` (kBool, default `false`, not content). Old clients ignore it; Undo and the history treat it like any reminder field.
 - **Server:** the schema entry and the generated schema only; no new route or check.
 - **Web:** one menu item and one icon in `RemindersField`, the flag in the shell hand-over. Under 0.3 KB gzip.
-- **iOS:** `Alarms.swift` (AlarmKit behind `#if canImport(AlarmKit)` and `@available(iOS 26.0, *)`), one App Intent for Snooze, `NSAlarmKitUsageDescription` in the Info.plist in six languages. AlarmKit is a system framework, weak-linked so the app still starts on iOS 16.4 to 25; the archive step checks that.
+- **iOS:** `Alarms` and `AlarmKitScheduler` in `Reminders.swift` (AlarmKit behind `#if canImport(AlarmKit)` and `@available(iOS 26.0, *)`), one App Intent for Snooze, `NSAlarmKitUsageDescription` in the Info.plist in the shell's eight languages. AlarmKit is a system framework, weak-linked so the app still starts on iOS 16.4 to 18; the archive step checks that.
 - **Android, E2EE, CalDAV, export:** none beyond the field travelling with the reminder (it carries no content).

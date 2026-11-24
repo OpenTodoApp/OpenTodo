@@ -4,7 +4,7 @@ import UserNotifications
 #if canImport(AlarmKit)
 // ios-urgent-alarms D7: only an SDK with AlarmKit (iOS 26, Xcode 26) compiles the alarms; with
 // an older one every urgent reminder is a notification. The framework is weak-linked, so the
-// app still starts on iOS 16.4 to 25 (`ios-testflight.sh archive` checks it).
+// app still starts on iOS 16.4 to 18 (`ios-testflight.sh archive` checks it).
 import AlarmKit
 import AppIntents
 import SwiftUI

@@ -34,7 +34,7 @@ Rejected: AlarmKit's own countdown snooze, which would move the alarm on this ph
 
 ## D7. Toolchain
 
-CI's `make ios` builds and tests with Xcode 16.4 (iOS 18.5 SDK), which has no AlarmKit; the archive and TestFlight steps use the newest Xcode on the runner (26.3). All AlarmKit code is inside `#if canImport(AlarmKit)` and `@available(iOS 26.0, *)`, and the pure rules (parse, split, permission route, UUID, difference) are outside it, so the unit tests run on Xcode 16.4 and the AlarmKit calls are compiled by the archive step. Deployment target stays 16.4: the framework is weak-linked (all its symbols are newer than the target), and `ios-testflight.sh archive` refuses a binary that links AlarmKit strongly, which would stop the app from starting on iOS 25 and earlier.
+CI's `make ios` builds and tests with Xcode 16.4 (iOS 18.5 SDK), which has no AlarmKit; the archive and TestFlight steps use the newest Xcode on the runner (26.3). All AlarmKit code is inside `#if canImport(AlarmKit)` and `@available(iOS 26.0, *)`, and the pure rules (parse, candidates, permission route, UUID, difference) are outside it, so the unit tests run on Xcode 16.4 and the AlarmKit calls are compiled by the archive step. Deployment target stays 16.4: the framework is weak-linked (all its symbols are newer than the target), and `ios-testflight.sh archive` refuses a binary that links AlarmKit strongly, which would stop the app from starting on iOS 18 and earlier.
 
 ## Interface budget
 
@@ -42,4 +42,4 @@ The task panel gains no row: one checkable item in the reminder chip's existing 
 
 ## Size
 
-Web under 0.3 KB gzip. iOS: one Swift file and an intent, system frameworks only (AlarmKit, AppIntents); no container or memory change on the server.
+Web under 0.3 KB gzip. iOS: about 200 lines in `Reminders.swift` (no new file, so the generated Xcode project is unchanged) and an intent, system frameworks only (AlarmKit, AppIntents); no container or memory change on the server.

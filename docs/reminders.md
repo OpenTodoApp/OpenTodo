@@ -45,6 +45,10 @@ A reminder does not fire, in the app, by push, through a notification channel or
 
 Snoozing sets a new firing time (in 10 minutes, in an hour, or tomorrow at 09:00) and the reminder fires again, also by push. Dismissing silences the current firing. Both are ordinary synced edits: when one device dismisses and another later snoozes the same reminder, the later edit wins on every device.
 
+## Urgent reminders
+
+For something you must not miss, open a reminder's menu and choose **Urgent**: the reminder shows an alarm clock instead of a bell. In the [iOS app](ios-app.md#urgent-reminders) on iOS 26 or later it rings as an alarm, over silent mode and Focus, until you stop or snooze it. Everywhere else (the browser, push, the Android app, older iOS) it fires as an ordinary reminder. The flag syncs, so a reminder marked urgent on your computer rings on your iPhone. Choose **Urgent** again to turn it off. Location reminders have no urgent mode.
+
 ## End-to-end encryption
 
 For an account with [end-to-end encryption](e2ee.md) the server never puts a title in a push, even for devices that opted in to titles: it cannot read it, and ciphertext would be useless. The notification uses the content-free text; in-app reminder toasts still show the decrypted title from the device.
