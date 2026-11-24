@@ -5629,6 +5629,7 @@
   "Uploading {percent}%": "Wird hochgeladen: {percent} %",
   "Uploading… {round}%": "Wird hochgeladen… {round} %",
   "Uploads the copy of the key record kept on this device. Your passphrase and recovery key stay the same.": "Lädt die auf diesem Gerät gespeicherte Kopie des Schlüsseleintrags hoch. Deine Passphrase und dein Wiederherstellungsschlüssel bleiben gleich.",
+  "Urgent": "Dringend",
   "Urgent and important": "Dringend und wichtig",
   "Urgent, not important": "Dringend, nicht wichtig",
   "Usage": "Nutzung",

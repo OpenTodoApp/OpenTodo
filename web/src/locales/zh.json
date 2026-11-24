@@ -5739,6 +5739,7 @@
   "Uploading {percent}%": "正在上传 {percent}%",
   "Uploading… {round}%": "正在上传… {round}%",
   "Uploads the copy of the key record kept on this device. Your passphrase and recovery key stay the same.": "上传保存在此设备上的密钥记录副本。你的口令和恢复密钥保持不变。",
+  "Urgent": "紧急",
   "Urgent and important": "紧急且重要",
   "Urgent, not important": "紧急但不重要",
   "Usage": "用量",

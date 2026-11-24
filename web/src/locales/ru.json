@@ -6116,6 +6116,7 @@
   "Uploads the copy of the key record kept on this device. Your passphrase and recovery key stay the same.": "Загружает копию записи ключа, хранящуюся на этом устройстве. Ваша парольная фраза и ключ восстановления не меняются.",
   "Urgency": "Срочность",
   "Urgency {score}, show why": "Срочность {score}, показать почему",
+  "Urgent": "Срочно",
   "Urgent and important": "Срочное и важное",
   "Urgent, not important": "Срочное, не важное",
   "Usage": "Использование",

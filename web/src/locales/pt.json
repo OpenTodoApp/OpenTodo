@@ -5629,6 +5629,7 @@
   "Uploading {percent}%": "Enviando {percent}%",
   "Uploading… {round}%": "Enviando… {round}%",
   "Uploads the copy of the key record kept on this device. Your passphrase and recovery key stay the same.": "Envia a cópia do registro de chaves guardada neste dispositivo. Sua frase secreta e sua chave de recuperação continuam as mesmas.",
+  "Urgent": "Urgente",
   "Urgent and important": "Urgente e importante",
   "Urgent, not important": "Urgente, não importante",
   "Usage": "Uso",

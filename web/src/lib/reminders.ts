@@ -102,6 +102,11 @@ export async function rearmReminder(id: string): Promise<void> {
   await mutate('reminder', id, { dismissed_at: null })
 }
 
+/** Mark a reminder urgent or not (ios-urgent-alarms D1): its firing and delivery state stay as they are. */
+export async function setReminderUrgent(id: string, urgent: boolean): Promise<void> {
+  await mutate('reminder', id, { urgent })
+}
+
 /** Dismiss the current firing. */
 export async function dismissReminder(id: string, now = Date.now()): Promise<void> {
   await mutate('reminder', id, { dismissed_at: now })

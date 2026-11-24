@@ -6116,6 +6116,7 @@
   "Uploads the copy of the key record kept on this device. Your passphrase and recovery key stay the same.": "Przesyła kopię rekordu klucza przechowywaną na tym urządzeniu. Twoje hasło szyfrujące i klucz odzyskiwania pozostają bez zmian.",
   "Urgency": "Pilność",
   "Urgency {score}, show why": "Pilność {score}, pokaż dlaczego",
+  "Urgent": "Pilne",
   "Urgent and important": "Pilne i ważne",
   "Urgent, not important": "Pilne, nieważne",
   "Usage": "Zużycie",
