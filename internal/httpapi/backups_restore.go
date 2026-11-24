@@ -146,12 +146,18 @@ func (s *Server) handleRestoreConfirm(w http.ResponseWriter, r *http.Request) {
 		invalidField(w, "confirm", "type RESTORE to confirm")
 		return
 	}
-	if err := s.backups.ConfirmRestore(r.Context(), in.ID, u.ID); err != nil {
+	inPlace, err := s.backups.ConfirmRestore(r.Context(), in.ID, u.ID)
+	if err != nil {
 		s.restoreError(w, err)
 		return
 	}
 	// The restart begins once this response is written: Shutdown waits for it.
-	writeJSON(w, http.StatusAccepted, map[string]any{"status": "restarting"})
+	// "restart_required": the server stops and cannot start itself again (#1961).
+	status := "restarting"
+	if !inPlace {
+		status = "restart_required"
+	}
+	writeJSON(w, http.StatusAccepted, map[string]any{"status": status})
 }
 
 func (s *Server) handleRestoreState(w http.ResponseWriter, r *http.Request) {

@@ -204,15 +204,21 @@ export function RestoreDialog(p: RestoreDialogProps) {
   )
 }
 
-/** Full-screen status while the server restarts (spec: restore state across the restart). */
-export function RestartScreen({ slow }: { slow: boolean }) {
+/**
+ * Full-screen status while the server restarts (spec: restore state across the
+ * restart). "stopped": the server said it cannot start itself again, or it has
+ * not come back within the wait; someone has to start it (#1961).
+ */
+export function RestartScreen({ stopped }: { stopped: boolean }) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-canvas p-6" data-testid="restore-restarting">
       <div className="max-w-sm space-y-3 text-center" role="status" aria-live="assertive">
-        <Icon name="loader-circle" size="md" className="mx-auto animate-spin motion-reduce:animate-none" />
-        <p className="text-body font-semibold text-default">{t('Restoring and restarting…')}</p>
-        <p className="text-meta text-muted">{slow
-          ? t('The server is still restarting. If this takes more than a few minutes, check the server log. This page reloads when it is back.')
+        {stopped
+          ? <Icon name="circle-alert" size="md" className="mx-auto text-muted" />
+          : <Icon name="loader-circle" size="md" className="mx-auto animate-spin motion-reduce:animate-none" />}
+        <p className="text-body font-semibold text-default">{stopped ? t('Restart OpenTodo to finish the restore.') : t('Restoring and restarting…')}</p>
+        <p className="text-meta text-muted">{stopped
+          ? t('The server did not start again on its own. This page reloads when it is back.')
           : t('This page reloads when the server is back, usually within a few seconds.')}</p>
       </div>
     </div>
@@ -239,7 +245,13 @@ export function RestoreSection({ offline }: { offline: boolean }) {
   const [dialog, setDialog] = useState<DialogState | null>(null)
   const [dialogError, setDialogError] = useState<string | null>(null)
   const [dialogBusy, setDialogBusy] = useState(false)
-  const [restarting, setRestarting] = useState<null | 'waiting' | 'slow'>(null)
+  const [restarting, setRestarting] = useState<null | 'waiting' | 'stopped'>(null)
+  const unmounted = useRef(new AbortController())
+  useEffect(() => {
+    const c = new AbortController()
+    unmounted.current = c
+    return () => c.abort()
+  }, [])
   const [deleting, setDeleting] = useState<string | null>(null)
 
   const load = useCallback(async () => {
@@ -318,8 +330,9 @@ export function RestoreSection({ offline }: { offline: boolean }) {
     if (!dialog?.staged) return
     setDialogBusy(true)
     setDialogError(null)
+    let inPlace: boolean
     try {
-      await api.confirmRestore(dialog.staged.id)
+      inPlace = (await api.confirmRestore(dialog.staged.id)).status !== 'restart_required'
     } catch (err) {
       setDialogBusy(false)
       // A refused re-authentication leaves the dialog open with the reason.
@@ -329,10 +342,15 @@ export function RestoreSection({ offline }: { offline: boolean }) {
     }
     markRestoring()
     setDialog(null)
-    setRestarting('waiting')
-    const back = await waitForRestart()
+    const signal = unmounted.current.signal
+    setRestarting(inPlace ? 'waiting' : 'stopped')
+    let back = inPlace && await waitForRestart({ signal })
+    if (!back && !signal.aborted) {
+      // Someone has to start the server; keep watching so the page reloads then.
+      setRestarting('stopped')
+      back = await waitForRestart({ intervalMs: 5000, budgetMs: Infinity, signal })
+    }
     if (back) window.location.reload()
-    else setRestarting('slow')
   }
 
   function cancel() {
@@ -364,7 +382,7 @@ export function RestoreSection({ offline }: { offline: boolean }) {
           }}
           onCancel={() => setDeleting(null)} />
       )}
-      {restarting && <RestartScreen slow={restarting === 'slow'} />}
+      {restarting && <RestartScreen stopped={restarting === 'stopped'} />}
     </>
   )
 }
