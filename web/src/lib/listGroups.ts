@@ -122,6 +122,22 @@ export interface DaySlot {
   byPart?: true
 }
 
+/** The slots are shared objects, so keepGroups sees an unchanged group as the same. */
+const SLOT_NONE: DaySlot = {}
+const PART_SLOTS: Record<DayPart | 'none', DaySlot> = { none: { part: null }, morning: { part: 'morning' }, afternoon: { part: 'afternoon' }, evening: { part: 'evening' } }
+const dateSlots = new Map<string, DaySlot>()
+function dateSlot(date: string, byPart: boolean): DaySlot {
+  const key = byPart ? `${date}|part` : date
+  let slot = dateSlots.get(key)
+  if (!slot) {
+    // A day a page no longer lists is not looked up again: start over now and then.
+    if (dateSlots.size > 2000) dateSlots.clear()
+    slot = byPart ? { date, byPart: true } : { date }
+    dateSlots.set(key, slot)
+  }
+  return slot
+}
+
 export const isTodayProjectGroup = (group: ListGroup) => !!group.project || group.key === 'day:inbox'
 
 /** A row the day order moves (day-manual-order D2): a top-level, non-contextual row of a group with a day slot. */
@@ -710,8 +726,7 @@ function flatGroups(p: GroupInput): ListGroup[] {
     // with day parts on, Manual order keeps a day in part order too (day-manual-order D4).
     const chosen = dayOrder(p, p.display, p.manualOrder ?? new Map())
     const order = chosen && p.dayParts && p.display?.sortBy === 'position' ? (a: Task, b: Task) => partRank(a) - partRank(b) || chosen(a, b) : chosen
-    const slot = (date: string): DaySlot => (p.dayParts ? { date, byPart: true } : { date })
-    const days = groupUpcoming(ahead, p.today).map(({ date, tasks: list }): ListGroup => ({ key: date, heading: formatDateHeading(date, p.today, p.resolved), rows: withImplied(dayRows(p, list, order, !!p.display?.subtasks, row), { date }), dropDay: date, daySlot: slot(date) }))
+    const days = groupUpcoming(ahead, p.today).map(({ date, tasks: list }): ListGroup => ({ key: date, heading: formatDateHeading(date, p.today, p.resolved), rows: withImplied(dayRows(p, list, order, !!p.display?.subtasks, row), { date }), dropDay: date, daySlot: dateSlot(date, !!p.dayParts) }))
     // Today's day groups take a drop for today (upcoming-drag); Earlier, Blocked and Waiting do not.
     const onToday = new Set(['today', 'morning', 'afternoon', 'evening'])
     const leadGroups = p.upcomingToday ? todayGroups({ ...p, tasks: lead, doneToday: undefined }, row, true).map((g) => (onToday.has(g.key) ? { ...g, dropDay: p.today } : g)) : []
@@ -767,7 +782,7 @@ function todayGroups(p: GroupInput, row: (task: Task) => ListRow, inUpcoming = f
   // In Upcoming the part headings take no drops: a drop there would change the part and leave the date (D3).
   // In Today a line in a part writes that part (day-manual-order D2).
   const drop = (part: DayPart | 'none') => (inUpcoming ? {} : {
-    ...(parts ? { dropPart: part } : {}), daySlot: { part: part === 'none' ? null : part },
+    ...(parts ? { dropPart: part } : {}), daySlot: PART_SLOTS[part],
   })
   // Earlier and Blocked imply nothing: how late a task is stays visible on its row (calm-rows D3, page-rhythm D5).
   if (earlier.length) g.push({ key: 'earlier', heading: t('Earlier'), rows: rows(earlier) })
@@ -807,11 +822,11 @@ function chosenTodayGroups(p: GroupInput, tasks: Task[], groupBy: ListDisplay['g
       ...(named(x.key) ? { named: true as const } : {}),
       ...(groupBy === 'project' && named(x.key) ? { project: x.key } : {}),
       // A line stays within a priority or label group (day-manual-order D2); projects take project drops.
-      ...(groupBy !== 'project' && !inUpcoming ? { daySlot: {} } : {}),
+      ...(groupBy !== 'project' && !inUpcoming ? { daySlot: SLOT_NONE } : {}),
     }))
   }
   if (inUpcoming ? !tasks.length : !tasks.length && afterEarlier) return []
-  return [{ key: 'day:all', heading: afterEarlier || inUpcoming ? t('Today') : null, rows: withImplied(rows(tasks), implied), ...(inUpcoming ? {} : { daySlot: {} }) }]
+  return [{ key: 'day:all', heading: afterEarlier || inUpcoming ? t('Today') : null, rows: withImplied(rows(tasks), implied), ...(inUpcoming ? {} : { daySlot: SLOT_NONE }) }]
 }
 
 /** Today's Waiting for a slot and Done today groups (today-closed-list D1, D6): folded unless opened on this device. */
@@ -863,10 +878,6 @@ export const sameRow = (a: ListRow, b: ListRow): boolean =>
 
 const sameValue = (a: unknown, b: unknown): boolean =>
   Object.is(a, b) || (Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => Object.is(v, b[i])))
-  || (isFlat(a) && isFlat(b) && Object.keys(a).length === Object.keys(b).length && Object.keys(a).every((k) => Object.is(a[k], b[k])))
-
-/** A small record such as a group's day slot, compared field by field. */
-const isFlat = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v) && Object.getPrototypeOf(v) === Object.prototype
 
 /**
  * The groups of a new derivation with everything that did not change kept from the

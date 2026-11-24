@@ -58,11 +58,13 @@ export function manualSequence<T extends OrderTask>(tasks: readonly T[], rank: R
  * new list is the new sequence up to its last placed task, so tasks below stay
  * unplaced; a stored id not on the page right now is kept after the id that
  * preceded it when `keep` says so (an open task the page may show again), else
- * dropped. At most MAX_VIEW_ORDER ids: hidden ids go first, then the tail. Null
- * when nothing changes or the move is impossible.
+ * dropped. At most MAX_VIEW_ORDER ids (boundOrder): `explicit` are the ids placed
+ * by hand before this move (default: `stored`); `moved` always stays. Null when
+ * nothing changes or the move is impossible.
  */
 export function planViewOrder(
   seq: readonly string[], stored: readonly string[], moved: string, at: ViewPlacement, keep: (id: string) => boolean,
+  explicit: ReadonlySet<string> = new Set(stored),
 ): string[] | null {
   const anchor = 'before' in at ? at.before : at.after
   if (anchor === moved || !seq.includes(moved) || !seq.includes(anchor)) return null
@@ -82,16 +84,31 @@ export function planViewOrder(
     if (onPage.has(id) || hidden.has(id) || !keep(id)) return
     let at = 0
     for (let j = i - 1; j >= 0; j--) {
-      const p = out.indexOf(stored[j])
+      // The moved task left its place: a hidden id stays with the neighbours it had.
+      const p = stored[j] === moved ? -1 : out.indexOf(stored[j])
       if (p >= 0) { at = p + 1; break }
     }
     out.splice(at, 0, id)
     hidden.add(id)
   })
-  // The bound: hidden ids leave first (from the end), then the tail falls back.
-  for (let i = out.length - 1; out.length > MAX_VIEW_ORDER && i >= 0; i--) if (hidden.has(out[i])) out.splice(i, 1)
-  if (out.length > MAX_VIEW_ORDER) out.length = MAX_VIEW_ORDER
-  return out.length === stored.length && out.every((id, i) => id === stored[i]) ? null : out
+  const bounded = boundOrder(out, [moved, anchor], explicit, hidden)
+  return bounded.length === stored.length && bounded.every((id, i) => id === stored[i]) ? null : bounded
+}
+
+/**
+ * A list cut to MAX_VIEW_ORDER ids, each pass from the end: first the ids no one placed
+ * by hand (shown rows a first move seeded, or unplaced rows between placed ones), then
+ * the placed ids the page does not show (`hidden`), then the other placed ones. The
+ * moved task and its anchor (`pinned`) never leave, so a move at any row takes effect.
+ */
+export function boundOrder(list: readonly string[], pinned: readonly string[], explicit: ReadonlySet<string>, hidden: ReadonlySet<string>): string[] {
+  const out = [...list]
+  const stays = new Set(pinned)
+  const passes: ((id: string) => boolean)[] = [(id) => !explicit.has(id) && !hidden.has(id), (id) => hidden.has(id), () => true]
+  for (const evict of passes) {
+    for (let i = out.length - 1; out.length > MAX_VIEW_ORDER && i >= 0; i--) if (!stays.has(out[i]) && evict(out[i])) out.splice(i, 1)
+  }
+  return out
 }
 
 /**

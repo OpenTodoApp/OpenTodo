@@ -15,6 +15,14 @@ const friday = addDaysISO(today, 3)
 const upcoming: OrderHost = { entity: 'user_prefs', id: 'me', page: 'upcoming' }
 const todayHost: OrderHost = { entity: 'user_prefs', id: 'me', page: 'today' }
 
+/** A row the page shows, without a stored task (the cap tests list 600 of them). */
+function fake(i: number, date: string): Task {
+  return {
+    id: `u${String(i).padStart(3, '0')}`, title: `U${i}`, notes: '', project_id: null, section_id: null, parent_id: null, position: i,
+    priority: 4, due: { date }, deadline: null, start: null, labels: [], completed_at: null, deleted_at: null, created_at: i, updated_at: i, assignee_id: null,
+  } as unknown as Task
+}
+
 async function tasksOf(ids: string[]): Promise<Task[]> {
   return (await db.tasks.bulkGet(ids)).filter((x): x is Task => !!x)
 }
@@ -28,7 +36,7 @@ describe('the day order', () => {
     await db.outbox.clear()
     const r = await moveInViewOrder(upcoming, await tasksOf([gym, bank, shop]), bank, { before: gym })
     expect(r?.label).toBe('Order changed')
-    expect(await db.userPrefs.get('me')).toMatchObject({ today_manual_order: [bank, gym, shop], upcoming_sort_by: 'position', upcoming_sort_dir: 'asc', today_sort_by: 'title' })
+    expect(await db.userPrefs.get('me')).toMatchObject({ today_manual_order: [bank, gym], upcoming_sort_by: 'position', upcoming_sort_dir: 'asc', today_sort_by: 'title' })
     expect((await db.outbox.toArray()).every((op) => op.entity === 'user_prefs')).toBe(true)
     await undoBatch(r!.entry!.id)
     expect(await db.userPrefs.get('me')).toMatchObject({ today_manual_order: [], upcoming_sort_by: '', today_sort_by: 'title' })
@@ -112,6 +120,28 @@ describe('the day order', () => {
     expect((await db.userPrefs.get('me'))?.today_manual_order).toEqual([e, a, d])
   })
 
+  it('at the 500 cap a first move in a 600-row Upcoming keeps Today\'s placements and the moved task', async () => {
+    const mine = [await createTask({ title: 'T1', due: { date: today } }), await createTask({ title: 'T2', due: { date: today } })]
+    await mutate('user_prefs', 'me', { today_sort_by: 'position', today_manual_order: mine })
+    const rows = Array.from({ length: 600 }, (_, i) => fake(i, thursday))
+    await moveInViewOrder(upcoming, rows, rows[550].id, { before: rows[549].id })
+    const order = (await db.userPrefs.get('me'))?.today_manual_order ?? []
+    expect(order.length).toBeLessThanOrEqual(500)
+    expect(order).toEqual(expect.arrayContaining(mine))
+    expect(order.indexOf(rows[550].id) + 1).toBe(order.indexOf(rows[549].id))
+    expect(order.indexOf(rows[550].id)).toBeGreaterThan(-1)
+  })
+
+  it('at the 500 cap a drop past row 500 places the task at its line', async () => {
+    const rows = Array.from({ length: 600 }, (_, i) => fake(i, thursday))
+    await mutate('user_prefs', 'me', { upcoming_sort_by: 'position', today_manual_order: rows.slice(0, 500).map((x) => x.id) })
+    await moveInViewOrder(upcoming, rows, rows[590].id, { after: rows[550].id })
+    const order = (await db.userPrefs.get('me'))?.today_manual_order ?? []
+    expect(order).toHaveLength(500)
+    expect(order.indexOf(rows[550].id)).toBeGreaterThan(-1)
+    expect(order.indexOf(rows[590].id)).toBe(order.indexOf(rows[550].id) + 1)
+  })
+
   it('two devices reordering offline converge on the list written last, each task once', async () => {
     const strip = (rows: Op[]) => rows.map((row) => { const { local: _l, ...o } = row as Op & { local?: unknown }; return o as Op })
     useDatabase(`laptop-${Date.now()}`); resetDeviceId(); await getDeviceId()
@@ -130,7 +160,7 @@ describe('the day order', () => {
     const orderOp = (ops: Op[]) => ops.find((op) => op.field === 'today_manual_order')!
     const stamp = (op: Op) => `${String(op.ts).padStart(16, '0')}:${op.device}`
     const later = stamp(orderOp(fromLaptop)) > stamp(orderOp(fromPhone)) ? fromLaptop : fromPhone
-    const expected = later === fromLaptop ? [ids[1], ids[0], ids[2]] : [ids[2], ids[0], ids[1]]
+    const expected = later === fromLaptop ? [ids[1], ids[0]] : [ids[2], ids[0]]
     await applyOps(fromPhone)
     const here = (await db.userPrefs.get('me'))?.today_manual_order
     useDatabase(`phone2-${Date.now()}`); resetDeviceId(); await getDeviceId()

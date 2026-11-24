@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { addDaysISO, currentDateTime } from './dates'
 import { compareDueWithParts } from './dayLists'
 import { defaultListDisplay, type ListDisplay } from './listDisplay'
-import { dayOrderRows, dayOrderSiblings, listGroups, type GroupInput } from './listGroups'
+import { dayOrderRows, dayOrderSiblings, keepGroups, listGroups, WAITING_OPEN_KEY, type GroupInput } from './listGroups'
 import type { Label, Project, Task } from './types'
 
 const TODAY = '2026-10-14'
@@ -91,6 +91,30 @@ describe('Manual order of the day', () => {
     expect(groups[0].daySlot).toEqual({ date: THURSDAY, byPart: true })
     expect(dayOrderSiblings(groups, nine.id).map((x) => x.title)).toEqual(['Morning', 'Nine'])
     expect(dayOrderSiblings(groups, eve.id).map((x) => x.title)).toEqual(['Eve'])
+  })
+
+  it('slots do not move under Manual order: the slots keep their tasks, Waiting keeps its fill order', () => {
+    const one = task({ title: 'One', due: { date: TODAY } })
+    const two = task({ title: 'Two', due: { date: TODAY } })
+    const three = task({ title: 'Three', due: { date: TODAY } })
+    const four = task({ title: 'Four', due: { date: TODAY } })
+    // The day order places a waiting task first; it still waits, and the slots show in the day order.
+    const rank = new Map([[four.id, 0], [two.id, 1], [one.id, 2]])
+    const groups = listGroups(input({ tasks: [one, two, three, four], display: shown({ sortBy: 'position' }), manualOrder: rank, closedList: { limit: 2, waiting: [three, four] } }))
+    expect(groups.map((g) => [g.key, titles(g)])).toEqual([['today', ['Two', 'One']], ['waiting', []]])
+    const open = listGroups(input({ tasks: [one, two, three, four], display: shown({ sortBy: 'position' }), manualOrder: rank, collapsed: new Set([WAITING_OPEN_KEY]), closedList: { limit: 2, waiting: [three, four] } }))
+    expect(titles(open.find((g) => g.key === 'waiting')!)).toEqual(['Three', 'Four'])
+    expect(dayOrderRows(open).map((r) => r.task.title)).toEqual(['Two', 'One'])
+  })
+
+  it('keeps the groups of an unchanged list, slots included (list-rendering-at-scale D6)', () => {
+    const gym = task({ title: 'Gym', due: { date: THURSDAY } })
+    const p = input({ view: 'upcoming', tasks: [gym, a], dayParts: true })
+    const first = listGroups(p)
+    expect(keepGroups(first, listGroups(p))).toBe(first)
+    const today = input({ tasks: [a, b], dayParts: true })
+    const before = listGroups(today)
+    expect(keepGroups(before, listGroups(today))).toBe(before)
   })
 
   it('a date edited elsewhere keeps the rank: the task is listed on its new day by it', () => {

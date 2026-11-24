@@ -11,7 +11,7 @@ import { getDeviceId } from './ops'
 import { t } from './i18n'
 import { applyBatch } from './undo'
 import type { UndoableResult } from './undoActions'
-import { manualSequence, MAX_VIEW_ORDER, orderRank, planViewOrder, stepAnchor, type ViewPlacement, type ViewStep } from './viewOrder'
+import { boundOrder, manualSequence, orderRank, planViewOrder, stepAnchor, type ViewPlacement, type ViewStep } from './viewOrder'
 import type { Task, UserPrefs, View } from './types'
 import { listDisplayOf } from './listDisplay'
 import { inToday, isSomeday, overdueInToday, viewOptions } from './views'
@@ -79,17 +79,24 @@ async function orderPatch(host: OrderHost, row: OrderRow, tasks: readonly Task[]
   const hidden = stored.filter((id) => !onPage.has(id))
   const rows = hidden.length ? await db.tasks.bulkGet(hidden) : []
   const alive = new Set(rows.filter((x): x is Task => !!x && !x.deleted_at && !x.completed_at).map((x) => x.id))
-  // The first manual move keeps the displayed order of every other visible row.
-  const seed = today && !manual ? [...seq, ...hidden.filter((id) => alive.has(id))] : stored
-  let next = planViewOrder(seq, seed, moved, at, (id) => alive.has(id))
+  // The first manual move seeds the shown order only through the moved task and its
+  // anchor; the rows below read as unplaced, and every placement already stored stays.
+  const explicit = new Set(stored)
+  const keep = (id: string) => onPage.has(id) || alive.has(id)
+  const through = Math.max(seq.indexOf(moved), seq.indexOf(anchor)) + 1
+  const prefix = seq.slice(0, through)
+  const seeded = new Set(prefix)
+  const seed = today && !manual ? [...prefix, ...stored.filter((id) => !seeded.has(id) && keep(id))] : stored
+  const planned = today && !manual ? manualSequence(visible, orderRank(seed), unplaced) : seq
+  let next = planViewOrder(planned, seed, moved, at, (id) => alive.has(id), explicit)
   if (today && !next) {
-    if (!manual || (previousId && previousId !== moved && stored.includes(moved))) next = seed.slice(0, MAX_VIEW_ORDER)
+    if (!manual || (previousId && previousId !== moved && stored.includes(moved))) next = boundOrder(seed, [moved, anchor], explicit, new Set(hidden))
     else if (previousId && !stored.includes(moved)) {
       // The drop already agrees with the fallback sequence. Pin it anyway, since
       // the structural move can change the task's position tie-breaker.
       const throughMoved = seq.slice(0, seq.indexOf(moved) + 1)
       const placed = new Set(throughMoved)
-      next = [...throughMoved, ...stored.filter((id) => !placed.has(id) && (onPage.has(id) || alive.has(id)))].slice(0, MAX_VIEW_ORDER)
+      next = boundOrder([...throughMoved, ...stored.filter((id) => !placed.has(id) && keep(id))], [moved, anchor], explicit, new Set(hidden))
     }
   }
   if (!next && manual) return null

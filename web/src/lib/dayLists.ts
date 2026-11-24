@@ -1,9 +1,9 @@
 // The Today, Upcoming and project lists as pure functions (OpenSpec change
 // `display-mode`, design D3): the list screen (TaskListView) and the display
 // (app/display) both call these, so a display can never disagree with the list.
-import { addDaysISO, compareDue, currentDayStart, localDueOf, logicalDay } from './dates'
+import { addDaysISO, currentDayStart, localDueOf, logicalDay } from './dates'
 import { blockedMap } from './dependencies'
-import { placedPart } from './dayParts'
+import { dayPartOf, partOfTime, placedPart } from './dayParts'
 import { compareByPosition, compareDueThenPriority } from './ordering'
 import type { Project, Task } from './types'
 import { inToday, inUpcoming, overdueInToday, upcomingDate } from './views'
@@ -85,11 +85,25 @@ export function partRank(task: Pick<Task, 'evening' | 'day_part' | 'due'>): numb
  */
 export function compareDueWithParts(desc = false): (a: Task, b: Task) => number {
   const sign = desc ? -1 : 1
+  // Each row's date, part and time, worked out once per sort.
+  const keys = new WeakMap<Task, { date: string | null; part: number; time: string }>()
+  const keyOf = (task: Task) => {
+    let key = keys.get(task)
+    if (!key) {
+      const due = task.due ? localDueOf(task.due) : null
+      const time = due?.time
+      const own = dayPartOf(task)
+      key = { date: due?.date ?? null, part: PART_RANK[own ?? (time ? partOfTime(time) : 'none')], time: time ?? '99:99' }
+      keys.set(task, key)
+    }
+    return key
+  }
   return (a, b) => {
-    const da = a.due ? localDueOf(a.due).date : null
-    const db = b.due ? localDueOf(b.due).date : null
-    if (da === null || db === null || da !== db) return (da === null || db === null ? 1 : sign) * compareDue(a.due, b.due) || compareDueThenPriority(a, b)
-    return sign * (partRank(a) - partRank(b) || compareDue(a.due, b.due)) || a.priority - b.priority || compareByPosition(a, b)
+    const ka = keyOf(a)
+    const kb = keyOf(b)
+    if (ka.date === null || kb.date === null) return (ka.date === null ? 1 : 0) - (kb.date === null ? 1 : 0) || compareDueThenPriority(a, b)
+    const order = (ka.date < kb.date ? -1 : ka.date > kb.date ? 1 : 0) || ka.part - kb.part || (ka.time < kb.time ? -1 : ka.time > kb.time ? 1 : 0)
+    return sign * order || a.priority - b.priority || compareByPosition(a, b)
   }
 }
 
