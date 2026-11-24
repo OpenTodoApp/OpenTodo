@@ -3271,6 +3271,7 @@
         "due_today[].untrusted_text": "object",
         "due_today[].waiting_for_slot": "boolean",
         "focus": "array",
+        "focus_date": "string",
         "overdue": "array",
         "server_time": "string",
         "timezone": "string",

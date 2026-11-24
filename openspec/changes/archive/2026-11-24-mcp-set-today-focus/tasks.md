@@ -2,8 +2,8 @@
 
 ## 1. Tool
 
-- [x] 1.1 `set_today_focus` (`internal/agenttools/write_focus.go`) with `ruleval.PlanSetFocus`, the user's own tasks only, personal scope; `focus` in `today_summary`; descriptions, golden files, device manifest and `v1_surface.json` updated. Verify: `go test ./internal/agenttools ./internal/assistant ./internal/mcp ./internal/httpapi`.
-- [x] 1.2 Set, replace, clear, more than three refused, a foreign or unknown task refused, a task assigned to someone else refused, Bento slots, the write gate and `token_restricted`, `today_summary` reflecting it. Verify: `go test ./internal/agenttools -run TestSetTodayFocus`.
+- [x] 1.1 `set_today_focus` (`internal/agenttools/write_focus.go`) with `ruleval.PlanSetFocus`, visible tasks only, personal scope; `focus` and `focus_date` in `today_summary`; descriptions, golden files, device manifest and `v1_surface.json` updated. Verify: `go test ./internal/agenttools ./internal/assistant ./internal/mcp ./internal/httpapi`.
+- [x] 1.2 Set, replace, clear, more than three refused (repeats count once), a foreign or unknown task refused, a task assigned to someone else accepted, Bento slots, Three tasks leaving `focus_slots`, the day start in a non-UTC account zone, the write gate and `token_restricted` through a call, `today_summary` reflecting it. Verify: `go test ./internal/agenttools -run TestSetTodayFocus`.
 
 ## 2. Docs and checks
 
