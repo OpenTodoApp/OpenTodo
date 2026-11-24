@@ -126,6 +126,60 @@ func TestReminderTools(t *testing.T) {
 	}
 }
 
+// ios-urgent-alarms: an agent reads and sets a reminder's urgent flag; the flag alone
+// moves nothing and keeps the delivery state.
+func TestReminderToolsUrgent(t *testing.T) {
+	f := newFixture(t)
+	c := agent("u1")
+	f.task("u1", "flight", "Leave for the airport", map[string]any{"due": map[string]any{"date": "2026-10-20", "time": "06:00"}})
+	out := f.mustCall(c, "add_reminders", map[string]any{"items": []any{
+		map[string]any{"task_id": "flight", "kind": "relative", "offset_minutes": -30, "urgent": true},
+		map[string]any{"task_id": "flight", "kind": "relative", "offset_minutes": -60},
+	}})
+	res := out["results"].([]map[string]any)
+	loud, quiet := res[0]["id"].(string), res[1]["id"].(string)
+	if res[0]["urgent"] != true || res[1]["urgent"] != false {
+		t.Fatalf("add results = %+v", res)
+	}
+	if string(f.entity("u1", "reminder", loud)["urgent"]) != "true" {
+		t.Fatalf("stored urgent = %s", f.entity("u1", "reminder", loud)["urgent"])
+	}
+	urgentOf := func() map[string]bool {
+		got := map[string]bool{}
+		for _, r := range f.mustCall(c, "get_task", map[string]any{"id": "flight"})["reminders"].([]reminderOut) {
+			got[r.ID] = r.Urgent
+		}
+		return got
+	}
+	if got := urgentOf(); !got[loud] || got[quiet] {
+		t.Fatalf("get_task urgent = %v", got)
+	}
+	before := f.entity("u1", "reminder", quiet)["fire_at"]
+	up := f.mustCall(c, "update_reminders", map[string]any{"updates": []any{
+		map[string]any{"id": quiet, "urgent": true},
+		map[string]any{"id": loud, "urgent": false},
+	}})
+	if r := up["results"].([]map[string]any); r[0]["status"] != "updated" || r[0]["urgent"] != true || r[1]["urgent"] != false {
+		t.Fatalf("update results = %+v", r)
+	}
+	if got := urgentOf(); got[loud] || !got[quiet] {
+		t.Fatalf("after update urgent = %v", got)
+	}
+	if after := f.entity("u1", "reminder", quiet)["fire_at"]; string(after) != string(before) {
+		t.Fatalf("urgent moved the reminder: %s → %s", before, after)
+	}
+	// Unchanged, and a bad value.
+	if r := f.mustCall(c, "update_reminders", map[string]any{"updates": []any{map[string]any{"id": quiet, "urgent": true}}})["results"].([]map[string]any); r[0]["status"] != "unchanged" {
+		t.Fatalf("same flag = %+v", r)
+	}
+	if _, err := f.call(c, "update_reminders", map[string]any{"updates": []any{map[string]any{"id": quiet, "urgent": "yes"}}}); !isArgErr(err) {
+		t.Fatalf("urgent yes: %v", err)
+	}
+	if _, err := f.call(c, "add_reminders", map[string]any{"items": []any{map[string]any{"task_id": "flight", "kind": "relative", "urgent": 1}}}); !isArgErr(err) {
+		t.Fatalf("urgent 1: %v", err)
+	}
+}
+
 func TestRemindersArePersonal(t *testing.T) {
 	f := newFixture(t)
 	f.put("u1", "project", "p", map[string]any{"name": "Shared", "position": 1, "created_at": 1})

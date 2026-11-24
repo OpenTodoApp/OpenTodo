@@ -1,5 +1,14 @@
+import CryptoKit
 import Foundation
 import UserNotifications
+#if canImport(AlarmKit)
+// ios-urgent-alarms D7: only an SDK with AlarmKit (iOS 26, Xcode 26) compiles the alarms; with
+// an older one every urgent reminder is a notification. The framework is weak-linked, so the
+// app still starts on iOS 16.4 to 18 (`ios-testflight.sh archive` checks it).
+import AlarmKit
+import AppIntents
+import SwiftUI
+#endif
 
 /// Reminders without a push service (ios-shell design D3): the web app hands over the
 /// next 7 days, the shell schedules one local notification each, and iOS decides when a
@@ -19,6 +28,8 @@ final class Reminders {
         let taskId: String
         let fireAt: Double
         let title: String?
+        /// Rings as an alarm where it can (ios-urgent-alarms D3); absent in the hand-over means no.
+        var urgent = false
     }
 
     /// A reminder handed over up to this late still fires, at once (ms).
@@ -51,7 +62,8 @@ final class Reminders {
                   let number = o["fireAt"] as? NSNumber, number.doubleValue >= 0
             else { return nil }
             let title = (o["title"] as? String).map { String($0.prefix(200)) }
-            return Handed(id: id, taskId: taskId, fireAt: number.doubleValue, title: title?.isEmpty == false ? title : nil)
+            return Handed(id: id, taskId: taskId, fireAt: number.doubleValue, title: title?.isEmpty == false ? title : nil,
+                          urgent: (o["urgent"] as? Bool) == true)
         }
     }
 
@@ -110,21 +122,34 @@ final class Reminders {
         let handed = Self.parse(json)
         let chosen = Self.select(handed)
         await removeScheduled()
-        guard !chosen.isEmpty else { return "granted" }
+        guard !chosen.isEmpty else {
+            _ = await AlarmScheduler.replace([], interactive: false)
+            return "granted"
+        }
         let center = UNUserNotificationCenter.current()
         let status = await center.notificationSettings().authorizationStatus
+        // ios-urgent-alarms D3: the notification permission is the master switch; refused, no
+        // alarm rings either.
         switch Self.permission(status: status, interactive: interactive, hasReminders: true) {
         case .schedule: break
-        case .refuse: return "denied"
+        case .refuse:
+            _ = await AlarmScheduler.replace([], interactive: false)
+            return "denied"
         case .ask:
             let granted = (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) ?? false
-            guard granted else { return "denied" }
+            guard granted else {
+                _ = await AlarmScheduler.replace([], interactive: false)
+                return "denied"
+            }
         }
         registerCategory()
+        // Urgent reminders still ahead ring as alarms where AlarmKit is there and allowed; the
+        // rest, and an urgent one that could not be armed, are notifications.
+        let armed = await AlarmScheduler.replace(Alarms.candidates(chosen), interactive: interactive)
         // What already showed, and when: a late reminder handed over again must not alert twice,
         // but the same reminder snoozed to a later time must (Android's `wasShown`, same minute).
         let delivered = await center.deliveredNotifications().map { ($0.request.identifier, $0.date) }
-        for reminder in chosen {
+        for reminder in chosen where !armed.contains(reminder.id) {
             let content = UNMutableNotificationContent()
             content.title = reminder.title ?? String(localized: "OpenTodo reminder")
             content.body = ""
@@ -166,6 +191,7 @@ final class Reminders {
     /// Deletes the schedule: sign-out, a locked encrypted account, a changed server.
     func clear() async {
         await removeScheduled()
+        _ = await AlarmScheduler.replace([], interactive: false, force: true)
         UNUserNotificationCenter.current().removeAllDeliveredNotifications()
     }
 
@@ -184,3 +210,235 @@ final class Reminders {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
     }
 }
+
+/// Urgent reminders as alarms (OpenSpec change ios-urgent-alarms): the rules, pure so the
+/// unit tests run on any SDK. The AlarmKit calls are in `AlarmKitScheduler` below.
+enum Alarms {
+    /// AlarmKit's authorization, without AlarmKit's type (it exists only in the iOS 26 SDK).
+    enum Authorization: Equatable { case notDetermined, authorized, denied }
+
+    /// What an urgent reminder becomes.
+    enum Route: Equatable {
+        /// An alarm: AlarmKit is there and allowed.
+        case alarm
+        /// Ask the person, then an alarm if they allow it.
+        case ask
+        /// An ordinary notification.
+        case notification
+    }
+
+    /// The permission rule (design D4), the notification permission's own: the question comes
+    /// with the first urgent reminder and only from the visible app; a background run leaves
+    /// it to the visible app's next hand-over, and iOS never asks twice.
+    static func route(available: Bool, state: Authorization, interactive: Bool) -> Route {
+        guard available else { return .notification }
+        switch state {
+        case .authorized: return .alarm
+        case .denied: return .notification
+        case .notDetermined: return interactive ? .ask : .notification
+        }
+    }
+
+    /// The urgent reminders an alarm can ring for (design D3): still more than a second away.
+    /// One handed over at its time is a notification, whose duplicate check can see that it
+    /// already showed; an alarm that rang leaves nothing to check.
+    static func candidates(_ chosen: [Reminders.Handed], now: Date = Date()) -> [Reminders.Handed] {
+        let at = now.timeIntervalSince1970 * 1000
+        return chosen.filter { $0.urgent && $0.fireAt > at + 1000 }
+    }
+
+    /// The alarm's id for a reminder (design D5): the first 16 bytes of SHA-256 of
+    /// `opentodo.reminder.<id>`, marked as a version 5 UUID, so a reminder keeps its alarm.
+    static func alarmID(_ reminderId: String) -> UUID {
+        var b = Array(SHA256.hash(data: Data(("opentodo.reminder." + reminderId).utf8)).prefix(16))
+        b[6] = (b[6] & 0x0F) | 0x50
+        b[8] = (b[8] & 0x3F) | 0x80
+        return UUID(uuid: (b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8], b[9], b[10], b[11], b[12], b[13], b[14], b[15]))
+    }
+
+    /// What an armed alarm was armed with: the time and a digest of the title, so a moved or
+    /// renamed reminder is armed again, without keeping the title itself.
+    static func signature(_ r: Reminders.Handed) -> String {
+        let title = SHA256.hash(data: Data((r.title ?? "").utf8)).prefix(8).map { String(format: "%02x", $0) }.joined()
+        return "\(Int64(r.fireAt))|\(title)"
+    }
+
+    /// The difference between the alarms the system holds (id → the signature they were armed
+    /// with, nil when unknown) and the ones wanted (design D5): an unchanged alarm is left
+    /// alone, a moved or renamed one is cancelled and armed again, any other one is cancelled.
+    ///
+    /// An alarm that is ringing is never cancelled, and one whose armed time has passed is left
+    /// for the system to remove when it is stopped (design D5): the web app hands over only
+    /// reminders still ahead, so the hand-over after the firing time no longer lists it.
+    static func changes(current: [UUID: Armed], wanted: [Reminders.Handed], now: Date = Date()) -> Plan {
+        let nowMs = now.timeIntervalSince1970 * 1000
+        let byID = Dictionary(wanted.map { (alarmID($0.id), $0) }, uniquingKeysWith: { a, _ in a })
+        var plan = Plan()
+        for (id, armed) in current.sorted(by: { $0.key.uuidString < $1.key.uuidString }) {
+            let r = byID[id]
+            let same = r.map { armed.signature == signature($0) } ?? false
+            if armed.alerting {
+                // Ringing: left alone. Wanted again unchanged, it counts as armed; moved (a snooze
+                // while it still rings), the reminder is a notification this time.
+                if same, let r { plan.kept.append(r.id) }
+                continue
+            }
+            if let r {
+                if same { plan.kept.append(r.id) } else { plan.cancel.append(id) }
+                continue
+            }
+            if let at = armedAt(armed.signature), at <= nowMs { continue }
+            plan.cancel.append(id)
+        }
+        for r in wanted {
+            let id = alarmID(r.id)
+            guard let armed = current[id] else { plan.schedule.append(r); continue }
+            if !armed.alerting && armed.signature != signature(r) { plan.schedule.append(r) }
+        }
+        return plan
+    }
+
+    /// The time an alarm was armed for, read back from its signature (ms).
+    static func armedAt(_ signature: String?) -> Double? {
+        guard let head = signature?.split(separator: "|").first else { return nil }
+        return Double(head)
+    }
+
+    /// What the system holds for an alarm: the signature it was armed with (nil when unknown)
+    /// and whether it is ringing now.
+    struct Armed: Equatable {
+        var signature: String?
+        var alerting = false
+    }
+
+    /// A hand-over's changes: alarms to cancel, reminders to arm, and reminders whose alarm is
+    /// already armed as wanted.
+    struct Plan: Equatable {
+        var cancel: [UUID] = []
+        var schedule: [Reminders.Handed] = []
+        var kept: [String] = []
+    }
+}
+
+/// The alarms of the app, armed or cancelled with the schedule. Without AlarmKit (an older
+/// SDK or iOS) nothing is armed and every urgent reminder is a notification.
+@MainActor
+enum AlarmScheduler {
+    /// Arms `candidates` where it can and cancels every other alarm of the app; returns the
+    /// reminder ids armed as alarms, which then get no notification. A ringing alarm, or one past
+    /// its time, is left to the system unless `force` (Change server) cancels everything.
+    static func replace(_ candidates: [Reminders.Handed], interactive: Bool, force: Bool = false) async -> Set<String> {
+        #if canImport(AlarmKit)
+        if #available(iOS 26.0, *) {
+            return await AlarmKitScheduler.replace(candidates, interactive: interactive, force: force)
+        }
+        #endif
+        return []
+    }
+}
+
+#if canImport(AlarmKit)
+/// What an alarm carries: the reminder and its task, never the title.
+@available(iOS 26.0, *)
+struct ReminderAlarm: AlarmMetadata {
+    var reminder: String
+    var task: String
+}
+
+@available(iOS 26.0, *)
+@MainActor
+enum AlarmKitScheduler {
+    /// The signatures of the armed alarms (`Alarms.signature`) by alarm id, in the app's own
+    /// defaults; emptied with the alarms.
+    private static let signaturesKey = "opentodo.alarms"
+
+    static func authorization() -> Alarms.Authorization {
+        switch AlarmManager.shared.authorizationState {
+        case .authorized: return .authorized
+        case .denied: return .denied
+        case .notDetermined: return .notDetermined
+        @unknown default: return .denied
+        }
+    }
+
+    static func replace(_ candidates: [Reminders.Handed], interactive: Bool, force: Bool = false) async -> Set<String> {
+        let manager = AlarmManager.shared
+        var wanted = candidates
+        if !candidates.isEmpty {
+            switch Alarms.route(available: true, state: authorization(), interactive: interactive) {
+            case .alarm: break
+            case .notification: wanted = []
+            case .ask:
+                let state = try? await manager.requestAuthorization()
+                if state != .authorized { wanted = [] }
+            }
+        }
+        let stored = UserDefaults.standard.dictionary(forKey: signaturesKey) as? [String: String] ?? [:]
+        let alarms = (try? manager.alarms) ?? []
+        let ids = alarms.map(\.id)
+        let current = Dictionary(alarms.map { ($0.id, Alarms.Armed(signature: stored[$0.id.uuidString], alerting: $0.state == .alerting)) },
+                                 uniquingKeysWith: { a, _ in a })
+        let plan = Alarms.changes(current: force ? current.mapValues { Alarms.Armed(signature: $0.signature) } : current,
+                                  wanted: wanted, now: force ? .distantPast : Date())
+        var signatures = stored.filter { key, _ in ids.contains { $0.uuidString == key } }
+        for id in plan.cancel {
+            try? manager.cancel(id: id)
+            signatures[id.uuidString] = nil
+        }
+        var armed = Set(plan.kept)
+        for reminder in plan.schedule {
+            let id = Alarms.alarmID(reminder.id)
+            do {
+                _ = try await manager.schedule(id: id, configuration: configuration(reminder))
+                signatures[id.uuidString] = Alarms.signature(reminder)
+                armed.insert(reminder.id)
+            } catch {
+                armed.remove(reminder.id)
+            }
+        }
+        UserDefaults.standard.set(signatures, forKey: signaturesKey)
+        return armed
+    }
+
+    /// The alarm: the task's title or the generic text, Stop (the system's, design D6) and
+    /// Snooze 10 min, which opens the app on the reminder's snooze address.
+    private static func configuration(_ r: Reminders.Handed) -> AlarmManager.AlarmConfiguration<ReminderAlarm> {
+        let title: LocalizedStringResource = r.title.map { LocalizedStringResource(stringLiteral: $0) } ?? "OpenTodo reminder"
+        let alert = AlarmPresentation.Alert(
+            title: title,
+            stopButton: AlarmButton(text: "Stop", textColor: .white, systemImageName: "stop.circle"),
+            secondaryButton: AlarmButton(text: "Snooze 10 min", textColor: .white, systemImageName: "zzz"),
+            secondaryButtonBehavior: .custom)
+        let attributes = AlarmAttributes(presentation: AlarmPresentation(alert: alert),
+                                         metadata: ReminderAlarm(reminder: r.id, task: r.taskId),
+                                         tintColor: Color.accentColor)
+        return AlarmManager.AlarmConfiguration(schedule: .fixed(Date(timeIntervalSince1970: r.fireAt / 1000)),
+                                               attributes: attributes,
+                                               secondaryIntent: SnoozeReminderIntent(reminder: r.id))
+    }
+}
+
+/// An alarm's Snooze 10 min (design D6): opens the app at `/?reminder=<id>&action=snooze`, the
+/// address of the notification's Snooze, so the web app moves the reminder through its own op.
+@available(iOS 26.0, *)
+struct SnoozeReminderIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Snooze 10 min"
+    static let openAppWhenRun = true
+    static let isDiscoverable = false
+
+    @Parameter(title: "Reminder")
+    var reminder: String
+
+    init() {}
+
+    init(reminder: String) {
+        self.reminder = reminder
+    }
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        AppModel.shared.show(reminder: reminder, action: "snooze")
+        return .result()
+    }
+}
+#endif

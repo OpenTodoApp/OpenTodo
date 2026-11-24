@@ -32,6 +32,10 @@ var reminderAtProp = map[string]any{"type": "object", "additionalProperties": fa
 var offsetProp = map[string]any{"type": "integer", "minimum": -opsync.MaxReminderOffset, "maximum": 0,
 	"description": "For kind relative: minutes before the due time (0 = at the due time, -30 = half an hour before). For kind deadline: minutes before 09:00 on the deadline day."}
 
+// urgentProp is a reminder's urgent flag (OpenSpec change ios-urgent-alarms, design D1).
+var urgentProp = map[string]any{"type": "boolean",
+	"description": "Urgent: the iPhone app (iOS 26 and later) rings it as an alarm until it is stopped; everywhere else it is an ordinary reminder. Only for the kinds relative, deadline and absolute. Default false."}
+
 func init() {
 	register(tool{def: func(Caller) Definition {
 		item := object([]string{"task_id", "kind"}, map[string]any{
@@ -39,6 +43,7 @@ func init() {
 			"kind":           map[string]any{"type": "string", "enum": []string{"relative", "deadline", "absolute"}, "description": "relative follows the task's due time, deadline its deadline day, absolute fires at a fixed moment."},
 			"offset_minutes": offsetProp,
 			"at":             reminderAtProp,
+			"urgent":         urgentProp,
 			"id":             chosenIDProp,
 		})
 		return writeDef("add_reminders", "Add reminders",
@@ -51,12 +56,13 @@ func init() {
 
 	register(tool{def: func(Caller) Definition {
 		return writeDef("update_reminders", "Update reminders",
-			"Change when the user's reminders fire: offset_minutes of a relative or deadline reminder, at of an absolute one. The kind never changes: remove the reminder and add another instead. get_task lists a task's reminders.",
+			"Change when the user's reminders fire: offset_minutes of a relative or deadline reminder, at of an absolute one; urgent marks one urgent or not. The kind never changes: remove the reminder and add another instead. get_task lists a task's reminders.",
 			object([]string{"updates"}, map[string]any{
 				"updates": map[string]any{"type": "array", "minItems": 1, "maxItems": PerCall, "items": object([]string{"id"}, map[string]any{
 					"id":             map[string]any{"type": "string", "description": "Reminder id (see get_task)."},
 					"offset_minutes": offsetProp,
 					"at":             reminderAtProp,
+					"urgent":         urgentProp,
 				})},
 			}), false, true, nil, false)
 	}, plan: (*Registry).planUpdateReminders})
@@ -197,7 +203,7 @@ func (r *Registry) planAddReminders(ctx context.Context, c Caller, a args, overl
 	chosen := map[string]bool{}
 	for i, it := range list {
 		p := fmt.Sprintf("items[%d].", i)
-		if err := it.only(p, "task_id", "kind", "offset_minutes", "at", "id"); err != nil {
+		if err := it.only(p, "task_id", "kind", "offset_minutes", "at", "urgent", "id"); err != nil {
 			return Plan{}, err
 		}
 		taskID, err := it.str("task_id")
@@ -215,6 +221,10 @@ func (r *Registry) planAddReminders(ctx context.Context, c Caller, a args, overl
 		at, hasAt, err := it.reminderAt(p, loc)
 		if err != nil {
 			return Plan{}, err
+		}
+		urgent, err := it.boolean("urgent")
+		if err != nil {
+			return Plan{}, argErr(p + "urgent: must be true or false")
 		}
 		switch {
 		case kind == "absolute" && (!hasAt || hasOffset):
@@ -256,11 +266,14 @@ func (r *Registry) planAddReminders(ctx context.Context, c Caller, a args, overl
 		}
 		patch := map[string]json.RawMessage{"task_id": raw(taskID), "kind": raw(kind), "offset_minutes": offset, "fire_at": fire,
 			"delivered_at": nullRaw, "dismissed_at": nullRaw, "created_at": raw(now), "deleted_at": nullRaw}
+		if urgent {
+			patch["urgent"] = raw(true)
+		}
 		if err := checkPatch(p, "reminder", id, patch); err != nil {
 			return Plan{}, err
 		}
 		cs = append(cs, Change{Entity: "reminder", EntityID: id, Create: true, Patch: patch, opSeed: seed})
-		out = append(out, map[string]any{"id": id, "status": "created", "task_id": taskID, "kind": kind, "fire_at": fireOut(fire)})
+		out = append(out, map[string]any{"id": id, "status": "created", "task_id": taskID, "kind": kind, "fire_at": fireOut(fire), "urgent": urgent})
 	}
 	if len(missing) > 0 {
 		return Plan{}, notFound("task", missing)
@@ -298,7 +311,7 @@ func (r *Registry) planUpdateReminders(ctx context.Context, c Caller, a args, ov
 	seen := map[string]bool{}
 	for i, it := range list {
 		p := fmt.Sprintf("updates[%d].", i)
-		if err := it.only(p, "id", "offset_minutes", "at"); err != nil {
+		if err := it.only(p, "id", "offset_minutes", "at", "urgent"); err != nil {
 			return Plan{}, err
 		}
 		id, err := it.str("id")
@@ -317,6 +330,11 @@ func (r *Registry) planUpdateReminders(ctx context.Context, c Caller, a args, ov
 		if err != nil {
 			return Plan{}, err
 		}
+		hasUrgent := it.present("urgent")
+		urgent, err := it.boolean("urgent")
+		if err != nil {
+			return Plan{}, argErr(p + "urgent: must be true or false")
+		}
 		rem, ok := byID[id]
 		if !ok {
 			missing = append(missing, id)
@@ -327,19 +345,23 @@ func (r *Registry) planUpdateReminders(ctx context.Context, c Caller, a args, ov
 		switch {
 		case opsync.IsLocationKind(kind):
 			// location-reminders: no firing time; the agent tools do not edit
-			// them yet (agent-tools-complete).
-			return Plan{}, argErr(p + "a location reminder fires on the user's phone at the task's location and has no time to change")
+			// them yet (agent-tools-complete), and they have no urgent mode.
+			return Plan{}, argErr(p + "a location reminder fires on the user's phone at the task's location and has no time or urgent mode to change")
 		case kind == "absolute" && hasOffset, kind != "absolute" && hasAt:
 			return Plan{}, argErr(p + "a reminder keeps its kind: give at for an absolute reminder, offset_minutes otherwise; to change the kind remove it and add another")
-		case !hasOffset && !hasAt:
-			return Plan{}, argErr(p + "nothing to change: give offset_minutes or at")
-		case kind == "absolute":
+		case !hasOffset && !hasAt && !hasUrgent:
+			return Plan{}, argErr(p + "nothing to change: give offset_minutes, at or urgent")
+		case kind == "absolute" && hasAt:
 			patch["fire_at"] = raw(at)
-		default:
+		case hasOffset:
 			patch["offset_minutes"] = offset
 			patch["fire_at"] = reminderFire(kind, snap.task(rawStr(rem, "task_id")), offset, loc)
 		}
-		if !opsync.SameJSON(patch["fire_at"], rem["fire_at"]) {
+		if hasUrgent {
+			// ios-urgent-alarms D1: the flag alone moves nothing and keeps the delivery state.
+			patch["urgent"] = raw(urgent)
+		}
+		if _, moved := patch["fire_at"]; moved && !opsync.SameJSON(patch["fire_at"], rem["fire_at"]) {
 			// A moved reminder fires again, as when its task's due date moves.
 			for _, f := range []string{"delivered_at", "dismissed_at"} {
 				if v, ok := rem[f]; ok && string(v) != "null" {
@@ -356,7 +378,7 @@ func (r *Registry) planUpdateReminders(ctx context.Context, c Caller, a args, ov
 			}
 		}
 		if len(patch) == 0 {
-			out = append(out, map[string]any{"id": id, "status": "unchanged", "fire_at": fireOut(rem["fire_at"])})
+			out = append(out, map[string]any{"id": id, "status": "unchanged", "fire_at": fireOut(rem["fire_at"]), "urgent": isTrue(rem["urgent"])})
 			continue
 		}
 		cs = append(cs, Change{Entity: "reminder", EntityID: id, Patch: patch, Base: base(rem, patch)})
@@ -364,7 +386,11 @@ func (r *Registry) planUpdateReminders(ctx context.Context, c Caller, a args, ov
 		if v, ok := patch["fire_at"]; ok {
 			fire = v
 		}
-		out = append(out, map[string]any{"id": id, "status": "updated", "fire_at": fireOut(fire)})
+		urgentNow := isTrue(rem["urgent"])
+		if v, ok := patch["urgent"]; ok {
+			urgentNow = isTrue(v)
+		}
+		out = append(out, map[string]any{"id": id, "status": "updated", "fire_at": fireOut(fire), "urgent": urgentNow})
 	}
 	if len(missing) > 0 {
 		return Plan{}, notFound("reminder", missing)
@@ -419,6 +445,8 @@ type reminderOut struct {
 	OffsetMinutes *int    `json:"offset_minutes"`
 	FireAt        *string `json:"fire_at"`
 	Dismissed     bool    `json:"dismissed"`
+	// Urgent rings as an alarm in the iPhone app (ios-urgent-alarms).
+	Urgent bool `json:"urgent"`
 }
 
 // taskReminders lists the caller's live reminders of one task.
@@ -432,7 +460,7 @@ func (r *Registry) taskReminders(ctx context.Context, uid, taskID string) ([]rem
 		if deleted(rem) || rawStr(rem, "task_id") != taskID || len(out) == MaxItems {
 			continue
 		}
-		o := reminderOut{ID: rawStr(rem, "id"), Kind: rawStr(rem, "kind"), FireAt: fireOut(rem["fire_at"])}
+		o := reminderOut{ID: rawStr(rem, "id"), Kind: rawStr(rem, "kind"), FireAt: fireOut(rem["fire_at"]), Urgent: isTrue(rem["urgent"])}
 		if v, ok := rem["offset_minutes"]; ok && string(v) != "null" {
 			var n int
 			if json.Unmarshal(v, &n) == nil {
@@ -446,3 +474,6 @@ func (r *Registry) taskReminders(ctx context.Context, uid, taskID string) ([]rem
 	}
 	return out, nil
 }
+
+// isTrue reads a stored boolean field; absent, null or anything else is false.
+func isTrue(v json.RawMessage) bool { return string(v) == "true" }

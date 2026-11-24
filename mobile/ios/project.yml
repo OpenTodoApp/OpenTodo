@@ -52,6 +52,9 @@ targets:
         # Saving an image from Quick Look's share button (Downloads, ios-quick-look): adding to
         # Photos only, never reading them. Without it that choice ends the app. Translated in InfoPlist.xcstrings.
         NSPhotoLibraryAddUsageDescription: OpenTodo saves the images you choose to your photo library.
+        # Urgent reminders as alarms (ios-urgent-alarms, AlarmKit on iOS 26): iOS shows it when the
+        # first urgent reminder asks; without it scheduling an alarm fails. Translated in InfoPlist.xcstrings.
+        NSAlarmKitUsageDescription: OpenTodo rings your urgent reminders as alarms.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         UIApplicationShortcutItems:

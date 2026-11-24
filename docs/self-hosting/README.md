@@ -83,7 +83,7 @@ ReadWritePaths=/var/lib/opentodo
 WantedBy=multi-user.target
 ```
 
-Then `sudo systemctl daemon-reload && sudo systemctl enable --now opentodo`, and `journalctl -u opentodo` for the log (the setup code is printed there). To upgrade, replace `/usr/local/bin/opentodo` and `sudo systemctl restart opentodo`.
+Then `sudo systemctl daemon-reload && sudo systemctl enable --now opentodo`, and `journalctl -u opentodo` for the log (the setup code is printed there). `Restart=on-failure` also finishes a web restore where the server cannot start itself again: it exits with status 75 and the next start applies the restore ([Restore from the web app](../backups.md#restore-from-the-web-app)). To upgrade, replace `/usr/local/bin/opentodo` and `sudo systemctl restart opentodo`.
 
 ## 2. First run
 

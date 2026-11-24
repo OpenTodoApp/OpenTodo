@@ -297,7 +297,7 @@ final class ReminderTests: XCTestCase {
     /// app's BridgeFixtureTest reads them too): with titles, an encrypted account without
     /// them, and a sign-out that empties the schedule.
     func testTheSharedBridgePayloadsScheduleAsTheFixtureSays() throws {
-        for name in ["reminders", "reminders-encrypted", "reminders-signed-out"] {
+        for name in ["reminders", "reminders-encrypted", "reminders-urgent", "reminders-signed-out"] {
             let file = URL(fileURLWithPath: #filePath)
                 .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
                 .appendingPathComponent("android/app/src/test/resources/bridge/\(name).json")
@@ -306,11 +306,139 @@ final class ReminderTests: XCTestCase {
             let nowMs = try XCTUnwrap(fixture["now"] as? Double, name)
             let want = try XCTUnwrap(fixture["expect"] as? [[String: Any]], name).map { r in
                 Reminders.Handed(id: r["id"] as? String ?? "?", taskId: r["taskId"] as? String ?? "?",
-                                 fireAt: r["fireAt"] as? Double ?? -1, title: r["title"] as? String)
+                                 fireAt: r["fireAt"] as? Double ?? -1, title: r["title"] as? String,
+                                 urgent: r["urgent"] as? Bool ?? false)
             }
             let payload = try XCTUnwrap(fixture["payload"] as? String, name)
             XCTAssertEqual(Reminders.select(Reminders.parse(payload), now: Date(timeIntervalSince1970: nowMs / 1000)), want, name)
         }
+    }
+}
+
+/// Urgent reminders as alarms (ios-urgent-alarms): the rules outside AlarmKit, so they run on
+/// the CI's Xcode 16.4 too, where the AlarmKit calls are compiled out.
+@MainActor
+final class AlarmTests: XCTestCase {
+    private func handed(_ id: String, at: Double, urgent: Bool = true, title: String? = nil) -> Reminders.Handed {
+        Reminders.Handed(id: id, taskId: "t", fireAt: at, title: title, urgent: urgent)
+    }
+
+    /// Design D4: the notification permission's rule. Only the visible app asks; without
+    /// AlarmKit, or refused, it is a notification.
+    func testTheAlarmPermissionIsAskedOnlyByTheVisibleApp() {
+        for interactive in [true, false] {
+            for state in [Alarms.Authorization.notDetermined, .authorized, .denied] {
+                XCTAssertEqual(Alarms.route(available: false, state: state, interactive: interactive), .notification)
+            }
+            XCTAssertEqual(Alarms.route(available: true, state: .authorized, interactive: interactive), .alarm)
+            XCTAssertEqual(Alarms.route(available: true, state: .denied, interactive: interactive), .notification)
+        }
+        XCTAssertEqual(Alarms.route(available: true, state: .notDetermined, interactive: true), .ask)
+        XCTAssertEqual(Alarms.route(available: true, state: .notDetermined, interactive: false), .notification)
+    }
+
+    /// Design D3: only urgent reminders still ahead become alarms; one handed over at its time
+    /// stays a notification.
+    func testOnlyUrgentRemindersAheadAreAlarms() {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let chosen = [
+            handed("late", at: 1_000_000 - 30_000),
+            handed("now", at: 1_000_500),
+            handed("quiet", at: 2_000_000, urgent: false),
+            handed("loud", at: 2_000_000),
+        ]
+        XCTAssertEqual(Alarms.candidates(chosen, now: now).map(\.id), ["loud"])
+    }
+
+    /// The hand-over's `urgent`: only a JSON true counts.
+    func testParseReadsUrgent() {
+        let json = #"[{"id":"a","taskId":"t","fireAt":1,"urgent":true},{"id":"b","taskId":"t","fireAt":2},{"id":"c","taskId":"t","fireAt":3,"urgent":"yes"}]"#
+        XCTAssertEqual(Reminders.parse(json).map(\.urgent), [true, false, false])
+    }
+
+    /// Design D5: a reminder keeps its alarm id; two reminders never share one.
+    func testTheAlarmIdIsStableAndAVersion5UUID() {
+        let id = Alarms.alarmID("r-soon")
+        XCTAssertEqual(id, Alarms.alarmID("r-soon"))
+        XCTAssertNotEqual(id, Alarms.alarmID("r-late"))
+        XCTAssertEqual(id.uuid.6 >> 4, 5)
+        XCTAssertEqual(id.uuid.8 >> 6, 2)
+    }
+
+    /// Design D5: an unchanged alarm is left alone, a moved or renamed one armed again, one
+    /// no longer wanted (or not ours to know) cancelled, a new one armed.
+    func testChangesTouchOnlyWhatMoved() {
+        let same = handed("same", at: 10_000, title: "A")
+        let moved = handed("moved", at: 20_000)
+        let renamed = handed("renamed", at: 30_000, title: "New")
+        let new = handed("new", at: 40_000)
+        let now = Date(timeIntervalSince1970: 1)  // 1,000 ms: every alarm here is still ahead
+        let current: [UUID: Alarms.Armed] = [
+            Alarms.alarmID("same"): .init(signature: Alarms.signature(same)),
+            Alarms.alarmID("moved"): .init(signature: Alarms.signature(handed("moved", at: 15_000))),
+            Alarms.alarmID("renamed"): .init(signature: Alarms.signature(handed("renamed", at: 30_000, title: "Old"))),
+            Alarms.alarmID("gone"): .init(signature: Alarms.signature(handed("gone", at: 50_000))),
+            Alarms.alarmID("unknown"): .init(signature: nil),
+        ]
+        let plan = Alarms.changes(current: current, wanted: [same, moved, renamed, new], now: now)
+        XCTAssertEqual(plan.schedule.map(\.id), ["moved", "renamed", "new"])
+        XCTAssertEqual(Set(plan.cancel), Set(["moved", "renamed", "gone", "unknown"].map(Alarms.alarmID)))
+        XCTAssertEqual(plan.kept, ["same"])
+        // Nothing wanted and nothing ringing or past: every alarm goes.
+        XCTAssertEqual(Set(Alarms.changes(current: current, wanted: [], now: now).cancel), Set(current.keys))
+    }
+
+    /// Review of #2020: the hand-over after the firing time no longer lists the reminder (the
+    /// web app hands over only reminders ahead), so a ringing alarm must survive it, the empty
+    /// hand-over and the denied one included; so must one past its time that the system has not
+    /// removed yet.
+    func testARingingAlarmIsNeverCancelledByAHandOver() {
+        let now = Date(timeIntervalSince1970: 100)  // 100,000 ms
+        let ringing = handed("ringing", at: 99_000)
+        let rang = handed("rang", at: 90_000)
+        let ahead = handed("ahead", at: 200_000)
+        let current: [UUID: Alarms.Armed] = [
+            Alarms.alarmID("ringing"): .init(signature: Alarms.signature(ringing), alerting: true),
+            Alarms.alarmID("rang"): .init(signature: Alarms.signature(rang)),
+            Alarms.alarmID("ahead"): .init(signature: Alarms.signature(ahead)),
+            Alarms.alarmID("unknown-ringing"): .init(signature: nil, alerting: true),
+        ]
+        // Empty (sign-out, nothing ahead) and denied (notifications or alarms refused) hand over [].
+        let empty = Alarms.changes(current: current, wanted: [], now: now)
+        XCTAssertEqual(empty.cancel, [Alarms.alarmID("ahead")])
+        XCTAssertTrue(empty.schedule.isEmpty)
+        // A later hand-over with the reminder ahead again (snoozed while it still rings): the
+        // ringing alarm stays and the snoozed time is not armed over it.
+        let snoozed = handed("ringing", at: 700_000)
+        let again = Alarms.changes(current: current, wanted: [snoozed, ahead], now: now)
+        XCTAssertFalse(again.cancel.contains(Alarms.alarmID("ringing")))
+        XCTAssertFalse(again.schedule.contains { $0.id == "ringing" })
+        XCTAssertEqual(again.kept, ["ahead"])
+        // Once it stopped ringing, a snoozed reminder is armed again over the stale alarm.
+        let stopped = current.merging([Alarms.alarmID("rang"): .init(signature: Alarms.signature(rang))]) { a, _ in a }
+        let rearm = Alarms.changes(current: stopped, wanted: [handed("rang", at: 700_000)], now: now)
+        XCTAssertTrue(rearm.cancel.contains(Alarms.alarmID("rang")))
+        XCTAssertEqual(rearm.schedule.map(\.id), ["rang"])
+    }
+
+    func testArmedAtReadsTheSignature() {
+        XCTAssertEqual(Alarms.armedAt(Alarms.signature(handed("a", at: 1_792_674_000_000))), 1_792_674_000_000)
+        XCTAssertNil(Alarms.armedAt(nil))
+    }
+
+    /// The signature keeps no title, only a digest.
+    func testTheSignatureCarriesNoTitle() {
+        XCTAssertFalse(Alarms.signature(handed("a", at: 1, title: "Call the plumber")).contains("plumber"))
+    }
+
+    /// Without AlarmKit (this SDK or an older iOS) nothing is armed, so every urgent reminder
+    /// is scheduled as a notification.
+    func testWithoutAlarmKitNothingIsArmed() async {
+        #if canImport(AlarmKit)
+        if #available(iOS 26.0, *) { return }
+        #endif
+        let armed = await AlarmScheduler.replace([handed("a", at: Date().timeIntervalSince1970 * 1000 + 60_000)], interactive: false)
+        XCTAssertTrue(armed.isEmpty)
     }
 }
 

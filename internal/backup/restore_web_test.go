@@ -131,12 +131,12 @@ func TestStagingLifecycle(t *testing.T) {
 	if _, err := os.Stat(e.svc.stagingDir(r.ID)); !os.IsNotExist(err) {
 		t.Fatal("the replaced staged restore was kept")
 	}
-	if err := e.svc.ConfirmRestore(ctx, r.ID, uid); !errors.Is(err, ErrStagedNotFound) {
+	if _, err := e.svc.ConfirmRestore(ctx, r.ID, uid); !errors.Is(err, ErrStagedNotFound) {
 		t.Fatalf("confirm replaced id: %v", err)
 	}
 	// 30 minutes later it has expired.
 	e.clock.Advance(31 * time.Minute)
-	if err := e.svc.ConfirmRestore(ctx, r2.ID, uid); !errors.Is(err, ErrStagedNotFound) {
+	if _, err := e.svc.ConfirmRestore(ctx, r2.ID, uid); !errors.Is(err, ErrStagedNotFound) {
 		t.Fatalf("confirm expired id: %v", err)
 	}
 	if _, err := os.Stat(e.svc.stagingDir(r2.ID)); !os.IsNotExist(err) {
@@ -230,8 +230,8 @@ func TestReceiveUpload(t *testing.T) {
 func confirmAndStop(t *testing.T, e *testEnv, id, uid string) {
 	t.Helper()
 	restarted := false
-	e.svc.SetRestartFunc(func() { restarted = true })
-	if err := e.svc.ConfirmRestore(context.Background(), id, uid); err != nil {
+	e.svc.SetRestartFunc(func() bool { restarted = true; return true })
+	if _, err := e.svc.ConfirmRestore(context.Background(), id, uid); err != nil {
 		t.Fatal(err)
 	}
 	if !restarted {
@@ -252,7 +252,7 @@ func TestApplyPendingRestore(t *testing.T) {
 	}
 	// A backup run in progress blocks the confirmation.
 	e.svc.runMu.Lock()
-	if err := e.svc.ConfirmRestore(context.Background(), r.ID, uid); !errors.Is(err, ErrRunning) {
+	if _, err := e.svc.ConfirmRestore(context.Background(), r.ID, uid); !errors.Is(err, ErrRunning) {
 		t.Fatalf("confirm during a run: %v", err)
 	}
 	e.svc.runMu.Unlock()
@@ -378,7 +378,7 @@ func TestUndoFromSafetyCopy(t *testing.T) {
 	if err != nil || u.Counts.Ops != 3 {
 		t.Fatalf("undo prepare: %+v %v", u, err)
 	}
-	if err := svc.ConfirmRestore(context.Background(), u.ID, uid); err != nil {
+	if _, err := svc.ConfirmRestore(context.Background(), u.ID, uid); err != nil {
 		t.Fatal(err)
 	}
 	db.Close()
