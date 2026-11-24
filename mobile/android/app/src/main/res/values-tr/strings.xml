@@ -44,6 +44,8 @@
     <string name="widget_empty">Bugün için başka görev kalmadı.</string>
     <string name="widget_untitled">Görev</string>
     <string name="widget_more">+ %1$d daha</string>
+    <string name="widget_earlier">Daha önce</string>
+    <string name="widget_complete">Tamamla: %1$s</string>
     <string name="widget_completed">Tamamlanan</string>
     <string name="widget_completed_description">Bu hafta kaç görev tamamladığın</string>
     <string name="widget_completed_locked">Kilitli: yalnızca bugünün sayısı</string>
@@ -57,6 +59,7 @@
     <string name="error_sign_in">Sunucunuz bir giriş sayfasının arkasında ve oturum açma işlemi uygulamada devam etmedi. Buradan tekrar oturum açın.</string>
     <string name="save_failed">Dosya kaydedilemedi.</string>
     <string name="channel_focus">Odak</string>
+    <string name="channel_sync">Eşitleniyor</string>
     <string name="focus_generic">Odak oturumu</string>
     <string name="focus_work">İş</string>
     <string name="focus_work_of">İş · %1$d / %2$d</string>

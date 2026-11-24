@@ -44,6 +44,8 @@
     <string name="widget_empty">Niente altro per oggi.</string>
     <string name="widget_untitled">Attività</string>
     <string name="widget_more">+ altre %1$d</string>
+    <string name="widget_earlier">Da prima</string>
+    <string name="widget_complete">Completa: %1$s</string>
     <string name="widget_completed">Completate</string>
     <string name="widget_completed_description">Quante attività hai completato questa settimana</string>
     <string name="widget_completed_locked">Bloccato: solo il numero di oggi</string>
@@ -57,6 +59,7 @@
     <string name="error_sign_in">Il server è dietro una pagina di accesso e l’accesso non è proseguito nell’app. Accedi di nuovo qui.</string>
     <string name="save_failed">Non è stato possibile salvare il file.</string>
     <string name="channel_focus">Focus</string>
+    <string name="channel_sync">Sincronizzazione</string>
     <string name="focus_generic">Sessione di focus</string>
     <string name="focus_work">Lavoro</string>
     <string name="focus_work_of">Lavoro · %1$d di %2$d</string>

@@ -44,6 +44,8 @@
     <string name="widget_empty">Voor vandaag is er niets meer open.</string>
     <string name="widget_untitled">Taak</string>
     <string name="widget_more">+ %1$d meer</string>
+    <string name="widget_earlier">Eerder</string>
+    <string name="widget_complete">Voltooien: %1$s</string>
     <string name="widget_completed">Afgerond</string>
     <string name="widget_completed_description">Hoeveel taken je deze week hebt afgerond</string>
     <string name="widget_completed_locked">Vergrendeld: alleen het aantal van vandaag</string>
@@ -57,6 +59,7 @@
     <string name="error_sign_in">Je server zit achter een aanmeldpagina, en de aanmelding ging in de app niet verder. Meld je hier opnieuw aan.</string>
     <string name="save_failed">Het bestand kon niet worden opgeslagen.</string>
     <string name="channel_focus">Focus</string>
+    <string name="channel_sync">Synchroniseren</string>
     <string name="focus_generic">Focussessie</string>
     <string name="focus_work">Werk</string>
     <string name="focus_work_of">Werk · %1$d van %2$d</string>

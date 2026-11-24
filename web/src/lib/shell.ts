@@ -62,7 +62,10 @@ export interface ShellWidgetData {
   locked: boolean
   count: number
   overdue: number
-  tasks: { id: string; title?: string; time?: string; priority: number; overdue: boolean }[]
+  /** `project`: the project's name (none for the Inbox); `date`: an overdue task's due date (android-widget-list D4). */
+  tasks: { id: string; title?: string; time?: string; date?: string; project?: string; priority: number; overdue: boolean }[]
+  /** What the widget may ask of this web app (android-widget-list D3): `complete` opens `/?complete=<id>` in a background run. */
+  actions?: 'complete'[]
   /**
    * The Completed widget (completed-widget D1): how many tasks were completed today and,
    * while the account is readable, on each of the last 7 days (oldest first), counted as
