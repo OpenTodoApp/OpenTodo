@@ -59,6 +59,7 @@
     <string name="error_sign_in">Dein Server liegt hinter einer Anmeldeseite, und die Anmeldung ging in der App nicht weiter. Melde dich hier erneut an.</string>
     <string name="save_failed">Die Datei konnte nicht gespeichert werden.</string>
     <string name="channel_focus">Fokus</string>
+    <string name="channel_sync">Synchronisieren</string>
     <string name="focus_generic">Fokussitzung</string>
     <string name="focus_work">Arbeit</string>
     <string name="focus_work_of">Arbeit · %1$d von %2$d</string>

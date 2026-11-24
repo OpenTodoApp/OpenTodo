@@ -1,13 +1,15 @@
 package app.opentodo
 
+import android.app.Activity
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
-import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.os.Bundle
 import android.text.format.DateFormat
 import android.view.View
 import android.widget.RemoteViews
@@ -52,12 +54,20 @@ object WidgetStore {
         val model = WidgetModel.parse(prefs.widget) ?: return
         if (!model.canComplete || model.rows.none { it.id == taskId }) return
         prefs.widgetPending = WidgetPending.toJson(WidgetPending.add(WidgetPending.parse(prefs.widgetPending), taskId, System.currentTimeMillis()))
+        prefs.queueWidgetCompletion(taskId)
         redraw(context)
-        HiddenRun.enqueueWidgetAction(context, completePath(taskId))
+        HiddenRun.enqueueWidgetRun(context)
     }
 
-    /** The address the web app completes a task at (shared fixture bridge/actions.json `completePaths`). */
-    fun completePath(taskId: String): String = "/?complete=" + java.net.URLEncoder.encode(taskId, "UTF-8")
+    /**
+     * The address one background run completes every queued task at (shared fixture
+     * bridge/actions.json `completePaths`), and empties the queue so each is sent once;
+     * null when nothing is queued (an earlier run of the chain took them).
+     */
+    fun takeCompletePath(context: Context): String? = Prefs(context).takeWidgetQueue().takeIf { it.isNotEmpty() }?.let { completePath(it) }
+
+    fun completePath(taskIds: List<String>): String =
+        "/?" + taskIds.joinToString("&") { "complete=" + java.net.URLEncoder.encode(it, "UTF-8") }
 
     /** The completions hidden now. */
     fun pending(context: Context): Set<String> =
@@ -96,7 +106,7 @@ class TodayWidget : AppWidgetProvider() {
                 @Suppress("DEPRECATION")
                 v.setRemoteAdapter(R.id.list, service)
                 v.setEmptyView(R.id.list, R.id.message)
-                v.setPendingIntentTemplate(R.id.list, WidgetActionReceiver.template(context))
+                v.setPendingIntentTemplate(R.id.list, WidgetAction.template(context))
                 manager.updateAppWidget(id, v)
             }
             @Suppress("DEPRECATION")
@@ -154,7 +164,7 @@ internal class TodayListFactory(private val context: Context) : RemoteViewsServi
     override fun getViewAt(position: Int): RemoteViews = when (val item = items.getOrNull(position)) {
         is WidgetModel.Item.Task -> row(item.row)
         is WidgetModel.Item.Heading -> heading(context.getString(if (item.group == WidgetModel.Group.EARLIER) R.string.widget_earlier else R.string.widget_today), null)
-        is WidgetModel.Item.More -> heading(context.getString(R.string.widget_more, item.count), WidgetActionReceiver.fillOpenToday())
+        is WidgetModel.Item.More -> heading(context.getString(R.string.widget_more, item.count), WidgetAction.fillOpenToday())
         null -> heading("", null)
     }
 
@@ -174,11 +184,11 @@ internal class TodayListFactory(private val context: Context) : RemoteViewsServi
         setTextViewText(R.id.meta, details)
         setViewVisibility(R.id.meta, if (details.isEmpty()) View.GONE else View.VISIBLE)
         setViewVisibility(R.id.details, if (date == null && details.isEmpty()) View.GONE else View.VISIBLE)
-        setOnClickFillInIntent(R.id.body, WidgetActionReceiver.fillOpen(row.id))
+        setOnClickFillInIntent(R.id.body, WidgetAction.fillOpen(row.id))
         if (canComplete) {
             setViewVisibility(R.id.check, View.VISIBLE)
             setContentDescription(R.id.check, context.getString(R.string.widget_complete, title))
-            setOnClickFillInIntent(R.id.check, WidgetActionReceiver.fillComplete(row.id))
+            setOnClickFillInIntent(R.id.check, WidgetAction.fillComplete(row.id))
         } else {
             // Without completing, the circle's room stays as a margin so titles keep their place.
             setViewVisibility(R.id.check, View.INVISIBLE)
@@ -186,38 +196,54 @@ internal class TodayListFactory(private val context: Context) : RemoteViewsServi
     }
 }
 
-/**
- * The Today widget's row taps (android-widget-list D2): `open` opens the task (or Today), `complete`
- * hides the row and queues the completion for the web app. Not exported; only the widget's own
- * template reaches it, and the template fixes the component, so a fill-in sets extras only.
- */
-class WidgetActionReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
-        val id = intent.getStringExtra(EXTRA_ID)
-        when (intent.getStringExtra(EXTRA_KIND)) {
-            KIND_OPEN -> {
-                val path = if (id.isNullOrEmpty()) "/today" else ReminderSchedule.taskPath(id)
-                context.startActivity(WidgetStore.openIntent(context, path).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            }
-            KIND_COMPLETE -> if (!id.isNullOrEmpty()) WidgetStore.complete(context, id)
-        }
-    }
+/** What a row tap asks for (android-widget-list D2). Pure for tests. */
+sealed interface WidgetAction {
+    data class Open(val path: String) : WidgetAction
+    data class Complete(val taskId: String) : WidgetAction
 
     companion object {
-        private const val EXTRA_KIND = "kind"
-        private const val EXTRA_ID = "id"
-        private const val KIND_OPEN = "open"
-        private const val KIND_COMPLETE = "complete"
+        const val EXTRA_KIND = "kind"
+        const val EXTRA_ID = "id"
+        const val KIND_OPEN = "open"
+        const val KIND_COMPLETE = "complete"
 
-        /** The list's template: mutable so each row's fill-in can add its extras; the component is fixed. */
+        /** `open` opens the task, or Today without one; `complete` needs a task; anything else is nothing. */
+        fun route(kind: String?, id: String?): WidgetAction? = when (kind) {
+            KIND_OPEN -> Open(if (id.isNullOrEmpty()) "/today" else ReminderSchedule.taskPath(id))
+            KIND_COMPLETE -> if (id.isNullOrEmpty()) null else Complete(id)
+            else -> null
+        }
+
+        /**
+         * The list's template: an activity intent, so a tap may start the app (a broadcast that
+         * starts an activity is a background start, which Android 10 and later block). Mutable
+         * so each row's fill-in adds its extras; the component is explicit and fixed.
+         */
         fun template(context: Context): PendingIntent {
-            val flags = PendingIntent.FLAG_UPDATE_CURRENT or if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0
-            return PendingIntent.getBroadcast(context, 400, Intent(context, WidgetActionReceiver::class.java), flags)
+            val flags = PendingIntent.FLAG_UPDATE_CURRENT or if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0
+            return PendingIntent.getActivity(context, 400, Intent(context, WidgetActionActivity::class.java), flags)
         }
 
         fun fillOpen(taskId: String): Intent = Intent().putExtra(EXTRA_KIND, KIND_OPEN).putExtra(EXTRA_ID, taskId)
         fun fillOpenToday(): Intent = Intent().putExtra(EXTRA_KIND, KIND_OPEN)
         fun fillComplete(taskId: String): Intent = Intent().putExtra(EXTRA_KIND, KIND_COMPLETE).putExtra(EXTRA_ID, taskId)
+    }
+}
+
+/**
+ * The Today widget's row taps, with no window of its own (Theme.NoDisplay): `open` forwards to the
+ * app at the task, `complete` hides the row and queues the completion for the web app, and the
+ * activity finishes before it would draw. Not exported; only the widget's template reaches it.
+ */
+class WidgetActionActivity : Activity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        when (val action = WidgetAction.route(intent?.getStringExtra(WidgetAction.EXTRA_KIND), intent?.getStringExtra(WidgetAction.EXTRA_ID))) {
+            is WidgetAction.Open -> startActivity(WidgetStore.openIntent(this, action.path))
+            is WidgetAction.Complete -> WidgetStore.complete(this, action.taskId)
+            null -> {}
+        }
+        finish()
     }
 }
 

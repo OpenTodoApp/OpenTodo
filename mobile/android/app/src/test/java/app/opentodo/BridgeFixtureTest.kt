@@ -335,7 +335,8 @@ class BridgeFixtureTest {
         assertTrue(complete.length() > 0)
         for (i in 0 until complete.length()) {
             val c = complete.getJSONObject(i)
-            assertEquals(c.getString("path"), WidgetStore.completePath(c.getString("taskId")))
+            val ids = c.getJSONArray("taskIds").let { a -> (0 until a.length()).map { a.getString(it) } }
+            assertEquals(c.getString("path"), WidgetStore.completePath(ids))
         }
     }
 

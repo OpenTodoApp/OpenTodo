@@ -124,10 +124,12 @@ class WidgetTest {
     @Test fun theCircleHidesTheRowAndQueuesTheCompletionForTheWebApp() {
         WidgetStore.publish(context, """{"updatedAt":1,"locked":false,"count":2,"actions":["complete"],"tasks":[{"id":"a","title":"Pay rent"},{"id":"b","title":"Call Ana"}]}""")
         waitUntil("the count") { text(R.id.count) == "2" }
-        context.sendBroadcast(Intent(context, WidgetActionReceiver::class.java).putExtra("kind", "complete").putExtra("id", "a"))
+        // The row's circle, as the launcher sends it: the list's template with the row's fill-in.
+        WidgetAction.template(context).send(context, 0, WidgetAction.fillComplete("a"))
         waitUntil("the row hidden") { lines().map { it.text } == listOf("Call Ana") }
         waitUntil("the count") { text(R.id.count) == "1" }
         // One hidden run at the web app's completion address; the shell writes no task data.
+        assertEquals("/?complete=a", server.waitForPath("/?complete=", timeoutMs = 60_000))
         val runs = WorkManager.getInstance(context).getWorkInfosForUniqueWork("widget").get()
         assertEquals(1, runs.size)
         assertTrue(runs[0].state != WorkInfo.State.CANCELLED)
@@ -135,6 +137,16 @@ class WidgetTest {
         WidgetStore.publish(context, """{"updatedAt":2,"locked":false,"count":1,"actions":["complete"],"tasks":[{"id":"b","title":"Call Ana"}]}""")
         WidgetStore.publish(context, """{"updatedAt":3,"locked":false,"count":2,"actions":["complete"],"tasks":[{"id":"a","title":"Pay rent"},{"id":"b","title":"Call Ana"}]}""")
         assertEquals(listOf("Pay rent", "Call Ana"), lines().map { it.text })
+    }
+
+    /** A tap on a row starts the app from the activity template (no broadcast trampoline), at the task. */
+    @Test fun aRowTapOpensTheTaskInTheApp() {
+        WidgetStore.publish(context, """{"updatedAt":1,"locked":false,"count":1,"actions":["complete"],"tasks":[{"id":"t/1","title":"Pay rent"}]}""")
+        WidgetAction.template(context).send(context, 0, WidgetAction.fillOpen("t/1"))
+        assertEquals(ReminderSchedule.taskPath("t/1"), server.waitForPath("/?task="))
+        // Opening completes nothing and queues no run.
+        assertTrue(WorkManager.getInstance(context).getWorkInfosForUniqueWork("widget").get().isEmpty())
+        assertEquals(listOf("Pay rent"), lines().map { it.text })
     }
 
     @Test fun nothingLeftForToday() {

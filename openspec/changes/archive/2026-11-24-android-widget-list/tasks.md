@@ -8,7 +8,7 @@
 ## 2. Android widget
 
 - [x] 2.1 `WidgetModel`: every published row with `project` and `date`, `canComplete` from `actions`, the item list with Earlier and Today headings, pending completions hidden and pruned (absent from a publication, or 30 minutes old). Verified: `WidgetModelTest`, `BridgeFixtureTest`.
-- [x] 2.2 The Today widget as a scrolling list (`TodayListService`), a completion circle per row, `+` for quick add, the empty state, a tap opening the task; `WidgetActionReceiver` stores the pending id, redraws and enqueues one hidden run at `/?complete=<id>` per tick, one after another. Verified: `make android` (unit tests, lint, translations, build), `WidgetTest` on the emulator.
+- [x] 2.2 The Today widget as a scrolling list (`TodayListService`), a completion circle per row, `+` for quick add, the empty state, a tap opening the task; row taps reach `WidgetActionActivity` (an activity template, no window), which opens the task or stores the pending id, redraws and enqueues one expedited hidden run that completes every queued tick at `/?complete=<id>&…`. Verified: `make android` (unit tests, lint, translations, build), `WidgetTest` on the emulator (it sends the template's PendingIntent for both actions).
 - [ ] 2.3 A check on a real Android phone: scrolling, ticking online and offline, a repeating task, light and dark, resizing (after the merge; a cloud session has none). Left open: it needs a real phone; the steps are in the pull request.
 
 ## 3. Docs, release

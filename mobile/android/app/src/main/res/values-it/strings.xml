@@ -59,6 +59,7 @@
     <string name="error_sign_in">Il server è dietro una pagina di accesso e l’accesso non è proseguito nell’app. Accedi di nuovo qui.</string>
     <string name="save_failed">Non è stato possibile salvare il file.</string>
     <string name="channel_focus">Focus</string>
+    <string name="channel_sync">Sincronizzazione</string>
     <string name="focus_generic">Sessione di focus</string>
     <string name="focus_work">Lavoro</string>
     <string name="focus_work_of">Lavoro · %1$d di %2$d</string>

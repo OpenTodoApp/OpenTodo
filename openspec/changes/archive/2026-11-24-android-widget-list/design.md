@@ -14,16 +14,16 @@ Rows set no colours in code: the title uses `@color/widget_text`, the details `@
 
 ### D2 — Completing is an op the web app writes, never the shell
 
-A row has two touch targets: the circle and the rest. The list's pending-intent template is a broadcast to `WidgetActionReceiver` (not exported); each row's fill-in intent carries the task id and `open` or `complete`.
+A row has two touch targets: the circle and the rest. The list's pending-intent template is an activity intent (mutable, explicit component) to `WidgetActionActivity`, which is not exported, draws nothing (`Theme.NoDisplay`, `excludeFromRecents`, `noHistory`) and finishes at once; each row's fill-in intent carries the task id and `open` or `complete`. A broadcast template whose receiver starts the app was rejected: that is a background activity start, which Android 10 and later block.
 
-- `open` starts the app at `/?task=<id>`, as the old rows did.
-- `complete` records the id as pending (`Prefs.widgetPending`, `{id: ms}`), redraws (the row disappears and the count drops by one), and enqueues one `HiddenRun` at `/?complete=<id>` on a unique, appended work chain, so several ticks run one after another and each exactly once.
+- `open` forwards to the app at `/?task=<id>`, as the old rows did.
+- `complete` records the id as pending (`Prefs.widgetPending`, `{id: ms}`) and queued (`widgetQueue`), redraws (the row disappears and the count drops by one), and enqueues a `HiddenRun` on one unique, appended work chain, expedited where the system allows (`RUN_AS_NON_EXPEDITED_WORK_REQUEST` otherwise). The run takes every queued id when it starts and opens `/?complete=<a>&complete=<b>…`, so quick ticks share one web view and each id is sent exactly once; a later run of the chain that finds the queue empty ends at once. On Android 11 and earlier an expedited run shows a silent, minimum-importance "Syncing" notification while it lasts, as a foreground service must.
 
-The web app reads `?complete=` (`shellUrlAction` → `{kind: "complete", id}`) and completes the task with `completeTask` when it is open and not deleted, as the reminder's Done does; a repeating task moves to its next occurrence by the normal rule. The op goes into the outbox and syncs when there is a network; the background run waits for the action like a reminder action. Convergence is the op log's: a completion made offline on the widget and an edit on the laptop merge field by field.
+The web app reads `?complete=` (`shellUrlAction` → `{kind: "complete", ids}`) and completes the task with `completeTask` when it is open and not deleted, as the reminder's Done does; a repeating task moves to its next occurrence by the normal rule. The op goes into the outbox and syncs when there is a network; the background run waits for the action like a reminder action. Convergence is the op log's: a completion made offline on the widget and an edit on the laptop merge field by field.
 
-The web app applies `?complete=` **only in a background run** (the page lists `background`). The visible app can be opened at any address by another app (`opentodo-open:` is exported), and a link that silently completes a task must not work there. The hidden run is started only by the app's own, non-exported receiver.
+The web app applies `?complete=` **only in a background run** (the page lists `background`). The visible app can be opened at any address by another app (`opentodo-open:` is exported), and a link that silently completes a task must not work there. The hidden run is started only by the app's own, non-exported activity.
 
-A pending id is dropped when a publication no longer lists it (the completion was applied), and after 30 minutes regardless, so a completion that never ran (an older web app, a run that never started) shows the task again instead of hiding it for good.
+A pending id is dropped when a publication no longer lists it (the completion was applied), and after 30 minutes regardless, so a completion that never ran (an older web app, a run that never started, an expired session or login wall, whose redirect the hidden run drops) shows the task again instead of hiding it for good.
 
 Rejected: writing the op from Kotlin (a second op writer, against "all data writes go through ops"); opening the visible app for each tick (the point is to stay on the home screen).
 
@@ -57,5 +57,5 @@ The widget is not a web screen. On it: one header row (title, count, add), one l
 
 ## Risks
 
-- A broadcast that starts an activity (`open`) relies on the launcher's click exemption for background activity starts; launchers grant it for widget clicks. The header's own intents are activity intents and always work.
+- A tick briefly starts `WidgetActionActivity`; it draws nothing and finishes in `onCreate`, so the home screen stays as it was.
 - The hidden run needs the web app cached (service worker) to complete offline, as notification actions do; when it cannot load, the completion is not applied and the task reappears after 30 minutes.

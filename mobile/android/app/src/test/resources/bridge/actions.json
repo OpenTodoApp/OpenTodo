@@ -54,12 +54,23 @@
   },
   "completePaths": [
     {
-      "taskId": "t1",
+      "taskIds": [
+        "t1"
+      ],
       "path": "/?complete=t1"
     },
     {
-      "taskId": "t/1 ü",
+      "taskIds": [
+        "t/1 ü"
+      ],
       "path": "/?complete=t%2F1+%C3%BC"
+    },
+    {
+      "taskIds": [
+        "a",
+        "b"
+      ],
+      "path": "/?complete=a&complete=b"
     }
   ],
   "focusOpen": {

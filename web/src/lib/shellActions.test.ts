@@ -72,8 +72,10 @@ describe('shell address actions', () => {
   })
 
   it('the widget\'s completion is read from the address', () => {
-    expect(shellUrlAction('?complete=t1')).toEqual({ kind: 'complete', id: 't1' })
-    expect(shellUrlAction('?complete=t%2F1')).toEqual({ kind: 'complete', id: 't/1' })
+    expect(shellUrlAction('?complete=t1')).toEqual({ kind: 'complete', ids: ['t1'] })
+    expect(shellUrlAction('?complete=t%2F1')).toEqual({ kind: 'complete', ids: ['t/1'] })
+    // Every tick queued since the last run, each once.
+    expect(shellUrlAction('?complete=a&complete=b&complete=a&complete=')).toEqual({ kind: 'complete', ids: ['a', 'b'] })
     expect(shellUrlAction('?complete=')).toBeNull()
   })
 
@@ -87,9 +89,11 @@ describe('shell address actions', () => {
       shellWith(['reminders', 'widgets', 'background'])
       try {
         const id = await createTask({ title: 'Call the plumber' })
+        const other = await createTask({ title: 'Water the plants' })
         const before = await db.outbox.count()
-        expect(await handleShellUrl(() => false, at(`?complete=${id}`), hist)).toEqual({ kind: 'complete', id })
+        expect(await handleShellUrl(() => false, at(`?complete=${id}&complete=${other}&complete=gone`), hist)).toEqual({ kind: 'complete', ids: [id, other, 'gone'] })
         expect((await db.tasks.get(id))!.completed_at).not.toBeNull()
+        expect((await db.tasks.get(other))!.completed_at).not.toBeNull()
         expect(await db.outbox.count()).toBeGreaterThan(before)
         expect(replaced.at(-1)).toBe('/')
         // Done already: a second run writes nothing.

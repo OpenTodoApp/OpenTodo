@@ -67,6 +67,24 @@ class Prefs(context: Context) {
         get() = p.getString("widgetPending", null)
         set(v) = p.edit().apply { if (v == null) remove("widgetPending") else putString("widgetPending", v) }.apply()
 
+    /** Adds a tick to the ids the next background run completes (android-widget-list D2). */
+    fun queueWidgetCompletion(taskId: String) = synchronized(LOCK) {
+        val queue = queueOf(p.getString("widgetQueue", null))
+        if (taskId !in queue) p.edit().putString("widgetQueue", org.json.JSONArray(queue + taskId).toString()).commit()
+    }
+
+    /** The queued ids, removed from the queue at once, so each is sent to the web app once. */
+    fun takeWidgetQueue(): List<String> = synchronized(LOCK) {
+        val queue = queueOf(p.getString("widgetQueue", null))
+        if (queue.isNotEmpty()) p.edit().remove("widgetQueue").commit()
+        queue
+    }
+
+    private fun queueOf(json: String?): List<String> = try {
+        val a = org.json.JSONArray(json ?: "[]")
+        (0 until a.length()).map { a.optString(it) }.filter { it.isNotEmpty() }.take(WidgetModel.MAX_ROWS)
+    } catch (e: Exception) { emptyList() }
+
     /** The last system bars the web app asked for (theme-engine D8), applied at the next launch before the page draws. */
     var systemBars: String?
         get() = p.getString("systemBars", null)
@@ -82,6 +100,8 @@ class Prefs(context: Context) {
         set(v) {
             p.edit().apply { if (v == null) { remove("keyIv"); remove("keyCt") } else { putString("keyIv", v.first); putString("keyCt", v.second) } }.apply()
         }
+
+    private companion object { val LOCK = Any() }
 
     /** Everything that belongs to the server: kept only the address when [keepServer]. */
     fun clearServerData(keepServer: Boolean) {

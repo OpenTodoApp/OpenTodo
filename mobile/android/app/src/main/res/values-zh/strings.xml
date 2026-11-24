@@ -59,6 +59,7 @@
     <string name="error_sign_in">你的服务器位于登录页之后，而且登录没有在应用中继续。请在这里重新登录。</string>
     <string name="save_failed">文件无法保存。</string>
     <string name="channel_focus">专注</string>
+    <string name="channel_sync">正在同步</string>
     <string name="focus_generic">专注时段</string>
     <string name="focus_work">工作</string>
     <string name="focus_work_of">工作 · %1$d / %2$d</string>

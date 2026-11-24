@@ -265,7 +265,8 @@ function actions() {
     ].map(({ id, action }) => ({ id, action, path: `/?reminder=${encodeURIComponent(id).replace(/%20/g, '+')}&action=${action}` })),
     quickAdd: { path: '/?add=' },
     // android-widget-list D2: the Today widget's completion circle, opened in a background run only.
-    completePaths: ['t1', 't/1 ü'].map((taskId) => ({ taskId, path: `/?complete=${encodeURIComponent(taskId).replace(/%20/g, '+')}` })),
+    // One run carries every queued tick.
+    completePaths: [['t1'], ['t/1 ü'], ['a', 'b']].map((taskIds) => ({ taskIds, path: `/?${taskIds.map((id) => `complete=${encodeURIComponent(id).replace(/%20/g, '+')}`).join('&')}` })),
     // focus-live-activity D4: a tap on the activity or notification opens focusOpen; Pause and Resume open these.
     focusOpen: { path: '/focus' },
     focusActions: (['pause', 'resume'] as const).map((action) => ({ action, path: `/focus?action=${action}` })),
@@ -515,7 +516,7 @@ describe('Android bridge fixtures', () => {
     const a = actions()
     for (const r of [...a.reminderActions, ...a.locationActions]) expect(shellUrlAction(new URL(r.path, 'https://x').search)).toEqual({ kind: 'reminder', id: r.id, action: r.action })
     expect(shellUrlAction(new URL(a.quickAdd.path, 'https://x').search)).toEqual({ kind: 'add', text: '' })
-    for (const c of a.completePaths) expect(shellUrlAction(new URL(c.path, 'https://x').search)).toEqual({ kind: 'complete', id: c.taskId })
+    for (const c of a.completePaths) expect(shellUrlAction(new URL(c.path, 'https://x').search)).toEqual({ kind: 'complete', ids: c.taskIds })
     for (const f of a.focusActions) { const u = new URL(f.path, 'https://x'); expect(shellUrlAction(u.search, u.pathname)).toEqual({ kind: 'focus', action: f.action }) }
   })
 })

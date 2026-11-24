@@ -120,7 +120,19 @@ class WidgetModelTest {
     }
 
     @Test fun theCompletionAddress() {
-        assertEquals("/?complete=t1", WidgetStore.completePath("t1"))
-        assertEquals("/?complete=t%2F1+%C3%BC", WidgetStore.completePath("t/1 ü"))
+        assertEquals("/?complete=t1", WidgetStore.completePath(listOf("t1")))
+        assertEquals("/?complete=t%2F1+%C3%BC", WidgetStore.completePath(listOf("t/1 ü")))
+        // One run for every tick queued since the last.
+        assertEquals("/?complete=a&complete=b", WidgetStore.completePath(listOf("a", "b")))
+    }
+
+    /** A row tap's fill-in, read by WidgetActionActivity: open a task (or Today), or complete one. */
+    @Test fun rowTapsRoute() {
+        assertEquals(WidgetAction.Open("/?task=t%2F1"), WidgetAction.route(WidgetAction.KIND_OPEN, "t/1"))
+        assertEquals(WidgetAction.Open("/today"), WidgetAction.route(WidgetAction.KIND_OPEN, null))
+        assertEquals(WidgetAction.Complete("a"), WidgetAction.route(WidgetAction.KIND_COMPLETE, "a"))
+        assertNull(WidgetAction.route(WidgetAction.KIND_COMPLETE, ""))
+        assertNull(WidgetAction.route("delete", "a"))
+        assertNull(WidgetAction.route(null, "a"))
     }
 }

@@ -59,6 +59,7 @@
     <string name="error_sign_in">Je server zit achter een aanmeldpagina, en de aanmelding ging in de app niet verder. Meld je hier opnieuw aan.</string>
     <string name="save_failed">Het bestand kon niet worden opgeslagen.</string>
     <string name="channel_focus">Focus</string>
+    <string name="channel_sync">Synchroniseren</string>
     <string name="focus_generic">Focussessie</string>
     <string name="focus_work">Werk</string>
     <string name="focus_work_of">Werk · %1$d van %2$d</string>

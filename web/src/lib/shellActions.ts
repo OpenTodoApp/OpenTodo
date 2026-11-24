@@ -20,7 +20,7 @@ export type FocusAction = 'pause' | 'resume'
 
 export type ShellUrlAction =
   | { kind: 'reminder'; id: string; action: ReminderAction }
-  | { kind: 'complete'; id: string }
+  | { kind: 'complete'; ids: string[] }
   | { kind: 'add'; text: string }
   | { kind: 'focus'; action: FocusAction }
   | null
@@ -31,8 +31,9 @@ export function shellUrlAction(search: string, pathname = '/'): ShellUrlAction {
   const id = p.get('reminder')
   const action = p.get('action')
   if (id && (action === 'snooze' || action === 'dismiss' || action === 'done')) return { kind: 'reminder', id, action }
-  const complete = p.get('complete')
-  if (complete) return { kind: 'complete', id: complete }
+  // One run carries every tick queued since the last one: `?complete=a&complete=b`.
+  const complete = [...new Set(p.getAll('complete').filter(Boolean))].slice(0, 50)
+  if (complete.length) return { kind: 'complete', ids: complete }
   if (pathname === '/focus' && !id && (action === 'pause' || action === 'resume')) return { kind: 'focus', action }
   // `add` may be empty: the widget's button opens quick add (Android widgets hold no text field).
   const add = p.get('add')
@@ -102,7 +103,9 @@ export async function handleShellUrl(openQuickAdd: () => boolean, loc: Location 
   }
   else if (action.kind === 'complete') {
     // Only in a background run: any app can open the visible app at an address (D2).
-    if (has('background')) try { await applyWidgetComplete(action.id) } finally { applied++ }
+    if (has('background')) {
+      try { for (const id of action.ids) await applyWidgetComplete(id).catch(() => undefined) } finally { applied++ }
+    }
   }
   else if (action.kind === 'focus') await applyFocusAction(action.action)
   else {
