@@ -42,6 +42,7 @@ Open changes, most of them part built.
 | [`ios-quick-look`](openspec/changes/ios-quick-look/) | An attached image or PDF opens in Quick Look in the iPhone app, without saving it first |  |
 | [`ios-web-location`](openspec/changes/ios-web-location/) | "Use my location" in a task's location editor works in the iPhone app |  |
 | [`click-selects-title`](openspec/changes/click-selects-title/) | One click rule in every list: a first click selects the row (and shows it beside the list), a second click edits its title, `a` adds a subtask after a click; "Click a task to" goes | [#1405](https://github.com/OpenTodoApp/OpenTodo/issues/1405) |
+| [`day-manual-order`](openspec/changes/archive/2026-11-24-day-manual-order/) | **Shipped.** Arrange a day by hand in Today (any grouping) and Upcoming, one order for both; a day's tasks by part of the day under Due date | [#1480](https://github.com/OpenTodoApp/OpenTodo/issues/1480) |
 | [`new-project-top-level`](openspec/changes/new-project-top-level/) | New project in the sidebar starts at the top level, whatever project is on screen | [#1759](https://github.com/OpenTodoApp/OpenTodo/issues/1759) |
 | [`drag-edge-scroll`](openspec/changes/drag-edge-scroll/) | Dragging a task or a project on a phone scrolls the list at its edge | [#1760](https://github.com/OpenTodoApp/OpenTodo/issues/1760) |
 | [`formatting-row-pressed`](openspec/changes/formatting-row-pressed/) | The formatting row shows which formatting is on | [#1477](https://github.com/OpenTodoApp/OpenTodo/issues/1477) |

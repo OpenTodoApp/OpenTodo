@@ -252,8 +252,9 @@ export function useListModel(route: ListRoute, userId?: string) {
   const nested = (route.view === 'today' || route.view === 'upcoming') && !!(display?.subtasks || todayDisplay?.subtasks)
   // The header's display button and the switch to manual order; a project's board and timeline have their own layout.
   const sortFields = route.view === 'project' ? layout.projectFieldDefs : allFieldDefs
-  const todayOrder = route.view === 'today' ? accountPrefs?.today_manual_order : undefined
-  const listDisplay = useListDisplay(display, displayScope, builtin || route.view === 'label' || layout.viewMode === 'list', sortFields, account, !!todayOrder?.length)
+  // Today and Upcoming share one day order (day-manual-order D1); Reset on Today clears it.
+  const todayOrder = route.view === 'today' || route.view === 'upcoming' ? accountPrefs?.today_manual_order : undefined
+  const listDisplay = useListDisplay(display, displayScope, builtin || route.view === 'label' || layout.viewMode === 'list', sortFields, account, route.view === 'today' && !!todayOrder?.length)
   const savedOrder = route.view === 'label' ? labelRow?.manual_order : todayOrder
   const manualOrder = useMemo(() => route.view === 'label' || savedOrder ? orderRank(savedOrder) : undefined, [route.view, savedOrder])
   // The urgency order (urgency-sort D4): scores follow every write and sync, worked out only while it is chosen.
@@ -261,7 +262,7 @@ export function useListModel(route: ListRoute, userId?: string) {
   const urgency = display?.sortBy === 'urgency' ? scorer : null
   const score = useMemo(() => (urgency ? scoreOf(urgency) : undefined), [urgency])
 
-  // Today grouped by part of the day (day-parts D3): the account's synced choice.
+  // Today grouped by part of the day (day-parts D3), and a day's due order by part (day-manual-order D4): the account's synced choice.
   const dayParts = dayPartsOn(accountPrefs)
   // Today's closed list (today-closed-list): slots from the whole of Today, before the duration filter;
   // Upcoming's Start with Today fills them from the same Today tasks (upcoming-start-with-today D3);

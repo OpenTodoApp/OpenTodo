@@ -4702,7 +4702,8 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Date changed": [
-    "web/src/lib/undoActions.ts"
+    "web/src/lib/undoActions.ts",
+    "web/src/lib/viewOrderMove.ts"
   ],
   "Date for {tasks}": [
     "web/src/app/bulk/BulkActions.tsx",
@@ -9613,7 +9614,8 @@
   "Lists sorted by date or priority keep their order.": [
     "web/src/app/task-list/useListDrag.ts",
     "web/src/lib/settingsCopy.ts",
-    "web/src/lib/undoActions.ts"
+    "web/src/lib/undoActions.ts",
+    "web/src/lib/viewOrderMove.ts"
   ],
   "Lists with method hints": [
     "web/src/lib/settingsCopy.ts"
@@ -10525,6 +10527,7 @@
     "web/src/app/menus/projectMenu.tsx"
   ],
   "Move to {name}": [
+    "web/src/app/task-list/dayOrderDrop.ts",
     "web/src/app/workspaceNav.ts"
   ],
   "Move to {project}": [
@@ -10628,7 +10631,8 @@
     "web/src/lib/noteOps.ts"
   ],
   "Moved to Any time": [
-    "web/src/lib/undoActions.ts"
+    "web/src/lib/undoActions.ts",
+    "web/src/lib/viewOrderMove.ts"
   ],
   "Moved to Someday": [
     "web/src/lib/undoActions.ts"
@@ -10651,7 +10655,8 @@
     "web/src/app/task-list/useListShortcuts.ts"
   ],
   "Moved to {part}": [
-    "web/src/lib/undoActions.ts"
+    "web/src/lib/undoActions.ts",
+    "web/src/lib/viewOrderMove.ts"
   ],
   "Moved to {project}: {title}.": [
     "web/src/app/TriageView.tsx"
@@ -14955,7 +14960,7 @@
   "Reorder": [
     "web/src/app/bulk/BulkActions.tsx"
   ],
-  "Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels": [
+  "Reorder tasks in project lists, boards, the Inbox, Today and Upcoming, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels": [
     "web/src/lib/shortcuts.ts"
   ],
   "Repeat": [
@@ -17184,7 +17189,7 @@
   "Sort {list} by {by}": [
     "web/src/lib/rules/sentence.ts"
   ],
-  "Sorted by date (or their own rule): no Alt moves there; in Upcoming, drag a task onto another day to move it": [
+  "Sorted by date (or their own rule): no Alt moves there": [
     "web/src/lib/shortcuts.ts"
   ],
   "Sorted by name": [

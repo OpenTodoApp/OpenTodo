@@ -142,7 +142,8 @@ describe('listGroups', () => {
     expect(on.map((g) => [g.key, g.heading, g.dropPart])).toEqual([
       ['today', 'Today', 'none'], ['morning', 'Morning', 'morning'], ['afternoon', 'Afternoon', 'afternoon'], ['evening', 'This Evening', 'evening'],
     ])
-    expect(on.map(titles)).toEqual([['Untimed'], ['Habit', 'Twenty'], ['Two'], ['Eve', 'Night']])
+    // Within a part, timed tasks by time, then the untimed ones (day-manual-order D4).
+    expect(on.map(titles)).toEqual([['Untimed'], ['Twenty', 'Habit'], ['Two'], ['Night', 'Eve']])
     expect(on[1].rows[0].implied).toEqual({ date: TODAY, part: 'morning' })
     // Off: exactly as before, the 14:00 task back in the day group, nothing to drop on.
     const off = listGroups(input({ view: 'today', tasks }))
