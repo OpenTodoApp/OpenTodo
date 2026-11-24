@@ -435,7 +435,10 @@ var notInApp = map[string]bool{"update_project": true, "set_favourite": true, "c
 	"list_objectives": true,
 	// Today's focus is set in the Daily check; the review screen does not
 	// describe a focus change (mcp-set-today-focus).
-	"set_today_focus": true}
+	"set_today_focus": true,
+	// Calendar events (calendar-event-edits D8): the edit is no change set the
+	// review screen can hold, and the disclosure does not name event titles.
+	"list_calendar_events": true, "update_calendar_event": true}
 
 // withWorkday gives find_free_time the device's working day when the model
 // names none (assistant-time-blocks D2), so its answer matches the block.

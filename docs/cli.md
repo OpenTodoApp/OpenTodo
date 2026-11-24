@@ -350,6 +350,19 @@ steps:
 
 `ot routine list` shows each routine's PROJECT and, for a routine of a [shared project](routines.md#routines-of-a-shared-project), RUNS AS (the person who last turned it on, `-` before anyone did); `ot routine show` prints both. `ot routine run` prints each step's status, items and time, and exits 6 when the run failed (with `--json`, the run record is printed and says at which step). A read token can list, show and read runs but is refused on every other subcommand (exit 5). Saving a routine with a step that is not available prints a warning naming the step and the reason.
 
+## Calendar events
+
+The events your calendar views show, and changing those of a [connected calendar](calendar-sync.md#edit-your-calendars-events) with **Edit events in OpenTodo** on:
+
+```bash
+ot calendar [--from today] [--to <day>]               # id, date, time, title, calendar, whether it can be changed
+ot calendar event edit 3f2a --start 2026-11-12T14:00  # a new start alone keeps the length; a date alone keeps the time
+ot calendar event edit 3f2a --title "Planning" [--end DATETHH:MM] [--all-day] [--on <day>]
+ot calendar event delete 3f2a [--yes]
+```
+
+`edit` and `delete` find the event by id or id prefix within 45 days of today, or of `--on`. A timed event keeps its time zone. Changing and deleting need a full token: a `read` or `agent` token is refused before anything is sent (exit 5), as are `event_edits_off` and `calendar_read_only`; `event_changed` (the event changed in your calendar since), `event_not_editable`, `event_gone` and `calendar_unreachable` exit 1. `--json` prints the [`calendar_event`](#machine-readable-help-ot-schema) objects; titles are written by people.
+
 ## Calendar frames
 
 Your [frames](frames.md), the recurring background windows of the Day and Week calendar:

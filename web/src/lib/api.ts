@@ -21,7 +21,7 @@ import type {
   AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, StorageStatus, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushNotify, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
   MemberInvitation, PendingAnswer,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput, IssueActionResult, IssueConnection, IssueConnectionInput,
-  CalendarConnection, CalendarConnectionPatch, CalendarSyncRun, SyncScope, GoogleClientSetting, MicrosoftClientSetting,
+  CalendarConnection, CalendarConnectionPatch, CalendarEventPatch, CalendarSyncRun, SyncScope, GoogleClientSetting, MicrosoftClientSetting,
   OwnTaskPage, PublishTaskPageInput, TaskPageCreated, TaskPageStatus,
   AutomationsSetting, RuleRun, RulesStatus, RoutineCatalogueEntry, RoutineInboxRun, RoutineRun, RoutineTestResult, RoutineStep, RuleCondition, RuleTrigger,
   RoutineAIUsage, RoutineProposal, RoutineProposalApplied,
@@ -95,6 +95,9 @@ export const onEnrolmentRequired = enrolment.subscribe
 export function promptReauth(): Promise<boolean> {
   return reauthenticate()
 }
+
+/** An event of a connected calendar by its connection (calendar-event-edits D4). */
+const eventPath = (connectionId: string, eventId: string) => `/api/v1/calendar-sync/connections/${encodeURIComponent(connectionId)}/events/${encodeURIComponent(eventId)}`
 
 function reauthenticate(): Promise<boolean> {
   if (!reauthHandler) return Promise.resolve(false)
@@ -572,6 +575,13 @@ export const api = {
     request<{ subscription: CalendarSubscription }>('POST', `/api/v1/calendar-feeds/subscriptions/${encodeURIComponent(id)}/refresh`),
   calendarEvents: (from: string, to: string) =>
     request<{ events: CalendarEvent[]; subscriptions: CalendarSubscription[] }>('GET', `/api/v1/calendar-feeds/events?from=${from}&to=${to}`),
+  // Event edits of connected calendars (calendar-event-edits D4): server data, never ops.
+  updateCalendarEvent: (connectionId: string, eventId: string, body: CalendarEventPatch & { rev: string }) =>
+    request<{ event: CalendarEvent; replaces: string }>('PATCH', `${eventPath(connectionId, eventId)}`, body),
+  deleteCalendarEvent: (connectionId: string, eventId: string, rev: string) =>
+    request<void>('DELETE', `${eventPath(connectionId, eventId)}?rev=${encodeURIComponent(rev)}`),
+  undoCalendarEvent: (connectionId: string, eventId: string) =>
+    request<{ event: CalendarEvent; replaces: string }>('POST', `${eventPath(connectionId, eventId)}/undo`),
   calendarFeed: () => request<{ feed: CalendarFeed | null }>('GET', '/api/v1/calendar-feeds/feed'),
   rotateCalendarFeed: () => request<{ feed: CalendarFeed; url: string }>('POST', '/api/v1/calendar-feeds/feed'),
   revokeCalendarFeed: () => request<void>('DELETE', '/api/v1/calendar-feeds/feed'),

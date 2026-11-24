@@ -34,6 +34,8 @@ var notPermittedCodes = map[string]bool{
 	"insufficient_scope": true, "forbidden": true, "not_permitted": true,
 	"writes_disabled_by_owner": true, "writes_disabled_by_user": true,
 	"read_only": true, "encryption_enabled": true, "issues_disabled": true,
+	// Event edits (calendar-event-edits D8): a switch or a capability.
+	"event_edits_off": true, "calendar_read_only": true, "token_restricted": true,
 }
 
 // exitError carries an exit code and, optionally, the exact JSON envelope to print

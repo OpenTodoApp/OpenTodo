@@ -78,6 +78,7 @@ func allConstructors() []Event {
 		CalendarConnectionCreated("u", "c1", "caldav"),
 		CalendarConnectionUpdated("u", "c1", "google", "password"),
 		CalendarConnectionDeleted("u", "c1", "caldav"),
+		CalendarEventChanged("u", "c1", "caldav", "updated", "t1"),
 		NotificationChannelCreated("u", "n1", "ntfy"),
 		NotificationChannelUpdated("u", "n1", "gotify", "token"),
 		NotificationChannelDeleted("u", "n1", "webhook"),

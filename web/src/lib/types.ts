@@ -1359,6 +1359,55 @@ export interface CalendarEvent {
   end: CalendarWhen
   allDay: boolean
   free: boolean
+  /** The version to send with a change: events of connected calendars only (calendar-event-edits). */
+  rev?: string
+  /** Whether OpenTodo may change or delete the event, and why not; absent for subscribed calendars. */
+  access?: CalendarEventAccess
+  /** An assistant's change the user can still undo. */
+  changedBy?: { kind: 'assistant'; name: string }
+}
+
+/** What OpenTodo may do with an event of a connected calendar (calendar-event-edits D3). */
+export interface CalendarEventAccess {
+  update: boolean
+  delete: boolean
+  reason?: 'edits_off' | 'calendar_read_only' | 'recurring' | 'has_guests' | 'not_organizer' | 'no_etag' | 'refresh_pending'
+}
+
+/** A calendar's capabilities (calendar-event-edits D3). */
+export interface CalendarCaps {
+  create: boolean
+  update: boolean
+  delete: boolean
+}
+
+/** A change of an event: a new title, or a start and end together. */
+export interface CalendarEventPatch {
+  summary?: string
+  start?: CalendarWhen
+  end?: CalendarWhen
+  allDay?: boolean
+}
+
+/**
+ * One queued edit of an event of a connected calendar (calendar-event-edits D6): one row per
+ * event, device-local, never an op. `base` is the event before the first queued edit.
+ */
+export interface EventCommand {
+  /** `${connectionId}:${eventId}` */
+  key: string
+  connectionId: string
+  eventId: string
+  rev: string
+  base: CalendarEvent
+  patch: CalendarEventPatch | { delete: true }
+  /** An edit made while this one is in flight, sent after it against the new id. */
+  next?: CalendarEventPatch
+  /** A delete waits 8 s so Undo can cancel it. */
+  notBefore: number
+  sending?: boolean
+  /** Failed while online (5xx, 429, calendar unreachable, no answer): shown with Retry and Discard, never retried alone. */
+  failed?: string
 }
 
 /** A subscribed calendar and its status. */
@@ -1375,6 +1424,10 @@ export interface CalendarSubscription {
   eventCount?: number
   /** A calendar of a calendar sync connection (calendar-two-way), not one of the user's subscriptions. */
   managed?: boolean
+  connectionId?: string
+  calendarUrl?: string
+  caps?: CalendarCaps
+  editEvents?: boolean
 }
 
 /** One calendar of a calendar sync account, as discovery found it. */
@@ -1384,6 +1437,7 @@ export interface SyncCalendar {
   color: string
   time_zone?: string
   read_only: boolean
+  caps?: CalendarCaps
 }
 
 /** What one calendar sync cycle did. */
@@ -1426,6 +1480,9 @@ export interface CalendarConnection {
   event_count: number
   created_at: number
   updated_at: number
+  /** "Edit events in OpenTodo" and "Let assistants edit events"; absent from older servers: off. */
+  edit_events?: boolean
+  assistant_edits?: boolean
 }
 
 /** The owner's Google client for calendar sync; never the secret. */
@@ -1459,6 +1516,9 @@ export interface CalendarConnectionPatch {
   scope?: SyncScope
   /** Replaces the project-to-calendar matches; {} is one calendar again. */
   project_calendars?: Record<string, string>
+  /** "Edit events in OpenTodo" and "Let assistants edit events" (calendar-event-edits D12). */
+  edit_events?: boolean
+  assistant_edits?: boolean
 }
 
 /**
@@ -2016,7 +2076,7 @@ export const AUDIT_EVENT_NAMES = [
   'project.member_added', 'project.grant_added', 'project.grant_changed', 'project.grant_removed',
   'workspace_invite.created', 'workspace_invite.accepted', 'workspace_invite.revoked',
   'member_invitation.created', 'member_invitation.accepted', 'member_invitation.declined', 'member_invitation.cancelled',
-  'calendar_connection.created', 'calendar_connection.updated', 'calendar_connection.deleted',
+  'calendar_connection.created', 'calendar_connection.updated', 'calendar_connection.deleted', 'calendar_event.changed',
   'project.agent_access',
   'task_page.published', 'task_page.revoked',
   'mcp_oauth.client_created', 'mcp_oauth.client_deleted', 'mcp_oauth.granted', 'mcp_oauth.revoked', 'mcp_oauth.refresh_reused', 'mcp_oauth.disconnected',

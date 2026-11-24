@@ -40,6 +40,11 @@ type Event struct {
 	TaskID        string
 	TransactionID string
 	Modified      time.Time
+	// Type ("singleInstance" when empty), NotOrganizer and Attendees serve
+	// Graph's type, isOrganizer and attendees (calendar-event-edits D2).
+	Type         string
+	NotOrganizer bool
+	Attendees    []string
 }
 
 // Calendar is one calendar of the account.
@@ -93,6 +98,7 @@ type Server struct {
 	requests  []string
 	prefers   []string
 	refreshes int
+	redirect  string
 }
 
 // New starts a fake with one writable calendar "cal-work" named "Calendar".
@@ -377,7 +383,16 @@ func (s *Server) guard(h func(w http.ResponseWriter, r *http.Request)) http.Hand
 			throttled = true
 		}
 		status, retry := s.throttleS, s.retry
+		redirect := s.redirect == r.Method
+		if redirect {
+			s.redirect = ""
+		}
 		s.mu.Unlock()
+		if redirect {
+			w.Header().Set("Location", s.URL+"/moved"+r.URL.Path)
+			w.WriteHeader(http.StatusFound)
+			return
+		}
 		if !ok {
 			graphError(w, 401, "InvalidAuthenticationToken")
 			return
@@ -452,7 +467,24 @@ func (s *Server) render(e *Event, r *http.Request, expand bool) map[string]any {
 	if expand && e.TaskID != "" {
 		out["singleValueExtendedProperties"] = []map[string]string{{"id": s.Property, "value": e.TaskID}}
 	}
+	out["type"] = "singleInstance"
+	if e.Type != "" {
+		out["type"] = e.Type
+	}
+	out["isOrganizer"] = !e.NotOrganizer
+	attendees := []map[string]any{}
+	for _, a := range e.Attendees {
+		attendees = append(attendees, map[string]any{"emailAddress": map[string]string{"address": a}})
+	}
+	out["attendees"] = attendees
 	return out
+}
+
+// RedirectNext answers the next request of method with a 302.
+func (s *Server) RedirectNext(method string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.redirect = method
 }
 
 func (s *Server) expands(r *http.Request) bool {

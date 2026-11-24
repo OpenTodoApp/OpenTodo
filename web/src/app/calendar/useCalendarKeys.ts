@@ -18,6 +18,8 @@ import { runSlot } from './slotActions'
 import { extendToSpanPatch, moveSpanPatch, resizeSpanPatch, spanOf } from '../../lib/span'
 import { completeWithUndo } from '../undoable'
 import type { Placement } from './grid'
+import { eventKeyTarget, type EventKey, type GridEvent } from './eventGrid'
+import { KEY_SETTLE_MS } from './eventActions'
 
 type Patch = Partial<Omit<Task, 'id' | '_clock'>>
 
@@ -71,6 +73,9 @@ export interface CalendarKeyContext {
   onQuickAdd?: (date: string) => void
   /** Whether the user may move a task (multi-day-tasks D4: a viewer's spans do not move). */
   canEdit?: (task: Task) => boolean
+  /** Changeable events by block id (calendar-event-edits D7), and how a key changes one. */
+  events?: Map<string, GridEvent>
+  commitEvent?: (id: string, target: DropTarget | 'delete', settle?: number) => void
 }
 
 /**
@@ -100,6 +105,15 @@ export function useCalendarKeys(c: CalendarKeyContext) {
   const task = selectedId && order.includes(selectedId) ? c.taskMap.get(selectedId) : undefined
   const block = task ? c.days.find((d) => d.date === task.due?.date)?.blocks.get(task.id) : undefined
   const slot = selectedId && isSlotKey(selectedId) ? c.slots?.get(selectedId) : undefined
+  const ev = selectedId ? c.events?.get(selectedId) : undefined
+  /** A selected event (calendar-event-edits D7): the task keys change it, waiting for the presses to settle. */
+  const eventKey = (key: EventKey, e: KeyboardEvent): boolean => {
+    if (!ev || placing || !c.commitEvent) return false
+    const dir = e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 1
+    const target = eventKeyTarget(ev, key, dir)
+    if (target) c.commitEvent(selectedId!, target, KEY_SETTLE_MS)
+    return true
+  }
   /** A selected slot (calendar-slots D5): arrows move it, Shift+arrows change its length. */
   const slotKeys = (e: KeyboardEvent): boolean => {
     if (!slot || placing) return false
@@ -169,6 +183,7 @@ export function useCalendarKeys(c: CalendarKeyContext) {
     'calendar.nudge': (e) => {
       const dir = e.key === 'ArrowUp' ? -1 : 1
       if (placing) { ghost({ ...placing, start: clamp(placing.start + dir * SLOT_MINUTES, 0, LAST_SLOT) }); return }
+      if (eventKey('nudge', e)) return
       // A span is whole days, never a block (multi-day-tasks D3).
       if (task && spanOf(task)) return
       return arrows((tk) => {
@@ -179,6 +194,7 @@ export function useCalendarKeys(c: CalendarKeyContext) {
       const days = e.key === 'ArrowLeft' ? -1 : 1
       if (placing) { ghost({ ...placing, date: addDaysISO(placing.date, days) }); return }
       if (slotKeys(e)) return
+      if (eventKey('shift-day', e)) return
       // A span moves whole: start and due by the same day (multi-day-tasks D4).
       if (task && spanOf(task)) { if (editable(task)) edit(task.id, (x) => spanKeyPatch(x, 'move', days), (_, patch) => patch.due && c.follow(patch.due.date)); return }
       return arrows((tk) => {
@@ -189,14 +205,20 @@ export function useCalendarKeys(c: CalendarKeyContext) {
     'calendar.span-end': (e) => spanKey(e, 'last'),
     'calendar.span-start': (e) => spanKey(e, 'first'),
     // Shift+Up shortens, Shift+Down lengthens: the block's lower edge follows the arrow.
-    'calendar.estimate': arrows((tk, _due, e) => edit(tk.id, (x) => ({ estimate_minutes: stepEstimate(x.estimate_minutes, (e.key === 'ArrowUp' ? -1 : 1) * SLOT_MINUTES) }))),
+    'calendar.estimate': (e) => eventKey('estimate', e) || arrows((tk, _due, e) => edit(tk.id, (x) => ({ estimate_minutes: stepEstimate(x.estimate_minutes, (e.key === 'ArrowUp' ? -1 : 1) * SLOT_MINUTES) })))(e),
     // Alt+Shift+Up starts earlier, Alt+Shift+Down later: the upper edge follows the arrow, the end stays (GitHub issue 355).
-    'calendar.estimate-start': arrows((tk, _due, e) => edit(tk.id, (x) => {
+    'calendar.estimate-start': (e) => eventKey('estimate-start', e) || arrows((tk, _due, e) => edit(tk.id, (x) => {
       const start = parseTime(x.due?.time)
       if (start === null || !x.due) return null
       const r = stepStart(start, x.estimate_minutes, (e.key === 'ArrowUp' ? -1 : 1) * SLOT_MINUTES)
       return { due: { date: x.due.date, time: toHHMM(r.start) }, estimate_minutes: r.estimate }
-    })),
+    }))(e),
+    // Delete or Backspace deletes the selected event, with Undo for 8 seconds (calendar-event-edits D7).
+    'calendar.delete': unlessPlacing(() => {
+      if (!ev?.ev.access?.delete || !c.commitEvent) return false
+      c.commitEvent(selectedId!, 'delete')
+      setSelectedId(order[idx + 1] ?? order[idx - 1] ?? null)
+    }),
     'calendar.next': unlessPlacing(() => setSelectedId(order[Math.min(order.length - 1, idx + 1)] ?? null)),
     'calendar.prev': unlessPlacing(() => setSelectedId(order[Math.max(0, idx - 1)] ?? null)),
     'calendar.range-prev': unlessPlacing(() => c.goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))),

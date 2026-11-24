@@ -351,6 +351,18 @@
   "story": "Screens/Calendar"
  },
  {
+  "id": "event-editor",
+  "route": "week",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": null,
+  "layoutCheckReason": "the popover editor of an event of a connected calendar with editing on (calendar-event-edits); the seeded server has no connected calendar, so the tour cannot open it",
+  "on": "week",
+  "tour": false
+ },
+ {
   "id": "month",
   "route": "month",
   "kind": "screen",

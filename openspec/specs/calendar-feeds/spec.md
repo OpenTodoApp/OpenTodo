@@ -162,7 +162,7 @@ Each stored occurrence SHALL carry the summary, location, start and end, whether
 - **THEN** it is not stored and disappears from devices after their next refresh
 
 ### Requirement: Events served to devices
-`GET /api/v1/calendar-feeds/events?from=YYYY-MM-DD&to=YYYY-MM-DD` SHALL return the caller's occurrences that overlap the range, at most 92 days wide, with start and end as `{date, time?, tz?}` values like a due, the subscription id and when the subscription was last refreshed. The route SHALL answer 400 `invalid_input` for a malformed or wider range.
+`GET /api/v1/calendar-feeds/events?from=YYYY-MM-DD&to=YYYY-MM-DD` SHALL return the caller's occurrences that overlap the range, at most 92 days wide, with start and end as `{date, time?, tz?}` values like a due, the subscription id and when the subscription was last refreshed. For an event of a connected calendar it SHALL also return `rev`, an opaque string that changes whenever the event's remote version does, and `access`, `{update, delete, reason?}`, which says whether OpenTodo may change or delete the event and, when it may not, why, and `changedBy` with the token name when an assistant changed it and the change can still be undone; the subscription of such an event SHALL carry `connectionId`, `calendarUrl`, `caps` and `editEvents`. Events of subscribed (ICS) calendars SHALL carry neither `rev` nor `access`. The route SHALL answer 400 `invalid_input` for a malformed or wider range.
 
 #### Scenario: Week of events
 - **WHEN** a device requests `from=2026-10-12&to=2026-10-18`
@@ -175,6 +175,18 @@ Each stored occurrence SHALL carry the summary, location, start and end, whether
 #### Scenario: Unauthenticated
 - **WHEN** the events route is requested without credentials
 - **THEN** the response is a 401 `unauthorized` error
+
+#### Scenario: Editable event of a connected calendar
+- **WHEN** a connection with "Edit events in OpenTodo" on shows a writable calendar holding a single event without guests
+- **THEN** the event is served with a `rev` and `access: {"update": true, "delete": true}`
+
+#### Scenario: Locked event says why
+- **WHEN** the same calendar holds a weekly event
+- **THEN** that event is served with `access: {"update": false, "delete": false, "reason": "recurring"}`
+
+#### Scenario: Subscribed calendar event
+- **WHEN** the response holds an event of an ICS subscription
+- **THEN** it has no `rev` and no `access`
 
 ### Requirement: Devices cache events for offline display
 A device SHALL keep the occurrences and subscriptions it last fetched in local storage and render the calendar views from that cache, so Day, Week, Plan, Month and Year open offline with the events as of the last refresh. The device SHALL refresh the cache when a calendar view opens and the cache is older than 10 minutes or does not cover the view's days, when the server signals a change over the live channel, and when the connection returns; it SHALL fetch other date ranges on demand while online. A range of up to 92 days SHALL be fetched padded by up to 28 days on each side within 92 days; a wider range (several months, a year) SHALL be fetched as asked, at most 373 days, as consecutive requests of at most 92 days whose occurrences and subscriptions are merged by id and replace the cache together. A failed request SHALL keep the previous cache. The cache is per device and never synced.
@@ -226,16 +238,20 @@ The Day and Week views SHALL draw each timed occurrence as a block between its s
 - **WHEN** an event runs from 22:00 to 02:00 the next day
 - **THEN** it is drawn from 22:00 to the end of the first day and from 00:00 to 02:00 on the next
 
-### Requirement: Events are read-only and can be hidden
-Event blocks, chips, rows and marks SHALL NOT be movable, resizable, completable or drop targets, and blocks, chips and rows SHALL be reachable with the keyboard for reading. A per-device toolbar toggle, shown in Day, Week, Plan, Month and Year while the user has a calendar, SHALL hide and show them in all of these views, kept across reloads and never synced.
+### Requirement: Subscribed and locked events are read-only and can be hidden
+Event blocks, chips, rows and marks of subscribed (ICS) calendars SHALL NOT be movable, resizable, completable or drop targets. The same holds for events of connected calendars unless their `access.update` or `access.delete` is true (see `calendar-event-edits`); no event SHALL be completable, and Month and Year rows and marks SHALL stay read-only. Blocks, chips and rows SHALL be reachable with the keyboard for reading. A per-device toolbar toggle, shown in Day, Week, Plan, Month and Year while the user has a calendar, SHALL hide and show them in all of these views, kept across reloads and never synced.
 
 #### Scenario: Only the task moves
-- **WHEN** the user drags on an event block
+- **WHEN** the user drags on an event block of a subscribed calendar
 - **THEN** nothing is written and the block stays where it is, while a task block next to it can still be dragged
+
+#### Scenario: Connected calendar with edits off
+- **WHEN** the user drags an event of a connected calendar whose connection has "Edit events in OpenTodo" off
+- **THEN** nothing is written and the event's popover says editing events is off for this connection
 
 #### Scenario: Keyboard
 - **WHEN** the user tabs onto an event block and presses Enter
-- **THEN** a read-only popover shows the summary, time, location and calendar name, and Escape closes it; no key moves or edits the event
+- **THEN** a popover shows the summary, time, location and calendar name, and Escape closes it; for an event that cannot be edited no key moves or edits it
 
 #### Scenario: Hide calendars on this device
 - **WHEN** the user turns the toolbar's "Calendars" toggle off
@@ -244,6 +260,10 @@ Event blocks, chips, rows and marks SHALL NOT be movable, resizable, completable
 #### Scenario: Hidden in the Month and the Year
 - **WHEN** the user turns "Calendars" off in the Month
 - **THEN** the Month's event rows and the Year's event marks disappear on this device, and turning it on in either view shows them again in both
+
+#### Scenario: Month stays read-only
+- **WHEN** the user drags an event row in the Month
+- **THEN** nothing is written, whatever the event's `access`
 
 ### Requirement: Personal task feed URL
 A signed-in user SHALL be able to create one private feed URL through Settings and `POST /api/v1/calendar-feeds/feed`, read its status (created, last used) through `GET`, rotate it with another `POST` and revoke it with `DELETE`. Creating or rotating SHALL require a recent sign-in like creating an API token and SHALL be refused for `read` and `agent` tokens.

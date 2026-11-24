@@ -1,6 +1,7 @@
 package calsync
 
 import (
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -37,6 +38,26 @@ type graphEvent struct {
 		ID    string `json:"id"`
 		Value string `json:"value"`
 	} `json:"singleValueExtendedProperties"`
+	// Type, IsOrganizer and Attendees decide whether OpenTodo may change the
+	// event (calendar-event-edits D2).
+	Type        string            `json:"type"`
+	IsOrganizer *bool             `json:"isOrganizer"`
+	Attendees   []json.RawMessage `json:"attendees"`
+}
+
+// lock is why OpenTodo will not change the event, "" when it may.
+func (e *graphEvent) lock() string {
+	switch {
+	case e.Type != "" && e.Type != "singleInstance":
+		return LockRecurring
+	case len(e.Attendees) > 0:
+		return LockHasGuests
+	case e.IsOrganizer != nil && !*e.IsOrganizer:
+		return LockNotOrganizer
+	case e.ETag == "":
+		return LockNoETag
+	}
+	return ""
 }
 
 // taskID is the task OpenTodo's property names, "" for another event.
@@ -109,7 +130,7 @@ func (e *graphEvent) remote() (remote, bool) {
 	if e.Start != nil && e.End != nil {
 		when = e.Start.DateTime + e.Start.TimeZone + e.End.DateTime + e.End.TimeZone
 	}
-	return remote{Href: e.ID, ETag: e.ETag, Events: []calfeed.Event{ev}, TaskID: e.taskID(),
+	return remote{Href: e.ID, ETag: e.ETag, Events: []calfeed.Event{ev}, TaskID: e.taskID(), Locked: e.lock(),
 		Version: e.ETag + "\x00" + hash16(e.Subject+"\x00"+when)}, true
 }
 

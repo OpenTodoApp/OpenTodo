@@ -57,6 +57,54 @@ type remote struct {
 	TaskID string
 	// Version identifies this state of the event for op ids.
 	Version string
+	// Locked is a lock the transport knows of itself (Graph's type,
+	// attendees and isOrganizer); lockOf adds what the events say.
+	Locked string
+}
+
+// Lock reasons of an event OpenTodo will not change (calendar-event-edits D2).
+const (
+	LockRecurring    = "recurring"
+	LockHasGuests    = "has_guests"
+	LockNotOrganizer = "not_organizer"
+	LockNoETag       = "no_etag"
+)
+
+// lockOf is why an object's events cannot be changed, "" when they can: the
+// first of recurring, has_guests, not_organizer (an ORGANIZER that is not one
+// of the account's addresses; with none known, any ORGANIZER) and no_etag.
+func lockOf(o remote, addrs []string) string {
+	if o.Locked != "" {
+		return o.Locked
+	}
+	guests, foreign := false, false
+	for _, ev := range o.Events {
+		if len(o.Events) > 1 || ev.RecurrenceID != "" || ev.RRule != "" || len(ev.RDates) > 0 || len(ev.ExDates) > 0 {
+			return LockRecurring
+		}
+		guests = guests || ev.Guests
+		if ev.Organizer != "" && !containsFold(addrs, ev.Organizer) {
+			foreign = true
+		}
+	}
+	switch {
+	case guests:
+		return LockHasGuests
+	case foreign:
+		return LockNotOrganizer
+	case o.ETag == "":
+		return LockNoETag
+	}
+	return ""
+}
+
+func containsFold(list []string, s string) bool {
+	for _, v := range list {
+		if strings.EqualFold(v, s) {
+			return true
+		}
+	}
+	return false
 }
 
 // master returns the event that is not an override.

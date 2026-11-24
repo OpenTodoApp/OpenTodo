@@ -118,7 +118,7 @@ func (h *harness) connect(dateOnly bool) *Connection {
 		h.t.Fatalf("discover: %v", err)
 	}
 	c, err := h.w.Store.Create(h.ctx, &Connection{UserID: "alice", Provider: ProviderCalDAV, Name: "Fake", ServerURL: base, Username: h.srv.User,
-		PrincipalURL: d.Principal, HomeURL: d.Home, Calendars: d.Calendars})
+		PrincipalURL: d.Principal, HomeURL: d.Home, Calendars: d.Calendars, Addresses: d.Addresses})
 	if err != nil {
 		h.t.Fatal(err)
 	}

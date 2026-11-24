@@ -1071,7 +1071,6 @@
     "web/src/app/MonthView.tsx",
     "web/src/app/QuickAdd.tsx",
     "web/src/app/QuickAddSheet.tsx",
-    "web/src/app/TabBar.tsx",
     "web/src/app/calendar/PlanAgenda.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/palette/BarParts.tsx"
@@ -1189,6 +1188,7 @@
     "web/src/app/NotificationChannelEditor.tsx"
   ],
   "Add details": [
+    "web/src/app/quickadd/LineTools.tsx",
     "web/src/app/quickadd/SheetBar.tsx"
   ],
   "Add details, or send as it is…": [
@@ -1289,6 +1289,8 @@
     "web/src/app/task-detail/Subtasks.tsx"
   ],
   "Add task": [
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/TabBar.tsx",
     "web/src/app/quickadd/SheetBar.tsx"
   ],
   "Add task below": [
@@ -2774,8 +2776,11 @@
   "Busy": [
     "web/src/app/CalendarEvents.tsx",
     "web/src/app/calendar/DayColumn.tsx",
+    "web/src/app/calendar/EventBlock.tsx",
     "web/src/app/calendar/SidebarSchedule.tsx",
-    "web/src/app/calendar/TodayAgenda.tsx"
+    "web/src/app/calendar/TodayAgenda.tsx",
+    "web/src/app/calendar/eventActions.ts",
+    "web/src/lib/calendarEventEdits.ts"
   ],
   "Busy calendar events add to each day in Day, Week and Month.": [
     "web/src/lib/settingsCopy.ts"
@@ -2850,6 +2855,9 @@
     "web/src/app/auditFormat.ts"
   ],
   "Calendar disconnected": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "Calendar event changed": [
     "web/src/app/auditFormat.ts"
   ],
   "Calendar events": [
@@ -3134,6 +3142,9 @@
   "Change “{task}”": [
     "web/src/lib/rules/proposal.ts"
   ],
+  "Changed by {name}": [
+    "web/src/app/calendar/EventEditor.tsx"
+  ],
   "Changed from {date} on": [
     "web/src/lib/seriesSplitActions.ts"
   ],
@@ -3145,6 +3156,9 @@
   ],
   "Changed since, left as is: {titles}": [
     "web/src/app/reopenDay.ts"
+  ],
+  "Changed {title}": [
+    "web/src/app/calendar/eventActions.ts"
   ],
   "Changed {when}": [
     "web/src/page/NotePageScreen.tsx"
@@ -4683,6 +4697,7 @@
   "Date": [
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/calendar/EventEditor.tsx",
     "web/src/app/editorCommands.ts",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/review/CloseDay.tsx",
@@ -4935,6 +4950,7 @@
     "web/src/app/RestoreSection.tsx",
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/WorkspaceGeneral.tsx",
+    "web/src/app/calendar/EventEditor.tsx",
     "web/src/app/calendar/FrameBand.tsx",
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/notes/NoteRow.tsx",
@@ -5023,6 +5039,9 @@
   "Delete the field “{name}”?": [
     "web/src/app/FieldsDialog.tsx"
   ],
+  "Delete the selected event of a connected calendar (Undo for 8 seconds)": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Delete the selected task (d alone does nothing after 1 s)": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -5102,6 +5121,9 @@
     "web/src/app/routines/RunHistory.tsx",
     "web/src/app/routines/StepCard.tsx",
     "web/src/lib/rules/proposal.ts"
+  ],
+  "Deleted {title}": [
+    "web/src/app/calendar/eventActions.ts"
   ],
   "Deletes earlier (superseded) versions of your titles, descriptions and names from the server's history, including any plaintext from before encryption was on. Revision history for those fields is gone afterwards. Backups made before now, and copies of the database, may still contain plaintext: delete them if that matters to you.": [
     "web/src/app/EncryptionPanel.tsx"
@@ -5311,6 +5333,7 @@
   "Discard": [
     "web/src/app/SettingsSaveBar.tsx",
     "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/calendar/EventEditor.tsx",
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/themes/ThemeEditor.tsx",
     "web/src/ui/patterns/SaveBar.tsx"
@@ -5738,6 +5761,9 @@
   "Edit delivery channel": [
     "web/src/app/NotificationChannelEditor.tsx"
   ],
+  "Edit events in OpenTodo": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "Edit frame": [
     "web/src/app/calendar/FramesDialog.tsx"
   ],
@@ -5820,6 +5846,10 @@
   ],
   "Edit “{text}”": [
     "web/src/app/assistant/MemorySettings.tsx"
+  ],
+  "Editing events is off for this connection": [
+    "web/src/lib/calendarEventEdits.ts",
+    "web/src/lib/i18n/errors.ts"
   ],
   "Editing. Enter saves, Escape cancels, Shift+Enter opens the details.": [
     "web/src/app/task-list/InlineEditor.tsx"
@@ -6008,6 +6038,7 @@
     "web/src/lib/e2ee.ts"
   ],
   "End": [
+    "web/src/app/calendar/EventEditor.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
   ],
@@ -6258,7 +6289,7 @@
   "Events from other calendars are stored unencrypted on the server.": [
     "web/src/lib/settingsCopy.ts"
   ],
-  "Events of these calendars appear next to your tasks, read-only.": [
+  "Events of these calendars appear next to your tasks.": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "Every 2 weeks": [
@@ -7250,7 +7281,8 @@
     "web/src/lib/taskSource.ts"
   ],
   "From a subscribed calendar. Edit it in its own app.": [
-    "web/src/app/CalendarEvents.tsx"
+    "web/src/app/CalendarEvents.tsx",
+    "web/src/lib/calendarEventEdits.ts"
   ],
   "From a task, reach its Schedule, Priority and More actions (wide screens with a mouse; in a tree list Tab indents)": [
     "web/src/lib/shortcuts.ts"
@@ -9402,6 +9434,9 @@
   "Let an MCP assistant read your tasks with a token; read-only by default.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Let assistants edit events": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "Let calendar apps sync with this server.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -10435,13 +10470,13 @@
   "Move the selected task (and its subtasks), or the ticked tasks, to the Trash": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Move the selected task 15 minutes earlier / later (a lane task gets a time); with nothing selected, select the first task": [
-    "web/src/lib/shortcuts.ts"
-  ],
   "Move the selected task down one place (with a count, that many; manually ordered views only)": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Move the selected task one day earlier / later": [
+  "Move the selected task or event 15 minutes earlier / later (a lane task gets a time); with nothing selected, select the first item": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Move the selected task or event one day earlier / later": [
     "web/src/lib/shortcuts.ts"
   ],
   "Move the selected task to the next column": [
@@ -11791,6 +11826,10 @@
   ],
   "Not run: the routine changed": [
     "web/src/app/routines/RoutinesDevice.tsx"
+  ],
+  "Not saved to your calendar": [
+    "web/src/app/calendar/EventBlock.tsx",
+    "web/src/app/calendar/EventEditor.tsx"
   ],
   "Not saved yet: this theme is a draft on this device until you save it.": [
     "web/src/app/themes/ThemeEditor.tsx"
@@ -14968,6 +15007,9 @@
     "web/src/app/RecurrenceField.tsx",
     "web/src/app/habits/HabitForm.tsx"
   ],
+  "Repeating events are read-only for now": [
+    "web/src/lib/calendarEventEdits.ts"
+  ],
   "Repeating occurrences": [
     "web/src/app/task-list/ProjectedGroupRows.tsx"
   ],
@@ -15210,7 +15252,8 @@
   "Retry": [
     "web/src/app/App.tsx",
     "web/src/app/EmailScreens.tsx",
-    "web/src/app/LinkCard.tsx"
+    "web/src/app/LinkCard.tsx",
+    "web/src/app/calendar/EventEditor.tsx"
   ],
   "Retry now": [
     "web/src/app/EmailScreens.tsx",
@@ -15602,6 +15645,7 @@
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/ShareCapture.tsx",
     "web/src/app/WebhooksPanel.tsx",
+    "web/src/app/calendar/EventEditor.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/habits/AmountDialog.tsx",
@@ -16315,6 +16359,7 @@
   "Settings": [
     "web/src/app/SettingsView.tsx",
     "web/src/app/SidebarFooter.tsx",
+    "web/src/app/calendar/EventEditor.tsx",
     "web/src/app/focus/FocusView.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/lib/shortcuts.ts"
@@ -16432,7 +16477,7 @@
   "Shortcuts": [
     "web/src/app/ShortcutHelp.tsx"
   ],
-  "Shorten / lengthen the estimate by 15 minutes": [
+  "Shorten / lengthen the selected task or event by 15 minutes": [
     "web/src/lib/shortcuts.ts"
   ],
   "Show": [
@@ -17103,6 +17148,9 @@
   "Someone else": [
     "web/src/lib/method/groups.ts"
   ],
+  "Someone else organised this event": [
+    "web/src/lib/calendarEventEdits.ts"
+  ],
   "Someone without an account, whose provider confirms their email, gets a member account on first sign-in. Off: only existing accounts (matched by verified email) and open sign-up.": [
     "web/src/app/SsoPanel.tsx"
   ],
@@ -17222,6 +17270,7 @@
     "web/src/app/RuleEditor.tsx",
     "web/src/app/assistant/ItemEditor.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
+    "web/src/app/calendar/EventEditor.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/method/DailyCheckToast.tsx",
@@ -17234,9 +17283,6 @@
     "web/src/lib/facets.ts",
     "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts"
-  ],
-  "Start 15 minutes earlier / later, keeping the end": [
-    "web/src/lib/shortcuts.ts"
   ],
   "Start a new sandbox": [
     "web/src/app/App.tsx"
@@ -17309,6 +17355,9 @@
   ],
   "Start the next session": [
     "web/src/app/focus/FocusView.tsx"
+  ],
+  "Start the selected task or event 15 minutes earlier / later, keeping the end": [
+    "web/src/lib/shortcuts.ts"
   ],
   "Start the timer on {task}": [
     "web/src/lib/rules/sentence.ts"
@@ -18131,6 +18180,9 @@
   "That date is not a coming occurrence of this repeating task.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "That date of this repeating task is already done, skipped or moved.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "That day’s daily note, created from your Daily notes settings when needed": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -18427,6 +18479,12 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "The energy must be deep, medium or low.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
+  "The event changed in your calendar; your edit was not applied.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
+  "The event is no longer in your calendar.": [
     "web/src/lib/i18n/errors.ts"
   ],
   "The exact address the app returns to after you sign in, starting with https://. The app’s documentation names it.": [
@@ -19382,6 +19440,10 @@
   "This browser refused the push subscription ({detail}). Private windows and some browsers cannot receive push; reminders still appear inside the app.": [
     "web/src/lib/push.ts"
   ],
+  "This calendar is read-only": [
+    "web/src/lib/calendarEventEdits.ts",
+    "web/src/lib/i18n/errors.ts"
+  ],
   "This change could not be saved.": [
     "web/src/app/PublicListScreen.tsx"
   ],
@@ -19499,6 +19561,16 @@
     "web/src/app/TaskRow.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/lib/assistant.ts"
+  ],
+  "This event can be changed after the next sync": [
+    "web/src/lib/calendarEventEdits.ts"
+  ],
+  "This event cannot be changed from OpenTodo": [
+    "web/src/app/calendar/eventActions.ts",
+    "web/src/lib/i18n/errors.ts"
+  ],
+  "This event has guests": [
+    "web/src/lib/calendarEventEdits.ts"
   ],
   "This file could not be opened.": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
@@ -20217,6 +20289,7 @@
     "web/src/app/TriageView.tsx",
     "web/src/app/assistant/ItemEditor.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
+    "web/src/app/calendar/EventEditor.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/habits/HabitForm.tsx",
     "web/src/app/notes/NoteEditor.tsx",
@@ -20857,6 +20930,8 @@
     "web/src/app/assistant/AssistantRoot.tsx",
     "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/bulk/UndoToast.tsx",
+    "web/src/app/calendar/EventEditor.tsx",
+    "web/src/app/calendar/eventActions.ts",
     "web/src/app/focus/startFocus.ts",
     "web/src/app/palette/routineCommand.ts",
     "web/src/app/routines/ProposalReview.tsx",
@@ -22741,6 +22816,9 @@
     "web/src/app/CalendarView.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/calendar/projections.tsx"
+  ],
+  "an assistant": [
+    "web/src/app/calendar/EventEditor.tsx"
   ],
   "and {n} more": [
     "web/src/app/assistant/blocks/SourcesLine.tsx",
@@ -26047,6 +26125,9 @@
   "{name} (guest, task page)": [
     "web/src/lib/activity.ts"
   ],
+  "{name} (read-only)": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "{name} (you)": [
     "web/src/app/ShareDialog.tsx"
   ],
@@ -26580,6 +26661,13 @@
     "web/src/app/MonthView.tsx",
     "web/src/app/calendar/MonthDensityCells.tsx"
   ],
+  "{title} changed in your calendar; your edit was not applied": [
+    "web/src/lib/calendarEventEdits.ts"
+  ],
+  "{title} could not be saved to your calendar": [
+    "web/src/app/calendar/eventActions.ts",
+    "web/src/lib/calendarEventEdits.ts"
+  ],
   "{title} is already on the list": [
     "web/src/app/reuseList.ts"
   ],
@@ -26592,6 +26680,9 @@
   ],
   "{title} is in today’s focus.": [
     "web/src/lib/focusEdit.ts"
+  ],
+  "{title} is no longer in your calendar": [
+    "web/src/lib/calendarEventEdits.ts"
   ],
   "{title} left today’s focus.": [
     "web/src/lib/focusEdit.ts"
@@ -26707,8 +26798,5 @@
   ],
   "⤼ Skip": [
     "web/src/app/RecurrenceField.tsx"
-  ],
-  "That date of this repeating task is already done, skipped or moved.": [
-    "web/src/lib/i18n/errors.ts"
   ]
 }
