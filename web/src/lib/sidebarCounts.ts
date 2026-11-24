@@ -2,7 +2,7 @@
 // Inbox, Today, Assigned to me and each project's own open tasks, worked out in one pass,
 // and after a write from the rows it changed. The same numbers as the Inbox and Today
 // lists and the app badge (inbox-means-unplaced, app-icon-badge).
-import { assignedToSomeoneElse, type TodayAssigneeFilter } from './dayLists'
+import { assignedToSomeoneElse } from './dayLists'
 import { isInboxTask, isPlaced, type InboxParentOf } from './inbox'
 import type { TaskChange } from './taskDelta'
 import type { Task } from './types'
@@ -24,7 +24,7 @@ export interface CountLookups {
 }
 
 /** The counts over the open tasks of `live` (every visible task: the Inbox walks parents that are done too). */
-export function sidebarCounts(live: readonly Task[], today: string, hide: TodayAssigneeFilter | null, userId: string, look: CountLookups): SidebarCounts {
+export function sidebarCounts(live: readonly Task[], today: string, userId: string, look: CountLookups): SidebarCounts {
   const inbox = new Set<string>()
   let todayN = 0
   let assigned = 0
@@ -32,7 +32,7 @@ export function sidebarCounts(live: readonly Task[], today: string, hide: TodayA
   for (const task of live) {
     if (task.completed_at) continue
     if (isInboxTask(task, look.parentOf)) inbox.add(task.id)
-    if (inToday(task, today) && !assignedToSomeoneElse(task, hide)) todayN++
+    if (inToday(task, today) && !assignedToSomeoneElse(task, userId)) todayN++
     if (!openCount(task, today)) continue
     if (task.assignee_id === userId) assigned++
     if (task.project_id) own.set(task.project_id, (own.get(task.project_id) ?? 0) + 1)
@@ -45,14 +45,14 @@ export function sidebarCounts(live: readonly Task[], today: string, hide: TodayA
  * Null (worked out in full) when a task with subtasks, open or done, changed its placement
  * or parent, or came or went: its subtasks may enter or leave the Inbox.
  */
-export function patchSidebarCounts(prev: SidebarCounts, changes: readonly TaskChange[], _live: readonly Task[], today: string, hide: TodayAssigneeFilter | null, userId: string, look: CountLookups): SidebarCounts | null {
+export function patchSidebarCounts(prev: SidebarCounts, changes: readonly TaskChange[], _live: readonly Task[], today: string, userId: string, look: CountLookups): SidebarCounts | null {
   const inbox = new Set(prev.inbox)
   let todayN = prev.today
   let assigned = prev.assigned
   const own = new Map(prev.own)
   const count = (task: Task | undefined, n: number) => {
     if (!task || task.completed_at) return
-    if (inToday(task, today) && !assignedToSomeoneElse(task, hide)) todayN += n
+    if (inToday(task, today) && !assignedToSomeoneElse(task, userId)) todayN += n
     if (!openCount(task, today)) return
     if (task.assignee_id === userId) assigned += n
     if (task.project_id) {

@@ -24,8 +24,7 @@ import { NO_TASKS, taskIndexOf, useLiveTasks } from '../../lib/liveTasks'
 import { Derived } from '../../lib/taskDelta'
 import { LOGBOOK_PAGE, logbookGroups } from '../../lib/logbook'
 import { filterCompleted, useCompletedDisplay } from '../../lib/completedDisplay'
-import { todayAssigneeFilter } from '../../lib/dayLists'
-import { canEditTasks, roleOf, useMe } from '../../lib/sharing'
+import { canEditTasks, roleOf } from '../../lib/sharing'
 import { liveProgress } from '../../lib/subtasks'
 import type { Project, Section, Task } from '../../lib/types'
 import { inToday, upcomingDate } from '../../lib/views'
@@ -126,7 +125,6 @@ export function useListModel(route: ListRoute, userId?: string) {
   const labels = useAllLabels()
   // Cached memberships (project-sharing): viewers get a read-only project, also offline.
   const memberships = useMemberships()
-  const me = useMe()
   const memberMap = useMemo(() => new Map(memberships.map((m) => [m.projectId, m])), [memberships])
   const isReadOnly = useCallback((tk: Task | undefined) => !!tk && roleOf(tk.project_id, memberMap) === 'viewer', [memberMap])
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
@@ -156,16 +154,15 @@ export function useListModel(route: ListRoute, userId?: string) {
   // Upcoming's Start with Today (upcoming-start-with-today D1): the account's synced choice.
   const accountPrefs = useUserPrefsRow()
   const upcomingToday = route.view === 'upcoming' && upcomingStartsWithToday(accountPrefs)
-  const assigneeFilter = useMemo(() => (route.view === 'today' ? todayAssigneeFilter(accountPrefs, memberships, me) : null), [route.view, accountPrefs, memberships, me])
   // A view's tasks follow the rows a write changed (incremental-list-updates D2); a zone change re-groups zoned dues (absolute-datetimes).
-  const viewOf = useRef(new Derived<Task[], [string, string, readonly Project[], string, string, string | undefined, boolean, ReturnType<typeof todayAssigneeFilter>]>(
-    (tasks, _view, _id, projects, today, _zone, userId, upcomingToday, hide) => tasksForView(routeRef.current, tasks, projects, today, userId, upcomingToday, hide),
-    (prev, changes, tasks, _view, _id, projects, today, _zone, userId, upcomingToday, hide) => patchViewTasks(prev, changes, routeRef.current, projects, today,
-      { parentOf: (id) => taskIndexOf(tasks).get(id), hasChildren: (id) => liveProgress(tasks).has(id) }, userId, upcomingToday, hide),
+  const viewOf = useRef(new Derived<Task[], [string, string, readonly Project[], string, string, string | undefined, boolean]>(
+    (tasks, _view, _id, projects, today, _zone, userId, upcomingToday) => tasksForView(routeRef.current, tasks, projects, today, userId, upcomingToday),
+    (prev, changes, tasks, _view, _id, projects, today, _zone, userId, upcomingToday) => patchViewTasks(prev, changes, routeRef.current, projects, today,
+      { parentOf: (id) => taskIndexOf(tasks).get(id), hasChildren: (id) => liveProgress(tasks).has(id) }, userId, upcomingToday),
   )).current
   const routeRef = useRef(route)
   routeRef.current = route
-  const viewTasks = viewOf.get(allTasks, route.view, 'id' in route ? route.id : '', projects, today, zone, userId, upcomingToday, assigneeFilter)
+  const viewTasks = viewOf.get(allTasks, route.view, 'id' in route ? route.id : '', projects, today, zone, userId, upcomingToday)
   // The last day Upcoming lists, before its filters, so calendar events stay when a filter hides the tasks.
   // viewTasks already recomputes when the zone changes, so this follows it.
   const upcomingThrough = useMemo(() => {
@@ -241,8 +238,8 @@ export function useListModel(route: ListRoute, userId?: string) {
   const todayDisplay = useStableDisplay(upcomingToday ? displayOf({ kind: 'today' }) : undefined)
   const todayContextFilter = useMemo(() => {
     const byDuration = duration && filterKey ? durationPredicate(duration) : null
-    return { assignees: assigneeFilter, matches: (task: Task) => (!todayHabits || !task.habit) && (!byDuration || byDuration(task)) }
-  }, [assigneeFilter, todayHabits, duration, filterKey])
+    return { me: userId ?? null, matches: (task: Task) => (!todayHabits || !task.habit) && (!byDuration || byDuration(task)) }
+  }, [userId, todayHabits, duration, filterKey])
   // Nest subtasks (D5): the rows are a tree, with the collapse toggle and Left and Right.
   const nested = (route.view === 'today' || route.view === 'upcoming') && !!(display?.subtasks || todayDisplay?.subtasks)
   // The header's display button and the switch to manual order; a project's board and timeline have their own layout.

@@ -177,13 +177,13 @@ function run(seed: number, steps: number) {
   const done = new Derived<Map<string, Task[]>, [string | null, Map<string, Section>]>(completedBySection, patchCompletedBySection)
   const look = (live: readonly Task[]) => ({ parentOf: (id: string) => taskIndexOf(live).get(id), hasChildren: (id: string) => liveProgress(live).has(id) })
   let live = sets.here
-  const counts = new Derived<ReturnType<typeof sidebarCounts>, [string, null, string]>(
-    (open, today, hide, user) => sidebarCounts(open, today, hide, user, look(live)),
-    (prev, changes, open, today, hide, user) => { const out = patchSidebarCounts(prev, changes, open, today, hide, user, look(live)); if (out) used.counts++; return out },
+  const counts = new Derived<ReturnType<typeof sidebarCounts>, [string, string]>(
+    (open, today, user) => sidebarCounts(open, today, user, look(live)),
+    (prev, changes, open, today, user) => { const out = patchSidebarCounts(prev, changes, open, today, user, look(live)); if (out) used.counts++; return out },
   )
   const labels = new Derived<Map<string, number>, [ReadonlySet<string>]>(labelCounts, patchLabelCounts)
   const archived = new Set(['p-d'])
-  const badge = new Derived<Record<string, number>, [string, number]>((open, today, days) => badgeCounts(open, today, days), (prev, ch, open, today, days) => patchBadgeCounts(prev, ch, open, today, days))
+  const badge = new Derived<Record<string, number>, [string, number]>((open, today, days) => badgeCounts(open, today, days, 'me'), (prev, ch, open, today, days) => patchBadgeCounts(prev, ch, open, today, days, 'me'))
   const doneToday = new Derived<Task[], [string]>((tasks, today) => completedOn(tasks, today),
     (prev, ch, _t, today) => patchOrdered(prev, ch, (x) => x.completed_at !== null && !x.deleted_at && !x.skipped && logicalDay(x.completed_at, currentDayStart()) === today,
       (a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0) || byId(a, b)))
@@ -289,11 +289,11 @@ function run(seed: number, steps: number) {
     }
 
     const open = openTasksOf(all)
-    const c = counts.get(all, TODAY, null, 'me')
-    const fc = sidebarCounts([...all], TODAY, null, 'me', look(all))
+    const c = counts.get(all, TODAY, 'me')
+    const fc = sidebarCounts([...all], TODAY, 'me', look(all))
     expect([[...c.inbox].sort(), c.today, c.assigned, entries(c.own)], at).toEqual([[...fc.inbox].sort(), fc.today, fc.assigned, entries(fc.own)])
     expect(entries(labels.get(open, archived)), at).toEqual(entries(labelCounts(open, archived)))
-    expect(badge.get(open, TODAY, 3), at).toEqual(badgeCounts(open, TODAY, 3))
+    expect(badge.get(open, TODAY, 3), at).toEqual(badgeCounts(open, TODAY, 3, 'me'))
 
   }
   // The patches did the work: most steps were followed row by row, not worked out in full.

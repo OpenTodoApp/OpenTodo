@@ -48,7 +48,7 @@ export function daySummary(input: MethodInput, review: Pick<Review, 'focus' | 'f
   const memberships = input.memberships as Map<string, Membership>
   const archived = new Set(input.projects.filter((p) => p.archived || p.deleted_at).map((p) => p.id))
   const live = input.tasks.filter((x) => !x.deleted_at && !x.skipped && !(x.project_id && archived.has(x.project_id)))
-  const unfinished = todayList(live, today).map((task) => ({ task, editable: canEditTasks(roleOf(task.project_id, memberships)) }))
+  const unfinished = todayList(live, today, input.me).map((task) => ({ task, editable: canEditTasks(roleOf(task.project_id, memberships)) }))
   const statsInput = { tasks: input.tasks, projects: input.projects, shared: sharedIds([...memberships.values()]), me: input.me, today }
   const stats = compute(statsInput, { start: today, end: today }, weekStart)
   const done = stats.perDay.find((d) => d.date === today)?.count ?? 0

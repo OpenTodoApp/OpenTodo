@@ -107,7 +107,7 @@ func init() {
 	})
 	register(tool{
 		def: readDef("today_summary", "Today summary",
-			"One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project. today_limit is the user's Today limit (null when off); each listed task has waiting_for_slot, true when that limit keeps it waiting; a waiting task also has time_sensitive, true when it is due today with a time or its deadline is today, a time-sensitive one time_passed, true once its time is before now, and waiting_time_sensitive lists those ids soonest first (the slots stay first come, first served).",
+			"One-call overview of the user's day: overdue tasks and tasks due today, both without tasks assigned to someone else, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project. today_limit is the user's Today limit (null when off); each listed task has waiting_for_slot, true when that limit keeps it waiting; a waiting task also has time_sensitive, true when it is due today with a time or its deadline is today, a time-sensitive one time_passed, true once its time is before now, and waiting_time_sensitive lists those ids soonest first (the slots stay first come, first served).",
 			object(nil, map[string]any{
 				"timezone": timezoneProp,
 			})),
@@ -680,6 +680,13 @@ func (r *Registry) getTask(ctx context.Context, c Caller, a args) (map[string]an
 
 // ---- today_summary ----
 
+// assignedToSomeoneElse is the personal views' rule (personal-views-assignee),
+// the same as the web app's: a task with an assignee other than the user.
+func assignedToSomeoneElse(t opsync.Entity, userID string) bool {
+	aid := str(t, "assignee_id")
+	return aid != "" && aid != userID
+}
+
 type projectCount struct {
 	ID        string   `json:"id"`
 	Untrusted nameText `json:"untrusted_text"`
@@ -712,7 +719,9 @@ func (r *Registry) todaySummary(ctx context.Context, userID string, a args) (map
 			perProject[pid]++
 		}
 		d := taskDue(t)
-		if d == nil {
+		// Today is a personal view (personal-views-assignee): a task assigned to
+		// someone else is theirs, so it is neither listed nor counted here.
+		if d == nil || assignedToSomeoneElse(t, userID) {
 			continue
 		}
 		date, _ := localDue(d, loc)

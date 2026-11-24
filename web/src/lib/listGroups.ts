@@ -7,7 +7,7 @@ import { nextWaiting, waitingTimeSensitive } from './closedList'
 import { formatDateHeading, formatTime, type ResolvedDateTime } from './dates'
 import type { Projection } from './occurrences'
 import { inboxTasks, isInboxTask, isPlaced, type InboxParentOf } from './inbox'
-import { assignedToSomeoneElse, groupToday, groupUpcoming, projectOpenList, todayList, upcomingList, upcomingWithToday, withoutArchived, type TodayAssigneeFilter } from './dayLists'
+import { assignedToSomeoneElse, groupToday, groupUpcoming, projectOpenList, todayList, upcomingList, upcomingWithToday, withoutArchived } from './dayLists'
 import { appendTo, groupBy } from './collections'
 import { t } from './i18n'
 import { logbookHeading, type LogbookGroup } from './logbook'
@@ -172,8 +172,10 @@ export function flatRow(task: Task, breadcrumb: string | null = null): ListRow {
 /**
  * The tasks a list view holds, in its order (archived projects stay out of cross-project views).
  * `upcomingToday`: Upcoming starts with Today's tasks (upcoming-start-with-today D2).
+ * `userId` is the viewer: Today, Upcoming, Someday and Anytime leave out tasks assigned to
+ * someone else (personal-views-assignee), and Assigned to me lists theirs.
  */
-export function tasksForView(scope: ListScope, allTasks: readonly Task[], projects: readonly Project[], today: string, userId?: string, upcomingToday = false, hide?: TodayAssigneeFilter | null): Task[] {
+export function tasksForView(scope: ListScope, allTasks: readonly Task[], projects: readonly Project[], today: string, userId?: string, upcomingToday = false): Task[] {
   // Tasks of archived projects stay out of the cross-project views (lib/dayLists, shared with the display).
   const all = withoutArchived(allTasks as Task[], projects as Project[], scope.view === 'project' ? scope.id : undefined)
   switch (scope.view) {
@@ -181,14 +183,14 @@ export function tasksForView(scope: ListScope, allTasks: readonly Task[], projec
       // Not placed, and no placed parent (lib/inbox, inbox-means-unplaced).
       return inboxTasks(all, allTasks)
     case 'today':
-      return todayList(all, today, hide)
+      return todayList(all, today, userId)
     case 'upcoming':
-      return upcomingToday ? upcomingWithToday(all, today) : upcomingList(all, today)
+      return upcomingToday ? upcomingWithToday(all, today, userId) : upcomingList(all, today, userId)
     // Someday and Anytime (someday-and-evening D5), grouped by project in listGroups.
     case 'someday':
-      return all.filter((task) => !task.completed_at && isSomeday(task)).sort(compareByPosition)
+      return all.filter((task) => !task.completed_at && isSomeday(task) && !assignedToSomeoneElse(task, userId)).sort(compareByPosition)
     case 'anytime':
-      return all.filter((task) => inAnytime(task, today)).sort(compareByPosition)
+      return all.filter((task) => inAnytime(task, today) && !assignedToSomeoneElse(task, userId)).sort(compareByPosition)
     case 'completed':
       // The logbook pages through every completion (completed-date-filters D4);
       // a habit's skipped occurrence record is not a completion (habits D6).
@@ -220,7 +222,7 @@ export interface ViewPatchContext {
  * placement or parent changed while it has subtasks): worked out in full.
  */
 export function patchViewTasks(prev: Task[], changes: readonly TaskChange[], scope: ListScope, projects: readonly Project[], today: string, ctx: ViewPatchContext,
-  userId?: string, upcomingToday = false, hide?: TodayAssigneeFilter | null): Task[] | null {
+  userId?: string, upcomingToday = false): Task[] | null {
   const hidden = new Set(projects.filter((p) => p.archived).map((p) => p.id))
   const keepProject = scope.view === 'project' ? scope.id : undefined
   // withoutArchived's rule, a task at a time. inbox-rule-ok: tasks of archived projects, not the Inbox.
@@ -237,13 +239,13 @@ export function patchViewTasks(prev: Task[], changes: readonly TaskChange[], sco
       return linked(prev, patchSorted(prev, changes, (task) => shown(task) && isInboxTask(task, ctx.parentOf)))
     }
     case 'today':
-      return patchOrdered(prev, changes, (task) => shown(task) && inToday(task, today) && !assignedToSomeoneElse(task, hide), compareDueThenPriority)
+      return patchOrdered(prev, changes, (task) => shown(task) && inToday(task, today) && !assignedToSomeoneElse(task, userId), compareDueThenPriority)
     case 'upcoming':
-      return upcomingToday ? null : patchOrdered(prev, changes, (task) => shown(task) && inUpcoming(task, today), compareDueThenPriority)
+      return upcomingToday ? null : patchOrdered(prev, changes, (task) => shown(task) && inUpcoming(task, today) && !assignedToSomeoneElse(task, userId), compareDueThenPriority)
     case 'someday':
-      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && isSomeday(task), compareByPosition)
+      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && isSomeday(task) && !assignedToSomeoneElse(task, userId), compareByPosition)
     case 'anytime':
-      return patchOrdered(prev, changes, (task) => shown(task) && inAnytime(task, today), compareByPosition)
+      return patchOrdered(prev, changes, (task) => shown(task) && inAnytime(task, today) && !assignedToSomeoneElse(task, userId), compareByPosition)
     case 'completed':
       return patchOrdered(prev, changes, (task) => shown(task) && !!task.completed_at && !task.skipped, byDone)
     case 'project':
@@ -430,7 +432,7 @@ export interface GroupInput {
   doneToday?: readonly Task[]
   /** Upcoming starts with Today's own groups, then Tomorrow onwards (upcoming-start-with-today D2). */
   upcomingToday?: boolean
-  todayContextFilter?: { assignees: TodayAssigneeFilter | null; matches: (task: Task) => boolean }
+  todayContextFilter?: { me: string | null; matches: (task: Task) => boolean }
 }
 
 /**
@@ -493,7 +495,7 @@ function todayContextChildren(p: GroupInput): Map<string, Task[]> {
     if (!task.parent_id || task.deleted_at || task.completed_at || task.habit_graduated_at != null) continue
     if (isSomeday(task) || inToday(task, p.today)) continue
     if (task.project_id && p.projectMap.get(task.project_id)?.archived) continue
-    if (assignedToSomeoneElse(task, p.todayContextFilter?.assignees) || p.todayContextFilter?.matches(task) === false) continue
+    if (assignedToSomeoneElse(task, p.todayContextFilter?.me) || p.todayContextFilter?.matches(task) === false) continue
     appendTo(children, task.parent_id, task)
   }
   return children

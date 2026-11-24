@@ -8,7 +8,7 @@
 import { calendarTasks, dayLoad } from './calendar'
 import { addDaysISO, daysBetweenISO, localDueOf, logicalDay } from './dates'
 import { blockedMap } from './dependencies'
-import { todayList, upcomingList, withoutArchived, type TodayAssigneeFilter } from './dayLists'
+import { todayList, upcomingList, withoutArchived } from './dayLists'
 import { compareDueThenPriority } from './ordering'
 import type { AppNotification, Project, Task } from './types'
 import { overdueInToday, upcomingDate } from './views'
@@ -67,8 +67,8 @@ export interface BriefingInput {
   closed: boolean
   /** The day start in minutes after midnight, for the day a completion belongs to. */
   dayStart: number
-  /** Today hides other people's shared tasks; Upcoming ignores this. */
-  hide?: TodayAssigneeFilter | null
+  /** The viewer: tasks assigned to someone else are not counted (personal-views-assignee). */
+  me?: string | null
 }
 
 const titleOf = (task: Task): BriefingTask => {
@@ -116,7 +116,7 @@ export function briefingFacts(input: BriefingInput): Briefing {
   const { today, dayLength } = input
   const all = withoutArchived(input.tasks.filter((x) => !x.deleted_at) as Task[], input.projects as Project[])
   const open = all.filter((x) => !x.completed_at)
-  const upcoming = upcomingList(all, today)
+  const upcoming = upcomingList(all, today, input.me)
   const tomorrow = tomorrowOf(upcoming, today)
   const later = fullDays(calendarTasks(open, [], addDaysISO(today, 1), addDaysISO(today, BRIEFING_DAYS)), today, dayLength)
 
@@ -126,7 +126,7 @@ export function briefingFacts(input: BriefingInput): Briefing {
     return { mode: 'upcoming', count, facts: later.length ? [{ kind: 'full', dates: later }] : [], tomorrow }
   }
 
-  const list = todayList(all, today, input.view === 'today' ? input.hide : null)
+  const list = todayList(all, today, input.me)
   if (list.length === 0) {
     const doneToday = input.closed || all.some((x) => x.completed_at && !x.skipped && logicalDay(x.completed_at, input.dayStart) === today)
     return { mode: doneToday ? 'done' : 'clear', tomorrow }

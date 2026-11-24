@@ -44,14 +44,14 @@ describe('briefing facts', () => {
     expect(b.mode).toBe('clear')
   })
 
-  it('Today drops a shared task assigned to someone else when asked; Upcoming still counts theirs', () => {
-    const hide = { shared: new Set(['p']), me: 'me' }
+  it('Today and Upcoming do not count tasks assigned to someone else', () => {
     const tasks = [
       task({ title: 'Theirs', due: { date: fixtures.today }, project_id: 'p', assignee_id: 'other' }),
       task({ title: 'Mine', due: { date: fixtures.today }, project_id: 'p', assignee_id: 'me' }),
       task({ title: 'Later', due: { date: '2026-10-23' }, project_id: 'p', assignee_id: 'other' }),
+      task({ title: 'Anyone later', due: { date: '2026-10-23' }, project_id: 'p' }),
     ]
-    const base = { today: fixtures.today, projects: [], dayLength: 480, notifications: [], closed: false, dayStart: 0, tasks, hide }
+    const base = { today: fixtures.today, projects: [], dayLength: 480, notifications: [], closed: false, dayStart: 0, tasks, me: 'me' }
     const today = briefingFacts({ ...base, view: 'today' })
     expect(today.mode).toBe('today')
     if (today.mode === 'today') expect(today.open).toBe(1)

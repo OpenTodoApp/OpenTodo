@@ -6,7 +6,7 @@
 // Outside a shell nothing here runs.
 import { liveQuery, type Subscription } from 'dexie'
 import { addDaysISO, localDueOf, logicalToday } from './dates'
-import { todayAssigneeFilter, todayList, type TodayAssigneeFilter } from './dayLists'
+import { todayList } from './dayLists'
 import { db, getMeta, setMeta } from './db'
 import { encryptionSnapshot, onEncryptionChange } from './e2ee'
 import { publishGeofences } from './geofences'
@@ -56,8 +56,8 @@ export function shellReminders(reminders: readonly Reminder[], tasks: readonly T
 }
 
 /** The widgets' Today list: titles only while the account is readable on this device, counts otherwise. */
-export function shellWidget(tasks: readonly Task[], today: string, now: number, locked: boolean, hide?: TodayAssigneeFilter | null): ShellWidgetData {
-  const list = todayList(tasks.filter((task) => !task.deleted_at && !task.completed_at), today, hide)
+export function shellWidget(tasks: readonly Task[], today: string, now: number, locked: boolean, me?: string | null): ShellWidgetData {
+  const list = todayList(tasks.filter((task) => !task.deleted_at && !task.completed_at), today, me)
   const rows = list.slice(0, WIDGET_MAX).map((task) => {
     const due = localDueOf(task.due)
     const overdue = !!due && due.date < today
@@ -173,11 +173,10 @@ export async function publishReminders(now = Date.now()): Promise<ShellPermissio
 /** Computes and hands over the widgets' Today list now. */
 async function publishToday(now = Date.now()): Promise<void> {
   const enc = encryptionSnapshot()
-  const [tasks, prefs, memberships, me, projects] = await Promise.all([db.tasks.toArray(), db.userPrefs.get('me'), db.memberships.toArray(), currentUserId(), db.projects.toArray()])
-  const hide = todayAssigneeFilter(prefs, memberships, me)
+  const [tasks, memberships, me, projects] = await Promise.all([db.tasks.toArray(), db.memberships.toArray(), currentUserId(), db.projects.toArray()])
   const today = logicalToday(undefined, now)
   const locked = enc.enabled && !enc.unlocked
-  publishWidget({ ...shellWidget(tasks, today, now, locked, hide), completed: shellCompleted(tasks, projects, memberships, me, today, locked) })
+  publishWidget({ ...shellWidget(tasks, today, now, locked, me), completed: shellCompleted(tasks, projects, memberships, me, today, locked) })
 }
 
 let started = false

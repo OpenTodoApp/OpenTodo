@@ -1483,7 +1483,8 @@
     "web/src/app/SsoPanel.tsx"
   ],
   "After {title}": [
-    "web/src/app/TaskRow.tsx"
+    "web/src/app/TaskRow.tsx",
+    "web/src/app/task-detail/Subtasks.tsx"
   ],
   "Afternoon": [
     "web/src/app/ParseChips.tsx",
@@ -7962,9 +7963,6 @@
   ],
   "Hide table": [
     "web/src/app/review/charts.tsx"
-  ],
-  "Hide tasks assigned to others": [
-    "web/src/app/TaskListView.tsx"
   ],
   "Hide text": [
     "web/src/app/task-detail/HistoryTab.tsx"
@@ -16582,9 +16580,6 @@
   "Show tasks as": [
     "web/src/app/CaldavPanel.tsx"
   ],
-  "Show tasks assigned to others": [
-    "web/src/app/TaskListView.tsx"
-  ],
   "Show text": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
@@ -21577,7 +21572,8 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Waits for the previous step: {title}": [
-    "web/src/app/TaskRow.tsx"
+    "web/src/app/TaskRow.tsx",
+    "web/src/app/task-detail/Subtasks.tsx"
   ],
   "Waits for {tasks}": [
     "web/src/lib/assistant.ts"

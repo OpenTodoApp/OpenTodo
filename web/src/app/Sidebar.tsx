@@ -28,7 +28,6 @@ import { flattenTree } from '../lib/tree'
 import type { Label, Project, Review, Task, User, View } from '../lib/types'
 import { useTrackedTotals } from '../lib/timeEntries'
 import { evaluateViews, isDashboard } from '../lib/views'
-import { todayAssigneeFilter, type TodayAssigneeFilter } from '../lib/dayLists'
 import { LabelRow, NewLabelForm, useLabelData, useLabelDrag } from './LabelsView'
 import { ViewMark, ViewMenu } from './ViewsView'
 import { FavouritesGroup } from './FavouritesGroup'
@@ -236,15 +235,14 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   // Re-read every minute, so the counts move to the new day at midnight.
   const today = useToday()
   // The same Today number the app icon badge shows (app-icon-badge).
-  const hide = useMemo(() => todayAssigneeFilter(prefsRow, [...memberMap.values()], user.id), [prefsRow, memberMap, user.id])
   // Worked out from the rows each write changed (incremental-list-updates D2); deferred and
   // parked tasks are not counted (someday-and-evening D2). The Inbox looks up parents among every live task.
   const live = liveTasks ?? openTasks
-  const countsOf = useRef(new Derived<SidebarCounts, [string, string, TodayAssigneeFilter | null, string]>(
-    (tasks, today, _zone, hide, userId) => sidebarCounts(tasks, today, hide, userId, lookups(tasks)),
-    (prev, changes, tasks, today, _zone, hide, userId) => patchSidebarCounts(prev, changes, tasks, today, hide, userId, lookups(tasks)),
+  const countsOf = useRef(new Derived<SidebarCounts, [string, string, string]>(
+    (tasks, today, _zone, userId) => sidebarCounts(tasks, today, userId, lookups(tasks)),
+    (prev, changes, tasks, today, _zone, userId) => patchSidebarCounts(prev, changes, tasks, today, userId, lookups(tasks)),
   )).current
-  const own = countsOf.get(live, today, zone, hide, user.id)
+  const own = countsOf.get(live, today, zone, user.id)
   const counts = useMemo(() => ({ inbox: own.inbox.size, today: own.today, assigned: own.assigned, byProject: rollUpCounts(own.own, tree, collapsed_) }), [own, tree, collapsed_])
 
   // Navigating to a sub-project reveals it: its ancestors leave the collapsed set.

@@ -11,7 +11,7 @@ import { setDateTime } from '../lib/dates'
 import { createTask, resetDeviceId } from '../lib/ops'
 import type { CalendarEvent, CalendarSubscription } from '../lib/types'
 import { setCurrentUserId } from '../lib/sharing'
-import { setTodayEventsShown, setTodayHidesOthers, todayEventsShown, todayHidesOthers } from '../lib/userPrefs'
+import { setTodayEventsShown, todayEventsShown } from '../lib/userPrefs'
 import { click, flush, key, render, waitFor } from '../ui/test-utils'
 import { resetTodayAgendaFetch } from './calendar/TodayAgenda'
 import { resetPanel } from './panel'
@@ -65,10 +65,10 @@ const agenda = () => document.querySelector('[data-today-agenda]')
 const menu = () => document.querySelector<HTMLButtonElement>('[data-page-header] button[aria-label="More actions"]')!
 const toggle = () => document.querySelector<HTMLElement>('[data-today-events-toggle]')
 
-async function openToday() {
+async function openToday(userId?: string) {
   await createTask({ title: 'Write the report', due: { date: '2026-10-22' } })
   navigate({ view: 'today' })
-  const r = await render(<TaskListView route={{ view: 'today' }} />)
+  const r = await render(<TaskListView route={{ view: 'today' }} userId={userId} />)
   await waitFor(() => !!r.container.querySelector('[data-task-id]'))
   return r
 }
@@ -141,18 +141,7 @@ describe('the option', () => {
     expect(todayEventsShown({ today_events: 'shown' })).toBe(true)
   })
 
-  it('hiding others is off until mine, and an unknown value stays stored', async () => {
-    expect(todayHidesOthers(null)).toBe(false)
-    expect(todayHidesOthers({ today_assignees: '' })).toBe(false)
-    expect(todayHidesOthers({ today_assignees: 'compact' })).toBe(false)
-    expect(todayHidesOthers({ today_assignees: 'mine' })).toBe(true)
-    await setTodayHidesOthers(true)
-    expect((await db.outbox.toArray()).filter((o) => o.entity === 'user_prefs').map((o) => [o.field, o.value])).toEqual([['today_assignees', 'mine']])
-    await setTodayHidesOthers(false)
-    expect((await db.outbox.toArray()).filter((o) => o.field === 'today_assignees').map((o) => o.value)).toEqual(['mine', ''])
-  })
-
-  it('offers Hide tasks assigned to others in the header overflow once someone else shares a project', async () => {
+  it('leaves out a task assigned to someone else, with no option to show it, and keeps mine and unassigned ones', async () => {
     await setCurrentUserId('me')
     await db.memberships.put({
       projectId: 'shared', role: 'editor', ownerId: 'me',
@@ -162,28 +151,16 @@ describe('the option', () => {
       ],
     })
     await createTask({ title: 'Sam task', due: { date: '2026-10-22' }, project_id: 'shared', assignee_id: 'sam' })
-    const r = await openToday()
-    await waitFor(() => r.container.textContent?.includes('Sam task') === true)
-    await click(menu())
-    const item = () => document.querySelector<HTMLElement>('[data-today-assignees-toggle]')
-    await waitFor(() => !!item())
-    expect(item()!.textContent).toContain('Hide tasks assigned to others')
-    await click(item()!)
-    await waitFor(() => r.container.textContent?.includes('Sam task') !== true)
+    await createTask({ title: 'Ada task', due: { date: '2026-10-22' }, project_id: 'shared', assignee_id: 'me' })
+    await createTask({ title: 'Anyone task', due: { date: '2026-10-22' }, project_id: 'shared' })
+    const r = await openToday('me')
+    await waitFor(() => r.container.textContent?.includes('Anyone task') === true)
+    expect(r.container.textContent).toContain('Ada task')
     expect(r.container.textContent).toContain('Write the report')
-    await click(menu())
-    await waitFor(() => item()?.textContent?.includes('Show tasks assigned to others') === true)
-    await r.unmount()
-  })
-
-  it('does not offer it while no shared project has another member, and keeps a stored value', async () => {
-    await setCurrentUserId('me')
-    await setTodayHidesOthers(true)
-    const r = await openToday()
+    expect(r.container.textContent).not.toContain('Sam task')
     await click(menu())
     await waitFor(() => !!document.querySelector('[data-briefing-toggle]'))
     expect(document.querySelector('[data-today-assignees-toggle]')).toBeNull()
-    expect((await db.userPrefs.get('me'))?.today_assignees).toBe('mine')
     await r.unmount()
   })
 })

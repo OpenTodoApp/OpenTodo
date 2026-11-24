@@ -17,7 +17,7 @@ import { useLabels, useLiveSections, useProjects, useSectionPlace, useUserPrefsR
 import { dayPartsOn } from '../../lib/dayParts'
 import { timeSectorsOn } from '../../lib/sectorNames'
 import { isFavourite } from '../../lib/favourites'
-import { earlierIds, todayAssigneeFilter } from '../../lib/dayLists'
+import { earlierIds } from '../../lib/dayLists'
 import { usePickScores } from '../../lib/pickRank'
 import { canEditProject, roleOf } from '../../lib/sharing'
 import { useViewMode } from '../../lib/sections'
@@ -103,8 +103,8 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const history = useUndoHistory()
   // Today's earlier tasks, once per data change: ctx follows the text typed, and this
   // read every task on each keystroke (list-rendering-at-scale D6).
-  const hideOthers = useMemo(() => (memberships ? todayAssigneeFilter(prefs, [...memberships.values()], user?.id ?? null) : null), [prefs, memberships, user])
-  const earlier = useMemo(() => earlierIds(tasks, projects, today, hideOthers), [tasks, projects, today, hideOthers])
+  const me = user?.id ?? null
+  const earlier = useMemo(() => earlierIds(tasks, projects, today, me), [tasks, projects, today, me])
   const ctx = useMemo<PaletteContext>(() => {
     const projectId = route.view === 'project' ? route.id : null
     const project = projectId ? projects.find((p) => p.id === projectId) : undefined
