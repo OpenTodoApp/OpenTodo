@@ -191,8 +191,10 @@ runs, or with `opentodo restore` while it is stopped.
    when the server is back, usually within seconds. Where the server cannot
    start itself again (for example in a chroot without `/proc/self/exe`), or
    has not come back within a minute, the page says **Restart OpenTodo to
-   finish the restore.** Start it again by hand: the restore is applied on that
-   start, and the page reloads once the server answers.
+   finish the restore.** The server then exits with status 75, so a supervisor
+   that restarts it on failure (systemd `Restart=on-failure`, a container
+   restart policy) starts it again; otherwise start it by hand. The restore is
+   applied on that start, and the page reloads once the server answers.
 
 Sessions live in the database, so anyone who signed in after the backup was
 taken (possibly you) signs in again; the sign-in screen says that the server

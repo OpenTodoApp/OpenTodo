@@ -46,3 +46,13 @@ func TestResolveExecutable(t *testing.T) {
 		}
 	}
 }
+
+// TestFinishRestartExitsForSupervisor (#1961): a failed re-exec exits non-zero,
+// so Restart=on-failure or a restart policy starts the server and the restore
+// is applied.
+func TestFinishRestartExitsForSupervisor(t *testing.T) {
+	failed := func() error { return errors.New("readlink /proc/self/exe: no such file or directory") }
+	if got := finishRestart(failed); got != exitRestartRequired || got == 0 {
+		t.Fatalf("exit status %d, want %d", got, exitRestartRequired)
+	}
+}

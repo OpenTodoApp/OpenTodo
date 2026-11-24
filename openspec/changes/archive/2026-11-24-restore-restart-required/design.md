@@ -2,7 +2,7 @@
 
 ## D1. Check before stopping
 
-The restart hook (`tenant.Options.Restart`) returns whether the server comes back on its own. `cmd/opentodo` resolves its executable before it stops (`restartTarget`: `os.Executable`, then `exec.LookPath(os.Args[0])` when that fails, then a stat that the file can be run), and re-executes the same path afterwards. A host closes the tenant and always comes back. `ConfirmRestore` passes the answer through, and `POST /api/v1/backups/restore` answers `{"status":"restart_required"}` instead of `{"status":"restarting"}`. The server still stops: the pending restore is applied on the next start, as before.
+The restart hook (`tenant.Options.Restart`) returns whether the server comes back on its own. `cmd/opentodo` resolves its executable before it stops (`restartTarget`: `os.Executable`, then `exec.LookPath(os.Args[0])` when that fails, then a stat that the file can be run), and re-executes the same path afterwards. A host closes the tenant and always comes back. `ConfirmRestore` passes the answer through, and `POST /api/v1/backups/restore` answers `{"status":"restart_required"}` instead of `{"status":"restarting"}`. The server still stops, with exit status 75 (EX_TEMPFAIL) when the re-exec fails, so systemd `Restart=on-failure` or a container restart policy starts it again; the pending restore is applied on that start.
 
 ## D2. One final screen
 

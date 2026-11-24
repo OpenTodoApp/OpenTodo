@@ -215,6 +215,26 @@ describe('preview and confirmation (5.3)', () => {
     await r.unmount()
   })
 
+  it('after the final screen, the page reloads once the server answers again (#1961)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true, toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    const reload = vi.fn()
+    vi.stubGlobal('location', { ...window.location, reload })
+    const calls = fakeServer({ ...base,
+      'POST /api/v1/backups/restore/prepare': () => [200, staged],
+      'POST /api/v1/backups/restore': () => [202, { status: 'restart_required' }],
+      'GET /healthz': (_b, n) => (n <= 2 ? [503, { status: 'down' }] : [200, { status: 'ok' }]),
+    })
+    const r = await render(<RestoreSection offline={false} />)
+    await confirmPrepared()
+    await waitFor(() => !!screen()?.textContent?.includes('Restart OpenTodo to finish the restore.'), 'the final screen')
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(reload).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(5_000)
+    await waitFor(() => reload.mock.calls.length === 1, 'the reload')
+    expect(calls.filter((c) => c.path === '/healthz')).toHaveLength(3)
+    await r.unmount()
+  })
+
   it('a server that does not come back within the wait gets the same final screen (#1961)', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true, toFake: ['setTimeout', 'clearTimeout', 'Date'] })
     fakeServer({ ...base,

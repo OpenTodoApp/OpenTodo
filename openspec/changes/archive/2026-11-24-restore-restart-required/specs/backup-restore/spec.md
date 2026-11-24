@@ -9,7 +9,7 @@
 
 #### Scenario: Server cannot restart itself
 - **WHEN** the owner confirms a restore on a server whose executable cannot be resolved (for example a chroot without `/proc/self/exe`) or run
-- **THEN** the response is 202 with `status` `restart_required`, the server stops, logs "restart OpenTodo to finish the restore", and applies the restore when it is started again
+- **THEN** the response is 202 with `status` `restart_required`, the server logs "restart OpenTodo to finish the restore" and exits with a non-zero status (so a supervisor that restarts on failure starts it again), and it applies the restore when it is started again
 
 #### Scenario: Stale session
 - **WHEN** the confirmation comes from a session that has not re-authenticated within the fresh window

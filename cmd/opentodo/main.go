@@ -79,11 +79,21 @@ func main() {
 		// A restore was confirmed in the web app (backup-restore-web D1): start
 		// again in the same process, so the next start applies it without relying
 		// on a container restart policy.
-		if err := reexec(); err != nil {
-			slog.Error("could not restart in place: restart OpenTodo to finish the restore", "err", err)
-		}
-		os.Exit(0)
+		os.Exit(finishRestart(reexec))
 	}
+}
+
+// exitRestartRequired is the exit status when a confirmed restore could not
+// re-execute the server (EX_TEMPFAIL): a supervisor with Restart=on-failure
+// or a container restart policy starts it again, and that start applies the
+// restore (#1961).
+const exitRestartRequired = 75
+
+// finishRestart re-executes the server; it returns only when that failed.
+func finishRestart(reexec func() error) int {
+	err := reexec()
+	slog.Error("could not restart in place: restart OpenTodo to finish the restore", "err", err)
+	return exitRestartRequired
 }
 
 // logLevelName is the OPENTODO_LOG_LEVEL value in effect, as the operator writes it.

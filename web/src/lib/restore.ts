@@ -67,10 +67,11 @@ export async function waitForRestart({ intervalMs = 1000, budgetMs = 60_000, fet
     await sleep(intervalMs)
     if (signal?.aborted) return false
     try {
-      const res = await fetchFn('/healthz', { cache: 'no-store' })
+      const res = await fetchFn('/healthz', { cache: 'no-store', signal })
       if (res.ok && (wentAway || now() - start >= 2 * intervalMs)) return true
       if (!res.ok) wentAway = true
     } catch {
+      if (signal?.aborted) return false
       wentAway = true
     }
   }
