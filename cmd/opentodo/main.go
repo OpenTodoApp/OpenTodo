@@ -79,11 +79,21 @@ func main() {
 		// A restore was confirmed in the web app (backup-restore-web D1): start
 		// again in the same process, so the next start applies it without relying
 		// on a container restart policy.
-		if err := reexec(); err != nil {
-			slog.Error("could not restart in place: restart OpenTodo to finish the restore", "err", err)
-		}
-		os.Exit(0)
+		os.Exit(finishRestart(reexec))
 	}
+}
+
+// exitRestartRequired is the exit status when a confirmed restore could not
+// re-execute the server (EX_TEMPFAIL): a supervisor with Restart=on-failure
+// or a container restart policy starts it again, and that start applies the
+// restore (#1961).
+const exitRestartRequired = 75
+
+// finishRestart re-executes the server; it returns only when that failed.
+func finishRestart(reexec func() error) int {
+	err := reexec()
+	slog.Error("could not restart in place: restart OpenTodo to finish the restore", "err", err)
+	return exitRestartRequired
 }
 
 // logLevelName is the OPENTODO_LOG_LEVEL value in effect, as the operator writes it.
@@ -121,9 +131,13 @@ func run() error {
 	// One tenant: the data directory, its services and its handler (OpenSpec
 	// `multi-tenant-host` D1). Open applies a pending web restore and holds the
 	// data directory shared until Close.
-	t, err := tenant.Open(ctx, cfg, tenant.Options{Version: version, Log: log, Restart: func() {
+	t, err := tenant.Open(ctx, cfg, tenant.Options{Version: version, Log: log, Restart: func() bool {
+		// Checked before stopping, so the page can say when someone has to
+		// start the server again (#1961).
+		_, err := restartTarget()
 		restartRequested.Store(true)
 		requestRestart()
+		return err == nil
 	}})
 	if err != nil {
 		return err

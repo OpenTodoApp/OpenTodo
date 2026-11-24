@@ -32,8 +32,9 @@ type Options struct {
 	// Restart is called when a restore confirmed in the web app needs the
 	// tenant to be closed and opened again (backup-restore-web D1). A
 	// self-hosted server re-executes itself; a host closes the tenant so the
-	// next request reopens it and applies the restore.
-	Restart func()
+	// next request reopens it and applies the restore. It reports whether the
+	// server comes back on its own.
+	Restart func() bool
 	// Hosted is set when a host serves this tenant (multi-tenant-host D2, D4):
 	// operator-level settings come from the host, the background jobs run in the
 	// host's shared scheduler and the tenant's limits apply.

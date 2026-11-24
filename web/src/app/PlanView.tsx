@@ -226,7 +226,7 @@ export function PlanView({ date }: { date?: string }) {
   // The active filter is one chip in the lead line (design D4).
   const meta = chrome.chip ? <span className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-2">{chrome.chip}{status}</span> : status
   const overflow = <>
-    <CalendarsToggle shown={feeds.eventsShown} count={feeds.subs.length} menu />
+    <CalendarsToggle shown={feeds.eventsShown} subs={feeds.subs} menu />
     <CalendarCompletedToggle shown={showCompleted} menu />
     {PLAN_SPANS.map((n) => (
       <MenuItem key={n} label={t('{n} days', { n })} icon="calendar-days" checked={span === n} data-plan-span={n}
@@ -240,7 +240,7 @@ export function PlanView({ date }: { date?: string }) {
     {chrome.overflow}
   </>
   const rangeActions = <>
-          <CalendarsToggle shown={feeds.eventsShown} count={feeds.subs.length} />
+          <CalendarsToggle shown={feeds.eventsShown} subs={feeds.subs} />
           <span className="flex items-center" role="group" aria-label={t('Range')}>
             <Button variant="ghost" size="sm" icon="chevron-left" aria-label={t('Previous week')} onClick={() => goTo(addDaysISO(anchor, -7))} />
             <Button variant="ghost" size="sm" onClick={() => goTo(today)}>{t('Today')}</Button>

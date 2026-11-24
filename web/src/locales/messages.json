@@ -7960,9 +7960,6 @@
   "Hide done today": [
     "web/src/app/task-list/ClosedListActions.tsx"
   ],
-  "Hide other calendars on this device": [
-    "web/src/app/calendar/CalendarsToggle.tsx"
-  ],
   "Hide sidebar": [
     "web/src/ui/patterns/PageHeader.tsx"
   ],
@@ -15139,6 +15136,9 @@
   "Response": [
     "web/src/app/WebhooksPanel.tsx"
   ],
+  "Restart OpenTodo to finish the restore.": [
+    "web/src/app/RestoreSection.tsx"
+  ],
   "Restore": [
     "web/src/app/ArchivedProjects.tsx",
     "web/src/app/TrashView.tsx",
@@ -16497,7 +16497,8 @@
     "web/src/app/TaskListView.tsx"
   ],
   "Show calendar events": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/TaskListView.tsx",
+    "web/src/app/calendar/CalendarsToggle.tsx"
   ],
   "Show completed tasks": [
     "web/src/app/ProjectHeader.tsx",
@@ -16582,9 +16583,6 @@
   ],
   "Show or hide the project activity; Tab reaches the person and kind filters": [
     "web/src/lib/shortcuts.ts"
-  ],
-  "Show other calendars on this device": [
-    "web/src/app/calendar/CalendarsToggle.tsx"
   ],
   "Show repeating occurrences": [
     "web/src/app/calendar/projectionSwitches.tsx"
@@ -18887,6 +18885,9 @@
   "The server did not answer like a CalDAV server.": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
+  "The server did not start again on its own. This page reloads when it is back.": [
+    "web/src/app/RestoreSection.tsx"
+  ],
   "The server does not have enough disk space.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -18904,9 +18905,6 @@
   ],
   "The server is on a private network the server owner has not allowed.": [
     "web/src/app/CalendarSyncPanel.tsx"
-  ],
-  "The server is still restarting. If this takes more than a few minutes, check the server log. This page reloads when it is back.": [
-    "web/src/app/RestoreSection.tsx"
   ],
   "The server is unreachable. Backups need a connection.": [
     "web/src/app/BackupsPanel.tsx"
