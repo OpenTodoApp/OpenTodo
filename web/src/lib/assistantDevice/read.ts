@@ -223,7 +223,9 @@ export function todaySummary(snap: Snapshot, a: Args, now: number, maxItems: num
     if (inInbox(t)) inbox++
     else if (pid) perProject.set(pid, (perProject.get(pid) ?? 0) + 1)
     const d = dueOf(t)
-    if (!d) continue
+    // Today is a personal view (personal-views-assignee): someone else's task is neither listed nor counted.
+    const assignee = field(t, 'assignee_id')
+    if (!d || (assignee && assignee !== snap.userId)) continue
     const day = dueDate(d, tz)
     if (day < today) overdue.push(t)
     else if (day === today) dueToday.push(t)

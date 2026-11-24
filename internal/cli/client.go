@@ -318,8 +318,16 @@ type task struct {
 	// Origin is null, the object or an encrypted account's ciphertext (task-origin).
 	Origin json.RawMessage `json:"origin"`
 	// WorkspaceID is the workspace of a task without a project (workspaces).
-	WorkspaceID *string         `json:"workspace_id"`
-	Raw         json.RawMessage `json:"-"`
+	WorkspaceID *string `json:"workspace_id"`
+	// AssigneeID is the account the task is assigned to, null for no one.
+	AssigneeID *string         `json:"assignee_id"`
+	Raw        json.RawMessage `json:"-"`
+}
+
+// assignedToSomeoneElse reports a task assigned to an account other than me
+// (personal-views-assignee): Today and Upcoming leave it out. Without me nothing is.
+func (t task) assignedToSomeoneElse(me string) bool {
+	return me != "" && t.AssigneeID != nil && *t.AssigneeID != "" && *t.AssigneeID != me
 }
 
 // originLabel is the origin's id or host, "" when there is none or it is encrypted.

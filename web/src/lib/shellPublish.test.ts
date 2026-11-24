@@ -77,6 +77,13 @@ describe('the widgets\' Today list', () => {
     const w = shellWidget(tasks, today, NOW, true)
     expect(w).toMatchObject({ locked: true, count: 2, tasks: [] })
   })
+
+  it('leaves out a task assigned to someone else, mine and unassigned ones stay', () => {
+    const shared = [...tasks, task('theirs', { due: { date: today }, assignee_id: 'ana' }), task('mine', { due: { date: today }, assignee_id: 'me' })]
+    const w = shellWidget(shared, today, NOW, false, 'me')
+    expect(w.count).toBe(3)
+    expect(w.tasks.map((r) => r.id).sort()).toEqual(['late', 'mine', 'now'])
+  })
 })
 
 describe('the Completed widget (completed-widget D1)', () => {

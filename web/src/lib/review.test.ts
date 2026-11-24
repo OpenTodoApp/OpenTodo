@@ -474,4 +474,15 @@ describe('Close the day (close-the-day 2.1–2.4)', () => {
     const decisions = new Map<string, CarryDecision>([['stay', { kind: 'keep' }], ['park', { kind: 'someday' }]])
     expect(tomorrowsTasks(decisions, carry(rows), TODAY, all).map((x) => x.id)).toEqual(['move', 'due'])
   })
+
+  it('tomorrowsTasks: a task assigned to someone else is not offered; mine and unassigned ones are', () => {
+    const next = { date: '2026-10-15' }
+    const all = [task('theirs', { due: next, assignee_id: 'ana' }), task('mine', { due: next, assignee_id: 'me', priority: 1 }), task('free', { due: next, priority: 2 })]
+    expect(tomorrowsTasks(new Map(), [], TODAY, all, 'me').map((x) => x.id)).toEqual(['mine', 'free'])
+  })
+
+  it('daySummary: a task assigned to someone else is not unfinished; mine and unassigned ones are', () => {
+    const tasks = [task('theirs', { due: { date: TODAY }, assignee_id: 'ana' }), task('mine', { due: { date: TODAY }, assignee_id: 'me' }), task('free', { due: { date: TODAY } })]
+    expect(daySummary(sumInput(tasks), null).unfinished.map((x) => x.task.id).sort()).toEqual(['free', 'mine'])
+  })
 })

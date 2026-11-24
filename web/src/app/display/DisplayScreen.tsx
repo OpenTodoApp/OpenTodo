@@ -7,8 +7,8 @@
 // the display is shown and removed when it leaves (design D4).
 import { useCallback, useMemo } from 'react'
 import { Icon, MenuItem, Menu } from '../../ui'
-import { useAllLabels, useMemberships, useProjectsLoaded, useSectionRows, useUserPrefsRow, useViewRowsLoaded } from '../../lib/localData'
-import { completedOn, groupToday, nextDays, projectOpenList, todayAssigneeFilter, todayList, withoutArchived } from '../../lib/dayLists'
+import { useAllLabels, useMemberships, useProjectsLoaded, useSectionRows, useViewRowsLoaded } from '../../lib/localData'
+import { completedOn, groupToday, nextDays, projectOpenList, todayList, withoutArchived } from '../../lib/dayLists'
 import { describeDue, formatTime, localDueOf, logicalDay } from '../../lib/dates'
 import { blockedMap } from '../../lib/dependencies'
 import { setTaskCompletedWithFeedback } from '../completionSound'
@@ -93,9 +93,7 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
   const projectId = target.kind === 'project' ? target.id : null
   const sections = useSectionRows(projectId)
   const memberMap = useMemo(() => new Map(memberships.map((m) => [m.projectId, m])), [memberships])
-  const prefs = useUserPrefsRow()
   const me = useMe()
-  const hideOthers = useMemo(() => (target.kind === 'today' ? todayAssigneeFilter(prefs, memberships, me) : null), [target.kind, prefs, memberships, me])
   const taskMap = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks])
   const blocked = useMemo(() => blockedMap(tasks), [tasks])
 
@@ -123,13 +121,13 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
         depth: o.depth, editable: canEditTask(task, memberMap),
       }
     }
-    const columns = (days: number): Group[] => nextDays(all, today, days).map(({ date, tasks: list }) => ({
+    const columns = (days: number): Group[] => nextDays(all, today, days, me).map(({ date, tasks: list }) => ({
       id: date, heading: dt.formatDate(date, 'heading'), rows: list.map((task) => toRow(task, date, { day: date })), empty: t('Nothing planned'),
     }))
 
     switch (target.kind) {
       case 'today': {
-        const g = groupToday(todayList(all, today, hideOthers), today, blocked)
+        const g = groupToday(todayList(all, today, me), today, blocked)
         const groups: Group[] = [
           { id: 'overdue', heading: t('Earlier'), rows: g.overdue.map((task) => toRow(task, 'overdue')) },
           { id: 'today', heading: t('Today'), rows: g.day.map((task) => toRow(task, 'today')), empty: g.overdue.length || g.evening.length ? undefined : t('Nothing left for today') },
@@ -172,7 +170,7 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }, [projects, liveTasks, tasks, views, labels, sections, memberMap, taskMap, blocked, target, projectId, today, zone, dt, options.days, hideOthers, viewCtx])
+  }, [projects, liveTasks, tasks, views, labels, sections, memberMap, taskMap, blocked, target, projectId, today, zone, dt, options.days, me, viewCtx])
 
   // ---- keyboard and focus (design D5): one roving focus across groups and columns ----
   const rows = useMemo(() => (content ? [...content.groups, ...content.columns].flatMap((g) => g.rows) : []), [content])

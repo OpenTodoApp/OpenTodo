@@ -57,7 +57,7 @@ export function DailyCheck() {
     if (!input) return null
     const archived = new Set(input.projects.filter((p) => p.archived || p.deleted_at).map((p) => p.id))
     const live = input.tasks.filter((x) => !x.deleted_at && !(x.project_id && archived.has(x.project_id)))
-    const today = todayList(live, input.today)
+    const today = todayList(live, input.today, input.me)
     // Completed or deleted tasks leave the Bento as they leave the focus: without a write.
     const bento = readBento(review, input.today, live.filter((x) => !x.completed_at))
     return {

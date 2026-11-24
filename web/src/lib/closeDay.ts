@@ -48,7 +48,7 @@ export function daySummary(input: MethodInput, review: Pick<Review, 'focus' | 'f
   const memberships = input.memberships as Map<string, Membership>
   const archived = new Set(input.projects.filter((p) => p.archived || p.deleted_at).map((p) => p.id))
   const live = input.tasks.filter((x) => !x.deleted_at && !x.skipped && !(x.project_id && archived.has(x.project_id)))
-  const unfinished = todayList(live, today).map((task) => ({ task, editable: canEditTasks(roleOf(task.project_id, memberships)) }))
+  const unfinished = todayList(live, today, input.me).map((task) => ({ task, editable: canEditTasks(roleOf(task.project_id, memberships)) }))
   const statsInput = { tasks: input.tasks, projects: input.projects, shared: sharedIds([...memberships.values()]), me: input.me, today }
   const stats = compute(statsInput, { start: today, end: today }, weekStart)
   const done = stats.perDay.find((d) => d.date === today)?.count ?? 0
@@ -116,13 +116,13 @@ export function carriedOf(decisions: ReadonlyMap<string, CarryDecision>, tasks: 
 /**
  * Tomorrow's tasks as the last step offers them (weekly-review "Tomorrow's first
  * thing"): due on the day after `day` once tonight's decisions are applied, in the
- * order Today will list them that day.
+ * order Today will list them that day, without tasks assigned to someone other than `me`.
  */
-export function tomorrowsTasks(decisions: ReadonlyMap<string, CarryDecision>, tasks: readonly CarryTask[], day: string, all: readonly Task[]): Task[] {
+export function tomorrowsTasks(decisions: ReadonlyMap<string, CarryDecision>, tasks: readonly CarryTask[], day: string, all: readonly Task[], me?: string | null): Task[] {
   const next = addDaysISO(day, 1)
   const patched = new Map(planCarryOver(decisions, tasks, day, [...all]).map((c) => [c.entityId, c.patch]))
   const after = all.filter((x) => !x.deleted_at && !x.skipped).map((x) => (patched.has(x.id) ? { ...x, ...patched.get(x.id) } as Task : x))
-  return todayList(after, next).filter((x) => x.due && localDueOf(x.due).date === next)
+  return todayList(after, next, me).filter((x) => x.due && localDueOf(x.due).date === next)
 }
 
 /**

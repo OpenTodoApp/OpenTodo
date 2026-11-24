@@ -1,7 +1,7 @@
 // The Today, Upcoming and project lists shared by the list screen and the display
 // (OpenSpec change display-mode, task 1.1): pure functions over task rows.
 import { describe, expect, it } from 'vitest'
-import { completedOn, groupToday, groupUpcoming, nextDays, projectOpenList, todayAssigneeFilter, todayList, upcomingList, upcomingWithToday, withoutArchived } from './dayLists'
+import { completedOn, earlierIds, groupToday, groupUpcoming, nextDays, projectOpenList, todayList, upcomingList, upcomingWithToday, withoutArchived } from './dayLists'
 import type { Task } from './types'
 
 const TODAY = '2026-10-14'
@@ -85,22 +85,28 @@ describe('day lists', () => {
     expect(upcomingList([chore], during).map((t) => t.title)).toEqual(['Chore'])
   })
 
-  it('hides a shared task assigned to someone else only when the account asked, and Upcoming keeps it', () => {
-    const shared = task({ title: 'Theirs', due: { date: TODAY }, project_id: 'p', assignee_id: 'other' })
+  it('Today and Upcoming leave out tasks assigned to someone else, and keep mine and unassigned ones', () => {
+    const theirs = task({ title: 'Theirs', due: { date: TODAY }, project_id: 'p', assignee_id: 'other' })
     const mine = task({ title: 'Mine', due: { date: TODAY }, project_id: 'p', assignee_id: 'me' })
     const open = task({ title: 'Open', due: { date: TODAY }, project_id: 'p' })
-    const personal = task({ title: 'Personal', due: { date: TODAY }, project_id: 'home', assignee_id: 'other' })
     const tomorrow = task({ title: 'Tomorrow', due: { date: '2026-10-15' }, project_id: 'p', assignee_id: 'other' })
-    const stale = task({ title: 'Stale', due: { date: TODAY }, project_id: 'gone', assignee_id: 'other' })
-    const tasks = [shared, mine, open, personal, tomorrow, stale]
-    expect(todayAssigneeFilter({ today_assignees: '' }, [{ projectId: 'p' }], 'me')).toBeNull()
-    expect(todayAssigneeFilter({ today_assignees: 'compact' }, [{ projectId: 'p' }], 'me')).toBeNull()
-    expect(todayList(tasks, TODAY).map((t) => t.title)).toEqual(['Theirs', 'Mine', 'Open', 'Personal', 'Stale'])
-    const on = todayAssigneeFilter({ today_assignees: 'mine' }, [{ projectId: 'p' }], 'me')
-    expect(todayList(tasks, TODAY, on).map((t) => t.title)).toEqual(['Mine', 'Open', 'Personal', 'Stale'])
-    expect(upcomingList(tasks, TODAY).map((t) => t.title)).toEqual(['Tomorrow'])
-    expect(upcomingWithToday(tasks, TODAY).map((t) => t.title)).toContain('Theirs')
-    expect(upcomingWithToday(tasks, TODAY).map((t) => t.title)).toContain('Tomorrow')
+    const myTomorrow = task({ title: 'My tomorrow', due: { date: '2026-10-15' }, project_id: 'p' })
+    const tasks = [theirs, mine, open, tomorrow, myTomorrow]
+    expect(todayList(tasks, TODAY, 'me').map((t) => t.title)).toEqual(['Mine', 'Open'])
+    expect(upcomingList(tasks, TODAY, 'me').map((t) => t.title)).toEqual(['My tomorrow'])
+    expect(upcomingWithToday(tasks, TODAY, 'me').map((t) => t.title)).toEqual(['Mine', 'Open', 'My tomorrow'])
+    expect(nextDays(tasks, TODAY, 1, 'me')[0].tasks.map((t) => t.title)).toEqual(['My tomorrow'])
+    // Without a viewer (signed out) nothing is left out.
+    expect(todayList(tasks, TODAY).map((t) => t.title)).toEqual(['Theirs', 'Mine', 'Open'])
+  })
+
+  it("Earlier leaves out an overdue task assigned to someone else", () => {
+    const theirs = task({ id: 'theirs', due: { date: '2026-10-12' }, project_id: 'p', assignee_id: 'other' })
+    const mine = task({ id: 'mine', due: { date: '2026-10-12' }, project_id: 'p', assignee_id: 'me' })
+    const open = task({ id: 'open', due: { date: '2026-10-13' }, project_id: 'p' })
+    const projects = [{ id: 'p', archived: false }]
+    expect(earlierIds([theirs, mine, open], projects, TODAY, 'me')).toEqual(['mine', 'open'])
+    expect(earlierIds([theirs, mine, open], projects, TODAY).sort()).toEqual(['mine', 'open', 'theirs'])
   })
 
   it('a flag without a valid range lists as a plain task', () => {

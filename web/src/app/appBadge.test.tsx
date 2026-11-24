@@ -54,6 +54,12 @@ describe('the count', () => {
     expect(counts).toEqual({ '2026-11-01': 4, '2026-11-02': 5, '2026-11-03': 5 })
   })
 
+  it('leaves out a task assigned to someone else, as Today does', () => {
+    const theirs = { ...tasks[0], id: 'theirs', assignee_id: 'other' }
+    expect(todayCount([...tasks, theirs], TODAY, 'me')).toBe(4)
+    expect(todayCount([...tasks, theirs], TODAY)).toBe(5)
+  })
+
   // Issue 1548 (badge-overdue): Earlier counts Today's Earlier group (overdueInToday) only.
   it('Earlier: only Today\'s Earlier group, and today\'s open tasks count as overdue tomorrow', () => {
     expect(todayCount(tasks, TODAY, null, 'overdue')).toBe(1)

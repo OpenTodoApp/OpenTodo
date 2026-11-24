@@ -69,7 +69,7 @@ export function CloseDay({ initialStep = 'done', initialDay }: { initialStep?: C
 
   const unfinished = useMemo(() => summary?.unfinished ?? [], [summary])
   const rowAt = unfinished.find((x) => x.task.id === cursor) ?? unfinished[0] ?? null
-  const tomorrow = useMemo(() => (input && day ? tomorrowsTasks(decisions, unfinished, day, input.tasks) : []), [input, day, decisions, unfinished])
+  const tomorrow = useMemo(() => (input && day ? tomorrowsTasks(decisions, unfinished, day, input.tasks, input.me) : []), [input, day, decisions, unfinished])
   const chosen = first && tomorrow.some((x) => x.id === first) ? first : null
   const projects = useMemo(() => new Map((input?.projects ?? []).map((p) => [p.id, p])), [input])
 

@@ -49,4 +49,6 @@ In a shared project, each task can be assigned to one member. Open the task and 
 
 **Assigned to me** in the sidebar (<kbd>g</kbd> <kbd>a</kbd>) lists every open task assigned to you, across projects.
 
+Today, Upcoming, Anytime and Someday leave out tasks assigned to someone else; they stay in their project and in [Waiting](method/place.md#waiting).
+
 In your Inbox, in a project you haven't shared, or in a shared project where you are the only member, nobody else can be assigned, so the **Assignee** row reads **You**. That is only how the panel shows it: such a task is not in **Assigned to me** unless you turn on **Show in Assigned to me** in the same row, which assigns it to you. Turning it off unassigns it again. When you share the project with someone, its unassigned tasks read **Unassigned** from then on, and the tasks you assigned to yourself stay yours.

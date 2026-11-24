@@ -13,7 +13,7 @@ import { t } from '../../lib/i18n'
 import { useLiveTasks } from '../../lib/liveTasks'
 import { useAllProjects, useMembershipMap, useReviewRow, useUserPrefsRow } from '../../lib/localData'
 import { storedFocus } from '../../lib/review'
-import { canEditTask } from '../../lib/sharing'
+import { canEditTask, useMe } from '../../lib/sharing'
 import type { Task } from '../../lib/types'
 import { ComboboxPanel, Dialog } from '../../ui'
 import { act } from '../actionError'
@@ -30,10 +30,10 @@ const LIMIT = 60
  * focus; today's and overdue first, then the rest, and for a slot the tasks whose
  * estimate suggests it first in each group, then those without an estimate.
  */
-export function focusCandidates(tasks: readonly Task[], archived: ReadonlySet<string>, focus: readonly string[], today: string, slot: BentoSlot | null): { task: Task; today: boolean }[] {
+export function focusCandidates(tasks: readonly Task[], archived: ReadonlySet<string>, focus: readonly string[], today: string, slot: BentoSlot | null, me?: string | null): { task: Task; today: boolean }[] {
   const taken = new Set(focus)
   const open = tasks.filter((x) => !x.completed_at && !x.deleted_at && !taken.has(x.id) && !(x.project_id && archived.has(x.project_id)))
-  const todays = todayList(open, today)
+  const todays = todayList(open, today, me)
   const inToday = new Set(todays.map((x) => x.id))
   const fit = (x: Task) => {
     if (!slot) return 0
@@ -54,10 +54,11 @@ export default function FocusPicker({ request, onClose }: { request: FocusPickRe
   const review = useReviewRow()
   const prefs = useUserPrefsRow()
   const today = useToday()
+  const me = useMe()
   const ctx: FocusContext | null = tasks ? { review, prefs, today, tasks } : null
   const slot = request.mode === 'task' ? request.slot : null
   const archived = useMemo(() => new Set(projects.filter((p) => p.archived || p.deleted_at).map((p) => p.id)), [projects])
-  const items = useMemo(() => (tasks ? focusCandidates(tasks, archived, storedFocus(review, today), today, slot) : []), [tasks, archived, review, today, slot])
+  const items = useMemo(() => (tasks ? focusCandidates(tasks, archived, storedFocus(review, today), today, slot, me) : []), [tasks, archived, review, today, slot, me])
   // The picker closes on a choice; the outcome is a toast with Undo, or (Bento without an
   // estimate) the slot menu, which the outcome asks the host for.
   const run = (p: Promise<FocusOutcome>) => { onClose(); act(p.then(showFocusOutcome)) }

@@ -20,6 +20,7 @@ import { projectActivity, taskActivity } from './activity'
 import { todayLimitOf } from './closedList'
 import { isInboxTask } from './inbox'
 import { lineageRows } from './lineageRows'
+import { assignedToSomeoneElse } from './dayLists'
 import { countedTasks, overdueOf } from './statsCounted'
 import { spanOf, type Span } from './timeline'
 import { inToday } from './views'
@@ -352,7 +353,7 @@ export function useBlockStats(block: Extract<AssistantBlock, { kind: 'stats' }>,
     return {
       completed, overdue: overdueOf(counted, projects, today).length,
       inbox: open.filter((tk) => isInboxTask(tk, (pid) => byId.get(pid))).length,
-      today: open.filter((tk) => inToday(tk, today)).length,
+      today: open.filter((tk) => inToday(tk, today) && !assignedToSomeoneElse(tk, me)).length,
       limit: todayLimitOf(prefs),
     }
   }, [block.from, block.to, today])

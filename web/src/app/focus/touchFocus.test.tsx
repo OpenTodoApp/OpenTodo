@@ -208,4 +208,9 @@ describe('Picker candidates', () => {
     const list = focusCandidates(tasks, new Set(['old']), ['focused'], TODAY, 'S')
     expect(list.map((x) => `${x.today ? 'T' : 'O'}:${x.task.id}`)).toEqual(['T:today-fit', 'T:today-none', 'T:today-big', 'O:later-fit'])
   })
+
+  it('a task assigned to someone else is not among today\'s', () => {
+    const list = focusCandidates([t('theirs', { due: { date: TODAY }, assignee_id: 'ana' }), t('mine', { due: { date: TODAY }, assignee_id: 'me' })], new Set(), [], TODAY, null, 'me')
+    expect(list.map((x) => `${x.today ? 'T' : 'O'}:${x.task.id}`)).toEqual(['T:mine', 'O:theirs'])
+  })
 })

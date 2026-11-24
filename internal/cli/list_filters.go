@@ -3,8 +3,9 @@ package cli
 import "sort"
 
 // filterTasks applies one view the way the web app does. Tasks of archived or
-// missing projects stay out of cross-project views.
-func filterTasks(all []task, projects []project, view string, selected *project, today string) []task {
+// missing projects stay out of cross-project views; Today and Upcoming leave out
+// tasks assigned to someone other than me (personal-views-assignee).
+func filterTasks(all []task, projects []project, view string, selected *project, today, me string) []task {
 	visible := map[string]bool{}
 	for _, p := range projects {
 		visible[p.ID] = !p.Archived && p.DeletedAt == nil
@@ -32,11 +33,11 @@ func filterTasks(all []task, projects []project, view string, selected *project,
 				continue
 			}
 		case "today":
-			if !open || t.Due == nil || t.Due.Date > today {
+			if !open || t.Due == nil || t.Due.Date > today || t.assignedToSomeoneElse(me) {
 				continue
 			}
 		case "upcoming":
-			if !open || t.Due == nil || t.Due.Date <= today {
+			if !open || t.Due == nil || t.Due.Date <= today || t.assignedToSomeoneElse(me) {
 				continue
 			}
 		case "completed":

@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest'
 import { currentDateTime } from './dates'
 import { isDeferred } from './views'
-import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, keepGroups, laterOpenKey, listGroups, sectionBuckets, sectionOfRows, siblingPositions, splitLater, tasksForView, type GroupInput, type ListGroup } from './listGroups'
+import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, keepGroups, laterOpenKey, listGroups, patchViewTasks, sectionBuckets, sectionOfRows, siblingPositions, splitLater, tasksForView, type GroupInput, type ListGroup } from './listGroups'
 import { defaultListDisplay, type ListDisplay } from './listDisplay'
 import { setPriorityNames } from './priority'
 import { buildTaskTree } from './subtasks'
@@ -50,6 +50,38 @@ describe('tasksForView', () => {
     expect(tasksForView({ view: 'completed' }, [older, skipped, newer], [], TODAY).map((t) => t.title)).toEqual(['Newer', 'Older'])
     expect(tasksForView({ view: 'assigned' }, [mine], [], TODAY, 'u1').map((t) => t.title)).toEqual(['Mine'])
     expect(tasksForView({ view: 'assigned' }, [mine], [], TODAY)).toEqual([])
+  })
+
+  // Issue 1938 (personal-views-assignee): one rule for every personal view.
+  it('Today, Upcoming, Someday and Anytime leave out tasks assigned to someone else; the project and Assigned to me do not change', () => {
+    const shared = project('p', 1)
+    const kinds = { today: { due: { date: TODAY } }, upcoming: { due: { date: '2026-10-15' } }, someday: { start: 'someday' }, anytime: {} } as const
+    const all = Object.entries(kinds).flatMap(([kind, over]) => [
+      task({ title: `${kind} theirs`, project_id: 'p', assignee_id: 'other', ...over }),
+      task({ title: `${kind} mine`, project_id: 'p', assignee_id: 'me', ...over }),
+      task({ title: `${kind} anyone`, project_id: 'p', ...over }),
+    ])
+    for (const view of Object.keys(kinds) as (keyof typeof kinds)[]) {
+      expect(tasksForView({ view }, all, [shared], TODAY, 'me').map((t) => t.title).sort(), view).toEqual([`${view} anyone`, `${view} mine`])
+    }
+    expect(tasksForView({ view: 'upcoming' }, all, [shared], TODAY, 'me', true).map((t) => t.title).sort()).toEqual(['today anyone', 'today mine', 'upcoming anyone', 'upcoming mine'])
+    expect(tasksForView({ view: 'project', id: 'p' }, all, [shared], TODAY, 'me')).toHaveLength(all.length)
+    expect(tasksForView({ view: 'assigned' }, all, [shared], TODAY, 'me').map((t) => t.title).sort()).toEqual(['anytime mine', 'someday mine', 'today mine', 'upcoming mine'])
+  })
+
+  it('a task reassigned to someone else leaves the personal views at once, and comes back when it is given back', () => {
+    const shared = project('p', 1)
+    const mine = task({ title: 'Mine', project_id: 'p', assignee_id: 'me', due: { date: TODAY } })
+    const ctx = { parentOf: () => undefined, hasChildren: () => false }
+    for (const view of ['today', 'anytime'] as const) {
+      const row = view === 'anytime' ? { ...mine, due: null } : mine
+      const away = { ...row, assignee_id: 'other' }
+      const before = tasksForView({ view }, [row], [shared], TODAY, 'me')
+      expect(before.map((t) => t.title), view).toEqual(['Mine'])
+      const gone = patchViewTasks(before, [{ id: row.id, before: row, after: away }], { view }, [shared], TODAY, ctx, 'me')
+      expect(gone, view).toEqual([])
+      expect(patchViewTasks(gone!, [{ id: row.id, before: away, after: row }], { view }, [shared], TODAY, ctx, 'me')?.map((t) => t.title), view).toEqual(['Mine'])
+    }
   })
 })
 
@@ -739,7 +771,7 @@ describe('built-in view options (builtin-view-options)', () => {
       const options = {
         taskMap: new Map(all.map((item) => [item.id, item])),
         display: nested,
-        todayContextFilter: { assignees: { shared: new Set([home.id]), me: 'me' }, matches: (item: Task) => item.id !== filtered.id },
+        todayContextFilter: { me: 'me', matches: (item: Task) => item.id !== filtered.id },
       }
       const regular = [parent, started, deadline]
       const rowsOf = (tasks: Task[], over: Partial<GroupInput> = {}) => listGroups(today(tasks, { ...options, ...over })).flatMap((group) => group.rows)

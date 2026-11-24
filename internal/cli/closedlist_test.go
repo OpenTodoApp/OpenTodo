@@ -1,11 +1,14 @@
 package cli
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // TestTodayClosedList (OpenSpec change today-closed-list, task 4.2): with a
@@ -159,5 +162,44 @@ func TestAddDone(t *testing.T) {
 		if title := e.(map[string]any)["title"]; title == "Stretch" || title == "Call mum" {
 			t.Fatalf("a refused win was created: %v", e)
 		}
+	}
+}
+
+// TestPersonalViewsAssignee (OpenSpec change personal-views-assignee): `ot today`
+// and `ot upcoming` leave out a task assigned to someone else, keep mine and
+// unassigned ones, and the Today limit fills its slots without it, as the web
+// app and today_summary do.
+func TestPersonalViewsAssignee(t *testing.T) {
+	h := newHarness(t)
+	h.login()
+	me := h.ownerID()
+	if _, err := h.db.Exec(`INSERT INTO users(id,email,name,password_hash,created_at) VALUES('bob','bob@example.com','Bob','h',1)`); err != nil {
+		t.Fatal(err)
+	}
+	h.put("project", "house", map[string]any{"name": "House"})
+	if _, err := h.sync.AddMember(context.Background(), me, "house", "bob", opsync.RoleEditor); err != nil {
+		t.Fatal(err)
+	}
+	day, next := map[string]any{"date": "2026-10-10"}, map[string]any{"date": "2026-10-11"}
+	in := func(f map[string]any) map[string]any { f["project_id"] = "house"; return f }
+	h.put("task", "aaaa0001", in(map[string]any{"title": "Theirs", "due": day, "created_at": 1000, "assignee_id": "bob"}))
+	h.put("task", "bbbb0001", in(map[string]any{"title": "Mine", "due": day, "created_at": 2000, "assignee_id": me}))
+	h.put("task", "cccc0001", in(map[string]any{"title": "Free", "due": day, "created_at": 3000}))
+	h.put("task", "dddd0001", in(map[string]any{"title": "Their tomorrow", "due": next, "assignee_id": "bob"}))
+	h.put("task", "eeee0001", in(map[string]any{"title": "My tomorrow", "due": next}))
+	if got := h.task("aaaa0001")["assignee_id"]; got != "bob" {
+		t.Fatalf("seed: assignee %v", got)
+	}
+
+	if out := h.mustRun("today"); strings.Contains(out, "Theirs") || !strings.Contains(out, "Mine") || !strings.Contains(out, "Free") {
+		t.Fatalf("ot today:\n%s", out)
+	}
+	if out := h.mustRun("upcoming"); strings.Contains(out, "Their tomorrow") || !strings.Contains(out, "My tomorrow") {
+		t.Fatalf("ot upcoming:\n%s", out)
+	}
+	// A limit of 2: Mine and Free take the slots and nothing waits, though Theirs is older.
+	h.putPersonal("user_prefs", map[string]any{"today_limit": 2})
+	if out := h.mustRun("today"); strings.Contains(out, "Waiting for a slot") || strings.Contains(out, "Theirs") {
+		t.Fatalf("ot today with a limit of 2:\n%s", out)
 	}
 }

@@ -11,10 +11,8 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSPr
 import { lazy } from '../lib/lazy'
 import { ProjectCalendarLayout, useListExtras } from './task-list/listExtras'
 import { t } from '../lib/i18n'
-import { sharedWithSomeoneElse } from '../lib/dayLists'
-import { useMemberships, useMembershipMap, useUserPrefsRow } from '../lib/localData'
-import { briefingHidden, preferredPlacement, setBriefingShown, setTodayEventsShown, setTodayHidesOthers, setUpcomingEventsShown, setUpcomingStartsWithToday, todayHidesOthers, upcomingStartsWithToday, USER_PREFS_ID } from '../lib/userPrefs'
-import { useMe } from '../lib/sharing'
+import { useMembershipMap, useUserPrefsRow } from '../lib/localData'
+import { briefingHidden, preferredPlacement, setBriefingShown, setTodayEventsShown, setUpcomingEventsShown, setUpcomingStartsWithToday, upcomingStartsWithToday, USER_PREFS_ID } from '../lib/userPrefs'
 import { useMarkProjectSeen } from '../lib/feed'
 import { completedOpenKey, flatRow, isTodayProjectGroup, sectionOfRows, type ListGroup, type ListRow } from '../lib/listGroups'
 import { moveTaskBy, taskStepEdges, type Step } from '../lib/move'
@@ -570,15 +568,6 @@ function ListHeader({ route, title, label, meta, subtitle, briefing, actions, ph
     <MenuItem icon="calendar-range" label={agenda ? t('Hide calendar events') : t('Show calendar events')} data-today-events-toggle
       onSelect={() => act(setTodayEventsShown(!agenda))} />
   )
-  // The same overflow the phone bar uses (today-assigned-filter): offered only while someone else shares a project.
-  const hidesOthers = todayHidesOthers(prefs)
-  const memberships = useMemberships()
-  const viewer = useMe()
-  const sharedOthers = sharedWithSomeoneElse(memberships, viewer)
-  const assigneesItem = route.view === 'today' && sharedOthers && (
-    <MenuItem icon="users" label={hidesOthers ? t('Show tasks assigned to others') : t('Hide tasks assigned to others')} data-today-assignees-toggle
-      onSelect={() => act(setTodayHidesOthers(!hidesOthers))} />
-  )
   const upcomingItem = upcomingEvents !== undefined && (
     <MenuItem icon="calendar-range" label={upcomingEvents ? t('Hide calendar events') : t('Show calendar events')} data-upcoming-events-toggle
       onSelect={() => act(setUpcomingEventsShown(!upcomingEvents))} />
@@ -591,7 +580,7 @@ function ListHeader({ route, title, label, meta, subtitle, briefing, actions, ph
     </MenuGroup>
   )
   const phoneItems = route.view !== 'inbox' && route.view !== 'label' && items.length > 0 ? <PhoneMenuItems items={items} /> : null
-  const own = phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{startItem}{route.view === 'upcoming' && <ProjectionsMenuItem surface="upcoming" />}{upcomingItem}{agendaItem}{assigneesItem}{partsItem}{closedItems}{route.view === 'today' && <><ReplanTodayItem /><AwayMenuItems /></>}{briefItem}</> : briefItem || null
+  const own = phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{startItem}{route.view === 'upcoming' && <ProjectionsMenuItem surface="upcoming" />}{upcomingItem}{agendaItem}{partsItem}{closedItems}{route.view === 'today' && <><ReplanTodayItem /><AwayMenuItems /></>}{briefItem}</> : briefItem || null
   // Print… ends every list's menu (print-lists); the Inbox and a label have their own menu.
   return (
     <>

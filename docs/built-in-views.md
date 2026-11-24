@@ -35,13 +35,15 @@ Each view works offline, from your device's tasks. Today and Upcoming have [a pa
 | **Review** | Your [weekly review](review-and-statistics.md) | <kbd>g</kbd> <kbd>r</kbd> |
 | **Statistics** | What you [completed and let slip](statistics.md#statistics) | <kbd>g</kbd> <kbd>Shift+S</kbd> |
 
+Today, Upcoming, Anytime and Someday leave out tasks [assigned to someone else](roles-and-assignments.md#assign-tasks).
+
 The sidebar keeps Inbox, Today, Upcoming and Calendar at the top; the rest wait in **More**, a menu on a computer. Inbox and Today show open-task counts; a project shows its count on hover or focus. Deferred and parked tasks ([When a task starts](tasks-and-projects.md#when-a-task-starts)) are not counted.
 
 Each project can also be shown three ways: as a **List**, as a **Board** with a column per section, or as a **Timeline** of its dates with arrows between tasks that wait for each other. Press <kbd>v</kbd> to cycle through them; see [Sections and boards](sections-and-boards.md).
 
 ## Anytime, for when you have time
 
-Anytime lists every open task that has no due date, no deadline and no start date, grouped by project: the things you could do whenever there is a moment; [quick add](quick-add.md) here adds an undated one. A task leaves it as soon as it gets a date, from any device.
+Anytime lists every open task that has no due date, no deadline and no start date, grouped by project; [quick add](quick-add.md) here adds an undated one. A task leaves it as soon as it gets a date, from any device.
 
 ## Park ideas in Someday
 
