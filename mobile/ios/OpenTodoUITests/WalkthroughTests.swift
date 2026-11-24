@@ -74,7 +74,7 @@ final class WalkthroughTests: XCTestCase {
 
         // Quick add with the keyboard.
         tap("Today")
-        if tap("Add a task") {
+        if tap("Add task") {
             step("quick-add", audit: false)
             app.typeText("Call Sam about the tiles tomorrow at 4pm #Home p2")
             step("quick-add-typed", audit: false)

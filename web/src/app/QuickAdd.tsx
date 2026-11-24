@@ -23,7 +23,8 @@ import { t, preferredLanguages } from '../lib/i18n'
 import { chipRange, type FieldKind, fieldRows, type FieldRow, type QuickAddProject, startToken } from './quickadd/fields'
 import { FieldRows, QuickAddFooter } from './quickadd/FieldRows'
 import { SheetBar } from './quickadd/SheetBar'
-import { LineDateButton, LineDatePicker, useLineDate } from './quickadd/LineDatePicker'
+import { LineDatePicker, useLineDate } from './quickadd/LineDatePicker'
+import { LineTools } from './quickadd/LineTools'
 import { usePasteOffer } from './quickadd/PasteOffer'
 import { NotesLine, useNotesField } from './quickadd/NotesLine'
 import { VoiceButton, VoiceNotice } from './quickadd/VoiceParts'
@@ -273,7 +274,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
     }
     const next = startToken(valueRef.current, r.kind)
     change(next.value)
-    if (r.kind === 'project' || r.kind === 'label' || r.kind === 'energy') suggest.openAt(next.caret)
+    if (r.kind === 'project' || r.kind === 'label' || r.kind === 'energy' || r.kind === 'priority') suggest.openAt(next.caret)
     else caretTo(next.caret)
   }
 
@@ -408,7 +409,8 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
           aria-describedby={chips.length ? 'quick-add-preview' : undefined}
         />
         </span>
-        {layout === 'line' && webCalendar && <span className={lead}><LineDateButton date={lineDate} /></span>}
+        {/* The line's field buttons (add-task-button D2): the calendar while recognition is on, then Priority, Project and Label. */}
+        {layout === 'line' && settings.enabled && <span className={lead}><LineTools chips={chips} date={lineDate} onEdit={edit} /></span>}
         {voice.enabled && <span className={lead}><VoiceButton voice={voice} shortcut={voiceShortcut} /></span>}
         {!hideHint && hints && <span className={`${lead} max-sm:hidden`} data-kbd-hint><span className="ui-kbd" data-quick-add-hint>{keysOf('list.quick-add')}</span></span>}
         {layout !== 'sheet' && suggest.list}{suggest.live}{paste.offer}

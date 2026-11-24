@@ -30,14 +30,14 @@ function Column({ children, width = 'w-64' }: { children: ReactNode; width?: str
 /** The Inbox open on the tinted column: the brand header, the primary destinations with their counts, projects and labels. */
 export const Default: StoryObj = {
   render: () => (
-    <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>
+    <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>
   ),
 }
 
 /** A nested project selected: its row is current and its parent is expanded. */
 export const ProjectSelected: StoryObj = {
   render: () => (
-    <Column><Sidebar route={{ view: 'project', id: seeded.website }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>
+    <Column><Sidebar route={{ view: 'project', id: seeded.website }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>
   ),
 }
 
@@ -53,7 +53,7 @@ function FoldedScrolled() {
   }, [])
   return (
     <div ref={column} className={`flex h-[32rem] w-64 flex-col border-r border-default ${TINTED}`}>
-      <Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} />
+      <Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} onToggleCollapse={noop} />
     </div>
   )
 }
@@ -64,7 +64,7 @@ export const FoldedAndScrolled: StoryObj = { render: () => <FoldedScrolled /> }
 /** The icon rail from 1024 px (`[`): icons only, names as tooltips, groups as dividers. */
 export const Collapsed: StoryObj = {
   render: () => (
-    <Column width="w-14"><Sidebar route={{ view: 'today' }} user={storyUser} onSearch={noop} onShortcuts={noop} collapsed onToggleCollapse={noop} /></Column>
+    <Column width="w-14"><Sidebar route={{ view: 'today' }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} collapsed onToggleCollapse={noop} /></Column>
   ),
 }
 
@@ -75,7 +75,7 @@ export const PhoneDrawer: StoryObj = {
       <div className="p-4 text-body text-muted">Inbox</div>
       <div className="absolute inset-0 bg-scrim" />
       <aside className="absolute inset-y-0 left-0 flex w-64 max-w-[85vw] border-r border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)]" aria-label="Navigation">
-        <div className="min-w-0 flex-1"><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} /></div>
+        <div className="min-w-0 flex-1"><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} /></div>
       </aside>
     </div>
   ),
@@ -96,7 +96,7 @@ async function seedFavourites() {
 export const Favourites: StoryObj = {
   ...withSeed(seedFavourites),
   render: () => (
-    <Column><Sidebar route={{ view: 'view', id: seeded.deepWorkView }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>
+    <Column><Sidebar route={{ view: 'view', id: seeded.deepWorkView }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>
   ),
 }
 
@@ -114,7 +114,7 @@ async function seedMarkers() {
 export const Markers: StoryObj = {
   ...withSeed(seedMarkers),
   render: () => (
-    <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>
+    <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>
   ),
 }
 
@@ -136,7 +136,7 @@ function FocusedProject() {
   }, [])
   return (
     // data-story-pending: the visual check waits until the row is focused.
-    <div ref={column} data-story-pending={pending || undefined}><Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column></div>
+    <div ref={column} data-story-pending={pending || undefined}><Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column></div>
   )
 }
 export const CountOnFocus: StoryObj = { ...withSeed(seedToday), render: () => <FocusedProject /> }
@@ -159,7 +159,7 @@ function AccountMenuOpen() {
   }, [])
   return (
     // data-story-pending: the visual check waits until the menu is open.
-    <div ref={column} data-story-pending={pending || undefined}><Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} onSignOut={noop} /></Column></div>
+    <div ref={column} data-story-pending={pending || undefined}><Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} onToggleCollapse={noop} onSignOut={noop} /></Column></div>
   )
 }
 export const AccountMenu: StoryObj = { render: () => <AccountMenuOpen /> }
@@ -189,13 +189,13 @@ const focus = (el: HTMLElement) => el.focus()
 /** Group controls on focus (sidebar-v2 D5): hidden by opacity at rest, shown while the header has the pointer or focus; here the All action of Projects is focused. */
 export const HoverControls: StoryObj = {
   ...withSeed(seedToday),
-  render: () => <Acting find={projectsAll} act={focus}><Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column></Acting>,
+  render: () => <Acting find={projectsAll} act={focus}><Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column></Acting>,
 }
 
 /** A running entry (sidebar-v2 D6): the pill takes the name's place in the footer's one row, with Stop inside it. */
 export const RunningEntry: StoryObj = {
   ...withSeed(seedTracking),
-  render: () => <Column><Sidebar route={{ view: 'today' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>,
+  render: () => <Column><Sidebar route={{ view: 'today' }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>,
 }
 
 const moreHeading = (root: HTMLElement) => root.querySelector<HTMLElement>('[data-sidebar-more-menu] button[aria-haspopup="menu"]')
@@ -203,7 +203,7 @@ const open = (el: HTMLElement) => el.click()
 /** More as a group heading (sidebar-v2 D7), open while Someday is the current place: the review-due dot is on the Review entry. */
 export const MoreGroup: StoryObj = {
   ...withSeed(seedMarkers),
-  render: () => <Acting find={moreHeading} act={open}><Column><Sidebar route={{ view: 'someday' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column></Acting>,
+  render: () => <Acting find={moreHeading} act={open}><Column><Sidebar route={{ view: 'someday' }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column></Acting>,
 }
 
 /** The Notes space (notes-space D1): the switch on Notes, All notes, two pinned notes in their order and the notes changed last; the lazy groups are awaited. */
@@ -218,7 +218,7 @@ async function seedNotesSpace() {
 const notesRecent = (root: HTMLElement) => root.querySelector<HTMLElement>('[data-testid="sidebar-notes-recent"]')
 export const NotesSpace: StoryObj = {
   ...withSeed(seedNotesSpace),
-  render: () => <Acting find={notesRecent} act={noop}><Column><Sidebar route={{ view: 'notes' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column></Acting>,
+  render: () => <Acting find={notesRecent} act={noop}><Column><Sidebar route={{ view: 'notes' }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column></Acting>,
 }
 
 // ---- workspaces (OpenSpec change workspaces, task 5.8) ----
@@ -241,7 +241,7 @@ async function seedWorkspaces(): Promise<void> {
 /** The header as the workspace control (workspaces D6, sidebar-brand-and-row-grid D1): the current workspace's picture and name, no new row. */
 export const WorkspaceControl: StoryObj = {
   ...withSeed(seedWorkspaces),
-  render: () => <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>,
+  render: () => <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>,
 }
 
 // Only once the seeded workspaces are loaded (the trigger names the current one, Family):
@@ -256,7 +256,7 @@ export const SwitcherOpen: StoryObj = {
   ...withSeed(seedWorkspaces),
   render: () => (
     <Acting find={workspaceTrigger} act={press}>
-      <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>
+      <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>
     </Acting>
   ),
 }
@@ -267,7 +267,7 @@ export const OneWorkspace: StoryObj = {
     await seedInbox()
     await storeWorkspaces([{ id: 'ws-personal', name: 'Personal', icon: '', color: '', default: true, role: 'owner', ownerId: storyUser.id, members: [], groups: [] }])
   }),
-  render: () => <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>,
+  render: () => <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>,
 }
 
 /** The instance's name for one story, put back when the story unmounts (branding is device state shared by every story). */
@@ -285,7 +285,7 @@ export const OneWorkspaceBranded: StoryObj = {
   }),
   render: () => (
     <Branded name="Acme Family Tasks Server">
-      <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>
+      <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>
     </Branded>
   ),
 }
