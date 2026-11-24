@@ -53,6 +53,6 @@ The Earlier group of Today SHALL carry two actions in its header, visible at all
 - **WHEN** the user types `Call the bank friday` in the Inbox quick add and presses Enter
 - **THEN** the task is created due Friday without a project, it is not listed in the Inbox, and an announcement reads "Added to Friday" with a control that opens Upcoming at Friday
 
-#### Scenario: Someone else's task stays until hidden
+#### Scenario: Someone else's task is not in Today
 - **WHEN** a shared project has a task due today assigned to another member
 - **THEN** Today does not list it, and the project's own list does

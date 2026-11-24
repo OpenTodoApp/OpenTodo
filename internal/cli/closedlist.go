@@ -29,6 +29,9 @@ type todaySplit struct {
 // todayClosedList fills Today's slots from its listed tasks; nil when the limit is off.
 func (a *App) todayClosedList(ctx context.Context, c *client, all []task, projects []project, tasks []task, today, now string) (*todaySplit, error) {
 	var me struct {
+		User struct {
+			ID string `json:"id"`
+		} `json:"user"`
 		ClosedList struct {
 			Limit     int    `json:"limit"`
 			FocusDate string `json:"focus_date"`
@@ -54,6 +57,10 @@ func (a *App) todayClosedList(ctx context.Context, c *client, all []task, projec
 	in := closedlist.Input{Limit: cl.Limit, Today: today,
 		Review: closedlist.Review{FocusDate: cl.FocusDate, Focus: cl.Focus, SlotsDate: cl.SlotsDate, Slots: cl.Slots}}
 	for _, t := range tasks {
+		// A task assigned to someone else takes no slot, as on the web and in today_summary.
+		if t.assignedToSomeoneElse(me.User.ID) {
+			continue
+		}
 		var row struct {
 			Habit    bool    `json:"habit"`
 			Deadline *string `json:"deadline"`

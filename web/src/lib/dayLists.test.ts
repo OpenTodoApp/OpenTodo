@@ -1,7 +1,7 @@
 // The Today, Upcoming and project lists shared by the list screen and the display
 // (OpenSpec change display-mode, task 1.1): pure functions over task rows.
 import { describe, expect, it } from 'vitest'
-import { completedOn, groupToday, groupUpcoming, nextDays, projectOpenList, todayList, upcomingList, upcomingWithToday, withoutArchived } from './dayLists'
+import { completedOn, earlierIds, groupToday, groupUpcoming, nextDays, projectOpenList, todayList, upcomingList, upcomingWithToday, withoutArchived } from './dayLists'
 import type { Task } from './types'
 
 const TODAY = '2026-10-14'
@@ -98,6 +98,15 @@ describe('day lists', () => {
     expect(nextDays(tasks, TODAY, 1, 'me')[0].tasks.map((t) => t.title)).toEqual(['My tomorrow'])
     // Without a viewer (signed out) nothing is left out.
     expect(todayList(tasks, TODAY).map((t) => t.title)).toEqual(['Theirs', 'Mine', 'Open'])
+  })
+
+  it("Earlier leaves out an overdue task assigned to someone else", () => {
+    const theirs = task({ id: 'theirs', due: { date: '2026-10-12' }, project_id: 'p', assignee_id: 'other' })
+    const mine = task({ id: 'mine', due: { date: '2026-10-12' }, project_id: 'p', assignee_id: 'me' })
+    const open = task({ id: 'open', due: { date: '2026-10-13' }, project_id: 'p' })
+    const projects = [{ id: 'p', archived: false }]
+    expect(earlierIds([theirs, mine, open], projects, TODAY, 'me')).toEqual(['mine', 'open'])
+    expect(earlierIds([theirs, mine, open], projects, TODAY).sort()).toEqual(['mine', 'open', 'theirs'])
   })
 
   it('a flag without a valid range lists as a plain task', () => {

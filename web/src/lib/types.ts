@@ -1033,7 +1033,7 @@ export interface UserPrefs extends UserPrefsFields {
   row_layout?: string
   /** Today's agenda of calendar events (today-agenda D1): 'shown' shows it; '' and anything else read as hidden. */
   today_events?: string
-  /** Today hides tasks assigned to others (today-assigned-filter): 'mine' hides them; '' and anything else read as off. */
+  /** Was Today's hide of tasks assigned to others (today-assigned-filter); since personal-views-assignee the personal views always hide them, and the field is kept but never read. */
   today_assignees?: string
   /** Upcoming's calendar events (today-agenda): 'shown' lists them on each day; '' and anything else read as hidden. */
   upcoming_events?: string

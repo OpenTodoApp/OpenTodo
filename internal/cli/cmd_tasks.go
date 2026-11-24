@@ -221,7 +221,15 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 		}
 		tasks = completedBetween(all, projects, selected, after, before)
 	} else {
-		tasks = filterTasks(all, projects, view, selected, today)
+		me := ""
+		if view == "today" || view == "upcoming" {
+			u, err := c.me(ctx)
+			if err != nil {
+				return err
+			}
+			me = u.ID
+		}
+		tasks = filterTasks(all, projects, view, selected, today, me)
 	}
 	if planning != "" {
 		var available func(task) bool

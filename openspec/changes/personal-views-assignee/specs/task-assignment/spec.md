@@ -23,6 +23,10 @@ The personal views SHALL show the work the viewer can act on: Inbox, Today, Upco
 - **WHEN** the viewer opens Today's menu in a shared workspace
 - **THEN** it has no item to hide or show tasks assigned to others
 
+#### Scenario: My subtask of someone else's task
+- **WHEN** a task due today is assigned to Sam and has two subtasks due today, one assigned to the viewer and one with no assignee
+- **THEN** Today leaves out Sam's task and lists both subtasks as top-level rows
+
 #### Scenario: Assistant summary
 - **WHEN** an assistant calls `today_summary` while a task assigned to Sam is overdue
 - **THEN** that task is neither in `overdue` nor in `counts.overdue`, and its project's open count still includes it
