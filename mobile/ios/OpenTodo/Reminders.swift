@@ -191,7 +191,7 @@ final class Reminders {
     /// Deletes the schedule: sign-out, a locked encrypted account, a changed server.
     func clear() async {
         await removeScheduled()
-        _ = await AlarmScheduler.replace([], interactive: false)
+        _ = await AlarmScheduler.replace([], interactive: false, force: true)
         UNUserNotificationCenter.current().removeAllDeliveredNotifications()
     }
 
@@ -266,19 +266,57 @@ enum Alarms {
     /// The difference between the alarms the system holds (id → the signature they were armed
     /// with, nil when unknown) and the ones wanted (design D5): an unchanged alarm is left
     /// alone, a moved or renamed one is cancelled and armed again, any other one is cancelled.
-    static func changes(current: [UUID: String?], wanted: [Reminders.Handed]) -> (cancel: [UUID], schedule: [Reminders.Handed]) {
-        var keep = Set<UUID>()
-        var schedule: [Reminders.Handed] = []
+    ///
+    /// An alarm that is ringing is never cancelled, and one whose armed time has passed is left
+    /// for the system to remove when it is stopped (design D5): the web app hands over only
+    /// reminders still ahead, so the hand-over after the firing time no longer lists it.
+    static func changes(current: [UUID: Armed], wanted: [Reminders.Handed], now: Date = Date()) -> Plan {
+        let nowMs = now.timeIntervalSince1970 * 1000
+        let byID = Dictionary(wanted.map { (alarmID($0.id), $0) }, uniquingKeysWith: { a, _ in a })
+        var plan = Plan()
+        for (id, armed) in current.sorted(by: { $0.key.uuidString < $1.key.uuidString }) {
+            let r = byID[id]
+            let same = r.map { armed.signature == signature($0) } ?? false
+            if armed.alerting {
+                // Ringing: left alone. Wanted again unchanged, it counts as armed; moved (a snooze
+                // while it still rings), the reminder is a notification this time.
+                if same, let r { plan.kept.append(r.id) }
+                continue
+            }
+            if let r {
+                if same { plan.kept.append(r.id) } else { plan.cancel.append(id) }
+                continue
+            }
+            if let at = armedAt(armed.signature), at <= nowMs { continue }
+            plan.cancel.append(id)
+        }
         for r in wanted {
             let id = alarmID(r.id)
-            if case let .some(.some(armed)) = current[id], armed == signature(r) {
-                keep.insert(id)
-            } else {
-                schedule.append(r)
-            }
+            guard let armed = current[id] else { plan.schedule.append(r); continue }
+            if !armed.alerting && armed.signature != signature(r) { plan.schedule.append(r) }
         }
-        let cancel = current.keys.filter { !keep.contains($0) }.sorted { $0.uuidString < $1.uuidString }
-        return (cancel, schedule)
+        return plan
+    }
+
+    /// The time an alarm was armed for, read back from its signature (ms).
+    static func armedAt(_ signature: String?) -> Double? {
+        guard let head = signature?.split(separator: "|").first else { return nil }
+        return Double(head)
+    }
+
+    /// What the system holds for an alarm: the signature it was armed with (nil when unknown)
+    /// and whether it is ringing now.
+    struct Armed: Equatable {
+        var signature: String?
+        var alerting = false
+    }
+
+    /// A hand-over's changes: alarms to cancel, reminders to arm, and reminders whose alarm is
+    /// already armed as wanted.
+    struct Plan: Equatable {
+        var cancel: [UUID] = []
+        var schedule: [Reminders.Handed] = []
+        var kept: [String] = []
     }
 }
 
@@ -287,11 +325,12 @@ enum Alarms {
 @MainActor
 enum AlarmScheduler {
     /// Arms `candidates` where it can and cancels every other alarm of the app; returns the
-    /// reminder ids armed as alarms, which then get no notification.
-    static func replace(_ candidates: [Reminders.Handed], interactive: Bool) async -> Set<String> {
+    /// reminder ids armed as alarms, which then get no notification. A ringing alarm, or one past
+    /// its time, is left to the system unless `force` (Change server) cancels everything.
+    static func replace(_ candidates: [Reminders.Handed], interactive: Bool, force: Bool = false) async -> Set<String> {
         #if canImport(AlarmKit)
         if #available(iOS 26.0, *) {
-            return await AlarmKitScheduler.replace(candidates, interactive: interactive)
+            return await AlarmKitScheduler.replace(candidates, interactive: interactive, force: force)
         }
         #endif
         return []
@@ -322,7 +361,7 @@ enum AlarmKitScheduler {
         }
     }
 
-    static func replace(_ candidates: [Reminders.Handed], interactive: Bool) async -> Set<String> {
+    static func replace(_ candidates: [Reminders.Handed], interactive: Bool, force: Bool = false) async -> Set<String> {
         let manager = AlarmManager.shared
         var wanted = candidates
         if !candidates.isEmpty {
@@ -335,20 +374,24 @@ enum AlarmKitScheduler {
             }
         }
         let stored = UserDefaults.standard.dictionary(forKey: signaturesKey) as? [String: String] ?? [:]
-        let ids = ((try? manager.alarms) ?? []).map(\.id)
-        let current = Dictionary(ids.map { ($0, stored[$0.uuidString]) }, uniquingKeysWith: { a, _ in a })
-        let plan = Alarms.changes(current: current, wanted: wanted)
+        let alarms = (try? manager.alarms) ?? []
+        let ids = alarms.map(\.id)
+        let current = Dictionary(alarms.map { ($0.id, Alarms.Armed(signature: stored[$0.id.uuidString], alerting: $0.state == .alerting)) },
+                                 uniquingKeysWith: { a, _ in a })
+        let plan = Alarms.changes(current: force ? current.mapValues { Alarms.Armed(signature: $0.signature) } : current,
+                                  wanted: wanted, now: force ? .distantPast : Date())
         var signatures = stored.filter { key, _ in ids.contains { $0.uuidString == key } }
         for id in plan.cancel {
             try? manager.cancel(id: id)
             signatures[id.uuidString] = nil
         }
-        var armed = Set(wanted.map(\.id))
+        var armed = Set(plan.kept)
         for reminder in plan.schedule {
             let id = Alarms.alarmID(reminder.id)
             do {
                 _ = try await manager.schedule(id: id, configuration: configuration(reminder))
                 signatures[id.uuidString] = Alarms.signature(reminder)
+                armed.insert(reminder.id)
             } catch {
                 armed.remove(reminder.id)
             }

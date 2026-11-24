@@ -372,18 +372,58 @@ final class AlarmTests: XCTestCase {
         let moved = handed("moved", at: 20_000)
         let renamed = handed("renamed", at: 30_000, title: "New")
         let new = handed("new", at: 40_000)
-        let current: [UUID: String?] = [
-            Alarms.alarmID("same"): Alarms.signature(same),
-            Alarms.alarmID("moved"): Alarms.signature(handed("moved", at: 15_000)),
-            Alarms.alarmID("renamed"): Alarms.signature(handed("renamed", at: 30_000, title: "Old")),
-            Alarms.alarmID("gone"): Alarms.signature(handed("gone", at: 50_000)),
-            Alarms.alarmID("unknown"): String?.none,
+        let now = Date(timeIntervalSince1970: 1)  // 1,000 ms: every alarm here is still ahead
+        let current: [UUID: Alarms.Armed] = [
+            Alarms.alarmID("same"): .init(signature: Alarms.signature(same)),
+            Alarms.alarmID("moved"): .init(signature: Alarms.signature(handed("moved", at: 15_000))),
+            Alarms.alarmID("renamed"): .init(signature: Alarms.signature(handed("renamed", at: 30_000, title: "Old"))),
+            Alarms.alarmID("gone"): .init(signature: Alarms.signature(handed("gone", at: 50_000))),
+            Alarms.alarmID("unknown"): .init(signature: nil),
         ]
-        let plan = Alarms.changes(current: current, wanted: [same, moved, renamed, new])
+        let plan = Alarms.changes(current: current, wanted: [same, moved, renamed, new], now: now)
         XCTAssertEqual(plan.schedule.map(\.id), ["moved", "renamed", "new"])
         XCTAssertEqual(Set(plan.cancel), Set(["moved", "renamed", "gone", "unknown"].map(Alarms.alarmID)))
-        // Nothing wanted: every alarm goes (sign-out, notifications off).
-        XCTAssertEqual(Set(Alarms.changes(current: current, wanted: []).cancel), Set(current.keys))
+        XCTAssertEqual(plan.kept, ["same"])
+        // Nothing wanted and nothing ringing or past: every alarm goes.
+        XCTAssertEqual(Set(Alarms.changes(current: current, wanted: [], now: now).cancel), Set(current.keys))
+    }
+
+    /// Review of #2020: the hand-over after the firing time no longer lists the reminder (the
+    /// web app hands over only reminders ahead), so a ringing alarm must survive it, the empty
+    /// hand-over and the denied one included; so must one past its time that the system has not
+    /// removed yet.
+    func testARingingAlarmIsNeverCancelledByAHandOver() {
+        let now = Date(timeIntervalSince1970: 100)  // 100,000 ms
+        let ringing = handed("ringing", at: 99_000)
+        let rang = handed("rang", at: 90_000)
+        let ahead = handed("ahead", at: 200_000)
+        let current: [UUID: Alarms.Armed] = [
+            Alarms.alarmID("ringing"): .init(signature: Alarms.signature(ringing), alerting: true),
+            Alarms.alarmID("rang"): .init(signature: Alarms.signature(rang)),
+            Alarms.alarmID("ahead"): .init(signature: Alarms.signature(ahead)),
+            Alarms.alarmID("unknown-ringing"): .init(signature: nil, alerting: true),
+        ]
+        // Empty (sign-out, nothing ahead) and denied (notifications or alarms refused) hand over [].
+        let empty = Alarms.changes(current: current, wanted: [], now: now)
+        XCTAssertEqual(empty.cancel, [Alarms.alarmID("ahead")])
+        XCTAssertTrue(empty.schedule.isEmpty)
+        // A later hand-over with the reminder ahead again (snoozed while it still rings): the
+        // ringing alarm stays and the snoozed time is not armed over it.
+        let snoozed = handed("ringing", at: 700_000)
+        let again = Alarms.changes(current: current, wanted: [snoozed, ahead], now: now)
+        XCTAssertFalse(again.cancel.contains(Alarms.alarmID("ringing")))
+        XCTAssertFalse(again.schedule.contains { $0.id == "ringing" })
+        XCTAssertEqual(again.kept, ["ahead"])
+        // Once it stopped ringing, a snoozed reminder is armed again over the stale alarm.
+        let stopped = current.merging([Alarms.alarmID("rang"): .init(signature: Alarms.signature(rang))]) { a, _ in a }
+        let rearm = Alarms.changes(current: stopped, wanted: [handed("rang", at: 700_000)], now: now)
+        XCTAssertTrue(rearm.cancel.contains(Alarms.alarmID("rang")))
+        XCTAssertEqual(rearm.schedule.map(\.id), ["rang"])
+    }
+
+    func testArmedAtReadsTheSignature() {
+        XCTAssertEqual(Alarms.armedAt(Alarms.signature(handed("a", at: 1_792_674_000_000))), 1_792_674_000_000)
+        XCTAssertNil(Alarms.armedAt(nil))
     }
 
     /// The signature keeps no title, only a digest.

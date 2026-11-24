@@ -16,7 +16,7 @@ Not **BREAKING**. One additive op field, no route, no environment variable.
 ## Out of scope
 
 - Ringing urgent reminders on Android (full-screen intents need their own permission review on Google Play) and in the browser. They stay ordinary notifications there.
-- Setting `urgent` from quick add, the CLI, MCP tools and CalDAV. The REST reminder routes accept the field because they follow the op schema; the agent tools and the CLI can gain it later.
+- Setting `urgent` from quick add, the CLI and CalDAV. The REST reminder routes accept the field because they follow the op schema, and the agent and MCP reminder tools (`add_reminders`, `update_reminders`, `get_task`) read and set it.
 - A per-account default of urgent reminders, a custom alarm sound, and Live Activity countdowns before the alarm.
 - Bumping the CI toolchain: `make ios` keeps building with Xcode 16.4, where the AlarmKit code is compiled out; the archive (Xcode 26) compiles it. #1733 tracks the SDK.
 

@@ -24,7 +24,7 @@ Same rule as the notification permission (`shell-reminders-on` D2), as a pure fu
 
 ## D5. Identity, replace and cancel
 
-AlarmKit identifies alarms by UUID. The shell derives one per reminder id (the first 16 bytes of SHA-256 of `opentodo.reminder.<id>`, marked as a version 5 UUID), so the same reminder always maps to the same alarm. On each hand-over the shell lists its alarms and computes the difference (`Alarms.changes`): an alarm whose reminder is gone, no longer urgent or moved is cancelled; a new or moved one is scheduled; an unchanged one is left alone, so a hand-over every minute does not touch the system's alarms. Sign-out, a locked encrypted account and Change server cancel every alarm (`Reminders.clear`).
+AlarmKit identifies alarms by UUID. The shell derives one per reminder id (the first 16 bytes of SHA-256 of `opentodo.reminder.<id>`, marked as a version 5 UUID), so the same reminder always maps to the same alarm. On each hand-over the shell lists its alarms and computes the difference (`Alarms.changes`): an alarm whose reminder is gone, no longer urgent or moved is cancelled; a new or moved one is scheduled; an unchanged one is left alone, so a hand-over every minute does not touch the system's alarms. A hand-over never cancels an alarm that is ringing (`Alarm.state == .alerting`), nor one past its armed time that the system still holds: the web app hands over only reminders still ahead, so the hand-over right after the firing time, the empty one (sign-out, lock) and the refused one no longer list it, and cancelling would silence it mid-ring. Change server (`Reminders.clear`) cancels every alarm.
 
 ## D6. Stop and Snooze
 
