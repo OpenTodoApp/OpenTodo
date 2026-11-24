@@ -23,11 +23,11 @@ Calendars of an account connected through [calendar sync](calendar-sync.md) refr
    - **Apple iCloud**: Calendar → the calendar's share button → **Public Calendar**, then copy the `webcal://` link.
    - **Fastmail and Nextcloud**: the calendar's *Share* or *Export* menu offers an iCal or `.ics` address.
 2. In OpenTodo open **Settings → Integrations → Calendar feeds** and choose **Add calendar**.
-3. Paste the address, and optionally give the calendar a name and a colour. `webcal://` addresses work too.
+3. Paste the address (`webcal://` works too), with a name and a colour if you like.
 
 The server fetches the calendar straight away and then on its own schedule: as often as the calendar asks (between every 30 minutes and once a day), and every hour by default. **Refresh now** in a calendar's menu fetches it at once.
 
-Each calendar's row shows when it was last refreshed. When fetches fail, the row shows the error and the time of the last successful refresh. A calendar that keeps failing is retried less and less often, up to every six hours. **Disable** stops fetching it and hides its events. **Delete** removes it and its events from every device.
+Each calendar's row shows its last refresh, or the error and the last success when fetches fail. A failing calendar is retried less often, up to every six hours. **Disable** stops fetching it and hides its events. **Delete** removes it and its events from every device.
 
 ### What you see in Day and Week
 
@@ -35,17 +35,17 @@ Each calendar's row shows when it was last refreshed. When fetches fail, the row
 - All-day and multi-day events appear as chips above each day's unscheduled lane.
 - Events marked as *free* in their calendar are drawn as an outline only, so the slot still reads as free.
 - Busy events count toward a day's total in the [Plan](calendar-views.md#plan-the-next-two-weeks), and in Day, Week and Month with [Count meetings in capacity](time-blocking.md#adjust-the-grid) on: overlaps once; free, all-day and hidden events never.
-- Events can't be moved or completed. Click one, or Tab to it and press Enter, for its time, location and calendar.
+- Events can't be moved or completed; click one, or Tab to it and press Enter, for its details.
 - [Month](calendar-views.md#see-the-month) lists them after a day's tasks; [Year](months-and-year.md#see-the-year) marks their days with a ring.
 
-The **Calendars** button hides or shows them on this device, in every view. Today can list them too: [Calendar events in Today](calendar-events-in-today.md).
+The **Calendars** button opens a menu: **Show calendar events** hides or shows every calendar on this device, and below it you untick a calendar to hide it in the current workspace, on all your devices. New calendars show everywhere; hidden ones still count as busy for the assistant's free time. On a phone these are in the page's menu. Today can list events too: [Calendar events in Today](calendar-events-in-today.md).
 
-Events are cached on each device, so they still show offline, as of the last refresh. The toolbar then says **Calendars as of** and the time. Days your device has not loaded yet show none while offline.
+Events are cached on each device, so they show offline as of the last refresh, with **Calendars as of** and the time in the toolbar; days not loaded yet show none.
 
 ### Limits
 
 - Up to 10 calendars per person.
 - A calendar may be up to 32 MB; events from 30 days back to a year ahead are kept, up to 5,000. Larger: [calendar sync](calendar-sync.md).
-- Repeating events are expanded on the server. A repeat rule OpenTodo doesn't understand shows its first occurrence only, and the calendar's row gets a warning. A calendar whose events repeat so much that expanding them would take more than a few seconds keeps the occurrences found so far, with a warning that some events are left out.
+- Repeating events are expanded on the server. A repeat rule OpenTodo doesn't understand shows its first occurrence only, and the calendar's row gets a warning. A calendar too slow to expand keeps the occurrences found so far, with a warning.
 - **Refresh now**, adding a calendar and changing its address count toward 12 fetches per person per hour.
-- Calendars on a private network (your NAS, a home server) are refused unless the server owner allows private network targets for [webhooks](webhooks.md#private-network-protection). The same switch applies to both.
+- Calendars on a private network (your NAS, a home server) are refused unless the server owner allows private network targets for [webhooks](webhooks.md#private-network-protection).

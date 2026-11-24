@@ -7953,9 +7953,6 @@
   "Hide done today": [
     "web/src/app/task-list/ClosedListActions.tsx"
   ],
-  "Hide other calendars on this device": [
-    "web/src/app/calendar/CalendarsToggle.tsx"
-  ],
   "Hide sidebar": [
     "web/src/ui/patterns/PageHeader.tsx"
   ],
@@ -16486,7 +16483,8 @@
     "web/src/app/TaskListView.tsx"
   ],
   "Show calendar events": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/TaskListView.tsx",
+    "web/src/app/calendar/CalendarsToggle.tsx"
   ],
   "Show completed tasks": [
     "web/src/app/ProjectHeader.tsx",
@@ -16571,9 +16569,6 @@
   ],
   "Show or hide the project activity; Tab reaches the person and kind filters": [
     "web/src/lib/shortcuts.ts"
-  ],
-  "Show other calendars on this device": [
-    "web/src/app/calendar/CalendarsToggle.tsx"
   ],
   "Show repeating occurrences": [
     "web/src/app/calendar/projectionSwitches.tsx"

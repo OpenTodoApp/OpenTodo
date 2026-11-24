@@ -108,7 +108,7 @@ describe('Day and Week', () => {
     await seed([ev('a', DAY, '09:00', '12:00')])
     await setMeta('calendar.showEvents', false)
     r = await render(<CalendarView mode="day" />)
-    await waitFor(() => r.container.querySelector('[data-calendars-toggle]')?.getAttribute('aria-pressed') === 'false', 'calendars hidden')
+    await waitFor(() => r.container.querySelector('[data-calendars-menu]')?.classList.contains('text-muted') === true, 'calendars hidden')
     await waitFor(() => capacity(r.container)?.textContent?.startsWith('6h / 8h') ?? false, 'tasks only, calendars hidden')
     expect(await tooltipOf(capacity(r.container)!)).toBe('Planned estimates against a 8h day')
     await r.unmount()

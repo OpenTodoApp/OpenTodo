@@ -2,13 +2,14 @@
 // from subscribed calendars, read from the device cache Day and Week fill, shown before
 // Today's list when the account turned it on (D1, D5). Read-only: every event opens the
 // calendar's details popover (D6). The per-device "Calendars" toggle of the grid does
-// not apply here; disabled subscriptions never show (D4).
+// not apply here; disabled subscriptions and calendars hidden in the workspace never show
+// (D4, calendars-per-workspace).
 import { useEffect, useMemo, type ReactNode } from 'react'
 import { allDayEvents, eventBlocks, formatTime as toHHMM, type EventBlock } from '../../lib/calendar'
 import { cachedWindow, covers, eventsStatus, refreshEvents, STALE_MS, type DayRange } from '../../lib/calendarFeeds'
 import { formatTime as formatWallTime } from '../../lib/dates'
 import { t } from '../../lib/i18n'
-import { useCachedEventsWindow, useCalendarEvents, useCalendarSubscriptions } from '../../lib/liveData'
+import { useCachedEventsWindow, useVisibleCalendarEvents } from '../../lib/liveData'
 import { useUserPrefsRow } from '../../lib/localData'
 import { useOnline } from '../../lib/online'
 import type { CalendarEvent, CalendarSubscription } from '../../lib/types'
@@ -52,25 +53,20 @@ export interface TodayCalendar {
  * calendar feeds sees no request from a device that never had one.
  */
 export function useTodayCalendar(active: boolean, shown: boolean, today: string, zone?: string): TodayCalendar {
-  const events = useCalendarEvents()
-  const subs = useCalendarSubscriptions()
+  const { subs, subMap, events } = useVisibleCalendarEvents()
   const win = useCachedEventsWindow()
   const ask = active && (shown || subs.length > 0)
   useEffect(() => {
     if (ask) void askForToday({ from: today, to: today })
   }, [ask, today])
-  return useMemo(() => {
-    const subMap = new Map(subs.map((s) => [s.id, s]))
-    const enabled = events.filter((e) => subMap.get(e.subscriptionId)?.enabled !== false)
-    return {
-      available: subs.length > 0,
-      allDay: allDayEvents(enabled, today),
-      timed: eventBlocks(enabled, today, zone),
-      subMap,
-      status: subs.length === 0 ? null : eventsStatus(win, { from: today, to: today }),
-      fetchedAt: win?.fetchedAt,
-    }
-  }, [events, subs, win, today, zone])
+  return useMemo(() => ({
+    available: subs.length > 0,
+    allDay: allDayEvents(events, today),
+    timed: eventBlocks(events, today, zone),
+    subMap,
+    status: subs.length === 0 ? null : eventsStatus(win, { from: today, to: today }),
+    fetchedAt: win?.fetchedAt,
+  }), [events, subs, subMap, win, today, zone])
 }
 
 /**

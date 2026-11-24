@@ -1,19 +1,18 @@
 // Subscribed calendars in a calendar view (calendar-feeds D8): the device cache,
-// refreshed for the range on screen, hidden with the toolbar toggle (per device).
+// refreshed for the range on screen, without the calendars hidden in this workspace
+// (calendars-per-workspace), all hidden with the device's switch.
 // Day, Week, the Plan (planner-view), Month and Year (calendar-events-all-views)
 // read them through this hook.
 import { useEffect, useMemo } from 'react'
 import { ensureEventsFor, eventsStatus } from '../../lib/calendarFeeds'
-import { useCachedEventsWindow, useCalendarEvents, useCalendarSubscriptions, useShowEvents } from '../../lib/liveData'
+import { useCachedEventsWindow, useShowEvents, useVisibleCalendarEvents } from '../../lib/liveData'
 
 export function useCalendarFeeds(from: string, to: string) {
   useEffect(() => { void ensureEventsFor({ from, to }) }, [from, to])
   const eventsShown = useShowEvents()
-  const events = useCalendarEvents()
-  const subs = useCalendarSubscriptions()
+  const { subs, subMap, events } = useVisibleCalendarEvents()
   const win = useCachedEventsWindow()
-  const subMap = useMemo(() => new Map(subs.map((s) => [s.id, s])), [subs])
-  const visibleEvents = useMemo(() => (eventsShown ? events.filter((e) => subMap.get(e.subscriptionId)?.enabled !== false) : []), [eventsShown, events, subMap])
+  const visibleEvents = useMemo(() => (eventsShown ? events : []), [eventsShown, events])
   const status = subs.length === 0 || !eventsShown ? null : eventsStatus(win, { from, to })
   return { eventsShown, subs, subMap, win, visibleEvents, status }
 }
