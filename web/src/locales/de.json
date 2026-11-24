@@ -794,7 +794,7 @@
   "Backups": "Sicherungen",
   "Backups are encrypted with your passphrase. Enter a new one to change it (future backups only).": "Sicherungen werden mit deiner Passphrase verschlüsselt. Gib eine neue ein, um sie zu ändern (nur für künftige Sicherungen).",
   "Backups of the whole server are under <a>Settings → Server</a>.": "Sicherungen des ganzen Servers findest du unter <a>Einstellungen → Server</a>.",
-  "Backups, attachments, outgoing email, branding, maps, automations, speech to text and the audit log": "Sicherungen, Anhänge, ausgehende E-Mail, Branding, Karten, Automatisierungen, Sprache zu Text und das Audit-Protokoll",
+  "Backups, attachments, outgoing email, branding, maps, task lists, automations, speech to text and the audit log": "Sicherungen, Anhänge, ausgehende E-Mail, Branding, Karten, Aufgabenlisten, Automatisierungen, Sprache zu Text und das Audit-Protokoll",
   "Base URL": "Basis-URL",
   "Base colours": "Grundfarben",
   "Base colours: every other colour follows from these.": "Grundfarben: Alle anderen Farben ergeben sich daraus.",
@@ -1519,7 +1519,7 @@
   "Download export (JSON)": "Export herunterladen (JSON)",
   "Download export with files (ZIP)": "Export mit Dateien herunterladen (ZIP)",
   "Download your data": "Lade deine Daten herunter",
-  "Download your data, branding, maps, automations and the audit log": "Deine Daten herunterladen, Branding, Karten, Automatisierungen und das Audit-Protokoll",
+  "Download your data, branding, maps, task lists, automations and the audit log": "Deine Daten herunterladen, Branding, Karten, Aufgabenlisten, Automatisierungen und das Audit-Protokoll",
   "Download {name}": "{name} herunterladen",
   "Do|method": "Tun",
   "Draft": "Entwerfen",
@@ -7871,5 +7871,9 @@
   "{name} reopened a task": "{name} hat eine Aufgabe wieder geöffnet",
   "Completed or reopened": "Erledigt oder wieder geöffnet",
   "Unread changes": "Ungelesene Änderungen",
-  "{name} will be attached": "{name} wird angehängt"
+  "{name} will be attached": "{name} wird angehängt",
+  "Click a task to": "Klick auf eine Aufgabe",
+  "Select, then edit the title": "Auswählen, dann Titel bearbeiten",
+  "Task lists": "Aufgabenlisten",
+  "Use the server default ({choice})": "Serverstandard verwenden ({choice})"
 }

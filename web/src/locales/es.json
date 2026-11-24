@@ -794,7 +794,7 @@
   "Backups": "Copias de seguridad",
   "Backups are encrypted with your passphrase. Enter a new one to change it (future backups only).": "Las copias se cifran con tu frase de contraseña. Introduce una nueva para cambiarla (solo copias futuras).",
   "Backups of the whole server are under <a>Settings → Server</a>.": "Las copias de todo el servidor están en <a>Ajustes → Servidor</a>.",
-  "Backups, attachments, outgoing email, branding, maps, automations, speech to text and the audit log": "Copias de seguridad, adjuntos, correo saliente, marca, mapas, automatizaciones, voz a texto y registro de auditoría",
+  "Backups, attachments, outgoing email, branding, maps, task lists, automations, speech to text and the audit log": "Copias de seguridad, adjuntos, correo saliente, marca, mapas, listas de tareas, automatizaciones, voz a texto y registro de auditoría",
   "Base URL": "URL base",
   "Base colours": "Colores base",
   "Base colours: every other colour follows from these.": "Colores base: todos los demás colores se derivan de estos.",
@@ -1519,7 +1519,7 @@
   "Download export (JSON)": "Descargar exportación (JSON)",
   "Download export with files (ZIP)": "Descargar exportación con archivos (ZIP)",
   "Download your data": "Descarga tus datos",
-  "Download your data, branding, maps, automations and the audit log": "Descargar tus datos, marca, mapas, automatizaciones y registro de auditoría",
+  "Download your data, branding, maps, task lists, automations and the audit log": "Descargar tus datos, marca, mapas, listas de tareas, automatizaciones y registro de auditoría",
   "Download {name}": "Descargar {name}",
   "Do|method": "Hacer",
   "Draft": "Redactar",
@@ -7871,5 +7871,9 @@
   "{name} reopened a task": "{name} reabrió una tarea",
   "Completed or reopened": "Completada o reabierta",
   "Unread changes": "Cambios sin leer",
-  "{name} will be attached": "Se adjuntará {name}"
+  "{name} will be attached": "Se adjuntará {name}",
+  "Click a task to": "Al hacer clic en una tarea",
+  "Select, then edit the title": "Seleccionar y luego editar el título",
+  "Task lists": "Listas de tareas",
+  "Use the server default ({choice})": "Usar el predeterminado del servidor ({choice})"
 }

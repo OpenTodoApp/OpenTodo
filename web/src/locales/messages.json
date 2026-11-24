@@ -2561,7 +2561,7 @@
   "Backups of the whole server are under <a>Settings → Server</a>.": [
     "web/src/app/DataSettings.tsx"
   ],
-  "Backups, attachments, outgoing email, branding, maps, automations, speech to text and the audit log": [
+  "Backups, attachments, outgoing email, branding, maps, task lists, automations, speech to text and the audit log": [
     "web/src/app/settingsSections.ts"
   ],
   "Bakery": [
@@ -3546,6 +3546,9 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Clears your tasks from this device after uploading unsynced changes.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Click a task to": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Click to sync now": [
@@ -5501,7 +5504,7 @@
     "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
-  "Download your data, branding, maps, automations and the audit log": [
+  "Download your data, branding, maps, task lists, automations and the audit log": [
     "web/src/app/settingsSections.ts"
   ],
   "Download {name}": [
@@ -6733,8 +6736,8 @@
     "web/src/app/ShareCapture.tsx"
   ],
   "Files are not attached on this demo instance.": [
-    "web/src/app/QuickAdd.tsx",
-    "web/src/app/ShareCapture.tsx"
+    "web/src/app/ShareCapture.tsx",
+    "web/src/app/quickadd/PendingFiles.tsx"
   ],
   "Files may be up to {bytes} each.": [
     "web/src/lib/settingsCopy.ts"
@@ -10966,6 +10969,7 @@
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Next action for {name}": [
+    "web/src/app/method/chooseNext.ts",
     "web/src/app/method/loop/PlaceMove.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
@@ -11280,6 +11284,7 @@
   ],
   "No matches": [
     "web/src/app/menus/stylePickers.tsx",
+    "web/src/app/quickadd/TickedSuggest.tsx",
     "web/src/app/routines/pickers.tsx",
     "web/src/ui/Combobox/Combobox.tsx",
     "web/src/ui/Combobox/useCombobox.ts",
@@ -11472,6 +11477,7 @@
     "web/src/app/Sections.tsx",
     "web/src/app/assistant/blocks/BoardBlock.tsx",
     "web/src/app/filter/conditionText.ts",
+    "web/src/app/method/chooseNext.ts",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
@@ -12800,7 +12806,8 @@
     "web/src/app/datetime/DateField.tsx"
   ],
   "Open details": [
-    "web/src/app/task-list/InlineEditor.tsx"
+    "web/src/app/task-list/InlineEditor.tsx",
+    "web/src/lib/rowClickPref.ts"
   ],
   "Open in Help": [
     "web/src/app/help/HelpPanel.tsx"
@@ -12882,6 +12889,7 @@
   ],
   "Open tasks": [
     "web/src/app/AppearanceSection.tsx",
+    "web/src/app/quickadd/TickedSuggest.tsx",
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
@@ -15999,6 +16007,9 @@
   "Select {title}": [
     "web/src/app/TaskRow.tsx"
   ],
+  "Select, then edit the title": [
+    "web/src/lib/rowClickPref.ts"
+  ],
   "Selected": [
     "web/src/ui/AccentPicker.tsx"
   ],
@@ -17062,6 +17073,7 @@
     "web/src/app/UrgencyChip.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/filter/conditionText.ts",
+    "web/src/app/method/chooseNext.ts",
     "web/src/app/review/CarryOver.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/RowSwipe.tsx",
@@ -17364,6 +17376,7 @@
   ],
   "Starts {date}": [
     "web/src/app/TaskRow.tsx",
+    "web/src/app/method/chooseNext.ts",
     "web/src/lib/assistant.ts"
   ],
   "Starts {from} → {to}": [
@@ -17829,6 +17842,10 @@
   ],
   "Task details": [
     "web/src/app/PanelHost.tsx",
+    "web/src/app/settingsSections.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Task lists": [
     "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
@@ -21360,6 +21377,9 @@
   ],
   "Use the recovery key instead": [
     "web/src/app/UnlockScreen.tsx"
+  ],
+  "Use the server default ({choice})": [
+    "web/src/app/AppearanceSection.tsx"
   ],
   "Use the server’s assistant": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -25621,6 +25641,7 @@
     "web/src/app/routines/RunHistory.tsx"
   ],
   "{n, plural, one {# result available} other {# results available}}": [
+    "web/src/app/quickadd/TickedSuggest.tsx",
     "web/src/ui/Combobox/useCombobox.ts",
     "web/src/ui/IconPicker.tsx"
   ],
@@ -26127,7 +26148,7 @@
     "web/src/app/WorkspacesSettings.tsx"
   ],
   "{name} will be attached": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/quickadd/PendingFiles.tsx"
   ],
   "{name} · proposal waiting · Review": [
     "web/src/lib/rules/inbox.ts"

@@ -794,7 +794,7 @@
   "Backups": "Backup",
   "Backups are encrypted with your passphrase. Enter a new one to change it (future backups only).": "I backup sono cifrati con la tua passphrase. Inseriscine una nuova per cambiarla (solo backup futuri).",
   "Backups of the whole server are under <a>Settings → Server</a>.": "I backup dell’intero server sono in <a>Impostazioni → Server</a>.",
-  "Backups, attachments, outgoing email, branding, maps, automations, speech to text and the audit log": "Backup, allegati, email in uscita, marchio, mappe, automazioni, da voce a testo e registro di audit",
+  "Backups, attachments, outgoing email, branding, maps, task lists, automations, speech to text and the audit log": "Backup, allegati, email in uscita, marchio, mappe, elenchi di attività, automazioni, da voce a testo e registro di audit",
   "Base URL": "URL di base",
   "Base colours": "Colori di base",
   "Base colours: every other colour follows from these.": "Colori di base: tutti gli altri colori derivano da questi.",
@@ -1519,7 +1519,7 @@
   "Download export (JSON)": "Scarica esportazione (JSON)",
   "Download export with files (ZIP)": "Scarica esportazione con file (ZIP)",
   "Download your data": "Scarica i tuoi dati",
-  "Download your data, branding, maps, automations and the audit log": "Scarica i tuoi dati, marchio, mappe, automazioni e registro di audit",
+  "Download your data, branding, maps, task lists, automations and the audit log": "Scarica i tuoi dati, marchio, mappe, elenchi di attività, automazioni e registro di audit",
   "Download {name}": "Scarica {name}",
   "Do|method": "Fai",
   "Draft": "Crea bozza",
@@ -7871,5 +7871,9 @@
   "{name} reopened a task": "{name} ha riaperto un’attività",
   "Completed or reopened": "Completata o riaperta",
   "Unread changes": "Modifiche non lette",
-  "{name} will be attached": "{name} verrà allegato"
+  "{name} will be attached": "{name} verrà allegato",
+  "Click a task to": "Fare clic su un’attività per",
+  "Select, then edit the title": "Selezionare, poi modificare il titolo",
+  "Task lists": "Elenchi di attività",
+  "Use the server default ({choice})": "Usa il predefinito del server ({choice})"
 }

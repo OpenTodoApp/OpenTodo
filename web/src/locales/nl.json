@@ -720,7 +720,7 @@
   "Backups": "Back-ups",
   "Backups are encrypted with your passphrase. Enter a new one to change it (future backups only).": "Back-ups worden versleuteld met je toegangszin. Voer een nieuwe in om deze te wijzigen (alleen voor toekomstige back-ups).",
   "Backups of the whole server are under <a>Settings → Server</a>.": "Back-ups van de hele server vind je onder <a>Instellingen → Server</a>.",
-  "Backups, attachments, outgoing email, branding, maps, automations, speech to text and the audit log": "Back-ups, bijlagen, uitgaande e-mail, branding, kaarten, automatiseringen, spraak-naar-tekst en het auditlog",
+  "Backups, attachments, outgoing email, branding, maps, task lists, automations, speech to text and the audit log": "Back-ups, bijlagen, uitgaande e-mail, branding, kaarten, takenlijsten, automatiseringen, spraak-naar-tekst en het auditlog",
   "Bakery": "Bakkerij",
   "Base URL": "Basis-URL",
   "Base colours": "Basiskleuren",
@@ -1470,7 +1470,7 @@
   "Download export (JSON)": "Export downloaden (JSON)",
   "Download export with files (ZIP)": "Export met bestanden downloaden (ZIP)",
   "Download your data": "Download je gegevens",
-  "Download your data, branding, maps, automations and the audit log": "Download je gegevens, branding, kaarten, automatiseringen en het auditlogboek",
+  "Download your data, branding, maps, task lists, automations and the audit log": "Download je gegevens, branding, kaarten, takenlijsten, automatiseringen en het auditlogboek",
   "Download {name}": "{name} downloaden",
   "Do|method": "Doen",
   "Draft": "Concept",
@@ -7871,5 +7871,9 @@
   "{name} reopened a task": "{name} heeft een taak opnieuw geopend",
   "Completed or reopened": "Voltooid of opnieuw geopend",
   "Unread changes": "Ongelezen wijzigingen",
-  "{name} will be attached": "{name} wordt bijgevoegd"
+  "{name} will be attached": "{name} wordt bijgevoegd",
+  "Click a task to": "Klik op een taak om",
+  "Select, then edit the title": "Selecteren, dan de titel bewerken",
+  "Task lists": "Takenlijsten",
+  "Use the server default ({choice})": "Serverstandaard gebruiken ({choice})"
 }

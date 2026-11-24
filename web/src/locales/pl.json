@@ -755,7 +755,7 @@
   "Backups": "Kopie zapasowe",
   "Backups are encrypted with your passphrase. Enter a new one to change it (future backups only).": "Kopie zapasowe są szyfrowane twoim hasłem szyfrującym. Wpisz nowe, aby je zmienić (tylko dla przyszłych kopii).",
   "Backups of the whole server are under <a>Settings → Server</a>.": "Kopie zapasowe całego serwera znajdziesz w <a>Ustawienia → Serwer</a>.",
-  "Backups, attachments, outgoing email, branding, maps, automations, speech to text and the audit log": "Kopie zapasowe, załączniki, poczta wychodząca, branding, mapy, automatyzacje, zamiana mowy na tekst i dziennik audytu",
+  "Backups, attachments, outgoing email, branding, maps, task lists, automations, speech to text and the audit log": "Kopie zapasowe, załączniki, poczta wychodząca, branding, mapy, listy zadań, automatyzacje, zamiana mowy na tekst i dziennik audytu",
   "Bakery": "Piekarnia",
   "Base URL": "Bazowy URL",
   "Base colours": "Kolory bazowe",
@@ -1561,7 +1561,7 @@
   "Download export (JSON)": "Pobierz eksport (JSON)",
   "Download export with files (ZIP)": "Pobierz eksport z plikami (ZIP)",
   "Download your data": "Pobierz swoje dane",
-  "Download your data, branding, maps, automations and the audit log": "Pobieranie danych, branding, mapy, automatyzacje i dziennik audytu",
+  "Download your data, branding, maps, task lists, automations and the audit log": "Pobieranie danych, branding, mapy, listy zadań, automatyzacje i dziennik audytu",
   "Download {name}": "Pobierz: {name}",
   "Do|method": "Wykonaj",
   "Draft": "Utwórz szkic",
@@ -7871,5 +7871,9 @@
   "{name} reopened a task": "{name} ponownie otworzył(a) zadanie",
   "Completed or reopened": "Ukończone lub ponownie otwarte",
   "Unread changes": "Nieprzeczytane zmiany",
-  "{name} will be attached": "{name} zostanie załączony"
+  "{name} will be attached": "{name} zostanie załączony",
+  "Click a task to": "Kliknięcie zadania",
+  "Select, then edit the title": "Zaznaczenie, potem edycja tytułu",
+  "Task lists": "Listy zadań",
+  "Use the server default ({choice})": "Domyślny dla serwera ({choice})"
 }

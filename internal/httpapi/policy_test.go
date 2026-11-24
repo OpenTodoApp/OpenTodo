@@ -213,6 +213,7 @@ func TestSecurityRoutePolicies(t *testing.T) {
 		"POST /api/v1/invitations":                   "auth admins admin-token fresh demo",
 		"DELETE /api/v1/invitations/{id}":            "auth admins admin-token demo",
 		"GET /api/v1/settings/mfa":                   "auth owner",
+		"PUT /api/v1/settings/row-click":             "auth owner demo",
 		"PUT /api/v1/settings/mfa":                   "auth owner admin-token fresh demo",
 		"POST /api/v1/members/{id}/mfa/reset":        "auth owner admin-token fresh demo",
 		"GET /api/v1/audit":                          "auth owner",

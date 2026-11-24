@@ -1029,6 +1029,8 @@ export interface UserPrefs extends UserPrefsFields {
   briefing?: string
   /** How a task opens from a list (task-side-panel D1): 'panel' docks it beside the list from 1024 px; '' and anything else read as 'page'. */
   task_open?: string
+  /** Click a task to (click-default D1): 'select' or 'open'; '' and anything else follow the server's default. */
+  row_click?: string
   /** The account's task row layout (row-layouts D1): 'line' or 'detailed'; '' and anything else read as 'line'. */
   row_layout?: string
   /** Today's agenda of calendar events (today-agenda D1): 'shown' shows it; '' and anything else read as hidden. */
@@ -1272,6 +1274,8 @@ export interface AuthStatus {
   branding?: { name: string; logoVersion: number }
   /** The version of the instance's themes (theme-instance-default D3), signed in only; absent on older servers. */
   themes?: { version: number }
+  /** What a click on a task does for accounts that have not chosen (click-default D2), signed in only; absent on older servers. */
+  rowClick?: { default: string }
   /** This session's wipe key (revoked-device-wipe D3), signed-in browser sessions only. */
   wipeKey?: string
   /** This cookie's session was revoked: the proof made with its wipe key (revoked-device-wipe D3). */

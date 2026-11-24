@@ -757,7 +757,7 @@
   "Backups": "Yedekler",
   "Backups are encrypted with your passphrase. Enter a new one to change it (future backups only).": "Yedekler parola ifadenizle şifrelenir. Değiştirmek için yenisini girin (yalnızca gelecekteki yedekler için).",
   "Backups of the whole server are under <a>Settings → Server</a>.": "Tüm sunucunun yedekleri <a>Ayarlar → Sunucu</a> altındadır.",
-  "Backups, attachments, outgoing email, branding, maps, automations, speech to text and the audit log": "Yedekler, ekler, giden e-posta, markalama, haritalar, otomasyonlar, konuşmayı metne dönüştürme ve denetim günlüğü",
+  "Backups, attachments, outgoing email, branding, maps, task lists, automations, speech to text and the audit log": "Yedekler, ekler, giden e-posta, markalama, haritalar, görev listeleri, otomasyonlar, konuşmayı metne dönüştürme ve denetim günlüğü",
   "Bakery": "Fırın",
   "Base URL": "Temel URL",
   "Base colours": "Temel renkler",
@@ -1563,7 +1563,7 @@
   "Download export (JSON)": "Dışa aktarımı indir (JSON)",
   "Download export with files (ZIP)": "Dosyalarla dışa aktarımı indir (ZIP)",
   "Download your data": "Verilerinizi indirin",
-  "Download your data, branding, maps, automations and the audit log": "Verilerinizi, markalamanızı, haritalarınızı, otomasyonlarınızı ve denetim günlüğünü indirin",
+  "Download your data, branding, maps, task lists, automations and the audit log": "Verilerinizi, markalamanızı, haritalarınızı, görev listelerinizi, otomasyonlarınızı ve denetim günlüğünü indirin",
   "Download {name}": "{name} dosyasını indir",
   "Do|method": "Yap",
   "Draft": "Taslak",
@@ -7871,5 +7871,9 @@
   "{name} reopened a task": "{name} bir görevi yeniden açtı",
   "Completed or reopened": "Tamamlandı veya yeniden açıldı",
   "Unread changes": "Okunmamış değişiklikler",
-  "{name} will be attached": "{name} eklenecek"
+  "{name} will be attached": "{name} eklenecek",
+  "Click a task to": "Bir göreve tıklayınca",
+  "Select, then edit the title": "Seç, sonra başlığı düzenle",
+  "Task lists": "Görev listeleri",
+  "Use the server default ({choice})": "Sunucu varsayılanını kullan ({choice})"
 }

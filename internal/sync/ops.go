@@ -793,6 +793,10 @@ var Schema = map[string]map[string]Field{
 		// design D1): "page" or "panel"; clients read an empty or unknown
 		// value as "page" and keep the stored value.
 		"task_open": {Kind: kString, Default: `""`},
+		// Click a task to (OpenSpec change click-default, design D1): "select"
+		// (select, then edit the title) or "open" (open the details); clients
+		// read an empty or unknown value as the server's default and keep it.
+		"row_click": {Kind: kString, Default: `""`},
 		// The account's task row layout (OpenSpec change row-layouts, design
 		// D1): "line" or "detailed", the layout of every list without its own
 		// choice; clients read an empty or unknown value as "line".
