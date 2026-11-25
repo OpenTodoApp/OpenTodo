@@ -3,18 +3,20 @@
 // every screen. It reads the clock each second while a run is on and again when
 // the tab is shown or focused, writes the end through one guarded transition, and
 // derives every effect of that end from the row change: the tone, Short or Long
-// (only while the tab is visible; a tab that saw the end hidden plays it when shown), the system
+// (in a hidden browser tab at the planned end on the audio clock, else when the
+// tab is shown; one tab rings per end, focus-alert-hidden-tab), the system
 // notification (hidden tab, permission granted, tagged per run so two tabs show
 // one), and the end of the session when its task is completed or trashed elsewhere.
 // It also adopts the session another of the person's devices wrote; the sound,
 // the notification and the noise are left to the device that made the last
 // change (sync-focus-sessions D2, D4).
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getTask, useReviewRow, useUserPrefsRow } from '../../lib/localData'
 import { orderedFocusIds } from '../../lib/bento'
 import { useLiveTasks } from '../../lib/liveTasks'
 import { swRegistration } from '../../lib/push'
-import { has } from '../../lib/shell'
+import { has, shell } from '../../lib/shell'
+import { readString, writeString } from '../../lib/deviceStorage'
 import { useFocusPrefs, useNoiseVolume, type FocusAlert, type FocusPrefs } from '../../lib/focus/prefs'
 import { nextFocusTask } from '../../lib/focus/select'
 import { adoptSession, completeSession, finishIfDue, noteEntryStopped, settlePending } from '../../lib/focus/session'
@@ -22,17 +24,17 @@ import { useSyncStatus } from '../../lib/sync'
 import { useEntryRunning } from '../../lib/focus/live'
 import { useFocusState } from '../../lib/focus/state'
 import { serverNow } from '../../lib/hlc'
-import { inRun, isDue, isRunning, type FocusState } from '../../lib/focus/timer'
-import { playTone } from '../../lib/focus/tone'
+import { inRun, isDue, isRunning, plannedEnd, type FocusState } from '../../lib/focus/timer'
+import { LONG_PEAK, playTone, REPEAT_MS, REPEATS, scheduleTone, type ScheduledTone } from '../../lib/focus/tone'
 import { t } from '../../lib/i18n'
 import { useToday } from '../useViews'
 import { resettable } from '../../lib/moduleState'
 
-/** Now, re-read every second while `active` and whenever the tab is shown or focused. */
-export function useFocusClock(active: boolean): number {
+/** Now, re-read every second while `active`, whenever the tab is shown or focused, and on `read()`. */
+function useClock(active: boolean): [number, () => void] {
   const [now, setNow] = useState(() => serverNow())
+  const read = useCallback(() => setNow(serverNow()), [])
   useEffect(() => {
-    const read = () => setNow(serverNow())
     read()
     const id = active ? setInterval(read, 1000) : null
     document.addEventListener('visibilitychange', read)
@@ -42,8 +44,32 @@ export function useFocusClock(active: boolean): number {
       document.removeEventListener('visibilitychange', read)
       window.removeEventListener('focus', read)
     }
-  }, [active])
-  return now
+  }, [active, read])
+  return [now, read]
+}
+
+/** Now, re-read every second while `active` and whenever the tab is shown or focused. */
+export function useFocusClock(active: boolean): number {
+  return useClock(active)[0]
+}
+
+/**
+ * The last session end rung on this device (focus-alert-hidden-tab D3): the key
+ * of `endKey`, claimed before every ring so two tabs ring once. Kept in memory
+ * too, for a page whose storage is refused.
+ */
+const RUNG_KEY = 'focusAlertRung'
+let rungHere: string | null = null
+const rung = (key: string) => rungHere === key || readString(RUNG_KEY) === key
+function claimRing(key: string): boolean {
+  if (rung(key)) return false
+  rungHere = key
+  writeString(RUNG_KEY, key)
+  return true
+}
+function releaseRing(key: string): void {
+  if (rungHere === key) rungHere = null
+  if (readString(RUNG_KEY) === key) writeString(RUNG_KEY, null)
 }
 
 /** Tags already notified in this window (two engines of one page show one). */
@@ -52,6 +78,8 @@ const notified = new Set<string>()
 /** Forgets the notified tags (tests). */
 export function resetFocusNotices(): void {
   notified.clear()
+  rungHere = null
+  writeString(RUNG_KEY, null)
 }
 resettable('focusNotices', resetFocusNotices)
 
@@ -94,7 +122,7 @@ function ring(alert: FocusAlert): void {
 
 function useEndEffects(state: FocusState | null | undefined, prefs: FocusPrefs): void {
   const seen = useRef<string | null>(null)
-  const pendingTone = useRef<FocusAlert | null>(null)
+  const pendingTone = useRef<{ alert: FocusAlert; key: string } | null>(null)
   const key = endKey(state)
   useEffect(() => {
     if (state === undefined) return
@@ -105,20 +133,64 @@ function useEndEffects(state: FocusState | null | undefined, prefs: FocusPrefs):
     // Only the device that made the last change rings (sync-focus-sessions D4).
     if (!state?.ended || state.remote) return
     if (document.visibilityState === 'hidden') {
-      pendingTone.current = prefs.sound ? prefs.alert : null
+      // A tone that played in the background, here or in another tab, is not kept for the return (focus-alert-hidden-tab D3).
+      pendingTone.current = prefs.sound && !rung(key) ? { alert: prefs.alert, key } : null
       void notifyFocusEnd(state)
-    } else if (prefs.sound && serverNow() - state.ended.at < FRESH_MS) ring(prefs.alert)
+    } else if (prefs.sound && serverNow() - state.ended.at < FRESH_MS && claimRing(key)) ring(prefs.alert)
   }, [key, state, prefs.sound, prefs.alert])
   useEffect(() => {
     const onVisible = () => {
-      const alert = pendingTone.current
-      if (document.visibilityState !== 'visible' || !alert) return
+      const pending = pendingTone.current
+      if (document.visibilityState !== 'visible' || !pending) return
       pendingTone.current = null
-      ring(alert)
+      if (claimRing(pending.key)) ring(pending.alert)
     }
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [])
+}
+
+/**
+ * The sound of a hidden tab at the planned end (focus-alert-hidden-tab D1-D4):
+ * scheduled on the audio clock while the tab is hidden and this device owns a
+ * running timed run, outside the native shells, on the audio the Start woke.
+ * A pause, another device's change, a new sound or the tab shown before the end
+ * cancels it; the first note wakes the engine, so the end and its notification
+ * come with the sound. A background Long stops when the tab is shown.
+ */
+function useHiddenAlert(state: FocusState | null | undefined, prefs: FocusPrefs, wake: () => void): void {
+  const [hidden, setHidden] = useState(() => document.visibilityState === 'hidden')
+  const ringing = useRef<ScheduledTone | null>(null)
+  useEffect(() => {
+    const onChange = () => {
+      const isHidden = document.visibilityState === 'hidden'
+      setHidden(isHidden)
+      if (!isHidden) { ringing.current?.cancel(); ringing.current = null }
+    }
+    document.addEventListener('visibilitychange', onChange)
+    return () => {
+      document.removeEventListener('visibilitychange', onChange)
+      ringing.current?.cancel()
+    }
+  }, [])
+  const end = state && !state.remote && isRunning(state) ? plannedEnd(state) : null
+  const key = state && end !== null ? `${state.startedAt}:${end}:${state.phase}` : ''
+  const alert = prefs.sound && !shell() ? prefs.alert : null
+  useEffect(() => {
+    if (!hidden || !key || !alert || end === null || !claimRing(key)) return
+    const long = alert === 'long'
+    const tone = scheduleTone(end - serverNow(), long ? LONG_PEAK : 0.2, long ? REPEATS : 1, REPEAT_MS, wake)
+    if (!tone) { releaseRing(key); return }
+    return () => {
+      if (!tone.started()) {
+        tone.cancel()
+        releaseRing(key)
+      } else if (document.visibilityState === 'hidden') {
+        ringing.current?.cancel()
+        ringing.current = tone
+      } else tone.cancel()
+    }
+  }, [hidden, key, alert, end, wake])
 }
 
 /** The session's task completed or trashed on any screen or device: the session ends and the next task of today's focus is offered. */
@@ -163,7 +235,7 @@ function useNoise(state: FocusState | null | undefined, prefs: FocusPrefs): void
 export function useFocusTimer(): { state: FocusState | null | undefined; prefs: FocusPrefs; now: number } {
   const state = useFocusState()
   const prefs = useFocusPrefs()
-  const now = useFocusClock(isRunning(state))
+  const [now, wake] = useClock(isRunning(state))
   // The session another device wrote (sync-focus-sessions D2).
   const run = useUserPrefsRow()?.focus_run
   useEffect(() => {
@@ -184,6 +256,7 @@ export function useFocusTimer(): { state: FocusState | null | undefined; prefs: 
   useEffect(() => {
     if (entryId && entryRuns === false) void noteEntryStopped(entryId)
   }, [entryId, entryRuns])
+  useHiddenAlert(state, prefs, wake)
   useEndEffects(state, prefs)
   useTaskGone(state, prefs, now)
   useNoise(state, prefs)

@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 // The focus timer's engine (OpenSpec change focus-mode, task 4.1): the end of a
 // session noticed from the clock, one transition for two tabs, the notification
-// in a hidden tab only with permission, and the tone only when turned on and only
-// while the tab is visible.
+// in a hidden tab only with permission, and the tone only when turned on, once per
+// end, and on time in a hidden tab whose audio runs (focus-alert-hidden-tab).
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
@@ -12,7 +12,8 @@ import { setCurrentUserId } from '../../lib/sharing'
 import { FOCUS_DEFAULTS } from '../../lib/focus/prefs'
 import { startSession } from '../../lib/focus/session'
 import { readFocus } from '../../lib/focus/state'
-import { resetTone } from '../../lib/focus/tone'
+import { primeTone, resetTone } from '../../lib/focus/tone'
+import { writeString } from '../../lib/deviceStorage'
 import { alertPlaying } from '../../lib/focus/alert'
 import { flush, render, waitFor } from '../../ui/test-utils'
 import { resetFocusNotices, useFocusTimer } from './useFocusTimer'
@@ -217,6 +218,187 @@ describe('the end of a session', () => {
     await waitFor(() => phases().every((p) => p === 'done'), 'the engine sees the end')
     await flush()
     expect(tonesPlayed()).toBe(1)
+    await r.unmount()
+  })
+})
+
+// The sound of a hidden tab at the planned end (focus-alert-hidden-tab): the
+// audio clock follows the fake Date, timers are frozen as a throttled tab's, and
+// the audio thread's `ended` events fire with audioTick().
+describe('the sound in a hidden tab (focus-alert-hidden-tab)', () => {
+  interface Note { frequency: { value: number }; at: number; gain: { connected: boolean }; onended: (() => void) | null; ended: boolean }
+  let notes: Note[] = []
+  let audio: 'running' | 'suspended' = 'running'
+  let frozen: number | null = null
+  const clock = () => frozen ?? (Date.now() - T0) / 1000
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] })
+    vi.setSystemTime(T0)
+    notes = []
+    audio = 'running'
+    frozen = null
+    class ClockContext {
+      get state() { return audio }
+      get currentTime() { return clock() }
+      destination = {}
+      resume = async () => { audio = 'running'; frozen = null }
+      createGain() {
+        const g = { connected: false, connect() { g.connected = true }, disconnect() { g.connected = false }, gain: { setValueAtTime: () => undefined, linearRampToValueAtTime: () => undefined } }
+        return g
+      }
+      createOscillator() {
+        const o: Note & Record<string, unknown> = {
+          type: '', frequency: { value: 0 }, at: Infinity, gain: { connected: false }, onended: null, ended: false,
+          connect(g: { connected: boolean }) { o.gain = g }, start(at: number) { o.at = at }, stop: () => undefined,
+        }
+        notes.push(o)
+        return o
+      }
+    }
+    vi.stubGlobal('AudioContext', ClockContext)
+  })
+
+  /** Tones heard so far: first notes whose time came while connected. */
+  const heard = () => notes.filter((n) => n.frequency.value === 660 && n.gain.connected && n.at <= clock()).length
+  /** The audio thread reports the notes that ended (an event, not a throttled timer). */
+  const audioTick = async () => {
+    for (const n of notes) if (!n.ended && n.at + 0.12 <= clock()) { n.ended = true; n.onended?.() }
+    await flush()
+  }
+  /** Time passes in a hidden tab whose timers do not run. */
+  const passTime = async (ms: number) => {
+    vi.setSystemTime(Date.now() + ms)
+    await flush()
+  }
+  const startHere = async () => {
+    primeTone() // the Start click
+    await startSession(task, FOCUS_DEFAULTS, Date.now())
+    await waitFor(() => phases().includes('work'), 'the engine sees the session')
+  }
+
+  it('Short plays at the planned end, the tone wakes the engine for the done state and the notification, and nothing plays again on return', async () => {
+    await mutate('user_prefs', 'me', { focus_sound: 'on' })
+    const r = await render(<Engine />)
+    await startHere()
+    await setVisibility('hidden')
+    await passTime(25 * MIN - 1000)
+    expect(heard()).toBe(0)
+    await passTime(1200)
+    expect(heard()).toBe(1)
+    await audioTick()
+    await waitFor(async () => (await readFocus())?.phase === 'done', 'done without a timer tick')
+    await waitFor(() => shown.length === 1, 'notification with the sound')
+    expect((await readFocus())?.ended?.at).toBe(T0 + 25 * MIN)
+    await setVisibility('visible')
+    await flush()
+    expect(heard()).toBe(1)
+    await r.unmount()
+  })
+
+  it('Long repeats in the background and stops when the tab is shown', async () => {
+    await mutate('user_prefs', 'me', { focus_sound: 'on', focus_alert: 'long' })
+    const r = await render(<Engine />)
+    await startHere()
+    await setVisibility('hidden')
+    await passTime(25 * MIN + 3500)
+    await audioTick()
+    await waitFor(async () => (await readFocus())?.phase === 'done', 'done')
+    expect(heard()).toBe(4)
+    await setVisibility('visible')
+    await passTime(20_000)
+    expect(heard()).toBe(4)
+    expect(alertPlaying()).toBe(false)
+    await r.unmount()
+  })
+
+  it('Long plays its ten repeats when nobody comes back', async () => {
+    await mutate('user_prefs', 'me', { focus_sound: 'on', focus_alert: 'long' })
+    const r = await render(<Engine />)
+    await startHere()
+    await setVisibility('hidden')
+    await passTime(25 * MIN + 200)
+    await audioTick()
+    await waitFor(async () => (await readFocus())?.phase === 'done', 'done')
+    await passTime(30_000)
+    expect(heard()).toBe(10)
+    await r.unmount()
+  })
+
+  it('Sound off: nothing is scheduled', async () => {
+    const r = await render(<Engine />)
+    await startHere()
+    await setVisibility('hidden')
+    await passTime(26 * MIN)
+    expect(notes).toHaveLength(0)
+    await r.unmount()
+  })
+
+  it('Paused on another device before the end: no tone at the planned end, and none on return', async () => {
+    await mutate('user_prefs', 'me', { focus_sound: 'on' })
+    const r = await render(<Engine />)
+    await startHere()
+    await setVisibility('hidden')
+    await passTime(10 * MIN)
+    const paused = { v: 1, rev: 'phone-1', taskId: task, mode: 'pomodoro', phase: 'work', startedAt: T0, resumedAt: null, accumulatedMs: 10 * MIN, plannedMs: 25 * MIN, cycle: 1, breakKind: null, entryId: null, ended: null }
+    await applyOps([{ id: 'p1', entity: 'user_prefs', entityId: 'me', field: 'focus_run', value: JSON.stringify(paused), ts: Date.now() + 1, device: 'phone' } as Op])
+    await waitFor(async () => (await readFocus())?.remote === true, 'adopted')
+    await flush()
+    await passTime(20 * MIN)
+    await audioTick()
+    expect(heard()).toBe(0)
+    await setVisibility('visible')
+    await flush()
+    expect(heard()).toBe(0)
+    await r.unmount()
+  })
+
+  it('Two tabs: the end rings once', async () => {
+    await mutate('user_prefs', 'me', { focus_sound: 'on' })
+    const r1 = await render(<Engine />)
+    const r2 = await render(<Engine />)
+    primeTone()
+    await startSession(task, FOCUS_DEFAULTS, Date.now())
+    await waitFor(() => phases().length === 2 && phases().every((p) => p === 'work'), 'both engines see the session')
+    await setVisibility('hidden')
+    await passTime(25 * MIN + 200)
+    await audioTick()
+    await waitFor(() => phases().every((p) => p === 'done'), 'both engines see the end')
+    await setVisibility('visible')
+    await flush()
+    expect(heard()).toBe(1)
+    await r1.unmount()
+    await r2.unmount()
+  })
+
+  it('An end another tab already rang is not rung in a visible tab', async () => {
+    await mutate('user_prefs', 'me', { focus_sound: 'on' })
+    const r = await render(<Engine />)
+    await startHere()
+    writeString('focusAlertRung', `${T0}:${T0 + 25 * MIN}:work`)
+    await advance(25 * MIN)
+    await waitFor(() => phases().every((p) => p === 'done'), 'the engine sees the end')
+    await flush()
+    expect(heard()).toBe(0)
+    await r.unmount()
+  })
+
+  it('Audio suspended in the background: nothing plays hidden, and the tone plays once on return', async () => {
+    await mutate('user_prefs', 'me', { focus_sound: 'on' })
+    const r = await render(<Engine />)
+    await startHere()
+    await setVisibility('hidden')
+    await passTime(MIN)
+    audio = 'suspended'
+    frozen = clock()
+    await advance(29 * MIN)
+    await waitFor(async () => (await readFocus())?.phase === 'done', 'done')
+    await waitFor(() => phases().every((p) => p === 'done'), 'the engine sees the end')
+    expect(heard()).toBe(0)
+    await setVisibility('visible')
+    await waitFor(() => heard() === 1, 'tone on return')
+    await flush()
+    expect(heard()).toBe(1)
     await r.unmount()
   })
 })
