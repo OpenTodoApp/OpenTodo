@@ -3466,6 +3466,7 @@
   "Opening the shared files…": "Ouverture des fichiers partagés…",
   "Opens the source {text}": "Ouvre la source {text}",
   "Open|count": "Ouvertes",
+  "Open|state": "Ouvertes",
   "Optional": "Facultatif",
   "Optional for everyone": "Facultative pour tous",
   "Optional, required for the owner, or required for everyone": "Facultative, obligatoire pour le propriétaire ou obligatoire pour tous",
