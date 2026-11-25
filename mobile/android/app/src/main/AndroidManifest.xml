@@ -159,6 +159,24 @@
             android:noHistory="true"
             android:taskAffinity=""
             android:theme="@android:style/Theme.NoDisplay" />
+        <!-- android-upcoming-calendar-widgets D3, D4: Upcoming (a list like Today's, through the same
+             row-tap activity) and Calendar (a month grid; its arrows are broadcasts to its own receiver). -->
+        <receiver android:name=".UpcomingWidget" android:exported="false" android:label="@string/widget_upcoming">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_upcoming" />
+        </receiver>
+        <service
+            android:name=".UpcomingListService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+        <receiver android:name=".CalendarWidget" android:exported="false" android:label="@string/widget_calendar">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_calendar" />
+        </receiver>
         <receiver android:name=".QuickAddWidget" android:exported="false" android:label="@string/widget_quick_add">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

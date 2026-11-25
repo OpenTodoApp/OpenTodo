@@ -50,6 +50,17 @@
     <string name="widget_completed_description">Cuántas tareas completaste esta semana</string>
     <string name="widget_completed_locked">Bloqueado: solo el número de hoy</string>
     <string name="widget_completed_days">Completadas por día: %1$s</string>
+    <string name="widget_upcoming">Próximo</string>
+    <string name="widget_upcoming_description">Tus próximas tareas, por día</string>
+    <string name="widget_upcoming_empty">Nada próximo.</string>
+    <string name="widget_upcoming_locked">Bloqueado. Próximas tareas: %1$d</string>
+    <string name="widget_tomorrow">Mañana</string>
+    <string name="widget_calendar">Calendario</string>
+    <string name="widget_calendar_description">El mes, con los días que tienen tareas</string>
+    <string name="widget_calendar_locked">Bloqueado</string>
+    <string name="widget_calendar_day">%1$s, tareas: %2$d</string>
+    <string name="widget_previous_month">Mes anterior</string>
+    <string name="widget_next_month">Mes siguiente</string>
     <string name="setup_old_webview">El Android System WebView de este teléfono es antiguo (versión %1$s). Actualízalo desde la tienda de apps para que OpenTodo funcione por completo.</string>
     <string name="site_bar_host">Iniciando sesión en %1$s</string>
     <string name="site_bar_close">Volver a OpenTodo</string>

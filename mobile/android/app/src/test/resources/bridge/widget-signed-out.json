@@ -9,6 +9,9 @@
     "count": 0,
     "overdue": 0,
     "canComplete": false,
+    "canCompleteOn": false,
+    "today": null,
+    "dayStart": null,
     "rows": [],
     "more": 0
   }
