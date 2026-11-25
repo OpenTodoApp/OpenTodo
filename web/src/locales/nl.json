@@ -7922,6 +7922,15 @@
   "Quick add notification": "Melding voor snelle invoer",
   "Add a task from the notification shade, in any app.": "Voeg een taak toe vanuit het meldingenpaneel, in elke app.",
   "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android heeft meldingen voor OpenTodo geweigerd. Sta ze toe in de instellingen van Android.",
+  "A workspace can have at most {n} fields.": "Een werkruimte kan maximaal {n} velden hebben.",
+  "Fields every project of this workspace has, before its own. At most {max} fields.": "Velden die elk project van deze werkruimte heeft, vóór zijn eigen velden. Maximaal {max} velden.",
+  "Only you see these fields; other members of the workspace do not.": "Alleen jij ziet deze velden; andere leden van de werkruimte niet.",
+  "The project “{project}” already has a field named “{name}”.": "Het project “{project}” heeft al een veld met de naam “{name}”.",
+  "The project “{project}” would have more than {n} fields.": "Het project “{project}” zou dan meer dan {n} velden hebben.",
+  "This project already has a field named “{name}” from “{workspace}”.": "Dit project heeft al een veld met de naam “{name}” uit “{workspace}”.",
+  "This workspace already has a field named “{name}”.": "Deze werkruimte heeft al een veld met de naam “{name}”.",
+  "Workspace fields are edited in the workspace’s settings.": "Velden van de werkruimte bewerk je in de instellingen van de werkruimte.",
+  "Only the workspace’s owner can change its fields.": "Alleen de eigenaar van de werkruimte kan de velden ervan wijzigen.",
   "Screens made for a phone. This device only.": "Schermen die voor de telefoon zijn gemaakt. Alleen op dit apparaat.",
   "The app in the design made for a phone. Turn it off for the earlier screens.": "De app in het ontwerp voor de telefoon. Zet het uit voor de eerdere schermen."
 }

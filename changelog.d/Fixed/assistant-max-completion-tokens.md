@@ -1,0 +1,1 @@
+- **Assistant with Azure OpenAI.** Reasoning models on Azure OpenAI's v1 endpoint, set up as a compatible endpoint, now answer turns, routines and Test connection instead of failing with `provider_error`: when a provider refuses `max_tokens`, the request is sent again with `max_completion_tokens`. (#2087)

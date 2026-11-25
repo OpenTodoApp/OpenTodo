@@ -702,6 +702,9 @@
   "A win does not repeat or remind; the words stay in the title.": [
     "web/src/app/QuickAdd.tsx"
   ],
+  "A workspace can have at most {n} fields.": [
+    "web/src/lib/fields.ts"
+  ],
   "A workspace has its own projects, labels and views, and its own people. Projects stay private until you share them.": [
     "web/src/app/NewWorkspaceDialog.tsx"
   ],
@@ -6785,6 +6788,9 @@
     "web/src/app/FieldsDialog.tsx",
     "web/src/app/task-detail/FieldsGroup.tsx"
   ],
+  "Fields every project of this workspace has, before its own. At most {max} fields.": [
+    "web/src/app/FieldsDialog.tsx"
+  ],
   "Fields of {name}": [
     "web/src/app/FieldsDialog.tsx"
   ],
@@ -6792,6 +6798,7 @@
     "web/src/app/FilterView.tsx"
   ],
   "Fields…": [
+    "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/menus/projectMenu.tsx"
   ],
   "File": [
@@ -12815,6 +12822,9 @@
   "Only the server owner can change the AI assistants settings of this server.": [
     "web/src/lib/assistants.ts"
   ],
+  "Only the workspace’s owner can change its fields.": [
+    "web/src/lib/fields.ts"
+  ],
   "Only these": [
     "web/src/app/SyncScopeField.tsx",
     "web/src/app/WorkspaceChoice.tsx"
@@ -12836,6 +12846,9 @@
   ],
   "Only you can change this, signed in to the app.": [
     "web/src/lib/assistants.ts"
+  ],
+  "Only you see these fields; other members of the workspace do not.": [
+    "web/src/app/FieldsDialog.tsx"
   ],
   "Only you, the owner, see this. It goes away after the server restarts with a corrected value.": [
     "web/src/app/ConfigWarnings.tsx"
@@ -13674,8 +13687,8 @@
   "Personal": [
     "web/src/app/WorkspaceControl.tsx",
     "web/src/app/routines/Starters.tsx",
-    "web/src/app/workspaceNav.ts",
-    "web/src/lib/templateLibrary.ts"
+    "web/src/lib/templateLibrary.ts",
+    "web/src/lib/workspaces.ts"
   ],
   "Personal care": [
     "web/src/lib/aisles/index.ts"
@@ -18869,6 +18882,12 @@
   "The project a task or a note is in": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "The project “{project}” already has a field named “{name}”.": [
+    "web/src/lib/fields.ts"
+  ],
+  "The project “{project}” would have more than {n} fields.": [
+    "web/src/lib/fields.ts"
+  ],
   "The provider answers, but this model does not support tool use, which the assistant needs. Choose another model.": [
     "web/src/lib/assistant.ts"
   ],
@@ -19951,6 +19970,9 @@
   "This project": [
     "web/src/app/assistant/AssistantPanel.tsx"
   ],
+  "This project already has a field named “{name}” from “{workspace}”.": [
+    "web/src/lib/fields.ts"
+  ],
   "This project already has a field named “{name}”.": [
     "web/src/lib/fields.ts"
   ],
@@ -20208,6 +20230,9 @@
   ],
   "This weekend": [
     "web/src/lib/dates.ts"
+  ],
+  "This workspace already has a field named “{name}”.": [
+    "web/src/lib/fields.ts"
   ],
   "This year": [
     "web/src/lib/stats.ts"
@@ -22199,6 +22224,9 @@
   ],
   "Workspace features changed": [
     "web/src/app/auditFormat.ts"
+  ],
+  "Workspace fields are edited in the workspace’s settings.": [
+    "web/src/app/FieldsDialog.tsx"
   ],
   "Workspace invite link created": [
     "web/src/app/auditFormat.ts"

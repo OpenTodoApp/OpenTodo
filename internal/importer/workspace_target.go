@@ -91,6 +91,11 @@ func intoWorkspace(parsed *Parsed, target string, isDefault bool, name string) {
 			if _, has := e["workspace_id"]; has || opsync.IsNull(e["project_id"]) {
 				e["workspace_id"] = value
 			}
+		case KindField:
+			// A workspace field (workspace-fields) has no project.
+			if p := string(e["project_id"]); p == "" || p == `""` {
+				e["workspace_id"] = value
+			}
 		}
 	}
 	if len(parsed.Workspaces) > 0 {

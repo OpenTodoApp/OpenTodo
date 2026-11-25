@@ -19,7 +19,7 @@ func FoldReactions(e Entity, viewer string) Entity {
 	if e == nil {
 		return nil
 	}
-	out := make(Entity, len(e)+2)
+	out := make(Entity, len(e))
 	byName := make(map[string][]string, len(ReactionNames))
 	for _, name := range ReactionNames {
 		byName[name] = []string{}

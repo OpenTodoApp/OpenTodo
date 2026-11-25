@@ -7922,6 +7922,15 @@
   "Quick add notification": "クイック追加の通知",
   "Add a task from the notification shade, in any app.": "どのアプリを使っていても、通知シェードからタスクを追加できます。",
   "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android が OpenTodo の通知を拒否しました。Android の設定で許可してください。",
+  "A workspace can have at most {n} fields.": "ワークスペースのフィールドは最大 {n} 個です。",
+  "Fields every project of this workspace has, before its own. At most {max} fields.": "このワークスペースのすべてのプロジェクトが、独自のフィールドより前に持つフィールドです。最大 {max} 個。",
+  "Only you see these fields; other members of the workspace do not.": "これらのフィールドはあなただけに表示され、ワークスペースの他のメンバーには表示されません。",
+  "The project “{project}” already has a field named “{name}”.": "プロジェクト「{project}」にはすでに「{name}」という名前のフィールドがあります。",
+  "The project “{project}” would have more than {n} fields.": "プロジェクト「{project}」のフィールドが {n} 個を超えてしまいます。",
+  "This project already has a field named “{name}” from “{workspace}”.": "このプロジェクトにはすでに「{workspace}」からの「{name}」という名前のフィールドがあります。",
+  "This workspace already has a field named “{name}”.": "このワークスペースにはすでに「{name}」という名前のフィールドがあります。",
+  "Workspace fields are edited in the workspace’s settings.": "ワークスペースのフィールドはワークスペースの設定で編集します。",
+  "Only the workspace’s owner can change its fields.": "ワークスペースのフィールドを変更できるのはオーナーだけです。",
   "Screens made for a phone. This device only.": "スマートフォン向けに作った画面。この端末のみ。",
   "The app in the design made for a phone. Turn it off for the earlier screens.": "スマートフォン向けデザインのアプリ。オフにすると以前の画面に戻ります。"
 }

@@ -35,6 +35,12 @@ export function flattenSurface(v, prefix = '', out = {}) {
   return out
 }
 
+/** The path of a route's request field, the only kind of entry that may become optional. */
+const REQUEST_FIELD = /^routes › [A-Z]+ \S+ › request › /
+
+/** A request field that became optional (workspace-fields): compatible, as internal/httpapi compareSurface reads it. */
+const relaxed = (p, was, now) => REQUEST_FIELD.test(p) && now === `${was}?`
+
 /** surfaceProblems: entries of the tagged snapshot that are missing or changed in the current one. */
 export function surfaceProblems(tagged, current, tag = FREEZE_TAG, allowed = SECURITY_NARROWINGS) {
   const was = flattenSurface(tagged)
@@ -43,7 +49,7 @@ export function surfaceProblems(tagged, current, tag = FREEZE_TAG, allowed = SEC
   for (const [p, v] of Object.entries(was)) {
     if (p === 'about') continue
     if (!(p in now)) problems.push(`${p}: present at ${tag}, missing now`)
-    else if (now[p] !== v && !(allowed[p]?.from === v && allowed[p]?.to === now[p])) problems.push(`${p}: was ${JSON.stringify(v)} at ${tag}, now ${JSON.stringify(now[p])}`)
+    else if (now[p] !== v && !(allowed[p]?.from === v && allowed[p]?.to === now[p]) && !relaxed(p, v, now[p])) problems.push(`${p}: was ${JSON.stringify(v)} at ${tag}, now ${JSON.stringify(now[p])}`)
   }
   return problems.sort()
 }
