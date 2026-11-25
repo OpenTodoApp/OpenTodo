@@ -54,6 +54,10 @@ The app opens on its background colour, light or dark with the phone, and shows 
 
 Long-press the app icon for **Add task** (quick add), **Today** or [**Change server**](#connect-to-your-server).
 
+## Links to tasks
+
+A task's link in a calendar event, from the [calendar feed](calendar-feeds.md) or [calendar sync](calendar-sync.md), opens Safari. On a task's page Safari shows a banner with **Open**, which opens the task in the app. The app only opens links to the server it is connected to. Once you close the banner, Safari stops showing it on that site. iOS can't open these links in the app straight away, because a self-hosted server's address can't be built into the app.
+
 ## Offline
 
 The app from TestFlight or the App Store opens any server, and iOS gives such an app no service worker. When the server is unreachable at launch, the app opens from its last copy in the web view's cache and reads the tasks it already holds, and syncs once the server answers again; the first launch, before the app has loaded once, still needs the network, and says so when there is none. For a full offline start with the precache, use the [installed web app](install-phone.md#iphone-and-ipad), or build the app for your one server: set `OPENTODO_APP_BOUND_HOST=todo.example.com` when you build, and it gets the whole installed-web-app treatment, the service worker, the precache and an offline start.
