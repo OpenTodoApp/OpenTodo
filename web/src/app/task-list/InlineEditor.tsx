@@ -4,6 +4,8 @@
 // and Project, the panel's own editors, and Open details. Enter or a click away saves,
 // Esc discards the title change, Shift+Enter saves and opens the panel. The title is
 // the panel's TitleField, so `tomorrow p1 #work` typed here applies as it does there.
+// On touch the compact editor has Save and Cancel, Return reads Done, and a tap outside
+// saves (touch-title-editing).
 import { type FocusEvent, type KeyboardEvent, Suspense, useMemo, useRef, useState } from 'react'
 import { lazy } from '../../lib/lazy'
 import { describeDue, localDueOf, logicalToday } from '../../lib/dates'
@@ -22,6 +24,7 @@ import { TitleField } from '../TitleField'
 import { commitTitleEdit } from '../titleEdit'
 import { moveWithUndo } from '../undoable'
 import { useViewerZone } from '../useViews'
+import { useTapOutside } from './tapOutside'
 import { t } from '../../lib/i18n'
 
 // Date opens the row's Schedule popover, loaded on first use like the row's own, so the
@@ -67,6 +70,12 @@ export function InlineEditor({ task, caret, compact = false, projects, labelMap,
     cancelled.current = true
     finish()
   }
+  // A tap outside leaves the field, which saves (TitleField commits on blur), and does nothing else.
+  useTapOutside(compact, root, () => {
+    const field = root.current?.querySelector<HTMLElement>('[data-inline-title]')
+    if (field && document.activeElement === field) field.blur()
+    else finish()
+  })
 
   const onKeyDownFirst = (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && e.shiftKey) {
@@ -97,6 +106,7 @@ export function InlineEditor({ task, caret, compact = false, projects, labelMap,
       <TitleField title={task.title} value={draft} onChange={setDraft} onCommit={commit}
         onCancel={cancel}
         projects={projects} labels={labels} autoFocus initialCaret={caret} onKeyDownFirst={onKeyDownFirst}
+        enterKeyHint={compact ? 'done' : undefined}
         className={`ui-input w-full py-1 text-body ${compact ? 'min-h-11' : ''}`} ariaLabel={t('Title')} placeholder={t('Untitled')} dataAttrs={{ 'data-inline-title': true }}
         actions={compact ? (save) => (
           <div className="mt-1 flex flex-wrap gap-1">
