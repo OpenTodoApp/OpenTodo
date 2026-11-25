@@ -15,7 +15,7 @@ import { LOGBOOK_PAGE } from '../lib/logbook'
 import { setCompletedDisplay } from '../lib/completedDisplay'
 import { saveListColumns } from '../lib/sections'
 import type { AccountRole, Task } from '../lib/types'
-import { Button, DESKTOP_HEADER_QUERY, frameKind, hueFor, PAGE_FRAME, Skeleton, useFinePointer, useMediaQuery } from '../ui'
+import { Button, frameKind, hueFor, PAGE_FRAME, Skeleton, useFinePointer } from '../ui'
 import { BoardView } from './BoardView'
 import { UrgencyContext } from './useUrgency'
 import { BulkActionsMenu, ListReorderContext, SelectionBar } from './bulk/BulkActions'
@@ -84,7 +84,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     showCheckbox: selectMode || (fine && selection.ticked.size > 0), selectMode, fieldColumns: m.fieldColumns, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
     timeColumn: m.timeColumn, slotsOff: m.slotsOff, rowLayout: m.display?.rowLayout, actions: rowActions, ...useAddLines(rows, ui), edgeOf, cardNotes,
     inlineId: inline?.id ?? null, renderInline, expandedId, swipe: useListSwipe(listRoot, !fine && selection.ticked.size === 0 && !selectMode && !board, rows.length),
-    swipeEditTitle: !useMediaQuery(DESKTOP_HEADER_QUERY) && !timeline,
+    swipeEditTitle: !timeline,
     editInPlace: !board && !timeline,
   })
   const pageActions = (

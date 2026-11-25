@@ -127,8 +127,9 @@ export function beginSwipe(e: { pointerId: number; pointerType: string; clientX:
   return stop
 }
 
-function swallowClick(): void {
+/** The next click, if one comes within `ms`, reaches nothing (a swipe, or the tap that ended a touch edit). */
+export function swallowClick(ms = 0): void {
   const stopClick = (ev: Event) => { ev.stopPropagation(); ev.preventDefault() }
   window.addEventListener('click', stopClick, { capture: true, once: true })
-  setTimeout(() => window.removeEventListener('click', stopClick, { capture: true }), 0)
+  setTimeout(() => window.removeEventListener('click', stopClick, { capture: true }), ms)
 }
