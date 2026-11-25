@@ -46,12 +46,14 @@ export interface ShellGeofencePayload {
 /** The answer of `scheduleGeofences`: whether the shell may watch the regions in the background. */
 export type ShellLocationPermission = 'granted' | 'foreground-only' | 'denied' | 'unavailable'
 
-/** One reminder handed to the shell: the next 7 days, title only when allowed. */
+/** One reminder handed to the shell: the next 7 days, title and due text only when allowed. */
 export interface ShellReminder {
   id: string
   taskId: string
   fireAt: number
   title?: string
+  /** The notification's body, the due as of the firing day ("Today 14:00"), sent with the title (push-due-date D4). */
+  due?: string
   /** Only on an urgent reminder, which the iPhone app rings as an alarm (ios-urgent-alarms D3). */
   urgent?: true
 }

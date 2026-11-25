@@ -1,20 +1,22 @@
 {
-  "description": "The next reminders with titles (titles on, account readable), earliest first.",
+  "description": "The next reminders with titles and due texts (titles on, account readable), earliest first. The due text is the notification body, written as of the day the reminder fires (push-due-date D4).",
   "method": "scheduleReminders",
-  "payload": "[{\"id\":\"r-soon\",\"taskId\":\"call\",\"fireAt\":1792674000000,\"title\":\"Call the plumber ☎\"},{\"id\":\"r-late\",\"taskId\":\"plain\",\"fireAt\":1792681200000,\"title\":\"Water the plants\"}]",
+  "payload": "[{\"id\":\"r-soon\",\"taskId\":\"call\",\"fireAt\":1792674000000,\"title\":\"Call the plumber ☎\",\"due\":\"Today 09:30\"},{\"id\":\"r-late\",\"taskId\":\"plain\",\"fireAt\":1792681200000,\"title\":\"Water the plants\",\"due\":\"Today\"}]",
   "now": 1792670400000,
   "expect": [
     {
       "id": "r-soon",
       "taskId": "call",
       "fireAt": 1792674000000,
-      "title": "Call the plumber ☎"
+      "title": "Call the plumber ☎",
+      "due": "Today 09:30"
     },
     {
       "id": "r-late",
       "taskId": "plain",
       "fireAt": 1792681200000,
-      "title": "Water the plants"
+      "title": "Water the plants",
+      "due": "Today"
     }
   ]
 }

@@ -54,7 +54,7 @@ The panel SHALL be either open or closed. Its state SHALL be kept on the device 
 
 While the panel is open:
 - A first click on a task's row or title (it selects the row), Enter on a selected row whose task is not shown, and moving the cursor (`j`, `k`, the arrow keys) SHALL show that task in the panel. While rows are ticked for a bulk action the panel SHALL keep its task.
-- A separate qualifying click on the selected title, `F2`, or the **Edit title** menu action SHALL edit in place where the list has the inline editor, and the panel SHALL keep showing the task (`task-list-presentation` "Inline title editing").
+- A separate qualifying click on the selected title, `F2`, or the **Edit** menu action SHALL edit in place where the list has the inline editor, and the panel SHALL keep showing the task (`task-list-presentation` "Inline title editing").
 - Focus SHALL stay on the list when the panel follows the cursor, after a key and after a click on a row alike; the panel takes focus only when the user moves into it.
 - Following the cursor SHALL cost the list what moving the cursor costs without the panel: one render of the list and of the two rows whose selection changed per move, at any list size.
 - Enter on the row whose task is shown SHALL open the task page.

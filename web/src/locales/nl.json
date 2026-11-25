@@ -1552,7 +1552,6 @@
   "Edit the project note ({keys})": "De projectnotitie bewerken ({keys})",
   "Edit the query of a saved view; Enter saves it, Esc discards": "Bewerk de query van een opgeslagen weergave; Enter slaat op, Esc gooit weg",
   "Edit the selected task's title in place (also click its selected title). Enter saves, Esc cancels, Shift+Enter opens the details": "Bewerk de titel van de geselecteerde taak in de lijst. Je kunt ook op de geselecteerde titel klikken. Enter slaat op, Esc annuleert en Shift+Enter opent de details.",
-  "Edit title": "Titel bewerken",
   "Edit the title. Tab, Enter or a click away saves it and the decision keys work again. Esc restores it": "Bewerk de titel. Tab, Enter of een klik ernaast slaat hem op en de beslisstoetsen werken weer. Esc herstelt hem",
   "Edit the view": "De weergave bewerken",
   "Edit this occurrence": "Dit exemplaar bewerken",
@@ -7916,6 +7915,10 @@
   "Label deleted": "Label verwijderd",
   "Merged into {label}": "Samengevoegd in {label}",
   "Field deleted": "Veld verwijderd",
+  "Phone screens": "Telefoonschermen",
+  "A trial of screens made for a phone. This device only.": "Een proef met schermen die voor de telefoon zijn gemaakt. Alleen op dit apparaat.",
+  "New phone screens": "Nieuwe telefoonschermen",
+  "Today and the task page in the new design. Turn it off at any time.": "Vandaag en de taakpagina in het nieuwe ontwerp. Je kunt het altijd uitzetten.",
   "Quick add notification": "Melding voor snelle invoer",
   "Add a task from the notification shade, in any app.": "Voeg een taak toe vanuit het meldingenpaneel, in elke app.",
   "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android heeft meldingen voor OpenTodo geweigerd. Sta ze toe in de instellingen van Android."

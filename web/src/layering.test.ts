@@ -41,4 +41,19 @@ describe('web layering', () => {
       expect(await rules(file, "import { db } from '../lib/db'\nexport const x = db.tasks\n")).toContain('no-restricted-imports')
     }
   })
+
+  it('keeps the phone UI and the desktop screens apart (phone-ui-trial D1)', async () => {
+    // A phone screen never imports a desktop screen; shared hooks, models and listed editors are fine.
+    expect(await rules('src/phone/screens/Fake.tsx', "import { TaskRow } from '../../app/TaskRow'\nexport const x = TaskRow\n")).toEqual(['no-restricted-imports'])
+    expect(await rules('src/phone/screens/Fake.tsx', "import { TaskListView } from '../../app/TaskListView'\nexport const x = TaskListView\n")).toEqual(['no-restricted-imports'])
+    expect(await rules('src/phone/screens/Fake.tsx', "import { completeWithUndo } from '../../app/undoable'\nexport const x = completeWithUndo\n")).toEqual([])
+    expect(await rules('src/phone/screens/Fake.tsx', "import { useListModel } from '../../app/task-list/useListModel'\nexport const x = useListModel\n")).toEqual([])
+    expect(await rules('src/phone/components/Fake.tsx', "import { Icon } from '../../ui'\nexport const x = Icon\n")).toEqual([])
+    // The phone UI reads local data through src/lib, like every screen.
+    expect(await rules('src/phone/screens/Fake.tsx', "import { db } from '../../lib/db'\nexport const x = db\n")).toEqual(['no-restricted-imports'])
+    // A desktop screen imports the phone UI only where it is chosen and switched on.
+    expect(await rules('src/app/TaskListView.tsx', "import { PhoneRow } from '../phone/components/PhoneRow'\nexport const x = PhoneRow\n")).toEqual(['no-restricted-imports'])
+    expect(await rules('src/app/Shell.tsx', "import { usePhoneUi } from '../phone/prefs'\nexport const x = usePhoneUi\n")).toEqual([])
+    expect(await rules('src/app/PreferencesPanels.tsx', "import { usePhoneUi } from '../phone/prefs'\nexport const x = usePhoneUi\n")).toEqual([])
+  })
 })

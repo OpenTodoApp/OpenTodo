@@ -119,15 +119,16 @@ object Notifier {
     fun notificationId(id: String): Int = id.hashCode()
 
     /** A reminder of the phone's schedule, when its alarm fires. */
-    fun reminder(context: Context, r: ShellReminder): Boolean = show(context, r.id, r.taskId, r.title, r.fireAt)
+    fun reminder(context: Context, r: ShellReminder): Boolean = show(context, r.id, r.taskId, r.title, r.fireAt, r.due)
 
     /**
      * The one notification of a reminder, for its alarm and for a push alike (shell-push D4):
      * the id comes from the reminder's id, so whichever arrives second replaces the first, and
      * without another sound. A firing already shown is not shown again (a notification the
-     * user dismissed stays away). False when notifications are not allowed.
+     * user dismissed stays away). [due] is the body ("Today 14:00", push-due-date), else "Reminder".
+     * False when notifications are not allowed.
      */
-    fun show(context: Context, reminderId: String, taskId: String, title: String?, fireAt: Long): Boolean {
+    fun show(context: Context, reminderId: String, taskId: String, title: String?, fireAt: Long, due: String? = null): Boolean {
         if (!Scheduler.notificationsAllowed(context)) return false
         val prefs = Prefs(context)
         if (ReminderSchedule.wasShown(prefs.remindersShown, reminderId, fireAt)) return true
@@ -135,7 +136,7 @@ object Notifier {
         val n = NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title ?: context.getString(R.string.reminder_generic))
-            .setContentText(context.getString(R.string.reminder_text))
+            .setContentText(due ?: context.getString(R.string.reminder_text))
             .setWhen(fireAt).setShowWhen(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

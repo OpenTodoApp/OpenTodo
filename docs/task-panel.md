@@ -11,7 +11,7 @@ order: 11
 
 <picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="A task open as its page: the breadcrumb and 2 / 5 at the top, the title, the notes and the subtasks on the left, and its facts on the right under Schedule, Details, Labels and Project."></picture>
 
-On desktop, click to select. Click the selected title or press <kbd>F2</kbd> to edit; with [**Click a task to: Open details**](settings-app.md#general) a click opens the task instead. <kbd>Enter</kbd> opens details or saves an edit. Double-click opens the page. On a phone, tap the title to open. A short left swipe edits the title on release. A full swipe opens **Schedule**.
+On desktop, click to select. Click the selected title, press <kbd>F2</kbd> or choose the row's **Edit** to edit; with [**Click a task to: Open details**](settings-app.md#general) a click opens the task instead. <kbd>Enter</kbd> or the row menu's **Open details** opens it. Double-click opens the page. On a phone, tap a title to open. A short left swipe edits the title on release. A full swipe opens **Schedule**.
 
 ## Moving around
 
@@ -42,8 +42,8 @@ If you are a viewer of a shared project, the lines read as text and can't be cha
 
 To keep tasks beside the list, choose **In a side panel** under **Settings → Appearance → Task details**. From 1024 px wide every list has a panel with the task's facts, subtasks, attachments, notes and comments:
 
-- It follows the selection: click a task or move to it with <kbd>j</kbd> / <kbd>k</kbd>, and the keyboard stays on the list. <kbd>Enter</kbd> on the task shown opens its page.
-- The panel never closes by itself. Only its **×**, or <kbd>Esc</kbd> inside it, closes it, and it stays closed until you click a task or press <kbd>Enter</kbd> on one.
+- It follows the selection: click a task or move to it with <kbd>j</kbd> / <kbd>k</kbd>. Editing another row keeps it. <kbd>Enter</kbd> on the task shown opens its page.
+- It never closes by itself. Its **×** or <kbd>Esc</kbd> inside it closes it; it stays closed until you click a task or press <kbd>Enter</kbd> on one.
 - Resize it by its left edge: drag it, click it (widest, then back), or focus it and press ← or →. Each device keeps its own width.
 
 Phones and narrow windows keep the page.

@@ -328,6 +328,14 @@ export function describeDue(due: Due | null, today = logicalToday(), zone?: stri
 }
 
 /**
+ * A reminder notification's body (push-due-date D1): the due in a row's words as of
+ * the day the reminder fires, "Today 14:00", "Tomorrow", "Friday", "28 Nov"; null without a due.
+ */
+export function notificationDue(due: Due | null | undefined, fireAt: number): string | null {
+  return describeDue(due ?? null, logicalDay(fireAt))?.label ?? null
+}
+
+/**
  * A due as one phrase in the long style ("Wed 21 Oct 3:00 PM"), in the
  * viewer's zone and the user's date and time formats (ux-feedback-2 D3): the one
  * way a scheduling surface shows a due with its time, never `due.time` raw.

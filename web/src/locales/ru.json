@@ -1649,7 +1649,6 @@
   "Edit the project note ({keys})": "Изменить заметку проекта ({keys})",
   "Edit the query of a saved view; Enter saves it, Esc discards": "Изменить запрос сохранённого вида; Enter сохраняет, Esc отменяет",
   "Edit the selected task's title in place (also click its selected title). Enter saves, Esc cancels, Shift+Enter opens the details": "Изменить название выбранной задачи прямо в списке. Можно также нажать на выбранное название. Enter сохраняет, Esc отменяет, Shift+Enter открывает сведения.",
-  "Edit title": "Изменить название",
   "Edit the title. Tab, Enter or a click away saves it and the decision keys work again. Esc restores it": "Измените заголовок. Tab, Enter или щелчок в стороне сохраняют его, и клавиши решений снова работают. Esc восстанавливает его",
   "Edit the view": "Изменить вид",
   "Edit this occurrence": "Изменить это повторение",
@@ -7916,6 +7915,10 @@
   "Label deleted": "Метка удалена",
   "Merged into {label}": "Объединено с {label}",
   "Field deleted": "Поле удалено",
+  "Phone screens": "Экраны для телефона",
+  "A trial of screens made for a phone. This device only.": "Пробная версия экранов, сделанных для телефона. Только на этом устройстве.",
+  "New phone screens": "Новые экраны для телефона",
+  "Today and the task page in the new design. Turn it off at any time.": "«Сегодня» и страница задачи в новом оформлении. Можно отключить в любой момент.",
   "Quick add notification": "Уведомление быстрого добавления",
   "Add a task from the notification shade, in any app.": "Добавляйте задачу из шторки уведомлений в любом приложении.",
   "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android запретил уведомления OpenTodo. Разрешите их в настройках Android."

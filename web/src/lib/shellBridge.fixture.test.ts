@@ -216,19 +216,19 @@ function fixtures(): Record<string, Fixture> {
       expect: { updatedAt: NOW, locked: true, today: completedLocked.completed.today, days: [] },
     },
     'reminders.json': {
-      description: 'The next reminders with titles (titles on, account readable), earliest first.',
+      description: 'The next reminders with titles and due texts (titles on, account readable), earliest first. The due text is the notification body, written as of the day the reminder fires (push-due-date D4).',
       method: 'scheduleReminders', payload: JSON.stringify(titled), now: NOW,
-      expect: titled.map((r) => ({ id: r.id, taskId: r.taskId, fireAt: r.fireAt, title: r.title ?? null })),
+      expect: titled.map((r) => ({ id: r.id, taskId: r.taskId, fireAt: r.fireAt, title: r.title ?? null, due: r.due ?? null })),
     },
     'reminders-encrypted.json': {
-      description: 'An end-to-end encrypted account: no titles reach the shell.',
+      description: 'An end-to-end encrypted account: no titles and no due texts reach the shell.',
       method: 'scheduleReminders', payload: JSON.stringify(untitled), now: NOW,
-      expect: untitled.map((r) => ({ id: r.id, taskId: r.taskId, fireAt: r.fireAt, title: null })),
+      expect: untitled.map((r) => ({ id: r.id, taskId: r.taskId, fireAt: r.fireAt, title: null, due: null })),
     },
     'reminders-urgent.json': {
       description: 'An urgent reminder (ios-urgent-alarms D3) carries urgent: true, the others no urgent at all. The iPhone app rings an urgent one as an alarm where it can; every other shell schedules it as an ordinary reminder.',
       method: 'scheduleReminders', payload: JSON.stringify(urgent), now: NOW,
-      expect: urgent.map((r) => ({ id: r.id, taskId: r.taskId, fireAt: r.fireAt, title: r.title ?? null, urgent: r.urgent === true })),
+      expect: urgent.map((r) => ({ id: r.id, taskId: r.taskId, fireAt: r.fireAt, title: r.title ?? null, due: r.due ?? null, urgent: r.urgent === true })),
     },
     'reminders-signed-out.json': {
       description: 'Sign-out: the schedule is emptied.',

@@ -2,7 +2,7 @@
 // everywhere except a page that keeps a split. It reads the trail the list left
 // (taskTrail.ts) for "4 / 12", j and k and the way back; opened from a link or a
 // reload there is no trail, and Back goes to the task's own list with it selected.
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useState, type ComponentType, type LazyExoticComponent } from 'react'
 import { lazy } from '../lib/lazy'
 import { useHabitsEnabled } from '../lib/habitPrefs'
 import { useTask } from '../lib/localData'
@@ -14,11 +14,16 @@ import { navigate, parseRoute } from './router'
 import { selectTask } from './signals'
 import { leaveTaskPage, openTaskPage, stepTask, trailNeighbour, trailPosition, useTaskTrail } from './taskTrail'
 import { TaskPageView } from './task-detail/TaskPageView'
+import type { TaskPageViewProps } from './task-detail/taskPageProps'
 import { t } from '../lib/i18n'
 
 const HabitPage = lazy(() => import('./habits/HabitPage'))
 
-export function TaskPage({ id, user, asTask = false }: { id: string; user?: Pick<User, 'id'>; asTask?: boolean }) {
+export function TaskPage({ id, user, asTask = false, View = TaskPageView }: {
+  id: string; user?: Pick<User, 'id'>; asTask?: boolean
+  /** What draws the page: the desktop page, or the phone's while the phone UI is on (phone-ui-trial D2). */
+  View?: ComponentType<TaskPageViewProps> | LazyExoticComponent<ComponentType<TaskPageViewProps>>
+}) {
   const habitsOn = useHabitsEnabled()
   // Whether the task was a habit when it opened: one made a habit here (Track as a habit) stays on its task page.
   const [openedAs, setOpenedAs] = useState<{ id: string; habit: boolean } | null>(null)
@@ -50,7 +55,7 @@ export function TaskPage({ id, user, asTask = false }: { id: string; user?: Pick
   // An open habit series shows its habit page (habits-polish D3); ?as=task, the page's Open as a task, the task page.
   if (habitsOn && !asTask && (openedAs?.id === id ? openedAs.habit : !!task.habit) && task.habit && !task.series_id) return <Suspense fallback={null}><HabitPage key={id} id={id} /></Suspense>
   return (
-    <TaskPageView key={id} taskId={id} userId={user?.id} readOnly={data.readOnly(task)} projects={data.projects} labelMap={data.labelMap}
+    <View key={id} taskId={id} userId={user?.id} readOnly={data.readOnly(task)} projects={data.projects} labelMap={data.labelMap}
       onOpen={(next) => openTaskPage(next)}
       nav={{
         position: trailPosition(id),
