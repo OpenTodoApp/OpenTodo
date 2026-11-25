@@ -37,8 +37,9 @@ type Point struct {
 	// Zone is the IANA name ("UTC" for Z times), "" for floating or all-day.
 	Zone   string
 	AllDay bool
-	// Wall is a zoned time's wall clock as written (in UTC), which T differs
-	// from only for a time in a daylight saving gap; zero otherwise.
+	// Wall is the wall clock as written (in UTC) of every time read in a
+	// zone, a TZID or the calendar's default; zero for Z, floating and
+	// all-day times. Its clock differs from T's only in a daylight saving gap.
 	Wall time.Time `json:"-"`
 }
 
