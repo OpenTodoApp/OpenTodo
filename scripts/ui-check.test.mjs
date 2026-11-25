@@ -103,5 +103,16 @@ test('rule 7 also covers floats, origins, gradients, safe padding, translates an
   assert.equal(physicalDirectionProblems('a.tsx', `<div style={{ textAlign: 'right' }} />`).length, 1)
   assert.deepEqual(physicalDirectionProblems('a.tsx', `<div style={{ /* physical: at the pointer */ left: x }} />`), [])
   assert.deepEqual(physicalDirectionProblems('a.tsx', `{/* physical: drawn from coordinates */}\n<div className="left-0" />`), [])
-  assert.deepEqual(physicalDirectionProblems('a.tsx', `// physical-file: a chart\nimport x from 'y'\nconst c = 'left-0'`), [])
+  assert.deepEqual(physicalDirectionProblems('web/src/app/review/charts.tsx', `// physical-file: a chart\nimport x from 'y'\nconst c = 'left-0'`), [])
+  // physical-file only for the listed files, never in web/src/ui, and with a reason.
+  assert.equal(physicalDirectionProblems('web/src/app/a.tsx', `// physical-file: a chart\nconst c = 'left-0'`).length, 2)
+  assert.match(physicalDirectionProblems('web/src/ui/Chart.tsx', `// physical-file: a chart\n`)[0], /shared component/)
+  assert.match(physicalDirectionProblems('web/src/app/review/charts.tsx', `// physical-file:\n`)[0], /needs a reason/)
+  // physical: needs a reason.
+  assert.equal(physicalDirectionProblems('a.tsx', `{/* physical: */}\n<div className="left-0" />`).length, 1)
+  assert.equal(physicalDirectionProblems('a.tsx', `// physical:\nconst c = 'left-0'`).length, 1)
+  // A translate's twin is an rtl: translate with the same variants, not any rtl: class.
+  assert.equal(physicalDirectionProblems('a.tsx', `<div className="translate-x-4 rtl:ms-2" />`).length, 1)
+  assert.equal(physicalDirectionProblems('a.tsx', `<div className="md:translate-x-4 rtl:-translate-x-4" />`).length, 1)
+  assert.deepEqual(physicalDirectionProblems('a.tsx', `<div className="md:translate-x-4 md:rtl:-translate-x-4 translate-x-0 rtl:translate-x-0" />`), [])
 })
