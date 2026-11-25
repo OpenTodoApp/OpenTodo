@@ -80,7 +80,7 @@ export function PhoneRow({ row, readOnly = false, swipe, onToggle, onOpen, depth
   return (
     <li data-drag-id="phone-row" data-phone-row={row.id} data-task-id={row.id} {...attrs} onPointerDown={press}
       data-ticked={ticked || undefined} data-depth={depth || undefined}
-      style={depth ? { paddingLeft: `${Math.min(depth, MAX_DEPTH) * INDENT_REM}rem` } : undefined}
+      style={depth ? { paddingInlineStart: `${Math.min(depth, MAX_DEPTH) * INDENT_REM}rem` } : undefined}
       className={`relative flex min-w-0 items-start ${ticked ? 'bg-accent-soft' : 'bg-surface'} ${swipe ? 'touch-pan-y' : ''} ${lifted ? 'z-[2] opacity-70 shadow-3' : ''}`}>
       {swipe?.layers}{overlay}
       {selecting ? (
@@ -100,9 +100,9 @@ export function PhoneRow({ row, readOnly = false, swipe, onToggle, onOpen, depth
           </span>
         </button>
       )}
-      {inline ? <div className="flex min-h-14 min-w-0 flex-1 items-center py-1 pr-2" data-phone-inline>{inline}</div> : (
+      {inline ? <div className="flex min-h-14 min-w-0 flex-1 items-center py-1 pe-2" data-phone-inline>{inline}</div> : (
         <button type="button" onClick={() => (tickable ? onTick?.(row.id) : selecting ? undefined : onOpen(row.id))} data-phone-open data-row-open
-          className="press-selected flex min-h-14 min-w-0 flex-1 flex-col justify-center py-2 pr-4 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">
+          className="press-selected flex min-h-14 min-w-0 flex-1 flex-col justify-center py-2 pe-4 text-start focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">
           <span data-row-title className={`line-clamp-2 text-prose ${row.done ? 'text-faint line-through' : 'text-strong'}`}>{row.title}</span>
           {facts.length > 0 && (
             <span className="mt-0.5 flex min-w-0 items-center gap-x-2 text-meta text-muted" data-phone-facts>

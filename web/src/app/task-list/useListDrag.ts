@@ -20,6 +20,7 @@ import type { ViewPlacement } from '../../lib/viewOrder'
 import { t } from '../../lib/i18n'
 import type { DayDrop, GroupDrop } from '../../lib/viewOrderMove'
 import type { DragDepth } from './projectGroupPlacement'
+import { inlineDelta } from '../../lib/direction'
 
 /** A drop Today or Upcoming plans: across project groups, or a line in the day order. */
 export type TodayListDrop = GroupDrop | DayDrop
@@ -158,7 +159,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
         // Over a sidebar target the list shows no drop line (the target shows its ring).
         const now = dragState.current
         if (now.today) {
-          const next = now.today.resolve(task, target, y, { start: startDepth, dx: x - startX, step }, x)
+          const next = now.today.resolve(task, target, y, { start: startDepth, dx: inlineDelta(x - startX), step }, x)
           setDropGroup(next?.group ?? null)
           show(next?.indicator ?? null)
           return
@@ -183,7 +184,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
         }
         const zone = id && !own.has(id) ? zoneUnder('data-task-id', id, y, tree) : null
         const gap = tree && id && zone ? gapAround(now.groups, own, id, zone) : null
-        const depth = gap ? pointedDepth(startDepth, x - startX, step, gapDepths(gap.above, gap.below)) : undefined
+        const depth = gap ? pointedDepth(startDepth, inlineDelta(x - startX), step, gapDepths(gap.above, gap.below)) : undefined
         show(id && zone ? { id, zone, ...(depth !== undefined ? { depth } : {}), ...(note ? { note } : {}) } : null)
         // A drop on a column lands last in it, so the placeholder follows its last card.
         const over = target?.startsWith('section:') ? target.slice('section:'.length) : doneColumn
@@ -194,7 +195,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
         const { rows: rs, groups, sectionOfRow: secs, board: b, ticked, reorder, readOnly, groupOf, across } = dragState.current
         const today = dragState.current.today
         // A line in one of Upcoming's days places the task there too (day-manual-order D2); without one the day takes the drop.
-        const line = today && target.startsWith('drop:day:') ? today.resolve(task, target, y, { start: startDepth, dx: x - startX, step }, x) : null
+        const line = today && target.startsWith('drop:day:') ? today.resolve(task, target, y, { start: startDepth, dx: inlineDelta(x - startX), step }, x) : null
         if (today && line) {
           act(today.move(task.id, line.drop).then((id) => { if (id) onDropped(id) }))
           return
@@ -206,7 +207,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
           return
         }
         if (today) {
-          const next = today.resolve(task, target, y, { start: startDepth, dx: x - startX, step }, x)
+          const next = today.resolve(task, target, y, { start: startDepth, dx: inlineDelta(x - startX), step }, x)
           if (next) act(today.move(task.id, next.drop).then((id) => { if (id) onDropped(id) }))
           return
         }

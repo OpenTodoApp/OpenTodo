@@ -37,7 +37,7 @@ export function Switch({ checked, onChange, label, description, disabled, hideLa
       >
         <span aria-hidden="true" className={`relative inline-flex h-[1.125rem] w-8 items-center rounded-full border transition duration-(--duration-ui) ease-calm
           ${checked ? 'border-accent bg-accent' : 'border-strong bg-selected'}`}>
-          <span className={`inline-block h-3.5 w-3.5 rounded-full shadow-1 transition-transform duration-(--duration-ui) ease-calm ${checked ? 'translate-x-[0.9375rem] bg-on-accent' : 'translate-x-px bg-muted'}`} />
+          <span className={`inline-block h-3.5 w-3.5 rounded-full shadow-1 transition-transform duration-(--duration-ui) ease-calm ${checked ? 'translate-x-[0.9375rem] rtl:-translate-x-[0.9375rem] bg-on-accent' : 'translate-x-px rtl:-translate-x-px bg-muted'}`} />
         </span>
       </button>
       {/* A disabled control fades; its label stays readable (AA) in the muted colour. */}

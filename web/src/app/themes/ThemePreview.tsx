@@ -77,7 +77,7 @@ function CalendarScreen({ d }: { d: PreviewData }) {
         <span key={a.title} data-hue={a.hue} className="ui-block ui-block--row z-[1] m-0.5 truncate px-1.5 py-0.5" style={{ gridRow: 2, gridColumn: `${a.day + 2} / span ${a.span}` }}>{a.title}</span>
       ))}
       {HOURS.map((h) => (
-        <span key={h} className="bg-surface px-1 text-right text-hint text-faint" style={{ gridRow: row(h) }}>{h}</span>
+        <span key={h} className="bg-surface px-1 text-end text-hint text-faint" style={{ gridRow: row(h) }}>{h}</span>
       ))}
       {HOURS.flatMap((h) => DAYS.map((i) => <span key={`${h}-${i}`} className={i === 2 ? 'bg-raised' : 'bg-surface'} style={{ gridRow: row(h), gridColumn: i + 2 }} />))}
       {d.blocks.map((b) => (

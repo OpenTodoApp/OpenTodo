@@ -16,7 +16,7 @@ export default function NoteBlock({ block }: { block: Extract<AssistantBlock, { 
     <div className="space-y-1 p-3" data-assistant-note>
       <p className="flex items-center gap-1.5 text-body font-semibold user-text"><Icon name="notebook-pen" size="sm" className="text-muted" />{n.title.trim() || t('Untitled note')}</p>
       {n.description && <div className="line-clamp-12 text-body"><Markdown source={n.description} /></div>}
-      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -ml-2 gap-1" onClick={() => navigate({ view: 'notes', id: n.id })}>
+      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -ms-2 gap-1" onClick={() => navigate({ view: 'notes', id: n.id })}>
         <Icon name="arrow-right" size="sm" />{t('Open note')}
       </button>
     </div>

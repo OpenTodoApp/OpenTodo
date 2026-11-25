@@ -171,7 +171,7 @@ export function CalendarFeedsView(p: CalendarFeedsViewProps) {
         <Dialog title={t('Your task feed URL')} onClose={p.onDismissUrl} size="md">
           <div className="space-y-4" data-testid="calendar-feed-url">
             <SecretReveal what={t('address')} secret={p.feedUrl} />
-            <ul className="list-disc space-y-1 pl-5 text-meta text-muted">
+            <ul className="list-disc space-y-1 ps-5 text-meta text-muted">
               <li>{t.rich('<strong>Google Calendar</strong>: Other calendars → From URL.', { strong: (chunks) => <strong className="text-default">{chunks}</strong> })}</li>
               <li>{t.rich('<strong>Outlook</strong>: Add calendar → Subscribe from web.', { strong: (chunks) => <strong className="text-default">{chunks}</strong> })}</li>
               <li>{t.rich('<strong>Apple Calendar</strong>: File → New Calendar Subscription.', { strong: (chunks) => <strong className="text-default">{chunks}</strong> })}</li>

@@ -116,11 +116,11 @@ describe('locale resolution (D4)', () => {
     }
   })
 
-  it('simplified Chinese sets lang to zh and does not change direction', () => {
+  it('simplified Chinese sets lang to zh and keeps the direction left to right', () => {
     document.documentElement.removeAttribute('dir')
     applyCatalog('zh' as LanguageCode, 'zh', {})
     expect(document.documentElement.lang).toBe('zh')
-    expect(document.documentElement.hasAttribute('dir')).toBe(false)
+    expect(document.documentElement.dir).toBe('ltr')
     document.documentElement.dir = 'ltr'
     applyCatalog('zh' as LanguageCode, 'zh-CN', {})
     expect(document.documentElement.lang).toBe('zh')
@@ -246,5 +246,17 @@ describe('words for tasks that are late (page-rhythm D8)', () => {
       expect(late, lang).toEqual([])
       expect(catalog.Earlier, `${lang} translates Earlier`).toBeTruthy()
     }
+  })
+})
+
+describe('Arabic numbers (arabic-rtl D6)', () => {
+  it('keeps Western digits and the six plural categories', async () => {
+    const { westernDigits } = await import('./locale')
+    expect(westernDigits('ar')).toBe('ar-u-nu-latn')
+    expect(westernDigits('ar-EG')).toBe('ar-EG-u-nu-latn')
+    expect(westernDigits('ar-EG-u-nu-arab')).toBe('ar-EG-u-nu-arab')
+    expect(westernDigits('de-CH')).toBe('de-CH')
+    expect(new Intl.NumberFormat(westernDigits('ar-EG')).format(12345)).toMatch(/^12.345$/)
+    expect(new Intl.PluralRules('ar').resolvedOptions().pluralCategories.sort()).toEqual(['few', 'many', 'one', 'other', 'two', 'zero'])
   })
 })

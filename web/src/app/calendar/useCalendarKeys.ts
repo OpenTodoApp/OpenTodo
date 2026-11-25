@@ -20,6 +20,7 @@ import { completeWithUndo } from '../undoable'
 import type { Placement } from './grid'
 import { eventKeyTarget, type EventKey, type GridEvent } from './eventGrid'
 import { KEY_SETTLE_MS } from './eventActions'
+import { inlineKey } from '../../lib/direction'
 
 type Patch = Partial<Omit<Task, 'id' | '_clock'>>
 
@@ -109,7 +110,7 @@ export function useCalendarKeys(c: CalendarKeyContext) {
   /** A selected event (calendar-event-edits D7): the task keys change it, waiting for the presses to settle. */
   const eventKey = (key: EventKey, e: KeyboardEvent): boolean => {
     if (!ev || placing || !c.commitEvent) return false
-    const dir = e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 1
+    const dir = e.key === 'ArrowUp' || inlineKey(e) === 'ArrowLeft' ? -1 : 1
     const target = eventKeyTarget(ev, key, dir)
     if (target) c.commitEvent(selectedId!, target, KEY_SETTLE_MS)
     return true
@@ -117,8 +118,8 @@ export function useCalendarKeys(c: CalendarKeyContext) {
   /** A selected slot (calendar-slots D5): arrows move it, Shift+arrows change its length. */
   const slotKeys = (e: KeyboardEvent): boolean => {
     if (!slot || placing) return false
-    const dir = e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 1
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    const dir = e.key === 'ArrowUp' || inlineKey(e) === 'ArrowLeft' ? -1 : 1
+    if (inlineKey(e) === 'ArrowLeft' || inlineKey(e) === 'ArrowRight') {
       const date = addDaysISO(slot.slot.date!, dir)
       void runSlot(moveSlot(slot, date, slot.start)).then(() => c.follow(date))
     } else if (e.shiftKey) void runSlot(resizeSlot(slot.slot, slot.slot.minutes + dir * SLOT_MINUTES))
@@ -144,7 +145,7 @@ export function useCalendarKeys(c: CalendarKeyContext) {
   const editable = (tk: Task) => !tk.completed_at && (c.canEdit?.(tk) ?? true)
   const spanKey = (e: KeyboardEvent, end: 'first' | 'last'): boolean | void => {
     if (placing || !task || !editable(task)) return false
-    const days = e.key === 'ArrowLeft' ? -1 : 1
+    const days = inlineKey(e) === 'ArrowLeft' ? -1 : 1
     if (!spanKeyPatch(task, end, days)) return false
     edit(task.id, (x) => spanKeyPatch(x, end, days))
   }
@@ -191,7 +192,7 @@ export function useCalendarKeys(c: CalendarKeyContext) {
       })(e)
     },
     'calendar.shift-day': (e) => {
-      const days = e.key === 'ArrowLeft' ? -1 : 1
+      const days = inlineKey(e) === 'ArrowLeft' ? -1 : 1
       if (placing) { ghost({ ...placing, date: addDaysISO(placing.date, days) }); return }
       if (slotKeys(e)) return
       if (eventKey('shift-day', e)) return

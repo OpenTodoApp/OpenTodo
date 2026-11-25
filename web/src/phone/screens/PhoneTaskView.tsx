@@ -56,7 +56,7 @@ export function PhoneTaskView(p: PhoneTaskViewProps) {
       <PhoneHeader shown title={p.position}
         lead={(
           <button type="button" onClick={p.onBack} aria-label={p.backLabel ? undefined : t('Back to the list')} data-page-back
-            className="flex min-h-11 min-w-11 items-center gap-0.5 rounded-control pl-1 pr-2 text-prose text-accent focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">
+            className="flex min-h-11 min-w-11 items-center gap-0.5 rounded-control ps-1 pe-2 text-prose text-accent focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">
             <Icon name="chevron-left" size="md" /><span className="max-w-[8rem] truncate">{p.backLabel}</span>
           </button>
         )}
@@ -70,7 +70,7 @@ export function PhoneTaskView(p: PhoneTaskViewProps) {
         {p.notice}
         <div className="flex items-start gap-1">
           <button type="button" aria-pressed={p.done} disabled={p.readOnly} aria-label={p.done ? t('Reopen task') : t('Complete task')} onClick={p.onToggle} data-phone-check
-            className="-ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-control focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-focus">
+            className="-ms-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-control focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-focus">
             <span aria-hidden className={`flex h-7 w-7 items-center justify-center rounded-full border-2 ${p.done ? 'border-transparent bg-faint text-on-accent' : RING[p.priority]}`}>
               {p.done && <Icon name="check" size="sm" />}
             </span>

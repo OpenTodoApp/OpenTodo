@@ -126,7 +126,7 @@ export function EnrolmentStepView(p: EnrolmentStepViewProps) {
   }
   return (
     <div className="space-y-3" data-testid="enrolment-wizard">
-      <ol className="list-decimal space-y-1 pl-5 text-body text-muted">
+      <ol className="list-decimal space-y-1 ps-5 text-body text-muted">
         <li>{t('Open an authenticator app on your phone (any app that supports time-based codes).')}</li>
         <li>{t('Scan this QR code, or enter the key by hand.')}</li>
         <li>{t('Type the six-digit code the app shows.')}</li>

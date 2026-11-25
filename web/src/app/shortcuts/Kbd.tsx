@@ -4,15 +4,16 @@
 import { parseKeys } from '../../lib/shortcuts'
 import { t } from '../../lib/i18n'
 import { useShortcutHints } from './hints'
+import { inlineArrows } from '../../lib/direction'
 
 export function Kbd({ k, only = false, className = '' }: { k: string; only?: boolean; className?: string }) {
   const on = useShortcutHints()
   // On a touch device the stylesheet hides badges (touch-keyboard-hints). A key named
   // inside a sentence stays, or the sentence would break; a line that is only about keys
   // carries `data-kbd-hint` and goes as a whole.
-  if (on) return <kbd className={`ui-kbd ${className}`.trim()} data-kbd-keep={only ? undefined : ''}>{k}</kbd>
+  if (on) return <kbd className={`ui-kbd ${className}`.trim()} data-kbd-keep={only ? undefined : ''}>{inlineArrows(k)}</kbd>
   if (only) return null
-  return <span className={className || undefined}>{k}</span>
+  return <span className={className || undefined}>{inlineArrows(k)}</span>
 }
 
 /**
@@ -33,10 +34,10 @@ export function Keys({ keys, className = '' }: { keys: string[]; className?: str
               ? k.split(' ').map((part, j) => (
                 <span key={j} className="inline-flex items-center gap-1">
                   {j > 0 && <span className="text-hint text-faint">{t('then', { context: 'keys' })}</span>}
-                  <kbd className="ui-kbd">{part}</kbd>
+                  <kbd className="ui-kbd">{inlineArrows(part)}</kbd>
                 </span>
               ))
-              : seq ? <kbd className="ui-kbd">{k}</kbd> : <span className="text-meta text-muted">{k}</span>}
+              : seq ? <kbd className="ui-kbd">{inlineArrows(k)}</kbd> : <span className="text-meta text-muted">{k}</span>}
           </span>
         )
       })}

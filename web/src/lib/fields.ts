@@ -11,7 +11,7 @@ import { planStep, positionAtEnd } from './ordering'
 import { applicableFields, fieldDescendants, fieldPlace, fieldWorkspace, isWorkspaceField, liveFields, workspaceFields, type FieldPlacement } from './fieldTree'
 import type { FieldDef, FieldType, FieldValue, Project, Task, Workspace } from './types'
 import { Partition, workspaceLabel } from './workspaces'
-import { t, msg, translatedList } from './i18n'
+import { currentLocale, t, msg, translatedList } from './i18n'
 import { uuid } from './ids'
 
 /** The types a definition may have, in the order the dialog offers them. */
@@ -141,7 +141,7 @@ export function validateValue(def: Pick<FieldDef, 'type' | 'options'>, raw: stri
 /** A value as text: numbers with the locale's digit grouping, dates by the user's date format. */
 export function formatValue(def: Pick<FieldDef, 'type'>, value: FieldValue | undefined, p: ResolvedDateTime = currentDateTime()): string {
   if (value === null || value === undefined || value === '') return ''
-  if (def.type === 'number' && typeof value === 'number') return new Intl.NumberFormat(undefined, { maximumFractionDigits: 20 }).format(value)
+  if (def.type === 'number' && typeof value === 'number') return new Intl.NumberFormat(currentLocale(), { maximumFractionDigits: 20 }).format(value)
   if (def.type === 'date' && typeof value === 'string' && validDate(value)) return formatDate(value, 'compact', p)
   if (def.type === 'checkbox' && typeof value === 'boolean') return value ? t('Yes') : t('No')
   return String(value)

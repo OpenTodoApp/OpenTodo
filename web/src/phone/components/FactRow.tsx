@@ -20,14 +20,14 @@ export interface FactModel {
 /** Hands the fact's control to what anchors a sheet to it. */
 export type FactAnchor = (id: string, el: HTMLButtonElement | null) => void
 
-const ROW = 'flex min-h-12 w-full min-w-0 items-center gap-3 px-4 text-left text-prose'
+const ROW = 'flex min-h-12 w-full min-w-0 items-center gap-3 px-4 text-start text-prose'
 
 export function FactRow({ fact, open = false, anchor, onOpen }: { fact: FactModel; open?: boolean; anchor?: FactAnchor; onOpen: (id: string) => void }) {
   const inner = (
     <>
       <Icon name={fact.icon} size="md" className="text-muted" />
       <span className="shrink-0 text-default">{fact.label}</span>
-      <span className={`ml-auto min-w-0 truncate text-right ${fact.tone ?? 'text-muted'}`}>{fact.value}</span>
+      <span className={`ms-auto min-w-0 truncate text-end ${fact.tone ?? 'text-muted'}`}>{fact.value}</span>
     </>
   )
   return (
@@ -36,7 +36,7 @@ export function FactRow({ fact, open = false, anchor, onOpen }: { fact: FactMode
         <button type="button" aria-haspopup="dialog" aria-expanded={open} ref={(el) => anchor?.(fact.id, el)} onClick={() => onOpen(fact.id)} data-part={fact.id}
           className={`${ROW} focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus`}>
           {inner}
-          <Icon name="chevron-right" size="sm" className="-mr-1 text-faint" />
+          <Icon name="chevron-right" size="sm" className="-me-1 text-faint" />
         </button>
       )}
     </li>
@@ -46,7 +46,7 @@ export function FactRow({ fact, open = false, anchor, onOpen }: { fact: FactMode
 /** The facts as one card, hairlines starting at the names. */
 export function FactCard({ label, children }: { label?: string; children: ReactNode }) {
   return (
-    <ul aria-label={label} className="overflow-hidden rounded-card bg-surface shadow-1 [&>li+li]:relative [&>li+li]:before:absolute [&>li+li]:before:left-12 [&>li+li]:before:right-0 [&>li+li]:before:top-0 [&>li+li]:before:border-t [&>li+li]:before:border-soft">
+    <ul aria-label={label} className="overflow-hidden rounded-card bg-surface shadow-1 [&>li+li]:relative [&>li+li]:before:absolute [&>li+li]:before:inset-s-12 [&>li+li]:before:inset-e-0 [&>li+li]:before:top-0 [&>li+li]:before:border-t [&>li+li]:before:border-soft">
       {children}
     </ul>
   )

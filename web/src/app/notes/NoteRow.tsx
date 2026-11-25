@@ -73,7 +73,7 @@ export function NoteRow({ entry, snippet, project, labels, updated, updatedTitle
           if (tick && (tick.shown || e.ctrlKey || e.metaKey || e.shiftKey)) { e.preventDefault(); tick.onTick(e.shiftKey); return }
           onOpen()
         }}
-        className={`${GRID} min-w-0 flex-1 items-baseline rounded-control px-2 py-1.5 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus`}>
+        className={`${GRID} min-w-0 flex-1 items-baseline rounded-control px-2 py-1.5 text-start focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus`}>
         {/* The checkbox takes the kind icon's 20 px slot, so the row's grid does not move (D2). */}
         {tick?.shown
           ? <span aria-hidden className={`flex h-4 w-4 items-center justify-center self-center justify-self-center rounded-[4px] border max-md:mt-0.5 max-md:self-start ${tick.ticked ? 'border-accent bg-accent text-on-accent' : 'border-strong'}`} data-note-tick>{tick.ticked && <Icon name="check" size={12} />}</span>
@@ -92,12 +92,12 @@ export function NoteRow({ entry, snippet, project, labels, updated, updatedTitle
           <span className="truncate">{place}</span>
         </span>
         <span className="hidden min-w-0 overflow-hidden @min-[40rem]/note:flex" data-note-labels>{labels.length > 0 && <LabelChips labels={labels} />}</span>
-        <time className="text-right text-meta whitespace-nowrap text-faint tabular-nums max-md:col-start-2 max-md:row-start-2 max-md:text-left" aria-label={updatedTitle}
+        <time className="text-end text-meta whitespace-nowrap text-faint tabular-nums max-md:col-start-2 max-md:row-start-2 max-md:text-start" aria-label={updatedTitle}
           dateTime={entry.updated ? new Date(entry.updated).toISOString() : undefined}>{updated}</time>
       </button>
       {/* Revealed on hover or focus with a mouse, always shown on touch (.hover-reveal). */}
       {/* The slot is kept on rows without a menu too, so every row's time lines up. */}
-      {menu ? <div className="hover-reveal flex w-11 shrink-0 justify-end pr-1">{menu}</div> : <div aria-hidden className="w-11 shrink-0" />}
+      {menu ? <div className="hover-reveal flex w-11 shrink-0 justify-end pe-1">{menu}</div> : <div aria-hidden className="w-11 shrink-0" />}
     </li>
   )
 }

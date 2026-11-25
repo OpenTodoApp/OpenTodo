@@ -92,7 +92,7 @@ export function RemindersField({ task, onAddLocation }: { task: Task; onAddLocat
             }
             return (
               <li key={r.id} data-reminder-id={r.id} data-location-chip
-                className={`inline-flex max-w-full items-center gap-1 rounded-full border border-default py-0.5 pl-2.5 pr-0.5 text-body ${dismissed ? 'text-faint' : 'text-default'}`}>
+                className={`inline-flex max-w-full items-center gap-1 rounded-full border border-default py-0.5 ps-2.5 pe-0.5 text-body ${dismissed ? 'text-faint' : 'text-default'}`}>
                 <Icon name={r.kind === 'arrive' ? 'map-pin' : 'log-out'} className="shrink-0 text-faint" />
                 <span className="min-w-0">
                   <span className="flex min-w-0 items-center gap-1">
@@ -128,7 +128,7 @@ export function RemindersField({ task, onAddLocation }: { task: Task; onAddLocat
           }
           return (
             <li key={r.id} data-reminder-id={r.id}
-              className={`inline-flex max-w-full items-center gap-1 rounded-full border border-default py-0.5 pl-2.5 pr-0.5 text-body ${isDismissed(r) ? 'text-faint' : 'text-default'}`}>
+              className={`inline-flex max-w-full items-center gap-1 rounded-full border border-default py-0.5 ps-2.5 pe-0.5 text-body ${isDismissed(r) ? 'text-faint' : 'text-default'}`}>
               <Icon name={r.urgent ? 'alarm-clock' : 'bell'} className={fired && !isDismissed(r) ? 'text-accent' : 'text-faint'} />
               <span className="min-w-0 truncate">
                 {r.kind !== 'absolute' ? <>{name} <span className="text-meta text-muted" data-testid="reminder-time">{when}</span></> : <span data-testid="reminder-time">{when}</span>}

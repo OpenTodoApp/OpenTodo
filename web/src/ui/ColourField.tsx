@@ -136,7 +136,7 @@ export function ColourPicker({ label, value, derived, onChange, onReset }: Pick<
               <span className="w-20 shrink-0">{axisLabel(axis)}</span>
               <input id={`${id}-${axis}`} type="range" min={0} max={max} step={1} value={n} aria-valuetext={axisValueText(axis, n)} data-colour-axis={axis}
                 className="min-w-0 flex-1 accent-(--ot-accent)" onKeyDown={onKey} onChange={(e) => setAxis(axis, Number(e.target.value))} />
-              <span className="w-10 shrink-0 text-right font-mono tabular-nums text-default" aria-hidden="true">{axis === 'C' ? (n / 100).toFixed(2) : n}</span>
+              <span className="w-10 shrink-0 text-end font-mono tabular-nums text-default" aria-hidden="true">{axis === 'C' ? (n / 100).toFixed(2) : n}</span>
             </label>
           )
         })}

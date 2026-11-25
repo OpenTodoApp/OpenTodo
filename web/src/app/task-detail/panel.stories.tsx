@@ -49,7 +49,7 @@ function Notes({ text, editing = false }: { text?: string | string[]; editing?: 
 
 function AddControl() {
   return (
-    <div className="pl-7">
+    <div className="ps-7">
       <button type="button" aria-label="Add a property" aria-haspopup="menu" className="inline-flex min-h-8 items-center rounded-control px-1 text-muted">
         <span className="inline-flex items-center gap-1 text-meta"><Icon name="plus" size="xs" />Add</span>
       </button>
@@ -121,7 +121,7 @@ export const FullTask: StoryObj = {
           {/* The quiet checklist (sidebar-brand-and-row-grid D7): the heading carries the weight, the rows are borderless 32 px lines. */}
           <div className="flex min-h-8 items-center gap-2 px-1 text-meta">
             <h3 className="flex items-baseline gap-2 font-medium text-default">Subtasks<span className="font-normal tabular-nums text-faint">1 of 3</span></h3>
-            <span className="ml-auto h-1 w-16 overflow-hidden rounded-full bg-sunken" aria-hidden="true"><span className="block h-full w-1/3 rounded-full bg-accent" /></span>
+            <span className="ms-auto h-1 w-16 overflow-hidden rounded-full bg-sunken" aria-hidden="true"><span className="block h-full w-1/3 rounded-full bg-accent" /></span>
           </div>
           <ul aria-label="Subtasks">
             {[['Collect the numbers', true], ['Draw the charts', false], ['Write the summary', false]].map(([t, done]) => (

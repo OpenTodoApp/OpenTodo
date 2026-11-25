@@ -14,6 +14,7 @@ import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { parseDateInput } from './parse'
 import { t, preferredLanguages } from '../../lib/i18n'
 import { useResetOnChange } from '../../lib/useResetOnChange'
+import { inlineKey } from '../../lib/direction'
 import { composing } from '../../lib/composeKey'
 
 export interface DateFieldProps {
@@ -152,7 +153,7 @@ export function CalendarGrid({ value, prefs, onPick, today = logicalToday(), com
       Enter: () => onPick(cursor),
       ' ': () => onPick(cursor),
     }
-    const fn = step[e.key]
+    const fn = step[inlineKey(e)]
     if (!fn) return
     e.preventDefault()
     fn()

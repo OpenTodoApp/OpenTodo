@@ -55,6 +55,20 @@ export function resolveLanguage(pref: string | null | undefined, browser: readon
  * entry in that language, else the bare language.
  */
 export function intlLocale(pref: string | null | undefined, browser: readonly string[] = browserLanguages()): string {
+  return westernDigits(localeOf(pref, browser))
+}
+
+/**
+ * Arabic numbers stay in Western digits (arabic-rtl D6), as stored dates and times
+ * are: `ar-EG` would write ١٢٬٣٤٥, `ar-EG-u-nu-latn` writes 12,345. Every other
+ * locale is returned as it is.
+ */
+export function westernDigits(tag: string): string {
+  if (primary(tag) !== 'ar' || /-u(-[a-z0-9]+)*-nu-/i.test(tag)) return tag
+  try { return Intl.getCanonicalLocales(tag.includes('-u-') ? `${tag}-nu-latn` : `${tag}-u-nu-latn`)[0] } catch { return tag }
+}
+
+function localeOf(pref: string | null | undefined, browser: readonly string[]): string {
   const usable = (tag: string | undefined) => { try { return tag ? Intl.getCanonicalLocales(tag)[0] : null } catch { return null } }
   if (pref === 'zh') {
     const zh = shippedCode(pref)

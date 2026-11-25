@@ -20,11 +20,11 @@ function Rows({ source }: { source: AssistantSource }) {
   const more = source.total - source.ids.length
   // Each row and the summary are 24 px targets (WCAG 2.5.8), one line each, so no target overlaps another.
   return (
-    <ul className="mt-1 space-y-0.5 pl-5">
+    <ul className="mt-1 space-y-0.5 ps-5">
       {rows.map((r, i) => (
         <li key={source.ids[i]}>
           {r
-            ? <button type="button" className="inline-flex min-h-6 min-w-0 items-center text-left text-default underline decoration-dotted underline-offset-2 user-text" onClick={() => open(r.id)}>{r.name || t('Untitled')}</button>
+            ? <button type="button" className="inline-flex min-h-6 min-w-0 items-center text-start text-default underline decoration-dotted underline-offset-2 user-text" onClick={() => open(r.id)}>{r.name || t('Untitled')}</button>
             : <span>{t('Removed')}</span>}
         </li>
       ))}

@@ -25,7 +25,7 @@ export function CalendarRangeSwitch({ mode, date }: { mode: CalendarRangeMode; d
   const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
   if (!desktop) {
     return (
-      <Menu kind="menu" label={t('Calendar range')} namedByContent triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ml-auto" triggerProps={{ 'data-calendar-range': mode }}
+      <Menu kind="menu" label={t('Calendar range')} namedByContent triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ms-auto" triggerProps={{ 'data-calendar-range': mode }}
         trigger={<><span className="sr-only">{t('Calendar range')} </span>{MODES.find((m) => m.mode === mode)?.label}<Icon name="chevron-down" size="sm" /></>}>
         {MODES.map((m) => <MenuItem key={m.mode} label={m.label} checked={mode === m.mode} radio data-calendar-range-item={m.mode} onSelect={() => go(m.mode, date)} />)}
       </Menu>
@@ -35,7 +35,7 @@ export function CalendarRangeSwitch({ mode, date }: { mode: CalendarRangeMode; d
     <span className="flex rounded-control border border-default text-meta" role="group" aria-label={t('Calendar range')}>
       {MODES.map((m, i) => (
         <button key={m.mode} type="button" aria-pressed={mode === m.mode} onClick={() => go(m.mode, date)}
-          className={`px-1 py-1 lg:px-2 ${i === 0 ? 'rounded-l-control' : ''} ${i === MODES.length - 1 ? 'rounded-r-control' : ''} ${mode === m.mode ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted'}`}>
+          className={`px-1 py-1 lg:px-2 ${i === 0 ? 'rounded-s-control' : ''} ${i === MODES.length - 1 ? 'rounded-e-control' : ''} ${mode === m.mode ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted'}`}>
           {m.label}
         </button>
       ))}

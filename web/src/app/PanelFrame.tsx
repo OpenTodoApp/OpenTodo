@@ -32,7 +32,7 @@ export function PanelFrame({ title, children, actions, edge, testId, onEscape, o
   })
   return (
     <aside data-panel-frame={testId ?? title} aria-label={title}
-      className={`fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-default bg-surface pb-safe max-[56.25rem]:pr-safe shadow-3 ${edge ? 'min-[56.25rem]:relative' : 'min-[56.25rem]:static'} min-[56.25rem]:w-(--panel-w) min-[56.25rem]:max-w-none min-[56.25rem]:shadow-none`}>
+      className={`fixed inset-y-0 inset-e-0 z-30 flex w-full max-w-md flex-col border-s border-default bg-surface pb-safe max-[56.25rem]:pe-safe shadow-3 ${edge ? 'min-[56.25rem]:relative' : 'min-[56.25rem]:static'} min-[56.25rem]:w-(--panel-w) min-[56.25rem]:max-w-none min-[56.25rem]:shadow-none`}>
       {edge}
       <div data-panel-header className="flex items-center gap-2 border-b border-default px-3 py-2 pt-[max(0.5rem,var(--safe-top))]">
         <h2 className="min-w-0 flex-1 truncate text-h3 font-semibold text-strong">{title}</h2>

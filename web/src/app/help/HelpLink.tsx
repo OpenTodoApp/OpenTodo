@@ -14,7 +14,7 @@ export function HelpLink({ screen, topic, className = '' }: { screen: string; to
       className={`ui-btn ui-btn--ghost ui-btn--sm touch-target shrink-0 px-1.5 py-0.5 text-meta font-normal text-muted hover:text-default ${className}`}
       aria-label={topic ? t('Help: {topic}', { topic }) : t('Help')} aria-haspopup="dialog"
       onClick={(e) => openHelp(screen, e.currentTarget)}>
-      {t.rich('<span>?</span>Help', { span: (chunks) => <span aria-hidden="true" className="mr-1 inline-flex h-4 w-4 items-center justify-center rounded-full border border-current text-hint leading-none">{chunks}</span> })}
+      {t.rich('<span>?</span>Help', { span: (chunks) => <span aria-hidden="true" className="me-1 inline-flex h-4 w-4 items-center justify-center rounded-full border border-current text-hint leading-none">{chunks}</span> })}
     </button>
   )
 }

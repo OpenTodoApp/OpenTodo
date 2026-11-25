@@ -110,7 +110,7 @@ export function ProjectNote({ project, phone = false }: { project: Project; phon
     return (
       <div className="mb-3" data-project-note="empty">
         <button type="button" onClick={() => setEditing(true)} className="inline-flex min-h-7 items-center gap-1.5 rounded-control px-1.5 py-1 text-meta text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised">
-          <Icon name="pencil" size="xs" />{t('Add a note')} <Kbd k={keysOf('project.note')} only className="ml-1" />
+          <Icon name="pencil" size="xs" />{t('Add a note')} <Kbd k={keysOf('project.note')} only className="ms-1" />
         </button>
       </div>
     )

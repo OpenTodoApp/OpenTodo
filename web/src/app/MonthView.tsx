@@ -46,6 +46,7 @@ import { moveSpanPatch, spanCovers, spanOf } from '../lib/span'
 import { MonthRow } from './calendar/MonthRow'
 import { monthOrder, monthSpanKeys, useMonthSpans } from './calendar/monthSpans'
 import { CELL_ROWS, MonthWeek, NO_PROJECTIONS, type CellEntry, type MonthCells } from './calendar/MonthWeek'
+import { inlineKey } from '../lib/direction'
 
 export { addMonthsISO }
 
@@ -231,9 +232,9 @@ export function MonthView({ date }: { date?: string }) {
   useShortcutScope('view', {
     // With a task selected the arrows move it (a day or a week); otherwise, or with Shift, they move the focused day.
     'month.move': (e) => {
-      if (selectedTask) { if (editable(selectedTask)) move(selectedTask.id, ARROWS[e.key]) } else focusDay(addDaysISO(focused, ARROWS[e.key]))
+      if (selectedTask) { if (editable(selectedTask)) move(selectedTask.id, ARROWS[inlineKey(e)]) } else focusDay(addDaysISO(focused, ARROWS[inlineKey(e)]))
     },
-    'month.focus': (e) => focusDay(addDaysISO(focused, ARROWS[e.key])),
+    'month.focus': (e) => focusDay(addDaysISO(focused, ARROWS[inlineKey(e)])),
     // A selected span's ends; anything else falls through to moving the focused day (multi-day-tasks D4).
     ...monthSpanKeys({ selected: selectedTask, viewed: viewedMap, editable, queue, focus: setFocused }),
     'month.next': () => step('next'),

@@ -189,7 +189,7 @@ export function DailyCheck() {
               </ul>
               {/* Three tasks by touch (phone-touch-focus): the free places open the focus picker. */}
               {s.key === 'focus' && s.tasks.length < FOCUS_MAX && (
-                <button type="button" className="flex min-h-11 w-full items-center gap-2 rounded-control pl-8 pr-2 text-left text-body text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised"
+                <button type="button" className="flex min-h-11 w-full items-center gap-2 rounded-control ps-8 pe-2 text-start text-body text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised"
                   data-focus-add onClick={() => requestFocusPick({ mode: 'task', slot: null })}>
                   <span className="flex w-5 shrink-0 justify-center"><Icon name="plus" size="sm" /></span>{t('Add to focus')}
                 </button>

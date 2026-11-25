@@ -48,7 +48,7 @@ function MemoryRow({ item, index, count, actions, onError }: { item: MemoryItem;
         <MemoryInput initial={item.text} label={t('Edit memory')} onCancel={back}
           onCommit={(v) => { void actions.onEdit(item, v).then(() => { onError(null); back() }, (err) => onError(err instanceof MemoryError ? err.message : null)) }} />
       ) : (
-        <button ref={textRef} type="button" data-memory-text className="min-w-0 flex-1 rounded-chip py-1 text-left text-body text-default user-text focus-visible:outline-2 focus-visible:outline-focus"
+        <button ref={textRef} type="button" data-memory-text className="min-w-0 flex-1 rounded-chip py-1 text-start text-body text-default user-text focus-visible:outline-2 focus-visible:outline-focus"
           aria-label={t('Edit “{text}”', { text: item.text })}
           onClick={() => setEditing(true)}
           onKeyDown={(e) => {
@@ -89,7 +89,7 @@ export function MemoryListView({ items, actions, startAdding = false }: { items:
           {full
             ? <p className="text-meta text-muted" data-memory-full>{t('Memory holds 20 items. Remove one first.')}</p>
             : <Button ref={addRef} size="sm" variant="ghost" icon="plus" onClick={() => setAdding(true)} data-memory-add>{t('Add')}</Button>}
-          {items.length > 0 && <Button size="sm" variant="ghost" className="ml-auto text-muted" onClick={() => setClearing(true)} data-memory-clear>{t('Clear all')}</Button>}
+          {items.length > 0 && <Button size="sm" variant="ghost" className="ms-auto text-muted" onClick={() => setClearing(true)} data-memory-clear>{t('Clear all')}</Button>}
         </div>
       )}
       {error && <p role="alert" className="mt-1 text-meta text-danger">{error}</p>}

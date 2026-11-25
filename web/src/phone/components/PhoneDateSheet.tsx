@@ -54,7 +54,7 @@ export function PhoneDatePanel({ value, today, choices, weekStart, weekdays, mon
           return (
             <li key={c.id}>
               <button type="button" onClick={() => onPick(c.date)} data-date-choice={c.id} aria-pressed={on}
-                className={`flex min-h-12 w-full items-center gap-2.5 rounded-card px-3 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus ${on ? 'bg-accent-soft' : 'bg-canvas'}`}>
+                className={`flex min-h-12 w-full items-center gap-2.5 rounded-card px-3 text-start focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus ${on ? 'bg-accent-soft' : 'bg-canvas'}`}>
                 <Icon name={c.icon} size="md" className={on ? 'text-accent' : 'text-muted'} />
                 <span className="flex min-w-0 flex-col">
                   <span className={`truncate text-body font-medium ${on ? 'text-accent' : 'text-strong'}`}>{c.label}</span>

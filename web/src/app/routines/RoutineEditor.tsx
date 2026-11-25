@@ -487,7 +487,7 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
           {notices}
           {stepsColumn}
         </div>
-        <aside aria-label={t('Test and history')} className="sticky top-(--routine-header-h) max-h-[calc(100dvh-var(--routine-header-h)-2rem)] min-w-0 self-start overflow-y-auto border-l border-soft pl-8" data-routine-side data-scroll-y>
+        <aside aria-label={t('Test and history')} className="sticky top-(--routine-header-h) max-h-[calc(100dvh-var(--routine-header-h)-2rem)] min-w-0 self-start overflow-y-auto border-s border-soft ps-8" data-routine-side data-scroll-y>
           <Tabs label={t('Test and history')} value={sidePane} onChange={(id) => setPane(id as Pane)} tabs={sideTabs}>
             <div className="pt-3">{sidePane === 'history' ? historyPanel : testPanel}</div>
           </Tabs>
@@ -516,7 +516,7 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
       {body}
       {!desktop && (
         <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center gap-2 border-t border-soft bg-canvas px-4 py-2 pb-[calc(0.5rem+var(--safe-bottom))]" data-routine-actions>
-          <div className="mr-auto">{status}</div>
+          <div className="me-auto">{status}</div>
           {actions}
         </div>
       )}
@@ -608,7 +608,7 @@ function HistoryPanel({ rule, openRun, onOpen }: { rule: Rule | undefined; openR
   if (!openRun) return <RunsList rules={[rule]} ruleId={rule.id} onOpen={(r) => onOpen(r.run_id)} />
   return (
     <div className="space-y-3">
-      <Button variant="ghost" size="sm" icon="arrow-left" className="-ml-2" onClick={() => onOpen(null)} data-runs-back>{t('All runs')}</Button>
+      <Button variant="ghost" size="sm" icon="arrow-left" className="-ms-2" onClick={() => onOpen(null)} data-runs-back>{t('All runs')}</Button>
       <RunDetailBody key={openRun} rule={rule} runId={openRun} />
     </div>
   )

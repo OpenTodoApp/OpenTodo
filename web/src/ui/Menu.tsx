@@ -3,6 +3,7 @@
 // roving keyboard model below.
 import { createContext, useContext, useId, useRef, type KeyboardEvent, type ReactNode } from 'react'
 import { Icon, type IconName } from './Icon'
+import { inlineArrows } from '../lib/direction'
 
 /** Set by the overlay Menu (kind="menu"): closes it and returns focus to the trigger. */
 export const MenuCloseContext = createContext<(() => void) | null>(null)
@@ -54,7 +55,7 @@ export function MenuItem({ label, onSelect, icon, shortcut, description, danger,
       disabled={disabled}
       data-menu-label={label}
       onClick={() => { onSelect(); if (!keepOpen) close?.() }}
-      className={`flex w-full items-start gap-2.5 rounded-control px-2.5 py-2 text-left text-body outline-none transition duration-(--duration-ui)
+      className={`flex w-full items-start gap-2.5 rounded-control px-2.5 py-2 text-start text-body outline-none transition duration-(--duration-ui)
         hover:bg-hover focus-visible:bg-selected focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-focus
         disabled:cursor-not-allowed disabled:text-faint disabled:hover:bg-transparent
         ${danger ? 'press-danger-soft text-danger hover:bg-danger-soft focus-visible:bg-danger-soft dark:hover:bg-danger-soft dark:focus-visible:bg-danger-soft' : 'press-selected text-default'}`}
@@ -67,7 +68,7 @@ export function MenuItem({ label, onSelect, icon, shortcut, description, danger,
         {description && <span id={`${id}-d`} aria-hidden className="block text-meta text-muted">{description}</span>}
       </span>
       {marker && <span aria-hidden className="mt-1 flex shrink-0 items-center" data-menu-marker>{marker}</span>}
-      {shortcut && <kbd id={`${id}-k`} aria-hidden className="ui-kbd mt-0.5 shrink-0">{shortcut}</kbd>}
+      {shortcut && <kbd id={`${id}-k`} aria-hidden className="ui-kbd mt-0.5 shrink-0">{inlineArrows(shortcut)}</kbd>}
     </button>
   )
 }

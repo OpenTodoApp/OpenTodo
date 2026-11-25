@@ -471,7 +471,7 @@ export function GraphView({ graph, topic, topicKey, matches, hueOf, onOpen, onCl
   const centreNode = centre !== null && g ? g.nodes[centre] : null
   const count = (m: Uint8Array | null) => (m ? m.reduce((n, v) => n + v, 0) : undefined)
   return (
-    <div className="notes-graph" data-notes-graph data-ready={shown ? '' : undefined}>
+    <div className="notes-graph" dir="ltr" data-notes-graph data-ready={shown ? '' : undefined}>
       <div ref={host} role="application" aria-roledescription={t('graph')} aria-label={t('Graph of notes')} aria-describedby="notes-graph-keys" tabIndex={0}
         className="notes-graph__area" onKeyDown={onKeyDown} data-notes-graph-area data-nodes={shown ? count(visible) : undefined}
         data-focus={focusIdx !== null && g ? g.nodes[focusIdx].key : undefined} data-centre={centreKey ?? undefined} data-lit={count(lit)}>

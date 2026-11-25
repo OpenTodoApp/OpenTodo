@@ -148,7 +148,7 @@ export function SkipLink({ frame, content }: { frame: RefObject<HTMLElement | nu
         const target = pageHeading(content.current) ?? pageHeading(frame.current) ?? content.current
         if (target) focusHeading(target)
       }}
-      className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-control focus:bg-surface focus:px-3 focus:py-2 focus:text-body focus:text-strong focus:shadow-2 focus:outline-2 focus:outline-focus">
+      className="sr-only focus:not-sr-only focus:fixed focus:inset-s-3 focus:top-3 focus:z-[60] focus:rounded-control focus:bg-surface focus:px-3 focus:py-2 focus:text-body focus:text-strong focus:shadow-2 focus:outline-2 focus:outline-focus">
       {t('Skip to content')}
     </a>
   )

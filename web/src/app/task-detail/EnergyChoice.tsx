@@ -7,6 +7,7 @@ import { ENERGY_LEVELS, energyName, energyOf, setTaskEnergy, type Energy } from 
 import { t } from '../../lib/i18n'
 import type { Task } from '../../lib/types'
 import { act } from '../actionError'
+import { inlineKey } from '../../lib/direction'
 
 export function EnergyChoice({ task, onChosen }: { task: Pick<Task, 'id' | 'energy'>; onChosen?: () => void }) {
   const current = energyOf(task)
@@ -18,7 +19,7 @@ export function EnergyChoice({ task, onChosen }: { task: Pick<Task, 'id' | 'ener
     onChosen?.()
   }
   const onKeyDown = (ev: KeyboardEvent<HTMLButtonElement>, i: number) => {
-    const step = ev.key === 'ArrowRight' || ev.key === 'ArrowDown' ? 1 : ev.key === 'ArrowLeft' || ev.key === 'ArrowUp' ? -1 : 0
+    const step = inlineKey(ev) === 'ArrowRight' || ev.key === 'ArrowDown' ? 1 : inlineKey(ev) === 'ArrowLeft' || ev.key === 'ArrowUp' ? -1 : 0
     if (!step) return
     ev.preventDefault()
     refs.current[(i + step + ENERGY_LEVELS.length) % ENERGY_LEVELS.length]?.focus()

@@ -45,7 +45,7 @@ export function ReviewProgress<S extends string = StepId, P extends string = Pha
           <li key={phase} className="min-w-0" style={{ flexGrow: STEP_IDS.filter((s) => PHASE_OF[s] === phase).length }} data-phase={phase}>
             {/* Below 360 px (a 320 px screen, or 400% zoom) the names lose their letter spacing and the
                 joins narrow, so the stepper still fits without scrolling sideways (WCAG 1.4.10). */}
-            <p className={`mb-2 whitespace-nowrap ${phase === PHASES[PHASES.length - 1] ? '' : 'pr-3 max-[359px]:pr-2'} text-hint font-semibold uppercase tracking-wide max-[359px]:tracking-normal ${PHASE_OF[step] === phase ? 'text-accent' : 'text-faint'}`}>{PHASE_TITLES[phase]}</p>
+            <p className={`mb-2 whitespace-nowrap ${phase === PHASES[PHASES.length - 1] ? '' : 'pe-3 max-[359px]:pe-2'} text-hint font-semibold uppercase tracking-wide max-[359px]:tracking-normal ${PHASE_OF[step] === phase ? 'text-accent' : 'text-faint'}`}>{PHASE_TITLES[phase]}</p>
             <ol className="flex">
               {STEP_IDS.filter((s) => PHASE_OF[s] === phase).map((s) => {
                 const i = STEP_IDS.indexOf(s)
@@ -63,7 +63,7 @@ export function ReviewProgress<S extends string = StepId, P extends string = Pha
                           {done && !current ? <Icon name="check" size="sm" /> : i + 1}
                         </span>
                         {!done && !current && steps.left[s] > 0 && (
-                          <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-warning-soft px-1 text-hint font-semibold text-on-warning-soft">{steps.left[s]}</span>
+                          <span aria-hidden="true" className="absolute -inset-e-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-warning-soft px-1 text-hint font-semibold text-on-warning-soft">{steps.left[s]}</span>
                         )}
                         {/* The button carries the spoken name only; the circle above is its picture. */}
                         <button type="button" onClick={() => onStep(s)} aria-current={current ? 'step' : undefined} data-progress-step={s}
@@ -73,7 +73,7 @@ export function ReviewProgress<S extends string = StepId, P extends string = Pha
                       </div>
                       {!last && <span aria-hidden="true" className={`mx-1 max-[359px]:mx-0.5 h-0.5 flex-1 rounded-full ${i < at || (done && steps.done[STEP_IDS[i + 1]]) ? 'bg-accent' : 'bg-faint/30'}`} />}
                     </div>
-                    <span aria-hidden="true" className={`mt-2 hidden truncate pr-2 text-hint sm:block ${current ? 'font-semibold text-strong' : done ? 'text-muted' : 'text-faint'}`}>{STEP_TITLES[s]}</span>
+                    <span aria-hidden="true" className={`mt-2 hidden truncate pe-2 text-hint sm:block ${current ? 'font-semibold text-strong' : done ? 'text-muted' : 'text-faint'}`}>{STEP_TITLES[s]}</span>
                   </li>
                 )
               })}

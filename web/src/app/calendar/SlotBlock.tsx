@@ -93,16 +93,16 @@ export function SlotBlock({ view, b, past, selected, dragging, dropTarget, onSel
       }}
       onClick={(e) => { if (e.target === e.currentTarget) onSelect(view.key) }}
       className={`ui-block absolute z-10 flex cursor-grab touch-manipulation flex-col overflow-hidden px-1 ${past ? 'ui-block--past' : ''} ${selected ? 'ring-2 ring-accent' : ''} ${dropTarget ? 'ring-2 ring-accent ring-offset-1' : ''} ${dragging ? 'opacity-40' : ''}`} // tone-lint-allow: the dragged slot's ghost
-      style={{ top, height, left: `calc(${(b.lane / b.lanes) * 100}% + 2px)`, width: `calc(${100 / b.lanes}% - 4px)` }}
+      style={{ top, height, insetInlineStart: `calc(${(b.lane / b.lanes) * 100}% + 2px)`, width: `calc(${100 / b.lanes}% - 4px)` }}
     >
       <div className="flex min-h-[22px] shrink-0 items-center gap-1" onClick={() => onSelect(view.key)}>
         <button ref={anchor} type="button" data-slot-name={view.slot.id} aria-haspopup="dialog" aria-expanded={open}
-          className="flex min-h-6 min-w-0 flex-1 items-center gap-1 rounded-chip text-left text-meta font-medium outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          className="flex min-h-6 min-w-0 flex-1 items-center gap-1 rounded-chip text-start text-meta font-medium outline-none focus-visible:ring-2 focus-visible:ring-focus"
           onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onSelect(view.key); setOpen(true) }}
           onKeyDown={(e) => { if (e.key === 'ArrowDown' && rows.length) { e.preventDefault(); e.stopPropagation(); focusRow(0) } }}>
           <Icon name="layers" size="xs" className="shrink-0" />
           <span className="min-w-0 truncate">{name}</span>
-          <span data-slot-count className={`ml-auto shrink-0 text-hint font-normal tabular-nums ${view.overfull ? 'text-warning' : ''}`}>{count}</span>
+          <span data-slot-count className={`ms-auto shrink-0 text-hint font-normal tabular-nums ${view.overfull ? 'text-warning' : ''}`}>{count}</span>
         </button>
         {b.overlap && <span data-overlap-marker className="shrink-0 text-warning" aria-hidden>⧉</span>}
       </div>

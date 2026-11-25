@@ -37,12 +37,12 @@ export function DeadlineMarker({ task, date, today, variant, onOpen }: {
       onDoubleClick={(e) => e.stopPropagation()}
       onContextMenu={(e) => e.stopPropagation()}
       onClick={(e) => { e.stopPropagation(); onOpen(task.id) }}
-      className={`flex w-full min-w-0 items-center gap-1 rounded-chip px-1.5 py-0.5 text-left focus-visible:outline-2 focus-visible:outline-focus ${variant === 'chip'
+      className={`flex w-full min-w-0 items-center gap-1 rounded-chip px-1.5 py-0.5 text-start focus-visible:outline-2 focus-visible:outline-focus ${variant === 'chip'
         ? `border border-dashed text-hint ${past ? 'border-default text-faint' : 'border-warning text-default'}`
         : `text-hint hover:bg-hover ${past ? 'text-faint' : 'text-muted'}`}`}>
       {variant === 'chip' && <DeadlineDiamond past={past} />}
       <span className="sr-only">{t('Deadline')}: </span>
-      <span className="min-w-0 flex-1 truncate">{title}</span>
+      <span dir="auto" className="min-w-0 flex-1 truncate">{title}</span>
       {variant === 'row' && <DeadlineDiamond past={past} />}
     </button>
   )

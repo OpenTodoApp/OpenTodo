@@ -79,7 +79,7 @@ export function FilterQueryChip({ query, onOpen, onClear }: { query: string; onO
   const words = useMemo(() => queryChips(query).map((c) => (c.not ? `${t('Not')} ${c.text}` : c.text)).join(', ') || query, [query])
   return (
     // The duration filter's chip, with the query's words (design D4).
-    <span className="inline-flex min-w-0 max-w-72 items-center gap-1 rounded-full border border-accent bg-accent-soft py-0.5 pl-2.5 pr-1 text-meta font-medium text-on-accent-soft" data-query-filter-chip>
+    <span className="inline-flex min-w-0 max-w-72 items-center gap-1 rounded-full border border-accent bg-accent-soft py-0.5 ps-2.5 pe-1 text-meta font-medium text-on-accent-soft" data-query-filter-chip>
       <button type="button" onClick={onOpen} className="flex min-h-6 min-w-0 items-center gap-1" aria-label={t('Filter: {words}. Edit the filter', { words })}>
         <Icon name="filter" size="xs" className="shrink-0" />
         <span aria-hidden className="min-w-0 truncate">{words}</span>

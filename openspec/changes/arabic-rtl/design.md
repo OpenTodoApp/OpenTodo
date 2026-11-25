@@ -1,0 +1,55 @@
+# Design: arabic-rtl
+
+## D1. The direction follows the interface language
+
+`lib/direction.ts` `directionOf(code)` answers `rtl` for Arabic (and for Hebrew, Persian and Urdu, which are not shipped), `ltr` for every other code. `platform.showLanguage(code)`, which already set `lang`, sets `dir` beside it; the task and note pages (`page/main.tsx`) do the same. The app renders its first screen after `bootLanguage()` has applied the mirrored preference, so the first screen is already in the right direction, offline too (the catalog is a precached chunk). The direction follows the interface language only, never the language of a task's title.
+
+## D2. Arabic as a community language
+
+By the maintainer's decision (issue #885), the Arabic catalog is drafted by machine translation and then reviewed by a person who reads Arabic, as Russian was (`russian-polish`). It ships with `community: true`: listed after the maintained languages with the community caption, complete on the web app, English elsewhere (emails, the digest, channel messages, the extension, the native shells, quick-add vocabulary). The translation guide lists it as a machine draft looking for a reviewer. Plurals use all six of Arabic's categories (`zero`, `one`, `two`, `few`, `many`, `other`) where the count changes the words; `make i18n-check` already accepts only the categories `Intl.PluralRules('ar')` reports and requires `other`.
+
+The swipe hint ("Swipe right to complete, left to schedule") and similar sentences name physical directions; the Arabic catalog writes the mirrored ones, since Arabic is the only right-to-left language. A future right-to-left language does the same in its catalog.
+
+## D3. Logical layout
+
+The layout classes name the start and end of the line: Tailwind's `ms-`/`me-`, `ps-`/`pe-`, `inset-s-`/`inset-e-`, `text-start`/`text-end`, `border-s`/`border-e`, `rounded-s-`/`rounded-e-` (and the corner forms). A codemod converted the web app (about 520 class names in 220 files); left to right the computed styles are the same, so the existing visual baselines hold. Kept physical, on purpose: a centring `left-1/2` with `-translate-x-1/2` (direction-neutral), boxes placed by screen coordinates (the drag ghost, the menus opened at the pointer, the popover's computed position, the routine editor's caret mark; each marked `// physical: <reason>`), the connections graph's nodes (`left-0` with a transform, in `index.css`, which the check does not read), and the symmetric safe-area padding `px-safe`. Two things the codemod must not lose in left-to-right: a `th` inherits its table's alignment only when that is not `start` (the browser centres it otherwise), so a header cell under a converted `text-start` carries its own `text-start`; and a class glued to a template expression (`-ml-2${…}`) is not seen by Tailwind's scanner, so it is written with a space before the expression, as a converted class may have no other use to generate it.
+
+`make ui-lint` (`scripts/ui-check.mjs` rule 7) refuses, in `web/src/app`, `phone`, `lib` and `ui`: the physical spacing, inset, border, radius and alignment utilities; `float-`/`clear-left|right`, `origin-left|right|…`, `bg-linear-to-l|r|…`/`bg-gradient-to-…`, `object-left|right`, `bg-left|right`, `pl-safe`/`pr-safe`; a `translate-x-*` without an `rtl:` translate twin on the line with the same variants or narrower ones (`translate-x-0` and a centring `-translate-x-1/2` are fine); and, lightly, an inline style with `left`, `right`, `marginLeft|Right`, `paddingLeft|Right` or `textAlign: 'left'|'right'`. A line is excused by `// physical: <reason>` or `/* physical: <reason> */` (also `{/* … */}` in JSX) on it or the line above, and the reason is required. A file drawn from coordinates and kept left to right says `// physical-file: <reason>` near its top, and only the files in `PHYSICAL_FILES` may (the Timeline view, the review charts, the assistant's timeline and free-time strip); it is refused anywhere in `web/src/ui`.
+
+Beside the classes:
+
+- Safe areas: `--safe-start` and `--safe-end` are the left and right insets, swapped right to left; `ps-safe`/`pe-safe` pad them. The drawer pads its start inset, the docked panels their end inset.
+- `index.css`: the select's chevron sits at the start edge (its two halves keep their order), the sidebar's hover menu button and the mention chip's icon use inline insets and margins, the docked panel slides in from its own edge (`--panel-shift`), as page transitions already did (`--nav-shift`).
+- Transforms that do not mirror by themselves: the closed drawer (`rtl:translate-x-full`), the switch's knob, the panel's resize handle.
+- Inline styles: indentation (`paddingInlineStart`), calendar lanes and sidebar drop guides (`insetInlineStart`); the selection dock, placed from a measured rectangle, sets `right: auto`.
+- The mirroring and isolation rules key off `:dir(rtl)` on the element itself, not `:root[dir=rtl]`, so a box kept left to right (D8) keeps its icons, figures and code as they are; the Tailwind `rtl:` variant also matches inside such a box (`[dir=rtl] *`), so it is used only outside them.
+- Icon and isolation rules sit outside every cascade layer, so a `rotate-90` utility on a mirrored disclosure chevron does not undo its turn.
+- Overlays: a popover's `align: 'start' | 'end'` means the trigger's start or end edge (swapped right to left in `Popover`); the collapsed rail's tooltip goes to the rail's left right to left.
+
+## D4. Input along the line
+
+`inlineKey(e)` returns the key as if the line ran left to right: ArrowLeft and ArrowRight swapped in a right-to-left context (the nearest `dir` attribute, so a left-to-right box answers for itself), every other key unchanged. The shortcut dispatcher matches chords against it, so `list.expand` (→) is ← in Arabic, `board.column-next` and `calendar.shift-day` move towards the end; the components that read the arrows themselves (tabs, segmented controls, menus' pickers, the date picker and calendar grids, Month, Plan, Year and Quarter, the habit grid, the sidebar's and the projects table's folding, the resizers) call it too. Up, Down, Home and End do not change. Keycaps (`Kbd`, `Keys`, menus, tooltips, the shortcut spotlight) print ← and → the way they are pressed (`inlineArrows`), and the Arabic catalog names the mirrored arrow in sentences such as "Shift+→ makes it a two-day span". A key pressed while an input method composes is still ignored by the dispatcher.
+
+`inlineDelta(dx)` turns a horizontal screen delta into a delta along the line and `fromStartEdge(x)` measures from the start edge. With them the row swipe mirrors (towards the end completes, towards the start schedules or edits the title; the 20 px strip at the start edge stays the edge swipe's), the edge swipe starts at the right edge and moves left (the page and the drawer follow the finger the right way, and the back transition continues from where the finger left it), a dragged row's depth grows towards the end, and the sidebar and panel resizers grow the way they are pulled. Targets keep their 44 px.
+
+## D5. Text keeps its own direction
+
+`.user-text` (titles, notes, comments and the other user-written text already marked with it) gets `unicode-bidi: plaintext`: each paragraph takes its direction from its first strong letter, so an English title in an Arabic row reads left to right with its punctuation at the right end, and the row's time, checkbox and menu, laid out by flexbox outside the text, do not move. Fields people type into (text inputs, text areas, the notes editor's paragraphs and list items) get the same `unicode-bidi: plaintext`, line by line; `dir="auto"` is not used on them because an empty field would fall back to left to right, placeholder and caret on the wrong side. Short titles in the calendar (Day and Week blocks, lanes, deadline markers, events) carry `dir="auto"`, and `isRtl()` looks past `dir="auto"` to the layout's direction. `pre`, `code` and `kbd` read left to right in an isolated box. An inline run of figures (`span.tabular-nums`, such as a time range 08:00–10:00) keeps its left-to-right order inside right-to-left text; a calendar block's time line is `dir="ltr"`, aligned to the end, so truncation cuts its end rather than its start. The in-app Help and the import guides stay English (`localization` "Help stays English") and are marked `lang="en" dir="ltr"`.
+
+## D6. Numbers and dates
+
+`intlLocale()` adds `-u-nu-latn` to an Arabic locale (`ar-EG` becomes `ar-EG-u-nu-latn`): numbers, counts, times and dates use the Western digits the stored data and the rest of the app use, while the month and weekday names, the order and the separators are Arabic. Week start stays the user's preference. A locale that already names a numbering system keeps it.
+
+## D7. Workbench
+
+`.storybook/preview.tsx` sets `dir` on every render from `parameters.direction`, else from the active language, so a right-to-left story does not leak into the next one. `Screens/Right to left` (`app/rightToLeft.stories.tsx`) reuses the core screens' stories with `direction: 'rtl'`: the shell's Inbox and task page, Today, a project with the docked panel, Week, the sidebar, a Settings page, the phone's Today and the row swipes. The visual gate takes them at 375 and 1280 px, light and dark; their baselines come from the "UI baselines" workflow. Left to right nothing changes.
+
+## D8. Coordinate-drawn axes stay left to right
+
+The Timeline view, the review charts, the assistant's timeline block and free-time strip place their marks with computed `left` values, and the notes and connections graphs with screen coordinates. The first five are wrapped in `dir="ltr"` (the notes graph's canvas also sets `ctx.direction = 'ltr'`, so its labels still extend to the right of their node), and the connections graph's nodes are placed physically (their keys then read as left to right too, through the nearest `dir`), so they stay correct inside an Arabic page; their classes are already logical, so mirroring them later is a change of their coordinate code only.
+
+## D9. Native shells
+
+The Android shell already declares `android:supportsRtl` and its layouts use start and end; the iOS shell's SwiftUI views use leading and trailing. Both mirror their own chrome when the system language is right to left and need no change; the web content inside them takes its direction from the page. Their strings stay English for a community language.
+
+Data model: none. Bundle: no dependency; `direction.ts` is under 1 KB, the catalog is a lazy chunk. Image size and memory: unchanged. Interface budget: no new chrome, no new shortcut (the existing arrows follow the direction), the same rows and properties.
