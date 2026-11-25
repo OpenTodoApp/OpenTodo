@@ -3,7 +3,8 @@
 // device's "New phone screens" switch on. The gestures a unit test cannot make: a hold
 // opens the row's menu, a hold and a move reorders, a swipe completes and Undo brings
 // the task back, Select tasks ticks rows and a bulk action writes them, a tap opens
-// the task page and Back returns to the same place. See scripts/README.md.
+// the task page and Back returns to the same place; a screen that is not a list has
+// the phone header and phone rows (`phone-all-screens`). See scripts/README.md.
 const { chromium } = await import('playwright').catch(async () => {
   const { createRequire } = await import('node:module')
   const { execSync } = await import('node:child_process')
@@ -119,6 +120,25 @@ try {
     await page.locator(`[data-phone-list="${view}"]`).waitFor({ timeout: 10000 })
   }
   await page.locator('[data-phone-row]', { hasText: 'Charlie' }).first().waitFor({ timeout: 10000 })
+
+  step('a screen that is not a list has the phone header, and Next lists phone rows')
+  await page.goto(`${base}/labels`)
+  await page.locator('[data-phone-header]').waitFor({ timeout: 10000 })
+  assert(await page.locator('[data-phone-bar]').count() === 0, 'Labels has no shell bar')
+  assert((await page.locator('[data-phone-head] [data-page-title]').textContent()) === 'Labels', 'the title is large under the bar')
+  await page.goto(`${base}/next`)
+  const next = page.locator('[data-phone-row]').first()
+  await next.waitFor({ timeout: 10000 })
+  assert(await page.locator('[data-drag-id="task-row"]').count() === 0, 'Next has no desktop row')
+  const nextTitle = await next.locator('[data-row-title]').textContent()
+  await next.locator('[data-phone-open]').tap()
+  await page.locator('[data-phone-screen="task"]').waitFor({ timeout: 10000 })
+  await page.locator('[data-page-back]').tap()
+  await page.locator('[data-phone-row]', { hasText: nextTitle }).first().waitFor({ timeout: 10000 })
+  await clear()
+  await page.locator('[data-phone-row]', { hasText: nextTitle }).first().locator('[data-phone-check]').tap()
+  // Next shows the next action: the completed one gives way to the one after it.
+  await page.locator('[data-phone-row]', { hasText: nextTitle }).first().waitFor({ state: 'detached', timeout: 5000 })
 
   assert(errors.length === 0, errors.join('\n'))
   console.log('e2e-phone: ok')

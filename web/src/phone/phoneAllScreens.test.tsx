@@ -114,3 +114,38 @@ describe('every task row is the phone row', () => {
     await r.unmount()
   })
 })
+
+describe('the page menu under the phone header', () => {
+  const items = () => [...document.querySelectorAll<HTMLElement>('[role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]')].map((el) => el.textContent?.trim() ?? '').filter(Boolean).sort()
+  const triggers = (bar: Element | null | undefined) => [...(bar?.querySelectorAll<HTMLElement>('button[aria-haspopup="menu"], button[aria-haspopup="true"]') ?? [])]
+  /** The items of the bar's last menu (the page's own), or null when the bar has no menu. */
+  async function menuOf(bar: () => Element | null | undefined): Promise<string[] | null> {
+    const last = triggers(bar()).at(-1)
+    if (!last) return null
+    await click(last)
+    await waitFor(() => items().length > 0, 'the menu open')
+    const found = items()
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await waitFor(() => items().length === 0, 'the menu closed')
+    return found
+  }
+  const helpIn = (bar: Element | null | undefined) => !!bar?.querySelector('[data-help-screen]')
+
+  for (const [route, name] of [[{ view: 'projects' }, 'Projects'], [{ view: 'labels' }, 'Labels'], [{ view: 'views' }, 'Views'], [{ view: 'next' }, 'Next'], [{ view: 'waiting' }, 'Waiting']] as [Route, string][]) {
+    it(`${name} offers what its present phone bar offers`, async () => {
+      const work = await createProject({ name: 'Work' })
+      await createTask({ title: 'Send the invoice', project_id: work })
+      navigate(route)
+      const r = await render(<Shell user={user} onLogout={() => {}} />)
+      await waitFor(() => !!shellBar() && (triggers(shellBar()).length > 0 || helpIn(shellBar())), 'the present bar')
+      const before = { menu: await menuOf(shellBar), help: helpIn(shellBar()) }
+      setPhoneUiEnabled(true)
+      await waitFor(() => !!header() && title() === name, 'the phone header')
+      const after = { menu: await menuOf(header), help: helpIn(header()) }
+      // Help is a button where the page has no menu, and the menu's last item where it has one: the same on both.
+      expect(after).toEqual(before)
+      await r.unmount()
+    })
+  }
+})
