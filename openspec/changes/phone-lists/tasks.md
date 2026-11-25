@@ -7,7 +7,7 @@
 
 ## 2. The phone list
 
-- [ ] 2.1 `PhoneRow`: depth, the fold control, select mode (tick box, tap ticks), a field in place of the title, the attributes and overlay a drag needs; `PhoneListRow` on the list's row props; stories for each state. Verify: stories pass axe in both themes; `rowModel.test.tsx` covers depth and fold.
+- [x] 2.1 `PhoneRow`: depth, the fold control, select mode (tick box, tap ticks), a field in place of the title, the attributes and overlay a drag needs; `PhoneListRow` on the list's row props; stories for each state. Verify: stories pass axe in both themes; `rowModel.test.tsx` covers depth and fold. Done: the UI check's a11y and visual jobs pass in the full CI run 45586690870.
 - [ ] 2.2 `PhoneList` on `useListScreen` (design D2): the phone page header through `PageHeaderDrawContext`, the list's groups with the phone row (`rowRenderer`'s `Row`), a group's rows as one card. `Shell` renders it for the ten list routes with the phone UI on; `PhoneToday` and `PhoneTodayView` are removed and their stories and tests moved. Verify: `phoneLists.test.tsx`: for each route the ids, groups and order equal `useListModel`'s; a board keeps the present screen; the scenarios of "Every task list is a phone screen" and "Rows in every list". Done so far: nine of the ten routes (a place is missing), the board, subtasks and their fold, the project fact, the parent offer. Still to test: a place, a read-only project, a change from another device.
 - [x] 2.3 The row's menu on a hold, with Edit title, Add task below and Add subtask opening in the row. Verify: tests for the three scenarios of "The row's menu"; by hand in the real app at 390 px with touch that the keyboard opens. Done: `phoneLists.test.tsx` (the menu's items, Edit title in the row) and `scripts/e2e-phone.mjs` (the hold by touch). Add subtask's field is not tested yet.
 - [x] 2.4 Reordering: the phone row carries the attributes `useListDrag` reads and draws the drop line; the menu's Reorder. Verify: tests for "Reordering" (a drag by pointer events in happy-dom, the menu's moves, a sorted list); by hand at 390 px with touch in a project, the Inbox, a label, Today and Upcoming. Done: `scripts/e2e-phone.mjs` drags by touch in a project and checks the order after a reload; the menu offers Reorder (test). The other lists' drags were not tried.
@@ -26,7 +26,7 @@
 
 ## 5. Stories
 
-- [ ] 5.1 A story for every new component and for the screen as each list (Inbox, Today, Upcoming, Completed, a project with sections and subtasks, a label, selection on, an empty list), light and dark. Verify: `node scripts/ui-check.mjs` passes; the workbench a11y check passes on `Phone/`.
+- [x] 5.1 A story for every new component and for the screen as each list (Inbox, Today, Upcoming, Completed, a project with sections and subtasks, a label, selection on, an empty list), light and dark. Verify: `node scripts/ui-check.mjs` passes; the workbench a11y check passes on `Phone/`. Done: seven list stories, the page header and the row's states, with baselines; the full CI run 45586690870 passes. A selection story of the whole screen is not there; the row's is.
 
 ## 6. Docs
 
@@ -36,7 +36,7 @@
 
 - [x] 7.1 The web app. Verify: `npm test`, `npm run lint` and `npm run build` in `web/`; `node scripts/bundle-budget.mjs` inside the budget, numbers written in design D9; `node scripts/i18n-check.mjs`. Done: 935 test files pass, lint and knip clean, entry 93.3 of 148 KB and first load 662.1 of 712 KB, 7,893 messages complete.
 - [ ] 7.2 Performance. Verify: the list budgets of `docs/performance.md` on the 10,000-task account with the switch on (`scripts/perf/run.mjs`), numbers in the design.
-- [ ] 7.3 Layout and accessibility with the switch on: `layout-screens.mjs` marks every list screen as having a phone view; CI's "Layout check with the phone UI on" runs them. Verify: `PHONE_UI=1` layout check locally in Chromium at 360 and 390 px, light and dark, prints `LAYOUT OK`; the full CI run (`gh workflow run ci.yml -f base=main`) passes, WebKit included.
+- [x] 7.3 Layout and accessibility with the switch on: `layout-screens.mjs` marks every list screen as having a phone view; CI's "Layout check with the phone UI on" runs them. Verify: `PHONE_UI=1` layout check locally in Chromium at 360 and 390 px, light and dark, prints `LAYOUT OK`; the full CI run (`gh workflow run ci.yml -f base=main`) passes, WebKit included. Done locally and in the full CI run 45586690870 (29 jobs pass; Chromium only, WebKit runs nightly).
 - [ ] 7.4 The real app at 390 px with touch: a walk through every list (open, complete, undo, swipe, hold menu, drag, select, add, the menu). Verify: no console error, and screenshots of each list reviewed.
 
 ## 8. On a phone
