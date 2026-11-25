@@ -3,7 +3,7 @@
 ## 1. One wiring for both screens
 
 - [x] 1.1 Move the list's wiring from `TaskListView.tsx` into `web/src/app/task-list/useListScreen.ts` (design D1), with the helper hooks it uses, in a commit that changes nothing else. `TaskListView` draws from the hook. Verify: `npm test` in `web/` passes with no test edited; `npm run lint`; the layout check on the list screens (`ONLY=inbox,today,upcoming,project,label,completed,assigned`) prints `LAYOUT OK` with the switch off.
-- [ ] 1.2 Move `ListHeader` into `task-list/ListHeader.tsx` and its menu items into `useListMenu` (design D3). Verify: `listChrome.test.tsx` and `closedListToday.test.tsx` pass unchanged; a new test lists the item ids per route.
+- [x] 1.2 Move `ListHeader` into `task-list/ListHeader.tsx` and its menu items into `useListMenu` (design D3). Verify: `listChrome.test.tsx` and `closedListToday.test.tsx` pass unchanged; a new test lists the item ids per route. Done: the test is the per-list menu comparison in `phoneLists.test.tsx` (five lists).
 
 ## 2. The phone list
 
@@ -30,11 +30,11 @@
 
 ## 6. Docs
 
-- [ ] 6.1 `docs/phone-screens.md`: the lists, what the menu holds, selection, reordering. `changelog.d/Changed/phone-lists.md`. `ROADMAP.md` row, then the docs build. Verify: `npm run docs:build` and `docs:check` in `web/`; repo checks.
+- [x] 6.1 `docs/phone-screens.md`: the lists, what the menu holds, selection, reordering. `changelog.d/Changed/phone-lists.md`. `ROADMAP.md` row, then the docs build. Verify: `npm run docs:build` and `docs:check` in `web/`; repo checks.
 
 ## 7. Checks
 
-- [ ] 7.1 The web app. Verify: `npm test`, `npm run lint` and `npm run build` in `web/`; `node scripts/bundle-budget.mjs` inside the budget, numbers written in design D9; `node scripts/i18n-check.mjs`.
+- [x] 7.1 The web app. Verify: `npm test`, `npm run lint` and `npm run build` in `web/`; `node scripts/bundle-budget.mjs` inside the budget, numbers written in design D9; `node scripts/i18n-check.mjs`. Done: 935 test files pass, lint and knip clean, entry 93.3 of 148 KB and first load 662.1 of 712 KB, 7,893 messages complete.
 - [ ] 7.2 Performance. Verify: the list budgets of `docs/performance.md` on the 10,000-task account with the switch on (`scripts/perf/run.mjs`), numbers in the design.
 - [ ] 7.3 Layout and accessibility with the switch on: `layout-screens.mjs` marks every list screen as having a phone view; CI's "Layout check with the phone UI on" runs them. Verify: `PHONE_UI=1` layout check locally in Chromium at 360 and 390 px, light and dark, prints `LAYOUT OK`; the full CI run (`gh workflow run ci.yml -f base=main`) passes, WebKit included.
 - [ ] 7.4 The real app at 390 px with touch: a walk through every list (open, complete, undo, swipe, hold menu, drag, select, add, the menu). Verify: no console error, and screenshots of each list reviewed.

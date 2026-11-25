@@ -241,3 +241,35 @@ describe('the row\'s menu in the phone list', () => {
     await r.unmount()
   })
 })
+
+describe('the page menu of the phone list', () => {
+  const items = () => [...document.querySelectorAll<HTMLElement>('[role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]')].map((el) => el.textContent?.trim() ?? '').filter(Boolean).sort()
+  /** Opens the last menu of a bar (the page's own menu) and returns its items; closes it again. */
+  async function menuOf(bar: () => Element | null | undefined): Promise<string[]> {
+    await waitFor(() => !!bar()?.querySelector('button[aria-haspopup]'), 'the page menu button')
+    const triggers = [...bar()!.querySelectorAll<HTMLElement>('button[aria-haspopup="menu"], button[aria-haspopup="true"]')]
+    await click(triggers.at(-1)!)
+    await waitFor(() => items().length > 0, 'the menu open')
+    const found = items()
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await waitFor(() => items().length === 0, 'the menu closed')
+    return found
+  }
+
+  for (const [name, route] of ROUTES.filter(([n]) => ['the Inbox', 'Today', 'Upcoming', 'a label', 'a project'].includes(n))) {
+    it(`${name} offers every item its present phone menu offers`, async () => {
+      const s = await seed()
+      navigate(route(s))
+      const r = await render(<Shell user={user} onLogout={() => {}} />)
+      await waitFor(() => !!document.querySelector('[data-list-page]') && rowIds().length > 0, 'the present list')
+      const before = await menuOf(() => document.querySelector('[data-phone-bar]'))
+      setPhoneUiEnabled(true)
+      await waitFor(() => !!list() && rowIds().length > 0, 'the phone list')
+      const after = await menuOf(() => list()?.querySelector('[data-phone-header]'))
+      expect(before.length).toBeGreaterThan(0)
+      expect(after).toEqual(before)
+      await r.unmount()
+    })
+  }
+})

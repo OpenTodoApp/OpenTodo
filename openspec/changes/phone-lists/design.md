@@ -101,7 +101,7 @@ The desktop list's add row is not sticky below 768 px and scrolls away; the add 
 
 ### D9. Size
 
-Reported after the build in `tasks.md` 7.1: the entry chunk and the first load against `web/bundle-budget.json` (today 100.6 and 660.0 of 148 and 712 KB), and the phone list chunk. Moving the wiring into a module of its own does not add code to the first load: `TaskListView` already loads it.
+Measured on this branch against `web/bundle-budget.json`: the entry chunk is 93.3 KB gzip (budget 148; 100.6 before this change) and the entry with its static imports 662.1 KB (budget 712; 660.0 before). The phone list is one chunk of 5.6 KB gzip, fetched only with the switch on. The entry shrank because the list's wiring and header now sit in modules of their own, which the bundler places in shared chunks; the first load as a whole grew by 2.1 KB.
 
 ## Risks / Trade-offs
 
