@@ -218,7 +218,7 @@ export function physicalDirectionProblems(file, text) {
     if (/^\s*(\/\/|\*|\/\*)/.test(line)) return
     const moving = []
     const twins = []
-    for (const token of line.split(/[\s"'`{};]/)) {
+    for (const token of line.split(/[\s"'`{};$]/)) {
       if (!token) continue
       const { utility, negative, variants } = utilityOf(token)
       if (PHYSICAL.test(utility)) {

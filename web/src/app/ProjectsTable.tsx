@@ -211,9 +211,9 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
           <tr className="border-b border-soft">
             <SortHeader label={t('Name')} sortKey="name" sort={sort} onSort={onSort} className="ps-8 pe-2" />
             {COLUMNS.map((c) => c.key === 'people'
-              ? <th key={c.key} scope="col" className={`${c.from} ${c.width} px-2 py-2 text-meta font-medium text-muted`}>{c.label()}</th>
+              ? <th key={c.key} scope="col" className={`${c.from} ${c.width} px-2 py-2 text-start text-meta font-medium text-muted`}>{c.label()}</th>
               : <SortHeader key={c.key} label={c.label()} sortKey={c.key} sort={sort} onSort={onSort} className={`${c.from} ${c.width} px-2`} />)}
-            <th scope="col" className="w-9"><span className="sr-only">{t('Actions')}</span></th>
+            <th scope="col" className="w-9 text-start"><span className="sr-only">{t('Actions')}</span></th>
           </tr>
         </thead>
         <tbody ref={body} onKeyDown={onKey}>
@@ -292,7 +292,7 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
 function SortHeader({ label, sortKey, sort, onSort, className }: { label: string; sortKey: ProjectSortKey; sort: ProjectsSort | null; onSort: (key: ProjectSortKey) => void; className: string }) {
   const active = sort?.key === sortKey
   return (
-    <th scope="col" aria-sort={active ? (sort!.dir === 1 ? 'ascending' : 'descending') : undefined} className={`${className} py-1 font-normal`}>
+    <th scope="col" aria-sort={active ? (sort!.dir === 1 ? 'ascending' : 'descending') : undefined} className={`${className} py-1 text-start font-normal`}>
       <button type="button" onClick={() => onSort(sortKey)} data-sort={sortKey}
         className={`-mx-1 inline-flex items-center gap-1 rounded-chip px-1 py-1 text-meta font-medium ${active ? 'text-default' : 'text-muted hover:text-default'}`}>
         {label}

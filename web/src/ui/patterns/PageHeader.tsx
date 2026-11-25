@@ -173,7 +173,7 @@ function OwnPageHeader({ title, subtitle, meta, leading, actions, barActions = f
   // Everything went to the phone bar: no empty header row in the page.
   if (!ownRow && !phoneDay && (!actions || barActions) && !children) return null
   const backLink = back && (
-    <a href={back.href ?? '#'} className={`ui-btn ui-btn--ghost ui-btn--sm -ml-2${back.hideFrom === 'lg' ? ' lg:hidden' : ''}`} data-page-back
+    <a href={back.href ?? '#'} className={`ui-btn ui-btn--ghost ui-btn--sm -ms-2 ${back.hideFrom === 'lg' ? 'lg:hidden' : ''}`} data-page-back
       onClick={(e) => { if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); back.onClick() }}>
       <Icon name="arrow-left" />{back.label}
     </a>

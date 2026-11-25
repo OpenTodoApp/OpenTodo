@@ -57,7 +57,7 @@ export const WordButton = forwardRef<HTMLButtonElement, WordButtonProps>(functio
   const empty = value === undefined || value === null || value === ''
   const read = empty ? placeholder : valueText ?? (typeof value === 'string' ? value : '')
   const asChip = chip && !empty
-  const text = wrap && !empty ? `whitespace-pre-wrap break-words text-left${clamp ? ' line-clamp-4' : ''}` : 'truncate'
+  const text = wrap && !empty ? `whitespace-pre-wrap break-words text-start ${clamp ? 'line-clamp-4' : ''}` : 'truncate'
   return (
     // No minimum width: a short word ("all") reads as a word, not a 44 px box with a gap
     // after it (the touch rule sets one on buttons, unlayered, so it is undone inline). A
