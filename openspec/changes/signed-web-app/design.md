@@ -152,7 +152,7 @@ A check is only as good as the paths around it. The worker answers every same-or
 | A `lazy` file not cached yet | Fetched, checked against the list, cached, then served. A mismatch fails the request (the screen's error boundary shows it) and posts `refused` |
 | Any other path outside the data paths | 404 from the worker, never the network |
 | A data path: `/api/`, `/healthz`, `/dav/`, `/feeds/`, `/oauth/`, `/.well-known/`, `/mcp`, `/branding/`, `/manifest.webmanifest`, `/app-manifest.json` | Passed to the network, with two limits below |
-| A navigation that isn't a `GET` (a form's `POST`, from any site or from a sandboxed server page) | The server's document, with the sandbox below once refusal is on |
+| A navigation that isn't a `GET` (a form's `POST`, from any site or from a sandboxed server page) | Once refusal is on, the server's document with the sandbox below. While reporting, the browser's own handling, as before the worker existed: the worker doesn't take it. The fetch handler has to decide at once, so it reads the mode the worker last read from its record (read as the worker starts, and on every request). Until that first read finishes the mode is unknown, and the worker takes the post and decides from the record, which fails safe: a device with refusal on never gets an unsandboxed answer, and one that is reporting gets the server's answer unchanged |
 | `sw.js` | The network: the one app path the worker leaves alone, since the browser fetches it for updates without asking the worker |
 
 - **No script from a data path.** A request whose destination is `script`, `worker`, `sharedworker` or `style` is refused for a data path. A JSONP-style answer from `/api/` can never run.

@@ -16,9 +16,11 @@ const record = (refuse: boolean): TrustRecord => ({
 } as unknown as TrustRecord)
 
 let stored: TrustRecord | null = null
+/** While set, every read of the record waits for it: a worker whose first read hasn't finished. */
+let held: Promise<void> | null = null
 vi.mock('./lib/appTrust', async (real) => ({
   ...(await real<typeof import('./lib/appTrust')>()),
-  loadTrust: async () => stored,
+  loadTrust: async () => { if (held) await held; return stored },
   updateTrust: async () => null,
   trustsOwnKey: async () => false,
 }))
@@ -66,10 +68,15 @@ beforeEach(async () => {
   lazy = { 't.html': { body: '<title>task page</title>' } }
   served = () => new Response('from the server', { headers: { 'Content-Security-Policy': SERVER_CSP } })
   shared.reset()
+  held = null
+})
+
+/** Starts a new worker on the record the test set; it reads the record as it starts. */
+async function start(): Promise<void> {
   vi.resetModules()
   await import('./sw')
   network.mockClear()
-})
+}
 
 /** Dispatches a GET through the worker's fetch handler: null when the worker left it to the browser. */
 function answer(path: string, mode: RequestMode | 'navigate' = 'cors', destination = '', method = 'GET'): Promise<Response> | null {
@@ -83,7 +90,17 @@ const post = (path: string) => answer(path, 'navigate', 'document', 'POST')
 const fromServer = () => network.mock.calls.some(([req]) => typeof req === 'object' && req !== null && 'mode' in req)
 
 describe('while reporting (refusal off)', () => {
-  beforeEach(() => { stored = record(false) })
+  beforeEach(async () => { stored = record(false); await start() })
+
+  it('takes a form post before the mode is known, and passes its answer through unchanged', async () => {
+    let release = () => {}
+    held = new Promise((r) => { release = r })
+    await start()
+    const pending = post('/api/v1/auth/oidc/app-continue')
+    expect(pending).not.toBeNull()
+    release()
+    expect((await pending!).headers.get('Content-Security-Policy')).toBe(SERVER_CSP)
+  })
 
   it('asks the network for a path the list does not name', async () => {
     expect(await answer('/robots.txt')!.then((r) => r.text())).toBe('from the server')
@@ -100,8 +117,10 @@ describe('while reporting (refusal off)', () => {
   it('passes a server document through unchanged, and the answer to a form post too', async () => {
     const r = await navigate('/api/v1/attachments/1')!
     expect(r.headers.get('Content-Security-Policy')).toBe(SERVER_CSP)
-    const posted = await post('/api/v1/auth/oidc/app-continue')!
-    expect(posted.headers.get('Content-Security-Policy')).toBe(SERVER_CSP)
+    // A form's POST navigation is the browser's own while reporting, exactly as before
+    // (sign-in steps post this way in every browser), once the mode is known.
+    await navigate('/')
+    for (const p of ['/api/v1/auth/oidc/app-continue', '/oauth/authorize', '/api/v1/me/app-sign-in', '/']) expect(post(p), p).toBeNull()
     // A POST that is not a navigation is the API's: left to the browser.
     expect(answer('/api/v1/sync', 'cors', '', 'POST')).toBeNull()
   })
@@ -119,7 +138,7 @@ describe('while reporting (refusal off)', () => {
 })
 
 describe('with refusal on', () => {
-  beforeEach(() => { stored = record(true) })
+  beforeEach(async () => { stored = record(true); await start() })
 
   it('answers 404 for a path the list does not name, without asking the network', async () => {
     for (const p of ['/robots.txt', '/assets/injected-1.js', '/push-sw.js']) {
@@ -157,11 +176,23 @@ describe('with refusal on', () => {
   })
 
   it('sandboxes the answer to a form post navigation, wherever it posts (a cross-site form, or one in a sandboxed page)', async () => {
+    await navigate('/') // the mode is known
     for (const p of ['/api/v1/auth/oidc/app-continue', '/', '/inbox', '/t/abc', '/anything']) {
       const r = await post(p)!
       expect(await r.text(), p).toBe('from the server')
       expect(r.headers.get('Content-Security-Policy'), p).toBe(`${SERVER_CSP}, ${SERVER_DOCUMENT_POLICY}`)
     }
+  })
+
+  it('takes a form post before the mode is known, and sandboxes it once the record says refusal', async () => {
+    // A new worker, before its first read of the record has finished: never the browser's default.
+    let release = () => {}
+    held = new Promise((r) => { release = r })
+    await start()
+    const pending = post('/api/v1/auth/oidc/app-continue')
+    expect(pending).not.toBeNull()
+    release()
+    expect((await pending!).headers.get('Content-Security-Policy')).toBe(`${SERVER_CSP}, ${SERVER_DOCUMENT_POLICY}`)
   })
 
   it('answers 404 for an address that cannot be decoded', async () => {

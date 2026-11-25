@@ -49,7 +49,16 @@ const POLICY_KEY = '/__policy'
 const remembered = rememberedMode(() => caches.open(POLICY_CACHE))
 const records = trustReader(env.load, remembered)
 /** One read of the trust state: a request decides everything from the one it took. */
-const trustState = (): Promise<TrustState> => records.read()
+/**
+ * The refusal mode of the last trust read, for the one decision the fetch handler
+ * makes before it can wait: whether to take a form's POST navigation (D7). Null
+ * until the first read; it only ever moves to true, like the record.
+ */
+let refusing: boolean | null = null
+const trustState = (): Promise<TrustState> => records.read().then((t) => {
+  refusing = refusing === true || t.refuse
+  return t
+})
 async function trust(): Promise<TrustRecord | null> {
   return (await records.read()).record
 }
@@ -91,6 +100,9 @@ function check(force = false): Promise<CheckOutcome | null> {
   })()
   return state.running
 }
+
+// The mode is known from the worker's start on (a failed read leaves it unknown).
+void trustState().catch(() => undefined)
 
 self.addEventListener('install', (event) => {
   self.skipWaiting()
@@ -252,11 +264,13 @@ self.addEventListener('fetch', (event) => {
   }
   const path = url.pathname
   const navigate = request.mode === 'navigate'
-  // Every navigation goes through the worker, a form's POST included (a cross-site
-  // one, or one from a sandboxed server page): its answer is the server's document,
-  // sandboxed once refusal is on, like any other (design D7).
+  // A form's POST navigation (a cross-site one, or one from a sandboxed server page):
+  // once refusal is on, its answer is the server's document, sandboxed like any other
+  // (design D7). While reporting the browser keeps it, exactly as before. Before the
+  // first trust read the mode is unknown: the worker takes it and decides from the
+  // record, so a device with refusal on never lets one through unsandboxed.
   if (request.method !== 'GET') {
-    if (navigate) event.respondWith(serverDocument(event))
+    if (navigate && refusing !== false) event.respondWith(serverDocument(event))
     return
   }
   if (navigate && PUBLIC_LIST.test(path)) {
