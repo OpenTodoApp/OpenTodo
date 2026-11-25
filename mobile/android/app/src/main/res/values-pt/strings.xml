@@ -58,6 +58,7 @@
     <string name="setup_sign_in">Entrar aqui</string>
     <string name="error_sign_in">Seu servidor está atrás de uma página de login, e o login não continuou no app. Entre novamente aqui.</string>
     <string name="save_failed">Não foi possível salvar o arquivo.</string>
+    <string name="quick_add_failed">A tarefa não foi adicionada. Toque para adicioná-la.</string>
     <string name="channel_focus">Foco</string>
     <string name="channel_sync">A sincronizar</string>
     <string name="focus_generic">Sessão de foco</string>

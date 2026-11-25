@@ -16,6 +16,7 @@ import { Popover } from './overlay'
 import { ACCENT_SWATCHES } from './tokens/accentSwatches'
 import { clampToGamut, colourToHex, formatOklch, MAX_CHROMA, parseOklch, type Oklch } from '../lib/theme/oklch'
 import { t } from '../lib/i18n'
+import { composing } from '../lib/composeKey'
 
 export interface ColourFieldProps {
   /** The visible name ("Accent"). */
@@ -118,7 +119,7 @@ export function ColourPicker({ label, value, derived, onChange, onReset }: Pick<
       <Field label={t('Hex colour')} error={error}>
         <Input value={text} placeholder="#rrggbb" spellCheck={false} autoComplete="off" autoCapitalize="off" maxLength={7} className="font-mono" data-colour-hex
           onChange={(e) => { setText(e.target.value); if (error) setError(null) }}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commitHex() } }} onBlur={commitHex} />
+          onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Enter') { e.preventDefault(); commitHex() } }} onBlur={commitHex} />
       </Field>
       <div className="flex flex-col gap-2">
         {AXES.map(({ axis, max, scale }) => {
@@ -204,7 +205,7 @@ export function ColourField({ label, value, derived, onChange, onReset, descript
       <Input value={text} aria-label={t('{name}, hex value', { name: label })} aria-invalid={hexError ? true : undefined} placeholder="#rrggbb"
         spellCheck={false} autoComplete="off" autoCapitalize="off" maxLength={7} className="w-[5.75rem] shrink-0 font-mono" data-colour-row-hex
         onChange={(e) => { setText(e.target.value); if (hexError) setHexError(null) }}
-        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commit() } }} onBlur={commit} />
+        onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Enter') { e.preventDefault(); commit() } }} onBlur={commit} />
       {onReset && value !== undefined && <IconButton icon="rotate-ccw" size="sm" label={t('Reset {name} to derived', { name: label })} onClick={onReset} data-colour-row-reset />}
       {popover}
     </div>

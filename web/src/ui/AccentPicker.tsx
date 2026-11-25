@@ -17,6 +17,7 @@ import { customAccentStyle } from '../lib/appearance'
 import { hueName } from '../lib/colourNames'
 import { t } from '../lib/i18n'
 import { inlineKey } from '../lib/direction'
+import { composing } from '../lib/composeKey'
 
 const COLS = 9
 /** The hue of each swatch column, for its accessible name. */
@@ -110,7 +111,7 @@ export function AccentPicker({ value, onPick, onDone }: AccentPickerProps) {
         <Input value={text} placeholder="#rrggbb" spellCheck={false} autoComplete="off" autoCapitalize="off" inputMode="text" maxLength={9}
           className="font-mono" data-accent-hex
           onChange={(e) => { setText(e.target.value); if (error) setError(null) }}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commit() } }}
+          onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Enter') { e.preventDefault(); commit() } }}
           onBlur={commit} />
       </Field>
       <div className="flex gap-2">

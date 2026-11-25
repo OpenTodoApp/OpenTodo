@@ -22,6 +22,7 @@ import { ProjectsTable, type ProjectsSort } from './ProjectsTable'
 import { navigate } from './router'
 import { requestTemplateDialog } from './TemplateDialogHost'
 import { useToday, useViewerZone } from './useViews'
+import { composing } from '../lib/composeKey'
 
 /** Whether the page was opened at its archived projects (`/projects#archived`, Settings → Data). */
 function wantsArchived(prop?: boolean): boolean {
@@ -83,6 +84,7 @@ export function ProjectsView({ archived }: { archived?: boolean }) {
   const onSort = (key: ProjectSortKey) => setSort((s) => (s?.key !== key ? { key, dir: firstDirection(key) }
     : s.dir === firstDirection(key) ? { key, dir: s.dir === 1 ? -1 : 1 } : null))
   const onFindKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (composing(e)) return
     if (e.key === 'Enter' && found?.order[0]) { e.preventDefault(); navigate({ view: 'project', id: found.order[0].id }) }
     else if (e.key === 'Escape' && query) { e.preventDefault(); e.stopPropagation(); setQuery('') }
     else if (e.key === 'ArrowDown') { e.preventDefault(); document.querySelector<HTMLElement>('[data-projects-table] [data-project-open]')?.focus() }

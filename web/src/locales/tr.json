@@ -7920,5 +7920,8 @@
   "Phone screens": "Telefon ekranları",
   "A trial of screens made for a phone. This device only.": "Telefon için tasarlanmış ekranların denemesi. Yalnızca bu cihazda.",
   "New phone screens": "Yeni telefon ekranları",
-  "Today and the task page in the new design. Turn it off at any time.": "Bugün ve görev sayfası yeni tasarımda. İstediğin zaman kapatabilirsin."
+  "Today and the task page in the new design. Turn it off at any time.": "Bugün ve görev sayfası yeni tasarımda. İstediğin zaman kapatabilirsin.",
+  "Quick add notification": "Hızlı ekle bildirimi",
+  "Add a task from the notification shade, in any app.": "Herhangi bir uygulamadayken bildirim panelinden görev ekle.",
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android, OpenTodo bildirimlerini reddetti. Android ayarlarından izin ver."
 }

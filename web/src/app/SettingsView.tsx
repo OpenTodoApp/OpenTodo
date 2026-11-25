@@ -18,6 +18,7 @@ import { SectionDemoNote, SettingsPageContent } from './settingsPages'
 import { useServerVersion } from '../lib/serverVersion'
 import { useNewsDot } from '../lib/whatsNew'
 import { NewsDot } from './NewsDot'
+import { composing } from '../lib/composeKey'
 
 export { followLink }
 
@@ -347,6 +348,7 @@ function SettingsSearch({ user, compact = false }: { user: User; compact?: boole
     open(first.section.id, first.entries[0])
   }
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (composing(e)) return
     if (e.key === 'ArrowDown' && hits.length) { e.preventDefault(); listRef.current?.querySelector<HTMLElement>('a')?.focus() }
     if (e.key === 'Escape' && query) { e.preventDefault(); setQuery('') }
   }

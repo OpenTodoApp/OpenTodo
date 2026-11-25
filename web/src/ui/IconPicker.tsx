@@ -13,6 +13,7 @@ import { CATALOGUE_NAMES } from './icons/catalogue.names'
 import { categoryLabel, iconTitle, loadCatalogue, searchIcons, type CatalogueEntry, type IconCategory, type LoadedCatalogue, ICON_CATEGORIES, catalogueIfLoaded } from './icons/catalogue'
 import { t } from '../lib/i18n'
 import { inlineKey } from '../lib/direction'
+import { composing } from '../lib/composeKey'
 
 /** The columns of the grid with a mouse. */
 const COLS = 8
@@ -144,6 +145,7 @@ export function IconPicker({ value, onPick, onClose, color, noneMark, label = t(
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (composing(e)) return
     const keys: Record<string, () => void> = {
       ArrowRight: () => move(0, 1), ArrowLeft: () => move(0, -1),
       ArrowDown: () => move(1, 0), ArrowUp: () => move(-1, 0),

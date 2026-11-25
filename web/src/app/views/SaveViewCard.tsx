@@ -6,6 +6,7 @@ import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { Button, Icon } from '../../ui'
 import { t } from '../../lib/i18n'
 import { messageOf } from '../../lib/errorText'
+import { composing } from '../../lib/composeKey'
 
 export function SaveViewCard({ onSave, onCancel }: { onSave: (name: string) => Promise<void>; onCancel: () => void }) {
   const [name, setName] = useState('')
@@ -23,7 +24,7 @@ export function SaveViewCard({ onSave, onCancel }: { onSave: (name: string) => P
   }
   return (
     <form onSubmit={(e) => void submit(e)} data-save-view-card aria-label={t('Save as view')}
-      onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}
+      onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}
       className="my-2 flex flex-wrap items-center gap-3 rounded-card border border-strong bg-raised px-3 py-2.5">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-sunken text-muted" aria-hidden><Icon name="layers" size="md" /></span>
       <div className="min-w-0 flex-1 basis-48">

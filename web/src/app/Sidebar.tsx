@@ -65,6 +65,7 @@ import { SpaceSwitch } from './SpaceSwitch'
 import { useFeatures, type FeatureId } from '../lib/features'
 import { ROUTE_FEATURES } from './screens'
 import { inlineKey } from '../lib/direction'
+import { composing } from '../lib/composeKey'
 
 /** The Notes space's groups (notes-space D1), loaded when the space is first shown. */
 const NotesSidebar = lazy(() => import('./notes/NotesSidebar'))
@@ -321,6 +322,7 @@ export function Sidebar({ route, user, onSearch, onAddTask, onShortcuts, onFeedb
     return sidebarFind.subscribe((id) => { if (id === 'open' && sidebarFind.take('open')) openFind() })
   }, [])
   const onFindKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (composing(e)) return
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeFind() }
     else if (e.key === 'Enter' && active) { e.preventDefault(); openMatch(active); closeFind(false) }
     else if (e.key === 'ArrowDown' && found) { e.preventDefault(); setActiveMatch((i) => Math.min(i + 1, found.order.length - 1)) }
@@ -676,7 +678,7 @@ function NewProjectForm({ projects, parentId, onParent, onDone }: { projects: Pr
       <div className="flex items-center gap-1">
         <SidebarAppearance color={color} onColor={setColor} icon={icon} onIcon={setIcon} />
         <input ref={field} className="ui-input min-w-0 flex-1" placeholder={t('Project name')} value={name} onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Escape' && onDone()} />
+          onKeyDown={(e) => !composing(e) && e.key === 'Escape' && onDone()} />
       </div>
       <ProjectPickerField label={t('Parent project')} projects={projects} value={parentId || null} onChange={(id) => onParent(id ?? '')}
         rankContext="project.parent" inbox={false} noneLabel={t('Top level')} className="py-1 text-meta" />
