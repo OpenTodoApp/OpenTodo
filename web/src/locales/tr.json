@@ -7918,7 +7918,10 @@
   "Merged into {label}": "{label} ile birleştirildi",
   "Field deleted": "Alan silindi",
   "Phone screens": "Telefon ekranları",
-  "Screens made for a phone. This device only.": "Telefon için tasarlanmış ekranlar. Yalnızca bu cihazda.",
   "New phone screens": "Yeni telefon ekranları",
+  "Quick add notification": "Hızlı ekle bildirimi",
+  "Add a task from the notification shade, in any app.": "Herhangi bir uygulamadayken bildirim panelinden görev ekle.",
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android, OpenTodo bildirimlerini reddetti. Android ayarlarından izin ver.",
+  "Screens made for a phone. This device only.": "Telefon için tasarlanmış ekranlar. Yalnızca bu cihazda.",
   "The app in the design made for a phone. Turn it off for the earlier screens.": "Uygulama, telefon için yapılmış tasarımda. Önceki ekranlar için kapat."
 }

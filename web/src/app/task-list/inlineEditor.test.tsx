@@ -90,6 +90,21 @@ describe('inline title editing', () => {
     await r.unmount()
   })
 
+  // composition-keys: Escape cancels the reading and Shift+Enter confirms it, not the editor.
+  it('keeps editing through Escape and Shift+Enter while an input method is composing', async () => {
+    const id = await createTask({ title: 'Call mum' })
+    const r = await list()
+    await clickTitle(r.container, 'Call mum')
+    await waitFor(() => !!editorTitle())
+    await typeInto(editorTitle()!, 'でんわ')
+    await key(editorTitle()!, 'Escape', { isComposing: true })
+    await key(editorTitle()!, 'Enter', { shiftKey: true, isComposing: true })
+    expect(editorTitle()).toBeTruthy()
+    expect(openedTask()).toBeNull()
+    expect((await db.tasks.get(id))!.title).toBe('Call mum')
+    await r.unmount()
+  })
+
   it('Shift+Enter saves and opens the task page', async () => {
     const id = await createTask({ title: 'Plan' })
     const r = await list()

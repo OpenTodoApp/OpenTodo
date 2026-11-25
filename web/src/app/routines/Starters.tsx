@@ -29,6 +29,7 @@ import { useRoutineNames, valueNamer, type RoutineNames } from './data'
 import { ChoicePopover, type Choice } from './pickers'
 import { openStarterDraft } from './routineNav'
 import { sentenceText } from './StepCard'
+import { composing } from '../../lib/composeKey'
 
 const CATEGORY_ORDER: readonly TemplateCategory[] = ['personal', 'home', 'work', 'study', 'method']
 const CATEGORY = translatedMap<string>({ personal: msg('Personal'), home: msg('Home'), work: msg('Work'), study: msg('Study'), method: msg('Method') })
@@ -69,7 +70,7 @@ export function StarterList({ starters, autoFocus = false }: { starters: Starter
   return (
     <div className="space-y-3" data-starter-list>
       <Input ref={search} type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('Search starters…')} aria-label={t('Search starters')}
-        data-starter-search onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); cards(list.current)[0]?.focus() } }} />
+        data-starter-search onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'ArrowDown') { e.preventDefault(); cards(list.current)[0]?.focus() } }} />
       <p className="sr-only" aria-live="polite">{t('{n, plural, one {# starter} other {# starters}}', { n: found.length })}</p>
       <div ref={list} className="space-y-4" onKeyDown={onListKey}>
         {CATEGORY_ORDER.map((c) => {

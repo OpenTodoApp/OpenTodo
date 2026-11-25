@@ -18,6 +18,7 @@ import { draftNamesOf, editorDraftOf, MAX_DRAFT_TEXT, type DraftAnswer } from '.
 import { Button, Field, IconButton, Notice, Textarea } from '../../ui'
 import { useRoutineNames } from './data'
 import { openDescribedDraft } from './routineNav'
+import { composing } from '../../lib/composeKey'
 
 /** Where Describe it runs: the server's assistant, this device's, or nowhere (not offered). */
 export type DescribeMode = 'server' | 'device' | null
@@ -103,7 +104,7 @@ export function DescribePanel({ mode, catalogue, onClose }: { mode: Exclude<Desc
   }
   return (
     <section ref={panel} id={DESCRIBE_PANEL_ID} className="surface-card mb-3 space-y-3 p-3" aria-labelledby="describe-routine-title" data-testid="describe-routine" data-describe-panel data-overlay="inline"
-      onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose() } }}>
+      onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose() } }}>
       <div className="flex items-center gap-2">
         <h2 id="describe-routine-title" className="min-w-0 flex-1 text-body font-semibold text-strong">{t('Describe a routine')}</h2>
         <IconButton size="sm" icon="x" label={t('Close')} onClick={onClose} />
@@ -113,7 +114,7 @@ export function DescribePanel({ mode, catalogue, onClose }: { mode: Exclude<Desc
           description={t('For example: every Friday at five, make tasks in Errands from my Groceries note.')}
           error={tooLong ? t('At most {n} characters', { n: MAX_DRAFT_TEXT }) : undefined}>
           <Textarea autoFocus value={text} rows={3} onChange={(e) => setText(e.target.value)} data-describe-text
-            onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void submit() } }} />
+            onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void submit() } }} />
         </Field>
         <p className="text-meta text-muted">
           {mode === 'device'

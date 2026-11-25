@@ -58,6 +58,7 @@
     <string name="setup_sign_in">Accedi qui</string>
     <string name="error_sign_in">Il server è dietro una pagina di accesso e l’accesso non è proseguito nell’app. Accedi di nuovo qui.</string>
     <string name="save_failed">Non è stato possibile salvare il file.</string>
+    <string name="quick_add_failed">L’attività non è stata aggiunta. Tocca per aggiungerla.</string>
     <string name="channel_focus">Focus</string>
     <string name="channel_sync">Sincronizzazione</string>
     <string name="focus_generic">Sessione di focus</string>

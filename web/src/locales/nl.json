@@ -7918,7 +7918,10 @@
   "Merged into {label}": "Samengevoegd in {label}",
   "Field deleted": "Veld verwijderd",
   "Phone screens": "Telefoonschermen",
-  "Screens made for a phone. This device only.": "Schermen die voor de telefoon zijn gemaakt. Alleen op dit apparaat.",
   "New phone screens": "Nieuwe telefoonschermen",
+  "Quick add notification": "Melding voor snelle invoer",
+  "Add a task from the notification shade, in any app.": "Voeg een taak toe vanuit het meldingenpaneel, in elke app.",
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android heeft meldingen voor OpenTodo geweigerd. Sta ze toe in de instellingen van Android.",
+  "Screens made for a phone. This device only.": "Schermen die voor de telefoon zijn gemaakt. Alleen op dit apparaat.",
   "The app in the design made for a phone. Turn it off for the earlier screens.": "De app in het ontwerp voor de telefoon. Zet het uit voor de eerdere schermen."
 }

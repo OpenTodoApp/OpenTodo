@@ -55,6 +55,7 @@ import { LIST_READY, perfMark } from '../lib/perfMarks'
 import { UrgencyChip, UrgencyContext } from './useUrgency'
 import { useCollapsedRows } from './task-list/collapsedRows'
 import { nestGroup, type NestedRow } from '../lib/viewNest'
+import { composing } from '../lib/composeKey'
 
 function parseError(src: string): string | null {
   if (!src.trim()) return t('The query must not be empty')
@@ -165,6 +166,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
     listRef.current?.focus()
   }
   function onInputKey(e: ReactKeyboardEvent<HTMLInputElement>) {
+    if (composing(e)) return
     if (e.key === 'Enter') {
       e.preventDefault()
       if (dirty) void saveQuery()

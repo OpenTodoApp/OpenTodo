@@ -1101,6 +1101,9 @@
   "Add a task for tomorrow…": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "Add a task from the notification shade, in any app.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Add a task labelled {label}…": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -1828,6 +1831,9 @@
   ],
   "Android refused notifications for OpenTodo. Allow them in Android's settings (Apps → OpenTodo → Notifications); reminders still appear inside the app.": [
     "web/src/app/ShellNotifications.tsx"
+  ],
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Animals|icon category": [
     "web/src/ui/icons/catalogue.ts"
@@ -14486,6 +14492,9 @@
   ],
   "Quick add a task (the command bar in Add mode on screens without a quick add)": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Quick add notification": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Quick add syntax": [
     "web/src/app/ShortcutHelp.tsx"

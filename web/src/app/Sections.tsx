@@ -23,6 +23,7 @@ import { t } from '../lib/i18n'
 import { act } from './actionError'
 import { addManyToList, createUnlessReused } from './reuseAdd'
 import { isReusable } from '../lib/reusable'
+import { composing } from '../lib/composeKey'
 
 /** The section menu as data (labels-and-menus 3.1). */
 export function sectionMenuGroups(title: string, o: { first: boolean; last: boolean; layout: 'list' | 'board'; count: number },
@@ -154,6 +155,7 @@ export function SectionHeader({ section, name: heading, count, layout, editable,
     <input className="ui-input max-w-xs py-0.5 text-body font-semibold" autoFocus aria-label={t('Section name')} value={name}
       onChange={(e) => setName(e.target.value)} onBlur={() => void commit()}
       onKeyDown={(e) => {
+        if (composing(e)) return
         if (e.key === 'Enter') void commit()
         if (e.key === 'Escape') { e.stopPropagation(); setName(section.name); setRenaming(false) }
       }} />
@@ -269,7 +271,7 @@ export function AddSection({ projectId, layout }: { projectId: string; layout: '
     <form onSubmit={(e) => void submit(e)} className={layout === 'board' ? 'ui-column-add' : 'max-w-xs'}>
       <input className="ui-input py-1 text-body" autoFocus placeholder={t('Section name, Enter to add')} aria-label={t('New section name')} value={name}
         onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setOpen(false); setName('') } }}
+        onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Escape') { e.stopPropagation(); setOpen(false); setName('') } }}
         onBlur={() => { if (!name.trim()) setOpen(false) }} />
     </form>
   )

@@ -7918,7 +7918,10 @@
   "Merged into {label}": "Mesclada em {label}",
   "Field deleted": "Campo excluído",
   "Phone screens": "Ecrãs para telemóvel",
-  "Screens made for a phone. This device only.": "Ecrãs feitos para o telemóvel. Apenas neste dispositivo.",
   "New phone screens": "Novos ecrãs para telemóvel",
+  "Quick add notification": "Notificação de adição rápida",
+  "Add a task from the notification shade, in any app.": "Adicione uma tarefa a partir da barra de notificações, em qualquer app.",
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "O Android recusou as notificações do OpenTodo. Permita-as nas definições do Android.",
+  "Screens made for a phone. This device only.": "Ecrãs feitos para o telemóvel. Apenas neste dispositivo.",
   "The app in the design made for a phone. Turn it off for the earlier screens.": "A aplicação no design feito para o telemóvel. Desative para voltar aos ecrãs anteriores."
 }

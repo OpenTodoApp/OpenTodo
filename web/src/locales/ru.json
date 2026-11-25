@@ -7918,7 +7918,10 @@
   "Merged into {label}": "Объединено с {label}",
   "Field deleted": "Поле удалено",
   "Phone screens": "Экраны для телефона",
-  "Screens made for a phone. This device only.": "Экраны, сделанные для телефона. Только на этом устройстве.",
   "New phone screens": "Новые экраны для телефона",
+  "Quick add notification": "Уведомление быстрого добавления",
+  "Add a task from the notification shade, in any app.": "Добавляйте задачу из шторки уведомлений в любом приложении.",
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android запретил уведомления OpenTodo. Разрешите их в настройках Android.",
+  "Screens made for a phone. This device only.": "Экраны, сделанные для телефона. Только на этом устройстве.",
   "The app in the design made for a phone. Turn it off for the earlier screens.": "Приложение в оформлении для телефона. Отключите, чтобы вернуть прежние экраны."
 }
