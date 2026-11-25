@@ -164,7 +164,7 @@ export function SectionHeader({ section, name: heading, count, layout, editable,
   // A coloured section tints its header, in the list and on the board (section-tint).
   return (
     <div data-section-heading={section?.id ?? ''} onKeyDown={editable && section && !renaming ? onRowKey : undefined}>
-      <ListGroupHeader title={titleNode} count={count} countTone={layout === 'board' ? 'muted' : 'faint'} bar={layout !== 'board'} kind={section ? 'named' : 'generated'}
+      <ListGroupHeader title={titleNode} count={count} countTone={layout === 'board' ? 'muted' : 'faint'} bar={layout === 'board' ? false : undefined} kind={section ? 'named' : 'generated'}
         hue={hue}
         collapsed={collapsed} onToggle={onToggleCollapse}
         note={count === 0 && completed > 0 ? (

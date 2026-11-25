@@ -11,7 +11,7 @@ import { completedOpenKey } from '../../lib/listGroups'
 import { LOGBOOK_PAGE } from '../../lib/logbook'
 import { canEditTasks, roleOf } from '../../lib/sharing'
 import type { AccountRole } from '../../lib/types'
-import { PageHeaderDrawContext, type PageHeaderProps, useMediaQuery } from '../../ui'
+import { GroupBarContext, PageHeaderDrawContext, type PageHeaderProps, useMediaQuery } from '../../ui'
 import { BulkActionsMenu, ListReorderContext, SelectionBar } from '../../app/bulk/BulkActions'
 import { TodayAgenda } from '../../app/calendar/TodayAgenda'
 import { UpcomingEventsNote } from '../../app/calendar/UpcomingAgenda'
@@ -65,7 +65,7 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
   if (!s.ready) return <div className="min-h-full bg-canvas" data-list-loading />
 
   return (
-    <ListReorderContext.Provider value={s.listReorder}><UrgencyContext.Provider value={m.urgency}><PageHeaderDrawContext value={header}>
+    <ListReorderContext.Provider value={s.listReorder}><UrgencyContext.Provider value={m.urgency}><PageHeaderDrawContext value={header}><GroupBarContext value={false}>
       <div ref={s.room} data-phone-screen="list" data-phone-list={route.view} className="min-h-full bg-canvas pb-6">
         {route.view === 'project' && currentProject ? (
           <ProjectHeader project={currentProject} userId={userId} extraGroups={s.boardGroups} print
@@ -109,6 +109,6 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
         {ui.prompt && <CompleteParentPrompt parent={ui.prompt} onAccept={s.acceptPrompt} onDismiss={() => s.setPrompt(null)} />}
         <RowPickerDialogs assignFor={ui.assignFor} pickerFor={ui.pickerFor} userId={userId} onCloseAssign={() => ui.setAssignFor(null)} onClosePicker={() => ui.setPickerFor(null)} />
       </div>
-    </PageHeaderDrawContext></UrgencyContext.Provider></ListReorderContext.Provider>
+    </GroupBarContext></PageHeaderDrawContext></UrgencyContext.Provider></ListReorderContext.Provider>
   )
 }
