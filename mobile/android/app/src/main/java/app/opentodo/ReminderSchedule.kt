@@ -2,8 +2,11 @@ package app.opentodo
 
 import org.json.JSONArray
 
-/** One reminder the web app handed over (bridge v1 `scheduleReminders`). */
-data class ShellReminder(val id: String, val taskId: String, val fireAt: Long, val title: String?)
+/**
+ * One reminder the web app handed over (bridge v1 `scheduleReminders`). [due] is the notification's
+ * body, the task's due as of the firing day ("Today 14:00"), handed over with the title (push-due-date D4).
+ */
+data class ShellReminder(val id: String, val taskId: String, val fireAt: Long, val title: String?, val due: String? = null)
 
 /** Parsing and filtering of the handed-over schedule; pure so the rules are unit-tested. */
 object ReminderSchedule {
@@ -29,7 +32,8 @@ object ReminderSchedule {
             if (now != null && (fireAt < now - GRACE_MS || fireAt > now + HORIZON_MS)) continue
             if (!seen.add(id)) continue
             val title = if (o.has("title") && !o.isNull("title")) o.optString("title").take(200).ifEmpty { null } else null
-            out.add(ShellReminder(id, taskId, fireAt, title))
+            val due = if (o.has("due") && !o.isNull("due")) o.optString("due").take(100).ifEmpty { null } else null
+            out.add(ShellReminder(id, taskId, fireAt, title, due))
         }
         return out.sortedBy { it.fireAt }.take(MAX)
     }
@@ -39,6 +43,7 @@ object ReminderSchedule {
         for (r in list) arr.put(org.json.JSONObject().apply {
             put("id", r.id); put("taskId", r.taskId); put("fireAt", r.fireAt)
             if (r.title != null) put("title", r.title)
+            if (r.due != null) put("due", r.due)
         })
         return arr.toString()
     }

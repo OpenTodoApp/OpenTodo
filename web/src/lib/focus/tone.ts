@@ -103,6 +103,54 @@ export async function playTone(peak = 0.2): Promise<boolean> {
   }
 }
 
+/** The Long alert's repeats (focus-end-alert D2): their gap, how many play at most, and their peak (Short plays at 0.2). */
+export const REPEAT_MS = 1000
+export const REPEATS = 10
+export const LONG_PEAK = 0.5
+
+/** Tones waiting on the audio clock (focus-alert-hidden-tab D1). */
+export interface ScheduledTone {
+  /** Whether the first tone has begun. */
+  started(): boolean
+  /** Silences the tones that have not begun. */
+  cancel(): void
+}
+
+/**
+ * Schedules `count` tones `gapMs` apart, the first `delayMs` from now, on the
+ * audio clock, which keeps time in a hidden tab whose timers the browser
+ * throttles. Only on a context a gesture already woke: null otherwise. `onStart`
+ * runs when the first tone's first note ends (an audio event, not a timer).
+ */
+export function scheduleTone(delayMs: number, peak: number, count = 1, gapMs = REPEAT_MS, onStart?: () => void): ScheduledTone | null {
+  const c = ctx
+  if (!c || c.state !== 'running') return null
+  try {
+    const t0 = c.currentTime + Math.max(0, delayMs) / 1000
+    const tones: { at: number; gain: GainNode }[] = []
+    let cancelled = false
+    for (let i = 0; i < count; i++) {
+      const at = t0 + (i * gapMs) / 1000
+      const gain = c.createGain()
+      gain.connect(c.destination)
+      const first = note(c, gain, 660, at, peak)
+      note(c, gain, 880, at + 0.14, peak)
+      if (i === 0 && onStart) first.onended = () => { if (!cancelled) onStart() }
+      tones.push({ at, gain })
+    }
+    const started = () => c.state === 'running' && c.currentTime >= t0
+    return {
+      started,
+      cancel() {
+        if (!started()) cancelled = true
+        for (const tone of tones) if (c.currentTime < tone.at) tone.gain.disconnect()
+      },
+    }
+  } catch {
+    return null
+  }
+}
+
 /** Forgets the context (tests). */
 export function resetTone(): void {
   ctx = null

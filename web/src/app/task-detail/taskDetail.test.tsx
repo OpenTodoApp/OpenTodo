@@ -6,10 +6,11 @@ import { describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
 import { activeLabels, createLabel } from '../../lib/labels'
 import { archiveProject, createProject, createSubtask, createTask, setTaskCompleted } from '../../lib/ops'
-import { parentUndoable } from '../../lib/undoActions'
-import { createSection, moveTaskToSection } from '../../lib/sections'
+import { parentUndoable, sectionMoveUndoable } from '../../lib/undoActions'
+import { createSection } from '../../lib/sections'
 import { click, key, type, visibleText } from '../../ui/test-utils'
 import { ME, membership, open, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
+const moveTaskToSection = (id: string, section: string | null) => sectionMoveUndoable(id, section, '')
 
 setupTaskDetailTests()
 

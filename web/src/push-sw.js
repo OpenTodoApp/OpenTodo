@@ -34,16 +34,16 @@
   // work-in-progress language may have an empty entry, `scripts/i18n/new-language.mjs`
   // adds one).
   const OWN_TEXT = {
-    en: { reminder: 'Reminder', due: 'Due {date}', tiny: '{tiny} is enough', generic: 'You have a reminder', done: 'Done|task', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.', assigned: '{name} assigned you a task', completed: '{name} completed a task', reopened: '{name} reopened a task', someone: 'Someone' },
-    de: { reminder: 'Erinnerung', due: 'Fällig {date}', tiny: '{tiny} reicht', generic: 'Du hast eine Erinnerung', done: 'Erledigt', snooze: '10 Min. später', dismiss: 'Verwerfen', test: 'Testbenachrichtigung: Push funktioniert auf diesem Gerät.', assigned: '{name} hat dir eine Aufgabe zugewiesen', completed: '{name} hat eine Aufgabe erledigt', reopened: '{name} hat eine Aufgabe wieder geöffnet', someone: 'Jemand' },
-    fr: { reminder: 'Rappel', due: 'Échéance {date}', tiny: '{tiny} suffit', generic: 'Tu as un rappel', done: 'Terminé', snooze: 'Reporter de 10 min', dismiss: 'Ignorer', test: 'Notification de test : les notifications push fonctionnent sur cet appareil.', assigned: '{name} t’a attribué une tâche', completed: '{name} a terminé une tâche', reopened: '{name} a rouvert une tâche', someone: 'Quelqu’un' },
-    es: { reminder: 'Recordatorio', due: 'Vence {date}', tiny: 'Con {tiny} basta', generic: 'Tienes un recordatorio', done: 'Hecho', snooze: 'Posponer 10 min', dismiss: 'Descartar', test: 'Notificación de prueba: las notificaciones push funcionan en este dispositivo.', assigned: '{name} te asignó una tarea', completed: '{name} completó una tarea', reopened: '{name} reabrió una tarea', someone: 'Alguien' },
-    it: { reminder: 'Promemoria', due: 'Scadenza {date}', tiny: 'Basta {tiny}', generic: 'Hai un promemoria', done: 'Fatto', snooze: 'Posticipa di 10 min', dismiss: 'Ignora', test: 'Notifica di prova: le notifiche push funzionano su questo dispositivo.', assigned: '{name} ti ha assegnato un’attività', completed: '{name} ha completato un’attività', reopened: '{name} ha riaperto un’attività', someone: 'Qualcuno' },
-    pt: { reminder: 'Lembrete', due: 'Vence {date}', tiny: '{tiny} já basta', generic: 'Você tem um lembrete', done: 'Concluído', snooze: 'Adiar 10 min', dismiss: 'Dispensar', test: 'Notificação de teste: as notificações push funcionam neste dispositivo.', assigned: '{name} atribuiu uma tarefa a você', completed: '{name} concluiu uma tarefa', reopened: '{name} reabriu uma tarefa', someone: 'Alguém' },
-    zh: { reminder: '提醒', due: '{date} 截止', tiny: '{tiny}就够了', generic: '你有一条提醒', done: '完成', snooze: '延后 10 分钟', dismiss: '忽略', test: '测试通知：推送在此设备上正常工作。', assigned: '{name} 给你分配了一项任务', completed: '{name} 完成了一项任务', reopened: '{name} 重新打开了一项任务', someone: '某人' },
-    nl: { reminder: 'Herinnering', due: 'Gepland {date}', tiny: '{tiny} is genoeg', generic: 'Je hebt een herinnering', done: 'Voltooid', snooze: '10 min. later', dismiss: 'Sluiten', test: 'Testmelding: push werkt op dit apparaat.', assigned: '{name} heeft je een taak toegewezen', completed: '{name} heeft een taak voltooid', reopened: '{name} heeft een taak opnieuw geopend', someone: 'Iemand' },
-    tr: { reminder: 'Hatırlatıcı', due: 'Bitiş: {date}', tiny: '{tiny} yeterli', generic: 'Bir hatırlatıcınız var', done: 'Tamamlandı', snooze: '10 dk ertele', dismiss: 'Kapat', test: 'Test bildirimi: bu cihazda anlık bildirimler çalışıyor.', assigned: '{name} sana bir görev atadı', completed: '{name} bir görevi tamamladı', reopened: '{name} bir görevi yeniden açtı', someone: 'Biri' },
-    pl: { reminder: 'Przypomnienie', due: 'Do wykonania {date}', tiny: '{tiny} wystarczy', generic: 'Masz przypomnienie', done: 'Zrobione', snooze: 'Odłóż o 10 min', dismiss: 'Zamknij', test: 'Powiadomienie testowe: powiadomienia push działają na tym urządzeniu.', assigned: '{name} przypisał(a) ci zadanie', completed: '{name} ukończył(a) zadanie', reopened: '{name} ponownie otworzył(a) zadanie', someone: 'Ktoś' },
+    en: { reminder: 'Reminder', today: 'Today', tomorrow: 'Tomorrow', tiny: '{tiny} is enough', generic: 'You have a reminder', done: 'Done|task', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.', assigned: '{name} assigned you a task', completed: '{name} completed a task', reopened: '{name} reopened a task', someone: 'Someone' },
+    de: { reminder: 'Erinnerung', today: 'Heute', tomorrow: 'Morgen', tiny: '{tiny} reicht', generic: 'Du hast eine Erinnerung', done: 'Erledigt', snooze: '10 Min. später', dismiss: 'Verwerfen', test: 'Testbenachrichtigung: Push funktioniert auf diesem Gerät.', assigned: '{name} hat dir eine Aufgabe zugewiesen', completed: '{name} hat eine Aufgabe erledigt', reopened: '{name} hat eine Aufgabe wieder geöffnet', someone: 'Jemand' },
+    fr: { reminder: 'Rappel', today: 'Aujourd’hui', tomorrow: 'Demain', tiny: '{tiny} suffit', generic: 'Tu as un rappel', done: 'Terminé', snooze: 'Reporter de 10 min', dismiss: 'Ignorer', test: 'Notification de test : les notifications push fonctionnent sur cet appareil.', assigned: '{name} t’a attribué une tâche', completed: '{name} a terminé une tâche', reopened: '{name} a rouvert une tâche', someone: 'Quelqu’un' },
+    es: { reminder: 'Recordatorio', today: 'Hoy', tomorrow: 'Mañana', tiny: 'Con {tiny} basta', generic: 'Tienes un recordatorio', done: 'Hecho', snooze: 'Posponer 10 min', dismiss: 'Descartar', test: 'Notificación de prueba: las notificaciones push funcionan en este dispositivo.', assigned: '{name} te asignó una tarea', completed: '{name} completó una tarea', reopened: '{name} reabrió una tarea', someone: 'Alguien' },
+    it: { reminder: 'Promemoria', today: 'Oggi', tomorrow: 'Domani', tiny: 'Basta {tiny}', generic: 'Hai un promemoria', done: 'Fatto', snooze: 'Posticipa di 10 min', dismiss: 'Ignora', test: 'Notifica di prova: le notifiche push funzionano su questo dispositivo.', assigned: '{name} ti ha assegnato un’attività', completed: '{name} ha completato un’attività', reopened: '{name} ha riaperto un’attività', someone: 'Qualcuno' },
+    pt: { reminder: 'Lembrete', today: 'Hoje', tomorrow: 'Amanhã', tiny: '{tiny} já basta', generic: 'Você tem um lembrete', done: 'Concluído', snooze: 'Adiar 10 min', dismiss: 'Dispensar', test: 'Notificação de teste: as notificações push funcionam neste dispositivo.', assigned: '{name} atribuiu uma tarefa a você', completed: '{name} concluiu uma tarefa', reopened: '{name} reabriu uma tarefa', someone: 'Alguém' },
+    zh: { reminder: '提醒', today: '今天', tomorrow: '明天', tiny: '{tiny}就够了', generic: '你有一条提醒', done: '完成', snooze: '延后 10 分钟', dismiss: '忽略', test: '测试通知：推送在此设备上正常工作。', assigned: '{name} 给你分配了一项任务', completed: '{name} 完成了一项任务', reopened: '{name} 重新打开了一项任务', someone: '某人' },
+    nl: { reminder: 'Herinnering', today: 'Vandaag', tomorrow: 'Morgen', tiny: '{tiny} is genoeg', generic: 'Je hebt een herinnering', done: 'Voltooid', snooze: '10 min. later', dismiss: 'Sluiten', test: 'Testmelding: push werkt op dit apparaat.', assigned: '{name} heeft je een taak toegewezen', completed: '{name} heeft een taak voltooid', reopened: '{name} heeft een taak opnieuw geopend', someone: 'Iemand' },
+    tr: { reminder: 'Hatırlatıcı', today: 'Bugün', tomorrow: 'Yarın', tiny: '{tiny} yeterli', generic: 'Bir hatırlatıcınız var', done: 'Tamamlandı', snooze: '10 dk ertele', dismiss: 'Kapat', test: 'Test bildirimi: bu cihazda anlık bildirimler çalışıyor.', assigned: '{name} sana bir görev atadı', completed: '{name} bir görevi tamamladı', reopened: '{name} bir görevi yeniden açtı', someone: 'Biri' },
+    pl: { reminder: 'Przypomnienie', today: 'Dziś', tomorrow: 'Jutro', tiny: '{tiny} wystarczy', generic: 'Masz przypomnienie', done: 'Zrobione', snooze: 'Odłóż o 10 min', dismiss: 'Zamknij', test: 'Powiadomienie testowe: powiadomienia push działają na tym urządzeniu.', assigned: '{name} przypisał(a) ci zadanie', completed: '{name} ukończył(a) zadanie', reopened: '{name} ponownie otworzył(a) zadanie', someone: 'Ktoś' },
   }
   self.__opentodoText = OWN_TEXT
   const TEXT = {}
@@ -259,21 +259,32 @@
     }
   }
 
-  // The due line in the user's date and time format (OpenSpec date-time-preferences,
-  // design D7): an inline copy of formatDate(…, 'compact') and formatTime from
-  // src/lib/dates.ts, checked against it by src/lib/pushWorker.test.ts. A missing
-  // row or an unknown value means "system": the locale's date and the stored HH:MM.
+  // The due in the user's date and time format (OpenSpec date-time-preferences,
+  // design D7), in a task row's words (push-due-date D2): an inline copy of
+  // describeDue, formatDate(…, 'compact') and formatTime from src/lib/dates.ts,
+  // checked against them by src/lib/pushWorker.test.ts. A missing row or an unknown
+  // value means "system": the locale's date and the stored HH:MM.
   function formatDue(dueValue, prefs, today) {
     const p = prefs || {}
+    const text = TEXT[languageOf(p)]
     // Month names and the day period in the stored language (app-localization D4),
     // as lib/i18n intlLocale picks it; only without a stored language, the browser's.
     const locale = localeOf(p)
     const pad = (n) => String(n).padStart(2, '0')
-    const [y, m, d] = String(dueValue.date).split('-').map(Number)
+    const due = localDue(dueValue)
+    const [y, m, d] = String(due.date).split('-').map(Number)
     const dt = new Date(y, m - 1, d)
-    let date = dueValue.date
-    if (!Number.isNaN(dt.getTime()) && p.date_format !== 'iso') {
-      const otherYear = String(dueValue.date).slice(0, 4) !== String(today).slice(0, 4)
+    let date = due.date
+    if (Number.isNaN(dt.getTime())) {
+      // An unreadable date stays as stored.
+    } else if (due.date === today) {
+      date = text.today
+    } else if (due.date === addDays(today, 1)) {
+      date = text.tomorrow
+    } else if (due.date > today && due.date < addDays(today, 7)) {
+      date = new Intl.DateTimeFormat(locale, { weekday: 'long' }).format(dt)
+    } else if (p.date_format !== 'iso') {
+      const otherYear = String(due.date).slice(0, 4) !== String(today).slice(0, 4)
       const parts = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(new Date(2026, 10, 3))
       const at = (type) => parts.findIndex((x) => x.type === type)
       const natural = at('year') < at('month') ? 'YMD' : at('day') < at('month') ? 'DM' : 'MD'
@@ -287,29 +298,68 @@
         date = new Intl.DateTimeFormat(locale, otherYear ? { year: 'numeric', month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric' }).format(dt)
       }
     }
-    if (!dueValue.time) return date
-    let time = dueValue.time
-    const t = /^(\d{1,2}):(\d{2})$/.exec(dueValue.time)
+    if (!due.time) return date
+    let time = due.time
+    const t = /^(\d{1,2}):(\d{2})$/.exec(due.time)
     if (t && p.time_format === '24h') time = `${pad(Number(t[1]))}:${t[2]}`
     if (t && p.time_format === '12h') {
       const h = Number(t[1])
       const period = new Intl.DateTimeFormat(locale, { hour: 'numeric', hourCycle: 'h12' }).formatToParts(new Date(2026, 0, 1, h)).find((x) => x.type === 'dayPeriod')
       time = `${h % 12 === 0 ? 12 : h % 12}:${t[2]} ${period ? period.value : h < 12 ? 'AM' : 'PM'}`
     }
-    return `${date}, ${time}`
+    return `${date} ${time}`
   }
   self.__opentodoFormatDue = formatDue
+
+  /** The calendar date `days` after `iso` (YYYY-MM-DD). */
+  function addDays(iso, days) {
+    const [y, m, d] = String(iso).split('-').map(Number)
+    const dt = new Date(Date.UTC(y, m - 1, d + days))
+    return dt.toISOString().slice(0, 10)
+  }
+
+  /**
+   * A zoned due (`tz` with a time) as this device's wall date and time, like
+   * localDueOf in src/lib/dates.ts; a floating due, or a zone this browser does
+   * not know, as stored.
+   */
+  function localDue(due) {
+    if (!due || !due.tz || !due.time) return due
+    try {
+      const [y, m, d] = String(due.date).split('-').map(Number)
+      const [hh, mm] = String(due.time).split(':').map(Number)
+      const wall = Date.UTC(y, m - 1, d, hh, mm)
+      const fmt = new Intl.DateTimeFormat('en-US', { timeZone: due.tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' })
+      const offset = (ms) => {
+        const v = {}
+        for (const x of fmt.formatToParts(ms)) v[x.type] = Number(x.value)
+        return Date.UTC(v.year, v.month - 1, v.day, v.hour, v.minute) - Math.floor(ms / 60000) * 60000
+      }
+      const at = wall - offset(wall - offset(wall))
+      const local = new Date(at)
+      const pad = (n) => String(n).padStart(2, '0')
+      if (Number.isNaN(local.getTime())) return due
+      return { date: `${local.getFullYear()}-${pad(local.getMonth() + 1)}-${pad(local.getDate())}`, time: `${pad(local.getHours())}:${pad(local.getMinutes())}` }
+    } catch {
+      return { date: due.date, time: due.time }
+    }
+  }
 
   function localToday() {
     const n = new Date()
     return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`
   }
 
-  function due(task, fallbackTitle, prefs) {
+  /**
+   * The notification's title and body: the task's title and its due in a row's words
+   * (push-due-date), from the task on this device, else from the opt-in payload.
+   */
+  function due(task, fallbackTitle, prefs, fallbackDue) {
     const text = TEXT[languageOf(prefs)]
     const title = (task && task.title) || fallbackTitle || text.reminder
     let body = text.reminder
-    if (task && task.due) body = text.due.replace('{date}', formatDue(task.due, prefs, localToday()))
+    const when = task ? task.due : fallbackDue
+    if (when && typeof when.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(when.date)) body = formatDue(when, prefs, localToday())
     // A habit's tiny version names the small step that still counts (habits-home D5).
     const tiny = task && task.habit && typeof task.habit_tiny === 'string' ? task.habit_tiny.trim() : ''
     if (tiny && !tiny.startsWith('enc:')) body = text.tiny.replace('{tiny}', tiny.charAt(0).toUpperCase() + tiny.slice(1))
@@ -461,7 +511,7 @@
       // Local state may be fresher than the server's (completed or dismissed offline).
       if (task && (task.completed_at || task.deleted_at)) return
       if (reminder && (reminder.deleted_at || (reminder.dismissed_at != null && reminder.dismissed_at >= data.fireAt))) return
-      const text = due(task, data.title, prefs)
+      const text = due(task, data.title, prefs, data.due)
       await self.registration.showNotification(text.title, {
         body: text.body,
         tag: `reminder:${data.reminderId}`,

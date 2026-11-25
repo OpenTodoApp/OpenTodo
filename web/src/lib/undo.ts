@@ -277,7 +277,11 @@ async function reverse(entry: AssistantUndo, src: Reversal): Promise<{ restored:
     } else if (inv.open && row && (row.completed_at || row.skipped)) {
       skippedHere = true
     } else {
+      // An entry a completion stopped runs again only while its person runs no other one
+      // (time-tracking "One running entry per user"): otherwise it stays closed at the completion.
+      const keepStopped = inv.entity === 'time_entry' && inv.patch.ended_at === null && !!row && await runsAnother(row)
       for (const [f, v] of Object.entries(inv.patch)) {
+        if (keepStopped && f === 'ended_at') continue
         const applied = src.clocks.find((c) => c.entityId === inv.entityId && c.entity === inv.entity && c.field === f)
         const ck = row?._clock?.[f]
         if (!row || !applied || !ck || ck.ts !== applied.ts || ck.device !== applied.device) {
@@ -323,6 +327,12 @@ async function reverse(entry: AssistantUndo, src: Reversal): Promise<{ restored:
   }
   // The review row in a Close/Reopen the day batch is bookkeeping, not an item the person changed.
   return { restored: batch.filter((c) => c.entity !== 'review').length - followUps, skipped, back: { inverse: back, clocks } }
+}
+
+/** Whether the person of a time entry has another entry running now. */
+async function runsAnother(entry: Record<string, unknown>): Promise<boolean> {
+  const others = await db.timeEntries.where('user_id').equals(String(entry.user_id)).filter((e) => e.id !== entry.id && !e.deleted_at && e.ended_at === null).count()
+  return others > 0
 }
 
 // Undo and redo run one at a time (#1488): a rapid second press (Ctrl+Z twice) must wait

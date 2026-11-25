@@ -66,6 +66,8 @@ test('helm: values.yaml and the schema agree', () => {
   has(valuesFound(values, '{').errors, /not JSON/)
   has(valuesFound(values.replace('  enabled: true\n  # Use an existing', '  enabled: false\n  # Use an existing')).errors, /persistence\.enabled must default to true/)
   has(valuesFound(values.replace('  keep: true', '  keep: false')).errors, /persistence\.keep/)
+  has(valuesFound(values.replace('httpRoute:\n  enabled: false', 'httpRoute:\n  enabled: true')).errors, /httpRoute\.enabled must default to false/)
+  has(valuesFound(values.replace('ingress:\n  enabled: false', 'ingress:\n  enabled: true')).errors, /ingress\.enabled must default to false/)
 })
 
 test('helm: the Deployment keeps one writer and a locked-down pod', () => {

@@ -696,6 +696,9 @@
   "A token with the read_api scope. It is never shown again.": [
     "web/src/app/IssueEditor.tsx"
   ],
+  "A trial of screens made for a phone. This device only.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "A view needs a name": [
     "web/src/lib/views.ts"
   ],
@@ -975,10 +978,11 @@
     "web/src/app/palette/modes.ts",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
-    "web/src/app/task-detail/Facets.tsx"
+    "web/src/app/task-detail/Facets.tsx",
+    "web/src/phone/screens/PhoneTaskView.tsx"
   ],
   "Add a blocker": [
-    "web/src/app/task-detail/TaskFacts.tsx"
+    "web/src/app/task-detail/useTaskFacts.tsx"
   ],
   "Add a comment": [
     "web/src/lib/rules/sentence.ts"
@@ -1025,7 +1029,7 @@
     "web/src/app/profile/ProfileSection.tsx"
   ],
   "Add a place": [
-    "web/src/app/task-detail/TaskFacts.tsx"
+    "web/src/app/task-detail/useTaskFacts.tsx"
   ],
   "Add a project to Favourites or remove it": [
     "web/src/lib/rules/sentence.ts"
@@ -1034,7 +1038,7 @@
     "web/src/app/task-detail/Facets.tsx"
   ],
   "Add a reminder": [
-    "web/src/app/task-detail/TaskFacts.tsx"
+    "web/src/app/task-detail/useTaskFacts.tsx"
   ],
   "Add a remote MCP server (streamable HTTP) with the endpoint and send the token as the Authorization header. Clients that take a JSON entry accept this.": [
     "web/src/app/AssistantsPanel.tsx"
@@ -1157,7 +1161,7 @@
     "web/src/app/AppLinksSettings.tsx"
   ],
   "Add an estimate": [
-    "web/src/app/task-detail/TaskFacts.tsx"
+    "web/src/app/task-detail/useTaskFacts.tsx"
   ],
   "Add and open": [
     "web/src/app/quickadd/FieldRows.tsx"
@@ -1516,7 +1520,8 @@
   "All day": [
     "web/src/app/CalendarEvents.tsx",
     "web/src/app/calendar/TodayAgenda.tsx",
-    "web/src/app/themes/ThemePreview.tsx"
+    "web/src/app/themes/ThemePreview.tsx",
+    "web/src/phone/screens/PhoneTodayView.tsx"
   ],
   "All done for today.": [
     "web/src/app/Briefing.tsx"
@@ -2194,7 +2199,7 @@
   ],
   "Assign": [
     "web/src/app/bulk/BulkActions.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx",
+    "web/src/app/task-detail/useTaskFacts.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Assign task": [
@@ -2205,7 +2210,7 @@
   ],
   "Assign to me": [
     "web/src/app/rules/RuleFields.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx"
+    "web/src/app/task-detail/useTaskFacts.tsx"
   ],
   "Assign to…": [
     "web/src/app/AssigneePicker.tsx"
@@ -2264,7 +2269,7 @@
     "web/src/app/task-detail/AssigneeEditor.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/RotationEditor.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx",
+    "web/src/app/task-detail/useTaskFacts.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/rules/proposal.ts"
   ],
@@ -2511,7 +2516,9 @@
     "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "Back to the list": [
-    "web/src/app/task-detail/TaskPageView.tsx"
+    "web/src/app/task-detail/TaskPageView.tsx",
+    "web/src/phone/screens/PhoneTaskPage.tsx",
+    "web/src/phone/screens/PhoneTaskView.tsx"
   ],
   "Back to the previous task": [
     "web/src/lib/shortcuts.ts"
@@ -2644,7 +2651,7 @@
   ],
   "Blocked by": [
     "web/src/app/task-detail/Facets.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx",
+    "web/src/app/task-detail/useTaskFacts.tsx",
     "web/src/lib/facets.ts"
   ],
   "Blocked by another task": [
@@ -2658,7 +2665,7 @@
   ],
   "Blocks": [
     "web/src/app/task-detail/Facets.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx"
+    "web/src/app/task-detail/useTaskFacts.tsx"
   ],
   "Blocks can be nested at most 3 deep": [
     "web/src/lib/rules/fixes.ts"
@@ -3510,7 +3517,9 @@
     "web/src/app/quickadd/LineDatePicker.tsx",
     "web/src/app/task-detail/FacetEditor.tsx",
     "web/src/app/task-detail/FieldsGroup.tsx",
-    "web/src/app/views/ViewToolbar.tsx"
+    "web/src/app/views/ViewToolbar.tsx",
+    "web/src/phone/components/PhoneDateSheet.tsx",
+    "web/src/phone/screens/TaskDateSheet.tsx"
   ],
   "Clear a note": [
     "web/src/lib/rules/sentence.ts"
@@ -3893,7 +3902,9 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Complete task": [
-    "web/src/app/task-detail/TaskHead.tsx"
+    "web/src/app/task-detail/TaskHead.tsx",
+    "web/src/phone/components/PhoneRow.tsx",
+    "web/src/phone/screens/PhoneTaskView.tsx"
   ],
   "Complete the selected task": [
     "web/src/lib/shortcuts.ts"
@@ -4842,8 +4853,8 @@
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/app/task-detail/useTaskFacts.tsx",
     "web/src/app/task-list/WaitingSoon.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/facets.ts",
@@ -5261,7 +5272,8 @@
     "web/src/app/AuditPanel.tsx",
     "web/src/app/DemoBanner.tsx",
     "web/src/app/ImportScreen.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx"
+    "web/src/app/task-detail/TaskFacts.tsx",
+    "web/src/phone/screens/PhoneTaskView.tsx"
   ],
   "Details of {title}": [
     "web/src/app/TaskRow.tsx"
@@ -5402,7 +5414,7 @@
     "web/src/lib/views.ts"
   ],
   "Do": [
-    "web/src/app/task-detail/TaskFacts.tsx"
+    "web/src/app/task-detail/useTaskFacts.tsx"
   ],
   "Do it if it is quicker than filing it|method": [
     "web/src/lib/method/vocabulary.json"
@@ -5411,7 +5423,8 @@
     "web/src/app/assistant/ItemEditor.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
-    "web/src/app/task-list/RowSchedule.tsx"
+    "web/src/app/task-list/RowSchedule.tsx",
+    "web/src/phone/screens/TaskDateSheet.tsx"
   ],
   "Do today: {title}": [
     "web/src/app/calendar/SectorGroups.tsx"
@@ -5427,7 +5440,7 @@
     "web/src/app/calendar/ReplanPreview.tsx"
   ],
   "Doesn’t repeat": [
-    "web/src/app/task-detail/TaskFacts.tsx"
+    "web/src/app/task-detail/useTaskFacts.tsx"
   ],
   "Doing": [
     "web/src/app/themes/previewData.ts"
@@ -5487,7 +5500,8 @@
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/review/CloseDay.tsx",
-    "web/src/lib/listGroups.ts"
+    "web/src/lib/listGroups.ts",
+    "web/src/phone/screens/PhoneTodayView.tsx"
   ],
   "Done today, {instant}": [
     "web/src/app/review/DailyCheck.tsx"
@@ -5652,8 +5666,7 @@
     "web/src/app/TriageView.tsx",
     "web/src/app/away/AwayDialog.tsx",
     "web/src/app/focus/FocusParts.tsx",
-    "web/src/lib/assistant.ts",
-    "web/src/push-sw.js"
+    "web/src/lib/assistant.ts"
   ],
   "Due {from} → {to}": [
     "web/src/lib/assistant.ts"
@@ -5731,7 +5744,8 @@
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/lib/listGroups.ts",
-    "web/src/lib/views.ts"
+    "web/src/lib/views.ts",
+    "web/src/phone/screens/PhoneToday.tsx"
   ],
   "Earlier conversations": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
@@ -5751,10 +5765,11 @@
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/WebhooksPanel.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/calendar/FrameBand.tsx",
-    "web/src/app/habits/HabitPage.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
+    "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/app/themes/YourThemes.tsx"
   ],
   "Edit as text": [
@@ -5844,9 +5859,6 @@
   "Edit this occurrence alone and move the series on": [
     "web/src/app/RecurrenceField.tsx"
   ],
-  "Edit title": [
-    "web/src/app/bulk/BulkActions.tsx"
-  ],
   "Edit webhook": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -5870,6 +5882,7 @@
   ],
   "Edit…": [
     "web/src/app/LabelsView.tsx",
+    "web/src/app/habits/HabitPage.tsx",
     "web/src/app/routines/RoutinesView.tsx"
   ],
   "Eisenhower": [
@@ -6109,7 +6122,7 @@
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/task-detail/EnergyChoice.tsx",
     "web/src/app/task-detail/Facets.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx",
+    "web/src/app/task-detail/useTaskFacts.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/facets.ts",
     "web/src/lib/rules/proposal.ts",
@@ -6251,7 +6264,7 @@
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/review/BentoSlots.tsx",
     "web/src/app/task-detail/Facets.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx",
+    "web/src/app/task-detail/useTaskFacts.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/facets.ts"
   ],
@@ -6295,7 +6308,8 @@
   ],
   "Events": [
     "web/src/app/CaldavPanel.tsx",
-    "web/src/app/WebhooksPanel.tsx"
+    "web/src/app/WebhooksPanel.tsx",
+    "web/src/phone/screens/PhoneTodayView.tsx"
   ],
   "Events from other calendars are stored unencrypted on the server.": [
     "web/src/lib/settingsCopy.ts"
@@ -6752,6 +6766,9 @@
   "Field": [
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "Field deleted": [
+    "web/src/lib/undoActions.ts"
   ],
   "Field names": [
     "web/src/app/FilterView.tsx"
@@ -7995,6 +8012,7 @@
   "Hide details": [
     "web/src/app/TaskRow.tsx",
     "web/src/app/away/AwayDialog.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -9149,6 +9167,9 @@
     "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
+  "Label deleted": [
+    "web/src/lib/undoActions.ts"
+  ],
   "Label is {name}": [
     "web/src/app/filter/conditionText.ts"
   ],
@@ -9197,7 +9218,8 @@
     "web/src/lib/facets.ts",
     "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts",
-    "web/src/lib/shortcuts.ts"
+    "web/src/lib/shortcuts.ts",
+    "web/src/phone/screens/PhoneTaskPage.tsx"
   ],
   "Labels (does not move on, so you can add a label and then decide)": [
     "web/src/lib/shortcuts.ts"
@@ -9803,7 +9825,7 @@
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/task-detail/Facets.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx",
+    "web/src/app/task-detail/useTaskFacts.tsx",
     "web/src/lib/facets.ts",
     "web/src/page/TaskPageScreen.tsx"
   ],
@@ -10251,6 +10273,9 @@
   "Merge “{source}” into “{target}”?": [
     "web/src/app/LabelsView.tsx"
   ],
+  "Merged into {label}": [
+    "web/src/lib/undoActions.ts"
+  ],
   "Merge…": [
     "web/src/app/LabelsView.tsx"
   ],
@@ -10383,6 +10408,7 @@
     "web/src/app/TaskRow.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
+    "web/src/phone/screens/PhoneToday.tsx",
     "web/src/ui/patterns/PageHeader.tsx"
   ],
   "More actions for this comment": [
@@ -10437,7 +10463,8 @@
     "web/src/ui/MoveHandle.tsx"
   ],
   "Move all to today": [
-    "web/src/app/task-list/EarlierActions.tsx"
+    "web/src/app/task-list/EarlierActions.tsx",
+    "web/src/phone/screens/PhoneToday.tsx"
   ],
   "Move down": [
     "web/src/app/AppearanceSection.tsx",
@@ -10565,9 +10592,6 @@
   "Move to workspace": [
     "web/src/app/menus/projectMenu.tsx"
   ],
-  "Move to workspace…": [
-    "web/src/app/menus/projectMenu.tsx"
-  ],
   "Move to {name}": [
     "web/src/app/task-list/dayOrderDrop.ts",
     "web/src/app/workspaceNav.ts"
@@ -10582,7 +10606,7 @@
     "web/src/app/calendar/occurrenceMenu.tsx",
     "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
-  "Move under task…": [
+  "Move under task": [
     "web/src/app/task-list/todayGroupDrop.ts"
   ],
   "Move up": [
@@ -10704,6 +10728,7 @@
     "web/src/app/TriageView.tsx"
   ],
   "Moved to {target}": [
+    "web/src/app/task-list/useListDrag.ts",
     "web/src/lib/undoActions.ts",
     "web/src/lib/viewOrderMove.ts"
   ],
@@ -10947,6 +10972,10 @@
     "web/src/app/PasswordSection.tsx",
     "web/src/app/ResetScreen.tsx"
   ],
+  "New phone screens": [
+    "web/src/app/PreferencesPanels.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "New project": [
     "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
@@ -11053,7 +11082,8 @@
     "web/src/app/MonthView.tsx",
     "web/src/app/datetime/DateField.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
-    "web/src/lib/sectorNames.ts"
+    "web/src/lib/sectorNames.ts",
+    "web/src/phone/components/PhoneDateSheet.tsx"
   ],
   "Next quarter": [
     "web/src/app/calendar/MonthsSpanView.tsx",
@@ -11068,7 +11098,8 @@
   ],
   "Next task": [
     "web/src/app/focus/FocusView.tsx",
-    "web/src/app/task-detail/TaskPageView.tsx"
+    "web/src/app/task-detail/TaskPageView.tsx",
+    "web/src/phone/screens/PhoneTaskView.tsx"
   ],
   "Next task of today's focus": [
     "web/src/lib/shortcuts.ts"
@@ -11542,8 +11573,10 @@
     "web/src/app/method/chooseNext.ts",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx",
+    "web/src/app/task-detail/useTaskFacts.tsx",
     "web/src/app/task-list/ListGroups.tsx",
+    "web/src/app/task-list/useBoardMoves.ts",
+    "web/src/app/task-list/useListDrag.ts",
     "web/src/app/task-list/useListShortcuts.ts",
     "web/src/lib/assistant.ts",
     "web/src/lib/assistantBlockData.ts",
@@ -11930,7 +11963,6 @@
     "web/src/app/RelayConfirm.tsx",
     "web/src/app/TrashView.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
-    "web/src/app/habits/DayMenu.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
@@ -12016,6 +12048,9 @@
   ],
   "Notes:": [
     "web/src/app/CardNotes.tsx"
+  ],
+  "Note…": [
+    "web/src/app/habits/DayMenu.tsx"
   ],
   "Nothing": [
     "web/src/app/routines/StepCard.tsx"
@@ -12103,7 +12138,8 @@
     "web/src/app/review/ReviewView.tsx"
   ],
   "Nothing left for today": [
-    "web/src/app/display/DisplayScreen.tsx"
+    "web/src/app/display/DisplayScreen.tsx",
+    "web/src/phone/screens/PhoneTodayView.tsx"
   ],
   "Nothing left to do in this project": [
     "web/src/app/display/DisplayScreen.tsx"
@@ -12876,6 +12912,7 @@
     "web/src/app/datetime/DateField.tsx"
   ],
   "Open details": [
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/lib/rowClickPref.ts"
   ],
@@ -12915,7 +12952,8 @@
     "web/src/lib/sampleTasks.ts"
   ],
   "Open menu": [
-    "web/src/app/Shell.tsx"
+    "web/src/app/Shell.tsx",
+    "web/src/phone/screens/PhoneTodayView.tsx"
   ],
   "Open note": [
     "web/src/app/assistant/blocks/NoteBlock.tsx"
@@ -13217,6 +13255,7 @@
     "web/src/app/views/useDisplayKeys.ts"
   ],
   "Order changed": [
+    "web/src/lib/undoActions.ts",
     "web/src/lib/viewOrderMove.ts"
   ],
   "Order the bathroom tiles": [
@@ -13227,7 +13266,7 @@
   ],
   "Origin": [
     "web/src/app/filter/ConditionEditor.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx",
+    "web/src/app/task-detail/useTaskFacts.tsx",
     "web/src/app/views/DisplayPanel.tsx"
   ],
   "Origin is {value}": [
@@ -13393,7 +13432,7 @@
   ],
   "Parent task": [
     "web/src/app/task-detail/Facets.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx",
+    "web/src/app/task-detail/useTaskFacts.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
   "Park in Someday, then the next task": [
@@ -13635,6 +13674,9 @@
   ],
   "Personal care": [
     "web/src/lib/aisles/index.ts"
+  ],
+  "Phone screens": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Photo {n}": [
     "web/src/app/assistant/ComposerCapture.tsx"
@@ -13926,7 +13968,8 @@
   "Previous month": [
     "web/src/app/HabitHistory.tsx",
     "web/src/app/MonthView.tsx",
-    "web/src/app/datetime/DateField.tsx"
+    "web/src/app/datetime/DateField.tsx",
+    "web/src/phone/components/PhoneDateSheet.tsx"
   ],
   "Previous project": [
     "web/src/app/review/ProjectWalk.tsx"
@@ -13935,7 +13978,8 @@
     "web/src/app/calendar/MonthsSpanView.tsx"
   ],
   "Previous task": [
-    "web/src/app/task-detail/TaskPageView.tsx"
+    "web/src/app/task-detail/TaskPageView.tsx",
+    "web/src/phone/screens/PhoneTaskView.tsx"
   ],
   "Previous week": [
     "web/src/app/CalendarView.tsx",
@@ -13978,7 +14022,7 @@
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx",
+    "web/src/app/task-detail/useTaskFacts.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/app/views/DisplayPanel.tsx",
@@ -14092,6 +14136,7 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
+    "web/src/app/task-detail/useTaskFacts.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/dashboard.ts",
@@ -14740,7 +14785,7 @@
     "web/src/app/ReminderToasts.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/task-detail/Facets.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx",
+    "web/src/app/task-detail/useTaskFacts.tsx",
     "web/src/lib/facets.ts",
     "web/src/push-sw.js"
   ],
@@ -14985,7 +15030,9 @@
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Reopen task": [
-    "web/src/app/task-detail/TaskHead.tsx"
+    "web/src/app/task-detail/TaskHead.tsx",
+    "web/src/phone/components/PhoneRow.tsx",
+    "web/src/phone/screens/PhoneTaskView.tsx"
   ],
   "Reopen the day": [
     "web/src/app/CloseDayRow.tsx",
@@ -15015,8 +15062,8 @@
   "Repeat": [
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/task-detail/Facets.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/app/task-detail/useTaskFacts.tsx",
     "web/src/lib/facets.ts"
   ],
   "Repeat a task": [
@@ -15815,7 +15862,8 @@
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/app/task-list/RowSwipe.tsx",
-    "web/src/lib/settingsCopy.ts"
+    "web/src/lib/settingsCopy.ts",
+    "web/src/phone/screens/PhoneTaskView.tsx"
   ],
   "Schedule the selected task: Day view in placement mode": [
     "web/src/lib/shortcuts.ts"
@@ -15976,11 +16024,14 @@
     "web/src/app/routines/words.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx",
+    "web/src/app/task-detail/useTaskFacts.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts",
     "web/src/lib/shortcuts.ts"
+  ],
+  "Section deleted": [
+    "web/src/lib/undoActions.ts"
   ],
   "Section flow changed": [
     "web/src/app/menus/flowMenu.ts"
@@ -16250,33 +16301,33 @@
     "web/src/app/review/BentoSlots.tsx"
   ],
   "Set a date": [
-    "web/src/app/task-detail/TaskFacts.tsx"
+    "web/src/app/task-detail/useTaskFacts.tsx"
   ],
   "Set a deadline": [
-    "web/src/app/task-detail/TaskFacts.tsx"
+    "web/src/app/task-detail/useTaskFacts.tsx"
   ],
   "Set a new password": [
     "web/src/app/ResetScreen.tsx"
   ],
   "Set a parent task": [
-    "web/src/app/task-detail/TaskFacts.tsx"
+    "web/src/app/task-detail/useTaskFacts.tsx"
   ],
   "Set a priority": [
-    "web/src/app/task-detail/TaskFacts.tsx"
+    "web/src/app/task-detail/useTaskFacts.tsx"
   ],
   "Set a start": [
-    "web/src/app/task-detail/TaskFacts.tsx"
+    "web/src/app/task-detail/useTaskFacts.tsx"
   ],
   "Set a time for the reminder first.": [
     "web/src/app/actionError.ts"
   ],
   "Set a time sector": [
-    "web/src/app/task-detail/TaskFacts.tsx"
+    "web/src/app/task-detail/useTaskFacts.tsx"
   ],
   "Set a time to fix this due to a time zone": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
-  "Set amount": [
+  "Set amount…": [
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/habits/HabitRow.tsx"
   ],
@@ -16299,7 +16350,7 @@
     "web/src/app/rules/AutomationsSettings.tsx"
   ],
   "Set energy": [
-    "web/src/app/task-detail/TaskFacts.tsx"
+    "web/src/app/task-detail/useTaskFacts.tsx"
   ],
   "Set estimate": [
     "web/src/app/review/BentoSlots.tsx"
@@ -16473,7 +16524,9 @@
     "web/src/app/WelcomeDialog.tsx"
   ],
   "Share project": [
-    "web/src/app/ProjectHeader.tsx",
+    "web/src/app/ProjectHeader.tsx"
+  ],
+  "Share project…": [
     "web/src/app/menus/useProjectMenu.tsx"
   ],
   "Share the current project: add members by email, change roles, remove, leave, transfer": [
@@ -16590,6 +16643,7 @@
   "Show details": [
     "web/src/app/TaskRow.tsx",
     "web/src/app/away/AwayDialog.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -17168,7 +17222,8 @@
     "web/src/lib/facets.ts",
     "web/src/lib/history.ts",
     "web/src/lib/review.ts",
-    "web/src/lib/shortcuts.ts"
+    "web/src/lib/shortcuts.ts",
+    "web/src/phone/screens/TaskDateSheet.tsx"
   ],
   "Someday|method": [
     "web/src/lib/method/vocabulary.json"
@@ -17317,9 +17372,9 @@
     "web/src/app/method/DailyCheckToast.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/app/task-detail/useTaskFacts.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/facets.ts",
     "web/src/lib/rules/proposal.ts",
@@ -20227,8 +20282,8 @@
     "web/src/app/ParseChips.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/task-detail/SectorChoice.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx",
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/app/task-detail/useTaskFacts.tsx"
   ],
   "Time sector cleared": [
     "web/src/lib/undoActions.ts"
@@ -20354,7 +20409,8 @@
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts",
-    "web/src/lib/shortcuts.ts"
+    "web/src/lib/shortcuts.ts",
+    "web/src/phone/screens/PhoneTaskPage.tsx"
   ],
   "Title or notes": [
     "web/src/app/filter/ConditionEditor.tsx"
@@ -20447,7 +20503,13 @@
     "web/src/lib/logbook.ts",
     "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts",
-    "web/src/lib/views.ts"
+    "web/src/lib/views.ts",
+    "web/src/phone/screens/PhoneToday.tsx",
+    "web/src/phone/screens/PhoneTodayView.tsx",
+    "web/src/push-sw.js"
+  ],
+  "Today and the task page in the new design. Turn it off at any time.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Today holds": [
     "web/src/lib/settingsCopy.ts"
@@ -20523,7 +20585,8 @@
     "web/src/app/task-list/EarlierActions.tsx",
     "web/src/app/task-list/RowSwipe.tsx",
     "web/src/lib/dates.ts",
-    "web/src/lib/views.ts"
+    "web/src/lib/views.ts",
+    "web/src/push-sw.js"
   ],
   "Tomorrow 09:00": [
     "web/src/app/ReminderToasts.tsx"
@@ -21243,11 +21306,11 @@
     "web/src/app/task-detail/OccurrenceScope.tsx",
     "web/src/app/task-detail/Subtasks.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/task-detail/TaskHead.tsx",
     "web/src/app/task-detail/TaskPageView.tsx",
     "web/src/app/task-detail/TaskPath.tsx",
     "web/src/app/task-detail/subtaskOrder.ts",
+    "web/src/app/task-detail/useTaskFacts.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/task-list/ListGroups.tsx",
@@ -21263,7 +21326,10 @@
     "web/src/lib/trash.ts",
     "web/src/lib/undoActions.ts",
     "web/src/lib/useFlow.ts",
-    "web/src/page/TaskPageScreen.tsx"
+    "web/src/page/TaskPageScreen.tsx",
+    "web/src/phone/rowModel.tsx",
+    "web/src/phone/screens/PhoneTaskPage.tsx",
+    "web/src/phone/screens/PhoneToday.tsx"
   ],
   "Untitled heading": [
     "web/src/app/editor/NoteOutline.tsx"
@@ -21316,6 +21382,8 @@
     "web/src/app/assistant/blocks/BoardBlock.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
+    "web/src/app/task-list/useBoardMoves.ts",
+    "web/src/app/task-list/useListDrag.ts",
     "web/src/app/task-list/useListShortcuts.ts"
   ],
   "Untitled theme": [
@@ -25907,7 +25975,8 @@
     "web/src/app/task-list/useListDrag.ts",
     "web/src/app/templates/TemplateLibrary.tsx",
     "web/src/lib/assistantBlocks.ts",
-    "web/src/lib/rules/sentence.ts"
+    "web/src/lib/rules/sentence.ts",
+    "web/src/phone/screens/PhoneToday.tsx"
   ],
   "{n, plural, one {# task} other {# tasks}} without estimate": [
     "web/src/app/calendar/CapacityLine.tsx",
@@ -26423,7 +26492,8 @@
     "web/src/app/review/DoneForToday.tsx"
   ],
   "{n} late": [
-    "web/src/app/ProjectsTable.tsx"
+    "web/src/app/ProjectsTable.tsx",
+    "web/src/phone/screens/PhoneToday.tsx"
   ],
   "{n} left": [
     "web/src/app/method/LoopHome.tsx",
@@ -26476,7 +26546,8 @@
   "{n} of {total}": [
     "web/src/app/TriageView.tsx",
     "web/src/app/focus/FocusParts.tsx",
-    "web/src/app/review/ProjectWalk.tsx"
+    "web/src/app/review/ProjectWalk.tsx",
+    "web/src/phone/screens/PhoneTaskPage.tsx"
   ],
   "{n} of {total} changes applied": [
     "web/src/app/bulk/BulkReview.tsx"
@@ -26716,7 +26787,7 @@
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "{tiny} is enough": [
-    "web/src/app/ReminderToasts.tsx",
+    "web/src/lib/reminderBody.ts",
     "web/src/push-sw.js"
   ],
   "{title} and its history move to the Trash.": [
