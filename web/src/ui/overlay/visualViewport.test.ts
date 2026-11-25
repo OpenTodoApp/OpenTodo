@@ -101,4 +101,22 @@ describe('the focused field above the keyboard', () => {
     keepAboveKeyboard(el, { offsetTop: 0, height: 500 })
     expect(into).toHaveBeenCalledWith({ block: 'nearest' })
   })
+
+  // touch-title-editing D4: the touch title editor's Save and Cancel sit under its field.
+  it('keeps the whole touch title editor above the keyboard, not only its field', () => {
+    const vv = fakeViewport()
+    document.body.innerHTML = '<div id="list" style="overflow-y:auto"><div style="height:2000px"><div id="ed" data-inline-compact="true"><input id="f"><button>Save</button></div></div></div>'
+    const list = document.getElementById('list')!
+    Object.defineProperty(list, 'scrollHeight', { value: 2000, configurable: true })
+    Object.defineProperty(list, 'clientHeight', { value: 600, configurable: true })
+    // The field ends at 440, inside the room; the editor with its buttons ends at 520.
+    vi.spyOn(document.getElementById('ed')!, 'getBoundingClientRect').mockImplementation(() => ({ top: 400 - list.scrollTop, bottom: 520 - list.scrollTop, height: 120, left: 0, right: 100, width: 100, x: 0, y: 400, toJSON: () => ({}) }) as DOMRect)
+    const field = document.getElementById('f') as HTMLInputElement
+    vi.spyOn(field, 'getBoundingClientRect').mockReturnValue({ top: 400, bottom: 440, height: 40, left: 0, right: 100, width: 100, x: 0, y: 400, toJSON: () => ({}) } as DOMRect)
+    field.focus()
+    const stop = watchVisualViewport()
+    vv.set(500)
+    expect(list.scrollTop).toBe(520 - (500 - KEYBOARD_GAP))
+    stop()
+  })
 })
