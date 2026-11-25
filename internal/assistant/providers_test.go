@@ -450,6 +450,13 @@ func TestChatReasoningEffortNone(t *testing.T) {
 	if rec.bodies[1]["reasoning_effort"] != "none" || rec.bodies[2]["reasoning_effort"] != "none" {
 		t.Fatalf("retried %v / %v", rec.bodies[1]["reasoning_effort"], rec.bodies[2]["reasoning_effort"])
 	}
+	// Asking again does not use up a rate-limit retry.
+	srv, rec = fakeAnthropic(t, effortError, apiError(429, "rate_limit"), sse(chatText("ok", "stop")))
+	p := chatFor(srv, OpenAI)
+	p.Retries = 1
+	if _, err := p.Start(req).Next(context.Background(), func(string) {}); err != nil || rec.n() != 3 || rec.bodies[2]["reasoning_effort"] != "none" {
+		t.Fatalf("%v %d", err, rec.n())
+	}
 	// Refused again: one retry only, reported as a plain refusal.
 	srv, rec = fakeAnthropic(t, effortError)
 	_, err := chatFor(srv, Compatible).Start(req).Next(context.Background(), func(string) {})

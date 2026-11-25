@@ -298,7 +298,9 @@ func (c *chatConv) post(ctx context.Context, body []byte) (*http.Response, error
 	if backoff == 0 {
 		backoff = 500 * time.Millisecond
 	}
-	for attempt := 0; ; attempt++ {
+	// attempt counts 429 and 5xx retries only: asking again with
+	// reasoning_effort "none" does not use one up.
+	for attempt := 0; ; {
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 		if err != nil {
 			return nil, &ProviderError{Code: CodeProviderError, Msg: "the provider URL is not valid"}
@@ -348,6 +350,7 @@ func (c *chatConv) post(ctx context.Context, body []byte) (*http.Response, error
 			return nil, ctx.Err()
 		case <-time.After(backoff << attempt):
 		}
+		attempt++
 	}
 }
 

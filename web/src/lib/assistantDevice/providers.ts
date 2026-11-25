@@ -42,9 +42,8 @@ export interface Provider { start(req: Request): Conversation }
 
 /** A failed provider request: a code the panel describes, never the key or request content. */
 export class ProviderError extends Error {
-  /** The refusal names reasoning_effort (effortRefusal). */
-  effort = false
-  constructor(public code: 'provider_auth' | 'provider_rate_limited' | 'provider_not_found' | 'provider_error' | 'blocked' | 'images_unsupported', message: string, public status = 0, public type = '') {
+  /** `effort`: the refusal names reasoning_effort (effortRefusal). */
+  constructor(public code: 'provider_auth' | 'provider_rate_limited' | 'provider_not_found' | 'provider_error' | 'blocked' | 'images_unsupported', message: string, public status = 0, public type = '', public effort = false) {
     super(message)
   }
 }
@@ -110,7 +109,7 @@ export function statusError(status: number, body = '', provider = ''): ProviderE
   }
   if (status === 429) return new ProviderError('provider_rate_limited', 'the provider is rate limiting requests; try again in a moment', status, type)
   if (status >= 500) return new ProviderError('provider_error', 'the provider had a problem; try again in a moment', status, type)
-  return new ProviderError('provider_error', `the provider refused the request (HTTP ${status})`, status, type)
+  return new ProviderError('provider_error', `the provider refused the request (HTTP ${status})`, status, type, effortRefusal(status, body))
 }
 
 /** Up to MAX_ERROR_BODY bytes of an error answer, as text. */
@@ -162,9 +161,7 @@ async function post(f: Fetch, provider: string, url: string, headers: Record<str
   if (!res.ok || !res.body) {
     const text = await errorBody(res)
     if (images && imageRefusal(res.status, text)) throw new ProviderError('images_unsupported', 'the model on this device does not read photos; send the message without them', res.status)
-    const err = statusError(res.status, text, provider)
-    err.effort = effortRefusal(res.status, text)
-    throw err
+    throw statusError(res.status, text, provider)
   }
   return res
 }
