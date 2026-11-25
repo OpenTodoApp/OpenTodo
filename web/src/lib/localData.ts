@@ -133,6 +133,11 @@ export function useWorkspaceState(): WorkspaceState {
   return workspaceState.use() ?? NO_WORKSPACES
 }
 
+/** Like useWorkspaceState, but undefined until the first read. */
+export function useWorkspaceStateLoaded(): WorkspaceState | undefined {
+  return workspaceState.use()
+}
+
 /** Live projects of every workspace, in position order (the palette and grouped pickers). */
 export function useProjectsOfEveryWorkspace(): Project[] {
   const all = everyProjectRow.use()
