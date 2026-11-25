@@ -6,8 +6,8 @@ A task's link in a calendar event (`<base URL>/task/<id>`, written by the calend
 
 ## What Changes
 
-- The page served for `/task/<id>` carries `<meta name="apple-itunes-app" content="app-id=6832200428, app-argument=<base URL>/task/<id>">`. Safari on an iPhone or iPad with the app installed shows a banner with **Open**, which opens the app at that task. Without the app, the banner offers it in the App Store. Other browsers and other platforms ignore the tag.
-- The server adds it to the page it sends, and the service worker adds the same tag to the page it serves from its cache. No other page gets it.
+- The page served for `/task/<id>` carries `<meta name="apple-itunes-app" content="app-id=6832200428, app-argument=<origin>/task/<id>">`. Safari on an iPhone or iPad with the app installed shows a banner with **Open**, which opens the app at that task. Without the app, the banner offers it in the App Store. Other browsers and other platforms ignore the tag.
+- The server adds it to the page it sends, naming the base URL's origin. The service worker adds it to the page it serves from its cache, naming its own origin. No other page gets it.
 - The iPhone app opens such an address only when its scheme, host and port are the configured server's. Any other host is ignored.
 - Without a configured base URL, the banner carries no argument and opens the app at its start. Feeds have no task links then anyway.
 

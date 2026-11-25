@@ -95,8 +95,9 @@ final class AppModel: ObservableObject {
               let host = url.host?.lowercased(), host == server.host?.lowercased(),
               (url.port ?? (scheme == "https" ? 443 : 80)) == (server.port ?? (scheme == "https" ? 443 : 80))
         else { return nil }
+        // The same paths as the server's and the worker's banner: no trailing slash, no "/" in the id.
         let parts = url.pathComponents
-        guard parts.count == 3, parts[1] == "task", !parts[2].isEmpty, parts[2] != "/" else { return nil }
+        guard !url.hasDirectoryPath, parts.count == 3, parts[1] == "task", !parts[2].isEmpty, !parts[2].contains("/") else { return nil }
         return parts[2]
     }
 

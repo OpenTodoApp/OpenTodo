@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"net/http"
-	"path"
 	"strconv"
 	"strings"
 
@@ -16,32 +15,37 @@ import (
 // The server makes no request for it: Safari draws the banner itself.
 func (s *Server) appBannerWeb(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
+		id := web.TaskPageID(r.URL.Path)
+		if (r.Method != http.MethodGet && r.Method != http.MethodHead) || id == "" {
 			next.ServeHTTP(w, r)
 			return
 		}
-		id := web.TaskPageID(strings.TrimPrefix(path.Clean(r.URL.Path), "/"))
-		if id == "" {
-			next.ServeHTTP(w, r)
-			return
+		// A HEAD gets the headers of the GET, Content-Length included, as brandedWeb answers it.
+		get := r
+		if r.Method == http.MethodHead {
+			get = r.Clone(r.Context())
+			get.Method = http.MethodGet
 		}
 		cw := &captureWriter{header: http.Header{}, status: http.StatusOK}
-		next.ServeHTTP(cw, r)
+		next.ServeHTTP(cw, get)
 		body := cw.body.Bytes()
 		h := w.Header()
 		for k, v := range cw.header {
 			h[k] = v
 		}
 		if cw.status == http.StatusOK && strings.HasPrefix(cw.header.Get("Content-Type"), "text/html") {
-			// Without a base URL the banner still opens the app, at its start (D3).
+			// The base URL's origin names the server; without one, the banner
+			// still opens the app, at its start (D3).
 			argument := ""
-			if s.cfg.BaseURL != nil {
-				argument = web.AppBannerArgument(s.cfg.BaseURL.String(), id)
+			if origin := s.cfg.Origin(); origin != "" {
+				argument = web.AppBannerArgument(origin, id)
 			}
 			body = web.InjectAppBanner(body, argument)
 			h.Set("Content-Length", strconv.Itoa(len(body)))
 		}
 		w.WriteHeader(cw.status)
-		_, _ = w.Write(body)
+		if r.Method != http.MethodHead {
+			_, _ = w.Write(body)
+		}
 	})
 }

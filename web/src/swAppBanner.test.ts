@@ -1,5 +1,6 @@
 // The worker serves a task's page from its cached copy with the Smart App Banner the
-// server's copy carries (ios-app-banner D4); every other page is served as cached.
+// server's copy carries, naming its own origin (ios-app-banner D4); every other page
+// is served as cached.
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TrustRecord } from './lib/appTrust'
 import { workerCaches } from './test/workerCaches'
@@ -14,7 +15,7 @@ vi.mock('./lib/appTrust', async (real) => ({
 const PAGE = '<!doctype html><html><head><title>OpenTodo</title></head><body></body></html>'
 vi.mock('./lib/appInstall', async (real) => ({
   ...(await real<typeof import('./lib/appInstall')>()),
-  cachedFile: async (_env: unknown, _r: unknown, path: string) => (path === 'index.html' ? new Response(PAGE, { headers: { 'Content-Type': 'text/html' } }) : null),
+  cachedFile: async (_env: unknown, _r: unknown, path: string) => (path === 'index.html' ? new Response(PAGE, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': String(PAGE.length) } }) : null),
   checkForUpdate: async () => ({ kind: 'unchanged' }),
   pruneCaches: async () => undefined,
   fetchLazy: async () => null,
@@ -45,18 +46,24 @@ beforeEach(async () => {
   await import('./sw')
 })
 
-async function navigate(path: string): Promise<string> {
+async function navigate(path: string): Promise<Response> {
   let responded: Promise<Response> | null = null
   handlers.fetch({ request: { url: `https://todo.example.com${path}`, method: 'GET', mode: 'navigate', destination: 'document', headers: new Headers() }, respondWith: (p: Promise<Response>) => { responded = p }, waitUntil: () => undefined })
-  return (await responded!).text()
+  return responded!
 }
 
 describe('the app banner in the worker', () => {
-  it('is on a task page served from the cache', async () => {
-    expect(await navigate('/task/abc')).toContain('<head><meta name="apple-itunes-app" content="app-id=6832200428, app-argument=https://todo.example.com/task/abc"><title>')
+  it('is on a task page served from the cache, with the page\'s headers', async () => {
+    const res = await navigate('/task/abc')
+    const other = await navigate('/inbox')
+    expect(await res.text()).toContain('<head><meta name="apple-itunes-app" content="app-id=6832200428, app-argument=https://todo.example.com/task/abc"><title>')
+    expect(res.headers.get('Content-Length')).toBeNull()
+    expect(res.headers.get('Content-Type')).toBe('text/html; charset=utf-8')
+    expect(res.headers.get('Content-Security-Policy')).toBeTruthy()
+    expect(res.headers.get('Content-Security-Policy')).toBe(other.headers.get('Content-Security-Policy'))
   })
 
   it('is on no other page', async () => {
-    for (const p of ['/inbox', '/', '/task/a/b']) expect(await navigate(p)).toBe(PAGE)
+    for (const p of ['/inbox', '/', '/task/a/b', '/task/abc/', '/task/a%2Fb']) expect(await (await navigate(p)).text()).toBe(PAGE)
   })
 })
