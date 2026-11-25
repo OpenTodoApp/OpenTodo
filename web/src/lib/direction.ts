@@ -24,7 +24,10 @@ export function directionOf(code: string): Direction {
  */
 export function isRtl(el?: Element | null): boolean {
   if (typeof document === 'undefined') return false
-  const own = el?.closest?.('[dir]')?.getAttribute('dir')
+  // `dir="auto"` (a title that takes its own direction) says nothing about the layout: look further up.
+  let box = el?.closest?.('[dir]') ?? null
+  while (box && box.getAttribute('dir') === 'auto') box = box.parentElement?.closest('[dir]') ?? null
+  const own = box?.getAttribute('dir')
   return (own ?? document.documentElement.getAttribute('dir')) === 'rtl'
 }
 

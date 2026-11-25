@@ -875,7 +875,7 @@ select.ui-input:not([multiple]) {
   background-repeat: no-repeat;
 }
 /* Right to left the chevron sits at the start edge, its two halves in the same order (arabic-rtl D3). */
-:root[dir="rtl"] select.ui-input:not([multiple]) { background-position: 0.625rem 50%, 0.9375rem 50%; }
+select.ui-input:not([multiple]):dir(rtl) { background-position: 0.625rem 50%, 0.9375rem 50%; }
 /* A settings row's control column (precision-settings D4): controls at the 32 px step. */
 [data-setting-control] :is(.ui-input:not(textarea), .ui-btn--md) { @apply min-h-8 px-2.5 py-1 text-meta; }
 [data-setting-control] select.ui-input:not([multiple]) { padding-inline-end: 2rem; }
@@ -919,6 +919,7 @@ select.ui-input:not([multiple]) {
 .notes-editor h1 { @apply text-h2 font-semibold; }
 .notes-editor h2 { @apply text-h3 font-semibold; }
 .notes-editor h3, .notes-editor h4, .notes-editor h5, .notes-editor h6 { @apply font-semibold; }
+.notes-editor :is(p, li, h1, h2, h3, blockquote, td, th) { unicode-bidi: plaintext; }
 .notes-editor ul { @apply list-disc space-y-1 ps-5; }
 .notes-editor ol { @apply list-decimal space-y-1 ps-5; }
 .notes-editor li > * + * { @apply mt-1; }
@@ -1059,6 +1060,7 @@ a.note-ref:focus-visible { @apply outline-2 outline-focus; }
 .note-outline__item { @apply flex min-h-7 w-full items-center rounded-e-control py-1 pe-2 text-start text-meta outline-none transition-colors duration-(--duration-ui)
   hover:bg-hover hover:text-default focus-visible:bg-selected focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-focus; }
 .note-outline__item[aria-current="location"] { box-shadow: inset 2px 0 0 var(--ot-accent); }
+.note-outline__item[aria-current="location"]:dir(rtl) { box-shadow: inset -2px 0 0 var(--ot-accent); }
 .note-column { @apply mx-auto w-full max-w-[40rem]; }
 .note-column:has(.notes-frame[data-outline="column"]) { max-width: 53.5rem; padding-inline-start: 13.5rem; }
 [data-task-notes-block]:has(.notes-frame[data-outline="column"]) { padding-inline-start: 13.5rem; }
@@ -2055,14 +2057,18 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
    own direction from its first letter, so an English title in an Arabic row (or the other
    way round) neither reorders nor drags its punctuation to the wrong end. */
 .user-text { unicode-bidi: plaintext; }
-/* Icons that point along the line mirror; the rest (a check, a clock, a logo) do not. A
+/* Fields people type into do the same, line by line. Not `dir="auto"`: an empty field would
+   then fall back to left to right, its placeholder and caret on the wrong side. */
+:is(input:not([type]), input[type="text"], input[type="search"], textarea, [contenteditable="true"]) { unicode-bidi: plaintext; }
+/* `:dir(rtl)` on the element itself, so a box kept left to right (the Timeline, a chart) keeps its icons and figures as they are.
+   Icons that point along the line mirror; the rest (a check, a clock, a logo) do not. A
    disclosure chevron that turns to open turns the other way, so it still points down. */
-:root[dir="rtl"] :is([data-icon="arrow-left"], [data-icon="arrow-right"], [data-icon="chevron-left"], [data-icon="chevron-right"],
+:is([data-icon="arrow-left"], [data-icon="arrow-right"], [data-icon="chevron-left"], [data-icon="chevron-right"],
   [data-icon="corner-down-right"], [data-icon="panel-left-close"], [data-icon="panel-left-open"], [data-icon="panel-right"],
   [data-icon="undo-2"], [data-icon="redo-2"], [data-icon="log-out"], [data-icon="send"], [data-icon="list"], [data-icon="list-ordered"],
-  [data-icon="list-checks"], [data-icon="table-of-contents"], [data-icon="text-quote"]) { scale: -1 1; }
-:root[dir="rtl"] [data-icon="chevron-right"].rotate-90 { rotate: -90deg; }
+  [data-icon="list-checks"], [data-icon="table-of-contents"], [data-icon="text-quote"]):dir(rtl) { scale: -1 1; }
+[data-icon="chevron-right"].rotate-90:dir(rtl) { rotate: -90deg; }
 /* Code, keys and addresses read left to right in every language. */
-:root[dir="rtl"] :is(pre, code, kbd, .ui-kbd) { direction: ltr; unicode-bidi: isolate; }
+:is(pre, code, kbd, .ui-kbd):dir(rtl) { direction: ltr; unicode-bidi: isolate; }
 /* A run of figures (a time range such as 08:00–10:00, a count) keeps its order inside right-to-left text. */
-:root[dir="rtl"] span.tabular-nums { direction: ltr; unicode-bidi: isolate; }
+span.tabular-nums:dir(rtl) { direction: ltr; unicode-bidi: isolate; }

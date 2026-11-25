@@ -42,7 +42,7 @@ export function DeadlineMarker({ task, date, today, variant, onOpen }: {
         : `text-hint hover:bg-hover ${past ? 'text-faint' : 'text-muted'}`}`}>
       {variant === 'chip' && <DeadlineDiamond past={past} />}
       <span className="sr-only">{t('Deadline')}: </span>
-      <span className="min-w-0 flex-1 truncate">{title}</span>
+      <span dir="auto" className="min-w-0 flex-1 truncate">{title}</span>
       {variant === 'row' && <DeadlineDiamond past={past} />}
     </button>
   )

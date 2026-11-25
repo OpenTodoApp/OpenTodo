@@ -53,7 +53,7 @@ export default function OccurrenceMenu({ p, x, y, onClose }: { p: Projection; x:
       {!moving && (
         // The hidden trigger sits at the pointer, so the panel opens there (as the add menu's does).
         <Menu kind="menu" label={t('Occurrence actions')} trigger={<span className="sr-only" />} triggerClassName="sr-only"
-          triggerProps={{ style: { position: 'fixed', left: x, top: y } }} align="start" width="sm:w-64" open
+          triggerProps={{ style: { /* physical: at the pointer */ position: 'fixed', left: x, top: y } }} align="start" width="sm:w-64" open
           onOpenChange={(open) => { if (!open) onClose() }}>
           <MenuItem label={t('Open')} icon="panel-right" data-occurrence-action="open" onSelect={() => setPanelTaskId(p.seriesId, p.occurrence)} />
           {canAct && (

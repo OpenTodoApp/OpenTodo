@@ -69,7 +69,7 @@ export function EventBlockView({ block, date, lane, lanes, overlap, pxPerMinute,
           width: `calc(${100 / lanes}% - 4px)`,
         }}
       >
-        <span className="flex min-w-0 items-center gap-1 font-medium">{!ev.free && <span aria-hidden className="ui-block-dot" />}<span className="truncate">{ev.summary || t('Busy')}</span></span>
+        <span className="flex min-w-0 items-center gap-1 font-medium">{!ev.free && <span aria-hidden className="ui-block-dot" />}<span dir="auto" className="truncate">{ev.summary || t('Busy')}</span></span>
         {/* Named by its visible summary, then the time, location and calendar as hidden text (WCAG 2.5.3 Label in Name): the short time line below is not read twice. */}
         <span className="sr-only">{eventLabel(ev, sub, zone).slice((ev.summary || t('Busy')).length)}</span>
         {height >= 30 && <span aria-hidden className="block truncate text-hint tabular-nums" data-event-time>{formatWallTime(toHHMM(block.start))}{ev.location ? ` · ${ev.location}` : ''}</span>}

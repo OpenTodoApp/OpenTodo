@@ -144,7 +144,7 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
   return createPortal(
     <div ref={panel} role={ariaRole} aria-label={label} tabIndex={-1} data-overlay="popover" data-overlay-root {...isolate} onKeyDown={onKeyDown}
       className={`surface-overlay fixed z-50 overflow-y-auto overscroll-contain text-body outline-none ${pos ? 'overlay-fade-in' : ''} ${width} ${className}`}
-      style={{ top: pos?.top ?? 0, left: pos?.left ?? 0, maxHeight: pos?.maxHeight, maxWidth: pos?.maxWidth, opacity: pos ? 1 : 0 }}>
+      style={{ /* physical: place() returns viewport coordinates */ top: pos?.top ?? 0, left: pos?.left ?? 0, maxHeight: pos?.maxHeight, maxWidth: pos?.maxWidth, opacity: pos ? 1 : 0 }}>
       {children}
     </div>,
     document.body,

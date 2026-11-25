@@ -36,6 +36,22 @@ describe('direction (arabic-rtl D1, D4)', () => {
     expect(inlineDelta(10, inner)).toBe(10)
   })
 
+  it('looks past dir="auto" to the layout direction', () => {
+    document.documentElement.dir = 'rtl'
+    const title = document.createElement('span')
+    title.dir = 'auto'
+    title.textContent = 'Call Bob'
+    document.body.append(title)
+    expect(isRtl(title)).toBe(true)
+    const box = document.createElement('div')
+    box.dir = 'ltr'
+    const inner = document.createElement('span')
+    inner.dir = 'auto'
+    box.append(inner)
+    document.body.append(box)
+    expect(isRtl(inner)).toBe(false)
+  })
+
   it('measures deltas and edges from the start of the line', () => {
     expect(inlineDelta(10)).toBe(10)
     expect(fromStartEdge(5)).toBe(5)

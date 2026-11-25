@@ -160,19 +160,39 @@ export function illustrationProblems(file, text) {
 
 // Physical direction utilities (rule 7): the ones with a logical twin in Tailwind.
 const PHYSICAL = new RegExp(String.raw`(?:^|[\s"'\x60{])(?:[\w\-\[\]&>*=.:/@()]+?:)*!?-?(` +
-  String.raw`(?:ml|mr|pl|pr|scroll-ml|scroll-mr|scroll-pl|scroll-pr|left|right)-(?:\d+(?:\.\d+)?(?:\/\d+)?|px|auto|full|\[[^\]\s]+\]|\([^)\s]+\))` +
+  String.raw`(?:ml|mr|pl|pr|scroll-ml|scroll-mr|scroll-pl|scroll-pr|left|right)-(?:\d+(?:\.\d+)?(?:\/\d+)?|px|auto|full|safe|\[[^\]\s]+\]|\([^)\s]+\))` +
   String.raw`|border-[lr](?:-[\w\[\]().%/-]+)?|rounded-(?:tl|tr|bl|br|l|r)(?:-[\w\[\]()-]+)?|text-(?:left|right)` +
+  String.raw`|float-(?:left|right)|clear-(?:left|right)|origin-(?:left|right|top-left|top-right|bottom-left|bottom-right)` +
+  String.raw`|bg-(?:linear|gradient)-to-(?:l|r|tl|tr|bl|br)|object-(?:left|right)(?:-top|-bottom)?|bg-(?:left|right)(?:-top|-bottom)?` +
   String.raw`)(?=$|[\s"'\x60!};])`, 'g')
+// A horizontal translate moves the same way in both directions: it needs an `rtl:` twin
+// on the line, or it is a centring `-translate-x-1/2` with `left-1/2`.
+const TRANSLATE_X = /(?:^|[\s"'\x60{])(?:[\w\-\[\]&>*=.:/@()]+?:)*!?-?translate-x-[\w.\[\]/()-]+/g
+// Inline styles with a physical side.
+const STYLE_SIDE = /\b(left|right|marginLeft|marginRight|paddingLeft|paddingRight)\s*:\s*[^,}\s]|\btextAlign\s*:\s*['"](?:left|right)['"]/
+const PHYSICAL_NOTE = /(\/\/|\/\*)\s*physical:/
 
 export function physicalDirectionProblems(file, text) {
   const out = []
+  // A box drawn from coordinates and kept left to right (arabic-rtl D8) says so once, near the top.
+  if (/^\/\/ physical-file:/m.test(text.split('\n').slice(0, 40).join('\n'))) return out
   const lines = text.split('\n')
+  const hint = 'use its start/end twin (ms, me, ps, pe, inset-s, inset-e, text-start, border-s, rounded-s, ps-safe) so right to left mirrors'
   lines.forEach((line, i) => {
-    if (/\/\/\s*physical:/.test(line) || /\/\/\s*physical:/.test(lines[i - 1] ?? '')) return
+    if (PHYSICAL_NOTE.test(line) || PHYSICAL_NOTE.test(lines[i - 1] ?? '')) return
     if (/^\s*(\/\/|\*|\/\*)/.test(line)) return
     for (const m of line.matchAll(PHYSICAL)) {
       if (/^-?(left|right)-1\/2$/.test(m[1])) continue
-      out.push(`${file}:${i + 1}: \`${m[1]}\` is a physical direction; use its start/end twin (ms, me, ps, pe, inset-s, inset-e, text-start, border-s, rounded-s) so right to left mirrors`)
+      out.push(`${file}:${i + 1}: \`${m[1]}\` is a physical direction; ${hint}`)
+    }
+    const translates = [...line.matchAll(TRANSLATE_X)].map((m) => m[0].trim().replace(/^["'\x60{]/, ''))
+    const moving = translates.filter((x) => !/^(?:[\w\-\[\]&>*=.:/@()]+?:)*!?-translate-x-1\/2$/.test(x))
+    if (moving.length && !/\brtl:/.test(line)) {
+      out.push(`${file}:${i + 1}: \`${moving[0]}\` moves the same way right to left; add its \`rtl:\` twin, or say \`// physical: <reason>\``)
+    }
+    if (/style=\{\{|style:\s*\{/.test(line)) {
+      const m = line.match(STYLE_SIDE)
+      if (m) out.push(`${file}:${i + 1}: inline style \`${m[0].trim()}\` is a physical side; use insetInlineStart/End, marginInline*, paddingInline*, textAlign 'start'/'end', or say \`// physical: <reason>\``)
     }
   })
   return out
