@@ -14,6 +14,7 @@ import { Button, Icon, IconButton, Input, isIconName } from '../../ui'
 import { DateField } from '../datetime/DateField'
 import { Markdown } from '../Markdown'
 import { ProjectPickerField } from '../ProjectPickerField'
+import { composing } from '../../lib/composeKey'
 
 const cards = (root: HTMLElement | null) => [...(root?.querySelectorAll<HTMLButtonElement>('[data-template-card]') ?? [])]
 
@@ -52,7 +53,7 @@ export function LibraryList({ templates, query, onQuery, onOpen, onUpload }: {
       <div className="flex flex-wrap items-center gap-2">
         <Input ref={search} type="search" value={query} onChange={(e) => onQuery(e.target.value)} placeholder={t('Search templates…')} aria-label={t('Search templates')}
           className="min-w-0 flex-1" data-template-search
-          onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); cards(list.current)[0]?.focus() } }} />
+          onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'ArrowDown') { e.preventDefault(); cards(list.current)[0]?.focus() } }} />
         <Button variant="secondary" size="sm" icon="upload" onClick={onUpload} data-template-upload>{t('Upload a file…')}</Button>
       </div>
       <p className="sr-only" aria-live="polite" data-template-count>{t('{n, plural, one {# template} other {# templates}}', { n: found.length })}</p>

@@ -209,7 +209,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
 
 /**
  * Alarms do not survive a reboot or a change of the exact-alarm permission, and proximity
- * alerts not a reboot or an app update: arm them again.
+ * alerts and the quick-add notification not a reboot or an app update: arm them again.
  */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -218,6 +218,7 @@ class BootReceiver : BroadcastReceiver() {
                 Scheduler.rearm(context)
                 Focus.rearm(context)
                 Geofences.rearm(context)
+                QuickAddNotification.restore(context)
                 HiddenRun.schedulePeriodic(context)
             }
             AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED -> {
@@ -225,7 +226,10 @@ class BootReceiver : BroadcastReceiver() {
                 Focus.rearm(context)
                 HiddenRun.schedulePeriodic(context)
             }
-            Intent.ACTION_MY_PACKAGE_REPLACED -> Geofences.rearm(context)
+            Intent.ACTION_MY_PACKAGE_REPLACED -> {
+                Geofences.rearm(context)
+                QuickAddNotification.restore(context)
+            }
         }
     }
 }

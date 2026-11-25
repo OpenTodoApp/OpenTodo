@@ -49,6 +49,7 @@ import { currentWorkspaceId } from '../lib/workspaces'
 import { ACTION_TOAST_MS, showBulkToast } from './bulk/toastStore'
 import { scoreOf, UrgencyChip, UrgencyContext, useUrgencyOf } from './useUrgency'
 import { GROUP_BY_OPTIONS, readSortBy, ROW_PROPERTIES, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VIEW_LAYOUTS, type GroupBy, type RowProperty, type SortBy, type SortDir, type ViewLayout } from '../lib/types'
+import { composing } from '../lib/composeKey'
 
 const DEBOUNCE_MS = 150
 
@@ -214,6 +215,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   }, [focusFirst, debounced, query, good, rows, loadedTasks])
 
   function onInputKey(e: ReactKeyboardEvent<HTMLInputElement>) {
+    if (composing(e)) return
     if (e.key === 'Enter') {
       e.preventDefault()
       setDebounced(query)
@@ -228,9 +230,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
       if (histIdx === -1) draft.current = query
       setHistIdx(next)
       setQuery(next === -1 ? draft.current : history[next])
-    } else if (e.key === 'Escape') {
-      e.stopPropagation()
-    }
+    } else if (e.key === 'Escape') e.stopPropagation()
   }
 
   // The filter panel (views-and-display D5): open by default here, kept per device.

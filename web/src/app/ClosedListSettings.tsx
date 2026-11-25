@@ -9,6 +9,7 @@ import { useUserPrefsRow } from '../lib/localData'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { NumberInput, Select, SettingRow, SettingsSection, Switch } from '../ui'
 import { act } from './actionError'
+import { composing } from '../lib/composeKey'
 
 export function ClosedListSection() {
   const row = useUserPrefsRow()
@@ -42,7 +43,7 @@ export function ClosedListView({ limit, done, onLimit, onDone }: { limit: number
             <option value="custom">{t('Custom')}</option>
           </Select>
           {custom && (
-            <div data-today-limit-custom onBlur={save} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); save() } }}>
+            <div data-today-limit-custom onBlur={save} onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Enter') { e.preventDefault(); save() } }}>
               <NumberInput label={t('Custom limit')} hideLabel min={1} max={TODAY_LIMIT_MAX} value={draft} onChange={setDraft} onValidityChange={setValid} />
             </div>
           )}

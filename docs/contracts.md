@@ -82,6 +82,7 @@ Some logic runs on the server and in the web app: the server needs it for REST, 
 | On-device `find_free_time` (arguments, defaults, exclusions, result) | `internal/agenttools/read_freetime.go` | `web/src/lib/assistantDevice/readFreeTime.ts` | `web/src/lib/assistantDevice/freeTimeRead.vectors.json` | `internal/assistant/device_freetime_test.go` | `web/src/lib/assistantDevice/readFreeTime.test.ts` | `go test ./internal/assistant -run DeviceFreeTimeVectors -update` |
 | Describe it on the device (routines-describe-it) | `internal/assistant` (`routinedraft.go`) | `web/src/lib/rules/describeDevice.ts` | `web/src/lib/assistantDevice/routineDraft.vectors.json` | `internal/assistant/routinedraft_test.go` | `web/src/lib/rules/describe.test.ts` | `go test ./internal/assistant -run Device -update` |
 | Provider error reading (Chat Completions) | `internal/assistant` (`chatError`) | `web/src/lib/assistantDevice/providers.ts` (`statusError`) | `web/src/lib/assistantDevice/errors.vectors.json` | `internal/assistant/errors_test.go` | `web/src/lib/assistantDevice/providers.test.ts` | `go test ./internal/assistant -run Device -update` |
+| Smart App Banner on a task's page (ios-app-banner: path rule, id escaping, tag) | `internal/web/appbanner.go` | `web/src/lib/appBanner.ts` | `web/src/lib/appBanner.vectors.json` | `internal/httpapi/appbanner_test.go` | `web/src/lib/appBanner.test.ts` | hand |
 
 
 Thin vector sets give false confidence: when you change one of these modules, add the case you fixed or added to its fixture first.

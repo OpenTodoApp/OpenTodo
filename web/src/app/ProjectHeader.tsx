@@ -20,6 +20,7 @@ import { useProjectViewMode, useShowCompletedPref } from '../lib/liveData'
 import { saveShowCompleted } from '../lib/sections'
 import { isReusable } from '../lib/reusable'
 import { printItems } from './menus/printItem'
+import { composing } from '../lib/composeKey'
 
 export { moveTargets, projectMenuGroups, type MoveTarget } from './menus/projectMenu'
 
@@ -109,7 +110,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
 
   const title = currentNameEdit ? (
     <input className="ui-input max-w-xs text-h1 font-semibold" autoFocus value={currentNameEdit.value} onChange={(e) => setNameEdit({ projectId: project.id, value: e.target.value })} aria-label={t('Project name')}
-      onBlur={() => void save()} onKeyDown={(e) => { if (e.key === 'Enter') void save(); if (e.key === 'Escape') setNameEdit(null) }} />
+      onBlur={() => void save()} onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Enter') void save(); if (e.key === 'Escape') setNameEdit(null) }} />
   ) : editable ? (
     <Tooltip label={t('Rename')}><button type="button" className="user-text min-w-0 truncate rounded-control text-left hover:bg-sunken dark:hover:bg-raised" onClick={startEditing} data-project-name>{project.name}</button></Tooltip>
   ) : <span className="user-text min-w-0 truncate" data-project-name>{project.name}</span>

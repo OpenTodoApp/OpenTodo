@@ -14,6 +14,11 @@ struct OpenTodoApp: App {
                 // The window's root answers the status bar style (shell-repairs D7).
                 .background(StatusBarInstaller())
                 .onOpenURL { model.handle(url: $0) }
+                // ios-app-banner D5: should iOS hand the banner's https address over as a
+                // browsing activity instead, it takes the same checked path.
+                .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
+                    if let url = activity.webpageURL { model.handle(url: url) }
+                }
         }
     }
 }

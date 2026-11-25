@@ -17,6 +17,7 @@ import { showUndoToast } from '../bulk/toastStore'
 import { navigate } from '../router'
 import { pickDay } from './habitUndo'
 import { openDayNote } from './dayNoteStore'
+import { composing } from '../../lib/composeKey'
 
 // Note on a past day (habit-notes D2): the dialog loads when a day's note opens.
 const DayNoteHost = lazy(() => import('./DayNoteDialog').then((m) => ({ default: m.DayNoteHost })))
@@ -32,7 +33,7 @@ function HabitText({ task, field, label, placeholder }: { task: Task; field: 'ha
     <label className="flex items-center gap-2 text-meta text-muted">
       <span className="w-24 shrink-0">{label}</span>
       <Input value={value} maxLength={200} placeholder={placeholder} onChange={(e) => setValue(e.target.value)} onBlur={save}
-        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); save() } }} data-habit-field={field} />
+        onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Enter') { e.preventDefault(); save() } }} data-habit-field={field} />
     </label>
   )
 }
