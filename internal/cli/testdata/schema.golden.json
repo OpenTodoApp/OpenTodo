@@ -280,6 +280,115 @@
       }
     },
     {
+      "name": "calendar event delete",
+      "aliases": [
+        "calendar event rm"
+      ],
+      "summary": "delete an event of a connected calendar (needs a full token)",
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "yes",
+          "short": "y",
+          "type": "bool",
+          "description": "confirm a destructive command (required off a terminal and with --json)"
+        },
+        {
+          "name": "on",
+          "type": "string",
+          "default": "today",
+          "description": "a day near the event (it is looked for within 45 days)"
+        }
+      ],
+      "writes": true,
+      "destructive": true,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/calendar_event"
+      }
+    },
+    {
+      "name": "calendar event edit",
+      "summary": "move or rename an event of a connected calendar (needs a full token and Edit events in OpenTodo on)",
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "title",
+          "type": "string",
+          "description": "new title"
+        },
+        {
+          "name": "start",
+          "type": "string",
+          "description": "new start: DATE or DATETHH:MM; alone it keeps the event's length"
+        },
+        {
+          "name": "end",
+          "type": "string",
+          "description": "new end: DATE or DATETHH:MM"
+        },
+        {
+          "name": "all-day",
+          "type": "bool",
+          "description": "make it an all-day event"
+        },
+        {
+          "name": "on",
+          "type": "string",
+          "default": "today",
+          "description": "a day near the event (it is looked for within 45 days)"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/calendar_event"
+      }
+    },
+    {
+      "name": "calendar events",
+      "summary": "list the events the calendar view shows, with whether OpenTodo may change each one",
+      "args": [],
+      "flags": [
+        {
+          "name": "from",
+          "type": "string",
+          "default": "today",
+          "description": "first day: YYYY-MM-DD, today, tomorrow or a weekday"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "description": "last day (default: six days after --from; at most 92 days)"
+        }
+      ],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "items": {
+          "$ref": "#/schemas/calendar_event"
+        },
+        "type": "array"
+      }
+    },
+    {
       "name": "completion",
       "summary": "print the completion script for bash, zsh or fish (works offline)",
       "args": [
@@ -3089,6 +3198,21 @@
       "meaning": "the account is end-to-end encrypted; readable text cannot be written"
     },
     {
+      "code": "event_edits_off",
+      "exit": 5,
+      "meaning": "Edit events in OpenTodo is off for the event's calendar connection"
+    },
+    {
+      "code": "calendar_read_only",
+      "exit": 5,
+      "meaning": "the calendar does not let this account change or delete the event"
+    },
+    {
+      "code": "token_restricted",
+      "exit": 5,
+      "meaning": "a token limited to chosen workspaces cannot use this route"
+    },
+    {
       "code": "vault_owned",
       "exit": 2,
       "meaning": "another device syncs this vault folder; nothing was sent: --take-over syncs it here instead"
@@ -3444,6 +3568,63 @@
         },
         "skipped": {
           "type": "integer"
+        }
+      }
+    },
+    "calendar_event": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "calendar_event",
+      "description": "An event as GET /api/v1/calendar-feeds/events serves it (OpenSpec calendar-feeds, calendar-event-edits). The summary and location are written by people. rev, access and changedBy are set for an event of a connected calendar only.",
+      "type": "object",
+      "required": [
+        "id",
+        "subscriptionId",
+        "summary",
+        "start",
+        "end",
+        "allDay"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "subscriptionId": {
+          "type": "string"
+        },
+        "uid": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "start": {
+          "type": "object",
+          "description": "{date, time?, tz?} like a task's due"
+        },
+        "end": {
+          "type": "object",
+          "description": "{date, time?, tz?}; an all-day end is exclusive"
+        },
+        "allDay": {
+          "type": "boolean"
+        },
+        "free": {
+          "type": "boolean"
+        },
+        "rev": {
+          "type": "string",
+          "description": "the version to send with a change"
+        },
+        "access": {
+          "type": "object",
+          "description": "{update, delete, reason?}: whether OpenTodo may change or delete it, and why not"
+        },
+        "changedBy": {
+          "type": "object",
+          "description": "{kind: assistant, name}: an assistant's change the user can still undo"
         }
       }
     },

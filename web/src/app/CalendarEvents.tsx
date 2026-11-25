@@ -1,10 +1,12 @@
-// Events of subscribed calendars in Day, Week, Plan and Month (OpenSpec changes
-// calendar-feeds D8 and calendar-events-all-views). Read-only: blocks and chips are buttons that open a popover with the
-// summary, time, location and calendar name; they never start a drag, are never
-// selected with j/k and are never drop targets.
-import { hueFor, Icon, Tooltip, Popover } from '../ui'
-import { useRef, useState, type PointerEvent } from 'react'
-import { formatTime as toHHMM, type EventBlock } from '../lib/calendar'
+// Events of calendars in Day, Week, Plan and Month (OpenSpec changes calendar-feeds D8,
+// calendar-events-all-views and calendar-event-edits). Chips and rows are buttons that open a
+// popover with the summary, time, location and calendar name; for an event of a connected
+// calendar the popover holds the editor or says why it cannot be changed (loaded on open,
+// outside the first load). The grid's event blocks are calendar/EventBlock.tsx.
+import { hueFor, Icon, Popover } from '../ui'
+import { Suspense, useRef, useState, type PointerEvent } from 'react'
+import { lazy } from '../lib/lazy'
+import { formatTime as toHHMM } from '../lib/calendar'
 import { formatShort, formatTime as formatWallTime, localDueOf } from '../lib/dates'
 import type { CalendarEvent, CalendarSubscription, CalendarWhen } from '../lib/types'
 import { t } from '../lib/i18n'
@@ -27,7 +29,7 @@ export function eventLabel(ev: CalendarEvent, sub: CalendarSubscription | undefi
   return [ev.summary || t('Busy'), eventTimeText(ev, zone), ev.location, sub?.name].filter(Boolean).join(', ')
 }
 
-function EventDetails({ ev, sub, zone }: { ev: CalendarEvent; sub?: CalendarSubscription; zone?: string }) {
+function EventDetails({ ev, sub, zone, onDone }: { ev: CalendarEvent; sub?: CalendarSubscription; zone?: string; onDone?: () => void }) {
   return (
     <div className="space-y-1 text-body" data-event-details>
       <p className="font-medium text-strong">{ev.summary || t('Busy')}</p>
@@ -39,10 +41,15 @@ function EventDetails({ ev, sub, zone }: { ev: CalendarEvent; sub?: CalendarSubs
         </p>
       )}
       {ev.free && <p className="text-meta text-faint">{t('Shown as free')}</p>}
-      <p className="text-meta text-faint">{t('From a subscribed calendar. Edit it in its own app.')}</p>
+      {ev.access
+        ? <Suspense fallback={null}><EventEditor ev={ev} zone={zone} onDone={onDone} /></Suspense>
+        : <p className="text-meta text-faint">{t('From a subscribed calendar. Edit it in its own app.')}</p>}
     </div>
   )
 }
+
+/** The editor of an event of a connected calendar (calendar-event-edits D7), loaded when a popover opens. */
+const EventEditor = lazy(() => import('./calendar/EventEditor'))
 
 /** An event's details popover, anchored to the button that toggles it. */
 export function useEventDetails(ev: CalendarEvent, sub?: CalendarSubscription, zone?: string) {
@@ -50,7 +57,7 @@ export function useEventDetails(ev: CalendarEvent, sub?: CalendarSubscription, z
   const [open, setOpen] = useState(false)
   const popover = (
     <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || t('Event')} width="sm:w-72" className="p-3" align="start">
-      <EventDetails ev={ev} sub={sub} zone={zone} />
+      <EventDetails ev={ev} sub={sub} zone={zone} onDone={() => setOpen(false)} />
     </Popover>
   )
   const toggle = () => setOpen((o) => !o)
@@ -61,45 +68,6 @@ export function useEventDetails(ev: CalendarEvent, sub?: CalendarSubscription, z
     onPointerDown: (e: PointerEvent) => e.stopPropagation(), onClick: toggle,
   }
   return { ref, open, toggle, trigger, popover }
-}
-
-/** One timed event in a day column, laid out with the task blocks. */
-export function EventBlockView({ block, lane, lanes, overlap, pxPerMinute, minHeight, sub, zone }: {
-  block: EventBlock
-  lane: number
-  lanes: number
-  overlap: boolean
-  pxPerMinute: number
-  minHeight: number
-  sub?: CalendarSubscription
-  zone?: string
-}) {
-  const ev = block.event
-  const details = useEventDetails(ev, sub, zone)
-  const height = Math.max(minHeight, (block.end - block.start) * pxPerMinute)
-  return (
-    <>
-      <Tooltip label={eventLabel(ev, sub, zone)} side="right">
-      <button
-        {...details.trigger}
-        data-event={ev.id}
-        data-overlap={overlap || undefined}
-        className={`absolute z-10 overflow-hidden px-1.5 text-left ${height < 20 ? 'py-0 text-hint leading-none' : 'py-0.5 text-meta'} ${ev.free ? 'rounded-control border border-dashed border-hue-solid bg-transparent text-hue' : 'ui-block ui-block--event'} focus-visible:outline-2 focus-visible:outline-focus`}
-        style={{
-          top: block.start * pxPerMinute, height,
-          left: `calc(${(lane / lanes) * 100}% + 2px)`,
-          width: `calc(${100 / lanes}% - 4px)`,
-        }}
-      >
-        <span className="flex min-w-0 items-center gap-1 font-medium">{!ev.free && <span aria-hidden className="ui-block-dot" />}<span className="truncate">{ev.summary || t('Busy')}</span></span>
-        {/* Named by its visible summary, then the time, location and calendar as hidden text (WCAG 2.5.3 Label in Name): the short time line below is not read twice. */}
-        <span className="sr-only">{eventLabel(ev, sub, zone).slice((ev.summary || t('Busy')).length)}</span>
-        {height >= 30 && <span aria-hidden className="block truncate text-hint tabular-nums" data-event-time>{formatWallTime(toHHMM(block.start))}{ev.location ? ` · ${ev.location}` : ''}</span>}
-      </button>
-      </Tooltip>
-      {details.popover}
-    </>
-  )
 }
 
 /** One all-day or multi-day event in a day's all-day strip. */

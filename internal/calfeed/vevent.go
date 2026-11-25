@@ -59,6 +59,17 @@ type Event struct {
 	// LastModified is LAST-MODIFIED in Unix ms, 0 when absent (calendar sync
 	// compares it with the task's last change, calendar-two-way D8).
 	LastModified int64
+	// Guests: the event has an ATTENDEE (calendar-event-edits D2).
+	Guests bool
+	// Organizer is the ORGANIZER's address, lower case without "mailto:", ""
+	// when the event names none.
+	Organizer string
+}
+
+// Address normalises a calendar user address: lower case, without "mailto:".
+func Address(v string) string {
+	v = strings.ToLower(strings.TrimSpace(v))
+	return strings.TrimPrefix(v, "mailto:")
 }
 
 // Calendar is a parsed calendar: its events and the hints it carries.
@@ -187,6 +198,10 @@ func parseEvent(c *caldav.Component, defaultLoc *time.Location, w warnings) (Eve
 			ev.Free = strings.EqualFold(strings.TrimSpace(p.Value), "TRANSPARENT")
 		case "SEQUENCE":
 			ev.Sequence, _ = strconv.Atoi(strings.TrimSpace(p.Value))
+		case "ATTENDEE":
+			ev.Guests = true
+		case "ORGANIZER":
+			ev.Organizer = Address(p.Value)
 		case "LAST-MODIFIED":
 			if t, err := time.Parse("20060102T150405Z", strings.TrimSpace(p.Value)); err == nil {
 				ev.LastModified = t.UnixMilli()

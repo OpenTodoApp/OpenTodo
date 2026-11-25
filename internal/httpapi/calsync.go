@@ -30,6 +30,7 @@ const (
 func (s *Server) registerCalendarSyncRoutes(mux *routes) {
 	w := s.calsync
 	s.calsyncLimiter = s.limit("calsync.action", calsyncActionsPerHr, time.Hour)
+	s.calsyncEventLimiter = s.limit("calsync.event", eventWritesPerHr, time.Hour)
 	gate := switchGate(s.calsyncOn, "calendar_sync_disabled", "the server owner has not enabled calendar sync")
 
 	s.switchRoutes(mux, "/api/v1/settings/calendar-sync", switchRoute{sw: s.calsyncOn,
@@ -48,6 +49,7 @@ func (s *Server) registerCalendarSyncRoutes(mux *routes) {
 	mux.handle("PATCH /api/v1/calendar-sync/connections/{id}", signedIn.DemoDenied(), gate(s.handlePatchCalendarConnection))
 	mux.handle("DELETE /api/v1/calendar-sync/connections/{id}", signedIn.DemoDenied(), gate(s.handleDeleteCalendarConnection))
 	mux.handle("POST /api/v1/calendar-sync/connections/{id}/sync", signedIn.DemoDenied(), gate(s.handleSyncCalendarConnection))
+	s.registerCalendarEventRoutes(mux, gate)
 	mux.handle("POST /api/v1/calendar-sync/google/start", signedIn.Recent().DemoDenied(), gate(s.handleGoogleStart))
 	mux.handle("GET "+calsyncCallback, signedIn.SessionOnly().DemoDenied(), gate(s.handleGoogleCallback))
 	// Microsoft (outlook-calendar-sync, design D11).
@@ -153,6 +155,11 @@ func (s *Server) calendarViews(ctx context.Context, uid string, list []calsync.C
 	out := make([]calendarConnectionView, 0, len(list))
 	for i := range list {
 		c := &list[i]
+		for j := range c.Calendars {
+			// A calendar saved before capabilities serves them from read_only.
+			caps := c.Calendars[j].CapsOf()
+			c.Calendars[j].Caps = &caps
+		}
 		targets, err := s.calsync.Store.ProjectTargets(ctx, c.ID)
 		if err != nil {
 			return nil, err

@@ -14,7 +14,9 @@ import { preferredPlacement } from '../lib/userPrefs'
 import { selectTask } from './signals'
 import { addTasksUndoable } from '../lib/pasteTasks'
 import { showBulkToast } from './bulk/toastStore'
-import { createSection, deleteSection, renameSection, reorderSection, setSectionStyle } from '../lib/sections'
+import { createSection, renameSection, reorderSection, setSectionStyle } from '../lib/sections'
+import { deleteSectionUndoable } from '../lib/undoActions'
+import { withUndoToast } from './undoable'
 import type { Label, Project, Section } from '../lib/types'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { t } from '../lib/i18n'
@@ -140,7 +142,7 @@ export function SectionHeader({ section, name: heading, count, layout, editable,
     flow: sectionFlowItem(section, project, { mode, canEdit: editable }),
     rename: startRename,
     move: (d) => reorderSection(section.id, d),
-    remove: () => deleteSection(section.id),
+    remove: () => withUndoToast(deleteSectionUndoable(section.id)),
   }) : [])]
   const onRowKey = useRowMenuShortcut({
     openMenu: () => setMenuOpen(true),

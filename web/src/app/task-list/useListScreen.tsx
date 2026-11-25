@@ -16,7 +16,7 @@ import { useMarkProjectSeen } from '../../lib/feed'
 import { dayOrderRows, dayOrderSiblings, isTodayProjectGroup, sectionOfRows, type ListGroup, type ListRow } from '../../lib/listGroups'
 import { useDayOrderDrop } from './useDayOrderDrop'
 import type { TodayListDrop } from './useListDrag'
-import { moveTaskBy, taskStepEdges, type Step } from '../../lib/move'
+import { taskStepEdges, type Step } from '../../lib/move'
 import type { ViewPlacement } from '../../lib/viewOrder'
 import type { OrderHost } from '../../lib/viewOrderMove'
 import { dropInView, reorderInView, stepInView } from '../viewOrderActions'
@@ -47,7 +47,7 @@ import { InlineEditor } from './InlineEditor'
 import { holdSelect } from './RowSwipe'
 import { type QuickAddInput } from '../QuickAdd'
 import { useSelection } from '../selection'
-import { completeWithUndo } from '../undoable'
+import { completeWithUndo, stepRowWithUndo } from '../undoable'
 import { useBoardMoves } from './useBoardMoves'
 import { usePhoneListActions } from './ListChrome'
 import { useCalmUpcoming, useListMotion } from './ListGroups'
@@ -196,7 +196,7 @@ function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], boa
 /** The row menu's Reorder items (accessibility-aa D3): the keyboard move's writes, from a pointer; null without a manual order. */
 function useListReorder(manual: boolean, ownOrder: Pick<NonNullable<ReturnType<typeof useOwnOrder>>, 'step' | 'edges' | 'todayDrop'> | null, onReorder: (() => void) | undefined, add?: ListReorder['add']): ListReorder | null {
   return useMemo<ListReorder | null>(() => (!manual ? null : {
-    move: (id, step) => { if (ownOrder) act(ownOrder.step(id, step)); else { onReorder?.(); act(moveTaskBy(id, step)) } },
+    move: (id, step) => { if (ownOrder) act(ownOrder.step(id, step)); else { onReorder?.(); act(stepRowWithUndo(id, step)) } },
     edges: ownOrder?.edges ?? taskStepEdges,
     contextActions: ownOrder?.todayDrop?.contextActions,
     add,

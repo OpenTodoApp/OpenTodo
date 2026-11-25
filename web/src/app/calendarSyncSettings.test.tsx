@@ -158,6 +158,30 @@ describe('calendar sync panel', () => {
     await r.unmount()
   })
 
+  it('turns on editing events, then letting assistants edit them (calendar-event-edits 5.5)', async () => {
+    serve({
+      'GET /api/v1/settings/calendar-sync': { enabled: true, google: false, max_connections: 3 },
+      'GET /api/v1/calendar-sync/connections': { connections: [{ ...base, state: 'choose_calendar' }] },
+      'GET /api/v1/settings/calendar-sync/google': { client_id: '', secret_set: false, from_env: false, redirect_uri: 'x' },
+      'PATCH /api/v1/calendar-sync/connections/c1': { connection: base },
+      'GET /api/v1/calendar-feeds/events': { events: [], subscriptions: [] },
+    })
+    const r = await render(<CalendarSyncPanel isOwner={false} />)
+    await waitFor(() => button(r.container, 'Choose calendars') !== undefined)
+    await click(button(r.container, 'Choose calendars')!)
+    await waitFor(() => document.querySelector('[data-testid="calendar-choice"]') !== null)
+    const choice = document.querySelector('[data-testid="calendar-choice"]')!
+    // The second switch shows only while the first is on.
+    expect(choice.querySelector('[data-assistant-edits]')).toBeNull()
+    await click(choice.querySelector('[data-edit-events] [role="switch"]')!)
+    await waitFor(() => choice.querySelector('[data-assistant-edits]') !== null)
+    await click(choice.querySelector('[data-assistant-edits] [role="switch"]')!)
+    await click(button(choice, 'Save')!)
+    await waitFor(() => keys().includes('PATCH /api/v1/calendar-sync/connections/c1'))
+    expect(calls.find((c) => c.key === 'PATCH /api/v1/calendar-sync/connections/c1')!.body).toMatchObject({ edit_events: true, assistant_edits: true })
+    await r.unmount()
+  })
+
   it('shows what a Google sign-in returned and cleans the address', async () => {
     window.history.replaceState(null, '', '/settings/integrations/calendar-sync?calendar-sync=denied')
     serve({

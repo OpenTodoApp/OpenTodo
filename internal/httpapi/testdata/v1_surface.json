@@ -79,6 +79,42 @@
           "(type)": "ref:away"
         }
       },
+      "calendar event delete": {
+        "args": {
+          "id": "required"
+        },
+        "flags": {
+          "on": "string",
+          "yes": "bool"
+        },
+        "output": {
+          "(type)": "ref:calendar_event"
+        }
+      },
+      "calendar event edit": {
+        "args": {
+          "id": "required"
+        },
+        "flags": {
+          "all-day": "bool",
+          "end": "string",
+          "on": "string",
+          "start": "string",
+          "title": "string"
+        },
+        "output": {
+          "(type)": "ref:calendar_event"
+        }
+      },
+      "calendar events": {
+        "flags": {
+          "from": "string",
+          "to": "string"
+        },
+        "output": {
+          "(type)": "array"
+        }
+      },
       "completion": {
         "args": {
           "shell": "required"
@@ -988,9 +1024,11 @@
       "audit_chain_broken": "1",
       "auth": "3",
       "body_changed": "1",
+      "calendar_read_only": "5",
       "confirmation_required": "2",
       "connection_stopped": "1",
       "encryption_enabled": "5",
+      "event_edits_off": "5",
       "forbidden": "5",
       "http_<status>": "1",
       "idempotency_conflict": "1",
@@ -1005,6 +1043,7 @@
       "provider_rate_limited": "1",
       "rate_limited": "1",
       "read_only": "5",
+      "token_restricted": "5",
       "too_many_appends": "1",
       "too_many_objectives": "1",
       "unauthorized": "3",
@@ -1075,6 +1114,21 @@
         "(type)": "object",
         "away": "string",
         "skipped": "integer"
+      },
+      "calendar_event": {
+        "(type)": "object",
+        "access": "object",
+        "allDay": "boolean",
+        "changedBy": "object",
+        "end": "object",
+        "free": "boolean",
+        "id": "string",
+        "location": "string",
+        "rev": "string",
+        "start": "object",
+        "subscriptionId": "string",
+        "summary": "string",
+        "uid": "string"
       },
       "comment": {
         "(type)": "object",
@@ -1660,6 +1714,10 @@
       "409",
       "listed"
     ],
+    "assistant_edits_off": [
+      "403",
+      "listed"
+    ],
     "assistant_quota": [
       "429",
       "listed"
@@ -1706,6 +1764,10 @@
     ],
     "busy": [
       "503",
+      "listed"
+    ],
+    "calendar_read_only": [
+      "403",
       "listed"
     ],
     "calendar_sync_disabled": [
@@ -1794,6 +1856,22 @@
     ],
     "encryption_enabled": [
       "409",
+      "listed"
+    ],
+    "event_changed": [
+      "409",
+      "listed"
+    ],
+    "event_edits_off": [
+      "403",
+      "listed"
+    ],
+    "event_gone": [
+      "404",
+      "listed"
+    ],
+    "event_not_editable": [
+      "422",
       "listed"
     ],
     "fallback": [
@@ -2910,6 +2988,13 @@
       },
       "kind": "read"
     },
+    "list_calendar_events": {
+      "arguments": {
+        "from": "string",
+        "to": "string"
+      },
+      "kind": "read"
+    },
     "list_frames": {
       "arguments": {
         "from": "string?",
@@ -3304,6 +3389,24 @@
     "trash_tasks": {
       "arguments": {
         "ids": "array"
+      },
+      "kind": "write"
+    },
+    "update_calendar_event": {
+      "arguments": {
+        "all_day": "boolean?",
+        "connection_id": "string",
+        "end": "object?",
+        "end.date": "string",
+        "end.time": "string?",
+        "end.tz": "string?",
+        "event_id": "string",
+        "rev": "string",
+        "start": "object?",
+        "start.date": "string",
+        "start.time": "string?",
+        "start.tz": "string?",
+        "summary": "string?"
       },
       "kind": "write"
     },
@@ -3843,6 +3946,9 @@
       "policy": "signed-in"
     },
     "DELETE /api/v1/calendar-sync/connections/{id}": {
+      "policy": "signed-in"
+    },
+    "DELETE /api/v1/calendar-sync/connections/{id}/events/{eventId}": {
       "policy": "signed-in"
     },
     "DELETE /api/v1/comments/{id}": {
@@ -4610,7 +4716,14 @@
       "policy": "signed-in",
       "response": {
         "events": "array",
+        "events[].access": "object|null",
+        "events[].access.delete": "boolean",
+        "events[].access.reason": "string",
+        "events[].access.update": "boolean",
         "events[].allDay": "boolean",
+        "events[].changedBy": "object|null",
+        "events[].changedBy.kind": "string",
+        "events[].changedBy.name": "string",
         "events[].end": "object",
         "events[].end.date": "string",
         "events[].end.time": "string|null",
@@ -4618,6 +4731,7 @@
         "events[].free": "boolean",
         "events[].id": "string",
         "events[].location": "string",
+        "events[].rev": "string",
         "events[].start": "object",
         "events[].start.date": "string",
         "events[].start.time": "string|null",
@@ -4626,7 +4740,14 @@
         "events[].summary": "string",
         "events[].uid": "string",
         "subscriptions": "array",
+        "subscriptions[].calendarUrl": "string",
+        "subscriptions[].caps": "object",
+        "subscriptions[].caps.create": "boolean",
+        "subscriptions[].caps.delete": "boolean",
+        "subscriptions[].caps.update": "boolean",
         "subscriptions[].color": "string",
+        "subscriptions[].connectionId": "string",
+        "subscriptions[].editEvents": "boolean",
         "subscriptions[].enabled": "boolean",
         "subscriptions[].id": "string",
         "subscriptions[].lastSuccessAt": "number|null",
@@ -4677,13 +4798,19 @@
       "policy": "signed-in",
       "response": {
         "connections": "array",
+        "connections[].assistant_edits": "boolean",
         "connections[].calendars": "array",
+        "connections[].calendars[].caps": "object|null",
+        "connections[].calendars[].caps.create": "boolean",
+        "connections[].calendars[].caps.delete": "boolean",
+        "connections[].calendars[].caps.update": "boolean",
         "connections[].calendars[].color": "string",
         "connections[].calendars[].name": "string",
         "connections[].calendars[].read_only": "boolean",
         "connections[].calendars[].time_zone": "string",
         "connections[].calendars[].url": "string",
         "connections[].created_at": "number",
+        "connections[].edit_events": "boolean",
         "connections[].enabled": "boolean",
         "connections[].event_count": "number",
         "connections[].id": "string",
@@ -7424,6 +7551,8 @@
     "PATCH /api/v1/calendar-sync/connections/{id}": {
       "policy": "signed-in",
       "request": {
+        "assistant_edits": "boolean|null?",
+        "edit_events": "boolean|null?",
         "enabled": "boolean|null?",
         "include_date_only": "boolean|null?",
         "name": "string|null?",
@@ -7439,13 +7568,19 @@
       },
       "response": {
         "connection": "object|null",
+        "connection.assistant_edits": "boolean",
         "connection.calendars": "array",
+        "connection.calendars[].caps": "object|null",
+        "connection.calendars[].caps.create": "boolean",
+        "connection.calendars[].caps.delete": "boolean",
+        "connection.calendars[].caps.update": "boolean",
         "connection.calendars[].color": "string",
         "connection.calendars[].name": "string",
         "connection.calendars[].read_only": "boolean",
         "connection.calendars[].time_zone": "string",
         "connection.calendars[].url": "string",
         "connection.created_at": "number",
+        "connection.edit_events": "boolean",
         "connection.enabled": "boolean",
         "connection.event_count": "number",
         "connection.id": "string",
@@ -7480,6 +7615,52 @@
         "connection.target": "string",
         "connection.updated_at": "number",
         "connection.username": "string"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
+    "PATCH /api/v1/calendar-sync/connections/{id}/events/{eventId}": {
+      "policy": "signed-in",
+      "request": {
+        "allDay": "boolean|null?",
+        "end": "object|null?",
+        "end.date": "string",
+        "end.time": "string|null?",
+        "end.tz": "string|null?",
+        "rev": "string|null?",
+        "start": "object|null?",
+        "start.date": "string",
+        "start.time": "string|null?",
+        "start.tz": "string|null?",
+        "summary": "string|null?"
+      },
+      "response": {
+        "event": "object",
+        "event.access": "object|null",
+        "event.access.delete": "boolean",
+        "event.access.reason": "string",
+        "event.access.update": "boolean",
+        "event.allDay": "boolean",
+        "event.changedBy": "object|null",
+        "event.changedBy.kind": "string",
+        "event.changedBy.name": "string",
+        "event.end": "object",
+        "event.end.date": "string",
+        "event.end.time": "string|null",
+        "event.end.tz": "string|null",
+        "event.free": "boolean",
+        "event.id": "string",
+        "event.location": "string",
+        "event.rev": "string",
+        "event.start": "object",
+        "event.start.date": "string",
+        "event.start.time": "string|null",
+        "event.start.tz": "string|null",
+        "event.subscriptionId": "string",
+        "event.summary": "string",
+        "event.uid": "string",
+        "replaces": "string"
       },
       "statuses": [
         "200"
@@ -8708,13 +8889,19 @@
       },
       "response": {
         "connection": "object|null",
+        "connection.assistant_edits": "boolean",
         "connection.calendars": "array",
+        "connection.calendars[].caps": "object|null",
+        "connection.calendars[].caps.create": "boolean",
+        "connection.calendars[].caps.delete": "boolean",
+        "connection.calendars[].caps.update": "boolean",
         "connection.calendars[].color": "string",
         "connection.calendars[].name": "string",
         "connection.calendars[].read_only": "boolean",
         "connection.calendars[].time_zone": "string",
         "connection.calendars[].url": "string",
         "connection.created_at": "number",
+        "connection.edit_events": "boolean",
         "connection.enabled": "boolean",
         "connection.event_count": "number",
         "connection.id": "string",
@@ -8754,17 +8941,56 @@
         "201"
       ]
     },
+    "POST /api/v1/calendar-sync/connections/{id}/events/{eventId}/undo": {
+      "policy": "signed-in",
+      "response": {
+        "event": "object",
+        "event.access": "object|null",
+        "event.access.delete": "boolean",
+        "event.access.reason": "string",
+        "event.access.update": "boolean",
+        "event.allDay": "boolean",
+        "event.changedBy": "object|null",
+        "event.changedBy.kind": "string",
+        "event.changedBy.name": "string",
+        "event.end": "object",
+        "event.end.date": "string",
+        "event.end.time": "string|null",
+        "event.end.tz": "string|null",
+        "event.free": "boolean",
+        "event.id": "string",
+        "event.location": "string",
+        "event.rev": "string",
+        "event.start": "object",
+        "event.start.date": "string",
+        "event.start.time": "string|null",
+        "event.start.tz": "string|null",
+        "event.subscriptionId": "string",
+        "event.summary": "string",
+        "event.uid": "string",
+        "replaces": "string"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
     "POST /api/v1/calendar-sync/connections/{id}/sync": {
       "policy": "signed-in",
       "response": {
         "connection": "object|null",
+        "connection.assistant_edits": "boolean",
         "connection.calendars": "array",
+        "connection.calendars[].caps": "object|null",
+        "connection.calendars[].caps.create": "boolean",
+        "connection.calendars[].caps.delete": "boolean",
+        "connection.calendars[].caps.update": "boolean",
         "connection.calendars[].color": "string",
         "connection.calendars[].name": "string",
         "connection.calendars[].read_only": "boolean",
         "connection.calendars[].time_zone": "string",
         "connection.calendars[].url": "string",
         "connection.created_at": "number",
+        "connection.edit_events": "boolean",
         "connection.enabled": "boolean",
         "connection.event_count": "number",
         "connection.id": "string",

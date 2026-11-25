@@ -79,6 +79,9 @@ export function CalendarsDialog({ connection, onSave, ...p }: FormProps & { conn
   const [target, setTarget] = useState(connection.target || writable[0]?.url || '')
   const [read, setRead] = useState<string[]>(connection.read)
   const [dateOnly, setDateOnly] = useState(connection.include_date_only)
+  // Editing events from OpenTodo, and by assistants (calendar-event-edits D12): off by default.
+  const [editEvents, setEditEvents] = useState(!!connection.edit_events)
+  const [assistantEdits, setAssistantEdits] = useState(!!connection.assistant_edits)
   const [scope, setScope] = useState(connection.scope ?? allScope())
   // A calendar per project (calsync-project-calendars): matches by project id.
   const [perProject, setPerProject] = useState(Object.keys(connection.project_calendars ?? {}).length > 0)
@@ -95,7 +98,9 @@ export function CalendarsDialog({ connection, onSave, ...p }: FormProps & { conn
           e.preventDefault()
           const chosen = perProject ? Object.fromEntries(Object.entries(matches).filter(([, u]) => u && u !== target)) : {}
           const had = Object.keys(connection.project_calendars ?? {}).length > 0
-          onSave({ target, read: read.filter((u) => u !== target), include_date_only: dateOnly, scope, ...(perProject || had ? { project_calendars: chosen } : {}) })
+          onSave({ target, read: read.filter((u) => u !== target), include_date_only: dateOnly, scope, ...(perProject || had ? { project_calendars: chosen } : {}),
+            ...(editEvents !== !!connection.edit_events ? { edit_events: editEvents } : {}),
+            ...(editEvents && assistantEdits) !== !!connection.assistant_edits ? { assistant_edits: editEvents && assistantEdits } : {} })
         }}>
         <fieldset className="space-y-2">
           <legend className="text-body font-medium text-default">{t('Write tasks into')}</legend>
@@ -126,7 +131,7 @@ export function CalendarsDialog({ connection, onSave, ...p }: FormProps & { conn
         </fieldset>
         <fieldset className="space-y-2">
           <legend className="text-body font-medium text-default">{t('Also show in Day and Week')}</legend>
-          <p className="text-meta text-muted">{t('Events of these calendars appear next to your tasks, read-only.')}</p>
+          <p className="text-meta text-muted">{t('Events of these calendars appear next to your tasks.')}</p>
           {read.filter((u) => u !== target && byUrl.has(u)).length > 0 && (
             <ul className="flex flex-wrap gap-1" aria-label={t('Also show in Day and Week')}>
               {read.filter((u) => u !== target && byUrl.has(u)).map((u) => (
@@ -135,7 +140,7 @@ export function CalendarsDialog({ connection, onSave, ...p }: FormProps & { conn
             </ul>
           )}
           <Combobox label={t('Also show in Day and Week')} placeholder={t('Find a calendar…')} source={others} getKey={(c: SyncCalendar) => c.url}
-            getLabel={(c: SyncCalendar) => c.name} multiple selected={read} emptyText={t('No other calendars.')} renderLeading={dot}
+            getLabel={(c: SyncCalendar) => (c.read_only ? t('{name} (read-only)', { name: c.name }) : c.name)} multiple selected={read} emptyText={t('No other calendars.')} renderLeading={dot}
             onPick={(c: SyncCalendar) => toggle(c.url)} />
         </fieldset>
         <SyncScopeField label={t('Tasks from')} value={scope} onChange={setScope} />
@@ -146,6 +151,14 @@ export function CalendarsDialog({ connection, onSave, ...p }: FormProps & { conn
           </div>
           <Switch checked={dateOnly} onChange={setDateOnly} label={t('Include tasks without a time')} hideLabel />
         </div>
+        <div data-edit-events>
+          <Switch checked={editEvents} onChange={setEditEvents} label={t('Edit events in OpenTodo')} />
+        </div>
+        {editEvents && (
+          <div data-assistant-edits>
+            <Switch checked={assistantEdits} onChange={setAssistantEdits} label={t('Let assistants edit events')} />
+          </div>
+        )}
         {p.error && <Notice tone="danger">{p.error}</Notice>}
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={p.onClose}>{t('Cancel')}</Button>

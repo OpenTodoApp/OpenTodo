@@ -40,7 +40,7 @@ Rejected: an `event_override` op entity (a second truth, orphaned when the remot
 The client identifies an event by **`(connection id, event id)`**, where the event id is the existing `EventRow.id` (24 hex characters). The server resolves it to the remote address (connection -> calendar URL -> event href or Graph id) through a new table, so the client never sees or sends an href:
 
 ```sql
--- 0075_calendar_event_edits.sql (idempotent: IF NOT EXISTS only, no ALTER)
+-- 0076_calendar_event_edits.sql (idempotent: IF NOT EXISTS only, no ALTER)
 CREATE TABLE IF NOT EXISTS calendar_event_remote (
   subscription_id TEXT NOT NULL REFERENCES calendar_subscriptions(id) ON DELETE CASCADE,
   uid             TEXT NOT NULL,
@@ -109,7 +109,7 @@ A move changes the instance, hence the `id` (Context). A successful `PATCH` ther
 - DAV (`discover.go`: `readOnly` becomes `capsOf`): `bind` gives create, `write-content` gives update, `unbind` gives delete; `write` or `all` give all three; no privilege set gives all three unless `ReadOnly`.
 - Graph (`graph.go`): `canEdit` gives all three, else none (Graph has no finer flag).
 - A calendar saved before this change has no `Caps`; the server derives `{!ReadOnly, !ReadOnly, !ReadOnly}`. `Rediscover` (`run.go:129`) refreshes them.
-- A write refused with 403 answers `403 calendar_read_only` and sets that calendar's caps to false until the next discovery (a privilege set can claim more than the server allows; Google's CalDAV answers for read-only calendars are unverified).
+- A write refused with 403 answers `403 calendar_read_only` and locks that event (`access.reason: "calendar_read_only"`) until the calendar is next read with changes; the calendar keeps its capabilities, so one refusal does not lock its other events (review fixes; a privilege set can claim more than the server allows; Google's CalDAV answers for read-only calendars are unverified).
 - `create` is served for the next phase and used by nothing in this change.
 
 The connection view always serves `calendars[].caps` (derived from `read_only` for a calendar saved before caps existed). The events route serves, per managed event, `access: {update, delete, reason?}`: `update` and `delete` are true only when the connection has `edit_events`, the calendar's cap allows it and `locked` is empty. The reason is the first unmet condition: `edits_off`, `calendar_read_only`, a `locked` reason (`recurring`, `has_guests`, `not_organizer`, `no_etag`), then `refresh_pending`; a calendar that allows only one of update and delete serves `calendar_read_only` for the one it forbids. The UI starts a drag only when `access.update` and shows the reason otherwise; the server re-checks everything on the write (the client flags are hints, not the gate).
@@ -167,7 +167,7 @@ Errors (the standard `{error:{code,message}}` envelope):
 | --- | --- | --- |
 | 401 | `unauthorized` | no credentials |
 | 403 | `demo_restricted` | public demo (policy, before authentication) |
-| 403 | `forbidden` | a read or agent token (existing rule) |
+| 403 | `insufficient_scope` | a read or agent token (existing rule) |
 | 403 | `token_restricted` | a token limited to chosen workspaces (no `.Reach()`) |
 | 404 | `calendar_sync_disabled` | the owner's switch is off |
 | 404 | `not_found` | the connection or event is not the caller's, or the event is not cached |
@@ -335,6 +335,7 @@ An assistant acts for the person but can misread them, and its edit lands in a c
 
 ## Risks
 
+- **Outlook events in a zone without a Windows id** (known limitation, review fixes). Graph takes Windows zone names; an event whose IANA zone has none (and any event sent in `UTC`) is written as the same instant in UTC, as tasks are. The time is right, but Outlook then shows the event as a UTC event, and a later change of that zone's offset rules does not move it. Mapping more zones is the fix, not a different write.
 - **Google's CalDAV privilege sets** for subscribed or holiday calendars are unverified; D3's 403 learning covers a wrong claim at the cost of one refused write.
 - **A server that re-serialises an object on PUT** may drop properties it does not know; we send them all back, and the post-write read shows what the server kept.
 - **Graph `$select` growth** (`attendees`) enlarges the window read for Microsoft connections; guests are the price of not sending invitations by accident. If it proves heavy, read `attendees` only for events that have `isOrganizer` true.

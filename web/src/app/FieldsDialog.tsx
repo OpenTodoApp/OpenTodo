@@ -7,8 +7,10 @@
 import { useMemo, useRef, useState, type DragEvent, type FormEvent, type KeyboardEvent } from 'react'
 import { useMembership, useProjectFieldRows, useProjects, useTaskRowsOfProjects } from '../lib/localData'
 import {
-  countValues, createField, deleteField, FIELD_TYPES, FieldError, fieldDescendants, liveFields, MAX_FIELDS, parseOptions, renameField, reorderField, setFieldOptions,
+  countValues, createField, FIELD_TYPES, FieldError, fieldDescendants, liveFields, MAX_FIELDS, parseOptions, renameField, reorderField, setFieldOptions,
 } from '../lib/fields'
+import { deleteFieldUndoable } from '../lib/undoActions'
+import { withUndoToast } from './undoable'
 import { useApplicableFields } from './useFields'
 import type { FieldDef, FieldType, Project, Task } from '../lib/types'
 import { Button, ConfirmDialog, Field, Icon, IconButton, Input, Select, Textarea, Dialog } from '../ui'
@@ -110,7 +112,7 @@ export function FieldsDialog({ project, onClose }: { project: Project; onClose: 
       {removing && (
         <ConfirmDialog title={t('Delete the field “{name}”?', { name: removing.name })} confirmLabel={t('Delete field')}
           consequence={valuesText(countValues(removing.id, tasks))}
-          onConfirm={() => deleteField(removing.id)} onCancel={() => setRemoving(null)} />
+          onConfirm={() => withUndoToast(deleteFieldUndoable(removing.id))} onCancel={() => setRemoving(null)} />
       )}
     </Dialog>
   )
