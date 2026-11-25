@@ -69,6 +69,7 @@
     <string name="setup_sign_in">Sign in here</string>
     <string name="error_sign_in">Your server is behind a login page, and signing in didn\'t continue in the app. Sign in again here.</string>
     <string name="save_failed">The file could not be saved.</string>
+    <string name="quick_add_failed">The task wasn\'t added. Tap to add it.</string>
     <string name="channel_focus">Focus</string>
     <string name="channel_sync">Syncing</string>
     <string name="focus_generic">Focus session</string>

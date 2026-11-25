@@ -69,6 +69,7 @@
     <string name="setup_sign_in">Zaloguj się tutaj</string>
     <string name="error_sign_in">Twój serwer jest za stroną logowania, a logowanie nie przeszło do aplikacji. Zaloguj się tutaj ponownie.</string>
     <string name="save_failed">Nie udało się zapisać pliku.</string>
+    <string name="quick_add_failed">Nie dodano zadania. Stuknij, aby je dodać.</string>
     <string name="channel_focus">Skupienie</string>
     <string name="channel_sync">Synchronizacja</string>
     <string name="focus_generic">Sesja skupienia</string>

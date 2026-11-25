@@ -18,7 +18,7 @@ import { useDictation } from './useDictation'
 import { useTokenSuggest } from './TokenSuggest'
 import { ParseChips, type ParseChipsProps } from './ParseChips'
 import { QuickAddTint } from './QuickAddTint'
-import { composingEnter } from '../lib/composeKey'
+import { composing, composingEnter } from '../lib/composeKey'
 import { t, preferredLanguages } from '../lib/i18n'
 import { chipRange, type FieldKind, fieldRows, type FieldRow, type QuickAddProject, startToken } from './quickadd/fields'
 import { FieldRows, QuickAddFooter } from './quickadd/FieldRows'
@@ -323,6 +323,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
 
   /** The palette's own keys (D3): ↑/↓ over the rows, Tab edits the highlighted one, Shift+Enter adds and opens, Escape clears the highlight. */
   function fieldKeys(e: KeyboardEvent<HTMLTextAreaElement>): boolean {
+    if (composing(e)) return false
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault()
       setRow((r) => (e.key === 'ArrowDown' ? (r === null ? 0 : Math.min(r + 1, rows.length - 1)) : r === null || r === 0 ? null : r - 1))
@@ -371,6 +372,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
           onPaste={(e) => { if (!pasted.onPaste(e)) paste.onPaste(e) }}
           onKeyDown={(e) => {
             if (composingEnter(e)) { e.preventDefault(); return }
+            if (composing(e)) return
             if (lineDate.escape(e)) return
             if (suggest.onKeyDown(e)) return
             if (palette && fieldKeys(e)) return

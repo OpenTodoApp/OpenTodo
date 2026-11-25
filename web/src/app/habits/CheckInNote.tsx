@@ -11,6 +11,7 @@ import { Button, Input, useMediaQuery } from '../../ui'
 import { act } from '../actionError'
 import { closeNote, usePendingNote } from './checkInNoteStore'
 import { showUndoToast } from '../bulk/toastStore'
+import { composing } from '../../lib/composeKey'
 
 export function CheckInNote({ seriesId, title, className = '' }: { seriesId: string; title: string; className?: string }) {
   const pending = usePendingNote(seriesId)
@@ -36,6 +37,7 @@ export function CheckInNote({ seriesId, title, className = '' }: { seriesId: str
         onChange={(e) => setText(e.target.value)}
         onBlur={() => closeNote()}
         onKeyDown={(e) => {
+          if (composing(e)) return
           if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeNote(); return }
           if (e.key !== 'Enter') return
           e.preventDefault()

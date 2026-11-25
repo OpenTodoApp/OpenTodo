@@ -8,6 +8,7 @@ import { checkEdit, editableFields, type EditableField, type ItemEdits } from '.
 import { t } from '../../lib/i18n'
 import { priorityName } from '../../lib/priority'
 import { Field, Input, Select } from '../../ui'
+import { composing } from '../../lib/composeKey'
 
 export type OnEdit = (index: number, edits: ItemEdits) => void
 
@@ -52,7 +53,8 @@ export function ItemEditor({ item, index, onEdit, onClose, focus }: { item: Revi
     onClose()
   }
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    // Enter and Esc belong to the editor here, not to the card (apply, discard).
+    // Enter and Esc belong to the editor here, not to the card (apply, discard), and to an input method first.
+    if (composing(e)) return
     const inField = (e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'SELECT'
     if (e.key === 'Enter' && inField) { e.preventDefault(); e.stopPropagation(); done() }
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose() }

@@ -18,7 +18,7 @@ import org.json.JSONObject
  * `window.opentodoShell`. The activity is the [Host] for what needs a screen (permission
  * prompts, the biometric prompt, the system browser); the hidden background run has none,
  * so it offers only reminders, widgets, geofences and push (and never asks for a permission,
- * saves a file, gives haptic feedback or starts a distributor's screen). The hidden run passes [backgroundDone], which the
+ * turns on the quick-add notification, saves a file, gives haptic feedback or starts a distributor's screen). The hidden run passes [backgroundDone], which the
  * web app calls when it has synced and handed over (shell-reminders-on D4): only that run
  * lists the capability `background`.
  */
@@ -26,7 +26,7 @@ class Bridge(
     private val context: Context,
     private val origin: String,
     private val host: Host?,
-    private val backgroundDone: (() -> Unit)? = null,
+    private val backgroundDone: ((String?) -> Unit)? = null,
 ) {
     interface Host {
         fun requestNotificationPermission(done: (Boolean) -> Unit)
@@ -126,7 +126,8 @@ class Bridge(
             "playCompletionSound" -> if (host != null && args.length() == 0) main.post { host.playCompletionSound() }
             // Without a screen there is no page to open, and the visible app has no run to end.
             "openAlarmSettings" -> if (host != null) main.post { host.openAlarmSettings() }
-            "backgroundDone" -> if (host == null) backgroundDone?.invoke()
+            // android-quick-add-notification D4: an optional JSON of what the run saved, `{"added": [ids]}`.
+            "backgroundDone" -> if (host == null) backgroundDone?.invoke(args.optString(0, "").ifEmpty { null })
             // shell-reveal-on-paint D2: only the visible app has a launch screen to end.
             "painted" -> if (host != null) main.post { host.painted() }
             "textScaleApplied" -> if (host != null) main.post { host.textScaleApplied() }
@@ -134,6 +135,10 @@ class Bridge(
             "pushSubscribe" -> args.optString(0).let { vapid -> main.post { Push.subscribe(context, host, vapid) { answer(it) } } }
             "pushState" -> answer(Push.stateJson(context))
             "pushUnsubscribe" -> main.post { Push.forget(context) }
+            // android-quick-add-notification D2: only the visible app turns it on or asks for the permission.
+            "quickAddNotification" -> if (host == null) answer("off") else main.post {
+                QuickAddNotification.handle(context, QuickAddNotification.parse(args.optString(0, "{}")), { done -> host.requestNotificationPermission(done) }) { answer(it) }
+            }
             "setSystemBars" -> if (host != null) {
                 // A malformed payload keeps the bars, and nothing of it is logged.
                 val json = args.optString(0)
@@ -190,7 +195,7 @@ class Bridge(
             if (!play) caps += "geofences"
             // shell-push D5: also a background run, which reads pushState to notice a new endpoint.
             caps += "push"
-            if (hasScreen) caps += listOf("share", "links", "obsidian-links", "app-links", "system-bars", "microphone", "files", "haptics", "completion-sound", "first-paint", "focus")
+            if (hasScreen) caps += listOf("share", "links", "obsidian-links", "app-links", "system-bars", "microphone", "files", "haptics", "completion-sound", "first-paint", "focus", "quick-add-notification")
             if (alarmSettings(hasScreen, sdkInt)) caps += "alarm-settings"
             if (hasScreen && biometric) caps += "biometric"
             if (background && !hasScreen) caps += "background"
@@ -267,12 +272,13 @@ class Bridge(
                 haptic: function (kind) { send('haptic', [String(kind)]) },
                 playCompletionSound: function () { send('playCompletionSound', []) },
                 openAlarmSettings: function () { send('openAlarmSettings', []) },
-                backgroundDone: function () { send('backgroundDone', []) },
+                backgroundDone: function (json) { send('backgroundDone', json == null ? [] : [String(json)]) },
                 painted: function () { send('painted', []) },
                 textScaleApplied: function () { send('textScaleApplied', []) },
                 pushSubscribe: function (key) { return call('pushSubscribe', [String(key)]) },
                 pushState: function () { return call('pushState', []) },
-                pushUnsubscribe: function () { send('pushUnsubscribe', []) }
+                pushUnsubscribe: function () { send('pushUnsubscribe', []) },
+                quickAddNotification: function (json) { return call('quickAddNotification', [String(json)]) }
               });
             })();
         """.trimIndent()

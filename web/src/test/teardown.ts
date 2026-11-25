@@ -74,8 +74,36 @@ function countTransactions(): void {
 }
 countTransactions()
 
+// Every database still opening, counted at the IDBFactory prototype. Dexie lists a
+// connection only once it is open, and queues the reads and writes asked for
+// meanwhile: on a busy runner a database the test's last render asked for can
+// still be opening when the teardown looks, and its queued reads then answer
+// (a setState) after the test environment is gone ("window is not defined").
+let opening = 0
+type FactoryProto = { open: (...args: unknown[]) => unknown; __counted?: boolean }
+type OpenRequest = { addEventListener?: (type: string, fn: () => void) => void }
+function countOpens(): void {
+  const proto = (globalThis as { IDBFactory?: { prototype: FactoryProto } }).IDBFactory?.prototype
+  if (!proto || proto.__counted) return
+  const original = proto.open
+  proto.open = function (this: unknown, ...args: unknown[]) {
+    const req = original.apply(this, args) as OpenRequest
+    if (typeof req?.addEventListener !== 'function') return req
+    opening++
+    let settled = false
+    const done = () => { if (!settled) { settled = true; opening-- } }
+    req.addEventListener('success', done)
+    req.addEventListener('error', done)
+    return req
+  }
+  proto.__counted = true
+}
+countOpens()
+
 /** At most this many rounds of waiting for the app's own writes before closing. */
 const SETTLE_ROUNDS = 20
+/** At most this long waiting for databases that are still opening (a blocked open never ends). */
+const OPEN_TIMEOUT_MS = 5_000
 
 const dexie = () => (globalThis as Record<symbol, unknown>)[Symbol.for('Dexie')] as DexieStatic | undefined
 
@@ -86,10 +114,14 @@ async function settle(): Promise<void> {
   // write after a click) finishes first: wait until a round of the event loop
   // starts no transaction but ours, each round queueing a read-write transaction
   // over every table behind the ones in flight. Closing under a pending write
-  // would reject it with "Database has been closed".
-  for (let round = 0; round < SETTLE_ROUNDS; round++) {
+  // would reject it with "Database has been closed". A database still opening
+  // holds work it will start once open, so its rounds do not count.
+  const deadline = performance.now() + OPEN_TIMEOUT_MS
+  for (let round = 0; round < SETTLE_ROUNDS;) {
     const before = started
     await new Promise<void>((r) => setTimeout(r, 5))
+    if (opening > 0 && performance.now() < deadline) continue
+    round++
     const live = Dexie.connections.filter((d) => d.isOpen())
     for (const d of live) await d.transaction('rw', d.tables, () => {}).catch(() => {})
     if (started - before <= live.length) break

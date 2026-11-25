@@ -2028,6 +2028,7 @@
   "Go to Completed": "Ga naar Voltooid",
   "Go to Focus": "Ga naar Focus",
   "Go to Focus: one task, a timer, a break when you need one": "Ga naar Focus: één taak, een timer, een pauze als je die nodig hebt",
+  "Go to Focus: {text}": "Ga naar Focus: {text}",
   "Go to Habits": "Naar Gewoonten",
   "Go to Habits: your habits, their last seven days and a check button (while Habits is on)": "Naar Gewoonten: je gewoonten, hun laatste zeven dagen en een afvinkknop (als Gewoonten aan staat)",
   "Go to Inbox": "Ga naar Inbox",
@@ -3512,7 +3513,8 @@
   "OpenTodo {version} · works offline": "OpenTodo {version} · werkt offline",
   "Opening the shared files…": "Gedeelde bestanden worden geopend…",
   "Opens the source {text}": "Opent de bron {text}",
-  "Open|count": "Openen",
+  "Open|count": "Open",
+  "Open|state": "Open",
   "Optional": "Optioneel",
   "Optional for everyone": "Voor iedereen optioneel",
   "Optional, required for the owner, or required for everyone": "Optioneel, verplicht voor de eigenaar, of verplicht voor iedereen",
@@ -7918,5 +7920,8 @@
   "Phone screens": "Telefoonschermen",
   "A trial of screens made for a phone. This device only.": "Een proef met schermen die voor de telefoon zijn gemaakt. Alleen op dit apparaat.",
   "New phone screens": "Nieuwe telefoonschermen",
-  "Today and the task page in the new design. Turn it off at any time.": "Vandaag en de taakpagina in het nieuwe ontwerp. Je kunt het altijd uitzetten."
+  "Today and the task page in the new design. Turn it off at any time.": "Vandaag en de taakpagina in het nieuwe ontwerp. Je kunt het altijd uitzetten.",
+  "Quick add notification": "Melding voor snelle invoer",
+  "Add a task from the notification shade, in any app.": "Voeg een taak toe vanuit het meldingenpaneel, in elke app.",
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android heeft meldingen voor OpenTodo geweigerd. Sta ze toe in de instellingen van Android."
 }

@@ -8,6 +8,7 @@ import { navigate } from '../router'
 import { HelpContent } from './HelpContent'
 import { t, msg, translatedList } from '../../lib/i18n'
 import { useResetOnChange } from '../../lib/useResetOnChange'
+import { composing } from '../../lib/composeKey'
 
 const SITE = 'https://open-todo.app/docs/'
 
@@ -88,6 +89,7 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
         <input id="help-search" ref={searchRef} type="search" className="ui-input w-full" placeholder={t('Search help, e.g. board, repeat, offline')} value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
+            if (composing(e)) return
             if (e.key === 'ArrowDown') { const first = document.querySelector<HTMLAnchorElement>('[data-help-result]'); if (first) { e.preventDefault(); first.focus() } }
             if (e.key === 'Enter' && results[0]) { e.preventDefault(); const [s, a] = results[0].url.split('#'); open(s, a) }
           }} />

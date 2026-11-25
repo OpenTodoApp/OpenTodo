@@ -9,6 +9,7 @@ import { Card } from '../Card'
 import { Icon } from '../Icon'
 import { MenuGroup, MenuItem } from '../Menu'
 import { t } from '../../lib/i18n'
+import { composing } from '../../lib/composeKey'
 
 export interface AskSkill {
   id: string
@@ -55,7 +56,8 @@ export function AskComposer({ skills, onAsk, examples = true, autoFocus, disable
     setPasted(null)
   }
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+    if (composing(e)) return
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       send()
     }
