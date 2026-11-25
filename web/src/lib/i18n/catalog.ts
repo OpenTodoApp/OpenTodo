@@ -151,10 +151,14 @@ export function msg<S extends string>(message: S): S { return message }
 /**
  * A label table defined at module level, read through t() on every access, so it
  * follows the active language: `const LABEL = translatedMap({ on: msg('On'), off: msg('Off') })`.
+ * An entry that needs a context is a function: `open: () => t('Open', { context: 'state' })`.
  */
-export function translatedMap<K extends string>(source: Record<K, string>): Record<K, string> {
+export function translatedMap<K extends string>(source: Record<K, string | (() => string)>): Record<K, string> {
   const out = {} as Record<K, string>
-  for (const k of Object.keys(source) as K[]) Object.defineProperty(out, k, { get: () => t(source[k]), enumerable: true })
+  for (const k of Object.keys(source) as K[]) {
+    const v = source[k]
+    Object.defineProperty(out, k, { get: () => (typeof v === 'function' ? v() : t(v)), enumerable: true })
+  }
   return out
 }
 

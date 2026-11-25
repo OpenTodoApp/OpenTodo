@@ -26,7 +26,7 @@ const clip = (s: string, n = 60) => (s.length > n ? `${s.slice(0, n - 1)}…` : 
 /** A field's value in words; empty for nothing. */
 function words(field: string, v: unknown, names: Names): string {
   if (v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length)) {
-    return field === 'project_id' ? t('Inbox') : field === 'completed_at' ? t('Open') : ''
+    return field === 'project_id' ? t('Inbox') : field === 'completed_at' ? t('Open', { context: 'state' }) : ''
   }
   switch (field) {
     case 'due': {

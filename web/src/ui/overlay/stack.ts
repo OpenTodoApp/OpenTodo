@@ -338,7 +338,8 @@ export function watchVisualViewport(): () => void {
     if (keyboard && !open && fits && vv.scale <= 1.01 && (window.scrollX || window.scrollY)) window.scrollTo(0, 0)
     keyboard = open
     const el = document.activeElement as HTMLElement | null
-    if (el && el.matches?.('input, textarea, select, [contenteditable="true"]')) keepAboveKeyboard(el, vv)
+    // The touch title editor keeps its Save and Cancel in view with its field (touch-title-editing D4).
+    if (el && el.matches?.('input, textarea, select, [contenteditable="true"]')) keepAboveKeyboard(el.closest<HTMLElement>('[data-inline-compact]') ?? el, vv)
   }
   vv.addEventListener('resize', update)
   vv.addEventListener('scroll', update)

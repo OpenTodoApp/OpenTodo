@@ -15,6 +15,7 @@ import {
 } from '.'
 import { applyCatalog, fetchCatalog, formatNumber } from './catalog'
 import { ERROR_MESSAGES } from './errors'
+import { KEYWORD_NAME } from '../../app/filter/conditionText'
 import serverCodes from './server-error-codes.json'
 
 afterEach(async () => {
@@ -51,6 +52,13 @@ describe('messages', () => {
     expect(html).toBe('<p>Connecté en tant que <b>Ana</b>.</p>')
     expect(t('{entity, select, task {a task} project {a project} label {a label} section {a section} comment {a comment} view {a view} field {a field} reminder {a reminder} other {an item}}', { entity: 'label' })).toBe('une étiquette')
     expect(t('A message no catalog has')).toBe('A message no catalog has')
+  })
+
+  it('the state "Open" is its own message, apart from the verb (#2063)', async () => {
+    await applyLanguagePreference('de', ['en-US'])
+    expect(t('Open')).toBe('Öffnen')
+    expect(t('Open', { context: 'state' })).toBe('Offen')
+    expect(KEYWORD_NAME.open).toBe('Offen')
   })
 
   it('Dutch plural and grouping: 1 taak, 2 taken, 1.234 (more-languages 3.5)', async () => {
