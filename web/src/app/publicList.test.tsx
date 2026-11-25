@@ -186,11 +186,17 @@ describe('public route in the app', () => {
       if (String(url).includes('/api/v1/public/')) return new Response(JSON.stringify(list()), { status: 200 })
       return new Response('{}', { status: 404 })
     }))
+    // Asking to keep the local copy is the sign-in's last step (App's refresh): once
+    // it is asked, the visitor is signed in and nothing of the sign-in is left to run
+    // after this test's environment is gone.
+    const { installPlatform, platform } = await import('../lib/platform')
+    const persistStorage = vi.fn(async () => false)
+    installPlatform({ ...platform, persistStorage })
     const { App } = await import('./App')
     const r = await render(<App />)
     await waitFor(() => r.container.querySelectorAll('[data-public-task]').length === 4)
-    // Signed in by now: the app has its auth answer, the moment sync would start.
-    await waitFor(() => vi.mocked(fetch).mock.calls.some((c) => String(c[0]).includes('/api/v1/auth/status')), 'the auth status')
+    // Signed in: the moment sync would start.
+    await waitFor(() => persistStorage.mock.calls.length > 0, 'the sign-in')
     await flush()
     expect(startSync).not.toHaveBeenCalled()
     await r.unmount()

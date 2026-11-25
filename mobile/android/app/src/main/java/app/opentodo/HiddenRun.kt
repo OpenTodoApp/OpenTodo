@@ -31,18 +31,23 @@ import java.util.concurrent.TimeUnit
  * Runs the web app briefly in a hidden web view (native-shells D4): hourly so it syncs and
  * hands over a fresh schedule and widget data, once for a notification's Snooze or
  * Dismiss, which the web app applies as its own reminder ops, and once after a pushed
- * reminder (shell-push D4). The run ends when the web app
+ * reminder (shell-push D4) or a quick-add notification's reply. The run ends when the web app
  * says it is done (shell-reminders-on D4: capability `background`, `backgroundDone()`), or
  * after 90 seconds when nothing is heard (an older web app, a server that does not answer).
  */
 class HiddenRunWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     @SuppressLint("SetJavaScriptEnabled")
     override suspend fun doWork(): Result {
-        val origin = Prefs(applicationContext).server ?: return Result.success()
+        // android-quick-add-notification D4: a reply's run knows its text and the id to create it with.
+        val addText = inputData.getString(QUICK_ADD_TEXT)
+        val addId = inputData.getString(QUICK_ADD_ID)
+        val origin = Prefs(applicationContext).server ?: return Result.success().also { addFailed(addText, addId, emptySet()) }
         // android-widget-list D2: a widget run takes every tick queued so far; a later run of the
         // chain that finds the queue empty has nothing to do.
         val path = if (inputData.getBoolean(WIDGET_RUN, false)) WidgetStore.takeCompletePath(applicationContext) ?: return Result.success()
+        else if (addText != null && addId != null) QuickAddNotification.replyPath(addText, addId)
         else inputData.getString("path")?.takeIf { it.startsWith("/") } ?: "/"
+        var result: String? = null
         withContext(Dispatchers.Main) {
             val web = WebView(applicationContext)
             web.settings.javaScriptEnabled = true
@@ -55,11 +60,17 @@ class HiddenRunWorker(context: Context, params: WorkerParameters) : CoroutineWor
                     !SignInFlow.hiddenRunStays(request.url.toString(), origin)
             }
             val done = CompletableDeferred<Unit>()
-            Bridge(applicationContext, origin, null) { done.complete(Unit) }.install(web)
+            Bridge(applicationContext, origin, null) { r -> result = r; done.complete(Unit) }.install(web)
             web.loadUrl(origin + path)
             try { awaitBackgroundDone(done, LIMIT_MS) } finally { web.stopLoading(); web.destroy() }
         }
+        addFailed(addText, addId, QuickAddNotification.added(result))
         return Result.success()
+    }
+
+    /** A reply the run did not save comes back as a notification that opens quick add with it (D4). */
+    private fun addFailed(text: String?, id: String?, added: Set<String>) {
+        if (text != null && id != null && id !in added) QuickAddNotification.failed(applicationContext, text, id)
     }
 
     /**
@@ -83,6 +94,8 @@ class HiddenRunWorker(context: Context, params: WorkerParameters) : CoroutineWor
     companion object {
         const val LIMIT_MS = 90_000L
         const val WIDGET_RUN = "widget"
+        const val QUICK_ADD_TEXT = "quickAddText"
+        const val QUICK_ADD_ID = "quickAddId"
         private const val SYNC_CHANNEL = "sync"
         private const val SYNC_NOTIFICATION = 7301
     }
@@ -108,6 +121,19 @@ object HiddenRun {
     /** A notification action: applied locally at once and synced when there is a network. */
     fun enqueueOnce(context: Context, path: String) {
         val req = OneTimeWorkRequestBuilder<HiddenRunWorker>().setInputData(workDataOf("path" to path)).build()
+        WorkManager.getInstance(context).enqueue(req)
+    }
+
+    /**
+     * A reply in the quick-add notification (android-quick-add-notification D4): expedited when
+     * the system allows, like a widget tick. The id goes with the text, so a run WorkManager
+     * repeats after the process died finds the task it created and adds nothing twice.
+     */
+    fun enqueueQuickAdd(context: Context, text: String, id: String) {
+        val req = OneTimeWorkRequestBuilder<HiddenRunWorker>()
+            .setInputData(workDataOf(HiddenRunWorker.QUICK_ADD_TEXT to text, HiddenRunWorker.QUICK_ADD_ID to id))
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            .build()
         WorkManager.getInstance(context).enqueue(req)
     }
 

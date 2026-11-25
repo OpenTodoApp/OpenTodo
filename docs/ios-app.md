@@ -54,6 +54,10 @@ The app opens on its background colour, light or dark with the phone, and shows 
 
 Long-press the app icon for **Add task** (quick add), **Today** or [**Change server**](#connect-to-your-server).
 
+## Links to tasks
+
+A task's link in a calendar event, from the [calendar feed](calendar-feeds.md) or [calendar sync](calendar-sync.md), opens Safari. On a task's page Safari shows a banner with **Open**, which opens the task in the app. The app only opens links to the server it is connected to. Once you close the banner, Safari stops showing it on that site. iOS can't open these links in the app straight away, because a self-hosted server's address can't be built into the app.
+
 ## Offline
 
 The app from TestFlight or the App Store opens any server, and iOS gives such an app no service worker. When the server is unreachable at launch, the app opens from its last copy in the web view's cache and reads the tasks it already holds, and syncs once the server answers again; the first launch, before the app has loaded once, still needs the network, and says so when there is none. For a full offline start with the precache, use the [installed web app](install-phone.md#iphone-and-ipad), or build the app for your one server: set `OPENTODO_APP_BOUND_HOST=todo.example.com` when you build, and it gets the whole installed-web-app treatment, the service worker, the precache and an offline start.
@@ -61,6 +65,12 @@ The app from TestFlight or the App Store opens any server, and iOS gives such an
 ## Sharing into OpenTodo
 
 The app appears in the share sheet of other apps. A link, some text or files open the capture screen, ready to save: up to ten files, 20 MB each and 25 MB together — check your server's own limit per file. A share that arrives before you have entered a server waits until you have.
+
+## Siri and Shortcuts
+
+Ask Siri **"What's on today in OpenTodo"**: it answers with today's count, the overdue count and up to five tasks with their times, from the list the app last published, without opening the app or asking the server. While your phone is locked, or for an encrypted account that was locked at the time, it gives the counts only. A list from an earlier day comes with its date. **"Open Today in OpenTodo"** and **"Open quick add in OpenTodo"** open the app there.
+
+All three are in the Shortcuts app, ready to use in your own shortcuts, and any of them can go on the Action Button (**Settings → Action Button → Shortcut**). Siri knows the phrases in each of the app's languages that it speaks itself.
 
 ## Widgets
 

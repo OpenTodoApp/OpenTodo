@@ -8,6 +8,7 @@ import tseslint from 'typescript-eslint'
 import reactHooks from 'eslint-plugin-react-hooks'
 import noGenericAriaLabel from './eslint/no-generic-aria-label.js'
 import noFixedWait from './eslint/no-fixed-wait.js'
+import compositionGuard from './eslint/composition-guard.js'
 
 // One lazy() for the app (OpenSpec change lazy-retry-online): React's keeps a failed
 // import forever, src/lib/lazy.ts lets a part that failed offline load again.
@@ -83,6 +84,15 @@ export default [
     files: ['src/**/*.test.{ts,tsx}', 'src/**/*.testkit.{ts,tsx}'],
     plugins: { 'test-hygiene': { rules: { 'no-fixed-wait': noFixedWait } } },
     rules: { 'test-hygiene/no-fixed-wait': 'error' },
+  },
+  {
+    // Keys wait for the input method (OpenSpec composition-keys): a text field's
+    // keydown handler that acts on Enter, Escape, Tab or an arrow returns first while
+    // Japanese, Chinese or Korean text is being composed (composing, src/lib/composeKey.ts).
+    files: ['src/app/**/*.{ts,tsx}', 'src/ui/**/*.{ts,tsx}'],
+    ignores: ['src/**/*.test.{ts,tsx}', 'src/**/*.testkit.{ts,tsx}', 'src/**/*.stories.tsx'],
+    plugins: { 'input-method': { rules: { 'composition-guard': compositionGuard } } },
+    rules: { 'input-method/composition-guard': 'error' },
   },
   {
     // The design system stands alone (web-layering): primitives are tested and shown

@@ -7920,5 +7920,8 @@
   "Phone screens": "Telefonansichten",
   "A trial of screens made for a phone. This device only.": "Ein Test von Ansichten, die für das Telefon gemacht sind. Nur auf diesem Gerät.",
   "New phone screens": "Neue Telefonansichten",
-  "Today and the task page in the new design. Turn it off at any time.": "Heute und die Aufgabenseite im neuen Design. Jederzeit abschaltbar."
+  "Today and the task page in the new design. Turn it off at any time.": "Heute und die Aufgabenseite im neuen Design. Jederzeit abschaltbar.",
+  "Quick add notification": "Schnelleingabe-Benachrichtigung",
+  "Add a task from the notification shade, in any app.": "Füge aus der Benachrichtigungsleiste eine Aufgabe hinzu, in jeder App.",
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android hat Benachrichtigungen für OpenTodo abgelehnt. Erlaube sie in den Android-Einstellungen."
 }

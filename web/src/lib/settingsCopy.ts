@@ -447,6 +447,15 @@ export const SETTINGS_COPY = {
       parse: { label: msg('Parse natural language'), description: msg('Dates and times, {project}, {label}, {p1}–{p4} and {estimate}; "quotes" keep text as is.') },
     },
   },
+  // The Android app's quick-add notification (android-quick-add-notification D1): the shell's switch for this phone.
+  'quick-add-notification': {
+    title: msg('Quick add notification'),
+    icon: 'bell',
+    description: msg('Add a task from the notification shade, in any app.'),
+    learnMore: 'android-app',
+    rows: { phone: { label: msg('On this phone') } },
+    notices: { denied: msg('Android refused notifications for OpenTodo. Allow them in Android\'s settings.') },
+  },
   // Default reminders (default-reminders D8): the synced user_prefs.reminder_default_*.
   'default-reminders': {
     title: msg('Default reminders'),

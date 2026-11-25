@@ -1,0 +1,7 @@
+/* Siri phrases of the App Shortcuts (apple-shortcuts D4). Every phrase names the app with
+   ${applicationName}. A String Catalog needs iOS 17, so these are .strings files. */
+
+"Open Today in ${applicationName}" = "Otwórz Dziś w ${applicationName}";
+"Open quick add in ${applicationName}" = "Otwórz szybkie dodawanie w ${applicationName}";
+"What do I have today in ${applicationName}" = "Co mam dziś w ${applicationName}";
+"What's on today in ${applicationName}" = "Co jest na dziś w ${applicationName}";

@@ -5,6 +5,7 @@ import { estimateFocus } from './signals'
 import { t } from '../lib/i18n'
 import { estimateUndoable } from '../lib/undoActions'
 import { act } from './actionError'
+import { composing } from '../lib/composeKey'
 
 /** The editor's presets (sidebar-brand-and-row-grid D5): four common sizes. */
 export const ESTIMATE_EDITOR_PRESETS = [15, 30, 60, 120] as const
@@ -89,6 +90,7 @@ export function EstimateField({ task }: { task: Task }) {
           if (!cancelled.current) commit()
         }}
         onKeyDown={(e) => {
+          if (composing(e)) return
           if (e.key === 'Enter') {
             e.preventDefault()
             if (commit()) ref.current?.blur()

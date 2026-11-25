@@ -30,6 +30,24 @@ describe('ComboboxPanel', () => {
     await unmount()
   })
 
+  // composition-keys: arrows and Enter while an input method composes choose its candidate, not an option.
+  it('neither moves nor picks while an input method is composing', async () => {
+    useDatabase(`cb-${Date.now()}-ime`)
+    const onPick = vi.fn()
+    const { container, unmount } = await render(<ComboboxPanel {...base} source={PEOPLE} onPick={onPick} />)
+    await type(input(container), 'wo')
+    const before = input(container).getAttribute('aria-activedescendant')
+    await key(input(container), 'ArrowDown', { isComposing: true })
+    await key(input(container), 'Enter', { isComposing: true })
+    await flush()
+    expect(input(container).getAttribute('aria-activedescendant')).toBe(before)
+    expect(onPick).not.toHaveBeenCalled()
+    await key(input(container), 'Enter')
+    await flush()
+    expect(onPick).toHaveBeenCalledOnce()
+    await unmount()
+  })
+
   it('typing on narrows to the same options as typing the whole text at once (list-rendering-at-scale D6)', async () => {
     useDatabase(`cb-${Date.now()}-n`)
     const many: Item[] = [...PEOPLE, { id: 'u6', name: 'Ward roster', email: 'wo@x.org' }, { id: 'u7', name: 'Two words' }, { id: 'u8', name: 'Owl watch' }, { id: 'u9', name: 'W o r k' }]

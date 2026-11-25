@@ -11,6 +11,7 @@ import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { parseTimeInput } from './parse'
 import { t } from '../../lib/i18n'
 import { useResetOnChange } from '../../lib/useResetOnChange'
+import { composing } from '../../lib/composeKey'
 
 export interface TimeFieldProps {
   /** `HH:MM`, or null when empty. */
@@ -75,6 +76,7 @@ export function TimeField({ value, onChange, label, hideLabel, disabled, classNa
   }
 
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (composing(e)) return
     switch (e.key) {
       case 'ArrowDown':
       case 'ArrowUp':

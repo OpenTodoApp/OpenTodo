@@ -9,7 +9,7 @@ import { logicalToday } from '../lib/dates'
 import { useMe } from '../lib/sharing'
 import { dismissChip, type Chip, type LabelRef, loadQuickAddSettings, onQuickAddSettingsChange, type ProjectRef, rebaseDismissed, resolveDayMonthOrder, resolveLanguages, type Span } from '../lib/nlp'
 import { editPlan, parseEdit, type EditPlan } from '../lib/nlp/edit'
-import { composingEnter } from '../lib/composeKey'
+import { composing } from '../lib/composeKey'
 import { preferredLanguages } from '../lib/i18n'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { dayPartsOn } from '../lib/dayParts'
@@ -111,7 +111,7 @@ export function TitleField({ title, value, onChange, onCommit, onCancel, project
   }, [])
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    if (composingEnter(e)) return
+    if (composing(e)) return
     if (suggest.onKeyDown(e)) return
     if (onKeyDownFirst?.(e)) return
     if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur() }

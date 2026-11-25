@@ -212,6 +212,8 @@ func (s *Server) registerWebAppRoutes(mux *routes, web http.Handler) {
 		// A branded instance (instance-branding) gets its name and icons in the
 		// page and the manifest on the way out.
 		web = s.brandedWeb(web)
+		// A task's page offers the iPhone app in Safari (ios-app-banner).
+		web = s.appBannerWeb(web)
 		// The share sheet POSTs here when the service worker is not active yet.
 		mux.handle("POST /share", public("the share sheet posts here before the service worker runs; it only redirects into the app"), s.handleSharePost)
 		mux.handler("/", public("the web app; it signs in through the API"), web)

@@ -12,6 +12,7 @@ import { Tooltip } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { CalendarGrid, inputLanguages } from './DateField'
 import { parseDateInput, parseDateTimeInput, type DateTimeInput } from './parse'
+import { composing } from '../../lib/composeKey'
 
 export interface DatePickerProps {
   /** `YYYY-MM-DD`, or null when empty. */
@@ -98,6 +99,7 @@ export function DatePicker({ value, onChange, onChangeTimed, label, choices, cho
     setDraft(formatDate(got.date, 'long', resolved))
   }
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (composing(e)) return
     if (e.key === 'Enter') { e.preventDefault(); commit() }
     else if (e.key === 'Escape' && draft !== words) { e.stopPropagation(); setDraft(words); setError(null) }
   }

@@ -19,6 +19,7 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 import { relativeTime } from '../lib/dates'
+import { composing } from '../lib/composeKey'
 
 export type LogStatus = 'loading' | 'ready' | 'offline' | 'error'
 
@@ -281,7 +282,7 @@ function AuditFilters({ id, open, form, accounts, onUpdate, onForm, onApplyAccou
       <Field label={t('Account')}>
         <Input className="w-full md:w-52" type="search" list="audit-accounts" placeholder={t('email')} value={form.actor}
           onChange={(e) => (e.target.value === '' ? onUpdate({ actor: '' }) : onForm({ ...form, actor: e.target.value }))} onBlur={onApplyAccount}
-          onKeyDown={(e) => { if (e.key === 'Enter') onApplyAccount() }} autoComplete="off" />
+          onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Enter') onApplyAccount() }} autoComplete="off" />
       </Field>
       <datalist id="audit-accounts">{accounts.map((a) => <option key={a} value={a} />)}</datalist>
       <Field label={t('Outcome')}>
