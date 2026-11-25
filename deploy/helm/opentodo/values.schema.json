@@ -90,6 +90,7 @@
           "type": "array",
           "items": {
             "type": "object",
+            "additionalProperties": false,
             "required": ["name"],
             "properties": {
               "group": { "type": "string" },

@@ -85,7 +85,7 @@ The chart then sets `OPENTODO_BASE_URL` to `https://todo.example.com`. If TLS en
 
 ## Gateway API
 
-On a cluster with a Gateway API implementation (Envoy Gateway, Cilium, Istio, Traefik, NGINX Gateway Fabric and others), the chart can create an `HTTPRoute` (`gateway.networking.k8s.io/v1`) instead of, or beside, the Ingress. It sends every path of its hostnames to the Service. The Gateway is yours: name it in `parentRefs`.
+On a cluster with a Gateway API implementation (Envoy Gateway, Cilium, Istio, Traefik, NGINX Gateway Fabric and others), the chart can create an `HTTPRoute` (`gateway.networking.k8s.io/v1`, so Gateway API v1.0 or later) instead of, or beside, the Ingress. It sends every path of its hostnames to the Service. The Gateway is yours: name it in `parentRefs`.
 
 ```yaml
 httpRoute:

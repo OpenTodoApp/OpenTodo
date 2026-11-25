@@ -78,9 +78,9 @@ httpRoute:
   #   namespace: gateway-system
   #   sectionName: https
   parentRefs: []
-  # Empty: every hostname of the Gateway's listener.
-  hostnames:
-    - todo.example.com
+  # Empty: every hostname of the Gateway's listener. For example:
+  # - todo.example.com
+  hostnames: []
 
 resources:
   requests:
