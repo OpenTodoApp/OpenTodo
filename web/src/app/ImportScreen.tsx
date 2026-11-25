@@ -349,7 +349,7 @@ export function ImportView(p: ImportViewProps) {
           <div className="max-h-[50dvh] overflow-auto rounded-control border border-default" data-scroll-x>
             <table className="w-full text-start text-body">
               <thead className="sticky top-0 bg-canvas text-meta text-muted">
-                <tr><th className="px-2 py-1">{t('Row')}</th><th className="px-2 py-1">{t('Title')}</th><th className="px-2 py-1">{t('Project')}</th><th className="px-2 py-1">{t('Outcome')}</th><th className="px-2 py-1">{t('Details')}</th></tr>
+                <tr><th className="px-2 py-1 text-start">{t('Row')}</th><th className="px-2 py-1 text-start">{t('Title')}</th><th className="px-2 py-1 text-start">{t('Project')}</th><th className="px-2 py-1 text-start">{t('Outcome')}</th><th className="px-2 py-1 text-start">{t('Details')}</th></tr>
               </thead>
               <tbody>
                 {p.preview.rows.slice(0, TABLE_LIMIT).map((r, i) => (

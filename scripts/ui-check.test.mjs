@@ -115,6 +115,8 @@ test('rule 7 also covers floats, origins, gradients, safe padding, translates an
   assert.equal(physicalDirectionProblems('a.tsx', `<div className="translate-x-4 rtl:ms-2" />`).length, 1)
   assert.equal(physicalDirectionProblems('a.tsx', `<div className="md:translate-x-4 rtl:-translate-x-4" />`).length, 1)
   assert.deepEqual(physicalDirectionProblems('a.tsx', `<div className="md:translate-x-4 md:rtl:-translate-x-4 translate-x-0 rtl:translate-x-0" />`), [])
+  // A class glued to a template expression is still a class (and Tailwind cannot see it there).
+  assert.equal(physicalDirectionProblems('a.tsx', 'const c = `ui-btn -ml-2${x ? " lg:hidden" : ""}`').length, 1)
 })
 
 test('a component without a stories file beside it is reported, in web/src/ui and web/src/phone alike (phone-ui-trial D7)', async () => {
