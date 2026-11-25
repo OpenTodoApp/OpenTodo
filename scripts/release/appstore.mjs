@@ -499,11 +499,15 @@ const OPEN_SUBMISSIONS = new Set(['READY_FOR_REVIEW', 'UNRESOLVED_ISSUES'])
 const ACTIVE_SUBMISSIONS = new Set(['WAITING_FOR_REVIEW', 'IN_REVIEW'])
 export const WHATS_NEW_LIMIT = 4000
 export const RELEASE_TYPE = 'AFTER_APPROVAL'
-/** `a` < `b` for marketing versions (`1.5.10` < `1.6.0`); an unreadable one counts as lower. */
+/**
+ * `a` < `b` for marketing versions (`1.5.10` < `1.6.0`). An unreadable one is never lower, so
+ * nothing is moved or withdrawn on its account.
+ */
 export function versionBelow(a, b) {
-  const pa = String(a ?? '').split('.').map(Number)
-  const pb = String(b ?? '').split('.').map(Number)
-  if (pa.some(Number.isNaN)) return true
+  const readable = (v) => /^\d+(\.\d+)*$/.test(String(v ?? ''))
+  if (!readable(a) || !readable(b)) return false
+  const pa = String(a).split('.').map(Number)
+  const pb = String(b).split('.').map(Number)
   for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
     const d = (pa[i] ?? 0) - (pb[i] ?? 0)
     if (d) return d < 0
@@ -528,33 +532,56 @@ export function whatsNew(changelog, version) {
   return releaseNotes(changelog, version, WHATS_NEW_LIMIT)
 }
 
+const items = (call, sub) => call('reading the submission\'s items', 'GET', `/v1/reviewSubmissions/${sub.id}/items?include=appStoreVersion&limit=200`).then((r) => r.data ?? [])
+const holdsVersion = (list, id) => list.some((i) => i.relationships?.appStoreVersion?.data?.id === id)
+const holdsOther = (list, id) => list.some((i) => i.relationships?.appStoreVersion?.data?.id !== id)
+const said = (state) => state.toLowerCase().replaceAll('_', ' ')
+
 /**
  * Withdraws `pending`, an earlier version still waiting for review, so that `version` can take
- * its place: the review submission that holds it alone is cancelled, and Apple then returns the
- * version to an editable state, which is awaited and returned. Returns null when no waiting
- * submission holds it; a submission that also holds other items is left alone (an error).
- * Returns the version's new state and the withdrawn submission.
+ * its place (#1976). Everything that could stop the submission afterwards is checked first,
+ * with nothing written: no other editable version, a localization to set, no other submission
+ * waiting or in review, no draft submission holding other items, and the waiting submission
+ * holding `pending` alone. The submission's state is read again just before it is cancelled.
+ * Apple then returns the version to an editable state, which is awaited. Returns the version's
+ * new state and the withdrawn submission, or null when no waiting submission holds it.
  */
-async function withdraw(call, { app, pending, version, log, pause, attempts, wait }) {
+async function withdraw(call, { app, pending, versions, version, log, pause, attempts, wait }) {
   const old = pending.attributes?.versionString
-  const subs = (await call('listing the review submissions', 'GET', `/v1/reviewSubmissions?filter[app]=${app.id}&filter[platform]=IOS&filter[state]=WAITING_FOR_REVIEW&limit=200`)).data ?? []
-  for (const sub of subs) {
-    const items = (await call('reading the submission\'s items', 'GET', `/v1/reviewSubmissions/${sub.id}/items?include=appStoreVersion&limit=200`)).data ?? []
-    if (!items.some((i) => i.relationships?.appStoreVersion?.data?.id === pending.id)) continue
-    if (items.some((i) => i.relationships?.appStoreVersion?.data?.id !== pending.id)) {
-      throw new Error(`review submission ${sub.id} holds ${old} and other items: withdraw it in App Store Connect, then run again; nothing was changed`)
+  const stop = (why) => new Error(`App Store version ${old} is waiting for review and ${version} would take its place, but ${why}: nothing was changed`)
+  const other = versions.find((v) => v.id !== pending.id && EDITABLE_STATES.has(versionState(v)))
+  if (other) throw stop(`version ${other.attributes?.versionString} is open for editing too`)
+  const locs = (await call(`reading the localizations of ${old}`, 'GET', `/v1/appStoreVersions/${pending.id}/appStoreVersionLocalizations?limit=200`)).data ?? []
+  if (!locs.length) throw stop(`${old} has no localization`)
+  const states = [...OPEN_SUBMISSIONS, ...ACTIVE_SUBMISSIONS].join(',')
+  const subs = (await call('listing the review submissions', 'GET', `/v1/reviewSubmissions?filter[app]=${app.id}&filter[platform]=IOS&filter[state]=${states}&limit=200`)).data ?? []
+  let target = null
+  for (const x of subs) {
+    const list = await items(call, x)
+    const active = ACTIVE_SUBMISSIONS.has(x.attributes?.state)
+    if (active && holdsVersion(list, pending.id) && !holdsOther(list, pending.id) && x.attributes?.state === 'WAITING_FOR_REVIEW') {
+      target = x
+      continue
     }
-    const res = await call(`withdrawing ${old} from review, superseded by ${version}`, 'PATCH', `/v1/reviewSubmissions/${sub.id}`, { data: { type: 'reviewSubmissions', id: sub.id, attributes: { canceled: true } } })
-    log('notice', `App Store version ${old} was waiting for review: withdrawn, ${version} takes its place`)
-    if (res.data?.id === 'dry-run') return { state: 'DEVELOPER_REJECTED', submission: sub.id }
-    for (let i = 0; i < attempts; i++) {
-      const state = versionState((await call(`reading App Store version ${old}`, 'GET', `/v1/appStoreVersions/${pending.id}`)).data)
-      if (EDITABLE_STATES.has(state)) return { state, submission: sub.id }
-      await pause(wait)
-    }
-    throw new Error(`App Store version ${old} was withdrawn from review but is not editable yet: run the workflow again in a few minutes`)
+    if (active) throw stop(`review submission ${x.id} is ${said(x.attributes.state)} with ${holdsVersion(list, pending.id) ? `${old} and other items` : 'other items'}: withdraw it in App Store Connect, then run again`)
+    if (holdsOther(list, pending.id)) throw stop(`draft review submission ${x.id} holds other items: submit or clear it in App Store Connect, then run again`)
   }
-  return null
+  if (!target) return null
+  const now = (await call('reading the review submission again', 'GET', `/v1/reviewSubmissions/${target.id}`)).data
+  if (now?.attributes?.state !== 'WAITING_FOR_REVIEW') throw stop(`review submission ${target.id} is now ${said(now?.attributes?.state ?? 'gone')}`)
+  const res = await call(`withdrawing ${old} from review, superseded by ${version}`, 'PATCH', `/v1/reviewSubmissions/${target.id}`, { data: { type: 'reviewSubmissions', id: target.id, attributes: { canceled: true } } })
+  if (res.data?.id === 'dry-run') {
+    log('notice', `App Store version ${old} is waiting for review: it would be withdrawn and become ${version}`)
+    return { state: 'DEVELOPER_REJECTED', submission: target.id }
+  }
+  log('notice', `App Store version ${old} was waiting for review: withdrawn, ${version} takes its place`)
+  let state = ''
+  for (let i = 0; i < attempts; i++) {
+    state = versionState((await call(`reading App Store version ${old}`, 'GET', `/v1/appStoreVersions/${pending.id}`)).data)
+    if (EDITABLE_STATES.has(state)) return { state, submission: target.id }
+    await pause(wait)
+  }
+  throw new Error(`App Store version ${old} was withdrawn from review, but Apple still shows it as ${said(state || 'unknown')} after ${Math.round((attempts * wait) / 60_000)} minutes: once it is editable (Developer Rejected), run iOS TestFlight for v${version} with app_store submit`)
 }
 
 /**
@@ -568,7 +595,18 @@ async function withdraw(call, { app, pending, version, log, pause, attempts, wai
  * is already submitted, in review or approved is left alone, a draft submission is reused, and
  * a value already set is not written again. Returns what it found or did.
  */
-export async function submitForReview(call, { version, build, notes, log = defaultLog, pause = sleep, attempts = 20, wait = 15_000 }) {
+export async function submitForReview(call, opts) {
+  const done = {}
+  try {
+    return await submit(call, opts, done)
+  } catch (err) {
+    // After a withdrawal the earlier version is editable, no longer waiting: say so, and how to go on.
+    if (done.withdrawn) throw new Error(`App Store version ${done.withdrawn.version} was withdrawn from review and is now ${said(done.withdrawn.state)} (editable): ${err.message}; run iOS TestFlight for v${opts.version} again with app_store submit`)
+    throw err
+  }
+}
+
+async function submit(call, { version, build, notes, log = defaultLog, pause = sleep, attempts = 20, wait = 15_000 }, done) {
   const app = await findApp(call)
   if (!app) throw new Error(`no app record for ${BUNDLE_IDS[0].identifier}`)
   const found = await findBuild(call, app.id, version, build)
@@ -600,14 +638,18 @@ export async function submitForReview(call, { version, build, notes, log = defau
     // An earlier version Apple has not started reviewing is superseded by this release: its
     // submission is withdrawn, and the version is moved to this one below (#1976).
     if (pending && versionState(pending) === 'WAITING_FOR_REVIEW' && versionBelow(pending.attributes?.versionString, version)) {
-      const out = await withdraw(call, { app, pending, version, log, pause, attempts, wait })
+      const out = await withdraw(call, { app, pending, versions, version, log, pause, attempts, wait })
       if (out) {
         versions = versions.map((v) => (v.id === pending.id ? { ...v, attributes: { ...v.attributes, appVersionState: out.state } } : v))
         withdrawn = out.submission
+        done.withdrawn = { version: pending.attributes?.versionString, state: out.state }
         pending = null
       }
     }
-    if (pending) throw new Error(`App Store version ${pending.attributes?.versionString} is ${versionState(pending).toLowerCase().replaceAll('_', ' ')}: Apple takes no new version until it is released or withdrawn; nothing was changed. Once it is released, run iOS TestFlight for v${version} with app_store submit-only and build_number ${build}`)
+    if (pending) {
+      const hint = versionBelow(pending.attributes?.versionString, version) ? `. Once it is released, run iOS TestFlight for v${version} with app_store submit-only and build_number ${build}` : ''
+      throw new Error(`App Store version ${pending.attributes?.versionString} is ${said(versionState(pending))}: Apple takes no new version until it is released or withdrawn; nothing was changed${hint}`)
+    }
     // Apple keeps one editable version per platform: an unsubmitted earlier one is moved to this
     // version. A later one (an older tag run again by hand) is never moved back.
     const editable = versions.find((v) => EDITABLE_STATES.has(versionState(v)))
@@ -650,7 +692,8 @@ export async function submitForReview(call, { version, build, notes, log = defau
 
   const states = [...OPEN_SUBMISSIONS, ...ACTIVE_SUBMISSIONS].join(',')
   const subs = ((await call('listing the review submissions', 'GET', `/v1/reviewSubmissions?filter[app]=${app.id}&filter[platform]=IOS&filter[state]=${states}&limit=200`)).data ?? [])
-    .filter((x) => x.id !== withdrawn) // Apple may still list it for a moment
+    // Apple may still list the withdrawn submission as active for a moment; once open, it is reused.
+    .filter((x) => !(x.id === withdrawn && ACTIVE_SUBMISSIONS.has(x.attributes?.state)))
   const holds = async (x) => ((await call('reading the submission\'s items', 'GET', `/v1/reviewSubmissions/${x.id}/items?include=appStoreVersion&limit=200`)).data ?? [])
     .some((i) => i.relationships?.appStoreVersion?.data?.id === target.id)
   // One active submission per platform: this version's means it is submitted; another's blocks it.

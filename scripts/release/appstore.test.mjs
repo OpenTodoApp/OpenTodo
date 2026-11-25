@@ -379,7 +379,7 @@ test('at the certificate limit with no certificate of an earlier run, sign stops
 // ---- App Store submission (ios-distribution D10) ----
 
 /** A fake App Store Connect for `submit`: the app, one build, versions, localizations and submissions. */
-function store({ versions = [], build = { processingState: 'VALID', usesNonExemptEncryption: false }, locs = [{ id: 'loc-en', attributes: { locale: 'en-US', whatsNew: 'old' } }, { id: 'loc-de', attributes: { locale: 'de-DE', whatsNew: '' } }], attachedBuild = null, submissions = [], items = [], polled = [] } = {}) {
+function store({ versions = [], build = { processingState: 'VALID', usesNonExemptEncryption: false }, locs = [{ id: 'loc-en', attributes: { locale: 'en-US', whatsNew: 'old' } }, { id: 'loc-de', attributes: { locale: 'de-DE', whatsNew: '' } }], attachedBuild = null, submissions = [], items = [], polled = [], reread = {}, listedAfter = null } = {}) {
   const calls = []
   const call = async (what, method, path, body) => {
     calls.push({ method, path, body })
@@ -388,9 +388,18 @@ function store({ versions = [], build = { processingState: 'VALID', usesNonExemp
     if (method === 'GET' && path.startsWith('/v1/apps/app1/appStoreVersions')) return { data: versions }
     if (method === 'GET' && path.endsWith('/relationships/build')) return { data: attachedBuild }
     if (method === 'GET' && path.includes('/appStoreVersionLocalizations')) return { data: locs }
-    if (method === 'GET' && path.startsWith('/v1/reviewSubmissions?')) return { data: submissions }
+    if (method === 'GET' && path.startsWith('/v1/reviewSubmissions?')) {
+      // After a withdrawal (a PATCH with canceled), the listing may change.
+      const cancelled = calls.some((c) => c.method === 'PATCH' && c.body?.data?.attributes?.canceled)
+      return { data: cancelled && listedAfter ? listedAfter : submissions }
+    }
     if (method === 'GET' && path.includes('/items')) return { data: items }
-    if (method === 'GET' && path.startsWith('/v1/appStoreVersions/')) return { data: { id: path.split('/')[3], attributes: { appVersionState: polled.shift() ?? 'DEVELOPER_REJECTED' } } }
+    if (method === 'GET' && /^\/v1\/reviewSubmissions\/[^/]+$/.test(path)) {
+      const id = path.split('/')[3]
+      const x = submissions.find((y) => y.id === id)
+      return { data: { id, attributes: { state: reread[id] ?? x?.attributes?.state } } }
+    }
+    if (method === 'GET' && path.startsWith('/v1/appStoreVersions/') && !path.includes('/appStoreVersionLocalizations') && !path.includes('/relationships/')) return { data: { id: path.split('/')[3], attributes: { appVersionState: polled.shift() ?? 'DEVELOPER_REJECTED' } } }
     if (method === 'POST' && path === '/v1/appStoreVersions') return { data: { id: 'v-new', attributes: { ...body.data.attributes, appVersionState: 'PREPARE_FOR_SUBMISSION' } } }
     if (method === 'POST' && path === '/v1/reviewSubmissions') return { data: { id: 'sub-new', attributes: { state: 'READY_FOR_REVIEW' } } }
     if (method === 'GET') throw new Error(`unexpected GET ${path}`)
@@ -501,6 +510,8 @@ test('submit: a later editable version is never moved back by an older tag run a
   assert.equal(versionBelow('1.5.10', '1.6.0'), true)
   assert.equal(versionBelow('1.10.0', '1.9.9'), false)
   assert.equal(versionBelow('1.6.0', '1.6.0'), false)
+  assert.equal(versionBelow('beta', '1.6.0'), false, 'an unreadable version is never lower')
+  assert.equal(versionBelow('', '1.6.0'), false)
 })
 
 test('submit: a draft submission holding other items is not sent along', async () => {
@@ -574,7 +585,7 @@ test('submit: a version in review, a later one waiting, or a shared submission i
   await assert.rejects(submitForReview(later.call, { version: '1.7.0', build: '10700', notes: 'x', log: quiet }), /1\.8\.0 is waiting for review/)
   assert.deepEqual(later.writes(), [])
   const shared = store({ versions: [released, { id: 'v16', attributes: { versionString: '1.6.0', appVersionState: 'WAITING_FOR_REVIEW' } }], submissions: [{ id: 's', attributes: { state: 'WAITING_FOR_REVIEW' } }], items: [item('v16'), item('event')] })
-  await assert.rejects(submitForReview(shared.call, { version: '1.7.0', build: '10700', notes: 'x', log: quiet }), /holds 1\.6\.0 and other items/)
+  await assert.rejects(submitForReview(shared.call, { version: '1.7.0', build: '10700', notes: 'x', log: quiet }), /would take its place, but review submission s is waiting for review with 1\.6\.0 and other items: .*nothing was changed/)
   assert.deepEqual(shared.writes(), [])
 })
 
@@ -587,7 +598,63 @@ test('submit --dry-run: withdrawing a waiting version is only logged', async () 
   assert.equal(out.state, 'submitted')
   assert.deepEqual(s.writes(), [])
   assert.ok(logs.some((m) => /dry run: would be withdrawing 1\.6\.0 from review, superseded by 1\.7\.0/.test(m)))
+  assert.ok(logs.some((m) => /1\.6\.0 is waiting for review: it would be withdrawn and become 1\.7\.0/.test(m)))
+  assert.ok(!logs.some((m) => /withdrawn, 1\.7\.0 takes its place/.test(m)), 'a dry run does not say it withdrew')
   assert.ok(logs.some((m) => /dry run: would be moving App Store version 1\.6\.0 to 1\.7\.0/.test(m)))
+})
+
+const v16Waiting = () => ({ id: 'v16', attributes: { versionString: '1.6.0', appVersionState: 'WAITING_FOR_REVIEW', releaseType: 'AFTER_APPROVAL' } })
+const itemOf = (id) => ({ id: `i-${id}`, relationships: { appStoreVersion: { data: { type: 'appStoreVersions', id } } } })
+
+test('submit: nothing is withdrawn when a later step would stop anyway', async () => {
+  const draft = store({ versions: [released, v16Waiting()], submissions: [{ id: 'sub16', attributes: { state: 'WAITING_FOR_REVIEW' } }, { id: 'draft', attributes: { state: 'READY_FOR_REVIEW' } }], items: [itemOf('v16')] })
+  // The fake gives every submission the same items: make the draft hold another item.
+  const call = async (what, method, path, body) => (method === 'GET' && path === '/v1/reviewSubmissions/draft/items?include=appStoreVersion&limit=200') ? { data: [itemOf('event')] } : draft.call(what, method, path, body)
+  await assert.rejects(submitForReview(call, { version: '1.7.0', build: '10700', notes: 'x', log: quiet }), /draft review submission draft holds other items.*nothing was changed/)
+  assert.deepEqual(draft.writes(), [])
+  const editable = store({ versions: [released, v16Waiting(), { id: 'v161', attributes: { versionString: '1.6.1', appVersionState: 'PREPARE_FOR_SUBMISSION' } }], submissions: [{ id: 'sub16', attributes: { state: 'WAITING_FOR_REVIEW' } }], items: [itemOf('v16')] })
+  await assert.rejects(submitForReview(editable.call, { version: '1.7.0', build: '10700', notes: 'x', log: quiet }), /version 1\.6\.1 is open for editing too: nothing was changed/)
+  assert.deepEqual(editable.writes(), [])
+  const noLoc = store({ versions: [released, v16Waiting()], submissions: [{ id: 'sub16', attributes: { state: 'WAITING_FOR_REVIEW' } }], items: [itemOf('v16')], locs: [] })
+  await assert.rejects(submitForReview(noLoc.call, { version: '1.7.0', build: '10700', notes: 'x', log: quiet }), /1\.6\.0 has no localization: nothing was changed/)
+  assert.deepEqual(noLoc.writes(), [])
+})
+
+test('submit: a submission Apple started reviewing meanwhile is not withdrawn', async () => {
+  const s = store({ versions: [released, v16Waiting()], submissions: [{ id: 'sub16', attributes: { state: 'WAITING_FOR_REVIEW' } }], items: [itemOf('v16')], reread: { sub16: 'IN_REVIEW' } })
+  await assert.rejects(submitForReview(s.call, { version: '1.7.0', build: '10700', notes: 'x', log: quiet }), /review submission sub16 is now in review: nothing was changed/)
+  assert.deepEqual(s.writes(), [])
+})
+
+test('submit: a failure after the withdrawal says the earlier version is editable and how to go on', async () => {
+  const s = store({ versions: [released, v16Waiting()], submissions: [{ id: 'sub16', attributes: { state: 'WAITING_FOR_REVIEW' } }], items: [itemOf('v16')] })
+  const call = async (what, method, path, body) => {
+    if (method === 'PATCH' && path === '/v1/appStoreVersions/v16') throw new Error('409 STATE_ERROR')
+    return s.call(what, method, path, body)
+  }
+  await assert.rejects(submitForReview(call, { version: '1.7.0', build: '10700', notes: 'x', log: quiet }),
+    /^Error: App Store version 1\.6\.0 was withdrawn from review and is now developer rejected \(editable\): 409 STATE_ERROR; run iOS TestFlight for v1\.7\.0 again with app_store submit$/)
+})
+
+test('submit: a withdrawn version Apple keeps waiting is named, with the run that continues', async () => {
+  const s = store({ versions: [released, v16Waiting()], submissions: [{ id: 'sub16', attributes: { state: 'WAITING_FOR_REVIEW' } }], items: [itemOf('v16')], polled: ['WAITING_FOR_REVIEW', 'WAITING_FOR_REVIEW'] })
+  await assert.rejects(submitForReview(s.call, { version: '1.7.0', build: '10700', notes: 'x', log: quiet, attempts: 2, wait: 60_000, pause: async () => {} }),
+    /1\.6\.0 was withdrawn from review, but Apple still shows it as waiting for review after 2 minutes: once it is editable \(Developer Rejected\), run iOS TestFlight for v1\.7\.0 with app_store submit/)
+})
+
+test('submit: the withdrawn submission is skipped while still listed as waiting, reused once open', async () => {
+  const reopened = store({ versions: [released, v16Waiting()], submissions: [{ id: 'sub16', attributes: { state: 'WAITING_FOR_REVIEW' } }], items: [itemOf('v16')],
+    listedAfter: [{ id: 'sub16', attributes: { state: 'READY_FOR_REVIEW' } }] })
+  await submitForReview(reopened.call, { version: '1.7.0', build: '10700', notes: 'x', log: quiet, pause: async () => {} })
+  assert.ok(!reopened.writes().includes('POST /v1/reviewSubmissions'), 'no second submission')
+  assert.equal(reopened.writes().at(-1), 'PATCH /v1/reviewSubmissions/sub16')
+})
+
+test('submit: the submit-only hint is given only for an earlier pending version', async () => {
+  const later = store({ versions: [released, { id: 'v18', attributes: { versionString: '1.8.0', appVersionState: 'IN_REVIEW' } }] })
+  const err = await submitForReview(later.call, { version: '1.7.0', build: '10700', notes: 'x', log: quiet }).catch((e) => e)
+  assert.match(err.message, /1\.8\.0 is in review/)
+  assert.doesNotMatch(err.message, /submit-only/)
 })
 
 test("Apple's errors are all shown, with the associated ones", async () => {
