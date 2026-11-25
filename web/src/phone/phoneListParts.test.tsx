@@ -332,14 +332,14 @@ describe('states of the phone list', () => {
     expect([...frame()!.querySelectorAll('button')].some((b) => b.textContent === 'All labels')).toBe(true)
     navigate({ view: 'project', id: 'gone' })
     await waitFor(() => !!frame()?.textContent?.includes('This project no longer exists.'), 'the missing project')
-    expect(list()).toBeNull()
+    expect(list()?.getAttribute('data-phone-missing')).toBe('project')
     await click([...frame()!.querySelectorAll('button')].find((b) => b.textContent === 'Go to Inbox')!)
     await waitFor(() => list()?.getAttribute('data-phone-list') === 'inbox' && rowIds().length === 1, 'the Inbox as a phone list')
     await r.unmount()
   })
 
-  // Missing: PhoneList returns MissingTarget before its screen, so the state has no phone header and sits under the shell's bar with an empty title.
-  it.skip('a missing project shows its state inside the phone screen, under the phone header', async () => {
+  // The state is part of the phone screen: the phone header's menu button is the way out, and the shell's own bar is gone.
+  it('a missing project shows its state inside the phone screen, under the phone header', async () => {
     await createProject({ name: 'Work' })
     setPhoneUiEnabled(true)
     navigate({ view: 'project', id: 'gone' })
