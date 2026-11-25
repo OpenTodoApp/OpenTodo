@@ -18,6 +18,7 @@ kubectl --namespace opentodo get secret opentodo-setup-token -o jsonpath='{.data
 - One pod, always: the data is in SQLite, which has one writer, so the Deployment has one replica and the `Recreate` strategy.
 - A PersistentVolumeClaim on `/data` (`persistence.*`, 2Gi by default), kept when the release is uninstalled.
 - A Service on port 8080 and, with `ingress.enabled`, an Ingress for `ingress.host`. With `ingress.tls`, `OPENTODO_BASE_URL` becomes `https://<host>`.
+- With `httpRoute.enabled`, a Gateway API `HTTPRoute` attached to the Gateways in `httpRoute.parentRefs`. TLS is the Gateway's, so set `env.OPENTODO_BASE_URL` to the https address.
 - User 65532 with `fsGroup`, a read-only root filesystem, no capabilities and the default seccomp profile (Pod Security `restricted`).
 - The image `ghcr.io/opentodoapp/opentodo` at the chart's `appVersion`: each chart version is one OpenTodo release, and `helm upgrade` moves to the next one.
 
@@ -32,6 +33,7 @@ kubectl --namespace opentodo get secret opentodo-setup-token -o jsonpath='{.data
 | `setupToken.generate` / `existingSecret` / `secretKey` | `true` / `""` / `setup-token` | Where `OPENTODO_SETUP_TOKEN` comes from. |
 | `persistence.size` / `storageClass` / `existingClaim` | `2Gi` / `""` / `""` | The data volume. |
 | `ingress.enabled` / `className` / `host` / `annotations` / `tls` | `false` | The Ingress. |
+| `httpRoute.enabled` / `parentRefs` / `hostnames` / `annotations` | `false` | The Gateway API HTTPRoute. |
 | `image.tag` | `""` | Empty: the chart's release. |
 
 The full guide, with https, updates and backups: <https://open-todo.app/docs/self-hosting/kubernetes/>. Source and issues: <https://github.com/OpenTodoApp/OpenTodo>. License: AGPL-3.0.

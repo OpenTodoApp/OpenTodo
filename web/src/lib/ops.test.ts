@@ -5,7 +5,7 @@ import {
   createTasks, mutateMany, planTasks, PlaintextTooLongError, resetDeviceId, setTaskCompleted, updateProject, updateTask,
 } from './ops'
 import { compareByPosition } from './ordering'
-import { parentUndoable } from './undoActions'
+import { deleteSectionUndoable as deleteSection, parentUndoable, sectionMoveUndoable } from './undoActions'
 import { inboxTasks } from './inbox'
 import { HLC_META, hlcLast, wins } from './hlc'
 import { parentReadyToComplete } from './subtasks'
@@ -21,7 +21,8 @@ import { projectFlowOf, sectionFlowOf } from './flow'
 import { projectStatusOf, reviewEveryOf } from './reviewCadence'
 import { publishEncryption } from './e2ee'
 import { MAX_PLAINTEXT_BYTES } from './crypto'
-import { createSection, deleteSection, moveTaskToSection, projectSections, renameSection, reorderSection } from './sections'
+import { createSection, projectSections, renameSection, reorderSection } from './sections'
+const moveTaskToSection = (id: string, section: string | null) => sectionMoveUndoable(id, section, '')
 
 let n = 0
 beforeEach(() => {

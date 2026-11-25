@@ -127,6 +127,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `spans-stay-in-sections` | A multi-day task stays in its section with its dates instead of folding into Later before its first day | Shipped in 1.6 |
 | `notes-page-own-notes` | The Notes page lists your notes and project notes; task descriptions are one `kind:task` chip away | Shipped in 1.6 |
 | `calsync-repeat-marker` | Repeating tasks show 🔁 before their title in a synced calendar; the marker never comes back as a rename | Shipped in 1.6 |
+| `calendar-event-edits` | Move, resize, rename and delete the events of a connected calendar in Day and Week, off until turned on per connection; assistants may move and rename them with a second switch, with Undo | Shipped in 1.8 |
 | `cli-subtasks` | Subtasks in `ot`: `--parent` on `add`, `edit` and `list`, `--subtasks` cascades on `done`, `rm` and `edit`, and the tree in `list` and `task show` | Shipped in 1.6 |
 | `repeat-field-language` | A task's Repeat field reads repeat phrases in the languages quick add reads, and stores the English rule | Shipped in 1.6 |
 | `repeat-rule-words` | A repeat rule is shown in the interface language wherever the app shows one; the Repeat field still takes English | Shipped in 1.6 |

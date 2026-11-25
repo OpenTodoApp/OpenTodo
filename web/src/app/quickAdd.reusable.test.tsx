@@ -7,13 +7,15 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, mutate, resetDeviceId, setTaskCompleted, updateProject } from '../lib/ops'
-import { createSection, loadShowCompleted, moveTaskToSection } from '../lib/sections'
+import { createSection, loadShowCompleted } from '../lib/sections'
+import { sectionMoveUndoable } from '../lib/undoActions'
 import { collapseDuplicates } from '../lib/reuseAdd'
 import { undoBatch } from '../lib/undo'
 import { render, mockFetch, noPublicLinks, type, waitFor } from '../ui/test-utils'
 import { bulkToast, hideBulkToast } from './bulk/toastStore'
 import { addManyToList, addToList } from './reuseAdd'
 import { TaskListView } from './TaskListView'
+const moveTaskToSection = (id: string, section: string | null) => sectionMoveUndoable(id, section, '')
 
 beforeEach(() => mockFetch(noPublicLinks))
 afterEach(() => { vi.unstubAllGlobals(); hideBulkToast() })

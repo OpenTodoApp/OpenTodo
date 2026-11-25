@@ -127,6 +127,7 @@ The automated gate runs on every pull request; "not toured" screens are only rea
 | `triage` | core | pass | 2 of 6 passes done, 4 pending |
 | `day` | core | pass | 2 of 6 passes done, 4 pending |
 | `week` | core | pass | 2 of 6 passes done, 4 pending |
+| `event-editor` | rare | not toured (see note) | not in the manual audit |
 | `month` | core | pass | 2 of 6 passes done, 4 pending |
 | `year` | core | pass | 2 of 6 passes done, 4 pending |
 | `quarter` | rare | pass | not in the manual audit |

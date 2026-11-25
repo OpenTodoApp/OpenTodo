@@ -16,8 +16,10 @@ import { CalendarsToggle } from './calendar/CalendarsToggle'
 import { addDaysISO, dueFromView, formatDate, formatShort, viewedTask } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import { getTask, readGridPrefs, useCalendarShowCompleted, useGridPrefs, useLiveProjects } from '../lib/liveData'
-import type { CalendarSubscription, Task } from '../lib/types'
-import { useCalendarDrag, type DragState, type DropTarget } from './calendarDrag'
+import type { CalendarSubscription, EventCommand, Task } from '../lib/types'
+import { isEventDrag, useCalendarDrag, type DragState, type DropTarget } from './calendarDrag'
+import { useCalendarEvents } from './calendar/eventActions'
+import { eventGhost, type GridEvent } from './calendar/eventGrid'
 import { estimateWithUndo, rescheduleWithUndo, setDueWithUndo, spanWithUndo } from './undoable'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { CalendarRangeSwitch } from './CalendarRange'
@@ -141,7 +143,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const { projections, hue: projectionHue } = useCalendarProjections({ raw: rawTasks, viewed: taskMap, projects, keeps: chrome.keeps, hueOf: chrome.color.hueOf, today, from, to, zone })
   const days = useMemo(() => calendarDays(dates, drawn, feeds.visibleEvents, zone, slotViews, projections), [dates, drawn, feeds.visibleEvents, zone, slotViews, projections])
   const { slotIndex, heldBy } = useSlotIndex(days)
-  const order = useMemo(() => calendarOrder(days), [days])
+  const taskOrder = useMemo(() => calendarOrder(days), [days])
   // Frames (calendar-frames): background bands of the shown days, never part of the order or capacity.
   const frameRows = useFrames()
   const frames = useMemo(() => framesByDate(frameRows, dates), [frameRows, dates])
@@ -152,6 +154,8 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   }), [dates, feeds.visibleEvents, prefs.countEvents, feeds.eventsShown, feeds.subs.length, feeds.win, online, zone])
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  // Changeable events of connected calendars join the selection order (calendar-event-edits D7).
+  const { events, order, eventCommands, commitEvent } = useCalendarEvents(days, taskOrder, zone, setSelectedId)
   const openId = usePanelTaskId()
   const setOpenId = setPanelTaskId
   const { placing, setPlacing, startPlacing } = usePlacement(dates, today, prefs, date, setSelectedId, inFrame)
@@ -207,7 +211,10 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   // After a placement from the list: focus back on it, or for a tap placement the list itself back (D2).
   usePlacementReturn(placing, placeFrom, scroller, tap.end)
 
-  const { drag, start } = useCalendarDrag({ pxPerMinute: PX_PER_MIN, scroller, onDrop: (id, target) => { if (!commitProjectionDrop(id, target, toHHMM)) commit(id, target) } })
+  const { drag, start } = useCalendarDrag({ pxPerMinute: PX_PER_MIN, scroller, onDrop: (id, target) => {
+    if (isEventDrag(id)) commitEvent(id, target)
+    else if (!commitProjectionDrop(id, target, toHHMM)) commit(id, target)
+  } })
   const startDrag = useCallback<typeof start>((event, info) => {
     if (!taskMap.get(info.taskId)?.completed_at) start(event, info)
   }, [taskMap, start])
@@ -235,7 +242,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
 
   useCalendarKeys({
     mode, anchor, today, nowMinutes, prefs, days, order, taskMap, selectedId, setSelectedId, openId, setOpenId, canEdit: useSpanEditable(),
-    placing, setPlacing, expanded, setExpanded, commit, startPlacing, goTo, follow, slots: slotIndex,
+    placing, setPlacing, expanded, setExpanded, commit, startPlacing, goTo, follow, slots: slotIndex, events, commitEvent,
     replan: previewing ? { apply: rp.apply, cancel: rp.cancel } : null,
     // `q` adds on the focused day without a time (calendar-clarity D2).
     onQuickAdd: (d) => chrome.add.add({ date: d }),
@@ -333,7 +340,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
             <CalendarGrid mode={mode} days={days} today={today} nowMinutes={nowMinutes} prefs={prefs} shown={shown} meetings={meetings} frames={frames} taskMap={taskMap} rawMap={rawMap} hueOf={hueOf} projectionHue={projectionHue} deadlines={deadlines} hidden={hidden} gestures={gestures} dragSlot={dragSlot}
               subMap={feeds.subMap} zone={zone} selectedId={selectedId} expanded={expanded} setExpanded={setExpanded} drag={drag} dragTask={dragTask}
               placing={placing} placingTask={placingTask} replanFor={previewing && desktopHead ? rp.ghostsFor : undefined} onSelect={select} onOpen={open} onDragStart={dragStart}
-              onTapTime={tap.onTapTime} />
+              onTapTime={tap.onTapTime} events={events} eventCommands={eventCommands} />
           )}
         </div>
         {tap.tapping && placingTask && <TapPlaceBar title={placingTask.title} onCancel={() => setPlacing(null)} />}
@@ -374,7 +381,10 @@ function previewProps(rp: ReplanPreviewState, taskMap: Map<string, Task>, today:
   }
 }
 
-function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, frames, taskMap, rawMap, hueOf, projectionHue, deadlines, hidden, gestures, subMap, zone, selectedId, expanded, setExpanded, drag, dragTask, dragSlot, placing, placingTask, replanFor, onTapTime, onSelect, onOpen, onDragStart }: {
+function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, frames, taskMap, rawMap, hueOf, projectionHue, deadlines, hidden, gestures, subMap, zone, selectedId, expanded, setExpanded, drag, dragTask, dragSlot, placing, placingTask, replanFor, onTapTime, onSelect, onOpen, onDragStart, events, eventCommands }: {
+  /** Changeable events by block id, and their queued changes by event id (calendar-event-edits). */
+  events: Map<string, GridEvent>
+  eventCommands: Map<string, EventCommand>
   /** The stored rows by id: span writes keep the due's time and zone (multi-day-tasks). */
   rawMap: Map<string, Task>
   /** The slot being dragged or resized (calendar-slots D5). */
@@ -414,6 +424,7 @@ function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, f
 }) {
   /** The ghost of a drag, a resize or a placement on this day. */
   const previewFor = (d: DayData): Preview | null => {
+    if (drag && isEventDrag(drag.taskId)) return eventGhost(drag, events, d.date)
     if (drag && dragSlot) {
       const title = slotName(dragSlot.slot)
       if (drag.target?.type === 'slot' && drag.target.date === d.date) return { id: 'drag-ghost', start: drag.target.start, length: dragSlot.end - dragSlot.start, title }
@@ -486,7 +497,8 @@ function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, f
         {days.map((d) => (
           <DayColumn key={d.date} day={d} prefs={prefs} isToday={d.date === today} isPast={d.date < today} nowMinutes={nowMinutes} taskMap={taskMap} hueOf={hueOf} projectionHue={projectionHue} gestures={gestures}
             subMap={subMap} zone={zone} selectedId={selectedId} draggingId={drag?.taskId ?? null} slotDrop={drag?.target?.type === 'into-slot' ? drag.target.slotId : null} expanded={expanded} setExpanded={setExpanded}
-            preview={previewFor(d)} replan={replanFor?.(d.date)} frames={frames.get(d.date)} onTapTime={onTapTime} onSelect={onSelect} onOpen={onOpen} onDragStart={onDragStart} />
+            preview={previewFor(d)} replan={replanFor?.(d.date)} frames={frames.get(d.date)} onTapTime={onTapTime} onSelect={onSelect} onOpen={onOpen} onDragStart={onDragStart}
+            eventCommands={eventCommands} />
         ))}
       </div>
     </div>

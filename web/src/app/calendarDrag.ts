@@ -10,6 +10,12 @@ import { tick } from './motion'
 
 export type DragKind = 'move' | 'resize' | 'resize-start'
 
+/**
+ * What a drag moves (calendar-event-edits D7): a task, a slot (`slot:<id>`) or an event of a
+ * connected calendar (`event:<id>`, the grid's block id). Events never drop into a slot.
+ */
+export const isEventDrag = (id: string): boolean => id.startsWith('event:')
+
 export type DropTarget =
   | { type: 'slot'; date: string; start: number }
   | { type: 'lane'; date: string }
@@ -87,9 +93,9 @@ export function useCalendarDrag(opts: { pxPerMinute: number; scroller: React.Ref
       return { type: 'resize-start', date: p.blockDate, ...resizeStart(p.blockEnd, offset, pxPerMinute) }
     }
     let el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-drop-slot],[data-drop-day],[data-drop-lane]')
-    // A task over a slot is added to it (calendar-slots D3); a slot dragged over another lands on the grid.
+    // A task over a slot is added to it (calendar-slots D3); a slot or an event (calendar-event-edits D7) dragged over one lands on the grid.
     if (el?.dataset.dropSlot) {
-      if (!p.taskId.startsWith('slot:')) return { type: 'into-slot', slotId: el.dataset.dropSlot }
+      if (!p.taskId.startsWith('slot:') && !isEventDrag(p.taskId)) return { type: 'into-slot', slotId: el.dataset.dropSlot }
       el = el.closest<HTMLElement>('[data-drop-day]')
     }
     if (!el) return null

@@ -201,7 +201,7 @@ func (s *Server) finishMicrosoft(ctx context.Context, uid string, st *calsync.OA
 		if err != nil || c.Provider != calsync.ProviderMicrosoft {
 			return "", "not_found"
 		}
-		if w.Secrets.Set(c.ID, tok.Refresh) != nil || w.Store.SaveDiscovery(ctx, c, "", w.GraphBase, acct.Calendars) != nil ||
+		if w.Secrets.Set(c.ID, tok.Refresh) != nil || w.Store.SaveDiscovery(ctx, c, &calsync.Discovery{Home: w.GraphBase, Calendars: acct.Calendars}) != nil ||
 			w.Store.Resume(ctx, c.ID) != nil {
 			return c.ID, "internal_error"
 		}

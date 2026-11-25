@@ -185,18 +185,19 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | --- | --- |
 | <kbd>j</kbd> | Select the next task (lane, then blocks) |
 | <kbd>k</kbd> | Select the previous task |
-| <kbd>↑</kbd> / <kbd>↓</kbd> | Move the selected task 15 minutes earlier / later (a lane task gets a time); with nothing selected, select the first task |
-| <kbd>←</kbd> / <kbd>→</kbd> | Move the selected task one day earlier / later |
+| <kbd>↑</kbd> / <kbd>↓</kbd> | Move the selected task or event 15 minutes earlier / later (a lane task gets a time); with nothing selected, select the first item |
+| <kbd>←</kbd> / <kbd>→</kbd> | Move the selected task or event one day earlier / later |
 | <kbd>Shift+←</kbd> / <kbd>Shift+→</kbd> | Move the last day of the selected span; on a task without a time, Shift+→ makes it a two-day span |
 | <kbd>Alt+Shift+←</kbd> / <kbd>Alt+Shift+→</kbd> | Move the first day of the selected span |
-| <kbd>Shift+↑</kbd> / <kbd>Shift+↓</kbd> | Shorten / lengthen the estimate by 15 minutes |
-| <kbd>Alt+Shift+↑</kbd> / <kbd>Alt+Shift+↓</kbd> | Start 15 minutes earlier / later, keeping the end |
+| <kbd>Shift+↑</kbd> / <kbd>Shift+↓</kbd> | Shorten / lengthen the selected task or event by 15 minutes |
+| <kbd>Alt+Shift+↑</kbd> / <kbd>Alt+Shift+↓</kbd> | Start the selected task or event 15 minutes earlier / later, keeping the end |
 | <kbd>u</kbd> | Unschedule the selected task (keep the date) |
 | <kbd>p</kbd> | Placement mode for the selected task: arrows move the ghost, Enter places it, Esc cancels |
 | <kbd>Enter</kbd> | Open the selected task |
 | <kbd>Shift+Enter</kbd> | While placing over a slot: add the task to the slot |
 | <kbd>e</kbd> | Edit the estimate of the selected task |
 | <kbd>c</kbd> | Complete the selected task |
+| <kbd>Delete</kbd> / <kbd>Backspace</kbd> | Delete the selected event of a connected calendar (Undo for 8 seconds) |
 | <kbd>q</kbd> | In Day and Week: add a task due on the focused day (the selected task's day, else today) |
 | <kbd>[</kbd> | Previous day or week |
 | <kbd>]</kbd> | Next day or week |

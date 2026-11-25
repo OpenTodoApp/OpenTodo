@@ -67,14 +67,15 @@ export async function reorderSection(id: string, delta: -1 | 1 | 'top' | 'bottom
  * Delete a section: its tombstone plus `section_id = null` on each of its open
  * tasks, one op per task, in one batch, so they fall back to "No section". Completed
  * tasks keep the reference and are shown without a section if reopened (design D3).
+ * Planned for one undoable step (undo-coverage); none for an unknown or deleted section.
  */
-export async function deleteSection(id: string): Promise<void> {
+export async function planDeleteSection(id: string, now = Date.now()): Promise<Change[]> {
   const s = await db.sections.get(id)
-  if (!s || s.deleted_at) return
+  if (!s || s.deleted_at) return []
   const tasks = await db.tasks.where('section_id').equals(id).filter((task) => !task.deleted_at && !task.completed_at).toArray()
-  const changes: Change[] = [{ entity: 'section', entityId: id, patch: { deleted_at: Date.now() } }]
+  const changes: Change[] = [{ entity: 'section', entityId: id, patch: { deleted_at: now } }]
   for (const tk of tasks) changes.push({ entity: 'task', entityId: tk.id, patch: { section_id: null } })
-  await mutateMany(changes)
+  return changes
 }
 
 /**
@@ -91,18 +92,18 @@ export function effectiveSection(task: Pick<Task, 'section_id' | 'project_id'>, 
 
 /**
  * Move a task to a section (null = "No section"): sets `section_id` and a position
- * after every open task already in the target column, in one mutate() call, so both
+ * after every open task already in the target column, in one change, so both
  * fields share a timestamp and concurrent moves resolve to the newer one together
- * (design D4). Works offline.
+ * (design D4). Throws for an unknown task or a section of another project.
  */
-export async function moveTaskToSection(id: string, sectionId: string | null): Promise<void> {
+export async function planTaskToSection(id: string, sectionId: string | null): Promise<Change> {
   const task = await db.tasks.get(id)
   if (!task || task.deleted_at) throw new Error('task not found')
   if (sectionId !== null) {
     const s = await db.sections.get(sectionId)
     if (!s || s.deleted_at || s.project_id !== task.project_id) throw new Error(t('section is not in the task’s project'))
   }
-  await mutate('task', id, { section_id: sectionId, position: await endOfSection(task, sectionId) })
+  return { entity: 'task', entityId: id, patch: { section_id: sectionId, position: await endOfSection(task, sectionId) } }
 }
 
 /** The position after the last open task of a section ('' or null = "No section") of the task's project. */

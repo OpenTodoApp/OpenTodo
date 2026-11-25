@@ -216,7 +216,7 @@ func (g *Graph) Discover(ctx context.Context) (*MicrosoftAccount, error) {
 				continue
 			}
 			acct.Calendars = append(acct.Calendars, Calendar{URL: c.ID, Name: firstOf(c.Name, "Calendar"), Color: color(c.HexColor),
-				TimeZone: acct.TimeZone, ReadOnly: !c.CanEdit})
+				TimeZone: acct.TimeZone, ReadOnly: !c.CanEdit, Caps: &Caps{c.CanEdit, c.CanEdit, c.CanEdit}})
 		}
 		next = p.Next
 	}
