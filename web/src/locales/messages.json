@@ -7961,6 +7961,7 @@
   "Hide details": [
     "web/src/app/TaskRow.tsx",
     "web/src/app/away/AwayDialog.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -16544,6 +16545,7 @@
   "Show details": [
     "web/src/app/TaskRow.tsx",
     "web/src/app/away/AwayDialog.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/lib/shortcuts.ts"
   ],

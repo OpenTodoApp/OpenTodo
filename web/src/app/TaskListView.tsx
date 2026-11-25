@@ -45,14 +45,13 @@ import type { Briefing } from '../lib/briefing'
 import { useListReady } from './task-list/useListReady'
 import { UrgencyContext } from './useUrgency'
 import { BulkActionsMenu, ListReorderContext, SelectionBar, type ListReorder, type RowMenuItems } from './bulk/BulkActions'
+import { useDockHold, useInlineEdit, useRowMenuItems } from './task-list/useRowEditing'
 import { useRowMenu } from './bulk/useRowMenu'
 import { useActionsOpen } from './bulk/useBulkList'
 import { useCollapsedGroups } from './collapsedGroups'
 import { EarlierActions } from './task-list/EarlierActions'
 import { taskDefaults } from './listActions'
-import { flushSync } from 'react-dom'
-import { openTaskPage } from './taskTrail'
-import { panelTaskId, usePanelHasTask, setPanelTaskId as setOpenId, sidePanelDocks, taskSplitDocks, watchPanelTaskId } from './panel'
+import { panelTaskId, usePanelHasTask, setPanelTaskId as setOpenId, sidePanelDocks } from './panel'
 import { useClickAway } from './task-list/useClickAway'
 import { InlineEditor } from './task-list/InlineEditor'
 import { ProjectHeader } from './ProjectHeader'
@@ -284,53 +283,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const { summarised, cursorRows } = useCalmUpcoming(route.view === 'upcoming', groups, rows, !!m.display?.laterInFull, collapsedGroups)
   // Bulk selection (bulk-edit D1): ticked rows, separate from the cursor row.
   const { tickRows, selection, ticked, contextIds } = useTickedRows(rows, taskMap, isReadOnly)
-  // An edit or a row's More on another row than the task beside the list keeps that task there
-  // until the cursor moves or a row is clicked (row-edit-action D3): `dockId` is what it follows.
-  // Another task opened there ends the hold; a closed pane stays closed until the cursor moves.
-  const [dockHold, setDockHold] = useState<{ id: string; keep: string | null } | null>(null)
-  if (dockHold && dockHold.id !== selectedId) setDockHold(null)
-  const dockId = dockHold ? dockHold.keep : selectedId
-  useEffect(() => {
-    if (!dockHold?.keep) return
-    const { id, keep } = dockHold
-    return watchPanelTaskId((now) => { if (now !== keep) setDockHold(now ? null : { id, keep: null }) })
-  }, [dockHold])
-  const holdDock = useCallback((id: string) => {
-    const keep = panelTaskId()
-    setDockHold((held) => (keep && keep !== id && taskSplitDocks() ? { id, keep } : held?.id === id ? held : null))
-  }, [])
-  const releaseDock = useCallback(() => setDockHold(null), [])
-  const [inline, setInline] = useState<{ id: string; caret?: number; compact?: boolean } | null>(null)
-  const startInline = useCallback((id: string, e?: React.MouseEvent, compact = false) => {
-    const task = taskMap.get(id)
-    if (!task || board || isReadOnly(task)) return
-    holdDock(id)
-    setSelectedId(id)
-    setInline({ id, caret: e ? caretFromClick(e) : task.title.length, compact })
-  }, [taskMap, board, isReadOnly, holdDock])
-  // Edit from the row's actions or its menu (row-edit-action D1, D2): the F2 editor with a fine
-  // pointer from 768 px, else the compact one with Save and Cancel. Mounted within the activation
-  // so iOS can show its keyboard.
-  const editTitle = useCallback((id: string) => {
-    const desk = !!window.matchMedia?.('(pointer: fine)').matches && !!window.matchMedia?.(DESKTOP_HEADER_QUERY).matches
-    flushSync(() => startInline(id, undefined, !desk))
-  }, [startInline])
-  // Open details in the row's menu (row-edit-action D2): the task as Enter opens it, by the Open tasks preference.
-  const openDetails = useCallback((id: string) => {
-    setSelectedId(id)
-    if (taskSplitDocks() && (!sidePanelDocks() || panelTaskId() === id)) openTaskPage(id)
-    else setOpenId(id)
-  }, [])
-  /** The one row whose details are shown under it (row-expand D4): this list's state only, never stored. */
-  const [expandedId, setExpandedId] = useState<string | null>(null)
-  // Show details in the row's menu, as → does: one row at a time, and the cursor goes with it.
-  const showDetails = useCallback((id: string) => {
-    setSelectedId(id)
-    setExpandedId((cur) => (cur === id ? null : id))
-  }, [])
-  // A phone's rows do not expand (phone-row-controls): its menu has Edit and Open details.
-  const wide = useMediaQuery(DESKTOP_HEADER_QUERY)
-  const menuItems: RowMenuItems = useMemo(() => (board || timeline ? { openDetails } : { editTitle, openDetails, showDetails: wide ? showDetails : undefined }), [board, timeline, editTitle, openDetails, showDetails, wide])
+  const { dockId, holdDock, releaseDock } = useDockHold(selectedId)
+  const { inline, setInline, startInline, editTitle } = useInlineEdit(taskMap, board, isReadOnly, setSelectedId, holdDock)
+  const { menuItems, expandedId, setExpandedId } = useRowMenuItems(!board && !timeline, editTitle, setSelectedId)
   const { ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, rowMenu } = useListUi(selection.ticked, ticked, menuItems, expandedId)
   // Observe panel presence only so moving the cursor between docked tasks does not redraw the list.
   const panelOpen = usePanelHasTask()
@@ -360,7 +315,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           row?.focus({ preventScroll: true })
         })
       }} />
-  ), [inline, m.projects, m.labelMap])
+  ), [inline, setInline, m.projects, m.labelMap])
   /** Vim `o` (vim-keybindings): the task the next quick-add entry is placed after, if any. */
   const insertAfter = useRef<string | null>(null)
 
@@ -448,7 +403,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     showCheckbox: selectMode || (fine && selection.ticked.size > 0), selectMode, fieldColumns: m.fieldColumns, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
     timeColumn: m.timeColumn, slotsOff: m.slotsOff, rowLayout: m.display?.rowLayout, actions: rowActions, ...useAddLines(rows, ui), edgeOf, cardNotes,
     inlineId: inline?.id ?? null, renderInline, expandedId, swipe: useListSwipe(listRoot, !fine && selection.ticked.size === 0 && !selectMode && !board, rows.length),
-    swipeEditTitle: !wide && !timeline,
+    swipeEditTitle: !useMediaQuery(DESKTOP_HEADER_QUERY) && !timeline,
     editInPlace: !board && !timeline,
   })
 
@@ -660,20 +615,3 @@ function ListHeader({ route, title, label, meta, subtitle, briefing, actions, ph
     </>
   )
 }
-
-/** The caret offset in the row's title under a click, or undefined (the editor puts it at the end). */
-function caretFromClick(e: React.MouseEvent): number | undefined {
-  const title = (e.currentTarget as Element).querySelector?.('[data-row-title]')
-  const doc = document as Document & { caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null }
-  const pos = doc.caretPositionFromPoint?.(e.clientX, e.clientY)
-  const range = !pos && document.caretRangeFromPoint ? document.caretRangeFromPoint(e.clientX, e.clientY) : null
-  const node = pos?.offsetNode ?? range?.startContainer
-  const offset = pos?.offset ?? range?.startOffset
-  if (!title || !node || offset === undefined || !title.contains(node)) return undefined
-  // Characters before the clicked text node within the title, plus the offset in it.
-  let before = 0
-  const walker = document.createTreeWalker(title, NodeFilter.SHOW_TEXT)
-  for (let n = walker.nextNode(); n && n !== node; n = walker.nextNode()) before += n.textContent?.length ?? 0
-  return before + offset
-}
-
