@@ -8,10 +8,10 @@ import * as TaskList from './taskList.stories'
 import { seedCalendarWeek, seedInbox, withSeed } from './stories/fixtures'
 
 // Right to left (OpenSpec change arabic-rtl, design D7): the screens people live in,
-// mirrored, beside their left-to-right stories. `parameters.direction` sets the
-// document's `dir` (.storybook/preview.tsx), so the layout is checked with any catalog;
-// the visual gate keeps a baseline for each, light and dark, at 375 and 1280 px.
-const meta: Meta = { title: 'Screens/Right to left', parameters: { direction: 'rtl' } }
+// in Arabic, beside their left-to-right stories. The fixtures keep their English
+// titles, so a baseline also shows Latin text inside the right-to-left layout.
+// The visual gate keeps a baseline for each, light and dark, at 375 and 1280 px.
+const meta: Meta = { title: 'Screens/Right to left', parameters: { direction: 'rtl' }, globals: { locale: 'ar' } }
 export default meta
 
 /** The shell with the Inbox: the sidebar on the right, rows from the right, the menu buttons on the left. */

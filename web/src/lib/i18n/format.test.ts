@@ -80,4 +80,12 @@ describe('message formatter (app-localization D2)', () => {
       args: ['n', 'name'], tags: ['b'], plurals: { n: ['one', 'other'] },
     })
   })
+
+  it('isolates interpolated values in right-to-left languages only (arabic-rtl D5)', () => {
+    expect(formatMessage('حُذفت «{title}».', { title: 'Q3 plan!' }, 'ar')).toBe('حُذفت «⁨Q3 plan!⁩».')
+    expect(formatMessage('Deleted “{title}”.', { title: 'Q3 plan!' }, 'en')).toBe('Deleted “Q3 plan!”.')
+    expect(formatMessage('{n, plural, one {# مهمة} other {# مهمة}} في {p}', { n: 3, p: 'Work' }, 'ar-u-nu-latn')).toBe('3 مهمة في ⁨Work⁩')
+    const el = { el: true }
+    expect(render(compile('<b>{who}</b> علّق'), { who: el }, 'ar', { b: (c) => `[${c.length}]` })).toEqual(['[3] علّق'])
+  })
 })

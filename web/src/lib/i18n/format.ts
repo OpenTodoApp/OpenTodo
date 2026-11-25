@@ -158,6 +158,14 @@ export function formatNumberIn(locale: string, n: number): string {
 export type Values = Record<string, unknown>
 export type TagFn<R> = (children: R[]) => R
 
+// In a right-to-left message, an interpolated value (a title, a name, a URL) is
+// wrapped in First Strong Isolate … Pop Directional Isolate, so a Latin title
+// does not pull the surrounding Arabic punctuation into its own direction.
+// Kept here rather than imported, as scripts/i18n-check.mjs loads this file alone.
+const RTL = /^(ar|fa|he|ur)\b/i
+const FSI = '⁨'
+const PDI = '⁩'
+
 /**
  * Formats parsed parts. `wrap` renders a tag (rich messages); without it a tag's
  * children are written as plain text. Values that are not strings or numbers are
@@ -177,6 +185,7 @@ export function render<R = string>(parts: Part[], values: Values, locale: string
         const v = values[p.name]
         if (v === undefined || v === null) push(`{${p.name}}`)
         else if (typeof v === 'number') push(p.number ? formatNumberIn(locale, v) : String(v))
+        else if (RTL.test(locale)) { push(FSI); push(v as R | string); push(PDI) }
         else push(v as R | string)
         break
       }

@@ -114,7 +114,7 @@ Quick add understands dates, times, repeats and reminders in a language only wit
 
 ## Right-to-left languages
 
-Arabic is laid out right to left: the app mirrors itself, so a translation never needs to. Two things are the translator's: a sentence that names a side or an arrow names the mirrored one ("Swipe right to complete" becomes "swipe left", "Shift+→" becomes "Shift+←", a board's "Move left" moves towards the previous column, which is on the right), and plurals use every category the language has (Arabic: `zero`, `one`, `two`, `few`, `many`, `other`; `other` is required). Numbers stay in Western digits.
+Arabic is laid out right to left: the app mirrors itself, so a translation never needs to. Two things are the translator's: a sentence that names a side or an arrow names the mirrored one ("Swipe right to complete" becomes "swipe left", "Shift+→" becomes "Shift+←", a board's "Move left" moves towards the previous column, which is on the right), and plurals use each category where the words differ (Arabic: `one`, `two`, `few`, `other`, plus `many` for 11 to 99 and `zero` where 0 is said in words; `other` is required). Settings breadcrumbs point the reading way ("الإعدادات ← الحساب"). The app isolates names and titles filled into a sentence, so a Latin title leaves the Arabic punctuation around it in place. Numbers stay in Western digits.
 
 ## Glossary
 
