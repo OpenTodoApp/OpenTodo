@@ -58,6 +58,8 @@ const (
 	relayTimeout  = 10 * time.Second
 	maxDeviceID   = 200
 	maxDueItems   = 20
+	// maxDueScan bounds the candidates read before closed tasks are skipped.
+	maxDueScan = 500
 )
 
 var (
@@ -69,7 +71,23 @@ var (
 	ErrInvalidApple = errors.New("invalid registration")
 	// ErrUnknownDueToken: no registration holds this due token.
 	ErrUnknownDueToken = errors.New("unknown due token")
+	// ErrRelayBusy: the relay answered 429; RelayBusyError says when to retry.
+	ErrRelayBusy = errors.New("relay-busy")
 )
+
+// RelayBusyError is the relay's 429 with its Retry-After.
+type RelayBusyError struct{ RetryAfter time.Duration }
+
+func (e *RelayBusyError) Error() string { return "the push relay is busy" }
+
+// Is makes errors.Is(err, ErrRelayBusy) true.
+func (e *RelayBusyError) Is(target error) bool { return target == ErrRelayBusy }
+
+// retryAfter reads a Retry-After in seconds, at least one second.
+func retryAfter(h http.Header) time.Duration {
+	secs, _ := strconv.Atoi(h.Get("Retry-After"))
+	return time.Duration(max(secs, 1)) * time.Second
+}
 
 // AppleOptions configure an Apple.
 type AppleOptions struct {
@@ -238,7 +256,7 @@ func (a *Apple) Register(ctx context.Context, uid, sessionHash string, in AppleI
 	if err != nil {
 		return nil, err
 	}
-	status, body, _, err := a.relayPost(ctx, "/v1/register", map[string]string{
+	status, body, h, err := a.relayPost(ctx, "/v1/register", map[string]string{
 		"token": strings.ToLower(in.Token), "environment": in.Environment, "wakeKey": base64.RawURLEncoding.EncodeToString(wakeKey)})
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrRelayUnreachable, outbound.RootCause(err))
@@ -246,6 +264,9 @@ func (a *Apple) Register(ctx context.Context, uid, sessionHash string, in AppleI
 	var out struct {
 		Handle    string `json:"handle"`
 		ExpiresAt int64  `json:"expiresAt"`
+	}
+	if status == http.StatusTooManyRequests {
+		return nil, &RelayBusyError{RetryAfter: retryAfter(h)}
 	}
 	if status == http.StatusBadRequest {
 		return nil, fmt.Errorf("%w: the relay refused the device token", ErrInvalidApple)
@@ -281,6 +302,12 @@ func (a *Apple) store(ctx context.Context, d *AppleDevice, sessionHash, dueHash 
 	return tx.Commit()
 }
 
+// liveSession keeps a registration whose session has not expired and whose
+// user is not deactivated: an expired session's row stays until the session
+// is deleted, but neither its due token nor its wakes work.
+const liveSession = ` AND session_hash IN (SELECT token_hash FROM sessions WHERE expires_at > ?)
+  AND user_id NOT IN (SELECT user_id FROM user_status WHERE deactivated_at IS NOT NULL)`
+
 const appleColumns = `id, user_id, device_id, handle, handle_expires_at, wake_key, include_content, schedule_cursor, scheduled_until, failures, failing_since, created_at`
 
 func scanApple(row interface{ Scan(...any) error }) (*AppleDevice, error) {
@@ -315,9 +342,10 @@ func (a *Apple) DeviceForCaller(ctx context.Context, uid, deviceID string) (*App
 	return d, err
 }
 
-// Devices lists the user's registrations.
+// Devices lists the user's registrations whose session is live (the ones a
+// wake may go to).
 func (a *Apple) Devices(ctx context.Context, uid string) ([]*AppleDevice, error) {
-	rows, err := a.db.QueryContext(ctx, `SELECT `+appleColumns+` FROM apple_devices WHERE user_id = ? ORDER BY created_at, id`, uid)
+	rows, err := a.db.QueryContext(ctx, `SELECT `+appleColumns+` FROM apple_devices WHERE user_id = ?`+liveSession+` ORDER BY created_at, id`, uid, a.now().UnixMilli())
 	if err != nil {
 		return nil, err
 	}
@@ -366,7 +394,7 @@ func (a *Apple) DeviceForDueToken(ctx context.Context, token string) (*AppleDevi
 	if b, err := base64.RawURLEncoding.DecodeString(token); err != nil || len(b) != dueTokenSize {
 		return nil, ErrUnknownDueToken
 	}
-	d, err := scanApple(a.db.QueryRowContext(ctx, `SELECT `+appleColumns+` FROM apple_devices WHERE due_token_hash = ?`, DueTokenHash(token)))
+	d, err := scanApple(a.db.QueryRowContext(ctx, `SELECT `+appleColumns+` FROM apple_devices WHERE due_token_hash = ?`+liveSession, DueTokenHash(token), a.now().UnixMilli()))
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrUnknownDueToken
 	}
@@ -403,7 +431,7 @@ ORDER BY CAST(f.value AS REAL), f.entity_id LIMIT ?`
 func (a *Apple) Due(ctx context.Context, d *AppleDevice) ([]DueItem, error) {
 	now := a.now()
 	rows, err := a.db.QueryContext(ctx, dueWindowQuery, opsync.PersonalScope(d.UserID),
-		float64(now.Add(-DueBefore).UnixMilli()), float64(now.Add(DueAfter).UnixMilli()), maxDueItems)
+		float64(now.Add(-DueBefore).UnixMilli()), float64(now.Add(DueAfter).UnixMilli()), maxDueScan)
 	if err != nil {
 		return nil, fmt.Errorf("due reminders: %w", err)
 	}
@@ -443,13 +471,17 @@ func (a *Apple) Due(ctx context.Context, d *AppleDevice) ([]DueItem, error) {
 			it.Title = PlainTitle(title)
 		}
 		out = append(out, it)
+		if len(out) == maxDueItems {
+			break
+		}
 	}
 	return out, nil
 }
 
 var (
-	mdLink  = regexp.MustCompile(`!?\[([^\]]*)\]\([^)]*\)`)
-	mdMarks = strings.NewReplacer("**", "", "__", "", "~~", "", "`", "", "==", "")
+	mdLink    = regexp.MustCompile(`!?\[([^\]]*)\]\([^)]*\)`)
+	mdHeading = regexp.MustCompile(`^#{1,6} +`)
+	mdMarks   = strings.NewReplacer("**", "", "__", "", "~~", "", "`", "", "==", "")
 )
 
 // PlainTitle is a task title as plain text: links reduced to their text,
@@ -458,7 +490,7 @@ func PlainTitle(s string) string {
 	s = mdLink.ReplaceAllString(s, "$1")
 	s = mdMarks.Replace(s)
 	s = strings.Join(strings.Fields(s), " ")
-	s = strings.TrimLeft(s, "# ")
+	s = mdHeading.ReplaceAllString(s, "")
 	if utf8.RuneCountInString(s) <= DueTitleRunes {
 		return s
 	}
@@ -497,8 +529,7 @@ func (a *Apple) Wake(ctx context.Context, d *AppleDevice, kind string) (WakeResu
 		_, err = a.db.ExecContext(ctx, `DELETE FROM apple_devices WHERE id = ?`, d.ID)
 		return WakeGone, 0, err
 	case err == nil && status == http.StatusTooManyRequests:
-		secs, _ := strconv.Atoi(h.Get("Retry-After"))
-		return WakeLimited, time.Duration(max(secs, 1)) * time.Second, nil
+		return WakeLimited, retryAfter(h), nil
 	}
 	if _, uerr := a.db.ExecContext(ctx, `UPDATE apple_devices SET failures = failures + 1, failing_since = COALESCE(failing_since, ?) WHERE id = ?`,
 		now, d.ID); uerr != nil {

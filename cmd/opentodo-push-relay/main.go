@@ -15,6 +15,15 @@
 //	                            caller's address, such as X-Forwarded-For
 //	                            (its last entry is used); the connection's
 //	                            address when unset
+//	PUSH_RELAY_TRUSTED_PROXIES  addresses or CIDR ranges, comma-separated,
+//	                            whose header is believed; loopback always is.
+//	                            From any other peer, and when the header's
+//	                            value is not an IP address, the connection's
+//	                            address counts
+//
+// The per-address limits are only as good as the address: run the relay
+// behind one proxy that sets the header (the reference deployment's Caddy on
+// the same host), and do not publish its port past that proxy.
 //
 // It logs nothing per request: once an hour it writes one line of counters
 // to standard output, and errors by class.
@@ -29,6 +38,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"os/signal"
 	"strings"
@@ -52,6 +62,7 @@ func main() {
 // config is the relay's environment.
 type config struct {
 	keyFile, keyID, teamID, topic, sealFile, addr, ipHeader string
+	trusted                                                 []netip.Prefix
 }
 
 func readConfig(getenv func(string) string) (config, error) {
@@ -63,6 +74,20 @@ func readConfig(getenv func(string) string) (config, error) {
 	}
 	if c.addr == "" {
 		c.addr = ":8080"
+	}
+	for _, v := range strings.Split(getenv("PUSH_RELAY_TRUSTED_PROXIES"), ",") {
+		if v = strings.TrimSpace(v); v == "" {
+			continue
+		}
+		p, err := netip.ParsePrefix(v)
+		if err != nil {
+			a, aerr := netip.ParseAddr(v)
+			if aerr != nil {
+				return c, fmt.Errorf("PUSH_RELAY_TRUSTED_PROXIES: %q is not an address or a CIDR range", v)
+			}
+			p = netip.PrefixFrom(a.Unmap(), a.Unmap().BitLen())
+		}
+		c.trusted = append(c.trusted, p.Masked())
 	}
 	var missing []string
 	for name, v := range map[string]string{"PUSH_RELAY_APNS_KEY_FILE": c.keyFile, "PUSH_RELAY_APNS_KEY_ID": c.keyID,
@@ -118,7 +143,7 @@ func run(ctx context.Context, getenv func(string) string, out io.Writer, ln net.
 	if err != nil {
 		return err
 	}
-	relay := pushrelay.New(pushrelay.Options{Keys: ring, APNs: apns, Now: th.now, ClientIP: clientIP(cfg.ipHeader), Log: logger})
+	relay := pushrelay.New(pushrelay.Options{Keys: ring, APNs: apns, Now: th.now, ClientIP: clientIP(cfg.ipHeader, cfg.trusted), Log: logger})
 	srv := &http.Server{
 		Handler:           relay,
 		ReadHeaderTimeout: 5 * time.Second,
@@ -162,19 +187,42 @@ func writeCounters(out io.Writer, relay *pushrelay.Relay) {
 }
 
 // clientIP reads the caller's address from header (its last entry, the one
-// the proxy in front added) or from the connection.
-func clientIP(header string) func(*http.Request) string {
+// the proxy in front added) when the connection comes from loopback or a
+// trusted proxy and the value is an IP address, and from the connection
+// otherwise.
+func clientIP(header string, trusted []netip.Prefix) func(*http.Request) string {
 	if header == "" {
 		return pushrelay.RemoteIP
 	}
 	return func(r *http.Request) string {
+		peer := pushrelay.RemoteIP(r)
+		pa, err := netip.ParseAddr(peer)
+		if err != nil || !trustedPeer(pa.Unmap(), trusted) {
+			return peer
+		}
 		v := r.Header.Values(header)
 		if len(v) == 0 {
-			return pushrelay.RemoteIP(r)
+			return peer
 		}
 		parts := strings.Split(v[len(v)-1], ",")
-		return strings.TrimSpace(parts[len(parts)-1])
+		a, err := netip.ParseAddr(strings.TrimSpace(parts[len(parts)-1]))
+		if err != nil {
+			return peer
+		}
+		return a.Unmap().String()
 	}
+}
+
+func trustedPeer(a netip.Addr, trusted []netip.Prefix) bool {
+	if a.IsLoopback() {
+		return true
+	}
+	for _, p := range trusted {
+		if p.Contains(a) {
+			return true
+		}
+	}
+	return false
 }
 
 // classOnly turns net/http's error log into a class, dropping its text.

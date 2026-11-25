@@ -184,9 +184,17 @@ func (a *APNs) providerToken(force bool) (string, error) {
 	return a.jwt, nil
 }
 
+// minResign is the least time between two provider tokens: Apple refuses
+// updates more often than that (TooManyProviderTokenUpdates).
+const minResign = 20 * time.Minute
+
+// forgetToken drops a refused provider token, unless it was signed less than
+// minResign ago: it is then kept until that much time has passed.
 func (a *APNs) forgetToken() {
 	a.mu.Lock()
-	a.jwt = ""
+	if a.cfg.Now().Sub(a.jwtAt) >= minResign {
+		a.jwt = ""
+	}
 	a.mu.Unlock()
 }
 

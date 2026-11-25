@@ -63,6 +63,41 @@ func relayFiles(t *testing.T) map[string]string {
 		"PUSH_RELAY_SEAL_KEYS_FILE": sealFile, "PUSH_RELAY_CLIENT_IP_HEADER": "X-Forwarded-For"}
 }
 
+// TestClientIPHeaderOnlyFromTrustedPeers: the header counts only from loopback
+// or a trusted proxy, and only when it holds an IP address.
+func TestClientIPHeaderOnlyFromTrustedPeers(t *testing.T) {
+	env := relayFiles(t)
+	env["PUSH_RELAY_TRUSTED_PROXIES"] = "192.0.2.0/24, 2001:db8::5"
+	cfg, err := readConfig(func(k string) string { return env[k] })
+	if err != nil {
+		t.Fatal(err)
+	}
+	ip := clientIP("X-Forwarded-For", cfg.trusted)
+	for _, c := range []struct{ peer, header, want string }{
+		{"127.0.0.1:1", "203.0.113.9", "203.0.113.9"},
+		{"[::1]:1", "spoof, 203.0.113.9", "203.0.113.9"},
+		{"192.0.2.44:1", "203.0.113.9", "203.0.113.9"},
+		{"[2001:db8::5]:1", "2001:db8:aa::1", "2001:db8:aa::1"},
+		{"198.51.100.7:1", "203.0.113.9", "198.51.100.7"},
+		{"127.0.0.1:1", "not-an-ip", "127.0.0.1"},
+		{"127.0.0.1:1", "", "127.0.0.1"},
+		{"[2001:db8::6]:1", "203.0.113.9", "2001:db8::6"},
+	} {
+		r, _ := http.NewRequest("POST", "/v1/wake", nil)
+		r.RemoteAddr = c.peer
+		if c.header != "" {
+			r.Header.Set("X-Forwarded-For", c.header)
+		}
+		if got := ip(r); got != c.want {
+			t.Errorf("peer %s header %q: %q, want %q", c.peer, c.header, got, c.want)
+		}
+	}
+	env["PUSH_RELAY_TRUSTED_PROXIES"] = "nope"
+	if _, err := readConfig(func(k string) string { return env[k] }); err == nil {
+		t.Fatal("a bad trusted proxy was accepted")
+	}
+}
+
 func TestConfigRequired(t *testing.T) {
 	err := run(context.Background(), func(string) string { return "" }, &bytes.Buffer{}, nil, nil, nil)
 	if err == nil || !strings.Contains(err.Error(), "PUSH_RELAY_APNS_KEY_FILE") || !strings.Contains(err.Error(), "PUSH_RELAY_SEAL_KEYS_FILE") {

@@ -3,7 +3,9 @@ package httpapi
 import (
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
+	gosync "sync"
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/audit"
@@ -17,10 +19,14 @@ import (
 // with web push; every route answers 403 relay-off while the switch is off,
 // and none of them is offered on a demo instance.
 
-// Due route requests per device (D8).
+// Due route requests per device (D8), failed due-token lookups per address,
+// and registrations per user, so one account cannot use up the server's
+// registrations at the relay (30 an hour per address).
 const (
-	appleDueLimit  = 30
-	appleDueWindow = time.Hour
+	appleDueLimit      = 30
+	appleDueWindow     = time.Hour
+	appleDueMissLimit  = 20
+	appleRegisterLimit = 5
 )
 
 func (s *Server) registerApplePushRoutes(mux *routes) {
@@ -31,11 +37,15 @@ func (s *Server) registerApplePushRoutes(mux *routes) {
 		get: signedIn, put: ownerOnly("manage iPhone push through the relay").DemoDenied(),
 		more: s.appleRelayBody, putMore: s.appleRelayBody})
 	mux.handle("PUT /api/v1/settings/push/apple-relay/url", ownerOnly("manage iPhone push through the relay").DemoDenied(), s.handleAppleRelayURL)
+	s.appleRegisterLimiter = s.limit("push.apple.register", appleRegisterLimit, time.Hour)
 	mux.handle("POST /api/v1/push/apple", signedIn.SessionOnly().DemoDenied(), s.appleGate(s.handleAppleRegister))
 	mux.handle("PUT /api/v1/push/apple/{id}/schedule", signedIn.SessionOnly().DemoDenied(), s.appleGate(s.handleAppleSchedule))
-	mux.handle("DELETE /api/v1/push/apple/{id}", signedIn.SessionOnly().DemoDenied(), s.appleGate(s.handleAppleDelete))
+	// Removing a registration contacts no relay, so it works with the switch
+	// off too: a device can always record that it opted out.
+	mux.handle("DELETE /api/v1/push/apple/{id}", signedIn.SessionOnly().DemoDenied(), s.handleAppleDelete)
 	mux.handle("GET /api/v1/push/apple/status", signedIn.SessionOnly().DemoDenied(), s.appleGate(s.handleAppleStatus))
 	s.appleDueLimiter = s.limit("push.apple.due", appleDueLimit, appleDueWindow)
+	s.appleDueMissLimiter = s.limit("push.apple.due-miss", appleDueMissLimit, appleDueWindow)
 	mux.handle("GET /api/v1/push/apple/due", public("notification extension: its own device due token").DemoDenied(), s.appleGate(s.handleAppleDue))
 }
 
@@ -49,7 +59,8 @@ func (s *Server) appleRelayBody(r *http.Request) map[string]any {
 }
 
 // appleGate answers 403 relay-off while the owner's switch is off, before
-// anything else: nothing reaches the relay then.
+// anything else: nothing reaches the relay then. Every route but DELETE
+// goes through it.
 func (s *Server) appleGate(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !s.set.Apple.On(r.Context()) {
@@ -113,8 +124,18 @@ func (s *Server) handleAppleRegister(w http.ResponseWriter, r *http.Request) {
 		badBody(w, err)
 		return
 	}
-	d, err := s.set.Apple.Register(r.Context(), userFrom(r.Context()).ID, sessionFrom(r.Context()).TokenHash, in)
+	uid := userFrom(r.Context()).ID
+	if !s.appleRegisterLimiter.allow(uid) {
+		w.Header().Set("Retry-After", retryAfterSeconds(s.appleRegisterLimiter.retryAfter(uid)))
+		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many registrations for this account, try again later")
+		return
+	}
+	d, err := s.set.Apple.Register(r.Context(), uid, sessionFrom(r.Context()).TokenHash, in)
+	var busy *push.RelayBusyError
 	switch {
+	case errors.As(err, &busy):
+		w.Header().Set("Retry-After", retryAfterSeconds(busy.RetryAfter))
+		writeError(w, http.StatusTooManyRequests, "rate_limited", "the push relay is busy, try again later")
 	case errors.Is(err, push.ErrInvalidApple):
 		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
 	case errors.Is(err, push.ErrRelayOff):
@@ -173,7 +194,7 @@ const relayFailingAfter = 3 * 24 * time.Hour
 // owner's switch is off.
 func (s *Server) handleAppleStatus(w http.ResponseWriter, r *http.Request) {
 	relay := map[string]any{"reached": true, "protocol": 0, "error": nil}
-	if p, err := s.set.Apple.RelayHealth(r.Context()); err != nil {
+	if p, err := s.relayHealth(r); err != nil {
 		relay["reached"], relay["error"] = false, "the push relay could not be reached"
 	} else {
 		relay["protocol"] = p
@@ -194,17 +215,51 @@ func (s *Server) handleAppleStatus(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
+// relayHealthTTL is how long the delivery check reuses the relay's answer.
+const relayHealthTTL = time.Minute
+
+// relayHealthCache is the last health probe, for one relay address.
+type relayHealthCache struct {
+	mu       gosync.Mutex
+	url      string
+	at       time.Time
+	protocol int
+	err      error
+}
+
+// relayHealth probes the relay at most once a minute per address.
+func (s *Server) relayHealth(r *http.Request) (int, error) {
+	c := &s.appleHealth
+	url := s.set.AppleRelayURL(r.Context())
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	now := s.now()
+	if c.url == url && !c.at.IsZero() && now.Sub(c.at) < relayHealthTTL {
+		return c.protocol, c.err
+	}
+	c.protocol, c.err = s.set.Apple.RelayHealth(r.Context())
+	c.url, c.at = url, now
+	return c.protocol, c.err
+}
+
 // handleAppleDue answers the notification extension: the reminders of the
 // device's user due now, authenticated by the device's due token alone.
 func (s *Server) handleAppleDue(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
+	ip := clientIP(r)
+	if s.appleDueMissLimiter.blocked(ip) {
+		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many failed requests, try again later")
+		return
+	}
 	tok, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
 	if !ok {
+		s.appleDueMissLimiter.allow(ip)
 		writeError(w, http.StatusUnauthorized, "unauthorized", "a device due token is required")
 		return
 	}
 	d, err := s.set.Apple.DeviceForDueToken(r.Context(), strings.TrimSpace(tok))
 	if errors.Is(err, push.ErrUnknownDueToken) {
+		s.appleDueMissLimiter.allow(ip)
 		writeError(w, http.StatusUnauthorized, "unauthorized", "unknown device due token")
 		return
 	}
@@ -222,4 +277,9 @@ func (s *Server) handleAppleDue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"reminders": items})
+}
+
+// retryAfterSeconds is a Retry-After value: whole seconds, at least one.
+func retryAfterSeconds(d time.Duration) string {
+	return strconv.Itoa(max(1, int((d+time.Second-1)/time.Second)))
 }

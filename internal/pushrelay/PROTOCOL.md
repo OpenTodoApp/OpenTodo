@@ -88,3 +88,7 @@ The limits live in memory, in fixed windows aligned to the clock, and reset when
 ## What the relay keeps
 
 Nothing per request: no address, handle, token, kind or time is logged or stored. Once an hour it writes one line of counters to standard output (registrations, wakes by kind and outcome, refusals by limit, Apple's errors by reason). There is no metrics or debug route.
+
+## Source addresses
+
+The per-address limits count the connection's address. Behind a proxy, `PUSH_RELAY_CLIENT_IP_HEADER` names the header the proxy sets (its last entry counts), and it is believed only from loopback or from `PUSH_RELAY_TRUSTED_PROXIES`, and only when it holds an IP address. Run the relay behind that one proxy and do not publish its port past it.

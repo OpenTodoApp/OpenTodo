@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	gosync "sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -50,6 +51,8 @@ type appleTestEnv struct {
 	set   *services.Set
 	relay *relaytest.Env
 	calls *relayCount
+	// skew moves the server's clock forward (the delivery check's cache).
+	skew *atomic.Int64
 }
 
 // appleEnv is a server with web push and the relay client pointed at a real
@@ -78,14 +81,15 @@ func appleEnv(t *testing.T, envURL bool) *appleTestEnv {
 	}
 	set.Apple = push.NewApple(db, set.Sync, push.AppleOptions{On: set.AppleRelay.On, URL: url,
 		Client: ob.NewClient(&ob.Dialer{AllowPrivate: func(context.Context) bool { return true }}, 5*time.Second)})
-	h := New(set, nil)
+	skew := &atomic.Int64{}
+	h := New(set, nil, WithClock(func() time.Time { return time.Now().Add(time.Duration(skew.Load())) }))
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 	jar, _ := cookiejar.New(nil)
 	e := &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db, handler: h, sync: set.Sync}
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "owner@example.com", "name": "Owner", "password": "correct horse battery"})
 	e.mustStatus(resp, 201, out)
-	return &appleTestEnv{env: e, set: set, relay: relay, calls: calls}
+	return &appleTestEnv{env: e, set: set, relay: relay, calls: calls, skew: skew}
 }
 
 func appleBody(device string) (map[string]any, string) {
@@ -119,8 +123,7 @@ func TestNoRelayCallWhileOff(t *testing.T) {
 	for _, c := range []struct {
 		method, path string
 		body         any
-	}{{"POST", "/api/v1/push/apple", body}, {"PUT", "/api/v1/push/apple/x/schedule", map[string]any{"cursor": 1, "until": 1}},
-		{"DELETE", "/api/v1/push/apple/x", nil}} {
+	}{{"POST", "/api/v1/push/apple", body}, {"PUT", "/api/v1/push/apple/x/schedule", map[string]any{"cursor": 1, "until": 1}}} {
 		resp, out := a.do(c.method, c.path, c.body)
 		if resp.StatusCode != 403 || errCode(out) != "relay-off" {
 			t.Errorf("%s %s while off = %d %v", c.method, c.path, resp.StatusCode, out)
@@ -131,6 +134,74 @@ func TestNoRelayCallWhileOff(t *testing.T) {
 	}
 	if n := a.calls.count(); n != 0 {
 		t.Fatalf("the relay received %d requests while the switch was off", n)
+	}
+	// Removing a registration works with the switch off: an opt-out is
+	// always recorded, and it contacts no relay.
+	if resp, out := a.do("DELETE", "/api/v1/push/apple/x", nil); resp.StatusCode != 404 || errCode(out) != "not_found" {
+		t.Errorf("DELETE while off = %d %v", resp.StatusCode, out)
+	}
+	resp, out = a.do("PUT", "/api/v1/settings/push/apple-relay", map[string]any{"enabled": true})
+	a.mustStatus(resp, 200, out)
+	resp, out = a.do("POST", "/api/v1/push/apple", body)
+	a.mustStatus(resp, 201, out)
+	id := out["registration"].(map[string]any)["id"].(string)
+	resp, out = a.do("PUT", "/api/v1/settings/push/apple-relay", map[string]any{"enabled": false})
+	a.mustStatus(resp, 200, out)
+	before := a.calls.count()
+	if resp, out := a.do("DELETE", "/api/v1/push/apple/"+id, nil); resp.StatusCode != 204 {
+		t.Fatalf("opt-out while off = %d %v", resp.StatusCode, out)
+	}
+	if a.calls.count() != before {
+		t.Fatal("removing a registration contacted the relay")
+	}
+}
+
+// TestAppleRegisterLimits: at most 5 registrations an hour per user, and the
+// relay's 429 comes back as 429 with its Retry-After.
+func TestAppleRegisterLimits(t *testing.T) {
+	a := appleEnv(t, false)
+	resp, out := a.do("PUT", "/api/v1/settings/push/apple-relay", map[string]any{"enabled": true})
+	a.mustStatus(resp, 200, out)
+	for i := range appleRegisterLimit {
+		body, _ := appleBody("phone" + string(rune('a'+i)))
+		resp, out := a.do("POST", "/api/v1/push/apple", body)
+		a.mustStatus(resp, 201, out)
+	}
+	body, _ := appleBody("extra")
+	resp, out = a.do("POST", "/api/v1/push/apple", body)
+	if resp.StatusCode != 429 || errCode(out) != "rate_limited" || resp.Header.Get("Retry-After") == "" {
+		t.Fatalf("6th registration = %d %v", resp.StatusCode, out)
+	}
+	// Another user has a budget of their own; the relay's 429 is passed on.
+	m, _ := a.member("member@example.com", "203.0.113.140")
+	a.relay.Server.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Retry-After", "1200")
+		w.WriteHeader(http.StatusTooManyRequests)
+		_, _ = io.WriteString(w, `{"error":"limit"}`)
+	})
+	resp, out = m.do("POST", "/api/v1/push/apple", body)
+	if resp.StatusCode != 429 || errCode(out) != "rate_limited" || resp.Header.Get("Retry-After") != "1200" {
+		t.Fatalf("relay busy = %d %v Retry-After %q", resp.StatusCode, out, resp.Header.Get("Retry-After"))
+	}
+}
+
+// TestAppleDueFailedLookupsLimited: an address that keeps sending unknown due
+// tokens is refused for a while, before any lookup.
+func TestAppleDueFailedLookupsLimited(t *testing.T) {
+	a := appleEnv(t, false)
+	resp, out := a.do("PUT", "/api/v1/settings/push/apple-relay", map[string]any{"enabled": true})
+	a.mustStatus(resp, 200, out)
+	body, dueTok := appleBody("phone")
+	resp, out = a.do("POST", "/api/v1/push/apple", body)
+	a.mustStatus(resp, 201, out)
+	wrong := base64.RawURLEncoding.EncodeToString(make([]byte, 32))
+	for i := range appleDueMissLimit {
+		if s, _ := a.due(wrong); s != 401 {
+			t.Fatalf("miss %d = %d", i+1, s)
+		}
+	}
+	if s, out := a.due(dueTok); s != 429 {
+		t.Fatalf("after %d misses = %d %v", appleDueMissLimit, s, out)
 	}
 }
 
@@ -378,6 +449,13 @@ func TestDeliveryCheckNoProbeWhileOff(t *testing.T) {
 		t.Fatal(err)
 	}
 	a.relay.Server.Close()
+	// Within a minute the cached probe answers; after it, the relay is asked again.
+	resp, out = a.do("GET", "/api/v1/push/apple/status?device=phone", nil)
+	a.mustStatus(resp, 200, out)
+	if out["relay"].(map[string]any)["reached"] != true {
+		t.Fatalf("cached probe %v", out)
+	}
+	a.skew.Store(int64(61 * time.Second))
 	resp, out = a.do("GET", "/api/v1/push/apple/status?device=phone", nil)
 	a.mustStatus(resp, 200, out)
 	reg, _ := out["registration"].(map[string]any)

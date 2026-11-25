@@ -27636,7 +27636,7 @@
     },
     "/api/v1/push/apple": {
       "post": {
-        "description": "`{deviceId, token, environment, dueToken, includeContent}` → 201 `{registration:{id, deviceId, includeContent, expiresAt, createdAt}}`: registers this iPhone with the push relay; 403 `relay-off` while the owner's switch is off, 502 `relay-unreachable`, 400 `invalid_input`\n\nNeeds a session; tokens are refused.",
+        "description": "`{deviceId, token, environment, dueToken, includeContent}` → 201 `{registration:{id, deviceId, includeContent, expiresAt, createdAt}}`: registers this iPhone with the push relay; 403 `relay-off` while the owner's switch is off, 502 `relay-unreachable`, 400 `invalid_input`, 429 `rate_limited` with `Retry-After` after 5 an hour per account or while the relay is busy\n\nNeeds a session; tokens are refused.",
         "externalDocs": {
           "url": "https://open-todo.app/docs/api/#your-account-and-credentials"
         },
@@ -27890,7 +27890,7 @@
     },
     "/api/v1/push/apple/{id}": {
       "delete": {
-        "description": "204, or 404 `not_found`\n\nNeeds a session; tokens are refused.",
+        "description": "204, or 404 `not_found`; works with the owner's switch off too, and contacts no relay\n\nNeeds a session; tokens are refused.",
         "externalDocs": {
           "url": "https://open-todo.app/docs/api/#your-account-and-credentials"
         },

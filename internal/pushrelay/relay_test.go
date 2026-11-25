@@ -433,11 +433,22 @@ func TestAPNsRequest(t *testing.T) {
 	if jwts[1] == jwts[2] {
 		t.Fatal("the provider token was not renewed after 40 minutes")
 	}
-	// A refused provider token is signed again on the next push.
+	// A refused provider token signed less than 20 minutes ago is kept (Apple
+	// refuses more frequent updates); one older than that is signed again.
 	e.APNs.Answer(func(relaytest.Push) (int, string) { return 403, "ExpiredProviderToken" })
 	if s, c, _ := wake(t, e, d, "due"); s != 502 || c != "apns" {
 		t.Fatalf("403: %d %s", s, c)
 	}
+	e.APNs.Answer(nil)
+	e.Clock.Add(time.Second)
+	wake(t, e, d, "due")
+	ps = e.APNs.Pushes()
+	if ps[len(ps)-1].Header.Get("Authorization") != ps[len(ps)-2].Header.Get("Authorization") {
+		t.Fatal("a provider token signed a minute ago was signed again")
+	}
+	e.Clock.Add(21 * time.Minute)
+	e.APNs.Answer(func(relaytest.Push) (int, string) { return 403, "ExpiredProviderToken" })
+	wake(t, e, d, "due")
 	e.APNs.Answer(nil)
 	e.Clock.Add(time.Second)
 	wake(t, e, d, "due")

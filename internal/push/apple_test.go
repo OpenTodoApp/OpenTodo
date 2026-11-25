@@ -372,3 +372,74 @@ func TestAppleDueAndSchedule(t *testing.T) {
 		t.Fatalf("a deleted device's due token: %v", err)
 	}
 }
+
+// TestExpiredSessionStopsTheDueToken: once its session expired, a
+// registration's due token no longer works and no wake selects it.
+func TestExpiredSessionStopsTheDueToken(t *testing.T) {
+	e := newAppleEnv(t)
+	ctx := context.Background()
+	if _, err := e.db.Exec(`INSERT INTO sessions(token_hash,user_id,created_at,expires_at) VALUES('short','u1',1,?)`, e.clock.UnixMilli()+60_000); err != nil {
+		t.Fatal(err)
+	}
+	in := appleInput("phone")
+	if _, err := e.apple.Register(ctx, "u1", "short", in); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.apple.DeviceForDueToken(ctx, in.DueToken); err != nil {
+		t.Fatalf("live session: %v", err)
+	}
+	*e.clock = e.clock.Add(2 * time.Minute)
+	if _, err := e.apple.DeviceForDueToken(ctx, in.DueToken); !errors.Is(err, ErrUnknownDueToken) {
+		t.Fatalf("expired session: %v", err)
+	}
+	if list, _ := e.apple.Devices(ctx, "u1"); len(list) != 0 {
+		t.Fatalf("%d devices of an expired session listed for wakes", len(list))
+	}
+	// A deactivated user's live session does not count either.
+	other := appleInput("ipad")
+	if _, err := e.apple.Register(ctx, "u2", "sess2", other); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.db.Exec(`INSERT INTO user_status(user_id, deactivated_at) VALUES('u2', 1)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.apple.DeviceForDueToken(ctx, other.DueToken); !errors.Is(err, ErrUnknownDueToken) {
+		t.Fatalf("deactivated user: %v", err)
+	}
+}
+
+func TestPlainTitle(t *testing.T) {
+	for in, want := range map[string]string{
+		"#1 priority":               "#1 priority",
+		"# Heading":                 "Heading",
+		"## **Bold** [link](x://y)": "Bold link",
+		"a  \n b":                   "a b",
+	} {
+		if got := PlainTitle(in); got != want {
+			t.Errorf("PlainTitle(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+// TestDueSkipsClosedTasksBeforeTheCap: many completed tasks due now do not
+// crowd out the open one.
+func TestDueSkipsClosedTasksBeforeTheCap(t *testing.T) {
+	e := newAppleEnv(t)
+	ctx := context.Background()
+	now := e.clock.UnixMilli()
+	for i := range maxDueItems + 5 {
+		id := "done" + string(rune('a'+i))
+		e.apply(t, "u1", map[string]map[string]any{"task:" + id: {"title": "x", "completed_at": now - 1, "deleted_at": nil}})
+		e.reminder(t, "u1", "r"+id, id, now-120_000)
+	}
+	e.apply(t, "u1", map[string]map[string]any{"task:open": {"title": "Open", "completed_at": nil, "deleted_at": nil}})
+	e.reminder(t, "u1", "ropen", "open", now-60_000)
+	d, err := e.apple.Register(ctx, "u1", "sess1", appleInput("phone"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	items, err := e.apple.Due(ctx, d)
+	if err != nil || len(items) != 1 || items[0].ID != "ropen" {
+		t.Fatalf("due %+v %v", items, err)
+	}
+}

@@ -37,14 +37,18 @@ type Relay struct {
 	now   func() time.Time
 	ip    func(*http.Request) string
 	log   *slog.Logger
-	lim   *limiter
+	// Separate LRUs (design D6): address counters are created for any request,
+	// even garbage, so they live apart and can never evict a device's counters,
+	// which are only created after a valid signature. Registrations are capped
+	// per address, which bounds how many device keys anyone can insert.
+	addrLim, devLim, instLim *limiter
 	stats *Stats
 	mux   *http.ServeMux
 }
 
 // New builds a relay.
 func New(o Options) *Relay {
-	r := &Relay{keys: o.Keys, apns: o.APNs, now: o.Now, ip: o.ClientIP, log: o.Log, lim: newLimiter(LRUKeys), stats: &Stats{}}
+	r := &Relay{keys: o.Keys, apns: o.APNs, now: o.Now, ip: o.ClientIP, log: o.Log, addrLim: newLimiter(LRUKeys), devLim: newLimiter(LRUKeys), instLim: newLimiter(1), stats: &Stats{}}
 	if r.now == nil {
 		r.now = time.Now
 	}
@@ -142,7 +146,7 @@ type registerIn struct {
 
 func (r *Relay) handleRegister(w http.ResponseWriter, req *http.Request) {
 	now := r.now()
-	if name, after := r.lim.take(now, "ra", addressKey(r.ip(req)), registerAddrWindows); name != "" {
+	if name, after := r.addrLim.take(now, "ra", addressKey(r.ip(req)), registerAddrWindows); name != "" {
 		r.refuse(w, name, after)
 		return
 	}
@@ -188,7 +192,7 @@ type wakeIn struct {
 
 func (r *Relay) handleWake(w http.ResponseWriter, req *http.Request) {
 	now := r.now()
-	if name, after := r.lim.take(now, "wa", addressKey(r.ip(req)), wakeAddrWindows); name != "" {
+	if name, after := r.addrLim.take(now, "wa", addressKey(r.ip(req)), wakeAddrWindows); name != "" {
 		r.refuse(w, name, after)
 		return
 	}
@@ -213,7 +217,7 @@ func (r *Relay) handleWake(w http.ResponseWriter, req *http.Request) {
 		writeErr(w, http.StatusGone, CodeExpired)
 		return
 	}
-	if name, after := r.lim.take(now, "instance", nil, instanceWindows); name != "" {
+	if name, after := r.instLim.take(now, "instance", nil, instanceWindows); name != "" {
 		r.refuse(w, name, after)
 		return
 	}
@@ -223,7 +227,7 @@ func (r *Relay) handleWake(w http.ResponseWriter, req *http.Request) {
 	}
 	// Keyed by the token, not the handle: the caps follow the phone across
 	// registrations by anyone (design D6).
-	if name, after := r.lim.take(now, "d"+kind, d.Token, ws); name != "" {
+	if name, after := r.devLim.take(now, "d"+kind, d.Token, ws); name != "" {
 		r.refuse(w, name, after)
 		return
 	}

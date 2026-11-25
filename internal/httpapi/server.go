@@ -130,6 +130,11 @@ type Server struct {
 	pushTestLimiter *rateLimiter
 	// appleDueLimiter caps the due route per iPhone registration (ios-push-relay D8).
 	appleDueLimiter *rateLimiter
+	// appleDueMissLimiter caps failed due-token lookups per address, and
+	// appleRegisterLimiter registrations per user (ios-push-relay).
+	appleDueMissLimiter, appleRegisterLimiter *rateLimiter
+	// appleHealth caches the delivery check's relay probe.
+	appleHealth relayHealthCache
 	// mail sends outgoing email (OpenSpec `outgoing-email`); nil on a demo
 	// instance or when not wired, which means "not configured".
 	mail *mail.Service
