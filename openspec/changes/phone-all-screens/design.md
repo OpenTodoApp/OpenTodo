@@ -58,11 +58,27 @@ Below 768 px the shell's content already sits on the canvas colour, and pages ke
 - The header's menu comparison of `phone-lists` (item by item against the present phone menu) is extended to five screens that are not lists.
 - `scripts/e2e-phone.mjs` gains a saved view and Next: a tap opens the task page, the check completes.
 
+### D6. Measured on the 10,000-task account
+
+`scripts/perf/run.mjs` takes `PERF_PHONE_UI=1`: the phone profile (412 by 915 px, CPU slowed four times) with the switch on, against the phone budgets. `scripts/perf/run.sh`, which the nightly runs, does both. Medians of three runs on the development machine, 2026-11-25:
+
+| | switch off | switch on | budget |
+| --- | --- | --- | --- |
+| cold start to Today | 1178 ms | 1252 ms | 3000 ms |
+| open the 2,000-task project | 279 ms | 140 ms | 1200 ms |
+| complete a task, p95 | 184 ms | 104 ms | 200 ms |
+| cursor move, p95 | 70.7 ms | 72.3 ms | 150 ms |
+| search keystroke, p95 | 58.3 ms | 56.7 ms | 200 ms |
+| saved view | 79.4 ms | 79.0 ms | 300 ms |
+| JS heap after the session | 50.3 MB | 44.6 MB | 150 MB |
+
+The first run with the switch on failed: completing a task took 1410 ms, because the phone row showed its tick only after the write had come back through the 2,000-row list. It now shows the tick with the tap (`usePendingDone`, as the desktop row), and marks the keyboard's cursor row (`aria-current`), which the cursor measure reads. The desktop profile was not run again here; the row's seam adds one context read to a row's render.
+
 ## Risks / Trade-offs
 
 - **A screen relies on the shell's bar for something `PageHeader` does not carry** → the unit test walks every route; a screen without a page header keeps the shell's bar.
 - **A screen's content looks out of place under the phone header** (a dense table, a wide control) → expected and named as out of scope; the layout check still guards sideways scroll and targets, and each such screen is a later change.
-- **The task row's seam costs the desktop a context read per row** → one `use()` per row render; measured against the list budgets in 4.2.
+- **The task row's seam costs the desktop a context read per row** → one `use()` per row render; measured in 4.2.
 
 ## Migration Plan
 

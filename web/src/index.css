@@ -1403,6 +1403,8 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    a screen lists phone rows, the rows of one list are one card, with hairlines that start
    at the text. The phone row exists only while the phone screens are on. */
 ul:has(> [data-phone-row]), ul:has(> .row-block [data-phone-row]) { @apply overflow-hidden rounded-card bg-surface shadow-1; }
+/* The keyboard's cursor row, on a phone with a keyboard. */
+[data-phone-row][aria-current="true"] { box-shadow: inset 3px 0 0 var(--ot-accent); }
 [data-phone-row] + [data-phone-row]::before { content: ''; @apply absolute left-12 right-0 top-0 z-[1] border-t border-soft; }
 [data-phone-list] [data-phone-list-body] > section { @apply mb-5; }
 

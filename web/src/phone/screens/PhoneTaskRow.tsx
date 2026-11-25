@@ -5,6 +5,7 @@
 // press the screen's own drag and hold read. What a screen does not give its rows
 // (a swipe, a menu, a tick), the phone row does not have there either.
 import { useCallback, useState } from 'react'
+import { usePendingDone } from '../../lib/pendingDone'
 import { useDateTimeFormat } from '../../app/DateTimePrefsProvider'
 import { dragFeedback } from '../../app/listDrop'
 import { prefersReducedMotion } from '../../app/motion'
@@ -17,7 +18,7 @@ import { rowOf } from '../rowModel'
 import { openTaskFromList } from '../transition'
 import { TaskDateSheet } from './TaskDateSheet'
 
-export function PhoneTaskRow({ task, contextual, depth = 0, project, showProject = true, progress, implied, hasChildren, collapsed, readOnly = false, swipe = false, selectMode = false, ticked = false, dragging = false,
+export function PhoneTaskRow({ task, selected = false, contextual, depth = 0, project, showProject = true, progress, implied, hasChildren, collapsed, readOnly = false, swipe = false, selectMode = false, ticked = false, dragging = false,
   dropIndicator, dropDepth, dropNote, dropKey, inline, treeItem, motion, onToggle, onTick, onToggleCollapse, onPointerDown, onRowMenu, onContextMenu }: TaskRowProps) {
   const today = useToday()
   const zone = useViewerZone()
@@ -27,7 +28,10 @@ export function PhoneTaskRow({ task, contextual, depth = 0, project, showProject
   const departing = motion === 'leave'
   const swipes = swipe && !readOnly && !inline && !departing
   const swiping = useRowSwipe({ task, enabled: swipes, onComplete: onToggle, onSchedule: schedule })
-  const row = rowOf(task, implied, { today, zone, dateTime, project: showProject ? project : undefined, progress })
+  // The tick shows with the tap, before the write has come back through the list, as the desktop row's does
+  // (a completion draws only its own row; found by the phone profile of the time benchmark).
+  const checked = usePendingDone(task) || departing
+  const row = { ...rowOf(task, implied, { today, zone, dateTime, project: showProject ? project : undefined, progress }), done: checked }
   const feedback = dragFeedback(prefersReducedMotion())
   const drag = departing ? undefined : onPointerDown
   return (
@@ -51,6 +55,8 @@ export function PhoneTaskRow({ task, contextual, depth = 0, project, showProject
           'data-draggable': drag ? '' : undefined,
           'data-swipeable': swipes ? '' : undefined,
           'data-dragging': dragging ? '' : undefined,
+          // The keyboard's cursor row, for a phone with a keyboard: marked as the list marks it.
+          'aria-current': selected && !departing ? true : undefined,
           'aria-level': treeItem ? depth + 1 : undefined,
           'aria-hidden': departing || undefined,
           // The screen's drag owns the hold on a row it can lift; elsewhere the row's own hold opens the menu.

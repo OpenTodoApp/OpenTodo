@@ -19,6 +19,6 @@
 ## 4. The whole
 
 - [x] 4.1 The web app. Verify: `npm test`, `npm run lint` and `npm run build` in `web/`; `node scripts/bundle-budget.mjs` inside the budget, numbers written in the design; `node scripts/i18n-check.mjs`. Done: 935 test files pass, lint and knip clean, entry 93.4 of 148 KB and first load 662.7 of 712 KB; no new string.
-- [ ] 4.2 Performance: the desktop list's budgets with the row's seam. Verify: the list budgets of `docs/performance.md` on the 10,000-task account, numbers in the design.
+- [ ] 4.2 Performance: the desktop list's budgets with the row's seam. Verify: the list budgets of `docs/performance.md` on the 10,000-task account, numbers in the design. Done so far: the phone profile with the switch off and on, every budget met (design D6); the nightly runs it. The desktop profile with the seam was not run locally: the nightly does.
 - [x] 4.3 Docs: `docs/phone-screens.md`, `changelog.d/Changed/phone-all-screens.md`, `ROADMAP.md`, the docs build. Verify: `npm run docs:build` and `docs:check`; repo checks.
 - [ ] 4.4 The owner tries the screens on a phone. Verify: their findings fixed or recorded here.

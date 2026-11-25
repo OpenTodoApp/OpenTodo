@@ -3,7 +3,8 @@
 # docs/performance.md), after the app and the server are built (`make perf` builds
 # them; the nightly workflow runs this in the Playwright image, which has no make).
 # Builds the 10,000-task account, then the server budgets (internal/perf) and the
-# desktop and phone-profile budgets (run.mjs), each PERF_RUNS times; fails when a
+# desktop and phone-profile budgets (run.mjs), the phone profile also with the phone UI
+# on, each PERF_RUNS times; fails when a
 # median is over its limit. Reports in perf-report/; the failures, one per line,
 # in perf-report/failures.txt.
 #
@@ -44,7 +45,15 @@ go run ./cmd/perfseed -data "$fixture" ${PERF_SEED_FLAGS:-} || exit 1
 st=0
 PERF_FIXTURE=$fixture PERF_REPORT=$reports/server.json go test -tags perf -count=1 -timeout 40m -run TestServerBudgets ./internal/perf/... || st=1
 PERF_FIXTURE=$fixture PERF_REPORT=$reports/web.json node scripts/perf/run.mjs || st=1
-node scripts/perf/failures.mjs perf-report/server.json perf-report/web.json > perf-report/failures.txt
+web_reports="perf-report/web.json"
+# The phone profile again with the device's "New phone screens" switch on (OpenSpec phone-all-screens):
+# the phone UI is held to the phone budgets of the screens it replaces.
+case ",${PERF_PROFILES:-desktop,phone}," in *,phone,*)
+  PERF_PHONE_UI=1 PERF_PROFILES=phone PERF_FIXTURE=$fixture PERF_REPORT=$reports/web-phone-ui.json node scripts/perf/run.mjs || st=1
+  web_reports="$web_reports perf-report/web-phone-ui.json";;
+esac
+# shellcheck disable=SC2086 # the report paths are words
+node scripts/perf/failures.mjs perf-report/server.json $web_reports > perf-report/failures.txt
 # The 2,000-row list as a screen reader gets it (accessibility-aa): every row in the tree, one named list per section.
 PERF_FIXTURE=$fixture node scripts/perf/a11y-list.mjs > "$reports/a11y-list.txt" 2>&1 || { st=1; echo "a11y-list: $(tail -1 "$reports/a11y-list.txt")" >> perf-report/failures.txt; }
 cat perf-report/failures.txt
