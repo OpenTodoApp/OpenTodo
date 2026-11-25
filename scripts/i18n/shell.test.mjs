@@ -1,7 +1,7 @@
 // node --test scripts/i18n/shell.test.mjs (run by `make i18n-check`)
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { checkShellCatalog, specifiers } from './shell.mjs'
+import { checkShellCatalog, parseStrings, placeholders, readAppShortcutsCatalog, specifiers } from './shell.mjs'
 
 const langs = ['de', 'es']
 const unit = (value) => ({ stringUnit: { state: 'translated', value } })
@@ -47,4 +47,52 @@ test('a language the web app does not ship is a problem', () => {
 test('specifiers keeps counts and order but drops the escaped percent', () => {
   assert.deepEqual(specifiers('100%% of %lld at %1$@'), ['%1$@', '%lld'])
   assert.deepEqual(specifiers('no format here'), [])
+})
+
+// apple-shortcuts D4: the Siri phrases' catalog, where a language may give several phrases.
+const phrases = (localizations) => catalog({ 'Open Today in ${applicationName}': { localizations } })
+const set = (...values) => ({ stringSet: { state: 'translated', values } })
+const siri = { label: 'shortcuts', appName: true }
+
+test('Siri phrases: several per language, each naming the app', () => {
+  const c = phrases({ de: set('Öffne Heute in ${applicationName}', 'Heute in ${applicationName}'), es: set('Abre Hoy en ${applicationName}') })
+  assert.deepEqual(checkShellCatalog(c, langs, [], siri), [])
+})
+
+test('Siri phrases: a phrase without the app, an empty set and a source without the app are named', () => {
+  assert.deepEqual(checkShellCatalog(phrases({ de: set('Öffne Heute'), es: set() }), langs, [], siri), [
+    'shortcuts de: "Öffne Heute" uses no placeholder, the source uses ${applicationName}',
+    'shortcuts es: "Open Today in ${applicationName}" is empty',
+  ])
+  const bare = catalog({ 'Open Today': { localizations: { de: set('Heute'), es: set('Hoy') } } })
+  assert.deepEqual(checkShellCatalog(bare, langs, [], siri), ['shortcuts: "Open Today" does not name the app with ${applicationName}'])
+})
+
+test('placeholders finds the App Shortcut parameters', () => {
+  assert.deepEqual(placeholders('Add ${text} in ${applicationName}'), ['${applicationName}', '${text}'])
+  assert.deepEqual(placeholders('100% of %@'), [])
+})
+
+test('every phrase of the iOS app names the app', () => {
+  const c = readAppShortcutsCatalog()
+  assert.ok(Object.keys(c.strings).length > 0)
+  for (const [key, entry] of Object.entries(c.strings)) {
+    assert.ok(key.includes('${applicationName}'), key)
+    for (const [lang, l] of Object.entries(entry.localizations)) {
+      assert.ok(l.stringUnit.value.includes('${applicationName}'), `${lang}: ${l.stringUnit.value}`)
+    }
+  }
+})
+
+test('parseStrings reads pairs, skips comments and refuses anything else', () => {
+  const text = '/* note */\n// line\n"Open ${applicationName}" = "Öffne \\"${applicationName}\\"";\n"a" = "b";\n'
+  assert.deepEqual(parseStrings(text), { 'Open ${applicationName}': 'Öffne "${applicationName}"', a: 'b' })
+  assert.throws(() => parseStrings('"a" = "b"\n'))
+})
+
+test('every language folder of the iOS app has every phrase', () => {
+  const c = readAppShortcutsCatalog()
+  for (const [key, entry] of Object.entries(c.strings)) {
+    assert.deepEqual(Object.keys(entry.localizations).sort(), ['de', 'es', 'fr', 'it', 'nl', 'pl', 'pt', 'tr', 'zh'], key)
+  }
 })

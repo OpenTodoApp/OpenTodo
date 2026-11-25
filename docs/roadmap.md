@@ -29,7 +29,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `play-production` | Google Play production, F-Droid and reproducible builds: reproducible builds, the F-Droid metadata and the Play upload are in; the store listings wait for the owner's Play Console and F-Droid steps | In progress (15 of 18) |
 | `ios-shell` | The iPhone and iPad app: first-run server screen, reminders on the phone without a push service, the share sheet, a Today widget, Face ID unlock | In progress (25 of 34) |
 | `ios-distribution` | The iPhone app in TestFlight and the App Store | In progress (15 of 29) |
-| `apple-shortcuts` | Siri, Shortcuts, the Action Button and iOS widgets | Planned |
+| `apple-shortcuts` | Siri, Shortcuts, the Action Button and iOS widgets | In progress (2 of 22) |
 | `focus-live-activity` | Focus as a Live Activity and in the Dynamic Island | In progress (18 of 21) |
 | `location-reminders` | Reminders when you arrive at or leave a place. Shipped on Android; iOS follows | In progress (16 of 18) |
 | `mobile-native-feel` | The phone apps made to feel native: the plan and the order, one change per step | In progress (5 of 15) |

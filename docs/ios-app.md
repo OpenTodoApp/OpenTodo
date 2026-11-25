@@ -66,6 +66,12 @@ The app from TestFlight or the App Store opens any server, and iOS gives such an
 
 The app appears in the share sheet of other apps. A link, some text or files open the capture screen, ready to save: up to ten files, 20 MB each and 25 MB together — check your server's own limit per file. A share that arrives before you have entered a server waits until you have.
 
+## Siri and Shortcuts
+
+Ask Siri **"What's on today in OpenTodo"**: it answers with today's count, the overdue count and up to five tasks with their times, from the list the app last published, without opening the app or asking the server. While your phone is locked, or for an encrypted account that was locked at the time, it gives the counts only. A list from an earlier day comes with its date. **"Open Today in OpenTodo"** and **"Open quick add in OpenTodo"** open the app there.
+
+All three are in the Shortcuts app, ready to use in your own shortcuts, and any of them can go on the Action Button (**Settings → Action Button → Shortcut**). Siri knows the phrases in each of the app's languages that it speaks itself.
+
 ## Widgets
 
 **Today**, in the medium size, shows the tasks due today and the overdue ones, with the time and priority, from the last thing the web app published. Tap a task to open it. For an encrypted account the widget shows counts only until you unlock.
