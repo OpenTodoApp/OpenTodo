@@ -7918,10 +7918,10 @@
   "Merged into {label}": "{label} に統合しました",
   "Field deleted": "フィールドを削除しました",
   "Phone screens": "スマートフォン画面",
-  "A trial of screens made for a phone. This device only.": "スマートフォン向けに作った画面の試用版。この端末のみ。",
   "New phone screens": "新しいスマートフォン画面",
-  "Today and the task page in the new design. Turn it off at any time.": "新しいデザインの今日とタスクページ。いつでもオフにできます。",
   "Quick add notification": "クイック追加の通知",
   "Add a task from the notification shade, in any app.": "どのアプリを使っていても、通知シェードからタスクを追加できます。",
-  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android が OpenTodo の通知を拒否しました。Android の設定で許可してください。"
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android が OpenTodo の通知を拒否しました。Android の設定で許可してください。",
+  "Screens made for a phone. This device only.": "スマートフォン向けに作った画面。この端末のみ。",
+  "The app in the design made for a phone. Turn it off for the earlier screens.": "スマートフォン向けデザインのアプリ。オフにすると以前の画面に戻ります。"
 }
