@@ -9,7 +9,7 @@ order: 32
 ---
 # Translating OpenTodo
 
-The web app ships in English, German, French, Spanish, Italian, Portuguese, Simplified Chinese, Dutch, Turkish and Polish, and in Russian as a community translation. People pick the language in **Settings → Language and region → Language** (see [The app in your language](language.md)); the choice syncs to every device of the account. This page is for contributors who write text in the app or translate it. The documentation and the in-app Help guide stay in English.
+The web app ships in English, German, French, Spanish, Italian, Portuguese, Simplified Chinese, Dutch, Turkish and Polish, and in Russian and Arabic as community translations. People pick the language in **Settings → Language and region → Language** (see [The app in your language](language.md)); the choice syncs to every device of the account. This page is for contributors who write text in the app or translate it. The documentation and the in-app Help guide stay in English.
 
 ## How text is written
 
@@ -75,7 +75,7 @@ Open a [Translation issue](https://github.com/OpenTodoApp/OpenTodo/issues/new?te
 4. List it: `{ code: 'sv', name: 'Svenska' }` in `SHIPPED`, `web/src/locales/index.ts`, with the name in the language itself.
    - A **maintained** language is complete on every surface, and also goes into `mail.Languages` (`internal/mail/message.go`) with its plural units and role names. The checks fail while a surface is missing.
    - A **community** language adds `community: true`; see [Community languages](#community-languages).
-5. Uncomment the language's row in the maintainer table and name the reviewer in the pull request. A speaker of the language reviews every catalog change; machine translation is not accepted (the Simplified Chinese and Russian catalogs started as machine drafts by the maintainer's decision, and are reviewed as speakers sign up).
+5. Uncomment the language's row in the maintainer table and name the reviewer in the pull request. A speaker of the language reviews every catalog change; machine translation is not accepted (the Simplified Chinese, Russian and Arabic catalogs started as machine drafts by the maintainer's decision, and are reviewed as speakers sign up).
 
 [Add a language](contributing/add-a-language.md) lists every file the language touches.
 
@@ -101,6 +101,7 @@ Every listed language has a reviewer who reads each catalog change. A language w
 | Nederlands | `nl` | maintained, reviewed in [#1077](https://github.com/OpenTodoApp/OpenTodo/pull/1077) | jschreuder |
 | Polski | `pl` | maintained | nkkfs |
 | Русский | `ru` | community, machine draft | wanted: open a [Translation issue](https://github.com/OpenTodoApp/OpenTodo/issues/new?template=translation.yml) to review it |
+| العربية | `ar` | community, machine draft, right to left | wanted: open a [Translation issue](https://github.com/OpenTodoApp/OpenTodo/issues/new?template=translation.yml) to review it |
 
 ## Writing a quick-add vocabulary
 
@@ -111,9 +112,13 @@ Quick add understands dates, times, repeats and reminders in a language only wit
 3. Add cases to `web/src/lib/nlp/quickadd.vectors.json` with the language in `ctx.languages`: at least one per kind of phrase (a day word, a weekday, a month, a time, a repeat, a reminder, a deadline), and a title that contains one of the words and must stay a title. Both parsers run every case, so `npm test -- nlp` and `go test ./internal/quickadd/` must agree.
 4. Word a phrase as people type it and keep it short: a word that is also common in English is parsed only while the language is active. Two lists cover ambiguities inside the language itself: `guardedAbbreviations` holds abbreviations that are also ordinary words (Dutch `ma`, "mum", and `zo`, "so"), which then count as a weekday only next to a date, and `halfWords` reads "half 4" as half past three where the language counts half hours that way (Dutch `om half 4`). `nl.ts` is a complete example of both.
 
+## Right-to-left languages
+
+Arabic is laid out right to left: the app mirrors itself, so a translation never needs to. Two things are the translator's: a sentence that names a side or an arrow names the mirrored one ("Swipe right to complete" becomes "swipe left", "Shift+→" becomes "Shift+←", a board's "Move left" moves towards the previous column, which is on the right), and plurals use every category the language has (Arabic: `zero`, `one`, `two`, `few`, `many`, `other`; `other` is required). Numbers stay in Western digits.
+
 ## Glossary
 
-Use these terms consistently; they match the quick-add vocabulary and the server's email templates. German and Dutch use *du*/*je*, French *tu*, Spanish *tú*, Italian *tu*, Portuguese (Brazil) *você*, Simplified Chinese 你, Russian *вы* and Polish *ty*. peilf reviews the Simplified Chinese catalog.
+Use these terms consistently; they match the quick-add vocabulary and the server's email templates. German and Dutch use *du*/*je*, French *tu*, Spanish *tú*, Italian *tu*, Portuguese (Brazil) *você*, Simplified Chinese 你, Russian *вы*, Polish *ty* and Arabic the imperative with أنت. peilf reviews the Simplified Chinese catalog.
 
 | English | Deutsch | Français | Español | Italiano | Português | 简体中文 | Nederlands | Русский | Polski | Türkçe |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
