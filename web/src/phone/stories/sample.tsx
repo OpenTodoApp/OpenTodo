@@ -5,7 +5,6 @@ import { IconButton } from '../../ui'
 import type { FactModel } from '../components/FactRow'
 import type { DateChoice } from '../components/PhoneDateSheet'
 import type { PhoneRowModel } from '../components/PhoneRow'
-import type { PhoneEvent, PhoneTodayGroup } from '../screens/PhoneTodayView'
 
 export const noop = () => {}
 
@@ -24,15 +23,6 @@ export const todayRows: PhoneRowModel[] = [
   { id: 't6', title: 'Stretch for ten minutes', priority: 3, facts: [{ id: 'project', text: 'Health', mark: <Dot c={RED} /> }] },
 ]
 export const more = <IconButton icon="ellipsis" label="More actions" onClick={noop} className="touch-target" />
-export const groups: PhoneTodayGroup[] = [
-  { id: 'earlier', title: 'Earlier', tone: 'danger', rows: lateRows, count: lateRows.length, action: more },
-  { id: 'today', title: 'Today', rows: todayRows, count: todayRows.length },
-]
-export const events: PhoneEvent[] = [
-  { id: 'e1', title: 'Team stand-up', time: '10:00', color: BLUE },
-  { id: 'e2', title: 'Lunch with Ana', time: '12:30', color: GREEN },
-]
-
 export const schedule: FactModel[] = [
   { id: 'due', label: 'Do', icon: 'sun', value: 'Tomorrow', tone: 'text-accent' },
   { id: 'deadline', label: 'Deadline', icon: 'hourglass', value: 'Fri 23 Oct' },

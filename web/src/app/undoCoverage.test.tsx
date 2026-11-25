@@ -36,7 +36,8 @@ const SURFACES: Record<string, RegExp> = {
   'task-detail/Facets.tsx': /\bsectionMoveWithUndo\(task\.id/,
   'task-detail/subtaskOrder.ts': /\bstepRowWithUndo\(c\.id[\s\S]*\bmoveRowWithUndo\(d\.id/,
   'task-list/useListShortcuts.ts': /\bstepRowWithUndo\(selectedId/,
-  'TaskListView.tsx': /\bstepRowWithUndo\(id, step\)/,
+  // The list's wiring is the hook both list screens draw from (phone-lists D1).
+  'task-list/useListScreen.tsx': /\bstepRowWithUndo\(id, step\)/,
   'vim/actions.ts': /\bstepRowWithUndo\(task\.id/,
   'Sections.tsx': /withUndoToast\(deleteSectionUndoable\(section\.id\)\)/,
   'palette/registry.ts': /withUndoToast\(deleteSectionUndoable\(s\.row\.id\)\)/,

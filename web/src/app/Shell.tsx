@@ -11,7 +11,9 @@ import type { User } from '../lib/types'
 import { openStartView } from './startView'
 import { describeRejected } from '../lib/sharing'
 import { useSyncStatus } from '../lib/sync'
-import { canonicalPath, navigate, offersQuickAdd, type Route, useRoute } from './router'
+import { canonicalPath, navigate, offersQuickAdd, useRoute } from './router'
+import { useProjectViewMode } from '../lib/liveData'
+import type { ListRoute } from './task-list/useListModel'
 import { SIDEBAR_COLLAPSED_REM, SIDEBAR_DEFAULT_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth } from './sidebarLayout'
 import { LabelsView } from './LabelsView'
 import { ViewsView } from './ViewsView'
@@ -71,12 +73,13 @@ const FeatureOff = lazy(() => import('./FeatureOff'))
 const VimLayer = lazy(() => import('./vim/VimLayer'))
 const WorkspaceActivity = lazy(() => import('./WorkspaceActivity'))
 // The phone UI's screens (phone-ui-trial D2): their own chunks, fetched only while the per-device switch is on below 768 px.
-const PhoneToday = lazy(() => import('../phone/screens/PhoneToday').then((m) => ({ default: m.PhoneToday })))
+const PhoneList = lazy(() => import('../phone/screens/PhoneList').then((m) => ({ default: m.PhoneList })))
 const PhoneTaskPage = lazy(() => import('../phone/screens/PhoneTaskPage').then((m) => ({ default: m.PhoneTaskPage })))
-/** The task page, drawn by the phone UI while it is on, and the phone UI's Today (phone-ui-trial D2). */
-function TaskOrPhone({ route, user, phoneUi, onMenu }: { route: Route; user: User; phoneUi: boolean; onMenu: () => void }) {
-  if (route.view === 'task') return <Suspense fallback={null}><TaskPage id={route.id} user={user} asTask={route.asTask} View={phoneUi ? PhoneTaskPage : undefined} /></Suspense>
-  return <Suspense fallback={null}><PhoneToday userId={user.id} onMenu={onMenu} /></Suspense>
+/** A task list: the phone UI's list while it is on (phone-lists D7); a project in another layout keeps the present screen. */
+function ListScreen({ route, user, phoneUi, onMenu }: { route: ListRoute; user: User; phoneUi: boolean; onMenu: () => void }) {
+  const layout = useProjectViewMode(phoneUi && route.view === 'project' ? route.id : null)
+  if (!phoneUi || layout !== 'list') return <TaskListView userId={user.id} userRole={user.role} route={route} />
+  return <Suspense fallback={null}><PhoneList route={route} userId={user.id} userRole={user.role} onMenu={onMenu} /></Suspense>
 }
 /** Whether the phone UI's screens are shown: the switch is on and the window is a phone's. */
 function usePhoneUi(): boolean {
@@ -399,8 +402,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <SavedViewRoute id={route.id} />
           ) : route.view === 'trash' ? (
             <Suspense fallback={SCREEN_LOADING}><TrashView /></Suspense>
-          ) : route.view === 'task' || (route.view === 'today' && phoneUi) ? (
-            <TaskOrPhone route={route} user={user} phoneUi={phoneUi} onMenu={() => setSidebarOpen(true)} />
+          ) : route.view === 'task' ? (
+            <Suspense fallback={null}><TaskPage id={route.id} user={user} asTask={route.asTask} View={phoneUi ? PhoneTaskPage : undefined} /></Suspense>
           ) : route.view === 'review' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading the review…')}</p>}>
               {route.step === 'daily' ? <DailyCheck /> : route.step === 'monthly' ? <MonthlyLook /> : route.step === 'close' ? <CloseDay /> : <ReviewView key={route.step ?? ''} userId={user.id} step={route.step} />}
@@ -429,7 +432,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <Suspense fallback={null}>{route.view === 'month' ? <MonthView date={route.date} /> : route.view === 'quarter' ? <QuarterView date={route.date} /> : route.view === 'plan' ? <PlanView date={route.date} /> : <YearView date={route.date} />}</Suspense>
           ) : (
             // App renders the invite, reset, capture and display screens itself; a stray /invite, /reset, /share or /display route inside the shell falls back to the Inbox.
-            <TaskListView userId={user.id} userRole={user.role} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'workspace-invite' || route.view === 'reset' || route.view === 'confirm-email' || route.view === 'forgot' || route.view === 'verify' || route.view === 'public' || route.view === 'share' || route.view === 'display' ? { view: 'inbox' } : route} />
+            <ListScreen route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'workspace-invite' || route.view === 'reset' || route.view === 'confirm-email' || route.view === 'forgot' || route.view === 'verify' || route.view === 'public' || route.view === 'share' || route.view === 'display' ? { view: 'inbox' } : route} user={user} phoneUi={phoneUi} onMenu={() => setSidebarOpen(true)} />
           )}
           </PanelBoundary>
         </div>
