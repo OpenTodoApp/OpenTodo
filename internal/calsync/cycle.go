@@ -56,7 +56,10 @@ func (r *cycle) mine(t calfeed.FeedTask) bool {
 // calendar; nil when neither names one.
 func (r *cycle) zone() *time.Location {
 	for _, u := range []string{r.target, r.c.TargetURL} {
-		if cal := r.c.Calendar(u); cal != nil && cal.TimeZone != "" {
+		for _, cal := range r.c.Calendars {
+			if cal.TimeZone == "" || r.c.calendarKey(cal.URL) != r.c.calendarKey(u) {
+				continue
+			}
 			if loc, err := zoned.Load(cal.TimeZone); err == nil {
 				return loc
 			}

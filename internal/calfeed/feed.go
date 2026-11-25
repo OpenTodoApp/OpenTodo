@@ -57,9 +57,9 @@ type FeedOptions struct {
 	BaseURL string
 	// Encrypted accounts show the placeholder title and no notes or labels.
 	Encrypted bool
-	// FloatingZone, when set, is the IANA zone WriteEvent writes a floating
-	// timed task in, at its wall time: the calendar's, which a client may
-	// otherwise read a floating time in as UTC (GitHub issue 2084).
+	// FloatingZone is the calendar's IANA zone: WriteEvent writes a floating
+	// timed task at its wall time with this TZID, because some clients read a
+	// floating time as UTC (GitHub issue 2084). "" keeps it floating.
 	FloatingZone string
 }
 
@@ -281,11 +281,14 @@ func eventTimes(t FeedTask) (caldav.Prop, caldav.Prop) {
 			params = []caldav.Param{{Name: "TZID", Values: []string{*t.TZ}}}
 		}
 	}
-	startT, err := time.ParseInLocation("2006-01-02 15:04", date+" "+*t.Time, loc)
+	// DTSTART is the wall time as given, also in a daylight saving gap, which
+	// clients read by RFC 5545 §3.3.5 (WallIn); DTEND is that instant plus
+	// the length, in the same zone.
+	wall, err := time.Parse("2006-01-02 15:04", date+" "+*t.Time)
 	if err != nil {
-		startT, _ = time.Parse("2006-01-02", date)
+		wall, _ = time.Parse("2006-01-02", date)
 	}
-	endT := startT.Add(length)
+	endT := WallIn(wall, loc).Add(length).In(loc)
 	layout := "20060102T150405"
-	return caldav.Prop{Name: "DTSTART", Params: params, Value: startT.Format(layout)}, caldav.Prop{Name: "DTEND", Params: params, Value: endT.Format(layout)}
+	return caldav.Prop{Name: "DTSTART", Params: params, Value: wall.Format(layout)}, caldav.Prop{Name: "DTEND", Params: params, Value: endT.Format(layout)}
 }

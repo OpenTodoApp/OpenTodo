@@ -113,6 +113,10 @@ func EventSnapshot(ev calfeed.Event, prev Snapshot, calZone *time.Location) Snap
 	if prev.TZ != "" && start.Zone == "" {
 		s.TZ = prev.TZ // a floating time read as the task's own zone
 	}
+	if !start.Wall.IsZero() && start.Zone != "UTC" && (prev.TZ == "" || start.Zone == prev.TZ) {
+		// The wall time as written, also one in a daylight saving gap.
+		t = start.Wall
+	}
 	s.Date, s.Time = t.Format("2006-01-02"), t.Format("15:04")
 	s.Minutes = prev.Minutes
 	if d, ok := length(ev); ok && d > 0 {
