@@ -87,10 +87,6 @@ const SHOTS_ALL = process.env.SHOTS === 'all'
 const LANG = process.env.OPENTODO_LANG ?? ''
 // The phone UI's switch, as the app keeps it on a device (web/src/phone/prefs.ts).
 const PHONE_UI = process.env.PHONE_UI === '1'
-// With the phone UI on, the overlays that open from the desktop row or from the task panel do
-// not exist: a tap on a row opens the task page. Every other overlay opens as before.
-const PHONE_UI_SKIPS = new Set(['task-detail', 'label-picker', 'bulk-actions-menu', 'bulk-review', 'bulk-toast', 'mention-picker', 'assignee-picker', 'project-picker', 'parent-picker',
-  'section-picker', 'when-popover', 'inline-editor', 'zone-control', 'location-editor', 'task-history', 'blocked-by-picker'])
 /** Screens outside the app's shell (Display mode, the share target, an invitation): no page header to draw. */
 const PHONE_UI_OUTSIDE = /^(display-|share-|project-invite)/
 const LAYOUT_DATE = process.env.LAYOUT_DATE ?? '2026-11-01'
@@ -320,7 +316,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       }
       await shot(p, s.name)
       // In another language only the overlays opened by data attributes (the start guide).
-      for (const o of (s.overlays ?? []).filter((n) => (!OTHER_LANG || ANY_LANG_OVERLAYS.has(n)) && (!PHONE_UI || width >= 768 || !PHONE_UI_SKIPS.has(n)))) {
+      for (const o of (s.overlays ?? []).filter((n) => (!OTHER_LANG || ANY_LANG_OVERLAYS.has(n)))) {
         run.step = `screen ${s.name} › ${o}`
         const checkOne = async () => {
           await visit()

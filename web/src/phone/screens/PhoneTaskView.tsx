@@ -75,13 +75,15 @@ export function PhoneTaskView(p: PhoneTaskViewProps) {
               {p.done && <Icon name="check" size="sm" />}
             </span>
           </button>
-          <div className="min-w-0 flex-1 pt-1.5">
+          <div className="min-w-0 flex-1 pt-1.5" data-task-content>
             {p.title}
-            {p.relations}
             <div className="mt-2 text-prose text-default" data-phone-notes>{p.notes}</div>
           </div>
         </div>
+        {/* The whole width, not the title's column: a repeating task's scope control needs it in a long language at 360 px. */}
+        {p.relations}
 
+        <div className="contents" data-facts>
         {p.schedule.length > 0 && (
           <FactCard label={t('Schedule')}>{p.schedule.map((f) => <FactRow key={f.id} fact={f} open={p.openFact === f.id} anchor={p.factAnchor} onOpen={p.onFact} />)}</FactCard>
         )}
@@ -90,6 +92,7 @@ export function PhoneTaskView(p: PhoneTaskViewProps) {
         )}
         {p.extra}
         {!p.readOnly && <FactChips label={t('Add')} facts={p.unset} open={p.openFact} anchor={p.factAnchor} onOpen={p.onFact} />}
+        </div>
         {p.rest}
       </div>
     </div>
