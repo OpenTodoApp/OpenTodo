@@ -78,8 +78,9 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
           {route.view === 'completed' && <Suspense fallback={<div className="mb-3 h-9" />}><CompletedSearch value={m.completedQuery} onChange={m.setCompletedQuery} /></Suspense>}
           {agenda.toggle && <TodayAgenda cal={agenda.cal} zone={m.zone} />}{m.todayHabits && <TodayStrip tasks={m.allTasks} projects={m.projects} today={today} />}
 
+          {/* Close ends the selection whole (phone-lists "Selecting tasks"): nothing stays ticked behind rows that show their checks again. */}
           <SelectionBar ids={ticked} onClear={selection.clear} menuOpen={actions.forTicked}
-            onMenuOpenChange={actions.onOpenChange} startPicker={actions.picker} onDone={selectMode ? () => setSelectMode(false) : undefined} />
+            onMenuOpenChange={actions.onOpenChange} startPicker={actions.picker} onDone={selectMode ? () => { selection.clear(); setSelectMode(false) } : undefined} />
           {actions.forCursor && selectedId && (
             <BulkActionsMenu ids={[selectedId]} open onOpenChange={actions.onOpenChange} startPicker={actions.picker} anchor={actionsFrom} editTitle={s.editTitle}
               trigger={<span className="sr-only">{t('Actions')}</span>} triggerClassName="sr-only" />
