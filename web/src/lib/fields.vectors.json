@@ -1,5 +1,5 @@
 {
-  "description": "Which custom fields apply to a project (OpenSpec inherited-custom-fields D1): the live definitions of its ancestors, farthest first, then its own, each in position order then id. Read by internal/sync/fields_vectors_test.go and web/src/lib/fields.test.ts.",
+  "description": "Which custom fields apply to a project (OpenSpec inherited-custom-fields D1, workspace-fields D2): with `workspaces`, the live fields of the project's workspace first, when the person owns the workspace (`owned`, every `known` one when absent) and the project is not shared with them by someone else (`foreign`) (an empty project_id; workspace_id null is the default, an unknown id applies nowhere; a project's workspace is its root's, an unknown one the default); then the live definitions of its ancestors, farthest first, then its own, each in position order then id. Read by internal/sync/fields_vectors_test.go and web/src/lib/fields.test.ts.",
   "cases": [
     {
       "name": "own fields only, by position then id",
@@ -134,6 +134,109 @@
         { "id": "fc", "project_id": "c", "position": 0 }
       ],
       "want": ["fa", "fc"]
+    },
+    {
+      "name": "workspace fields first, then the parent's, then own",
+      "project": "child",
+      "workspaces": { "default": "home", "known": ["home", "work"] },
+      "projects": [{ "id": "root", "parent_id": null, "workspace_id": "work" }, { "id": "child", "parent_id": "root", "workspace_id": null }],
+      "fields": [
+        { "id": "own", "project_id": "child", "position": 0 },
+        { "id": "inherited", "project_id": "root", "position": 0 },
+        { "id": "w2", "project_id": "", "workspace_id": "work", "position": 2 },
+        { "id": "w1", "project_id": "", "workspace_id": "work", "position": 1 }
+      ],
+      "want": ["w1", "w2", "inherited", "own"]
+    },
+    {
+      "name": "a null workspace_id is the default workspace",
+      "project": "p",
+      "workspaces": { "default": "home", "known": ["home", "work"] },
+      "projects": [{ "id": "p", "parent_id": null, "workspace_id": null }],
+      "fields": [
+        { "id": "home", "project_id": "", "workspace_id": null, "position": 0 },
+        { "id": "named", "project_id": "", "workspace_id": "home", "position": 1 },
+        { "id": "work", "project_id": "", "workspace_id": "work", "position": 0 }
+      ],
+      "want": ["home", "named"]
+    },
+    {
+      "name": "another workspace's fields do not apply",
+      "project": "p",
+      "workspaces": { "default": "home", "known": ["home", "work"] },
+      "projects": [{ "id": "p", "parent_id": null, "workspace_id": "work" }],
+      "fields": [
+        { "id": "home", "project_id": "", "workspace_id": null, "position": 0 },
+        { "id": "mine", "project_id": "p", "position": 0 }
+      ],
+      "want": ["mine"]
+    },
+    {
+      "name": "a field naming an unknown workspace (a deleted one) applies nowhere",
+      "project": "p",
+      "workspaces": { "default": "home", "known": ["home", "work"] },
+      "projects": [{ "id": "p", "parent_id": null, "workspace_id": null }],
+      "fields": [{ "id": "gone", "project_id": "", "workspace_id": "deleted-workspace", "position": 0 }],
+      "want": []
+    },
+    {
+      "name": "a project naming an unknown workspace reads as the default",
+      "project": "p",
+      "workspaces": { "default": "home", "known": ["home", "work"] },
+      "projects": [{ "id": "p", "parent_id": null, "workspace_id": "someone-elses" }],
+      "fields": [{ "id": "home", "project_id": "", "workspace_id": null, "position": 0 }],
+      "want": ["home"]
+    },
+    {
+      "name": "deleted workspace fields are left out",
+      "project": "p",
+      "workspaces": { "default": "home", "known": ["home", "work"] },
+      "projects": [{ "id": "p", "parent_id": null, "workspace_id": "work" }],
+      "fields": [
+        { "id": "gone", "project_id": "", "workspace_id": "work", "position": 0, "deleted_at": 5 },
+        { "id": "kept", "project_id": "", "workspace_id": "work", "position": 1 }
+      ],
+      "want": ["kept"]
+    },
+    {
+      "name": "the inbox has no workspace fields",
+      "project": null,
+      "workspaces": { "default": "home", "known": ["home", "work"] },
+      "projects": [],
+      "fields": [{ "id": "home", "project_id": "", "workspace_id": null, "position": 0 }],
+      "want": []
+    },
+    {
+      "name": "without workspaces, workspace fields are not read",
+      "project": "p",
+      "projects": [{ "id": "p", "parent_id": null }],
+      "fields": [
+        { "id": "home", "project_id": "", "workspace_id": null, "position": 0 },
+        { "id": "mine", "project_id": "p", "position": 0 }
+      ],
+      "want": ["mine"]
+    },
+    {
+      "name": "a workspace the person does not own: its fields apply nowhere",
+      "project": "p",
+      "workspaces": { "default": "home", "known": ["home", "work"], "owned": ["home"] },
+      "projects": [{ "id": "p", "parent_id": null, "workspace_id": "work" }],
+      "fields": [
+        { "id": "theirs", "project_id": "", "workspace_id": "work", "position": 0 },
+        { "id": "mine", "project_id": "p", "position": 0 }
+      ],
+      "want": ["mine"]
+    },
+    {
+      "name": "a project someone else shared: no workspace fields, its own still apply",
+      "project": "shared",
+      "workspaces": { "default": "home", "known": ["home"], "foreign": ["shared"] },
+      "projects": [{ "id": "shared", "parent_id": null, "workspace_id": null }],
+      "fields": [
+        { "id": "home", "project_id": "", "workspace_id": null, "position": 0 },
+        { "id": "own", "project_id": "shared", "position": 0 }
+      ],
+      "want": ["own"]
     }
   ],
   "descendants": [

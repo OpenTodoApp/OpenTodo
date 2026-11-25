@@ -7923,5 +7923,14 @@
   "Today and the task page in the new design. Turn it off at any time.": "«Сегодня» и страница задачи в новом оформлении. Можно отключить в любой момент.",
   "Quick add notification": "Уведомление быстрого добавления",
   "Add a task from the notification shade, in any app.": "Добавляйте задачу из шторки уведомлений в любом приложении.",
-  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android запретил уведомления OpenTodo. Разрешите их в настройках Android."
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android запретил уведомления OpenTodo. Разрешите их в настройках Android.",
+  "A workspace can have at most {n} fields.": "В рабочем пространстве может быть не больше {n} полей.",
+  "Fields every project of this workspace has, before its own. At most {max} fields.": "Поля, которые есть у каждого проекта этого рабочего пространства, перед его собственными. Не больше {max} полей.",
+  "Only you see these fields; other members of the workspace do not.": "Эти поля видите только вы; другие участники рабочего пространства их не видят.",
+  "The project “{project}” already has a field named “{name}”.": "В проекте «{project}» уже есть поле «{name}».",
+  "The project “{project}” would have more than {n} fields.": "В проекте «{project}» было бы больше {n, plural, one {# поля} few {# полей} many {# полей} other {# поля}}.",
+  "This project already has a field named “{name}” from “{workspace}”.": "В этом проекте уже есть поле «{name}» из «{workspace}».",
+  "This workspace already has a field named “{name}”.": "В этом рабочем пространстве уже есть поле «{name}».",
+  "Workspace fields are edited in the workspace’s settings.": "Поля рабочего пространства изменяются в его настройках.",
+  "Only the workspace’s owner can change its fields.": "Изменять поля рабочего пространства может только его владелец."
 }

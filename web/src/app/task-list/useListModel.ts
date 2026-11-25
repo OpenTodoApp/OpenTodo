@@ -36,7 +36,7 @@ import { useUnusedSlots } from '../../lib/rowSlots'
 import { localDueOf } from '../../lib/dates'
 import { useSlotted } from '../../lib/slots'
 import type { Route } from '../router'
-import { useApplicableFields, useFieldDefs } from '../useFields'
+import { useApplicableFields, useFieldDefs, useFieldPlacement } from '../useFields'
 import { useToday, useViewerZone } from '../useViews'
 import { useCollapsedRows } from './collapsedRows'
 import { useResetOnChange } from '../../lib/useResetOnChange'
@@ -116,6 +116,7 @@ const NO_HABITS: Map<string, HabitStats> = new Map()
 
 export function useListModel(route: ListRoute, userId?: string) {
   const allFieldDefs = useFieldDefs()
+  const fieldPlacement = useFieldPlacement()
   const dt = useDateTimeFormat()
   // Re-read every minute: Today, Upcoming and the Logbook roll over at midnight.
   const today = useToday()
@@ -292,10 +293,10 @@ export function useListModel(route: ListRoute, userId?: string) {
   const keptGroups = useRef<ListGroup[] | null>(null)
   const groups = useMemo<ListGroup[]>(() => (keptGroups.current = keepGroups(keptGroups.current, listGroups({
     view: route.view, tasks, laterTasks, projectId, timeline: layout.timeline, tree, subProjects, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
-    projects, projectMap, fields: sortFields, score, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday,
+    projects, projectMap, fields: sortFields, fieldPlacement, score, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday,
     upcomingToday, todayDisplay, todayContextFilter, subProjectList: sub.list,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }))), [dt.resolved, tree, subProjects, tasks, laterTasks, projectId, layout.timeline, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, score, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday, todayDisplay, todayContextFilter, sub.list])
+  }))), [dt.resolved, fieldPlacement, tree, subProjects, tasks, laterTasks, projectId, layout.timeline, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, score, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday, todayDisplay, todayContextFilter, sub.list])
   // Upcoming's projected occurrences (series-occurrences D4): off by default, per device; never rows.
   const projectedGroups = useUpcomingGroups(route.view === 'upcoming', groups, { allTasks, projects, today, zone, duration: filterKey ? duration : null, queryTest, resolved: dt.resolved })
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])

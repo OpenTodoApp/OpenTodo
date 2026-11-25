@@ -4,7 +4,7 @@
 // otherwise; opening an entity of another workspace switches first and says so.
 import { useEffect } from 'react'
 import { t } from '../lib/i18n'
-import { onCurrentWorkspaceGone, readWorkspaceState, switchTo, workspaceOfEntity, type PartitionedKind } from '../lib/workspaces'
+import { onCurrentWorkspaceGone, readWorkspaceState, switchTo, workspaceLabel, workspaceOfEntity, type PartitionedKind } from '../lib/workspaces'
 import { getTask, useWorkspaceState } from '../lib/localData'
 import type { Task } from '../lib/types'
 import { showBulkToast } from './bulk/toastStore'
@@ -51,10 +51,7 @@ export async function followEntity(kind: PartitionedKind, id: string): Promise<b
   return true
 }
 
-/** A workspace's name as shown: the default workspace's untouched name is translated. */
-export function workspaceLabel(name: string, isDefault: boolean): string {
-  return isDefault && name === 'Personal' ? t('Personal') : name
-}
+export { workspaceLabel }
 
 /**
  * The shell's part: an address, a notification or a palette result naming an

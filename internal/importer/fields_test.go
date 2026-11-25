@@ -76,3 +76,43 @@ func TestOwnExportRoundTripKeepsFields(t *testing.T) {
 		t.Fatalf("undo kept field %v", f)
 	}
 }
+
+// Workspace fields (OpenSpec change workspace-fields): an own export restores a
+// field without a project as a workspace field, and a task keeps its value.
+const workspaceFieldExport = `{
+  "format": "opentodo-export", "version": 1,
+  "projects": [{"id": "p1", "name": "Kitchen", "color": "#ef4444", "position": 1, "archived": false, "parent_id": null, "created_at": 1, "deleted_at": null}],
+  "fields": [
+    {"id": "f-client", "name": "Client", "project_id": "", "workspace_id": null, "type": "text", "options": "", "position": 1, "created_at": 2, "deleted_at": null}
+  ],
+  "tasks": [
+    {"id": "t1", "title": "Tiles", "project_id": "p1", "priority": 4, "labels": [], "position": 1, "created_at": 3, "completed_at": null, "deleted_at": null,
+     "fields": {"f-client": "Acme"}}
+  ]
+}`
+
+func TestOwnExportRoundTripKeepsWorkspaceFields(t *testing.T) {
+	h := newHarness(t)
+	plan, err := h.svc.Preview(context.Background(), h.uid, []byte(workspaceFieldExport), Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plan.Totals.Error != 0 || plan.Totals.Fields != 1 {
+		t.Fatalf("totals = %+v rows = %+v", plan.Totals, plan.Rows)
+	}
+	job := h.run(workspaceFieldExport, Options{})
+	if job.Status != StatusDone {
+		t.Fatalf("job = %+v", job)
+	}
+	f, err := h.sync.Get(context.Background(), h.uid, "field", "f-client")
+	if err != nil || f == nil {
+		t.Fatalf("field: %v %v", f, err)
+	}
+	if str(f, "project_id") != "" || !opsync.IsNull(f["workspace_id"]) || str(f, "name") != "Client" {
+		t.Fatalf("workspace field = %v", f)
+	}
+	task, err := h.sync.Get(context.Background(), h.uid, "task", "t1")
+	if err != nil || string(task["fields.f-client"]) != `"Acme"` {
+		t.Fatalf("t1 = %v %v", task, err)
+	}
+}

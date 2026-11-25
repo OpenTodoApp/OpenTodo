@@ -5,18 +5,20 @@
 import { useMemo } from 'react'
 import type { FilterContext } from '../lib/filter'
 import { NO_TASKS, useTasksOfEveryWorkspace } from '../lib/liveTasks'
-import { useLabelsOfEveryWorkspace, useProjectsOfEveryWorkspace, useWorkspaceState } from '../lib/localData'
+import { useFieldPlacement, useLabelsOfEveryWorkspace, useProjectsOfEveryWorkspace, useWorkspaceState } from '../lib/localData'
 import type { Task } from '../lib/types'
 import { Partition } from '../lib/workspaces'
 
-export type WorkspaceFilterContext = Pick<FilterContext, 'workspaces' | 'workspaceOf' | 'everyWorkspace'>
+export type WorkspaceFilterContext = Pick<FilterContext, 'workspaces' | 'workspaceOf' | 'everyWorkspace' | 'fieldPlacement'>
 
 export function useWorkspaceFilter(): WorkspaceFilterContext {
   const state = useWorkspaceState()
   const projects = useProjectsOfEveryWorkspace()
   const labels = useLabelsOfEveryWorkspace()
   const tasks = useTasksOfEveryWorkspace() ?? NO_TASKS
-  return useMemo(() => workspaceFilterContext(state.defaultId, state.list, projects, labels, tasks), [state, projects, labels, tasks])
+  // Which workspace fields apply to a task's project (workspace-fields D2): the shared placement.
+  const fieldPlacement = useFieldPlacement()
+  return useMemo(() => ({ ...workspaceFilterContext(state.defaultId, state.list, projects, labels, tasks), fieldPlacement }), [state, projects, labels, tasks, fieldPlacement])
 }
 
 /** The pure part of useWorkspaceFilter (tests). With one workspace there is nothing to widen. */
