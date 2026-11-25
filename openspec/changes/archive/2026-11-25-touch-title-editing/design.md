@@ -10,9 +10,23 @@ The compact touch editor (`InlineEditor` with `compact`) is the title field with
 
 **D2. Return says Done and saves.** The compact field sets `enterKeyHint="done"`. Enter already blurs the field, and the blur saves.
 
-**D3. A tap outside saves, and only saves.** While the compact editor is open, a capture listener on `pointerdown` follows a press that starts outside the editor and outside the overlays its pickers open (`[data-overlay]`, `[data-overlay-root]`). The press counts as a tap when it moves less than 10 px and is not cancelled. On its release the field is blurred, which saves through `TitleField` as any blur does, and the click that follows within 400 ms is swallowed (`swallowClick`). The listener follows the tap even if focus already moved on the press and the editor closed. A scroll or a swipe ends with movement or `pointercancel`, so the editor stays open.
+**D3. A tap outside saves; on a list row it only saves.** While the compact editor is open, a capture listener on `pointerdown` follows a primary press (`isPrimary`, button 0) that starts outside the editor and outside the overlays its pickers open (`insideEditor`: `[data-overlay]`, `[data-overlay-root]`). Each press gets its own listeners, tied to an `AbortController`.
 
-The tap does nothing else because a person dismissing the keyboard should not land on another task's page, and iOS does not blur a field for a tap on content that takes no focus. Cancel still discards, and Return still saves.
+The press is a tap when it:
+- moves less than 10 px,
+- is not cancelled,
+- is released within 500 ms (a longer press is the row's hold),
+- and is not released in an overlay.
+
+On a tap's release, the field is blurred. The blur saves through `TitleField`, as any blur does. Then:
+- If a finger or pen tapped a task row of the list (`[data-task-id]`, not in the side panel or an overlay), the click that follows within 400 ms is swallowed (`swallowClick`).
+- A tap anywhere else, and any mouse or trackpad click, goes on as usual. A mouse's click selects or opens the other row, and the tab bar, add button, toasts, header and side panel act on the first tap.
+
+The listener follows the tap even if focus already moved on the press and the editor closed. A scroll or a swipe ends with movement or `pointercancel`, so the editor stays open.
+
+Only a tap on a list row is swallowed. A person dismissing the keyboard there should not land on another task's page, and iOS does not blur a field for a tap on content that takes no focus. The rest of the screen keeps its first tap. Cancel still discards, and Return still saves.
+
+VoiceOver's double-tap activates an element with a click and no primary press of its own, so it is never swallowed. The edit then ends by the blur, or by Save or Cancel, as before. To be confirmed on a device.
 
 Alternatives considered:
 - Rely on blur alone. iOS keeps the field focused for such taps, and Android moves focus and also opens the other row.

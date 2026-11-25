@@ -70,8 +70,8 @@ export function InlineEditor({ task, caret, compact = false, projects, labelMap,
     cancelled.current = true
     finish()
   }
-  // A tap outside leaves the field, which saves (TitleField commits on blur), and does nothing else.
-  useTapOutside(compact, root, () => {
+  // A press outside leaves the field, which saves (TitleField commits on blur).
+  useTapOutside(compact, (node) => insideEditor(root.current, node), () => {
     const field = root.current?.querySelector<HTMLElement>('[data-inline-title]')
     if (field && document.activeElement === field) field.blur()
     else finish()

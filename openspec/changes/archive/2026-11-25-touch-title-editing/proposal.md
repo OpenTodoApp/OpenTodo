@@ -15,7 +15,11 @@ The owner decided on the issue: a tap keeps opening the task, the short swipe wo
 
 - **Any width on touch.** The short left swipe (48 px up to 96 px) edits the title on every touch screen, the iPad included. The full swipe still opens Schedule. A fine pointer never swipes, as before.
 - **Return says Done** in the compact editor, and Return saves.
-- **A tap outside saves.** A tap that starts outside the compact editor and outside its pickers saves the title and ends the edit. That tap does nothing else: it does not open, tick or expand the row it lands on. A press that moves (a scroll, a swipe) leaves the editor open. Cancel still discards the change.
+- **A tap outside saves.** A tap or a click that starts outside the compact editor and outside its pickers saves the title and ends the edit.
+  - A finger or pen tap on another task row of the list does nothing else: it does not open, tick or expand that row.
+  - A tap anywhere else (the tab bar, the add button, a toast, the header, the side panel) saves and then acts as usual, and so does a mouse or trackpad click.
+  - A press that moves (a scroll, a swipe), a long press, a second finger and a press that ends in a menu or sheet leave the editor open.
+  - Cancel still discards the change.
 - **Above the keyboard.** While the keyboard is open, the whole compact editor stays in view, with Save and Cancel.
 - **Subtasks** edit like their parents.
 
