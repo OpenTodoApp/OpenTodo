@@ -71,7 +71,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const {
     m, workspaceName, rows, taskGroups, groups, columns, board, timeline, projectId, today, taskMap, isReadOnly, viewMode,
     upcomingCal, selectedId, setSelectedId, currentColumn, setCurrentColumn, revealed, setRevealed, collapsedGroups, summarised,
-    selection, ticked, contextIds, inline, renderInline, editTitle, ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, rowMenu,
+    selection, ticked, contextIds, inline, renderInline, ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, rowMenu,
     quickAddRef, listRoot, toggleViewMode, chooseViewMode, toggleSection, dayOrderIds, ownOrder, manual, drag, onAdd, onAddMany,
     setPrompt, acceptPrompt, rowActions, edgeOf, boardGroups, queryFilter, queryHost, cardNotes, own, hiddenDone, showCompleted,
     displayControl, completedNarrowed, currentProject, currentLabel, currentPlace, phone, room, phoneActions, meta, methodSubtitle, title, agenda, ready, briefing,
@@ -85,6 +85,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     timeColumn: m.timeColumn, slotsOff: m.slotsOff, rowLayout: m.display?.rowLayout, actions: rowActions, ...useAddLines(rows, ui), edgeOf, cardNotes,
     inlineId: inline?.id ?? null, renderInline, expandedId, swipe: useListSwipe(listRoot, !fine && selection.ticked.size === 0 && !selectMode && !board, rows.length),
     swipeEditTitle: !useMediaQuery(DESKTOP_HEADER_QUERY) && !timeline,
+    editInPlace: !board && !timeline,
   })
   const pageActions = (
     <ListPageActions route={route} userRole={userRole} rowCount={own.length} extra={displayControl}
@@ -126,7 +127,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             onMenuOpenChange={actions.onOpenChange} startPicker={actions.picker} onDone={selectMode ? () => setSelectMode(false) : undefined} />
           {actions.forCursor && selectedId && ( // `.` with nothing ticked: the same menu for the cursor task.
             <BulkActionsMenu ids={[selectedId]} open onOpenChange={actions.onOpenChange} startPicker={actions.picker} anchor={actionsFrom}
-              editTitle={board || timeline ? undefined : editTitle}
+              {...s.menuItems} expandedId={expandedId}
               trigger={<span className="sr-only">{t('Actions')}</span>} triggerClassName="sr-only" />
           )}
           {rowMenu.element}{queryHost}

@@ -36,7 +36,7 @@ export interface RowActions {
   contextAt: (task: Task, x: number, y: number, row: HTMLElement) => void
 }
 
-export type TaskListRowProps = Omit<TaskRowProps, 'motion' | 'labels' | 'onToggle' | 'onOpen' | 'onOpenPage' | 'onEditTitle' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'onGripDown' | 'onGripClick' | 'dropKey' | 'actions' | 'onMore' | 'onExpand'> & {
+export type TaskListRowProps = Omit<TaskRowProps, 'motion' | 'labels' | 'onToggle' | 'onOpen' | 'onOpenPage' | 'onEditTitle' | 'onEdit' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'onGripDown' | 'onGripClick' | 'dropKey' | 'actions' | 'onMore' | 'onExpand'> & {
   labelMap: Map<string, Label>
   /** The row can be picked up (to a sidebar project or label, ux-feedback-2 D4). */
   draggable: boolean
@@ -47,6 +47,8 @@ export type TaskListRowProps = Omit<TaskRowProps, 'motion' | 'labels' | 'onToggl
   /** The row can show its details under it (row-expand): list rows, not cards or departing rows. */
   expandable: boolean
   swipeEditTitle?: boolean
+  /** The list edits rows in place: the revealed Edit action (row-edit-action D1). */
+  editInPlace?: boolean
   handlers: RowActions
 }
 
@@ -67,7 +69,7 @@ export function rowMotion(task: Task, departure: ReturnType<typeof useDeparture>
  * rows whose `selected` changed. The row follows its own task's completion sequence,
  * so a click on its checkbox draws this row only (list-rendering-at-scale D7).
  */
-export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable, reorderable, collapsible, expandable, swipeEditTitle, handlers: actions, ...rest }: TaskListRowProps) {
+export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable, reorderable, collapsible, expandable, swipeEditTitle, editInPlace, handlers: actions, ...rest }: TaskListRowProps) {
   const labels = useMemo(() => resolveLabels(task.labels, labelMap), [task.labels, labelMap])
   const departure = useDeparture(task.id)
   // Under the urgency order a top-level row shows its score (urgency-sort D4).
@@ -95,6 +97,7 @@ export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable
       onOpen={(e, intent) => actions.open(task.id, e, intent)}
       onOpenPage={() => actions.openPage(task.id)}
       onEditTitle={swipeEditTitle ? () => actions.editTitle(task.id) : undefined}
+      onEdit={editInPlace ? () => actions.editTitle(task.id) : undefined}
       onTick={rest.contextual ? undefined : (range) => actions.tick(task.id, range)}
       onMore={(from) => actions.more(task.id, from)}
       onExpand={expandable ? () => actions.expand(task.id) : undefined}

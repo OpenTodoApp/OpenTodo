@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
-  compareDue, currentDayStart, describeDue, logicalDay, logicalToday, setDayStart, todayISO, dueFromView, dueToInstant, fixDueToZone, instantToLocalDue, localDueOf, onViewerZoneChange,
+  compareDue, currentDayStart, describeDue, notificationDue, logicalDay, logicalToday, setDayStart, todayISO, dueFromView, dueToInstant, fixDueToZone, instantToLocalDue, localDueOf, onViewerZoneChange,
   refreshViewerZone, releaseDue, viewerZone, watchViewerZone, zonedInstant, zoneHint, quickChoices, setDateTime,
 } from './dates'
 import vectors from './zoned.vectors.json'
@@ -77,6 +77,13 @@ describe('display in the viewer zone', () => {
   it('describeDue labels the local date and time', () => {
     expect(describeDue(berlin9, '2026-10-11', LA)).toEqual({ label: 'Today 00:00', day: 'Today', tone: 'today', time: '00:00' })
     expect(describeDue({ date: '2026-10-12', time: '02:00', tz: 'Asia/Tokyo' }, '2026-10-11', BERLIN)).toEqual({ label: 'Today 19:00', day: 'Today', tone: 'today', time: '19:00' })
+  })
+
+  it('notificationDue is the row label as of the firing day (push-due-date D1)', () => {
+    const fire = Date.UTC(2026, 9, 11, 8, 0)
+    expect(notificationDue({ date: '2026-10-11', time: '14:00' }, fire)).toBe(describeDue({ date: '2026-10-11', time: '14:00' }, logicalDay(fire))!.label)
+    expect(notificationDue({ date: '2026-10-12' }, fire)).toBe('Tomorrow')
+    expect(notificationDue(null, fire)).toBeNull()
   })
 
   it('describeDue says Vandaag, Morgen, the weekday and the date in Dutch (more-languages 3.5)', async () => {

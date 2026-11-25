@@ -1,5 +1,5 @@
 {
-  "description": "An end-to-end encrypted account: no titles reach the shell.",
+  "description": "An end-to-end encrypted account: no titles and no due texts reach the shell.",
   "method": "scheduleReminders",
   "payload": "[{\"id\":\"r-soon\",\"taskId\":\"call\",\"fireAt\":1792674000000},{\"id\":\"r-late\",\"taskId\":\"plain\",\"fireAt\":1792681200000}]",
   "now": 1792670400000,
@@ -8,13 +8,15 @@
       "id": "r-soon",
       "taskId": "call",
       "fireAt": 1792674000000,
-      "title": null
+      "title": null,
+      "due": null
     },
     {
       "id": "r-late",
       "taskId": "plain",
       "fireAt": 1792681200000,
-      "title": null
+      "title": null,
+      "due": null
     }
   ]
 }

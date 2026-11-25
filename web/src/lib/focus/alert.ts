@@ -5,13 +5,10 @@
 // only when a Long end plays, so it stays out of the first load.
 import { readHapticsPref } from '../haptics'
 import { resettable } from '../moduleState'
-import { playTone } from './tone'
+import { LONG_PEAK, playTone, REPEAT_MS, REPEATS } from './tone'
 
-/** Time between repeats, and how many play at most (about ten seconds). */
-export const REPEAT_MS = 1000
-export const REPEATS = 10
-/** The Long tone's peak gain (Short plays at 0.2). */
-export const LONG_PEAK = 0.5
+/** Time between repeats, how many play at most (about ten seconds), and the Long tone's peak gain. */
+export { LONG_PEAK, REPEAT_MS, REPEATS }
 const VIBRATION = [200, 100, 200]
 
 let stop: (() => void) | null = null
