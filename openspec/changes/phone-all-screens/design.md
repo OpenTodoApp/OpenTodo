@@ -74,6 +74,14 @@ Below 768 px the shell's content already sits on the canvas colour, and pages ke
 
 The first run with the switch on failed: completing a task took 1410 ms, because the phone row showed its tick only after the write had come back through the 2,000-row list. It now shows the tick with the tap (`usePendingDone`, as the desktop row), and marks the keyboard's cursor row (`aria-current`), which the cursor measure reads. The desktop profile was not run again here; the row's seam adds one context read to a row's render.
 
+On CI the same measure with the switch off (the earlier layout) read 192 to 416 ms in four runs of this branch, over its 200 ms budget in three, where the nightly on `main` read 88 to 128 ms. It was looked into before anything merged, and is not this change's doing as far as could be measured:
+
+- The value is the slowest of ten completions, and in the failing runs it is the first one (about 220 ms, the nine after it 40 to 60 ms). In those runs the app's own idle preloads (the command palette's warmer, the notes section, the settings index) are fetched while the first completion is handled; that happens on `main` too.
+- A branch of the same day without this change had the same spike in two sessions of five (216 and 296 ms) and passed on its median.
+- `main` and this branch were compared on one machine three ways: the phone profile as it is (medians 72 and 120 ms against 144 and 144), the processor slowed twelve times (the same spread, spikes near 440 ms in both), and inside the CI image held to two processors (184 and 120 ms against 176 and 176). No difference stands out of the spread.
+
+So the measure is unstable near its budget on today's `main`, whichever layout. It is left as it is here; making the benchmark wait for the idle preloads, or the preloads wait for the first interaction, is a change of its own.
+
 ## Risks / Trade-offs
 
 - **A screen relies on the shell's bar for something `PageHeader` does not carry** → the unit test walks every route; a screen without a page header keeps the shell's bar.
