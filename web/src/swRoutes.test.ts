@@ -72,13 +72,14 @@ beforeEach(async () => {
 })
 
 /** Dispatches a GET through the worker's fetch handler: null when the worker left it to the browser. */
-function answer(path: string, mode: RequestMode | 'navigate' = 'cors', destination = ''): Promise<Response> | null {
+function answer(path: string, mode: RequestMode | 'navigate' = 'cors', destination = '', method = 'GET'): Promise<Response> | null {
   let responded: Promise<Response> | null = null
-  const request = { url: `https://todo.example.com${path}`, method: 'GET', mode, destination, headers: new Headers() }
+  const request = { url: `https://todo.example.com${path}`, method, mode, destination, headers: new Headers() }
   handlers.fetch({ request, respondWith: (p: Promise<Response>) => { responded = p }, waitUntil: () => undefined })
   return responded
 }
 const navigate = (path: string) => answer(path, 'navigate', 'document')
+const post = (path: string) => answer(path, 'navigate', 'document', 'POST')
 const fromServer = () => network.mock.calls.some(([req]) => typeof req === 'object' && req !== null && 'mode' in req)
 
 describe('while reporting (refusal off)', () => {
@@ -96,9 +97,17 @@ describe('while reporting (refusal off)', () => {
     }
   })
 
-  it('passes a server document through unchanged', async () => {
+  it('passes a server document through unchanged, and the answer to a form post too', async () => {
     const r = await navigate('/api/v1/attachments/1')!
     expect(r.headers.get('Content-Security-Policy')).toBe(SERVER_CSP)
+    const posted = await post('/api/v1/auth/oidc/app-continue')!
+    expect(posted.headers.get('Content-Security-Policy')).toBe(SERVER_CSP)
+    // A POST that is not a navigation is the API's: left to the browser.
+    expect(answer('/api/v1/sync', 'cors', '', 'POST')).toBeNull()
+  })
+
+  it('keeps the network for an address that cannot be decoded', async () => {
+    expect(await answer('/%E0%A4%A')!.then((r) => r.text())).toBe('from the server')
   })
 
   it('serves a public list from the verified page with the server headers', async () => {
@@ -145,6 +154,19 @@ describe('with refusal on', () => {
     }
     // No script runs in it; forms and the origin stay, for the sign-in steps that post.
     expect(SERVER_DOCUMENT_POLICY.split(' ')).toEqual(['sandbox', 'allow-forms', 'allow-same-origin'])
+  })
+
+  it('sandboxes the answer to a form post navigation, wherever it posts (a cross-site form, or one in a sandboxed page)', async () => {
+    for (const p of ['/api/v1/auth/oidc/app-continue', '/', '/inbox', '/t/abc', '/anything']) {
+      const r = await post(p)!
+      expect(await r.text(), p).toBe('from the server')
+      expect(r.headers.get('Content-Security-Policy'), p).toBe(`${SERVER_CSP}, ${SERVER_DOCUMENT_POLICY}`)
+    }
+  })
+
+  it('answers 404 for an address that cannot be decoded', async () => {
+    expect((await answer('/%E0%A4%A')!).status).toBe(404)
+    expect(network).not.toHaveBeenCalled()
   })
 
   it('passes a redirect as it is, and keeps a response without a body', async () => {

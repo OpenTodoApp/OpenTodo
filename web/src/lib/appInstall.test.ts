@@ -157,6 +157,10 @@ describe('first install', () => {
     expect(r.keys).toEqual([keys.release.spki, keys.recovery.spki])
     // The worker the list names, for the changed-worker warning (D8).
     expect(r.current?.worker).toBe(sha('w1'))
+    // The type comes from the file's name, never from the server, and is never sniffed.
+    const page = (await cachedFile(e, r, 'index.html'))!
+    expect(page.headers.get('Content-Type')).toBe('text/html; charset=utf-8')
+    expect(page.headers.get('X-Content-Type-Options')).toBe('nosniff')
     expect(await text(await cachedFile(e, r, 'index.html'))).toBe('<div id=root>1</div>')
     expect(await cachedFile(e, r, 'assets/MapView-1.js')).toBeNull()
     expect(srv.requests).not.toContain('/assets/MapView-1.js')
@@ -627,7 +631,7 @@ describe('caches', () => {
     expect(handed).toHaveLength(1)
     expect(got).not.toBe(handed[0])
     expect(handed[0].bodyUsed).toBe(true)
-    expect(got!.headers.get('Content-Type')).toBe('text/javascript')
+    expect(got!.headers.get('Content-Type')).toBe('text/javascript; charset=utf-8')
     expect(await text(got)).toBe('one')
   })
 

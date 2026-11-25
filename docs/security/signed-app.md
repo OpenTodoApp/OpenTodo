@@ -57,7 +57,7 @@ The switch is the `refuse` field of the signed manifest, copied by the build fro
 
 With refusal on, a failed update is not installed. The page shows "This update wasn't installed." with the likely cause and **What to do**, which opens [Signed updates](../signed-updates.md).
 
-Refusal also makes the service worker the only door for code. A path the signed list doesn't name gets a 404 from the worker, never the network. Task pages, note pages and public lists come from the checked files. A page from one of the server's own addresses (an attachment opened in a tab, a sign-in step) runs no script, so it cannot read the app's local data. And when a new service worker takes control that no signed list names, the page warns: "This server changed how the app checks updates. Don't enter your passphrase, and ask the server's operator." A server that replaces the worker can still hide from that warning, so it is a warning, not a defence.
+Refusal also makes the service worker the only door for code. A path the signed list doesn't name gets a 404 from the worker, never the network. Task pages, note pages and public lists come from the checked files. A page from one of the server's own addresses (an attachment opened in a tab, a sign-in step), and whatever the server answers to a form's post, runs no script, so it cannot read the app's local data. And when a new service worker takes control that no signed list names, the page warns: "This server changed how the app checks updates. Don't enter your passphrase, and ask the server's operator." That warning only catches a worker that isn't trying to hide: the page reads the worker and the list through the new worker, so a few lines in it silence the warning. An older signed worker still installs, too: the version order covers the app's files, not the worker. It is a warning, not a defence.
 
 ## How a release is signed
 
@@ -107,7 +107,7 @@ Check any server with `go run github.com/OpenTodoApp/opentodo/cmd/websign@latest
 ## What the check does not cover
 
 - A first-ever visit to a hostile server, and any visit before the app is installed.
-- In a browser, a server that replaces the service worker itself or sends `Clear-Site-Data`: the browser installs a new worker without asking the current one.
+- In a browser, a server that replaces the service worker itself or sends `Clear-Site-Data`: the browser installs a new worker without asking the current one, an older signed one included.
 - A stolen release key, until a rotation reaches each device.
 - The iOS app, which is a later change.
 - While report-only mode is on, everything: a failed check is recorded and the update is installed.

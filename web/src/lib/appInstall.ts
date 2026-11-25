@@ -82,15 +82,26 @@ async function download(env: InstallEnv, path: string): Promise<{ body: ArrayBuf
   }
   if (!res.ok) return null
   try {
-    return { body: await res.arrayBuffer(), type: res.headers.get('Content-Type') }
+    return { body: await res.arrayBuffer(), type: typeFor(path) ?? res.headers.get('Content-Type') }
   } catch {
     throw new Interrupted(path)
   }
 }
 
+/** The type of a listed file from its extension, so the server's header never decides how checked bytes run. */
+const TYPES: Record<string, string> = {
+  html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', mjs: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8',
+  json: 'application/json', svg: 'image/svg+xml', png: 'image/png', webp: 'image/webp', ico: 'image/x-icon', woff2: 'font/woff2',
+  md: 'text/markdown; charset=utf-8', txt: 'text/plain; charset=utf-8', wasm: 'application/wasm',
+}
+function typeFor(path: string): string | null {
+  const ext = /\.([a-z0-9]+)$/i.exec(path)?.[1]?.toLowerCase()
+  return (ext && TYPES[ext]) || null
+}
+
 /** A stored copy of a file, with only the headers the worker writes. */
 export function fileResponse(body: BodyInit | null, type: string | null): Response {
-  const headers = new Headers()
+  const headers = new Headers({ 'X-Content-Type-Options': 'nosniff' })
   if (type) headers.set('Content-Type', type)
   return new Response(body, { status: 200, headers })
 }

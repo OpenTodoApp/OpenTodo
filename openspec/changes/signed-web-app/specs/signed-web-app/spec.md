@@ -102,7 +102,7 @@ A device's first install SHALL decide its mode for that server. A list signed by
 - **THEN** the device is still in signed mode and still refuses an unsigned update
 
 ### Requirement: Code runs only from the verified set
-In a browser, the service worker SHALL answer every request for the web app's files from the verified set and never from the network. A file needed only later, such as the map, SHALL be checked against the list when first loaded. If it doesn't match, the load fails, the update message is shown and nothing is cached. A path that is neither a listed file nor a data path (the API, health, CalDAV, calendar feeds, OAuth, `.well-known`, MCP, branding images, the web manifest) SHALL get a 404 from the worker. A script, worker or stylesheet SHALL never be loaded from a data path. A document from a data path SHALL be opened sandboxed, without access to the app's storage. Task pages and public lists SHALL be served from the verified set. The page's script policy SHALL come from the signed build and allow scripts only from the app's own origin, whatever policy the server sends. Only the server's allowed connection origins are taken from the server.
+In a browser, the service worker SHALL answer every request for the web app's files from the verified set and never from the network. A file needed only later, such as the map, SHALL be checked against the list when first loaded. If it doesn't match, the load fails, the update message is shown and nothing is cached. A path that is neither a listed file nor a data path (the API, health, CalDAV, calendar feeds, OAuth, `.well-known`, MCP, branding images, the web manifest) SHALL get a 404 from the worker. A script, worker or stylesheet SHALL never be loaded from a data path. A document from a data path, and the answer to any form's POST navigation, SHALL be opened sandboxed, without access to the app's storage. Task pages and public lists SHALL be served from the verified set. The page's script policy SHALL come from the signed build and allow scripts only from the app's own origin, whatever policy the server sends. Only the server's allowed connection origins are taken from the server.
 
 #### Scenario: Lazy chunk tampered
 - **WHEN** an installed app opens the map for the first time and the server's map chunk does not match the list
@@ -119,6 +119,10 @@ In a browser, the service worker SHALL answer every request for the web app's fi
 #### Scenario: Server document opened in a tab
 - **WHEN** an installed app opens an address under `/api/` as a page
 - **THEN** that page is sandboxed and cannot read the app's local database
+
+#### Scenario: Form posted to the server
+- **WHEN** refusal is on and a form on another site, or in a sandboxed server page, posts to an address of the server
+- **THEN** the page the server answers with is sandboxed and cannot read the app's local database
 
 ### Requirement: Keys rotate without stranding devices
 A list SHALL be accepted when any one of its signatures verifies with a trusted key. After an install, the device SHALL trust exactly the keys the installed list names. A release SHALL be able to name a new key while signed by the old one, or by the recovery key that every signed release names.

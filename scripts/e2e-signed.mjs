@@ -12,7 +12,8 @@
 //   5. with the server stopped, a reload opens the app from the verified set;
 //   6. v1.3.0 says refuse: true and turns refusal on;
 //   6a. with refusal on, a task page is the verified t.html, a file the list doesn't
-//      name is a 404 although the server has it, and a page from /api/ is sandboxed;
+//      name is a 404 although the server has it, and a page from /api/, opened or
+//      answering a form's POST, runs no script;
 //   6b. the server swaps sw.js under the installed list: the page warns that it
 //      changed how the app checks updates;
 //   7. a tampered v1.4.0 is refused: v1.3.0 stays, and the page shows the cause,
@@ -129,6 +130,12 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '
 let serving = v1
 const server = http.createServer((req, res) => {
   const p = decodeURIComponent(new URL(req.url, 'http://x').pathname).replace(/^\/+/, '')
+  if (p === 'api/v1/page') {
+    // A page of the server's own with an inline script, as a hostile server would send:
+    // it marks the document and reads the app's local data when it runs.
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end('<!doctype html><title>server page</title><script>document.documentElement.dataset.ran = "1"; indexedDB.databases().then((d) => { document.documentElement.dataset.read = String(d.length) })</script>')
+    return
+  }
   if (p.startsWith('api/') || p === 'healthz') {
     res.writeHead(404, { 'Content-Type': 'application/json' }).end('{"error":{"code":"not_found","message":"no API here"}}')
     return
@@ -187,6 +194,10 @@ try {
   await page.goto(origin + '/', { waitUntil: 'load' })
   let r = await until('v1 installed', (x) => x.current?.version === '1.0.0')
   check(r.mode === 'signed' && r.lastCheck?.passed === true && r.refuse === false, `v1 in signed mode, check passed (${r.mode}, ${JSON.stringify(r.lastCheck)})`)
+  // While reporting, the server's page runs as the server sent it: what step 6a's marker would show.
+  await page.goto(origin + '/api/v1/page', { waitUntil: 'load' })
+  check(await page.waitForFunction(() => document.documentElement.dataset.ran === '1', null, { timeout: 5_000 }).then(() => true, () => false), "while reporting, a server page's own script runs (the control for 6a)")
+  await page.goto(origin + '/', { waitUntil: 'load' })
 
   log('2. tampered', v2.version, '(report-only)')
   await serve(v2)
@@ -233,8 +244,19 @@ try {
   await page.goto(origin + '/', { waitUntil: 'load' })
   const injected = await page.evaluate(() => fetch('/injected.js').then((r) => r.status))
   check(injected === 404, `a file no list names is a 404, though the server has it (${injected})`)
-  const doc = await page.goto(origin + '/api/v1/anything', { waitUntil: 'load' })
-  check(/sandbox allow-forms allow-same-origin/.test(doc?.headers()['content-security-policy'] ?? ''), `a page from /api/ is sandboxed (${doc?.headers()['content-security-policy']})`)
+  const doc = await page.goto(origin + '/api/v1/page', { waitUntil: 'load' })
+  const ran = await page.evaluate(() => ({ ran: document.documentElement.dataset.ran ?? null, read: document.documentElement.dataset.read ?? null, origin: self.origin }))
+  check(/sandbox allow-forms allow-same-origin/.test(doc?.headers()['content-security-policy'] ?? '') && ran.ran === null && ran.read === null && ran.origin === origin,
+    `a page from /api/ runs no script and keeps the app's origin (${doc?.headers()['content-security-policy']}, ${JSON.stringify(ran)})`)
+  // A form's POST navigation, as a cross-site form or one in a sandboxed page would send: its answer is sandboxed too.
+  await page.goto(origin + '/', { waitUntil: 'load' })
+  const [posted] = await Promise.all([
+    page.waitForNavigation({ waitUntil: 'load' }),
+    page.evaluate(() => { const f = document.createElement('form'); f.method = 'post'; f.action = '/api/v1/page'; document.body.append(f); f.submit() }),
+  ])
+  const postRan = await page.evaluate(() => document.documentElement.dataset.ran ?? null)
+  check(posted?.request().method() === 'POST' && /sandbox allow-forms allow-same-origin/.test(posted?.headers()['content-security-policy'] ?? '') && postRan === null,
+    `the answer to a form post runs no script (${posted?.headers()['content-security-policy']}, ran=${postRan})`)
   await page.goto(origin + '/', { waitUntil: 'load' })
 
   log('6b. the server swaps sw.js under the installed list')

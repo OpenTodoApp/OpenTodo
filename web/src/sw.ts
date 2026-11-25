@@ -250,9 +250,15 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(share(request))
     return
   }
-  if (request.method !== 'GET') return
   const path = url.pathname
   const navigate = request.mode === 'navigate'
+  // Every navigation goes through the worker, a form's POST included (a cross-site
+  // one, or one from a sandboxed server page): its answer is the server's document,
+  // sandboxed once refusal is on, like any other (design D7).
+  if (request.method !== 'GET') {
+    if (navigate) event.respondWith(serverDocument(event))
+    return
+  }
   if (navigate && PUBLIC_LIST.test(path)) {
     event.respondWith(navigation(event, PUBLIC_LIST_HEADERS))
     return
@@ -270,7 +276,15 @@ self.addEventListener('fetch', (event) => {
     return
   }
   let rel: string
-  try { rel = decodeURIComponent(path.slice(1)) } catch { return }
+  try {
+    rel = decodeURIComponent(path.slice(1))
+  } catch {
+    // Not a path any list can name: with refusal on, a 404 like any other.
+    event.respondWith(trustState().then((t) => refusedPath(t) ?? fetch(event.request)))
+    return
+  }
+  // sw.js is the one app path the worker leaves to the network: the browser fetches
+  // it for updates without asking the worker, and the changed-worker check reads it.
   if (!rel || rel === 'sw.js') return
   event.respondWith(appFile(event, rel))
 })
