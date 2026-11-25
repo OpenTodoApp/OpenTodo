@@ -48,7 +48,7 @@ The first open after the update shows the new screens with no prompt. The change
 
 - **Someone depends on something only the earlier layout did** → the switch is the way back for one release, and `mobile/AUDIT.md` asks for reports; removing it is a separate change.
 - **WebKit has not run the phone screens** (it runs only in the nightly and release runs) → this change is merged only after the full CI run with the WebKit legs has passed on its branch, started by hand without a base (`gh workflow run ci.yml --ref phone-ui-default`), and task 3.3 records it.
-- **A real iPhone in Safari and both apps were not tried** → the owner's check, task 4.1; the default can be turned off again by reverting D1, a three-line change.
+- **A real iPhone in Safari and both apps were not tried** → the owner decided on 2026-11-25 that no check on real devices is needed before this merges (task 4.1). The WebKit legs (3.3) are the automated stand-in for Safari; the switch is the way back for a person who meets a problem, and reverting D1 is a three-line change for everyone.
 
 ## Migration Plan
 

@@ -7,7 +7,7 @@
 
 ## 2. The tests of the earlier layout
 
-- [ ] 2.1 A helper in `ui/test-utils` that turns the phone screens off for a test file, used by every file that asserts the earlier phone layout (design D3). Verify: `npm test` in `web/` passes; no assertion removed (the diff of each file is its setup).
+- [x] 2.1 A helper in `ui/test-utils` that turns the phone screens off for a test file, used by every file that asserts the earlier phone layout (design D3). Verify: `npm test` in `web/` passes; no assertion removed (the diff of each file is its setup).
 
 ## 3. The checks
 
@@ -17,7 +17,7 @@
 
 ## 4. On a phone
 
-- [ ] 4.1 The owner opens the app on an iPhone (Safari and the app) and an Android phone after the update. Verify: their findings fixed or recorded here.
+- [x] 4.1 The owner opens the app on an iPhone (Safari and the app) and an Android phone after the update. Verify: their findings fixed or recorded here. Not done, by the owner's decision of 2026-11-25: no check on real devices is asked for before this merges. What stands in its place: the owner's own use in Chrome on an iPhone during the trial, the Android app on an emulator (API 34), and the WebKit legs of 3.3. Not covered by any of them: Safari and the iPhone app on a device, and system Back over a sheet on Android.
 
 ## 5. Docs
 
