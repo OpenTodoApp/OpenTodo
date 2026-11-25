@@ -21,6 +21,7 @@
     <string name="error_offline">Nie można połączyć się z serwerem, a OpenTodo nie było jeszcze otwierane na tym telefonie.</string>
     <string name="error_untrusted">Ten telefon nie ufa certyfikatowi serwera.</string>
     <string name="channel_reminders">Przypomnienia</string>
+    <string name="channel_urgent">Pilne przypomnienia</string>
     <string name="reminder_generic">Przypomnienie</string>
     <string name="reminder_text">Przypomnienie o zadaniu</string>
     <string name="action_snooze">Odłóż o 10 min</string>

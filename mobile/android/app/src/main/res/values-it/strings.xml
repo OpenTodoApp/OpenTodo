@@ -21,6 +21,7 @@
     <string name="error_offline">Il server non è raggiungibile e OpenTodo non è mai stato aperto su questo telefono.</string>
     <string name="error_untrusted">Questo telefono non si fida del certificato del server.</string>
     <string name="channel_reminders">Promemoria</string>
+    <string name="channel_urgent">Promemoria urgenti</string>
     <string name="reminder_generic">Promemoria</string>
     <string name="reminder_text">Promemoria attività</string>
     <string name="action_snooze">Posticipa di 10 min</string>

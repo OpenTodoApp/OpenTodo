@@ -7,6 +7,7 @@ import { addReminder, deleteReminder, dismissReminder, rearmReminder, setReminde
 import { isLocationKind, radiusOf, reminderPoint, useGeofencesHere, type LocationKind } from '../lib/geofences'
 import { locationLabel, shownLocation, usePlaceRows } from '../lib/locations'
 import { FiresOnPhone, LocationMenuGroup, locationReminderName, radiusText } from './LocationReminders'
+import { allowUrgentAlarms } from '../lib/shell'
 
 // The radius form loads with its first use (location-reminders: keep the first load small).
 const LocationReminderEditor = lazy(() => import('./LocationReminderEditor'))
@@ -137,8 +138,12 @@ export function RemindersField({ task, onAddLocation }: { task: Task; onAddLocat
                 <MenuItem label={t('Edit')} icon="pencil" onSelect={() => setEditing(r.id)} />
                 {fired && !isDismissed(r) && <MenuItem label={t('Snooze 10 minutes')} icon="clock" onSelect={() => void run(() => snoozeReminder(r.id, '10m'))} />}
                 {fired && !isDismissed(r) && <MenuItem label={t('Dismiss')} icon="check" onSelect={() => void run(() => dismissReminder(r.id))} />}
-                {/* ios-urgent-alarms D2: rings as an alarm in the iPhone app, an ordinary reminder elsewhere. */}
-                <MenuItem label={t('Urgent')} checked={r.urgent === true} onSelect={() => void run(() => setReminderUrgent(r.id, r.urgent !== true))} />
+                {/* ios-urgent-alarms D2: rings as an alarm in the phone apps, an ordinary reminder elsewhere.
+                    android-urgent-alarms D4: turning it on lets the Android app ask for what an alarm needs. */}
+                <MenuItem label={t('Urgent')} checked={r.urgent === true} onSelect={() => {
+                  if (r.urgent !== true) allowUrgentAlarms()
+                  void run(() => setReminderUrgent(r.id, r.urgent !== true))
+                }} />
                 <MenuSeparator />
                 <MenuItem label={t('Delete reminder')} icon="trash-2" danger onSelect={() => void run(() => deleteReminder(r.id))} />
               </Menu>

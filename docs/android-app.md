@@ -112,6 +112,12 @@ On Android 14 and later a new app may not set exact alarms. The app then says on
 
 A reminder's notification offers **Done**, **Snooze 10 min** and **Dismiss**. **Done** completes the task without opening the app, the same as ticking it off (a repeating task moves to its next date), and works offline: the change goes out with the next sync.
 
+### Urgent reminders
+
+A reminder marked **Urgent** (in its menu in the task panel, on any device) rings as an alarm: at its time the screen turns on over the lock screen with the task's name (or **Reminder** for an encrypted account, with task names off, or on a lock screen set to hide sensitive content), and the phone's alarm sound plays at the alarm volume, also with the ringer silent, until you tap **Done**, **Snooze 10 min** or **Dismiss**. Swiping the notification away or opening the notifications only silences it. While you use the phone it rings as a notification at the top of the screen with the same buttons.
+
+When you turn **Urgent** on in the app the first time, Android's **Alarms & reminders** page opens if exact alarms are not allowed, and on Android 14 and later then its **Full-screen notifications** page, each only once. Without exact alarms the alarm can ring a few minutes late; without full-screen notifications it rings as a notification instead of filling the screen. Change either later in Android's settings for OpenTodo. Do Not Disturb treats it as an alarm: it rings when your Do Not Disturb settings let alarms through, as they do unless you turned that off, and stays silent under **Total silence**. The **Urgent reminders** category in Android's notification settings for OpenTodo turns them off or lets them override Do Not Disturb. Urgent alarms are set again after a restart once you unlock the phone, so one due before that first unlock does not ring; signing out removes the ones set for later, and **Change server** also silences one that is ringing.
+
 ### On time through UnifiedPush
 
 A reminder set on another device shortly before it is due can miss the hourly refresh. With a [UnifiedPush](https://unifiedpush.org) app such as ntfy on the phone, your server pushes each reminder to the app the moment it is due, the way it pushes to a browser, without Google services.
