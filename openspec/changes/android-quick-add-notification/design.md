@@ -28,6 +28,7 @@ Alternative: a web-side meta row handed over like the reminders switch. The shel
 **D2. One method, `quickAddNotification(json)`.**
 The argument is `{"on"?: boolean, "reply": boolean}`, and the answer is `"on"`, `"off"` or `"denied"`:
 - `on: true` shows the notification when notifications are allowed. Without the permission, the visible app asks on Android 13 and later; a refusal answers `denied` and the switch stays off.
+- `denied` also answers a switch that is on while the user has blocked the `quick-add` channel in Android's settings, so the card never reads on while nothing shows.
 - `on: false` removes the notification.
 - Without `on`, the shell only takes the new `reply` and answers the state. Settings reads it this way.
 
@@ -39,20 +40,23 @@ The capability is visible only: a background run never asks for anything.
 The web app sends `reply` with every call. The shell publishers send it again when encryption is turned on or off, skipping a value already sent. The shell re-posts the notification only when the value changed.
 
 **D4. The reply is the widget's address, applied in a background run.**
-- The receiver enqueues a hidden run at `/?add=<text>`, at most 500 characters (the address's own limit).
+- The receiver does nothing but remove the notification when the switch is off (a notification left over). Otherwise it enqueues an expedited hidden run at `/?add=<text>&id=<new UUID>`, the text at most 500 characters (the address's own limit).
 - In a background run, and only there, the web app saves a non-empty `add` instead of prefilling it:
   - It reads the line with quick-add syntax (`noteTasks.lineInputs`: dates and times, `#project`, priority and existing labels).
   - It places the task by the user's add position.
-  - It creates the task with `createTask`, so the default is the current workspace's Inbox and the op log carries the task. Offline, the task is stored and synced later.
+  - It creates the task with `createTask` under the shell's `id`, so the default is the current workspace's Inbox and the op log carries the task. Offline, the task is stored and synced later.
+  - **Exactly once.** WorkManager runs a request again when the process died before it finished. That run finds a task with the `id` in the local store and creates nothing, as the capture queue of apple-shortcuts does.
 - The visible app keeps prefilling without saving, so another app that opens OpenTodo at that address still saves nothing (native-shells "Widgets").
 - The run waits for the add as it waits for a reminder action (`reminderActionsApplied`).
+- The run hands the ids it saved to the shell with `backgroundDone('{"added": [ids]}')`; with nothing saved it calls `backgroundDone()` as before, which an older shell already reads.
+- **Nothing lost silently.** When the run ends and its id is not among them (signed out, a page that did not load in the run's 90 seconds, an older web app), the shell posts a notification on the reminders channel with the text as its title and "The task wasn't added. Tap to add it.". A tap opens `/?add=<text>`: quick add with the words typed in.
 - After the reply, the shell re-posts the notification, which ends the inline field's progress state.
 
 **D5. The notification.**
 - **Channel:** `quick-add` at `IMPORTANCE_MIN`, with no badge and no sound, named "Quick add" like the widget.
 - **Notification:** ongoing, silent, `PRIORITY_MIN`, with no timestamp and a fixed id. It carries no task content.
 - **Content:** the title is "Quick add" and a tap on the body opens `/?add=`. The one action is "Add task", with a `RemoteInput` whose hint is "Add task".
-- **Strings:** it reuses the translated widget strings and adds no string resource.
+- **Strings:** it reuses the translated widget strings. The one new string resource is the failed reply's text (D4), translated in every language of the app.
 - **Reply intent:** the PendingIntent is mutable, as RemoteInput requires, and explicit, to a receiver that is not exported.
 
 **D6. Coming back and going away.**

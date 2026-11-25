@@ -4,6 +4,7 @@
 // only while a background run can write the account, so never for an encrypted one
 // (D3). A reply comes back as `/?add=<text>` in a background run, saved here as a
 // task through createTask with quick-add parsing (D4).
+import { db } from './db'
 import { encryptionSnapshot, isEnabled } from './e2ee'
 import { resettable } from './moduleState'
 import { createTask } from './ops'
@@ -44,10 +45,16 @@ export function syncQuickAddReply(): void {
  * D4: the notification's reply, in a background run. Read with quick-add syntax (dates,
  * `#project`, priority, existing labels), in the Inbox unless a project is typed, placed by
  * the add position. Nothing for an empty line, signed out, or an encrypted account.
+ * The shell's `id` becomes the task's id: a run WorkManager repeats finds that task and
+ * creates nothing more. Answers the id of the task that exists, or null.
  */
-export async function applyNotificationAdd(text: string, now = new Date()): Promise<string | null> {
+export async function applyNotificationAdd(text: string, id?: string, now = new Date()): Promise<string | null> {
   const line = text.trim()
   if (!line || (await isEnabled()) || !(await currentUserId())) return null
+  const given = id && UUID.test(id) ? id : undefined
+  if (given && (await db.tasks.get(given))) return given
   const [input] = await (await import('./noteTasks')).lineInputs([line])
-  return createTask({ project_id: null, ...input, placement: await preferredPlacement() }, now)
+  return createTask({ project_id: null, ...input, placement: await preferredPlacement() }, now, given)
 }
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i

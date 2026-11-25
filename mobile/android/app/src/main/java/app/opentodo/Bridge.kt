@@ -26,7 +26,7 @@ class Bridge(
     private val context: Context,
     private val origin: String,
     private val host: Host?,
-    private val backgroundDone: (() -> Unit)? = null,
+    private val backgroundDone: ((String?) -> Unit)? = null,
 ) {
     interface Host {
         fun requestNotificationPermission(done: (Boolean) -> Unit)
@@ -126,7 +126,8 @@ class Bridge(
             "playCompletionSound" -> if (host != null && args.length() == 0) main.post { host.playCompletionSound() }
             // Without a screen there is no page to open, and the visible app has no run to end.
             "openAlarmSettings" -> if (host != null) main.post { host.openAlarmSettings() }
-            "backgroundDone" -> if (host == null) backgroundDone?.invoke()
+            // android-quick-add-notification D4: an optional JSON of what the run saved, `{"added": [ids]}`.
+            "backgroundDone" -> if (host == null) backgroundDone?.invoke(args.optString(0, "").ifEmpty { null })
             // shell-reveal-on-paint D2: only the visible app has a launch screen to end.
             "painted" -> if (host != null) main.post { host.painted() }
             "textScaleApplied" -> if (host != null) main.post { host.textScaleApplied() }
@@ -271,7 +272,7 @@ class Bridge(
                 haptic: function (kind) { send('haptic', [String(kind)]) },
                 playCompletionSound: function () { send('playCompletionSound', []) },
                 openAlarmSettings: function () { send('openAlarmSettings', []) },
-                backgroundDone: function () { send('backgroundDone', []) },
+                backgroundDone: function (json) { send('backgroundDone', json == null ? [] : [String(json)]) },
                 painted: function () { send('painted', []) },
                 textScaleApplied: function () { send('textScaleApplied', []) },
                 pushSubscribe: function (key) { return call('pushSubscribe', [String(key)]) },

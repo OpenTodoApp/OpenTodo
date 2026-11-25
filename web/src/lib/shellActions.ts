@@ -9,13 +9,14 @@
 // (focus-live-activity D4), applied as Space applies it. The Android Today widget's
 // completion circle opens `/?complete=<taskId>` in a background run
 // (android-widget-list D2), applied only there, never in the visible app. The
-// Android quick-add notification's reply opens `/?add=<text>` in a background run,
-// which saves the task (android-quick-add-notification D4); the visible app only
-// ever prefills.
+// Android quick-add notification's reply opens `/?add=<text>&id=<id>` in a background
+// run, which saves the task with that id (android-quick-add-notification D4); the
+// visible app only ever prefills.
 import { db } from './db'
 import { completeTask } from './ops'
 import { pauseSession, resumeSession } from './focus/session'
 import { dismissReminder, snoozeReminder } from './reminders'
+import { resettable } from './moduleState'
 import { has } from './shell'
 
 export type ReminderAction = 'snooze' | 'dismiss' | 'done'
@@ -24,7 +25,7 @@ export type FocusAction = 'pause' | 'resume'
 export type ShellUrlAction =
   | { kind: 'reminder'; id: string; action: ReminderAction }
   | { kind: 'complete'; ids: string[] }
-  | { kind: 'add'; text: string }
+  | { kind: 'add'; text: string; id?: string }
   | { kind: 'focus'; action: FocusAction }
   | null
 
@@ -40,7 +41,9 @@ export function shellUrlAction(search: string, pathname = '/'): ShellUrlAction {
   if (pathname === '/focus' && !id && (action === 'pause' || action === 'resume')) return { kind: 'focus', action }
   // `add` may be empty: the widget's button opens quick add (Android widgets hold no text field).
   const add = p.get('add')
-  if (add != null) return { kind: 'add', text: add.slice(0, 500) }
+  // A quick-add notification's reply also names the task's id (android-quick-add-notification D4).
+  const addId = p.get('id')
+  if (add != null) return { kind: 'add', text: add.slice(0, 500), ...(addId ? { id: addId } : {}) }
   return null
 }
 
@@ -80,10 +83,17 @@ export async function applyFocusAction(action: FocusAction, now?: number): Promi
 
 let pendingAdd: string | null = null
 let applied = 0
+let added: string[] = []
+resettable('shellActions', () => { added = [] })
 
 /** How many notification and widget actions this page has written; a background run waits for its own (shell-reminders-on D4). */
 export function reminderActionsApplied(): number {
   return applied
+}
+
+/** The tasks this page saved from quick-add notification replies, for `backgroundDone` (android-quick-add-notification D4). */
+export function notificationAddsSaved(): readonly string[] {
+  return added
 }
 
 /** Text the quick-add widget asked to prefill; read once by the quick-add sheet. */
@@ -99,6 +109,7 @@ export async function handleShellUrl(openQuickAdd: () => boolean, loc: Location 
   if (!action) return null
   const p = new URLSearchParams(loc.search)
   for (const k of ['reminder', 'action', 'add', 'complete']) p.delete(k)
+  if (action.kind === 'add') p.delete('id')
   const query = p.toString()
   hist.replaceState(hist.state, '', `${loc.pathname}${query ? `?${query}` : ''}${loc.hash}`)
   if (action.kind === 'reminder') {
@@ -113,7 +124,10 @@ export async function handleShellUrl(openQuickAdd: () => boolean, loc: Location 
   else if (action.kind === 'focus') await applyFocusAction(action.action)
   else if (has('background')) {
     if (action.text.trim()) {
-      try { await (await import('./shellQuickAdd')).applyNotificationAdd(action.text) } finally { applied++ }
+      try {
+        const id = await (await import('./shellQuickAdd')).applyNotificationAdd(action.text, action.id)
+        if (id) added = [...added, id]
+      } finally { applied++ }
     }
   }
   else {

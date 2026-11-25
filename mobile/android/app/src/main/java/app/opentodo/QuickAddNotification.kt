@@ -10,6 +10,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.RemoteInput
 import org.json.JSONObject
+import java.util.UUID
 
 /**
  * Quick add from the notification shade (android-quick-add-notification): an ongoing, silent
@@ -40,12 +41,35 @@ object QuickAddNotification {
     /** The bridge's answer: `off`, `on`, or `denied` when it is on but Android shows no notification. */
     fun answer(on: Boolean, allowed: Boolean): String = if (!on) "off" else if (allowed) "on" else "denied"
 
-    /** The background run's address for a reply, or null for an empty one (D4). */
-    fun replyPath(text: CharSequence?): String? {
+    /** A reply's text, trimmed and cut at [MAX_TEXT] without splitting a character; null when empty. */
+    fun replyText(text: CharSequence?): String? {
         var t = text?.toString()?.trim() ?: return null
         if (t.length > MAX_TEXT) t = t.take(MAX_TEXT).let { if (it.last().isHighSurrogate()) it.dropLast(1) else it }
-        if (t.isEmpty()) return null
-        return ReminderSchedule.QUICK_ADD_PATH + java.net.URLEncoder.encode(t, "UTF-8")
+        return t.ifEmpty { null }
+    }
+
+    /** Quick add in the visible app with [text] typed in (the address of a reply that was not saved). */
+    fun addPath(text: String): String = ReminderSchedule.QUICK_ADD_PATH + java.net.URLEncoder.encode(text, "UTF-8")
+
+    /**
+     * The background run's address for a reply (D4): the text and the id the task is created
+     * with, so a run WorkManager repeats finds the task and adds nothing twice.
+     */
+    fun replyPath(text: String, id: String): String = addPath(text) + "&id=" + id
+
+    /** The ids the web app says it saved, from `backgroundDone(json)` (D4); none for an older web app. */
+    fun added(json: String?): Set<String> = try {
+        val a = JSONObject(json ?: return emptySet()).optJSONArray("added") ?: return emptySet()
+        (0 until a.length()).map { a.optString(it) }.filter { it.isNotEmpty() }.toSet()
+    } catch (e: Exception) {
+        emptySet()
+    }
+
+    /** Notifications allowed, and the `quick-add` channel not blocked in Android's settings (D2). */
+    fun allowed(context: Context): Boolean {
+        if (!Scheduler.notificationsAllowed(context)) return false
+        val c = context.getSystemService(NotificationManager::class.java).getNotificationChannel(CHANNEL)
+        return c == null || c.importance != NotificationManager.IMPORTANCE_NONE
     }
 
     /**
@@ -58,16 +82,16 @@ object QuickAddNotification {
         prefs.quickAddReply = req.reply
         when (req.on) {
             false -> { prefs.quickAddNotification = false; cancel(context); done("off") }
-            true -> if (Scheduler.notificationsAllowed(context)) { prefs.quickAddNotification = true; show(context); done("on") }
+            true -> if (Scheduler.notificationsAllowed(context)) { prefs.quickAddNotification = true; show(context); done(answer(true, allowed(context))) }
                 else ask { granted ->
                     val allowed = granted && Scheduler.notificationsAllowed(context)
                     prefs.quickAddNotification = allowed
                     if (allowed) show(context)
-                    done(answer(true, allowed))
+                    done(answer(true, allowed && allowed(context)))
                 }
             null -> {
                 if (prefs.quickAddNotification && replyChanged) show(context)
-                done(answer(prefs.quickAddNotification, Scheduler.notificationsAllowed(context)))
+                done(answer(prefs.quickAddNotification, allowed(context)))
             }
         }
     }
@@ -115,16 +139,39 @@ object QuickAddNotification {
             .build()
         return try { NotificationManagerCompat.from(context).notify(ID, n); true } catch (e: SecurityException) { false }
     }
+
+    /**
+     * A reply whose run ended without the web app saving it (D4: signed out, a page that did not
+     * load in time): the words come back on the reminders channel, and a tap opens quick add with
+     * them typed in, so nothing the user wrote is lost silently.
+     */
+    fun failed(context: Context, text: String, id: String) {
+        if (!Scheduler.notificationsAllowed(context)) return
+        Notifier.ensureChannel(context)
+        val code = "quick-add:$id".hashCode()
+        val n = NotificationCompat.Builder(context, Notifier.CHANNEL)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(text)
+            .setContentText(context.getString(R.string.quick_add_failed))
+            .setPublicVersion(Focus.publicVersion(context, Notifier.CHANNEL, context.getString(R.string.quick_add_failed)))
+            .setCategory(NotificationCompat.CATEGORY_ERROR)
+            .setAutoCancel(true)
+            .setContentIntent(Notifier.open(context, addPath(text), code))
+            .build()
+        try { NotificationManagerCompat.from(context).notify(code, n) } catch (e: SecurityException) { /* not allowed after all */ }
+    }
 }
 
 /**
- * The inline reply (D4): the text goes to a background run at `/?add=<text>`, where the web app
- * saves it as a task; the notification is posted again, which ends the field's progress state.
+ * The inline reply (D4): the text goes to a background run at `/?add=<text>&id=<new id>`, where
+ * the web app saves it as a task; the notification is posted again, which ends the field's
+ * progress state. A notification left over after the switch went off saves nothing and goes.
  */
 class QuickAddReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val text = RemoteInput.getResultsFromIntent(intent)?.getCharSequence(QuickAddNotification.KEY_TEXT)
-        QuickAddNotification.replyPath(text)?.let { HiddenRun.enqueueOnce(context, it) }
-        if (Prefs(context).quickAddNotification) QuickAddNotification.show(context) else QuickAddNotification.cancel(context)
+        if (!Prefs(context).quickAddNotification) { QuickAddNotification.cancel(context); return }
+        val text = QuickAddNotification.replyText(RemoteInput.getResultsFromIntent(intent)?.getCharSequence(QuickAddNotification.KEY_TEXT))
+        if (text != null) HiddenRun.enqueueQuickAdd(context, text, UUID.randomUUID().toString())
+        QuickAddNotification.show(context)
     }
 }

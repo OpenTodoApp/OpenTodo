@@ -474,18 +474,25 @@ function quickAdd() {
   void setQuickAddNotification(true)
   publishEncryption({ enabled: false })
   forgetShellData()
-  delete window.opentodoShell
-  const replies = ['Call the plumber tomorrow 9am #Home', '  Buy milk  ', 'Überweisung «Miete» ☎ 50% & more?', '   '].map((raw) => {
+  const ids = ['3f2b8c1e-5d4a-4e6f-9a7b-1c2d3e4f5a6b', '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d', 'c0ffee00-1234-4abc-8def-0123456789ab', '7e57ab1e-0000-4000-8000-000000000000']
+  const replies = ['Call the plumber tomorrow 9am #Home', '  Buy milk  ', 'Überweisung «Miete» ☎ 50% & more?', '   '].map((raw, i) => {
     const t = raw.trim()
-    return { text: raw, path: t ? `/?${new URLSearchParams({ add: t })}` : null }
+    return { text: raw, id: ids[i], path: t ? `/?${new URLSearchParams({ add: t, id: ids[i] })}` : null, open: t ? `/?${new URLSearchParams({ add: t })}` : null }
   })
+  // What a background run hands back with backgroundDone once it saved the first two replies.
+  const done: (string | undefined)[] = []
+  window.opentodoShell = { bridge: 1, platform: 'android', app: '1.8.0', capabilities: ['background'], backgroundDone: (json?: string) => void done.push(json) }
+  backgroundDone({ added: ids.slice(0, 2) })
+  backgroundDone({ added: [] })
+  delete window.opentodoShell
   return {
-    description: 'The quick-add notification (android-quick-add-notification): a shell that lists the capability takes quickAddNotification(json) with one of calls (on absent: only read the state and take reply) and answers one of answers; a reply\'s text becomes path (trimmed, at most 500 characters; none when empty), which the web app reads back as add in a background run.',
+    description: 'The quick-add notification (android-quick-add-notification): a shell that lists the capability takes quickAddNotification(json) with one of calls (on absent: only read the state and take reply) and answers one of answers; a reply\'s text and a new id become path (text trimmed, at most 500 characters; none when empty), which the web app reads back as add and id in a background run and saves once as the task with that id. The run hands the saved ids to backgroundDone as one of done (absent: nothing saved); a reply not among them is offered again at open, which the visible app only prefills.',
     capability: 'quick-add-notification' satisfies ShellCapability,
     method: 'quickAddNotification' as const,
     calls: calls.map((json) => ({ json, ...(JSON.parse(json) as object) })),
     answers: ['on', 'off', 'denied'],
     replies,
+    done: done.map((json) => ({ json: json ?? null, added: json ? (JSON.parse(json) as { added: string[] }).added : [] })),
   }
 }
 
@@ -518,7 +525,10 @@ describe('Android bridge fixtures', () => {
   })
 
   it('the web app reads every quick-add reply address back as add', () => {
-    for (const r of quickAdd().replies) if (r.path) expect(shellUrlAction(r.path.slice(1))).toEqual({ kind: 'add', text: r.text.trim() })
+    for (const r of quickAdd().replies) {
+      if (r.path) expect(shellUrlAction(r.path.slice(1))).toEqual({ kind: 'add', text: r.text.trim(), id: r.id })
+      if (r.open) expect(shellUrlAction(r.open.slice(1))).toEqual({ kind: 'add', text: r.text.trim() })
+    }
   })
 
   it('the web app reads every push answer of the fixture, and calls the methods only with the capability', async () => {

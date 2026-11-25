@@ -13,12 +13,14 @@ export function QuickAddNotificationSection() {
   const [busy, setBusy] = useState(false)
   const offered = has('quick-add-notification')
   useEffect(() => {
-    if (offered) void quickAddNotificationState().then(setState, () => undefined)
+    // A bridge that does not answer leaves the switch off and usable.
+    if (offered) void quickAddNotificationState().then(setState, () => setState('off'))
   }, [offered])
   if (!offered) return null
   const toggle = async (on: boolean) => {
     setBusy(true)
-    setState(await setQuickAddNotification(on).catch(() => null))
+    const next = await setQuickAddNotification(on).catch(() => quickAddNotificationState().catch(() => 'off' as const))
+    setState(next ?? 'off')
     setBusy(false)
   }
   return <QuickAddNotificationView state={state} busy={busy} onToggle={(on) => void toggle(on)} />

@@ -37,21 +37,37 @@ class QuickAddNotificationTest {
         for (on in listOf(true, false)) for (allowed in listOf(true, false)) assertTrue(answers.contains(QuickAddNotification.answer(on, allowed)))
     }
 
-    @Test fun aReplyOpensTheAddressTheWebAppSaves() {
+    @Test fun aReplyOpensTheAddressTheWebAppSavesWithItsId() {
         val replies = fixture.getJSONArray("replies")
         for (i in 0 until replies.length()) {
             val r = replies.getJSONObject(i)
-            val want = if (r.isNull("path")) null else r.getString("path")
-            assertEquals(r.getString("text"), want, QuickAddNotification.replyPath(r.getString("text")))
+            val text = QuickAddNotification.replyText(r.getString("text"))
+            assertEquals(r.getString("text"), if (r.isNull("path")) null else r.getString("path"), text?.let { QuickAddNotification.replyPath(it, r.getString("id")) })
+            assertEquals(r.getString("text"), if (r.isNull("open")) null else r.getString("open"), text?.let { QuickAddNotification.addPath(it) })
         }
-        assertNull(QuickAddNotification.replyPath(null))
+        assertNull(QuickAddNotification.replyText(null))
+    }
+
+    @Test fun readsWhatTheRunSaved() {
+        val done = fixture.getJSONArray("done")
+        assertTrue(done.length() > 0)
+        for (i in 0 until done.length()) {
+            val d = done.getJSONObject(i)
+            val want = d.getJSONArray("added").let { a -> (0 until a.length()).map { a.getString(it) }.toSet() }
+            assertEquals(want, QuickAddNotification.added(if (d.isNull("json")) null else d.getString("json")))
+        }
+        // An older web app says nothing, and a malformed answer saves nothing: the reply comes back.
+        assertEquals(emptySet<String>(), QuickAddNotification.added("not json"))
+        assertEquals(emptySet<String>(), QuickAddNotification.added("{}"))
     }
 
     @Test fun aLongReplyIsCutAtTheAddressLimitWithoutSplittingACharacter() {
-        val path = QuickAddNotification.replyPath("a".repeat(499) + "😀" + "b")!!
-        val text = java.net.URLDecoder.decode(path.removePrefix(ReminderSchedule.QUICK_ADD_PATH), "UTF-8")
-        assertEquals("a".repeat(499), text)
-        assertEquals(500, QuickAddNotification.replyPath("c".repeat(600))!!.removePrefix(ReminderSchedule.QUICK_ADD_PATH).length)
+        assertEquals("a".repeat(499), QuickAddNotification.replyText("a".repeat(499) + "😀" + "b"))
+        assertEquals(500, QuickAddNotification.replyText("c".repeat(600))!!.length)
+    }
+
+    @Test fun theBackgroundRunHandsOverWhatItSaved() {
+        assertTrue(Bridge.script("1.0.0", listOf("background")).contains("backgroundDone: function (json) { send('backgroundDone', json == null ? [] : [String(json)]) }"))
     }
 
     @Test fun onlyTheVisibleAppListsTheCapability() {

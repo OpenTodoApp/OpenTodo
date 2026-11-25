@@ -129,8 +129,11 @@ export interface OpenTodoShell {
   playCompletionSound?(): void
   /** shell-reminders-on D3: opens the system page where exact alarms are allowed (Android, the visible app). */
   openAlarmSettings?(): void
-  /** shell-reminders-on D4: a background run's web app is done; the shell ends the run. */
-  backgroundDone?(): void
+  /**
+   * shell-reminders-on D4: a background run's web app is done; the shell ends the run. The
+   * JSON names what the run saved (android-quick-add-notification D4: `{"added": [taskIds]}`).
+   */
+  backgroundDone?(json?: string): void
   /**
    * pull-to-sync D4: the page showing handles a pull down itself, so a shell with its
    * own pull to refresh (`pull-refresh`) turns that off until another page loads.
@@ -376,11 +379,17 @@ export function openAlarmSettings(): boolean {
   return true
 }
 
-/** Tells a background run's shell the web app is done; false outside such a run. */
-export function backgroundDone(): boolean {
+/** What a background run saved, handed over with `backgroundDone` (android-quick-add-notification D4). */
+export interface ShellRunResult {
+  added: string[]
+}
+
+/** Tells a background run's shell the web app is done, with what it saved when anything; false outside such a run. */
+export function backgroundDone(result?: ShellRunResult): boolean {
   const s = shell()
   if (!s || !has('background') || !s.backgroundDone) return false
-  s.backgroundDone()
+  if (result?.added.length) s.backgroundDone(JSON.stringify(result))
+  else s.backgroundDone()
   return true
 }
 

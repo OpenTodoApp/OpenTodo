@@ -9,7 +9,7 @@ import { db, setMeta } from '../lib/db'
 import { publishEncryption } from '../lib/e2ee'
 import { resetDeviceId } from '../lib/ops'
 import { forgetShellData, type OpenTodoShell } from '../lib/shell'
-import { handleShellUrl, reminderActionsApplied } from '../lib/shellActions'
+import { handleShellUrl, notificationAddsSaved, reminderActionsApplied } from '../lib/shellActions'
 import { startBackgroundRun } from '../lib/shellBackground'
 import { applyNotificationAdd, quickAddNotificationState, setQuickAddNotification, syncQuickAddReply } from '../lib/shellQuickAdd'
 import { setCurrentUserId } from '../lib/sharing'
@@ -81,6 +81,18 @@ describe('a reply in a background run', () => {
     expect(reminderActionsApplied()).toBe(before + 1)
   })
 
+  it('saves a reply once under the shell\'s id, even when the run is repeated', async () => {
+    shellWith(['reminders', 'background'])
+    const id = '3f2b8c1e-5d4a-4e6f-9a7b-1c2d3e4f5a6b'
+    expect(await handleShellUrl(() => false, at(`?add=Buy+milk&id=${id}`), hist)).toEqual({ kind: 'add', text: 'Buy milk', id })
+    // WorkManager runs the same request again after the process died before it finished.
+    await handleShellUrl(() => false, at(`?add=Buy+milk&id=${id}`), hist)
+    expect((await live()).map((t) => [t.id, t.title])).toEqual([[id, 'Buy milk']])
+    expect(notificationAddsSaved()).toEqual([id, id])
+    // Anything but a UUID is not an id: the task gets its own.
+    expect(await applyNotificationAdd('Bread', 'not-an-id')).not.toBe('not-an-id')
+  })
+
   it('goes to a typed project', async () => {
     const { createProject } = await import('../lib/ops')
     const home = await createProject({ name: 'Home' })
@@ -106,20 +118,35 @@ describe('a reply in a background run', () => {
     expect(await live()).toEqual([])
   })
 
-  it('the run waits for the reply to be saved', async () => {
+  it('the run waits for the reply to be saved, and tells the shell its id', async () => {
     shellWith(['reminders', 'background'])
-    let done = false
-    window.opentodoShell!.backgroundDone = () => { done = true }
+    const id = '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d'
+    let done: string | null | undefined = null
+    window.opentodoShell!.backgroundDone = (json?: string) => { done = json }
     // The clock stands still until the reply is saved: only the pending add holds the run.
     let t = 0, polls = 0, saved = false
-    const run = startBackgroundRun({ now: () => t, sleep: async (ms) => { polls++; if (saved) t += ms; await Promise.resolve() }, search: '?add=Buy+milk' })
+    const run = startBackgroundRun({ now: () => t, sleep: async (ms) => { polls++; if (saved) t += ms; await Promise.resolve() }, search: `?add=Buy+milk&id=${id}` })
     await waitFor(() => polls > 3, 'the run polling')
-    expect(done).toBe(false)
-    await handleShellUrl(() => false, at('?add=Buy+milk'), hist)
+    expect(done).toBeNull()
+    await handleShellUrl(() => false, at(`?add=Buy+milk&id=${id}`), hist)
     saved = true
     await run
-    expect(done).toBe(true)
+    expect(done).toBe(JSON.stringify({ added: [id] }))
     expect(t).toBeLessThan(45_000)
+  })
+
+  it('a reply the run could not save is not reported, so the shell offers it again', async () => {
+    shellWith(['reminders', 'background'])
+    await setMeta('userId', null)
+    const args: unknown[][] = []
+    window.opentodoShell!.backgroundDone = (...a: unknown[]) => void args.push(a)
+    const search = '?add=Buy+milk&id=0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d'
+    let t = 0
+    const run = startBackgroundRun({ now: () => t, sleep: async (ms) => { t += ms; await Promise.resolve() }, search })
+    await handleShellUrl(() => false, at(search), hist)
+    await run
+    expect(args).toEqual([[]])
+    expect(await live()).toEqual([])
   })
 })
 
@@ -141,6 +168,18 @@ describe('Settings card', () => {
     const { container, unmount } = await render(<QuickAddNotificationSection />)
     await waitFor(() => container.querySelector('[aria-checked="true"]') != null, 'the switch on')
     expect(calls).toEqual(['{"reply":true}'])
+    unmount()
+  })
+
+  it('a bridge that fails leaves the switch usable', async () => {
+    shellWith(['quick-add-notification', 'links'])
+    window.opentodoShell!.quickAddNotification = () => Promise.reject(new Error('gone'))
+    const { container, unmount } = await render(<QuickAddNotificationSection />)
+    const sw = () => container.querySelector('[role="switch"]')
+    await waitFor(() => sw()?.getAttribute('aria-checked') === 'false' && !sw()?.hasAttribute('disabled'), 'the switch off and enabled')
+    ;(sw() as HTMLElement).click()
+    await waitFor(() => !sw()?.hasAttribute('disabled'), 'the switch enabled again')
+    expect(sw()?.getAttribute('aria-checked')).toBe('false')
     unmount()
   })
 })

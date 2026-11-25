@@ -181,11 +181,11 @@ The widgets follow the phone's light or dark mode, and show what the app last sa
 
 ## Quick add in the notifications
 
-To add tasks from any app, turn on **Settings → Capture → Quick add → Quick add notification → On this phone**. It is off until you turn it on, and it is set per phone. On Android 13 and later, the app asks to send notifications the first time; if you refuse, the switch stays off until you allow notifications for OpenTodo in Android's settings.
+To add tasks from any app, turn on **Settings → Capture → Quick add → Quick add notification → On this phone**. It is off until you turn it on, and it is set per phone. On Android 13 and later, the app asks to send notifications the first time; if you refuse, the switch stays off until you allow notifications for OpenTodo in Android's settings. If you turn off the **Quick add** channel there, the switch reads off too.
 
 A silent notification then stays in the notification shade, on its own **Quick add** channel:
 
-- **Add task** opens a field right in the notification. Type a task and send it, and you stay in the app you were in. The app saves the task in the background, reading it as [quick add](quick-add.md) does: dates and times, `#project`, priority and existing labels. It goes to the Inbox unless you type a project. Without a connection, the task waits on the phone and syncs later, like any other change.
+- **Add task** opens a field right in the notification. Type a task and send it, and you stay in the app you were in. The app saves the task in the background, reading it as [quick add](quick-add.md) does: dates and times, `#project`, priority and existing labels. It goes to the Inbox unless you type a project. Without a connection, the task waits on the phone and syncs later, like any other change. If the app could not save it (you are signed out, or the app could not start in the background), a notification says so; tap it to open quick add with your words typed in.
 - **A tap on the notification** opens the app's quick add with the keyboard up.
 
 With [end-to-end encryption](e2ee.md), **Add task** opens quick add instead: the app cannot save to an encrypted account in the background.

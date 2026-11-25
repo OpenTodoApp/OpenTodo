@@ -9,11 +9,13 @@ Turning the switch on SHALL show a silent notification of minimum importance on 
 - The web app SHALL save the title in a background run of the app, through its own task operation, read with quick-add syntax. The task SHALL go to the Inbox unless a project is typed.
 - The user SHALL stay in the app they were in.
 - Offline, the task SHALL be stored on the phone as an operation and synced with the next sync, converging like any other new task.
+- A reply SHALL create at most one task, also when the system runs the background run again.
+- A reply the background run did not save SHALL come back as a notification that opens quick add with the text typed in.
 - For an end-to-end encrypted account, the button SHALL open quick add instead of taking a title.
 
 The notification SHALL come back after a reboot and after an app update. It SHALL go when the switch is turned off, on sign-out and on Change server.
 
-On Android 13 and later, turning the switch on without the notification permission SHALL ask for it. A refusal SHALL leave the switch off, with a notice.
+On Android 13 and later, turning the switch on without the notification permission SHALL ask for it. A refusal SHALL leave the switch off, with a notice. While the user has blocked the notification's channel, the switch SHALL not read on.
 
 The visible app SHALL never save a task from an address alone.
 
@@ -24,6 +26,14 @@ The visible app SHALL never save a task from an address alone.
 #### Scenario: Add offline
 - **WHEN** the phone has no network and the user sends "Buy milk" from the notification
 - **THEN** the task exists on the phone in the Inbox and reaches the server with the next sync
+
+#### Scenario: The run is repeated
+- **WHEN** the phone ends the app's process after the task "Buy milk" was stored but before the background run finished, and the system runs it again
+- **THEN** exactly one task "Buy milk" exists
+
+#### Scenario: The reply could not be saved
+- **WHEN** the user sends "Buy milk" from the notification and the background run ends without saving it
+- **THEN** a notification "Buy milk" says the task wasn't added, and a tap opens quick add with "Buy milk" typed in
 
 #### Scenario: Open quick add
 - **WHEN** the user taps the notification itself

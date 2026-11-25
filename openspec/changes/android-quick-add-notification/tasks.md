@@ -5,7 +5,7 @@
 - [x] 1.1 `QuickAddNotification.kt` holds three parts, verified by `QuickAddNotificationTest` (requests, answers and the reply address from the shared fixture `bridge/quick-add-notification.json`) in CI's Android job:
   - the `quick-add` channel (minimum importance, no badge, no sound);
   - the ongoing notification: the body opens `/?add=`, and Add task takes the title inline or opens quick add;
-  - the reply receiver, which enqueues a hidden run at `/?add=<text>`.
+  - the reply receiver, which enqueues an expedited hidden run at `/?add=<text>&id=<id>` while the switch is on, and the notification of a reply the run did not save (`QuickAddNotificationTest.readsWhatTheRunSaved`).
 - [x] 1.2 `Bridge.kt` lists `quick-add-notification` with a screen only and handles `quickAddNotification`, asking for the permission on Android 13+; verified by `BridgeFixtureTest.capabilitiesOfTheVisibleAppAndOfABackgroundRun` and `QuickAddNotificationTest.onlyTheVisibleAppListsTheCapability`
 - [x] 1.3 Restored at boot, after an app update and at app start; removed on Change server (`cancelAll`, `Prefs.clearServerData`); verified by the device checks in the pull request
 
