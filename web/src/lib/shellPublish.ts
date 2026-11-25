@@ -6,8 +6,9 @@
 // Outside a shell nothing here runs.
 import { liveQuery, type Subscription } from 'dexie'
 import { calendarTasks } from './calendar'
-import { addDaysISO, currentDateTime, localDueOf, logicalToday } from './dates'
+import { addDaysISO, currentDateTime, currentDayStart, localDueOf, logicalToday, viewedTask } from './dates'
 import { groupUpcoming, todayList, upcomingList, withoutArchived } from './dayLists'
+import { monthGrid } from './month'
 import { db, getMeta, setMeta } from './db'
 import { encryptionSnapshot, onEncryptionChange } from './e2ee'
 import { publishGeofences } from './geofences'
@@ -64,7 +65,9 @@ export function shellReminders(reminders: readonly Reminder[], tasks: readonly T
  * The widgets' Today list: titles, times, the project's name and an overdue task's
  * date only while the account is readable on this device, counts otherwise.
  * `actions` tells the shell what it may ask of this web app (android-widget-list D3):
- * `complete`, the widget's completion circle (`/?complete=<id>` in a background run).
+ * `complete`, the widget's completion circle (`/?complete=<id>` in a background run), and
+ * `complete-on`, a tick naming its occurrence (`<id>@<due>`, android-upcoming-calendar-widgets
+ * D6); `due` is a row's due date, the occurrence the widget names.
  */
 export function shellWidget(tasks: readonly Task[], today: string, now: number, locked: boolean, me?: string | null, projects: readonly Pick<Project, 'id' | 'name'>[] = []): ShellWidgetData {
   const list = todayList(tasks.filter((task) => !task.deleted_at && !task.completed_at), today, me)
@@ -78,12 +81,13 @@ export function shellWidget(tasks: readonly Task[], today: string, now: number, 
       ...(locked ? {} : { title: task.title }),
       ...(due?.time && !locked ? { time: due.time } : {}),
       ...(overdue && due && !locked ? { date: due.date } : {}),
+      ...(due && !locked ? { due: due.date } : {}),
       ...(project && !locked ? { project } : {}),
       priority: task.priority,
       overdue,
     }
   })
-  return { updatedAt: now, locked, count: list.length, overdue: rows.filter((r) => r.overdue).length, tasks: locked ? [] : rows, actions: ['complete'] }
+  return { updatedAt: now, locked, count: list.length, overdue: rows.filter((r) => r.overdue).length, tasks: locked ? [] : rows, actions: ['complete', 'complete-on'] }
 }
 
 /**
@@ -117,6 +121,7 @@ export function shellUpcoming(tasks: readonly Task[], today: string, locked: boo
       date,
       // A time belongs to the day it is due on (a span is listed under its first day).
       ...(due?.time && due.date === date ? { time: due.time } : {}),
+      ...(due ? { due: due.date } : {}),
       ...(project ? { project } : {}),
       priority: task.priority,
     }
@@ -135,20 +140,23 @@ function monthStart(iso: string, months: number): string {
 
 /**
  * The Calendar widget's days (android-upcoming-calendar-widgets D1): per date of the
- * widget's months, the open tasks Month draws on it (a span on each of its days); days
- * without tasks are left out. Locked: no days, only how to draw and open them.
+ * widget's six grids (the first week of this month's grid to the last of the fifth
+ * month's after it), the open tasks Month draws on it by their due as viewed here, a span
+ * on each of its days. A repeating task marks its next date only, not the projected
+ * occurrences Month adds. Days without tasks are left out. Locked: no days, only how to
+ * draw and open them.
  */
 export function shellCalendar(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], today: string, locked: boolean, weekStart: number, dayView: boolean): NonNullable<ShellWidgetData['calendar']> {
   if (locked) return { weekStart, dayView }
-  const from = monthStart(today, 0)
-  const to = addDaysISO(monthStart(today, CALENDAR_MONTHS), -1)
+  const from = monthGrid(monthStart(today, 0), weekStart)[0][0]
+  const to = monthGrid(monthStart(today, CALENDAR_MONTHS - 1), weekStart)[5][6]
   const counts = new Map<string, number>()
   const add = (date: string) => { if (date >= from && date <= to) counts.set(date, (counts.get(date) ?? 0) + 1) }
   for (const task of calendarTasks(tasks, projects, from, to)) {
     const span = spanOf(task)
     const clip = span && spanClip(span, from, to)
     if (clip) for (let d = clip.first; d <= clip.last; d = addDaysISO(d, 1)) add(d)
-    else { const due = localDueOf(task.due); if (due) add(due.date) }
+    else { const due = viewedTask(task).due; if (due) add(due.date) }
   }
   const days: Record<string, number> = {}
   for (const date of [...counts.keys()].sort()) days[date] = counts.get(date)!
@@ -265,6 +273,9 @@ async function publishToday(now = Date.now()): Promise<void> {
   const dayView = workspaces.list.find((w) => w.id === workspaces.current)?.features?.calendar !== false
   publishWidget({
     ...shellWidget(open, today, now, locked, me, projects),
+    // The logical day (Settings → Date and time, a day that starts after midnight), so the widgets' "today" is the app's.
+    today,
+    dayStart: currentDayStart(),
     completed: shellCompleted(tasks, projects, memberships, me, today, locked),
     upcoming: shellUpcoming(open, today, locked, me, projects),
     calendar: shellCalendar(open, projects, today, locked, currentDateTime().weekStart, dayView),

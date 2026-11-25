@@ -1,5 +1,7 @@
 package app.opentodo
 
+import java.time.LocalDate
+import java.time.LocalDateTime
 import org.json.JSONObject
 
 /**
@@ -17,6 +19,11 @@ data class WidgetModel(
     val rows: List<Row>,
     val more: Int,
     val upcoming: Upcoming? = null,
+    /** The web app reads `<id>@<due>`, the occurrence ticked (android-upcoming-calendar-widgets D6). */
+    val canCompleteOn: Boolean = false,
+    /** The app's logical today when published, and the minutes after midnight its day starts (D7). */
+    val today: String? = null,
+    val dayStart: Int? = null,
 ) {
     data class Row(
         val id: String,
@@ -26,6 +33,8 @@ data class WidgetModel(
         val project: String?,
         val priority: Int,
         val overdue: Boolean,
+        /** The task's due date, the occurrence a tick names (android-upcoming-calendar-widgets D6). */
+        val due: String? = null,
     )
 
     /** The Upcoming list (android-upcoming-calendar-widgets D1): rows in day order, each [Row.date] the day it is under. */
@@ -44,10 +53,16 @@ data class WidgetModel(
     enum class Group { EARLIER, TODAY }
 
     /** The rows still to show once the [pending] completions are hidden. */
-    fun visibleRows(pending: Set<String>): List<Row> = rows.filter { it.id !in pending }
+    fun visibleRows(pending: Set<String>): List<Row> {
+        val ids = WidgetPending.ids(pending)
+        return rows.filter { it.id !in ids }
+    }
 
     /** The header's count: the published count less the rows hidden as completed. */
-    fun visibleCount(pending: Set<String>): Int = (count - rows.count { it.id in pending }).coerceAtLeast(0)
+    fun visibleCount(pending: Set<String>): Int {
+        val ids = WidgetPending.ids(pending)
+        return (count - rows.count { it.id in ids }).coerceAtLeast(0)
+    }
 
     /**
      * The list's lines: the rows in the web app's order (overdue first), under "Earlier" and
@@ -85,9 +100,17 @@ data class WidgetModel(
         return out
     }
 
-    /** Whether the publication lists the task: in Today ([date] null) or in Upcoming on [date]. */
-    fun lists(taskId: String, date: String?): Boolean =
-        if (date == null) rows.any { it.id == taskId } else upcoming?.rows?.any { it.id == taskId && it.date == date } == true
+    /** The row a tick is for: in Today ([date] null) or in Upcoming on [date]; null when the publication does not list it. */
+    fun row(taskId: String, date: String?): Row? =
+        if (date == null) rows.firstOrNull { it.id == taskId } else upcoming?.rows?.firstOrNull { it.id == taskId && it.date == date }
+
+    fun lists(taskId: String, date: String?): Boolean = row(taskId, date) != null
+
+    /** What a run sends for a tick on [row]: `<id>@<due>` when the web app reads it, so an occurrence is completed once (D6). */
+    fun completion(row: Row): String = if (canCompleteOn && row.due != null) "${row.id}@${row.due}" else row.id
+
+    /** The app's logical today at [now] (android-upcoming-calendar-widgets D7). */
+    fun logicalToday(now: LocalDateTime = LocalDateTime.now()): LocalDate = logicalToday(dayStart, today, now)
 
     companion object {
         /** The web app publishes at most 50 (shellPublish.ts WIDGET_MAX). */
@@ -112,6 +135,7 @@ data class WidgetModel(
                     project = text(t, "project", 100),
                     priority = t.optInt("priority", 4).coerceIn(1, 4),
                     overdue = t.optBoolean("overdue", false),
+                    due = text(t, "due", 10)?.takeIf { DATE.matches(it) },
                 )
             }
             val rows = all.filter { it.id.isNotEmpty() }.take(MAX_ROWS)
@@ -132,6 +156,7 @@ data class WidgetModel(
                         project = text(t, "project", 100),
                         priority = t.optInt("priority", 4).coerceIn(1, 4),
                         overdue = false,
+                        due = text(t, "due", 10)?.takeIf { DATE.matches(it) },
                     )
                 }
                 val shown = upRows.filter { it.id.isNotEmpty() }.take(MAX_ROWS)
@@ -144,10 +169,23 @@ data class WidgetModel(
                 count = count,
                 overdue = o.optInt("overdue", 0).coerceAtLeast(0),
                 canComplete = complete && !locked,
+                canCompleteOn = complete && !locked && actions != null && (0 until actions.length()).any { actions.optString(it) == "complete-on" },
+                today = text(o, "today", 10)?.takeIf { DATE.matches(it) },
+                dayStart = if (o.has("dayStart")) o.optInt("dayStart", -1).takeIf { it in 0 until 24 * 60 } else null,
                 rows = rows,
                 more = (count - rows.size).coerceAtLeast(0),
                 upcoming = upcoming,
             )
+        }
+
+        /**
+         * The app's logical today (android-upcoming-calendar-widgets D7): the phone's date [dayStart]
+         * minutes earlier, as the web app's logicalDay; without one the published [today], else the phone's date.
+         */
+        fun logicalToday(dayStart: Int?, today: String?, now: LocalDateTime = LocalDateTime.now()): LocalDate = when {
+            dayStart != null -> now.minusMinutes(dayStart.toLong()).toLocalDate()
+            today != null -> try { LocalDate.parse(today) } catch (e: Exception) { now.toLocalDate() }
+            else -> now.toLocalDate()
         }
 
         private fun text(o: JSONObject, key: String, max: Int): String? =
@@ -167,6 +205,11 @@ object WidgetPending {
 
     /** The pending key of a tick: the task id in Today ([date] null), `id@date` in Upcoming. */
     fun key(taskId: String, date: String?): String = if (date == null) taskId else "$taskId@$date"
+
+    private val OCCURRENCE = Regex("""^(.+)@\d{4}-\d\d-\d\d$""")
+
+    /** The tasks of the pending keys: a tick in Upcoming hides the task's Today row too (D3). */
+    fun ids(pending: Set<String>): Set<String> = pending.mapTo(HashSet()) { OCCURRENCE.find(it)?.groupValues?.get(1) ?: it }
 
     fun parse(json: String?): Map<String, Long> {
         if (json.isNullOrEmpty()) return emptyMap()

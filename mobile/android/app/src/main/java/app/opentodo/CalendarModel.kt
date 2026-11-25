@@ -18,7 +18,13 @@ data class CalendarModel(
     val weekStart: Int?,
     val dayView: Boolean,
     val days: Map<String, Int>,
+    /** The app's logical today when published, and the minutes after midnight its day starts (D7). */
+    val today: String? = null,
+    val dayStart: Int? = null,
 ) {
+    /** The app's logical today at [now], for the ring and the month shown (android-upcoming-calendar-widgets D7). */
+    fun logicalToday(now: java.time.LocalDateTime = java.time.LocalDateTime.now()): LocalDate = WidgetModel.logicalToday(dayStart, today, now)
+
     /** The open tasks due on [date] (zero for a day the web app did not publish). */
     fun count(date: LocalDate): Int = days[date.toString()] ?: 0
 
@@ -52,6 +58,8 @@ data class CalendarModel(
                 weekStart = if (c.has("weekStart")) c.optInt("weekStart", -1).takeIf { it in 0..6 } else null,
                 dayView = c.optBoolean("dayView", true),
                 days = days,
+                today = o.optString("today", "").takeIf { DATE.matches(it) },
+                dayStart = if (o.has("dayStart")) o.optInt("dayStart", -1).takeIf { it in 0 until 24 * 60 } else null,
             )
         }
 

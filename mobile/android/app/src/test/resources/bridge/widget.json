@@ -1,7 +1,7 @@
 {
   "description": "The widgets' lists: Today overdue first, titles, times, the project's name and an overdue task's date while readable, and the completion circle (actions: complete, android-widget-list D3); Upcoming by day, each row with the day it is listed under; the calendar's open tasks per day, the first day of the week and whether a day opens Day (android-upcoming-calendar-widgets D1).",
   "method": "publishWidget",
-  "payload": "{\"updatedAt\":1792670400000,\"locked\":false,\"count\":3,\"overdue\":1,\"tasks\":[{\"id\":\"late\",\"title\":\"Überweisung «Miete»\",\"date\":\"2026-10-20\",\"project\":\"Zuhause\",\"priority\":2,\"overdue\":true},{\"id\":\"call\",\"title\":\"Call the plumber ☎\",\"time\":\"09:30\",\"priority\":1,\"overdue\":false},{\"id\":\"plain\",\"title\":\"Water the plants\",\"priority\":4,\"overdue\":false}],\"actions\":[\"complete\"],\"upcoming\":{\"count\":2,\"tasks\":[{\"id\":\"dentist\",\"title\":\"Book the dentist\",\"date\":\"2026-10-23\",\"time\":\"08:15\",\"project\":\"Zuhause\",\"priority\":4},{\"id\":\"later\",\"title\":\"Not today\",\"date\":\"2026-10-25\",\"priority\":4}]},\"calendar\":{\"weekStart\":1,\"dayView\":true,\"days\":{\"2026-10-20\":1,\"2026-10-22\":2,\"2026-10-23\":1,\"2026-10-25\":1}}}",
+  "payload": "{\"updatedAt\":1792670400000,\"locked\":false,\"count\":3,\"overdue\":1,\"tasks\":[{\"id\":\"late\",\"title\":\"Überweisung «Miete»\",\"date\":\"2026-10-20\",\"due\":\"2026-10-20\",\"project\":\"Zuhause\",\"priority\":2,\"overdue\":true},{\"id\":\"call\",\"title\":\"Call the plumber ☎\",\"time\":\"09:30\",\"due\":\"2026-10-22\",\"priority\":1,\"overdue\":false},{\"id\":\"plain\",\"title\":\"Water the plants\",\"due\":\"2026-10-22\",\"priority\":4,\"overdue\":false}],\"actions\":[\"complete\",\"complete-on\"],\"today\":\"2026-10-22\",\"dayStart\":240,\"upcoming\":{\"count\":2,\"tasks\":[{\"id\":\"dentist\",\"title\":\"Book the dentist\",\"date\":\"2026-10-23\",\"time\":\"08:15\",\"due\":\"2026-10-23\",\"project\":\"Zuhause\",\"priority\":4},{\"id\":\"later\",\"title\":\"Not today\",\"date\":\"2026-10-25\",\"due\":\"2026-10-25\",\"priority\":4}]},\"calendar\":{\"weekStart\":1,\"dayView\":true,\"days\":{\"2026-10-20\":1,\"2026-10-22\":2,\"2026-10-23\":1,\"2026-10-25\":1}}}",
   "now": 1792670400000,
   "expect": {
     "updatedAt": 1792670400000,
@@ -9,12 +9,16 @@
     "count": 3,
     "overdue": 1,
     "canComplete": true,
+    "canCompleteOn": true,
+    "today": "2026-10-22",
+    "dayStart": 240,
     "rows": [
       {
         "id": "late",
         "title": "Überweisung «Miete»",
         "time": null,
         "date": "2026-10-20",
+        "due": "2026-10-20",
         "project": "Zuhause",
         "priority": 2,
         "overdue": true
@@ -24,6 +28,7 @@
         "title": "Call the plumber ☎",
         "time": "09:30",
         "date": null,
+        "due": "2026-10-22",
         "project": null,
         "priority": 1,
         "overdue": false
@@ -33,6 +38,7 @@
         "title": "Water the plants",
         "time": null,
         "date": null,
+        "due": "2026-10-22",
         "project": null,
         "priority": 4,
         "overdue": false
@@ -47,6 +53,7 @@
           "title": "Book the dentist",
           "date": "2026-10-23",
           "time": "08:15",
+          "due": "2026-10-23",
           "project": "Zuhause",
           "priority": 4
         },
@@ -55,6 +62,7 @@
           "title": "Not today",
           "date": "2026-10-25",
           "time": null,
+          "due": "2026-10-25",
           "project": null,
           "priority": 4
         }

@@ -177,9 +177,9 @@ Five home-screen widgets: **Today**, **Upcoming**, **Calendar**, **Completed** a
 
 **Upcoming** lists what comes after today, as [Upcoming](today-and-upcoming.md) does, under a heading for each day (**Tomorrow**, then the weekday and date), each task with its time and project. Tap a task to open it, the circle to complete it (as in Today: a repeating task shows again under its next date), **+** for quick add, and the header to open Upcoming.
 
-**Calendar** shows a month, starting on your first day of the week (**Settings → Language and region → Date and time**), with a dot under each day that has open tasks and today ringed. Tap a day to open it in [Day](calendar-views.md), or the month's name to open Month; while the current workspace has [Calendar switched off](workspace-features.md), both open Upcoming instead. The arrows move to the next five months and back; each Calendar widget keeps its own month.
+**Calendar** shows a month, starting on your first day of the week (**Settings → Language and region → Date and time**), with a dot under each day that has open tasks (a repeating task on its next date) and today ringed. Tap a day to open it in [Day](calendar-views.md), or the month's name to open Month; while the current workspace has [Calendar switched off](workspace-features.md), both open Upcoming instead. The arrows move to the next five months and back; each Calendar widget keeps its own month.
 
-The widgets list the tasks the app's own lists show: open subtasks you [kept](keep-open-subtasks.md) when completing their parent stay out, and so do tasks of archived projects. They cover every workspace of your account.
+The widgets list the tasks the app's own lists show: open subtasks you [kept](keep-open-subtasks.md) when completing their parent stay out, and so do tasks of archived or trashed projects. They cover every workspace of your account.
 
 **Completed** shows how many tasks you completed today and a bar for each of the last 7 days (counted as in [Statistics](statistics.md), which a tap opens), and **Quick add** opens the app's quick add.
 

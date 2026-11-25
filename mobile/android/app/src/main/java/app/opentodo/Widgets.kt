@@ -25,16 +25,32 @@ object WidgetStore {
         if (json.length > 512 * 1024) return
         val model = WidgetModel.parse(json) ?: return
         val prefs = Prefs(context)
+        val before = prefs.widget
         prefs.widget = json
         // android-widget-list D2: a completion the publication confirms (the row is gone) is done.
-        prefs.widgetPending = WidgetPending.toJson(WidgetPending.prune(WidgetPending.parse(prefs.widgetPending), model, System.currentTimeMillis()))
+        val pending = WidgetPending.parse(prefs.widgetPending)
+        val pruned = WidgetPending.prune(pending, model, System.currentTimeMillis())
+        prefs.widgetPending = WidgetPending.toJson(pruned)
+        // The web app republishes on every local change; the same content within the minute shown changes no pixel.
+        if (pruned == pending && sameWithinAMinute(before, json)) return
         redraw(context)
+    }
+
+    /** Whether two publications differ only in an `updatedAt` less than a minute apart (android-upcoming-calendar-widgets). */
+    fun sameWithinAMinute(before: String?, after: String): Boolean {
+        val a = try { org.json.JSONObject(before ?: return false) } catch (e: Exception) { return false }
+        val b = try { org.json.JSONObject(after) } catch (e: Exception) { return false }
+        if (kotlin.math.abs(b.optLong("updatedAt") - a.optLong("updatedAt")) >= 60_000) return false
+        a.remove("updatedAt")
+        b.remove("updatedAt")
+        return a.toString() == b.toString()
     }
 
     fun clear(context: Context) {
         val prefs = Prefs(context)
         prefs.widget = null
         prefs.widgetPending = null
+        prefs.clearCalendarOffsets()
         redraw(context)
     }
 
@@ -48,6 +64,8 @@ object WidgetStore {
         if (upcoming.isNotEmpty()) UpcomingWidget.draw(context, m, upcoming)
         val calendar = m.getAppWidgetIds(ComponentName(context, CalendarWidget::class.java))
         if (calendar.isNotEmpty()) CalendarWidget.draw(context, m, calendar)
+        // Day headings and the calendar's ring move at the start of the app's next day (D7).
+        if (upcoming.isNotEmpty() || calendar.isNotEmpty()) CalendarWidget.scheduleNextDay(context)
     }
 
     /**
@@ -58,9 +76,11 @@ object WidgetStore {
     fun complete(context: Context, taskId: String, date: String? = null) {
         val prefs = Prefs(context)
         val model = WidgetModel.parse(prefs.widget) ?: return
-        if (!model.canComplete || !model.lists(taskId, date)) return
+        val row = model.row(taskId, date)
+        if (!model.canComplete || row == null) return
         prefs.widgetPending = WidgetPending.toJson(WidgetPending.add(WidgetPending.parse(prefs.widgetPending), WidgetPending.key(taskId, date), System.currentTimeMillis()))
-        prefs.queueWidgetCompletion(taskId)
+        // `<id>@<due>` where the web app reads it, so a repeating task is advanced once (D6).
+        prefs.queueWidgetCompletion(model.completion(row))
         redraw(context)
         HiddenRun.enqueueWidgetRun(context)
     }
@@ -205,7 +225,7 @@ internal class UpcomingListFactory(private val context: Context) : RemoteViewsSe
         items = model?.upcomingItems(WidgetStore.pending(context)) ?: emptyList()
         canComplete = model?.canComplete == true
         pattern = TodayWidget.weekdayMonthDay()
-        today = LocalDate.now()
+        today = model?.logicalToday() ?: LocalDate.now()
     }
 
     override fun getCount(): Int = items.size

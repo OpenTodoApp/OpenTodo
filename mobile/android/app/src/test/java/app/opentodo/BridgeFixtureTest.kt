@@ -52,7 +52,7 @@ class BridgeFixtureTest {
             canComplete = want.getBoolean("canComplete"),
             rows = (0 until rows.length()).map { i ->
                 val r = rows.getJSONObject(i)
-                WidgetModel.Row(r.getString("id"), nullableString(r, "title"), nullableString(r, "time"), nullableString(r, "date"), nullableString(r, "project"), r.getInt("priority"), r.getBoolean("overdue"))
+                WidgetModel.Row(r.getString("id"), nullableString(r, "title"), nullableString(r, "time"), nullableString(r, "date"), nullableString(r, "project"), r.getInt("priority"), r.getBoolean("overdue"), nullableString(r, "due"))
             },
             more = want.getInt("more"),
             upcoming = want.optJSONObject("upcoming")?.let { u ->
@@ -61,11 +61,14 @@ class BridgeFixtureTest {
                     count = u.getInt("count"),
                     rows = (0 until up.length()).map { i ->
                         val r = up.getJSONObject(i)
-                        WidgetModel.Row(r.getString("id"), nullableString(r, "title"), nullableString(r, "time"), r.getString("date"), nullableString(r, "project"), r.getInt("priority"), false)
+                        WidgetModel.Row(r.getString("id"), nullableString(r, "title"), nullableString(r, "time"), r.getString("date"), nullableString(r, "project"), r.getInt("priority"), false, nullableString(r, "due"))
                     },
                     more = u.getInt("more"),
                 )
             },
+            canCompleteOn = want.getBoolean("canCompleteOn"),
+            today = nullableString(want, "today"),
+            dayStart = if (want.isNull("dayStart")) null else want.getInt("dayStart"),
         )
         val payload = f.getString("payload")
         assertEquals(name, expected, WidgetModel.parse(payload))
@@ -76,7 +79,7 @@ class BridgeFixtureTest {
         else {
             val days = calendar.getJSONObject("days")
             val expectedDays = days.keys().asSequence().associateWith { days.getInt(it) }
-            assertEquals(name, CalendarModel(want.getLong("updatedAt"), want.getBoolean("locked"), calendar.getInt("weekStart"), calendar.getBoolean("dayView"), expectedDays), got)
+            assertEquals(name, CalendarModel(want.getLong("updatedAt"), want.getBoolean("locked"), calendar.getInt("weekStart"), calendar.getBoolean("dayView"), expectedDays, nullableString(want, "today"), want.getInt("dayStart")), got)
         }
     }
 

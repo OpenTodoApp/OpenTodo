@@ -94,7 +94,7 @@ describe('the widgets\' Today list', () => {
   it('names the project and an overdue task\'s date, and says the widget may complete (android-widget-list D3, D4)', () => {
     const inProject = tasks.map((t) => (t.id === 'late' ? { ...t, project_id: 'p1' } : t))
     const w = shellWidget(inProject, today, NOW, false, null, [{ id: 'p1', name: 'Home' }])
-    expect(w.actions).toEqual(['complete'])
+    expect(w.actions).toEqual(['complete', 'complete-on'])
     expect(w.tasks.find((r) => r.id === 'late')).toMatchObject({ project: 'Home', date: '2026-10-20', overdue: true })
     // The Inbox has no project name; a task due today carries no date.
     const now = w.tasks.find((r) => r.id === 'now')!
@@ -170,8 +170,8 @@ describe('the Upcoming widget (android-upcoming-calendar-widgets D1)', () => {
     expect(u.count).toBe(3)
     // In the app's Upcoming order: by day, then timed first, then priority.
     expect(u.tasks.map((r) => [r.id, r.date])).toEqual([['fri', '2026-10-23'], ['fri2', '2026-10-23'], ['mon', '2026-10-26']])
-    expect(u.tasks[0]).toEqual({ id: 'fri', title: 'Task fri', date: '2026-10-23', time: '09:00', project: 'Home', priority: 4 })
-    expect(u.tasks[1]).toEqual({ id: 'fri2', title: 'Task fri2', date: '2026-10-23', priority: 1 })
+    expect(u.tasks[0]).toEqual({ id: 'fri', title: 'Task fri', date: '2026-10-23', time: '09:00', due: '2026-10-23', project: 'Home', priority: 4 })
+    expect(u.tasks[1]).toEqual({ id: 'fri2', title: 'Task fri2', date: '2026-10-23', due: '2026-10-23', priority: 1 })
   })
 
   it('at most 50 rows, the count of all', () => {
@@ -194,19 +194,28 @@ describe('the Calendar widget (android-upcoming-calendar-widgets D1)', () => {
     task('b', { due: { date: '2026-10-03', time: '10:00' } }),
     task('c', { due: { date: '2026-12-31' } }),
     task('span', { start: '2026-10-30', due: { date: '2026-11-02' }, span: true } as Partial<Task>),
-    task('before', { due: { date: '2026-09-30' } }),
-    task('after', { due: { date: '2027-04-01' } }),
+    task('grid-start', { due: { date: '2026-09-28' } }),
+    task('before', { due: { date: '2026-09-27' } }),
+    task('grid-end', { due: { date: '2027-04-11' } }),
+    task('after', { due: { date: '2027-04-12' } }),
     task('last', { due: { date: '2027-03-31' } }),
     task('archived', { due: { date: '2026-10-05' }, project_id: 'old' }),
     task('done', { due: { date: '2026-10-05' }, completed_at: NOW }),
   ]
 
-  it('counts open tasks per day of this month and the next five, a span on each of its days', () => {
+  it('counts open tasks per day of the six grids (this month and the next five), a span on each of its days', () => {
+    // Monday first: October 2026's grid starts on 28 September, March 2027's ends on 11 April.
     const c = shellCalendar(tasks, projects, today, false, 1, true)
     expect(c).toEqual({
       weekStart: 1, dayView: true,
-      days: { '2026-10-03': 2, '2026-10-30': 1, '2026-10-31': 1, '2026-11-01': 1, '2026-11-02': 1, '2026-12-31': 1, '2027-03-31': 1 },
+      days: { '2026-09-28': 1, '2026-10-03': 2, '2026-10-30': 1, '2026-10-31': 1, '2026-11-01': 1, '2026-11-02': 1, '2026-12-31': 1, '2027-03-31': 1, '2027-04-11': 1 },
     })
+  })
+
+  it('a zoned due counts on the viewer\'s day, as Month draws it', () => {
+    // 01:30 on the 4th in Tokyo is 16:30 on the 3rd in UTC, the tests' zone.
+    const zoned = task('z', { due: { date: '2026-10-04', time: '01:30', tz: 'Asia/Tokyo' } } as Partial<Task>)
+    expect(shellCalendar([zoned], [], today, false, 1, true).days).toEqual({ '2026-10-03': 1 })
   })
 
   it('locked: how to draw and open the days, no days', () => {

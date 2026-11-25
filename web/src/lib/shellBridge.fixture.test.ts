@@ -179,9 +179,9 @@ function fixtures(): Record<string, Fixture> {
   const urgent = shellReminders(reminders.map((r) => (r.id === 'r-soon' ? { ...r, urgent: true } : r)), tasks, NOW, { titles: true, encrypted: false })
   const projects = [{ id: 'home', name: 'Zuhause' }]
   // As publishToday hands them over: Today, Upcoming and the calendar's days (android-upcoming-calendar-widgets D1).
-  const widget = { ...shellWidget(tasks, TODAY, NOW, false, null, projects), upcoming: shellUpcoming(tasks, TODAY, false, null, projects), calendar: shellCalendar(tasks, [], TODAY, false, 1, true) }
-  const locked = { ...shellWidget(tasks, TODAY, NOW, true, null, projects), upcoming: shellUpcoming(tasks, TODAY, true, null, projects), calendar: shellCalendar(tasks, [], TODAY, true, 1, true) }
-  const upcomingExpect = (u: typeof widget.upcoming) => ({ count: u.count, rows: u.tasks.map((t) => ({ id: t.id, title: t.title ?? null, date: t.date, time: t.time ?? null, project: t.project ?? null, priority: t.priority })), more: Math.max(0, u.count - u.tasks.length) })
+  const widget = { ...shellWidget(tasks, TODAY, NOW, false, null, projects), today: TODAY, dayStart: 240, upcoming: shellUpcoming(tasks, TODAY, false, null, projects), calendar: shellCalendar(tasks, [], TODAY, false, 1, true) }
+  const locked = { ...shellWidget(tasks, TODAY, NOW, true, null, projects), today: TODAY, dayStart: 240, upcoming: shellUpcoming(tasks, TODAY, true, null, projects), calendar: shellCalendar(tasks, [], TODAY, true, 1, true) }
+  const upcomingExpect = (u: typeof widget.upcoming) => ({ count: u.count, rows: u.tasks.map((t) => ({ id: t.id, title: t.title ?? null, date: t.date, time: t.time ?? null, due: t.due ?? null, project: t.project ?? null, priority: t.priority })), more: Math.max(0, u.count - u.tasks.length) })
   const calendarExpect = (c: typeof widget.calendar) => ({ weekStart: c.weekStart, dayView: c.dayView, days: c.days ?? {} })
   const completedWidget = { ...widget, completed: shellCompleted(doneTasks, [], [], null, TODAY, false) }
   const completedLocked = { ...locked, completed: shellCompleted(doneTasks, [], [], null, TODAY, true) }
@@ -240,17 +240,17 @@ function fixtures(): Record<string, Fixture> {
     'widget.json': {
       description: "The widgets' lists: Today overdue first, titles, times, the project's name and an overdue task's date while readable, and the completion circle (actions: complete, android-widget-list D3); Upcoming by day, each row with the day it is listed under; the calendar's open tasks per day, the first day of the week and whether a day opens Day (android-upcoming-calendar-widgets D1).",
       method: 'publishWidget', payload: JSON.stringify(widget), now: NOW,
-      expect: { updatedAt: NOW, locked: false, count: widget.count, overdue: widget.overdue, canComplete: true, rows: widget.tasks.map((t) => ({ id: t.id, title: t.title ?? null, time: t.time ?? null, date: t.date ?? null, project: t.project ?? null, priority: t.priority, overdue: t.overdue })), more: Math.max(0, widget.count - widget.tasks.length), upcoming: upcomingExpect(widget.upcoming), calendar: calendarExpect(widget.calendar) },
+      expect: { updatedAt: NOW, locked: false, count: widget.count, overdue: widget.overdue, canComplete: true, canCompleteOn: true, today: TODAY, dayStart: 240, rows: widget.tasks.map((t) => ({ id: t.id, title: t.title ?? null, time: t.time ?? null, date: t.date ?? null, due: t.due ?? null, project: t.project ?? null, priority: t.priority, overdue: t.overdue })), more: Math.max(0, widget.count - widget.tasks.length), upcoming: upcomingExpect(widget.upcoming), calendar: calendarExpect(widget.calendar) },
     },
     'widget-locked.json': {
       description: 'A locked encrypted account: counts only, no rows, so no completion circle; Upcoming its count only, the calendar no days.',
       method: 'publishWidget', payload: JSON.stringify(locked), now: NOW,
-      expect: { updatedAt: NOW, locked: true, count: locked.count, overdue: locked.overdue, canComplete: false, rows: [], more: locked.count, upcoming: upcomingExpect(locked.upcoming), calendar: calendarExpect(locked.calendar) },
+      expect: { updatedAt: NOW, locked: true, count: locked.count, overdue: locked.overdue, canComplete: false, canCompleteOn: false, today: TODAY, dayStart: 240, rows: [], more: locked.count, upcoming: upcomingExpect(locked.upcoming), calendar: calendarExpect(locked.calendar) },
     },
     'widget-signed-out.json': {
       description: 'Sign-out: an empty, locked widget.',
       method: 'publishWidget', payload: JSON.stringify(signedOutWidget), now: NOW,
-      expect: { updatedAt: NOW, locked: true, count: 0, overdue: 0, canComplete: false, rows: [], more: 0 },
+      expect: { updatedAt: NOW, locked: true, count: 0, overdue: 0, canComplete: false, canCompleteOn: false, today: null, dayStart: null, rows: [], more: 0 },
     },
   }
 }
@@ -271,7 +271,8 @@ function actions() {
     quickAdd: { path: '/?add=' },
     // android-widget-list D2: the Today widget's completion circle, opened in a background run only.
     // One run carries every queued tick.
-    completePaths: [['t1'], ['t/1 ü'], ['a', 'b']].map((taskIds) => ({ taskIds, path: `/?${taskIds.map((id) => `complete=${encodeURIComponent(id).replace(/%20/g, '+')}`).join('&')}` })),
+    // android-upcoming-calendar-widgets D6: a tick naming its occurrence, `<id>@<due>`, beside plain ids.
+    completePaths: [['t1'], ['t/1 ü'], ['a', 'b'], ['a@2026-10-23', 'b']].map((taskIds) => ({ taskIds, path: `/?${taskIds.map((id) => `complete=${encodeURIComponent(id).replace(/%20/g, '+')}`).join('&')}` })),
     // android-upcoming-calendar-widgets D4: a calendar day and the month's name open Day and Month,
     // or Upcoming while the current workspace has Calendar off (dayView false).
     calendarPaths: [
@@ -529,7 +530,11 @@ describe('Android bridge fixtures', () => {
     const a = actions()
     for (const r of [...a.reminderActions, ...a.locationActions]) expect(shellUrlAction(new URL(r.path, 'https://x').search)).toEqual({ kind: 'reminder', id: r.id, action: r.action })
     expect(shellUrlAction(new URL(a.quickAdd.path, 'https://x').search)).toEqual({ kind: 'add', text: '' })
-    for (const c of a.completePaths) expect(shellUrlAction(new URL(c.path, 'https://x').search)).toEqual({ kind: 'complete', ids: c.taskIds })
+    for (const c of a.completePaths) {
+      const on = Object.fromEntries(c.taskIds.filter((t) => t.includes('@')).map((t) => t.split('@')))
+      const ids = c.taskIds.map((t) => t.split('@')[0])
+      expect(shellUrlAction(new URL(c.path, 'https://x').search)).toEqual(Object.keys(on).length ? { kind: 'complete', ids, on } : { kind: 'complete', ids })
+    }
     for (const c of a.calendarPaths) expect(parseRoute(c.path)).toEqual(c.route)
     for (const f of a.focusActions) { const u = new URL(f.path, 'https://x'); expect(shellUrlAction(u.search, u.pathname)).toEqual({ kind: 'focus', action: f.action }) }
   })

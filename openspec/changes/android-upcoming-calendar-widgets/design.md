@@ -11,7 +11,7 @@ The Today widget (`TodayWidget`, `TodayListService`, `WidgetModel`) draws the we
 `publishWidget` keeps its shape and gains two optional members, computed in `publishToday` from the same rows:
 
 - `upcoming: {count, tasks}`: `groupUpcoming(upcomingList(…))` flattened, so rows come in day order and each carries `date`, the day the app's Upcoming lists it under; at most 50, `count` is the whole list. Rows carry `title`, `time`, `project` and `priority` as Today's do. Locked: `count` only and no rows.
-- `calendar: {weekStart, dayView, days}`: `days` maps each date from the first of the current month to the end of the fifth month after it to its number of open tasks, as Month draws them (`calendarTasks`, a multi-day task counted on each of its days); days without tasks are left out. `weekStart` is the app's first day of the week (Settings → Date & time, 0 = Sunday), `dayView` whether the current workspace has Calendar on (workspace-feature-switches). Locked: no `days`.
+- `calendar: {weekStart, dayView, days}`: `days` maps each date of the widget's six grids (the first date of this month's six-week grid to the last of the fifth month's after it) to its number of open tasks, as Month draws them (`calendarTasks`, the due as viewed here through `viewedTask`, a multi-day task counted on each of its days); days without tasks are left out. A repeating task marks only its next date: Month's projected occurrences are left out, to keep the publication small and the count the tasks a person can tick. `weekStart` is the app's first day of the week (Settings → Date & time, 0 = Sunday), `dayView` whether the current workspace has Calendar on (workspace-feature-switches). Locked: no `days`.
 
 Separate bridge methods were rejected: one call, one stored string and one prune keep the three widgets consistent with each other.
 
@@ -33,11 +33,19 @@ The arrows are broadcasts to the provider (`ACTION_MONTH` with the widget id and
 
 ### D5 — Sizes
 
-Upcoming as Today (from 2×2). The calendar's week rows share the height by weight; it opens at 4×4 and resizes down to `minResizeWidth` 180 dp by `minResizeHeight` 220 dp, where the six rows still fit a day number and its dot.
+Upcoming as Today (from 2×2). The calendar's week rows share the height by weight; it opens at 4×4 and resizes down to `minResizeWidth` 180 dp by `minResizeHeight` 260 dp. A cell is a frame: the number in the middle (at least 24 dp, growing with the font size) and the dot at its foot, taking no height of its own, so six rows fit the header and the weekday row at a large font size. The update line keeps to one line.
+
+### D6 — A tick names its occurrence
+
+A run that completes a repeating task advances it, so a tick sent twice (a second run of the chain, another device that completed it meanwhile) would advance it twice. Each row carries `due`, its task's due date, and the publication announces `complete-on` in `actions`. A tick on such a row is queued as `<id>@<due>`, and the web app completes the task only while it is still due that day (`applyWidgetComplete`); a task no longer due then is left alone. Without `complete-on` (an older web app, which would look the entry up as an id) the shell sends the plain id, as before. A row without a due date (Today by its deadline or start, Upcoming by its deadline) sends the plain id too. A tick in Upcoming (`id@date`) also hides the task's Today row until confirmed, as a Today tick hides its Upcoming rows.
+
+### D7 — The app's today
+
+Upcoming's "Tomorrow", the calendar's ring and the month the arrows count from follow the app's logical day (Settings → Date and time, a day that starts after midnight), not the phone's date. The publication carries `today` and `dayStart` (minutes after midnight); the shell works the logical day out live as the phone's local time `dayStart` minutes earlier, as the web app's `logicalDay` does, and uses `today` only without `dayStart`. One inexact alarm (`AlarmManager.set`, no permission) wakes the widgets a minute after the next day starts, re-armed on every redraw while an Upcoming or Calendar widget is placed. A publication that differs from the stored one only by an `updatedAt` less than a minute later redraws nothing.
 
 ## Data model
 
-No op, table or field change. The publication gains optional `upcoming` and `calendar`. The app's private storage gains `calendarOffset:<id>`; pending ticks may now hold `id@date` keys, which an older app never matches against a row.
+No op, table or field change. The publication gains optional `upcoming`, `calendar`, `today`, `dayStart` and per-row `due`, and `actions` may list `complete-on`; a completion address may carry `<id>@<date>`. The app's private storage gains `calendarOffset:<id>`; pending ticks may now hold `id@date` keys, which an older app never matches against a row.
 
 ## Size
 

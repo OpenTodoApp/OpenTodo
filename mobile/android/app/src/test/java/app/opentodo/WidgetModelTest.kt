@@ -193,6 +193,49 @@ class WidgetModelTest {
         assertEquals(setOf("t"), WidgetPending.prune(mapOf("t" to now), today, now + 3).keys)
     }
 
+    /** A tick in Upcoming hides the same task's Today row too (an overdue repeating task can be in both). */
+    @Test fun anUpcomingTickHidesTheTodayRow() {
+        val m = WidgetModel.parse(withUpcoming(upRow("a", "2026-10-23"), today = row("a")))!!
+        val ticked = setOf(WidgetPending.key("a", "2026-10-23"))
+        assertTrue(m.visibleRows(ticked).isEmpty())
+        assertEquals(0, m.visibleCount(ticked))
+        assertEquals(setOf("a", "t/1@x"), WidgetPending.ids(setOf("a@2026-10-23", "t/1@x")))
+    }
+
+    /** android-upcoming-calendar-widgets D6: a tick names its occurrence only where the web app reads it. */
+    @Test fun aTickNamesItsOccurrence() {
+        val json = """{"updatedAt":1,"locked":false,"count":1,"tasks":[{"id":"a","title":"A","due":"2026-10-22","priority":4}],"actions":["complete","complete-on"],
+            "upcoming":{"count":1,"tasks":[{"id":"b","date":"2026-10-23","due":"2026-10-24","priority":4},{"id":"c","date":"2026-10-25","priority":4}]}}"""
+        val m = WidgetModel.parse(json)!!
+        assertTrue(m.canCompleteOn)
+        assertEquals("a@2026-10-22", m.completion(m.row("a", null)!!))
+        // A span listed under its first day names its due day; a deadline-only row has no due.
+        assertEquals("b@2026-10-24", m.completion(m.row("b", "2026-10-23")!!))
+        assertEquals("c", m.completion(m.row("c", "2026-10-25")!!))
+        val older = WidgetModel.parse(json.replace(""","complete-on"""", ""))!!
+        assertFalse(older.canCompleteOn)
+        assertEquals("a", older.completion(older.row("a", null)!!))
+    }
+
+    /** android-upcoming-calendar-widgets D7: the app's logical day, live from its day start. */
+    @Test fun theAppsLogicalToday() {
+        val early = java.time.LocalDateTime.parse("2026-10-23T02:30")
+        assertEquals(LocalDate.parse("2026-10-22"), WidgetModel.logicalToday(240, "2026-10-20", early))
+        assertEquals(LocalDate.parse("2026-10-23"), WidgetModel.logicalToday(0, null, early))
+        assertEquals(LocalDate.parse("2026-10-20"), WidgetModel.logicalToday(null, "2026-10-20", early))
+        assertEquals(LocalDate.parse("2026-10-23"), WidgetModel.logicalToday(null, "junk", early))
+        assertEquals(java.time.LocalDateTime.parse("2026-10-23T04:00"), CalendarWidget.nextDayStart(early, 240))
+        assertEquals(java.time.LocalDateTime.parse("2026-10-24T00:00"), CalendarWidget.nextDayStart(early, 0))
+    }
+
+    @Test fun aRepublicationWithinTheMinuteIsNotRedrawn() {
+        val a = publication(row("a")).replace("\"updatedAt\":1", "\"updatedAt\":1000")
+        assertTrue(WidgetStore.sameWithinAMinute(a, a.replace("1000", "30000")))
+        assertFalse(WidgetStore.sameWithinAMinute(a, a.replace("1000", "70000")))
+        assertFalse(WidgetStore.sameWithinAMinute(a, publication(row("b")).replace("\"updatedAt\":1", "\"updatedAt\":1000")))
+        assertFalse(WidgetStore.sameWithinAMinute(null, a))
+    }
+
     @Test fun upcomingDayHeadings() {
         val today = LocalDate.parse("2026-10-22")
         assertEquals("Tomorrow", TodayWidget.dayHeading("2026-10-23", today, "Tomorrow", "EEE, MMM d", Locale.US))

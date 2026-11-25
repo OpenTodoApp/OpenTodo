@@ -73,6 +73,9 @@ class Prefs(context: Context) {
     fun setCalendarOffset(widgetId: Int, offset: Int) =
         p.edit().apply { if (offset == 0) remove("calendarOffset:$widgetId") else putInt("calendarOffset:$widgetId", offset) }.apply()
 
+    /** Every Calendar widget's month (WidgetStore.clear). */
+    fun clearCalendarOffsets() = p.edit().apply { p.all.keys.filter { it.startsWith("calendarOffset:") }.forEach { remove(it) } }.apply()
+
     /** Adds a tick to the ids the next background run completes (android-widget-list D2). */
     fun queueWidgetCompletion(taskId: String) = synchronized(LOCK) {
         val queue = queueOf(p.getString("widgetQueue", null))
