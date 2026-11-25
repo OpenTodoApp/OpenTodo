@@ -7918,9 +7918,7 @@
   "Merged into {label}": "Unita in {label}",
   "Field deleted": "Campo eliminato",
   "Phone screens": "Schermate per telefono",
-  "A trial of screens made for a phone. This device only.": "Una prova di schermate pensate per il telefono. Solo su questo dispositivo.",
   "New phone screens": "Nuove schermate per telefono",
-  "Today and the task page in the new design. Turn it off at any time.": "Oggi e la pagina dell’attività nel nuovo design. Puoi disattivarlo in qualsiasi momento.",
   "Quick add notification": "Notifica di aggiunta rapida",
   "Add a task from the notification shade, in any app.": "Aggiungi un'attività dalla tendina delle notifiche, in qualsiasi app.",
   "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android ha rifiutato le notifiche per OpenTodo. Consentile nelle impostazioni di Android.",
@@ -7932,5 +7930,7 @@
   "This project already has a field named “{name}” from “{workspace}”.": "Questo progetto ha già un campo chiamato «{name}» da «{workspace}».",
   "This workspace already has a field named “{name}”.": "Questo spazio di lavoro ha già un campo chiamato «{name}».",
   "Workspace fields are edited in the workspace’s settings.": "I campi dello spazio di lavoro si modificano nelle sue impostazioni.",
-  "Only the workspace’s owner can change its fields.": "Solo il proprietario dello spazio di lavoro può modificarne i campi."
+  "Only the workspace’s owner can change its fields.": "Solo il proprietario dello spazio di lavoro può modificarne i campi.",
+  "Screens made for a phone. This device only.": "Schermate pensate per il telefono. Solo su questo dispositivo.",
+  "The app in the design made for a phone. Turn it off for the earlier screens.": "L’app nel design pensato per il telefono. Disattivalo per tornare alle schermate precedenti."
 }

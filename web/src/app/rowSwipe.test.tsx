@@ -19,6 +19,8 @@ import { UndoToast } from './bulk/UndoToast'
 import { panelTaskId, resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
 import { TaskRow } from './TaskRow'
+import { setPhoneUiEnabled } from '../phone/prefs'
+
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 const original = window.matchMedia
@@ -279,3 +281,7 @@ describe('rows that never swipe', () => {
     await r.unmount()
   })
 })
+
+// These tests are about the earlier phone layout, the way back while the phone screens are the default
+// (phone-ui-default D3). Registered last, so it runs after the setup above has cleared the device's storage.
+beforeEach(() => setPhoneUiEnabled(false))

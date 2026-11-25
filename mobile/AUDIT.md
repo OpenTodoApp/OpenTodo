@@ -91,6 +91,8 @@ Seventh round (2026-11-25): **a phone UI of its own**, `phone-ui-trial`. After s
 - **The gate:** both screens on real phones, switch on and off, in front of the people who gave the feedback. Verdict: *the reviewers' is not yet recorded*. The owner tried both screens on an iPhone (Chrome, iOS 27) on 2026-11-25, found them good and decided to go on to the whole phone UI before that verdict: every function of the web app in it, starting with every task list (`phone-lists`).
 - **If it fails:** the web view is the limit, and the native app (`native-app-foundation`) is the remaining way; the screen designs carry over.
 
+After the trial (2026-11-25): the phone UI grew to the whole app in three steps, `phone-lists` (every task list, at parity), `phone-all-screens` (the phone header and the phone task row on every screen) and `phone-ui-default` (on by default below 768 px, the switch kept as the way back on a device). Checked by the unit tests, the layout and accessibility check over the whole inventory with the phone screens, the visual baselines, an end-to-end check of the gestures, the time benchmark's phone profile, and in the Android app on an emulator (API 34). Still to do on real devices: Safari and the iPhone app, an Android phone, and system Back over a sheet, which the emulator cannot show.
+
 Open:
 
 - **Push to the iPhone app**: an iPhone only takes pushes signed with the app's key, so a self-hosted server needs a relay the project would run, or an app signed by whoever runs the server. Not planned. Android has it through `shell-push` ([#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344)).

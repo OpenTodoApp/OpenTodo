@@ -11,8 +11,8 @@
 // PERF_RUNS (default 5), PERF_PROFILES (default "desktop,phone"), PERF_REPORT (default
 // perf-report/web.json), PERF_ONLY (metric ids, comma-separated: the session stops once
 // it has them and only they are judged, for a quick look at one regression), PERF_PHONE_UI
-// (1: the phone profile runs with the device's "New phone screens" switch on, against the
-// same phone limits), CHROMIUM_PATH.
+// (0: the phone profile runs with the device's "New phone screens" switch off, the earlier
+// layout; by default it has the phone screens, as a phone has), CHROMIUM_PATH.
 //
 // The app's measurement points are performance.mark entries (web/src/lib/perfMarks.ts):
 // they never leave the browser, and this run checks that every request goes to the
@@ -38,9 +38,9 @@ const RUNS = Number(process.env.PERF_RUNS ?? 5)
 const PROFILES = (process.env.PERF_PROFILES ?? 'desktop,phone').split(',').filter(Boolean)
 const REPORT = process.env.PERF_REPORT ?? 'perf-report/web.json'
 const ONLY = (process.env.PERF_ONLY ?? '').split(',').filter(Boolean)
-// The phone UI's screens (OpenSpec phone-ui-trial and after) are held to the phone budgets they replace.
-const PHONE_UI = process.env.PERF_PHONE_UI === '1'
-const phoneUiOn = () => { try { localStorage.setItem('opentodo.phoneUi', '1') } catch { /* storage blocked */ } }
+// The phone profile has the phone screens, as a phone does by default (OpenSpec phone-ui-default); both layouts are held to the phone budgets.
+const PHONE_UI = process.env.PERF_PHONE_UI !== '0'
+const phoneUiOff = () => { try { localStorage.setItem('opentodo.phoneUi', '0') } catch { /* storage blocked */ } }
 /** With PERF_ONLY, whether the session has every metric asked for and can stop. */
 const enough = (out) => ONLY.length > 0 && ONLY.every((id) => id in out)
 const summary = JSON.parse(readFileSync(join(FIXTURE, 'perfseed.json'), 'utf8'))
@@ -177,7 +177,7 @@ async function session(browser, profileName) {
   const ctx = await browser.newContext({ viewport: prof.viewport, isMobile: prof.isMobile, hasTouch: prof.hasTouch, deviceScaleFactor: prof.deviceScaleFactor, serviceWorkers: 'block' })
   try {
     await ctx.addInitScript(instrument)
-    if (PHONE_UI && prof.isMobile) await ctx.addInitScript(phoneUiOn)
+    if (!PHONE_UI && prof.isMobile) await ctx.addInitScript(phoneUiOff)
     ctx.on('request', (r) => {
       const u = new URL(r.url())
       if (u.origin !== server.base && u.protocol !== 'data:' && u.protocol !== 'blob:') foreign.push(r.url())
@@ -349,7 +349,7 @@ async function notesSession(browser, profileName) {
   const ctx = await browser.newContext({ viewport: prof.viewport, isMobile: prof.isMobile, hasTouch: prof.hasTouch, deviceScaleFactor: prof.deviceScaleFactor, serviceWorkers: 'block' })
   try {
     await ctx.addInitScript(instrument)
-    if (PHONE_UI && prof.isMobile) await ctx.addInitScript(phoneUiOn)
+    if (!PHONE_UI && prof.isMobile) await ctx.addInitScript(phoneUiOff)
     const login = await ctx.request.post(`${server.base}/api/v1/auth/login`, { data: { email: summary.ownerEmail, password: summary.password } })
     if (!login.ok()) throw new Error(`login: ${login.status()}`)
     const page = await ctx.newPage()

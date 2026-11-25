@@ -1,6 +1,6 @@
 ---
 title: New phone screens
-summary: Try the task lists and the task page in a design made for a phone, on the phone you choose, and turn it off again.
+summary: On a phone OpenTodo shows screens made for a phone; what they do, and how to go back to the earlier ones on a device.
 audience: user
 section: Guides
 specs: []
@@ -11,13 +11,13 @@ order: 153
 
 <picture><source srcset="images/phone-screens-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/phone-screens-light.webp" alt="Today on a phone in the new design: the menu button, the display options and the menu in the bar, the title Today with the date and the briefing, then cards of tasks under Earlier, Today and This Evening, each task with its circle, its title and one line with its date or time, repeat and project; the tab bar and the add button at the bottom."></picture>
 
-OpenTodo on a phone has so far been the same screens as on a computer, rearranged to fit. **New phone screens** is a trial of screens designed for a phone from the start. It covers every **task list** (the Inbox, Today, Upcoming, Anytime, Someday, Assigned to me, Completed, a label, a location and a project as a list) and the **task page**. Every other screen keeps its content and gets the same bar, title and task rows.
+On a phone OpenTodo shows screens designed for a phone from the start, in the apps and in a phone's browser alike. They cover every **task list** (the Inbox, Today, Upcoming, Anytime, Someday, Assigned to me, Completed, a label, a location and a project as a list) and the **task page**. Every other screen keeps its content and gets the same bar, title and task rows.
 
-## Turn it on
+## The earlier screens
 
-On your phone, open **Settings → Appearance → Theme and density** and turn on **New phone screens** at the end of the page. The switch is only shown on a screen narrower than 768 px. It takes effect at once, and turning it off brings the earlier screens back.
+Until now a phone showed the same screens as a computer, rearranged to fit. They are still there: open **Settings → Appearance → Theme and density** and turn off **New phone screens** at the end of the page. It takes effect at once, and turning it on brings the phone screens back. The switch is only shown on a screen narrower than 768 px.
 
-The choice is kept on that phone and is not synced: your other devices are not affected. It works in the Android and iPhone apps and in a phone's browser.
+The choice is kept on that phone and is not synced: your other devices are not affected.
 
 ## The task lists
 
@@ -42,6 +42,6 @@ Every list shows the same tasks, groups and order as before, and does the same t
 
 The **Do** row opens a sheet made for a phone: **Today**, **Tomorrow**, **This weekend** and **Next week** with the date each one means, then a month with days large enough for a thumb, then the time of day. A tap on a choice or a day sets the date and closes the sheet; a task keeps its time. **Clear** removes the date. The same sheet opens when you swipe a task to the left in a list, where it also offers **Someday**.
 
-## What this is for
+## Tell us
 
-It is a trial, to find out whether screens made for a phone feel like an app. The other screens follow one by one. Tell us what you notice with **Feedback and problems** in the menu.
+What is particular to a screen, such as the calendar's grid or a board, is being redrawn one screen at a time. If something was easier on the earlier screens, tell us with **Feedback and problems** in the menu: the switch is the way back for now, not for good.

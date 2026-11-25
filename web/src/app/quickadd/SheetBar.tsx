@@ -49,7 +49,8 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
   return (
     <div data-quick-add-sheet-bar>
       {date?.open && <LineDatePicker id={date.id} due={date.due} onPick={date.pick} onKeyDown={date.escape} />}
-      <div className="flex gap-1.5 overflow-x-auto px-3 pb-3 pt-1 [scrollbar-width:none]" role="group" aria-label={t('Understood')} data-scroll-x>
+      {/* The chips wrap: a row that scrolls sideways fails reflow at 320 CSS px (WCAG 1.4.10, the accessibility gate's M18). */}
+      <div className="flex flex-wrap gap-1.5 px-3 pb-3 pt-1" role="group" aria-label={t('Understood')}>
         {chips.map((c) => {
           const project = c.kind === 'project' ? projects.find((p) => p.id === c.value) : undefined
           return (
@@ -75,7 +76,8 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
           </button>
         ))}
       </div>
-      <div className="flex items-center gap-1 border-t border-default px-2.5 py-2" role="toolbar" aria-label={t('Add details')}>
+      {/* Wraps at 320 CSS px, where seven tools and the send button are wider than the sheet (WCAG 1.4.10). */}
+      <div className="flex flex-wrap items-center gap-1 border-t border-default px-2.5 py-2" role="toolbar" aria-label={t('Add details')}>
         {date && (
           <button type="button" data-sheet-tool="when" onMouseDown={keepFocus} onClick={date.toggle} aria-label={FIELD_NAME.when} aria-expanded={date.open} aria-controls={date.id}
             className={`inline-flex h-[2.375rem] w-[2.375rem] items-center justify-center rounded-control hover:bg-hover hover:text-default ${date.open ? 'bg-selected text-default' : 'text-muted'}`}>
@@ -94,9 +96,8 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
             <Icon name="text-quote" size={18} />
           </button>
         )}
-        <span className="flex-1" />
         <button type="submit" onMouseDown={keepFocus} disabled={!canSend} aria-label={t('Add task')} data-sheet-send
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent text-on-accent disabled:opacity-40">
+          className="ms-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent text-on-accent disabled:opacity-40">
           <Icon name="arrow-up" size={18} />
         </button>
       </div>

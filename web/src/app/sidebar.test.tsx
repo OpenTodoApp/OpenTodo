@@ -23,6 +23,8 @@ import { sidebarFind } from './signals'
 import { Shell } from './Shell'
 import { Sidebar } from './Sidebar'
 import { resetSidebarLayout, setSidebarWidth, sidebarLayout, toggleSidebarCollapsed } from './sidebarLayout'
+import { setPhoneUiEnabled } from '../phone/prefs'
+
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 
@@ -1226,3 +1228,7 @@ describe('the start guide entry (moments-and-onboarding 3.3)', () => {
     await r.unmount()
   })
 })
+
+// These tests are about the earlier phone layout, the way back while the phone screens are the default
+// (phone-ui-default D3). Registered last, so it runs after the setup above has cleared the device's storage.
+beforeEach(() => setPhoneUiEnabled(false))
