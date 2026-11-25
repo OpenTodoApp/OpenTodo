@@ -1,0 +1,1 @@
+- **The Android Today widget leaves out tasks of archived and trashed projects,** as the app's Today does.

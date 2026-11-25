@@ -47,7 +47,7 @@ Snoozing sets a new firing time (in 10 minutes, in an hour, or tomorrow at 09:00
 
 ## Urgent reminders
 
-For something you must not miss, open a reminder's menu and choose **Urgent**: the reminder shows an alarm clock instead of a bell. In the [iOS app](ios-app.md#urgent-reminders) on iOS 26 or later it rings as an alarm, over silent mode and Focus, until you stop or snooze it. Everywhere else (the browser, push, the Android app, older iOS) it fires as an ordinary reminder. The flag syncs, so a reminder marked urgent on your computer rings on your iPhone. Choose **Urgent** again to turn it off. Location reminders have no urgent mode.
+For something you must not miss, open a reminder's menu and choose **Urgent**: the reminder shows an alarm clock instead of a bell. In the [iOS app](ios-app.md#urgent-reminders) on iOS 26 or later and in the [Android app](android-app.md#urgent-reminders) it rings as an alarm, over silent mode, until you answer it. Everywhere else (the browser, older iOS) it fires as an ordinary reminder. The flag syncs, so a reminder marked urgent on your computer rings on your phone. Choose **Urgent** again to turn it off. Location reminders have no urgent mode.
 
 ## End-to-end encryption
 

@@ -25,6 +25,7 @@ const WEEKDAYS: Record<string, string[]> = {
   nl: ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag'],
   pt: ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'],
   zh: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'],
+  ja: ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'],
 }
 
 /** The {{name}} placeholders of a text that are not one of the four. */
@@ -65,7 +66,7 @@ export function placeholderOrder(dateFormat: string | undefined, lang: string): 
   if (dateFormat === 'day-month') return 'DM'
   if (dateFormat === 'month-day') return 'MD'
   if (dateFormat === 'iso') return 'YMD'
-  return lang === 'en' ? 'MD' : lang === 'zh' ? 'YMD' : 'DM'
+  return lang === 'en' ? 'MD' : lang === 'zh' || lang === 'ja' ? 'YMD' : 'DM'
 }
 
 /** The clock of a time_format preference ("system" follows the language), as templatelib.Hour12. */
