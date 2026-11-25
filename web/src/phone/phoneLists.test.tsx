@@ -304,3 +304,24 @@ describe('adding and the layout from the phone list', () => {
     await r.unmount()
   })
 })
+
+describe('a project the person can only read', () => {
+  it('opens its tasks, and offers no check, swipe, drag or selection', async () => {
+    const s = await seed()
+    await db.memberships.put({ projectId: s.work, role: 'viewer', ownerId: 'someone', members: [] })
+    setPhoneUiEnabled(true)
+    navigate({ view: 'project', id: s.work })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!row(s.late) && row(s.late).querySelector<HTMLButtonElement>('[data-phone-check]')?.disabled === true, 'the project as a reader sees it')
+    const li = row(s.late)
+    expect(li.hasAttribute('data-swipeable')).toBe(false)
+    expect(li.hasAttribute('data-drop-target')).toBe(false)
+    // The check does nothing.
+    await click(li.querySelector('[data-phone-check]')!)
+    expect((await db.tasks.get(s.late))?.completed_at ?? null).toBeNull()
+    // The row still opens its task.
+    await click(li.querySelector('[data-phone-open]')!)
+    await waitFor(() => !!document.querySelector('[data-phone-screen="task"]'), 'the task page')
+    await r.unmount()
+  })
+})
