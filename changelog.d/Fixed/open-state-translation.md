@@ -1,0 +1,1 @@
+- **"Open" as a state.** The filter condition and the assistant’s before-and-after now say "Open" as a state in every language (German "Offen", no longer "Öffnen"); the verb and the state are separate messages for translators. Dutch says "Open" in the projects table’s count column. (#2063)
