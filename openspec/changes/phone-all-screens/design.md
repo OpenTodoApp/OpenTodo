@@ -49,7 +49,7 @@ A tap opens the task page through `onOpen`. On a phone every screen already open
 
 ### D4. Canvas and gutter
 
-The shell's content area takes the canvas background while the phone UI is on (a class on the scroller), so a screen that draws on the surface colour is not a white page between grey ones. Screens keep their own 16 px gutter; no screen is restyled further here.
+Below 768 px the shell's content already sits on the canvas colour, and pages keep their own 16 px gutter, so nothing is added: the walk of twenty screens found the same background on each, the bar at the screen's edge and the title 20 px in. No screen is restyled further here.
 
 ### D5. Checks
 

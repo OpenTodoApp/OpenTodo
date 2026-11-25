@@ -11,7 +11,7 @@ order: 153
 
 <picture><source srcset="images/phone-screens-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/phone-screens-light.webp" alt="Today on a phone in the new design: the menu button, the display options and the menu in the bar, the title Today with the date and the briefing, then cards of tasks under Earlier, Today and This Evening, each task with its circle, its title and one line with its date or time, repeat and project; the tab bar and the add button at the bottom."></picture>
 
-OpenTodo on a phone has so far been the same screens as on a computer, rearranged to fit. **New phone screens** is a trial of screens designed for a phone from the start. It covers every **task list** (the Inbox, Today, Upcoming, Anytime, Someday, Assigned to me, Completed, a label, a location and a project as a list) and the **task page**; every other screen is as before, and so is a project shown as a board, timeline or calendar.
+OpenTodo on a phone has so far been the same screens as on a computer, rearranged to fit. **New phone screens** is a trial of screens designed for a phone from the start. It covers every **task list** (the Inbox, Today, Upcoming, Anytime, Someday, Assigned to me, Completed, a label, a location and a project as a list) and the **task page**. Every other screen keeps its content and gets the same bar, title and task rows.
 
 ## Turn it on
 
