@@ -20,7 +20,7 @@ export function scrollParent(el: HTMLElement): HTMLElement | null {
   return null
 }
 
-export function PhonePageHeader({ title, meta, subtitle, leading, actions, overflow, menu, help, briefing, children, back, onMenu }: PageHeaderProps & {
+export function PhonePageHeader({ title, meta, subtitle, leading, actions, barActions = false, overflow, menu, help, briefing, children, back, onMenu }: PageHeaderProps & {
   /** Opens the drawer. */
   onMenu: () => void
 }) {
@@ -44,7 +44,7 @@ export function PhonePageHeader({ title, meta, subtitle, leading, actions, overf
           ? <a href={back.href ?? '#'} aria-label={back.label} data-page-back className="flex h-11 w-11 items-center justify-center rounded-control text-default focus-visible:outline-2 focus-visible:outline-focus"
               onClick={(e) => { e.preventDefault(); back.onClick() }}><Icon name="arrow-left" size="md" /></a>
           : <IconButton icon="menu" label={t('Open menu')} onClick={onMenu} className="touch-target" />}
-        trailing={<PageActions actions={actions} overflow={overflow} menu={menu} help={help} helpInMenu />} />
+        trailing={<PageActions actions={barActions ? actions : undefined} overflow={overflow} menu={menu} help={help} helpInMenu />} />
       <div className="px-1 pb-4 pt-1" data-phone-head>
         <div ref={head} className="flex min-w-0 items-center gap-2">
           {leading}
@@ -54,6 +54,8 @@ export function PhonePageHeader({ title, meta, subtitle, leading, actions, overf
         </div>
         {lead && <div className="mt-0.5 text-prose text-muted" data-page-meta data-phone-summary>{lead}</div>}
         {briefing && <div className="mt-2 text-prose text-muted" data-page-briefing>{briefing}</div>}
+        {/* Actions a page did not fit for the bar's two slots stay in the page as a wrapping row, so nothing is pushed sideways. */}
+        {actions && !barActions && <div className="mt-2 flex flex-wrap items-center gap-1" data-page-actions>{actions}</div>}
         {children && <div className="mt-2 flex flex-wrap items-center gap-2" data-page-secondary>{children}</div>}
       </div>
     </>

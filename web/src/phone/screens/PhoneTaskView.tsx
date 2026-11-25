@@ -51,7 +51,8 @@ const RING: Record<number, string> = { 1: 'border-p1', 2: 'border-p2', 3: 'borde
 export function PhoneTaskView(p: PhoneTaskViewProps) {
   const stepper = !!p.position
   return (
-    <div data-phone-screen="task" className="min-h-full bg-canvas">
+    // The conversation's tab bar pins just under the bar: it reads the bar's height here, as on the desktop page.
+    <div data-phone-screen="task" className="min-h-full bg-canvas [--panel-header-h:calc(3rem+max(0.25rem,var(--safe-top)))]">
       <PhoneHeader shown title={p.position}
         lead={(
           <button type="button" onClick={p.onBack} aria-label={p.backLabel ? undefined : t('Back to the list')} data-page-back

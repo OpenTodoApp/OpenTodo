@@ -61,7 +61,7 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
 
   return (
     <ListReorderContext.Provider value={s.listReorder}><UrgencyContext.Provider value={m.urgency}><PhoneChrome onMenu={onMenu}>
-      <div ref={s.room} data-phone-screen="list" data-phone-list={route.view} className="min-h-full bg-canvas pb-6">
+      <div ref={s.room} data-phone-screen="list" data-phone-list={route.view} data-page-project={route.view === 'project' ? '' : undefined} className="min-h-full bg-canvas pb-6">
         <div className="px-4" data-phone-list-body>
         {route.view === 'project' && currentProject ? (
             <ProjectHeader project={currentProject} userId={userId} extraGroups={s.boardGroups} print
