@@ -37,7 +37,7 @@ The [Android app](android-app.md) uses no push service: **Notifications through 
 
 A push message goes through your browser's push service (run by the browser maker). It contains only an id and a time, encrypted so the push service can't read it. Your device then shows the title from its own copy of the task.
 
-**Include task titles** puts the title in the encrypted message as well, so the notification can show it even before that device has synced the task. Notes are never sent. If your account uses [end-to-end encryption](e2ee.md), titles are never included.
+**Include task titles** puts the title and due date in the encrypted message too, so the notification shows them before that device has synced the task. Notes are never sent. With [end-to-end encryption](e2ee.md), neither is included.
 
 ## When notifications don't arrive
 

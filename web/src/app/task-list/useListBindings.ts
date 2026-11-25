@@ -86,6 +86,10 @@ export interface BindingContext {
   /** Starts inline editing on a selected title. */
   startInline?: (id: string, e: React.MouseEvent) => void
   editTitle: (id: string) => void
+  /** Keeps the task beside the list there while this row is the cursor (row-edit-action D3). */
+  holdDock?: (id: string) => void
+  /** A click shows the clicked row beside the list again. */
+  releaseDock?: () => void
   /** The row whose details are shown (row-expand D4): one per list, closed when the list changes. */
   setExpandedId: (update: (id: string | null) => string | null) => void
   /** Opens the row's actions menu for a task at a point: the right-click and a touch hold's release share this rule (useRowMenu owns it for every list). */
@@ -211,6 +215,7 @@ export function useListBindings(c: BindingContext): RowActions {
         if (e) live.current.startInline?.(id, e)
         return
       }
+      live.current.releaseDock?.()
       const docked = taskSplitDocks()
       // On the Inbox's split the task is already beside the list: Enter or Space on its row opens its page (inbox-split D1).
       if (e?.detail === 0 && docked && panelTaskId() === id) { openTaskPage(id); return }
@@ -234,6 +239,7 @@ export function useListBindings(c: BindingContext): RowActions {
     },
     // The revealed More action (rows-v2 D7): the row menu for this row, as `.` opens it.
     more: (id, from) => {
+      live.current.holdDock?.(id)
       setSelectedId(id)
       live.current.ui.openActions(null, from)
     },

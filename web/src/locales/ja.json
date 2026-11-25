@@ -1536,7 +1536,6 @@
   "Edit the project note ({keys})": "プロジェクトのノートを編集（{keys}）",
   "Edit the query of a saved view; Enter saves it, Esc discards": "保存したビューのクエリを編集。Enter で保存、Esc で破棄",
   "Edit the selected task's title in place (also click its selected title). Enter saves, Esc cancels, Shift+Enter opens the details": "選択中のタスクのタイトルをその場で編集（選択中のタイトルをクリックしても可）。Enter で保存、Esc でキャンセル、Shift+Enter で詳細を開く",
-  "Edit title": "タイトルを編集",
   "Edit the title. Tab, Enter or a click away saves it and the decision keys work again. Esc restores it": "タイトルを編集します。Tab、Enter、または外側をクリックすると保存され、判断のキーが再び使えます。Esc で元に戻します",
   "Edit the view": "ビューを編集",
   "Edit this occurrence": "この回を編集",
@@ -7915,5 +7914,9 @@
   "Section deleted": "セクションを削除しました",
   "Label deleted": "ラベルを削除しました",
   "Merged into {label}": "{label} に統合しました",
-  "Field deleted": "フィールドを削除しました"
+  "Field deleted": "フィールドを削除しました",
+  "Phone screens": "スマートフォン画面",
+  "A trial of screens made for a phone. This device only.": "スマートフォン向けに作った画面の試用版。この端末のみ。",
+  "New phone screens": "新しいスマートフォン画面",
+  "Today and the task page in the new design. Turn it off at any time.": "新しいデザインの今日とタスクページ。いつでもオフにできます。"
 }
