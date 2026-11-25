@@ -329,6 +329,31 @@ func TestPayloadNeverCarriesCiphertext(t *testing.T) {
 	}
 }
 
+// TestEncryptedAccountPushesNoContent (push-due-date D3): the gate is the
+// account, so a plaintext title or due of an encrypted account (written before
+// encryption, or by an older client) is not pushed either.
+func TestEncryptedAccountPushesNoContent(t *testing.T) {
+	e := newTestEnv(t)
+	withTitle := newFakePush(t)
+	ctx := context.Background()
+	s := e.service()
+	if _, err := e.db.Exec(`INSERT INTO encryption_keys(user_id,version,kdf,salt,iterations,wrapped_passphrase,wrapped_recovery,created_at,updated_at) VALUES('u1',1,1,'s',1,'p','r',1,1)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := s.Upsert(ctx, "u1", "", withTitle.input("laptop", true)); err != nil {
+		t.Fatal(err)
+	}
+	now := e.clock.UnixMilli()
+	e.apply(t, "u1", map[string]map[string]any{"task:t1": {"title": "Plain", "due": map[string]any{"date": "2026-11-03"}}})
+	e.reminder(t, "u1", "r1", "t1", now-1)
+	if n, err := s.Tick(ctx); err != nil || n != 1 {
+		t.Fatalf("tick = %d, %v", n, err)
+	}
+	if got := withTitle.received(); len(got) != 1 || got[0].Title != "" || got[0].Due != nil {
+		t.Fatalf("payload = %+v", got)
+	}
+}
+
 func TestGoneSubscriptionIsRemoved(t *testing.T) {
 	e := newTestEnv(t)
 	gone, flaky, ok := newFakePush(t), newFakePush(t), newFakePush(t)

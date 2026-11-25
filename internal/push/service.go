@@ -384,8 +384,9 @@ const scanPage = 500
 
 func (s *Service) dueReminders(ctx context.Context, nowMs int64) ([]dueReminder, error) {
 	var out []dueReminder
-	quiet := map[string]bool{} // "<user>\x00<project>" -> in the Trash or archived (this pass)
-	away := map[string]bool{}  // user -> away with reminders paused (this pass)
+	quiet := map[string]bool{}  // "<user>\x00<project>" -> in the Trash or archived (this pass)
+	away := map[string]bool{}   // user -> away with reminders paused (this pass)
+	sealed := map[string]bool{} // user -> account encrypts its content (this pass)
 	var after *dueReminder
 	for {
 		cands, err := s.candidates(ctx, nowMs, scanPage, after)
@@ -423,6 +424,18 @@ func (s *Service) dueReminders(ctx context.Context, nowMs int64) ([]dueReminder,
 					return nil, err
 				}
 				continue
+			}
+			// An end-to-end encrypted account pushes no content at all, not even a
+			// due or a title that happens to be plaintext (push-due-date D3).
+			enc, seen := sealed[d.UserID]
+			if !seen {
+				if enc, err = e2ee.NewStore(s.db).Enabled(ctx, d.UserID); err != nil {
+					return nil, err
+				}
+				sealed[d.UserID] = enc
+			}
+			if enc {
+				d.Title, d.Due = "", nil
 			}
 			out = append(out, d)
 			if len(out) == batchLimit {

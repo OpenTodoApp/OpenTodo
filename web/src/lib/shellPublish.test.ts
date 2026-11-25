@@ -47,6 +47,12 @@ describe('reminders handed to the shell', () => {
     expect(shellReminders(rs, [...tasks, ...dated], NOW, { titles: false, encrypted: false }).some((r) => r.due)).toBe(false)
   })
 
+  it('a habit’s tiny version is the body before its due (habits "Reminder text")', () => {
+    const habit = task('h', { habit: true, habit_tiny: 'one page', due: { date: '2026-10-22', time: '21:00' } })
+    const [r] = shellReminders([reminder('r', 'h', NOW + HOUR)], [habit], NOW, { titles: true, encrypted: false })
+    expect(r.due).toBe('One page is enough')
+  })
+
   it('marks an urgent reminder only, so older shells read the same entries (ios-urgent-alarms D3)', () => {
     const list = shellReminders([
       reminder('loud', 'a', NOW + HOUR, { urgent: true }),
