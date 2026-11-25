@@ -28,10 +28,10 @@ export const PAGE_HEADER_NOT_YET: readonly string[] = []
 const PAGE_HEADER_NOT_YET_MAX = 0
 
 /**
- * Headers rendered by a component that its caller places inside the frame (ProjectHeader: TaskListView's frame;
- * CalendarPageHeader: the PageBody of Day, Week, Month and Plan, calendar-clarity).
+ * Headers rendered by a component that its caller places inside the frame (ProjectHeader and ListHeader:
+ * TaskListView's frame; CalendarPageHeader: the PageBody of Day, Week, Month and Plan, calendar-clarity).
  */
-const FRAME_BY_CALLER: readonly string[] = ['src/app/ProjectHeader.tsx', 'src/app/calendar/useCalendarChrome.tsx']
+const FRAME_BY_CALLER: readonly string[] = ['src/app/ProjectHeader.tsx', 'src/app/task-list/ListHeader.tsx', 'src/app/calendar/useCalendarChrome.tsx']
 
 export function ownHeadings(path: string, source: string): string[] {
   return source.split('\n').flatMap((line, i) => (/<h1\b/.test(line) ? [`${path}:${i + 1}`] : []))

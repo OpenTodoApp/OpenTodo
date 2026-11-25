@@ -11,7 +11,7 @@
 // than 40 rem (a tablet beside the sidebar, a list beside the docked task panel) keeps
 // its row as the phone bar does: Help joins the menu, the title gives way before the
 // actions wrap, and the lead line shows whole or not at all (tablet-header-room).
-import { useEffect, useMemo, useState, type HTMLAttributes, type ReactNode, type Ref } from 'react'
+import { createContext, use, useEffect, useMemo, useState, type HTMLAttributes, type ReactNode, type Ref } from 'react'
 import { openHelp } from '../../lib/helpRequest'
 import { Menu } from '../overlay/Menu'
 import { MenuItem, MenuTailContext, type MenuTail } from '../Menu'
@@ -135,7 +135,19 @@ function SidebarToggleButton() {
   )
 }
 
-export function PageHeader({ title, subtitle, meta, leading, actions, barActions = false, overflow, menu, help, back, level = 1, sticky = true, children, icon, testId, titleRef, titleTabIndex, kind = 'tool', briefing }: PageHeaderProps) {
+/**
+ * What draws a page's header in place of this component (OpenSpec change phone-lists,
+ * design D3): the phone UI gives its own bar and large title, fed by the same props, so
+ * a page's title, lead line, actions and menus are built once for both.
+ */
+export const PageHeaderDrawContext = createContext<((props: PageHeaderProps) => ReactNode) | null>(null)
+
+export function PageHeader(props: PageHeaderProps) {
+  const draw = use(PageHeaderDrawContext)
+  return draw ? draw(props) : <OwnPageHeader {...props} />
+}
+
+function OwnPageHeader({ title, subtitle, meta, leading, actions, barActions = false, overflow, menu, help, back, level = 1, sticky = true, children, icon, testId, titleRef, titleTabIndex, kind = 'tool', briefing }: PageHeaderProps) {
   const H = level === 1 ? 'h1' : 'h2'
   // The shell's phone bar shows this page's title and actions below 768 px (app-shell
   // "No desktop top bar"); the header's own row exists only above it, so the actions

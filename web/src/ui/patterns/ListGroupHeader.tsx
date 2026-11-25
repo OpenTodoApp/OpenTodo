@@ -8,7 +8,7 @@
 // column's sunken surface it stays a plain heading. No header is red: how late a task
 // is shows on its row. A coloured section's header is tinted with its hue (section-tint):
 // the bar's fill, or on a board a strip of the same fill, never its rows.
-import type { ReactNode } from 'react'
+import { createContext, use, type ReactNode } from 'react'
 import type { HueName } from '../tokens/palette'
 import { Icon } from '../Icon'
 import { CatalogueIcon } from '../CatalogueIcon'
@@ -57,7 +57,16 @@ export interface ListGroupHeaderProps {
 /** The label's classes (precision-rows D4): one style whether the view or the user named the group; `kind` stays a hook for tests and drop targets. */
 const GROUP_LABEL = 'min-w-0 truncate text-meta font-medium text-default'
 
-export function ListGroupHeader({ title, icon, count, countLabel, countTone = 'faint', kind = 'generated', collapsed, onToggle, actions, actionsAlwaysVisible = false, note, detail, level = 2, testId, className = '', bar = true, hue }: ListGroupHeaderProps) {
+/**
+ * Whether a list's group headers are filled bars where they do not say (OpenSpec change
+ * phone-lists, design D2): the phone list turns the fill off, so a group is a quiet name
+ * over its card of rows.
+ */
+export const GroupBarContext = createContext(true)
+
+export function ListGroupHeader({ title, icon, count, countLabel, countTone = 'faint', kind = 'generated', collapsed, onToggle, actions, actionsAlwaysVisible = false, note, detail, level = 2, testId, className = '', bar: ownBar, hue }: ListGroupHeaderProps) {
+  const filled = use(GroupBarContext)
+  const bar = ownBar ?? filled
   const H = level === 2 ? 'h2' : 'h3'
   const collapsible = onToggle !== undefined
   const text = (
