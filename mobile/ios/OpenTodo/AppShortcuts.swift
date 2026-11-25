@@ -1,5 +1,6 @@
 import AppIntents
 import Foundation
+import UIKit
 
 // Siri, Shortcuts and the Action Button (OpenSpec change apple-shortcuts, design D4). The
 // intents never make a request: the two that open the app go through AppModel's addresses,
@@ -31,12 +32,16 @@ struct OpenQuickAddIntent: AppIntent {
     }
 }
 
-/// "What's on today": answers from the last publication without opening the app.
+/// "What's on today": answers from the last publication without opening the app. Siri may
+/// run it on a locked phone, so it then answers with counts only.
 struct TodayIntent: AppIntent {
     static let title: LocalizedStringResource = "What's on today"
 
+    @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        .result(dialog: "\(TodaySummary.text(WidgetPublication.load()))")
+        let text = TodaySummary.text(WidgetPublication.load(), phoneLocked: !UIApplication.shared.isProtectedDataAvailable)
+        // The text is already localised: built from a variable, the dialog is no catalog key.
+        return .result(dialog: IntentDialog(LocalizedStringResource(stringLiteral: text)))
     }
 }
 
@@ -47,9 +52,11 @@ struct OpenTodoShortcuts: AppShortcutsProvider {
         AppShortcut(intent: TodayIntent(), phrases: [
             "What's on today in \(.applicationName)",
             "What do I have today in \(.applicationName)",
-        ])
-        AppShortcut(intent: OpenTodayIntent(), phrases: ["Open Today in \(.applicationName)"])
-        AppShortcut(intent: OpenQuickAddIntent(), phrases: ["Open quick add in \(.applicationName)"])
+        ], shortTitle: "What's on today", systemImageName: "checklist")
+        AppShortcut(intent: OpenTodayIntent(), phrases: ["Open Today in \(.applicationName)"],
+                    shortTitle: "Open Today", systemImageName: "sun.max")
+        AppShortcut(intent: OpenQuickAddIntent(), phrases: ["Open quick add in \(.applicationName)"],
+                    shortTitle: "Open quick add", systemImageName: "plus")
     }
 }
 
@@ -62,30 +69,39 @@ enum ShortcutRoute {
 
 /// The answer of "What's on today" (design D4), one sentence per line: the count and the
 /// overdue count, up to five titles with their times, and the time of the publication. A
-/// publication made while the account was locked gives counts only, as the Today widget does.
+/// publication made while the account was locked gives counts only, as the Today widget does,
+/// and so does a locked phone. A publication from an earlier day starts with its date instead
+/// of ending with its time. Before the first unlock after a restart nothing can be read.
 enum TodaySummary {
     static let maxTitles = 5
 
-    static func text(_ publication: WidgetPublication.Publication?) -> String {
-        lines(publication).joined(separator: "\n")
+    static func text(_ publication: WidgetPublication.Publication?, phoneLocked: Bool = false,
+                     now: Date = Date(), calendar: Calendar = .current) -> String {
+        lines(publication, phoneLocked: phoneLocked, now: now, calendar: calendar).joined(separator: "\n")
     }
 
-    static func lines(_ publication: WidgetPublication.Publication?) -> [String] {
-        guard let p = publication else { return [String(localized: "Open OpenTodo once to see today here.")] }
+    static func lines(_ publication: WidgetPublication.Publication?, phoneLocked: Bool = false,
+                      now: Date = Date(), calendar: Calendar = .current) -> [String] {
+        guard let p = publication else {
+            return [phoneLocked ? String(localized: "Unlock to see today.") : String(localized: "Open OpenTodo once to see today here.")]
+        }
         var lines: [String] = []
+        let date = Date(timeIntervalSince1970: p.updatedAt / 1000)
+        let earlierDay = p.updatedAt > 0 && !calendar.isDate(date, inSameDayAs: now)
+        if earlierDay {
+            lines.append(String(localized: "This list is from \(date.formatted(date: .abbreviated, time: .shortened))."))
+        }
         if p.count <= 0 {
             lines.append(String(localized: "Nothing left for today."))
         } else {
             lines.append(p.overdue > 0 ? String(localized: "\(p.count) today · \(p.overdue) overdue") : String(localized: "\(p.count) today"))
-            let titles = p.locked ? [] : p.tasks.prefix(maxTitles).map(item)
             if p.locked {
                 lines.append(String(localized: "Locked. Open OpenTodo to see your tasks."))
-            } else if !titles.isEmpty {
-                lines.append(ListFormatter.localizedString(byJoining: titles))
+            } else if !phoneLocked, !p.tasks.isEmpty {
+                lines.append(ListFormatter.localizedString(byJoining: p.tasks.prefix(maxTitles).map(item)))
             }
         }
-        if p.updatedAt > 0 {
-            let date = Date(timeIntervalSince1970: p.updatedAt / 1000)
+        if p.updatedAt > 0, !earlierDay {
             lines.append(String(localized: "Updated \(date.formatted(date: .omitted, time: .shortened))"))
         }
         return lines

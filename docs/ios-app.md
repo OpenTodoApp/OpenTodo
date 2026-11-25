@@ -62,9 +62,9 @@ The app appears in the share sheet of other apps. A link, some text or files ope
 
 ## Siri and Shortcuts
 
-Ask Siri **"What's on today in OpenTodo"**: it answers with today's count, the overdue count and up to five tasks with their times, from the list the app last published, without opening the app or asking the server. For an encrypted account that was locked at the time, it gives the counts only. **"Open Today in OpenTodo"** and **"Open quick add in OpenTodo"** open the app there.
+Ask Siri **"What's on today in OpenTodo"**: it answers with today's count, the overdue count and up to five tasks with their times, from the list the app last published, without opening the app or asking the server. While your phone is locked, or for an encrypted account that was locked at the time, it gives the counts only. A list from an earlier day comes with its date. **"Open Today in OpenTodo"** and **"Open quick add in OpenTodo"** open the app there.
 
-All three are in the Shortcuts app, ready to use in your own shortcuts, and any of them can go on the Action Button (**Settings → Action Button → Shortcut**). Siri understands them in every language the app is in.
+All three are in the Shortcuts app, ready to use in your own shortcuts, and any of them can go on the Action Button (**Settings → Action Button → Shortcut**). Siri knows the phrases in each of the app's languages that it speaks itself.
 
 ## Widgets
 
