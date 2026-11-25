@@ -159,18 +159,37 @@ export function illustrationProblems(file, text) {
 }
 
 // Physical direction utilities (rule 7): the ones with a logical twin in Tailwind.
-const PHYSICAL = new RegExp(String.raw`(?:^|[\s"'\x60{])(?:[\w\-\[\]&>*=.:/@()]+?:)*!?-?(` +
+// A line is split into class tokens and each token's utility (the part after its
+// variants) is tested whole, so no pattern has to skip variants by backtracking.
+const PHYSICAL = new RegExp('^(?:' +
   String.raw`(?:ml|mr|pl|pr|scroll-ml|scroll-mr|scroll-pl|scroll-pr|left|right)-(?:\d+(?:\.\d+)?(?:\/\d+)?|px|auto|full|safe|\[[^\]\s]+\]|\([^)\s]+\))` +
   String.raw`|border-[lr](?:-[\w\[\]().%/-]+)?|rounded-(?:tl|tr|bl|br|l|r)(?:-[\w\[\]()-]+)?|text-(?:left|right)` +
   String.raw`|float-(?:left|right)|clear-(?:left|right)|origin-(?:left|right|top-left|top-right|bottom-left|bottom-right)` +
   String.raw`|bg-(?:linear|gradient)-to-(?:l|r|tl|tr|bl|br)|object-(?:left|right)(?:-top|-bottom)?|bg-(?:left|right)(?:-top|-bottom)?` +
-  String.raw`)(?=$|[\s"'\x60!};])`, 'g')
+  ')$')
 // A horizontal translate moves the same way in both directions: it needs an `rtl:` twin
 // on the line, or it is a centring `-translate-x-1/2` with `left-1/2`.
-const TRANSLATE_X = /(?:^|[\s"'\x60{])(?:[\w\-\[\]&>*=.:/@()]+?:)*!?-?translate-x-[\w.\[\]/()-]+/g
+const TRANSLATE_X = /^translate-x-[\w.[\]/()-]+$/
 // Inline styles with a physical side.
 const STYLE_SIDE = /\b(left|right|marginLeft|marginRight|paddingLeft|paddingRight)\s*:\s*[^,}\s]|\btextAlign\s*:\s*['"](?:left|right)['"]/
 const PHYSICAL_NOTE = /(\/\/|\/\*)\s*physical:/
+
+/** The utility of a class token: after its last variant colon outside brackets, without `!` or a leading `-`. */
+function utilityOf(token) {
+  let depth = 0
+  let from = 0
+  for (let i = 0; i < token.length; i++) {
+    const c = token[i]
+    if (c === '[' || c === '(') depth++
+    else if ((c === ']' || c === ')') && depth > 0) depth--
+    else if (c === ':' && depth === 0) from = i + 1
+  }
+  let u = token.slice(from)
+  if (u.startsWith('!')) u = u.slice(1)
+  if (u.endsWith('!')) u = u.slice(0, -1)
+  const negative = u.startsWith('-')
+  return { utility: negative ? u.slice(1) : u, negative }
+}
 
 export function physicalDirectionProblems(file, text) {
   const out = []
@@ -181,12 +200,17 @@ export function physicalDirectionProblems(file, text) {
   lines.forEach((line, i) => {
     if (PHYSICAL_NOTE.test(line) || PHYSICAL_NOTE.test(lines[i - 1] ?? '')) return
     if (/^\s*(\/\/|\*|\/\*)/.test(line)) return
-    for (const m of line.matchAll(PHYSICAL)) {
-      if (/^-?(left|right)-1\/2$/.test(m[1])) continue
-      out.push(`${file}:${i + 1}: \`${m[1]}\` is a physical direction; ${hint}`)
+    const moving = []
+    for (const token of line.split(/[\s"'`{};]/)) {
+      if (!token) continue
+      const { utility, negative } = utilityOf(token)
+      if (PHYSICAL.test(utility)) {
+        if (/^(left|right)-1\/2$/.test(utility)) continue
+        out.push(`${file}:${i + 1}: \`${utility}\` is a physical direction; ${hint}`)
+      } else if (TRANSLATE_X.test(utility) && !(negative && utility === 'translate-x-1/2')) {
+        moving.push(token)
+      }
     }
-    const translates = [...line.matchAll(TRANSLATE_X)].map((m) => m[0].trim().replace(/^["'\x60{]/, ''))
-    const moving = translates.filter((x) => !/^(?:[\w\-\[\]&>*=.:/@()]+?:)*!?-translate-x-1\/2$/.test(x))
     if (moving.length && !/\brtl:/.test(line)) {
       out.push(`${file}:${i + 1}: \`${moving[0]}\` moves the same way right to left; add its \`rtl:\` twin, or say \`// physical: <reason>\``)
     }
