@@ -7915,5 +7915,8 @@
   "Section deleted": "Usunięto sekcję",
   "Label deleted": "Usunięto etykietę",
   "Merged into {label}": "Scalono z: {label}",
-  "Field deleted": "Usunięto pole"
+  "Field deleted": "Usunięto pole",
+  "Quick add notification": "Powiadomienie szybkiego dodawania",
+  "Add a task from the notification shade, in any app.": "Dodaj zadanie z obszaru powiadomień, w dowolnej aplikacji.",
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android odrzucił powiadomienia OpenTodo. Zezwól na nie w ustawieniach Androida."
 }

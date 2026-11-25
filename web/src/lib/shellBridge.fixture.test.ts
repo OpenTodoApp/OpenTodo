@@ -24,6 +24,8 @@ import appLinkVectors from '../../../internal/origin/testdata/app_links.vectors.
 import { openAppLink, setAppLinkSchemes, trustScheme } from './appLinks'
 import type { Place, Reminder, Task } from './types'
 import { SCROLL_TOP_EVENT } from '../ui/scrollTop'
+import { publishEncryption } from './e2ee'
+import { quickAddNotificationState, setQuickAddNotification } from './shellQuickAdd'
 
 // Vitest runs in web/ (happy-dom's URL cannot resolve file: addresses).
 const dir = path.resolve(process.cwd(), '../mobile/android/app/src/test/resources/bridge')
@@ -381,7 +383,7 @@ function haptics() {
  * has a screen" from `links`, so no background run may list anything of visibleOnly.
  */
 function capabilities() {
-  const visibleOnly = ['share', 'links', 'obsidian-links', 'app-links', 'system-bars', 'microphone', 'files', 'haptics', 'completion-sound', 'alarm-settings', 'first-paint', 'focus']
+  const visibleOnly = ['share', 'links', 'obsidian-links', 'app-links', 'system-bars', 'microphone', 'files', 'haptics', 'completion-sound', 'alarm-settings', 'first-paint', 'focus', 'quick-add-notification']
   const backgroundOnly = ['background']
   const both = ['reminders', 'widgets', 'push']
   const called: string[] = []
@@ -457,6 +459,36 @@ function pushBridge() {
 
 const text = (v: unknown) => JSON.stringify(v, null, 2) + '\n'
 
+/**
+ * android-quick-add-notification D2 to D4: the requests the web app hands over, captured
+ * from the real calls (Settings, an encrypted account, sign-out), the answers it reads, and
+ * the address of a reply, which the background run reads back as `add`.
+ */
+function quickAdd() {
+  const calls: string[] = []
+  window.opentodoShell = { bridge: 1, platform: 'android', app: '1.8.0', capabilities: ['quick-add-notification'], quickAddNotification: (json: string) => { calls.push(json); return 'on' } }
+  void quickAddNotificationState()
+  void setQuickAddNotification(true)
+  void setQuickAddNotification(false)
+  publishEncryption({ enabled: true })
+  void setQuickAddNotification(true)
+  publishEncryption({ enabled: false })
+  forgetShellData()
+  delete window.opentodoShell
+  const replies = ['Call the plumber tomorrow 9am #Home', '  Buy milk  ', 'Überweisung «Miete» ☎ 50% & more?', '   '].map((raw) => {
+    const t = raw.trim()
+    return { text: raw, path: t ? `/?${new URLSearchParams({ add: t })}` : null }
+  })
+  return {
+    description: 'The quick-add notification (android-quick-add-notification): a shell that lists the capability takes quickAddNotification(json) with one of calls (on absent: only read the state and take reply) and answers one of answers; a reply\'s text becomes path (trimmed, at most 500 characters; none when empty), which the web app reads back as add in a background run.',
+    capability: 'quick-add-notification' satisfies ShellCapability,
+    method: 'quickAddNotification' as const,
+    calls: calls.map((json) => ({ json, ...(JSON.parse(json) as object) })),
+    answers: ['on', 'off', 'denied'],
+    replies,
+  }
+}
+
 /** status-bar-scroll-top D2: the capability, the event the page listens for and the script the iOS shell runs. */
 function scrollTop() {
   return {
@@ -473,7 +505,7 @@ afterEach(() => {
 
 describe('Android bridge fixtures', () => {
   it('are current (mobile/android/app/src/test/resources/bridge)', () => {
-    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'app-links.json': text(appLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()), 'pull.json': text(pull()), 'painted.json': text(painted()), 'push-bridge.json': text(pushBridge()), 'scroll-top.json': text(scrollTop()) }
+    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'app-links.json': text(appLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()), 'pull.json': text(pull()), 'painted.json': text(painted()), 'push-bridge.json': text(pushBridge()), 'scroll-top.json': text(scrollTop()), 'quick-add-notification.json': text(quickAdd()) }
     for (const [name, f] of Object.entries({ ...fixtures(), ...focusFixtures() })) want[name] = text(f)
     if (update) {
       mkdirSync(dir, { recursive: true })
@@ -483,6 +515,10 @@ describe('Android bridge fixtures', () => {
       const file = path.join(dir, name)
       expect(existsSync(file) ? readFileSync(file, 'utf8') : '(missing)', `${name} is out of date: UPDATE_BRIDGE_FIXTURES=1 npx vitest run src/lib/shellBridge.fixture.test.ts`).toBe(body)
     }
+  })
+
+  it('the web app reads every quick-add reply address back as add', () => {
+    for (const r of quickAdd().replies) if (r.path) expect(shellUrlAction(r.path.slice(1))).toEqual({ kind: 'add', text: r.text.trim() })
   })
 
   it('the web app reads every push answer of the fixture, and calls the methods only with the capability', async () => {

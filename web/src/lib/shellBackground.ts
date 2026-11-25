@@ -54,8 +54,9 @@ export async function startBackgroundRun(opts: { now?: () => number; sleep?: (ms
   const now = opts.now ?? Date.now
   const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)))
   const started = now()
-  const kind = shellUrlAction(opts.search ?? location.search)?.kind
-  const wantsAction = kind === 'reminder' || kind === 'complete'
+  const action = shellUrlAction(opts.search ?? location.search)
+  // A quick-add notification's reply is saved in the run (android-quick-add-notification D4).
+  const wantsAction = action?.kind === 'reminder' || action?.kind === 'complete' || (action?.kind === 'add' && !!action.text.trim())
   const appliedAtStart = reminderActionsApplied()
   for (;;) {
     const snap = syncSnapshot()

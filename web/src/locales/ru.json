@@ -7915,5 +7915,8 @@
   "Section deleted": "Раздел удалён",
   "Label deleted": "Метка удалена",
   "Merged into {label}": "Объединено с {label}",
-  "Field deleted": "Поле удалено"
+  "Field deleted": "Поле удалено",
+  "Quick add notification": "Уведомление быстрого добавления",
+  "Add a task from the notification shade, in any app.": "Добавляйте задачу из шторки уведомлений в любом приложении.",
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android запретил уведомления OpenTodo. Разрешите их в настройках Android."
 }

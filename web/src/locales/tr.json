@@ -7915,5 +7915,8 @@
   "Section deleted": "Bölüm silindi",
   "Label deleted": "Etiket silindi",
   "Merged into {label}": "{label} ile birleştirildi",
-  "Field deleted": "Alan silindi"
+  "Field deleted": "Alan silindi",
+  "Quick add notification": "Hızlı ekle bildirimi",
+  "Add a task from the notification shade, in any app.": "Herhangi bir uygulamadayken bildirim panelinden görev ekle.",
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android, OpenTodo bildirimlerini reddetti. Android ayarlarından izin ver."
 }

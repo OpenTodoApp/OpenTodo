@@ -7915,5 +7915,8 @@
   "Section deleted": "分组已删除",
   "Label deleted": "标签已删除",
   "Merged into {label}": "已合并到 {label}",
-  "Field deleted": "字段已删除"
+  "Field deleted": "字段已删除",
+  "Quick add notification": "快速添加通知",
+  "Add a task from the notification shade, in any app.": "在任意应用中，从通知栏添加任务。",
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android 拒绝了 OpenTodo 的通知。请在 Android 设置中允许。"
 }

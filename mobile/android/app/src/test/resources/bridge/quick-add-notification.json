@@ -1,0 +1,54 @@
+{
+  "description": "The quick-add notification (android-quick-add-notification): a shell that lists the capability takes quickAddNotification(json) with one of calls (on absent: only read the state and take reply) and answers one of answers; a reply's text becomes path (trimmed, at most 500 characters; none when empty), which the web app reads back as add in a background run.",
+  "capability": "quick-add-notification",
+  "method": "quickAddNotification",
+  "calls": [
+    {
+      "json": "{\"reply\":true}",
+      "reply": true
+    },
+    {
+      "json": "{\"on\":true,\"reply\":true}",
+      "on": true,
+      "reply": true
+    },
+    {
+      "json": "{\"on\":false,\"reply\":true}",
+      "on": false,
+      "reply": true
+    },
+    {
+      "json": "{\"on\":true,\"reply\":false}",
+      "on": true,
+      "reply": false
+    },
+    {
+      "json": "{\"on\":false,\"reply\":false}",
+      "on": false,
+      "reply": false
+    }
+  ],
+  "answers": [
+    "on",
+    "off",
+    "denied"
+  ],
+  "replies": [
+    {
+      "text": "Call the plumber tomorrow 9am #Home",
+      "path": "/?add=Call+the+plumber+tomorrow+9am+%23Home"
+    },
+    {
+      "text": "  Buy milk  ",
+      "path": "/?add=Buy+milk"
+    },
+    {
+      "text": "Überweisung «Miete» ☎ 50% & more?",
+      "path": "/?add=%C3%9Cberweisung+%C2%ABMiete%C2%BB+%E2%98%8E+50%25+%26+more%3F"
+    },
+    {
+      "text": "   ",
+      "path": null
+    }
+  ]
+}

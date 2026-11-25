@@ -214,10 +214,10 @@
     "web/src/app/NotificationBell.tsx"
   ],
   "<b>{inviter}</b> invited you to the project <b2>{name}</b2> as {role}": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "<b>{inviter}</b> invited you to the workspace <b2>{name}</b2> as {role}": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "<b>{name}</b> replied on <b2>{task}</b2>": [
     "web/src/app/NotificationBell.tsx"
@@ -815,7 +815,7 @@
     "web/src/app/themes/tokenNames.ts"
   ],
   "Accept": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "Accept and continue": [
     "web/src/app/assistant/AssistantConsent.tsx"
@@ -1098,6 +1098,9 @@
   ],
   "Add a task for tomorrow…": [
     "web/src/app/task-list/ListChrome.tsx"
+  ],
+  "Add a task from the notification shade, in any app.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Add a task labelled {label}…": [
     "web/src/app/task-list/ListChrome.tsx"
@@ -1827,6 +1830,9 @@
   "Android refused notifications for OpenTodo. Allow them in Android's settings (Apps → OpenTodo → Notifications); reminders still appear inside the app.": [
     "web/src/app/ShellNotifications.tsx"
   ],
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Animals|icon category": [
     "web/src/ui/icons/catalogue.ts"
   ],
@@ -1847,19 +1853,19 @@
     "web/src/app/RelaySettings.tsx"
   ],
   "Answering an AI connector": [
-    "web/src/app/RelaySettings.tsx"
+    "web/src/app/RelayIndicator.tsx"
   ],
   "Answering an AI connector: {tool}": [
-    "web/src/app/RelaySettings.tsx"
+    "web/src/app/RelayIndicator.tsx"
   ],
   "Answering an invitation needs a connection.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Answering needs a connection to your server.": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "Answering {token}: {tool}": [
-    "web/src/app/RelaySettings.tsx"
+    "web/src/app/RelayIndicator.tsx"
   ],
   "Answers on your key do not count toward the server’s monthly limit.": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -3708,7 +3714,8 @@
   ],
   "Collapse {name}": [
     "web/src/app/ProjectsTable.tsx",
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/SubProjects.tsx"
   ],
   "Collection URL": [
     "web/src/app/BackupsPanel.tsx"
@@ -4894,7 +4901,7 @@
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Decline": [
-    "web/src/app/MemberInvitations.tsx",
+    "web/src/app/InvitationAnswer.tsx",
     "web/src/app/RelayConfirm.tsx"
   ],
   "Declined": [
@@ -6560,7 +6567,8 @@
   ],
   "Expand {name}": [
     "web/src/app/ProjectsTable.tsx",
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/SubProjects.tsx"
   ],
   "Expected \"&\" or \"|\" before \"{before}\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
@@ -11944,9 +11952,6 @@
     "web/src/lib/rules/sentence.ts",
     "web/src/page/NotePageScreen.tsx"
   ],
-  "Note…": [
-    "web/src/app/habits/DayMenu.tsx"
-  ],
   "Note actions": [
     "web/src/app/notes/NoteRow.tsx"
   ],
@@ -12025,6 +12030,9 @@
   ],
   "Notes:": [
     "web/src/app/CardNotes.tsx"
+  ],
+  "Note…": [
+    "web/src/app/habits/DayMenu.tsx"
   ],
   "Nothing": [
     "web/src/app/routines/StepCard.tsx"
@@ -14453,6 +14461,9 @@
   "Quick add a task (the command bar in Add mode on screens without a quick add)": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Quick add notification": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Quick add syntax": [
     "web/src/app/ShortcutHelp.tsx"
   ],
@@ -15610,7 +15621,7 @@
     "web/src/app/help/HelpView.tsx"
   ],
   "Running {name}…": [
-    "web/src/app/RelaySettings.tsx",
+    "web/src/app/RelayIndicator.tsx",
     "web/src/app/routines/RoutinesDevice.tsx"
   ],
   "Runs": [
@@ -16862,6 +16873,7 @@
     "web/src/app/AppSessions.tsx",
     "web/src/app/ProjectInviteScreen.tsx",
     "web/src/app/SidebarFooter.tsx",
+    "web/src/app/SignOutDialog.tsx",
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/UnlockScreen.tsx"
   ],
@@ -16887,7 +16899,7 @@
     "web/src/app/settingsIndex.ts"
   ],
   "Sign out of this device?": [
-    "web/src/app/AccountSettings.tsx"
+    "web/src/app/SignOutDialog.tsx"
   ],
   "Sign out of {name} too": [
     "web/src/app/SsoPanel.tsx"
@@ -17190,7 +17202,7 @@
   "Someone": [
     "web/public/push-sw.js",
     "web/src/app/FeedView.tsx",
-    "web/src/app/MemberInvitations.tsx",
+    "web/src/app/InvitationAnswer.tsx",
     "web/src/app/NotificationBell.tsx",
     "web/src/app/ProjectActivity.tsx",
     "web/src/app/WorkspaceActivity.tsx",
@@ -17676,7 +17688,8 @@
     "web/src/lib/templateLibrary.ts"
   ],
   "Sub-projects": [
-    "web/src/app/SubProjects.tsx"
+    "web/src/app/SubProjects.tsx",
+    "web/src/lib/listGroups.ts"
   ],
   "Subject": [
     "web/src/lib/rules/sentence.ts"
@@ -21195,7 +21208,7 @@
     "web/src/app/calendar/DayColumn.tsx"
   ],
   "Unsynced changes are uploaded first when you are online, then the local copy of your tasks is cleared from this device. Your data stays on your server.": [
-    "web/src/app/AccountSettings.tsx"
+    "web/src/app/SignOutDialog.tsx"
   ],
   "Untitled": [
     "web/src/app/CalendarView.tsx",
@@ -21311,7 +21324,7 @@
     "web/src/lib/trash.ts"
   ],
   "Untitled routine": [
-    "web/src/app/RelaySettings.tsx",
+    "web/src/app/RelayIndicator.tsx",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/palette/routineCommand.ts",
     "web/src/app/routines/RoutineEditor.tsx",
@@ -22760,7 +22773,7 @@
     "web/src/lib/assistant.ts"
   ],
   "a project": [
-    "web/src/app/MemberInvitations.tsx",
+    "web/src/app/InvitationAnswer.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/lib/assistant.ts"
   ],
@@ -22830,7 +22843,7 @@
     "web/src/app/routines/words.tsx"
   ],
   "a workspace": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "accept the assistant’s updated terms for routines": [
     "web/src/lib/rules/catalogue.ts"

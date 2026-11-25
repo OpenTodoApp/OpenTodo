@@ -8,7 +8,10 @@
 // `/focus?action=pause|resume` from its Live Activity or ongoing notification
 // (focus-live-activity D4), applied as Space applies it. The Android Today widget's
 // completion circle opens `/?complete=<taskId>` in a background run
-// (android-widget-list D2), applied only there, never in the visible app.
+// (android-widget-list D2), applied only there, never in the visible app. The
+// Android quick-add notification's reply opens `/?add=<text>` in a background run,
+// which saves the task (android-quick-add-notification D4); the visible app only
+// ever prefills.
 import { db } from './db'
 import { completeTask } from './ops'
 import { pauseSession, resumeSession } from './focus/session'
@@ -108,6 +111,11 @@ export async function handleShellUrl(openQuickAdd: () => boolean, loc: Location 
     }
   }
   else if (action.kind === 'focus') await applyFocusAction(action.action)
+  else if (has('background')) {
+    if (action.text.trim()) {
+      try { await (await import('./shellQuickAdd')).applyNotificationAdd(action.text) } finally { applied++ }
+    }
+  }
   else {
     pendingAdd = action.text
     if (!openQuickAdd()) pendingAdd = null

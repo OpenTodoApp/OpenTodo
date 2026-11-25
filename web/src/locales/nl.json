@@ -7915,5 +7915,8 @@
   "Section deleted": "Sectie verwijderd",
   "Label deleted": "Label verwijderd",
   "Merged into {label}": "Samengevoegd in {label}",
-  "Field deleted": "Veld verwijderd"
+  "Field deleted": "Veld verwijderd",
+  "Quick add notification": "Melding voor snelle invoer",
+  "Add a task from the notification shade, in any app.": "Voeg een taak toe vanuit het meldingenpaneel, in elke app.",
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android heeft meldingen voor OpenTodo geweigerd. Sta ze toe in de instellingen van Android."
 }

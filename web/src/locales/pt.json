@@ -7915,5 +7915,8 @@
   "Section deleted": "Seção excluída",
   "Label deleted": "Etiqueta excluída",
   "Merged into {label}": "Mesclada em {label}",
-  "Field deleted": "Campo excluído"
+  "Field deleted": "Campo excluído",
+  "Quick add notification": "Notificação de adição rápida",
+  "Add a task from the notification shade, in any app.": "Adicione uma tarefa a partir da barra de notificações, em qualquer app.",
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "O Android recusou as notificações do OpenTodo. Permita-as nas definições do Android."
 }

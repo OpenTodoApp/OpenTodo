@@ -304,6 +304,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             }
             Bridge(this, server, this).install(web)
             HiddenRun.schedulePeriodic(this)
+            QuickAddNotification.restore(this)
         }
         if (!replay) return
         val share = pendingShare
