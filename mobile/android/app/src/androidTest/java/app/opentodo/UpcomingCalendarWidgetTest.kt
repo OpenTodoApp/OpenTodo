@@ -58,6 +58,8 @@ class UpcomingCalendarWidgetTest {
     @After fun tearDown() {
         shell("appops set ${context.packageName} SYSTEM_ALERT_WINDOW default")
         WorkManager.getInstance(context).cancelAllWork().result.get()
+        // Cancelled runs stay listed until pruned; the next test (of either class) must start with none.
+        WorkManager.getInstance(context).pruneWork().result.get()
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             host.deleteAppWidgetId(upcomingId)
             host.deleteAppWidgetId(calendarId)
