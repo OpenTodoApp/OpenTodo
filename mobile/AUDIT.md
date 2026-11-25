@@ -88,7 +88,7 @@ Seventh round (2026-11-25): **a phone UI of its own**, `phone-ui-trial`. After s
 
 - **The trial:** Today, the task page and a date sheet, behind **New phone screens** in Settings, off by default and kept on the device. The design was drawn in Storybook first and approved against screenshots of the present screens.
 - **The destination, if it passes:** the phone UI is what both apps and a phone browser show below 768 px, with every function of the web app in it, screen by screen; a screen without a phone view keeps its present layout meanwhile. A tablet later shows two phone screens side by side, so the screens are written as panes.
-- **The gate:** both screens on real phones, switch on and off, in front of the people who gave the feedback. Verdict: *not yet recorded*.
+- **The gate:** both screens on real phones, switch on and off, in front of the people who gave the feedback. Verdict: *the reviewers' is not yet recorded*. The owner tried both screens on an iPhone (Chrome, iOS 27) on 2026-11-25, found them good and decided to go on to the whole phone UI before that verdict: every function of the web app in it, starting with every task list (`phone-lists`).
 - **If it fails:** the web view is the limit, and the native app (`native-app-foundation`) is the remaining way; the screen designs carry over.
 
 Open:

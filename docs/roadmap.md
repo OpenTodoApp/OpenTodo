@@ -278,7 +278,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `touch-sidebar-names` | On touch a sidebar row's name has the room; its menu opens on a hold | Shipped in 1.6 |
 | `reminder-card-compact` | The in-app reminder as one compact card on touch: Snooze and Dismiss on one row | Shipped in 1.6 |
 | `phone-fab-scroll-room` | The calendar's Day and Week reach the tab bar; no empty room under pages without the add button | Shipped in 1.6 |
-| `phone-ui-trial` | A trial of screens made only for a phone, behind a switch on the device: Today and the task page, a date sheet, and a place and rules for the phone screens that follow | In progress (18 of 23) |
+| `phone-ui-trial` | A trial of screens made only for a phone, behind a switch on the device: Today and the task page, a date sheet, and a place and rules for the phone screens that follow | In progress (20 of 23) |
 | `shell-push` | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | Shipped in 1.5 |
 
 <!-- roadmap:end -->
