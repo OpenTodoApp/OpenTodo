@@ -68,6 +68,20 @@ ingress:
   #     - todo.example.com
   tls: []
 
+# A Gateway API HTTPRoute (gateway.networking.k8s.io/v1), instead of or beside the Ingress.
+# The Gateway and its TLS are yours: set env.OPENTODO_BASE_URL when it serves https.
+httpRoute:
+  enabled: false
+  annotations: {}
+  # The Gateway the route attaches to, for example:
+  # - name: my-gateway
+  #   namespace: gateway-system
+  #   sectionName: https
+  parentRefs: []
+  # Empty: every hostname of the Gateway's listener.
+  hostnames:
+    - todo.example.com
+
 resources:
   requests:
     cpu: 50m
