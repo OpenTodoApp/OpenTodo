@@ -107,6 +107,8 @@ export function checkCatalog(lang, catalog, messages, fmt) {
     let src, tr
     try { src = fmt.messageShape(base(id)) } catch (err) { problems.push(`source: malformed "${id}": ${err.message}`); continue }
     try { tr = fmt.messageShape(value) } catch (err) { problems.push(`${lang}: malformed "${id}": ${err.message}`); continue }
+    // A trailing "……" is refused on purpose, also in zh: the UI's labels use one "…".
+    // A source's trailing "…" may move inside the translation (zh "Start with…": "从…开始").
     const dots = ellipsisProblem(lang, id, value)
     if (dots) problems.push(dots)
     else if (base(id).endsWith('…') && !value.includes('…')) problems.push(`${lang}: "${id}" ends with "…", but its translation has none`)
