@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useDatabase } from '../db'
+import { applyCatalog } from '../i18n/catalog'
 import { applyOps, resetDeviceId } from '../ops'
 import type { Op, RuleActions } from '../types'
 import { MAX_RULES, activeRules, createRule, deleteRule, duplicateRule, isKnownRule, reorderRule, setRuleEnabled, updateRule } from './store'
@@ -63,5 +64,16 @@ describe('rule store', () => {
     expect(activeRules(await db.rules.toArray()).map((r) => r.name)).toEqual(['A', 'B (copy)', 'B'])
     await deleteRule(a)
     expect(activeRules(await db.rules.toArray()).map((r) => r.name)).toEqual(['B (copy)', 'B'])
+  })
+
+  it('names a copy without the isolates Arabic text puts around a value (arabic-rtl D5)', async () => {
+    const a = await createRule({ ...WAITING, name: 'Plan' })
+    applyCatalog('ar', 'ar', { '{name} (copy)': '{name} (نسخة)' })
+    try {
+      const c = await duplicateRule(a)
+      expect((await db.rules.get(c))?.name).toBe('Plan (نسخة)')
+    } finally {
+      applyCatalog('en', 'en', {})
+    }
   })
 })

@@ -34,7 +34,7 @@ import { moveTargets } from '../ProjectHeader'
 import { useRoute } from '../router'
 import { useStartView, useToday, useViews } from '../useViews'
 import { useVimEnabled } from '../vim/prefs'
-import { groupOf, isStep, KIND_ICON, secondaryOf, type Entry, type Step } from './entries'
+import { groupOf, isStep, KIND_ICON, labelOf, secondaryOf, type Entry, type Step } from './entries'
 import { filterEntries } from './filterEntries'
 import { makeTaskEntry } from './index'
 import { usePaletteEntities } from './usePaletteEntities'
@@ -184,7 +184,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const state = useCombobox<Entry>({
     source: commandsMode ? commandsOnly : source, emptySource: commandsMode ? commandsOnly : emptySource, prefix: commandsMode ? [] : prefix,
     suffix: commandsMode ? [] : [...notes.entries, ...trailing, ...(addEntry ? [addEntry] : [])], limit: PALETTE_LIMIT, rankContext: 'palette',
-    getKey: (e) => e.key, getLabel: (e) => e.label, getSecondary: (e) => secondaryOf(e, false), getKeywords: (e) => e.keywords, getGroup: groupOf,
+    getKey: (e) => e.key, getLabel: labelOf, getSecondary: (e) => secondaryOf(e, false), getKeywords: (e) => e.keywords, getGroup: groupOf,
     onPick: (e) => runEntry(e),
     onClose: () => { if (keepOpen.current) keepOpen.current = false; else onClose() },
   })

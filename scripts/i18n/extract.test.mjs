@@ -5,7 +5,7 @@ import { messagesIn, methodMessages, shortcutMessages, workerMessages } from './
 
 const ids = (list) => list.map((m) => m.id)
 
-test('collects plain, context, rich, plural, msg() and conditional messages', () => {
+test('collects plain, context, rich, plain-text, plural, msg() and conditional messages', () => {
   const src = `
     import { t, msg, T } from '../lib/i18n'
     const LABEL = msg('Inbox')
@@ -17,10 +17,11 @@ test('collects plain, context, rich, plural, msg() and conditional messages', ()
         {t(ok ? 'Yes' : 'No')}
         <T>{'Press <b>Save</b>'}</T>
         {t(LABEL)}
+        {t.plain('{name} (copy)', { name: 'x' })}
       </div>
     }`
   assert.deepEqual(ids(messagesIn('fixture.tsx', src)).sort(), [
-    'Inbox', 'No', 'Open|verb', 'Press <b>Save</b>', 'Read the <a>guide</a>', 'Save', 'Yes', '{n, plural, one {# task} other {# tasks}}',
+    'Inbox', 'No', 'Open|verb', 'Press <b>Save</b>', 'Read the <a>guide</a>', 'Save', 'Yes', '{n, plural, one {# task} other {# tasks}}', '{name} (copy)',
   ].sort())
 })
 

@@ -605,7 +605,7 @@ function ListHeader({ route, title, label, meta, subtitle, briefing, actions, ph
   const assistantAvailable = !!useAssistantStatus()?.available
   const briefItem = route.view === 'today' && assistantAvailable && (
     <MenuGroup label={t('Assistant')}>
-      <MenuItem icon="sparkles" label={t('Brief me')} data-assistant-brief onSelect={() => openAssistantWith({ skill: 'brief-today', text: t('Brief me'), send: true })} />
+      <MenuItem icon="sparkles" label={t('Brief me')} data-assistant-brief onSelect={() => openAssistantWith({ skill: 'brief-today', text: t.plain('Brief me'), send: true })} />
     </MenuGroup>
   )
   const phoneItems = route.view !== 'inbox' && route.view !== 'label' && items.length > 0 ? <PhoneMenuItems items={items} /> : null

@@ -6,7 +6,7 @@
 // content: never encrypted. Lazy: Settings › Appearance and the editor load it.
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
-import { t } from '../i18n'
+import { stripIsolates, t } from '../i18n'
 import { uuid } from '../ids'
 import { getDeviceId, mutate } from '../ops'
 import type { CustomTheme, UserPrefs } from '../types'
@@ -123,7 +123,8 @@ export function uniqueName(name: string, taken: readonly string[]): string {
   }
 }
 
-const clip = (s: string, n: number) => [...s].slice(0, n).join('')
+// Stored text: never with the isolates a right-to-left language puts around values.
+const clip = (s: string, n: number) => [...stripIsolates(s)].slice(0, n).join('')
 
 /**
  * Customise (design D4): a copy that looks identical, named "<name> (custom)",
@@ -131,7 +132,7 @@ const clip = (s: string, n: number) => [...s].slice(0, n).join('')
  * licence until the user changes it. Seeds and explicit tokens are copied.
  */
 export function customiseDocument(source: ThemeDocument, author: string, id = newThemeId()): ThemeDocument {
-  const credit = t('Based on {name} by {author} ({licence})', { name: source.name, author: source.author || t('unknown'), licence: source.licence || t('unknown') })
+  const credit = t.plain('Based on {name} by {author} ({licence})', { name: source.name, author: source.author || t('unknown'), licence: source.licence || t('unknown') })
   const note = source.notes?.text ? `${credit}. ${source.notes.text}` : credit
   const { source: _src, ...rest } = source
   void _src
@@ -139,7 +140,7 @@ export function customiseDocument(source: ThemeDocument, author: string, id = ne
     ...rest,
     opentodoTheme: THEME_FORMAT,
     id,
-    name: clip(t('{name} (custom)', { name: source.name }), MAX_THEME_NAME),
+    name: clip(t.plain('{name} (custom)', { name: source.name }), MAX_THEME_NAME),
     author: clip(author, 120),
     licence: source.licence,
     notes: { ...(source.notes?.adapted ? { adapted: source.notes.adapted } : {}), text: clip(note, 500) },

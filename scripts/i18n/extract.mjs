@@ -4,7 +4,7 @@
 //   node scripts/i18n/extract.mjs            print the count
 //   node scripts/i18n/extract.mjs --write    refresh web/src/locales/messages.json
 //
-// A message is the first argument of t(), t.rich() or msg() (a literal, or each
+// A message is the first argument of t(), t.rich(), t.plain() or msg() (a literal, or each
 // branch of a conditional), the text of <T>, plus two lists kept outside the
 // message layer: the shortcut registry in web/src/lib/shortcuts.ts (the keyboard
 // guide is generated from it, so it stays plain English and is translated where
@@ -17,7 +17,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { calleeName, contextOf, isSource, literalsOf, parse, rel, repo, ts, walk } from './source.mjs'
 
-const MESSAGE_CALLS = new Set(['t', 't.rich', 'msg'])
+const MESSAGE_CALLS = new Set(['t', 't.rich', 't.plain', 'msg'])
 
 /** Messages in one source text: [{ id, file, line }]. */
 export function messagesIn(file, text) {
