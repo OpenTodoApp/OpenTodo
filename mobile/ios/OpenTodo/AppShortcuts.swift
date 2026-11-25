@@ -46,18 +46,16 @@ struct TodayIntent: AppIntent {
 }
 
 /// Every intent as an App Shortcut, so Siri, Spotlight, the Action Button and the Shortcuts
-/// app offer them without any setup. Each phrase names the app, as the system requires. The
-/// optional title and symbol pick the iOS 16 initialiser; the non-optional one needs iOS 17.
+/// app offer them without any setup. Each phrase names the app, as the system requires. No
+/// short title or symbol: the initialiser with constant ones needs iOS 17 (the target is 16.4).
 struct OpenTodoShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(intent: TodayIntent(), phrases: [
             "What's on today in \(.applicationName)",
             "What do I have today in \(.applicationName)",
-        ], shortTitle: "What's on today" as LocalizedStringResource?, systemImageName: "checklist" as String?)
-        AppShortcut(intent: OpenTodayIntent(), phrases: ["Open Today in \(.applicationName)"],
-                    shortTitle: "Open Today" as LocalizedStringResource?, systemImageName: "sun.max" as String?)
-        AppShortcut(intent: OpenQuickAddIntent(), phrases: ["Open quick add in \(.applicationName)"],
-                    shortTitle: "Open quick add" as LocalizedStringResource?, systemImageName: "plus" as String?)
+        ])
+        AppShortcut(intent: OpenTodayIntent(), phrases: ["Open Today in \(.applicationName)"])
+        AppShortcut(intent: OpenQuickAddIntent(), phrases: ["Open quick add in \(.applicationName)"])
     }
 }
 
