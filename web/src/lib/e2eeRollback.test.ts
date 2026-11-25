@@ -42,7 +42,10 @@ vi.mock('./api', () => ({
     },
     putEncryptionKeys: async (r: KeyRecord) => {
       if (r.version !== (server.record?.version ?? 0) + 1) throw new MockApiError(409, 'encryption_conflict', 'conflict')
-      server.record = { ...r, createdAt: server.record?.createdAt ?? Date.now() + server.seq, updatedAt: Date.now() }
+      // As internal/e2ee Store.Put: a replacing record keeps the creation time,
+      // unless it claims a later enablement than the stored one.
+      const keep = server.record && !((r.createdAt ?? 0) > (server.record.createdAt ?? 0))
+      server.record = { ...r, createdAt: keep ? server.record!.createdAt : Math.max(Date.now(), (r.createdAt ?? 0) + 1) + server.seq, updatedAt: Date.now() }
       return { keys: structuredClone(server.record) }
     },
     deleteEncryptionKeys: async () => {
@@ -281,6 +284,12 @@ describe('rollback of a content value (D4)', () => {
   })
 })
 
+/** The record another enablement made (another account key), without touching this device. */
+async function enableElsewhere(): Promise<KeyRecord> {
+  const { createKeyRecord } = await import('./crypto')
+  return (await createKeyRecord('another passphrase entirely', FAST)).record
+}
+
 describe('an older key record (D6)', () => {
   it('warns and keeps its own record, without stopping anything', async () => {
     await account()
@@ -352,6 +361,37 @@ describe('an older key record (D6)', () => {
     expect(sent.length).toBeGreaterThan(0)
     expect(sent.every((o) => isEnvelope(o.value))).toBe(true)
     expect(await title()).toBe('After the backup')
+  })
+
+  it('uploading over an earlier enablement’s record keeps this device and the others unlocked', async () => {
+    await account()
+    await on('B')
+    await unlock(PASS, 'passphrase')
+    await on('A')
+    const mine = structuredClone(server.record!)
+    // The server serves the record of an earlier enablement: another account key, an older creation time.
+    const earlier = await enableElsewhere()
+    server.record = { ...earlier, createdAt: (mine.createdAt ?? 0) - 1000, version: 5 }
+    await refreshFromServer()
+    expect(encryptionSnapshot()).toMatchObject({ olderRecord: true, olderRecordDetail: { served: { version: 5 }, mine: { version: 1 } } })
+    await reuploadKeyRecord()
+    expect(server.record).toMatchObject({ version: 6, wrappedByPassphrase: mine.wrappedByPassphrase })
+    expect((server.record!.createdAt ?? 0) > (mine.createdAt ?? 0)).toBe(true)
+    expect(await currentKey()).not.toBeNull()
+    expect(encryptionSnapshot()).toMatchObject({ unlocked: true, olderRecord: false })
+    // Another device of the same enablement adopts the fresh record and stays unlocked.
+    await on('B')
+    await refreshFromServer()
+    expect(await currentKey()).not.toBeNull()
+    expect(encryptionSnapshot()).toMatchObject({ unlocked: true, olderRecord: false, keyVersion: 6 })
+  })
+
+  it('a record of another account key with a newer creation time still locks', async () => {
+    await account()
+    const other = await enableElsewhere()
+    server.record = { ...other, createdAt: (server.record!.createdAt ?? 0) + 1000, version: 2 }
+    await refreshFromServer()
+    expect(await currentKey()).toBeNull()
   })
 
   it('counts the record of an earlier enablement as older too', async () => {

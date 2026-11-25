@@ -92,6 +92,17 @@ export interface EncryptionSnapshot {
   olderVersions?: number
   /** The server sent an older key record than the one this device adopted; it kept its own (D6). */
   olderRecord?: boolean
+  /** The served record's and this device's record's version and creation time, for that warning. */
+  olderRecordDetail?: OlderRecordDetail
+}
+
+export interface OlderRecordDetail {
+  served: { version: number; createdAt: number }
+  mine: { version: number; createdAt: number }
+}
+
+function olderDetail(served: { version: number; createdAt: number }, mine: KeyRecord): OlderRecordDetail {
+  return { served, mine: { version: mine.version, createdAt: mine.createdAt ?? 0 } }
 }
 
 const snap = createStore<EncryptionSnapshot>('encryption', { enabled: false, unlocked: false, keyVersion: 0, migration: null, updateRequired: false, recordMissing: false })
@@ -148,14 +159,20 @@ async function setEnabled(enabled: boolean, record: KeyRecord | null): Promise<v
   // enabled again, possibly elsewhere) has a new account key: lock instead of
   // producing undecryptable values.
   if (enabled && record && (await currentKey()) && (await getMeta<number | null>(K_KEY_FOR, null)) !== (record.createdAt ?? null)) {
-    await storeKey(null)
+    // Unless the record still carries a wrap this device's record has: then it
+    // wraps the same account key (a record uploaded again after a server restore,
+    // e2ee-rollback D6, gets a fresh creation time), and the key now belongs to it.
+    const cached = await cachedRecord()
+    const same = !!cached && (record.wrappedByPassphrase === cached.wrappedByPassphrase || record.wrappedByRecovery === cached.wrappedByRecovery)
+    if (same) await setMeta(K_KEY_FOR, record.createdAt ?? null)
+    else await storeKey(null)
   }
   await setMeta(K_ENABLED, enabled)
   if (record) {
     await setMeta(K_RECORD, record)
     await setMeta(K_RECORD_HW, { createdAt: record.createdAt ?? 0, version: record.version })
     await db.meta.delete(K_SERVED)
-    publishEncryption({ olderRecord: false })
+    publishEncryption({ olderRecord: false, olderRecordDetail: undefined })
   } else await db.meta.delete(K_RECORD)
   // Either the server has a record again or the user turned encryption off here.
   await db.meta.delete(K_MISSING)
@@ -179,8 +196,9 @@ export async function syncBlocked(): Promise<boolean> {
 /** Load the stored state into the snapshot (app start, database switch in tests). */
 export async function loadEncryptionState(): Promise<EncryptionSnapshot> {
   memKeys.delete(db.name)
-  const [enabled, key, record, missing, older, served] = await Promise.all([isEnabled(), currentKey(), cachedRecord(), isRecordMissing(), olderVersions(), getMeta(K_SERVED, null)])
-  publishEncryption({ enabled, unlocked: !!key, keyVersion: record?.version ?? 0, recordMissing: enabled && missing, olderVersions: olderCount(older), olderRecord: !!served })
+  const [enabled, key, record, missing, older, served] = await Promise.all([isEnabled(), currentKey(), cachedRecord(), isRecordMissing(), olderVersions(), getMeta<{ version: number; createdAt: number } | null>(K_SERVED, null)])
+  publishEncryption({ enabled, unlocked: !!key, keyVersion: record?.version ?? 0, recordMissing: enabled && missing, olderVersions: olderCount(older), olderRecord: !!served,
+    olderRecordDetail: served && record ? olderDetail(served, record) : undefined })
   return snap.get()
 }
 
@@ -220,7 +238,7 @@ export async function refreshFromServer(): Promise<KeyRecord | null> {
       // stop. The device keeps its own record, under the server's version number
       // so a passphrase change or reuploadKeyRecord replaces the served one.
       await setMeta(K_SERVED, { version: record.version, createdAt: record.createdAt ?? 0 })
-      publishEncryption({ olderRecord: true })
+      publishEncryption({ olderRecord: true, olderRecordDetail: olderDetail({ version: record.version, createdAt: record.createdAt ?? 0 }, cached) })
       return { ...cached, version: record.version }
     }
     await setEnabled(true, record)
@@ -254,9 +272,18 @@ export async function reuploadKeyRecord(): Promise<void> {
   const cached = await cachedRecord()
   const served = await getMeta<{ version: number } | null>(K_SERVED, null)
   if (!cached || !served) return
-  const { createdAt: _created, updatedAt: _updated, ...rest } = cached
+  const { updatedAt: _updated, ...rest } = cached
+  // createdAt tells the server which enablement this record belongs to: a later
+  // one than the stored record gets a fresh creation time (e2ee/keys.go Put).
   const stored = (await putOrConflict({ ...rest, version: served.version + 1 })).keys
+  await keepKeyFor(stored)
   await setEnabled(true, stored)
+}
+
+/** The device's key belongs to a record it uploaded itself, whatever creation time the server gave it. */
+async function keepKeyFor(stored: KeyRecord): Promise<void> {
+  const key = await currentKey()
+  if (key) await storeKey(key, stored)
 }
 
 // ---- older versions of content (e2ee-rollback D4) ----
@@ -443,7 +470,9 @@ export async function changePassphrase(current: string, next: string, opts: { it
   const record = await refreshFromServer()
   if (!record) throw new Error(t('Encryption is not enabled for this account.'))
   const rewrapped = await attempt(() => rewrapWithPassphrase(record, current, next, opts))
-  const stored = (await putOrConflict(rewrapped)).keys
+  // The record's createdAt names its enablement (an older record served, D6).
+  const stored = (await putOrConflict({ ...rewrapped, createdAt: record.createdAt })).keys
+  await keepKeyFor(stored)
   await setEnabled(true, stored)
 }
 
@@ -453,7 +482,7 @@ export async function resetPassphrase(recoveryKey: string, next: string, opts: {
   const record = await refreshFromServer()
   if (!record) throw new Error(t('Encryption is not enabled for this account.'))
   const reset = await attempt(() => resetWithRecoveryKey(record, recoveryKey, next, opts))
-  const stored = (await putOrConflict(reset.record)).keys
+  const stored = (await putOrConflict({ ...reset.record, createdAt: record.createdAt })).keys
   await storeKey(reset.key, stored)
   await setEnabled(true, stored)
   return { recoveryKey: reset.recoveryKey }

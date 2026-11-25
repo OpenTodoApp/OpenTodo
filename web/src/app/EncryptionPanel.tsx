@@ -7,6 +7,7 @@ import { ConfirmDialog } from '../ui'
 import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { MIN_PASSPHRASE_LENGTH } from '../lib/crypto'
+import { formatInstant } from '../lib/dates'
 import {
   changePassphrase, commitEnable, disableEncryption, disableWithoutKey, lock, prepareEnable, purgeHistory,
   resetPassphrase, reuploadKeyRecord, useEncryption, type EncryptionSnapshot, type PreparedEnable,
@@ -43,6 +44,7 @@ export type Mode =
   | { kind: 'confirmDisable' }
   | { kind: 'confirmLost' }
   | { kind: 'older' }
+  | { kind: 'confirmReupload' }
 
 export interface EncryptionViewProps {
   state: EncryptionSnapshot
@@ -118,10 +120,17 @@ export function EncryptionView(p: EncryptionViewProps) {
       {p.error && <Notice tone="danger">{p.error}</Notice>}
       {p.notice && <Notice tone="success">{p.notice}</Notice>}
       {/* Older versions the server sent and this device refused (e2ee-rollback D4, D6). */}
-      {state.olderRecord && (
-        <Notice tone="warning" action={p.onReuploadRecord && <Button variant="secondary" size="sm" disabled={p.busy} onClick={p.onReuploadRecord}>{t('Upload this device’s key record')}</Button>}>
-          {t('The server sent an older encryption key record. This device kept its own.')}
+      {state.olderRecord && state.olderRecordDetail && (
+        <Notice tone="warning" action={p.onReuploadRecord && <Button variant="secondary" size="sm" disabled={p.busy} onClick={() => p.onMode({ kind: 'confirmReupload' })}>{t('Upload this device’s key record')}</Button>}>
+          {t('The server sent an older encryption key record (version {served}, {servedDate}) than this device’s (version {mine}, {mineDate}). This device kept its own.', {
+            served: state.olderRecordDetail.served.version, servedDate: formatInstant(state.olderRecordDetail.served.createdAt, 'date'),
+            mine: state.olderRecordDetail.mine.version, mineDate: formatInstant(state.olderRecordDetail.mine.createdAt, 'date'),
+          })}
         </Notice>
+      )}
+      {mode.kind === 'confirmReupload' && state.olderRecordDetail && p.onReuploadRecord && (
+        <ConfirmDialog title={t('Upload this device’s key record?')} confirmLabel={t('Upload this device’s key record')} onCancel={idle} onConfirm={p.onReuploadRecord}
+          consequence={t('It replaces the key record on the server with this device’s, as version {next}. Other devices keep working and adopt it. If this device missed a passphrase change made elsewhere, its older passphrase is the one that works again.', { next: state.olderRecordDetail.served.version + 1 })} />
       )}
       {!!state.olderVersions && (
         <Notice tone="warning" action={<Button variant="secondary" size="sm" onClick={() => p.onMode({ kind: 'older' })}>{t('Details')}</Button>}>
@@ -335,6 +344,7 @@ export function EncryptionPanel() {
       })}
       onReuploadRecord={() => void run(async () => {
         await reuploadKeyRecord()
+        setMode({ kind: 'idle' })
       })}
       onDisable={() => void run(async () => {
         // Files first, while the key record still exists: each is re-uploaded

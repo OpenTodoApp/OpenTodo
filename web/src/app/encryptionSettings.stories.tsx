@@ -23,4 +23,6 @@ export const Migrating: StoryObj = { render: () => view({ ...on, migration: { mo
 export const WithError: StoryObj = { render: () => view(on, { kind: 'change' }, { error: 'That passphrase is not correct.' }) }
 export const ConfirmDisable: StoryObj = { render: () => view(on, { kind: 'confirmDisable' }) }
 export const OlderVersionsKept: StoryObj = { render: () => view({ ...on, olderVersions: 3 }) }
-export const OlderKeyRecord: StoryObj = { render: () => view({ ...on, olderRecord: true }) }
+const olderRecordDetail = { served: { version: 1, createdAt: Date.UTC(2026, 9, 1) }, mine: { version: 2, createdAt: Date.UTC(2026, 9, 1) } }
+export const OlderKeyRecord: StoryObj = { render: () => view({ ...on, olderRecord: true, olderRecordDetail }, { kind: 'idle' }, { onReuploadRecord: noop }) }
+export const ConfirmUploadKeyRecord: StoryObj = { render: () => view({ ...on, olderRecord: true, olderRecordDetail }, { kind: 'confirmReupload' }, { onReuploadRecord: noop }) }

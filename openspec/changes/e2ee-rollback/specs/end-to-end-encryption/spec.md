@@ -98,8 +98,12 @@ A device SHALL remember the newest key record it adopted (its creation time and 
 - **THEN** the device warns about the older record and still re-sends its data, encrypted, to the restored server
 
 #### Scenario: Uploading this device's record
-- **WHEN** the user chooses "Upload this device's key record"
-- **THEN** the server stores this device's record as the next version, the warning goes, and other devices adopt it on their next refresh
+- **WHEN** the user chooses "Upload this device's key record" and confirms that it replaces the server's record
+- **THEN** the server stores this device's record as the next version, the warning goes, this device stays unlocked, and other devices adopt it on their next refresh without locking
+
+#### Scenario: Uploading over an earlier enablement's record
+- **WHEN** the server served the record of an earlier time encryption was on and the user uploads this device's record
+- **THEN** the server gives it a fresh creation time, this device and the other devices of the current account key stay unlocked, and a device of another account key locks as before
 
 #### Scenario: Restore after the server lost the record
 - **WHEN** the server lost the key record and the user restores it from this device

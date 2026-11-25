@@ -372,3 +372,29 @@ func TestStaleCiphertext(t *testing.T) {
 	resp, out = anon.do("PATCH", "/api/v1/tasks/"+id, map[string]any{"title": ctV2(now + 1)})
 	anon.mustStatus(resp, 401, out)
 }
+
+// TestKeyRecordUploadOfLaterEnablement (e2ee-rollback D6): a replacing record
+// keeps the stored creation time, unless the device uploads the record of a
+// later enablement (a newer createdAt than the stored one, after the server was
+// restored from an older backup): then it gets a fresh one, newer than both.
+func TestKeyRecordUploadOfLaterEnablement(t *testing.T) {
+	e := ownerEnv(t)
+	resp, out := e.do("PUT", "/api/v1/encryption/keys", keyRecord(1, 1))
+	e.mustStatus(resp, 201, out)
+	created := out["keys"].(map[string]any)["createdAt"].(float64)
+	next := keyRecord(2, 2)
+	next["createdAt"] = created - 1000
+	resp, out = e.do("PUT", "/api/v1/encryption/keys", next)
+	e.mustStatus(resp, 200, out)
+	if got := out["keys"].(map[string]any)["createdAt"].(float64); got != created {
+		t.Fatalf("an older claim moved createdAt: %v, want %v", got, created)
+	}
+	later := keyRecord(3, 3)
+	later["createdAt"] = created + 5
+	time.Sleep(2 * time.Millisecond)
+	resp, out = e.do("PUT", "/api/v1/encryption/keys", later)
+	e.mustStatus(resp, 200, out)
+	if got := out["keys"].(map[string]any)["createdAt"].(float64); got <= created {
+		t.Fatalf("a later enablement kept createdAt %v", got)
+	}
+}
