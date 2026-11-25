@@ -5755,7 +5755,6 @@
     "web/src/app/RemindersField.tsx",
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/calendar/FrameBand.tsx",
-    "web/src/app/habits/HabitPage.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/themes/YourThemes.tsx"
@@ -5873,6 +5872,7 @@
   ],
   "Edit…": [
     "web/src/app/LabelsView.tsx",
+    "web/src/app/habits/HabitPage.tsx",
     "web/src/app/routines/RoutinesView.tsx"
   ],
   "Eisenhower": [
@@ -6755,6 +6755,9 @@
   "Field": [
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "Field deleted": [
+    "web/src/lib/undoActions.ts"
   ],
   "Field names": [
     "web/src/app/FilterView.tsx"
@@ -9157,6 +9160,9 @@
     "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
+  "Label deleted": [
+    "web/src/lib/undoActions.ts"
+  ],
   "Label is {name}": [
     "web/src/app/filter/conditionText.ts"
   ],
@@ -10259,6 +10265,9 @@
   "Merge “{source}” into “{target}”?": [
     "web/src/app/LabelsView.tsx"
   ],
+  "Merged into {label}": [
+    "web/src/lib/undoActions.ts"
+  ],
   "Merge…": [
     "web/src/app/LabelsView.tsx"
   ],
@@ -10573,9 +10582,6 @@
   "Move to workspace": [
     "web/src/app/menus/projectMenu.tsx"
   ],
-  "Move to workspace…": [
-    "web/src/app/menus/projectMenu.tsx"
-  ],
   "Move to {name}": [
     "web/src/app/task-list/dayOrderDrop.ts",
     "web/src/app/workspaceNav.ts"
@@ -10590,7 +10596,7 @@
     "web/src/app/calendar/occurrenceMenu.tsx",
     "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
-  "Move under task…": [
+  "Move under task": [
     "web/src/app/task-list/todayGroupDrop.ts"
   ],
   "Move up": [
@@ -10712,6 +10718,7 @@
     "web/src/app/TriageView.tsx"
   ],
   "Moved to {target}": [
+    "web/src/app/task-list/useListDrag.ts",
     "web/src/lib/undoActions.ts",
     "web/src/lib/viewOrderMove.ts"
   ],
@@ -11552,6 +11559,8 @@
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/task-list/ListGroups.tsx",
+    "web/src/app/task-list/useBoardMoves.ts",
+    "web/src/app/task-list/useListDrag.ts",
     "web/src/app/task-list/useListShortcuts.ts",
     "web/src/lib/assistant.ts",
     "web/src/lib/assistantBlockData.ts",
@@ -11938,7 +11947,6 @@
     "web/src/app/RelayConfirm.tsx",
     "web/src/app/TrashView.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
-    "web/src/app/habits/DayMenu.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
@@ -12024,6 +12032,9 @@
   ],
   "Notes:": [
     "web/src/app/CardNotes.tsx"
+  ],
+  "Note…": [
+    "web/src/app/habits/DayMenu.tsx"
   ],
   "Nothing": [
     "web/src/app/routines/StepCard.tsx"
@@ -13228,6 +13239,7 @@
     "web/src/app/views/useDisplayKeys.ts"
   ],
   "Order changed": [
+    "web/src/lib/undoActions.ts",
     "web/src/lib/viewOrderMove.ts"
   ],
   "Order the bathroom tiles": [
@@ -15993,6 +16005,9 @@
     "web/src/lib/rules/sentence.ts",
     "web/src/lib/shortcuts.ts"
   ],
+  "Section deleted": [
+    "web/src/lib/undoActions.ts"
+  ],
   "Section flow changed": [
     "web/src/app/menus/flowMenu.ts"
   ],
@@ -16287,7 +16302,7 @@
   "Set a time to fix this due to a time zone": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
-  "Set amount": [
+  "Set amount…": [
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/habits/HabitRow.tsx"
   ],
@@ -16484,7 +16499,9 @@
     "web/src/app/WelcomeDialog.tsx"
   ],
   "Share project": [
-    "web/src/app/ProjectHeader.tsx",
+    "web/src/app/ProjectHeader.tsx"
+  ],
+  "Share project…": [
     "web/src/app/menus/useProjectMenu.tsx"
   ],
   "Share the current project: add members by email, change roles, remove, leave, transfer": [
@@ -21336,6 +21353,8 @@
     "web/src/app/assistant/blocks/BoardBlock.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
+    "web/src/app/task-list/useBoardMoves.ts",
+    "web/src/app/task-list/useListDrag.ts",
     "web/src/app/task-list/useListShortcuts.ts"
   ],
   "Untitled theme": [

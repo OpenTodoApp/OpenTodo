@@ -42,7 +42,8 @@ export interface Provider { start(req: Request): Conversation }
 
 /** A failed provider request: a code the panel describes, never the key or request content. */
 export class ProviderError extends Error {
-  constructor(public code: 'provider_auth' | 'provider_rate_limited' | 'provider_not_found' | 'provider_error' | 'blocked' | 'images_unsupported', message: string, public status = 0, public type = '') {
+  /** `effort`: the refusal names reasoning_effort (effortRefusal). */
+  constructor(public code: 'provider_auth' | 'provider_rate_limited' | 'provider_not_found' | 'provider_error' | 'blocked' | 'images_unsupported', message: string, public status = 0, public type = '', public effort = false) {
     super(message)
   }
 }
@@ -108,7 +109,7 @@ export function statusError(status: number, body = '', provider = ''): ProviderE
   }
   if (status === 429) return new ProviderError('provider_rate_limited', 'the provider is rate limiting requests; try again in a moment', status, type)
   if (status >= 500) return new ProviderError('provider_error', 'the provider had a problem; try again in a moment', status, type)
-  return new ProviderError('provider_error', `the provider refused the request (HTTP ${status})`, status, type)
+  return new ProviderError('provider_error', `the provider refused the request (HTTP ${status})`, status, type, effortRefusal(status, body))
 }
 
 /** Up to MAX_ERROR_BODY bytes of an error answer, as text. */
@@ -163,6 +164,19 @@ async function post(f: Fetch, provider: string, url: string, headers: Record<str
     throw statusError(res.status, text, provider)
   }
   return res
+}
+
+/**
+ * Whether a 400 names the reasoning_effort parameter (effortRefusal in Go):
+ * OpenAI's answer when a model calls function tools in Chat Completions only
+ * with reasoning_effort "none" (issue #2045).
+ */
+function effortRefusal(status: number, body: string): boolean {
+  if (status !== 400) return false
+  let v: unknown
+  try { v = JSON.parse(body) } catch { return false }
+  const o = (v && typeof v === 'object' ? v : {}) as { param?: unknown; error?: { param?: unknown } | null }
+  return o.param === 'reasoning_effort' || (!!o.error && typeof o.error === 'object' && o.error.param === 'reasoning_effort')
 }
 
 /** Server-sent events of a response body: {event, data} per blank-line-terminated event. */
@@ -344,15 +358,26 @@ export function chatProvider(setup: DeviceSetup, f: Fetch = fetch): Provider {
       const images = hasImages(req.messages)
       const toolsOf = (list: ManifestTool[]) => list.map((t) => ({ type: 'function', function: { name: t.name, description: t.description, parameters: setup.provider === 'gemini' ? t.strict_nullable_schema : t.input_schema } }))
       let tools = toolsOf(req.tools)
+      // Set once the provider refused tools at the model's default reasoning effort (effortRefusal).
+      let effortNone = false
       return {
         setTools(list) { tools = toolsOf(list) },
         async next(onText, signal) {
-          const body: Record<string, unknown> = { model: setup.model, messages, stream: true, stream_options: { include_usage: true } }
-          if (tools.length) { body.tools = tools; body.tool_choice = 'auto' }
-          body[setup.provider === 'openai' ? 'max_completion_tokens' : 'max_tokens'] = req.maxTokens
           const headers: Record<string, string> = {}
           if (setup.key) headers.authorization = `Bearer ${setup.key}`
-          const res = await post(f, setup.provider, baseUrlOf(setup) + '/chat/completions', headers, body, signal, images)
+          const send = () => {
+            const body: Record<string, unknown> = { model: setup.model, messages, stream: true, stream_options: { include_usage: true } }
+            if (tools.length) { body.tools = tools; body.tool_choice = 'auto' }
+            if (effortNone) body.reasoning_effort = 'none'
+            body[setup.provider === 'openai' ? 'max_completion_tokens' : 'max_tokens'] = req.maxTokens
+            return post(f, setup.provider, baseUrlOf(setup) + '/chat/completions', headers, body, signal, images)
+          }
+          const res = await send().catch((err: unknown) => {
+            // Models such as GPT-6 Luna call tools in Chat Completions only without reasoning: ask once more.
+            if (!(err instanceof ProviderError) || !err.effort || effortNone || !tools.length) throw err
+            effortNone = true
+            return send()
+          })
           const calls: { id: string; name: string; args: string }[] = []
           let text = ''
           let finish = ''

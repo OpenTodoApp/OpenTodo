@@ -18,7 +18,7 @@ import { resolveLabels } from '../../lib/labels'
 import { hasTimeColumn } from '../../lib/rowTime'
 import { listSlotsOff } from '../../lib/rowSlots'
 import { useAllLabels, useReviewRow, useUserPrefsRow } from '../../lib/localData'
-import { setTaskCompletedWithFeedback } from '../completionSound'
+import { completeWithUndo } from '../undoable'
 import { dailyDue, finishDailyCheck, FOCUS_MAX, focusTasks, yesterdaysNote } from '../../lib/review'
 import { canEditTask } from '../../lib/sharing'
 import { qualifies } from '../../lib/triage'
@@ -125,7 +125,7 @@ export function DailyCheck() {
     return (
       <TaskRow key={key} task={task} project={task.project_id ? projectMap.get(task.project_id) : undefined} labels={resolveLabels(task.labels, labelMap)}
         showProject selected={key === selected} timeColumn={timeColumn} slotsOff={slotsOff} breadcrumb={crumb}
-        onToggle={() => act(setTaskCompletedWithFeedback(task.id, !task.completed_at))}
+        onToggle={() => act(completeWithUndo(task.id, !task.completed_at))}
         onOpen={() => { setSelected(key); setPanelTaskId(task.id) }} />
     )
   }

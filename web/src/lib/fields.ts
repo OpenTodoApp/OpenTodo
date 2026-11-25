@@ -377,13 +377,6 @@ export async function reorderField(id: string, delta: -1 | 1 | 'top' | 'bottom')
   return true
 }
 
-/** Delete a definition: a tombstone only. Values stay in the tasks' data, hidden (spec). */
-export async function deleteField(id: string): Promise<void> {
-  const def = await db.fields.get(id)
-  if (!def || def.deleted_at) return
-  await mutate('field', id, { deleted_at: Date.now() })
-}
-
 export { fieldValueLabel, rememberFieldNames } from './fieldNames'
 export { applicableFields, applicableFieldsLookup, fieldChain, fieldDescendants, fieldWorkspace, isWorkspaceField, liveFields, workspaceFields, type FieldPlacement, type FieldProject } from './fieldTree'
 

@@ -8,9 +8,11 @@
 import { useMemo, useRef, useState, type DragEvent, type FormEvent, type KeyboardEvent } from 'react'
 import { useMembership, useProjectFieldRows, useProjects, useProjectsOfEveryWorkspace, useTaskRowsOfProjects, useWorkspaceMembers, useWorkspaceState } from '../lib/localData'
 import {
-  countValues, createField, createWorkspaceField, deleteField, FIELD_TYPES, FieldError, fieldDescendants, fieldWorkspace, isWorkspaceField, liveFields, MAX_FIELDS, parseOptions,
+  countValues, createField, createWorkspaceField, FIELD_TYPES, FieldError, fieldDescendants, fieldWorkspace, isWorkspaceField, liveFields, MAX_FIELDS, parseOptions,
   renameField, reorderField, setFieldOptions, workspaceFields,
 } from '../lib/fields'
+import { deleteFieldUndoable } from '../lib/undoActions'
+import { withUndoToast } from './undoable'
 import { useApplicableFields, useFieldDefs, useFieldPlacement } from './useFields'
 import type { FieldDef, FieldType, Project, Task, Workspace } from '../lib/types'
 import { Button, ConfirmDialog, Field, Icon, IconButton, Input, Select, Textarea, Dialog } from '../ui'
@@ -167,7 +169,7 @@ function FieldList({ live, tasks, clashOf, empty }: { live: FieldDef[]; tasks: T
       {removing && (
         <ConfirmDialog title={t('Delete the field “{name}”?', { name: removing.name })} confirmLabel={t('Delete field')}
           consequence={valuesText(countValues(removing.id, tasks))}
-          onConfirm={() => deleteField(removing.id)} onCancel={() => setRemoving(null)} />
+          onConfirm={() => withUndoToast(deleteFieldUndoable(removing.id))} onCancel={() => setRemoving(null)} />
       )}
     </>
   )

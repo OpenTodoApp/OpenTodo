@@ -84,6 +84,15 @@ export function orderGroups(groups: ActionGroup[]): ActionGroup[] {
   return danger.length ? [...safe, { items: danger }] : safe
 }
 
+/**
+ * A label for an item that needs another step (a picker, a confirmation, a step, a
+ * submenu): one "…" after it. Those labels are written without one; a label that
+ * already ends in "…" keeps a single one (bug #2028: "Move to workspace……").
+ */
+export function withEllipsis(label: string): string {
+  return label.endsWith('…') ? label : `${label}…`
+}
+
 /** Keeps a MenuItem from closing the menu (picker steps and confirmations close it themselves). */
 function NoClose({ children }: { children: ReactNode }) {
   return <MenuCloseContext.Provider value={() => {}}>{children}</MenuCloseContext.Provider>
@@ -126,13 +135,13 @@ function Items({ groups, onPicker, onStep, onConfirm, onSubmenu }: {
                 case 'check':
                   return <MenuItem key={item.id} {...common} checked={item.checked} onSelect={() => void item.onSelect()} />
                 case 'picker':
-                  return <NoClose key={item.id}><MenuItem {...common} label={`${item.label}…`} onSelect={() => onPicker(item.id, item.picker)} /></NoClose>
+                  return <NoClose key={item.id}><MenuItem {...common} label={withEllipsis(item.label)} onSelect={() => onPicker(item.id, item.picker)} /></NoClose>
                 case 'confirm':
-                  return <NoClose key={item.id}><MenuItem {...common} label={`${item.label}…`} onSelect={() => { close?.(); onConfirm(item.confirm) }} /></NoClose>
+                  return <NoClose key={item.id}><MenuItem {...common} label={withEllipsis(item.label)} onSelect={() => { close?.(); onConfirm(item.confirm) }} /></NoClose>
                 case 'step':
-                  return <NoClose key={item.id}><MenuItem {...common} label={`${item.label}…`} onSelect={() => onStep(item.step)} /></NoClose>
+                  return <NoClose key={item.id}><MenuItem {...common} label={withEllipsis(item.label)} onSelect={() => onStep(item.step)} /></NoClose>
                 case 'submenu':
-                  return <NoClose key={item.id}><MenuItem {...common} label={`${item.label}…`} onSelect={() => onSubmenu(item.id)} /></NoClose>
+                  return <NoClose key={item.id}><MenuItem {...common} label={withEllipsis(item.label)} onSelect={() => onSubmenu(item.id)} /></NoClose>
               }
             })}
           </MenuGroup>

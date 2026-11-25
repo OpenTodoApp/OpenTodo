@@ -5,10 +5,11 @@ import { db, useDatabase } from './db'
 import { occurrenceId } from './ids'
 import { applyOps, completeTask, createProject, createTask, getDeviceId, mutate, resetDeviceId, updateTask } from './ops'
 import {
-  countValues, createField, deleteField, FieldError, fieldBadges, formatValue, liveFields, matchesType, MAX_FIELDS, parseLocaleNumber,
+  countValues, createField, FieldError, fieldBadges, formatValue, liveFields, matchesType, MAX_FIELDS, parseLocaleNumber,
   parseOptions, renameField, reorderField, setFieldOptions, setFieldValue, validateValue, applicableFields, fieldDescendants, type FieldProject,
   createWorkspaceField, workspaceFieldsOf,
 } from './fields'
+import { deleteFieldUndoable as deleteField } from './undoActions'
 import vectors from './fields.vectors.json'
 import { isContentField } from './e2ee'
 import type { FieldDef, Op, Task, Workspace } from './types'

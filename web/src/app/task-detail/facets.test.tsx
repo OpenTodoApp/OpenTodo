@@ -35,10 +35,11 @@ describe('facet lines', () => {
 
   it('Where reads project then section', async () => {
     const p = await createProject({ name: 'Home' })
-    const { createSection, moveTaskToSection } = await import('../../lib/sections')
+    const { createSection } = await import('../../lib/sections')
+    const { sectionMoveUndoable } = await import('../../lib/undoActions')
     const doing = await createSection(p, 'Doing')
     const id = await createTask({ title: 'Paint', project_id: p })
-    await moveTaskToSection(id, doing)
+    await sectionMoveUndoable(id, doing, '')
     const { container, row, unmount } = await open(id)
     await waitFor(() => !!row('section'))
     const where = container.querySelector('[data-facet="where"]')!
