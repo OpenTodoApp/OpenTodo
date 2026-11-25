@@ -193,7 +193,7 @@ func recordExamples(t *testing.T) (map[string]recordedExample, map[string]any) {
 // see: the owner switches, habits, rules, a repeating task's occurrences.
 func recordMore(x *exampleRecorder, note string) {
 	x.t.Helper()
-	for _, name := range []string{"automations", "caldav", "caldav/push", "calendar-feeds", "calendar-sync", "issues", "notification-channels", "project-invites"} {
+	for _, name := range []string{"automations", "caldav", "caldav/push", "calendar-feeds", "calendar-sync", "issues", "notification-channels", "project-invites", "push/apple-relay"} {
 		path := "/api/v1/settings/" + name
 		got := x.call("GET "+path, path, nil, 200)
 		field := "enabled"

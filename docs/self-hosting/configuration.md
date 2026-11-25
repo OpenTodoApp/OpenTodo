@@ -57,6 +57,7 @@ A test reads the code and fails when a variable is read but missing here, or lis
 | Variable | Default | Example | Explained in |
 | --- | --- | --- | --- |
 | `OPENTODO_PUSH` | `on` | `off` | [Push notifications](../push-notifications.md) |
+| `OPENTODO_APPLE_RELAY` | unset, the project's relay | `https://relay.example.com` | [Push notifications](../push-notifications.md) (only the address: the owner's switch in Settings turns the relay on) |
 | `OPENTODO_MCP` | unset, off (preset) | `true` | [AI assistants (MCP)](../mcp.md#1-enable-it-owner) |
 | `OPENTODO_MCP_WRITES` | unset, off (preset) | `true` | [AI assistants (MCP)](../mcp.md#letting-an-assistant-make-changes) |
 | `OPENTODO_CALDAV` | unset, off (preset) | `true` | [Calendar apps (CalDAV)](../caldav.md) |

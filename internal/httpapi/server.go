@@ -128,6 +128,8 @@ type Server struct {
 	// pushTestLimiter caps test pushes per account (5 per 10 minutes; OpenSpec
 	// `push-test-delivery` D3), see push.go.
 	pushTestLimiter *rateLimiter
+	// appleDueLimiter caps the due route per iPhone registration (ios-push-relay D8).
+	appleDueLimiter *rateLimiter
 	// mail sends outgoing email (OpenSpec `outgoing-email`); nil on a demo
 	// instance or when not wired, which means "not configured".
 	mail *mail.Service

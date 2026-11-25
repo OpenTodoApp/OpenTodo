@@ -55,6 +55,10 @@ type Config struct {
 	// PushDisabled turns web push off (OPENTODO_PUSH=off): the /api/v1/push routes
 	// answer 404 and the reminder scheduler does not run. Push is on by default.
 	PushDisabled bool
+	// AppleRelayURL overrides the push relay's address (OPENTODO_APPLE_RELAY,
+	// ios-push-relay D8): an https URL, "" when unset. It never turns the
+	// relay on; the owner's switch does.
+	AppleRelayURL string
 	// TrashRetentionDays is how long deleted tasks and projects stay in the Trash
 	// before the server purges them (OPENTODO_TRASH_RETENTION_DAYS, default 30,
 	// 0 disables automatic purge).
@@ -454,6 +458,13 @@ func (c *Config) loadTrashAndPush() error {
 		c.PushDisabled = true
 	default:
 		return fmt.Errorf("OPENTODO_PUSH must be on or off, got %q", os.Getenv("OPENTODO_PUSH"))
+	}
+	if v := strings.TrimSpace(os.Getenv("OPENTODO_APPLE_RELAY")); v != "" {
+		u, err := url.Parse(v)
+		if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || len(v) > 2048 {
+			return fmt.Errorf("OPENTODO_APPLE_RELAY must be an https URL, got %q", v)
+		}
+		c.AppleRelayURL = strings.TrimRight(v, "/")
 	}
 	return nil
 }

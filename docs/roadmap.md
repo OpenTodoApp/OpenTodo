@@ -60,7 +60,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `routines-shared-notify` | A "members" recipient for Notify me in shared routines, mutable per routine | Planned |
 | `telegram-channel` | Telegram as a notification channel (postponed by the owner on 2026-11-10) | Planned |
 | `desktop-shell` | Desktop app for macOS and Windows: the embedded server plus a window, a tray icon and native notifications | Planned |
-| `ios-push-relay` | Reminders on time in the iPhone app through a push relay run by the project: content-free wake-ups, off until the owner and the user turn it on | Planned |
+| `ios-push-relay` | Reminders on time in the iPhone app through a push relay run by the project: content-free wake-ups, off until the owner and the user turn it on | In progress (9 of 28) |
 
 ## 0.17 "Calm constraints"
 

@@ -131,6 +131,8 @@
   "quota_exceeded",
   "rate_limited",
   "reauth_required",
+  "relay-off",
+  "relay-unreachable",
   "reset_invalid",
   "routine_changed",
   "run_closed",

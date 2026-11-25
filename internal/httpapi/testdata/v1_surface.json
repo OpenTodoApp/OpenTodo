@@ -2211,6 +2211,14 @@
       "403",
       "listed"
     ],
+    "relay-off": [
+      "403",
+      "listed"
+    ],
+    "relay-unreachable": [
+      "502",
+      "listed"
+    ],
     "reset_invalid": [
       "404",
       "listed"
@@ -4151,6 +4159,9 @@
       "statuses": [
         "200"
       ]
+    },
+    "DELETE /api/v1/push/apple/{id}": {
+      "policy": "signed-in.session-only"
     },
     "DELETE /api/v1/push/subscriptions/{id}": {
       "policy": "signed-in"
@@ -6202,6 +6213,36 @@
         "200"
       ]
     },
+    "GET /api/v1/push/apple/due": {
+      "policy": "public",
+      "response": {
+        "reminders": "array",
+        "reminders[].fireAt": "number",
+        "reminders[].id": "string",
+        "reminders[].taskId": "string",
+        "reminders[].title": "string"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
+    "GET /api/v1/push/apple/status": {
+      "policy": "signed-in.session-only",
+      "response": {
+        "registration": "object",
+        "registration.expiresAt": "number",
+        "registration.failures": "number",
+        "registration.id": "string",
+        "registration.relayUnreachable": "boolean",
+        "relay": "object",
+        "relay.error": "string",
+        "relay.protocol": "number",
+        "relay.reached": "boolean"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
     "GET /api/v1/push/vapid-key": {
       "policy": "signed-in",
       "response": {
@@ -6732,6 +6773,9 @@
       ]
     },
     "GET /api/v1/settings/project-invites": {
+      "policy": "signed-in"
+    },
+    "GET /api/v1/settings/push/apple-relay": {
       "policy": "signed-in"
     },
     "GET /api/v1/settings/smtp": {
@@ -10483,6 +10527,27 @@
         "200"
       ]
     },
+    "POST /api/v1/push/apple": {
+      "policy": "signed-in.session-only",
+      "request": {
+        "deviceId": "string",
+        "dueToken": "string",
+        "environment": "string",
+        "includeContent": "boolean",
+        "token": "string"
+      },
+      "response": {
+        "registration": "object",
+        "registration.createdAt": "number",
+        "registration.deviceId": "string",
+        "registration.expiresAt": "number",
+        "registration.id": "string",
+        "registration.includeContent": "boolean"
+      },
+      "statuses": [
+        "201"
+      ]
+    },
     "POST /api/v1/push/subscriptions": {
       "policy": "signed-in",
       "request": {
@@ -12046,6 +12111,19 @@
         "200"
       ]
     },
+    "PUT /api/v1/push/apple/{id}/schedule": {
+      "policy": "signed-in.session-only",
+      "request": {
+        "cursor": "number|null?",
+        "until": "number|null?"
+      },
+      "response": {
+        "renew": "boolean"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
     "PUT /api/v1/relay/devices/{device}": {
       "policy": "signed-in.session-only.recent",
       "request": {
@@ -12267,6 +12345,22 @@
     },
     "PUT /api/v1/settings/project-invites": {
       "policy": "owner-only"
+    },
+    "PUT /api/v1/settings/push/apple-relay": {
+      "policy": "owner-only"
+    },
+    "PUT /api/v1/settings/push/apple-relay/url": {
+      "policy": "owner-only",
+      "request": {
+        "url": "string|null?"
+      },
+      "response": {
+        "url": "string",
+        "urlFixedBy": "string"
+      },
+      "statuses": [
+        "200"
+      ]
     },
     "PUT /api/v1/settings/row-click": {
       "policy": "owner-only",
