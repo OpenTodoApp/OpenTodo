@@ -3497,6 +3497,7 @@
   "Opening the shared files…": "正在打开共享文件…",
   "Opens the source {text}": "打开来源 {text}",
   "Open|count": "未完成",
+  "Open|state": "未完成",
   "Optional": "可选",
   "Optional for everyone": "对所有人可选",
   "Optional, required for the owner, or required for everyone": "可选、仅所有者必选，或所有人必选",

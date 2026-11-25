@@ -3746,6 +3746,7 @@
   "Opening the shared files…": "Открытие общих файлов…",
   "Opens the source {text}": "Открывает источник {text}",
   "Open|count": "Открытые",
+  "Open|state": "Открытые",
   "Optional": "Необязательно",
   "Optional for everyone": "Необязательно для всех",
   "Optional, required for the owner, or required for everyone": "Необязательно, обязательно для владельца или обязательно для всех",

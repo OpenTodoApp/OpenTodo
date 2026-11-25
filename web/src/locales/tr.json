@@ -3752,6 +3752,7 @@
   "Opening the shared files…": "Paylaşılan dosyalar açılıyor…",
   "Opens the source {text}": "{text} kaynağını açar",
   "Open|count": "Açık",
+  "Open|state": "Açık",
   "Optional": "İsteğe bağlı",
   "Optional for everyone": "Herkes için isteğe bağlı",
   "Optional, required for the owner, or required for everyone": "İsteğe bağlı, sahip için zorunlu veya herkes için zorunlu",
