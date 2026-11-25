@@ -64,10 +64,10 @@ try {
   step('a hold and a release opens the row\'s menu')
   let b = await box('Alpha')
   await touch('touchStart', b.x + 150, b.y + 25); await wait(HOLD_MS); await touch('touchEnd')
-  await page.getByRole('menuitem', { name: /Edit title/ }).waitFor({ timeout: 5000 })
+  await page.getByRole('menuitem', { name: /^Edit(?![a-z ])/ }).waitFor({ timeout: 5000 })
   assert(await page.getByRole('menuitem', { name: /Reorder/ }).count() === 1, 'the menu offers Reorder')
   await page.keyboard.press('Escape')
-  await page.getByRole('menuitem', { name: /Edit title/ }).waitFor({ state: 'detached', timeout: 5000 })
+  await page.getByRole('menuitem', { name: /^Edit(?![a-z ])/ }).waitFor({ state: 'detached', timeout: 5000 })
   await clear()
 
   step('a hold and a move puts the last task first')

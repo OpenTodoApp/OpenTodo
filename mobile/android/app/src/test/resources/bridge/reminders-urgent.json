@@ -1,7 +1,7 @@
 {
   "description": "An urgent reminder (ios-urgent-alarms D3) carries urgent: true, the others no urgent at all. The iPhone app rings an urgent one as an alarm where it can; every other shell schedules it as an ordinary reminder.",
   "method": "scheduleReminders",
-  "payload": "[{\"id\":\"r-soon\",\"taskId\":\"call\",\"fireAt\":1792674000000,\"title\":\"Call the plumber ☎\",\"urgent\":true},{\"id\":\"r-late\",\"taskId\":\"plain\",\"fireAt\":1792681200000,\"title\":\"Water the plants\"}]",
+  "payload": "[{\"id\":\"r-soon\",\"taskId\":\"call\",\"fireAt\":1792674000000,\"title\":\"Call the plumber ☎\",\"due\":\"Today 09:30\",\"urgent\":true},{\"id\":\"r-late\",\"taskId\":\"plain\",\"fireAt\":1792681200000,\"title\":\"Water the plants\",\"due\":\"Today\"}]",
   "now": 1792670400000,
   "expect": [
     {
@@ -9,6 +9,7 @@
       "taskId": "call",
       "fireAt": 1792674000000,
       "title": "Call the plumber ☎",
+      "due": "Today 09:30",
       "urgent": true
     },
     {
@@ -16,6 +17,7 @@
       "taskId": "plain",
       "fireAt": 1792681200000,
       "title": "Water the plants",
+      "due": "Today",
       "urgent": false
     }
   ]

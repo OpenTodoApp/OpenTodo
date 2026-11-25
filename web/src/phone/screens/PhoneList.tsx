@@ -77,7 +77,7 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
           <SelectionBar ids={ticked} onClear={selection.clear} menuOpen={actions.forTicked}
             onMenuOpenChange={actions.onOpenChange} startPicker={actions.picker} onDone={selectMode ? () => { selection.clear(); setSelectMode(false) } : undefined} />
           {actions.forCursor && selectedId && (
-            <BulkActionsMenu ids={[selectedId]} open onOpenChange={actions.onOpenChange} startPicker={actions.picker} anchor={actionsFrom} editTitle={s.editTitle}
+            <BulkActionsMenu ids={[selectedId]} open onOpenChange={actions.onOpenChange} startPicker={actions.picker} anchor={actionsFrom} {...s.menuItems} expandedId={s.expandedId}
               trigger={<span className="sr-only">{t('Actions')}</span>} triggerClassName="sr-only" />
           )}
           {rowMenu.element}{s.queryHost}

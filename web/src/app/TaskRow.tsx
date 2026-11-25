@@ -449,6 +449,8 @@ export interface TaskRowProps {
   selectOnClick?: boolean
   /** Enables compact title editing from a short left swipe. */
   onEditTitle?: () => void
+  /** The revealed Edit action (row-edit-action D1): the list's inline editor, in Show details' place. */
+  onEdit?: () => void
   /** A double-click on the row opens the task's page (row-click-modes D2); without it a double-click is two clicks. */
   onOpenPage?: () => void
   /** Ticked for a bulk action (bulk-edit). */
@@ -617,7 +619,8 @@ function useRowClicks(selectOnClick: boolean | undefined, selected: boolean | un
     const pointerId = (e.nativeEvent as Partial<PointerEvent>).pointerId
     if (!previous || e.detail === 0 || (pointerId !== undefined && pointerId !== previous.pointerId)) { open(e); return }
     if (!previous.selected) { open(e, 'select'); return }
-    if (!(e.target instanceof Element) || !e.target.closest('[data-row-title]')) return
+    // The selected row's empty area shows it beside the list again, after an edit kept another task there (row-edit-action D3).
+    if (!(e.target instanceof Element) || !e.target.closest('[data-row-title]')) { open(e, 'select'); return }
     opened.current = e.timeStamp
     open(e, 'edit')
   }
@@ -748,7 +751,7 @@ function rowDeadline(task: Task, off: boolean, asDate: boolean, resolved: Resolv
   return { deadline: asDate ? { ...countdown, label: formatDate(task.deadline!, 'compact', resolved) } : countdown, deadlineLabel }
 }
 
-function FullRow({ task, contextual = false, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, groupSeparator, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, selectOnClick, onOpenPage, onEditTitle, onToggleCollapse, shape = 'row', timeColumn = false, slotsOff, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dropNote, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, logbook = false, expanded = false, onExpand, layout, edge, notes = false, score }: TaskRowProps) {
+function FullRow({ task, contextual = false, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, groupSeparator, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, selectOnClick, onOpenPage, onEditTitle, onEdit, onToggleCollapse, shape = 'row', timeColumn = false, slotsOff, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dropNote, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, logbook = false, expanded = false, onExpand, layout, edge, notes = false, score }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -982,7 +985,7 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
           </button>
         </span>
       )}
-      {revealed && <RowActionCluster task={task} onMore={onMore} force={forceActions} editable={!readOnly}
+      {revealed && <RowActionCluster task={task} onMore={onMore} onEdit={onEdit} force={forceActions} editable={!readOnly}
         details={canExpand ? { expanded: showDetails, controls: detailsId, onToggle: onExpand! } : undefined} />}
       {grip && <RowGrip name={name} ticked={ticked} showCheckbox={showCheckbox} onDown={onGripDown!} onClick={onGripClick!} onMore={contextual ? onMore : undefined} />}
       {showDetails && (

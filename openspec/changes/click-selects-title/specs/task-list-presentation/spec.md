@@ -3,7 +3,7 @@
 ### Requirement: Inline title editing
 In the list layout of the Inbox, Today, Upcoming, Anytime, Someday, Completed, Assigned to me, projects, labels and places, a qualifying fine-pointer click on the title of the row that was already selected when the press began SHALL turn its title into a text field in place, with the caret where the user clicked ("A click selects the row, a second click edits its title"). This SHALL hold with the task page preference, beside the side panel and in the Inbox's split alike. `F2` on a selected editable row SHALL open the same editor with the caret at the end. Enter or a click outside the row SHALL save the title and end editing without opening an add field. Esc SHALL discard the title change and leave the row selected. `Shift+Enter` SHALL save and open the task. Only one row SHALL be edited inline at a time. Pressing and moving in its field selects text, and the other rows stay draggable. Edits SHALL apply locally at once, work offline and converge per field like any title edit, also while the side panel shows the same task. Viewers SHALL never get the inline editor. The row's controls keep their own actions.
 
-The existing single-row actions menu SHALL offer **Edit title** in those lists for one writable task or subtask. On touch, the menu is reachable with the existing hold gesture and through More actions where available. The action SHALL select the row and focus the title field in the same row without opening the task. The compact touch editor SHALL provide visible and accessible **Save** and **Cancel** controls. It uses the existing title operation, leaves the checkbox and nesting controls in place and restores focus to the list after saving or cancelling. The bulk menu and viewers SHALL have no Edit title action.
+The existing single-row actions menu SHALL offer **Edit** in those lists for one writable task or subtask. On touch, the menu is reachable with the existing hold gesture and through More actions where available. The action SHALL select the row and focus the title field in the same row without opening the task. The compact touch editor SHALL provide visible and accessible **Save** and **Cancel** controls. It uses the existing title operation, leaves the checkbox and nesting controls in place and restores focus to the list after saving or cancelling. The bulk menu and viewers SHALL have no Edit action.
 
 In the phone preview below 768 px, a short left swipe released at 48 px or more and below 96 px on a writable row SHALL open and focus its compact title editor during the release gesture. The pencil is feedback during the swipe. A release at 96 px or more SHALL open Schedule. The title swipe SHALL be unavailable during bulk selection or while the row is editing, and SHALL not open the task page.
 
@@ -36,7 +36,7 @@ In the phone preview below 768 px, a short left swipe released at 48 px or more 
 - **THEN** the task opens as its page as before, and no title field opens
 
 #### Scenario: Edit a subtask from the row menu on a phone
-- **WHEN** the user holds an editable subtask in a manually ordered project on a 390 px touch screen, chooses **Edit title**, changes the title and taps Save
+- **WHEN** the user holds an editable subtask in a manually ordered project on a 390 px touch screen, chooses **Edit**, changes the title and taps Save
 - **THEN** the field starts focused in the subtask's existing row, the task remains in the same tree position, and the title is saved without opening the task
 
 #### Scenario: Short and full left swipes on a phone
@@ -51,11 +51,11 @@ In the phone preview below 768 px, a short left swipe released at 48 px or more 
 
 #### Scenario: Viewer on touch
 - **WHEN** a viewer holds a subtask in a shared project
-- **THEN** the action menu has no **Edit title** and a tap can still open the subtask
+- **THEN** the action menu has no **Edit** and a tap can still open the subtask
 
 #### Scenario: Title editing is a separate choice on a hybrid
 - **WHEN** a user taps a title with a finger on a 1024 px tablet with a mouse connected
-- **THEN** the tap opens the task as before and the same row's **Edit title** menu action remains available only for editable tasks
+- **THEN** the tap opens the task as before and the same row's **Edit** menu action remains available only for editable tasks
 
 #### Scenario: Saving an existing title leaves creation idle
 - **WHEN** a user edits a nested subtask inline, changes the title and presses Enter
@@ -98,7 +98,7 @@ In the phone preview below 768 px, a short left swipe released at 48 px or more 
 ## ADDED Requirements
 
 ### Requirement: A click selects the row, a second click edits its title
-With a fine pointer at a viewport width of at least 768 px, a mouse, trackpad or pen press on the row followed by its click SHALL be the pointer path for selection and editing. Clicking the title or empty area of a previously unselected row SHALL select it with focus on the list. Where a task shows beside the list (the side panel of `web-app` "Task details in a side panel", the Inbox's split of `inbox-triage` "Inbox list and detail") the selected task SHALL show there. An explicit click can reopen a closed side panel as specified in `web-app`. A separate title click whose press began on the selected row SHALL edit it in place ("Inline title editing") where the list has the inline editor and the task is writable. Clicking the empty area of an already selected row otherwise leaves it selected. A row counts as selected by click, `j`/`k`, the arrow keys, returning from the task page, or opening from the panel.
+With a fine pointer at a viewport width of at least 768 px, a mouse, trackpad or pen press on the row followed by its click SHALL be the pointer path for selection and editing. Clicking the title or empty area of a previously unselected row SHALL select it with focus on the list. Where a task shows beside the list (the side panel of `web-app` "Task details in a side panel", the Inbox's split of `inbox-triage` "Inbox list and detail") the selected task SHALL show there. An explicit click can reopen a closed side panel as specified in `web-app`. A separate title click whose press began on the selected row SHALL edit it in place ("Inline title editing") where the list has the inline editor and the task is writable. Clicking the empty area of an already selected row otherwise leaves it selected, and shows it beside the list as a first click does. A row counts as selected by click, `j`/`k`, the arrow keys, returning from the task page, or opening from the panel.
 
 This SHALL apply to the list layout of the Inbox, Today, Upcoming, Anytime, Someday, Completed, Assigned to me, projects, labels and places. Board cards, the Filter view, saved views, Next and Waiting SHALL select on a first click in the same way; a second click there SHALL change nothing. The calendar's Day, Week, Month and Plan, the timeline, dashboards, the review screens and Close the day keep their own clicks.
 
@@ -140,7 +140,7 @@ Shift or Ctrl/⌘ clicks and Select mode SHALL keep ticking rows, a press that m
 
 #### Scenario: Empty area
 - **WHEN** the user clicks a row in the space between its title and its project name, then clicks the same place again
-- **THEN** the first click selects the row, the second changes nothing, and no title field or page opens
+- **THEN** the first click selects the row, the second keeps it selected and shows it beside the list where a side panel or the Inbox's split shows tasks (`row-edit-action`), and no title field or page opens
 
 #### Scenario: A drag from the selected row
 - **WHEN** "Pay rent" is selected in a manually ordered project and the user presses its title, drags it two rows down and releases

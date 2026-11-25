@@ -76,7 +76,7 @@ Interface budget (`docs/interface-guide.md`): one row of chrome (the bar) above 
 - **Selection.** In select mode the check is a tick box and a tap on the row ticks. The row takes `selecting` and `ticked`; the gesture hook is off.
 - **Hold and drag.** The row's `onPointerDown` is the list's own (`holdForRow`, moved from `TaskRow.tsx` to `task-list/rowHold.ts`, over `rowActions.drag`), so the 350 ms hold, the menu on release and the drag on a move are the code and timings of today. `useListDrag` finds rows and drop places by data attributes; `PhoneListRow` puts the same attributes on its element (`data-task-id`, `data-drop-target`, `data-draggable`, `data-depth`), the groups are the list's own (D2), and the drop line is the list's (`dragFeedback`). Tried by touch in the real app at 390 px: a hold and a move reorders a project's list with the drop line shown.
 
-Edit title, Add task below and Add subtask render the present `InlineEditor`, `SiblingInput` and `SubtaskInput` in a slot of the row, since they must mount inside the tap for iOS to raise the keyboard.
+Edit, Add task below and Add subtask render the present `InlineEditor`, `SiblingInput` and `SubtaskInput` in a slot of the row, since they must mount inside the tap for iOS to raise the keyboard.
 
 The facts line is unchanged (`rowModel`, at most four facts).
 

@@ -523,7 +523,7 @@ export const OVERLAYS = {
       await title.click()
     } else {
       await task.locator('[data-row-title]').click({ button: 'right' })
-      await p.getByRole('menuitem', { name: 'Edit title' }).click()
+      await p.locator('[role="menuitem"][data-action="edit-title"]').click()
     }
     const editor = p.locator('[data-inline-editor]').first()
     await editor.waitFor()

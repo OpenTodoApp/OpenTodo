@@ -170,10 +170,12 @@ final class ShellController: NSObject, ObservableObject {
         }
     }
 
-    func load() {
+    /// The first page: the server's start page, or `path` of it when one was waiting (a quick
+    /// action or a notification that launched the app, before this view appeared).
+    func load(path: String? = nil) {
         flow.started(origin)
         triedCache = false
-        var request = URLRequest(url: origin)
+        var request = URLRequest(url: path.flatMap { URL(string: $0, relativeTo: origin)?.absoluteURL } ?? origin)
         request.cachePolicy = .useProtocolCachePolicy
         webView.load(request)
     }
@@ -531,7 +533,12 @@ struct ShellView: View {
         .overlay {
             if let failure = shell.failure, !shell.loaded { FailureView(failure: failure) { shell.load() } }
         }
-        .onAppear { if shell.webView.url == nil { shell.load() } }
+        // onChange does not fire for a path set before the view appeared (a cold start).
+        .onAppear {
+            guard shell.webView.url == nil else { return }
+            shell.load(path: model.pendingPath)
+            model.pendingPath = nil
+        }
         .onChange(of: model.pendingPath) { path in
             guard let path else { return }
             shell.open(path: path)

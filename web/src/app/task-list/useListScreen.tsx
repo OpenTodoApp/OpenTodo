@@ -35,12 +35,12 @@ import { useAwayMeta } from '../away/AwayMenu'
 import { offerArchiveAfterCompletion } from '../ArchivePrompt'
 import { useWorkspaceName } from '../workspaceNav'
 import { useListReady } from './useListReady'
-import { type ListReorder } from '../bulk/BulkActions'
+import { type ListReorder, type RowMenuItems } from '../bulk/BulkActions'
+import { useDockHold, useInlineEdit, useRowMenuItems } from './useRowEditing'
 import { useRowMenu } from '../bulk/useRowMenu'
 import { useActionsOpen } from '../bulk/useBulkList'
 import { useCollapsedGroups } from '../collapsedGroups'
 import { taskDefaults } from '../listActions'
-import { flushSync } from 'react-dom'
 import { panelTaskId, usePanelHasTask, setPanelTaskId as setOpenId, sidePanelDocks } from '../panel'
 import { useClickAway } from './useClickAway'
 import { InlineEditor } from './InlineEditor'
@@ -70,7 +70,7 @@ import { addManyToList, createUnlessReused } from '../reuseAdd'
 const CompletedOptions = lazy(() => import('../completed/CompletedBar').then((m) => ({ default: m.CompletedOptions })))
 
 /** Transient UI of the list: pickers, prompts, quick adds and the actions menu. */
-function useListUi(ticked: ReadonlySet<string>, order: readonly string[], editTitle: ((id: string) => void) | undefined) {
+function useListUi(ticked: ReadonlySet<string>, order: readonly string[], items: RowMenuItems, expandedId: string | null) {
   const actions = useActionsOpen(order.length)
   const [selectMode, setSelectMode] = useState(false)
   const [addingUnder, setAddingUnder] = useState<string | null>(null)
@@ -85,15 +85,13 @@ function useListUi(ticked: ReadonlySet<string>, order: readonly string[], editTi
   const [addingTo, setAddingTo] = useState<string | null>(null)
   /** The row's More button when the menu was opened from it (rows-v2 D7); null for `.`. */
   const actionsFrom = useRef<HTMLElement | null>(null)
-  /** The one row whose details are shown under it (row-expand D4): this list's state only, never stored. */
-  const [expandedId, setExpandedId] = useState<string | null>(null)
   const { open: openActionsMenu } = actions
   const openActions = useCallback((picker: string | null = null, from: HTMLElement | null = null) => { actionsFrom.current = from; openActionsMenu(picker) }, [openActionsMenu])
   // The row's menu at the pointer (task-row-context-menu): one state, one selection
   // rule and one focus restore, shared with the filter, saved-view and method lists.
-  const rowMenu = useRowMenu(ticked, order, editTitle)
+  const rowMenu = useRowMenu(ticked, order, { ...items, expandedId })
   const ui: ListUi = { pickerFor, setPickerFor, assignFor, setAssignFor, prompt, setPrompt, addingUnder, setAddingUnder, addingBelow, setAddingBelow, setAddingTo, openActions }
-  return { ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId, rowMenu }
+  return { ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, rowMenu }
 }
 
 /** Bulk selection over the list's rows (bulk-edit D1); read-only tasks cannot be ticked. */
@@ -238,19 +236,13 @@ export function useListScreen(route: ListRoute, userId?: string, userRole?: Acco
   const { summarised, cursorRows } = useCalmUpcoming(route.view === 'upcoming', groups, rows, !!m.display?.laterInFull, collapsedGroups)
   // Bulk selection (bulk-edit D1): ticked rows, separate from the cursor row.
   const { tickRows, selection, ticked, contextIds } = useTickedRows(rows, taskMap, isReadOnly)
-  const [inline, setInline] = useState<{ id: string; caret?: number; compact?: boolean } | null>(null)
-  const startInline = useCallback((id: string, e?: React.MouseEvent, compact = false) => {
-    const task = taskMap.get(id)
-    if (!task || board || isReadOnly(task)) return
-    setSelectedId(id)
-    setInline({ id, caret: e ? caretFromClick(e) : task.title.length, compact })
-  }, [taskMap, board, isReadOnly])
-  // Mount the input within the menu activation so iOS can show its keyboard.
-  const editTitle = useCallback((id: string) => { flushSync(() => startInline(id, undefined, true)) }, [startInline])
-  const { ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId, rowMenu } = useListUi(selection.ticked, ticked, board || timeline ? undefined : editTitle)
+  const { dockId, holdDock, releaseDock } = useDockHold(selectedId)
+  const { inline, setInline, startInline, editTitle } = useInlineEdit(taskMap, board, isReadOnly, setSelectedId, holdDock)
+  const { menuItems, expandedId, setExpandedId } = useRowMenuItems(!board && !timeline, editTitle, setSelectedId)
+  const { ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, rowMenu } = useListUi(selection.ticked, ticked, menuItems, expandedId)
   // Observe panel presence only so moving the cursor between docked tasks does not redraw the list.
   const panelOpen = usePanelHasTask()
-  const inbox = useListSplit({ inbox: route.view === 'inbox', rows, ownRows: m.ownRows, selectedId, setSelectedId, ticking: selection.ticked.size > 0 })
+  const inbox = useListSplit({ inbox: route.view === 'inbox', rows, ownRows: m.ownRows, selectedId, setSelectedId, ticking: selection.ticked.size > 0, dockId })
   const quickAddRef = useRef<HTMLTextAreaElement>(null)
   // The first-day checklist's "Plan today" (moments-and-onboarding D5): Today opened after the first task.
   useEffect(() => { if (route.view === 'today') void noteTodayOpened() }, [route.view])
@@ -275,7 +267,7 @@ export function useListScreen(route: ListRoute, userId?: string, userRole?: Acco
           row?.focus({ preventScroll: true })
         })
       }} />
-  ), [inline, m.projects, m.labelMap])
+  ), [inline, setInline, m.projects, m.labelMap])
   /** Vim `o` (vim-keybindings): the task the next quick-add entry is placed after, if any. */
   const insertAfter = useRef<string | null>(null)
 
@@ -354,7 +346,7 @@ export function useListScreen(route: ListRoute, userId?: string, userRole?: Acco
     editInline: startInline, expandedId, setExpandedId,
   })
   // Vim's `o` inserts by project position: only where positions are the order (manual: projectManual).
-  const rowActions = useListBindings({ ...shared, manual: projectManual, setSelectMode, startDrag: drag.startDrag, insertAfter, listRoot, projectReadOnly: m.projectReadOnly, startInline, editTitle, setExpandedId, openRowMenu: rowMenu.open, draggingId: drag.draggingId })
+  const rowActions = useListBindings({ ...shared, manual: projectManual, setSelectMode, startDrag: drag.startDrag, insertAfter, listRoot, projectReadOnly: m.projectReadOnly, startInline, editTitle, holdDock, releaseDock, setExpandedId, openRowMenu: rowMenu.open, draggingId: drag.draggingId })
 
   const { edgeOf, boardGroups, queryControl: queryFilter, queryHost, cardNotes } = useListExtras(board, m.queryFilter, projectId ? { mode: viewMode, onChoose: chooseViewMode } : null, projectId, m.currentProject?.name) // Colour by on boards, Upcoming's and each project's query filter (calendar-clarity, project-query-filter)
 
@@ -386,25 +378,9 @@ export function useListScreen(route: ListRoute, userId?: string, userRole?: Acco
   return {
     m, workspaceName, rows, taskGroups, groups, columns, board, timeline, projectId, today, taskMap, isReadOnly, viewMode,
     upcomingCal, selectedId, setSelectedId, currentColumn, setCurrentColumn, revealed, setRevealed, collapsedGroups, summarised,
-    selection, ticked, contextIds, inline, renderInline, editTitle, ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, rowMenu,
+    selection, ticked, contextIds, inline, renderInline, editTitle, menuItems, ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, rowMenu,
     quickAddRef, listRoot, toggleViewMode, chooseViewMode, toggleSection, dayOrderIds, ownOrder, manual, listReorder, drag, onAdd, onAddMany,
     toggleComplete, setPrompt, acceptPrompt, rowActions, edgeOf, boardGroups, queryFilter, queryHost, cardNotes, own, hiddenDone, showCompleted,
     displayControl, completedNarrowed, currentProject, currentLabel, currentPlace, phone, room, phoneActions, meta, methodSubtitle, title, agenda, ready, briefing,
   }
-}
-
-/** The caret offset in the row's title under a click, or undefined (the editor puts it at the end). */
-function caretFromClick(e: React.MouseEvent): number | undefined {
-  const title = (e.currentTarget as Element).querySelector?.('[data-row-title]')
-  const doc = document as Document & { caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null }
-  const pos = doc.caretPositionFromPoint?.(e.clientX, e.clientY)
-  const range = !pos && document.caretRangeFromPoint ? document.caretRangeFromPoint(e.clientX, e.clientY) : null
-  const node = pos?.offsetNode ?? range?.startContainer
-  const offset = pos?.offset ?? range?.startOffset
-  if (!title || !node || offset === undefined || !title.contains(node)) return undefined
-  // Characters before the clicked text node within the title, plus the offset in it.
-  let before = 0
-  const walker = document.createTreeWalker(title, NodeFilter.SHOW_TEXT)
-  for (let n = walker.nextNode(); n && n !== node; n = walker.nextNode()) before += n.textContent?.length ?? 0
-  return before + offset
 }
