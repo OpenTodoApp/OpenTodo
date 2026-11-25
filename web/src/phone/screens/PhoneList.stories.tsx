@@ -58,7 +58,6 @@ export const Inbox: StoryObj = {
 export const Upcoming: StoryObj = {
   name: 'Upcoming',
   ...withSeed(async () => {
-    await seedInbox()
     await seedToday()
     navigate({ view: 'upcoming' })
   }),
