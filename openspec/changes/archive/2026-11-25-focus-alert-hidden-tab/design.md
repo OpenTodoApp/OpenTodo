@@ -20,15 +20,15 @@ The first note's `ended` event (an audio event, not a timer, so not throttled) m
 
 ### D3. One ring per session end
 
-The key of a session end is the run's start, its planned end and its phase: the key the done state carries (`ended.runStartedAt`, `ended.at`, `ended.kind`), so it is known before the end. Every ring (scheduled in a hidden tab, played in a visible tab, played when a tab is shown) first claims the key in the device's storage (`focusAlertRung`, one value, also kept in memory when storage is refused); a key already claimed is not rung again, so two tabs of one browser ring once. A scheduled tone cancelled before it started gives its claim back. When the done state arrives in a hidden tab whose scheduled tone has started, nothing is kept for the return; when the tone did not start (a phone browser that suspended the audio), it is cancelled, its claim given back, and the tone plays when the tab is shown, as before. Between devices the rule of sync-focus-sessions D4 stays: only the owner rings.
+The key of a session end is the run's start, its planned end and its phase: the key the done state carries (`ended.runStartedAt`, `ended.at`, `ended.kind`), so it is known before the end. Every ring (scheduled in a hidden tab, played in a visible tab, played when a tab is shown) first claims the key in the device's storage (`focusAlertRung`, one value, also kept in memory when storage is refused); a key already claimed is not rung again, so two tabs of one browser ring once. A scheduled tone cancelled before it started gives its claim back. React's cleanup never runs in a tab that is closed, discarded or frozen, so a waiting tone that has not started is also cancelled and its claim given back on `pagehide` and `freeze`; the tabs that remain then ring the end on return. When the done state arrives in a hidden tab whose scheduled tone has started, nothing is kept for the return; when the tone did not start (a phone browser that suspended the audio), it is cancelled, its claim given back, and the tone plays when the tab is shown, as before. Between devices the rule of sync-focus-sessions D4 stays: only the owner rings.
 
 ### D4. Long in the background
 
-The background Long has no click or key to wait for, so its repeats stop when the tab is shown again (coming back is the acknowledgement) or after ten. No vibration: it is a desktop path. The constants (`REPEAT_MS`, `REPEATS`, `LONG_PEAK`) move to `tone.ts`, re-exported by `alert.ts`, so the lazily loaded alert chunk stays out of the first load.
+The background Long has no click or key in its own tab to wait for, so its repeats stop when the tab is shown again (coming back is the acknowledgement), when the sound is turned off, or after ten. A click, tap or key in another, visible tab of the app also stops it: while that tab's sound is Long, its input during the ten seconds after the claimed end writes the end's key to `focusAlertStop`, and the ringing tab's `storage` listener cancels the repeats of that end that are left. Writing only during those ten seconds keeps ordinary input from touching storage. No vibration: it is a desktop path. The constants (`REPEAT_MS`, `REPEATS`, `LONG_PEAK`) move to `tone.ts`, re-exported by `alert.ts`, so the lazily loaded alert chunk stays out of the first load.
 
 ## Data model
 
-None: no op field, nothing synced. One device-local storage key, `focusAlertRung`.
+None: no op field, nothing synced. Two device-local storage keys, `focusAlertRung` and `focusAlertStop`.
 
 ## Size
 

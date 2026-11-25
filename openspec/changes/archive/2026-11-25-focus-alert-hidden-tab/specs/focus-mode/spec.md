@@ -14,7 +14,7 @@ When the user has chosen a sound, it SHALL play a tone generated on the device, 
 
 While Long plays on a device that can vibrate and haptics are on, each repeat also vibrates.
 
-In a browser, outside the native apps, a tab that is hidden when a timed session or break ends SHALL play the sound at the planned end, timed by the audio clock and not by timers the browser throttles, when that tab's audio was started by a gesture in it (the Start of the session) and still runs. In the background, Long repeats until the tab is shown again or 10 seconds pass. A sound played in the background SHALL NOT be played again when the tab is shown; when the tab's audio did not run, the tone SHALL play when the tab is shown again. This is device-local: nothing is written or synced, and it works offline.
+In a browser, outside the native apps, a tab that is hidden when a timed session or break ends SHALL play the sound at the planned end, timed by the audio clock and not by timers the browser throttles, when that tab's audio was started by a gesture in it (the Start of the session) and still runs. In the background, Long repeats until the tab is shown again, the user clicks, taps or presses a key in another tab of the app, the sound is turned off, or 10 seconds pass. A sound played in the background SHALL NOT be played again when the tab is shown; when the tab's audio did not run, the tone SHALL play when the tab is shown again. A tab closed, discarded or frozen before the end SHALL leave the end to the tabs that remain, which ring it on return. This is device-local: nothing is written or synced, and it works offline.
 
 #### Scenario: Sound off by default
 - **WHEN** a session ends on a fresh account
@@ -42,7 +42,7 @@ In a browser, outside the native apps, a tab that is hidden when a timed session
 
 #### Scenario: Long in a hidden tab
 - **WHEN** the user chose Long and the session ends while the tab is hidden
-- **THEN** the tone repeats about once a second and stops when the user shows the tab again, or after 10 seconds
+- **THEN** the tone repeats about once a second and stops when the user shows the tab again, presses a key or clicks in another tab of the app, or after 10 seconds
 
 #### Scenario: Paused before the end
 - **WHEN** the tab is hidden and the session is paused on another device before its end
@@ -51,6 +51,10 @@ In a browser, outside the native apps, a tab that is hidden when a timed session
 #### Scenario: Two tabs
 - **WHEN** the app is open in two tabs of the same browser, both hidden or one visible, and the session ends
 - **THEN** the tone plays once
+
+#### Scenario: Tab closed before the end
+- **WHEN** two tabs of the app are hidden, the one that started the session is closed before the end, and the session ends
+- **THEN** no tone plays in the background, and the tone plays once when the other tab is shown
 
 #### Scenario: Audio not running
 - **WHEN** the tab's audio was never started in it, or the browser suspended it in the background, and the session ends while the tab is hidden

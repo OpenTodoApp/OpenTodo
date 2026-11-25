@@ -10,10 +10,10 @@ import { applyOps, createTask, mutate, resetDeviceId } from '../../lib/ops'
 import type { Op } from '../../lib/types'
 import { setCurrentUserId } from '../../lib/sharing'
 import { FOCUS_DEFAULTS } from '../../lib/focus/prefs'
-import { startSession } from '../../lib/focus/session'
+import { pauseSession, resumeSession, startSession } from '../../lib/focus/session'
 import { readFocus } from '../../lib/focus/state'
 import { primeTone, resetTone } from '../../lib/focus/tone'
-import { writeString } from '../../lib/deviceStorage'
+import { readString, writeString } from '../../lib/deviceStorage'
 import { alertPlaying } from '../../lib/focus/alert'
 import { flush, render, waitFor } from '../../ui/test-utils'
 import { resetFocusNotices, useFocusTimer } from './useFocusTimer'
@@ -397,6 +397,131 @@ describe('the sound in a hidden tab (focus-alert-hidden-tab)', () => {
     expect(heard()).toBe(0)
     await setVisibility('visible')
     await waitFor(() => heard() === 1, 'tone on return')
+    await flush()
+    expect(heard()).toBe(1)
+    await r.unmount()
+  })
+
+  const END_KEY = `${T0}:${T0 + 25 * MIN}:work`
+
+  it('A tab closed or discarded before the end gives its claim back: the end rings once, in the tab that is left', async () => {
+    await mutate('user_prefs', 'me', { focus_sound: 'on' })
+    const r1 = await render(<Engine />)
+    const r2 = await render(<Engine />)
+    await startHere()
+    await setVisibility('hidden')
+    expect(readString('focusAlertRung')).toBe(END_KEY)
+    // No unmount: React's cleanup never runs in a closed tab.
+    window.dispatchEvent(new Event('pagehide'))
+    expect(readString('focusAlertRung')).toBeNull()
+    await advance(25 * MIN + 200)
+    await audioTick()
+    await waitFor(() => phases().every((p) => p === 'done'), 'the engines see the end')
+    expect(heard()).toBe(0)
+    await setVisibility('visible')
+    await waitFor(() => heard() === 1, 'tone on return')
+    await flush()
+    expect(heard()).toBe(1)
+    await r1.unmount()
+    await r2.unmount()
+  })
+
+  it('A key press in another tab of the app stops a background Long', async () => {
+    await mutate('user_prefs', 'me', { focus_sound: 'on', focus_alert: 'long' })
+    const r = await render(<Engine />)
+    await startHere()
+    await setVisibility('hidden')
+    await passTime(25 * MIN + 1500)
+    await audioTick()
+    await waitFor(async () => (await readFocus())?.phase === 'done', 'done')
+    expect(heard()).toBe(2)
+    window.dispatchEvent(new StorageEvent('storage', { key: 'focusAlertStop', newValue: END_KEY }))
+    await passTime(20_000)
+    expect(heard()).toBe(2)
+    await r.unmount()
+  })
+
+  it('A visible tab sends the stop for a Long another tab rings, only during that Long', async () => {
+    await mutate('user_prefs', 'me', { focus_sound: 'on', focus_alert: 'long' })
+    const r = await render(<Engine />)
+    await waitFor(() => phases().length === 1, 'engine')
+    await flush()
+    const future = `${T0}:${T0 + MIN}:work`
+    writeString('focusAlertRung', future)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }))
+    expect(readString('focusAlertStop')).toBeNull()
+    const ringingNow = `${T0 - 25 * MIN}:${T0 - 3000}:work`
+    writeString('focusAlertRung', ringingNow)
+    window.dispatchEvent(new PointerEvent('pointerdown'))
+    expect(readString('focusAlertStop')).toBe(ringingNow)
+    await r.unmount()
+  })
+
+  it('Turning the sound off stops a background Long and cancels a waiting tone', async () => {
+    await mutate('user_prefs', 'me', { focus_sound: 'on', focus_alert: 'long' })
+    const r = await render(<Engine />)
+    await startHere()
+    await setVisibility('hidden')
+    await passTime(25 * MIN + 1500)
+    await audioTick()
+    await waitFor(async () => (await readFocus())?.phase === 'done', 'done')
+    expect(heard()).toBe(2)
+    await mutate('user_prefs', 'me', { focus_sound: 'off' })
+    await flush()
+    await passTime(20_000)
+    expect(heard()).toBe(2)
+    await r.unmount()
+  })
+
+  it('Sound turned off while the tone waits: nothing plays at the end', async () => {
+    await mutate('user_prefs', 'me', { focus_sound: 'on' })
+    const r = await render(<Engine />)
+    await startHere()
+    await setVisibility('hidden')
+    await passTime(10 * MIN)
+    await mutate('user_prefs', 'me', { focus_sound: 'off' })
+    await flush()
+    expect(readString('focusAlertRung')).toBeNull()
+    await passTime(16 * MIN)
+    await audioTick()
+    expect(heard()).toBe(0)
+    await r.unmount()
+  })
+
+  it('Paused and resumed here while hidden: the tone moves to the new end', async () => {
+    await mutate('user_prefs', 'me', { focus_sound: 'on' })
+    const r = await render(<Engine />)
+    await startHere()
+    await setVisibility('hidden')
+    await passTime(10 * MIN)
+    await pauseSession(Date.now())
+    await waitFor(async () => (await readFocus())?.resumedAt === null, 'paused')
+    await flush()
+    await passTime(20 * MIN)
+    expect(heard()).toBe(0)
+    await resumeSession(Date.now())
+    await waitFor(async () => (await readFocus())?.resumedAt !== null, 'resumed')
+    await flush()
+    await passTime(15 * MIN - 1000)
+    expect(heard()).toBe(0)
+    await passTime(1200)
+    expect(heard()).toBe(1)
+    await audioTick()
+    await waitFor(async () => (await readFocus())?.phase === 'done', 'done')
+    expect((await readFocus())?.ended?.at).toBe(T0 + 45 * MIN)
+    await r.unmount()
+  })
+
+  it('Shown again before the end: the waiting tone is cancelled and the visible end rings once', async () => {
+    await mutate('user_prefs', 'me', { focus_sound: 'on' })
+    const r = await render(<Engine />)
+    await startHere()
+    await setVisibility('hidden')
+    await passTime(10 * MIN)
+    await setVisibility('visible')
+    await advance(15 * MIN)
+    await waitFor(async () => (await readFocus())?.phase === 'done', 'done')
+    await waitFor(() => heard() === 1, 'visible tone')
     await flush()
     expect(heard()).toBe(1)
     await r.unmount()

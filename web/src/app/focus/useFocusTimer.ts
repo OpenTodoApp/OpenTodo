@@ -59,6 +59,8 @@ export function useFocusClock(active: boolean): number {
  * too, for a page whose storage is refused.
  */
 const RUNG_KEY = 'focusAlertRung'
+/** A click, tap or key in a visible tab of the app stops a background Long in another (focus-alert-hidden-tab D4). */
+const STOP_KEY = 'focusAlertStop'
 let rungHere: string | null = null
 const rung = (key: string) => rungHere === key || readString(RUNG_KEY) === key
 function claimRing(key: string): boolean {
@@ -80,6 +82,7 @@ export function resetFocusNotices(): void {
   notified.clear()
   rungHere = null
   writeString(RUNG_KEY, null)
+  writeString(STOP_KEY, null)
 }
 resettable('focusNotices', resetFocusNotices)
 
@@ -150,47 +153,105 @@ function useEndEffects(state: FocusState | null | undefined, prefs: FocusPrefs):
   }, [])
 }
 
+/** The planned end an end key names. */
+const endOf = (key: string) => Number(key.split(':')[1])
+
+interface Waiting { key: string; tone: ScheduledTone }
+
 /**
  * The sound of a hidden tab at the planned end (focus-alert-hidden-tab D1-D4):
  * scheduled on the audio clock while the tab is hidden and this device owns a
  * running timed run, outside the native shells, on the audio the Start woke.
  * A pause, another device's change, a new sound or the tab shown before the end
- * cancels it; the first note wakes the engine, so the end and its notification
- * come with the sound. A background Long stops when the tab is shown.
+ * cancels it, and a tab that is closed, discarded or frozen first gives its
+ * claim back. The first note wakes the engine, so the end and its notification
+ * come with the sound. A background Long stops when the tab is shown, when the
+ * sound is turned off, or at a click, tap or key in another tab of the app.
  */
 function useHiddenAlert(state: FocusState | null | undefined, prefs: FocusPrefs, wake: () => void): void {
   const [hidden, setHidden] = useState(() => document.visibilityState === 'hidden')
-  const ringing = useRef<ScheduledTone | null>(null)
+  const waiting = useRef<Waiting | null>(null)
+  const ringing = useRef<Waiting | null>(null)
+  const alert = prefs.sound && !shell() ? prefs.alert : null
+  const long = alert === 'long'
   useEffect(() => {
+    const silence = () => { ringing.current?.tone.cancel(); ringing.current = null }
     const onChange = () => {
       const isHidden = document.visibilityState === 'hidden'
       setHidden(isHidden)
-      if (!isHidden) { ringing.current?.cancel(); ringing.current = null }
+      if (!isHidden) silence()
+    }
+    // React's cleanup never runs in a tab that is closed or discarded: the end must still ring in another tab or on return.
+    const onGone = () => {
+      const w = waiting.current
+      if (!w || w.tone.started()) return
+      waiting.current = null
+      w.tone.cancel()
+      releaseRing(w.key)
+    }
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== STOP_KEY || !e.newValue) return
+      for (const r of [waiting, ringing]) {
+        if (r.current?.key === e.newValue && r.current.tone.started()) { r.current.tone.cancel(); r.current = null }
+      }
     }
     document.addEventListener('visibilitychange', onChange)
+    window.addEventListener('pagehide', onGone)
+    document.addEventListener('freeze', onGone)
+    window.addEventListener('storage', onStorage)
     return () => {
       document.removeEventListener('visibilitychange', onChange)
-      ringing.current?.cancel()
+      window.removeEventListener('pagehide', onGone)
+      document.removeEventListener('freeze', onGone)
+      window.removeEventListener('storage', onStorage)
+      silence()
     }
   }, [])
+  useEffect(() => {
+    if (!alert) { ringing.current?.tone.cancel(); ringing.current = null }
+  }, [alert])
+  // In a visible tab: input during a Long another tab rings stops it there.
+  useEffect(() => {
+    if (hidden || !long) return
+    const onInput = () => {
+      const key = readString(RUNG_KEY)
+      const at = key ? endOf(key) : NaN
+      const now = serverNow()
+      if (key && now >= at && now - at <= REPEATS * REPEAT_MS) writeString(STOP_KEY, key)
+    }
+    window.addEventListener('pointerdown', onInput, true)
+    window.addEventListener('keydown', onInput, true)
+    return () => {
+      window.removeEventListener('pointerdown', onInput, true)
+      window.removeEventListener('keydown', onInput, true)
+    }
+  }, [hidden, long])
   const end = state && !state.remote && isRunning(state) ? plannedEnd(state) : null
   const key = state && end !== null ? `${state.startedAt}:${end}:${state.phase}` : ''
-  const alert = prefs.sound && !shell() ? prefs.alert : null
   useEffect(() => {
     if (!hidden || !key || !alert || end === null || !claimRing(key)) return
-    const long = alert === 'long'
-    const tone = scheduleTone(end - serverNow(), long ? LONG_PEAK : 0.2, long ? REPEATS : 1, REPEAT_MS, wake)
+    // The wake, again at the end when the audio clock ran a little ahead of the server's.
+    const onStart = () => {
+      wake()
+      const left = end - serverNow()
+      if (left > 0) setTimeout(wake, left)
+    }
+    const tone = scheduleTone(end - serverNow(), long ? LONG_PEAK : 0.2, long ? REPEATS : 1, REPEAT_MS, onStart)
     if (!tone) { releaseRing(key); return }
+    const mine: Waiting = { key, tone }
+    waiting.current = mine
     return () => {
+      // Gone already when the page was hidden for good and gave its claim back.
+      const live = waiting.current === mine
+      if (live) waiting.current = null
       if (!tone.started()) {
-        tone.cancel()
-        releaseRing(key)
+        if (live) { tone.cancel(); releaseRing(key) }
       } else if (document.visibilityState === 'hidden') {
-        ringing.current?.cancel()
-        ringing.current = tone
+        ringing.current?.tone.cancel()
+        ringing.current = mine
       } else tone.cancel()
     }
-  }, [hidden, key, alert, end, wake])
+  }, [hidden, key, alert, long, end, wake])
 }
 
 /** The session's task completed or trashed on any screen or device: the session ends and the next task of today's focus is offered. */
