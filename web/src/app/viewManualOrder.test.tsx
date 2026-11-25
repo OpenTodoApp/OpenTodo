@@ -75,6 +75,8 @@ describe('the New view page', () => {
   it('offers no Manual order', async () => {
     const r = await render(<FilterView />)
     await click(document.querySelector('[data-display-trigger]')!)
+    // The panel's content is a lazy part: it can still be loading when the panel opens.
+    await waitFor(() => !!document.querySelector('[data-display-panel] select[aria-label="Order by"]'), 'the panel')
     const options = [...document.querySelectorAll('[data-display-panel] select[aria-label="Order by"] option')].map((o) => o.textContent)
     expect(options).not.toContain('Manual order')
     expect(options).toContain('Due date')
