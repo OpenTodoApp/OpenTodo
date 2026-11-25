@@ -1,0 +1,1 @@
+- **Gateway API support in the Helm chart.** Set `httpRoute.enabled` and name your Gateway in `httpRoute.parentRefs` to get an `HTTPRoute` instead of, or beside, the Ingress, on Envoy Gateway, Cilium, Istio, Traefik or NGINX Gateway Fabric. Existing installs render the same manifests. See [Running on Kubernetes](docs/self-hosting/kubernetes.md#gateway-api).

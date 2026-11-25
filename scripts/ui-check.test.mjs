@@ -84,3 +84,26 @@ test('a raw "Priority {n}" message outside lib/priority.ts is refused (priority-
   assert.deepEqual(rawPriorityNameProblems('web/src/app/X.tsx', "t('Priority {from} → {to}', { from, to })"), [])
   assert.deepEqual(rawPriorityNameProblems('web/src/app/X.tsx', "// t('Priority {n}') was here"), [])
 })
+
+test('a component without a stories file beside it is reported, in web/src/ui and web/src/phone alike (phone-ui-trial D7)', async () => {
+  const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const { storyProblemsIn } = await import('./ui-check.mjs')
+  const dir = mkdtempSync(join(tmpdir(), 'ui-check-'))
+  try {
+    mkdirSync(join(dir, 'components'))
+    mkdirSync(join(dir, 'stories'))
+    writeFileSync(join(dir, 'components/PhoneRow.tsx'), 'export function PhoneRow() { return null }\n')
+    writeFileSync(join(dir, 'components/prefs.ts'), 'export const x = 1\n')
+    // Story helpers are not components to cover.
+    writeFileSync(join(dir, 'stories/frame.tsx'), 'export function PhoneFrame() { return null }\n')
+    const before = storyProblemsIn(dir)
+    assert.equal(before.length, 1)
+    assert.match(before[0], /PhoneRow\.tsx: no stories file imports this component/)
+    writeFileSync(join(dir, 'components/PhoneRow.stories.tsx'), "import { PhoneRow } from './PhoneRow'\nexport default { component: PhoneRow }\n")
+    assert.deepEqual(storyProblemsIn(dir), [])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})

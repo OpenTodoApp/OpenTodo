@@ -52,6 +52,8 @@ A reminder marked **Urgent** (in its menu in the task panel, on any device) ring
 
 The app opens on its background colour, light or dark with the phone, and shows the page once it has loaded, so no white screen comes between them. A server that takes longer than five seconds gets the page as far as it has loaded; one that can't be reached gets the usual message.
 
+Long-press the app icon for **Add task** (quick add), **Today** or [**Change server**](#connect-to-your-server).
+
 ## Links to tasks
 
 A task's link in a calendar event, from the [calendar feed](calendar-feeds.md) or [calendar sync](calendar-sync.md), opens Safari. On a task's page Safari shows a banner with **Open**, which opens the task in the app. The app only opens links to the server it is connected to. Once you close the banner, Safari stops showing it on that site. iOS can't open these links in the app straight away, because a self-hosted server's address can't be built into the app.

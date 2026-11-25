@@ -95,3 +95,17 @@ test('the iOS catalog may hold part of a community language, never an unlisted o
   assert.deepEqual(checkShellCatalog(catalog, ['de'], ['pl']), [])
   assert.deepEqual(checkShellCatalog(catalog, ['de']), ['shell pl: "Done" is translated into a language the web app does not ship'])
 })
+
+test('a menu label ends in one "…" exactly when its source does (#2028)', () => {
+  const ids = [...messages, 'Move to workspace…', 'Rename']
+  const ok = { ...de, 'Move to workspace…': 'In Arbeitsbereich verschieben…', Rename: 'Umbenennen' }
+  assert.deepEqual(checkCatalog('de', ok, ids, fmt), [])
+  assert.deepEqual(checkCatalog('de', { ...ok, 'Move to workspace…': 'In Arbeitsbereich verschieben……' }, ids, fmt),
+    ['de: "Move to workspace…" ends with two ellipses; use one "…"'])
+  assert.deepEqual(checkCatalog('de', { ...ok, 'Move to workspace…': 'In Arbeitsbereich verschieben...' }, ids, fmt),
+    ['de: "Move to workspace…" ends with "..."; use "…"'])
+  assert.deepEqual(checkCatalog('de', { ...ok, 'Move to workspace…': 'In Arbeitsbereich verschieben' }, ids, fmt),
+    ['de: "Move to workspace…" ends with "…", but its translation has none'])
+  assert.deepEqual(checkCatalog('de', { ...ok, Rename: 'Umbenennen…' }, ids, fmt),
+    ['de: "Rename" has no "…", but its translation ends with one'])
+})

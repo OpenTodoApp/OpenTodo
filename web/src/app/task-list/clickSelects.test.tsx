@@ -179,6 +179,21 @@ describe('click selects before editing', () => {
     await r.unmount()
   })
 
+  it('a click on the selected row\'s empty area reopens a closed side panel, without editing', async () => {
+    await setTaskOpen('panel')
+    const { a, r } = await list()
+    await click(title(a))
+    await waitFor(() => panel() === a)
+    await act(async () => closeTaskPanel())
+    await waitFor(() => panel() === undefined || panel() === null, 'the panel closed')
+    expect(row(a).getAttribute('aria-current')).toBe('true')
+    await click(row(a), { at: 5_000 })
+    await waitFor(() => panel() === a, 'the panel again')
+    expect(editor()).toBeNull()
+    expect(openedTask()).toBeNull()
+    await r.unmount()
+  })
+
   it('Ctrl+click ticks the row without starting the title editor', async () => {
     const { a, b, r } = await list()
     await click(title(a))
@@ -229,8 +244,8 @@ describe('click selects before editing', () => {
     coarse = true
     const { a, r } = await list()
     await act(async () => row(a).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true })))
-    const action = () => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((item) => item.textContent?.includes('Edit title'))
-    await waitFor(() => !!action(), 'Edit title in the row menu')
+    const action = () => document.querySelector<HTMLElement>('[role="menuitem"][data-action="edit-title"]')
+    await waitFor(() => !!action(), 'Edit in the row menu')
     await act(async () => action()?.click())
     await waitFor(() => document.activeElement === editor() && !!editor(), 'focused title field')
     await act(async () => {

@@ -53,7 +53,7 @@ A push message contains only an id and a time, encrypted so the push service can
 
 ### Language
 
-The text of a notification (**Due** and the date, **Snooze 10 min**, **Dismiss**, the test message) is written in your [interface language](language.md), read on the device from your synced preferences, so it needs nothing from the server. A device that has not synced your preferences yet writes it in English.
+The text of a notification (when the task is due, like **Today 14:00**, then **Snooze 10 min**, **Dismiss**, the test message) is written in your [interface language](language.md) and formats, read on the device from your synced preferences, so it needs nothing from the server. A device that has not synced your preferences yet writes it in English.
 
 ## A weekly digest by email
 

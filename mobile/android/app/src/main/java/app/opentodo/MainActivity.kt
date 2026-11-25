@@ -87,7 +87,13 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     private var heldBars: SystemBars? = null
 
     private val setup = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
-        if (r.resultCode == RESULT_OK) { holdLaunchScreen(firstFrame = false); start() } else finish()
+        if (r.resultCode == RESULT_OK) {
+            // The launch intent is replayed once the server is set; Change server is done by then
+            // (it led here, or there was no server to change), so it must not ask again.
+            if (intent?.action == ACTION_CHANGE_SERVER) intent = Intent(this, MainActivity::class.java)
+            holdLaunchScreen(firstFrame = false)
+            start()
+        } else finish()
     }
     private val chooser = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
         fileCallback?.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(r.resultCode, r.data))

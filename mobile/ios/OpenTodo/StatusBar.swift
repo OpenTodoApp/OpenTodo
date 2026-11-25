@@ -99,7 +99,10 @@ struct StatusBarInstaller: UIViewRepresentable {
             super.didMoveToWindow()
             guard window != nil else { return }
             // After this pass: the root is not replaced while the view tree is being built.
-            Task { @MainActor [weak self] in StatusBar.install(in: self?.window) }
+            Task { @MainActor [weak self] in
+                StatusBar.install(in: self?.window)
+                AppModel.shared.windowReady()
+            }
         }
     }
 }
