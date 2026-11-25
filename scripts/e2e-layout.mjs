@@ -57,7 +57,7 @@
 // n jobs side by side check them all; CI's pull request legs).
 // PHONE_UI=1 (the device's "New phone screens" switch is on, OpenSpec change
 // phone-ui-trial: Today and the task page are then the phone UI's below 768 px; run it
-// with ONLY=today,task-repeating, the screens that have a phone view).
+// with ONLY naming the screens that have a phone view: the task lists and a task page).
 //
 // The browsers' clock is fixed at 09:00 UTC on LAYOUT_DATE and the account is seeded
 // around that day, so the check sees the same calendars whatever day it runs: which
@@ -87,6 +87,9 @@ const SHOTS_ALL = process.env.SHOTS === 'all'
 const LANG = process.env.OPENTODO_LANG ?? ''
 // The phone UI's switch, as the app keeps it on a device (web/src/phone/prefs.ts).
 const PHONE_UI = process.env.PHONE_UI === '1'
+// With the phone UI on, a list's overlays that open from the desktop row (the task panel and its
+// pickers) do not exist: a tap opens the task page. These open the same way on both.
+const PHONE_UI_OVERLAYS = new Set(['quick-add'])
 const LAYOUT_DATE = process.env.LAYOUT_DATE ?? '2026-11-01'
 const [SHARD_AT, SHARD_OF] = (process.env.SHARD || '1/1').split('/').map(Number)
 if (!(SHARD_OF >= 1 && SHARD_AT >= 1 && SHARD_AT <= SHARD_OF)) throw new Error(`SHARD must be i/n with 1 <= i <= n, not ${process.env.SHARD}`)
@@ -310,7 +313,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       }
       await shot(p, s.name)
       // In another language only the overlays opened by data attributes (the start guide).
-      for (const o of (s.overlays ?? []).filter((n) => !OTHER_LANG || ANY_LANG_OVERLAYS.has(n))) {
+      for (const o of (s.overlays ?? []).filter((n) => (!OTHER_LANG || ANY_LANG_OVERLAYS.has(n)) && (!PHONE_UI || width >= 768 || PHONE_UI_OVERLAYS.has(n)))) {
         run.step = `screen ${s.name} › ${o}`
         const checkOne = async () => {
           await visit()
