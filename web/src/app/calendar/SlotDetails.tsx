@@ -41,7 +41,7 @@ export function SlotDetails({ view, editTitle = false, onOpenTask, onDone }: { v
                   onClick={() => act(completeWithUndo(task.id, !task.completed_at))}>
                   <Icon name={task.completed_at ? 'check' : 'circle'} size="sm" />
                 </button>
-                <button type="button" className={`min-h-6 min-w-0 flex-1 truncate rounded-chip text-left outline-none hover:underline focus-visible:ring-2 focus-visible:ring-focus ${task.completed_at ? 'text-faint line-through' : ''}`}
+                <button type="button" className={`min-h-6 min-w-0 flex-1 truncate rounded-chip text-start outline-none hover:underline focus-visible:ring-2 focus-visible:ring-focus ${task.completed_at ? 'text-faint line-through' : ''}`}
                   onClick={() => onOpenTask(task.id)}>{task.title || t('Untitled')}</button>
                 {task.estimate_minutes ? <span className="shrink-0 text-hint tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
                 <Button variant="ghost" size="sm" icon="x" aria-label={t('Take {title} out of the slot', { title: task.title || t('Untitled') })} data-slot-take-out={task.id}

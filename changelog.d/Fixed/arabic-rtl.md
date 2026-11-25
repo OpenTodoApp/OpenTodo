@@ -1,0 +1,1 @@
+- **Titles written right to left read correctly.** A task, note or comment written in Arabic or Hebrew takes its own direction inside the left-to-right app, so its punctuation stays at its end; the layout is ready for right-to-left languages.

@@ -132,7 +132,7 @@ export function RunsList({ rules, ruleId, onOpen }: { rules: readonly Rule[]; ru
             const o = outcomeOf(run)
             return (
               <li key={run.run_id} data-run={run.outcome}>
-                <button type="button" onClick={() => onOpen(run)} className="flex min-h-11 w-full flex-wrap items-center gap-x-2 gap-y-0.5 rounded-control px-2 py-1.5 text-left hover:bg-sunken dark:hover:bg-raised">
+                <button type="button" onClick={() => onOpen(run)} className="flex min-h-11 w-full flex-wrap items-center gap-x-2 gap-y-0.5 rounded-control px-2 py-1.5 text-start hover:bg-sunken dark:hover:bg-raised">
                   <span className="text-body text-default">{formatInstant(run.at, 'datetime')}</span>
                   {!ruleId && <span className="user-text text-body text-default">· {rule?.name || t('A deleted routine')}</span>}
                   <Badge hue={o.hue}>{o.text}</Badge>
@@ -156,7 +156,7 @@ function Touched({ ids, output, names }: { ids: string[]; output: string; names:
   if (!ids.length) return null
   const project = output === 'project'
   return (
-    <ul className="ml-4 list-disc space-y-0.5 text-meta">
+    <ul className="ms-4 list-disc space-y-0.5 text-meta">
       {ids.map((id) => {
         const title = project ? names.projectName(id) : names.title(id)
         return (

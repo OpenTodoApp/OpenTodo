@@ -152,7 +152,7 @@ export function EditBar({ task, projects, labelMap, onDetails }: { task: Task; p
           className="min-h-7 border-transparent bg-transparent px-1.5 py-0 text-meta text-muted shadow-none hover:bg-sunken dark:hover:bg-raised"
           onChange={(id) => { if (id !== (task.project_id ?? null)) act(moveWithUndo(task.id, id, id ? projects.find((p) => p.id === id)?.name ?? t('the project') : t('Inbox'))) }} />
       </span>
-      <IconButton icon="chevron-right" size="sm" label={t('Open details')} shortcut="Shift+Enter" onClick={onDetails} className="ml-auto" data-open-details />
+      <IconButton icon="chevron-right" size="sm" label={t('Open details')} shortcut="Shift+Enter" onClick={onDetails} className="ms-auto" data-open-details />
       {open === 'date' && (
         <Suspense fallback={null}>
           <RowSchedule task={task} anchor={dateAnchor} onClose={() => setOpen(null)} />

@@ -107,7 +107,7 @@ export function AssistantPanelBody(p: PanelViewProps) {
             <ul className="space-y-1">
               {p.threads.map((item) => (
                 <li key={item.id}>
-                  <button type="button" className="ui-btn ui-btn--ghost ui-btn--md w-full justify-start text-left" onClick={() => p.onPickThread(item.id)}>
+                  <button type="button" className="ui-btn ui-btn--ghost ui-btn--md w-full justify-start text-start" onClick={() => p.onPickThread(item.id)}>
                     <span className="min-w-0 flex-1 truncate">{item.title}</span>
                     <span className="text-meta text-faint">{dt.formatInstant(item.updated_at, 'date')}</span>
                   </button>
@@ -137,7 +137,7 @@ export function AssistantPanelBody(p: PanelViewProps) {
             </ol>
           )}
           {(p.review || p.result) && (
-            <div className="sm:pl-9">
+            <div className="sm:ps-9">
               <ChangeSetReview review={p.review} result={p.result} busy={p.reviewBusy} onToggle={p.onToggle} onEdit={p.onEdit} shapes onApply={p.onApply} onDiscard={p.onDiscard} onUndo={p.onUndo} regionRef={p.reviewRef} />
             </div>
           )}
@@ -165,7 +165,7 @@ function AnswerSteps({ lines }: { lines: string[] }) {
   return (
     <details className="text-meta text-muted" data-assistant-steps>
       <summary className="min-h-6 w-fit cursor-pointer rounded-control leading-6">{t('{n, plural, one {# step} other {# steps}}', { n: lines.length })}</summary>
-      <ol className="mt-1 list-decimal space-y-0.5 pl-5">
+      <ol className="mt-1 list-decimal space-y-0.5 ps-5">
         {lines.map((line, i) => <li key={i}>{line}</li>)}
       </ol>
     </details>
@@ -194,7 +194,7 @@ function actionsFor(p: PanelViewProps, i: number): ItemActions {
 function MessageItem({ m, actions }: { m: AssistantMessage; actions: ItemActions }) {
   if (m.role === 'user') {
     return (
-      <li className="ml-auto w-fit max-w-[85%] rounded-card bg-sunken px-3 py-2 text-body">
+      <li className="ms-auto w-fit max-w-[85%] rounded-card bg-sunken px-3 py-2 text-body">
         {(m.skill || m.pastedLines || m.photos) && (
           <p className="mb-1 text-meta text-muted">{[m.skill && t('Skill: {name}', { name: m.skill }), m.pastedLines && t('{n, plural, one {pasted text, # line} other {pasted text, # lines}}', { n: m.pastedLines }),
             m.photos && t('{n, plural, one {# photo (not kept)} other {# photos (not kept)}}', { n: m.photos })].filter(Boolean).join(' · ')}</p>

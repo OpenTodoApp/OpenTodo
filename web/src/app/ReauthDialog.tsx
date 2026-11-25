@@ -48,7 +48,7 @@ export function ReauthDialogView(p: ReauthDialogViewProps) {
           <div className="flex flex-wrap items-center gap-2">
             <button className="ui-btn ui-btn--primary ui-btn--md" disabled={p.busy}>{p.busy ? t('Checking…') : t('Continue')}</button>
             <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={p.onCancel}>{t('Cancel')}</button>
-            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm ml-auto text-meta" onClick={() => p.onMode(p.mode === 'password' ? 'code' : 'password')}>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm ms-auto text-meta" onClick={() => p.onMode(p.mode === 'password' ? 'code' : 'password')}>
               {p.mode === 'password' ? t('Use an app code instead') : t('Use my password instead')}
             </button>
           </div>

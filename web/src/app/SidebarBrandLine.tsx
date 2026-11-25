@@ -26,8 +26,8 @@ export function SidebarBrandLine({ collapsed = false }: { collapsed?: boolean })
         <InstanceMark size={14} />
         {!collapsed && <span className="user-text min-w-0 truncate tabular-nums" data-brand-text>{text}</span>}
         {news && (collapsed
-          ? <span aria-hidden="true" className="absolute right-1 top-0.5 size-1.5 rounded-full bg-accent" data-news-dot />
-          : <span className="ml-auto flex"><NewsDot /></span>)}
+          ? <span aria-hidden="true" className="absolute inset-e-1 top-0.5 size-1.5 rounded-full bg-accent" data-news-dot />
+          : <span className="ms-auto flex"><NewsDot /></span>)}
       </button>
     </Tooltip>
   )

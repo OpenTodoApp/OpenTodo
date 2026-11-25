@@ -63,7 +63,7 @@ export function HourGutter() {
   return (
     <div className="relative w-12 shrink-0" style={{ height: GRID_HEIGHT }} aria-hidden>
       {Array.from({ length: 24 }, (_, h) => (
-        <div key={h} className="absolute right-1 -translate-y-1/2 text-hint tabular-nums text-faint" data-hour-label style={{ top: h * 60 * PX_PER_MIN }}>
+        <div key={h} className="absolute inset-e-1 -translate-y-1/2 text-hint tabular-nums text-faint" data-hour-label style={{ top: h * 60 * PX_PER_MIN }}>
           {h === 0 ? '' : formatHour(h)}
         </div>
       ))}
@@ -146,10 +146,10 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
         {shape.toggle && (
           // Still the lane's drop target while folded: a task dragged onto the header lands in the lane.
           <button type="button" data-lane-toggle={day.date} aria-expanded={open} onClick={() => setLaneFold(open ? 'closed' : 'open')}
-            className="flex min-h-8 w-full touch-manipulation items-center gap-1 rounded-chip px-1 text-left text-meta text-muted hover:bg-hover">
+            className="flex min-h-8 w-full touch-manipulation items-center gap-1 rounded-chip px-1 text-start text-meta text-muted hover:bg-hover">
             <Icon name="chevron-down" size="xs" className={`shrink-0 ${open ? '' : '-rotate-90'}`} />
             <span className="truncate">{t('Unscheduled')}</span>
-            <span data-lane-count className="ml-auto shrink-0 rounded-full bg-sunken px-1.5 text-hint tabular-nums text-strong">{count}</span>
+            <span data-lane-count className="ms-auto shrink-0 rounded-full bg-sunken px-1.5 text-hint tabular-nums text-strong">{count}</span>
           </button>
         )}
         {open && day.lane.map((task) => (
@@ -161,13 +161,13 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
             onPointerDown={task.completed_at ? undefined : (e) => onPointerDown(e, task.id)}
             onClick={() => onSelect(task.id)}
             onDoubleClick={() => onOpen(task.id)}
-            className={`ui-block ui-block--row relative flex w-full touch-manipulation items-center gap-1 truncate px-1.5 py-0.5 text-left text-meta ${task.completed_at || day.date < today ? 'ui-block--past' : ''} ${selectedId === task.id ? 'ring-1 ring-accent' : ''}`}
+            className={`ui-block ui-block--row relative flex w-full touch-manipulation items-center gap-1 truncate px-1.5 py-0.5 text-start text-meta ${task.completed_at || day.date < today ? 'ui-block--past' : ''} ${selectedId === task.id ? 'ring-1 ring-accent' : ''}`}
             data-hue={hueOf(task)}
           >
             <span className={`truncate ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
             {task.completed_at ? <span className="sr-only">{t('(completed)')}</span> : null}
             {task.deadline === day.date && !task.completed_at && <><DeadlineDiamond past={day.date < today} /><span className="sr-only">, {deadlineMark(task, day.date)}</span></>}
-            {task.estimate_minutes ? <span className="ml-auto shrink-0 text-hint tabular-nums">{formatMinutes(task.estimate_minutes)}</span> : null}
+            {task.estimate_minutes ? <span className="ms-auto shrink-0 text-hint tabular-nums">{formatMinutes(task.estimate_minutes)}</span> : null}
             {/* The trailing end: drag it onto a later day to make the task a span (multi-day-tasks D2). */}
             {onExtend && !task.completed_at && !task.due?.time && <span data-drag-id="calendar-lane-extend" aria-hidden data-span-handle="extend" onPointerDown={(e) => onExtend(e, task)} className="absolute inset-y-0 end-0 w-2 cursor-ew-resize touch-none" />}
           </button>
@@ -175,10 +175,10 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
         {open && day.laneProjected.map((p) => <ProjectedItem key={p.id} p={p} hue={projectionHue?.(p)} variant="row" className="truncate" onDrag={(e) => onPointerDown(e, p.id)} />)}
       </div>
   </>
-  if (part === 'head') return <div className="min-w-0 flex-1 border-l border-default px-1 pt-1" data-day-header={day.date}>{head}</div>
-  if (part === 'body') return <div className="min-w-0 flex-1 border-l border-default px-1 pb-1" data-day-strip={day.date}>{body}</div>
+  if (part === 'head') return <div className="min-w-0 flex-1 border-s border-default px-1 pt-1" data-day-header={day.date}>{head}</div>
+  if (part === 'body') return <div className="min-w-0 flex-1 border-s border-default px-1 pb-1" data-day-strip={day.date}>{body}</div>
   return (
-    <div className="min-w-0 flex-1 border-l border-default px-1 pb-1 pt-1" data-day-header={day.date}>
+    <div className="min-w-0 flex-1 border-s border-default px-1 pb-1 pt-1" data-day-header={day.date}>
       {head}
       {body}
     </div>
@@ -247,7 +247,7 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
         const at = tapTarget(e.target, e.currentTarget, () => slotOf(e, e.currentTarget), preview?.id === 'placement-ghost' ? preview.start : null)
         if (at !== null) onTapTime(day.date, at)
       } : undefined}
-      className="relative min-w-0 flex-1 border-l border-default"
+      className="relative min-w-0 flex-1 border-s border-default"
       style={{
         height: GRID_HEIGHT,
         // Hour lines, fainter 15-minute lines, in the theme's border colour.
@@ -275,7 +275,7 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
           return <ProjectedItem key={b.id} p={pj.projection} hue={projectionHue?.(pj.projection)} variant="block"
             onDrag={(e) => onDragStart(e, { taskId: pj.projection.id, kind: 'move', grabOffset: e.clientY - e.currentTarget.getBoundingClientRect().top })} style={{
             top: b.start * PX_PER_MIN, height: Math.max(MIN_BLOCK_MINUTES * PX_PER_MIN, (b.end - b.start) * PX_PER_MIN),
-            left: `calc(${(b.lane / b.lanes) * 100}% + 2px)`, width: `calc(${100 / b.lanes}% - 4px)`,
+            insetInlineStart: `calc(${(b.lane / b.lanes) * 100}% + 2px)`, width: `calc(${100 / b.lanes}% - 4px)`,
           }} />
         }
         const sv = day.slots.get(b.id)
@@ -316,7 +316,7 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
 
       {isToday && nowMinutes < DAY_MINUTES && (
         <div data-now-line className="pointer-events-none absolute inset-x-0 z-20 border-t-2 border-danger" style={{ top: nowMinutes * PX_PER_MIN }}>
-          <span className="absolute -left-1 -top-1.5 h-3 w-3 rounded-full bg-danger" />
+          <span className="absolute -inset-s-1 -top-1.5 h-3 w-3 rounded-full bg-danger" />
         </div>
       )}
     </div>
@@ -369,7 +369,7 @@ function TaskBlock({ b, block, task, date, past, hue, selected, dragging, movesT
       className={`ui-block absolute z-10 ${task.completed_at ? '' : 'cursor-grab'} touch-manipulation overflow-hidden px-1.5 ${height < 20 ? 'py-0 text-hint leading-[10px]' : 'py-0.5 text-meta'} ${block.estimated ? '' : 'ui-block--dashed'} ${past || task.completed_at || movesTo !== undefined ? 'ui-block--past' : ''} ${selected ? 'ring-2 ring-accent' : ''} ${ghost}`}
       style={{
         top, height,
-        left: `calc(${(b.lane / b.lanes) * 100}% + 2px)`,
+        insetInlineStart: `calc(${(b.lane / b.lanes) * 100}% + 2px)`,
         width: `calc(${100 / b.lanes}% - 4px)`,
       }}
     >
@@ -382,8 +382,8 @@ function TaskBlock({ b, block, task, date, past, hue, selected, dragging, movesT
       </div>
       {height >= 30 && (
         <div aria-hidden className="truncate text-hint tabular-nums">
-          {formatTime(block.start)}–{formatTime(block.end === DAY_MINUTES ? DAY_MINUTES - 1 : block.end)}
-          {block.estimated && <span className="ml-1">{formatMinutes(task.estimate_minutes!)}</span>}
+          <span className="tabular-nums">{formatTime(block.start)}–{formatTime(block.end === DAY_MINUTES ? DAY_MINUTES - 1 : block.end)}</span>
+          {block.estimated && <span className="ms-1">{formatMinutes(task.estimate_minutes!)}</span>}
         </div>
       )}
       {!task.completed_at && <div
@@ -415,7 +415,7 @@ function OverflowStack({ o, day, taskMap, selectedId, expanded, setExpanded, onS
   const key = `${day.date}:${o.start}`
   const open = expanded === key
   return (
-    <div className="absolute z-20" style={{ top: o.start * PX_PER_MIN, left: `calc(${(o.lane / o.lanes) * 100}% + 2px)`, width: `calc(${100 / o.lanes}% - 4px)` }}>
+    <div className="absolute z-20" style={{ top: o.start * PX_PER_MIN, insetInlineStart: `calc(${(o.lane / o.lanes) * 100}% + 2px)`, width: `calc(${100 / o.lanes}% - 4px)` }}>
       <Tooltip label={t('{count} more overlapping items', { count: o.ids.length })}>
         <button
           type="button"
@@ -460,7 +460,7 @@ function OverflowStack({ o, day, taskMap, selectedId, expanded, setExpanded, onS
                   onPointerDown={tk?.completed_at ? undefined : (e) => onDragStart(e, { taskId: id, kind: 'move' })}
                   onClick={() => onSelect(id)}
                   onDoubleClick={() => onOpen(id)}
-                  className={`flex w-full gap-1 truncate rounded-control px-1 py-0.5 text-left text-meta ${selectedId === id ? 'bg-selected-row' : 'hover:bg-hover'}`}
+                  className={`flex w-full gap-1 truncate rounded-control px-1 py-0.5 text-start text-meta ${selectedId === id ? 'bg-selected-row' : 'hover:bg-hover'}`}
                 >
                   <span className="text-hint tabular-nums text-muted">{blk ? formatTime(blk.start) : ''}</span>
                   <span className={`truncate ${tk?.completed_at ? 'line-through' : ''}`}>{tk?.title || t('Untitled')}</span>

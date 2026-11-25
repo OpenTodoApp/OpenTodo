@@ -128,7 +128,7 @@ export interface SsoPanelViewProps {
 function Lock() {
   return (
     <Tooltip label={t('Set by an OPENTODO_OIDC_* environment variable')}>
-      <span className="ml-1 inline-flex items-center gap-1 rounded-chip text-meta text-faint" tabIndex={0}>
+      <span className="ms-1 inline-flex items-center gap-1 rounded-chip text-meta text-faint" tabIndex={0}>
         <Icon name="lock" size="xs" />{t('set by environment')}
       </span>
     </Tooltip>

@@ -64,7 +64,7 @@ export function ProjectedRow({ projection, large, position }: { projection: Proj
   const { handlers, menu } = useProjectionMenu(projection, dayDrag(projection))
   const row = (
     <button type="button" data-plan-projected={projection.id} onClick={() => openProjection(projection)} aria-haspopup="menu" aria-keyshortcuts="Shift+F10" {...handlers}
-      className={`flex w-full min-w-0 items-center gap-x-1 rounded-chip border border-dashed border-default px-1 text-left text-faint pointer-fine:hover:bg-hover ${large ? 'title-phone-row min-h-11 py-1 text-body' : 'min-h-6 flex-wrap py-0.5 text-meta'}`}>
+      className={`flex w-full min-w-0 items-center gap-x-1 rounded-chip border border-dashed border-default px-1 text-start text-faint pointer-fine:hover:bg-hover ${large ? 'title-phone-row min-h-11 py-1 text-body' : 'min-h-6 flex-wrap py-0.5 text-meta'}`}>
       <span className="sr-only">{[projection.title || t('Untitled'), t('projected'), formatDate(projection.date, 'full'), projection.time ? formatTime(projection.time) : '', projection.estimate_minutes ? formatMinutes(projection.estimate_minutes) : ''].filter(Boolean).join(', ')}</span>
       <span aria-hidden className="inline-flex shrink-0"><Icon name="repeat" size="xs" /></span>
       {projection.time && !position && <span aria-hidden className="shrink-0 tabular-nums">{formatTime(projection.time)}</span>}

@@ -1,7 +1,7 @@
 // Fixtures for the source checks of scripts/ui-check.mjs (run by `make ui-lint`).
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { learnMoreProblems, rawDueTimeProblems } from './ui-check.mjs'
+import { learnMoreProblems, physicalDirectionProblems, rawDueTimeProblems } from './ui-check.mjs'
 
 test('a raw due time joined into text is reported (ux-feedback-2 D3)', () => {
   const bad = [
@@ -83,4 +83,13 @@ test('a raw "Priority {n}" message outside lib/priority.ts is refused (priority-
   assert.deepEqual(rawPriorityNameProblems('web/src/app/X.tsx', "<option>{priorityName(p)}</option>"), [])
   assert.deepEqual(rawPriorityNameProblems('web/src/app/X.tsx', "t('Priority {from} → {to}', { from, to })"), [])
   assert.deepEqual(rawPriorityNameProblems('web/src/app/X.tsx', "// t('Priority {n}') was here"), [])
+})
+
+test('layout classes name the start and end of the line (arabic-rtl D3)', () => {
+  const bad = physicalDirectionProblems('a.tsx', `<div className="ml-2 pr-4 sm:left-0 text-right border-l-2 rounded-r-control" />`)
+  assert.equal(bad.length, 6)
+  assert.match(bad[0], /`ml-2` is a physical direction/)
+  assert.deepEqual(physicalDirectionProblems('a.tsx', `<div className="ms-2 pe-4 sm:inset-s-0 text-end border-s-2 rounded-e-control left-1/2 -translate-x-1/2 pl-safe" />`), [])
+  assert.deepEqual(physicalDirectionProblems('a.ts', `// physical: follows the pointer\nconst c = 'fixed left-0 top-0'`), [])
+  assert.deepEqual(physicalDirectionProblems('a.ts', `const side = 'left'; const word = 'left-aligned'`), [])
 })

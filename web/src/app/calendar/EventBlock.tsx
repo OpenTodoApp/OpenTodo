@@ -62,10 +62,10 @@ export function EventBlockView({ block, date, lane, lanes, overlap, pxPerMinute,
           else if (e.clientY <= rect.top + edge) onDragStart!(e, { taskId: block.id, kind: 'resize-start', blockEnd: block.end, blockDate: date })
           else onDragStart!(e, { taskId: block.id, kind: 'move', grabOffset: e.clientY - rect.top })
         }}
-        className={`absolute z-10 overflow-hidden px-1.5 text-left ${movable ? 'cursor-grab touch-manipulation' : ''} ${height < 20 ? 'py-0 text-hint leading-none' : 'py-0.5 text-meta'} ${ev.free ? 'rounded-control border border-dashed border-hue-solid bg-transparent text-hue' : 'ui-block ui-block--event'} ${dim} ${selected ? 'ring-2 ring-accent' : ''} focus-visible:outline-2 focus-visible:outline-focus`}
+        className={`absolute z-10 overflow-hidden px-1.5 text-start ${movable ? 'cursor-grab touch-manipulation' : ''} ${height < 20 ? 'py-0 text-hint leading-none' : 'py-0.5 text-meta'} ${ev.free ? 'rounded-control border border-dashed border-hue-solid bg-transparent text-hue' : 'ui-block ui-block--event'} ${dim} ${selected ? 'ring-2 ring-accent' : ''} focus-visible:outline-2 focus-visible:outline-focus`}
         style={{
           top: block.start * pxPerMinute, height,
-          left: `calc(${(lane / lanes) * 100}% + 2px)`,
+          insetInlineStart: `calc(${(lane / lanes) * 100}% + 2px)`,
           width: `calc(${100 / lanes}% - 4px)`,
         }}
       >

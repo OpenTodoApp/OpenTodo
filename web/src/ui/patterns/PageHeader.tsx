@@ -128,7 +128,7 @@ function SidebarToggleButton() {
   return (
     <Tooltip label={label} shortcut={toggle.shortcut}>
       <button type="button" aria-label={label} aria-pressed={!toggle.collapsed} data-sidebar-toggle onClick={toggle.toggle}
-        className={`ui-btn ui-btn--ghost ui-btn--sm touch-target -ml-1 h-7 w-7 px-0 ${toggle.collapsed ? '' : 'bg-selected text-default'}`}>
+        className={`ui-btn ui-btn--ghost ui-btn--sm touch-target -ms-1 h-7 w-7 px-0 ${toggle.collapsed ? '' : 'bg-selected text-default'}`}>
         <Icon name={toggle.collapsed ? 'panel-left-open' : 'panel-left-close'} />
       </button>
     </Tooltip>
@@ -175,7 +175,7 @@ export function PageHeader({ title, subtitle, meta, leading, actions, barActions
   const lead = (ownRow || phoneDay) && meta && (day ? <div className="min-w-0 text-prose text-muted" data-page-lead data-page-meta>{meta}</div> : <LeadLine>{meta}</LeadLine>)
   // At most the row's width: actions longer than a line (the calendar's range, view switch and
   // menus in German or French at 768 px) wrap inside it instead of pushing the page sideways.
-  const toolsEnd = <div className="ml-auto flex max-w-full shrink-0 flex-wrap items-center justify-end gap-1" data-page-actions><PageActions actions={actions} overflow={overflow} menu={menu} help={help} helpInMenu={narrow} /></div>
+  const toolsEnd = <div className="ms-auto flex max-w-full shrink-0 flex-wrap items-center justify-end gap-1" data-page-actions><PageActions actions={actions} overflow={overflow} menu={menu} help={help} helpInMenu={narrow} /></div>
   return (
     <header ref={room} data-page-header data-page-head={day ? 'day' : 'tool'} data-page-narrow={narrow || undefined} data-testid={testId}
       className={`${sticky && !phoneDay ? 'sticky top-[var(--page-head-top,0px)] z-10 -mx-4 bg-canvas px-4 md:-mx-8 md:bg-surface md:px-8 before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-[var(--page-head-top,0px)] before:bg-inherit' : ''} ${ownRow || phoneDay || (actions && !barActions) ? (day ? 'mb-3 pb-3' : 'mb-2 border-b border-soft') : ''} ${level === 1 ? (ownRow || phoneDay ? (day ? 'pt-2' : '') : '') : 'pt-5'}`}>

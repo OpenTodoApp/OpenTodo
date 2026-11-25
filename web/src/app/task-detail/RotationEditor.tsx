@@ -121,10 +121,10 @@ export default function RotationEditor({ task, userId, onBack }: { task: Task; u
                 <MoveHandle data-rotation-handle data-drag-id="rotation-member" label={t('Move {name} (Alt+Up or Alt+Down)', { name })}
                   first={i === 0} last={i === list.length - 1} onMove={(delta) => move(id, delta)}
                   onKeyDown={(e) => onKey(e, id)} onPointerDown={(e) => onDown(e, id)} />
-                <span className="w-4 shrink-0 text-right text-meta text-faint tabular-nums" aria-hidden="true">{i + 1}</span>
+                <span className="w-4 shrink-0 text-end text-meta text-faint tabular-nums" aria-hidden="true">{i + 1}</span>
                 <PersonAvatar id={id} name={name} size="xs" />
                 <span className={`min-w-0 flex-1 truncate text-body ${gone ? 'italic text-faint' : 'text-default'} ${now ? 'font-semibold' : ''}`}>
-                  {name}{now && <span className="ml-1.5 text-meta font-normal text-muted">{t('(now)')}</span>}
+                  {name}{now && <span className="ms-1.5 text-meta font-normal text-muted">{t('(now)')}</span>}
                 </span>
                 <IconButton icon="x" size="sm" label={t('Remove {name}', { name })} onClick={() => save(list.filter((x) => x !== id))} />
               </li>

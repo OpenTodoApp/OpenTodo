@@ -119,7 +119,7 @@ export function PendingFiles({ files, onRemove, className = '' }: {
   return (
     <ul aria-label={t('Files to attach')} className={`flex flex-wrap gap-1 ${className}`} data-pending-files>
       {files.map((f, i) => (
-        <li key={`${f.name}-${i}`} className="flex max-w-full items-center gap-1 rounded-control bg-sunken py-0.5 pl-2 text-meta text-default">
+        <li key={`${f.name}-${i}`} className="flex max-w-full items-center gap-1 rounded-control bg-sunken py-0.5 ps-2 text-meta text-default">
           <Icon name="paperclip" size="xs" className="text-faint" /><span className="min-w-0 truncate">{f.name}</span>
           <IconButton icon="x" size="sm" label={t('Remove {name}', { name: f.name })} onClick={() => onRemove(i)} />
         </li>

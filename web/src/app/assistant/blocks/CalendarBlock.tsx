@@ -48,7 +48,7 @@ export function AgendaDays({ days, items, dayLength, dropDay }: { days: readonly
           <li key={day} className={`px-3 py-2 ${dropDay === day ? 'bg-accent-soft' : ''}`} data-agenda-day={day} data-drop-lane={dropDay !== undefined ? day : undefined}>
             <div className="flex items-center gap-2">
               <button type="button" className="min-h-9 text-body font-semibold hover:underline" onClick={() => navigate({ view: 'day', date: day })}>{formatDate(day, 'long')}</button>
-              <CapacityLine load={load} dayLength={dayLength} unestimated className="ml-auto" />
+              <CapacityLine load={load} dayLength={dayLength} unestimated className="ms-auto" />
             </div>
             {own.length === 0 ? <p className="text-meta text-faint">{t('Nothing planned')}</p> : (
               <ul className="mt-1">
@@ -80,7 +80,7 @@ export function AgendaDays({ days, items, dayLength, dropDay }: { days: readonly
                       ) : (
                         <div className="flex min-h-9 items-center gap-2 text-body">
                           {time}
-                          <button type="button" className={`min-h-9 min-w-0 flex-1 truncate text-left user-text hover:underline ${done}`} onClick={() => openTaskPanel(task.id)}>{task.title}</button>
+                          <button type="button" className={`min-h-9 min-w-0 flex-1 truncate text-start user-text hover:underline ${done}`} onClick={() => openTaskPanel(task.id)}>{task.title}</button>
                           {estimate}
                         </div>
                       )}

@@ -294,7 +294,7 @@ export function AttachmentItem({ a, blob, selected, missing, note, renaming, can
       <div className="min-w-0 flex-1">
         {renaming ? <RenameField initial={a.name} onDone={onRenamed} /> : (
           <Tooltip label={a.name}>
-            <button type="button" data-attachment-open tabIndex={selected ? 0 : -1} className="block w-full truncate rounded-control text-left text-body text-default hover:underline" onClick={() => onOpen(false)}>
+            <button type="button" data-attachment-open tabIndex={selected ? 0 : -1} className="block w-full truncate rounded-control text-start text-body text-default hover:underline" onClick={() => onOpen(false)}>
               {a.name}
             </button>
           </Tooltip>

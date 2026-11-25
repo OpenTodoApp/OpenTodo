@@ -68,13 +68,13 @@ export function BeforeAfter({ review }: { review: Review }) {
   if (!loaded) return null
   // One table: the column heads once, then each item as a group of its fields.
   return (
-    <table className="w-full table-fixed text-left text-meta" aria-label={t('Before and after')} data-before-after>
+    <table className="w-full table-fixed text-start text-meta" aria-label={t('Before and after')} data-before-after>
       <colgroup><col className="w-28" /><col /><col /></colgroup>
       <thead>
         <tr className="border-b border-soft text-faint">
-          <th scope="col" className="py-1.5 pl-3 font-normal"><span className="sr-only">{t('Field')}</span></th>
-          <th scope="col" className="py-1.5 pr-3 font-normal">{t('Before')}</th>
-          <th scope="col" className="py-1.5 pr-3 font-normal">{t('After')}</th>
+          <th scope="col" className="py-1.5 ps-3 font-normal"><span className="sr-only">{t('Field')}</span></th>
+          <th scope="col" className="py-1.5 pe-3 font-normal">{t('Before')}</th>
+          <th scope="col" className="py-1.5 pe-3 font-normal">{t('After')}</th>
         </tr>
       </thead>
       {review.items.map((item, i) => <ItemDiff key={item.change.entity + item.change.entityId} item={item} row={loaded.rows[i]} names={loaded.names} />)}
@@ -95,9 +95,9 @@ function ItemDiff({ item, row, names }: { item: ReviewItem; row: Row | null; nam
         const last = i === fields.length - 1 ? 'pb-2' : ''
         return (
           <tr key={f}>
-            <th scope="row" className={`pl-3 pr-3 font-normal text-muted ${last}`}>{FIELD[f]()}</th>
-            <td className={`truncate pr-3 text-muted user-text ${last}`} data-before={f}>{before || '—'}</td>
-            <td className={`truncate pr-3 font-medium text-default user-text ${last}`} data-after={f}>{after || '—'}</td>
+            <th scope="row" className={`ps-3 pe-3 font-normal text-muted ${last}`}>{FIELD[f]()}</th>
+            <td className={`truncate pe-3 text-muted user-text ${last}`} data-before={f}>{before || '—'}</td>
+            <td className={`truncate pe-3 font-medium text-default user-text ${last}`} data-after={f}>{after || '—'}</td>
           </tr>
         )
       })}

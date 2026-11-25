@@ -152,7 +152,7 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
           <ol className="mb-4 space-y-1 rounded-control border border-default p-2 text-body" aria-label={t('Arrange panels')}>
             {dashboard.panels.map((id, i) => (
               <li key={id} className="flex items-center gap-2">
-                <span className="w-5 text-right text-meta text-faint">{i + 1}</span>
+                <span className="w-5 text-end text-meta text-faint">{i + 1}</span>
                 <span className="min-w-0 flex-1 truncate">{nameOf(id)}</span>
                 <ArrangeRule view={views.find((v) => v.id === id && !v.deleted_at && !isDashboard(v))} names={names} onEdit={setRuleFor} />
                 <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={i === 0} aria-label={t('Move {nameOf} earlier', { nameOf: nameOf(id) })} onClick={() => run(() => movePanel(dashboard.id, id, -1))}><Icon name="arrow-up" /></button>
@@ -249,7 +249,7 @@ function Panel({ index, panel, selectedId, tasks, held, names, projectMap, label
         className={`${ring} p-0 data-drop-active:ring-2 data-drop-active:ring-accent data-drop-active:border-dashed`}>
         <button type="button" aria-expanded={false} onClick={() => onFold?.(false)} data-panel-strip
           aria-label={t('{name}, {n, plural, one {# open task} other {# open tasks}}, folded', { name: view.name, n: count })}
-          className="flex w-full items-center gap-2 rounded-card p-3 text-left outline-none hover:shadow-2 focus-visible:ring-2 focus-visible:ring-focus">
+          className="flex w-full items-center gap-2 rounded-card p-3 text-start outline-none hover:shadow-2 focus-visible:ring-2 focus-visible:ring-focus">
           <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-hue-solid" data-hue={hueFor(view.color)} aria-hidden />
           <span className="truncate text-body font-semibold">{view.name}</span>{' '}
           <span className="text-body tabular-nums text-faint">{count}</span>
@@ -294,7 +294,7 @@ function Panel({ index, panel, selectedId, tasks, held, names, projectMap, label
             // A held card (rule-boards D6): shown first, marked, until it matches or changes again.
             return tk !== held ? row : (
               <li key={tk.id} data-held className="rounded-control border border-dashed border-input pt-1">
-                <Badge hue="orange" className="ml-2">{t('Not matching')}</Badge>
+                <Badge hue="orange" className="ms-2">{t('Not matching')}</Badge>
                 <ul>{row}</ul>
               </li>
             )

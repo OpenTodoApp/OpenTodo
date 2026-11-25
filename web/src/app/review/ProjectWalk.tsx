@@ -175,13 +175,13 @@ export function ProjectWalk({ walk, notDue = [], now, onAdd, paused }: {
         {buttons.map((b) => (
           <Button key={b.key} size="sm" variant={b.primary ? 'primary' : b.key === 'reviewed' || b.key === 'add' ? 'secondary' : 'ghost'} disabled={b.disabled} onClick={b.run} data-walk-action={b.key}
             aria-keyshortcuts={b.hint}>
-            {b.label}<Kbd k={b.hint} only className="ml-1" />
+            {b.label}<Kbd k={b.hint} only className="ms-1" />
           </Button>
         ))}
         {/* Review every… (project-review-cadence D6): the user's own interval, in every mode. */}
         <ActionMenu label={t('Review every…')} title={w.project.name} align="start" open={everyOpen} onOpenChange={setEveryOpen}
           groups={[{ items: reviewEveryChoices(w.project.id, w.every) }]}
-          trigger={<>{t('Review every…')}<Kbd k="e" only className="ml-1" /></>}
+          trigger={<>{t('Review every…')}<Kbd k="e" only className="ms-1" /></>}
           triggerClassName="ui-btn ui-btn--ghost ui-btn--sm" triggerProps={{ 'data-walk-action': 'every', 'aria-keyshortcuts': 'e' }} />
       </div>
     </div>

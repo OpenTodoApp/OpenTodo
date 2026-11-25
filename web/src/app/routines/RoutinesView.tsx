@@ -118,7 +118,7 @@ function RoutineRow({ rule, index, total, status, catalogue, names, onEdit, onHi
   return (
     <li className="flex min-h-11 items-start gap-3 rounded-control px-2 py-2 hover:bg-sunken dark:hover:bg-raised" data-rule-row={rule.id}>
       <Switch label={t('Routine {name} on', { name })} hideLabel checked={rule.enabled} disabled={!editable} onChange={(on) => act(setRuleEnabled(rule.id, on))} />
-      <button type="button" className="min-w-0 flex-1 text-left" onClick={known ? onEdit : undefined} disabled={!known} data-edit-routine>
+      <button type="button" className="min-w-0 flex-1 text-start" onClick={known ? onEdit : undefined} disabled={!known} data-edit-routine>
         <span className="block truncate text-body text-default">{name}</span>
         <span className="block text-meta text-muted" data-rule-line>{known ? routineLine(rule, names) : t('Made with a newer version')}</span>
         {project && (

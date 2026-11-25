@@ -195,8 +195,8 @@ function Field<T>({ state, label, placeholder, inputRef, onFocus, expanded, auto
 }) {
   const palette = look === 'palette'
   return (
-    <div className={palette ? 'relative flex items-center gap-2.5 border-b border-default px-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-focus/30 sm:pr-11' : 'relative'}>
-      <span className={palette ? 'pointer-events-none flex shrink-0 text-faint' : 'pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint'}><Icon name="search" /></span>
+    <div className={palette ? 'relative flex items-center gap-2.5 border-b border-default px-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-focus/30 sm:pe-11' : 'relative'}>
+      <span className={palette ? 'pointer-events-none flex shrink-0 text-faint' : 'pointer-events-none absolute inset-s-3 top-1/2 -translate-y-1/2 text-faint'}><Icon name="search" /></span>
       <input
         ref={inputRef}
         role="combobox"
@@ -212,7 +212,7 @@ function Field<T>({ state, label, placeholder, inputRef, onFocus, expanded, auto
         onChange={(e) => state.setQuery(e.target.value)}
         onKeyDown={state.onKeyDown}
         onFocus={onFocus}
-        className={palette ? 'min-w-0 flex-1 bg-transparent py-3.5 text-prose text-strong outline-none placeholder:text-faint' : 'ui-input pl-9'}
+        className={palette ? 'min-w-0 flex-1 bg-transparent py-3.5 text-prose text-strong outline-none placeholder:text-faint' : 'ui-input ps-9'}
         {...(autoFocus === true ? { autoFocus: true, 'data-autofocus': '' } : { ...pickerField(), ...(autoFocus ? null : { autoFocus: false }) })}
       />
       {trailing}
@@ -247,7 +247,7 @@ export function Combobox<T>({ label, placeholder, emptyText, renderLeading, ...c
   if (!wide) {
     return (
       <div ref={anchor} data-combobox>
-        <button type="button" className="ui-input flex items-center gap-2 text-left text-muted" aria-haspopup="dialog" onClick={() => setOpen(true)}>
+        <button type="button" className="ui-input flex items-center gap-2 text-start text-muted" aria-haspopup="dialog" onClick={() => setOpen(true)}>
           <Icon name="search" />{placeholder ?? label}
         </button>
         <Popover open={open} onClose={close} anchor={anchor} label={label} className="p-2">

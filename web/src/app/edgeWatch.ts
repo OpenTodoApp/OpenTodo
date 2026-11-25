@@ -3,6 +3,7 @@
 // one, else open the menu. Unless motion is reduced, the page (or the closed menu)
 // follows the finger: a released Back continues as the back transition from where the
 // finger left the page, a cancelled swipe springs back.
+import { inlineDelta } from '../lib/direction'
 import { edgeEnv } from './edgeEnv'
 import { edgeSwipeAction, watchEdgeSwipe, watchesEdge, type EdgeFollower } from './edgeSwipe'
 import { noMotion, prefersReducedMotion } from './motion'
@@ -27,12 +28,12 @@ export function pageFollower(page: HTMLElement): EdgeFollower {
     move(dx) {
       page.style.transition = 'none'
       page.style.boxShadow = 'var(--shadow-3)'
-      page.style.transform = `translateX(${dx}px)`
+      page.style.transform = `translateX(${inlineDelta(dx)}px)`
     },
     settle(commit, dx) {
       if (!commit) return springBack(page, clear)
       // The back transition takes over from here (D1): its old page starts at this offset.
-      document.documentElement.style.setProperty(NAV_FROM, `${dx}px`)
+      document.documentElement.style.setProperty(NAV_FROM, `${inlineDelta(dx)}px`)
       page.style.transform = ''
       clear()
     },
@@ -46,7 +47,7 @@ export function menuFollower(drawer: HTMLElement): EdgeFollower {
   return {
     move(dx) {
       drawer.style.transition = 'none'
-      drawer.style.transform = `translateX(${Math.min(0, dx - width)}px)`
+      drawer.style.transform = `translateX(${inlineDelta(Math.min(0, dx - width))}px)`
     },
     settle(commit) {
       if (!commit) return springBack(drawer, clear)

@@ -81,7 +81,7 @@ export function RunningPill({ running: r, collapsed = false }: { running: Runnin
       {/* The title truncates in a narrow column; the tooltip carries it whole. */}
       <Tooltip label={`${elapsedText(r.minutes)} · ${r.title}`} side="top">
         <button type="button" aria-label={nameOf(r.title, r.minutes)} onClick={() => openTaskPanel(r.entry.task_id)} data-tracking-open
-          className="flex min-h-8 min-w-0 flex-1 items-center rounded-full py-1 pl-2.5 text-left text-meta max-md:min-h-11">
+          className="flex min-h-8 min-w-0 flex-1 items-center rounded-full py-1 ps-2.5 text-start text-meta max-md:min-h-11">
           <span aria-hidden="true" className="min-w-0 truncate text-on-accent-soft" data-tracking-text>
             <span className={`font-semibold tabular-nums ${long}`}>{elapsedText(r.minutes)}</span>{' · '}{r.title}
           </span>

@@ -168,7 +168,7 @@ export function SettingsView({ user, onLogout, section, page: pageId, anchor }: 
       </div>
       <div className="lg:-mt-2 lg:grid lg:grid-cols-[14.25rem_minmax(0,1fr)]">
         {twoColumn && (
-          <aside className="hidden border-r border-soft lg:sticky lg:top-0 lg:block lg:max-h-[calc(100dvh-4.5rem)] lg:min-h-[calc(100dvh-4.5rem)] lg:self-start lg:overflow-y-auto lg:px-3 lg:py-3" aria-label={t('Settings')} data-settings-pane>
+          <aside className="hidden border-e border-soft lg:sticky lg:top-0 lg:block lg:max-h-[calc(100dvh-4.5rem)] lg:min-h-[calc(100dvh-4.5rem)] lg:self-start lg:overflow-y-auto lg:px-3 lg:py-3" aria-label={t('Settings')} data-settings-pane>
             <SettingsList user={user} current={shown.id} page={sub?.id} inPage={!!sub} compact />
           </aside>
         )}
@@ -293,7 +293,7 @@ export function SettingsList({ user, current, page, inPage = false, compact = fa
       </nav>
       {!compact && (
         <p className="text-meta text-faint">
-          {t('OpenTodo is free software (AGPL-3.0). No telemetry, no tracking, no subscription.')}<a className="ml-1 underline" href="https://github.com/OpenTodoApp/OpenTodo" target="_blank" rel="noreferrer">{t('Source code')}</a>
+          {t('OpenTodo is free software (AGPL-3.0). No telemetry, no tracking, no subscription.')}<a className="ms-1 underline" href="https://github.com/OpenTodoApp/OpenTodo" target="_blank" rel="noreferrer">{t('Source code')}</a>
         </p>
       )}
     </div>
@@ -309,7 +309,7 @@ function PanePages({ user, section, page }: { user: User; section: SettingsSecti
   const pages = visiblePages(user, section)
   if (pages.length === 0) return null
   return (
-    <ul className="mt-0.5 mb-1 space-y-0.5 pl-6" aria-label={section.label} data-settings-pane-pages={section.id}>
+    <ul className="mt-0.5 mb-1 space-y-0.5 ps-6" aria-label={section.label} data-settings-pane-pages={section.id}>
       {pages.map((p) => {
         const on = p.id === page
         return (
@@ -353,11 +353,11 @@ function SettingsSearch({ user, compact = false }: { user: User; compact?: boole
   return (
     <form role="search" onSubmit={submit} className="space-y-2" data-settings-search>
       <div className="relative">
-        <span className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-faint"><Icon name="search" size="sm" /></span>
+        <span className="pointer-events-none absolute top-1/2 inset-s-2.5 -translate-y-1/2 text-faint"><Icon name="search" size="sm" /></span>
         <Input ref={inputRef} type="search" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={onKey}
           placeholder={t('Search settings')} aria-label={t('Search settings')} autoComplete="off" aria-keyshortcuts={slash}
-          className={compact ? 'min-h-8 py-1 pr-8 pl-8 text-body' : 'pl-8'} />
-        {!query && slash && <kbd aria-hidden="true" className="ui-kbd pointer-events-none absolute top-1/2 right-2 -translate-y-1/2">{slash}</kbd>}
+          className={compact ? 'min-h-8 py-1 pe-8 ps-8 text-body' : 'ps-8'} />
+        {!query && slash && <kbd aria-hidden="true" className="ui-kbd pointer-events-none absolute top-1/2 inset-e-2 -translate-y-1/2">{slash}</kbd>}
       </div>
       {query.trim() && (
         <ul ref={listRef} className="rounded-card border border-default bg-surface p-1 shadow-1" aria-label={t('Matching settings')} data-settings-results>{/* surface-lint-allow: search results, not a section */}
@@ -367,9 +367,9 @@ function SettingsSearch({ user, compact = false }: { user: User; compact?: boole
               <ResultLink section={h.section} onOpen={() => open(h.section.id)} />
               {h.entries.map((en) => (
                 <a key={en.anchor + en.label} href={routePath(entryRoute(user, en))} data-settings-result={`${h.section.id}:${en.anchor}`}
-                  className="flex min-h-9 items-center gap-2 rounded-control px-2 py-1 pl-7 text-body hover:bg-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus dark:hover:bg-raised"
+                  className="flex min-h-9 items-center gap-2 rounded-control px-2 py-1 ps-7 text-body hover:bg-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus dark:hover:bg-raised"
                   onClick={(e) => { if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); open(h.section.id, en) }}>
-                  {cardIcon(en.anchor) ? <Icon name={cardIcon(en.anchor) as IconName} size="xs" className="-ml-5 text-muted" /> : null}
+                  {cardIcon(en.anchor) ? <Icon name={cardIcon(en.anchor) as IconName} size="xs" className="-ms-5 text-muted" /> : null}
                   <span className="min-w-0 flex-1 truncate">{en.label}</span>
                   <span className="truncate text-meta text-muted">{en.description}</span>
                 </a>

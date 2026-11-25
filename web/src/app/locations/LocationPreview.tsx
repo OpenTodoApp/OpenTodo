@@ -10,7 +10,7 @@ export function LocationPreview({ shown }: { shown: ShownLocation | null }) {
   if (!shown || shown.encrypted || shown.lat === undefined || shown.lon === undefined) return null
   const label = locationLabel(shown)
   return (
-    <div className="space-y-1 pl-7" data-location-preview>
+    <div className="space-y-1 ps-7" data-location-preview>
       <LocationMap label={t('Map of {place}', { place: label })} className="h-32 w-full overflow-hidden rounded-control border border-default"
         points={[{ lat: shown.lat, lon: shown.lon, label }]} />
       <a href={openInMapsHref(shown.lat, shown.lon, coarsePointer())} target="_blank" rel="noreferrer noopener"

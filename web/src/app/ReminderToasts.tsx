@@ -105,7 +105,7 @@ export function ReminderToasts() {
         >
           <div className="flex items-start gap-2">
             <span className="pt-0.5 text-muted pointer-coarse:pt-1.5"><Icon name="alarm-clock" /></span>
-            <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openTaskInList(d.task)}>
+            <button type="button" className="min-w-0 flex-1 text-start" onClick={() => openTaskInList(d.task)}>
               <p className={`${compact ? 'truncate' : 'line-clamp-2'} user-text text-body font-medium`}>{d.task.title || t('Untitled')}</p>
               <p className={`text-meta text-muted ${compact ? 'truncate' : ''}`}>{tinyText(d.task) ?? t('Reminder · {instant}', { instant: dt.formatInstant(d.reminder.fire_at as number, 'datetime') })}</p>
             </button>
@@ -129,7 +129,7 @@ export function ReminderToasts() {
           )}
         </div>
       ))}
-      {!compact && more > 0 && <p className="pointer-events-auto text-right text-meta text-muted">{moreText}</p>}
+      {!compact && more > 0 && <p className="pointer-events-auto text-end text-meta text-muted">{moreText}</p>}
     </ToastRegion>
   )
 }

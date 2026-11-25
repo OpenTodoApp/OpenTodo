@@ -461,8 +461,8 @@ function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, f
       spanRows={spanRowsOn(d.date)} spanHidden={hiddenOn.get(d.date) ?? 0} onExtend={extend} compact={compact} />
   )
   const gutter = (label: boolean) => (
-    <div className="w-12 shrink-0 pt-1 text-right text-hint text-faint" aria-hidden>
-      {label && <span className="pr-1">{t('all day')}</span>}
+    <div className="w-12 shrink-0 pt-1 text-end text-hint text-faint" aria-hidden>
+      {label && <span className="pe-1">{t('all day')}</span>}
     </div>
   )
   return (

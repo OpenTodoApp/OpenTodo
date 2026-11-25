@@ -55,7 +55,7 @@ export function InboxCardView({ lines, more, hide, online, onOpen, onDismiss, on
           <Fragment key={`${l.ruleId}:${l.kind}`}>
             <li className="flex items-center gap-1" data-inbox-line={l.kind}>
               <button type="button" onClick={() => onOpen(l)}
-                className={`user-text min-h-11 min-w-0 flex-1 truncate rounded-control px-2 text-left text-meta hover:bg-sunken dark:hover:bg-raised ${l.kind === 'failure' ? 'text-danger' : l.kind === 'proposal' ? 'font-medium text-strong' : 'text-default'}`}>
+                className={`user-text min-h-11 min-w-0 flex-1 truncate rounded-control px-2 text-start text-meta hover:bg-sunken dark:hover:bg-raised ${l.kind === 'failure' ? 'text-danger' : l.kind === 'proposal' ? 'font-medium text-strong' : 'text-default'}`}>
                 {l.text}
               </button>
               {l.auto && onUndo && <Button size="sm" variant="ghost" disabled={!online} onClick={() => onUndo(l)} data-inbox-undo>{t('Undo')}</Button>}

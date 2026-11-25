@@ -106,7 +106,7 @@ export function RestoreSectionView(p: RestoreSectionViewProps) {
           <Button variant="secondary" icon="upload" disabled={disabled} onClick={() => fileInput.current?.click()}>{t('Choose an archive…')}</Button>
           {p.uploadProgress !== null && (
             <div role="status" aria-live="polite" className="text-meta text-muted" data-testid="restore-upload-progress">
-              <progress className="mr-2 align-middle" max={1} value={p.uploadProgress} aria-label={t('Upload progress')} />{' '}{t('Uploading… {round}%', { round: Math.round(p.uploadProgress * 100) })}
+              <progress className="me-2 align-middle" max={1} value={p.uploadProgress} aria-label={t('Upload progress')} />{' '}{t('Uploading… {round}%', { round: Math.round(p.uploadProgress * 100) })}
             </div>
           )}
           {p.state && p.state.uploadLimit >= 0 && <p className="text-meta text-faint">{t('Up to {bytes} with the free space on the server.', { bytes: formatBytes(p.state.uploadLimit) })}</p>}
@@ -182,7 +182,7 @@ export function RestoreDialog(p: RestoreDialogProps) {
             </dl>
             <div className="rounded-control bg-warning-soft p-3 text-meta text-on-warning-soft" data-testid="restore-consequences">
               <p className="font-medium">{t('What will happen')}</p>
-              <ul className="ml-4 list-disc space-y-1">
+              <ul className="ms-4 list-disc space-y-1">
                 <li>{t('The server restarts. Everyone is briefly disconnected.')}</li>
                 <li>{t('Accounts, passwords, sessions and tokens go back to the state in the backup. Anyone whose session started after it, possibly you, signs in again.')}</li>
                 <li>{t('Devices sync again. A device that changed something after the backup sends those newer changes back, so they are not lost.')}</li>

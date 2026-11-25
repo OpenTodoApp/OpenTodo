@@ -171,7 +171,7 @@ export function ShareDialog({ project, userId, cached, section, onPublicLinks, o
           <span>{t('Adding by email works for accounts on this server; invite anyone else with a link. Labels stay personal.')}</span>
           <HelpLink screen="share-dialog" topic={t('Sharing projects')} />
         </p>
-        <button className="ui-btn ui-btn--ghost ui-btn--md mt-3 w-full" onClick={onClose}>{t('Close')} <Kbd k="Esc" only className="ml-1" /></button>
+        <button className="ui-btn ui-btn--ghost ui-btn--md mt-3 w-full" onClick={onClose}>{t('Close')} <Kbd k="Esc" only className="ms-1" /></button>
         {asking?.kind === 'transfer' && (
           <ConfirmDialog title={t('Make {name} the owner?', { name: asking.name })} confirmLabel={t('Make owner')}
             consequence={t('Make {name} the owner of “{project}”? You become an admin.', { name: asking.name, project: project.name })}

@@ -46,7 +46,7 @@ The working habits `AGENTS.md` points to, in full.
 
 **TypeScript.** Strict, function components, Tailwind classes, data access only through `src/lib`. Custom CSS classes live in `@layer components` so utilities can override them.
 
-**Design.** Colours, type, radius, elevation and motion come from the tokens in `web/src/index.css`: no raw palette classes or hex in `web/src/ui`. Shared UI is built and checked in the Storybook workbench (`make storybook`, `make ui-check`). Screens use primitives from `web/src/ui`, never emoji or glyphs as icons (`<Icon>`, enforced by `make ui-lint`), and choose entities (people, labels, projects, tasks) with the Combobox. See [the design system](../design-system.md).
+**Design.** Colours, type, radius, elevation and motion come from the tokens in `web/src/index.css`: no raw palette classes or hex in `web/src/ui`. Shared UI is built and checked in the Storybook workbench (`make storybook`, `make ui-check`). Screens use primitives from `web/src/ui`, never emoji or glyphs as icons (`<Icon>`, enforced by `make ui-lint`), and choose entities (people, labels, projects, tasks) with the Combobox. Layout names the start and end of the line, not left and right (`ms-2`, `ps-4`, `inset-s-0`, `text-start`, `border-e`), so right to left mirrors; code that reads ← and → or a horizontal pointer delta goes through `web/src/lib/direction.ts` (`inlineKey`, `inlineDelta`). `make ui-lint` refuses physical utilities unless the line says `// physical: <reason>`. See [the design system](../design-system.md).
 
 **Docs.** Front matter in `docs/` is YAML parsed by both GitHub and `web/scripts/docs/lib.mjs`: double-quote scalar values (such as `summary`) that contain `: ` or end in `:` (`make docs-check` enforces this).
 

@@ -215,7 +215,7 @@ export function ImportView(p: ImportViewProps) {
       <section className="space-y-3">
         <label className="block text-body font-medium" htmlFor="import-file">{t('File')}</label>
         <input id="import-file" type="file" accept=".json,.csv,.txt,.zip,.sqlite,.sqlite3,.ics,application/json,text/csv,text/calendar,application/zip,application/x-zip-compressed,application/vnd.sqlite3,application/x-sqlite3" disabled={disabled}
-          className="block w-full text-body file:mr-3 file:rounded-control file:border-0 file:bg-sunken file:px-3 file:py-1.5 file:text-body"
+          className="block w-full text-body file:me-3 file:rounded-control file:border-0 file:bg-sunken file:px-3 file:py-1.5 file:text-body"
           onChange={(e) => p.onPickFile(e.target.files?.[0] ?? null)} />
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -347,7 +347,7 @@ export function ImportView(p: ImportViewProps) {
             </p>
           )}
           <div className="max-h-[50dvh] overflow-auto rounded-control border border-default" data-scroll-x>
-            <table className="w-full text-left text-body">
+            <table className="w-full text-start text-body">
               <thead className="sticky top-0 bg-canvas text-meta text-muted">
                 <tr><th className="px-2 py-1">{t('Row')}</th><th className="px-2 py-1">{t('Title')}</th><th className="px-2 py-1">{t('Project')}</th><th className="px-2 py-1">{t('Outcome')}</th><th className="px-2 py-1">{t('Details')}</th></tr>
               </thead>
@@ -355,7 +355,7 @@ export function ImportView(p: ImportViewProps) {
                 {p.preview.rows.slice(0, TABLE_LIMIT).map((r, i) => (
                   <tr key={`${r.sourceId ?? ''}-${i}`} className="border-t border-default align-top">
                     <td className="px-2 py-1 text-meta text-faint">{r.file ? `${r.file}:${r.row ?? ''}` : r.row ?? r.sourceId}</td>
-                    <td className="px-2 py-1">{r.kind !== 'task' && <span className="mr-1 text-meta text-faint">{r.kind}</span>}{r.title || <em className="text-faint">{t('untitled')}</em>}</td>
+                    <td className="px-2 py-1">{r.kind !== 'task' && <span className="me-1 text-meta text-faint">{r.kind}</span>}{r.title || <em className="text-faint">{t('untitled')}</em>}</td>
                     <td className="px-2 py-1 text-muted">{r.project}</td>
                     <td className={`px-2 py-1 font-medium ${OUTCOME_STYLE[r.outcome]}`}>{r.outcome}</td>
                     <td className="px-2 py-1 text-meta text-muted">
@@ -382,7 +382,7 @@ export function ImportView(p: ImportViewProps) {
             <li key={j.id} className="flex items-center gap-3 py-2 text-body">
               <div className="min-w-0 flex-1">
                 <p>
-                  <span className="mr-2 rounded-control bg-sunken dark:bg-raised px-1.5 py-0.5 text-meta">{j.status}</span>
+                  <span className="me-2 rounded-control bg-sunken dark:bg-raised px-1.5 py-0.5 text-meta">{j.status}</span>
                   {dt.formatInstant(j.createdAt, 'datetime')}
                 </p>
                 <p className="truncate text-meta text-muted">{jobSummary(j)}{j.message ? ` · ${j.message}` : ''}</p>

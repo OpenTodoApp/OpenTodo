@@ -62,17 +62,17 @@ export function Subtasks({ task, items, progress, readOnly, boxed = false, add =
             {items.length > 0 && <span className="font-normal tabular-nums text-faint" data-subtask-count>{t('{done} of {total}', progress)}</span>}
           </h3>
           {flow && (
-            <span className="ml-auto" data-subtask-flow>
+            <span className="ms-auto" data-subtask-flow>
               <Switch checked={inOrder} onChange={(on) => { void setInOrder(on) }} label={t('One at a time')} disabled={readOnly} />
             </span>
           )}
           {items.length > 0 && (
-            <span className={`${flow ? 'ml-2 ' : 'ml-auto '}h-1 w-16 overflow-hidden rounded-full bg-sunken`} aria-hidden="true" data-subtask-progress>
+            <span className={`${flow ? 'ms-2 ' : 'ms-auto '}h-1 w-16 overflow-hidden rounded-full bg-sunken`} aria-hidden="true" data-subtask-progress>
               <span className="block h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
             </span>
           )}
           {/* The share as a percentage after the bar (task-progress D3), in a fixed width so the bar never moves. */}
-          {items.length > 0 && <span className="w-9 shrink-0 text-right tabular-nums text-faint" data-subtask-percent><ReadAs label={t('{n}% done', { n: pct })}>{`${pct}%`}</ReadAs></span>}
+          {items.length > 0 && <span className="w-9 shrink-0 text-end tabular-nums text-faint" data-subtask-percent><ReadAs label={t('{n}% done', { n: pct })}>{`${pct}%`}</ReadAs></span>}
         </div>
       )}
       <ul className={`empty:hidden ${boxed ? 'pb-1' : ''}`} aria-label={t('Subtasks')} {...order.listProps}>
@@ -93,7 +93,7 @@ export function Subtasks({ task, items, progress, readOnly, boxed = false, add =
                 {c.completed_at && <Icon name="check" size={10} />}
               </span>
             </button>
-            <button type="button" className={`min-w-0 flex-1 truncate text-left text-body ${c.completed_at ? 'text-faint line-through' : after ? 'text-muted' : 'text-default'}`} onClick={() => onOpen?.(c.id)} data-waiting={after ? '' : undefined}>
+            <button type="button" className={`min-w-0 flex-1 truncate text-start text-body ${c.completed_at ? 'text-faint line-through' : after ? 'text-muted' : 'text-default'}`} onClick={() => onOpen?.(c.id)} data-waiting={after ? '' : undefined}>
               {c.title || <span className="italic text-faint">{t('Untitled')}</span>}
             </button>
             {after && (

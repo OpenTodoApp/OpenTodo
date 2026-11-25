@@ -187,6 +187,7 @@ function makeGhost(label: string): HTMLElement {
   g.textContent = label || t('Untitled')
   g.setAttribute('aria-hidden', 'true')
   g.setAttribute('data-drag-ghost', '')
+  // physical: the ghost follows the pointer's screen coordinates (translate).
   g.className = 'pointer-events-none fixed left-0 top-0 z-50 max-w-60 truncate rounded-md border border-accent bg-surface px-2 py-1 text-sm shadow-lg'
   document.body.appendChild(g)
   return g

@@ -89,7 +89,7 @@ export function useTickedSuggest<I extends TickedItem>({ items, query, enabled, 
 
   const list = shown ? (
     <ul id={listId} role="listbox" aria-label={next ? t('Open tasks') : t('Completed')} data-ticked-suggestions={kind}
-      className="surface-overlay absolute left-0 right-0 top-full z-30 mt-1 max-h-64 overflow-y-auto overscroll-contain p-1 sm:right-auto sm:w-72">
+      className="surface-overlay absolute inset-s-0 inset-e-0 top-full z-30 mt-1 max-h-64 overflow-y-auto overscroll-contain p-1 sm:inset-e-auto sm:w-72">
       {matches.map((item, i) => {
         const hint = hintOf?.(item)
         return (

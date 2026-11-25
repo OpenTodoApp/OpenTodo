@@ -76,7 +76,7 @@ export const AddButton = forwardRef<HTMLButtonElement, { onClick: () => void; op
   return (
     <button ref={ref} type="button" onClick={onClick} aria-label={note ? t('New note') : t('Add task')} aria-haspopup={note ? undefined : 'dialog'} aria-expanded={note ? undefined : open} data-add-button data-focus-key="add-button"
       data-away={away || undefined} tabIndex={away ? -1 : undefined} aria-hidden={away || undefined}
-      className={`fixed right-[calc(1rem+var(--safe-right))] z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-on-accent shadow-3 press-accent-hover transition-transform duration-(--duration-ui) md:hidden ${away ? 'pointer-events-none translate-y-[calc(100%+6rem)]' : ''}`}
+      className={`fixed inset-e-[calc(1rem+var(--safe-end))] z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-on-accent shadow-3 press-accent-hover transition-transform duration-(--duration-ui) md:hidden ${away ? 'pointer-events-none translate-y-[calc(100%+6rem)]' : ''}`}
       style={{ bottom: `calc(${TAB_BAR_HEIGHT_REM}rem + 0.75rem + var(--safe-bottom))` }}>
       <Icon name="plus" size="lg" />
     </button>

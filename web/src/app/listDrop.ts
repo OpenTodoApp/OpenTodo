@@ -66,7 +66,7 @@ export function zoneUnder(attr: string, id: string, y: number, allowInside: bool
 export function dragFeedback(reducedMotion: boolean): { lift: string; line: string; inside: string } {
   return {
     lift: reducedMotion ? 'opacity-60' : 'scale-[1.01] shadow-2 opacity-90',
-    line: "pointer-events-none absolute inset-x-0 h-0.5 rounded-full bg-accent before:absolute before:-left-1 before:-top-[3px] before:h-2 before:w-2 before:rounded-full before:bg-accent before:content-['']",
+    line: "pointer-events-none absolute inset-x-0 h-0.5 rounded-full bg-accent before:absolute before:-inset-s-1 before:-top-[3px] before:h-2 before:w-2 before:rounded-full before:bg-accent before:content-['']",
     inside: 'ring-2 ring-accent',
   }
 }

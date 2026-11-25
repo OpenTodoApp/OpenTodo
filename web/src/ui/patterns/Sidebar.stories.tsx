@@ -11,7 +11,7 @@ const Dot = ({ hue }: { hue: string }) => <span className="inline-block h-2.5 w-
 const Unread = ({ n }: { n: number }) => <span className="rounded-full bg-accent px-1.5 text-hint font-semibold leading-4 text-on-accent">{n}</span>
 
 function Frame({ children }: { children: React.ReactNode }) {
-  return <div className="flex h-[32rem] w-64 flex-col border-r border-default bg-canvas">{children}</div>
+  return <div className="flex h-[32rem] w-64 flex-col border-e border-default bg-canvas">{children}</div>
 }
 
 /** The whole structure: pinned top, a scrolling middle with sticky group headings, a pinned footer; Filters folded with its count. */

@@ -19,7 +19,7 @@ export function KindsMenu({ kinds, onChange, label }: { kinds: readonly FeedKind
   return (
     <Menu kind="menu" label={t('{label}: {kinds}', { label, kinds: text })} align="end" width="sm:w-56"
       triggerProps={{ 'data-kinds-menu': true }}
-      triggerClassName="ui-input flex w-40 items-center gap-1 py-0.5 text-left text-meta"
+      triggerClassName="ui-input flex w-40 items-center gap-1 py-0.5 text-start text-meta"
       trigger={<><span className="min-w-0 flex-1 truncate">{text}</span><Icon name="chevron-down" size="xs" /></>}>
       {FEED_KINDS.map((k) => (
         <MenuItem key={k.value} label={k.label} checked={chosen.has(k.value)} keepOpen onSelect={() => toggle(k.value)} data-kind-item={k.value} />

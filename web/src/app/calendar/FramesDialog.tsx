@@ -91,7 +91,7 @@ function FrameList({ frames, onAdd, onEdit }: { frames: Frame[]; onAdd: () => vo
                 <MoveHandle label={t('Move {name}', { name: f.title || t('Untitled') })} first={i === 0} last={i === frames.length - 1}
                   onMove={(delta) => move(f.id, delta)} className="text-faint" />
                 <span aria-hidden data-hue={hueFor(f.color)} className="ui-block-dot" />
-                <button type="button" data-frame-edit className="min-w-0 flex-1 rounded-control text-left outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                <button type="button" data-frame-edit className="min-w-0 flex-1 rounded-control text-start outline-none focus-visible:ring-2 focus-visible:ring-focus"
                   aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" onClick={() => onEdit(f.id)}
                   onKeyDown={(e: KeyboardEvent) => {
                     if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return
@@ -101,7 +101,7 @@ function FrameList({ frames, onAdd, onEdit }: { frames: Frame[]; onAdd: () => vo
                   <span className="block truncate text-body text-strong">{f.title || t('Untitled')}</span>
                   <span className="block truncate text-meta text-muted">
                     {weekdaysLabel(f.weekdays, resolved.weekStart)} · {formatTime(f.start)}–{formatTime(f.end)}
-                    {!frameTimesValid(f) && <span className="ml-1 text-warning" data-frame-fix>· {t('Times need fixing')}</span>}
+                    {!frameTimesValid(f) && <span className="ms-1 text-warning" data-frame-fix>· {t('Times need fixing')}</span>}
                   </span>
                 </button>
                 <Button variant="ghost" size="sm" icon="trash-2" aria-label={t('Delete {name}', { name: f.title || t('Untitled') })} onClick={() => void remove(f)} />
@@ -224,7 +224,7 @@ function SourcePicker({ value, onPick }: { value: string; onPick: (key: string) 
   const group: Record<string, string> = { project: t('Projects'), label: t('Labels'), view: t('Saved views') }
   return (
     <Field label={t('Plan from')} description={t('The planning list opens on it when you plan from this frame.')}>
-      <button ref={anchor} type="button" className="ui-input flex items-center gap-2 text-left" aria-haspopup="dialog" aria-expanded={open} data-frame-source={value}
+      <button ref={anchor} type="button" className="ui-input flex items-center gap-2 text-start" aria-haspopup="dialog" aria-expanded={open} data-frame-source={value}
         onClick={() => setOpen(true)}>
         <span className="min-w-0 flex-1 truncate">{chosen ? chosen.label : value ? t('A source that no longer exists') : t('No source')}</span>
         <Icon name="chevron-down" size="xs" />

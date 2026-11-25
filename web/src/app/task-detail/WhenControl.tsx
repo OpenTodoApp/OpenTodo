@@ -33,6 +33,7 @@ import { useUserPrefsRow } from '../../lib/localData'
 import { formatSpan, multiDayOnPatch, spanOf } from '../../lib/span'
 import { useTimeSectors } from '../../lib/sectorPrefs'
 import { SectorChoice } from './SectorChoice'
+import { inlineKey } from '../../lib/direction'
 // The habit section loads with the first habit (habits-home): none of it is on the first load.
 const HabitSection = lazy(() => import('../habits/HabitSection').then((m) => ({ default: m.HabitSection })))
 
@@ -72,7 +73,7 @@ export function WhenSegmentPicker({ value, onChange, sector = false }: { value: 
   const segments = WHEN_SEGMENTS.filter((sg) => sector || sg.id !== 'sector')
   const move = (e: KeyboardEvent, i: number) => {
     const n = segments.length
-    const next = e.key === 'ArrowRight' ? (i + 1) % n : e.key === 'ArrowLeft' ? (i - 1 + n) % n : e.key === 'Home' ? 0 : e.key === 'End' ? n - 1 : -1
+    const next = inlineKey(e) === 'ArrowRight' ? (i + 1) % n : inlineKey(e) === 'ArrowLeft' ? (i - 1 + n) % n : e.key === 'Home' ? 0 : e.key === 'End' ? n - 1 : -1
     if (next < 0) return
     e.preventDefault()
     onChange(segments[next].id)
@@ -155,7 +156,7 @@ function TimeOfDay({ task, readOnly, zone, viewer }: { task: Task; readOnly: boo
               onClick={() => write({ time: tm })}>{dt.formatTime(tm)}</button>
           ))}
           {time && zone !== viewer && <YourTime due={task.due} viewer={viewer} />}
-          {time && <span className="ml-auto"><ZoneControl task={task} readOnly={readOnly} viewerZone={viewer} variant="inline" /></span>}
+          {time && <span className="ms-auto"><ZoneControl task={task} readOnly={readOnly} viewerZone={viewer} variant="inline" /></span>}
         </div>
       )}
     </div>
@@ -248,13 +249,13 @@ function RepeatPresets({ task, onOpen }: { task: Task; onOpen?: (id: string) => 
       <div role="radiogroup" aria-label={t('Repeat')} className="flex flex-col gap-1" data-repeat-presets>
         {presets.map((p) => (
           <button key={p.id} type="button" role="radio" aria-checked={current === p.id} data-preset={p.id}
-            className={`flex min-h-8 items-center gap-2 rounded-control px-2 text-left text-body ${current === p.id ? 'bg-selected font-medium text-strong' : 'text-default hover:bg-sunken dark:hover:bg-raised'}`}
+            className={`flex min-h-8 items-center gap-2 rounded-control px-2 text-start text-body ${current === p.id ? 'bg-selected font-medium text-strong' : 'text-default hover:bg-sunken dark:hover:bg-raised'}`}
             onClick={() => act(recurrenceUndoable(task.id, p.rule))}>
             <Icon name={current === p.id ? 'check' : 'repeat'} size="xs" className={current === p.id ? '' : 'text-faint'} />{p.label}
           </button>
         ))}
         <button type="button" role="radio" aria-checked={showCustom && !current} aria-expanded={showCustom} data-preset="custom"
-          className="flex min-h-8 items-center gap-2 rounded-control px-2 text-left text-body text-default hover:bg-sunken dark:hover:bg-raised"
+          className="flex min-h-8 items-center gap-2 rounded-control px-2 text-start text-body text-default hover:bg-sunken dark:hover:bg-raised"
           onClick={() => setCustom((v) => !v)}>
           <Icon name="pencil" size="xs" className="text-faint" />{t('Custom…')}
         </button>

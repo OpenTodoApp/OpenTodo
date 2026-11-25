@@ -34,7 +34,7 @@ export function SaveViewCard({ onSave, onCancel }: { onSave: (name: string) => P
           {error ? <span role="alert" className="text-danger">{error}</span> : <span className="text-faint">{t('Saved with its conditions and display options, in the sidebar under Views.')}</span>}
         </p>
       </div>
-      <div className="ml-auto flex shrink-0 items-center gap-2">
+      <div className="ms-auto flex shrink-0 items-center gap-2">
         <Button variant="ghost" size="sm" type="button" onClick={onCancel}>{t('Cancel')}</Button>
         <Button variant="primary" size="sm" type="submit">{t('Save view')}</Button>
       </div>

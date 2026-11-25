@@ -34,22 +34,22 @@ export function ChartFigure({ title, summary, table, children, note, wide, testI
       <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2 id={`${id}-h`} className="text-body font-semibold text-default">{title}</h2>
         {note && <p className="text-meta text-muted">{note}</p>}
-        <button type="button" className="ml-auto touch-target rounded-control px-2 py-1 text-meta text-muted hover:text-default focus-visible:outline-2 focus-visible:outline-focus"
+        <button type="button" className="ms-auto touch-target rounded-control px-2 py-1 text-meta text-muted hover:text-default focus-visible:outline-2 focus-visible:outline-focus"
           aria-expanded={open} aria-controls={`${id}-t`} onClick={() => setOpen(!open)} data-show-table>
           {open ? t('Hide table') : t('Show as table')}
         </button>
       </div>
-      <div data-chart-summary={summary}>{children}</div>
+      <div data-chart-summary={summary} dir="ltr">{children}</div>
       <div id={`${id}-t`} className={`${open ? 'block' : 'hidden'} mt-3 max-w-full overflow-x-auto forced-colors:block`} data-scroll-x data-chart-table>
         <table className="w-full border-collapse text-meta tabular-nums">
           <caption className="sr-only">{title}</caption>
           <thead>
-            <tr>{table.head.map((h, i) => <th key={i} scope="col" className="border-b border-default px-2 py-1 text-left font-medium text-muted">{h}</th>)}</tr>
+            <tr>{table.head.map((h, i) => <th key={i} scope="col" className="border-b border-default px-2 py-1 text-start font-medium text-muted">{h}</th>)}</tr>
           </thead>
           <tbody>
             {table.rows.map((r, i) => (
               <tr key={i}>{r.map((c, j) => (j === 0
-                ? <th key={j} scope="row" className="px-2 py-1 text-left font-normal text-default">{c}</th>
+                ? <th key={j} scope="row" className="px-2 py-1 text-start font-normal text-default">{c}</th>
                 : <td key={j} className="px-2 py-1 text-default">{c}</td>))}</tr>
             ))}
           </tbody>
@@ -279,8 +279,8 @@ export function LineChart({ points, aName, bName, summary }: { points: readonly 
         </div>
         {last && (
           <div className="relative w-24 shrink-0 text-meta" aria-hidden="true" data-end-labels>
-            <span className="absolute left-0 max-w-full -translate-y-1/2 truncate text-default" style={{ top: `${(ends.a / PLOT_H) * 100}%` }}>{aName} {last.a}</span>
-            <span className="absolute left-0 max-w-full -translate-y-1/2 truncate text-muted" style={{ top: `${(ends.b / PLOT_H) * 100}%` }}>{bName} {last.b}</span>
+            <span className="absolute inset-s-0 max-w-full -translate-y-1/2 truncate text-default" style={{ top: `${(ends.a / PLOT_H) * 100}%` }}>{aName} {last.a}</span>
+            <span className="absolute inset-s-0 max-w-full -translate-y-1/2 truncate text-muted" style={{ top: `${(ends.b / PLOT_H) * 100}%` }}>{bName} {last.b}</span>
           </div>
         )}
       </div>
@@ -314,7 +314,7 @@ export function HBars({ bars, summary }: { bars: readonly HBar[]; summary: strin
           <div key={i} role="row" className="grid grid-cols-[minmax(0,7rem)_1fr] items-center gap-2">
             <span className="truncate text-meta text-default" aria-hidden="true">{b.label}</span>
             <div {...grid.cellProps(i, 0)} className="flex min-h-6 items-center gap-2 rounded-control outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus" data-bar={b.label}>
-              <span className="h-3 rounded-r-[4px] bg-chart-base" style={{ width: `${Math.max(2, (b.value / max) * 85)}%` }} aria-hidden="true" />
+              <span className="h-3 rounded-e-[4px] bg-chart-base" style={{ width: `${Math.max(2, (b.value / max) * 85)}%` }} aria-hidden="true" />
               <span className="text-meta tabular-nums text-muted" aria-hidden="true">{b.text}</span>
             </div>
           </div>

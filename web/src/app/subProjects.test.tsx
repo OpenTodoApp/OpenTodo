@@ -225,7 +225,7 @@ describe('a sub-project open in place', () => {
     expect(visibleText(block(p.garden)!.querySelector('[data-sub-project]')!)).toBe('Garden3')
     const order = [...document.querySelectorAll('[data-sub-project-row], [data-task-id]')].map((el) => el.getAttribute('data-sub-project-row') ?? el.getAttribute('data-task-id'))
     expect(order).toEqual([p.garden, p.mow, p.weed, p.beds, p.kitchen, p.paint])
-    expect(block(p.beds)!.querySelector('[data-sub-project-row]')!.getAttribute('style')).toContain('padding-left: 2rem')
+    expect(block(p.beds)!.querySelector('[data-sub-project-row]')!.getAttribute('style')).toContain('padding-inline-start: 2rem')
     await click(toggle(p.beds)!)
     await waitFor(() => !!row(p.mulch), 'Beds opened')
     // Beds is a list nested in Garden's item, so its level is announced.

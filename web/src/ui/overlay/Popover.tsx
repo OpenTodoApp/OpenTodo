@@ -3,6 +3,7 @@ import { type ReactNode, type RefObject, useCallback, useLayoutEffect, useRef, u
 import { createPortal } from 'react-dom'
 import { playExit } from './exit'
 import { place } from './position'
+import { isRtl } from '../../lib/direction'
 import { safeInsets } from './safeArea'
 import { trapTab, useWide } from './stack'
 import { useSheetDrag } from './sheetDrag'
@@ -75,7 +76,9 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
     el.style.maxHeight = ''
     const size = { width: el.offsetWidth, height: el.scrollHeight }
     el.style.maxHeight = prevMax
-    const next = place(r, size, { width: vw, height: vh }, { side, align, insets: safeInsets() })
+    // Start and end are the trigger's line edges: swapped right to left (arabic-rtl D3).
+    const edge = align ?? 'end'
+    const next = place(r, size, { width: vw, height: vh }, { side, align: isRtl(a) ? (edge === 'end' ? 'start' : 'end') : edge, insets: safeInsets() })
     setPos((cur) => (cur && cur.top === next.top && cur.left === next.left && cur.maxHeight === next.maxHeight && cur.maxWidth === next.maxWidth ? cur : next))
   }, [anchor, docked, side, align])
 
@@ -125,7 +128,7 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
           className="overlay-fade-in pointer-events-auto absolute inset-x-0 flex flex-col rounded-t-popover border-t border-strong bg-pop px-safe text-body shadow-3 outline-none"
           style={{ bottom: 'var(--vv-bottom, 0px)', maxHeight: SHEET_MAX_HEIGHT }}>
           {/* The handle strip and the title row: the grip a drag always starts from (sheetDrag.ts). */}
-          <div className="relative flex shrink-0 touch-none items-center gap-2 border-b border-default pl-4 pr-1 pt-2" data-sheet-grip>
+          <div className="relative flex shrink-0 touch-none items-center gap-2 border-b border-default ps-4 pe-1 pt-2" data-sheet-grip>
             <span aria-hidden="true" data-sheet-handle className="absolute left-1/2 top-1 h-1 w-10 -translate-x-1/2 rounded-full bg-faint" />
             <h2 className="min-w-0 flex-1 truncate text-body font-semibold">{label}</h2>
             <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 text-h3 leading-none" aria-label={t('Close')} data-overlay-close

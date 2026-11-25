@@ -158,7 +158,7 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
 
   const list = shown ? (
     <ul id={listId} role="listbox" aria-label={at!.kind === 'project' ? t('Projects') : at!.kind === 'energy' ? t('Energy') : at!.kind === 'priority' ? t('Priority') : t('Labels')} data-token-suggestions={at!.kind}
-      className="surface-overlay absolute left-0 right-0 top-full z-30 mt-1 max-h-64 overflow-y-auto overscroll-contain p-1 sm:right-auto sm:w-72">
+      className="surface-overlay absolute inset-s-0 inset-e-0 top-full z-30 mt-1 max-h-64 overflow-y-auto overscroll-contain p-1 sm:inset-e-auto sm:w-72">
       {items.map((item, i) => (
         <li key={item.key} id={`${listId}-${i}`} role="option" aria-selected={i === Math.min(active, items.length - 1)}
           className={`flex items-center gap-2 rounded-control px-2 py-1.5 text-body pointer-coarse:min-h-11 ${i === Math.min(active, items.length - 1) ? 'bg-sunken dark:bg-raised' : ''}`}

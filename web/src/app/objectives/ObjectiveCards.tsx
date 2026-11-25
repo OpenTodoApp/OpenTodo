@@ -114,7 +114,7 @@ function ObjectiveCard({ o, index, count, readOnly, actions, dragging, onDraggin
       ) : (
         <Tooltip label={title}><button ref={titleRef} type="button" aria-label={title} data-objective-title
           aria-describedby={readOnly ? undefined : hintId}
-          className={`min-w-0 flex-1 truncate rounded-chip text-left text-body focus-visible:outline-2 focus-visible:outline-focus ${done ? 'text-muted line-through' : 'text-default'} ${readOnly ? 'cursor-default' : ''}`}
+          className={`min-w-0 flex-1 truncate rounded-chip text-start text-body focus-visible:outline-2 focus-visible:outline-focus ${done ? 'text-muted line-through' : 'text-default'} ${readOnly ? 'cursor-default' : ''}`}
           onClick={() => { if (!readOnly) setMode('edit') }} onKeyDown={onKey}>{title}</button></Tooltip>
       )}
       {/* The card drags; with one pointer and no drag, its handle offers Move up and Move down

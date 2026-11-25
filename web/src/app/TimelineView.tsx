@@ -219,7 +219,7 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
     }
     const place = !l.span ? (e: React.PointerEvent) => startDrag(e, l.task, 'place') : undefined
     const row = { role: 'row', 'aria-selected': selected, 'data-timeline-row': l.task.id, 'data-blocked': blocked || undefined }
-    const text = <>{blocked && <Icon name="lock" size="xs" className="mr-1 inline" />}{title}</>
+    const text = <>{blocked && <Icon name="lock" size="xs" className="me-1 inline" />}{title}</>
     if (stacked) {
       // The whole row is the name's button, under the bar; the name's text stays at the
       // grid's left edge while the days scroll, and covers the today line where they meet.
@@ -229,10 +229,10 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
         <div key={l.task.id} {...row} className={`relative border-b border-default ${selected ? 'bg-selected-row' : ''}`} style={{ height, width }}>
           <div role="rowheader" className="absolute inset-0">
             <button data-drag-id="timeline-unscheduled" {...name} className="absolute inset-0" onPointerDown={place} />
-            <span aria-hidden data-timeline-name className={`pointer-events-none sticky left-0 z-20 block w-fit truncate px-2 text-body leading-5 ${blocked ? 'text-muted' : 'text-default'} ${selected ? 'bg-selected-row' : 'bg-canvas'}`}
+            <span aria-hidden data-timeline-name className={`pointer-events-none sticky inset-s-0 z-20 block w-fit truncate px-2 text-body leading-5 ${blocked ? 'text-muted' : 'text-default'} ${selected ? 'bg-selected-row' : 'bg-canvas'}`}
               style={{ marginLeft: indent, marginTop: l.span ? 4 : (height - 20) / 2, maxWidth: `calc(100cqw - ${indent}px)` }}>{text}</span>
           </div>
-          <div role="gridcell" className="pointer-events-none absolute bottom-0 left-0" style={{ width, height: ROW_PX }}>
+          <div role="gridcell" className="pointer-events-none absolute bottom-0 inset-s-0" style={{ width, height: ROW_PX }}>
             {l.span && <TimelineBar task={l.task} s={l.span} selected={selected} {...barProps} />}
           </div>
         </div>
@@ -240,9 +240,9 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
     }
     return (
       <div key={l.task.id} {...row} className={`flex border-b border-default ${selected ? 'bg-selected-row' : ''}`} style={{ height: rowPx }}>
-        <div role="rowheader" className={`sticky left-0 z-10 flex w-[40vw] max-w-64 shrink-0 items-center gap-1 border-r border-default px-2 sm:w-64 ${selected ? 'bg-selected-row' : 'bg-surface'}`}
+        <div role="rowheader" className={`sticky inset-s-0 z-10 flex w-[40vw] max-w-64 shrink-0 items-center gap-1 border-e border-default px-2 sm:w-64 ${selected ? 'bg-selected-row' : 'bg-surface'}`}
           style={{ paddingLeft: 8 + l.depth * 14 }}>
-          <button data-drag-id="timeline-unscheduled" {...name} className={`min-w-0 flex-1 truncate text-left text-body ${blocked ? 'text-muted' : 'text-default'}`} onPointerDown={place}>{text}</button>
+          <button data-drag-id="timeline-unscheduled" {...name} className={`min-w-0 flex-1 truncate text-start text-body ${blocked ? 'text-muted' : 'text-default'}`} onPointerDown={place}>{text}</button>
         </div>
         <div role="gridcell" className="relative shrink-0" style={{ width, marginTop: (rowPx - ROW_PX) / 2 }}>
           {l.span && <TimelineBar task={l.task} s={l.span} selected={selected} {...barProps} />}
@@ -254,7 +254,7 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
   // A section heading is the list's group bar (D5): sentence case, the name and its number of rows.
   const heading = (key: string, text: string, count: number) => (
     <div key={`h:${key}`} role="row" data-timeline-group={key} className="flex border-b border-default bg-raised" style={{ height: ROW_PX }}>
-      <div role="rowheader" className={`sticky left-0 z-10 flex shrink-0 items-center gap-1.5 bg-raised px-2 ${stacked ? 'max-w-[100cqw]' : 'w-[40vw] max-w-64 border-r border-default sm:w-64'}`}>
+      <div role="rowheader" className={`sticky inset-s-0 z-10 flex shrink-0 items-center gap-1.5 bg-raised px-2 ${stacked ? 'max-w-[100cqw]' : 'w-[40vw] max-w-64 border-e border-default sm:w-64'}`}>
         <span className="min-w-0 truncate text-meta font-medium text-default">{text}</span>
         <span className="text-meta tabular-nums text-faint" data-group-count><ReadAs label={t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</ReadAs></span>
       </div>
@@ -267,12 +267,12 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
   const weekLabel = (iso: string) => formatDateRange(iso, addDaysISO(iso, 6), { month: 'short', day: 'numeric' })
   const headerRows = 1
   return (
-    <div data-timeline className="min-w-0">
+    <div data-timeline dir="ltr" className="min-w-0">
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <span className="flex rounded-control border border-default text-meta" role="group" aria-label={t('Timeline zoom')}>
           {(['day', 'week'] as const).map((z, i) => (
             <button key={z} type="button" aria-pressed={zoom === z} onClick={() => chooseZoom(z)}
-              className={`${i === 0 ? 'rounded-l-control' : 'rounded-r-control'} px-2 py-1 ${zoom === z ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted'}`}>
+              className={`${i === 0 ? 'rounded-s-control' : 'rounded-e-control'} px-2 py-1 ${zoom === z ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted'}`}>
               {z === 'day' ? t('Days') : t('Weeks')}
             </button>
           ))}
@@ -289,10 +289,10 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
         <div className="relative" style={{ width: `calc(${names} + ${width}px)` }}>
           {/* Axis */}
           <div role="row" className="sticky top-0 z-20 flex border-b border-default bg-surface" style={{ height: ROW_PX }}>
-            <div role="columnheader" className={stacked ? 'sr-only' : 'sticky left-0 z-10 w-[40vw] max-w-64 shrink-0 border-r border-default bg-surface px-2 text-hint leading-8 text-muted sm:w-64'}>{t('Task')}</div>
+            <div role="columnheader" className={stacked ? 'sr-only' : 'sticky inset-s-0 z-10 w-[40vw] max-w-64 shrink-0 border-e border-default bg-surface px-2 text-hint leading-8 text-muted sm:w-64'}>{t('Task')}</div>
             <div ref={axisRef} className="relative shrink-0" style={{ width }}>
               {ax.columns.map((c) => (
-                <span key={c} role="columnheader" className="absolute top-0 h-full border-l border-default px-0.5 text-hint leading-8 text-muted" style={{ left: x(c), width: (zoom === 'week' ? 7 : 1) * px }}>
+                <span key={c} role="columnheader" className="absolute top-0 h-full border-s border-default px-0.5 text-hint leading-8 text-muted" style={{ left: x(c), width: (zoom === 'week' ? 7 : 1) * px }}>
                   {zoom === 'week' ? weekLabel(c) : c.endsWith('-01') ? `${monthLabel(c)} ${Number(c.slice(8))}` : Number(c.slice(8))}
                 </span>
               ))}
@@ -395,7 +395,7 @@ function TimelineBar({ task, s, selected, from, totalDays, px, today, hue, edita
   if (to < 0 || first > totalDays - 1) {
     // Entirely outside the window: a marker at the near edge.
     const before = dayOffset(from, s.to) < 0
-    return <span data-beyond={before ? 'before' : 'after'} className={`absolute top-2.5 text-muted ${before ? 'left-1' : 'right-1'}`} aria-hidden><Icon name={before ? 'chevron-left' : 'chevron-right'} size="xs" /></span>
+    return <span data-beyond={before ? 'before' : 'after'} className={`absolute top-2.5 text-muted ${before ? 'inset-s-1' : 'inset-e-1'}`} aria-hidden><Icon name={before ? 'chevron-left' : 'chevron-right'} size="xs" /></span>
   }
   const clippedLeft = dayOffset(from, s.from) < 0
   const clippedRight = dayOffset(from, s.to) > totalDays - 1
@@ -422,7 +422,7 @@ function TimelineBar({ task, s, selected, from, totalDays, px, today, hue, edita
       {clippedLeft && <Icon name="chevron-left" size="xs" className="relative text-muted" />}
       {/* Below 768 px the name already stands above the bar (phone-timeline-rows). */}
       {titled && <span data-bar-title aria-hidden className="user-text pointer-events-none relative min-w-0 flex-1 truncate px-1.5 text-meta font-medium max-md:hidden">{task.title || t('Untitled')}</span>}
-      {editable && !clippedLeft && <span data-drag-id="timeline-bar-start" data-bar-edge="start" className="absolute inset-y-0 left-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => onDrag(e, task, 'start')} />}
+      {editable && !clippedLeft && <span data-drag-id="timeline-bar-start" data-bar-edge="start" className="absolute inset-y-0 inset-s-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => onDrag(e, task, 'start')} />}
       {s.dueAt && s.dueAt !== s.from && s.dueAt !== s.to && dayOffset(from, s.dueAt) >= 0 && (
         <span data-due-marker className="absolute top-1.5 h-3 w-0.5 rounded-full bg-accent" style={{ left: (dayOffset(from, s.dueAt) - first + 0.5) * px }} aria-hidden />
       )}
@@ -430,8 +430,8 @@ function TimelineBar({ task, s, selected, from, totalDays, px, today, hue, edita
         // The deadline diamond (D8): a 10 px square turned 45 degrees, centred on its day.
         <span data-deadline-marker className={`absolute top-1/2 size-2.5 -translate-y-1/2 rotate-45 rounded-[2px] ${s.late ? 'bg-danger' : 'bg-warning'}`} style={{ left: (dayOffset(from, s.deadlineAt!) - first + 0.5) * px - 5 }} aria-hidden />
       )}
-      {clippedRight && <Icon name="chevron-right" size="xs" className="relative ml-auto text-muted" />}
-      {editable && !clippedRight && <span data-drag-id="timeline-bar-end" data-bar-edge="end" className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => onDrag(e, task, 'end')} />}
+      {clippedRight && <Icon name="chevron-right" size="xs" className="relative ms-auto text-muted" />}
+      {editable && !clippedRight && <span data-drag-id="timeline-bar-end" data-bar-edge="end" className="absolute inset-y-0 inset-e-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => onDrag(e, task, 'end')} />}
     </div>
     {after && !clippedRight && (
       <span data-bar-after className={`pointer-events-none absolute top-1.5 flex h-6 items-center whitespace-nowrap text-meta tabular-nums ${after.tone}`} style={{ left: notePlacement(first * px, first * px + barPx, noteWidth(after.text), todayIn ? (dayOffset(from, today) + 0.5) * px : null, totalDays * px) }}>{after.text}</span>

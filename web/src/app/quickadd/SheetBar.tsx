@@ -53,7 +53,7 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
         {chips.map((c) => {
           const project = c.kind === 'project' ? projects.find((p) => p.id === c.value) : undefined
           return (
-            <span key={c.key} data-sheet-chip={c.kind} className="inline-flex h-[1.875rem] shrink-0 items-center gap-1.5 rounded-full border border-default bg-raised pl-2.5 pr-1 text-body text-strong">
+            <span key={c.key} data-sheet-chip={c.kind} className="inline-flex h-[1.875rem] shrink-0 items-center gap-1.5 rounded-full border border-default bg-raised ps-2.5 pe-1 text-body text-strong">
               {project?.color
                 ? <ProjectMark project={{ color: project.color, icon: project.icon }} size="xs" />
                 : <Icon name={FIELD_ICON[fieldOf(c.kind)]} size={14} className="text-muted" />}

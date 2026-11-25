@@ -33,7 +33,7 @@ export function VoiceNotice({ voice }: { voice: Voice }) {
     <>
       <span className="sr-only" role="status" aria-live="polite" data-voice-status>{voice.view.announcement}</span>
       {voice.view.message && (
-        <p className="mt-1 flex items-start gap-2 pl-6 text-meta text-on-warning-soft" data-voice-message>
+        <p className="mt-1 flex items-start gap-2 ps-6 text-meta text-on-warning-soft" data-voice-message>
           <span className="flex-1">{voice.view.message}</span>
           <button type="button" className="underline" onClick={voice.dismissMessage}>{t('Dismiss')}</button>
         </p>

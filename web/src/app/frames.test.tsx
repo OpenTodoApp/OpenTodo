@@ -130,7 +130,7 @@ describe('bands on the grid', () => {
     const r = await render(<Calendar />)
     await waitFor(() => qa('[data-frame-band]').length === 2, 'two bands')
     const [a, b] = qa('[data-frame-band]')
-    expect([a.style.left, a.style.width, b.style.left, b.style.width]).toEqual(['0%', '50%', '50%', '50%'])
+    expect([a.style.insetInlineStart, a.style.width, b.style.insetInlineStart, b.style.width]).toEqual(['0%', '50%', '50%', '50%'])
     await r.unmount()
   })
 })

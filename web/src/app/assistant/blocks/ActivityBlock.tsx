@@ -55,7 +55,7 @@ export default function ActivityBlock({ block }: { block: Extract<AssistantBlock
           })}
         </ol>
       )}
-      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -ml-2 gap-1"
+      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -ms-2 gap-1"
         onClick={() => (block.of === 'project' ? navigate({ view: 'project', id: block.id }) : openTaskPanel(block.id))}>
         <Icon name="arrow-right" size="sm" />{block.of === 'project' ? t('Open project') : t('Open task')}
       </button>

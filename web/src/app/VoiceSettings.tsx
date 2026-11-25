@@ -17,7 +17,7 @@ import { cardCopy, rowCopy, SETTINGS_COPY } from '../lib/settingsCopy'
 /** The privacy statement shown before voice capture can be switched on (spec "Privacy contract"). */
 export function VoicePrivacyStatement() {
   return (
-    <ul className="list-disc space-y-1 pl-5 text-body text-default">
+    <ul className="list-disc space-y-1 ps-5 text-body text-default">
       <li>{t('Speech is recognised by your browser, not by OpenTodo.')}</li>
       <li>{t('Depending on the browser, your audio may be sent to the browser vendor’s speech service (for example Google for Chrome, Apple for Safari) and handled under their privacy policy.')}</li>
       <li>{t('OpenTodo asks the browser to recognise speech on this device when it offers that choice.')}</li>
@@ -33,7 +33,7 @@ export function VoicePrivacyStatement() {
  */
 export function ServerSpeechStatement({ host, encrypted }: { host: string; encrypted: boolean }) {
   return (
-    <ul className="list-disc space-y-1 pl-5 text-body text-default" data-server-speech-statement>
+    <ul className="list-disc space-y-1 ps-5 text-body text-default" data-server-speech-statement>
       <li>{t('Each phrase is recorded in this browser while the microphone is on, then sent once to your OpenTodo server.')}</li>
       <li>{t('The server passes it to the speech service the owner connected, {host}, and returns the text.', { host })}</li>
       <li>{t('Neither the server nor the app keeps the audio or the text. Only the task you save with Enter is stored and synced.')}</li>

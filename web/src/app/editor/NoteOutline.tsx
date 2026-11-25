@@ -24,7 +24,7 @@ function OutlineMenuItem({ entry, current, onGo }: { entry: OutlineEntry; curren
   return (
     <button type="button" role="menuitem" data-menu-label={label(entry)} aria-current={current ? 'location' : undefined} data-outline-item
       onClick={() => { onGo(); close?.() }}
-      className={`flex w-full items-center rounded-control py-1.5 pe-2.5 text-left text-body outline-none hover:bg-hover focus-visible:bg-selected focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-focus ${INDENT[entry.level]} ${current ? 'font-medium text-accent' : entry.level === 1 ? 'text-default' : 'text-muted'}`}>
+      className={`flex w-full items-center rounded-control py-1.5 pe-2.5 text-start text-body outline-none hover:bg-hover focus-visible:bg-selected focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-focus ${INDENT[entry.level]} ${current ? 'font-medium text-accent' : entry.level === 1 ? 'text-default' : 'text-muted'}`}>
       <span className="min-w-0 flex-1 truncate">{label(entry)}</span>
     </button>
   )

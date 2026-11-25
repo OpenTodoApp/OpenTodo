@@ -25,6 +25,7 @@ import { focusHeading, pageHeading } from '../pageFocus'
 import { useShortcutScope } from '../shortcuts'
 import { useToday } from '../useViews'
 import { useResetOnChange } from '../../lib/useResetOnChange'
+import { inlineKey } from '../../lib/direction'
 
 /** What differs between the two spans; Tailwind needs the container classes spelled out. */
 const SPANS = {
@@ -90,7 +91,7 @@ export function MonthsSpanView({ mode, anchor, title, months }: MonthsSpan) {
 
   const ARROWS: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }
   useShortcutScope('view', {
-    [`${mode}.move`]: (e) => focusDay(addDaysISO(focused, ARROWS[e.key])),
+    [`${mode}.move`]: (e) => focusDay(addDaysISO(focused, ARROWS[inlineKey(e)])),
     [`${mode}.month`]: (e) => focusDay(addMonthsISO(focused, e.key === 'PageUp' ? -1 : 1)),
     [`${mode}.edge`]: (e) => focusDay(e.key === 'Home' ? `${focused.slice(0, 7)}-01` : monthEnd(focused)),
     [`${mode}.range-prev`]: () => goTo(addMonthsISO(focused, -span.step)),
@@ -154,7 +155,7 @@ export function MonthsSpanView({ mode, anchor, title, months }: MonthsSpan) {
               <div key={m} data-year-month={m} className="relative min-w-0 rounded-card p-1 pointer-fine:hover:bg-hover">
                 <button type="button" onClick={() => openMonth(m)} data-year-month-link={m}
                   aria-label={[monthName(m, 'long', true), total ? t('{n, plural, one {# task} other {# tasks}}', { n: total }) : '', eventDays ? t('{n, plural, one {# day with events} other {# days with events}}', { n: eventDays }) : ''].filter(Boolean).join(', ')}
-                  className="mb-1 block w-full truncate rounded-card text-left text-h3 text-strong after:absolute after:inset-0 after:rounded-card focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-solid focus-visible:after:outline-focus">
+                  className="mb-1 block w-full truncate rounded-card text-start text-h3 text-strong after:absolute after:inset-0 after:rounded-card focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-solid focus-visible:after:outline-focus">
                   {name}
                 </button>
                 <div aria-hidden>{cells}</div>

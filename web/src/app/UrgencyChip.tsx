@@ -39,11 +39,11 @@ export function UrgencyBreakdown({ urgency: u }: { urgency: Urgency }) {
       {u.parts.map((p) => (
         <div key={p.key} className="contents">
           <dt className="text-muted">{partLabel(p)}</dt>
-          <dd className="text-right text-default">{signed.format(p.value)}</dd>
+          <dd className="text-end text-default">{signed.format(p.value)}</dd>
         </div>
       ))}
       <dt className="border-t border-soft pt-1 font-medium text-default">{t('Urgency')}</dt>
-      <dd className="border-t border-soft pt-1 text-right font-medium text-default">{fixed(2, false).format(u.score)}</dd>
+      <dd className="border-t border-soft pt-1 text-end font-medium text-default">{fixed(2, false).format(u.score)}</dd>
     </dl>
   )
 }

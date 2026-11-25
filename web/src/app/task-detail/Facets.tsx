@@ -269,7 +269,7 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
         <ul className="flex min-w-0 flex-col gap-0.5" aria-label={t('Tasks waiting for this one')}>
           {m.blocks.map((tk) => (
             <li key={tk.id} className="min-w-0">
-              <button type="button" className="max-w-full truncate text-left text-meta text-accent hover:underline" onClick={() => { onClose(); onOpen?.(tk.id) }}>{tk.title || t('Untitled')}</button>
+              <button type="button" className="max-w-full truncate text-start text-meta text-accent hover:underline" onClick={() => { onClose(); onOpen?.(tk.id) }}>{tk.title || t('Untitled')}</button>
             </li>
           ))}
         </ul>
@@ -312,7 +312,7 @@ function AddMenu({ task, userId, m }: { task: Task; userId?: string; m: Properti
   ]
   const shown = groups.map((g) => ({ ...g, offers: g.offers.filter((o) => (o.when ?? true) && !ed.visible(o.id)) })).filter((g) => g.offers.length > 0)
   return (
-    <div className="pl-7" data-add-property>
+    <div className="ps-7" data-add-property>
       <Menu kind="menu" label={t('Add a property')} title={t('Add')} width="sm:w-64" align="start"
         trigger={<span className="inline-flex items-center gap-1 text-meta"><Icon name="plus" size="xs" />{t('Add')}</span>}
         triggerClassName="inline-flex min-h-8 items-center rounded-control px-1 text-muted pointer-coarse:min-h-11 hover:bg-sunken hover:text-default dark:hover:bg-raised">

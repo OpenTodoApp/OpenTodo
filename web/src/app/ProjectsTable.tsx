@@ -22,6 +22,7 @@ import { navigate } from './router'
 import { ProjectMark } from './ProjectMark'
 import { MAX_INDENT } from './TaskRow'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { inlineKey } from '../lib/direction'
 
 export interface ProjectsSort { key: ProjectSortKey; dir: 1 | -1 }
 
@@ -177,7 +178,7 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
       return
     }
     if (e.metaKey || e.ctrlKey || e.altKey) return
-    switch (e.key) {
+    switch (inlineKey(e)) {
       case 'ArrowDown': case 'j': return go(i + 1)
       case 'ArrowUp': case 'k': return go(i - 1)
       case 'Home': return go(0)
@@ -205,10 +206,10 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
 
   return (
     <div ref={frame} className="@container/projects" data-projects-table>
-      <table className="w-full table-fixed border-collapse text-left" aria-label={t('Projects')}>
+      <table className="w-full table-fixed border-collapse text-start" aria-label={t('Projects')}>
         <thead>
           <tr className="border-b border-soft">
-            <SortHeader label={t('Name')} sortKey="name" sort={sort} onSort={onSort} className="pl-8 pr-2" />
+            <SortHeader label={t('Name')} sortKey="name" sort={sort} onSort={onSort} className="ps-8 pe-2" />
             {COLUMNS.map((c) => c.key === 'people'
               ? <th key={c.key} scope="col" className={`${c.from} ${c.width} px-2 py-2 text-meta font-medium text-muted`}>{c.label()}</th>
               : <SortHeader key={c.key} label={c.label()} sortKey={c.key} sort={sort} onSort={onSort} className={`${c.from} ${c.width} px-2`} />)}
@@ -228,7 +229,7 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
               <tr key={n.id} data-projects-row={n.id} data-ticked={tk?.ticked || undefined} onClick={(e) => onRowClick(e, n.id)}
                 className={`group cursor-pointer border-b border-soft ${tk?.ticked ? 'bg-accent-soft' : 'row-hover focus-within:bg-selected'}`}>
                 <td className="min-w-0 py-0">
-                  <div className="flex min-h-11 min-w-0 items-center" style={{ paddingLeft: `${Math.min(n.depth, MAX_INDENT) * 1.25}rem` }}>
+                  <div className="flex min-h-11 min-w-0 items-center" style={{ paddingInlineStart: `${Math.min(n.depth, MAX_INDENT) * 1.25}rem` }}>
                     <span className="flex h-8 w-6 shrink-0 items-center justify-center pointer-coarse:h-11 pointer-coarse:w-11">
                       {has && foldable && (
                         <button type="button" tabIndex={-1} onClick={() => onFold(n.id, !isFolded)} aria-expanded={!isFolded}
@@ -240,7 +241,7 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
                     </span>
                     <button type="button" onClick={(e) => openOrTick(e, n.id)} data-project-open={n.id}
                       aria-expanded={has && foldable ? !isFolded : undefined} aria-pressed={tk?.shown ? tk.ticked : undefined}
-                      className={`flex min-w-0 flex-1 items-center gap-2 rounded-control py-1.5 pr-2 text-left text-body font-medium outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus ${dimmed?.has(n.id) ? 'text-faint' : 'text-strong'}`}>
+                      className={`flex min-w-0 flex-1 items-center gap-2 rounded-control py-1.5 pe-2 text-start text-body font-medium outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus ${dimmed?.has(n.id) ? 'text-faint' : 'text-strong'}`}>
                       {/* While the boxes show, a row's box stands where its mark is (as on the Notes page). */}
                       <span className="flex w-5 shrink-0 justify-center">{tk?.shown
                         ? <span aria-hidden className={`flex h-4 w-4 items-center justify-center rounded-[4px] border ${tk.ticked ? 'border-accent bg-accent text-on-accent' : 'border-strong'}`} data-project-tick>{tk.ticked && <Icon name="check" size={12} />}</span>
@@ -249,7 +250,7 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
                     </button>
                   </div>
                   {/* Too narrow for a health column (a large text size on a phone): the health sits under the name. */}
-                  <div className="-mt-1.5 pb-2 pointer-coarse:ml-5 @min-[18rem]/projects:hidden" style={{ paddingLeft: `${Math.min(n.depth, MAX_INDENT) * 1.25 + 3.25}rem` }} data-health-under>
+                  <div className="-mt-1.5 pb-2 pointer-coarse:ms-5 @min-[18rem]/projects:hidden" style={{ paddingInlineStart: `${Math.min(n.depth, MAX_INDENT) * 1.25 + 3.25}rem` }} data-health-under>
                     <HealthCell summary={s} narrow />
                   </div>
                 </td>
@@ -270,13 +271,13 @@ export function ProjectsTable({ rows, summaries, memberships, dimmed, folded, fo
                   {members.length > 0 && <span className="flex items-center -space-x-1.5" role="img" aria-label={members.map((m) => m.name || m.email).join(', ')}>
                     {members.slice(0, 3).map((m) => <Avatar key={m.userId} id={m.userId} name={m.name || m.email} size="sm" className="ring-2 ring-surface"
                       src={m.avatarVersion ? avatarUrl(m.userId, m.avatarVersion) : undefined} />)}
-                    {members.length > 3 && <span className="pl-2.5 text-meta tabular-nums text-faint">{`+${members.length - 3}`}</span>}
+                    {members.length > 3 && <span className="ps-2.5 text-meta tabular-nums text-faint">{`+${members.length - 3}`}</span>}
                   </span>}
                 </td>
                 <td className={`${cellOf('updated')} px-2 text-meta text-muted`}>
                   {s?.updated ? updatedLabel(s.updated, now, today, (iso) => dt.formatDate(iso, 'compact')) : ''}
                 </td>
-                <td className="pr-1 text-right">
+                <td className="pe-1 text-end">
                   <ProjectRowMenu project={p} movable={canMove(n)} edges={edges(n)} className="hover-reveal" />
                 </td>
               </tr>

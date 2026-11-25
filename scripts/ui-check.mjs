@@ -12,6 +12,11 @@
 //   6. a priority level is named only through web/src/lib/priority.ts (OpenSpec change
 //      priority-names, design D3): no raw "Priority {n}" message elsewhere, so a renamed
 //      level reads the same on every screen.
+//   7. layout classes name the start and end of the line, not left and right (OpenSpec
+//      change arabic-rtl, design D3): `ms-2`, `ps-4`, `inset-s-0`, `text-start`,
+//      `border-e`, `rounded-s-control`. A box placed by screen coordinates keeps
+//      `left-0` with a `// physical: <reason>` comment on the line or the line above;
+//      a centring `left-1/2` is fine.
 // A glyph counts as an icon when it stands alone in a string or JSX text, starts or
 // ends a label ("✓ Complete", "Next ›"), or is a trigger=/icon= prop. Typography
 // inside copy ("Settings → Integrations", "2 × 3") is fine.
@@ -153,6 +158,26 @@ export function illustrationProblems(file, text) {
   return out
 }
 
+// Physical direction utilities (rule 7): the ones with a logical twin in Tailwind.
+const PHYSICAL = new RegExp(String.raw`(?:^|[\s"'\x60{])(?:[\w\-\[\]&>*=.:/@()]+?:)*!?-?(` +
+  String.raw`(?:ml|mr|pl|pr|scroll-ml|scroll-mr|scroll-pl|scroll-pr|left|right)-(?:\d+(?:\.\d+)?(?:\/\d+)?|px|auto|full|\[[^\]\s]+\]|\([^)\s]+\))` +
+  String.raw`|border-[lr](?:-[\w\[\]().%/-]+)?|rounded-(?:tl|tr|bl|br|l|r)(?:-[\w\[\]()-]+)?|text-(?:left|right)` +
+  String.raw`)(?=$|[\s"'\x60!};])`, 'g')
+
+export function physicalDirectionProblems(file, text) {
+  const out = []
+  const lines = text.split('\n')
+  lines.forEach((line, i) => {
+    if (/\/\/\s*physical:/.test(line) || /\/\/\s*physical:/.test(lines[i - 1] ?? '')) return
+    if (/^\s*(\/\/|\*|\/\*)/.test(line)) return
+    for (const m of line.matchAll(PHYSICAL)) {
+      if (/^-?(left|right)-1\/2$/.test(m[1])) continue
+      out.push(`${file}:${i + 1}: \`${m[1]}\` is a physical direction; use its start/end twin (ms, me, ps, pe, inset-s, inset-e, text-start, border-s, rounded-s) so right to left mirrors`)
+    }
+  })
+  return out
+}
+
 function storyProblems() {
   const ui = join(repo, 'web/src/ui')
   return walk(ui)
@@ -182,6 +207,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
       .flatMap((f) => rawRadioProblems(relative(repo, f), readFileSync(f, 'utf8'))),
     ...[...walk(app), ...walk(join(repo, 'web/src/lib')), ...walk(join(repo, 'web/src/ui'))].filter((f) => /\.tsx?$/.test(f) && !/\.(test|stories)\.tsx?$/.test(f))
       .flatMap((f) => rawPriorityNameProblems(relative(repo, f), readFileSync(f, 'utf8'))),
+    ...[...walk(app), ...walk(join(repo, 'web/src/lib')), ...walk(join(repo, 'web/src/ui'))].filter((f) => /\.tsx?$/.test(f) && !/\.(test|stories)\.tsx?$/.test(f) && !/\/icons\//.test(f))
+      .flatMap((f) => physicalDirectionProblems(relative(repo, f), readFileSync(f, 'utf8'))),
     ...walk(join(repo, 'web/src/ui/illustrations')).filter((f) => f.endsWith('.tsx') && !/\.(test|stories)\.tsx$/.test(f))
       .flatMap((f) => illustrationProblems(relative(repo, f), readFileSync(f, 'utf8'))),
     ...untranslated().map((p) => `${p} (untranslated: wrap it in t() or add it to scripts/i18n/allow.txt)`),
