@@ -4,6 +4,7 @@
 // sheet on phones) with Clear and Done; the When parts share one popover that shows
 // one segment at a time. The Add menu offers what is not set, grouped by facet.
 // Every editor writes exactly the operation its chip wrote (usePropertiesModel).
+import { useFeature } from '../../lib/features'
 import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { lazy } from '../../lib/lazy'
 import { facetsOf, type FacetId, type FacetPart, type WhenSegmentId } from '../../lib/facets'
@@ -283,12 +284,14 @@ function AddMenu({ task, userId, m }: { task: Task; userId?: string; m: Properti
   const { solo, offerSection, editing: ed } = m
   // Energy is offered only while the account has Energy levels on (task-energy D3).
   const energyOn = energyLevelsOn(useUserPrefsRow())
+  // A location is offered only while the current workspace has Locations on (workspace-feature-switches D4).
+  const locationsOn = useFeature('locations')
   type Offer = { id: Optional; label: string; icon: IconName; shortcut?: string; when?: boolean; run?: () => void }
   const groups: { title: string; offers: Offer[] }[] = [
     { title: t('Where'), offers: [
       { id: 'section', label: t('Section'), icon: 'kanban', when: offerSection },
       { id: 'parent', label: t('Parent task'), icon: 'corner-down-right' },
-      { id: 'location', label: t('Location'), icon: 'map-pin' },
+      { id: 'location', label: t('Location'), icon: 'map-pin', when: locationsOn },
     ] },
     { title: t('When'), offers: [
       { id: 'deadline', label: t('Deadline'), icon: 'hourglass', shortcut: keysOf('list.deadline') },

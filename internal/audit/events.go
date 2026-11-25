@@ -130,6 +130,7 @@ const (
 	// (OpenSpec change workspaces, design D9): ids only, never a name.
 	WorkspaceCreatedName            Name = "workspace.created"
 	WorkspaceRenamedName            Name = "workspace.renamed"
+	WorkspaceFeaturesChangedName    Name = "workspace.features_changed"
 	WorkspaceDeletedName            Name = "workspace.deleted"
 	WorkspaceTransferredName        Name = "workspace.transferred"
 	WorkspaceMemberAddedName        Name = "workspace.member_added"
@@ -187,7 +188,7 @@ var Names = []Name{
 	EmailSentName, EmailFailedName,
 	RelayEnabledName, RelayDisabledName,
 	NameChangedName, EmailChangeRequestedName, EmailChangedName, AvatarChangedName,
-	WorkspaceCreatedName, WorkspaceRenamedName, WorkspaceDeletedName, WorkspaceTransferredName,
+	WorkspaceCreatedName, WorkspaceRenamedName, WorkspaceFeaturesChangedName, WorkspaceDeletedName, WorkspaceTransferredName,
 	WorkspaceMemberAddedName, WorkspaceMemberRoleChangedName, WorkspaceMemberRemovedName,
 	WorkspaceGroupCreatedName, WorkspaceGroupDeletedName, WorkspaceGroupMemberAddedName, WorkspaceGroupMemberRemovedName,
 	ProjectMemberAddedName,
@@ -818,6 +819,13 @@ func WorkspaceCreated(actorID, workspaceID string) Event {
 // WorkspaceRenamed records a change of a workspace's name, icon or colour (never the values).
 func WorkspaceRenamed(actorID, workspaceID string) Event {
 	return ev(WorkspaceRenamedName, Success, actorID, "", "workspace", workspaceID)
+}
+
+// WorkspaceFeaturesChanged records feature switches of a workspace changed
+// (workspace-feature-switches D2): setting "features" and, as "to", the switched
+// ids with on or off ("focus=on,habits=off"), ids only.
+func WorkspaceFeaturesChanged(actorID, workspaceID, to string) Event {
+	return ev(WorkspaceFeaturesChangedName, Success, actorID, "", "workspace", workspaceID, "setting", "features", "to", to)
 }
 
 // WorkspaceDeleted records a deleted workspace.

@@ -13,6 +13,7 @@ import { ArgError, ToolError } from './args'
 import { loadSnapshot } from './data'
 import { getNote, listNotes, searchNotes } from './readNotes'
 import { listFrames, listSlots, listTimeEntries } from './readTime'
+import { listProjects, listTasks, searchTasks, todaySummary } from './read'
 import vectors from './read.vectors.json'
 
 type Row = Record<string, unknown> & { _clock: Record<string, { ts: number; device: string }> }
@@ -48,6 +49,17 @@ beforeEach(async () => {
 
 const TOOLS: Record<string, (snap: Awaited<ReturnType<typeof loadSnapshot>>, a: Record<string, unknown>, now: number, max: number) => Promise<unknown>> = {
   list_notes: listNotes, search_notes: searchNotes, get_note: getNote, list_time_entries: listTimeEntries, list_frames: listFrames, list_slots: listSlots,
+  // Kept subtasks (keep-open-subtasks D5) leave the task lists, search, the summary and the counts.
+  list_tasks: async (s, a, now, max) => listTasks(s, a, now, max), search_tasks: async (s, a, now, max) => searchTasks(s, a, now, max),
+  today_summary: async (s, a, now, max) => todaySummary(s, a, now, max), list_projects: async (s, a, _now, max) => listProjects(s, a, max),
+}
+
+type Listed = { id: string; open_count?: number }
+/** The ids and counts of a task tool's answer (keep-open-subtasks D5). */
+function keptView(res: unknown) {
+  const r = res as { tasks?: Listed[]; projects?: Listed[]; due_today?: Listed[]; overdue?: Listed[]; inbox_open_count?: number; inbox_count?: number }
+  const ids = (l?: Listed[]) => l?.map((x) => x.id)
+  return { tasks: ids(r.tasks), due_today: ids(r.due_today), overdue: ids(r.overdue), projects: r.projects?.map((p) => [p.id, p.open_count]), inbox: r.inbox_open_count ?? r.inbox_count }
 }
 
 describe('read vectors', () => {
@@ -64,7 +76,9 @@ describe('read vectors', () => {
         else throw err
       }
       expect(code).toBe(c.error ?? '')
-      if (!c.error) expect(JSON.parse(JSON.stringify(got))).toEqual(c.result)
+      // The task tools render more on the server; for them the vectors pin what the kept rule decides: which tasks, and the counts.
+      if (!c.error && c.name.startsWith('kept:')) expect(keptView(got)).toEqual(keptView(c.result))
+      else if (!c.error) expect(JSON.parse(JSON.stringify(got))).toEqual(c.result)
     })
   }
 

@@ -17,8 +17,11 @@ import { dropTasks } from '../taskDrop'
 import { showBulkToast, showUndoToast } from '../bulk/toastStore'
 import type { ViewPlacement } from '../../lib/viewOrder'
 import { t } from '../../lib/i18n'
-import type { GroupDrop } from '../../lib/viewOrderMove'
+import type { DayDrop, GroupDrop } from '../../lib/viewOrderMove'
 import type { DragDepth } from './projectGroupPlacement'
+
+/** A drop Today or Upcoming plans: across project groups, or a line in the day order. */
+export type TodayListDrop = GroupDrop | DayDrop
 
 /** What a drag session reads at drop time; the latest render's values. */
 export interface DragSource {
@@ -52,10 +55,17 @@ export interface DragSource {
     canEdit: (projectId: string | null) => boolean
     move: (taskId: string, at: ViewPlacement, groupKey: string) => void
   }
+  /**
+   * Today and Upcoming (today-project-drops, day-manual-order D2): where a drag over
+   * `target` lands, worked out by the page, and its write. Over Upcoming's days the
+   * target is the day (`drop:day:<date>`), so `x` and `y` find the row.
+   */
   today?: {
-    resolve: (task: Task, target: string | null, y: number, gesture: DragDepth) => { indicator?: DropAt; group?: string; drop: GroupDrop } | null
-    move: (id: string, drop: GroupDrop) => Promise<string | undefined>
+    resolve: (task: Task, target: string | null, y: number, gesture: DragDepth, x: number) => { indicator?: DropAt; group?: string; drop: TodayListDrop } | null
+    move: (id: string, drop: TodayListDrop) => Promise<string | undefined>
   }
+  /** The project on screen: a task of one of its open sub-projects dropped on its section header moves into it (subproject-inline D5). */
+  project?: string | null
   /** A task the user may not change: it can still be ordered in its own list, never dropped on the sidebar. */
   readOnly?: (task: Task) => boolean
 }
@@ -109,6 +119,11 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
     const startX = e.clientX
     const startDepth = st.rows.find((r) => r.task.id === task.id)?.depth ?? 0
     const contextual = st.rows.some((r) => r.task.id === task.id && r.contextual)
+    // A project's list with open sub-projects: a task reorders among its own project's rows only (subproject-inline D5).
+    const blocks = !st.reorder && !!st.groups?.some((g) => g.subProject && g.rows.length)
+    const projectOfRow = (id: string) => st.rows.find((r) => r.task.id === id)?.task.project_id
+    // Ticked tasks of several projects take no place among rows: each project keeps its own order.
+    const mixed = !!group && blocks && group.some((id) => projectOfRow(id) !== task.project_id)
     const step = indentStep()
     const height = host?.offsetHeight ?? 0
     let column: string | null = null
@@ -142,7 +157,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
         // Over a sidebar target the list shows no drop line (the target shows its ring).
         const now = dragState.current
         if (now.today) {
-          const next = now.today.resolve(task, target, y, { start: startDepth, dx: x - startX, step })
+          const next = now.today.resolve(task, target, y, { start: startDepth, dx: x - startX, step }, x)
           setDropGroup(next?.group ?? null)
           show(next?.indicator ?? null)
           return
@@ -155,6 +170,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
           if (into && now.across?.canEdit(into.id)) note = t('Move to {project}', { project: into.name })
           else id = null
         }
+        if (id && blocks && projectOfRow(id) !== task.project_id) id = null
         // The Completed column has no order of its own: a card over it, or a completed card anywhere, goes to the column (board-completed-column D3).
         const doneColumn = now.board && id ? completedMove(now.sectionOfRow, task.id, id) : null
         if (doneColumn !== null) id = null
@@ -175,15 +191,21 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
       },
       onDrop: (target, x, y) => {
         const { rows: rs, groups, sectionOfRow: secs, board: b, ticked, reorder, readOnly, groupOf, across } = dragState.current
+        const today = dragState.current.today
+        // A line in one of Upcoming's days places the task there too (day-manual-order D2); without one the day takes the drop.
+        const line = today && target.startsWith('drop:day:') ? today.resolve(task, target, y, { start: startDepth, dx: x - startX, step }, x) : null
+        if (today && line) {
+          act(today.move(task.id, line.drop).then((id) => { if (id) onDropped(id) }))
+          return
+        }
         if (target.startsWith('drop:')) {
           if (contextual || readOnly?.(task) || rs.some((r) => r.task.id === task.id && r.contextual)) return
           const ids = ticked?.has(task.id) ? [...ticked] : [task.id]
           act(withListTransition(ids.length, () => dropTasks(target.slice('drop:'.length), ids)))
           return
         }
-        const today = dragState.current.today
         if (today) {
-          const next = today.resolve(task, target, y, { start: startDepth, dx: x - startX, step })
+          const next = today.resolve(task, target, y, { start: startDepth, dx: x - startX, step }, x)
           if (next) act(today.move(task.id, next.drop).then((id) => { if (id) onDropped(id) }))
           return
         }
@@ -198,6 +220,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
           const key = completedMove(secs, task.id, target.slice('task:'.length))!
           if (key !== secs.get(task.id)) moveToSection(task, key)
         } else if (target.startsWith('task:')) {
+          if (mixed) { showBulkToast(t('The tasks must be in one project'), null); return }
           const r = current ? rs.find((x) => x.task.id === current?.id) : undefined
           if (!r || !current) return
           // Between two rows of a tree list the line's depth decides the parent (drop-depth).
@@ -224,6 +247,12 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
           act(withListTransition(1, () => moveTask(task.id, { ...entry, ...(section !== undefined ? { section_id: section } : {}) })))
         } else if (target.startsWith('section:')) {
           const key = target.slice('section:'.length)
+          const into = dragState.current.project
+          if (into && task.project_id !== into) {
+            // From an open sub-project into the project on screen, at that section, with Undo.
+            if (!readOnly?.(task)) act(withListTransition(1, () => dropTasks(`project:${into}#${key}`, [task.id])))
+            return
+          }
           const row = rs.find((x) => x.task.id === task.id)
           if (row && row.parent === null) moveToSection(task, key)
           else act(withListTransition(1, () => moveTask(task.id, { parent_id: null, section_id: key, at: 'bottom' })))

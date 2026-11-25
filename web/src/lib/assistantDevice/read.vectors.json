@@ -222,6 +222,38 @@
       }
     },
     {
+      "entity": "task",
+      "id": "trip",
+      "ts": 1790001620000,
+      "fields": {
+        "completed_at": 1791784800000,
+        "created_at": 2,
+        "deleted_at": null,
+        "labels": [],
+        "priority": 4,
+        "project_id": "work",
+        "title": "Plan the trip"
+      }
+    },
+    {
+      "entity": "task",
+      "id": "hotel",
+      "ts": 1790001680000,
+      "fields": {
+        "completed_at": null,
+        "created_at": 2,
+        "deleted_at": null,
+        "due": {
+          "date": "2026-10-12"
+        },
+        "labels": [],
+        "parent_id": "trip",
+        "priority": 4,
+        "project_id": "work",
+        "title": "Book a hotel"
+      }
+    },
+    {
       "entity": "note",
       "id": "n1",
       "ts": 1790001800000,
@@ -2871,6 +2903,159 @@
         ],
         "timezone": "UTC",
         "to": "2026-10-18"
+      }
+    },
+    {
+      "name": "kept: not in today",
+      "tool": "list_tasks",
+      "args": {
+        "timezone": "UTC",
+        "view": "today"
+      },
+      "result": {
+        "tasks": [],
+        "timezone": "UTC",
+        "today": "2026-10-12"
+      }
+    },
+    {
+      "name": "kept: not in the project",
+      "tool": "list_tasks",
+      "args": {
+        "include_completed": true,
+        "project_id": "work"
+      },
+      "result": {
+        "tasks": [
+          {
+            "blocked": false,
+            "blocked_by": [],
+            "completed": true,
+            "completed_at": "2026-10-12T06:00:00Z",
+            "completed_by": "u1",
+            "created_at": "1970-01-01T00:00:00Z",
+            "day_part": null,
+            "deadline": null,
+            "due": null,
+            "energy": null,
+            "evening": false,
+            "fields": {},
+            "id": "trip",
+            "label_ids": [],
+            "location": null,
+            "origin": null,
+            "priority": 4,
+            "project_id": "work",
+            "sector": null,
+            "start": null,
+            "tracked_minutes": 0,
+            "untrusted_text": {
+              "labels": [],
+              "project": "Work",
+              "title": "Plan the trip"
+            }
+          }
+        ],
+        "timezone": "UTC",
+        "today": "2026-10-12"
+      }
+    },
+    {
+      "name": "kept: not found",
+      "tool": "search_tasks",
+      "args": {
+        "query": "hotel"
+      },
+      "result": {
+        "tasks": [],
+        "timezone": "UTC",
+        "today": "2026-10-12"
+      }
+    },
+    {
+      "name": "kept: not in the summary",
+      "tool": "today_summary",
+      "args": {
+        "timezone": "UTC"
+      },
+      "result": {
+        "counts": {
+          "due_today": 0,
+          "inbox": 1,
+          "overdue": 0,
+          "per_project": [
+            {
+              "id": "move",
+              "open": 2,
+              "untrusted_text": {
+                "name": "Moving house"
+              }
+            },
+            {
+              "id": "work",
+              "open": 0,
+              "untrusted_text": {
+                "name": "Work"
+              }
+            }
+          ]
+        },
+        "due_today": [],
+        "focus": [],
+        "focus_date": "2026-10-12",
+        "overdue": [],
+        "timezone": "UTC",
+        "today": "2026-10-12",
+        "today_limit": null,
+        "waiting_time_sensitive": []
+      }
+    },
+    {
+      "name": "kept: not counted",
+      "tool": "list_projects",
+      "args": {},
+      "result": {
+        "inbox_open_count": 1,
+        "projects": [
+          {
+            "aisles": false,
+            "archived": false,
+            "color": "#2563eb",
+            "encrypted": false,
+            "fields": [],
+            "flow_mode": "parallel",
+            "id": "move",
+            "open_count": 2,
+            "reusable": false,
+            "shared": false,
+            "status": "active",
+            "untrusted_text": {
+              "description": "Everything about the move to Leeds.",
+              "name": "Moving house",
+              "workspace": "Personal"
+            },
+            "workspace_id": "6c5f61f6-dbb4-839a-8afb-13f6b57e96fa"
+          },
+          {
+            "aisles": false,
+            "archived": false,
+            "color": "#2563eb",
+            "encrypted": false,
+            "fields": [],
+            "flow_mode": "parallel",
+            "id": "work",
+            "open_count": 0,
+            "reusable": false,
+            "shared": false,
+            "status": "active",
+            "untrusted_text": {
+              "description": "",
+              "name": "Work",
+              "workspace": "Personal"
+            },
+            "workspace_id": "6c5f61f6-dbb4-839a-8afb-13f6b57e96fa"
+          }
+        ]
       }
     },
     {

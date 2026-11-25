@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/OpenTodoApp/opentodo/internal/kept"
 	"sort"
 	"strconv"
 	"strings"
@@ -251,6 +252,9 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 		if tasks, err = filterParent(tasks, all, o.parent); err != nil {
 			return err
 		}
+	} else {
+		// Kept subtasks (keep-open-subtasks D5) are listed only under their parent.
+		tasks = withoutKept(tasks, all)
 	}
 	// One workspace's tasks (workspaces); a named project is shown wherever it is.
 	if view != "project" {
@@ -1024,4 +1028,28 @@ func inboxRule(all []task) func(task) bool {
 		return inboxTask(p), true
 	}
 	return func(t task) bool { return inbox.IsTask(inboxTask(t), parentOf) }
+}
+
+// withoutKept leaves out the kept subtasks of tasks (internal/kept): open
+// under a completed ancestor among all.
+func withoutKept(tasks, all []task) []task {
+	rows := make([]kept.Task, 0, len(all))
+	for _, t := range all {
+		parent := ""
+		if t.ParentID != nil {
+			parent = *t.ParentID
+		}
+		rows = append(rows, kept.Task{ID: t.ID, ParentID: parent, Completed: t.CompletedAt != nil && *t.CompletedAt != 0, Deleted: t.DeletedAt != nil})
+	}
+	ids := kept.IDs(rows)
+	if len(ids) == 0 {
+		return tasks
+	}
+	out := make([]task, 0, len(tasks))
+	for _, t := range tasks {
+		if !ids[t.ID] {
+			out = append(out, t)
+		}
+	}
+	return out
 }

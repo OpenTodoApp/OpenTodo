@@ -8,6 +8,7 @@
 // Search, except in Add when the bar was opened in Add. One shell for every mode
 // (palette-quick-add D4-D6): a card near the top, the field, the results with their
 // keycaps, and a footer that names the keys.
+import { useFeatures } from '../../lib/features'
 import { useHabitsEnabled } from '../../lib/habitPrefs'
 import { useWorkspaceFilter } from '../useWorkspaceFilter'
 import { useAgentExclusions } from '../../lib/agentAccess'
@@ -100,6 +101,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const reviewEvery = useReviewEvery()
   const missedBlocks = useMissedBlocks().length
   const habitsOn = useHabitsEnabled()
+  const features = useFeatures()
   const history = useUndoHistory()
   // Today's earlier tasks, once per data change: ctx follows the text typed, and this
   // read every task on each keystroke (list-rendering-at-scale D6).
@@ -137,8 +139,9 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
       slot: task ? slotStateOf(task.id) : null,
       missedBlocks,
       history,
+      features,
     }
-  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, reviewEvery, workspaceState, missedBlocks, earlier, habitsOn, history])
+  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, reviewEvery, workspaceState, missedBlocks, earlier, habitsOn, history, features])
 
   const taskEntry = useMemo(() => makeTaskEntry(projects, today), [projects, today])
   const entities = usePaletteEntities(user, today, projects, labels, views, tasks)

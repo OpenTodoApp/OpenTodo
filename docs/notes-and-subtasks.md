@@ -32,7 +32,7 @@ To add several at once, paste a list (up to 100 lines) into the empty **Add subt
 
 To turn an existing task into a subtask, select it and press <kbd>Tab</kbd>: it moves under the task above it. <kbd>Shift</kbd>+<kbd>Tab</kbd> moves it back out. You can also pick a **Parent task** in the panel. Use <kbd>←</kbd> and <kbd>→</kbd> to fold and unfold a parent's subtasks.
 
-Completing a parent completes all its open subtasks too. When you tick off the last open subtask, OpenTodo asks whether to complete the parent as well; press <kbd>Enter</kbd> for yes.
+Completing a parent completes its open subtasks too ([or keeps them](keep-open-subtasks.md)). When you tick off the last open subtask, OpenTodo asks whether to complete the parent as well; press <kbd>Enter</kbd> for yes.
 
 In a terminal: [`ot` subtasks](cli.md#subtasks).
 

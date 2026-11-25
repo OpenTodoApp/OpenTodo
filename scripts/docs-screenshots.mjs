@@ -649,6 +649,11 @@ const shots = [
   } },
   // Priority names (priority-names): three levels named in Settings → General → Priorities, then Home renovation
   // grouped by priority under those names. Names and grouping sync, so the scene puts both back.
+  // Keep open subtasks (keep-open-subtasks): Settings → General → Tasks with its one switch.
+  { name: 'keep-open-subtasks', server: D, async run(p) {
+    await go(p, demoBase, '/settings/general/tasks', () => p.locator('#tasks-complete-subtasks-switch').waitFor())
+    await p.mouse.move(900, 600); await settle(p, 500)
+  } },
   { name: 'app-links', server: D, async run(p) {
     // Links to other apps (app-links): two schemes added through the page, as a person adds them.
     await go(p, demoBase, '/settings/integrations/app-links', () => p.locator('[data-app-link-input]').waitFor())
@@ -1157,6 +1162,17 @@ const shots = [
     await go(p, plainBase, '/settings/workspaces', () => p.getByRole('heading', { name: 'Workspaces', level: 1 }).waitFor())
     await p.getByRole('button', { name: /^Family/ }).first().click(); await p.getByRole('tab', { name: /^Members/ }).click()
     await p.locator('#workspace-members').waitFor(); await settle(p, 600)
+  } },
+  // The Features tab of a shared workspace (workspace-feature-switches D5).
+  { name: 'workspace-features', server: P, async run(p) {
+    // Family keeps its time to itself: Time tracking off, the rest on.
+    const head = { Origin: plainBase, 'Content-Type': 'application/json' }
+    const { workspaces } = await (await p.request.fetch(plainBase + '/api/v1/workspaces', { headers: head })).json()
+    const family = workspaces.find((w) => w.name === 'Family')
+    await p.request.fetch(plainBase + `/api/v1/workspaces/${family.id}`, { method: 'PATCH', headers: head, data: JSON.stringify({ features: { 'time-tracking': false } }) })
+    await go(p, plainBase, '/settings/workspaces', () => p.getByRole('heading', { name: 'Workspaces', level: 1 }).waitFor())
+    await p.getByRole('button', { name: /^Family/ }).first().click(); await p.getByRole('tab', { name: /^Features/ }).click()
+    await p.locator('[data-feature-switch="locations"]').waitFor(); await settle(p, 600)
   } },
   // A reusable list sorting into aisles (reusable-lists): made for these two scenes and
   // deleted after the last one, so no other screenshot shows it.

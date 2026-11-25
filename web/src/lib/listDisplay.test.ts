@@ -5,7 +5,7 @@ import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { currentDateTime } from './dates'
 import { db, useDatabase } from './db'
-import { defaultListDisplay, isDefaultDisplay, listDisplayOf, resetListDisplay, setListDisplay } from './listDisplay'
+import { defaultListDisplay, isDefaultDisplay, listDisplayOf, listSortOptions, resetListDisplay, setListDisplay } from './listDisplay'
 import { listGroups, sectionBuckets, type GroupInput } from './listGroups'
 import { buildTaskTree } from './subtasks'
 import { fieldSortBy, type FieldDef, type Label, type Op, type Project, type Section, type Task } from './types'
@@ -242,9 +242,13 @@ describe('built-in view options (builtin-view-options)', () => {
     expect(listDisplayOf('today', null)).toEqual({ groupBy: 'day', sortBy: 'due', sortDir: 'asc', rowLayout: 'line', subtasks: false })
     expect(listDisplayOf('upcoming', undefined, 'detailed')).toEqual({ groupBy: 'none', sortBy: 'due', sortDir: 'asc', rowLayout: 'detailed', subtasks: false, laterInFull: false })
     expect(listDisplayOf('inbox', {})).toEqual({ groupBy: 'none', sortBy: 'position', sortDir: 'asc', rowLayout: 'line' })
-    // A project's grouping on Today, manual order on Today, a newer client's value, a custom field in the Inbox.
-    expect(listDisplayOf('today', { today_group_by: 'section', today_sort_by: 'position', today_sort_dir: 'sideways', today_subtasks: 'tree' }))
+    // A project's grouping on Today, a newer client's value, a custom field in the Inbox.
+    expect(listDisplayOf('today', { today_group_by: 'section', today_sort_by: 'urgency', today_sort_dir: 'sideways', today_subtasks: 'tree' }))
       .toEqual({ groupBy: 'day', sortBy: 'due', sortDir: 'asc', rowLayout: 'line', subtasks: false })
+    // The day order (day-manual-order D1): Manual order under every grouping of Today, and in Upcoming.
+    expect(listDisplayOf('today', { today_group_by: 'section', today_sort_by: 'position' }).sortBy).toBe('position')
+    expect(listDisplayOf('upcoming', { upcoming_sort_by: 'position' }).sortBy).toBe('position')
+    expect(listDisplayOf('upcoming', { upcoming_sort_by: 'someday-order' }).sortBy).toBe('due')
     expect(listDisplayOf('upcoming', { upcoming_group_by: 'priority' }).groupBy).toBe('none')
     expect(listDisplayOf('inbox', { inbox_group_by: 'project', inbox_sort_by: fieldSortBy('cccccccc-cccc-4ccc-8ccc-cccccccccccc') }))
       .toMatchObject({ groupBy: 'none', sortBy: 'position' })
@@ -291,11 +295,17 @@ describe('built-in view options (builtin-view-options)', () => {
     expect(await db.outbox.count()).toBe(0)
   })
 
-  it('offers Today manual order only by project and clears the saved sequence on Reset', async () => {
+  it('offers the day order under every grouping of Today and in Upcoming, and clears it on Today\'s Reset (day-manual-order D1)', async () => {
     await mutate('user_prefs', 'me', { today_group_by: 'project', today_sort_by: 'position', today_manual_order: ['task'] })
     expect(listDisplayOf('today', await db.userPrefs.get('me')).sortBy).toBe('position')
     await setListDisplay({ kind: 'today' }, { groupBy: 'priority' })
-    expect(listDisplayOf('today', await db.userPrefs.get('me')).sortBy).toBe('due')
+    expect(listDisplayOf('today', await db.userPrefs.get('me')).sortBy).toBe('position')
+    expect(listSortOptions('today')).toContain('position')
+    expect(listSortOptions('upcoming')).toContain('position')
+    // Upcoming's Reset leaves the shared list to Today's.
+    await setListDisplay({ kind: 'upcoming' }, { sortBy: 'position' })
+    await resetListDisplay({ kind: 'upcoming' })
+    expect((await db.userPrefs.get('me'))?.today_manual_order).toEqual(['task'])
     await resetListDisplay({ kind: 'today' })
     expect((await db.userPrefs.get('me'))?.today_manual_order).toEqual([])
   })

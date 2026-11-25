@@ -9,6 +9,7 @@ import { uuid } from '../ids'
 import type { ProposedChange } from '../assistantTypes'
 import type { Task } from '../types'
 import { memberSet } from '../rotation'
+import { descendants } from '../tree'
 import { ArgError, ToolError, calendarDate, forbidden, idList, items, notFound, only, present, str, text, zone, type Args } from './args'
 import { canWriteTask, isOpen, list, roleIn, scopeKey, str as field, type Row, type Snapshot } from './data'
 import { todayIn } from './read'
@@ -314,9 +315,10 @@ export function completeTasks(ctx: PlanContext, a: Args): Plan {
   const changes: ProposedChange[] = []
   const out: Record<string, unknown>[] = []
   let n = 0
+  const done = new Set<string>()
   for (const t of tasks) {
     const id = field(t, 'id')
-    if (!isOpen(t)) { out.push({ id, status: 'already_completed' }); continue }
+    if (!isOpen(t) || done.has(id)) { out.push({ id, status: 'already_completed' }); continue }
     const rule = seriesRule(t as unknown as Task)
     const pid = field(t, 'project_id')
     const members = pid ? memberSet(snap.memberships.get(pid)) : undefined
@@ -330,6 +332,16 @@ export function completeTasks(ctx: PlanContext, a: Args): Plan {
     } else {
       const patch = { completed_at: now }
       changes.push({ entity: 'task', entityId: id, patch, base: base(t, patch) })
+      done.add(id)
+      // Its open subtasks complete with it unless the user keeps them (keep-open-subtasks D4), as complete_tasks on the server.
+      if (!snap.keep) {
+        for (const d of descendants(id, snap.tasks as unknown as Task[])) {
+          const sub = snap.byId.get(d)
+          if (!sub || !isOpen(sub) || done.has(d)) continue
+          done.add(d)
+          changes.push({ entity: 'task', entityId: d, patch: { completed_at: now }, base: base(sub, { completed_at: now }) })
+        }
+      }
       out.push({ id, status: 'completed' })
     }
     n++

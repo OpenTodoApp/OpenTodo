@@ -9,6 +9,7 @@ import type { Due } from '../types'
 import { ArgError, ToolError, bool, date, int, limit, only, str, zone, type Args } from './args'
 import { isOpen, list, num, str as field, type Row, type Snapshot } from './data'
 import { labelFilterMatches, labelSearchMatches } from './labelMatch'
+import { keptIds, type KeptRow } from '../subtasks'
 
 /** Today's date in a zone. */
 export function todayIn(tz: string, now: number): string {
@@ -82,7 +83,13 @@ function byKey(tz: string) {
   return (a: Row, b: Row) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0)
 }
 
-function visible(snap: Snapshot, t: Row, includeArchived: boolean): boolean {
+/** Kept subtasks (keep-open-subtasks D5): open under a completed ancestor; left out of lists, search and counts like the server's snapshot.listed. */
+export function keptOf(snap: Snapshot): Set<string> {
+  return keptIds(snap.tasks as unknown as KeptRow[])
+}
+
+function visible(snap: Snapshot, t: Row, includeArchived: boolean, kept: Set<string>): boolean {
+  if (kept.has(field(t, 'id'))) return false
   const pid = field(t, 'project_id')
   if (!pid) return true
   const p = snap.projects.get(pid)
@@ -93,7 +100,8 @@ export function listProjects(snap: Snapshot, a: Args, maxItems: number) {
   only(a, '', 'include_archived')
   const archived = bool(a, 'include_archived')
   const counts = new Map<string, number>()
-  for (const t of snap.tasks) if (isOpen(t)) counts.set(field(t, 'project_id'), (counts.get(field(t, 'project_id')) ?? 0) + 1)
+  const kept = keptOf(snap)
+  for (const t of snap.tasks) if (isOpen(t) && !kept.has(field(t, 'id'))) counts.set(field(t, 'project_id'), (counts.get(field(t, 'project_id')) ?? 0) + 1)
   const inInbox = inboxRule(snap)
   // Each project's sections in board order (assistant-eval-gaps), as list_projects on the server.
   const sections = new Map<string, Record<string, unknown>[]>()
@@ -116,7 +124,7 @@ export function listProjects(snap: Snapshot, a: Args, maxItems: number) {
         ...(sections.has(id) ? { sections: sections.get(id) } : {}),
       }
     })
-  return { projects, inbox_open_count: snap.tasks.filter(inInbox).length }
+  return { projects, inbox_open_count: snap.tasks.filter((t) => inInbox(t) && !kept.has(field(t, 'id'))).length }
 }
 
 const VIEWS = ['all', 'inbox', 'today', 'upcoming', 'someday', 'anytime']
@@ -145,9 +153,10 @@ export function listTasks(snap: Snapshot, a: Args, now: number, maxItems: number
     if (wanted.size === 0) throw new ArgError('label: no such label')
   }
   const inInbox = inboxRule(snap)
+  const kept = keptOf(snap)
   const out = snap.tasks.filter((t) => {
     if (projectId && field(t, 'project_id') !== projectId) return false
-    if (!visible(snap, t, !!projectId)) return false
+    if (!visible(snap, t, !!projectId, kept)) return false
     const open = isOpen(t)
     const d = dueOf(t)
     const day = d ? dueDate(d, tz) : ''
@@ -203,7 +212,8 @@ export function searchTasks(snap: Snapshot, a: Args, now: number, maxItems: numb
     return s.startsWith(CIPHERTEXT_PREFIX) ? '' : s.toLowerCase()
   }
   const labels = new Set(snap.labelList.filter((l) => labelSearchMatches(field(l, 'name'), query)).map((l) => field(l, 'id')))
-  const out = snap.tasks.filter((t) => visible(snap, t, false) && (completed || isOpen(t))
+  const kept = keptOf(snap)
+  const out = snap.tasks.filter((t) => visible(snap, t, false, kept) && (completed || isOpen(t))
     && (plain(t.title).includes(needle) || plain(t.description).includes(needle) || list(t, 'labels').some((l) => labels.has(l)))).sort(byKey(tz))
   return { tasks: out.slice(0, max).map((t) => render(snap, t, tz, today, true)), ...(out.length > max ? { truncated: true } : {}), timezone: tz, today }
 }
@@ -217,8 +227,9 @@ export function todaySummary(snap: Snapshot, a: Args, now: number, maxItems: num
   const dueToday: Row[] = []
   let inbox = 0
   const perProject = new Map<string, number>()
+  const kept = keptOf(snap)
   for (const t of snap.tasks) {
-    if (!isOpen(t) || !visible(snap, t, false)) continue
+    if (!isOpen(t) || !visible(snap, t, false, kept)) continue
     const pid = field(t, 'project_id')
     if (inInbox(t)) inbox++
     else if (pid) perProject.set(pid, (perProject.get(pid) ?? 0) + 1)

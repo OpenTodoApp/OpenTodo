@@ -4273,7 +4273,7 @@
   "Reopened": "Otwarto ponownie",
   "Reopened on the list": "Ponownie na liście",
   "Reorder": "Zmień kolejność",
-  "Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels": "Zmieniaj kolejność zadań na listach projektów, tablicach i w Skrzynce oraz projektów na pasku bocznym; upuść na środek wiersza, aby zagnieździć; Esc anuluje",
+  "Reorder tasks in project lists, boards, the Inbox, Today and Upcoming, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels": "Zmieniaj kolejność zadań na listach projektów, tablicach, w Skrzynce, Dziś i Nadchodzących oraz projektów na pasku bocznym; upuść na środek wiersza, aby zagnieździć; Esc anuluje",
   "Repeat": "Powtarzanie",
   "Repeat a task": "Powtarzaj zadanie",
   "Repeat and remind (6 languages)": "Powtarzanie i przypomnienia (6 języków)",
@@ -4916,7 +4916,7 @@
   "Sort into aisles": "Sortuj według alejek",
   "Sort {list} by {by}": "Posortuj {list} według {by}",
   "Sorted by name": "Posortowano według nazwy",
-  "Sorted by date (or their own rule): no Alt moves there; in Upcoming, drag a task onto another day to move it": "Sortowane według daty (albo własnej reguły): tam nie działa przesuwanie z Alt; w Nadchodzących przeciągnij zadanie na inny dzień, aby je przenieść",
+  "Sorted by date (or their own rule): no Alt moves there": "Sortowane według daty (albo własnej reguły): tam nie działa przesuwanie z Alt",
   "Sound": "Dźwięk",
   "Source": "Źródło",
   "Source code": "Kod źródłowy",
@@ -7880,5 +7880,12 @@
   "Click a task to": "Kliknięcie zadania",
   "Select, then edit the title": "Zaznaczenie, potem edycja tytułu",
   "Task lists": "Listy zadań",
-  "Use the server default ({choice})": "Domyślny dla serwera ({choice})"
+  "Use the server default ({choice})": "Domyślny dla serwera ({choice})",
+  "Complete subtasks with parent": "Ukończ też podzadania",
+  "Or keep open subtasks when a task is completed": "Lub zachowaj otwarte podzadania po ukończeniu zadania",
+  "Features": "Funkcje",
+  "Only the owner and admins can change these.": "Tylko właściciel i administratorzy mogą to zmienić.",
+  "Time tracking": "Śledzenie czasu",
+  "{feature} is off in this workspace.": "{feature}: wyłączone w tym obszarze roboczym.",
+  "Workspace features changed": "Zmieniono funkcje obszaru roboczego"
 }

@@ -343,12 +343,17 @@ func (r *Registry) planCompleteTasks(ctx context.Context, c Caller, a args, over
 		return Plan{}, err
 	}
 	now := stamp()
+	keep, err := r.sync.KeepsOpenSubtasks(ctx, c.UserID)
+	if err != nil {
+		return Plan{}, err
+	}
 	var cs ChangeSet
 	var out []map[string]any
 	n := 0
+	done := map[string]bool{}
 	for _, t := range tasks {
 		id := str(t, "id")
-		if !isOpen(t) {
+		if !isOpen(t) || done[id] {
 			out = append(out, map[string]any{"id": id, "status": "already_completed"})
 			continue
 		}
@@ -360,6 +365,20 @@ func (r *Registry) planCompleteTasks(ctx context.Context, c Caller, a args, over
 			return Plan{}, err
 		}
 		cs = append(cs, Change{Entity: "task", EntityID: id, Patch: body, Base: base(t, body)})
+		done[id] = true
+		if !ok && !keep {
+			// Its open subtasks complete with it, as on the web app, unless the user
+			// keeps them (keep-open-subtasks D4).
+			for _, d := range snap.openDescendants(id) {
+				did := str(d, "id")
+				if done[did] {
+					continue
+				}
+				done[did] = true
+				patch := map[string]json.RawMessage{"completed_at": raw(now)}
+				cs = append(cs, Change{Entity: "task", EntityID: did, Patch: patch, Base: base(d, patch)})
+			}
+		}
 		item := map[string]any{"id": id, "status": "completed"}
 		if ok {
 			cs = append(cs, Change{Entity: "task", EntityID: recordID, Create: true, Patch: record})

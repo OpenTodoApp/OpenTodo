@@ -41,7 +41,7 @@ Your account and how the app looks for you: [Settings: You](settings-you.md).
 
 ### Workspaces
 
-[Workspaces](workspaces.md): members, groups and invite links.
+[Workspaces](workspaces.md): members, groups, invite links and [features](workspace-features.md).
 
 ## App
 

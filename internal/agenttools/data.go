@@ -71,6 +71,10 @@ type snapshot struct {
 	// part places projects and tasks in them (built on first use, reset by apply).
 	workspaces []opsync.Workspace
 	part       *opsync.Partition
+	// kept holds the kept subtasks (keep-open-subtasks D5): open under a
+	// completed ancestor, left out of lists, search and counts, still in their
+	// parent's subtasks and reachable by id (built on first use, reset by apply).
+	kept map[string]bool
 }
 
 // keptAway resolves which of the user's projects are kept away from AI

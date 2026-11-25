@@ -114,16 +114,34 @@ describe('a drop where the list keeps its date order', () => {
     await r.unmount()
   })
 
-  it('Today: a drop on another row says the list keeps its order and writes nothing', async () => {
+})
+
+// OpenSpec change day-manual-order (D2): Today and Upcoming take a drop line in their shared day order.
+describe('a drop line in the day order', () => {
+  it('Today: a drop on another row places the task there and switches to Manual order, with Undo', async () => {
     const a = await createTask({ title: 'Call Ada', due: { date: '2026-10-21' } })
     const b = await createTask({ title: 'Pay rent', due: { date: '2026-10-21' } })
     navigate({ view: 'today' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!row(a) && !!row(b))
-    await db.outbox.clear()
-    await drag(row(a), row(b))
-    await waitFor(() => toast().includes('Lists sorted by date or priority keep their order.'))
-    expect(await db.outbox.count()).toBe(0)
+    await waitFor(() => !!row(b)?.closest('[data-drop-target]'), 'rows of the day order')
+    await drag(row(b), row(a))
+    await waitFor(() => toast().includes('Order changed'))
+    expect(toast()).toContain('Undo')
+    expect(await db.userPrefs.get('me')).toMatchObject({ today_manual_order: [b, a], today_sort_by: 'position' })
+    await r.unmount()
+  })
+
+  it('Upcoming: a drop on a row of another day moves the task there and places it, in one change', async () => {
+    const id = await createTask({ title: 'Dentist', due: { date: '2026-10-22', time: '09:30' } })
+    const there = await createTask({ title: 'Groceries', due: { date: '2026-10-24' } })
+    const r = await shell()
+    await waitFor(() => !!row(id) && !!row(there)?.closest('[data-drop-target]'), 'rows of the day order')
+    const { line } = await drag(row(id), row(there))
+    expect(line).toBe(true)
+    await waitFor(() => toast().includes('Date changed'))
+    expect((await task(id)).due).toEqual({ date: '2026-10-24', time: '09:30' })
+    expect(await db.userPrefs.get('me')).toMatchObject({ upcoming_sort_by: 'position' })
+    expect((await db.userPrefs.get('me'))?.today_manual_order).toContain(id)
     await r.unmount()
   })
 })

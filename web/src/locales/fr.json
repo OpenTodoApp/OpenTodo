@@ -3946,7 +3946,7 @@
   "Reopen the day": "Rouvrir la journée",
   "Reopen {title}": "Rouvrir {title}",
   "Reopened": "Rouverte",
-  "Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels": "Réordonner les tâches dans les listes de projet, les tableaux et la Boîte de réception, et les projets dans la barre latérale ; déposer au milieu d’une ligne pour imbriquer ; Échap annule",
+  "Reorder tasks in project lists, boards, the Inbox, Today and Upcoming, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels": "Réordonner les tâches dans les listes de projet, les tableaux, la Boîte de réception, Aujourd’hui et À venir, et les projets dans la barre latérale ; déposer au milieu d’une ligne pour imbriquer ; Échap annule",
   "Repeat": "Répéter",
   "Repeat a task": "Répéter une tâche",
   "Repeat and remind (6 languages)": "Répéter et rappeler (6 langues)",
@@ -4540,7 +4540,7 @@
   "Sort sub-projects by name": "Trier les sous-projets par nom",
   "Sort {list} by {by}": "Trier {list} par {by}",
   "Sorted by name": "Trié par nom",
-  "Sorted by date (or their own rule): no Alt moves there; in Upcoming, drag a task onto another day to move it": "Triées par date (ou selon leur propre règle) : pas de déplacement avec Alt ; dans À venir, glisse une tâche sur un autre jour pour la déplacer",
+  "Sorted by date (or their own rule): no Alt moves there": "Triées par date (ou selon leur propre règle) : pas de déplacement avec Alt",
   "Sound": "Son",
   "Short": "Court",
   "Long": "Long",
@@ -7880,5 +7880,12 @@
   "Click a task to": "Cliquer sur une tâche pour",
   "Select, then edit the title": "Sélectionner, puis modifier le titre",
   "Task lists": "Listes de tâches",
-  "Use the server default ({choice})": "Utiliser le réglage du serveur ({choice})"
+  "Use the server default ({choice})": "Utiliser le réglage du serveur ({choice})",
+  "Complete subtasks with parent": "Terminer les sous-tâches aussi",
+  "Or keep open subtasks when a task is completed": "Ou garder les sous-tâches ouvertes quand une tâche est terminée",
+  "Features": "Fonctionnalités",
+  "Only the owner and admins can change these.": "Seuls le propriétaire et les admins peuvent les modifier.",
+  "Time tracking": "Suivi du temps",
+  "{feature} is off in this workspace.": "{feature} est désactivé dans cet espace de travail.",
+  "Workspace features changed": "Fonctionnalités de l’espace de travail modifiées"
 }

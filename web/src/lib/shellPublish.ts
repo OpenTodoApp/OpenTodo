@@ -17,6 +17,7 @@ import { compute, sharedIds } from './stats'
 import type { StatProject } from './statsCounted'
 import type { Membership } from './types'
 import type { Project, Reminder, Task } from './types'
+import { withoutKept } from './subtasks'
 
 /** The device's "notifications through the app" switch (Settings → Notifications in a shell). */
 export const META_SHELL_NOTIFICATIONS = 'shell:notifications'
@@ -172,7 +173,8 @@ export async function publishReminders(now = Date.now()): Promise<ShellPermissio
   const on = await shellNotificationsEnabled()
   if (!on || (enc.enabled && !enc.unlocked)) return scheduleReminders([])
   const [reminders, tasks, projects, titles, prefs] = await Promise.all([db.reminders.toArray(), db.tasks.toArray(), db.projects.toArray(), shellTitlesEnabled(), db.userPrefs.get('me')])
-  const list = shellReminders(reminders, tasks, now, { titles, encrypted: enc.enabled, away: prefs?.away }, projects)
+  // A kept subtask fires no reminder (keep-open-subtasks D3).
+  const list = shellReminders(reminders, withoutKept(tasks), now, { titles, encrypted: enc.enabled, away: prefs?.away }, projects)
   const permission = await scheduleReminders(list)
   if (!list.length || !shellVisible()) return permission
   if (permission === 'denied') await autoOffShellNotifications()
@@ -186,7 +188,7 @@ async function publishToday(now = Date.now()): Promise<void> {
   const [tasks, memberships, me, projects] = await Promise.all([db.tasks.toArray(), db.memberships.toArray(), currentUserId(), db.projects.toArray()])
   const today = logicalToday(undefined, now)
   const locked = enc.enabled && !enc.unlocked
-  publishWidget({ ...shellWidget(tasks, today, now, locked, me, projects), completed: shellCompleted(tasks, projects, memberships, me, today, locked) })
+  publishWidget({ ...shellWidget(withoutKept(tasks), today, now, locked, me, projects), completed: shellCompleted(tasks, projects, memberships, me, today, locked) })
 }
 
 let started = false

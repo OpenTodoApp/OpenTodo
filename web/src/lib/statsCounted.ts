@@ -3,9 +3,10 @@
 // assistant-project-blocks) need not load the whole statistics model. lib/stats
 // re-exports them.
 import type { Project, Task } from './types'
+import { keptIds } from './subtasks'
 
 export type StatTask = Pick<Task, 'id' | 'project_id' | 'created_at' | 'completed_at' | 'deleted_at' | 'due' | 'series_id' | 'assignee_id'>
-  & Partial<Pick<Task, 'skipped' | 'completed_by' | 'sample'>>
+  & Partial<Pick<Task, 'skipped' | 'completed_by' | 'sample' | 'parent_id'>>
 export type StatProject = Pick<Project, 'id' | 'name' | 'archived' | 'deleted_at'>
 
 /**
@@ -21,11 +22,13 @@ export function isMine(item: StatTask, shared: ReadonlySet<string>, me: string |
 
 /**
  * The rows statistics see: live (not in the Trash, nor in a trashed project), not a skipped habit
- * occurrence, not a start guide sample (moments-and-onboarding D3), and the user's.
+ * occurrence, not a start guide sample (moments-and-onboarding D3), not a kept subtask
+ * (keep-open-subtasks D5, as the Go digest), and the user's.
  */
 export function countedTasks<T extends StatTask>(input: { tasks: readonly T[]; projects: readonly StatProject[]; shared: ReadonlySet<string>; me: string | null }): T[] {
   const trashed = new Set(input.projects.filter((p) => p.deleted_at).map((p) => p.id))
-  return input.tasks.filter((item) => !item.deleted_at && !(item.project_id && trashed.has(item.project_id)) && !item.skipped && !item.sample && isMine(item, input.shared, input.me))
+  const kept = keptIds(input.tasks)
+  return input.tasks.filter((item) => !item.deleted_at && !(item.project_id && trashed.has(item.project_id)) && !item.skipped && !item.sample && !kept.has(item.id) && isMine(item, input.shared, input.me))
 }
 
 /** Open tasks due before today, outside archived projects, oldest due first. */

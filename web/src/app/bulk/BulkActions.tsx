@@ -2,6 +2,7 @@
 // menu for the ticked tasks (or the cursor task when nothing is ticked), built on
 // the shared ActionMenu so its items, pickers, shortcuts and disabled reasons work
 // like every other object menu. Moves and assignments go through the review (D6).
+import { useFeatures } from '../../lib/features'
 import { useHabitsEnabled } from '../../lib/habitPrefs'
 import { openHabitForm } from '../habits/habitFormStore'
 import { keysOf } from '../../lib/shortcuts'
@@ -115,7 +116,10 @@ interface Data { tasks: Task[]; labels: Label[]; projects: Project[]; sections: 
   /** One task's place in a manually ordered list (accessibility-aa D3): the Reorder items. */
   edges?: { first: boolean; last: boolean } | null
   /** Habits is on (habits-home D9): Make it a habit for one task. */
-  habits?: boolean }
+  habits?: boolean
+  /** The current workspace has Time tracking and Focus off (workspace-feature-switches D4): no Start tracking or Start focus. */
+  trackingOff?: boolean
+  focusOff?: boolean }
 
 /**
  * Start or Stop tracking for one task (time-tracking D5): Stop while its entry runs,
@@ -273,7 +277,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
   const editTitle = n === 1 && a.editTitle && d.tasks[0] && canEditTask(d.tasks[0], d.memberships) ? a.editTitle : null
   return [
     ...(swipeTwins ? [{ items: [complete, { kind: 'action', id: 'schedule', label: t('Schedule…'), icon: 'calendar-days', onSelect: a.schedule } as ActionItem] }] : []),
-    ...(n === 1 ? [{ items: [...whyItem(a.why), ...slotItem(d.tasks[0], d.slot), ...todayFocusItem(d.tasks[0], d.focus), ...trackingItem(d.tasks[0], d.runningTask, d.memberships), ...focusItem(d.tasks[0], d.memberships), ...makeHabitItem(d.tasks[0], d)] }] : []),
+    ...(n === 1 ? [{ items: [...whyItem(a.why), ...slotItem(d.tasks[0], d.slot), ...todayFocusItem(d.tasks[0], d.focus), ...(d.trackingOff ? [] : trackingItem(d.tasks[0], d.runningTask, d.memberships)), ...(d.focusOff ? [] : focusItem(d.tasks[0], d.memberships)), ...makeHabitItem(d.tasks[0], d)] }] : []),
     ...(swipeTwins ? [] : [{ items: [complete] }]),
     ...(editTitle ? [{ items: [{ kind: 'action' as const, id: 'edit-title', label: t('Edit title'), icon: 'pencil' as const, closeBeforeSelect: true, onSelect: () => editTitle(ids[0]) }] }] : []),
     // Beside a row its own Priority and Schedule buttons already offer these.
@@ -360,6 +364,7 @@ function useBulkData(ids: readonly string[]): Data {
   const dayParts = dayPartsOn(prefs)
   const energy = energyLevelsOn(prefs)
   const habits = useHabitsEnabled()
+  const on = useFeatures()
   const slot = useSlotState(ids.length === 1 ? ids[0] : '')
   const review = useReviewRow()
   const today = useToday()
@@ -367,7 +372,7 @@ function useBulkData(ids: readonly string[]): Data {
   // The one task's items (focus, tracking, slot, Energy, Day part) and the Labels item's
   // reason come from these reads: a menu shown before them grows under the pointer.
   const ready = read?.key === key && labelsLoaded && memberMap !== undefined && prefs !== undefined && review !== undefined
-  return { tasks, labels, projects, sections, memberships, runningTask, dayParts, energy, habits, slot, focus, ready }
+  return { tasks, labels, projects, sections, memberships, runningTask, dayParts, energy, habits, slot, focus, ready, trackingOff: !on('time-tracking'), focusOff: !on('focus') }
 }
 
 /**

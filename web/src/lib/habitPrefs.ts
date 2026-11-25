@@ -2,6 +2,7 @@
 // the synced user_prefs.habits, read with whether the device holds an open habit.
 // Every habit control reads useHabitsEnabled() and renders nothing while it is
 // false; no write path checks it, so records keep accruing while Habits is off.
+import { useFeature } from './features'
 import { habitsChoice, habitsEnabled, isOpenHabit, type HabitsChoice } from './habits'
 import { useUserPrefsRow } from './localData'
 import { useLiveTasks } from './liveTasks'
@@ -22,11 +23,15 @@ export function useHabitsChoice(): HabitsChoice | undefined {
   return prefs === undefined ? undefined : habitsChoice(prefs)
 }
 
-/** Whether habits are shown on this device (D1), live; false while loading. */
+/**
+ * Whether habits are shown on this device (D1), live; false while loading. The
+ * current workspace gates it (workspace-feature-switches D3): off there, off here.
+ */
 export function useHabitsEnabled(): boolean {
   const prefs = useUserPrefsRow()
   const tasks = useLiveTasks()
-  return habitsEnabled(prefs, !!tasks && holdsOpenHabit(tasks))
+  const allowed = useFeature('habits')
+  return allowed && habitsEnabled(prefs, !!tasks && holdsOpenHabit(tasks))
 }
 
 /** Turns Habits on or off for the account: one synced op, offline included, and nothing on any task (D2). */

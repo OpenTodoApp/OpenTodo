@@ -27,6 +27,7 @@ import { REVIEW_ID } from './review'
 import { USER_PREFS_ID } from './userPrefs'
 import { ownIn, projectsIn, readWorkspaceState, tasksIn, type WorkspaceState } from './workspaces'
 import { pinnedNoteIds } from './favourites'
+import { dropKept } from './subtasks'
 import type {
   AppNotification, Attachment, CalendarConnection, CalendarSubscription, WorkspaceGroup, WorkspaceMember, IssueConnection, Comment, FieldDef, HabitTally, Label, Membership, Note, Project, ProjectPrefs, Reminder, Review, Section, Task, UserPrefs, View,
 } from './types'
@@ -415,7 +416,7 @@ export function useSectionPlace(sectionId: string | null | undefined, projectId:
     const sections = (await db.sections.where('project_id').equals(projectId).toArray()).filter((s) => !s.deleted_at).sort((a, b) => a.position - b.position)
     const i = sections.findIndex((s) => s.id === sectionId)
     if (i < 0) return undefined
-    const count = await db.tasks.filter((tk) => tk.section_id === sectionId && !tk.deleted_at && !tk.completed_at).count()
+    const count = (await dropKept(await db.tasks.filter((tk) => tk.section_id === sectionId && !tk.deleted_at && !tk.completed_at).toArray())).length
     return { row: sections[i], first: i === 0, last: i === sections.length - 1, count }
   }, [sectionId, projectId])
 }

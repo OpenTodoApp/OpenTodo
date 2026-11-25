@@ -65,7 +65,7 @@ func (snap *snapshot) searchItems(needle, ws string, includeCompleted bool, loc 
 	items := []keyed[taskOut]{}
 	labels := searchLabels(snap.labelList, needle)
 	for _, t := range snap.tasks {
-		if !snap.visible(t, false) || (!includeCompleted && !isOpen(t)) {
+		if !snap.listed(t, false) || (!includeCompleted && !isOpen(t)) {
 			continue
 		}
 		if ws != "" && snap.partition().Task(str(t, "id")) != ws {
@@ -91,8 +91,9 @@ func textMatches(stored, needle string) bool {
 
 // searchFields are the task fields search_tasks' first pass reads: the text and
 // labels it matches, and what rendering a match reads of other tasks (its blockers' state
-// and its series' records; a split lineage reads every task).
-var searchFields = []string{"title", "description", "labels", "blocked_by", "series_id", "split_from"}
+// and its series' records; a split lineage reads every task), and its parents, which
+// decide whether it is kept (keep-open-subtasks D5).
+var searchFields = []string{"title", "description", "labels", "blocked_by", "series_id", "split_from", "parent_id"}
 
 // searchReader narrows search_tasks' snapshot to the tasks its answer can
 // depend on (performance-10k: listing every task of a 10,000-task account was
@@ -140,6 +141,17 @@ func (r *Registry) searchReader(userID, needle, workspace string) taskReader {
 			}
 		}
 		need := maps.Clone(matched)
+		parents := map[string]string{}
+		for _, v := range vals {
+			if v.Field == "parent_id" {
+				parents[v.EntityID] = rawText(v.Value)
+			}
+		}
+		for id := range matched {
+			for up, n := parents[id], 0; up != "" && !need[up] && n < 1000; up, n = parents[up], n+1 {
+				need[up] = true
+			}
+		}
 		for _, v := range vals {
 			switch v.Field {
 			case "blocked_by":

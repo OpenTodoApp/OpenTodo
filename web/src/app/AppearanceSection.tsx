@@ -16,7 +16,8 @@ import { useHabitsEnabled } from '../lib/habitPrefs'
 import { readMethodMode } from '../lib/method/mode'
 import { type DragEvent, type KeyboardEvent, Suspense, useEffect, useRef, useState } from 'react'
 import { lazy } from '../lib/lazy'
-import { cachedCustom, customAccentStyle, type CustomAccentValues, deriveCustom, DENSITIES, type Density, destinationOrder, type DestinationId, FIXED_DESTINATIONS, moveDestination, PROMOTABLE, type Promotable, readAppearance, readSidebarCounts, setAppearance, setCustomAccent, setPromoted, setSidebarCounts, SIDEBAR_COUNTS, type SidebarCounts, THEME_MODES, type Appearance } from '../lib/appearance'
+import { useFeatures } from '../lib/features'
+import { cachedCustom, customAccentStyle, type CustomAccentValues, deriveCustom, DENSITIES, type Density, destinationOrder, destinationsIn, type DestinationId, FIXED_DESTINATIONS, moveDestination, PROMOTABLE, type Promotable, readAppearance, readSidebarCounts, setAppearance, setCustomAccent, setPromoted, setSidebarCounts, SIDEBAR_COUNTS, type SidebarCounts, THEME_MODES, type Appearance } from '../lib/appearance'
 import { ActionMenu } from './menus/ActionMenu'
 import { useUserPrefsRow } from '../lib/localData'
 import type { ThemeModePref, UserPrefs } from '../lib/types'
@@ -384,9 +385,11 @@ export function SidebarSection() {
   const value = readAppearance(row)
   // Off means off (habits-home D2): no Habits destination to arrange while Habits is not on.
   const habits = useHabitsEnabled()
+  // Nor a destination of a feature the current workspace has off (workspace-feature-switches D4).
+  const on = useFeatures()
   return <SidebarView promoted={value.sidebar ?? []} arranged={readMethodMode(row) === 'first'} onPromote={(id, on) => act(setPromoted(row, id, on))}
     counts={readSidebarCounts(row)} onCounts={(v) => act(setSidebarCounts(v))}
-    order={destinationOrder(row).filter((id) => habits || id !== 'habits')} onMove={loaded ? (id, delta) => moveDestination(row, id, delta) : undefined} />
+    order={destinationsIn(destinationOrder(row), on).filter((id) => habits || id !== 'habits')} onMove={loaded ? (id, delta) => moveDestination(row, id, delta) : undefined} />
 }
 
 /** Settings → Appearance → Task details (task-side-panel D1): the synced choice, written through ops. */

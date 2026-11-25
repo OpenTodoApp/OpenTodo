@@ -42,6 +42,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `ios-quick-look` | An attached image or PDF opens in Quick Look in the iPhone app, without saving it first | In progress (4 of 5) |
 | `ios-web-location` | "Use my location" in a task's location editor works in the iPhone app | In progress (5 of 6) |
 | `click-selects-title` | One click rule in every list: a first click selects the row (and shows it beside the list), a second click edits its title, `a` adds a subtask after a click; "Click a task to" goes | In progress (12 of 14) |
+| `day-manual-order` | Arrange a day by hand in Today (any grouping) and Upcoming, one order for both; a day's tasks by part of the day under Due date | Shipped in 1.8 |
 | `new-project-top-level` | New project in the sidebar starts at the top level, whatever project is on screen | In progress (2 of 3) |
 | `drag-edge-scroll` | Dragging a task or a project on a phone scrolls the list at its edge | In progress (3 of 4) |
 | `formatting-row-pressed` | The formatting row shows which formatting is on | In progress (3 of 4) |
@@ -119,6 +120,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `quick-add-links` | A link typed or pasted into quick add becomes a link attachment, with a chip like a date's | Shipped in 1.7 |
 | `away-periods` | Away: mark a period, also after the fact, that skips the repeating occurrences in it in one Undo, keeps streaks and pauses reminders | Shipped in 1.6 |
 | `workspace-activity` | A workspace Activity page for retrospectives: every project, a date range, several kinds at once, tracked time, filters remembered on the device | Shipped in 1.6 |
+| `workspace-feature-switches` | Feature switches per workspace: the owner and admins turn Notes, Calendar, Habits, Time tracking, Focus, Routines, Reviews and Locations on or off for everyone in it; off hides, never deletes | Shipped in 1.8 |
 | `caldav-push` | Push to calendar apps: a change on any device wakes a subscribed CalDAV client (WebDAV-Push), off until the owner turns it on | Shipped in 1.6 |
 | `drag-ticked-together` | Drag several ticked tasks within a list to reorder or nest them in one move, with one Undo | Shipped in 1.6 |
 | `quarter-view-and-plan-spans` | A Quarter view in the Calendar (three months at a glance, `g q`), and 3-day and custom Plan spans | Shipped in 1.6 |

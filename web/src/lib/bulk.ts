@@ -8,7 +8,7 @@ import type { ProposedChange } from './assistantTypes'
 import { addDaysISO, logicalToday, weekStartOf } from './dates'
 import { db, tableOf } from './db'
 import { memberSet } from './rotation'
-import { getDeviceId, planCompletePlain, planProjectChange, type Change } from './ops'
+import { getDeviceId, keepsSubtasksNow, planCompletePlain, planProjectChange, type Change } from './ops'
 import { planCompletion, seriesRule, skipsInstead } from './recurring'
 import { refusedSeries, withNotMoved } from './seriesDates'
 import { assignableIn, canEditTask, currentUserId, membershipMap, scopeOf } from './sharing'
@@ -34,7 +34,7 @@ export function mergeChanges(changes: Change[]): Change[] {
 export const allCompleted = (tasks: readonly Task[]): boolean => tasks.length > 0 && tasks.every((task) => !!task.completed_at)
 
 /** Complete the open tasks (series roll forward, subtrees complete), or reopen when all are completed. */
-export function planComplete(tasks: readonly Task[], all: Task[], now: number, today: string, memberships?: Map<string, Membership>): Change[] {
+export function planComplete(tasks: readonly Task[], all: Task[], now: number, today: string, memberships?: Map<string, Membership>, keep = false): Change[] {
   if (allCompleted(tasks)) return planReopen(tasks)
   const out: Change[] = []
   for (const task of tasks) {
@@ -43,7 +43,7 @@ export function planComplete(tasks: readonly Task[], all: Task[], now: number, t
     const members = task.project_id ? memberSet(memberships?.get(task.project_id)) : undefined
     const plan = rule ? planCompletion(task, rule, all, now, today, members) : null
     if (plan && plan.kind === 'roll') out.push(...plan.changes)
-    else out.push(...planCompletePlain(task.id, all, now))
+    else out.push(...planCompletePlain(task.id, all, now, keep))
   }
   return mergeChanges(out)
 }
@@ -202,7 +202,7 @@ export async function applyBulk(ids: readonly string[], action: BulkAction, opts
   switch (action.kind) {
     case 'complete': {
       const reopen = allCompleted(tasks)
-      changes = planComplete(tasks, all, now, today, await membershipMap())
+      changes = planComplete(tasks, all, now, today, await membershipMap(), await keepsSubtasksNow())
       label = bulkLabel(reopen ? { kind: 'reopen' } : action, reopen ? tasks.length : tasks.filter((task) => !task.completed_at).length)
       break
     }

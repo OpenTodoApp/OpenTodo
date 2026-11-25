@@ -13,7 +13,8 @@ vi.mock('../lib/e2ee', async (orig) => ({ ...(await orig<typeof import('../lib/e
 
 const { answer, setConfirmReads } = await import('../lib/relay')
 const { RelayConfirm, RelayConfirmView, SHOWN_MAX } = await import('./RelayConfirm')
-const { RelayIndicatorView, RelayView } = await import('./RelaySettings')
+const { RelayView } = await import('./RelaySettings')
+const { RelayIndicatorView } = await import('./RelayIndicator')
 
 beforeEach(async () => {
   await db.delete()

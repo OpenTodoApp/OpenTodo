@@ -13,7 +13,7 @@ import { useDisplayKeys } from '../views/useDisplayKeys'
 
 export function useListDisplay(display: ListDisplay | undefined, scope: DisplayScope | null, shown: boolean, sortFields: readonly FieldDef[], account: RowLayout, hasTodayOrder = false): { control: ReactNode; onReorder: () => void } {
   const kind = scope ? DISPLAY_KINDS[scope.kind] : null
-  const sorts = scope && display ? listSortOptions(scope.kind, display.groupBy) : []
+  const sorts = scope && display ? listSortOptions(scope.kind) : []
   const otherOrder = !!display && sorts.includes('position') && !(display.sortBy === 'position' && display.sortDir === 'asc')
   const onReorder = useCallback(() => {
     if (otherOrder && scope) act(setListDisplay(scope, { sortBy: 'position', sortDir: 'asc' }))

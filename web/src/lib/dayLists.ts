@@ -1,10 +1,10 @@
 // The Today, Upcoming and project lists as pure functions (OpenSpec change
 // `display-mode`, design D3): the list screen (TaskListView) and the display
 // (app/display) both call these, so a display can never disagree with the list.
-import { addDaysISO, currentDayStart, logicalDay } from './dates'
+import { addDaysISO, currentDayStart, localDueOf, logicalDay } from './dates'
 import { blockedMap } from './dependencies'
-import { placedPart } from './dayParts'
-import { compareDueThenPriority } from './ordering'
+import { dayPartOf, partOfTime, placedPart } from './dayParts'
+import { compareByPosition, compareDueThenPriority } from './ordering'
 import type { Project, Task } from './types'
 import { inToday, inUpcoming, overdueInToday, upcomingDate } from './views'
 
@@ -68,6 +68,43 @@ export interface TodayGroups {
   evening: Task[]
   /** Blocked tasks (task-dependencies D7), kept apart at the end. */
   blocked: Task[]
+}
+
+/** Each part's place in a day, as Time of day lays them out: no part first (day-manual-order D4). */
+const PART_RANK = { none: 0, morning: 1, afternoon: 2, evening: 3 } as const
+
+/** A task's place in its day while day parts are on: its stored part, else the part of its due time, else none. */
+export function partRank(task: Pick<Task, 'evening' | 'day_part' | 'due'>): number {
+  return PART_RANK[placedPart(task) ?? 'none']
+}
+
+/**
+ * Due date order with the part of the day (day-parts "Part of the day in the due order"):
+ * the date, then the part, then the time and the usual tie-breaks. `desc` reverses the
+ * date, part and time, as Due date descending does, and keeps the tie-breaks ascending.
+ */
+export function compareDueWithParts(desc = false): (a: Task, b: Task) => number {
+  const sign = desc ? -1 : 1
+  // Each row's date, part and time, worked out once per sort.
+  const keys = new WeakMap<Task, { date: string | null; part: number; time: string }>()
+  const keyOf = (task: Task) => {
+    let key = keys.get(task)
+    if (!key) {
+      const due = task.due ? localDueOf(task.due) : null
+      const time = due?.time
+      const own = dayPartOf(task)
+      key = { date: due?.date ?? null, part: PART_RANK[own ?? (time ? partOfTime(time) : 'none')], time: time ?? '99:99' }
+      keys.set(task, key)
+    }
+    return key
+  }
+  return (a, b) => {
+    const ka = keyOf(a)
+    const kb = keyOf(b)
+    if (ka.date === null || kb.date === null) return (ka.date === null ? 1 : 0) - (kb.date === null ? 1 : 0) || compareDueThenPriority(a, b)
+    const order = (ka.date < kb.date ? -1 : ka.date > kb.date ? 1 : 0) || ka.part - kb.part || (ka.time < kb.time ? -1 : ka.time > kb.time ? 1 : 0)
+    return sign * order || a.priority - b.priority || compareByPosition(a, b)
+  }
 }
 
 /**

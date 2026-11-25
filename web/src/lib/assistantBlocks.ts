@@ -5,6 +5,7 @@
 import { db, type AssistantBlock, type AssistantMessage, type AssistantSource } from './db'
 import { formatDate } from './dates'
 import { t } from './i18n'
+import { dropKept } from './subtasks'
 
 export type { AssistantBlock }
 
@@ -169,7 +170,7 @@ export async function blockText(b: AssistantBlock): Promise<string> {
       return live(r) ? `- [${r.completed_at ? 'x' : ' '}] ${r.title}` : t('Removed')
     }
     case 'deadlines': {
-      const rows = await db.tasks.filter((r) => !r.deleted_at && !r.completed_at && !!r.deadline && r.deadline >= b.from && r.deadline <= b.to).toArray()
+      const rows = await dropKept(await db.tasks.filter((r) => !r.deleted_at && !r.completed_at && !!r.deadline && r.deadline >= b.from && r.deadline <= b.to).toArray())
       rows.sort((x, y) => (x.deadline! < y.deadline! ? -1 : x.deadline! > y.deadline! ? 1 : x.title.localeCompare(y.title)))
       return [blockLabel(b), ...rows.map((r) => `- ${r.title} (${formatDate(r.deadline!, 'compact')})`)].join('\n')
     }

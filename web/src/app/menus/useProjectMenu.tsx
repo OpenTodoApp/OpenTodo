@@ -4,7 +4,9 @@
 // the panels group (Show completed tasks, Print…) and its layout's groups. A sidebar row
 // passes `active` only while its menu is open, so a long sidebar keeps no live queries
 // for menus nobody opened.
-import { type ReactNode, useMemo, useState } from 'react'
+import { type ReactNode, Suspense, useMemo, useState } from 'react'
+import { preloadable } from '../../lib/lazy'
+import { Skeleton } from '../../ui'
 import { useMembership, useProjects } from '../../lib/localData'
 import { useProjectPrefsRow } from '../../lib/liveData'
 import { setFavourite } from '../../lib/favourites'
@@ -15,20 +17,26 @@ import { keysOf } from '../../lib/shortcuts'
 import { openAssistantWith, useAssistantStatus } from '../../lib/assistantStatus'
 import type { Project } from '../../lib/types'
 import { DEFAULT_DISPLAY_OPTIONS } from '../display/displayOptions'
-import { FieldsDialog } from '../FieldsDialog'
 import { HistoryPanel } from '../HistoryPanel'
 import { closePanel, openPanel, usePanelOccupantKey } from '../panel'
 import { PanelFrame } from '../PanelFrame'
-import { ProjectActivity } from '../ProjectActivity'
 import { moveTargets, projectMenuGroups } from './projectMenu'
 import { navigate, useRoute } from '../router'
-import { ShareDialog } from '../ShareDialog'
 import { openConnections, useConnected } from '../signals'
-import { DuplicateProjectDialog, SaveTemplateDialog } from '../TemplateDialogs'
 import { useIsFavourite } from '../useFavourites'
 import { useOtherWorkspaces } from '../workspaceNav'
 import type { ActionGroup, ActionItem } from './ActionMenu'
 import { ColourSwatches, setProjectColour } from './projectAppearance'
+import { PanelBoundary } from '../PanelBoundary'
+
+// The menu's dialogs and the Activity panel are not on the first load.
+const FieldsDialog = preloadable(() => import('../FieldsDialog').then((m) => ({ default: m.FieldsDialog })))
+const ProjectActivity = preloadable(() => import('../ProjectActivity').then((m) => ({ default: m.ProjectActivity })))
+const ShareDialog = preloadable(() => import('../ShareDialog').then((m) => ({ default: m.ShareDialog })))
+const DuplicateProjectDialog = preloadable(() => import('../TemplateDialogs').then((m) => ({ default: m.DuplicateProjectDialog })))
+const SaveTemplateDialog = preloadable(() => import('../TemplateDialogs').then((m) => ({ default: m.SaveTemplateDialog })))
+/** Fetches them ahead (the shell, once idle). */
+export const preloadProjectMenu = () => Promise.all([FieldsDialog.preload(), ProjectActivity.preload(), ShareDialog.preload(), DuplicateProjectDialog.preload(), SaveTemplateDialog.preload()])
 
 const ACTIVITY_PANEL = 'project-activity'
 const HISTORY_PANEL = 'project-history'
@@ -70,7 +78,7 @@ export function useProjectMenu(project: Project, o: { userId?: string; rename: (
   const left = () => { if (route.view === 'project' && route.id === project.id) navigate({ view: 'inbox' }) }
 
   // Activity and History are occupants of the shell's panel slot (app-shell "The panel slot has an address").
-  const showActivity = () => (occupant === ACTIVITY_PANEL ? closePanel() : openPanel(ACTIVITY_PANEL, () => <PanelFrame title={t('Activity')} testId="project-activity"><ProjectActivity project={project} /></PanelFrame>))
+  const showActivity = () => (occupant === ACTIVITY_PANEL ? closePanel() : openPanel(ACTIVITY_PANEL, () => <PanelFrame title={t('Activity')} testId="project-activity"><Suspense fallback={<Skeleton shape="row" count={4} />}><ProjectActivity project={project} /></Suspense></PanelFrame>))
   const showHistory = () => (occupant === HISTORY_PANEL ? closePanel() : openPanel(HISTORY_PANEL, () => <PanelFrame title={t('History')} testId="project-history"><HistoryPanel entity="project" id={project.id} readOnly={!editable} embedded /></PanelFrame>))
 
   const panels: ActionGroup = { items: [
@@ -97,13 +105,13 @@ export function useProjectMenu(project: Project, o: { userId?: string; rename: (
     panels,
   ]
   const swatches = editable ? <ColourSwatches color={project.color} onPick={(color) => setProjectColour(project, color)} menu /> : undefined
-  const dialogs: ReactNode = <>
+  const dialogs: ReactNode = <PanelBoundary><Suspense fallback={null}>
     {sharing && <ShareDialog project={project} userId={o.userId ?? ''} cached={membership ?? undefined} section={sharing === 'public' ? 'public' : undefined}
       onPublicLinks={o.page?.onPublicLinks} onClose={() => setSharing(false)} />}
     {dialog === 'duplicate' && <DuplicateProjectDialog project={project} shared={!!membership} onClose={() => setDialog(null)} />}
     {dialog === 'template' && <SaveTemplateDialog project={project} onClose={() => setDialog(null)} />}
     {dialog === 'fields' && <FieldsDialog project={project} onClose={() => setDialog(null)} />}
-  </>
+  </Suspense></PanelBoundary>
   // Share project, or Members for a role that only sees them: the header's button, as a menu item (#1905).
   const shareItem: ActionItem = { kind: 'action', id: 'share', label: canManageMembers(role) ? t('Share project') : t('Members'), icon: 'users', onSelect: () => setSharing(true) }
   return { groups, swatches, dialogs, membership, role, editable, shareItem, share: (section?: 'public') => setSharing(section ?? true), fields: () => setDialog('fields'), activity: showActivity }

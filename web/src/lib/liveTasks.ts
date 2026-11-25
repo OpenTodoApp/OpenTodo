@@ -98,13 +98,6 @@ export function openCountsByProject(tasks: readonly Task[]): ReadonlyMap<string,
   return countOpen(openTasksOf(tasks))
 }
 
-/** Open tasks per project id, live (empty until loaded). */
-export function useLiveOwnOpenCounts(): ReadonlyMap<string, number> {
-  const all = useLiveTasks()
-  return all ? openCountsByProject(all) : NO_COUNTS
-}
-const NO_COUNTS: ReadonlyMap<string, number> = new Map()
-
 /** Number of open tasks in a project, live; undefined until the first snapshot arrives. */
 export function useOpenTaskCount(projectId: string): number | undefined {
   const all = useLiveTasks()
