@@ -32,7 +32,7 @@ class BridgeFixtureTest {
         val got = ReminderSchedule.parse(f.getString("payload"), f.getLong("now"))
         assertEquals(name, (0 until want.length()).map { i ->
             val o = want.getJSONObject(i)
-            ShellReminder(o.getString("id"), o.getString("taskId"), o.getLong("fireAt"), nullableString(o, "title"))
+            ShellReminder(o.getString("id"), o.getString("taskId"), o.getLong("fireAt"), nullableString(o, "title"), o.optBoolean("urgent", false))
         }, got)
     }
 
@@ -62,8 +62,8 @@ class BridgeFixtureTest {
 
     @Test fun signOutEmptiesTheSchedule() = checkReminders("reminders-signed-out.json")
 
-    /** ios-urgent-alarms D2: Android reads an urgent reminder as an ordinary one. */
-    @Test fun urgentRemindersAreOrdinaryReminders() = checkReminders("reminders-urgent.json")
+    /** android-urgent-alarms D3: Android reads the urgent flag of the shared hand-over and rings that reminder as an alarm. */
+    @Test fun urgentRemindersFollowTheFixture() = checkReminders("reminders-urgent.json")
 
     @Test fun widget() = checkWidget("widget.json")
 
@@ -248,6 +248,7 @@ class BridgeFixtureTest {
         assertEquals("alarm-settings", methods.getString("openAlarmSettings"))
         assertEquals("background", methods.getString("backgroundDone"))
         assertEquals("completion-sound", methods.getString("playCompletionSound"))
+        assertEquals("urgent-alarms", methods.getString("allowUrgentAlarms"))
         val script = Bridge.script("1.0.0", listOf("reminders", "widgets"))
         for (m in methods.keys()) assertTrue("$m in the page script", script.contains("$m: function () { send('$m', []) }"))
     }
@@ -297,8 +298,10 @@ class BridgeFixtureTest {
         assertFalse(Bridge.alarmSettings(hasScreen = false, sdkInt = 36))
         val old = Bridge.capabilityList(play = false, hasScreen = true, background = false, sdkInt = 30, biometric = false)
         val new = Bridge.capabilityList(play = false, hasScreen = true, background = false, sdkInt = 31, biometric = false)
-        assertEquals(old + "alarm-settings", new)
+        assertEquals(old + "alarm-settings" + "urgent-alarms", new)
         assertFalse(Bridge.capabilityList(play = false, hasScreen = false, background = true, sdkInt = 36, biometric = false).contains("alarm-settings"))
+        // android-urgent-alarms D4: asking needs a person, so never in a background run.
+        assertFalse(Bridge.capabilityList(play = false, hasScreen = false, background = true, sdkInt = 36, biometric = false).contains("urgent-alarms"))
     }
 
     /** `background` only in a run without a screen; the Play build drops geofences; biometric needs a screen. */

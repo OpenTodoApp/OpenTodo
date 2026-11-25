@@ -134,6 +134,34 @@ describe('RemindersField', () => {
     await unmount()
   })
 
+  it('lets the Android app ask for alarms only when Urgent turns on (android-urgent-alarms 2.1)', async () => {
+    const asked: string[] = []
+    window.opentodoShell = { bridge: 1, platform: 'android', app: '1.6.0', capabilities: ['reminders', 'links', 'urgent-alarms'], allowUrgentAlarms: () => void asked.push('ask') }
+    try {
+      const id = await createTask({ title: 'Take the medicine', due: { date: '2026-10-20', time: '08:00' } })
+      const rid = await addReminder(id, { kind: 'relative', offset_minutes: 0 })
+      const { container, unmount } = await render(<RemindersField task={(await db.tasks.get(id))!} />)
+      const menuFor = () => container.querySelector(`[data-reminder-id="${rid}"] button[aria-haspopup="menu"]`) as HTMLButtonElement | null
+      const urgentItem = () => [...document.querySelectorAll<HTMLElement>('[role="menuitemcheckbox"]')].find((b) => b.textContent?.includes('Urgent'))
+      await waitFor(() => !!menuFor(), 'the reminder chip')
+      await click(menuFor()!)
+      await waitFor(() => !!urgentItem(), 'the Urgent item')
+      await click(urgentItem()!)
+      await waitFor(async () => (await db.reminders.get(rid))!.urgent === true, 'the urgent flag')
+      expect(asked).toEqual(['ask'])
+      await waitFor(() => !document.querySelector('[role="menu"]'), 'the menu closed')
+      await click(menuFor()!)
+      await waitFor(() => urgentItem()?.getAttribute('aria-checked') === 'true', 'Urgent checked')
+      await click(urgentItem()!)
+      await waitFor(async () => (await db.reminders.get(rid))!.urgent === false, 'the flag cleared')
+      // Turning it off asks nothing.
+      expect(asked).toEqual(['ask'])
+      await unmount()
+    } finally {
+      delete window.opentodoShell
+    }
+  })
+
   it('offers no Urgent on a location reminder', async () => {
     const id = await createTask({ title: 'Buy stamps', location: { name: 'Post office', lat: 45.46, lon: 9.19 } })
     const rid = await addReminder(id, { kind: 'arrive', radius_m: 150 })

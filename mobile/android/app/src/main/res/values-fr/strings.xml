@@ -21,6 +21,7 @@
     <string name="error_offline">Le serveur est injoignable et OpenTodo n’a jamais été ouvert sur ce téléphone.</string>
     <string name="error_untrusted">Ce téléphone ne fait pas confiance au certificat du serveur.</string>
     <string name="channel_reminders">Rappels</string>
+    <string name="channel_urgent">Rappels urgents</string>
     <string name="reminder_generic">Rappel</string>
     <string name="reminder_text">Rappel de tâche</string>
     <string name="action_snooze">Reporter de 10 min</string>

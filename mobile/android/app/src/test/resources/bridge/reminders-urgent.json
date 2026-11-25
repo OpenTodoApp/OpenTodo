@@ -1,5 +1,5 @@
 {
-  "description": "An urgent reminder (ios-urgent-alarms D3) carries urgent: true, the others no urgent at all. The iPhone app rings an urgent one as an alarm where it can; every other shell schedules it as an ordinary reminder.",
+  "description": "An urgent reminder (ios-urgent-alarms D3) carries urgent: true, the others no urgent at all. The iPhone and Android apps ring an urgent one as an alarm where they can (android-urgent-alarms D3); every other shell schedules it as an ordinary reminder.",
   "method": "scheduleReminders",
   "payload": "[{\"id\":\"r-soon\",\"taskId\":\"call\",\"fireAt\":1792674000000,\"title\":\"Call the plumber ☎\",\"urgent\":true},{\"id\":\"r-late\",\"taskId\":\"plain\",\"fireAt\":1792681200000,\"title\":\"Water the plants\"}]",
   "now": 1792670400000,

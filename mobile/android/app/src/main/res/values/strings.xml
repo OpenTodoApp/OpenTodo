@@ -21,6 +21,7 @@
     <string name="error_offline">The server can\'t be reached, and OpenTodo hasn\'t been opened on this phone before.</string>
     <string name="error_untrusted">This phone doesn\'t trust the server\'s certificate.</string>
     <string name="channel_reminders">Reminders</string>
+    <string name="channel_urgent">Urgent reminders</string>
     <string name="reminder_generic">Reminder</string>
     <string name="reminder_text">Task reminder</string>
     <string name="action_snooze">Snooze 10 min</string>

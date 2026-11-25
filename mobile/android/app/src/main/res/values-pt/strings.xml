@@ -21,6 +21,7 @@
     <string name="error_offline">Não é possível contactar o servidor e o OpenTodo nunca foi aberto neste telemóvel.</string>
     <string name="error_untrusted">Este telemóvel não confia no certificado do servidor.</string>
     <string name="channel_reminders">Lembretes</string>
+    <string name="channel_urgent">Lembretes urgentes</string>
     <string name="reminder_generic">Lembrete</string>
     <string name="reminder_text">Lembrete de tarefa</string>
     <string name="action_snooze">Adiar 10 min</string>

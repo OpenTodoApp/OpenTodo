@@ -21,6 +21,7 @@
     <string name="error_offline">De server is niet bereikbaar, en OpenTodo is op deze telefoon nog nooit geopend.</string>
     <string name="error_untrusted">Deze telefoon vertrouwt het certificaat van de server niet.</string>
     <string name="channel_reminders">Meldingen</string>
+    <string name="channel_urgent">Dringende meldingen</string>
     <string name="reminder_generic">Herinnering</string>
     <string name="reminder_text">Taakmelding</string>
     <string name="action_snooze">10 min. later</string>

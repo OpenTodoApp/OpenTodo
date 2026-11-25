@@ -2,8 +2,11 @@ package app.opentodo
 
 import org.json.JSONArray
 
-/** One reminder the web app handed over (bridge v1 `scheduleReminders`). */
-data class ShellReminder(val id: String, val taskId: String, val fireAt: Long, val title: String?)
+/**
+ * One reminder the web app handed over (bridge v1 `scheduleReminders`). [urgent] rings it as an
+ * alarm (android-urgent-alarms D1); only a JSON `true` sets it.
+ */
+data class ShellReminder(val id: String, val taskId: String, val fireAt: Long, val title: String?, val urgent: Boolean = false)
 
 /** Parsing and filtering of the handed-over schedule; pure so the rules are unit-tested. */
 object ReminderSchedule {
@@ -29,7 +32,7 @@ object ReminderSchedule {
             if (now != null && (fireAt < now - GRACE_MS || fireAt > now + HORIZON_MS)) continue
             if (!seen.add(id)) continue
             val title = if (o.has("title") && !o.isNull("title")) o.optString("title").take(200).ifEmpty { null } else null
-            out.add(ShellReminder(id, taskId, fireAt, title))
+            out.add(ShellReminder(id, taskId, fireAt, title, o.opt("urgent") == true))
         }
         return out.sortedBy { it.fireAt }.take(MAX)
     }
@@ -39,6 +42,7 @@ object ReminderSchedule {
         for (r in list) arr.put(org.json.JSONObject().apply {
             put("id", r.id); put("taskId", r.taskId); put("fireAt", r.fireAt)
             if (r.title != null) put("title", r.title)
+            if (r.urgent) put("urgent", true)
         })
         return arr.toString()
     }
@@ -93,4 +97,28 @@ object ReminderSchedule {
 
     /** The address the quick-add widget opens (the web app's `?add=`; shared fixture bridge/actions.json). */
     const val QUICK_ADD_PATH = "/?add="
+}
+
+/** The rules of urgent reminders on Android (android-urgent-alarms); pure so they are unit-tested. */
+object UrgentAlarms {
+    const val EXACT = "exact"
+    const val FULL_SCREEN = "full-screen"
+
+    /** Android 12 (API 31) asks for exact alarms, Android 14 (API 34) for full-screen notifications. */
+    private const val EXACT_SDK = 31
+    private const val FULL_SCREEN_SDK = 34
+
+    /**
+     * D4: the settings page to open when the user turns Urgent on, or null: exact alarms first,
+     * then full-screen notifications, each only when missing on this Android version and not
+     * asked on this device before.
+     */
+    fun nextAsk(sdk: Int, exact: Boolean, fullScreen: Boolean, askedExact: Boolean, askedFullScreen: Boolean): String? = when {
+        sdk >= EXACT_SDK && !exact && !askedExact -> EXACT
+        sdk >= FULL_SCREEN_SDK && !fullScreen && !askedFullScreen -> FULL_SCREEN
+        else -> null
+    }
+
+    /** D3: an urgent reminder is an alarm clock when exact alarms are allowed; everything else is armed as before. */
+    fun armAsAlarmClock(r: ShellReminder, exact: Boolean): Boolean = r.urgent && exact
 }

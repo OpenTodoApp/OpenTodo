@@ -21,6 +21,7 @@
     <string name="error_offline">无法连接到服务器，而且这台手机上还没有打开过 OpenTodo。</string>
     <string name="error_untrusted">这台手机不信任服务器的证书。</string>
     <string name="channel_reminders">提醒</string>
+    <string name="channel_urgent">紧急提醒</string>
     <string name="reminder_generic">提醒</string>
     <string name="reminder_text">任务提醒</string>
     <string name="action_snooze">延后 10 分钟</string>

@@ -11,6 +11,7 @@
     "haptics",
     "completion-sound",
     "alarm-settings",
+    "urgent-alarms",
     "first-paint",
     "focus"
   ],
@@ -24,6 +25,7 @@
   ],
   "methods": {
     "openAlarmSettings": "alarm-settings",
+    "allowUrgentAlarms": "urgent-alarms",
     "backgroundDone": "background",
     "playCompletionSound": "completion-sound",
     "painted": "first-paint"
@@ -32,15 +34,18 @@
     "visible": {
       "shellVisible": true,
       "openAlarmSettings": true,
+      "allowUrgentAlarms": true,
       "backgroundDone": false
     },
     "background": {
       "shellVisible": false,
       "openAlarmSettings": false,
+      "allowUrgentAlarms": false,
       "backgroundDone": true
     },
     "called": [
       "openAlarmSettings",
+      "allowUrgentAlarms",
       "backgroundDone"
     ]
   }

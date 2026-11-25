@@ -21,6 +21,7 @@
     <string name="error_offline">Sunucuya ulaşılamıyor ve OpenTodo bu telefonda daha önce açılmamış.</string>
     <string name="error_untrusted">Bu telefon sunucunun sertifikasına güvenmiyor.</string>
     <string name="channel_reminders">Hatırlatıcılar</string>
+    <string name="channel_urgent">Acil hatırlatıcılar</string>
     <string name="reminder_generic">Hatırlatıcı</string>
     <string name="reminder_text">Görev hatırlatıcısı</string>
     <string name="action_snooze">10 dk ertele</string>

@@ -39,6 +39,42 @@ class ReminderScheduleTest {
         assertTrue(ReminderSchedule.parse(ReminderSchedule.toJson(list), 0).isEmpty())
     }
 
+    /** android-urgent-alarms D3: only a JSON `true` makes a reminder urgent, and the stored schedule keeps it (a reboot re-arms it). */
+    @Test fun urgentIsReadStrictlyAndStored() {
+        val json = """[{"id":"a","taskId":"t","fireAt":${now + hour},"urgent":true},{"id":"b","taskId":"t","fireAt":${now + hour},"urgent":"true"},{"id":"c","taskId":"t","fireAt":${now + hour},"urgent":1},{"id":"d","taskId":"t","fireAt":${now + hour}}]"""
+        val list = ReminderSchedule.parse(json, now)
+        assertEquals(listOf(true, false, false, false), list.map { it.urgent })
+        assertEquals(list, ReminderSchedule.parse(ReminderSchedule.toJson(list), null))
+        // An ordinary reminder is stored as before, without the field.
+        assertTrue(!ReminderSchedule.toJson(list.drop(1)).contains("urgent"))
+    }
+
+    @Test fun anUrgentReminderIsAnAlarmClockOnlyWhenExact() {
+        val urgent = ShellReminder("a", "t", now, null, urgent = true)
+        assertTrue(UrgentAlarms.armAsAlarmClock(urgent, exact = true))
+        assertEquals(false, UrgentAlarms.armAsAlarmClock(urgent, exact = false))
+        assertEquals(false, UrgentAlarms.armAsAlarmClock(urgent.copy(urgent = false), exact = true))
+    }
+
+    /** android-urgent-alarms D4: exact alarms first, then full-screen, each only where Android asks for it and once. */
+    @Test fun urgentAlarmsAskEachMissingPermissionOnce() {
+        fun ask(sdk: Int, exact: Boolean = false, full: Boolean = false, askedExact: Boolean = false, askedFull: Boolean = false) =
+            UrgentAlarms.nextAsk(sdk, exact, full, askedExact, askedFull)
+        // Before Android 12 neither is a permission.
+        assertEquals(null, ask(30))
+        // Android 12 and 13: exact alarms only (full-screen is granted at install).
+        assertEquals(UrgentAlarms.EXACT, ask(31))
+        assertEquals(null, ask(33, askedExact = true))
+        assertEquals(null, ask(33, exact = true))
+        // Android 14+: exact first, then full-screen, then nothing.
+        assertEquals(UrgentAlarms.EXACT, ask(34))
+        assertEquals(UrgentAlarms.FULL_SCREEN, ask(34, askedExact = true))
+        assertEquals(UrgentAlarms.FULL_SCREEN, ask(36, exact = true))
+        assertEquals(null, ask(36, askedExact = true, askedFull = true))
+        assertEquals(null, ask(36, exact = true, full = true))
+        assertEquals(null, ask(36, exact = true, askedFull = true))
+    }
+
     @Test fun atMost500() {
         val json = (0 until 600).joinToString(",", "[", "]") { """{"id":"r$it","taskId":"t","fireAt":${now + it * 1000L}}""" }
         assertEquals(ReminderSchedule.MAX, ReminderSchedule.parse(json, now).size)

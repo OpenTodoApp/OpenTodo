@@ -35,6 +35,11 @@ class Bridge(
          * Only the web app's button leads here; handing over a schedule never does.
          */
         fun openAlarmSettings() {}
+        /**
+         * android-urgent-alarms D4: the user turned Urgent on; the settings page for what an
+         * urgent reminder still lacks (exact alarms, then full-screen notifications), each once.
+         */
+        fun allowUrgentAlarms() {}
         /** The microphone for dictation. The default refuses, so a host without a screen never grants it. */
         fun requestMicrophone(done: (Boolean) -> Unit) { done(false) }
         fun biometricStore(key: ByteArray, done: (Boolean) -> Unit)
@@ -126,6 +131,7 @@ class Bridge(
             "playCompletionSound" -> if (host != null && args.length() == 0) main.post { host.playCompletionSound() }
             // Without a screen there is no page to open, and the visible app has no run to end.
             "openAlarmSettings" -> if (host != null) main.post { host.openAlarmSettings() }
+            "allowUrgentAlarms" -> if (host != null) main.post { host.allowUrgentAlarms() }
             "backgroundDone" -> if (host == null) backgroundDone?.invoke()
             // shell-reveal-on-paint D2: only the visible app has a launch screen to end.
             "painted" -> if (host != null) main.post { host.painted() }
@@ -191,7 +197,8 @@ class Bridge(
             // shell-push D5: also a background run, which reads pushState to notice a new endpoint.
             caps += "push"
             if (hasScreen) caps += listOf("share", "links", "obsidian-links", "app-links", "system-bars", "microphone", "files", "haptics", "completion-sound", "first-paint", "focus")
-            if (alarmSettings(hasScreen, sdkInt)) caps += "alarm-settings"
+            // android-urgent-alarms D4: the same rule; before Android 12 there is nothing to allow.
+            if (alarmSettings(hasScreen, sdkInt)) caps += listOf("alarm-settings", "urgent-alarms")
             if (hasScreen && biometric) caps += "biometric"
             if (background && !hasScreen) caps += "background"
             return caps
@@ -267,6 +274,7 @@ class Bridge(
                 haptic: function (kind) { send('haptic', [String(kind)]) },
                 playCompletionSound: function () { send('playCompletionSound', []) },
                 openAlarmSettings: function () { send('openAlarmSettings', []) },
+                allowUrgentAlarms: function () { send('allowUrgentAlarms', []) },
                 backgroundDone: function () { send('backgroundDone', []) },
                 painted: function () { send('painted', []) },
                 textScaleApplied: function () { send('textScaleApplied', []) },

@@ -21,6 +21,7 @@
     <string name="error_offline">No se puede acceder al servidor y OpenTodo nunca se ha abierto en este teléfono.</string>
     <string name="error_untrusted">Este teléfono no confía en el certificado del servidor.</string>
     <string name="channel_reminders">Recordatorios</string>
+    <string name="channel_urgent">Recordatorios urgentes</string>
     <string name="reminder_generic">Recordatorio</string>
     <string name="reminder_text">Recordatorio de tarea</string>
     <string name="action_snooze">Posponer 10 min</string>
