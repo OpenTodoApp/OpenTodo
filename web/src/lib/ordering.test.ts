@@ -6,9 +6,11 @@ import { applyOps, createTask, resetDeviceId } from './ops'
 import {
   GAP, compareByPosition, compareDueThenPriority, needsRenumber, planMove, planStep, positionBetween, renumber, type PositionChange,
 } from './ordering'
-import { moveProjectBy, moveProjectTo, moveTask, moveTaskBy } from './move'
+import { moveProjectBy, moveProjectTo, moveTask, type Step } from './move'
+import { moveTaskByUndoable } from './undoActions'
 import { buildTree } from './tree'
 import type { Membership, Op, Task } from './types'
+const moveTaskBy = async (id: string, step: Step) => (await moveTaskByUndoable(id, step)) !== null
 
 let n = 0
 beforeEach(() => {

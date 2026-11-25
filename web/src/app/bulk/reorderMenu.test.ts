@@ -5,7 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from '../../lib/db'
 import { applyOps, resetDeviceId } from '../../lib/ops'
 import { compareByPosition } from '../../lib/ordering'
-import { moveTaskBy, taskStepEdges } from '../../lib/move'
+import { taskStepEdges } from '../../lib/move'
+import { moveTaskByUndoable } from '../../lib/undoActions'
 import type { Membership, Op } from '../../lib/types'
 import { reorderItem, type ListReorder } from './BulkActions'
 
@@ -65,7 +66,7 @@ describe('the Reorder items', () => {
   it('run the same move as the keyboard, written locally: offline it is in the outbox and the list order', async () => {
     await seed([...task('a', 1000), ...task('b', 2000), ...task('c', 3000)])
     const moved: Promise<boolean>[] = []
-    const r: ListReorder = { move: (id, step) => { moved.push(moveTaskBy(id, step)) }, edges: taskStepEdges }
+    const r: ListReorder = { move: (id, step) => { moved.push(moveTaskByUndoable(id, step).then((r) => r !== null)) }, edges: taskStepEdges }
     const [sub] = reorderItem('c', r, await taskStepEdges('c'))
     const items = sub.kind === 'submenu' ? sub.items : []
     const top = items.find((i) => i.id === 'move-top')!

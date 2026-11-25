@@ -509,7 +509,7 @@ export function Sidebar({ route, user, onSearch, onAddTask, onShortcuts, onFeedb
               <li data-drag-id="sidebar-project" key={n.id} role="treeitem" aria-level={n.depth + 1} aria-expanded={has ? !isCollapsed : undefined}
                 data-project-row={n.id} data-menu-row data-drop-target={`project:${n.id}`} data-task-drop={canEditTasks(roleOf(n.id, memberMap)) ? taskDrop.project(n.id) : undefined}
                 onPointerDown={!editing && movable(n.id) ? (e) => startDrag(e, n) : undefined}
-                className={`group relative flex items-center rounded-control ${countsAll ? 'ui-swap-row ' : ''}${movingProject ? '' : 'data-drop-active:ring-2 data-drop-active:ring-accent'} ${rowGap(shownRows, i)} ${drop === 'inside' ? feedback.inside : ''}`} style={{ paddingLeft: collapsed ? 0 : `${levels * INDENT_REM}rem` }}>
+                className={`group relative flex items-center rounded-control ${countsAll ? 'ui-swap-row ' : ''}${movingProject ? '' : 'data-drop-active:ring-2 data-drop-active:ring-accent'} ${rowGap(shownRows, i)} ${drop === 'inside' ? feedback.inside : ''}`} style={{ paddingInlineStart: collapsed ? 0 : `${levels * INDENT_REM}rem` }}>
                 <GuideLines levels={levels} />
                 {(drop === 'before' || drop === 'after') && (
                   // The task list's line with a dot, starting at the level the project lands on.

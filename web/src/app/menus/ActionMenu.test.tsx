@@ -3,7 +3,7 @@
 import { act } from 'react'
 import { describe, expect, it } from 'vitest'
 import { click, key, render, waitFor } from '../../ui/test-utils'
-import { ActionMenu, orderGroups, useConfirm, type ActionGroup } from './ActionMenu'
+import { ActionMenu, orderGroups, useConfirm, withEllipsis, type ActionGroup } from './ActionMenu'
 
 const targets = [{ id: 'a', name: 'Alpha' }, { id: 'b', name: 'Beta' }, { id: 'c', name: 'Current' }]
 
@@ -43,7 +43,24 @@ describe('orderGroups', () => {
   })
 })
 
+describe('withEllipsis', () => {
+  it('adds one "…" to a label that needs another step and never a second (#2028)', () => {
+    expect(withEllipsis('Move to workspace')).toBe('Move to workspace…')
+    expect(withEllipsis('Move to workspace…')).toBe('Move to workspace…')
+  })
+})
+
 describe('ActionMenu', () => {
+  it('shows one "…" on a picker whose label already ends in one (#2028)', async () => {
+    const menu: ActionGroup[] = [{ items: [{ kind: 'picker', id: 'move-workspace', label: 'In Arbeitsbereich verschieben…', picker: {
+      title: 'Move to workspace', source: targets, getKey: (t) => t.id, getLabel: (t) => t.name, onPick: () => {} } }] }]
+    const r = await render(<ActionMenu label="Menu" groups={menu} />)
+    await click(r.container.querySelector('button')!)
+    await waitFor(() => items().length > 0, 'the open menu')
+    expect(items().map((b) => b.getAttribute('data-menu-label'))).toEqual(['In Arbeitsbereich verschieben…'])
+    await r.unmount()
+  })
+
   it('renders groups in order with separators, danger last, reasons and checked state', async () => {
     const calls: string[] = []
     const { unmount } = await openMenu(calls)

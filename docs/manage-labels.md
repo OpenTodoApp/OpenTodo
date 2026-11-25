@@ -29,6 +29,8 @@ When adding a label with **+** in the sidebar, use **Colour** beside its name to
 - **Merge into…**: type to find the label to keep. A confirmation names both labels and how many tasks change. Tasks with the first label get the second one instead, and the first is deleted. Handy when you end up with both "Errand" and "errand".
 - **Delete label…**: the confirmation says how many tasks carry it. It's removed from them; the tasks stay.
 
+Both offer **Undo**, which puts the label back on every task that carried it.
+
 If two of your devices created the same label while offline, both copies get a **duplicate** badge, and the labels page offers to merge them. **Swap** chooses which one is kept.
 
 Every change is saved on this device first and syncs to your other devices, also when you make it offline. Labels are personal: in a shared project, other members don't see yours (see [Labels and filters](labels-and-filters.md)).

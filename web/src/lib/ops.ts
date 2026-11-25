@@ -1253,7 +1253,7 @@ export async function liveSubtree(id: string): Promise<Task[]> {
  * (time-tracking "Start and stop from the web app"). The server's completion
  * paths do not: they cannot know whether the person is still working.
  */
-async function trackingStops(taskId: string, now: number): Promise<Change[]> {
+export async function trackingStops(taskId: string, now: number): Promise<Change[]> {
   const me = await currentUserId()
   if (!me) return []
   const rows = await db.timeEntries.where('task_id').equals(taskId).toArray()

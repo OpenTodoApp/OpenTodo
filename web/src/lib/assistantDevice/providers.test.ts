@@ -175,6 +175,32 @@ describe('Chat Completions from the browser', () => {
     expect(calls[1].url).toBe(manifest.endpoints.gemini + '/chat/completions')
     expect(String(calls[1].init.body)).not.toContain('["string","null"]')
   })
+
+  it('asks once more with reasoning_effort none when tools need it (#2045)', async () => {
+    const refusal = JSON.stringify({ error: { message: 'Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions.', type: 'invalid_request_error', param: 'reasoning_effort', code: null } })
+    const done = sse([{ choices: [{ delta: {}, finish_reason: 'stop' }] }, '[DONE]'], false)
+    const scripted = (answers: [number, string][]) => {
+      const bodies: Record<string, unknown>[] = []
+      const f: Fetch = async (_url, init) => {
+        bodies.push(JSON.parse(String(init!.body)))
+        const [status, text] = answers[Math.min(bodies.length, answers.length) - 1]
+        return new Response(text, { status })
+      }
+      return { f, bodies }
+    }
+    const setup = { provider: 'openai' as const, model: 'gpt-6-luna', key: 'sk-o', savedAt: 1 }
+    const ok = scripted([[400, refusal], [200, done], [200, done]])
+    const conv = chatProvider(setup, ok.f).start({ system: '', messages: [{ role: 'user', text: 'Q' }], tools: [tool], maxTokens: 9 })
+    await conv.next(() => {})
+    await conv.next(() => {})
+    expect(ok.bodies.map((b) => b.reasoning_effort)).toEqual([undefined, 'none', 'none'])
+    const again = scripted([[400, refusal]])
+    await expect(chatProvider(setup, again.f).start({ system: '', messages: [], tools: [tool], maxTokens: 9 }).next(() => {})).rejects.toMatchObject({ code: 'provider_error', status: 400, type: 'invalid_request_error' })
+    expect(again.bodies).toHaveLength(2)
+    const plain = scripted([[400, JSON.stringify({ error: { type: 'invalid_request_error', param: 'tools' } })]])
+    await expect(chatProvider(setup, plain.f).start({ system: '', messages: [], tools: [tool], maxTokens: 9 }).next(() => {})).rejects.toMatchObject({ status: 400 })
+    expect(plain.bodies).toHaveLength(1)
+  })
 })
 
 describe('device setup checks', () => {

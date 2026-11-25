@@ -78,7 +78,7 @@ export function CheckButton({ series, state, today, compact = false }: { series:
           groups={[{ items: amount ? [
             ...(kept ? [] : [{ kind: 'action' as const, id: 'add', label: t('Add {step}', { step }), icon: 'plus' as const, shortcut: 'Space', onSelect: () => checkInWithUndo(series.id, false) }]),
             { kind: 'action', id: 'subtract', label: t('Subtract {step}', { step }), icon: 'minus', onSelect: () => stepAmount(series.id, -step) },
-            { kind: 'action', id: 'set', label: t('Set amount'), icon: 'pencil', onSelect: () => openSetAmount(series.id, today) },
+            { kind: 'action', id: 'set', label: t('Set amount…'), icon: 'pencil', onSelect: () => openSetAmount(series.id, today) },
           ] : [
             { kind: 'action', id: 'done', label: t('Check in'), icon: 'check', shortcut: 'Space', onSelect: () => checkInWithUndo(series.id, false) },
             { kind: 'action', id: 'tiny', label: series.habit_tiny ? t('Log the tiny version: {tiny}', { tiny: series.habit_tiny }) : t('Log the tiny version'), icon: 'circle', shortcut: 'Shift+Space', onSelect: () => checkInWithUndo(series.id, true) },
