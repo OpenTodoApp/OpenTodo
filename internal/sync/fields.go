@@ -34,7 +34,7 @@ func FoldFieldValues(e Entity) Entity {
 	if e == nil {
 		return nil
 	}
-	out := make(Entity, len(e)+1)
+	out := make(Entity, len(e))
 	values := map[string]json.RawMessage{}
 	for k, v := range e {
 		if id, ok := FieldValueID(k); ok {
