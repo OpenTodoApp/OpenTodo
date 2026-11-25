@@ -333,6 +333,10 @@ func (c *chatConv) post(ctx context.Context, body []byte) (*http.Response, error
 		if resp.StatusCode >= 300 && resp.StatusCode < 400 {
 			return nil, &ProviderError{Code: CodeProviderError, Status: resp.StatusCode, Msg: "the endpoint answered with a redirect, which this server does not follow"}
 		}
+		if c.images && imageRefusal(resp.StatusCode, string(errBody)) {
+			typ, _ := readChatError(errBody)
+			return nil, imagesUnsupported(resp.StatusCode, typ)
+		}
 		if c.askAgain(refusedParam(resp.StatusCode, errBody)) {
 			if body, err = c.body(); err != nil {
 				return nil, err
@@ -340,10 +344,6 @@ func (c *chatConv) post(ctx context.Context, body []byte) (*http.Response, error
 			continue
 		}
 		if !retry || attempt >= c.p.Retries {
-			if c.images && imageRefusal(resp.StatusCode, string(errBody)) {
-				typ, _ := readChatError(errBody)
-				return nil, imagesUnsupported(resp.StatusCode, typ)
-			}
 			return nil, chatError(c.p.Name, resp.StatusCode, errBody)
 		}
 		select {
@@ -355,18 +355,21 @@ func (c *chatConv) post(ctx context.Context, body []byte) (*http.Response, error
 	}
 }
 
-// askAgain adapts the request to a 400 that names param and reports whether
-// to send it again; each adaptation happens at most once per conversation.
+// askAgain adapts the request to a 400 that names r's parameter and reports
+// whether to send it again; each adaptation happens at most once per
+// conversation.
 //   - reasoning_effort, on a request with tools: models such as GPT-6 Luna
 //     call tools in Chat Completions only without reasoning (issue #2045), so
 //     send reasoning_effort "none".
-//   - max_tokens: reasoning models, such as OpenAI's on Azure's v1 endpoint,
-//     take the limit only as max_completion_tokens (issue #2087).
-func (c *chatConv) askAgain(param string) bool {
+//   - max_tokens with code unsupported_parameter: reasoning models, such as
+//     OpenAI's on Azure's v1 endpoint, take the limit only as
+//     max_completion_tokens (issue #2087). Another code, such as
+//     invalid_value for a limit that is too large, is not asked again.
+func (c *chatConv) askAgain(r refusal) bool {
 	switch {
-	case param == "reasoning_effort" && !c.effortNone && len(c.tools) > 0:
+	case r.param == "reasoning_effort" && !c.effortNone && len(c.tools) > 0:
 		c.effortNone = true
-	case param == "max_tokens" && !c.completionTokens && c.maxTokens > 0:
+	case r.param == "max_tokens" && r.code == "unsupported_parameter" && !c.completionTokens && c.maxTokens > 0:
 		c.completionTokens = true
 	default:
 		return false
@@ -374,25 +377,33 @@ func (c *chatConv) askAgain(param string) bool {
 	return true
 }
 
-// refusedParam is the parameter a 400 names in its error's param (OpenAI's
-// and Azure OpenAI's form), else "".
-func refusedParam(status int, b []byte) string {
+// refusal is the parameter and code a 400 names.
+type refusal struct{ param, code string }
+
+// refusedParam reads the param and code of a 400's error, or of the body's
+// top level when the error has no param (OpenAI's and Azure OpenAI's form).
+// Fields of another type, or an error that is not an object, read as empty.
+func refusedParam(status int, b []byte) refusal {
 	if status != http.StatusBadRequest {
-		return ""
+		return refusal{}
 	}
-	var e struct {
-		Param string `json:"param"`
-		Error *struct {
-			Param string `json:"param"`
-		} `json:"error"`
+	type fields struct {
+		Param any `json:"param"`
+		Code  any `json:"code"`
 	}
-	if json.Unmarshal(b, &e) != nil {
-		return ""
+	var top struct {
+		fields
+		Error json.RawMessage `json:"error"`
 	}
-	if e.Error != nil && e.Error.Param != "" {
-		return e.Error.Param
+	if json.Unmarshal(b, &top) != nil {
+		return refusal{}
 	}
-	return e.Param
+	str := func(v any) string { s, _ := v.(string); return s }
+	var inner fields
+	if json.Unmarshal(top.Error, &inner) == nil && str(inner.Param) != "" {
+		return refusal{str(inner.Param), str(inner.Code)}
+	}
+	return refusal{str(top.Param), str(top.Code)}
 }
 
 // maxErrorBody bounds the part of an error answer that is read.

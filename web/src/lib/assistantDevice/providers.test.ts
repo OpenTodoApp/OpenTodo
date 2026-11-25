@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { manifest } from './manifest'
-import { anthropicProvider, chatProvider, fitsAnthropicStrict, deviceCode, ProviderError, sseEvents, testConnection, type Fetch } from './providers'
+import { anthropicProvider, chatProvider, fitsAnthropicStrict, deviceCode, ProviderError, refusedParam, sseEvents, testConnection, type Fetch } from './providers'
 import vectors from './errors.vectors.json'
 import { checkSetup, originOf, baseUrlOf, ENDPOINTS } from './settings'
 
@@ -220,6 +220,26 @@ describe('Chat Completions from the browser', () => {
     expect(bodies.map((b) => [b.max_tokens, b.max_completion_tokens, b.reasoning_effort])).toEqual([
       [9, undefined, undefined], [undefined, 9, undefined], [undefined, 9, 'none'], [undefined, 9, 'none'],
     ])
+    // A limit that is too large (invalid_value) is not asked again.
+    const tooLarge = JSON.stringify({ error: { message: 'max_tokens is too large', type: 'invalid_request_error', param: 'max_tokens', code: 'invalid_value' } })
+    let n = 0
+    const once: Fetch = async () => { n++; return new Response(tooLarge, { status: 400 }) }
+    await expect(chatProvider(setup, once).start({ system: '', messages: [], tools: [tool], maxTokens: 9 }).next(() => {})).rejects.toMatchObject({ code: 'provider_error', status: 400 })
+    expect(n).toBe(1)
+  })
+
+  it('reads the param and code of a refusal as refusedParam does in Go', () => {
+    const cases: [string, { param: string; code: string }][] = [
+      ['{"error":{"param":"max_tokens","code":"unsupported_parameter"}}', { param: 'max_tokens', code: 'unsupported_parameter' }],
+      ['{"error":{"param":"reasoning_effort","code":null}}', { param: 'reasoning_effort', code: '' }],
+      ['{"error":{"param":"max_tokens","code":400}}', { param: 'max_tokens', code: '' }],
+      ['{"error":"bad request","param":"max_tokens","code":"unsupported_parameter"}', { param: 'max_tokens', code: 'unsupported_parameter' }],
+      ['{"param":["x"],"error":{"param":7}}', { param: '', code: '' }],
+      ['[{"error":{"param":"max_tokens"}}]', { param: '', code: '' }],
+      ['not json', { param: '', code: '' }],
+    ]
+    for (const [body, want] of cases) expect(refusedParam(400, body)).toEqual(want)
+    expect(refusedParam(422, cases[0][0])).toEqual({ param: '', code: '' })
   })
 })
 

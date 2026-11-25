@@ -20,7 +20,7 @@ which OpenTodo reports as `provider_error` ("the provider refused the request"),
 
 ### D1. Ask again on the provider's own signal, as for reasoning_effort
 
-The adapter reads the `param` of a 400 once (`refusedParam`) and `askAgain` decides: `reasoning_effort` on a request with tools sends `reasoning_effort: "none"` (unchanged), `max_tokens` on a request with a limit sends the limit as `max_completion_tokens`. Each happens at most once per conversation and neither uses up a 429/5xx retry, so a model that needs both is answered on the third request whichever it names first.
+The adapter reads the `param` of a 400 once (`refusedParam`) and `askAgain` decides: `reasoning_effort` on a request with tools sends `reasoning_effort: "none"` (unchanged), `max_tokens` with `code` `unsupported_parameter` on a request with a limit sends the limit as `max_completion_tokens` (another code, such as `invalid_value` for a limit that is too large, is reported as is). An image refusal is classified first, on the server as on the device. Each happens at most once per conversation and neither uses up a 429/5xx retry, so a model that needs both is answered on the third request whichever it names first.
 
 Alternatives: always sending `max_completion_tokens` to compatible endpoints breaks servers that know only `max_tokens`; detecting Azure by host would build a provider host into behaviour and miss routers that forward OpenAI's refusal; a setting adds a field the owner must know to set.
 

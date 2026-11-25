@@ -42,8 +42,8 @@ export interface Provider { start(req: Request): Conversation }
 
 /** A failed provider request: a code the panel describes, never the key or request content. */
 export class ProviderError extends Error {
-  /** `param`: the parameter a 400 names (refusedParam). */
-  constructor(public code: 'provider_auth' | 'provider_rate_limited' | 'provider_not_found' | 'provider_error' | 'blocked' | 'images_unsupported', message: string, public status = 0, public type = '', public param = '') {
+  /** `refused`: the parameter and code a 400 names (refusedParam). */
+  constructor(public code: 'provider_auth' | 'provider_rate_limited' | 'provider_not_found' | 'provider_error' | 'blocked' | 'images_unsupported', message: string, public status = 0, public type = '', public refused: Refusal = { param: '', code: '' }) {
     super(message)
   }
 }
@@ -166,14 +166,23 @@ async function post(f: Fetch, provider: string, url: string, headers: Record<str
   return res
 }
 
-/** The parameter a 400 names in its error's param, else '' (refusedParam in Go). */
-function refusedParam(status: number, body: string): string {
-  if (status !== 400) return ''
+/** The parameter and code a refused request names. */
+export interface Refusal { param: string; code: string }
+
+/**
+ * The param and code of a 400's error, or of the body's top level when the
+ * error has no param (refusedParam in Go). Fields of another type read as empty.
+ */
+export function refusedParam(status: number, body: string): Refusal {
+  const none = { param: '', code: '' }
+  if (status !== 400) return none
   let v: unknown
-  try { v = JSON.parse(body) } catch { return '' }
-  const o = (v && typeof v === 'object' ? v : {}) as { param?: unknown; error?: { param?: unknown } | null }
-  const p = o.error && typeof o.error === 'object' && o.error.param ? o.error.param : o.param
-  return typeof p === 'string' ? p : ''
+  try { v = JSON.parse(body) } catch { return none }
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return none
+  const str = (x: unknown) => (typeof x === 'string' ? x : '')
+  const top = v as { param?: unknown; code?: unknown; error?: unknown }
+  const inner = (top.error && typeof top.error === 'object' ? top.error : {}) as { param?: unknown; code?: unknown }
+  return str(inner.param) ? { param: str(inner.param), code: str(inner.code) } : { param: str(top.param), code: str(top.code) }
 }
 
 /** Server-sent events of a response body: {event, data} per blank-line-terminated event. */
@@ -372,9 +381,10 @@ export function chatProvider(setup: DeviceSetup, f: Fetch = fetch): Provider {
             return post(f, setup.provider, baseUrlOf(setup) + '/chat/completions', headers, body, signal, images)
           }
           const askAgain = (err: unknown): Promise<Response> => {
-            const param = err instanceof ProviderError ? err.param : ''
+            const { param, code } = err instanceof ProviderError ? err.refused : { param: '', code: '' }
             if (param === 'reasoning_effort' && !effortNone && tools.length) effortNone = true
-            else if (param === 'max_tokens' && !completionTokens && req.maxTokens) completionTokens = true
+            // Only an unsupported max_tokens: invalid_value (a limit too large) is reported as is.
+            else if (param === 'max_tokens' && code === 'unsupported_parameter' && !completionTokens && req.maxTokens) completionTokens = true
             else throw err
             return send().catch(askAgain)
           }

@@ -511,6 +511,34 @@ func TestChatMaxCompletionTokens(t *testing.T) {
 	if pe, ok := AsProviderError(err); !ok || pe.Code != CodeProviderError || pe.Status != 400 || rec.n() != 2 {
 		t.Fatalf("%v %d", err, rec.n())
 	}
+	// A limit that is too large (invalid_value) is not asked again.
+	tooLarge := func(w http.ResponseWriter, _ map[string]any) {
+		w.WriteHeader(400)
+		_, _ = io.WriteString(w, `{"error":{"message":"max_tokens is too large","type":"invalid_request_error","param":"max_tokens","code":"invalid_value"}}`)
+	}
+	srv, rec = fakeAnthropic(t, tooLarge)
+	if _, err := chatFor(srv, Compatible).Start(req).Next(context.Background(), func(string) {}); err == nil || rec.n() != 1 {
+		t.Fatalf("%v %d", err, rec.n())
+	}
+}
+
+func TestRefusedParam(t *testing.T) {
+	for body, want := range map[string]refusal{
+		`{"error":{"param":"max_tokens","code":"unsupported_parameter"}}`:             {"max_tokens", "unsupported_parameter"},
+		`{"error":{"param":"reasoning_effort","code":null}}`:                          {"reasoning_effort", ""},
+		`{"error":{"param":"max_tokens","code":400}}`:                                 {"max_tokens", ""},
+		`{"error":"bad request","param":"max_tokens","code":"unsupported_parameter"}`: {"max_tokens", "unsupported_parameter"},
+		`{"param":["x"],"error":{"param":7}}`:                                         {},
+		`[{"error":{"param":"max_tokens"}}]`:                                          {},
+		`not json`:                                                                    {},
+	} {
+		if got := refusedParam(400, []byte(body)); got != want {
+			t.Errorf("%s: %+v, want %+v", body, got, want)
+		}
+	}
+	if got := refusedParam(422, []byte(`{"error":{"param":"max_tokens","code":"unsupported_parameter"}}`)); got != (refusal{}) {
+		t.Errorf("422: %+v", got)
+	}
 }
 
 // TestTestConnectionAzureV1: Test connection passes against an endpoint

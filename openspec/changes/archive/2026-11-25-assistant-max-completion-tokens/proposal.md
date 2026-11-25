@@ -8,7 +8,7 @@ Sending `max_completion_tokens` to every compatible endpoint is not an option: m
 
 ## What Changes
 
-- When a Chat Completions request is refused with HTTP 400 and an error whose `param` is `max_tokens`, the server's provider and the on-device assistant send the same request once more with the limit as `max_completion_tokens` instead, and keep it for the rest of the turn. A second refusal is reported as before.
+- When a Chat Completions request is refused with HTTP 400 and an error whose `param` is `max_tokens` and `code` is `unsupported_parameter`, the server's provider and the on-device assistant send the same request once more with the limit as `max_completion_tokens` instead, and keep it for the rest of the turn. A second refusal is reported as before.
 - The `reasoning_effort` retry and this one are independent: a request may be asked again once for each.
 - `docs/assistant-setup.md` says how to set up Azure OpenAI as a compatible endpoint.
 - No setting, no model id or host built into behaviour, no new environment variable.
