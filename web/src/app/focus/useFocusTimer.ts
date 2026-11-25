@@ -29,6 +29,7 @@ import { LONG_PEAK, playTone, REPEAT_MS, REPEATS, scheduleTone, type ScheduledTo
 import { t } from '../../lib/i18n'
 import { useToday } from '../useViews'
 import { resettable } from '../../lib/moduleState'
+import { watchKeys } from '../shortcuts/dispatch'
 
 /** Now, re-read every second while `active`, whenever the tab is shown or focused, and on `read()`. */
 function useClock(active: boolean): [number, () => void] {
@@ -220,10 +221,11 @@ function useHiddenAlert(state: FocusState | null | undefined, prefs: FocusPrefs,
       if (key && now >= at && now - at <= REPEATS * REPEAT_MS) writeString(STOP_KEY, key)
     }
     window.addEventListener('pointerdown', onInput, true)
-    window.addEventListener('keydown', onInput, true)
+    // Keys come through the shortcut dispatcher's one window listener.
+    const unwatch = watchKeys(onInput)
     return () => {
       window.removeEventListener('pointerdown', onInput, true)
-      window.removeEventListener('keydown', onInput, true)
+      unwatch()
     }
   }, [hidden, long])
   const end = state && !state.remote && isRunning(state) ? plannedEnd(state) : null

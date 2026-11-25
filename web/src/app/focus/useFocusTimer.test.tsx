@@ -16,6 +16,7 @@ import { primeTone, resetTone } from '../../lib/focus/tone'
 import { readString, writeString } from '../../lib/deviceStorage'
 import { alertPlaying } from '../../lib/focus/alert'
 import { flush, render, waitFor } from '../../ui/test-utils'
+import { installShortcutDispatcher } from '../shortcuts/dispatch'
 import { resetFocusNotices, useFocusTimer } from './useFocusTimer'
 
 const T0 = new Date(2026, 9, 14, 9, 0).getTime()
@@ -447,6 +448,7 @@ describe('the sound in a hidden tab (focus-alert-hidden-tab)', () => {
     await waitFor(() => phases().length === 1, 'engine')
     await flush()
     const future = `${T0}:${T0 + MIN}:work`
+    const release = installShortcutDispatcher()
     writeString('focusAlertRung', future)
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }))
     expect(readString('focusAlertStop')).toBeNull()
@@ -454,6 +456,11 @@ describe('the sound in a hidden tab (focus-alert-hidden-tab)', () => {
     writeString('focusAlertRung', ringingNow)
     window.dispatchEvent(new PointerEvent('pointerdown'))
     expect(readString('focusAlertStop')).toBe(ringingNow)
+    // A key, through the shortcut dispatcher's one listener.
+    writeString('focusAlertStop', null)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }))
+    expect(readString('focusAlertStop')).toBe(ringingNow)
+    release()
     await r.unmount()
   })
 
