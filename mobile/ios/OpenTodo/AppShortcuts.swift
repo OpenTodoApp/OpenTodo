@@ -5,8 +5,8 @@ import UIKit
 // Siri, Shortcuts and the Action Button (OpenSpec change apple-shortcuts, design D4). The
 // intents never make a request: the two that open the app go through AppModel's addresses,
 // as the widgets and the icon's quick actions do, and "What's on today" answers from the
-// last Today publication. The phrases are translated in AppShortcuts.xcstrings, the titles
-// and answers in Shared/Localizable.xcstrings.
+// last Today publication. The phrases are translated in <lang>.lproj/AppShortcuts.strings (a
+// String Catalog of phrases needs iOS 17), the titles and answers in Shared/Localizable.xcstrings.
 
 /// Opens the app at `/today`.
 struct OpenTodayIntent: AppIntent {
@@ -46,17 +46,18 @@ struct TodayIntent: AppIntent {
 }
 
 /// Every intent as an App Shortcut, so Siri, Spotlight, the Action Button and the Shortcuts
-/// app offer them without any setup. Each phrase names the app, as the system requires.
+/// app offer them without any setup. Each phrase names the app, as the system requires. The
+/// optional title and symbol pick the iOS 16 initialiser; the non-optional one needs iOS 17.
 struct OpenTodoShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(intent: TodayIntent(), phrases: [
             "What's on today in \(.applicationName)",
             "What do I have today in \(.applicationName)",
-        ], shortTitle: "What's on today", systemImageName: "checklist")
+        ], shortTitle: "What's on today" as LocalizedStringResource?, systemImageName: "checklist" as String?)
         AppShortcut(intent: OpenTodayIntent(), phrases: ["Open Today in \(.applicationName)"],
-                    shortTitle: "Open Today", systemImageName: "sun.max")
+                    shortTitle: "Open Today" as LocalizedStringResource?, systemImageName: "sun.max" as String?)
         AppShortcut(intent: OpenQuickAddIntent(), phrases: ["Open quick add in \(.applicationName)"],
-                    shortTitle: "Open quick add", systemImageName: "plus")
+                    shortTitle: "Open quick add" as LocalizedStringResource?, systemImageName: "plus" as String?)
     }
 }
 

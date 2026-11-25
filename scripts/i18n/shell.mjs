@@ -8,10 +8,11 @@
 //     (`%@`, `%lld`, `%1$@`, …), because a dropped one silently loses its value,
 //   - no localizations for a language that is not shipped.
 //
-// The Siri phrases (apple-shortcuts D4) are a second catalog, AppShortcuts.xcstrings, read
-// with the same rules. A language may give several phrases (a `stringSet`); every phrase keeps
-// the source's `${applicationName}`, which iOS requires in each one.
-import { readFileSync } from 'node:fs'
+// The Siri phrases (apple-shortcuts D4) are a second catalog, read with the same rules. A
+// String Catalog of App Shortcut phrases needs iOS 17, so they are one AppShortcuts.strings per
+// language folder (`<lang>.lproj`), read here into the catalog's shape; `en.lproj` is the source.
+// Every phrase keeps the source's `${applicationName}`, which iOS requires in each one.
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { repo } from './source.mjs'
 
@@ -21,10 +22,48 @@ export function readShellCatalog(root = repo) {
   return JSON.parse(readFileSync(shellCatalogPath(root), 'utf8'))
 }
 
-export const appShortcutsCatalogPath = (root = repo) => join(root, 'mobile/ios/OpenTodo/AppShortcuts.xcstrings')
+const appShortcutsDir = (root = repo) => join(root, 'mobile/ios/OpenTodo')
+const appShortcutsFile = 'AppShortcuts.strings'
 
+/** The source language's phrases, whose presence turns the check on. */
+export const appShortcutsCatalogPath = (root = repo) => join(appShortcutsDir(root), 'en.lproj', appShortcutsFile)
+
+/**
+ * The `"key" = "value";` pairs of a .strings file, comments skipped. Throws on anything else,
+ * so a broken file fails the check instead of reading as fewer phrases.
+ */
+export function parseStrings(text) {
+  const out = {}
+  const str = String.raw`"((?:[^"\\]|\\.)*)"`
+  const re = new RegExp(String.raw`\s*(?:/\*[\s\S]*?\*/|//[^\n]*|${str}\s*=\s*${str}\s*;)`, 'y')
+  const unescape = (v) => v.replace(/\\(.)/g, (_, c) => ({ n: '\n', t: '\t' })[c] ?? c)
+  let at = 0
+  while (at < text.length) {
+    if (!text.slice(at).trim()) break
+    re.lastIndex = at
+    const m = re.exec(text)
+    if (!m) throw new Error(`cannot read the .strings text at "${text.slice(at, at + 40).trim()}"`)
+    if (m[1] !== undefined) out[unescape(m[1])] = unescape(m[2])
+    at = re.lastIndex
+  }
+  return out
+}
+
+/** Every `<lang>.lproj/AppShortcuts.strings` as a catalog: { sourceLanguage, strings: { key: { localizations } } }. */
 export function readAppShortcutsCatalog(root = repo) {
-  return JSON.parse(readFileSync(appShortcutsCatalogPath(root), 'utf8'))
+  const dir = appShortcutsDir(root)
+  const strings = {}
+  for (const key of Object.keys(parseStrings(readFileSync(appShortcutsCatalogPath(root), 'utf8')))) strings[key] = { localizations: {} }
+  for (const folder of readdirSync(dir).sort()) {
+    const lang = folder.replace(/\.lproj$/, '')
+    const file = join(dir, folder, appShortcutsFile)
+    if (lang === folder || lang === 'en' || !existsSync(file)) continue
+    for (const [key, value] of Object.entries(parseStrings(readFileSync(file, 'utf8')))) {
+      strings[key] ??= { localizations: {} }
+      strings[key].localizations[lang] = { stringUnit: { state: 'translated', value } }
+    }
+  }
+  return { sourceLanguage: 'en', strings }
 }
 
 /** `${applicationName}` and the other App Shortcut placeholders a phrase must keep. */

@@ -1,7 +1,7 @@
 // node --test scripts/i18n/shell.test.mjs (run by `make i18n-check`)
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { checkShellCatalog, placeholders, readAppShortcutsCatalog, specifiers } from './shell.mjs'
+import { checkShellCatalog, parseStrings, placeholders, readAppShortcutsCatalog, specifiers } from './shell.mjs'
 
 const langs = ['de', 'es']
 const unit = (value) => ({ stringUnit: { state: 'translated', value } })
@@ -79,7 +79,20 @@ test('every phrase of the iOS app names the app', () => {
   for (const [key, entry] of Object.entries(c.strings)) {
     assert.ok(key.includes('${applicationName}'), key)
     for (const [lang, l] of Object.entries(entry.localizations)) {
-      for (const v of l.stringSet.values) assert.ok(v.includes('${applicationName}'), `${lang}: ${v}`)
+      assert.ok(l.stringUnit.value.includes('${applicationName}'), `${lang}: ${l.stringUnit.value}`)
     }
+  }
+})
+
+test('parseStrings reads pairs, skips comments and refuses anything else', () => {
+  const text = '/* note */\n// line\n"Open ${applicationName}" = "Öffne \\"${applicationName}\\"";\n"a" = "b";\n'
+  assert.deepEqual(parseStrings(text), { 'Open ${applicationName}': 'Öffne "${applicationName}"', a: 'b' })
+  assert.throws(() => parseStrings('"a" = "b"\n'))
+})
+
+test('every language folder of the iOS app has every phrase', () => {
+  const c = readAppShortcutsCatalog()
+  for (const [key, entry] of Object.entries(c.strings)) {
+    assert.deepEqual(Object.keys(entry.localizations).sort(), ['de', 'es', 'fr', 'it', 'nl', 'pl', 'pt', 'tr', 'zh'], key)
   }
 })
