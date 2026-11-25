@@ -13,7 +13,7 @@
 
 - [x] 3.1 `scripts/e2e-layout.mjs` (`PHONE_UI=0`), `scripts/perf/run.sh`, `scripts/e2e-phone.mjs` and `.github/workflows/ci.yml` (design D4). Verify: the layout check with the default and with `PHONE_UI=0`, Chromium at 360 and 390 px, light and dark, prints `LAYOUT OK` twice. Done: 116 screens and overlays with the default and 132 with the switch off, in each of the four combinations.
 - [ ] 3.2 The other end-to-end scripts and the UX audit at phone widths. Verify: `scripts/e2e.sh` passes; the full CI run passes.
-- [ ] 3.3 WebKit. Verify: the full CI run on this branch (`gh workflow run ci.yml --ref phone-ui-default`, no base: every leg) passes its layout checks in WebKit.
+- [x] 3.3 WebKit. Verify: the full CI run on this branch (`gh workflow run ci.yml --ref phone-ui-default`, no base: every leg) passes its layout checks in WebKit. Done: run 45689361770 on 4fa9f269c, WebKit at 360, 390 and 768 px all pass, with the Chromium, French, German, safe-area, end-to-end and accessibility legs (39 jobs pass; the one failure was the visual job, whose baselines for the eleven stories the default changes are regenerated in the next commit).
 
 ## 4. On a phone
 
