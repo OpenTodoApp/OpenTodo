@@ -45,9 +45,11 @@ export function CalendarsToggle({ shown, subs, menu = false }: { shown: boolean;
 function CalendarRows({ subs, shown }: { subs: readonly CalendarSubscription[]; shown: boolean }) {
   const { workspace, hidden } = useHiddenCalendars()
   const rows = useMemo(() => subs.filter((s) => s.enabled).sort((a, b) => a.name.localeCompare(b.name)), [subs])
-  const toggle = (id: string) => hidden && act(setCalendarHidden(currentUserPrefsRow(), { workspace, calendars: subs.map((s) => s.id) }, id, !hidden.has(id)))
+  const toggle = (id: string) => {
+    if (hidden) act(setCalendarHidden(currentUserPrefsRow(), { workspace, calendars: subs.map((s) => s.id) }, id, !hidden.has(id)))
+  }
   return rows.map((s) => (
-    <MenuItem key={s.id} label={s.name} checked={shown && !hidden?.has(s.id)} disabled={!shown || !workspace || !hidden} keepOpen data-calendar-row={s.id} onSelect={() => toggle(s.id)}
+    <MenuItem key={s.id} label={s.name} checked={shown && !!hidden && !hidden.has(s.id)} disabled={!shown || !workspace || !hidden} keepOpen data-calendar-row={s.id} onSelect={() => toggle(s.id)}
       marker={<span className="block h-2.5 w-2.5 rounded-full bg-hue-solid" data-hue={hueFor(s.color)} aria-hidden />} />
   ))
 }

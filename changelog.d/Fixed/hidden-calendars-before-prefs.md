@@ -1,1 +1,1 @@
-- **A calendar hidden in a workspace no longer flashes in the agenda.** Today, Upcoming and the calendar views briefly showed its events while the app was still reading your preferences; they now wait until it knows which calendars are hidden.
+- **A calendar hidden in a workspace no longer flashes in the agenda.** Today, Upcoming and the calendar views showed its events for a moment when they loaded before the workspace and its list of hidden calendars had been read; they now wait for both.

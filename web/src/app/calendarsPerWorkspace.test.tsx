@@ -16,22 +16,33 @@ import { CalendarView } from './CalendarView'
 import { useTodayCalendar } from './calendar/TodayAgenda'
 import { resetPanel } from './panel'
 
-// The prefs row can be held back as still loading, to order it after the events.
-const prefsGate = vi.hoisted(() => ({ held: false, listeners: new Set<() => void>() }))
+// The prefs row and the workspace state can each be held back as still loading, to order them after the events.
+const gate = vi.hoisted(() => ({ prefs: false, workspace: false, listeners: new Set<() => void>() }))
 vi.mock('../lib/localData', async (orig) => {
   const actual = await orig<typeof import('../lib/localData')>()
-  const subscribe = (fn: () => void) => { prefsGate.listeners.add(fn); return () => prefsGate.listeners.delete(fn) }
+  const subscribe = (fn: () => void) => { gate.listeners.add(fn); return () => gate.listeners.delete(fn) }
+  const useHeld = (what: 'prefs' | 'workspace') => useSyncExternalStore(subscribe, () => gate[what])
   return {
     ...actual,
     useUserPrefsRow: () => {
       const row = actual.useUserPrefsRow()
-      return useSyncExternalStore(subscribe, () => prefsGate.held) ? undefined : row
+      return useHeld('prefs') ? undefined : row
+    },
+    useWorkspaceStateLoaded: () => {
+      const state = actual.useWorkspaceStateLoaded()
+      return useHeld('workspace') ? undefined : state
+    },
+    // What screens read before the state arrives.
+    useWorkspaceState: () => {
+      const state = actual.useWorkspaceState()
+      return useHeld('workspace') ? { current: '', defaultId: '', list: [] } : state
     },
   }
 })
-function releasePrefs() {
-  prefsGate.held = false
-  for (const fn of prefsGate.listeners) fn()
+function release() {
+  gate.prefs = false
+  gate.workspace = false
+  for (const fn of gate.listeners) fn()
 }
 
 const DAY = '2026-10-14'
@@ -57,7 +68,8 @@ beforeEach(async () => {
   await setMeta('calendar.events.window', { from: '2026-09-01', to: '2026-11-30', fetchedAt: Date.now() })
 })
 afterEach(() => {
-  prefsGate.held = false
+  gate.prefs = false
+  gate.workspace = false
   window.matchMedia = original
   vi.useRealTimers()
   vi.unstubAllGlobals()
@@ -179,9 +191,9 @@ describe("Today's agenda", () => {
     await r.unmount()
   })
 
-  it('never shows a hidden calendar while the prefs row is still loading', async () => {
+  it.each([['the prefs row', 'prefs'], ['the workspace', 'workspace']] as const)('never shows a hidden calendar while %s is still loading', async (what, held) => {
     await applyOps([{ id: 'o4', entity: 'user_prefs', entityId: USER_PREFS_ID, field: 'calendars_hidden', value: JSON.stringify({ personal: ['cal-work'] }), ts: Date.now(), device: 'laptop' }] as never)
-    prefsGate.held = true
+    gate[held] = true
     const seen = new Set<string>()
     function Watched() {
       const cached = useCalendarEvents()
@@ -190,9 +202,9 @@ describe("Today's agenda", () => {
       return <><span data-cached={cached.length} /><Agenda /></>
     }
     const r = await render(<Watched />)
-    await waitFor(() => r.container.querySelector('[data-cached="2"]') !== null, 'the events read before the prefs row')
+    await waitFor(() => r.container.querySelector('[data-cached="2"]') !== null, `the events read before ${what}`)
     expect(seen.size).toBe(0)
-    releasePrefs()
+    release()
     await waitFor(() => r.container.querySelector('[data-agenda="dinner"]') !== null, 'Family')
     expect(seen.has('standup')).toBe(false)
     await r.unmount()
