@@ -174,4 +174,16 @@ describe('Completing stops tracking in the same step', () => {
     expect((await db.tasks.get(task))?.completed_at).toBeNull()
     expect((await db.timeEntries.get(entry))?.ended_at).toBeNull()
   })
+
+  it('keeps the entry closed when another one runs by then: one running entry per person', async () => {
+    const a = await createTask({ title: 'Write the report' })
+    const b = await createTask({ title: 'Call the bank' })
+    const first = await startTracking(a, { now: 1_000 })
+    const r = await completeUndoable(a, true, { now: 60_000, today: '2026-10-20' })
+    const second = await startTracking(b, { now: 600_000 })
+    await undoBatch(r.entry!.id)
+    expect((await db.tasks.get(a))?.completed_at).toBeNull()
+    expect((await db.timeEntries.get(first))?.ended_at).toBe(60_000)
+    expect((await db.timeEntries.get(second))?.ended_at).toBeNull()
+  })
 })

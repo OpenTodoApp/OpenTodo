@@ -256,7 +256,11 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
           }
           const row = rs.find((x) => x.task.id === task.id)
           if (row && row.parent === null) moveToSection(task, key)
-          else act(moveRowWithUndo(task.id, { parent_id: null, section_id: key, at: 'bottom' }))
+          else {
+            // A subtask leaves its parent for that section: named after the section, as a top-level row's move is.
+            const name = key ? dragState.current.sectionMap.get(key)?.name || t('Untitled section') : t('No section')
+            act(moveRowWithUndo(task.id, { parent_id: null, section_id: key, at: 'bottom' }, t('Moved to {target}', { target: name })))
+          }
         } else return
         onDropped(task.id)
       },

@@ -216,7 +216,7 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
         : (
           <ComboboxPanel<PickerItem> label={t('Section')} placeholder={t('Find a section…')} source={sectionSource(m.sections, m.projectId ?? '')}
             getKey={itemKey} getLabel={itemLabel} pinned={[NONE_KEY]} selected={[m.sectionId ?? NONE_KEY]} rankContext="task.section"
-            onPick={async (i) => { await sectionMoveWithUndo(task.id, i.value, i.label).catch(reportActionError); onClose() }} onClose={onClose} />
+            onPick={async (i) => { if ((i.value ?? null) !== (m.sectionId ?? null)) await sectionMoveWithUndo(task.id, i.value, i.label).catch(reportActionError); onClose() }} onClose={onClose} />
         ))
     case 'parent':
       return frame('corner-down-right', t('Parent task'), (

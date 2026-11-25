@@ -102,8 +102,8 @@ export async function parkWithUndo(id: string): Promise<void> {
 }
 
 /** One row dragged among rows or onto a section heading (undo-coverage): the row travels, then the toast offers Undo. */
-export async function moveRowWithUndo(id: string, target: TaskTarget): Promise<boolean> {
-  const r = await withListTransition(1, () => moveTaskUndoable(id, target))
+export async function moveRowWithUndo(id: string, target: TaskTarget, label?: string): Promise<boolean> {
+  const r = await withListTransition(1, () => moveTaskUndoable(id, target, label))
   if (r?.entry) showUndoToast(r.label, r.entry.id)
   return r !== null
 }

@@ -420,10 +420,10 @@ export async function moveTasksUndoable(ids: readonly string[], target: TaskTarg
   return apply(changes, t('{n, plural, one {# task moved} other {# tasks moved}}', { n: ids.length }))
 }
 
-/** One row dragged among a list's rows or onto a section heading (undo-coverage): one batch with Undo, named like a drag of ticked rows. */
-export async function moveTaskUndoable(id: string, target: TaskTarget): Promise<UndoableResult | null> {
+/** One row dragged among a list's rows (undo-coverage): one batch with Undo, named like a drag of ticked rows unless `label` names it. */
+export async function moveTaskUndoable(id: string, target: TaskTarget, label?: string): Promise<UndoableResult | null> {
   const changes = await planTaskMove(id, target)
-  return changes ? apply(changes, t('{n, plural, one {# task moved} other {# tasks moved}}', { n: 1 })) : null
+  return changes ? apply(changes, label ?? t('{n, plural, one {# task moved} other {# tasks moved}}', { n: 1 })) : null
 }
 
 /** A keyboard move of one row in its list (Alt+arrows, the row menu's Move items, Vim): one step with Undo, "Order changed" as in a view's own order. */

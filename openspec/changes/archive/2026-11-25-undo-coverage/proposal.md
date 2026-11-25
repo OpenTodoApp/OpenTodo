@@ -10,7 +10,7 @@ Follow-ups to #1748: #2001, #2002 and #2003. Checked on main (2026-11-25):
 ## What Changes
 
 - Every surface above ticks through `completeWithUndo`: one step named "Task completed" with the Undo toast, as in the main list.
-- A single row's drag among rows or onto a section heading is one step named "1 task moved", as a drag of ticked rows; a keyboard move is one step per press named "Order changed", as in a view's own order; a move to a board column or a section from the picker is one step named "Moved to {section}". Each shows the Undo toast.
+- A single row's drag among rows is one step named "1 task moved", as a drag of ticked rows; a keyboard move is one step per press named "Order changed", as in a view's own order; a drop on a section heading, a move to a board column or a section from the picker is one step named "Moved to {section}". Each shows the Undo toast.
 - Deleting a section ("Section deleted"), deleting a label ("Label deleted"), merging a label ("Merged into {label}") and deleting a custom field ("Field deleted") are each one batch and one step with the Undo toast, after the same confirmation. Deleting or merging a label now writes one batch instead of one per task.
 - Completing through the undoable step also ends the person's running time entry on the task in the same batch, as the plain completion did (time-tracking "Complete stops tracking"); the main list's completion missed this.
 

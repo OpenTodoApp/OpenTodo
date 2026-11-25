@@ -18,35 +18,37 @@ import { useBoardMoves } from './task-list/useBoardMoves'
 const sources = import.meta.glob('./**/*.{ts,tsx}', { query: '?raw', eager: true, import: 'default' }) as Record<string, string>
 const src = (file: string) => sources[`./${file}`] ?? ''
 
-// Each surface and the plain writes it must no longer call: they write without a step.
+// Each surface, the undoable call it must make, and the plain writes it must not
+// use: a direct op write, or the completion without a step.
+const PLAIN = /\b(mutate|mutateMany|setTaskCompletedWithFeedback|setTaskCompleted|completeTask|planTask(Move|Step|ToSection)|planDelete(Section|Label)|planMergeLabels)\(/
 const SURFACES: Record<string, RegExp> = {
-  'FilterView.tsx': /setTaskCompletedWithFeedback/,
-  'SavedViewView.tsx': /setTaskCompletedWithFeedback/,
-  'DashboardView.tsx': /setTaskCompletedWithFeedback/,
-  'useListKeys.ts': /setTaskCompletedWithFeedback/,
-  'review/ReviewView.tsx': /setTaskCompletedWithFeedback/,
-  'review/DailyCheck.tsx': /setTaskCompletedWithFeedback/,
-  'review/MonthlyLook.tsx': /setTaskCompletedWithFeedback/,
-  'method/MethodListView.tsx': /setTaskCompletedWithFeedback/,
-  'method/loop/rows.tsx': /setTaskCompletedWithFeedback/,
-  'task-list/useListDrag.ts': /\bmoveTask\(/,
-  'task-list/useBoardMoves.ts': /\bmoveTaskToSection\(/,
-  'task-detail/Facets.tsx': /\bmoveTaskToSection\(/,
-  'task-detail/subtaskOrder.ts': /\bmoveTask(By)?\(/,
-  'task-list/useListShortcuts.ts': /\bmoveTaskBy\(/,
-  'TaskListView.tsx': /\bmoveTaskBy\(/,
-  'vim/actions.ts': /\bmoveTaskBy\(/,
-  'Sections.tsx': /\bdeleteSection\(/,
-  'palette/registry.ts': /\bdeleteSection\(/,
-  'LabelsView.tsx': /\b(deleteLabel|mergeLabels)\(/,
-  'FieldsDialog.tsx': /\bdeleteField\(/,
+  'FilterView.tsx': /\bcompleteWithUndo\(tk\.id/,
+  'SavedViewView.tsx': /\bcompleteWithUndo\(tk\.id/,
+  'DashboardView.tsx': /\bcompleteWithUndo\(f\.tasks\[f\.cur\]\.id/,
+  'useListKeys.ts': /toggleComplete: \(id, completed\) => completeWithUndo\(id, completed\)/,
+  'review/ReviewView.tsx': /\bcompleteWithUndo\(item\.id/,
+  'review/DailyCheck.tsx': /\bcompleteWithUndo\(task\.id/,
+  'review/MonthlyLook.tsx': /\bcompleteWithUndo\(task\.id/,
+  'method/MethodListView.tsx': /\bcompleteWithUndo\(task\.id/,
+  'method/loop/rows.tsx': /\bcompleteWithUndo\(task\.id/,
+  'task-list/useListDrag.ts': /\bmoveRowWithUndo\(task\.id, \{ \.\.\.entry/,
+  'task-list/useBoardMoves.ts': /\bsectionMoveWithUndo\(task\.id/,
+  'task-detail/Facets.tsx': /\bsectionMoveWithUndo\(task\.id/,
+  'task-detail/subtaskOrder.ts': /\bstepRowWithUndo\(c\.id[\s\S]*\bmoveRowWithUndo\(d\.id/,
+  'task-list/useListShortcuts.ts': /\bstepRowWithUndo\(selectedId/,
+  'TaskListView.tsx': /\bstepRowWithUndo\(id, step\)/,
+  'vim/actions.ts': /\bstepRowWithUndo\(task\.id/,
+  'Sections.tsx': /withUndoToast\(deleteSectionUndoable\(section\.id\)\)/,
+  'palette/registry.ts': /withUndoToast\(deleteSectionUndoable\(s\.row\.id\)\)/,
+  'LabelsView.tsx': /withUndoToast\(mergeLabelsUndoable\([\s\S]*withUndoToast\(deleteLabelUndoable\(/,
+  'FieldsDialog.tsx': /withUndoToast\(deleteFieldUndoable\(removing\.id\)\)/,
 }
 
 describe('every surface writes through the undoable step', () => {
-  for (const [file, plain] of Object.entries(SURFACES)) {
+  for (const [file, undoable] of Object.entries(SURFACES)) {
     it(file, () => {
-      expect(src(file), file).not.toBe('')
-      expect(src(file)).not.toMatch(plain)
+      expect(src(file), file).toMatch(undoable)
+      expect(src(file)).not.toMatch(PLAIN)
     })
   }
 })
@@ -76,6 +78,17 @@ describe('ticking a task in a Filter view, a saved view, the reviews and the met
     expect(bulkToast()?.label).toBe('Task completed')
     expect((await db.tasks.get(id))?.completed_at).toBeTruthy()
     await act(() => undoToast(bulkToast()!.undoId!))
+    expect((await db.tasks.get(id))?.completed_at).toBeNull()
+    await r.unmount()
+  })
+  it('a repeating task rolls forward, and Undo puts it back on its day', async () => {
+    const id = await createTask({ title: 'Water the plants', recurrence: 'every day', due: { date: '2026-10-20' } })
+    const r = await render(<ListKeys task={(await db.tasks.get(id))!} />)
+    await press('c')
+    await waitFor(() => bulkToast()?.undoId != null, 'the undo toast')
+    expect((await db.tasks.get(id))?.due?.date).not.toBe('2026-10-20')
+    await act(() => undoToast(bulkToast()!.undoId!))
+    expect((await db.tasks.get(id))?.due?.date).toBe('2026-10-20')
     expect((await db.tasks.get(id))?.completed_at).toBeNull()
     await r.unmount()
   })
