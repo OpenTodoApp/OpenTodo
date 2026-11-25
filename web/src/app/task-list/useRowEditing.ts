@@ -52,7 +52,7 @@ export function useInlineEdit(taskMap: Map<string, Task>, board: boolean, isRead
 }
 
 /**
- * One task's items in the row menu (D2) and the expanded row they toggle (row-expand D4: this
+ * One task's items in the row menu (D2), in the list layout only (boards and the timeline get none), and the expanded row they toggle (row-expand D4: this
  * list's state only, never stored). Open details opens the task as Enter does, by Open tasks.
  * A phone's rows do not expand (phone-row-controls): its menu has Edit and Open details.
  */
@@ -68,7 +68,7 @@ export function useRowMenuItems(editable: boolean, editTitle: (id: string) => vo
     setSelectedId(id)
     setExpandedId((cur) => (cur === id ? null : id))
   }, [setSelectedId])
-  const menuItems: RowMenuItems = useMemo(() => (editable ? { editTitle, openDetails, showDetails: wide ? showDetails : undefined } : { openDetails }), [editable, editTitle, openDetails, showDetails, wide])
+  const menuItems: RowMenuItems = useMemo(() => (editable ? { editTitle, openDetails, showDetails: wide ? showDetails : undefined } : {}), [editable, editTitle, openDetails, showDetails, wide])
   return { menuItems, expandedId, setExpandedId }
 }
 

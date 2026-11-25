@@ -11,8 +11,11 @@ import { setCurrentUserId } from '../../lib/sharing'
 import { setTaskOpen } from '../../lib/userPrefs'
 import { minWidthPx, mockFetch, noPublicLinks, render, waitFor } from '../../ui/test-utils'
 import { PanelHost } from '../PanelHost'
-import { resetPanel } from '../panel'
+import { closeTaskPanel, resetPanel } from '../panel'
 import { TaskListView } from '../TaskListView'
+import { SavedViewRoute } from '../SavedViewView'
+import { FilterView } from '../FilterView'
+import { createView } from '../../lib/views'
 import { openedTask, resetTaskPage } from '../taskPage.testkit'
 
 let width: number
@@ -210,6 +213,54 @@ describe('the task beside the list stays while another row is edited', () => {
       editor()!.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter', shiftKey: true }))
     })
     await waitFor(() => panel() === b, 'B in the panel')
+    await r.unmount()
+  })
+
+  it('keeps a closed side panel closed after the edit, and a row click reopens it', async () => {
+    await setTaskOpen('panel')
+    const { a, b, r } = await list()
+    await click(title(a))
+    await waitFor(() => panel() === a, 'A in the panel')
+    await click(action(b, 'edit')!, { at: 3_000 })
+    await waitFor(() => !!editor(), 'the editor on B')
+    await act(async () => closeTaskPanel())
+    await waitFor(() => panel() === null, 'the panel closed')
+    await key('Escape', editor())
+    await waitFor(() => !editor(), 'the editor closed')
+    expect(panel()).toBeNull()
+    expect(row(b).getAttribute('aria-current')).toBe('true')
+    await click(row(b), { at: 6_000 })
+    await waitFor(() => panel() === b, 'B in the panel')
+    await r.unmount()
+  })
+
+  it('closing the Inbox split while A is kept clears the cursor', async () => {
+    const { a, b, r } = await list('inbox')
+    await click(title(a))
+    await waitFor(() => panel() === a, 'A in the split')
+    await click(action(b, 'more')!, { at: 3_000 })
+    await waitFor(() => !!menuItem('edit-title'), 'the menu')
+    await act(async () => menuItem('edit-title')!.click())
+    await waitFor(() => !!editor(), 'the editor on B')
+    await key('Escape', editor())
+    await waitFor(() => !editor(), 'the editor closed')
+    expect(panel()).toBe(a)
+    await act(async () => closeTaskPanel())
+    await waitFor(() => !document.querySelector('li[data-task-id][aria-current]'), 'no cursor')
+    await r.unmount()
+  })
+})
+
+describe('lists without the inline editor', () => {
+  it.each(['filter', 'saved view'] as const)('the %s row menu has no Edit, Show details or Open details', async (where) => {
+    const t1 = await createTask({ title: 'Order the tiles', priority: 1 })
+    const view = await createView({ name: 'Everything', query: 'p1' })
+    const r = await render(where === 'filter' ? <FilterView initialQuery="p1" /> : <SavedViewRoute id={view} />)
+    await waitFor(() => !!row(t1), 'the row')
+    await act(async () => row(t1).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true })))
+    await waitFor(() => !!document.querySelector('[role="menu"]'), 'the menu')
+    for (const id of ['edit-title', 'show-details', 'open-details']) expect(menuItem(id)).toBeNull()
+    expect(action(t1, 'details')).toBeTruthy()
     await r.unmount()
   })
 })

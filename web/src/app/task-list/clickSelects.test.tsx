@@ -179,6 +179,21 @@ describe('click selects before editing', () => {
     await r.unmount()
   })
 
+  it('a click on the selected row\'s empty area reopens a closed side panel, without editing', async () => {
+    await setTaskOpen('panel')
+    const { a, r } = await list()
+    await click(title(a))
+    await waitFor(() => panel() === a)
+    await act(async () => closeTaskPanel())
+    await waitFor(() => panel() === undefined || panel() === null, 'the panel closed')
+    expect(row(a).getAttribute('aria-current')).toBe('true')
+    await click(row(a), { at: 5_000 })
+    await waitFor(() => panel() === a, 'the panel again')
+    expect(editor()).toBeNull()
+    expect(openedTask()).toBeNull()
+    await r.unmount()
+  })
+
   it('Ctrl+click ticks the row without starting the title editor', async () => {
     const { a, b, r } = await list()
     await click(title(a))

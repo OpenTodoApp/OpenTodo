@@ -50,15 +50,16 @@ export function useInboxSplit({ inbox, on, rows, selectedId, setSelectedId, tick
     else if (!dockId && was && panelTaskId() === was) setPanelTaskId(null)
   }, [on, dockId, ticking, listed])
 
-  // Closing the docked task (its Close, Esc inside it) clears the cursor too, so the pane and the list agree.
+  // Closing the docked task (its Close, Esc inside it) clears the cursor too, so the pane and the list agree;
+  // that includes a task kept there while another row was edited (row-edit-action D3).
   // Watched, not subscribed, so the list does not draw again for the pane following the cursor (row-click-modes D4).
-  const live = useRef({ selectedId, setSelectedId, ticking })
-  live.current = { selectedId, setSelectedId, ticking }
+  const live = useRef({ selectedId, dockId, setSelectedId, ticking })
+  live.current = { selectedId, dockId, setSelectedId, ticking }
   useEffect(() => {
     if (!on) return
     return watchPanelTaskId((id, was) => {
       const l = live.current
-      if (!l.ticking && was && !id && taskSplitDocks() && l.selectedId === was) l.setSelectedId(null)
+      if (!l.ticking && was && !id && taskSplitDocks() && (l.selectedId === was || l.dockId === was)) l.setSelectedId(null)
     })
   }, [on])
 

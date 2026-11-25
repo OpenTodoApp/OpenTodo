@@ -215,6 +215,11 @@ describe('expanded rows', () => {
     await waitFor(() => focused().matches('[data-row-open]'), 'focus on the row')
     await key(focused(), 'ArrowRight')
     await waitFor(() => details().length === 1, 'the details')
+    // The expanded row says so: its open control is expanded and its disclosure reads Hide details.
+    expect(openControl('Book the dentist').getAttribute('aria-expanded')).toBe('true')
+    const disclosure = row('Book the dentist').querySelector<HTMLButtonElement>('[data-row-expand] button')!
+    expect(disclosure.getAttribute('aria-label')).toBe('Hide details')
+    expect(disclosure.getAttribute('aria-expanded')).toBe('true')
     // Open task opens it, as Enter does.
     await click(details()[0].querySelector('[data-row-details-open]')!)
     await waitFor(() => openedTask() !== null, 'the task opened')

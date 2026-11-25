@@ -98,7 +98,7 @@ In the phone preview below 768 px, a short left swipe released at 48 px or more 
 ## ADDED Requirements
 
 ### Requirement: A click selects the row, a second click edits its title
-With a fine pointer at a viewport width of at least 768 px, a mouse, trackpad or pen press on the row followed by its click SHALL be the pointer path for selection and editing. Clicking the title or empty area of a previously unselected row SHALL select it with focus on the list. Where a task shows beside the list (the side panel of `web-app` "Task details in a side panel", the Inbox's split of `inbox-triage` "Inbox list and detail") the selected task SHALL show there. An explicit click can reopen a closed side panel as specified in `web-app`. A separate title click whose press began on the selected row SHALL edit it in place ("Inline title editing") where the list has the inline editor and the task is writable. Clicking the empty area of an already selected row otherwise leaves it selected. A row counts as selected by click, `j`/`k`, the arrow keys, returning from the task page, or opening from the panel.
+With a fine pointer at a viewport width of at least 768 px, a mouse, trackpad or pen press on the row followed by its click SHALL be the pointer path for selection and editing. Clicking the title or empty area of a previously unselected row SHALL select it with focus on the list. Where a task shows beside the list (the side panel of `web-app` "Task details in a side panel", the Inbox's split of `inbox-triage` "Inbox list and detail") the selected task SHALL show there. An explicit click can reopen a closed side panel as specified in `web-app`. A separate title click whose press began on the selected row SHALL edit it in place ("Inline title editing") where the list has the inline editor and the task is writable. Clicking the empty area of an already selected row otherwise leaves it selected, and shows it beside the list as a first click does. A row counts as selected by click, `j`/`k`, the arrow keys, returning from the task page, or opening from the panel.
 
 This SHALL apply to the list layout of the Inbox, Today, Upcoming, Anytime, Someday, Completed, Assigned to me, projects, labels and places. Board cards, the Filter view, saved views, Next and Waiting SHALL select on a first click in the same way; a second click there SHALL change nothing. The calendar's Day, Week, Month and Plan, the timeline, dashboards, the review screens and Close the day keep their own clicks.
 
@@ -140,7 +140,7 @@ Shift or Ctrl/⌘ clicks and Select mode SHALL keep ticking rows, a press that m
 
 #### Scenario: Empty area
 - **WHEN** the user clicks a row in the space between its title and its project name, then clicks the same place again
-- **THEN** the first click selects the row, the second changes nothing, and no title field or page opens
+- **THEN** the first click selects the row, the second keeps it selected and shows it beside the list where a side panel or the Inbox's split shows tasks (`row-edit-action`), and no title field or page opens
 
 #### Scenario: A drag from the selected row
 - **WHEN** "Pay rent" is selected in a manually ordered project and the user presses its title, drags it two rows down and releases

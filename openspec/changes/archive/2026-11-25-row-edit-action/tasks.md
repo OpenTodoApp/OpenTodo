@@ -12,7 +12,7 @@
 
 ## 3. The task beside the list
 
-- [x] 3.1 An edit, or More, on a row other than the task in the side panel or the Inbox's split keeps that task there; `j`/`k`, a click on a row (the selected row's empty area included) or another task opened there ends it; closing the pane leaves it closed (`TaskListView.tsx` `dockHold`, `useListBindings.ts`, `useInboxSplit.tsx` `dockId`). Verify: `rowEditAction.test.tsx` ("the task beside the list stays while another row is edited") for the side panel and the Inbox's split; `sidePanel.test.tsx`, `inboxSplit.test.tsx` and `clickSelects.test.tsx` still pass.
+- [x] 3.1 An edit, or More, on a row other than the task in the side panel or the Inbox's split keeps that task there; `j`/`k`, a click on a row (the selected row's empty area included) or another task opened there ends it; closing the side panel leaves it closed, closing the Inbox's split clears the cursor; a click on the selected row's empty area shows it there (`TaskListView.tsx` `dockHold`, `useListBindings.ts`, `useInboxSplit.tsx` `dockId`). Verify: `rowEditAction.test.tsx` ("the task beside the list stays while another row is edited") for the side panel and the Inbox's split, a closed panel and a closed split; `clickSelects.test.tsx` (the empty area reopens a closed panel); the Filter view and saved views get none of the menu items; `sidePanel.test.tsx`, `inboxSplit.test.tsx` and `clickSelects.test.tsx` still pass.
 
 ## 4. Docs and checks
 
