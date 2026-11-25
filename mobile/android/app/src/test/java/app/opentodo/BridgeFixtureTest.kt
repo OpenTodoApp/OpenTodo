@@ -249,7 +249,9 @@ class BridgeFixtureTest {
         assertEquals("background", methods.getString("backgroundDone"))
         assertEquals("completion-sound", methods.getString("playCompletionSound"))
         val script = Bridge.script("1.0.0", listOf("reminders", "widgets"))
-        for (m in methods.keys()) assertTrue("$m in the page script", script.contains("$m: function () { send('$m', []) }"))
+        // backgroundDone may carry what the run saved (android-quick-add-notification D4).
+        for (m in methods.keys()) assertTrue("$m in the page script", script.contains("$m: function () { send('$m', []) }") ||
+            script.contains("$m: function (json) { send('$m', json == null ? [] : [String(json)]) }"))
     }
 
     /**

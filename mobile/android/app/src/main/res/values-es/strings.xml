@@ -58,6 +58,7 @@
     <string name="setup_sign_in">Iniciar sesión aquí</string>
     <string name="error_sign_in">Tu servidor está detrás de una página de inicio de sesión y el inicio de sesión no continuó en la app. Vuelve a iniciar sesión aquí.</string>
     <string name="save_failed">No se pudo guardar el archivo.</string>
+    <string name="quick_add_failed">No se añadió la tarea. Toca para añadirla.</string>
     <string name="channel_focus">Foco</string>
     <string name="channel_sync">Sincronizando</string>
     <string name="focus_generic">Sesión de foco</string>
