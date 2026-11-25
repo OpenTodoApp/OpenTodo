@@ -307,7 +307,7 @@ final class ReminderTests: XCTestCase {
             let want = try XCTUnwrap(fixture["expect"] as? [[String: Any]], name).map { r in
                 Reminders.Handed(id: r["id"] as? String ?? "?", taskId: r["taskId"] as? String ?? "?",
                                  fireAt: r["fireAt"] as? Double ?? -1, title: r["title"] as? String,
-                                 urgent: r["urgent"] as? Bool ?? false)
+                                 urgent: r["urgent"] as? Bool ?? false, due: r["due"] as? String)
             }
             let payload = try XCTUnwrap(fixture["payload"] as? String, name)
             XCTAssertEqual(Reminders.select(Reminders.parse(payload), now: Date(timeIntervalSince1970: nowMs / 1000)), want, name)

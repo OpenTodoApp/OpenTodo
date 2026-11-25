@@ -38,6 +38,15 @@ describe('reminders handed to the shell', () => {
     expect(shellReminders(rs, tasks, NOW, { titles: false, encrypted: false })[0].title).toBeUndefined()
   })
 
+  it('hands over the due as of the firing day with the title, never without it (push-due-date D4)', () => {
+    const dated = [task('t', { due: { date: '2026-10-23', time: '09:30' } }), task('d', { due: { date: '2026-10-23' } })]
+    const rs = [reminder('today', 't', NOW + 23 * HOUR), reminder('eve', 't', NOW + 2 * HOUR), reminder('none', 'a', NOW + HOUR), reminder('day', 'd', NOW + HOUR)]
+    const list = shellReminders(rs, [...tasks, ...dated], NOW, { titles: true, encrypted: false })
+    expect(Object.fromEntries(list.map((r) => [r.id, r.due]))).toEqual({ none: undefined, eve: 'Tomorrow 09:30', day: 'Tomorrow', today: 'Today 09:30' })
+    expect(shellReminders(rs, [...tasks, ...dated], NOW, { titles: true, encrypted: true }).some((r) => r.due)).toBe(false)
+    expect(shellReminders(rs, [...tasks, ...dated], NOW, { titles: false, encrypted: false }).some((r) => r.due)).toBe(false)
+  })
+
   it('marks an urgent reminder only, so older shells read the same entries (ios-urgent-alarms D3)', () => {
     const list = shellReminders([
       reminder('loud', 'a', NOW + HOUR, { urgent: true }),

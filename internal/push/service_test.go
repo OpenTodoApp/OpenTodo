@@ -278,7 +278,7 @@ func TestPayloadOmitsContentByDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 	now := e.clock.UnixMilli()
-	e.apply(t, "u1", map[string]map[string]any{"task:t1": {"title": "Call the dentist", "description": "Ask about the crown"}})
+	e.apply(t, "u1", map[string]map[string]any{"task:t1": {"title": "Call the dentist", "description": "Ask about the crown", "due": map[string]any{"date": "2026-11-03", "time": "15:00"}}})
 	e.reminder(t, "u1", "r1", "t1", now-1)
 	if n, err := s.Tick(ctx); err != nil || n != 1 {
 		t.Fatalf("tick = %d, %v", n, err)
@@ -287,17 +287,19 @@ func TestPayloadOmitsContentByDefault(t *testing.T) {
 	if len(a) != 1 || len(b) != 1 {
 		t.Fatalf("received %d and %d", len(a), len(b))
 	}
-	if a[0].Title != "" || a[0].ReminderID != "r1" || a[0].TaskID != "t1" || a[0].FireAt != now-1 {
+	if a[0].Title != "" || a[0].Due != nil || a[0].ReminderID != "r1" || a[0].TaskID != "t1" || a[0].FireAt != now-1 {
 		t.Fatalf("default payload = %+v", a[0])
 	}
-	if b[0].Title != "Call the dentist" {
+	// The opt-in payload carries the due as stored, for a worker without the task (push-due-date D3).
+	var due struct{ Date, Time string }
+	if b[0].Title != "Call the dentist" || json.Unmarshal(b[0].Due, &due) != nil || due.Date != "2026-11-03" || due.Time != "15:00" {
 		t.Fatalf("opt-in payload = %+v", b[0])
 	}
-	raw := string(BuildPayload("r1", "t1", 5, "Call the dentist", false))
-	if strings.Contains(raw, "dentist") || strings.Contains(raw, "crown") {
+	raw := string(BuildPayload("r1", "t1", 5, "Call the dentist", json.RawMessage(`{"date":"2026-11-03"}`), false))
+	if strings.Contains(raw, "dentist") || strings.Contains(raw, "crown") || strings.Contains(raw, "2026-11-03") {
 		t.Fatalf("payload leaks content: %s", raw)
 	}
-	if raw := string(BuildPayload("r1", "t1", 5, "Call", true)); strings.Contains(raw, "description") {
+	if raw := string(BuildPayload("r1", "t1", 5, "Call", nil, true)); strings.Contains(raw, "description") {
 		t.Fatalf("payload carries a description field: %s", raw)
 	}
 	// Each request carries a VAPID authorization for the endpoint's origin.
@@ -317,12 +319,12 @@ func TestPayloadNeverCarriesCiphertext(t *testing.T) {
 		t.Fatal(err)
 	}
 	now := e.clock.UnixMilli()
-	e.apply(t, "u1", map[string]map[string]any{"task:t1": {"title": "enc:v1:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}})
+	e.apply(t, "u1", map[string]map[string]any{"task:t1": {"title": "enc:v1:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "due": map[string]any{"date": "2026-11-03"}}})
 	e.reminder(t, "u1", "r1", "t1", now-1)
 	if n, err := s.Tick(ctx); err != nil || n != 1 {
 		t.Fatalf("tick = %d, %v", n, err)
 	}
-	if got := withTitle.received(); len(got) != 1 || got[0].Title != "" || got[0].TaskID != "t1" {
+	if got := withTitle.received(); len(got) != 1 || got[0].Title != "" || got[0].Due != nil || got[0].TaskID != "t1" {
 		t.Fatalf("payload = %+v", got)
 	}
 }

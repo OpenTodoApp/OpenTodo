@@ -101,6 +101,7 @@ type DueReminder struct {
 	UserID, ID, TaskID string
 	FireAt             int64
 	Title              string
+	Due                json.RawMessage
 }
 
 // SetReminderHook installs a consumer called for every eligible due reminder on
@@ -164,21 +165,25 @@ func (s *Service) Keys() (*Keys, error) {
 	return k, nil
 }
 
-// Payload is the JSON pushed for a due reminder. Title is present only when the
-// device opted in to content; the task description is never sent.
+// Payload is the JSON pushed for a due reminder. Title and Due (the task's
+// floating due as stored, push-due-date D3) are present only when the device
+// opted in to content; the task description is never sent.
 type Payload struct {
-	Type       string `json:"type"`
-	ReminderID string `json:"reminderId"`
-	TaskID     string `json:"taskId"`
-	FireAt     int64  `json:"fireAt"`
-	Title      string `json:"title,omitempty"`
+	Type       string          `json:"type"`
+	ReminderID string          `json:"reminderId"`
+	TaskID     string          `json:"taskId"`
+	FireAt     int64           `json:"fireAt"`
+	Title      string          `json:"title,omitempty"`
+	Due        json.RawMessage `json:"due,omitempty"`
 }
 
-// BuildPayload encodes the push message for one subscription.
-func BuildPayload(reminderID, taskID string, fireAt int64, title string, includeContent bool) []byte {
+// BuildPayload encodes the push message for one subscription. due is the
+// task's due field, or nil to send none.
+func BuildPayload(reminderID, taskID string, fireAt int64, title string, due json.RawMessage, includeContent bool) []byte {
 	p := Payload{Type: "reminder", ReminderID: reminderID, TaskID: taskID, FireAt: fireAt}
 	if includeContent {
 		p.Title = textutil.TruncateEllipsis(title, 200)
+		p.Due = due
 	}
 	b, _ := json.Marshal(p)
 	return b
@@ -342,6 +347,7 @@ type dueReminder struct {
 	UserID, ID, TaskID string
 	FireAt             int64
 	Title              string
+	Due                json.RawMessage
 }
 
 // dueQuery selects reminders whose firing time has passed and that are not
@@ -497,9 +503,11 @@ func (s *Service) eligible(ctx context.Context, d *dueReminder, quiet map[string
 		return false, false, nil
 	}
 	// An end-to-end encrypted title (OpenSpec `e2ee`) is never pushed, not even
-	// as ciphertext: the notification falls back to the content-free text.
+	// as ciphertext: the notification falls back to the content-free text. The
+	// due goes where the title goes (push-due-date D3).
 	if title := jsonString(t["title"]); !e2ee.IsCiphertext(title) {
 		d.Title = title
+		d.Due = pushedDue(t["due"])
 	}
 	return true, false, nil
 }
@@ -554,6 +562,18 @@ func (s *Service) NextDue(ctx context.Context) (time.Time, bool, error) {
 		}
 	}
 	return time.Time{}, false, nil
+}
+
+// pushedDue is a task's due as the payload carries it: an object with a date,
+// else nil (none, null, or a value a worker could not read).
+func pushedDue(raw json.RawMessage) json.RawMessage {
+	var v struct {
+		Date string `json:"date"`
+	}
+	if len(raw) == 0 || json.Unmarshal(raw, &v) != nil || v.Date == "" || len(raw) > 200 {
+		return nil
+	}
+	return raw
 }
 
 func jsonString(raw json.RawMessage) string {
@@ -633,7 +653,7 @@ func (s *Service) tickUser(ctx context.Context, now time.Time, userID string, du
 				break
 			}
 			attempted++
-			res, err := s.Send(ctx, sub, BuildPayload(d.ID, d.TaskID, d.FireAt, d.Title, sub.IncludeContent), topicFor(d.ID))
+			res, err := s.Send(ctx, sub, BuildPayload(d.ID, d.TaskID, d.FireAt, d.Title, d.Due, sub.IncludeContent), topicFor(d.ID))
 			if res == Failed {
 				transient++
 				s.log.Warn("push send failed", "subscription", sub.ID, "err", err)

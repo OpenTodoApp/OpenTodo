@@ -5,7 +5,7 @@
 // or as counts when the account is locked or the user signs out (the store empties).
 // Outside a shell nothing here runs.
 import { liveQuery, type Subscription } from 'dexie'
-import { addDaysISO, localDueOf, logicalToday } from './dates'
+import { addDaysISO, localDueOf, logicalToday, notificationDue } from './dates'
 import { todayList } from './dayLists'
 import { db, getMeta, setMeta } from './db'
 import { encryptionSnapshot, onEncryptionChange } from './e2ee'
@@ -50,7 +50,11 @@ export function shellReminders(reminders: readonly Reminder[], tasks: readonly T
     if (!task || task.deleted_at || task.completed_at) continue
     if (inQuietProject(task.project_id, projectById)) continue
     const item: ShellReminder = { id: r.id, taskId: r.task_id, fireAt: r.fire_at }
-    if (opts.titles && !opts.encrypted && task.title) item.title = task.title
+    if (opts.titles && !opts.encrypted) {
+      if (task.title) item.title = task.title
+      const due = notificationDue(task.due, r.fire_at)
+      if (due) item.due = due
+    }
     if (r.urgent === true) item.urgent = true
     out.push(item)
   }

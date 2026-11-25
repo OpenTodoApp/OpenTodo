@@ -12,6 +12,7 @@ import { requestSync } from '../lib/sync'
 import { openTaskInList } from './signals'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
+import { notificationDue } from '../lib/dates'
 
 /**
  * In-app reminder notifications (OpenSpec change `reminders`). Mounted once by
@@ -154,7 +155,7 @@ async function notifyIfHidden(list: DueReminder[], notified: Set<string>): Promi
     if (notified.has(key)) continue
     notified.add(key)
     const options: NotificationOptions = {
-      body: tinyText(d.task) ?? t('Reminder'), tag: `reminder:${d.reminder.id}`, icon: '/pwa-192.png',
+      body: tinyText(d.task) ?? notificationDue(d.task.due, d.reminder.fire_at ?? Date.now()) ?? t('Reminder'), tag: `reminder:${d.reminder.id}`, icon: '/pwa-192.png',
       data: { reminderId: d.reminder.id, taskId: d.task.id, fireAt: d.reminder.fire_at },
     }
     try {
