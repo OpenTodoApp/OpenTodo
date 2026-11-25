@@ -214,10 +214,10 @@
     "web/src/app/NotificationBell.tsx"
   ],
   "<b>{inviter}</b> invited you to the project <b2>{name}</b2> as {role}": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "<b>{inviter}</b> invited you to the workspace <b2>{name}</b2> as {role}": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "<b>{name}</b> replied on <b2>{task}</b2>": [
     "web/src/app/NotificationBell.tsx"
@@ -702,6 +702,9 @@
   "A win does not repeat or remind; the words stay in the title.": [
     "web/src/app/QuickAdd.tsx"
   ],
+  "A workspace can have at most {n} fields.": [
+    "web/src/lib/fields.ts"
+  ],
   "A workspace has its own projects, labels and views, and its own people. Projects stay private until you share them.": [
     "web/src/app/NewWorkspaceDialog.tsx"
   ],
@@ -815,7 +818,7 @@
     "web/src/app/themes/tokenNames.ts"
   ],
   "Accept": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "Accept and continue": [
     "web/src/app/assistant/AssistantConsent.tsx"
@@ -1847,19 +1850,19 @@
     "web/src/app/RelaySettings.tsx"
   ],
   "Answering an AI connector": [
-    "web/src/app/RelaySettings.tsx"
+    "web/src/app/RelayIndicator.tsx"
   ],
   "Answering an AI connector: {tool}": [
-    "web/src/app/RelaySettings.tsx"
+    "web/src/app/RelayIndicator.tsx"
   ],
   "Answering an invitation needs a connection.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Answering needs a connection to your server.": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "Answering {token}: {tool}": [
-    "web/src/app/RelaySettings.tsx"
+    "web/src/app/RelayIndicator.tsx"
   ],
   "Answers on your key do not count toward the server’s monthly limit.": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -3708,7 +3711,8 @@
   ],
   "Collapse {name}": [
     "web/src/app/ProjectsTable.tsx",
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/SubProjects.tsx"
   ],
   "Collection URL": [
     "web/src/app/BackupsPanel.tsx"
@@ -4894,7 +4898,7 @@
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Decline": [
-    "web/src/app/MemberInvitations.tsx",
+    "web/src/app/InvitationAnswer.tsx",
     "web/src/app/RelayConfirm.tsx"
   ],
   "Declined": [
@@ -6560,7 +6564,8 @@
   ],
   "Expand {name}": [
     "web/src/app/ProjectsTable.tsx",
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/SubProjects.tsx"
   ],
   "Expected \"&\" or \"|\" before \"{before}\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
@@ -6762,7 +6767,11 @@
   ],
   "Fields": [
     "web/src/app/FieldsDialog.tsx",
+    "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/task-detail/FieldsGroup.tsx"
+  ],
+  "Fields every project of this workspace has, before its own. At most {max} fields.": [
+    "web/src/app/FieldsDialog.tsx"
   ],
   "Fields of {name}": [
     "web/src/app/FieldsDialog.tsx"
@@ -6771,6 +6780,7 @@
     "web/src/app/FilterView.tsx"
   ],
   "Fields…": [
+    "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/menus/projectMenu.tsx"
   ],
   "File": [
@@ -12796,6 +12806,9 @@
   "Only you can change this, signed in to the app.": [
     "web/src/lib/assistants.ts"
   ],
+  "Only you see these fields; other members of the workspace do not.": [
+    "web/src/app/FieldsDialog.tsx"
+  ],
   "Only you, the owner, see this. It goes away after the server restarts with a corrected value.": [
     "web/src/app/ConfigWarnings.tsx"
   ],
@@ -15598,7 +15611,7 @@
     "web/src/app/help/HelpView.tsx"
   ],
   "Running {name}…": [
-    "web/src/app/RelaySettings.tsx",
+    "web/src/app/RelayIndicator.tsx",
     "web/src/app/routines/RoutinesDevice.tsx"
   ],
   "Runs": [
@@ -16845,6 +16858,7 @@
     "web/src/app/AppSessions.tsx",
     "web/src/app/ProjectInviteScreen.tsx",
     "web/src/app/SidebarFooter.tsx",
+    "web/src/app/SignOutDialog.tsx",
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/UnlockScreen.tsx"
   ],
@@ -16870,7 +16884,7 @@
     "web/src/app/settingsIndex.ts"
   ],
   "Sign out of this device?": [
-    "web/src/app/AccountSettings.tsx"
+    "web/src/app/SignOutDialog.tsx"
   ],
   "Sign out of {name} too": [
     "web/src/app/SsoPanel.tsx"
@@ -17173,7 +17187,7 @@
   "Someone": [
     "web/public/push-sw.js",
     "web/src/app/FeedView.tsx",
-    "web/src/app/MemberInvitations.tsx",
+    "web/src/app/InvitationAnswer.tsx",
     "web/src/app/NotificationBell.tsx",
     "web/src/app/ProjectActivity.tsx",
     "web/src/app/WorkspaceActivity.tsx",
@@ -17659,7 +17673,8 @@
     "web/src/lib/templateLibrary.ts"
   ],
   "Sub-projects": [
-    "web/src/app/SubProjects.tsx"
+    "web/src/app/SubProjects.tsx",
+    "web/src/lib/listGroups.ts"
   ],
   "Subject": [
     "web/src/lib/rules/sentence.ts"
@@ -18795,6 +18810,12 @@
   "The project a task or a note is in": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "The project “{project}” already has a field named “{name}”.": [
+    "web/src/lib/fields.ts"
+  ],
+  "The project “{project}” would have more than {n} fields.": [
+    "web/src/lib/fields.ts"
+  ],
   "The provider answers, but this model does not support tool use, which the assistant needs. Choose another model.": [
     "web/src/lib/assistant.ts"
   ],
@@ -19169,7 +19190,8 @@
     "web/src/lib/fields.ts"
   ],
   "The tasks must be in one project": [
-    "web/src/app/bulk/BulkActions.tsx"
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/task-list/useListDrag.ts"
   ],
   "The test failed": [
     "web/src/app/OutgoingEmailPanel.tsx"
@@ -19876,6 +19898,9 @@
   "This project": [
     "web/src/app/assistant/AssistantPanel.tsx"
   ],
+  "This project already has a field named “{name}” from “{workspace}”.": [
+    "web/src/lib/fields.ts"
+  ],
   "This project already has a field named “{name}”.": [
     "web/src/lib/fields.ts"
   ],
@@ -20133,6 +20158,9 @@
   ],
   "This weekend": [
     "web/src/lib/dates.ts"
+  ],
+  "This workspace already has a field named “{name}”.": [
+    "web/src/lib/fields.ts"
   ],
   "This year": [
     "web/src/lib/stats.ts"
@@ -21177,7 +21205,7 @@
     "web/src/app/calendar/DayColumn.tsx"
   ],
   "Unsynced changes are uploaded first when you are online, then the local copy of your tasks is cleared from this device. Your data stays on your server.": [
-    "web/src/app/AccountSettings.tsx"
+    "web/src/app/SignOutDialog.tsx"
   ],
   "Untitled": [
     "web/src/app/CalendarView.tsx",
@@ -21293,7 +21321,7 @@
     "web/src/lib/trash.ts"
   ],
   "Untitled routine": [
-    "web/src/app/RelaySettings.tsx",
+    "web/src/app/RelayIndicator.tsx",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/palette/routineCommand.ts",
     "web/src/app/routines/RoutineEditor.tsx",
@@ -22118,6 +22146,9 @@
   "Workspace features changed": [
     "web/src/app/auditFormat.ts"
   ],
+  "Workspace fields are edited in the workspace’s settings.": [
+    "web/src/app/FieldsDialog.tsx"
+  ],
   "Workspace invite link created": [
     "web/src/app/auditFormat.ts"
   ],
@@ -22740,7 +22771,7 @@
     "web/src/lib/assistant.ts"
   ],
   "a project": [
-    "web/src/app/MemberInvitations.tsx",
+    "web/src/app/InvitationAnswer.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/lib/assistant.ts"
   ],
@@ -22810,7 +22841,7 @@
     "web/src/app/routines/words.tsx"
   ],
   "a workspace": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "accept the assistant’s updated terms for routines": [
     "web/src/lib/rules/catalogue.ts"

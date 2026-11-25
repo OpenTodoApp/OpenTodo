@@ -6,9 +6,9 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from '../lib/db'
-import { createField, liveFields, setFieldValue } from '../lib/fields'
+import { createField, createWorkspaceField, liveFields, setFieldValue } from '../lib/fields'
 import { createProject, createTask, mutate, resetDeviceId } from '../lib/ops'
-import type { Project } from '../lib/types'
+import type { Project, Workspace } from '../lib/types'
 import { click, key, render, waitFor } from '../ui/test-utils'
 import { FieldsDialog, renamedOptions, valuesText } from './FieldsDialog'
 import { projectMenuGroups } from './ProjectHeader'
@@ -138,6 +138,49 @@ describe('inherited fields (inherited-custom-fields)', () => {
     await act(async () => { form.requestSubmit() })
     await waitFor(() => /inherits a field named “wsjf” from “Scoring”/.test(dialog().textContent ?? ''), 'the refusal')
     expect(document.activeElement).toBe(input)
+  })
+})
+
+describe('workspace fields (workspace-fields)', () => {
+  const home: Workspace = { id: 'home', name: 'Personal', icon: '', color: '', default: true, role: 'owner', ownerId: 'u1' }
+
+  it('lists the workspace\'s fields first in a project\'s dialog, read-only, naming the workspace', async () => {
+    await db.workspaces.put(home)
+    const kitchen = await createProject({ name: 'Kitchen' })
+    const client = await createWorkspaceField(home, { name: 'Client', type: 'text' })
+    await createField(kitchen, { name: 'Cost', type: 'number' })
+    await render(<FieldsDialog project={(await db.projects.get(kitchen)) as Project} onClose={() => {}} />)
+    const dialog = () => document.querySelector('[data-testid="fields-dialog"]') as HTMLElement
+    await waitFor(() => !!dialog()?.querySelector(`[data-field-inherited="${client}"]`), 'the workspace field')
+    const group = dialog().querySelector('[data-inherited-fields="workspace:home"]') as HTMLElement
+    expect(group.textContent).toContain('From Personal')
+    expect(group.querySelectorAll('button')).toHaveLength(0)
+    expect(dialog().querySelector('[data-inherited-note]')?.textContent).toContain('edited in the workspace’s settings')
+    await waitFor(() => dialog().querySelectorAll('[data-field-def]').length === 1, 'the own field')
+  })
+
+  it('adds, refuses a clash with a project and lists a workspace\'s fields', async () => {
+    await db.workspaces.put(home)
+    const kitchen = await createProject({ name: 'Kitchen' })
+    await createField(kitchen, { name: 'Size', type: 'number' })
+    await render(<FieldsDialog workspace={home} onClose={() => {}} />)
+    const dialog = () => document.querySelector('[data-testid="fields-dialog"]') as HTMLElement
+    await waitFor(() => !!dialog()?.querySelector('form[aria-label="Add a field"] input'), 'the dialog')
+    expect(dialog().textContent).toContain('Fields of Personal')
+    const form = dialog().querySelector('form[aria-label="Add a field"]') as HTMLFormElement
+    const input = form.querySelector('input') as HTMLInputElement
+    await setValue(input, 'Client')
+    await act(async () => { form.requestSubmit() })
+    await waitFor(() => dialog().querySelectorAll('[data-field-def]').length === 1, 'the added field')
+    const defs = await db.fields.toArray()
+    expect(defs.filter((d) => !d.project_id).map((d) => [d.name, d.workspace_id])).toEqual([['Client', null]])
+    await setValue(input, 'size')
+    await act(async () => { form.requestSubmit() })
+    await waitFor(() => /project “Kitchen” already has a field named “size”/.test(dialog().textContent ?? ''), 'the refusal')
+    expect(document.activeElement).toBe(input)
+    const axe = (await import('axe-core')).default
+    const res = await axe.run(dialog(), { rules: { 'color-contrast': { enabled: false } } })
+    expect(res.violations.map((v) => v.id)).toEqual([])
   })
 })
 

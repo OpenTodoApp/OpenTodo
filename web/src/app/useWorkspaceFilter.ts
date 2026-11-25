@@ -9,7 +9,7 @@ import { useLabelsOfEveryWorkspace, useProjectsOfEveryWorkspace, useWorkspaceSta
 import type { Task } from '../lib/types'
 import { Partition } from '../lib/workspaces'
 
-export type WorkspaceFilterContext = Pick<FilterContext, 'workspaces' | 'workspaceOf' | 'everyWorkspace'>
+export type WorkspaceFilterContext = Pick<FilterContext, 'workspaces' | 'workspaceOf' | 'everyWorkspace' | 'fieldPlacement'>
 
 export function useWorkspaceFilter(): WorkspaceFilterContext {
   const state = useWorkspaceState()
@@ -27,6 +27,8 @@ export function workspaceFilterContext(
   // Built when first asked: with one workspace a filter rarely asks, and it maps every task (incremental-list-updates).
   let p: Partition | null = null
   const workspaceOf = (task: Task) => (p ??= new Partition(defaultId, list.map((w) => w.id), projects, tasks)).taskRow(task)
-  if (list.length <= 1) return { workspaces: list, workspaceOf }
-  return { workspaces: list, workspaceOf, everyWorkspace: { tasks, projects, labels } }
+  // Which workspace fields apply to a task's project (workspace-fields D2).
+  const fieldPlacement = new Partition(defaultId, list.map((w) => w.id), projects)
+  if (list.length <= 1) return { workspaces: list, workspaceOf, fieldPlacement }
+  return { workspaces: list, workspaceOf, fieldPlacement, everyWorkspace: { tasks, projects, labels } }
 }

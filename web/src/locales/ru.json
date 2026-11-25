@@ -7910,5 +7910,13 @@
   "Only the owner and admins can change these.": "Изменять это могут только владелец и администраторы.",
   "Time tracking": "Учёт времени",
   "{feature} is off in this workspace.": "{feature}: выключено в этом рабочем пространстве.",
-  "Workspace features changed": "Функции рабочего пространства изменены"
+  "Workspace features changed": "Функции рабочего пространства изменены",
+  "A workspace can have at most {n} fields.": "В рабочем пространстве может быть не больше {n} полей.",
+  "Fields every project of this workspace has, before its own. At most {max} fields.": "Поля, которые есть у каждого проекта этого рабочего пространства, перед его собственными. Не больше {max} полей.",
+  "Only you see these fields; other members of the workspace do not.": "Эти поля видите только вы; другие участники рабочего пространства их не видят.",
+  "The project “{project}” already has a field named “{name}”.": "В проекте «{project}» уже есть поле «{name}».",
+  "The project “{project}” would have more than {n} fields.": "В проекте «{project}» было бы больше {n, plural, one {# поля} few {# полей} many {# полей} other {# поля}}.",
+  "This project already has a field named “{name}” from “{workspace}”.": "В этом проекте уже есть поле «{name}» из «{workspace}».",
+  "This workspace already has a field named “{name}”.": "В этом рабочем пространстве уже есть поле «{name}».",
+  "Workspace fields are edited in the workspace’s settings.": "Поля рабочего пространства изменяются в его настройках."
 }

@@ -142,6 +142,11 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 			if kind == KindProjectPrefs {
 				row.Title = "Project preferences"
 			}
+			// A workspace field (workspace-fields D1) has no project: its empty
+			// project_id is the default, never written as an op.
+			if kind == KindField && string(e["project_id"]) == `""` {
+				delete(e, "project_id")
+			}
 			out.Rows = append(out.Rows, row)
 		}
 	}

@@ -7910,5 +7910,13 @@
   "Only the owner and admins can change these.": "只有所有者和管理员可以更改这些设置。",
   "Time tracking": "时间记录",
   "{feature} is off in this workspace.": "此工作区已关闭{feature}。",
-  "Workspace features changed": "工作区功能已更改"
+  "Workspace features changed": "工作区功能已更改",
+  "A workspace can have at most {n} fields.": "一个工作区最多可以有 {n} 个字段。",
+  "Fields every project of this workspace has, before its own. At most {max} fields.": "此工作区中每个项目都拥有的字段，排在项目自己的字段之前。最多 {max} 个字段。",
+  "Only you see these fields; other members of the workspace do not.": "只有你能看到这些字段，工作区的其他成员看不到。",
+  "The project “{project}” already has a field named “{name}”.": "项目“{project}”已有名为“{name}”的字段。",
+  "The project “{project}” would have more than {n} fields.": "项目“{project}”的字段数将超过 {n} 个。",
+  "This project already has a field named “{name}” from “{workspace}”.": "此项目已有来自“{workspace}”的名为“{name}”的字段。",
+  "This workspace already has a field named “{name}”.": "此工作区已有名为“{name}”的字段。",
+  "Workspace fields are edited in the workspace’s settings.": "工作区字段需在工作区的设置中编辑。"
 }

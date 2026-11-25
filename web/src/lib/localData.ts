@@ -17,7 +17,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { CALENDAR_COMPLETED_META_KEY, GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from './calendar'
 import { db, getMeta, localEpoch, setMeta, type AttachmentBlob } from './db'
 import { rememberFieldNames } from './fieldNames'
-import { applicableFieldsLookup } from './fieldTree'
+import { applicableFieldsLookup, type FieldPlacement } from './fieldTree'
 import { t } from './i18n'
 import { activeLabels } from './labels'
 import { lineageRows } from './lineageRows'
@@ -25,7 +25,7 @@ import { derived, liveSnapshot } from './liveSnapshot'
 import { compareByPosition } from './ordering'
 import { REVIEW_ID } from './review'
 import { USER_PREFS_ID } from './userPrefs'
-import { ownIn, projectsIn, readWorkspaceState, tasksIn, type WorkspaceState } from './workspaces'
+import { ownIn, Partition, projectsIn, readWorkspaceState, tasksIn, type WorkspaceState } from './workspaces'
 import { pinnedNoteIds } from './favourites'
 import { dropKept } from './subtasks'
 import type {
@@ -269,20 +269,39 @@ export function useFieldDefs(): FieldDef[] {
 }
 
 type FieldLookup = (projectId: string | null | undefined) => FieldDef[]
-const fieldLookups = new WeakMap<Project[], WeakMap<FieldDef[], FieldLookup>>()
+const fieldLookups = new WeakMap<Project[], WeakMap<FieldDef[], WeakMap<FieldPlacement, FieldLookup>>>()
+const placements = new WeakMap<WorkspaceState, WeakMap<Project[], FieldPlacement>>()
 
 /**
- * The fields that apply to each project, inherited ones included (OpenSpec
- * inherited-custom-fields): one shared, memoizing lookup per snapshot of projects
- * and definitions, so every row of a list reuses the same chain walks.
+ * Where each project is (workspace-fields D2): the partition of every
+ * workspace's projects, one per snapshot of the workspaces and the projects.
+ */
+export function useFieldPlacement(): FieldPlacement {
+  const state = useWorkspaceState()
+  const all = everyProjectRow.use() ?? NO_PROJECTS
+  let byProjects = placements.get(state)
+  if (!byProjects) placements.set(state, (byProjects = new WeakMap()))
+  let place = byProjects.get(all)
+  if (!place) byProjects.set(all, (place = new Partition(state.defaultId, state.list.map((w) => w.id), all)))
+  return place
+}
+
+/**
+ * The fields that apply to each project, workspace and inherited ones included
+ * (OpenSpec inherited-custom-fields, workspace-fields): one shared, memoizing
+ * lookup per snapshot of projects, definitions and workspaces, so every row of
+ * a list reuses the same chain walks.
  */
 export function useApplicableFields(): FieldLookup {
   const projects = useProjects()
   const defs = useFieldDefs()
+  const place = useFieldPlacement()
   let byDefs = fieldLookups.get(projects)
   if (!byDefs) fieldLookups.set(projects, (byDefs = new WeakMap()))
-  let lookup = byDefs.get(defs)
-  if (!lookup) byDefs.set(defs, (lookup = applicableFieldsLookup(projects, defs)))
+  let byPlace = byDefs.get(defs)
+  if (!byPlace) byDefs.set(defs, (byPlace = new WeakMap()))
+  let lookup = byPlace.get(place)
+  if (!lookup) byPlace.set(place, (lookup = applicableFieldsLookup(projects, defs, place)))
   return lookup
 }
 

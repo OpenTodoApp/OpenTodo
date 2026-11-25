@@ -141,7 +141,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   useEffect(() => { setCurrentFilter(good.ast ? good.src : null); return () => setCurrentFilter(null) }, [good])
   // Custom field definitions, tracked minutes (time-tracking: `tracked > 1h` follows a running entry live) and the urgency order's scores (urgency-sort).
   const fieldDefs = useFieldDefs(), tracked = useTrackedTotals(), directory = useAssigneeDirectory(), scorer = useUrgencyOf(allTasks, today, zone), urgency = display.sortBy === 'urgency' ? scorer : null
-  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, sections: flow.sections, weekStart, fields: fieldDefs, ...tracked, ...directory, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf, score: scoreOf(scorer) }),
+  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, sections: flow.sections, weekStart, fields: fieldDefs, ...tracked, ...directory, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf, fieldPlacement: ws.fieldPlacement, score: scoreOf(scorer) }),
     [today, labels, projects, allTasks, flow.sections, weekStart, fieldDefs, tracked, directory, ws, scorer])
   const compiled = useMemo(() => {
     if (!good.ast) return null

@@ -7,7 +7,7 @@ import { idsNamed } from './names'
 import { blockedMap } from '../dependencies'
 import { currentDateTime, currentDayStart, localDueOf } from '../dates'
 import { descendants } from '../tree'
-import { applicableFieldsLookup } from '../fieldTree'
+import { applicableFieldsLookup, type FieldPlacement } from '../fieldTree'
 import type { FieldDef, FieldValue, Label, Project, Section, Task } from '../types'
 import { availability, type FlowState } from '../flow'
 import { originMatches, originOf } from '../taskOrigin'
@@ -36,6 +36,8 @@ export interface FilterContext {
    * `no name`; names resolve against the live ones of every project, ignoring case.
    */
   fields?: readonly FieldDef[]
+  /** Where each project is, so workspace fields apply (workspace-fields D2); without it only project fields do. */
+  fieldPlacement?: FieldPlacement
   /**
    * Every member's tracked minutes per task, a running entry to the current minute
    * (time-tracking D4), for `tracked` and `tracked cmp duration`; none tracked without it.
@@ -283,7 +285,7 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
     if (!d.deleted_at) fieldsByName.set(nameKey(d.name), [...(fieldsByName.get(nameKey(d.name)) ?? []), d])
   }
   // Which definitions apply to a task's project, inherited ones included (inherited-custom-fields D2).
-  const fieldsOf = applicableFieldsLookup(liveProjects, ctx.fields ?? [])
+  const fieldsOf = applicableFieldsLookup(liveProjects, ctx.fields ?? [], ctx.fieldPlacement)
   const appliesTo = new Map<string, Set<string>>()
   const applies = (task: Task, def: FieldDef): boolean => {
     if (!task.project_id) return false

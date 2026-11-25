@@ -182,31 +182,78 @@ func FieldChain(projectID string, projects map[string]Entity) []string {
 	return chain
 }
 
+// FieldPlacement places projects in the account's workspaces
+// (workspace-fields D2); *Partition is one. Project gives a project's
+// workspace (its root's), Own("") the default workspace.
+type FieldPlacement interface {
+	Project(id string) string
+	Own(workspaceID string) string
+}
+
+// IsWorkspaceField reports whether a definition belongs to a workspace rather
+// than a project (workspace-fields D1): its project_id is empty.
+func IsWorkspaceField(d Entity) bool { return d.str("project_id") == "" }
+
+// FieldWorkspace is the workspace a workspace field belongs to: its own
+// workspace_id, null reading as the default. Unlike a label's, an id the
+// account does not know (a deleted workspace) is not read as the default, so
+// such a field applies nowhere.
+func FieldWorkspace(d Entity, place FieldPlacement) string {
+	if ws := d.str("workspace_id"); ws != "" {
+		return ws
+	}
+	return place.Own("")
+}
+
+// WorkspaceFields returns the live workspace fields of one workspace in
+// position order. Without a placement there are none.
+func WorkspaceFields(workspace string, place FieldPlacement, defs []Entity) []Entity {
+	if place == nil || workspace == "" {
+		return nil
+	}
+	var out []Entity
+	for _, d := range defs {
+		if !d.deleted() && IsWorkspaceField(d) && FieldWorkspace(d, place) == workspace {
+			out = append(out, d)
+		}
+	}
+	sortFieldsByPosition(out)
+	return out
+}
+
 // ApplicableFields returns the live field definitions that apply to a project
-// (none for Inbox, an empty id), inherited ones first.
-func ApplicableFields(projectID string, projects map[string]Entity, defs []Entity) []Entity {
+// (none for Inbox, an empty id): its workspace's fields first (workspace-fields
+// D2, only with a placement), then the inherited ones, then its own.
+func ApplicableFields(projectID string, projects map[string]Entity, defs []Entity, place FieldPlacement) []Entity {
 	if projectID == "" {
 		return nil
 	}
 	byProject := map[string][]Entity{}
 	for _, d := range defs {
-		if !d.deleted() {
+		if !d.deleted() && !IsWorkspaceField(d) {
 			pid := d.str("project_id")
 			byProject[pid] = append(byProject[pid], d)
 		}
 	}
 	var out []Entity
+	if place != nil {
+		out = append(out, WorkspaceFields(place.Project(projectID), place, defs)...)
+	}
 	for _, pid := range FieldChain(projectID, projects) {
 		own := byProject[pid]
-		sort.SliceStable(own, func(i, j int) bool {
-			if a, b := own[i].number("position"), own[j].number("position"); a != b {
-				return a < b
-			}
-			return own[i].str("id") < own[j].str("id")
-		})
+		sortFieldsByPosition(own)
 		out = append(out, own...)
 	}
 	return out
+}
+
+func sortFieldsByPosition(defs []Entity) {
+	sort.SliceStable(defs, func(i, j int) bool {
+		if a, b := defs[i].number("position"), defs[j].number("position"); a != b {
+			return a < b
+		}
+		return defs[i].str("id") < defs[j].str("id")
+	})
 }
 
 // FieldDescendants returns the ids of the live projects below projectID at any

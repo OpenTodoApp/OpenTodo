@@ -320,6 +320,15 @@ export interface SectionFields {
 export interface FieldDefFields {
   name?: string
   project_id?: string
+  /**
+   * The workspace a field without a project belongs to (workspace-fields
+   * D1): an empty project_id makes the definition a workspace field that
+   * applies to every project of this workspace, before the projects' own
+   * fields. Null is the default workspace, as for a label. It lives in the
+   * author's personal scope and never changes after creation; it is
+   * ignored on a field with a project. Additive.
+   */
+  workspace_id?: string | null
   type?: string
   options?: string
   position?: number
@@ -1368,7 +1377,7 @@ export const OP_DEFAULTS = {
     name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null, flow_mode: '', aisle: null,
   } satisfies Omit<Section, 'id' | '_clock'>,
   field: {
-    name: '', project_id: '', type: 'text', options: '', position: 0, created_at: 0, deleted_at: null,
+    name: '', project_id: '', workspace_id: null, type: 'text', options: '', position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<FieldDef, 'id' | '_clock'>,
   note: {
     title: '', notes_doc: '', description: '', project_id: null, labels: [], position: 0, created_at: 0, deleted_at: null, workspace_id: null, template: false, day: '', appends: {},

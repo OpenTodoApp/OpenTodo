@@ -2388,7 +2388,8 @@
         "options": "string",
         "position": "number",
         "project_id": "id",
-        "type": "string"
+        "type": "string",
+        "workspace_id": "nullable_string"
       },
       "frames": {
         "color": "string",
@@ -3575,7 +3576,8 @@
       "options": "string",
       "position": "number",
       "project_id": "id",
-      "type": "string"
+      "type": "string",
+      "workspace_id": "nullable_string"
     },
     "frame": {
       "color": "string",
@@ -4932,7 +4934,8 @@
         "fields[].options": "string",
         "fields[].position": "number",
         "fields[].project_id": "id",
-        "fields[].type": "string"
+        "fields[].type": "string",
+        "fields[].workspace_id": "nullable_string"
       }
     },
     "GET /api/v1/fields/{id}": {
@@ -4945,7 +4948,8 @@
         "options": "string",
         "position": "number",
         "project_id": "id",
-        "type": "string"
+        "type": "string",
+        "workspace_id": "nullable_string"
       }
     },
     "GET /api/v1/frames": {
@@ -7698,7 +7702,8 @@
         "options": "string?",
         "position": "number?",
         "project_id": "id?",
-        "type": "string?"
+        "type": "string?",
+        "workspace_id": "nullable_string?"
       },
       "response": {
         "created_at": "number",
@@ -7708,7 +7713,8 @@
         "options": "string",
         "position": "number",
         "project_id": "id",
-        "type": "string"
+        "type": "string",
+        "workspace_id": "nullable_string"
       }
     },
     "PATCH /api/v1/frames/{id}": {
@@ -9103,7 +9109,8 @@
         "options": "string?",
         "position": "number?",
         "project_id": "id",
-        "type": "string?"
+        "type": "string?",
+        "workspace_id": "nullable_string?"
       },
       "response": {
         "created_at": "number",
@@ -9113,7 +9120,8 @@
         "options": "string",
         "position": "number",
         "project_id": "id",
-        "type": "string"
+        "type": "string",
+        "workspace_id": "nullable_string"
       }
     },
     "POST /api/v1/frames": {

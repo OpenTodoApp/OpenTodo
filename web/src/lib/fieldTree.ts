@@ -1,10 +1,41 @@
-// Which custom fields apply to a project (OpenSpec inherited-custom-fields D1):
-// its ancestors' live definitions, farthest first, then its own. Pure, so the
-// filter engine, the panel and the definition checks share one rule; the Go port
-// is internal/sync ApplicableFields, pinned by fields.vectors.json.
+// Which custom fields apply to a project (OpenSpec inherited-custom-fields D1,
+// workspace-fields D2): its workspace's live fields, then its ancestors' live
+// definitions, farthest first, then its own. Pure, so the filter engine, the
+// panel and the definition checks share one rule; the Go port is internal/sync
+// ApplicableFields, pinned by fields.vectors.json.
 import { compareByPosition } from './ordering'
 import { descendants } from './tree'
 import type { FieldDef, Project } from './types'
+
+/**
+ * Places projects in the account's workspaces (workspace-fields D2): a
+ * Partition from lib/workspaces.ts is one. `project` gives a project's
+ * workspace (its root's), `own('')` the default workspace.
+ */
+export interface FieldPlacement {
+  project(id: string): string
+  own(workspaceId: string | null | undefined): string
+}
+
+/** Whether a definition belongs to a workspace rather than a project (workspace-fields D1). */
+export function isWorkspaceField(d: Pick<FieldDef, 'project_id'>): boolean {
+  return !d.project_id
+}
+
+/**
+ * The workspace a workspace field belongs to: its own workspace_id, null reading
+ * as the default. Unlike a label's, an id the account does not know (a deleted
+ * workspace) is not read as the default, so such a field applies nowhere.
+ */
+export function fieldWorkspace(d: Pick<FieldDef, 'workspace_id'>, place: FieldPlacement): string {
+  return d.workspace_id || place.own('')
+}
+
+/** The live fields of one workspace, in position order. Without a placement there are none. */
+export function workspaceFields(workspace: string, place: FieldPlacement | null | undefined, defs: readonly FieldDef[]): FieldDef[] {
+  if (!place || !workspace) return []
+  return defs.filter((d) => isWorkspaceField(d) && !d.deleted_at && fieldWorkspace(d, place) === workspace).sort(compareByPosition)
+}
 
 /** Live definitions of a project, in position order. Inbox (null) has none. */
 export function liveFields(projectId: string | null | undefined, defs: readonly FieldDef[]): FieldDef[] {
@@ -40,26 +71,28 @@ export function fieldChain(projectId: string, projects: readonly FieldProject[] 
 }
 
 /**
- * The fields that apply to a project: the live definitions of its ancestors,
- * farthest first, then its own, each group in position order. Inbox (null) has none.
+ * The fields that apply to a project: its workspace's live fields (only with a
+ * placement), then the live definitions of its ancestors, farthest first, then
+ * its own, each group in position order. Inbox (null) has none.
  */
-export function applicableFields(projectId: string | null | undefined, projects: readonly FieldProject[] | ReadonlyMap<string, FieldProject>, defs: readonly FieldDef[]): FieldDef[] {
+export function applicableFields(projectId: string | null | undefined, projects: readonly FieldProject[] | ReadonlyMap<string, FieldProject>, defs: readonly FieldDef[], place?: FieldPlacement | null): FieldDef[] {
   if (!projectId) return []
-  return fieldChain(projectId, projects).flatMap((pid) => liveFields(pid, defs))
+  const ws = place ? workspaceFields(place.project(projectId), place, defs) : []
+  return [...ws, ...fieldChain(projectId, projects).flatMap((pid) => liveFields(pid, defs))]
 }
 
 /**
  * A memoizing lookup of applicable fields per project, for lists that resolve
  * many rows at once (the badges, the filters): one chain walk per project.
  */
-export function applicableFieldsLookup(projects: readonly FieldProject[], defs: readonly FieldDef[]): (projectId: string | null | undefined) => FieldDef[] {
+export function applicableFieldsLookup(projects: readonly FieldProject[], defs: readonly FieldDef[], place?: FieldPlacement | null): (projectId: string | null | undefined) => FieldDef[] {
   const byId = new Map(projects.map((p) => [p.id, p]))
   const cache = new Map<string, FieldDef[]>()
   return (projectId) => {
     if (!projectId) return []
     let hit = cache.get(projectId)
     if (!hit) {
-      hit = applicableFields(projectId, byId, defs)
+      hit = applicableFields(projectId, byId, defs, place)
       cache.set(projectId, hit)
     }
     return hit

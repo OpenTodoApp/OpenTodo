@@ -330,11 +330,18 @@ var Schema = map[string]map[string]Field{
 	"field": {
 		"name":       {Kind: kString, Default: `""`, Content: true},
 		"project_id": {Kind: kID, Default: `""`},
-		"type":       {Kind: kString, Default: `"text"`},
-		"options":    {Kind: kString, Default: `""`, Content: true},
-		"position":   {Kind: kNumber, Default: `0`},
-		"created_at": {Kind: kNumber, Default: `0`},
-		"deleted_at": {Kind: kNullableNumber, Default: `null`},
+		// The workspace a field without a project belongs to (workspace-fields
+		// D1): an empty project_id makes the definition a workspace field that
+		// applies to every project of this workspace, before the projects' own
+		// fields. Null is the default workspace, as for a label. It lives in the
+		// author's personal scope and never changes after creation; it is
+		// ignored on a field with a project. Additive.
+		"workspace_id": {Kind: kNullableString, Default: `null`},
+		"type":         {Kind: kString, Default: `"text"`},
+		"options":      {Kind: kString, Default: `""`, Content: true},
+		"position":     {Kind: kNumber, Default: `0`},
+		"created_at":   {Kind: kNumber, Default: `0`},
+		"deleted_at":   {Kind: kNullableNumber, Default: `null`},
 	},
 	// note: a standalone note (OpenSpec change notes-overview, design D1), not a
 	// task: it never shows in task lists, counts, calendars, filters or

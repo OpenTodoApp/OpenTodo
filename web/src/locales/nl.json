@@ -7910,5 +7910,13 @@
   "Only the owner and admins can change these.": "Alleen de eigenaar en beheerders kunnen dit wijzigen.",
   "Time tracking": "Tijdregistratie",
   "{feature} is off in this workspace.": "{feature} staat uit in deze werkruimte.",
-  "Workspace features changed": "Functies van de werkruimte gewijzigd"
+  "Workspace features changed": "Functies van de werkruimte gewijzigd",
+  "A workspace can have at most {n} fields.": "Een werkruimte kan maximaal {n} velden hebben.",
+  "Fields every project of this workspace has, before its own. At most {max} fields.": "Velden die elk project van deze werkruimte heeft, vóór zijn eigen velden. Maximaal {max} velden.",
+  "Only you see these fields; other members of the workspace do not.": "Alleen jij ziet deze velden; andere leden van de werkruimte niet.",
+  "The project “{project}” already has a field named “{name}”.": "Het project “{project}” heeft al een veld met de naam “{name}”.",
+  "The project “{project}” would have more than {n} fields.": "Het project “{project}” zou dan meer dan {n} velden hebben.",
+  "This project already has a field named “{name}” from “{workspace}”.": "Dit project heeft al een veld met de naam “{name}” uit “{workspace}”.",
+  "This workspace already has a field named “{name}”.": "Deze werkruimte heeft al een veld met de naam “{name}”.",
+  "Workspace fields are edited in the workspace’s settings.": "Velden van de werkruimte bewerk je in de instellingen van de werkruimte."
 }

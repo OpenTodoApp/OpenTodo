@@ -9,7 +9,7 @@ import { db, getMeta, setMeta } from './db'
 import { compile, filterScope, mentionsState, namesWorkspace, parse, withCompletedTasks, type FilterContext, type Node } from './filter'
 import type { BoardTemplate } from './boardTemplates'
 import { activeLabels } from './labels'
-import { applicableFieldsLookup } from './fieldTree'
+import { applicableFieldsLookup, type FieldPlacement } from './fieldTree'
 import { nameKey } from './fieldNames'
 import { VIEW_DEFAULTS, getDeviceId, mutate, mutateMany, mutationTables, type Change } from './ops'
 import { knownRule } from './rules'
@@ -453,6 +453,8 @@ function byTitle(a: Task, b: Task): number {
 export interface FieldSortContext {
   projects: readonly Project[]
   fields?: readonly FieldDef[]
+  /** Where each project is, so a workspace field applies (workspace-fields); without it only project fields do. */
+  fieldPlacement?: FieldPlacement
   /** The urgency order's score of a task (urgency-sort), null without one; without it the order reads as due date. */
   score?: (task: Task) => number | null
 }
@@ -499,7 +501,7 @@ export function compareTasks(sortBy: SortBy, dir: SortDir, context?: FieldSortCo
     const selected = context?.fields?.find((field) => field.id === selectedId && !field.deleted_at)
     if (!selected || !context || (selected.type !== 'number' && selected.type !== 'date')) return compareTasks('due', 'asc')
     const selectedName = nameKey(selected.name)
-    const fieldsOf = applicableFieldsLookup(context.projects, context.fields ?? [])
+    const fieldsOf = applicableFieldsLookup(context.projects, context.fields ?? [], context.fieldPlacement)
     const values = new WeakMap<Task, SortableFieldValue | null>()
     const valueOf = (task: Task) => {
       if (!values.has(task)) values.set(task, fieldValueFor(task, selectedName, fieldsOf))

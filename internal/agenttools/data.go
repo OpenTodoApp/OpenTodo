@@ -673,12 +673,16 @@ type fieldOut struct {
 	Type string `json:"type"`
 	// InheritedFrom is the id of the project above that defines the field,
 	// when it is inherited (inherited-custom-fields); empty for the project's own.
-	InheritedFrom string    `json:"inherited_from,omitempty"`
-	Untrusted     fieldText `json:"untrusted_text"`
+	InheritedFrom string `json:"inherited_from,omitempty"`
+	// Workspace is the id of the workspace that defines the field, when it
+	// is a workspace field (workspace-fields); empty for a project's field.
+	Workspace string    `json:"workspace_id,omitempty"`
+	Untrusted fieldText `json:"untrusted_text"`
 }
 
-// fieldsFor lists the custom fields that apply to a project: the live
-// definitions of its ancestors, farthest first, then its own (none for Inbox).
+// fieldsFor lists the custom fields that apply to a project: its workspace's
+// fields (workspace-fields), then the live definitions of its ancestors,
+// farthest first, then its own (none for Inbox).
 func (snap *snapshot) fieldsFor(pid string) []opsync.Entity {
 	if pid == "" {
 		return nil
@@ -686,7 +690,7 @@ func (snap *snapshot) fieldsFor(pid string) []opsync.Entity {
 	if defs, ok := snap.fieldDefs[pid]; ok {
 		return defs
 	}
-	defs := opsync.ApplicableFields(pid, snap.projects, snap.allFieldDefs)
+	defs := opsync.ApplicableFields(pid, snap.projects, snap.allFieldDefs, snap.partition())
 	snap.fieldDefs[pid] = defs
 	return defs
 }
@@ -700,7 +704,9 @@ func (snap *snapshot) renderFields(pid string) []fieldOut {
 	out := []fieldOut{}
 	for _, d := range snap.fieldsFor(pid) {
 		f := fieldOut{ID: str(d, "id"), Type: str(d, "type"), Untrusted: fieldText{Name: str(d, "name")}}
-		if owner := rawStr(d, "project_id"); owner != pid {
+		if opsync.IsWorkspaceField(d) {
+			f.Workspace = opsync.FieldWorkspace(d, snap.partition())
+		} else if owner := rawStr(d, "project_id"); owner != pid {
 			f.InheritedFrom = owner
 		}
 		if f.Type == "choice" {

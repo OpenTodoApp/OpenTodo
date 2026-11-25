@@ -78,6 +78,12 @@ func (s *Service) partition(ctx context.Context, r *reach, userID string) (*Part
 	return p, nil
 }
 
+// Partition places the account's projects and tasks in its workspaces, the
+// rule the devices use (workspace-fields D2: which workspace fields apply).
+func (s *Service) Partition(ctx context.Context, userID string) (*Partition, error) {
+	return s.buildPartition(ctx, userID)
+}
+
 // buildPartition reads the placement of the account without the reach,
 // deleted projects and tasks included.
 func (s *Service) buildPartition(ctx context.Context, userID string) (*Partition, error) {
@@ -123,8 +129,14 @@ func workspaceOf(p *Partition, entity string, e Entity) string {
 		return p.Project(e.str("id"))
 	case "task":
 		return p.Task(e.str("id"))
-	case "section", "field":
+	case "section":
 		return p.Project(e.str("project_id"))
+	case "field":
+		// A workspace field (workspace-fields D1) has no project.
+		if pid := e.str("project_id"); pid != "" {
+			return p.Project(pid)
+		}
+		return p.Own(e.str("workspace_id"))
 	case "note", "rule":
 		if pid := e.str("project_id"); pid != "" {
 			return p.Project(pid)

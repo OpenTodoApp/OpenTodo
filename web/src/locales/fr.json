@@ -7910,5 +7910,13 @@
   "Only the owner and admins can change these.": "Seuls le propriétaire et les admins peuvent les modifier.",
   "Time tracking": "Suivi du temps",
   "{feature} is off in this workspace.": "{feature} est désactivé dans cet espace de travail.",
-  "Workspace features changed": "Fonctionnalités de l’espace de travail modifiées"
+  "Workspace features changed": "Fonctionnalités de l’espace de travail modifiées",
+  "A workspace can have at most {n} fields.": "Un espace de travail peut avoir au plus {n} champs.",
+  "Fields every project of this workspace has, before its own. At most {max} fields.": "Les champs que chaque projet de cet espace de travail a avant les siens. {max} champs maximum.",
+  "Only you see these fields; other members of the workspace do not.": "Vous seul voyez ces champs ; les autres membres de l’espace de travail ne les voient pas.",
+  "The project “{project}” already has a field named “{name}”.": "Le projet « {project} » a déjà un champ nommé « {name} ».",
+  "The project “{project}” would have more than {n} fields.": "Le projet « {project} » aurait plus de {n} champs.",
+  "This project already has a field named “{name}” from “{workspace}”.": "Ce projet a déjà un champ nommé « {name} » venant de « {workspace} ».",
+  "This workspace already has a field named “{name}”.": "Cet espace de travail a déjà un champ nommé « {name} ».",
+  "Workspace fields are edited in the workspace’s settings.": "Les champs de l’espace de travail se modifient dans ses réglages."
 }

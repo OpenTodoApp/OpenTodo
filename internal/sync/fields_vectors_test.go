@@ -7,12 +7,17 @@ import (
 	"testing"
 )
 
-// The shared vectors of inherited custom fields (OpenSpec change
-// inherited-custom-fields, design D1), read by web/src/lib/fields.test.ts too.
+// The shared vectors of inherited and workspace custom fields (OpenSpec changes
+// inherited-custom-fields D1 and workspace-fields D2), read by
+// web/src/lib/fields.test.ts too.
 type fieldVectors struct {
 	Cases []struct {
-		Name     string            `json:"name"`
-		Project  *string           `json:"project"`
+		Name       string  `json:"name"`
+		Project    *string `json:"project"`
+		Workspaces *struct {
+			Default string   `json:"default"`
+			Known   []string `json:"known"`
+		} `json:"workspaces"`
 		Projects []json.RawMessage `json:"projects"`
 		Fields   []json.RawMessage `json:"fields"`
 		Want     []string          `json:"want"`
@@ -56,8 +61,21 @@ func TestFieldVectors(t *testing.T) {
 			if c.Project != nil {
 				project = *c.Project
 			}
+			projects := vectorEntities(t, c.Projects)
+			// With workspaces (workspace-fields D2) the case places its projects.
+			var place FieldPlacement
+			if w := c.Workspaces; w != nil {
+				p := &Partition{Default: w.Default, Known: map[string]bool{}, Projects: map[string]PartitionProject{}}
+				for _, id := range w.Known {
+					p.Known[id] = true
+				}
+				for _, e := range projects {
+					p.Projects[e.str("id")] = PartitionProject{WorkspaceID: e.str("workspace_id"), ParentID: e.str("parent_id")}
+				}
+				place = p
+			}
 			got := []string{}
-			for _, d := range ApplicableFields(project, ProjectsByID(vectorEntities(t, c.Projects)), vectorEntities(t, c.Fields)) {
+			for _, d := range ApplicableFields(project, ProjectsByID(projects), vectorEntities(t, c.Fields), place) {
 				got = append(got, d.str("id"))
 			}
 			if !reflect.DeepEqual(got, c.Want) {
