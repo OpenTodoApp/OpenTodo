@@ -20,6 +20,10 @@ import (
 // collectionRoutes lists the generic collection routes once per collection,
 // with the collection's op fields (as their kind names) and the members a
 // read adds to a row (observed on a running server).
+// optionalOnCreate are id fields a create may leave out: a workspace field has
+// no project (workspace-fields D1).
+var optionalOnCreate = map[string]bool{"field.project_id": true}
+
 func collectionRoutes(t *testing.T, table map[string]routePolicy) map[string]any {
 	t.Helper()
 	extras := observedRowMembers(t)
@@ -38,7 +42,7 @@ func collectionRoutes(t *testing.T, table map[string]routePolicy) map[string]any
 		create, patch := map[string]any{}, map[string]any{}
 		for f, k := range kinds[entity] {
 			patch[f] = k + "?"
-			if k == "id" {
+			if k == "id" && !optionalOnCreate[entity+"."+f] {
 				create[f] = k // a non-empty id: a create needs it
 			} else {
 				create[f] = k + "?"

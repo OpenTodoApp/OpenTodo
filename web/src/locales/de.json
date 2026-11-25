@@ -7923,5 +7923,14 @@
   "Today and the task page in the new design. Turn it off at any time.": "Heute und die Aufgabenseite im neuen Design. Jederzeit abschaltbar.",
   "Quick add notification": "Schnelleingabe-Benachrichtigung",
   "Add a task from the notification shade, in any app.": "Füge aus der Benachrichtigungsleiste eine Aufgabe hinzu, in jeder App.",
-  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android hat Benachrichtigungen für OpenTodo abgelehnt. Erlaube sie in den Android-Einstellungen."
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android hat Benachrichtigungen für OpenTodo abgelehnt. Erlaube sie in den Android-Einstellungen.",
+  "A workspace can have at most {n} fields.": "Ein Arbeitsbereich kann höchstens {n} Felder haben.",
+  "Fields every project of this workspace has, before its own. At most {max} fields.": "Felder, die jedes Projekt dieses Arbeitsbereichs vor seinen eigenen hat. Höchstens {max} Felder.",
+  "Only you see these fields; other members of the workspace do not.": "Nur du siehst diese Felder, andere Mitglieder des Arbeitsbereichs nicht.",
+  "The project “{project}” already has a field named “{name}”.": "Das Projekt „{project}“ hat bereits ein Feld namens „{name}“.",
+  "The project “{project}” would have more than {n} fields.": "Das Projekt „{project}“ hätte dann mehr als {n} Felder.",
+  "This project already has a field named “{name}” from “{workspace}”.": "Dieses Projekt hat bereits ein Feld namens „{name}“ aus „{workspace}“.",
+  "This workspace already has a field named “{name}”.": "Dieser Arbeitsbereich hat bereits ein Feld namens „{name}“.",
+  "Workspace fields are edited in the workspace’s settings.": "Felder des Arbeitsbereichs bearbeitest du in seinen Einstellungen.",
+  "Only the workspace’s owner can change its fields.": "Nur der Eigentümer des Arbeitsbereichs kann seine Felder ändern."
 }

@@ -7923,5 +7923,14 @@
   "Today and the task page in the new design. Turn it off at any time.": "Hoy y la página de la tarea con el nuevo diseño. Puedes desactivarlo cuando quieras.",
   "Quick add notification": "Notificación de añadido rápido",
   "Add a task from the notification shade, in any app.": "Añade una tarea desde el panel de notificaciones, en cualquier app.",
-  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android rechazó las notificaciones de OpenTodo. Permítelas en los ajustes de Android."
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android rechazó las notificaciones de OpenTodo. Permítelas en los ajustes de Android.",
+  "A workspace can have at most {n} fields.": "Un espacio de trabajo puede tener como máximo {n} campos.",
+  "Fields every project of this workspace has, before its own. At most {max} fields.": "Campos que tiene cada proyecto de este espacio de trabajo, antes de los suyos. Como máximo {max} campos.",
+  "Only you see these fields; other members of the workspace do not.": "Solo tú ves estos campos; los demás miembros del espacio de trabajo no.",
+  "The project “{project}” already has a field named “{name}”.": "El proyecto «{project}» ya tiene un campo llamado «{name}».",
+  "The project “{project}” would have more than {n} fields.": "El proyecto «{project}» tendría más de {n} campos.",
+  "This project already has a field named “{name}” from “{workspace}”.": "Este proyecto ya tiene un campo llamado «{name}» de «{workspace}».",
+  "This workspace already has a field named “{name}”.": "Este espacio de trabajo ya tiene un campo llamado «{name}».",
+  "Workspace fields are edited in the workspace’s settings.": "Los campos del espacio de trabajo se editan en su configuración.",
+  "Only the workspace’s owner can change its fields.": "Solo el propietario del espacio de trabajo puede cambiar sus campos."
 }

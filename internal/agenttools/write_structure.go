@@ -375,7 +375,7 @@ func (r *Registry) planSetFavourite(ctx context.Context, c Caller, a args, overl
 	}
 	list := FavouriteEntries(current)
 	entry := kind + ":" + id
-	next := make([]string, 0, len(list)+1)
+	next := make([]string, 0, len(list))
 	has := false
 	for _, e := range list {
 		if e == entry {
