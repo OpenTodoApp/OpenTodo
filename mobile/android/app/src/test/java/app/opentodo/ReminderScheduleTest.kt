@@ -75,6 +75,26 @@ class ReminderScheduleTest {
         assertEquals(null, ask(36, exact = true, askedFull = true))
     }
 
+    /** android-urgent-alarms D2: one answer per firing, so a repeating task is not advanced twice. */
+    @Test fun aFiringIsAnsweredOnce() {
+        val first = UrgentAlarms.firstAnswer("{}", "r1", now, now)
+        assertTrue(first != null)
+        // A second tap, or Done from the shade while the alarm screen is open.
+        assertEquals(null, UrgentAlarms.firstAnswer(first!!, "r1", now, now + 1000))
+        assertEquals(null, UrgentAlarms.firstAnswer(first, "r1", now + 30_000, now + 1000))
+        // Snoozed, the next firing is answered again; another reminder is another.
+        assertTrue(UrgentAlarms.firstAnswer(first, "r1", now + 10 * 60_000, now + 10 * 60_000) != null)
+        assertTrue(UrgentAlarms.firstAnswer(first, "r2", now, now) != null)
+        // A location reminder has no time: every answer counts and nothing is stored.
+        assertEquals(first, UrgentAlarms.firstAnswer(first, "g1", 0, now))
+    }
+
+    @Test fun theLockedAlarmScreenHidesTheTitleWhenPrivateContentIsHidden() {
+        assertTrue(UrgentAlarms.showTitle(locked = false, privateOnLockScreen = false))
+        assertTrue(UrgentAlarms.showTitle(locked = true, privateOnLockScreen = true))
+        assertEquals(false, UrgentAlarms.showTitle(locked = true, privateOnLockScreen = false))
+    }
+
     @Test fun atMost500() {
         val json = (0 until 600).joinToString(",", "[", "]") { """{"id":"r$it","taskId":"t","fireAt":${now + it * 1000L}}""" }
         assertEquals(ReminderSchedule.MAX, ReminderSchedule.parse(json, now).size)

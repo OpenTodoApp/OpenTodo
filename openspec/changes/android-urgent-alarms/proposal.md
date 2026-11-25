@@ -6,7 +6,7 @@
 
 ## What Changes
 
-- **The Android app rings an urgent reminder as an alarm.** At its firing time it posts the reminder on its own **Urgent reminders** channel: the phone's alarm sound on the alarm stream, repeated until it is answered, and a full-screen alarm over the lock screen with the task's title (or the generic text), the time, **Done**, **Snooze 10 min** and **Dismiss**. These are the notification's own actions and go through the web app's operations in the background, as today. Swiping the notification away only silences it.
+- **The Android app rings an urgent reminder as an alarm.** At its firing time it posts the reminder on its own **Urgent reminders** channel: the phone's alarm sound on the alarm stream, repeated until it is answered, and a full-screen alarm over the lock screen with the task's title (or the generic text), the time, **Done**, **Snooze 10 min** and **Dismiss**. These are the notification's own actions and go through the web app's operations in the background, as today, once per firing. Swiping the notification away or opening the notification shade only silences it.
 - **Exact when allowed.** An urgent reminder is armed with `setAlarmClock` when the app may set exact alarms, so it rings on time in Doze and shows as the phone's next alarm; without that permission it is armed inexactly, as every reminder is, and still rings when it fires.
 - **The permissions are asked when the user turns Urgent on.** A new capability `urgent-alarms` with one method, `allowUrgentAlarms()`: the web app calls it when the user marks a reminder urgent in the visible Android app, and the shell opens, once per device, Android's page for what is missing: **Alarms & reminders** (Android 12+), then **Full-screen notifications** (Android 14+). Never at launch, at a hand-over or in a background run.
 - **Graceful fallback.** Without the full-screen permission the alarm is a heads-up notification that still rings on the alarm stream; without notifications nothing rings, as for any reminder.
@@ -22,6 +22,8 @@ Not **BREAKING**. No op field, no route, no environment variable. The bridge gai
 - `USE_EXACT_ALARM`, which Play reserves for alarm clock and calendar apps.
 - A separate F-Droid and Play build: both declare the same permissions; on Play the full-screen permission is off by default on Android 14+ until the user allows it.
 - Urgent reminders in the browser and by push to the browser.
+- Ringing before the first unlock after a restart (direct boot): the schedule lives in credential-protected storage and the actions need the web app, so alarms are armed again at the first unlock. A follow-up can keep a device-protected copy of the urgent schedule.
+- An `urgent` flag in the push payload: a push rings as an alarm only for a reminder the phone's schedule holds as urgent. A follow-up can add the flag to the server's push message.
 
 ROADMAP item advanced: "Shells that feel native".
 

@@ -121,4 +121,20 @@ object UrgentAlarms {
 
     /** D3: an urgent reminder is an alarm clock when exact alarms are allowed; everything else is armed as before. */
     fun armAsAlarmClock(r: ShellReminder, exact: Boolean): Boolean = r.urgent && exact
+
+    /**
+     * D2: [acted] with this firing answered, or null when it was answered already (a double tap,
+     * or Done from the notification shade or a watch while the alarm screen is open), so a
+     * repeating task is not advanced twice. A firing is the reminder at its time (the same
+     * minute, as for [ReminderSchedule.wasShown]); without a time ([fireAt] 0, a location
+     * reminder) every answer counts.
+     */
+    fun firstAnswer(acted: String, id: String, fireAt: Long, now: Long): String? = when {
+        fireAt <= 0 -> acted
+        ReminderSchedule.wasShown(acted, id, fireAt) -> null
+        else -> ReminderSchedule.markShown(acted, id, fireAt, now)
+    }
+
+    /** The alarm screen over a locked phone names the task only when the user lets notifications show private content there. */
+    fun showTitle(locked: Boolean, privateOnLockScreen: Boolean): Boolean = !locked || privateOnLockScreen
 }

@@ -772,34 +772,36 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
 
     /** The system's "Alarms & reminders" page for the app; a device without it gets the app's own settings page. */
     override fun openAlarmSettings() {
-        if (Build.VERSION.SDK_INT < 31) return
+        openSettings(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, 31) // inexact alarms stay when neither page opens
+    }
+
+    /** The system page [action] for this app (from API [minSdk]), else the app's own settings page; whether one opened. */
+    private fun openSettings(action: String, minSdk: Int): Boolean {
+        if (Build.VERSION.SDK_INT < minSdk) return false
         val app = Uri.parse("package:$packageName")
-        try {
-            startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, app))
-        } catch (e: ActivityNotFoundException) {
-            try { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, app)) } catch (e2: ActivityNotFoundException) { /* inexact alarms stay */ }
+        for (intent in listOf(Intent(action, app), Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, app))) {
+            try { startActivity(intent); return true } catch (e: ActivityNotFoundException) { /* the next one */ }
         }
+        return false
     }
 
     /**
-     * android-urgent-alarms D4: opens the page for what urgent reminders still lack, at most once
-     * per device each, and the next one when the user comes back (onResume).
+     * android-urgent-alarms D4: creates the Urgent reminders channel (so its Do Not Disturb
+     * override can be set before the first alarm) and opens the page for what urgent reminders
+     * still lack, at most once per device each, and the next one when the user comes back (onResume).
      */
     override fun allowUrgentAlarms() {
+        Notifier.ensureUrgentChannel(this)
         val prefs = Prefs(this)
         val fullScreen = Build.VERSION.SDK_INT < 34 || getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent()
         val page = UrgentAlarms.nextAsk(Build.VERSION.SDK_INT, Scheduler.canExact(this), fullScreen,
             prefs.urgentAsked(UrgentAlarms.EXACT), prefs.urgentAsked(UrgentAlarms.FULL_SCREEN)) ?: return
+        val opened = if (page == UrgentAlarms.EXACT) openSettings(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, 31)
+            else openSettings(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, 34)
+        // Only a page that opened counts as asked, and only then may the next one follow on return.
+        if (!opened) return
         prefs.markUrgentAsked(page)
         urgentAsking = true
-        if (page == UrgentAlarms.EXACT) return openAlarmSettings()
-        if (Build.VERSION.SDK_INT < 34) return
-        val app = Uri.parse("package:$packageName")
-        try {
-            startActivity(Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, app))
-        } catch (e: ActivityNotFoundException) {
-            try { startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)) } catch (e2: ActivityNotFoundException) { /* a heads-up notification stays */ }
-        }
     }
 
     private fun prompt(cipher: javax.crypto.Cipher, title: Int, done: (javax.crypto.Cipher?) -> Unit) {

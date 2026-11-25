@@ -10,13 +10,17 @@ The channel is new because Android fixes a channel's sound when it is created; t
 
 ## D2. The full-screen alarm
 
-`AlarmActivity` (not exported, `showWhenLocked`, `turnScreenOn`, no Recents entry) shows the time, the task's title or **Reminder**, and **Done**, **Snooze 10 min** and **Dismiss**. Each button does what the notification's button does (`ReminderActions.run`: the notification goes, which silences it, and the hidden web view applies the action as an operation, `/?reminder=<id>&action=<action>`), then the screen closes. A tap on the heads-up notification opens the same screen. The reminder is passed in the intent's extras, not read from the stored schedule, because a push may have removed it from the schedule by then.
+`AlarmActivity` (not exported, `showWhenLocked`, `turnScreenOn`, no Recents entry) shows the time, the task's title or **Reminder**, and **Done**, **Snooze 10 min** and **Dismiss**. Each button does what the notification's button does (`ReminderActions.run`: the notification goes, which silences it, and the hidden web view applies the action as an operation, `/?reminder=<id>&action=<action>`), then the screen closes. A tap on the heads-up notification opens the same screen and keeps the notification (no auto-cancel), so it rings until answered.
+
+One answer per firing: the action path (`ReminderActions.run`, for the notification's buttons and the screen's) remembers the reminder id and firing time it answered (`UrgentAlarms.firstAnswer`, the same-minute rule of `wasShown`) and ignores a second answer, so a double tap, or Done from the shade or a watch while the screen is open, does not advance a repeating task twice. The screen's buttons go inert after the first tap. An answer anywhere closes a screen showing that reminder, and the screen closes on resume when the notification is gone (swiped away), so it never stays on with the screen kept awake.
+
+Over a locked phone the screen and the notification's public version read **Reminder** instead of the title when the lock screen hides private notification content (`UrgentAlarms.showTitle`). The reminder is passed in the intent's extras, not read from the stored schedule, because a push may have removed it from the schedule by then.
 
 Android decides when the full-screen intent is used: with the screen off or locked it shows the activity; with the phone in use it shows a heads-up notification with the same buttons.
 
 ## D3. Arming
 
-`ShellReminder` gains `urgent` (true only for `urgent: true` in the hand-over, stored with the schedule so a reboot keeps it). `Scheduler.arm` arms an urgent reminder with `setAlarmClock` when exact alarms are allowed: exempt from Doze, on time, and shown as the phone's next alarm (its show intent opens the task). Otherwise it uses `setAndAllowWhileIdle` like every reminder, and the alarm rings when the system fires it. `BootReceiver` already re-arms the stored schedule after a reboot and a change of the exact-alarm permission.
+`ShellReminder` gains `urgent` (true only for `urgent: true` in the hand-over, stored with the schedule so a reboot keeps it). `Scheduler.arm` arms an urgent reminder with `setAlarmClock` when exact alarms are allowed: exempt from Doze, on time, and shown as the phone's next alarm (its show intent opens the task). Otherwise it uses `setAndAllowWhileIdle` like every reminder, and the alarm rings when the system fires it. `BootReceiver` already re-arms the stored schedule after a reboot and a change of the exact-alarm permission. On a phone with file-based encryption that is at the first unlock after the restart (`BOOT_COMPLETED`): the schedule is in credential-protected storage and the actions need the web app, so an urgent reminder due before that first unlock does not ring. Direct-boot alarms (`LOCKED_BOOT_COMPLETED`, a device-protected copy of the urgent schedule) are a follow-up.
 
 ## D4. Asking
 
@@ -33,11 +37,11 @@ The pure rule `UrgentAlarms.nextAsk(sdk, exact, fullScreen, askedExact, askedFul
 
 ## D6. Do Not Disturb and silent mode
 
-The app asks for no Do Not Disturb access. An alarm-category notification with alarm audio is what Android's Do Not Disturb calls an alarm: it sounds when the user's rules let alarms through, which is Android's default for Do Not Disturb and for schedules, and is silent under "Total silence" or when the user turned alarms off in the rule. The user can also let the **Urgent reminders** channel override Do Not Disturb in its settings. The ringer's silent and vibrate modes do not mute the alarm stream.
+The app asks for no Do Not Disturb access. An alarm-category notification with alarm audio is what Android's Do Not Disturb calls an alarm: it sounds when the user's rules let alarms through, which is Android's default for Do Not Disturb and for schedules, and is silent under "Total silence" or when the user turned alarms off in the rule. The user can also let the **Urgent reminders** channel override Do Not Disturb in its settings; the channel is created when the user turns Urgent on, and at any hand-over with an urgent reminder, so that is possible before the first alarm. The ringer's silent and vibrate modes do not mute the alarm stream.
 
-## D7. Hand-overs, sign-out and change server
+## D7. Hand-overs, push, sign-out and change server
 
-The ringing alarm is a notification, and a hand-over replaces alarms only: it never silences a ringing alarm, also when the reminder has left the schedule (as on iOS after #2020). A reminder no longer urgent, moved, dismissed, completed or deleted is re-armed or cancelled at the next hand-over, as every reminder is. Sign-out and a locked encrypted account hand over an empty schedule, which cancels every alarm still ahead; **Change server** also cancels every notification, so it silences a ringing alarm.
+The ringing alarm is a notification, and a hand-over replaces alarms only: it never silences a ringing alarm, also when the reminder has left the schedule (as on iOS after #2020). The push message carries no `urgent` flag yet: a push rings as an alarm when the phone's schedule holds the reminder as urgent, which it does for every reminder handed over in time; the flag in the payload is a follow-up. A reminder no longer urgent, moved, dismissed, completed or deleted is re-armed or cancelled at the next hand-over, as every reminder is. Sign-out and a locked encrypted account hand over an empty schedule, which cancels every alarm still ahead; **Change server** also cancels every notification, so it silences a ringing alarm.
 
 ## D8. Google Play
 

@@ -40,6 +40,11 @@ class Prefs(context: Context) {
         get() = p.getString("remindersShown", "{}") ?: "{}"
         set(v) = p.edit().putString("remindersShown", v).apply()
 
+    /** Per reminder, the fire time it was last answered for (android-urgent-alarms D2: one answer per firing): `{id: ms}`. */
+    var remindersActed: String
+        get() = p.getString("remindersActed", "{}") ?: "{}"
+        set(v) { p.edit().putString("remindersActed", v).commit() }
+
     /**
      * The UnifiedPush registration (shell-push D3): token, distributor, endpoint and the Web Push
      * keys, private key included. It never leaves the phone and goes with the server's data.

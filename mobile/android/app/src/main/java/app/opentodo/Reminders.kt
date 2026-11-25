@@ -41,6 +41,8 @@ object Scheduler {
         cancelAll(context, prefs)
         val list = ReminderSchedule.parse(json, now)
         prefs.reminders = ReminderSchedule.toJson(list)
+        // android-urgent-alarms D4: the channel exists before the first alarm, also for one marked urgent on another device.
+        if (list.any { it.urgent }) Notifier.ensureUrgentChannel(context)
         arm(context, list)
     }
 
@@ -111,14 +113,18 @@ object Notifier {
         return PendingIntent.getActivity(context, code, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     }
 
-    private val alarmAudio: AudioAttributes = AudioAttributes.Builder()
-        .setUsage(AudioAttributes.USAGE_ALARM).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build()
-
     private fun alarmSound(): Uri? =
         RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM) ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
 
-    private fun urgentChannel(context: Context) {
+    /**
+     * The Urgent reminders channel. Also created when the user turns Urgent on (D4), so its
+     * Do Not Disturb override can be set in Android's settings before the first alarm.
+     */
+    internal fun ensureUrgentChannel(context: Context) {
         val channel = NotificationChannel(URGENT_CHANNEL, context.getString(R.string.channel_urgent), NotificationManager.IMPORTANCE_HIGH).apply {
+            // Built here, not in the object's initializer, which runs wherever Notifier is first used.
+            val alarmAudio = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build()
             setSound(alarmSound(), alarmAudio)
             enableVibration(true)
             vibrationPattern = longArrayOf(0, 800, 800)
@@ -137,10 +143,11 @@ object Notifier {
         return PendingIntent.getActivity(context, notificationId(reminderId), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     }
 
-    private fun action(context: Context, id: String, action: String): PendingIntent {
+    /** [fireAt] names the firing the button answers (android-urgent-alarms D2: once); 0 for a location reminder. */
+    private fun action(context: Context, id: String, action: String, fireAt: Long): PendingIntent {
         val intent = Intent(context, NotificationActionReceiver::class.java)
             .setData(Uri.parse("opentodo-action:" + Uri.encode(id) + "?" + action))
-            .putExtra("id", id).putExtra("action", action)
+            .putExtra("id", id).putExtra("action", action).putExtra("fireAt", fireAt)
         return PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     }
 
@@ -150,8 +157,8 @@ object Notifier {
         else -> R.string.action_dismiss
     }
 
-    private fun NotificationCompat.Builder.actions(context: Context, id: String, actions: List<String>): NotificationCompat.Builder {
-        for (a in actions) addAction(0, context.getString(label(a)), action(context, id, a))
+    private fun NotificationCompat.Builder.actions(context: Context, id: String, actions: List<String>, fireAt: Long = 0): NotificationCompat.Builder {
+        for (a in actions) addAction(0, context.getString(label(a)), action(context, id, a, fireAt))
         return this
     }
 
@@ -196,17 +203,20 @@ object Notifier {
             .setAutoCancel(true)
             .setOnlyAlertOnce(true)
             .setContentIntent(open(context, ReminderSchedule.taskPath(taskId), notificationId(reminderId)))
-            .actions(context, reminderId, ReminderSchedule.REMINDER_ACTIONS)
+            .actions(context, reminderId, ReminderSchedule.REMINDER_ACTIONS, fireAt)
             .build()
     }
 
     /**
      * D1, D2: the alarm sound on the alarm stream, repeated until the notification goes
      * (FLAG_INSISTENT), and the full-screen alarm where Android allows it; without that
-     * permission Android shows it as a heads-up notification (D5). Swiping it away silences it.
+     * permission Android shows it as a heads-up notification (D5). Swiping it away or opening
+     * the notification shade silences it. A tap opens the alarm screen and keeps the
+     * notification (no auto-cancel), so the screen stays until it is answered. On a lock screen
+     * that hides private content it reads "Reminder".
      */
     private fun alarmNotification(context: Context, reminderId: String, title: String?, fireAt: Long): Notification {
-        urgentChannel(context)
+        ensureUrgentChannel(context)
         val screen = alarmScreen(context, reminderId, title, fireAt)
         @Suppress("DEPRECATION") // the stream is read only before channels; the channel's alarm audio applies from Android 8.
         val n = NotificationCompat.Builder(context, URGENT_CHANNEL)
@@ -219,8 +229,9 @@ object Notifier {
             .setSound(alarmSound(), AudioManager.STREAM_ALARM)
             .setFullScreenIntent(screen, true)
             .setContentIntent(screen)
-            .setAutoCancel(true)
-            .actions(context, reminderId, ReminderSchedule.REMINDER_ACTIONS)
+            .setPublicVersion(NotificationCompat.Builder(context, URGENT_CHANNEL).setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(context.getString(R.string.reminder_generic)).setWhen(fireAt).setShowWhen(true).build())
+            .actions(context, reminderId, ReminderSchedule.REMINDER_ACTIONS, fireAt)
             .build()
         n.flags = n.flags or Notification.FLAG_INSISTENT
         return n
@@ -273,19 +284,24 @@ class AlarmReceiver : BroadcastReceiver() {
 class NotificationActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val id = intent.getStringExtra("id") ?: return
-        ReminderActions.run(context, id, intent.getStringExtra("action") ?: return)
+        ReminderActions.run(context, id, intent.getStringExtra("action") ?: return, intent.getLongExtra("fireAt", 0))
     }
 }
 
 /**
  * A reminder's Done, Snooze 10 min or Dismiss, from its notification or its full-screen alarm
- * (android-urgent-alarms D2): the notification goes, which silences an alarm, and the hidden
- * web view applies the action.
+ * (android-urgent-alarms D2): the notification goes, which silences an alarm, an alarm screen
+ * showing it closes, and the hidden web view applies the action, once per firing ([fireAt]).
  */
 object ReminderActions {
-    fun run(context: Context, id: String, action: String) {
+    @Synchronized
+    fun run(context: Context, id: String, action: String, fireAt: Long) {
         if (!ReminderSchedule.isAction(action)) return
         NotificationManagerCompat.from(context).cancel(Notifier.notificationId(id))
+        AlarmActivity.answered(id)
+        val prefs = Prefs(context)
+        val acted = UrgentAlarms.firstAnswer(prefs.remindersActed, id, fireAt, System.currentTimeMillis()) ?: return
+        prefs.remindersActed = acted
         HiddenRun.enqueueOnce(context, ReminderSchedule.actionPath(id, action))
     }
 }
