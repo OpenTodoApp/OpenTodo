@@ -17,7 +17,8 @@ import { TaskListView } from './TaskListView'
 import { TaskRow } from './TaskRow'
 import { TrackingIndicator, TrackingPill } from './TrackingIndicator'
 import { navigate } from './router'
-import { startSession } from '../lib/focus/session'
+import { breakSession, pauseSession, startSession } from '../lib/focus/session'
+import { readFocus, writeFocus } from '../lib/focus/state'
 import { FOCUS_DEFAULTS } from '../lib/focus/prefs'
 import { TriageView } from './TriageView'
 
@@ -187,13 +188,54 @@ describe('the running indicator', () => {
     const id = await createTask({ title: 'Write the report' })
     await startSession(id, FOCUS_DEFAULTS, NOW.getTime() - 5 * 60000)
     const r = await render(<TrackingIndicator collapsed />)
-    await waitFor(() => r.container.querySelector('[data-tracking-open]')?.getAttribute('aria-label') === 'Go to Focus: 5m · Write the report')
+    await waitFor(() => !!r.container.querySelector('[data-tracking-open]'))
+    // The rail's trigger opens a menu, so it keeps the tracking name.
+    expect(r.container.querySelector('[data-tracking-open]')!.getAttribute('aria-label')).toBe('Tracking 5m · Write the report')
     await click(r.container.querySelector('[data-tracking-open]')!)
     const items = () => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')]
     await waitFor(() => items().some((x) => x.textContent?.includes('Go to Focus')), 'the menu')
     expect(items().some((x) => x.textContent?.includes('Open the tracked task'))).toBe(false)
     await click(items().find((x) => x.textContent?.includes('Go to Focus'))!)
     await waitFor(() => location.pathname === '/focus', 'the Focus screen')
+  })
+
+  // Entries that are not the running Focus stretch on the task keep opening the task.
+  const opensTheTask = async () => {
+    navigate({ view: 'today' }, { replace: true })
+    const r = await render(<><TrackingIndicator /><TaskPageHost /></>)
+    await waitFor(() => !!r.container.querySelector('[data-tracking-open]'))
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- the Focus row is read live; give a wrong name time to show
+    await flush(60)
+    const open = r.container.querySelector<HTMLButtonElement>('[data-tracking-open]')!
+    expect(open.getAttribute('aria-label')).toBe('Tracking 0m · Write the report')
+    await click(open)
+    await waitFor(() => !!document.querySelector('[data-task-title]'))
+    expect(location.pathname.startsWith('/focus')).toBe(false)
+  }
+
+  it('A paused Focus session: tracking the same task opens the task', async () => {
+    const id = await createTask({ title: 'Write the report' })
+    await startSession(id, FOCUS_DEFAULTS, NOW.getTime() - 5 * 60000)
+    await pauseSession(NOW.getTime() - 60000)
+    await startTracking(id, { now: NOW.getTime() })
+    await opensTheTask()
+  })
+
+  it('A Focus break: tracking the same task opens the task', async () => {
+    const id = await createTask({ title: 'Write the report' })
+    await startSession(id, FOCUS_DEFAULTS, NOW.getTime() - 5 * 60000)
+    await breakSession(FOCUS_DEFAULTS, NOW.getTime() - 60000)
+    expect((await readFocus())!.phase).toBe('break')
+    await startTracking(id, { now: NOW.getTime() })
+    await opensTheTask()
+  })
+
+  it('A Focus stretch recording another entry on the same task: the running entry opens the task', async () => {
+    const id = await createTask({ title: 'Write the report' })
+    // The session's own entry runs, but the session names another one.
+    const s = await startSession(id, FOCUS_DEFAULTS, NOW.getTime())
+    await writeFocus({ ...s, entryId: 'another-entry' }, { local: true })
+    await opensTheTask()
   })
 
   it('Nothing running: no tracking control', async () => {

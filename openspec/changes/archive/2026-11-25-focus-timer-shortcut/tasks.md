@@ -1,6 +1,6 @@
 ## 1. Indicator
 
-- [x] 1.1 `useRunning` marks the entry of the running Focus work stretch; the footer pill's body and the icon rail menu go to Focus for it, and open the task otherwise (vitest `src/app/timeTracking.test.tsx`)
+- [x] 1.1 `useRunning` marks the entry of the running Focus work stretch; the footer pill's body and the icon rail menu go to Focus for it, and open the task otherwise, including a paused session, a break and a session recording another entry; the rail's menu button keeps its tracking name (vitest `src/app/timeTracking.test.tsx`)
 - [x] 1.2 The bar's pill below 768 px goes to Focus for the session's entry and keeps the sheet otherwise (vitest `src/app/timeTracking.test.tsx`)
 - [x] 1.3 The new name "Go to Focus: {text}" in `messages.json` and every shipped catalog (`make i18n-check`)
 

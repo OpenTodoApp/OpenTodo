@@ -12,6 +12,6 @@ The indicator already reads the running entry (`useRunning`). It also reads the 
 
 ## D3. Name and look
 
-The accessible name keeps the visible text (WCAG 2.5.3) and names the destination: "Go to Focus: 1:05 · Write the report", one new message beside the existing "Go to Focus". The controls are already buttons in the tab order with the token focus ring and touch-height targets; classes, icon and text are unchanged, so no Storybook baseline changes.
+The accessible name keeps the visible text (WCAG 2.5.3) and names the destination: "Go to Focus: 1:05 · Write the report", one new message beside the existing "Go to Focus". This name is for the pill's body and the phone bar's button only: the icon rail's control opens a menu (`aria-haspopup="menu"`), so it keeps "Tracking …" and its menu item reads "Go to Focus", with the clock icon of the sidebar's Focus destination. The controls are already buttons in the tab order with the token focus ring and touch-height targets; classes, icon and text are unchanged, so no Storybook baseline changes.
 
 Data model: none; the indicator writes nothing and works offline from local rows. Bundle: no dependency; `lib/focus/state` is already in the shell's chunk (the break reminder). Interface budget: no new chrome, no new shortcut, no new scroll region.

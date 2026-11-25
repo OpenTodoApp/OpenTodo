@@ -60,9 +60,9 @@ function Announcer({ id, title }: { id: string | null; title: string }) {
  * The accessible name holds the visible text (WCAG "Label in Name"): "Tracking 1:05 ·
  * Write the report". It is not a live region, so the ticks are never announced.
  */
-const nameOf = (r: Running) => {
+const nameOf = (r: Running, focus = r.focus) => {
   const text = `${elapsedText(r.minutes)} · ${r.title}`
-  return r.focus ? t('Go to Focus: {text}', { text }) : t('Tracking {text}', { text })
+  return focus ? t('Go to Focus: {text}', { text }) : t('Tracking {text}', { text })
 }
 
 /** The footer's announcements (from 768 px); below it the phone bar's pill announces and the drawer's copy stays quiet. */
@@ -82,7 +82,8 @@ export function RunningPill({ running: r, collapsed = false }: { running: Runnin
   if (collapsed) {
     return (
       <div data-tracking-indicator className="w-full">
-        <Menu kind="menu" label={nameOf(r)} title={r.title} tip={`${elapsedText(r.minutes)} · ${r.title}`} tipSide="right" align="start" width="sm:w-56"
+        {/* The rail opens a menu, so it keeps the tracking name; "Go to Focus" is its item. */}
+        <Menu kind="menu" label={nameOf(r, false)} title={r.title} tip={`${elapsedText(r.minutes)} · ${r.title}`} tipSide="right" align="start" width="sm:w-56"
           triggerProps={{ 'data-tracking-open': true }}
           triggerClassName={`flex min-h-8 w-full items-center justify-center rounded-full bg-accent-soft px-1 text-hint font-semibold tabular-nums max-md:min-h-11 ${long}`}
           trigger={<span aria-hidden="true" data-tracking-text>{elapsedText(r.minutes)}</span>}>
