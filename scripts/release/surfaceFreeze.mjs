@@ -35,8 +35,11 @@ export function flattenSurface(v, prefix = '', out = {}) {
   return out
 }
 
+/** The path of a route's request field, the only kind of entry that may become optional. */
+const REQUEST_FIELD = /^routes › [A-Z]+ \S+ › request › /
+
 /** A request field that became optional (workspace-fields): compatible, as internal/httpapi compareSurface reads it. */
-const relaxed = (p, was, now) => p.includes(`${SEP}request${SEP}`) && now === `${was}?`
+const relaxed = (p, was, now) => REQUEST_FIELD.test(p) && now === `${was}?`
 
 /** surfaceProblems: entries of the tagged snapshot that are missing or changed in the current one. */
 export function surfaceProblems(tagged, current, tag = FREEZE_TAG, allowed = SECURITY_NARROWINGS) {

@@ -970,6 +970,13 @@ test('the surface freeze accepts a request field that became optional, not one t
   assert.deepEqual(surfaceProblems(tagged, relaxedNow, 'v1.0.0', {}), [])
   const required = { routes: { 'POST /api/v1/fields': { request: { project_id: 'id', name: 'string' } } } }
   assert.deepEqual(surfaceProblems(tagged, required, 'v1.0.0', {}), ['routes › POST /api/v1/fields › request › name: was "string?" at v1.0.0, now "string"'])
+  // Only a route's request: a response or MCP key named request stays frozen.
+  const other = { routes: { 'GET /api/v1/tasks/{id}': { response: { request: { id: 'id' } } } }, mcp: { tools: { list_tasks: { request: { limit: 'number' } } } } }
+  const otherNow = { routes: { 'GET /api/v1/tasks/{id}': { response: { request: { id: 'id?' } } } }, mcp: { tools: { list_tasks: { request: { limit: 'number?' } } } } }
+  assert.deepEqual(surfaceProblems(other, otherNow, 'v1.0.0', {}), [
+    'mcp › tools › list_tasks › request › limit: was "number" at v1.0.0, now "number?"',
+    'routes › GET /api/v1/tasks/{id} › response › request › id: was "id" at v1.0.0, now "id?"',
+  ])
 })
 
 test('the surface freeze names an entry deleted by hand after v1.0.0', () => {

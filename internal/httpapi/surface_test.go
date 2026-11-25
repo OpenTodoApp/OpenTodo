@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"maps"
 	"os"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -308,7 +309,7 @@ func compareSurface(snapshot, current map[string]string) surfaceDiff {
 			d.missing = append(d.missing, path+" is gone (removed or renamed)")
 		case now != was && strings.HasSuffix(was, "?") && now == strings.TrimSuffix(was, "?"):
 			d.changed = append(d.changed, path+": became required")
-		case now != was && strings.Contains(path, " › request › ") && now == was+"?":
+		case now != was && requestField.MatchString(path) && now == was+"?":
 			d.relaxed = append(d.relaxed, path)
 		case now != was:
 			d.changed = append(d.changed, fmt.Sprintf("%s: was %q, now %q", path, was, now))
@@ -326,13 +327,17 @@ func compareSurface(snapshot, current map[string]string) surfaceDiff {
 	return d
 }
 
+// requestField matches the path of a route's request field, the only kind of
+// entry that may become optional (scripts/release/surfaceFreeze.mjs has the twin).
+var requestField = regexp.MustCompile(`^routes › [A-Z]+ \S+ › request › `)
+
 // mergeSurface is the snapshot plus the new entries of current: -update adds,
 // and marks a request field that became optional, but never removes or
 // otherwise changes an entry.
 func mergeSurface(snapshot, current map[string]string) map[string]string {
 	out := maps.Clone(snapshot)
 	for path, v := range current {
-		if was, ok := out[path]; !ok || (strings.Contains(path, " › request › ") && v == was+"?") {
+		if was, ok := out[path]; !ok || (requestField.MatchString(path) && v == was+"?") {
 			out[path] = v
 		}
 	}
@@ -451,6 +456,8 @@ func TestCompareSurface(t *testing.T) {
 		"routes › GET /api/v1/tasks/{id} › response › completed_at": "nullable_number",
 		"routes › POST /api/v1/tasks › request › project_id":        "string|null?",
 		"routes › POST /api/v1/sections › request › project_id":     "id",
+		"routes › GET /api/v1/tasks/{id} › response › request › id": "id",
+		"mcp › tools › list_tasks › request › limit":                "number",
 		"routes › POST /api/v1/tasks › statuses › 201":              "",
 		"errors › bad_request › 400":                                "",
 		"cli › exit_codes › 2":                                      "usage",
@@ -484,6 +491,12 @@ func TestCompareSurface(t *testing.T) {
 		{"request field becomes optional", func(m map[string]string) {
 			m["routes › POST /api/v1/sections › request › project_id"] = "id?"
 		}, "relaxed: routes › POST /api/v1/sections › request › project_id"},
+		{"a response key named request cannot become optional", func(m map[string]string) {
+			m["routes › GET /api/v1/tasks/{id} › response › request › id"] = "id?"
+		}, `routes › GET /api/v1/tasks/{id} › response › request › id: was "id", now "id?"`},
+		{"an MCP key named request cannot become optional", func(m map[string]string) {
+			m["mcp › tools › list_tasks › request › limit"] = "number?"
+		}, `mcp › tools › list_tasks › request › limit: was "number", now "number?"`},
 		{"changed exit code", func(m map[string]string) {
 			m["cli › exit_codes › 2"] = "server_error"
 		}, `cli › exit_codes › 2: was "usage"`},
