@@ -15,7 +15,7 @@ const SKEW_TOLERANCE_MS = 2000
 const RESTART_AFTER_REFUSAL_MS = MAX_FUTURE_SKEW_MS / 2
 /**
  * The meta row holding the offset to server time, so the service worker
- * (public/push-sw.js), which writes ops from notification actions, stamps them
+ * (src/push-sw.js), which writes ops from notification actions, stamps them
  * with the same corrected clock (web-lint-and-test-hygiene).
  */
 export const CLOCK_OFFSET_META = 'hlc_offset'

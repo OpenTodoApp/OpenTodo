@@ -7359,6 +7359,7 @@
   "The server's list of files couldn't be read.": "无法读取服务器的文件列表。",
   "This server runs {version}": "此服务器运行 {version}",
   "This update wasn't installed.": "此更新未安装。",
+  "This server changed how the app checks updates. Don't enter your passphrase, and ask the server's operator.": "此服务器更改了应用检查更新的方式。请不要输入你的密语，并询问服务器的管理员。",
   "Updates are not signature-checked.": "更新不进行签名检查。",
   "Version {version}": "版本 {version}",
   "Verify key": "验证密钥",

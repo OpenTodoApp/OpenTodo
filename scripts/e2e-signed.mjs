@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Browser end to end of the signed web app (OpenSpec change signed-web-app,
-// tasks 5.3, 5.7 and 7.5): Chromium installs the app from a server and follows its
+// tasks 5.3, 5.7, 7.2, 7.4 and 7.5): Chromium installs the app from a server and follows its
 // updates, each signed with the test key (internal/websign/testdata). It checks
 // the trust record the service worker keeps:
 //
@@ -11,7 +11,12 @@
 //   4. a signed v0.9.0 is recorded as older;
 //   5. with the server stopped, a reload opens the app from the verified set;
 //   6. v1.3.0 says refuse: true and turns refusal on;
-//   7. a tampered v1.4.0 is refused: v1.3.0 stays, and the page shows the cause.
+//   6a. with refusal on, a task page is the verified t.html, a file the list doesn't
+//      name is a 404 although the server has it, and a page from /api/ is sandboxed;
+//   6b. the server swaps sw.js under the installed list: the page warns that it
+//      changed how the app checks updates;
+//   7. a tampered v1.4.0 is refused: v1.3.0 stays, and the page shows the cause,
+//      without the changed-worker warning (a newer signed list names its sw.js).
 //
 // Then a second, new device rehearses the key rotation (task 5.7) with
 // throwaway keys made by `websign keygen` in the temporary directory; the test
@@ -104,6 +109,12 @@ const v3 = release('v3', { version: '1.2.0' })
 const v0 = release('v0', { version: '0.9.0' })
 const v4 = release('v4-refuse', { version: '1.3.0', refuse: true })
 const v5 = release('v5-tampered', { version: '1.4.0', tamper: true })
+// A file the server has but no list names, as an injected script would be.
+writeFileSync(path.join(v4.dir, 'injected.js'), 'window.injected = true\n')
+// v1.3.0's files and list as installed, with another sw.js: no list names it.
+const v6 = { dir: path.join(tmp, 'v6-worker'), version: '1.3.0' }
+cpSync(v4.dir, v6.dir, { recursive: true })
+appendFileSync(path.join(v6.dir, 'sw.js'), '\n// not in any list\n')
 const r1 = release('r1', { version: '2.0.0', listed: listing([A], R) })
 const r2 = release('r2-a-and-b', { version: '2.1.0', signers: [A.file, B.file], listed: listing([A, B], R) })
 const r3 = release('r3-b', { version: '2.2.0', signers: [B.file], listed: listing([B], R) })
@@ -212,12 +223,33 @@ try {
   r = await until('v4 installed', (x) => x.current?.version === '1.3.0')
   check(r.refuse === true && r.lastCheck?.passed === true, 'refuse: true turns refusal on')
 
+  log('6a. refusal on: the worker is the only door')
+  // Every new worker has taken over (a navigation that a successor interrupts can stall in Chromium, task 7.5).
+  await page.waitForFunction(async () => !(await navigator.serviceWorker.getRegistration())?.waiting, null, { timeout: 20_000 })
+  const task = await page.goto(origin + '/t/abc', { waitUntil: 'load' })
+  const taskPage = await page.evaluate(() => !!document.querySelector('script[src*="/assets/t-"]'))
+  check(task?.fromServiceWorker() && taskPage && task.headers()['x-robots-tag'] === 'noindex, nofollow' && task.headers()['referrer-policy'] === 'no-referrer',
+    `a task page is the verified t.html with the server's headers (${JSON.stringify(task?.headers())})`)
+  await page.goto(origin + '/', { waitUntil: 'load' })
+  const injected = await page.evaluate(() => fetch('/injected.js').then((r) => r.status))
+  check(injected === 404, `a file no list names is a 404, though the server has it (${injected})`)
+  const doc = await page.goto(origin + '/api/v1/anything', { waitUntil: 'load' })
+  check(/sandbox allow-forms allow-same-origin/.test(doc?.headers()['content-security-policy'] ?? ''), `a page from /api/ is sandboxed (${doc?.headers()['content-security-policy']})`)
+  await page.goto(origin + '/', { waitUntil: 'load' })
+
+  log('6b. the server swaps sw.js under the installed list')
+  await serve(v6)
+  const warning = await page.waitForSelector('[data-update-banner="worker-changed"]', { timeout: 20_000 }).then((el) => el.textContent()).catch(() => '')
+  check(warning.includes("This server changed how the app checks updates. Don't enter your passphrase, and ask the server's operator."), `the page warns about the changed worker: "${warning}"`)
+
   log('7. tampered', v5.version, '(refusal on)')
   await serve(v5)
   r = await until('v5 refused', (x) => x.lastCheck?.version === '1.4.0')
   check(r.lastCheck?.refused === true && r.lastCheck?.cause === 'changed-file' && r.current?.version === '1.3.0', `tampered update refused, 1.3.0 kept (${JSON.stringify(r.lastCheck)})`)
   const banner = await page.waitForSelector('[data-update-banner="refused"]', { timeout: 15_000 }).then((el) => el.textContent()).catch(() => '')
   check(/This update wasn.t installed\. A proxy or the server changed the app.s files\./.test(banner) && banner.includes('What to do'), `the page names the cause: "${banner}"`)
+  await page.waitForLoadState('networkidle')
+  check(!(await page.$('[data-update-banner="worker-changed"]')), 'no changed-worker warning: a newer signed list names the new sw.js')
 
   // Key rotation, on a new device (task 5.7).
   await context.close()

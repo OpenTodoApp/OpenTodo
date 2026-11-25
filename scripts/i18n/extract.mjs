@@ -8,7 +8,7 @@
 // branch of a conditional), the text of <T>, plus two lists kept outside the
 // message layer: the shortcut registry in web/src/lib/shortcuts.ts (the keyboard
 // guide is generated from it, so it stays plain English and is translated where
-// it is shown), the English texts of the service worker (web/public/push-sw.js)
+// it is shown), the English texts of the service worker (web/src/push-sw.js)
 // and the Open Loops vocabulary (web/src/lib/method/vocabulary.json, whose method
 // name is a product name and stays untranslated).
 // A context option makes the key `message|context`.
@@ -99,7 +99,7 @@ export function extract(root = repo) {
     if (f.endsWith('web/src/lib/shortcuts.ts')) found.push(...shortcutMessages(f, text))
     found.push(...messagesIn(f, text))
   }
-  const sw = join(root, 'web/public/push-sw.js')
+  const sw = join(root, 'web/src/push-sw.js')
   found.push(...workerMessages(sw, readFileSync(sw, 'utf8')))
   const vocabulary = join(root, 'web/src/lib/method/vocabulary.json')
   found.push(...methodMessages(vocabulary, readFileSync(vocabulary, 'utf8')))

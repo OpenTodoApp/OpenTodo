@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { lazy } from '../lib/lazy'
-import { useRefusal, useUpdateReason } from '../lib/appUpdate'
+import { useRefusal, useUpdateReason, useWorkerChanged } from '../lib/appUpdate'
 import { t } from '../lib/i18n'
 import { ToastRegion } from '../ui'
 
@@ -14,11 +14,14 @@ export const UPDATE_NOTICE_CLASS = 'pointer-events-auto rounded-control border b
  * client-sync-robustness): a newer release took over this tab's service worker,
  * or a newer tab upgraded the local database (this tab can no longer save).
  * Once refusal is on (signed-web-app), an update the worker refused shows here
- * too, with its likely cause and the help page, and no reload.
+ * too, with its likely cause and the help page, and no reload; and a server
+ * worker no verified list names, before anything else (D8).
  */
 export function UpdateBanner() {
   const reason = useUpdateReason()
   const refused = useRefusal()
+  const workerChanged = useWorkerChanged()
+  if (workerChanged) return <Suspense fallback={null}><RefusedBanner refused={refused} workerChanged /></Suspense>
   if (reason) {
     return (
       <ToastRegion side="start">

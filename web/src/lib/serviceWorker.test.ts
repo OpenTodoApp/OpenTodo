@@ -23,11 +23,15 @@ describe('built service worker', () => {
   it.skipIf(!sw)('precaches the build, keeps the deny list and push, and handles the share POST', () => {
     expect(sw).toMatch(/"revision":"[0-9a-f]+"/)
     expect(sw).not.toContain('self.__WB_MANIFEST')
-    // A task page (/t/) is its own document, never the app (task-pages D8), and the
-    // OAuth endpoints and discovery documents reach the server too (mcp-oauth), and the
-    // OpenTodo app's sign-in (app-sign-in).
-    expect(sw).toContain('[/^\\/api\\//,/^\\/healthz/,/^\\/t\\//,/^\\/oauth\\//,/^\\/app\\/sign-in$/,/^\\/\\.well-known\\//,/^\\/mcp$/]')
-    expect(sw).toContain('push-sw.js')
+    // A task page, a note page and a stop page are t.html, never the app (task-pages D8);
+    // the OAuth endpoints and discovery documents reach the server (mcp-oauth), and so
+    // does the OpenTodo app's sign-in (app-sign-in).
+    expect(sw).toContain('[/^\\/t\\//,/^\\/n\\//,/^\\/routine-emails\\//]')
+    expect(sw).toContain('[/^\\/app\\/sign-in$/]')
+    expect(sw).toContain('[/^\\/api\\//,/^\\/healthz/,/^\\/dav\\//,/^\\/feeds\\//,/^\\/oauth\\//,/^\\/\\.well-known\\//,/^\\/mcp(\\/|$)/,')
+    // Reminder push is bundled in (signed-web-app D1): the list's hash of sw.js covers it.
+    expect(sw).toContain('notificationclick')
+    expect(sw).not.toContain('importScripts')
     expect(sw).toContain('/share?inbox=')
     expect(sw).toContain('opentodo-share')
     // A classic script (importScripts needs one): no module syntax at the top level.
@@ -56,6 +60,7 @@ describe('built file list', () => {
     }
     expect(m.worker).toEqual({ path: 'sw.js', sha256: m.files['sw.js'].sha256 })
     expect(m.files['manifest.webmanifest']).toBeUndefined()
+    expect(m.files['push-sw.js']).toBeUndefined()
     const legacy = JSON.parse(/opentodoPrecache=(\[[^\]]*\])/.exec(sw!)![1]) as { url: string }[]
     const installs = Object.keys(m.files).filter((p) => m.files[p].load === 'install').sort()
     // The interface catalogues are lazy with their language (precache-device-language D2),

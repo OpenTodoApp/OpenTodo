@@ -6,7 +6,7 @@ import { diagnosticsLine, officialFingerprints, type TrustRecord } from '../lib/
 import { AppCodeView } from './AppCodeRow'
 import { UpdateBanner } from './UpdateBanner'
 import RefusedBanner from './RefusedBanner'
-import { currentRefusal, dismissRefusal, resetAppUpdate, updateReason, watchAppUpdates } from '../lib/appUpdate'
+import { currentRefusal, dismissRefusal, useWorkerChanged, resetAppUpdate, updateReason, watchAppUpdates } from '../lib/appUpdate'
 
 const FP = 'aeca03a5fc4a754f6d9b9b66c61771f3375ce1d563b9a68e7efa36752b5b8b87'
 const files = { 'index.html': { sha256: 'a', size: 1, load: 'install' as const } }
@@ -121,5 +121,25 @@ describe('the refusal banner', () => {
     dismissRefusal()
     refused()
     expect(currentRefusal()).toBeNull()
+  })
+
+  it('warns about a server worker that no verified list names, without a reload or a help link (D8)', async () => {
+    const sw = Object.assign(new EventTarget(), { controller: { postMessage: () => {} } }) as unknown as ServiceWorkerContainer
+    watchAppUpdates(Object.assign(new EventTarget(), { location: { reload: () => {} } }), sw, Date.now, () => true, async () => true)
+    sw.dispatchEvent(new Event('controllerchange'))
+    await new Promise((r) => setTimeout(r, 0))
+    const Warned = () => <>{String(useWorkerChanged())}</>
+    expect(renderToStaticMarkup(<Warned />)).toBe('true')
+    const html = renderToStaticMarkup(<RefusedBanner refused={null} workerChanged />)
+    expect(html).toContain('data-update-banner="worker-changed"')
+    expect(html).toContain('This server changed how the app checks updates. Don&#x27;t enter your passphrase, and ask the server&#x27;s operator.')
+    expect(html).not.toContain('Reload to update')
+    expect(html).not.toContain('What to do')
+    // With a refusal too, both are said: the warning first, then the cause and the help page.
+    const both = renderToStaticMarkup(<RefusedBanner refused={{ ownKey: false, check: { at: 1, version: '1.4.0', passed: false, cause: 'older', refused: true } }} workerChanged />)
+    const warning = both.indexOf('This server changed how the app checks updates.')
+    expect(warning).toBeGreaterThan(-1)
+    expect(both.indexOf('This update wasn&#x27;t installed. The server went back to an older version.')).toBeGreaterThan(warning)
+    expect(both).toContain('What to do')
   })
 })

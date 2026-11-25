@@ -111,9 +111,11 @@ While the relay is on, the server is trusted with content within those caps; see
 - `web/src/lib/appInstall.test.ts`: the worker's checks: first use and its modes, a valid update, a tampered chunk recorded while reporting and refused with refusal on, unsigned, unknown-key, bad-signature and older lists, a cut-off download that leaves the current set, offline, lazy chunks, a rotation, refusal that a later list cannot turn off, and the trust record surviving sign-out.
 - `web/src/lib/pagePolicy.test.ts` and `TestCSPFixture`: the page policy the worker writes equals the server's `cspBase` and keeps `script-src 'self'` whatever the server sends.
 - `TestServedAsBuilt` and `TestSecurityHeaders`: `/index.html` as built, the list never cached, `no-transform` on the app's files.
-- `scripts/e2e-signed.mjs` (`make e2e-signed`): Chromium against real servers signed with the test key.
+- `web/src/swRoutes.test.ts`: with refusal on, a 404 for paths the list doesn't name, task pages from the checked `t.html`, and server pages that run no script.
+- `web/src/lib/workerChange.test.ts`: the warning for a service worker no signed list names.
+- `scripts/e2e-signed.mjs` (`make e2e-signed`): Chromium against real servers signed with the test key, including refusal, those serving rules and a swapped service worker.
 
-**Not verified yet:** refusal in a real browser and on hosting such as PikaPods and Cloudflare; that is the gate for turning it on.
+**Not verified yet:** refusal on hosting such as PikaPods and Cloudflare; that is the gate for turning it on.
 
 ## The route policy wrapper
 

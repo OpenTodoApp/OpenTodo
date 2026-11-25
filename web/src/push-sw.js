@@ -1,8 +1,8 @@
 // Reminder push handling for the service worker (OpenSpec change `reminders`,
-// design D7). Imported by the generated Workbox service worker (vite.config.ts,
-// workbox.importScripts). Plain JavaScript on purpose: it runs outside the
-// bundle and talks to the app's IndexedDB ("opentodo", the Dexie database in
-// src/lib/db.ts) with the raw API.
+// design D7). Bundled into the service worker (sw.ts imports it), so the signed
+// file list's hash of sw.js covers it too (signed-web-app D1). Plain JavaScript
+// on purpose: it shares no code with the app's bundle and talks to the app's
+// IndexedDB ("opentodo", the Dexie database in src/lib/db.ts) with the raw API.
 //
 // - push: if a window of the app is focused, hand the reminder to it (in-app
 //   toast only, no system notification); otherwise show a notification titled
@@ -18,7 +18,6 @@
 // - badge (OpenSpec change app-icon-badge): a push that arrives with the app closed
 //   sets the app icon badge to the count of the logical today from the counts the
 //   app stored in meta "badge:today" (src/lib/appBadge.ts). The push carries no count.
-/* eslint-disable no-restricted-globals */
 ;(() => {
   const DB_NAME = 'opentodo'
   const SHOWN_KEY = 'reminders:shown'
@@ -26,7 +25,7 @@
   const BADGE_KEY = 'badge:today'
 
   // Notification texts in the interface language stored on this device (OpenSpec
-  // change app-localization, design D7). The worker runs outside the bundle and
+  // change app-localization, design D7). The worker runs outside the app's bundle and
   // cannot load the catalogs, so it keeps its few texts here; each entry is pinned
   // to the app catalog's translation of the English text by src/lib/pushWorker.test.ts.
   // A missing preferences row or "system" means English: the worker cannot know

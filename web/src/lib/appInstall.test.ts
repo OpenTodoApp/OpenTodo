@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { base64Decode, fingerprint } from './appCode'
-import { answerAfterFailure, checkForUpdate, cachedFile, fetchLazy, pruneCaches, stagingName, type InstallEnv } from './appInstall'
+import { checkForUpdate, cachedFile, fetchLazy, pruneCaches, stagingName, type InstallEnv } from './appInstall'
 import { loadTrust, updateTrust, type TrustRecord } from './appTrust'
 import { clearLocalData } from './db'
 
@@ -155,6 +155,8 @@ describe('first install', () => {
     const r = e.record()
     expect(r).toMatchObject({ mode: 'signed', refuse: false, signer: await fingerprint(keys.release.spki), verified: { version: '1.3.0' } })
     expect(r.keys).toEqual([keys.release.spki, keys.recovery.spki])
+    // The worker the list names, for the changed-worker warning (D8).
+    expect(r.current?.worker).toBe(sha('w1'))
     expect(await text(await cachedFile(e, r, 'index.html'))).toBe('<div id=root>1</div>')
     expect(await cachedFile(e, r, 'assets/MapView-1.js')).toBeNull()
     expect(srv.requests).not.toContain('/assets/MapView-1.js')
@@ -534,10 +536,6 @@ describe('lazy files (design D7)', () => {
     // A changed one answers 404 although its check could not be recorded.
     srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
     expect((await fetchLazy(e, e.record(), 'assets/MapView-1.js'))?.response.status).toBe(404)
-    // And a request whose handling throws answers 404 for a listed file, the network only for others.
-    expect(answerAfterFailure(e.record(), 'assets/MapView-1.js')?.status).toBe(404)
-    expect(answerAfterFailure(e.record(), 'robots.txt')).toBeNull()
-    expect(answerAfterFailure({ ...e.record(), refuse: false }, 'assets/MapView-1.js')).toBeNull()
   })
 
   it('answers 404 for a listed file that could not be downloaded, and never serves a later changed one', async () => {

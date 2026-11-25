@@ -262,6 +262,7 @@ export async function checkForUpdate(env: InstallEnv): Promise<CheckOutcome> {
   // Install: the staged set becomes current in one write. The mode, the keys
   // and refusal move forward only on a check that passed, or on first use (D17).
   const installed: InstalledVersion = { version, payloadHash, cache: cacheName, files: list.manifest.files, at: now }
+  if (typeof list.manifest.worker?.sha256 === 'string') installed.worker = list.manifest.worker.sha256
   const first = !record
   const passed = !cause
   // First use decides the mode; after that only a passing check moves it, and
@@ -315,16 +316,6 @@ export async function cachedFile(env: Pick<InstallEnv, 'caches'>, record: TrustR
 }
 
 export type LazyResult = { response: Response; check?: CheckResult }
-
-/**
- * The answer for a request whose handling threw: 404 for a listed file once
- * refusal is on, so nothing unchecked is served; null (the network) otherwise,
- * as report-only serves while it records (D17).
- */
-export function answerAfterFailure(record: TrustRecord | null, path: string): Response | null {
-  if (!record?.refuse) return null
-  return path in (record.current?.files ?? {}) || path in (record.previous?.files ?? {}) ? new Response('', { status: 404 }) : null
-}
 
 /**
  * A listed file that isn't stored yet (a lazy chunk such as the map): fetched,

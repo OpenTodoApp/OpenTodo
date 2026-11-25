@@ -214,10 +214,10 @@
     "web/src/app/NotificationBell.tsx"
   ],
   "<b>{inviter}</b> invited you to the project <b2>{name}</b2> as {role}": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "<b>{inviter}</b> invited you to the workspace <b2>{name}</b2> as {role}": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "<b>{name}</b> replied on <b2>{task}</b2>": [
     "web/src/app/NotificationBell.tsx"
@@ -815,7 +815,7 @@
     "web/src/app/themes/tokenNames.ts"
   ],
   "Accept": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "Accept and continue": [
     "web/src/app/assistant/AssistantConsent.tsx"
@@ -1847,19 +1847,19 @@
     "web/src/app/RelaySettings.tsx"
   ],
   "Answering an AI connector": [
-    "web/src/app/RelaySettings.tsx"
+    "web/src/app/RelayIndicator.tsx"
   ],
   "Answering an AI connector: {tool}": [
-    "web/src/app/RelaySettings.tsx"
+    "web/src/app/RelayIndicator.tsx"
   ],
   "Answering an invitation needs a connection.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Answering needs a connection to your server.": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "Answering {token}: {tool}": [
-    "web/src/app/RelaySettings.tsx"
+    "web/src/app/RelayIndicator.tsx"
   ],
   "Answers on your key do not count toward the server’s monthly limit.": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -3708,7 +3708,8 @@
   ],
   "Collapse {name}": [
     "web/src/app/ProjectsTable.tsx",
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/SubProjects.tsx"
   ],
   "Collection URL": [
     "web/src/app/BackupsPanel.tsx"
@@ -4894,7 +4895,7 @@
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Decline": [
-    "web/src/app/MemberInvitations.tsx",
+    "web/src/app/InvitationAnswer.tsx",
     "web/src/app/RelayConfirm.tsx"
   ],
   "Declined": [
@@ -5361,7 +5362,6 @@
     "web/src/app/ConnectedApps.tsx"
   ],
   "Dismiss": [
-    "web/public/push-sw.js",
     "web/src/app/ArchivePrompt.tsx",
     "web/src/app/DemoBanner.tsx",
     "web/src/app/RefusedBanner.tsx",
@@ -5373,7 +5373,8 @@
     "web/src/app/assistant/ComposerCapture.tsx",
     "web/src/app/bulk/UndoToast.tsx",
     "web/src/app/quickadd/VoiceParts.tsx",
-    "web/src/app/routines/ProposalReview.tsx"
+    "web/src/app/routines/ProposalReview.tsx",
+    "web/src/push-sw.js"
   ],
   "Dismiss {name}": [
     "web/src/app/routines/RoutinesInboxCard.tsx"
@@ -5495,7 +5496,7 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Done|task": [
-    "web/public/push-sw.js"
+    "web/src/push-sw.js"
   ],
   "Don’t ask again for {scheme}: on this device": [
     "web/src/app/AppLinkConfirm.tsx"
@@ -5648,11 +5649,11 @@
     "web/src/app/filter/conditionText.ts"
   ],
   "Due {date}": [
-    "web/public/push-sw.js",
     "web/src/app/TriageView.tsx",
     "web/src/app/away/AwayDialog.tsx",
     "web/src/app/focus/FocusParts.tsx",
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/push-sw.js"
   ],
   "Due {from} → {to}": [
     "web/src/lib/assistant.ts"
@@ -6560,7 +6561,8 @@
   ],
   "Expand {name}": [
     "web/src/app/ProjectsTable.tsx",
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/SubProjects.tsx"
   ],
   "Expected \"&\" or \"|\" before \"{before}\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
@@ -14734,13 +14736,13 @@
     "web/src/app/ParseChips.tsx"
   ],
   "Reminder": [
-    "web/public/push-sw.js",
     "web/src/app/ParseChips.tsx",
     "web/src/app/ReminderToasts.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
-    "web/src/lib/facets.ts"
+    "web/src/lib/facets.ts",
+    "web/src/push-sw.js"
   ],
   "Reminder date": [
     "web/src/app/RemindersField.tsx"
@@ -15598,7 +15600,7 @@
     "web/src/app/help/HelpView.tsx"
   ],
   "Running {name}…": [
-    "web/src/app/RelaySettings.tsx",
+    "web/src/app/RelayIndicator.tsx",
     "web/src/app/routines/RoutinesDevice.tsx"
   ],
   "Runs": [
@@ -16845,6 +16847,7 @@
     "web/src/app/AppSessions.tsx",
     "web/src/app/ProjectInviteScreen.tsx",
     "web/src/app/SidebarFooter.tsx",
+    "web/src/app/SignOutDialog.tsx",
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/UnlockScreen.tsx"
   ],
@@ -16870,7 +16873,7 @@
     "web/src/app/settingsIndex.ts"
   ],
   "Sign out of this device?": [
-    "web/src/app/AccountSettings.tsx"
+    "web/src/app/SignOutDialog.tsx"
   ],
   "Sign out of {name} too": [
     "web/src/app/SsoPanel.tsx"
@@ -17091,8 +17094,8 @@
     "web/src/app/ReminderToasts.tsx"
   ],
   "Snooze 10 min": [
-    "web/public/push-sw.js",
-    "web/src/app/ReminderToasts.tsx"
+    "web/src/app/ReminderToasts.tsx",
+    "web/src/push-sw.js"
   ],
   "Snooze 10 minutes": [
     "web/src/app/RemindersField.tsx"
@@ -17171,9 +17174,8 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Someone": [
-    "web/public/push-sw.js",
     "web/src/app/FeedView.tsx",
-    "web/src/app/MemberInvitations.tsx",
+    "web/src/app/InvitationAnswer.tsx",
     "web/src/app/NotificationBell.tsx",
     "web/src/app/ProjectActivity.tsx",
     "web/src/app/WorkspaceActivity.tsx",
@@ -17181,7 +17183,8 @@
     "web/src/app/assistant/blocks/TaskBlock.tsx",
     "web/src/app/task-detail/ActivityTab.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
-    "web/src/app/task-detail/HistoryTab.tsx"
+    "web/src/app/task-detail/HistoryTab.tsx",
+    "web/src/push-sw.js"
   ],
   "Someone else": [
     "web/src/lib/method/groups.ts"
@@ -17659,7 +17662,8 @@
     "web/src/lib/templateLibrary.ts"
   ],
   "Sub-projects": [
-    "web/src/app/SubProjects.tsx"
+    "web/src/app/SubProjects.tsx",
+    "web/src/lib/listGroups.ts"
   ],
   "Subject": [
     "web/src/lib/rules/sentence.ts"
@@ -18142,7 +18146,7 @@
     "web/src/lib/push.ts"
   ],
   "Test notification: push works on this device.": [
-    "web/public/push-sw.js"
+    "web/src/push-sw.js"
   ],
   "Test runs every step against your tasks and shows what each would do. Nothing is written.": [
     "web/src/app/routines/RoutineEditor.tsx"
@@ -19169,7 +19173,8 @@
     "web/src/lib/fields.ts"
   ],
   "The tasks must be in one project": [
-    "web/src/app/bulk/BulkActions.tsx"
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/task-list/useListDrag.ts"
   ],
   "The test failed": [
     "web/src/app/OutgoingEmailPanel.tsx"
@@ -19962,6 +19967,9 @@
   ],
   "This server cannot email links until the owner sets its public address (OPENTODO_BASE_URL).": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "This server changed how the app checks updates. Don't enter your passphrase, and ask the server's operator.": [
+    "web/src/lib/appCodeCopy.ts"
   ],
   "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": [
     "web/src/lib/limits.ts"
@@ -21177,7 +21185,7 @@
     "web/src/app/calendar/DayColumn.tsx"
   ],
   "Unsynced changes are uploaded first when you are online, then the local copy of your tasks is cleared from this device. Your data stays on your server.": [
-    "web/src/app/AccountSettings.tsx"
+    "web/src/app/SignOutDialog.tsx"
   ],
   "Untitled": [
     "web/src/app/CalendarView.tsx",
@@ -21293,7 +21301,7 @@
     "web/src/lib/trash.ts"
   ],
   "Untitled routine": [
-    "web/src/app/RelaySettings.tsx",
+    "web/src/app/RelayIndicator.tsx",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/palette/routineCommand.ts",
     "web/src/app/routines/RoutineEditor.tsx",
@@ -22372,7 +22380,7 @@
     "web/src/app/AuthScreen.tsx"
   ],
   "You have a reminder": [
-    "web/public/push-sw.js"
+    "web/src/push-sw.js"
   ],
   "You have not accepted yet; the assistant asks before your first message.": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -22740,7 +22748,7 @@
     "web/src/lib/assistant.ts"
   ],
   "a project": [
-    "web/src/app/MemberInvitations.tsx",
+    "web/src/app/InvitationAnswer.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/lib/assistant.ts"
   ],
@@ -22810,7 +22818,7 @@
     "web/src/app/routines/words.tsx"
   ],
   "a workspace": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "accept the assistant’s updated terms for routines": [
     "web/src/lib/rules/catalogue.ts"
@@ -26207,7 +26215,7 @@
     "web/src/app/Briefing.tsx"
   ],
   "{name} assigned you a task": [
-    "web/public/push-sw.js"
+    "web/src/push-sw.js"
   ],
   "{name} can sign in again.": [
     "web/src/app/UsersPanel.tsx"
@@ -26216,7 +26224,7 @@
     "web/src/lib/assistant.ts"
   ],
   "{name} completed a task": [
-    "web/public/push-sw.js"
+    "web/src/push-sw.js"
   ],
   "{name} failed · {why}": [
     "web/src/lib/rules/inbox.ts"
@@ -26274,7 +26282,7 @@
     "web/src/lib/rules/inbox.ts"
   ],
   "{name} reopened a task": [
-    "web/public/push-sw.js"
+    "web/src/push-sw.js"
   ],
   "{name} replied": [
     "web/src/app/Briefing.tsx"
@@ -26708,8 +26716,8 @@
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "{tiny} is enough": [
-    "web/public/push-sw.js",
-    "web/src/app/ReminderToasts.tsx"
+    "web/src/app/ReminderToasts.tsx",
+    "web/src/push-sw.js"
   ],
   "{title} and its history move to the Trash.": [
     "web/src/app/habits/HabitPage.tsx"

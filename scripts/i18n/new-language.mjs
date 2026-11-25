@@ -6,7 +6,7 @@
 // It refuses a code that is not two or three lowercase letters, and a language
 // that already has a file on any surface, before writing anything. Then it writes:
 //   - web/src/locales/<code>.json as {} (unlisted, so work in progress),
-//   - an empty entry in the service worker's table (web/public/push-sw.js),
+//   - an empty entry in the service worker's table (web/src/push-sw.js),
 //   - extension/_locales/<code>/messages.json: the English values, each description
 //     starting "TODO translate" (the store packages leave the folder out until then),
 //   - mobile/android/app/src/main/res/values-<code>/strings.xml with no strings,
@@ -44,7 +44,7 @@ export function refusal(root, code, name) {
   if (existsSync(join(root, TEMPLATES))) {
     found.push(...readdirSync(join(root, TEMPLATES)).filter((f) => f.endsWith(`.${code}.txt`)).map((f) => `${TEMPLATES}/${f}`))
   }
-  if (workerTexts(root)[code]) found.push(`the ${code} entry in web/public/push-sw.js`)
+  if (workerTexts(root)[code]) found.push(`the ${code} entry in web/src/push-sw.js`)
   if (channelRows(root)[code]) found.push(`the ${code} row in internal/channels/messages.go`)
   return found.length ? `${code} already exists: ${found.join(', ')}` : null
 }
@@ -104,7 +104,7 @@ export function vocabularyStub(root, code, name) {
 /** The service worker with an empty entry for the language at the end of its table. */
 export function workerWithEntry(text, code) {
   const end = /\n {2}\}\n {2}self\.__opentodoText = /.exec(text)
-  if (!end) throw new Error('web/public/push-sw.js: the end of the OWN_TEXT table was not found')
+  if (!end) throw new Error('web/src/push-sw.js: the end of the OWN_TEXT table was not found')
   return `${text.slice(0, end.index)}\n    ${code}: {},${text.slice(end.index)}`
 }
 
@@ -133,7 +133,7 @@ export function plan(root, code, name) {
   const why = refusal(root, code, name)
   if (why) throw new Error(why)
   const files = [[`web/src/locales/${code}.json`, '{}\n']]
-  files.push(['web/public/push-sw.js', workerWithEntry(readFileSync(join(root, 'web/public/push-sw.js'), 'utf8'), code)])
+  files.push(['web/src/push-sw.js', workerWithEntry(readFileSync(join(root, 'web/src/push-sw.js'), 'utf8'), code)])
   const en = JSON.parse(readFileSync(join(root, 'extension/_locales/en/messages.json'), 'utf8'))
   files.push([`extension/_locales/${code}/messages.json`, `${JSON.stringify(extensionStub(en), null, 2)}\n`])
   files.push([`${RES}/values-${code}/strings.xml`, [

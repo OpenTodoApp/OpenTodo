@@ -7370,6 +7370,7 @@
   "The server's list of files couldn't be read.": "Non è stato possibile leggere l’elenco dei file del server.",
   "This server runs {version}": "Questo server ha la versione {version}",
   "This update wasn't installed.": "Questo aggiornamento non è stato installato.",
+  "This server changed how the app checks updates. Don't enter your passphrase, and ask the server's operator.": "Questo server ha cambiato il modo in cui l’app controlla gli aggiornamenti. Non inserire la tua passphrase e chiedi a chi gestisce il server.",
   "Updates are not signature-checked.": "La firma degli aggiornamenti non viene verificata.",
   "Version {version}": "Versione {version}",
   "Verify key": "Verifica la chiave",

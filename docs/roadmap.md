@@ -23,7 +23,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 
 | Change | What | Status |
 | --- | --- | --- |
-| `signed-web-app` | The installed app checks every update against a file list signed at release, so a compromised server cannot serve changed code; report-only first | In progress (25 of 40) |
+| `signed-web-app` | The installed app checks every update against a file list signed at release, so a compromised server cannot serve changed code; report-only first | In progress (28 of 40) |
 | `external-security-review` | A threat model and disclosure policy; an independent security review is optional, depending on funding | In progress (38 of 44) |
 | `caldav-verified` | CalDAV verified on real clients | In progress (6 of 16) |
 | `play-production` | Google Play production, F-Droid and reproducible builds: reproducible builds, the F-Droid metadata and the Play upload are in; the store listings wait for the owner's Play Console and F-Droid steps | In progress (15 of 18) |

@@ -7,7 +7,7 @@
 //
 // The surfaces, each counted against its English source:
 //   web          web/src/locales/<code>.json against messages.json
-//   notifications the service worker's table in web/public/push-sw.js
+//   notifications the service worker's table in web/src/push-sw.js
 //   extension    extension/_locales/<code>/messages.json (a "TODO translate" description is untranslated)
 //   android      mobile/android/app/src/main/res/values-<code>/strings.xml
 //   ios          the iOS shell's String Catalog, mobile/ios/Shared/Localizable.xcstrings
@@ -51,9 +51,9 @@ export function webSurface(root, code) {
 
 /** The service worker's own texts per language (the table it exposes as self.__opentodoText). */
 export function workerTexts(root = repo) {
-  if (!has(root, 'web/public/push-sw.js')) return {}
+  if (!has(root, 'web/src/push-sw.js')) return {}
   const self = { addEventListener() {}, navigator: { languages: [] } }
-  runInNewContext(read(root, 'web/public/push-sw.js'), { self, fetch() {}, indexedDB: undefined, Intl, console })
+  runInNewContext(read(root, 'web/src/push-sw.js'), { self, fetch() {}, indexedDB: undefined, Intl, console })
   return self.__opentodoText ?? {}
 }
 

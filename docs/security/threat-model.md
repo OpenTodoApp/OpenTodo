@@ -556,7 +556,7 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
 
 ### Web client
 
-- **Code:** `web/src`, the service worker `web/src/sw.ts` and `web/public/push-sw.js`.
+- **Code:** `web/src`, the service worker `web/src/sw.ts` and `web/src/push-sw.js`.
 - **Controls:**
   - Markdown is rendered by an in-house renderer to React elements. Raw HTML stays text, and only `http(s)` and `mailto` links are rendered (`web/src/lib/markdown.test.ts`).
   - Links from encrypted data open only `http(s)`.

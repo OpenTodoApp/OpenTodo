@@ -1,14 +1,17 @@
 /// <reference lib="webworker" />
 // The app's service worker. It installs the web app from the signed file list
 // and serves it (OpenSpec change signed-web-app; the checks are in
-// lib/appInstall.ts), handles reminder push (push-sw.js, OpenSpec `reminders`)
+// lib/appInstall.ts), handles reminder push (push-sw.js, bundled in, so the
+// list's hash of this file covers it: OpenSpec `reminders`, signed-web-app D1)
 // and the share sheet's POST /share with files, handed to the page through
 // IndexedDB (attachments D9). While refusal is off (report-only, design D17),
 // every check runs and is recorded, and updates are installed anyway.
-import { answerAfterFailure, checkForUpdate, cachedFile, fetchLazy, pruneCaches, type CheckOutcome, type InstallEnv } from './lib/appInstall'
+import { checkForUpdate, cachedFile, fetchLazy, pruneCaches, type CheckOutcome, type InstallEnv } from './lib/appInstall'
 import { loadTrust, rememberedMode, trustReader, updateTrust, trustsOwnKey, type TrustRecord, type TrustState } from './lib/appTrust'
-import { pagePolicy } from './lib/pagePolicy'
+import { pagePolicy, sandboxed } from './lib/pagePolicy'
 import { entryFromForm, entrySize, putInboxEntry, SHARE_MAX_BYTES, shareRequestVerdict } from './lib/shareInbox'
+// Reminder push, notification actions and the shown set (OpenSpec `reminders`).
+import './push-sw.js'
 
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: (string | { url: string; revision: string | null })[] }
 /** The keys built into this worker (vite.config.ts): the official keys, or an own-key build's key. */
@@ -21,9 +24,6 @@ declare const __APP_KEYS__: string[]
 // so the browser installs the new worker and its install runs the check
 // (design D6). Nothing here reads it.
 ;(self as unknown as { opentodoPrecache: unknown }).opentodoPrecache = self.__WB_MANIFEST
-
-// Reminder push, notification actions and the shown set (OpenSpec `reminders`).
-importScripts('push-sw.js')
 
 const env: InstallEnv = {
   fetch: (path, init) => fetch(new URL(path, self.location.origin).href, init),
@@ -54,12 +54,13 @@ async function trust(): Promise<TrustRecord | null> {
   return (await records.read()).record
 }
 /**
- * While the record cannot be read and refusal applies, an app file that was not
- * answered checked gets a 404, whatever record stands in (it may be older than the
- * set just installed): never the network. Files the stand-in's sets hold in the
- * cache are served: each was checked when it was stored.
+ * The answer for an app path that wasn't answered checked, once refusal applies: a
+ * 404, never the network (design D7, phase 2). That covers a path the list doesn't
+ * name, and, while the record cannot be read, any path the stand-in record (which
+ * may be older than the set just installed) can't answer from the cache. Files the
+ * stand-in's sets hold in the cache are served: each was checked when it was stored.
  */
-const closedFor = (t: TrustState): Response | null => (t.unreadable && t.refuse ? new Response('', { status: 404 }) : null)
+const refusedPath = (t: TrustState): Response | null => (t.refuse ? new Response('', { status: 404 }) : null)
 
 async function tell(message: Record<string, unknown>): Promise<void> {
   // An own-key build's refusal names that key instead of OpenTodo (design D11).
@@ -127,7 +128,6 @@ self.addEventListener('message', (event) => {
 
 // Nothing under /api/ (in particular the live event stream) or /healthz is ever
 // answered by the app shell or stored in a cache.
-// A task page (/t/, task-pages D8) is its own document from the server, never the app.
 // The OAuth endpoints and the discovery documents must reach the server too
 // (mcp-oauth): answered with the app shell, an authorize navigation showed the
 // app and the connection stopped without a code ever being issued. /mcp itself
@@ -135,9 +135,15 @@ self.addEventListener('message', (event) => {
 // The OpenTodo app's sign-in (app-sign-in) is the same kind of address:
 // answered with the app shell, the sign-in sheet showed the web app instead of the
 // confirmation, in every browser that had opened the web app before.
-const NAVIGATION_DENYLIST = [/^\/api\//, /^\/healthz/, /^\/t\//, /^\/oauth\//, /^\/app\/sign-in$/, /^\/\.well-known\//, /^\/mcp$/]
-// The server's own addresses: never a script, a worker or a stylesheet (design D7).
-const DATA_PATHS = [/^\/api\//, /^\/healthz/, /^\/dav\//, /^\/feeds\//, /^\/oauth\//, /^\/\.well-known\//, /^\/mcp(\/|$)/, /^\/branding\//, /^\/manifest\.webmanifest$/]
+const SERVER_PAGES = [/^\/app\/sign-in$/]
+// A task page, a note page and a routine email's stop page (task-pages D8,
+// note-public-links D1, routines-shared-email D5) are t.html, never the app.
+const TASK_PAGES = [/^\/t\//, /^\/n\//, /^\/routine-emails\//]
+// A public list page (public-links D7) is the app, with the server's headers.
+const PUBLIC_LIST = /^\/public\//
+// The server's own addresses: never a script, a worker or a stylesheet, and a page from one is the server's document (design D7).
+// The signed list is one: the page reads the server's own (lib/workerChange.ts).
+const DATA_PATHS = [/^\/api\//, /^\/healthz/, /^\/dav\//, /^\/feeds\//, /^\/oauth\//, /^\/\.well-known\//, /^\/mcp(\/|$)/, /^\/branding\//, /^\/manifest\.webmanifest$/, /^\/app-manifest\.json$/, PUBLIC_LIST]
 const CODE_DESTINATIONS = new Set(['script', 'worker', 'sharedworker', 'style', 'serviceworker'])
 
 
@@ -151,23 +157,27 @@ async function refreshPolicy(): Promise<void> {
   }
 }
 
-async function navigation(event: FetchEvent): Promise<Response> {
-  const t = await trustState()
+/** The headers the server sends with a task page and a public list (task-pages D8, public-links D7), kept when the worker serves them. */
+const TASK_PAGE_HEADERS = { 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer', 'Cache-Control': 'no-store' }
+const PUBLIC_LIST_HEADERS = { 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer' }
+
+/** A page of the verified set (index.html, or t.html once refusal is on) with the build's policy and `extra` headers. */
+async function page(event: FetchEvent, t: TrustState, file: string, extra: Record<string, string> = {}): Promise<Response> {
   event.waitUntil(Promise.all([refreshPolicy(), check()]))
-  let page: Response | null
+  let doc: Response | null
   try {
-    page = await cachedFile(env, t.record, 'index.html')
+    doc = await cachedFile(env, t.record, file)
   } catch {
     // The cache cannot be read: report-only keeps the network (D17), refusal serves nothing unchecked.
     return t.refuse ? new Response('', { status: 404 }) : fetch(event.request)
   }
-  if (!page) {
+  if (!doc) {
     // Report-only keeps the network (D17). With refusal the page is served only
     // checked against the record: fetched and checked now, or not at all.
     if (!t.refuse) return fetch(event.request)
-    const lazy = t.record ? await fetchLazy(env, t.record, 'index.html', !t.unreadable, t.refuse).catch(() => null) : null
+    const lazy = t.record ? await fetchLazy(env, t.record, file, !t.unreadable, t.refuse).catch(() => null) : null
     if (!lazy || lazy.check || !lazy.response.ok) return new Response('', { status: 404 })
-    page = lazy.response
+    doc = lazy.response
   }
   let stored: Response | undefined
   try {
@@ -176,10 +186,37 @@ async function navigation(event: FetchEvent): Promise<Response> {
     // The stored policy cannot be read: report-only keeps the network, refusal the built-in policy.
     if (!t.refuse) return fetch(event.request)
   }
-  const headers = new Headers(page.headers)
+  const headers = new Headers(doc.headers)
   headers.set('Content-Security-Policy', pagePolicy(stored ? await stored.text() : null))
   headers.set('Cache-Control', 'no-cache')
-  return new Response(await page.blob(), { status: 200, headers })
+  for (const [k, v] of Object.entries(extra)) headers.set(k, v)
+  return new Response(await doc.blob(), { status: 200, headers })
+}
+
+async function navigation(event: FetchEvent, extra?: Record<string, string>): Promise<Response> {
+  return page(event, await trustState(), 'index.html', extra)
+}
+
+/**
+ * A task page: the server's while reporting; once refusal is on, the verified
+ * t.html with the server's headers (design D7, phase 2), so its code is checked
+ * like the app's.
+ */
+async function taskPage(event: FetchEvent): Promise<Response> {
+  const t = await trustState()
+  return t.refuse ? page(event, t, 't.html', TASK_PAGE_HEADERS) : fetch(event.request)
+}
+
+/**
+ * A page from one of the server's addresses (an attachment opened in a tab, a
+ * sign-in step): the server's own document. Once refusal is on it is
+ * sandboxed (design D7, phase 2): no script runs in it, so it cannot read the
+ * app's storage.
+ */
+async function serverDocument(event: FetchEvent): Promise<Response> {
+  const t = await trustState()
+  const res = await fetch(event.request)
+  return t.refuse ? sandboxed(res) : res
 }
 
 async function appFile(event: FetchEvent, path: string): Promise<Response> {
@@ -198,10 +235,10 @@ async function appFile(event: FetchEvent, path: string): Promise<Response> {
         return lazy.response
       }
     }
-    return closedFor(t) ?? fetch(event.request)
+    return refusedPath(t) ?? fetch(event.request)
   } catch {
     // Decided from the same snapshot: no second read within one request.
-    return answerAfterFailure(t.record, path) ?? closedFor(t) ?? fetch(event.request)
+    return refusedPath(t) ?? fetch(event.request)
   }
 }
 
@@ -215,14 +252,21 @@ self.addEventListener('fetch', (event) => {
   }
   if (request.method !== 'GET') return
   const path = url.pathname
+  const navigate = request.mode === 'navigate'
+  if (navigate && PUBLIC_LIST.test(path)) {
+    event.respondWith(navigation(event, PUBLIC_LIST_HEADERS))
+    return
+  }
   if (DATA_PATHS.some((re) => re.test(path))) {
     // A JSONP-style answer or a stylesheet from the server's addresses never runs.
     if (CODE_DESTINATIONS.has(request.destination)) event.respondWith(new Response('', { status: 404 }))
+    else if (navigate) event.respondWith(serverDocument(event))
     return
   }
-  if (request.mode === 'navigate') {
-    if (NAVIGATION_DENYLIST.some((re) => re.test(path))) return
-    event.respondWith(navigation(event))
+  if (navigate) {
+    if (TASK_PAGES.some((re) => re.test(path))) event.respondWith(taskPage(event))
+    else if (SERVER_PAGES.some((re) => re.test(path))) event.respondWith(serverDocument(event))
+    else event.respondWith(navigation(event))
     return
   }
   let rel: string

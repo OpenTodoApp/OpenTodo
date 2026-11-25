@@ -13,7 +13,7 @@ import { status } from './status.mjs'
 
 const repo = fileURLToPath(new URL('../..', import.meta.url))
 const COPIED = [
-  'web/src/locales', 'web/public/push-sw.js', 'extension/_locales', 'mobile/android/app/src/main/res/values',
+  'web/src/locales', 'web/src/push-sw.js', 'extension/_locales', 'mobile/android/app/src/main/res/values',
   'mobile/android/app/src/main/res/values-de', 'internal/mail/templates', 'internal/mail/message.go',
   'internal/channels/messages.go', 'internal/quickadd/vocab.go', 'web/src/lib/nlp/vocab', 'web/src/lib/sectors.ts', 'docs/translating.md',
 ]
@@ -39,7 +39,7 @@ test('scaffolding sv writes every surface, lists nothing, and the status shows S
   try {
     const before = snapshot(root)
     const written = scaffold(root, 'sv', 'Svenska')
-    for (const rel of ['web/src/locales/sv.json', 'extension/_locales/sv/messages.json', 'mobile/android/app/src/main/res/values-sv/strings.xml', 'internal/mail/templates/digest.sv.txt', 'web/src/lib/nlp/vocab/sv.ts', 'web/public/push-sw.js', 'docs/translating.md']) {
+    for (const rel of ['web/src/locales/sv.json', 'extension/_locales/sv/messages.json', 'mobile/android/app/src/main/res/values-sv/strings.xml', 'internal/mail/templates/digest.sv.txt', 'web/src/lib/nlp/vocab/sv.ts', 'web/src/push-sw.js', 'docs/translating.md']) {
       assert.ok(written.includes(rel), rel)
       assert.ok(existsSync(join(root, rel)), rel)
     }
@@ -55,7 +55,7 @@ test('scaffolding sv writes every surface, lists nothing, and the status shows S
     // No existing language's file changed; only push-sw.js and the guide gained a line.
     const after = snapshot(root)
     const changed = Object.keys(before).filter((k) => after[k] !== before[k]).sort()
-    assert.deepEqual(changed, ['/docs/translating.md', '/web/public/push-sw.js'])
+    assert.deepEqual(changed, ['/docs/translating.md', '/web/src/push-sw.js'])
     // The status lists Swedish as work in progress at 0 on every surface it has.
     const sv = status(root).find((r) => r.code === 'sv')
     assert.equal(sv.tier, 'work in progress')
