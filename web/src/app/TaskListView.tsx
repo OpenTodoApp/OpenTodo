@@ -44,14 +44,15 @@ import { BriefingText } from './Briefing'
 import type { Briefing } from '../lib/briefing'
 import { useListReady } from './task-list/useListReady'
 import { UrgencyContext } from './useUrgency'
-import { BulkActionsMenu, ListReorderContext, SelectionBar, type ListReorder } from './bulk/BulkActions'
+import { BulkActionsMenu, ListReorderContext, SelectionBar, type ListReorder, type RowMenuItems } from './bulk/BulkActions'
 import { useRowMenu } from './bulk/useRowMenu'
 import { useActionsOpen } from './bulk/useBulkList'
 import { useCollapsedGroups } from './collapsedGroups'
 import { EarlierActions } from './task-list/EarlierActions'
 import { taskDefaults } from './listActions'
 import { flushSync } from 'react-dom'
-import { panelTaskId, usePanelHasTask, setPanelTaskId as setOpenId, sidePanelDocks } from './panel'
+import { openTaskPage } from './taskTrail'
+import { panelTaskId, usePanelHasTask, setPanelTaskId as setOpenId, sidePanelDocks, taskSplitDocks, watchPanelTaskId } from './panel'
 import { useClickAway } from './task-list/useClickAway'
 import { InlineEditor } from './task-list/InlineEditor'
 import { ProjectHeader } from './ProjectHeader'
@@ -102,7 +103,7 @@ const HELP_SCREENS: Partial<Record<Route['view'], string>> = {
 }
 
 /** Transient UI of the list: pickers, prompts, quick adds and the actions menu. */
-function useListUi(ticked: ReadonlySet<string>, order: readonly string[], editTitle: ((id: string) => void) | undefined) {
+function useListUi(ticked: ReadonlySet<string>, order: readonly string[], items: RowMenuItems, expandedId: string | null) {
   const actions = useActionsOpen(order.length)
   const [selectMode, setSelectMode] = useState(false)
   const [addingUnder, setAddingUnder] = useState<string | null>(null)
@@ -117,15 +118,13 @@ function useListUi(ticked: ReadonlySet<string>, order: readonly string[], editTi
   const [addingTo, setAddingTo] = useState<string | null>(null)
   /** The row's More button when the menu was opened from it (rows-v2 D7); null for `.`. */
   const actionsFrom = useRef<HTMLElement | null>(null)
-  /** The one row whose details are shown under it (row-expand D4): this list's state only, never stored. */
-  const [expandedId, setExpandedId] = useState<string | null>(null)
   const { open: openActionsMenu } = actions
   const openActions = useCallback((picker: string | null = null, from: HTMLElement | null = null) => { actionsFrom.current = from; openActionsMenu(picker) }, [openActionsMenu])
   // The row's menu at the pointer (task-row-context-menu): one state, one selection
   // rule and one focus restore, shared with the filter, saved-view and method lists.
-  const rowMenu = useRowMenu(ticked, order, editTitle)
+  const rowMenu = useRowMenu(ticked, order, { ...items, expandedId })
   const ui: ListUi = { pickerFor, setPickerFor, assignFor, setAssignFor, prompt, setPrompt, addingUnder, setAddingUnder, addingBelow, setAddingBelow, setAddingTo, openActions }
-  return { ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId, rowMenu }
+  return { ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, rowMenu }
 }
 
 /**
@@ -285,19 +284,57 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const { summarised, cursorRows } = useCalmUpcoming(route.view === 'upcoming', groups, rows, !!m.display?.laterInFull, collapsedGroups)
   // Bulk selection (bulk-edit D1): ticked rows, separate from the cursor row.
   const { tickRows, selection, ticked, contextIds } = useTickedRows(rows, taskMap, isReadOnly)
+  // An edit or a row's More on another row than the task beside the list keeps that task there
+  // until the cursor moves or a row is clicked (row-edit-action D3): `dockId` is what it follows.
+  // Another task opened there ends the hold; a closed pane stays closed until the cursor moves.
+  const [dockHold, setDockHold] = useState<{ id: string; keep: string | null } | null>(null)
+  if (dockHold && dockHold.id !== selectedId) setDockHold(null)
+  const dockId = dockHold ? dockHold.keep : selectedId
+  useEffect(() => {
+    if (!dockHold?.keep) return
+    const { id, keep } = dockHold
+    return watchPanelTaskId((now) => { if (now !== keep) setDockHold(now ? null : { id, keep: null }) })
+  }, [dockHold])
+  const holdDock = useCallback((id: string) => {
+    const keep = panelTaskId()
+    setDockHold((held) => (keep && keep !== id && taskSplitDocks() ? { id, keep } : held?.id === id ? held : null))
+  }, [])
+  const releaseDock = useCallback(() => setDockHold(null), [])
   const [inline, setInline] = useState<{ id: string; caret?: number; compact?: boolean } | null>(null)
   const startInline = useCallback((id: string, e?: React.MouseEvent, compact = false) => {
     const task = taskMap.get(id)
     if (!task || board || isReadOnly(task)) return
+    holdDock(id)
     setSelectedId(id)
     setInline({ id, caret: e ? caretFromClick(e) : task.title.length, compact })
-  }, [taskMap, board, isReadOnly])
-  // Mount the input within the menu activation so iOS can show its keyboard.
-  const editTitle = useCallback((id: string) => { flushSync(() => startInline(id, undefined, true)) }, [startInline])
-  const { ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId, rowMenu } = useListUi(selection.ticked, ticked, board || timeline ? undefined : editTitle)
+  }, [taskMap, board, isReadOnly, holdDock])
+  // Edit from the row's actions or its menu (row-edit-action D1, D2): the F2 editor with a fine
+  // pointer from 768 px, else the compact one with Save and Cancel. Mounted within the activation
+  // so iOS can show its keyboard.
+  const editTitle = useCallback((id: string) => {
+    const desk = !!window.matchMedia?.('(pointer: fine)').matches && !!window.matchMedia?.(DESKTOP_HEADER_QUERY).matches
+    flushSync(() => startInline(id, undefined, !desk))
+  }, [startInline])
+  // Open details in the row's menu (row-edit-action D2): the task as Enter opens it, by the Open tasks preference.
+  const openDetails = useCallback((id: string) => {
+    setSelectedId(id)
+    if (taskSplitDocks() && (!sidePanelDocks() || panelTaskId() === id)) openTaskPage(id)
+    else setOpenId(id)
+  }, [])
+  /** The one row whose details are shown under it (row-expand D4): this list's state only, never stored. */
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  // Show details in the row's menu, as → does: one row at a time, and the cursor goes with it.
+  const showDetails = useCallback((id: string) => {
+    setSelectedId(id)
+    setExpandedId((cur) => (cur === id ? null : id))
+  }, [])
+  // A phone's rows do not expand (phone-row-controls): its menu has Edit and Open details.
+  const wide = useMediaQuery(DESKTOP_HEADER_QUERY)
+  const menuItems: RowMenuItems = useMemo(() => (board || timeline ? { openDetails } : { editTitle, openDetails, showDetails: wide ? showDetails : undefined }), [board, timeline, editTitle, openDetails, showDetails, wide])
+  const { ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, rowMenu } = useListUi(selection.ticked, ticked, menuItems, expandedId)
   // Observe panel presence only so moving the cursor between docked tasks does not redraw the list.
   const panelOpen = usePanelHasTask()
-  const inbox = useListSplit({ inbox: route.view === 'inbox', rows, ownRows: m.ownRows, selectedId, setSelectedId, ticking: selection.ticked.size > 0 })
+  const inbox = useListSplit({ inbox: route.view === 'inbox', rows, ownRows: m.ownRows, selectedId, setSelectedId, ticking: selection.ticked.size > 0, dockId })
   const quickAddRef = useRef<HTMLTextAreaElement>(null), quickAddRow = useRef<HTMLDivElement>(null)
   // The first-day checklist's "Plan today" (moments-and-onboarding D5): Today opened after the first task.
   useEffect(() => { if (route.view === 'today') void noteTodayOpened() }, [route.view])
@@ -402,7 +439,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     editInline: startInline, expandedId, setExpandedId,
   })
   // Vim's `o` inserts by project position: only where positions are the order (manual: projectManual).
-  const rowActions = useListBindings({ ...shared, manual: projectManual, setSelectMode, startDrag: drag.startDrag, insertAfter, listRoot, projectReadOnly: m.projectReadOnly, startInline, editTitle, setExpandedId, openRowMenu: rowMenu.open, draggingId: drag.draggingId })
+  const rowActions = useListBindings({ ...shared, manual: projectManual, setSelectMode, startDrag: drag.startDrag, insertAfter, listRoot, projectReadOnly: m.projectReadOnly, startInline, editTitle, holdDock, releaseDock, setExpandedId, openRowMenu: rowMenu.open, draggingId: drag.draggingId })
 
   const { edgeOf, boardGroups, queryControl: queryFilter, queryHost, cardNotes } = useListExtras(board, m.queryFilter, projectId ? { mode: viewMode, onChoose: chooseViewMode } : null, projectId, m.currentProject?.name) // Colour by on boards, Upcoming's and each project's query filter (calendar-clarity, project-query-filter)
   const renderRow = useRowRenderer({
@@ -411,7 +448,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     showCheckbox: selectMode || (fine && selection.ticked.size > 0), selectMode, fieldColumns: m.fieldColumns, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
     timeColumn: m.timeColumn, slotsOff: m.slotsOff, rowLayout: m.display?.rowLayout, actions: rowActions, ...useAddLines(rows, ui), edgeOf, cardNotes,
     inlineId: inline?.id ?? null, renderInline, expandedId, swipe: useListSwipe(listRoot, !fine && selection.ticked.size === 0 && !selectMode && !board, rows.length),
-    swipeEditTitle: !useMediaQuery(DESKTOP_HEADER_QUERY) && !timeline,
+    swipeEditTitle: !wide && !timeline,
+    editInPlace: !board && !timeline,
   })
 
   // The list's own rows: Today's Done today group is not part of them (today-closed-list D6).
@@ -479,7 +517,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             onMenuOpenChange={actions.onOpenChange} startPicker={actions.picker} onDone={selectMode ? () => setSelectMode(false) : undefined} />
           {actions.forCursor && selectedId && ( // `.` with nothing ticked: the same menu for the cursor task.
             <BulkActionsMenu ids={[selectedId]} open onOpenChange={actions.onOpenChange} startPicker={actions.picker} anchor={actionsFrom}
-              editTitle={board || timeline ? undefined : editTitle}
+              {...menuItems} expandedId={expandedId}
               trigger={<span className="sr-only">{t('Actions')}</span>} triggerClassName="sr-only" />
           )}
           {rowMenu.element}{queryHost}

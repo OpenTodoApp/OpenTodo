@@ -12,7 +12,7 @@ import { InboxEmptyPane } from '../InboxEmptyPane'
 import { panelTaskId, setPanelTaskId, setTaskSplit, taskSplitDocks, watchPanelTaskId } from '../panel'
 import { useSidePanel, useSidePanelChosen } from '../sidePanel'
 
-export function useInboxSplit({ inbox, on, rows, selectedId, setSelectedId, ticking }: {
+export function useInboxSplit({ inbox, on, rows, selectedId, setSelectedId, ticking, dockId = selectedId }: {
   /** The page is the Inbox. */
   inbox: boolean
   /** The Inbox keeps its own split (the page preference). */
@@ -23,6 +23,8 @@ export function useInboxSplit({ inbox, on, rows, selectedId, setSelectedId, tick
   setSelectedId: (id: string | null) => void
   /** Rows are ticked: a bulk selection opens nothing (bulk-edit), so the pane stays empty meanwhile. */
   ticking: boolean
+  /** The task the pane follows: the cursor's, or the one an edit kept there (row-edit-action D3). */
+  dockId?: string | null
 }): { meta: string | undefined; count: number } {
   const count = useMemo(() => rows.filter((r) => r.depth === 0).length, [rows])
   // With nothing to sort the list's own empty state says so, and the slot stays closed.
@@ -38,15 +40,15 @@ export function useInboxSplit({ inbox, on, rows, selectedId, setSelectedId, tick
   // load, and the task must dock once its row arrives (not on every later change of the rows,
   // so a pane closed by hand stays closed).
   const lastSelected = useRef<string | null>(null)
-  const listed = !!selectedId && rows.some((r) => r.task.id === selectedId)
+  const listed = !!dockId && rows.some((r) => r.task.id === dockId)
   useEffect(() => {
     const was = lastSelected.current
-    lastSelected.current = selectedId
+    lastSelected.current = dockId
     if (!on || !taskSplitDocks()) return
     if (ticking) { if (panelTaskId()) setPanelTaskId(null); return }
-    if (selectedId && selectedId !== panelTaskId()) { if (listed) setPanelTaskId(selectedId) }
-    else if (!selectedId && was && panelTaskId() === was) setPanelTaskId(null)
-  }, [on, selectedId, ticking, listed])
+    if (dockId && dockId !== panelTaskId()) { if (listed) setPanelTaskId(dockId) }
+    else if (!dockId && was && panelTaskId() === was) setPanelTaskId(null)
+  }, [on, dockId, ticking, listed])
 
   // Closing the docked task (its Close, Esc inside it) clears the cursor too, so the pane and the list agree.
   // Watched, not subscribed, so the list does not draw again for the pane following the cursor (row-click-modes D4).
@@ -68,19 +70,21 @@ export function useInboxSplit({ inbox, on, rows, selectedId, setSelectedId, tick
  * A task list's split (task-side-panel D2, D7): with the side panel preference every list,
  * the Inbox included, keeps the side panel; otherwise the Inbox keeps its own split.
  */
-export function useListSplit({ inbox, rows, ownRows, selectedId, setSelectedId, ticking }: {
+export function useListSplit({ inbox, rows, ownRows, selectedId, setSelectedId, ticking, dockId = selectedId }: {
   inbox: boolean
   rows: readonly ListRow[]
   ownRows: readonly ListRow[]
   selectedId: string | null
   setSelectedId: (id: string | null) => void
   ticking: boolean
+  /** The task beside the list follows this: the cursor's, or the one an edit kept there (row-edit-action D3). */
+  dockId?: string | null
 }): { meta: string | undefined } {
   const side = useSidePanelChosen()
-  const split = useInboxSplit({ inbox, on: inbox && !side, rows: ownRows, selectedId, setSelectedId, ticking })
+  const split = useInboxSplit({ inbox, on: inbox && !side, rows: ownRows, selectedId, setSelectedId, ticking, dockId })
   // The panel follows the cursor only while its row is in the list: a bulk action that took
   // every ticked row out leaves the cursor on a task no longer listed, which must not open (issue 841).
-  const listed = useMemo(() => (selectedId && rows.some((r) => r.task.id === selectedId) ? selectedId : null), [rows, selectedId])
+  const listed = useMemo(() => (dockId && rows.some((r) => r.task.id === dockId) ? dockId : null), [rows, dockId])
   useSidePanel({ on: true, selectedTaskId: listed, ticking, hasRows: rows.length > 0, inboxCount: inbox ? split.count : undefined })
   return { meta: split.meta }
 }

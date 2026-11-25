@@ -206,15 +206,15 @@ describe('expanded rows', () => {
     await r.unmount()
   })
 
-  it('the revealed actions start with Show details on a fine pointer', async () => {
+  it('the revealed actions start with Edit on a fine pointer, and → still shows the details', async () => {
     const { r } = await today('Book the dentist')
     const actions = [...row('Book the dentist').querySelectorAll<HTMLElement>('[data-row-action]')].map((b) => b.getAttribute('data-row-action'))
-    expect(actions).toEqual(['details', 'schedule', 'priority', 'more'])
-    const show = row('Book the dentist').querySelector<HTMLButtonElement>('[data-row-action="details"]')!
-    expect(show.getAttribute('aria-label')).toBe('Show details')
-    await click(show)
+    // Edit takes Show details' place (row-edit-action D1).
+    expect(actions).toEqual(['edit', 'schedule', 'priority', 'more'])
+    await key(document.body, 'j')
+    await waitFor(() => focused().matches('[data-row-open]'), 'focus on the row')
+    await key(focused(), 'ArrowRight')
     await waitFor(() => details().length === 1, 'the details')
-    expect(row('Book the dentist').querySelector('[data-row-action="details"]')!.getAttribute('aria-label')).toBe('Hide details')
     // Open task opens it, as Enter does.
     await click(details()[0].querySelector('[data-row-details-open]')!)
     await waitFor(() => openedTask() !== null, 'the task opened')
@@ -263,6 +263,9 @@ describe('expanded rows in a saved view', () => {
     const r = await render(<SavedViewRoute id={view} />)
     await waitFor(() => document.querySelectorAll('li[data-task-id]').length === 2, 'the rows')
     await flush()
+    // A list without the inline editor keeps Show details among the revealed actions (row-edit-action D1).
+    expect(row('Order the tiles').querySelector('[data-row-action="details"]')).toBeTruthy()
+    expect(row('Order the tiles').querySelector('[data-row-action="edit"]')).toBeNull()
     await key(document.body, 'j')
     await key(focused(), 'ArrowRight')
     await waitFor(() => details().length === 1, 'the details')

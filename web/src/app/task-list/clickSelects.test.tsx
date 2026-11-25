@@ -229,8 +229,8 @@ describe('click selects before editing', () => {
     coarse = true
     const { a, r } = await list()
     await act(async () => row(a).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true })))
-    const action = () => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((item) => item.textContent?.includes('Edit title'))
-    await waitFor(() => !!action(), 'Edit title in the row menu')
+    const action = () => document.querySelector<HTMLElement>('[role="menuitem"][data-action="edit-title"]')
+    await waitFor(() => !!action(), 'Edit in the row menu')
     await act(async () => action()?.click())
     await waitFor(() => document.activeElement === editor() && !!editor(), 'focused title field')
     await act(async () => {
