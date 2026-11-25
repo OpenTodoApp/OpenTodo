@@ -5858,9 +5858,6 @@
   "Edit this occurrence alone and move the series on": [
     "web/src/app/RecurrenceField.tsx"
   ],
-  "Edit title": [
-    "web/src/app/bulk/BulkActions.tsx"
-  ],
   "Edit webhook": [
     "web/src/app/WebhooksPanel.tsx"
   ],
