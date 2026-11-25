@@ -5,7 +5,7 @@
 // hidden copy of the text in the same grid cell sizes it, up to six lines.
 import { forwardRef, type RefObject, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { composingEnter } from '../../lib/composeKey'
+import { composing } from '../../lib/composeKey'
 import { t } from '../../lib/i18n'
 
 /**
@@ -45,7 +45,7 @@ export const NotesLine = forwardRef<HTMLTextAreaElement, {
           className={`quick-add-notes ${box} text-muted focus:border-transparent focus:ring-0`}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => {
-            if (composingEnter(e)) return
+            if (composing(e)) return
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault()
               e.currentTarget.form?.requestSubmit()

@@ -20,6 +20,7 @@ import { cardCopy, noticeCopy, SETTINGS_COPY } from '../lib/settingsCopy'
 import { messageOf } from '../lib/errorText'
 import { useAction } from '../lib/useAction'
 import { readString, writeString } from '../lib/deviceStorage'
+import { composing } from '../lib/composeKey'
 
 // Settings → Account → Passkeys (OpenSpec change `passkeys`; layout by settings-redesign). The server list is
 // authoritative and not cached for offline use: offline, the panel shows what
@@ -143,7 +144,7 @@ export function SecurityPanelView(p: SecurityPanelViewProps) {
     setEditing(null)
   }
   function escapeTo(e: KeyboardEvent, close: () => void) {
-    if (e.key === 'Escape') {
+    if (!composing(e) && e.key === 'Escape') {
       e.stopPropagation()
       close()
     }

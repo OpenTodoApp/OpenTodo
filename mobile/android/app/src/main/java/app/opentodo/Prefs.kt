@@ -3,7 +3,7 @@ package app.opentodo
 import android.content.Context
 import android.content.SharedPreferences
 
-/** App-private settings: the server, the handed-over schedule, location reminders and widget data, the wrapped key. Never backed up. */
+/** App-private settings: the server, the handed-over schedule, location reminders and widget data, the quick-add notification, the wrapped key. Never backed up. */
 class Prefs(context: Context) {
     private val p: SharedPreferences = context.applicationContext.getSharedPreferences("opentodo", Context.MODE_PRIVATE)
 
@@ -104,6 +104,16 @@ class Prefs(context: Context) {
     var systemBars: String?
         get() = p.getString("systemBars", null)
         set(v) = p.edit().putString("systemBars", v).apply()
+
+    /** The quick-add notification's switch (android-quick-add-notification D1); off by default, gone with the server's data. */
+    var quickAddNotification: Boolean
+        get() = p.getBoolean("quickAddNotification", false)
+        set(v) = p.edit().putBoolean("quickAddNotification", v).apply()
+
+    /** Whether its Add task button takes a title inline (D3: false for an encrypted account). */
+    var quickAddReply: Boolean
+        get() = p.getBoolean("quickAddReply", false)
+        set(v) = p.edit().putBoolean("quickAddReply", v).apply()
 
     /** The account key, AES-GCM encrypted under the biometric Keystore key: base64 iv and ciphertext. */
     var wrappedKey: Pair<String, String>?

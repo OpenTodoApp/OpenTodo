@@ -7,6 +7,7 @@
 // every check runs and is recorded, and updates are installed anyway.
 import { answerAfterFailure, checkForUpdate, cachedFile, fetchLazy, pruneCaches, type CheckOutcome, type InstallEnv } from './lib/appInstall'
 import { loadTrust, rememberedMode, trustReader, updateTrust, trustsOwnKey, type TrustRecord, type TrustState } from './lib/appTrust'
+import { taskPageId, withAppBanner } from './lib/appBanner'
 import { pagePolicy } from './lib/pagePolicy'
 import { entryFromForm, entrySize, putInboxEntry, SHARE_MAX_BYTES, shareRequestVerdict } from './lib/shareInbox'
 
@@ -179,6 +180,12 @@ async function navigation(event: FetchEvent): Promise<Response> {
   const headers = new Headers(page.headers)
   headers.set('Content-Security-Policy', pagePolicy(stored ? await stored.text() : null))
   headers.set('Cache-Control', 'no-cache')
+  // A task's page offers the iPhone app in Safari, as the server's copy does (ios-app-banner).
+  const task = taskPageId(new URL(event.request.url).pathname)
+  if (task !== null) {
+    headers.delete('Content-Length')
+    return new Response(withAppBanner(await page.text(), self.location.origin, task), { status: 200, headers })
+  }
   return new Response(await page.blob(), { status: 200, headers })
 }
 

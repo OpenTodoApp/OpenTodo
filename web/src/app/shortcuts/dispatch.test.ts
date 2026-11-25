@@ -459,6 +459,23 @@ describe('keyboard layouts', () => {
     }
     expect(add).not.toHaveBeenCalled()
   })
+
+  // composition-keys: Safari reports a composing Escape as key code 229 with isComposing false.
+  it('leaves a composing Escape in a field to the input method, by isComposing or key code 229', () => {
+    const escape = vi.fn()
+    registerShortcutScope({ scope: 'list', handlers: { 'list.escape': escape } })
+    const input = document.createElement('input')
+    document.body.append(input)
+    expect(press('Escape', { isComposing: true }, input).defaultPrevented).toBe(false)
+    const safari = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
+    Object.defineProperty(safari, 'keyCode', { get: () => 229 })
+    input.dispatchEvent(safari)
+    expect(safari.defaultPrevented).toBe(false)
+    expect(escape).not.toHaveBeenCalled()
+    press('Escape', {}, input)
+    expect(escape).toHaveBeenCalledOnce()
+    input.remove()
+  })
 })
 
 describe('undo and redo guards (#1488)', () => {

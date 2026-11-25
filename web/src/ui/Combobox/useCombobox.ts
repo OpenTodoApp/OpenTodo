@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 
 import { pickScores, rankBy, recordPick } from '../../lib/pickRank'
 import { matchPrepared, prepareCached, prepareQuery, type Match } from './match'
 import { t } from '../../lib/i18n'
+import { composing } from '../../lib/composeKey'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 
 /**
@@ -262,6 +263,7 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (composing(e)) return
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault()
       if (options.length === 0) return

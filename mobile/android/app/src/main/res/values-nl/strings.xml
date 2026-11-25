@@ -59,6 +59,7 @@
     <string name="setup_sign_in">Hier aanmelden</string>
     <string name="error_sign_in">Je server zit achter een aanmeldpagina, en de aanmelding ging in de app niet verder. Meld je hier opnieuw aan.</string>
     <string name="save_failed">Het bestand kon niet worden opgeslagen.</string>
+    <string name="quick_add_failed">De taak is niet toegevoegd. Tik om hem toe te voegen.</string>
     <string name="channel_focus">Focus</string>
     <string name="channel_sync">Synchroniseren</string>
     <string name="focus_generic">Focussessie</string>

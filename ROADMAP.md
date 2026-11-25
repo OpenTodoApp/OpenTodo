@@ -39,6 +39,7 @@ Open changes, most of them part built.
 | [`android-reveal-on-paint`](openspec/changes/android-reveal-on-paint/) | The Android app shows the web app at its first drawn frame, as the iPhone app does | [#1755](https://github.com/OpenTodoApp/OpenTodo/issues/1755) |
 | [`android-unicode-address`](openspec/changes/android-unicode-address/) | A server address typed in Unicode works in the Android app; both apps share one set of address cases |  |
 | [`android-urgent-alarms`](openspec/changes/android-urgent-alarms/) | Urgent reminders ring as full-screen alarms in the Android app; built, the device run is open | [#2023](https://github.com/OpenTodoApp/OpenTodo/issues/2023) |
+| [`android-quick-add-notification`](openspec/changes/android-quick-add-notification/) | A quick-add notification in the Android app: add a task from the notification shade in any app | [#2046](https://github.com/OpenTodoApp/OpenTodo/issues/2046) |
 | [`ios-microphone-origin`](openspec/changes/ios-microphone-origin/) | The iPhone app grants the microphone to the configured server only, without a second prompt |  |
 | [`ios-quick-look`](openspec/changes/ios-quick-look/) | An attached image or PDF opens in Quick Look in the iPhone app, without saving it first |  |
 | [`ios-web-location`](openspec/changes/ios-web-location/) | "Use my location" in a task's location editor works in the iPhone app |  |

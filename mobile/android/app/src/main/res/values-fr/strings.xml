@@ -59,6 +59,7 @@
     <string name="setup_sign_in">Se connecter ici</string>
     <string name="error_sign_in">Votre serveur est derrière une page de connexion, et la connexion ne s’est pas poursuivie dans l’app. Reconnectez-vous ici.</string>
     <string name="save_failed">Le fichier n’a pas pu être enregistré.</string>
+    <string name="quick_add_failed">La tâche n’a pas été ajoutée. Touchez pour l’ajouter.</string>
     <string name="channel_focus">Focus</string>
     <string name="channel_sync">Synchronisation</string>
     <string name="focus_generic">Session de focus</string>

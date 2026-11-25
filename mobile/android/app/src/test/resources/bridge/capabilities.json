@@ -13,7 +13,8 @@
     "alarm-settings",
     "urgent-alarms",
     "first-paint",
-    "focus"
+    "focus",
+    "quick-add-notification"
   ],
   "backgroundOnly": [
     "background"

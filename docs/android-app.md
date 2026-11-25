@@ -4,7 +4,7 @@ summary: "The OpenTodo app for Android: connect it to your server, reminders wit
 audience: user
 section: Reference
 specs: []
-screens: []
+screens: [android-app]
 order: 22
 ---
 # The Android app
@@ -186,6 +186,19 @@ Three home-screen widgets: **Today**, **Completed** and **Quick add**. Long-pres
 **Completed** shows how many tasks you completed today and a bar for each of the last 7 days (counted as in [Statistics](statistics.md), which a tap opens), and **Quick add** opens the app's quick add.
 
 The widgets follow the phone's light or dark mode, and show what the app last saw: it refreshes them while it is open and about once an hour in the background. While an encrypted account is locked, the Today widget shows only counts, without circles, and the Completed widget only today's number.
+
+## Quick add in the notifications
+
+To add tasks from any app, turn on **Settings → Capture → Quick add → Quick add notification → On this phone**. It is off until you turn it on, and it is set per phone. On Android 13 and later, the app asks to send notifications the first time; if you refuse, the switch stays off until you allow notifications for OpenTodo in Android's settings. If you turn off the **Quick add** channel there, the switch reads off too.
+
+A silent notification then stays in the notification shade, on its own **Quick add** channel:
+
+- **Add task** opens a field right in the notification. Type a task and send it, and you stay in the app you were in. The app saves the task in the background, reading it as [quick add](quick-add.md) does: dates and times, `#project`, priority and existing labels. It goes to the Inbox unless you type a project. Without a connection, the task waits on the phone and syncs later, like any other change. If the app could not save it (you are signed out, or the app could not start in the background), a notification says so; tap it to open quick add with your words typed in.
+- **A tap on the notification** opens the app's quick add with the keyboard up.
+
+With [end-to-end encryption](e2ee.md), **Add task** opens quick add instead: the app cannot save to an encrypted account in the background.
+
+The notification comes back after the phone restarts or the app updates. On Android 14 and later you can swipe it away; it returns the next time you open the app. It goes when you turn the switch off, sign out or change the server.
 
 ## Status and navigation bars
 

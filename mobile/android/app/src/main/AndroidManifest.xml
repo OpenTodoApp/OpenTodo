@@ -131,6 +131,7 @@
         <receiver android:name=".AlarmReceiver" android:exported="false" />
         <receiver android:name=".FocusEndReceiver" android:exported="false" />
         <receiver android:name=".NotificationActionReceiver" android:exported="false" />
+        <receiver android:name=".QuickAddReceiver" android:exported="false" />
         <receiver android:name=".GeofenceReceiver" android:exported="false" />
         <!-- shell-push D2: the distributor's answers and messages. Exported, as UnifiedPush needs
              (the distributor is another app, and there is no permission to ask of it): every

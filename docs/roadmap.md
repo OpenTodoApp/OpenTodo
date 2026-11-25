@@ -28,8 +28,8 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `caldav-verified` | CalDAV verified on real clients | In progress (6 of 16) |
 | `play-production` | Google Play production, F-Droid and reproducible builds: reproducible builds, the F-Droid metadata and the Play upload are in; the store listings wait for the owner's Play Console and F-Droid steps | In progress (15 of 18) |
 | `ios-shell` | The iPhone and iPad app: first-run server screen, reminders on the phone without a push service, the share sheet, a Today widget, Face ID unlock | In progress (25 of 34) |
-| `ios-distribution` | The iPhone app in TestFlight and the App Store | In progress (14 of 28) |
-| `apple-shortcuts` | Siri, Shortcuts, the Action Button and iOS widgets | Planned |
+| `ios-distribution` | The iPhone app in TestFlight and the App Store | In progress (15 of 29) |
+| `apple-shortcuts` | Siri, Shortcuts, the Action Button and iOS widgets | In progress (2 of 22) |
 | `focus-live-activity` | Focus as a Live Activity and in the Dynamic Island | In progress (18 of 21) |
 | `location-reminders` | Reminders when you arrive at or leave a place. Shipped on Android; iOS follows | In progress (16 of 18) |
 | `mobile-native-feel` | The phone apps made to feel native: the plan and the order, one change per step | In progress (5 of 15) |
@@ -39,6 +39,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `android-reveal-on-paint` | The Android app shows the web app at its first drawn frame, as the iPhone app does | In progress (3 of 4) |
 | `android-unicode-address` | A server address typed in Unicode works in the Android app; both apps share one set of address cases | In progress (3 of 4) |
 | `android-urgent-alarms` | Urgent reminders ring as full-screen alarms in the Android app; built, the device run is open | In progress (10 of 11) |
+| `android-quick-add-notification` | A quick-add notification in the Android app: add a task from the notification shade in any app | In progress (7 of 8) |
 | `ios-microphone-origin` | The iPhone app grants the microphone to the configured server only, without a second prompt | In progress (4 of 5) |
 | `ios-quick-look` | An attached image or PDF opens in Quick Look in the iPhone app, without saving it first | In progress (4 of 5) |
 | `ios-web-location` | "Use my location" in a task's location editor works in the iPhone app | In progress (5 of 6) |

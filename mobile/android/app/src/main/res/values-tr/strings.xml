@@ -59,6 +59,7 @@
     <string name="setup_sign_in">Buradan oturum açın</string>
     <string name="error_sign_in">Sunucunuz bir giriş sayfasının arkasında ve oturum açma işlemi uygulamada devam etmedi. Buradan tekrar oturum açın.</string>
     <string name="save_failed">Dosya kaydedilemedi.</string>
+    <string name="quick_add_failed">Görev eklenmedi. Eklemek için dokunun.</string>
     <string name="channel_focus">Odak</string>
     <string name="channel_sync">Eşitleniyor</string>
     <string name="focus_generic">Odak oturumu</string>

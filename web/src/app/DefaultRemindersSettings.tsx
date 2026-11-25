@@ -7,6 +7,7 @@ import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { type DefaultReminders, readDefaultReminders, setDefaultReminder } from '../lib/userPrefs'
 import { MAX_DEFAULT_OFFSET } from '../lib/defaultReminder'
 import { act } from './actionError'
+import { composing } from '../lib/composeKey'
 
 type Kind = 'timed' | 'dated'
 
@@ -94,7 +95,7 @@ function CustomOffset({ initial, onSave, onCancel }: { initial: number; onSave: 
   return (
     <form ref={form} className="flex flex-wrap items-center gap-2 pb-3" data-testid="default-reminder-custom"
       onSubmit={(e) => { e.preventDefault(); save() }}
-      onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}>
+      onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}>
       <NumberInput label={t('Offset amount')} hideLabel min={0} max={Math.floor(MAX_DEFAULT_OFFSET / Number(unit))} value={amount} onChange={setAmount} onValidityChange={setValid} />
       <Select className="w-auto py-1" aria-label={t('Offset unit')} value={unit} onChange={(e) => setUnit(e.target.value as '1' | '60' | '1440')}>
         <option value="1">{t('minutes')}</option>

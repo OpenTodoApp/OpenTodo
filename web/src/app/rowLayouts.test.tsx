@@ -123,6 +123,7 @@ describe('a detailed row', () => {
     const proj = await render(<TaskListView route={{ view: 'project', id: pid }} />)
     await waitFor(() => !!document.querySelector('li[data-row-layout="detailed"]'), 'project follows the account')
     await click(document.querySelector('[data-display-trigger]')!)
+    await waitFor(() => !!document.querySelector('[data-display-panel]'), 'the panel')
     const one = document.querySelector<HTMLButtonElement>('[data-display-row-layout] [data-row-layout="line"]')!
     expect(document.querySelector('[data-display-row-layout] [aria-checked="true"]')!.getAttribute('data-row-layout')).toBe('detailed')
     await click(one)
