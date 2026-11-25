@@ -14,7 +14,7 @@
 **D1. One rule, decided by where the press began.** With a fine pointer from 768 px, in a task list:
 1. A click on a row's title or empty area whose row was **not** the selected row when the press began selects it. Where a task docks beside the list (the side panel, the Inbox's split) it shows there, as for any cursor move. Nothing else happens: no editor, no page.
 2. A click on the **title** of the row that **was** the selected row when the press began opens the inline editor, with the caret at the click (`caretFromClick`, as today), in every list that has the inline editor (D6), beside the side panel and in the Inbox's split too.
-3. A click on the empty area of the selected row does nothing more.
+3. A click on the empty area of the selected row edits nothing; it shows the row beside the list again, as any row click does (`row-edit-action` D3, for a task kept there while another row was edited, or a closed side panel).
 
 The row records whether it was selected at the start of its own `pointerdown` (it already receives the press for drags and the touch hold). The click consumes that press. The second event of a native double-click leaves the selection and editor alone even if its second press started on a selected row. The double-click handler opens the page (D2). Selection can come from `j`/`k`, returning from the task page, following a subtask link in the panel, or a previous click. Shift and Ctrl/⌘ clicks and Select mode keep ticking. A press that moves past the drag threshold is a drag and its click is swallowed (`lib/dnd.ts`). Viewers can select and open tasks. Editing requires write access.
 

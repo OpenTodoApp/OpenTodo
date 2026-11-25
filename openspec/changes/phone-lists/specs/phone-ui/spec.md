@@ -62,14 +62,14 @@ Completing the last open subtask SHALL offer to complete its parent, and complet
 - **THEN** rows open the task page, and no row can be swiped, completed, dragged or selected
 
 ### Requirement: The row's menu
-A hold on a row that ends without a move SHALL open the row's menu, the same menu with the same items as the list's row menu with the switch off, as a bottom sheet. Its Edit title, Add task below and Add subtask SHALL open their field in the list at the row, with the on-screen keyboard up.
+A hold on a row that ends without a move SHALL open the row's menu, the same menu with the same items as the list's row menu with the switch off, as a bottom sheet. Its Edit, Add task below and Add subtask SHALL open their field in the list at the row, with the on-screen keyboard up.
 
 #### Scenario: The menu
 - **WHEN** the person holds a row of the Inbox for 350 ms and lifts the finger
 - **THEN** the row's menu opens as a bottom sheet with the items the Inbox's row menu has with the switch off
 
-#### Scenario: Edit title
-- **WHEN** the person chooses Edit title in the row's menu
+#### Scenario: Edit
+- **WHEN** the person chooses Edit in the row's menu
 - **THEN** the title becomes a field in the row with the keyboard open, and Done saves it
 
 #### Scenario: Add a subtask

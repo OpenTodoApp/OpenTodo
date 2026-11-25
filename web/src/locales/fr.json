@@ -1598,7 +1598,6 @@
   "Edit the project note ({keys})": "Modifier la note du projet ({keys})",
   "Edit the query of a saved view; Enter saves it, Esc discards": "Modifier la requête d’une vue enregistrée ; Entrée enregistre, Échap abandonne",
   "Edit the selected task's title in place (also click its selected title). Enter saves, Esc cancels, Shift+Enter opens the details": "Modifier le titre de la tâche sélectionnée dans la liste. Un clic sur le titre sélectionné ouvre aussi l’éditeur. Entrée enregistre, Échap annule et Maj+Entrée ouvre les détails.",
-  "Edit title": "Modifier le titre",
   "Edit the title. Tab, Enter or a click away saves it and the decision keys work again. Esc restores it": "Modifier le titre. Tab, Entrée ou un clic à côté l’enregistre, et les touches de décision marchent de nouveau. Échap le rétablit",
   "Edit the view": "Modifier la vue",
   "Edit this occurrence": "Modifier cette occurrence",

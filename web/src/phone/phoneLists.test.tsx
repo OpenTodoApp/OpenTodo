@@ -213,9 +213,11 @@ describe('what a list keeps', () => {
 describe('the row\'s menu in the phone list', () => {
   const menuItems = () => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')]
   const item = (text: string) => menuItems().find((el) => el.textContent?.includes(text))
+  // The row's Edit (row-edit-action): the item whose label is that word alone, before its key hint.
+  const editItem = () => menuItems().find((el) => /^Edit(?![a-z ])/.test(el.textContent?.trim() ?? ''))
   const openMenu = (id: string) => row(id).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 40, clientY: 200 }))
 
-  it('opens the list\'s own row menu, with Edit title, Add subtask and Reorder', async () => {
+  it('opens the list\'s own row menu, with Edit, Add subtask and Reorder', async () => {
     const s = await seed()
     // A second task beside it: a task alone among its siblings has nowhere to move.
     await createTask({ title: 'File the receipts', project_id: s.work })
@@ -224,19 +226,19 @@ describe('the row\'s menu in the phone list', () => {
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!row(s.late), 'the project list')
     openMenu(s.late)
-    await waitFor(() => !!item('Edit title') && !!item('Add subtask') && !!item('Reorder'), 'the row menu')
+    await waitFor(() => !!editItem() && !!item('Add subtask') && !!item('Reorder'), 'the row menu')
     await r.unmount()
   })
 
-  it('Edit title opens the field in the row', async () => {
+  it('Edit opens the field in the row', async () => {
     const s = await seed()
     setPhoneUiEnabled(true)
     navigate({ view: 'project', id: s.work })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!row(s.late), 'the project list')
     openMenu(s.late)
-    await waitFor(() => !!item('Edit title'), 'the row menu')
-    await click(item('Edit title')!)
+    await waitFor(() => !!editItem(), 'the row menu')
+    await click(editItem()!)
     await waitFor(() => !!row(s.late).querySelector('[data-phone-inline] textarea, [data-phone-inline] input, [data-phone-inline] [contenteditable]'), 'the title field in the row')
     await r.unmount()
   })

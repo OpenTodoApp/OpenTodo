@@ -1536,7 +1536,6 @@
   "Edit the project note ({keys})": "编辑项目笔记 ({keys})",
   "Edit the query of a saved view; Enter saves it, Esc discards": "编辑已保存视图的查询条件；按 Enter 保存，按 Esc 放弃",
   "Edit the selected task's title in place (also click its selected title). Enter saves, Esc cancels, Shift+Enter opens the details": "在列表中编辑所选任务的标题。也可以点按所选标题。Enter 保存，Esc 取消，Shift+Enter 打开详情。",
-  "Edit title": "编辑标题",
   "Edit the title. Tab, Enter or a click away saves it and the decision keys work again. Esc restores it": "编辑标题。Tab、Enter 或点到别处会保存，决策键会重新生效。Esc 会还原标题",
   "Edit the view": "编辑视图",
   "Edit this occurrence": "编辑此次重复项",

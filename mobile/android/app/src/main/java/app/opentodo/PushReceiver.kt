@@ -196,7 +196,9 @@ object Push {
         when (val message = plain?.let { UnifiedPush.message(it, System.currentTimeMillis()) }) {
             is UnifiedPush.Message.Reminder -> {
                 val r = message.reminder
-                if (Notifier.show(app, r.id, r.taskId, r.title, r.fireAt)) Scheduler.cancel(app, r.id)
+                // A push carries no due text: the same reminder in the phone's schedule has it (push-due-date D4).
+                val due = Scheduler.find(app, r.id)?.due
+                if (Notifier.show(app, r.id, r.taskId, r.title, r.fireAt, due)) Scheduler.cancel(app, r.id)
                 // The web app syncs, hands over the schedule again and refreshes the widget.
                 HiddenRun.enqueueRefresh(app)
             }

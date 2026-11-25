@@ -5660,7 +5660,6 @@
     "web/src/app/filter/conditionText.ts"
   ],
   "Due {date}": [
-    "web/public/push-sw.js",
     "web/src/app/TriageView.tsx",
     "web/src/app/away/AwayDialog.tsx",
     "web/src/app/focus/FocusParts.tsx",
@@ -5762,9 +5761,11 @@
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/WebhooksPanel.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/calendar/FrameBand.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
+    "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/app/themes/YourThemes.tsx"
   ],
   "Edit as text": [
@@ -5853,9 +5854,6 @@
   ],
   "Edit this occurrence alone and move the series on": [
     "web/src/app/RecurrenceField.tsx"
-  ],
-  "Edit title": [
-    "web/src/app/bulk/BulkActions.tsx"
   ],
   "Edit webhook": [
     "web/src/app/WebhooksPanel.tsx"
@@ -8010,6 +8008,7 @@
   "Hide details": [
     "web/src/app/TaskRow.tsx",
     "web/src/app/away/AwayDialog.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -12906,6 +12905,7 @@
     "web/src/app/datetime/DateField.tsx"
   ],
   "Open details": [
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/lib/rowClickPref.ts"
   ],
@@ -16640,6 +16640,7 @@
   "Show details": [
     "web/src/app/TaskRow.tsx",
     "web/src/app/away/AwayDialog.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -20460,6 +20461,7 @@
     "web/src/app/CaldavPanel.tsx"
   ],
   "Today": [
+    "web/public/push-sw.js",
     "web/src/app/AppBadge.tsx",
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/CalendarView.tsx",
@@ -20564,6 +20566,7 @@
     "web/src/app/TokensSection.tsx"
   ],
   "Tomorrow": [
+    "web/public/push-sw.js",
     "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
@@ -26774,7 +26777,7 @@
   ],
   "{tiny} is enough": [
     "web/public/push-sw.js",
-    "web/src/app/ReminderToasts.tsx"
+    "web/src/lib/reminderBody.ts"
   ],
   "{title} and its history move to the Trash.": [
     "web/src/app/habits/HabitPage.tsx"
