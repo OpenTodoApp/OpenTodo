@@ -7887,5 +7887,9 @@
   "Only the owner and admins can change these.": "Alleen de eigenaar en beheerders kunnen dit wijzigen.",
   "Time tracking": "Tijdregistratie",
   "{feature} is off in this workspace.": "{feature} staat uit in deze werkruimte.",
-  "Workspace features changed": "Functies van de werkruimte gewijzigd"
+  "Workspace features changed": "Functies van de werkruimte gewijzigd",
+  "Section deleted": "Sectie verwijderd",
+  "Label deleted": "Label verwijderd",
+  "Merged into {label}": "Samengevoegd in {label}",
+  "Field deleted": "Veld verwijderd"
 }

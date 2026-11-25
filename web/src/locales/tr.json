@@ -7887,5 +7887,9 @@
   "Only the owner and admins can change these.": "Bunları yalnızca sahip ve yöneticiler değiştirebilir.",
   "Time tracking": "Zaman takibi",
   "{feature} is off in this workspace.": "{feature} bu çalışma alanında kapalı.",
-  "Workspace features changed": "Çalışma alanı özellikleri değiştirildi"
+  "Workspace features changed": "Çalışma alanı özellikleri değiştirildi",
+  "Section deleted": "Bölüm silindi",
+  "Label deleted": "Etiket silindi",
+  "Merged into {label}": "{label} ile birleştirildi",
+  "Field deleted": "Alan silindi"
 }

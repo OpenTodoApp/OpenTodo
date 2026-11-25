@@ -5,7 +5,8 @@
 import { useCallback, useRef, useState } from 'react'
 import { beginDrag } from '../../lib/dnd'
 import { COMPLETED_COLUMN, type ListGroup, type ListRow } from '../../lib/listGroups'
-import { moveTask, type TaskTarget } from '../../lib/move'
+import type { TaskTarget } from '../../lib/move'
+import { moveRowWithUndo } from '../undoable'
 import { moveTasksUndoable } from '../../lib/undoActions'
 import type { Section, Task } from '../../lib/types'
 import { flattenTree, type Tree } from '../../lib/tree'
@@ -244,7 +245,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
             return
           }
           // The row travels to its new place and the others make room (motion-v2 D4).
-          act(withListTransition(1, () => moveTask(task.id, { ...entry, ...(section !== undefined ? { section_id: section } : {}) })))
+          act(moveRowWithUndo(task.id, { ...entry, ...(section !== undefined ? { section_id: section } : {}) }))
         } else if (target.startsWith('section:')) {
           const key = target.slice('section:'.length)
           const into = dragState.current.project
@@ -255,7 +256,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
           }
           const row = rs.find((x) => x.task.id === task.id)
           if (row && row.parent === null) moveToSection(task, key)
-          else act(withListTransition(1, () => moveTask(task.id, { parent_id: null, section_id: key, at: 'bottom' })))
+          else act(moveRowWithUndo(task.id, { parent_id: null, section_id: key, at: 'bottom' }))
         } else return
         onDropped(task.id)
       },

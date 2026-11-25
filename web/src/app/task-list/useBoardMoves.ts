@@ -1,13 +1,15 @@
 // A project board's column moves and folds (board-view, board-polish), with its
 // Completed column (board-completed-column): a move there completes the task as its
 // checkbox does, a completed card moved to a section reopens there in one batch.
+// A move to another column is one step with Undo (undo-coverage).
 import { useCallback, type RefObject } from 'react'
 import { COMPLETED_COLUMN } from '../../lib/listGroups'
-import { effectiveSection, moveTaskToSection, setSectionCollapsed } from '../../lib/sections'
+import { effectiveSection, setSectionCollapsed } from '../../lib/sections'
 import { reopenInto } from './boardReopen'
 import type { Section, Task } from '../../lib/types'
+import { t } from '../../lib/i18n'
 import { act } from '../actionError'
-import { withListTransition } from '../motion'
+import { sectionMoveWithUndo } from '../undoable'
 
 export function useBoardMoves(projectId: string | null, collapsedSections: readonly string[], sectionMap: Map<string, Section>,
   complete: RefObject<(id: string, completed: boolean) => Promise<void>>) {
@@ -25,7 +27,8 @@ export function useBoardMoves(projectId: string | null, collapsedSections: reado
     }
     if (task.completed_at) return act(reopenInto(task, key || null))
     if ((effectiveSection(task, sectionMap) ?? '') === key) return
-    act(withListTransition(1, () => moveTaskToSection(task.id, key || null)))
+    const name = key ? sectionMap.get(key)?.name || t('Untitled section') : t('No section')
+    act(sectionMoveWithUndo(task.id, key || null, name))
   }, [sectionMap, complete])
   return { toggleSection, moveToSection }
 }
