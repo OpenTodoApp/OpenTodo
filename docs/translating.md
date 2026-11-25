@@ -9,7 +9,7 @@ order: 32
 ---
 # Translating OpenTodo
 
-The web app ships in English, German, French, Spanish, Italian, Portuguese, Simplified Chinese, Dutch, Turkish and Polish, and in Russian and Arabic as community translations. People pick the language in **Settings → Language and region → Language** (see [The app in your language](language.md)); the choice syncs to every device of the account. This page is for contributors who write text in the app or translate it. The documentation and the in-app Help guide stay in English.
+The web app ships in English, German, French, Spanish, Italian, Portuguese, Simplified Chinese, Dutch, Turkish and Polish, and in Russian, Japanese and Arabic as community translations. People pick the language in **Settings → Language and region → Language** (see [The app in your language](language.md)); the choice syncs to every device of the account. This page is for contributors who write text in the app or translate it. The documentation and the in-app Help guide stay in English.
 
 ## How text is written
 
@@ -75,7 +75,7 @@ Open a [Translation issue](https://github.com/OpenTodoApp/OpenTodo/issues/new?te
 4. List it: `{ code: 'sv', name: 'Svenska' }` in `SHIPPED`, `web/src/locales/index.ts`, with the name in the language itself.
    - A **maintained** language is complete on every surface, and also goes into `mail.Languages` (`internal/mail/message.go`) with its plural units and role names. The checks fail while a surface is missing.
    - A **community** language adds `community: true`; see [Community languages](#community-languages).
-5. Uncomment the language's row in the maintainer table and name the reviewer in the pull request. A speaker of the language reviews every catalog change; machine translation is not accepted (the Simplified Chinese, Russian and Arabic catalogs started as machine drafts by the maintainer's decision, and are reviewed as speakers sign up).
+5. Uncomment the language's row in the maintainer table and name the reviewer in the pull request. A speaker of the language reviews every catalog change; machine translation is not accepted (the Simplified Chinese, Russian, Japanese and Arabic catalogs started as machine drafts by the maintainer's decision, and are reviewed as speakers sign up).
 
 [Add a language](contributing/add-a-language.md) lists every file the language touches.
 
@@ -101,6 +101,7 @@ Every listed language has a reviewer who reads each catalog change. A language w
 | Nederlands | `nl` | maintained, reviewed in [#1077](https://github.com/OpenTodoApp/OpenTodo/pull/1077) | jschreuder |
 | Polski | `pl` | maintained | nkkfs |
 | Русский | `ru` | community, machine draft | wanted: open a [Translation issue](https://github.com/OpenTodoApp/OpenTodo/issues/new?template=translation.yml) to review it |
+| 日本語 | `ja` | community, machine draft | wanted: a native speaker, see [issue #884](https://github.com/OpenTodoApp/OpenTodo/issues/884) |
 | العربية | `ar` | community, machine draft, right to left | wanted: open a [Translation issue](https://github.com/OpenTodoApp/OpenTodo/issues/new?template=translation.yml) to review it |
 
 ## Writing a quick-add vocabulary
@@ -118,29 +119,29 @@ Arabic is laid out right to left: the app mirrors itself, so a translation never
 
 ## Glossary
 
-Use these terms consistently; they match the quick-add vocabulary and the server's email templates. German and Dutch use *du*/*je*, French *tu*, Spanish *tú*, Italian *tu*, Portuguese (Brazil) *você*, Simplified Chinese 你, Russian *вы*, Polish *ty* and Arabic the imperative with أنت. peilf reviews the Simplified Chinese catalog.
+Use these terms consistently; they match the quick-add vocabulary and the server's email templates. German and Dutch use *du*/*je*, French *tu*, Spanish *tú*, Italian *tu*, Portuguese (Brazil) *você*, Simplified Chinese 你, Russian *вы*, Polish *ty*, Japanese です/ます for sentences, with plain nouns and verbs on buttons (保存, 完了), and Arabic the imperative with أنت. peilf reviews the Simplified Chinese catalog.
 
-| English | Deutsch | Français | Español | Italiano | Português | 简体中文 | Nederlands | Русский | Polski | Türkçe |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Task | Aufgabe | tâche | tarea | attività | tarefa | 任务 | Taak | задача | zadanie | Görev |
-| Subtask | Unteraufgabe | sous-tâche | subtarea | sottoattività | subtarefa | 子任务 | Subtaak | подзадача | podzadanie | Alt görev |
-| Project | Projekt | projet | proyecto | progetto | projeto | 项目 | Project | проект | projekt | Proje |
-| Section | Abschnitt | section | sección | sezione | seção | 分组 | Sectie | раздел | sekcja | Bölüm |
-| Label | Label | étiquette | etiqueta | etichetta | etiqueta | 标签 | Label | метка | etykieta | Etiket |
-| Inbox | Eingang | Boîte de réception | Bandeja de entrada | In arrivo | Caixa de entrada | 收件箱 | Inbox | Входящие | Skrzynka | Gelen Kutusu |
-| Today | Heute | Aujourd’hui | Hoy | Oggi | Hoje | 今天 | Vandaag | Сегодня | Dziś | Bugün |
-| Upcoming | Demnächst | À venir | Próximo | In programma | Em breve | 即将到来 | Binnenkort | Предстоящие | Nadchodzące | Yaklaşan |
-| Anytime | Jederzeit | N’importe quand | En cualquier momento | In qualsiasi momento | A qualquer hora | 随时 | Altijd | В любое время | W dowolnym momencie | Her Zaman |
-| Someday | Irgendwann | Un jour | Algún día | Un giorno | Algum dia | 将来某天 | Ooit | Когда-нибудь | Kiedyś | Bir Gün |
-| This Evening | Heute Abend | Ce soir | Esta noche | Stasera | Hoje à noite | 今晚 | Vanavond | Этим вечером | Dziś wieczorem | Bu Akşam |
-| Completed | Erledigt | Terminées | Completadas | Completate | Concluídas | 已完成 | Voltooid | Выполненные | Ukończone | Tamamlanan |
-| Trash | Papierkorb | Corbeille | Papelera | Cestino | Lixeira | 废纸篓 | Prullenbak | Корзина | Kosz | Çöp Kutusu |
-| Due date | Fälligkeitsdatum | date d’échéance | fecha de vencimiento | data di scadenza | data de vencimento | 截止日期 | Geplande datum | дата выполнения | data wykonania | Bitiş tarihi |
-| Deadline | Frist | date limite | fecha límite | termine | prazo | 最后期限 | Deadline | крайний срок | termin | Son teslim tarihi |
-| Reminder | Erinnerung | rappel | recordatorio | promemoria | lembrete | 提醒 | Herinnering | напоминание | przypomnienie | Hatırlatıcı |
-| Quick add | Schnelleingabe | Ajout rapide | Añadido rápido | Aggiunta rapida | Adição rápida | 快速添加 | Snel toevoegen | Быстрое добавление | Szybkie dodawanie | Hızlı ekle |
-| Settings | Einstellungen | Réglages | Ajustes | Impostazioni | Configurações | 设置 | Instellingen | Настройки | Ustawienia | Ayarlar |
-| Owner, admin, editor, viewer | Eigentümer, Admin, Bearbeiter, Betrachter | propriétaire, admin, éditeur, lecteur | propietario, admin, editor, lector | proprietario, admin, editor, visualizzatore | proprietário, admin, editor, leitor | 所有者、管理员、编辑者、查看者 | Eigenaar, beheerder, bewerker, lezer | владелец, администратор, редактор, читатель | właściciel, administrator, edytor, czytelnik | sahip, yönetici, düzenleyici, izleyici |
-| Passkey | Passkey | clé d’accès | llave de acceso | passkey | chave de acesso | 通行密钥 | Passkey | ключ доступа | klucz dostępu | Geçiş anahtarı |
-| Two-factor authentication | Zwei-Faktor-Authentifizierung | authentification à deux facteurs | autenticación en dos pasos | autenticazione a due fattori | autenticação de dois fatores | 双重验证 | Tweestapsverificatie | двухфакторная аутентификация | uwierzytelnianie dwuskładnikowe | İki faktörlü kimlik doğrulama |
-| Weekly review | Wochenrückblick | revue hebdomadaire | revisión semanal | revisione settimanale | revisão semanal | 每周回顾 | Wekelijkse terugblik | Еженедельный обзор | przegląd tygodnia | Haftalık gözden geçirme |
+| English | Deutsch | Français | Español | Italiano | Português | 简体中文 | Nederlands | Русский | Polski | Türkçe | 日本語 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Task | Aufgabe | tâche | tarea | attività | tarefa | 任务 | Taak | задача | zadanie | Görev | タスク |
+| Subtask | Unteraufgabe | sous-tâche | subtarea | sottoattività | subtarefa | 子任务 | Subtaak | подзадача | podzadanie | Alt görev | サブタスク |
+| Project | Projekt | projet | proyecto | progetto | projeto | 项目 | Project | проект | projekt | Proje | プロジェクト |
+| Section | Abschnitt | section | sección | sezione | seção | 分组 | Sectie | раздел | sekcja | Bölüm | セクション |
+| Label | Label | étiquette | etiqueta | etichetta | etiqueta | 标签 | Label | метка | etykieta | Etiket | ラベル |
+| Inbox | Eingang | Boîte de réception | Bandeja de entrada | In arrivo | Caixa de entrada | 收件箱 | Inbox | Входящие | Skrzynka | Gelen Kutusu | インボックス |
+| Today | Heute | Aujourd’hui | Hoy | Oggi | Hoje | 今天 | Vandaag | Сегодня | Dziś | Bugün | 今日 |
+| Upcoming | Demnächst | À venir | Próximo | In programma | Em breve | 即将到来 | Binnenkort | Предстоящие | Nadchodzące | Yaklaşan | 近日予定 |
+| Anytime | Jederzeit | N’importe quand | En cualquier momento | In qualsiasi momento | A qualquer hora | 随时 | Altijd | В любое время | W dowolnym momencie | Her Zaman | いつでも |
+| Someday | Irgendwann | Un jour | Algún día | Un giorno | Algum dia | 将来某天 | Ooit | Когда-нибудь | Kiedyś | Bir Gün | いつか |
+| This Evening | Heute Abend | Ce soir | Esta noche | Stasera | Hoje à noite | 今晚 | Vanavond | Этим вечером | Dziś wieczorem | Bu Akşam | 今夜 |
+| Completed | Erledigt | Terminées | Completadas | Completate | Concluídas | 已完成 | Voltooid | Выполненные | Ukończone | Tamamlanan | 完了済み |
+| Trash | Papierkorb | Corbeille | Papelera | Cestino | Lixeira | 废纸篓 | Prullenbak | Корзина | Kosz | Çöp Kutusu | ゴミ箱 |
+| Due date | Fälligkeitsdatum | date d’échéance | fecha de vencimiento | data di scadenza | data de vencimento | 截止日期 | Geplande datum | дата выполнения | data wykonania | Bitiş tarihi | 予定日 |
+| Deadline | Frist | date limite | fecha límite | termine | prazo | 最后期限 | Deadline | крайний срок | termin | Son teslim tarihi | 締め切り |
+| Reminder | Erinnerung | rappel | recordatorio | promemoria | lembrete | 提醒 | Herinnering | напоминание | przypomnienie | Hatırlatıcı | リマインダー |
+| Quick add | Schnelleingabe | Ajout rapide | Añadido rápido | Aggiunta rapida | Adição rápida | 快速添加 | Snel toevoegen | Быстрое добавление | Szybkie dodawanie | Hızlı ekle | クイック追加 |
+| Settings | Einstellungen | Réglages | Ajustes | Impostazioni | Configurações | 设置 | Instellingen | Настройки | Ustawienia | Ayarlar | 設定 |
+| Owner, admin, editor, viewer | Eigentümer, Admin, Bearbeiter, Betrachter | propriétaire, admin, éditeur, lecteur | propietario, admin, editor, lector | proprietario, admin, editor, visualizzatore | proprietário, admin, editor, leitor | 所有者、管理员、编辑者、查看者 | Eigenaar, beheerder, bewerker, lezer | владелец, администратор, редактор, читатель | właściciel, administrator, edytor, czytelnik | sahip, yönetici, düzenleyici, izleyici | オーナー、管理者、編集者、閲覧者 |
+| Passkey | Passkey | clé d’accès | llave de acceso | passkey | chave de acesso | 通行密钥 | Passkey | ключ доступа | klucz dostępu | Geçiş anahtarı | パスキー |
+| Two-factor authentication | Zwei-Faktor-Authentifizierung | authentification à deux facteurs | autenticación en dos pasos | autenticazione a due fattori | autenticação de dois fatores | 双重验证 | Tweestapsverificatie | двухфакторная аутентификация | uwierzytelnianie dwuskładnikowe | İki faktörlü kimlik doğrulama | 2要素認証 |
+| Weekly review | Wochenrückblick | revue hebdomadaire | revisión semanal | revisione settimanale | revisão semanal | 每周回顾 | Wekelijkse terugblik | Еженедельный обзор | przegląd tygodnia | Haftalık gözden geçirme | 週次レビュー |

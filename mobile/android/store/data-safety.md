@@ -18,6 +18,7 @@ Answers for the Play Console "Data safety" form, kept next to the code so a chan
 | `ACCESS_NETWORK_STATE` | retry the first-run check when the network returns |
 | `POST_NOTIFICATIONS` | show reminders |
 | `SCHEDULE_EXACT_ALARM` | show reminders on time; inexact alarms are used when refused |
+| `USE_FULL_SCREEN_INTENT` | ring an urgent reminder as a full-screen alarm over the lock screen; a heads-up notification is used when refused |
 | `RECEIVE_BOOT_COMPLETED` | arm the reminders again after a restart |
 | `USE_BIOMETRIC` | optional fingerprint or face unlock of an encrypted account |
 | `RECORD_AUDIO` | dictate a task; the app keeps no recording |

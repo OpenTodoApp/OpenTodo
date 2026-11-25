@@ -8,10 +8,12 @@
 // `/focus?action=pause|resume` from its Live Activity or ongoing notification
 // (focus-live-activity D4), applied as Space applies it. The Android Today widget's
 // completion circle opens `/?complete=<taskId>` in a background run
-// (android-widget-list D2), applied only there, never in the visible app. The
-// Android quick-add notification's reply opens `/?add=<text>&id=<id>` in a background
+// (android-widget-list D2), applied only there, never in the visible app; an entry
+// `<taskId>@<YYYY-MM-DD>` names the occurrence ticked (android-upcoming-calendar-widgets D6).
+// The Android quick-add notification's reply opens `/?add=<text>&id=<id>` in a background
 // run, which saves the task with that id (android-quick-add-notification D4); the
 // visible app only ever prefills.
+import { localDueOf } from './dates'
 import { db } from './db'
 import { completeTask } from './ops'
 import { pauseSession, resumeSession } from './focus/session'
@@ -24,7 +26,7 @@ export type FocusAction = 'pause' | 'resume'
 
 export type ShellUrlAction =
   | { kind: 'reminder'; id: string; action: ReminderAction }
-  | { kind: 'complete'; ids: string[] }
+  | { kind: 'complete'; ids: string[]; on?: Record<string, string> }
   | { kind: 'add'; text: string; id?: string }
   | { kind: 'focus'; action: FocusAction }
   | null
@@ -35,9 +37,18 @@ export function shellUrlAction(search: string, pathname = '/'): ShellUrlAction {
   const id = p.get('reminder')
   const action = p.get('action')
   if (id && (action === 'snooze' || action === 'dismiss' || action === 'done')) return { kind: 'reminder', id, action }
-  // One run carries every tick queued since the last one: `?complete=a&complete=b`.
-  const complete = [...new Set(p.getAll('complete').filter(Boolean))].slice(0, 50)
-  if (complete.length) return { kind: 'complete', ids: complete }
+  // One run carries every tick queued since the last one: `?complete=a&complete=b`;
+  // `a@2026-10-23` is the occurrence due that day (android-upcoming-calendar-widgets D6).
+  const ids: string[] = []
+  const on: Record<string, string> = {}
+  for (const entry of p.getAll('complete')) {
+    const m = OCCURRENCE.exec(entry)
+    const id = m ? m[1] : entry
+    if (!id || ids.includes(id) || ids.length >= 50) continue
+    ids.push(id)
+    if (m) on[id] = m[2]
+  }
+  if (ids.length) return Object.keys(on).length ? { kind: 'complete', ids, on } : { kind: 'complete', ids }
   if (pathname === '/focus' && !id && (action === 'pause' || action === 'resume')) return { kind: 'focus', action }
   // `add` may be empty: the widget's button opens quick add (Android widgets hold no text field).
   const add = p.get('add')
@@ -46,6 +57,9 @@ export function shellUrlAction(search: string, pathname = '/'): ShellUrlAction {
   if (add != null) return { kind: 'add', text: add.slice(0, 500), ...(addId ? { id: addId } : {}) }
   return null
 }
+
+/** A widget tick naming its occurrence: `<taskId>@<YYYY-MM-DD>`. */
+const OCCURRENCE = /^(.+)@(\d{4}-\d{2}-\d{2})$/
 
 /**
  * Writes a notification button's operation: Snooze 10 min or Dismiss, as `push-sw.js`
@@ -65,11 +79,16 @@ export async function applyReminderAction(id: string, action: ReminderAction, no
 /**
  * The widget's completion circle (android-widget-list D2): completes an open task
  * through completeTask, as a tap in the list does (a repeating task moves to its
- * next occurrence). A task already completed, deleted or unknown is left alone.
+ * next occurrence). A task already completed, deleted or unknown is left alone, and
+ * so is one no longer due on `on`, the day of the occurrence ticked: a repeating task
+ * another run or device already advanced is not advanced twice
+ * (android-upcoming-calendar-widgets D6).
  */
-export async function applyWidgetComplete(id: string, now = Date.now()): Promise<void> {
+export async function applyWidgetComplete(id: string, now = Date.now(), on?: string): Promise<void> {
   const task = await db.tasks.get(id)
-  if (task && !task.deleted_at && !task.completed_at) await completeTask(task.id, { now })
+  if (!task || task.deleted_at || task.completed_at) return
+  if (on !== undefined && (task.due ? localDueOf(task.due).date : null) !== on) return
+  await completeTask(task.id, { now })
 }
 
 /**
@@ -118,7 +137,7 @@ export async function handleShellUrl(openQuickAdd: () => boolean, loc: Location 
   else if (action.kind === 'complete') {
     // Only in a background run: any app can open the visible app at an address (D2).
     if (has('background')) {
-      try { for (const id of action.ids) await applyWidgetComplete(id).catch(() => undefined) } finally { applied++ }
+      try { for (const id of action.ids) await applyWidgetComplete(id, Date.now(), action.on?.[id]).catch(() => undefined) } finally { applied++ }
     }
   }
   else if (action.kind === 'focus') await applyFocusAction(action.action)
