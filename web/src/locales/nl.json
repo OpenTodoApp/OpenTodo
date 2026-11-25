@@ -7887,5 +7887,9 @@
   "Only the owner and admins can change these.": "Alleen de eigenaar en beheerders kunnen dit wijzigen.",
   "Time tracking": "Tijdregistratie",
   "{feature} is off in this workspace.": "{feature} staat uit in deze werkruimte.",
-  "Workspace features changed": "Functies van de werkruimte gewijzigd"
+  "Workspace features changed": "Functies van de werkruimte gewijzigd",
+  "Phone screens": "Telefoonschermen",
+  "A trial of screens made for a phone. This device only.": "Een proef met schermen die voor de telefoon zijn gemaakt. Alleen op dit apparaat.",
+  "New phone screens": "Nieuwe telefoonschermen",
+  "Today and the task page in the new design. Turn it off at any time.": "Vandaag en de taakpagina in het nieuwe ontwerp. Je kunt het altijd uitzetten."
 }

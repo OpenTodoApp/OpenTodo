@@ -7887,5 +7887,9 @@
   "Only the owner and admins can change these.": "Solo el propietario y los administradores pueden cambiarlas.",
   "Time tracking": "Registro de tiempo",
   "{feature} is off in this workspace.": "{feature} está desactivado en este espacio de trabajo.",
-  "Workspace features changed": "Funciones del espacio de trabajo cambiadas"
+  "Workspace features changed": "Funciones del espacio de trabajo cambiadas",
+  "Phone screens": "Pantallas para el teléfono",
+  "A trial of screens made for a phone. This device only.": "Una prueba de pantallas hechas para el teléfono. Solo en este dispositivo.",
+  "New phone screens": "Nuevas pantallas para el teléfono",
+  "Today and the task page in the new design. Turn it off at any time.": "Hoy y la página de la tarea con el nuevo diseño. Puedes desactivarlo cuando quieras."
 }

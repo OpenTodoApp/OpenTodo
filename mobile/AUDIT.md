@@ -84,6 +84,13 @@ Sixth round (2026-11-14, the first tour at 768 px with touch, a tablet held upri
 
 Since (2026-11-15 to 22, under the open umbrella change `mobile-native-feel` and after it): `press-feedback-delay`, `touch-input-mode`, `row-lift-overscroll`, `swipe-back-follows`, `status-bar-scroll-top`, `app-links`, `ios-keyboard-bar`, `tablet-layouts`.
 
+Seventh round (2026-11-25): **a phone UI of its own**, `phone-ui-trial`. After six rounds the apps still read as "a responsive version". Looking at the screens showed why polish had run out: Today and the task page already had a large title, two-line rows, 44 px fact rows and editors as bottom sheets. What was left of the desktop was the design itself: a grip on every row, a bar of buttons in a group's header, an add field and an add button on one screen, facts behind "More properties". So the owner decided to try screens designed only for a phone, in their own part of the web app (`web/src/phone/`), running on the hooks the desktop screens run on. This is how TREK (`liketrek/TREK`), a web app in web-view apps like ours, is built.
+
+- **The trial:** Today, the task page and a date sheet, behind **New phone screens** in Settings, off by default and kept on the device. The design was drawn in Storybook first and approved against screenshots of the present screens.
+- **The destination, if it passes:** the phone UI is what both apps and a phone browser show below 768 px, with every function of the web app in it, screen by screen; a screen without a phone view keeps its present layout meanwhile. A tablet later shows two phone screens side by side, so the screens are written as panes.
+- **The gate:** both screens on real phones, switch on and off, in front of the people who gave the feedback. Verdict: *not yet recorded*.
+- **If it fails:** the web view is the limit, and the native app (`native-app-foundation`) is the remaining way; the screen designs carry over.
+
 Open:
 
 - **Push to the iPhone app**: an iPhone only takes pushes signed with the app's key, so a self-hosted server needs a relay the project would run, or an app signed by whoever runs the server. Not planned. Android has it through `shell-push` ([#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344)).

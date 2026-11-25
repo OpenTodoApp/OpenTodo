@@ -7887,5 +7887,9 @@
   "Only the owner and admins can change these.": "只有所有者和管理员可以更改这些设置。",
   "Time tracking": "时间记录",
   "{feature} is off in this workspace.": "此工作区已关闭{feature}。",
-  "Workspace features changed": "工作区功能已更改"
+  "Workspace features changed": "工作区功能已更改",
+  "Phone screens": "手机界面",
+  "A trial of screens made for a phone. This device only.": "试用为手机设计的界面。仅限此设备。",
+  "New phone screens": "新版手机界面",
+  "Today and the task page in the new design. Turn it off at any time.": "“今天”和任务页面使用新设计。可随时关闭。"
 }
