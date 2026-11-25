@@ -77,7 +77,7 @@ describe('Language panel', () => {
   it('System names the language it resolves to, and every language in its own name', async () => {
     const view = await render(<LanguageView value="system" system="English" onChange={vi.fn()} />)
     const options = [...view.container.querySelectorAll('#language-select option')].map((o) => o.textContent)
-    expect(options).toEqual(['System (English)', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Português', '简体中文', 'Nederlands', 'Türkçe', 'Polski', 'Русский'])
+    expect(options).toEqual(['System (English)', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Português', '简体中文', 'Nederlands', 'Türkçe', 'Polski', 'Русский', '日本語'])
     await view.unmount()
   })
 
@@ -87,7 +87,7 @@ describe('Language panel', () => {
     const view = await render(<LanguageView value="system" system={system} onChange={vi.fn()} />)
     const options = [...view.container.querySelectorAll('#language-select option')].map((o) => o.textContent)
     expect(options[0]).toBe('System (简体中文)')
-    expect(options).toHaveLength(12)
+    expect(options).toHaveLength(13)
     await view.unmount()
   })
 
@@ -97,7 +97,7 @@ describe('Language panel', () => {
   it('a community language is listed after the maintained ones', async () => {
     const view = await render(<LanguageView value="system" system="English" languages={WITH_RUSSIAN} onChange={vi.fn()} />)
     const options = [...view.container.querySelectorAll('#language-select option')].map((o) => o.textContent)
-    expect(options).toEqual(['System (English)', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Português', '简体中文', 'Nederlands', 'Türkçe', 'Polski', 'Русский'])
+    expect(options).toEqual(['System (English)', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Português', '简体中文', 'Nederlands', 'Türkçe', 'Polski', 'Русский', '日本語'])
     expect(view.container.querySelector('[data-language-community]')).toBeNull()
     await view.unmount()
   })

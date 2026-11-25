@@ -90,8 +90,8 @@ describe('locale resolution (D4)', () => {
     expect(resolveLanguage('de', ['en-US'])).toBe('de')
   })
   it('a browser language without a catalog falls back to English', () => {
-    expect(resolveLanguage('system', ['ja'])).toBe('en')
-    expect(resolveLanguage('xx', ['ja'])).toBe('en')
+    expect(resolveLanguage('system', ['sv'])).toBe('en')
+    expect(resolveLanguage('xx', ['sv'])).toBe('en')
   })
 
   it('classifies simplified Chinese and leaves traditional Chinese on English', () => {
@@ -117,6 +117,20 @@ describe('locale resolution (D4)', () => {
     applyCatalog('zh' as LanguageCode, 'zh-CN', {})
     expect(document.documentElement.lang).toBe('zh')
     expect(document.documentElement.dir).toBe('ltr')
+  })
+
+  it('resolves Japanese, sets lang to ja and keeps the direction (japanese)', async () => {
+    expect(resolveLanguage('system', ['ja-JP', 'en'])).toBe('ja')
+    expect(intlLocale('system', ['ja-JP'])).toBe('ja-JP')
+    expect(intlLocale('ja', ['en-US'])).toBe('ja')
+    document.documentElement.dir = 'ltr'
+    await applyLanguagePreference('ja', ['en-US'])
+    expect(currentLanguage()).toBe('ja')
+    expect(document.documentElement.lang).toBe('ja')
+    expect(document.documentElement.dir).toBe('ltr')
+    expect(t('Inbox')).toBe('インボックス')
+    expect(t('{n, plural, one {# task} other {# tasks}}', { n: 1 })).toBe('1件のタスク')
+    expect(t('{n, plural, one {# task} other {# tasks}}', { n: 1234 })).toBe('1,234件のタスク')
   })
 
   it('resolves Turkish and loads its catalog offline', async () => {
@@ -180,6 +194,15 @@ describe('dates in the interface language (D4)', () => {
     expect(formatDate('2026-10-14', 'numeric', undefined, '2026-01-01')).toBe('14-10-2026')
     expect(formatDate('2026-10-12', 'full', undefined, '2026-01-01')).toMatch(/^maandag/)
     expect(formatDate('2026-03-03', 'compact', undefined, '2026-01-01')).toMatch(/^3 mrt/)
+    expect(formatTime('15:00')).toBe('15:00')
+  })
+  it('Japanese with an en-US browser: year first, 2027年11月4日 and the weekday (japanese)', async () => {
+    await applyLanguagePreference('ja', ['en-US'])
+    setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
+    expect(currentLocale()).toBe('ja')
+    expect(formatDate('2026-11-04', 'full', undefined, '2026-01-01')).toBe('11月4日水曜日')
+    expect(formatDate('2027-11-04', 'numeric', undefined, '2026-01-01')).toBe('2027/11/04')
+    expect(formatDate('2027-11-04', 'compact', undefined, '2026-01-01')).toBe('2027年11月4日')
     expect(formatTime('15:00')).toBe('15:00')
   })
   it('Swiss German keeps its region', async () => {

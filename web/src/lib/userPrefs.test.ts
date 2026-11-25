@@ -49,9 +49,9 @@ describe('language (app-localization D1)', () => {
     expect(readLanguage(undefined)).toBe('system')
     await applyOps([{ id: 'l1', entity: 'user_prefs', entityId: 'me', field: 'language', value: 'de', ts: 10, device: 'laptop' }])
     expect(readLanguage(await db.userPrefs.get('me'))).toBe('de')
-    await applyOps([{ id: 'l2', entity: 'user_prefs', entityId: 'me', field: 'language', value: 'ja', ts: 11, device: 'newer' }])
+    await applyOps([{ id: 'l2', entity: 'user_prefs', entityId: 'me', field: 'language', value: 'sv', ts: 11, device: 'newer' }])
     const row = await db.userPrefs.get('me')
-    expect(row?.language).toBe('ja')
+    expect(row?.language).toBe('sv')
     expect(readLanguage(row)).toBe('system')
   })
 

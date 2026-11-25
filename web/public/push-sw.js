@@ -45,6 +45,7 @@
     nl: { reminder: 'Herinnering', due: 'Gepland {date}', tiny: '{tiny} is genoeg', generic: 'Je hebt een herinnering', done: 'Voltooid', snooze: '10 min. later', dismiss: 'Sluiten', test: 'Testmelding: push werkt op dit apparaat.', assigned: '{name} heeft je een taak toegewezen', completed: '{name} heeft een taak voltooid', reopened: '{name} heeft een taak opnieuw geopend', someone: 'Iemand' },
     tr: { reminder: 'Hatırlatıcı', due: 'Bitiş: {date}', tiny: '{tiny} yeterli', generic: 'Bir hatırlatıcınız var', done: 'Tamamlandı', snooze: '10 dk ertele', dismiss: 'Kapat', test: 'Test bildirimi: bu cihazda anlık bildirimler çalışıyor.', assigned: '{name} sana bir görev atadı', completed: '{name} bir görevi tamamladı', reopened: '{name} bir görevi yeniden açtı', someone: 'Biri' },
     pl: { reminder: 'Przypomnienie', due: 'Do wykonania {date}', tiny: '{tiny} wystarczy', generic: 'Masz przypomnienie', done: 'Zrobione', snooze: 'Odłóż o 10 min', dismiss: 'Zamknij', test: 'Powiadomienie testowe: powiadomienia push działają na tym urządzeniu.', assigned: '{name} przypisał(a) ci zadanie', completed: '{name} ukończył(a) zadanie', reopened: '{name} ponownie otworzył(a) zadanie', someone: 'Ktoś' },
+    ja: { reminder: 'リマインダー', due: '予定日 {date}', tiny: '{tiny}で十分', generic: 'リマインダーがあります', done: '完了', snooze: '10分後に再通知', dismiss: '閉じる', test: 'テスト通知：この端末でプッシュが動作しています。', assigned: '{name} があなたにタスクを割り当てました', completed: '{name} がタスクを完了しました', reopened: '{name} がタスクを再開しました', someone: '誰か' },
   }
   self.__opentodoText = OWN_TEXT
   const TEXT = {}

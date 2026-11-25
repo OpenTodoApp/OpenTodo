@@ -107,6 +107,21 @@ describe('group mentions', () => {
     expect(mentions).toEqual(['group:g-adults'])
   })
 
+  it('the plain composer ignores Enter while an input method is composing', async () => {
+    const p = props({ richComposer: false })
+    const r = await render(<CommentsView {...p} />)
+    const area = r.container.querySelector('#comment-composer') as HTMLTextAreaElement
+    area.focus()
+    await typeArea(area, '@adu')
+    await waitFor(() => !!document.querySelector('[role="listbox"] [data-mention-group]'), 'the group option')
+    await key(area, 'Enter', { isComposing: true })
+    await key(area, 'Enter', { ctrlKey: true, isComposing: true })
+    expect(area.value).toBe('@adu')
+    expect(p.onCreate).not.toHaveBeenCalled()
+    await key(area, 'Enter')
+    expect(area.value).toBe('@Adults ')
+  })
+
   it('renders a group mention as a group chip and a person as a person chip', async () => {
     const c = { id: 'c1', task_id: 't1', parent_id: null, body: '@Adults and @Anna, look', author_id: 'anna', mentions: ['group:g-adults', 'anna'], created_at: MON, edited_at: null, deleted_at: null, _clock: {} } as Comment
     const r = await render(<CommentsView {...props({ threads: [{ root: c, replies: [] }], richComposer: false })} />)
