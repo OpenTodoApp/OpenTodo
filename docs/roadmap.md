@@ -28,7 +28,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `caldav-verified` | CalDAV verified on real clients | In progress (6 of 16) |
 | `play-production` | Google Play production, F-Droid and reproducible builds: reproducible builds, the F-Droid metadata and the Play upload are in; the store listings wait for the owner's Play Console and F-Droid steps | In progress (15 of 18) |
 | `ios-shell` | The iPhone and iPad app: first-run server screen, reminders on the phone without a push service, the share sheet, a Today widget, Face ID unlock | In progress (25 of 34) |
-| `ios-distribution` | The iPhone app in TestFlight and the App Store | In progress (14 of 28) |
+| `ios-distribution` | The iPhone app in TestFlight and the App Store | In progress (15 of 29) |
 | `apple-shortcuts` | Siri, Shortcuts, the Action Button and iOS widgets | Planned |
 | `focus-live-activity` | Focus as a Live Activity and in the Dynamic Island | In progress (18 of 21) |
 | `location-reminders` | Reminders when you arrive at or leave a place. Shipped on Android; iOS follows | In progress (16 of 18) |
@@ -280,6 +280,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `touch-sidebar-names` | On touch a sidebar row's name has the room; its menu opens on a hold | Shipped in 1.6 |
 | `reminder-card-compact` | The in-app reminder as one compact card on touch: Snooze and Dismiss on one row | Shipped in 1.6 |
 | `phone-fab-scroll-room` | The calendar's Day and Week reach the tab bar; no empty room under pages without the add button | Shipped in 1.6 |
+| `phone-ui-trial` | A trial of screens made only for a phone, behind a switch on the device: Today and the task page, a date sheet, and a place and rules for the phone screens that follow | In progress (20 of 23) |
 | `shell-push` | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | Shipped in 1.5 |
 
 <!-- roadmap:end -->

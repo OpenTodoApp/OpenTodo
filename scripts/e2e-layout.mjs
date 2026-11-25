@@ -55,6 +55,9 @@
 // LAYOUT_DATE (default 2026-11-01: the browsers' clock and the seeded dates),
 // SHARD (i/n: only every n-th engine × width × theme combination, from the i-th, so
 // n jobs side by side check them all; CI's pull request legs).
+// PHONE_UI=1 (the device's "New phone screens" switch is on, OpenSpec change
+// phone-ui-trial: Today and the task page are then the phone UI's below 768 px; run it
+// with ONLY=today,task-repeating, the screens that have a phone view).
 //
 // The browsers' clock is fixed at 09:00 UTC on LAYOUT_DATE and the account is seeded
 // around that day, so the check sees the same calendars whatever day it runs: which
@@ -82,6 +85,8 @@ const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null
 const CONCURRENCY = Number(process.env.CONCURRENCY ?? 3)
 const SHOTS_ALL = process.env.SHOTS === 'all'
 const LANG = process.env.OPENTODO_LANG ?? ''
+// The phone UI's switch, as the app keeps it on a device (web/src/phone/prefs.ts).
+const PHONE_UI = process.env.PHONE_UI === '1'
 const LAYOUT_DATE = process.env.LAYOUT_DATE ?? '2026-11-01'
 const [SHARD_AT, SHARD_OF] = (process.env.SHARD || '1/1').split('/').map(Number)
 if (!(SHARD_OF >= 1 && SHARD_AT >= 1 && SHARD_AT <= SHARD_OF)) throw new Error(`SHARD must be i/n with 1 <= i <= n, not ${process.env.SHARD}`)
@@ -211,6 +216,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
     const events = calendarEvents(NOW)
     await ctx.route('**/api/v1/calendar-feeds/events?*', (route) => route.fulfill({ json: events }))
     if (LANG) for (const c of [anonCtx, ctx]) await c.addInitScript((code) => { try { localStorage.setItem('opentodo.lang', code) } catch { /* storage blocked */ } }, LANG)
+    if (PHONE_UI) await ctx.addInitScript(() => { try { localStorage.setItem('opentodo.phoneUi', '1') } catch { /* storage blocked */ } })
     const page = await ctx.newPage()
     page.on('dialog', (d) => d.dismiss())
     page.on('crash', () => { run.crashed ??= run.step; browser.close().catch(() => {}) })
@@ -258,6 +264,9 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
           await p.waitForTimeout(300)
         }
         await p.waitForTimeout(250)
+        // With the switch on, a screen that has a phone view must be showing it: a run that
+        // quietly checked the present screens would pass and prove nothing (phone-ui-trial).
+        if (PHONE_UI && width < 768 && !s.anon && !(await p.locator('[data-phone-screen]').count())) throw new Error('the phone UI is on but the screen is not a phone screen')
       }
       try {
         await visit()
