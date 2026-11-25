@@ -2203,7 +2203,7 @@
                   "type": "string"
                 },
                 "urgent": {
-                  "description": "Urgent: the iPhone app (iOS 26 and later) rings it as an alarm until it is stopped; everywhere else it is an ordinary reminder. Only for the kinds relative, deadline and absolute. Default false.",
+                  "description": "Urgent: the iPhone app (iOS 26 and later) and the Android app ring it as an alarm until it is answered; everywhere else it is an ordinary reminder. Only for the kinds relative, deadline and absolute. Default false.",
                   "type": "boolean"
                 }
               },
@@ -2277,7 +2277,7 @@
                   "type": "integer"
                 },
                 "urgent": {
-                  "description": "Urgent: the iPhone app (iOS 26 and later) rings it as an alarm until it is stopped; everywhere else it is an ordinary reminder. Only for the kinds relative, deadline and absolute. Default false.",
+                  "description": "Urgent: the iPhone app (iOS 26 and later) and the Android app ring it as an alarm until it is answered; everywhere else it is an ordinary reminder. Only for the kinds relative, deadline and absolute. Default false.",
                   "type": "boolean"
                 }
               },

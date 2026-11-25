@@ -36,6 +36,9 @@ class WidgetTest {
 
     @Before fun setUp() {
         resetApp()
+        // No widget run left from an earlier test class (UpcomingCalendarWidgetTest ticks one too).
+        WorkManager.getInstance(context).cancelAllWork().result.get()
+        WorkManager.getInstance(context).pruneWork().result.get()
         server = FakeServer()
         Prefs(context).server = server.origin
         shell("appops set ${context.packageName} SYSTEM_ALERT_WINDOW allow")
@@ -66,6 +69,8 @@ class WidgetTest {
     @After fun tearDown() {
         shell("appops set ${context.packageName} SYSTEM_ALERT_WINDOW default")
         WorkManager.getInstance(context).cancelAllWork().result.get()
+        // Cancelled runs stay listed until pruned; the next test (of either class) must start with none.
+        WorkManager.getInstance(context).pruneWork().result.get()
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             host.deleteAppWidgetId(widgetId)
             host.stopListening()

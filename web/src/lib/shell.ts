@@ -13,7 +13,7 @@ export const BRIDGE_VERSION = 1
 /** The oldest shell app version this web app expects (bumped when a shell bug needs a forced update). */
 export const MIN_SHELL_APP = '0.10.0'
 
-export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'completion-sound' | 'alarm-settings' | 'background' | 'pull-refresh' | 'first-paint' | 'push' | 'app-links' | 'scroll-top' | 'focus' | 'quick-add-notification'
+export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'completion-sound' | 'alarm-settings' | 'urgent-alarms' | 'background' | 'pull-refresh' | 'first-paint' | 'push' | 'app-links' | 'scroll-top' | 'focus' | 'quick-add-notification'
 
 /**
  * One location reminder handed to the shell (location-reminders D3): the circle
@@ -54,7 +54,7 @@ export interface ShellReminder {
   title?: string
   /** The notification's body, the due as of the firing day ("Today 14:00"), sent with the title (push-due-date D4). */
   due?: string
-  /** Only on an urgent reminder, which the iPhone app rings as an alarm (ios-urgent-alarms D3). */
+  /** Only on an urgent reminder, which the iPhone and Android apps ring as an alarm (ios-urgent-alarms D3, android-urgent-alarms). */
   urgent?: true
 }
 
@@ -65,15 +65,34 @@ export interface ShellWidgetData {
   count: number
   overdue: number
   /** `project`: the project's name (none for the Inbox); `date`: an overdue task's due date (android-widget-list D4). */
-  tasks: { id: string; title?: string; time?: string; date?: string; project?: string; priority: number; overdue: boolean }[]
-  /** What the widget may ask of this web app (android-widget-list D3): `complete` opens `/?complete=<id>` in a background run. */
-  actions?: 'complete'[]
+  tasks: { id: string; title?: string; time?: string; date?: string; due?: string; project?: string; priority: number; overdue: boolean }[]
+  /**
+   * What the widget may ask of this web app (android-widget-list D3): `complete` opens `/?complete=<id>` in a
+   * background run; `complete-on` lets a tick name its occurrence, `<id>@<due>` (android-upcoming-calendar-widgets D6).
+   */
+  actions?: ('complete' | 'complete-on')[]
+  /** The logical today (`YYYY-MM-DD`) and the minutes after midnight the day starts (android-upcoming-calendar-widgets D7). */
+  today?: string
+  dayStart?: number
   /**
    * The Completed widget (completed-widget D1): how many tasks were completed today and,
    * while the account is readable, on each of the last 7 days (oldest first), counted as
    * Statistics counts them. Numbers and days only, never task content.
    */
   completed?: { today: number; days?: { day: string; done: number }[] }
+  /**
+   * The Upcoming widget (android-upcoming-calendar-widgets D1): the app's Upcoming after
+   * today in day order, at most 50; `date` is the day a row is listed under, `count` the
+   * whole list. Locked: the count and no rows.
+   */
+  upcoming?: { count: number; tasks: { id: string; title?: string; date: string; time?: string; due?: string; project?: string; priority: number }[] }
+  /**
+   * The Calendar widget (android-upcoming-calendar-widgets D1): the number of open tasks per
+   * day (days with none left out) from the first of this month to the end of the fifth month
+   * after it; `weekStart` 0 = Sunday; `dayView` whether the current workspace has Calendar on,
+   * so a tap opens the day (else Upcoming). Locked: no `days`.
+   */
+  calendar?: { weekStart: number; dayView: boolean; days?: Record<string, number> }
 }
 
 /** The answer of `scheduleReminders`: whether the shell may show notifications. */
@@ -131,6 +150,11 @@ export interface OpenTodoShell {
   playCompletionSound?(): void
   /** shell-reminders-on D3: opens the system page where exact alarms are allowed (Android, the visible app). */
   openAlarmSettings?(): void
+  /**
+   * android-urgent-alarms D4: the user turned Urgent on; the shell opens the system page
+   * for what an urgent reminder still lacks (exact alarms, full-screen), each once per device.
+   */
+  allowUrgentAlarms?(): void
   /**
    * shell-reminders-on D4: a background run's web app is done; the shell ends the run. The
    * JSON names what the run saved (android-quick-add-notification D4: `{"added": [taskIds]}`).
@@ -378,6 +402,14 @@ export function openAlarmSettings(): boolean {
   const s = shell()
   if (!s || !has('alarm-settings') || !s.openAlarmSettings) return false
   s.openAlarmSettings()
+  return true
+}
+
+/** Lets a shell that lists `urgent-alarms` ask for what urgent reminders need; false elsewhere. */
+export function allowUrgentAlarms(): boolean {
+  const s = shell()
+  if (!s || !has('urgent-alarms') || !s.allowUrgentAlarms) return false
+  s.allowUrgentAlarms()
   return true
 }
 

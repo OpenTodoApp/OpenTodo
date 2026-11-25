@@ -38,6 +38,7 @@ Open changes, most of them part built.
 | [`android-home-network-notice`](openspec/changes/android-home-network-notice/) | The Android app says when the server address only works at home |  |
 | [`android-reveal-on-paint`](openspec/changes/android-reveal-on-paint/) | The Android app shows the web app at its first drawn frame, as the iPhone app does | [#1755](https://github.com/OpenTodoApp/OpenTodo/issues/1755) |
 | [`android-unicode-address`](openspec/changes/android-unicode-address/) | A server address typed in Unicode works in the Android app; both apps share one set of address cases |  |
+| [`android-urgent-alarms`](openspec/changes/android-urgent-alarms/) | Urgent reminders ring as full-screen alarms in the Android app; built, the device run is open | [#2023](https://github.com/OpenTodoApp/OpenTodo/issues/2023) |
 | [`android-quick-add-notification`](openspec/changes/android-quick-add-notification/) | A quick-add notification in the Android app: add a task from the notification shade in any app | [#2046](https://github.com/OpenTodoApp/OpenTodo/issues/2046) |
 | [`ios-microphone-origin`](openspec/changes/ios-microphone-origin/) | The iPhone app grants the microphone to the configured server only, without a second prompt |  |
 | [`ios-quick-look`](openspec/changes/ios-quick-look/) | An attached image or PDF opens in Quick Look in the iPhone app, without saving it first |  |
@@ -174,6 +175,7 @@ Longer horizons, and the household.
 | [`chore-rotation`](openspec/changes/archive/2026-11-02-chore-rotation/) | Recurring tasks that rotate between members of a group | [#582](https://github.com/OpenTodoApp/OpenTodo/issues/582) |
 | [`more-languages`](openspec/changes/archive/2026-11-12-more-languages/) | Dutch, quick add in Dutch, and a kit for community languages | [#584](https://github.com/OpenTodoApp/OpenTodo/issues/584) |
 | [`simplified-chinese`](openspec/changes/archive/2026-11-11-simplified-chinese/) | Simplified Chinese (简体中文) | [#883](https://github.com/OpenTodoApp/OpenTodo/issues/883) |
+| [`japanese`](openspec/changes/japanese/) | Japanese (日本語) as a community language, reviewed by a native speaker | [#884](https://github.com/OpenTodoApp/OpenTodo/issues/884) |
 | [`priority-names`](openspec/changes/archive/2026-11-10-priority-names/) | Rename the four priorities |  |
 
 ### [1.0 "Trust"](https://github.com/OpenTodoApp/OpenTodo/milestone/6)

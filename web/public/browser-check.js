@@ -18,6 +18,7 @@
     pt: ['Este navegador é antigo demais para o OpenTodo', 'O OpenTodo precisa do Chrome ou do Android System WebView 111, do Safari 16.4 ou do Firefox 128, ou mais recentes.', 'No Android, o app OpenTodo mostra o servidor pelo WebView do sistema do telefone. Se ele não puder ser atualizado, abra o endereço do seu servidor num navegador com motor próprio, como o Firefox, e adicione-o à tela inicial.', 'Este informa'],
     nl: ['Deze browser is te oud voor OpenTodo', 'OpenTodo heeft Chrome of Android System WebView 111, Safari 16.4 of Firefox 128 nodig, of nieuwer.', 'Op Android toont de OpenTodo-app de server via de systeem-WebView van de telefoon. Kan die niet worden bijgewerkt, open dan het adres van je server in een browser met een eigen engine, zoals Firefox, en zet het op je beginscherm.', 'Deze meldt'],
     zh: ['此浏览器版本过旧，无法运行 OpenTodo', 'OpenTodo 需要 Chrome 或 Android System WebView 111、Safari 16.4 或 Firefox 128 及以上版本。', '在 Android 上，OpenTodo 应用通过手机的系统 WebView 显示服务器。如果它无法更新，请在自带内核的浏览器（例如 Firefox）中打开你的服务器地址，并添加到主屏幕。', '此浏览器报告'],
+    ja: ['このブラウザは古すぎて OpenTodo を使えません', 'OpenTodo には Chrome または Android System WebView 111、Safari 16.4、Firefox 128 以降が必要です。', 'Android では、OpenTodo アプリはスマートフォンのシステム WebView でサーバーを表示します。更新できない場合は、Firefox など独自のエンジンを持つブラウザでサーバーのアドレスを開き、ホーム画面に追加してください。', 'このブラウザの報告'],
   }
   var lang = (navigator.language || 'en').toLowerCase().slice(0, 2)
   var t = texts[lang] || texts.en
