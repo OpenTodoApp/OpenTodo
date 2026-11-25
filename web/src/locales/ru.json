@@ -2137,6 +2137,7 @@
   "Go to Completed": "Перейти в «Выполненные»",
   "Go to Focus": "Перейти в «Фокус»",
   "Go to Focus: one task, a timer, a break when you need one": "Перейти в «Фокус»: одна задача, таймер и перерыв, когда он нужен",
+  "Go to Focus: {text}": "Перейти в «Фокус»: {text}",
   "Go to Habits": "Перейти в «Привычки»",
   "Go to Habits: your habits, their last seven days and a check button (while Habits is on)": "Перейти в «Привычки»: ваши привычки, их последние семь дней и кнопка отметки (если привычки включены)",
   "Go to Inbox": "Перейти во Входящие",

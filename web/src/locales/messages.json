@@ -7469,10 +7469,14 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Go to Focus": [
+    "web/src/app/TrackingIndicator.tsx",
     "web/src/app/palette/registry.ts"
   ],
   "Go to Focus: one task, a timer, a break when you need one": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Go to Focus: {text}": [
+    "web/src/app/TrackingIndicator.tsx"
   ],
   "Go to Habits": [
     "web/src/app/palette/registry.ts"

@@ -16,6 +16,9 @@ import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
 import { TaskRow } from './TaskRow'
 import { TrackingIndicator, TrackingPill } from './TrackingIndicator'
+import { navigate } from './router'
+import { startSession } from '../lib/focus/session'
+import { FOCUS_DEFAULTS } from '../lib/focus/prefs'
 import { TriageView } from './TriageView'
 
 let n = 0
@@ -146,6 +149,51 @@ describe('the running indicator', () => {
     const stop = [...sheet.querySelectorAll('button')].find((b) => b.textContent === 'Stop tracking')!
     await click(stop)
     await waitFor(() => !r.container.querySelector('[data-tracking-pill]'))
+  })
+
+  it('Back to a running Focus session (focus-timer-shortcut): the pill keeps its text, is named for Focus and opens it', async () => {
+    navigate({ view: 'today' }, { replace: true })
+    const id = await createTask({ title: 'Write the report' })
+    await startSession(id, FOCUS_DEFAULTS, NOW.getTime() - 5 * 60000)
+    const r = await render(<><TrackingIndicator /><TaskPageHost /></>)
+    await waitFor(() => !!r.container.querySelector('[data-tracking-text]'))
+    expect(visibleText(r.container.querySelector('[data-tracking-text]')!)).toBe('5m · Write the report')
+    const open = r.container.querySelector<HTMLButtonElement>('[data-tracking-open]')!
+    expect(open.tagName).toBe('BUTTON')
+    expect(open.getAttribute('aria-label')).toBe('Go to Focus: 5m · Write the report')
+    await click(open)
+    await waitFor(() => location.pathname === '/focus', 'the Focus screen')
+    expect(document.querySelector('[data-task-title]')).toBeNull()
+    await click(r.container.querySelector('[data-tracking-stop]')!)
+    await waitFor(() => !r.container.querySelector('[data-tracking-indicator]'))
+  })
+
+  it('Back to Focus on a phone: the bar goes to Focus without the sheet', async () => {
+    width = 390
+    navigate({ view: 'today' }, { replace: true })
+    const id = await createTask({ title: 'Write the report' })
+    await startSession(id, FOCUS_DEFAULTS, NOW.getTime() - 5 * 60000)
+    const r = await render(<TrackingPill />)
+    await waitFor(() => r.container.querySelector('[data-tracking-pill]')?.getAttribute('aria-label') === 'Go to Focus: 5m · Write the report')
+    const pill = r.container.querySelector<HTMLButtonElement>('[data-tracking-pill]')!
+    expect(pill.hasAttribute('aria-haspopup')).toBe(false)
+    await click(pill)
+    await waitFor(() => location.pathname === '/focus', 'the Focus screen')
+    expect(document.querySelector('[data-testid="tracking-sheet"]')).toBeNull()
+  })
+
+  it('Icon rail of a Focus session: the menu offers Go to Focus', async () => {
+    navigate({ view: 'today' }, { replace: true })
+    const id = await createTask({ title: 'Write the report' })
+    await startSession(id, FOCUS_DEFAULTS, NOW.getTime() - 5 * 60000)
+    const r = await render(<TrackingIndicator collapsed />)
+    await waitFor(() => r.container.querySelector('[data-tracking-open]')?.getAttribute('aria-label') === 'Go to Focus: 5m · Write the report')
+    await click(r.container.querySelector('[data-tracking-open]')!)
+    const items = () => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')]
+    await waitFor(() => items().some((x) => x.textContent?.includes('Go to Focus')), 'the menu')
+    expect(items().some((x) => x.textContent?.includes('Open the tracked task'))).toBe(false)
+    await click(items().find((x) => x.textContent?.includes('Go to Focus'))!)
+    await waitFor(() => location.pathname === '/focus', 'the Focus screen')
   })
 
   it('Nothing running: no tracking control', async () => {
