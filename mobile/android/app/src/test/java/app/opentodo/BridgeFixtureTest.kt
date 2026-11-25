@@ -32,7 +32,10 @@ class BridgeFixtureTest {
         val got = ReminderSchedule.parse(f.getString("payload"), f.getLong("now"))
         assertEquals(name, (0 until want.length()).map { i ->
             val o = want.getJSONObject(i)
-            ShellReminder(o.getString("id"), o.getString("taskId"), o.getLong("fireAt"), nullableString(o, "title"), o.optBoolean("urgent", false))
+            ShellReminder(
+                o.getString("id"), o.getString("taskId"), o.getLong("fireAt"), nullableString(o, "title"),
+                nullableString(o, "due"), o.optBoolean("urgent", false),
+            )
         }, got)
     }
 

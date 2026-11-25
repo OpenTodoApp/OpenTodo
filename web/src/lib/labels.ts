@@ -3,7 +3,7 @@
 // The array itself is a whole-value LWW register (see docs/sync.md, "Task labels"),
 // which is why every write here reads the current array in the same transaction.
 import { db } from './db'
-import { getDeviceId, mutate, mutateMany, mutationTables } from './ops'
+import { getDeviceId, mutate, mutateMany, mutationTables, type Change } from './ops'
 import { compareByPosition, planMove, planStep, type Placement, type PositionChange } from './ordering'
 import type { Label, Task } from './types'
 import { HUES } from '../ui/tokens/palette'
@@ -124,26 +124,33 @@ async function tasksCarrying(labelId: string): Promise<Task[]> {
   return db.tasks.filter((task) => !task.deleted_at && task.labels.includes(labelId)).toArray()
 }
 
-/** Tombstone the label and drop its id from every non-deleted task, one op per task. */
-export async function deleteLabel(id: string): Promise<void> {
-  for (const task of await tasksCarrying(id)) await removeLabel(task.id, id)
-  await mutate('label', id, { deleted_at: Date.now() })
+/** Tombstone the label and drop its id from every non-deleted task, one op per task in one batch, so Undo takes it back as one step (undo-coverage). */
+export function planDeleteLabel(id: string, now = Date.now()): Promise<Change[]> {
+  return relabel(id, (cur) => cur.filter((l) => l !== id), now)
 }
 
-/** Rewrite every carrier of `sourceId` to carry `targetId` (de-duplicated), then delete the source. */
-export async function mergeLabels(sourceId: string, targetId: string): Promise<void> {
-  if (sourceId === targetId) return
-  for (const task of await tasksCarrying(sourceId)) {
-    await rewriteTaskLabels(task.id, (cur) => {
-      const out: string[] = []
-      for (const id of cur) {
-        const v = id === sourceId ? targetId : id
-        if (!out.includes(v)) out.push(v)
-      }
-      return out
-    })
+/** Rewrite every carrier of `sourceId` to carry `targetId` (de-duplicated), then delete the source, in one batch; none when the two are one label. */
+export async function planMergeLabels(sourceId: string, targetId: string, now = Date.now()): Promise<Change[]> {
+  if (sourceId === targetId) return []
+  return relabel(sourceId, (cur) => {
+    const out: string[] = []
+    for (const id of cur) {
+      const v = id === sourceId ? targetId : id
+      if (!out.includes(v)) out.push(v)
+    }
+    return out
+  }, now)
+}
+
+/** Each carrier of `labelId` with its labels rewritten by `fn`, then the label's tombstone. */
+async function relabel(labelId: string, fn: (current: string[]) => string[], now: number): Promise<Change[]> {
+  const changes: Change[] = []
+  for (const task of await tasksCarrying(labelId)) {
+    const next = fn(task.labels)
+    if (next.length !== task.labels.length || next.some((v, i) => v !== task.labels[i])) changes.push({ entity: 'task', entityId: task.id, patch: { labels: next } })
   }
-  await mutate('label', sourceId, { deleted_at: Date.now() })
+  changes.push({ entity: 'label', entityId: labelId, patch: { deleted_at: now } })
+  return changes
 }
 
 // ---- display helpers (pure) ----

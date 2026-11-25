@@ -118,6 +118,16 @@
             android:turnScreenOn="true"
             tools:targetApi="o_mr1" />
 
+        <!-- native-shells "Quick actions on the app icon": the shortcuts' target, so the task the
+             system clears for a static shortcut is this one's and a running app keeps its state. -->
+        <activity
+            android:name=".ShortcutActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay" />
+
         <receiver android:name=".AlarmReceiver" android:exported="false" />
         <receiver android:name=".FocusEndReceiver" android:exported="false" />
         <receiver android:name=".NotificationActionReceiver" android:exported="false" />

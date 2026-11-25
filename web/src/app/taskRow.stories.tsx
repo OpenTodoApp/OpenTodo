@@ -284,7 +284,7 @@ const work = project({ id: 'p-work', name: 'Work', color: HEX.blue })
 /** The demo's Today rows: timed tasks, an overdue one, a deadline, an evening repeat, three labels with counts, a P3 (rows-v2 D11). */
 function TodayRows({ forceActions = false }: { forceActions?: boolean }) {
   const today = { date: TODAY }
-  const row = { ...base, showProject: true, timeColumn: true, onMore: noop }
+  const row = { ...base, showProject: true, timeColumn: true, onMore: noop, onEdit: noop }
   return (
     <List>
       <TaskRow {...row} project={work} task={task({ id: 't-late', title: 'Send the invoice to Northwind', project_id: work.id, due: { date: '2026-10-12', time: '18:00' }, priority: 2 })} />

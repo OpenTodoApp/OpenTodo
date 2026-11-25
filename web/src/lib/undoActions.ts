@@ -10,7 +10,7 @@ import { formatDate, logicalToday } from './dates'
 import { planSkip, seriesRule } from './recurring'
 import { duePatch, refusedSeries, seriesDateRefusal, withNotMoved } from './seriesDates'
 import { lineageRows } from './lineageRows'
-import { editRedirected, getDeviceId, keepsSubtasksNow, liveSubtree, parkTask, pastScopeActive, planRecurrence, planReminders, planTaskEdit, planTaskParent, setRecurrence, updateTask, type Change } from './ops'
+import { editRedirected, getDeviceId, keepsSubtasksNow, liveSubtree, parkTask, pastScopeActive, planRecurrence, planReminders, planTaskEdit, planTaskParent, setRecurrence, trackingStops, updateTask, type Change } from './ops'
 import type { ReminderPhrase } from './nlp'
 import { currentUserId, memberName, membershipMap } from './sharing'
 import type { FilterContext } from './filter'
@@ -29,7 +29,9 @@ import { dayPartFields, dayPartName, dayPartOf, doOnPatch, type DayPart, type Do
 import { energyName, type Energy } from './energy'
 import { sectorPatch } from './sectorWrites'
 import { planDayDrop } from './dayDrop'
-import { planSortProjects, planTasksMove, type TaskTarget } from './move'
+import { planSortProjects, planTaskMove, planTaskStep, planTasksMove, type Step, type TaskTarget } from './move'
+import { planDeleteSection, planTaskToSection } from './sections'
+import { planDeleteLabel, planMergeLabels } from './labels'
 import { replanChanges, type ReplanProposal, type UnfitChoice } from './replan'
 import { keepWorkspaceFor, Partition, readWorkspaceState, workspaceIdFor } from './workspaces'
 import { resettable } from './moduleState'
@@ -88,7 +90,10 @@ export async function completeUndoable(id: string, completed: boolean, opts: { n
     : await readTicked([id])
   const task = tasks[0]
   if (!task) return { entry: null, label: '' }
-  const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? logicalToday(), await membershipMap(), await keepsSubtasksNow()) : planReopen([task])
+  const now = opts.now ?? Date.now()
+  const changes = completed ? planComplete([task], all, now, opts.today ?? logicalToday(), await membershipMap(), await keepsSubtasksNow()) : planReopen([task])
+  // Completing ends the person's running entry on the task in the same step (time-tracking "Complete stops tracking").
+  if (completed && !task.completed_at) changes.push(...await trackingStops(id, now))
   const result = await apply(changes, completed ? t('Task completed') : t('Task reopened'))
   return { ...result, completed: completed && !task.completed_at && !!result.entry }
 }
@@ -413,6 +418,45 @@ export async function moveTasksUndoable(ids: readonly string[], target: TaskTarg
   const changes = await planTasksMove(ids, target)
   if (!changes) return null
   return apply(changes, t('{n, plural, one {# task moved} other {# tasks moved}}', { n: ids.length }))
+}
+
+/** One row dragged among a list's rows (undo-coverage): one batch with Undo, named like a drag of ticked rows unless `label` names it. */
+export async function moveTaskUndoable(id: string, target: TaskTarget, label?: string): Promise<UndoableResult | null> {
+  const changes = await planTaskMove(id, target)
+  return changes ? apply(changes, label ?? t('{n, plural, one {# task moved} other {# tasks moved}}', { n: 1 })) : null
+}
+
+/** A keyboard move of one row in its list (Alt+arrows, the row menu's Move items, Vim): one step with Undo, "Order changed" as in a view's own order. */
+export async function moveTaskByUndoable(id: string, step: Step): Promise<UndoableResult | null> {
+  const changes = await planTaskStep(id, step)
+  return changes ? apply(changes, t('Order changed')) : null
+}
+
+/** A task moved to a section, or with null to No section (board columns, the section picker): one step with Undo named after the section. */
+export async function sectionMoveUndoable(id: string, sectionId: string | null, sectionName: string): Promise<UndoableResult> {
+  return apply([await planTaskToSection(id, sectionId)], t('Moved to {target}', { target: sectionName }))
+}
+
+/** Delete a section and take its open tasks out of it, as one step with Undo (undo-coverage). */
+export async function deleteSectionUndoable(id: string): Promise<UndoableResult> {
+  return apply(await planDeleteSection(id), t('Section deleted'))
+}
+
+/** Delete a label and take it off every task, as one step with Undo (undo-coverage). */
+export async function deleteLabelUndoable(id: string): Promise<UndoableResult> {
+  return apply(await planDeleteLabel(id), t('Label deleted'))
+}
+
+/** Merge one label into another, as one step with Undo: Undo brings the label back on the tasks that carried it. */
+export async function mergeLabelsUndoable(sourceId: string, targetId: string, targetName: string): Promise<UndoableResult> {
+  return apply(await planMergeLabels(sourceId, targetId), t('Merged into {label}', { label: targetName }))
+}
+
+/** Delete a custom field (its tombstone; the values stay in the tasks, hidden) as one step with Undo, which shows the field and its values again. */
+export async function deleteFieldUndoable(id: string): Promise<UndoableResult> {
+  const def = await db.fields.get(id)
+  if (!def || def.deleted_at) return { entry: null, label: '' }
+  return apply([{ entity: 'field', entityId: id, patch: { deleted_at: Date.now() } }], t('Field deleted'))
 }
 
 /** Put tasks on a day as a drop on the calendar does (upcoming-drag): one batch with Undo; tasks already there write nothing. */

@@ -28,8 +28,15 @@ class ReminderScheduleTest {
     }
 
     @Test fun roundTrip() {
-        val list = listOf(ShellReminder("r1", "t1", now + hour, "A"), ShellReminder("r2", "t2", now + 2 * hour, null))
+        val list = listOf(ShellReminder("r1", "t1", now + hour, "A", "Today 14:00"), ShellReminder("r2", "t2", now + 2 * hour, null))
         assertEquals(list, ReminderSchedule.parse(ReminderSchedule.toJson(list), now))
+    }
+
+    /** push-due-date D4: the due text is the body; an empty or missing one is none, a long one is cut. */
+    @Test fun dueText() {
+        val long = "x".repeat(150)
+        val json = """[{"id":"a","taskId":"t","fireAt":${now + hour},"due":"Tomorrow"},{"id":"b","taskId":"t","fireAt":${now + hour},"due":""},{"id":"c","taskId":"t","fireAt":${now + hour},"due":"$long"},{"id":"d","taskId":"t","fireAt":${now + hour}}]"""
+        assertEquals(listOf("Tomorrow", null, "x".repeat(100), null), ReminderSchedule.parse(json, now).map { it.due })
     }
 
     /** The alarm receiver reads the stored schedule without a window: a 2026 timestamp is not "beyond the horizon of 1970". */

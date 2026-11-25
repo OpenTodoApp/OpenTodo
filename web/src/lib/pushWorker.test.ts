@@ -7,7 +7,7 @@ import { CLOCK_OFFSET_META } from './hlc'
 import { createTask, getDeviceId, resetDeviceId } from './ops'
 import { addReminder } from './reminders'
 import { checkReminders, SHOWN_KEY, type ShownSet } from './reminderWatcher'
-import { formatDate, formatTime, logicalDay, resolveDateTime } from './dates'
+import { describeDue, logicalDay, resolveDateTime, todayISO } from './dates'
 import { setUserPref, type DateTimePrefs } from './userPrefs'
 import { applyReminderAction, handleShellUrl } from './shellActions'
 import { occurrenceId } from './ids'
@@ -219,7 +219,7 @@ describe('service worker test pushes (push-test-delivery)', () => {
   })
 })
 
-type DueFormatter = (due: { date: string; time?: string }, prefs: Partial<DateTimePrefs> | undefined, today: string) => string
+type DueFormatter = (due: { date: string; time?: string; tz?: string }, prefs: Partial<DateTimePrefs> | undefined, today: string) => string
 
 /** Loads push-sw.js into a bare scope and returns its inline due formatter. */
 function workerFormatter(): DueFormatter {
@@ -228,11 +228,18 @@ function workerFormatter(): DueFormatter {
   return self.__opentodoFormatDue!
 }
 
-describe('service worker due text (date-time-preferences D7)', () => {
+describe('service worker due text (date-time-preferences D7, push-due-date D2)', () => {
   const TODAY = '2026-10-14'
   const P = (p: Partial<DateTimePrefs>): DateTimePrefs => ({ date_format: 'system', time_format: 'system', week_start: 'system', ...p })
-  // One table for both formatters: the inline copy in push-sw.js and lib/dates.ts.
-  const FIXTURE: [Partial<DateTimePrefs>, { date: string; time?: string }][] = [
+  // One table for both formatters: the inline copy in push-sw.js and describeDue in lib/dates.ts.
+  const FIXTURE: [Partial<DateTimePrefs>, { date: string; time?: string; tz?: string }][] = [
+    [{ time_format: '24h' }, { date: TODAY, time: '14:00' }],
+    [{}, { date: '2026-10-15' }],
+    [{ time_format: '12h' }, { date: '2026-10-17', time: '09:30' }],
+    [{ date_format: 'day-month' }, { date: '2026-10-21' }],
+    [{ date_format: 'day-month' }, { date: '2026-10-12', time: '08:00' }],
+    [{ time_format: '24h' }, { date: TODAY, time: '23:30', tz: 'Asia/Tokyo' }],
+    [{ time_format: '24h' }, { date: '2026-10-15', time: '01:00', tz: 'America/New_York' }],
     [{}, { date: '2026-11-03', time: '15:00' }],
     [{}, { date: '2027-02-03' }],
     [{ date_format: 'day-month', time_format: '24h' }, { date: '2026-11-03', time: '9:05' }],
@@ -245,8 +252,13 @@ describe('service worker due text (date-time-preferences D7)', () => {
   it.each(FIXTURE)('%o %o matches lib/dates.ts', (prefs, due) => {
     const fmt = workerFormatter()
     const r = resolveDateTime(P(prefs), { order: 'MD', hour12: false, weekStart: 1 })
-    const want = due.time ? `${formatDate(due.date, 'compact', r, TODAY)}, ${formatTime(due.time, r)}` : formatDate(due.date, 'compact', r, TODAY)
-    expect(fmt(due, prefs, TODAY)).toBe(want)
+    expect(fmt(due, prefs, TODAY)).toBe(describeDue(due, TODAY, undefined, r)!.label)
+  })
+
+  it('says today and tomorrow in a row’s words, without a "Due" prefix', () => {
+    const fmt = workerFormatter()
+    expect(fmt({ date: TODAY, time: '14:00' }, { time_format: '24h' }, TODAY)).toBe('Today 14:00')
+    expect(fmt({ date: '2026-10-15' }, {}, TODAY)).toBe('Tomorrow')
   })
 
   it('a pushed reminder reads the due date and 12h time as lib/dates formats them', async () => {
@@ -263,8 +275,7 @@ describe('service worker due text (date-time-preferences D7)', () => {
     // app uses instead of hard-coding one language.
     const year = new Date().getFullYear()
     const r = resolveDateTime({ date_format: 'month-day', time_format: '12h', week_start: 'system' }, { order: 'MD', hour12: false, weekStart: 1 })
-    const want = `${formatDate(`${year}-11-03`, 'compact', r, `${year}-10-14`)}, ${formatTime('15:00', r)}`
-    expect(sw.shown[0].options.body).toBe(`Due ${want}`)
+    expect(sw.shown[0].options.body).toBe(describeDue({ date: `${year}-11-03`, time: '15:00' }, todayISO(), undefined, r)!.label)
   })
 
   it('falls back to the locale date and the stored time without preferences', async () => {
@@ -272,7 +283,15 @@ describe('service worker due text (date-time-preferences D7)', () => {
     const sw = loadWorker()
     await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: now - 1000 }))
     const date = new Date(2026, 9, 11).toLocaleDateString(undefined, new Date().getFullYear() === 2026 ? { month: 'short', day: 'numeric' } : { year: 'numeric', month: 'short', day: 'numeric' })
-    expect(sw.shown[0].options.body).toBe(`Due ${date}, 10:00`)
+    expect(sw.shown[0].options.body).toBe(`${date} 10:00`)
+  })
+
+  it('formats the opt-in payload’s due when the task is not on the device', async () => {
+    const sw = loadWorker()
+    await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId: 'r-x', taskId: 't-x', fireAt: 5, title: 'From payload', due: { date: todayISO(), time: '14:00' } }))
+    await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId: 'r-y', taskId: 't-y', fireAt: 5, title: 'No due' }))
+    await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId: 'r-z', taskId: 't-z', fireAt: 5, due: { date: 'soon' } }))
+    expect(sw.shown.map((n) => [n.title, n.options.body])).toEqual([['From payload', 'Today 14:00'], ['No due', 'Reminder'], ['Reminder', 'Reminder']])
   })
 })
 
@@ -287,15 +306,15 @@ describe('service worker due dates in the chosen language (#1009)', () => {
   const DUE = { date: '2026-11-03', time: '15:00' }
 
   it('English on a German browser writes English month names', () => {
-    expect(formatterOn(['de-DE', 'de'])(DUE, { language: 'en', time_format: '12h' } as never, TODAY)).toBe('Nov 3, 3:00 PM')
+    expect(formatterOn(['de-DE', 'de'])(DUE, { language: 'en', time_format: '12h' } as never, TODAY)).toBe('Nov 3 3:00 PM')
   })
 
   it('English takes the browser’s English region, like the app', () => {
-    expect(formatterOn(['de-DE', 'en-GB'])(DUE, { language: 'en', time_format: '24h' } as never, TODAY)).toBe('3 Nov, 15:00')
+    expect(formatterOn(['de-DE', 'en-GB'])(DUE, { language: 'en', time_format: '24h' } as never, TODAY)).toBe('3 Nov 15:00')
   })
 
   it('German on an English browser writes German month names', () => {
-    expect(formatterOn(['en-US'])(DUE, { language: 'de', time_format: '24h' } as never, TODAY)).toBe('3. Nov., 15:00')
+    expect(formatterOn(['en-US'])(DUE, { language: 'de', time_format: '24h' } as never, TODAY)).toBe('3. Nov. 15:00')
   })
 
   it('an unknown stored language is the browser’s locale', () => {
@@ -418,7 +437,7 @@ describe('service worker task pushes', () => {
 })
 
 describe('service worker texts in the stored language (app-localization D9)', () => {
-  const KEYS = { reminder: 'Reminder', due: 'Due {date}', tiny: '{tiny} is enough', generic: 'You have a reminder', done: 'Done|task', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.', assigned: '{name} assigned you a task', completed: '{name} completed a task', reopened: '{name} reopened a task', someone: 'Someone' } as const
+  const KEYS = { reminder: 'Reminder', today: 'Today', tomorrow: 'Tomorrow', tiny: '{tiny} is enough', generic: 'You have a reminder', done: 'Done|task', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.', assigned: '{name} assigned you a task', completed: '{name} completed a task', reopened: '{name} reopened a task', someone: 'Someone' } as const
   type Texts = Partial<Record<keyof typeof KEYS, string>>
   function worker(code = source): Record<string, unknown> {
     const self: Record<string, unknown> = { addEventListener: () => undefined }
@@ -451,8 +470,7 @@ describe('service worker texts in the stored language (app-localization D9)', ()
   })
 
   it('a pushed reminder is German when the synced language is German', async () => {
-    const year = new Date().getFullYear()
-    const taskId = await createTask({ title: 'Miete zahlen', due: { date: `${year}-11-03`, time: '15:00' } })
+    const taskId = await createTask({ title: 'Miete zahlen', due: { date: todayISO(), time: '15:00' } })
     const reminderId = await addReminder(taskId, { kind: 'absolute', fire_at: Date.now() - 1000 })
     await setUserPref('language', 'de')
     await setUserPref('time_format', '24h')
@@ -460,7 +478,7 @@ describe('service worker texts in the stored language (app-localization D9)', ()
     await db.open()
     const sw = loadWorker()
     await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: Date.now() - 1000 }))
-    expect(sw.shown[0].options.body).toBe('Fällig 3. Nov., 15:00')
+    expect(sw.shown[0].options.body).toBe('Heute 15:00')
     expect((sw.shown[0].options.actions as { title: string }[]).map((a) => a.title)).toEqual(['Erledigt', '10 Min. später', 'Verwerfen'])
   })
 
@@ -468,7 +486,7 @@ describe('service worker texts in the stored language (app-localization D9)', ()
     const { taskId, reminderId, now } = await setup()
     const sw = loadWorker()
     await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: now - 1000 }))
-    expect(String(sw.shown[0].options.body)).toMatch(/^Due /)
+    expect(String(sw.shown[0].options.body)).toMatch(/ 10:00$/)
     expect((sw.shown[0].options.actions as { title: string }[]).map((a) => a.title)).toEqual(['Done', 'Snooze 10 min', 'Dismiss'])
   })
 })

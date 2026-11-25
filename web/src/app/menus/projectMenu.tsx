@@ -101,7 +101,7 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
         onPick: (item: MoveTarget) => { act(moveProject(project.id, item.id || null)) },
       } },
       // Only the owner moves a project to another of their workspaces (workspaces D7).
-      ...(role === 'owner' && o.workspaces?.length ? [{ kind: 'picker' as const, id: 'move-workspace', label: t('Move to workspace…'), icon: 'layers' as const, picker: {
+      ...(role === 'owner' && o.workspaces?.length ? [{ kind: 'picker' as const, id: 'move-workspace', label: t('Move to workspace'), icon: 'layers' as const, picker: {
         title: t('Move to workspace'), placeholder: t('Find a workspace…'), emptyText: t('No other workspace'),
         source: o.workspaces, getKey: (w: { id: string }) => w.id, getLabel: (w: { name: string }) => w.name, rankContext: 'project-move-workspace',
         onPick: (w: { id: string; name: string }) => { void moveProjectToWorkspaceUndoable(project.id, w.id, w.name).then((r) => { if (r.entry) showUndoToast(r.label, r.entry.id) }) },

@@ -165,23 +165,24 @@ object Notifier {
     fun notificationId(id: String): Int = id.hashCode()
 
     /** A reminder of the phone's schedule, when its alarm fires. */
-    fun reminder(context: Context, r: ShellReminder): Boolean = show(context, r.id, r.taskId, r.title, r.fireAt, r.urgent)
+    fun reminder(context: Context, r: ShellReminder): Boolean = show(context, r.id, r.taskId, r.title, r.fireAt, r.due, r.urgent)
 
     /**
      * The one notification of a reminder, for its alarm and for a push alike (shell-push D4):
      * the id comes from the reminder's id, so whichever arrives second replaces the first, and
      * without another sound. A firing already shown is not shown again (a notification the
-     * user dismissed stays away). False when notifications are not allowed. An [urgent]
-     * reminder rings as an alarm (android-urgent-alarms D1); a push reads the flag from the schedule.
+     * user dismissed stays away). [due] is the body ("Today 14:00", push-due-date), else "Reminder".
+     * False when notifications are not allowed. An [urgent] reminder rings as an alarm
+     * (android-urgent-alarms D1); a push reads the flag from the schedule.
      */
     fun show(
-        context: Context, reminderId: String, taskId: String, title: String?, fireAt: Long,
+        context: Context, reminderId: String, taskId: String, title: String?, fireAt: Long, due: String? = null,
         urgent: Boolean = Scheduler.find(context, reminderId)?.urgent == true,
     ): Boolean {
         if (!Scheduler.notificationsAllowed(context)) return false
         val prefs = Prefs(context)
         if (ReminderSchedule.wasShown(prefs.remindersShown, reminderId, fireAt)) return true
-        val n = if (urgent) alarmNotification(context, reminderId, title, fireAt) else reminderNotification(context, reminderId, taskId, title, fireAt)
+        val n = if (urgent) alarmNotification(context, reminderId, title, fireAt, due) else reminderNotification(context, reminderId, taskId, title, fireAt, due)
         return try {
             NotificationManagerCompat.from(context).notify(notificationId(reminderId), n)
             prefs.remindersShown = ReminderSchedule.markShown(prefs.remindersShown, reminderId, fireAt, System.currentTimeMillis())
@@ -191,12 +192,12 @@ object Notifier {
         }
     }
 
-    private fun reminderNotification(context: Context, reminderId: String, taskId: String, title: String?, fireAt: Long): Notification {
+    private fun reminderNotification(context: Context, reminderId: String, taskId: String, title: String?, fireAt: Long, due: String?): Notification {
         channel(context)
         return NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title ?: context.getString(R.string.reminder_generic))
-            .setContentText(context.getString(R.string.reminder_text))
+            .setContentText(due ?: context.getString(R.string.reminder_text))
             .setWhen(fireAt).setShowWhen(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -215,14 +216,14 @@ object Notifier {
      * notification (no auto-cancel), so the screen stays until it is answered. On a lock screen
      * that hides private content it reads "Reminder".
      */
-    private fun alarmNotification(context: Context, reminderId: String, title: String?, fireAt: Long): Notification {
+    private fun alarmNotification(context: Context, reminderId: String, title: String?, fireAt: Long, due: String?): Notification {
         ensureUrgentChannel(context)
         val screen = alarmScreen(context, reminderId, title, fireAt)
         @Suppress("DEPRECATION") // the stream is read only before channels; the channel's alarm audio applies from Android 8.
         val n = NotificationCompat.Builder(context, URGENT_CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title ?: context.getString(R.string.reminder_generic))
-            .setContentText(context.getString(R.string.reminder_text))
+            .setContentText(due ?: context.getString(R.string.reminder_text))
             .setWhen(fireAt).setShowWhen(true)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_MAX)
