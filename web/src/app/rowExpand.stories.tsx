@@ -5,7 +5,7 @@ import { seedBase, seedCounts, seeded, storyUser, TODAY, withSeed } from './stor
 import { TaskListView } from './TaskListView'
 
 // Expanded rows (OpenSpec change row-expand, task-list-presentation "Expanded rows"):
-// Today with one row's details open under it, as Show details (a fine pointer from
+// Today with one row's details open under it, as → or Show details (a fine pointer from
 // 768 px), the row's disclosure (touch from 768 px) or → (below 768 px, where a row has
 // no disclosure until it is expanded, phone-row-controls) opens them: the notes, the facet lines,
 // the subtasks with their checkboxes, the counts and Open task, indented under the title.
@@ -40,12 +40,10 @@ function Expand({ children }: { children: ReactNode }) {
       const li = [...(el?.querySelectorAll<HTMLElement>('li[data-task-id]') ?? [])].find((r) => r.querySelector('[data-row-title]')?.textContent === 'Get three quotes for the kitchen')
       const details = el?.querySelector('[data-row-details] [data-subtasks]')
       if (details) { (document.activeElement as HTMLElement | null)?.blur(); setDone(true); return }
-      const button = li && (li.querySelector<HTMLButtonElement>('[data-row-action="details"]') ?? li.querySelector<HTMLButtonElement>('[data-row-expand] button'))
-      if (button && li.getAttribute('data-expanded') === null) {
-        // The cluster's control from 768 px on a fine pointer, else the row's disclosure (not displayed below 768 px until the row is expanded; the click stands in for →).
-        const wide = matchMedia('(min-width: 768px) and (pointer: fine)').matches
-        ;(wide ? li.querySelector<HTMLButtonElement>('[data-row-action="details"]') : li.querySelector<HTMLButtonElement>('[data-row-expand] button'))?.click()
-      }
+      // The row's disclosure stands in for → (row-edit-action D1: the cluster has Edit in Show details' place);
+      // it is in the row at every width, hidden on a fine pointer, so a click reaches it there too.
+      const button = li?.querySelector<HTMLButtonElement>('[data-row-expand] button')
+      if (button && li!.getAttribute('data-expanded') === null) button.click()
       setTimeout(tick, 50)
     }
     tick()

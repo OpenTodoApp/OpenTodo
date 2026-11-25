@@ -57,7 +57,15 @@ targets:
         NSAlarmKitUsageDescription: OpenTodo rings your urgent reminders as alarms.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
+        # native-shells "Quick actions on the app icon": the titles are translated in
+        # OpenTodo/InfoPlist.xcstrings, keyed by the title itself.
         UIApplicationShortcutItems:
+          - UIApplicationShortcutItemType: add-task
+            UIApplicationShortcutItemTitle: Add task
+            UIApplicationShortcutItemIconSymbolName: plus
+          - UIApplicationShortcutItemType: today
+            UIApplicationShortcutItemTitle: Today
+            UIApplicationShortcutItemIconSymbolName: calendar
           - UIApplicationShortcutItemType: change-server
             UIApplicationShortcutItemTitle: Change server
             UIApplicationShortcutItemIconSymbolName: server.rack

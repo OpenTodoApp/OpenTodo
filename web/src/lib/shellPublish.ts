@@ -7,6 +7,7 @@
 import { liveQuery, type Subscription } from 'dexie'
 import { calendarTasks } from './calendar'
 import { addDaysISO, currentDateTime, currentDayStart, localDueOf, logicalToday, viewedTask } from './dates'
+import { reminderBody } from './reminderBody'
 import { groupUpcoming, todayList, upcomingList, withoutArchived } from './dayLists'
 import { monthGrid } from './month'
 import { db, getMeta, setMeta } from './db'
@@ -54,7 +55,12 @@ export function shellReminders(reminders: readonly Reminder[], tasks: readonly T
     if (!task || task.deleted_at || task.completed_at) continue
     if (inQuietProject(task.project_id, projectById)) continue
     const item: ShellReminder = { id: r.id, taskId: r.task_id, fireAt: r.fire_at }
-    if (opts.titles && !opts.encrypted && task.title) item.title = task.title
+    if (opts.titles && !opts.encrypted) {
+      if (task.title) item.title = task.title
+      // The body as of the firing day; a habit's tiny version first (push-due-date D4).
+      const due = reminderBody(task, r.fire_at)
+      if (due) item.due = due
+    }
     if (r.urgent === true) item.urgent = true
     out.push(item)
   }

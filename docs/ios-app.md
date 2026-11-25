@@ -13,7 +13,7 @@ The OpenTodo app for iPhone and iPad opens your own OpenTodo server, like the [i
 
 ## Install it
 
-The official app is in the App Store: [OpenTodo for iPhone and iPad](https://apps.apple.com/us/app/opentodo/id6832200428). It is the first release, so expect some rough edges, and [say what to improve](feedback-and-support.md). New builds go to testers through TestFlight, Apple's app for testing, and every OpenTodo release is sent to Apple's App Store review the same day: the App Store update arrives once Apple approves it, usually within a few days.
+The official app is in the App Store: [OpenTodo for iPhone and iPad](https://apps.apple.com/us/app/opentodo/id6832200428). It is the first release, so expect some rough edges, and [say what to improve](feedback-and-support.md). New builds go to testers through TestFlight, Apple's app for testing, and every OpenTodo release is sent to Apple's App Store review the same day: the App Store update arrives once Apple approves it, usually within a few days. The app's version is the server release it belongs to, so until then the App Store shows the previous one. A release that follows before Apple has started reviewing the previous one takes its place.
 
 As the copyright holder, the author of OpenTodo allows distributing its iOS app through Apple's App Store and TestFlight. You can still build the app yourself from source ([Building it](#building-it)).
 
@@ -51,6 +51,8 @@ A reminder marked **Urgent** (in its menu in the task panel, on any device) ring
 ## Opening the app
 
 The app opens on its background colour, light or dark with the phone, and shows the page once it has loaded, so no white screen comes between them. A server that takes longer than five seconds gets the page as far as it has loaded; one that can't be reached gets the usual message.
+
+Long-press the app icon for **Add task** (quick add), **Today** or [**Change server**](#connect-to-your-server).
 
 ## Offline
 

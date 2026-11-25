@@ -4,7 +4,7 @@
 // same one a project list uses, so the order is the one every list shows.
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { t } from '../../lib/i18n'
-import { moveTask, moveTaskBy } from '../../lib/move'
+import { moveRowWithUndo, stepRowWithUndo } from '../undoable'
 import type { Task } from '../../lib/types'
 
 /** `list` with the item at `from` put at `to`. */
@@ -32,7 +32,7 @@ export function useSubtaskOrder(parent: Task, items: Task[]) {
   const say = (c: Task, place: number) => setAnnounce(t('{name} moved to position {n} of {count}', { name: c.title || t('Untitled'), n: place, count: open.length }))
   const step = async (c: Task, delta: -1 | 1 | 'top' | 'bottom') => {
     const to = delta === 'top' ? 0 : delta === 'bottom' ? open.length - 1 : open.indexOf(c) + delta
-    if (!(await moveTaskBy(c.id, delta))) return
+    if (!(await stepRowWithUndo(c.id, delta))) return
     say(c, to + 1)
     requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-subtask-row="${c.id}"] [data-move-handle]`)?.focus())
   }
@@ -53,7 +53,7 @@ export function useSubtaskOrder(parent: Task, items: Task[]) {
       const below = draft.slice(at + 1).find((c) => !c.completed_at)
       const place = above ? { after: above.id } : below ? { before: below.id } : null
       const c = draft[at]
-      if (place) void moveTask(d.id, { parent_id: parent.id, at: place }).then((ok) => { if (ok) say(c, open.indexOf(c) + 1) })
+      if (place) void moveRowWithUndo(d.id, { parent_id: parent.id, at: place }).then((ok) => { if (ok) say(c, open.indexOf(c) + 1) })
     }
     setDraft(null)
     setDragging(null)

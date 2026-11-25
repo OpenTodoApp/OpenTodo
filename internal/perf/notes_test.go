@@ -77,16 +77,33 @@ func TestNotesBudgets(t *testing.T) {
 	}
 	defer reader.Close()
 	svc.SetReader(reader)
-	job := compaction.New(compaction.Options{DB: db, Reader: reader, Sync: svc, Settings: settings.New(db), DataDir: out, Log: slog.New(slog.DiscardHandler),
+	// Times in this test's log are offsets from start, so a slow push lines up
+	// with the compaction run and the job's own lines (#1947).
+	start := time.Now()
+	since := func() time.Duration { return time.Since(start).Round(time.Millisecond) }
+	// The job's info lines (one per run) and warnings (a failed checkpoint or
+	// vacuum step) go to the test log.
+	jobLog := slog.New(slog.NewTextHandler(t.Output(), &slog.HandlerOptions{Level: slog.LevelInfo,
+		ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.TimeKey {
+				return slog.Duration("after", since())
+			}
+			return a
+		}}))
+	job := compaction.New(compaction.Options{DB: db, Reader: reader, Sync: svc, Settings: settings.New(db), DataDir: out, Log: jobLog,
 		FreeSpace: func(string) (uint64, bool, error) { return 1 << 40, true, nil }})
 
 	// A device keeps writing while compaction runs. The budget is judged on the
 	// second-longest wait of one push: the runner's shared disk alone sometimes
 	// stalls a single write past 100 ms (see copyFile), so one outlier is noise
-	// and two are a regression (#987). The longest is still reported.
+	// and two are a regression (#987). The longest is still reported, and every
+	// push over slowPush is logged with when it started.
+	const slowPush = 50 * time.Millisecond
+	type slow struct{ at, took time.Duration }
 	stop := make(chan struct{})
 	var wg sync.WaitGroup
 	var longest, second time.Duration
+	var slows []slow
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -98,12 +115,16 @@ func TestNotesBudgets(t *testing.T) {
 			}
 			op := opsync.Op{ID: fmt.Sprintf("notes-push-%d", i), Entity: "task", EntityID: sum.SampleTask, Field: "title",
 				Value: json.RawMessage(strconv.Quote(fmt.Sprintf("Push %d", i))), TS: time.Now().UnixMilli(), Device: "perf-pusher"}
-			start := time.Now()
+			at, began := since(), time.Now()
 			if _, err := svc.Apply(ctx, sum.OwnerID, []opsync.Op{op}); err != nil {
 				t.Error(err)
 				return
 			}
-			switch d := time.Since(start); {
+			d := time.Since(began)
+			if d > slowPush {
+				slows = append(slows, slow{at, d})
+			}
+			switch {
 			case d > longest:
 				longest, second = d, longest
 			case d > second:
@@ -111,7 +132,6 @@ func TestNotesBudgets(t *testing.T) {
 			}
 		}
 	}()
-	start := time.Now()
 	var removedOps int
 	var removedBytes int64
 	// Done once a pass has finished and the freed pages are back with the file system,
@@ -119,14 +139,13 @@ func TestNotesBudgets(t *testing.T) {
 	// compaction is reported as such (and fails its budget) instead of hanging the job.
 	const settled = 1 << 20
 	for run := 0; time.Since(start) < 20*time.Minute; run++ {
+		from := since()
 		job.Run(ctx)
 		st, err := job.Status(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if run%10 == 0 || st.Last != nil {
-			t.Logf("compaction run %d after %s: free %.1f MB, last pass %+v", run, time.Since(start).Round(time.Second), float64(st.FreeBytes)/(1<<20), st.Last)
-		}
+		t.Logf("compaction run %d from %s to %s: free %.1f MB, last pass %+v", run, from, since(), float64(st.FreeBytes)/(1<<20), st.Last)
 		if st.Last != nil && st.Last.At >= start.UnixMilli() && st.FreeBytes < settled {
 			removedOps, removedBytes = st.Last.OpsRemoved, st.Last.ValueBytesRemoved
 			break
@@ -135,6 +154,9 @@ func TestNotesBudgets(t *testing.T) {
 	samples["notes-compaction"] = []float64{time.Since(start).Seconds()}
 	close(stop)
 	wg.Wait()
+	for _, p := range slows {
+		t.Logf("push started after %s waited %s", p.at, p.took.Round(time.Millisecond))
+	}
 	samples["notes-push-wait"] = []float64{ms(second)}
 	reported["notes-push-wait-longest-ms"] = ms(longest)
 	if err := store.Checkpoint(ctx, db); err != nil {

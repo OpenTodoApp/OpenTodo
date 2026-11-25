@@ -13,6 +13,21 @@ import noFixedWait from './eslint/no-fixed-wait.js'
 // import forever, src/lib/lazy.ts lets a part that failed offline load again.
 const reactLazy = { name: 'react', importNames: ['lazy'], message: "Import lazy from src/lib/lazy: React's keeps a failed import (lazy-retry-online)." }
 
+// What the phone UI may import from src/app (phone-ui-trial D1, D4): the hooks and
+// models both sets of screens run on, and the editors and sections the phone task
+// page shows as they are. Paths are relative to src/app. A desktop screen is never
+// listed; when one holds logic a phone screen needs, the logic moves to a hook first.
+const PHONE_MAY_IMPORT = [
+  // Shared hooks and models.
+  'router', 'undoable', 'motion', 'actionError', 'signals', 'taskTrail', 'panel', 'PanelHost', 'useViews', 'DateTimePrefsProvider', 'shortcuts',
+  'task-list/useListModel', 'task-list/useClosedList', 'task-list/RowSwipe', 'calendar/TodayAgenda',
+  'task-detail/useTaskDetail', 'task-detail/useTaskFacts', 'task-detail/usePropertiesModel', 'task-detail/occurrenceView', 'task-detail/taskPageProps',
+  // Editors and sections shown unchanged.
+  'task-detail/Facets', 'task-detail/TaskActionsMenu', 'task-detail/TaskNotes', 'task-detail/Subtasks', 'task-detail/FieldsGroup',
+  'task-detail/AttachmentsRow', 'task-detail/ConversationTabs', 'task-detail/TaskHead', 'task-detail/TaskPageDialog', 'task-detail/RotationLine',
+  'task-detail/WhenControl', 'task-list/EarlierActions', 'habits/TodayStrip', 'TitleField', 'LabelPicker', 'ProjectMark', 'locations/LocationPreview', 'SampleNotice',
+]
+
 export default [
   { ignores: ['node_modules/**', 'storybook-static/**', 'public/**', 'scripts/**'] },
   {
@@ -74,21 +89,28 @@ export default [
       'no-restricted-imports': ['error', { paths: [reactLazy], patterns: [{ regex: '(^|/)app(/|$)', message: 'src/ui must not import from src/app (web-layering); move what it needs into src/ui or src/lib.' }] }],
     },
   },
-  {
-    // Screens read local data through src/lib (web-layering, AGENTS.md "data access
-    // only via src/lib"): lib/localData.ts and lib/liveTasks.ts hold the shared live
-    // snapshots and the one visibility rule. Only the sign-out and storage lifecycle
-    // calls of lib/db are open to screens. Tests and test kits seed the database.
-    files: ['src/app/**/*.{ts,tsx}'],
-    ignores: [
-      'src/app/**/*.test.{ts,tsx}', 'src/app/**/*.testkit.tsx', 'src/app/**/*.stories.tsx', 'src/app/stories/**',
-    ],
+  // Screens read local data through src/lib (web-layering, AGENTS.md "data access
+  // only via src/lib"): lib/localData.ts and lib/liveTasks.ts hold the shared live
+  // snapshots and the one visibility rule. Only the sign-out and storage lifecycle
+  // calls of lib/db are open to screens. Tests and test kits seed the database.
+  // The phone UI (src/phone, OpenSpec phone-ui-trial D1) is held to the same rule,
+  // and the two sets of screens are kept apart: a desktop screen imports the phone
+  // UI only where it is chosen (Shell) and switched on (PreferencesPanels), and a
+  // phone screen imports from src/app only the shared hooks, models and editors
+  // listed in PHONE_MAY_IMPORT, never a desktop screen.
+  ...[
+    { files: ['src/app/**/*.{ts,tsx}'], ignores: ['src/app/Shell.tsx', 'src/app/PreferencesPanels.tsx'], extra: [{ regex: '(^|/)phone(/|$)', message: 'Only Shell.tsx and PreferencesPanels.tsx import the phone UI (phone-ui-trial D1).' }] },
+    { files: ['src/app/Shell.tsx', 'src/app/PreferencesPanels.tsx'], ignores: [], extra: [] },
+    { files: ['src/phone/**/*.{ts,tsx}'], ignores: [], extra: [{ regex: `(^|/)app/(?!(${PHONE_MAY_IMPORT.join('|')})$)`, message: 'A phone screen imports from src/app only what PHONE_MAY_IMPORT lists (shared hooks, models and editors), never a desktop screen (phone-ui-trial D1).' }] },
+  ].map(({ files, ignores, extra }) => ({
+    files,
+    ignores: [...ignores, 'src/**/*.test.{ts,tsx}', 'src/**/*.testkit.tsx', 'src/**/*.stories.tsx', 'src/app/stories/**', 'src/phone/stories/**'],
     rules: {
       'no-restricted-imports': ['error', {
         patterns: [{
           regex: '(^|/)lib/db$', allowImportNames: ['clearLocalData', 'hasLocalData', 'requestPersistentStorage'],
           message: 'Screens read local data through src/lib (lib/localData.ts, lib/liveTasks.ts), not lib/db (web-layering).',
-        }],
+        }, ...extra],
         // Every live read is a named hook in src/lib (wave 4, M5): shared snapshots
         // where one exists (lib/localData.ts), else a hook beside its query.
         paths: [reactLazy, { name: 'dexie-react-hooks', message: 'Screens read live data through a named hook in src/lib (lib/localData.ts or beside the query), not useLiveQuery.' }],
@@ -98,7 +120,7 @@ export default [
         message: 'Screens read local data through src/lib (lib/localData.ts, lib/liveTasks.ts), not the Dexie database (web-layering).',
       }],
     },
-  },
+  })),
   // The one place React's lazy() is wrapped.
   { files: ['src/lib/lazy.ts'], rules: { 'no-restricted-imports': 'off' } },
 ]

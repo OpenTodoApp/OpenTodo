@@ -30,6 +30,8 @@ final class Reminders {
         let title: String?
         /// Rings as an alarm where it can (ios-urgent-alarms D3); absent in the hand-over means no.
         var urgent = false
+        /// The notification's body, the due as of the firing day ("Today 14:00", push-due-date D4).
+        var due: String? = nil
     }
 
     /// A reminder handed over up to this late still fires, at once (ms).
@@ -62,8 +64,9 @@ final class Reminders {
                   let number = o["fireAt"] as? NSNumber, number.doubleValue >= 0
             else { return nil }
             let title = (o["title"] as? String).map { String($0.prefix(200)) }
+            let due = (o["due"] as? String).map { String($0.prefix(100)) }
             return Handed(id: id, taskId: taskId, fireAt: number.doubleValue, title: title?.isEmpty == false ? title : nil,
-                          urgent: (o["urgent"] as? Bool) == true)
+                          urgent: (o["urgent"] as? Bool) == true, due: due?.isEmpty == false ? due : nil)
         }
     }
 
@@ -152,7 +155,7 @@ final class Reminders {
         for reminder in chosen where !armed.contains(reminder.id) {
             let content = UNMutableNotificationContent()
             content.title = reminder.title ?? String(localized: "OpenTodo reminder")
-            content.body = ""
+            content.body = reminder.due ?? ""
             content.sound = .default
             content.categoryIdentifier = Self.categoryIdentifier
             content.userInfo = ["reminder": reminder.id, "task": reminder.taskId]

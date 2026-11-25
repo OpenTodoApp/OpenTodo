@@ -20,6 +20,7 @@
     "src/**/*.testkit.tsx",
     "src/ui/test-utils.tsx",
     "src/app/stories/**",
+    "src/phone/stories/**",
     "src/ui/foundations/tokens.tsx",
     "src/ui/tokens/{contrast,css,notYetMigrated,resolve,styleLint}.ts",
     "src/lib/theme/catalogue/**",

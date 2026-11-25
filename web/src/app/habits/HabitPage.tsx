@@ -78,10 +78,10 @@ function menuItems(task: Task, graduated: boolean, kept: boolean, choice: Return
   return [
     ...(!graduated && task.habit_amount ? [
       { kind: 'action' as const, id: 'subtract', label: t('Subtract {step}', { step }), icon: 'minus' as const, onSelect: () => stepAmount(task.id, -step) },
-      { kind: 'action' as const, id: 'set', label: t('Set amount'), icon: 'pencil' as const, onSelect: () => openSetAmount(task.id, today) },
+      { kind: 'action' as const, id: 'set', label: t('Set amount…'), icon: 'pencil' as const, onSelect: () => openSetAmount(task.id, today) },
     ] : []),
     ...(!graduated && !kept && !task.habit_amount ? [{ kind: 'action' as const, id: 'tiny', label: task.habit_tiny ? t('Log the tiny version: {tiny}', { tiny: task.habit_tiny }) : t('Log the tiny version'), icon: 'circle' as const, onSelect: () => checkInWithUndo(task.id, true) }] : []),
-    { kind: 'action', id: 'edit', label: t('Edit'), icon: 'pencil', onSelect: () => openHabitForm({ taskId: task.id }) },
+    { kind: 'action', id: 'edit', label: t('Edit…'), icon: 'pencil', onSelect: () => openHabitForm({ taskId: task.id }) },
     graduated
       ? { kind: 'action', id: 'resume', label: t('Resume'), icon: 'rotate-ccw', onSelect: () => undo(resume(task.id)) }
       : { kind: 'action', id: 'graduate', label: t('Graduate'), icon: 'graduation-cap', onSelect: () => undo(graduate(task.id)) },

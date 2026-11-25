@@ -1,4 +1,3 @@
-import type { Task } from '../lib/types'
 import { Icon, Menu, MenuItem, ToastRegion, useMediaQuery } from '../ui'
 import { useEffect, useRef, useState } from 'react'
 import { getTask, touchReminders } from '../lib/localData'
@@ -12,6 +11,7 @@ import { requestSync } from '../lib/sync'
 import { openTaskInList } from './signals'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
+import { reminderBody, tinyText } from '../lib/reminderBody'
 
 /**
  * In-app reminder notifications (OpenSpec change `reminders`). Mounted once by
@@ -137,12 +137,6 @@ export function ReminderToasts() {
 /** The card's small buttons with a mouse. */
 const SMALL = 'ui-btn ui-btn--sm px-2 py-0.5 text-meta'
 
-/** A habit's reminder names its tiny version (habits-home D5): "One page is enough". */
-function tinyText(task: Task): string | null {
-  const tiny = task.habit ? task.habit_tiny?.trim() : ''
-  return tiny ? t('{tiny} is enough', { tiny: tiny.charAt(0).toUpperCase() + tiny.slice(1) }) : null
-}
-
 /** Hidden tab, permission granted, no push on this device: show a local system notification once per firing. */
 async function notifyIfHidden(list: DueReminder[], notified: Set<string>): Promise<void> {
   if (typeof document === 'undefined' || document.visibilityState !== 'hidden') return
@@ -154,7 +148,8 @@ async function notifyIfHidden(list: DueReminder[], notified: Set<string>): Promi
     if (notified.has(key)) continue
     notified.add(key)
     const options: NotificationOptions = {
-      body: tinyText(d.task) ?? t('Reminder'), tag: `reminder:${d.reminder.id}`, icon: '/pwa-192.png',
+      // Shown now, so the due's words are as of now (push-due-date D1).
+      body: reminderBody(d.task, Date.now()) ?? t('Reminder'), tag: `reminder:${d.reminder.id}`, icon: '/pwa-192.png',
       data: { reminderId: d.reminder.id, taskId: d.task.id, fireAt: d.reminder.fire_at },
     }
     try {
