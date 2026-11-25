@@ -54,7 +54,7 @@ func (p *ChatProvider) Start(req Request) Conversation {
 		}
 		msgs = append(msgs, map[string]any{"role": role, "content": m.Text})
 	}
-	return &chatConv{p: p, messages: msgs, tools: p.tools(req.Tools), maxTokens: req.MaxTokens, images: hasImages(req.Messages)}
+	return &chatConv{p: p, messages: msgs, tools: p.tools(req.Tools), maxTokens: req.MaxTokens, images: hasImages(req.Messages), completionTokens: p.Name == OpenAI}
 }
 
 // tools are the function declarations of a request.
@@ -84,8 +84,12 @@ type chatConv struct {
 	// images marks a turn that carries photos (a 400 about them is images_unsupported).
 	images bool
 	// effortNone sends reasoning_effort "none", set once the provider refused
-	// tools at the model's default reasoning effort (effortRefusal).
+	// tools at the model's default reasoning effort (askAgain).
 	effortNone bool
+	// completionTokens sends the limit as max_completion_tokens: always on
+	// OpenAI, and elsewhere once the provider refused max_tokens (Azure
+	// OpenAI's reasoning models, issue #2087).
+	completionTokens bool
 }
 
 func (c *chatConv) body() ([]byte, error) {
@@ -103,7 +107,7 @@ func (c *chatConv) body() ([]byte, error) {
 		b["reasoning_effort"] = "none"
 	}
 	if c.maxTokens > 0 {
-		if c.p.Name == OpenAI {
+		if c.completionTokens {
 			b["max_completion_tokens"] = c.maxTokens
 		} else {
 			b["max_tokens"] = c.maxTokens
@@ -298,8 +302,8 @@ func (c *chatConv) post(ctx context.Context, body []byte) (*http.Response, error
 	if backoff == 0 {
 		backoff = 500 * time.Millisecond
 	}
-	// attempt counts 429 and 5xx retries only: asking again with
-	// reasoning_effort "none" does not use one up.
+	// attempt counts 429 and 5xx retries only: asking again after a refused
+	// parameter (askAgain) does not use one up.
 	for attempt := 0; ; {
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 		if err != nil {
@@ -329,10 +333,7 @@ func (c *chatConv) post(ctx context.Context, body []byte) (*http.Response, error
 		if resp.StatusCode >= 300 && resp.StatusCode < 400 {
 			return nil, &ProviderError{Code: CodeProviderError, Status: resp.StatusCode, Msg: "the endpoint answered with a redirect, which this server does not follow"}
 		}
-		if !c.effortNone && len(c.tools) > 0 && effortRefusal(resp.StatusCode, errBody) {
-			// Models such as GPT-6 Luna call tools in Chat Completions only
-			// without reasoning: ask once more with reasoning_effort "none".
-			c.effortNone = true
+		if c.askAgain(refusedParam(resp.StatusCode, errBody)) {
 			if body, err = c.body(); err != nil {
 				return nil, err
 			}
@@ -354,12 +355,30 @@ func (c *chatConv) post(ctx context.Context, body []byte) (*http.Response, error
 	}
 }
 
-// effortRefusal reports a 400 whose error names the reasoning_effort
-// parameter: OpenAI's answer when a model calls function tools in Chat
-// Completions only with reasoning_effort "none" (issue #2045).
-func effortRefusal(status int, b []byte) bool {
-	if status != http.StatusBadRequest {
+// askAgain adapts the request to a 400 that names param and reports whether
+// to send it again; each adaptation happens at most once per conversation.
+//   - reasoning_effort, on a request with tools: models such as GPT-6 Luna
+//     call tools in Chat Completions only without reasoning (issue #2045), so
+//     send reasoning_effort "none".
+//   - max_tokens: reasoning models, such as OpenAI's on Azure's v1 endpoint,
+//     take the limit only as max_completion_tokens (issue #2087).
+func (c *chatConv) askAgain(param string) bool {
+	switch {
+	case param == "reasoning_effort" && !c.effortNone && len(c.tools) > 0:
+		c.effortNone = true
+	case param == "max_tokens" && !c.completionTokens && c.maxTokens > 0:
+		c.completionTokens = true
+	default:
 		return false
+	}
+	return true
+}
+
+// refusedParam is the parameter a 400 names in its error's param (OpenAI's
+// and Azure OpenAI's form), else "".
+func refusedParam(status int, b []byte) string {
+	if status != http.StatusBadRequest {
+		return ""
 	}
 	var e struct {
 		Param string `json:"param"`
@@ -368,9 +387,12 @@ func effortRefusal(status int, b []byte) bool {
 		} `json:"error"`
 	}
 	if json.Unmarshal(b, &e) != nil {
-		return false
+		return ""
 	}
-	return e.Param == "reasoning_effort" || (e.Error != nil && e.Error.Param == "reasoning_effort")
+	if e.Error != nil && e.Error.Param != "" {
+		return e.Error.Param
+	}
+	return e.Param
 }
 
 // maxErrorBody bounds the part of an error answer that is read.

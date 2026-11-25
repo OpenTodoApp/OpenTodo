@@ -201,6 +201,26 @@ describe('Chat Completions from the browser', () => {
     await expect(chatProvider(setup, plain.f).start({ system: '', messages: [], tools: [tool], maxTokens: 9 }).next(() => {})).rejects.toMatchObject({ status: 400 })
     expect(plain.bodies).toHaveLength(1)
   })
+
+  it('asks once more with max_completion_tokens when max_tokens is refused (#2087)', async () => {
+    const tokens = JSON.stringify({ error: { message: "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.", type: 'invalid_request_error', param: 'max_tokens', code: 'unsupported_parameter' } })
+    const effort = JSON.stringify({ error: { type: 'invalid_request_error', param: 'reasoning_effort', code: null } })
+    const done = sse([{ choices: [{ delta: {}, finish_reason: 'stop' }] }, '[DONE]'], false)
+    const bodies: Record<string, unknown>[] = []
+    const answers: [number, string][] = [[400, tokens], [400, effort], [200, done], [200, done]]
+    const f: Fetch = async (_url, init) => {
+      bodies.push(JSON.parse(String(init!.body)))
+      const [status, text] = answers[Math.min(bodies.length, answers.length) - 1]
+      return new Response(text, { status })
+    }
+    const setup = { provider: 'compatible' as const, model: 'gpt-6.2-sol', key: 'k', baseUrl: 'https://example.openai.azure.com/openai/v1', savedAt: 1 }
+    const conv = chatProvider(setup, f).start({ system: '', messages: [{ role: 'user', text: 'Q' }], tools: [tool], maxTokens: 9 })
+    await conv.next(() => {})
+    await conv.next(() => {})
+    expect(bodies.map((b) => [b.max_tokens, b.max_completion_tokens, b.reasoning_effort])).toEqual([
+      [9, undefined, undefined], [undefined, 9, undefined], [undefined, 9, 'none'], [undefined, 9, 'none'],
+    ])
+  })
 })
 
 describe('device setup checks', () => {

@@ -29,7 +29,7 @@ The [assistant](assistant.md) is off until the server owner turns it on here. Me
 | Google Gemini | Any Gemini model id | A Gemini API key | Google's OpenAI-compatible endpoint on `generativelanguage.googleapis.com` |
 | Compatible endpoint | The model name your server serves | Optional | Ollama, LM Studio, OpenRouter, Mistral and others; enter the base URL, for example `http://192.168.1.20:11434/v1` |
 
-The model must support tool use. **Test connection** reports an endpoint that rejects tool definitions as `no_tool_support`. Some models, such as GPT-6 Luna, use tools in Chat Completions only without reasoning: when OpenAI, Gemini or a compatible endpoint refuses a request for that reason, OpenTodo sends it once more with `reasoning_effort: "none"`. A model on your own network is set up as a compatible endpoint; see [A local model](assistant-owner-options.md#a-local-model).
+The model must support tool use. **Test connection** reports an endpoint that rejects tool definitions as `no_tool_support`. Some models, such as GPT-6 Luna, use tools in Chat Completions only without reasoning: when OpenAI, Gemini or a compatible endpoint refuses a request for that reason, OpenTodo sends it once more with `reasoning_effort: "none"`, and a refused `max_tokens` as `max_completion_tokens`. Azure OpenAI is a compatible endpoint: base URL `https://<resource>.openai.azure.com/openai/v1`, the deployment name as the model. A model on your own network is set up as a compatible endpoint; see [A local model](assistant-owner-options.md#a-local-model).
 
 ## When Test connection fails
 

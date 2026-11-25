@@ -474,6 +474,87 @@ func TestChatReasoningEffortNone(t *testing.T) {
 	}
 }
 
+// maxTokensError is Azure OpenAI's answer to max_tokens on a reasoning model
+// (issue #2087).
+func maxTokensError(w http.ResponseWriter, _ map[string]any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, _ = io.WriteString(w, `{"error":{"message":"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.","type":"invalid_request_error","param":"max_tokens","code":"unsupported_parameter"}}`)
+}
+
+// TestChatMaxCompletionTokens: a refusal naming max_tokens is asked again
+// once with max_completion_tokens, which the rest of the conversation keeps;
+// a second refusal is reported as before.
+func TestChatMaxCompletionTokens(t *testing.T) {
+	tools := []ToolDef{{Name: "today_summary", Description: "d", Schema: map[string]any{"type": "object"}}}
+	req := Request{System: "s", Messages: []Message{{Role: "user", Text: "x"}}, Tools: tools, MaxTokens: 64}
+	srv, rec := fakeAnthropic(t, maxTokensError, sse(chatToolCalls(call("c1", "today_summary", map[string]any{}))), sse(chatText("ok", "stop")))
+	conv := chatFor(srv, Compatible).Start(req)
+	if r, err := conv.Next(context.Background(), func(string) {}); err != nil || r.Stop != StopToolUse {
+		t.Fatalf("%v %v", r.Stop, err)
+	}
+	conv.AddToolResults([]ToolResult{{ID: "c1", Content: "{}"}})
+	if _, err := conv.Next(context.Background(), func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	if rec.n() != 3 || rec.bodies[0]["max_tokens"] == nil || rec.bodies[0]["max_completion_tokens"] != nil {
+		t.Fatalf("requests %d, first %v", rec.n(), rec.bodies[0])
+	}
+	for _, b := range rec.bodies[1:] {
+		if b["max_tokens"] != nil || b["max_completion_tokens"] != float64(64) {
+			t.Fatalf("retried %v", b)
+		}
+	}
+	// Refused again: one retry only, reported as a plain refusal.
+	srv, rec = fakeAnthropic(t, maxTokensError)
+	_, err := chatFor(srv, Compatible).Start(req).Next(context.Background(), func(string) {})
+	if pe, ok := AsProviderError(err); !ok || pe.Code != CodeProviderError || pe.Status != 400 || rec.n() != 2 {
+		t.Fatalf("%v %d", err, rec.n())
+	}
+}
+
+// TestTestConnectionAzureV1: Test connection passes against an endpoint
+// shaped like Azure OpenAI's v1 API serving a reasoning model, which takes
+// the limit only as max_completion_tokens and tools only with
+// reasoning_effort "none", whichever it reports first (issue #2087).
+func TestTestConnectionAzureV1(t *testing.T) {
+	for _, effortFirst := range []bool{false, true} {
+		var bodies []map[string]any
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var b map[string]any
+			_ = json.NewDecoder(r.Body).Decode(&b)
+			bodies = append(bodies, b)
+			if r.URL.Path != "/openai/v1/chat/completions" || r.Header.Get("Authorization") != "Bearer azure-key" || b["model"] != "gpt-6.2-sol" {
+				w.WriteHeader(404)
+				return
+			}
+			_, maxTokens := b["max_tokens"]
+			_, tools := b["tools"]
+			noEffort := tools && b["reasoning_effort"] != "none"
+			switch {
+			case effortFirst && noEffort:
+				effortError(w, b)
+			case maxTokens:
+				maxTokensError(w, b)
+			case noEffort:
+				effortError(w, b)
+			default:
+				_, _ = io.WriteString(w, chatText("OK", "stop"))
+			}
+		}))
+		set := compatibleSettings(srv.URL+"/openai/v1", true)
+		p := set.Providers[Compatible]
+		p.Model = "gpt-6.2-sol"
+		set.Providers[Compatible] = p
+		key := "azure-key"
+		got := NewService(newTestStore(t), nil).TestConnection(context.Background(), Compatible, set, Draft{Key: &key})
+		srv.Close()
+		if !got.OK || len(bodies) != 3 {
+			t.Fatalf("effort first %v: %+v after %d requests", effortFirst, got, len(bodies))
+		}
+	}
+}
+
 // ---- network policy ----
 
 type fakeResolver struct {
