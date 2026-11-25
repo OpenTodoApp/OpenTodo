@@ -40,13 +40,19 @@ func (s Snapshot) SameTimes(o Snapshot) bool {
 
 // BodyHash is the hash of what a task's event shows beyond its snapshot: its
 // notes (none when encrypted) and, with a base URL, its link (bodyVersion
-// changes when the written form does, so every event is written again once).
-func BodyHash(t calfeed.FeedTask, encrypted bool, baseURL string) string {
+// changes when the written form does, so every event is written again once)
+// and, for a floating timed task, the zone its event is written in (zone, the
+// calendar's), so a change of that zone writes it again.
+func BodyHash(t calfeed.FeedTask, encrypted bool, baseURL, zone string) string {
 	link := ""
 	if baseURL != "" {
 		link = calfeed.TaskURL(baseURL, t.ID)
 	}
-	return hash16(bodyVersion + "\x00" + calfeed.EventNotes(t, encrypted) + "\x00" + link)
+	body := bodyVersion + "\x00" + calfeed.EventNotes(t, encrypted) + "\x00" + link
+	if z := calfeed.FloatingIn(t, zone); z != "" {
+		body += "\x00" + z
+	}
+	return hash16(body)
 }
 
 // bodyVersion names the written form of an event's notes and link.

@@ -57,6 +57,22 @@ type FeedOptions struct {
 	BaseURL string
 	// Encrypted accounts show the placeholder title and no notes or labels.
 	Encrypted bool
+	// FloatingZone, when set, is the IANA zone WriteEvent writes a floating
+	// timed task in, at its wall time: the calendar's, which a client may
+	// otherwise read a floating time in as UTC (GitHub issue 2084).
+	FloatingZone string
+}
+
+// FloatingIn is the zone a task's event is written in when it is a floating
+// timed task (not a span) and zone is a known IANA zone; "" otherwise.
+func FloatingIn(t FeedTask, zone string) string {
+	if zone == "" || t.TZ != nil || t.Time == nil || t.Start != "" {
+		return ""
+	}
+	if _, err := zoned.Load(zone); err != nil {
+		return ""
+	}
+	return zone
 }
 
 // Feed window and the default length of a timed task (design D6).
@@ -99,12 +115,15 @@ func WriteFeed(tasks []FeedTask, opts FeedOptions) []byte {
 // calendar sync connection writes into the user's calendar (OpenSpec change
 // calendar-two-way, design D5). It is the feed's event without RRULE (a
 // recurring task is its next occurrence), categories or priority, marked with
-// X-OPENTODO-TASK.
+// X-OPENTODO-TASK, and a floating timed task in opts.FloatingZone.
 func WriteEvent(t FeedTask, opts FeedOptions) []byte {
 	cal := &caldav.Component{Name: "VCALENDAR"}
 	cal.Props = append(cal.Props, caldav.Prop{Name: "VERSION", Value: "2.0"}, caldav.Prop{Name: "PRODID", Value: caldav.ProdID})
 	t.Title = SyncTitle(t, opts.Encrypted)
 	t.RRULE, t.RDates, t.Labels, t.Priority = "", nil, nil, 0
+	if z := FloatingIn(t, opts.FloatingZone); z != "" {
+		t.TZ = &z
+	}
 	ev := taskEvent(cal, map[string]bool{}, t, opts)
 	ev.Props = append(ev.Props, caldav.Prop{Name: "X-OPENTODO-TASK", Value: t.ID})
 	cal.Children = append(cal.Children, ev)
