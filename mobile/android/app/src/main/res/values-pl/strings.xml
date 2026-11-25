@@ -50,6 +50,17 @@
     <string name="widget_completed_description">Ile zadań ukończyłeś w tym tygodniu</string>
     <string name="widget_completed_locked">Zablokowane: tylko dzisiejsza liczba</string>
     <string name="widget_completed_days">Ukończone dziennie: %1$s</string>
+    <string name="widget_upcoming">Nadchodzące</string>
+    <string name="widget_upcoming_description">Twoje kolejne zadania, według dni</string>
+    <string name="widget_upcoming_empty">Nic nie nadchodzi.</string>
+    <string name="widget_upcoming_locked">Zablokowane. Nadchodzące zadania: %1$d</string>
+    <string name="widget_tomorrow">Jutro</string>
+    <string name="widget_calendar">Kalendarz</string>
+    <string name="widget_calendar_description">Miesiąc z dniami, w które są zadania</string>
+    <string name="widget_calendar_locked">Zablokowane</string>
+    <string name="widget_calendar_day">%1$s, zadania: %2$d</string>
+    <string name="widget_previous_month">Poprzedni miesiąc</string>
+    <string name="widget_next_month">Następny miesiąc</string>
     <string name="setup_old_webview">Android System WebView na tym telefonie jest stary (wersja %1$s). Zaktualizuj go ze sklepu z aplikacjami, aby OpenTodo działało w pełni.</string>
     <string name="site_bar_host">Logowanie na %1$s</string>
     <string name="site_bar_close">Wróć do OpenTodo</string>

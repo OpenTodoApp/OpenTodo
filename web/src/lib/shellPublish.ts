@@ -1,13 +1,15 @@
 // What the web app hands a native shell while it runs there (OpenSpec change
 // native-shells, design D4 and D6): the next 7 days of reminders for the
-// device-scheduled notifications, and the Today list for the widgets. Both are
+// device-scheduled notifications, and the widgets' lists. Both are
 // computed from the local store on every change, debounced, and republished empty
 // or as counts when the account is locked or the user signs out (the store empties).
 // Outside a shell nothing here runs.
 import { liveQuery, type Subscription } from 'dexie'
-import { addDaysISO, localDueOf, logicalToday } from './dates'
+import { calendarTasks } from './calendar'
+import { addDaysISO, currentDateTime, currentDayStart, localDueOf, logicalToday, viewedTask } from './dates'
 import { reminderBody } from './reminderBody'
-import { todayList } from './dayLists'
+import { groupUpcoming, todayList, upcomingList, withoutArchived } from './dayLists'
+import { monthGrid } from './month'
 import { db, getMeta, setMeta } from './db'
 import { encryptionSnapshot, onEncryptionChange } from './e2ee'
 import { publishGeofences } from './geofences'
@@ -20,6 +22,8 @@ import type { StatProject } from './statsCounted'
 import type { Membership } from './types'
 import type { Project, Reminder, Task } from './types'
 import { withoutKept } from './subtasks'
+import { spanClip, spanOf } from './span'
+import { readWorkspaceState } from './workspaces'
 
 /** The device's "notifications through the app" switch (Settings → Notifications in a shell). */
 export const META_SHELL_NOTIFICATIONS = 'shell:notifications'
@@ -68,7 +72,9 @@ export function shellReminders(reminders: readonly Reminder[], tasks: readonly T
  * The widgets' Today list: titles, times, the project's name and an overdue task's
  * date only while the account is readable on this device, counts otherwise.
  * `actions` tells the shell what it may ask of this web app (android-widget-list D3):
- * `complete`, the widget's completion circle (`/?complete=<id>` in a background run).
+ * `complete`, the widget's completion circle (`/?complete=<id>` in a background run), and
+ * `complete-on`, a tick naming its occurrence (`<id>@<due>`, android-upcoming-calendar-widgets
+ * D6); `due` is a row's due date, the occurrence the widget names.
  */
 export function shellWidget(tasks: readonly Task[], today: string, now: number, locked: boolean, me?: string | null, projects: readonly Pick<Project, 'id' | 'name'>[] = []): ShellWidgetData {
   const list = todayList(tasks.filter((task) => !task.deleted_at && !task.completed_at), today, me)
@@ -82,12 +88,86 @@ export function shellWidget(tasks: readonly Task[], today: string, now: number, 
       ...(locked ? {} : { title: task.title }),
       ...(due?.time && !locked ? { time: due.time } : {}),
       ...(overdue && due && !locked ? { date: due.date } : {}),
+      ...(due && !locked ? { due: due.date } : {}),
       ...(project && !locked ? { project } : {}),
       priority: task.priority,
       overdue,
     }
   })
-  return { updatedAt: now, locked, count: list.length, overdue: rows.filter((r) => r.overdue).length, tasks: locked ? [] : rows, actions: ['complete'] }
+  return { updatedAt: now, locked, count: list.length, overdue: rows.filter((r) => r.overdue).length, tasks: locked ? [] : rows, actions: ['complete', 'complete-on'] }
+}
+
+/**
+ * The tasks every widget starts from (android-upcoming-calendar-widgets D2), as the app's
+ * own lists: open, not deleted, not kept (keep-open-subtasks D3), outside archived and
+ * trashed projects, no graduated habit. `tasks` must be every stored row (a kept task's
+ * ancestors decide).
+ */
+export function widgetTasks(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived' | 'deleted_at'>[]): Task[] {
+  const trashed = new Set(projects.filter((p) => p.deleted_at).map((p) => p.id))
+  const open = withoutKept(tasks).filter((task) => !task.deleted_at && !task.completed_at && !(task.project_id && trashed.has(task.project_id)))
+  return withoutArchived(open, projects)
+}
+
+/**
+ * The Upcoming widget's rows (android-upcoming-calendar-widgets D1): the app's Upcoming
+ * after today, by day, at most 50, each with the day it is listed under. Titles, times and
+ * projects only while readable; locked, the count alone.
+ */
+export function shellUpcoming(tasks: readonly Task[], today: string, locked: boolean, me?: string | null, projects: readonly Pick<Project, 'id' | 'name'>[] = []): NonNullable<ShellWidgetData['upcoming']> {
+  const days = groupUpcoming(upcomingList(tasks.filter((task) => !task.deleted_at && !task.completed_at), today, me), today)
+  const listed = days.flatMap((d) => d.tasks.map((task) => ({ task, date: d.date })))
+  if (locked) return { count: listed.length, tasks: [] }
+  const names = new Map(projects.map((p) => [p.id, p.name]))
+  const rows = listed.slice(0, WIDGET_MAX).map(({ task, date }) => {
+    const due = localDueOf(task.due)
+    const project = task.project_id ? names.get(task.project_id) : undefined
+    return {
+      id: task.id,
+      title: task.title,
+      date,
+      // A time belongs to the day it is due on (a span is listed under its first day).
+      ...(due?.time && due.date === date ? { time: due.time } : {}),
+      ...(due ? { due: due.date } : {}),
+      ...(project ? { project } : {}),
+      priority: task.priority,
+    }
+  })
+  return { count: listed.length, tasks: rows }
+}
+
+/** The months the Calendar widget can show: this one and the next five (android-upcoming-calendar-widgets D4). */
+const CALENDAR_MONTHS = 6
+
+/** The first day of the month `months` after the month of `iso`. */
+function monthStart(iso: string, months: number): string {
+  const d = new Date(Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1 + months, 1))
+  return d.toISOString().slice(0, 10)
+}
+
+/**
+ * The Calendar widget's days (android-upcoming-calendar-widgets D1): per date of the
+ * widget's six grids (the first week of this month's grid to the last of the fifth
+ * month's after it), the open tasks Month draws on it by their due as viewed here, a span
+ * on each of its days. A repeating task marks its next date only, not the projected
+ * occurrences Month adds. Days without tasks are left out. Locked: no days, only how to
+ * draw and open them.
+ */
+export function shellCalendar(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], today: string, locked: boolean, weekStart: number, dayView: boolean): NonNullable<ShellWidgetData['calendar']> {
+  if (locked) return { weekStart, dayView }
+  const from = monthGrid(monthStart(today, 0), weekStart)[0][0]
+  const to = monthGrid(monthStart(today, CALENDAR_MONTHS - 1), weekStart)[5][6]
+  const counts = new Map<string, number>()
+  const add = (date: string) => { if (date >= from && date <= to) counts.set(date, (counts.get(date) ?? 0) + 1) }
+  for (const task of calendarTasks(tasks, projects, from, to)) {
+    const span = spanOf(task)
+    const clip = span && spanClip(span, from, to)
+    if (clip) for (let d = clip.first; d <= clip.last; d = addDaysISO(d, 1)) add(d)
+    else { const due = viewedTask(task).due; if (due) add(due.date) }
+  }
+  const days: Record<string, number> = {}
+  for (const date of [...counts.keys()].sort()) days[date] = counts.get(date)!
+  return { weekStart, dayView, days }
 }
 
 /**
@@ -189,13 +269,24 @@ export async function publishReminders(now = Date.now()): Promise<ShellPermissio
   return permission
 }
 
-/** Computes and hands over the widgets' Today list now. */
+/** Computes and hands over the widgets' lists now: Today, Upcoming, the calendar's days and the completions. */
 async function publishToday(now = Date.now()): Promise<void> {
   const enc = encryptionSnapshot()
-  const [tasks, memberships, me, projects] = await Promise.all([db.tasks.toArray(), db.memberships.toArray(), currentUserId(), db.projects.toArray()])
+  const [tasks, memberships, me, projects, workspaces] = await Promise.all([db.tasks.toArray(), db.memberships.toArray(), currentUserId(), db.projects.toArray(), readWorkspaceState()])
   const today = logicalToday(undefined, now)
   const locked = enc.enabled && !enc.unlocked
-  publishWidget({ ...shellWidget(withoutKept(tasks), today, now, locked, me, projects), completed: shellCompleted(tasks, projects, memberships, me, today, locked) })
+  const open = widgetTasks(tasks, projects)
+  // A tap on a calendar day opens Day only where the current workspace has Calendar on (workspace-feature-switches).
+  const dayView = workspaces.list.find((w) => w.id === workspaces.current)?.features?.calendar !== false
+  publishWidget({
+    ...shellWidget(open, today, now, locked, me, projects),
+    // The logical day (Settings → Date and time, a day that starts after midnight), so the widgets' "today" is the app's.
+    today,
+    dayStart: currentDayStart(),
+    completed: shellCompleted(tasks, projects, memberships, me, today, locked),
+    upcoming: shellUpcoming(open, today, locked, me, projects),
+    calendar: shellCalendar(open, projects, today, locked, currentDateTime().weekStart, dayView),
+  })
 }
 
 let started = false
@@ -221,8 +312,8 @@ export function startShellPublishers(): () => void {
       syncQuickAddReply()
     }, DEBOUNCE_MS)
   }
-  // Any change to tasks, reminders, projects (trashed or archived), places (a linked place's pin), the meta table (the switches, the titles option) or the preferences (an away period).
-  const sub: Subscription = liveQuery(() => Promise.all([db.tasks.count(), db.reminders.toArray(), db.tasks.toArray(), db.projects.toArray(), db.places.toArray(), db.meta.toArray(), db.userPrefs.get('me')])).subscribe({ next: run, error: () => undefined })
+  // Any change to tasks, reminders, projects (trashed or archived), places (a linked place's pin), the meta table (the switches, the titles option, the current workspace), the preferences (an away period, the first day of the week) or the workspaces (their Calendar switch).
+  const sub: Subscription = liveQuery(() => Promise.all([db.tasks.count(), db.reminders.toArray(), db.tasks.toArray(), db.projects.toArray(), db.places.toArray(), db.meta.toArray(), db.userPrefs.get('me'), db.workspaces.toArray()])).subscribe({ next: run, error: () => undefined })
   const offEnc = onEncryptionChange(run)
   // The day rolls over at the logical day start even when nothing changes.
   const tick = setInterval(run, 15 * 60 * 1000)

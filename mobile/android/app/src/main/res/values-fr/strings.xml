@@ -50,6 +50,17 @@
     <string name="widget_completed_description">Combien de tâches vous avez terminées cette semaine</string>
     <string name="widget_completed_locked">Verrouillé : seulement le nombre du jour</string>
     <string name="widget_completed_days">Terminées par jour : %1$s</string>
+    <string name="widget_upcoming">À venir</string>
+    <string name="widget_upcoming_description">Vos prochaines tâches, par jour</string>
+    <string name="widget_upcoming_empty">Rien à venir.</string>
+    <string name="widget_upcoming_locked">Verrouillé. Tâches à venir : %1$d</string>
+    <string name="widget_tomorrow">Demain</string>
+    <string name="widget_calendar">Calendrier</string>
+    <string name="widget_calendar_description">Le mois, avec les jours qui ont des tâches</string>
+    <string name="widget_calendar_locked">Verrouillé</string>
+    <string name="widget_calendar_day">%1$s, tâches : %2$d</string>
+    <string name="widget_previous_month">Mois précédent</string>
+    <string name="widget_next_month">Mois suivant</string>
     <string name="setup_old_webview">L’Android System WebView de ce téléphone est ancien (version %1$s). Mettez-le à jour depuis votre magasin d’applications pour qu’OpenTodo fonctionne pleinement.</string>
     <string name="site_bar_host">Connexion sur %1$s</string>
     <string name="site_bar_close">Retour à OpenTodo</string>

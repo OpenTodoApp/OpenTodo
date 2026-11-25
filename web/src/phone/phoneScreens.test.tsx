@@ -58,21 +58,24 @@ describe('choosing the phone screens', () => {
     await seed()
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => rowIds().length === 4, 'the present Today')
-    expect(screen('today')).toBeNull()
+    expect(screen('list')).toBeNull()
     expect(document.querySelector('[data-phone-bar]')).not.toBeNull()
     await r.unmount()
   })
 
-  it('shows the phone Today with the switch on below 768 px, and the present screens elsewhere', async () => {
+  it('shows the phone lists with the switch on below 768 px, and the present screens elsewhere', async () => {
     await seed()
     setPhoneUiEnabled(true)
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!screen('today') && rowIds().length === 4, 'the phone Today')
+    await waitFor(() => !!screen('list') && rowIds().length === 4, 'the phone Today')
     // It draws its own bar: the shell's phone bar is left out, the tab bar stays.
     expect(document.querySelector('[data-phone-bar]')).toBeNull()
     expect(document.querySelector('[data-tab-bar]')).not.toBeNull()
+    // Every task list is the phone list (phone-lists); a screen without a phone view keeps the shell's bar.
     navigate({ view: 'inbox' })
-    await waitFor(() => !screen('today') && !!document.querySelector('[data-phone-bar]'), 'the Inbox as it was')
+    await waitFor(() => document.querySelector('[data-phone-list]')?.getAttribute('data-phone-list') === 'inbox', 'the Inbox as the phone list')
+    navigate({ view: 'labels' })
+    await waitFor(() => !screen('list') && !!document.querySelector('[data-phone-bar]'), 'Labels as it was')
     await r.unmount()
   })
 
@@ -82,7 +85,7 @@ describe('choosing the phone screens', () => {
     width = 1280
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => rowIds().length === 4, 'the desktop Today')
-    expect(screen('today')).toBeNull()
+    expect(screen('list')).toBeNull()
     await r.unmount()
   })
 })
@@ -94,13 +97,13 @@ describe('the phone Today', () => {
     await waitFor(() => rowIds().length === 4, 'the present Today')
     const desktop = rowIds()
     setPhoneUiEnabled(true)
-    await waitFor(() => !!screen('today') && rowIds().length === 4, 'the phone Today')
+    await waitFor(() => !!screen('list') && rowIds().length === 4, 'the phone Today')
     expect(rowIds()).toEqual(desktop)
-    const names = [...document.querySelectorAll('[data-phone-group] h2')].map((h) => h.textContent)
+    const names = [...screen('list')!.querySelectorAll('[data-group-label]')].map((h) => h.textContent)
     expect(names).toEqual(['Earlier', 'Today'])
     // No add field in the page, and no grip on a row.
-    expect(screen('today')!.querySelector('input, textarea')).toBeNull()
-    expect(screen('today')!.querySelector('[data-grip], [data-drag-handle]')).toBeNull()
+    expect(screen('list')!.querySelector('input, textarea')).toBeNull()
+    expect(screen('list')!.querySelector('[data-grip], [data-drag-handle]')).toBeNull()
     await r.unmount()
   })
 
@@ -143,15 +146,13 @@ describe('the phone Today', () => {
     await r.unmount()
   })
 
-  it('the overdue group keeps its actions in one menu', async () => {
+  it('the overdue group keeps its actions', async () => {
     const s = await seed()
     setPhoneUiEnabled(true)
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector('[data-earlier-menu]'), 'the group menu')
-    await click(document.querySelector('[data-earlier-menu]')!)
-    await waitFor(() => !!document.querySelector('[role="menuitem"]'), 'the menu open')
-    const move = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((el) => el.textContent?.includes('Move all to today'))!
-    await click(move)
+    const move = () => [...(screen('list')?.querySelectorAll<HTMLElement>('[data-group-actions] button') ?? [])].find((el) => el.textContent?.includes('Move all to today'))
+    await waitFor(() => !!move(), 'the group actions')
+    await click(move()!)
     await waitFor(async () => (await stored(s.late))?.due?.date === today, 'the overdue task moved to today')
     await r.unmount()
   })
@@ -163,14 +164,15 @@ describe('the phone Today', () => {
     await setTodayLimit(2)
     setPhoneUiEnabled(true)
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => rowIds().length === 2 && !!document.querySelector('[data-phone-fold]'), 'two slots and a folded group')
+    const waiting = () => [...document.querySelectorAll<HTMLElement>('[data-group-toggle]')].find((el) => el.textContent?.includes('Waiting for a slot'))
+    await waitFor(() => rowIds().length === 2 && !!waiting(), 'two slots and a folded group')
     expect(document.querySelector('[data-phone-summary]')!.textContent).toContain('2 of 2')
-    const fold = document.querySelector<HTMLElement>('[data-phone-fold]')!
+    const fold = waiting()!
     expect(fold.textContent).toContain('Waiting for a slot')
     expect(fold.getAttribute('aria-expanded')).toBe('false')
     await click(fold)
     await waitFor(() => rowIds().length === 3, 'the waiting task shown')
-    expect(document.querySelector('[data-phone-fold]')!.getAttribute('aria-expanded')).toBe('true')
+    expect(waiting()!.getAttribute('aria-expanded')).toBe('true')
     await r.unmount()
   })
 
@@ -178,10 +180,10 @@ describe('the phone Today', () => {
     await seed()
     setPhoneUiEnabled(true)
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!screen('today'), 'the phone Today')
+    await waitFor(() => !!screen('list'), 'the phone Today')
     const aside = document.querySelector('aside[data-sidebar]')!
     expect(aside.className).toContain('-translate-x-full')
-    await click(screen('today')!.querySelector('[data-phone-header] button')!)
+    await click(screen('list')!.querySelector('[data-phone-header] button')!)
     await waitFor(() => !aside.className.includes('-translate-x-full'), 'the drawer open')
     await r.unmount()
   })

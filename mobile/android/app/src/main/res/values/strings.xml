@@ -50,6 +50,17 @@
     <string name="widget_completed_description">How many tasks you completed this week</string>
     <string name="widget_completed_locked">Locked: today’s count only</string>
     <string name="widget_completed_days">Completed per day: %1$s</string>
+    <string name="widget_upcoming">Upcoming</string>
+    <string name="widget_upcoming_description">Your next tasks, by day</string>
+    <string name="widget_upcoming_empty">Nothing upcoming.</string>
+    <string name="widget_upcoming_locked">Locked. Upcoming tasks: %1$d</string>
+    <string name="widget_tomorrow">Tomorrow</string>
+    <string name="widget_calendar">Calendar</string>
+    <string name="widget_calendar_description">The month, with the days that have tasks</string>
+    <string name="widget_calendar_locked">Locked</string>
+    <string name="widget_calendar_day">%1$s, tasks: %2$d</string>
+    <string name="widget_previous_month">Previous month</string>
+    <string name="widget_next_month">Next month</string>
     <string name="setup_old_webview">This phone\'s Android System WebView is old (version %1$s). Update it from your app store so OpenTodo works fully.</string>
     <string name="site_bar_host">Signing in on %1$s</string>
     <string name="site_bar_close">Back to OpenTodo</string>

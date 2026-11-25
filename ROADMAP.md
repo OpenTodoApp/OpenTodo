@@ -330,6 +330,7 @@ The phone apps stay web-view shells and are made to feel like apps, in the order
 | [`reminder-card-compact`](openspec/changes/archive/2026-11-21-reminder-card-compact/) | The in-app reminder as one compact card on touch: Snooze and Dismiss on one row | [#1381](https://github.com/OpenTodoApp/OpenTodo/issues/1381) |
 | [`phone-fab-scroll-room`](openspec/changes/archive/2026-11-21-phone-fab-scroll-room/) | The calendar's Day and Week reach the tab bar; no empty room under pages without the add button | [#1382](https://github.com/OpenTodoApp/OpenTodo/issues/1382) |
 | [`phone-ui-trial`](openspec/changes/phone-ui-trial/) | A trial of screens made only for a phone, behind a switch on the device: Today and the task page, a date sheet, and a place and rules for the phone screens that follow | |
+| [`phone-lists`](openspec/changes/phone-lists/) | Every task list in the phone screens, with all a list does: its menu, selection, reordering, subtasks and each list's own parts | |
 | [`shell-push`](openspec/changes/archive/2026-11-21-shell-push/) | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | [#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344) |
 
 ## Future ideas

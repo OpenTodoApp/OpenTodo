@@ -894,7 +894,8 @@
     "web/src/app/ProjectsTable.tsx",
     "web/src/app/TaskListView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
-    "web/src/app/bulk/useBulkList.tsx"
+    "web/src/app/bulk/useBulkList.tsx",
+    "web/src/phone/screens/PhoneList.tsx"
   ],
   "Actions for reminder {name}": [
     "web/src/app/RemindersField.tsx"
@@ -1523,8 +1524,7 @@
   "All day": [
     "web/src/app/CalendarEvents.tsx",
     "web/src/app/calendar/TodayAgenda.tsx",
-    "web/src/app/themes/ThemePreview.tsx",
-    "web/src/phone/screens/PhoneTodayView.tsx"
+    "web/src/app/themes/ThemePreview.tsx"
   ],
   "All done for today.": [
     "web/src/app/Briefing.tsx"
@@ -1938,7 +1938,7 @@
   "Anytime": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/Sidebar.tsx",
-    "web/src/app/TaskListView.tsx",
+    "web/src/app/task-list/useListScreen.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Anywhere": [
@@ -2239,10 +2239,10 @@
     "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/Sidebar.tsx",
-    "web/src/app/TaskListView.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/app/task-list/useListScreen.tsx",
     "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts"
   ],
@@ -2283,7 +2283,6 @@
     "web/src/app/AssistantsPanel.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/SidebarFooter.tsx",
-    "web/src/app/TaskListView.tsx",
     "web/src/app/TokensSection.tsx",
     "web/src/app/assistant/AskEntry.tsx",
     "web/src/app/assistant/AssistantPage.tsx",
@@ -2293,6 +2292,7 @@
     "web/src/app/settingsIndex.ts",
     "web/src/app/settingsSections.ts",
     "web/src/app/task-detail/TaskActionsMenu.tsx",
+    "web/src/app/task-list/ListMenu.tsx",
     "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts"
   ],
@@ -2744,7 +2744,7 @@
     "web/src/app/task-detail/TaskActionsMenu.tsx"
   ],
   "Brief me": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListMenu.tsx"
   ],
   "Briefing": [
     "web/src/lib/settingsCopy.ts"
@@ -3719,7 +3719,8 @@
     "web/src/app/SidebarFooter.tsx"
   ],
   "Collapse subtasks": [
-    "web/src/app/TaskRow.tsx"
+    "web/src/app/TaskRow.tsx",
+    "web/src/phone/components/PhoneRow.tsx"
   ],
   "Collapse {name}": [
     "web/src/app/ProjectsTable.tsx",
@@ -3945,7 +3946,6 @@
     "web/src/app/BoardView.tsx",
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/Sidebar.tsx",
-    "web/src/app/TaskListView.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/notes/NoteRow.tsx",
@@ -3953,6 +3953,7 @@
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-list/ListGroups.tsx",
+    "web/src/app/task-list/useListScreen.tsx",
     "web/src/app/task-list/useListShortcuts.ts",
     "web/src/lib/assistant.ts",
     "web/src/lib/feed.ts",
@@ -5506,8 +5507,7 @@
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/review/CloseDay.tsx",
-    "web/src/lib/listGroups.ts",
-    "web/src/phone/screens/PhoneTodayView.tsx"
+    "web/src/lib/listGroups.ts"
   ],
   "Done today, {instant}": [
     "web/src/app/review/DailyCheck.tsx"
@@ -5750,8 +5750,7 @@
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/lib/listGroups.ts",
-    "web/src/lib/views.ts",
-    "web/src/phone/screens/PhoneToday.tsx"
+    "web/src/lib/views.ts"
   ],
   "Earlier conversations": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
@@ -5771,9 +5770,11 @@
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/WebhooksPanel.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/calendar/FrameBand.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
+    "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/app/themes/YourThemes.tsx"
   ],
   "Edit as text": [
@@ -6312,8 +6313,7 @@
   ],
   "Events": [
     "web/src/app/CaldavPanel.tsx",
-    "web/src/app/WebhooksPanel.tsx",
-    "web/src/phone/screens/PhoneTodayView.tsx"
+    "web/src/app/WebhooksPanel.tsx"
   ],
   "Events from other calendars are stored unencrypted on the server.": [
     "web/src/lib/settingsCopy.ts"
@@ -6575,7 +6575,8 @@
     "web/src/app/SidebarFooter.tsx"
   ],
   "Expand subtasks": [
-    "web/src/app/TaskRow.tsx"
+    "web/src/app/TaskRow.tsx",
+    "web/src/phone/components/PhoneRow.tsx"
   ],
   "Expand {name}": [
     "web/src/app/ProjectsTable.tsx",
@@ -7798,7 +7799,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Group by part of the day": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListMenu.tsx"
   ],
   "Group by priority": [
     "web/src/lib/shortcuts.ts"
@@ -8009,10 +8010,10 @@
     "web/src/app/views/DisplayOptionsBody.tsx"
   ],
   "Hide briefing": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListMenu.tsx"
   ],
   "Hide calendar events": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListMenu.tsx"
   ],
   "Hide delivery log": [
     "web/src/app/WebhooksPanel.tsx"
@@ -8020,6 +8021,7 @@
   "Hide details": [
     "web/src/app/TaskRow.tsx",
     "web/src/app/away/AwayDialog.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -8651,7 +8653,6 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/SyncScopeField.tsx",
     "web/src/app/TabBar.tsx",
-    "web/src/app/TaskListView.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/WorkspaceActivity.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
@@ -8670,6 +8671,7 @@
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/todayGroupDrop.ts",
+    "web/src/app/task-list/useListScreen.tsx",
     "web/src/app/titleEdit.ts",
     "web/src/lib/assistant.ts",
     "web/src/lib/assistantBlockData.ts",
@@ -9160,13 +9162,13 @@
   "Label": [
     "web/src/app/LabelPicker.tsx",
     "web/src/app/ParseChips.tsx",
-    "web/src/app/TaskListView.tsx",
     "web/src/app/away/AwayDialog.tsx",
     "web/src/app/calendar/colorByControls.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/routines/Starters.tsx",
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/app/task-list/useListScreen.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -9828,11 +9830,11 @@
     "web/src/lib/push.ts"
   ],
   "Location": [
-    "web/src/app/TaskListView.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/useTaskFacts.tsx",
+    "web/src/app/task-list/useListScreen.tsx",
     "web/src/lib/facets.ts",
     "web/src/page/TaskPageScreen.tsx"
   ],
@@ -10415,7 +10417,6 @@
     "web/src/app/TaskRow.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
-    "web/src/phone/screens/PhoneToday.tsx",
     "web/src/ui/patterns/PageHeader.tsx"
   ],
   "More actions for this comment": [
@@ -10470,8 +10471,7 @@
     "web/src/ui/MoveHandle.tsx"
   ],
   "Move all to today": [
-    "web/src/app/task-list/EarlierActions.tsx",
-    "web/src/phone/screens/PhoneToday.tsx"
+    "web/src/app/task-list/EarlierActions.tsx"
   ],
   "Move down": [
     "web/src/app/AppearanceSection.tsx",
@@ -12145,8 +12145,7 @@
     "web/src/app/review/ReviewView.tsx"
   ],
   "Nothing left for today": [
-    "web/src/app/display/DisplayScreen.tsx",
-    "web/src/phone/screens/PhoneTodayView.tsx"
+    "web/src/app/display/DisplayScreen.tsx"
   ],
   "Nothing left to do in this project": [
     "web/src/app/display/DisplayScreen.tsx"
@@ -12917,6 +12916,7 @@
     "web/src/app/datetime/DateField.tsx"
   ],
   "Open details": [
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/lib/rowClickPref.ts"
   ],
@@ -12957,7 +12957,7 @@
   ],
   "Open menu": [
     "web/src/app/Shell.tsx",
-    "web/src/phone/screens/PhoneTodayView.tsx"
+    "web/src/phone/components/PhonePageHeader.tsx"
   ],
   "Open note": [
     "web/src/app/assistant/blocks/NoteBlock.tsx"
@@ -14123,7 +14123,6 @@
     "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/ShareCapture.tsx",
-    "web/src/app/TaskListView.tsx",
     "web/src/app/ThemeAbout.tsx",
     "web/src/app/TrashView.tsx",
     "web/src/app/TriageView.tsx",
@@ -14146,6 +14145,7 @@
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/app/task-detail/useTaskFacts.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
+    "web/src/app/task-list/useListScreen.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/dashboard.ts",
     "web/src/lib/listGroups.ts",
@@ -16150,7 +16150,8 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Select {title}": [
-    "web/src/app/TaskRow.tsx"
+    "web/src/app/TaskRow.tsx",
+    "web/src/phone/components/PhoneRow.tsx"
   ],
   "Select, then edit the title": [
     "web/src/lib/rowClickPref.ts"
@@ -16594,7 +16595,7 @@
     "web/src/app/ProjectNote.tsx"
   ],
   "Show Today’s tasks before Tomorrow": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListMenu.tsx"
   ],
   "Show Trash": [
     "web/src/app/bulk/BulkActions.tsx",
@@ -16626,11 +16627,11 @@
     "web/src/app/review/charts.tsx"
   ],
   "Show briefing": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListMenu.tsx"
   ],
   "Show calendar events": [
-    "web/src/app/TaskListView.tsx",
-    "web/src/app/calendar/CalendarsToggle.tsx"
+    "web/src/app/calendar/CalendarsToggle.tsx",
+    "web/src/app/task-list/ListMenu.tsx"
   ],
   "Show completed tasks": [
     "web/src/app/ProjectHeader.tsx",
@@ -16654,6 +16655,7 @@
   "Show details": [
     "web/src/app/TaskRow.tsx",
     "web/src/app/away/AwayDialog.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -16739,7 +16741,7 @@
     "web/src/app/CaldavPanel.tsx"
   ],
   "Show tasks assigned to others": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListMenu.tsx"
   ],
   "Show text": [
     "web/src/app/task-detail/HistoryTab.tsx"
@@ -17217,7 +17219,6 @@
     "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/Sidebar.tsx",
-    "web/src/app/TaskListView.tsx",
     "web/src/app/TaskRow.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/UrgencyChip.tsx",
@@ -17227,6 +17228,7 @@
     "web/src/app/review/CarryOver.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/RowSwipe.tsx",
+    "web/src/app/task-list/useListScreen.tsx",
     "web/src/lib/assistant.ts",
     "web/src/lib/dates.ts",
     "web/src/lib/facets.ts",
@@ -17493,7 +17495,7 @@
     "web/src/app/settingsSections.ts"
   ],
   "Start with Today": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListMenu.tsx"
   ],
   "Start with something small": [
     "web/src/app/habits/HabitsScreen.tsx"
@@ -17625,7 +17627,7 @@
     "web/src/app/BackupsPanel.tsx"
   ],
   "Stop grouping by part of the day": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/task-list/ListMenu.tsx"
   ],
   "Stop listening": [
     "web/src/app/assistant/ComposerCapture.tsx"
@@ -20483,7 +20485,6 @@
     "web/src/app/RuleEditor.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TabBar.tsx",
-    "web/src/app/TaskListView.tsx",
     "web/src/app/TimelineView.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/WorkspaceActivity.tsx",
@@ -20505,15 +20506,14 @@
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/EarlierActions.tsx",
     "web/src/app/task-list/RowSwipe.tsx",
+    "web/src/app/task-list/useListScreen.tsx",
     "web/src/app/themes/ThemePreview.tsx",
     "web/src/lib/dates.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/logbook.ts",
     "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts",
-    "web/src/lib/views.ts",
-    "web/src/phone/screens/PhoneToday.tsx",
-    "web/src/phone/screens/PhoneTodayView.tsx"
+    "web/src/lib/views.ts"
   ],
   "Today and the task page in the new design. Turn it off at any time.": [
     "web/src/lib/settingsCopy.ts"
@@ -21335,8 +21335,7 @@
     "web/src/lib/useFlow.ts",
     "web/src/page/TaskPageScreen.tsx",
     "web/src/phone/rowModel.tsx",
-    "web/src/phone/screens/PhoneTaskPage.tsx",
-    "web/src/phone/screens/PhoneToday.tsx"
+    "web/src/phone/screens/PhoneTaskPage.tsx"
   ],
   "Untitled heading": [
     "web/src/app/editor/NoteOutline.tsx"
@@ -21424,9 +21423,9 @@
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TabBar.tsx",
-    "web/src/app/TaskListView.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/display/DisplayScreen.tsx",
+    "web/src/app/task-list/useListScreen.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Update a project": [
@@ -25982,8 +25981,7 @@
     "web/src/app/task-list/useListDrag.ts",
     "web/src/app/templates/TemplateLibrary.tsx",
     "web/src/lib/assistantBlocks.ts",
-    "web/src/lib/rules/sentence.ts",
-    "web/src/phone/screens/PhoneToday.tsx"
+    "web/src/lib/rules/sentence.ts"
   ],
   "{n, plural, one {# task} other {# tasks}} without estimate": [
     "web/src/app/calendar/CapacityLine.tsx",
@@ -26499,8 +26497,7 @@
     "web/src/app/review/DoneForToday.tsx"
   ],
   "{n} late": [
-    "web/src/app/ProjectsTable.tsx",
-    "web/src/phone/screens/PhoneToday.tsx"
+    "web/src/app/ProjectsTable.tsx"
   ],
   "{n} left": [
     "web/src/app/method/LoopHome.tsx",
