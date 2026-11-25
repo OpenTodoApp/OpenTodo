@@ -77,6 +77,9 @@ describe('shell address actions', () => {
     // Every tick queued since the last run, each once.
     expect(shellUrlAction('?complete=a&complete=b&complete=a&complete=')).toEqual({ kind: 'complete', ids: ['a', 'b'] })
     expect(shellUrlAction('?complete=')).toBeNull()
+    // android-upcoming-calendar-widgets D6: the occurrence ticked, beside plain ids.
+    expect(shellUrlAction('?complete=a%402026-10-23&complete=b')).toEqual({ kind: 'complete', ids: ['a', 'b'], on: { a: '2026-10-23' } })
+    expect(shellUrlAction('?complete=a%40soon')).toEqual({ kind: 'complete', ids: ['a@soon'] })
   })
 
   describe('the widget\'s completion (android-widget-list D2)', () => {
@@ -100,6 +103,17 @@ describe('shell address actions', () => {
         const after = await db.outbox.count()
         await handleShellUrl(() => false, at(`?complete=${id}`), hist)
         expect(await db.outbox.count()).toBe(after)
+      } finally { delete window.opentodoShell }
+    })
+
+    it('an occurrence already advanced is not advanced again (android-upcoming-calendar-widgets D6)', async () => {
+      shellWith(['reminders', 'widgets', 'background'])
+      try {
+        const id = await createTask({ title: 'Water the plants', due: { date: '2026-10-23' } })
+        await handleShellUrl(() => false, at(`?complete=${id}@2026-10-22`), hist)
+        expect((await db.tasks.get(id))!.completed_at).toBeNull()
+        await handleShellUrl(() => false, at(`?complete=${id}@2026-10-23`), hist)
+        expect((await db.tasks.get(id))!.completed_at).not.toBeNull()
       } finally { delete window.opentodoShell }
     })
 

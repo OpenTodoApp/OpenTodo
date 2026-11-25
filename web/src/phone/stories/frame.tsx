@@ -11,7 +11,7 @@ export const PHONE_H = 760
 
 export function PhoneFrame({ children, width = PHONE_W, height = PHONE_H }: { children: ReactNode; width?: number; height?: number }) {
   return (
-    <div data-phone-frame className="relative isolate overflow-hidden rounded-[2rem] border border-default bg-canvas shadow-2"
+    <div data-phone-frame className="relative isolate max-w-full overflow-hidden rounded-[2rem] border border-default bg-canvas shadow-2"
       style={{ width, height, transform: 'translateZ(0)' }}>
       {children}
     </div>
