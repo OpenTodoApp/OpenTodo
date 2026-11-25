@@ -90,8 +90,8 @@ describe('locale resolution (D4)', () => {
     expect(resolveLanguage('de', ['en-US'])).toBe('de')
   })
   it('a browser language without a catalog falls back to English', () => {
-    expect(resolveLanguage('system', ['sv'])).toBe('en')
-    expect(resolveLanguage('xx', ['sv'])).toBe('en')
+    expect(resolveLanguage('system', ['qaa'])).toBe('en')
+    expect(resolveLanguage('xx', ['qaa'])).toBe('en')
   })
 
   it('classifies simplified Chinese and leaves traditional Chinese on English', () => {

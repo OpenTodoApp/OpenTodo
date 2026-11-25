@@ -16,7 +16,7 @@ import { Button, ComposerFrame, IconButton, Popover } from '../../ui'
 import { filesFrom } from '../../lib/pastedFiles'
 import { PendingFiles } from '../quickadd/PendingFiles'
 import { t } from '../../lib/i18n'
-import { composingEnter } from '../../lib/composeKey'
+import { composing } from '../../lib/composeKey'
 import { readString, writeString } from '../../lib/deviceStorage'
 import { FormattingToggle, useFormattingToggle } from '../FormattingToggle'
 
@@ -193,8 +193,8 @@ export const Composer = forwardRef<HTMLElement | null, ComposerProps>(function C
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
-    // Enter confirms an input method's character (japanese): it neither picks a mention nor sends.
-    if (composingEnter(e)) return
+    // Keys while an input method composes belong to it (japanese): no mention pick, list move, send or cancel.
+    if (composing(e)) return
     if (options.length) {
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault()

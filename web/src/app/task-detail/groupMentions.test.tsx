@@ -122,6 +122,24 @@ describe('group mentions', () => {
     expect(area.value).toBe('@Adults ')
   })
 
+  it('the plain composer leaves Escape and the arrows to a composing input method', async () => {
+    const p = props({ richComposer: false })
+    const r = await render(<CommentsView {...p} />)
+    const area = r.container.querySelector('#comment-composer') as HTMLTextAreaElement
+    area.focus()
+    await typeArea(area, '@a')
+    await waitFor(() => !!document.querySelector('[role="listbox"]'), 'the mention list')
+    const selected = () => document.querySelector('[role="listbox"] [aria-selected="true"]')?.textContent
+    const before = selected()
+    await key(area, 'ArrowDown', { isComposing: true })
+    expect(selected()).toBe(before)
+    await key(area, 'Escape', { isComposing: true })
+    expect(document.querySelector('[role="listbox"]')).not.toBeNull()
+    expect(document.activeElement).toBe(area)
+    await key(area, 'Escape')
+    expect(document.querySelector('[role="listbox"]')).toBeNull()
+  })
+
   it('renders a group mention as a group chip and a person as a person chip', async () => {
     const c = { id: 'c1', task_id: 't1', parent_id: null, body: '@Adults and @Anna, look', author_id: 'anna', mentions: ['group:g-adults', 'anna'], created_at: MON, edited_at: null, deleted_at: null, _clock: {} } as Comment
     const r = await render(<CommentsView {...props({ threads: [{ root: c, replies: [] }], richComposer: false })} />)
