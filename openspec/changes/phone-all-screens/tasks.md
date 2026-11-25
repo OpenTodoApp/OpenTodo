@@ -8,7 +8,7 @@
 ## 2. The phone row everywhere
 
 - [x] 2.1 `TaskRowDrawContext` in `TaskRow`, `PhoneTaskRow` on the row's props, `PhoneListRow` on top of it (design D3). Verify: the list tests of `phone-lists` pass unchanged; `npm test` passes with no desktop test edited.
-- [ ] 2.2 Tests: a saved view, a filter, Next and Waiting show phone rows in their order; a tap opens the task page; the check completes with Undo; a board's cards are unchanged. Verify: the tests pass.
+- [ ] 2.2 Tests: a saved view, a filter, Next and Waiting show phone rows in their order; a tap opens the task page; the check completes with Undo; a board's cards are unchanged. Verify: the tests pass. Done so far: Next (rows, the check, the tap). Still to test: a saved view, a filter, Waiting, a board's cards.
 
 ## 3. Checks
 
@@ -18,7 +18,7 @@
 
 ## 4. The whole
 
-- [ ] 4.1 The web app. Verify: `npm test`, `npm run lint` and `npm run build` in `web/`; `node scripts/bundle-budget.mjs` inside the budget, numbers written in the design; `node scripts/i18n-check.mjs`.
+- [x] 4.1 The web app. Verify: `npm test`, `npm run lint` and `npm run build` in `web/`; `node scripts/bundle-budget.mjs` inside the budget, numbers written in the design; `node scripts/i18n-check.mjs`. Done: 935 test files pass, lint and knip clean, entry 93.4 of 148 KB and first load 662.7 of 712 KB; no new string.
 - [ ] 4.2 Performance: the desktop list's budgets with the row's seam. Verify: the list budgets of `docs/performance.md` on the 10,000-task account, numbers in the design.
 - [x] 4.3 Docs: `docs/phone-screens.md`, `changelog.d/Changed/phone-all-screens.md`, `ROADMAP.md`, the docs build. Verify: `npm run docs:build` and `docs:check`; repo checks.
 - [ ] 4.4 The owner tries the screens on a phone. Verify: their findings fixed or recorded here.
