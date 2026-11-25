@@ -379,7 +379,7 @@ test('at the certificate limit with no certificate of an earlier run, sign stops
 // ---- App Store submission (ios-distribution D10) ----
 
 /** A fake App Store Connect for `submit`: the app, one build, versions, localizations and submissions. */
-function store({ versions = [], build = { processingState: 'VALID', usesNonExemptEncryption: false }, locs = [{ id: 'loc-en', attributes: { locale: 'en-US', whatsNew: 'old' } }, { id: 'loc-de', attributes: { locale: 'de-DE', whatsNew: '' } }], attachedBuild = null, submissions = [], items = [] } = {}) {
+function store({ versions = [], build = { processingState: 'VALID', usesNonExemptEncryption: false }, locs = [{ id: 'loc-en', attributes: { locale: 'en-US', whatsNew: 'old' } }, { id: 'loc-de', attributes: { locale: 'de-DE', whatsNew: '' } }], attachedBuild = null, submissions = [], items = [], polled = [] } = {}) {
   const calls = []
   const call = async (what, method, path, body) => {
     calls.push({ method, path, body })
@@ -390,6 +390,7 @@ function store({ versions = [], build = { processingState: 'VALID', usesNonExemp
     if (method === 'GET' && path.includes('/appStoreVersionLocalizations')) return { data: locs }
     if (method === 'GET' && path.startsWith('/v1/reviewSubmissions?')) return { data: submissions }
     if (method === 'GET' && path.includes('/items')) return { data: items }
+    if (method === 'GET' && path.startsWith('/v1/appStoreVersions/')) return { data: { id: path.split('/')[3], attributes: { appVersionState: polled.shift() ?? 'DEVELOPER_REJECTED' } } }
     if (method === 'POST' && path === '/v1/appStoreVersions') return { data: { id: 'v-new', attributes: { ...body.data.attributes, appVersionState: 'PREPARE_FOR_SUBMISSION' } } }
     if (method === 'POST' && path === '/v1/reviewSubmissions') return { data: { id: 'sub-new', attributes: { state: 'READY_FOR_REVIEW' } } }
     if (method === 'GET') throw new Error(`unexpected GET ${path}`)
@@ -544,6 +545,49 @@ test('submit: a rejected version goes again through its submission, its item mar
   })
   await submitForReview(s.call, { version: '1.6.0', build: '10600', notes: 'x', log: quiet })
   assert.deepEqual(s.writes(), ['PATCH /v1/reviewSubmissionItems/i3', 'PATCH /v1/reviewSubmissions/sub3'])
+})
+
+test('submit: an earlier version still waiting for review is withdrawn and becomes this release (#1976)', async () => {
+  const v16 = { id: 'v16', attributes: { versionString: '1.6.0', appVersionState: 'WAITING_FOR_REVIEW', releaseType: 'AFTER_APPROVAL' } }
+  const waiting = { id: 'sub16', attributes: { state: 'WAITING_FOR_REVIEW' } }
+  const holds16 = [{ id: 'i16', relationships: { appStoreVersion: { data: { type: 'appStoreVersions', id: 'v16' } } } }]
+  const s = store({ versions: [released, v16], submissions: [waiting], items: holds16, polled: ['WAITING_FOR_REVIEW', 'DEVELOPER_REJECTED'] })
+  const pauses = []
+  const out = await submitForReview(s.call, { version: '1.7.0', build: '10700', notes: 'New things', log: quiet, pause: async (ms) => { pauses.push(ms) }, wait: 5 })
+  assert.equal(out.state, 'submitted')
+  assert.deepEqual(pauses, [5], 'waits until Apple has made the version editable again')
+  const writes = s.writes()
+  assert.equal(writes[0], 'PATCH /v1/reviewSubmissions/sub16', 'the waiting submission is withdrawn first')
+  assert.deepEqual(s.calls.find((c) => c.method === 'PATCH' && c.path === '/v1/reviewSubmissions/sub16').body.data.attributes, { canceled: true })
+  assert.ok(!writes.includes('POST /v1/appStoreVersions'), 'no second version')
+  assert.deepEqual(s.calls.find((c) => c.method === 'PATCH' && c.path === '/v1/appStoreVersions/v16').body.data.attributes, { versionString: '1.7.0', releaseType: 'AFTER_APPROVAL' })
+  assert.ok(writes.includes('PATCH /v1/appStoreVersions/v16/relationships/build'), 'the new build is attached')
+  assert.equal(writes.at(-1), 'PATCH /v1/reviewSubmissions/sub-new', 'and submitted in a new submission')
+})
+
+test('submit: a version in review, a later one waiting, or a shared submission is not withdrawn', async () => {
+  const item = (id) => ({ id: `i-${id}`, relationships: { appStoreVersion: { data: { type: 'appStoreVersions', id } } } })
+  const inReview = store({ versions: [released, { id: 'v16', attributes: { versionString: '1.6.0', appVersionState: 'IN_REVIEW' } }], submissions: [{ id: 's', attributes: { state: 'IN_REVIEW' } }], items: [item('v16')] })
+  await assert.rejects(submitForReview(inReview.call, { version: '1.7.0', build: '10700', notes: 'x', log: quiet }), /1\.6\.0 is in review: .*submit-only and build_number 10700/)
+  assert.deepEqual(inReview.writes(), [])
+  const later = store({ versions: [released, { id: 'v18', attributes: { versionString: '1.8.0', appVersionState: 'WAITING_FOR_REVIEW' } }], submissions: [{ id: 's', attributes: { state: 'WAITING_FOR_REVIEW' } }], items: [item('v18')] })
+  await assert.rejects(submitForReview(later.call, { version: '1.7.0', build: '10700', notes: 'x', log: quiet }), /1\.8\.0 is waiting for review/)
+  assert.deepEqual(later.writes(), [])
+  const shared = store({ versions: [released, { id: 'v16', attributes: { versionString: '1.6.0', appVersionState: 'WAITING_FOR_REVIEW' } }], submissions: [{ id: 's', attributes: { state: 'WAITING_FOR_REVIEW' } }], items: [item('v16'), item('event')] })
+  await assert.rejects(submitForReview(shared.call, { version: '1.7.0', build: '10700', notes: 'x', log: quiet }), /holds 1\.6\.0 and other items/)
+  assert.deepEqual(shared.writes(), [])
+})
+
+test('submit --dry-run: withdrawing a waiting version is only logged', async () => {
+  const v16 = { id: 'v16', attributes: { versionString: '1.6.0', appVersionState: 'WAITING_FOR_REVIEW', releaseType: 'AFTER_APPROVAL' } }
+  const s = store({ versions: [released, v16], submissions: [{ id: 'sub16', attributes: { state: 'WAITING_FOR_REVIEW' } }], items: [{ id: 'i16', relationships: { appStoreVersion: { data: { type: 'appStoreVersions', id: 'v16' } } } }] })
+  const logs = []
+  const log = (l, m) => logs.push(m)
+  const out = await submitForReview(dryRun(s.call, log), { version: '1.7.0', build: '10700', notes: 'x', log })
+  assert.equal(out.state, 'submitted')
+  assert.deepEqual(s.writes(), [])
+  assert.ok(logs.some((m) => /dry run: would be withdrawing 1\.6\.0 from review, superseded by 1\.7\.0/.test(m)))
+  assert.ok(logs.some((m) => /dry run: would be moving App Store version 1\.6\.0 to 1\.7\.0/.test(m)))
 })
 
 test("Apple's errors are all shown, with the associated ones", async () => {

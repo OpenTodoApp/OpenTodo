@@ -42,7 +42,7 @@ The repository SHALL hold, under `mobile/ios/store/`, the App Store listing text
 - **THEN** they enter `demo.open-todo.app`, choose "Try the demo" and reach a populated Today list without creating an account
 
 ### Requirement: App Store review for a final tag
-After Apple has processed the TestFlight build of a final tag, CI SHALL make the App Store version of its marketing version ready and submit it for review, with the project's App Store Connect key and nothing stored besides it: the version SHALL be created, or the one editable version moved to it; its release type SHALL be release after approval; every localization it has SHALL get the version's changelog section as plain text of at most 4,000 characters as What's New, except on the app's first version; the processed build SHALL be attached with export compliance answered as the build declares it; and the version SHALL be submitted for review. A release candidate SHALL never be submitted. Running it again SHALL create nothing twice and SHALL leave alone a version that is already submitted, in review, approved or released. A dry run SHALL read App Store Connect and only log what it would write. A run by hand SHALL be a dry run unless the owner chooses to submit.
+After Apple has processed the TestFlight build of a final tag, CI SHALL make the App Store version of its marketing version ready and submit it for review, with the project's App Store Connect key and nothing stored besides it: the version SHALL be created, or the one editable version moved to it; an earlier version still waiting for review, not yet in review, SHALL be withdrawn from review and moved to it, so the App Store follows the latest release, while one in review or approved SHALL stop the submission with nothing changed; its release type SHALL be release after approval; every localization it has SHALL get the version's changelog section as plain text of at most 4,000 characters as What's New, except on the app's first version; the processed build SHALL be attached with export compliance answered as the build declares it; and the version SHALL be submitted for review. A release candidate SHALL never be submitted. Running it again SHALL create nothing twice and SHALL leave alone a version that is already submitted, in review, approved or released. A dry run SHALL read App Store Connect and only log what it would write. A run by hand SHALL be a dry run unless the owner chooses to submit.
 
 #### Scenario: A final release
 - **WHEN** `v1.6.0` is released and Apple has processed build 10600
@@ -51,6 +51,14 @@ After Apple has processed the TestFlight build of a final tag, CI SHALL make the
 #### Scenario: Run again
 - **WHEN** the workflow runs again for `v1.6.0` while 1.6.0 is waiting for review
 - **THEN** nothing is written to App Store Connect and the run says the version is already submitted
+
+#### Scenario: A release supersedes one waiting for review
+- **WHEN** `v1.7.0` is released and Apple has processed build 10700 while App Store version 1.6.0 is still waiting for review
+- **THEN** 1.6.0 is withdrawn from review and becomes version 1.7.0 with build 10700 and the 1.7.0 What's New, and 1.7.0 is waiting for review
+
+#### Scenario: The earlier version is in review
+- **WHEN** `v1.7.0` is released while 1.6.0 is in review
+- **THEN** nothing is changed in App Store Connect, and the run fails naming the hand run that submits build 10700 once 1.6.0 is released
 
 #### Scenario: Release candidate
 - **WHEN** `v1.6.0-rc.1` is uploaded to TestFlight
