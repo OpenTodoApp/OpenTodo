@@ -22,6 +22,7 @@ import { useShortcutDispatcher, useShortcutScope } from './shortcuts'
 import { Kbd } from './shortcuts/Kbd'
 import { t } from '../lib/i18n'
 import { messageOf } from '../lib/errorText'
+import { composing } from '../lib/composeKey'
 
 /** How files come with this share: the hand-over store, the extension's message, lost on the way, or refused by the service worker. */
 export type ShareFiles = { inbox?: string | null; mode?: 'extension' | 'denied' | 'lost' | 'unverified' | null }
@@ -236,6 +237,7 @@ export function ShareCapture() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             onKeyDown={(e) => {
+              if (composing(e)) return
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault()
                 ;(document.getElementById('share-capture') as HTMLFormElement | null)?.requestSubmit()

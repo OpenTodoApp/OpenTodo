@@ -22,7 +22,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { existsSync } from 'node:fs'
 import { extract } from './i18n/extract.mjs'
-import { checkShellCatalog, readShellCatalog, shellCatalogPath } from './i18n/shell.mjs'
+import { appShortcutsCatalogPath, checkShellCatalog, readAppShortcutsCatalog, readShellCatalog, shellCatalogPath } from './i18n/shell.mjs'
 import { checkObsidianCatalogs, checkObsidianSource, obsidianDir, obsidianMessages, readObsidianCatalogs } from './i18n/obsidian.mjs'
 import { repo, ts } from './i18n/source.mjs'
 import { androidSurface, shippedLanguages } from './i18n/status.mjs'
@@ -191,6 +191,10 @@ export async function check(root = repo) {
   // Maintained languages are required; a community language may be partly there.
   if (existsSync(shellCatalogPath(root))) {
     problems.push(...checkShellCatalog(readShellCatalog(root), maintained.filter((c) => c !== 'en'), community))
+  }
+  // Its Siri phrases (apple-shortcuts D4): the same rules, and every phrase names the app.
+  if (existsSync(appShortcutsCatalogPath(root))) {
+    problems.push(...checkShellCatalog(readAppShortcutsCatalog(root), maintained.filter((c) => c !== 'en'), community, { label: 'shortcuts', appName: true }))
   }
   // The Obsidian plugin's own strings (obsidian-plugin task 6.1): obsidian/locales/.
   if (existsSync(join(obsidianDir(root), 'src'))) {

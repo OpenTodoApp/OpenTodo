@@ -9,6 +9,7 @@ import { t } from '../../lib/i18n'
 import { MAX_OBJECTIVE_TITLE, OBJECTIVE_COUNTDOWN } from '../../lib/objectives'
 import type { Objective } from '../../lib/types'
 import { Button, MoveHandle, Tooltip } from '../../ui'
+import { composing } from '../../lib/composeKey'
 
 export interface ObjectiveActions {
   onToggle: (o: Objective, done: boolean) => void
@@ -46,6 +47,7 @@ export function ObjectiveInput({ initial = '', label, onCommit, onCancel }: {
         onChange={(e) => setValue(e.target.value.replace(/[\r\n]+/g, ' '))}
         onKeyDown={(e) => {
           e.stopPropagation()
+          if (composing(e)) return
           if (e.key === 'Enter') { e.preventDefault(); finish(true) }
           if (e.key === 'Escape') { e.preventDefault(); finish(false) }
         }}

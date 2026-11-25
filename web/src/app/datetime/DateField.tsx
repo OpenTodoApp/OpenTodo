@@ -15,6 +15,7 @@ import { parseDateInput } from './parse'
 import { t, preferredLanguages } from '../../lib/i18n'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 import { inlineKey } from '../../lib/direction'
+import { composing } from '../../lib/composeKey'
 
 export interface DateFieldProps {
   /** `YYYY-MM-DD`, or null when empty. */
@@ -69,6 +70,7 @@ export function DateField({ value, onChange, label, hideLabel, disabled, classNa
   }
 
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (composing(e)) return
     if (e.key === 'Enter') {
       e.preventDefault()
       commit()

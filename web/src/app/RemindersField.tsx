@@ -19,6 +19,7 @@ import { TimeField } from './datetime/TimeField'
 import { t } from '../lib/i18n'
 import { messageOf } from '../lib/errorText'
 import { useAction } from '../lib/useAction'
+import { composing } from '../lib/composeKey'
 
 /** A local date and wall-clock time for an instant (the date and time fields edit these). */
 function toLocalParts(ms: number): { date: string; time: string } {
@@ -238,7 +239,7 @@ function ReminderEditor({ task, initial, mode, onSave, onCancel }: {
       ref={form}
       className="flex flex-wrap items-center gap-2"
       onSubmit={(e) => { e.preventDefault(); save() }}
-      onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}
+      onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}
     >
       {initial && (
         <Select className="w-auto py-1" aria-label={t('Reminder kind')} value={kind} onChange={(e) => setKind(e.target.value as TimeKind)}>

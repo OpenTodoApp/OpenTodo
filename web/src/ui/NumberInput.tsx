@@ -5,6 +5,7 @@
 // and the decimal separator follows what the person types.
 import { useEffect, useId, useState, type ReactNode } from 'react'
 import { t } from '../lib/i18n'
+import { composing } from '../lib/composeKey'
 
 export interface NumberInputProps {
   label: ReactNode
@@ -72,6 +73,7 @@ export function NumberInput({ label, description, value, onChange, onValidityCha
             aria-describedby={[unitId, descId, errId].filter(Boolean).join(' ') || undefined}
             onChange={(e) => commit(e.target.value)}
             onKeyDown={(e) => {
+              if (composing(e)) return
               if (e.key === 'ArrowUp') { e.preventDefault(); stepBy(1) }
               if (e.key === 'ArrowDown') { e.preventDefault(); stepBy(-1) }
             }}

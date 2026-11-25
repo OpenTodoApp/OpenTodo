@@ -45,6 +45,7 @@ describe('Display options on a project page', () => {
     await waitFor(() => titles().length === 3, 'rows')
     expect(titles()).toEqual(['Wash car', 'Call plumber', 'Buy bulbs'])
     await click(document.querySelector('[data-display-trigger]')!)
+    await waitFor(() => !!document.querySelector('[data-display-panel]'), 'the panel')
     const panel = document.querySelector('[data-display-panel]')!
     // The project's panel: grouping and order, no layout or row properties of a view.
     expect(panel.querySelector('[data-display-layout]')).toBeNull()
@@ -124,6 +125,7 @@ describe('Display options on a label page', () => {
     const r = await render(<TaskListView route={{ view: 'label', id: lid }} />)
     await waitFor(() => titles().length === 2, 'rows')
     await click(document.querySelector('[data-display-trigger]')!)
+    await waitFor(() => !!document.querySelector('[data-display-panel]'), 'the panel')
     expect([...document.querySelectorAll('[data-display-panel] select[aria-label="Group by"] option')].map((o) => o.textContent)).toEqual(['Project', 'None', 'Due date', 'Priority'])
     await choose('Order by', 'priority')
     await click(document.querySelector('[data-display-more]')!)

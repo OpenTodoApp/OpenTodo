@@ -50,6 +50,7 @@ import { barModes, PREFIX_OF, prefixSwitch, type BarMode } from './modes'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 import { Snippet, usePaletteNotes } from './notesSection'
 import { perfMark, SEARCH_RESULTS } from '../../lib/perfMarks'
+import { composing } from '../../lib/composeKey'
 
 /** At most this many entries are listed; the rest are counted. */
 export const PALETTE_LIMIT = 50
@@ -201,6 +202,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const toMode = (m: BarMode) => { setBar(m); if (m === 'search' || m === 'commands') state.setQuery('') }
   // In Add and Ask the field is their own: the same prefix in it while empty returns to Search with the character.
   const onKeyDownCapture = (e: KeyboardEvent) => {
+    if (composing(e)) return
     const target = e.target as HTMLInputElement
     if (bar === 'search' && e.key === 'Enter' && (e.ctrlKey || e.metaKey) && state.query.trim()) {
       e.preventDefault()

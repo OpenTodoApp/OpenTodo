@@ -6,7 +6,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import type { Project, Task } from '../lib/types'
-import { click, key, render, spokenText, visibleText, waitFor } from '../ui/test-utils'
+import { click, key, render, spokenText, type, visibleText, waitFor } from '../ui/test-utils'
 import { panelOccupant, resetPanel } from './panel'
 import { PanelHost } from './PanelHost'
 import { ProjectHeader } from './ProjectHeader'
@@ -119,6 +119,22 @@ describe('project header', () => {
     await click(title!)
 
     expect(r.container.querySelector<HTMLInputElement>('input[aria-label="Project name"]')?.value).toBe('Example Project 2')
+    await r.unmount()
+  })
+
+  // composition-keys: Enter and Escape while an input method composes belong to it.
+  it('keeps renaming through Enter and Escape while an input method is composing', async () => {
+    const r = await render(<ProjectHeader project={p('home', 'Home')} />)
+    await waitFor(() => !!r.container.querySelector('button[data-project-name]'), 'the title')
+    await click(r.container.querySelector('button[data-project-name]')!)
+    const field = () => r.container.querySelector<HTMLInputElement>('input[aria-label="Project name"]')
+    await type(field()!, 'かいぎ')
+    await key(field()!, 'Enter', { isComposing: true })
+    await key(field()!, 'Escape', { isComposing: true })
+    expect(field()?.value).toBe('かいぎ')
+    expect((await db.projects.get('home'))?.name).toBe('Home')
+    await key(field()!, 'Escape')
+    expect(field()).toBeNull()
     await r.unmount()
   })
 })

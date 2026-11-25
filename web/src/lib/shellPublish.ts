@@ -13,6 +13,7 @@ import { encryptionSnapshot, onEncryptionChange } from './e2ee'
 import { publishGeofences } from './geofences'
 import { has, publishWidget, scheduleReminders, shell, shellVisible, type ShellPermission, type ShellReminder, type ShellWidgetData } from './shell'
 import { heldAway, inQuietProject, type ProjectLink } from './reminderWatcher'
+import { syncQuickAddReply } from './shellQuickAdd'
 import { currentUserId } from './sharing'
 import { compute, sharedIds } from './stats'
 import type { StatProject } from './statsCounted'
@@ -216,6 +217,8 @@ export function startShellPublishers(): () => void {
       if (has('widgets')) void publishToday().catch(() => undefined)
       // Location reminders (location-reminders D3): the armed regions, on every change and on the tick.
       if (has('geofences')) void publishGeofences().catch(() => undefined)
+      // The quick-add notification's inline field follows encryption (android-quick-add-notification D3).
+      syncQuickAddReply()
     }, DEBOUNCE_MS)
   }
   // Any change to tasks, reminders, projects (trashed or archived), places (a linked place's pin), the meta table (the switches, the titles option) or the preferences (an away period).

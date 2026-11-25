@@ -8,6 +8,7 @@ import { NodeSelection } from 'prosemirror-state'
 import type { EditorView, NodeView } from 'prosemirror-view'
 import { t } from '../lib/i18n'
 import { EmbeddedImage } from './Markdown'
+import { composing } from '../lib/composeKey'
 
 class ImageView implements NodeView {
   dom: HTMLElement
@@ -40,6 +41,7 @@ class ImageView implements NodeView {
         {this.selected && editable && (
           <input className="ui-input mt-1 text-meta" aria-label={t('Alternative text')} placeholder={t('Describe the image')} defaultValue={alt}
             onKeyDown={(e) => {
+              if (composing(e)) return
               if (e.key === 'Enter' || e.key === 'Escape') {
                 e.preventDefault()
                 this.view.focus()

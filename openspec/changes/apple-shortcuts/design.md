@@ -61,9 +61,9 @@ The web app reads the queue on start, when it becomes visible, and once after ea
 | Add task (`text`, requested by Siri when missing) | no | D1, D2 |
 | Open quick add | yes | opens `/?add=` (empty) |
 | Open Today | yes | opens `/today` |
-| What's on today | no | answers from the last widget publication: the count, the overdue count and up to 5 titles with their times, plus "as of 09:12". When the publication is `locked` it gives counts only. With no publication yet: "Open OpenTodo once to see today here." |
+| What's on today | no | answers from the last widget publication: the count, the overdue count and up to 5 titles with their times, plus "as of 09:12". When the publication is `locked`, or the phone is locked (`isProtectedDataAvailable` is false), it gives counts only. A publication from an earlier day starts with "This list is from Nov 24, 18:40." instead of ending with its time. With no publication yet: "Open OpenTodo once to see today here.", or "Unlock to see today." before the first unlock, when the file cannot be read. |
 
-Every intent is an App Shortcut with one or two phrases that contain the app name (an `AppShortcutsProvider` requirement), localised in en, de, fr, es, it and pt in `AppShortcuts.xcstrings`. Example: "Add a task in OpenTodo" and "Füge in OpenTodo eine Aufgabe hinzu". The Action Button and the iOS 18 controls can run any App Shortcut, so neither needs its own code beyond D5.
+Every intent is an App Shortcut with one or two phrases that contain the app name (an `AppShortcutsProvider` requirement), localised in en, de, fr, es, it and pt in `<lang>.lproj/AppShortcuts.strings` (a String Catalog of phrases needs iOS 17, above the 16.4 deployment target). They carry no short title or symbol for Shortcuts and Spotlight tiles: the initialiser that takes them as constants needs iOS 17 too, so the tiles wait for that deployment target. Example: "Add a task in OpenTodo" and "Füge in OpenTodo eine Aufgabe hinzu". The Action Button and the iOS 18 controls can run any App Shortcut, so neither needs its own code beyond D5.
 
 **D5. Widgets: a quick-add button, lock-screen accessories, a control.**
 WidgetKit has no text field (ios-shell D8), but a widget can be a button that opens the app:

@@ -7920,5 +7920,8 @@
   "Phone screens": "Telefoonschermen",
   "A trial of screens made for a phone. This device only.": "Een proef met schermen die voor de telefoon zijn gemaakt. Alleen op dit apparaat.",
   "New phone screens": "Nieuwe telefoonschermen",
-  "Today and the task page in the new design. Turn it off at any time.": "Vandaag en de taakpagina in het nieuwe ontwerp. Je kunt het altijd uitzetten."
+  "Today and the task page in the new design. Turn it off at any time.": "Vandaag en de taakpagina in het nieuwe ontwerp. Je kunt het altijd uitzetten.",
+  "Quick add notification": "Melding voor snelle invoer",
+  "Add a task from the notification shade, in any app.": "Voeg een taak toe vanuit het meldingenpaneel, in elke app.",
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android heeft meldingen voor OpenTodo geweigerd. Sta ze toe in de instellingen van Android."
 }

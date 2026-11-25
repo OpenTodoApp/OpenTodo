@@ -32,7 +32,7 @@ The iOS shell SHALL offer App Intents, each an App Shortcut with phrases that na
 - **Add task**, with a text parameter that Siri asks for when it is missing. It queues the text as a capture without opening the app, then tries to file it with a hidden run of the web app for up to 8 seconds. It answers "Added to OpenTodo" when the entry was filed in that time, and otherwise that the task will be added the next time the app runs (or once the account is unlocked, when the last publication was locked).
 - **Open quick add**, which opens the app at `/?add=`.
 - **Open Today**, which opens the app at `/today`.
-- **What's on today**, which answers without opening the app or making a request. It uses the last Today publication: the count, the overdue count and up to five titles with their times, plus the time of the publication, and only counts when the publication was made while the account was locked.
+- **What's on today**, which answers without opening the app or making a request. It uses the last Today publication: the count, the overdue count and up to five titles with their times, plus the time of the publication, and only counts when the publication was made while the account was locked. While the phone is locked it SHALL give only counts, never a title, whatever the publication; when the publication cannot be read before the first unlock it SHALL ask the user to unlock. A publication from an earlier day SHALL be answered as the list of that day, with its date, never as today's.
 
 The intents SHALL never make a network request of their own, and they SHALL be usable from the Action Button and inside the user's own Shortcuts.
 
@@ -51,6 +51,18 @@ The intents SHALL never make a network request of their own, and they SHALL be u
 #### Scenario: Encrypted and locked
 - **WHEN** the last publication was made while the encrypted account was locked
 - **THEN** "What's on today" gives the counts and no title
+
+#### Scenario: Locked phone
+- **WHEN** the phone is locked, the last publication has three titles, and the user asks "What's on today in OpenTodo"
+- **THEN** Siri answers with the counts and no title
+
+#### Scenario: Before the first unlock
+- **WHEN** the phone has restarted and not been unlocked yet, and the user asks "What's on today in OpenTodo"
+- **THEN** Siri asks the user to unlock the device to see today
+
+#### Scenario: A list from yesterday
+- **WHEN** the last publication was made yesterday at 18:40 and the user asks "What's on today in OpenTodo" this morning
+- **THEN** Siri says the list is from yesterday's date at 18:40 before giving its counts, instead of answering as today's
 
 #### Scenario: Action Button
 - **WHEN** the user assigns the "Add task" shortcut to the Action Button and presses it

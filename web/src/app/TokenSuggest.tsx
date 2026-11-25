@@ -17,6 +17,7 @@ import { useTickedItems, type TickedItem } from '../lib/tickedItems'
 import type { NextChoice } from '../lib/method/rules'
 import { useTickedSuggest } from './quickadd/TickedSuggest'
 import { choiceHint } from './method/chooseNext'
+import { composing } from '../lib/composeKey'
 
 interface Item { key: string; label: string; secondary?: string; color?: string; level?: number; create?: boolean; run: () => Promise<string> | string }
 
@@ -105,6 +106,7 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
 
   /** Runs before the field's own key handling; true when the key was the list's. */
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>): boolean => {
+    if (composing(e)) return false
     if (!open || !items.length) return ticked.onKeyDown(e)
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault()
