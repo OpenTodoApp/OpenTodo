@@ -4,14 +4,14 @@
 // tasks, groups, order, selection, drag and every write are the same; this file
 // draws it for a phone: the phone header, each list's own parts, the groups with the
 // phone row, the selection bar and the prompts. No add line: the add button adds.
-import { Suspense, useCallback } from 'react'
+import { Suspense } from 'react'
 import { lazy } from '../../lib/lazy'
 import { setCompletedDisplay } from '../../lib/completedDisplay'
 import { completedOpenKey } from '../../lib/listGroups'
 import { LOGBOOK_PAGE } from '../../lib/logbook'
 import { canEditTasks, roleOf } from '../../lib/sharing'
 import type { AccountRole } from '../../lib/types'
-import { GroupBarContext, PageHeaderDrawContext, type PageHeaderProps, useMediaQuery } from '../../ui'
+import { useMediaQuery } from '../../ui'
 import { BulkActionsMenu, ListReorderContext, SelectionBar } from '../../app/bulk/BulkActions'
 import { TodayAgenda } from '../../app/calendar/TodayAgenda'
 import { UpcomingEventsNote } from '../../app/calendar/UpcomingAgenda'
@@ -32,9 +32,7 @@ import type { ListRoute } from '../../app/task-list/useListModel'
 import { useListScreen } from '../../app/task-list/useListScreen'
 import { UrgencyContext } from '../../app/useUrgency'
 import { t } from '../../lib/i18n'
-import { useOwnBar } from '../chrome'
-import { PhonePageHeader } from '../components/PhonePageHeader'
-import { PhoneListRow } from './PhoneListRow'
+import { PhoneChrome } from '../PhoneChrome'
 
 const CompletedSearch = lazy(() => import('../../app/completed/CompletedBar').then((m) => ({ default: m.CompletedSearch })))
 
@@ -43,14 +41,11 @@ const earlierActions = (ids: readonly string[]) => <EarlierActions ids={ids} />
 
 export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRoute; userId?: string; userRole?: AccountRole; onMenu: () => void }) {
   const s = useListScreen(route, userId, userRole)
-  useOwnBar()
   const { m, rows, taskGroups, groups, projectId, today, isReadOnly, upcomingCal, selectedId, revealed, setRevealed, collapsedGroups, summarised,
     selection, ticked, contextIds, inline, ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, rowMenu, ownOrder, manual, drag, own, hiddenDone, showCompleted,
     completedNarrowed, currentProject, currentLabel, currentPlace, phoneActions, agenda } = s
   const coarse = useMediaQuery('(pointer: coarse)')
-  const header = useCallback((p: PageHeaderProps) => <PhonePageHeader {...p} onMenu={onMenu} />, [onMenu])
   const renderRow = useRowRenderer({
-    Row: PhoneListRow,
     view: route.view, labelId: route.view === 'label' ? route.id : undefined, userId, projectMap: m.projectMap, labelMap: m.labelMap, memberMap: m.memberMap, selectedId, progress: m.progress, blocked: m.blocked, flow: m.flow,
     habits: m.habits, isReadOnly, board: false, manual, ownOrder: !!ownOrder, dayOrderIds: s.dayOrderIds, treeView: m.treeView || m.nested, dropAt: drag.dropAt, draggingId: drag.draggingId, ticked: selection.ticked,
     showCheckbox: selectMode, selectMode, fieldColumns: false, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
@@ -65,16 +60,16 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
   if (!s.ready) return <div className="min-h-full bg-canvas" data-list-loading />
 
   return (
-    <ListReorderContext.Provider value={s.listReorder}><UrgencyContext.Provider value={m.urgency}><PageHeaderDrawContext value={header}><GroupBarContext value={false}>
-      <div ref={s.room} data-phone-screen="list" data-phone-list={route.view} className="min-h-full bg-canvas pb-6">
-        {route.view === 'project' && currentProject ? (
-          <ProjectHeader project={currentProject} userId={userId} extraGroups={s.boardGroups} print
-            phone={{ slots: phoneActions.slots, groups: phoneGroups(phoneActions.projectItems) }} />
-        ) : (
-          <ListHeader route={route} title={s.title} label={currentLabel} meta={s.meta} subtitle={s.methodSubtitle} briefing={s.briefing} actions={null} phone={phoneActions} agenda={agenda.toggle} upcomingEvents={upcomingCal.toggle} />
-        )}
-
+    <ListReorderContext.Provider value={s.listReorder}><UrgencyContext.Provider value={m.urgency}><PhoneChrome onMenu={onMenu}>
+      <div ref={s.room} data-phone-screen="list" data-phone-list={route.view} data-page-project={route.view === 'project' ? '' : undefined} className="min-h-full bg-canvas pb-6">
         <div className="px-4" data-phone-list-body>
+        {route.view === 'project' && currentProject ? (
+            <ProjectHeader project={currentProject} userId={userId} extraGroups={s.boardGroups} print
+              phone={{ slots: phoneActions.slots, groups: phoneGroups(phoneActions.projectItems) }} />
+          ) : (
+            <ListHeader route={route} title={s.title} label={currentLabel} meta={s.meta} subtitle={s.methodSubtitle} briefing={s.briefing} actions={null} phone={phoneActions} agenda={agenda.toggle} upcomingEvents={upcomingCal.toggle} />
+          )}
+
           {route.view === 'completed' && <Suspense fallback={<div className="mb-3 h-9" />}><CompletedSearch value={m.completedQuery} onChange={m.setCompletedQuery} /></Suspense>}
           {agenda.toggle && <TodayAgenda cal={agenda.cal} zone={m.zone} />}{m.todayHabits && <TodayStrip tasks={m.allTasks} projects={m.projects} today={today} />}
 
@@ -110,6 +105,6 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
         {ui.prompt && <CompleteParentPrompt parent={ui.prompt} onAccept={s.acceptPrompt} onDismiss={() => s.setPrompt(null)} />}
         <RowPickerDialogs assignFor={ui.assignFor} pickerFor={ui.pickerFor} userId={userId} onCloseAssign={() => ui.setAssignFor(null)} onClosePicker={() => ui.setPickerFor(null)} />
       </div>
-    </GroupBarContext></PageHeaderDrawContext></UrgencyContext.Provider></ListReorderContext.Provider>
+    </PhoneChrome></UrgencyContext.Provider></ListReorderContext.Provider>
   )
 }

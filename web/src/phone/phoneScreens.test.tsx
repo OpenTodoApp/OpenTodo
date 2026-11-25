@@ -63,7 +63,7 @@ describe('choosing the phone screens', () => {
     await r.unmount()
   })
 
-  it('shows the phone lists with the switch on below 768 px, and the present screens elsewhere', async () => {
+  it('shows the phone screens with the switch on below 768 px', async () => {
     await seed()
     setPhoneUiEnabled(true)
     const r = await render(<Shell user={user} onLogout={() => {}} />)
@@ -71,11 +71,11 @@ describe('choosing the phone screens', () => {
     // It draws its own bar: the shell's phone bar is left out, the tab bar stays.
     expect(document.querySelector('[data-phone-bar]')).toBeNull()
     expect(document.querySelector('[data-tab-bar]')).not.toBeNull()
-    // Every task list is the phone list (phone-lists); a screen without a phone view keeps the shell's bar.
+    // Every task list is the phone list (phone-lists), and every other screen has the phone header (phone-all-screens).
     navigate({ view: 'inbox' })
     await waitFor(() => document.querySelector('[data-phone-list]')?.getAttribute('data-phone-list') === 'inbox', 'the Inbox as the phone list')
     navigate({ view: 'labels' })
-    await waitFor(() => !screen('list') && !!document.querySelector('[data-phone-bar]'), 'Labels as it was')
+    await waitFor(() => !screen('list') && !!document.querySelector('[data-phone-header]') && !document.querySelector('[data-phone-bar]'), 'Labels under the phone header')
     await r.unmount()
   })
 

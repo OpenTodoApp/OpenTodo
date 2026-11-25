@@ -144,7 +144,8 @@ export const PageHeaderDrawContext = createContext<((props: PageHeaderProps) => 
 
 export function PageHeader(props: PageHeaderProps) {
   const draw = use(PageHeaderDrawContext)
-  return draw ? draw(props) : <OwnPageHeader {...props} />
+  // A header inside a page (level 2) is the page's own, whoever draws the page's header.
+  return draw && props.level !== 2 ? draw(props) : <OwnPageHeader {...props} />
 }
 
 function OwnPageHeader({ title, subtitle, meta, leading, actions, barActions = false, overflow, menu, help, back, level = 1, sticky = true, children, icon, testId, titleRef, titleTabIndex, kind = 'tool', briefing }: PageHeaderProps) {

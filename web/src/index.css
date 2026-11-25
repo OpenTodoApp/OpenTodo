@@ -1399,11 +1399,18 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 ::view-transition-group(*) { animation-duration: var(--duration-emphasis); animation-timing-function: var(--ease-spring); }
 ::view-transition-old(*), ::view-transition-new(*) { animation-duration: var(--duration-ui); }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: var(--duration-ui); }
-/* The phone list (OpenSpec change phone-lists, design D2): the groups are the list's own
-   (GroupedList); on the phone screen a group's rows are one card, with hairlines that
-   start at the text, as the phone group draws them. */
-[data-phone-list] ul:has(> [data-phone-row]), [data-phone-list] ul:has(> .row-block) { @apply overflow-hidden rounded-card bg-surface shadow-1; }
-[data-phone-list] [data-phone-row] + [data-phone-row]::before { content: ''; @apply absolute left-12 right-0 top-0 z-[1] border-t border-soft; }
+/* The phone row's list (OpenSpec changes phone-lists D2 and phone-all-screens D3): wherever
+   a screen lists phone rows, the rows of one list are one card, with hairlines that start
+   at the text. The phone row exists only while the phone screens are on. No `:has()` over a
+   list: it would restyle a 2,000-row list on every change (styleScope.perf.test). */
+[data-phone-rows] { @apply overflow-hidden rounded-card; }
+/* A screen's own list of phone rows (Next, a saved view): the first and the last row round the card. */
+[data-phone-row]:first-child { border-top-left-radius: var(--radius-card); border-top-right-radius: var(--radius-card); }
+[data-phone-row]:last-child { border-bottom-left-radius: var(--radius-card); border-bottom-right-radius: var(--radius-card); }
+[data-phone-rows] [data-phone-row] { border-radius: 0; }
+/* The keyboard's cursor row, on a phone with a keyboard. */
+[data-phone-row][aria-current="true"] { box-shadow: inset 3px 0 0 var(--ot-accent); }
+[data-phone-row] + [data-phone-row]::before { content: ''; @apply absolute left-12 right-0 top-0 z-[1] border-t border-soft; }
 [data-phone-list] [data-phone-list-body] > section { @apply mb-5; }
 
 /* The phone UI's screens push and pop (phone-ui-trial D6): the task page comes in from the end edge over the list, which

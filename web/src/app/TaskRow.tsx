@@ -43,6 +43,7 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { prefersReducedMotion } from './motion'
 import { useRowSwipe } from './task-list/RowSwipe'
 import { holdForRow } from './task-list/rowHold'
+import { TaskRowDrawContext } from './task-list/rowDraw'
 import { dragFeedback, dropIndent } from './listDrop'
 import { fieldBadges } from '../lib/fields'
 import { useApplicableFields, useFieldDefs } from './useFields'
@@ -722,7 +723,10 @@ function RowMarks({ priority, m, counts }: { priority: number | null; m: MetaVal
  * boolean, not the list's selected id).
  */
 export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowProps) {
-  return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
+  const draw = use(TaskRowDrawContext)
+  if (props.shape === 'compact') return <CompactRow {...props} />
+  // The phone UI draws a list's row itself (phone-all-screens D3); a card stays a card.
+  return draw && props.shape !== 'card' ? draw(props) : <FullRow {...props} />
 })
 
 function RowTrailing({ score, origin, revealed, forceActions }: { score?: ReactNode; origin: ReactNode; revealed: boolean; forceActions: boolean }) {
