@@ -8,7 +8,7 @@ import { logicalToday } from '../../lib/dates'
 import { createLabel } from '../../lib/labels'
 import { createProject, detachOccurrence, unparkTask } from '../../lib/ops'
 import { reorderLabel, updateLabel } from '../../lib/labels'
-import { deleteSection, renameSection, reorderSection } from '../../lib/sections'
+import { renameSection, reorderSection } from '../../lib/sections'
 import { syncNow } from '../../lib/sync'
 import type { Label, Project, ProjectRole, Section, Task, User, View, Workspace } from '../../lib/types'
 import { createView, deleteView, reorderView, setStartView, updateView } from '../../lib/views'
@@ -18,7 +18,7 @@ import { HUES } from '../../ui'
 import type { IconName } from '../../ui'
 import { labelMenuGroups } from '../LabelsView'
 import type { ListState } from '../listActions'
-import { flatItems, type ActionGroup } from '../menus/ActionMenu'
+import { flatItems, withEllipsis, type ActionGroup } from '../menus/ActionMenu'
 import { startFocusOn } from '../focus/startFocus'
 import { projectMenuGroups, type MoveTarget } from '../ProjectHeader'
 import { navigate, type Route } from '../router'
@@ -37,14 +37,14 @@ import { switchWorkspace, workspaceLabel } from '../workspaceNav'
 import { viewMenuGroups } from '../ViewsView'
 import type { Entry, Step } from './entries'
 import { runBulk } from '../bulk/BulkActions'
-import { deleteWithUndo, moveWithUndo, parkWithUndo } from '../undoable'
+import { deleteWithUndo, moveWithUndo, parkWithUndo, withUndoToast } from '../undoable'
 import { keysOf } from '../../lib/shortcuts'
 import { runGroupDue } from '../task-list/EarlierActions'
 import { hueName } from '../../lib/colourNames'
 import { t, msg, translatedList } from '../../lib/i18n'
 import { customPriorityName, isNoPriority } from '../../lib/priority'
 import { DAY_PARTS, dayPartName, dayPartOf } from '../../lib/dayParts'
-import { dayPartUndoable, eveningUndoable, priorityUndoable, sectorUndoable, skipOccurrence } from '../../lib/undoActions'
+import { dayPartUndoable, deleteSectionUndoable, eveningUndoable, priorityUndoable, sectorUndoable, skipOccurrence } from '../../lib/undoActions'
 import { sectorChoices } from '../../lib/sectorNames'
 import { runGiveBackSlot, runTakeSlot, type SlotState } from '../task-list/slotActions'
 import { requestFrames } from '../calendar/framesRequest'
@@ -219,7 +219,7 @@ function fromMenu(prefix: string, groups: ActionGroup[], idPrefix: string): Comm
   // A step (the icon grid, the colour swatches) runs here as its Combobox form; one without it is not listed.
   // A submenu's items are listed in its place.
   return flatItems(groups).filter((i) => !i.disabled && (i.kind !== 'step' || i.step.palette)).map((i): Command => ({
-    id: `${idPrefix}:${i.id}`, label: t('{object}: {action}', { object: prefix, action: i.label.replace(/…$/, '') }), icon: i.icon, shortcut: i.shortcut, menuLabel: i.kind === 'step' ? `${i.label}…` : i.label,
+    id: `${idPrefix}:${i.id}`, label: t('{object}: {action}', { object: prefix, action: i.label.replace(/…$/, '') }), icon: i.icon, shortcut: i.shortcut, menuLabel: i.kind === 'action' || i.kind === 'check' ? i.label : withEllipsis(i.label),
     run: () => (i.kind === 'picker' ? { kind: 'picker', picker: i.picker } as Step
       : i.kind === 'step' ? { kind: 'picker', picker: i.step.palette! } as Step
         : i.kind === 'confirm' ? { kind: 'confirm', confirm: i.confirm } as Step : i.onSelect()),
@@ -389,7 +389,7 @@ export function commands(ctx: PaletteContext): Command[] {
       section: s.row,
       rename: () => prompt(t('Rename section'), t('Section name'), s.row.name, (n) => renameSection(s.row.id, n)),
       move: (d) => reorderSection(s.row.id, d),
-      remove: () => deleteSection(s.row.id),
+      remove: () => withUndoToast(deleteSectionUndoable(s.row.id)),
     }), 'section'))
   }
 

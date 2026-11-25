@@ -152,7 +152,7 @@ function OptionRow<T>({ state, o, i, renderLeading, renderTrailing, renderSecond
       className={palette
         ? `relative flex items-center gap-2.5 px-4 text-body ${active ? 'row-selected' : ''} ${o.kind === 'create' ? 'text-accent' : 'text-default'}`
         : `flex items-center gap-2.5 rounded-control px-2.5 text-body ${active ? 'bg-sunken dark:bg-raised' : ''} ${o.kind === 'create' ? 'text-accent' : 'text-default'}`}
-      style={windowed ? { position: 'absolute', top: i * rh + 4, left: palette ? 0 : 4, right: palette ? 0 : 4, height: rh } : { minHeight: rh, paddingTop: palette ? 4 : 6, paddingBottom: palette ? 4 : 6, paddingLeft: o.kind === 'item' ? (palette ? 16 : 10) + o.depth * 16 : undefined }}
+      style={windowed ? { position: 'absolute', top: i * rh + 4, left: palette ? 0 : 4, right: palette ? 0 : 4, height: rh } : { minHeight: rh, paddingTop: palette ? 4 : 6, paddingBottom: palette ? 4 : 6, paddingInlineStart: o.kind === 'item' ? (palette ? 16 : 10) + o.depth * 16 : undefined }}
     >
       {o.kind === 'create' ? (
         <>{t.rich('{icon}<span>Create “{query}”</span>', { icon: <Icon name="plus" />, query: o.query, span: (chunks) => <span className="truncate">{chunks}</span> })}</>

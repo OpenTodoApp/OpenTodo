@@ -1,0 +1,1 @@
+- **Assistant with GPT-6 Luna.** OpenAI models that call tools in Chat Completions only without reasoning, such as GPT-6 Luna, now answer turns, routines and Test connection: when OpenAI asks for it, the request is sent again with `reasoning_effort` set to `none`. (#2045)

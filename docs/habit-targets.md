@@ -23,9 +23,9 @@ Some habits don't fit fixed days or a single tick. In the habit form, **How ofte
 
 ## Amounts
 
-"Water, 8 glasses" adds a glass each time you press the check button (or the step you chose). The row reads "5 of 8 glasses". A day at 8 is done and checks in as any habit does; a day with less is partial and counts like the tiny version. The button's menu has **Subtract** and **Set amount**, and a past day can be changed like any other.
+"Water, 8 glasses" adds a glass each time you press the check button (or the step you chose). The row reads "5 of 8 glasses". A day at 8 is done and checks in as any habit does; a day with less is partial and counts like the tiny version. The button's menu has **Subtract** and **Set amount…**, and a past day can be changed like any other.
 
-Each device adds to its own count of the day, so two phones adding glasses offline both count once they sync. **Set amount** sets the day's total.
+Each device adds to its own count of the day, so two phones adding glasses offline both count once they sync. **Set amount…** sets the day's total.
 
 ## From elsewhere
 

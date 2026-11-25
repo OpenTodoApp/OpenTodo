@@ -8,7 +8,7 @@ import { useFeature } from '../../lib/features'
 import type { Dispatch, RefObject, SetStateAction } from 'react'
 import { detachOccurrence, unparkTask } from '../../lib/ops'
 import type { ListColumn, ListRow } from '../../lib/listGroups'
-import { moveTaskBy, type Step } from '../../lib/move'
+import type { Step } from '../../lib/move'
 import { duplicateTask } from '../../lib/templates'
 import { toggleTracking } from '../../lib/timeEntries'
 import type { Priority, Task } from '../../lib/types'
@@ -22,7 +22,7 @@ import { openTaskPage } from '../taskTrail'
 import type { useSelection } from '../selection'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, placeInDay } from '../signals'
 import { isActivationTarget, isTypingTarget, useShortcutScope } from '../shortcuts'
-import { deleteWithUndo, parkWithUndo } from '../undoable'
+import { deleteWithUndo, parkWithUndo, stepRowWithUndo } from '../undoable'
 import type { ListRoute } from './useListModel'
 import { t } from '../../lib/i18n'
 import { eveningUndoable, parentUndoable, priorityUndoable, skipOccurrence } from '../../lib/undoActions'
@@ -149,7 +149,7 @@ export function useListShortcuts(c: ShortcutContext) {
     if (!c.manual || !selectedId) return false
     if (c.moveInView) { act(c.moveInView(selectedId, how)); return }
     c.onReorder?.()
-    act(moveTaskBy(selectedId, how))
+    act(stepRowWithUndo(selectedId, how))
   }
   /** The selected (or open) task, for occurrence keys; false when it is missing or read-only. */
   const occurrence = () => {
