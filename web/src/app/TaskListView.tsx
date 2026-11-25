@@ -5,7 +5,7 @@
 // row, the rows (TaskRow) and the bodies for the list, the board and the timeline.
 import { TodayStrip } from './habits/TodayStrip'
 import { CloseDayRow } from './CloseDayRow'
-import { Suspense, useRef, type CSSProperties, type ReactNode } from 'react'
+import { Suspense, useRef, type CSSProperties } from 'react'
 import { lazy, preloadable } from '../lib/lazy'
 import { ProjectCalendarLayout } from './task-list/listExtras'
 import { t } from '../lib/i18n'
@@ -14,12 +14,9 @@ import { canEditTasks, roleOf } from '../lib/sharing'
 import { LOGBOOK_PAGE } from '../lib/logbook'
 import { setCompletedDisplay } from '../lib/completedDisplay'
 import { saveListColumns } from '../lib/sections'
-import type { AccountRole, Label, Task } from '../lib/types'
-import { Button, DESKTOP_HEADER_QUERY, frameKind, hueFor, PAGE_FRAME, PageHeader, Skeleton, useFinePointer, useMediaQuery } from '../ui'
-import { AwayHost } from './away/AwayMenu'
+import type { AccountRole, Task } from '../lib/types'
+import { Button, DESKTOP_HEADER_QUERY, frameKind, hueFor, PAGE_FRAME, Skeleton, useFinePointer, useMediaQuery } from '../ui'
 import { BoardView } from './BoardView'
-import { BriefingText } from './Briefing'
-import type { Briefing } from '../lib/briefing'
 import { UrgencyContext } from './useUrgency'
 import { BulkActionsMenu, ListReorderContext, SelectionBar } from './bulk/BulkActions'
 import { EarlierActions } from './task-list/EarlierActions'
@@ -29,27 +26,21 @@ import { ProjectNote } from './ProjectNote'
 import { LinkedRefs } from './Markdown'
 import { useListSwipe } from './task-list/RowSwipe'
 import { QuickAdd } from './QuickAdd'
-import type { Route } from './router'
 import { AddSection } from './Sections'
 import { SubProjectsGroup, subProjectLead } from './SubProjects'
-import { CompleteParentPrompt, EmptyState, FilteredEmpty, HiddenNote, LayoutSwitch, ListPageActions, MissingTarget, type PhoneItem, phoneGroups, placeholderFor, ReadOnlyQuickAdd, RowPickerDialogs } from './task-list/ListChrome'
+import { CompleteParentPrompt, EmptyState, FilteredEmpty, HiddenNote, LayoutSwitch, ListPageActions, MissingTarget, phoneGroups, placeholderFor, ReadOnlyQuickAdd, RowPickerDialogs } from './task-list/ListChrome'
 import { GroupedList, LogbookMore, useRowRenderer } from './task-list/ListGroups'
 import { STICKY_QUICK_ADD, useStickyQuickAdd } from './task-list/stickyQuickAdd'
 import { useAddLines } from './task-list/belowLine'
 import type { ListRoute } from './task-list/useListModel'
 import { useListScreen } from './task-list/useListScreen'
-import { useListMenu } from './task-list/ListMenu'
+import { ListHeader } from './task-list/ListHeader'
 import { TodayAgenda } from './calendar/TodayAgenda'
 import { UpcomingEventsNote } from './calendar/UpcomingAgenda'
 import { RoutinesInboxSlot } from './routines/InboxSlot'
 import { isReusable } from '../lib/reusable'
 
 export { BLOCKED_OPEN_KEY } from '../lib/listGroups'
-
-/** The guide section of each list page (user-documentation "Contextual help"); projects use their header's. */
-const HELP_SCREENS: Partial<Record<Route['view'], string>> = {
-  inbox: 'inbox', today: 'today', upcoming: 'upcoming', anytime: 'anytime', someday: 'someday', completed: 'completed', assigned: 'assigned', label: 'label',
-}
 
 
 /**
@@ -185,40 +176,5 @@ function ColumnsToggle({ on, onToggle }: { on: boolean; onToggle: () => void }) 
         {t('Columns')}
       </Button>
     </div>
-  )
-}
-
-
-/**
- * The page header of a list that is not a project (ux-overhaul, app-shell "Page template";
- * task-list-presentation "Nothing between the header and the list"): title, meta, actions,
- * Help. On a phone the actions are the bar's slots and the rest joins its menu (phone-v2 D1).
- */
-function ListHeader({ route, title, label, meta, subtitle, briefing, actions, phone, agenda, upcomingEvents }: {
-  route: ListRoute
-  title: string
-  label?: Label
-  meta: ReactNode
-  subtitle: ReactNode
-  /** A day page's briefing, read before the list is shown (today-no-shift). */
-  briefing: Briefing | null
-  actions: ReactNode
-  phone: { slots: ReactNode; items: PhoneItem[] } | null
-  /** Today's calendar events option (today-agenda D2): undefined when not offered, else whether it is on. */
-  agenda?: boolean
-  /** Upcoming's calendar events option: undefined when not offered, else whether it is on. */
-  upcomingEvents?: boolean
-}) {
-  const { menu, overflow } = useListMenu(route, { items: phone?.items ?? [], label, agenda, upcomingEvents })
-  // Print… ends every list's menu (print-lists); the Inbox and a label have their own menu.
-  return (
-    <>
-      <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={phone ? phone.slots : actions} barActions={!!phone}
-        overflow={overflow}
-        leading={label && <span className="h-3 w-3 rounded-full bg-hue-solid" data-hue={hueFor(label.color)} />}
-        meta={meta} subtitle={subtitle} menu={menu} kind={route.view === 'today' || route.view === 'upcoming' ? 'day' : 'tool'}
-        briefing={briefing && <BriefingText briefing={briefing} />} />
-      {route.view === 'today' && <AwayHost />}
-    </>
   )
 }

@@ -35,11 +35,20 @@ The move is mechanical: the body is already only hooks before the first `return`
 
 Alternative: the phone list calls the smaller hooks itself. Rejected: it is the copy this change exists to avoid, and the order of those calls carries meaning (the drag reads the selection, the bindings read the drag).
 
-Alternative: restyle `TaskRow` for the phone UI. Rejected: it is the responsive screen again; `phone-ui-trial` D5 found that the desktop row's structure is what makes the screen read as a web page.
+Alternative: restyle `TaskRow` for the phone UI. Rejected: it is the responsive screen again; `phone-ui-trial` D5 found that the desktop row's structure is what makes the screen read as a web page. The phone row is its own component (D2, D4).
 
-### D2. One screen, parts per list
+### D2. One screen, parts per list; the groups and the row renderer are shared
 
-`web/src/phone/screens/PhoneList.tsx` is the container: it calls `useListScreen` and maps its result to props. `PhoneListView.tsx` only draws (D5 of `phone-ui-trial`): header, an `above` slot, groups, a `below` slot, the selection bar. `PhoneToday` and `PhoneTodayView` are replaced by it; their stories and tests move to the list's.
+`web/src/phone/screens/PhoneList.tsx` is the container: it calls `useListScreen` and draws the phone header, each list's own parts, the groups, the selection bar and the prompts. `PhoneToday` and `PhoneTodayView` are replaced by it; their stories and tests move to the list's.
+
+Reading `ListGroups.tsx` changed the first plan, which was a phone view of the groups written from nothing. A list's groups are not markup alone: `GroupedList` holds which group is a section, a section's own Later, the Sub-projects lead, Upcoming's events and summarised days, projected occurrences, the Completed group, the drop targets the drag resolves by attribute (`data-drop-target`, `data-task-drop`, `data-group`), the rows drawn in steps (150 at a time) and the blocks that keep a 2,000-row list fast. `rowRenderer` holds the add lines, the "Add task below" line that keeps its focus, and the memo that redraws one row. A second copy of that would be the largest source of parity bugs in the change, and of none of the design: what makes the list read as a phone screen is the row and the group's frame.
+
+So the structure is shared and the two things a person sees are the phone's:
+
+- **The row.** `rowRenderer` draws `c.Row ?? TaskListRow`. The phone passes `PhoneListRow`, which takes the same props and draws the phone row (D4).
+- **The group's frame.** `ListSkinContext` (`'desktop'` by default, `'phone'` under the phone list) is read by `ListGroupHeader`, `SectionHeader` and the row list: on the phone a heading is the phone group's heading (name, count, one control) and the rows sit in a card. Structure, attributes and behaviour are the same component.
+
+`TaskListView` passes neither, so the desktop list is unchanged.
 
 Per-list parts are small components chosen by `route.view` in the container, each rendering an existing component in a slot:
 
@@ -55,17 +64,17 @@ Shown as they are: `TodayAgenda`, `TodayStrip`, `UpcomingEventsNote`, `RoutinesI
 
 ### D3. The header reuses the list's phone actions
 
-`usePhoneListActions` already reduces a list's header to what a phone bar can hold: `slots` (the controls shown) and menu groups. The phone list's `PhoneHeader` shows up to two slots and one menu built from those groups plus the list's own menu (`InboxMenu`, `LabelMenu`, the project's groups, Today's and Upcoming's items from `ListHeader`). The items are the same objects, so an item added to a list's menu later appears in both screens.
+`usePhoneListActions` already reduces a list's header to what a phone bar can hold: `slots` (the controls shown) and menu groups. `ListHeader` and `ProjectHeader` turn those into a `PageHeader` with its title, lead line, actions and menus (`InboxMenu`, `LabelMenu`, the project menu with its rename, share and dialogs). The phone list keeps both components and changes only what draws them: `PageHeaderDrawContext` (in `src/ui`) lets a screen give `PageHeader` its drawing, and the phone list gives `PhonePageHeader`, the bar with the menu button, the slots and the menus, then the title large with the lead line and the briefing. The items are the same objects, so an item added to a list's menu later appears in both screens, and a project's rename, share and keyboard shortcuts are not written twice.
 
-The items now built inline in `ListHeader` (`TaskListView.tsx`, the briefing, events, parts of the day, limit, Replan, Away, Brief me) move into a function both headers call, `listMenuGroups(route, screen)`.
+`ListHeader` moves out of `TaskListView.tsx` into `task-list/ListHeader.tsx`, and the items it built inline (the briefing, events, parts of the day, limit, Replan, Away, Brief me) into the hook `useListMenu` (`task-list/ListMenu.tsx`).
 
 Interface budget (`docs/interface-guide.md`): one row of chrome (the bar) above the title, and the title scrolls away; a list's first item is under at most two rows. One vertical scroll region, the shell's. No new shortcut.
 
 ### D4. Rows: `PhoneRow` grows three things
 
-- **Depth and fold.** `PhoneRowModel` gains `depth` (0 to 2, indented 24 px a step) and `fold` (`{ open, onToggle, count }`), shown as a 44 px control at the row's end.
+- **Depth and fold.** `PhoneRow` takes `depth` (indented 24 px a step, three steps at most) and `fold` (`{ open, onToggle }`), shown as a 44 px control at the row's end.
 - **Selection.** In select mode the check is a tick box and a tap on the row ticks. The row takes `selecting` and `ticked`; the gesture hook is off.
-- **Hold and drag.** The row's `onPointerDown` is the list's own (`rowActions`), so the 350 ms hold, the menu on release and the drag on a move are the code and timings of today. `useListDrag` finds rows and drop places by data attributes; `PhoneRow` and `PhoneGroup` carry the same attributes (`data-task-id`, the group and section keys), and the drop line is drawn by the list's indicator from `drag.dropAt`.
+- **Hold and drag.** The row's `onPointerDown` is the list's own (`holdForRow`, moved from `TaskRow.tsx` to `task-list/rowHold.ts`, over `rowActions.drag`), so the 350 ms hold, the menu on release and the drag on a move are the code and timings of today. `useListDrag` finds rows and drop places by data attributes; `PhoneListRow` puts the same attributes on its element (`data-task-id`, `data-drop-target`, `data-draggable`, `data-depth`), the groups are the list's own (D2), and the drop line is the list's (`dragFeedback`). Tried by touch in the real app at 390 px: a hold and a move reorders a project's list with the drop line shown.
 
 Edit title, Add task below and Add subtask render the present `InlineEditor`, `SiblingInput` and `SubtaskInput` in a slot of the row, since they must mount inside the tap for iOS to raise the keyboard.
 
@@ -81,7 +90,7 @@ The desktop list's add row is not sticky below 768 px and scrolls away; the add 
 
 ### D7. Which screen draws a route
 
-`Shell.tsx`: with the phone UI on, a `ListRoute` renders `PhoneList`. `PhoneList` returns the present `TaskListView` for a project whose layout is not List, so a layout switch needs no reload and the board keeps its code. The phone list is one lazy chunk; `PhoneToday`'s chunk goes.
+`Shell.tsx`: with the phone UI on, a `ListRoute` renders `PhoneList`, except a project whose layout is not List, which renders the present `TaskListView`. The shell reads the layout (`useProjectViewMode`), since a phone screen may not import a desktop screen; a layout chosen in the menu switches the screen without a reload. The phone list is one lazy chunk (5.6 KB gzip); `PhoneToday`'s chunk goes.
 
 ### D8. Checks
 
@@ -97,7 +106,7 @@ Reported after the build in `tasks.md` 7.1: the entry chunk and the first load a
 ## Risks / Trade-offs
 
 - **The move breaks a list behaviour without a test noticing** → the move is its own commit with no other edit; the whole web suite and the layout check run on it before anything is built on top.
-- **Drag depends on DOM details of `TaskRow`** → 2.4 reads `useListDrag` and `lib/dnd.ts` first and lists the attributes it needs; if the phone row cannot meet them, the fallback is the menu's Reorder plus a drag handle, and the spec's hold-and-move scenario is amended openly.
+- **Drag depends on DOM details of `TaskRow`** → settled by D2 and D4: the groups and their drop targets are shared, and the phone row carries the row's attributes.
 - **The list is long (500 rows)** → the phone row is lighter than `TaskRow`; measured in 7.2 on the 10,000-task account against the list budgets of `docs/performance.md`.
 - **Half of the app is still the old layout** → unchanged by this change; the switch stays off by default.
 

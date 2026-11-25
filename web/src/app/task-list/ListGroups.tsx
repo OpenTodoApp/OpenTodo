@@ -1,7 +1,7 @@
 // The list body (OpenSpec change web-component-structure): rows, the grouped list
 // with its headers and section groups, and the logbook's "Show more". The board and
 // the timeline have their own bodies (BoardView, TimelineView).
-import { type CSSProperties, Fragment, isValidElement, Suspense, type ReactElement, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { type ComponentType, type CSSProperties, Fragment, isValidElement, Suspense, type ReactElement, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { lazy } from '../../lib/lazy'
 import { t, useLanguageVersion } from '../../lib/i18n'
 import { BLOCKED_OPEN_KEY, earlierCollapsed, flatRow, SUB_PROJECTS, type ListGroup, type ListRow as Row } from '../../lib/listGroups'
@@ -25,7 +25,7 @@ import { SubProjectsGroup, subProjectLead } from '../SubProjects'
 import { taskDrop } from '../taskDrop'
 import { departures$, ghostMemory, isGhost, listCommitted, markGhost, registerList, withGhosts } from '../motion'
 import type { FlowView } from '../../lib/useFlow'
-import { TaskListRow, SubtaskInput, SubtaskAddLine, type RowActions } from './TaskListRow'
+import { TaskListRow, SubtaskInput, SubtaskAddLine, type RowActions, type TaskListRowProps } from './TaskListRow'
 import type { BelowLine } from './belowLine'
 import { WaitingSoonList } from './WaitingSoon'
 import type { ListRoute } from './useListModel'
@@ -100,6 +100,8 @@ export interface RowContext {
   edgeOf?: (task: Task) => HueName
   /** A project board's notes preview is on (board-polish): cards show two lines of their notes. */
   cardNotes?: boolean
+  /** What draws a row: the desktop row, or the phone list's (phone-lists D2). The lines around it are shared. */
+  Row?: ComponentType<TaskListRowProps>
 }
 
 /**
@@ -164,6 +166,7 @@ function renderListRows(rows: readonly Row[], render: RenderRow) {
 /** One task line (or a board card), inside the columns table when that layout is on (custom-fields). */
 export function rowRenderer(c: RowContext): RenderRow {
   const tree = c.treeView && !c.board
+  const ListRow = c.Row ?? TaskListRow
   const line = (r: Row, groupSeparator?: boolean) => {
     // The row being edited in place is not dragged: a press in its field selects text.
     const editing = !c.board && c.inlineId === r.task.id
@@ -172,7 +175,7 @@ export function rowRenderer(c: RowContext): RenderRow {
     const ghost = isGhost(r.task)
     return (
       <Fragment key={r.task.id}>
-        <TaskListRow
+        <ListRow
           task={r.task}
           contextual={r.contextual}
           depth={r.depth}

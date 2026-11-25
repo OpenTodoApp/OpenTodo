@@ -26,6 +26,9 @@ const PHONE_MAY_IMPORT = [
   'task-detail/Facets', 'task-detail/TaskActionsMenu', 'task-detail/TaskNotes', 'task-detail/Subtasks', 'task-detail/FieldsGroup',
   'task-detail/AttachmentsRow', 'task-detail/ConversationTabs', 'task-detail/TaskHead', 'task-detail/TaskPageDialog', 'task-detail/RotationLine',
   'task-detail/WhenControl', 'task-list/EarlierActions', 'habits/TodayStrip', 'TitleField', 'LabelPicker', 'ProjectMark', 'locations/LocationPreview', 'SampleNotice',
+  // The task list (phone-lists D1 to D5): its wiring, its groups and row renderer, and the parts of a list shown as they are.
+  'task-list/useListScreen', 'task-list/ListGroups', 'task-list/ListHeader', 'task-list/ListChrome', 'task-list/TaskListRow', 'task-list/rowHold', 'task-list/belowLine', 'listDrop',
+  'bulk/BulkActions', 'useUrgency', 'ProjectHeader', 'ProjectNote', 'Markdown', 'Sections', 'CloseDayRow', 'routines/InboxSlot', 'calendar/UpcomingAgenda', 'completed/CompletedBar',
 ]
 
 export default [

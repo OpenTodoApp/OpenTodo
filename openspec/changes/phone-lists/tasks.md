@@ -3,19 +3,19 @@
 ## 1. One wiring for both screens
 
 - [x] 1.1 Move the list's wiring from `TaskListView.tsx` into `web/src/app/task-list/useListScreen.ts` (design D1), with the helper hooks it uses, in a commit that changes nothing else. `TaskListView` draws from the hook. Verify: `npm test` in `web/` passes with no test edited; `npm run lint`; the layout check on the list screens (`ONLY=inbox,today,upcoming,project,label,completed,assigned`) prints `LAYOUT OK` with the switch off.
-- [ ] 1.2 Move the menu items built in `ListHeader` into `listMenuGroups(route, screen)` (design D3), called by `ListHeader`. Verify: `listChrome.test.tsx` and `closedListToday.test.tsx` pass unchanged; a new test lists the item ids per route.
+- [ ] 1.2 Move `ListHeader` into `task-list/ListHeader.tsx` and its menu items into `useListMenu` (design D3). Verify: `listChrome.test.tsx` and `closedListToday.test.tsx` pass unchanged; a new test lists the item ids per route.
 
 ## 2. The phone list
 
-- [ ] 2.1 `PhoneRow`: depth, the fold control, select mode (tick box, tap ticks), a slot under the row for the add and edit fields; stories for each state. Verify: stories pass axe in both themes; `rowModel.test.tsx` covers depth and fold.
-- [ ] 2.2 `PhoneListView` (draws only) and `PhoneList` (container on `useListScreen`): the header with the title, summary line, up to two slots and the menu; groups with heading, count, fold and their actions; rows. `Shell` renders it for the ten list routes with the phone UI on; `PhoneToday` and `PhoneTodayView` are removed and their stories and tests moved. Verify: `phoneLists.test.tsx`: for each route the ids, groups and order equal `useListModel`'s; a board keeps the present screen; the scenarios of "Every task list is a phone screen" and "Rows in every list".
+- [ ] 2.1 `PhoneRow`: depth, the fold control, select mode (tick box, tap ticks), a field in place of the title, the attributes and overlay a drag needs; `PhoneListRow` on the list's row props; stories for each state. Verify: stories pass axe in both themes; `rowModel.test.tsx` covers depth and fold.
+- [ ] 2.2 `PhoneList` on `useListScreen` (design D2): the phone page header through `PageHeaderDrawContext`, the list's groups with the phone row (`rowRenderer`'s `Row`), a group's rows as one card. `Shell` renders it for the ten list routes with the phone UI on; `PhoneToday` and `PhoneTodayView` are removed and their stories and tests moved. Verify: `phoneLists.test.tsx`: for each route the ids, groups and order equal `useListModel`'s; a board keeps the present screen; the scenarios of "Every task list is a phone screen" and "Rows in every list".
 - [ ] 2.3 The row's menu on a hold, with Edit title, Add task below and Add subtask opening in the row. Verify: tests for the three scenarios of "The row's menu"; by hand in the real app at 390 px with touch that the keyboard opens.
-- [ ] 2.4 Reordering: read `useListDrag` and `lib/dnd.ts`, give `PhoneRow` and `PhoneGroup` the attributes they need and draw the drop line; the menu's Reorder. Verify: tests for "Reordering" (a drag by pointer events in happy-dom, the menu's moves, a sorted list); by hand at 390 px with touch in a project, the Inbox, a label, Today and Upcoming.
+- [ ] 2.4 Reordering: the phone row carries the attributes `useListDrag` reads and draws the drop line; the menu's Reorder. Verify: tests for "Reordering" (a drag by pointer events in happy-dom, the menu's moves, a sorted list); by hand at 390 px with touch in a project, the Inbox, a label, Today and Upcoming.
 - [ ] 2.5 Selection: Select tasks, the selection bar, the bulk actions. Verify: tests for "Selecting tasks"; the layout check's `bulk-actions-menu` overlay with the switch on.
 
 ## 3. The bar and the menu
 
-- [ ] 3.1 The phone header from `usePhoneListActions` and `listMenuGroups`: slots, chips, the menu, for every list (Inbox and label menus, a project's groups and layout switch, Completed's options). Verify: the equivalence test of design D8 (every menu item id of the present phone header is in the phone list's menu, per route); tests for the four scenarios of "The list's bar and menu".
+- [ ] 3.1 The phone header from `ListHeader` and `ProjectHeader` through `PhonePageHeader`: slots, chips, the menu, for every list (Inbox and label menus, a project's groups and layout switch, Completed's options). Verify: the equivalence test of design D8 (every menu item id of the present phone header is in the phone list's menu, per route); tests for the four scenarios of "The list's bar and menu".
 
 ## 4. Each list's own parts
 
