@@ -160,12 +160,13 @@ func TestOwnExportRestoresPriorityNames(t *testing.T) {
 
 // TestOwnExportLeavesAppLinkSchemes (app-links D1): the list of apps a person's
 // links may open is chosen on the account by the person who clicks, never
-// restored by an import; the other preferences of the row still come back.
+// restored by an import, nor is a Focus session from the past (sync-focus-sessions
+// D6); the other preferences of the row still come back.
 func TestOwnExportLeavesAppLinkSchemes(t *testing.T) {
 	h := newHarness(t)
 	export := `{"format":"opentodo-export","version":1,
   "projects":[],"tasks":[],"labels":[],"sections":[],"reminders":[],"views":[],"comments":[],
-  "user_prefs":[{"id":"me","date_format":"iso","app_link_schemes":"[\"ms-word\",\"shortcuts\"]"}],
+  "user_prefs":[{"id":"me","date_format":"iso","app_link_schemes":"[\"ms-word\",\"shortcuts\"]","focus_run":"{\"v\":1}"}],
   "encryption":null}`
 	job := h.run(export, Options{})
 	if job.Status != StatusDone {
@@ -177,5 +178,8 @@ func TestOwnExportLeavesAppLinkSchemes(t *testing.T) {
 	}
 	if v, ok := row["app_link_schemes"]; ok && string(v) != `""` && string(v) != "null" {
 		t.Fatalf("app_link_schemes imported: %s", v)
+	}
+	if v, ok := row["focus_run"]; ok && string(v) != `""` && string(v) != "null" {
+		t.Fatalf("focus_run imported: %s", v)
 	}
 }

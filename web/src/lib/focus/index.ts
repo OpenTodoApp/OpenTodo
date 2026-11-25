@@ -20,7 +20,8 @@ export const timeTrackingLogger: FocusLogger = {
   },
   async running(entryId) {
     const row = await db.timeEntries.get(entryId)
-    return !!row && isRunning(row)
+    // An entry this device has not received yet (another device's session) is not known to be stopped (sync-focus-sessions D5).
+    return !row || isRunning(row)
   },
 }
 

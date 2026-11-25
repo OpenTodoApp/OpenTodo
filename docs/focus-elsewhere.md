@@ -17,5 +17,7 @@ What a panel sees:
 - **On a break or while paused**: nothing running, because no time is logged then. The app's running indicator shows the same.
 - **When the session's device is offline**: the last state it synced. Starting, pausing or ending the session reaches the panel when that device syncs again.
 
+Your own devices show the whole session, paused or on a break too ([Focus on every device](focus-devices.md)); a panel sees only the running stretch.
+
 Panels should ask every 15 to 30 seconds and count down on their own between two answers. Nothing about the session can be changed from outside.
 

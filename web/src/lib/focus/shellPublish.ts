@@ -6,6 +6,7 @@
 // writes an op or reaches the server; outside a shell with `focus` nothing runs.
 import { liveQuery, type Subscription } from 'dexie'
 import { db } from '../db'
+import { hlcOffset } from '../hlc'
 import { encryptionSnapshot, onEncryptionChange } from '../e2ee'
 import { has, NO_FOCUS, publishFocus, type ShellFocus } from '../shell'
 import { shellTitlesEnabled } from '../shellPublish'
@@ -13,12 +14,18 @@ import { focusPrefs, type FocusPrefs } from './prefs'
 import { readFocus } from './state'
 import { inRun, plannedEnd, type FocusState } from './timer'
 
-/** The payload for a stored state; `title` only when the caller may hand it over. */
+/**
+ * The payload for a stored state; `title` only when the caller may hand it over.
+ * A session another device owns is not handed over, so its end is notified once,
+ * by the owner (sync-focus-sessions D4).
+ */
 export function focusPayload(s: FocusState | null, prefs: Pick<FocusPrefs, 'longBreakEvery'>, title?: string): ShellFocus {
-  if (!s || (!inRun(s) && s.phase !== 'done')) return NO_FOCUS
+  if (!s || s.remote || (!inRun(s) && s.phase !== 'done')) return NO_FOCUS
   const done = s.phase === 'done'
   const phase = done ? (s.ended?.kind === 'break' ? 'break' : 'work') : (s.phase as 'work' | 'break')
   const end = plannedEnd(s)
+  // The session's times are server time (sync-focus-sessions D7); the shell's clock is the device's.
+  const skew = hlcOffset()
   return {
     v: 1,
     state: done ? 'done' : s.resumedAt !== null ? 'running' : 'paused',
@@ -28,10 +35,10 @@ export function focusPayload(s: FocusState | null, prefs: Pick<FocusPrefs, 'long
     phase,
     ...(phase === 'break' && s.breakKind ? { breakKind: s.breakKind } : {}),
     ...(s.mode === 'pomodoro' ? { cycle: s.cycle, cycleLength: prefs.longBreakEvery } : {}),
-    phaseStartedAt: s.startedAt,
-    ...(!done && s.resumedAt !== null ? { runningSince: s.resumedAt } : {}),
+    phaseStartedAt: s.startedAt - skew,
+    ...(!done && s.resumedAt !== null ? { runningSince: s.resumedAt - skew } : {}),
     elapsedMs: s.accumulatedMs,
-    ...(end !== null ? { plannedEndAt: end } : {}),
+    ...(end !== null ? { plannedEndAt: end - skew } : {}),
     ...(s.plannedMs !== null && !done ? { plannedMs: s.plannedMs } : {}),
   }
 }

@@ -69,11 +69,11 @@ describe('startFocus', () => {
     expect(await finishIfDue(FOCUS_DEFAULTS, at(27))).toMatchObject({ phase: 'done' })
   })
 
-  it('works offline: the only writes are the entry ops in the outbox', async () => {
+  it('works offline: the entry ops and the shared session wait in the outbox', async () => {
     await startFocus(report, FOCUS_DEFAULTS, { now: at(0) })
     const ops = await db.outbox.toArray()
     expect(ops.length).toBeGreaterThan(0)
-    expect(new Set(ops.map((o) => o.entity))).toEqual(new Set(['time_entry']))
+    expect(new Set(ops.map((o) => o.entity === 'user_prefs' ? `user_prefs.${o.field}` : o.entity))).toEqual(new Set(['time_entry', 'user_prefs.focus_run']))
   })
 })
 

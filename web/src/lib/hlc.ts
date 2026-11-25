@@ -82,6 +82,15 @@ export function hlcOffset(): number {
   return offset
 }
 
+/**
+ * The server's wall clock as this device knows it: the local clock plus the
+ * tracked offset, not monotonic like hlcNow. Times every device compares, such
+ * as the shared Focus session's (sync-focus-sessions D7), use it.
+ */
+export function serverNow(): number {
+  return Date.now() + offset
+}
+
 /** Called at start-up with the stored offset, so stamps before the first sync are corrected too. */
 export function hlcSeedOffset(stored: number): void {
   if (Number.isFinite(stored)) offset = stored

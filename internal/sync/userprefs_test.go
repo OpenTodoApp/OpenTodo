@@ -268,6 +268,43 @@ func TestPriorityNamesConvergePerLevel(t *testing.T) {
 	}
 }
 
+// TestFocusRunConverges (sync-focus-sessions D1): the Focus session is one JSON
+// field on the person's preferences row. A record applies, two devices that
+// start sessions offline converge on the later record as a whole whatever order
+// the ops arrive in, and another account never receives it.
+func TestFocusRunConverges(t *testing.T) {
+	f := newSharing(t)
+	f.add("alice", "bob", RoleEditor)
+	laptop := QuoteJSON(`{"v":1,"rev":"r1","taskId":"t1","mode":"pomodoro","phase":"work","startedAt":1000,"resumedAt":1000,"accumulatedMs":0,"plannedMs":1500000,"cycle":1,"breakKind":null,"entryId":"e1","ended":null}`)
+	phone := QuoteJSON(`{"v":1,"rev":"r2","taskId":"t2","mode":"flowtime","phase":"work","startedAt":2000,"resumedAt":2000,"accumulatedMs":0,"plannedMs":null,"cycle":1,"breakKind":null,"entryId":"e2","ended":null}`)
+	early := f.op("user_prefs", "me", "focus_run", laptop)
+	late := f.op("user_prefs", "me", "focus_run", phone)
+	if res := f.apply("alice", "phone", late); res.Applied != 1 || len(res.Rejected) != 0 {
+		t.Fatalf("phone write = %+v", res)
+	}
+	f.apply("alice", "laptop", early)
+	if got := f.field("alice", "user_prefs", "me", "focus_run"); got != phone {
+		t.Fatalf("focus_run = %s, want the phone's later record", got)
+	}
+	ops, _ := f.pullAll("alice", "tablet", 0)
+	// A device applying what it pulls keeps the op with the greatest timestamp.
+	var last Op
+	for _, o := range ops {
+		if o.Entity == "user_prefs" && o.Field == "focus_run" && o.TS > last.TS {
+			last = o
+		}
+	}
+	if string(last.Value) != phone {
+		t.Fatalf("alice's tablet ends with %s, want the phone's record", last.Value)
+	}
+	ops, _ = f.pullAll("bob", "B2", 0)
+	for _, o := range ops {
+		if o.Entity == "user_prefs" {
+			t.Fatalf("bob's device pulled %+v", o)
+		}
+	}
+}
+
 // TestCalendarsHiddenIsAPersonalPref (calendars-per-workspace D1): the per-workspace
 // hide-list is one string field of user_prefs, applied like any other and kept
 // in its author's scope.

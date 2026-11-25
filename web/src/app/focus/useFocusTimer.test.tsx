@@ -6,7 +6,8 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
-import { createTask, mutate, resetDeviceId } from '../../lib/ops'
+import { applyOps, createTask, mutate, resetDeviceId } from '../../lib/ops'
+import type { Op } from '../../lib/types'
 import { setCurrentUserId } from '../../lib/sharing'
 import { FOCUS_DEFAULTS } from '../../lib/focus/prefs'
 import { startSession } from '../../lib/focus/session'
@@ -183,6 +184,25 @@ describe('the end of a session', () => {
     expect(tonesPlayed()).toBeGreaterThanOrEqual(1)
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     expect(alertPlaying()).toBe(false)
+    await r.unmount()
+  })
+
+  it('Another device\'s session (sync-focus-sessions D2, D4): the engine adopts it, and its end plays no tone, shows no notification and writes nothing', async () => {
+    await mutate('user_prefs', 'me', { focus_sound: 'on' })
+    const r = await render(<Engine />)
+    const record = { v: 1, rev: 'laptop-1', taskId: task, mode: 'pomodoro', phase: 'work', startedAt: T0, resumedAt: T0, accumulatedMs: 0, plannedMs: 25 * MIN, cycle: 1, breakKind: null, entryId: null, ended: null }
+    await applyOps([{ id: 'l1', entity: 'user_prefs', entityId: 'me', field: 'focus_run', value: JSON.stringify(record), ts: Date.now() + 1, device: 'laptop' } as Op])
+    await waitFor(() => phases().includes('work'), 'the engine adopts the session')
+    expect(await readFocus()).toMatchObject({ taskId: task, phase: 'work', rev: 'laptop-1', remote: true })
+    await setVisibility('hidden')
+    await advance(30 * MIN)
+    await waitFor(async () => (await readFocus())?.phase === 'done', 'done')
+    await waitFor(() => phases().every((p) => p === 'done'), 'the engine sees the end')
+    await setVisibility('visible')
+    await flush()
+    expect(shown).toEqual([])
+    expect(tonesPlayed()).toBe(0)
+    expect((await db.outbox.toArray()).filter((o) => o.field === 'focus_run')).toEqual([])
     await r.unmount()
   })
 

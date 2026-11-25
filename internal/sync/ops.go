@@ -863,6 +863,15 @@ var Schema = map[string]map[string]Field{
 		// short and keep it. A client without this field plays the short
 		// tone.
 		"focus_alert": {Kind: kString, Default: `""`},
+		// The person's Focus session on every device (OpenSpec change
+		// sync-focus-sessions, design D1): one JSON record {v, rev, taskId,
+		// mode, phase, startedAt, resumedAt, accumulatedMs, plannedMs, cycle,
+		// breakKind, entryId, ended}, written on user actions only and never
+		// while a session merely runs. One field so a conflict keeps one whole
+		// session by last-writer-wins. Ids and times only, never content;
+		// clients ignore and keep a value they cannot read, and the importer
+		// drops it, a backup restore resets it. Times are server time.
+		"focus_run": {Kind: kString, Default: `""`},
 		// Today grouped by part of the day (OpenSpec change day-parts, design
 		// D3): "on" groups Today into Morning, Afternoon and This Evening and
 		// turns on the part phrases of quick add; clients read an empty or
