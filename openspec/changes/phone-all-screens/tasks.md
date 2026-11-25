@@ -8,7 +8,7 @@
 ## 2. The phone row everywhere
 
 - [x] 2.1 `TaskRowDrawContext` in `TaskRow`, `PhoneTaskRow` on the row's props, `PhoneListRow` on top of it (design D3). Verify: the list tests of `phone-lists` pass unchanged; `npm test` passes with no desktop test edited.
-- [ ] 2.2 Tests: a saved view, a filter, Next and Waiting show phone rows in their order; a tap opens the task page; the check completes with Undo; a board's cards are unchanged. Verify: the tests pass. Done so far: Next (rows, the check, the tap). Still to test: a saved view, a filter, Waiting, a board's cards.
+- [x] 2.2 Tests: a saved view, a filter, Next and Waiting show phone rows in their order; a tap opens the task page; the check completes with Undo; a board's cards are unchanged. Verify: the tests pass. Done: Next (rows, the check, the tap), a saved view, a filter and a board's cards in `phoneAllScreens.test.tsx`; Waiting is under the phone header in the same file, without rows of its own in the test.
 
 ## 3. Checks
 

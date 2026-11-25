@@ -7,6 +7,8 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
+import { saveViewMode } from '../lib/sections'
+import { createView } from '../lib/views'
 import type { User } from '../lib/types'
 import { click, minWidthPx, render, waitFor } from '../ui/test-utils'
 import { resetPanel } from '../app/panel'
@@ -111,6 +113,50 @@ describe('every task row is the phone row', () => {
     await waitFor(() => !!document.querySelector(`[data-phone-row="${first}"]`), 'the row')
     await click(document.querySelector(`[data-phone-row="${first}"] [data-phone-open]`)!)
     await waitFor(() => !!document.querySelector('[data-phone-screen="task"]'), 'the task page')
+    await r.unmount()
+  })
+})
+
+describe('the phone row on the other screens that list tasks', () => {
+  const titles = () => [...document.querySelectorAll('[data-phone-row] [data-row-title]')].map((el) => el.textContent)
+
+  it('a saved view lists its tasks as phone rows', async () => {
+    await createTask({ title: 'Urgent one', priority: 1 })
+    await createTask({ title: 'Urgent two', priority: 1 })
+    await createTask({ title: 'Not urgent' })
+    const id = await createView({ name: 'Urgent', query: 'p1' })
+    setPhoneUiEnabled(true)
+    navigate({ view: 'view', id })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => titles().length === 2, 'the view\'s two tasks')
+    expect(titles().sort()).toEqual(['Urgent one', 'Urgent two'])
+    expect(document.querySelector('[data-drag-id="task-row"]')).toBeNull()
+    // The view's title is its path (Views, then its name), as in its present header.
+    expect(title()).toContain('Urgent')
+    await r.unmount()
+  })
+
+  it('a filter\'s results are phone rows', async () => {
+    await createTask({ title: 'Urgent one', priority: 1 })
+    await createTask({ title: 'Not urgent' })
+    setPhoneUiEnabled(true)
+    navigate({ view: 'filter', q: 'p1' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => titles().length === 1, 'the filter\'s one task')
+    expect(titles()).toEqual(['Urgent one'])
+    await r.unmount()
+  })
+
+  it('a board\'s cards stay cards', async () => {
+    const work = await createProject({ name: 'Work' })
+    const card = await createTask({ title: 'A card', project_id: work })
+    await saveViewMode(work, 'board')
+    setPhoneUiEnabled(true)
+    navigate({ view: 'project', id: work })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!document.querySelector(`[data-task-id="${card}"]`), 'the card')
+    expect(document.querySelector('[data-phone-row]')).toBeNull()
+    expect(document.querySelector(`[data-task-id="${card}"]`)!.getAttribute('data-drag-id')).toBe('task-row')
     await r.unmount()
   })
 })
