@@ -1118,6 +1118,61 @@ final class AppModelTests: XCTestCase {
         let model = AppModel()
         XCTAssertFalse(model.changeServerRequested)
     }
+
+    /// The tests below connect a model; the saved server of the test host is put back after.
+    private func keepServerOrigin() {
+        let saved = Prefs.shared.serverOrigin
+        addTeardownBlock { Prefs.shared.serverOrigin = saved }
+    }
+
+    /// native-shells "Quick actions on the app icon": the types of project.yml.
+    @MainActor
+    func testTheIconQuickActionsOpenTheirScreens() {
+        let model = AppModel()
+        XCTAssertTrue(model.perform(shortcut: "add-task"))
+        XCTAssertEqual(model.pendingPath, "/?add=")
+        XCTAssertTrue(model.perform(shortcut: "today"))
+        XCTAssertEqual(model.pendingPath, "/today")
+        XCTAssertFalse(model.changeServerRequested)
+        XCTAssertFalse(model.perform(shortcut: "unknown"))
+    }
+
+    @MainActor
+    func testTheChangeServerShortcutAsksFirst() {
+        keepServerOrigin()
+        let model = AppModel()
+        model.connect("https://todo.example.com")
+        XCTAssertTrue(model.perform(shortcut: "change-server"))
+        XCTAssertTrue(model.changeServerRequested)
+        XCTAssertEqual(model.origin?.absoluteString, "https://todo.example.com", "the server is kept until the user confirms")
+        XCTAssertNil(model.pendingPath)
+    }
+
+    /// At a cold start the dialog waits for the window's final root (StatusBar).
+    @MainActor
+    func testChangeServerAtLaunchAsksOnceTheWindowIsReady() {
+        keepServerOrigin()
+        let model = AppModel()
+        model.connect("https://todo.example.com")
+        XCTAssertTrue(model.perform(shortcut: "change-server", atLaunch: true))
+        XCTAssertFalse(model.changeServerRequested)
+        model.windowReady()
+        XCTAssertTrue(model.changeServerRequested)
+        model.changeServerRequested = false
+        model.windowReady()
+        XCTAssertFalse(model.changeServerRequested, "asked once")
+    }
+
+    /// Without a server the first-run screen is up: nothing to change, nothing to ask.
+    @MainActor
+    func testChangeServerWithoutAServerDoesNothing() {
+        keepServerOrigin()
+        Prefs.shared.serverOrigin = nil
+        let model = AppModel()
+        XCTAssertNil(model.origin)
+        XCTAssertFalse(model.perform(shortcut: "change-server"))
+        XCTAssertFalse(model.changeServerRequested)
+    }
 }
 
 /// The second review's fixes (ios-shell): untrusted input from the shared container, the
