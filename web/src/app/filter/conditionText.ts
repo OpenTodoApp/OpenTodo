@@ -31,7 +31,7 @@ export const KEYWORD_NAME = translatedMap<Keyword>({
   evening: msg('This evening'),
   morning: msg('In the morning'),
   afternoon: msg('In the afternoon'),
-  open: msg('Open'),
+  open: () => t('Open', { context: 'state' }),
   completed: msg('Completed'),
   subtask: msg('Is a subtask'),
   blocked: msg('Waiting on another task'),

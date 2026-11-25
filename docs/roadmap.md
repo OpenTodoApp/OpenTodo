@@ -28,7 +28,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `caldav-verified` | CalDAV verified on real clients | In progress (6 of 16) |
 | `play-production` | Google Play production, F-Droid and reproducible builds: reproducible builds, the F-Droid metadata and the Play upload are in; the store listings wait for the owner's Play Console and F-Droid steps | In progress (15 of 18) |
 | `ios-shell` | The iPhone and iPad app: first-run server screen, reminders on the phone without a push service, the share sheet, a Today widget, Face ID unlock | In progress (25 of 34) |
-| `ios-distribution` | The iPhone app in TestFlight and the App Store | In progress (14 of 28) |
+| `ios-distribution` | The iPhone app in TestFlight and the App Store | In progress (15 of 29) |
 | `apple-shortcuts` | Siri, Shortcuts, the Action Button and iOS widgets | Planned |
 | `focus-live-activity` | Focus as a Live Activity and in the Dynamic Island | In progress (18 of 21) |
 | `location-reminders` | Reminders when you arrive at or leave a place. Shipped on Android; iOS follows | In progress (16 of 18) |

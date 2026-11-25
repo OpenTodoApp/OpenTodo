@@ -7520,10 +7520,14 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Go to Focus": [
+    "web/src/app/TrackingIndicator.tsx",
     "web/src/app/palette/registry.ts"
   ],
   "Go to Focus: one task, a timer, a break when you need one": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Go to Focus: {text}": [
+    "web/src/app/TrackingIndicator.tsx"
   ],
   "Go to Habits": [
     "web/src/app/palette/registry.ts"
@@ -12840,9 +12844,7 @@
     "web/src/app/AppLinkConfirm.tsx",
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageView.tsx",
-    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/calendar/occurrenceMenu.tsx",
-    "web/src/app/filter/conditionText.ts",
     "web/src/app/palette/addFromBar.ts",
     "web/src/app/review/ProjectWalk.tsx",
     "web/src/app/task-list/afterListAdd.ts"
@@ -13153,6 +13155,10 @@
   ],
   "Open|count": [
     "web/src/app/ProjectsTable.tsx"
+  ],
+  "Open|state": [
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
+    "web/src/app/filter/conditionText.ts"
   ],
   "Optional": [
     "web/src/app/assistant/AssistantSettings.tsx",
