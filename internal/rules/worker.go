@@ -389,8 +389,12 @@ func (e *Engine) buildOps(ctx context.Context, w *world, r *rule, t map[string]j
 	return ops, changes, skipped, nil
 }
 
-// openDescendants lists the open, live subtasks under a task, depth first.
+// openDescendants lists the open, live subtasks under a task, depth first:
+// the ones a completion completes, none when the user keeps them (w.keep).
 func (w *world) openDescendants(id string) []string {
+	if w.keep {
+		return nil
+	}
 	children := map[string][]string{}
 	for tid, t := range w.tasks {
 		if p := strOf(t["parent_id"]); p != "" {

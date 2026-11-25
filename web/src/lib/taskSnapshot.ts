@@ -21,6 +21,7 @@ import { deletedProjectIds, isTaskVisible } from './trash'
 import type { Project, Task } from './types'
 import { readWorkspaceState, tasksIn, type WorkspaceState } from './workspaces'
 import { locateById, noteChanges, patchSorted, type TaskChange } from './taskDelta'
+import { isKept, keptIds } from './subtasks'
 
 export interface TaskSets { every: Task[]; here: Task[] }
 
@@ -73,11 +74,26 @@ export function patchRowsWith(rows: readonly Task[], keys: readonly string[], re
   return { rows: out, changes }
 }
 
-/** The visible tasks of every workspace and of the current one. */
+/** A task of `rows` (sorted by id) by its id. */
+const finder = (rows: readonly Task[]) => (id: string): Task | undefined => {
+  const [at, found] = locateById(rows, id)
+  return found ? rows[at] : undefined
+}
+
+/** The visible tasks of every workspace and of the current one; kept subtasks are left out (keep-open-subtasks D3). */
 export function deriveSets(rows: readonly Task[], projects: readonly Project[], state: WorkspaceState): TaskSets {
   const gone = deletedProjectIds(projects)
-  const every = rows.filter((task) => isTaskVisible(task, gone))
+  const kept = keptIds(rows, finder(rows))
+  const every = rows.filter((task) => isTaskVisible(task, gone) && !kept.has(task.id))
   return { every, here: tasksIn(state, projects, every) }
+}
+
+/** Whether a change can change whether other rows are kept: a parent's completion, deletion or parent changed (keep-open-subtasks D3). */
+function movesKept(c: TaskChange, isParent: (id: string) => boolean): boolean {
+  const a = c.before
+  const b = c.after
+  if (a && b && !a.completed_at === !b.completed_at && !a.deleted_at === !b.deleted_at && (a.parent_id ?? null) === (b.parent_id ?? null)) return false
+  return isParent(c.id)
 }
 
 /**
@@ -86,10 +102,21 @@ export function deriveSets(rows: readonly Task[], projects: readonly Project[], 
  * when the account has more than one workspace (a task's workspace can follow its
  * parent's, so a change can move others), and the sets are derived in full.
  */
-export function patchSets(prev: TaskSets, changes: readonly TaskChange[], projects: readonly Project[], state: WorkspaceState): TaskSets | null {
+export function patchSets(prev: TaskSets, changes: readonly TaskChange[], projects: readonly Project[], state: WorkspaceState, rows: readonly Task[]): TaskSets | null {
   if (prev.here !== prev.every || state.list.length > 1) return null
+  // A changed parent can change its subtasks' state without a change of their own: derived in full.
+  let parents: Set<string> | null = null
+  const isParent = (id: string) => {
+    if (!parents) {
+      parents = new Set()
+      for (const r of rows) if (r.parent_id) parents.add(r.parent_id)
+    }
+    return parents.has(id)
+  }
+  if (changes.some((c) => movesKept(c, isParent))) return null
   const gone = deletedProjectIds(projects)
-  const every = patchSorted(prev.every, changes, (task) => isTaskVisible(task, gone))
+  const get = finder(rows)
+  const every = patchSorted(prev.every, changes, (task) => isTaskVisible(task, gone) && !isKept(task, get))
   if (every.list === prev.every) return prev
   noteChanges(prev.every, every.list, every.changes)
   return { every: every.list, here: every.list }
@@ -143,7 +170,7 @@ export function taskSnapshot(): LiveSnapshot<TaskSets> {
 
   function publish(changes?: readonly TaskChange[]) {
     if (!rows || !context) return
-    const patched = changes && snapshot && derivedWith === context ? patchSets(snapshot, changes, context.projects, context.state) : null
+    const patched = changes && snapshot && derivedWith === context ? patchSets(snapshot, changes, context.projects, context.state, rows) : null
     if (patched === snapshot) return
     const value = patched ?? deriveSets(rows, context.projects, context.state)
     derivedWith = context

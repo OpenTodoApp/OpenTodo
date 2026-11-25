@@ -549,6 +549,22 @@ func (c *client) quickPrefs(ctx context.Context) (dayParts, energy, sectors bool
 	return out.DayParts, out.Energy, out.Sectors, out.Auth.Scope, err
 }
 
+// keepsOpenSubtasks reports the account's Complete subtasks with parent choice
+// (GET /api/v1/me keep_open_subtasks, keep-open-subtasks D4): true when
+// completing a task leaves its open subtasks open. Like quickPrefs it hands the
+// credential's scope to the write gate, so no second /me is read.
+func (c *client) keepsOpenSubtasks(ctx context.Context) (bool, error) {
+	var out struct {
+		Keep bool       `json:"keep_open_subtasks"`
+		Auth credential `json:"auth"`
+	}
+	err := c.getJSON(ctx, "/me", &out)
+	if err == nil && c.gate != nil && !c.gate.scopeKnown {
+		c.gate.cred, c.gate.scopeKnown = out.Auth, true
+	}
+	return out.Keep, err
+}
+
 // normalizeURL accepts "todo.example.com", "http://host:8080/" and friends.
 func normalizeURL(s string) (string, error) {
 	s = strings.TrimSpace(s)

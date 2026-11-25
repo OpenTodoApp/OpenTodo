@@ -19,6 +19,7 @@ import { getDeviceId, SLOT_DEFAULTS } from './ops'
 import { canEditTask, membershipMap } from './sharing'
 import type { Due, Membership, Slot, Task } from './types'
 import { applyBatch } from './undo'
+import { withoutKept } from './subtasks'
 
 /** The most tasks one slot lists (design D1). */
 export const MAX_SLOT_TASKS = 20
@@ -307,9 +308,10 @@ export function nextFreeStart(from: number, busy: readonly { start: number; end:
 
 /** The busy intervals of a day from local rows: timed open tasks and live slots (events are added by the grid). */
 export async function busyOn(date: string, zone?: string): Promise<{ start: number; end: number }[]> {
-  const [tasks, slots] = await Promise.all([db.tasks.toArray(), db.slots.toArray()])
+  const [rows, slots] = await Promise.all([db.tasks.toArray(), db.slots.toArray()])
   const out: { start: number; end: number }[] = []
-  for (const task of tasks) {
+  // A kept subtask is not on the calendar (keep-open-subtasks D3).
+  for (const task of withoutKept(rows)) {
     if (task.deleted_at || task.completed_at || !task.due?.time) continue
     const due = localDueOf(task.due, zone)
     const start = clockMinutes(due.time)

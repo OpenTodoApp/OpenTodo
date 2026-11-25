@@ -385,6 +385,16 @@ func (s *Server) applyPageTick(w http.ResponseWriter, r *http.Request, rp resolv
 		}
 		if ok {
 			ops = append(ops, deviceOps("task", recordID, record, ts, device)...)
+		} else {
+			// Its open subtasks complete with it unless the owner keeps them (keep-open-subtasks D4).
+			kids, err := s.sync.CompletionCascade(ctx, p.UserID, taskID, body, task)
+			if err != nil {
+				s.internal(w, err)
+				return
+			}
+			for _, kid := range kids {
+				ops = append(ops, deviceOps("task", kid, map[string]json.RawMessage{"completed_at": body["completed_at"], "completed_by": body["completed_by"]}, ts, device)...)
+			}
 		}
 	}
 	ops = append(ops, deviceOps("task", taskID, body, ts, device)...)

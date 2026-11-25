@@ -7881,6 +7881,8 @@
   "Select, then edit the title": "Выбрать, затем изменить название",
   "Task lists": "Списки задач",
   "Use the server default ({choice})": "Как на сервере ({choice})",
+  "Complete subtasks with parent": "Завершать подзадачи вместе",
+  "Or keep open subtasks when a task is completed": "Или оставлять открытые подзадачи при завершении задачи",
   "Features": "Функции",
   "Only the owner and admins can change these.": "Изменять это могут только владелец и администраторы.",
   "Time tracking": "Учёт времени",

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/OpenTodoApp/opentodo/internal/kept"
 	"io"
 	"log/slog"
 	"math"
@@ -482,6 +483,13 @@ func (s *Service) eligible(ctx context.Context, d *dueReminder, quiet map[string
 	if err != nil {
 		return false, false, err
 	}
+	if !waits {
+		// A kept subtask (open under a completed ancestor, keep-open-subtasks D5)
+		// waits like a task in a quiet project: reopening the parent lets it fire.
+		if waits, err = s.keptTask(ctx, d.UserID, t); err != nil {
+			return false, false, err
+		}
+	}
 	if waits {
 		// Not recorded as delivered: once the project is restored or
 		// unarchived the reminder is delivered on the next pass (OpenSpec
@@ -494,6 +502,34 @@ func (s *Service) eligible(ctx context.Context, d *dueReminder, quiet map[string
 		d.Title = title
 	}
 	return true, false, nil
+}
+
+// keptTask reports whether t is a kept subtask, reading its ancestors.
+func (s *Service) keptTask(ctx context.Context, uid string, t opsync.Entity) (bool, error) {
+	self := kept.Of(t)
+	if self.Completed || self.Deleted || self.ParentID == "" {
+		return false, nil
+	}
+	chain := map[string]kept.Task{}
+	for id, n := self.ParentID, 0; id != "" && n < 1000; n++ {
+		if _, seen := chain[id]; seen || id == self.ID {
+			break
+		}
+		up, err := s.sync.Get(ctx, uid, "task", id)
+		if err != nil {
+			return false, err
+		}
+		if up == nil {
+			break
+		}
+		row := kept.Of(up)
+		chain[id] = row
+		if row.Deleted || row.Completed {
+			break
+		}
+		id = row.ParentID
+	}
+	return kept.Is(self, func(id string) (kept.Task, bool) { x, ok := chain[id]; return x, ok }), nil
 }
 
 // nextScan bounds how many candidates NextDue examines.

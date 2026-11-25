@@ -170,7 +170,7 @@ func (snap *snapshot) inboxCount() int {
 	n := 0
 	inInbox := snap.inboxRule()
 	for _, t := range snap.tasks {
-		if inInbox(t) {
+		if inInbox(t) && !snap.isKept(t) {
 			n++
 		}
 	}
@@ -180,7 +180,7 @@ func (snap *snapshot) inboxCount() int {
 func (snap *snapshot) openCounts() map[string]int {
 	counts := map[string]int{}
 	for _, t := range snap.tasks {
-		if isOpen(t) {
+		if isOpen(t) && !snap.isKept(t) {
 			counts[str(t, "project_id")]++
 		}
 	}
@@ -435,7 +435,7 @@ func (r *Registry) queryTasks(snap *snapshot, q taskQuery) (map[string]any, erro
 		if ws != "" && snap.partition().Task(str(t, "id")) != ws {
 			continue
 		}
-		if !snap.visible(t, q.projectID != "") {
+		if !snap.listed(t, q.projectID != "") {
 			continue
 		}
 		open := isOpen(t)
@@ -709,7 +709,7 @@ func (r *Registry) todaySummary(ctx context.Context, userID string, a args) (map
 	perProject := map[string]int{}
 	inInbox := snap.inboxRule()
 	for _, t := range snap.tasks {
-		if !isOpen(t) || !snap.visible(t, false) {
+		if !isOpen(t) || !snap.listed(t, false) {
 			continue
 		}
 		pid := str(t, "project_id")

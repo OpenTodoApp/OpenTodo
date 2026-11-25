@@ -176,6 +176,17 @@
         "completed_at": null,
         "created_at": 1,
         "deleted_at": null,
+        "id": "kept",
+        "labels": [],
+        "parent_id": "t3",
+        "priority": 4,
+        "project_id": null,
+        "title": "Kept follow-up"
+      },
+      {
+        "completed_at": null,
+        "created_at": 1,
+        "deleted_at": null,
         "due": {
           "date": "2026-11-10"
         },

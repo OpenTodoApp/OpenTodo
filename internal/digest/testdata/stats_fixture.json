@@ -390,6 +390,21 @@
    "assignee_id": null,
    "completed_by": null,
    "sample": true
+  },
+  {
+   "id": "kept1",
+   "title": "open subtask of a completed task: kept, never overdue (keep-open-subtasks)",
+   "project_id": null,
+   "parent_id": "t1",
+   "created_at": 1700000000000,
+   "completed_at": null,
+   "deleted_at": null,
+   "due": {
+    "date": "2026-09-01"
+   },
+   "series_id": null,
+   "assignee_id": null,
+   "completed_by": null
   }
  ],
  "cases": [

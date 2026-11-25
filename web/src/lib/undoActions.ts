@@ -10,7 +10,7 @@ import { formatDate, logicalToday } from './dates'
 import { planSkip, seriesRule } from './recurring'
 import { duePatch, refusedSeries, seriesDateRefusal, withNotMoved } from './seriesDates'
 import { lineageRows } from './lineageRows'
-import { editRedirected, getDeviceId, liveSubtree, parkTask, pastScopeActive, planRecurrence, planReminders, planTaskEdit, planTaskParent, setRecurrence, updateTask, type Change } from './ops'
+import { editRedirected, getDeviceId, keepsSubtasksNow, liveSubtree, parkTask, pastScopeActive, planRecurrence, planReminders, planTaskEdit, planTaskParent, setRecurrence, updateTask, type Change } from './ops'
 import type { ReminderPhrase } from './nlp'
 import { currentUserId, memberName, membershipMap } from './sharing'
 import type { FilterContext } from './filter'
@@ -88,7 +88,7 @@ export async function completeUndoable(id: string, completed: boolean, opts: { n
     : await readTicked([id])
   const task = tasks[0]
   if (!task) return { entry: null, label: '' }
-  const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? logicalToday(), await membershipMap()) : planReopen([task])
+  const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? logicalToday(), await membershipMap(), await keepsSubtasksNow()) : planReopen([task])
   const result = await apply(changes, completed ? t('Task completed') : t('Task reopened'))
   return { ...result, completed: completed && !task.completed_at && !!result.entry }
 }
@@ -648,7 +648,7 @@ export async function dropOnPanel(taskId: string, view: Pick<View, 'name' | 'que
   const task = tasks[0]
   if (!task) return { entry: null, label: '', taskId, matches: false, changed: false }
   const memberships = await membershipMap()
-  const changes = planRule(task, all, view.on_drop, { now, today, labels: ctx.names.labels, memberships, me: await currentUserId() })
+  const changes = planRule(task, all, view.on_drop, { now, today, labels: ctx.names.labels, memberships, me: await currentUserId(), keep: await keepsSubtasksNow() })
   const column = view.name
   if (changes.length === 0) {
     return { entry: null, label: t('{task} already matches {column}', { task: task.title || t('Untitled'), column }), taskId, matches: true, changed: false }

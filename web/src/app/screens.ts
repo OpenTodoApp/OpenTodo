@@ -96,7 +96,7 @@ export const SETTINGS_SCREENS: readonly string[] = [
   'settings/general', 'settings/integrations', 'settings/invitations', 'settings/issues', 'settings/keyboard',
   'settings/language', 'settings/notification-channels', 'settings/notifications', 'settings/outgoing-email',
   'settings/notes', 'settings/people', 'settings/priorities', 'settings/quick-add', 'settings/security', 'settings/server', 'settings/sso',
-  'settings/start-view', 'settings/tokens', 'settings/users', 'settings/voice', 'settings/webhooks',
+  'settings/start-view', 'settings/tasks', 'settings/tokens', 'settings/users', 'settings/voice', 'settings/webhooks',
   'settings/workspaces',
 ]
 

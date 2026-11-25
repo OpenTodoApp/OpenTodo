@@ -7881,6 +7881,8 @@
   "Select, then edit the title": "Seç, sonra başlığı düzenle",
   "Task lists": "Görev listeleri",
   "Use the server default ({choice})": "Sunucu varsayılanını kullan ({choice})",
+  "Complete subtasks with parent": "Alt görevleri de tamamla",
+  "Or keep open subtasks when a task is completed": "Ya da bir görev tamamlandığında açık alt görevleri koru",
   "Features": "Özellikler",
   "Only the owner and admins can change these.": "Bunları yalnızca sahip ve yöneticiler değiştirebilir.",
   "Time tracking": "Zaman takibi",

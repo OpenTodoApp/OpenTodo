@@ -108,13 +108,13 @@ describe('the patched task snapshot', () => {
     const rows = [row('a'), row('b'), row('c', { project_id: 'gone' })]
     const prev = deriveSets(rows, projects, one)
     const changes = [{ id: 'b', before: rows[1], after: row('b', { deleted_at: 2 }) }, { id: 'd', before: undefined, after: row('d') }]
-    const next = patchSets(prev, changes, projects, one)!
+    const next = patchSets(prev, changes, projects, one, rows)!
     expect(next.every.map((t) => t.id)).toEqual(['a', 'd'])
     expect(next.here).toBe(next.every)
     expect(changesBetween(prev.every, next.every)!.map((c) => c.id).sort()).toEqual(['b', 'd'])
-    expect(patchSets(prev, [{ id: 'a', before: rows[0], after: rows[0] }], projects, one)).toBe(prev)
+    expect(patchSets(prev, [{ id: 'a', before: rows[0], after: rows[0] }], projects, one, rows)).toBe(prev)
     const two = { current: 'w1', defaultId: 'w1', list: [{ id: 'w1' }, { id: 'w2' }] } as unknown as WorkspaceState
-    expect(patchSets(deriveSets(rows, projects, two), changes, projects, two)).toBeNull()
+    expect(patchSets(deriveSets(rows, projects, two), changes, projects, two, rows)).toBeNull()
   })
 })
 

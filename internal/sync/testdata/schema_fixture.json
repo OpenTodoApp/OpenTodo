@@ -272,6 +272,7 @@
       "bento_order",
       "briefing",
       "calendars_hidden",
+      "complete_subtasks",
       "completion_sound",
       "daily_notes",
       "daily_notes_project",

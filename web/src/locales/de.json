@@ -7881,6 +7881,8 @@
   "Select, then edit the title": "Auswählen, dann Titel bearbeiten",
   "Task lists": "Aufgabenlisten",
   "Use the server default ({choice})": "Serverstandard verwenden ({choice})",
+  "Complete subtasks with parent": "Unteraufgaben mit erledigen",
+  "Or keep open subtasks when a task is completed": "Oder offene Unteraufgaben behalten, wenn eine Aufgabe erledigt wird",
   "Features": "Funktionen",
   "Only the owner and admins can change these.": "Nur der Eigentümer und Admins können das ändern.",
   "Time tracking": "Zeiterfassung",

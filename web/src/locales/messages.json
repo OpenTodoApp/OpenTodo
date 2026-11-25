@@ -3872,6 +3872,10 @@
   "Complete or reopen the focused task (only where you may edit it)": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Complete subtasks with parent": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Complete task": [
     "web/src/app/task-detail/TaskHead.tsx"
   ],
@@ -13118,6 +13122,9 @@
   "Or import with a Todoist API token": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Or keep open subtasks when a task is completed": [
+    "web/src/app/settingsIndex.ts"
+  ],
   "Or paste or drop files on the note": [
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx"
@@ -17951,8 +17958,10 @@
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/app/review/StatsView.tsx",
+    "web/src/app/settingsSections.ts",
     "web/src/lib/listGroups.ts",
-    "web/src/lib/rules/sentence.ts"
+    "web/src/lib/rules/sentence.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Tasks and fields": [
     "web/src/app/FieldColumns.tsx"

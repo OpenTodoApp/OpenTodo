@@ -8,7 +8,7 @@ import { addDaysISO, currentDayStart, localDueOf, logicalDay } from './dates'
 import { db, type AssistantUndo } from './db'
 import { msg, t, translatedMap } from './i18n'
 import type { MethodInput } from './method/rules'
-import type { Change } from './ops'
+import { keepsSubtasksNow, type Change } from './ops'
 import { carryOverOf, FOCUS_MAX, REVIEW_ID, storedFocus, TOMORROW_NOTE_MAX, type CarryOverItem, type CarryOverRecord, type FocusBefore } from './review'
 import { canEditTasks, membershipMap, roleOf } from './sharing'
 import { compute, countedTasks, sharedIds } from './stats'
@@ -74,14 +74,14 @@ export type CarryDecision = { kind: 'tomorrow' } | { kind: 'day'; date: string }
  */
 export function planCarryOver(
   decisions: ReadonlyMap<string, CarryDecision>, tasks: readonly CarryTask[], today: string, all: Task[] = tasks.map((x) => x.task), now = Date.now(),
-  memberships?: Map<string, Membership>,
+  memberships?: Map<string, Membership>, keep = false,
 ): Change[] {
   const out: Change[] = []
   for (const { task, editable } of tasks) {
     const d = decisions.get(task.id) ?? { kind: 'tomorrow' }
     if (!editable || d.kind === 'keep') continue
     if (d.kind === 'done') {
-      out.push(...planComplete([task], all, now, today, memberships))
+      out.push(...planComplete([task], all, now, today, memberships, keep))
       continue
     }
     if (d.kind === 'someday') {
@@ -174,7 +174,7 @@ export function closeLabel(carried: Carried): string {
 export async function closeTheDay(input: CloseInput): Promise<CloseResult> {
   const { decisions, tasks, day, first } = input
   const now = input.now ?? Date.now()
-  const changes = planCarryOver(decisions, tasks, day, input.all, now, await membershipMap())
+  const changes = planCarryOver(decisions, tasks, day, input.all, now, await membershipMap(), await keepsSubtasksNow())
   const carried = carriedOf(decisions, tasks)
   // A decision that wrote nothing (a task already as it would be) counts as kept.
   for (const x of tasks) {
