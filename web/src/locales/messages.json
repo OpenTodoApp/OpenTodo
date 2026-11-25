@@ -5663,7 +5663,6 @@
     "web/src/app/filter/conditionText.ts"
   ],
   "Due {date}": [
-    "web/public/push-sw.js",
     "web/src/app/TriageView.tsx",
     "web/src/app/away/AwayDialog.tsx",
     "web/src/app/focus/FocusParts.tsx",
@@ -20457,6 +20456,7 @@
     "web/src/app/CaldavPanel.tsx"
   ],
   "Today": [
+    "web/public/push-sw.js",
     "web/src/app/AppBadge.tsx",
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/CalendarView.tsx",
@@ -20566,6 +20566,7 @@
     "web/src/app/TokensSection.tsx"
   ],
   "Tomorrow": [
+    "web/public/push-sw.js",
     "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
@@ -26779,7 +26780,7 @@
   ],
   "{tiny} is enough": [
     "web/public/push-sw.js",
-    "web/src/app/ReminderToasts.tsx"
+    "web/src/lib/reminderBody.ts"
   ],
   "{title} and its history move to the Trash.": [
     "web/src/app/habits/HabitPage.tsx"
