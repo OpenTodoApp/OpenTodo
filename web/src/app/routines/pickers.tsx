@@ -143,7 +143,7 @@ export function InlineText({ label, value, max, insertable, onCommit }: {
   return (
     // Escape on "+ value" (where focus returns when its list closes) keeps the text too.
     <span className="relative my-1 flex w-full items-start gap-1" data-inline-text
-      onKeyDown={(e) => { if (e.key === 'Escape' && e.target === plus.current) { e.preventDefault(); e.stopPropagation(); commit() } }}>
+      onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Escape' && e.target === plus.current) { e.preventDefault(); e.stopPropagation(); commit() } }}>
       <textarea ref={area} rows={1} aria-label={label} value={text} maxLength={max} spellCheck
         className="ui-input min-h-9 flex-1 scroll-mt-24 resize-none overflow-hidden py-1.5 font-normal"
         onChange={(e) => setText(e.target.value)}

@@ -123,6 +123,18 @@ export const useList = () => ({ onKeyDown: (e: KeyboardEvent<HTMLInputElement>) 
       expect(await lint(code)).toEqual(Array(4).fill(rule))
     })
 
+    it('refuses an element around a text field, and a guard after the first key test', async () => {
+      const code = `import { composing } from '../lib/composeKey'
+import { NumberInput } from '../ui'
+declare const save: () => void
+export const A = () => <div>
+  <form onKeyDown={(e) => { if (e.key === 'Escape') save() }}><label><input /></label></form>
+  <div onKeyDown={(e) => { if (e.key === 'Enter') save() }}>{true && <NumberInput />}</div>
+  <input onKeyDown={(e) => { if (e.key === 'Escape' && !composing(e)) save() }} />
+</div>`
+      expect(await lint(code)).toEqual(Array(3).fill(rule))
+    })
+
     it('refuses composingEnter alone when the handler also acts on Escape', async () => {
       const code = `import { composingEnter } from '../lib/composeKey'
 declare const save: () => void

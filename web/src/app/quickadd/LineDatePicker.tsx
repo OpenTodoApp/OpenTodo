@@ -57,7 +57,7 @@ export function useLineDate({ input, value, chips, context, change }: {
   const hide = () => setOpen(false)
   /** Escape closes the open picker first, before the field or the dialog around it (quick-add-calendar). */
   const escape = (e: KeyboardEvent) => {
-    if (e.key !== 'Escape' || !open || composing(e)) return false
+    if (composing(e) || e.key !== 'Escape' || !open) return false
     e.stopPropagation()
     e.preventDefault()
     hide()

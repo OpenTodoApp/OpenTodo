@@ -5,6 +5,7 @@
 import { useSyncExternalStore } from 'react'
 import { raisesKeyboard, touchOnly } from '../../lib/keyboardLikely'
 import { createSignal } from '../../lib/store'
+import { composing } from '../../lib/composeKey'
 
 interface Entry { id: number; onEscape: () => void }
 const stack: Entry[] = []
@@ -15,7 +16,7 @@ const depth = createSignal()
 const notifyDepth = depth.notify
 
 function onKey(e: KeyboardEvent) {
-  if (e.key !== 'Escape' || e.isComposing) return
+  if (e.key !== 'Escape' || composing(e)) return
   const top = stack[stack.length - 1]
   if (!top) return
   // A field whose own suggestion list is open closes that list first (data-claims-escape).

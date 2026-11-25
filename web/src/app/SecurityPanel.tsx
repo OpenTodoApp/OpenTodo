@@ -144,7 +144,7 @@ export function SecurityPanelView(p: SecurityPanelViewProps) {
     setEditing(null)
   }
   function escapeTo(e: KeyboardEvent, close: () => void) {
-    if (e.key === 'Escape' && !composing(e)) {
+    if (!composing(e) && e.key === 'Escape') {
       e.stopPropagation()
       close()
     }

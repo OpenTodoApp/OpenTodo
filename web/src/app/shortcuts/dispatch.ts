@@ -9,6 +9,7 @@ import { type Chord, chordKey, chordsOf, matchesChord, physicalShortcutKey, SEQU
 import { resettable } from '../../lib/moduleState'
 import { createSignal } from '../../lib/store'
 import { isCharacterKey, singleKeysOn } from './singleKeys'
+import { composing } from '../../lib/composeKey'
 
 export type ShortcutHandler = (e: KeyboardEvent, s: Shortcut, chord: Chord) => boolean | void
 
@@ -236,7 +237,7 @@ function resolve(e: KeyboardEvent, key: string, active: ScopeFrame[], pend: Chor
 
 /** Resolves one key press; returns whether a shortcut ran (or a prefix was armed). */
 export function dispatch(e: KeyboardEvent): boolean {
-  if (MODIFIERS.has(e.key) || e.isComposing) return false
+  if (MODIFIERS.has(e.key) || composing(e)) return false
   // A control that already handled the key (a routine editor's own Ctrl+Z, an editor's
   // keymap) calls preventDefault; the dispatcher then stands back so one press is one action.
   if (e.defaultPrevented) return false

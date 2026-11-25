@@ -677,7 +677,7 @@ function NewProjectForm({ projects, parentId, onParent, onDone }: { projects: Pr
       <div className="flex items-center gap-1">
         <SidebarAppearance color={color} onColor={setColor} icon={icon} onIcon={setIcon} />
         <input ref={field} className="ui-input min-w-0 flex-1" placeholder={t('Project name')} value={name} onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Escape' && !composing(e) && onDone()} />
+          onKeyDown={(e) => !composing(e) && e.key === 'Escape' && onDone()} />
       </div>
       <ProjectPickerField label={t('Parent project')} projects={projects} value={parentId || null} onChange={(id) => onParent(id ?? '')}
         rankContext="project.parent" inbox={false} noneLabel={t('Top level')} className="py-1 text-meta" />

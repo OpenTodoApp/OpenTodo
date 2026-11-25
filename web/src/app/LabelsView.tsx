@@ -71,7 +71,7 @@ export function NewLabelForm({ onDone, appearance = false, className = '' }: { o
   }
   return (
     <form onSubmit={(e) => void submit(e)} className={className}>
-      <div className={appearance ? 'flex items-center gap-1' : undefined} onKeyDown={(e) => e.key === 'Escape' && !e.defaultPrevented && onDone()}>
+      <div className={appearance ? 'flex items-center gap-1' : undefined} onKeyDown={(e) => !composing(e) && e.key === 'Escape' && !e.defaultPrevented && onDone()}>
         {appearance && <SidebarAppearance color={color} onColor={setColor} onOpenChange={setChoosingColor} />}
         <input className="ui-input min-w-0 flex-1" autoFocus placeholder={t('Label name')} aria-label={t('New label name')} value={name}
           onChange={(e) => { setName(e.target.value); setError(null) }}
