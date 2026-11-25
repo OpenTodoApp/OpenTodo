@@ -1,4 +1,7 @@
 {
+  "Text size": "Tekstgrootte",
+  "Larger": "Groter",
+  "Largest": "Grootst",
   "Allow pinch zoom": "Knijpzoomen toestaan",
   "Pinch to zoom the app on this device. Turn it off for a more app-like feel.": "Zoom in de app met je vingers op dit apparaat. Zet uit voor een app-achtiger gevoel.",
   "\"after completion\" only applies to day, week, month and year intervals": "„Na voltooiing” geldt alleen voor intervallen in dagen, weken, maanden en jaren",
@@ -4015,7 +4018,7 @@
   "Reopened": "Heropend",
   "Reopened on the list": "Weer op de lijst",
   "Reorder": "Herschikken",
-  "Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels": "Taken in projectlijsten, borden en de Inbox en projecten in de zijbalk herschikken; laat los op het midden van een rij om in te nestelen; Esc breekt af",
+  "Reorder tasks in project lists, boards, the Inbox, Today and Upcoming, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels": "Taken in projectlijsten, borden, de Inbox, Vandaag en Binnenkort en projecten in de zijbalk herschikken; laat los op het midden van een rij om in te nestelen; Esc breekt af",
   "Repeat": "Herhalen",
   "Repeat a task": "Taak herhalen",
   "Repeat and remind (6 languages)": "Herhalen en herinneren (6 talen)",
@@ -7479,7 +7482,7 @@
   "Something else": "Iets anders",
   "Something isn't working": "Iets werkt niet",
   "Something the assistant should remember": "Iets wat de assistent moet onthouden",
-  "Sorted by date (or their own rule): no Alt moves there; in Upcoming, drag a task onto another day to move it": "Gesorteerd op datum (of hun eigen regel): verplaats daar niets met Alt; in Binnenkort sleep je een taak naar een andere dag om hem te verplaatsen",
+  "Sorted by date (or their own rule): no Alt moves there": "Gesorteerd op datum (of hun eigen regel): verplaats daar niets met Alt",
   "Space": "Ruimte",
   "Standalone notes": "Losse notities",
   "Start signing in again from the app.": "Begin opnieuw aan te melden vanuit de app.",
@@ -7900,5 +7903,12 @@
   "{title} is no longer in your calendar": "{title} staat niet meer in je agenda",
   "The event changed in your calendar; your edit was not applied.": "De afspraak is gewijzigd in je agenda; je wijziging is niet toegepast.",
   "The event is no longer in your calendar.": "De afspraak staat niet meer in je agenda.",
-  "Assistants may not edit this connection’s events.": "Assistenten mogen de afspraken van deze koppeling niet wijzigen."
+  "Assistants may not edit this connection’s events.": "Assistenten mogen de afspraken van deze koppeling niet wijzigen.",
+  "Complete subtasks with parent": "Subtaken mee afronden",
+  "Or keep open subtasks when a task is completed": "Of open subtaken behouden wanneer een taak wordt afgerond",
+  "Features": "Functies",
+  "Only the owner and admins can change these.": "Alleen de eigenaar en beheerders kunnen dit wijzigen.",
+  "Time tracking": "Tijdregistratie",
+  "{feature} is off in this workspace.": "{feature} staat uit in deze werkruimte.",
+  "Workspace features changed": "Functies van de werkruimte gewijzigd"
 }

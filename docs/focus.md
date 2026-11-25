@@ -56,7 +56,7 @@ The keys show in the tooltips, and under the buttons with **Show shortcut hints*
 
 ## Time worked
 
-Each stretch of work is a [time entry](time-tracking.md) on the task; breaks are never logged. The entries sync and carry the timer and session, to [show elsewhere](focus-elsewhere.md). The running timer stays on this device and counts from the clock, so a reload or a laptop that slept still shows the right time.
+Each stretch of work is a [time entry](time-tracking.md) on the task; breaks are never logged. The entries sync and carry the timer and session, to [show elsewhere](focus-elsewhere.md). The timer counts from the clock, so a reload or a laptop that slept still shows the right time, and the session [follows you to your other devices](focus-devices.md).
 
 ## Outside the app
 

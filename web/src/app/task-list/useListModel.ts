@@ -43,7 +43,7 @@ import { useResetOnChange } from '../../lib/useResetOnChange'
 import { useUpcomingGroups } from './upcomingProjections'
 import { isReusable } from '../../lib/reusable'
 import { scoreOf, useUrgencyOf } from '../useUrgency'
-import { useHasSubProjects } from '../SubProjects'
+import { useSubProjectList } from './useSubProjectList'
 
 export type ListRoute = Extract<Route, ListScope>
 
@@ -185,11 +185,15 @@ export function useListModel(route: ListRoute, userId?: string) {
   const queryTest = queryKey ? queryFilter.test : null
   // While Habits is on, Today's habits are in its strip, not among its rows (habits-home D3).
   const todayHabits = habitsOn && route.view === 'today'
+  // The duration and query filters, also inside a project's open sub-projects (subproject-inline D3).
+  const keep = useMemo(() => {
+    const byDuration = duration && filterKey ? durationPredicate(duration) : null
+    return byDuration || queryTest ? (task: Task) => (!byDuration || byDuration(task)) && (!queryTest || queryTest(task)) : null
+  }, [duration, filterKey, queryTest])
   const tasks = useMemo(() => {
     const own = todayHabits ? viewTasks.filter((x) => !x.habit) : viewTasks
-    const byDuration = !duration || !filterKey ? own : own.filter(durationPredicate(duration))
-    return queryTest ? byDuration.filter(queryTest) : byDuration
-  }, [viewTasks, duration, filterKey, queryTest, todayHabits])
+    return keep ? own.filter(keep) : own
+  }, [viewTasks, keep, todayHabits])
 
   // Completed renders a page of the logbook at a time; a new route starts again.
   const [logbookLimit, setLogbookLimit] = useState(LOGBOOK_PAGE)
@@ -248,8 +252,9 @@ export function useListModel(route: ListRoute, userId?: string) {
   const nested = (route.view === 'today' || route.view === 'upcoming') && !!(display?.subtasks || todayDisplay?.subtasks)
   // The header's display button and the switch to manual order; a project's board and timeline have their own layout.
   const sortFields = route.view === 'project' ? layout.projectFieldDefs : allFieldDefs
-  const todayOrder = route.view === 'today' ? accountPrefs?.today_manual_order : undefined
-  const listDisplay = useListDisplay(display, displayScope, builtin || route.view === 'label' || layout.viewMode === 'list', sortFields, account, !!todayOrder?.length)
+  // Today and Upcoming share one day order (day-manual-order D1); Reset on Today clears it.
+  const todayOrder = route.view === 'today' || route.view === 'upcoming' ? accountPrefs?.today_manual_order : undefined
+  const listDisplay = useListDisplay(display, displayScope, builtin || route.view === 'label' || layout.viewMode === 'list', sortFields, account, route.view === 'today' && !!todayOrder?.length)
   const savedOrder = route.view === 'label' ? labelRow?.manual_order : todayOrder
   const manualOrder = useMemo(() => route.view === 'label' || savedOrder ? orderRank(savedOrder) : undefined, [route.view, savedOrder])
   // The urgency order (urgency-sort D4): scores follow every write and sync, worked out only while it is chosen.
@@ -257,7 +262,7 @@ export function useListModel(route: ListRoute, userId?: string) {
   const urgency = display?.sortBy === 'urgency' ? scorer : null
   const score = useMemo(() => (urgency ? scoreOf(urgency) : undefined), [urgency])
 
-  // Today grouped by part of the day (day-parts D3): the account's synced choice.
+  // Today grouped by part of the day (day-parts D3), and a day's due order by part (day-manual-order D4): the account's synced choice.
   const dayParts = dayPartsOn(accountPrefs)
   // Today's closed list (today-closed-list): slots from the whole of Today, before the duration filter;
   // Upcoming's Start with Today fills them from the same Today tasks (upcoming-start-with-today D3);
@@ -279,21 +284,25 @@ export function useListModel(route: ListRoute, userId?: string) {
     return done && todayHabits ? done.filter((x) => !(x.series_id && taskMap.get(x.series_id)?.habit)) : done
   }, [route.view, closed.doneToday, todayHabits, taskMap])
   // A write keeps every group and row it did not change (list-rendering-at-scale D6).
-  // The project shows its Sub-projects group: its own tasks take a Tasks group (subprojects-above-tasks).
-  const subProjects = useHasSubProjects(route.view === 'project' ? route.id : null)
+  // The project shows its Sub-projects group: its own tasks take a Tasks group (subprojects-above-tasks); in the list layout its
+  // sub-projects open in place, without an arrow under a grouping or the columns layout (subproject-inline D1, D6).
+  const grouped = !!display?.groupBy && !['section', 'none', 'project', 'day'].includes(display.groupBy)
+  const sub = useSubProjectList(projectId, !board, !layout.timeline && !grouped && !layout.fieldColumns, allTasks, projects, collapsed, keep)
+  const subProjects = sub.has
   const keptGroups = useRef<ListGroup[] | null>(null)
   const groups = useMemo<ListGroup[]>(() => (keptGroups.current = keepGroups(keptGroups.current, listGroups({
     view: route.view, tasks, laterTasks, projectId, timeline: layout.timeline, tree, subProjects, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
     projects, projectMap, fields: sortFields, score, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday,
-    upcomingToday, todayDisplay, todayContextFilter,
+    upcomingToday, todayDisplay, todayContextFilter, subProjectList: sub.list,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }))), [dt.resolved, tree, subProjects, tasks, laterTasks, projectId, layout.timeline, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, score, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday, todayDisplay, todayContextFilter])
+  }))), [dt.resolved, tree, subProjects, tasks, laterTasks, projectId, layout.timeline, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, score, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday, todayDisplay, todayContextFilter, sub.list])
   // Upcoming's projected occurrences (series-occurrences D4): off by default, per device; never rows.
   const projectedGroups = useUpcomingGroups(route.view === 'upcoming', groups, { allTasks, projects, today, zone, duration: filterKey ? duration : null, queryTest, resolved: dt.resolved })
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
   // Context and Done today are visible without becoming members of the open list.
+  // An open sub-project's rows are not the project's own (subproject-inline).
   const ownRows = useMemo(() => route.view === 'today'
-    ? groups.filter((g) => g.key !== 'done').flatMap((g) => g.rows.filter((r) => !r.contextual)) : rows, [route.view, groups, rows])
+    ? groups.filter((g) => g.key !== 'done').flatMap((g) => g.rows.filter((r) => !r.contextual)) : sub.list ? groups.filter((g) => !g.subProject).flatMap((g) => g.rows) : rows, [route.view, groups, rows, sub.list])
   const siblingPos = useMemo(() => siblingPositions(groups), [groups])
   // The time column (rows-v2 D2): one fact of the whole list, from its visible rows; cards have none.
   // A task a calendar slot holds shows the slot's start there (calendar-slots D8).

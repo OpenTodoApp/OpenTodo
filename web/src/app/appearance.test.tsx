@@ -294,3 +294,21 @@ it('opts in to completion sound separately and keeps unknown synced values silen
     vi.unstubAllGlobals()
   }
 })
+
+describe('Appearance → Text size (text-size 1.4)', () => {
+  it('Default on a fresh device; Largest stays on this device and writes no op', async () => {
+    const r = await render(<AppearanceSection />)
+    try {
+      await waitFor(() => !!document.querySelector('#appearance-text-size-select'), 'the text size select')
+      const select = document.querySelector<HTMLSelectElement>('#appearance-text-size-select')!
+      expect(select.value).toBe('default')
+      expect([...select.options].map((o) => o.textContent)).toEqual(['Default', 'Large', 'Larger', 'Largest'])
+      select.value = 'largest'
+      select.dispatchEvent(new Event('change', { bubbles: true }))
+      await waitFor(() => localStorage.getItem('opentodo.textSize') === 'largest', 'stored on the device')
+      expect((await db.outbox.toArray()).some((o) => o.entity === 'user_prefs')).toBe(false)
+    } finally {
+      await r.unmount()
+    }
+  })
+})

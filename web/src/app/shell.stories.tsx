@@ -43,6 +43,20 @@ export const Tracking: StoryObj = {
   render: () => <Viewport><Shell user={storyUser} onLogout={noop} /></Viewport>,
 }
 
+/** The Inbox at the largest text size (text-size, #1414): the root at 150 %, as Settings → Appearance → Text size → Largest sets it. */
+const largestSeed = withSeed(seedInbox)
+export const LargestText: StoryObj = {
+  ...largestSeed,
+  decorators: [...(largestSeed.decorators as Decorator[]), (Story) => {
+    useEffect(() => {
+      document.documentElement.style.setProperty('--ot-text-scale', '1.5')
+      return () => { document.documentElement.style.removeProperty('--ot-text-scale') }
+    }, [])
+    return <Story />
+  }],
+  render: () => <Viewport><Shell user={storyUser} onLogout={noop} /></Viewport>,
+}
+
 /** Below 768 px while the list scrolls down (phone-v2 D6): the tab bar as 40 px of icons, the add button slid out. */
 const minimisedSeed = withSeed(async () => { await seedInbox(); forceMinimisedForStory(true) })
 export const PhoneScrolling: StoryObj = {

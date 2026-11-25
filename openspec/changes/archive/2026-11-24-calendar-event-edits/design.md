@@ -40,7 +40,7 @@ Rejected: an `event_override` op entity (a second truth, orphaned when the remot
 The client identifies an event by **`(connection id, event id)`**, where the event id is the existing `EventRow.id` (24 hex characters). The server resolves it to the remote address (connection -> calendar URL -> event href or Graph id) through a new table, so the client never sees or sends an href:
 
 ```sql
--- 0075_calendar_event_edits.sql (idempotent: IF NOT EXISTS only, no ALTER)
+-- 0076_calendar_event_edits.sql (idempotent: IF NOT EXISTS only, no ALTER)
 CREATE TABLE IF NOT EXISTS calendar_event_remote (
   subscription_id TEXT NOT NULL REFERENCES calendar_subscriptions(id) ON DELETE CASCADE,
   uid             TEXT NOT NULL,

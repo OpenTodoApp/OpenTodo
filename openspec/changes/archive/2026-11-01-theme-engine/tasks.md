@@ -11,7 +11,7 @@
 - [x] 2.1 Generalise the search of `web/src/lib/accentDerive.ts` so its base tokens are parameters (the custom accent keeps passing `accent.vectors.json` unchanged); verify `accentDerive.test.ts`
 - [x] 2.2 Write `web/src/lib/theme/derive.ts` (design D3 steps 1–8: surfaces, tones, lines, accent with the red guard and the white-or-dark on-accent rule, status, priorities, label palette, scrim, highlight, charts), reading the mix ratios from the same constants as the stylesheet; verify `derive.test.ts` and `derive.vectors.json`, including that OpenTodo's seeds reproduce every default token of `index.css` in both modes
 - [x] 2.3 Write `web/src/lib/theme/check.ts` (`checkTheme` over `PAIRS` and `GLYPH_PAIRS` for the kind); verify `check.test.ts` with a theme that fails `faint` on `canvas` reporting the pair and ratios
-- [x] 2.4 Add a perf test: deriving a theme stays under 5 ms on the CI runner's budget scale; verify `npm test`
+- [x] 2.4 Add a perf test: deriving a theme stays under 5 ms on the CI runner's budget scale; verify `npm run test:perf` (`web/src/lib/theme/derive.perf.test.ts`)
 
 ## 3. OpenTodo themes and the gate
 

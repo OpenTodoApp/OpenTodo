@@ -124,14 +124,15 @@ describe('session details on the entry', () => {
 })
 
 describe('without time tracking', () => {
-  it('Degraded: a full session starts, pauses and ends the same and writes no op', async () => {
+  it('Degraded: a full session starts, pauses and ends the same and writes no entry, only the shared session', async () => {
     setFocusLogger(noopLogger)
     await startSession(task, FOCUS_DEFAULTS, at(0))
     await pauseSession(at(5))
     await resumeSession(at(6))
     const done = await finishIfDue(FOCUS_DEFAULTS, at(30))
     expect(done?.ended).toMatchObject({ kind: 'work', workedMs: 25 * MIN })
-    expect(await db.outbox.count()).toBe(0)
+    // Start, pause and resume are published; the end is derived and never written (sync-focus-sessions D3).
+    expect((await db.outbox.toArray()).map((o) => `${o.entity}.${o.field}`)).toEqual(['user_prefs.focus_run', 'user_prefs.focus_run', 'user_prefs.focus_run'])
     expect(await entries()).toEqual([])
   })
 })

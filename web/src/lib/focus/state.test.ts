@@ -5,7 +5,7 @@ import { FOCUS_DEFAULTS } from './prefs'
 import { readFocus, transitionFocus, writeFocus } from './state'
 import { finish, idleState, start } from './timer'
 
-// The device-local timer row (OpenSpec focus-mode, task 2.2).
+// The timer row (OpenSpec focus-mode, task 2.2; sync-focus-sessions task 2.1).
 
 const T0 = new Date(2026, 9, 20, 9, 0).getTime()
 let n = 0
@@ -21,7 +21,7 @@ describe('focus state on the device', () => {
     const name = db.name
     db.close()
     useDatabase(name)
-    expect(await readFocus()).toEqual(s)
+    expect(await readFocus()).toMatchObject({ ...s, remote: false })
   })
 
   it('two concurrent transitions of one run write once', async () => {
@@ -35,9 +35,9 @@ describe('focus state on the device', () => {
     expect(await transitionFocus(T0 - 1, end)).toBeNull()
   })
 
-  it('is never an op and not a synced table; sign-out empties it', async () => {
+  it('is not a synced table: a write is one focus_run op on the preferences row (sync-focus-sessions D1); sign-out empties the row', async () => {
     await writeFocus(idleState('a', 'pomodoro', T0))
-    expect(await db.outbox.count()).toBe(0)
+    expect((await db.outbox.toArray()).map((o) => `${o.entity}.${o.field}`)).toEqual(['user_prefs.focus_run'])
     expect(syncedTables().map((t) => t.name)).not.toContain('focus')
     await clearLocalData()
     expect(await readFocus()).toBeNull()

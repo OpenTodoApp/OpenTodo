@@ -160,7 +160,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion, auth, agent_excluded_projects}`; `auth` describes the credential, see [Credential introspection](#credential-introspection); `agent_excluded_projects` lists the projects [kept away from assistants](#keeping-a-project-away-from-assistants); `day_parts` is the account's [Day parts](day-parts.md) preference, `energy_levels` its Energy levels switch and `time_sectors` its [Time sectors](time-sectors.md) switch, so a client can read quick-add lines like the app; `closed_list` is `{limit, focus_date, focus, slots_date, slots}`, the account's [Today limit](today-limit.md) (0 = off) and the dates and task ids of today's focus and taken slots as stored, so a client can fill Today's slots like the app (ids and dates only). The owner's session also gets `config_warnings: [{variable, message, ignored?}]`, configuration problems the server started despite (an invalid `OPENTODO_TRUSTED_PROXIES` entry, outgoing email without `OPENTODO_BASE_URL`), empty when there are none; admins, members and tokens never get the field |
+| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion, auth, agent_excluded_projects}`; `auth` describes the credential, see [Credential introspection](#credential-introspection); `agent_excluded_projects` lists the projects [kept away from assistants](#keeping-a-project-away-from-assistants); `day_parts` is the account's [Day parts](day-parts.md) preference, `energy_levels` its Energy levels switch and `time_sectors` its [Time sectors](time-sectors.md) switch, so a client can read quick-add lines like the app; `keep_open_subtasks` is true when the account [keeps open subtasks](keep-open-subtasks.md), so a client completes a task's open subtasks with it otherwise, like the app; `closed_list` is `{limit, focus_date, focus, slots_date, slots}`, the account's [Today limit](today-limit.md) (0 = off) and the dates and task ids of today's focus and taken slots as stored, so a client can fill Today's slots like the app (ids and dates only). The owner's session also gets `config_warnings: [{variable, message, ignored?}]`, configuration problems the server started despite (an invalid `OPENTODO_TRUSTED_PROXIES` entry, outgoing email without `OPENTODO_BASE_URL`), empty when there are none; admins, members and tokens never get the field |
 | POST | `/api/v1/me/password` | credential, fresh | `{currentPassword, newPassword}` → 204; signs out your other sessions |
 | GET | `/api/v1/me/activity` | yes | `{events:[…]}`: your own access events, last 90 days, at most 100 |
 | GET | `/api/v1/me/agent-access` | session or `full` token | `{allow_writes, owner_allows_writes, mcp_enabled}`: your "Allow AI assistants to make changes" switch; `read` and `agent` tokens → 403 `insufficient_scope` |
@@ -1372,6 +1372,7 @@ The server records security-relevant events in its own database (never synced to
 | `project_invite.revoked` | success | actor = project owner or admin | `project_invite_id`, `shared_project_id` |
 | `project_invite.accepted` | success | actor = the account that joined (new or existing), target = the link's creator | `project_invite_id`, `shared_project_id`, `project_role` |
 | `workspace.created`, `workspace.renamed`, `workspace.deleted` | success | actor = owner or admin (the server owner when an account deletion removed it) | `workspace` (id; `renamed` also covers icon and colour, never a value) |
+| `workspace.features_changed` | success | actor = owner or admin | `workspace` (id), `setting` (`features`), `to` (the switched ids, such as `habits=off,focus=on`) |
 | `workspace.transferred` | success | actor = previous owner (the deleting owner at account deletion), target = new owner | `workspace` |
 | `workspace.member_added`, `workspace.member_role_changed`, `workspace.member_removed` | success | actor = owner or admin (the member when leaving), target = member | `workspace`, `workspace_role` or `from`, `to` |
 | `workspace.group_created`, `workspace.group_deleted` | success | actor = owner or admin | `workspace`, `group` (ids, never names) |
@@ -1568,8 +1569,8 @@ Every route needs a session or a `full` or `admin` token (`read` and `agent` tok
 | Method | Path | Body → answer |
 | --- | --- | --- |
 | `GET` | `/api/v1/workspaces` | → `{workspaces: [workspace]}` |
-| `POST` | `/api/v1/workspaces` | `{name, icon?, color?}` → 201 workspace; 20 owned per account (409 `limit_reached`) |
-| `GET`, `PATCH`, `DELETE` | `/api/v1/workspaces/{id}` | `PATCH {name?, icon?, color?}` (owner, admin); `DELETE` (owner) → 204, 409 `workspace_not_empty` while it has projects or other members |
+| `POST` | `/api/v1/workspaces` | `{name, icon?, color?, features?}` → 201 workspace; 20 owned per account (409 `limit_reached`) |
+| `GET`, `PATCH`, `DELETE` | `/api/v1/workspaces/{id}` | `PATCH {name?, icon?, color?, features?}` (owner, admin); `DELETE` (owner) → 204, 409 `workspace_not_empty` while it has projects or other members |
 | `POST` | `/api/v1/workspaces/{id}/leave`, `…/transfer` | leave → 204 (the owner: 409 `owner_must_transfer`); transfer `{userId}` (owner, to a member) → 200 |
 | `GET`, `POST` | `/api/v1/workspaces/{id}/members` | `POST {email, role: member\|admin}` (admins add members) → 201 when the account already shares a project or workspace with you, otherwise 202 `{pending: true}` with or without an account ([invitations](#membership-invitations)); `GET` → 200 `{members, pending?}` (`pending` for the owner and admins) |
 | `DELETE` | `/api/v1/workspaces/{id}/member-invitations/{invitationId}` | cancel an open invitation (owner, admin) → 204 |
@@ -1582,8 +1583,11 @@ A workspace:
 
 ```json
 {"id": "…", "name": "Family", "icon": "house", "color": "#3b82f6", "default": false, "role": "owner", "ownerId": "…",
+ "features": {"habits": false},
  "members": [{"userId": "…", "name": "Alice", "role": "owner"}], "groups": [{"id": "…", "name": "Adults", "members": ["…"]}]}
 ```
+
+**Features** (OpenSpec `workspace-feature-switches`) are the workspace's switches for `notes`, `calendar`, `habits`, `time-tracking`, `focus`, `routines`, `reviews` and `locations`: `false` where the owner or an admin switched one off, a missing key (and `{}`, every workspace's start) on. `PATCH {features: {"habits": false}}` merges key by key, so other keys keep their value; an unknown id or a `null` answers 400 `invalid_input` naming it. Each change is audited as `workspace.features_changed`. A switch only hides the feature in the apps for that workspace: every route, sync, the CLI, MCP, the export and CalDAV keep working on its data. The change wakes every member's devices.
 
 Members carry names, never emails. Limits are 409 `limit_reached` naming the limit; a hosted server may lower them per tenant. An end-to-end encrypted account can create, rename and delete its workspaces and move things between them, but adding members, creating groups or links, and granting groups answer 409 `encryption_enabled`.
 

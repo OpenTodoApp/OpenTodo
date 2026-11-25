@@ -22,7 +22,8 @@ describe('Today order', () => {
     const shown = await tasksOf([c, b, a])
     await db.outbox.clear()
     const result = await stepInViewOrder(host, shown, shown, b, -1)
-    expect((await db.userPrefs.get('me'))?.today_manual_order).toEqual([b, c, a])
+    // Seeded through the moved task and its anchor; A below them reads as unplaced (day-manual-order).
+    expect((await db.userPrefs.get('me'))?.today_manual_order).toEqual([b, c])
     expect((await db.outbox.toArray()).map((op) => op.entity)).toEqual(['user_prefs', 'user_prefs', 'user_prefs'])
     expect(await tasksOf([c, b, a])).toEqual(shown)
     await undoBatch(result!.entry!.id)

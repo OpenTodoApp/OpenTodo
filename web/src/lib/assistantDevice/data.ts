@@ -20,6 +20,8 @@ export interface Snapshot {
   tasks: Row[]
   byId: Map<string, Row>
   memberships: Map<string, Membership>
+  /** user_prefs.complete_subtasks "keep": completing leaves open subtasks open (keep-open-subtasks D4). */
+  keep?: boolean
 }
 
 export const str = (r: Row | undefined, f: string): string => {
@@ -55,13 +57,14 @@ function keptAwaySet(projects: Row[], cached: string[]): Set<string> {
 
 /** Loads the snapshot and lays the overlay over it. */
 export async function loadSnapshot(overlay: ProposedChange[] = []): Promise<Snapshot> {
-  const [projects, labels, sections, tasks, memberships, me, cached] = await Promise.all([
+  const [projects, labels, sections, tasks, memberships, me, cached, prefs] = await Promise.all([
     db.projects.toArray(), db.labels.toArray(), db.sections.toArray(), db.tasks.toArray(), membershipMap(), currentUserId(),
-    getMeta<string[]>(AGENT_EXCLUSIONS_KEY, []).catch(() => [] as string[]),
+    getMeta<string[]>(AGENT_EXCLUSIONS_KEY, []).catch(() => [] as string[]), db.userPrefs.get('me'),
   ])
   const keptAway = keptAwaySet(projects as unknown as Row[], Array.isArray(cached) ? cached : [])
   const snap: Snapshot = {
     userId: me ?? '', projects: new Map(), projList: [], labels: new Map(), labelList: [], sections: new Map(), tasks: [], byId: new Map(), memberships,
+    keep: prefs?.complete_subtasks === 'keep',
   }
   for (const p of projects as unknown as Row[]) {
     if (isDeleted(p) || keptAway.has(str(p, 'id'))) continue

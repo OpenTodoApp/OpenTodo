@@ -2,8 +2,10 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
+	"time"
 )
 
 // seedTrip is the subtask fixture of cli-subtasks: "Plan trip" in Travel with
@@ -145,17 +147,33 @@ func TestDescendants(t *testing.T) {
 	}
 }
 
+// setPref writes one user_prefs field with an op of its own.
+func (h *harness) setPref(field, value string) {
+	h.t.Helper()
+	ts := time.Now().UnixNano() / 1000
+	op := map[string]any{"id": fmt.Sprintf("pref-%s-%d", field, ts), "entity": "user_prefs", "entityId": "me", "field": field, "value": value, "ts": ts / 1000, "device": "seed"}
+	h.apiJSON("POST", "/api/v1/sync", map[string]any{"device": "seed", "cursor": 0, "ops": []any{op}})
+}
+
 func TestSubtaskCascades(t *testing.T) {
 	h := newHarness(t)
 	h.login()
 	h.seedTrip()
 
-	// Without --subtasks only the named task changes (the 1.x behaviour).
-	h.mustRun("done", "trip")
+	// --subtasks=false completes only the named task (the 1.x behaviour).
+	h.mustRun("done", "trip", "--subtasks=false")
 	if h.task("trip0001")["completed_at"] == nil || h.task("hotl0001")["completed_at"] != nil {
-		t.Fatal("done without --subtasks touched a subtask")
+		t.Fatal("done --subtasks=false touched a subtask")
 	}
 	h.mustRun("reopen", "trip")
+	// So does a plain done while the account keeps open subtasks (keep-open-subtasks D4).
+	h.setPref("complete_subtasks", "keep")
+	h.mustRun("done", "trip")
+	if h.task("trip0001")["completed_at"] == nil || h.task("hotl0001")["completed_at"] != nil {
+		t.Fatal("done with keep touched a subtask")
+	}
+	h.mustRun("reopen", "trip")
+	h.setPref("complete_subtasks", "")
 
 	// A dry run lists one request per open task, deepest first, the parent last.
 	out := h.mustRun("done", "trip", "--subtasks", "--dry-run", "--json")
@@ -243,18 +261,21 @@ func TestSubtaskListNesting(t *testing.T) {
 	if got != want {
 		t.Fatalf("nested list\n got %q\nwant %q\n%s", got, want, out)
 	}
-	// A subtask whose parent isn't listed is printed at the top level.
+	// Completing a parent completes its open subtasks by default (keep-open-subtasks D4).
 	h.mustRun("done", "hotl")
+	if h.task("cmpr0001")["completed_at"] == nil {
+		t.Fatal("done did not complete the open subtask")
+	}
 	out = h.mustRun("list", "--project", "Travel")
-	if !strings.Contains(out, "Travel   Compare prices") {
-		t.Fatalf("orphan not at top level:\n%s", out)
+	if strings.Contains(out, "Compare prices") {
+		t.Fatalf("completed subtask listed:\n%s", out)
 	}
 	// Other views stay flat; --json keeps its order (position).
 	if out := h.mustRun("list"); strings.Contains(out, "  Flights") && strings.Contains(out, "1/") {
 		t.Fatalf("default list nested:\n%s", out)
 	}
 	out = h.mustRun("list", "--project", "Travel", "--json")
-	if got := strings.Join(idsOf(t, out), ","); got != "trip0001,cmpr0001,flig0001,pack0001" {
+	if got := strings.Join(idsOf(t, out), ","); got != "trip0001,flig0001,pack0001" {
 		t.Fatalf("--json order = %s", got)
 	}
 }
@@ -272,6 +293,22 @@ func TestSubtaskListParent(t *testing.T) {
 	}
 	if code, _, _ := h.run("list", "--parent", "nope"); code != ExitUsage {
 		t.Fatalf("unknown parent: exit %d", code)
+	}
+}
+
+// Kept subtasks (keep-open-subtasks D5): with "Plan trip" completed, its open
+// subtasks leave `ot list` and stay under `ot list --parent`.
+func TestSubtaskListKept(t *testing.T) {
+	h := newHarness(t)
+	h.login()
+	h.seedTrip()
+	h.put("task", "trip0001", map[string]any{"title": "Plan trip", "project_id": "trav0001", "position": 1, "completed_at": 1700000000000})
+
+	if got := strings.Join(idsOf(t, h.mustRun("list", "--json")), ","); got != "pack0001,inbx0001" {
+		t.Fatalf("list = %s", got)
+	}
+	if got := strings.Join(idsOf(t, h.mustRun("list", "--parent", "trip", "--json")), ","); got != "hotl0001,flig0001" {
+		t.Fatalf("--parent = %s", got)
 	}
 }
 

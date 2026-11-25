@@ -1,4 +1,7 @@
 {
+  "Text size": "Textgröße",
+  "Larger": "Größer",
+  "Largest": "Am größten",
   "Allow pinch zoom": "Zoomen mit zwei Fingern erlauben",
   "Pinch to zoom the app on this device. Turn it off for a more app-like feel.": "Mit zwei Fingern in der App zoomen – auf diesem Gerät. Aus für ein app-ähnlicheres Gefühl.",
   "\"after completion\" only applies to day, week, month and year intervals": "\"after completion\" gilt nur für Intervalle in Tagen, Wochen, Monaten und Jahren",
@@ -3939,7 +3942,7 @@
   "Reopen the day": "Tag wieder öffnen",
   "Reopen {title}": "{title} wieder öffnen",
   "Reopened": "Wieder geöffnet",
-  "Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels": "Aufgaben in Projektlisten, Boards und im Eingang sowie Projekte in der Seitenleiste umsortieren; auf die Mitte einer Zeile ziehen, um zu verschachteln; Esc bricht ab",
+  "Reorder tasks in project lists, boards, the Inbox, Today and Upcoming, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels": "Aufgaben in Projektlisten, Boards, im Eingang, in Heute und Demnächst sowie Projekte in der Seitenleiste umsortieren; auf die Mitte einer Zeile ziehen, um zu verschachteln; Esc bricht ab",
   "Repeat": "Wiederholen",
   "Repeat a task": "Eine Aufgabe wiederholen",
   "Repeat and remind (6 languages)": "Wiederholen und erinnern (6 Sprachen)",
@@ -4532,7 +4535,7 @@
   "Sort sub-projects by name": "Unterprojekte nach Name sortieren",
   "Sort {list} by {by}": "{list} nach {by} sortieren",
   "Sorted by name": "Nach Name sortiert",
-  "Sorted by date (or their own rule): no Alt moves there; in Upcoming, drag a task onto another day to move it": "Nach Datum sortiert (oder nach eigener Regel): dort keine Alt-Verschiebungen; in Demnächst eine Aufgabe auf einen anderen Tag ziehen, um sie zu verschieben",
+  "Sorted by date (or their own rule): no Alt moves there": "Nach Datum sortiert (oder nach eigener Regel): dort keine Alt-Verschiebungen",
   "Sound": "Ton",
   "Short": "Kurz",
   "Long": "Lang",
@@ -7900,5 +7903,12 @@
   "{title} is no longer in your calendar": "{title} ist nicht mehr in deinem Kalender",
   "The event changed in your calendar; your edit was not applied.": "Der Termin wurde in deinem Kalender geändert; deine Änderung wurde nicht übernommen.",
   "The event is no longer in your calendar.": "Der Termin ist nicht mehr in deinem Kalender.",
-  "Assistants may not edit this connection’s events.": "Assistenten dürfen die Termine dieser Verbindung nicht ändern."
+  "Assistants may not edit this connection’s events.": "Assistenten dürfen die Termine dieser Verbindung nicht ändern.",
+  "Complete subtasks with parent": "Unteraufgaben mit erledigen",
+  "Or keep open subtasks when a task is completed": "Oder offene Unteraufgaben behalten, wenn eine Aufgabe erledigt wird",
+  "Features": "Funktionen",
+  "Only the owner and admins can change these.": "Nur der Eigentümer und Admins können das ändern.",
+  "Time tracking": "Zeiterfassung",
+  "{feature} is off in this workspace.": "{feature} ist in diesem Arbeitsbereich aus.",
+  "Workspace features changed": "Funktionen des Arbeitsbereichs geändert"
 }

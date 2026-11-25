@@ -47,7 +47,8 @@ async function change<T>(run: () => Promise<T>): Promise<T> {
 export const workspaceApi = {
   list: () => request<{ workspaces: WorkspaceEntry[] }>('GET', base),
   create: (input: { name: string; icon?: string; color?: string }) => change(() => request<WorkspaceEntry>('POST', base, input)),
-  update: (id: string, input: { name?: string; icon?: string; color?: string }) => change(() => request<WorkspaceEntry>('PATCH', `${base}/${enc(id)}`, input)),
+  /** `features` merges per key on the server (workspace-feature-switches D2). */
+  update: (id: string, input: { name?: string; icon?: string; color?: string; features?: Record<string, boolean> }) => change(() => request<WorkspaceEntry>('PATCH', `${base}/${enc(id)}`, input)),
   remove: (id: string) => change(() => request<void>('DELETE', `${base}/${enc(id)}`)),
   leave: (id: string) => change(() => request<void>('POST', `${base}/${enc(id)}/leave`)),
   transfer: (id: string, userId: string) => change(() => request<WorkspaceEntry>('POST', `${base}/${enc(id)}/transfer`, { userId })),

@@ -205,7 +205,7 @@ function run(seed: number, steps: number) {
     // Now and then a change the snapshot cannot name row by row: derived in full, no link.
     const linked = !r.chance(0.05)
     const before = sets
-    const patched = linked ? patchSets(sets, next.changes, projects, state) : null
+    const patched = linked ? patchSets(sets, next.changes, projects, state, stored) : null
     const full = deriveSets(stored, projects, state)
     sets = patched ?? full
     const at = `seed ${seed} step ${step}`

@@ -20,7 +20,7 @@ func setCompleted(a *App, ctx context.Context, g *globalFlags, args []string, na
 	fs := a.flagSet(name, g)
 	subtasks := false
 	if complete {
-		fs.BoolVar(&subtasks, "subtasks", false, "also complete the task's open subtasks, at every depth")
+		fs.BoolVar(&subtasks, "subtasks", false, "also complete the task's open subtasks, at every depth (the default unless Settings keeps open subtasks; --subtasks=false completes only the task)")
 	}
 	refs, err := a.parse(g, fs, name, args)
 	if err != nil {
@@ -40,6 +40,14 @@ func setCompleted(a *App, ctx context.Context, g *globalFlags, args []string, na
 	targets, refOf, err := resolveTaskRefs(all, refs)
 	if err != nil {
 		return err
+	}
+	if complete && !visited(fs)["subtasks"] {
+		// Like the app: a completion completes the open subtasks unless the user keeps them (keep-open-subtasks D4).
+		keep, err := c.keepsOpenSubtasks(ctx)
+		if err != nil {
+			return err
+		}
+		subtasks = !keep
 	}
 	if subtasks {
 		targets = withSubtasks(all, targets, refOf, func(t task) bool { return t.CompletedAt == nil })

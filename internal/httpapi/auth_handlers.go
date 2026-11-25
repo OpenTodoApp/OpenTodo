@@ -410,6 +410,9 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 		out["energy_levels"] = idOf(prefs["energy"]) == "on"
 		// And Time sectors (time-sectors D8), for the CLI's sector phrases.
 		out["time_sectors"] = idOf(prefs["time_sectors"]) == "on"
+		// And Complete subtasks with parent (keep-open-subtasks D4): `ot done`
+		// completes a task's open subtasks unless the user keeps them.
+		out["keep_open_subtasks"] = idOf(prefs["complete_subtasks"]) == "keep"
 	}
 	// Today's closed list (today-closed-list D7): the limit and today's chosen
 	// tasks, so the CLI fills Today's slots as the app does.

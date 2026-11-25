@@ -2625,6 +2625,7 @@
         "bento_order": "string",
         "briefing": "string",
         "calendars_hidden": "string",
+        "complete_subtasks": "string",
         "completion_sound": "string",
         "daily_notes": "bool",
         "daily_notes_project": "string",
@@ -2645,6 +2646,7 @@
         "focus_mode": "string",
         "focus_noise": "string",
         "focus_presets": "string",
+        "focus_run": "string",
         "focus_short_break_minutes": "number",
         "focus_sound": "string",
         "focus_style": "string",
@@ -3809,6 +3811,7 @@
       "bento_order": "string",
       "briefing": "string",
       "calendars_hidden": "string",
+      "complete_subtasks": "string",
       "completion_sound": "string",
       "daily_notes": "bool",
       "daily_notes_project": "string",
@@ -3829,6 +3832,7 @@
       "focus_mode": "string",
       "focus_noise": "string",
       "focus_presets": "string",
+      "focus_run": "string",
       "focus_short_break_minutes": "number",
       "focus_sound": "string",
       "focus_style": "string",
@@ -4279,6 +4283,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -4300,6 +4305,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -4321,6 +4327,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -4348,6 +4355,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -5267,6 +5275,7 @@
         "encryption.enabled": "boolean",
         "encryption.keyVersion": "number",
         "energy_levels": "boolean",
+        "keep_open_subtasks": "boolean",
         "maps": "boolean",
         "mfa": "object|null",
         "mfa.enrolled": "boolean",
@@ -7342,6 +7351,7 @@
         "workspaces": "array",
         "workspaces[].color": "string",
         "workspaces[].default": "boolean",
+        "workspaces[].features": "object",
         "workspaces[].groups": "array",
         "workspaces[].groups[].id": "string",
         "workspaces[].groups[].members": "array",
@@ -7365,6 +7375,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -8327,12 +8338,14 @@
       "policy": "signed-in.full-tokens",
       "request": {
         "color": "string|null?",
+        "features": "object?",
         "icon": "string|null?",
         "name": "string|null?"
       },
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -8357,6 +8370,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -8381,6 +8395,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -11164,6 +11179,7 @@
         "workspaces": "array",
         "workspaces[].color": "string",
         "workspaces[].default": "boolean",
+        "workspaces[].features": "object",
         "workspaces[].groups": "array",
         "workspaces[].groups[].id": "string",
         "workspaces[].groups[].members": "array",
@@ -11670,12 +11686,14 @@
       "policy": "signed-in.full-tokens",
       "request": {
         "color": "string|null?",
+        "features": "object?",
         "icon": "string|null?",
         "name": "string|null?"
       },
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -11739,6 +11757,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -11764,6 +11783,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -11791,6 +11811,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",
@@ -12394,6 +12415,7 @@
       "response": {
         "color": "string",
         "default": "boolean",
+        "features": "object",
         "groups": "array",
         "groups[].id": "string",
         "groups[].members": "array",

@@ -317,6 +317,25 @@ func TestCompletingARecurringTaskAndSubtasks(t *testing.T) {
 	}
 }
 
+// A completing rule leaves the open subtasks open while the user keeps them
+// (keep-open-subtasks D4).
+func TestCompletingKeepsOpenSubtasks(t *testing.T) {
+	h := newHarness(t)
+	h.write("alice", "laptop", "user_prefs", "me", map[string]any{"complete_subtasks": "keep"})
+	h.rule("alice", "r1", "Done", `{"kind":"label.added","label_id":"done"}`, "", `{"state":"complete"}`)
+	h.write("alice", "laptop", "label", "done", map[string]any{"name": "done", "created_at": 1, "deleted_at": nil})
+	h.task("alice", "parent", nil)
+	h.task("alice", "child", map[string]any{"parent_id": "parent"})
+	h.write("alice", "phone", "task", "parent", map[string]any{"labels": []string{"done"}})
+	h.e.Drain(h.ctx)
+	if p := h.get("alice", "parent"); opsync.IsNull(p["completed_at"]) {
+		t.Fatal("parent left open")
+	}
+	if c := h.get("alice", "child"); !opsync.IsNull(c["completed_at"]) {
+		t.Fatal("kept subtask completed")
+	}
+}
+
 func TestSchedule(t *testing.T) {
 	h := newHarness(t)
 	// Sunday 2026-10-25, the rule is created on Wednesday.

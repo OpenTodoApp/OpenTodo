@@ -26,7 +26,7 @@ func TestCalendarEventEditsMigration(t *testing.T) {
 			t.Fatalf("%s: %v", q, err)
 		}
 	}
-	m, err := migrations.ReadFile("migrations/0075_calendar_event_edits.sql")
+	m, err := migrations.ReadFile("migrations/0076_calendar_event_edits.sql")
 	if err != nil {
 		t.Fatal(err)
 	}

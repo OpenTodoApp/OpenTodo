@@ -789,6 +789,10 @@ var Schema = map[string]map[string]Field{
 		"haptics": {Kind: kString, Default: `""`},
 		// The optional completion sound is enabled only by an explicit "on".
 		"completion_sound": {Kind: kString, Default: `""`},
+		// Completing a parent (OpenSpec change keep-open-subtasks, design D1):
+		// "keep" completes only the parent and leaves its open subtasks open
+		// (kept); empty or any other value completes them too.
+		"complete_subtasks": {Kind: kString, Default: `""`},
 		// The day pages' briefing (OpenSpec change briefing-links, design D4):
 		// "hidden" hides it on Today and Upcoming; clients read an empty or
 		// unknown value as shown.
@@ -859,6 +863,15 @@ var Schema = map[string]map[string]Field{
 		// short and keep it. A client without this field plays the short
 		// tone.
 		"focus_alert": {Kind: kString, Default: `""`},
+		// The person's Focus session on every device (OpenSpec change
+		// sync-focus-sessions, design D1): one JSON record {v, rev, taskId,
+		// mode, phase, startedAt, resumedAt, accumulatedMs, plannedMs, cycle,
+		// breakKind, entryId, ended}, written on user actions only and never
+		// while a session merely runs. One field so a conflict keeps one whole
+		// session by last-writer-wins. Ids and times only, never content;
+		// clients ignore and keep a value they cannot read, and the importer
+		// drops it, a backup restore resets it. Times are server time.
+		"focus_run": {Kind: kString, Default: `""`},
 		// Today grouped by part of the day (OpenSpec change day-parts, design
 		// D3): "on" groups Today into Morning, Afternoon and This Evening and
 		// turns on the part phrases of quick add; clients read an empty or
@@ -932,9 +945,11 @@ var Schema = map[string]map[string]Field{
 		// values as "day" and preserve the stored value. Settings, never content.
 		"today_group_by": {Kind: kString, Default: `""`},
 		// Today's order (builtin-view-options D2): "due", "priority", "created",
-		// "deadline", "title" or "field:<id>"; empty or unknown reads as "due".
+		// "deadline", "title", "position" (the day order) or "field:<id>"; empty or
+		// unknown reads as "due".
 		"today_sort_by": {Kind: kString, Default: `""`},
-		// Task IDs placed by hand in Today's project groups, in personal order.
+		// Task IDs placed by hand in the day order Today and Upcoming share
+		// (day-manual-order), in personal order; whole-list last-writer-wins.
 		"today_manual_order": {Kind: kOrderList, Default: `[]`},
 		// Today's order direction: "asc" or "desc"; empty or unknown reads as "asc".
 		"today_sort_dir": {Kind: kString, Default: `""`},
@@ -946,7 +961,8 @@ var Schema = map[string]map[string]Field{
 		// else reads as flat.
 		"today_subtasks": {Kind: kString, Default: `""`},
 		// Upcoming's order within each day (builtin-view-options D2, D4): the
-		// same values as today_sort_by; empty or unknown reads as "due".
+		// same values as today_sort_by ("position": the shared day order); empty
+		// or unknown reads as "due".
 		"upcoming_sort_by": {Kind: kString, Default: `""`},
 		// Upcoming's order direction: "asc" or "desc"; empty or unknown reads as "asc".
 		"upcoming_sort_dir": {Kind: kString, Default: `""`},

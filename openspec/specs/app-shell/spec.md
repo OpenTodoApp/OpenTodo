@@ -1099,6 +1099,21 @@ Below 768 px, while the app does not yet know the account, the loading skeleton 
 - **WHEN** the app starts at 1280 px
 - **THEN** the skeleton shows rows and no bar or tab bar
 
+### Requirement: Destinations of features that are off
+The sidebar (its primary destinations, the More group or menu, the phone drawer and the Notes space switch) and Settings → Appearance → Sidebar SHALL leave out every destination of a feature the current workspace has off (`workspaces` "Workspace features"): Notes, Calendar, Habits, Focus, Routines, Review and Statistics, and Locations. A promoted destination of such a feature SHALL be left out without changing the stored promotion, and SHALL come back in its place when the feature is turned on or another workspace is current. This works offline from the cached workspace.
+
+#### Scenario: Calendar off
+- **WHEN** the current workspace has Calendar off
+- **THEN** the sidebar's primary destinations are Inbox, Today and Upcoming, and `sidebar_order` is unchanged
+
+#### Scenario: Promoted Focus
+- **WHEN** a user promoted Focus and switches to a workspace with Focus off
+- **THEN** Focus is not in the sidebar nor in Appearance → Sidebar, and switching back shows it promoted again
+
+#### Scenario: Notes off
+- **WHEN** the current workspace has Notes off
+- **THEN** the sidebar shows no Tasks and Notes switch, and the Tasks space is shown
+
 ### Requirement: Add task in the sidebar
 From 768 px, the sidebar SHALL show an "Add task" item in the Tasks space, under the workspace row and the space switch and above the primary destinations, in the row's quiet tone with the phone add button's mark (a plus on the accent). With "Show shortcut hints" on, it SHALL print the quick add key (`q`) at its end; its tooltip SHALL name the key in every case, and it SHALL be a button named "Add task" that announces the key. In the icon rail it SHALL show the mark alone, its name in the tooltip. Activating it SHALL do exactly what the quick add key does on that screen outside a text field: on a list screen with a quick add, focus that quick add, whose task takes the view's defaults (the project of a project, today in Today, tomorrow in Upcoming, the label of a label, the location of a location, parked in Someday, assigned to the user in Assigned to me); elsewhere, open the command bar in Add mode, which takes the defaults of "Add mode". It SHALL NOT be shown in the phone drawer, where the add button is, nor in the Notes space. The phone's floating add button SHALL carry the same name, "Add task". Adding works offline through the same local operation as every quick add.
 

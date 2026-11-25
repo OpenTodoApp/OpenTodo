@@ -2074,7 +2074,7 @@ export const AUDIT_EVENT_NAMES = [
   'account.email_change_requested',
   'account.email_changed',
   'account.avatar_changed',
-  'workspace.created', 'workspace.renamed', 'workspace.deleted', 'workspace.transferred',
+  'workspace.created', 'workspace.renamed', 'workspace.features_changed', 'workspace.deleted', 'workspace.transferred',
   'workspace.member_added', 'workspace.member_role_changed', 'workspace.member_removed',
   'workspace.group_created', 'workspace.group_deleted', 'workspace.group_member_added', 'workspace.group_member_removed',
   'project.member_added', 'project.grant_added', 'project.grant_changed', 'project.grant_removed',
@@ -2320,6 +2320,12 @@ export interface Workspace {
   default: boolean
   role: WorkspaceRole
   ownerId: string
+  /**
+   * The features the owner and admins switched off, as `{id: false}`
+   * (workspace-feature-switches D2); a missing key, or no map from an older
+   * server, is on. Read with featureOn() in lib/features.ts.
+   */
+  features?: Record<string, boolean>
 }
 
 /** A member of a workspace, by name only (the directory is shown to every member). */

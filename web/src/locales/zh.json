@@ -1,4 +1,7 @@
 {
+  "Text size": "文字大小",
+  "Larger": "更大",
+  "Largest": "最大",
   "Allow pinch zoom": "允许双指缩放",
   "Pinch to zoom the app on this device. Turn it off for a more app-like feel.": "在此设备上用双指缩放应用。关闭后更有原生应用的感觉。",
   "\"after completion\" only applies to day, week, month and year intervals": "“完成后”仅适用于按天、周、月和年的重复间隔",
@@ -3989,7 +3992,7 @@
   "Reopen {title}": "重新打开 {title}",
   "Reopened": "已重新打开",
   "Reopened on the list": "已回到列表",
-  "Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels": "在项目列表、看板和收件箱中调整任务顺序，以及在侧边栏中调整项目顺序；拖放到行中间可将其嵌套；按 Esc 取消",
+  "Reorder tasks in project lists, boards, the Inbox, Today and Upcoming, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels": "在项目列表、看板、收件箱、今天和即将到来中调整任务顺序，以及在侧边栏中调整项目顺序；拖放到行中间可将其嵌套；按 Esc 取消",
   "Repeat": "重复",
   "Repeat a task": "重复任务",
   "Repeat and remind (6 languages)": "重复与提醒（6 种语言）",
@@ -4600,7 +4603,7 @@
   "Sort into aisles": "按过道分类",
   "Sort {list} by {by}": "将{list}按{by}排序",
   "Sorted by name": "已按名称排序",
-  "Sorted by date (or their own rule): no Alt moves there; in Upcoming, drag a task onto another day to move it": "按日期（或其自身规则）排序：此处不支持按 Alt 移动；在即将到来中，将任务拖到另一天即可移动",
+  "Sorted by date (or their own rule): no Alt moves there": "按日期（或其自身规则）排序：此处不支持按 Alt 移动",
   "Sound": "声音",
   "Short": "短",
   "Long": "长",
@@ -7900,5 +7903,12 @@
   "{title} is no longer in your calendar": "{title}已不在你的日历中",
   "The event changed in your calendar; your edit was not applied.": "该事件已在你的日历中更改；你的修改未生效。",
   "The event is no longer in your calendar.": "该事件已不在你的日历中。",
-  "Assistants may not edit this connection’s events.": "助手不能编辑此连接的事件。"
+  "Assistants may not edit this connection’s events.": "助手不能编辑此连接的事件。",
+  "Complete subtasks with parent": "同时完成子任务",
+  "Or keep open subtasks when a task is completed": "或在完成任务时保留未完成的子任务",
+  "Features": "功能",
+  "Only the owner and admins can change these.": "只有所有者和管理员可以更改这些设置。",
+  "Time tracking": "时间记录",
+  "{feature} is off in this workspace.": "此工作区已关闭{feature}。",
+  "Workspace features changed": "工作区功能已更改"
 }

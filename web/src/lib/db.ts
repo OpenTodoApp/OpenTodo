@@ -202,7 +202,7 @@ class OpenTodoDB extends Dexie {
   objectives!: Table<Objective, string>
   /** What the assistant remembers (OpenSpec assistant-memory): a synced entity, by position. */
   memories!: Table<MemoryItem, string>
-  /** The focus timer's state (focus-mode D2): one row "current" on this device, never synced, cleared at sign-out. */
+  /** The focus timer's state (focus-mode D2): one row "current", the working copy of the session whose shared part syncs as user_prefs.focus_run (sync-focus-sessions D2); cleared at sign-out. */
   focus!: Table<FocusState, string>
   /** The account's workspaces, their members and groups (workspaces D8): replaced from every sync response, never ops. */
   workspaces!: Table<Workspace, string>

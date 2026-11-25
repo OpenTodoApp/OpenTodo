@@ -262,6 +262,38 @@
       ]
     },
     {
+      "name": "complete with its open subtask",
+      "tool": "complete_tasks",
+      "args": {
+        "ids": [
+          "t1"
+        ],
+        "timezone": "UTC"
+      },
+      "changes": [
+        {
+          "base": {
+            "completed_at": null
+          },
+          "entity": "task",
+          "entityId": "t1",
+          "patch": {
+            "completed_at": "<ts>"
+          }
+        },
+        {
+          "base": {
+            "completed_at": null
+          },
+          "entity": "task",
+          "entityId": "t6",
+          "patch": {
+            "completed_at": "<ts>"
+          }
+        }
+      ]
+    },
+    {
       "name": "complete recurring",
       "tool": "complete_tasks",
       "args": {

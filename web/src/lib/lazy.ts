@@ -5,7 +5,7 @@
 // its next render (PanelBoundary calls it when the device is back online). Nothing
 // retries on its own: React renders an errored tree once more before the boundary
 // takes it, and an import retried there would loop while offline.
-import { createElement, lazy as reactLazy, type ComponentProps, type ComponentType, type FunctionComponent } from 'react'
+import { createElement, lazy as reactLazy, useState, type ComponentProps, type ComponentType, type FunctionComponent } from 'react'
 import { resettable } from './moduleState'
 
 const failed = new Set<() => void>()
@@ -23,6 +23,22 @@ export function lazy<T extends ComponentType<any>>(factory: () => Promise<{ defa
   function retry() { current = make() }
   const Lazy: FunctionComponent<ComponentProps<T>> = (props) => createElement(current, props)
   return Lazy
+}
+
+/**
+ * A lazy part that can be fetched ahead of use (`preload`, on idle) and, once in,
+ * renders without suspending: a lazy component suspends on its first render even
+ * when its chunk is in, and React 19 holds a revealed boundary ~300 ms. Before its
+ * chunk is in it suspends like lazy(), so it still needs a Suspense with a skeleton.
+ */
+export function preloadable<T extends ComponentType<any>>(factory: () => Promise<{ default: T }>): FunctionComponent<ComponentProps<T>> & { preload: () => Promise<unknown> } {
+  let loaded: T | undefined
+  let pending: Promise<{ default: T }> | undefined
+  const load = () => (pending ??= factory().then((m) => { loaded = m.default; return m }, (err: unknown) => { pending = undefined; throw err }))
+  const Lazy = lazy(load)
+  // Chosen once per mount, so a part that mounted lazily is never swapped for the loaded type (which would remount it).
+  const Part: FunctionComponent<ComponentProps<T>> = (props) => createElement(useState<ComponentType<any>>(() => loaded ?? Lazy)[0], props)
+  return Object.assign(Part, { preload: load })
 }
 
 /** Gives every lazy part whose import failed a fresh import for its next render; returns how many. */

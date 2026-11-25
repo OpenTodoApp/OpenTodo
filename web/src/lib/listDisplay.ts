@@ -36,7 +36,7 @@ export type DisplayScope = { kind: 'project' | 'label'; id: string } | { kind: B
 
 /** Order by, as the panel lists them on a project or label page: manual first. */
 export const LIST_SORT_OPTIONS: readonly SortBy[] = ['position', 'priority', 'due', 'created', 'deadline', 'title', 'urgency']
-/** The date views' common orders. Today by project also offers manual order. */
+/** The date views' common orders; Today and Upcoming add their shared day order (listSortOptions). */
 export const DAY_SORT_OPTIONS: readonly SortBy[] = ['due', 'priority', 'created', 'deadline', 'title']
 /** A project groups by its sections by default; projects make no sense inside one project. */
 export const PROJECT_GROUP_OPTIONS: readonly ListGroupBy[] = ['section', 'none', 'due', 'priority', 'label']
@@ -70,10 +70,11 @@ export const DISPLAY_KINDS: Record<DisplayScope['kind'], DisplayKind> = {
 
 const isBuiltin = (kind: DisplayScope['kind']): kind is BuiltinDisplayKind => kind === 'today' || kind === 'upcoming' || kind === 'inbox'
 
-const TODAY_PROJECT_SORTS: readonly SortBy[] = [...DAY_SORT_OPTIONS, 'position']
+/** Today (every grouping) and Upcoming also offer the day order they share (day-manual-order D1). */
+const DAY_MANUAL_SORTS: readonly SortBy[] = [...DAY_SORT_OPTIONS, 'position']
 
-export function listSortOptions(kind: DisplayScope['kind'], group: ListGroupBy): readonly SortBy[] {
-  return kind === 'today' && group === 'project' ? TODAY_PROJECT_SORTS : DISPLAY_KINDS[kind].sorts
+export function listSortOptions(kind: DisplayScope['kind']): readonly SortBy[] {
+  return kind === 'today' || kind === 'upcoming' ? DAY_MANUAL_SORTS : DISPLAY_KINDS[kind].sorts
 }
 
 /** A built-in view's options live in the user's preferences and can be reset. */
@@ -108,7 +109,7 @@ export function listDisplayOf(kind: DisplayScope['kind'], row: object | null | u
   const f = fieldsOf(kind)
   const r = (row ?? {}) as Record<string, unknown>
   const groupBy = pick(r[f.groupBy], k.groups, k.groupBy)
-  const sortBy = readSortBy(r[f.sortBy], listSortOptions(kind, groupBy), k.sortBy)
+  const sortBy = readSortBy(r[f.sortBy], listSortOptions(kind), k.sortBy)
   return {
     rowLayout: rowLayoutOf(r[f.rowLayout], account),
     groupBy,

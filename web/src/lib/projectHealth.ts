@@ -10,6 +10,7 @@ import { openCount } from './views'
 import { projectFlowOf } from './flow'
 import { inMaintenance } from './reviewCadence'
 import { progressPart, showsProgress } from './progress'
+import { keptIds } from './subtasks'
 
 /**
  * The health words, most urgent first (design D2): the first rule that holds decides.
@@ -55,7 +56,7 @@ export interface ProjectSummary {
 }
 
 type HealthTask = Pick<Task, 'id' | 'title' | 'project_id' | 'completed_at' | 'deleted_at' | 'due' | 'series_id' | '_clock'>
-  & Partial<Pick<Task, 'deadline' | 'skipped' | 'sample' | 'start'>>
+  & Partial<Pick<Task, 'deadline' | 'skipped' | 'sample' | 'start' | 'parent_id'>>
 type HealthProject = Pick<Project, 'id' | 'parent_id' | 'archived' | 'deleted_at' | '_clock'> & Partial<Pick<Project, 'flow_mode' | 'status' | 'reusable'>>
 
 export interface HealthInput {
@@ -111,8 +112,10 @@ export function summarizeProjects(input: HealthInput): Map<string, ProjectSummar
     children.set(p.parent_id, list)
   }
   const byProject = new Map<string, HealthTask[]>()
+  // A kept subtask is no open work (keep-open-subtasks D3).
+  const kept = keptIds(input.tasks)
   for (const task of input.tasks) {
-    if (!task.project_id || !ids.has(task.project_id) || !counts(task)) continue
+    if (!task.project_id || !ids.has(task.project_id) || !counts(task) || kept.has(task.id)) continue
     const list = byProject.get(task.project_id) ?? []
     list.push(task)
     byProject.set(task.project_id, list)

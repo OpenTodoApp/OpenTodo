@@ -4,7 +4,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
 import { lineageRows, lineageScan } from './lineageRows'
-import { completeTask, createTask, getDeviceId, resetDeviceId } from './ops'
+import { completeTask, createTask, createTasks, getDeviceId, resetDeviceId } from './ops'
 import { skipOccurrence } from './undoActions'
 import type { Task } from './types'
 
@@ -40,7 +40,10 @@ const sorted = (rows: Task[]) => rows.map((t) => t.id).sort()
 
 describe('lineageRows', () => {
   it('completing and skipping a repeating task read a handful of rows among many tasks', async () => {
-    for (let i = 0; i < 300; i++) await createTask({ title: `Task ${i}` })
+    // One batch through the op log: 300 createTask calls were 300 transactions, about
+    // 35 s on a busy machine, past the test timeout, for rows the test only counts past.
+    await createTasks(Array.from({ length: 300 }, (_, i) => ({ title: `Task ${i}` })))
+    expect(await db.tasks.count()).toBe(300)
     const daily = await createTask({ title: 'Water the plants', due: { date: TODAY }, recurrence: 'every day' })
     const weekly = await createTask({ title: 'Review', due: { date: TODAY }, recurrence: 'every week' })
 

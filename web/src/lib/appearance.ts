@@ -7,6 +7,7 @@
 // The custom accent (accent-colour) is a picked colour whose derived values are set
 // as inline properties on the root; the derivation itself loads lazily.
 import { ACCENTS, CUSTOM_ACCENT, DARK_BAR, DEFAULT_ACCENT, isAccent, type AccentId, type ThemeAccent } from '../ui/tokens/accents'
+import type { FeatureId } from './features'
 import { mutate } from './ops'
 import type { ThemeModePref, UserPrefs } from './types'
 import { USER_PREFS_ID } from './userPrefs'
@@ -23,6 +24,14 @@ export const THEME_MODES: readonly ThemeModePref[] = ['system', 'light', 'dark']
  */
 export const PROMOTABLE = ['loop', 'next', 'waiting', 'anytime', 'someday', 'assigned', 'completed', 'feed', 'trash', 'filter', 'focus', 'habits'] as const
 export type Promotable = (typeof PROMOTABLE)[number]
+
+/** The workspace feature of a destination that has one (workspace-feature-switches D4); the others are always on. */
+const DESTINATION_FEATURES: Partial<Record<string, FeatureId>> = { calendar: 'calendar', focus: 'focus', habits: 'habits' }
+
+/** The destinations among `ids` whose feature the current workspace allows (`on`); stored promotions are not touched. */
+export function destinationsIn<T extends string>(ids: readonly T[], on: (id: FeatureId | null | undefined) => boolean): T[] {
+  return ids.filter((id) => on(DESTINATION_FEATURES[id]))
+}
 
 /** Row density (appearance-preferences "Density preference"); unknown stored values read as comfortable. */
 export const DENSITIES = ['comfortable', 'compact'] as const
