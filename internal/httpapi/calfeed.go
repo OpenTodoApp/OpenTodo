@@ -15,6 +15,7 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/audit"
 	"github.com/OpenTodoApp/opentodo/internal/calfeed"
+	"github.com/OpenTodoApp/opentodo/internal/calsync"
 	"github.com/OpenTodoApp/opentodo/internal/freetime"
 	ob "github.com/OpenTodoApp/opentodo/internal/outbound"
 	"github.com/OpenTodoApp/opentodo/internal/textutil"
@@ -260,6 +261,11 @@ func (s *Server) handleCalendarEvents(w http.ResponseWriter, r *http.Request) {
 		}
 		subs = append(subs, more...)
 	}
+	managedInfo, err := s.decorateManaged(r.Context(), uid, events, managed)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
 	type subInfo struct {
 		ID            string `json:"id"`
 		Name          string `json:"name"`
@@ -268,12 +274,55 @@ func (s *Server) handleCalendarEvents(w http.ResponseWriter, r *http.Request) {
 		LastSuccessAt *int64 `json:"lastSuccessAt"`
 		// Managed is a calendar sync connection's calendar, not a subscription.
 		Managed bool `json:"managed,omitempty"`
+		*managedSub
 	}
 	info := []subInfo{}
 	for i, sub := range subs {
-		info = append(info, subInfo{sub.ID, sub.Name, sub.Color, sub.Enabled, sub.LastSuccessAt, i >= own})
+		info = append(info, subInfo{sub.ID, sub.Name, sub.Color, sub.Enabled, sub.LastSuccessAt, i >= own, managedInfo[sub.ID]})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"events": events, "subscriptions": info})
+}
+
+// managedSub is what the events route adds to a connected calendar's
+// subscription entry (calendar-event-edits D4).
+type managedSub struct {
+	ConnectionID string       `json:"connectionId"`
+	CalendarURL  string       `json:"calendarUrl"`
+	Caps         calsync.Caps `json:"caps"`
+	EditEvents   bool         `json:"editEvents"`
+}
+
+// decorateManaged sets rev, access and changedBy on the events of connected
+// calendars and returns their subscriptions' connection and capabilities.
+func (s *Server) decorateManaged(ctx context.Context, uid string, events []calfeed.EventRow, managed bool) (map[string]*managedSub, error) {
+	out := map[string]*managedSub{}
+	if !managed {
+		return out, nil
+	}
+	conns, err := s.calsync.Store.List(ctx, uid)
+	if err != nil {
+		return nil, err
+	}
+	for i := range conns {
+		c := &conns[i]
+		m, err := s.calWorker.Store.ManagedOf(ctx, c.ID)
+		if err != nil {
+			return nil, err
+		}
+		for url, mc := range m {
+			caps := calsync.Caps{}
+			if cal := c.Calendar(url); cal != nil {
+				caps = cal.CapsOf()
+			}
+			out[mc.SubscriptionID] = &managedSub{ConnectionID: c.ID, CalendarURL: url, Caps: caps, EditEvents: c.EditEvents}
+		}
+	}
+	rows := make([]*calfeed.EventRow, len(events))
+	for i := range events {
+		rows[i] = &events[i]
+	}
+	calsync.Decorate(rows, conns)
+	return out, nil
 }
 
 func (s *Server) handleGetFeed(w http.ResponseWriter, r *http.Request) {

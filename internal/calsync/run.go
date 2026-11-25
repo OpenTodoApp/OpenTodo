@@ -157,7 +157,7 @@ func (w *Worker) Rediscover(ctx context.Context, c *Connection) error {
 		if err != nil {
 			return err
 		}
-		return w.Store.SaveDiscovery(ctx, c, "", w.GraphBase, acct.Calendars)
+		return w.Store.SaveDiscovery(ctx, c, &Discovery{Home: w.GraphBase, Calendars: acct.Calendars})
 	}
 	dav, err := w.Client(ctx, c)
 	if err != nil {
@@ -171,7 +171,7 @@ func (w *Worker) Rediscover(ctx context.Context, c *Connection) error {
 	if err != nil {
 		return err
 	}
-	return w.Store.SaveDiscovery(ctx, c, d.Principal, d.Home, d.Calendars)
+	return w.Store.SaveDiscovery(ctx, c, d)
 }
 
 // RememberToken caches a Google access token just obtained (the callback).

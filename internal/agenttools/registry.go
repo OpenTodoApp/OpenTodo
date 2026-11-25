@@ -213,6 +213,8 @@ type Registry struct {
 	routines Routines
 	// events reads calendar events for find_free_time (nil: none counted).
 	events EventSource
+	// eventEditor serves the calendar event tools (calendar-event-edits); nil: unavailable.
+	eventEditor EventEditor
 }
 
 // Options configure a Registry.

@@ -54,6 +54,9 @@ const (
 	// server address, username, password, token or a calendar's name.
 	CalendarConnectionCreatedName Name = "calendar_connection.created"
 	CalendarConnectionUpdatedName Name = "calendar_connection.updated"
+	// CalendarEventChangedName: an event of a connected calendar changed or
+	// deleted from OpenTodo (calendar-event-edits D4), never its title.
+	CalendarEventChangedName      Name = "calendar_event.changed"
 	CalendarConnectionDeletedName Name = "calendar_connection.deleted"
 	// OAuth clients for the MCP endpoint (mcp-oauth): the client id and scope
 	// only, never its secret, a code or a refresh token.
@@ -167,7 +170,7 @@ var Names = []Name{
 	CalendarFeedCreatedName, CalendarFeedRotatedName, CalendarFeedRevokedName,
 	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
 	IssueConnectionCreatedName, IssueConnectionUpdatedName, IssueConnectionDeletedName,
-	CalendarConnectionCreatedName, CalendarConnectionUpdatedName, CalendarConnectionDeletedName,
+	CalendarConnectionCreatedName, CalendarConnectionUpdatedName, CalendarConnectionDeletedName, CalendarEventChangedName,
 	MCPOAuthClientCreatedName, MCPOAuthClientDeletedName, MCPOAuthGrantedName, MCPOAuthRevokedName, MCPOAuthRefreshReusedName, MCPOAuthDisconnectedName,
 	NotificationChannelCreatedName, NotificationChannelUpdatedName, NotificationChannelDeletedName,
 	InvitationCreatedName, InvitationAcceptedName, InvitationRevokedName,
@@ -208,7 +211,7 @@ var PersonalNames = []Name{
 	CalendarFeedCreatedName, CalendarFeedRotatedName, CalendarFeedRevokedName,
 	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
 	IssueConnectionCreatedName, IssueConnectionUpdatedName, IssueConnectionDeletedName,
-	CalendarConnectionCreatedName, CalendarConnectionUpdatedName, CalendarConnectionDeletedName,
+	CalendarConnectionCreatedName, CalendarConnectionUpdatedName, CalendarConnectionDeletedName, CalendarEventChangedName,
 	NotificationChannelCreatedName, NotificationChannelUpdatedName, NotificationChannelDeletedName,
 	MCPOAuthDisconnectedName,
 	IdentityLinkedName, IdentityUnlinkedName,
@@ -276,6 +279,7 @@ var allowedDetailKeys = map[string]bool{
 	"to":                true, // new value of a setting or role
 	"provider":          true, // identity provider name, or github | gitlab for an issue connection
 	"connection_id":     true, // id of an issue or calendar connection (never its host, username or secret)
+	"event_action":      true, // updated | deleted | undone, for an event of a connected calendar (calendar-event-edits)
 	// OAuth clients (mcp-oauth): the client's id, never its secret or a token it
 	// was given, and never a client name it chose for itself.
 	"oauth_client_id": true,
@@ -516,6 +520,16 @@ func CalendarConnectionCreated(userID, connID, provider string) Event {
 // reconnected; a comma-separated list when several did), never a value.
 func CalendarConnectionUpdated(userID, connID, provider, setting string) Event {
 	return ev(CalendarConnectionUpdatedName, Success, userID, "", "connection_id", connID, "provider", provider, "setting", setting)
+}
+
+// CalendarEventChanged records an event of a connected calendar changed,
+// deleted or restored from OpenTodo: the connection, the provider, the
+// action and, for an assistant's change, its token; never a title or time.
+func CalendarEventChanged(userID, connID, provider, action, tokenID string) Event {
+	if tokenID != "" {
+		return ev(CalendarEventChangedName, Success, userID, "", "connection_id", connID, "provider", provider, "event_action", action, "token_id", tokenID)
+	}
+	return ev(CalendarEventChangedName, Success, userID, "", "connection_id", connID, "provider", provider, "event_action", action)
 }
 
 // CalendarConnectionDeleted records a deleted calendar connection (its secret removed).

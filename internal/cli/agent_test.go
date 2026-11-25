@@ -664,7 +664,8 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 	for _, sp := range cmdSpecs {
 		// The vault plans its own sync ops (vault_report.planned), covered by
 		// TestVaultDryRun.
-		if sp.Writes && !covered[sp.Name] && !strings.HasPrefix(sp.Name, "vault ") {
+		// Calendar event edits need a connected calendar: TestCalendarCommands.
+		if sp.Writes && !covered[sp.Name] && !strings.HasPrefix(sp.Name, "vault ") && !strings.HasPrefix(sp.Name, "calendar event ") {
 			t.Errorf("write command %q not covered by the dry-run test", sp.Name)
 		}
 	}

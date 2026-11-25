@@ -24,7 +24,7 @@ export function DayMenu({ cell, label, onPick, onNote, trigger, triggerClassName
     item('tiny', t('Tiny version'), 'tiny'),
     item('skipped', t('Skipped'), 'skipped'),
     ...(cell.state !== 'missed' ? [{ kind: 'action' as const, id: 'clear', label: t('Clear'), icon: 'x' as const, onSelect: () => onPick('clear') }] : []),
-    ...(onNote ? [{ kind: 'action' as const, id: 'note', label: t('Note'), icon: 'pencil' as const, onSelect: onNote }] : []),
+    ...(onNote ? [{ kind: 'action' as const, id: 'note', label: t('Note…'), icon: 'pencil' as const, onSelect: onNote }] : []),
   ]
   return (
     <ActionMenu label={label} title={label} groups={[{ items }]} align="start" width="sm:w-48"

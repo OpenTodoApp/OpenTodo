@@ -10,9 +10,10 @@ import { t } from '../../lib/i18n'
 import type { PlacedFrame } from '../../lib/frames'
 import { slotCapacity, slotCount, slotName } from '../../lib/slots'
 import type { PlacedBlock, Overflow } from '../../lib/layout'
-import type { CalendarEvent, CalendarSubscription, Task } from '../../lib/types'
+import type { CalendarEvent, CalendarSubscription, EventCommand, Task } from '../../lib/types'
 import { Button, Icon, Tooltip, TruncatedText, type HueName } from '../../ui'
-import { EventBlockView, EventChip } from '../CalendarEvents'
+import { EventChip } from '../CalendarEvents'
+import { EventBlockView } from './EventBlock'
 import type { useCalendarDrag } from '../calendarDrag'
 import { ALL_DAY_CAP, toggleAllDay, useAllDayExpanded } from './allDayExpanded'
 import { laneShape, setLaneFold, useLaneFold } from './laneFold'
@@ -191,8 +192,10 @@ export interface ReplanGhosts {
   movesTo: Map<string, number>
 }
 
-export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, taskMap, hueOf, projectionHue, subMap, zone, selectedId, draggingId, slotDrop = null, expanded, setExpanded, preview, replan, frames, gestures, onTapTime, onSelect, onOpen, onDragStart }: {
+export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, taskMap, hueOf, projectionHue, subMap, zone, selectedId, draggingId, slotDrop = null, expanded, setExpanded, preview, replan, frames, gestures, onTapTime, onSelect, onOpen, onDragStart, eventCommands }: {
   day: DayData
+  /** Queued changes of events by event id (calendar-event-edits D6): a block draws its own as saving. */
+  eventCommands?: Map<string, EventCommand>
   /** The day's frame occurrences (calendar-frames D3): background bands below every block. */
   frames?: readonly PlacedFrame[]
   prefs: GridPrefs
@@ -261,8 +264,9 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
       {day.layout.blocks.filter((b) => !b.hidden).map((b) => {
         const ev = day.events.get(b.id)
         if (ev) {
-          return <EventBlockView key={b.id} block={ev} lane={b.lane} lanes={b.lanes} overlap={b.overlap} pxPerMinute={PX_PER_MIN}
-            minHeight={MIN_BLOCK_MINUTES * PX_PER_MIN} sub={subMap.get(ev.event.subscriptionId)} zone={zone} />
+          return <EventBlockView key={b.id} block={ev} date={day.date} lane={b.lane} lanes={b.lanes} overlap={b.overlap} pxPerMinute={PX_PER_MIN}
+            minHeight={MIN_BLOCK_MINUTES * PX_PER_MIN} sub={subMap.get(ev.event.subscriptionId)} zone={zone} selected={selectedId === b.id}
+            dragging={draggingId === b.id} command={eventCommands?.get(ev.event.id)} onDragStart={onDragStart} onSelect={onSelect} />
         }
         const pj = day.projected.get(b.id)
         if (pj) {

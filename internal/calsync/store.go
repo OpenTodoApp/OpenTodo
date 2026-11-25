@@ -27,18 +27,22 @@ func (s *Store) SetClock(now func() time.Time) { s.now = now }
 const connColumns = `id, user_id, provider, name, server_url, username, principal_url, home_url, calendars, target_url, read_urls,
 	include_date_only, sync_token, ctag, enabled, next_sync_at, backoff_seconds, last_sync_at, last_success_at, last_error,
 	last_error_at, COALESCE(stopped_reason,''), last_run, created_at, updated_at,
-	COALESCE((SELECT scope FROM calsync_scopes WHERE connection_id = calsync_connections.id), '')`
+	COALESCE((SELECT scope FROM calsync_scopes WHERE connection_id = calsync_connections.id), ''),
+	(SELECT assistants FROM calsync_event_edit WHERE connection_id = calsync_connections.id),
+	COALESCE((SELECT json_group_array(address) FROM calsync_account_addresses WHERE connection_id = calsync_connections.id), '[]')`
 
 func scanConn(row interface{ Scan(...any) error }) (*Connection, error) {
 	var c Connection
-	var cals, reads, run, scope string
+	var cals, reads, run, scope, addrs string
 	var dateOnly, enabled int
-	var lastSync, lastSuccess, lastErrAt sql.NullInt64
+	var lastSync, lastSuccess, lastErrAt, edits sql.NullInt64
 	if err := row.Scan(&c.ID, &c.UserID, &c.Provider, &c.Name, &c.ServerURL, &c.Username, &c.PrincipalURL, &c.HomeURL, &cals, &c.TargetURL, &reads,
 		&dateOnly, &c.SyncToken, &c.CTag, &enabled, &c.NextSyncAt, &c.BackoffSeconds, &lastSync, &lastSuccess, &c.LastError,
-		&lastErrAt, &c.StoppedReason, &run, &c.CreatedAt, &c.UpdatedAt, &scope); err != nil {
+		&lastErrAt, &c.StoppedReason, &run, &c.CreatedAt, &c.UpdatedAt, &scope, &edits, &addrs); err != nil {
 		return nil, err
 	}
+	c.EditEvents, c.AssistantEdits = edits.Valid, edits.Valid && edits.Int64 == 1
+	_ = json.Unmarshal([]byte(addrs), &c.Addresses)
 	c.IncludeDateOnly, c.Enabled = dateOnly == 1, enabled == 1
 	c.Scope = syncscope.Parse(scope)
 	c.LastSyncAt, c.LastSuccessAt, c.LastErrorAt = nullInt(lastSync), nullInt(lastSuccess), nullInt(lastErrAt)
@@ -151,6 +155,9 @@ func (s *Store) Create(ctx context.Context, c *Connection) (*Connection, error) 
 		c.ID, c.UserID, c.Provider, c.Name, c.ServerURL, c.Username, c.PrincipalURL, c.HomeURL, jsonText(nonNilCals(c.Calendars)), now, now, now); err != nil {
 		return nil, err
 	}
+	if err := saveAddresses(ctx, tx, c.ID, c.Addresses); err != nil {
+		return nil, err
+	}
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
@@ -167,7 +174,11 @@ func nonNilCals(l []Calendar) []Calendar {
 // SaveDiscovery records a new discovery: the principal, home and calendars. A
 // target or read calendar that is gone is dropped (the target then has to be
 // chosen again).
-func (s *Store) SaveDiscovery(ctx context.Context, c *Connection, principal, home string, cals []Calendar) error {
+func (s *Store) SaveDiscovery(ctx context.Context, c *Connection, d *Discovery) error {
+	principal, home, cals := d.Principal, d.Home, d.Calendars
+	if err := s.SetAddresses(ctx, c.ID, d.Addresses); err != nil {
+		return err
+	}
 	known := map[string]bool{}
 	for _, cal := range cals {
 		known[cal.URL] = true
@@ -196,6 +207,10 @@ type Patch struct {
 	Enabled         *bool
 	// Scope is a normalized scope (syncscope.Normalize).
 	Scope *syncscope.Scope
+	// EditEvents and AssistantEdits are the event edit options
+	// (calendar-event-edits D12); turning EditEvents off turns both off.
+	EditEvents     *bool
+	AssistantEdits *bool
 }
 
 // Update applies a patch. A new scope makes the connection due now; a new target forgets the old calendar's links, sync
@@ -257,6 +272,9 @@ func (s *Store) Update(ctx context.Context, userID, id string, p Patch) (*Connec
 				set = append(set, "stopped_reason = NULL")
 			}
 		}
+	}
+	if err := saveEditOptions(ctx, tx, id, cur, p); err != nil {
+		return nil, err
 	}
 	if due {
 		set = append(set, "next_sync_at = ?", "backoff_seconds = 0")

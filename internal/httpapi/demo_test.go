@@ -601,6 +601,10 @@ func TestDemoRestrictedRoutes(t *testing.T) {
 		{"GET", "/api/v1/calendar-feeds/events?from=2026-10-01&to=2026-10-07"},
 		{"GET", "/feeds/otfeed_x/tasks.ics"},
 		{"PUT", "/api/v1/settings/calendar-feeds"},
+		// Event edits of connected calendars (calendar-event-edits): every route.
+		{"PATCH", "/api/v1/calendar-sync/connections/x/events/y"},
+		{"DELETE", "/api/v1/calendar-sync/connections/x/events/y?rev=r"},
+		{"POST", "/api/v1/calendar-sync/connections/x/events/y/undo"},
 		// Issue connections (issue-import 4.3): every method, before authentication.
 		{"POST", "/api/v1/issues/connections"},
 		{"GET", "/api/v1/issues/connections"},

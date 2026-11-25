@@ -171,6 +171,10 @@ func scanWords(words []string) *compState {
 			}
 		case st.spec == nil:
 			if st.spec = findSpecOrAlias(st.top + " " + w); st.spec == nil {
+				if hasSubcommands(st.top + " " + w) {
+					st.top += " " + w // a third level: ot calendar event edit
+					continue
+				}
 				st.unknown = true
 				return st
 			}
@@ -261,8 +265,16 @@ func commandCandidates() []compItem {
 
 func subcommandCandidates(top string) []compItem {
 	var out []compItem
+	seen := map[string]bool{}
 	for _, sp := range cmdSpecs {
 		if sub, ok := strings.CutPrefix(sp.Name, top+" "); ok {
+			if group, _, nested := strings.Cut(sub, " "); nested {
+				if !seen[group] {
+					seen[group] = true
+					out = append(out, compItem{group, ""})
+				}
+				continue
+			}
 			out = append(out, compItem{sub, sp.Summary})
 			for _, al := range sp.Aliases {
 				if s, ok := strings.CutPrefix(al, top+" "); ok {

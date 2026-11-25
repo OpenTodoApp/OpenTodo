@@ -109,7 +109,7 @@ func (s *Server) handleCreateCalendarConnection(w http.ResponseWriter, r *http.R
 		}
 	}
 	c, err := s.calsync.Store.Create(r.Context(), &calsync.Connection{UserID: uid, Provider: calsync.ProviderCalDAV, Name: name, ServerURL: base,
-		Username: in.Username, PrincipalURL: d.Principal, HomeURL: d.Home, Calendars: d.Calendars})
+		Username: in.Username, PrincipalURL: d.Principal, HomeURL: d.Home, Calendars: d.Calendars, Addresses: d.Addresses})
 	if errors.Is(err, calsync.ErrLimit) {
 		writeError(w, http.StatusConflict, "limit_reached", fmt.Sprintf("you can connect at most %d calendar accounts", calsync.MaxConnections))
 		return
@@ -140,6 +140,10 @@ type calendarPatch struct {
 	// ProjectCalendars replaces the project-to-calendar matches
 	// (calsync-project-calendars); {} is one calendar again.
 	ProjectCalendars *map[string]string `json:"project_calendars"`
+	// EditEvents and AssistantEdits are the event edit options
+	// (calendar-event-edits D12).
+	EditEvents     *bool `json:"edit_events"`
+	AssistantEdits *bool `json:"assistant_edits"`
 }
 
 // patchOf checks a patch against the connection's calendars; it returns the
@@ -193,6 +197,16 @@ func patchOf(c *calsync.Connection, in calendarPatch) (calsync.Patch, []string, 
 		}
 		p.Scope = &scope
 		changed = append(changed, "scope")
+	}
+	p.EditEvents, p.AssistantEdits = in.EditEvents, in.AssistantEdits
+	if _, _, err := calsync.EditOptions(c, p); err != nil {
+		return p, nil, "assistant_edits", "turn on Edit events in OpenTodo first"
+	}
+	if in.EditEvents != nil {
+		changed = append(changed, "edit_events")
+	}
+	if in.AssistantEdits != nil {
+		changed = append(changed, "assistant_edits")
 	}
 	return p, changed, "", ""
 }
@@ -275,7 +289,7 @@ func (s *Server) newCalendarPassword(w http.ResponseWriter, r *http.Request, c *
 		s.internal(w, err)
 		return false
 	}
-	if err := s.calsync.Store.SaveDiscovery(ctx, c, d.Principal, d.Home, d.Calendars); err != nil {
+	if err := s.calsync.Store.SaveDiscovery(ctx, c, d); err != nil {
 		s.internal(w, err)
 		return false
 	}
@@ -478,7 +492,7 @@ func (s *Server) finishGoogle(ctx context.Context, uid string, st *calsync.OAuth
 		if err != nil {
 			return "", "not_found"
 		}
-		if s.calsync.Secrets.Set(c.ID, tok.Refresh) != nil || s.calsync.Store.SaveDiscovery(ctx, c, d.Principal, d.Home, d.Calendars) != nil ||
+		if s.calsync.Secrets.Set(c.ID, tok.Refresh) != nil || s.calsync.Store.SaveDiscovery(ctx, c, d) != nil ||
 			s.calsync.Store.Resume(ctx, c.ID) != nil {
 			return c.ID, "internal_error"
 		}
@@ -488,7 +502,7 @@ func (s *Server) finishGoogle(ctx context.Context, uid string, st *calsync.OAuth
 		return c.ID, "connected"
 	}
 	c, err := s.calsync.Store.Create(ctx, &calsync.Connection{UserID: uid, Provider: calsync.ProviderGoogle, Name: "Google Calendar",
-		ServerURL: calsync.GoogleCalDAV, PrincipalURL: d.Principal, HomeURL: d.Home, Calendars: d.Calendars})
+		ServerURL: calsync.GoogleCalDAV, PrincipalURL: d.Principal, HomeURL: d.Home, Calendars: d.Calendars, Addresses: d.Addresses})
 	if errors.Is(err, calsync.ErrLimit) {
 		return "", "limit_reached"
 	}

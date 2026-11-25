@@ -27,6 +27,9 @@
    { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" },
    { "file": "web/src/app/EstimateField.tsx", "contains": "aria-label={t('Estimate')}" }
   ] },
+  { "id": "calendar-event", "what": "An event of a connected calendar in Day and Week, when editing events is on for its connection: move it to another time or day, or resize its start or end.", "alternatives": [
+   { "file": "web/src/app/calendar/EventEditor.tsx", "contains": "data-event-edit" }
+  ] },
   { "id": "calendar-lane-task", "what": "An all-day task in the calendar's day lane: drag to another day or into the hours.", "alternatives": [
    { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" }
   ] },

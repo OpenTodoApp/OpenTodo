@@ -80,7 +80,7 @@ export function contextualMoveItems(task: Task, groups: readonly ListGroup[], me
   const contextParent = task.parent_id
   const parents = eligible.flatMap((group) => group.rows.filter((r) => contextualParent(task, r, group, members, taskMap))
     .map((r) => ({ task: r.task, group })))
-  const reparent = t('Move under task…')
+  const reparent = t('Move under task')
   const promote = t('Make top-level for today')
   return [
     { kind: 'picker', id: 'today-reparent-context', label: reparent, icon: 'corner-down-right', disabled: parents.length === 0,
