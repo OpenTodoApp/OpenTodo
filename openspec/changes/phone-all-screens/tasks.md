@@ -14,7 +14,7 @@
 
 - [x] 3.1 The layout and accessibility check with `PHONE_UI=1` over the whole inventory below 768 px (design D5). Verify: Chromium at 360 and 390 px, light and dark, prints `LAYOUT OK`; the CI step runs every screen. Done: 116 screens and overlays in each of the four combinations.
 - [x] 3.2 The page menu comparison for five screens that are not lists; `scripts/e2e-phone.mjs` with a saved view and Next. Verify: both pass. Done: five screens compared in `phoneAllScreens.test.tsx`; `e2e-phone` opens Labels and Next (a saved view is not in it).
-- [ ] 3.3 Stories for `PhoneChrome` around two screens and for `PhoneTaskRow`; baselines. Verify: `node scripts/ui-check.mjs`; the UI check in the full CI run.
+- [x] 3.3 Stories for `PhoneChrome` around two screens and for `PhoneTaskRow`; baselines. Verify: `node scripts/ui-check.mjs`; the UI check in the full CI run. Done: the stories and their baselines; the full CI run 45599574701 passes (29 jobs, Chromium; WebKit runs nightly).
 
 ## 4. The whole
 
