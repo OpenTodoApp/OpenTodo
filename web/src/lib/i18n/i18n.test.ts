@@ -141,6 +141,27 @@ describe('locale resolution (D4)', () => {
     expect(t('{n, plural, one {# task} other {# tasks}}', { n: 1234 })).toBe('1,234件のタスク')
   })
 
+  it('resolves Arabic, sets lang to ar, turns the page right to left and keeps Western digits (arabic-rtl)', async () => {
+    expect(resolveLanguage('system', ['ar-EG', 'en'])).toBe('ar')
+    expect(intlLocale('system', ['ar-EG'])).toBe('ar-EG-u-nu-latn')
+    expect(intlLocale('ar', ['en-US'])).toBe('ar-u-nu-latn')
+    document.documentElement.dir = 'ltr'
+    await applyLanguagePreference('ar', ['en-US'])
+    expect(currentLanguage()).toBe('ar')
+    expect(document.documentElement.lang).toBe('ar')
+    expect(document.documentElement.dir).toBe('rtl')
+    expect(t('Inbox')).toBe('الوارد')
+    const days = '{n, plural, one {# day} other {# days}}'
+    expect(t(days, { n: 1 })).toBe('يوم واحد')
+    expect(t(days, { n: 2 })).toBe('يومان')
+    expect(t(days, { n: 3 })).toBe('3 أيام')
+    expect(t(days, { n: 11 })).toBe('11 يومًا')
+    expect(t(days, { n: 100 })).toBe('100 يوم')
+    expect(t(days, { n: 1234 })).toMatch(/^1.234 يومًا$/)
+    await applyLanguagePreference('en', ['en-US'])
+    expect(document.documentElement.dir).toBe('ltr')
+  })
+
   it('resolves Turkish and loads its catalog offline', async () => {
     expect(resolveLanguage('system', ['tr-TR', 'en'])).toBe('tr')
     expect(intlLocale('tr', ['en-US', 'tr-TR'])).toBe('tr-TR')

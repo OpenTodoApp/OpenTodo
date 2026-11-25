@@ -32,6 +32,14 @@ describe('browser-check.js', () => {
     expect(note?.querySelector('h1')?.textContent).toBe('此浏览器版本过旧，无法运行 OpenTodo')
   })
 
+  it('reads right to left in Arabic (arabic-rtl)', () => {
+    const note = run(false, 'ar-EG', 'Mozilla/5.0 Chrome/90.0.4430.0')
+    expect(note?.getAttribute('dir')).toBe('rtl')
+    expect(note?.getAttribute('lang')).toBe('ar')
+    expect(note?.querySelector('h1')?.textContent).toBe('هذا المتصفح أقدم من أن يشغّل OpenTodo')
+    expect(note?.textContent).toContain('Chrome 90.0.4430.0')
+  })
+
   it('falls back to English and is not added twice', () => {
     run(false, 'sv-SE', 'Mozilla/5.0 Firefox/91.0')
     new Function(script)()

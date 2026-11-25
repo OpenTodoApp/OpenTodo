@@ -157,6 +157,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `more-languages` | Dutch, quick add in Dutch, and a kit for community languages | Shipped in 1.5 |
 | `simplified-chinese` | Simplified Chinese (简体中文) | Shipped in 0.23 |
 | `japanese` | Japanese (日本語) as a community language, reviewed by a native speaker | In progress (8 of 9) |
+| `arabic-rtl` | Arabic (العربية) as a community language, and the app laid out right to left | In progress (16 of 17) |
 | `priority-names` | Rename the four priorities | Shipped in 1.4 |
 
 ## 1.0 "Trust"

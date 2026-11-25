@@ -93,7 +93,7 @@ export function RecoveryCodesView(p: RecoveryCodesViewProps) {
 function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void }) {
   const [acknowledged, setAcknowledged] = useState(false)
   const [copied, setCopied] = useState(false)
-  const text = `${t('OpenTodo recovery codes ({host})', { host: location.host })}\n${t('Each code works once.')}\n\n${codes.join('\n')}\n`
+  const text = `${t.plain('OpenTodo recovery codes ({host})', { host: location.host })}\n${t('Each code works once.')}\n\n${codes.join('\n')}\n`
   return (
     <RecoveryCodesView
       codes={codes} acknowledged={acknowledged} copied={copied} onAcknowledge={setAcknowledged} onDone={onDone}

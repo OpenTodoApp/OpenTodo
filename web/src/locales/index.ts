@@ -22,7 +22,7 @@ export const SHIPPED = [
   { code: 'ru', name: 'Русский', community: true },
   // A machine draft by the maintainer's decision (japanese), reviewed by a native speaker before it becomes maintained.
   { code: 'ja', name: '日本語', community: true },
-  // Machine draft by the maintainer's decision (arabic-rtl, #885), reviewed by a native speaker; right to left.
+  // A machine draft by the maintainer's decision (arabic-rtl), to be reviewed by a native speaker before it becomes maintained; right to left.
   { code: 'ar', name: 'العربية', community: true },
 ] as const satisfies readonly ShippedLanguage[]
 
