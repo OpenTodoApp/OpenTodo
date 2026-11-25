@@ -413,7 +413,7 @@ describe('children read as children (ux-feedback-2 D6)', () => {
     const r = await render(<aside data-sidebar><Sidebar route={{ view: 'inbox' }} user={user} /></aside>)
     await waitFor(() => !!r.container.querySelector(`[data-project-row="${q4}"]`))
     const rowOf = (id: string) => r.container.querySelector<HTMLElement>(`[data-project-row="${id}"]`)!
-    expect([work, client, q4, hiring, home].map((id) => rowOf(id).style.paddingLeft)).toEqual(['0rem', '1rem', '2rem', '1rem', '0rem'])
+    expect([work, client, q4, hiring, home].map((id) => rowOf(id).style.paddingInlineStart)).toEqual(['0rem', '1rem', '2rem', '1rem', '0rem'])
     expect([work, client, q4, hiring, home].map((id) => rowOf(id).querySelectorAll('[data-guide-line]').length)).toEqual([0, 1, 2, 1, 0])
     for (const line of r.container.querySelectorAll('[data-guide-line]')) expect(line.getAttribute('aria-hidden')).toBe('true')
     // Hiring ends Work's subtree: 6 px before Home; other rows are 2 px apart.
@@ -433,7 +433,7 @@ describe('children read as children (ux-feedback-2 D6)', () => {
     await waitFor(() => !!r.container.querySelector(`[data-project-row="${ids[4]}"]`))
     const deepest = r.container.querySelector<HTMLElement>(`[data-project-row="${ids[4]}"]`)!
     expect(deepest.querySelectorAll('[data-guide-line]').length).toBe(3)
-    expect(deepest.style.paddingLeft).toBe('3rem')
+    expect(deepest.style.paddingInlineStart).toBe('3rem')
     expect(r.container.querySelector(`[data-project-id="${ids[4]}"]`)!.getAttribute('title')).toBe('L0 › L1 › L2 › L3 › L4')
     await r.unmount()
   })

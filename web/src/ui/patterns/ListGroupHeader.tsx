@@ -14,6 +14,7 @@ import { Icon } from '../Icon'
 import { CatalogueIcon } from '../CatalogueIcon'
 import { ReadAs } from '../Chips'
 import { t } from '../../lib/i18n'
+import { inlineKey } from '../../lib/direction'
 
 export interface ListGroupHeaderProps {
   title: ReactNode
@@ -81,11 +82,11 @@ export function ListGroupHeader({ title, icon, count, countLabel, countTone = 'f
       <H className="flex min-w-0 flex-1 items-center">
         {collapsible ? (
           // Named by its visible title and count (WCAG 2.5.3 Label in Name); aria-expanded says whether it is open.
-          <button type="button" className="flex min-w-0 items-center gap-1.5 rounded-control py-1 pr-1 text-left hover:text-strong"
+          <button type="button" className="flex min-w-0 items-center gap-1.5 rounded-control py-1 pe-1 text-start hover:text-strong"
             aria-expanded={!collapsed} onClick={onToggle} data-group-toggle
             // → opens a closed group and ← closes an open one, as on a tree (sidebar-brand-and-row-grid D8).
             onKeyDown={(e) => {
-              if ((e.key === 'ArrowRight' && collapsed) || (e.key === 'ArrowLeft' && !collapsed)) { e.preventDefault(); e.stopPropagation(); onToggle() }
+              if ((inlineKey(e) === 'ArrowRight' && collapsed) || (inlineKey(e) === 'ArrowLeft' && !collapsed)) { e.preventDefault(); e.stopPropagation(); onToggle() }
             }}>
             <Icon name="chevron-right" size="xs" className={`shrink-0 text-faint transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} />
             {text}

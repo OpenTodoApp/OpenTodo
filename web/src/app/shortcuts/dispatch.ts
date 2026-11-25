@@ -7,6 +7,7 @@
 // it with plain frames and synthetic events.
 import { type Chord, chordKey, chordsOf, matchesChord, physicalShortcutKey, SEQUENCE_STEPS, SHORTCUTS, type Shortcut, type ShortcutScope } from '../../lib/shortcuts'
 import { resettable } from '../../lib/moduleState'
+import { inlineKey } from '../../lib/direction'
 import { createSignal } from '../../lib/store'
 import { isCharacterKey, singleKeysOn } from './singleKeys'
 import { composing } from '../../lib/composeKey'
@@ -250,7 +251,7 @@ export function dispatch(e: KeyboardEvent): boolean {
     if (!frame.capture || !frame.any || !focusInside(frame)) continue
     if (frame.any(e) === true) { clearPrefix(); return true }
   }
-  if (resolve(e, e.key, active, pend, typing, dialog)) return true
+  if (resolve(e, inlineKey(e), active, pend, typing, dialog)) return true
   const fallback = physicalShortcutKey(e)
   if (fallback && resolve(e, fallback, active, pend, typing, dialog)) return true
   if (!pend.length) return false

@@ -26,10 +26,10 @@ export function CheckIns({ series, rows, today }: { series: Task; rows: readonly
         {all.slice(0, shown).map((c) => (
           <li key={c.record.id} className="py-2" data-check-in-entry={c.date}>
             <button type="button" onClick={() => openDayNote(series.id, c.date)}
-              className="group flex w-full items-center gap-2 rounded-chip text-left text-meta text-muted hover:text-default focus-visible:outline-2 focus-visible:outline-focus">
+              className="group flex w-full items-center gap-2 rounded-chip text-start text-meta text-muted hover:text-default focus-visible:outline-2 focus-visible:outline-focus">
               <span className="text-default">{formatDate(c.date, 'full', undefined, today)}</span>
               <span>· {STATE_TEXT[c.state]}</span>
-              <Icon name="pencil" size="xs" className="ml-auto opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" />
+              <Icon name="pencil" size="xs" className="ms-auto opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" />
             </button>
             <Markdown source={c.record.description} taskId={c.record.id} className="mt-1 text-body text-default" />
           </li>

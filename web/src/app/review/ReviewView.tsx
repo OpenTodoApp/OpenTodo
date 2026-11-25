@@ -212,7 +212,7 @@ const STEP_ICONS: Record<StepId, IconName> = { clear: 'inbox', sweep: 'lightbulb
 /** Every step done, or the review just finished: a calm moment of closure before the next week. */
 function AllClear({ finished }: { finished: number | null }) {
   return (
-    <Card className="mb-5 flex flex-col items-center gap-3 text-center sm:flex-row sm:text-left" data-review-all-clear>
+    <Card className="mb-5 flex flex-col items-center gap-3 text-center sm:flex-row sm:text-start" data-review-all-clear>
       <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-success-soft text-on-success-soft">
         <Icon name="circle-check-big" size="lg" />
       </span>

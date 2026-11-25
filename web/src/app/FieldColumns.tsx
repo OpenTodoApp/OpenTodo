@@ -19,7 +19,7 @@ export function FieldColumnsTable({ defs, children }: { defs: readonly FieldDef[
     <div role="table" aria-label={t('Tasks and fields')} className="mb-4 overflow-x-auto" data-field-columns data-scroll-x>
       <div role="rowgroup" className="sticky top-0 z-10 bg-canvas">
         <div role="row" className="grid items-end gap-2 border-b border-default pb-1 text-meta font-semibold text-muted" style={{ gridTemplateColumns: columnsTemplate(defs.length) }}>
-          <span role="columnheader" className="pl-15">{t('Task')}</span>
+          <span role="columnheader" className="ps-15">{t('Task')}</span>
           {defs.map((d) => <span key={d.id} role="columnheader" className="user-text truncate" data-column={d.id}>{d.name}</span>)}
         </div>
       </div>

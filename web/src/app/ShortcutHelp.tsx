@@ -128,7 +128,7 @@ function Rows({ rows, mono = false }: { rows: SheetRow[]; mono?: boolean }) {
             {r.when && <span className="block truncate text-hint text-faint" data-sheet-when>{r.when}</span>}
           </span>
           {mono
-            ? <code className="max-w-[55%] shrink-0 break-words text-right text-meta text-muted">{r.keys.join(' ')}</code>
+            ? <code className="max-w-[55%] shrink-0 break-words text-end text-meta text-muted">{r.keys.join(' ')}</code>
             : <Keys keys={r.keys} className="max-w-[60%] shrink-0" />}
         </li>
       ))}
@@ -175,7 +175,7 @@ export function ShortcutHelp({ onClose, extraSections = [], context, vim = extra
         <div className="gap-x-8 md:columns-2 xl:columns-3">
           {groups.map((g, i) => (
             <section key={g.id} data-help-section={g.title} data-context-section={i < contextCount && !q ? '' : undefined} className="mb-3 break-inside-avoid">
-              <h3 className="mb-1 mt-3 text-hint font-semibold uppercase tracking-wide text-faint">{g.title}{i < contextCount && !q ? <span className="ml-2 font-normal normal-case tracking-normal text-accent">{t('here')}</span> : null}</h3>
+              <h3 className="mb-1 mt-3 text-hint font-semibold uppercase tracking-wide text-faint">{g.title}{i < contextCount && !q ? <span className="ms-2 font-normal normal-case tracking-normal text-accent">{t('here')}</span> : null}</h3>
               <Rows rows={g.rows} />
             </section>
           ))}

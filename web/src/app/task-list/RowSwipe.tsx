@@ -19,6 +19,7 @@ import { beginSwipe, revealed, SWIPE, type SwipeDir } from '../rowSwipe'
 import { showBulkToast } from '../bulk/toastStore'
 import { createStore } from '../../lib/store'
 import { readString, writeString } from '../../lib/deviceStorage'
+import { inlineDelta } from '../../lib/direction'
 
 const EDGE = 'data-swipe-edge'
 
@@ -27,7 +28,7 @@ const movable = (row: HTMLElement) => [...row.children].filter((c): c is HTMLEle
 
 function place(row: HTMLElement, offset: number, animate: boolean) {
   const ease = animate ? `transform ${SWIPE.returnMs}ms var(--ease-calm)` : ''
-  for (const c of movable(row)) { c.style.transition = ease; c.style.transform = offset ? `translateX(${offset}px)` : '' }
+  for (const c of movable(row)) { c.style.transition = ease; c.style.transform = offset ? `translateX(${inlineDelta(offset, row)}px)` : '' }
   const edge = row.querySelector<HTMLElement>(`[${EDGE}]`)
   if (edge) {
     edge.style.transition = animate ? `width ${SWIPE.returnMs}ms var(--ease-calm)` : ''
@@ -96,7 +97,7 @@ export function useRowSwipe({ task, enabled, onComplete, onEditTitle, onSchedule
   const layers = dir && (
     <span aria-hidden="true" {...{ [EDGE]: dir }}
       // The icon over its word, so both fit from the reveal distance (64 px) on.
-      className={`group/edge pointer-events-none absolute inset-y-0 flex w-0 flex-col items-center justify-center gap-0.5 overflow-hidden px-1 text-hint font-medium ${dir === 'right' ? 'left-0 bg-success-soft text-on-success-soft' : 'right-0 bg-accent-soft text-on-accent-soft'}`}>
+      className={`group/edge pointer-events-none absolute inset-y-0 flex w-0 flex-col items-center justify-center gap-0.5 overflow-hidden px-1 text-hint font-medium ${dir === 'right' ? 'inset-s-0 bg-success-soft text-on-success-soft' : 'inset-e-0 bg-accent-soft text-on-accent-soft'}`}>
       {dir === 'left' && canEdit && <Icon name="pencil" size="sm" className="group-data-[full-swipe]/edge:hidden" />}
       <Icon name={dir === 'right' ? (doneTask ? 'rotate-ccw' : 'check') : 'calendar-days'} size="sm"
         className={dir === 'left' && canEdit ? 'hidden group-data-[full-swipe]/edge:block' : undefined} />
@@ -175,7 +176,7 @@ export function RowScheduleSheet({ task, onClose }: { task: Task; onClose: () =>
 function SheetChoice({ id, label, onClick }: { id: string; label: string; onClick: () => void }) {
   return (
     <button type="button" data-schedule-choice={id} onClick={onClick}
-      className="flex min-h-12 items-center rounded-control px-3 text-left text-body hover:bg-sunken dark:hover:bg-raised">
+      className="flex min-h-12 items-center rounded-control px-3 text-start text-body hover:bg-sunken dark:hover:bg-raised">
       {label}
     </button>
   )
@@ -208,7 +209,8 @@ export function useSwipeCue(root: React.RefObject<HTMLElement | null>, enabled: 
       shown.current = true
       writeString(CUE_KEY, '1')
       if (!prefersReducedMotion()) {
-        for (const c of movable(first)) c.animate?.([{ transform: 'translateX(0)' }, { transform: 'translateX(40px)' }, { transform: 'translateX(0)' }], { duration: 400, easing: 'ease-in-out' })
+        const peek = inlineDelta(40, first)
+        for (const c of movable(first)) c.animate?.([{ transform: 'translateX(0)' }, { transform: `translateX(${peek}px)` }, { transform: 'translateX(0)' }], { duration: 400, easing: 'ease-in-out' })
       }
       showBulkToast(t('Swipe right to complete, left to schedule. Also in a task\'s menu.'), null)
     }

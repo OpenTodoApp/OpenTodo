@@ -121,7 +121,7 @@ function ActivityList({ project }: { project: Project }) {
                     </button>
                   </>
                 )}
-                {isPending(e, pending) && <Tooltip label={t('Not yet synced')}><span className="ml-1 rounded-chip italic text-warning" tabIndex={0}>{t('(pending)')}</span></Tooltip>}
+                {isPending(e, pending) && <Tooltip label={t('Not yet synced')}><span className="ms-1 rounded-chip italic text-warning" tabIndex={0}>{t('(pending)')}</span></Tooltip>}
               </span>
               <time className="shrink-0 text-faint" dateTime={new Date(e.ts).toISOString()}>{dt.formatInstant(e.ts, 'datetime')}</time>
             </li>

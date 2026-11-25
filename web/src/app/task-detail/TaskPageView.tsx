@@ -125,7 +125,7 @@ export function TaskPageView({ taskId, userId, readOnly: viewer, projects, label
           </div>
           <TaskRelations m={m} onOpen={onOpen} readOnly={viewer} />
         </div>
-        <aside aria-label={t('Facts')} className="min-w-0 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:sticky lg:top-(--panel-header-h) lg:self-start lg:border-l lg:border-soft lg:pl-8 lg:pt-4 max-lg:rounded-card max-lg:border max-lg:border-default md:max-lg:p-3 max-md:overflow-hidden" data-task-facts>
+        <aside aria-label={t('Facts')} className="min-w-0 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:sticky lg:top-(--panel-header-h) lg:self-start lg:border-s lg:border-soft lg:ps-8 lg:pt-4 max-lg:rounded-card max-lg:border max-lg:border-default md:max-lg:p-3 max-md:overflow-hidden" data-task-facts>
           {/* Below 768 px the facts are one stacked card of 44 px rows (precision-phone D4). */}
           <TaskFacts stacked={!desktop} task={task} userId={userId} readOnly={readOnly} projects={projects} labelMap={labelMap}
             parent={m.parent ?? undefined} childCount={m.children.length} onOpen={onOpen} />

@@ -12,6 +12,7 @@ import { HelpLink } from '../help/HelpLink'
 import { QuickAdd, type QuickAddInput } from '../QuickAdd'
 import { ask } from '../assistant/AskEntry'
 import { MODE_LABEL, PREFIX_OF, type BarMode } from './modes'
+import { inlineKey } from '../../lib/direction'
 
 /** A command's keys at the right of its row (palette-quick-add D5): each alternative as keycaps, a sequence with "then". */
 export function ShortcutKeys({ keys }: { keys: string }) {
@@ -27,10 +28,10 @@ export function ShortcutKeys({ keys }: { keys: string }) {
 export function ModeSwitch({ modes, mode, onMode }: { modes: BarMode[]; mode: BarMode; onMode: (m: BarMode) => void }) {
   const refs = useRef<Record<string, HTMLButtonElement | null>>({})
   const move = (e: React.KeyboardEvent) => {
-    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
+    if (inlineKey(e) !== 'ArrowRight' && inlineKey(e) !== 'ArrowLeft') return
     e.preventDefault()
     const i = modes.indexOf(mode)
-    const next = modes[(i + (e.key === 'ArrowRight' ? 1 : modes.length - 1)) % modes.length]
+    const next = modes[(i + (inlineKey(e) === 'ArrowRight' ? 1 : modes.length - 1)) % modes.length]
     onMode(next)
     refs.current[next]?.focus()
   }
@@ -63,7 +64,7 @@ export function BarFooter({ ask: withAsk }: { ask: boolean }) {
         </span>
         <span className="inline-flex items-center gap-1.5 whitespace-nowrap">{key('Enter')}{t('Run')}</span>
       </span>
-      <span className="hidden min-w-0 flex-1 truncate text-right sm:pointer-fine:block">
+      <span className="hidden min-w-0 flex-1 truncate text-end sm:pointer-fine:block">
         {withAsk
           ? t.rich('Type {add} to add, {commands} for commands, {ask} to ask', { add: key(PREFIX_OF.add), commands: key(PREFIX_OF.commands), ask: key(PREFIX_OF.ask) })
           : t.rich('Type {add} to add, {commands} for commands', { add: key(PREFIX_OF.add), commands: key(PREFIX_OF.commands) })}
@@ -126,7 +127,7 @@ export function AskPanel({ onSent }: { onSent: () => void }) {
     onSent()
   }
   return (
-    <form onSubmit={submit} className="flex items-center gap-2.5 border-b border-default px-4 py-2.5 sm:pr-11" data-bar-ask>
+    <form onSubmit={submit} className="flex items-center gap-2.5 border-b border-default px-4 py-2.5 sm:pe-11" data-bar-ask>
       <Icon name="message-circle" className="shrink-0 text-accent" />
       <input className="ui-input border-transparent bg-transparent px-1 text-prose shadow-none focus:border-transparent focus:ring-0 dark:bg-transparent" autoFocus
         value={text} onChange={(e) => setText(e.target.value)} aria-label={t('Ask the assistant')} placeholder={t('Ask about your tasks…')} enterKeyHint="send" data-bar-ask-input />

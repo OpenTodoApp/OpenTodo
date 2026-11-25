@@ -13,6 +13,7 @@ import type { FieldDef, Label, Project, Section } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { conditionText } from './conditionText'
 import { ConditionEditor } from './ConditionEditor'
+import { inlineKey } from '../../lib/direction'
 
 export interface FilterBuilderProps {
   /** The formula as typed; it may not parse. */
@@ -130,9 +131,9 @@ function GroupBlock({ group, depth, root, tree, commit, onEdit }: GroupProps) {
     const list = e.currentTarget.closest('[data-filter-items]')
     const chips = list ? [...list.querySelectorAll<HTMLButtonElement>(':scope > li > [data-filter-chip] > button[data-chip-open]')] : []
     const i = chips.indexOf(e.currentTarget)
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    if (inlineKey(e) === 'ArrowRight' || e.key === 'ArrowDown' || inlineKey(e) === 'ArrowLeft' || e.key === 'ArrowUp') {
       e.preventDefault()
-      const next = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? Math.min(chips.length - 1, i + 1) : Math.max(0, i - 1)
+      const next = inlineKey(e) === 'ArrowRight' || e.key === 'ArrowDown' ? Math.min(chips.length - 1, i + 1) : Math.max(0, i - 1)
       chips[next]?.focus()
     } else if (e.key === 'Delete' || e.key === 'Backspace') {
       e.preventDefault()
@@ -188,9 +189,9 @@ function Chip({ item, onOpen, onKey, onRemove }: { item: BCondition; onOpen: () 
   const text = conditionText(item.leaf)
   return (
     <span data-filter-chip data-not={item.not || undefined}
-      className="flex min-h-8 w-full items-center gap-1 rounded-control border border-soft bg-raised pl-2.5 pr-0.5 text-meta sm:w-auto pointer-coarse:min-h-11">
+      className="flex min-h-8 w-full items-center gap-1 rounded-control border border-soft bg-raised ps-2.5 pe-0.5 text-meta sm:w-auto pointer-coarse:min-h-11">
       {/* Named by its visible text ("Not" and the condition), so speech and sight agree. */}
-      <button type="button" data-chip-open className="flex min-w-0 flex-1 items-center gap-2 rounded-control py-1 text-left"
+      <button type="button" data-chip-open className="flex min-w-0 flex-1 items-center gap-2 rounded-control py-1 text-start"
         onClick={onOpen} onKeyDown={onKey}>
         {item.not && <span className="shrink-0 rounded-chip bg-danger-soft px-1.5 text-hint font-semibold uppercase text-on-danger-soft">{t('Not')}</span>}
         <span className="min-w-0 truncate">{text}</span>

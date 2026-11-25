@@ -18,7 +18,7 @@ export default function RefusedBanner({ refused }: { refused: Refusal }) {
           {t(REFUSED)} {t(causeMessage(refused.check.cause, refused.ownKey))}{' '}
           <button type="button" className="underline" onClick={() => navigate({ view: 'help', page: SIGNED_UPDATES_PAGE })}>{t(WHAT_TO_DO)}</button>
         </p>
-        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -mr-1 px-1 py-1" aria-label={t('Dismiss')} onClick={dismissRefusal}><Icon name="x" size="xs" /></button>
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -me-1 px-1 py-1" aria-label={t('Dismiss')} onClick={dismissRefusal}><Icon name="x" size="xs" /></button>
       </div>
     </ToastRegion>
   )

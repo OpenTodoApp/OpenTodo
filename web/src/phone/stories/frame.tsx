@@ -43,7 +43,7 @@ export const CHROME_ROOM = '3.5rem'
 export function StoryChrome({ current = 'today' }: { current?: string }) {
   return (
     <>
-      <div aria-hidden className="absolute bottom-[4.5rem] right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-on-accent shadow-3">
+      <div aria-hidden className="absolute bottom-[4.5rem] inset-e-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-on-accent shadow-3">
         <Icon name="plus" size="lg" />
       </div>
       <div aria-hidden className="absolute inset-x-0 bottom-0 z-20 flex border-t border-soft bg-canvas">

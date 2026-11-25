@@ -10,6 +10,7 @@ import { cloneElement, type ReactElement, type ReactNode, useCallback, useEffect
 import { createPortal } from 'react-dom'
 import { focusFromKeyboard } from '../lib/focusSource'
 import { t } from '../lib/i18n'
+import { inlineArrows, isRtl } from '../lib/direction'
 
 export interface TooltipProps {
   /** What the control does, in a few words. */
@@ -44,7 +45,7 @@ export function KeySequence({ keys }: { keys: string }) {
       {steps.map((k, i) => (
         <span key={i} className="inline-flex items-center gap-1">
           {i > 0 && <span className="text-muted">{t('then')}</span>}
-          <kbd className="ui-kbd">{k.length === 1 ? k.toUpperCase() : k}</kbd>
+          <kbd className="ui-kbd">{k.length === 1 ? k.toUpperCase() : inlineArrows(k)}</kbd>
         </span>
       ))}
     </span>
@@ -103,9 +104,11 @@ export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 40
     const vw = document.documentElement.clientWidth, vh = window.innerHeight
     if (side === 'right') {
       // Beside the control (the collapsed sidebar's icon rail); falls back below it at the viewport's edge.
-      const fits = r.right + GAP + w <= vw - 8
+      // Right to left the rail is on the right and the tip goes to its left (arabic-rtl D3).
+      const rtl = isRtl(a)
+      const fits = rtl ? r.left - GAP - w >= 8 : r.right + GAP + w <= vw - 8
       const top = fits ? Math.max(8, Math.min(vh - h - 8, r.top + r.height / 2 - h / 2)) : r.bottom + GAP
-      const left = fits ? r.right + GAP : Math.max(8, Math.min(vw - w - 8, r.left))
+      const left = fits ? (rtl ? r.left - GAP - w : r.right + GAP) : Math.max(8, Math.min(vw - w - 8, r.left))
       setPos({ top, left })
       return
     }

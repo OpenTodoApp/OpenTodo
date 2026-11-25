@@ -159,7 +159,7 @@ export function InlineText({ label, value, max, insertable, onCommit }: {
           if (!inserting && to !== plus.current && !to?.closest('[data-overlay-root]')) commit()
         }} />
       {inserting === 'caret' && caret && (
-        <span ref={caretMark} aria-hidden="true" className="pointer-events-none absolute w-px" style={{ top: caret.top, left: caret.left, height: caret.height }} data-caret-anchor />
+        <span ref={caretMark} aria-hidden="true" className="pointer-events-none absolute w-px" style={{ /* physical: the caret's measured offset */ top: caret.top, left: caret.left, height: caret.height }} data-caret-anchor />
       )}
       {insertable.length > 0 && (
         <Button ref={plus} size="sm" variant="ghost" icon="plus" aria-haspopup="listbox" aria-expanded={!!inserting} onClick={() => openList('button')}>{t('value')}</Button>

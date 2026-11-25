@@ -20,6 +20,7 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
 import { DayMenu } from './habits/DayMenu'
 import { dayLabel } from './habits/habitText'
+import { inlineKey } from '../lib/direction'
 export { dayLabel }
 
 const CELL: Record<DayState, string> = {
@@ -108,7 +109,7 @@ export function HabitHistory({ series, records, today = logicalToday(), onPick, 
       PageUp: () => shiftMonth(focus, -1),
       PageDown: () => shiftMonth(focus, 1),
     }
-    const next = keys[e.key]
+    const next = keys[inlineKey(e)]
     if (!next) return
     e.preventDefault()
     go(next())
@@ -156,7 +157,7 @@ export function HabitHistory({ series, records, today = logicalToday(), onPick, 
                     onNote={onNote ? () => onNote(c.date) : undefined}
                     trigger={<Glyph state={c.state} date={c.date} />} triggerClassName="flex h-6 w-6 items-center justify-center rounded-chip" />
                   : <Glyph state={c.state} date={c.date} />}
-                {notes.has(c.date) && <span aria-hidden="true" className="pointer-events-none absolute -bottom-0.5 right-0 h-1.5 w-1.5 rounded-full border border-surface bg-accent" />}
+                {notes.has(c.date) && <span aria-hidden="true" className="pointer-events-none absolute -bottom-0.5 inset-e-0 h-1.5 w-1.5 rounded-full border border-surface bg-accent" />}
               </span>
             ) : <span key={`blank-${w}-${i}`} role="gridcell" aria-hidden="true" className="h-6 w-6" />)}
           </div>

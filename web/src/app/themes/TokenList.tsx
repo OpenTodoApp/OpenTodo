@@ -45,7 +45,7 @@ export function TokenList({ doc, resolved, failures, worst, onSet, canUndoToken,
     <section aria-labelledby="theme-advanced-title" data-theme-advanced>
       <details open={open || !!q} onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)} className="group/advanced" data-theme-advanced-details>
         <summary className="flex cursor-pointer list-none items-center gap-2 rounded-control py-1 outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus [&::-webkit-details-marker]:hidden">
-          <Icon name="chevron-right" size="sm" className="text-muted transition-transform group-open/advanced:rotate-90" />
+          <Icon name="chevron-right" size="sm" className="text-muted transition-transform group-open/advanced:rotate-90 rtl:group-open/advanced:-rotate-90" />
           <h2 id="theme-advanced-title" className="flex-1 text-body font-semibold text-strong">{t('Advanced')}</h2>
           <span className="text-meta text-muted" data-theme-advanced-counts>
             {[t('{n} set', { n: setCount }), warnCount ? t('{n, plural, one {# warning} other {# warnings}}', { n: warnCount }) : ''].filter(Boolean).join(' · ')}
@@ -55,8 +55,8 @@ export function TokenList({ doc, resolved, failures, worst, onSet, canUndoToken,
           <p className="text-meta text-muted">{t('Every colour of the theme. Setting one keeps it as you set it; Reset lets it follow the base colours again.')}</p>
           <label htmlFor={filterId} className="sr-only">{t('Filter colours')}</label>
           <div className="relative">
-            <span className="pointer-events-none absolute inset-y-0 left-2 flex items-center text-muted"><Icon name="search" /></span>
-            <Input id={filterId} type="search" value={q} placeholder={t('Filter colours')} className="pl-8" onChange={(e) => setQ(e.target.value)} data-theme-token-filter />
+            <span className="pointer-events-none absolute inset-y-0 inset-s-2 flex items-center text-muted"><Icon name="search" /></span>
+            <Input id={filterId} type="search" value={q} placeholder={t('Filter colours')} className="ps-8" onChange={(e) => setQ(e.target.value)} data-theme-token-filter />
           </div>
           {groups.length === 0 && <p className="text-meta text-muted" role="status">{t('No colour matches “{q}”.', { q })}</p>}
       {groups.map(([g, tokens]) => {

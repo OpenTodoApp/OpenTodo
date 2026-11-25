@@ -14,7 +14,7 @@ function Palette() {
             <div className="flex items-center gap-2">
               <span className="h-3 w-3 rounded-full bg-hue-solid" aria-hidden="true" />
               <span className="text-body font-medium">{h.name}</span>
-              <span className="ml-auto font-mono text-hint text-muted">{h.hex}</span>
+              <span className="ms-auto font-mono text-hint text-muted">{h.hex}</span>
             </div>
             <span className="inline-flex rounded-chip bg-hue-soft px-2 py-0.5 text-meta text-hue">#{h.name} label</span>
           </div>

@@ -30,7 +30,7 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
     if ((f.onlySet || readOnly) && f.value === null) return null
     const fixed = readOnly || (f.id === 'origin' && parts.get('origin')?.fixed)
     const content = f.value ?? f.empty
-    const cls = `flex min-h-8 min-w-0 items-center gap-2 rounded-control px-1.5 text-left text-body ${f.value === null ? 'text-faint' : f.tone ?? 'text-default'}`
+    const cls = `flex min-h-8 min-w-0 items-center gap-2 rounded-control px-1.5 text-start text-body ${f.value === null ? 'text-faint' : f.tone ?? 'text-default'}`
     return (
       <div key={f.id} className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-2" data-fact={f.id}>
         <span className="truncate text-meta text-muted">{f.label}</span>
@@ -68,9 +68,9 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
       const inner = <>
         <Icon name={f.icon} size="sm" className="shrink-0 text-faint" />
         <span className="shrink-0 text-muted">{f.label}</span>
-        <span className={`ml-auto min-w-0 truncate text-right ${f.value === null ? 'text-faint' : f.tone ?? 'text-default'}`}>{f.value ?? f.empty}</span>
+        <span className={`ms-auto min-w-0 truncate text-end ${f.value === null ? 'text-faint' : f.tone ?? 'text-default'}`}>{f.value ?? f.empty}</span>
       </>
-      const cls = 'flex min-h-11 w-full min-w-0 items-center gap-3 px-3 text-left text-body'
+      const cls = 'flex min-h-11 w-full min-w-0 items-center gap-3 px-3 text-start text-body'
       return (
         <li key={f.id} data-fact={f.id}>
           {fixed ? <span className={cls} data-part={f.id}>{inner}</span> : (
@@ -85,11 +85,11 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
     const labelsRow = (m.labels.length > 0 || (expanded && !readOnly)) && (
       <li key="labels" data-fact="labels">
         <button type="button" ref={(el) => pe.partRef('labels', el)} data-part="labels" aria-haspopup="dialog" aria-expanded={pe.open === 'labels'} disabled={readOnly}
-          className="flex min-h-11 w-full min-w-0 items-center gap-3 px-3 text-left text-body hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
+          className="flex min-h-11 w-full min-w-0 items-center gap-3 px-3 text-start text-body hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
           onClick={() => pe.activate('labels')}>
           <Icon name="tag" size="sm" className="shrink-0 text-faint" />
           <span className="shrink-0 text-muted">{t('Labels')}</span>
-          <span className="ml-auto flex min-w-0 flex-wrap justify-end gap-1">
+          <span className="ms-auto flex min-w-0 flex-wrap justify-end gap-1">
             {m.labels.length ? m.labels.map((l) => <LabelChip key={l.id} label={l} />) : <span className="text-faint">{t('Add labels')}</span>}
           </span>
         </button>
@@ -102,7 +102,7 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
           {labelsRow}
           {!expanded && hiddenCount > 0 && (
             <li>
-              <button type="button" className="flex min-h-11 w-full items-center gap-3 px-3 text-left text-body text-muted hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
+              <button type="button" className="flex min-h-11 w-full items-center gap-3 px-3 text-start text-body text-muted hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
                 onClick={() => setAllShown(true)} data-facts-more>
                 <Icon name="ellipsis" size="sm" className="shrink-0 text-faint" />{t('More properties')}
               </button>
@@ -125,7 +125,7 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
   return (
     <section ref={m.section} aria-label={t('Properties')} className="space-y-5" data-facts>
       {group(t('Schedule'), 'schedule', schedule.map(row))}
-      {group(t('Details'), 'details', <>{details.map(withTurns(row, (n) => <RotationLine key={n} as="div" className="pl-[7rem]" task={task} userId={userId} />))}<LocationPreview shown={shownLocation} /></>)}
+      {group(t('Details'), 'details', <>{details.map(withTurns(row, (n) => <RotationLine key={n} as="div" className="ps-[7rem]" task={task} userId={userId} />))}<LocationPreview shown={shownLocation} /></>)}
       {group(t('Labels'), 'labels', (
         <div className="flex flex-wrap items-center gap-1" data-fact="labels">
           {m.labels.map((l) => <LabelChip key={l.id} label={l} />)}

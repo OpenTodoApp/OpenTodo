@@ -180,7 +180,7 @@ export function CaptureStrip(p: CaptureStripProps) {
           {p.photos.map((ph, i) => (
             <li key={ph.id} className="relative size-14 overflow-hidden rounded-control border border-default bg-sunken">
               {ph.preview ? <img src={ph.preview} alt={t('Photo {n}', { n: i + 1 })} className="size-full object-cover" /> : <span className="sr-only">{t('Photo {n}', { n: i + 1 })}</span>}
-              <button type="button" className="touch-target absolute right-0 top-0 inline-flex size-6 items-center justify-center rounded-bl-control bg-surface text-muted hover:text-strong"
+              <button type="button" className="touch-target absolute inset-e-0 top-0 inline-flex size-6 items-center justify-center rounded-es-control bg-surface text-muted hover:text-strong"
                 aria-label={t('Remove photo {n}', { n: i + 1 })} onClick={() => p.onRemove(ph.id)}><Icon name="x" size="xs" /></button>
             </li>
           ))}

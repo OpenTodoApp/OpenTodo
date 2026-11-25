@@ -350,7 +350,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
 
       {chrome.element}
       {drag && (dragTask || dragSlot) && (
-        <div className="pointer-events-none fixed z-50 max-w-56 truncate rounded-control bg-accent px-2 py-1 text-meta text-on-accent shadow-2" style={{ left: drag.x + 12, top: drag.y + 12 }}>
+        <div className="pointer-events-none fixed z-50 max-w-56 truncate rounded-control bg-accent px-2 py-1 text-meta text-on-accent shadow-2" style={{ /* physical: follows the pointer */ left: drag.x + 12, top: drag.y + 12 }}>
           {dragSlot ? slotName(dragSlot.slot) : dragTask!.title || t('Untitled')}
           {drag.target?.type === 'into-slot' && ` · ${slotName(slotIndex.get(slotKey(drag.target.slotId))?.slot ?? { title: '' })}`}
           {drag.target?.type === 'slot' && ` · ${formatTime(drag.target.start)}`}
@@ -461,8 +461,8 @@ function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, f
       spanRows={spanRowsOn(d.date)} spanHidden={hiddenOn.get(d.date) ?? 0} onExtend={extend} compact={compact} />
   )
   const gutter = (label: boolean) => (
-    <div className="w-12 shrink-0 pt-1 text-right text-hint text-faint" aria-hidden>
-      {label && <span className="pr-1">{t('all day')}</span>}
+    <div className="w-12 shrink-0 pt-1 text-end text-hint text-faint" aria-hidden>
+      {label && <span className="pe-1">{t('all day')}</span>}
     </div>
   )
   return (

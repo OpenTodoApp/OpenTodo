@@ -6,6 +6,7 @@ import { navigate } from './router'
 import { ProjectMark } from './ProjectMark'
 import { t } from '../lib/i18n'
 import { taskDrop } from './taskDrop'
+import { inlineKey } from '../lib/direction'
 
 /**
  * A sub-project's row (project-organization "Sub-projects inside a project view"): a task
@@ -19,8 +20,8 @@ function SubProjectRow({ project, count, depth = 0, open = false, onToggle, drop
   return (
     // → opens a folded sub-project and ← folds an open one, from either of its buttons, as on a tree.
     <div className="row-hover flex items-center gap-2 rounded-control px-2 text-body data-drop-active:ring-2 data-drop-active:ring-accent"
-      style={depth ? { paddingLeft: `${depth * 1.5 + 0.5}rem` } : undefined} data-sub-project-row={project.id} data-task-drop={drop ? taskDrop.project(project.id) : undefined}
-      onKeyDown={(e) => { if (onToggle && ((e.key === 'ArrowRight' && !open) || (e.key === 'ArrowLeft' && open))) { e.preventDefault(); e.stopPropagation(); onToggle() } }}>
+      style={depth ? { paddingInlineStart: `${depth * 1.5 + 0.5}rem` } : undefined} data-sub-project-row={project.id} data-task-drop={drop ? taskDrop.project(project.id) : undefined}
+      onKeyDown={(e) => { if (onToggle && ((inlineKey(e) === 'ArrowRight' && !open) || (inlineKey(e) === 'ArrowLeft' && open))) { e.preventDefault(); e.stopPropagation(); onToggle() } }}>
       <span aria-hidden={onToggle ? undefined : true} className="flex h-6 w-4 shrink-0 items-center justify-center">
         {onToggle && (
           <button type="button" aria-expanded={open} aria-label={open ? t('Collapse {name}', { name: project.name }) : t('Expand {name}', { name: project.name })}
@@ -31,7 +32,7 @@ function SubProjectRow({ project, count, depth = 0, open = false, onToggle, drop
         )}
       </span>
       <button type="button" onClick={() => navigate({ view: 'project', id: project.id })} data-sub-project={project.id}
-        className="flex min-h-9 min-w-0 flex-1 items-center gap-2 py-1.5 text-left pointer-coarse:min-h-11">
+        className="flex min-h-9 min-w-0 flex-1 items-center gap-2 py-1.5 text-start pointer-coarse:min-h-11">
         <span className="flex w-5 shrink-0 items-center justify-center"><ProjectMark project={project} /></span>
         <span className="min-w-0 flex-1 truncate">{project.name}</span>
         <span className="text-meta tabular-nums text-faint">{count}<span className="sr-only"> {t('Open tasks including sub-projects')}</span></span>
@@ -76,7 +77,7 @@ export function SubProjectsGroup({ groups, projects, toggle, canEdit = NO_DROP, 
       items.push(
         <li key={g.key} data-sub-project-block={project.id}>
           <SubProjectRow project={project} count={g.count ?? 0} depth={depth} open={!g.folded} onToggle={g.openKey ? () => toggle(g.openKey!) : undefined} drop={canEdit(project.id)} />
-          {!g.folded && <div style={{ paddingLeft: `${(depth + 1) * 1.5}rem` }}>{rows(g)}</div>}
+          {!g.folded && <div style={{ paddingInlineStart: `${(depth + 1) * 1.5}rem` }}>{rows(g)}</div>}
           {nested.length > 0 && <ul>{nested}</ul>}
         </li>,
       )

@@ -127,7 +127,7 @@ export function ParseChips({ chips, misses = [], projects, labels, highlight = n
           <span
             data-chip={c.kind}
             data-hue={CHIP_HUE[c.kind]}
-            className={`inline-flex items-center gap-1 rounded-full border border-hue-solid/40 bg-hue-soft py-0.5 pl-2 pr-1 text-hue ${highlight === i ? 'ring-2 ring-focus' : ''}`}
+            className={`inline-flex items-center gap-1 rounded-full border border-hue-solid/40 bg-hue-soft py-0.5 ps-2 pe-1 text-hue ${highlight === i ? 'ring-2 ring-focus' : ''}`}
           >
             <span className="sr-only">{KIND_NAME[c.kind]}: </span>
             {label?.color && <span className="inline-block h-2 w-2 rounded-full bg-hue-solid" data-hue={hueFor(label.color)} aria-hidden="true" />}

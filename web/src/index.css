@@ -228,7 +228,11 @@
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
+  /* The start and end insets (arabic-rtl D3): the left and right ones, swapped right to left. */
+  --safe-start: var(--safe-left);
+  --safe-end: var(--safe-right);
 }
+:root[dir="rtl"] { --safe-start: var(--safe-right); --safe-end: var(--safe-left); }
 :root {
   --duration-ui: 120ms;
   --duration-emphasis: 250ms;
@@ -864,15 +868,17 @@ select.ui-input { @apply truncate; contain: layout paint; }
    with two gradients in the muted text colour, so no image and no hex. */
 select.ui-input:not([multiple]) {
   appearance: none;
-  padding-right: 2rem;
+  padding-inline-end: 2rem;
   background-image: linear-gradient(45deg, transparent 50%, var(--ot-muted) 50%), linear-gradient(135deg, var(--ot-muted) 50%, transparent 50%);
   background-position: calc(100% - 0.9375rem) 50%, calc(100% - 0.625rem) 50%;
   background-size: 0.3125rem 0.3125rem;
   background-repeat: no-repeat;
 }
+/* Right to left the chevron sits at the start edge, its two halves in the same order (arabic-rtl D3). */
+select.ui-input:not([multiple]):dir(rtl) { background-position: 0.625rem 50%, 0.9375rem 50%; }
 /* A settings row's control column (precision-settings D4): controls at the 32 px step. */
 [data-setting-control] :is(.ui-input:not(textarea), .ui-btn--md) { @apply min-h-8 px-2.5 py-1 text-meta; }
-[data-setting-control] select.ui-input:not([multiple]) { padding-right: 2rem; }
+[data-setting-control] select.ui-input:not([multiple]) { padding-inline-end: 2rem; }
 .ui-kbd { @apply whitespace-nowrap rounded-chip border border-default bg-sunken px-1.5 py-0.5 font-mono text-hint text-muted; }
 /* Rich-text notes (collaborative-rich-text). ProseMirror's required base rules
    are inlined instead of importing its stylesheet. */
@@ -913,13 +919,14 @@ select.ui-input:not([multiple]) {
 .notes-editor h1 { @apply text-h2 font-semibold; }
 .notes-editor h2 { @apply text-h3 font-semibold; }
 .notes-editor h3, .notes-editor h4, .notes-editor h5, .notes-editor h6 { @apply font-semibold; }
-.notes-editor ul { @apply list-disc space-y-1 pl-5; }
-.notes-editor ol { @apply list-decimal space-y-1 pl-5; }
+.notes-editor :is(p, li, h1, h2, h3, blockquote, td, th) { unicode-bidi: plaintext; }
+.notes-editor ul { @apply list-disc space-y-1 ps-5; }
+.notes-editor ol { @apply list-decimal space-y-1 ps-5; }
 .notes-editor li > * + * { @apply mt-1; }
-.notes-editor ul:has(> li.task-item) { @apply pl-0; }
-.notes-editor li.task-item { @apply relative list-none pl-6; }
+.notes-editor ul:has(> li.task-item) { @apply ps-0; }
+.notes-editor li.task-item { @apply relative list-none ps-6; }
 .notes-editor li.task-item::before {
-  @apply absolute top-0.5 left-0.5 flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded-chip border border-input text-hint leading-none text-on-accent;
+  @apply absolute top-0.5 inset-s-0.5 flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded-chip border border-input text-hint leading-none text-on-accent;
   content: "";
 }
 .notes-editor li.task-item[data-checked="true"]::before {
@@ -932,7 +939,7 @@ select.ui-input:not([multiple]) {
 .notes-editor .ProseMirror-gapcursor { @apply hidden; }
 .notes-editor .ProseMirror-hideselection *::selection { background: transparent; }
 /* editor-everywhere: quotes, code blocks, tables (scrolling in their own box), images, mentions. */
-.notes-editor blockquote { @apply space-y-2 border-l-2 border-input pl-2 text-muted; }
+.notes-editor blockquote { @apply space-y-2 border-s-2 border-input ps-2 text-muted; }
 .notes-editor pre { @apply overflow-x-auto rounded-control bg-sunken p-2 font-mono text-meta dark:bg-raised; white-space: pre; }
 .notes-editor pre code { @apply bg-transparent p-0; }
 .notes-editor .tableWrapper { @apply max-w-full overflow-x-auto; }
@@ -945,7 +952,7 @@ select.ui-input:not([multiple]) {
 .mention, .mention-chip { @apply rounded-chip bg-accent-soft px-0.5 text-accent; }
 /* group-mentions D4: a group reads as the same chip with an outline (and the group icon where rendered). */
 .mention[data-mention^="group:"], .mention-chip--group { @apply font-medium ring-1 ring-inset ring-focus; }
-.mention-chip--group svg { display: inline; vertical-align: -0.125em; margin-right: 0.125rem; }
+.mention-chip--group svg { display: inline; vertical-align: -0.125em; margin-inline-end: 0.125rem; }
 /* note-links D2, D4: an internal link reads as a quiet reference (icon and current
    title in the accent tone, underlined only on hover); a done task's is struck
    through; one the reader cannot open is muted text with no hover. */
@@ -1006,8 +1013,8 @@ a.note-ref:focus-visible { @apply outline-2 outline-focus; }
 .notes-graph__area { @apply absolute inset-0 overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus; }
 .notes-graph__canvas { @apply block cursor-grab touch-none select-none; }
 .notes-graph__empty { @apply pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center; }
-.notes-graph__zoom { @apply absolute right-3 bottom-3 flex flex-col gap-0.5 rounded-control border border-default bg-surface p-0.5 shadow-2 max-md:bottom-[calc(var(--add-room,0px)+0.75rem)]; }
-.notes-graph__centre { @apply absolute bottom-3 left-3 flex max-w-[calc(100%-5rem)] items-center gap-2 rounded-control border border-default bg-surface py-0.5 ps-2.5 pe-0.5 shadow-2 max-md:bottom-[calc(var(--add-room,0px)+0.75rem)]; }
+.notes-graph__zoom { @apply absolute inset-e-3 bottom-3 flex flex-col gap-0.5 rounded-control border border-default bg-surface p-0.5 shadow-2 max-md:bottom-[calc(var(--add-room,0px)+0.75rem)]; }
+.notes-graph__centre { @apply absolute bottom-3 inset-s-3 flex max-w-[calc(100%-5rem)] items-center gap-2 rounded-control border border-default bg-surface py-0.5 ps-2.5 pe-0.5 shadow-2 max-md:bottom-[calc(var(--add-room,0px)+0.75rem)]; }
 .editor-toolbar { @apply -mx-2 mb-1 flex items-center gap-1 overflow-x-auto px-2 py-1; }
 /* A control whose formatting applies at the selection (formatting-row-pressed). */
 .editor-toolbar [aria-pressed="true"] { @apply bg-selected text-strong; }
@@ -1050,9 +1057,10 @@ a.note-ref:focus-visible { @apply outline-2 outline-focus; }
 .notes-source[readonly] { @apply border-transparent bg-sunken ring-0; }
 .note-outline { @apply absolute inset-y-0 w-48; inset-inline-end: calc(100% + 1.5rem); }
 .note-outline__list { @apply sticky top-4 space-y-px border-s border-soft; }
-.note-outline__item { @apply flex min-h-7 w-full items-center rounded-e-control py-1 pe-2 text-left text-meta outline-none transition-colors duration-(--duration-ui)
+.note-outline__item { @apply flex min-h-7 w-full items-center rounded-e-control py-1 pe-2 text-start text-meta outline-none transition-colors duration-(--duration-ui)
   hover:bg-hover hover:text-default focus-visible:bg-selected focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-focus; }
 .note-outline__item[aria-current="location"] { box-shadow: inset 2px 0 0 var(--ot-accent); }
+.note-outline__item[aria-current="location"]:dir(rtl) { box-shadow: inset -2px 0 0 var(--ot-accent); }
 .note-column { @apply mx-auto w-full max-w-[40rem]; }
 .note-column:has(.notes-frame[data-outline="column"]) { max-width: 53.5rem; padding-inline-start: 13.5rem; }
 [data-task-notes-block]:has(.notes-frame[data-outline="column"]) { padding-inline-start: 13.5rem; }
@@ -1705,7 +1713,7 @@ html[dir='rtl'][data-phone-nav]::view-transition-old(root), html[dir='rtl'][data
 @media (hover: hover) and (pointer: fine) {
   .ui-swap-row { position: relative; }
   .ui-swap-count { min-width: 1.75rem; text-align: center; }
-  .ui-swap-menu { position: absolute; right: 0.25rem; top: 50%; translate: 0 -50%; opacity: 0; }
+  .ui-swap-menu { position: absolute; inset-inline-end: 0.25rem; top: 50%; translate: 0 -50%; opacity: 0; }
   .ui-swap-row:is(:hover, :focus-within) .ui-swap-menu, .ui-swap-menu[aria-expanded="true"] { opacity: 1; }
   .ui-swap-row:is(:hover, :focus-within) .ui-swap-count, .ui-swap-row:has(.ui-swap-menu[aria-expanded="true"]) .ui-swap-count { visibility: hidden; }
 }
@@ -1717,7 +1725,7 @@ html[dir='rtl'][data-phone-nav]::view-transition-old(root), html[dir='rtl'][data
    The hold arms with the task row's tint. With a mouse nothing changes. */
 @media (pointer: coarse) {
   [data-sidebar-scroll] [data-menu-row] { position: relative; }
-  [data-sidebar-scroll] [data-menu-row] button[aria-haspopup] { position: absolute; right: 0; top: 50%; translate: 0 -50%; border-radius: var(--radius-control); background-color: var(--sidebar-bg, var(--color-canvas)); }
+  [data-sidebar-scroll] [data-menu-row] button[aria-haspopup] { position: absolute; inset-inline-end: 0; top: 50%; translate: 0 -50%; border-radius: var(--radius-control); background-color: var(--sidebar-bg, var(--color-canvas)); }
   [data-sidebar-scroll] [data-menu-row] button[aria-haspopup]:not(:focus-visible) { opacity: 0; pointer-events: none; }
   [data-sidebar-scroll] [data-touch-hold] { background-color: color-mix(in oklab, var(--text-color-accent) 8%, transparent); }
 }
@@ -1773,6 +1781,9 @@ html[dir='rtl'][data-phone-nav]::view-transition-old(root), html[dir='rtl'][data
 @utility pl-safe { padding-left: var(--safe-left); }
 @utility pr-safe { padding-right: var(--safe-right); }
 @utility px-safe { padding-left: var(--safe-left); padding-right: var(--safe-right); }
+/* The start and end edges (arabic-rtl D3): a panel on the end side pads the end inset. */
+@utility ps-safe { padding-inline-start: var(--safe-start); }
+@utility pe-safe { padding-inline-end: var(--safe-end); }
 @layer utilities {
 /* Controls revealed on hover stay visible where there is no hover. */
 @media (hover: hover) {
@@ -1845,8 +1856,8 @@ html[dir='rtl'][data-phone-nav]::view-transition-old(root), html[dir='rtl'][data
 .help-prose h4 { @apply mt-4 mb-1 font-semibold; }
 .help-prose h1 + p { @apply text-muted; }
 .help-prose p, .help-prose ul, .help-prose ol, .help-prose details { @apply mb-3; }
-.help-prose ul { @apply list-disc pl-5; }
-.help-prose ol { @apply list-decimal pl-5; }
+.help-prose ul { @apply list-disc ps-5; }
+.help-prose ol { @apply list-decimal ps-5; }
 .help-prose li { @apply my-1; }
 .help-prose a { @apply text-accent underline underline-offset-2; }
 .help-prose .anchor { @apply hidden; }
@@ -1854,10 +1865,10 @@ html[dir='rtl'][data-phone-nav]::view-transition-old(root), html[dir='rtl'][data
 .help-prose pre { @apply mb-3 overflow-x-auto rounded-control border border-default bg-canvas p-3 text-meta; }
 .help-prose pre code { @apply bg-transparent p-0; }
 .help-prose kbd { @apply inline-block whitespace-nowrap rounded-chip border border-input bg-canvas px-1.5 py-0.5 font-mono text-hint leading-tight text-muted; }
-.help-prose blockquote { @apply mb-3 border-l-4 border-accent pl-3 text-muted; }
+.help-prose blockquote { @apply mb-3 border-s-4 border-accent ps-3 text-muted; }
 .help-prose .table-wrap { @apply mb-4 overflow-x-auto rounded-card border border-default; }
 .help-prose table { @apply w-full border-collapse text-meta; }
-.help-prose th, .help-prose td { @apply border-t border-default px-3 py-2 text-left align-top; }
+.help-prose th, .help-prose td { @apply border-t border-default px-3 py-2 text-start align-top; }
 .help-prose thead th { @apply border-t-0 bg-sunken font-semibold; }
 .help-prose summary { @apply font-medium; }
 .help-snippet mark, .help-prose mark { @apply rounded-chip bg-highlight px-0.5 text-on-highlight; }
@@ -1933,8 +1944,11 @@ html[dir='rtl'][data-phone-nav]::view-transition-old(root), html[dir='rtl'][data
 @keyframes dialog-enter { from { transform: scale(0.98); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes dialog-exit { from { transform: none; opacity: 1; } to { transform: scale(0.98); opacity: 0; } }
 @keyframes toast-enter { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
-@keyframes panel-enter { from { transform: translateX(1.5rem); opacity: 0; } to { transform: none; opacity: 1; } }
-@keyframes panel-exit { from { transform: none; opacity: 1; } to { transform: translateX(1.5rem); opacity: 0; } }
+/* The docked panel comes from the end edge: the right, or the left right to left (arabic-rtl D3). */
+:root { --panel-shift: 1.5rem; }
+:root[dir="rtl"] { --panel-shift: -1.5rem; }
+@keyframes panel-enter { from { transform: translateX(var(--panel-shift)); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes panel-exit { from { transform: none; opacity: 1; } to { transform: translateX(var(--panel-shift)); opacity: 0; } }
 .dialog-sheet { animation: dialog-sheet-up var(--duration-emphasis) var(--ease-spring) backwards; }
 .dialog-sheet[data-closing] { animation: dialog-sheet-down calc(var(--duration-emphasis) * 0.75) var(--ease-calm) both; }
 @media (min-width: 40rem) {
@@ -2062,3 +2076,24 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
   [data-group-header] { break-after: avoid; }
 }
 }
+
+/* Outside every layer, so a rotate utility on a mirrored chevron loses to it. */
+/* Right to left (OpenSpec change arabic-rtl, design D3 and D5). Text people wrote takes its
+   own direction from its first letter, so an English title in an Arabic row (or the other
+   way round) neither reorders nor drags its punctuation to the wrong end. */
+.user-text { unicode-bidi: plaintext; }
+/* Fields people type into do the same, line by line. Not `dir="auto"`: an empty field would
+   then fall back to left to right, its placeholder and caret on the wrong side. */
+:is(input:not([type]), input[type="text"], input[type="search"], textarea, [contenteditable="true"]) { unicode-bidi: plaintext; }
+/* `:dir(rtl)` on the element itself, so a box kept left to right (the Timeline, a chart) keeps its icons and figures as they are.
+   Icons that point along the line mirror; the rest (a check, a clock, a logo) do not. A
+   disclosure chevron that turns to open turns the other way, so it still points down. */
+:is([data-icon="arrow-left"], [data-icon="arrow-right"], [data-icon="chevron-left"], [data-icon="chevron-right"],
+  [data-icon="corner-down-right"], [data-icon="panel-left-close"], [data-icon="panel-left-open"], [data-icon="panel-right"],
+  [data-icon="undo-2"], [data-icon="redo-2"], [data-icon="log-out"], [data-icon="send"], [data-icon="list"], [data-icon="list-ordered"],
+  [data-icon="list-checks"], [data-icon="table-of-contents"], [data-icon="text-quote"]):dir(rtl) { scale: -1 1; }
+[data-icon="chevron-right"].rotate-90:dir(rtl) { rotate: -90deg; }
+/* Code, keys and addresses read left to right in every language. */
+:is(pre, code, kbd, .ui-kbd):dir(rtl) { direction: ltr; unicode-bidi: isolate; }
+/* A run of figures (a time range such as 08:00–10:00, a count) keeps its order inside right-to-left text. */
+span.tabular-nums:dir(rtl) { direction: ltr; unicode-bidi: isolate; }

@@ -15,6 +15,7 @@ import { editorCommands, filterCommands, tableCommands, type CommandEnv, type Ed
 import { MentionOption } from './task-detail/MentionOption'
 import { offersNewNote, type LinkCandidate } from '../lib/linkPicker'
 import { LinkOption, linkGroupLabel } from './LinkOption'
+import { inlineKey } from '../lib/direction'
 
 // A person or a workspace group (group-mentions D4).
 type Member = MentionTarget
@@ -252,8 +253,8 @@ export function EditorToolbar({ id, view, env, visible, onMenu, coarse: forced, 
       target.click()
       return
     }
-    const next = e.key === 'ArrowRight' ? (at + 1) % list.length
-      : e.key === 'ArrowLeft' ? (at + list.length - 1) % list.length
+    const next = inlineKey(e) === 'ArrowRight' ? (at + 1) % list.length
+      : inlineKey(e) === 'ArrowLeft' ? (at + list.length - 1) % list.length
         : e.key === 'Home' ? 0 : e.key === 'End' ? list.length - 1 : null
     if (next === null) return
     e.preventDefault()

@@ -5,6 +5,8 @@
 // system's own back swipe, so the watcher is off there. The row swipes leave that
 // strip alone (rowSwipe.ts SWIPE.edge); the lock is theirs. With a follower
 // (swipe-back-follows) the page or the menu moves with the finger while it drags.
+// Right to left the swipe starts at the right edge and moves left (arabic-rtl D4).
+import { fromStartEdge, inlineDelta } from '../lib/direction'
 import { lockOf, SWIPE } from './rowSwipe'
 
 /** What a right edge swipe does: Back when the page has one, else the menu. */
@@ -50,7 +52,7 @@ export interface EdgeOptions {
  */
 export function watchEdgeSwipe(open: () => void, enabled: () => boolean, opts: EdgeOptions = {}): () => void {
   const down = (e: PointerEvent) => {
-    if (e.pointerType === 'mouse' || e.clientX >= SWIPE.edge || !enabled()) return
+    if (e.pointerType === 'mouse' || fromStartEdge(e.clientX) >= SWIPE.edge || !enabled()) return
     const x0 = e.clientX
     const y0 = e.clientY
     let taken = false
@@ -70,7 +72,7 @@ export function watchEdgeSwipe(open: () => void, enabled: () => boolean, opts: E
     }
     const move = (ev: PointerEvent) => {
       if (ev.pointerId !== e.pointerId) return
-      dx = ev.clientX - x0
+      dx = inlineDelta(ev.clientX - x0)
       if (!taken) {
         const lock = lockOf(dx, ev.clientY - y0)
         if (lock === 'scroll' || (lock === 'swipe' && dx < 0)) return stop()
@@ -81,7 +83,7 @@ export function watchEdgeSwipe(open: () => void, enabled: () => boolean, opts: E
       }
       follower?.move(Math.max(0, dx))
       const now = performance.now()
-      if (now > last.t) velocity = (ev.clientX - last.x) / (now - last.t)
+      if (now > last.t) velocity = inlineDelta(ev.clientX - last.x) / (now - last.t)
       last = { x: ev.clientX, t: now }
     }
     const up = (ev: PointerEvent) => {

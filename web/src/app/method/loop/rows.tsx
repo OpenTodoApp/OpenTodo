@@ -38,7 +38,7 @@ export function GroupHeading({ id, children, end }: { id: string; children: Reac
   return (
     <div className="mb-1 flex items-center gap-2 px-2">
       <h3 id={id} className="text-meta font-semibold text-faint">{children}</h3>
-      {end && <span className="ml-auto">{end}</span>}
+      {end && <span className="ms-auto">{end}</span>}
     </div>
   )
 }

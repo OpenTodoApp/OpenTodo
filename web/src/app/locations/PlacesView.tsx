@@ -78,7 +78,7 @@ function PlaceRow({ place, count, index, total, order }: { place: Place; count: 
   ]
   return (
     <li className="group flex min-h-11 items-center gap-2 rounded-control px-2 hover:bg-sunken dark:hover:bg-raised" data-place-row={place.id}>
-      <button type="button" className="flex min-w-0 flex-1 items-center gap-3 py-1.5 text-left" onClick={() => navigate({ view: 'place', id: place.id })}>
+      <button type="button" className="flex min-w-0 flex-1 items-center gap-3 py-1.5 text-start" onClick={() => navigate({ view: 'place', id: place.id })}>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-body text-default">{name}</span>
           {!encrypted && place.address && <span className="block truncate text-meta text-muted">{place.address}</span>}

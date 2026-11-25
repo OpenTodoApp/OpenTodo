@@ -22,6 +22,7 @@ import { useLiveEntries, useMinuteNow } from '../../lib/timeEntries'
 import { useTimeExport } from './timeExport'
 import { t } from '../../lib/i18n'
 import { readEnum, writeString } from '../../lib/deviceStorage'
+import { inlineKey } from '../../lib/direction'
 
 const PERIOD_KEY = 'ot.stats.period'
 /** The stored period; a value this version no longer offers (the 4 and 12 weeks) opens on this week. */
@@ -52,8 +53,8 @@ export function PeriodChooser({ value, onChange, narrow = false }: { value: Dash
   const move = (e: KeyboardEvent) => {
     const i = PERIOD_KINDS.indexOf(value)
     const n = PERIOD_KINDS.length
-    const next = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? (i + 1) % n
-      : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? (i - 1 + n) % n
+    const next = inlineKey(e) === 'ArrowRight' || e.key === 'ArrowDown' ? (i + 1) % n
+      : inlineKey(e) === 'ArrowLeft' || e.key === 'ArrowUp' ? (i - 1 + n) % n
       : e.key === 'Home' ? 0 : e.key === 'End' ? n - 1 : -1
     if (next < 0) return
     e.preventDefault()
@@ -295,7 +296,7 @@ function KeepsSlipping({ slipping, projectOf }: { slipping: readonly Slip[]; pro
       <ul className="divide-y divide-(--ot-border)">
         {slipping.map(({ task, moves }) => (
           <li key={task.id}>
-            <button type="button" className="flex w-full flex-wrap items-baseline justify-between gap-x-3 rounded-control px-1 py-2 text-left text-body hover:bg-sunken focus-visible:outline-2 focus-visible:outline-focus"
+            <button type="button" className="flex w-full flex-wrap items-baseline justify-between gap-x-3 rounded-control px-1 py-2 text-start text-body hover:bg-sunken focus-visible:outline-2 focus-visible:outline-focus"
               onClick={() => setPanelTaskId(task.id)} data-slipping={task.id}>
               <span className="min-w-0 truncate text-default">{task.title}</span>
               <span className="text-meta text-muted">{t('{project} · moved {n, plural, one {# time} other {# times}}', { project: projectOf(task), n: moves })}</span>
@@ -343,7 +344,7 @@ export function StatsView() {
           <div className="flex flex-wrap items-center gap-2 max-md:w-full" data-stats-header-row>
             {chooser}
             {/* After the period chooser, which stays the first stop (statistics "Statistics screen"). */}
-            <span className="ml-auto">
+            <span className="ms-auto">
               <Menu kind="menu" label={t('More actions')} trigger={<Icon name="ellipsis" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1" width="sm:w-64" align="end">
                 {exportItem}
               </Menu>

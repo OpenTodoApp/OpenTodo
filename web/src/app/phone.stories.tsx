@@ -88,7 +88,7 @@ export const TaskPage: StoryObj = {
 function Drawer() {
   return (
     <div className="-m-4 flex h-[49rem] bg-canvas">
-      <aside className="flex w-80 max-w-[85vw] border-r border-default bg-surface [--sidebar-bg:var(--color-surface)] [&_[data-sidebar-item]]:min-h-12">
+      <aside className="flex w-80 max-w-[85vw] border-e border-default bg-surface [--sidebar-bg:var(--color-surface)] [&_[data-sidebar-item]]:min-h-12">
         <div className="min-w-0 flex-1"><Sidebar route={{ view: 'inbox' }} user={storyUser} onSignOut={noop} /></div>
       </aside>
     </div>

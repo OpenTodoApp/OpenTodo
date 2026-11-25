@@ -39,14 +39,14 @@ export default function ReviewHabits({ today, weekStart }: { today: string; week
           <li key={series.id} data-review-habit={series.id}>
             <div className="flex items-center gap-3">
               <button type="button" onClick={() => navigate({ view: 'habits', id: series.id })}
-                className="user-text min-w-0 flex-1 truncate rounded-chip text-left text-body text-default hover:underline focus-visible:outline-2 focus-visible:outline-focus">
+                className="user-text min-w-0 flex-1 truncate rounded-chip text-start text-body text-default hover:underline focus-visible:outline-2 focus-visible:outline-focus">
                 {series.title || t('Untitled')}
               </button>
               <Thread days={days} today={today} notes={new Set(notes.map((n) => n.date))} label={t('This week')} />
-              <span className="w-16 shrink-0 text-right text-meta tabular-nums text-muted" data-review-measure>{t('{kept} of {of}', { kept: measure.kept, of: measure.of })}</span>
+              <span className="w-16 shrink-0 text-end text-meta tabular-nums text-muted" data-review-measure>{t('{kept} of {of}', { kept: measure.kept, of: measure.of })}</span>
             </div>
             {notes.length > 0 && (
-              <ul className="mt-1 space-y-1 border-l border-soft pl-3">
+              <ul className="mt-1 space-y-1 border-s border-soft ps-3">
                 {notes.map((n) => (
                   <li key={n.record.id} className="text-meta" data-review-note={n.date}>
                     <span className="text-muted">{formatDate(n.date, 'heading', undefined, today)}</span>

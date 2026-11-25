@@ -7,6 +7,7 @@
 // only when the row itself has no more room.
 import { useRef, type KeyboardEvent } from 'react'
 import { selectionHaptic, useTouchPress } from './touchPress'
+import { inlineKey } from '../lib/direction'
 
 export interface SegmentOption<T extends string> {
   id: T
@@ -39,8 +40,8 @@ export function SegmentedControl<T extends string>({ options, value, onChange, l
   const none = !options.some((o) => o.id === value)
   const move = (e: KeyboardEvent) => {
     const i = options.findIndex((o) => o.id === value)
-    const next = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? (i + 1) % options.length
-      : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? (i - 1 + options.length) % options.length
+    const next = inlineKey(e) === 'ArrowRight' || e.key === 'ArrowDown' ? (i + 1) % options.length
+      : inlineKey(e) === 'ArrowLeft' || e.key === 'ArrowUp' ? (i - 1 + options.length) % options.length
       : e.key === 'Home' ? 0 : e.key === 'End' ? options.length - 1 : -1
     if (next < 0) return
     e.preventDefault()

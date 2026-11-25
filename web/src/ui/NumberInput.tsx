@@ -77,8 +77,8 @@ export function NumberInput({ label, description, value, onChange, onValidityCha
               if (e.key === 'ArrowUp') { e.preventDefault(); stepBy(1) }
               if (e.key === 'ArrowDown') { e.preventDefault(); stepBy(-1) }
             }}
-            className={`ui-input aria-invalid:border-danger aria-invalid:focus:ring-danger/30 ${unit ? 'pr-12' : ''}`} />
-          {unit && <span id={unitId} className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-meta text-muted">{unit}</span>}
+            className={`ui-input aria-invalid:border-danger aria-invalid:focus:ring-danger/30 ${unit ? 'pe-12' : ''}`} />
+          {unit && <span id={unitId} className="pointer-events-none absolute inset-y-0 inset-e-3 flex items-center text-meta text-muted">{unit}</span>}
         </div>
         {noLimit && (
           <label className={`inline-flex items-center gap-2 text-body text-default ${disabled ? '' : 'cursor-pointer'}`}>

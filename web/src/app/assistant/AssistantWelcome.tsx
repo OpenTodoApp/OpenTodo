@@ -70,7 +70,7 @@ export function AssistantWelcome({ name, skills, onStarter, composer, layout }: 
             {starters.map((s) => (
               <li key={s.id}>
                 <button type="button" onClick={() => onStarter(s)} data-assistant-starter={s.id}
-                  className="flex h-full w-full flex-col gap-1 rounded-card border border-default bg-surface p-4 text-left hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+                  className="flex h-full w-full flex-col gap-1 rounded-card border border-default bg-surface p-4 text-start hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
                   <Icon name={STARTER_ICONS[s.id] ?? 'sparkles'} className="mb-3 text-muted" />
                   <span className="text-body font-medium text-default">{s.name}</span>
                   <span className="text-meta text-muted">{s.description}</span>

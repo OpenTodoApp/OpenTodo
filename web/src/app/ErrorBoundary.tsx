@@ -16,7 +16,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
         <p className="font-medium">{t('Something went wrong in the app.')}</p>
-        <pre className="max-w-lg overflow-auto rounded-control bg-sunken p-3 text-left text-meta text-danger">{this.state.error.message}</pre>
+        <pre className="max-w-lg overflow-auto rounded-control bg-sunken p-3 text-start text-meta text-danger">{this.state.error.message}</pre>
         <p className="text-body text-muted">{t('Your data is safe on this device and on the server.')}</p>
         <button className="ui-btn ui-btn--primary ui-btn--md" onClick={() => location.reload()}>{t('Reload')}</button>
       </div>

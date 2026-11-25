@@ -12,6 +12,7 @@ import type { Task } from '../lib/types'
 import { DatePicker } from './datetime/DatePicker'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { useShortcutScope } from './shortcuts'
+import { inlineKey } from '../lib/direction'
 
 export interface ScheduleSheetProps {
   task: Pick<Task, 'due' | 'deadline'>
@@ -36,12 +37,12 @@ export function ScheduleSheet({ task, onPick, onClose }: ScheduleSheetProps) {
 
   // Arrow keys move between the relative choices; Tab still walks every control.
   const onRowKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+    if (inlineKey(e) !== 'ArrowRight' && inlineKey(e) !== 'ArrowLeft' && e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
     const buttons = [...e.currentTarget.querySelectorAll<HTMLButtonElement>('button')]
     const i = buttons.indexOf(document.activeElement as HTMLButtonElement)
     if (i < 0) return
     e.preventDefault()
-    const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1
+    const step = inlineKey(e) === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1
     buttons[(i + step + buttons.length) % buttons.length].focus()
   }
 
@@ -57,7 +58,7 @@ export function ScheduleSheet({ task, onPick, onClose }: ScheduleSheetProps) {
               {relative.map((c) => (
                 <button key={c.id} type="button" data-relative={c.id} aria-keyshortcuts={c.key}
                   aria-label={t('{choice}, {date}', { choice: c.label, date: formatDate(c.date, 'long', resolved) })}
-                  className="flex min-h-11 items-center gap-2 rounded-control border border-default px-2.5 py-1 text-left text-meta text-default hover:bg-sunken dark:hover:bg-raised"
+                  className="flex min-h-11 items-center gap-2 rounded-control border border-default px-2.5 py-1 text-start text-meta text-default hover:bg-sunken dark:hover:bg-raised"
                   onClick={() => onPick(c.date)}>
                   <span className="ui-kbd shrink-0">{c.key}</span>
                   <span className="min-w-0">

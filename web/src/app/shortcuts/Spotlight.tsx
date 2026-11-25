@@ -11,6 +11,7 @@ import { type Chord, chordText, labelMessage, shortcut, spotlightGroup, type Sho
 import { t } from '../../lib/i18n'
 import { IconButton } from '../../ui'
 import { clearPrefix, type Continuation, dispatch, hasScope, holdPrefix, pendingContinuations, pendingPrefix, subscribePrefix } from './dispatch'
+import { inlineArrows } from '../../lib/direction'
 
 /** How long a hesitation lasts before the spotlight shows (design D2). */
 export const SPOTLIGHT_DELAY_MS = 250
@@ -86,7 +87,7 @@ export function Spotlight({ delay = SPOTLIGHT_DELAY_MS }: { delay?: number }) {
         className="spotlight-in surface-overlay w-[30rem] max-w-full p-4">
         <div className="mb-3 flex items-center gap-2">
           <p id={titleId} className="flex min-w-0 flex-1 items-center gap-2 text-body">
-            {pressed.map((k, i) => <kbd key={i} className="ui-kbd text-meta">{k}</kbd>)}
+            {pressed.map((k, i) => <kbd key={i} className="ui-kbd text-meta">{inlineArrows(k)}</kbd>)}
             <span aria-hidden className="text-muted">+</span>
             <span className="truncate text-muted">{t('Press a key')}</span>
           </p>
@@ -100,9 +101,9 @@ export function Spotlight({ delay = SPOTLIGHT_DELAY_MS }: { delay?: number }) {
               <ul className="grid grid-cols-1 gap-x-3 min-[25rem]:grid-cols-2">
                 {g.items.map((c) => (
                   <li key={c.entry.id}>
-                    <button type="button" className="flex min-h-8 w-full items-center gap-2 rounded-control px-1.5 text-left text-body hover:bg-sunken focus-visible:outline-2 focus-visible:outline-focus dark:hover:bg-raised"
+                    <button type="button" className="flex min-h-8 w-full items-center gap-2 rounded-control px-1.5 text-start text-body hover:bg-sunken focus-visible:outline-2 focus-visible:outline-focus dark:hover:bg-raised"
                       onClick={() => run(c)} data-spotlight-entry={c.entry.id}>
-                      <kbd className="ui-kbd inline-flex min-w-6 justify-center">{chordText(c.next)}</kbd>
+                      <kbd className="ui-kbd inline-flex min-w-6 justify-center">{inlineArrows(chordText(c.next))}</kbd>
                       <span className="min-w-0 truncate">{shortcutLabel(c.entry)}</span>
                     </button>
                   </li>

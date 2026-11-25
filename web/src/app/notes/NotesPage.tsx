@@ -123,7 +123,7 @@ export function NewNoteRow({ text, cursor, onCreate }: { text: string; cursor: b
     <li className={`group relative flex min-h-12 items-center rounded-control md:min-h-(--size-row) ${cursor ? 'bg-sunken dark:bg-raised' : 'hover:bg-sunken dark:hover:bg-raised'}`}
       data-note-new-row data-cursor={cursor || undefined}>
       <button type="button" data-note-open data-note-create onClick={onCreate}
-        className="flex min-w-0 flex-1 items-center gap-3 rounded-control px-2 py-2 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">
+        className="flex min-w-0 flex-1 items-center gap-3 rounded-control px-2 py-2 text-start focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">
         <span className="flex h-5 w-5 shrink-0 items-center justify-center text-accent"><Icon name="notebook-pen" /></span>
         <span className="user-text min-w-0 flex-1 truncate text-body text-default">{t('New note "{title}"', { title: text })}</span>
       </button>
@@ -226,7 +226,7 @@ export function NotesModeSwitch({ mode, onChange, compact }: { mode: NotesMode; 
       {(['list', 'graph'] as const).map((m) => (
         <Tooltip key={m} label={label[m]} shortcut={keysOf('notes.view-mode')}>
           <button type="button" aria-pressed={mode === m} onClick={() => onChange(m)} data-notes-mode-option={m}
-            className={`${m === 'list' ? 'rounded-l-control' : 'rounded-r-control'} touch-target flex items-center gap-1.5 px-2 py-1 ${mode === m ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
+            className={`${m === 'list' ? 'rounded-s-control' : 'rounded-e-control'} touch-target flex items-center gap-1.5 px-2 py-1 ${mode === m ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
             <Icon name={icon[m]} size="sm" /><span className="max-lg:sr-only">{label[m]}</span>
           </button>
         </Tooltip>

@@ -34,6 +34,7 @@ import { SidebarAppearance } from './sidebarAppearanceLazy'
 import { pinItem } from './menus/pinItem'
 import { printItems } from './menus/printItem'
 import { messageOf } from '../lib/errorText'
+import { inlineKey } from '../lib/direction'
 import { composing } from '../lib/composeKey'
 
 
@@ -173,7 +174,7 @@ export function LabelEditPanel({ label, labels, anchor, onClose }: { label: Labe
   }
   function onSwatchKey(e: KeyboardEvent<HTMLDivElement>) {
     const i = HUES.findIndex((h) => h.name === current)
-    const delta = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0
+    const delta = inlineKey(e) === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : inlineKey(e) === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0
     if (!delta) return
     e.preventDefault()
     const next = HUES[(i + delta + HUES.length) % HUES.length]
@@ -332,19 +333,19 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
     <div ref={row} data-label-row={label.id} data-menu-row data-drop-target={`label:${label.id}`} data-task-drop={taskDrop.label(label.id)} data-active={active || undefined} data-find-active={findActive || undefined}
       className={`group relative rounded-control ${swap ? 'ui-swap-row ' : ''}data-drop-active:ring-2 data-drop-active:ring-accent ${active ? 'bg-selected-row' : 'hover:bg-hover'}${findActive ? ' ring-2 ring-focus' : ''}`}>
       {drop?.id === label.id && <span aria-hidden="true" className={`pointer-events-none absolute inset-x-1 h-0.5 rounded-control bg-accent ${drop.zone === 'before' ? '-top-px' : '-bottom-px'}`} />}
-      <div className="flex items-center gap-1 pr-1">
+      <div className="flex items-center gap-1 pe-1">
         {onDragStart && (
-          <span data-drag-id="label" className="hover-reveal flex cursor-grab touch-none items-center pl-1 text-faint" aria-hidden="true"
+          <span data-drag-id="label" className="hover-reveal flex cursor-grab touch-none items-center ps-1 text-faint" aria-hidden="true"
             onPointerDown={(e) => onDragStart(e, label)} data-label-handle>
             <Icon name="grip-vertical" size="xs" />
           </span>
         )}
         {editing ? (
-          <input className="ui-input my-0.5 ml-1 py-0.5" autoFocus aria-label={t('Label name')} value={name} onChange={(e) => setName(e.target.value)} onBlur={() => void save()}
+          <input className="ui-input my-0.5 ms-1 py-0.5" autoFocus aria-label={t('Label name')} value={name} onChange={(e) => setName(e.target.value)} onBlur={() => void save()}
             onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Enter') void save(); if (e.key === 'Escape') { e.stopPropagation(); setName(label.name); setEditing(false) } }} />
         ) : (
           <button data-label-open onClick={() => navigate({ view: 'label', id: label.id })} onDoubleClick={startRename} onKeyDown={onKeyDown}
-            className={`flex min-w-0 flex-1 items-center gap-2 px-1.5 py-1.5 text-left text-body ${active ? 'font-medium text-strong' : 'text-muted'}`}>
+            className={`flex min-w-0 flex-1 items-center gap-2 px-1.5 py-1.5 text-start text-body ${active ? 'font-medium text-strong' : 'text-muted'}`}>
             <span data-hue={hueFor(label.color)} className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-hue-solid" />
             <span className="flex-1 truncate">{label.name}</span>
             {duplicate && <Badge hue="yellow" title={t('Another label has this name. Merge them from the menu or the banner on the labels page.')}>{t('duplicate')}</Badge>}

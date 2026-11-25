@@ -30,7 +30,7 @@ export function AnswerActions({ text, onRegenerate, enabled }: AnswerActionsProp
     }
   }
   return (
-    <div className="-ml-1.5 flex items-center gap-0.5" data-assistant-actions>
+    <div className="-ms-1.5 flex items-center gap-0.5" data-assistant-actions>
       <IconButton icon={copied === 'ok' ? 'check' : 'copy'} size="sm" className="touch-target text-muted" onClick={() => void copy()}
         label={copied === 'ok' ? t('Copied') : copied === 'failed' ? t('Could not copy') : t('Copy answer')} data-assistant-copy />
       {onRegenerate && (

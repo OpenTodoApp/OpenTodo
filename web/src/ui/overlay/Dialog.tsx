@@ -54,11 +54,11 @@ export interface DialogProps {
 }
 
 const WIDTH = { sm: 'sm:max-w-sm', md: 'sm:max-w-md', lg: 'sm:max-w-lg', graph: 'sm:max-w-[48rem]', xl: 'sm:max-w-5xl' }
-const HEADER = 'sticky top-0 z-10 flex items-center gap-2 border-b border-default bg-inherit pl-4 pr-1 pt-[var(--safe-top)] sm:-top-4 sm:rounded-t-card'
+const HEADER = 'sticky top-0 z-10 flex items-center gap-2 border-b border-default bg-inherit ps-4 pe-1 pt-[var(--safe-top)] sm:-top-4 sm:rounded-t-card'
 // The sheet sits at the bottom, below the notch: no top inset, its own curved corners.
-const HEADER_SHEET = 'sticky top-0 z-10 flex items-center gap-2 rounded-t-card border-b border-default bg-inherit pl-4 pr-1 sm:-top-4'
+const HEADER_SHEET = 'sticky top-0 z-10 flex items-center gap-2 rounded-t-card border-b border-default bg-inherit ps-4 pe-1 sm:-top-4'
 // The palette from 640 px: no title bar, only the close button at the first row's end (the content leaves room for it).
-const HEADER_PALETTE = 'sticky top-0 z-10 flex items-center gap-2 border-b border-default bg-inherit pl-4 pr-1 pt-[var(--safe-top)] sm:absolute sm:right-1 sm:top-1.5 sm:border-0 sm:bg-transparent sm:p-0'
+const HEADER_PALETTE = 'sticky top-0 z-10 flex items-center gap-2 border-b border-default bg-inherit ps-4 pe-1 pt-[var(--safe-top)] sm:absolute sm:inset-e-1 sm:top-1.5 sm:border-0 sm:bg-transparent sm:p-0'
 const CARD = {
   center: 'h-fit min-h-full w-full bg-surface outline-none sm:surface-overlay sm:my-auto sm:min-h-0',
   palette: 'h-fit min-h-full w-full bg-surface outline-none sm:surface-overlay sm:relative sm:mt-[12vh] sm:mb-auto sm:min-h-0 sm:overflow-hidden sm:max-w-[40rem]',
@@ -90,7 +90,7 @@ export function Dialog({ title, onClose, children, size = 'sm', actions, dismiss
     return () => { if (motion === 'dialog') playExit(el, { closing: '.dialog-card', className: 'overlay-scrim-exit' }) }
   }, [motion])
   const tree = (
-    <div ref={root} className={`fixed inset-0 z-50 flex justify-center overflow-y-auto overscroll-contain bg-scrim px-safe ${placement === 'bottom' ? 'sm:pl-[max(1rem,var(--safe-left))] sm:pr-[max(1rem,var(--safe-right))] sm:pt-4' : 'sm:pl-[max(1rem,var(--safe-left))] sm:pr-[max(1rem,var(--safe-right))] sm:pt-4 sm:pb-[max(1rem,var(--safe-bottom))]'}`} data-overlay-root {...isolate}
+    <div ref={root} className={`fixed inset-0 z-50 flex justify-center overflow-y-auto overscroll-contain bg-scrim px-safe ${placement === 'bottom' ? 'sm:ps-[max(1rem,var(--safe-start))] sm:pe-[max(1rem,var(--safe-end))] sm:pt-4' : 'sm:ps-[max(1rem,var(--safe-start))] sm:pe-[max(1rem,var(--safe-end))] sm:pt-4 sm:pb-[max(1rem,var(--safe-bottom))]'}`} data-overlay-root {...isolate}
       onClick={(e) => { if (dismissable && e.target === e.currentTarget) onClose() }}
       onKeyDown={(e) => { if (panel.current) trapTab(e, panel.current); e.stopPropagation() }}>
       <div ref={panel} role={role} aria-modal="true" aria-labelledby={label ? undefined : titleId} aria-label={label} tabIndex={-1} data-overlay="dialog" data-testid={testId}

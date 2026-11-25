@@ -72,19 +72,19 @@ function ReviewRow({ item, index, p, editing, setEditing }: { item: ReviewItem; 
                 + (item.turn === 'added' ? ` ${t('(added this turn)')}` : item.turn === 'changed' ? ` ${t('(changed this turn)')}` : '')} />
             <span className="min-w-0 flex-1 user-text">
               <span className={item.checked ? 'text-default' : 'text-muted'}>{item.title}</span>
-              {item.shared && <span className="ml-1.5 rounded-control border border-info px-1 text-hint font-medium text-on-info-soft">{t('shared')}</span>}
-              {item.state === 'stale' && <span className="ml-1.5 rounded-control border border-warning px-1 text-hint font-medium text-on-warning-soft">{t('changed since proposed')}</span>}
-              {item.edited && <span className="ml-1.5 rounded-control border border-default px-1 text-hint font-medium text-muted" data-edited>{t('edited')}</span>}
-              {item.turn && <span className="ml-1.5 rounded-control border border-accent px-1 text-hint font-medium text-accent" data-turn={item.turn}>{item.turn === 'added' ? t('added') : t('changed')}</span>}
+              {item.shared && <span className="ms-1.5 rounded-control border border-info px-1 text-hint font-medium text-on-info-soft">{t('shared')}</span>}
+              {item.state === 'stale' && <span className="ms-1.5 rounded-control border border-warning px-1 text-hint font-medium text-on-warning-soft">{t('changed since proposed')}</span>}
+              {item.edited && <span className="ms-1.5 rounded-control border border-default px-1 text-hint font-medium text-muted" data-edited>{t('edited')}</span>}
+              {item.turn && <span className="ms-1.5 rounded-control border border-accent px-1 text-hint font-medium text-accent" data-turn={item.turn}>{item.turn === 'added' ? t('added') : t('changed')}</span>}
             </span>
           </span>
           {item.lines.length > 0 && (
-            <span className="pl-6 text-meta text-muted user-text @md/review:max-w-[55%] @md/review:pl-0 @md/review:text-right">
+            <span className="ps-6 text-meta text-muted user-text @md/review:max-w-[55%] @md/review:ps-0 @md/review:text-end">
               {item.lines.map((l) => <span key={l} className="block">{l}</span>)}
             </span>
           )}
         </label>
-        {canEdit && <IconButton icon="pencil" size="sm" className="touch-target my-1 mr-1 text-muted" label={t('Edit {title}', { title: item.title })} aria-expanded={editing} onClick={() => setEditing(editing ? null : index)} data-edit-item />}
+        {canEdit && <IconButton icon="pencil" size="sm" className="touch-target my-1 me-1 text-muted" label={t('Edit {title}', { title: item.title })} aria-expanded={editing} onClick={() => setEditing(editing ? null : index)} data-edit-item />}
       </div>
       {editing && p.onEdit && <Suspense fallback={null}><ItemEditor item={item} index={index} onEdit={p.onEdit} onClose={() => setEditing(null)} /></Suspense>}
     </li>
@@ -140,7 +140,7 @@ export function ChangeSetReview(p: ChangeSetReviewProps) {
         <Icon name="pencil" size="sm" className="text-muted" />
         <h3 id={headingId} className="text-body font-semibold">{t('Proposed changes')}</h3>
         <span className="text-meta text-muted" data-assistant-selected>{t('{checked} of {count} selected', { checked, count: review.items.length })}</span>
-        <span className="ml-auto flex items-center gap-1">
+        <span className="ms-auto flex items-center gap-1">
           {p.shapes && (
             <button type="button" aria-pressed={compare} onClick={() => setCompare(!compare)} data-before-after-switch
               className={`ui-btn ui-btn--sm ${compare ? 'ui-btn--secondary' : 'ui-btn--ghost text-muted'}`}>{t('Before and after')}</button>
@@ -172,7 +172,7 @@ export function ChangeSetReview(p: ChangeSetReviewProps) {
           {t('{n, plural, one {Apply # change} other {Apply # changes}}', { n: checked })}
         </button>
         <button type="button" className="ui-btn ui-btn--secondary ui-btn--sm" onClick={p.onDiscard}>{t('Discard')}</button>
-        <span className="ml-auto text-meta text-faint">{t.rich('{enter} applies, {esc} discards. Each change shows in its task’s history.', { enter: <Kbd k="Enter" />, esc: <Kbd k="Esc" /> })}</span>
+        <span className="ms-auto text-meta text-faint">{t.rich('{enter} applies, {esc} discards. Each change shows in its task’s history.', { enter: <Kbd k="Enter" />, esc: <Kbd k="Esc" /> })}</span>
       </div>
     </div>
   )

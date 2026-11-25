@@ -11,6 +11,7 @@ import { COLOR_BY_MODES, type ColorByMode } from '../../lib/colorBy'
 import { COLOR_BY_LABEL } from '../calendar/colorByControls'
 import { fieldSortOptions } from '../../lib/fieldSortOptions'
 import { GROUP_LABEL, LAYOUT_LABEL, PROPERTY_LABEL, ROW_LAYOUT_LABEL, SORT_LABEL, type DisplayPanelProps, type PanelValue, type ViewDisplay } from './DisplayPanel'
+import { inlineKey } from '../../lib/direction'
 
 const LAYOUT_ICON: Record<ViewLayout, IconName> = { list: 'list', board: 'kanban' }
 const ROW_LAYOUT_ICON: Record<RowLayout, IconName> = { line: 'rows-3', detailed: 'rows-2' }
@@ -109,10 +110,10 @@ export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, 
       </div>}
       <div className="border-t border-soft">
         <button type="button" aria-expanded={more} onClick={() => setMore(!more)} data-display-more
-          className="flex w-full items-center gap-1.5 px-3 py-2.5 text-left text-default hover:bg-sunken">
+          className="flex w-full items-center gap-1.5 px-3 py-2.5 text-start text-default hover:bg-sunken">
           <Icon name="chevron-right" size="xs" className={`text-faint transition-transform duration-(--duration-ui) ${more ? 'rotate-90' : ''}`} />
           {t('More options')}
-          <span className="ml-auto truncate text-faint">{t('Sort direction')}</span>
+          <span className="ms-auto truncate text-faint">{t('Sort direction')}</span>
         </button>
         {more && (
           <div className="px-3 pb-3">
@@ -129,7 +130,7 @@ export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, 
       {onReset && (
         <div className="border-t border-soft p-1.5">
           <button type="button" data-display-reset onClick={() => { resetting.current = true; onReset() }}
-            className="touch-target w-full rounded-control px-1.5 py-1 text-left text-default hover:bg-sunken">
+            className="touch-target w-full rounded-control px-1.5 py-1 text-start text-default hover:bg-sunken">
             {t('Reset')}
           </button>
         </div>
@@ -149,9 +150,9 @@ function Choice<T extends string>({ label, items, value, labels, icons, attr, on
           className={`touch-target flex min-w-0 items-center justify-center gap-1.5 rounded-control px-3 py-1.5 ${value === l ? 'bg-raised text-strong shadow-1' : 'text-muted hover:text-default'}`}
           onClick={() => onChange(l)}
           onKeyDown={(e) => {
-            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+            if (inlineKey(e) !== 'ArrowLeft' && inlineKey(e) !== 'ArrowRight') return
             e.preventDefault()
-            const next = items[(items.indexOf(value) + (e.key === 'ArrowRight' ? 1 : items.length - 1)) % items.length]
+            const next = items[(items.indexOf(value) + (inlineKey(e) === 'ArrowRight' ? 1 : items.length - 1)) % items.length]
             onChange(next)
             ;(e.currentTarget.parentElement?.querySelector(`[data-${attr}="${next}"]`) as HTMLElement | null)?.focus()
           }}

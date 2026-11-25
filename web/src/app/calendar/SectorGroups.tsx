@@ -39,10 +39,10 @@ export function PlanRow({ task, actions }: { task: Task; actions: () => RowActio
       }}
       onClick={() => actions()?.onTap?.(task.id)}
       onDoubleClick={() => actions()?.onOpen(task.id)}
-      className="flex w-full min-w-0 cursor-grab touch-manipulation items-center gap-1 rounded-control px-2 py-1.5 text-left text-body hover:bg-sunken dark:hover:bg-raised"
+      className="flex w-full min-w-0 cursor-grab touch-manipulation items-center gap-1 rounded-control px-2 py-1.5 text-start text-body hover:bg-sunken dark:hover:bg-raised"
     >
       <span className="truncate">{task.title || t('Untitled')}</span>
-      {task.estimate_minutes ? <span className="ml-auto shrink-0 text-meta tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
+      {task.estimate_minutes ? <span className="ms-auto shrink-0 text-meta tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
     </button>
   )
 }

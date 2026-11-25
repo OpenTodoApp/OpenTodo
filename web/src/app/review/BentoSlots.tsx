@@ -13,7 +13,7 @@ import type { Task } from '../../lib/types'
 import { Button, Dialog, Icon, Input } from '../../ui'
 
 // The slot's name lines up with the task titles (row padding, leading slot, check box and gaps).
-const LABEL = 'pl-15 pr-2 text-hint font-semibold uppercase tracking-wide text-faint'
+const LABEL = 'ps-15 pe-2 text-hint font-semibold uppercase tracking-wide text-faint'
 
 /**
  * The slot rows: each slot is its name over the held task (`row` renders a TaskRow),
@@ -35,12 +35,12 @@ export function BentoSlotRows({ read, order, row, onFill }: {
           return (
             <li key={slot} className="flex min-h-11 items-center text-body text-faint" data-bento-slot={slot} data-bento-empty={slot}>
               {onFill ? (
-                <button type="button" className="flex min-h-11 w-full items-center gap-2 rounded-control pl-8 pr-2 text-left hover:bg-sunken hover:text-muted dark:hover:bg-raised"
+                <button type="button" className="flex min-h-11 w-full items-center gap-2 rounded-control ps-8 pe-2 text-start hover:bg-sunken hover:text-muted dark:hover:bg-raised"
                   data-bento-fill={slot} onClick={() => onFill(slot)}>
                   <span className="flex w-5 shrink-0 justify-center"><Icon name="plus" size="sm" /></span>
                   {SLOT_HINTS[slot]}<span className="sr-only">{`, ${t('Choose a task')}`}</span>
                 </button>
-              ) : <span className="pl-15 pr-2">{SLOT_HINTS[slot]}</span>}
+              ) : <span className="ps-15 pe-2">{SLOT_HINTS[slot]}</span>}
             </li>
           )
         }
@@ -86,7 +86,7 @@ export function SlotChooser({ task, free, editable, onPick, onEstimate, onClose 
           {BENTO_SLOTS.filter((s) => free.includes(s)).map((slot) => (
             <Button key={slot} variant="secondary" className="min-h-11 w-full justify-start" data-bento-pick={slot} onClick={() => onPick(slot)}>
               <span className="font-semibold">{SLOT_NAMES[slot]}</span>
-              <span className="ml-2 text-meta text-muted">{SLOT_HINTS[slot]}</span>
+              <span className="ms-2 text-meta text-muted">{SLOT_HINTS[slot]}</span>
             </Button>
           ))}
           {editable && free.length > 0 && (

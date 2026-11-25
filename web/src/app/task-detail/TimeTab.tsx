@@ -201,7 +201,7 @@ export function TimeTab({ task, readOnly }: { task: Task; readOnly: boolean }) {
           </Button>
         )}
         {!readOnly && !adding && <Button variant="ghost" size="sm" icon="plus" onClick={() => setAdding(true)} data-time-add-open>{t('Add time')}</Button>}
-        <span className="ml-auto flex flex-col items-end text-meta tabular-nums text-muted">
+        <span className="ms-auto flex flex-col items-end text-meta tabular-nums text-muted">
           <span data-time-total>{t('Total {duration}', { duration: formatMinutes(total) })}</span>
           {all !== total && <span className="text-faint" data-time-total-all>{t('All occurrences {duration}', { duration: formatMinutes(all) })}</span>}
         </span>
