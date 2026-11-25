@@ -113,6 +113,6 @@ export function useProjectMenu(project: Project, o: { userId?: string; rename: (
     {dialog === 'fields' && <FieldsDialog project={project} onClose={() => setDialog(null)} />}
   </Suspense></PanelBoundary>
   // Share project, or Members for a role that only sees them: the header's button, as a menu item (#1905).
-  const shareItem: ActionItem = { kind: 'action', id: 'share', label: canManageMembers(role) ? t('Share project') : t('Members'), icon: 'users', onSelect: () => setSharing(true) }
+  const shareItem: ActionItem = { kind: 'action', id: 'share', label: canManageMembers(role) ? t('Share project…') : t('Members'), icon: 'users', onSelect: () => setSharing(true) }
   return { groups, swatches, dialogs, membership, role, editable, shareItem, share: (section?: 'public') => setSharing(section ?? true), fields: () => setDialog('fields'), activity: showActivity }
 }

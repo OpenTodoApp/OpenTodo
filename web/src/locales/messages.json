@@ -5751,7 +5751,6 @@
     "web/src/app/RemindersField.tsx",
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/calendar/FrameBand.tsx",
-    "web/src/app/habits/HabitPage.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/themes/YourThemes.tsx"
@@ -5869,6 +5868,7 @@
   ],
   "Edit…": [
     "web/src/app/LabelsView.tsx",
+    "web/src/app/habits/HabitPage.tsx",
     "web/src/app/routines/RoutinesView.tsx"
   ],
   "Eisenhower": [
@@ -10563,9 +10563,6 @@
   "Move to workspace": [
     "web/src/app/menus/projectMenu.tsx"
   ],
-  "Move to workspace…": [
-    "web/src/app/menus/projectMenu.tsx"
-  ],
   "Move to {name}": [
     "web/src/app/task-list/dayOrderDrop.ts",
     "web/src/app/workspaceNav.ts"
@@ -10580,7 +10577,7 @@
     "web/src/app/calendar/occurrenceMenu.tsx",
     "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
-  "Move under task…": [
+  "Move under task": [
     "web/src/app/task-list/todayGroupDrop.ts"
   ],
   "Move up": [
@@ -11928,13 +11925,15 @@
     "web/src/app/RelayConfirm.tsx",
     "web/src/app/TrashView.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
-    "web/src/app/habits/DayMenu.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/lib/assistantBlocks.ts",
     "web/src/lib/rules/sentence.ts",
     "web/src/page/NotePageScreen.tsx"
+  ],
+  "Note…": [
+    "web/src/app/habits/DayMenu.tsx"
   ],
   "Note actions": [
     "web/src/app/notes/NoteRow.tsx"
@@ -16274,7 +16273,7 @@
   "Set a time to fix this due to a time zone": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
-  "Set amount": [
+  "Set amount…": [
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/habits/HabitRow.tsx"
   ],
@@ -16471,7 +16470,9 @@
     "web/src/app/WelcomeDialog.tsx"
   ],
   "Share project": [
-    "web/src/app/ProjectHeader.tsx",
+    "web/src/app/ProjectHeader.tsx"
+  ],
+  "Share project…": [
     "web/src/app/menus/useProjectMenu.tsx"
   ],
   "Share the current project: add members by email, change roles, remove, leave, transfer": [
