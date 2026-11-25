@@ -7923,5 +7923,6 @@
   "The project “{project}” would have more than {n} fields.": "O projeto «{project}» ficaria com mais de {n} campos.",
   "This project already has a field named “{name}” from “{workspace}”.": "Este projeto já tem um campo chamado «{name}» de «{workspace}».",
   "This workspace already has a field named “{name}”.": "Este espaço de trabalho já tem um campo chamado «{name}».",
-  "Workspace fields are edited in the workspace’s settings.": "Os campos do espaço de trabalho são editados nas suas definições."
+  "Workspace fields are edited in the workspace’s settings.": "Os campos do espaço de trabalho são editados nas suas definições.",
+  "Only the workspace’s owner can change its fields.": "Só o proprietário do espaço de trabalho pode alterar os seus campos."
 }

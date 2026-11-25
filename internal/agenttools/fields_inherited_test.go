@@ -2,6 +2,7 @@ package agenttools
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -90,7 +91,7 @@ func TestWorkspaceFieldsInTools(t *testing.T) {
 			}
 		}
 	}
-	if len(kitchen) == 0 || kitchen[0] == "stage@" || kitchen[0][:6] != "stage@" {
+	if len(kitchen) == 0 || kitchen[0] == "stage@" || !strings.HasPrefix(kitchen[0], "stage@") {
 		t.Fatalf("kitchen fields = %v (projects %s)", kitchen, raw)
 	}
 	f.mustCall(c, "update_tasks", map[string]any{"updates": []any{map[string]any{"id": "t1", "fields": map[string]any{"stage": "Ordered"}}}})

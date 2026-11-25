@@ -17,6 +17,8 @@ type fieldVectors struct {
 		Workspaces *struct {
 			Default string   `json:"default"`
 			Known   []string `json:"known"`
+			Owned   []string `json:"owned"`
+			Foreign []string `json:"foreign"`
 		} `json:"workspaces"`
 		Projects []json.RawMessage `json:"projects"`
 		Fields   []json.RawMessage `json:"fields"`
@@ -72,7 +74,18 @@ func TestFieldVectors(t *testing.T) {
 				for _, e := range projects {
 					p.Projects[e.str("id")] = PartitionProject{WorkspaceID: e.str("workspace_id"), ParentID: e.str("parent_id")}
 				}
-				place = p
+				owned := w.Owned
+				if owned == nil {
+					owned = w.Known
+				}
+				f := &FieldPlace{Partition: p, Owned: map[string]bool{}, Foreign: map[string]bool{}}
+				for _, id := range owned {
+					f.Owned[id] = true
+				}
+				for _, id := range w.Foreign {
+					f.Foreign[id] = true
+				}
+				place = f
 			}
 			got := []string{}
 			for _, d := range ApplicableFields(project, ProjectsByID(projects), vectorEntities(t, c.Fields), place) {

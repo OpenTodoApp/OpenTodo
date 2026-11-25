@@ -7923,5 +7923,6 @@
   "The project “{project}” would have more than {n} fields.": "项目“{project}”的字段数将超过 {n} 个。",
   "This project already has a field named “{name}” from “{workspace}”.": "此项目已有来自“{workspace}”的名为“{name}”的字段。",
   "This workspace already has a field named “{name}”.": "此工作区已有名为“{name}”的字段。",
-  "Workspace fields are edited in the workspace’s settings.": "工作区字段需在工作区的设置中编辑。"
+  "Workspace fields are edited in the workspace’s settings.": "工作区字段需在工作区的设置中编辑。",
+  "Only the workspace’s owner can change its fields.": "只有工作区的所有者可以更改其字段。"
 }

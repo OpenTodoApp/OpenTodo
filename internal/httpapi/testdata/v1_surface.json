@@ -9108,7 +9108,7 @@
         "name": "string?",
         "options": "string?",
         "position": "number?",
-        "project_id": "id",
+        "project_id": "id?",
         "type": "string?",
         "workspace_id": "nullable_string?"
       },

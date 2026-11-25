@@ -111,6 +111,12 @@ function WorkspaceFieldsDialog({ workspace, onClose }: { workspace: Workspace; o
   const everyProject = useProjectsOfEveryWorkspace()
   const projectIds = useMemo(() => everyProject.filter((p) => place.project(p.id) === workspace.id).map((p) => p.id), [everyProject, place, workspace.id])
   const tasks = useTaskRowsOfProjects(projectIds)
+  // A clash that arrived through sync or a move: a project of the workspace with its own field of the same name.
+  const clashOf = (d: FieldDef) => {
+    const key = d.name.trim().toLocaleLowerCase()
+    const p = everyProject.find((x) => projectIds.includes(x.id) && liveFields(x.id, defs).some((o) => o.name.trim().toLocaleLowerCase() === key))
+    return p ? p.name : null
+  }
   const others = useWorkspaceMembers().some((m) => m.workspaceId === workspace.id && m.userId !== workspace.ownerId)
   const name = workspaceLabel(workspace.name, workspace.default)
   return (
@@ -120,7 +126,7 @@ function WorkspaceFieldsDialog({ workspace, onClose }: { workspace: Workspace; o
           {t('Fields every project of this workspace has, before its own. At most {max} fields.', { max: MAX_FIELDS })}{' '}<HelpLink screen="project-fields" topic={t('Custom fields')} />
         </p>
         {others && <p className="text-meta text-muted" data-workspace-fields-private>{t('Only you see these fields; other members of the workspace do not.')}</p>}
-        <FieldList live={live} tasks={tasks} clashOf={() => null} empty={t('No fields yet.')} />
+        <FieldList live={live} tasks={tasks} clashOf={clashOf} empty={t('No fields yet.')} />
         <AddField create={(input) => createWorkspaceField(workspace, input)} disabled={live.length >= MAX_FIELDS} />
       </div>
     </Dialog>

@@ -17,7 +17,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { CALENDAR_COMPLETED_META_KEY, GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from './calendar'
 import { db, getMeta, localEpoch, setMeta, type AttachmentBlob } from './db'
 import { rememberFieldNames } from './fieldNames'
-import { applicableFieldsLookup, type FieldPlacement } from './fieldTree'
+import { applicableFieldsLookup, fieldPlace, type FieldPlacement } from './fieldTree'
 import { t } from './i18n'
 import { activeLabels } from './labels'
 import { lineageRows } from './lineageRows'
@@ -270,20 +270,30 @@ export function useFieldDefs(): FieldDef[] {
 
 type FieldLookup = (projectId: string | null | undefined) => FieldDef[]
 const fieldLookups = new WeakMap<Project[], WeakMap<FieldDef[], WeakMap<FieldPlacement, FieldLookup>>>()
-const placements = new WeakMap<WorkspaceState, WeakMap<Project[], FieldPlacement>>()
+const placements = new WeakMap<WorkspaceState, WeakMap<Project[], WeakMap<Membership[], FieldPlacement>>>()
 
 /**
- * Where each project is (workspace-fields D2): the partition of every
- * workspace's projects, one per snapshot of the workspaces and the projects.
+ * Which workspace's fields apply to each project (workspace-fields D2): the
+ * person's own projects in a workspace they own, one placement per snapshot of
+ * the workspaces, the projects and the memberships.
  */
 export function useFieldPlacement(): FieldPlacement {
   const state = useWorkspaceState()
   const all = everyProjectRow.use() ?? NO_PROJECTS
+  const memberships = useMemberships()
   let byProjects = placements.get(state)
   if (!byProjects) placements.set(state, (byProjects = new WeakMap()))
-  let place = byProjects.get(all)
-  if (!place) byProjects.set(all, (place = new Partition(state.defaultId, state.list.map((w) => w.id), all)))
+  let byMembers = byProjects.get(all)
+  if (!byMembers) byProjects.set(all, (byMembers = new WeakMap()))
+  let place = byMembers.get(memberships)
+  if (!place) byMembers.set(memberships, (place = placementOf(state, all, memberships)))
   return place
+}
+
+/** The placement of the cached workspaces, projects and memberships. */
+export function placementOf(state: Pick<WorkspaceState, 'defaultId' | 'list'>, projects: readonly Project[], memberships: readonly Membership[]): FieldPlacement {
+  return fieldPlace(new Partition(state.defaultId, state.list.map((w) => w.id), projects),
+    state.list.filter((w) => w.role === 'owner').map((w) => w.id), memberships.filter((m) => m.role !== 'owner').map((m) => m.projectId))
 }
 
 /**

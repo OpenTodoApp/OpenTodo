@@ -8,9 +8,9 @@ import { db } from './db'
 import { formatDate, type ResolvedDateTime, currentDateTime } from './dates'
 import { mutate, mutateMany, type Change } from './ops'
 import { planStep, positionAtEnd } from './ordering'
-import { applicableFields, fieldDescendants, fieldWorkspace, isWorkspaceField, liveFields, workspaceFields, type FieldPlacement } from './fieldTree'
+import { applicableFields, fieldDescendants, fieldPlace, fieldWorkspace, isWorkspaceField, liveFields, workspaceFields, type FieldPlacement } from './fieldTree'
 import type { FieldDef, FieldType, FieldValue, Project, Task, Workspace } from './types'
-import { Partition } from './workspaces'
+import { Partition, workspaceLabel } from './workspaces'
 import { t, msg, translatedList } from './i18n'
 import { uuid } from './ids'
 
@@ -186,8 +186,10 @@ interface FieldTree { projects: Project[]; defs: FieldDef[]; place: FieldPlaceme
 
 /** The live projects, every definition row and where each project is. */
 async function fieldTree(): Promise<FieldTree> {
-  const [projects, defs, workspaces] = await Promise.all([db.projects.toArray(), db.fields.toArray(), db.workspaces.toArray()])
-  const place = new Partition(workspaces.find((w) => w.default)?.id ?? '', workspaces.map((w) => w.id), projects)
+  const [projects, defs, workspaces, memberships] = await Promise.all([db.projects.toArray(), db.fields.toArray(), db.workspaces.toArray(), db.memberships.toArray()])
+  const partition = new Partition(workspaces.find((w) => w.default)?.id ?? '', workspaces.map((w) => w.id), projects)
+  // The person's own projects in a workspace they own (workspace-fields D2).
+  const place = fieldPlace(partition, workspaces.filter((w) => w.role === 'owner').map((w) => w.id), memberships.filter((m) => m.role !== 'owner').map((m) => m.projectId))
   return { projects: projects.filter((p) => !p.deleted_at), defs, place, workspaces }
 }
 
@@ -218,7 +220,7 @@ function checkName(name: string, projectId: string, tree: FieldTree, exceptId?: 
     if (d.id === exceptId || !sameName(d, key)) continue
     if (isWorkspaceField(d)) {
       const ws = tree.workspaces.find((w) => w.id === fieldWorkspace(d, tree.place))
-      throw new FieldError(t('This project already has a field named “{name}” from “{workspace}”.', { name: trimmed, workspace: ws?.name ?? '' }))
+      throw new FieldError(t('This project already has a field named “{name}” from “{workspace}”.', { name: trimmed, workspace: ws ? workspaceLabel(ws.name, ws.default) : '' }))
     }
     if (d.project_id === projectId) throw new FieldError(t('This project already has a field named “{name}”.', { name: trimmed }))
     throw new FieldError(t('This project already inherits a field named “{name}” from “{project}”.', { name: trimmed, project: nameOf(d.project_id) }))
@@ -256,6 +258,11 @@ function checkWorkspaceName(name: string, workspaceId: string, tree: FieldTree, 
     }
   }
   return trimmed
+}
+
+/** Only a workspace's owner changes its fields (workspace-fields D1). */
+function checkOwner(workspaceId: string, tree: FieldTree): void {
+  if (!tree.place.owns(workspaceId)) throw new FieldError(t('Only the workspace’s owner can change its fields.'))
 }
 
 /** The 30-field limit counts a workspace's fields on every project of the workspace. */
@@ -309,6 +316,7 @@ export async function createField(projectId: string, input: { name: string; type
  */
 export async function createWorkspaceField(workspace: Pick<Workspace, 'id' | 'default'>, input: { name: string; type: FieldType; options?: string }): Promise<string> {
   const tree = await fieldTree()
+  checkOwner(workspace.id, tree)
   checkWorkspaceLimit(workspace.id, tree)
   const name = checkWorkspaceName(input.name, workspace.id, tree)
   if (!FIELD_TYPES.some((item) => item.type === input.type)) throw new FieldError(t('Choose a type.'), 'type')
@@ -327,6 +335,7 @@ export async function renameField(id: string, name: string): Promise<void> {
   const def = await db.fields.get(id)
   if (!def || def.deleted_at) return
   const tree = await fieldTree()
+  if (isWorkspaceField(def)) checkOwner(fieldWorkspace(def, tree.place), tree)
   const trimmed = isWorkspaceField(def) ? checkWorkspaceName(name, fieldWorkspace(def, tree.place), tree, id) : checkName(name, def.project_id, tree, id)
   if (trimmed !== def.name) await mutate('field', id, { name: trimmed })
 }
@@ -378,7 +387,7 @@ export async function reorderField(id: string, delta: -1 | 1 | 'top' | 'bottom')
 }
 
 export { fieldValueLabel, rememberFieldNames } from './fieldNames'
-export { applicableFields, applicableFieldsLookup, fieldChain, fieldDescendants, fieldWorkspace, isWorkspaceField, liveFields, workspaceFields, type FieldPlacement, type FieldProject } from './fieldTree'
+export { applicableFields, applicableFieldsLookup, fieldChain, fieldDescendants, fieldPlace, fieldWorkspace, isWorkspaceField, liveFields, workspaceFields, type FieldPlacement, type FieldProject } from './fieldTree'
 
 /** Set one value of a task (null clears); one `fields.<id>` op, nothing else touched. */
 export async function setFieldValue(taskId: string, defId: string, value: FieldValue): Promise<void> {

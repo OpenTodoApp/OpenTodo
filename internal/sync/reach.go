@@ -78,12 +78,6 @@ func (s *Service) partition(ctx context.Context, r *reach, userID string) (*Part
 	return p, nil
 }
 
-// Partition places the account's projects and tasks in its workspaces, the
-// rule the devices use (workspace-fields D2: which workspace fields apply).
-func (s *Service) Partition(ctx context.Context, userID string) (*Partition, error) {
-	return s.buildPartition(ctx, userID)
-}
-
 // buildPartition reads the placement of the account without the reach,
 // deleted projects and tasks included.
 func (s *Service) buildPartition(ctx context.Context, userID string) (*Partition, error) {

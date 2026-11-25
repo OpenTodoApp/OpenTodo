@@ -44,12 +44,12 @@ func foldFieldsInPlace(e opsync.Entity) {
 type fieldTree struct {
 	projects   map[string]opsync.Entity
 	defs       []opsync.Entity
-	place      *opsync.Partition
+	place      *opsync.FieldPlace
 	workspaces []opsync.Workspace
 }
 
 func (s *Server) loadFieldTree(ctx context.Context, uid string) (fieldTree, error) {
-	projects, err := s.sync.List(ctx, uid, "project", false)
+	projects, err := s.sync.List(ctx, uid, "project", true)
 	if err != nil {
 		return fieldTree{}, err
 	}
@@ -57,15 +57,26 @@ func (s *Server) loadFieldTree(ctx context.Context, uid string) (fieldTree, erro
 	if err != nil {
 		return fieldTree{}, err
 	}
-	place, err := s.sync.Partition(ctx, uid)
-	if err != nil {
-		return fieldTree{}, err
-	}
 	workspaces, err := s.sync.Workspaces(ctx, uid)
 	if err != nil {
 		return fieldTree{}, err
 	}
-	return fieldTree{projects: opsync.ProjectsByID(projects), defs: defs, place: place, workspaces: workspaces}, nil
+	shared, err := s.sync.SharedProjects(ctx, uid)
+	if err != nil {
+		return fieldTree{}, err
+	}
+	// The placement reads projects and workspaces only, never the tasks.
+	part := &opsync.Partition{Known: map[string]bool{}, Projects: map[string]opsync.PartitionProject{}}
+	for _, w := range workspaces {
+		part.Known[w.ID] = true
+		if w.Default {
+			part.Default = w.ID
+		}
+	}
+	for _, p := range projects {
+		part.Projects[idOf(p["id"])] = opsync.PartitionProject{WorkspaceID: idOf(p["workspace_id"]), ParentID: idOf(p["parent_id"])}
+	}
+	return fieldTree{projects: opsync.ProjectsByID(projects), defs: defs, place: opsync.NewFieldPlace(part, workspaces, shared, uid), workspaces: workspaces}, nil
 }
 
 // applicable lists the fields that apply to a project: its workspace's
@@ -103,7 +114,8 @@ func (t fieldTree) workspaceName(id string) string {
 	return id
 }
 
-// inWorkspace lists the live projects of one workspace, sorted by id.
+// inWorkspace lists the live projects of one workspace that its fields apply
+// to (the person's own), sorted by id.
 func (t fieldTree) inWorkspace(ws string) []string {
 	var out []string
 	for id := range t.projects {
@@ -292,7 +304,11 @@ func (s *Server) checkField(ctx context.Context, uid, id string, body map[string
 	}
 	if project == "" {
 		if workspace == "" {
-			workspace = tree.place.Default
+			workspace = tree.place.Default()
+		}
+		// Only the owner changes a workspace's fields, also after a transfer (workspace-fields D1).
+		if !tree.place.Owns(workspace) {
+			return "field.workspace_id: only the workspace's owner changes its fields", nil
 		}
 		return tree.checkWorkspace(workspace, id, name, existing == nil), nil
 	}

@@ -5,7 +5,7 @@
 import { useMemo } from 'react'
 import type { FilterContext } from '../lib/filter'
 import { NO_TASKS, useTasksOfEveryWorkspace } from '../lib/liveTasks'
-import { useLabelsOfEveryWorkspace, useProjectsOfEveryWorkspace, useWorkspaceState } from '../lib/localData'
+import { useFieldPlacement, useLabelsOfEveryWorkspace, useProjectsOfEveryWorkspace, useWorkspaceState } from '../lib/localData'
 import type { Task } from '../lib/types'
 import { Partition } from '../lib/workspaces'
 
@@ -16,7 +16,9 @@ export function useWorkspaceFilter(): WorkspaceFilterContext {
   const projects = useProjectsOfEveryWorkspace()
   const labels = useLabelsOfEveryWorkspace()
   const tasks = useTasksOfEveryWorkspace() ?? NO_TASKS
-  return useMemo(() => workspaceFilterContext(state.defaultId, state.list, projects, labels, tasks), [state, projects, labels, tasks])
+  // Which workspace fields apply to a task's project (workspace-fields D2): the shared placement.
+  const fieldPlacement = useFieldPlacement()
+  return useMemo(() => ({ ...workspaceFilterContext(state.defaultId, state.list, projects, labels, tasks), fieldPlacement }), [state, projects, labels, tasks, fieldPlacement])
 }
 
 /** The pure part of useWorkspaceFilter (tests). With one workspace there is nothing to widen. */
@@ -27,8 +29,6 @@ export function workspaceFilterContext(
   // Built when first asked: with one workspace a filter rarely asks, and it maps every task (incremental-list-updates).
   let p: Partition | null = null
   const workspaceOf = (task: Task) => (p ??= new Partition(defaultId, list.map((w) => w.id), projects, tasks)).taskRow(task)
-  // Which workspace fields apply to a task's project (workspace-fields D2).
-  const fieldPlacement = new Partition(defaultId, list.map((w) => w.id), projects)
-  if (list.length <= 1) return { workspaces: list, workspaceOf, fieldPlacement }
-  return { workspaces: list, workspaceOf, fieldPlacement, everyWorkspace: { tasks, projects, labels } }
+  if (list.length <= 1) return { workspaces: list, workspaceOf }
+  return { workspaces: list, workspaceOf, everyWorkspace: { tasks, projects, labels } }
 }

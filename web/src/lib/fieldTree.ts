@@ -8,13 +8,40 @@ import { descendants } from './tree'
 import type { FieldDef, Project } from './types'
 
 /**
- * Places projects in the account's workspaces (workspace-fields D2): a
- * Partition from lib/workspaces.ts is one. `project` gives a project's
- * workspace (its root's), `own('')` the default workspace.
+ * Which workspace's fields apply to a project (workspace-fields D2): `project`
+ * is that workspace, or '' when none applies (someone else shared the project,
+ * or the person does not own its workspace); `defaultWorkspace` is the default
+ * workspace and `owns` whether the person owns a workspace. Made by fieldPlace.
  */
 export interface FieldPlacement {
   project(id: string): string
-  own(workspaceId: string | null | undefined): string
+  defaultWorkspace(): string
+  owns(workspaceId: string): boolean
+}
+
+/** The part of a Partition (lib/workspaces.ts) a placement reads. */
+export interface ProjectPartition {
+  readonly defaultId: string
+  project(id: string): string
+}
+
+/**
+ * The placement of a partition: the person's own projects in a workspace they
+ * own. `owned` are the workspaces whose role is owner; `foreign` the projects
+ * someone else shared with the person. The Go twin is internal/sync FieldPlace.
+ */
+export function fieldPlace(partition: ProjectPartition, owned: Iterable<string>, foreign: Iterable<string>): FieldPlacement {
+  const mine = new Set(owned)
+  const theirs = new Set(foreign)
+  return {
+    project: (id) => {
+      if (theirs.has(id)) return ''
+      const ws = partition.project(id)
+      return mine.has(ws) ? ws : ''
+    },
+    defaultWorkspace: () => partition.defaultId,
+    owns: (ws) => !!ws && mine.has(ws),
+  }
 }
 
 /** Whether a definition belongs to a workspace rather than a project (workspace-fields D1). */
@@ -28,12 +55,15 @@ export function isWorkspaceField(d: Pick<FieldDef, 'project_id'>): boolean {
  * workspace) is not read as the default, so such a field applies nowhere.
  */
 export function fieldWorkspace(d: Pick<FieldDef, 'workspace_id'>, place: FieldPlacement): string {
-  return d.workspace_id || place.own('')
+  return d.workspace_id || place.defaultWorkspace()
 }
 
-/** The live fields of one workspace, in position order. Without a placement there are none. */
+/**
+ * The live fields of one workspace, in position order. They apply only while the
+ * person owns the workspace (workspace-fields D1); without a placement there are none.
+ */
 export function workspaceFields(workspace: string, place: FieldPlacement | null | undefined, defs: readonly FieldDef[]): FieldDef[] {
-  if (!place || !workspace) return []
+  if (!place || !place.owns(workspace)) return []
   return defs.filter((d) => isWorkspaceField(d) && !d.deleted_at && fieldWorkspace(d, place) === workspace).sort(compareByPosition)
 }
 

@@ -7923,5 +7923,6 @@
   "The project “{project}” would have more than {n} fields.": "В проекте «{project}» было бы больше {n, plural, one {# поля} few {# полей} many {# полей} other {# поля}}.",
   "This project already has a field named “{name}” from “{workspace}”.": "В этом проекте уже есть поле «{name}» из «{workspace}».",
   "This workspace already has a field named “{name}”.": "В этом рабочем пространстве уже есть поле «{name}».",
-  "Workspace fields are edited in the workspace’s settings.": "Поля рабочего пространства изменяются в его настройках."
+  "Workspace fields are edited in the workspace’s settings.": "Поля рабочего пространства изменяются в его настройках.",
+  "Only the workspace’s owner can change its fields.": "Изменять поля рабочего пространства может только его владелец."
 }

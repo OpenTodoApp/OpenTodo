@@ -182,6 +182,18 @@ describe('workspace fields (workspace-fields)', () => {
     const res = await axe.run(dialog(), { rules: { 'color-contrast': { enabled: false } } })
     expect(res.violations.map((v) => v.id)).toEqual([])
   })
+
+  it('marks a clash that arrived through sync, naming the project', async () => {
+    await db.workspaces.put(home)
+    const kitchen = await createProject({ name: 'Kitchen' })
+    const client = await createWorkspaceField(home, { name: 'Client', type: 'text' })
+    // Written as plain ops, as another device would.
+    await mutate('field', 'kitchen-client', { name: 'client', project_id: kitchen, type: 'text', options: '', position: 0, created_at: 1, deleted_at: null })
+    await render(<FieldsDialog workspace={home} onClose={() => {}} />)
+    const dialog = () => document.querySelector('[data-testid="fields-dialog"]') as HTMLElement
+    await waitFor(() => !!dialog()?.querySelector(`[data-field-def="${client}"] [data-field-clash]`), 'the clash note')
+    expect(dialog().querySelector(`[data-field-def="${client}"] [data-field-clash]`)?.textContent).toContain('“Kitchen”')
+  })
 })
 
 describe('project menu', () => {

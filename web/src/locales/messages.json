@@ -6770,7 +6770,6 @@
   ],
   "Fields": [
     "web/src/app/FieldsDialog.tsx",
-    "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/task-detail/FieldsGroup.tsx"
   ],
   "Fields every project of this workspace has, before its own. At most {max} fields.": [
@@ -12795,6 +12794,9 @@
   "Only the server owner can change the AI assistants settings of this server.": [
     "web/src/lib/assistants.ts"
   ],
+  "Only the workspace’s owner can change its fields.": [
+    "web/src/lib/fields.ts"
+  ],
   "Only these": [
     "web/src/app/SyncScopeField.tsx",
     "web/src/app/WorkspaceChoice.tsx"
@@ -13653,8 +13655,8 @@
   "Personal": [
     "web/src/app/WorkspaceControl.tsx",
     "web/src/app/routines/Starters.tsx",
-    "web/src/app/workspaceNav.ts",
-    "web/src/lib/templateLibrary.ts"
+    "web/src/lib/templateLibrary.ts",
+    "web/src/lib/workspaces.ts"
   ],
   "Personal care": [
     "web/src/lib/aisles/index.ts"

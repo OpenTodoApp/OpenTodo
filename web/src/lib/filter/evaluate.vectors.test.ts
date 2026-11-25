@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import type { FieldDef, Label, Project, Section, Task } from '../types'
 import { runFilter } from './evaluate'
+import { fieldPlace } from '../fieldTree'
 import vectors from './evaluate.vectors.json'
 
 function task(row: Record<string, unknown>): Task {
@@ -34,6 +35,8 @@ describe('filter evaluation (shared vectors with internal/filter)', () => {
     trackedOccurrence: new Map(Object.entries(vectors.tracked_occurrence)),
     me: vectors.me,
     members: vectors.members,
+    // Every project in the default workspace (workspace-fields), as internal/filter's vectorPlace.
+    fieldPlacement: fieldPlace({ defaultId: vectors.field_place.default, project: () => vectors.field_place.default }, vectors.field_place.owned, vectors.field_place.foreign),
   }
   it('has the vectors', () => expect(vectors.cases.length).toBeGreaterThanOrEqual(50))
   for (const c of vectors.cases) {

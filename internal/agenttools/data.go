@@ -71,6 +71,10 @@ type snapshot struct {
 	// part places projects and tasks in them (built on first use, reset by apply).
 	workspaces []opsync.Workspace
 	part       *opsync.Partition
+	// userID is the person the snapshot is of; fplace says which workspace's
+	// fields apply to a project (workspace-fields, built on first use).
+	userID string
+	fplace *opsync.FieldPlace
 	// kept holds the kept subtasks (keep-open-subtasks D5): open under a
 	// completed ancestor, left out of lists, search and counts, still in their
 	// parent's subtasks and reachable by id (built on first use, reset by apply).
@@ -112,7 +116,7 @@ type taskReader func(ctx context.Context) (tasks []opsync.Entity, ok bool, err e
 // whose answer depends on a few tasks reads only those (searchTasks). Every
 // other part of the snapshot is the same.
 func (r *Registry) loadWith(ctx context.Context, userID string, tasks taskReader) (*snapshot, error) {
-	snap := &snapshot{projects: map[string]opsync.Entity{}, labels: map[string]string{}, sections: map[string]string{}, people: map[string]string{}, members: map[string]map[string]bool{}, sectionProject: map[string]string{}, fieldDefs: map[string][]opsync.Entity{}}
+	snap := &snapshot{userID: userID, projects: map[string]opsync.Entity{}, labels: map[string]string{}, sections: map[string]string{}, people: map[string]string{}, members: map[string]map[string]bool{}, sectionProject: map[string]string{}, fieldDefs: map[string][]opsync.Entity{}}
 	var err error
 	if snap.projList, err = r.list(ctx, userID, "project", false); err != nil {
 		return nil, err
@@ -690,9 +694,18 @@ func (snap *snapshot) fieldsFor(pid string) []opsync.Entity {
 	if defs, ok := snap.fieldDefs[pid]; ok {
 		return defs
 	}
-	defs := opsync.ApplicableFields(pid, snap.projects, snap.allFieldDefs, snap.partition())
+	defs := opsync.ApplicableFields(pid, snap.projects, snap.allFieldDefs, snap.fieldPlace())
 	snap.fieldDefs[pid] = defs
 	return defs
+}
+
+// fieldPlace says which workspace's fields apply to a project: the
+// person's own projects in a workspace they own (workspace-fields D2).
+func (snap *snapshot) fieldPlace() *opsync.FieldPlace {
+	if snap.fplace == nil {
+		snap.fplace = opsync.NewFieldPlace(snap.partition(), snap.workspaces, snap.shared, snap.userID)
+	}
+	return snap.fplace
 }
 
 type fieldText struct {
@@ -705,7 +718,7 @@ func (snap *snapshot) renderFields(pid string) []fieldOut {
 	for _, d := range snap.fieldsFor(pid) {
 		f := fieldOut{ID: str(d, "id"), Type: str(d, "type"), Untrusted: fieldText{Name: str(d, "name")}}
 		if opsync.IsWorkspaceField(d) {
-			f.Workspace = opsync.FieldWorkspace(d, snap.partition())
+			f.Workspace = opsync.FieldWorkspace(d, snap.fieldPlace())
 		} else if owner := rawStr(d, "project_id"); owner != pid {
 			f.InheritedFrom = owner
 		}

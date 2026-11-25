@@ -11,6 +11,7 @@
 - [x] 2.1 `internal/httpapi/fields.go`: create with `workspace_id` for an owned workspace, refusals for both or neither, an unknown or not-owned workspace, name clashes and the limit across the workspace, `workspace_id` immutable, task values for workspace fields (design D3, D5). Verify: `go test ./internal/httpapi -run 'TestWorkspaceFields|TestFields'`, including the 401 scenario.
 - [x] 2.2 `internal/agenttools`: `list_projects` lists workspace fields with `workspace_id`; values and patches use them. Verify: `go test ./internal/agenttools -run TestWorkspaceFieldsInTools`.
 - [x] 2.3 `internal/importer`: an own export restores a workspace field and its values; a chosen target workspace is stamped. Verify: `go test ./internal/importer -run TestOwnExportRoundTripKeepsWorkspaceFields`.
+- [x] 2.4 Routine filters apply workspace fields: `filter.Context.FieldPlace` (`internal/filter`, `internal/rules`) and the device's `queryMatcher`, with cases in `web/src/lib/filter/evaluate.vectors.json`. Verify: `go test ./internal/filter`, `cd web && npx vitest run src/lib/filter`.
 
 ## 3. Web app
 

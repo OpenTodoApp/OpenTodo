@@ -205,6 +205,8 @@ type world struct {
 	labels    map[string]bool
 	sections  map[string]string
 	shared    map[string]bool
+	// sharedAccess is who owns each shared project (whose workspace fields apply, workspace-fields).
+	sharedAccess map[string]opsync.ProjectAccess
 	// tracked is every entry of a task (the 1.0 meaning, for the tracked
 	// condition); trackedOcc a repeating task's current occurrence only, for a
 	// Find tasks step's `tracked occurrence` (tracked-time-api-compatible).
@@ -306,6 +308,7 @@ func (e *Engine) load(ctx context.Context, uid string) (*world, error) {
 	for id := range shared {
 		w.shared[id] = true
 	}
+	w.sharedAccess = shared
 	w.encrypted, _ = e.keys.Enabled(ctx, uid)
 	w.loadWorkspaces = func() ([]opsync.Workspace, error) { return e.Sync.Workspaces(ctx, uid) }
 	return w, nil

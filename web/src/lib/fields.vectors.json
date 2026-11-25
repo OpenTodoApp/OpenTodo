@@ -1,5 +1,5 @@
 {
-  "description": "Which custom fields apply to a project (OpenSpec inherited-custom-fields D1, workspace-fields D2): with `workspaces`, the live fields of the project's workspace first (an empty project_id; workspace_id null is the default, an unknown id applies nowhere; a project's workspace is its root's, an unknown one the default); then the live definitions of its ancestors, farthest first, then its own, each in position order then id. Read by internal/sync/fields_vectors_test.go and web/src/lib/fields.test.ts.",
+  "description": "Which custom fields apply to a project (OpenSpec inherited-custom-fields D1, workspace-fields D2): with `workspaces`, the live fields of the project's workspace first, when the person owns the workspace (`owned`, every `known` one when absent) and the project is not shared with them by someone else (`foreign`) (an empty project_id; workspace_id null is the default, an unknown id applies nowhere; a project's workspace is its root's, an unknown one the default); then the live definitions of its ancestors, farthest first, then its own, each in position order then id. Read by internal/sync/fields_vectors_test.go and web/src/lib/fields.test.ts.",
   "cases": [
     {
       "name": "own fields only, by position then id",
@@ -215,6 +215,28 @@
         { "id": "mine", "project_id": "p", "position": 0 }
       ],
       "want": ["mine"]
+    },
+    {
+      "name": "a workspace the person does not own: its fields apply nowhere",
+      "project": "p",
+      "workspaces": { "default": "home", "known": ["home", "work"], "owned": ["home"] },
+      "projects": [{ "id": "p", "parent_id": null, "workspace_id": "work" }],
+      "fields": [
+        { "id": "theirs", "project_id": "", "workspace_id": "work", "position": 0 },
+        { "id": "mine", "project_id": "p", "position": 0 }
+      ],
+      "want": ["mine"]
+    },
+    {
+      "name": "a project someone else shared: no workspace fields, its own still apply",
+      "project": "shared",
+      "workspaces": { "default": "home", "known": ["home"], "foreign": ["shared"] },
+      "projects": [{ "id": "shared", "parent_id": null, "workspace_id": null }],
+      "fields": [
+        { "id": "home", "project_id": "", "workspace_id": null, "position": 0 },
+        { "id": "own", "project_id": "shared", "position": 0 }
+      ],
+      "want": ["own"]
     }
   ],
   "descendants": [

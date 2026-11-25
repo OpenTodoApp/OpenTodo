@@ -9953,9 +9953,6 @@
                     ]
                   }
                 },
-                "required": [
-                  "project_id"
-                ],
                 "type": "object"
               }
             }

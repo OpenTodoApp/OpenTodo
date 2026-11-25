@@ -26,17 +26,17 @@ Open the project, open the **⋯** menu and choose **Fields…** (or press <kbd>
 | Link | an `http` or `https` address |
 | Checkbox | on or off |
 
-A project has at most 30 fields, and two fields of one project cannot share a name. The type of a field is fixed once it exists. In the same dialog you can rename a field, edit the options of a choice, move a field up or down (drag it, or press <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd> on its handle) and delete it.
+A project has at most 30 fields, each with its own name. The type of a field is fixed once it exists. In the same dialog you can rename a field, edit the options of a choice, move a field up or down (drag it, or press <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd> on its handle) and delete it.
 
-Whoever may edit the project's tasks may manage its fields. Viewers of a shared project see the values but not the **Fields…** item. The Inbox has no fields.
+Editors of a project manage its fields; viewers see the values only. The Inbox has no fields.
 
 ## Fill in values
 
-Open a task: the **Fields** group of the panel lists the project's fields in order, each with an editor that fits its type. A number or text is saved when you press <kbd>Enter</kbd> or leave the field, a choice opens with <kbd>Enter</kbd> or <kbd>Alt</kbd>+<kbd>↓</kbd>, and a link has a button that opens it in a new tab. Clear a value to leave it empty. Values work offline and sync per field.
+A task's panel has a **Fields** group with an editor for each field. A number or text is saved when you press <kbd>Enter</kbd> or leave the field, a choice opens with <kbd>Enter</kbd> or <kbd>Alt</kbd>+<kbd>↓</kbd>, and a link has a button that opens it in a new tab. Values work offline and sync like every edit; two people editing different fields of one task both keep their change.
 
 ## See values on rows, cards and columns
 
-Rows and board cards show up to three values as small badges, such as **Cost 1,200** or **Paid**, and **+2** for the rest. On a wide screen a project's list offers a **Columns** button above its tasks: one column per field, read-only, with the task panel for editing.
+Rows and board cards show up to three values as small badges, such as **Cost 1,200** or **Paid**, and **+2** for the rest. On a wide screen a project's list offers a **Columns** button above its tasks: one column per field, read-only, with the task panel for editing. The choice is remembered per project on that device.
 
 ## Fields of sub-projects
 
@@ -44,15 +44,15 @@ A field applies to its project and to every sub-project below it. The **Fields�
 
 ## Fields of a workspace
 
-A field can belong to a workspace: in **Settings → Workspaces**, open it and choose **Fields…**. It applies to every project there, listed under **From** and the workspace's name. Only the workspace's owner defines and sees these fields.
+A field can belong to a workspace: in **Settings → Workspaces**, open it and choose **Fields…**. It applies to every project of yours there, listed under **From** and the workspace's name, and no project may reuse its name. Only the owner defines and sees these fields.
 
 ## Move a task or delete a field
 
-A task moved to another project keeps its values, but shows only the fields of its new project; move it back and they reappear. Moving a sub-project or a project works the same way. Deleting a field asks first and says how many tasks hold a value: the values stay in the export, hidden, and **Undo** restores them.
+A task moved to another project keeps its values but shows only that project's fields; move it back and they reappear. Moving a sub-project or a project works the same way. Deleting a field asks first and says how many tasks hold a value: the values stay in the export, hidden, and **Undo** restores them.
 
-Renaming an option of a choice field in place (same line) updates the tasks that held the old text.
+Renaming a choice option in place updates the tasks holding it.
 
 ## Filter by a field
 
 Use a field's name in a [filter query](filters.md#custom-fields): `cost > 100`, `client = "Acme"`, `"Order date" <= friday`, `paid = true`, or `no client` for tasks without a value.
-See [Group and order](group-and-order.md) for field sorting.
+See [Group and order](group-and-order.md) for field sorting. The setting stores definition IDs, keeping encrypted names out of sync operations.

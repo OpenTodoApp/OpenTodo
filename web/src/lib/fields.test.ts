@@ -7,7 +7,7 @@ import { applyOps, completeTask, createProject, createTask, getDeviceId, mutate,
 import {
   countValues, createField, FieldError, fieldBadges, formatValue, liveFields, matchesType, MAX_FIELDS, parseLocaleNumber,
   parseOptions, renameField, reorderField, setFieldOptions, setFieldValue, validateValue, applicableFields, fieldDescendants, type FieldProject,
-  createWorkspaceField, workspaceFieldsOf,
+  createWorkspaceField, workspaceFieldsOf, fieldPlace,
 } from './fields'
 import { deleteFieldUndoable as deleteField } from './undoActions'
 import vectors from './fields.vectors.json'
@@ -253,8 +253,8 @@ describe('inherited fields', () => {
   it('matches the shared vectors', () => {
     for (const c of vectors.cases) {
       // With workspaces (workspace-fields D2) the case places its projects.
-      const w = (c as { workspaces?: { default: string; known: string[] } }).workspaces
-      const place = w ? new Partition(w.default, w.known, c.projects as FieldProject[]) : undefined
+      const w = (c as { workspaces?: { default: string; known: string[]; owned?: string[]; foreign?: string[] } }).workspaces
+      const place = w ? fieldPlace(new Partition(w.default, w.known, c.projects as FieldProject[]), w.owned ?? w.known, w.foreign ?? []) : undefined
       const got = applicableFields(c.project, c.projects as FieldProject[], c.fields as unknown as FieldDef[], place).map((d) => d.id)
       expect(got, c.name).toEqual(c.want)
     }
@@ -320,7 +320,7 @@ describe('inherited fields', () => {
       await use(run())
       await db.workspaces.bulkPut([home, work])
     })
-    const place = async () => new Partition('home', ['home', 'work'], await db.projects.toArray())
+    const place = async () => fieldPlace(new Partition('home', ['home', 'work'], await db.projects.toArray()), ['home', 'work'], [])
 
     it('applies to every project of its workspace, first, and writes no project_id', async () => {
       const kitchen = await createProject({ name: 'Kitchen' })
@@ -351,6 +351,20 @@ describe('inherited fields', () => {
       await expect(renameField(client, 'Size')).rejects.toThrow(/project “Kitchen”/)
       await renameField(client, 'Customer')
       expect((await db.fields.get(client))?.name).toBe('Customer')
+    })
+
+    it('leaves out a project someone else shared, and a workspace the person does not own', async () => {
+      const theirs = await createProject({ name: 'Garden' })
+      await createField(theirs, { name: 'Client', type: 'text' })
+      await db.memberships.put({ projectId: theirs, role: 'editor', ownerId: 'u2', members: [] })
+      await db.workspaces.put({ ...work, role: 'admin' })
+      // The shared-in project neither clashes with the workspace field nor counts toward its limit.
+      const client = await createWorkspaceField(home, { name: 'Client', type: 'text' })
+      await expect(createWorkspaceField(work, { name: 'Stage', type: 'text' })).rejects.toThrow()
+      const tree = { projects: await db.projects.toArray(), defs: await db.fields.toArray() }
+      const placed = fieldPlace(new Partition('home', ['home', 'work'], tree.projects), ['home'], [theirs])
+      expect(applicableFields(theirs, tree.projects, tree.defs, placed).map((d) => d.name)).toEqual(['Client'])
+      expect(applicableFields(theirs, tree.projects, tree.defs, placed).map((d) => d.id)).not.toContain(client)
     })
 
     it('counts toward every project\'s limit of 30', async () => {

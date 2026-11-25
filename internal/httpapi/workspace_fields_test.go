@@ -116,3 +116,45 @@ func TestWorkspaceFieldsLimit(t *testing.T) {
 	resp, out = e.do("POST", "/api/v1/fields", map[string]any{"name": "More", "type": "text", "project_id": pid})
 	e.mustStatus(resp, 400, out)
 }
+
+// A workspace field applies only to the person's own projects in a workspace
+// they own: not to a project someone else shared with them, and not after the
+// workspace is transferred (workspace-fields D1, D2).
+func TestWorkspaceFieldsOwnProjectsOnly(t *testing.T) {
+	se := newShareEnv(t)
+	alice, bob := se.alice, se.bob
+	post := func(c *env, path string, body map[string]any, status int) map[string]any {
+		t.Helper()
+		resp, out := c.do("POST", path, body)
+		c.mustStatus(resp, status, out)
+		return out
+	}
+	// Alice shares Garden, which has its own "Client"; for Bob it sits in his default workspace.
+	garden := post(alice, "/api/v1/projects", map[string]any{"name": "Garden"}, 201)["id"].(string)
+	post(alice, "/api/v1/fields", map[string]any{"name": "Client", "type": "text", "project_id": garden}, 201)
+	addByEmail(alice, bob, "/api/v1/projects/"+garden+"/members", "bob@example.com", "editor")
+	bobDef := defaultWorkspaceID(t, bob)
+	// The shared-in project neither clashes with nor counts toward Bob's workspace field.
+	stage := post(bob, "/api/v1/fields", map[string]any{"name": "Client", "type": "text", "workspace_id": bobDef}, 201)["id"].(string)
+	task := post(bob, "/api/v1/tasks", map[string]any{"title": "Weed", "project_id": garden}, 201)["id"].(string)
+	resp, out := bob.do("PATCH", "/api/v1/tasks/"+task, map[string]any{"fields": map[string]any{stage: "Acme"}})
+	bob.mustStatus(resp, 400, out)
+
+	// After Alice transfers Work to Bob, her Work fields apply nowhere and she cannot rename them.
+	work := createWorkspace(alice, "Work")
+	addByEmail(alice, bob, "/api/v1/workspaces/"+work+"/members", "bob@example.com", "admin")
+	office := post(alice, "/api/v1/projects", map[string]any{"name": "Office", "workspace_id": work}, 201)["id"].(string)
+	effort := post(alice, "/api/v1/fields", map[string]any{"name": "Effort", "type": "number", "workspace_id": work}, 201)["id"].(string)
+	desk := post(alice, "/api/v1/tasks", map[string]any{"title": "Desk", "project_id": office}, 201)["id"].(string)
+	resp, out = alice.do("PATCH", "/api/v1/tasks/"+desk, map[string]any{"fields": map[string]any{effort: 3}})
+	alice.mustStatus(resp, 200, out)
+	resp, out = alice.do("POST", "/api/v1/workspaces/"+work+"/transfer", map[string]any{"userId": se.ids["bob"]})
+	alice.mustStatus(resp, 200, out)
+	resp, out = alice.do("PATCH", "/api/v1/tasks/"+desk, map[string]any{"fields": map[string]any{effort: 5}})
+	alice.mustStatus(resp, 400, out)
+	resp, out = alice.do("PATCH", "/api/v1/fields/"+effort, map[string]any{"name": "Size"})
+	alice.mustStatus(resp, 400, out)
+	if !strings.Contains(out["error"].(map[string]any)["message"].(string), "only the workspace's owner") {
+		t.Fatalf("rename after transfer = %v", out)
+	}
+}

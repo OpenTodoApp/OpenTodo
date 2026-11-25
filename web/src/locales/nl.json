@@ -7923,5 +7923,6 @@
   "The project “{project}” would have more than {n} fields.": "Het project “{project}” zou dan meer dan {n} velden hebben.",
   "This project already has a field named “{name}” from “{workspace}”.": "Dit project heeft al een veld met de naam “{name}” uit “{workspace}”.",
   "This workspace already has a field named “{name}”.": "Deze werkruimte heeft al een veld met de naam “{name}”.",
-  "Workspace fields are edited in the workspace’s settings.": "Velden van de werkruimte bewerk je in de instellingen van de werkruimte."
+  "Workspace fields are edited in the workspace’s settings.": "Velden van de werkruimte bewerk je in de instellingen van de werkruimte.",
+  "Only the workspace’s owner can change its fields.": "Alleen de eigenaar van de werkruimte kan de velden ervan wijzigen."
 }

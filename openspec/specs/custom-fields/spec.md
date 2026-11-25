@@ -285,7 +285,7 @@ Project, label and saved-view task lists SHALL be able to order by a live Number
 - **THEN** sorting by the inherited field's definition ID resolves its local name through fieldTree and orders the values numerically
 
 ### Requirement: Workspace fields
-A field definition without a project SHALL be a workspace field: its `workspace_id` names the workspace, null meaning the default workspace, and it SHALL apply to every project of that workspace, before the project's inherited and own fields, in position order. A project's workspace SHALL be the one the sidebar places it in (its top-level project's). A workspace field naming a workspace the person does not have (a deleted one) SHALL apply nowhere. Only the workspace's owner SHALL define its fields. A workspace field SHALL live in its owner's personal data: it is written as operations, applied locally first so it works offline, converges under per-field last-writer-wins, and reaches the owner's devices only; other members of a shared workspace or project SHALL NOT receive it, and values they hold under it SHALL stay in the tasks' data, hidden for them. Values SHALL be held under the workspace field's id, like any value. The set of applicable fields SHALL be derived on every device, offline too, identically on device and server; nothing is written when a project moves between workspaces.
+A field definition without a project SHALL be a workspace field: its `workspace_id` names the workspace, null meaning the default workspace, and it SHALL apply to every project of that workspace that is the person's own, before the project's inherited and own fields, in position order. A project someone else shared with the person SHALL get none of the person's workspace fields, and SHALL count neither for their names nor for their limit, even where the person's sidebar places it in that workspace. A project's workspace SHALL be the one the sidebar places it in (its top-level project's). A workspace field naming a workspace the person does not have (a deleted one), or one the person no longer owns (after a transfer, or one an import or another device named), SHALL apply nowhere. Only the workspace's owner SHALL define and change its fields. A workspace field SHALL live in its owner's personal data: it is written as operations, applied locally first so it works offline, converges under per-field last-writer-wins, and reaches the owner's devices only; other members of a shared workspace or project SHALL NOT receive it, and values they hold under it SHALL stay in the tasks' data, hidden for them. Values SHALL be held under the workspace field's id, like any value. The set of applicable fields SHALL be derived on every device, offline too, identically on device and server; nothing is written when a project moves between workspaces.
 
 #### Scenario: A field for every project
 - **WHEN** the owner adds the text field "Client" to the workspace Personal, offline, which holds "Kitchen" and "Garden"
@@ -302,6 +302,14 @@ A field definition without a project SHALL be a workspace field: its `workspace_
 #### Scenario: Concurrent edits converge
 - **WHEN** two of the owner's devices rename the workspace field offline and both sync
 - **THEN** every device shows the name written with the greater timestamp
+
+#### Scenario: A project someone else shared
+- **WHEN** Alice shares her project "Garden", which defines "Client", with Bob, Bob's sidebar shows it in his default workspace, and Bob adds a workspace field "Client" to that workspace
+- **THEN** the field is added, Garden's tasks do not show Bob's Client, and the REST API refuses a value for it on a Garden task
+
+#### Scenario: After a transfer
+- **WHEN** Alice transfers the workspace Work, which has her workspace field "Effort", to Bob
+- **THEN** Effort no longer applies to Work's projects for Alice, and renaming it is refused with 400 `invalid_input` saying only the workspace's owner changes its fields
 
 ### Requirement: Names and limits across a workspace
 A workspace field's name SHALL be unique, ignoring case, among the workspace's live fields and the own fields of every project in the workspace: adding or renaming one SHALL be refused naming the project that uses the name. A project field SHALL NOT take a name of a workspace field that applies to it; the refusal SHALL name the workspace. A workspace SHALL have at most 30 live fields, and adding a workspace field SHALL be refused, naming the project, when a project of the workspace already has 30 applicable fields. A clash that arrives through a move or concurrent offline edits SHALL be shown, never repaired.

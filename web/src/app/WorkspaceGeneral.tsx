@@ -79,8 +79,8 @@ export function IdentitySection({ ws, online }: { ws: Workspace; online: boolean
 function FieldsRow({ ws }: { ws: Workspace }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="divide-y divide-soft border-y border-soft" data-workspace-fields={ws.id}>
-      <SettingRow label={t('Fields')} control={<Button onClick={() => setOpen(true)}>{t('Fields…')}</Button>} />
+    <div data-workspace-fields={ws.id}>
+      <Button onClick={() => setOpen(true)}>{t('Fields…')}</Button>
       {open && <FieldsDialog workspace={ws} onClose={() => setOpen(false)} />}
     </div>
   )
