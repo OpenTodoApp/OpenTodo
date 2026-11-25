@@ -175,7 +175,7 @@ export function MonthsSpanView({ mode, anchor, title, months }: MonthsSpan) {
       {tip && tipDay && (tipDay.count > 0 || tipEvents > 0) && !narrow && (
         <div role="tooltip" id={`${mode}-day-tip`} data-tooltip {...{ [`data-${mode}-tip`]: tip.date }}
           className="overlay-fade-in pointer-events-none fixed z-[70] max-w-64 -translate-x-1/2 rounded-chip border border-strong bg-pop px-2 py-1 text-meta text-default shadow-2"
-          style={{ top: tip.top, left: tip.left }}>
+          style={{ /* physical: centred on the measured day */ top: tip.top, left: tip.left }}>
           {tipText(tipDay, tipEvents).map((line, i) => <span key={i} className={`block truncate ${i === 0 ? 'font-medium' : ''}`}>{line}</span>)}
         </div>
       )}

@@ -5,6 +5,7 @@
 // under forced colours), and one roving-tabindex grid of its marks: the arrow keys
 // move, and the focused mark shows the tooltip a pointer gets. Marks wear the chart
 // tokens; every text wears text tokens.
+// physical-file: a time axis drawn from computed left offsets, kept left to right in a dir="ltr" box (arabic-rtl D8).
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Icon, type IconName } from '../../ui'
 import { t } from '../../lib/i18n'

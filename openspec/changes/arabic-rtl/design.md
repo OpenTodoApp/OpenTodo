@@ -12,9 +12,9 @@ The swipe hint ("Swipe right to complete, left to schedule") and similar sentenc
 
 ## D3. Logical layout
 
-The layout classes name the start and end of the line: Tailwind's `ms-`/`me-`, `ps-`/`pe-`, `inset-s-`/`inset-e-`, `text-start`/`text-end`, `border-s`/`border-e`, `rounded-s-`/`rounded-e-` (and the corner forms). A codemod converted the web app (about 520 class names in 220 files); left to right the computed styles are the same, so the existing visual baselines hold. Kept physical, on purpose: a centring `left-1/2` with `-translate-x-1/2` (direction-neutral), the drag ghost and the graph nodes placed by screen coordinates (marked `// physical:`), and the symmetric safe-area padding `px-safe`.
+The layout classes name the start and end of the line: Tailwind's `ms-`/`me-`, `ps-`/`pe-`, `inset-s-`/`inset-e-`, `text-start`/`text-end`, `border-s`/`border-e`, `rounded-s-`/`rounded-e-` (and the corner forms). A codemod converted the web app (about 520 class names in 220 files); left to right the computed styles are the same, so the existing visual baselines hold. Kept physical, on purpose: a centring `left-1/2` with `-translate-x-1/2` (direction-neutral), boxes placed by screen coordinates (the drag ghost, the menus opened at the pointer, the popover's computed position, the routine editor's caret mark; each marked `// physical: <reason>`), the connections graph's nodes (`left-0` with a transform, in `index.css`, which the check does not read), and the symmetric safe-area padding `px-safe`.
 
-`make ui-lint` (`scripts/ui-check.mjs` rule 7) refuses a physical utility in `web/src/app`, `lib` and `ui`, unless the line or the line above carries `// physical: <reason>`.
+`make ui-lint` (`scripts/ui-check.mjs` rule 7) refuses, in `web/src/app`, `lib` and `ui`: the physical spacing, inset, border, radius and alignment utilities; `float-`/`clear-left|right`, `origin-left|right|…`, `bg-linear-to-l|r|…`/`bg-gradient-to-…`, `object-left|right`, `bg-left|right`, `pl-safe`/`pr-safe`; a `translate-x-*` without an `rtl:` twin on the line (a centring `-translate-x-1/2` is fine); and, lightly, an inline style with `left`, `right`, `marginLeft|Right`, `paddingLeft|Right` or `textAlign: 'left'|'right'`. A line is excused by `// physical: <reason>` or `/* physical: <reason> */` (also `{/* … */}` in JSX) on it or the line above; a file drawn from coordinates and kept left to right says `// physical-file: <reason>` near its top (the Timeline view, the review charts, the assistant's timeline and free-time strip).
 
 Beside the classes:
 
@@ -22,6 +22,7 @@ Beside the classes:
 - `index.css`: the select's chevron sits at the start edge (its two halves keep their order), the sidebar's hover menu button and the mention chip's icon use inline insets and margins, the docked panel slides in from its own edge (`--panel-shift`), as page transitions already did (`--nav-shift`).
 - Transforms that do not mirror by themselves: the closed drawer (`rtl:translate-x-full`), the switch's knob, the panel's resize handle.
 - Inline styles: indentation (`paddingInlineStart`), calendar lanes and sidebar drop guides (`insetInlineStart`); the selection dock, placed from a measured rectangle, sets `right: auto`.
+- The mirroring and isolation rules key off `:dir(rtl)` on the element itself, not `:root[dir=rtl]`, so a box kept left to right (D8) keeps its icons, figures and code as they are; the Tailwind `rtl:` variant also matches inside such a box (`[dir=rtl] *`), so it is used only outside them.
 - Icon and isolation rules sit outside every cascade layer, so a `rotate-90` utility on a mirrored disclosure chevron does not undo its turn.
 - Overlays: a popover's `align: 'start' | 'end'` means the trigger's start or end edge (swapped right to left in `Popover`); the collapsed rail's tooltip goes to the rail's left right to left.
 
@@ -33,7 +34,7 @@ Beside the classes:
 
 ## D5. Text keeps its own direction
 
-`.user-text` (titles, notes, comments and the other user-written text already marked with it) gets `unicode-bidi: plaintext`: each paragraph takes its direction from its first strong letter, so an English title in an Arabic row reads left to right with its punctuation at the right end, and the row's time, checkbox and menu, laid out by flexbox outside the text, do not move. `pre`, `code` and `kbd` read left to right in an isolated box. An inline run of figures (`span.tabular-nums`, such as a time range 08:00–10:00) keeps its left-to-right order inside right-to-left text. The in-app Help and the import guides stay English (`localization` "Help stays English") and are marked `lang="en" dir="ltr"`.
+`.user-text` (titles, notes, comments and the other user-written text already marked with it) gets `unicode-bidi: plaintext`: each paragraph takes its direction from its first strong letter, so an English title in an Arabic row reads left to right with its punctuation at the right end, and the row's time, checkbox and menu, laid out by flexbox outside the text, do not move. Fields people type into (text inputs, text areas, the notes editor's paragraphs and list items) get the same `unicode-bidi: plaintext`, line by line; `dir="auto"` is not used on them because an empty field would fall back to left to right, placeholder and caret on the wrong side. Short titles in the calendar (Day and Week blocks, lanes, deadline markers, events) carry `dir="auto"`, and `isRtl()` looks past `dir="auto"` to the layout's direction. `pre`, `code` and `kbd` read left to right in an isolated box. An inline run of figures (`span.tabular-nums`, such as a time range 08:00–10:00) keeps its left-to-right order inside right-to-left text; a calendar block's time line is `dir="ltr"`, aligned to the end, so truncation cuts its end rather than its start. The in-app Help and the import guides stay English (`localization` "Help stays English") and are marked `lang="en" dir="ltr"`.
 
 ## D6. Numbers and dates
 
@@ -45,7 +46,7 @@ Beside the classes:
 
 ## D8. Coordinate-drawn axes stay left to right
 
-The Timeline view, the review charts, the assistant's timeline block and free-time strip place their marks with computed `left` values, and the notes and connections graphs with screen coordinates. They are wrapped in `dir="ltr"` (their keys then read as left to right too, through the nearest `dir`), so they stay correct inside an Arabic page; their classes are already logical, so mirroring them later is a change of their coordinate code only.
+The Timeline view, the review charts, the assistant's timeline block and free-time strip place their marks with computed `left` values, and the notes and connections graphs with screen coordinates. The first five are wrapped in `dir="ltr"` (the notes graph's canvas also sets `ctx.direction = 'ltr'`, so its labels still extend to the right of their node), and the connections graph's nodes are placed physically (their keys then read as left to right too, through the nearest `dir`), so they stay correct inside an Arabic page; their classes are already logical, so mirroring them later is a change of their coordinate code only.
 
 ## D9. Native shells
 

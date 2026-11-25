@@ -164,7 +164,7 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
             className={`ui-block ui-block--row relative flex w-full touch-manipulation items-center gap-1 truncate px-1.5 py-0.5 text-start text-meta ${task.completed_at || day.date < today ? 'ui-block--past' : ''} ${selectedId === task.id ? 'ring-1 ring-accent' : ''}`}
             data-hue={hueOf(task)}
           >
-            <span className={`truncate ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
+            <span dir="auto" className={`truncate ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
             {task.completed_at ? <span className="sr-only">{t('(completed)')}</span> : null}
             {task.deadline === day.date && !task.completed_at && <><DeadlineDiamond past={day.date < today} /><span className="sr-only">, {deadlineMark(task, day.date)}</span></>}
             {task.estimate_minutes ? <span className="ms-auto shrink-0 text-hint tabular-nums">{formatMinutes(task.estimate_minutes)}</span> : null}
@@ -294,7 +294,7 @@ export function DayColumn({ day, prefs, isToday, isPast = false, nowMinutes, tas
         <div key={g.id} data-replan-ghost={g.id} data-hue={g.hue} aria-hidden
           className="ui-block ui-block--ghost pointer-events-none absolute inset-x-0.5 z-30 overflow-hidden px-1.5 py-0.5 text-meta"
           style={{ top: g.start * PX_PER_MIN, height: Math.max(MIN_BLOCK_MINUTES, Math.min(g.length, DAY_MINUTES - g.start)) * PX_PER_MIN }}>
-          <span className="text-hint tabular-nums">{formatTime(g.start)}</span> <span className="truncate font-medium">{g.title || t('Untitled')}</span>
+          <span className="text-hint tabular-nums">{formatTime(g.start)}</span> <span dir="auto" className="truncate font-medium">{g.title || t('Untitled')}</span>
         </div>
       ))}
 
@@ -376,12 +376,12 @@ function TaskBlock({ b, block, task, date, past, hue, selected, dragging, movesT
       {/* Named by its content (WCAG 2.5.3 Label in Name): the spoken text is visually hidden, the visible one is not read twice. */}
       <span className="sr-only">{[task.title || t('Untitled'), task.completed_at ? t('(completed)') : '', block.estimated ? t('{time} for {duration}', { time: formatTime(block.start), duration: formatMinutes(task.estimate_minutes!) }) : t('{time}, no estimate', { time: formatTime(block.start) }), b.overlap ? t('overlaps another item') : '', movesTo !== undefined ? t('moves to {time}', { time: formatTime(movesTo) }) : '', task.completed_at ? '' : deadlineMark(task, date)].filter(Boolean).join(', ')}</span>
       <div aria-hidden className="flex items-start gap-1">
-        <span className={`min-w-0 flex-1 truncate font-medium ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
+        <span dir="auto" className={`min-w-0 flex-1 truncate font-medium ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
         {task.deadline === date && !task.completed_at && <DeadlineDiamond past={past} className="mt-1" />}
         {b.overlap && <span data-overlap-marker className="shrink-0 text-warning" aria-hidden>⧉</span>}
       </div>
       {height >= 30 && (
-        <div aria-hidden className="truncate text-hint tabular-nums">
+        <div aria-hidden dir="ltr" className="truncate text-hint tabular-nums rtl:text-end">
           <span className="tabular-nums">{formatTime(block.start)}–{formatTime(block.end === DAY_MINUTES ? DAY_MINUTES - 1 : block.end)}</span>
           {block.estimated && <span className="ms-1">{formatMinutes(task.estimate_minutes!)}</span>}
         </div>
@@ -463,7 +463,7 @@ function OverflowStack({ o, day, taskMap, selectedId, expanded, setExpanded, onS
                   className={`flex w-full gap-1 truncate rounded-control px-1 py-0.5 text-start text-meta ${selectedId === id ? 'bg-selected-row' : 'hover:bg-hover'}`}
                 >
                   <span className="text-hint tabular-nums text-muted">{blk ? formatTime(blk.start) : ''}</span>
-                  <span className={`truncate ${tk?.completed_at ? 'line-through' : ''}`}>{tk?.title || t('Untitled')}</span>
+                  <span dir="auto" className={`truncate ${tk?.completed_at ? 'line-through' : ''}`}>{tk?.title || t('Untitled')}</span>
                   {tk?.completed_at ? <span className="sr-only">{t('(completed)')}</span> : null}
                 </button>
               </li>

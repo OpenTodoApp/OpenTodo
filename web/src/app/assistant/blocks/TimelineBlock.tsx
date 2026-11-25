@@ -4,6 +4,7 @@
 // part and deadline diamond), on an axis fitted to the block so it never scrolls
 // sideways, with today marked. Read-only: nothing drags or resizes, and the
 // timeline's keyboard scope is not taken. A row opens its task. Lazy chunk.
+// physical-file: a time axis drawn from computed left offsets, kept left to right in a dir="ltr" box (arabic-rtl D8).
 import type { AssistantBlock } from '../../../lib/assistantBlocks'
 import { useBlockTimeline, type TimelineLine } from '../../../lib/assistantBlockData'
 import { addDaysISO, daysBetweenISO, formatDate, formatDateRange, logicalToday } from '../../../lib/dates'

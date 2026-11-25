@@ -4,6 +4,7 @@
 // server's find_free_time). A strip shows where in the working day they fall; titles
 // are never needed, so encrypted accounts look the same. Activating a day opens it.
 // Read-only: placing a task is a proposal. Lazy chunk.
+// physical-file: a time axis drawn from computed left offsets, kept left to right in a dir="ltr" box (arabic-rtl D8).
 import type { AssistantBlock } from '../../../lib/assistantBlocks'
 import { useFreeTime } from '../../../lib/assistantBlockData'
 import { formatDate, formatTime } from '../../../lib/dates'

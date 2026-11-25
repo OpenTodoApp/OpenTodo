@@ -3,6 +3,7 @@
 // on a day or week axis, dependency arrows, and date moves by drag and keyboard.
 // Selection and opening stay with the list (j / k / Enter); this view adds the
 // axis, the bars and the date edits, each one batch of ordinary field ops.
+// physical-file: a time axis drawn from computed left offsets, kept left to right in a dir="ltr" box (arabic-rtl D8).
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { DESKTOP_HEADER_QUERY, Icon, ReadAs, useMediaQuery } from '../ui'
 import { addDaysISO, daysBetweenISO, formatDate, viewedTask, formatDateRange, monthName } from '../lib/dates'
