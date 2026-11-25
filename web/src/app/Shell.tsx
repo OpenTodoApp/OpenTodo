@@ -35,7 +35,6 @@ import { currentAddress, openTaskPage, settleTrail } from './taskTrail'
 import { AddButton, TAB_BAR_ROOM, TabBar } from './TabBar'
 import { PHONE_BAR_FRAME, PHONE_BAR_LINE, hasPhoneChrome } from './phoneFrame'
 import { usePhoneOwnBar } from '../phone/chrome'
-import { PhoneChrome } from '../phone/PhoneChrome'
 import { usePhoneUiEnabled } from '../phone/prefs'
 import { usePhoneChrome } from './useScrollDirection'
 import { onQuickAddSheetRequest, QuickAddSheet, requestQuickAddSheet } from './QuickAddSheet'
@@ -74,6 +73,7 @@ const FeatureOff = lazy(() => import('./FeatureOff'))
 const VimLayer = lazy(() => import('./vim/VimLayer'))
 const WorkspaceActivity = lazy(() => import('./WorkspaceActivity'))
 // The phone UI's screens (phone-ui-trial D2): their own chunks, fetched only while the per-device switch is on below 768 px.
+const PhoneChrome = lazy(() => import('../phone/PhoneChrome').then((m) => ({ default: m.PhoneChrome })))
 const PhoneList = lazy(() => import('../phone/screens/PhoneList').then((m) => ({ default: m.PhoneList })))
 const PhoneTaskPage = lazy(() => import('../phone/screens/PhoneTaskPage').then((m) => ({ default: m.PhoneTaskPage })))
 /** A task list: the phone UI's list while it is on (phone-lists D7); a project in another layout keeps the present screen. */
@@ -84,7 +84,8 @@ function ListScreen({ route, user, phoneUi, onMenu }: { route: ListRoute; user: 
 }
 /** The phone UI around the screens while it is on (phone-all-screens): every page's header is the phone's. */
 function PhoneOr({ on, onMenu, children }: { on: boolean; onMenu: () => void; children: ReactNode }) {
-  return on ? <PhoneChrome onMenu={onMenu}>{children}</PhoneChrome> : <>{children}</>
+  // Its chunk is fetched only while the phone UI is on; the screens mount once it is here.
+  return on ? <Suspense fallback={null}><PhoneChrome onMenu={onMenu}>{children}</PhoneChrome></Suspense> : <>{children}</>
 }
 /** Whether the phone UI's screens are shown: the switch is on and the window is a phone's. */
 function usePhoneUi(): boolean {

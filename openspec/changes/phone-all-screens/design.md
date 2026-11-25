@@ -27,7 +27,7 @@ A prototype put the shell's screens inside a provider of `PageHeaderDrawContext`
 
 `PhonePageHeader` says the screen draws its own bar (`useOwnBar`), so the shell leaves its phone bar out on every screen with a page header and keeps it on one without. A header with `level` 2 stays the page's own (`PageHeader` checks it), since a section's header is not the page's.
 
-`PhoneChrome` is imported by `Shell.tsx`, one of the two files allowed to import `src/phone`. It is in the first load: it is a provider and must wrap the screens before they render, and a lazy provider would mount every screen twice. Its cost is `PhonePageHeader` and `PhoneHeader`, about 1 KB gzip; measured in 4.1.
+`PhoneChrome` is loaded by `Shell.tsx`, one of the two files allowed to import `src/phone`, as a lazy chunk inside `Suspense`: the screens are its children, so they mount once, when the chunk is here. Imported statically it put the phone row, the date sheet and the swipe in the first load (17 KB gzip, measured); lazily the first load is as before. Measured in 4.1.
 
 Alternative: a phone version of each screen's header call. Rejected: about forty call sites, each a place to forget an action.
 

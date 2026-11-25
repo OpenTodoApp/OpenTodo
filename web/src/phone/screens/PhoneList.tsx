@@ -33,7 +33,6 @@ import { useListScreen } from '../../app/task-list/useListScreen'
 import { UrgencyContext } from '../../app/useUrgency'
 import { t } from '../../lib/i18n'
 import { PhoneChrome } from '../PhoneChrome'
-import { PhoneListRow } from './PhoneListRow'
 
 const CompletedSearch = lazy(() => import('../../app/completed/CompletedBar').then((m) => ({ default: m.CompletedSearch })))
 
@@ -47,7 +46,6 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
     completedNarrowed, currentProject, currentLabel, currentPlace, phoneActions, agenda } = s
   const coarse = useMediaQuery('(pointer: coarse)')
   const renderRow = useRowRenderer({
-    Row: PhoneListRow,
     view: route.view, labelId: route.view === 'label' ? route.id : undefined, userId, projectMap: m.projectMap, labelMap: m.labelMap, memberMap: m.memberMap, selectedId, progress: m.progress, blocked: m.blocked, flow: m.flow,
     habits: m.habits, isReadOnly, board: false, manual, ownOrder: !!ownOrder, dayOrderIds: s.dayOrderIds, treeView: m.treeView || m.nested, dropAt: drag.dropAt, draggingId: drag.draggingId, ticked: selection.ticked,
     showCheckbox: selectMode, selectMode, fieldColumns: false, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
