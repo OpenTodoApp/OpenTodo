@@ -48,15 +48,15 @@ const POLICY_CACHE = 'opentodo-policy'
 const POLICY_KEY = '/__policy'
 const remembered = rememberedMode(() => caches.open(POLICY_CACHE))
 const records = trustReader(env.load, remembered)
-/** One read of the trust state: a request decides everything from the one it took. */
 /**
  * The refusal mode of the last trust read, for the one decision the fetch handler
  * makes before it can wait: whether to take a form's POST navigation (D7). Null
  * until the first read; it only ever moves to true, like the record.
  */
-let refusing: boolean | null = null
+const mode: { refusing: boolean | null } = { refusing: null }
+/** One read of the trust state: a request decides everything from the one it took. */
 const trustState = (): Promise<TrustState> => records.read().then((t) => {
-  refusing = refusing === true || t.refuse
+  mode.refusing = mode.refusing === true || t.refuse
   return t
 })
 async function trust(): Promise<TrustRecord | null> {
@@ -270,7 +270,7 @@ self.addEventListener('fetch', (event) => {
   // first trust read the mode is unknown: the worker takes it and decides from the
   // record, so a device with refusal on never lets one through unsandboxed.
   if (request.method !== 'GET') {
-    if (navigate && refusing !== false) event.respondWith(serverDocument(event))
+    if (navigate && mode.refusing !== false) event.respondWith(serverDocument(event))
     return
   }
   if (navigate && PUBLIC_LIST.test(path)) {
