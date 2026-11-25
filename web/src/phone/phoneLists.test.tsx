@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { addDaysISO, logicalToday } from '../lib/dates'
 import { createLabel } from '../lib/labels'
+import { createPlace, locationFromPlace, getPlace } from '../lib/locations'
 import { createProject, createSubtask, createTask, resetDeviceId, setTaskCompleted } from '../lib/ops'
 import { createSection, saveViewMode } from '../lib/sections'
 import type { User } from '../lib/types'
@@ -171,6 +172,72 @@ describe('selecting in the phone list', () => {
     await waitFor(() => !!close(), 'the selection bar')
     await click(close()!)
     await waitFor(() => !row(s.late).querySelector('[data-phone-tick]') && document.querySelectorAll('[data-ticked]').length === 0, 'the checks again')
+    await r.unmount()
+  })
+})
+
+describe('what a list keeps', () => {
+  it('a place lists its tasks in the phone list', async () => {
+    const place = await createPlace({ name: 'Post office' })
+    const there = await createTask({ title: 'Buy stamps', location: locationFromPlace((await getPlace(place))!) })
+    setPhoneUiEnabled(true)
+    navigate({ view: 'place', id: place })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => list()?.getAttribute('data-phone-list') === 'place' && rowIds().includes(there), 'the place\'s list')
+    await r.unmount()
+  })
+
+  it('a task added elsewhere appears without a reload, and a completed one leaves', async () => {
+    const s = await seed()
+    setPhoneUiEnabled(true)
+    navigate({ view: 'inbox' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => rowIds().includes(s.loose), 'the Inbox')
+    const added = await createTask({ title: 'Another thought' })
+    await waitFor(() => rowIds().includes(added), 'the new task')
+    await setTaskCompleted(s.loose, true)
+    await waitFor(() => !rowIds().includes(s.loose), 'the completed task gone')
+    await r.unmount()
+  })
+
+  it('an empty list shows its empty state', async () => {
+    setPhoneUiEnabled(true)
+    navigate({ view: 'someday' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!list()?.querySelector('[data-empty-view]'), 'the empty state')
+    expect(rowIds()).toEqual([])
+    await r.unmount()
+  })
+})
+
+describe('the row\'s menu in the phone list', () => {
+  const menuItems = () => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')]
+  const item = (text: string) => menuItems().find((el) => el.textContent?.includes(text))
+  const openMenu = (id: string) => row(id).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 40, clientY: 200 }))
+
+  it('opens the list\'s own row menu, with Edit title, Add subtask and Reorder', async () => {
+    const s = await seed()
+    // A second task beside it: a task alone among its siblings has nowhere to move.
+    await createTask({ title: 'File the receipts', project_id: s.work })
+    setPhoneUiEnabled(true)
+    navigate({ view: 'project', id: s.work })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!row(s.late), 'the project list')
+    openMenu(s.late)
+    await waitFor(() => !!item('Edit title') && !!item('Add subtask') && !!item('Reorder'), 'the row menu')
+    await r.unmount()
+  })
+
+  it('Edit title opens the field in the row', async () => {
+    const s = await seed()
+    setPhoneUiEnabled(true)
+    navigate({ view: 'project', id: s.work })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!row(s.late), 'the project list')
+    openMenu(s.late)
+    await waitFor(() => !!item('Edit title'), 'the row menu')
+    await click(item('Edit title')!)
+    await waitFor(() => !!row(s.late).querySelector('[data-phone-inline] textarea, [data-phone-inline] input, [data-phone-inline] [contenteditable]'), 'the title field in the row')
     await r.unmount()
   })
 })

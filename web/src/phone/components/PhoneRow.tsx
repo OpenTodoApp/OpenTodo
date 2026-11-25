@@ -46,6 +46,8 @@ export interface PhoneRowFold {
 }
 
 /** One step of indent for a subtask, and the deepest step drawn. */
+// The pressed colour of the check, the tick box and the fold keeps to a 32 px circle around the glyph
+// of their 44 px wide target (touch-pressed-states): padding with the colour clipped to the content.
 const INDENT_REM = 1.5
 const MAX_DEPTH = 3
 
@@ -84,7 +86,7 @@ export function PhoneRow({ row, readOnly = false, swipe, onToggle, onOpen, depth
       {selecting ? (
         <button type="button" role="checkbox" aria-checked={ticked} disabled={!tickable} aria-label={t('Select {title}', { title: row.title })}
           onClick={() => onTick?.(row.id)} data-phone-tick
-          className="flex h-14 w-12 shrink-0 items-center justify-center rounded-control focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-focus">
+          className="press-selected flex h-14 w-12 shrink-0 items-center justify-center rounded-full bg-clip-content px-2 py-3 focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-focus">
           <span aria-hidden className={`flex h-6 w-6 items-center justify-center rounded-md border-2 ${ticked ? 'border-transparent bg-accent text-on-accent' : 'border-input'} ${tickable ? '' : 'opacity-40'}`}>
             {ticked && <Icon name="check" size="xs" />}
           </span>
@@ -92,7 +94,7 @@ export function PhoneRow({ row, readOnly = false, swipe, onToggle, onOpen, depth
       ) : (
         <button type="button" aria-pressed={!!row.done} disabled={readOnly} aria-label={row.done ? t('Reopen task') : t('Complete task')}
           onClick={() => onToggle(row.id)} data-phone-check
-          className="flex h-14 w-12 shrink-0 items-center justify-center rounded-control focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-focus">
+          className="press-selected flex h-14 w-12 shrink-0 items-center justify-center rounded-full bg-clip-content px-2 py-3 focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-focus">
           <span aria-hidden data-check-mark className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${row.done ? 'border-transparent bg-faint text-on-accent' : RING[row.priority]}`}>
             {row.done && <Icon name="check" size="xs" />}
           </span>
@@ -100,7 +102,7 @@ export function PhoneRow({ row, readOnly = false, swipe, onToggle, onOpen, depth
       )}
       {inline ? <div className="flex min-h-14 min-w-0 flex-1 items-center py-1 pr-2" data-phone-inline>{inline}</div> : (
         <button type="button" onClick={() => (tickable ? onTick?.(row.id) : selecting ? undefined : onOpen(row.id))} data-phone-open data-row-open
-          className="flex min-h-14 min-w-0 flex-1 flex-col justify-center py-2 pr-4 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">
+          className="press-selected flex min-h-14 min-w-0 flex-1 flex-col justify-center py-2 pr-4 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">
           <span data-row-title className={`line-clamp-2 text-prose ${row.done ? 'text-faint line-through' : 'text-strong'}`}>{row.title}</span>
           {facts.length > 0 && (
             <span className="mt-0.5 flex min-w-0 items-center gap-x-2 text-meta text-muted" data-phone-facts>
@@ -117,7 +119,7 @@ export function PhoneRow({ row, readOnly = false, swipe, onToggle, onOpen, depth
       )}
       {fold && !inline && (
         <button type="button" aria-expanded={fold.open} aria-label={fold.open ? t('Collapse subtasks') : t('Expand subtasks')} onClick={fold.onToggle} data-phone-fold-row
-          className="flex h-14 w-11 shrink-0 items-center justify-center rounded-control text-muted focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-focus">
+          className="press-selected flex h-14 w-11 shrink-0 items-center justify-center rounded-full bg-clip-content px-1.5 py-3 text-muted focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-focus">
           <Icon name={fold.open ? 'chevron-down' : 'chevron-right'} size="sm" />
         </button>
       )}
