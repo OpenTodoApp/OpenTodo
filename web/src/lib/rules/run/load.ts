@@ -72,7 +72,7 @@ export async function loadRunWorld(o: LoadOptions): Promise<RunWorld> {
   const now = o.now ?? Date.now()
   const [tasks, projects, labels, sections, views, fields, timeEntries, prefs, memberships, me, workspaces] = await Promise.all([
     db.tasks.toArray(), db.projects.toArray(), db.labels.toArray(), db.sections.toArray(), db.views.toArray(), db.fields.toArray(),
-    db.timeEntries.toArray(), db.userPrefs.get('me'), membershipMap(), currentUserId(), o.workspace ? db.workspaces.toArray() : Promise.resolve([]),
+    db.timeEntries.toArray(), db.userPrefs.get('me'), membershipMap(), currentUserId(), db.workspaces.toArray(),
   ])
   const p = (prefs ?? {}) as Partial<UserPrefs> & Row
   const dayStart = typeof p.day_start === 'string' ? p.day_start : ''
@@ -97,7 +97,7 @@ export async function loadRunWorld(o: LoadOptions): Promise<RunWorld> {
     userId: me ?? '', today: logicalDate(now, offset, dayStart), now, weekStart: WEEK_START[String(p.week_start)] ?? 1, offset, dayStart,
     tasks: rows(tasks), projects: rows(projects), labels: rows(labels), sections: rows(sections), views: rows(views), fields: rows(fields),
     timeEntries: rows(timeEntries), prefs: p, memberships, project: o.project || undefined, changed: changedDates(rows(tasks), offset, dayStart), encrypted: o.encrypted,
-    env: o.env, templates, noteTemplates, notes, noteChanged, noteMs,
+    env: o.env, templates, noteTemplates, notes, noteChanged, noteMs, workspaces,
   }
   if (!o.workspace || o.project) return world
   const scoped = inWorkspace(world, o.workspace, workspaces)

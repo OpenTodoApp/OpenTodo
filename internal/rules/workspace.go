@@ -39,8 +39,12 @@ func (w *world) workspaceList() []opsync.Workspace {
 	return *w.wsList
 }
 
-// partition places the world's projects and tasks in the user's workspaces.
+// partition places the world's projects and tasks in the user's workspaces,
+// built once per world (its rows are fixed once loaded).
 func (w *world) partition() *opsync.Partition {
+	if w.part != nil {
+		return w.part
+	}
 	p := &opsync.Partition{Known: map[string]bool{}, Projects: map[string]opsync.PartitionProject{}, Tasks: map[string]opsync.PartitionTask{}}
 	for _, ws := range w.workspaceList() {
 		p.Known[ws.ID] = true
@@ -54,6 +58,7 @@ func (w *world) partition() *opsync.Partition {
 	for id, t := range w.tasks {
 		p.Tasks[id] = opsync.PartitionTask{WorkspaceID: str(t, "workspace_id"), ProjectID: str(t, "project_id"), ParentID: str(t, "parent_id")}
 	}
+	w.part = p
 	return p
 }
 
@@ -66,6 +71,7 @@ func (w *world) inWorkspace(ws string) *world {
 		return nil
 	}
 	b := *w
+	b.part = nil // the narrowed world places its own rows
 	b.workspace, b.workspaceDefault = ws, part.Default == ws
 	b.tasks, b.parent, b.projectRows, b.elsewhere = map[string]opsync.Entity{}, map[string]string{}, map[string]opsync.Entity{}, map[string]bool{}
 	b.sections, b.sectionName = map[string]string{}, map[string]string{}

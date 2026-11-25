@@ -7923,5 +7923,14 @@
   "Today and the task page in the new design. Turn it off at any time.": "Dzisiaj i strona zadania w nowym wyglądzie. Możesz to wyłączyć w każdej chwili.",
   "Quick add notification": "Powiadomienie szybkiego dodawania",
   "Add a task from the notification shade, in any app.": "Dodaj zadanie z obszaru powiadomień, w dowolnej aplikacji.",
-  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android odrzucił powiadomienia OpenTodo. Zezwól na nie w ustawieniach Androida."
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android odrzucił powiadomienia OpenTodo. Zezwól na nie w ustawieniach Androida.",
+  "A workspace can have at most {n} fields.": "Obszar roboczy może mieć najwyżej {n} pól.",
+  "Fields every project of this workspace has, before its own. At most {max} fields.": "Pola, które ma każdy projekt tego obszaru roboczego, przed własnymi. Najwyżej {max} pól.",
+  "Only you see these fields; other members of the workspace do not.": "Tylko ty widzisz te pola; inni członkowie obszaru roboczego ich nie widzą.",
+  "The project “{project}” already has a field named “{name}”.": "Projekt „{project}” ma już pole o nazwie „{name}”.",
+  "The project “{project}” would have more than {n} fields.": "Projekt „{project}” miałby więcej niż {n} pól.",
+  "This project already has a field named “{name}” from “{workspace}”.": "Ten projekt ma już pole o nazwie „{name}” z „{workspace}”.",
+  "This workspace already has a field named “{name}”.": "Ten obszar roboczy ma już pole o nazwie „{name}”.",
+  "Workspace fields are edited in the workspace’s settings.": "Pola obszaru roboczego edytuje się w jego ustawieniach.",
+  "Only the workspace’s owner can change its fields.": "Tylko właściciel obszaru roboczego może zmieniać jego pola."
 }
