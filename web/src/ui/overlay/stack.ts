@@ -322,7 +322,12 @@ export function watchVisualViewport(): () => void {
   if (!vv) return () => {}
   let keyboard = false
   const update = () => {
-    const covered = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop))
+    // The height sheets are laid out in. Chrome on iPhone shrinks the page itself for
+    // the keyboard while window.innerHeight can still hold the full height: counting the
+    // keyboard there too lifts a sheet a second time, up to the top of the screen.
+    const page = document.documentElement.clientHeight
+    const layout = page > 0 ? Math.min(window.innerHeight, page) : window.innerHeight
+    const covered = Math.max(0, layout - (vv.height + vv.offsetTop))
     document.documentElement.style.setProperty('--vv-bottom', `${Math.round(covered)}px`)
     // The keyboard closed (issue #724): Safari on iOS can leave the document scrolled
     // where it moved the focused field to, with a strip of nothing under the app. The
@@ -337,8 +342,11 @@ export function watchVisualViewport(): () => void {
   }
   vv.addEventListener('resize', update)
   vv.addEventListener('scroll', update)
+  // The page can change height after the last viewport event; measure again then.
+  window.addEventListener('resize', update)
   return () => {
     vv.removeEventListener('resize', update)
     vv.removeEventListener('scroll', update)
+    window.removeEventListener('resize', update)
   }
 }
