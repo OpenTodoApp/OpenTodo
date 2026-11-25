@@ -964,6 +964,14 @@ test('the surface freeze accepts a listed security narrowing exactly, and nothin
   ])
 })
 
+test('the surface freeze accepts a request field that became optional, not one that became required', () => {
+  const tagged = { routes: { 'POST /api/v1/fields': { request: { project_id: 'id', name: 'string?' } } } }
+  const relaxedNow = { routes: { 'POST /api/v1/fields': { request: { project_id: 'id?', name: 'string?' } } } }
+  assert.deepEqual(surfaceProblems(tagged, relaxedNow, 'v1.0.0', {}), [])
+  const required = { routes: { 'POST /api/v1/fields': { request: { project_id: 'id', name: 'string' } } } }
+  assert.deepEqual(surfaceProblems(tagged, required, 'v1.0.0', {}), ['routes › POST /api/v1/fields › request › name: was "string?" at v1.0.0, now "string"'])
+})
+
 test('the surface freeze names an entry deleted by hand after v1.0.0', () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'surface-freeze-'))
   try {

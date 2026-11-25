@@ -35,6 +35,9 @@ export function flattenSurface(v, prefix = '', out = {}) {
   return out
 }
 
+/** A request field that became optional (workspace-fields): compatible, as internal/httpapi compareSurface reads it. */
+const relaxed = (p, was, now) => p.includes(`${SEP}request${SEP}`) && now === `${was}?`
+
 /** surfaceProblems: entries of the tagged snapshot that are missing or changed in the current one. */
 export function surfaceProblems(tagged, current, tag = FREEZE_TAG, allowed = SECURITY_NARROWINGS) {
   const was = flattenSurface(tagged)
@@ -43,7 +46,7 @@ export function surfaceProblems(tagged, current, tag = FREEZE_TAG, allowed = SEC
   for (const [p, v] of Object.entries(was)) {
     if (p === 'about') continue
     if (!(p in now)) problems.push(`${p}: present at ${tag}, missing now`)
-    else if (now[p] !== v && !(allowed[p]?.from === v && allowed[p]?.to === now[p])) problems.push(`${p}: was ${JSON.stringify(v)} at ${tag}, now ${JSON.stringify(now[p])}`)
+    else if (now[p] !== v && !(allowed[p]?.from === v && allowed[p]?.to === now[p]) && !relaxed(p, v, now[p])) problems.push(`${p}: was ${JSON.stringify(v)} at ${tag}, now ${JSON.stringify(now[p])}`)
   }
   return problems.sort()
 }
