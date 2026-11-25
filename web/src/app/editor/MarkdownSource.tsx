@@ -6,6 +6,7 @@ import { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type
 import type { EditorView } from 'prosemirror-view'
 import { applySource, blockAt, mapCaret, sourceOf } from '../../lib/markdownSource'
 import { t } from '../../lib/i18n'
+import { composing } from '../../lib/composeKey'
 
 /** The pause after the last keystroke before the source is applied (the editor's local save). */
 const PAUSE_MS = 400
@@ -81,6 +82,7 @@ export default function MarkdownSource({ view, readOnly, handle, onToggle, onEsc
   useEffect(() => { area.current?.focus({ preventScroll: true }) }, [])
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (composing(e)) return
     if (isToggle(e)) { e.preventDefault(); e.stopPropagation(); onToggle(); return }
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); flush(); e.currentTarget.blur(); onEscape() }
   }

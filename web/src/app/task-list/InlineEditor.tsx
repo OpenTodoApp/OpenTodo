@@ -23,6 +23,7 @@ import { commitTitleEdit } from '../titleEdit'
 import { moveWithUndo } from '../undoable'
 import { useViewerZone } from '../useViews'
 import { t } from '../../lib/i18n'
+import { composing } from '../../lib/composeKey'
 
 // Date opens the row's Schedule popover, loaded on first use like the row's own, so the
 // When editor stays out of the list's first load (when-picker).
@@ -69,6 +70,7 @@ export function InlineEditor({ task, caret, compact = false, projects, labelMap,
   }
 
   const onKeyDownFirst = (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (composing(e)) return false
     if (e.key === 'Enter' && e.shiftKey) {
       e.preventDefault()
       details.current = true

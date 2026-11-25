@@ -18,6 +18,7 @@ import { walkOccurrences } from '../lib/occurrences'
 import type { Task } from '../lib/types'
 import { preferredLanguages, t, useLanguageVersion } from '../lib/i18n'
 import { act } from './actionError'
+import { composing } from '../lib/composeKey'
 // The habit section loads with the first habit (habits-home): none of it is on the first load.
 const HabitSection = lazy(() => import('./habits/HabitSection').then((m) => ({ default: m.HabitSection })))
 
@@ -114,6 +115,7 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
           onChange={(e) => { setDraft(e.target.value); setError(null) }}
           onBlur={() => { if (draft !== (task.recurrence ?? '')) void commit() }}
           onKeyDown={(e) => {
+            if (composing(e)) return
             if (e.key === 'Enter') { e.preventDefault(); void commit() }
             if (e.key === 'Escape') { setDraft(task.recurrence ?? ''); setError(null) }
           }}

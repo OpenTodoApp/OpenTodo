@@ -1,0 +1,1 @@
+- **Typing Japanese, Chinese or Korean no longer saves or cancels a field halfway.** While an input method is converting, Enter, Escape, Tab and the arrow keys belong to it in every text field: renaming a project, section or label no longer saves the unconverted reading or discards the edit, and search fields and pickers no longer jump to a result or pick a suggestion.
