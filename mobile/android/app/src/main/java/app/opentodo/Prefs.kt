@@ -40,6 +40,11 @@ class Prefs(context: Context) {
         get() = p.getString("remindersShown", "{}") ?: "{}"
         set(v) = p.edit().putString("remindersShown", v).apply()
 
+    /** Per reminder, the fire time it was last answered for (android-urgent-alarms D2: one answer per firing): `{id: ms}`. */
+    var remindersActed: String
+        get() = p.getString("remindersActed", "{}") ?: "{}"
+        set(v) { p.edit().putString("remindersActed", v).commit() }
+
     /**
      * The UnifiedPush registration (shell-push D3): token, distributor, endpoint and the Web Push
      * keys, private key included. It never leaves the phone and goes with the server's data.
@@ -93,6 +98,16 @@ class Prefs(context: Context) {
         val a = org.json.JSONArray(json ?: "[]")
         (0 until a.length()).map { a.optString(it) }.filter { it.isNotEmpty() }.take(WidgetModel.MAX_ROWS)
     } catch (e: Exception) { emptyList() }
+
+    /**
+     * android-urgent-alarms D4: the settings pages already opened for urgent reminders (`exact`,
+     * `full-screen`), each once per device: kept apart, so signing out or changing server keeps them.
+     */
+    private val device: SharedPreferences = context.applicationContext.getSharedPreferences("opentodo-device", Context.MODE_PRIVATE)
+
+    fun urgentAsked(page: String): Boolean = device.getBoolean("urgentAsked.$page", false)
+
+    fun markUrgentAsked(page: String) = device.edit().putBoolean("urgentAsked.$page", true).apply()
 
     /** The last system bars the web app asked for (theme-engine D8), applied at the next launch before the page draws. */
     var systemBars: String?

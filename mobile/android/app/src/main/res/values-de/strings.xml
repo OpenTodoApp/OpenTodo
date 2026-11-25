@@ -21,6 +21,7 @@
     <string name="error_offline">Der Server ist nicht erreichbar, und OpenTodo wurde auf diesem Telefon noch nie geöffnet.</string>
     <string name="error_untrusted">Dieses Telefon vertraut dem Zertifikat des Servers nicht.</string>
     <string name="channel_reminders">Erinnerungen</string>
+    <string name="channel_urgent">Dringende Erinnerungen</string>
     <string name="reminder_generic">Erinnerung</string>
     <string name="reminder_text">Aufgabenerinnerung</string>
     <string name="action_snooze">10 Min. später</string>

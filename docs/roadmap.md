@@ -38,6 +38,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `android-home-network-notice` | The Android app says when the server address only works at home | In progress (2 of 3) |
 | `android-reveal-on-paint` | The Android app shows the web app at its first drawn frame, as the iPhone app does | In progress (3 of 4) |
 | `android-unicode-address` | A server address typed in Unicode works in the Android app; both apps share one set of address cases | In progress (3 of 4) |
+| `android-urgent-alarms` | Urgent reminders ring as full-screen alarms in the Android app; built, the device run is open | In progress (10 of 11) |
 | `android-quick-add-notification` | A quick-add notification in the Android app: add a task from the notification shade in any app | In progress (7 of 8) |
 | `ios-microphone-origin` | The iPhone app grants the microphone to the configured server only, without a second prompt | In progress (4 of 5) |
 | `ios-quick-look` | An attached image or PDF opens in Quick Look in the iPhone app, without saving it first | In progress (4 of 5) |
@@ -155,6 +156,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `chore-rotation` | Recurring tasks that rotate between members of a group | Shipped in 0.21 |
 | `more-languages` | Dutch, quick add in Dutch, and a kit for community languages | Shipped in 1.5 |
 | `simplified-chinese` | Simplified Chinese (简体中文) | Shipped in 0.23 |
+| `japanese` | Japanese (日本語) as a community language, reviewed by a native speaker | In progress (8 of 9) |
 | `priority-names` | Rename the four priorities | Shipped in 1.4 |
 
 ## 1.0 "Trust"

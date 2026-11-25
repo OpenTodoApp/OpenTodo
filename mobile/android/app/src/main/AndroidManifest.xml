@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- android-urgent-alarms D4: an urgent reminder's alarm over the lock screen. On Android 14+
+         from Google Play the user allows it (the Play declaration is in store/play-review.md). -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -102,6 +105,18 @@
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
+
+        <!-- android-urgent-alarms D2: an urgent reminder's full-screen alarm, opened only by its own
+             notification. Shown over the lock screen; no Recents entry, no back stack. -->
+        <activity
+            android:name=".AlarmActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:showWhenLocked="true"
+            android:taskAffinity=""
+            android:turnScreenOn="true"
+            tools:targetApi="o_mr1" />
 
         <!-- native-shells "Quick actions on the app icon": the shortcuts' target, so the task the
              system clears for a static shortcut is this one's and a running app keeps its state. -->

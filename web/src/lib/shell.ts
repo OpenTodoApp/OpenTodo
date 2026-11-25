@@ -13,7 +13,7 @@ export const BRIDGE_VERSION = 1
 /** The oldest shell app version this web app expects (bumped when a shell bug needs a forced update). */
 export const MIN_SHELL_APP = '0.10.0'
 
-export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'completion-sound' | 'alarm-settings' | 'background' | 'pull-refresh' | 'first-paint' | 'push' | 'app-links' | 'scroll-top' | 'focus' | 'quick-add-notification'
+export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'completion-sound' | 'alarm-settings' | 'urgent-alarms' | 'background' | 'pull-refresh' | 'first-paint' | 'push' | 'app-links' | 'scroll-top' | 'focus' | 'quick-add-notification'
 
 /**
  * One location reminder handed to the shell (location-reminders D3): the circle
@@ -54,7 +54,7 @@ export interface ShellReminder {
   title?: string
   /** The notification's body, the due as of the firing day ("Today 14:00"), sent with the title (push-due-date D4). */
   due?: string
-  /** Only on an urgent reminder, which the iPhone app rings as an alarm (ios-urgent-alarms D3). */
+  /** Only on an urgent reminder, which the iPhone and Android apps ring as an alarm (ios-urgent-alarms D3, android-urgent-alarms). */
   urgent?: true
 }
 
@@ -150,6 +150,11 @@ export interface OpenTodoShell {
   playCompletionSound?(): void
   /** shell-reminders-on D3: opens the system page where exact alarms are allowed (Android, the visible app). */
   openAlarmSettings?(): void
+  /**
+   * android-urgent-alarms D4: the user turned Urgent on; the shell opens the system page
+   * for what an urgent reminder still lacks (exact alarms, full-screen), each once per device.
+   */
+  allowUrgentAlarms?(): void
   /**
    * shell-reminders-on D4: a background run's web app is done; the shell ends the run. The
    * JSON names what the run saved (android-quick-add-notification D4: `{"added": [taskIds]}`).
@@ -397,6 +402,14 @@ export function openAlarmSettings(): boolean {
   const s = shell()
   if (!s || !has('alarm-settings') || !s.openAlarmSettings) return false
   s.openAlarmSettings()
+  return true
+}
+
+/** Lets a shell that lists `urgent-alarms` ask for what urgent reminders need; false elsewhere. */
+export function allowUrgentAlarms(): boolean {
+  const s = shell()
+  if (!s || !has('urgent-alarms') || !s.allowUrgentAlarms) return false
+  s.allowUrgentAlarms()
   return true
 }
 

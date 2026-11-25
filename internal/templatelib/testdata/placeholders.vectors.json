@@ -22,6 +22,9 @@
     {"name": "Chinese", "title": "{{weekday}}", "text": "{{title}}",
       "context": {"date": "2026-11-14", "time": "10:00", "order": "YMD", "hour12": false, "lang": "zh"},
       "want_title": "星期六", "want_text": "星期六"},
+    {"name": "Japanese", "title": "{{weekday}} {{date}}", "text": "{{title}}",
+      "context": {"date": "2026-11-16", "time": "10:00", "order": "YMD", "hour12": false, "lang": "ja"},
+      "want_title": "月曜日 2026-11-16", "want_text": "月曜日 2026-11-16"},
     {"name": "{{title}} in the title is nothing", "title": "{{title}} Standup {{date}}", "text": "",
       "context": {"date": "2026-11-16", "time": "10:00", "order": "DM", "hour12": false, "lang": "en"},
       "want_title": "Standup 16/11/2026", "want_text": ""}
@@ -29,6 +32,6 @@
   "order": [
     {"date_format": "day-month", "lang": "en", "order": "DM"}, {"date_format": "month-day", "lang": "it", "order": "MD"},
     {"date_format": "iso", "lang": "en", "order": "YMD"}, {"date_format": "system", "lang": "en", "order": "MD"},
-    {"date_format": "system", "lang": "zh", "order": "YMD"}, {"date_format": "system", "lang": "fr", "order": "DM"}
+    {"date_format": "system", "lang": "zh", "order": "YMD"}, {"date_format": "system", "lang": "ja", "order": "YMD"}, {"date_format": "system", "lang": "fr", "order": "DM"}
   ]
 }

@@ -10,7 +10,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { shellGeofences } from './geofences'
-import { announcePainted, backgroundDone, forgetShellData, openAlarmSettings, setSystemBars, shellHaptic, shellVisible, takeOverPull, type OpenTodoShell, type ShellCapability, type ShellGeofencePayload, type ShellHaptic } from './shell'
+import { allowUrgentAlarms, announcePainted, backgroundDone, forgetShellData, openAlarmSettings, setSystemBars, shellHaptic, shellVisible, takeOverPull, type OpenTodoShell, type ShellCapability, type ShellGeofencePayload, type ShellHaptic } from './shell'
 import { fileChunks } from './saveFile'
 import { shellUrlAction } from './shellActions'
 import { parsePushState, parsePushSubscription, pushState, pushSubscribe, pushUnsubscribe } from './shellPush'
@@ -231,7 +231,7 @@ function fixtures(): Record<string, Fixture> {
       expect: untitled.map((r) => ({ id: r.id, taskId: r.taskId, fireAt: r.fireAt, title: null, due: null })),
     },
     'reminders-urgent.json': {
-      description: 'An urgent reminder (ios-urgent-alarms D3) carries urgent: true, the others no urgent at all. The iPhone app rings an urgent one as an alarm where it can; every other shell schedules it as an ordinary reminder.',
+      description: 'An urgent reminder (ios-urgent-alarms D3) carries urgent: true, the others no urgent at all. The iPhone and Android apps ring an urgent one as an alarm where they can (android-urgent-alarms D3); every other shell schedules it as an ordinary reminder.',
       method: 'scheduleReminders', payload: JSON.stringify(urgent), now: NOW,
       expect: urgent.map((r) => ({ id: r.id, taskId: r.taskId, fireAt: r.fireAt, title: r.title ?? null, due: r.due ?? null, urgent: r.urgent === true })),
     },
@@ -397,21 +397,21 @@ function haptics() {
  * has a screen" from `links`, so no background run may list anything of visibleOnly.
  */
 function capabilities() {
-  const visibleOnly = ['share', 'links', 'obsidian-links', 'app-links', 'system-bars', 'microphone', 'files', 'haptics', 'completion-sound', 'alarm-settings', 'first-paint', 'focus', 'quick-add-notification']
+  const visibleOnly = ['share', 'links', 'obsidian-links', 'app-links', 'system-bars', 'microphone', 'files', 'haptics', 'completion-sound', 'alarm-settings', 'urgent-alarms', 'first-paint', 'focus', 'quick-add-notification']
   const backgroundOnly = ['background']
   const both = ['reminders', 'widgets', 'push']
   const called: string[] = []
-  const bridge = (caps: string[]): OpenTodoShell => ({ bridge: 1, platform: 'android', app: '1.6.0', capabilities: caps, openAlarmSettings: () => void called.push('openAlarmSettings'), backgroundDone: () => void called.push('backgroundDone') })
+  const bridge = (caps: string[]): OpenTodoShell => ({ bridge: 1, platform: 'android', app: '1.6.0', capabilities: caps, openAlarmSettings: () => void called.push('openAlarmSettings'), allowUrgentAlarms: () => void called.push('allowUrgentAlarms'), backgroundDone: () => void called.push('backgroundDone') })
   // Each method is called only where its capability is listed.
   window.opentodoShell = bridge([...both, ...visibleOnly])
-  const visible = { shellVisible: shellVisible(), openAlarmSettings: openAlarmSettings(), backgroundDone: backgroundDone() }
+  const visible = { shellVisible: shellVisible(), openAlarmSettings: openAlarmSettings(), allowUrgentAlarms: allowUrgentAlarms(), backgroundDone: backgroundDone() }
   window.opentodoShell = bridge([...both, ...backgroundOnly])
-  const background = { shellVisible: shellVisible(), openAlarmSettings: openAlarmSettings(), backgroundDone: backgroundDone() }
+  const background = { shellVisible: shellVisible(), openAlarmSettings: openAlarmSettings(), allowUrgentAlarms: allowUrgentAlarms(), backgroundDone: backgroundDone() }
   delete window.opentodoShell
   return {
     description: 'Capabilities by kind of run (shell-reminders-on): visibleOnly is listed only by the app a person sees (biometric and geofences depend on the device and the store build and are not listed here), backgroundOnly only by a background run, both by either. methods names the capability each new method needs; expect is what the web app does in each run.',
     visibleOnly, backgroundOnly, both,
-    methods: { openAlarmSettings: 'alarm-settings', backgroundDone: 'background', playCompletionSound: 'completion-sound', painted: 'first-paint' },
+    methods: { openAlarmSettings: 'alarm-settings', allowUrgentAlarms: 'urgent-alarms', backgroundDone: 'background', playCompletionSound: 'completion-sound', painted: 'first-paint' },
     expect: { visible, background, called },
   }
 }
