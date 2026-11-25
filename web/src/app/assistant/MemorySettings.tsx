@@ -10,6 +10,7 @@ import type { MemoryItem } from '../../lib/types'
 import { Button, ConfirmDialog, IconButton, MoveHandle } from '../../ui'
 import { reportActionError } from '../actionError'
 import { showUndoToast } from '../bulk/toastStore'
+import { composing } from '../../lib/composeKey'
 
 export interface MemoryListActions {
   onAdd: (text: string) => Promise<unknown>
@@ -30,6 +31,7 @@ function MemoryInput({ initial = '', label, placeholder, onCommit, onCancel }: {
       onChange={(e) => setValue(e.target.value.replace(/[\r\n]+/g, ' '))}
       onKeyDown={(e) => {
         e.stopPropagation()
+        if (composing(e)) return
         if (e.key === 'Enter') { e.preventDefault(); if (value.trim()) onCommit(value); else onCancel() }
         if (e.key === 'Escape') { e.preventDefault(); onCancel() }
       }} />

@@ -18,6 +18,7 @@ import { HelpLink } from './help/HelpLink'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
 import { messageOf } from '../lib/errorText'
+import { composing } from '../lib/composeKey'
 
 const typeLabel = (item: string) => FIELD_TYPES.find((x) => x.type === item)?.label ?? item
 
@@ -159,7 +160,7 @@ function FieldItem({ def, first, last, dragging, tasks, clash, onMove, onHandleK
           <form className="flex min-w-0 flex-1 items-center gap-2" onSubmit={(e: FormEvent) => { e.preventDefault(); void saveName() }}>
             <Input ref={nameRef} autoFocus value={name} aria-label={t('Rename {name}', { name: def.name })} aria-invalid={!!error || undefined} className="py-1.5"
               onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setName(def.name); setError(null); setRenaming(false) } }} />
+              onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Escape') { e.stopPropagation(); setName(def.name); setError(null); setRenaming(false) } }} />
             <Button type="submit" size="sm" variant="primary">{t('Save')}</Button>
           </form>
         ) : (

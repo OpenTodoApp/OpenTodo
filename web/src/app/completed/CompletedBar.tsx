@@ -7,6 +7,7 @@ import { lazy } from '../../lib/lazy'
 import type { CompletedDisplay } from '../../lib/completedDisplay'
 import { t } from '../../lib/i18n'
 import { Icon, IconButton, Input, Popover } from '../../ui'
+import { composing } from '../../lib/composeKey'
 
 const loadBody = () => import('./CompletedOptionsBody')
 const CompletedOptionsBody = lazy(loadBody)
@@ -17,7 +18,7 @@ export function CompletedSearch({ value, onChange }: { value: string; onChange: 
     <div className="relative mb-3" data-completed-search>
       <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint"><Icon name="search" /></span>
       <Input type="search" value={value} onChange={(e) => onChange(e.target.value)} aria-label={t('Search completed tasks')}
-        placeholder={t('Search')} className="pl-9" onKeyDown={(e) => { if (e.key === 'Escape' && value) { e.stopPropagation(); onChange('') } }} />
+        placeholder={t('Search')} className="pl-9" onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Escape' && value) { e.stopPropagation(); onChange('') } }} />
     </div>
   )
 }

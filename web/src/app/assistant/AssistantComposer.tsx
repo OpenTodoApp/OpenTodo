@@ -10,6 +10,7 @@ import { t } from '../../lib/i18n'
 import { ComposerFrame, Icon, Menu, MenuGroup, MenuItem } from '../../ui'
 import { OFFLINE_MESSAGE } from './assistantHints'
 import { useComposerCapture } from './ComposerCapture'
+import { composing } from '../../lib/composeKey'
 
 export interface ComposerProps {
   draft: string; onDraft: (s: string) => void; onSend: () => void; onStop: () => void; streaming: boolean; connected: boolean; disabled: boolean
@@ -39,13 +40,14 @@ export function Composer({ draft, onDraft, onSend, onStop, streaming, connected,
   const capture = useComposerCapture({ draft, onDraft, voice, listenRequest, photos, onPhotos, photoProvider, disabled, fieldRef: field })
   const ready = !!draft.trim() || !!skill || !!pasted || photos.length > 0
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (composing(e)) return
     if (e.key === 'Escape' && capture.listening) {
       e.preventDefault()
       e.stopPropagation()
       capture.stop()
       return
     }
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       if (!streaming && ready && !capture.listening) onSend()
     }

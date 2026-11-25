@@ -7,6 +7,7 @@ import { api, ApiError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
+import { composing } from '../lib/composeKey'
 
 /**
  * Settings section for every user (OpenSpec `user-management`): change the own
@@ -74,7 +75,7 @@ export function PasswordView(p: {
       {!p.online && <Notice>{noticeCopy('password', 'offline')}</Notice>}
       {p.done && !p.open && <Notice tone="success">{noticeCopy('password', 'changed')}</Notice>}
       {p.open ? (
-        <form onSubmit={p.onSubmit} className="space-y-3 py-1" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); p.onCancel?.() } }}>
+        <form onSubmit={p.onSubmit} className="space-y-3 py-1" onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Escape') { e.stopPropagation(); p.onCancel?.() } }}>
           {/* Lets password managers attach the new password to the right account. */}
           <input type="text" name="username" autoComplete="username" hidden readOnly />
           <div className="grid gap-3 sm:grid-cols-2">

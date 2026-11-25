@@ -36,6 +36,7 @@ import { useRules } from '../../lib/rules/store'
 import { useOnline } from '../../lib/online'
 import { knownNotePage, subscribeTaskPages, taskPagesVersion } from '../../lib/taskPages'
 import { attachmentsRowChunk, notesEditorChunk } from './noteEditorChunks'
+import { composing } from '../../lib/composeKey'
 
 // The editor and a standalone note's files (note-attachments D5) load with chunks of their
 // own; once in, the form renders them without suspending (noteEditorChunks.ts, issue 1580).
@@ -108,6 +109,7 @@ function TitleInput({ note, readOnly }: { note: Note; readOnly: boolean }) {
         timer.current = setTimeout(() => saveRef.current('deferred'), TITLE_SAVE_MS)
       }}
       onKeyDown={(e) => {
+        if (composing(e)) return
         // Enter moves on to the note, as a title does.
         if (e.key === 'Enter') { e.preventDefault(); (e.currentTarget.closest('[data-note-form]')?.querySelector('.notes-editor') as HTMLElement | null)?.focus() }
       }}

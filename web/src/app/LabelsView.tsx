@@ -34,6 +34,7 @@ import { SidebarAppearance } from './sidebarAppearanceLazy'
 import { pinItem } from './menus/pinItem'
 import { printItems } from './menus/printItem'
 import { messageOf } from '../lib/errorText'
+import { composing } from '../lib/composeKey'
 
 
 /** Labels in sidebar order with per-label open counts (same project filter as the views). */
@@ -70,7 +71,7 @@ export function NewLabelForm({ onDone, appearance = false, className = '' }: { o
   }
   return (
     <form onSubmit={(e) => void submit(e)} className={className}>
-      <div className={appearance ? 'flex items-center gap-1' : undefined} onKeyDown={(e) => e.key === 'Escape' && !e.defaultPrevented && onDone()}>
+      <div className={appearance ? 'flex items-center gap-1' : undefined} onKeyDown={(e) => !composing(e) && e.key === 'Escape' && !e.defaultPrevented && onDone()}>
         {appearance && <SidebarAppearance color={color} onColor={setColor} onOpenChange={setChoosingColor} />}
         <input className="ui-input min-w-0 flex-1" autoFocus placeholder={t('Label name')} aria-label={t('New label name')} value={name}
           onChange={(e) => { setName(e.target.value); setError(null) }}
@@ -188,7 +189,7 @@ export function LabelEditPanel({ label, labels, anchor, onClose }: { label: Labe
             <span className="mb-1 block text-muted">{t('Name')}</span>
             <input className="ui-input" value={name} aria-invalid={!!error} aria-describedby={error ? `label-name-error-${label.id}` : undefined}
               onChange={(e) => { setName(e.target.value); setError(null) }}
-              onBlur={() => void saveName()} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void saveName() } }} />
+              onBlur={() => void saveName()} onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Enter') { e.preventDefault(); void saveName() } }} />
             {error && <span id={`label-name-error-${label.id}`} role="alert" className="mt-1 block text-meta text-danger">{t('{error}. The name stays “{name}”.', { error, name: label.name })}</span>}
           </label>
           <div ref={swatches} role="radiogroup" aria-label={t('Colour')} className="flex flex-wrap gap-1" onKeyDown={onSwatchKey}>
@@ -340,7 +341,7 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
         )}
         {editing ? (
           <input className="ui-input my-0.5 ml-1 py-0.5" autoFocus aria-label={t('Label name')} value={name} onChange={(e) => setName(e.target.value)} onBlur={() => void save()}
-            onKeyDown={(e) => { if (e.key === 'Enter') void save(); if (e.key === 'Escape') { e.stopPropagation(); setName(label.name); setEditing(false) } }} />
+            onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Enter') void save(); if (e.key === 'Escape') { e.stopPropagation(); setName(label.name); setEditing(false) } }} />
         ) : (
           <button data-label-open onClick={() => navigate({ view: 'label', id: label.id })} onDoubleClick={startRename} onKeyDown={onKeyDown}
             className={`flex min-w-0 flex-1 items-center gap-2 px-1.5 py-1.5 text-left text-body ${active ? 'font-medium text-strong' : 'text-muted'}`}>

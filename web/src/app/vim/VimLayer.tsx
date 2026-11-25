@@ -17,6 +17,7 @@ import { complete, runCommand } from './commands'
 import { createDispatcher, isTextField, type Mode } from './dispatch'
 import { VIM_HELP } from './help'
 import { t } from '../../lib/i18n'
+import { composing } from '../../lib/composeKey'
 
 /**
  * `i`: the panel renders on the next commit; focus its title once it is there.
@@ -129,6 +130,7 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
             onChange={(e) => { setText(e.target.value); setMessage(null) }}
             onBlur={() => openCommand(false)}
             onKeyDown={(e) => {
+              if (composing(e)) return
               if (e.key === 'Escape') {
                 e.preventDefault()
                 e.stopPropagation()
