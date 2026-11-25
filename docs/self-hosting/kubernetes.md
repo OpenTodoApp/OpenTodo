@@ -1,6 +1,6 @@
 ---
 title: Running on Kubernetes
-summary: Install the Helm chart, the first account and its setup token, Ingress and https, storage, security, updates and backups.
+summary: Install the Helm chart, the first account and its setup token, Ingress or Gateway API and https, storage, security, updates and backups.
 audience: admin
 specs: [self-hosting]
 screens: []
@@ -8,7 +8,7 @@ order: 32
 ---
 # Running OpenTodo on Kubernetes
 
-OpenTodo is one container with one volume. The Helm chart runs it as a single pod with a PersistentVolumeClaim on `/data`, a Service on port 8080 and, if you want one, an Ingress. You need Kubernetes 1.23 or later, Helm 3.8 or later, and a StorageClass that provides `ReadWriteOnce` volumes (most clusters have a default one).
+OpenTodo is one container with one volume. The Helm chart runs it as a single pod with a PersistentVolumeClaim on `/data`, a Service on port 8080 and, if you want one, an Ingress or a Gateway API `HTTPRoute`. You need Kubernetes 1.23 or later, Helm 3.8 or later, and a StorageClass that provides `ReadWriteOnce` volumes (most clusters have a default one).
 
 ## Install
 
@@ -59,6 +59,7 @@ Put your settings in a values file and pass it with `-f my-values.yaml` on insta
 | `persistence.storageClass` | empty | Empty uses the cluster's default StorageClass. |
 | `persistence.existingClaim` | empty | Use a PersistentVolumeClaim you created. |
 | `ingress.enabled`, `ingress.host`, `ingress.className`, `ingress.annotations`, `ingress.tls` | off | An Ingress for one host, see below. |
+| `httpRoute.enabled`, `httpRoute.parentRefs`, `httpRoute.hostnames`, `httpRoute.annotations` | off | A Gateway API `HTTPRoute` attached to your Gateway, see [Gateway API](#gateway-api). |
 | `image.tag` | empty | Empty runs the chart's own release. Set it only to pin a different version. |
 
 ## https and the Ingress
@@ -81,6 +82,25 @@ ingress:
 ```
 
 The chart then sets `OPENTODO_BASE_URL` to `https://todo.example.com`. If TLS ends somewhere else (a cloud load balancer, a tunnel), leave `tls` empty and set `env.OPENTODO_BASE_URL` to the https address yourself. Never set an `https://` address while you open OpenTodo over plain http: the session cookie becomes secure-only and sign-in fails. More on proxies and forwarded addresses in [Running with Docker](docker.md#behind-a-reverse-proxy).
+
+## Gateway API
+
+On a cluster with a Gateway API implementation (Envoy Gateway, Cilium, Istio, Traefik, NGINX Gateway Fabric and others), the chart can create an `HTTPRoute` (`gateway.networking.k8s.io/v1`, so Gateway API v1.0 or later) instead of, or beside, the Ingress. It sends every path of its hostnames to the Service. The Gateway is yours: name it in `parentRefs`.
+
+```yaml
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: my-gateway
+      namespace: gateway-system
+      sectionName: https
+  hostnames:
+    - todo.example.com
+env:
+  OPENTODO_BASE_URL: https://todo.example.com
+```
+
+TLS ends at the Gateway's listener, so the chart cannot tell whether it serves https: set `env.OPENTODO_BASE_URL` to the https address yourself. Empty `hostnames` matches every hostname of the listener. The Gateway must allow routes from the release's namespace (its listener's `allowedRoutes`).
 
 ## One pod, by design
 

@@ -6,7 +6,7 @@
 // Chart.yaml, values.yaml and artifacthub-repo.yml are read with the strict YAML parser
 // (yaml.mjs), values.schema.json with JSON.parse; the templates are Go templates, so
 // they are checked as text for the rules that matter (one replica, Recreate, non-root, fsGroup,
-// read-only root, probes, port, /data). When helm is installed (or HELM names it), helm lint
+// read-only root, probes, port, /data, Ingress and HTTPRoute off by default). When helm is installed (or HELM names it), helm lint
 // --strict and helm template run too; without it the check works offline.
 
 import { spawnSync } from 'node:child_process'
@@ -24,7 +24,7 @@ export const ARTIFACTHUB = 'deploy/helm/artifacthub-repo.yml'
 export const WORKFLOW = '.github/workflows/helm.yml'
 export const OCI = 'oci://ghcr.io/opentodoapp/charts'
 const RAW = 'https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/'
-const TEMPLATES = ['_helpers.tpl', 'deployment.yaml', 'service.yaml', 'pvc.yaml', 'secret.yaml', 'ingress.yaml', 'NOTES.txt']
+const TEMPLATES = ['_helpers.tpl', 'deployment.yaml', 'service.yaml', 'pvc.yaml', 'secret.yaml', 'ingress.yaml', 'httproute.yaml', 'NOTES.txt']
 
 function parse(text, name, errors) {
   if (text === null) { errors.push(`${name} is missing`); return null }
@@ -129,6 +129,7 @@ export function checkValues(text, schemaText, appVersion, ctx) {
   if (p.accessMode !== 'ReadWriteOnce') errors.push('values.yaml: persistence.accessMode must default to ReadWriteOnce')
   if (String(v.service?.port) !== String(ctx.facts.port)) errors.push(`values.yaml: service.port must be ${ctx.facts.port}`)
   if (v.ingress?.enabled !== false) errors.push('values.yaml: ingress.enabled must default to false')
+  if (v.httpRoute?.enabled !== false) errors.push('values.yaml: httpRoute.enabled must default to false')
   return { errors, found: { image: `${img.repository}:${img.tag || appVersion}`, variables } }
 }
 
@@ -195,13 +196,21 @@ export function runHelm(appVersion, ctx, root = ROOT, helm = process.env.HELM ||
   const dir = join(root, DIR)
   const lint = spawnSync(helm, ['lint', '--strict', dir], { encoding: 'utf8' })
   if (lint.status !== 0) errors.push(`helm lint --strict failed:\n${lint.stdout}${lint.stderr}`)
-  const variants = [[], ['--set', 'ingress.enabled=true', '--set', 'ingress.tls[0].secretName=t', '--set', 'setupToken.existingSecret=s', '--set', 'persistence.existingClaim=c']]
-  for (const extra of variants) {
+  const route = ['--set', 'httpRoute.enabled=true', '--set', 'httpRoute.parentRefs[0].name=gateway']
+  const variants = [
+    { extra: [], routes: 0 },
+    { extra: ['--set', 'ingress.enabled=true', '--set', 'ingress.tls[0].secretName=t', '--set', 'setupToken.existingSecret=s', '--set', 'persistence.existingClaim=c'], routes: 0 },
+    { extra: route, routes: 1 },
+  ]
+  for (const { extra, routes } of variants) {
     const r = spawnSync(helm, ['template', 'opentodo', dir, ...extra], { encoding: 'utf8' })
     if (r.status !== 0) { errors.push(`helm template ${extra.join(' ')} failed: ${r.stderr}`); continue }
     if (!r.stdout.includes(`image: "${ctx.facts.image}:${appVersion}"`)) errors.push(`helm template: the Deployment must run ${ctx.facts.image}:${appVersion}`)
     if ((r.stdout.match(/^kind: Deployment$/gm) ?? []).length !== 1) errors.push('helm template must render exactly one Deployment')
+    if ((r.stdout.match(/^kind: HTTPRoute$/gm) ?? []).length !== routes) errors.push(`helm template ${extra.join(' ')} must render ${routes} HTTPRoute`)
   }
+  const noParent = spawnSync(helm, ['template', 'opentodo', dir, '--set', 'httpRoute.enabled=true'], { encoding: 'utf8' })
+  if (noParent.status === 0 || !noParent.stderr.includes('httpRoute.parentRefs')) errors.push('helm template: an HTTPRoute without parentRefs must fail and name httpRoute.parentRefs')
   return errors
 }
 
@@ -224,4 +233,4 @@ export function check(ctx, root = ROOT) {
   return errors
 }
 
-export const summary = 'release version, image, one replica with Recreate, non-root and read-only, probes, PVC on /data, variables, Artifact Hub metadata, publish workflow (and helm lint/template when helm is installed)'
+export const summary = 'release version, image, one replica with Recreate, non-root and read-only, probes, PVC on /data, variables, Ingress and HTTPRoute off by default, Artifact Hub metadata, publish workflow (and helm lint/template when helm is installed)'

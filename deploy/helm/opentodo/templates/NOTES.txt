@@ -2,6 +2,12 @@ OpenTodo {{ .Chart.AppVersion }} is starting ({{ include "opentodo.image" . }}).
 
 {{- if .Values.ingress.enabled }}
 Open {{ if .Values.ingress.tls }}https{{ else }}http{{ end }}://{{ .Values.ingress.host }}
+{{- else if .Values.httpRoute.enabled }}
+{{- with include "opentodo.baseUrl" . }}
+Open {{ . }}
+{{- else }}
+Open {{ with .Values.httpRoute.hostnames }}http://{{ first . }}{{ else }}your Gateway's address{{ end }} (over https, set env.OPENTODO_BASE_URL to it)
+{{- end }}
 {{- else }}
 Open it with a port-forward:
   kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "opentodo.fullname" . }} 8080:{{ .Values.service.port }}

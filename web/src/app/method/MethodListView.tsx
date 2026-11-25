@@ -10,7 +10,7 @@ import { hasTimeColumn } from '../../lib/rowTime'
 import { listSlotsOff } from '../../lib/rowSlots'
 import { useAllLabels } from '../../lib/localData'
 import { nextGroups, waitingGroups, type MethodGroup } from '../../lib/method/groups'
-import { setTaskCompletedWithFeedback } from '../completionSound'
+import { completeWithUndo } from '../undoable'
 import { Dialog, EmptyState, type EmptyStateAction, PageBody, PageHeader, Skeleton, type IconName } from '../../ui'
 import { act } from '../actionError'
 import { useBulkList } from '../bulk/useBulkList'
@@ -99,7 +99,7 @@ function MethodList({ title, icon, move, help, groups, empty }: Props) {
                         labels={resolveLabels(task.labels, labelMap)} showProject selected={key === selected} timeColumn={timeColumn} slotsOff={slotsOff}
                         onMore={(from) => { setSelected(key); bulk.openActions(null, from) }}
                         blockedBy={blocked.get(task.id)} breadcrumb={g.notes?.get(task.id) ?? null}
-                        onToggle={() => act(setTaskCompletedWithFeedback(task.id, !task.completed_at))}
+                        onToggle={() => act(completeWithUndo(task.id, !task.completed_at))}
                         selectOnClick onOpen={(e, intent) => { setSelected(key); openFromRow(task.id, e, intent) }}
                         onOpenPage={() => openTaskPage(task.id)}
                         {...bulk.rowProps(task)} />
