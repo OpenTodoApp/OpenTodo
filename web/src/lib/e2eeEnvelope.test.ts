@@ -21,13 +21,13 @@ describe('e2eeEnvelope', () => {
   it('seals content values and opens them back; other values pass through', async () => {
     const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt'])
     const origin = { kind: 'obsidian', id: 'Daily/2026-10-29.md', url: 'obsidian://open?vault=Notes&file=Daily%2F2026-10-29.md', title: '2026-10-29' }
-    const title = await sealValue(key, 'task', 't1', 'title', 'Renew passport')
-    const sealedOrigin = await sealValue(key, 'task', 't1', 'origin', origin)
+    const title = await sealValue(key, 'task', 't1', 'title', 'Renew passport', 1)
+    const sealedOrigin = await sealValue(key, 'task', 't1', 'origin', origin, 1)
     expect(isEnvelope(title) && isEnvelope(sealedOrigin)).toBe(true)
     expect(await openValue(key, 'task', 't1', 'title', title)).toBe('Renew passport')
     expect(await openValue(key, 'task', 't1', 'origin', sealedOrigin)).toEqual(origin)
-    expect(await sealValue(key, 'task', 't1', 'priority', 2)).toBe(2)
-    expect(await sealValue(key, 'task', 't1', 'title', '')).toBe('')
+    expect(await sealValue(key, 'task', 't1', 'priority', 2, 1)).toBe(2)
+    expect(await sealValue(key, 'task', 't1', 'title', '', 1)).toBe('')
     // Bound to the place it was sealed for.
     await expect(openValue(key, 'task', 't2', 'title', title)).rejects.toThrow()
     expect(isContentField('label', 'name') && !isContentField('task', 'labels')).toBe(true)

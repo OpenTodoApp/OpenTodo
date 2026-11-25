@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
 
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
@@ -61,6 +62,13 @@ func (s *Server) applyREST(w http.ResponseWriter, ctx context.Context, uid strin
 	// A series moved onto a date with one of its records (server-series-move).
 	case isRej && rej.Reason == opsync.ReasonSeriesDateTaken:
 		writeError(w, http.StatusConflict, "series_date_taken", opsync.SeriesDateMessage(rej))
+	// A v2 ciphertext's stamp is the op's timestamp (e2ee-rollback D3): one that
+	// would not win is sealed again by the writer with a later stamp.
+	case isRej && rej.Reason == opsync.ReasonStaleCiphertext:
+		cur, _ := strconv.ParseInt(rej.Detail, 10, 64)
+		writeErrorWith(w, http.StatusConflict, "stale_ciphertext", "the encrypted value is stamped before the field's current value; seal it again with a later stamp", map[string]any{"currentTs": cur})
+	case isRej && rej.Reason == opsync.ReasonClockSkew:
+		writeErrorWith(w, http.StatusBadRequest, "clock_skew", "the encrypted value is stamped too far ahead of the server's clock", map[string]any{"serverTime": s.now().UnixMilli()})
 	case isRej && reasons[rej.Reason] != nil:
 		reasons[rej.Reason](w, rej)
 	case isRej && reasons[otherRefusal] != nil:

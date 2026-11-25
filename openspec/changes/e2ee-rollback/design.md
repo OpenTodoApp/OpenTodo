@@ -75,7 +75,7 @@ Rejected: binding the device id too. Writers through REST and MCP do not know th
 - **Server-side writes of a client-made envelope** (REST, MCP tools, the relay's encrypt answers, import): the operation takes its timestamp from the stamp; the write's other fields keep the server's clock. Then the server's clock observes the stamp (receive rule), as with any stored op.
   - A stamp that would not win over the field's current operation, so it is not greater than that operation's `ts`, is refused 409 `stale_ciphertext` with `currentTs`. The writer seals again with `max(now, currentTs + 1)` and retries once (`ot`, `ot mcp --decrypt`).
   - A stamp more than `MaxFutureSkewMs` ahead is refused 400 `clock_skew`.
-  - The relay names the stamp in each encrypt request item (`ts`, additive); the device seals with it and refuses an item without one. The server takes the next value of its clock.
+  - The relay's encrypt answers and routine device runs are sealed with the device's own clock (its HLC, past every op it pulled); the server stores them at that stamp like any server-side write. The relay request is unchanged.
   - Import keeps a `v2` value only when its stamp wins in the target account; otherwise the field is skipped and counted.
 - **Routine undo** (`rules/routine_undo.go`) puts back the value before the run as a new operation. For a content field of an encrypted account, that value is an older envelope, which devices would refuse (D4). Undo lists those fields under `not_undoable` (`encrypted text`) instead, and restores the rest.
 - No other server path writes a stored envelope again as a new operation. `ot vault`'s re-seed and the web app's re-seed after a server restore re-send operations with their original timestamps. A backup restore keeps the op log as it was. Task 4.6 checks this with a test over every `ApplyStrict` caller that writes a content field.
@@ -91,13 +91,14 @@ Before an incoming batch is applied (`decryptIncoming`), each content op is clas
 | `v2`, stamp equals `ts`, authentic | anything | applied by last-writer-wins as today |
 | `v2`, stamp differs from `ts` | anything | **refused** |
 | `v2`, authentication fails | anything | undecryptable placeholder, as today |
-| `v1` that would win | the field as `v2`, or any value once this device's re-seal finished (D5) | **refused** |
-| `v1` that would win | the field as `v1`, plaintext or nothing, before the re-seal finished | applied, as today |
+| `v1` that would win | the field as `v2` (writer release on) | **refused** |
+| `v1` that would win | the field as `v2` (reader release) | applied: honest writers still write `v1` there, for example an older `ot` next to a newer one |
+| `v1` that would win | the field as `v1`, plaintext or nothing | applied, as today |
 | `v1` or `v2` that would lose | anything | ignored by last-writer-wins, as today |
 
-A refused op is left out of the batch. The field keeps its value and its clock, the pull cursor moves on, and sync continues. The device records it in a local list (`e2ee.rollbacks` in `meta`: entity, id, field, op id, server `seq`, time; at most 200, the oldest dropped), and Settings → Encryption shows one line while the list is not empty: "The server sent older versions of 3 items. This device kept its own." A **Details** button lists the items (title, field, date) with **Clear**. Nothing is re-written automatically: the device cannot tell a hostile server from a buggy one, and a re-write could replace a change someone else made. Editing the item writes the device's value again, as any edit does.
+A refused op is left out of the batch. The field keeps its value and its clock, the pull cursor moves on, and sync continues. The device records it in a local list (`e2ee.olderVersions` in `meta`: entity, id, field, op id, server `seq`, time; at most 200, the oldest dropped), and Settings → Encryption shows one line while the list is not empty: "The server sent older versions of 3 items. This device kept its own." A **Details** button lists the items (title, field, date) with **Clear**. Nothing is re-written automatically: the device cannot tell a hostile server from a buggy one, and a re-write could replace a change someone else made. Editing the item writes the device's value again, as any edit does.
 
-History and activity pages (`displayValue`) show a `v2` value whose stamp differs from its change's timestamp as "[Cannot decrypt]".
+History pages (`displayValue` with the change set's `ts`) show a `v2` value whose stamp differs from its change's timestamp as "[Cannot decrypt]". Readers that have no op (`ot mcp --decrypt`, `ot notes`, a shared page's snapshot, the relay's decrypt requests) check authenticity only. `ot vault` and the Obsidian plugin's vault check the stamp in their store before applying, without the key (`OlderCiphertext`, `olderCiphertext`).
 
 `RowEncryption` (local only) gains `v2?: Record<string, true>`: the fields whose current value arrived or left as `v2`. `markSent` and `decryptIncoming` set and clear it with the wire marks.
 
@@ -111,7 +112,8 @@ Rejected:
 ### D5. Existing values move to `v2`
 
 - **Reader release (D8, step 1):** every reader opens `v2`. Writers still write `v1`.
-- **Writer release (step 2):** every writer writes `v2`. A new value of the re-write job's catch-up, `format: 2` in `e2ee.covered` (`catchUpEncryption`), makes the next unlocked device that completes a sync re-seal every content value in the personal scope whose wire form is `v1`, as when a new kind is added to the job. It is resumable and idempotent: two devices racing write two `v2` ciphertexts of the same text, and one wins. Once it finishes on a device, `v1` is refused over any value the device holds (D4).
+- **The switch:** one constant per language turns the writer release on: `WRITE_V2` in `web/src/lib/e2eeEnvelope.ts` (the web app and the Obsidian plugin) and `e2ee.WriterRelease` in Go (`crypt.WriteV2` for `ot`). It turns on the `v2` writers and the refusal of `v1` over a value held as `v2` (D4) together.
+- **Writer release (step 2):** every writer writes `v2`. A new value of the re-write job's catch-up, `format: 2` in `e2ee.covered` (`catchUpEncryption`), makes the next unlocked device that completes a sync re-seal every content value in the personal scope whose wire form is `v1`, as when a new kind is added to the job. It is resumable and idempotent: two devices racing write two `v2` ciphertexts of the same text, and one wins. From the writer release, `v1` is refused over a value the device holds as `v2` (D4); once the re-seal finished on a device, over any value it holds.
 - **Purge plaintext history** also deletes the superseded `v1` operations afterwards. It is not needed for G1: a `v1` replay is refused once the field is `v2`.
 - Fields of entities a device never held stay acceptable as `v1`. A pre-release `ot` creating a task writes those, and nothing is held to compare with. The writer release also refuses `v1` writes for encrypted accounts on the server (`ciphertext_outdated`: "Update the app, ot or the plugin"), so after it only a hostile server can produce them.
 
@@ -125,14 +127,14 @@ A device keeps `e2ee.recordHighWater` (`createdAt`, `version`) of the newest key
 
 ### D8. Rollout
 
-1. **Reader release.** Every reader opens `v2` and applies D4 to `v2` values, the server enforces D3 for `v2` ops, the key record high-water mark (D6) ships, and writers still write `v1`. Nothing anyone sees changes.
+1. **Reader release.** Every reader opens `v2` and refuses a `v2` value whose stamp is not its op's timestamp, the server enforces D3 for `v2` ops (so a newer `ot` that writes `v2` early works against it), routine undo leaves `v2` fields out, the key record high-water mark (D6) ships, and writers still write `v1`. Nothing anyone sees changes, except a refused older key record.
 2. **Writer release**, at least one release later (the owner picks the gap). Writers write `v2`, `MinClientVersion` and `CLIENT_VERSION` become 2, the catch-up re-seals (D5), the server refuses `v1` writes for encrypted accounts, and routine undo skips encrypted fields. The docs move Rollback to "Defended". A web app older than step 1 shows "Update required". An older `ot` or Obsidian plugin shows `v2` values as undecryptable (task 6.3 checks that each marks them undecryptable and never writes the placeholder back) and its `v1` writes are refused with an error that names the update.
 
 ## Data model impact
 
 - **Op schema:** none. Content values stay strings and no field is added, renamed or removed. `TestGeneratedOpSchema` is unchanged.
-- **Server:** no table or column. New refusals: sync `invalid_op` (`stamp_mismatch`), `clock_skew` for `v2` ops of clients without the feature; REST and MCP 409 `stale_ciphertext` (`currentTs`), 400 `clock_skew`; writer release: 409 `ciphertext_outdated`. The relay's encrypt item gains `ts` (additive).
-- **Device:** `RowEncryption.v2` (local), `meta` keys `e2ee.rollbacks` and `e2ee.recordHighWater`, and `format: 2` in the catch-up marker. No IndexedDB version bump: all are optional fields of existing rows.
+- **Server:** no table or column. New refusals: sync `invalid_op` (`stamp_mismatch`), `clock_skew` for `v2` ops of clients without the feature; REST and MCP 409 `stale_ciphertext` (`currentTs`), 400 `clock_skew`; writer release: 409 `ciphertext_outdated`. The relay protocol is unchanged.
+- **Device:** `RowEncryption.v2` (local), `meta` keys `e2ee.olderVersions` and `e2ee.recordHighWater`, and `format: 2` in the catch-up marker (writer release). No IndexedDB version bump: all are optional fields of existing rows. `ot`'s key file gains `record_created_at`.
 
 ## Size and performance
 
@@ -160,10 +162,10 @@ One line in Settings → Encryption, only while refused versions are recorded, w
 - **Old clients during the gap.** Step 1 changes no stored value, so the gap only delays the protection.
 - **Op volume of the re-seal.** One pass, like turning encryption on. Purge afterwards if the history size matters.
 
-## Open questions (owner decisions)
+## Owner decisions (2026-11-25)
 
-1. **Approve the breaking format and the two-step rollout (D8)**, and the gap between the reader and the writer release (one release, or a date).
-2. **Approve that server-side writes of a `v2` envelope take their timestamp from it (D3)**, with 409 `stale_ciphertext`. It changes the REST and MCP contract for clients that write ciphertext; scripts writing `v1` keep working until the writer release.
-3. **Detection behaviour (D4):** keep the device's value and report it (recommended), against apply-and-warn or stopping sync.
-4. **Routine undo (D3):** report encrypted fields as not undoable (recommended), or a device-side undo now (a separate change).
-5. **The re-seal (D5)** runs automatically after the writer release, without asking (recommended, as for the 0.21 catch-up), and `v1` is then refused over held values.
+1. **The breaking format and the two-step rollout (D8): approved.** The reader release comes first; the writer release, which bumps `MinClientVersion` to 2 and refuses `v1` writes, follows after a gap the owner picks.
+2. **Server-side writes of a `v2` envelope take their timestamp from it (D3), with 409 `stale_ciphertext`: approved.**
+3. **Detection (D4): keep the device's value and report it in Settings → End-to-end encryption: approved.**
+4. **Routine undo (D3): encrypted fields are reported as not undoable** (the recommendation).
+5. **The re-seal (D5) runs automatically after the writer release, then `v1` is refused** (the recommendation).

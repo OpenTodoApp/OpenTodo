@@ -26,7 +26,9 @@ const InboxFile = "Inbox.md"
 // user's machine (design D10). nil for an account without encryption.
 type Crypter interface {
 	Open(entity, id, field, value string) (string, error)
-	Seal(entity, id, field, plaintext string) (string, error)
+	// Seal seals for the op with timestamp ts (a v2 envelope is bound to it,
+	// e2ee-rollback D3).
+	Seal(entity, id, field, plaintext string, ts int64) (string, error)
 }
 
 // view reads a store for printing: decrypted text, the project tree and

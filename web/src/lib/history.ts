@@ -17,7 +17,7 @@ import { dayPartName } from './dayParts'
 /** One page of history; ciphertext values (OpenSpec e2ee) are decrypted for display. */
 export async function fetchHistory(entity: 'task' | 'project', id: string, before?: number): Promise<HistoryPage> {
   const page = await api.history(entity, id, before)
-  const decrypted = await Promise.all(page.changeSets.map(async (s) => ({ ...s, changes: await decryptChanges(entity, id, s.changes) })))
+  const decrypted = await Promise.all(page.changeSets.map(async (s) => ({ ...s, changes: await decryptChanges(entity, id, s.changes, s.ts) })))
   // A write that kept the value (for example the plain-text copy of a note rewritten
   // when the note is upgraded) changes nothing a person can see or restore.
   const changeSets = decrypted

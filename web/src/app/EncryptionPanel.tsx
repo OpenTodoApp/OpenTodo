@@ -20,6 +20,7 @@ import { useAction } from '../lib/useAction'
 import { copyText } from '../lib/clipboard'
 import { encryptionMessage, LostKeysConfirm } from './encryptionShared'
 // Loaded with the Encryption page only (routines-ai-step: Run my routines on this device).
+const OlderVersionsDialog = lazy(() => import('./OlderVersionsDialog').then((m) => ({ default: m.OlderVersionsDialog })))
 const RoutinesDeviceSettings = lazy(() => import('./routines/RoutinesDevice').then((m) => ({ default: m.RoutinesDeviceSettings })))
 
 // Settings → End-to-end encryption (OpenSpec `e2ee`, task 4.1). The pure
@@ -41,6 +42,7 @@ export type Mode =
   | { kind: 'confirmPurge' }
   | { kind: 'confirmDisable' }
   | { kind: 'confirmLost' }
+  | { kind: 'older' }
 
 export interface EncryptionViewProps {
   state: EncryptionSnapshot
@@ -113,6 +115,14 @@ export function EncryptionView(p: EncryptionViewProps) {
     <SettingsSection {...cardCopy('e2ee')}>
       {p.error && <Notice tone="danger">{p.error}</Notice>}
       {p.notice && <Notice tone="success">{p.notice}</Notice>}
+      {/* Older versions the server sent and this device refused (e2ee-rollback D4, D6). */}
+      {state.olderRecord && <Notice tone="warning">{t('The server sent an older encryption key record. This device kept its own.')}</Notice>}
+      {!!state.olderVersions && (
+        <Notice tone="warning" action={<Button variant="secondary" size="sm" onClick={() => p.onMode({ kind: 'older' })}>{t('Details')}</Button>}>
+          {t('The server sent older versions of {n, plural, one {# item} other {# items}}. This device kept its own.', { n: state.olderVersions })}
+        </Notice>
+      )}
+      {mode.kind === 'older' && <Suspense fallback={null}><OlderVersionsDialog onClose={idle} /></Suspense>}
       {progress && (
         <Notice>
           {t('{mode, select, encrypt {Encrypting} other {Decrypting}} your {what, select, files {files: {done} of {total} files} other {data: {done} of {total}}}…', { mode: progress.mode, what: progress.files ? 'files' : 'data', done: progress.done, total: progress.total })}

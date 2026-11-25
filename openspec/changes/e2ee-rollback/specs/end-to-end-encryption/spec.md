@@ -42,14 +42,14 @@ Every writer of version 2 ciphertext SHALL seal with the timestamp of the operat
 
 #### Scenario: Relay encryption
 - **WHEN** the server asks an opted-in device to encrypt a title for an assistant's write
-- **THEN** the request names the stamp, the device seals with it, and the server stores the operation with that stamp as its timestamp
+- **THEN** the device seals it with its own clock as the stamp, and the server stores the operation with that stamp as its timestamp
 
 #### Scenario: Undo of a routine run that changed encrypted text
 - **WHEN** a user undoes a routine run that changed an encrypted task title on an encrypted account
 - **THEN** the title is not put back, the undo lists it under not undoable, and the run's other changes are undone
 
 ### Requirement: Devices refuse an older ciphertext
-Before applying incoming operations, a device SHALL refuse a version 2 value whose stamp differs from its operation's timestamp, and a version 1 value that would win over a field the device holds as version 2, or over any value it holds once its re-seal of existing values has finished. A refused operation SHALL NOT be applied: the field keeps its value and clock, sync continues, nothing is re-written automatically, and the device records the refusal locally (at most 200 entries) and shows in Settings → Encryption how many items it kept, with their list. Operations that lose last-writer-wins SHALL be ignored as before. A device that never held the field SHALL accept the winning authentic value. Offline, nothing is checked until the operations arrive; two devices that refuse the same operation keep the same value, and the next edit of the field converges every device again.
+Before applying incoming operations, a device SHALL refuse a version 2 value whose stamp differs from its operation's timestamp, and, from the release in which writers write version 2, a version 1 value that would win over a field the device holds as version 2, or over any value it holds once its re-seal of existing values has finished. A refused operation SHALL NOT be applied: the field keeps its value and clock, sync continues, nothing is re-written automatically, and the device records the refusal locally (at most 200 entries) and shows in Settings → Encryption how many items it kept, with their list. Operations that lose last-writer-wins SHALL be ignored as before. A device that never held the field SHALL accept the winning authentic value. Offline, nothing is checked until the operations arrive; two devices that refuse the same operation keep the same value, and the next edit of the field converges every device again.
 
 #### Scenario: Replay under a new timestamp
 - **WHEN** the server serves last month's title ciphertext of a task inside an operation with today's timestamp

@@ -29,6 +29,19 @@ type keyFile struct {
 	// Key is the 32-byte account key, base64url. Owner-only file, never printed.
 	Key       string `json:"key"`
 	CreatedAt int64  `json:"created_at"`
+	// RecordCreatedAt is the creation time of the key record the key was
+	// unwrapped from: with KeyVersion, the newest record ot adopted, so an older
+	// one served later is refused (e2ee-rollback D6).
+	RecordCreatedAt int64 `json:"record_created_at,omitempty"`
+}
+
+// olderRecord reports a key record older than the one kf was unwrapped from:
+// an earlier enablement, or an earlier version of the same record.
+func olderRecord(kf *keyFile, rec e2ee.KeyRecord, server string) bool {
+	if kf == nil || kf.RecordCreatedAt == 0 || strings.TrimRight(kf.Server, "/") != strings.TrimRight(server, "/") {
+		return false
+	}
+	return rec.CreatedAt < kf.RecordCreatedAt || (rec.CreatedAt == kf.RecordCreatedAt && rec.Version < kf.KeyVersion)
 }
 
 // attempts records failed unlocks, to delay guessing (5 within a minute).
@@ -174,6 +187,9 @@ func cmdEncryptionUnlock(a *App, ctx context.Context, g *globalFlags, args []str
 	if rec == nil {
 		return usageErr("this account does not use end-to-end encryption; there is nothing to unlock")
 	}
+	if kf, _, err := a.loadKey(t.Profile); err == nil && olderRecord(kf, *rec, t.URL) {
+		return &exitError{code: ExitServer, jsonCode: "key_record_rollback", msg: "the server sent an older encryption key record than the one this key came from; the stored key is kept; ask the server operator to check the server"}
+	}
 	if !*recovery {
 		if err := crypt.CheckRecord(*rec); err != nil {
 			return &exitError{code: ExitServer, jsonCode: "key_record_out_of_range", msg: err.Error() + "; ask the server operator to check the server"}
@@ -204,7 +220,7 @@ func cmdEncryptionUnlock(a *App, ctx context.Context, g *globalFlags, args []str
 	if err != nil {
 		return err
 	}
-	kf := keyFile{Server: t.URL, KeyVersion: rec.Version, Key: base64.RawURLEncoding.EncodeToString(key), CreatedAt: a.Now().UnixMilli()}
+	kf := keyFile{Server: t.URL, KeyVersion: rec.Version, Key: base64.RawURLEncoding.EncodeToString(key), CreatedAt: a.Now().UnixMilli(), RecordCreatedAt: rec.CreatedAt}
 	if err := writeOwnerOnly(path, kf); err != nil {
 		return authErr("store the encryption key: %v", err)
 	}

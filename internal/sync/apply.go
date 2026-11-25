@@ -11,6 +11,12 @@ import (
 // transaction admits, resolves and stores each op (applyBatch.applyOne), and
 // finally charges the write guard, commits and notifies (finish).
 func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict bool) (ApplyResult, error) {
+	// A server-side write of a client-sealed v2 envelope takes its stamp as the
+	// op's timestamp (e2ee-rollback D3).
+	stamped := strict || ctx.Value(stampKey{}) != nil
+	if stamped {
+		ops = stampTimestamps(ops)
+	}
 	// A request limited to workspaces writes only inside them (token-workspaces D3).
 	if err := s.checkReach(ctx, userID, ops); err != nil {
 		return ApplyResult{}, err
@@ -49,6 +55,7 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	if err != nil {
 		return ApplyResult{}, err
 	}
+	b.stamped = stamped
 	b.rs.attachmentQuota = attachmentQuota
 	// Restores hold their size until the batch committed or rolled back: this
 	// deferred release runs after finish's commit (issue #676).
@@ -82,6 +89,9 @@ func (s *Service) validateBatch(ctx context.Context, ops []Op) (WriteGuard, erro
 		if err := Validate(ops[i]); err != nil {
 			return nil, err
 		}
+		if err := checkStamp(ops[i]); err != nil {
+			return nil, err
+		}
 		if guard != nil {
 			if err := guard.CheckOp(ops[i]); err != nil {
 				return nil, err
@@ -100,12 +110,14 @@ type applyBatch struct {
 	strict     bool
 	nowMs      int64
 	refuseSkew bool
-	acc        *access
-	rs         *resolver
-	pc         *purgeChecker
-	admit      func(Op) string
-	tracker    *changeTracker
-	touched    map[string]bool
+	// stamped: v2 ops took their stamp as timestamp and must win (e2ee-rollback D3).
+	stamped bool
+	acc     *access
+	rs      *resolver
+	pc      *purgeChecker
+	admit   func(Op) string
+	tracker *changeTracker
+	touched map[string]bool
 	// refused ops get the server's value handed back; rewritten ops were stored
 	// with a changed value the author's device must adopt.
 	refused, rewritten []Op
@@ -167,7 +179,9 @@ func (b *applyBatch) reject(op Op, reason string, detail string, rej Rejection) 
 func (b *applyBatch) applyOne(op Op) error {
 	ctx, tx, rs := b.ctx, b.tx, b.rs
 	skewed := op.TS > b.nowMs+MaxFutureSkewMs
-	if skewed && !b.refuseSkew {
+	// A v2 op is never moved to another timestamp: its envelope is sealed for
+	// this one (e2ee-rollback D3). It is refused instead.
+	if skewed && !b.refuseSkew && !IsV2Op(op) {
 		// Older clients: clamp, as before sync-convergence.
 		op.TS = b.nowMs + MaxFutureSkewMs
 		skewed = false
@@ -220,7 +234,34 @@ func (b *applyBatch) applyOne(op Op) error {
 		}
 		return nil
 	}
+	if b.stamped && IsV2Op(op) {
+		if cur, stale, err := b.staleStamp(op, scope); err != nil {
+			return err
+		} else if stale {
+			if err := b.reject(op, ReasonStaleCiphertext, fmt.Sprint(cur), Rejection{ID: op.ID, Reason: ReasonStaleCiphertext}); err != nil {
+				return err
+			}
+			b.refused = append(b.refused, op)
+			return nil
+		}
+	}
 	return b.store(op, scope)
+}
+
+// staleStamp reports whether a server-side v2 write would not win over the
+// field's current op, and that op's timestamp.
+func (b *applyBatch) staleStamp(op Op, scope string) (int64, bool, error) {
+	var ts int64
+	var device string
+	err := b.tx.QueryRowContext(b.ctx, `SELECT ts, device FROM scope_fields WHERE scope_id = ? AND entity = ? AND entity_id = ? AND field = ?`,
+		scope, op.Entity, op.EntityID, op.Field).Scan(&ts, &device)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, err
+	}
+	return ts, !Wins(op.TS, op.Device, ts, device), nil
 }
 
 // store writes one admitted op and records what follows from it.

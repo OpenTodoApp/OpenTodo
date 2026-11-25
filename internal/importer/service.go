@@ -485,7 +485,8 @@ func (s *Service) writeBatch(ctx context.Context, uid string, job *Job, batch []
 	}
 	// The plan's comments are bounded by MaxComments, not by the per-account
 	// comment limit (todoist-notes-comments D3).
-	res, err := s.sync.Apply(opsync.WithoutCommentLimit(ctx), uid, ops)
+	// A v2 ciphertext keeps its stamp as timestamp (e2ee-rollback D3).
+	res, err := s.sync.Apply(opsync.WithStampTimestamps(opsync.WithoutCommentLimit(ctx)), uid, ops)
 	if err != nil {
 		return err
 	}
@@ -683,7 +684,7 @@ func (s *Service) Undo(ctx context.Context, uid, id string) (*Job, error) {
 		for _, w := range writes[start:end] {
 			ops = append(ops, opsync.Op{ID: s.newID(), Entity: w.entity, EntityID: w.id, Field: w.field, Value: w.value, TS: ts, Device: Device})
 		}
-		res, err := s.sync.Apply(ctx, uid, ops)
+		res, err := s.sync.Apply(opsync.WithStampTimestamps(ctx), uid, ops)
 		if err != nil {
 			return nil, err
 		}

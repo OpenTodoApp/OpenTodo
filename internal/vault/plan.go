@@ -42,7 +42,7 @@ func (e *engine) build() []Op {
 			}
 			oid := opID(e.st.Device, entity, id, f, string(base.V)+"@"+strconv.FormatInt(base.TS, 10)+"@"+base.D, idValue)
 			if s, ok := b[f].(string); ok && e.sealing(entity, id, f, b) {
-				sealed, err := e.o.Crypter.Seal(entity, id, f, s)
+				sealed, err := e.o.Crypter.Seal(entity, id, f, s, ts)
 				if err != nil {
 					e.rep.warn("could not encrypt the %s of %s %s; it is not sent", f, entity, short(id))
 					continue

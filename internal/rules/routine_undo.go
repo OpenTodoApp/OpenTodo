@@ -136,9 +136,12 @@ func (e *Engine) Undo(ctx context.Context, uid, ruleID, runID string) (UndoResul
 	}
 	device := Device(ruleID)
 	for _, wr := range list {
-		ops, restored, err := e.undoEntity(ctx, ruleID, run.OccurrenceKey, wr, nowMs, ts, device)
+		ops, restored, sealed, err := e.undoEntity(ctx, ruleID, run.OccurrenceKey, wr, nowMs, ts, device)
 		if err != nil {
 			return out, err
+		}
+		if sealed {
+			out.NotUndoable = appendOnce(out.NotUndoable, NotUndoableEncrypted)
 		}
 		if !restored {
 			out.Kept++
@@ -164,9 +167,17 @@ func appendOnce(list []string, s string) []string {
 	return append(list, s)
 }
 
+// NotUndoableEncrypted names, in an undo's not_undoable list, encrypted text
+// that cannot go back: the value before the run is a v2 ciphertext sealed for
+// its own time, which devices refuse as an older version when it is written
+// again (OpenSpec change e2ee-rollback, design D3). A device writes it again by
+// an ordinary edit.
+const NotUndoableEncrypted = "encrypted text"
+
 // undoEntity plans one entity's undo; restored is false when everything it
-// wrote changed since (kept).
-func (e *Engine) undoEntity(ctx context.Context, ruleID, key string, wr written, nowMs, ts int64, device string) ([]opsync.Op, bool, error) {
+// wrote changed since (kept), sealed is true when a field was left out because
+// its earlier value is a v2 ciphertext.
+func (e *Engine) undoEntity(ctx context.Context, ruleID, key string, wr written, nowMs, ts int64, device string) (ops []opsync.Op, restored, sealed bool, err error) {
 	mine := func(f string) string { return opID(ruleID, key, wr.ID, f) }
 	op := func(f string, v json.RawMessage) opsync.Op {
 		return opsync.Op{ID: ids.NameID("rule-undo", ruleID+"\x00"+key+"\x00"+wr.ID+"\x00"+f), Entity: wr.Entity, EntityID: wr.ID, Field: f, Value: v, TS: ts, Device: device}
@@ -175,7 +186,7 @@ func (e *Engine) undoEntity(ctx context.Context, ruleID, key string, wr written,
 	for _, f := range wr.Fields {
 		list, err := e.fieldOps(ctx, wr.Entity, wr.ID, f)
 		if err != nil {
-			return nil, false, err
+			return nil, false, false, err
 		}
 		if w := winner(list, ""); w != nil && w.opID == mine(f) {
 			still[f] = winner(list, mine(f))
@@ -183,19 +194,18 @@ func (e *Engine) undoEntity(ctx context.Context, ruleID, key string, wr written,
 	}
 	if wr.Created {
 		if len(still) < len(wr.Fields) {
-			return nil, false, nil // changed since: kept
+			return nil, false, false, nil // changed since: kept
 		}
 		if wr.Entity == "time_entry" {
-			return []opsync.Op{op("ended_at", raw(nowMs))}, true, nil
+			return []opsync.Op{op("ended_at", raw(nowMs))}, true, false, nil
 		}
-		return []opsync.Op{op("deleted_at", raw(nowMs))}, true, nil
+		return []opsync.Op{op("deleted_at", raw(nowMs))}, true, false, nil
 	}
 	fields := make([]string, 0, len(still))
 	for f := range still {
 		fields = append(fields, f)
 	}
 	sort.Strings(fields)
-	var ops []opsync.Op
 	for _, f := range fields {
 		if wr.Entity == "time_entry" && f == "ended_at" {
 			continue // a timer it stopped stays stopped
@@ -207,7 +217,12 @@ func (e *Engine) undoEntity(ctx context.Context, ruleID, key string, wr written,
 		if p := still[f]; p != nil {
 			prev = p.value
 		}
-		ops = append(ops, op(f, prev))
+		back := op(f, prev)
+		if opsync.IsV2Op(back) {
+			sealed = true
+			continue
+		}
+		ops = append(ops, back)
 	}
-	return ops, len(ops) > 0, nil
+	return ops, len(ops) > 0, sealed, nil
 }

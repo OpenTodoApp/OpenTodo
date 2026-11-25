@@ -2,8 +2,8 @@
 // key on this device with the web app's own code, the key stays in memory until
 // Obsidian closes unless the user asks to remember it, and every content value
 // is sealed before it enters the outbox.
-import { b64url, checkRecordParams, decryptValue, encryptValue, fromB64url, unlockWithPassphrase, unlockWithRecoveryKey, type KeyRecord } from '../../web/src/lib/crypto'
-import { openValue, sealValue } from '../../web/src/lib/e2eeEnvelope'
+import { b64url, checkRecordParams, decryptValue, fromB64url, unlockWithPassphrase, unlockWithRecoveryKey, type KeyRecord } from '../../web/src/lib/crypto'
+import { openValue, sealText, sealValue } from '../../web/src/lib/e2eeEnvelope'
 import type { Entity } from '../../web/src/lib/types'
 import { K, type DeviceStorage } from './storage'
 import type { Op } from './ops'
@@ -70,7 +70,7 @@ export class Keyring {
     const key = this.key
     if (!key) throw new LockedError()
     const out: Op[] = []
-    for (const op of ops) out.push(personal(op) ? { ...op, value: await sealValue(key, op.entity as Entity, op.entityId, op.field, op.value) } : op)
+    for (const op of ops) out.push(personal(op) ? { ...op, value: await sealValue(key, op.entity as Entity, op.entityId, op.field, op.value, op.ts) } : op)
     return out
   }
 
@@ -93,7 +93,7 @@ export class Keyring {
     if (!key) return null
     return {
       open: (entity, id, field, value) => decryptValue(key, entity, id, field, value),
-      seal: (entity, id, field, plaintext) => encryptValue(key, entity, id, field, plaintext),
+      seal: (entity, id, field, plaintext, ts) => sealText(key, entity as Entity, id, field, plaintext, ts),
     }
   }
 }

@@ -214,10 +214,10 @@
     "web/src/app/NotificationBell.tsx"
   ],
   "<b>{inviter}</b> invited you to the project <b2>{name}</b2> as {role}": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "<b>{inviter}</b> invited you to the workspace <b2>{name}</b2> as {role}": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "<b>{name}</b> replied on <b2>{task}</b2>": [
     "web/src/app/NotificationBell.tsx"
@@ -815,7 +815,7 @@
     "web/src/app/themes/tokenNames.ts"
   ],
   "Accept": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "Accept and continue": [
     "web/src/app/assistant/AssistantConsent.tsx"
@@ -1847,19 +1847,19 @@
     "web/src/app/RelaySettings.tsx"
   ],
   "Answering an AI connector": [
-    "web/src/app/RelaySettings.tsx"
+    "web/src/app/RelayIndicator.tsx"
   ],
   "Answering an AI connector: {tool}": [
-    "web/src/app/RelaySettings.tsx"
+    "web/src/app/RelayIndicator.tsx"
   ],
   "Answering an invitation needs a connection.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Answering needs a connection to your server.": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "Answering {token}: {tool}": [
-    "web/src/app/RelaySettings.tsx"
+    "web/src/app/RelayIndicator.tsx"
   ],
   "Answers on your key do not count toward the server’s monthly limit.": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -3505,6 +3505,7 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Clear": [
+    "web/src/app/OlderVersionsDialog.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/habits/DayMenu.tsx",
     "web/src/app/quickadd/LineDatePicker.tsx",
@@ -3708,7 +3709,8 @@
   ],
   "Collapse {name}": [
     "web/src/app/ProjectsTable.tsx",
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/SubProjects.tsx"
   ],
   "Collection URL": [
     "web/src/app/BackupsPanel.tsx"
@@ -4894,7 +4896,7 @@
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Decline": [
-    "web/src/app/MemberInvitations.tsx",
+    "web/src/app/InvitationAnswer.tsx",
     "web/src/app/RelayConfirm.tsx"
   ],
   "Declined": [
@@ -5259,6 +5261,7 @@
   "Details": [
     "web/src/app/AuditPanel.tsx",
     "web/src/app/DemoBanner.tsx",
+    "web/src/app/EncryptionPanel.tsx",
     "web/src/app/ImportScreen.tsx",
     "web/src/app/task-detail/TaskFacts.tsx"
   ],
@@ -5444,6 +5447,7 @@
     "web/src/app/MembersPanel.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/OAuthClients.tsx",
+    "web/src/app/OlderVersionsDialog.tsx",
     "web/src/app/ProjectNote.tsx",
     "web/src/app/RefChip.tsx",
     "web/src/app/TokensSection.tsx",
@@ -6560,7 +6564,8 @@
   ],
   "Expand {name}": [
     "web/src/app/ProjectsTable.tsx",
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/SubProjects.tsx"
   ],
   "Expected \"&\" or \"|\" before \"{before}\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
@@ -12475,6 +12480,9 @@
   "Older updates could not be loaded.": [
     "web/src/app/FeedView.tsx"
   ],
+  "Older versions this device kept out": [
+    "web/src/app/OlderVersionsDialog.tsx"
+  ],
   "Oldest": [
     "web/src/app/notes/NotesPage.tsx"
   ],
@@ -15598,7 +15606,7 @@
     "web/src/app/help/HelpView.tsx"
   ],
   "Running {name}…": [
-    "web/src/app/RelaySettings.tsx",
+    "web/src/app/RelayIndicator.tsx",
     "web/src/app/routines/RoutinesDevice.tsx"
   ],
   "Runs": [
@@ -16845,6 +16853,7 @@
     "web/src/app/AppSessions.tsx",
     "web/src/app/ProjectInviteScreen.tsx",
     "web/src/app/SidebarFooter.tsx",
+    "web/src/app/SignOutDialog.tsx",
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/UnlockScreen.tsx"
   ],
@@ -16870,7 +16879,7 @@
     "web/src/app/settingsIndex.ts"
   ],
   "Sign out of this device?": [
-    "web/src/app/AccountSettings.tsx"
+    "web/src/app/SignOutDialog.tsx"
   ],
   "Sign out of {name} too": [
     "web/src/app/SsoPanel.tsx"
@@ -17173,7 +17182,7 @@
   "Someone": [
     "web/public/push-sw.js",
     "web/src/app/FeedView.tsx",
-    "web/src/app/MemberInvitations.tsx",
+    "web/src/app/InvitationAnswer.tsx",
     "web/src/app/NotificationBell.tsx",
     "web/src/app/ProjectActivity.tsx",
     "web/src/app/WorkspaceActivity.tsx",
@@ -17659,7 +17668,8 @@
     "web/src/lib/templateLibrary.ts"
   ],
   "Sub-projects": [
-    "web/src/app/SubProjects.tsx"
+    "web/src/app/SubProjects.tsx",
+    "web/src/lib/listGroups.ts"
   ],
   "Subject": [
     "web/src/lib/rules/sentence.ts"
@@ -19099,6 +19109,13 @@
   "The server sent an answer this app does not understand. Your changes stay on this device.": [
     "web/src/lib/sync.ts"
   ],
+  "The server sent an older encryption key record. This device kept its own.": [
+    "web/src/app/EncryptionPanel.tsx",
+    "web/src/lib/e2ee.ts"
+  ],
+  "The server sent older versions of {n, plural, one {# item} other {# items}}. This device kept its own.": [
+    "web/src/app/EncryptionPanel.tsx"
+  ],
   "The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.": [
     "web/src/app/TaskRow.tsx"
   ],
@@ -19169,7 +19186,8 @@
     "web/src/lib/fields.ts"
   ],
   "The tasks must be in one project": [
-    "web/src/app/bulk/BulkActions.tsx"
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/task-list/useListDrag.ts"
   ],
   "The test failed": [
     "web/src/app/OutgoingEmailPanel.tsx"
@@ -19596,6 +19614,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "This device’s clock is far off and the server keeps refusing its changes. Your changes stay on this device.": [
+    "web/src/lib/i18n/errors.ts",
     "web/src/lib/sync.ts"
   ],
   "This device’s sync state": [
@@ -19722,6 +19741,9 @@
   ],
   "This is your only way to sign in. Add a passkey or another linked account first.": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "This item changed in the meantime. Try again.": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "This kind of link can never open": [
     "web/src/lib/settingsCopy.ts"
@@ -21177,10 +21199,11 @@
     "web/src/app/calendar/DayColumn.tsx"
   ],
   "Unsynced changes are uploaded first when you are online, then the local copy of your tasks is cleared from this device. Your data stays on your server.": [
-    "web/src/app/AccountSettings.tsx"
+    "web/src/app/SignOutDialog.tsx"
   ],
   "Untitled": [
     "web/src/app/CalendarView.tsx",
+    "web/src/app/OlderVersionsDialog.tsx",
     "web/src/app/PlanView.tsx",
     "web/src/app/PublicListScreen.tsx",
     "web/src/app/ReminderToasts.tsx",
@@ -21293,7 +21316,7 @@
     "web/src/lib/trash.ts"
   ],
   "Untitled routine": [
-    "web/src/app/RelaySettings.tsx",
+    "web/src/app/RelayIndicator.tsx",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/palette/routineCommand.ts",
     "web/src/app/routines/RoutineEditor.tsx",
@@ -22740,7 +22763,7 @@
     "web/src/lib/assistant.ts"
   ],
   "a project": [
-    "web/src/app/MemberInvitations.tsx",
+    "web/src/app/InvitationAnswer.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/lib/assistant.ts"
   ],
@@ -22810,7 +22833,7 @@
     "web/src/app/routines/words.tsx"
   ],
   "a workspace": [
-    "web/src/app/MemberInvitations.tsx"
+    "web/src/app/InvitationAnswer.tsx"
   ],
   "accept the assistant’s updated terms for routines": [
     "web/src/lib/rules/catalogue.ts"

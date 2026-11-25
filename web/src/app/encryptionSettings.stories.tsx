@@ -22,3 +22,5 @@ export const Locked: StoryObj = { render: () => view({ ...on, unlocked: false })
 export const Migrating: StoryObj = { render: () => view({ ...on, migration: { mode: 'encrypt', done: 340, total: 1200 } }) }
 export const WithError: StoryObj = { render: () => view(on, { kind: 'change' }, { error: 'That passphrase is not correct.' }) }
 export const ConfirmDisable: StoryObj = { render: () => view(on, { kind: 'confirmDisable' }) }
+export const OlderVersionsKept: StoryObj = { render: () => view({ ...on, olderVersions: 3 }) }
+export const OlderKeyRecord: StoryObj = { render: () => view({ ...on, olderRecord: true }) }

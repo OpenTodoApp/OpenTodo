@@ -53,7 +53,8 @@ export interface Transport {
 /** Opens and seals content values of an encrypted account on the device. */
 export interface Crypter {
   open(entity: string, id: string, field: string, value: string): Promise<string>
-  seal(entity: string, id: string, field: string, plaintext: string): Promise<string>
+  /** Seals for the op with timestamp ts: a v2 envelope is bound to it (e2ee-rollback D3). */
+  seal(entity: string, id: string, field: string, plaintext: string, ts: number): Promise<string>
 }
 
 /** The installation that syncs a folder (state.go Owner). */

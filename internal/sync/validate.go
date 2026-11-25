@@ -30,7 +30,7 @@ const ReasonUnknownField = "unknown_field"
 func SplitInvalid(ops []Op) (valid []Op, refused []Rejection, invalid []Op) {
 	valid = make([]Op, 0, len(ops))
 	for _, op := range ops {
-		if !ReservedDevice(op.Device) && Validate(op) == nil {
+		if !ReservedDevice(op.Device) && Validate(op) == nil && checkStamp(op) == nil {
 			valid = append(valid, op)
 			continue
 		}

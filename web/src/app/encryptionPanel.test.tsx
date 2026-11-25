@@ -28,6 +28,15 @@ const labels = (html: string) => buttons(html).map((b) => b.label)
 const button = (html: string, label: string) => buttons(html).find((b) => b.label === label)?.html
 
 describe('EncryptionView', () => {
+  it('older versions kept (e2ee-rollback D4): one line with Details, only while there are any', () => {
+    expect(render(on)).not.toContain('older versions')
+    const html = render({ ...on, olderVersions: 3 })
+    expect(html).toContain('The server sent older versions of 3 items. This device kept its own.')
+    expect(labels(html)).toContain('Details')
+    expect(render({ ...on, olderVersions: 1 })).toContain('older versions of 1 item.')
+    expect(render({ ...on, olderRecord: true })).toContain('The server sent an older encryption key record. This device kept its own.')
+  })
+
   it('off: explains the boundary and offers set-up', () => {
     const html = render(off)
     expect(html).toContain('Your task text is encrypted on your devices')

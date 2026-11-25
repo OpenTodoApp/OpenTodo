@@ -13,6 +13,8 @@
 package e2ee
 
 import (
+	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"regexp"
 	"strings"
@@ -23,7 +25,44 @@ import (
 const (
 	Prefix   = "enc:"
 	PrefixV1 = "enc:v1:"
+	PrefixV2 = "enc:v2:"
 )
+
+// WriterRelease turns on the writer half of e2ee-rollback (design D8): every
+// writer of ot seals v2 (crypt.WriteV2), and readers refuse a v1 value over a
+// value held as v2. It is false in the reader release, where honest writers
+// still write v1, so a v1 value after a v2 one is no sign of an older version.
+// The web app's switch is WRITE_V2 in web/src/lib/e2eeEnvelope.ts.
+const WriterRelease = false
+
+// MaxStamp is the largest v2 stamp: the largest integer a JavaScript number
+// holds exactly. Stamps are positive Unix milliseconds.
+const MaxStamp = 1<<53 - 1
+
+// v2Body is the smallest v2 body: stamp, nonce and tag.
+const v2Body = 8 + 12 + 16
+
+// IsV2 reports whether s starts like a v2 envelope (well formed or not).
+func IsV2(s string) bool { return strings.HasPrefix(s, PrefixV2) }
+
+// Stamp returns the stamp of a well-formed v2 envelope: base64url without
+// padding, at least stamp, nonce and tag long, and a stamp from 1 to MaxStamp.
+// ok is false for anything else, v1 included. It reads the clear header only:
+// whether the value is authentic needs the key, which the server never has.
+func Stamp(s string) (stamp int64, ok bool) {
+	if !IsV2(s) {
+		return 0, false
+	}
+	body, err := base64.RawURLEncoding.Strict().DecodeString(s[len(PrefixV2):])
+	if err != nil || len(body) < v2Body {
+		return 0, false
+	}
+	v := binary.BigEndian.Uint64(body[:8])
+	if v < 1 || v > MaxStamp {
+		return 0, false
+	}
+	return int64(v), true
+}
 
 // Placeholder is what server-built text (notifications, reminder pushes) shows
 // instead of a ciphertext value.
