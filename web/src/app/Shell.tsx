@@ -5,7 +5,7 @@ import { resettable } from '../lib/moduleState'
 import { useHabitForm } from './habits/habitFormStore'
 import { DESKTOP_HEADER_QUERY, IconButton, PageActions, PageBarTitle, Skeleton, TruncatedText, trapTab, useMediaQuery, useOverlay, pageBar, usePageBar, useOverlayDepth } from '../ui'
 import { useCommandBar } from './palette/useCommandBar'
-import { Suspense, useEffect, useRef, useState, type ComponentType, type RefObject } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState, type ComponentType, type ReactNode, type RefObject } from 'react'
 import { lazy, preloadable } from '../lib/lazy'
 import type { User } from '../lib/types'
 import { openStartView } from './startView'
@@ -35,6 +35,7 @@ import { currentAddress, openTaskPage, settleTrail } from './taskTrail'
 import { AddButton, TAB_BAR_ROOM, TabBar } from './TabBar'
 import { PHONE_BAR_FRAME, PHONE_BAR_LINE, hasPhoneChrome } from './phoneFrame'
 import { usePhoneOwnBar } from '../phone/chrome'
+import { PhoneChrome } from '../phone/PhoneChrome'
 import { usePhoneUiEnabled } from '../phone/prefs'
 import { usePhoneChrome } from './useScrollDirection'
 import { onQuickAddSheetRequest, QuickAddSheet, requestQuickAddSheet } from './QuickAddSheet'
@@ -80,6 +81,10 @@ function ListScreen({ route, user, phoneUi, onMenu }: { route: ListRoute; user: 
   const layout = useProjectViewMode(phoneUi && route.view === 'project' ? route.id : null)
   if (!phoneUi || layout !== 'list') return <TaskListView userId={user.id} userRole={user.role} route={route} />
   return <Suspense fallback={null}><PhoneList route={route} userId={user.id} userRole={user.role} onMenu={onMenu} /></Suspense>
+}
+/** The phone UI around the screens while it is on (phone-all-screens): every page's header is the phone's. */
+function PhoneOr({ on, onMenu, children }: { on: boolean; onMenu: () => void; children: ReactNode }) {
+  return on ? <PhoneChrome onMenu={onMenu}>{children}</PhoneChrome> : <>{children}</>
 }
 /** Whether the phone UI's screens are shown: the switch is on and the window is a phone's. */
 function usePhoneUi(): boolean {
@@ -347,7 +352,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const connections = useConnectionsRequest()
   // Page changes are announced (assistive-tech-semantics): the tab title names the
   // page and a navigation moves focus to its heading; the skip link jumps there too.
-  const content = useRef<HTMLDivElement>(null)
+  const content = useRef<HTMLDivElement>(null), openDrawer = useCallback(() => setSidebarOpen(true), [setSidebarOpen])
   usePageFocus(route, frame, content)
   // The phone's bottom chrome: the tab bar minimises while scrolling down, the toast sits above it (phone-v2 D5, D6).
   const minimised = usePhoneChrome(content, phoneChrome, sidebarOpen)
@@ -379,7 +384,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         <div ref={content} id="content" data-main-scroller data-add-room={addRoom || undefined}
           className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${addRoom ? 'max-md:pb-(--add-room)' : ''} ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
           {/* One screen failing (a render bug, a chunk gone after an upgrade) leaves the shell usable (client-sync-robustness). */}
-          <PanelBoundary resetKey={route}>
+          <PanelBoundary resetKey={route}><PhoneOr on={phoneUi} onMenu={openDrawer}>
           {!on(ROUTE_FEATURES[route.view]) ? <Suspense fallback={null}><FeatureOff id={ROUTE_FEATURES[route.view]!} /></Suspense> : route.view === 'help' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading help…')}</p>}><HelpView page={route.page} q={route.q} /></Suspense>
           ) : route.view === 'settings' ? (
@@ -432,9 +437,9 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <Suspense fallback={null}>{route.view === 'month' ? <MonthView date={route.date} /> : route.view === 'quarter' ? <QuarterView date={route.date} /> : route.view === 'plan' ? <PlanView date={route.date} /> : <YearView date={route.date} />}</Suspense>
           ) : (
             // App renders the invite, reset, capture and display screens itself; a stray /invite, /reset, /share or /display route inside the shell falls back to the Inbox.
-            <ListScreen route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'workspace-invite' || route.view === 'reset' || route.view === 'confirm-email' || route.view === 'forgot' || route.view === 'verify' || route.view === 'public' || route.view === 'share' || route.view === 'display' ? { view: 'inbox' } : route} user={user} phoneUi={phoneUi} onMenu={() => setSidebarOpen(true)} />
+            <ListScreen route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'workspace-invite' || route.view === 'reset' || route.view === 'confirm-email' || route.view === 'forgot' || route.view === 'verify' || route.view === 'public' || route.view === 'share' || route.view === 'display' ? { view: 'inbox' } : route} user={user} phoneUi={phoneUi} onMenu={openDrawer} />
           )}
-          </PanelBoundary>
+          </PhoneOr></PanelBoundary>
         </div>
         {vim && (
           <PanelBoundary>
