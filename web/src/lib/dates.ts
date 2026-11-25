@@ -221,6 +221,16 @@ export function localDueOf(due: Due | null | undefined, zone = viewerZone()): Du
   return out
 }
 
+/**
+ * A wall time the viewer chose on the grid, as an event kept in `tz` holds it (calendar-event-edits
+ * D6): the inverse of localDueOf. A floating event (no `tz`) keeps the wall time as it is.
+ */
+export function eventPointIn(tz: string | undefined, local: { date: string; time: string }, zone = viewerZone()): { date: string; time: string; tz?: string } {
+  if (!tz) return { date: local.date, time: local.time }
+  const at = instantToLocalDue(zonedInstant(local.date, local.time, zone), tz)
+  return { date: at.date, time: at.time, tz }
+}
+
 /** The due's calendar date in `zone` (the viewer's by default), or null. */
 export function localDate(due: Due | null | undefined, zone?: string): string | null {
   return localDueOf(due, zone)?.date ?? null

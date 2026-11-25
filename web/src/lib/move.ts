@@ -71,17 +71,25 @@ export async function canReorderTasks(projectId: string | null): Promise<boolean
  * descendants, a section of another project, an unknown anchor.
  */
 export async function moveTask(id: string, target: TaskTarget): Promise<boolean> {
+  const changes = await planTaskMove(id, target)
+  if (!changes) return false
+  await mutateMany(changes)
+  return true
+}
+
+/** The batch moveTask writes, or null when it would refuse or change nothing (undo-coverage plans it as one step). */
+export async function planTaskMove(id: string, target: TaskTarget): Promise<Change[] | null> {
   const task = await db.tasks.get(id)
-  if (!task || task.deleted_at || task.completed_at) return false
-  if (!(await canReorderTasks(task.project_id))) return false
+  if (!task || task.deleted_at || task.completed_at) return null
+  if (!(await canReorderTasks(task.project_id))) return null
   const ctx = await taskContext(task.project_id)
   const node = ctx.tree.nodes.get(id)
-  if (!node) return false
+  if (!node) return null
   const parent = target.parent_id
   const patch: Record<string, unknown> = {}
   if (parent !== node.parent) {
     if (parent !== null) {
-      if (parent === id || !ctx.tree.nodes.has(parent) || isDescendant(parent, id, ctx.all)) return false
+      if (parent === id || !ctx.tree.nodes.has(parent) || isDescendant(parent, id, ctx.all)) return null
     }
     patch.parent_id = parent
   }
@@ -91,15 +99,14 @@ export async function moveTask(id: string, target: TaskTarget): Promise<boolean>
     section = target.section_id === undefined ? current : target.section_id || null
     if (section !== null) {
       const s = ctx.sections.get(section)
-      if (!s || s.deleted_at) return false
+      if (!s || s.deleted_at) return null
     }
     if (section !== current) patch.section_id = section
   }
   const plan = planMove(taskSiblings(ctx, parent, section), id, target.at)
-  if (plan === null) return false
-  if (plan.length === 0 && Object.keys(patch).length === 0) return false
-  await mutateMany(toChanges('task', plan, patch, id))
-  return true
+  if (plan === null) return null
+  if (plan.length === 0 && Object.keys(patch).length === 0) return null
+  return toChanges('task', plan, patch, id)
 }
 
 /**
@@ -179,27 +186,25 @@ export async function planTasksMove(ids: readonly string[], target: TaskTarget):
 }
 
 /**
- * Keyboard move (Alt+Up/Down, Alt+Shift+Up/Down) within the task's current list.
- * False at the edge of the list, for a viewer, or for a task not shown in a list.
+ * Plan a keyboard move (Alt+Up/Down, Alt+Shift+Up/Down) within the task's current list.
+ * Null at the edge of the list, for a viewer, or for a task not shown in a list.
  */
-export async function moveTaskBy(id: string, step: Step): Promise<boolean> {
+export async function planTaskStep(id: string, step: Step): Promise<Change[] | null> {
   const task = await db.tasks.get(id)
-  if (!task || task.deleted_at || task.completed_at) return false
-  if (!(await canReorderTasks(task.project_id))) return false
+  if (!task || task.deleted_at || task.completed_at) return null
+  if (!(await canReorderTasks(task.project_id))) return null
   const ctx = await taskContext(task.project_id)
   const node = ctx.tree.nodes.get(id)
-  if (!node) return false
+  if (!node) return null
   const section = node.parent === null ? effectiveSection(task, ctx.sections) : null
   const plan = planStep(taskSiblings(ctx, node.parent, section), id, step)
-  if (!plan) return false
-  await mutateMany(toChanges('task', plan))
-  return true
+  return plan ? toChanges('task', plan) : null
 }
 
 /**
  * Where a task sits in its list for the row menu's Move items (accessibility-aa D3, the
  * single-pointer alternative to dragging a row): first and last among its siblings, or
- * null when moveTaskBy would refuse it (viewer, completed, not in a list).
+ * null when planTaskStep would refuse it (viewer, completed, not in a list).
  */
 export async function taskStepEdges(id: string): Promise<{ first: boolean; last: boolean } | null> {
   const task = await db.tasks.get(id)

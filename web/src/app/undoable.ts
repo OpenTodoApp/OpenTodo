@@ -2,7 +2,8 @@
 // task-list-presentation "Completion feedback", "Single-action undo"): the list,
 // the panel and the calendar call these instead of the plain ops, so every
 // complete, delete, move, date change and park shows the same toast.
-import { assigneeUndoable, calendarEditUndoable, completeUndoable, deadlineUndoable, doOnUndoable, dueUndoable, estimateUndoable, moveUndoable, parkUndoable, rescheduleUndoable, spanUndoable, trashUndoable } from '../lib/undoActions'
+import { assigneeUndoable, calendarEditUndoable, completeUndoable, deadlineUndoable, doOnUndoable, dueUndoable, estimateUndoable, moveTaskByUndoable, moveTaskUndoable, moveUndoable, parkUndoable, rescheduleUndoable, sectionMoveUndoable, spanUndoable, trashUndoable, type UndoableResult } from '../lib/undoActions'
+import type { Step, TaskTarget } from '../lib/move'
 import type { DoOnChoice } from '../lib/dayParts'
 import type { Task } from '../lib/types'
 import { hideBulkToast, showActionToast, showUndoToast } from './bulk/toastStore'
@@ -97,5 +98,31 @@ export async function calendarEditWithUndo(id: string, patch: Partial<Task>): Pr
 
 export async function parkWithUndo(id: string): Promise<void> {
   const r = await withListTransition(1, () => parkUndoable(id))
+  if (r.entry) showUndoToast(r.label, r.entry.id)
+}
+
+/** One row dragged among rows or onto a section heading (undo-coverage): the row travels, then the toast offers Undo. */
+export async function moveRowWithUndo(id: string, target: TaskTarget, label?: string): Promise<boolean> {
+  const r = await withListTransition(1, () => moveTaskUndoable(id, target, label))
+  if (r?.entry) showUndoToast(r.label, r.entry.id)
+  return r !== null
+}
+
+/** A keyboard move of one row (Alt+arrows, the row menu's Move items, Vim); false at the list's edge. */
+export async function stepRowWithUndo(id: string, step: Step): Promise<boolean> {
+  const r = await withListTransition(1, () => moveTaskByUndoable(id, step))
+  if (r?.entry) showUndoToast(r.label, r.entry.id)
+  return r !== null
+}
+
+/** A task moved to a section, or with null to No section (a board column, the section picker), with Undo. */
+export async function sectionMoveWithUndo(id: string, sectionId: string | null, sectionName: string): Promise<void> {
+  const r = await withListTransition(1, () => sectionMoveUndoable(id, sectionId, sectionName))
+  if (r.entry) showUndoToast(r.label, r.entry.id)
+}
+
+/** Deleting a section, a label or a custom field, or merging labels, after its confirmation: one step with Undo. */
+export async function withUndoToast(run: Promise<UndoableResult>): Promise<void> {
+  const r = await run
   if (r.entry) showUndoToast(r.label, r.entry.id)
 }

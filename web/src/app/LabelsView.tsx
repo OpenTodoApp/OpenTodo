@@ -7,9 +7,11 @@ import { type FormEvent, type KeyboardEvent, type PointerEvent as ReactPointerEv
 import { useLabels, useProjects } from '../lib/localData'
 import { beginDrag } from '../lib/dnd'
 import {
-  LabelExistsError, createLabel, deleteLabel, duplicateLabelIds, labelKey, labelUsage,
-  mergeLabels, moveLabelTo, reorderLabel, updateLabel,
+  LabelExistsError, createLabel, duplicateLabelIds, labelKey, labelUsage,
+  moveLabelTo, reorderLabel, updateLabel,
 } from '../lib/labels'
+import { deleteLabelUndoable, mergeLabelsUndoable } from '../lib/undoActions'
+import { withUndoToast } from './undoable'
 import { useOpenTasks } from '../lib/liveTasks'
 import { labelCounts, patchLabelCounts } from '../lib/sidebarCounts'
 import { Derived } from '../lib/taskDelta'
@@ -93,7 +95,7 @@ export function mergeConfirm(source: Label, target: Label): ConfirmSpec {
     },
     confirmLabel: t('Merge'),
     onConfirm: async () => {
-      await mergeLabels(source.id, target.id)
+      await withUndoToast(mergeLabelsUndoable(source.id, target.id, target.name))
       navigate({ view: 'label', id: target.id })
     },
   }
@@ -108,7 +110,7 @@ export function deleteConfirm(label: Label): ConfirmSpec {
       return n ? t('{n, plural, one {It is removed from # task. The tasks themselves stay.} other {It is removed from # tasks. The tasks themselves stay.}}', { n }) : t('No task carries it.')
     },
     confirmLabel: t('Delete label'),
-    onConfirm: () => deleteLabel(label.id),
+    onConfirm: () => withUndoToast(deleteLabelUndoable(label.id)),
   }
 }
 

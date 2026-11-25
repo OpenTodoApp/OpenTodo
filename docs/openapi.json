@@ -97,6 +97,7 @@
                   "already_uploaded",
                   "assistant_busy",
                   "assistant_disabled",
+                  "assistant_edits_off",
                   "assistant_quota",
                   "attachment_mismatch",
                   "attachment_too_large",
@@ -109,6 +110,7 @@
                   "base_url_required",
                   "body_changed",
                   "busy",
+                  "calendar_read_only",
                   "calendar_sync_disabled",
                   "calendar_unreachable",
                   "channels_disabled",
@@ -131,6 +133,10 @@
                   "encryption_conflict",
                   "encryption_disabled",
                   "encryption_enabled",
+                  "event_changed",
+                  "event_edits_off",
+                  "event_gone",
+                  "event_not_editable",
                   "fallback",
                   "feeds_disabled",
                   "forbidden",
@@ -5785,7 +5791,7 @@
     },
     "/api/v1/calendar-feeds/events": {
       "get": {
-        "description": "at most 92 days; `{events: [{id, subscriptionId, uid, summary, location, start, end, allDay, free}], subscriptions: [{id, name, color, enabled, lastSuccessAt, managed?}]}` (`managed`: a calendar of a [calendar sync](https://open-todo.app/docs/api/#calendar-sync) connection); answers while calendar feeds or calendar sync is on; `start` and `end` are shaped like a task's `due` (`{date, time?, tz?}`; no `tz` means floating)",
+        "description": "at most 92 days; `{events: [{id, subscriptionId, uid, summary, location, start, end, allDay, free, rev?, access?, changedBy?}], subscriptions: [{id, name, color, enabled, lastSuccessAt, managed?, connectionId?, calendarUrl?, caps?, editEvents?}]}` (`managed`: a calendar of a [calendar sync](https://open-todo.app/docs/api/#calendar-sync) connection, which also carries `connectionId`, `calendarUrl`, `caps` and `editEvents`; its events carry `rev`, the version to send with a change, `access: {update, delete, reason?}` ([Calendar events](https://open-todo.app/docs/api/#calendar-events)) and, while an assistant's change can be undone, `changedBy: {kind: \"assistant\", name}`); answers while calendar feeds or calendar sync is on; `start` and `end` are shaped like a task's `due` (`{date, time?, tz?}`; no `tz` means floating)",
         "externalDocs": {
           "url": "https://open-todo.app/docs/api/#calendar-feeds"
         },
@@ -5797,7 +5803,16 @@
                 "example": {
                   "events": [
                     {
+                      "access": {
+                        "delete": false,
+                        "reason": "example",
+                        "update": false
+                      },
                       "allDay": false,
+                      "changedBy": {
+                        "kind": "example",
+                        "name": "Ada"
+                      },
                       "end": {
                         "date": "2026-11-20",
                         "time": "example",
@@ -5806,6 +5821,7 @@
                       "free": false,
                       "id": "00000000-0000-4000-8000-000000000001",
                       "location": "example",
+                      "rev": "example",
                       "start": {
                         "date": "2026-11-20",
                         "time": "example",
@@ -5818,7 +5834,15 @@
                   ],
                   "subscriptions": [
                     {
+                      "calendarUrl": "https://todo.example.com/",
+                      "caps": {
+                        "create": false,
+                        "delete": false,
+                        "update": false
+                      },
                       "color": "#3b82f6",
+                      "connectionId": "00000000-0000-4000-8000-000000000001",
+                      "editEvents": false,
                       "enabled": false,
                       "id": "00000000-0000-4000-8000-000000000001",
                       "lastSuccessAt": 1794906000000,
@@ -5832,8 +5856,39 @@
                     "events": {
                       "items": {
                         "properties": {
+                          "access": {
+                            "properties": {
+                              "delete": {
+                                "type": "boolean"
+                              },
+                              "reason": {
+                                "type": "string"
+                              },
+                              "update": {
+                                "type": "boolean"
+                              }
+                            },
+                            "type": [
+                              "object",
+                              "null"
+                            ]
+                          },
                           "allDay": {
                             "type": "boolean"
+                          },
+                          "changedBy": {
+                            "properties": {
+                              "kind": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "type": [
+                              "object",
+                              "null"
+                            ]
                           },
                           "end": {
                             "properties": {
@@ -5862,6 +5917,9 @@
                             "type": "string"
                           },
                           "location": {
+                            "type": "string"
+                          },
+                          "rev": {
                             "type": "string"
                           },
                           "start": {
@@ -5901,8 +5959,31 @@
                     "subscriptions": {
                       "items": {
                         "properties": {
+                          "calendarUrl": {
+                            "type": "string"
+                          },
+                          "caps": {
+                            "properties": {
+                              "create": {
+                                "type": "boolean"
+                              },
+                              "delete": {
+                                "type": "boolean"
+                              },
+                              "update": {
+                                "type": "boolean"
+                              }
+                            },
+                            "type": "object"
+                          },
                           "color": {
                             "type": "string"
+                          },
+                          "connectionId": {
+                            "type": "string"
+                          },
+                          "editEvents": {
+                            "type": "boolean"
                           },
                           "enabled": {
                             "type": "boolean"
@@ -6722,7 +6803,7 @@
     },
     "/api/v1/calendar-sync/connections": {
       "get": {
-        "description": "`{connections: [...]}`: `id`, `provider` (`caldav`, `google`, `microsoft`), `name`, `server_url`, `username`, `calendars` (`[{url, name, color, time_zone?, read_only}]`), `target`, `read`, `include_date_only`, `scope` (see [Sync scope](https://open-todo.app/docs/api/#sync-scope)), `enabled`, `state` (`off`, `choose_calendar`, `pending`, `ok`, `failed`, `reconnect`, `stopped`), `next_sync_at`, `last_sync_at`, `last_success_at`, `last_error`, `last_error_at`, `stopped_reason`, `last_run` (`{moved, renamed, unscheduled, written, removed, conflicts, refused, partial}`), `password_set`, `event_count`. Never the password or token.",
+        "description": "`{connections: [...]}`: `id`, `provider` (`caldav`, `google`, `microsoft`), `name`, `server_url`, `username`, `calendars` (`[{url, name, color, time_zone?, read_only, caps: {create, update, delete}}]`), `target`, `read`, `include_date_only`, `scope` (see [Sync scope](https://open-todo.app/docs/api/#sync-scope)), `enabled`, `state` (`off`, `choose_calendar`, `pending`, `ok`, `failed`, `reconnect`, `stopped`), `next_sync_at`, `last_sync_at`, `last_success_at`, `last_error`, `last_error_at`, `stopped_reason`, `last_run` (`{moved, renamed, unscheduled, written, removed, conflicts, refused, partial}`), `password_set`, `event_count`. Never the password or token.",
         "externalDocs": {
           "url": "https://open-todo.app/docs/api/#calendar-sync"
         },
@@ -6734,8 +6815,14 @@
                 "example": {
                   "connections": [
                     {
+                      "assistant_edits": false,
                       "calendars": [
                         {
+                          "caps": {
+                            "create": false,
+                            "delete": false,
+                            "update": false
+                          },
                           "color": "#3b82f6",
                           "name": "Ada",
                           "read_only": false,
@@ -6744,6 +6831,7 @@
                         }
                       ],
                       "created_at": 1794906000000,
+                      "edit_events": false,
                       "enabled": false,
                       "event_count": 1,
                       "id": "00000000-0000-4000-8000-000000000001",
@@ -6796,9 +6884,29 @@
                     "connections": {
                       "items": {
                         "properties": {
+                          "assistant_edits": {
+                            "type": "boolean"
+                          },
                           "calendars": {
                             "items": {
                               "properties": {
+                                "caps": {
+                                  "properties": {
+                                    "create": {
+                                      "type": "boolean"
+                                    },
+                                    "delete": {
+                                      "type": "boolean"
+                                    },
+                                    "update": {
+                                      "type": "boolean"
+                                    }
+                                  },
+                                  "type": [
+                                    "object",
+                                    "null"
+                                  ]
+                                },
                                 "color": {
                                   "type": "string"
                                 },
@@ -6821,6 +6929,9 @@
                           },
                           "created_at": {
                             "type": "number"
+                          },
+                          "edit_events": {
+                            "type": "boolean"
                           },
                           "enabled": {
                             "type": "boolean"
@@ -7025,8 +7136,14 @@
               "application/json": {
                 "example": {
                   "connection": {
+                    "assistant_edits": false,
                     "calendars": [
                       {
+                        "caps": {
+                          "create": false,
+                          "delete": false,
+                          "update": false
+                        },
                         "color": "#3b82f6",
                         "name": "Ada",
                         "read_only": false,
@@ -7035,6 +7152,7 @@
                       }
                     ],
                     "created_at": 1794906000000,
+                    "edit_events": false,
                     "enabled": false,
                     "event_count": 1,
                     "id": "00000000-0000-4000-8000-000000000001",
@@ -7085,9 +7203,29 @@
                   "properties": {
                     "connection": {
                       "properties": {
+                        "assistant_edits": {
+                          "type": "boolean"
+                        },
                         "calendars": {
                           "items": {
                             "properties": {
+                              "caps": {
+                                "properties": {
+                                  "create": {
+                                    "type": "boolean"
+                                  },
+                                  "delete": {
+                                    "type": "boolean"
+                                  },
+                                  "update": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "type": [
+                                  "object",
+                                  "null"
+                                ]
+                              },
                               "color": {
                                 "type": "string"
                               },
@@ -7110,6 +7248,9 @@
                         },
                         "created_at": {
                           "type": "number"
+                        },
+                        "edit_events": {
+                          "type": "boolean"
                         },
                         "enabled": {
                           "type": "boolean"
@@ -7303,7 +7444,7 @@
         "x-opentodo-policy": "signed-in"
       },
       "patch": {
-        "description": "any of `name`, `target` (a writable calendar of the connection), `read` (up to 10 of its calendars), `include_date_only`, `scope` (see [Sync scope](https://open-todo.app/docs/api/#sync-scope); makes the connection due now), `enabled`, `password` (CalDAV only; Google and Microsoft reconnect instead; needs a fresh sign-in, `403 reauth_required`; checked by discovery, then clears a stop)",
+        "description": "any of `name`, `target` (a writable calendar of the connection), `read` (up to 10 of its calendars), `include_date_only`, `scope` (see [Sync scope](https://open-todo.app/docs/api/#sync-scope); makes the connection due now), `enabled`, `edit_events` and `assistant_edits` (booleans, off by default, see [Calendar events](https://open-todo.app/docs/api/#calendar-events); `assistant_edits: true` while `edit_events` is off is `400 invalid_input` naming `assistant_edits`, and turning `edit_events` off turns both off), `password` (CalDAV only; Google and Microsoft reconnect instead; needs a fresh sign-in, `403 reauth_required`; checked by discovery, then clears a stop)",
         "externalDocs": {
           "url": "https://open-todo.app/docs/api/#calendar-sync"
         },
@@ -7322,6 +7463,8 @@
           "content": {
             "application/json": {
               "example": {
+                "assistant_edits": false,
+                "edit_events": false,
                 "enabled": false,
                 "include_date_only": false,
                 "name": "Ada",
@@ -7346,6 +7489,18 @@
               },
               "schema": {
                 "properties": {
+                  "assistant_edits": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "edit_events": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
                   "enabled": {
                     "type": [
                       "boolean",
@@ -7436,8 +7591,14 @@
               "application/json": {
                 "example": {
                   "connection": {
+                    "assistant_edits": false,
                     "calendars": [
                       {
+                        "caps": {
+                          "create": false,
+                          "delete": false,
+                          "update": false
+                        },
                         "color": "#3b82f6",
                         "name": "Ada",
                         "read_only": false,
@@ -7446,6 +7607,7 @@
                       }
                     ],
                     "created_at": 1794906000000,
+                    "edit_events": false,
                     "enabled": false,
                     "event_count": 1,
                     "id": "00000000-0000-4000-8000-000000000001",
@@ -7496,9 +7658,29 @@
                   "properties": {
                     "connection": {
                       "properties": {
+                        "assistant_edits": {
+                          "type": "boolean"
+                        },
                         "calendars": {
                           "items": {
                             "properties": {
+                              "caps": {
+                                "properties": {
+                                  "create": {
+                                    "type": "boolean"
+                                  },
+                                  "delete": {
+                                    "type": "boolean"
+                                  },
+                                  "update": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "type": [
+                                  "object",
+                                  "null"
+                                ]
+                              },
                               "color": {
                                 "type": "string"
                               },
@@ -7521,6 +7703,9 @@
                         },
                         "created_at": {
                           "type": "number"
+                        },
+                        "edit_events": {
+                          "type": "boolean"
                         },
                         "enabled": {
                           "type": "boolean"
@@ -7679,6 +7864,518 @@
         "x-opentodo-policy": "signed-in"
       }
     },
+    "/api/v1/calendar-sync/connections/{id}/events/{eventId}": {
+      "delete": {
+        "description": "delete an event of a connected calendar: `204`",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#calendar-sync"
+        },
+        "operationId": "deleteCalendarSyncConnectionsByIdEventsByEventId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "eventId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Delete a calendar sync connection event",
+        "tags": [
+          "Calendar sync"
+        ],
+        "x-opentodo-policy": "signed-in"
+      },
+      "patch": {
+        "description": "change an event of a connected calendar: see [Calendar events](https://open-todo.app/docs/api/#calendar-events)",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#calendar-sync"
+        },
+        "operationId": "patchCalendarSyncConnectionsByIdEventsByEventId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "eventId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "allDay": false,
+                "end": {
+                  "date": "2026-11-20",
+                  "time": "example",
+                  "tz": "Europe/Rome"
+                },
+                "rev": "example",
+                "start": {
+                  "date": "2026-11-20",
+                  "time": "example",
+                  "tz": "Europe/Rome"
+                },
+                "summary": "example"
+              },
+              "schema": {
+                "properties": {
+                  "allDay": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "end": {
+                    "properties": {
+                      "date": {
+                        "type": "string"
+                      },
+                      "time": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "tz": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "date"
+                    ],
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  },
+                  "rev": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "start": {
+                    "properties": {
+                      "date": {
+                        "type": "string"
+                      },
+                      "time": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "tz": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "date"
+                    ],
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  },
+                  "summary": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "event": {
+                    "access": {
+                      "delete": false,
+                      "reason": "example",
+                      "update": false
+                    },
+                    "allDay": false,
+                    "changedBy": {
+                      "kind": "example",
+                      "name": "Ada"
+                    },
+                    "end": {
+                      "date": "2026-11-20",
+                      "time": "example",
+                      "tz": "Europe/Rome"
+                    },
+                    "free": false,
+                    "id": "00000000-0000-4000-8000-000000000001",
+                    "location": "example",
+                    "rev": "example",
+                    "start": {
+                      "date": "2026-11-20",
+                      "time": "example",
+                      "tz": "Europe/Rome"
+                    },
+                    "subscriptionId": "00000000-0000-4000-8000-000000000001",
+                    "summary": "example",
+                    "uid": "example"
+                  },
+                  "replaces": "example"
+                },
+                "schema": {
+                  "properties": {
+                    "event": {
+                      "properties": {
+                        "access": {
+                          "properties": {
+                            "delete": {
+                              "type": "boolean"
+                            },
+                            "reason": {
+                              "type": "string"
+                            },
+                            "update": {
+                              "type": "boolean"
+                            }
+                          },
+                          "type": [
+                            "object",
+                            "null"
+                          ]
+                        },
+                        "allDay": {
+                          "type": "boolean"
+                        },
+                        "changedBy": {
+                          "properties": {
+                            "kind": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          },
+                          "type": [
+                            "object",
+                            "null"
+                          ]
+                        },
+                        "end": {
+                          "properties": {
+                            "date": {
+                              "type": "string"
+                            },
+                            "time": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "tz": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "free": {
+                          "type": "boolean"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "location": {
+                          "type": "string"
+                        },
+                        "rev": {
+                          "type": "string"
+                        },
+                        "start": {
+                          "properties": {
+                            "date": {
+                              "type": "string"
+                            },
+                            "time": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "tz": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "subscriptionId": {
+                          "type": "string"
+                        },
+                        "summary": {
+                          "type": "string"
+                        },
+                        "uid": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "replaces": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Update a calendar sync connection event",
+        "tags": [
+          "Calendar sync"
+        ],
+        "x-opentodo-policy": "signed-in"
+      }
+    },
+    "/api/v1/calendar-sync/connections/{id}/events/{eventId}/undo": {
+      "post": {
+        "description": "restore what an assistant's change of the event replaced",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#calendar-sync"
+        },
+        "operationId": "postCalendarSyncConnectionsByIdEventsByEventIdUndo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "eventId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "event": {
+                    "access": {
+                      "delete": false,
+                      "reason": "example",
+                      "update": false
+                    },
+                    "allDay": false,
+                    "changedBy": {
+                      "kind": "example",
+                      "name": "Ada"
+                    },
+                    "end": {
+                      "date": "2026-11-20",
+                      "time": "example",
+                      "tz": "Europe/Rome"
+                    },
+                    "free": false,
+                    "id": "00000000-0000-4000-8000-000000000001",
+                    "location": "example",
+                    "rev": "example",
+                    "start": {
+                      "date": "2026-11-20",
+                      "time": "example",
+                      "tz": "Europe/Rome"
+                    },
+                    "subscriptionId": "00000000-0000-4000-8000-000000000001",
+                    "summary": "example",
+                    "uid": "example"
+                  },
+                  "replaces": "example"
+                },
+                "schema": {
+                  "properties": {
+                    "event": {
+                      "properties": {
+                        "access": {
+                          "properties": {
+                            "delete": {
+                              "type": "boolean"
+                            },
+                            "reason": {
+                              "type": "string"
+                            },
+                            "update": {
+                              "type": "boolean"
+                            }
+                          },
+                          "type": [
+                            "object",
+                            "null"
+                          ]
+                        },
+                        "allDay": {
+                          "type": "boolean"
+                        },
+                        "changedBy": {
+                          "properties": {
+                            "kind": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          },
+                          "type": [
+                            "object",
+                            "null"
+                          ]
+                        },
+                        "end": {
+                          "properties": {
+                            "date": {
+                              "type": "string"
+                            },
+                            "time": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "tz": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "free": {
+                          "type": "boolean"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "location": {
+                          "type": "string"
+                        },
+                        "rev": {
+                          "type": "string"
+                        },
+                        "start": {
+                          "properties": {
+                            "date": {
+                              "type": "string"
+                            },
+                            "time": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "tz": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "subscriptionId": {
+                          "type": "string"
+                        },
+                        "summary": {
+                          "type": "string"
+                        },
+                        "uid": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "replaces": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Calendar sync connection event undo",
+        "tags": [
+          "Calendar sync"
+        ],
+        "x-opentodo-policy": "signed-in"
+      }
+    },
     "/api/v1/calendar-sync/connections/{id}/sync": {
       "post": {
         "description": "discovery and a cycle now: `{ok, run?, reason?, connection}`",
@@ -7702,8 +8399,14 @@
               "application/json": {
                 "example": {
                   "connection": {
+                    "assistant_edits": false,
                     "calendars": [
                       {
+                        "caps": {
+                          "create": false,
+                          "delete": false,
+                          "update": false
+                        },
                         "color": "#3b82f6",
                         "name": "Ada",
                         "read_only": false,
@@ -7712,6 +8415,7 @@
                       }
                     ],
                     "created_at": 1794906000000,
+                    "edit_events": false,
                     "enabled": false,
                     "event_count": 1,
                     "id": "00000000-0000-4000-8000-000000000001",
@@ -7762,9 +8466,29 @@
                   "properties": {
                     "connection": {
                       "properties": {
+                        "assistant_edits": {
+                          "type": "boolean"
+                        },
                         "calendars": {
                           "items": {
                             "properties": {
+                              "caps": {
+                                "properties": {
+                                  "create": {
+                                    "type": "boolean"
+                                  },
+                                  "delete": {
+                                    "type": "boolean"
+                                  },
+                                  "update": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "type": [
+                                  "object",
+                                  "null"
+                                ]
+                              },
                               "color": {
                                 "type": "string"
                               },
@@ -7787,6 +8511,9 @@
                         },
                         "created_at": {
                           "type": "number"
+                        },
+                        "edit_events": {
+                          "type": "boolean"
                         },
                         "enabled": {
                           "type": "boolean"

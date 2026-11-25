@@ -44,6 +44,8 @@ func TestDisclosureCoversEveryReadTool(t *testing.T) {
 		"list_habits": "task titles and descriptions", "get_habit": "task titles and descriptions",
 		// Not offered in the app (assistant notInApp, plan-objectives D7).
 		"list_objectives": "",
+		// Not offered in the app either (calendar-event-edits D8): the disclosure does not name event titles.
+		"list_calendar_events": "",
 	}
 	reg := agenttools.New(nil, agenttools.Options{})
 	reads := 0

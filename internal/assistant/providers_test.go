@@ -417,6 +417,63 @@ func TestCompatibleFinishReasonMapping(t *testing.T) {
 	}
 }
 
+// effortError is OpenAI's answer to function tools at a model's default
+// reasoning effort in Chat Completions (GPT-6 Luna, issue #2045).
+func effortError(w http.ResponseWriter, _ map[string]any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, _ = io.WriteString(w, `{"error":{"message":"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.","type":"invalid_request_error","param":"reasoning_effort","code":null}}`)
+}
+
+// TestChatReasoningEffortNone: a refusal naming reasoning_effort is asked
+// again once with reasoning_effort "none", which the rest of the conversation
+// keeps; requests never carry the field before that, and a second refusal or
+// a request without tools is not asked again.
+func TestChatReasoningEffortNone(t *testing.T) {
+	tools := []ToolDef{{Name: "today_summary", Description: "d", Schema: map[string]any{"type": "object"}}}
+	req := Request{System: "s", Messages: []Message{{Role: "user", Text: "x"}}, Tools: tools}
+	srv, rec := fakeAnthropic(t, effortError, sse(chatToolCalls(call("c1", "today_summary", map[string]any{}))), sse(chatText("ok", "stop")))
+	conv := chatFor(srv, OpenAI).Start(req)
+	if r, err := conv.Next(context.Background(), func(string) {}); err != nil || r.Stop != StopToolUse {
+		t.Fatalf("%v %v", r.Stop, err)
+	}
+	conv.AddToolResults([]ToolResult{{ID: "c1", Content: "{}"}})
+	if _, err := conv.Next(context.Background(), func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	if rec.n() != 3 {
+		t.Fatalf("requests %d", rec.n())
+	}
+	if _, ok := rec.bodies[0]["reasoning_effort"]; ok {
+		t.Fatalf("first request %v", rec.bodies[0])
+	}
+	if rec.bodies[1]["reasoning_effort"] != "none" || rec.bodies[2]["reasoning_effort"] != "none" {
+		t.Fatalf("retried %v / %v", rec.bodies[1]["reasoning_effort"], rec.bodies[2]["reasoning_effort"])
+	}
+	// Asking again does not use up a rate-limit retry.
+	srv, rec = fakeAnthropic(t, effortError, apiError(429, "rate_limit"), sse(chatText("ok", "stop")))
+	p := chatFor(srv, OpenAI)
+	p.Retries = 1
+	if _, err := p.Start(req).Next(context.Background(), func(string) {}); err != nil || rec.n() != 3 || rec.bodies[2]["reasoning_effort"] != "none" {
+		t.Fatalf("%v %d", err, rec.n())
+	}
+	// Refused again: one retry only, reported as a plain refusal.
+	srv, rec = fakeAnthropic(t, effortError)
+	_, err := chatFor(srv, Compatible).Start(req).Next(context.Background(), func(string) {})
+	if pe, ok := AsProviderError(err); !ok || pe.Code != CodeProviderError || pe.Status != 400 || rec.n() != 2 {
+		t.Fatalf("%v %d", err, rec.n())
+	}
+	// Without tools there is nothing to ask again for; other 400s are not retried.
+	srv, rec = fakeAnthropic(t, effortError)
+	if _, err := chatFor(srv, OpenAI).Start(Request{}).Next(context.Background(), func(string) {}); err == nil || rec.n() != 1 {
+		t.Fatalf("%v %d", err, rec.n())
+	}
+	srv, rec = fakeAnthropic(t, apiError(400, "invalid_request_error"))
+	if _, err := chatFor(srv, OpenAI).Start(req).Next(context.Background(), func(string) {}); err == nil || rec.n() != 1 {
+		t.Fatalf("%v %d", err, rec.n())
+	}
+}
+
 // ---- network policy ----
 
 type fakeResolver struct {

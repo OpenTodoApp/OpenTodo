@@ -1,0 +1,30 @@
+{{- if .Values.httpRoute.enabled }}
+{{- if not .Values.httpRoute.parentRefs }}
+{{- fail "httpRoute.parentRefs must name the Gateway the route attaches to" }}
+{{- end }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "opentodo.fullname" . }}
+  labels:
+    {{- include "opentodo.labels" . | nindent 4 }}
+  {{- with .Values.httpRoute.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    {{- toYaml .Values.httpRoute.parentRefs | nindent 4 }}
+  {{- with .Values.httpRoute.hostnames }}
+  hostnames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: {{ include "opentodo.fullname" . }}
+          port: {{ .Values.service.port }}
+{{- end }}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "calendar_event",
+  "description": "An event as GET /api/v1/calendar-feeds/events serves it (OpenSpec calendar-feeds, calendar-event-edits). The summary and location are written by people. rev, access and changedBy are set for an event of a connected calendar only.",
+  "type": "object",
+  "required": ["id", "subscriptionId", "summary", "start", "end", "allDay"],
+  "properties": {
+    "id": {"type": "string"},
+    "subscriptionId": {"type": "string"},
+    "uid": {"type": "string"},
+    "summary": {"type": "string"},
+    "location": {"type": "string"},
+    "start": {"type": "object", "description": "{date, time?, tz?} like a task's due"},
+    "end": {"type": "object", "description": "{date, time?, tz?}; an all-day end is exclusive"},
+    "allDay": {"type": "boolean"},
+    "free": {"type": "boolean"},
+    "rev": {"type": "string", "description": "the version to send with a change"},
+    "access": {"type": "object", "description": "{update, delete, reason?}: whether OpenTodo may change or delete it, and why not"},
+    "changedBy": {"type": "object", "description": "{kind: assistant, name}: an assistant's change the user can still undo"}
+  }
+}

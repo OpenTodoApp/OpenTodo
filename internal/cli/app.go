@@ -185,6 +185,7 @@ func init() {
 		{"issues", "issue connections: list, sync", "ot issues list\not issues sync [<id>]", cmdIssues},
 		{"rules", "automation rules: list, enable, disable, runs", "ot rules list\not rules enable <id>\not rules disable <id>\not rules runs <id>", cmdRules},
 		{"routine", "routines: list, show, runs, run, enable, disable, create, edit, rm, undo (also ot routines)", routineUsage, cmdRoutine},
+		{"calendar", "calendar events: list, edit, delete", calendarUsage, cmdCalendar},
 		{"frames", "calendar frames: list, add, rm", "ot frames\not frames add <title> [--days mon-fri] [--from HH:MM] [--to HH:MM] [--color #rrggbb] [--source label:<id>]\not frames rm <id> [--yes]", cmdFrames},
 		{"objectives", "quarterly and weekly objectives: list, add, done, undone, edit, delete", objectivesUsage, cmdObjectives},
 		{"habits", "habits: list, show, log", habitsUsage, cmdHabits},

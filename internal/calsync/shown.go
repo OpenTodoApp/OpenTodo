@@ -33,6 +33,9 @@ func (r *cycle) readCalendars(ctx context.Context) error {
 	if feeds == nil {
 		return nil
 	}
+	if err := r.w.Store.ExpireUndos(ctx); err != nil {
+		return err
+	}
 	urls := r.c.shownURLs()
 	keep := map[string]bool{}
 	for _, u := range urls {
@@ -81,13 +84,16 @@ func (r *cycle) readCalendars(ctx context.Context) error {
 		}
 		var events []calfeed.Event
 		var warns []string
+		refs := map[string]calfeed.EventRemote{}
 		for _, o := range objs {
 			if u == r.c.TargetURL && (r.byHref[r.tr.key(o.Href)] != nil || o.TaskID != "") {
 				continue // OpenTodo's own events are tasks already
 			}
+			lock := lockOf(o, r.c.Addresses)
 			for _, ev := range o.Events {
 				if _, ours := r.links[ev.UID]; !ours || u != r.c.TargetURL {
 					events = append(events, ev)
+					refs[ev.UID] = calfeed.EventRemote{Href: o.Href, ETag: o.ETag, Locked: lock}
 				}
 			}
 			warns = append(warns, o.Warnings...)
@@ -95,7 +101,7 @@ func (r *cycle) readCalendars(ctx context.Context) error {
 		ectx, cancel := context.WithTimeout(ctx, calfeed.MaxExpandTime)
 		occ, more := calfeed.ExpandContext(ectx, events, calfeed.StoreWindow(r.w.clock()), calfeed.MaxOccurrences)
 		cancel()
-		if err := feeds.StoreManaged(ctx, m.SubscriptionID, key, occ, dedupe(append(warns, more...))); err != nil {
+		if err := feeds.StoreManagedRefs(ctx, m.SubscriptionID, key, occ, dedupe(append(warns, more...)), refs); err != nil {
 			return err
 		}
 		changed = true

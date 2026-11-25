@@ -17,6 +17,9 @@ type Discovery struct {
 	Principal string
 	Home      string
 	Calendars []Calendar
+	// Addresses are the principal's calendar-user-address-set (RFC 6638), and
+	// a Google account's email, lower case without "mailto:".
+	Addresses []string
 }
 
 // StartURL turns what a user typed (an address, a host name or an email
@@ -64,17 +67,27 @@ func (d *DAV) Discover(ctx context.Context, start string) (*Discovery, error) {
 		return nil, err
 	}
 	home := principal
-	ms, err := d.PropFind(ctx, principal, "0", `<c:calendar-home-set/>`)
+	ms, err := d.PropFind(ctx, principal, "0", `<c:calendar-home-set/><c:calendar-user-address-set/>`)
 	if err != nil {
 		return nil, davError(err)
 	}
+	var addrs []string
 	for _, r := range ms.Resources {
-		if h := r.Prop(caldav.NSCalDAV, "calendar-home-set"); h != nil {
-			if href := h.Child(caldav.NSDAV, "href"); href != nil && strings.TrimSpace(href.Text) != "" {
-				home = Resolve(r.Href, strings.TrimSpace(href.Text))
-				break
+		if set := r.Prop(caldav.NSCalDAV, "calendar-user-address-set"); set != nil {
+			for _, h := range set.Children {
+				if a := strings.TrimSpace(h.Text); h.Is(caldav.NSDAV, "href") && strings.HasPrefix(strings.ToLower(a), "mailto:") {
+					addrs = append(addrs, calfeed.Address(a))
+				}
 			}
 		}
+		if h := r.Prop(caldav.NSCalDAV, "calendar-home-set"); h != nil && home == principal {
+			if href := h.Child(caldav.NSDAV, "href"); href != nil && strings.TrimSpace(href.Text) != "" {
+				home = Resolve(r.Href, strings.TrimSpace(href.Text))
+			}
+		}
+	}
+	if a := googleAccount(principal); a != "" {
+		addrs = append(addrs, a)
 	}
 	cals, err := d.ListCalendars(ctx, home)
 	if err != nil {
@@ -83,7 +96,21 @@ func (d *DAV) Discover(ctx context.Context, start string) (*Discovery, error) {
 	if len(cals) == 0 {
 		return nil, &Error{Reason: ReasonNoCalendars}
 	}
-	return &Discovery{Principal: principal, Home: home, Calendars: cals}, nil
+	return &Discovery{Principal: principal, Home: home, Calendars: cals, Addresses: addrs}, nil
+}
+
+// googleAccount is the email a Google CalDAV principal names
+// (/caldav/v2/<email>/user), "" for any other principal.
+func googleAccount(principal string) string {
+	u, err := url.Parse(principal)
+	if err != nil || !strings.HasPrefix(u.Path, "/caldav/v2/") {
+		return ""
+	}
+	seg := strings.Split(strings.Trim(strings.TrimPrefix(u.Path, "/caldav/v2/"), "/"), "/")[0]
+	if s, err := url.PathUnescape(seg); err == nil && strings.Contains(s, "@") {
+		return calfeed.Address(s)
+	}
+	return ""
 }
 
 // findPrincipal asks each candidate for current-user-principal; a server that
@@ -129,7 +156,8 @@ func (d *DAV) ListCalendars(ctx context.Context, home string) ([]Calendar, error
 		if rt == nil || rt.Child(caldav.NSCalDAV, "calendar") == nil || !holdsEvents(r) {
 			continue
 		}
-		cal := Calendar{URL: r.Href, Name: r.Text(caldav.NSDAV, "displayname"), Color: color(r.Text(caldav.NSApple, "calendar-color")), ReadOnly: readOnly(r)}
+		caps := capsOf(r)
+		cal := Calendar{URL: r.Href, Name: r.Text(caldav.NSDAV, "displayname"), Color: color(r.Text(caldav.NSApple, "calendar-color")), ReadOnly: readOnly(r), Caps: &caps}
 		if cal.Name == "" {
 			cal.Name = lastSegment(r.Href)
 		}
@@ -175,6 +203,32 @@ func readOnly(r *Resource) bool {
 		}
 	}
 	return true
+}
+
+// capsOf reads a calendar's capabilities from its privilege set
+// (calendar-event-edits D3): bind creates, write-content updates, unbind
+// deletes, write or all give all three; no privilege set gives all three.
+func capsOf(r *Resource) Caps {
+	set := r.Prop(caldav.NSDAV, "current-user-privilege-set")
+	if set == nil {
+		return Caps{true, true, true}
+	}
+	var c Caps
+	for _, p := range set.Children {
+		for _, g := range p.Children {
+			switch g.Local {
+			case "write", "all":
+				c = Caps{true, true, true}
+			case "bind":
+				c.Create = true
+			case "write-content":
+				c.Update = true
+			case "unbind":
+				c.Delete = true
+			}
+		}
+	}
+	return c
 }
 
 // color normalises an Apple calendar colour (#RRGGBBAA) to #RRGGBB.

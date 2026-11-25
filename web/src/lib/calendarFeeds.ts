@@ -6,7 +6,7 @@
 import { api } from './api'
 import { addDaysISO, daysBetweenISO, logicalToday } from './dates'
 import { db, getMeta, setMeta } from './db'
-import type { CalendarEvent, CalendarSubscription } from './types'
+import type { CalendarEvent, CalendarSubscription, EventCommand } from './types'
 
 const WINDOW_KEY = 'calendar.events.window'
 const SHOW_KEY = 'calendar.showEvents'
@@ -115,13 +115,19 @@ export async function refreshEvents(range?: DayRange): Promise<boolean> {
         for (const ev of res.events) events.set(ev.id, ev)
         for (const sub of res.subscriptions) subs.set(sub.id, sub)
       }
-      await db.transaction('rw', [db.calendarEvents, db.calendarSubscriptions, db.meta], async () => {
+      let queued = 0
+      await db.transaction('rw', [db.calendarEvents, db.calendarSubscriptions, db.meta, db.eventOutbox], async () => {
+        const commands = await db.eventOutbox.toArray()
+        queued = commands.length
+        applyQueued(events, commands)
         await db.calendarEvents.clear()
         await db.calendarSubscriptions.clear()
         await db.calendarEvents.bulkPut([...events.values()])
         await db.calendarSubscriptions.bulkPut([...subs.values()])
         await setMeta(WINDOW_KEY, { from: target.from, to: target.to, fetchedAt: Date.now() } satisfies EventsWindow)
       })
+      // Queued edits go out after a refresh; the outbox code loads only when there is one.
+      if (queued) void import('./calendarEventEdits').then((m) => m.flushEventEdits())
       return true
     } catch {
       return false
@@ -130,6 +136,19 @@ export async function refreshEvents(range?: DayRange): Promise<boolean> {
     }
   })()
   return inflight
+}
+
+/**
+ * Draws the user's queued edits over fetched events (calendar-event-edits D6), so a refresh in
+ * the middle of an offline edit does not undo it: a queued delete hides the event.
+ */
+export function applyQueued(events: Map<string, CalendarEvent>, commands: readonly EventCommand[]): void {
+  for (const c of commands) {
+    const ev = events.get(c.eventId)
+    if (!ev) continue
+    if ('delete' in c.patch) events.delete(c.eventId)
+    else events.set(c.eventId, { ...ev, ...c.patch, ...c.next })
+  }
 }
 
 /**
