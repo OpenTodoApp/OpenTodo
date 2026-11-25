@@ -30,6 +30,20 @@ describe('the on-screen keyboard (issue #724)', () => {
     stop()
   })
 
+  it('does not lift a sheet twice when the browser shrinks the page for the keyboard', () => {
+    const vv = fakeViewport()
+    const full = window.innerHeight
+    const stop = watchVisualViewport()
+    vv.set(full - 300)
+    expect(document.documentElement.style.getPropertyValue('--vv-bottom')).toBe('300px')
+    // Chrome on iPhone: the page now ends where the keyboard starts, and only a window resize follows.
+    Object.defineProperty(document.documentElement, 'clientHeight', { value: full - 300, configurable: true })
+    window.dispatchEvent(new Event('resize'))
+    expect(document.documentElement.style.getPropertyValue('--vv-bottom')).toBe('0px')
+    stop()
+    Reflect.deleteProperty(document.documentElement, 'clientHeight')
+  })
+
   it('leaves a pinch zoom alone', () => {
     const vv = fakeViewport()
     const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
