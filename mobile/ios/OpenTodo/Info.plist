@@ -62,6 +62,22 @@
 	<array>
 		<dict>
 			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>plus</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Add task</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>add-task</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>calendar</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Today</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>today</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
 			<string>server.rack</string>
 			<key>UIApplicationShortcutItemTitle</key>
 			<string>Change server</string>

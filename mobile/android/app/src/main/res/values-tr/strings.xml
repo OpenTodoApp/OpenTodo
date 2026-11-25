@@ -18,6 +18,8 @@
     <string name="retry">Tekrar dene</string>
     <string name="change_server">Sunucuyu değiştir</string>
     <string name="change_server_confirm">Bu işlem mevcut sunucunun verilerini bu telefondan kaldırır: çevrimdışı kopya, zamanlanmış hatırlatıcılar, widget verileri ve parmak izi kilidi. Henüz eşitlenmemiş değişiklikler kaybolur.</string>
+    <string name="shortcut_add_task">Görev ekle</string>
+    <string name="shortcut_today">Bugün</string>
     <string name="error_offline">Sunucuya ulaşılamıyor ve OpenTodo bu telefonda daha önce açılmamış.</string>
     <string name="error_untrusted">Bu telefon sunucunun sertifikasına güvenmiyor.</string>
     <string name="channel_reminders">Hatırlatıcılar</string>

@@ -18,6 +18,8 @@
     <string name="retry">Erneut versuchen</string>
     <string name="change_server">Server wechseln</string>
     <string name="change_server_confirm">Das entfernt die Daten des aktuellen Servers von diesem Telefon: die Offline-Kopie, geplante Erinnerungen, Widget-Daten und das Entsperren per Fingerabdruck. Noch nicht synchronisierte Änderungen gehen verloren.</string>
+    <string name="shortcut_add_task">Aufgabe hinzufügen</string>
+    <string name="shortcut_today">Heute</string>
     <string name="error_offline">Der Server ist nicht erreichbar, und OpenTodo wurde auf diesem Telefon noch nie geöffnet.</string>
     <string name="error_untrusted">Dieses Telefon vertraut dem Zertifikat des Servers nicht.</string>
     <string name="channel_reminders">Erinnerungen</string>

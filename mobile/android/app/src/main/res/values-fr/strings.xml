@@ -18,6 +18,8 @@
     <string name="retry">Réessayer</string>
     <string name="change_server">Changer de serveur</string>
     <string name="change_server_confirm">Cela supprime de ce téléphone les données du serveur actuel : la copie hors ligne, les rappels programmés, les données des widgets et le déverrouillage par empreinte. Les modifications pas encore synchronisées sont perdues.</string>
+    <string name="shortcut_add_task">Ajouter une tâche</string>
+    <string name="shortcut_today">Aujourd’hui</string>
     <string name="error_offline">Le serveur est injoignable et OpenTodo n’a jamais été ouvert sur ce téléphone.</string>
     <string name="error_untrusted">Ce téléphone ne fait pas confiance au certificat du serveur.</string>
     <string name="channel_reminders">Rappels</string>

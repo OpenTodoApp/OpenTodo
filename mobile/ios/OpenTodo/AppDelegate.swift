@@ -16,12 +16,25 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         BackgroundRefresh.scheduleNext()
     }
 
-    /// The home-screen shortcut on the app icon: "Change server" asks first, because the
-    /// reset discards the web app's storage, and that can hold ops which have not synced yet.
+    /// The quick actions on the app icon (AppModel.perform(shortcut:)). A SwiftUI app runs in
+    /// scenes, so UIKit hands them to the scene's delegate, never to this one: the item that
+    /// launched the app comes with the scene's connection, a later one to QuickActionSceneDelegate.
     func application(_ application: UIApplication,
-                     performActionFor shortcut: UIApplicationShortcutItem,
+                     configurationForConnecting session: UISceneSession,
+                     options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        if let item = options.shortcutItem { AppModel.shared.perform(shortcut: item.type) }
+        let configuration = UISceneConfiguration(name: nil, sessionRole: session.role)
+        configuration.delegateClass = QuickActionSceneDelegate.self
+        return configuration
+    }
+}
+
+/// A quick action chosen while the app is running; SwiftUI keeps drawing the window.
+@MainActor
+final class QuickActionSceneDelegate: NSObject, UIWindowSceneDelegate {
+    func windowScene(_ windowScene: UIWindowScene,
+                     performActionFor shortcutItem: UIApplicationShortcutItem,
                      completionHandler: @escaping (Bool) -> Void) {
-        if shortcut.type == "change-server" { AppModel.shared.changeServerRequested = true }
-        completionHandler(true)
+        completionHandler(AppModel.shared.perform(shortcut: shortcutItem.type))
     }
 }

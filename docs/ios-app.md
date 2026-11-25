@@ -52,6 +52,8 @@ A reminder marked **Urgent** (in its menu in the task panel, on any device) ring
 
 The app opens on its background colour, light or dark with the phone, and shows the page once it has loaded, so no white screen comes between them. A server that takes longer than five seconds gets the page as far as it has loaded; one that can't be reached gets the usual message.
 
+Long-press the app icon for **Add task**, which opens quick add, **Today** and [**Change server**](#connect-to-your-server).
+
 ## Offline
 
 The app from TestFlight or the App Store opens any server, and iOS gives such an app no service worker. When the server is unreachable at launch, the app opens from its last copy in the web view's cache and reads the tasks it already holds, and syncs once the server answers again; the first launch, before the app has loaded once, still needs the network, and says so when there is none. For a full offline start with the precache, use the [installed web app](install-phone.md#iphone-and-ipad), or build the app for your one server: set `OPENTODO_APP_BOUND_HOST=todo.example.com` when you build, and it gets the whole installed-web-app treatment, the service worker, the precache and an offline start.

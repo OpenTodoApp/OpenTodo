@@ -1,6 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Long-press the app icon: "Change server" (the shell's own menu, native-shells "First-run server screen"). -->
+<!-- Long-press the app icon (native-shells "Quick actions on the app icon"): Add task and Today
+     open the addresses the widgets open (MainActivity reads opentodo-open:), then the shell's own
+     "Change server", last because it is rare and asks first. The order is pinned by repo-checks. -->
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_add"
+        android:shortcutId="add_task"
+        android:shortcutShortLabel="@string/shortcut_add_task">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="opentodo-open:/?add="
+            android:targetClass="app.opentodo.MainActivity"
+            android:targetPackage="app.opentodo" />
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_today"
+        android:shortcutId="today"
+        android:shortcutShortLabel="@string/shortcut_today">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="opentodo-open:/today"
+            android:targetClass="app.opentodo.MainActivity"
+            android:targetPackage="app.opentodo" />
+    </shortcut>
     <shortcut
         android:enabled="true"
         android:icon="@drawable/ic_launcher"

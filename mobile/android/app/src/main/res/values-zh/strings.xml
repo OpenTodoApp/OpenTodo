@@ -18,6 +18,8 @@
     <string name="retry">重试</string>
     <string name="change_server">更换服务器</string>
     <string name="change_server_confirm">这会从这台手机移除当前服务器的数据：离线副本、已安排的提醒、小组件数据和指纹解锁。尚未同步的更改会丢失。</string>
+    <string name="shortcut_add_task">添加任务</string>
+    <string name="shortcut_today">今天</string>
     <string name="error_offline">无法连接到服务器，而且这台手机上还没有打开过 OpenTodo。</string>
     <string name="error_untrusted">这台手机不信任服务器的证书。</string>
     <string name="channel_reminders">提醒</string>

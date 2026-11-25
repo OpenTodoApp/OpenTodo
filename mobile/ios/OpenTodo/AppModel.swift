@@ -55,7 +55,8 @@ final class AppModel: ObservableObject {
 
     /// `opentodo://task/<id>`, `opentodo://reminder/<id>?action=done|snooze|dismiss`,
     /// `opentodo://focus[?action=pause|resume]` from the Focus Live Activity,
-    /// `opentodo://share?files=1` from the share extension. Any app may open these, so the
+    /// `opentodo://share?files=1` from the share extension, `opentodo://add` and
+    /// `opentodo://today` from the widgets and the icon's quick actions. Any app may open these, so the
     /// values are treated as data and never pasted into a path.
     func handle(url: URL) {
         guard url.scheme?.lowercased() == "opentodo" else { return }
@@ -76,9 +77,25 @@ final class AppModel: ObservableObject {
         case "stats":
             // The Completed widget opens Statistics, as on Android.
             pendingPath = "/stats"
+        case "today":
+            pendingPath = "/today"
         default:
             break
         }
+    }
+
+    /// The quick actions on the app icon (`UIApplicationShortcutItems` in project.yml): Add task
+    /// and Today open the same addresses as the widgets; Change server asks first, because the
+    /// reset discards the web app's storage, and that can hold ops which have not synced yet.
+    @discardableResult
+    func perform(shortcut type: String) -> Bool {
+        switch type {
+        case "add-task": handle(url: URL(string: "opentodo://add")!)
+        case "today": handle(url: URL(string: "opentodo://today")!)
+        case "change-server": changeServerRequested = true
+        default: return false
+        }
+        return true
     }
 
     /// `/?task=<id>`: a reminder tap opens the task it belongs to. An empty id (the test

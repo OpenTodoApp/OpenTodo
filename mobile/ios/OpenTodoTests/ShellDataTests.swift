@@ -1118,6 +1118,28 @@ final class AppModelTests: XCTestCase {
         let model = AppModel()
         XCTAssertFalse(model.changeServerRequested)
     }
+
+    /// native-shells "Quick actions on the app icon": the types of project.yml.
+    @MainActor
+    func testTheIconQuickActionsOpenTheirScreens() {
+        let model = AppModel()
+        XCTAssertTrue(model.perform(shortcut: "add-task"))
+        XCTAssertEqual(model.pendingPath, "/?add=")
+        XCTAssertTrue(model.perform(shortcut: "today"))
+        XCTAssertEqual(model.pendingPath, "/today")
+        XCTAssertFalse(model.changeServerRequested)
+        XCTAssertFalse(model.perform(shortcut: "unknown"))
+    }
+
+    @MainActor
+    func testTheChangeServerShortcutAsksFirst() {
+        let model = AppModel()
+        let origin = model.origin
+        XCTAssertTrue(model.perform(shortcut: "change-server"))
+        XCTAssertTrue(model.changeServerRequested)
+        XCTAssertEqual(model.origin, origin, "the server is kept until the user confirms")
+        XCTAssertNil(model.pendingPath)
+    }
 }
 
 /// The second review's fixes (ios-shell): untrusted input from the shared container, the

@@ -18,6 +18,8 @@
     <string name="retry">Spróbuj ponownie</string>
     <string name="change_server">Zmień serwer</string>
     <string name="change_server_confirm">To usuwa z tego telefonu dane bieżącego serwera: kopię offline, zaplanowane przypomnienia, dane widżetów i odblokowanie odciskiem palca. Niezsynchronizowane zmiany zostaną utracone.</string>
+    <string name="shortcut_add_task">Dodaj zadanie</string>
+    <string name="shortcut_today">Dziś</string>
     <string name="error_offline">Nie można połączyć się z serwerem, a OpenTodo nie było jeszcze otwierane na tym telefonie.</string>
     <string name="error_untrusted">Ten telefon nie ufa certyfikatowi serwera.</string>
     <string name="channel_reminders">Przypomnienia</string>

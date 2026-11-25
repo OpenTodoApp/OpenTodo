@@ -18,6 +18,8 @@
     <string name="retry">Try again</string>
     <string name="change_server">Change server</string>
     <string name="change_server_confirm">This removes the current server\'s data from this phone: the offline copy, scheduled reminders, widget data and fingerprint unlock. Changes not yet synced are lost.</string>
+    <string name="shortcut_add_task">Add task</string>
+    <string name="shortcut_today">Today</string>
     <string name="error_offline">The server can\'t be reached, and OpenTodo hasn\'t been opened on this phone before.</string>
     <string name="error_untrusted">This phone doesn\'t trust the server\'s certificate.</string>
     <string name="channel_reminders">Reminders</string>

@@ -1089,6 +1089,44 @@ test('the iOS app carries its Face ID usage text', () => {
   assert.ok(catalog.strings?.NSFaceIDUsageDescription, 'InfoPlist.xcstrings translates NSFaceIDUsageDescription')
 })
 
+// icon-quick-actions (#2041): neither shell is compiled here, so the declarations are checked.
+// Android: the order, each action's address (MainActivity opens `opentodo-open:<path>`) and a
+// label in every language. iOS: the Info.plist against project.yml, and every title translated.
+test('both shells offer Add task, Today and Change server on the app icon', () => {
+  const xml = read('mobile/android/app/src/main/res/xml/shortcuts.xml')
+  const android = [...xml.matchAll(/<shortcut\b([\s\S]*?)<\/shortcut>/g)].map(([, s]) => ({
+    id: /android:shortcutId="([^"]+)"/.exec(s)?.[1],
+    label: /android:shortcutShortLabel="@string\/([^"]+)"/.exec(s)?.[1],
+    action: /android:action="([^"]+)"/.exec(s)?.[1],
+    data: /android:data="([^"]+)"/.exec(s)?.[1],
+  }))
+  assert.deepEqual(android.map((s) => s.id), ['add_task', 'today', 'change_server'])
+  assert.deepEqual(android.map((s) => s.data), ['opentodo-open:/?add=', 'opentodo-open:/today', undefined])
+  assert.deepEqual(android.map((s) => s.action), ['android.intent.action.VIEW', 'android.intent.action.VIEW', 'app.opentodo.CHANGE_SERVER'])
+  const res = 'mobile/android/app/src/main/res'
+  for (const dir of readdirSync(path.join(root, res)).filter((d) => d.startsWith('values') && existsSync(path.join(root, res, d, 'strings.xml')))) {
+    const strings = read(`${res}/${dir}/strings.xml`)
+    for (const { label } of android) assert.match(strings, new RegExp(`<string name="${label}">[^<]+</string>`), `${dir} labels ${label}`)
+  }
+
+  const want = [['add-task', 'Add task'], ['today', 'Today'], ['change-server', 'Change server']]
+  const plist = read('mobile/ios/OpenTodo/Info.plist')
+  const block = /<key>UIApplicationShortcutItems<\/key>\s*<array>([\s\S]*?)<\/array>/.exec(plist)?.[1] ?? ''
+  const items = [...block.matchAll(/<dict>([\s\S]*?)<\/dict>/g)].map(([, d]) => [
+    /<key>UIApplicationShortcutItemType<\/key>\s*<string>([^<]+)/.exec(d)?.[1],
+    /<key>UIApplicationShortcutItemTitle<\/key>\s*<string>([^<]+)/.exec(d)?.[1],
+  ])
+  assert.deepEqual(items, want)
+  const yml = read('mobile/ios/project.yml')
+  const ymlItems = [...yml.matchAll(/UIApplicationShortcutItemType: (\S+)\s+UIApplicationShortcutItemTitle: ([^\n]+)/g)].map(([, t, title]) => [t, title.trim()])
+  assert.deepEqual(ymlItems, want)
+  const catalog = JSON.parse(read('mobile/ios/OpenTodo/InfoPlist.xcstrings'))
+  const langs = Object.keys(JSON.parse(read('mobile/ios/Shared/Localizable.xcstrings')).strings.Today.localizations)
+  for (const [, title] of want) {
+    for (const lang of langs) assert.ok(catalog.strings?.[title]?.localizations?.[lang]?.stringUnit?.value, `InfoPlist.xcstrings translates "${title}" into ${lang}`)
+  }
+})
+
 // shell-first-paint: both shells open on a launch screen in the web app's canvas colour,
 // light and dark. Neither is compiled here, so the pieces that must agree are checked: the
 // colour both platforms declare, the Info.plist against the project file that generates it,
