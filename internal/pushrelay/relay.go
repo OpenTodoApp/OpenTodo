@@ -32,18 +32,19 @@ type Options struct {
 
 // Relay is the push relay's HTTP handler and its in-memory state.
 type Relay struct {
-	keys  *Keyring
-	apns  Sender
-	now   func() time.Time
-	ip    func(*http.Request) string
-	log   *slog.Logger
+	keys *Keyring
+	apns Sender
+	now  func() time.Time
+	ip   func(*http.Request) string
+	log  *slog.Logger
 	// Separate LRUs (design D6): address counters are created for any request,
 	// even garbage, so they live apart and can never evict a device's counters,
-	// which are only created after a valid signature. Registrations are capped
-	// per address, which bounds how many device keys anyone can insert.
+	// which are only created after a valid signature, and are never evicted:
+	// while the device LRU is full, a device without counters is refused until
+	// the UTC day ends (takeNoEvict).
 	addrLim, devLim, instLim *limiter
-	stats *Stats
-	mux   *http.ServeMux
+	stats                    *Stats
+	mux                      *http.ServeMux
 }
 
 // New builds a relay.
@@ -227,7 +228,7 @@ func (r *Relay) handleWake(w http.ResponseWriter, req *http.Request) {
 	}
 	// Keyed by the token, not the handle: the caps follow the phone across
 	// registrations by anyone (design D6).
-	if name, after := r.devLim.take(now, "d"+kind, d.Token, ws); name != "" {
+	if name, after := r.devLim.takeNoEvict(now, "d"+kind, d.Token, ws); name != "" {
 		r.refuse(w, name, after)
 		return
 	}

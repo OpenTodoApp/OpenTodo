@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strconv"
@@ -218,6 +219,9 @@ func (s *Server) handleAppleStatus(w http.ResponseWriter, r *http.Request) {
 // relayHealthTTL is how long the delivery check reuses the relay's answer.
 const relayHealthTTL = time.Minute
 
+// relayHealthTimeout bounds one probe, like every request to the relay.
+const relayHealthTimeout = 10 * time.Second
+
 // relayHealthCache is the last health probe, for one relay address.
 type relayHealthCache struct {
 	mu       gosync.Mutex
@@ -237,7 +241,11 @@ func (s *Server) relayHealth(r *http.Request) (int, error) {
 	if c.url == url && !c.at.IsZero() && now.Sub(c.at) < relayHealthTTL {
 		return c.protocol, c.err
 	}
-	c.protocol, c.err = s.set.Apple.RelayHealth(r.Context())
+	// Detached from the caller: a cancelled request must not cache a failure
+	// for everyone else.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), relayHealthTimeout)
+	defer cancel()
+	c.protocol, c.err = s.set.Apple.RelayHealth(ctx)
 	c.url, c.at = url, now
 	return c.protocol, c.err
 }
@@ -246,21 +254,23 @@ func (s *Server) relayHealth(r *http.Request) (int, error) {
 // device's user due now, authenticated by the device's due token alone.
 func (s *Server) handleAppleDue(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
-	ip := clientIP(r)
-	if s.appleDueMissLimiter.blocked(ip) {
-		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many failed requests, try again later")
-		return
+	// Misses count per address, but a token that resolves is never refused
+	// for its address's misses (phones share addresses behind NAT).
+	miss := func(msg string) {
+		if !s.appleDueMissLimiter.allow(clientIP(r)) {
+			writeError(w, http.StatusTooManyRequests, "rate_limited", "too many failed requests, try again later")
+			return
+		}
+		writeError(w, http.StatusUnauthorized, "unauthorized", msg)
 	}
 	tok, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
 	if !ok {
-		s.appleDueMissLimiter.allow(ip)
-		writeError(w, http.StatusUnauthorized, "unauthorized", "a device due token is required")
+		miss("a device due token is required")
 		return
 	}
 	d, err := s.set.Apple.DeviceForDueToken(r.Context(), strings.TrimSpace(tok))
 	if errors.Is(err, push.ErrUnknownDueToken) {
-		s.appleDueMissLimiter.allow(ip)
-		writeError(w, http.StatusUnauthorized, "unauthorized", "unknown device due token")
+		miss("unknown device due token")
 		return
 	}
 	if err != nil {

@@ -305,7 +305,7 @@ func (a *Apple) store(ctx context.Context, d *AppleDevice, sessionHash, dueHash 
 // liveSession keeps a registration whose session has not expired and whose
 // user is not deactivated: an expired session's row stays until the session
 // is deleted, but neither its due token nor its wakes work.
-const liveSession = ` AND session_hash IN (SELECT token_hash FROM sessions WHERE expires_at > ?)
+const liveSession = ` AND EXISTS (SELECT 1 FROM sessions s WHERE s.token_hash = apple_devices.session_hash AND s.expires_at > ?)
   AND user_id NOT IN (SELECT user_id FROM user_status WHERE deactivated_at IS NOT NULL)`
 
 const appleColumns = `id, user_id, device_id, handle, handle_expires_at, wake_key, include_content, schedule_cursor, scheduled_until, failures, failing_since, created_at`

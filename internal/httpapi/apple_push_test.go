@@ -186,7 +186,7 @@ func TestAppleRegisterLimits(t *testing.T) {
 }
 
 // TestAppleDueFailedLookupsLimited: an address that keeps sending unknown due
-// tokens is refused for a while, before any lookup.
+// tokens gets 429 for them, while a token that resolves is still answered.
 func TestAppleDueFailedLookupsLimited(t *testing.T) {
 	a := appleEnv(t, false)
 	resp, out := a.do("PUT", "/api/v1/settings/push/apple-relay", map[string]any{"enabled": true})
@@ -200,8 +200,12 @@ func TestAppleDueFailedLookupsLimited(t *testing.T) {
 			t.Fatalf("miss %d = %d", i+1, s)
 		}
 	}
-	if s, out := a.due(dueTok); s != 429 {
-		t.Fatalf("after %d misses = %d %v", appleDueMissLimit, s, out)
+	if s, out := a.due(wrong); s != 429 {
+		t.Fatalf("miss after %d misses = %d %v", appleDueMissLimit, s, out)
+	}
+	// A valid token from the same address (phones behind one NAT) still works.
+	if s, out := a.due(dueTok); s != 200 {
+		t.Fatalf("valid token from a blocked address = %d %v", s, out)
 	}
 }
 

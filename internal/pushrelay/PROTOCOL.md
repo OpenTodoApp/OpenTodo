@@ -64,7 +64,7 @@ Every refusal is `{"error": code}`.
 
 ## Limits
 
-The limits live in memory, in fixed windows aligned to the clock, and reset when the relay restarts. Per-device counters are keyed by an HMAC of the device token under a salt that changes every UTC day, so they follow the phone across registrations and cannot be linked from one day to the next.
+The limits live in memory, in fixed windows aligned to the clock, and reset when the relay restarts. Per-device counters are keyed by an HMAC of the device token under a salt that changes every UTC day, so they follow the phone across registrations and cannot be linked from one day to the next. Address counters and device counters are kept apart: address counters exist for any request and can be pushed out, device counters exist only after a valid signature and never are. While the device counters are full, a device that has none is refused (`429`) until the UTC day ends.
 
 | Limit | Value |
 | --- | --- |

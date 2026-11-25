@@ -12,6 +12,39 @@ import (
 	"time"
 )
 
+// TestDeviceCountersNeverEvicted: with the device LRU full, a new device is
+// refused instead of evicting another device's counters, so a capped device
+// stays capped; the next UTC day starts over.
+func TestDeviceCountersNeverEvicted(t *testing.T) {
+	l := newLimiter(10)
+	now := time.Unix(1_800_000_000, 0)
+	victim := []byte("victim-token")
+	for range DuePerDeviceHour {
+		if name, _ := l.takeNoEvict(now, "ddue", victim, dueWindows); name != "" {
+			t.Fatalf("victim refused early: %s", name)
+		}
+	}
+	// Valid handles of other tokens fill the LRU (two counters each).
+	refused := 0
+	for i := range 100 {
+		if name, after := l.takeNoEvict(now, "ddue", []byte{byte(i)}, dueWindows); name == "device.full" {
+			refused++
+			if after < 1 || after > 86400 {
+				t.Fatalf("Retry-After %d", after)
+			}
+		}
+	}
+	if refused == 0 || l.len() > 10 {
+		t.Fatalf("refused %d, held %d", refused, l.len())
+	}
+	if name, _ := l.takeNoEvict(now, "ddue", victim, dueWindows); name != "device.due.hour" {
+		t.Fatalf("the victim's cap after the flood: %q", name)
+	}
+	if name, _ := l.takeNoEvict(now.Add(24*time.Hour), "ddue", []byte("new"), dueWindows); name != "" {
+		t.Fatalf("the next day: %q", name)
+	}
+}
+
 type okSender struct{ n int }
 
 func (s *okSender) Send(context.Context, Device, string) (Outcome, string) {

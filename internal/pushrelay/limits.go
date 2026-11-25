@@ -66,7 +66,10 @@ func (l *limiter) keyLocked(now time.Time, ns string, value []byte) string {
 func (l *limiter) take(now time.Time, ns string, value []byte, ws []window) (refused string, retryAfter int64) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	base := l.keyLocked(now, ns, value)
+	return l.takeLocked(now, l.keyLocked(now, ns, value), ws)
+}
+
+func (l *limiter) takeLocked(now time.Time, base string, ws []window) (refused string, retryAfter int64) {
 	t := now.Unix()
 	cs := make([]*counter, len(ws))
 	for i, w := range ws {
@@ -84,6 +87,28 @@ func (l *limiter) take(now time.Time, ns string, value []byte, ws []window) (ref
 		c.n++
 	}
 	return "", 0
+}
+
+// takeNoEvict is take for counters that must never be evicted (a device's
+// caps): when the windows' counters are new and the LRU has no room for
+// them, nothing is counted and the refusal is "device.full" until the UTC
+// day ends and the salt, with every key, changes. Fails closed: a phone then
+// keeps its own schedule (design D10).
+func (l *limiter) takeNoEvict(now time.Time, ns string, value []byte, ws []window) (refused string, retryAfter int64) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	base := l.keyLocked(now, ns, value)
+	missing := 0
+	for _, w := range ws {
+		if _, ok := l.m[base+"/"+w.key]; !ok {
+			missing++
+		}
+	}
+	if l.ll.Len()+missing > l.max {
+		t := now.Unix()
+		return "device.full", 86400 - t%86400
+	}
+	return l.takeLocked(now, base, ws)
 }
 
 func (l *limiter) getLocked(key string) *counter {
