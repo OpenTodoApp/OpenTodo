@@ -22,7 +22,7 @@
 - [ ] 4.1 Today: briefing, events and their toggle, habits strip, away notice, Earlier actions, Done today, Log a win, Close the day, time totals. Verify: tests per part against `closedListToday.test.tsx`'s cases; the screen equals the trial's Today for a seeded day.
 - [ ] 4.2 Inbox (Process, routines slot, sample tasks), Upcoming (events per day, summarised later days, projections, Start with Today), Completed (search, options, show earlier). Verify: tests for the scenarios of "Each list keeps its own parts".
 - [ ] 4.3 Project: note, linked references, sub-projects, sections with their menu, add and "n completed", Add section, the hidden tasks note. Label and place lists, Anytime, Someday, Assigned. Empty, filtered-empty and missing states. Verify: tests for "Groups and sections" and the empty and missing scenarios.
-- [ ] 4.4 Adding: the add button's sheet takes the list's `onAdd` and `onAddMany`; no add line at the top. Verify: tests for "Adding from a list", including a pasted list of three lines with one Undo.
+- [x] 4.4 Adding: the add button's sheet takes the list's `onAdd` and `onAddMany`; no add line at the top. Verify: tests for "Adding from a list", including a pasted list of three lines with one Undo. Done: a label's list adds with the label (`phoneLists.test.tsx`); the pasted list with one Undo is the sheet's own behaviour and is not tested again here.
 
 ## 5. Stories
 

@@ -12,7 +12,7 @@ import { createPlace, locationFromPlace, getPlace } from '../lib/locations'
 import { createProject, createSubtask, createTask, resetDeviceId, setTaskCompleted } from '../lib/ops'
 import { createSection, saveViewMode } from '../lib/sections'
 import type { User } from '../lib/types'
-import { click, minWidthPx, render, waitFor } from '../ui/test-utils'
+import { click, minWidthPx, render, type, waitFor } from '../ui/test-utils'
 import { resetPanel } from '../app/panel'
 import { navigate, type Route } from '../app/router'
 import { Shell } from '../app/Shell'
@@ -272,4 +272,35 @@ describe('the page menu of the phone list', () => {
       await r.unmount()
     })
   }
+})
+
+describe('adding and the layout from the phone list', () => {
+  it('the add button adds to the list on screen with its defaults: a label\'s task has the label', async () => {
+    const s = await seed()
+    setPhoneUiEnabled(true)
+    navigate({ view: 'label', id: s.errand })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => list()?.getAttribute('data-phone-list') === 'label' && !!document.querySelector('[data-add-button]'), 'the label\'s list and the add button')
+    await click(document.querySelector('[data-add-button]')!)
+    const field = () => document.querySelector<HTMLTextAreaElement>('[data-overlay="sheet"] textarea')
+    await waitFor(() => !!field(), 'the add sheet')
+    await type(field()!, 'Buy stamps')
+    field()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
+    await waitFor(async () => (await db.tasks.toArray()).some((t) => t.title === 'Buy stamps' && t.labels.includes(s.errand)), 'the task with the label')
+    await waitFor(() => [...document.querySelectorAll('[data-phone-row] [data-row-title]')].some((el) => el.textContent === 'Buy stamps'), 'the task in the list')
+    await r.unmount()
+  })
+
+  it('Board in a project\'s menu shows the project as its board, and List returns to the phone list', async () => {
+    const s = await seed()
+    setPhoneUiEnabled(true)
+    navigate({ view: 'project', id: s.work })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!list(), 'the phone list')
+    await saveViewMode(s.work, 'board')
+    await waitFor(() => !list() && !!document.querySelector('[data-list-page]'), 'the board')
+    await saveViewMode(s.work, 'list')
+    await waitFor(() => !!list(), 'the phone list again')
+    await r.unmount()
+  })
 })
