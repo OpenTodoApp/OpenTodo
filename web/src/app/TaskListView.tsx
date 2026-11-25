@@ -18,7 +18,7 @@ import { useMarkProjectSeen } from '../lib/feed'
 import { completedOpenKey, dayOrderRows, dayOrderSiblings, flatRow, isTodayProjectGroup, sectionOfRows, type ListGroup, type ListRow } from '../lib/listGroups'
 import { useDayOrderDrop } from './task-list/useDayOrderDrop'
 import type { TodayListDrop } from './task-list/useListDrag'
-import { moveTaskBy, taskStepEdges, type Step } from '../lib/move'
+import { taskStepEdges, type Step } from '../lib/move'
 import type { ViewPlacement } from '../lib/viewOrder'
 import type { OrderHost } from '../lib/viewOrderMove'
 import { dropInView, reorderInView, stepInView } from './viewOrderActions'
@@ -64,7 +64,7 @@ import type { Route } from './router'
 import { AddSection } from './Sections'
 import { useSelection } from './selection'
 import { SubProjectsGroup, subProjectLead } from './SubProjects'
-import { completeWithUndo } from './undoable'
+import { completeWithUndo, stepRowWithUndo } from './undoable'
 import { useBoardMoves } from './task-list/useBoardMoves'
 import { CompleteParentPrompt, EmptyState, FilteredEmpty, HiddenNote, LayoutSwitch, ListPageActions, MissingTarget, type PhoneItem, PhoneMenuItems, phoneGroups, placeholderFor, ReadOnlyQuickAdd, usePhoneListActions, RowPickerDialogs } from './task-list/ListChrome'
 import { GroupedList, LogbookMore, useCalmUpcoming, useListMotion, useRowRenderer } from './task-list/ListGroups'
@@ -243,7 +243,7 @@ function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], boa
 /** The row menu's Reorder items (accessibility-aa D3): the keyboard move's writes, from a pointer; null without a manual order. */
 function useListReorder(manual: boolean, ownOrder: Pick<NonNullable<ReturnType<typeof useOwnOrder>>, 'step' | 'edges' | 'todayDrop'> | null, onReorder: (() => void) | undefined, add?: ListReorder['add']): ListReorder | null {
   return useMemo<ListReorder | null>(() => (!manual ? null : {
-    move: (id, step) => { if (ownOrder) act(ownOrder.step(id, step)); else { onReorder?.(); act(moveTaskBy(id, step)) } },
+    move: (id, step) => { if (ownOrder) act(ownOrder.step(id, step)); else { onReorder?.(); act(stepRowWithUndo(id, step)) } },
     edges: ownOrder?.edges ?? taskStepEdges,
     contextActions: ownOrder?.todayDrop?.contextActions,
     add,

@@ -6751,6 +6751,9 @@
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/filter/ConditionEditor.tsx"
   ],
+  "Field deleted": [
+    "web/src/lib/undoActions.ts"
+  ],
   "Field names": [
     "web/src/app/FilterView.tsx"
   ],
@@ -9147,6 +9150,9 @@
     "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
+  "Label deleted": [
+    "web/src/lib/undoActions.ts"
+  ],
   "Label is {name}": [
     "web/src/app/filter/conditionText.ts"
   ],
@@ -10249,6 +10255,9 @@
   "Merge “{source}” into “{target}”?": [
     "web/src/app/LabelsView.tsx"
   ],
+  "Merged into {label}": [
+    "web/src/lib/undoActions.ts"
+  ],
   "Merge…": [
     "web/src/app/LabelsView.tsx"
   ],
@@ -10699,6 +10708,7 @@
     "web/src/app/TriageView.tsx"
   ],
   "Moved to {target}": [
+    "web/src/app/task-list/useListDrag.ts",
     "web/src/lib/undoActions.ts",
     "web/src/lib/viewOrderMove.ts"
   ],
@@ -11539,6 +11549,8 @@
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/task-list/ListGroups.tsx",
+    "web/src/app/task-list/useBoardMoves.ts",
+    "web/src/app/task-list/useListDrag.ts",
     "web/src/app/task-list/useListShortcuts.ts",
     "web/src/lib/assistant.ts",
     "web/src/lib/assistantBlockData.ts",
@@ -13214,6 +13226,7 @@
     "web/src/app/views/useDisplayKeys.ts"
   ],
   "Order changed": [
+    "web/src/lib/undoActions.ts",
     "web/src/lib/viewOrderMove.ts"
   ],
   "Order the bathroom tiles": [
@@ -15978,6 +15991,9 @@
     "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts",
     "web/src/lib/shortcuts.ts"
+  ],
+  "Section deleted": [
+    "web/src/lib/undoActions.ts"
   ],
   "Section flow changed": [
     "web/src/app/menus/flowMenu.ts"
@@ -19170,7 +19186,8 @@
     "web/src/lib/fields.ts"
   ],
   "The tasks must be in one project": [
-    "web/src/app/bulk/BulkActions.tsx"
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/task-list/useListDrag.ts"
   ],
   "The test failed": [
     "web/src/app/OutgoingEmailPanel.tsx"
@@ -21309,6 +21326,8 @@
     "web/src/app/assistant/blocks/BoardBlock.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
+    "web/src/app/task-list/useBoardMoves.ts",
+    "web/src/app/task-list/useListDrag.ts",
     "web/src/app/task-list/useListShortcuts.ts"
   ],
   "Untitled theme": [

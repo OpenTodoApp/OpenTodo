@@ -125,11 +125,11 @@ describe('favourites', () => {
   })
 
   it('a merged label leaves the group and the survivor is not pinned', async () => {
-    const { mergeLabels } = await import('./labels')
+    const { mergeLabelsUndoable } = await import('./undoActions')
     const src = await createLabel({ name: 'errands' })
     const dst = await createLabel({ name: 'errand' })
     await pin('label', src)
-    await mergeLabels(src, dst)
+    await mergeLabelsUndoable(src, dst, '')
     expect(await shown()).toEqual([])
     expect(isFavourite(await prefs(), 'label', dst)).toBe(false)
   })

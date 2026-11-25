@@ -7911,5 +7911,9 @@
   "Only the owner and admins can change these.": "Nur der Eigentümer und Admins können das ändern.",
   "Time tracking": "Zeiterfassung",
   "{feature} is off in this workspace.": "{feature} ist in diesem Arbeitsbereich aus.",
-  "Workspace features changed": "Funktionen des Arbeitsbereichs geändert"
+  "Workspace features changed": "Funktionen des Arbeitsbereichs geändert",
+  "Section deleted": "Abschnitt gelöscht",
+  "Label deleted": "Label gelöscht",
+  "Merged into {label}": "Mit {label} zusammengeführt",
+  "Field deleted": "Feld gelöscht"
 }

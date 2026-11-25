@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useDatabase } from './db'
 import {
-  LABEL_PALETTE, LabelExistsError, activeLabels, addLabel, createLabel, deleteLabel, duplicateLabelIds,
-  labelUsage, mergeLabels, moveLabelTo, removeLabel, reorderLabel, resolveLabels, updateLabel,
+  LABEL_PALETTE, LabelExistsError, activeLabels, addLabel, createLabel, duplicateLabelIds,
+  labelUsage, moveLabelTo, removeLabel, reorderLabel, resolveLabels, updateLabel,
 } from './labels'
+import { deleteLabelUndoable as deleteLabel, mergeLabelsUndoable } from './undoActions'
 import { hueFor } from '../ui/tokens/palette'
 import { compareByPosition } from './ordering'
 import { applyOps, createTask, resetDeviceId } from './ops'
@@ -196,7 +197,7 @@ describe('deleteLabel / mergeLabels', () => {
     await addLabel(both, target)
 
     const before = await db.outbox.count()
-    await mergeLabels(source, target)
+    await mergeLabelsUndoable(source, target, '')
     const written = (await db.outbox.orderBy('local').toArray()).slice(before)
     expect(written.filter((o) => o.entity === 'task')).toHaveLength(3) // 2 source-only + 1 both
     for (const id of [...onlySource, ...onlyTarget, both]) {

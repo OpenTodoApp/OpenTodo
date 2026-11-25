@@ -7911,5 +7911,9 @@
   "Only the owner and admins can change these.": "Изменять это могут только владелец и администраторы.",
   "Time tracking": "Учёт времени",
   "{feature} is off in this workspace.": "{feature}: выключено в этом рабочем пространстве.",
-  "Workspace features changed": "Функции рабочего пространства изменены"
+  "Workspace features changed": "Функции рабочего пространства изменены",
+  "Section deleted": "Раздел удалён",
+  "Label deleted": "Метка удалена",
+  "Merged into {label}": "Объединено с {label}",
+  "Field deleted": "Поле удалено"
 }

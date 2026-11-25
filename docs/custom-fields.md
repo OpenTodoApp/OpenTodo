@@ -44,7 +44,7 @@ A field applies to its project and to every sub-project below it. The **Fieldsâ€
 
 ## Move a task or delete a field
 
-A task moved to another project keeps its values, but shows only the fields of its new project; move it back and they reappear. Moving a sub-project works the same way. Deleting a field asks first and says how many tasks hold a value: the values stay in the data and in the export, hidden.
+A task moved to another project keeps its values, but shows only the fields of its new project; move it back and they reappear. Moving a sub-project works the same way. Deleting a field asks first and says how many tasks hold a value: the values stay in the export, hidden, and **Undo** restores them.
 
 Renaming an option of a choice field in place (same line) updates the tasks that held the old text.
 

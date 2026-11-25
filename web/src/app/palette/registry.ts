@@ -8,7 +8,7 @@ import { logicalToday } from '../../lib/dates'
 import { createLabel } from '../../lib/labels'
 import { createProject, detachOccurrence, unparkTask } from '../../lib/ops'
 import { reorderLabel, updateLabel } from '../../lib/labels'
-import { deleteSection, renameSection, reorderSection } from '../../lib/sections'
+import { renameSection, reorderSection } from '../../lib/sections'
 import { syncNow } from '../../lib/sync'
 import type { Label, Project, ProjectRole, Section, Task, User, View, Workspace } from '../../lib/types'
 import { createView, deleteView, reorderView, setStartView, updateView } from '../../lib/views'
@@ -37,14 +37,14 @@ import { switchWorkspace, workspaceLabel } from '../workspaceNav'
 import { viewMenuGroups } from '../ViewsView'
 import type { Entry, Step } from './entries'
 import { runBulk } from '../bulk/BulkActions'
-import { deleteWithUndo, moveWithUndo, parkWithUndo } from '../undoable'
+import { deleteWithUndo, moveWithUndo, parkWithUndo, withUndoToast } from '../undoable'
 import { keysOf } from '../../lib/shortcuts'
 import { runGroupDue } from '../task-list/EarlierActions'
 import { hueName } from '../../lib/colourNames'
 import { t, msg, translatedList } from '../../lib/i18n'
 import { customPriorityName, isNoPriority } from '../../lib/priority'
 import { DAY_PARTS, dayPartName, dayPartOf } from '../../lib/dayParts'
-import { dayPartUndoable, eveningUndoable, priorityUndoable, sectorUndoable, skipOccurrence } from '../../lib/undoActions'
+import { dayPartUndoable, deleteSectionUndoable, eveningUndoable, priorityUndoable, sectorUndoable, skipOccurrence } from '../../lib/undoActions'
 import { sectorChoices } from '../../lib/sectorNames'
 import { runGiveBackSlot, runTakeSlot, type SlotState } from '../task-list/slotActions'
 import { requestFrames } from '../calendar/framesRequest'
@@ -389,7 +389,7 @@ export function commands(ctx: PaletteContext): Command[] {
       section: s.row,
       rename: () => prompt(t('Rename section'), t('Section name'), s.row.name, (n) => renameSection(s.row.id, n)),
       move: (d) => reorderSection(s.row.id, d),
-      remove: () => deleteSection(s.row.id),
+      remove: () => withUndoToast(deleteSectionUndoable(s.row.id)),
     }), 'section'))
   }
 
