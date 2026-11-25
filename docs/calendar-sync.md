@@ -3,7 +3,7 @@ title: Calendar sync
 summary: "Two-way sync with your own calendar: dated tasks become events in iCloud, Fastmail, Nextcloud, Google, Outlook, Microsoft 365 or any CalDAV calendar, and moving an event moves the task."
 audience: user
 section: Integrations
-specs: [calendar-sync, calendar-feeds, end-to-end-encryption]
+specs: [calendar-sync, calendar-feeds, calendar-event-edits, end-to-end-encryption]
 screens: [settings/calendar-sync, calendar-sync/denied#access-blocked-or-app-not-verified, calendar-sync/authorization_failed#fix-a-failed-google-connection, calendar-sync/redirect_uri_mismatch#error-400-redirect_uri_mismatch, calendar-sync/base_url_mismatch#wrong-address-behind-a-proxy, calendar-sync/google_client_refused#google-refused-the-client, calendar-sync/scope_not_granted#calendar-permission-not-ticked, calendar-sync/caldav_api_disabled#the-caldav-api-is-not-enabled]
 order: 33
 ---
@@ -40,7 +40,7 @@ And back:
 
 With **Include tasks without a time** off, an event you make all-day is removed from the calendar at the next check; the task keeps its date.
 
-Only events OpenTodo wrote change tasks. Your other events are never changed and never become tasks; the ones in the calendar tasks are written into are shown next to your tasks in the calendar views, read-only.
+Only events OpenTodo wrote change tasks. Your other events never become tasks; the ones in the calendar tasks are written into, and in the calendars you also show, appear next to your tasks in the calendar views. They are read-only unless you turn on [Edit events in OpenTodo](#edit-your-calendars-events).
 
 Tasks are written from 30 days back to a year ahead, the same tasks as the [task feed](calendar-feeds.md): your own and those of projects shared with you, outside archived projects. A zoned task (due 09:00 Europe/Berlin) keeps its zone; a floating task keeps its wall-clock time in your calendar's zone (for Outlook, your mailbox's time zone).
 
@@ -155,6 +155,34 @@ Instead of the panel, you can set `OPENTODO_MICROSOFT_CLIENT_ID` and `OPENTODO_M
 
 National clouds (Microsoft 365 GCC High, DoD, operated by 21Vianet), certificate credentials and Exchange servers on your own premises are not supported. Without a Microsoft client, you can still subscribe to your [task feed](calendar-feeds.md) in Outlook (**Add calendar → Subscribe from web**) and add your Outlook calendar's published address as an [other calendar](other-calendars.md); both are read-only.
 
+## Edit your calendar's events
+
+Turn on **Edit events in OpenTodo** in a connection's **Calendars** dialog to change its events where you see them in Day and Week:
+
+- **Move** an event to another time or day, or onto the day's all-day row; **resize** it by its upper or lower edge.
+- **Rename** it, change its date and times, or **delete** it from its popover. Every change shows a toast with **Undo**; a delete waits 8 seconds before it is sent, so Undo cancels it.
+- With the keyboard: select it with <kbd>j</kbd> and <kbd>k</kbd>, move it with the arrows, change its end with <kbd>Shift</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> and its start with <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>, and delete it with <kbd>Delete</kbd>. See [keyboard shortcuts](keyboard.md).
+
+The change is written to your calendar at once, with the event's own time zone: dragging a meeting kept in Berlin time while you are in Lisbon writes the matching Berlin time. Only the title, the start and the end change; reminders, the description and everything else of the event stay as they are. It is off for every connection until you turn it on, and turning it on asks for no new permission.
+
+These events stay read-only, and their popover says why:
+
+- **Repeating events** (the series and each of its occurrences), for now.
+- **Events with guests**, so OpenTodo never sends invitations or updates to other people.
+- **Events someone else organised**, even without guests.
+- Events of **calendars you cannot edit** (a calendar shared with you to read, a holidays calendar), and of [subscribed calendars](other-calendars.md).
+- Events OpenTodo wrote for tasks: they behave as tasks.
+
+Right after an upgrade, an event becomes editable once the next check has read its calendar.
+
+**Your calendar is the truth.** A change is written only if the event is still the version you saw. If it was changed in another app in the meantime, nothing is written: the event goes back to how your calendar holds it and a message says your edit was not applied. Do it again on the fresh event. An event deleted in the calendar disappears with a message.
+
+**Offline**, your changes are kept on the device, drawn as saving, and sent once it is back online, one request per event however many times you moved it. A change the calendar refuses is undone with the reason. A change that fails while you are online (the calendar does not answer) shows **Not saved to your calendar** in its popover with **Retry** and **Discard**.
+
+### Let assistants edit events
+
+**Let assistants edit events**, below it and off by default, lets an AI assistant with [changes allowed](mcp.md#letting-an-assistant-make-changes) move and rename this connection's editable events with `update_calendar_event`. Assistants cannot delete events. An event an assistant changed says **Changed by** with the assistant's token name in its popover, with **Undo**, for 30 days or until you change it yourself. Undo is refused when the event changed in your calendar since. Tokens limited to [chosen workspaces](mcp.md#a-token-for-some-workspaces) cannot read or change calendar events at all.
+
 ## When changes travel
 
 The server checks each connected calendar every 5 minutes, and about 20 seconds after you change a task's date, time, length, title or notes. **Sync now** on the connection card runs a check at once and also finds calendars you added to the account. Changes made in OpenTodo on a device that is offline travel once the device syncs.
@@ -181,6 +209,7 @@ The server cannot read an encrypted account's titles and notes. With encryption 
 - Up to 200 events written or removed per check; the rest follows about 20 seconds later.
 - No answer from a calendar server is read past 4 MB, so a large calendar is read in pieces. A calendar's events (about two months back to thirteen months ahead) are asked for in one request; when the answer would be larger, the server asks for each half of that time instead, down to single days, and reads a day that is still too large event by event in batches of up to 50. When the list of changes is too large (the first sync of a calendar with years of history, for example), only the events OpenTodo wrote are read back, and the next checks read only what changed since. Only a single event over 4 MB stops the sync, with "The calendar server sent more than 4 MB at once". There is no setting for the limit.
 - Repeating tasks are written as their next occurrence, not as a series. Alarms, attendees and invitations are not written.
+- Up to 600 event changes an hour per person from OpenTodo; titles up to 500 characters.
 - Moving an event of a task you may only view in a shared project is undone: the next check writes the task's time back (for a multi-day task, its start and due dates).
 - Calendar sync is refused on a public demo instance.
 

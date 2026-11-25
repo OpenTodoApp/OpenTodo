@@ -91,6 +91,7 @@ export const AUDIT_LABELS = translatedMap<AuditEventName>({
   'calendar_connection.created': msg('Calendar connected'),
   'calendar_connection.updated': msg('Calendar connection changed'),
   'calendar_connection.deleted': msg('Calendar disconnected'),
+  'calendar_event.changed': msg('Calendar event changed'),
   'project.agent_access': msg('Project kept away from AI assistants changed'),
   'task_page.published': msg('Task published as a page'),
   'task_page.revoked': msg('Task page revoked'),

@@ -41,7 +41,10 @@ type Calendar struct {
 	// answers with, to model a calendar that cannot be read — like Google's
 	// virtual Week Numbers/Holidays calendars answering 409 (see #1627).
 	QueryStatus int
-	objects     map[string]*Object
+	// Privileges, when set, are the privilege set served instead of read and
+	// write (calendar-event-edits: write-content, bind, unbind, all...).
+	Privileges []string
+	objects    map[string]*Object
 	// log records changes for sync-collection: seq → member, deleted.
 	log []change
 }
@@ -68,6 +71,13 @@ type Server struct {
 	// event for 30 days: its UID stays taken, and creating an object with a
 	// UID that is taken (in the Bin or by another member) answers 409.
 	KeepDeletedUIDs bool
+	// Addresses are the principal's calendar-user-address-set (mailto: URIs).
+	Addresses []string
+
+	// redirect answers the next request of a method with a redirect.
+	redirectMethod string
+	redirectStatus int
+	redirectTo     string
 
 	mu        sync.Mutex
 	cals      map[string]*Calendar
@@ -190,6 +200,21 @@ func (s *Server) Count(method string) int {
 	return s.Requests[method]
 }
 
+// RedirectNext answers the next request of method with status and a
+// Location to (an absolute address, or the same path under /moved when "").
+func (s *Server) RedirectNext(method string, status int, to string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.redirectMethod, s.redirectStatus, s.redirectTo = method, status, to
+}
+
+// SetReadOnly makes a calendar refuse writes with 403 (or accept them again).
+func (s *Server) SetReadOnly(cal string, ro bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.cals[cal].ReadOnly = ro
+}
+
 func (s *Server) authorized(r *http.Request) bool {
 	if s.Bearer != "" {
 		return r.Header.Get("Authorization") == "Bearer "+s.Bearer
@@ -201,6 +226,18 @@ func (s *Server) authorized(r *http.Request) bool {
 func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	s.Requests[r.Method]++
+	if s.redirectMethod == r.Method {
+		to := s.redirectTo
+		if to == "" {
+			to = "/moved" + r.URL.Path
+		}
+		status := s.redirectStatus
+		s.redirectMethod = ""
+		s.mu.Unlock()
+		w.Header().Set("Location", to)
+		w.WriteHeader(status)
+		return
+	}
 	s.mu.Unlock()
 	if r.URL.Path == "/.well-known/caldav" {
 		http.Redirect(w, r, s.Prefix+"/", http.StatusMovedPermanently)
@@ -260,8 +297,15 @@ func (s *Server) root(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) principal(w http.ResponseWriter, r *http.Request) {
+	addrs := ""
+	for _, a := range s.Addresses {
+		addrs += `<d:href>` + caldav.Esc(a) + `</d:href>`
+	}
+	if addrs != "" {
+		addrs = `<c:calendar-user-address-set>` + addrs + `</c:calendar-user-address-set>`
+	}
 	s.multistatus(w, response(s.Prefix+"/principals/me/", `<c:calendar-home-set><d:href>`+s.Prefix+`/calendars/me/</d:href></c:calendar-home-set>`+
-		`<d:current-user-principal><d:href>`+s.Prefix+`/principals/me/</d:href></d:current-user-principal>`))
+		`<d:current-user-principal><d:href>`+s.Prefix+`/principals/me/</d:href></d:current-user-principal>`+addrs))
 }
 
 func (s *Server) calProps(id string, c *Calendar) string {
@@ -270,8 +314,11 @@ func (s *Server) calProps(id string, c *Calendar) string {
 		comps += `<c:comp name="` + n + `"/>`
 	}
 	priv := `<d:privilege><d:read/></d:privilege>`
-	if !c.ReadOnly {
+	if !c.ReadOnly && c.Privileges == nil {
 		priv += `<d:privilege><d:write/></d:privilege>`
+	}
+	for _, p := range c.Privileges {
+		priv += `<d:privilege><d:` + p + `/></d:privilege>`
 	}
 	p := `<d:resourcetype><d:collection/><c:calendar/></d:resourcetype><d:displayname>` + caldav.Esc(c.Name) + `</d:displayname>` +
 		`<c:supported-calendar-component-set>` + comps + `</c:supported-calendar-component-set><d:current-user-privilege-set>` + priv + `</d:current-user-privilege-set>` +

@@ -123,6 +123,25 @@ type Calendar struct {
 	Color    string `json:"color"`
 	TimeZone string `json:"time_zone,omitempty"`
 	ReadOnly bool   `json:"read_only"`
+	// Caps are what the account lets the user do with the calendar's events
+	// (calendar-event-edits D3); nil for a calendar saved before them.
+	Caps *Caps `json:"caps,omitempty"`
+}
+
+// Caps are a calendar's capabilities.
+type Caps struct {
+	Create bool `json:"create"`
+	Update bool `json:"update"`
+	Delete bool `json:"delete"`
+}
+
+// CapsOf returns the calendar's capabilities, derived from ReadOnly for a
+// calendar saved before they existed.
+func (c Calendar) CapsOf() Caps {
+	if c.Caps != nil {
+		return *c.Caps
+	}
+	return Caps{!c.ReadOnly, !c.ReadOnly, !c.ReadOnly}
 }
 
 // RunCounts is what one cycle did.
@@ -171,6 +190,13 @@ type Connection struct {
 	LastRun        *RunCounts      `json:"last_run"`
 	CreatedAt      int64           `json:"created_at"`
 	UpdatedAt      int64           `json:"updated_at"`
+	// EditEvents is "Edit events in OpenTodo", AssistantEdits "Let assistants
+	// edit events" (calendar-event-edits D12); both off by default.
+	EditEvents     bool `json:"edit_events"`
+	AssistantEdits bool `json:"assistant_edits"`
+	// Addresses are the account's own calendar addresses (lower case, without
+	// "mailto:"), set by discovery and read for the organiser lock.
+	Addresses []string `json:"-"`
 }
 
 // States served to the client (design D2).

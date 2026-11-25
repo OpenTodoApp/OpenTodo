@@ -73,53 +73,85 @@ type Response struct {
 // reads at most MaxBody of the answer.
 func (d *DAV) Do(ctx context.Context, method, target string, header map[string]string, body []byte) (*Response, error) {
 	for hop := 0; ; hop++ {
-		u, err := ob.ValidateURL(target)
+		resp, u, err := d.send(ctx, method, target, header, body)
 		if err != nil {
-			return nil, &Error{Reason: ReasonInvalid}
+			return nil, err
 		}
-		if !d.sameSite(u.Hostname()) {
+		if !isRedirect(resp.Status) {
+			return resp, nil
+		}
+		loc := resp.Header.Get("Location")
+		if loc == "" || hop >= MaxRedirects {
 			return nil, &Error{Reason: ReasonRedirect}
 		}
-		req, err := http.NewRequestWithContext(ctx, method, u.String(), bytes.NewReader(body))
+		next, err := u.Parse(loc)
 		if err != nil {
-			return nil, &Error{Reason: ReasonInvalid}
+			return nil, &Error{Reason: ReasonRedirect}
 		}
-		req.Header.Set("User-Agent", d.UserAgent)
-		for k, v := range header {
-			req.Header.Set(k, v)
-		}
-		if d.Auth != nil {
-			d.Auth(req.Header)
-		}
-		resp, err := d.HTTP.Do(req)
-		if err != nil {
-			return nil, &Error{Reason: transportReason(err)}
-		}
-		data, rerr := io.ReadAll(io.LimitReader(resp.Body, MaxBody+1))
-		resp.Body.Close()
-		if rerr != nil {
-			return nil, &Error{Reason: transportReason(rerr)}
-		}
-		if len(data) > MaxBody {
-			return nil, &Error{Reason: ReasonTooLarge}
-		}
-		switch resp.StatusCode {
-		case http.StatusMovedPermanently, http.StatusFound, http.StatusSeeOther, http.StatusTemporaryRedirect, http.StatusPermanentRedirect:
-			loc := resp.Header.Get("Location")
-			if loc == "" || hop >= MaxRedirects {
-				return nil, &Error{Reason: ReasonRedirect}
-			}
-			next, err := u.Parse(loc)
-			if err != nil {
-				return nil, &Error{Reason: ReasonRedirect}
-			}
-			target = next.String()
-			continue
-		case http.StatusTooManyRequests:
-			return nil, &Error{Reason: ReasonRateLimited, Until: retryAfter(resp.Header, time.Now())}
-		}
-		return &Response{Status: resp.StatusCode, Header: resp.Header, Body: data, URL: u.String()}, nil
+		target = next.String()
 	}
+}
+
+// DoOnce is Do without redirects, for event writes (calendar-event-edits D5):
+// the request is sent once, with the same outbound client and the same
+// address and site checks before credentials are added, and any 3xx answer
+// is ReasonRedirect.
+func (d *DAV) DoOnce(ctx context.Context, method, target string, header map[string]string, body []byte) (*Response, error) {
+	resp, _, err := d.send(ctx, method, target, header, body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.Status >= 300 && resp.Status < 400 {
+		return nil, &Error{Reason: ReasonRedirect}
+	}
+	return resp, nil
+}
+
+func isRedirect(status int) bool {
+	switch status {
+	case http.StatusMovedPermanently, http.StatusFound, http.StatusSeeOther, http.StatusTemporaryRedirect, http.StatusPermanentRedirect:
+		return true
+	}
+	return false
+}
+
+// send sends one request: the address must pass the outbound rules and be on
+// the account's site before the credentials are set.
+func (d *DAV) send(ctx context.Context, method, target string, header map[string]string, body []byte) (*Response, *url.URL, error) {
+	u, err := ob.ValidateURL(target)
+	if err != nil {
+		return nil, nil, &Error{Reason: ReasonInvalid}
+	}
+	if !d.sameSite(u.Hostname()) {
+		return nil, nil, &Error{Reason: ReasonRedirect}
+	}
+	req, err := http.NewRequestWithContext(ctx, method, u.String(), bytes.NewReader(body))
+	if err != nil {
+		return nil, nil, &Error{Reason: ReasonInvalid}
+	}
+	req.Header.Set("User-Agent", d.UserAgent)
+	for k, v := range header {
+		req.Header.Set(k, v)
+	}
+	if d.Auth != nil {
+		d.Auth(req.Header)
+	}
+	resp, err := d.HTTP.Do(req)
+	if err != nil {
+		return nil, nil, &Error{Reason: transportReason(err)}
+	}
+	data, rerr := io.ReadAll(io.LimitReader(resp.Body, MaxBody+1))
+	resp.Body.Close()
+	if rerr != nil {
+		return nil, nil, &Error{Reason: transportReason(rerr)}
+	}
+	if len(data) > MaxBody {
+		return nil, nil, &Error{Reason: ReasonTooLarge}
+	}
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return nil, nil, &Error{Reason: ReasonRateLimited, Until: retryAfter(resp.Header, time.Now())}
+	}
+	return &Response{Status: resp.StatusCode, Header: resp.Header, Body: data, URL: u.String()}, u, nil
 }
 
 func retryAfter(h http.Header, now time.Time) time.Time {
