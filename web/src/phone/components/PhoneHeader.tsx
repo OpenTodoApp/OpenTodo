@@ -4,17 +4,19 @@
 // away; a screen without a large title passes `shown`.
 import type { ReactNode } from 'react'
 
-export function PhoneHeader({ lead, title, shown = false, trailing }: {
+export function PhoneHeader({ lead, title, shown = false, trailing, bleed = false }: {
   /** The control at the start: the menu button, or Back. */
   lead: ReactNode
   title?: string
   /** Whether the title is in the bar now. */
   shown?: boolean
   trailing?: ReactNode
+  /** Inside a page's 16 px gutter (a page header): the bar reaches the screen's edges. */
+  bleed?: boolean
 }) {
   return (
     <header data-phone-header data-titled={shown || undefined}
-      className={`sticky top-0 z-10 flex min-h-12 items-center gap-1 bg-canvas px-2 pt-[max(0.25rem,var(--safe-top))] ${shown ? 'border-b border-soft' : ''}`}>
+      className={`sticky top-0 z-10 flex min-h-12 items-center gap-1 bg-canvas px-2 pt-[max(0.25rem,var(--safe-top))] ${bleed ? '-mx-4' : ''} ${shown ? 'border-b border-soft' : ''}`}>
       <div className="flex shrink-0 items-center">{lead}</div>
       <p aria-hidden={!shown} className={`min-w-0 flex-1 truncate text-center text-title text-strong transition-opacity duration-(--duration-ui) ${shown ? 'opacity-100' : 'opacity-0'}`}>{title}</p>
       <div className="flex shrink-0 items-center gap-1">{trailing}</div>

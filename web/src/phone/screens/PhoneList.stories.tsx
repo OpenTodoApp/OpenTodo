@@ -7,7 +7,6 @@ import { seeded, seedInbox, seedProjectWithSections, seedToday, storyUser, TODAY
 import { PhoneFrame, StoryChrome, StoryScroller } from '../stories/frame'
 import { noop } from '../stories/sample'
 import { PhoneList } from './PhoneList'
-import { PhoneListRow } from './PhoneListRow'
 
 // The task lists on a phone with the seeded account (phone-lists): the list the desktop
 // screen wires, in the phone's drawing. One story per list and state.
@@ -16,9 +15,6 @@ export default meta
 
 const screen = (route: () => ListRoute) => () => <PhoneFrame><StoryScroller chrome><PhoneList route={route()} userId={storyUser.id} onMenu={noop} /></StoryScroller><StoryChrome /></PhoneFrame>
 const today = screen(() => ({ view: 'today' }))
-
-// The row the list draws is the list's own (PhoneListRow): every story here shows it wired to the list.
-void PhoneListRow
 
 export const Today: StoryObj = {
   name: 'Today, the seeded day',

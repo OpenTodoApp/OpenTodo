@@ -42,7 +42,7 @@ With **Include tasks without a time** off, an event you make all-day is removed 
 
 Only events OpenTodo wrote change tasks. Your other events never become tasks; the ones in the calendar tasks are written into, and in the calendars you also show, appear next to your tasks in the calendar views. They are read-only unless you turn on [Edit events in OpenTodo](#edit-your-calendars-events).
 
-Tasks are written from 30 days back to a year ahead, the same tasks as the [task feed](calendar-feeds.md): your own and those of projects shared with you, outside archived projects. A zoned task (due 09:00 Europe/Berlin) keeps its zone; a floating task keeps its wall-clock time in your calendar's zone (for Outlook, your mailbox's time zone).
+Tasks are written from 30 days back to a year ahead, the same tasks as the [task feed](calendar-feeds.md): your own and those of projects shared with you, outside archived projects. A zoned task (due 09:00 Europe/Berlin) keeps its zone; a floating task keeps its wall-clock time and is written in your calendar's time zone (for Outlook, your mailbox's time zone), so every calendar app shows the same time. OpenTodo reads that time zone when you connect the calendar; after you change it at your provider, use **Sync now** so OpenTodo picks it up.
 
 ## Connect a CalDAV calendar
 
