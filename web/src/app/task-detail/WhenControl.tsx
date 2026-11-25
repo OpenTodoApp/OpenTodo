@@ -109,7 +109,7 @@ const ARROWS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home
  * line's end, the zone. Disabled until the task has a do date (with nothing chosen,
  * so the row reads as waiting), and for a reader.
  */
-function TimeOfDay({ task, readOnly, zone, viewer }: { task: Task; readOnly: boolean; zone: string; viewer: string }) {
+export function TimeOfDay({ task, readOnly, zone, viewer }: { task: Task; readOnly: boolean; zone: string; viewer: string }) {
   const dt = useDateTimeFormat()
   const parts = dayPartsOn(useUserPrefsRow())
   const view = localDueOf(task.due, zone)

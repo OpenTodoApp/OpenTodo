@@ -7915,5 +7915,9 @@
   "Section deleted": "Section supprimée",
   "Label deleted": "Étiquette supprimée",
   "Merged into {label}": "Fusionnée dans {label}",
-  "Field deleted": "Champ supprimé"
+  "Field deleted": "Champ supprimé",
+  "Phone screens": "Écrans pour téléphone",
+  "A trial of screens made for a phone. This device only.": "Un essai d’écrans conçus pour le téléphone. Sur cet appareil uniquement.",
+  "New phone screens": "Nouveaux écrans pour téléphone",
+  "Today and the task page in the new design. Turn it off at any time.": "Aujourd’hui et la page de la tâche dans le nouveau design. Désactivable à tout moment."
 }

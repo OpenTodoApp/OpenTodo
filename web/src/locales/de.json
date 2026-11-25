@@ -7915,5 +7915,9 @@
   "Section deleted": "Abschnitt gelöscht",
   "Label deleted": "Label gelöscht",
   "Merged into {label}": "Mit {label} zusammengeführt",
-  "Field deleted": "Feld gelöscht"
+  "Field deleted": "Feld gelöscht",
+  "Phone screens": "Telefonansichten",
+  "A trial of screens made for a phone. This device only.": "Ein Test von Ansichten, die für das Telefon gemacht sind. Nur auf diesem Gerät.",
+  "New phone screens": "Neue Telefonansichten",
+  "Today and the task page in the new design. Turn it off at any time.": "Heute und die Aufgabenseite im neuen Design. Jederzeit abschaltbar."
 }

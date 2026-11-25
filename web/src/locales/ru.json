@@ -7915,5 +7915,9 @@
   "Section deleted": "Раздел удалён",
   "Label deleted": "Метка удалена",
   "Merged into {label}": "Объединено с {label}",
-  "Field deleted": "Поле удалено"
+  "Field deleted": "Поле удалено",
+  "Phone screens": "Экраны для телефона",
+  "A trial of screens made for a phone. This device only.": "Пробная версия экранов, сделанных для телефона. Только на этом устройстве.",
+  "New phone screens": "Новые экраны для телефона",
+  "Today and the task page in the new design. Turn it off at any time.": "«Сегодня» и страница задачи в новом оформлении. Можно отключить в любой момент."
 }

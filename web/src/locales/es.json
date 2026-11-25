@@ -7915,5 +7915,9 @@
   "Section deleted": "Sección eliminada",
   "Label deleted": "Etiqueta eliminada",
   "Merged into {label}": "Combinada en {label}",
-  "Field deleted": "Campo eliminado"
+  "Field deleted": "Campo eliminado",
+  "Phone screens": "Pantallas para el teléfono",
+  "A trial of screens made for a phone. This device only.": "Una prueba de pantallas hechas para el teléfono. Solo en este dispositivo.",
+  "New phone screens": "Nuevas pantallas para el teléfono",
+  "Today and the task page in the new design. Turn it off at any time.": "Hoy y la página de la tarea con el nuevo diseño. Puedes desactivarlo cuando quieras."
 }

@@ -9,10 +9,12 @@ import { useLanguageStatus, type LanguageStatus } from './LanguageProvider'
 import { Select } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { Switch } from '../ui'
+import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../ui'
 import { DISPLAY_START_VIEWS, setStartView, type StartView } from '../lib/views'
 import type { View } from '../lib/types'
 import { useStartView, useViews } from './useViews'
 import { setVimEnabled, useVimEnabled } from './vim/prefs'
+import { setPhoneUiEnabled, usePhoneUiEnabled } from '../phone/prefs'
 import { setShortcutHints, useShortcutHints } from './shortcuts/hints'
 import { setSingleKeys, useSingleKeys } from './shortcuts/singleKeys'
 import { Kbd } from './shortcuts/Kbd'
@@ -130,6 +132,26 @@ export function DayPartsView({ on, onChange }: { on: boolean; onChange: (on: boo
     <SettingsSection {...cardCopy('day-parts')}>
       <SettingRow {...rowCopy('day-parts', 'group')} id="day-parts" htmlFor="day-parts-switch"
         control={<span data-day-parts-switch><Switch id="day-parts-switch" checked={on} onChange={onChange} label={t('Group Today by part of the day')} hideLabel /></span>} />
+    </SettingsSection>
+  )
+}
+
+/**
+ * "New phone screens" (phone-ui-trial D3): the trial's switch, kept on this device. Shown only
+ * below 768 px, where the phone screens apply; a wider window has nothing to switch.
+ */
+export function PhoneUiSection() {
+  const on = usePhoneUiEnabled()
+  const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
+  if (desktop) return null
+  return <PhoneUiView on={on} onChange={setPhoneUiEnabled} />
+}
+
+export function PhoneUiView({ on, onChange }: { on: boolean; onChange: (on: boolean) => void }) {
+  return (
+    <SettingsSection {...cardCopy('phone-ui')}>
+      <SettingRow {...rowCopy('phone-ui', 'on')} id="phone-ui" htmlFor="phone-ui-switch"
+        control={<span data-phone-ui-switch><Switch id="phone-ui-switch" checked={on} onChange={onChange} label={t('New phone screens')} hideLabel /></span>} />
     </SettingsSection>
   )
 }

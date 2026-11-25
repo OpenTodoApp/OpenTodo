@@ -7915,5 +7915,9 @@
   "Section deleted": "Bölüm silindi",
   "Label deleted": "Etiket silindi",
   "Merged into {label}": "{label} ile birleştirildi",
-  "Field deleted": "Alan silindi"
+  "Field deleted": "Alan silindi",
+  "Phone screens": "Telefon ekranları",
+  "A trial of screens made for a phone. This device only.": "Telefon için tasarlanmış ekranların denemesi. Yalnızca bu cihazda.",
+  "New phone screens": "Yeni telefon ekranları",
+  "Today and the task page in the new design. Turn it off at any time.": "Bugün ve görev sayfası yeni tasarımda. İstediğin zaman kapatabilirsin."
 }
