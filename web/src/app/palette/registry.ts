@@ -18,7 +18,7 @@ import { HUES } from '../../ui'
 import type { IconName } from '../../ui'
 import { labelMenuGroups } from '../LabelsView'
 import type { ListState } from '../listActions'
-import { flatItems, type ActionGroup } from '../menus/ActionMenu'
+import { flatItems, withEllipsis, type ActionGroup } from '../menus/ActionMenu'
 import { startFocusOn } from '../focus/startFocus'
 import { projectMenuGroups, type MoveTarget } from '../ProjectHeader'
 import { navigate, type Route } from '../router'
@@ -219,7 +219,7 @@ function fromMenu(prefix: string, groups: ActionGroup[], idPrefix: string): Comm
   // A step (the icon grid, the colour swatches) runs here as its Combobox form; one without it is not listed.
   // A submenu's items are listed in its place.
   return flatItems(groups).filter((i) => !i.disabled && (i.kind !== 'step' || i.step.palette)).map((i): Command => ({
-    id: `${idPrefix}:${i.id}`, label: t('{object}: {action}', { object: prefix, action: i.label.replace(/…$/, '') }), icon: i.icon, shortcut: i.shortcut, menuLabel: i.kind === 'step' ? `${i.label}…` : i.label,
+    id: `${idPrefix}:${i.id}`, label: t('{object}: {action}', { object: prefix, action: i.label.replace(/…$/, '') }), icon: i.icon, shortcut: i.shortcut, menuLabel: i.kind === 'step' ? withEllipsis(i.label) : i.label,
     run: () => (i.kind === 'picker' ? { kind: 'picker', picker: i.picker } as Step
       : i.kind === 'step' ? { kind: 'picker', picker: i.step.palette! } as Step
         : i.kind === 'confirm' ? { kind: 'confirm', confirm: i.confirm } as Step : i.onSelect()),
