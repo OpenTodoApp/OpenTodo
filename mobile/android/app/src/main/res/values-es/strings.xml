@@ -18,8 +18,6 @@
     <string name="retry">Reintentar</string>
     <string name="change_server">Cambiar de servidor</string>
     <string name="change_server_confirm">Esto elimina de este teléfono los datos del servidor actual: la copia sin conexión, los recordatorios programados, los datos de los widgets y el desbloqueo con huella. Se pierden los cambios aún no sincronizados.</string>
-    <string name="shortcut_add_task">Añadir tarea</string>
-    <string name="shortcut_today">Hoy</string>
     <string name="error_offline">No se puede acceder al servidor y OpenTodo nunca se ha abierto en este teléfono.</string>
     <string name="error_untrusted">Este teléfono no confía en el certificado del servidor.</string>
     <string name="channel_reminders">Recordatorios</string>

@@ -17,21 +17,26 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     /// The quick actions on the app icon (AppModel.perform(shortcut:)). A SwiftUI app runs in
-    /// scenes, so UIKit hands them to the scene's delegate, never to this one: the item that
-    /// launched the app comes with the scene's connection, a later one to QuickActionSceneDelegate.
+    /// scenes, so UIKit hands them to the scene's delegate, never to this one. The item is read
+    /// there too, not here: a restored scene session connects without asking for a configuration.
     func application(_ application: UIApplication,
                      configurationForConnecting session: UISceneSession,
                      options: UIScene.ConnectionOptions) -> UISceneConfiguration {
-        if let item = options.shortcutItem { AppModel.shared.perform(shortcut: item.type) }
         let configuration = UISceneConfiguration(name: nil, sessionRole: session.role)
-        configuration.delegateClass = QuickActionSceneDelegate.self
+        if session.role == .windowApplication { configuration.delegateClass = QuickActionSceneDelegate.self }
         return configuration
     }
 }
 
-/// A quick action chosen while the app is running; SwiftUI keeps drawing the window.
+/// The icon's quick actions, at a cold start (the connection's item) and while the app runs;
+/// SwiftUI keeps drawing the window.
 @MainActor
 final class QuickActionSceneDelegate: NSObject, UIWindowSceneDelegate {
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+        guard let item = connectionOptions.shortcutItem else { return }
+        AppModel.shared.perform(shortcut: item.type, atLaunch: true)
+    }
+
     func windowScene(_ windowScene: UIWindowScene,
                      performActionFor shortcutItem: UIApplicationShortcutItem,
                      completionHandler: @escaping (Bool) -> Void) {

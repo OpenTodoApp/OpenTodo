@@ -52,7 +52,7 @@ A reminder marked **Urgent** (in its menu in the task panel, on any device) ring
 
 The app opens on its background colour, light or dark with the phone, and shows the page once it has loaded, so no white screen comes between them. A server that takes longer than five seconds gets the page as far as it has loaded; one that can't be reached gets the usual message.
 
-Long-press the app icon for **Add task**, which opens quick add, **Today** and [**Change server**](#connect-to-your-server).
+Long-press the app icon for **Add task** (quick add), **Today** or [**Change server**](#connect-to-your-server).
 
 ## Offline
 

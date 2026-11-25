@@ -9,6 +9,7 @@ Long-pressing the app icon offers one action on Android and on iPhone: **Change 
 - **Two quick actions on the app icon, on Android and iPhone: Add task and Today.** Add task opens quick add (the web app's `/?add=`, as the quick-add widget does); Today opens the Today list (`/today`, as the Today widget's header does). Both go through the shells' existing deep-link handling (`opentodo-open:` on Android, `opentodo://` on iOS), so nothing new reaches the web app.
 - **Change server stays, as the last item.** It is the only way back to the first-run screen, and nothing in the web app's Settings opens it yet, so removing it from the menu would strand people. Moving it into Settings is left to a follow-up (see Out of scope).
 - **The labels are translated** in every language the shells ship, the iPhone's three titles included (Change server was English only there).
+- **A quick action chosen while the Android app runs keeps the app's state.** The system starts a static shortcut with a cleared task; a small trampoline activity hands the action to the running app instead.
 - **A quick action at a cold start on iPhone opens its screen.** The SwiftUI app had no scene delegate, so a quick action that launched the app was not delivered, and a path set before the window showed was not opened.
 
 Not **BREAKING**. No new environment variable, no op, no bridge change.
@@ -33,6 +34,6 @@ None.
 
 ## Impact
 
-- Android: `res/xml/shortcuts.xml`, two strings in every `values*/strings.xml`, two icons.
-- iOS: `Info.plist` and `project.yml` (`UIApplicationShortcutItems`), `InfoPlist.xcstrings`, `AppDelegate.swift` (a scene delegate), `AppModel.swift` (`perform(shortcut:)`, `opentodo://today`), `ShellView.swift` (a path waiting at the first load).
+- Android: `res/xml/shortcuts.xml` (the widgets' strings as labels), two icons, `ShortcutActivity` (a trampoline, so a running app is not started again), `MainActivity` (no second Change server after the first-run screen).
+- iOS: `Info.plist` and `project.yml` (`UIApplicationShortcutItems`), `InfoPlist.xcstrings`, `AppDelegate.swift` (a scene delegate), `AppModel.swift` (`perform(shortcut:atLaunch:)`, `windowReady()`, `opentodo://today`), `StatusBar.swift`, `ShellView.swift` (a path waiting at the first load).
 - Docs: `docs/android-app.md`, `docs/ios-app.md`. Checks: `scripts/repo-checks.test.mjs`.

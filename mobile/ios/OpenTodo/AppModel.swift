@@ -56,7 +56,7 @@ final class AppModel: ObservableObject {
     /// `opentodo://task/<id>`, `opentodo://reminder/<id>?action=done|snooze|dismiss`,
     /// `opentodo://focus[?action=pause|resume]` from the Focus Live Activity,
     /// `opentodo://share?files=1` from the share extension, `opentodo://add` and
-    /// `opentodo://today` from the widgets and the icon's quick actions. Any app may open these, so the
+    /// `opentodo://today` from the icon's quick actions. Any app may open these, so the
     /// values are treated as data and never pasted into a path.
     func handle(url: URL) {
         guard url.scheme?.lowercased() == "opentodo" else { return }
@@ -87,15 +87,30 @@ final class AppModel: ObservableObject {
     /// The quick actions on the app icon (`UIApplicationShortcutItems` in project.yml): Add task
     /// and Today open the same addresses as the widgets; Change server asks first, because the
     /// reset discards the web app's storage, and that can hold ops which have not synced yet.
+    /// Without a server the first-run screen is already up, so Change server does nothing.
+    /// `atLaunch`: the dialog waits for `windowReady()`, since StatusBar replaces the window's
+    /// root after the first pass and a dialog presented before would go with the old root.
     @discardableResult
-    func perform(shortcut type: String) -> Bool {
+    func perform(shortcut type: String, atLaunch: Bool = false) -> Bool {
         switch type {
         case "add-task": handle(url: URL(string: "opentodo://add")!)
         case "today": handle(url: URL(string: "opentodo://today")!)
-        case "change-server": changeServerRequested = true
+        case "change-server":
+            guard origin != nil else { return false }
+            if atLaunch { changeServerAtLaunch = true } else { changeServerRequested = true }
         default: return false
         }
         return true
+    }
+
+    /// Change server chosen to launch the app, asked once the window's root is final.
+    private var changeServerAtLaunch = false
+
+    /// Called once StatusBar has installed its root controller (StatusBarInstaller).
+    func windowReady() {
+        guard changeServerAtLaunch else { return }
+        changeServerAtLaunch = false
+        changeServerRequested = true
     }
 
     /// `/?task=<id>`: a reminder tap opens the task it belongs to. An empty id (the test

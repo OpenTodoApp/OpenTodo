@@ -147,7 +147,7 @@ Whatever the app saves opens Android's save dialog, where you choose the folder:
 
 The app opens on its icon over the app's background colour, light or dark with the phone, and keeps that until the page is ready, so no blank screen comes between them. A server that takes longer than five seconds gets the page as far as it has loaded; one that can't be reached gets the usual message.
 
-Long-press the app icon for **Add task**, which opens quick add, **Today** and [**Change server**](#connect-to-your-server).
+Long-press the app icon for **Add task** (quick add), **Today** or [**Change server**](#connect-to-your-server).
 
 ## Back
 

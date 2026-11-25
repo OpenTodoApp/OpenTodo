@@ -18,8 +18,6 @@
     <string name="retry">Opnieuw proberen</string>
     <string name="change_server">Server wijzigen</string>
     <string name="change_server_confirm">Dit verwijdert de gegevens van de huidige server van deze telefoon: de offline kopie, geplande meldingen, widgetgegevens en het ontgrendelen met vingerafdruk. Nog niet gesynchroniseerde wijzigingen gaan verloren.</string>
-    <string name="shortcut_add_task">Taak toevoegen</string>
-    <string name="shortcut_today">Vandaag</string>
     <string name="error_offline">De server is niet bereikbaar, en OpenTodo is op deze telefoon nog nooit geopend.</string>
     <string name="error_untrusted">Deze telefoon vertrouwt het certificaat van de server niet.</string>
     <string name="channel_reminders">Meldingen</string>

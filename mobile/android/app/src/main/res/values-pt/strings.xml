@@ -18,8 +18,6 @@
     <string name="retry">Tentar novamente</string>
     <string name="change_server">Mudar de servidor</string>
     <string name="change_server_confirm">Isto remove deste telemóvel os dados do servidor atual: a cópia offline, os lembretes agendados, os dados dos widgets e o desbloqueio por impressão digital. As alterações ainda não sincronizadas perdem-se.</string>
-    <string name="shortcut_add_task">Adicionar tarefa</string>
-    <string name="shortcut_today">Hoje</string>
     <string name="error_offline">Não é possível contactar o servidor e o OpenTodo nunca foi aberto neste telemóvel.</string>
     <string name="error_untrusted">Este telemóvel não confia no certificado do servidor.</string>
     <string name="channel_reminders">Lembretes</string>

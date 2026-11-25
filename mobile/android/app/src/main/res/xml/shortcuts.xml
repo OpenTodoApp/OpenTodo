@@ -1,38 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Long-press the app icon (native-shells "Quick actions on the app icon"): Add task and Today
      open the addresses the widgets open (MainActivity reads opentodo-open:), then the shell's own
-     "Change server", last because it is rare and asks first. The order is pinned by repo-checks. -->
+     "Change server", last because it is rare and asks first. ShortcutActivity hands each to the
+     running MainActivity. The labels are the widgets'. The order is pinned by repo-checks. -->
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
     <shortcut
         android:enabled="true"
         android:icon="@drawable/ic_shortcut_add"
         android:shortcutId="add_task"
-        android:shortcutShortLabel="@string/shortcut_add_task">
+        android:shortcutShortLabel="@string/widget_quick_add_label"
+        android:shortcutLongLabel="@string/widget_quick_add_label">
         <intent
             android:action="android.intent.action.VIEW"
             android:data="opentodo-open:/?add="
-            android:targetClass="app.opentodo.MainActivity"
+            android:targetClass="app.opentodo.ShortcutActivity"
             android:targetPackage="app.opentodo" />
     </shortcut>
     <shortcut
         android:enabled="true"
         android:icon="@drawable/ic_shortcut_today"
         android:shortcutId="today"
-        android:shortcutShortLabel="@string/shortcut_today">
+        android:shortcutShortLabel="@string/widget_today"
+        android:shortcutLongLabel="@string/widget_today">
         <intent
             android:action="android.intent.action.VIEW"
             android:data="opentodo-open:/today"
-            android:targetClass="app.opentodo.MainActivity"
+            android:targetClass="app.opentodo.ShortcutActivity"
             android:targetPackage="app.opentodo" />
     </shortcut>
     <shortcut
         android:enabled="true"
         android:icon="@drawable/ic_launcher"
         android:shortcutId="change_server"
-        android:shortcutShortLabel="@string/change_server">
+        android:shortcutShortLabel="@string/change_server"
+        android:shortcutLongLabel="@string/change_server">
         <intent
             android:action="app.opentodo.CHANGE_SERVER"
-            android:targetClass="app.opentodo.MainActivity"
+            android:targetClass="app.opentodo.ShortcutActivity"
             android:targetPackage="app.opentodo" />
     </shortcut>
 </shortcuts>

@@ -1090,8 +1090,8 @@ test('the iOS app carries its Face ID usage text', () => {
 })
 
 // icon-quick-actions (#2041): neither shell is compiled here, so the declarations are checked.
-// Android: the order, each action's address (MainActivity opens `opentodo-open:<path>`) and a
-// label in every language. iOS: the Info.plist against project.yml, and every title translated.
+// Android: the order, each action's address (MainActivity opens `opentodo-open:<path>`), the
+// trampoline that hands it to the running app, and a label in every language. iOS: the Info.plist against project.yml, and every title translated.
 test('both shells offer Add task, Today and Change server on the app icon', () => {
   const xml = read('mobile/android/app/src/main/res/xml/shortcuts.xml')
   const android = [...xml.matchAll(/<shortcut\b([\s\S]*?)<\/shortcut>/g)].map(([, s]) => ({
@@ -1099,14 +1099,21 @@ test('both shells offer Add task, Today and Change server on the app icon', () =
     label: /android:shortcutShortLabel="@string\/([^"]+)"/.exec(s)?.[1],
     action: /android:action="([^"]+)"/.exec(s)?.[1],
     data: /android:data="([^"]+)"/.exec(s)?.[1],
+    target: /android:targetClass="([^"]+)"/.exec(s)?.[1],
+    long: /android:shortcutLongLabel="@string\/([^"]+)"/.exec(s)?.[1],
   }))
   assert.deepEqual(android.map((s) => s.id), ['add_task', 'today', 'change_server'])
   assert.deepEqual(android.map((s) => s.data), ['opentodo-open:/?add=', 'opentodo-open:/today', undefined])
   assert.deepEqual(android.map((s) => s.action), ['android.intent.action.VIEW', 'android.intent.action.VIEW', 'app.opentodo.CHANGE_SERVER'])
+  for (const s of android) {
+    assert.equal(s.target, 'app.opentodo.ShortcutActivity', `${s.id} starts the trampoline, not a cleared MainActivity`)
+    assert.ok(s.long, `${s.id} has a long label`)
+  }
+  assert.match(read('mobile/android/app/src/main/AndroidManifest.xml'), /android:name="\.ShortcutActivity"\s+android:excludeFromRecents="true"\s+android:exported="false"/)
   const res = 'mobile/android/app/src/main/res'
   for (const dir of readdirSync(path.join(root, res)).filter((d) => d.startsWith('values') && existsSync(path.join(root, res, d, 'strings.xml')))) {
     const strings = read(`${res}/${dir}/strings.xml`)
-    for (const { label } of android) assert.match(strings, new RegExp(`<string name="${label}">[^<]+</string>`), `${dir} labels ${label}`)
+    for (const label of new Set(android.flatMap((s) => [s.label, s.long]))) assert.match(strings, new RegExp(`<string name="${label}">[^<]+</string>`), `${dir} labels ${label}`)
   }
 
   const want = [['add-task', 'Add task'], ['today', 'Today'], ['change-server', 'Change server']]

@@ -17,15 +17,21 @@ Android's shortcuts are `ACTION_VIEW` intents with `opentodo-open:/?add=` and `o
 
 ### D3. Order: Add task, Today, Change server
 
-The common actions first, the rare and destructive one last. Change server keeps its confirmation on both platforms. Labels: "Add task" is the name of the add button everywhere in the app (`app-shell`), and the quick-add widget's label already carries it in every language; "Today" is the view's name.
+The common actions first, the rare and destructive one last. Change server keeps its confirmation on both platforms. Labels: "Add task" is the name of the add button everywhere in the app (`app-shell`), and the quick-add widget's label already carries it in every language; "Today" is the view's name. Android reuses the widgets' strings (`widget_quick_add_label`, `widget_today`) as short and long label; "Add task" and "Today" fit the short label's ten characters, a longer translation is the launcher's to shorten.
 
 ### D4. iOS: a scene delegate for quick actions
 
-A SwiftUI app runs in scenes, and UIKit delivers a quick action to the scene delegate (`windowScene(_:performActionFor:)`, or `connectionOptions.shortcutItem` at a cold start), not to the app delegate. `AppDelegate.application(_:configurationForConnecting:options:)` returns a configuration with a small `QuickActionSceneDelegate` and hands the cold start's item to the model. A path set before `ShellView` appeared was not opened either, because `onChange` does not fire for the first value: `ShellView` now loads that path as its first page. When that first load fails offline, the portable build falls back to its cached start page (#1458), as before; the path is not kept, because the cache holds the start page's address only.
+A SwiftUI app runs in scenes, and UIKit delivers a quick action to the scene delegate, not to the app delegate. `AppDelegate.application(_:configurationForConnecting:options:)` gives window scenes (and only those) a small `QuickActionSceneDelegate`. The cold start's item is read in its `scene(_:willConnectTo:options:)` from `connectionOptions.shortcutItem`, as in Apple's sample, because a restored scene session connects without asking for a configuration; a later one arrives in `windowScene(_:performActionFor:)`.
 
-### D5. Android launches a static shortcut with a cleared task
+A path set before `ShellView` appeared was not opened either, because `onChange` does not fire for the first value: `ShellView` now loads that path as its first page. When that first load fails offline, the portable build falls back to its cached start page (#1458), as before; the path is not kept, because the cache holds the start page's address only.
 
-The system starts a static shortcut's intent with `FLAG_ACTIVITY_CLEAR_TASK`, so the activity is created again and the page loads from the shell's stored copy. That is how Change server has always worked, and the first frame comes from the stored shell, so it stays quick. A dynamic shortcut could avoid it, at the cost of D1.
+At a cold start, Change server's dialog waits for `AppModel.windowReady()`, which `StatusBarInstaller` calls once `StatusBar.install` has replaced the window's root: a dialog presented before would belong to the root that is replaced. Without a server (`origin == nil`) Change server does nothing; the first-run screen is already up.
+
+### D5. Android: a trampoline keeps the running app
+
+The system starts a static shortcut's intent with `FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_CLEAR_TASK`. Aimed at `MainActivity`, that recreates a running app and loses an open sheet or a sign-in in progress. So every shortcut targets `ShortcutActivity`: not exported (the launcher starts shortcuts as the app), no display, no history, its own task affinity. It hands `opentodo-open:` and Change server, and nothing else (`Shortcut.forwards`), to the singleTask `MainActivity`, which gets them in `onNewIntent` when it runs, and finishes. A dynamic shortcut could set its own flags, at the cost of D1.
+
+After the first-run screen `MainActivity` replays its launch intent; a Change server intent is dropped there, since the change it asked for is done (or there was no server to change), so the confirmation does not come back.
 
 ## Interface budget
 
