@@ -103,4 +103,62 @@ export async function t(done: () => boolean) {
       expect(await lint(`export const pause = () => new Promise((r) => setTimeout(r, 50))`, 'src/lib/pause.ts')).toEqual([])
     })
   })
+
+  // composition-keys: a text field's Enter, Escape, Tab or arrows wait for the input method.
+  describe('keys wait for the input method', () => {
+    const rule = 'input-method/composition-guard: 2'
+    it('refuses an inline handler, a named one, one it calls and a typed hook handler without the guard', async () => {
+      const code = `import type { KeyboardEvent } from 'react'
+declare const save: () => void
+function cancelOn(e: { key: string }) { if (e.key === 'Escape') save() }
+export function A() {
+  const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => { if (e.key === 'Tab') save() }
+  return <div>
+    <input onKeyDown={(e) => { if (e.key === 'Enter') save() }} />
+    <textarea onKeyDown={onKey} />
+    <div contentEditable onKeyDown={(e) => cancelOn(e)} />
+  </div>
+}
+export const useList = () => ({ onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => { if (e.key === 'ArrowDown') save() } })`
+      expect(await lint(code)).toEqual(Array(4).fill(rule))
+    })
+
+    it('refuses an element around a text field, and a guard after the first key test', async () => {
+      const code = `import { composing } from '../lib/composeKey'
+import { NumberInput } from '../ui'
+declare const save: () => void
+export const A = () => <div>
+  <form onKeyDown={(e) => { if (e.key === 'Escape') save() }}><label><input /></label></form>
+  <div onKeyDown={(e) => { if (e.key === 'Enter') save() }}>{true && <NumberInput />}</div>
+  <input onKeyDown={(e) => { if (e.key === 'Escape' && !composing(e)) save() }} />
+</div>`
+      expect(await lint(code)).toEqual(Array(3).fill(rule))
+    })
+
+    it('refuses composingEnter alone when the handler also acts on Escape', async () => {
+      const code = `import { composingEnter } from '../lib/composeKey'
+declare const save: () => void
+export const A = () => <input onKeyDown={(e) => { if (composingEnter(e)) return; if (e.key === 'Enter' || e.key === 'Escape') save() }} />`
+      expect(await lint(code)).toEqual([rule])
+    })
+
+    it('accepts the guard, composingEnter for Enter alone, and keys outside a text field', async () => {
+      const code = `import type { KeyboardEvent } from 'react'
+import { composing, composingEnter } from '../lib/composeKey'
+declare const save: () => void
+export function A() {
+  const onKey = (e: KeyboardEvent<HTMLInputElement>) => { if (composing(e)) return; if (e.key === 'Escape') save() }
+  const onSlider = (e: KeyboardEvent<HTMLInputElement>) => { if (e.key === 'ArrowUp') save() }
+  return <div>
+    <input onKeyDown={onKey} />
+    <input onKeyDown={(e) => { if (e.key === 'Enter' && !composingEnter(e)) save() }} />
+    <input type="range" onKeyDown={onSlider} />
+    <input type="checkbox" onKeyDown={(e) => { if (e.key === 'Enter') save() }} />
+    <button onKeyDown={(e) => { if (e.key === 'Escape') save() }} />
+    <input onKeyDown={(e) => { if (e.key === 'a') save() }} />
+  </div>
+}`
+      expect(await lint(code)).toEqual([])
+    })
+  })
 })

@@ -7920,5 +7920,8 @@
   "Phone screens": "Экраны для телефона",
   "A trial of screens made for a phone. This device only.": "Пробная версия экранов, сделанных для телефона. Только на этом устройстве.",
   "New phone screens": "Новые экраны для телефона",
-  "Today and the task page in the new design. Turn it off at any time.": "«Сегодня» и страница задачи в новом оформлении. Можно отключить в любой момент."
+  "Today and the task page in the new design. Turn it off at any time.": "«Сегодня» и страница задачи в новом оформлении. Можно отключить в любой момент.",
+  "Quick add notification": "Уведомление быстрого добавления",
+  "Add a task from the notification shade, in any app.": "Добавляйте задачу из шторки уведомлений в любом приложении.",
+  "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android запретил уведомления OpenTodo. Разрешите их в настройках Android."
 }

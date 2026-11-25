@@ -13,7 +13,7 @@ export const BRIDGE_VERSION = 1
 /** The oldest shell app version this web app expects (bumped when a shell bug needs a forced update). */
 export const MIN_SHELL_APP = '0.10.0'
 
-export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'completion-sound' | 'alarm-settings' | 'background' | 'pull-refresh' | 'first-paint' | 'push' | 'app-links' | 'scroll-top' | 'focus'
+export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'completion-sound' | 'alarm-settings' | 'background' | 'pull-refresh' | 'first-paint' | 'push' | 'app-links' | 'scroll-top' | 'focus' | 'quick-add-notification'
 
 /**
  * One location reminder handed to the shell (location-reminders D3): the circle
@@ -131,8 +131,11 @@ export interface OpenTodoShell {
   playCompletionSound?(): void
   /** shell-reminders-on D3: opens the system page where exact alarms are allowed (Android, the visible app). */
   openAlarmSettings?(): void
-  /** shell-reminders-on D4: a background run's web app is done; the shell ends the run. */
-  backgroundDone?(): void
+  /**
+   * shell-reminders-on D4: a background run's web app is done; the shell ends the run. The
+   * JSON names what the run saved (android-quick-add-notification D4: `{"added": [taskIds]}`).
+   */
+  backgroundDone?(json?: string): void
   /**
    * pull-to-sync D4: the page showing handles a pull down itself, so a shell with its
    * own pull to refresh (`pull-refresh`) turns that off until another page loads.
@@ -151,6 +154,27 @@ export interface OpenTodoShell {
   pushUnsubscribe?(): void
   /** focus-live-activity D1: the whole Focus session as a JSON `ShellFocus`; the shell replaces what it shows. */
   publishFocus?(json: string): void
+  /**
+   * android-quick-add-notification D2: a JSON `ShellQuickAddRequest`; answers the state
+   * after it, `on`, `off` or `denied` (turned on, but Android shows no notification).
+   */
+  quickAddNotification?(json: string): Promise<string> | string
+}
+
+/** The argument of `quickAddNotification` (D2): `on` absent only reads the state; `reply` offers the inline field (D3). */
+export interface ShellQuickAddRequest {
+  on?: boolean
+  reply: boolean
+}
+
+export type ShellQuickAddState = 'on' | 'off' | 'denied'
+
+/** Calls `quickAddNotification` in a shell that lists it; null elsewhere. */
+export async function quickAddNotification(req: ShellQuickAddRequest): Promise<ShellQuickAddState | null> {
+  const s = shell()
+  if (!s || !has('quick-add-notification') || !s.quickAddNotification) return null
+  const out = await s.quickAddNotification(JSON.stringify(req))
+  return out === 'on' || out === 'denied' ? out : 'off'
 }
 
 /**
@@ -306,7 +330,7 @@ export function biometricForget(): void {
   if (s && has('biometric')) s.biometricForget?.()
 }
 
-/** Sign-out: the shell drops the schedule, the widget data and the key behind the biometrics. */
+/** Sign-out: the shell drops the schedule, the widget data, the key behind the biometrics and the quick-add notification. */
 export function forgetShellData(): void {
   const s = shell()
   if (!s) return
@@ -319,6 +343,7 @@ export function forgetShellData(): void {
   if (has('biometric')) s.biometricForget?.()
   if (has('push')) s.pushUnsubscribe?.()
   if (has('focus')) publishFocus(NO_FOCUS, true)
+  if (has('quick-add-notification')) void quickAddNotification({ on: false, reply: false }).catch(() => undefined)
 }
 
 let focusSent: string | null = null
@@ -356,11 +381,17 @@ export function openAlarmSettings(): boolean {
   return true
 }
 
-/** Tells a background run's shell the web app is done; false outside such a run. */
-export function backgroundDone(): boolean {
+/** What a background run saved, handed over with `backgroundDone` (android-quick-add-notification D4). */
+export interface ShellRunResult {
+  added: string[]
+}
+
+/** Tells a background run's shell the web app is done, with what it saved when anything; false outside such a run. */
+export function backgroundDone(result?: ShellRunResult): boolean {
   const s = shell()
   if (!s || !has('background') || !s.backgroundDone) return false
-  s.backgroundDone()
+  if (result?.added.length) s.backgroundDone(JSON.stringify(result))
+  else s.backgroundDone()
   return true
 }
 

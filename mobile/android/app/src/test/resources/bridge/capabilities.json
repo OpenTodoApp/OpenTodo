@@ -12,7 +12,8 @@
     "completion-sound",
     "alarm-settings",
     "first-paint",
-    "focus"
+    "focus",
+    "quick-add-notification"
   ],
   "backgroundOnly": [
     "background"
