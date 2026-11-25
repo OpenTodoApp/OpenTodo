@@ -37,6 +37,10 @@ type Point struct {
 	// Zone is the IANA name ("UTC" for Z times), "" for floating or all-day.
 	Zone   string
 	AllDay bool
+	// Wall is the wall clock as written (in UTC) of every time read in a
+	// zone, a TZID or the calendar's default; zero for Z, floating and
+	// all-day times. Its clock differs from T's only in a daylight saving gap.
+	Wall time.Time `json:"-"`
 }
 
 // Event is one VEVENT as published.
@@ -266,8 +270,27 @@ func parseValue(v, kind, tzid string, defaultLoc *time.Location, w warnings) (Po
 	if loc == nil {
 		return Point{T: wall}, nil
 	}
-	t := time.Date(wall.Year(), wall.Month(), wall.Day(), wall.Hour(), wall.Minute(), wall.Second(), 0, loc)
-	return Point{T: t, Zone: zoneName(loc)}, nil
+	return Point{T: WallIn(wall, loc), Zone: zoneName(loc), Wall: wall}, nil
+}
+
+// WallIn is the instant of a wall time (given in UTC) in loc as RFC 5545
+// §3.3.5 reads it: the first of two that repeat, and one in a gap with the
+// offset before the gap (02:30 on the day clocks go from 02:00 to 03:00 is
+// 03:30), whatever time.Date would choose.
+func WallIn(wall time.Time, loc *time.Location) time.Time {
+	w := wall.Unix()
+	offAt := func(u int64) int64 {
+		_, o := time.Unix(u, 0).In(loc).Zone()
+		return int64(o)
+	}
+	before, after := offAt(w-86400), offAt(w+86400)
+	best, found := w-before, false
+	for _, o := range []int64{before, after} {
+		if c := w - o; offAt(c) == o && (!found || c < best) {
+			best, found = c, true
+		}
+	}
+	return time.Unix(best, 0).In(loc)
 }
 
 func zoneName(loc *time.Location) string {

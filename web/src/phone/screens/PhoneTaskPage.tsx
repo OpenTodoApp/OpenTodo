@@ -142,7 +142,8 @@ function Body({ m, task, viewer, readOnly, locked, root, facts: props, nav, onBa
             <Subtasks task={task} items={m.children} progress={m.progress} readOnly={locked} boxed onToggle={m.toggle} onOpen={onOpen} />
             <AttachmentsRow taskId={task.id} userId={userId} role={roleOf(task.project_id, m.memberships ?? new Map())} dropTarget={root} />
             <ConversationTabs task={task} userId={userId} readOnly={readOnly} onOpen={onOpen} composerHost={footer} page />
-            <div ref={setFooter} data-panel-footer className="sticky bottom-0 bg-canvas pb-3 pt-2 empty:hidden" />
+            {/* Above the conversation's sticky tab bar (z 5), which would otherwise paint over the open composer. */}
+            <div ref={setFooter} data-panel-footer className="sticky bottom-0 z-[6] bg-canvas pb-3 pt-2 empty:hidden" />
           </div>
         )}
         menu={<TaskActionsMenu m={m} page readOnly={locked} onOpen={onOpen} />}

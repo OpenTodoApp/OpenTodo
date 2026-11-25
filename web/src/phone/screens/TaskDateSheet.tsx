@@ -43,10 +43,13 @@ export function TaskDateSheet({ task, someday = false, readOnly = false, onClose
   return (
     <Dialog title={t('Do on')} placement="bottom" onClose={onClose} testId="phone-date-sheet"
       actions={clear && !readOnly ? <Button variant="ghost" size="sm" className="text-danger" onClick={clear} data-date-clear>{t('Clear')}</Button> : undefined}>
-      <PhoneDatePanel value={view?.date ?? null} today={today} choices={choices} weekStart={dt.weekStart}
-        weekdays={Array.from({ length: 7 }, (_, i) => weekdayName((dt.weekStart + i) % 7, 'narrow'))}
-        monthName={(anchor) => monthName(anchor, 'long', true)} onPick={readOnly ? () => {} : pick}
-        time={<div className="p-3"><TimeOfDay task={task} readOnly={readOnly} zone={zone} viewer={viewer} /></div>} />
+      {/* Marked as a task's property editor, which it is: the checks find every editor by this. */}
+      <div data-facet-editor>
+        <PhoneDatePanel value={view?.date ?? null} today={today} choices={choices} weekStart={dt.weekStart}
+          weekdays={Array.from({ length: 7 }, (_, i) => weekdayName((dt.weekStart + i) % 7, 'narrow'))}
+          monthName={(anchor) => monthName(anchor, 'long', true)} onPick={readOnly ? () => {} : pick}
+          time={<div className="p-3"><TimeOfDay task={task} readOnly={readOnly} zone={zone} viewer={viewer} /></div>} />
+      </div>
     </Dialog>
   )
 }

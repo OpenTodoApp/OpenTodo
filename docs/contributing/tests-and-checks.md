@@ -55,7 +55,7 @@ Changing the public surface (a route, a field, an error code, an MCP tool, an `o
 
 ## Screens
 
-- `make layout-check`: every screen and overlay in a browser, including axe-core accessibility. A new screen or overlay is added to `scripts/e2e-layout.mjs`. With `PHONE_UI=1` it runs with the device's "New phone screens" switch on (`ONLY=inbox,today,upcoming,assigned,completed,project,label,task-repeating`, the screens that have a phone view) and fails when one of them is not the phone's; CI runs that at the phone widths too.
+- `make layout-check`: every screen and overlay in a browser, including axe-core accessibility. A new screen or overlay is added to `scripts/e2e-layout.mjs`. With `PHONE_UI=1` it runs with the device's "New phone screens" switch on over every screen and fails when a screen of the app has neither the phone header nor a phone screen; CI runs that at the phone widths too.
 - `make safe-area-check`: the same screens and overlays as the installed app on an iPhone with a Dynamic Island (insets emulated, portrait and landscape); fails when a control sits under the island, the home indicator or a rounded side, or when a screen draws text under the status bar or lacks the opaque backdrop that keeps Safari from blurring it (at load, after an overlay closes and after a cold start).
 - `make screens`: PNGs of the core screens at 1280×800 and 390×844, light and dark. Run it on `main` with `OUT_DIR=dist/screens-before make screens`, then on your branch, and attach the pairs your change affects.
 - `make storybook` and `make ui-check`: the shared components in `web/src/ui`, each with stories.
