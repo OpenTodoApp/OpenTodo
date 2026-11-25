@@ -25,7 +25,7 @@ The [assistant](assistant.md) is off until the server owner turns it on here. Me
 | Provider | Model | Key | Notes |
 | --- | --- | --- | --- |
 | Anthropic (Claude) | `claude-opus-5-5` by default; `claude-sonnet-5-5` and `claude-haiku-5-5` are offered, any model id can be typed | An Anthropic API key | Uses the official Anthropic Go SDK and the Messages API |
-| OpenAI | Any chat model id from your account | An OpenAI API key | Chat Completions at `api.openai.com` |
+| OpenAI | Any chat model id from your account | An OpenAI API key | Chat Completions at `api.openai.com`; a model that uses tools only without reasoning, such as GPT-6 Luna, gets `reasoning_effort: "none"` when OpenAI asks for it |
 | Google Gemini | Any Gemini model id | A Gemini API key | Google's OpenAI-compatible endpoint on `generativelanguage.googleapis.com` |
 | Compatible endpoint | The model name your server serves | Optional | Ollama, LM Studio, OpenRouter, Mistral and others; enter the base URL, for example `http://192.168.1.20:11434/v1` |
 

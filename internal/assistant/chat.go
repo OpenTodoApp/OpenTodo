@@ -83,6 +83,9 @@ type chatConv struct {
 	maxTokens int64
 	// images marks a turn that carries photos (a 400 about them is images_unsupported).
 	images bool
+	// effortNone sends reasoning_effort "none", set once the provider refused
+	// tools at the model's default reasoning effort (effortRefusal).
+	effortNone bool
 }
 
 func (c *chatConv) body() ([]byte, error) {
@@ -95,6 +98,9 @@ func (c *chatConv) body() ([]byte, error) {
 	if len(c.tools) > 0 {
 		b["tools"] = c.tools
 		b["tool_choice"] = "auto"
+	}
+	if c.effortNone {
+		b["reasoning_effort"] = "none"
 	}
 	if c.maxTokens > 0 {
 		if c.p.Name == OpenAI {
@@ -321,6 +327,15 @@ func (c *chatConv) post(ctx context.Context, body []byte) (*http.Response, error
 		if resp.StatusCode >= 300 && resp.StatusCode < 400 {
 			return nil, &ProviderError{Code: CodeProviderError, Status: resp.StatusCode, Msg: "the endpoint answered with a redirect, which this server does not follow"}
 		}
+		if !c.effortNone && len(c.tools) > 0 && effortRefusal(resp.StatusCode, errBody) {
+			// Models such as GPT-6 Luna call tools in Chat Completions only
+			// without reasoning: ask once more with reasoning_effort "none".
+			c.effortNone = true
+			if body, err = c.body(); err != nil {
+				return nil, err
+			}
+			continue
+		}
 		if !retry || attempt >= c.p.Retries {
 			if c.images && imageRefusal(resp.StatusCode, string(errBody)) {
 				typ, _ := readChatError(errBody)
@@ -334,6 +349,25 @@ func (c *chatConv) post(ctx context.Context, body []byte) (*http.Response, error
 		case <-time.After(backoff << attempt):
 		}
 	}
+}
+
+// effortRefusal reports a 400 whose error names the reasoning_effort
+// parameter: OpenAI's answer when a model calls function tools in Chat
+// Completions only with reasoning_effort "none" (issue #2045).
+func effortRefusal(status int, b []byte) bool {
+	if status != http.StatusBadRequest {
+		return false
+	}
+	var e struct {
+		Param string `json:"param"`
+		Error *struct {
+			Param string `json:"param"`
+		} `json:"error"`
+	}
+	if json.Unmarshal(b, &e) != nil {
+		return false
+	}
+	return e.Param == "reasoning_effort" || (e.Error != nil && e.Error.Param == "reasoning_effort")
 }
 
 // maxErrorBody bounds the part of an error answer that is read.
