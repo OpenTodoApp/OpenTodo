@@ -7889,7 +7889,7 @@
   "{feature} is off in this workspace.": "{feature}: выключено в этом рабочем пространстве.",
   "Workspace features changed": "Функции рабочего пространства изменены",
   "Phone screens": "Экраны для телефона",
-  "A trial of screens made for a phone. This device only.": "Пробная версия экранов, сделанных для телефона. Только на этом устройстве.",
+  "Screens made for a phone. This device only.": "Экраны, сделанные для телефона. Только на этом устройстве.",
   "New phone screens": "Новые экраны для телефона",
-  "Today and the task page in the new design. Turn it off at any time.": "«Сегодня» и страница задачи в новом оформлении. Можно отключить в любой момент."
+  "The app in the design made for a phone. Turn it off for the earlier screens.": "Приложение в оформлении для телефона. Отключите, чтобы вернуть прежние экраны."
 }

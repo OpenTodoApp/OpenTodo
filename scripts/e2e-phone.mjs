@@ -1,6 +1,6 @@
 // End-to-end check of the phone UI (OpenSpec changes `phone-ui-trial` and `phone-lists`)
 // against a running server with a FRESH data directory: a phone with touch and the
-// device's "New phone screens" switch on. The gestures a unit test cannot make: a hold
+// phone screens it has by default (`phone-ui-default`). The gestures a unit test cannot make: a hold
 // opens the row's menu, a hold and a move reorders, a swipe completes and Undo brings
 // the task back, Select tasks ticks rows and a bulk action writes them, a tap opens
 // the task page and Back returns to the same place; a screen that is not a list has
@@ -20,7 +20,6 @@ const assert = (c, msg) => { if (!c) throw new Error('ASSERT: ' + msg) }
 const HOLD_MS = 600 // past the row's 350 ms hold
 
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
-await ctx.addInitScript(() => { try { localStorage.setItem('opentodo.phoneUi', '1') } catch { /* no storage */ } })
 const page = await ctx.newPage()
 page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
 page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|net::/.test(m.text())) errors.push(`console: ${m.text()}`) })

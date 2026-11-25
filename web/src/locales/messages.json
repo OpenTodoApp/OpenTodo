@@ -696,9 +696,6 @@
   "A token with the read_api scope. It is never shown again.": [
     "web/src/app/IssueEditor.tsx"
   ],
-  "A trial of screens made for a phone. This device only.": [
-    "web/src/lib/settingsCopy.ts"
-  ],
   "A view needs a name": [
     "web/src/lib/views.ts"
   ],
@@ -15847,6 +15844,9 @@
   "Scopes": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "Screens made for a phone. This device only.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Scrim": [
     "web/src/app/themes/tokenNames.ts"
   ],
@@ -18317,6 +18317,9 @@
   "The app could not show a notification. Allow notifications for OpenTodo in the iPhone's Settings.": [
     "web/src/app/ShellNotifications.tsx"
   ],
+  "The app in the design made for a phone. Turn it off for the earlier screens.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "The app showed a test notification on this device.": [
     "web/src/app/ShellNotifications.tsx"
   ],
@@ -20409,9 +20412,6 @@
     "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts",
     "web/src/lib/views.ts"
-  ],
-  "Today and the task page in the new design. Turn it off at any time.": [
-    "web/src/lib/settingsCopy.ts"
   ],
   "Today holds": [
     "web/src/lib/settingsCopy.ts"

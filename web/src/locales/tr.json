@@ -7889,7 +7889,7 @@
   "{feature} is off in this workspace.": "{feature} bu çalışma alanında kapalı.",
   "Workspace features changed": "Çalışma alanı özellikleri değiştirildi",
   "Phone screens": "Telefon ekranları",
-  "A trial of screens made for a phone. This device only.": "Telefon için tasarlanmış ekranların denemesi. Yalnızca bu cihazda.",
+  "Screens made for a phone. This device only.": "Telefon için tasarlanmış ekranlar. Yalnızca bu cihazda.",
   "New phone screens": "Yeni telefon ekranları",
-  "Today and the task page in the new design. Turn it off at any time.": "Bugün ve görev sayfası yeni tasarımda. İstediğin zaman kapatabilirsin."
+  "The app in the design made for a phone. Turn it off for the earlier screens.": "Uygulama, telefon için yapılmış tasarımda. Önceki ekranlar için kapat."
 }
