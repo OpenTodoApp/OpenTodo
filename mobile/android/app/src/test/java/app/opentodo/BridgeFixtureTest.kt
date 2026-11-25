@@ -5,9 +5,12 @@ import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.nio.file.Files
+import java.time.LocalDate
+import java.time.YearMonth
 import java.util.Base64
 
 /**
@@ -52,8 +55,29 @@ class BridgeFixtureTest {
                 WidgetModel.Row(r.getString("id"), nullableString(r, "title"), nullableString(r, "time"), nullableString(r, "date"), nullableString(r, "project"), r.getInt("priority"), r.getBoolean("overdue"))
             },
             more = want.getInt("more"),
+            upcoming = want.optJSONObject("upcoming")?.let { u ->
+                val up = u.getJSONArray("rows")
+                WidgetModel.Upcoming(
+                    count = u.getInt("count"),
+                    rows = (0 until up.length()).map { i ->
+                        val r = up.getJSONObject(i)
+                        WidgetModel.Row(r.getString("id"), nullableString(r, "title"), nullableString(r, "time"), r.getString("date"), nullableString(r, "project"), r.getInt("priority"), false)
+                    },
+                    more = u.getInt("more"),
+                )
+            },
         )
-        assertEquals(name, expected, WidgetModel.parse(f.getString("payload")))
+        val payload = f.getString("payload")
+        assertEquals(name, expected, WidgetModel.parse(payload))
+        // android-upcoming-calendar-widgets D1: the calendar's days, its first day of the week and where a day opens.
+        val calendar = want.optJSONObject("calendar")
+        val got = CalendarModel.parse(payload)
+        if (calendar == null) assertNull(name, got)
+        else {
+            val days = calendar.getJSONObject("days")
+            val expectedDays = days.keys().asSequence().associateWith { days.getInt(it) }
+            assertEquals(name, CalendarModel(want.getLong("updatedAt"), want.getBoolean("locked"), calendar.getInt("weekStart"), calendar.getBoolean("dayView"), expectedDays), got)
+        }
     }
 
     @Test fun reminders() = checkReminders("reminders.json")
@@ -352,6 +376,15 @@ class BridgeFixtureTest {
             val c = complete.getJSONObject(i)
             val ids = c.getJSONArray("taskIds").let { a -> (0 until a.length()).map { a.getString(it) } }
             assertEquals(c.getString("path"), WidgetStore.completePath(ids))
+        }
+        // android-upcoming-calendar-widgets D4: a calendar day and the month's name, with Calendar on and off.
+        val calendar = f.getJSONArray("calendarPaths")
+        assertTrue(calendar.length() > 0)
+        for (i in 0 until calendar.length()) {
+            val c = calendar.getJSONObject(i)
+            val model = CalendarModel(0, false, 1, c.getBoolean("dayView"), emptyMap())
+            val path = if (c.has("date")) model.dayPath(LocalDate.parse(c.getString("date"))) else model.monthPath(YearMonth.parse(c.getString("month")))
+            assertEquals(c.toString(), c.getString("path"), path)
         }
     }
 

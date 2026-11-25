@@ -73,6 +73,42 @@
       "path": "/?complete=a&complete=b"
     }
   ],
+  "calendarPaths": [
+    {
+      "date": "2026-10-18",
+      "dayView": true,
+      "path": "/day/2026-10-18",
+      "route": {
+        "view": "day",
+        "date": "2026-10-18"
+      }
+    },
+    {
+      "date": "2026-10-18",
+      "dayView": false,
+      "path": "/upcoming",
+      "route": {
+        "view": "upcoming"
+      }
+    },
+    {
+      "month": "2026-11",
+      "dayView": true,
+      "path": "/month/2026-11-01",
+      "route": {
+        "view": "month",
+        "date": "2026-11-01"
+      }
+    },
+    {
+      "month": "2026-11",
+      "dayView": false,
+      "path": "/upcoming",
+      "route": {
+        "view": "upcoming"
+      }
+    }
+  ],
   "focusOpen": {
     "path": "/focus"
   },

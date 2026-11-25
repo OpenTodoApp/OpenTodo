@@ -72,6 +72,19 @@ export interface ShellWidgetData {
    * Statistics counts them. Numbers and days only, never task content.
    */
   completed?: { today: number; days?: { day: string; done: number }[] }
+  /**
+   * The Upcoming widget (android-upcoming-calendar-widgets D1): the app's Upcoming after
+   * today in day order, at most 50; `date` is the day a row is listed under, `count` the
+   * whole list. Locked: the count and no rows.
+   */
+  upcoming?: { count: number; tasks: { id: string; title?: string; date: string; time?: string; project?: string; priority: number }[] }
+  /**
+   * The Calendar widget (android-upcoming-calendar-widgets D1): the number of open tasks per
+   * day (days with none left out) from the first of this month to the end of the fifth month
+   * after it; `weekStart` 0 = Sunday; `dayView` whether the current workspace has Calendar on,
+   * so a tap opens the day (else Upcoming). Locked: no `days`.
+   */
+  calendar?: { weekStart: number; dayView: boolean; days?: Record<string, number> }
 }
 
 /** The answer of `scheduleReminders`: whether the shell may show notifications. */

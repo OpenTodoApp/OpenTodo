@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A day of the month before or after the one shown in the Calendar widget (muted). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/cell"
+    android:layout_width="0dp"
+    android:layout_height="match_parent"
+    android:layout_weight="1"
+    android:gravity="center"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/day_number"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:gravity="center"
+        android:importantForAccessibility="no"
+        android:textColor="@color/widget_muted"
+        android:textSize="12sp" />
+
+    <ImageView
+        android:id="@+id/day_dot"
+        android:layout_width="4dp"
+        android:layout_height="4dp"
+        android:layout_marginTop="1dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/widget_dot" />
+</LinearLayout>

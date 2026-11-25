@@ -67,6 +67,12 @@ class Prefs(context: Context) {
         get() = p.getString("widgetPending", null)
         set(v) = p.edit().apply { if (v == null) remove("widgetPending") else putString("widgetPending", v) }.apply()
 
+    /** The month a Calendar widget shows, counted from the current one (android-upcoming-calendar-widgets D4); 0 removes it. */
+    fun calendarOffset(widgetId: Int): Int = p.getInt("calendarOffset:$widgetId", 0)
+
+    fun setCalendarOffset(widgetId: Int, offset: Int) =
+        p.edit().apply { if (offset == 0) remove("calendarOffset:$widgetId") else putInt("calendarOffset:$widgetId", offset) }.apply()
+
     /** Adds a tick to the ids the next background run completes (android-widget-list D2). */
     fun queueWidgetCompletion(taskId: String) = synchronized(LOCK) {
         val queue = queueOf(p.getString("widgetQueue", null))

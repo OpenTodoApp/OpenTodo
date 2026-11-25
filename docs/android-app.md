@@ -171,13 +171,19 @@ The app appears in Android's share menu for links, text, photos and files, also 
 
 ## Widgets
 
-Three home-screen widgets: **Today**, **Completed** and **Quick add**. Long-press the home screen, choose **Widgets** and drag one from OpenTodo; each can be resized.
+Five home-screen widgets: **Today**, **Upcoming**, **Calendar**, **Completed** and **Quick add**. Long-press the home screen, choose **Widgets** and drag one from OpenTodo; each can be resized.
 
 **Today** lists your tasks for [Today](today-and-upcoming.md) in a list that scrolls: overdue ones under **Earlier** with their date, the rest under **Today**, each with its time and project when it has them. Tap a task to open it, the circle beside it to complete it, and **+** to open quick add. A completed task leaves the widget at once; the app records the completion in the background, as if you had ticked it in the app (a repeating task moves to its next date), and syncs it when the phone is online. Without a connection the completion waits on the phone like any other change. If the completion could not be recorded (an older server, the app could not start in the background, or your session or a [login wall's](#behind-a-login-page-pangolin-authelia-and-others) session has expired), it is not applied and the task comes back after half an hour; open the app, sign in again if it asks, and tick it there. The header shows the number of tasks and when the list was last updated.
 
+**Upcoming** lists what comes after today, as [Upcoming](today-and-upcoming.md) does, under a heading for each day (**Tomorrow**, then the weekday and date), each task with its time and project. Tap a task to open it, the circle to complete it (as in Today: a repeating task shows again under its next date), **+** for quick add, and the header to open Upcoming.
+
+**Calendar** shows a month, starting on your first day of the week (**Settings → Language and region → Date and time**), with a dot under each day that has open tasks and today ringed. Tap a day to open it in [Day](calendar-views.md), or the month's name to open Month; while the current workspace has [Calendar switched off](workspace-features.md), both open Upcoming instead. The arrows move to the next five months and back; each Calendar widget keeps its own month.
+
+The widgets list the tasks the app's own lists show: open subtasks you [kept](keep-open-subtasks.md) when completing their parent stay out, and so do tasks of archived projects. They cover every workspace of your account.
+
 **Completed** shows how many tasks you completed today and a bar for each of the last 7 days (counted as in [Statistics](statistics.md), which a tap opens), and **Quick add** opens the app's quick add.
 
-The widgets follow the phone's light or dark mode, and show what the app last saw: it refreshes them while it is open and about once an hour in the background. While an encrypted account is locked, the Today widget shows only counts, without circles, and the Completed widget only today's number.
+The widgets follow the phone's light or dark mode, and show what the app last saw: it refreshes them while it is open and about once an hour in the background. While an encrypted account is locked, the Today and Upcoming widgets show only counts, without circles, the Calendar widget shows the month without dots, and the Completed widget only today's number.
 
 ## Status and navigation bars
 

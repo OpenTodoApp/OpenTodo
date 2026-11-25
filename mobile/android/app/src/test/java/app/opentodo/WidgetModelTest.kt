@@ -1,5 +1,6 @@
 package app.opentodo
 
+import java.time.LocalDate
 import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -126,11 +127,88 @@ class WidgetModelTest {
         assertEquals("/?complete=a&complete=b", WidgetStore.completePath(listOf("a", "b")))
     }
 
+    private fun upRow(id: String, date: String, extra: String = "") = """{"id":"$id","title":"Task $id","date":"$date","priority":4$extra}"""
+    private fun withUpcoming(vararg rows: String, count: Int = rows.size, today: String = "", locked: Boolean = false) =
+        """{"updatedAt":1,"locked":$locked,"count":0,"overdue":0,"tasks":[$today],"actions":["complete"],"upcoming":{"count":$count,"tasks":[${rows.joinToString(",")}]}}"""
+
+    /** android-upcoming-calendar-widgets D3: a heading before each day's rows, then the tasks not published. */
+    @Test fun upcomingByDay() {
+        val m = WidgetModel.parse(withUpcoming(upRow("a", "2026-10-23", ""","time":"09:00","project":"Home""""), upRow("b", "2026-10-23"), upRow("c", "2026-10-26"), count = 5))!!
+        assertEquals(WidgetModel.Row("a", "Task a", "09:00", "2026-10-23", "Home", 4, false), m.upcoming!!.rows[0])
+        assertEquals(
+            listOf("d:2026-10-23", "a", "b", "d:2026-10-26", "c", "more:2"),
+            m.upcomingItems(emptySet()).map {
+                when (it) {
+                    is WidgetModel.Item.Day -> "d:${it.date}"
+                    is WidgetModel.Item.Task -> it.row.id
+                    is WidgetModel.Item.More -> "more:${it.count}"
+                    is WidgetModel.Item.Heading -> "h"
+                }
+            },
+        )
+        assertEquals(5, m.upcomingCount(emptySet()))
+        // The Today list is untouched by Upcoming.
+        assertTrue(m.items(emptySet()).isEmpty())
+    }
+
+    @Test fun upcomingNeedsItsListAndTamesBadRows() {
+        assertNull(WidgetModel.parse(publication(row("a")))!!.upcoming)
+        val m = WidgetModel.parse(withUpcoming(upRow("a", "soon"), """{"date":"2026-10-23"}""", """{"id":"b","title":"Task b","date":"2026-10-24","time":"late","priority":0}""", count = 3))!!
+        assertEquals(listOf(WidgetModel.Row("b", "Task b", null, "2026-10-24", null, 1, false)), m.upcoming!!.rows)
+        assertEquals(3, m.upcoming?.count)
+        assertEquals(2, m.upcoming?.more)
+    }
+
+    @Test fun upcomingLockedShowsTheCountOnly() {
+        val m = WidgetModel.parse(withUpcoming(upRow("a", "2026-10-23"), count = 4, locked = true))!!
+        assertTrue(m.upcoming!!.rows.isEmpty())
+        assertEquals(4, m.upcoming?.count)
+        assertTrue(m.upcomingItems(emptySet()).isEmpty())
+    }
+
+    /** A tick in Upcoming hides that occurrence; a tick in Today hides the task in both lists. */
+    @Test fun upcomingTicksAreHiddenByOccurrence() {
+        val m = WidgetModel.parse(withUpcoming(upRow("a", "2026-10-23"), upRow("b", "2026-10-23"), upRow("b", "2026-10-25"), count = 3))!!
+        val ticked = setOf(WidgetPending.key("b", "2026-10-23"))
+        assertEquals(listOf("a", "b@2026-10-25"), m.upcomingItems(ticked).filterIsInstance<WidgetModel.Item.Task>().map { WidgetPending.key(it.row.id, if (it.row.id == "b") it.row.date else null) })
+        assertEquals(2, m.upcomingCount(ticked))
+        assertEquals(1, m.upcomingCount(setOf("b")))
+        assertTrue(m.lists("b", "2026-10-25"))
+        assertFalse(m.lists("b", "2026-10-24"))
+        assertFalse(m.lists("b", null))
+    }
+
+    /** A repeating task ticked under Thursday shows under its next date as soon as a publication lists it there. */
+    @Test fun upcomingTickIsConfirmedPerOccurrence() {
+        val now = 1_000_000_000L
+        val pending = WidgetPending.add(emptyMap(), WidgetPending.key("water", "2026-10-22"), now)
+        val before = WidgetModel.parse(withUpcoming(upRow("water", "2026-10-22")))
+        assertEquals(pending.keys, WidgetPending.prune(pending, before, now + 1).keys)
+        val moved = WidgetModel.parse(withUpcoming(upRow("water", "2026-10-24")))!!
+        val left = WidgetPending.prune(pending, moved, now + 2)
+        assertTrue(left.isEmpty())
+        assertEquals(listOf("water"), moved.upcomingItems(left.keys).filterIsInstance<WidgetModel.Item.Task>().map { it.row.id })
+        // A Today tick stays until Today no longer lists the task.
+        val today = WidgetModel.parse(withUpcoming(today = row("t")))
+        assertEquals(setOf("t"), WidgetPending.prune(mapOf("t" to now), today, now + 3).keys)
+    }
+
+    @Test fun upcomingDayHeadings() {
+        val today = LocalDate.parse("2026-10-22")
+        assertEquals("Tomorrow", TodayWidget.dayHeading("2026-10-23", today, "Tomorrow", "EEE, MMM d", Locale.US))
+        assertEquals("Sat, Oct 24", TodayWidget.dayHeading("2026-10-24", today, "Tomorrow", "EEE, MMM d", Locale.US))
+        assertEquals("nonsense", TodayWidget.dayHeading("nonsense", today, "Tomorrow", "EEE, MMM d", Locale.US))
+    }
+
     /** A row tap's fill-in, read by WidgetActionActivity: open a task (or Today), or complete one. */
     @Test fun rowTapsRoute() {
         assertEquals(WidgetAction.Open("/?task=t%2F1"), WidgetAction.route(WidgetAction.KIND_OPEN, "t/1"))
         assertEquals(WidgetAction.Open("/today"), WidgetAction.route(WidgetAction.KIND_OPEN, null))
         assertEquals(WidgetAction.Complete("a"), WidgetAction.route(WidgetAction.KIND_COMPLETE, "a"))
+        // android-upcoming-calendar-widgets D3: an Upcoming tick carries its day; a malformed day is dropped.
+        assertEquals(WidgetAction.Complete("a", "2026-10-23"), WidgetAction.route(WidgetAction.KIND_COMPLETE, "a", "2026-10-23"))
+        assertEquals(WidgetAction.Complete("a"), WidgetAction.route(WidgetAction.KIND_COMPLETE, "a", "soon"))
+        assertEquals(WidgetAction.Open("/upcoming"), WidgetAction.route(WidgetAction.KIND_OPEN_UPCOMING, null))
         assertNull(WidgetAction.route(WidgetAction.KIND_COMPLETE, ""))
         assertNull(WidgetAction.route("delete", "a"))
         assertNull(WidgetAction.route(null, "a"))
