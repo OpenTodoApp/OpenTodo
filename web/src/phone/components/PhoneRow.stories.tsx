@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import type { ReactNode } from 'react'
 import { PhoneFrame } from '../stories/frame'
 import { BLUE, Dot, noop } from '../stories/sample'
-import { PhoneGroup } from './PhoneGroup'
 import { PhoneRow, type PhoneRowModel } from './PhoneRow'
 
 // One task on a phone list (phone-ui-trial "Phone task rows"): every state a row has.
@@ -21,24 +21,46 @@ const states: PhoneRowModel[] = [
   { ...base, id: 'done', title: 'Answer Mia about the tiles', done: true, facts: [{ id: 'due', text: '11:00' }] },
 ]
 
+/** The rows as a list shows them: one card (the list's own frame, index.css). */
+const Rows = ({ children }: { children: ReactNode }) => <div data-phone-list className="px-4 pt-3"><ul>{children}</ul></div>
+
 export const States: StoryObj = {
   name: 'States',
   render: () => (
-    <PhoneFrame height={560}>
-      <div className="pt-3">
-        <PhoneGroup title="Rows" count={states.length}>
-          {states.map((row) => <PhoneRow key={row.id} row={row} onToggle={noop} onOpen={noop} />)}
-        </PhoneGroup>
-      </div>
+    <PhoneFrame height={470}>
+      <Rows>{states.map((row) => <PhoneRow key={row.id} row={row} onToggle={noop} onOpen={noop} />)}</Rows>
     </PhoneFrame>
   ),
 }
 
 export const ReadOnly: StoryObj = {
   name: 'A reader\'s row',
+  render: () => <PhoneFrame height={110}><Rows><PhoneRow row={states[3]} readOnly onToggle={noop} onOpen={noop} /></Rows></PhoneFrame>,
+}
+
+export const Subtasks: StoryObj = {
+  name: 'Subtasks under their task',
   render: () => (
-    <PhoneFrame height={140}>
-      <div className="pt-3"><PhoneGroup title="Shared with you" count={1}><PhoneRow row={states[3]} readOnly onToggle={noop} onOpen={noop} /></PhoneGroup></div>
+    <PhoneFrame height={260}>
+      <Rows>
+        <PhoneRow row={{ ...base, id: 'parent', title: 'Plan the launch day', facts: [{ id: 'subtasks', text: '0/2', icon: 'list-checks' }] }} fold={{ open: true, onToggle: noop }} onToggle={noop} onOpen={noop} />
+        <PhoneRow row={{ ...base, id: 'c1', title: 'Book the room' }} depth={1} onToggle={noop} onOpen={noop} />
+        <PhoneRow row={{ ...base, id: 'c2', title: 'Order the cake' }} depth={1} onToggle={noop} onOpen={noop} />
+        <PhoneRow row={{ ...base, id: 'folded', title: 'Pricing page', priority: 1 }} fold={{ open: false, onToggle: noop }} onToggle={noop} onOpen={noop} />
+      </Rows>
+    </PhoneFrame>
+  ),
+}
+
+export const Selecting: StoryObj = {
+  name: 'In selection',
+  render: () => (
+    <PhoneFrame height={210}>
+      <Rows>
+        <PhoneRow row={states[0]} selecting ticked onTick={noop} onToggle={noop} onOpen={noop} />
+        <PhoneRow row={states[3]} selecting onTick={noop} onToggle={noop} onOpen={noop} />
+        <PhoneRow row={states[4]} selecting readOnly onTick={noop} onToggle={noop} onOpen={noop} />
+      </Rows>
     </PhoneFrame>
   ),
 }

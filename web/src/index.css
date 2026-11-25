@@ -1399,6 +1399,13 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 ::view-transition-group(*) { animation-duration: var(--duration-emphasis); animation-timing-function: var(--ease-spring); }
 ::view-transition-old(*), ::view-transition-new(*) { animation-duration: var(--duration-ui); }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: var(--duration-ui); }
+/* The phone list (OpenSpec change phone-lists, design D2): the groups are the list's own
+   (GroupedList); on the phone screen a group's rows are one card, with hairlines that
+   start at the text, as the phone group draws them. */
+[data-phone-list] ul:has(> [data-phone-row]), [data-phone-list] ul:has(> .row-block) { @apply overflow-hidden rounded-card bg-surface shadow-1; }
+[data-phone-list] [data-phone-row] + [data-phone-row]::before { content: ''; @apply absolute left-12 right-0 top-0 z-[1] border-t border-soft; }
+[data-phone-list] [data-phone-list-body] > section { @apply mb-5; }
+
 /* The phone UI's screens push and pop (phone-ui-trial D6): the task page comes in from the end edge over the list, which
    moves a quarter of the way out; Back plays it the other way. `data-phone-nav` is set by src/phone/transition.ts for the
    length of the transition only, so no other change of the page is drawn this way. */
