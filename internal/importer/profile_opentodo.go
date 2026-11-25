@@ -115,38 +115,7 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 			}
 			row.SourceID = id
 			_ = json.Unmarshal(e[titleField], &row.Title)
-			if kind == KindReminder {
-				var task string
-				_ = json.Unmarshal(e["task_id"], &task)
-				row.Title = "Reminder: " + taskTitles[task]
-			}
-			if kind == KindUserPrefs {
-				row.Title = "Preferences"
-				dropUnrestored(e)
-			}
-			if kind == KindReview {
-				row.Title = "Last weekly review"
-			}
-			if kind == KindTimeEntry {
-				var task string
-				_ = json.Unmarshal(e["task_id"], &task)
-				row.Title = "Time entry: " + taskTitles[task]
-			}
-			if kind == KindTheme {
-				var d struct {
-					Name string `json:"name"`
-				}
-				_ = json.Unmarshal(e["doc"], &d)
-				row.Title = "Theme: " + d.Name
-			}
-			if kind == KindProjectPrefs {
-				row.Title = "Project preferences"
-			}
-			// A workspace field (workspace-fields D1) has no project: its empty
-			// project_id is the default, never written as an op.
-			if kind == KindField && string(e["project_id"]) == `""` {
-				delete(e, "project_id")
-			}
+			kindRow(&row, e, taskTitles)
 			out.Rows = append(out.Rows, row)
 		}
 	}
@@ -179,6 +148,43 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		out.Notes = append(out.Notes, fmt.Sprintf("%d %s not imported: a comment keeps its author, and the authors in this file are accounts of the exporting instance", n, plural(n, "comment is", "comments are")))
 	}
 	return out, nil
+}
+
+// kindRow gives an exported row its title by kind, and prepares the entity
+// of a kind that needs it before planning.
+func kindRow(row *Row, e map[string]json.RawMessage, taskTitles map[string]string) {
+	if row.Kind == KindReminder {
+		var task string
+		_ = json.Unmarshal(e["task_id"], &task)
+		row.Title = "Reminder: " + taskTitles[task]
+	}
+	if row.Kind == KindUserPrefs {
+		row.Title = "Preferences"
+		dropUnrestored(e)
+	}
+	if row.Kind == KindReview {
+		row.Title = "Last weekly review"
+	}
+	if row.Kind == KindTimeEntry {
+		var task string
+		_ = json.Unmarshal(e["task_id"], &task)
+		row.Title = "Time entry: " + taskTitles[task]
+	}
+	if row.Kind == KindTheme {
+		var d struct {
+			Name string `json:"name"`
+		}
+		_ = json.Unmarshal(e["doc"], &d)
+		row.Title = "Theme: " + d.Name
+	}
+	if row.Kind == KindProjectPrefs {
+		row.Title = "Project preferences"
+	}
+	// A workspace field (workspace-fields D1) has no project: its empty
+	// project_id is the default, never written as an op.
+	if row.Kind == KindField && string(e["project_id"]) == `""` {
+		delete(e, "project_id")
+	}
 }
 
 // unfoldFieldValues turns an exported task's `fields` object back into one
