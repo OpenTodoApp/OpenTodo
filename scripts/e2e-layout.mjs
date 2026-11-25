@@ -273,7 +273,11 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
         await p.waitForTimeout(250)
         // With the switch on, a screen that has a phone view must be showing it: a run that
         // quietly checked the present screens would pass and prove nothing (phone-ui-trial).
-        if (PHONE_UI && width < 768 && !s.anon && !PHONE_UI_OUTSIDE.test(s.name) && !(await p.locator('[data-phone-screen], [data-phone-header]').count())) throw new Error('the phone UI is on but the screen has neither a phone screen nor the phone header')
+        // Waited for, not looked up once: a screen loaded on demand (the calendar) mounts after its `ready` has held.
+        if (PHONE_UI && width < 768 && !s.anon && !PHONE_UI_OUTSIDE.test(s.name)) {
+          await p.locator('[data-phone-screen], [data-phone-header]').first().waitFor({ state: 'attached', timeout: 20000 })
+            .catch(() => { throw new Error('the phone UI is on but the screen has neither a phone screen nor the phone header') })
+        }
       }
       try {
         await visit()
