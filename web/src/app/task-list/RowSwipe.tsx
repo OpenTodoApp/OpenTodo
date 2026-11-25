@@ -51,11 +51,13 @@ export interface RowSwipe {
  * `enabled` is false on a fine pointer, read-only rows, while anything is ticked, in
  * the Trash, on cards and while the inline editor is open (design D3).
  */
-export function useRowSwipe({ task, enabled, onComplete, onEditTitle, force, rowEl }: {
+export function useRowSwipe({ task, enabled, onComplete, onEditTitle, onSchedule, force, rowEl }: {
   task: Task
   enabled: boolean
   onComplete: () => void
   onEditTitle?: () => void
+  /** What a swipe to the left opens; by default the Schedule sheet (the phone UI opens its date sheet, phone-ui-trial D10). */
+  onSchedule?: () => void
   /** Stories: hold the row at this offset (positive: the complete edge, negative: schedule). */
   force?: number
   rowEl?: RefObject<HTMLElement | null>
@@ -86,11 +88,11 @@ export function useRowSwipe({ task, enabled, onComplete, onEditTitle, force, row
         if (fire || reduced) done()
         else setTimeout(done, SWIPE.returnMs)
         if (fire === 'right') onComplete()
-        if (fire === 'left') openRowSchedule(task.id)
+        if (fire === 'left') { if (onSchedule) onSchedule(); else openRowSchedule(task.id) }
         if (fire === 'edit-title' && live.current) onEditTitle?.()
       },
     })
-  }, [canEdit, enabled, onComplete, onEditTitle, task.id])
+  }, [canEdit, enabled, onComplete, onEditTitle, onSchedule, task.id])
   const doneTask = !!task.completed_at
   const layers = dir && (
     <span aria-hidden="true" {...{ [EDGE]: dir }}

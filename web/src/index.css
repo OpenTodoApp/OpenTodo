@@ -1407,6 +1407,17 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 ::view-transition-group(*) { animation-duration: var(--duration-emphasis); animation-timing-function: var(--ease-spring); }
 ::view-transition-old(*), ::view-transition-new(*) { animation-duration: var(--duration-ui); }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: var(--duration-ui); }
+/* The phone UI's screens push and pop (phone-ui-trial D6): the task page comes in from the end edge over the list, which
+   moves a quarter of the way out; Back plays it the other way. `data-phone-nav` is set by src/phone/transition.ts for the
+   length of the transition only, so no other change of the page is drawn this way. */
+html[data-phone-nav]::view-transition-old(root), html[data-phone-nav]::view-transition-new(root) { animation-duration: var(--duration-emphasis); animation-timing-function: var(--ease-calm); mix-blend-mode: normal; }
+html[data-phone-nav='push']::view-transition-new(root) { animation-name: phone-screen-in; z-index: 1; }
+html[data-phone-nav='push']::view-transition-old(root) { animation-name: phone-screen-under; }
+html[data-phone-nav='pop']::view-transition-old(root) { animation-name: phone-screen-in; animation-direction: reverse; z-index: 1; }
+html[data-phone-nav='pop']::view-transition-new(root) { animation-name: phone-screen-under; animation-direction: reverse; }
+html[dir='rtl'][data-phone-nav]::view-transition-old(root), html[dir='rtl'][data-phone-nav]::view-transition-new(root) { --phone-screen-from: -100%; --phone-screen-under: 25%; }
+@keyframes phone-screen-in { from { transform: translateX(var(--phone-screen-from, 100%)); } to { transform: translateX(0); } }
+@keyframes phone-screen-under { from { transform: translateX(0); opacity: 1; } to { transform: translateX(var(--phone-screen-under, -25%)); opacity: 0.6; } }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
 }

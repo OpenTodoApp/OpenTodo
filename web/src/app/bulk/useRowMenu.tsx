@@ -5,7 +5,7 @@
 import { type ReactNode, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import type { Task } from '../../lib/types'
 import { rowMenuIds } from '../task-list/useListBindings'
-import { BulkActionsMenu } from './BulkActions'
+import { BulkActionsMenu, type RowMenuItems } from './BulkActions'
 
 interface OpenMenu {
   ids: string[]
@@ -28,7 +28,7 @@ export interface RowMenu {
   dismiss: () => void
 }
 
-export function useRowMenu(ticked: ReadonlySet<string>, order: readonly string[], editTitle?: (id: string) => void): RowMenu {
+export function useRowMenu(ticked: ReadonlySet<string>, order: readonly string[], items: RowMenuItems = {}): RowMenu {
   const [menu, setMenu] = useState<OpenMenu | null>(null)
   // The latest menu, read by the close handler without re-creating it every render.
   const latest = useRef<OpenMenu | null>(null)
@@ -65,7 +65,7 @@ export function useRowMenu(ticked: ReadonlySet<string>, order: readonly string[]
 
   const element = menu ? (
     <BulkActionsMenu ids={menu.ids} open onOpenChange={(v) => { if (!v) close() }}
-      editTitle={menu.ids.length === 1 && !ticked.has(menu.ids[0]) ? editTitle : undefined}
+      {...(menu.ids.length === 1 && !ticked.has(menu.ids[0]) ? items : {})}
       trigger={<span className="sr-only" />} triggerClassName="sr-only"
       triggerProps={{ style: { /* physical: at the pointer */ position: 'fixed', left: menu.x, top: menu.y } }} />
   ) : null

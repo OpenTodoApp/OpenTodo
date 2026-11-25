@@ -1,8 +1,8 @@
 // Design-system check (OpenSpec change ui-primitives, design D10), run by
 // `make check`:
-//   1. every component file in web/src/ui has a sibling *.stories.tsx,
-//   2. no emoji or Unicode glyph is used as an icon in web/src/app (use <Icon>),
-//   3. no user-facing text in web/src/app and web/src/ui bypasses the message layer
+//   1. every component file in web/src/ui and web/src/phone has a sibling *.stories.tsx,
+//   2. no emoji or Unicode glyph is used as an icon in web/src/app and web/src/phone (use <Icon>),
+//   3. no user-facing text in web/src/app, web/src/phone and web/src/ui bypasses the message layer
 //      (OpenSpec change app-localization, design D8; scripts/i18n/untranslated.mjs,
 //      exceptions in scripts/i18n/allow.txt),
 //   4. "Learn more" is rendered only by the LearnMore element (settings-refresh D2),
@@ -244,11 +244,15 @@ export function physicalDirectionProblems(file, text) {
   return out
 }
 
-function storyProblems() {
-  const ui = join(repo, 'web/src/ui')
-  return walk(ui)
-    .filter((f) => f.endsWith('.tsx') && !/\.(stories|test)\.tsx$/.test(f) && !/test-utils|\/tokens\//.test(f))
-    .filter((f) => /export (function|const) [A-Z]/.test(readFileSync(f, 'utf8')))
+/**
+ * The component files under `dir` that no sibling stories file imports. The shared
+ * primitives (web/src/ui) and the phone UI (web/src/phone, phone-ui-trial D7) are
+ * built in the workbench, so each of their components has a story.
+ */
+export function storyProblemsIn(dir) {
+  return walk(dir)
+    .filter((f) => f.endsWith('.tsx') && !/\.(stories|test)\.tsx$/.test(f) && !/test-utils|\/tokens\/|\/stories\//.test(f))
+    .filter((f) => /export (default )?(function|const) [A-Z]/.test(readFileSync(f, 'utf8')))
     .filter((f) => {
       const dir = dirname(f)
       const stem = basename(f, '.tsx')
@@ -259,21 +263,27 @@ function storyProblems() {
     .map((f) => `${relative(repo, f)}: no stories file imports this component`)
 }
 
+function storyProblems() {
+  return [...storyProblemsIn(join(repo, 'web/src/ui')), ...storyProblemsIn(join(repo, 'web/src/phone'))]
+}
+
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  // The screens: the desktop ones and the phone UI's (phone-ui-trial D7).
   const app = join(repo, 'web/src/app')
+  const screens = () => [...walk(app), ...walk(join(repo, 'web/src/phone'))]
   const problems = [
     ...storyProblems(),
-    ...walk(app).filter((f) => f.endsWith('.tsx') && !/\.test\.tsx$/.test(f))
+    ...screens().filter((f) => f.endsWith('.tsx') && !/\.test\.tsx$/.test(f))
       .flatMap((f) => iconProblems(relative(repo, f), readFileSync(f, 'utf8'))),
-    ...[...walk(app), ...walk(join(repo, 'web/src/ui'))].filter((f) => /\.tsx?$/.test(f) && !/\.(test|stories)\.tsx?$/.test(f))
+    ...[...screens(), ...walk(join(repo, 'web/src/ui'))].filter((f) => /\.tsx?$/.test(f) && !/\.(test|stories)\.tsx?$/.test(f))
       .flatMap((f) => rawDueTimeProblems(relative(repo, f), readFileSync(f, 'utf8'))),
-    ...[...walk(app), ...walk(join(repo, 'web/src/ui'))].filter((f) => /\.tsx?$/.test(f) && !/\.(test|stories)\.tsx?$/.test(f))
+    ...[...screens(), ...walk(join(repo, 'web/src/ui'))].filter((f) => /\.tsx?$/.test(f) && !/\.(test|stories)\.tsx?$/.test(f))
       .flatMap((f) => learnMoreProblems(relative(repo, f), readFileSync(f, 'utf8'))),
-    ...walk(app).filter((f) => f.endsWith('.tsx') && !/\.(test|stories)\.tsx$/.test(f))
+    ...screens().filter((f) => f.endsWith('.tsx') && !/\.(test|stories)\.tsx$/.test(f))
       .flatMap((f) => rawRadioProblems(relative(repo, f), readFileSync(f, 'utf8'))),
-    ...[...walk(app), ...walk(join(repo, 'web/src/lib')), ...walk(join(repo, 'web/src/ui'))].filter((f) => /\.tsx?$/.test(f) && !/\.(test|stories)\.tsx?$/.test(f))
+    ...[...screens(), ...walk(join(repo, 'web/src/lib')), ...walk(join(repo, 'web/src/ui'))].filter((f) => /\.tsx?$/.test(f) && !/\.(test|stories)\.tsx?$/.test(f))
       .flatMap((f) => rawPriorityNameProblems(relative(repo, f), readFileSync(f, 'utf8'))),
-    ...[...walk(app), ...walk(join(repo, 'web/src/lib')), ...walk(join(repo, 'web/src/ui'))].filter((f) => /\.tsx?$/.test(f) && !/\.(test|stories)\.tsx?$/.test(f) && !/\/icons\//.test(f))
+    ...[...screens(), ...walk(join(repo, 'web/src/lib')), ...walk(join(repo, 'web/src/ui'))].filter((f) => /\.tsx?$/.test(f) && !/\.(test|stories)\.tsx?$/.test(f) && !/\/icons\//.test(f))
       .flatMap((f) => physicalDirectionProblems(relative(repo, f), readFileSync(f, 'utf8'))),
     ...walk(join(repo, 'web/src/ui/illustrations')).filter((f) => f.endsWith('.tsx') && !/\.(test|stories)\.tsx$/.test(f))
       .flatMap((f) => illustrationProblems(relative(repo, f), readFileSync(f, 'utf8'))),
