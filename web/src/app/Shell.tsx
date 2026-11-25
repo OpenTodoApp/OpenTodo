@@ -11,7 +11,7 @@ import type { User } from '../lib/types'
 import { openStartView } from './startView'
 import { describeRejected } from '../lib/sharing'
 import { useSyncStatus } from '../lib/sync'
-import { canonicalPath, navigate, offersQuickAdd, useRoute } from './router'
+import { canonicalPath, navigate, offersQuickAdd, type Route, useRoute } from './router'
 import { SIDEBAR_COLLAPSED_REM, SIDEBAR_DEFAULT_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth } from './sidebarLayout'
 import { LabelsView } from './LabelsView'
 import { ViewsView } from './ViewsView'
@@ -32,6 +32,8 @@ import { closePanelIfStale, panelTaskId, usePanel, usePanelCovering } from './pa
 import { currentAddress, openTaskPage, settleTrail } from './taskTrail'
 import { AddButton, TAB_BAR_ROOM, TabBar } from './TabBar'
 import { PHONE_BAR_FRAME, PHONE_BAR_LINE, hasPhoneChrome } from './phoneFrame'
+import { usePhoneOwnBar } from '../phone/chrome'
+import { usePhoneUiEnabled } from '../phone/prefs'
 import { usePhoneChrome } from './useScrollDirection'
 import { onQuickAddSheetRequest, QuickAddSheet, requestQuickAddSheet } from './QuickAddSheet'
 import { PanelHost } from './PanelHost'
@@ -69,6 +71,19 @@ const FeatureOff = lazy(() => import('./FeatureOff'))
 // per-device switch is on, so the default bundle carries just this boundary.
 const VimLayer = lazy(() => import('./vim/VimLayer'))
 const WorkspaceActivity = lazy(() => import('./WorkspaceActivity'))
+// The phone UI's screens (phone-ui-trial D2): their own chunks, fetched only while the per-device switch is on below 768 px.
+const PhoneToday = lazy(() => import('../phone/screens/PhoneToday').then((m) => ({ default: m.PhoneToday })))
+const PhoneTaskPage = lazy(() => import('../phone/screens/PhoneTaskPage').then((m) => ({ default: m.PhoneTaskPage })))
+/** The task page, drawn by the phone UI while it is on, and the phone UI's Today (phone-ui-trial D2). */
+function TaskOrPhone({ route, user, phoneUi, onMenu }: { route: Route; user: User; phoneUi: boolean; onMenu: () => void }) {
+  if (route.view === 'task') return <Suspense fallback={null}><TaskPage id={route.id} user={user} asTask={route.asTask} View={phoneUi ? PhoneTaskPage : undefined} /></Suspense>
+  return <Suspense fallback={null}><PhoneToday userId={user.id} onMenu={onMenu} /></Suspense>
+}
+/** Whether the phone UI's screens are shown: the switch is on and the window is a phone's. */
+function usePhoneUi(): boolean {
+  const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
+  return usePhoneUiEnabled() && !desktop
+}
 // Pull to sync (pull-to-sync): the gesture and its mark load only on a touch device, where a pull is possible; a mouse
 // or a trackpad never loads them, and a chunk that is gone just leaves the gesture out.
 type Scroller = { scroller: RefObject<HTMLElement | null> }
@@ -324,7 +339,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   })
 
   const openPalette = palette.openSearch
-  const vim = useVimEnabled()
+  const vim = useVimEnabled(), phoneUi = usePhoneUi()
   const [vimHelp, setVimHelp] = useState<HelpSection | null>(null)
   const helpRequest = useHelpRequest()
   const connections = useConnectionsRequest()
@@ -385,8 +400,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <SavedViewRoute id={route.id} />
           ) : route.view === 'trash' ? (
             <Suspense fallback={SCREEN_LOADING}><TrashView /></Suspense>
-          ) : route.view === 'task' ? (
-            <TaskPage id={route.id} user={user} asTask={route.asTask} />
+          ) : route.view === 'task' || (route.view === 'today' && phoneUi) ? (
+            <TaskOrPhone route={route} user={user} phoneUi={phoneUi} onMenu={() => setSidebarOpen(true)} />
           ) : route.view === 'review' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading the review…')}</p>}>
               {route.step === 'daily' ? <DailyCheck /> : route.step === 'monthly' ? <MonthlyLook /> : route.step === 'close' ? <CloseDay /> : <ReviewView key={route.step ?? ''} userId={user.id} step={route.step} />}
@@ -507,7 +522,9 @@ function SidebarResizer({ width }: { width: number }) {
 function PhoneBar({ onMenu }: { onMenu: () => void }) {
   const bar = usePageBar()
   const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
-  if (desktop) return null
+  // A phone UI screen draws its own bar (phone-ui-trial D2).
+  const own = usePhoneOwnBar()
+  if (desktop || own) return null
   const day = !!bar?.day
   return (
     <header className={`${PHONE_BAR_FRAME} ${day ? '' : PHONE_BAR_LINE}`} data-phone-bar data-phone-bar-day={day || undefined}>

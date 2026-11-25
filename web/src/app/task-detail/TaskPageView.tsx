@@ -8,7 +8,6 @@
 // return to the list.
 import { useLayoutEffect, useRef, useState } from 'react'
 import { roleOf } from '../../lib/sharing'
-import type { Label, Project } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { DESKTOP_HEADER_QUERY, IconButton, PAGE_FRAME, PageHeader, useMediaQuery, useNarrow } from '../../ui'
 import { navigate } from '../router'
@@ -30,29 +29,9 @@ import { TaskPageDialog } from './TaskPageDialog'
 import { TaskPath } from './TaskPath'
 import { useFooterKeepsScroll } from './pinnedFooterScroll'
 import { useTaskDetail } from './useTaskDetail'
+import type { TaskPageViewProps } from './taskPageProps'
 
-export interface TaskPageNav {
-  /** Where the task sits in the list it was opened from, or null when it is not listed there. */
-  position: { index: number; total: number } | null
-  hasPrev: boolean
-  hasNext: boolean
-  onStep: (step: 1 | -1) => void
-  onBack: () => void
-  /** The list's name, for the phone's bar and the breadcrumb's first crumb ("Today"). */
-  backLabel: string
-  /** The task was opened from its own project, so the project crumb leads back. */
-  fromProject?: boolean
-}
-
-export interface TaskPageViewProps {
-  taskId: string
-  userId?: string
-  readOnly: boolean
-  projects: Project[]
-  labelMap: Map<string, Label>
-  nav: TaskPageNav
-  onOpen: (id: string) => void
-}
+export type { TaskPageNav, TaskPageViewProps } from './taskPageProps'
 
 export function TaskPageView({ taskId, userId, readOnly: viewer, projects, labelMap, nav, onOpen }: TaskPageViewProps) {
   const root = useRef<HTMLDivElement>(null)

@@ -1598,7 +1598,6 @@
   "Edit the project note ({keys})": "Modifica la nota del progetto ({keys})",
   "Edit the query of a saved view; Enter saves it, Esc discards": "Modifica la query di una vista salvata; Invio salva, Esc scarta",
   "Edit the selected task's title in place (also click its selected title). Enter saves, Esc cancels, Shift+Enter opens the details": "Modifica il titolo dell’attività selezionata nella lista. Puoi anche fare clic sul titolo selezionato. Invio salva, Esc annulla e Maiusc+Invio apre i dettagli.",
-  "Edit title": "Modifica titolo",
   "Edit the title. Tab, Enter or a click away saves it and the decision keys work again. Esc restores it": "Modifica il titolo. Tab, Invio o un clic fuori lo salva, e i tasti di decisione tornano a funzionare. Esc lo ripristina",
   "Edit the view": "Modifica la vista",
   "Edit this occurrence": "Modifica questa occorrenza",
@@ -7915,5 +7914,9 @@
   "Section deleted": "Sezione eliminata",
   "Label deleted": "Etichetta eliminata",
   "Merged into {label}": "Unita in {label}",
-  "Field deleted": "Campo eliminato"
+  "Field deleted": "Campo eliminato",
+  "Phone screens": "Schermate per telefono",
+  "A trial of screens made for a phone. This device only.": "Una prova di schermate pensate per il telefono. Solo su questo dispositivo.",
+  "New phone screens": "Nuove schermate per telefono",
+  "Today and the task page in the new design. Turn it off at any time.": "Oggi e la pagina dell’attività nel nuovo design. Puoi disattivarlo in qualsiasi momento."
 }

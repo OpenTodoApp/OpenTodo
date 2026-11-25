@@ -300,7 +300,18 @@ function stepOf(seq: Chord[]): Shortcut | undefined {
 
 let installed = 0
 let lastKey = -Infinity
-const onWindowKey = (e: KeyboardEvent) => { lastKey = performance.now(); dispatch(e) }
+const keyWatchers = new Set<(e: KeyboardEvent) => void>()
+const onWindowKey = (e: KeyboardEvent) => {
+  lastKey = performance.now()
+  for (const fn of keyWatchers) fn(e)
+  dispatch(e)
+}
+
+/** Calls `fn` on every key the dispatcher sees, before it dispatches (a key that acknowledges something, never a shortcut); returns the unsubscribe. */
+export function watchKeys(fn: (e: KeyboardEvent) => void): () => void {
+  keyWatchers.add(fn)
+  return () => { keyWatchers.delete(fn) }
+}
 
 /** When the last key went down (performance.now): a page change made from the keyboard happens at once (page-transitions). */
 export function lastKeyAt(): number {

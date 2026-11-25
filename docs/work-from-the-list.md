@@ -38,7 +38,7 @@ Most changes show a toast with **Undo** for a few seconds (<kbd>Ctrl</kbd>+<kbd>
 
 A row leaves out what the view already says: no "Today" in Today, no date under an Upcoming day, no project inside that project. Times stand in a column before the titles (a deadline's countdown when there is no time). Dates are grey for later, darker for tomorrow, the accent for today and red when past; only P1 and P2 colour and fill the circle. Labels are small chips, two at most and "+2". The project and counts end the row, faint until hovered.
 
-With a mouse on a wide screen, hovering a row shows **Show details**, **Schedule**, **Priority** and **More**; <kbd>Tab</kbd> reaches them. On a touch screen, swipe a row or hold for its menu.
+With a mouse on a wide screen, hovering a row shows **Edit**, **Schedule**, **Priority** and **More**; <kbd>Tab</kbd> reaches them. On a touch screen, swipe a row or hold for its menu.
 
 ## Quick changes from the list
 
