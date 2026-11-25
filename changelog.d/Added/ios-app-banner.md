@@ -1,0 +1,1 @@
+- **A task's link opens the iPhone app.** A task's link in a calendar event shows a banner in Safari on iPhone and iPad. Tap Open to see the task in the OpenTodo app. The app only opens links to its own server (#1777).

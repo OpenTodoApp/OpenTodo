@@ -1023,6 +1023,25 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.pendingPath, "/?task=abc")
     }
 
+    /// ios-app-banner D5: the banner's address opens the task only on the configured server.
+    func testABannerLinkOpensTheTaskOnTheServerOnly() {
+        let server = URL(string: "https://todo.example.com")
+        let id = { (link: String) in AppModel.taskID(webLink: URL(string: link)!, server: server) }
+        XCTAssertEqual(id("https://todo.example.com/task/abc"), "abc")
+        XCTAssertEqual(id("https://TODO.example.com:443/task/abc"), "abc")
+        XCTAssertEqual(id("https://todo.example.com/task/a%20b"), "a b")
+        XCTAssertNil(id("https://evil.example.com/task/abc"), "another host")
+        XCTAssertNil(id("https://todo.example.com.evil.example/task/abc"))
+        XCTAssertNil(id("http://todo.example.com/task/abc"), "another scheme")
+        XCTAssertNil(id("https://todo.example.com:8443/task/abc"), "another port")
+        XCTAssertNil(id("https://todo.example.com/task/"))
+        XCTAssertNil(id("https://todo.example.com/task/a/b"))
+        XCTAssertNil(id("https://todo.example.com/today"))
+        XCTAssertNil(id("opentodo://task/abc"), "the app's own links keep their own route")
+        XCTAssertNil(AppModel.taskID(webLink: URL(string: "https://todo.example.com/task/abc")!, server: nil), "no server yet")
+        XCTAssertEqual(AppModel.taskID(webLink: URL(string: "http://192.168.1.5:8080/task/abc")!, server: URL(string: "http://192.168.1.5:8080")), "abc")
+    }
+
     /// shell-repairs D6: Done, Snooze and Dismiss build the addresses of the shared bridge
     /// fixture (the Android app's too), which the web app reads.
     private func actionsFixture() throws -> [String: Any] {
