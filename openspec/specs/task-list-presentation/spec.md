@@ -1282,6 +1282,54 @@ The default SHALL be changed with `PUT /api/v1/settings/row-click` `{default}` (
 - **WHEN** the owner sends `PUT /api/v1/settings/row-click` `{"default": "expand"}`
 - **THEN** the server answers 400 `invalid_input` and the default is unchanged
 
+### Requirement: Touch title editing
+On a touch screen of any width, without a fine pointer, a writable task or subtask row in a list SHALL turn its title into the compact editor when a left swipe is released at 48 px or more and below 96 px. A release at 96 px or more SHALL open Schedule, and a tap on the title SHALL still open the task. The compact editor SHALL show the title field with **Save** and **Cancel**, and the keyboard's return key SHALL read Done.
+
+Each way of ending the edit SHALL do one thing:
+- Return, Save, or a tap or click that starts outside the editor and outside the pickers it opened SHALL save the title.
+- A finger or pen tap on another task row of the list SHALL do nothing else: it SHALL not open, tick or expand that row.
+- A tap elsewhere (the tab bar, the add button, a toast, the header, the side panel) and a mouse or trackpad click SHALL save and then act as usual.
+- A press outside that moves (a scroll or a swipe), a long press, a second finger, and a press released in a menu or sheet SHALL leave the editor open.
+- **Cancel** SHALL discard the change.
+
+While the on-screen keyboard is open, the editor with its **Save** and **Cancel** SHALL stay in view above it. The edit is the task's title operation, so it SHALL apply locally at once, work offline and converge per field like any title edit. Viewers SHALL get no swipe and no editor.
+
+#### Scenario: On an iPad
+- **WHEN** the user swipes "Order the tiles" 70 px to the left on a 1024 px touch screen and lifts the finger
+- **THEN** the title becomes the compact editor in the row with the keyboard's return key reading Done, and the task does not open
+
+#### Scenario: A tap outside saves
+- **WHEN** the user is editing a title on a phone, changes it and taps another task's title
+- **THEN** the new title is saved, the editor closes and the other task does not open
+
+#### Scenario: A tap on the tab bar
+- **WHEN** the user is editing a title on a phone, changes it and taps Today in the tab bar
+- **THEN** the new title is saved and Today opens
+
+#### Scenario: A trackpad click
+- **WHEN** the user is editing a title on an iPad with a trackpad and clicks another task
+- **THEN** the new title is saved and the click acts on the other task as it would without the editor
+
+#### Scenario: A scroll keeps the edit
+- **WHEN** the user is editing a title on a phone and scrolls the list
+- **THEN** the editor stays open with the draft
+
+#### Scenario: Return saves
+- **WHEN** the user changes the title in the compact editor and presses Done on the keyboard
+- **THEN** the title is saved and the editor closes
+
+#### Scenario: Cancel
+- **WHEN** the user changes the title in the compact editor and taps Cancel
+- **THEN** the title is unchanged and the editor closes
+
+#### Scenario: A subtask
+- **WHEN** the user swipes a subtask a short way left on a phone, changes its title and taps outside
+- **THEN** the subtask's title is saved and its parent is unchanged
+
+#### Scenario: Above the keyboard
+- **WHEN** the keyboard opens for the compact editor near the bottom of the list
+- **THEN** the list scrolls so the field and its Save and Cancel sit above the keyboard
+
 ### Requirement: Edit and Open details from a row
 In the lists that offer inline editing (the list layout of the Inbox, Today, Upcoming, Anytime, Someday, Completed, Assigned to me, projects, labels and places), the actions menu of one task (More, `.`, a right-click, a touch hold) SHALL hold, after Complete: **Edit**, named with `F2`, on a task the user may change; from 768 px wide, **Show details**, named with →, or **Hide details**, named with ←, while the details are shown under its row ("Expanded rows"); and **Open details**, named with Enter. A menu for several ticked tasks SHALL hold none of the three. Edit SHALL select the row and open the inline editor on it without opening the task: the editor of `F2` with a mouse, trackpad or pen on a fine pointer from 768 px, and otherwise the compact editor with visible Save and Cancel. Open details SHALL select the row and open the task as Enter on it does, following the account's "Open tasks" preference only: the side panel shows it (a task it already shows opens as its page); in the Inbox's split, and wherever no side panel shows tasks, its page opens.
 
