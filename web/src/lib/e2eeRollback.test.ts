@@ -16,6 +16,9 @@ const { server, MockApiError } = vi.hoisted(() => {
     log: [] as (Op & { seq: number })[],
     seq: 0,
     record: null as KeyRecord | null,
+    /** The log generation; a new value means "restored from a backup". */
+    generation: undefined as string | undefined,
+    calls: [] as Op[][],
   }
   return { server, MockApiError }
 })
@@ -24,13 +27,14 @@ vi.mock('./api', () => ({
   ApiError: MockApiError,
   api: {
     sync: async (device: string, cursor: number, ops: Op[]) => {
+      server.calls.push(structuredClone(ops))
       let applied = 0
       for (const op of ops) {
         if (server.log.some((o) => o.id === op.id)) continue
         server.log.push({ ...structuredClone(op), seq: ++server.seq })
         applied++
       }
-      return { applied, ops: server.log.filter((o) => o.seq > cursor && o.device !== device), cursor: server.seq, hasMore: false, serverTime: Date.now(), rejected: [] }
+      return { applied, ops: server.log.filter((o) => o.seq > cursor && o.device !== device), cursor: server.seq, hasMore: false, serverTime: Date.now(), rejected: [], ...(server.generation ? { generation: server.generation } : {}) }
     },
     encryptionKeys: async () => {
       if (!server.record) throw new MockApiError(404, 'encryption_disabled', 'not enabled')
@@ -49,16 +53,16 @@ vi.mock('./api', () => ({
   },
 }))
 
-import { encryptValue, encryptValueV2, ITERATION_LIMITS, PREFIX_V1 } from './crypto'
+import { encryptValue, encryptValueV2, isEnvelope, ITERATION_LIMITS, PREFIX_V1 } from './crypto'
 import { db, useDatabase } from './db'
 import {
-  cachedRecord, changePassphrase, clearOlderVersions, currentKey, displayValue, enableEncryption, encryptionSnapshot, KeyRecordRollbackError, loadEncryptionState, lock,
-  MAX_OLDER_VERSIONS, olderVersions, recordOlderVersions, refreshFromServer, restoreKeyRecord, unlock, UNDECRYPTABLE,
+  cachedRecord, changePassphrase, clearOlderVersions, currentKey, decryptChanges, displayValue, enableEncryption, encryptionSnapshot, loadEncryptionState, lock,
+  MAX_OLDER_VERSIONS, olderCount, olderVersionItems, olderVersions, recordOlderVersions, refreshFromServer, restoreKeyRecord, reuploadKeyRecord, unlock, UNDECRYPTABLE,
 } from './e2ee'
 import { WRITE_V2 } from './e2eeEnvelope'
 import { decryptIncoming, olderVersion, prepareOutgoing } from './e2eeSync'
 import { mutate, resetDeviceId } from './ops'
-import { syncNow } from './sync'
+import { syncNow, syncSnapshot } from './sync'
 import { nextMillisecond } from '../test/clock'
 
 const PASS = 'correct horse battery staple'
@@ -77,6 +81,8 @@ beforeEach(() => {
   server.log = []
   server.seq = 0
   server.record = null
+  server.generation = undefined
+  server.calls = []
 })
 
 /** Device A of an encrypted account with one task, unlocked. */
@@ -212,6 +218,11 @@ describe('rollback of a content value (D4)', () => {
     const list = await olderVersions()
     expect(list.length).toBe(MAX_OLDER_VERSIONS)
     expect(list[list.length - 1].op).toBe(`o${MAX_OLDER_VERSIONS + 4}`)
+    // Settings counts values, not ops: all of these are one task's title.
+    expect(olderCount(list)).toBe(1)
+    expect(encryptionSnapshot().olderVersions).toBe(1)
+    expect(olderCount([...list, { ...one, field: 'description', op: 'd' }])).toBe(2)
+    expect((await olderVersionItems()).map((o) => o.name)).toEqual(['Untitled'])
   })
 
   it('checks the stamp without a key, before decrypting', () => {
@@ -245,6 +256,21 @@ describe('rollback of a content value (D4)', () => {
     expect(await displayValue('task', 't1', 'title', v, 1000)).toBe('Then')
     expect(await displayValue('task', 't1', 'title', v, 2000)).toBe(UNDECRYPTABLE)
     expect(await displayValue('task', 't1', 'title', v)).toBe('Then')
+    // A change's `from` is the value it replaced: one stamped after the change cannot be it.
+    const later = await encryptValueV2(key, 3000, 'task', 't1', 'title', 'Later')
+    const [c] = await decryptChanges('task', 't1', [{ field: 'title', from: later, to: v }], 2000)
+    expect(c.from).toBe(UNDECRYPTABLE)
+    const [d] = await decryptChanges('task', 't1', [{ field: 'title', from: v, to: later }], 3000)
+    expect(d).toMatchObject({ from: 'Then', to: 'Later' })
+  })
+
+  it('treats a title typed as "enc:v2: …" as text', async () => {
+    await account()
+    const t0 = Date.now() + 10_000
+    serve('title', 'enc:v2: release notes', t0)
+    await syncNow()
+    expect(await title()).toBe('enc:v2: release notes')
+    expect(await olderVersions()).toEqual([])
   })
 
   it('the reader release still uploads v1', async () => {
@@ -255,29 +281,85 @@ describe('rollback of a content value (D4)', () => {
   })
 })
 
-describe('rollback of the key record (D6)', () => {
-  it('refuses an older version of the same record and keeps its own', async () => {
+describe('an older key record (D6)', () => {
+  it('warns and keeps its own record, without stopping anything', async () => {
     await account()
     const v1 = structuredClone(server.record!)
     await changePassphrase(PASS, 'a brand new passphrase', FAST)
     expect((await cachedRecord())?.version).toBe(2)
-    // The hostile server serves the version 1 record again.
+    // The server serves the version 1 record again, unchanged (a restore, or a hostile server).
     server.record = v1
-    await expect(refreshFromServer()).rejects.toBeInstanceOf(KeyRecordRollbackError)
+    const got = await refreshFromServer()
+    expect(got?.wrappedByPassphrase).toBe((await cachedRecord())?.wrappedByPassphrase)
     expect((await cachedRecord())?.version).toBe(2)
     expect(encryptionSnapshot().olderRecord).toBe(true)
-    // Unlocking falls back to the cached record: the old passphrase does not open it.
+    // Sync goes on, and unlocking uses this device's record: the old passphrase does not open it.
+    await syncNow()
+    expect(syncSnapshot().state).toBe('idle')
     await lock()
     await expect(unlock(PASS, 'passphrase')).rejects.toThrow()
     await unlock('a brand new passphrase', 'passphrase')
     expect(await currentKey()).not.toBeNull()
+    // The state survives a reload.
+    await loadEncryptionState()
+    expect(encryptionSnapshot().olderRecord).toBe(true)
   })
 
-  it('refuses the record of an earlier enablement', async () => {
+  it('uploads this device’s record over the older one on request', async () => {
+    await account()
+    const v1 = structuredClone(server.record!)
+    await changePassphrase(PASS, 'a brand new passphrase', FAST)
+    const mine = (await cachedRecord())!
+    server.record = v1
+    await refreshFromServer()
+    await reuploadKeyRecord()
+    expect(server.record).toMatchObject({ version: 2, wrappedByPassphrase: mine.wrappedByPassphrase, salt: mine.salt })
+    expect(encryptionSnapshot().olderRecord).toBe(false)
+    await refreshFromServer()
+    expect(encryptionSnapshot().olderRecord).toBe(false)
+  })
+
+  it('a passphrase change while an older record is served replaces it', async () => {
+    await account()
+    const v1 = structuredClone(server.record!)
+    await changePassphrase(PASS, 'a brand new passphrase', FAST)
+    server.record = v1
+    await refreshFromServer()
+    await changePassphrase('a brand new passphrase', 'a third passphrase here', FAST)
+    expect(server.record?.version).toBe(2)
+    expect(encryptionSnapshot().olderRecord).toBe(false)
+  })
+
+  it('a server restored from an older backup with an older record still gets the re-seed', async () => {
+    await account()
+    server.generation = 'g1'
+    await syncNow()
+    const backupLog = structuredClone(server.log)
+    const backupRecord = structuredClone(server.record!)
+    await changePassphrase(PASS, 'a brand new passphrase', FAST)
+    await mutate('task', 't1', { title: 'After the backup' })
+    await syncNow()
+    // The honest server goes back to the backup: older log, older key record, new generation.
+    server.log = backupLog
+    server.seq = backupLog.length
+    server.record = backupRecord
+    server.generation = 'g2'
+    const n = server.calls.length
+    await syncNow()
+    expect(syncSnapshot().state).toBe('idle')
+    expect(encryptionSnapshot().olderRecord).toBe(true)
+    const sent = server.calls.slice(n).flat().filter((o) => o.entity === 'task' && o.field === 'title')
+    expect(sent.length).toBeGreaterThan(0)
+    expect(sent.every((o) => isEnvelope(o.value))).toBe(true)
+    expect(await title()).toBe('After the backup')
+  })
+
+  it('counts the record of an earlier enablement as older too', async () => {
     await account()
     const current = structuredClone(server.record!)
     server.record = { ...current, createdAt: (current.createdAt ?? 0) - 1, version: 7 }
-    await expect(refreshFromServer()).rejects.toBeInstanceOf(KeyRecordRollbackError)
+    await refreshFromServer()
+    expect(encryptionSnapshot().olderRecord).toBe(true)
     server.record = current
     await refreshFromServer()
     expect(encryptionSnapshot().olderRecord).toBe(false)

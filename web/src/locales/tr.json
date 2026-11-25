@@ -5477,6 +5477,7 @@
   "Older versions this device kept out": "Bu cihazın reddettiği eski sürümler",
   "The server sent an older encryption key record. This device kept its own.": "Sunucu daha eski bir şifreleme anahtarı kaydı gönderdi. Bu cihaz kendi kaydını korudu.",
   "The server sent older versions of {n, plural, one {# item} other {# items}}. This device kept its own.": "Sunucu {n, plural, one {# öğenin} other {# öğenin}} eski sürümlerini gönderdi. Bu cihaz kendi sürümlerini korudu.",
+  "Upload this device’s key record": "Bu cihazın anahtar kaydını yükle",
   "The server went back to an older version.": "Sunucu daha eski bir sürüme geri döndü.",
   "The server's list of files couldn't be read.": "Sunucunun dosya listesi okunamadı.",
   "The server’s assistant": "Sunucunun asistanı",

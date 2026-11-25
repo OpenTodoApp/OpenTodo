@@ -395,8 +395,9 @@ function v2Body(value: string): { stamp: number; raw: Uint8Array } | null {
   } catch {
     return null
   }
-  // Unpadded base64url only, as the Go side decodes strictly: 4n+1 characters never encode bytes.
-  if (value.length - PREFIX_V2.length !== Math.ceil((raw.length * 4) / 3) || raw.length < STAMP_BYTES + NONCE_BYTES + 16) return null
+  // Canonical unpadded base64url only, as the Go side decodes strictly (no
+  // stray trailing bits, no padding): the body must be exactly what its bytes encode to.
+  if (b64url(raw) !== value.slice(PREFIX_V2.length) || raw.length < STAMP_BYTES + NONCE_BYTES + 16) return null
   const big = new DataView(raw.buffer, raw.byteOffset).getBigUint64(0)
   if (big > BigInt(MAX_STAMP)) return null
   const stamp = Number(big)

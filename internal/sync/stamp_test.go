@@ -53,6 +53,18 @@ func TestV2StampMustEqualTS(t *testing.T) {
 	if _, err := s.Apply(ctx, "u", []Op{op("e", "task", "t1", "title", envV2(0), 1, "A")}); !errors.Is(err, ErrInvalidOp) {
 		t.Fatalf("stamp 0: %v", err)
 	}
+	// Text that only starts like a v2 envelope is a title, applied at its own
+	// timestamp on every path.
+	typed := `"enc:v2: release notes"`
+	if res, err := s.Apply(ctx, "u", []Op{op("t", "task", "t3", "title", typed, 7, "A")}); err != nil || res.Applied != 1 {
+		t.Fatalf("typed title: %+v %v", res, err)
+	}
+	if _, err := s.ApplyStrict(ctx, "u", []Op{op("t2", "task", "t3", "description", typed, 9, "server")}); err != nil {
+		t.Fatalf("typed description: %v", err)
+	}
+	if ts := storedTS(t, s, "task", "t3", "description"); ts != 9 {
+		t.Fatalf("typed description ts = %d", ts)
+	}
 	// Only content fields follow the rule; a v1 value or plaintext is as before.
 	if _, err := s.Apply(ctx, "u", []Op{op("f", "task", "t2", "title", `"enc:v1:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"`, 5, "A")}); err != nil {
 		t.Fatalf("v1: %v", err)

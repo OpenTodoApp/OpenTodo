@@ -5162,6 +5162,7 @@
   "Older versions this device kept out": "Oudere versies die dit apparaat heeft geweigerd",
   "The server sent an older encryption key record. This device kept its own.": "De server stuurde een ouder sleutelrecord voor de versleuteling. Dit apparaat heeft het eigen record gehouden.",
   "The server sent older versions of {n, plural, one {# item} other {# items}}. This device kept its own.": "De server stuurde oudere versies van {n, plural, one {# item} other {# items}}. Dit apparaat heeft de eigen versies gehouden.",
+  "Upload this device’s key record": "Sleutelrecord van dit apparaat uploaden",
   "The server went back to an older version.": "De server is teruggegaan naar een oudere versie.",
   "The server's list of files couldn't be read.": "De bestandenlijst van de server kon niet worden gelezen.",
   "The server’s assistant": "De assistent van de server",

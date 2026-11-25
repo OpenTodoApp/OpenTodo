@@ -86,12 +86,20 @@ After the release in which writers write version 2, the next unlocked device tha
 - **WHEN** an app, `ot` or Obsidian plugin older than the reader release receives a version 2 title
 - **THEN** it shows the title as undecryptable and never writes the placeholder back
 
-### Requirement: Devices refuse an older key record
-A device SHALL remember the newest key record it adopted (its creation time and version), across turning encryption off and until sign-out, and SHALL refuse a served key record with an earlier creation time, or with the same creation time and a lower version. On refusal the device keeps its cached record and its locked or unlocked state, and Settings → Encryption shows the reason. A record returned by the device's own upload SHALL always be adopted. Offline, the cached record is used as before.
+### Requirement: Devices notice an older key record
+A device SHALL remember the newest key record it adopted (its creation time and version), across turning encryption off and until sign-out. When the server serves a record with an earlier creation time, or with the same creation time and a lower version, the device SHALL keep using its cached record, SHALL NOT stop sync, the re-send after a server restore or any account action, and SHALL say so in Settings → Encryption with an action that uploads its own record as the next version. A passphrase change or reset while an older record is served SHALL replace that record. A record returned by the device's own upload SHALL always be adopted. The record's version and creation time are not authenticated, so this notices an older record served unchanged only. Offline, the cached record is used as before.
 
 #### Scenario: Passphrase change rolled back
 - **WHEN** the passphrase was changed (record version 2) and the server later serves the version 1 record again
-- **THEN** the device refuses it, keeps the version 2 record, and the old passphrase does not unlock it
+- **THEN** the device keeps the version 2 record, the old passphrase does not unlock it, sync goes on, and Settings offers "Upload this device's key record"
+
+#### Scenario: Server restored from an older backup
+- **WHEN** the server is restored from a backup made before the last passphrase change
+- **THEN** the device warns about the older record and still re-sends its data, encrypted, to the restored server
+
+#### Scenario: Uploading this device's record
+- **WHEN** the user chooses "Upload this device's key record"
+- **THEN** the server stores this device's record as the next version, the warning goes, and other devices adopt it on their next refresh
 
 #### Scenario: Restore after the server lost the record
 - **WHEN** the server lost the key record and the user restores it from this device
@@ -100,5 +108,5 @@ A device SHALL remember the newest key record it adopted (its creation time and 
 ## REMOVED Requirements
 
 ### Requirement: Ciphertext rollback is a documented limit
-**Reason**: Devices now refuse a field's older ciphertext (version 2 stamps bound to the operation's timestamp) and an older key record.
+**Reason**: Devices now refuse a field's older ciphertext (version 2 stamps bound to the operation's timestamp) and notice an older key record served unchanged.
 **Migration**: The threat model lists rollback as defended, with the remaining limits: a device that never held the newer value, a server that withholds the newest operations, and a server that shows different histories to different devices ("Devices refuse an older ciphertext").

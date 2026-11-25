@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { Button, Dialog } from '../ui'
 import { clearOlderVersions, olderVersionItems, type OlderVersion } from '../lib/e2ee'
 import { formatInstant } from '../lib/dates'
+import { fieldLabel } from '../lib/history'
 import { t } from '../lib/i18n'
 
 interface Row extends OlderVersion {
@@ -16,9 +17,9 @@ export function OlderVersionsList({ rows }: { rows: Row[] }) {
   return (
     <ul className="max-h-80 divide-y divide-default overflow-y-auto" data-testid="older-versions">
       {rows.map((r) => (
-        <li key={r.op} className="flex items-baseline justify-between gap-3 py-2 text-body">
+        <li key={`${r.entity}:${r.entityId}:${r.field}`} className="flex items-baseline justify-between gap-3 py-2 text-body">
           <span className="min-w-0 truncate text-default">{r.name}</span>
-          <span className="shrink-0 text-meta text-muted">{r.field} · {formatInstant(r.at, 'datetime')}</span>
+          <span className="shrink-0 text-meta text-muted">{fieldLabel(r.field)} · {formatInstant(r.at, 'datetime')}</span>
         </li>
       ))}
     </ul>

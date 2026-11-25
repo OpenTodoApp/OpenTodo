@@ -42,6 +42,10 @@ func TestStoreRefusesOlderCiphertext(t *testing.T) {
 	if !s.Apply(op("d", v2(400), 400)) {
 		t.Fatal("a later value not applied")
 	}
+	// A title typed as "enc:v2: …" is text, not an envelope.
+	if !s.Apply(Op{ID: "g", Entity: "task", EntityID: "t3", Field: "title", Value: json.RawMessage(`"enc:v2: release notes"`), TS: 5, Device: "A"}) {
+		t.Fatal("typed title refused")
+	}
 	// v1 over v1 and plaintext stay as before.
 	if !s.Apply(Op{ID: "e", Entity: "task", EntityID: "t2", Field: "title", Value: json.RawMessage(`"enc:v1:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"`), TS: 5, Device: "A"}) ||
 		!s.Apply(Op{ID: "f", Entity: "task", EntityID: "t2", Field: "title", Value: json.RawMessage(`"enc:v1:BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"`), TS: 6, Device: "A"}) {

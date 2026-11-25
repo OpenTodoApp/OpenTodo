@@ -81,7 +81,7 @@ func OlderCiphertext(op Op, cur Field, held bool) bool {
 		return false
 	}
 	var s string
-	if json.Unmarshal(op.Value, &s) != nil || !e2ee.IsCiphertext(s) {
+	if json.Unmarshal(op.Value, &s) != nil || !e2ee.IsEnvelope(s) {
 		return false
 	}
 	if e2ee.IsV2(s) {
@@ -89,7 +89,7 @@ func OlderCiphertext(op Op, cur Field, held bool) bool {
 		return !ok || stamp != op.TS
 	}
 	var was string
-	return e2ee.WriterRelease && held && json.Unmarshal(cur.V, &was) == nil && e2ee.IsV2(was) && op.Field != "notes_doc" // mergeable: replaying an update changes nothing
+	return e2ee.WriterRelease && held && json.Unmarshal(cur.V, &was) == nil && e2ee.IsEnvelope(was) && e2ee.IsV2(was) && op.Field != "notes_doc" // mergeable: replaying an update changes nothing
 }
 
 // Purge removes an entity the server purged.

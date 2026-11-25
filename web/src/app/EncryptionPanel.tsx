@@ -9,7 +9,7 @@ import { SettingRow, SettingsSection } from '../ui'
 import { MIN_PASSPHRASE_LENGTH } from '../lib/crypto'
 import {
   changePassphrase, commitEnable, disableEncryption, disableWithoutKey, lock, prepareEnable, purgeHistory,
-  resetPassphrase, useEncryption, type EncryptionSnapshot, type PreparedEnable,
+  resetPassphrase, reuploadKeyRecord, useEncryption, type EncryptionSnapshot, type PreparedEnable,
 } from '../lib/e2ee'
 import { startMigration } from '../lib/e2eeSync'
 import { FileMigrationPaused, runFileMigration, waitForUploads } from '../lib/attachments'
@@ -62,6 +62,8 @@ export interface EncryptionViewProps {
   onLock: () => void
   onDisable: () => void
   onLost: () => void
+  /** The server serves an older key record (e2ee-rollback D6): replace it with this device's. */
+  onReuploadRecord?: () => void
   /** "Run my routines on this device" (routines-ai-step D7), shown while encryption is on. */
   routines?: ReactNode
 }
@@ -116,7 +118,11 @@ export function EncryptionView(p: EncryptionViewProps) {
       {p.error && <Notice tone="danger">{p.error}</Notice>}
       {p.notice && <Notice tone="success">{p.notice}</Notice>}
       {/* Older versions the server sent and this device refused (e2ee-rollback D4, D6). */}
-      {state.olderRecord && <Notice tone="warning">{t('The server sent an older encryption key record. This device kept its own.')}</Notice>}
+      {state.olderRecord && (
+        <Notice tone="warning" action={p.onReuploadRecord && <Button variant="secondary" size="sm" disabled={p.busy} onClick={p.onReuploadRecord}>{t('Upload this device’s key record')}</Button>}>
+          {t('The server sent an older encryption key record. This device kept its own.')}
+        </Notice>
+      )}
       {!!state.olderVersions && (
         <Notice tone="warning" action={<Button variant="secondary" size="sm" onClick={() => p.onMode({ kind: 'older' })}>{t('Details')}</Button>}>
           {t('The server sent older versions of {n, plural, one {# item} other {# items}}. This device kept its own.', { n: state.olderVersions })}
@@ -326,6 +332,9 @@ export function EncryptionPanel() {
       })}
       onLock={() => void run(async () => {
         await lock()
+      })}
+      onReuploadRecord={() => void run(async () => {
+        await reuploadKeyRecord()
       })}
       onDisable={() => void run(async () => {
         // Files first, while the key record still exists: each is re-uploaded

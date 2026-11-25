@@ -33,7 +33,7 @@ Readers: the web app (sync, history, activity, task and note pages, notification
 - **G1, no rollback of a held value.** A device never replaces a content value it holds with a ciphertext written before that value.
 - **G2, no replay under a new clock.** A ciphertext authenticates only with the operation timestamp it was written for. Last-writer-wins then orders every replayed ciphertext where it was written, on every device and on the server.
 - **G3, no downgrade.** Stripping the version (serving a `v1` ciphertext of the same field) does not get around G1 once the device holds the field as `v2`.
-- **G4, no key record rollback.** A device never adopts a key record older than the one it cached.
+- **G4, an older key record is noticed, not obeyed.** A device never adopts a key record older than the one it cached when the server serves it unchanged, and it never stops working over one. The record's version and creation time are not authenticated, so a hostile server can relabel an older record with current numbers: that is not defended in this change (see D6).
 - **G5, no data loss on detection.** What the device refuses is never applied and never re-written over a value someone else wrote.
 
 **Not goals** (documented as limits):
@@ -119,7 +119,15 @@ Rejected:
 
 ### D6. The key record high-water mark
 
-A device keeps `e2ee.recordHighWater` (`createdAt`, `version`) of the newest key record it adopted. It survives turning encryption off (`setEnabled(false)`) and goes at sign-out. `refreshFromServer` refuses a served record with an older `createdAt`, or the same `createdAt` and a lower `version`, with `KeyRecordRollbackError`. The device keeps its cached record and stays as it is (unlocked or locked), and Settings shows the error like `KeyRecordParamsError`. A record the device's own upload returns (enabling, a passphrase change, a reset, `restoreKeyRecord`) is adopted and moves the mark, whatever its `createdAt`: the device made it. No format change; it can ship in the reader release. `ot encryption unlock` keeps the same mark next to its key file.
+A device keeps `e2ee.recordHighWater` (`createdAt`, `version`) of the newest key record it adopted. It survives turning encryption off (`setEnabled(false)`) and goes at sign-out.
+
+- When `refreshFromServer` gets a record with an older `createdAt`, or the same `createdAt` and a lower `version`, it does not adopt it and never throws: it returns this device's cached record under the served version number, stores the served numbers (`e2ee.olderRecordServed`) and sets `olderRecord` in the snapshot. Sync, the re-send after a server restore, unlocking, a passphrase change and a reset all go on with the device's own record. A server honestly restored from an older backup must never lock a device out.
+- Settings shows one line with **Upload this device's key record** (`reuploadKeyRecord`): the cached record goes up as the served version + 1. It wraps the same account key, so other devices keep decrypting and adopt it on their next refresh. A passphrase change or reset while the older record is served replaces it the same way.
+- A record the device's own upload returns (enabling, a passphrase change, a reset, `restoreKeyRecord`, `reuploadKeyRecord`) is adopted and moves the mark, whatever its `createdAt`: the device made it.
+- `ot encryption unlock` keeps the same mark next to its key file and keeps the stored key when an older record is served.
+- **Limit:** `version` and `createdAt` are metadata the server sets; nothing authenticates them. A hostile server can serve an older wrap and salt under current numbers, and the device adopts it. So this notices an older record served unchanged (a restore, a mistake), not an attack. The writer release binds the record's numbers to the account key (a MAC under a key derived from the account key, checked after unwrapping) so that a relabelled record is noticed too.
+
+No format change; it ships in the reader release.
 
 ### D7. Shared vectors
 
@@ -127,7 +135,7 @@ A device keeps `e2ee.recordHighWater` (`createdAt`, `version`) of the newest key
 
 ### D8. Rollout
 
-1. **Reader release.** Every reader opens `v2` and refuses a `v2` value whose stamp is not its op's timestamp, the server enforces D3 for `v2` ops (so a newer `ot` that writes `v2` early works against it), routine undo leaves `v2` fields out, the key record high-water mark (D6) ships, and writers still write `v1`. Nothing anyone sees changes, except a refused older key record.
+1. **Reader release.** Every reader opens `v2` and refuses a `v2` value whose stamp is not its op's timestamp, the server enforces D3 for `v2` ops (so a newer `ot` that writes `v2` early works against it), routine undo leaves `v2` fields out, the key record high-water mark (D6) ships as a warning, and writers still write `v1`. Nothing anyone sees changes, except the warning about an older key record.
 2. **Writer release**, at least one release later (the owner picks the gap). Writers write `v2`, `MinClientVersion` and `CLIENT_VERSION` become 2, the catch-up re-seals (D5), the server refuses `v1` writes for encrypted accounts, and routine undo skips encrypted fields. The docs move Rollback to "Defended". A web app older than step 1 shows "Update required". An older `ot` or Obsidian plugin shows `v2` values as undecryptable (task 6.3 checks that each marks them undecryptable and never writes the placeholder back) and its `v1` writes are refused with an error that names the update.
 
 ## Data model impact

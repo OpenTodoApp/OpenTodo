@@ -180,6 +180,36 @@
       "ts": 1764000000000,
       "value": "enc:v2:AAABmraX6AAwMTIzNDU2Nzg5Ojv_VEK0yQIlbV5bqZ8y7Vcc8EI_TlHn6DeJupr9EetYV-0Z=",
       "reason": "malformed"
+    },
+    {
+      "name": "non-canonical base64 (trailing bits set)",
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "entity": "task",
+      "entityId": "t1",
+      "field": "title",
+      "ts": 1764000000000,
+      "value": "enc:v2:AAABmraX6AA1Njc4OTo7PD0-P0BKPZJLpKTHvVtdXwbnOFrJKh",
+      "reason": "malformed"
+    },
+    {
+      "name": "moved to another task",
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "entity": "task",
+      "entityId": "t2",
+      "field": "title",
+      "ts": 1764000000000,
+      "value": "enc:v2:AAABmraX6AAwMTIzNDU2Nzg5Ojv_VEK0yQIlbV5bqZ8y7Vcc8EI_TlHn6DeJupr9EetYV-0Z",
+      "reason": "decrypt"
+    },
+    {
+      "name": "moved to another entity type",
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "entity": "note",
+      "entityId": "t1",
+      "field": "title",
+      "ts": 1764000000000,
+      "value": "enc:v2:AAABmraX6AAwMTIzNDU2Nzg5Ojv_VEK0yQIlbV5bqZ8y7Vcc8EI_TlHn6DeJupr9EetYV-0Z",
+      "reason": "decrypt"
     }
   ],
   "passphrase": {

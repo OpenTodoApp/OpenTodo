@@ -5472,6 +5472,7 @@
   "Older versions this device kept out": "Старые версии, отклонённые этим устройством",
   "The server sent an older encryption key record. This device kept its own.": "Сервер прислал более старую запись ключа шифрования. Это устройство сохранило свою.",
   "The server sent older versions of {n, plural, one {# item} other {# items}}. This device kept its own.": "Сервер прислал старые версии {n, plural, one {# элемента} few {# элементов} many {# элементов} other {# элемента}}. Это устройство сохранило свои.",
+  "Upload this device’s key record": "Загрузить запись ключа с этого устройства",
   "The server went back to an older version.": "Сервер вернулся к более старой версии.",
   "The server's list of files couldn't be read.": "Не удалось прочитать список файлов сервера.",
   "The server’s assistant": "Ассистент сервера",

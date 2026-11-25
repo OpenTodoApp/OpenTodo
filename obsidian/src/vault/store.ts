@@ -1,6 +1,6 @@
 // The vault's copy of the account (internal/vault/store.go): fields with the
 // clock of the op that wrote them, folded under the log's winner rule.
-import { isV2, stampOf } from '../../../web/src/lib/crypto'
+import { isEnvelope, isV2, stampOf } from '../../../web/src/lib/crypto'
 import { isContentField, WRITE_V2 } from '../../../web/src/lib/e2eeEnvelope'
 import type { Entity } from '../../../web/src/lib/types'
 import { byteOrder, goJSON } from './gojson'
@@ -56,9 +56,9 @@ export function apply(s: Store, op: Op): boolean {
  * writer release, WRITE_V2) a v1 ciphertext over a value held as v2. Both are an older value served again.
  */
 export function olderCiphertext(op: Op, cur: Field | undefined): boolean {
-  if (typeof op.value !== 'string' || !op.value.startsWith('enc:') || !isContentField(op.entity as Entity, op.field)) return false
+  if (!isEnvelope(op.value) || !isContentField(op.entity as Entity, op.field)) return false
   if (isV2(op.value)) return stampOf(op.value) !== op.ts
-  return WRITE_V2 && cur !== undefined && isV2(cur.v) && op.field !== 'notes_doc'
+  return WRITE_V2 && cur !== undefined && isEnvelope(cur.v) && isV2(cur.v) && op.field !== 'notes_doc'
 }
 
 export function purge(s: Store, entity: string, id: string): void {

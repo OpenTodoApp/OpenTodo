@@ -19110,8 +19110,7 @@
     "web/src/lib/sync.ts"
   ],
   "The server sent an older encryption key record. This device kept its own.": [
-    "web/src/app/EncryptionPanel.tsx",
-    "web/src/lib/e2ee.ts"
+    "web/src/app/EncryptionPanel.tsx"
   ],
   "The server sent older versions of {n, plural, one {# item} other {# items}}. This device kept its own.": [
     "web/src/app/EncryptionPanel.tsx"
@@ -21203,7 +21202,6 @@
   ],
   "Untitled": [
     "web/src/app/CalendarView.tsx",
-    "web/src/app/OlderVersionsDialog.tsx",
     "web/src/app/PlanView.tsx",
     "web/src/app/PublicListScreen.tsx",
     "web/src/app/ReminderToasts.tsx",
@@ -21270,6 +21268,7 @@
     "web/src/app/task-list/todayGroupDrop.ts",
     "web/src/lib/dependencies.ts",
     "web/src/lib/dnd.ts",
+    "web/src/lib/e2ee.ts",
     "web/src/lib/facets.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/localData.ts",
@@ -21413,6 +21412,9 @@
   ],
   "Upload progress": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "Upload this device’s key record": [
+    "web/src/app/EncryptionPanel.tsx"
   ],
   "Uploading": [
     "web/src/app/task-detail/AttachmentsRow.tsx"

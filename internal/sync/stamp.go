@@ -25,14 +25,16 @@ import (
 const ReasonStaleCiphertext = "stale_ciphertext"
 
 // v2Stamp returns the stamp of op's value when it is a v2 envelope of a content
-// field. v2 is true for a value that starts like one, well formed or not.
+// field. v2 is true for an envelope-shaped value (e2ee.IsEnvelope) labelled v2,
+// whether its stamp is valid or not; text that only starts with "enc:v2:", such
+// as a title someone typed, is plain text and not v2.
 func v2Stamp(op Op) (stamp int64, v2, ok bool) {
 	if !bytes.HasPrefix(op.Value, []byte(`"`+e2ee.PrefixV2)) || !e2ee.IsContentField(op.Entity, op.Field) {
 		return 0, false, false
 	}
 	var s string
-	if json.Unmarshal(op.Value, &s) != nil {
-		return 0, true, false
+	if json.Unmarshal(op.Value, &s) != nil || !e2ee.IsEnvelope(s) {
+		return 0, false, false
 	}
 	stamp, ok = e2ee.Stamp(s)
 	return stamp, true, ok

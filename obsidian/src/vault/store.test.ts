@@ -23,6 +23,12 @@ describe('vault store and v2 ciphertext', () => {
     expect(await openValue(k, 'task', 't1', 'title', get(s, 'task', 't1')!.title.v, 400)).toBe('Now')
   })
 
+  it('applies a title typed as "enc:v2: …" as text', () => {
+    const s: Store = {}
+    expect(apply(s, op('a', 'enc:v2: release notes', 5))).toBe(true)
+    expect(apply(s, op('b', 'enc:v2: release notes, take two', 6))).toBe(true)
+  })
+
   it('applies v1 over v1 as before', async () => {
     const k = await key()
     const s: Store = {}

@@ -241,9 +241,18 @@ func generate(t *testing.T) vectors {
 		v1 := sealValue(key, seq(0x31, 12), "task", "t1", "title", "Dentist")
 		short := binary.BigEndian.AppendUint64(nil, ts)
 		short = append(short, seq(0x32, 20)...)
-		r := func(name string, tsIn int64, field, value, reason string) {
-			v.Refused = append(v.Refused, refusedV2{name, k, "task", "t1", field, tsIn, value, reason})
+		rAt := func(name, entity, id string, tsIn int64, field, value, reason string) {
+			v.Refused = append(v.Refused, refusedV2{name, k, entity, id, field, tsIn, value, reason})
 		}
+		r := func(name string, tsIn int64, field, value, reason string) {
+			rAt(name, "task", "t1", tsIn, field, value, reason)
+		}
+		// 37 bytes: the last base64url character carries 4 unused bits, which a
+		// strict decoder requires to be zero.
+		shortPt := sealV2(key, seq(0x35, 12), ts, "task", "t1", "title", "x")
+		const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+		last := strings.IndexByte(alphabet, shortPt[len(shortPt)-1])
+		nonCanonical := shortPt[:len(shortPt)-1] + string(alphabet[last^1])
 		// The rollback itself: an authentic older value inside a newer op.
 		r("replayed under a later timestamp", ts+86400000, "title", good, "mismatch")
 		r("replayed under an earlier timestamp", ts-1, "title", good, "mismatch")
@@ -255,6 +264,9 @@ func generate(t *testing.T) vectors {
 		r("stamp beyond 2^53-1", ts, "title", sealV2(key, seq(0x34, 12), MaxStamp+1, "task", "t1", "title", "x"), "malformed")
 		r("too short for stamp, nonce and tag", ts, "title", PrefixV2+base64.RawURLEncoding.EncodeToString(short), "malformed")
 		r("padded base64", ts, "title", good+"=", "malformed")
+		r("non-canonical base64 (trailing bits set)", ts, "title", nonCanonical, "malformed")
+		rAt("moved to another task", "task", "t2", ts, "title", good, "decrypt")
+		rAt("moved to another entity type", "note", "t1", ts, "title", good, "decrypt")
 	}
 	dek := seq(0x40, 32)
 	v.Passphrase.Passphrase = "correct horse battery staple"

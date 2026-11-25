@@ -16,10 +16,10 @@ export const MAX_DOC_CHARS = 256 * 1024
 
 /**
  * The cap for an account with end-to-end encryption (OpenSpec e2ee): the
- * ciphertext "enc:v1:" + base64url(nonce || ciphertext || tag) of the envelope
+ * ciphertext "enc:v2:" + base64url(stamp || nonce || ciphertext || tag) of the envelope (v1 is 8 bytes shorter)
  * must still fit MAX_DOC_CHARS.
  */
-export const MAX_DOC_CHARS_ENCRYPTED = Math.floor(((MAX_DOC_CHARS - 'enc:v1:'.length) * 3) / 4) - 28 - 64
+export const MAX_DOC_CHARS_ENCRYPTED = Math.floor(((MAX_DOC_CHARS - 'enc:v2:'.length) * 3) / 4) - 28 - 8 - 64
 
 /** The value cap of an ordinary string field such as the `description` projection (MaxValueBytes, JSON-encoded). */
 export const MAX_TEXT_VALUE = 64 * 1024

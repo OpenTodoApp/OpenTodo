@@ -7370,6 +7370,7 @@
   "Older versions this device kept out": "Ältere Versionen, die dieses Gerät abgelehnt hat",
   "The server sent an older encryption key record. This device kept its own.": "Der Server hat einen älteren Schlüsseleintrag für die Verschlüsselung gesendet. Dieses Gerät hat seinen eigenen behalten.",
   "The server sent older versions of {n, plural, one {# item} other {# items}}. This device kept its own.": "Der Server hat ältere Versionen von {n, plural, one {# Eintrag} other {# Einträgen}} gesendet. Dieses Gerät hat seine eigenen behalten.",
+  "Upload this device’s key record": "Schlüsseleintrag dieses Geräts hochladen",
   "The server went back to an older version.": "Der Server ist zu einer älteren Version zurückgekehrt.",
   "The server's list of files couldn't be read.": "Die Dateiliste des Servers konnte nicht gelesen werden.",
   "This server runs {version}": "Dieser Server verwendet {version}",

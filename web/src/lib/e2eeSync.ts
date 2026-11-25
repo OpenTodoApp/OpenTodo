@@ -142,11 +142,13 @@ export interface Incoming {
  * the reader release honest writers still write v1 after a v2 value.
  */
 export function olderVersion(op: Op, held: { v2: boolean; clock?: { ts: number; device: string } }, downgrade = WRITE_V2): boolean {
+  // Only envelopes: a title someone typed as "enc:v2: …" is text.
+  if (!isEnvelope(op.value)) return false
   if (isV2(op.value)) {
     const stamp = stampOf(op.value)
     return stamp !== null && stamp !== op.ts
   }
-  if (!isEnvelope(op.value) || isDocField(op.entity, op.field)) return false
+  if (isDocField(op.entity, op.field)) return false
   return downgrade && held.v2 && wins(op.ts, op.device, held.clock)
 }
 

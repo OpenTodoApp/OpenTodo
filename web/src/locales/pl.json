@@ -5472,6 +5472,7 @@
   "Older versions this device kept out": "Starsze wersje odrzucone przez to urządzenie",
   "The server sent an older encryption key record. This device kept its own.": "Serwer wysłał starszy rekord klucza szyfrowania. To urządzenie zachowało własny.",
   "The server sent older versions of {n, plural, one {# item} other {# items}}. This device kept its own.": "Serwer wysłał starsze wersje {n, plural, one {# elementu} few {# elementów} many {# elementów} other {# elementu}}. To urządzenie zachowało własne.",
+  "Upload this device’s key record": "Prześlij rekord klucza z tego urządzenia",
   "The server went back to an older version.": "Serwer wrócił do starszej wersji.",
   "The server's list of files couldn't be read.": "Nie udało się odczytać listy plików serwera.",
   "The server’s assistant": "Asystent serwera",
