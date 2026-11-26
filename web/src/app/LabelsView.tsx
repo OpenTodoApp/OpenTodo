@@ -116,12 +116,15 @@ export function deleteConfirm(label: Label): ConfirmSpec {
   }
 }
 
+/** What the duplicate badge means and what to do about it: the badge's tooltip, and the Merge into item's line where a tap reads it. */
+const duplicateNote = () => t('Another label has this name. Merge them from the menu or the banner on the labels page.')
+
 /**
  * The label menu as data (labels-and-menus 5.1). `pin` adds the checkable "Pin to sidebar"
  * (sidebar-favourites D3); `edges` replaces the label order for Move up and Move down when
  * the menu is opened from the Favourites group.
  */
-export function labelMenuGroups(label: Label, labels: Label[], a: { edit: () => void; rename: () => void; move: (to: -1 | 1) => unknown; pin?: { checked: boolean; toggle: () => unknown } }, edges?: { first: boolean; last: boolean }): ActionGroup[] {
+export function labelMenuGroups(label: Label, labels: Label[], a: { edit: () => void; rename: () => void; move: (to: -1 | 1) => unknown; pin?: { checked: boolean; toggle: () => unknown }; duplicate?: boolean }, edges?: { first: boolean; last: boolean }): ActionGroup[] {
   const i = labels.findIndex((l) => l.id === label.id)
   const others = labels.filter((l) => l.id !== label.id)
   const first = edges ? edges.first : i <= 0
@@ -137,7 +140,7 @@ export function labelMenuGroups(label: Label, labels: Label[], a: { edit: () => 
       { kind: 'action', id: 'down', label: t('Move down'), icon: 'arrow-down', shortcut: 'Alt+↓', disabled: last, reason: t('Already last'), onSelect: () => a.move(1) },
     ] },
     { items: [
-      { kind: 'picker', id: 'merge', label: t('Merge into'), icon: 'merge', tone: 'danger', disabled: others.length === 0, reason: t('There is no other label'), picker: {
+      { kind: 'picker', id: 'merge', label: t('Merge into'), icon: 'merge', tone: 'danger', disabled: others.length === 0, reason: t('There is no other label'), description: a.duplicate ? duplicateNote() : undefined, picker: {
         title: t('Merge into'), placeholder: t('Find a label…'), source: others, getKey: (l: Label) => l.id, getLabel: (l: Label) => l.name,
         rankContext: 'label-merge', renderLeading: (l: Label) => <span data-hue={hueFor(l.color)} className="inline-block h-2.5 w-2.5 rounded-full bg-hue-solid" />,
         onPick: (target: Label) => mergeConfirm(label, target),
@@ -327,7 +330,7 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
   const move = (to: -1 | 1 | 'top' | 'bottom') => { refocus.current = true; act(reorderLabel(label.id, to)) }
   const onKeyDown = useRowMenuShortcut({ openMenu: () => setMenuOpen(true), rename: startRename, move })
   const pinned = useIsFavourite('label', label.id)
-  const groups = labelMenuGroups(label, labels, { edit: () => setPanelOpen(true), rename: startRename, move, pin: { checked: pinned, toggle: () => setFavourite('label', label.id, !pinned) } })
+  const groups = labelMenuGroups(label, labels, { edit: () => setPanelOpen(true), rename: startRename, move, pin: { checked: pinned, toggle: () => setFavourite('label', label.id, !pinned) }, duplicate })
 
   return (
     <div ref={row} data-label-row={label.id} data-menu-row data-drop-target={`label:${label.id}`} data-task-drop={taskDrop.label(label.id)} data-active={active || undefined} data-find-active={findActive || undefined}
@@ -348,7 +351,7 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
             className={`flex min-w-0 flex-1 items-center gap-2 px-1.5 py-1.5 text-start text-body ${active ? 'font-medium text-strong' : 'text-muted'}`}>
             <span data-hue={hueFor(label.color)} className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-hue-solid" />
             <span className="flex-1 truncate">{label.name}</span>
-            {duplicate && <Badge hue="yellow" title={t('Another label has this name. Merge them from the menu or the banner on the labels page.')}>{t('duplicate')}</Badge>}
+            {duplicate && <Badge hue="yellow" title={duplicateNote()}>{t('duplicate')}</Badge>}
             {count && quiet ? <span className="sr-only" data-open-count={count}>{`, ${t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}`}</span> : null}
             {count && !quiet ? <span className={`text-meta text-faint${swap ? ' ui-swap-count' : ''}`} data-open-count={count}><ReadAs label={t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</ReadAs></span> : null}
             {swap && !count ? <span className="ui-swap-count" aria-hidden="true" /> : null}

@@ -10,6 +10,9 @@ import { occurrenceId } from '../lib/ids'
 import { createTask, resetDeviceId, updateTask } from '../lib/ops'
 import { click, key, render, waitFor } from '../ui/test-utils'
 import { bulkToast, hideBulkToast } from './bulk/toastStore'
+import type { Projection } from '../lib/occurrences'
+import { ProjectedRow } from './calendar/PlanRow'
+import { ProjectedItem } from './calendar/projections'
 import { MonthView } from './MonthView'
 import { panelTaskId, resetPanel, setPanelTaskId, setTaskSplit } from './panel'
 import { TaskDetail } from './task-detail/TaskDetail'
@@ -109,6 +112,34 @@ describe('Act on one occurrence', () => {
     await act(async () => { p.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 5, clientY: 5 })) })
     await waitFor(() => menuItem('open') !== null, 'the menu')
     expect(menuItem('complete')).toBeNull()
+    await r.unmount()
+  })
+})
+
+// phone-control-facts: a tap on a projection opens its occurrence, never the tooltip.
+describe('A capped series', () => {
+  const projection = (o: Partial<Projection> = {}): Projection => ({
+    id: 'proj:s1:2026-10-19', seriesId: 's1', date: '2026-10-19', occurrence: '2026-10-19', title: 'Stretch', estimate_minutes: null, priority: 4, position: 1, project_id: null, ...o,
+  } as Projection)
+
+  it('says so in its projections\' names and as the heading of their menu', async () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('coarse'), media: q, addEventListener() {}, removeEventListener() {} }))
+    const r = await render(<div><ProjectedItem p={projection({ capped: true })} variant="large" /><ProjectedRow projection={projection({ capped: true })} large /></div>)
+    for (const el of r.container.querySelectorAll('.sr-only')) expect(el.textContent).toContain('Showing the next 31 occurrences')
+    expect(r.container.querySelectorAll('.sr-only')).toHaveLength(2)
+    await act(async () => { r.container.querySelector('[data-projected]')!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 5, clientY: 5 })) })
+    await waitFor(() => menuItem('open') !== null, 'the menu')
+    const group = menuItem('open')!.closest('[role="group"]')!
+    expect(document.getElementById(group.getAttribute('aria-labelledby')!)!.textContent).toBe('Showing the next 31 occurrences')
+    await r.unmount()
+  })
+
+  it('a series that is not capped has no note', async () => {
+    const r = await render(<ProjectedItem p={projection()} variant="row" />)
+    expect(r.container.querySelector('.sr-only')!.textContent).not.toContain('Showing the next')
+    await act(async () => { r.container.querySelector('[data-projected]')!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 5, clientY: 5 })) })
+    await waitFor(() => menuItem('open') !== null, 'the menu')
+    expect(menuItem('open')!.closest('[role="group"]')!.hasAttribute('aria-labelledby')).toBe(false)
     await r.unmount()
   })
 })
