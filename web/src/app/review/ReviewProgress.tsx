@@ -106,7 +106,11 @@ function usePhasesFit(names: string) {
       width = now
       // Measured as the grid: back to it first, then see whether it runs over.
       el.removeAttribute('data-tight')
-      const over = el.scrollWidth > el.clientWidth + 1
+      // Over means past the screen's edge, which is what scrolls the page: a pixel or two into the
+      // page's own gutter does not, and English at 360 px has always had that.
+      const box = el.getBoundingClientRect()
+      const screen = document.documentElement.clientWidth
+      const over = getComputedStyle(el).direction === 'rtl' ? box.right - el.scrollWidth < -0.5 : box.left + el.scrollWidth > screen + 0.5
       if (over) el.setAttribute('data-tight', '')
       setTight(over)
     }
