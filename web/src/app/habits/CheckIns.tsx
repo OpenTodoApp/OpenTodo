@@ -29,7 +29,7 @@ export function CheckIns({ series, rows, today }: { series: Task; rows: readonly
               className="group flex w-full items-center gap-2 rounded-chip text-start text-meta text-muted hover:text-default focus-visible:outline-2 focus-visible:outline-focus">
               <span className="text-default">{formatDate(c.date, 'full', undefined, today)}</span>
               <span>· {STATE_TEXT[c.state]}</span>
-              <Icon name="pencil" size="xs" className="ms-auto opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" />
+              <Icon name="pencil" size="xs" className="ms-auto opacity-0 pointer-coarse:opacity-100 group-hover:opacity-100 group-focus-visible:opacity-100" />
             </button>
             <Markdown source={c.record.description} taskId={c.record.id} className="mt-1 text-body text-default" />
           </li>

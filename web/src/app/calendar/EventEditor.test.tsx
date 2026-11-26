@@ -64,6 +64,16 @@ describe('EventEditor', () => {
     await r.unmount()
   })
 
+  // phone-control-facts: the block's tooltip gives the reason; a tap opens this editor instead.
+  it('says why an event that can only be deleted cannot be changed, above Delete', async () => {
+    const r = await render(<EventEditor ev={ev({ access: { update: false, delete: true, reason: 'calendar_read_only' } })} />)
+    expect(r.container.querySelector('[data-event-edit]')).toBeNull()
+    expect(r.container.querySelector('[data-event-locked="calendar_read_only"]')!.textContent).toBe('This calendar is read-only')
+    await click(button(r.container, 'Delete')!)
+    expect(editEventWithUndo).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'e1' }), { delete: true })
+    await r.unmount()
+  })
+
   it('shows an assistant\'s change with Undo', async () => {
     const r = await render(<EventEditor ev={ev({ changedBy: { kind: 'assistant', name: 'Claude' } })} />)
     expect(r.container.querySelector('[data-event-changed-by]')!.textContent).toContain('Changed by Claude')

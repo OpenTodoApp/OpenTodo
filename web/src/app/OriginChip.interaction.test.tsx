@@ -57,6 +57,18 @@ describe('Obsidian origin chip', () => {
     expect(openExternal).not.toHaveBeenCalled()
   })
 
+  // phone-control-facts: the chip's tooltip never opens on a tap, so the menu it opens carries the page's title.
+  it('the Copy link menu of an origin that is not a link is titled with the page\'s title', async () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('coarse'), media: q, addEventListener() {}, removeEventListener() {} }))
+    const r = await render(<OriginChip origin={{ kind: 'url', url: 'obsidian://open?vault=Notes&file=a', title: 'Reading list for the trip' }} />)
+    await click(r.container.querySelector<HTMLButtonElement>('[data-origin="url"] button')!)
+    await waitFor(() => !!document.querySelector('[data-origin-copy]'), 'the Copy link item')
+    const sheet = document.querySelector('[data-overlay="sheet"]')!
+    expect(sheet.getAttribute('aria-label')).toBe('Reading list for the trip')
+    expect(sheet.querySelector('h2')!.textContent).toBe('Reading list for the trip')
+    await r.unmount()
+  })
+
   it('never links a url origin carrying an Obsidian link', async () => {
     const r = await render(<OriginChip origin={{ kind: 'url', url: 'obsidian://open?vault=Notes&file=a' }} />)
     expect(r.container.querySelector('a')).toBeNull()

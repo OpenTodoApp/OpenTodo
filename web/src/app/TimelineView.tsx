@@ -5,7 +5,7 @@
 // axis, the bars and the date edits, each one batch of ordinary field ops.
 // physical-file: a time axis drawn from computed left offsets, kept left to right in a dir="ltr" box (arabic-rtl D8).
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { DESKTOP_HEADER_QUERY, Icon, ReadAs, useMediaQuery } from '../ui'
+import { Button, DESKTOP_HEADER_QUERY, Icon, ReadAs, useMediaQuery } from '../ui'
 import { addDaysISO, daysBetweenISO, formatDate, viewedTask, formatDateRange, monthName } from '../lib/dates'
 import { isBlocked } from '../lib/dependencies'
 import { getTask } from '../lib/localData'
@@ -329,6 +329,12 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
               {z === 'day' ? t('Days') : t('Weeks')}
             </button>
           ))}
+        </span>
+        {/* The range moves by its keys ([ ] t) and by these: a phone has no keys. */}
+        <span className="flex items-center" role="group" aria-label={t('Range')} data-timeline-range>
+          <Button variant="ghost" size="sm" icon="chevron-left" aria-label={t('Earlier')} onClick={() => setAnchor((a) => addDaysISO(a, -rangeStep))} />
+          <Button variant="ghost" size="sm" onClick={() => setAnchor(today)}>{t('Today')}</Button>
+          <Button variant="ghost" size="sm" icon="chevron-right" aria-label={t('Later')} onClick={() => setAnchor((a) => addDaysISO(a, rangeStep))} />
         </span>
         <span className="text-meta text-faint">
           {editable
