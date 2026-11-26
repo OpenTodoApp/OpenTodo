@@ -129,7 +129,35 @@ describe('timeline', () => {
     expect(bar(ended).querySelector('[data-bar-title]')).toBeNull()
     // Today is an accent line with its mark on the axis (D9).
     expect(r.container.querySelector('[data-today-line]')!.className).toContain('bg-accent')
-    expect(r.container.querySelector('[data-today-mark]')!.textContent).toBe('Today')
+    expect(r.container.querySelector('[data-today-mark]')).not.toBeNull()
+    await r.unmount()
+  })
+
+  // Seen on a phone: a "Today" mark over the axis covered the labels of two days, and "Dec 1" wrapped under its column.
+  it('marks today on its own column\'s label, and the first of a month reads as the month alone', async () => {
+    const p = await timeline()
+    const id = await createTask({ title: 'Book flights', project_id: p, due: { date: '2026-11-03' } })
+    const r = await render(<TaskListView route={{ view: 'project', id: p }} />)
+    await waitFor(() => r.container.querySelector(`[data-bar="${id}"]`) !== null, 'the bar')
+    const columns = () => [...r.container.querySelectorAll<HTMLElement>('[data-timeline] [role="columnheader"]')].slice(1)
+    const current = () => columns().filter((c) => c.getAttribute('aria-current') === 'date')
+    const marks = () => [...r.container.querySelectorAll('[data-today-mark]')]
+    // Days: 31 October, then the 1st of November, which is today, then the 2nd.
+    expect(columns().slice(27, 30).map((c) => c.textContent)).toEqual(['31', 'Nov', '2'])
+    expect(current()).toEqual([columns()[28]])
+    // The mark is that column's label, so it is inside the column and no other label is under it.
+    expect(marks()).toHaveLength(1)
+    expect(marks()[0].parentElement).toBe(columns()[28])
+    expect(marks()[0].textContent).toBe('Nov')
+    // Weeks: the column of the week today is in carries it.
+    const weeks = [...r.container.querySelectorAll<HTMLElement>('[role="group"][aria-label="Timeline zoom"] button')].find((b) => b.textContent === 'Weeks')!
+    await click(weeks)
+    await waitFor(() => weeks.getAttribute('aria-pressed') === 'true', 'the Weeks zoom')
+    expect(current()).toHaveLength(1)
+    expect(marks()).toHaveLength(1)
+    expect(marks()[0].parentElement).toBe(current()[0])
+    // 1 November 2026 is a Sunday, the first day of the week here.
+    expect(marks()[0].textContent).toMatch(/^Nov 1\D+7$/)
     await r.unmount()
   })
 

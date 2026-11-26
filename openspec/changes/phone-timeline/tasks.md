@@ -11,6 +11,7 @@
 - [x] 2.3 The grid scrolls sideways under a lifted drag near its left or right edge, in `TimelineView.tsx`, and marks the day under the pointer. Verify: the same file ("the grid scrolls under a dragged bar").
 - [x] 2.4 A group bar's spacer takes the rest of its row, so the grid is as wide as the axis below 768 px. Verify: the same file ("a group bar is no wider than the axis"), and in the browser the grid's `scrollWidth` against the axis's width at 390 and 1280 px.
 - [x] 2.5 Type-check, lint and the suite. Verify: `npx tsc --noEmit -p .`, `npm run lint`, `npm test`, `npm run build` in `web/`; `node scripts/i18n-check.mjs` (no new string); `node scripts/bundle-budget.mjs`.
+- [x] 2.6 The axis' labels, seen in the Android app: the "Today" mark covered "26" and 6 px of "27", and "Dec 1" wrapped in its 32 px column with the "1" over the first row. `AxisColumns` in `TimelineView.tsx`: today's column draws its own label on the accent, the first of a month reads as the month, each label is one line cut to its column. Verify: `npx vitest run src/app/timelineView.test.tsx` ("marks today on its own column's label"), and in Chromium at 390 × 844 and 1280 × 800 no label's text box meets the mark of another column or a row.
 
 ## 3. Checks in a browser
 
