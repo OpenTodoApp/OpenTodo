@@ -15,7 +15,7 @@ import { hueFor, Icon, Popover } from '../../ui'
 import type { useCalendarDrag } from '../calendarDrag'
 import { completeWithUndo } from '../undoable'
 import { act } from '../actionError'
-import { formatTime, PX_PER_MIN, RESIZE_ZONE_PX } from './grid'
+import { formatTime, PX_PER_MIN, resizeZone } from './grid'
 import { SlotDetails } from './SlotDetails'
 
 type DragStart = ReturnType<typeof useCalendarDrag>['start']
@@ -87,7 +87,7 @@ export function SlotBlock({ view, b, past, selected, dragging, dropTarget, onSel
       aria-label={t('Slot {title}, {times}, {count}', { title: name, times, count })}
       onPointerDown={(e) => {
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-        const zone = Math.min(RESIZE_ZONE_PX, rect.height / 3)
+        const zone = resizeZone(rect.height, e.pointerType)
         if (e.clientY >= rect.bottom - zone) onDragStart(e, { taskId: view.key, kind: 'resize', blockStart: view.start, blockDate: view.slot.date! })
         else onDragStart(e, { taskId: view.key, kind: 'move', grabOffset: e.clientY - rect.top })
       }}

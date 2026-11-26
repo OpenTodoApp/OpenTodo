@@ -3,6 +3,7 @@
 // range (multi-day-tasks D8) and a date-only row its trailing end, which makes it a
 // span when dragged (D2).
 import { formatTime } from '../../lib/dates'
+import { use } from 'react'
 import { beginDrag } from '../../lib/dnd'
 import { t } from '../../lib/i18n'
 import { customPriorityName, priorityAccessibleName, priorityShort } from '../../lib/priority'
@@ -12,6 +13,7 @@ import type { HueName } from '../../ui'
 import { DeadlineDiamond, deadlineMark } from './DeadlineMarker'
 import { ExtendHandle } from './monthSpans'
 import { usePreloadSpanDrag } from './spanModel'
+import { CalendarRowDrawContext } from '../task-list/rowDraw'
 
 export function MonthRow({ task, v, compact, list = false, today, selected, hue, canMove, readOnly, extend, onDrop, onSelect, onOpen }: {
   task: Task
@@ -34,6 +36,9 @@ export function MonthRow({ task, v, compact, list = false, today, selected, hue,
   const onDeadline = !!v?.due && task.deadline === v.due.date
   const span = v ? spanOf(v) : null
   usePreloadSpanDrag(canMove && extend)
+  // The chosen day's list on a phone with the phone screens: the phone row (phone-calendar).
+  const draw = use(CalendarRowDrawContext)
+  if (list && draw && v?.due) return draw({ task, date: v.due.date, today, time: v.due.time && !span ? formatTime(v.due.time) : null, note: span ? formatSpan(span) : undefined, readOnly })
   return (
     <button data-drag-id="month-task" type="button" tabIndex={-1} data-month-task={task.id} data-hue={hue} aria-pressed={selected}
       onPointerDown={canMove ? (e) => {
