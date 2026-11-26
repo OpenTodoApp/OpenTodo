@@ -8,7 +8,7 @@
 
 - [x] 2.1 `PhoneCalendarRow` with the calendar's facts, provided by `PhoneChrome`; a day's tasks as one card (D2, D4). Verify: in a real browser at 390 px with touch on a seeded server, Week, Month's day and Plan list phone rows and none of the earlier rows, nothing scrolls sideways, no console error; a tap opens the task page and Back returns to Week; the circle completes and Undo is offered (done 2026-11-26, screenshots looked at).
 - [x] 2.2 `phoneCalendar.test.tsx`: seven tests for the scenarios of "A task in a calendar list is the phone row" and "Swipes and the date sheet in a calendar list" (Week, Month's day, Plan, a read-only task, the switch off and 768 px, both swipes with the real gesture, a day picked in the date sheet). Verify: the file three times in a row (7 pass); `npx vitest run src/phone src/app/calendarView.test.tsx src/app/monthView.test.tsx src/app/planView.test.tsx` (167 pass). Not asserted: Month's count in the grid after a completion.
-- [ ] 2.3 The story `Phone/Screens/Calendar row` with baselines from `ui-baselines.yml`. Verify: the visual job passes; the images looked at.
+- [x] 2.3 The story `Phone/Screens/Calendar row` with baselines from `ui-baselines.yml` (run 45818483830). Verify: the four images looked at (the facts in order, the deadline in the accent tone, a past day's "all day" in the danger tone); no other story of the calendar changed.
 
 ## 3. Touch in the grid
 
