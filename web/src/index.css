@@ -1849,7 +1849,7 @@ html[dir='rtl'][data-phone-nav]::view-transition-old(root), html[dir='rtl'][data
   li[data-task-id] :is(input, textarea, [contenteditable="true"]) { -webkit-user-select: text; user-select: text; }
   :where(button, [role="button"], summary, select, a.ui-btn) { min-height: 44px; min-width: 44px; }
   /* A hold on a group's or a board column's name is the start of a drag or nothing: not a text selection with Android's Copy and Share bar. */
-  [data-group-label] { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  [data-group-label], [data-timeline-group], [data-timeline-name] { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   :where(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"], [type="color"]), textarea) { min-height: 44px; }
   :where(label:has(> input[type="checkbox"], > input[type="radio"])) { min-height: 44px; }
 }
