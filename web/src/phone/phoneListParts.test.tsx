@@ -27,7 +27,8 @@ import { logTime } from '../lib/timeEntries'
 import { createProject, createTask, setTaskCompleted, updateProject, updateTask } from '../lib/ops'
 import { createSection } from '../lib/sections'
 import type { CalendarEvent, CalendarSubscription, RoutineInboxRun, User } from '../lib/types'
-import { setBriefingShown, setTodayEventsShown } from '../lib/userPrefs'
+import { closeStartGuide, openStartGuide } from '../lib/startGuide'
+import { setBriefingShown, setTodayEventsShown, setUpcomingEventsShown } from '../lib/userPrefs'
 import { click, minWidthPx, mockFetch, render, type, waitFor } from '../ui/test-utils'
 import { setUpcomingProjections } from '../app/calendar/projections'
 import { hideBulkToast } from '../app/bulk/toastStore'
@@ -442,6 +443,95 @@ describe('the remaining parts of each list in the phone list', () => {
     const r = await open({ view: 'place', id: place })
     await waitFor(() => rowIds().join() === there && inList('[data-phone-head] [data-page-title]')?.textContent === 'Post office', 'the place with its task and name')
     expect(inList('[data-phone-header] button')!.getAttribute('aria-label')).toBe('Open menu')
+    await r.unmount()
+  })
+})
+
+describe('calendar events, Start with Today and the sample offer in the phone list', () => {
+  /** A calendar the device already holds, with its events (no request is answered). */
+  async function calendar(events: [id: string, summary: string, date: string, start: string, end: string][]) {
+    const work: CalendarSubscription = { id: 'work', name: 'Work', color: '#2563eb', enabled: true, lastSuccessAt: Date.now() }
+    await db.calendarSubscriptions.put(work)
+    await db.calendarEvents.bulkPut(events.map(([id, summary, date, start, end]): CalendarEvent => (
+      { id, subscriptionId: 'work', uid: id, summary, location: '', allDay: false, free: false, start: { date, time: start }, end: { date, time: end } })))
+    await setMeta('calendar.events.window', { from: addDaysISO(today, -28), to: addDaysISO(today, 28), fetchedAt: Date.now() })
+  }
+  /** Chooses an item of the page menu of the phone list. */
+  async function choose(item: string) {
+    await click(inList('[data-phone-header] button[aria-label="More actions"]')!)
+    await waitFor(() => !!document.querySelector(`[role="menu"] [${item}]`), `the menu item ${item}`)
+    const el = document.querySelector<HTMLElement>(`[role="menu"] [${item}]`)!
+    const label = el.textContent ?? ''
+    await click(el)
+    await waitFor(() => !document.querySelector(`[role="menu"] [${item}]`), 'the menu closed')
+    return label
+  }
+
+  it('Upcoming lists a day\'s events before its tasks while events are shown, and not once they are hidden', async () => {
+    const tomorrow = addDaysISO(today, 1)
+    await calendar([['review', 'Design review', tomorrow, '11:00', '12:00'], ['standup', 'Standup', tomorrow, '09:00', '09:15']])
+    await setUpcomingEventsShown(true)
+    const task = await createTask({ title: 'Write the notes', due: { date: tomorrow } })
+    const r = await open({ view: 'upcoming' })
+    const events = () => allInList(`[data-group="${tomorrow}"] [data-upcoming-events] [data-agenda-event]`)
+    await waitFor(() => rowIds().join() === task && events().length === 2, 'tomorrow\'s two events')
+    // In start order, above the day's task.
+    expect(events().map((e) => e.dataset.agendaEvent)).toEqual(['standup', 'review'])
+    expect(events()[1].textContent).toContain('Design review')
+    expect(before(events()[1], inList(`[data-phone-row="${task}"]`)!)).toBe(true)
+    expect(await choose('data-upcoming-events-toggle')).toContain('Hide calendar events')
+    await waitFor(() => !!list() && !inList('[data-upcoming-events]') && rowIds().join() === task, 'the events hidden, the task kept')
+    expect(await choose('data-upcoming-events-toggle')).toContain('Show calendar events')
+    await waitFor(() => events().length === 2, 'the events again')
+    await r.unmount()
+  })
+
+  it('Upcoming puts Today\'s group first with Start with Today, and drops it when turned off', async () => {
+    const tomorrow = addDaysISO(today, 1)
+    const now = await createTask({ title: 'Write the notes', due: { date: today } })
+    const next = await createTask({ title: 'Book the room', due: { date: tomorrow } })
+    const r = await open({ view: 'upcoming' })
+    await waitFor(() => rowIds().join() === next && groupKeys().join() === tomorrow, 'Upcoming from tomorrow')
+    await choose('data-upcoming-today-toggle')
+    await waitFor(() => rowIds().join() === [now, next].join(), 'Today\'s task first')
+    expect(headings()).toEqual(['Today', 'Tomorrow'])
+    expect(groupKeys().at(-1)).toBe(tomorrow)
+    expect((await db.userPrefs.toArray())[0]?.upcoming_today).toBe('on')
+    await choose('data-upcoming-today-toggle')
+    await waitFor(() => rowIds().join() === next && headings().join() === 'Tomorrow', 'Upcoming from tomorrow again')
+    await r.unmount()
+  })
+
+  it('Today\'s menu hides and shows the day\'s events', async () => {
+    await calendar([['standup', 'Standup', today, '09:00', '09:15']])
+    await setTodayEventsShown(true)
+    const now = await createTask({ title: 'Write the notes', due: { date: today } })
+    const r = await open({ view: 'today' })
+    const event = () => inList('[data-today-agenda] [data-agenda-event="standup"]')
+    await waitFor(() => rowIds().includes(now) && !!event(), 'the event')
+    expect(await choose('data-today-events-toggle')).toContain('Hide calendar events')
+    await waitFor(() => !!list() && !inList('[data-today-agenda]') && rowIds().includes(now), 'the events hidden, the task kept')
+    expect(await choose('data-today-events-toggle')).toContain('Show calendar events')
+    await waitFor(() => !!event(), 'the event again')
+    await r.unmount()
+  })
+
+  it('an empty Inbox takes the start guide\'s sample tasks into the phone list', async () => {
+    const r = await open({ view: 'inbox' })
+    await waitFor(() => !!inList('[data-empty-state="inbox"]'), 'the empty Inbox')
+    expect(rowIds()).toEqual([])
+    openStartGuide()
+    const offer = () => document.querySelector<HTMLElement>('[data-first-run] [data-first-run-sample]')
+    await waitFor(() => !!offer(), 'the offer of sample tasks')
+    expect(offer()!.textContent).toBe('Start with three sample tasks')
+    await click(offer()!)
+    // The unplaced samples and the third's subtask; the one due today is Today's.
+    await waitFor(() => rowIds().length === 3 && !inList('[data-empty-state]'), 'the sample tasks in the phone list')
+    expect(allInList('[data-phone-row] [data-row-title]').map((el) => el.textContent)).toContain('Tick me off when you have read this')
+    expect(inList('[data-phone-header] [data-triage-start]')!.textContent).toBe('Process 2')
+    // Offered once.
+    await waitFor(() => !offer(), 'the offer gone')
+    closeStartGuide()
     await r.unmount()
   })
 })
