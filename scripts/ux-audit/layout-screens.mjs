@@ -18,7 +18,17 @@ export const closes = (overlay) => overlay.waitFor({ state: 'hidden', timeout: 2
 export async function openScreen(p, url) {
   const doc = (u) => u.split('#')[0]
   if (url.includes('#') && doc(p.url()) === doc(url)) await p.goto('about:blank')
-  await p.goto(url)
+  // A navigation the page itself was still making (Back out of the phone task page, the
+  // app's own redirect) aborts this one: net::ERR_ABORTED, seen three times in one day on
+  // the capture after the task panel at 360 px. That is two navigations racing, not a
+  // screen that does not open, so the page is left to settle and the navigation made again.
+  for (let attempt = 0; ; attempt++) {
+    try { await p.goto(url); return } catch (err) {
+      if (attempt >= 2 || !/ERR_ABORTED|interrupted by another navigation/.test(String(err?.message))) throw err
+      await p.waitForLoadState('load').catch(() => {})
+      await p.waitForTimeout(500)
+    }
+  }
 }
 
 // `overlays` names openers from OVERLAYS below; each runs on the screen it is listed for.
