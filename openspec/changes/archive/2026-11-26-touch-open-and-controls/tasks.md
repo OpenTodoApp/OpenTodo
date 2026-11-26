@@ -13,7 +13,7 @@
 
 ## 3. Checks
 
-- [ ] 3.1 `npm test` and `npm run build` in `web/`, `make ui-check`, `make docs-check`, `openspec validate --all --strict`; the layout check in Chromium (`timeline`, `updates`, `labels`). Verify: all pass, `LAYOUT OK`.
+- [x] 3.1 `npm test` in `web/` (953 files, 11,015 tests pass) and the build, `ui-check`, docs build and check, repo checks, `openspec validate --all --strict`; the layout check in Chromium over the whole inventory: `LAYOUT OK` (2026-11-26).
 - [x] 3.2 In a real browser at 390 px with touch on a seeded server: the main pointer is coarse, a tap on a feed row opens the task page, no console error (done 2026-11-26). Not seen there: the habit menu (the seeded account has no habit; the class is tested) and the timeline's buttons (tested in `timelineView.test.tsx`; the layout check opens the timeline).
 
 ## 4. Release note
