@@ -4,7 +4,7 @@
 // selection and keyboard handling. Columns are drop targets for lib/dnd.
 import { Button, useWide } from '../ui'
 import type { ReactNode } from 'react'
-import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { lazy } from '../lib/lazy'
 import type { Label, Project, Section, Task } from '../lib/types'
 import { AddSection, SectionHeader, SectionMark, SectionQuickAdd } from './Sections'
@@ -102,9 +102,19 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
     return () => onCurrentColumn(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- names is keyed by its content; onCurrentColumn is an inline parent callback
   }, [wide, current, names.join('\u0000')])
+  // A column that arrives in front of the others (the tasks without a section load after
+  // the sections) would leave the row snapped to the column that was first: until the
+  // person moves the board, it stays at its start (phone-board D4).
+  const moved = useRef(false)
+  const touched = () => { moved.current = true }
+  const firstKey = columns[0]?.key
+  useLayoutEffect(() => {
+    if (!wide && !moved.current && scroller.current && scroller.current.scrollLeft !== 0) scroller.current.scrollLeft = 0
+  }, [wide, firstKey])
   const goTo = (i: number) => scroller.current?.querySelectorAll<HTMLElement>('[data-column]:not([data-folded])')[i]?.scrollIntoView({ inline: 'start', block: 'nearest', behavior: 'smooth' })
   // Unfolding from the strip brings the column into view (a tap on a phone, D9).
   const unfold = (key: string) => {
+    touched()
     onFold?.(key, false)
     requestAnimationFrame(() => scroller.current?.querySelector<HTMLElement>(`[data-column="${CSS.escape(key)}"]`)?.scrollIntoView?.({ inline: 'nearest', block: 'nearest', behavior: 'smooth' }))
   }
@@ -115,15 +125,16 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
       <div className="mb-2 flex items-center justify-center gap-2" data-board-pager>
         <span className="sr-only" aria-live="polite">{t('Column {n} of {count}: {name}', { n: current + 1, count: open.length, name: names[current] })}</span>
         {open.map((col, i) => (
-          <button key={col.key || 'none'} type="button" onClick={() => goTo(i)} aria-label={t('{name}, column {n} of {count}', { name: names[i], n: i + 1, count: open.length })} aria-current={i === current ? 'true' : undefined}
+          <button key={col.key || 'none'} type="button" onClick={() => { touched(); goTo(i) }} aria-label={t('{name}, column {n} of {count}', { name: names[i], n: i + 1, count: open.length })} aria-current={i === current ? 'true' : undefined}
             className="touch-target flex min-h-6 min-w-6 items-center justify-center" data-board-dot={i === current ? 'current' : ''}>
             <span aria-hidden="true" className={`block h-2 w-2 rounded-full ${i === current ? 'bg-accent' : 'bg-faint'}`} />
           </button>
         ))}
       </div>
     )}
-    {/* Columns stretch to the board's height, so every band runs to the bottom (precision-boards-timeline D1). */}
-    <div ref={scroller} onScroll={wide ? undefined : onScroll} className="-mx-4 flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto px-4 pb-6 md:mx-0 md:snap-none md:px-0" data-board data-scroll-x>
+    {/* Columns stretch to the board's height, so every band runs to the bottom (precision-boards-timeline D1).
+        A held card scrolls the row at its sides and a column's cards at their top and bottom (phone-board D1). */}
+    <div ref={scroller} onScroll={wide ? undefined : onScroll} onPointerDown={touched} onWheel={touched} data-edge-scroll="x" className="-mx-4 flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto px-4 pb-6 md:mx-0 md:snap-none md:px-0" data-board data-scroll-x>
       {columns.map((col) => {
         const idx = sections.findIndex((c) => c.key === col.key)
         const name = nameOf(col)
@@ -151,7 +162,7 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
               onFold={onFold ? () => onFold(col.key, true) : undefined}
             />
             {/* Cards lift on hover and focus; the dragged one fades while its placeholder shows where it lands. */}
-            <ul className="ui-cards--lift min-h-0 space-y-1.5 overflow-y-auto px-0.5 pb-1">
+            <ul className="ui-cards--lift min-h-0 space-y-1.5 overflow-y-auto px-0.5 pb-1" data-edge-scroll="y">
               {col.cards.map((tk) => renderCard(tk))}
               {placeholder?.key === col.key && <li aria-hidden data-drop-placeholder className="ui-drop-placeholder" style={{ height: placeholder.height }} />}
             </ul>

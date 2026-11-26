@@ -72,7 +72,7 @@ export function ViewResults({ groups, layout, renderTask, isNested, foldScope, s
   }
   if (layout === 'board') {
     return (
-      <div className="-mx-4 flex snap-x snap-mandatory items-start gap-3 overflow-x-auto px-4 pb-6 md:mx-0 md:snap-none md:px-0" data-board data-view-board data-scroll-x>
+      <div className="-mx-4 flex snap-x snap-mandatory items-start gap-3 overflow-x-auto px-4 pb-6 md:mx-0 md:snap-none md:px-0" data-board data-view-board data-scroll-x data-edge-scroll="x">
         {groups.map((g) => {
           const name = g.heading || t('All tasks')
           if (g.folded) return <FoldedGroup key={g.key} group={g} name={name} onUnfold={() => fold(g.key, false)} />
@@ -85,7 +85,7 @@ export function ViewResults({ groups, layout, renderTask, isNested, foldScope, s
             <section key={g.key} data-group={g.key} data-column={g.key} aria-label={t('{name}, {n, plural, one {# task} other {# tasks}}', { name, n: g.tasks.length })}
               className="ui-column flex max-h-[calc(100dvh-14rem)] w-[88vw] shrink-0 snap-start flex-col sm:w-72 sm:max-w-72">
               <ListGroupHeader title={name} count={g.tasks.length} countTone="muted" bar={false} actions={menu} {...appearance(g.key)} />
-              <ul className="ui-cards--lift min-h-8 space-y-1.5 overflow-y-auto px-0.5 pb-1">
+              <ul className="ui-cards--lift min-h-8 space-y-1.5 overflow-y-auto px-0.5 pb-1" data-edge-scroll="y">
                 {g.tasks.map((tk) => renderTask(tk, `${g.key}:${tk.id}`, 'card'))}
               </ul>
             </section>
