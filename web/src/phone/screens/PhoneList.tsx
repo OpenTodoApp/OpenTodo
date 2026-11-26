@@ -11,7 +11,7 @@ import { completedOpenKey } from '../../lib/listGroups'
 import { LOGBOOK_PAGE } from '../../lib/logbook'
 import { canEditTasks, roleOf } from '../../lib/sharing'
 import type { AccountRole } from '../../lib/types'
-import { useMediaQuery } from '../../ui'
+import { PageHeader, useMediaQuery } from '../../ui'
 import { BulkActionsMenu, ListReorderContext, SelectionBar } from '../../app/bulk/BulkActions'
 import { TodayAgenda } from '../../app/calendar/TodayAgenda'
 import { UpcomingEventsNote } from '../../app/calendar/UpcomingAgenda'
@@ -54,9 +54,18 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
     swipeEditTitle: false,
   })
 
-  if (route.view === 'project' && m.projects.length > 0 && !currentProject) return <MissingTarget kind="project" />
-  if (route.view === 'label' && m.labels.length > 0 && (!currentLabel || currentLabel.deleted_at)) return <MissingTarget kind="label" />
-  if (route.view === 'place' && currentPlace !== undefined && (!currentPlace || currentPlace.deleted_at)) return <MissingTarget kind="place" />
+  const missing = route.view === 'project' && m.projects.length > 0 && !currentProject ? 'project' as const
+    : route.view === 'label' && m.labels.length > 0 && (!currentLabel || currentLabel.deleted_at) ? 'label' as const
+      : route.view === 'place' && currentPlace !== undefined && (!currentPlace || currentPlace.deleted_at) ? 'place' as const : null
+  // What is gone is said inside the phone screen, under the phone header: its menu button is the way out.
+  if (missing) return (
+    <PhoneChrome onMenu={onMenu}>
+      <div data-phone-screen="list" data-phone-list={route.view} data-phone-missing={missing} className="min-h-full bg-canvas">
+        <div className="px-4"><PageHeader title={s.title} /></div>
+        <MissingTarget kind={missing} />
+      </div>
+    </PhoneChrome>
+  )
   if (!s.ready) return <div className="min-h-full bg-canvas" data-list-loading />
 
   return (
