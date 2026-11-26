@@ -307,7 +307,7 @@ final class ReminderTests: XCTestCase {
             let want = try XCTUnwrap(fixture["expect"] as? [[String: Any]], name).map { r in
                 Reminders.Handed(id: r["id"] as? String ?? "?", taskId: r["taskId"] as? String ?? "?",
                                  fireAt: r["fireAt"] as? Double ?? -1, title: r["title"] as? String,
-                                 urgent: r["urgent"] as? Bool ?? false)
+                                 urgent: r["urgent"] as? Bool ?? false, due: r["due"] as? String)
             }
             let payload = try XCTUnwrap(fixture["payload"] as? String, name)
             XCTAssertEqual(Reminders.select(Reminders.parse(payload), now: Date(timeIntervalSince1970: nowMs / 1000)), want, name)
@@ -1023,6 +1023,33 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.pendingPath, "/?task=abc")
     }
 
+    /// ios-app-banner D5: the banner's address opens the task only on the configured server.
+    func testABannerLinkOpensTheTaskOnTheServerOnly() {
+        let server = URL(string: "https://todo.example.com")
+        let id = { (link: String) in AppModel.taskID(webLink: URL(string: link)!, server: server) }
+        XCTAssertEqual(id("https://todo.example.com/task/abc"), "abc")
+        XCTAssertEqual(id("https://TODO.example.com:443/task/abc"), "abc")
+        XCTAssertEqual(id("https://todo.example.com/task/a%20b"), "a b")
+        XCTAssertNil(id("https://evil.example.com/task/abc"), "another host")
+        XCTAssertNil(id("https://todo.example.com.evil.example/task/abc"))
+        XCTAssertNil(id("https://todo.example.com:8443/task/abc"), "another port")
+        XCTAssertNil(id("https://todo.example.com/task/"))
+        XCTAssertNil(id("https://todo.example.com/task/a/b"))
+        XCTAssertNil(id("https://todo.example.com/task/abc/"))
+        XCTAssertNil(id("https://todo.example.com/today"))
+        XCTAssertNil(AppModel.taskID(webLink: URL(string: "https://todo.example.com/task/abc")!, server: nil), "no server yet")
+        XCTAssertEqual(AppModel.taskID(webLink: URL(string: "http://192.168.1.5:8080/task/abc")!, server: URL(string: "http://192.168.1.5:8080")), "abc")
+    }
+
+    /// ios-app-banner D5: the scheme is the configured server's; the app's own links keep their own route.
+    func testABannerLinkOnAnotherSchemeIsIgnored() {
+        let server = URL(string: "https://todo.example.com")
+        XCTAssertNil(AppModel.taskID(webLink: URL(string: "http://todo.example.com/task/abc")!, server: server))
+        XCTAssertNil(AppModel.taskID(webLink: URL(string: "ftp://todo.example.com/task/abc")!, server: server))
+        XCTAssertNil(AppModel.taskID(webLink: URL(string: "opentodo://task/abc")!, server: server))
+        XCTAssertNil(AppModel.taskID(webLink: URL(string: "https://todo.example.com/task/abc")!, server: URL(string: "http://todo.example.com")))
+    }
+
     /// shell-repairs D6: Done, Snooze and Dismiss build the addresses of the shared bridge
     /// fixture (the Android app's too), which the web app reads.
     private func actionsFixture() throws -> [String: Any] {
@@ -1116,6 +1143,61 @@ final class AppModelTests: XCTestCase {
 
     func testTheChangeServerShortcutDoesNotResetWithoutConfirmation() {
         let model = AppModel()
+        XCTAssertFalse(model.changeServerRequested)
+    }
+
+    /// The tests below connect a model; the saved server of the test host is put back after.
+    private func keepServerOrigin() {
+        let saved = Prefs.shared.serverOrigin
+        addTeardownBlock { Prefs.shared.serverOrigin = saved }
+    }
+
+    /// native-shells "Quick actions on the app icon": the types of project.yml.
+    @MainActor
+    func testTheIconQuickActionsOpenTheirScreens() {
+        let model = AppModel()
+        XCTAssertTrue(model.perform(shortcut: "add-task"))
+        XCTAssertEqual(model.pendingPath, "/?add=")
+        XCTAssertTrue(model.perform(shortcut: "today"))
+        XCTAssertEqual(model.pendingPath, "/today")
+        XCTAssertFalse(model.changeServerRequested)
+        XCTAssertFalse(model.perform(shortcut: "unknown"))
+    }
+
+    @MainActor
+    func testTheChangeServerShortcutAsksFirst() {
+        keepServerOrigin()
+        let model = AppModel()
+        model.connect("https://todo.example.com")
+        XCTAssertTrue(model.perform(shortcut: "change-server"))
+        XCTAssertTrue(model.changeServerRequested)
+        XCTAssertEqual(model.origin?.absoluteString, "https://todo.example.com", "the server is kept until the user confirms")
+        XCTAssertNil(model.pendingPath)
+    }
+
+    /// At a cold start the dialog waits for the window's final root (StatusBar).
+    @MainActor
+    func testChangeServerAtLaunchAsksOnceTheWindowIsReady() {
+        keepServerOrigin()
+        let model = AppModel()
+        model.connect("https://todo.example.com")
+        XCTAssertTrue(model.perform(shortcut: "change-server", atLaunch: true))
+        XCTAssertFalse(model.changeServerRequested)
+        model.windowReady()
+        XCTAssertTrue(model.changeServerRequested)
+        model.changeServerRequested = false
+        model.windowReady()
+        XCTAssertFalse(model.changeServerRequested, "asked once")
+    }
+
+    /// Without a server the first-run screen is up: nothing to change, nothing to ask.
+    @MainActor
+    func testChangeServerWithoutAServerDoesNothing() {
+        keepServerOrigin()
+        Prefs.shared.serverOrigin = nil
+        let model = AppModel()
+        XCTAssertNil(model.origin)
+        XCTAssertFalse(model.perform(shortcut: "change-server"))
         XCTAssertFalse(model.changeServerRequested)
     }
 }

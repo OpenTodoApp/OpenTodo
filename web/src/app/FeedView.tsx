@@ -173,11 +173,11 @@ export function FeedView() {
                           <button type="button" className="text-default underline decoration-dotted" onClick={() => open(e)}>{title}</button>
                         </>
                       )}
-                      {isPending(e, pending) && <Tooltip label={t('Not yet synced')}><span className="ml-1 rounded-chip text-meta italic text-warning" tabIndex={0}>{t('(pending)')}</span></Tooltip>}
+                      {isPending(e, pending) && <Tooltip label={t('Not yet synced')}><span className="ms-1 rounded-chip text-meta italic text-warning" tabIndex={0}>{t('(pending)')}</span></Tooltip>}
                       <span className="mt-0.5 flex items-center gap-1 text-meta text-faint">
                         {p ? <ProjectMark project={p} size="xs" />
                           : <span className="inline-block h-2 w-2 rounded-full bg-hue-solid" data-hue={hueFor(undefined)} aria-hidden />}
-                        <button type="button" className="min-h-6 min-w-0 truncate text-left hover:underline" onClick={() => e.projectId && navigate({ view: 'project', id: e.projectId })}>
+                        <button type="button" className="min-h-6 min-w-0 truncate text-start hover:underline" onClick={() => e.projectId && navigate({ view: 'project', id: e.projectId })}>
                           {projectName(e.projectId, e.projectName)}
                         </button>
                       </span>

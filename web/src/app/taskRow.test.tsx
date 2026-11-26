@@ -687,7 +687,7 @@ describe('the touch grip', () => {
     const r = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} hasChildren onToggleCollapse={() => {}} onToggle={() => {}} onOpen={() => {}} onTick={() => {}} onGripDown={() => {}} onGripClick={() => {}} /></ul>)
     const fold = r.container.querySelector<HTMLElement>('[data-leading-slot] button')!
     // 44 px that end where the checkbox's begin (its -m-3 around a 20 px slot, 8 px after the 16 px leading slot) and reach back over the indent.
-    for (const cls of ['pointer-coarse:w-11', 'pointer-coarse:h-11', 'pointer-coarse:-ml-8', 'pointer-coarse:mr-1', 'pointer-coarse:justify-end']) expect(fold.className).toContain(cls)
+    for (const cls of ['pointer-coarse:w-11', 'pointer-coarse:h-11', 'pointer-coarse:-ms-8', 'pointer-coarse:me-1', 'pointer-coarse:justify-end']) expect(fold.className).toContain(cls)
     expect(fold.className).not.toContain('-mx-3.5')
     // Its pressed circle is the glyph's, not the target's, and the press does not dim it.
     const mark = fold.querySelector<HTMLElement>('[data-fold-mark]')!

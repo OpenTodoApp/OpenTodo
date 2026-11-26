@@ -31,7 +31,7 @@ export const Inline: StoryObj = {
       {[{ date: '2026-11-02', time: '15:00' }, { date: '2026-11-02', time: '15:00', tz: 'America/New_York' }].map((due) => (
         <div key={due.tz ?? 'floating'} className="flex items-center gap-2">
           <span className="text-body tabular-nums text-default">15:00</span>
-          <span className="ml-auto"><ZoneControl task={task(due)} viewerZone={VIEWER} variant="inline" /></span>
+          <span className="ms-auto"><ZoneControl task={task(due)} viewerZone={VIEWER} variant="inline" /></span>
         </div>
       ))}
     </div>

@@ -53,6 +53,7 @@ import type { ReactNode } from 'react'
 import { t } from '../lib/i18n'
 import { keysOf } from '../lib/shortcuts'
 import { messageOf } from '../lib/errorText'
+import { isRtl } from '../lib/direction'
 
 /**
  * Debounce between the last keystroke and saving the note on the device (design D3).
@@ -406,10 +407,13 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
       clipboardTextParser: (text) => markdownSlice(text),
       ...(imageParent && !readOnly ? imageHandlers(imageParent) : {}),
       handleClickOn: (_view, _pos, node, nodePos, event) => {
-        // A click on a check item's box (left of its text) toggles it.
+        // A click on a check item's box (before its text, at the line's start edge) toggles it.
         if (node.type.name !== 'list_item' || node.attrs.checked === null || readOnly) return false
         const li = (event.target as HTMLElement).closest('li')
-        if (!li || event.clientX > li.getBoundingClientRect().left + parseFloat(getComputedStyle(li).paddingLeft)) return false
+        if (!li) return false
+        const r = li.getBoundingClientRect()
+        const fromStart = isRtl(li) ? r.right - event.clientX : event.clientX - r.left
+        if (fromStart > parseFloat(getComputedStyle(li).paddingInlineStart)) return false
         v.dispatch(v.state.tr.setNodeMarkup(nodePos, undefined, { checked: !node.attrs.checked }))
         return true
       },

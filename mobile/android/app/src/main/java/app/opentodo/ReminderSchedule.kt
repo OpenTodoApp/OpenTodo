@@ -2,8 +2,14 @@ package app.opentodo
 
 import org.json.JSONArray
 
-/** One reminder the web app handed over (bridge v1 `scheduleReminders`). */
-data class ShellReminder(val id: String, val taskId: String, val fireAt: Long, val title: String?)
+/**
+ * One reminder the web app handed over (bridge v1 `scheduleReminders`). [due] is the notification's
+ * body, the task's due as of the firing day ("Today 14:00"), handed over with the title (push-due-date D4).
+ * [urgent] rings it as an alarm (android-urgent-alarms D1); only a JSON `true` sets it.
+ */
+data class ShellReminder(
+    val id: String, val taskId: String, val fireAt: Long, val title: String?, val due: String? = null, val urgent: Boolean = false,
+)
 
 /** Parsing and filtering of the handed-over schedule; pure so the rules are unit-tested. */
 object ReminderSchedule {
@@ -29,7 +35,8 @@ object ReminderSchedule {
             if (now != null && (fireAt < now - GRACE_MS || fireAt > now + HORIZON_MS)) continue
             if (!seen.add(id)) continue
             val title = if (o.has("title") && !o.isNull("title")) o.optString("title").take(200).ifEmpty { null } else null
-            out.add(ShellReminder(id, taskId, fireAt, title))
+            val due = if (o.has("due") && !o.isNull("due")) o.optString("due").take(100).ifEmpty { null } else null
+            out.add(ShellReminder(id, taskId, fireAt, title, due, o.opt("urgent") == true))
         }
         return out.sortedBy { it.fireAt }.take(MAX)
     }
@@ -39,6 +46,8 @@ object ReminderSchedule {
         for (r in list) arr.put(org.json.JSONObject().apply {
             put("id", r.id); put("taskId", r.taskId); put("fireAt", r.fireAt)
             if (r.title != null) put("title", r.title)
+            if (r.due != null) put("due", r.due)
+            if (r.urgent) put("urgent", true)
         })
         return arr.toString()
     }
@@ -93,4 +102,44 @@ object ReminderSchedule {
 
     /** The address the quick-add widget opens (the web app's `?add=`; shared fixture bridge/actions.json). */
     const val QUICK_ADD_PATH = "/?add="
+}
+
+/** The rules of urgent reminders on Android (android-urgent-alarms); pure so they are unit-tested. */
+object UrgentAlarms {
+    const val EXACT = "exact"
+    const val FULL_SCREEN = "full-screen"
+
+    /** Android 12 (API 31) asks for exact alarms, Android 14 (API 34) for full-screen notifications. */
+    private const val EXACT_SDK = 31
+    private const val FULL_SCREEN_SDK = 34
+
+    /**
+     * D4: the settings page to open when the user turns Urgent on, or null: exact alarms first,
+     * then full-screen notifications, each only when missing on this Android version and not
+     * asked on this device before.
+     */
+    fun nextAsk(sdk: Int, exact: Boolean, fullScreen: Boolean, askedExact: Boolean, askedFullScreen: Boolean): String? = when {
+        sdk >= EXACT_SDK && !exact && !askedExact -> EXACT
+        sdk >= FULL_SCREEN_SDK && !fullScreen && !askedFullScreen -> FULL_SCREEN
+        else -> null
+    }
+
+    /** D3: an urgent reminder is an alarm clock when exact alarms are allowed; everything else is armed as before. */
+    fun armAsAlarmClock(r: ShellReminder, exact: Boolean): Boolean = r.urgent && exact
+
+    /**
+     * D2: [acted] with this firing answered, or null when it was answered already (a double tap,
+     * or Done from the notification shade or a watch while the alarm screen is open), so a
+     * repeating task is not advanced twice. A firing is the reminder at its time (the same
+     * minute, as for [ReminderSchedule.wasShown]); without a time ([fireAt] 0, a location
+     * reminder) every answer counts.
+     */
+    fun firstAnswer(acted: String, id: String, fireAt: Long, now: Long): String? = when {
+        fireAt <= 0 -> acted
+        ReminderSchedule.wasShown(acted, id, fireAt) -> null
+        else -> ReminderSchedule.markShown(acted, id, fireAt, now)
+    }
+
+    /** The alarm screen over a locked phone names the task only when the user lets notifications show private content there. */
+    fun showTitle(locked: Boolean, privateOnLockScreen: Boolean): Boolean = !locked || privateOnLockScreen
 }

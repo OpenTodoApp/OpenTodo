@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 // The swipe gesture's numbers (OpenSpec change phone-v2, design D3 table), one case per threshold.
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { beginSwipe, lockOf, offsetOf, releaseOf, revealed, SWIPE, type SwipeHandlers } from './rowSwipe'
+import { beginSwipe, lockOf, offsetOf, releaseOf, revealed, swallowClick, SWIPE, type SwipeHandlers } from './rowSwipe'
 
 describe('the gesture table', () => {
   it.each([
@@ -93,5 +93,25 @@ describe('beginSwipe', () => {
     const c = track()
     move(140); move(200); move(120); up(120)
     expect(c.end).toEqual([null])
+  })
+})
+
+// touch-title-editing D3: the tap that ends a touch edit; iOS can send its click a moment after the release.
+describe('swallowClick', () => {
+  afterEach(() => { vi.useRealTimers() })
+  it('swallows one click within the window, and none after it', () => {
+    vi.useFakeTimers()
+    const seen = vi.fn()
+    document.body.addEventListener('click', seen)
+    swallowClick(400)
+    vi.advanceTimersByTime(200)
+    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(seen).toHaveBeenCalledTimes(1)
+    swallowClick(400)
+    vi.advanceTimersByTime(401)
+    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(seen).toHaveBeenCalledTimes(2)
+    document.body.removeEventListener('click', seen)
   })
 })

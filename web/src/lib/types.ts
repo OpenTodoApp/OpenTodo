@@ -401,8 +401,9 @@ export type FieldValue = string | number | boolean | null
 export type FieldType = 'text' | 'number' | 'date' | 'choice' | 'link' | 'checkbox'
 
 /**
- * A custom field definition of one project (OpenSpec `custom-fields`, design D1).
- * `project_id` and `type` never change after creation; `options` holds a choice
+ * A custom field definition of one project (OpenSpec `custom-fields`, design D1),
+ * or of a workspace when `project_id` is empty (`workspace-fields`, D1).
+ * `project_id`, `workspace_id` and `type` never change after creation; `options` holds a choice
  * field's options, one per line, in display order (`""` otherwise).
  */
 export interface FieldDef extends FieldDefFields {

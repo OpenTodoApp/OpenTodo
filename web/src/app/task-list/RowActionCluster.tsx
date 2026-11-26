@@ -1,5 +1,6 @@
 // Revealed row actions (OpenSpec change rows-v2, task-list-presentation "Revealed
-// row actions", design D7): Show details (row-expand D2), Schedule, Priority and More at the row's right edge, in
+// row actions", design D7): Edit (row-edit-action D1) or Show details (row-expand D2),
+// Schedule, Priority and More at the row's right edge, in
 // the place of the trailing group while the pointer is over the row or focus is
 // inside it. They are real buttons at all times (reachable by Tab, never hover-only);
 // CSS shows them only on a fine pointer from 768 px, and on touch they are not
@@ -25,12 +26,14 @@ function reveal(el: HTMLElement) {
   el.scrollIntoView?.({ block: 'nearest' })
 }
 
-export function RowActionCluster({ task, onMore, force = false, editable = true, details }: {
+export function RowActionCluster({ task, onMore, force = false, editable = true, details, onEdit }: {
   task: Task
   /** The user may change the task: Schedule, Priority and More; a viewer's cluster has Show details only. */
   editable?: boolean
-  /** Show details / Hide details (row-expand D2), when the row can expand. */
+  /** Show details / Hide details (row-expand D2), when the row can expand and offers no Edit. */
   details?: { expanded: boolean; controls: string; onToggle: () => void }
+  /** Edit (row-edit-action D1): the list's inline editor, as F2 opens it; it takes Show details' place. */
+  onEdit?: () => void
   /** Opens the row menu, as `.` does; without it the cluster has no More button. */
   onMore?: (from: HTMLElement) => void
   /** Stories: shown as if hovered (the visual gate cannot hover). */
@@ -57,8 +60,12 @@ export function RowActionCluster({ task, onMore, force = false, editable = true,
   const shown = force || scheduling ? 'opacity-100' : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-has-[[data-project]_:focus-visible]:pointer-events-none! group-has-[[data-project]_:focus-visible]:opacity-0! group-has-[[data-row-meta]_:focus-visible]:pointer-events-none! group-has-[[data-row-meta]_:focus-visible]:opacity-0! group-has-[[data-urgency-chip]:focus-visible]:pointer-events-none! group-has-[[data-urgency-chip]:focus-visible]:opacity-0!'
   return (
     <span data-row-actions="" onKeyDown={onKeyDown} onFocus={(e) => reveal(e.target as HTMLElement)}
-      className={`absolute top-px right-1 z-10 hidden items-center gap-2 rounded-control border border-strong bg-pop px-0.5 shadow-2 transition-opacity duration-(--duration-ui) md:pointer-fine:flex ${shown}`}>
-      {details && (
+      className={`absolute top-px inset-e-1 z-10 hidden items-center gap-2 rounded-control border border-strong bg-pop px-0.5 shadow-2 transition-opacity duration-(--duration-ui) md:pointer-fine:flex ${shown}`}>
+      {editable && onEdit ? (
+        <IconButton icon="pencil" size="sm" label={t('Edit')} shortcut={keysOf('list.edit-inline')} data-row-action="edit"
+          // The editor replaces the actions: the click must not reach the row as a click on its empty area.
+          onClick={(e) => { e.stopPropagation(); onEdit() }} />
+      ) : details && (
         <IconButton icon="chevron-down" size="sm" label={details.expanded ? t('Hide details') : t('Show details')}
           shortcut={keysOf(details.expanded ? 'list.collapse' : 'list.expand')} aria-expanded={details.expanded}
           aria-controls={details.expanded ? details.controls : undefined} data-row-action="details" onClick={details.onToggle}

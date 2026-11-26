@@ -19,6 +19,7 @@ import { showBulkToast } from '../bulk/toastStore'
 import { onAttachRequest } from './attachRequest'
 import { t, msg, translatedMap } from '../../lib/i18n'
 import { filesFrom } from '../../lib/pastedFiles'
+import { composing } from '../../lib/composeKey'
 
 /** "PDF", "PNG", or the name's extension; "Link" for links. */
 export function typeLabel(a: Pick<Attachment, 'mime' | 'name' | 'url'>): string {
@@ -253,7 +254,7 @@ function LinkForm({ onAdd, onCancel }: { onAdd: (url: string) => Promise<void>; 
     }}>
       <input autoFocus type="url" inputMode="url" value={value} placeholder={t('https://…')} aria-label={t('Link address')} aria-invalid={!!error}
         aria-describedby={error ? 'attachment-link-error' : undefined}
-        onChange={(e) => { setValue(e.target.value); setError(null) }} onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}
+        onChange={(e) => { setValue(e.target.value); setError(null) }} onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}
         className="ui-input min-w-0 flex-1 py-1 text-body" />
       <Button type="submit" size="sm">{t('Add')}</Button>
       <Button size="sm" variant="ghost" onClick={onCancel}>{t('Cancel')}</Button>
@@ -294,7 +295,7 @@ export function AttachmentItem({ a, blob, selected, missing, note, renaming, can
       <div className="min-w-0 flex-1">
         {renaming ? <RenameField initial={a.name} onDone={onRenamed} /> : (
           <Tooltip label={a.name}>
-            <button type="button" data-attachment-open tabIndex={selected ? 0 : -1} className="block w-full truncate rounded-control text-left text-body text-default hover:underline" onClick={() => onOpen(false)}>
+            <button type="button" data-attachment-open tabIndex={selected ? 0 : -1} className="block w-full truncate rounded-control text-start text-body text-default hover:underline" onClick={() => onOpen(false)}>
               {a.name}
             </button>
           </Tooltip>
@@ -329,6 +330,7 @@ function RenameField({ initial, onDone }: { initial: string; onDone: (name: stri
       onChange={(e) => setValue(e.target.value)} onBlur={() => finish(value)}
       onKeyDown={(e) => {
         e.stopPropagation()
+        if (composing(e)) return
         if (e.key === 'Enter') { e.preventDefault(); finish(value) }
         if (e.key === 'Escape') { e.preventDefault(); finish(null) }
       }} />

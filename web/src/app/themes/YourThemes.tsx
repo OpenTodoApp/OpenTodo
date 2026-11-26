@@ -164,12 +164,12 @@ export function YourThemes({ themes, lowContrast, resolved = {}, actions, onNew,
           {themes.map((th) => (
             <li key={th.id} className="relative flex flex-col gap-2 rounded-card border border-default bg-surface p-2" data-custom-theme={th.id}>
               <ThemeSwatches swatches={docSwatches(th.doc, resolved[th.id])} />
-              <button type="button" className="min-w-0 pr-7 text-left outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus rounded-control" onClick={() => openTheme(th.id)}>
+              <button type="button" className="min-w-0 pe-7 text-start outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus rounded-control" onClick={() => openTheme(th.id)}>
                 <span className="block truncate text-meta font-medium text-default"><span className="sr-only">{t('Edit')} </span>{th.doc.name}</span>
                 <span className="block truncate text-hint text-muted">{th.doc.kind === 'light' ? t('Light') : t('Dark')}</span>
                 {lowContrast[th.id] ? <span className="block truncate text-hint font-medium text-warning" data-theme-low-contrast={lowContrast[th.id]}>{lowContrastBadge(lowContrast[th.id])}</span> : null}
               </button>
-              <div className="absolute right-1 bottom-1"><CustomThemeMenu theme={th} actions={actions} room={room} /></div>
+              <div className="absolute inset-e-1 bottom-1"><CustomThemeMenu theme={th} actions={actions} room={room} /></div>
             </li>
           ))}
         </ul>

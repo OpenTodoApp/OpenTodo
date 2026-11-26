@@ -28,8 +28,8 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `caldav-verified` | CalDAV verified on real clients | In progress (6 of 16) |
 | `play-production` | Google Play production, F-Droid and reproducible builds: reproducible builds, the F-Droid metadata and the Play upload are in; the store listings wait for the owner's Play Console and F-Droid steps | In progress (15 of 18) |
 | `ios-shell` | The iPhone and iPad app: first-run server screen, reminders on the phone without a push service, the share sheet, a Today widget, Face ID unlock | In progress (25 of 34) |
-| `ios-distribution` | The iPhone app in TestFlight and the App Store | In progress (14 of 28) |
-| `apple-shortcuts` | Siri, Shortcuts, the Action Button and iOS widgets | Planned |
+| `ios-distribution` | The iPhone app in TestFlight and the App Store | In progress (15 of 29) |
+| `apple-shortcuts` | Siri, Shortcuts, the Action Button and iOS widgets | In progress (2 of 22) |
 | `focus-live-activity` | Focus as a Live Activity and in the Dynamic Island | In progress (18 of 21) |
 | `location-reminders` | Reminders when you arrive at or leave a place. Shipped on Android; iOS follows | In progress (16 of 18) |
 | `mobile-native-feel` | The phone apps made to feel native: the plan and the order, one change per step | In progress (5 of 15) |
@@ -38,6 +38,8 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `android-home-network-notice` | The Android app says when the server address only works at home | In progress (2 of 3) |
 | `android-reveal-on-paint` | The Android app shows the web app at its first drawn frame, as the iPhone app does | In progress (3 of 4) |
 | `android-unicode-address` | A server address typed in Unicode works in the Android app; both apps share one set of address cases | In progress (3 of 4) |
+| `android-urgent-alarms` | Urgent reminders ring as full-screen alarms in the Android app; built, the device run is open | In progress (10 of 11) |
+| `android-quick-add-notification` | A quick-add notification in the Android app: add a task from the notification shade in any app | In progress (7 of 8) |
 | `ios-microphone-origin` | The iPhone app grants the microphone to the configured server only, without a second prompt | In progress (4 of 5) |
 | `ios-quick-look` | An attached image or PDF opens in Quick Look in the iPhone app, without saving it first | In progress (4 of 5) |
 | `ios-web-location` | "Use my location" in a task's location editor works in the iPhone app | In progress (5 of 6) |
@@ -121,6 +123,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `away-periods` | Away: mark a period, also after the fact, that skips the repeating occurrences in it in one Undo, keeps streaks and pauses reminders | Shipped in 1.6 |
 | `workspace-activity` | A workspace Activity page for retrospectives: every project, a date range, several kinds at once, tracked time, filters remembered on the device | Shipped in 1.6 |
 | `workspace-feature-switches` | Feature switches per workspace: the owner and admins turn Notes, Calendar, Habits, Time tracking, Focus, Routines, Reviews and Locations on or off for everyone in it; off hides, never deletes | Shipped in 1.8 |
+| `workspace-fields` | Fields a workspace's owner defines once for every project of the workspace | Shipped |
 | `caldav-push` | Push to calendar apps: a change on any device wakes a subscribed CalDAV client (WebDAV-Push), off until the owner turns it on | Shipped in 1.6 |
 | `drag-ticked-together` | Drag several ticked tasks within a list to reorder or nest them in one move, with one Undo | Shipped in 1.6 |
 | `quarter-view-and-plan-spans` | A Quarter view in the Calendar (three months at a glance, `g q`), and 3-day and custom Plan spans | Shipped in 1.6 |
@@ -154,6 +157,8 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `chore-rotation` | Recurring tasks that rotate between members of a group | Shipped in 0.21 |
 | `more-languages` | Dutch, quick add in Dutch, and a kit for community languages | Shipped in 1.5 |
 | `simplified-chinese` | Simplified Chinese (简体中文) | Shipped in 0.23 |
+| `japanese` | Japanese (日本語) as a community language, reviewed by a native speaker | In progress (8 of 9) |
+| `arabic-rtl` | Arabic (العربية) as a community language, and the app laid out right to left | In progress (16 of 17) |
 | `priority-names` | Rename the four priorities | Shipped in 1.4 |
 
 ## 1.0 "Trust"
@@ -279,6 +284,10 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `touch-sidebar-names` | On touch a sidebar row's name has the room; its menu opens on a hold | Shipped in 1.6 |
 | `reminder-card-compact` | The in-app reminder as one compact card on touch: Snooze and Dismiss on one row | Shipped in 1.6 |
 | `phone-fab-scroll-room` | The calendar's Day and Week reach the tab bar; no empty room under pages without the add button | Shipped in 1.6 |
+| `phone-ui-trial` | A trial of screens made only for a phone, behind a switch on the device: Today and the task page, a date sheet, and a place and rules for the phone screens that follow | In progress (20 of 23) |
+| `phone-lists` | Every task list in the phone screens, with all a list does: its menu, selection, reordering, subtasks and each list's own parts | In progress (12 of 19) |
+| `phone-all-screens` | The phone header and the phone task row on every screen of the app, so the phone screens are one interface | In progress (9 of 11) |
+| `phone-ui-default` | The phone screens are what a phone shows by default; the switch stays as the way back on a device | In progress (7 of 8) |
 | `shell-push` | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | Shipped in 1.5 |
 
 <!-- roadmap:end -->

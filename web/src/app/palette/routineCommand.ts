@@ -124,7 +124,7 @@ export function runRoutineStep(task: Task | undefined): Step {
       return { items: list }
     },
     getKey: (r: Rule) => r.id,
-    getLabel: (r: Rule) => t('Run routine: {name}', { name: r.name || t('Untitled routine') }),
+    getLabel: (r: Rule) => t.plain('Run routine: {name}', { name: r.name || t('Untitled routine') }),
     getSecondary: (r: Rule) => (online() ? triggerText(r) : t('Needs a connection')),
     onPick: (r: Rule) => { void runRoutineNow(r, task) },
   } }

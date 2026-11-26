@@ -69,8 +69,8 @@ export function FilterPanel({ count, onClose, onClear, builder, formula, message
           </span>
         </h2>
         {/* The New view page's draft starts over (filter-queries "New view keeps its draft"). */}
-        {onClear && <Button variant="ghost" size="sm" className="ml-auto" onClick={onClear} data-filter-clear>{t('Clear')}</Button>}
-        <IconButton icon="x" size="sm" label={t('Close the filter')} className={onClear ? undefined : 'ml-auto'} onClick={onClose} />
+        {onClear && <Button variant="ghost" size="sm" className="ms-auto" onClick={onClear} data-filter-clear>{t('Clear')}</Button>}
+        <IconButton icon="x" size="sm" label={t('Close the filter')} className={onClear ? undefined : 'ms-auto'} onClick={onClose} />
       </header>
       <div className="px-3">{builder}</div>
       <div className="mx-3 mb-3 rounded-control bg-sunken p-1.5" data-filter-formula>

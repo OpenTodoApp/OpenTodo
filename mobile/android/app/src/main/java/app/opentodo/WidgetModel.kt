@@ -1,11 +1,14 @@
 package app.opentodo
 
+import java.time.LocalDate
+import java.time.LocalDateTime
 import org.json.JSONObject
 
 /**
- * What the Today widget shows, built from the web app's last publication only (native-shells D6):
- * every published row (at most [MAX_ROWS]), and whether the web app can complete a task from
- * the widget (android-widget-list D3). Pure for tests.
+ * What the Today and Upcoming widgets show, built from the web app's last publication only
+ * (native-shells D6): every published row (at most [MAX_ROWS]), whether the web app can complete
+ * a task from the widget (android-widget-list D3), and the Upcoming list by day, null when the
+ * web app publishes none (android-upcoming-calendar-widgets D1). Pure for tests.
  */
 data class WidgetModel(
     val updatedAt: Long,
@@ -15,6 +18,12 @@ data class WidgetModel(
     val canComplete: Boolean,
     val rows: List<Row>,
     val more: Int,
+    val upcoming: Upcoming? = null,
+    /** The web app reads `<id>@<due>`, the occurrence ticked (android-upcoming-calendar-widgets D6). */
+    val canCompleteOn: Boolean = false,
+    /** The app's logical today when published, and the minutes after midnight its day starts (D7). */
+    val today: String? = null,
+    val dayStart: Int? = null,
 ) {
     data class Row(
         val id: String,
@@ -24,23 +33,36 @@ data class WidgetModel(
         val project: String?,
         val priority: Int,
         val overdue: Boolean,
+        /** The task's due date, the occurrence a tick names (android-upcoming-calendar-widgets D6). */
+        val due: String? = null,
     )
 
-    /** One line of the list: a group heading or a task (android-widget-list D1). */
+    /** The Upcoming list (android-upcoming-calendar-widgets D1): rows in day order, each [Row.date] the day it is under. */
+    data class Upcoming(val count: Int, val rows: List<Row>, val more: Int)
+
+    /** One line of a list: a group heading, a day heading (Upcoming) or a task (android-widget-list D1). */
     sealed interface Item {
         data class Heading(val group: Group) : Item
+        /** The day the following Upcoming rows are listed under, `YYYY-MM-DD`. */
+        data class Day(val date: String) : Item
         data class Task(val row: Row) : Item
-        /** Tasks counted but not published (beyond [MAX_ROWS]); a tap opens Today. */
+        /** Tasks counted but not published (beyond [MAX_ROWS]); a tap opens the list in the app. */
         data class More(val count: Int) : Item
     }
 
     enum class Group { EARLIER, TODAY }
 
     /** The rows still to show once the [pending] completions are hidden. */
-    fun visibleRows(pending: Set<String>): List<Row> = rows.filter { it.id !in pending }
+    fun visibleRows(pending: Set<String>): List<Row> {
+        val ids = WidgetPending.ids(pending)
+        return rows.filter { it.id !in ids }
+    }
 
     /** The header's count: the published count less the rows hidden as completed. */
-    fun visibleCount(pending: Set<String>): Int = (count - rows.count { it.id in pending }).coerceAtLeast(0)
+    fun visibleCount(pending: Set<String>): Int {
+        val ids = WidgetPending.ids(pending)
+        return (count - rows.count { it.id in ids }).coerceAtLeast(0)
+    }
 
     /**
      * The list's lines: the rows in the web app's order (overdue first), under "Earlier" and
@@ -55,6 +77,40 @@ data class WidgetModel(
         else listOf<Item>(Item.Heading(Group.EARLIER)) + earlier.map { Item.Task(it) } + Item.Heading(Group.TODAY) + today.map { Item.Task(it) }
         return if (more > 0) tasks + Item.More(more) else tasks
     }
+
+    /** Whether an Upcoming row is hidden: ticked there (its occurrence), or ticked in Today (android-upcoming-calendar-widgets D3). */
+    private fun hiddenUpcoming(row: Row, pending: Set<String>): Boolean = WidgetPending.key(row.id, row.date) in pending || row.id in pending
+
+    /** The Upcoming header's count once the [pending] completions are hidden. */
+    fun upcomingCount(pending: Set<String>): Int =
+        upcoming?.let { u -> (u.count - u.rows.count { hiddenUpcoming(it, pending) }).coerceAtLeast(0) } ?: 0
+
+    /** The Upcoming list's lines: a [Item.Day] heading before each day's rows, then the tasks not published. */
+    fun upcomingItems(pending: Set<String>): List<Item> {
+        val u = upcoming ?: return emptyList()
+        if (locked) return emptyList()
+        val out = ArrayList<Item>()
+        var day: String? = null
+        for (row in u.rows) {
+            if (hiddenUpcoming(row, pending)) continue
+            if (row.date != day) { day = row.date; out += Item.Day(row.date ?: "") }
+            out += Item.Task(row)
+        }
+        if (u.more > 0) out += Item.More(u.more)
+        return out
+    }
+
+    /** The row a tick is for: in Today ([date] null) or in Upcoming on [date]; null when the publication does not list it. */
+    fun row(taskId: String, date: String?): Row? =
+        if (date == null) rows.firstOrNull { it.id == taskId } else upcoming?.rows?.firstOrNull { it.id == taskId && it.date == date }
+
+    fun lists(taskId: String, date: String?): Boolean = row(taskId, date) != null
+
+    /** What a run sends for a tick on [row]: `<id>@<due>` when the web app reads it, so an occurrence is completed once (D6). */
+    fun completion(row: Row): String = if (canCompleteOn && row.due != null) "${row.id}@${row.due}" else row.id
+
+    /** The app's logical today at [now] (android-upcoming-calendar-widgets D7). */
+    fun logicalToday(now: LocalDateTime = LocalDateTime.now()): LocalDate = logicalToday(dayStart, today, now)
 
     companion object {
         /** The web app publishes at most 50 (shellPublish.ts WIDGET_MAX). */
@@ -79,21 +135,57 @@ data class WidgetModel(
                     project = text(t, "project", 100),
                     priority = t.optInt("priority", 4).coerceIn(1, 4),
                     overdue = t.optBoolean("overdue", false),
+                    due = text(t, "due", 10)?.takeIf { DATE.matches(it) },
                 )
             }
             val rows = all.filter { it.id.isNotEmpty() }.take(MAX_ROWS)
             val count = o.optInt("count", rows.size).coerceAtLeast(0)
             val actions = o.optJSONArray("actions")
             val complete = actions != null && (0 until actions.length()).any { actions.optString(it) == "complete" }
+            val upcoming = o.optJSONObject("upcoming")?.let { u ->
+                val list = u.optJSONArray("tasks")
+                val upRows = ArrayList<Row>()
+                if (!locked && list != null) for (i in 0 until list.length()) {
+                    val t = list.optJSONObject(i) ?: continue
+                    val date = text(t, "date", 10)?.takeIf { DATE.matches(it) } ?: continue
+                    upRows += Row(
+                        id = t.optString("id"),
+                        title = text(t, "title", 200),
+                        time = text(t, "time", 5)?.takeIf { TIME.matches(it) },
+                        date = date,
+                        project = text(t, "project", 100),
+                        priority = t.optInt("priority", 4).coerceIn(1, 4),
+                        overdue = false,
+                        due = text(t, "due", 10)?.takeIf { DATE.matches(it) },
+                    )
+                }
+                val shown = upRows.filter { it.id.isNotEmpty() }.take(MAX_ROWS)
+                val upCount = u.optInt("count", shown.size).coerceAtLeast(0)
+                Upcoming(upCount, shown, (upCount - shown.size).coerceAtLeast(0))
+            }
             return WidgetModel(
                 updatedAt = o.optLong("updatedAt", 0),
                 locked = locked,
                 count = count,
                 overdue = o.optInt("overdue", 0).coerceAtLeast(0),
                 canComplete = complete && !locked,
+                canCompleteOn = complete && !locked && actions != null && (0 until actions.length()).any { actions.optString(it) == "complete-on" },
+                today = text(o, "today", 10)?.takeIf { DATE.matches(it) },
+                dayStart = if (o.has("dayStart")) o.optInt("dayStart", -1).takeIf { it in 0 until 24 * 60 } else null,
                 rows = rows,
                 more = (count - rows.size).coerceAtLeast(0),
+                upcoming = upcoming,
             )
+        }
+
+        /**
+         * The app's logical today (android-upcoming-calendar-widgets D7): the phone's date [dayStart]
+         * minutes earlier, as the web app's logicalDay; without one the published [today], else the phone's date.
+         */
+        fun logicalToday(dayStart: Int?, today: String?, now: LocalDateTime = LocalDateTime.now()): LocalDate = when {
+            dayStart != null -> now.minusMinutes(dayStart.toLong()).toLocalDate()
+            today != null -> try { LocalDate.parse(today) } catch (e: Exception) { now.toLocalDate() }
+            else -> now.toLocalDate()
         }
 
         private fun text(o: JSONObject, key: String, max: Int): String? =
@@ -102,12 +194,22 @@ data class WidgetModel(
 }
 
 /**
- * Completions ticked on the widget that no publication has confirmed yet (android-widget-list D2):
- * `{taskId: ms}`. A row stays hidden until a publication leaves it out, or for [HIDE_MS] at most,
- * so a completion that never ran shows the task again. Pure for tests.
+ * Completions ticked on the widgets that no publication has confirmed yet (android-widget-list D2):
+ * `{key: ms}`, the key a Today row's task id, or `id@date` for an Upcoming row, so a repeating task
+ * shows again under its next date (android-upcoming-calendar-widgets D3). A row stays hidden until a
+ * publication leaves it out, or for [HIDE_MS] at most, so a completion that never ran shows the
+ * task again. Pure for tests.
  */
 object WidgetPending {
     const val HIDE_MS = 30 * 60 * 1000L
+
+    /** The pending key of a tick: the task id in Today ([date] null), `id@date` in Upcoming. */
+    fun key(taskId: String, date: String?): String = if (date == null) taskId else "$taskId@$date"
+
+    private val OCCURRENCE = Regex("""^(.+)@\d{4}-\d\d-\d\d$""")
+
+    /** The tasks of the pending keys: a tick in Upcoming hides the task's Today row too (D3). */
+    fun ids(pending: Set<String>): Set<String> = pending.mapTo(HashSet()) { OCCURRENCE.find(it)?.groupValues?.get(1) ?: it }
 
     fun parse(json: String?): Map<String, Long> {
         if (json.isNullOrEmpty()) return emptyMap()
@@ -121,9 +223,9 @@ object WidgetPending {
     fun active(pending: Map<String, Long>, now: Long): Set<String> =
         pending.filterValues { now - it in 0 until HIDE_MS }.keys
 
-    /** After a new publication: keep only the ids it still lists and that are not too old. */
+    /** After a new publication: keep only the ticks it still lists (Today by id, Upcoming by occurrence) and that are not too old. */
     fun prune(pending: Map<String, Long>, published: WidgetModel?, now: Long): Map<String, Long> {
-        val listed = published?.rows?.map { it.id }?.toSet() ?: emptySet()
+        val listed = (published?.rows?.map { it.id }.orEmpty() + published?.upcoming?.rows?.map { key(it.id, it.date) }.orEmpty()).toSet()
         return pending.filter { (id, at) -> id in listed && now - at in 0 until HIDE_MS }
     }
 

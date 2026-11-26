@@ -1,7 +1,7 @@
 // Fixtures for the source checks of scripts/ui-check.mjs (run by `make ui-lint`).
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { learnMoreProblems, rawDueTimeProblems } from './ui-check.mjs'
+import { learnMoreProblems, physicalDirectionProblems, rawDueTimeProblems } from './ui-check.mjs'
 
 test('a raw due time joined into text is reported (ux-feedback-2 D3)', () => {
   const bad = [
@@ -83,4 +83,61 @@ test('a raw "Priority {n}" message outside lib/priority.ts is refused (priority-
   assert.deepEqual(rawPriorityNameProblems('web/src/app/X.tsx', "<option>{priorityName(p)}</option>"), [])
   assert.deepEqual(rawPriorityNameProblems('web/src/app/X.tsx', "t('Priority {from} → {to}', { from, to })"), [])
   assert.deepEqual(rawPriorityNameProblems('web/src/app/X.tsx', "// t('Priority {n}') was here"), [])
+})
+
+test('layout classes name the start and end of the line (arabic-rtl D3)', () => {
+  const bad = physicalDirectionProblems('a.tsx', `<div className="ml-2 pr-4 sm:left-0 text-right border-l-2 rounded-r-control" />`)
+  assert.equal(bad.length, 6)
+  assert.match(bad[0], /`ml-2` is a physical direction/)
+  assert.deepEqual(physicalDirectionProblems('a.tsx', `<div className="ms-2 pe-4 sm:inset-s-0 text-end border-s-2 rounded-e-control left-1/2 -translate-x-1/2 px-safe" />`), [])
+  assert.deepEqual(physicalDirectionProblems('a.ts', `// physical: follows the pointer\nconst c = 'fixed left-0 top-0'`), [])
+  assert.deepEqual(physicalDirectionProblems('a.ts', `const side = 'left'; const word = 'left-aligned'`), [])
+})
+
+test('rule 7 also covers floats, origins, gradients, safe padding, translates and inline styles', () => {
+  const bad = physicalDirectionProblems('a.tsx', `<div className="float-left origin-top-left bg-linear-to-r object-right pl-safe translate-x-2" />`)
+  assert.equal(bad.length, 6)
+  assert.match(bad[5], /`translate-x-2` moves the same way right to left/)
+  assert.deepEqual(physicalDirectionProblems('a.tsx', `<div className="translate-x-2 rtl:-translate-x-2 -translate-x-1/2" />`), [])
+  assert.equal(physicalDirectionProblems('a.tsx', `<div style={{ paddingLeft: 8 }} />`).length, 1)
+  assert.equal(physicalDirectionProblems('a.tsx', `<div style={{ textAlign: 'right' }} />`).length, 1)
+  assert.deepEqual(physicalDirectionProblems('a.tsx', `<div style={{ /* physical: at the pointer */ left: x }} />`), [])
+  assert.deepEqual(physicalDirectionProblems('a.tsx', `{/* physical: drawn from coordinates */}\n<div className="left-0" />`), [])
+  assert.deepEqual(physicalDirectionProblems('web/src/app/review/charts.tsx', `// physical-file: a chart\nimport x from 'y'\nconst c = 'left-0'`), [])
+  // physical-file only for the listed files, never in web/src/ui, and with a reason.
+  assert.equal(physicalDirectionProblems('web/src/app/a.tsx', `// physical-file: a chart\nconst c = 'left-0'`).length, 2)
+  assert.match(physicalDirectionProblems('web/src/ui/Chart.tsx', `// physical-file: a chart\n`)[0], /shared component/)
+  assert.match(physicalDirectionProblems('web/src/app/review/charts.tsx', `// physical-file:\n`)[0], /needs a reason/)
+  // physical: needs a reason.
+  assert.equal(physicalDirectionProblems('a.tsx', `{/* physical: */}\n<div className="left-0" />`).length, 1)
+  assert.equal(physicalDirectionProblems('a.tsx', `// physical:\nconst c = 'left-0'`).length, 1)
+  // A translate's twin is an rtl: translate with the same variants, not any rtl: class.
+  assert.equal(physicalDirectionProblems('a.tsx', `<div className="translate-x-4 rtl:ms-2" />`).length, 1)
+  assert.equal(physicalDirectionProblems('a.tsx', `<div className="md:translate-x-4 rtl:-translate-x-4" />`).length, 1)
+  assert.deepEqual(physicalDirectionProblems('a.tsx', `<div className="md:translate-x-4 md:rtl:-translate-x-4 translate-x-0 rtl:translate-x-0" />`), [])
+  // A class glued to a template expression is still a class (and Tailwind cannot see it there).
+  assert.equal(physicalDirectionProblems('a.tsx', 'const c = `ui-btn -ml-2${x ? " lg:hidden" : ""}`').length, 1)
+})
+
+test('a component without a stories file beside it is reported, in web/src/ui and web/src/phone alike (phone-ui-trial D7)', async () => {
+  const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const { storyProblemsIn } = await import('./ui-check.mjs')
+  const dir = mkdtempSync(join(tmpdir(), 'ui-check-'))
+  try {
+    mkdirSync(join(dir, 'components'))
+    mkdirSync(join(dir, 'stories'))
+    writeFileSync(join(dir, 'components/PhoneRow.tsx'), 'export function PhoneRow() { return null }\n')
+    writeFileSync(join(dir, 'components/prefs.ts'), 'export const x = 1\n')
+    // Story helpers are not components to cover.
+    writeFileSync(join(dir, 'stories/frame.tsx'), 'export function PhoneFrame() { return null }\n')
+    const before = storyProblemsIn(dir)
+    assert.equal(before.length, 1)
+    assert.match(before[0], /PhoneRow\.tsx: no stories file imports this component/)
+    writeFileSync(join(dir, 'components/PhoneRow.stories.tsx'), "import { PhoneRow } from './PhoneRow'\nexport default { component: PhoneRow }\n")
+    assert.deepEqual(storyProblemsIn(dir), [])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })

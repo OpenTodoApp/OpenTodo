@@ -19,6 +19,7 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 import { relativeTime } from '../lib/dates'
+import { composing } from '../lib/composeKey'
 
 export type LogStatus = 'loading' | 'ready' | 'offline' | 'error'
 
@@ -171,7 +172,7 @@ export function AuditPanel() {
               <Button variant="ghost" size="sm" icon="filter" className="md:hidden" aria-expanded={filtersOpen} aria-controls="audit-filters"
                 onClick={() => setFiltersOpen(!filtersOpen)} data-audit-filters-toggle>{t('Filters')}</Button>
               <ActiveFilterChips form={form} onRemove={update} />
-              <a ref={exportLink} className="ui-btn ui-btn--secondary ui-btn--sm ml-auto" href={exportHref} download data-audit-export>
+              <a ref={exportLink} className="ui-btn ui-btn--secondary ui-btn--sm ms-auto" href={exportHref} download data-audit-export>
                 <Icon name="download" /> {t('Export')}
               </a>
             </div>
@@ -281,7 +282,7 @@ function AuditFilters({ id, open, form, accounts, onUpdate, onForm, onApplyAccou
       <Field label={t('Account')}>
         <Input className="w-full md:w-52" type="search" list="audit-accounts" placeholder={t('email')} value={form.actor}
           onChange={(e) => (e.target.value === '' ? onUpdate({ actor: '' }) : onForm({ ...form, actor: e.target.value }))} onBlur={onApplyAccount}
-          onKeyDown={(e) => { if (e.key === 'Enter') onApplyAccount() }} autoComplete="off" />
+          onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Enter') onApplyAccount() }} autoComplete="off" />
       </Field>
       <datalist id="audit-accounts">{accounts.map((a) => <option key={a} value={a} />)}</datalist>
       <Field label={t('Outcome')}>
@@ -327,11 +328,11 @@ export function AuditTable({ status, events, onKeyDown }: { status: LogStatus; e
           return (
             <li key={ev.id} data-event={ev.name}>
               <button type="button" aria-expanded={expanded} onClick={() => setOpen(expanded ? null : ev.id)}
-                className="flex w-full min-w-0 items-center gap-2 px-2 py-1.5 text-left text-body hover:bg-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus">
+                className="flex w-full min-w-0 items-center gap-2 px-2 py-1.5 text-start text-body hover:bg-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus">
                 <Icon name={failed ? 'x' : 'history'} size="sm" className={failed ? 'text-danger' : 'text-muted'} />
                 <span className={`min-w-0 truncate ${failed ? 'text-danger' : 'text-default'}`}>{AUDIT_LABELS[ev.name] ?? ev.name}</span>
                 <span className="min-w-0 truncate text-muted">{eventAccount(ev)}</span>
-                <span className="ml-auto hidden shrink-0 truncate text-meta text-muted sm:inline">{shortAgent(ev.userAgent)}</span>
+                <span className="ms-auto hidden shrink-0 truncate text-meta text-muted sm:inline">{shortAgent(ev.userAgent)}</span>
                 <time dateTime={new Date(ev.ts).toISOString()} className="shrink-0 text-meta tabular-nums text-muted">
                   {now - ev.ts < 86_400_000 ? relativeTime(ev.ts, now) : dt.formatInstant(ev.ts, 'date')}
                 </time>

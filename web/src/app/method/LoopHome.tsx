@@ -23,6 +23,7 @@ import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { MethodLink } from '../help/MethodLink'
 import { navigate, type Route } from '../router'
 import { useMethodInput } from './useMethodInput'
+import { inlineKey } from '../../lib/direction'
 
 const Catch = lazy(() => import('./loop/CatchMove'))
 const Clarify = lazy(() => import('./loop/ClarifyMove'))
@@ -248,7 +249,7 @@ function Stepper({ data, open, up, onOpen, items }: { data: LoopData; open?: Mov
   useEffect(() => { if (open) setFocus(open) }, [open])
   const onKey = (e: KeyboardEvent<HTMLOListElement>) => {
     const i = ORDER.indexOf(focus)
-    const to = e.key === 'ArrowRight' ? ORDER[(i + 1) % ORDER.length] : e.key === 'ArrowLeft' ? ORDER[(i + ORDER.length - 1) % ORDER.length]
+    const to = inlineKey(e) === 'ArrowRight' ? ORDER[(i + 1) % ORDER.length] : inlineKey(e) === 'ArrowLeft' ? ORDER[(i + ORDER.length - 1) % ORDER.length]
       : e.key === 'Home' ? ORDER[0] : e.key === 'End' ? ORDER[ORDER.length - 1] : null
     if (!to) return
     e.preventDefault()
@@ -295,7 +296,7 @@ function PulseLine({ pulse }: { pulse: PulseData }) {
   return (
     <>
       <button ref={anchor} type="button" aria-haspopup="dialog" aria-expanded={shown} onClick={() => setShown(true)} data-loop-pulse-line
-        className="mt-2 flex w-full min-w-0 items-center gap-1.5 rounded-control px-3 py-1.5 text-left text-meta text-muted outline-none hover:text-default focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus">
+        className="mt-2 flex w-full min-w-0 items-center gap-1.5 rounded-control px-3 py-1.5 text-start text-meta text-muted outline-none hover:text-default focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus">
         <span className="min-w-0 flex-1 tabular-nums">
           {t('{n} done this week', { n: pulse.week })}
           <span aria-hidden="true"> · </span><span className="sr-only">, </span>
@@ -303,7 +304,7 @@ function PulseLine({ pulse }: { pulse: PulseData }) {
           <span aria-hidden="true"> · </span><span className="sr-only">, </span>
           {pulse.age === null ? t('Inbox empty') : (
             <span className={stale ? 'text-on-warning-soft' : undefined} data-loop-age-stale={stale || undefined}>
-              {stale && <Icon name="circle-alert" size="xs" className="mr-1 inline align-[-2px]" />}
+              {stale && <Icon name="circle-alert" size="xs" className="me-1 inline align-[-2px]" />}
               {t('{n, plural, one {oldest in Inbox # day} other {oldest in Inbox # days}}', { n: pulse.age })}
             </span>
           )}
@@ -327,7 +328,7 @@ function MovePart({ move, data, page, left, onLeft, onClose }: { move: MoveId; d
         <div className="mb-3 flex items-center gap-3 border-b border-soft pb-2">
           <h2 id="loop-move-title" className="text-title text-strong">{termName(term(move))}</h2>
           {meta && <span className="text-meta tabular-nums text-muted" data-loop-left>{meta}</span>}
-          <IconButton icon="x" size="sm" label={t('Close')} className="ml-auto" onClick={onClose} data-loop-close />
+          <IconButton icon="x" size="sm" label={t('Close')} className="ms-auto" onClick={onClose} data-loop-close />
         </div>
       )}
       <Suspense fallback={<Skeleton shape="row" count={3} />}>{part}</Suspense>

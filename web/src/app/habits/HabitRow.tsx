@@ -111,7 +111,7 @@ export function HabitRow({ series, rows, stats, hue, today, opts }: { series: Ta
       <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-hue-solid" aria-hidden="true" />
       <HabitTitle title={title} anchor={series.habit_anchor} onOpen={() => openHabit(series.id)} />
       <span className="hidden sm:block">{thread}</span>
-      <span className={`shrink-0 text-right text-meta tabular-nums sm:w-24 ${stats?.backOnTrack ? 'text-hue' : 'text-muted'}`} data-habit-measure>{measure}</span>
+      <span className={`shrink-0 text-end text-meta tabular-nums sm:w-24 ${stats?.backOnTrack ? 'text-hue' : 'text-muted'}`} data-habit-measure>{measure}</span>
       <CheckButton series={series} state={state} today={today} />
       <span className="col-start-2 col-end-[-1] sm:hidden">{thread}</span>
       <CheckInNote seriesId={series.id} title={title} className="col-start-2 col-end-[-1] pb-1" />
@@ -135,7 +135,7 @@ function HabitTitle({ title, anchor, onOpen }: { title: string; anchor?: string;
   }, [title])
   return (
     <Tooltip label={title} disabled={!cut}>
-      <button type="button" className="flex min-w-0 items-baseline gap-2 text-left" onClick={onOpen} tabIndex={-1} data-habit-open>
+      <button type="button" className="flex min-w-0 items-baseline gap-2 text-start" onClick={onOpen} tabIndex={-1} data-habit-open>
         <span ref={ref} className="min-w-0 truncate text-body text-default" data-habit-title>{title}</span>
         {anchor && <span className="hidden min-w-0 shrink-[2] truncate text-meta text-muted sm:inline" data-habit-anchor>{anchor}</span>}
       </button>

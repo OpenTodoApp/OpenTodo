@@ -261,7 +261,18 @@ function whyItem(why: Urgency | null | undefined): ActionItem[] {
   } }] : []
 }
 
-export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (title: string, plan: Promise<ReviewPlan>) => void; pickDate: () => void; schedule?: () => void; editTitle?: (id: string) => void; reorder?: ListReorder | null; why?: Urgency | null }, besideRow = false): ActionGroup[] {
+/** One task's own items in a list's row menu (row-edit-action D2): Edit, Show details and Open details. */
+export interface RowMenuItems {
+  /** The list's inline editor, as F2 opens it. */
+  editTitle?: (id: string) => void
+  /** The task as Enter opens it: its page, or beside the list (Open tasks). */
+  openDetails?: (id: string) => void
+  /** Shows or hides the task's details under its row, as → does; `expandedId` is the row that shows them. */
+  showDetails?: (id: string) => void
+  expandedId?: string | null
+}
+
+export function bulkMenuGroups(ids: readonly string[], d: Data, a: RowMenuItems & { review: (title: string, plan: Promise<ReviewPlan>) => void; pickDate: () => void; schedule?: () => void; reorder?: ListReorder | null; why?: Urgency | null }, besideRow = false): ActionGroup[] {
   const n = d.tasks.length
   const reopen = allCompleted(d.tasks)
   const live = d.labels.filter((l) => !l.deleted_at)
@@ -275,11 +286,20 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
   // On touch, one task's menu starts with the two swipe actions (phone-v2 D3, WCAG 2.2 2.5.7).
   const swipeTwins = n === 1 && a.schedule
   const editTitle = n === 1 && a.editTitle && d.tasks[0] && canEditTask(d.tasks[0], d.memberships) ? a.editTitle : null
+  // Edit and Open details for one task (row-edit-action D2): the inline editor, and the task as Enter opens it.
+  const openDetails = n === 1 ? a.openDetails : undefined
+  const showDetails = n === 1 ? a.showDetails : undefined
+  const shown = a.expandedId === ids[0]
+  const editItems: ActionItem[] = [
+    ...(editTitle ? [{ kind: 'action' as const, id: 'edit-title', label: t('Edit'), icon: 'pencil' as const, shortcut: keysOf('list.edit-inline'), closeBeforeSelect: true, onSelect: () => editTitle(ids[0]) }] : []),
+    ...(showDetails ? [{ kind: 'action' as const, id: 'show-details', label: shown ? t('Hide details') : t('Show details'), icon: 'chevron-down' as const, shortcut: keysOf(shown ? 'list.collapse' : 'list.expand'), onSelect: () => showDetails(ids[0]) }] : []),
+    ...(openDetails ? [{ kind: 'action' as const, id: 'open-details', label: t('Open details'), icon: 'chevron-right' as const, shortcut: keysOf('list.open'), onSelect: () => openDetails(ids[0]) }] : []),
+  ]
   return [
     ...(swipeTwins ? [{ items: [complete, { kind: 'action', id: 'schedule', label: t('Schedule…'), icon: 'calendar-days', onSelect: a.schedule } as ActionItem] }] : []),
     ...(n === 1 ? [{ items: [...whyItem(a.why), ...slotItem(d.tasks[0], d.slot), ...todayFocusItem(d.tasks[0], d.focus), ...(d.trackingOff ? [] : trackingItem(d.tasks[0], d.runningTask, d.memberships)), ...(d.focusOff ? [] : focusItem(d.tasks[0], d.memberships)), ...makeHabitItem(d.tasks[0], d)] }] : []),
     ...(swipeTwins ? [] : [{ items: [complete] }]),
-    ...(editTitle ? [{ items: [{ kind: 'action' as const, id: 'edit-title', label: t('Edit title'), icon: 'pencil' as const, closeBeforeSelect: true, onSelect: () => editTitle(ids[0]) }] }] : []),
+    ...(editItems.length ? [{ items: editItems }] : []),
     // Beside a row its own Priority and Schedule buttons already offer these.
     // Priority and Date are one row each (a submenu), so the menu fits on the screen;
     // beside a row its own Priority and Schedule buttons already offer them.
@@ -379,7 +399,7 @@ function useBulkData(ids: readonly string[]): Data {
  * The Actions menu for `ids`. `startPicker` opens it straight into a picker
  * ("labels" for `L`, "assign" for Shift+A on a selection).
  */
-export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClassName, triggerProps, startPicker = null, anchor, editTitle }: {
+export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClassName, triggerProps, startPicker = null, anchor, editTitle, openDetails, showDetails, expandedId }: RowMenuItems & {
   ids: readonly string[]
   open?: boolean
   onOpenChange?: (open: boolean) => void
@@ -388,8 +408,6 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
   /** Extra attributes on the trigger button (the pointer position of a right-click menu). */
   triggerProps?: React.ComponentProps<typeof ActionMenu>['triggerProps']
   startPicker?: string | null
-  /** The list offers title editing in its single-row menu. */
-  editTitle?: (id: string) => void
   /** Opened from a row's More button: placed there, without the groups the row's own buttons offer. */
   anchor?: RefObject<HTMLElement | null>
 }) {
@@ -411,9 +429,12 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
     pickDate: () => bulkDialog.set({ kind: 'date', ids, n }),
     schedule: touch && ids.length === 1 ? () => openRowSchedule(ids[0]) : undefined,
     editTitle,
+    openDetails,
+    showDetails,
+    expandedId,
     reorder,
     why,
-  }, besideRow), [ids, data, besideRow, touch, n, reorder, why, editTitle])
+  }, besideRow), [ids, data, besideRow, touch, n, reorder, why, editTitle, openDetails, showDetails, expandedId])
   return (
     <ActionMenu label={t('Actions for {tasks}', { tasks: tasksWord(n) })} title={tasksWord(n)} groups={groups} open={open} pending={!settled && !data.ready} onOpenChange={onOpenChange}
       trigger={trigger} triggerClassName={triggerClassName} triggerProps={triggerProps} startPicker={startPicker} width="sm:w-72" anchor={anchor} />
@@ -504,14 +525,14 @@ export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPi
   const box = useFrameBox(shown)
   if (!shown) return null
   return (
-    <div data-selection-dock style={box ? { left: box.left, width: box.width } : undefined}
+    <div data-selection-dock style={box ? { left: box.left, right: "auto", width: box.width } : undefined}
       className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--toast-lift,4.25rem)-3.5rem+var(--safe-bottom))] z-30 flex justify-center px-4 md:bottom-[calc(1.25rem+var(--safe-bottom))] md:px-8">
       <div className="pointer-events-auto flex w-full max-w-[40rem] items-center gap-2 rounded-control border border-default bg-selected px-3 py-1.5 text-body shadow-2" data-selection-bar>
         <span role="status" className="min-w-0 flex-1 font-medium text-strong">{t('{count} selected', { count: ids.length })}</span>
         {ids.length > 0 && (menu
-          ? menu(<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ml-1" /></>, 'ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body')
+          ? menu(<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ms-1" /></>, 'ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body')
           : <BulkActionsMenu ids={ids} open={menuOpen} onOpenChange={onMenuOpenChange} startPicker={startPicker}
-            trigger={<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ml-1" /></>} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" />)}
+            trigger={<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ms-1" /></>} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" />)}
         {ids.length > 0 && (
           <Tooltip label={t('Clear the selection')} shortcut="Esc">
             <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" onClick={onClear}><Icon name="x" />{t('Clear')}</button>

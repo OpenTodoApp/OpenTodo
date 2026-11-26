@@ -341,10 +341,10 @@ function Triage({ embedded }: { embedded?: { onLeave: () => void; onLeft?: (n: n
             {bar.map((b) => (
               <Button key={b.key} size="sm" variant={b.key === 'today' ? 'primary' : 'secondary'} disabled={b.disabled} onClick={b.run}
                 aria-keyshortcuts={b.hint === 'Del' ? 'Delete' : b.hint} data-decision={b.key}>
-                {b.label} <span className="ui-kbd ml-1">{b.hint}</span>
+                {b.label} <span className="ui-kbd ms-1">{b.hint}</span>
               </Button>
             ))}
-            <Button size="sm" variant="ghost" onClick={() => setPanelTaskId(task.id)} data-decision="open">{t('Open')} <span className="ui-kbd ml-1">Enter</span></Button>
+            <Button size="sm" variant="ghost" onClick={() => setPanelTaskId(task.id)} data-decision="open">{t('Open')} <span className="ui-kbd ms-1">Enter</span></Button>
           </div>
           {delegates.length === 0 && <p className="mt-2 text-meta text-faint">{t('Delegating needs a project you share with someone.')}</p>}
         </>

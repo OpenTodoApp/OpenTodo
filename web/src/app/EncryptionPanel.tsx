@@ -116,7 +116,7 @@ export function EncryptionView(p: EncryptionViewProps) {
       {progress && (
         <Notice>
           {t('{mode, select, encrypt {Encrypting} other {Decrypting}} your {what, select, files {files: {done} of {total} files} other {data: {done} of {total}}}…', { mode: progress.mode, what: progress.files ? 'files' : 'data', done: progress.done, total: progress.total })}
-          <progress className="ml-2 align-middle" max={Math.max(progress.total, 1)} value={progress.done} />
+          <progress className="ms-2 align-middle" max={Math.max(progress.total, 1)} value={progress.done} />
         </Notice>
       )}
 

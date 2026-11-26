@@ -96,7 +96,7 @@ export function AgendaEvent({ ev, sub, zone, className, data, children, extra }:
     <>
       <button ref={details.ref} type="button" aria-haspopup="dialog" aria-expanded={details.open} data-hue={hueFor(sub?.color)} {...data}
         onClick={details.toggle}
-        className={`${className} min-w-0 text-left focus-visible:outline-2 focus-visible:outline-focus`}>
+        className={`${className} min-w-0 text-start focus-visible:outline-2 focus-visible:outline-focus`}>
         {children}
         {rest && <span className="sr-only">{`, ${rest}`}</span>}
       </button>

@@ -4,6 +4,7 @@
 // part and deadline diamond), on an axis fitted to the block so it never scrolls
 // sideways, with today marked. Read-only: nothing drags or resizes, and the
 // timeline's keyboard scope is not taken. A row opens its task. Lazy chunk.
+// physical-file: a time axis drawn from computed left offsets, kept left to right in a dir="ltr" box (arabic-rtl D8).
 import type { AssistantBlock } from '../../../lib/assistantBlocks'
 import { useBlockTimeline, type TimelineLine } from '../../../lib/assistantBlockData'
 import { addDaysISO, daysBetweenISO, formatDate, formatDateRange, logicalToday } from '../../../lib/dates'
@@ -46,7 +47,7 @@ export default function TimelineBlock({ block }: { block: Extract<AssistantBlock
   const hue = hueFor(data.project.color)
   const more = data.lines.length - lines.length
   return (
-    <div className="space-y-2 p-3" data-assistant-timeline>
+    <div className="space-y-2 p-3" data-assistant-timeline dir="ltr">
       <p className="flex min-w-0 items-center gap-1.5 text-body font-semibold">
         <Icon name="calendar-range" size="sm" className="shrink-0 text-muted" />
         <span className="truncate user-text">{data.project.name}</span>
@@ -69,7 +70,7 @@ export default function TimelineBlock({ block }: { block: Extract<AssistantBlock
               return (
                 <li key={task.id} className="contents" data-timeline-row={task.id} data-late={span.late || undefined}>
                   {/* The visible title is the button's name; the dates follow it as hidden text. */}
-                  <button type="button" className="flex min-h-8 min-w-0 items-center text-left text-body hover:underline" onClick={() => openTaskPanel(task.id)}>
+                  <button type="button" className="flex min-h-8 min-w-0 items-center text-start text-body hover:underline" onClick={() => openTaskPanel(task.id)}>
                     <span className="truncate user-text">{task.title || t('Untitled')}</span>
                     <span className="sr-only">, {range}{late ? `, ${late}` : ''}</span>
                   </button>
@@ -93,7 +94,7 @@ export default function TimelineBlock({ block }: { block: Extract<AssistantBlock
           {[more > 0 ? t('{n, plural, one {# more task} other {# more tasks}}', { n: more }) : '', data.undated > 0 ? t('{n, plural, one {# task without dates} other {# tasks without dates}}', { n: data.undated }) : ''].filter(Boolean).join(' · ')}
         </p>
       )}
-      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -ml-2 gap-1" onClick={() => navigate({ view: 'project', id: block.id })}>
+      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -ms-2 gap-1" onClick={() => navigate({ view: 'project', id: block.id })}>
         <Icon name="arrow-right" size="sm" />{t('Open project')}
       </button>
     </div>

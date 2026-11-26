@@ -51,7 +51,7 @@ export function SectorReview({ carried, next, today, weekStart, row, onDate }: {
       <ul className="-mx-2">
         {list.flatMap((task) => [
           row(task),
-          <li key={`${task.id}:plan`} className="mb-1 ml-9 flex flex-wrap gap-1" role="group" aria-label={t('Plan {title}', { title: task.title || t('Untitled') })}>
+          <li key={`${task.id}:plan`} className="mb-1 ms-9 flex flex-wrap gap-1" role="group" aria-label={t('Plan {title}', { title: task.title || t('Untitled') })}>
             {ACTIONS.map((a) => (
               <Button key={a.word} size="sm" variant="ghost" data-sector-action={a.word} onClick={() => act(move(task, a.word))}>{a.label()}</Button>
             ))}

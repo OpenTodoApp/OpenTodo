@@ -1,5 +1,5 @@
 // The untranslated-string pass of `make ui-lint` (OpenSpec change app-localization,
-// design D8): user-facing text in web/src/app and web/src/ui must go through the
+// design D8): user-facing text in web/src/app, web/src/phone and web/src/ui must go through the
 // message layer (t(), t.rich(), <T>, or msg() for text defined at module level).
 //
 // Reported, as file:line:
@@ -60,7 +60,7 @@ export function untranslatedProblems(path, text, allow = new Set()) {
   }
   const inMessageCall = (n) => {
     for (let p = n.parent; p; p = p.parent) {
-      if (ts.isCallExpression(p) && ['t', 't.rich', 'msg'].includes(calleeName(p))) return true
+      if (ts.isCallExpression(p) && ['t', 't.rich', 't.plain', 'msg'].includes(calleeName(p))) return true
       if (ts.isJsxElement(p) && p.openingElement.tagName.getText(sf) === 'T') return true
       if (ts.isFunctionLike(p)) return false
     }
@@ -105,8 +105,8 @@ export function untranslatedProblems(path, text, allow = new Set()) {
   return out
 }
 
-/** Every problem in web/src/app and web/src/ui. */
+/** Every problem in web/src/app, web/src/phone and web/src/ui. */
 export function untranslated(allow = loadAllow()) {
-  const files = [...walk(join(repo, 'web/src/app')), ...walk(join(repo, 'web/src/ui'))].filter((f) => f.endsWith('.tsx') && isSource(f))
+  const files = [...walk(join(repo, 'web/src/app')), ...walk(join(repo, 'web/src/phone')), ...walk(join(repo, 'web/src/ui'))].filter((f) => f.endsWith('.tsx') && isSource(f))
   return files.flatMap((f) => untranslatedProblems(rel(f), readFileSync(f, 'utf8'), allow))
 }

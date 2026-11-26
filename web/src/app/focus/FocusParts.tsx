@@ -146,16 +146,16 @@ export function FocusDetails({ task, subtasks }: { task: Task; subtasks: readonl
         {subtasks.length > 0 && <span className="tabular-nums text-faint">{done}/{subtasks.length}</span>}
       </button>
       {open && (
-        <div id={body} className="mt-4 w-full space-y-4 text-left">
+        <div id={body} className="mt-4 w-full space-y-4 text-start">
           {task.due && <p className="text-meta text-muted" data-focus-due>{t('Due {date}', { date: formatDueLong(task.due, zone) })}</p>}
           {task.description?.trim()
             ? (
               <div className="text-body" data-focus-notes>
                 <Markdown source={task.description} />
-                <Button size="sm" variant="ghost" className="-ml-2.5 mt-1" onClick={() => openTaskPanel(task.id)}>{t('Edit the notes')}</Button>
+                <Button size="sm" variant="ghost" className="-ms-2.5 mt-1" onClick={() => openTaskPanel(task.id)}>{t('Edit the notes')}</Button>
               </div>
             )
-            : <Button size="sm" variant="ghost" className="-ml-2.5" onClick={() => openTaskPanel(task.id)} data-focus-notes-add>{t('Add notes')}</Button>}
+            : <Button size="sm" variant="ghost" className="-ms-2.5" onClick={() => openTaskPanel(task.id)} data-focus-notes-add>{t('Add notes')}</Button>}
           <section aria-label={t('Subtasks')} data-focus-subtasks>
             <ul className="space-y-0.5 empty:hidden">
               {subtasks.map((c) => (

@@ -28,7 +28,7 @@ function Thread({ item, nested }: { item: Extract<TimelineItem, { kind: 'thread'
         <div className="user-text mt-0.5 text-body text-default">{item.body}</div>
         {item.actions && <div className="mt-1 flex gap-1">{item.actions}</div>}
         {item.replies && item.replies.length > 0 && (
-          <ol className="mt-1 border-l-2 border-default pl-3">
+          <ol className="mt-1 border-s-2 border-default ps-3">
             {item.replies.map((r) => <li key={r.id}><Thread item={r} nested /></li>)}
           </ol>
         )}

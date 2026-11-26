@@ -10,6 +10,7 @@
     <color name="widget_text">#FF1B1F24</color>
     <color name="widget_muted">#FF5B6470</color>
     <color name="widget_track">#1F1B1F24</color>
+    <color name="widget_accent">#FF2F6FEB</color>
     <color name="overdue">#FFBF3530</color>
     <color name="site_bar">#FFEEF1F5</color>
 </resources>

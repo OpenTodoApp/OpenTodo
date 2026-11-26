@@ -8,6 +8,7 @@ import { lazy } from '../lib/lazy'
 import { createRoot } from 'react-dom/client'
 import '../index.css'
 import { setDateLocale } from '../lib/dates'
+import { directionOf } from '../lib/direction'
 import { applyCatalog, fetchCatalog } from '../lib/i18n/catalog'
 import { intlLocale, resolveLanguage } from '../lib/i18n/locale'
 import { secretFromPath } from '../lib/taskPageApi'
@@ -24,6 +25,7 @@ async function boot(): Promise<void> {
     if (code !== 'en') applyCatalog(code, locale, await fetchCatalog(code))
     setDateLocale(locale)
     document.documentElement.lang = code
+    document.documentElement.dir = directionOf(code)
   } catch {
     // English, the source text, when the catalog cannot be loaded.
   }

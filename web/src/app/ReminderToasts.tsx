@@ -1,4 +1,3 @@
-import type { Task } from '../lib/types'
 import { Icon, Menu, MenuItem, ToastRegion, useMediaQuery } from '../ui'
 import { useEffect, useRef, useState } from 'react'
 import { getTask, touchReminders } from '../lib/localData'
@@ -12,6 +11,7 @@ import { requestSync } from '../lib/sync'
 import { openTaskInList } from './signals'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
+import { reminderBody, tinyText } from '../lib/reminderBody'
 
 /**
  * In-app reminder notifications (OpenSpec change `reminders`). Mounted once by
@@ -105,7 +105,7 @@ export function ReminderToasts() {
         >
           <div className="flex items-start gap-2">
             <span className="pt-0.5 text-muted pointer-coarse:pt-1.5"><Icon name="alarm-clock" /></span>
-            <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openTaskInList(d.task)}>
+            <button type="button" className="min-w-0 flex-1 text-start" onClick={() => openTaskInList(d.task)}>
               <p className={`${compact ? 'truncate' : 'line-clamp-2'} user-text text-body font-medium`}>{d.task.title || t('Untitled')}</p>
               <p className={`text-meta text-muted ${compact ? 'truncate' : ''}`}>{tinyText(d.task) ?? t('Reminder · {instant}', { instant: dt.formatInstant(d.reminder.fire_at as number, 'datetime') })}</p>
             </button>
@@ -129,19 +129,13 @@ export function ReminderToasts() {
           )}
         </div>
       ))}
-      {!compact && more > 0 && <p className="pointer-events-auto text-right text-meta text-muted">{moreText}</p>}
+      {!compact && more > 0 && <p className="pointer-events-auto text-end text-meta text-muted">{moreText}</p>}
     </ToastRegion>
   )
 }
 
 /** The card's small buttons with a mouse. */
 const SMALL = 'ui-btn ui-btn--sm px-2 py-0.5 text-meta'
-
-/** A habit's reminder names its tiny version (habits-home D5): "One page is enough". */
-function tinyText(task: Task): string | null {
-  const tiny = task.habit ? task.habit_tiny?.trim() : ''
-  return tiny ? t('{tiny} is enough', { tiny: tiny.charAt(0).toUpperCase() + tiny.slice(1) }) : null
-}
 
 /** Hidden tab, permission granted, no push on this device: show a local system notification once per firing. */
 async function notifyIfHidden(list: DueReminder[], notified: Set<string>): Promise<void> {
@@ -154,7 +148,8 @@ async function notifyIfHidden(list: DueReminder[], notified: Set<string>): Promi
     if (notified.has(key)) continue
     notified.add(key)
     const options: NotificationOptions = {
-      body: tinyText(d.task) ?? t('Reminder'), tag: `reminder:${d.reminder.id}`, icon: '/pwa-192.png',
+      // Shown now, so the due's words are as of now (push-due-date D1).
+      body: reminderBody(d.task, Date.now()) ?? t('Reminder'), tag: `reminder:${d.reminder.id}`, icon: '/pwa-192.png',
       data: { reminderId: d.reminder.id, taskId: d.task.id, fireAt: d.reminder.fire_at },
     }
     try {

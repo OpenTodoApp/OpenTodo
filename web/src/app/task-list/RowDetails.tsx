@@ -85,7 +85,7 @@ export default function RowDetails({ task, readOnly, childrenShown, onOpen }: Ro
             <Icon name={c.icon} size="xs" className="text-faint" />{c.text}
           </span>
         ))}
-        <Button variant="ghost" size="sm" className="-ml-1.5" onClick={onOpen} data-row-details-open>{t('Open task')}</Button>
+        <Button variant="ghost" size="sm" className="-ms-1.5" onClick={onOpen} data-row-details-open>{t('Open task')}</Button>
       </div>
     </div>
   )

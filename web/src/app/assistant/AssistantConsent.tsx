@@ -41,7 +41,7 @@ export function AssistantConsent({ status, connected, busy, error, onAccept, dev
       )}
       <div>
         <p className="font-medium">{t('What may be sent')}</p>
-        <ul className="mt-1 list-disc space-y-0.5 pl-5 text-muted">
+        <ul className="mt-1 list-disc space-y-0.5 ps-5 text-muted">
           {status.fields.map((f) => <li key={f}>{disclosureField(f)}</li>)}
         </ul>
       </div>

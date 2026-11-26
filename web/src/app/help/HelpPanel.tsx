@@ -35,8 +35,8 @@ export function HelpPanel({ screen, trigger, onClose }: { screen: string; trigge
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
       onKeyDown={(e) => { if (panel.current) trapTab(e, panel.current); e.stopPropagation() }}>
       <div ref={panel} role="dialog" aria-modal="true" aria-label={page ? t('Help: {title}', { title: page.title }) : t('Help')} tabIndex={-1} data-overlay="dialog" data-help-panel
-        data-help-scroll className="h-full w-full overflow-y-auto overscroll-contain bg-surface pr-safe max-sm:pl-safe shadow-3 outline-none sm:max-w-lg sm:border-l sm:border-default">
-        <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-default bg-surface pl-4 pr-1 pt-[var(--safe-top)]">
+        data-help-scroll className="h-full w-full overflow-y-auto overscroll-contain bg-surface pe-safe max-sm:ps-safe shadow-3 outline-none sm:max-w-lg sm:border-s sm:border-default">
+        <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-default bg-surface ps-4 pe-1 pt-[var(--safe-top)]">
           <p className="min-w-0 flex-1 truncate py-2 text-body font-semibold">{page ? page.title : t('Help')}</p>
           {page && (
             <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 text-meta" onClick={() => { onClose(); navigate({ view: 'help', page: page.slug }) }}>

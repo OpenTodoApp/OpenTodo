@@ -13,6 +13,7 @@ export {
 } from './catalog'
 export { browserLanguages, intlLocale, isSimplifiedChineseTag, preferredLanguages, resolveLanguage } from './locale'
 export { errorMessage } from './errors'
+export { stripIsolates } from './format'
 export { T, useLanguageVersion, useT } from './react'
 
 /**

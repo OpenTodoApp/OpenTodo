@@ -767,8 +767,7 @@ export type NewTaskInput = {
 export type Placement = 'top' | 'bottom'
 
 /** The ops of a new task without writing them, for a batch with other changes (a shared file's attachments). */
-export async function planTask(input: NewTaskInput, position?: number): Promise<{ id: string; change: Change }> {
-  const id = uuid()
+export async function planTask(input: NewTaskInput, position?: number, id = uuid()): Promise<{ id: string; change: Change }> {
   const now = Date.now()
   const at = position ?? (input.placement === 'top' && !input.parent_id ? (await topTaskPositions(1))[0] : await nextTaskPosition(now))
   let due = input.due ?? null
@@ -839,8 +838,9 @@ export async function planCompanions(input: NewTaskInput, planned: { id: string;
   return changes
 }
 
-export async function createTask(input: NewTaskInput, now = new Date()): Promise<string> {
-  const planned = await planTask(input)
+/** Creates a task; `id` is the caller's when it chose one (a shell's quick-add reply, android-quick-add-notification D4). */
+export async function createTask(input: NewTaskInput, now = new Date(), id?: string): Promise<string> {
+  const planned = await planTask(input, undefined, id)
   // One batch: the task never syncs without its reminders, its time entry and its files.
   const changes = await planCompanions(input, planned, now)
   // attachments.ts imports this module: loaded only for pasted files (quick-add-files D1).

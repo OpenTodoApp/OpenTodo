@@ -29,7 +29,7 @@ Some logic runs on the server and in the web app: the server needs it for REST, 
 | Away periods: the stored value (`user_prefs.away`) | `internal/sync/away.go` | `web/src/lib/away.ts` | `internal/sync/testdata/away.vectors.json` | `internal/sync/away_test.go` | `web/src/lib/away.test.ts` | hand |
 | Away periods: the skips of a period | `internal/sync/away_plan.go` | `web/src/lib/awayPlan.ts` | `internal/sync/testdata/away_plan.fixture.json` | `internal/sync/away_plan_test.go` | `web/src/lib/awayPlan.fixture.test.ts` | hand |
 | Time-zone-fixed due values | `internal/zoned` | `web/src/lib/dates.ts` | `web/src/lib/zoned.vectors.json` | `internal/zoned/zoned_test.go` | `web/src/lib/dates.test.ts` | hand |
-| Inherited custom fields | `internal/sync/fields.go` | `web/src/lib/fieldTree.ts` | `web/src/lib/fields.vectors.json` | `internal/sync/fields_vectors_test.go` | `web/src/lib/fields.test.ts` | hand |
+| Inherited and workspace custom fields | `internal/sync/fields.go` | `web/src/lib/fieldTree.ts` | `web/src/lib/fields.vectors.json` | `internal/sync/fields_vectors_test.go` | `web/src/lib/fields.test.ts` | hand |
 | Kept subtasks (open under a completed ancestor) | `internal/kept` | `web/src/lib/subtasks.ts` | `web/src/lib/kept.vectors.json` | `internal/kept/kept_test.go` | `web/src/lib/subtasks.kept.test.ts` | hand |
 | Inbox membership | `internal/inbox/inbox.go` | `web/src/lib/inbox.ts` | `web/src/lib/inbox.vectors.json` | `internal/inbox/inbox_test.go` | `web/src/lib/inbox.test.ts` | hand |
 | Time sectors (validity, the viewer's periods, relative names, carry-over, planning list groups) | `internal/sector` | `web/src/lib/sectors.ts` | `web/src/lib/sectors.vectors.json` | `internal/sector/sector_test.go` | `web/src/lib/sectors.test.ts` | hand |
@@ -82,6 +82,7 @@ Some logic runs on the server and in the web app: the server needs it for REST, 
 | On-device `find_free_time` (arguments, defaults, exclusions, result) | `internal/agenttools/read_freetime.go` | `web/src/lib/assistantDevice/readFreeTime.ts` | `web/src/lib/assistantDevice/freeTimeRead.vectors.json` | `internal/assistant/device_freetime_test.go` | `web/src/lib/assistantDevice/readFreeTime.test.ts` | `go test ./internal/assistant -run DeviceFreeTimeVectors -update` |
 | Describe it on the device (routines-describe-it) | `internal/assistant` (`routinedraft.go`) | `web/src/lib/rules/describeDevice.ts` | `web/src/lib/assistantDevice/routineDraft.vectors.json` | `internal/assistant/routinedraft_test.go` | `web/src/lib/rules/describe.test.ts` | `go test ./internal/assistant -run Device -update` |
 | Provider error reading (Chat Completions) | `internal/assistant` (`chatError`) | `web/src/lib/assistantDevice/providers.ts` (`statusError`) | `web/src/lib/assistantDevice/errors.vectors.json` | `internal/assistant/errors_test.go` | `web/src/lib/assistantDevice/providers.test.ts` | `go test ./internal/assistant -run Device -update` |
+| Smart App Banner on a task's page (ios-app-banner: path rule, id escaping, tag) | `internal/web/appbanner.go` | `web/src/lib/appBanner.ts` | `web/src/lib/appBanner.vectors.json` | `internal/httpapi/appbanner_test.go` | `web/src/lib/appBanner.test.ts` | hand |
 
 
 Thin vector sets give false confidence: when you change one of these modules, add the case you fixed or added to its fixture first.

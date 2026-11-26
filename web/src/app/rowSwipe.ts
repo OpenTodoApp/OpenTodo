@@ -3,7 +3,9 @@
 // it will take at the reveal distance and fires it at the commit distance or on a
 // flick; anything shorter springs back. Pointer events only, beside the long-press
 // drag of lib/dnd.ts: a hold without movement is still a drag, a swipe that began
-// never is (dnd cancels a touch drag once the finger moves).
+// never is (dnd cancels a touch drag once the finger moves). Right to left the gesture
+// mirrors (arabic-rtl D4): "right" is towards the end of the line, "left" towards its start.
+import { fromStartEdge, inlineDelta } from '../lib/direction'
 
 /** The gesture's numbers (design D3, "Gesture value" table). */
 export const SWIPE = {
@@ -24,7 +26,7 @@ export const SWIPE = {
   max: 120,
   /** The return, in ms (the ui duration token). */
   returnMs: 120,
-  /** A press this close to the left edge belongs to the menu's edge swipe, never to a row (edge-swipe-menu). */
+  /** A press this close to the start edge (the left, or the right right to left) belongs to the menu's edge swipe, never to a row (edge-swipe-menu). */
   edge: 20,
 } as const
 
@@ -77,7 +79,7 @@ export interface SwipeHandlers {
  * click is swallowed so a swipe never also opens the task.
  */
 export function beginSwipe(e: { pointerId: number; pointerType: string; clientX: number; clientY: number }, h: SwipeHandlers): () => void {
-  if (e.pointerType === 'mouse' || e.clientX < SWIPE.edge) return () => undefined
+  if (e.pointerType === 'mouse' || fromStartEdge(e.clientX) < SWIPE.edge) return () => undefined
   const x0 = e.clientX
   const y0 = e.clientY
   let state: 'pending' | 'swipe' | 'scroll' = 'pending'
@@ -93,7 +95,7 @@ export function beginSwipe(e: { pointerId: number; pointerType: string; clientX:
   }
   const move = (ev: PointerEvent) => {
     if (ev.pointerId !== e.pointerId) return
-    const mx = ev.clientX - x0
+    const mx = inlineDelta(ev.clientX - x0)
     if (state === 'pending') {
       const lock = lockOf(mx, ev.clientY - y0)
       if (lock === 'scroll') { state = 'scroll'; stop(); return }
@@ -102,7 +104,7 @@ export function beginSwipe(e: { pointerId: number; pointerType: string; clientX:
       state = 'swipe'
     }
     const now = performance.now()
-    if (now > last.t) velocity = (ev.clientX - last.x) / (now - last.t)
+    if (now > last.t) velocity = inlineDelta(ev.clientX - last.x) / (now - last.t)
     last = { x: ev.clientX, t: now }
     dx = mx
     const next: SwipeDir = dx >= 0 ? 'right' : 'left'
@@ -127,8 +129,9 @@ export function beginSwipe(e: { pointerId: number; pointerType: string; clientX:
   return stop
 }
 
-function swallowClick(): void {
+/** The next click, if one comes within `ms`, reaches nothing (a swipe, or the tap that ended a touch edit). */
+export function swallowClick(ms = 0): void {
   const stopClick = (ev: Event) => { ev.stopPropagation(); ev.preventDefault() }
   window.addEventListener('click', stopClick, { capture: true, once: true })
-  setTimeout(() => window.removeEventListener('click', stopClick, { capture: true }), 0)
+  setTimeout(() => window.removeEventListener('click', stopClick, { capture: true }), ms)
 }

@@ -18,7 +18,7 @@ import { useDictation } from './useDictation'
 import { useTokenSuggest } from './TokenSuggest'
 import { ParseChips, type ParseChipsProps } from './ParseChips'
 import { QuickAddTint } from './QuickAddTint'
-import { composingEnter } from '../lib/composeKey'
+import { composing, composingEnter } from '../lib/composeKey'
 import { t, preferredLanguages } from '../lib/i18n'
 import { chipRange, type FieldKind, fieldRows, type FieldRow, type QuickAddProject, startToken } from './quickadd/fields'
 import { FieldRows, QuickAddFooter } from './quickadd/FieldRows'
@@ -95,7 +95,7 @@ function LinePreview({ title, emptyTitle, ...chips }: ParseChipsProps & { title?
   return (
     <div id="quick-add-preview" role="status" aria-live="polite" className="empty:hidden">
       {(chips.chips.length > 0 || (chips.misses?.length ?? 0) > 0) && (
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-9 text-meta">
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 ps-9 text-meta">
           <ParseChips {...chips} />
           <span className="text-muted" data-testid="quick-add-title">
             <span className="sr-only">{t('Title:')}{' '}</span>
@@ -323,6 +323,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
 
   /** The palette's own keys (D3): ↑/↓ over the rows, Tab edits the highlighted one, Shift+Enter adds and opens, Escape clears the highlight. */
   function fieldKeys(e: KeyboardEvent<HTMLTextAreaElement>): boolean {
+    if (composing(e)) return false
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault()
       setRow((r) => (e.key === 'ArrowDown' ? (r === null ? 0 : Math.min(r + 1, rows.length - 1)) : r === null || r === 0 ? null : r - 1))
@@ -352,7 +353,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
   const lead = `quick-add-lead ${size || 'text-body'}`
   return (
     <form id={formId} onSubmit={submit} data-quick-add-layout={layout}>
-      <div className={`relative flex items-start ${palette ? 'gap-2.5 border-b border-default px-4 py-2.5 sm:pr-11' : layout === 'sheet' ? 'gap-2 px-3 pb-2' : 'quick-add-surface gap-2'}`}>
+      <div className={`relative flex items-start ${palette ? 'gap-2.5 border-b border-default px-4 py-2.5 sm:pe-11' : layout === 'sheet' ? 'gap-2 px-3 pb-2' : 'quick-add-surface gap-2'}`}>
         {palette ? <span className={lead}><Icon name="plus" className="text-faint" /></span> : layout === 'line' && <span className={lead}><span className="text-h2 leading-none text-accent">+</span></span>}
         {/* The recognised spans tinted behind the text (moments-and-onboarding D8, QuickAddTint). */}
         {/* The tints are the field's sizer (quick-add-notes D1): in one grid cell with the
@@ -371,6 +372,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
           onPaste={(e) => { if (!pasted.onPaste(e)) paste.onPaste(e) }}
           onKeyDown={(e) => {
             if (composingEnter(e)) { e.preventDefault(); return }
+            if (composing(e)) return
             if (lineDate.escape(e)) return
             if (suggest.onKeyDown(e)) return
             if (palette && fieldKeys(e)) return
@@ -419,9 +421,9 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
       {layout === 'sheet' && suggest.list && <div className="px-3 pb-2 [&>ul]:static [&>ul]:mt-0 [&>ul]:w-full" data-sheet-suggestions>{suggest.list}</div>}
       {notes !== null && (
         <NotesLine ref={notesField.ref} value={notes} onChange={notesField.setNotes} onClose={notesField.close}
-          className={layout === 'sheet' ? 'px-3 pb-2' : 'pl-5'} size={size} />
+          className={layout === 'sheet' ? 'px-3 pb-2' : 'ps-5'} size={size} />
       )}
-      {pasted.view(layout === 'sheet' ? 'px-3 pb-2' : palette ? 'px-4 py-2' : 'pl-5 pt-1.5')}
+      {pasted.view(layout === 'sheet' ? 'px-3 pb-2' : palette ? 'px-4 py-2' : 'ps-5 pt-1.5')}
       {voice.enabled && <VoiceNotice voice={voice} />}
       {palette && <>
         <div id="quick-add-preview" role="status" aria-live="polite">

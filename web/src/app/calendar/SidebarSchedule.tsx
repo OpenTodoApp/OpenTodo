@@ -80,7 +80,7 @@ function ScheduleBody() {
         ? <p className="px-1 text-meta text-faint" data-schedule-empty>{t('Nothing else scheduled today.')}</p>
         : <ul className="space-y-0.5">{shown.map((i) => <li key={i.id}><ScheduleRow item={i} now={now} hue={i.kind === 'task' ? hueOf(i.task) : undefined} subName={i.kind === 'event' ? cal.subMap.get(i.event.subscriptionId)?.name : undefined} zone={zone} cal={cal} /></li>)}</ul>}
       <button type="button" onClick={() => navigate({ view: 'day' })} data-schedule-calendar
-        className="flex w-full items-center gap-1 rounded-control px-1 py-0.5 text-left text-meta text-muted hover:bg-hover hover:text-default">
+        className="flex w-full items-center gap-1 rounded-control px-1 py-0.5 text-start text-meta text-muted hover:bg-hover hover:text-default">
         <span className="min-w-0 flex-1 truncate">{later > 0 ? t('{n} more today', { n: later }) : t('Open the calendar')}</span>
         <Icon name="arrow-right" size="xs" />
       </button>
@@ -113,7 +113,7 @@ function ScheduleRow({ item, now, hue, subName, zone, cal }: {
   }
   return (
     <button type="button" onClick={() => openTaskPanel(item.id)} data-schedule-task={item.id} data-current={current || undefined} data-hue={hue}
-      className={`flex w-full items-center gap-2 rounded-control px-1 py-0.5 text-left text-meta hover:bg-hover ${current ? 'bg-selected text-strong' : 'text-default'}`}>
+      className={`flex w-full items-center gap-2 rounded-control px-1 py-0.5 text-start text-meta hover:bg-hover ${current ? 'bg-selected text-strong' : 'text-default'}`}>
       {when}
       <span aria-hidden className="ui-block-dot" />
       <span className="min-w-0 flex-1 truncate">{item.task.title || t('Untitled')}</span>

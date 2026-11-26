@@ -59,7 +59,7 @@ export function useAddHere(projects: readonly ProjectRef[]): AddHere {
       {menu && (
         // The menu's hidden trigger sits at the pointer, so the panel opens there (as the row menu's does).
         <Menu kind="menu" label={t('Add here')} trigger={<span className="sr-only" />} triggerClassName="sr-only"
-          triggerProps={{ style: { position: 'fixed', left: menu.x, top: menu.y } }} align="start" width="sm:w-60" open
+          triggerProps={{ style: { /* physical: at the pointer */ position: 'fixed', left: menu.x, top: menu.y } }} align="start" width="sm:w-60" open
           onOpenChange={(open) => { if (!open) setMenu(null) }}>
           <AddHereItems place={menu} onAdd={add} />
         </Menu>

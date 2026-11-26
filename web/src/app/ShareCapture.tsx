@@ -22,6 +22,7 @@ import { useShortcutDispatcher, useShortcutScope } from './shortcuts'
 import { Kbd } from './shortcuts/Kbd'
 import { t } from '../lib/i18n'
 import { messageOf } from '../lib/errorText'
+import { composing } from '../lib/composeKey'
 
 /** How files come with this share: the hand-over store, the extension's message, lost on the way, or refused by the service worker. */
 export type ShareFiles = { inbox?: string | null; mode?: 'extension' | 'denied' | 'lost' | 'unverified' | null }
@@ -236,6 +237,7 @@ export function ShareCapture() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             onKeyDown={(e) => {
+              if (composing(e)) return
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault()
                 ;(document.getElementById('share-capture') as HTMLFormElement | null)?.requestSubmit()
@@ -251,7 +253,7 @@ export function ShareCapture() {
           onRemove={(key) => setRemoved((r) => new Set(r).add(key))} />
         {error && <p className="mt-3 text-body text-danger" role="alert">{error}</p>}
         <div className="mt-4 flex items-center justify-end gap-2">
-          <span className="mr-auto hidden text-meta text-faint sm:inline" data-kbd-hint>
+          <span className="me-auto hidden text-meta text-faint sm:inline" data-kbd-hint>
             {t.rich('{enter} saves · {esc} cancels', { enter: <Kbd k="Enter" />, esc: <Kbd k="Esc" /> })}
           </span>
           <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={() => leave({ view: 'inbox' })}>{t('Cancel')}</button>

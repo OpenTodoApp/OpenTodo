@@ -4,44 +4,14 @@
 // its own action in a quiet tone ("Set a deadline", "Add a place"), so nothing hides
 // behind an Add menu. Every row opens the same popover editor as the panel's facet
 // parts (Facets.tsx), anchored to the row, and writes the same operation.
-import { useFeature } from '../../lib/features'
-import { useMemo, useState, type ReactNode } from 'react'
-import type { FacetPart } from '../../lib/facets'
+import { useState, type ReactNode } from 'react'
 import { t } from '../../lib/i18n'
-import { Icon, ReadAs, type IconName } from '../../ui'
+import { Icon } from '../../ui'
 import { LabelChip } from '../LabelPicker'
 import { LocationPreview } from '../locations/LocationPreview'
-import { ProjectMark } from '../ProjectMark'
-import { OPTIONAL, PartEditor, type PropertiesProps, useFacetParts, usePartEditor } from './Facets'
-import { usePropertiesModel } from './usePropertiesModel'
-import { dayPartOf, dayPartWord } from '../../lib/dayParts'
-import { energyLevelsOn } from '../../lib/energy'
-import { useTimeSectors } from '../../lib/sectorPrefs'
-import { useUserPrefsRow } from '../../lib/localData'
+import { PartEditor, type PropertiesProps } from './Facets'
+import { type Fact, useTaskFacts } from './useTaskFacts'
 import { RotationLine } from './RotationLine'
-import { isNoPriority, priorityAccessibleName, priorityName } from '../../lib/priority'
-
-const TONE: Record<string, string> = {
-  overdue: 'text-danger',
-  today: 'text-accent',
-  warning: 'text-(--ot-hue-orange-text)',
-}
-
-/** The priority ring beside "Priority 2": the p1–p4 border tokens. */
-const RING: Record<number, string> = { 1: 'border-p1', 2: 'border-p2', 3: 'border-p3', 4: 'border-p4' }
-
-interface Fact {
-  id: string
-  label: string
-  icon: IconName
-  /** The value in the row's words, or null when unset. */
-  value: ReactNode | null
-  /** The quiet action shown while unset. */
-  empty: string
-  tone?: string
-  /** Shown only with a value (Blocks, the origin). */
-  onlySet?: boolean
-}
 
 /**
  * The facts a phone's stacked card shows before "More" (precision-phone D4): every fact
@@ -55,55 +25,12 @@ export function stackedFirst(f: { id: string; set: boolean; priority?: number })
 export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { stacked?: boolean }) {
   const { task, readOnly, userId } = props
   const [allShown, setAllShown] = useState(false)
-  const m = usePropertiesModel(props)
-  const pe = usePartEditor(m, task)
-  // Every optional part is asked for, so each fact can read its value (the empty ones are ignored).
-  const all = useMemo(() => new Set(OPTIONAL), [])
-  const { facets, shownLocation } = useFacetParts(props, m, all)
-  const parts = new Map<string, FacetPart>()
-  for (const p of [...facets.where, ...facets.when, ...facets.how, ...facets.who]) if (!p.empty) parts.set(p.id, p)
-  const text = (id: string) => parts.get(id)?.text ?? null
-  const tone = (id: string) => TONE[parts.get(id)?.tone ?? ''] ?? undefined
-
-  // Energy is offered while unset only with Energy levels on; a value is always shown (task-energy D3).
-  const energyOn = energyLevelsOn(useUserPrefsRow())
-  // Locations off in the current workspace: a set location still shows, none is offered (workspace-feature-switches D4).
-  const locationsOn = useFeature('locations')
-  const sectorsOn = useTimeSectors()
-  const due = text('due')
-  const partWord = dayPartWord(dayPartOf(task))
-  const schedule: Fact[] = [
-    { id: 'due', label: t('Do'), icon: 'sun', value: due && partWord ? `${due} · ${partWord}` : due ?? partWord, empty: t('Set a date'), tone: tone('due') },
-    // The time sector (time-sectors D6): offered while unset only with the switch on; a value always shows.
-    { id: 'sector', label: t('Time sector'), icon: 'calendar-range', value: text('sector'), empty: t('Set a time sector'), onlySet: !sectorsOn || !!task.recurrence },
-    { id: 'when', label: t('Start'), icon: 'calendar-range', value: text('when'), empty: t('Set a start') },
-    { id: 'deadline', label: t('Deadline'), icon: 'hourglass', value: text('deadline'), empty: t('Set a deadline'), tone: tone('deadline') },
-    { id: 'reminders', label: t('Reminder'), icon: 'alarm-clock', value: text('reminders'), empty: t('Add a reminder') },
-    { id: 'repeat', label: t('Repeat'), icon: 'repeat', value: text('repeat'), empty: t('Doesn’t repeat') },
-  ]
-  const details: Fact[] = [
-    { id: 'priority', label: t('Priority'), icon: 'flag', empty: t('Set a priority'),
-      value: isNoPriority(task.priority) ? null : <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className={`h-3 w-3 rounded-full border-2 ${RING[task.priority] ?? 'border-p4'}`} /><ReadAs label={priorityAccessibleName(task.priority)}>{priorityName(task.priority)}</ReadAs></span> },
-    { id: 'estimate', label: t('Estimate'), icon: 'clock', value: text('estimate'), empty: t('Add an estimate') },
-    { id: 'energy', label: t('Energy'), icon: 'zap', value: text('energy'), empty: t('Set energy'), onlySet: !energyOn },
-    ...(userId ? [{ id: 'assignee', label: t('Assignee'), icon: 'user-check' as const, value: text('assignee'), empty: m.solo ? t('Assign to me') : t('Assign') }] : []),
-    { id: 'blocked-by', label: t('Blocked by'), icon: 'lock', value: text('blocked-by'), empty: t('Add a blocker') },
-    { id: 'blocks', label: t('Blocks'), icon: 'arrow-right', value: text('blocks'), empty: '', onlySet: true },
-    { id: 'location', label: t('Location'), icon: 'map-pin', value: text('location'), empty: t('Add a place'), onlySet: !locationsOn },
-  ]
-  const where: Fact[] = [
-    { id: 'project', label: t('Project'), icon: 'folder', empty: '',
-      value: <span className="inline-flex min-w-0 items-center gap-1.5">{m.project && <ProjectMark project={m.project} />}<span className="truncate">{text('project')}</span></span> },
-    ...(m.offerSection || m.shownSection ? [{ id: 'section', label: t('Section'), icon: 'kanban' as const, value: text('section'), empty: t('No section') }] : []),
-    { id: 'parent', label: t('Parent task'), icon: 'corner-down-right', value: task.parent_id ? (props.parent?.title || t('Untitled')) : null, empty: t('Set a parent task') },
-    { id: 'origin', label: t('Origin'), icon: 'link', value: text('origin'), empty: '', onlySet: true },
-  ]
-
+  const { m, pe, parts, schedule, details, where, shownLocation } = useTaskFacts(props)
   const row = (f: Fact) => {
     if ((f.onlySet || readOnly) && f.value === null) return null
     const fixed = readOnly || (f.id === 'origin' && parts.get('origin')?.fixed)
     const content = f.value ?? f.empty
-    const cls = `flex min-h-8 min-w-0 items-center gap-2 rounded-control px-1.5 text-left text-body ${f.value === null ? 'text-faint' : f.tone ?? 'text-default'}`
+    const cls = `flex min-h-8 min-w-0 items-center gap-2 rounded-control px-1.5 text-start text-body ${f.value === null ? 'text-faint' : f.tone ?? 'text-default'}`
     return (
       <div key={f.id} className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-2" data-fact={f.id}>
         <span className="truncate text-meta text-muted">{f.label}</span>
@@ -141,9 +68,9 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
       const inner = <>
         <Icon name={f.icon} size="sm" className="shrink-0 text-faint" />
         <span className="shrink-0 text-muted">{f.label}</span>
-        <span className={`ml-auto min-w-0 truncate text-right ${f.value === null ? 'text-faint' : f.tone ?? 'text-default'}`}>{f.value ?? f.empty}</span>
+        <span className={`ms-auto min-w-0 truncate text-end ${f.value === null ? 'text-faint' : f.tone ?? 'text-default'}`}>{f.value ?? f.empty}</span>
       </>
-      const cls = 'flex min-h-11 w-full min-w-0 items-center gap-3 px-3 text-left text-body'
+      const cls = 'flex min-h-11 w-full min-w-0 items-center gap-3 px-3 text-start text-body'
       return (
         <li key={f.id} data-fact={f.id}>
           {fixed ? <span className={cls} data-part={f.id}>{inner}</span> : (
@@ -158,11 +85,11 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
     const labelsRow = (m.labels.length > 0 || (expanded && !readOnly)) && (
       <li key="labels" data-fact="labels">
         <button type="button" ref={(el) => pe.partRef('labels', el)} data-part="labels" aria-haspopup="dialog" aria-expanded={pe.open === 'labels'} disabled={readOnly}
-          className="flex min-h-11 w-full min-w-0 items-center gap-3 px-3 text-left text-body hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
+          className="flex min-h-11 w-full min-w-0 items-center gap-3 px-3 text-start text-body hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
           onClick={() => pe.activate('labels')}>
           <Icon name="tag" size="sm" className="shrink-0 text-faint" />
           <span className="shrink-0 text-muted">{t('Labels')}</span>
-          <span className="ml-auto flex min-w-0 flex-wrap justify-end gap-1">
+          <span className="ms-auto flex min-w-0 flex-wrap justify-end gap-1">
             {m.labels.length ? m.labels.map((l) => <LabelChip key={l.id} label={l} />) : <span className="text-faint">{t('Add labels')}</span>}
           </span>
         </button>
@@ -175,7 +102,7 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
           {labelsRow}
           {!expanded && hiddenCount > 0 && (
             <li>
-              <button type="button" className="flex min-h-11 w-full items-center gap-3 px-3 text-left text-body text-muted hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
+              <button type="button" className="flex min-h-11 w-full items-center gap-3 px-3 text-start text-body text-muted hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
                 onClick={() => setAllShown(true)} data-facts-more>
                 <Icon name="ellipsis" size="sm" className="shrink-0 text-faint" />{t('More properties')}
               </button>
@@ -198,7 +125,7 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
   return (
     <section ref={m.section} aria-label={t('Properties')} className="space-y-5" data-facts>
       {group(t('Schedule'), 'schedule', schedule.map(row))}
-      {group(t('Details'), 'details', <>{details.map(withTurns(row, (n) => <RotationLine key={n} as="div" className="pl-[7rem]" task={task} userId={userId} />))}<LocationPreview shown={shownLocation} /></>)}
+      {group(t('Details'), 'details', <>{details.map(withTurns(row, (n) => <RotationLine key={n} as="div" className="ps-[7rem]" task={task} userId={userId} />))}<LocationPreview shown={shownLocation} /></>)}
       {group(t('Labels'), 'labels', (
         <div className="flex flex-wrap items-center gap-1" data-fact="labels">
           {m.labels.map((l) => <LabelChip key={l.id} label={l} />)}

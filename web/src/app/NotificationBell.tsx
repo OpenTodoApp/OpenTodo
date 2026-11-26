@@ -105,9 +105,9 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
         aria-haspopup="dialog" onClick={() => setOpen((v) => !v)} data-notifications>
         <Icon name="bell" />
         {/* Quiet markers (quiet-sidebar D4, app-shell "Notification bell marker"): a dot for one, a small accent count above one, never red. */}
-        {unread === 1 && <span aria-hidden="true" className="absolute right-1 top-1 h-2 w-2 rounded-full bg-accent" data-unread={1} data-dot />}
+        {unread === 1 && <span aria-hidden="true" className="absolute inset-e-1 top-1 h-2 w-2 rounded-full bg-accent" data-unread={1} data-dot />}
         {unread > 1 && (
-          <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-accent px-1 text-center text-hint font-semibold leading-4 text-on-accent" data-unread={unread}>{unread}</span>
+          <span aria-hidden="true" className="absolute -inset-e-0.5 -top-0.5 min-w-4 rounded-full bg-accent px-1 text-center text-hint font-semibold leading-4 text-on-accent" data-unread={unread}>{unread}</span>
         )}
       </button>
       <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={t('Notifications')} width="sm:w-80" className="py-1">
@@ -120,7 +120,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
             ) : (
               <li key={n.id}>
                 <button type="button" data-autofocus={n === list[0] ? '' : undefined} onClick={() => void choose(n)}
-                  className={`flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-canvas dark:hover:bg-raised ${n.readAt === null ? '' : 'text-faint'}`}>
+                  className={`flex w-full items-start gap-2 px-3 py-2 text-start hover:bg-canvas dark:hover:bg-raised ${n.readAt === null ? '' : 'text-faint'}`}>
                   <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.readAt === null ? 'bg-accent' : 'bg-transparent'}`} />
                   <span className="user-text min-w-0 flex-1">
                     {(n.kind === 'page_replied' || n.kind === 'page_completed') && 'pageId' in n.payload ? (
@@ -172,7 +172,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
 function InvitationNotification({ n, payload: p, when, autofocus }: { n: AppNotification; payload: MemberInvitationPayload; when: string; autofocus: boolean }) {
   const unread = n.readAt === null
   return (
-    <div className={`flex w-full items-start gap-2 px-3 py-2 text-left outline-none ${unread ? '' : 'text-faint'}`} data-kind="member_invitation"
+    <div className={`flex w-full items-start gap-2 px-3 py-2 text-start outline-none ${unread ? '' : 'text-faint'}`} data-kind="member_invitation"
       data-autofocus={autofocus ? '' : undefined} tabIndex={autofocus ? -1 : undefined}>
       <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${unread ? 'bg-accent' : 'bg-transparent'}`} />
       <span className="user-text min-w-0 flex-1">

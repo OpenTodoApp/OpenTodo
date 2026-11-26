@@ -21,6 +21,7 @@
     <string name="error_offline">The server can\'t be reached, and OpenTodo hasn\'t been opened on this phone before.</string>
     <string name="error_untrusted">This phone doesn\'t trust the server\'s certificate.</string>
     <string name="channel_reminders">Reminders</string>
+    <string name="channel_urgent">Urgent reminders</string>
     <string name="reminder_generic">Reminder</string>
     <string name="reminder_text">Task reminder</string>
     <string name="action_snooze">Snooze 10 min</string>
@@ -50,6 +51,17 @@
     <string name="widget_completed_description">How many tasks you completed this week</string>
     <string name="widget_completed_locked">Locked: today’s count only</string>
     <string name="widget_completed_days">Completed per day: %1$s</string>
+    <string name="widget_upcoming">Upcoming</string>
+    <string name="widget_upcoming_description">Your next tasks, by day</string>
+    <string name="widget_upcoming_empty">Nothing upcoming.</string>
+    <string name="widget_upcoming_locked">Locked. Upcoming tasks: %1$d</string>
+    <string name="widget_tomorrow">Tomorrow</string>
+    <string name="widget_calendar">Calendar</string>
+    <string name="widget_calendar_description">The month, with the days that have tasks</string>
+    <string name="widget_calendar_locked">Locked</string>
+    <string name="widget_calendar_day">%1$s, tasks: %2$d</string>
+    <string name="widget_previous_month">Previous month</string>
+    <string name="widget_next_month">Next month</string>
     <string name="setup_old_webview">This phone\'s Android System WebView is old (version %1$s). Update it from your app store so OpenTodo works fully.</string>
     <string name="site_bar_host">Signing in on %1$s</string>
     <string name="site_bar_close">Back to OpenTodo</string>
@@ -58,6 +70,7 @@
     <string name="setup_sign_in">Sign in here</string>
     <string name="error_sign_in">Your server is behind a login page, and signing in didn\'t continue in the app. Sign in again here.</string>
     <string name="save_failed">The file could not be saved.</string>
+    <string name="quick_add_failed">The task wasn\'t added. Tap to add it.</string>
     <string name="channel_focus">Focus</string>
     <string name="channel_sync">Syncing</string>
     <string name="focus_generic">Focus session</string>

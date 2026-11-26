@@ -2,8 +2,10 @@
 // the workspace's name, colour and icon for the owner and admins, then the
 // danger zone: Transfer and Delete for the owner, Leave for everyone else. The
 // default workspace has the identity only. settings-foundation D8: the name and colour
-// save together with the save bar; the icon applies when picked.
+// save together with the save bar; the icon applies when picked. The owner opens
+// the workspace's Fields… dialog from here (workspace-fields).
 import { useState } from 'react'
+import { lazy } from '../lib/lazy'
 import { Button, ConfirmDialog, Field, IconPicker, Input, Menu, Select, SettingRow, SettingsSection, useDraft } from '../ui'
 import { SettingsSaveBar } from './SettingsSaveBar'
 import { act, actionErrorMessage } from './actionError'
@@ -15,12 +17,15 @@ import { WorkspaceMark } from './WorkspaceControl'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { manages } from './workspaceRoles'
 
+const FieldsDialog = lazy(() => import('./FieldsDialog').then((m) => ({ default: m.FieldsDialog })))
+
 export function WorkspaceGeneral({ ws, members, user, online }: { ws: Workspace; members: WorkspaceMember[]; user: User; online: boolean }) {
   return (
     <div className="space-y-8">
       {manages(ws.role)
         ? <IdentitySection ws={ws} online={online} />
         : <p className="text-meta text-muted">{t('Only the owner and admins can change the name, colour and icon.')}</p>}
+      {ws.role === 'owner' && <FieldsRow ws={ws} />}
       {ws.default
         ? <p className="text-meta text-muted" data-default-workspace-note>{cardCopy('workspace-members', { variant: 'default' }).description}</p>
         : <DangerSection ws={ws} members={members} user={user} online={online} />}
@@ -67,6 +72,17 @@ export function IdentitySection({ ws, online }: { ws: Workspace; online: boolean
         disabledReason={online ? undefined : t('Workspaces need a connection to your server. The lists below are from this device.')}
         onDiscard={() => { form.reset(); setError(null) }} onSave={() => void save()} />
     </SettingsSection>
+  )
+}
+
+/** The workspace's fields (workspace-fields): ops, so they work offline too. */
+function FieldsRow({ ws }: { ws: Workspace }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div data-workspace-fields={ws.id}>
+      <Button onClick={() => setOpen(true)}>{t('Fields…')}</Button>
+      {open && <FieldsDialog workspace={ws} onClose={() => setOpen(false)} />}
+    </div>
   )
 }
 

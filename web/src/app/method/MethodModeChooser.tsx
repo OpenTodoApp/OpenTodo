@@ -16,6 +16,7 @@ import { Button, Notice } from '../../ui'
 import { act } from '../actionError'
 import { openHelp } from '../../lib/helpRequest'
 import { METHOD_HELP_SCREENS } from '../help/MethodLink'
+import { inlineKey } from '../../lib/direction'
 
 // The three options' text is the How you work card's in the settings copy table (settings-copy D7).
 const OPTIONS = SETTINGS_COPY['how-you-work'].options
@@ -46,8 +47,8 @@ export function MethodModeChooser({ value, onChosen, writeOnChoose = true, offer
     onChosen?.(mode)
   }
   const onKey = (e: KeyboardEvent, i: number) => {
-    const next = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? (i + 1) % METHOD_MODES.length
-      : e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? (i - 1 + METHOD_MODES.length) % METHOD_MODES.length
+    const next = e.key === 'ArrowDown' || inlineKey(e) === 'ArrowRight' ? (i + 1) % METHOD_MODES.length
+      : e.key === 'ArrowUp' || inlineKey(e) === 'ArrowLeft' ? (i - 1 + METHOD_MODES.length) % METHOD_MODES.length
       : e.key === 'Home' ? 0 : e.key === 'End' ? METHOD_MODES.length - 1 : -1
     if (next < 0) return
     e.preventDefault()
@@ -65,7 +66,7 @@ export function MethodModeChooser({ value, onChosen, writeOnChoose = true, offer
           return (
             <button key={mode} ref={(el) => { refs.current[i] = el }} type="button" role="radio" aria-checked={on} tabIndex={on ? 0 : -1}
               data-method-mode={mode} onClick={() => choose(mode)} onKeyDown={(e) => onKey(e, i)}
-              className={`touch-target rounded-card border p-3 text-left transition duration-(--duration-ui) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${on ? 'border-accent bg-accent-soft' : 'border-default bg-surface hover:bg-sunken'}`}>
+              className={`touch-target rounded-card border p-3 text-start transition duration-(--duration-ui) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${on ? 'border-accent bg-accent-soft' : 'border-default bg-surface hover:bg-sunken'}`}>
               <span className="block text-body font-semibold text-default hyphens-auto break-words">{MODE_LABEL[mode]}</span>
               <span className="mt-1 block text-meta text-muted">{MODE_DESCRIPTION[mode]}</span>
             </button>

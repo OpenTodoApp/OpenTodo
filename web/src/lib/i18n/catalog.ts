@@ -120,6 +120,12 @@ export interface TFunction {
    * Values may be elements too.
    */
   rich(message: string, values?: RichValues): ReactNode
+  /**
+   * The same text without the direction isolates a right-to-left language puts around
+   * values, for text that is stored, sent or matched rather than shown: a copy's name,
+   * a prompt, a notification body, the document title.
+   */
+  plain(message: string, values?: TValues): string
 }
 
 export const t: TFunction = Object.assign(
@@ -138,6 +144,11 @@ export const t: TFunction = Object.assign(
       const parts = render<ReactNode>(compile(text), values as Values, locale, tags)
       return createElement(Fragment, null, ...parts.map((p, i) => (typeof p === 'string' ? p : createElement(Fragment, { key: i }, p))))
     },
+    plain(message: string, values?: TValues): string {
+      const text = lookup(message, values?.context)
+      if (!values && !/[{'<#]/.test(text)) return text
+      return render<string>(compile(text), values ?? {}, locale, undefined, undefined, false).join('')
+    },
   },
 )
 
@@ -151,10 +162,14 @@ export function msg<S extends string>(message: S): S { return message }
 /**
  * A label table defined at module level, read through t() on every access, so it
  * follows the active language: `const LABEL = translatedMap({ on: msg('On'), off: msg('Off') })`.
+ * An entry that needs a context is a function: `open: () => t('Open', { context: 'state' })`.
  */
-export function translatedMap<K extends string>(source: Record<K, string>): Record<K, string> {
+export function translatedMap<K extends string>(source: Record<K, string | (() => string)>): Record<K, string> {
   const out = {} as Record<K, string>
-  for (const k of Object.keys(source) as K[]) Object.defineProperty(out, k, { get: () => t(source[k]), enumerable: true })
+  for (const k of Object.keys(source) as K[]) {
+    const v = source[k]
+    Object.defineProperty(out, k, { get: () => (typeof v === 'function' ? v() : t(v)), enumerable: true })
+  }
   return out
 }
 

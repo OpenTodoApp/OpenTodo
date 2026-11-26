@@ -21,6 +21,7 @@
     <string name="error_offline">Il server non è raggiungibile e OpenTodo non è mai stato aperto su questo telefono.</string>
     <string name="error_untrusted">Questo telefono non si fida del certificato del server.</string>
     <string name="channel_reminders">Promemoria</string>
+    <string name="channel_urgent">Promemoria urgenti</string>
     <string name="reminder_generic">Promemoria</string>
     <string name="reminder_text">Promemoria attività</string>
     <string name="action_snooze">Posticipa di 10 min</string>
@@ -50,6 +51,17 @@
     <string name="widget_completed_description">Quante attività hai completato questa settimana</string>
     <string name="widget_completed_locked">Bloccato: solo il numero di oggi</string>
     <string name="widget_completed_days">Completate per giorno: %1$s</string>
+    <string name="widget_upcoming">In programma</string>
+    <string name="widget_upcoming_description">Le tue prossime attività, per giorno</string>
+    <string name="widget_upcoming_empty">Niente in programma.</string>
+    <string name="widget_upcoming_locked">Bloccato. Attività in programma: %1$d</string>
+    <string name="widget_tomorrow">Domani</string>
+    <string name="widget_calendar">Calendario</string>
+    <string name="widget_calendar_description">Il mese, con i giorni che hanno attività</string>
+    <string name="widget_calendar_locked">Bloccato</string>
+    <string name="widget_calendar_day">%1$s, attività: %2$d</string>
+    <string name="widget_previous_month">Mese precedente</string>
+    <string name="widget_next_month">Mese successivo</string>
     <string name="setup_old_webview">L’Android System WebView di questo telefono è vecchio (versione %1$s). Aggiornalo dallo store delle app perché OpenTodo funzioni del tutto.</string>
     <string name="site_bar_host">Accesso su %1$s</string>
     <string name="site_bar_close">Torna a OpenTodo</string>
@@ -58,6 +70,7 @@
     <string name="setup_sign_in">Accedi qui</string>
     <string name="error_sign_in">Il server è dietro una pagina di accesso e l’accesso non è proseguito nell’app. Accedi di nuovo qui.</string>
     <string name="save_failed">Non è stato possibile salvare il file.</string>
+    <string name="quick_add_failed">L’attività non è stata aggiunta. Tocca per aggiungerla.</string>
     <string name="channel_focus">Focus</string>
     <string name="channel_sync">Sincronizzazione</string>
     <string name="focus_generic">Sessione di focus</string>

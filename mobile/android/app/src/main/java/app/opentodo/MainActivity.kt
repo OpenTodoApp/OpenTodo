@@ -77,6 +77,8 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     private var pendingRedeemScript: String? = null
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var permissionDone: ((Boolean) -> Unit)? = null
+    /** android-urgent-alarms D4: an urgent-alarm settings page is open; on return the next one may follow. */
+    private var urgentAsking = false
     private val io = Executors.newSingleThreadExecutor()
     /** Files the app saves (shell-repairs D2): the bridge's chunks, the server's downloads, the save dialog. */
     private val saver = FileSaver(this)
@@ -87,7 +89,13 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     private var heldBars: SystemBars? = null
 
     private val setup = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
-        if (r.resultCode == RESULT_OK) { holdLaunchScreen(firstFrame = false); start() } else finish()
+        if (r.resultCode == RESULT_OK) {
+            // The launch intent is replayed once the server is set; Change server is done by then
+            // (it led here, or there was no server to change), so it must not ask again.
+            if (intent?.action == ACTION_CHANGE_SERVER) intent = Intent(this, MainActivity::class.java)
+            holdLaunchScreen(firstFrame = false)
+            start()
+        } else finish()
     }
     private val chooser = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
         fileCallback?.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(r.resultCode, r.data))
@@ -191,6 +199,8 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     override fun onResume() {
         super.onResume()
         Focus.foreground = true
+        // android-urgent-alarms D4: back from one urgent-alarm settings page, the next one (if any).
+        if (urgentAsking) { urgentAsking = false; allowUrgentAlarms() }
     }
 
     override fun onPause() {
@@ -304,6 +314,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             }
             Bridge(this, server, this).install(web)
             HiddenRun.schedulePeriodic(this)
+            QuickAddNotification.restore(this)
         }
         if (!replay) return
         val share = pendingShare
@@ -768,13 +779,36 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
 
     /** The system's "Alarms & reminders" page for the app; a device without it gets the app's own settings page. */
     override fun openAlarmSettings() {
-        if (Build.VERSION.SDK_INT < 31) return
+        openSettings(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, 31) // inexact alarms stay when neither page opens
+    }
+
+    /** The system page [action] for this app (from API [minSdk]), else the app's own settings page; whether one opened. */
+    private fun openSettings(action: String, minSdk: Int): Boolean {
+        if (Build.VERSION.SDK_INT < minSdk) return false
         val app = Uri.parse("package:$packageName")
-        try {
-            startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, app))
-        } catch (e: ActivityNotFoundException) {
-            try { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, app)) } catch (e2: ActivityNotFoundException) { /* inexact alarms stay */ }
+        for (intent in listOf(Intent(action, app), Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, app))) {
+            try { startActivity(intent); return true } catch (e: ActivityNotFoundException) { /* the next one */ }
         }
+        return false
+    }
+
+    /**
+     * android-urgent-alarms D4: creates the Urgent reminders channel (so its Do Not Disturb
+     * override can be set before the first alarm) and opens the page for what urgent reminders
+     * still lack, at most once per device each, and the next one when the user comes back (onResume).
+     */
+    override fun allowUrgentAlarms() {
+        Notifier.ensureUrgentChannel(this)
+        val prefs = Prefs(this)
+        val fullScreen = Build.VERSION.SDK_INT < 34 || getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent()
+        val page = UrgentAlarms.nextAsk(Build.VERSION.SDK_INT, Scheduler.canExact(this), fullScreen,
+            prefs.urgentAsked(UrgentAlarms.EXACT), prefs.urgentAsked(UrgentAlarms.FULL_SCREEN)) ?: return
+        val opened = if (page == UrgentAlarms.EXACT) openSettings(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, 31)
+            else openSettings(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, 34)
+        // Only a page that opened counts as asked, and only then may the next one follow on return.
+        if (!opened) return
+        prefs.markUrgentAsked(page)
+        urgentAsking = true
     }
 
     private fun prompt(cipher: javax.crypto.Cipher, title: Int, done: (javax.crypto.Cipher?) -> Unit) {

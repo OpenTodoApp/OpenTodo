@@ -34,7 +34,7 @@ import { moveTargets } from '../ProjectHeader'
 import { useRoute } from '../router'
 import { useStartView, useToday, useViews } from '../useViews'
 import { useVimEnabled } from '../vim/prefs'
-import { groupOf, isStep, KIND_ICON, secondaryOf, type Entry, type Step } from './entries'
+import { groupOf, isStep, KIND_ICON, labelOf, secondaryOf, type Entry, type Step } from './entries'
 import { filterEntries } from './filterEntries'
 import { makeTaskEntry } from './index'
 import { usePaletteEntities } from './usePaletteEntities'
@@ -50,6 +50,7 @@ import { barModes, PREFIX_OF, prefixSwitch, type BarMode } from './modes'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 import { Snippet, usePaletteNotes } from './notesSection'
 import { perfMark, SEARCH_RESULTS } from '../../lib/perfMarks'
+import { composing } from '../../lib/composeKey'
 
 /** At most this many entries are listed; the rest are counted. */
 export const PALETTE_LIMIT = 50
@@ -184,7 +185,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const state = useCombobox<Entry>({
     source: commandsMode ? commandsOnly : source, emptySource: commandsMode ? commandsOnly : emptySource, prefix: commandsMode ? [] : prefix,
     suffix: commandsMode ? [] : [...notes.entries, ...trailing, ...(addEntry ? [addEntry] : [])], limit: PALETTE_LIMIT, rankContext: 'palette',
-    getKey: (e) => e.key, getLabel: (e) => e.label, getSecondary: (e) => secondaryOf(e, false), getKeywords: (e) => e.keywords, getGroup: groupOf,
+    getKey: (e) => e.key, getLabel: labelOf, getSecondary: (e) => secondaryOf(e, false), getKeywords: (e) => e.keywords, getGroup: groupOf,
     onPick: (e) => runEntry(e),
     onClose: () => { if (keepOpen.current) keepOpen.current = false; else onClose() },
   })
@@ -201,6 +202,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const toMode = (m: BarMode) => { setBar(m); if (m === 'search' || m === 'commands') state.setQuery('') }
   // In Add and Ask the field is their own: the same prefix in it while empty returns to Search with the character.
   const onKeyDownCapture = (e: KeyboardEvent) => {
+    if (composing(e)) return
     const target = e.target as HTMLInputElement
     if (bar === 'search' && e.key === 'Enter' && (e.ctrlKey || e.metaKey) && state.query.trim()) {
       e.preventDefault()

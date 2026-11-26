@@ -9,6 +9,7 @@ import { Card } from '../Card'
 import { Icon } from '../Icon'
 import { MenuGroup, MenuItem } from '../Menu'
 import { t } from '../../lib/i18n'
+import { composing } from '../../lib/composeKey'
 
 export interface AskSkill {
   id: string
@@ -55,7 +56,8 @@ export function AskComposer({ skills, onAsk, examples = true, autoFocus, disable
     setPasted(null)
   }
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+    if (composing(e)) return
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       send()
     }
@@ -103,7 +105,7 @@ export function AskComposer({ skills, onAsk, examples = true, autoFocus, disable
           {skills.slice(0, 3).map((s) => (
             <li key={s.id}>
               <Card padding="none" className="h-full p-3">
-                <button type="button" className="flex h-full w-full flex-col items-start gap-1 text-left outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus"
+                <button type="button" className="flex h-full w-full flex-col items-start gap-1 text-start outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus"
                   disabled={disabled} onClick={() => pick(s, true)} data-ask-example={s.id}>
                   <span className="text-meta font-medium text-default">{s.name}</span>
                   <span className="text-meta text-muted">“{s.example}”</span>
