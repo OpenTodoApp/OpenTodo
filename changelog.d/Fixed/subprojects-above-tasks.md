@@ -1,1 +1,0 @@
-- **Sub-projects and tasks apart.** In a project with sub-projects, the project's own tasks now follow the Sub-projects group under a Tasks heading, lined up with the sub-projects instead of indented like subtasks. (#1981)

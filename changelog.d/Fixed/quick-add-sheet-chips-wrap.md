@@ -1,1 +1,0 @@
-- **Quick add on a phone: nothing scrolls sideways in the add sheet.** The chips of what the line was understood as (the date, the priority, a label) scrolled sideways when they did not fit, and at a large text size or 400 % zoom the tools were wider than the sheet. Both now wrap onto another row (WCAG 1.4.10).

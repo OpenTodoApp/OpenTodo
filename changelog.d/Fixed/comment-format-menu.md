@@ -1,1 +1,0 @@
-- **More formatting in a comment opens its menu again.** Opening the menu in an empty comment closed the whole comment box; picking a format now applies it and the comment stays open.

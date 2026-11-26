@@ -1,1 +1,0 @@
-- **Add task and Today on the app icon.** Long-press the icon of the Android or iPhone app to open quick add or the Today list straight away; Change server is still there, as the last item, and its iPhone label is now translated.

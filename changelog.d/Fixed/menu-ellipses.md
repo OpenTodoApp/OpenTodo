@@ -1,1 +1,0 @@
-- **Menu labels end with one ellipsis, and only when another step follows.** The project menu showed "Move to workspace……" (six dots), and the Today menu of a subtask "Move under task……". Set amount, a habit's Edit, a habit day's Note and Share project now end with "…" because they open a dialog, in every language. (#2028)
