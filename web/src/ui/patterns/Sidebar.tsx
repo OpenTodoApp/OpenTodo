@@ -173,8 +173,8 @@ export const SidebarGroupAction = forwardRef<HTMLButtonElement, ButtonHTMLAttrib
 /**
  * Marks a scroller's edges for the fade masks of `.ui-scroller` (sidebar-compact-desktop):
  * `data-fade-top` while content is hidden above, `data-fade-bottom` while some is hidden
- * below, so a list that fits shows no fade at all. Sideways (`axis: 'x'`, a tab row):
- * `data-fade-left` and `data-fade-right` the same way.
+ * below, so a list that fits shows no fade at all. Sideways (`axis: 'x'`, a tab row, a
+ * chart wider than a phone): `data-fade-left` and `data-fade-right` the same way.
  */
 export function useScrollEdges(ref: RefObject<HTMLElement | null>, axis: 'x' | 'y' = 'y'): void {
   useEffect(() => {
@@ -184,8 +184,13 @@ export function useScrollEdges(ref: RefObject<HTMLElement | null>, axis: 'x' | '
     const update = () => {
       frame = 0
       if (axis === 'x') {
-        el.toggleAttribute('data-fade-left', el.scrollLeft > 1)
-        el.toggleAttribute('data-fade-right', el.scrollLeft + el.clientWidth < el.scrollWidth - 1)
+        // A row that starts at its right end (a reversed row, or right to left) counts scrollLeft down from 0.
+        const max = el.scrollWidth - el.clientWidth
+        const style = getComputedStyle(el)
+        const fromRight = (style.flexDirection === 'row-reverse') !== (style.direction === 'rtl')
+        const left = fromRight ? max + el.scrollLeft : el.scrollLeft
+        el.toggleAttribute('data-fade-left', left > 1)
+        el.toggleAttribute('data-fade-right', left < max - 1)
         return
       }
       el.toggleAttribute('data-fade-top', el.scrollTop > 1)

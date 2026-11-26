@@ -149,6 +149,21 @@ describe('the Today strip', () => {
 })
 
 describe('habits-polish', () => {
+  it('The row\'s "More ways to check in" menu is never hidden on touch: it shows with hover where there is one (phone-rest)', async () => {
+    const read = await habit('Read', 'every day', '2026-11-11')
+    const r = await render(<HabitsScreen />)
+    await waitFor(() => !!document.querySelector(`[data-habit-row="${read}"]`), 'the row')
+    const menu = document.querySelector<HTMLElement>(`[data-habit-row="${read}"] [aria-label="More ways to check in Read"]`)!
+    // `ui-reveal` hides only under `(hover: hover)` (index.css); an `opacity-0` class would hide it from a finger too.
+    const classes = menu.className.split(/\s+/)
+    expect(classes).toContain('ui-reveal')
+    expect(classes.some((c) => c.includes('opacity-0'))).toBe(false)
+    expect(menu.closest('.group')).not.toBeNull()
+    await click(menu)
+    await waitFor(() => [...document.querySelectorAll('[role="menuitem"]')].some((i) => i.textContent?.includes('Log the tiny version')), 'the menu')
+    await r.unmount()
+  })
+
   it('A long title stays on one line, its name whole; every row has a check button, early for a habit due later', async () => {
     const long = 'Practise the Bach cello suite in G major, first movement'
     const cello = await habit(long, 'every day', '2026-11-11')
