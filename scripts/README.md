@@ -60,6 +60,15 @@ OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
 node scripts/e2e-habits.mjs
 ```
 
+## `e2e-phone-task-add.mjs`
+
+Checks #2105 in Chromium: both phone-screen preferences, section and board add controls, project/section destinations, offline capture, accessibility, and desktop inline entry, in light and dark. `ENGINE=webkit` selects WebKit when its runtime is available. Starts and cleans up its own server and data directory on a free port, never 8080. Needs `make build`, Playwright's browsers, and globally installed `@playwright/test@1.56.1`. Screenshots go to `dist/issue-2105-after`.
+
+```sh
+node scripts/e2e-phone-task-add.mjs
+BASELINE=1 OPENTODO_BIN=/path/to/baseline/opentodo OUT_DIR=dist/issue-2105-before node scripts/e2e-phone-task-add.mjs
+```
+
 ## `e2e-phone.mjs`
 
 The phone UI (`phone-ui-trial`, `phone-lists`) on a phone with touch and the "New phone screens" switch on: a hold opens the row's menu, a hold and a move reorders and the order survives a reload, a swipe completes and Undo brings the task back, Select tasks ticks rows and a bulk action writes them, a tap opens the task page and Back returns, and the other lists open as phone lists. Needs a fresh data directory.

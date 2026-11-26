@@ -1,7 +1,7 @@
 // The quick add stays reachable in long lists (OpenSpec change add-position, design
 // D4): from 768 px, where no floating Add button is shown, the list page's quick add
 // row sticks right under the sticky page header and the rows scroll under it. Below
-// 768 px it scrolls with the list as before. On a phone held in landscape (coarse
+// 768 px the floating button's sheet replaces this row. On a phone held in landscape (coarse
 // pointer, under 500 px tall) the pinned row would cover the top of the list, so the
 // `pins` variant leaves it unstuck there too; revealRow reads the computed position,
 // so it stops counting the row as soon as it no longer sticks.

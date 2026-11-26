@@ -37,7 +37,7 @@ import { PHONE_BAR_FRAME, PHONE_BAR_LINE, hasPhoneChrome } from './phoneFrame'
 import { usePhoneOwnBar } from '../phone/chrome'
 import { usePhoneUiEnabled } from '../phone/prefs'
 import { usePhoneChrome } from './useScrollDirection'
-import { onQuickAddSheetRequest, QuickAddSheet, requestQuickAddSheet } from './QuickAddSheet'
+import { QuickAddSheet, requestQuickAddSheet, useQuickAddSheet } from './QuickAddSheet'
 import { PanelHost } from './PanelHost'
 import { useRoomFold } from './useRoomFold'
 import { TaskPage } from './TaskPage'
@@ -59,7 +59,6 @@ import { closeHelp, useHelpRequest } from '../lib/helpRequest'
 import { closeConnections, useConnectionsRequest } from './signals'
 import { assistantStatus, openAssistant, refreshAssistantStatus, showLauncher, useAssistantOpen, useAssistantStatus } from '../lib/assistantStatus'
 import { t } from '../lib/i18n'
-import { handleShellUrl } from '../lib/shellActions'
 import { useRunningRepair } from '../lib/timeEntries'
 import { TrackingPill } from './TrackingIndicator'
 import { BreakReminder } from './focus/BreakReminder'
@@ -305,8 +304,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const [showHelp, setShowHelp] = useState(false)
   const consentPending = useConsentPending()
   // Phone navigation (app-shell): the tab bar and the add button hide while a sheet or the panel is open, and on the task page (its own bar).
-  const [addOpen, setAddOpen] = useState(false)
-  useEffect(() => { const off = onQuickAddSheetRequest(() => setAddOpen(true)); void handleShellUrl(requestQuickAddSheet); return off }, []) // and a native shell's address actions (native-shells)
+  const { open: addOpen, context: addRequest, close: closeAdd } = useQuickAddSheet(route)
   const addButton = useRef<HTMLButtonElement>(null)
   const sheetOpen = useOverlayDepth() > 0
   const [panelOpen, panelCoversPage] = [!!usePanel(), usePanelCovering()]
@@ -454,8 +452,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       <PanelBoundary><PanelHost user={user} /></PanelBoundary>
       {phoneChrome && <TabBar route={route} onSearch={openPalette} minimised={minimised} />}
       {(addRoom || addOpen) && <AddButton ref={addButton} open={addOpen} away={minimised && !addOpen} note={route.view === 'notes' && !addOpen}
-        onClick={() => (route.view === 'notes' && !addOpen ? navigate({ view: 'notes', create: true }) : setAddOpen((v) => !v))} />}
-      <QuickAddSheet open={addOpen} onClose={() => setAddOpen(false)} anchor={addButton} route={route} userId={user.id} />
+        onClick={() => (route.view === 'notes' && !addOpen ? navigate({ view: 'notes', create: true }) : addOpen ? closeAdd() : requestQuickAddSheet())} />}
+      <QuickAddSheet open={addOpen} onClose={closeAdd} anchor={addRequest?.trigger ? { current: addRequest.trigger } : addButton} route={route} userId={user.id} context={addRequest} />
       {showHelp && <PanelBoundary><Suspense fallback={null}><ShortcutHelp onClose={() => setShowHelp(false)} vim={vim} extraSections={vim && vimHelp ? [vimHelp] : []}
         context={{ view: route.view, board: hasScope('board') || hasScope('timeline'), panelOpen: hasScope('panel') || !!panelTaskId() }} /></Suspense></PanelBoundary>}
       {helpRequest && <PanelBoundary><Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense></PanelBoundary>}

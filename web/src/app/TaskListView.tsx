@@ -15,7 +15,7 @@ import { LOGBOOK_PAGE } from '../lib/logbook'
 import { setCompletedDisplay } from '../lib/completedDisplay'
 import { saveListColumns } from '../lib/sections'
 import type { AccountRole, Task } from '../lib/types'
-import { Button, frameKind, hueFor, PAGE_FRAME, Skeleton, useFinePointer } from '../ui'
+import { Button, DESKTOP_HEADER_QUERY, frameKind, hueFor, PAGE_FRAME, Skeleton, useFinePointer, useMediaQuery } from '../ui'
 import { BoardView } from './BoardView'
 import { UrgencyContext } from './useUrgency'
 import { BulkActionsMenu, ListReorderContext, SelectionBar } from './bulk/BulkActions'
@@ -78,6 +78,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   } = s
   const quickAddRow = useRef<HTMLDivElement>(null)
   const fine = useFinePointer()
+  const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
   const renderRow = useRowRenderer({
     view: route.view, labelId: route.view === 'label' ? route.id : undefined, userId, projectMap: m.projectMap, labelMap: m.labelMap, memberMap: m.memberMap, selectedId, progress: m.progress, blocked: m.blocked, flow: m.flow,
     habits: m.habits, isReadOnly, board, manual, ownOrder: !!ownOrder, dayOrderIds, treeView: m.treeView || m.nested, dropAt: drag.dropAt, draggingId: drag.draggingId, ticked: selection.ticked,
@@ -93,7 +94,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   )
   const frame = useListFrame(route.view === 'project', board || timeline, m.fieldColumns)
   // Measured once the list (and its quick add row) is on screen.
-  const quickAddTop = useStickyQuickAdd(quickAddRow, ready && route.view !== 'completed')
+  const quickAddTop = useStickyQuickAdd(quickAddRow, ready && desktop && route.view !== 'completed')
   if (route.view === 'project' && m.projects.length > 0 && !currentProject) return <MissingTarget kind="project" />
   if (route.view === 'label' && m.labels.length > 0 && (!currentLabel || currentLabel.deleted_at)) return <MissingTarget kind="label" />
   if (route.view === 'place' && currentPlace !== undefined && (!currentPlace || currentPlace.deleted_at)) return <MissingTarget kind="place" />
@@ -113,7 +114,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           )}
 
           {route.view === 'completed' && <Suspense fallback={<div className="mb-3 h-9" />}><CompletedSearch value={m.completedQuery} onChange={m.setCompletedQuery} /></Suspense>}
-          {route.view !== 'completed' && (
+          {desktop && route.view !== 'completed' && (
             // Sticks under the page header from 768 px, so adding never needs a scroll back up (add-position D4).
             <div ref={quickAddRow} style={{ top: quickAddTop.top, '--below-head-gap': `${quickAddTop.gap}px` } as CSSProperties} className={`mb-3 pb-2 ${STICKY_QUICK_ADD}`} data-quick-add-row>
               {m.projectReadOnly ? <ReadOnlyQuickAdd /> : (

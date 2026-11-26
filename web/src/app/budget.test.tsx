@@ -276,7 +276,7 @@ describe('visible properties', () => {
   })
 })
 
-// The phone (phone-v2 D1, D2, D10): the bar and the quick add, two rows, and the add button never covers a row.
+// The phone: the bar leads straight to the list; capture uses the floating button's sheet.
 describe('on a phone (390 px)', () => {
   const original = window.matchMedia
   beforeEach(() => {
@@ -287,7 +287,7 @@ describe('on a phone (390 px)', () => {
   })
   afterEach(() => { window.matchMedia = original })
 
-  it('Today, the Inbox and a project show nothing between the bar and the quick add', async () => {
+  it('Today, the Inbox and a project have no top add row between the header and the tasks', async () => {
     const { project } = await seed()
     for (const route of [{ view: 'inbox' } as const, { view: 'today' } as const, { view: 'project', id: project } as const]) {
       const r = await render(<TaskListView route={route} />)
@@ -295,8 +295,8 @@ describe('on a phone (390 px)', () => {
       // Today's head (title, date, briefing) is its header, in the page on a phone (precision-phone D1).
       const rows = chromeRows(r.container).filter((e) => !e.matches('[data-page-head="day"]'))
       if (route.view === 'today') expect(r.container.querySelector('[data-list-page] > [data-page-head="day"] h1')?.textContent).toBe('Today')
-      expect(rows.map((e) => e.outerHTML.slice(0, 120)), route.view).toEqual([rows[0].outerHTML.slice(0, 120)])
-      expect(rows[0].querySelector('[role="combobox"]'), route.view).toBeTruthy()
+      expect(rows.map((e) => e.outerHTML.slice(0, 120)), route.view).toEqual([])
+      expect(r.container.querySelector('[data-quick-add-row]'), route.view).toBeNull()
       await r.unmount()
     }
   })

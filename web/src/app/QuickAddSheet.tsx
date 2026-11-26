@@ -17,35 +17,57 @@ import { showBulkToast } from './bulk/toastStore'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import type { Route } from './router'
 import { t } from '../lib/i18n'
-import { takeQuickAddPrefill } from '../lib/shellActions'
-import { useMemo, useState } from 'react'
+import { handleShellUrl, takeQuickAddPrefill } from '../lib/shellActions'
+import { useEffect, useMemo, useState } from 'react'
 import { addManyToList, addToList } from './reuseAdd'
 import { isReusable } from '../lib/reusable'
 
 // An empty view's "Add a task" on a touch device opens this sheet (lean-chrome D7,
 // task-list-presentation "Empty views"): the Shell registers the opener; without a
 // Shell (a list rendered alone) the caller focuses its own quick add instead.
-let opener: (() => void) | null = null
+export interface QuickAddSheetRequest {
+  projectId: string
+  sectionId: string | null
+  sectionName: string
+  trigger?: HTMLElement
+}
+
+let opener: ((request?: QuickAddSheetRequest) => void) | null = null
 
 /** The Shell's way to open the sheet; returns the unregister function. */
-export function onQuickAddSheetRequest(fn: () => void): () => void {
+function onQuickAddSheetRequest(fn: (request?: QuickAddSheetRequest) => void): () => void {
   opener = fn
   return () => { if (opener === fn) opener = null }
 }
 
 /** Opens the quick-add sheet; false when no Shell is mounted to open it. */
-export function requestQuickAddSheet(): boolean {
+export function requestQuickAddSheet(request?: QuickAddSheetRequest): boolean {
   if (!opener) return false
-  opener()
+  opener(request)
   return true
 }
 
-export function QuickAddSheet({ open, onClose, anchor, route, userId }: {
+/** One capture session in the shell; context belongs to an opening, never to a later page. */
+export function useQuickAddSheet(route: Route) {
+  const [open, setOpen] = useState(false)
+  const [context, setContext] = useState<QuickAddSheetRequest>()
+  const close = () => { setOpen(false); setContext(undefined) }
+  useEffect(() => { setOpen(false); setContext(undefined) }, [route])
+  useEffect(() => {
+    const off = onQuickAddSheetRequest((request) => { setContext(request); setOpen(true) })
+    void handleShellUrl(requestQuickAddSheet)
+    return off
+  }, [])
+  return { open, context, close }
+}
+
+export function QuickAddSheet({ open, onClose, anchor, route, userId, context }: {
   open: boolean
   onClose: () => void
-  anchor: RefObject<HTMLButtonElement | null>
+  anchor: RefObject<HTMLElement | null>
   route: Route
   userId?: string
+  context?: QuickAddSheetRequest
 }) {
   // Live projects, archived included, as in the views' quick add: the parser and the
   // pickers leave archived ones out themselves (web-layering, one visibility rule).
@@ -57,10 +79,13 @@ export function QuickAddSheet({ open, onClose, anchor, route, userId }: {
   const withDefaults = ({ labels: typed, ...rest }: QuickAddInput) => {
     const { labels: viewLabels, ...defaults } = taskDefaults(route, logicalToday(), userId)
     if (rest.due || rest.deadline) delete defaults.start
-    return { ...defaults, ...rest, labels: [...new Set([...viewLabels, ...(typed ?? [])])] }
+    const project_id = rest.project_id ?? context?.projectId ?? defaults.project_id
+    return { ...defaults, ...rest, project_id,
+      ...(context ? { section_id: project_id === context.projectId ? context.sectionId : null } : {}),
+      labels: [...new Set([...viewLabels, ...(typed ?? [])])] }
   }
   // In a reusable list, its ticked items are suggested while typing, as in the list's own line (reusable-suggest-sheet).
-  const listId = route.view === 'project' ? route.id : null
+  const listId = context?.projectId ?? (route.view === 'project' ? route.id : null)
   const reuseProjectId = listId && isReusable(projects.find((p) => p.id === listId)) ? listId : null
   // A count of adds, so the status line announces "Added" again for each one.
   const [added, setAdded] = useState(0)
@@ -80,6 +105,7 @@ export function QuickAddSheet({ open, onClose, anchor, route, userId }: {
   return (
     <Popover open={open} onClose={onClose} anchor={anchor} label={t('Add a task')} side="top" align="end" width="sm:w-96" className="pt-3 pb-0">
       <div data-quick-add-sheet>
+        {context && <p className="user-text px-3 pb-2 text-meta text-muted" data-quick-add-section>{t('Add a task to {sectionName}', { sectionName: context.sectionName })}</p>}
         <span className="sr-only" role="status" aria-live="polite" data-sheet-added>{added > 0 && <span key={added}>{t('Added')}</span>}</span>
         <QuickAdd layout="sheet" autoFocus hideHint initialValue={prefill ?? undefined} placeholder={t('Add a task…')} label={t('Add a task')} reuseProjectId={reuseProjectId} projects={projects} labels={labels} onAdd={onAdd} onAddMany={onAddMany} />
       </div>

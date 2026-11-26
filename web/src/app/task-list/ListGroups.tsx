@@ -11,7 +11,8 @@ import type { Progress } from '../../lib/subtasks'
 import type { HabitStats } from '../../lib/habits'
 import type { RowLayout } from '../../lib/rowLayout'
 import type { FieldDef, Label, Membership, Project, Task } from '../../lib/types'
-import { Button, GroupBarContext, ListGroupHeader, type HueName } from '../../ui'
+import { Button, DESKTOP_HEADER_QUERY, GroupBarContext, ListGroupHeader, useMediaQuery, type HueName } from '../../ui'
+import { requestQuickAddSheet } from '../QuickAddSheet'
 import { projectHue } from '../projectHue'
 
 // Upcoming's projected rows load with their switch (series-occurrences D4).
@@ -657,6 +658,7 @@ function RowList({ children, extra }: { children: ReactNode[]; extra?: Record<st
 /** Project list grouped by section (board-view). */
 function SectionGroup({ g, later, first, last, rowList, project, ...p }: GroupedListProps & { g: ListGroup; later?: ListGroup; first: boolean; last: boolean; rowList: RowList; project: Project }) {
   const key = g.section?.id ?? ''
+  const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
   return (
     <section role={p.fieldColumns ? 'rowgroup' : undefined} className="mb-3 rounded-control data-drop-active:ring-2 data-drop-active:ring-accent" data-drop-target={sectionTarget(key)}>
       <SectionHeader
@@ -668,7 +670,10 @@ function SectionGroup({ g, later, first, last, rowList, project, ...p }: Grouped
         last={last}
         collapsed={g.sectionCollapsed}
         onToggleCollapse={() => p.onToggleSection(key)}
-        onAdd={() => p.setAddingTo(key)}
+        onAdd={(e) => {
+          if (!desktop && requestQuickAddSheet({ projectId: project.id, sectionId: g.section?.id ?? null, sectionName: g.heading ?? t('No section'), trigger: e.currentTarget })) return
+          p.setAddingTo(key)
+        }}
         completed={p.doneBySection.get(key)?.length ?? 0}
         revealed={p.revealed.has(g.key)}
         onReveal={() => p.onReveal(g.key)}
