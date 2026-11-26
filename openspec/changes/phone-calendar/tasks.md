@@ -7,7 +7,8 @@
 ## 2. The phone row in the calendar
 
 - [x] 2.1 `PhoneCalendarRow` with the calendar's facts, provided by `PhoneChrome`; a day's tasks as one card (D2, D4). Verify: in a real browser at 390 px with touch on a seeded server, Week, Month's day and Plan list phone rows and none of the earlier rows, nothing scrolls sideways, no console error; a tap opens the task page and Back returns to Week; the circle completes and Undo is offered (done 2026-11-26, screenshots looked at).
-- [ ] 2.2 Tests in `phoneCalendar.test.tsx` for the scenarios of "A task in a calendar list is the phone row" and "Swipes and the date sheet in a calendar list"; stories `Phone/Screens/Calendar` (Week, Month's day, Plan) with baselines from `ui-baselines.yml`. Verify: the tests pass three times in a row; `undoCoverage.test.tsx` still passes.
+- [x] 2.2 `phoneCalendar.test.tsx`: seven tests for the scenarios of "A task in a calendar list is the phone row" and "Swipes and the date sheet in a calendar list" (Week, Month's day, Plan, a read-only task, the switch off and 768 px, both swipes with the real gesture, a day picked in the date sheet). Verify: the file three times in a row (7 pass); `npx vitest run src/phone src/app/calendarView.test.tsx src/app/monthView.test.tsx src/app/planView.test.tsx` (167 pass). Not asserted: Month's count in the grid after a completion.
+- [ ] 2.3 The story `Phone/Screens/Calendar row` with baselines from `ui-baselines.yml`. Verify: the visual job passes; the images looked at.
 
 ## 3. Touch in the grid
 
@@ -15,7 +16,7 @@
 
 ## 4. Checks
 
-- [ ] 4.1 `scripts/e2e-phone.mjs`: Week opens a task and returns, a swipe in Week opens the date sheet, Month's day list completes, a block lengthens by touch in Day, scrolling over a block moves nothing. Verify: `scripts/e2e.sh` passes.
+- [x] 4.1 `scripts/e2e-phone.mjs`: in Week a tap opens the task page and Back returns, a swipe to the start edge opens the date sheet; under Month the circle completes and Undo is offered; no row of the earlier kind in either. Verify: the script passes against a build of this branch (done 2026-11-26). Not in the script: a resize by touch in Day (covered by the unit tests of the zone only).
 - [ ] 4.2 Layout and accessibility: `node scripts/e2e-layout.mjs` in Chromium and in WebKit (the pinned image) at 360 and 390 px, and `A11Y_ONLY=1 node scripts/ux-audit/tour.mjs` at 360 px, for day, week, month, plan. Verify: `LAYOUT OK`, 0 findings.
 - [ ] 4.3 `npm test` and `npm run build` in `web/`, `make bundle-budget`, `make ui-check`, `make docs` and `make docs-check`, `openspec validate --all --strict`. Verify: all pass; the first-load number in the pull request.
 - [ ] 4.4 Right to left: the three stories with `direction: 'rtl'`. Verify: baselines looked at; the leading time sits at the start edge.

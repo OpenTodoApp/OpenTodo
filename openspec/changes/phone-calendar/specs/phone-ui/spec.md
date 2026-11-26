@@ -5,7 +5,7 @@
 ### Requirement: A task in a calendar list is the phone row
 While the phone screens are on below 768 px, a task listed in Week's list of days, in Month's list of the chosen day and in Plan's agenda SHALL be drawn as the phone row, and the tasks of one day SHALL be one card. The row SHALL keep what the calendar says of the task there: its time or "all day" before the title, a span's place ("Day 2 of 3"), the deadline mark and the estimate. What a day lists and in which order SHALL be what `time-blocking`, `month-view`, `planner-view` and `multi-day-tasks` specify; events, slots, frames, deadlines and projected occurrences in those lists are unchanged.
 
-A tap on the row SHALL open the task page, and the row's circle SHALL complete the task and offer Undo, as in a phone task list. A task the person may only read SHALL have no circle.
+A tap on the row SHALL open the task page, and the row's circle SHALL complete the task and offer Undo, as in a phone task list. The circle of a task the person may only read SHALL be off.
 
 Every change made from the row SHALL be written as the same operations as the same action in a phone task list. It SHALL work offline, and it SHALL converge with changes from other devices exactly as that action does.
 
@@ -27,7 +27,7 @@ Every change made from the row SHALL be written as the same operations as the sa
 
 #### Scenario: A read-only task
 - **WHEN** Week lists a task of a project the person may only read
-- **THEN** its row has no circle, and a tap still opens the task page
+- **THEN** its circle is off, and a tap still opens the task page
 
 ### Requirement: Swipes and the date sheet in a calendar list
 While the phone screens are on below 768 px, a row in Week's list of days, Month's list of the chosen day and Plan's agenda SHALL take the swipes of a phone task list: to the end edge completes, to the start edge opens the date sheet. Choosing a date in the sheet SHALL move the task to that day with the operation a task list writes, keep its time if it has one, and the lists SHALL show it under its new day. This is how a task moves to another day in Week on a phone, which has no grid to drag over. A task the person may only read SHALL take no swipe.
