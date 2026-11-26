@@ -16795,6 +16795,7 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Showing the next {n} occurrences": [
+    "web/src/app/calendar/occurrenceMenu.tsx",
     "web/src/app/calendar/projections.tsx"
   ],
   "Shown after the link’s secret, to say what the page is about. Lowercase letters, digits and hyphens.": [
@@ -22979,7 +22980,8 @@
     "web/src/app/CalendarEvents.tsx",
     "web/src/app/CalendarView.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
-    "web/src/app/calendar/projections.tsx"
+    "web/src/app/calendar/projections.tsx",
+    "web/src/phone/screens/PhoneCalendarRow.tsx"
   ],
   "an assistant": [
     "web/src/app/calendar/EventEditor.tsx"
@@ -23295,7 +23297,8 @@
     "web/src/app/TaskRow.tsx",
     "web/src/app/calendar/DeadlineMarker.tsx",
     "web/src/lib/facets.ts",
-    "web/src/lib/rules/summary.ts"
+    "web/src/lib/rules/summary.ts",
+    "web/src/phone/screens/PhoneCalendarRow.tsx"
   ],
   "deadline {date}, {count}": [
     "web/src/lib/facets.ts"
