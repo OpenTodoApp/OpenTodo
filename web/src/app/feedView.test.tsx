@@ -83,6 +83,20 @@ describe('Updates by touch', () => {
     await r.unmount()
   })
 
+  it('a tap on a word that explains itself in a tooltip opens nothing: the tap is the tooltip\'s (tooltip-tap)', async () => {
+    coarse = true
+    const r = await feed()
+    // The tooltip marks its trigger with data-tip; "(pending)" beside an entry not yet synced is one.
+    const word = document.createElement('span')
+    word.setAttribute('data-tip', 'Not yet synced')
+    taskRow().append(word)
+    const before = location.pathname
+    await click(word)
+    expect(location.pathname).toBe(before)
+    word.remove()
+    await r.unmount()
+  })
+
   it('a tap on the task\'s name inside the row opens the task once', async () => {
     coarse = true
     const r = await feed()
