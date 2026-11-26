@@ -59,7 +59,8 @@ data class ServerAddress(val baseUrl: String) {
             if (octets.size == 4 && octets.all { part -> part.toIntOrNull()?.let { it in 0..255 } == true }) {
                 val (first, second) = octets[0].toInt() to octets[1].toInt()
                 return first == 127 || first == 10 || (first == 172 && second in 16..31) ||
-                    (first == 192 && second == 168) || (first == 169 && second == 254)
+                    (first == 192 && second == 168) || (first == 169 && second == 254) ||
+                    (first == 100 && second in 64..127)
             }
             return host == "::1" || host.startsWith("fc") || host.startsWith("fd") ||
                 host.startsWith("fe8") || host.startsWith("fe9") || host.startsWith("fea") || host.startsWith("feb")
