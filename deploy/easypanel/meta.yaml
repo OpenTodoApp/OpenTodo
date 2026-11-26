@@ -54,6 +54,8 @@ changeLog:
     description: Update to 1.10.0
   - date: 2026-11-26
     description: Update to 1.10.1
+  - date: 2026-11-26
+    description: Update to 1.10.2
 links:
   - label: Website
     url: https://open-todo.app/
@@ -77,7 +79,7 @@ schema:
     appServiceImage:
       type: string
       title: App Service Image
-      default: ghcr.io/opentodoapp/opentodo:1.10.1
+      default: ghcr.io/opentodoapp/opentodo:1.10.2
 benefits:
   - title: Your Tasks, Your Server
     description:

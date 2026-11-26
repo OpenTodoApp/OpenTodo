@@ -6,6 +6,23 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 Changes since the last release are in [changelog.d/](changelog.d/README.md), one file per change; `make release-prepare` moves them here when a release is cut.
 
+## [1.10.2] - 2026-11-26
+
+Fixes found by using the released 1.10.1 Android app on an emulator: swiping a task did nothing on older Android system web views, the timeline's Earlier and Later seemed to do nothing, and a few things sat a little wrong on a phone.
+
+### Upgrade notes
+
+- **Replace the image or the binary and restart; back up first.** No migration, no new or changed variable, as for 1.10.1. The apps show the fixes once their server runs this version.
+
+### Fixed
+
+- **Swiping a row works in the Android app on older system web views.** On Android System WebView 113 a swipe on a task was taken by the page's own scrolling, so nothing happened.
+- **Earlier and Later move the timeline.** The view went back to today after each press, so on a phone the buttons seemed to do nothing.
+- **A task's title lines up with its circle on a phone**, and a hold on a section's name no longer starts a text selection.
+- **The timeline's day labels are all readable.** The "Today" mark covered the numbers of today and of the day after: today's own number is now drawn on the accent colour instead. The first day of a month reads as the month, such as **Dec**, where "Dec 1" was split with the "1" over the first row.
+- **One flick turns a phone's board by one column.** A quick flick passed a column and landed on the one after it.
+- **The comment field keeps its send button above the keyboard.** On a phone's task page the keyboard cut the row under the field.
+
 ## [1.10.1] - 2026-11-26
 
 1.10.0 was tagged but not published: its release run found the weekly review scrolling sideways at 360 px in German. This release fixes that and carries everything listed under 1.10.0 below, which is the phone screens reaching the rest of the app. Coming from 1.9.0, read 1.10.0's notes for what is new.
@@ -2114,7 +2131,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.10.1...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.10.2...HEAD
+[1.10.2]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.10.1...v1.10.2
 [1.10.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.10.0...v1.10.1
 [1.10.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.8.0...v1.9.0
