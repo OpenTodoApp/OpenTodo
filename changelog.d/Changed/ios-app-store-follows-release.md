@@ -1,1 +1,0 @@
-- **The iPhone app in the App Store follows the latest release.** When a release comes out before Apple has started reviewing the previous one, the new release takes its place in review instead of waiting for the next release, so the App Store version catches up with the server sooner. See [the iOS app](docs/ios-app.md).

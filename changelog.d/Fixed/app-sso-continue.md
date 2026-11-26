@@ -1,1 +1,0 @@
-- **Single sign-on in the apps.** Signing in through a provider in the Android and iPhone apps no longer stops after the provider step with a cross-site error. (#1539)

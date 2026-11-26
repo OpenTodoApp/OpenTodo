@@ -341,7 +341,8 @@ async function assistantSetup() {
   const state = await c.storageState(); await c.close(); return state
 }
 async function ask(p, question, ready) {
-  await go(p, assistantBase, '/inbox', () => p.getByRole('combobox', { name: 'Add a task' }).waitFor())
+  // The add line of the list, or the phone list, which has none (phone-ui-default).
+  await go(p, assistantBase, '/inbox', () => p.locator('[role="combobox"][aria-label="Add a task"], [data-phone-list]').first().waitFor())
   await p.keyboard.press('Shift+I'); await p.locator('[data-assistant-panel]').waitFor(); await settle(p, 400)
   await p.locator('[data-assistant-composer]').fill(question); await p.keyboard.press('Enter')
   await ready(); await settle(p, 600)
