@@ -243,13 +243,13 @@ export function NotesModeSwitch({ mode, onChange, compact }: { mode: NotesMode; 
 export function NotesHeader({ count, desktop, onNew, onFromTemplate, templateAnchor, viewSwitch, overflow, children }: {
   count: number; desktop: boolean; onNew: () => void
   /** The split part of New note: From template… (note-templates). */
-  onFromTemplate?: () => void; templateAnchor?: RefObject<HTMLButtonElement | null>
+  onFromTemplate?: () => void; templateAnchor?: RefObject<HTMLElement | null>
   viewSwitch?: ReactNode; overflow?: ReactNode; children: ReactNode
 }) {
   const newNote = desktop && (
     <span className="inline-flex items-center" data-note-new-split>
       <Button size="sm" variant="ghost" onClick={onNew} data-note-new><Icon name="plus" />{t('New note')}</Button>
-      {onFromTemplate && <IconButton ref={templateAnchor} size="sm" icon="chevron-down" label={t('From template…')} shortcut={keysOf('notes.from-template')}
+      {onFromTemplate && <IconButton ref={templateAnchor as RefObject<HTMLButtonElement | null>} size="sm" icon="chevron-down" label={t('From template…')} shortcut={keysOf('notes.from-template')}
         aria-haspopup="dialog" onClick={onFromTemplate} data-note-from-template />}
     </span>
   )
@@ -259,7 +259,8 @@ export function NotesHeader({ count, desktop, onNew, onFromTemplate, templateAnc
       // On a phone the floating + starts a note (the one add of the screen); the header keeps the title, count and Help.
       actions={desktop || viewSwitch ? <>{viewSwitch}{newNote}</> : undefined}
       overflow={overflow}>
-      {children}
+      {/* Without the split button (below 768 px) the template list opens from the menu and docks under the search row from 640 px (phone-rest D5). */}
+      {desktop ? children : <div ref={templateAnchor as RefObject<HTMLDivElement | null>}>{children}</div>}
     </PageHeader>
   )
 }
@@ -475,7 +476,8 @@ export function NotesPage({ id, day }: { id?: string; day?: string }) {
   }
 
   // The header's menu: Sort in List mode, the graph's display choices (D2) in Graph mode, which ignores the order.
-  const overflow = !graphMode ? <>{bulk.selectItem}<MenuSeparator /><NotesSortItems sort={sort} onSort={changeSort} /></> : <GraphShowItems show={show} />
+  const templateItem = !desktop && <FromTemplateItem onOpen={fromTemplate.open} />
+  const overflow = !graphMode ? <>{templateItem}{bulk.selectItem}<MenuSeparator /><NotesSortItems sort={sort} onSort={changeSort} /></> : <>{templateItem}<GraphShowItems show={show} /></>
 
   return (
     <PageBody width="list" data-page="notes" flush={graphMode} className={graphMode ? 'page-fill flex flex-col' : undefined} data-notes-mode={mode}>
@@ -518,11 +520,16 @@ export default NotesPage
 
 /** From template… (note-templates): the split part of New note, and Shift+Q; the new note opens with the caret in its body. */
 function useFromTemplate(projectOf: () => string | null | undefined) {
-  const anchor = useRef<HTMLButtonElement>(null)
+  const anchor = useRef<HTMLElement>(null)
   const [open, setOpen] = useState(false)
   const created = (id: string) => { focusBodyOnOpen(id); navigate({ view: 'notes', id }) }
   const picker = <TemplatePicker open={open} anchor={anchor} projectId={projectOf() ?? null} onClose={() => setOpen(false)} onCreated={created} />
   return { anchor, open: () => setOpen(true), picker }
+}
+
+/** Below 768 px New note's split part is not shown (the add button starts a blank note), so From template… is the page menu's first item (phone-rest D5). */
+function FromTemplateItem({ onOpen }: { onOpen: () => void }) {
+  return <><MenuItem label={t('From template…')} icon="copy" onSelect={onOpen} data-note-from-template-item /><MenuSeparator /></>
 }
 
 /** The graph's display choices (notes-graph D2), in the header's menu in Graph mode. */

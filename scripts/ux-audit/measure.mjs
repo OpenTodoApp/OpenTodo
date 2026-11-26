@@ -26,7 +26,12 @@ export async function axeProblems(p, include) {
     for (let t = 0; t < 1000 && document.querySelector('[data-settings-settling]'); t += 50) await new Promise((r) => setTimeout(r, 50))
     // eslint-disable-next-line no-undef
     const r = await axe.run(sel ? { include: [sel] } : document, { resultTypes: ['violations'] })
-    return r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `axe ${v.impact} ${v.id}: ${v.help} (${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(', ')})`)
+    // A region that scrolls inside a field being edited (a code block in a note's editor) is reached with the caret,
+    // which axe does not count as keyboard access: only regions outside an editing host are reported (phone-rest).
+    const editing = (n) => { try { return !!document.querySelector(n.target.at(-1))?.closest('[contenteditable="true"]') } catch { return false } }
+    return r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
+      .map((v) => (v.id === 'scrollable-region-focusable' ? { ...v, nodes: v.nodes.filter((n) => !editing(n)) } : v)).filter((v) => v.nodes.length)
+      .map((v) => `axe ${v.impact} ${v.id}: ${v.help} (${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(', ')})`)
   }, include ?? null)
 }
 

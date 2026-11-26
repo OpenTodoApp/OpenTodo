@@ -17,6 +17,7 @@ import { createProject, createTask, mutate, mutateMany, resetDeviceId, updateTas
 import { activeBody, encodeDoc, newDoc, updateBody, type RNode } from '../../lib/richtext'
 import { setCurrentUserId } from '../../lib/sharing'
 import { act } from 'react'
+import { PageActions, usePageBar } from '../../ui'
 import { click, flush, key, minWidthPx, render, type, waitFor } from '../../ui/test-utils'
 import { noteViewOf } from '../NotesEditor'
 import { panelOccupant, resetPanel } from '../panel'
@@ -336,6 +337,40 @@ describe('phones', () => {
     expect(container.querySelector('[data-note-search-field]')).not.toBeNull()
     // One add on a phone: the floating + (notes-home); the header has no New note.
     expect(container.querySelector('[data-note-new]')).toBeNull()
+  })
+
+  it('From template on a phone: the first item of the page menu opens the template list, and a choice makes the note (phone-rest)', async () => {
+    width = 390
+    await mutate('note', await createNote({ title: 'Meeting', description: '## Notes' }), { template: true })
+    // The shell's phone bar, as far as the page's menu goes.
+    function Bar() {
+      const bar = usePageBar()
+      return bar ? <PageActions overflow={bar.overflow} /> : null
+    }
+    const { container } = await render(<><Bar /><NotesPage /></>)
+    await flush()
+    await waitFor(() => rows(container).length === 1, 'one row')
+    // No split button below 768 px: the menu holds the entry.
+    expect(container.querySelector('[data-note-from-template]')).toBeNull()
+    await click(container.querySelector<HTMLElement>('button[aria-label="More actions"]')!)
+    await waitFor(() => !!document.querySelector('[data-note-from-template-item]'), 'the menu item')
+    const items = [...document.querySelectorAll('[role="menu"] [role^="menuitem"]')]
+    expect(items[0]).toBe(document.querySelector('[data-note-from-template-item]'))
+    expect(items[0].textContent).toContain('From template…')
+    await click(items[0] as HTMLElement)
+    await waitFor(() => !!document.querySelector('[data-template-picker] input'), 'the picker')
+    await waitFor(() => [...document.querySelectorAll('[data-template-picker] [role="option"]')].some((o) => o.textContent?.includes('Meeting')), 'the template is listed')
+    const before = await db.notes.count()
+    await click([...document.querySelectorAll<HTMLElement>('[data-template-picker] [role="option"]')].find((o) => o.textContent?.includes('Meeting'))!)
+    await waitFor(async () => (await db.notes.count()) === before + 1, 'a note from the template')
+  })
+
+  it('From 768 px the page menu has no From template item: the split button holds it (phone-rest)', async () => {
+    const { container } = await page()
+    expect(container.querySelector('[data-note-from-template]')).not.toBeNull()
+    await click(container.querySelector<HTMLElement>('button[aria-label="More actions"]')!)
+    await waitFor(() => !!document.querySelector('[role="menu"]'), 'the menu')
+    expect(document.querySelector('[data-note-from-template-item]')).toBeNull()
   })
 })
 

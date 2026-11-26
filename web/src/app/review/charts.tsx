@@ -7,7 +7,7 @@
 // tokens; every text wears text tokens.
 // physical-file: a time axis drawn from computed left offsets, kept left to right in a dir="ltr" box (arabic-rtl D8).
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Icon, type IconName } from '../../ui'
+import { Icon, type IconName, useScrollEdges } from '../../ui'
 import { t } from '../../lib/i18n'
 
 // ---------------------------------------------------------------- figure
@@ -30,6 +30,9 @@ export function ChartFigure({ title, summary, table, children, note, wide, testI
 }) {
   const id = useId()
   const [open, setOpen] = useState(false)
+  // A table wider than the screen fades at the edge where columns are hidden (phone-rest D4).
+  const tableBox = useRef<HTMLDivElement>(null)
+  useScrollEdges(tableBox, 'x')
   return (
     <figure className={`ui-section-flat ui-panel-flat min-w-0 ${wide ? 'lg:col-span-2' : ''}`} data-panel={testId} aria-labelledby={`${id}-h`}>
       <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -41,7 +44,7 @@ export function ChartFigure({ title, summary, table, children, note, wide, testI
         </button>
       </div>
       <div data-chart-summary={summary} dir="ltr">{children}</div>
-      <div id={`${id}-t`} className={`${open ? 'block' : 'hidden'} mt-3 max-w-full overflow-x-auto forced-colors:block`} data-scroll-x data-chart-table>
+      <div ref={tableBox} id={`${id}-t`} className={`ui-scroller ${open ? 'block' : 'hidden'} mt-3 max-w-full overflow-x-auto forced-colors:block`} data-scroll-x data-chart-table>
         <table className="w-full border-collapse text-meta tabular-nums">
           <caption className="sr-only">{title}</caption>
           <thead>
@@ -355,11 +358,14 @@ export function Heatmap({ weeks, rowLabels, columnLabels, tip, summary }: {
   const todayRow = weeks[lastCol]?.reduce((at, d, i) => (d ? i : at), 0) ?? 0
   const start = useMemo(() => ({ r: todayRow, c: lastCol }), [todayRow, lastCol])
   const grid = useChartGrid(7, weeks.length, label, start, true)
+  const scroller = useRef<HTMLDivElement>(null)
+  useScrollEdges(scroller, 'x')
   return (
     <div ref={box} className="relative min-w-0">
     {/* A reversed row starts scrolled to its end, so the current week is in view on a
-        narrow screen without measuring or scrolling after paint. */}
-    <div className="flex max-w-full flex-row-reverse overflow-x-auto pb-1" data-scroll-x data-heatmap>
+        narrow screen without measuring or scrolling after paint. It fades at the edge
+        where weeks are hidden (phone-rest D4). */}
+    <div ref={scroller} className="ui-scroller flex max-w-full flex-row-reverse overflow-x-auto pb-1" data-scroll-x data-heatmap>
       <div className="inline-grid shrink-0 grid-cols-[2rem_auto] gap-x-1 [--heat:14px] pointer-coarse:[--heat:24px]">
         <span aria-hidden="true" />
         <div className="grid grid-flow-col auto-cols-(--heat) gap-[2px] pb-1 text-hint text-muted" aria-hidden="true">
@@ -407,9 +413,11 @@ export function DotGrid({ counts, max, rowLabels, columnLabels, tip, summary }: 
   const box = useRef<HTMLDivElement>(null)
   const label = useCallback((r: number, c: number) => (counts[r]?.[c] === undefined ? null : tip(r, c)), [counts, tip])
   const grid = useChartGrid(counts.length, columnLabels.length, label)
+  const scroller = useRef<HTMLDivElement>(null)
+  useScrollEdges(scroller, 'x')
   return (
     <div ref={box} className="relative min-w-0">
-    <div className="max-w-full overflow-x-auto" data-scroll-x data-dot-grid>
+    <div ref={scroller} className="ui-scroller max-w-full overflow-x-auto" data-scroll-x data-dot-grid>
       <div className="inline-grid grid-cols-[2.5rem_repeat(24,var(--dot))] items-center [--dot:18px] pointer-coarse:[--dot:24px]" aria-hidden="true">
         <span />
         {columnLabels.map((h, i) => <span key={i} className="text-center text-hint text-muted">{i % 6 === 0 ? h : ''}</span>)}

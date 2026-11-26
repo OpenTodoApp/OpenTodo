@@ -131,7 +131,8 @@ function RoutineRow({ rule, index, total, status, catalogue, names, onEdit, onHi
         {missing > 0 && <span className="block text-meta text-warning" data-unavailable-count>{t('{n, plural, one {# step not available} other {# steps not available}}', { n: missing })}</span>}
         {meta && <span className="block text-meta text-faint">{meta}</span>}
       </button>
-      <Button size="sm" variant="ghost" icon="zap" disabled={!online || !editable} onClick={() => void runRoutineNow(rule, undefined)} aria-label={t('Run now: {name}', { name })}>{t('Run now')}</Button>
+      {/* Below 640 px Run now is the row menu's item only, so the name and the sentence keep the row's width (phone-rest D6). */}
+      <Button size="sm" variant="ghost" icon="zap" className="max-sm:hidden" disabled={!online || !editable} onClick={() => void runRoutineNow(rule, undefined)} aria-label={t('Run now: {name}', { name })} data-run-now>{t('Run now')}</Button>
       <ActionMenu label={t('Menu for routine {name}', { name })} groups={groups} />
       {confirm.element}
     </li>

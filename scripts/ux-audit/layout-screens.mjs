@@ -72,6 +72,20 @@ export function screens(ids, base) {
     { name: 'ask', path: '/ask', ready: heading('Assistant') },
     // Notes (notes-overview 4.8): the search field and the filters row, behind one Filters button on a phone.
     { name: 'notes', path: '/notes', ready: heading('Notes') },
+    // A standalone note's page (phone-rest): a long title, a long address and a code block that scrolls inside itself.
+    ...(ids.note ? [{ name: 'note', path: `/notes/${ids.note}`, ready: (p) => p.locator('[data-note-page], [data-note-form]').first().waitFor() }] : []), // its own page on a phone, docked beside the list on a wide screen
+    // The method lists, the Loop home, the reviews, Habits and Focus (phone-rest): the screens the check did not open.
+    { name: 'next', path: '/next', ready: heading('Next') },
+    { name: 'waiting', path: '/waiting', ready: heading('Waiting') },
+    { name: 'loop', path: '/loop', ready: heading('Loop home') },
+    { name: 'review', path: '/review', ready: (p) => p.locator('[data-review-step]').waitFor() },
+    { name: 'review-close', path: '/review/close', ready: (p) => p.locator('[data-close-step]').waitFor() },
+    { name: 'review-daily', path: '/review/daily', ready: heading('Daily check') },
+    ...(ids.habit ? [
+      { name: 'habits', path: '/habits', ready: (p) => p.locator('[data-habit-row]').first().waitFor() },
+      { name: 'habit', path: `/habits/${ids.habit}`, ready: (p) => p.locator('[data-habit-page]').waitFor() },
+    ] : []),
+    { name: 'focus', path: '/focus', ready: (p) => p.locator('[data-focus]').first().waitFor() },
     { name: 'trash', path: '/trash', ready: (p) => p.getByText('Old shopping list').first().waitFor() },
     { name: 'updates', path: '/updates', ready: heading('Updates') },
     // The old address still opens Updates (ux-overhaul vocabulary).

@@ -152,6 +152,10 @@ export async function seed({ base, pw, lang = '', now = Date.now() }) {
     { id: 'c', kind: 'create_tasks', in: { text: { ref: 'b' }, project: { literal: { project: home.id } } } },
   ] })
   await A('POST', '/api/v1/tasks', { title: 'Water the plants', due: { date: new Date(now - 2 * 86400e3).toISOString().slice(0, 10) } })
+  // A habit and a standalone note (phone-rest): the Habits screen and a habit's page, a note's page with a long
+  // title, a long address and a code block wider than a phone.
+  const habit = await T({ title: 'Read ten pages of a book every evening', due: { date: today }, recurrence: 'every day', habit: true })
+  const note = await A('POST', '/api/v1/notes', { title: 'Meeting notes from the kitchen planning call with the fitters', description: `## Agenda\n\n- cabinets\n- counter top\n\nSee ${LONG_URL}\n\n\`\`\`\nconst quote = priceOf("cabinets and the counter top, fitted, with the old kitchen taken away")\n\`\`\`\n` })
   if (lang) {
     // The interface language is a synced preference (user_prefs.language); written
     // like any device would, so every screen of the run opens in it.
@@ -162,5 +166,5 @@ export async function seed({ base, pw, lang = '', now = Date.now() }) {
   // One session for every browser context: logging in per context trips the rate limit.
   const storageState = await ctx.storageState()
   await browser.close()
-  return { storageState, projectInvite: projectLink.split('/invite/p/')[1], publicLink: publicLink.split('/public/')[1], pageSecret, home: home.id, work: work.id, view: v1.id, dashboard: dash.id, label: L.errand, quotes: quotes.id, routine: routine.id, repeating: repeating.id, deep: deep.id, workspace, llm }
+  return { storageState, projectInvite: projectLink.split('/invite/p/')[1], publicLink: publicLink.split('/public/')[1], pageSecret, home: home.id, work: work.id, view: v1.id, dashboard: dash.id, label: L.errand, quotes: quotes.id, routine: routine.id, repeating: repeating.id, deep: deep.id, habit: habit.id, note: note.id, workspace, llm }
 }
