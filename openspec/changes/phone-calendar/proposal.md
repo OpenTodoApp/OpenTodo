@@ -14,7 +14,7 @@ Reading the calendar's code showed it is not a desktop screen squeezed: below 64
 ## What Changes
 
 - **A task in a calendar list is the phone row.** In Week's list of days, Month's list of the chosen day and Plan's agenda, with the phone screens on below 768 px: the day's tasks are one card; the circle completes with Undo; a tap opens the task page; a swipe right completes and a swipe left opens the date sheet, as in the task lists. The row keeps what a calendar row says: its time or "all day" first, a span's "Day 2 of 3", the deadline mark, the estimate.
-- **Moving a task to another day from Week** is the date sheet (the swipe, or the row's menu on a hold), since the list has no grid to drag over.
+- **Moving a task to another day from Week** is the date sheet, opened by the swipe, since the list has no grid to drag over.
 - **Resizing by touch.** On a coarse pointer the top and bottom of a block in the Day grid take a resize from a zone a finger can hit, without drawing the block differently.
 - **Tap to place works in Week on a phone:** a tap on a planning-list task, then on a day, places it on that day.
 - **Tests and checks:** behaviour tests for the three lists in the phone UI, the gestures' end-to-end script opens Week and Month, the layout check keeps covering the calendar screens.
@@ -37,6 +37,6 @@ None.
 
 ## Impact
 
-- Changed: `web/src/app/calendar/WeekAgenda.tsx` and `MonthRow.tsx` (their task rows drawn through `TaskRow`'s compact shape, as `PlanRow` already does), `web/src/app/TaskRow.tsx` and `task-list/rowDraw.ts` (the compact shape can be drawn by the phone UI in a calendar list), `web/src/phone/screens/PhoneTaskRow.tsx` and `components/PhoneRow.tsx` (the leading time), `web/src/app/calendar/DayColumn.tsx` and `grid.ts` (the resize zone on a coarse pointer), `web/src/app/calendar/tapPlace.tsx` and `CalendarView.tsx` (tap to place in Week), `web/src/index.css` (a day's rows as one card in a calendar list).
-- New: `web/src/phone/phoneCalendar.test.tsx`, stories for the three lists in the phone UI with their baselines; `scripts/e2e-phone.mjs` gains Week and Month.
+- Changed: `web/src/app/task-list/rowDraw.ts` (`CalendarRowDrawContext`), `web/src/app/calendar/WeekAgenda.tsx`, `MonthRow.tsx`, `PlanRow.tsx` and `web/src/app/MonthView.tsx` (they call it when it is set), `web/src/phone/PhoneChrome.tsx` (provides it), `web/src/app/calendar/DayColumn.tsx` and `grid.ts` (the resize zone on a coarse pointer), `web/src/app/calendar/tapPlace.tsx` and `CalendarView.tsx` (tap to place in Week).
+- New: `web/src/phone/screens/PhoneCalendarRow.tsx`, `web/src/phone/phoneCalendar.test.tsx`, stories for the three lists in the phone UI with their baselines; `scripts/e2e-phone.mjs` gains Week and Month.
 - No op field, no route, no server change, no environment variable, no dependency. The first load is measured against `web/bundle-budget.json`.

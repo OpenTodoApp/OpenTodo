@@ -1,15 +1,13 @@
 # Tasks
 
-## 1. One row for the three lists
+## 1. The seam
 
-- [ ] 1.1 `WeekAgenda`'s task row drawn by `TaskRow shape="compact"` (design D1), with time, span place, deadline mark and estimate as props. Verify: `npx vitest run src/app/calendarView.test.tsx src/app/calendarSpans.test.tsx src/app/calendarDeadlines.test.tsx` passes with no assertion changed; the `Screens/Calendar` baselines unchanged or looked at and regenerated.
-- [ ] 1.2 `MonthRow`'s list row the same way. Verify: `npx vitest run src/app/monthView.test.tsx`; the `Screens/Month` baselines.
-- [ ] 1.3 `CalendarListContext` provided by `WeekAgenda`, `MonthDayList` and `PlanAgenda`; `TaskRow` hands the compact shape to `TaskRowDrawContext` inside it only (D2). Verify: a test that a board's card and a compact row outside a calendar list are not handed over; `npm run lint` (the import allow-list).
+- [x] 1.1 `CalendarRowDrawContext` in `task-list/rowDraw.ts`; `WeekAgenda`, `MonthRow` (the chosen day's list) and `PlanDayRows` (the agenda) call it when it is set and draw their own row otherwise (design D1). Verify: `npx vitest run src/app/calendarView.test.tsx src/app/monthView.test.tsx src/app/planView.test.tsx src/app/calendarSpans.test.tsx src/app/calendarDeadlines.test.tsx src/app/calendarPhoneChrome.test.tsx` passes with no assertion changed (186 with `src/phone`); `npm run lint` (the import allow-list).
 
 ## 2. The phone row in the calendar
 
-- [ ] 2.1 `PhoneTaskRow` draws the compact props: leading time or "all day", span place, estimate; a day's rows as one card (D2, D4). Verify: `phoneCalendar.test.tsx` for the scenarios "Open a task from Week", "A row keeps its calendar facts", "A read-only task"; stories `Phone/Screens/Calendar` (Week, Month's day, Plan) with baselines from `ui-baselines.yml`.
-- [ ] 2.2 `useCalendarRowActions`: circle with `completeWithUndo`, swipe with `useRowSwipe` and `TaskDateSheet`, hold with `holdForRow` (D3). Verify: tests for "Complete from Month's day list", "Offline", "Move a task to Thursday", "Swipe to complete"; `undoCoverage.test.tsx` still passes.
+- [x] 2.1 `PhoneCalendarRow` with the calendar's facts, provided by `PhoneChrome`; a day's tasks as one card (D2, D4). Verify: in a real browser at 390 px with touch on a seeded server, Week, Month's day and Plan list phone rows and none of the earlier rows, nothing scrolls sideways, no console error; a tap opens the task page and Back returns to Week; the circle completes and Undo is offered (done 2026-11-26, screenshots looked at).
+- [ ] 2.2 Tests in `phoneCalendar.test.tsx` for the scenarios of "A task in a calendar list is the phone row" and "Swipes and the date sheet in a calendar list"; stories `Phone/Screens/Calendar` (Week, Month's day, Plan) with baselines from `ui-baselines.yml`. Verify: the tests pass three times in a row; `undoCoverage.test.tsx` still passes.
 
 ## 3. Touch in the grid and Week
 

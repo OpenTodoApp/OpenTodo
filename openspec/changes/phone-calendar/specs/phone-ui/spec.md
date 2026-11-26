@@ -30,7 +30,7 @@ Every change made from the row SHALL be written as the same operations as the sa
 - **THEN** its row has no circle, and a tap still opens the task page
 
 ### Requirement: Swipes and the date sheet in a calendar list
-While the phone screens are on below 768 px, a row in Week's list of days, Month's list of the chosen day and Plan's agenda SHALL take the swipes of a phone task list: to the end edge completes, to the start edge opens the date sheet. A hold on the row SHALL open the row's menu. Choosing a date in the sheet SHALL move the task to that day with the operation a task list writes, keep its time if it has one, and the lists SHALL show it under its new day. This is how a task moves to another day in Week on a phone, which has no grid to drag over. A task the person may only read SHALL take no swipe.
+While the phone screens are on below 768 px, a row in Week's list of days, Month's list of the chosen day and Plan's agenda SHALL take the swipes of a phone task list: to the end edge completes, to the start edge opens the date sheet. Choosing a date in the sheet SHALL move the task to that day with the operation a task list writes, keep its time if it has one, and the lists SHALL show it under its new day. This is how a task moves to another day in Week on a phone, which has no grid to drag over. A task the person may only read SHALL take no swipe.
 
 It SHALL work offline, and it SHALL converge with changes from other devices exactly as changing the date in a task list does.
 
