@@ -25,11 +25,15 @@
 
 ## 6. Catalog (second pull request)
 
-- [ ] 6.1 `web/src/locales/ar.json` with every message of `messages.json`, plurals in Arabic's categories, the glossary's Settings names, the swipe sentences mirrored. Verify `make i18n-check` passes.
-- [ ] 6.2 List `ar` in `SHIPPED` with `community: true`; tests that list the shipped languages. Verify `cd web && npm test -- i18n languageSettings` passes.
-- [ ] 6.3 `docs/translating.md` (machine-draft row looking for a reviewer, glossary column), `docs/language.md`, `docs/contributing/add-a-language.md`. Verify `make docs-check` passes.
-- [ ] 6.4 Changelog fragment `changelog.d/Added/arabic-rtl.md`. Verify `make repo-check` passes.
+- [x] 6.1 `web/src/locales/ar.json` with every message of `messages.json`, plurals in Arabic's categories, the glossary's Settings names, the swipe sentences mirrored. Verify `make i18n-check` passes.
+- [x] 6.2 List `ar` in `SHIPPED` with `community: true`; tests that list the shipped languages. Verify `cd web && npm test -- i18n languageSettings` passes.
+- [x] 6.3 `docs/translating.md` (machine-draft row looking for a reviewer, a "Right-to-left languages" section for translators), `docs/language.md`, `docs/contributing/add-a-language.md`. Verify `make docs-check` passes.
+- [x] 6.4 Changelog fragment `changelog.d/Added/arabic-rtl.md`. Verify `make repo-check` passes.
+- [x] 6.5 Interpolated values isolated in right-to-left languages (`render()`), `many` where the accusative is written, Settings breadcrumbs pointing ←. Verify `cd web && npm test -- i18n/format` passes.
+- [x] 6.6 As for Japanese: Arabic in the push worker's own texts, the browser check (right to left) and the template weekdays (Go and web, with a shared vector); an end-to-end Arabic test; copied answers and recovery codes without isolates. Verify `go test ./internal/templatelib` and `cd web && npm test -- i18n pushWorker browserCheck assistantBlocks` pass.
 
 ## 7. Checks for the second pull request
+
+Archive `japanese` before `arabic-rtl`: this change's "Shipped languages and their catalogs" is Japanese's text plus Arabic, so archiving it second keeps both.
 
 - [ ] 7.1 `make openspec-validate`, `make i18n-check`, `cd web && npm test && npm run build`, `make bundle-budget`; the right-to-left stories in Arabic. Verify all pass.

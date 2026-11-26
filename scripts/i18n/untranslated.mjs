@@ -60,7 +60,7 @@ export function untranslatedProblems(path, text, allow = new Set()) {
   }
   const inMessageCall = (n) => {
     for (let p = n.parent; p; p = p.parent) {
-      if (ts.isCallExpression(p) && ['t', 't.rich', 'msg'].includes(calleeName(p))) return true
+      if (ts.isCallExpression(p) && ['t', 't.rich', 't.plain', 'msg'].includes(calleeName(p))) return true
       if (ts.isJsxElement(p) && p.openingElement.tagName.getText(sf) === 'T') return true
       if (ts.isFunctionLike(p)) return false
     }

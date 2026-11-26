@@ -1,0 +1,1 @@
+- **Arabic (العربية), right to left.** Pick العربية in Settings → Language and region → Language: the whole app mirrors, numbers stay in Western digits, and text you wrote keeps its own direction. It is a community translation, a machine draft waiting for a native speaker's review; emails, the native apps and quick-add words stay English for now.

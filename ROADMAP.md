@@ -177,6 +177,7 @@ Longer horizons, and the household.
 | [`more-languages`](openspec/changes/archive/2026-11-12-more-languages/) | Dutch, quick add in Dutch, and a kit for community languages | [#584](https://github.com/OpenTodoApp/OpenTodo/issues/584) |
 | [`simplified-chinese`](openspec/changes/archive/2026-11-11-simplified-chinese/) | Simplified Chinese (简体中文) | [#883](https://github.com/OpenTodoApp/OpenTodo/issues/883) |
 | [`japanese`](openspec/changes/japanese/) | Japanese (日本語) as a community language, reviewed by a native speaker | [#884](https://github.com/OpenTodoApp/OpenTodo/issues/884) |
+| [`arabic-rtl`](openspec/changes/arabic-rtl/) | Arabic (العربية) as a community language, and the app laid out right to left | [#885](https://github.com/OpenTodoApp/OpenTodo/issues/885) |
 | [`priority-names`](openspec/changes/archive/2026-11-10-priority-names/) | Rename the four priorities |  |
 
 ### [1.0 "Trust"](https://github.com/OpenTodoApp/OpenTodo/milestone/6)

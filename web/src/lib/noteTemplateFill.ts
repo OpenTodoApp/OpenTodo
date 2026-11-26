@@ -26,6 +26,7 @@ const WEEKDAYS: Record<string, string[]> = {
   pt: ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'],
   zh: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'],
   ja: ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'],
+  ar: ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'],
 }
 
 /** The {{name}} placeholders of a text that are not one of the four. */

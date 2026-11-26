@@ -24,7 +24,7 @@ The document's `lang` attribute SHALL name the active language and its `dir` att
 - **THEN** the page's `lang` is `ar` and its `dir` is `rtl`
 
 ### Requirement: Shipped languages and their catalogs
-English, German, French, Spanish, Italian, Portuguese, Simplified Chinese (`zh`, shown as 简体中文), Dutch, Turkish (`tr`, shown as Türkçe) and Polish (`pl`, shown as Polski) SHALL be maintained in the repository and SHALL be complete in every release. A maintained language SHALL be offered in Settings only when its catalog is complete. A community language (see "Community languages") SHALL be offered when it meets that requirement's threshold. The Simplified Chinese catalog MAY be drafted by machine translation and SHALL be reviewed afterwards by a person who reads Simplified Chinese. Russian (`ru`, shown as Русский) SHALL be shipped as a community language; its catalog MAY be drafted by machine translation, SHALL be listed in the translation guide as a machine draft looking for a reviewer until a speaker has read it, and SHALL be reviewed by a person who reads Russian once one signs up. Arabic (`ar`, shown as العربية) SHALL be shipped as a community language; its catalog MAY be drafted by machine translation, SHALL be listed in the translation guide as a machine draft looking for a reviewer until a speaker has read it, and SHALL be reviewed by a person who reads Arabic. The other shipped catalogs, maintained or community, SHALL be written and reviewed by people; machine translation SHALL NOT be used for them.
+English, German, French, Spanish, Italian, Portuguese, Simplified Chinese (`zh`, shown as 简体中文), Dutch, Turkish (`tr`, shown as Türkçe) and Polish (`pl`, shown as Polski) SHALL be maintained in the repository and SHALL be complete in every release. A maintained language SHALL be offered in Settings only when its catalog is complete. A community language (see "Community languages") SHALL be offered when it meets that requirement's threshold. The Simplified Chinese catalog MAY be drafted by machine translation and SHALL be reviewed afterwards by a person who reads Simplified Chinese. Russian (`ru`, shown as Русский) SHALL be shipped as a community language; its catalog MAY be drafted by machine translation, SHALL be listed in the translation guide as a machine draft looking for a reviewer until a speaker has read it, and SHALL be reviewed by a person who reads Russian once one signs up. Japanese (`ja`, shown as 日本語) SHALL be shipped as a community language; its catalog MAY be drafted by machine translation at the maintainer's decision, SHALL be listed in the translation guide as a machine draft looking for a native reviewer until a person who reads Japanese has reviewed it, and SHALL stay a community language until then. Arabic (`ar`, shown as العربية) SHALL be shipped as a community language; its catalog MAY be drafted by machine translation, SHALL be listed in the translation guide as a machine draft looking for a reviewer until a speaker has read it, and SHALL be reviewed by a person who reads Arabic once one signs up. The other shipped catalogs, maintained or community, SHALL be written and reviewed by people; machine translation SHALL NOT be used for them.
 
 Simplified Chinese SHALL be complete on the web app, the service worker's notification texts, the browser extension, the Android shell, server emails, the weekly digest and notification-channel messages.
 
@@ -52,10 +52,17 @@ Simplified Chinese SHALL be complete on the web app, the service worker's notifi
 - **WHEN** the user opens the Language panel
 - **THEN** `Polski` is listed among the maintained languages, `Русский` after them with the community caption, and picking `Polski` shows Today's headings in Polish with the root element's `lang` set to `pl`
 
+#### Scenario: Japanese as a community language
+- **WHEN** the user picks 日本語 and opens Today with an overdue task
+- **THEN** 日本語 is listed after the maintained languages with the community caption, the headings and the row menu are in Japanese, the root element's `lang` is `ja` and its `dir` stays `ltr`, dates read like 2026年11月4日, and the task's title is as written
+
+#### Scenario: Japanese email
+- **WHEN** a person whose app is in Japanese is sent a password reset
+- **THEN** the email is in English until Japanese is a maintained language
+
 #### Scenario: Arabic as a community language
 - **WHEN** the user opens the Language panel
 - **THEN** `العربية` is listed after the maintained languages with the community caption, and picking it shows Today's headings in Arabic with the root element's `lang` set to `ar` and its `dir` set to `rtl`
-
 
 ## ADDED Requirements
 

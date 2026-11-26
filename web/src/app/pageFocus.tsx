@@ -7,7 +7,7 @@
 // Settings row a link asked for, the list's cursor row).
 import { type RefObject, useEffect, useLayoutEffect, useRef } from 'react'
 import { isTypingTarget } from './shortcuts'
-import { t } from '../lib/i18n'
+import { stripIsolates, t } from '../lib/i18n'
 import { getBranding } from '../lib/branding'
 
 /** Elements that own focus over the page: dialogs, overlays (menus, sheets) and the task panel. */
@@ -15,11 +15,11 @@ const OWNERS = '[role="dialog"], [role="alertdialog"], [data-overlay], [data-ove
 
 /** The tab title for a page heading. */
 export function pageTitle(heading: string | null | undefined): string {
-  const page = heading?.replace(/\s+/g, ' ').trim()
+  const page = heading && stripIsolates(heading).replace(/\s+/g, ' ').trim()
   // A branded instance (instance-branding) names itself in the tab.
   const app = getBranding().name
   if (app) return page ? `${page} – ${app}` : app
-  return page ? t('{page} – OpenTodo', { page }) : 'OpenTodo'
+  return page ? t.plain('{page} – OpenTodo', { page }) : 'OpenTodo'
 }
 
 /** The page's level-one heading: the header's title, or the phone bar's below 768 px. */

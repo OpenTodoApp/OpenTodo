@@ -154,10 +154,10 @@ export function useTaskDetail({ taskId, initial, readOnly, projects, labelMap, o
     if (task) void copyText(taskLink(task.id)).then(() => setCopied(true), () => {})
   }
   // assistant-skills: "Break this down" runs the skill with this task as its subject.
-  const breakDown = () => { if (task) openAssistantWith({ skill: 'break-down', text: t('Break down “{title}”', { title: task.title }), selected: [task.id] }) }
+  const breakDown = () => { if (task) openAssistantWith({ skill: 'break-down', text: t.plain('Break down “{title}”', { title: task.title }), selected: [task.id] }) }
   // assistant-in-context: Rewrite this and Find a slot run their skill on this task and send at once.
-  const rewrite = () => { if (task) openAssistantWith({ skill: 'rewrite-task', text: t('Rewrite “{title}”', { title: task.title }), selected: [task.id], send: true }) }
-  const findSlot = () => { if (task) openAssistantWith({ skill: 'find-slot', text: t('Find a slot for “{title}”', { title: task.title }), selected: [task.id], send: true }) }
+  const rewrite = () => { if (task) openAssistantWith({ skill: 'rewrite-task', text: t.plain('Rewrite “{title}”', { title: task.title }), selected: [task.id], send: true }) }
+  const findSlot = () => { if (task) openAssistantWith({ skill: 'find-slot', text: t.plain('Find a slot for “{title}”', { title: task.title }), selected: [task.id], send: true }) }
 
   return {
     task, title, setTitle, titleField, labelList, commitTitle, toggle, remove, copyLink, copied, breakDown, rewrite, findSlot,

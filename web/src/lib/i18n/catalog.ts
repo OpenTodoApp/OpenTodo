@@ -120,6 +120,12 @@ export interface TFunction {
    * Values may be elements too.
    */
   rich(message: string, values?: RichValues): ReactNode
+  /**
+   * The same text without the direction isolates a right-to-left language puts around
+   * values, for text that is stored, sent or matched rather than shown: a copy's name,
+   * a prompt, a notification body, the document title.
+   */
+  plain(message: string, values?: TValues): string
 }
 
 export const t: TFunction = Object.assign(
@@ -137,6 +143,11 @@ export const t: TFunction = Object.assign(
       }
       const parts = render<ReactNode>(compile(text), values as Values, locale, tags)
       return createElement(Fragment, null, ...parts.map((p, i) => (typeof p === 'string' ? p : createElement(Fragment, { key: i }, p))))
+    },
+    plain(message: string, values?: TValues): string {
+      const text = lookup(message, values?.context)
+      if (!values && !/[{'<#]/.test(text)) return text
+      return render<string>(compile(text), values ?? {}, locale, undefined, undefined, false).join('')
     },
   },
 )

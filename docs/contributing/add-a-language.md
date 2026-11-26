@@ -9,7 +9,7 @@ order: 5
 ---
 # Add a language
 
-The app ships in ten languages. A new one is a catalog plus a handful of small tables, and a speaker of the language who reviews it. **Machine translation is not accepted**, except for the drafts the maintainer started for Simplified Chinese, Russian and Japanese, which a speaker reviews afterwards. How messages are written is in [Translating OpenTodo](../translating.md).
+The app ships in ten languages. A new one is a catalog plus a handful of small tables, and a speaker of the language who reviews it. **Machine translation is not accepted**, except for the drafts the maintainer started for Simplified Chinese, Russian, Japanese and Arabic, which a speaker reviews afterwards. How messages are written is in [Translating OpenTodo](../translating.md).
 
 ## Before you start
 

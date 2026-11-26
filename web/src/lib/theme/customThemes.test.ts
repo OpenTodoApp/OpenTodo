@@ -4,6 +4,7 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../db'
+import { applyCatalog } from '../i18n/catalog'
 import { applyOps, mutate, resetDeviceId } from '../ops'
 import { undoBatch } from '../undo'
 import nord from './builtin/nord.json'
@@ -78,6 +79,18 @@ describe('Customise and New (design D4)', () => {
     expect(c.notes?.text).toMatch(/^Based on Nord by Sven Greb \(MIT\)/)
     expect(c.source).toBeUndefined()
     expect(validateTheme(c).ok).toBe(true)
+  })
+
+  it('customises without the isolates Arabic text puts around a value (arabic-rtl D5)', () => {
+    applyCatalog('ar', 'ar', { '{name} (custom)': '{name} (مخصّص)', 'Based on {name} by {author} ({licence})': 'مبني على {name} من {author} ({licence})' })
+    try {
+      const c = customiseDocument(NORD, 'Ana', 'th-ar')
+      expect(c.name).toBe('Nord (مخصّص)')
+      expect(c.notes?.text).toMatch(/^مبني على Nord من Sven Greb \(MIT\)/)
+      expect(JSON.stringify(c)).not.toMatch(/[\u2068\u2069]/)
+    } finally {
+      applyCatalog('en', 'en', {})
+    }
   })
 
   it('New starts from the side\'s OpenTodo seeds with every token derived', () => {
