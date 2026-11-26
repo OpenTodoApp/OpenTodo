@@ -3,8 +3,9 @@
 // and 4.1 to 4.3): Today's briefing, habits, Earlier, Done today, Close the day and
 // events; the Inbox's Process; Upcoming's days, summaries and projections; Completed's
 // search, options and paging; a project's sections, note and sub-projects; the
-// filtered-empty and missing states; and the page menu of the lists that
-// phoneLists.test.tsx leaves out. Every test reads the phone screen, so none passes
+// filtered-empty and missing states; Log a win, the away notice and the time totals;
+// the Inbox's routines card and sample tasks; a project's linked references; a place;
+// and the page menu of the lists that phoneLists.test.tsx leaves out. Every test reads the phone screen, so none passes
 // against the earlier layout.
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -13,13 +14,23 @@ import { db, setMeta } from '../lib/db'
 import { addDaysISO, logicalToday } from '../lib/dates'
 import { removeItem } from '../lib/deviceStorage'
 import { projectFilterKey, saveQueryFilter } from '../lib/deviceFilters'
+import { setAway } from '../lib/awayActions'
 import { createLabel } from '../lib/labels'
+import { createPlace, getPlace, locationFromPlace } from '../lib/locations'
+import { resetLinkIndex } from '../lib/noteLinks'
+import { createNote } from '../lib/noteOps'
+import { markRoutinesSeen } from '../lib/rules/inbox'
+import { createRule } from '../lib/rules/store'
+import { createSampleTasks } from '../lib/sampleTasks'
+import { setCurrentUserId } from '../lib/sharing'
+import { logTime } from '../lib/timeEntries'
 import { createProject, createTask, setTaskCompleted, updateProject, updateTask } from '../lib/ops'
 import { createSection } from '../lib/sections'
-import type { CalendarEvent, CalendarSubscription, User } from '../lib/types'
+import type { CalendarEvent, CalendarSubscription, RoutineInboxRun, User } from '../lib/types'
 import { setBriefingShown, setTodayEventsShown } from '../lib/userPrefs'
-import { click, minWidthPx, render, type, waitFor } from '../ui/test-utils'
+import { click, minWidthPx, mockFetch, render, type, waitFor } from '../ui/test-utils'
 import { setUpcomingProjections } from '../app/calendar/projections'
+import { hideBulkToast } from '../app/bulk/toastStore'
 import { navigate, type Route } from '../app/router'
 import { Shell } from '../app/Shell'
 import { setPhoneUiEnabled } from './prefs'
@@ -40,7 +51,7 @@ beforeEach(async () => {
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
   setPhoneUiEnabled(false)
 })
-afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals(); setUpcomingProjections(false); setPhoneUiEnabled(false) })
+afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals(); resetLinkIndex(); setUpcomingProjections(false); setPhoneUiEnabled(false) })
 
 const list = () => document.querySelector<HTMLElement>('[data-phone-screen="list"][data-phone-list]')
 const inList = <E extends HTMLElement = HTMLElement>(selector: string) => list()?.querySelector<E>(selector) ?? null
@@ -340,6 +351,101 @@ describe('states of the phone list', () => {
   })
 })
 
+describe('the remaining parts of each list in the phone list', () => {
+  it('Today offers Log a win in the Done today header', async () => {
+    const done = await createTask({ title: 'Call the bank', due: { date: today } })
+    await setTaskCompleted(done, true)
+    await setDoneTodayShown(true)
+    const r = await open({ view: 'today' })
+    await waitFor(() => !!inList('[data-group="done"] [data-group-header] [data-log-win]'), 'Log a win')
+    expect(inList('[data-log-win]')!.textContent).toBe('Log a win')
+    // It opens the add field set to log a finished task.
+    await click(inList('[data-log-win]')!)
+    const field = () => document.querySelector('[data-overlay] [data-log-done] textarea[aria-label="Log a win"]')
+    await waitFor(() => !!field(), 'the Log a win field')
+    await click(document.querySelector('[data-overlay] [data-overlay-close]')!)
+    await waitFor(() => !field(), 'the field closed')
+    await r.unmount()
+  })
+
+  it('Today says "Away until" in its lead line while away, and its menu offers End now', async () => {
+    await createTask({ title: 'Write the notes', due: { date: today } })
+    await setAway({ from: today, to: addDaysISO(today, 2), scope: { all: true }, quiet: false })
+    const r = await open({ view: 'today' })
+    await waitFor(() => !!inList('[data-phone-head] [data-phone-summary]')?.textContent?.includes('Away until'), 'the away notice')
+    expect(inList('[data-phone-summary]')!.textContent).toMatch(/ · Away until \S+$/)
+    await click(inList('[data-phone-header] button[aria-label="More actions"]')!)
+    await waitFor(() => !!document.querySelector('[role="menu"] [data-away-end]'), 'End now in Today\'s menu')
+    expect(document.querySelector('[role="menu"] [data-away-item]')).not.toBeNull()
+    await r.unmount()
+  })
+
+  it('Today reads the planned and tracked totals in its lead line', async () => {
+    await setCurrentUserId(user.id)
+    const a = await createTask({ title: 'Plan', due: { date: today }, estimate_minutes: 120 })
+    await createTask({ title: 'Call', due: { date: today }, estimate_minutes: 60 })
+    await logTime(a, Date.now() - 2 * 60_000, Date.now())
+    const r = await open({ view: 'today' })
+    await waitFor(() => !!inList('[data-phone-head] [data-phone-summary]')?.textContent?.includes('3h planned · 2m tracked'), 'the totals')
+    await r.unmount()
+  })
+
+  it('the Inbox shows the routines card under its tasks', async () => {
+    const rule = await createRule({ name: 'Morning sweep', trigger: { kind: 'schedule', at: '07:00', weekdays: [6, 7] }, actions: { priority: 3 } })
+    await markRoutinesSeen(1)
+    const runs: RoutineInboxRun[] = [{ id: 200, run_id: `${rule}-200`, rule_id: rule, at: 200, outcome: 'applied', source: 'schedule', run_as: 'u1', test: false, steps_count: 1, writes: 5, duration_ms: 5, undone_at: null, failed_step: -1, kind: 'success',
+      steps: [{ index: 0, step_id: 'a', kind: 'change_tasks', status: 'ok', duration_ms: 2, items: 5, output: 'tasks', ids: [] }] }]
+    mockFetch((_method, path) => (path === '/api/v1/me/rules/runs' ? { runs, seen_at: 0, hide_successes: false } : {}))
+    const task = await createTask({ title: 'An idea' })
+    const r = await open({ view: 'inbox' })
+    await waitFor(() => rowIds().includes(task) && !!inList('[data-routines-inbox] [data-inbox-line]'), 'the routines card')
+    expect(inList('[data-routines-inbox] [data-inbox-line="success"]')!.textContent).toContain('Morning sweep · 5 tasks changed')
+    expect(before(inList(`[data-phone-row="${task}"]`)!, inList('[data-routines-inbox]')!)).toBe(true)
+    await r.unmount()
+  })
+
+  it('the Inbox lists the sample tasks, and its menu removes them', async () => {
+    const ids = await createSampleTasks(today)
+    const real = await createTask({ title: 'Real task' })
+    const r = await open({ view: 'inbox' })
+    // The unplaced samples (the second is due today, so it is Today's) and the third's subtask.
+    await waitFor(() => rowIds().length === 4 && [ids[0], ids[2], real].every((id) => rowIds().includes(id)), 'the sample tasks and the real one')
+    expect(rowIds()).not.toContain(ids[1])
+    expect(inList(`[data-phone-row="${ids[0]}"] [data-row-title]`)!.textContent).toBe('Tick me off when you have read this')
+    await click(inList('[data-phone-header] [data-inbox-menu]')!)
+    await waitFor(() => !!document.querySelector('[role="menu"] [data-remove-samples]'), 'Remove sample tasks')
+    await click(document.querySelector('[role="menu"] [data-remove-samples]')!)
+    await waitFor(() => rowIds().join() === real, 'only the real task')
+    hideBulkToast()
+    await r.unmount()
+  })
+
+  it('a project shows its linked references as one folded line that opens', async () => {
+    const p = await createProject({ name: 'Renovation' })
+    const a = await createNote({ title: 'Kitchen', description: `For [Renovation](?project=${p})` })
+    const task = await createTask({ title: 'Paint', project_id: p })
+    const r = await open({ view: 'project', id: p })
+    await waitFor(() => rowIds().includes(task) && !!inList('[data-linked-references][data-folded]'), 'the folded line')
+    const toggle = inList<HTMLButtonElement>('.linked-refs__toggle')!
+    expect(toggle.textContent).toBe('Linked references1')
+    await click(toggle)
+    await waitFor(() => allInList('[data-linked-ref]').map((el) => el.dataset.linkedRef).join() === `note:${a}`, 'the reference')
+    await r.unmount()
+  })
+
+  it('a place lists its tasks under its name, and no task of another place', async () => {
+    const place = await createPlace({ name: 'Post office' })
+    const other = await createPlace({ name: 'Library' })
+    const there = await createTask({ title: 'Buy stamps', location: locationFromPlace((await getPlace(place))!) })
+    await createTask({ title: 'Return the book', location: locationFromPlace((await getPlace(other))!) })
+    await createTask({ title: 'An idea' })
+    const r = await open({ view: 'place', id: place })
+    await waitFor(() => rowIds().join() === there && inList('[data-phone-head] [data-page-title]')?.textContent === 'Post office', 'the place with its task and name')
+    expect(inList('[data-phone-header] button')!.getAttribute('aria-label')).toBe('Open menu')
+    await r.unmount()
+  })
+})
+
 describe('the page menu of the phone list, for the lists phoneLists.test.tsx leaves out', () => {
   const items = () => [...document.querySelectorAll<HTMLElement>('[role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]')].map((el) => el.textContent?.trim() ?? '').filter(Boolean).sort()
   /** Opens the last menu of a bar (the page's own menu) and returns its items; closes it again. */
@@ -383,4 +489,21 @@ describe('the page menu of the phone list, for the lists phoneLists.test.tsx lea
       await r.unmount()
     })
   }
+
+  it('a place offers every item its present phone menu offers, and the same controls in the bar', async () => {
+    const place = await createPlace({ name: 'Post office' })
+    await createTask({ title: 'Buy stamps', location: locationFromPlace((await getPlace(place))!) })
+    navigate({ view: 'place', id: place })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!document.querySelector('[data-list-page]') && everyRow().length > 0, 'the present list')
+    const present = await menuOf(() => document.querySelector('[data-phone-bar]'))
+    const presentControls = controls(document.querySelector('[data-phone-bar]')!)
+    setPhoneUiEnabled(true)
+    await waitFor(() => list()?.getAttribute('data-phone-list') === 'place' && rowIds().length > 0, 'the phone list')
+    const phone = await menuOf(() => inList('[data-phone-header]'))
+    expect(present.length).toBeGreaterThan(0)
+    for (const item of present) expect(phone).toContain(item)
+    expect(controls(inList('[data-phone-header]')!)).toEqual(presentControls)
+    await r.unmount()
+  })
 })
