@@ -11,7 +11,7 @@ import { undoBatch } from '../lib/undo'
 import { completeTask, createProject, createTask, resetDeviceId, updateTask } from '../lib/ops'
 import type { Task } from '../lib/types'
 import { loadViewMode, nextViewMode, saveViewMode } from '../lib/sections'
-import { flush, key, render, waitFor } from '../ui/test-utils'
+import { click, flush, key, render, waitFor } from '../ui/test-utils'
 import { panelTaskId, resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
 import { notePlacement, rowMetrics } from './TimelineView'
@@ -316,5 +316,93 @@ describe('notes beside short bars (precision-polish D4)', () => {
   })
   it('moves before the bar at the end of the axis', () => {
     expect(notePlacement(900, 960, 60, null, 1000)).toBe(832)
+  })
+})
+
+describe('the range\'s controls (touch-open-and-controls)', () => {
+  /** A timeline with one bar on the 3rd; today is the 1st, so the axis starts 28 days before it. */
+  async function ranged() {
+    const p = await timeline()
+    const id = await createTask({ title: 'Book flights', project_id: p, start: '2026-11-03', due: { date: '2026-11-05' } })
+    const r = await render(<TaskListView route={{ view: 'project', id: p }} />)
+    await waitFor(() => r.container.querySelector(`[data-bar="${id}"]`) !== null, 'the bar')
+    const range = () => r.container.querySelector<HTMLElement>('[data-timeline-range]')!
+    const button = (name: string) => [...range().querySelectorAll('button')].find((b) => (b.getAttribute('aria-label') ?? b.textContent) === name)!
+    /** The first date column's header: the day the axis starts on (a week's range in Weeks). */
+    const first = () => r.container.querySelectorAll('[data-timeline] [role="columnheader"]')[1].textContent
+    /** Where the bar starts, in px from the axis start: it moves left as the range moves later. */
+    const left = () => parseFloat(r.container.querySelector<HTMLElement>(`[data-bar="${id}"]`)!.style.left)
+    const zoom = (name: string) => [...r.container.querySelectorAll<HTMLElement>('[role="group"][aria-label="Timeline zoom"] button')].find((b) => b.textContent === name)!
+    return { r, range, button, first, left, zoom }
+  }
+
+  it('has Earlier, Today and Later beside the zoom, on every device', async () => {
+    const { r, range } = await ranged()
+    expect(range().getAttribute('role')).toBe('group')
+    expect(range().getAttribute('aria-label')).toBe('Range')
+    expect([...range().querySelectorAll('button')].map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual(['Earlier', 'Today', 'Later'])
+    const zoom = r.container.querySelector('[role="group"][aria-label="Timeline zoom"]')!
+    expect(zoom.parentElement).toBe(range().parentElement)
+    expect(zoom.compareDocumentPosition(range()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    await r.unmount()
+  })
+
+  it('in Days, Later starts the timeline one week later, Earlier moves it back, and Today returns after a move; nothing is written', async () => {
+    const { r, button, first, left } = await ranged()
+    const writes = await db.outbox.count()
+    // 32 px a day from 4 October: the 3rd of November is 30 days in.
+    expect(first()).toBe('4')
+    expect(left()).toBe(30 * 32)
+    await click(button('Later'))
+    expect(first()).toBe('11')
+    expect(left()).toBe(23 * 32)
+    await click(button('Earlier'))
+    expect(first()).toBe('4')
+    await click(button('Earlier'))
+    expect(first()).toBe('27')
+    expect(left()).toBe(37 * 32)
+    await click(button('Later'))
+    await click(button('Later'))
+    await click(button('Later'))
+    expect(first()).toBe('18')
+    await click(button('Today'))
+    expect(first()).toBe('4')
+    expect(left()).toBe(30 * 32)
+    expect(r.container.querySelector('[data-today-mark]')).not.toBeNull()
+    // Opening the project marks it seen a moment later (feed_seen_at); the range itself writes nothing.
+    expect((await db.outbox.toArray()).slice(writes).filter((o) => o.field !== 'feed_seen_at')).toEqual([])
+    await r.unmount()
+  })
+
+  it('in Weeks, Later and Earlier move the range by four weeks, and Today returns', async () => {
+    const { r, button, first, left, zoom } = await ranged()
+    await click(zoom('Weeks'))
+    await waitFor(() => zoom('Weeks').getAttribute('aria-pressed') === 'true', 'the Weeks zoom')
+    // A week's column is seven days wide: a day's width, whatever it is, from the header.
+    const day = parseFloat(r.container.querySelectorAll<HTMLElement>('[data-timeline] [role="columnheader"]')[1].style.width) / 7
+    const start = { first: first(), left: left() }
+    await click(button('Later'))
+    expect(first()).not.toBe(start.first)
+    expect(left()).toBe(start.left - 28 * day)
+    await click(button('Earlier'))
+    expect({ first: first(), left: left() }).toEqual(start)
+    await click(button('Earlier'))
+    expect(left()).toBe(start.left + 28 * day)
+    await click(button('Today'))
+    expect({ first: first(), left: left() }).toEqual(start)
+    await r.unmount()
+  })
+
+  it('the keys still move the range: ] later, [ earlier, t back to today', async () => {
+    const { r, first } = await ranged()
+    await key(document.body, ']')
+    expect(first()).toBe('11')
+    await key(document.body, ']')
+    expect(first()).toBe('18')
+    await key(document.body, '[')
+    expect(first()).toBe('11')
+    await key(document.body, 't')
+    expect(first()).toBe('4')
+    await r.unmount()
   })
 })
