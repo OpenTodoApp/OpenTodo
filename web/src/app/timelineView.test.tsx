@@ -14,7 +14,8 @@ import { loadViewMode, nextViewMode, saveViewMode } from '../lib/sections'
 import { click, flush, key, render, waitFor } from '../ui/test-utils'
 import { panelTaskId, resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
-import { notePlacement, rowMetrics } from './TimelineView'
+import { TOUCH_HOLD_MS } from '../lib/dnd'
+import { edgeStepX, notePlacement, rowMetrics } from './TimelineView'
 
 beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -303,6 +304,234 @@ describe('on a phone and on touch (phone-timeline-rows)', () => {
     const keys = r.container.querySelector('[data-timeline] [data-kbd-hint]')!
     expect(keys.textContent!.trim()).toBe('← → move the selected task, Shift+← → its deadline.')
     expect(keys.parentElement!.textContent).toBe('Drag a bar to move its dates, or its ends to set the start and deadline. ← → move the selected task, Shift+← → its deadline.')
+    await r.unmount()
+  })
+})
+
+describe('by touch (phone-timeline)', () => {
+  const device = (width: number, coarse: boolean) => vi.stubGlobal('matchMedia', (q: string) => ({
+    matches: q.includes('min-width') ? width >= parseFloat(q.split('min-width:')[1]) * 16 : q.includes('coarse') ? coarse : false,
+    media: q, addEventListener() {}, removeEventListener() {},
+  }))
+  // happy-dom lays nothing out: the axis and every bar start at x = 0, so a press's x is
+  // both its distance into the bar and, at 32 px a day, its day on the axis from the 4th of October.
+  const press = (el: Element, pointerType: string, x: number) => el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, pointerType, button: 0, clientX: x, clientY: 5 }))
+  const moveTo = (pointerType: string, x: number, y = 5) => window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, pointerType, clientX: x, clientY: y }))
+  const release = (pointerType: string, x: number) => window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, pointerType, clientX: x, clientY: 5 }))
+  const open = async (task: Parameters<typeof createTask>[0], role?: 'viewer') => {
+    const p = await timeline()
+    if (role) await db.memberships.put({ projectId: p, role, ownerId: 'someone', members: [] })
+    const id = await createTask({ ...task, project_id: p })
+    const r = await render(<TaskListView route={{ view: 'project', id: p }} />)
+    await waitFor(() => r.container.querySelector(`[data-bar="${id}"]`) !== null)
+    const col = (d: string) => r.container.querySelector(`[data-drop-target="tl:${d}"]`)!
+    const bar = () => r.container.querySelector<HTMLElement>(`[data-bar="${id}"]`)!
+    /** Press `x` px into the bar, hold past the interval (or not), move and drop on `day`. */
+    const drag = async (pointerType: string, x: number, day: string, hold = pointerType === 'touch') => {
+      document.elementFromPoint = () => col(day)
+      await act(async () => { press(bar(), pointerType, x) })
+      // The touch hold is a timer of the drag itself; nothing in the page says it has armed
+      if (hold) await flush(TOUCH_HOLD_MS + 50)
+      await act(async () => {
+        moveTo(pointerType, x + 40)
+        release(pointerType, x + 40)
+      })
+    }
+    return { r, id, bar, col, drag, task: async () => (await db.tasks.get(id))! }
+  }
+  const five = { title: 'Pack', start: '2026-11-03', due: { date: '2026-11-05', time: '09:00' }, deadline: '2026-11-07' }
+
+  it('a tap on a bar opens the task on a touch screen and changes no date', async () => {
+    device(360, true)
+    const { r, id, bar, task } = await open(five)
+    await act(async () => { bar().click() })
+    await waitFor(() => location.pathname === `/task/${id}`, 'the task opened')
+    expect(await task()).toMatchObject(five)
+    history.replaceState(null, '', '/')
+    await r.unmount()
+  })
+
+  it('with a mouse a click on a bar selects its row and a double click opens the task', async () => {
+    device(1280, false)
+    const { r, id, bar } = await open(five)
+    await act(async () => { bar().click() })
+    await waitFor(() => r.container.querySelector(`[data-timeline-row="${id}"]`)!.getAttribute('aria-selected') === 'true', 'the row selected')
+    expect(panelTaskId()).toBeNull()
+    await act(async () => { bar().dispatchEvent(new MouseEvent('dblclick', { bubbles: true })) })
+    // The panel beside the list or the task's page, by the window's width.
+    await waitFor(() => panelTaskId() === id || location.pathname === `/task/${id}`, 'the task opened')
+    history.replaceState(null, '', '/')
+    await r.unmount()
+  })
+
+  it('a finger 12 px inside the right end drags the deadline, offline as one queued op', async () => {
+    device(360, true)
+    const { r, id, drag, bar, task } = await open(five)
+    // The bar is drawn as for a mouse: 160 px, with its 6 px handles.
+    expect(bar().style.width).toBe('160px')
+    expect(bar().querySelector('[data-bar-edge="end"]')!.className).toContain('w-1.5')
+    const queued = await db.outbox.count()
+    await drag('touch', 148, '2026-11-09')
+    await waitFor(async () => (await task()).deadline === '2026-11-09', 'the deadline written')
+    expect(await task()).toMatchObject({ ...five, deadline: '2026-11-09' })
+    // No server answers in this test: the write is local and its one op waits in the outbox.
+    const ops = (await db.outbox.toArray()).slice(queued)
+    expect(ops.map((op) => [op.entityId, op.field, op.value])).toEqual([[id, 'deadline', '2026-11-09']])
+    await r.unmount()
+  })
+
+  it('a finger 12 px inside the left end drags the start, and on the handle itself too', async () => {
+    device(360, true)
+    const { r, drag, bar, col, task } = await open(five)
+    await drag('touch', 12, '2026-11-02')
+    await waitFor(async () => (await task()).start === '2026-11-02', 'the start written')
+    expect(await task()).toMatchObject({ ...five, start: '2026-11-02' })
+    // A touch press on the 6 px handle reaches the bar: the same zone, one drag.
+    document.elementFromPoint = () => col('2026-11-01')
+    await act(async () => { press(bar().querySelector('[data-bar-edge="start"]')!, 'touch', 2) })
+    // The touch hold is a timer of the drag itself.
+    await flush(TOUCH_HOLD_MS + 50)
+    await act(async () => {
+      moveTo('touch', 42)
+      release('touch', 42)
+    })
+    await waitFor(async () => (await task()).start === '2026-11-01', 'the start written again')
+    expect(await task()).toMatchObject({ due: five.due, deadline: five.deadline })
+    await r.unmount()
+  })
+
+  it('a finger in the middle moves every date; a mouse 12 px inside the end moves the bar too', async () => {
+    device(360, true)
+    const { r, drag, task } = await open(five)
+    // x = 80 is the axis's third day (6 October): a drop on the 7th is one day later.
+    await drag('touch', 80, '2026-10-07')
+    await waitFor(async () => (await task()).start === '2026-11-04', 'the dates moved')
+    expect(await task()).toMatchObject({ start: '2026-11-04', due: { date: '2026-11-06', time: '09:00' }, deadline: '2026-11-08' })
+    // x = 148 is the 8th of October: a mouse there holds the bar, not its end.
+    await drag('mouse', 148, '2026-10-10')
+    await waitFor(async () => (await task()).start === '2026-11-06', 'the dates moved again')
+    expect(await task()).toMatchObject({ start: '2026-11-06', due: { date: '2026-11-08', time: '09:00' }, deadline: '2026-11-10' })
+    await r.unmount()
+  })
+
+  it('the middle of a one-day bar moves it and its last 10 px set the deadline', async () => {
+    device(360, true)
+    const { r, drag, bar, task } = await open({ title: 'Call', due: { date: '2026-11-10' } })
+    expect(bar().style.width).toBe('32px')
+    await drag('touch', 16, '2026-10-05')
+    await waitFor(async () => (await task()).due?.date === '2026-11-11', 'the due day moved')
+    expect((await task()).deadline ?? null).toBeNull()
+    expect((await task()).start ?? null).toBeNull()
+    await drag('touch', 28, '2026-11-13')
+    await waitFor(async () => (await task()).deadline === '2026-11-13', 'the deadline created')
+    expect((await task()).due).toEqual({ date: '2026-11-11' })
+    await r.unmount()
+  })
+
+  it('a movement before the hold is a scroll, and a hold released without a movement does not open the task', async () => {
+    device(360, true)
+    const { r, drag, bar, task } = await open(five)
+    await drag('touch', 148, '2026-11-09', false)
+    // The hold alone: the click that follows the release is swallowed.
+    await act(async () => { press(bar(), 'touch', 80) })
+    // The touch hold is a timer of the drag itself.
+    await flush(TOUCH_HOLD_MS + 50)
+    await act(async () => {
+      release('touch', 80)
+      bar().click()
+    })
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- neither gesture writes or opens anything, so there is no signal to wait for
+    await flush(50)
+    expect(await task()).toMatchObject(five)
+    expect(location.pathname).not.toContain('/task/')
+    await r.unmount()
+  })
+
+  it('a viewer cannot drag by touch', async () => {
+    device(360, true)
+    const { r, drag, bar, task } = await open(five, 'viewer')
+    expect(bar().querySelector('[data-bar-edge]')).toBeNull()
+    await drag('touch', 148, '2026-11-09')
+    await drag('touch', 80, '2026-10-07')
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- a viewer's drag writes nothing, so there is no signal to wait for
+    await flush(50)
+    expect(await task()).toMatchObject(five)
+    await r.unmount()
+  })
+
+  it('below 768 px a group bar is no wider than the axis, so the grid ends where the axis does', async () => {
+    device(360, true)
+    const { r } = await open({ title: 'Call', due: { date: '2026-11-10' } })
+    await createTask({ title: 'No dates', project_id: (await db.projects.toArray())[0].id })
+    await waitFor(() => r.container.querySelector('[data-timeline-group="unscheduled"]') !== null, 'the Unscheduled group')
+    const rest = r.container.querySelector<HTMLElement>('[data-timeline-group="unscheduled"] [data-group-rest]')!
+    expect(rest.style.width).toBe('')
+    expect(rest.className).toBe('min-w-0 flex-1')
+    await r.unmount()
+  })
+})
+
+describe('the grid scrolls under a dragged bar (phone-timeline D3)', () => {
+  it('steps at a quarter of the lists\' pace, faster nearer the edge, and not at all between the edges', () => {
+    expect(edgeStepX(357, 0, 358)).toBe(4)
+    expect(edgeStepX(1, 0, 358)).toBe(-4)
+    expect(edgeStepX(180, 0, 358)).toBe(0)
+    expect(edgeStepX(48, 0, 358)).toBe(0)
+    expect(edgeStepX(315, 0, 358)).toBe(1)
+    expect(edgeStepX(340, 0, 358)).toBeGreaterThan(edgeStepX(315, 0, 358))
+    // From 768 px the left edge is after the names column.
+    expect(edgeStepX(260, 256, 1000)).toBe(-4)
+  })
+
+  it('scrolls toward the edge the pointer rests at, marks the day under it, stops away from the edges and drops on the day under the pointer', async () => {
+    const project = await createProject({ name: 'Trip' })
+    await saveViewMode(project, 'timeline')
+    const id = await createTask({ title: 'Pack', project_id: project, start: '2026-11-03', due: { date: '2026-11-05' } })
+    const r = await render(<TaskListView route={{ view: 'project', id: project }} />)
+    await waitFor(() => r.container.querySelector(`[data-bar="${id}"]`) !== null)
+    const grid = r.container.querySelector<HTMLElement>('[data-timeline] [role="grid"]')!
+    let left = 800
+    Object.defineProperty(grid, 'scrollLeft', { get: () => left, set: (v: number) => { left = Math.max(0, Math.min(3258, v)) }, configurable: true })
+    grid.getBoundingClientRect = () => ({ top: 0, bottom: 600, left: 0, right: 358, width: 358, height: 600, x: 0, y: 0, toJSON() {} })
+    const col = (d: string) => r.container.querySelector(`[data-drop-target="tl:${d}"]`)!
+    const bar = r.container.querySelector(`[data-bar="${id}"]`)!
+    const moveTo = (x: number, y = 5) => act(async () => { window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, pointerType: 'mouse', clientX: x, clientY: y })) })
+    document.elementFromPoint = () => col('2026-10-07')
+    // Held at x = 80, the axis's third day (6 October).
+    await act(async () => { bar.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, pointerType: 'mouse', button: 0, clientX: 80, clientY: 5 })) })
+    // Across the middle: nothing scrolls.
+    await moveTo(180)
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- nothing scrolls here, so there is no signal to wait for
+    await flush(60)
+    expect(left).toBe(800)
+    // At the right edge the grid scrolls on under a still pointer.
+    await moveTo(355)
+    await waitFor(() => left > 820, 'the grid scrolled to later days')
+    // The day now under the pointer is the marked one.
+    document.elementFromPoint = () => col('2026-10-09')
+    await waitFor(() => col('2026-10-09').hasAttribute('data-drop-active'), 'the day under the pointer marked')
+    expect(col('2026-10-07').hasAttribute('data-drop-active')).toBe(false)
+    // Outside the grid's height the pointer is not at its edge.
+    await moveTo(355, 700)
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- one frame for a step already asked for
+    await flush(40)
+    const resting = left
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- nothing scrolls here, so there is no signal to wait for
+    await flush(80)
+    expect(left).toBe(resting)
+    // The left edge scrolls back, to the start of the axis and no further.
+    left = 30
+    await moveTo(3)
+    await waitFor(() => left === 0, 'the grid scrolled to the first day')
+    // Released: the drop is the day under the pointer, three days after the grab, and the scroll is over.
+    await act(async () => { window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, pointerType: 'mouse', clientX: 3, clientY: 5 })) })
+    await waitFor(async () => (await db.tasks.get(id))!.start === '2026-11-06', 'the drop written')
+    expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-11-08' })
+    expect(r.container.querySelector('[data-drop-active]')).toBeNull()
+    left = 500
+    // eslint-disable-next-line test-hygiene/no-fixed-wait -- the drag is over, so nothing scrolls and there is no signal to wait for
+    await flush(60)
+    expect(left).toBe(500)
     await r.unmount()
   })
 })

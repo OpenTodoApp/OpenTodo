@@ -17,6 +17,8 @@ Choose **Timeline** at the top of the project (or press <kbd>v</kbd> until it sh
 - **Drag the left or right end** to set the start or the deadline. If the task has none yet, one is created.
 - **Drag an unscheduled task** from its name onto a day to give it that due date.
 - **Keyboard:** select a task with <kbd>j</kbd> and <kbd>k</kbd>, then <kbd>←</kbd> and <kbd>→</kbd> move its dates a day. <kbd>Shift</kbd>+<kbd>←</kbd> and <kbd>Shift</kbd>+<kbd>→</kbd> move its deadline, starting from the due date when it has none. <kbd>Enter</kbd> opens it.
+- **On a touch screen:** tap a task's name or its bar to open it. To drag, press and hold the bar until it lifts, then move: the middle moves the task, and a finger's width at either end sets the start or the deadline. A swipe without holding scrolls the days.
+- **Hold a dragged bar at the left or right edge** of the timeline and the days scroll under it, so it can reach a date that is not in view.
 - **Days** and **Weeks** change the scale. <kbd>[</kbd> and <kbd>]</kbd> move the visible range, and <kbd>t</kbd> comes back to today.
 
 When one task [waits for another](tasks-and-projects.md#wait-for-another-task) in the same project, an arrow joins them and the waiting task is dimmed until the other is done. Moving a task never moves the tasks that wait for it. Viewers of a shared project see the timeline but can't change dates.
