@@ -28,7 +28,7 @@ Every list shows the same tasks, groups and order as before, and does the same t
 - **The menu.** The bar's menu holds display options, filters, **Select tasks** and the list's own items, such as Today's limit and a project's layout.
 - **Selecting.** **Select tasks** turns the circles into tick boxes. The bar at the bottom acts on the ticked tasks; **Close** ends the selection.
 - **Adding.** The add button adds to the list on screen; a list has no add field of its own. A task's menu has **Add task below** and **Add subtask**.
-- **Each list's own parts** stay: Today's briefing and **Close the day**, the Inbox's **Process**, Upcoming's events, Completed's search.
+- **Each list's own parts** stay, such as Today's briefing and the Inbox's **Process**.
 
 ## The task page
 
@@ -42,6 +42,10 @@ Every list shows the same tasks, groups and order as before, and does the same t
 
 The **Do** row opens a sheet made for a phone: **Today**, **Tomorrow**, **This weekend** and **Next week** with the date each one means, then a month with days large enough for a thumb, then the time of day. A tap on a choice or a day sets the date and closes the sheet; a task keeps its time. **Clear** removes the date. The same sheet opens when you swipe a task to the left in a list, where it also offers **Someday**.
 
+## The calendar
+
+In **Week**, **Month** and **Plan** a task is the row of the lists: tap to open, the circle completes, swipe left to move it to another day. In **Day**, hold a block near an edge to change its length.
+
 ## Tell us
 
-What is particular to a screen, such as the calendar's grid or a board, is being redrawn one screen at a time. If something was easier on the earlier screens, tell us with **Feedback and problems** in the menu: the switch is the way back for now, not for good.
+If something was easier before, tell us with **Feedback and problems** in the menu.
