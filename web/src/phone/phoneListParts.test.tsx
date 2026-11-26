@@ -11,19 +11,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setDoneTodayShown } from '../lib/closedListPrefs'
 import { db, setMeta } from '../lib/db'
 import { addDaysISO, logicalToday } from '../lib/dates'
+import { removeItem } from '../lib/deviceStorage'
 import { projectFilterKey, saveQueryFilter } from '../lib/deviceFilters'
 import { createLabel } from '../lib/labels'
-import { createProject, createTask, resetDeviceId, setTaskCompleted, updateProject, updateTask } from '../lib/ops'
+import { createProject, createTask, setTaskCompleted, updateProject, updateTask } from '../lib/ops'
 import { createSection } from '../lib/sections'
 import type { CalendarEvent, CalendarSubscription, User } from '../lib/types'
 import { setBriefingShown, setTodayEventsShown } from '../lib/userPrefs'
 import { click, minWidthPx, render, type, waitFor } from '../ui/test-utils'
 import { setUpcomingProjections } from '../app/calendar/projections'
-import { resetTodayAgendaFetch } from '../app/calendar/TodayAgenda'
-import { resetPanel } from '../app/panel'
 import { navigate, type Route } from '../app/router'
 import { Shell } from '../app/Shell'
-import { resetTaskTrail } from '../app/taskTrail'
 import { setPhoneUiEnabled } from './prefs'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
@@ -33,10 +31,8 @@ const today = logicalToday()
 beforeEach(async () => {
   await db.delete()
   await db.open()
-  resetDeviceId()
-  resetPanel()
-  resetTaskTrail()
-  resetTodayAgendaFetch()
+  // Folds are kept per device: Done today's in this key (the collapsed groups' store resets itself).
+  removeItem('opentodo.collapsed')
   window.matchMedia = ((q: string) => ({
     matches: q.includes('min-width') ? minWidthPx(q) <= 390 : false, media: q, onchange: null,
     addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
@@ -111,9 +107,6 @@ describe('Today in the phone list', () => {
     expect(doneGroup().querySelector('[data-group-count] [aria-hidden]')!.textContent).toBe('1')
     await click(doneGroup().querySelector('[data-group-toggle]')!)
     await waitFor(() => !!doneGroup().querySelector(`[data-phone-row="${done}"]`), 'the completed task under Done today')
-    // The fold is kept per device: close it again for the next test.
-    await click(doneGroup().querySelector('[data-group-toggle]')!)
-    await waitFor(() => !doneGroup().querySelector('[data-phone-row]'), 'Done today folded')
     await r.unmount()
   })
 
@@ -170,9 +163,6 @@ describe('the Inbox, Upcoming and Completed in the phone list', () => {
     expect(later().querySelector('[data-day-summary]')!.textContent).toBe('Renew the passport')
     await click(later().querySelector('[data-group-toggle]')!)
     await waitFor(() => !!later().querySelector(`[data-phone-row="${far}"]`), 'the later day opened')
-    // Opened days are kept per device: close it again for the next test.
-    await click(later().querySelector('[data-group-toggle]')!)
-    await waitFor(() => !later().querySelector('[data-phone-row]') && !!later().querySelector('[data-day-summary]'), 'the later day summarised again')
     await r.unmount()
   })
 
@@ -329,6 +319,7 @@ describe('states of the phone list', () => {
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     const frame = () => document.querySelector<HTMLElement>('[data-app-frame]')
     await waitFor(() => !!frame()?.textContent?.includes('This label no longer exists.'), 'the missing label')
+    expect(list()?.dataset.phoneMissing).toBe('label')
     expect([...frame()!.querySelectorAll('button')].some((b) => b.textContent === 'All labels')).toBe(true)
     navigate({ view: 'project', id: 'gone' })
     await waitFor(() => !!frame()?.textContent?.includes('This project no longer exists.'), 'the missing project')

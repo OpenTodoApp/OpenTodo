@@ -1,1 +1,0 @@
-- **Phone screens: a project, label or location that no longer exists.** Its page said so under the earlier bar with an empty title. It is now a phone screen like the others, with the menu button in its bar.
