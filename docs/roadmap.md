@@ -123,7 +123,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `away-periods` | Away: mark a period, also after the fact, that skips the repeating occurrences in it in one Undo, keeps streaks and pauses reminders | Shipped in 1.6 |
 | `workspace-activity` | A workspace Activity page for retrospectives: every project, a date range, several kinds at once, tracked time, filters remembered on the device | Shipped in 1.6 |
 | `workspace-feature-switches` | Feature switches per workspace: the owner and admins turn Notes, Calendar, Habits, Time tracking, Focus, Routines, Reviews and Locations on or off for everyone in it; off hides, never deletes | Shipped in 1.8 |
-| `workspace-fields` | Fields a workspace's owner defines once for every project of the workspace | Shipped in 1.9 |
+| `workspace-fields` | Fields a workspace's owner defines once for every project of the workspace | Shipped in 1.10 |
 | `caldav-push` | Push to calendar apps: a change on any device wakes a subscribed CalDAV client (WebDAV-Push), off until the owner turns it on | Shipped in 1.6 |
 | `drag-ticked-together` | Drag several ticked tasks within a list to reorder or nest them in one move, with one Undo | Shipped in 1.6 |
 | `quarter-view-and-plan-spans` | A Quarter view in the Calendar (three months at a glance, `g q`), and 3-day and custom Plan spans | Shipped in 1.6 |
@@ -206,7 +206,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `notes-bulk-actions` | Select several notes to move, label, pin, trash or turn into tasks at once | Shipped in 1.5 |
 | `note-markdown-source` | Edit a note's Markdown source as plain text | Shipped in 1.5 |
 | `note-outline` | An outline of a long note's headings | Shipped in 1.5 |
-| `note-templates` | Start a note from a template, with built-in ones and a routine step | Shipped in 1.5 |
+| `note-templates` | Start a note from a template, with built-in ones and a routine step | Shipped in 1.10 |
 | `daily-notes` | One note per day, opened from Today, that routines can add to | Shipped in 1.5 |
 | `note-public-links` | A read-only public link for one note | Shipped in 1.5 |
 | `note-webhooks` | Opt-in note events for webhooks | Shipped in 1.5 |

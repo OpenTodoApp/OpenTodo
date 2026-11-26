@@ -6,6 +6,31 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 Changes since the last release are in [changelog.d/](changelog.d/README.md), one file per change; `make release-prepare` moves them here when a release is cut.
 
+## [1.10.0] - 2026-11-26
+
+The rest of the app follows the task lists onto the phone. The calendar's lists, Process the Inbox, a board, a project's timeline, Updates, Habits, Notes, Routines and Statistics now work with one thumb: a tap opens, a circle completes, a swipe decides, a held card or bar scrolls the board or the grid under it. Explanations that only a mouse could reach, in tooltips, can be read by a tap. Nothing changes on a computer except three buttons on the timeline (Earlier, Today, Later) and a board that scrolls under a dragged card.
+
+### Upgrade notes
+
+- **Replace the image or the binary and restart; back up first.** No migration, no new or changed variable: 1.9.0 reads the data as it is.
+- **No new app is needed.** The Android and iPhone apps show what the server serves, so the phone screens of this release appear once the server is updated.
+
+### Changed
+
+- **A board on a phone: a held card reaches every column.** Keep a card at the left or right edge of the board and the board moves to the next column under it, one column at a time, so the card can be dropped in a column that was out of sight; a long column scrolls under the card too. A board on a phone now also opens on its first column ([Sections and boards](docs/sections-and-boards.md#move-cards-between-columns)).
+- **The calendar on a phone: tasks you can tap, tick and swipe.** In Week, in the day under Month and in Plan, a task is now the same row as in the task lists: a tap opens it, its circle completes it with Undo, a swipe right completes and a swipe left moves it to another day. In Day and Week's grid, a finger now resizes a block from a zone it can hit (24 px at the top and bottom, a third of a short block) ([New phone screens](docs/phone-screens.md#the-calendar)).
+- **Notes on a phone: start a note from a template.** The Notes page's menu (**…**) now begins with **From template…**, which a phone could not reach before ([Note templates](docs/note-templates.md)).
+- **Routines on a phone: the row has room for its text.** On a narrow screen a routine's row shows the switch, the name and what it does; **Run now** is in the row's menu.
+- **Statistics on a phone: a chart that continues says so.** The year of done tasks, the weekday and hour grid and a wide table fade out at the edge where more is hidden.
+- **A project's timeline by touch.** A tap on a task's bar now opens the task, as a tap on its name does. A finger can drag a bar's start or deadline from a zone it can hit (24 px at each end, a third of a short bar), and while any dragged bar is held at the left or right edge the days scroll under it, with a mouse too. On a phone the timeline no longer scrolls past its last day into an empty strip ([A project on a timeline](docs/project-timeline.md)).
+- **Process the Inbox on a phone: the decisions under your thumb.** Today, Schedule, Move, Complete and More now sit in a bar at the bottom of the screen, always in the same place, with Back and Skip under them; More holds Delegate, Labels, Someday, Open and Trash. Swipe the card right to complete a task and left to schedule it, as in a task list. Move, Delegate and Labels open as sheets from the bottom, and Move lists your projects at once. The add button is not shown on this screen ([Process the Inbox](docs/process-the-inbox.md#on-a-phone)).
+
+### Fixed
+
+- **Explanations a phone could not show.** A tap on a button never opens its tooltip, so a few facts were out of reach on a phone. They now also appear where a tap gets to: what a duplicate label means (under Merge into in its menu), why a calendar event can be deleted but not changed, that a repeating task shows only its next 31 occurrences (in the occurrence's long-press menu), what Skip and This occurrence only do, the page title of an origin that is not a link, and who chose a reaction (in the comment's More actions).
+- **Explanations you can read on a phone.** A word, a time or a badge that explains itself in a tooltip now shows it on a tap on a phone or tablet: "Not yet synced" behind "(pending)", a session's device and address, the full time of a sign-in, what a role means, why a passkey is marked suspicious, a day's capacity in the calendar, the exact time behind "3 h ago". A tap elsewhere closes it. Until now a tooltip opened under a mouse only, so these could not be read by touch.
+- **By touch: Updates, Habits, Timeline and Labels.** A tap on a row of Updates now opens the task or project it is about (it only selected the row, and opening needed a double click). In Habits, the menu with the other ways to check in and the pencil of a check-in's note are visible on a phone or tablet (they appeared only under a mouse). A project's Timeline has **Earlier**, **Today** and **Later** buttons (the range moved with keys only). The handle that reorders a label is large enough for a finger.
+
 ## [1.9.0] - 2026-11-26
 
 A phone now shows OpenTodo in a design made for a phone: in the Android and iPhone apps and in a phone's browser, every screen has its own bar and large title, tasks are cards with one line of facts, and a task opens as a page with its facts as rows. **New phone screens** under **Settings → Appearance** turns it off on a device for as long as the earlier screens are kept. Also new: Arabic, right to left, and Japanese; widgets, alarms for urgent reminders and quick add from the notification shade on Android; Siri and Shortcuts on iPhone; editing your calendar's events in Day and Week; fields and feature switches for a whole workspace; and Focus on every device. 1.8.0 was prepared but never published, so everything listed under it below arrives with this release too.
@@ -2077,7 +2102,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.9.0...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.10.0...HEAD
+[1.10.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.6.0...v1.7.0
