@@ -20,9 +20,9 @@
 - [x] 4.1 `npx tsc --noEmit -p .`, `npm run lint`, `npx vitest run src/app/triageView.test.tsx` three times, `npm test`, `npm run build` in `web/`. Verify: all pass.
 - [x] 4.2 `npm run docs:build` and `npm run docs:check`, `node scripts/ui-check.mjs`, `node --test scripts/repo-checks.test.mjs`, `node scripts/i18n/extract.mjs --write` and `node scripts/i18n-check.mjs` (no new string), `node scripts/bundle-budget.mjs`, `openspec validate --all --strict`. Verify: all pass.
 - [x] 4.3 Layout check for this screen: `ONLY=triage ENGINES=chromium node scripts/e2e-layout.mjs` at 360, 390 and 768 px, light and dark. Verify: `LAYOUT OK`.
-- [ ] 4.4 The layout check in WebKit, the whole layout check, the accessibility tour (`A11Y_ONLY=1 node scripts/ux-audit/tour.mjs`) and `scripts/e2e-smoke.mjs` / `scripts/e2e-phone.mjs`. Not run here: CI runs them.
+- [x] 4.4 The layout check in WebKit, the whole layout check, the accessibility tour (`A11Y_ONLY=1 node scripts/ux-audit/tour.mjs`) and `scripts/e2e-smoke.mjs` / `scripts/e2e-phone.mjs`. Not run here: CI runs them. Done: the full CI run with every leg on main after the phone changes (run 45845169175, 2026-11-26: the layout check in Chromium at three widths, in WebKit at 360, 390 and 768 px, in German and French, the safe-area leg, the end-to-end scripts with `e2e-phone`, both accessibility legs; 41 jobs pass), and again on the commit released as 1.10.1 (run 45889260718).
 - [ ] 4.5 Right to left: the bar and the swipes in Arabic. `useRowSwipe` and the chevrons mirror by the app's rules; not looked at.
-- [ ] 4.6 The story `Screens/Process the Inbox` at 375 px now shows the phone bar: its baselines come from `ui-baselines.yml` and have to be looked at.
+- [x] 4.6 The story `Screens/Process the Inbox` at 375 px now shows the phone bar: its baselines come from `ui-baselines.yml` and have to be looked at. Done: baselines from `ui-baselines.yml` (run 45830257524), looked at before they were committed (#2116).
 
 ## 5. Docs and release notes
 
