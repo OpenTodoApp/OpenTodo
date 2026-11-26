@@ -6,6 +6,7 @@
 // name, so the stepper fits a 375 px screen without scrolling (and, tighter, a 320 px one:
 // accessibility-aa). Close the day
 // (close-the-day D2) passes its own steps and its one phase.
+import { useLayoutEffect, useRef, useState } from 'react'
 import { t } from '../../lib/i18n'
 import { PHASE_OF as WEEKLY_PHASE_OF, PHASE_TITLES as WEEKLY_PHASE_TITLES, STEP_IDS as WEEKLY_IDS, STEP_TITLES as WEEKLY_STEP_TITLES, type PhaseId, type StepId } from '../../lib/review'
 import { Icon } from '../../ui'
@@ -35,11 +36,12 @@ export function ReviewProgress<S extends string = StepId, P extends string = Pha
   const at = STEP_IDS.indexOf(step)
   const columns = PHASES.map((p) => `minmax(min-content, ${STEP_IDS.filter((s) => PHASE_OF[s] === p).length}fr)`).join(' ')
   const status = (s: S) => (steps.done[s] ? t('done') : t('{n} left', { n: steps.left[s] }))
+  const { list, tight } = usePhasesFit(PHASES.map((p) => PHASE_TITLES[p]).join('|'))
   return (
     <nav aria-label={props.label ?? t('Review progress')} className="mb-5" data-review-progress>
       <p className="sr-only">{t('Step {n} of {total} · {phase}', { n: at + 1, total: STEP_IDS.length, phase: PHASE_TITLES[PHASE_OF[step]] })}</p>
       {/* Below 360 px (a 320 px screen, 400% zoom, large text) the phases wrap onto more lines instead of scrolling sideways (WCAG 1.4.10). */}
-      <ol className="grid max-[359px]:flex max-[359px]:flex-wrap max-[359px]:gap-y-2" style={{ gridTemplateColumns: columns }}>
+      <ol ref={list} data-tight={tight || undefined} className="grid max-[359px]:flex max-[359px]:flex-wrap max-[359px]:gap-y-2 data-[tight]:flex data-[tight]:flex-wrap data-[tight]:gap-y-2" style={{ gridTemplateColumns: columns }}>
         {PHASES.map((phase) => (
           // In the narrow flex layout a phase grows with its number of steps, as its grid column does.
           <li key={phase} className="min-w-0" style={{ flexGrow: STEP_IDS.filter((s) => PHASE_OF[s] === phase).length }} data-phase={phase}>
@@ -83,4 +85,36 @@ export function ReviewProgress<S extends string = StepId, P extends string = Pha
       </ol>
     </nav>
   )
+}
+
+/**
+ * Whether the phases need more than one line: their names never break, so in a language
+ * with longer names (German at 360 px) the row was wider than the screen and the page
+ * scrolled sideways (WCAG 1.4.10). Measured, not guessed from the width: where the names
+ * fit, the row stays the grid it was.
+ */
+function usePhasesFit(names: string) {
+  const list = useRef<HTMLOListElement>(null)
+  const [tight, setTight] = useState(false)
+  useLayoutEffect(() => {
+    const el = list.current
+    if (!el) return
+    let width = -1
+    const measure = () => {
+      const now = el.parentElement?.clientWidth ?? 0
+      if (now === width) return
+      width = now
+      // Measured as the grid: back to it first, then see whether it runs over.
+      el.removeAttribute('data-tight')
+      const over = el.scrollWidth > el.clientWidth + 1
+      if (over) el.setAttribute('data-tight', '')
+      setTight(over)
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    if (el.parentElement) ro.observe(el.parentElement)
+    return () => ro.disconnect()
+  }, [names])
+  return { list, tight }
 }

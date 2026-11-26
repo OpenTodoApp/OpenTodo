@@ -1,0 +1,1 @@
+- **The weekly review on a small phone in German and other languages with long words.** The names of the review's three phases never broke, so at 360 px in German the page was wider than the screen and scrolled sideways. Where the names do not fit they now take more than one row (WCAG 1.4.10).
