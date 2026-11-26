@@ -8,7 +8,7 @@
 
 - [x] 2.1 `npm test` in `web/` (952 files, 11,009 tests pass) and the build, first load 668.4 of 712 KB, `ui-check`, docs build and check, repo checks, `openspec validate`; the layout check in Chromium over the whole inventory: `LAYOUT OK` (2026-11-26).
 - [ ] 2.2 In a real browser at 390 px with touch: a tap on a word with a tooltip shows the tip and a tap elsewhere closes it. Verify: a screenshot looked at. Tried on 2026-11-26 on a seeded server: the screens opened there (Updates, Week, Settings → Security and Account) showed no text with a tooltip, so this is still open; the unit tests drive the tap.
-- [ ] 2.3 Rows that open on a tap skip taps on `[data-tip]` (Updates, after `touch-open-and-controls` has merged). Verify: a test in `feedView.test.tsx`.
+- [x] 2.3 Rows that open on a tap skip taps on `[data-tip]`: Updates (`FeedView.tsx`). Verify: `feedView.test.tsx` "a tap on a word that explains itself in a tooltip opens nothing".
 
 ## 3. Release note
 
