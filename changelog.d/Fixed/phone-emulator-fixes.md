@@ -1,3 +1,6 @@
 - **Swiping a row works in the Android app on older system web views.** On Android System WebView 113 a swipe on a task was taken by the page's own scrolling, so nothing happened.
 - **Earlier and Later move the timeline.** The view went back to today after each press, so on a phone the buttons seemed to do nothing.
 - **A task's title lines up with its circle on a phone**, and a hold on a section's name no longer starts a text selection.
+- **The timeline's day labels are all readable.** The "Today" mark covered the numbers of today and of the day after: today's own number is now drawn on the accent colour instead. The first day of a month reads as the month, such as **Dec**, where "Dec 1" was split with the "1" over the first row.
+- **One flick turns a phone's board by one column.** A quick flick passed a column and landed on the one after it.
+- **The comment field keeps its send button above the keyboard.** On a phone's task page the keyboard cut the row under the field.

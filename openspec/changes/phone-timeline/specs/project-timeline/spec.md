@@ -45,6 +45,33 @@ The layout is drawn from local data and writes nothing, so it is the same offlin
 - **WHEN** the timeline is opened at 1280 px with a mouse
 - **THEN** rows are 36 px with the names in a column beside the grid, a click on a name selects its row, and the hint also names the arrow keys
 
+### Requirement: Timeline layout of a project
+Every project SHALL offer a timeline layout beside list and board: one row per open task in list order, grouped under its sections with subtasks indented, a horizontal axis of days or weeks with a today line, sticky row labels, horizontal scrolling and `[`, `]` and `t` to move the visible range. With a mouse from 768 px, rows SHALL have the list's comfortable height with titles at body size; narrower screens and touch screens follow "Timeline on narrow screens". Section and "Unscheduled" headings SHALL be drawn as the list's group bars (sentence case, the name and the number of rows). The today line SHALL use the accent colour, and the axis SHALL mark today above it by drawing the label of the column today is in on the accent, so the mark covers no other label. A day column SHALL be labelled with its day number, the first day of a month with the month's short name instead, and a week column with its date range; a label SHALL stay on one line inside its column. It SHALL render from local data, work offline, and update live as local or synced changes arrive.
+
+#### Scenario: Open the timeline offline
+- **WHEN** the device is offline and the user switches a project to its timeline
+- **THEN** every open task of the project is listed in list order with its bar, and completing one on this device removes its row at once
+
+#### Scenario: Remote change updates a bar
+- **WHEN** another device moves a task's deadline and this device syncs
+- **THEN** the bar's end moves without a reload
+
+#### Scenario: Zoom
+- **WHEN** the user switches the axis from days to weeks
+- **THEN** each column is a week starting on the user's first day of the week, labelled with its range such as "20–26 Oct", and bars keep their dates
+
+#### Scenario: Today mark
+- **WHEN** the timeline shows days around the 26th, which is today
+- **THEN** an accent line runs down today's column, the axis shows "26" on the accent above it, and "25" and "27" beside it are not covered
+
+#### Scenario: First day of a month
+- **WHEN** the day axis shows the 30th of November and the days after it
+- **THEN** the column after "30" reads "Dec" on one line, the next reads "2", and nothing of a label is drawn over the first row
+
+#### Scenario: Sections as group bars
+- **WHEN** a project's timeline has a "Kitchen" section with 4 dated tasks
+- **THEN** the rows sit under a group bar reading "Kitchen" and "4", in sentence case
+
 ## ADDED Requirements
 
 ### Requirement: A bar's ends by touch

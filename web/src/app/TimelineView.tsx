@@ -315,9 +315,6 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
     </div>
   )
 
-  const monthLabel = (iso: string) => monthName(iso, 'short')
-  // A week column reads as its range, "20–26 Oct" (D9), in the user's locale.
-  const weekLabel = (iso: string) => formatDateRange(iso, addDaysISO(iso, 6), { month: 'short', day: 'numeric' })
   const headerRows = 1
   return (
     <div data-timeline dir="ltr" className="min-w-0">
@@ -350,15 +347,7 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
           <div role="row" className="sticky top-0 z-20 flex border-b border-default bg-surface" style={{ height: ROW_PX }}>
             <div role="columnheader" className={stacked ? 'sr-only' : 'sticky inset-s-0 z-10 w-[40vw] max-w-64 shrink-0 border-e border-default bg-surface px-2 text-hint leading-8 text-muted sm:w-64'}>{t('Task')}</div>
             <div ref={axisRef} className="relative shrink-0" style={{ width }}>
-              {ax.columns.map((c) => (
-                <span key={c} role="columnheader" className="absolute top-0 h-full border-s border-default px-0.5 text-hint leading-8 text-muted" style={{ left: x(c), width: (zoom === 'week' ? 7 : 1) * px }}>
-                  {zoom === 'week' ? weekLabel(c) : c.endsWith('-01') ? `${monthLabel(c)} ${Number(c.slice(8))}` : Number(c.slice(8))}
-                </span>
-              ))}
-              {dayOffset(ax.from, today) >= 0 && dayOffset(ax.from, today) < totalDays && (
-                // The today mark (D9): an accent pill on the axis above the line.
-                <span data-today-mark className="pointer-events-none absolute top-1.5 z-10 -translate-x-1/2 rounded-chip bg-accent px-1.5 text-hint font-medium leading-5 text-on-accent" style={{ left: (dayOffset(ax.from, today) + 0.5) * px }}>{t('Today')}</span>
-              )}
+              <AxisColumns columns={ax.columns} zoom={zoom} px={px} from={ax.from} today={today} />
             </div>
           </div>
           {/* Day columns: the drop targets, under the rows. */}
@@ -385,6 +374,25 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
       </div>
     </div>
   )
+}
+
+/**
+ * The axis' columns (D9): a day's number, the month's name on its first day, a week's range
+ * such as "20–26 Oct" in the user's locale. The column today is in carries the today mark:
+ * its own label on the accent. Each label is one line cut to its column: a "Today" mark over
+ * the labels covered two of them, and "Dec 1" wrapped in a 32 px column, its "1" over the first row.
+ */
+function AxisColumns({ columns, zoom, px, from, today }: { columns: string[]; zoom: Zoom; px: number; from: string; today: string }) {
+  const span = zoom === 'week' ? 7 : 1
+  return columns.map((c) => {
+    const label = zoom === 'week' ? formatDateRange(c, addDaysISO(c, 6), { month: 'short', day: 'numeric' }) : c.endsWith('-01') ? monthName(c, 'short') : Number(c.slice(8))
+    const now = dayOffset(c, today) >= 0 && dayOffset(c, today) < span
+    return (
+      <span key={c} role="columnheader" aria-current={now ? 'date' : undefined} className="absolute top-0 h-full overflow-hidden whitespace-nowrap border-s border-default px-0.5 text-hint leading-8 text-muted" style={{ left: dayOffset(from, c) * px, width: span * px }}>
+        {now ? <span data-today-mark className="inline-block rounded-chip bg-accent px-1 align-middle font-medium leading-5 text-on-accent">{label}</span> : label}
+      </span>
+    )
+  })
 }
 
 /** The dependency arrows (D4): from the end of the blocker's bar to the start of the dependent's, over the rows. */
