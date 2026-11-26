@@ -2,21 +2,24 @@
 // Process the Inbox (OpenSpec change inbox-triage, tasks 2.1-2.6, 5.1, 5.2): the
 // route and the Process control, the queue and its progress, each decision, the
 // pickers and their Escape, delegating in one batch, Someday, the empty state,
-// leaving with the task selected, and the Vim list state.
+// leaving with the task selected, and the Vim list state. On a phone (phone-triage):
+// the bar and its More menu, the swipes on the card, the pickers as bottom sheets.
 import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { formatTime, localDueOf, setDateTime } from '../lib/dates'
 import { isInboxTask } from '../lib/inbox'
+import { createLabel } from '../lib/labels'
 import { createProject, createTask, resetDeviceId, updateTask } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
-import { click, flush, key, render, type, waitFor } from '../ui/test-utils'
+import { click, flush, key, minWidthPx, render, type, waitFor } from '../ui/test-utils'
+import { bulkToast, hideBulkToast } from './bulk/toastStore'
 import { listState } from './listActions'
 import { panelTaskId, resetPanel, setPanelTaskId } from './panel'
 import { parseRoute } from './router'
 import { selectTask } from './signals'
-import { delegateEntries, TriageView } from './TriageView'
+import { delegateEntries, TriageCard, TriageView } from './TriageView'
 
 beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -344,6 +347,278 @@ describe('the scheduling sheet (inbox-means-unplaced)', () => {
     await waitFor(() => document.body.textContent!.includes('Inbox zero'))
     for (const id of ids) expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-15' })
     expect(await db.outbox.count()).toBeGreaterThan(before)
+    await r.unmount()
+  })
+})
+
+// On a phone (OpenSpec change phone-triage): the decisions are a bar pinned at the end of
+// the page with a More menu, the card takes a task row's two swipes, and Move, Delegate
+// and Labels are bottom sheets. Every control writes what the key of the same name writes.
+describe('on a phone (phone-triage)', () => {
+  const original = window.matchMedia
+  let coarse = true
+  beforeEach(() => {
+    coarse = true
+    // A phone: 390 px wide, a touch screen unless the test says a mouse.
+    window.matchMedia = ((q: string) => ({
+      matches: /pointer:\s*coarse/.test(q) ? coarse : q.includes('min-width') ? minWidthPx(q) <= 390 : false, media: q, onchange: null,
+      addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
+    })) as typeof window.matchMedia
+  })
+  afterEach(() => { window.matchMedia = original; vi.restoreAllMocks(); hideBulkToast() })
+
+  const bar = () => document.querySelector<HTMLElement>('[data-triage-bar]')!
+  const inBar = (k: string) => bar().querySelector<HTMLButtonElement>(`[data-decision="${k}"]`)
+  const more = () => document.querySelector<HTMLButtonElement>('[data-triage-more]')!
+  const item = (k: string) => document.querySelector<HTMLButtonElement>(`[role="menuitem"][data-decision="${k}"]`)
+  const card = () => document.querySelector<HTMLElement>('[data-triage-card]')!
+  // The header's lead line is in the phone's bar below 768 px; the card names its position.
+  const position = () => card().getAttribute('aria-label')
+  const sheet = (id: string) => document.querySelector<HTMLElement>(`[data-testid="${id}"]`)
+  const option = (name: string) => [...document.querySelectorAll<HTMLElement>('[role="dialog"] [role="option"]')].find((o) => o.textContent!.includes(name))
+  async function openMore() {
+    await click(more())
+    await waitFor(() => !!item('trash'), 'the More menu')
+  }
+  /** A swipe on the card: the press, the moves, the release, 120 ms apart (as rowSwipe.test.tsx drives it). */
+  async function swipe(xs: number[], pointerType = 'touch') {
+    let now = 0
+    const clock = vi.spyOn(performance, 'now').mockImplementation(() => now)
+    await act(async () => { card().dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 3, pointerType, clientX: 200, clientY: 50 })) })
+    for (const x of xs) {
+      now += 120
+      await act(async () => { window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 3, pointerType, clientX: 200 + x, clientY: 50 })) })
+    }
+    await act(async () => { window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 3, pointerType, clientX: 200 + xs[xs.length - 1], clientY: 50 })) })
+    clock.mockRestore()
+  }
+
+  it('The bar at 390 px: Today, Schedule, Move, Complete and More, then Back and Skip, pinned, with no key', async () => {
+    await inbox('One', 'Two')
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'One')
+    expect([...bar().querySelectorAll<HTMLElement>('button')].map((b) => b.dataset.decision ?? (b.hasAttribute('data-triage-more') ? 'more' : '?')))
+      .toEqual(['today', 'schedule', 'move', 'complete', 'more', 'back', 'skip'])
+    expect(more().textContent).toBe('More')
+    expect(bar().querySelector('.ui-kbd')).toBeNull()
+    expect(bar().className).toContain('sticky')
+    expect(inBar('back')!.disabled).toBe(true)
+    // The rest is in the menu, not on the page.
+    expect(document.querySelector('[data-decision="trash"], [data-decision="open"], [data-decision="labels"], [data-decision="delegate"], [data-decision="someday"]')).toBeNull()
+    await openMore()
+    expect([...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].map((m) => m.dataset.decision)).toEqual(['delegate', 'labels', 'someday', 'open', 'trash'])
+    expect(document.querySelector('[role="menu"] .ui-kbd, [role="dialog"] .ui-kbd')).toBeNull()
+    await r.unmount()
+  })
+
+  it('Today from the bar, Trash and Someday from More: each writes what its key writes, queues it and moves on (offline)', async () => {
+    const [a, b, c] = await inbox('Alpha', 'Beta', 'Gamma', 'Delta')
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Alpha')
+    const before = await db.outbox.count()
+    await click(inBar('today')!)
+    await waitFor(() => cardTitle() === 'Beta')
+    expect((await db.tasks.get(a))!.due).toEqual({ date: '2026-10-14' })
+    await openMore()
+    await click(item('trash')!)
+    await waitFor(() => cardTitle() === 'Gamma')
+    expect((await db.tasks.get(b))!.deleted_at).not.toBeNull()
+    expect(bulkToast()?.undoId).toBeTruthy()
+    await openMore()
+    await click(item('someday')!)
+    await waitFor(() => cardTitle() === 'Delta')
+    expect((await db.tasks.get(c))!.start).toBe('someday')
+    // The network answers nothing here: the three decisions are on the device and queued.
+    expect(await db.outbox.count()).toBeGreaterThanOrEqual(before + 3)
+    expect(position()).toBe('Task 4 of 4')
+    await r.unmount()
+  })
+
+  it('Complete from the bar, and Open from More', async () => {
+    const [a, b] = await inbox('Done already', 'Look closer')
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Done already')
+    await click(inBar('complete')!)
+    await waitFor(() => cardTitle() === 'Look closer')
+    expect((await db.tasks.get(a))!.completed_at).not.toBeNull()
+    await openMore()
+    await click(item('open')!)
+    // Below 768 px a task opens as its page.
+    expect(location.pathname).toBe(`/task/${b}`)
+    await r.unmount()
+  })
+
+  it('Nobody to delegate to: Delegate is disabled in More and says why', async () => {
+    await inbox('Fix the gate')
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Fix the gate')
+    await openMore()
+    expect(item('delegate')!.disabled).toBe(true)
+    expect(item('delegate')!.textContent).toContain('Delegating needs a project you share with someone.')
+    await r.unmount()
+  })
+
+  it('Skip and Back walk the queue and write nothing', async () => {
+    await inbox('One', 'Two', 'Three')
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'One')
+    const before = await db.outbox.count()
+    await click(inBar('skip')!)
+    await waitFor(() => cardTitle() === 'Two')
+    expect(position()).toBe('Task 2 of 3')
+    expect(inBar('back')!.disabled).toBe(false)
+    await click(inBar('back')!)
+    await waitFor(() => cardTitle() === 'One')
+    expect(position()).toBe('Task 1 of 3')
+    expect(await db.outbox.count()).toBe(before)
+    await r.unmount()
+  })
+
+  it('A wide window keeps its bar: every decision a button with its key, no More menu, centred pickers', async () => {
+    window.matchMedia = original
+    await inbox('One')
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'One')
+    expect([...bar().querySelectorAll<HTMLElement>('button')].map((b) => b.dataset.decision))
+      .toEqual(['today', 'schedule', 'move', 'delegate', 'labels', 'someday', 'complete', 'trash', 'skip', 'back', 'open'])
+    expect(bar().querySelectorAll('.ui-kbd').length).toBe(11)
+    expect(document.querySelector('[data-triage-more]')).toBeNull()
+    expect(bar().className).not.toContain('sticky')
+    expect(card().hasAttribute('data-swipeable')).toBe(false)
+    await click(inBar('move')!)
+    await waitFor(() => !!sheet('triage-move'))
+    expect(sheet('triage-move')!.hasAttribute('data-placement')).toBe(false)
+    await r.unmount()
+  })
+
+  it('inside the Clarify move the two rows follow the card and are not pinned', async () => {
+    await inbox('One')
+    const r = await render(<TriageCard onLeave={() => {}} />)
+    await waitFor(() => cardTitle() === 'One')
+    expect(bar().dataset.triageBar).toBe('phone')
+    expect(bar().className).not.toContain('sticky')
+    expect(inBar('today')).not.toBeNull()
+    await r.unmount()
+  })
+
+  it('Swipe to complete: past the commit distance the task is completed with Undo and the next one is shown', async () => {
+    const [a] = await inbox('Call the plumber', 'Next')
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Call the plumber')
+    expect(card().hasAttribute('data-swipeable')).toBe(true)
+    const before = await db.outbox.count()
+    await swipe([20, 60, 110])
+    await waitFor(() => cardTitle() === 'Next')
+    expect((await db.tasks.get(a))!.completed_at).not.toBeNull()
+    expect(bulkToast()?.undoId).toBeTruthy()
+    // Offline: on the device at once, and queued.
+    expect(await db.outbox.count()).toBeGreaterThan(before)
+    await r.unmount()
+  })
+
+  it('Swipe to schedule: the sheet opens and nothing is written until a day is chosen', async () => {
+    const [a] = await inbox('Plan trip', 'Next')
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Plan trip')
+    const before = await db.outbox.count()
+    await swipe([-20, -60, -110])
+    await waitFor(() => !!sheet('schedule-sheet'), 'the scheduling sheet')
+    expect(await db.outbox.count()).toBe(before)
+    expect(cardTitle()).toBe('Plan trip')
+    await click(document.querySelector('[data-choice="tomorrow"]')!)
+    await waitFor(() => cardTitle() === 'Next')
+    expect((await db.tasks.get(a))!.due).toEqual({ date: '2026-10-15' })
+    await r.unmount()
+  })
+
+  it('A short swipe returns the card, and a mouse never swipes: nothing is written', async () => {
+    await inbox('Stay', 'Next')
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Stay')
+    const before = await db.outbox.count()
+    await swipe([20, 40])
+    await swipe([20, 60, 110], 'mouse')
+    expect(document.querySelector('[data-testid="schedule-sheet"]')).toBeNull()
+    expect(cardTitle()).toBe('Stay')
+    expect(await db.outbox.count()).toBe(before)
+    await r.unmount()
+    // A narrow window with a mouse: the card is not swipeable at all.
+    coarse = false
+    const r2 = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Stay')
+    expect(card().hasAttribute('data-swipeable')).toBe(false)
+    await swipe([20, 60, 110])
+    expect(cardTitle()).toBe('Stay')
+    expect(await db.outbox.count()).toBe(before)
+    await r2.unmount()
+  })
+
+  it('a press in the title while it is edited belongs to the text, not to a swipe', async () => {
+    await inbox('Edit me', 'Next')
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Edit me')
+    const field = document.querySelector<HTMLElement>('[data-triage-title]')!
+    await act(async () => { field.focus() })
+    const before = await db.outbox.count()
+    await act(async () => { field.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 3, pointerType: 'touch', clientX: 200, clientY: 50 })) })
+    for (const x of [20, 60, 110]) await act(async () => { window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 3, pointerType: 'touch', clientX: 200 + x, clientY: 50 })) })
+    await act(async () => { window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 3, pointerType: 'touch', clientX: 310, clientY: 50 })) })
+    expect(cardTitle()).toBe('Edit me')
+    expect(await db.outbox.count()).toBe(before)
+    await r.unmount()
+  })
+
+  it('Move with one tap: a bottom sheet lists the projects, a tap moves the task and moves on; closing it writes nothing', async () => {
+    const home = await createProject({ name: 'Home' })
+    const [a] = await inbox('Fix the tap', 'Next')
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Fix the tap')
+    const before = await db.outbox.count()
+    await click(inBar('move')!)
+    await waitFor(() => !!option('Home'), 'the projects listed in the sheet')
+    expect(sheet('triage-move')!.dataset.placement).toBe('bottom')
+    // The list is what was asked for: the keyboard stays closed until the field is tapped.
+    expect(document.activeElement?.tagName).not.toBe('INPUT')
+    await key(sheet('triage-move')!, 'Escape')
+    await waitFor(() => sheet('triage-move') === null)
+    expect(cardTitle()).toBe('Fix the tap')
+    expect(await db.outbox.count()).toBe(before)
+    await click(inBar('move')!)
+    await waitFor(() => !!option('Home'))
+    await click(option('Home')!)
+    await waitFor(() => cardTitle() === 'Next')
+    expect((await db.tasks.get(a))!.project_id).toBe(home)
+    // Offline: the move is on the device and queued.
+    expect(await db.outbox.count()).toBeGreaterThan(before)
+    await r.unmount()
+  })
+
+  it('Labels stay on the task: the sheet adds a label and the same task is shown; Delegate is a sheet too', async () => {
+    const errand = await createLabel({ name: 'errand' })
+    const home = await createProject({ name: 'Household' })
+    await db.memberships.put({ projectId: home, role: 'owner', ownerId: 'me', members: [{ userId: 'me', name: 'Me', email: 'me@example.com', role: 'owner' }, { userId: 'ana', name: 'Ana', email: 'ana@example.com', role: 'editor' }] })
+    const [a] = await inbox('Buy screws', 'Next')
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Buy screws')
+    await openMore()
+    await click(item('labels')!)
+    await waitFor(() => !!option('errand'), 'the labels listed in the sheet')
+    expect(sheet('triage-labels')!.dataset.placement).toBe('bottom')
+    await click(option('errand')!)
+    await waitFor(async () => (await db.tasks.get(a))!.labels.includes(errand))
+    await key(sheet('triage-labels')!, 'Escape')
+    await waitFor(() => sheet('triage-labels') === null)
+    expect(cardTitle()).toBe('Buy screws')
+    expect(position()).toBe('Task 1 of 2')
+    await openMore()
+    expect(item('delegate')!.disabled).toBe(false)
+    await click(item('delegate')!)
+    await waitFor(() => !!option('Ana · Household'), 'the people listed in the sheet')
+    expect(sheet('triage-delegate')!.dataset.placement).toBe('bottom')
+    await click(option('Ana · Household')!)
+    await waitFor(() => cardTitle() === 'Next')
+    const moved = (await db.tasks.toArray()).find((t) => t.title === 'Buy screws' && !t.deleted_at)!
+    expect([moved.project_id, moved.assignee_id, moved.labels]).toEqual([home, 'ana', [errand]])
     await r.unmount()
   })
 })
