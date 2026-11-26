@@ -146,6 +146,25 @@ describe('RecurrenceField habit switch', () => {
   })
 })
 
+// phone-control-facts: a tap on Skip or This occurrence only acts and opens no tooltip.
+describe('RecurrenceField actions on a touch screen', () => {
+  it('says what Skip and This occurrence only do in lines under them, hidden with a fine pointer', async () => {
+    const id = await createTask({ title: 'Stretch', due: { date: '2026-10-12' }, recurrence: 'every day' })
+    const r = await render(<RecurrenceField task={(await db.tasks.get(id))!} />)
+    const help = r.container.querySelector('[data-recurrence-actions-help]')!
+    expect(help.className).toContain('pointer-fine:hidden')
+    expect([...help.children].map((c) => c.textContent)).toEqual([
+      '⤼ Skip · Move to the next occurrence without completing',
+      'This occurrence only · Edit this occurrence alone and move the series on',
+    ])
+    await r.unmount()
+    const plain = await createTask({ title: 'Once' })
+    const r2 = await render(<RecurrenceField task={(await db.tasks.get(plain))!} />)
+    expect(r2.container.querySelector('[data-recurrence-actions-help]')).toBeNull()
+    await r2.unmount()
+  })
+})
+
 describe('rows and views', () => {
   it('the streak chip has an accessible name, with "at risk" when the day has passed', async () => {
     const t = task({ id: 'h', title: 'Read', recurrence: 'every day', due: { date: '2026-10-14' }, habit: true })

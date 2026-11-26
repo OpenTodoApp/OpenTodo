@@ -10,7 +10,7 @@ import { navigate } from './router'
 import { openTaskInList } from './signals'
 import { isActivationTarget, useShortcutScope } from './shortcuts'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { hueFor, PageBody, PageHeader, Skeleton } from '../ui'
+import { hueFor, PageBody, PageHeader, Skeleton, useMediaQuery } from '../ui'
 import { Tooltip } from '../ui'
 import { t } from '../lib/i18n'
 import { ProjectMark } from './ProjectMark'
@@ -94,6 +94,8 @@ export function FeedView() {
     else if (e.projectId) navigate({ view: 'project', id: e.projectId })
   }, [])
 
+  // By touch a tap on a row opens what it is about, as a row of a list does; with a mouse a click selects and a double click opens.
+  const coarse = useMediaQuery('(pointer: coarse)')
   const idx = shown.findIndex((x) => x.id === selected)
   useShortcutScope('view', {
     'feed.down': () => setSelected(shown[Math.min(shown.length - 1, idx + 1)]?.id ?? null),
@@ -162,7 +164,7 @@ export function FeedView() {
                 const fresh = isNew(e)
                 return (
                   <li key={e.id} data-feed-id={e.id} data-event={e.kind} data-actor={e.actor} data-unread={fresh || undefined}
-                    onClick={() => setSelected(e.id)} onDoubleClick={() => open(e)}
+                    onClick={(ev) => { setSelected(e.id); if (coarse && !(ev.target as Element).closest('a, button')) open(e) }} onDoubleClick={() => open(e)}
                     className={`flex items-baseline gap-2 px-2 py-1.5 text-body ${e.id === selected ? 'bg-selected-row' : ''}`}>
                     <span className={`h-2 w-2 shrink-0 self-center rounded-full ${fresh ? 'bg-accent' : 'bg-transparent'}`}>{fresh && <span className="sr-only">{t('New')}</span>}</span>
                     <span className="min-w-0 flex-1">
