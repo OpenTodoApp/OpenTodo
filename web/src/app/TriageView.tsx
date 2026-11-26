@@ -3,11 +3,14 @@
 // labels, y someday, c complete, Delete trash, j or Space skip, k back, Enter
 // open). Each decision is the same operation the list writes, with its Undo
 // toast, so it applies locally first, works offline and converges like any edit.
+// Below 768 px (OpenSpec change phone-triage) the decisions are a bar pinned on the tab
+// bar (TriageBar), the card takes a task row's two swipes and the pickers are bottom sheets.
 import { useWithMethod } from './help/MethodLink'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Button, ComboboxPanel, EmptyState, Icon, Notice, PageBody, PageHeader, Dialog } from '../ui'
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { ComboboxPanel, DESKTOP_HEADER_QUERY, EmptyState, Icon, Notice, PageBody, PageHeader, Dialog, useMediaQuery } from '../ui'
 import { formatDate, formatDueLong, logicalToday } from '../lib/dates'
 import { useAllLabels, useMemberships, useProjects, useReminderRows } from '../lib/localData'
+import { itemKeywords, projectSource, type PickerItem } from '../lib/pickerSources'
 import { moveTaskAcrossScopes } from '../lib/ops'
 import { useMe } from '../lib/sharing'
 import { advance, advanceQueue, back, claim, current, positionText, progress, startTriage, type TriageState } from '../lib/triage'
@@ -17,8 +20,11 @@ import { LabelPicker } from './LabelPicker'
 import { registerListState } from './listActions'
 import { Markdown } from './Markdown'
 import { setPanelTaskId, setTaskSplit, usePanelTaskId } from './panel'
+import { ProjectMark } from './ProjectMark'
 import { ProjectPickerField } from './ProjectPickerField'
 import { ScheduleSheet } from './ScheduleSheet'
+import { useRowSwipe } from './task-list/RowSwipe'
+import { TriageBar, type Decision } from './TriageBar'
 import { navigate } from './router'
 import { useViewerZone } from './useViews'
 import { isActivationTarget, useShortcutScope } from './shortcuts'
@@ -80,31 +86,76 @@ function TriageTitle({ task, projects, labels, onLeave }: { task: Task; projects
   )
 }
 
-/** The decision that needs a choice: a day, a project, a person or labels. */
-function Pickers({ picker, task, projects, delegates, onClose, onSchedule, onMove, onDelegate, afterSchedule }: {
-  picker: Exclude<Picker, null>; task: Task; projects: readonly Project[]; delegates: DelegateEntry[]; onClose: () => void
+/** Move on a phone (phone-triage D5): the projects at once, one tap each, instead of a field that opens a second picker. */
+function ProjectList({ projects, onPick, onClose }: { projects: readonly Project[]; onPick: (id: string | null) => void; onClose: () => void }) {
+  const items = useMemo(() => projectSource(projects.filter((p) => !p.archived && !p.deleted_at), { inbox: false }), [projects])
+  return (
+    <ComboboxPanel<PickerItem> label={t('Project')} placeholder={t('Find a project…')} emptyText={t('No project matches.')} source={items}
+      getKey={(i) => i.key} getLabel={(i) => i.label} getPath={(i) => i.path} getKeywords={itemKeywords} getSecondary={(i) => i.meta} rankContext="triage.move"
+      renderLeading={(i) => <span className="flex h-6 w-6 items-center justify-center text-faint">{i.project ? <ProjectMark project={i.project} /> : <Icon name="circle" />}</span>}
+      onPick={(i) => onPick(i.value)} onClose={onClose} />
+  )
+}
+
+/** The decision that needs a choice: a day, a project, a person or labels. Below 768 px each is a bottom sheet (phone-triage D5). */
+function Pickers({ picker, task, projects, delegates, phone, onClose, onSchedule, onMove, onDelegate, afterSchedule }: {
+  picker: Exclude<Picker, null>; task: Task; projects: readonly Project[]; delegates: DelegateEntry[]; phone: boolean; onClose: () => void
   onSchedule: (iso: string | null) => void; onMove: (id: string | null) => void; onDelegate: (d: DelegateEntry) => void; afterSchedule: () => void
 }) {
+  const placement = phone ? 'bottom' : 'center'
   if (picker === 'schedule') return <ScheduleSheet task={task} onPick={onSchedule} onClose={() => { onClose(); afterSchedule() }} />
   if (picker === 'move') {
     return (
-      <Dialog title={t('Move to a project')} onClose={onClose} size="sm">
-        <ProjectPickerField label={t('Project')} projects={projects} value={task.project_id} inbox rankContext="triage.move" onChange={onMove} />
+      <Dialog title={t('Move to a project')} onClose={onClose} size="sm" placement={placement} testId="triage-move">
+        {phone ? <ProjectList projects={projects} onPick={onMove} onClose={onClose} />
+          : <ProjectPickerField label={t('Project')} projects={projects} value={task.project_id} inbox rankContext="triage.move" onChange={onMove} />}
       </Dialog>
     )
   }
   if (picker === 'delegate') {
     return (
-      <Dialog title={t('Delegate')} onClose={onClose} size="sm">
+      <Dialog title={t('Delegate')} onClose={onClose} size="sm" placement={placement} testId="triage-delegate">
         <ComboboxPanel<DelegateEntry> label={t('Delegate to')} placeholder={t('Find a person…')} emptyText={t('Nobody matches.')} source={delegates}
           getKey={(d) => d.key} getLabel={(d) => d.label} rankContext="triage.delegate" onPick={onDelegate} onClose={onClose} />
       </Dialog>
     )
   }
   return (
-    <Dialog title={t('Labels')} label={t('Labels for task')} onClose={onClose}>
+    <Dialog title={t('Labels')} label={t('Labels for task')} onClose={onClose} placement={placement} testId="triage-labels">
       <LabelPicker taskId={task.id} onClose={onClose} />
     </Dialog>
+  )
+}
+
+/**
+ * The task on the card: its title as a field, its date, labels and reminders, its notes. Below 768 px on a
+ * touch screen it takes a task row's two swipes (phone-triage D4): towards the end completes, towards the start schedules.
+ */
+function Card({ task, n, total, projects, labels, swipe, onComplete, onSchedule, cardRef }: {
+  task: Task; n: number; total: number; projects: readonly Project[]; labels: readonly Label[]; swipe: boolean
+  onComplete: () => void; onSchedule: () => void; cardRef: RefObject<HTMLElement | null>
+}) {
+  const zone = useViewerZone()
+  const reminders = useReminderRows(task.id).filter((r) => !r.deleted_at).length
+  const swiping = useRowSwipe({ task, enabled: swipe, onComplete, onSchedule })
+  const label = (id: string) => labels.find((l) => l.id === id)?.name ?? 'label'
+  // A press in the title while it is edited belongs to the text, never to a swipe.
+  const editing = (target: EventTarget) => target === document.activeElement && (target as Element).hasAttribute('data-triage-title')
+  return (
+    <section data-drag-id="triage-card" ref={cardRef} tabIndex={-1} aria-label={t('Task {n} of {total}', { n, total })} data-triage-card={task.id} data-swipeable={swipe ? '' : undefined}
+      onPointerDown={(e) => { if (!editing(e.target)) swiping.onPointerDown(e) }}
+      className={`relative rounded-card border border-default bg-surface p-5 outline-none shadow-1 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus ${swipe ? 'touch-pan-y' : ''}`}>
+      {swiping.layers}
+      <TriageTitle task={task} projects={projects} labels={labels} onLeave={() => cardRef.current?.focus()} />
+      {(task.due || task.labels.length > 0 || reminders > 0) && (
+        <p className="mt-2 flex flex-wrap gap-2 text-meta text-muted">
+          {task.due && <span>{t('Due {date}', { date: formatDueLong(task.due, zone) })}</span>}
+          {task.labels.map((l) => <span key={l} className="rounded-chip bg-sunken px-1.5">@{label(l)}</span>)}
+          {reminders > 0 && <span>{t('{count} reminder(s)', { count: reminders })}</span>}
+        </p>
+      )}
+      {task.description?.trim() && <div className="mt-3 text-body"><Markdown source={task.description} /></div>}
+    </section>
   )
 }
 
@@ -123,13 +174,15 @@ export function TriageCard({ onLeave, onLeft }: { onLeave: () => void; onLeft?: 
 }
 
 function Triage({ embedded }: { embedded?: { onLeave: () => void; onLeft?: (n: number) => void } }) {
-  const zone = useViewerZone()
   const tasks = useLiveTasks()
   const projects = useProjects()
   const labels = useAllLabels()
   const memberships = useMemberships()
   const me = useMe()
   const openId = usePanelTaskId()
+  // Below 768 px the decisions are a bar under the thumb and the pickers are sheets; a touch screen there swipes the card (phone-triage).
+  const phone = !useMediaQuery(DESKTOP_HEADER_QUERY)
+  const swipe = useMediaQuery('(pointer: coarse)') && phone
   // The card keeps the opened task beside it from 1024 px instead of leaving for the task page (task-full-page D3).
   useEffect(() => setTaskSplit(true), [])
   const [state, setState] = useState<TriageState | null>(null)
@@ -161,7 +214,6 @@ function Triage({ embedded }: { embedded?: { onLeave: () => void; onLeft?: (n: n
   const delegates = useMemo(() => delegateEntries(memberships, projects, me), [memberships, projects, me])
   const meta = useWithMethod('clarify', p.total > 0 && !p.done ? <span data-triage-progress className="tabular-nums text-muted">{t('{n} of {total}', { n: p.n, total: p.total })}</span> : undefined)
   const methodSubtitle = useWithMethod('clarify')
-  const reminders = useReminderRows(curId)
 
   // A position whose task is gone (trashed this session) is passed over in the direction of travel.
   const dir = useRef<1 | -1>(1)
@@ -295,8 +347,7 @@ function Triage({ embedded }: { embedded?: { onLeave: () => void; onLeft?: (n: n
   // Back from the panel: the card takes the focus again.
   useEffect(() => { if (!openId) card.current?.focus() }, [openId])
 
-  const label = (id: string) => labels.find((l) => l.id === id)?.name ?? 'label'
-  const bar: { key: string; hint: string; label: string; run: () => void; disabled?: boolean }[] = task ? [
+  const bar: Decision[] = task ? [
     { key: 'today', hint: 't', label: t('Today'), run: () => void decide('today') },
     { key: 'schedule', hint: 's', label: t('Schedule'), run: () => setPicker('schedule') },
     { key: 'move', hint: 'm', label: t('Move'), run: () => setPicker('move') },
@@ -325,38 +376,20 @@ function Triage({ embedded }: { embedded?: { onLeave: () => void; onLeft?: (n: n
         )
       ) : (
         <>
-          <section ref={card} tabIndex={-1} aria-label={t('Task {n} of {total}', { n: p.n, total: p.total })} data-triage-card={task.id}
-            className="rounded-card border border-default bg-surface p-5 outline-none shadow-1 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus">
-            <TriageTitle task={task} projects={projects} labels={labels} onLeave={() => card.current?.focus()} />
-            {(task.due || task.labels.length > 0 || reminders.some((r) => !r.deleted_at)) && (
-              <p className="mt-2 flex flex-wrap gap-2 text-meta text-muted">
-                {task.due && <span>{t('Due {date}', { date: formatDueLong(task.due, zone) })}</span>}
-                {task.labels.map((l) => <span key={l} className="rounded-chip bg-sunken px-1.5">@{label(l)}</span>)}
-                {reminders.filter((r) => !r.deleted_at).length > 0 && <span>{t('{count} reminder(s)', { count: reminders.filter((r) => !r.deleted_at).length })}</span>}
-              </p>
-            )}
-            {task.description?.trim() && <div className="mt-3 text-body"><Markdown source={task.description} /></div>}
-          </section>
-          <div role="toolbar" aria-label={t('Decisions')} className="mt-4 flex flex-wrap gap-2" data-triage-bar>
-            {bar.map((b) => (
-              <Button key={b.key} size="sm" variant={b.key === 'today' ? 'primary' : 'secondary'} disabled={b.disabled} onClick={b.run}
-                aria-keyshortcuts={b.hint === 'Del' ? 'Delete' : b.hint} data-decision={b.key}>
-                {b.label} <span className="ui-kbd ms-1">{b.hint}</span>
-              </Button>
-            ))}
-            <Button size="sm" variant="ghost" onClick={() => setPanelTaskId(task.id)} data-decision="open">{t('Open')} <span className="ui-kbd ms-1">Enter</span></Button>
-          </div>
-          {delegates.length === 0 && <p className="mt-2 text-meta text-faint">{t('Delegating needs a project you share with someone.')}</p>}
+          <Card task={task} n={p.n} total={p.total} projects={projects} labels={labels} swipe={swipe} cardRef={card}
+            onComplete={() => void decide('complete')} onSchedule={() => setPicker('schedule')} />
+          <TriageBar decisions={bar} onOpen={() => setPanelTaskId(task.id)} noDelegates={delegates.length === 0} phone={phone} pinned={phone && !embedded} />
         </>
       )}
 
-      {task && picker && <Pickers picker={picker} task={task} projects={projects} delegates={delegates} onClose={() => setPicker(null)} onSchedule={(iso) => void schedule(iso)}
+      {task && picker && <Pickers picker={picker} task={task} projects={projects} delegates={delegates} phone={phone} onClose={() => setPicker(null)} onSchedule={(iso) => void schedule(iso)}
         onMove={(id) => act(moveTo(id))} onDelegate={(d) => void delegate(d)} afterSchedule={() => card.current?.focus()} />}
     </>
   )
   if (embedded) return <div data-triage data-triage-embedded>{body}</div>
   return (
-    <PageBody data-triage>
+    // On a phone the page is a column as tall as the screen, so the bar ends it on the tab bar (phone-triage D2).
+    <PageBody data-triage flush={phone} className={phone ? 'flex min-h-full flex-col' : undefined}>
       <PageHeader title={t('Process the Inbox')} help="inbox/triage" back={{ label: t('Inbox'), onClick: leave }}
         meta={meta} subtitle={methodSubtitle} />
       {body}

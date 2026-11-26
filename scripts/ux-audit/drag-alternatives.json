@@ -23,6 +23,11 @@
    { "file": "web/src/phone/components/PhoneRow.tsx", "contains": "data-phone-check" },
    { "file": "web/src/phone/screens/PhoneTaskPage.tsx", "contains": "<TaskDateSheet task={task}" }
   ] },
+  { "id": "triage-card", "what": "The card of Process the Inbox below 768 px (phone-triage): on touch, swipe right to complete, swipe left to open the scheduling sheet.", "alternatives": [
+   { "file": "web/src/app/TriageBar.tsx", "contains": "data-decision={d.key}" },
+   { "file": "web/src/app/TriageView.tsx", "contains": "{ key: 'complete', hint: 'c'" },
+   { "file": "web/src/app/TriageView.tsx", "contains": "{ key: 'schedule', hint: 's'" }
+  ] },
   { "id": "calendar-block", "what": "A timed block in Day and Week: move it, or resize its start or end.", "alternatives": [
    { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" },
    { "file": "web/src/app/EstimateField.tsx", "contains": "aria-label={t('Estimate')}" }

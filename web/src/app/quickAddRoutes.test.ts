@@ -15,11 +15,11 @@ describe('quick add by route', () => {
     expect(offersQuickAdd(r), `${path} → ${routePath(r)}`).toBe(false)
   })
 
-  it.each(['/help', '/help/import', '/updates', '/stats', '/trash', '/routines', '/share', '/focus', '/review/close', '/review', '/review/sweep', '/routines/new'])('has no add button on %s', (path) => {
+  it.each(['/help', '/help/import', '/updates', '/stats', '/trash', '/routines', '/share', '/focus', '/review/close', '/review', '/review/sweep', '/routines/new', '/triage'])('has no add button on %s', (path) => {
     expect(offersQuickAdd(parseRoute(path))).toBe(false)
   })
 
-  it.each(['/inbox', '/today', '/upcoming', '/projects', '/week', '/notes', '/triage', '/review/daily', '/review/monthly'])('keeps the add button on %s', (path) => {
+  it.each(['/inbox', '/today', '/upcoming', '/projects', '/week', '/notes', '/review/daily', '/review/monthly'])('keeps the add button on %s', (path) => {
     expect(offersQuickAdd(parseRoute(path))).toBe(true)
   })
 })
