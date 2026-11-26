@@ -5744,6 +5744,7 @@
   ],
   "Earlier": [
     "web/src/app/AppBadge.tsx",
+    "web/src/app/TimelineView.tsx",
     "web/src/app/assistant/blocks/StatsBlock.tsx",
     "web/src/app/calendar/planSource.ts",
     "web/src/app/display/DisplayScreen.tsx",
@@ -9392,6 +9393,7 @@
     "web/src/app/ProjectsTable.tsx"
   ],
   "Later": [
+    "web/src/app/TimelineView.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/review/CarryOver.tsx",
     "web/src/app/themes/previewData.ts",
@@ -14554,6 +14556,7 @@
     "web/src/app/CalendarView.tsx",
     "web/src/app/MonthView.tsx",
     "web/src/app/PlanView.tsx",
+    "web/src/app/TimelineView.tsx",
     "web/src/app/calendar/MonthsSpanView.tsx"
   ],
   "Re-enable": [
