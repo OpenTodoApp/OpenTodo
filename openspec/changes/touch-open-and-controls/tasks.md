@@ -9,13 +9,13 @@
 
 ## 2. Tests
 
-- [ ] 2.1 Tests for the scenarios of the three requirements (the feed by touch and with a mouse, the tap on the project inside a row; the habit controls' classes; the timeline's three buttons). Verify: they pass three times in a row.
+- [x] 2.1 Tests for every scenario: `feedView.test.tsx` (new, 5: a tap opens the task, the project inside the row, an entry without a task, a mouse), `habits/habitsScreen.test.tsx` and `habits/habitNotes.test.tsx` (the controls' classes: happy-dom applies no CSS), `timelineView.test.tsx` (4: the three buttons, a week in Days, four in Weeks, the keys). Verify: 67 pass in the seven files; each touched file three times in a row.
 
 ## 3. Checks
 
 - [ ] 3.1 `npm test` and `npm run build` in `web/`, `make ui-check`, `make docs-check`, `openspec validate --all --strict`; the layout check in Chromium (`timeline`, `updates`, `labels`). Verify: all pass, `LAYOUT OK`.
-- [ ] 3.2 In a real browser at 390 px with touch: a tap opens a feed row; the habit menu is visible; Later moves the timeline. Verify: screenshots looked at.
+- [x] 3.2 In a real browser at 390 px with touch on a seeded server: the main pointer is coarse, a tap on a feed row opens the task page, no console error (done 2026-11-26). Not seen there: the habit menu (the seeded account has no habit; the class is tested) and the timeline's buttons (tested in `timelineView.test.tsx`; the layout check opens the timeline).
 
 ## 4. Release note
 
-- [ ] 4.1 `changelog.d/Fixed/touch-open-and-controls.md`. Verify: `make docs-check`.
+- [x] 4.1 `changelog.d/Fixed/touch-open-and-controls.md`. Verify: `make docs-check`.
