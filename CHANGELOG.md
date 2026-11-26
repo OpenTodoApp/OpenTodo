@@ -6,6 +6,18 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 Changes since the last release are in [changelog.d/](changelog.d/README.md), one file per change; `make release-prepare` moves them here when a release is cut.
 
+## [1.10.1] - 2026-11-26
+
+1.10.0 was tagged but not published: its release run found the weekly review scrolling sideways at 360 px in German. This release fixes that and carries everything listed under 1.10.0 below, which is the phone screens reaching the rest of the app. Coming from 1.9.0, read 1.10.0's notes for what is new.
+
+### Upgrade notes
+
+- **Replace the image or the binary and restart; back up first.** No migration, no new or changed variable, as for 1.10.0.
+
+### Fixed
+
+- **The weekly review on a small phone in German and other languages with long words.** The names of the review's three phases never broke, so at 360 px in German the page was wider than the screen and scrolled sideways. Where the names do not fit they now take more than one row (WCAG 1.4.10).
+
 ## [1.10.0] - 2026-11-26
 
 The rest of the app follows the task lists onto the phone. The calendar's lists, Process the Inbox, a board, a project's timeline, Updates, Habits, Notes, Routines and Statistics now work with one thumb: a tap opens, a circle completes, a swipe decides, a held card or bar scrolls the board or the grid under it. Explanations that only a mouse could reach, in tooltips, can be read by a tap. Nothing changes on a computer except three buttons on the timeline (Earlier, Today, Later) and a board that scrolls under a dragged card.
@@ -2102,7 +2114,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.10.0...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.10.1...HEAD
+[1.10.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.10.0...v1.10.1
 [1.10.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.7.0...v1.8.0

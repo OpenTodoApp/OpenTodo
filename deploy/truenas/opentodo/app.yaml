@@ -1,4 +1,4 @@
-app_version: 1.10.0
+app_version: 1.10.1
 capabilities: []
 categories:
 - productivity
@@ -33,4 +33,4 @@ sources:
 - https://github.com/OpenTodoApp/OpenTodo/pkgs/container/opentodo
 title: OpenTodo
 train: community
-version: 1.0.22
+version: 1.0.23
