@@ -182,11 +182,11 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
     setZoom(z)
     writeString(ZOOM_KEY, z) // per-device convenience
   }
-  // Start with today in view.
+  // The day the range is on stays in view: today at first, then where Earlier, Later or their keys moved it (it went back to today each time, so they seemed to do nothing).
   useLayoutEffect(() => {
     const el = scroller.current
-    if (el) el.scrollLeft = Math.max(0, dayOffset(ax.from, today) * px - el.clientWidth / 3)
-  }, [ax.from, px, today])
+    if (el) el.scrollLeft = Math.max(0, dayOffset(ax.from, anchor) * px - el.clientWidth / 3)
+  }, [ax.from, px, anchor])
 
   const x = (iso: string) => dayOffset(ax.from, iso) * px
   /** The axis day under a pointer position. */

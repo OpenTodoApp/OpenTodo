@@ -1,0 +1,3 @@
+- **Swiping a row works in the Android app on older system web views.** On Android System WebView 113 a swipe on a task was taken by the page's own scrolling, so nothing happened.
+- **Earlier and Later move the timeline.** The view went back to today after each press, so on a phone the buttons seemed to do nothing.
+- **A task's title lines up with its circle on a phone**, and a hold on a section's name no longer starts a text selection.
