@@ -1418,7 +1418,8 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 [data-phone-rows] [data-phone-row] { border-radius: 0; }
 /* The keyboard's cursor row, on a phone with a keyboard. */
 [data-phone-row][aria-current="true"] { box-shadow: inset 3px 0 0 var(--ot-accent); }
-[data-phone-row] + [data-phone-row]::before { content: ''; @apply absolute left-12 right-0 top-0 z-[1] border-t border-soft; }
+[data-phone-row][aria-current="true"]:dir(rtl) { box-shadow: inset -3px 0 0 var(--ot-accent); }
+[data-phone-row] + [data-phone-row]::before { content: ''; @apply absolute inset-s-12 inset-e-0 top-0 z-[1] border-t border-soft; }
 [data-phone-list] [data-phone-list-body] > section { @apply mb-5; }
 
 /* The phone UI's screens push and pop (phone-ui-trial D6): the task page comes in from the end edge over the list, which

@@ -55,9 +55,9 @@
 // LAYOUT_DATE (default 2026-11-01: the browsers' clock and the seeded dates),
 // SHARD (i/n: only every n-th engine × width × theme combination, from the i-th, so
 // n jobs side by side check them all; CI's pull request legs).
-// PHONE_UI=1 (the device's "New phone screens" switch is on, OpenSpec change
-// phone-ui-trial: Today and the task page are then the phone UI's below 768 px; run it
-// and every screen of the shell has the phone header, phone-all-screens; a run fails when one has neither).
+// PHONE_UI=0 (the device's "New phone screens" switch is off: the earlier phone layout, kept as
+// the way back, phone-ui-default; unset, the phone widths show the phone screens, and a run fails
+// when a screen of the app has neither the phone header nor a phone screen).
 //
 // The browsers' clock is fixed at 09:00 UTC on LAYOUT_DATE and the account is seeded
 // around that day, so the check sees the same calendars whatever day it runs: which
@@ -86,7 +86,8 @@ const CONCURRENCY = Number(process.env.CONCURRENCY ?? 3)
 const SHOTS_ALL = process.env.SHOTS === 'all'
 const LANG = process.env.OPENTODO_LANG ?? ''
 // The phone UI's switch, as the app keeps it on a device (web/src/phone/prefs.ts).
-const PHONE_UI = process.env.PHONE_UI === '1'
+// The phone screens are on by default below 768 px (phone-ui-default); PHONE_UI=0 turns the device's switch off.
+const PHONE_UI = process.env.PHONE_UI !== '0'
 /** Screens outside the app's shell (Display mode, the share target, an invitation): no page header to draw. */
 const PHONE_UI_OUTSIDE = /^(display-|share-|project-invite)/
 const LAYOUT_DATE = process.env.LAYOUT_DATE ?? '2026-11-01'
@@ -218,7 +219,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
     const events = calendarEvents(NOW)
     await ctx.route('**/api/v1/calendar-feeds/events?*', (route) => route.fulfill({ json: events }))
     if (LANG) for (const c of [anonCtx, ctx]) await c.addInitScript((code) => { try { localStorage.setItem('opentodo.lang', code) } catch { /* storage blocked */ } }, LANG)
-    if (PHONE_UI) await ctx.addInitScript(() => { try { localStorage.setItem('opentodo.phoneUi', '1') } catch { /* storage blocked */ } })
+    if (!PHONE_UI) await ctx.addInitScript(() => { try { localStorage.setItem('opentodo.phoneUi', '0') } catch { /* storage blocked */ } })
     const page = await ctx.newPage()
     page.on('dialog', (d) => d.dismiss())
     page.on('crash', () => { run.crashed ??= run.step; browser.close().catch(() => {}) })

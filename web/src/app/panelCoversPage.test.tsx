@@ -12,6 +12,10 @@ import { minWidthPx, render, waitFor } from '../ui/test-utils'
 import { closePanel, openPanel, openTaskPanel, resetPanel, setTaskSplit } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
+import { setPhoneUiEnabled } from '../phone/prefs'
+
+// These tests are about the earlier phone layout, the way back while the phone screens are the default (phone-ui-default D3).
+beforeEach(() => setPhoneUiEnabled(false))
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 const original = window.matchMedia

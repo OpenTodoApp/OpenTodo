@@ -287,6 +287,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `phone-ui-trial` | A trial of screens made only for a phone, behind a switch on the device: Today and the task page, a date sheet, and a place and rules for the phone screens that follow | In progress (20 of 23) |
 | `phone-lists` | Every task list in the phone screens, with all a list does: its menu, selection, reordering, subtasks and each list's own parts | In progress (12 of 19) |
 | `phone-all-screens` | The phone header and the phone task row on every screen of the app, so the phone screens are one interface | In progress (9 of 11) |
+| `phone-ui-default` | The phone screens are what a phone shows by default; the switch stays as the way back on a device | In progress (7 of 8) |
 | `shell-push` | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | Shipped in 1.5 |
 
 <!-- roadmap:end -->

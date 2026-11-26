@@ -198,13 +198,16 @@
   "frequency": "daily",
   "core": true,
   "layoutCheck": null,
-  "layoutCheckReason": "the inline quick add is part of every list screen; the tour focuses it and types a phrase with chips",
+  "layoutCheckReason": "the inline quick add is part of every list screen; the tour focuses it and types a phrase with chips. On a phone screen (phone-lists) a list has no add line: the add button opens the same quick add as a sheet",
   "story": "Screens/Quick add",
   "on": "inbox",
   "open": {
    "steps": [
     {
-     "focus": "textarea[aria-label=\"Add a task\"]"
+     "clickIfVisible": ":root:has([data-phone-screen]) [data-add-button]"
+    },
+    {
+     "focus": "textarea[aria-label=\"Add a task\"], [data-overlay=\"sheet\"] textarea"
     },
     {
      "type": "Call mum tomorrow p1 @errand"

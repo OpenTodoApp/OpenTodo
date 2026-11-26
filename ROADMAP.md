@@ -336,6 +336,7 @@ The phone apps stay web-view shells and are made to feel like apps, in the order
 | [`phone-ui-trial`](openspec/changes/phone-ui-trial/) | A trial of screens made only for a phone, behind a switch on the device: Today and the task page, a date sheet, and a place and rules for the phone screens that follow | |
 | [`phone-lists`](openspec/changes/phone-lists/) | Every task list in the phone screens, with all a list does: its menu, selection, reordering, subtasks and each list's own parts | |
 | [`phone-all-screens`](openspec/changes/phone-all-screens/) | The phone header and the phone task row on every screen of the app, so the phone screens are one interface | |
+| [`phone-ui-default`](openspec/changes/phone-ui-default/) | The phone screens are what a phone shows by default; the switch stays as the way back on a device | |
 | [`shell-push`](openspec/changes/archive/2026-11-21-shell-push/) | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | [#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344) |
 
 ## Future ideas
