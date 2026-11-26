@@ -11,7 +11,7 @@ import { t } from '../../lib/i18n'
 import { Tooltip } from '../../ui'
 import { eventLabel, useEventDetails } from '../CalendarEvents'
 import type { useCalendarDrag } from '../calendarDrag'
-import { RESIZE_ZONE_PX } from './grid'
+import { resizeZone } from './grid'
 
 type DragStart = ReturnType<typeof useCalendarDrag>['start']
 
@@ -57,7 +57,7 @@ export function EventBlockView({ block, date, lane, lanes, overlap, pxPerMinute,
           onSelect?.(block.id)
           // The lowest and highest few pixels resize, as on a task block; the rest moves it.
           const rect = e.currentTarget.getBoundingClientRect()
-          const edge = Math.min(RESIZE_ZONE_PX, rect.height / 3)
+          const edge = resizeZone(rect.height, e.pointerType)
           if (e.clientY >= rect.bottom - edge) onDragStart!(e, { taskId: block.id, kind: 'resize', blockStart: block.start, blockDate: date })
           else if (e.clientY <= rect.top + edge) onDragStart!(e, { taskId: block.id, kind: 'resize-start', blockEnd: block.end, blockDate: date })
           else onDragStart!(e, { taskId: block.id, kind: 'move', grabOffset: e.clientY - rect.top })

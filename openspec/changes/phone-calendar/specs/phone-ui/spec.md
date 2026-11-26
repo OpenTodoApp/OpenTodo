@@ -43,27 +43,16 @@ It SHALL work offline, and it SHALL converge with changes from other devices exa
 - **THEN** the task is completed and Undo is offered
 
 ### Requirement: A block resizes under a finger
-On a device whose main pointer is coarse, the top and the bottom of a task's block in the Day grid SHALL each take a resize from a zone at least 24 CSS px tall, reaching outside the block where the block is too short to hold both zones and the place it moves from. The block SHALL be drawn as it is with a fine pointer, and a hold in its middle SHALL still move it. With a fine pointer nothing changes. A resize SHALL write what it writes today, offline too, and converge as it does today.
+When a block of the Day or Week grid (a task's, a slot's, or an event that can be changed) is pressed by touch, a press within 24 CSS px of its top or of its bottom SHALL start a resize of that end, and never within more than a third of the block's height from either end, so that the middle third at least always moves the block. With a mouse or a pen the zones are the few pixels they were. The block SHALL be drawn the same for every pointer. A block too short to offer a useful zone keeps its other way to change its length: the estimate on the task's page. A resize SHALL write what it writes today, offline too, and converge as it does today.
 
 #### Scenario: Lengthen a block by touch
-- **WHEN** on a touch phone a person holds the bottom edge of a 30-minute block and moves down by two quarter-hours
-- **THEN** the block is one hour long, with the same operation a mouse resize writes
+- **WHEN** on a touch phone a person holds a two-hour block 20 px above its bottom edge and moves down by two quarter-hours
+- **THEN** the block is two and a half hours long, with the same operation a mouse resize writes
 
-#### Scenario: A short block
-- **WHEN** a block is 15 minutes long on a touch phone
-- **THEN** a hold on its middle moves it, and a hold just above or below it resizes it
+#### Scenario: The middle moves
+- **WHEN** a person holds the middle of a one-hour block by touch and moves it
+- **THEN** the block moves and keeps its length
 
 #### Scenario: A mouse
-- **WHEN** the main pointer is fine
-- **THEN** the resize zones are as they were
-
-### Requirement: Tap to place in Week on a phone
-While the phone screens are on below 768 px and the planning list is shown in Week, a tap on one of its tasks followed by a tap on a day SHALL place the task on that day, without a time, with the operation a drop on that day writes. The bar that says which task is being placed, and its Cancel, SHALL be the ones Day shows. It SHALL work offline and converge as a drop does.
-
-#### Scenario: Place on Friday
-- **WHEN** a person taps "Buy primer" in the planning list in Week on a phone and then taps Friday
-- **THEN** "Buy primer" is listed under Friday as all day
-
-#### Scenario: Cancel
-- **WHEN** a person taps a task of the planning list and then Cancel in the bar
-- **THEN** nothing is placed
+- **WHEN** a block is pressed with a mouse 20 px above its bottom edge
+- **THEN** the block moves, as before

@@ -8,7 +8,7 @@ What exists below 640 px was read before writing this (the proposal lists it). T
 
 ## Goals / Non-Goals
 
-**Goals:** the phone row in the calendar's three lists with what a phone list does (open, complete, swipe, hold); a resize a finger can start; tap to place in Week; tests that open the calendar in the phone UI.
+**Goals:** the phone row in the calendar's three lists with what a phone list does (open, complete, swipe); a resize a finger can start; tests that open the calendar in the phone UI.
 
 **Non-goals:** a new Day or Week grid, Quarter, Year, Timeline, Board, the event editor, anything from 768 px, any change to what a day lists.
 
@@ -22,9 +22,9 @@ What exists below 640 px was read before writing this (the proposal lists it). T
 
 **D4. A day's rows are one card by the mark the lists use.** `data-phone-rows` on the `<ul>` that holds the day's tasks (`web/src/index.css`, no `:has()`: the scale test forbids it). In Week the events, slots and frame headings of the day are items of that same list, as they are today; in Month and Plan they stay outside the card.
 
-**D5. The resize zone grows on a coarse pointer only.** `RESIZE_ZONE_PX` (7) stays for a fine pointer. With `(pointer: coarse)` the hit test in `DayColumn` uses a 24 px zone, centred on each edge and so reaching 12 px outside a block. A block shorter than 48 px keeps its middle for moving: the zones are then entirely outside it. The drag already distinguishes a long press (350 ms) from a scroll; that stays. 24 px is WCAG 2.2's target size and is what fits between two quarter-hours at `PX_PER_MIN = 0.8` (12 px each); 44 px would cover three quarter-hours and steal moves from the neighbours.
+**D5. The resize zone follows the pointer that pressed.** `resizeZone(blockHeight, pointerType)` in `calendar/grid.ts`: 24 px for `touch` (WCAG 2.2's target size), the earlier 7 px otherwise, and never more than a third of the block, used by `DayColumn`, `SlotBlock` and `EventBlock`. The pointer's own type, not a media query: a laptop with a touch screen gets the right zone for each press. The drag already tells a long press (350 ms) from a scroll; that stays. First planned: zones reaching outside a short block. Rejected: a zone outside a block overlaps the block above or below it and the empty slot between, where a hold adds a task; a short block's length is changed from the task page's estimate instead, and the requirement says so.
 
-**D6. Tap to place in Week targets a day.** `useTapPlace` is on when `mode === 'day' || wide`; it becomes on in Week below 640 px too, where the target is a day's section (`data-agenda-day`) instead of a time. The drop it writes is `commit`'s for a day without a time.
+**D6. Tap to place in Week is not part of this change.** It was in the first draft. `plan-list-tap-to-place` turns it on where "the view shows times" and places on a time of a grid; Week's list on a phone has days, not times. Placing on a day is a change to that capability's decisions and gets a change of its own if wanted.
 
 **D7. Data model, size.** No op field, no route, no server change. No dependency: image size and memory unchanged. The phone row's compact drawing lands in the lazy `PhoneChrome` chunk; the first load is measured with `make bundle-budget` and reported in the pull request.
 

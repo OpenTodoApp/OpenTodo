@@ -9,10 +9,9 @@
 - [x] 2.1 `PhoneCalendarRow` with the calendar's facts, provided by `PhoneChrome`; a day's tasks as one card (D2, D4). Verify: in a real browser at 390 px with touch on a seeded server, Week, Month's day and Plan list phone rows and none of the earlier rows, nothing scrolls sideways, no console error; a tap opens the task page and Back returns to Week; the circle completes and Undo is offered (done 2026-11-26, screenshots looked at).
 - [ ] 2.2 Tests in `phoneCalendar.test.tsx` for the scenarios of "A task in a calendar list is the phone row" and "Swipes and the date sheet in a calendar list"; stories `Phone/Screens/Calendar` (Week, Month's day, Plan) with baselines from `ui-baselines.yml`. Verify: the tests pass three times in a row; `undoCoverage.test.tsx` still passes.
 
-## 3. Touch in the grid and Week
+## 3. Touch in the grid
 
-- [ ] 3.1 The resize zone on a coarse pointer (D5) as a pure function in `calendar/grid.ts`, used by `DayColumn`. Verify: unit tests for a 30-minute, a 15-minute and a 2-hour block, coarse and fine; `calendarResizeStart.test.tsx` unchanged.
-- [ ] 3.2 Tap to place in Week below 640 px (D6). Verify: tests for "Place on Friday" and "Cancel"; `calendarPlanPanel.test.tsx` unchanged.
+- [x] 3.1 `resizeZone(blockHeight, pointerType)` in `calendar/grid.ts`, used by `DayColumn`, `SlotBlock` and `EventBlock` (D5). Verify: `npx vitest run src/app/calendar/grid.test.ts src/app/calendarResizeStart.test.tsx src/app/slots.test.tsx src/app/calendar/eventEdits.test.tsx` (15 pass; the existing ones unchanged).
 
 ## 4. Checks
 
