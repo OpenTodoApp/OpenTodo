@@ -73,7 +73,7 @@ export function screens(ids, base) {
     // Notes (notes-overview 4.8): the search field and the filters row, behind one Filters button on a phone.
     { name: 'notes', path: '/notes', ready: heading('Notes') },
     // A standalone note's page (phone-rest): a long title, a long address and a code block that scrolls inside itself.
-    ...(ids.note ? [{ name: 'note', path: `/notes/${ids.note}`, ready: (p) => p.locator('[data-note-page]').waitFor() }] : []),
+    ...(ids.note ? [{ name: 'note', path: `/notes/${ids.note}`, ready: (p) => p.locator('[data-note-page], [data-note-form]').first().waitFor() }] : []), // its own page on a phone, docked beside the list on a wide screen
     // The method lists, the Loop home, the reviews, Habits and Focus (phone-rest): the screens the check did not open.
     { name: 'next', path: '/next', ready: heading('Next') },
     { name: 'waiting', path: '/waiting', ready: heading('Waiting') },
