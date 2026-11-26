@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { use, useState } from 'react'
 import { dayLoad, type GridPrefs } from '../../lib/calendar'
 import type { DayData } from '../../lib/calendarDays'
 import { formatDateParts } from '../../lib/dates'
@@ -19,6 +19,7 @@ import { dayLoadProjections, dayProjections, type ProjectionHue } from './DayCol
 import { spanDay } from '../../lib/span'
 import { ProjectedItem } from './projections'
 import { EventRow } from '../CalendarEvents'
+import { CalendarRowDrawContext } from '../task-list/rowDraw'
 
 /**
  * The Week below 640 px: the days listed vertically, each with its capacity, its
@@ -52,7 +53,9 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
   /** An empty day's "Add a task": quick add with that day as the date. */
   onAdd: (date: string) => void
 }) {
-  const row = (task: Task, time: string | null, past: boolean, date: string, position?: string) => (
+  // On a phone with the phone screens the task is the phone row (phone-calendar): the list keeps its own otherwise.
+  const draw = use(CalendarRowDrawContext)
+  const row = (task: Task, time: string | null, past: boolean, date: string, position?: string) => draw ? draw({ task, date, today, time, note: position }) : (
     <li key={task.id}>
       <button type="button" data-cal-id={task.id} data-agenda-task={task.id} onClick={() => onSelect(task.id)} onDoubleClick={() => onOpen(task.id)}
         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onOpen(task.id) } }}
@@ -109,7 +112,7 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
                 </>
               )
               : (
-                <ul className="mt-1 space-y-0.5">
+                <ul className={draw ? 'mt-1' : 'mt-1 space-y-0.5'} data-phone-rows={draw ? '' : undefined}>
                   {spanRows}
                   {d.allDay.map((ev) => <li key={`event:${ev.id}`}><EventRow ev={ev} sub={subMap?.get(ev.subscriptionId)} zone={zone} variant="agenda" /></li>)}
                   {d.lane.map((tk) => row(tk, null, d.date < today, d.date))}

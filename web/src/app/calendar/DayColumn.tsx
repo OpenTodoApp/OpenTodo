@@ -26,7 +26,7 @@ import { SlotBlock } from './SlotBlock'
 import { ProjectedItem } from './projections'
 import type { Projection } from '../../lib/occurrences'
 import type { DayMeetings } from './meetingCapacity'
-import { formatTime, GRID_HEIGHT, PX_PER_MIN, RESIZE_ZONE_PX, type Preview } from './grid'
+import { formatTime, GRID_HEIGHT, PX_PER_MIN, resizeZone, type Preview } from './grid'
 
 type DragStart = ReturnType<typeof useCalendarDrag>['start']
 /** The hue of a task under the device's Colour by (calendar-clarity D3). */
@@ -358,7 +358,7 @@ function TaskBlock({ b, block, task, date, past, hue, selected, dragging, movesT
         if (task.completed_at) return
         // The lowest few pixels resize the end, the highest few the start (GitHub issue 355); the rest moves the block.
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-        const zone = Math.min(RESIZE_ZONE_PX, rect.height / 3)
+        const zone = resizeZone(rect.height, e.pointerType)
         if (e.clientY >= rect.bottom - zone) onDragStart(e, { taskId: b.id, kind: 'resize', blockStart: block.start, blockDate: date })
         else if (e.clientY <= rect.top + zone) onDragStart(e, { taskId: b.id, kind: 'resize-start', blockEnd: block.start + (task.estimate_minutes || DEFAULT_BLOCK_MINUTES), blockDate: date })
         else onDragStart(e, { taskId: b.id, kind: 'move', grabOffset: e.clientY - rect.top })
