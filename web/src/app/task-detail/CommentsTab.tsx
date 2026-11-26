@@ -150,7 +150,7 @@ export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(fu
             {reply && <MenuItem label={t('Reply')} icon="corner-down-right" onSelect={() => startReply(c.id)} />}
             {edit && <MenuItem label={t('Edit')} icon="pencil" onSelect={() => setEditing(c.id)} />}
             {del && <MenuItem label={t('Delete')} icon="trash-2" danger onSelect={() => setDeleting(c.id)} />}
-            {react && <ReactionMenuItems comment={c} me={me} onReact={onReact} />}
+            {react && <ReactionMenuItems comment={c} me={me} name={name} onReact={onReact} />}
           </Menu>
         </span>
       )

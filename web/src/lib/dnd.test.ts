@@ -6,7 +6,7 @@
 // the touch rework); a move before the hold is a swipe or a scroll, never a drag —
 // except on the grip, which never scrolls and drags on movement alone.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { beginDrag, EDGE_STEP, edgeScroller, edgeStep, TOUCH_HOLD_MS } from './dnd'
+import { beginDrag, EDGE_STEP, edgeScroller, edgeStep, nextSnap, PAGE_ARM, PAGE_DWELL, sideScroller, TOUCH_HOLD_MS } from './dnd'
 
 beforeEach(() => { vi.useFakeTimers() })
 afterEach(() => { vi.useRealTimers() })
@@ -401,5 +401,221 @@ describe('the scroller near the pointer (drag-edge-scroll D2)', () => {
     expect(box.scrollTop).toBe(at)
     expect(blocked()).toBe(false)
     cancel()
+  })
+})
+
+describe('a held card scrolls the board (phone-board D1, D2)', () => {
+  type Row = { left: number; right: number; scrollLeft: number; scrollWidth: number }
+  /** A sideways scroller 600 px high; with `columns`, as the phone's board: 343 px columns, a 12 px gap, 16 px of padding. */
+  function board(box: Row, opts: { snap?: boolean; mark?: boolean; columns?: number; rtl?: boolean } = {}): HTMLElement {
+    const el = document.createElement('div')
+    if (opts.mark !== false) el.setAttribute('data-edge-scroll', 'x')
+    if (opts.snap) el.style.scrollSnapType = 'x mandatory'
+    if (opts.rtl) el.style.direction = 'rtl'
+    const width = box.right - box.left
+    const max = box.scrollWidth - width
+    const clamp = (v: number) => (opts.rtl ? Math.max(-max, Math.min(0, v)) : Math.max(0, Math.min(max, v)))
+    el.getBoundingClientRect = () => ({ top: 0, bottom: 600, left: box.left, right: box.right, width, height: 600, x: box.left, y: 0, toJSON() {} })
+    Object.defineProperty(el, 'scrollLeft', { get: () => box.scrollLeft, set: (v: number) => { box.scrollLeft = clamp(v) }, configurable: true })
+    Object.defineProperty(el, 'clientWidth', { value: width, configurable: true })
+    Object.defineProperty(el, 'scrollWidth', { value: box.scrollWidth, configurable: true })
+    el.scrollTo = ((o: { left: number }) => { box.scrollLeft = clamp(o.left) }) as typeof el.scrollTo
+    for (let i = 0; i < (opts.columns ?? 0); i++) {
+      const col = document.createElement('section')
+      col.style.scrollSnapAlign = 'start'
+      const start = 16 + i * 355
+      col.getBoundingClientRect = () => {
+        const left = opts.rtl ? box.right - start - 343 - box.scrollLeft : box.left + start - box.scrollLeft
+        return { top: 0, bottom: 600, left, right: left + 343, width: 343, height: 600, x: left, y: 0, toJSON() {} }
+      }
+      el.appendChild(col)
+    }
+    // The "Add a section" column ends the row and declares no snap point.
+    el.appendChild(document.createElement('div'))
+    document.body.appendChild(el)
+    return el
+  }
+  beforeEach(() => { vi.stubGlobal('innerWidth', 390); vi.stubGlobal('innerHeight', 800) })
+  afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals() })
+
+  it('the neighbouring snap point: the nearest one past the position, kept within the scroll range, none at the end', () => {
+    const starts = [16, 371, 726, 1081]
+    expect(nextSnap(starts, 16, 1, 0, 1200)).toBe(371)
+    expect(nextSnap(starts, 371, 1, 0, 1200)).toBe(726)
+    expect(nextSnap(starts, 371, -1, 0, 1200)).toBe(16)
+    expect(nextSnap(starts, 16, -1, 0, 1200)).toBeNull()
+    // The last column cannot reach its start: the end of the row is its snap point, and then there is none.
+    expect(nextSnap(starts, 726, 1, 0, 1000)).toBe(1000)
+    expect(nextSnap(starts, 1000, 1, 0, 1000)).toBeNull()
+    // A fractional position at a snap point counts as that point.
+    expect(nextSnap(starts, 370.4, 1, 0, 1200)).toBe(726)
+    // Right to left the positions run from -max to 0.
+    expect(nextSnap([-16, -371, -726], -16, -1, -1000, 0)).toBe(-371)
+    expect(nextSnap([-16, -371, -726], -371, 1, -1000, 0)).toBe(-16)
+    expect(nextSnap([], 0, 1, 0, 1000)).toBeNull()
+  })
+
+  it('the sideways scroller near the pointer: which one, which way and how fast', () => {
+    const box = { left: 0, right: 390, scrollLeft: 400, scrollWidth: 1500 }
+    const el = board(box)
+    // Within 32 px of the right edge: to the right, faster nearer the edge; the same to the left.
+    expect(sideScroller(389, 300)).toEqual({ el, step: EDGE_STEP })
+    expect(sideScroller(370, 300)!.step).toBeGreaterThan(0)
+    expect(sideScroller(370, 300)!.step).toBeLessThan(EDGE_STEP)
+    expect(sideScroller(1, 300)).toEqual({ el, step: -EDGE_STEP })
+    // 40 px from the edge would scroll a list up or down, but not the board sideways.
+    expect(sideScroller(350, 300)).toBeNull()
+    expect(sideScroller(200, 300)).toBeNull()
+    // Outside its box, and at either end, nothing.
+    expect(sideScroller(389, 700)).toBeNull()
+    box.scrollLeft = 1110
+    expect(sideScroller(389, 300)).toBeNull()
+    expect(sideScroller(1, 300)!.step).toBeLessThan(0)
+    box.scrollLeft = 0
+    expect(sideScroller(1, 300)).toBeNull()
+  })
+
+  it('only a scroller that asks for it; never an inert one or under a dialog', () => {
+    const box = { left: 0, right: 390, scrollLeft: 400, scrollWidth: 1500 }
+    const el = board(box, { mark: false })
+    expect(sideScroller(389, 300)).toBeNull()
+    el.setAttribute('data-edge-scroll', 'x')
+    expect(sideScroller(389, 300)?.el).toBe(el)
+    const main = document.createElement('main')
+    main.setAttribute('inert', '')
+    document.body.appendChild(main)
+    main.appendChild(el)
+    expect(sideScroller(389, 300)).toBeNull()
+    main.removeAttribute('inert')
+    const dialog = document.createElement('div')
+    dialog.setAttribute('role', 'dialog')
+    document.body.appendChild(dialog)
+    const doc = document as unknown as { elementFromPoint: unknown }
+    doc.elementFromPoint = () => dialog
+    expect(sideScroller(389, 300)).toBeNull()
+    delete doc.elementFromPoint
+  })
+
+  it('a snapping board names the neighbouring column, in both writing directions', () => {
+    const box = { left: 0, right: 390, scrollLeft: 16, scrollWidth: 1500 }
+    const el = board(box, { snap: true, columns: 4 })
+    expect(sideScroller(385, 300)).toMatchObject({ el, to: 371 })
+    expect(sideScroller(5, 300)).toBeNull()
+    box.scrollLeft = 371
+    expect(sideScroller(385, 300)!.to).toBe(726)
+    expect(sideScroller(5, 300)!.to).toBe(16)
+    // The last column, and no further: what ends the row declares no snap point.
+    box.scrollLeft = 726
+    expect(sideScroller(385, 300)!.to).toBe(1081)
+    box.scrollLeft = 1081
+    expect(sideScroller(385, 300)).toBeNull()
+    document.body.innerHTML = ''
+    const rtl = { left: 0, right: 390, scrollLeft: -16, scrollWidth: 1500 }
+    board(rtl, { snap: true, columns: 4, rtl: true })
+    // The second column is to the left: the left edge turns to it, the right edge has nowhere to go.
+    expect(sideScroller(5, 300)!.to).toBe(-371)
+    expect(sideScroller(385, 300)).toBeNull()
+    rtl.scrollLeft = -371
+    expect(sideScroller(385, 300)!.to).toBe(-16)
+  })
+
+  it('a card held at the edge of a snapping board turns it one column at a time, re-reading the target; a quick release turns nothing', () => {
+    const box = { left: 0, right: 390, scrollLeft: 16, scrollWidth: 1500 }
+    board(box, { snap: true, columns: 4 })
+    const onMove = vi.fn()
+    const onDrop = vi.fn()
+    beginDrag(press, { label: 'Card', onDrop, onMove })
+    vi.advanceTimersByTime(TOUCH_HOLD_MS + 10)
+    move(385, 300)
+    // Resting for less than the arm time: the board has not moved.
+    vi.advanceTimersByTime(PAGE_ARM - 50)
+    expect(box.scrollLeft).toBe(16)
+    vi.advanceTimersByTime(100)
+    expect(box.scrollLeft).toBe(371)
+    // The target under the still finger is read again while the column slides in.
+    const moves = onMove.mock.calls.length
+    vi.advanceTimersByTime(200)
+    expect(onMove.mock.calls.length).toBeGreaterThan(moves)
+    expect(box.scrollLeft).toBe(371)
+    // One more column after each dwell.
+    vi.advanceTimersByTime(PAGE_DWELL)
+    expect(box.scrollLeft).toBe(726)
+    // Away from the edge it stops; back at an edge it arms again.
+    move(200, 300)
+    vi.advanceTimersByTime(PAGE_DWELL * 2)
+    expect(box.scrollLeft).toBe(726)
+    move(5, 300)
+    vi.advanceTimersByTime(PAGE_ARM + 50)
+    expect(box.scrollLeft).toBe(371)
+    up(5, 300)
+    vi.advanceTimersByTime(PAGE_DWELL * 2)
+    expect(box.scrollLeft).toBe(371)
+    // A drop on the next column's edge within the arm time lands without a turn.
+    box.scrollLeft = 16
+    beginDrag(press, { label: 'Card', onDrop, onMove })
+    vi.advanceTimersByTime(TOUCH_HOLD_MS + 10)
+    move(385, 300)
+    vi.advanceTimersByTime(PAGE_ARM - 100)
+    up(385, 300)
+    vi.advanceTimersByTime(PAGE_DWELL)
+    expect(box.scrollLeft).toBe(16)
+  })
+
+  it('the turn is smooth, and instant with reduced motion', () => {
+    const box = { left: 0, right: 390, scrollLeft: 16, scrollWidth: 1500 }
+    const el = board(box, { snap: true, columns: 4 })
+    const calls: ScrollToOptions[] = []
+    el.scrollTo = ((o: ScrollToOptions) => { calls.push(o) }) as typeof el.scrollTo
+    const held = (reduce: boolean) => {
+      vi.stubGlobal('matchMedia', (q: string) => ({ matches: reduce && q.includes('reduce'), media: q, addEventListener() {}, removeEventListener() {} }))
+      beginDrag({ ...press, pointerType: 'mouse' }, { label: 'Card', onDrop: vi.fn() })
+      move(385, 300)
+      vi.advanceTimersByTime(PAGE_ARM + 50)
+      up(385, 300)
+    }
+    held(false)
+    held(true)
+    expect(calls).toEqual([{ left: 371, behavior: 'smooth' }, { left: 371, behavior: 'auto' }])
+  })
+
+  it('a board that does not snap scrolls steadily while the pointer rests at its edge, and stops at the end', () => {
+    vi.stubGlobal('innerWidth', 1000)
+    const box = { left: 0, right: 1000, scrollLeft: 0, scrollWidth: 1200 }
+    board(box)
+    const onMove = vi.fn()
+    beginDrag({ ...press, pointerType: 'mouse' }, { label: 'Card', onDrop: vi.fn(), onMove })
+    move(995, 300)
+    vi.advanceTimersByTime(50)
+    expect(box.scrollLeft).toBeGreaterThan(0)
+    expect(box.scrollLeft).toBeLessThan(200)
+    vi.advanceTimersByTime(1000)
+    expect(box.scrollLeft).toBe(200)
+    const settled = onMove.mock.calls.length
+    vi.advanceTimersByTime(200)
+    expect(onMove.mock.calls.length).toBe(settled)
+    up(995, 300)
+  })
+
+  it('a column\'s cards scroll before the page, and the page once the column is at its end', () => {
+    type Box = { top: number; bottom: number; scrollTop: number; scrollHeight: number }
+    const scroller = (attr: string, value: string, b: Box, parent: HTMLElement) => {
+      const el = document.createElement('div')
+      el.setAttribute(attr, value)
+      el.getBoundingClientRect = () => ({ top: b.top, bottom: b.bottom, left: 0, right: 300, width: 300, height: b.bottom - b.top, x: 0, y: b.top, toJSON() {} })
+      Object.defineProperty(el, 'scrollTop', { get: () => b.scrollTop, set: (v: number) => { b.scrollTop = Math.max(0, Math.min(b.scrollHeight - (b.bottom - b.top), v)) }, configurable: true })
+      Object.defineProperty(el, 'clientHeight', { value: b.bottom - b.top, configurable: true })
+      Object.defineProperty(el, 'scrollHeight', { value: b.scrollHeight, configurable: true })
+      parent.appendChild(el)
+      return el
+    }
+    const page = { top: 0, bottom: 800, scrollTop: 0, scrollHeight: 2000 }
+    const cards = { top: 300, bottom: 800, scrollTop: 0, scrollHeight: 900 }
+    const main = scroller('data-main-scroller', '', page, document.body)
+    const list = scroller('data-edge-scroll', 'y', cards, main)
+    expect(edgeScroller(100, 795)?.el).toBe(list)
+    expect(edgeScroller(100, 305)).toBeNull()
+    cards.scrollTop = 400
+    expect(edgeScroller(100, 795)?.el).toBe(main)
+    expect(edgeScroller(100, 305)?.el).toBe(list)
   })
 })

@@ -76,6 +76,22 @@ describe('the Habits screen', () => {
     await r.unmount()
   })
 
+  it('the control that opens the other ways to check in shows by touch, and on hover or focus with a mouse (touch-open-and-controls)', async () => {
+    const read = await habit('Read', 'every day', '2026-11-11')
+    const walk = await habit('Walk', 'every day', '2026-11-11')
+    await completeTask(walk, { today: '2026-11-11' })
+    const r = await render(<HabitsScreen />)
+    await waitFor(() => !!document.querySelector(`[data-habit-row="${read}"]`) && !!document.querySelector(`[data-habit-row="${walk}"] [data-check-in][data-kept]`), 'the rows')
+    const trigger = document.querySelector<HTMLElement>(`[data-habit-row="${read}"] button[aria-label="More ways to check in Read"]`)!
+    // happy-dom applies no CSS, so the classes are what can be read here: hidden at rest,
+    // shown with a coarse pointer, and with a fine one on the row's hover or focus.
+    const classes = trigger.className.split(/\s+/)
+    expect(classes).toEqual(expect.arrayContaining(['opacity-0', 'pointer-coarse:opacity-100', 'group-hover:opacity-100', 'group-focus-within:opacity-100', 'focus:opacity-100']))
+    // A row kept today offers no other way, so it has no control to show.
+    expect(document.querySelector(`[data-habit-row="${walk}"] button[aria-label^="More ways to check in"]`)).toBeNull()
+    await r.unmount()
+  })
+
   it('Check in from the screen with Space, and the tiny version with Shift+Space; the day fills at once', async () => {
     const read = await habit('Read', 'every day', '2026-11-11', { habit_tiny: 'One page' })
     const walk = await habit('Walk', 'every day', '2026-11-11')
@@ -149,21 +165,6 @@ describe('the Today strip', () => {
 })
 
 describe('habits-polish', () => {
-  it('The row\'s "More ways to check in" menu is never hidden on touch: it shows with hover where there is one (phone-rest)', async () => {
-    const read = await habit('Read', 'every day', '2026-11-11')
-    const r = await render(<HabitsScreen />)
-    await waitFor(() => !!document.querySelector(`[data-habit-row="${read}"]`), 'the row')
-    const menu = document.querySelector<HTMLElement>(`[data-habit-row="${read}"] [aria-label="More ways to check in Read"]`)!
-    // `ui-reveal` hides only under `(hover: hover)` (index.css); an `opacity-0` class would hide it from a finger too.
-    const classes = menu.className.split(/\s+/)
-    expect(classes).toContain('ui-reveal')
-    expect(classes.some((c) => c.includes('opacity-0'))).toBe(false)
-    expect(menu.closest('.group')).not.toBeNull()
-    await click(menu)
-    await waitFor(() => [...document.querySelectorAll('[role="menuitem"]')].some((i) => i.textContent?.includes('Log the tiny version')), 'the menu')
-    await r.unmount()
-  })
-
   it('A long title stays on one line, its name whole; every row has a check button, early for a habit due later', async () => {
     const long = 'Practise the Bach cello suite in G major, first movement'
     const cello = await habit(long, 'every day', '2026-11-11')

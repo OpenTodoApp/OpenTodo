@@ -74,7 +74,7 @@ export function projectionLabel(p: Projection): string {
   return [p.title || t('Untitled'), t('repeating, projected'), when, p.estimate_minutes ? formatMinutes(p.estimate_minutes) : ''].filter(Boolean).join(', ')
 }
 
-/** The tooltip of a capped series' projections ("Showing the next 31 occurrences"). */
+/** A capped series' note ("Showing the next 31 occurrences"): its projections' tooltip, a part of their name and the heading of their menu. */
 export const cappedNote = (p: Projection): string | undefined => (p.capped ? t('Showing the next {n} occurrences', { n: MAX_PROJECTIONS }) : undefined)
 
 /** Focus is on a projection: the views' "open the selected task" Enter stands back for its own click. */
@@ -168,7 +168,7 @@ export function ProjectedItem({ p, hue, variant, style, className = '', onDrag }
       data-projection-movable={onDrag && p.actionable ? '' : undefined}
       onClick={() => openProjection(p)} {...handlers}
       className={`ui-block ui-block--projected ${block ? 'absolute z-10 flex flex-col overflow-hidden' : 'ui-block--row flex w-full items-center'} touch-manipulation gap-1 text-start ${size} ${className}`}>
-      <span className="sr-only">{projectionLabel(p)}</span>
+      <span className="sr-only">{[projectionLabel(p), note].filter(Boolean).join(', ')}</span>
       <span aria-hidden className={`flex min-w-0 ${variant === 'large' ? 'flex-1 items-baseline gap-2' : block ? 'items-center gap-1' : 'flex-1 items-center gap-1'}`}>
         {/* The phone agenda's time column, as its task rows have. */}
         {variant === 'large' && <span className="w-14 shrink-0 text-meta tabular-nums">{p.time ? formatWallTime(p.time) : t('all day')}</span>}

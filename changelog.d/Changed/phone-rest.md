@@ -1,4 +1,3 @@
 - **Notes on a phone: start a note from a template.** The Notes page's menu (**…**) now begins with **From template…**, which a phone could not reach before ([Note templates](docs/note-templates.md)).
 - **Routines on a phone: the row has room for its text.** On a narrow screen a routine's row shows the switch, the name and what it does; **Run now** is in the row's menu.
 - **Statistics on a phone: a chart that continues says so.** The year of done tasks, the weekday and hour grid and a wide table fade out at the edge where more is hidden.
-- **Habits on a phone: the row's menu is visible.** "More ways to check in" (the tiny version, an amount) showed only under a mouse.

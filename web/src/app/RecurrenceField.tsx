@@ -45,6 +45,10 @@ function useRepeatLanguages(today: string): RepeatPhraseContext {
   }, [today, prefs, resolved, language]) // eslint-disable-line react-hooks/exhaustive-deps -- the interface language decides the languages read
 }
 
+// What Skip and This occurrence only do: their tooltips, and the lines under them on a touch screen.
+const skipDoes = () => t('Move to the next occurrence without completing')
+const detachDoes = () => t('Edit this occurrence alone and move the series on')
+
 export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: string) => void }) {
   const [draft, setDraft] = useState(task.recurrence ?? '')
   const [error, setError] = useState<string | null>(null)
@@ -139,13 +143,20 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
       {parsed?.ok && preview.length === 0 && <p className="text-meta text-muted">{t('No further occurrences: the next completion ends the series.')}</p>}
       {recurring && (
         <div className="flex flex-wrap gap-2 pt-1">
-          <Tooltip label={t('Move to the next occurrence without completing')} shortcut={keysOf('list.skip')}>
+          <Tooltip label={skipDoes()} shortcut={keysOf('list.skip')}>
             <button className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => act(skip())}>{t('⤼ Skip')}</button>
           </Tooltip>
-          <Tooltip label={t('Edit this occurrence alone and move the series on')} shortcut={keysOf('list.detach')}>
+          <Tooltip label={detachDoes()} shortcut={keysOf('list.detach')}>
             <button className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => void detach()}>{t('This occurrence only')}</button>
           </Tooltip>
         </div>
+      )}
+      {/* What the two do, under them where a tap opens no tooltip (phone-control-facts). */}
+      {recurring && (
+        <dl className="space-y-0.5 text-meta text-faint pointer-fine:hidden" data-recurrence-actions-help>
+          <div><dt className="inline text-muted">{t('⤼ Skip')}</dt>{' · '}<dd className="inline">{skipDoes()}</dd></div>
+          <div><dt className="inline text-muted">{t('This occurrence only')}</dt>{' · '}<dd className="inline">{detachDoes()}</dd></div>
+        </dl>
       )}
       {notice && <p className="text-meta text-muted" role="status">{notice}</p>}
       {habitOffered && <Suspense fallback={null}><HabitSection task={task} related={related} today={today} /></Suspense>}

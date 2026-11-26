@@ -4909,7 +4909,7 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Decisions": [
-    "web/src/app/TriageView.tsx",
+    "web/src/app/TriageBar.tsx",
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Decline": [
@@ -4969,7 +4969,7 @@
     "web/src/app/TriageView.tsx"
   ],
   "Delegating needs a project you share with someone.": [
-    "web/src/app/TriageView.tsx"
+    "web/src/app/TriageBar.tsx"
   ],
   "Delete": [
     "web/src/app/CalendarFeedsPanel.tsx",
@@ -5744,6 +5744,7 @@
   ],
   "Earlier": [
     "web/src/app/AppBadge.tsx",
+    "web/src/app/TimelineView.tsx",
     "web/src/app/assistant/blocks/StatsBlock.tsx",
     "web/src/app/calendar/planSource.ts",
     "web/src/app/display/DisplayScreen.tsx",
@@ -6925,6 +6926,7 @@
   "Find a project…": [
     "web/src/app/ProjectPickerField.tsx",
     "web/src/app/ProjectsView.tsx",
+    "web/src/app/TriageView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/completed/CompletedOptionsBody.tsx",
     "web/src/app/menus/projectMenu.tsx",
@@ -9392,6 +9394,7 @@
     "web/src/app/ProjectsTable.tsx"
   ],
   "Later": [
+    "web/src/app/TimelineView.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/review/CarryOver.tsx",
     "web/src/app/themes/previewData.ts",
@@ -10413,6 +10416,7 @@
   ],
   "More": [
     "web/src/app/Sidebar.tsx",
+    "web/src/app/TriageBar.tsx",
     "web/src/app/review/charts.tsx",
     "web/src/app/routines/RoutinesView.tsx",
     "web/src/app/routines/wordPicker.tsx"
@@ -11520,6 +11524,7 @@
   ],
   "No project matches.": [
     "web/src/app/ProjectPickerField.tsx",
+    "web/src/app/TriageView.tsx",
     "web/src/app/completed/CompletedOptionsBody.tsx"
   ],
   "No project named \"{name}\"": [
@@ -12859,7 +12864,7 @@
   "Open": [
     "web/src/app/AppLinkConfirm.tsx",
     "web/src/app/TrackingIndicator.tsx",
-    "web/src/app/TriageView.tsx",
+    "web/src/app/TriageBar.tsx",
     "web/src/app/calendar/occurrenceMenu.tsx",
     "web/src/app/palette/addFromBar.ts",
     "web/src/app/review/ProjectWalk.tsx",
@@ -14554,6 +14559,7 @@
     "web/src/app/CalendarView.tsx",
     "web/src/app/MonthView.tsx",
     "web/src/app/PlanView.tsx",
+    "web/src/app/TimelineView.tsx",
     "web/src/app/calendar/MonthsSpanView.tsx"
   ],
   "Re-enable": [
@@ -16795,6 +16801,7 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Showing the next {n} occurrences": [
+    "web/src/app/calendar/occurrenceMenu.tsx",
     "web/src/app/calendar/projections.tsx"
   ],
   "Shown after the link’s secret, to say what the page is about. Lowercase letters, digits and hyphens.": [
@@ -22979,7 +22986,8 @@
     "web/src/app/CalendarEvents.tsx",
     "web/src/app/CalendarView.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
-    "web/src/app/calendar/projections.tsx"
+    "web/src/app/calendar/projections.tsx",
+    "web/src/phone/screens/PhoneCalendarRow.tsx"
   ],
   "an assistant": [
     "web/src/app/calendar/EventEditor.tsx"
@@ -23295,7 +23303,8 @@
     "web/src/app/TaskRow.tsx",
     "web/src/app/calendar/DeadlineMarker.tsx",
     "web/src/lib/facets.ts",
-    "web/src/lib/rules/summary.ts"
+    "web/src/lib/rules/summary.ts",
+    "web/src/phone/screens/PhoneCalendarRow.tsx"
   ],
   "deadline {date}, {count}": [
     "web/src/lib/facets.ts"

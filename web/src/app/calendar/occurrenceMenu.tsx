@@ -7,10 +7,10 @@ import { useState } from 'react'
 import { t } from '../../lib/i18n'
 import { useMembershipMap, useTask } from '../../lib/localData'
 import { actOnOccurrenceUndoable, moveOccurrenceFromView } from '../../lib/occurrenceActions'
-import type { Projection } from '../../lib/occurrences'
+import { MAX_PROJECTIONS, type Projection } from '../../lib/occurrences'
 import type { OccurrenceAction } from '../../lib/seriesPlan'
 import { canEditTasks, roleOf } from '../../lib/sharing'
-import { Dialog, Field, Input, Menu, MenuItem } from '../../ui'
+import { Dialog, Field, Input, Menu, MenuGroup, MenuItem } from '../../ui'
 import { act } from '../actionError'
 import { showUndoToast } from '../bulk/toastStore'
 import { setPanelTaskId } from '../panel'
@@ -55,16 +55,19 @@ export default function OccurrenceMenu({ p, x, y, onClose }: { p: Projection; x:
         <Menu kind="menu" label={t('Occurrence actions')} trigger={<span className="sr-only" />} triggerClassName="sr-only"
           triggerProps={{ style: { /* physical: at the pointer */ position: 'fixed', left: x, top: y } }} align="start" width="sm:w-64" open
           onOpenChange={(open) => { if (!open) onClose() }}>
-          <MenuItem label={t('Open')} icon="panel-right" data-occurrence-action="open" onSelect={() => setPanelTaskId(p.seriesId, p.occurrence)} />
-          {canAct && (
-            <>
-              <MenuItem label={t('Complete this occurrence')} icon="check" data-occurrence-action="complete" onSelect={() => act(actOnProjection(p.seriesId, p.occurrence, { kind: 'complete' }))} />
-              <MenuItem label={p.habit ? t('Skip this day') : t('Skip this occurrence')} icon="arrow-right" data-occurrence-action="skip"
-                onSelect={() => act(actOnProjection(p.seriesId, p.occurrence, { kind: 'skip' }))} />
-              <MenuItem label={t('Move to…')} icon="calendar-days" data-occurrence-action="move" onSelect={() => setMoving(true)} />
-              <MenuItem label={t('Delete this and following')} icon="trash-2" danger data-occurrence-action="end-from" onSelect={() => act(endFromProjection(p))} />
-            </>
-          )}
+          {/* A capped series says so where a long press reads it (phone-control-facts): a tap never opens the tooltip. */}
+          <MenuGroup label={p.capped ? t('Showing the next {n} occurrences', { n: MAX_PROJECTIONS }) : undefined}>
+            <MenuItem label={t('Open')} icon="panel-right" data-occurrence-action="open" onSelect={() => setPanelTaskId(p.seriesId, p.occurrence)} />
+            {canAct && (
+              <>
+                <MenuItem label={t('Complete this occurrence')} icon="check" data-occurrence-action="complete" onSelect={() => act(actOnProjection(p.seriesId, p.occurrence, { kind: 'complete' }))} />
+                <MenuItem label={p.habit ? t('Skip this day') : t('Skip this occurrence')} icon="arrow-right" data-occurrence-action="skip"
+                  onSelect={() => act(actOnProjection(p.seriesId, p.occurrence, { kind: 'skip' }))} />
+                <MenuItem label={t('Move to…')} icon="calendar-days" data-occurrence-action="move" onSelect={() => setMoving(true)} />
+                <MenuItem label={t('Delete this and following')} icon="trash-2" danger data-occurrence-action="end-from" onSelect={() => act(endFromProjection(p))} />
+              </>
+            )}
+          </MenuGroup>
         </Menu>
       )}
       {moving && <MoveOccurrenceDialog p={p} onClose={onClose} />}

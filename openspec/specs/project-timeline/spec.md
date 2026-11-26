@@ -144,3 +144,14 @@ The layout is drawn from local data and writes nothing, so it is the same offlin
 #### Scenario: Unchanged with a mouse
 - **WHEN** the timeline is opened at 1280 px with a mouse
 - **THEN** rows are 36 px with the names in a column beside the grid, a click on a name selects its row, and the hint also names the arrow keys
+
+### Requirement: The range has visible controls
+The timeline SHALL offer three buttons beside its zoom, named Earlier, Today and Later: Earlier and Later move the range by the step the keys `[` and `]` move it (one week in Days, four in Weeks), and Today returns it to today. They SHALL be there on every device, so a device without a keyboard can move the range. The keys stay. Moving the range changes what is shown and writes nothing.
+
+#### Scenario: Move the range on a phone
+- **WHEN** a person taps Later in Days
+- **THEN** the timeline starts one week later
+
+#### Scenario: Back to today
+- **WHEN** the range was moved and a person taps Today
+- **THEN** the timeline shows today's range again

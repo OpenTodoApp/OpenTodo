@@ -231,3 +231,69 @@ describe('TruncatedText (ux-fixes-phone D2)', () => {
     await r.unmount()
   })
 })
+
+// By touch a tip has no hover: on something that is not a control a tap opens it (OpenSpec change tooltip-tap).
+describe('a tooltip on something that is not a control, by touch', () => {
+  const down = (el: EventTarget) => act(async () => { el.dispatchEvent(new (window.PointerEvent ?? MouseEvent)('pointerdown', { bubbles: true, pointerType: 'touch' } as PointerEventInit)) })
+  const tap = async (el: Element) => { await down(el); await act(async () => { (el as HTMLElement).click() }) }
+
+  it('opens on a tap, at once, and closes on a second tap', async () => {
+    mockPointer(true)
+    const r = await render(<Tooltip label="Not yet synced"><span tabIndex={0}>(pending)</span></Tooltip>)
+    const word = r.container.querySelector('span')!
+    await tap(word)
+    expect(tip()?.textContent).toBe('Not yet synced')
+    await tap(word)
+    expect(tip()).toBeNull()
+    await r.unmount()
+  })
+
+  it('closes on a press anywhere else, on a scroll and on Escape', async () => {
+    mockPointer(true)
+    const r = await render(<div><Tooltip label="Firefox on Linux"><span tabIndex={0}>Firefox</span></Tooltip><p>elsewhere</p></div>)
+    const word = r.container.querySelector('span')!
+    await tap(word)
+    expect(tip()).not.toBeNull()
+    await down(r.container.querySelector('p')!)
+    expect(tip()).toBeNull()
+    await tap(word)
+    await act(async () => { window.dispatchEvent(new Event('scroll')) })
+    expect(tip()).toBeNull()
+    await tap(word)
+    await act(async () => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })) })
+    expect(tip()).toBeNull()
+    await r.unmount()
+  })
+
+  it('does not open on a control or inside one: the tap is the control\'s', async () => {
+    mockPointer(true)
+    const r = await render(
+      <div>
+        <Tooltip label="Close"><button>×</button></Tooltip>
+        <button data-outer><Tooltip label="Two labels share this name"><span>duplicate</span></Tooltip></button>
+      </div>,
+    )
+    await tap(r.container.querySelector('button')!)
+    expect(tip()).toBeNull()
+    await tap(r.container.querySelector('[data-outer] span')!)
+    expect(tip()).toBeNull()
+    await r.unmount()
+  })
+
+  it('does not open on a click with a mouse', async () => {
+    const r = await render(<Tooltip label="Not yet synced"><span tabIndex={0}>(pending)</span></Tooltip>)
+    await act(async () => { r.container.querySelector('span')!.click() })
+    await advance(1000)
+    expect(tip()).toBeNull()
+    await r.unmount()
+  })
+
+  it('keeps the element\'s own click handler', async () => {
+    mockPointer(true)
+    const seen = vi.fn()
+    const r = await render(<Tooltip label="More"><span tabIndex={0} onClick={seen}>word</span></Tooltip>)
+    await tap(r.container.querySelector('span')!)
+    expect(seen).toHaveBeenCalledTimes(1)
+    await r.unmount()
+  })
+})

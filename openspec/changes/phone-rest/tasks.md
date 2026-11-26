@@ -9,7 +9,7 @@
 - [x] 2.1 Notes: From template… is the first item of the page's menu below 768 px. Verify: `notesPage.test.tsx` "From template on a phone" and "From 768 px the page menu has no From template item"; tapped at 390 px.
 - [x] 2.2 Routines: below 640 px Run now is the row menu's item only. Verify: `routines.test.tsx` "Narrow row"; a screenshot at 360 px.
 - [x] 2.3 Statistics: the heatmap, the weekday and hour grid and a chart's table fade where they continue; `useScrollEdges` reads a row that starts at its right end. Verify: `statsView.test.tsx` "a chart or table wider than the screen fades at the edge where more is hidden", `surfaces.test.tsx` (tab rows unchanged); a finger drag at 360 and 390 px.
-- [x] 2.4 Habits: the row's menu button is shown on touch. Verify: `habitsScreen.test.tsx` "never hidden on touch"; the layout check on `habits`.
+- [x] 2.4 Habits: the row's menu button was invisible on touch (found by the layout check on the new `habits` entry). Nothing to add: `touch-open-and-controls` (#2111) fixed it on main while this change was written. Verify: the layout check on `habits` after the merge with main.
 
 ## 3. Checks
 
