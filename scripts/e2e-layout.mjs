@@ -224,8 +224,11 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
     page.on('dialog', (d) => d.dismiss())
     page.on('crash', () => { run.crashed ??= run.step; browser.close().catch(() => {}) })
     const pageErrors = []
-    // WebKit reports fetches cut off by a navigation as errors; those are not app bugs.
-    page.on('pageerror', (e) => { if (!/access control checks|Load failed|The network connection was lost|cancelled/i.test(e.message)) pageErrors.push(e.message) })
+    // WebKit reports fetches cut off by a navigation as errors; those are not app bugs. A lazy chunk whose
+    // import the next navigation cut off is one of them ("Importing a module script failed"): seen three times
+    // in the 768 px leg on unrelated commits, each on a rerun that then passed. A chunk that is really
+    // missing still fails the check: its screen shows the load error instead of its content.
+    page.on('pageerror', (e) => { if (!/access control checks|Load failed|The network connection was lost|cancelled|Importing a module script failed/i.test(e.message)) pageErrors.push(e.message) })
     await page.goto(base + '/inbox')
     await page.locator('[data-task-id]').first().waitFor({ timeout: 30000 })
     // The touch probes (mobile-native-feel): each on a page of its own, opened on the
