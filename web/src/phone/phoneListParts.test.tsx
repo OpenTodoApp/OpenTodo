@@ -34,7 +34,6 @@ import { setUpcomingProjections } from '../app/calendar/projections'
 import { hideBulkToast } from '../app/bulk/toastStore'
 import { navigate, type Route } from '../app/router'
 import { Shell } from '../app/Shell'
-import { setPhoneUiEnabled } from './prefs'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 const original = window.matchMedia
@@ -50,9 +49,8 @@ beforeEach(async () => {
     addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
   })) as typeof window.matchMedia
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
-  setPhoneUiEnabled(false)
 })
-afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals(); resetLinkIndex(); setUpcomingProjections(false); setPhoneUiEnabled(false) })
+afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals(); resetLinkIndex(); setUpcomingProjections(false) })
 
 const list = () => document.querySelector<HTMLElement>('[data-phone-screen="list"][data-phone-list]')
 const inList = <E extends HTMLElement = HTMLElement>(selector: string) => list()?.querySelector<E>(selector) ?? null
@@ -65,7 +63,6 @@ const before = (a: Element, b: Element) => !!(a.compareDocumentPosition(b) & Nod
 
 /** Opens a route in the phone UI and waits for its phone list. */
 async function open(route: Route) {
-  setPhoneUiEnabled(true)
   navigate(route)
   const r = await render(<Shell user={user} onLogout={() => {}} />)
   await waitFor(() => list()?.getAttribute('data-phone-list') === route.view, `the phone list of ${route.view}`)
@@ -326,7 +323,6 @@ describe('states of the phone list', () => {
     await createProject({ name: 'Work' })
     await createLabel({ name: 'errand' })
     await createTask({ title: 'An idea' })
-    setPhoneUiEnabled(true)
     navigate({ view: 'label', id: 'gone' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     const frame = () => document.querySelector<HTMLElement>('[data-app-frame]')
@@ -344,7 +340,6 @@ describe('states of the phone list', () => {
   // The state is part of the phone screen: the phone header's menu button is the way out, and the shell's own bar is gone.
   it('a missing project shows its state inside the phone screen, under the phone header', async () => {
     await createProject({ name: 'Work' })
-    setPhoneUiEnabled(true)
     navigate({ view: 'project', id: 'gone' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!document.querySelector('[data-phone-screen]')?.textContent?.includes('This project no longer exists.') && !!document.querySelector('[data-phone-header]') && !document.querySelector('[data-phone-bar]'), 'the missing state in the phone screen')
@@ -537,6 +532,9 @@ describe('calendar events, Start with Today and the sample offer in the phone li
 })
 
 describe('the page menu of the phone list, for the lists phoneLists.test.tsx leaves out', () => {
+  // Every item of the menu, and the bar's controls, sorted.
+  const MENU = ['Help', 'Print…', 'Select tasks']
+  const BAR = ['More actions', 'Open menu']
   const items = () => [...document.querySelectorAll<HTMLElement>('[role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]')].map((el) => el.textContent?.trim() ?? '').filter(Boolean).sort()
   /** Opens the last menu of a bar (the page's own menu) and returns its items; closes it again. */
   async function menuOf(bar: () => Element | null | undefined): Promise<string[]> {
@@ -550,50 +548,38 @@ describe('the page menu of the phone list, for the lists phoneLists.test.tsx lea
     await waitFor(() => items().length === 0, 'the menu closed')
     return found
   }
-  const everyRow = () => [...document.querySelectorAll<HTMLElement>('[data-task-id]')].map((el) => el.dataset.taskId!)
   const controls = (bar: Element) => [...bar.querySelectorAll('button[aria-label]')].map((b) => b.getAttribute('aria-label')).sort()
 
-  const ROUTES: [string, Route][] = [
-    ['Completed', { view: 'completed' }],
-    ['Anytime', { view: 'anytime' }],
-    ['Someday', { view: 'someday' }],
-    ['Assigned to me', { view: 'assigned' }],
+  const ROUTES: [string, Route, string[], string[]][] = [
+    // Completed selects nothing, and its display options are a control of the bar.
+    ['Completed', { view: 'completed' }, ['Help', 'Print…'], ['Display options', ...BAR]],
+    ['Anytime', { view: 'anytime' }, MENU, BAR],
+    ['Someday', { view: 'someday' }, MENU, BAR],
+    ['Assigned to me', { view: 'assigned' }, MENU, BAR],
   ]
-  for (const [name, route] of ROUTES) {
-    it(`${name} offers every item its present phone menu offers, and the same controls in the bar`, async () => {
+  for (const [name, route, menu, bar] of ROUTES) {
+    it(`${name} offers every item of its menu, and its controls in the bar`, async () => {
       const work = await createProject({ name: 'Work' })
       await createTask({ title: 'Send the invoice', project_id: work, assignee_id: user.id })
       await createTask({ title: 'Learn the cello', start: 'someday' })
       await setTaskCompleted(await createTask({ title: 'Old thing' }), true)
       navigate(route)
       const r = await render(<Shell user={user} onLogout={() => {}} />)
-      await waitFor(() => !!document.querySelector('[data-list-page]') && everyRow().length > 0, 'the present list')
-      const present = await menuOf(() => document.querySelector('[data-phone-bar]'))
-      const presentControls = controls(document.querySelector('[data-phone-bar]')!)
-      setPhoneUiEnabled(true)
       await waitFor(() => list()?.getAttribute('data-phone-list') === route.view && rowIds().length > 0, 'the phone list')
-      const phone = await menuOf(() => inList('[data-phone-header]'))
-      expect(present.length).toBeGreaterThan(0)
-      for (const item of present) expect(phone).toContain(item)
-      expect(controls(inList('[data-phone-header]')!)).toEqual(presentControls)
+      expect(await menuOf(() => inList('[data-phone-header]'))).toEqual(menu)
+      expect(controls(inList('[data-phone-header]')!)).toEqual(bar)
       await r.unmount()
     })
   }
 
-  it('a place offers every item its present phone menu offers, and the same controls in the bar', async () => {
+  it('a place offers every item of its menu, and its controls in the bar', async () => {
     const place = await createPlace({ name: 'Post office' })
     await createTask({ title: 'Buy stamps', location: locationFromPlace((await getPlace(place))!) })
     navigate({ view: 'place', id: place })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector('[data-list-page]') && everyRow().length > 0, 'the present list')
-    const present = await menuOf(() => document.querySelector('[data-phone-bar]'))
-    const presentControls = controls(document.querySelector('[data-phone-bar]')!)
-    setPhoneUiEnabled(true)
     await waitFor(() => list()?.getAttribute('data-phone-list') === 'place' && rowIds().length > 0, 'the phone list')
-    const phone = await menuOf(() => inList('[data-phone-header]'))
-    expect(present.length).toBeGreaterThan(0)
-    for (const item of present) expect(phone).toContain(item)
-    expect(controls(inList('[data-phone-header]')!)).toEqual(presentControls)
+    expect(await menuOf(() => inList('[data-phone-header]'))).toEqual(MENU)
+    expect(controls(inList('[data-phone-header]')!)).toEqual(BAR)
     await r.unmount()
   })
 })

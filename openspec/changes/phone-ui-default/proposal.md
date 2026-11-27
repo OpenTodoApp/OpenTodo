@@ -15,6 +15,8 @@ While the switch is off by default, almost nobody sees them, and the apps are st
 
 Out of scope: removing the switch and the earlier phone layout (the change after one release, once nobody needs the way back), tablets and every width from 768 px, redrawing what is particular to a screen, and the Android and iOS shells.
 
+Since: `phone-ui-only` removed the switch and the earlier phone layout. This change's spec delta was edited to what still holds (`phone-ui-only` design D1); the rest of this change is as it was written.
+
 Advances the ROADMAP item "Shells that feel native" (the phone reads like an app, `mobile/AUDIT.md`).
 
 ## Capabilities

@@ -14,10 +14,7 @@ import { openTaskPanel, resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
 import { RESTORE_AFTER_MS } from './useScrollDirection'
-import { setPhoneUiEnabled } from '../phone/prefs'
 
-// These tests are about the earlier phone layout, the way back while the phone screens are the default (phone-ui-default D3).
-beforeEach(() => setPhoneUiEnabled(false))
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 let width = 390
@@ -80,7 +77,9 @@ describe('the tab bar', () => {
     const aside = document.querySelector('aside[data-sidebar]')!
     expect(aside.className).toContain('-translate-x-full')
     expect(tab('more' as string)).toBeNull()
-    await click(document.querySelector<HTMLButtonElement>('[data-phone-bar] button[aria-label="Open menu"]')!)
+    const menu = () => document.querySelector<HTMLButtonElement>('[data-phone-header] button[aria-label="Open menu"]')
+    await waitFor(() => !!menu(), 'the header\'s menu button')
+    await click(menu()!)
     await waitFor(() => document.querySelector('aside[data-sidebar]')!.className.includes('translate-x-0'), 'the drawer open')
     expect(document.querySelector('aside[data-sidebar]')!.className).toContain('translate-x-0')
     await click(document.querySelector<HTMLElement>('.bg-scrim')!)

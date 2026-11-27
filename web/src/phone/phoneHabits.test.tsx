@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 // The Habits screen on a phone (OpenSpec change habits-complete, task 3.1): the ring
 // checks in and takes back, an earlier day lists its habits and fixes a missed day,
-// a hold opens the row's actions, and the desktop screen stays with the switch off.
+// a hold opens the row's actions, and the desktop screen stays from 768 px.
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
@@ -13,7 +13,6 @@ import { click, minWidthPx, render, waitFor } from '../ui/test-utils'
 import { resetPanel } from '../app/panel'
 import { navigate } from '../app/router'
 import { Shell } from '../app/Shell'
-import { setPhoneUiEnabled } from './prefs'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 let width = 390
@@ -35,9 +34,8 @@ beforeEach(async () => {
     addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
   })) as typeof window.matchMedia
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
-  setPhoneUiEnabled(true)
 })
-afterEach(() => { vi.useRealTimers(); window.matchMedia = original; vi.unstubAllGlobals(); setPhoneUiEnabled(false) })
+afterEach(() => { vi.useRealTimers(); window.matchMedia = original; vi.unstubAllGlobals() })
 
 async function habit(title: string, rule: string, due: string, extra: Record<string, unknown> = {}): Promise<string> {
   const id = await createTask({ title, due: { date: due }, recurrence: rule })
@@ -105,17 +103,11 @@ describe('Habits on a phone', () => {
     await r.unmount()
   })
 
-  it('Off: the desktop screen with the switch off or from 768 px', async () => {
+  it('From 768 px: the desktop screen', async () => {
     await habit('Read', 'every day', '2026-11-11')
-    setPhoneUiEnabled(false)
     navigate({ view: 'habits' })
-    let r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector('[data-habits-page]'), 'the screen')
-    expect(document.querySelector('[data-phone-habits]')).toBeNull()
-    await r.unmount()
-    setPhoneUiEnabled(true)
     width = 1024
-    r = await render(<Shell user={user} onLogout={() => {}} />)
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!document.querySelector('[data-habits-page]'), 'the screen')
     expect(document.querySelector('[data-phone-habits]')).toBeNull()
     await r.unmount()

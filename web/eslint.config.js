@@ -108,12 +108,12 @@ export default [
   // calls of lib/db are open to screens. Tests and test kits seed the database.
   // The phone UI (src/phone, OpenSpec phone-ui-trial D1) is held to the same rule,
   // and the two sets of screens are kept apart: a desktop screen imports the phone
-  // UI only where it is chosen (Shell) and switched on (PreferencesPanels), and a
+  // UI only where it is chosen (Shell), and a
   // phone screen imports from src/app only the shared hooks, models and editors
   // listed in PHONE_MAY_IMPORT, never a desktop screen.
   ...[
-    { files: ['src/app/**/*.{ts,tsx}'], ignores: ['src/app/Shell.tsx', 'src/app/PreferencesPanels.tsx'], extra: [{ regex: '(^|/)phone(/|$)', message: 'Only Shell.tsx and PreferencesPanels.tsx import the phone UI (phone-ui-trial D1).' }] },
-    { files: ['src/app/Shell.tsx', 'src/app/PreferencesPanels.tsx'], ignores: [], extra: [] },
+    { files: ['src/app/**/*.{ts,tsx}'], ignores: ['src/app/Shell.tsx'], extra: [{ regex: '(^|/)phone(/|$)', message: 'Only Shell.tsx imports the phone UI (phone-ui-trial D1).' }] },
+    { files: ['src/app/Shell.tsx'], ignores: [], extra: [] },
     { files: ['src/phone/**/*.{ts,tsx}'], ignores: [], extra: [{ regex: `(^|/)app/(?!(${PHONE_MAY_IMPORT.join('|')})$)`, message: 'A phone screen imports from src/app only what PHONE_MAY_IMPORT lists (shared hooks, models and editors), never a desktop screen (phone-ui-trial D1).' }] },
   ].map(({ files, ignores, extra }) => ({
     files,

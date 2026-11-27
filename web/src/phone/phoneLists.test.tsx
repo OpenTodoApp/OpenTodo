@@ -17,11 +17,11 @@ import { resetPanel } from '../app/panel'
 import { navigate, type Route } from '../app/router'
 import { Shell } from '../app/Shell'
 import { resetTaskTrail } from '../app/taskTrail'
-import { setPhoneUiEnabled } from './prefs'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 const original = window.matchMedia
 const today = logicalToday()
+let width = 390
 
 beforeEach(async () => {
   await db.delete()
@@ -29,14 +29,14 @@ beforeEach(async () => {
   resetDeviceId()
   resetPanel()
   resetTaskTrail()
+  width = 390
   window.matchMedia = ((q: string) => ({
-    matches: q.includes('min-width') ? minWidthPx(q) <= 390 : false, media: q, onchange: null,
+    matches: q.includes('min-width') ? minWidthPx(q) <= width : false, media: q, onchange: null,
     addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
   })) as typeof window.matchMedia
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
-  setPhoneUiEnabled(false)
 })
-afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals(); setPhoneUiEnabled(false) })
+afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals() })
 
 const list = () => document.querySelector<HTMLElement>('[data-phone-list]')
 const rowIds = () => [...document.querySelectorAll<HTMLElement>('[data-task-id]')].map((el) => el.dataset.taskId!)
@@ -73,15 +73,18 @@ const ROUTES: [string, (s: Seeded) => Route][] = [
 
 describe('every task list is a phone screen', () => {
   for (const [name, route] of ROUTES) {
-    it(`${name} shows the rows, groups and order of the list it replaces`, async () => {
+    it(`${name} shows the rows, groups and order of the same list at 1280 px`, async () => {
       const s = await seed()
       navigate(route(s))
-      const r = await render(<Shell user={user} onLogout={() => {}} />)
-      await waitFor(() => !!document.querySelector('[data-list-page]'), 'the present list')
-      // The present list settles on its rows; an empty list has none.
-      await waitFor(async () => { const a = rowIds().join(); await new Promise((ok) => requestAnimationFrame(() => ok(null))); return a === rowIds().join() }, 'the present list at rest')
+      width = 1280
+      const wide = await render(<Shell user={user} onLogout={() => {}} />)
+      await waitFor(() => !!document.querySelector('[data-list-page]'), 'the desktop list')
+      // The desktop list settles on its rows; an empty list has none.
+      await waitFor(async () => { const a = rowIds().join(); await new Promise((ok) => requestAnimationFrame(() => ok(null))); return a === rowIds().join() }, 'the desktop list at rest')
       const before = { ids: rowIds(), headings: headings() }
-      setPhoneUiEnabled(true)
+      await wide.unmount()
+      width = 390
+      const r = await render(<Shell user={user} onLogout={() => {}} />)
       await waitFor(() => !!list() && rowIds().join() === before.ids.join(), 'the phone list with the same rows')
       expect(list()!.getAttribute('data-phone-list')).toBe(route(s).view)
       expect(headings()).toEqual(before.headings)
@@ -96,7 +99,6 @@ describe('every task list is a phone screen', () => {
   it('a project in the Board layout keeps its present screen', async () => {
     const s = await seed()
     await saveViewMode(s.work, 'board')
-    setPhoneUiEnabled(true)
     navigate({ view: 'project', id: s.work })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!document.querySelector('[data-list-page]'), 'the board')
@@ -108,7 +110,6 @@ describe('every task list is a phone screen', () => {
 describe('rows of the phone list', () => {
   it('a subtask sits under its task, indented, and the fold hides and shows it', async () => {
     const s = await seed()
-    setPhoneUiEnabled(true)
     navigate({ view: 'project', id: s.work })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!row(s.child), 'the subtask')
@@ -125,7 +126,6 @@ describe('rows of the phone list', () => {
 
   it('leaves the project out of a row inside its own project, and names it elsewhere', async () => {
     const s = await seed()
-    setPhoneUiEnabled(true)
     navigate({ view: 'project', id: s.work })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!row(s.late), 'the project list')
@@ -138,7 +138,6 @@ describe('rows of the phone list', () => {
 
   it('completing the last open subtask offers the parent', async () => {
     const s = await seed()
-    setPhoneUiEnabled(true)
     navigate({ view: 'project', id: s.work })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!row(s.child), 'the subtask')
@@ -152,7 +151,6 @@ describe('rows of the phone list', () => {
 describe('selecting in the phone list', () => {
   it('Select tasks turns the checks into tick boxes, a tap ticks, and Close ends it', async () => {
     const s = await seed()
-    setPhoneUiEnabled(true)
     navigate({ view: 'project', id: s.work })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!row(s.late), 'the project list')
@@ -180,7 +178,6 @@ describe('what a list keeps', () => {
   it('a place lists its tasks in the phone list', async () => {
     const place = await createPlace({ name: 'Post office' })
     const there = await createTask({ title: 'Buy stamps', location: locationFromPlace((await getPlace(place))!) })
-    setPhoneUiEnabled(true)
     navigate({ view: 'place', id: place })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => list()?.getAttribute('data-phone-list') === 'place' && rowIds().includes(there), 'the place\'s list')
@@ -189,7 +186,6 @@ describe('what a list keeps', () => {
 
   it('a task added elsewhere appears without a reload, and a completed one leaves', async () => {
     const s = await seed()
-    setPhoneUiEnabled(true)
     navigate({ view: 'inbox' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => rowIds().includes(s.loose), 'the Inbox')
@@ -201,7 +197,6 @@ describe('what a list keeps', () => {
   })
 
   it('an empty list shows its empty state', async () => {
-    setPhoneUiEnabled(true)
     navigate({ view: 'someday' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!list()?.querySelector('[data-empty-view]'), 'the empty state')
@@ -221,7 +216,6 @@ describe('the row\'s menu in the phone list', () => {
     const s = await seed()
     // A second task beside it: a task alone among its siblings has nowhere to move.
     await createTask({ title: 'File the receipts', project_id: s.work })
-    setPhoneUiEnabled(true)
     navigate({ view: 'project', id: s.work })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!row(s.late), 'the project list')
@@ -232,7 +226,6 @@ describe('the row\'s menu in the phone list', () => {
 
   it('Edit opens the field in the row', async () => {
     const s = await seed()
-    setPhoneUiEnabled(true)
     navigate({ view: 'project', id: s.work })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!row(s.late), 'the project list')
@@ -259,18 +252,24 @@ describe('the page menu of the phone list', () => {
     return found
   }
 
-  for (const [name, route] of ROUTES.filter(([n]) => ['the Inbox', 'Today', 'Upcoming', 'a label', 'a project'].includes(n))) {
-    it(`${name} offers every item its present phone menu offers`, async () => {
+  // Every item of each list's menu, sorted: its own items, the filters, Select tasks, Print and Help.
+  const DURATIONS = ['Over 1 h', 'Quick wins', 'Under 30 min', 'Unestimated']
+  const MENUS: Record<string, string[]> = {
+    'the Inbox': ['Help', 'Print…', 'Select tasks', ...DURATIONS],
+    Today: ['Away…', 'Display mode', 'Help', 'Hide briefing', 'Print…', 'Select tasks', ...DURATIONS],
+    Upcoming: ['Display mode', 'Filter…', 'Help', 'Hide briefing', 'Print…', 'Select tasks', 'Show repeating occurrencesFuture dates of repeating tasks, read-only', 'Start with TodayShow Today’s tasks before Tomorrow', ...DURATIONS],
+    'a label': ['Delete label…', 'Edit…', 'Help', 'Merge into…There is no other label', 'Move downAlready lastAlt+↓', 'Move upAlready firstAlt+↑', 'Pin to sidebar', 'Print…', 'RenameF2', 'Select tasks'],
+    'a project': ['ActivityShift+H', 'Add a note', 'Archive…', 'Board', 'Calendar', 'Delete project…', 'Display mode', 'Duplicate…', 'Fields…Shift+F', 'Filter…', 'Help', 'History', 'Icon…', 'List', 'List…', 'Move to…m', 'Pin to sidebar', 'Print…', 'Rename', 'Routines', 'Save as template…', 'Select tasks', 'Share project…', 'Show completed tasks', 'Timeline', ...DURATIONS],
+  }
+  for (const [name, route] of ROUTES.filter(([n]) => n in MENUS)) {
+    it(`${name} offers every item of its menu`, async () => {
       const s = await seed()
       navigate(route(s))
       const r = await render(<Shell user={user} onLogout={() => {}} />)
-      await waitFor(() => !!document.querySelector('[data-list-page]') && rowIds().length > 0, 'the present list')
-      const before = await menuOf(() => document.querySelector('[data-phone-bar]'))
-      setPhoneUiEnabled(true)
       await waitFor(() => !!list() && rowIds().length > 0, 'the phone list')
-      const after = await menuOf(() => list()?.querySelector('[data-phone-header]'))
-      expect(before.length).toBeGreaterThan(0)
-      expect(after).toEqual(before)
+      // Today's "Re-plan the rest of the day" is there only once a block of today is behind: it depends on the hour, so it is left out.
+      const offered = (await menuOf(() => list()?.querySelector('[data-phone-header]'))).filter((item) => !item.startsWith('Re-plan the rest of the day'))
+      expect(offered).toEqual([...MENUS[name]].sort())
       await r.unmount()
     })
   }
@@ -279,7 +278,6 @@ describe('the page menu of the phone list', () => {
 describe('adding and the layout from the phone list', () => {
   it('the add button adds to the list on screen with its defaults: a label\'s task has the label', async () => {
     const s = await seed()
-    setPhoneUiEnabled(true)
     navigate({ view: 'label', id: s.errand })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => list()?.getAttribute('data-phone-list') === 'label' && !!document.querySelector('[data-add-button]'), 'the label\'s list and the add button')
@@ -295,7 +293,6 @@ describe('adding and the layout from the phone list', () => {
 
   it('Board in a project\'s menu shows the project as its board, and List returns to the phone list', async () => {
     const s = await seed()
-    setPhoneUiEnabled(true)
     navigate({ view: 'project', id: s.work })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!list(), 'the phone list')
@@ -311,7 +308,6 @@ describe('a project the person can only read', () => {
   it('opens its tasks, and offers no check, swipe, drag or selection', async () => {
     const s = await seed()
     await db.memberships.put({ projectId: s.work, role: 'viewer', ownerId: 'someone', members: [] })
-    setPhoneUiEnabled(true)
     navigate({ view: 'project', id: s.work })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!row(s.late) && row(s.late).querySelector<HTMLButtonElement>('[data-phone-check]')?.disabled === true, 'the project as a reader sees it')

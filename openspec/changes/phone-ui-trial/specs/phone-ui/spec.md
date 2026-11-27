@@ -2,38 +2,30 @@
 
 ## Purpose
 
-Screens written only for a phone, shown in place of the responsive layout of the desktop screens below 768 px: how they are turned on, what Today and the task page look like and do, and how one screen follows another.
+Screens written only for a phone, shown in place of the responsive layout of the desktop screens below 768 px: where they are shown, what Today and the task page look like and do, and how one screen follows another.
 
 ## ADDED Requirements
 
-### Requirement: The phone screens are opt-in on each device
-Settings SHALL offer a switch, "New phone screens", only below 768 px. It SHALL be off until the person turns it on, SHALL be kept on the device, and SHALL NOT be synced, sent to the server or written as an operation. While it is off, and at every width from 768 px, every screen SHALL be exactly as it is without this capability. While it is on below 768 px, Today and the task page SHALL be the phone screens of this capability and every other screen SHALL be unchanged. Turning it on or off SHALL work offline and SHALL take effect without a reload.
+### Requirement: The phone screens are shown below 768 px
+Below 768 px Today and the task page SHALL be the phone screens of this capability; the other requirements of this capability say what every other screen is there. At every width from 768 px every screen SHALL be exactly as it is without this capability. The width of the window alone SHALL decide which screens are shown: no setting chooses them, and nothing about the choice is kept on the device, synced, sent to the server or written as an operation. It SHALL work offline, and a window that crosses 768 px SHALL change its screens without a reload.
 
-#### Scenario: Off by default
-- **WHEN** a person opens Today on a 390 px phone and has never touched the switch
-- **THEN** Today is the screen it was before this capability
-
-#### Scenario: Turned on
-- **WHEN** the person turns "New phone screens" on at 390 px and opens Today
-- **THEN** Today is the phone screen, and Inbox, Upcoming and a project are unchanged
+#### Scenario: A phone
+- **WHEN** a person opens Today on a 390 px phone
+- **THEN** Today is the phone screen
 
 #### Scenario: Not on a wide window
-- **WHEN** the switch is on and the window is 768 px wide or wider
-- **THEN** Today and the task page are the desktop screens and Settings does not show the switch
-
-#### Scenario: One device only
-- **WHEN** the person turns the switch on on their phone and opens the app on a second phone
-- **THEN** the second phone still shows the earlier screens, and no operation was written for the switch
+- **WHEN** the window is 768 px wide or wider
+- **THEN** Today and the task page are the desktop screens
 
 #### Scenario: Crossing the width
-- **WHEN** the switch is on and a window is widened from 390 px to 900 px and narrowed again
+- **WHEN** a window is widened from 390 px to 900 px and narrowed again
 - **THEN** Today is the desktop screen while wide and the phone screen while narrow, with the same tasks in both
 
 ### Requirement: Phone Today
 The phone Today SHALL show the same tasks, in the same groups and the same order, as Today shows at 768 px for the same account, preferences and moment, including the Today limit. Above the list it SHALL show a large title with the date, which SHALL shrink into the bar when the list scrolls, and today's calendar events when the account has any. Its bar SHALL keep the menu button that opens the phone drawer. The tasks of a group SHALL be drawn as one card, and a group's own actions (for the overdue group: move all to today, reschedule) SHALL be in one menu at the end of the group's name. The screen SHALL have no add field of its own: a task is added with the add button. Tasks completed today SHALL be one row at the end that opens them. The phone Today SHALL NOT offer reordering by dragging in this capability; the order is the one Today computes. There SHALL be at most two rows of chrome above the first item. The tab bar and the add button SHALL stay as `app-shell` "Phone navigation" describes them. The screen reads local data only: it SHALL show the same content offline, and a change that arrives from another device SHALL appear without a reload.
 
 #### Scenario: The same list
-- **WHEN** an account has two overdue tasks, three tasks due today and one completed today, and Today is opened at 390 px with the switch on
+- **WHEN** an account has two overdue tasks, three tasks due today and one completed today, and Today is opened at 390 px
 - **THEN** the screen shows those tasks under the same group names and in the same order as Today at 1280 px
 
 #### Scenario: A group's actions
@@ -111,7 +103,7 @@ The phone task page SHALL have its own bar with Back, the next and previous task
 - **THEN** the task has the new priority on the person's other devices
 
 ### Requirement: Phone date sheet
-With the switch on, the date a task is to be done on SHALL be chosen in a bottom sheet made for a phone, opened by the task page's Do on row and by a swipe to the left on a row of the phone Today. The sheet SHALL show, from the top: the quick choices Today, Tomorrow, This weekend and Next week, each a target at least 44 px tall that names the date it means; a month with days as targets of at least 44 px, today and the chosen day marked, and the earlier and later months one tap away; a time row; the parts of the day when the account uses them; and Clear when the task has a date. Opened by the row swipe it SHALL also offer Someday, as the swipe offers today. A tap on a quick choice or on a day SHALL set the date and close the sheet; setting a time or a part of the day SHALL keep the sheet open until the person closes it. On a 360×640 screen the quick choices and the whole of a five-week month SHALL be visible without scrolling; the time row follows and may need a scroll inside the sheet. It writes the same fields, with the same Undo, as the Do on editor of the desktop task page, so a date set here SHALL be set offline and converge on every device. Start, deadline, repeat and reminders are separate rows of the phone task page and keep their present editors.
+Below 768 px, the date a task is to be done on SHALL be chosen in a bottom sheet made for a phone, opened by the task page's Do on row and by a swipe to the left on a row of the phone Today. The sheet SHALL show, from the top: the quick choices Today, Tomorrow, This weekend and Next week, each a target at least 44 px tall that names the date it means; a month with days as targets of at least 44 px, today and the chosen day marked, and the earlier and later months one tap away; a time row; the parts of the day when the account uses them; and Clear when the task has a date. Opened by the row swipe it SHALL also offer Someday, as the swipe offers today. A tap on a quick choice or on a day SHALL set the date and close the sheet; setting a time or a part of the day SHALL keep the sheet open until the person closes it. On a 360×640 screen the quick choices and the whole of a five-week month SHALL be visible without scrolling; the time row follows and may need a scroll inside the sheet. It writes the same fields, with the same Undo, as the Do on editor of the desktop task page, so a date set here SHALL be set offline and converge on every device. Start, deadline, repeat and reminders are separate rows of the phone task page and keep their present editors.
 
 #### Scenario: Tomorrow in two taps
 - **WHEN** the person taps the Do on row of a task with no date and taps Tomorrow
@@ -142,7 +134,7 @@ With the switch on, the date a task is to be done on SHALL be chosen in a bottom
 - **THEN** the task has that date on the person's other devices
 
 ### Requirement: Screens push and pop
-With the switch on, opening a task from the phone Today SHALL slide the task page in from the end edge, and going back SHALL slide it out, in the interface's standard duration. Back on the page, the system's Back and the edge swipe SHALL all return to Today at the scroll position the person left; the page's Back and the edge swipe slide the page out, and the system's Back, which the app learns of only once it has happened, returns without the slide. When the system requests reduced motion, or the browser cannot animate between screens, the screens SHALL change without animation and everything else SHALL work the same.
+Below 768 px, opening a task from the phone Today SHALL slide the task page in from the end edge, and going back SHALL slide it out, in the interface's standard duration. Back on the page, the system's Back and the edge swipe SHALL all return to Today at the scroll position the person left; the page's Back and the edge swipe slide the page out, and the system's Back, which the app learns of only once it has happened, returns without the slide. When the system requests reduced motion, or the browser cannot animate between screens, the screens SHALL change without animation and everything else SHALL work the same.
 
 #### Scenario: Open and go back
 - **WHEN** the person scrolls Today down, taps a task, and taps Back

@@ -11010,10 +11010,6 @@
     "web/src/app/PasswordSection.tsx",
     "web/src/app/ResetScreen.tsx"
   ],
-  "New phone screens": [
-    "web/src/app/PreferencesPanels.tsx",
-    "web/src/lib/settingsCopy.ts"
-  ],
   "New project": [
     "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
@@ -13728,9 +13724,6 @@
   "Personal care": [
     "web/src/lib/aisles/index.ts"
   ],
-  "Phone screens": [
-    "web/src/lib/settingsCopy.ts"
-  ],
   "Photo {n}": [
     "web/src/app/assistant/ComposerCapture.tsx"
   ],
@@ -15965,9 +15958,6 @@
   ],
   "Scopes": [
     "web/src/app/SsoPanel.tsx"
-  ],
-  "Screens made for a phone. This device only.": [
-    "web/src/lib/settingsCopy.ts"
   ],
   "Scrim": [
     "web/src/app/themes/tokenNames.ts"
@@ -18456,9 +18446,6 @@
   ],
   "The app could not show a notification. Allow notifications for OpenTodo in the iPhone's Settings.": [
     "web/src/app/ShellNotifications.tsx"
-  ],
-  "The app in the design made for a phone. Turn it off for the earlier screens.": [
-    "web/src/lib/settingsCopy.ts"
   ],
   "The app showed a test notification on this device.": [
     "web/src/app/ShellNotifications.tsx"

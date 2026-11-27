@@ -1,6 +1,6 @@
 // End-to-end check of the phone UI (OpenSpec changes `phone-ui-trial` and `phone-lists`)
 // against a running server with a FRESH data directory: a phone with touch and the
-// phone screens it has by default (`phone-ui-default`). The gestures a unit test cannot make: a hold
+// phone screens a phone shows (`phone-ui-only`). The gestures a unit test cannot make: a hold
 // opens the row's menu, a hold and a move reorders, a swipe completes and Undo brings
 // the task back, Select tasks ticks rows and a bulk action writes them, a tap opens
 // the task page and Back returns to the same place; a screen that is not a list has
