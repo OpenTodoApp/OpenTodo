@@ -45,16 +45,20 @@ const LazyAttachmentsRow = lazy(() => attachmentsRowChunk.load().then((c) => ({ 
 // Publishing a note page (note-public-links): loaded when the dialog opens.
 const NotePageDialog = lazy(() => import('./NotePageDialog'))
 
-/** The note whose body takes the caret when it opens next (a note written from the search field, notes-home D3). */
-let bodyFocus: string | null = null
-resettable('noteBodyFocus', () => { bodyFocus = null })
+/** One-time focus for a new note: its title, or its body when it already has a title. */
+let openingFocus: { id: string; field: 'title' | 'body' } | null = null
+resettable('noteBodyFocus', () => { openingFocus = null })
 export function focusBodyOnOpen(id: string): void {
-  bodyFocus = id
+  openingFocus = { id, field: 'body' }
 }
-function takeBodyFocus(id: string): boolean {
-  if (bodyFocus !== id) return false
-  bodyFocus = null
-  return true
+export function focusTitleOnOpen(id: string): void {
+  openingFocus = { id, field: 'title' }
+}
+function takeFocusOnOpen(id: string): 'title' | 'body' | null {
+  if (openingFocus?.id !== id) return null
+  const { field } = openingFocus
+  openingFocus = null
+  return field
 }
 
 /** What a daily note's draft was typed before the note existed (daily-notes D3): applied once its editor opens. */
@@ -62,7 +66,7 @@ let pendingInput: { id: string; text: string } | null = null
 resettable('notePendingInput', () => { pendingInput = null })
 export function typeOnOpen(id: string, text: string): void {
   pendingInput = { id, text }
-  bodyFocus = id
+  focusBodyOnOpen(id)
 }
 function takePendingInput(id: string): string | undefined {
   if (pendingInput?.id !== id) return undefined
@@ -80,7 +84,7 @@ export function useNoteEditable(note: Pick<Note, 'project_id'> | null | undefine
   return !!note && canEditTasks(roleOf(note.project_id, memberships))
 }
 
-function TitleInput({ note, readOnly }: { note: Note; readOnly: boolean }) {
+function TitleInput({ note, readOnly, autoFocus }: { note: Note; readOnly: boolean; autoFocus: boolean }) {
   const [value, setValue] = useState(note.title)
   const focused = useRef(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -100,7 +104,7 @@ function TitleInput({ note, readOnly }: { note: Note; readOnly: boolean }) {
   if (readOnly) return <h2 className="user-text text-h3 text-strong" data-note-title-field>{note.title.trim() || t('Untitled note')}</h2>
   return (
     <input className="user-text w-full min-w-0 rounded-control bg-transparent px-1 py-1 text-h3 font-semibold text-strong placeholder:text-faint focus-visible:outline-2 focus-visible:outline-focus"
-      aria-label={t('Title')} placeholder={t('Untitled note')} value={value} maxLength={500} data-note-title-field
+      aria-label={t('Title')} placeholder={t('Untitled note')} value={value} maxLength={500} autoFocus={autoFocus} data-note-title-field
       onFocus={() => { focused.current = true }}
       onChange={(e) => {
         setValue(e.target.value)
@@ -143,7 +147,7 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
   const projects = useProjects()
   const labels = useLabels()
   const project = projects.find((p) => p.id === note.project_id)
-  const [focusBody] = useState(() => takeBodyFocus(note.id))
+  const [focus] = useState(() => takeFocusOnOpen(note.id))
   const [initialInput] = useState(() => takePendingInput(note.id))
   // The first code block's Copy button needs the corner's room (copy-code-block D3); a viewer's Copy note needs none.
   const hasCode = !!note.description && note.description.split('\n').some((l) => /^ {0,3}(```|~~~)/.test(l))
@@ -158,11 +162,11 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
   const [AttachmentsRow] = useState(() => attachmentsRowChunk.loaded() ?? LazyAttachmentsRow)
   return (
     <div ref={form} className="space-y-4" data-note-form={note.id}>
-      <TitleInput note={note} readOnly={readOnly} />
+      <TitleInput note={note} readOnly={readOnly} autoFocus={focus === 'title'} />
       {/* The rendered body sits in a frame of its own, so its first code block can leave the corner its room; the
           editor keeps its own frame (the outline's). Only a code block takes room: a viewer's Copy note is absolutely placed. */}
       <Suspense fallback={<div className="notes-frame" data-corner={hasCode ? '' : undefined} style={hasCode ? { '--notes-corner': '2.25rem' } as React.CSSProperties : undefined}><div className="notes-host" aria-busy="true"><div className="notes-editor">{note.description ? <Markdown source={note.description} taskId={noteParent(note.id)} /> : <p className="text-faint">{t('Add notes…')}</p>}</div></div></div>}>
-        <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} autoFocus={initialInput ?? focusBody} outline="auto" copied={copied} onCopied={() => setCopied(true)} />
+        <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} autoFocus={initialInput ?? (focus === 'body')} outline="auto" copied={copied} onCopied={() => setCopied(true)} />
       </Suspense>
       {/* Viewers attach too (note-attachments D2); nothing shows until the note has a file. */}
       <Suspense fallback={null}><AttachmentsRow taskId={noteParent(note.id)} note={note} userId={me ?? undefined} role={role} dropTarget={form} /></Suspense>
