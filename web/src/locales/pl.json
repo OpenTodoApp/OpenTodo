@@ -2595,7 +2595,6 @@
   "Keep “{source}” as text": "Zachowaj „{source}” jako tekst",
   "Keeps each colour's hue and moves only its lightness until the pair reads.": "Zachowuje odcień każdego koloru i zmienia tylko jasność, aż para będzie czytelna.",
   "Keeps its place": "Zostaje na miejscu",
-  "Kept": "Utrzymany",
   "Kept away": "Odseparowany",
   "Kept away, through {parent}": "Odseparowany przez: {parent}",
   "Kept because they were changed again since: {items}.": "Zachowano, bo od tego czasu znów je zmieniono: {items}.",
@@ -7935,5 +7934,6 @@
   "Check-in taken back": "Odhaczenie cofnięte",
   "{kept} of {due} today": "{kept} z {due} dzisiaj",
   "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} z {of} zaplanowanych dni dotrzymanych w ostatnich 53 tygodniach",
-  "Checked in": "Odhaczone"
+  "Checked in": "Odhaczone",
+  "By weekday": "Według dnia tygodnia"
 }

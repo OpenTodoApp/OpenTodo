@@ -2593,7 +2593,6 @@
   "Keep “{source}” as text": "Оставить «{source}» как текст",
   "Keeps each colour's hue and moves only its lightness until the pair reads.": "Сохраняет оттенок каждого цвета и меняет только светлоту, пока пара не станет читаемой.",
   "Keeps its place": "Сохраняет место",
-  "Kept": "Сохранено",
   "Kept away": "Скрыто",
   "Kept away, through {parent}": "Скрыто через {parent}",
   "Kept because they were changed again since: {items}.": "Оставлены, потому что с тех пор их снова изменили: {items}.",
@@ -7935,5 +7934,6 @@
   "Check-in taken back": "Отметка отменена",
   "{kept} of {due} today": "{kept} из {due} сегодня",
   "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} из {of} запланированных дней выполнено за последние 53 недели",
-  "Checked in": "Отмечено"
+  "Checked in": "Отмечено",
+  "By weekday": "По дням недели"
 }

@@ -23,6 +23,8 @@ const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', cre
 const originalMedia = window.matchMedia
 
 beforeEach(async () => {
+  // These tests read the habit rows, which the screen shows below 640 px (habits-board D1).
+  window.matchMedia = ((media: string) => ({ matches: false, media, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => true })) as typeof window.matchMedia
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 10, 11, 12, 0)) // Wednesday 11 November 2026
   await db.delete()

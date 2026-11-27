@@ -7505,7 +7505,6 @@
   "Day closed": "Tag abgeschlossen",
   "Day closed · {n} moved to tomorrow": "Tag abgeschlossen · {n} auf morgen verschoben",
   "Keeps its place": "Bleibt, wo sie ist",
-  "Kept": "Gehalten",
   "More for {title}": "Mehr zu {title}",
   "Move {title} to": "{title} verschieben auf",
   "Moves to {date}": "Wandert auf {date}",
@@ -7935,5 +7934,6 @@
   "Check-in taken back": "Check-in zurückgenommen",
   "{kept} of {due} today": "{kept} von {due} heute",
   "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} von {of} geplanten Tagen gehalten in den letzten 53 Wochen",
-  "Checked in": "Eingecheckt"
+  "Checked in": "Eingecheckt",
+  "By weekday": "Nach Wochentag"
 }

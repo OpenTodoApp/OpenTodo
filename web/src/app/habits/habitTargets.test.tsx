@@ -14,7 +14,11 @@ import { HabitFormDialog } from './HabitForm'
 import HabitsScreen from './HabitsScreen'
 import { stripHabits } from './TodayStrip'
 
+const originalMedia = window.matchMedia
+afterEach(() => { window.matchMedia = originalMedia })
 beforeEach(async () => {
+  // These tests read the habit rows, which the screen shows below 640 px (habits-board D1).
+  window.matchMedia = ((media: string) => ({ matches: false, media, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => true })) as typeof window.matchMedia
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 10, 13, 12, 0)) // Friday 13 November 2026
   await db.delete()

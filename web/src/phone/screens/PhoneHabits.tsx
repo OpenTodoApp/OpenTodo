@@ -5,7 +5,7 @@
 // small marks. A hold opens the row's actions as a sheet; the title opens the habit's
 // page, which is the shared one. Built on the desktop screen's model, so both group,
 // order and count alike; everything it writes is the desktop screen's write.
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { addDaysISO } from '../../lib/dates'
 import { dayProgress, dayStateOf } from '../../lib/habitDay'
 import { editableDay, habitGoal, habitStats, habitTarget, threadDays, type DayState, type HabitOptions } from '../../lib/habits'
@@ -14,28 +14,11 @@ import { noteDatesOf } from '../../lib/habitNotes'
 import { targetThread } from '../../lib/habitTargets'
 import { t } from '../../lib/i18n'
 import type { Task } from '../../lib/types'
-import { Button, EmptyState, Icon, IconButton, ListGroupHeader, PageBody, PageHeader, type HueName } from '../../ui'
+import { Button, EmptyState, IconButton, ListGroupHeader, PageBody, PageHeader, type HueName } from '../../ui'
 import { act } from '../../app/actionError'
-import { ActionMenu, AmountHost, CheckInNote, DayNoteHost, DayStrip, GraduatedGroup, GROUP_TITLE, HabitPage, HabitsOff, STARTERS, TargetBar, Thread, checkInItems, checkStateOf, measureText, onCheck, openDayNote, openHabit, openHabitForm, openSetAmount, pickDay, progressText, useHabitsModel, type ActionItem, type CheckState } from '../../app/habits/shared'
+import { ActionMenu, AmountHost, DayMark, CheckInNote, DayNoteHost, DayStrip, GraduatedGroup, GROUP_TITLE, HabitPage, HabitsOff, STARTERS, TargetBar, Thread, checkInItems, checkStateOf, measureText, onCheck, openDayNote, openHabit, openHabitForm, openSetAmount, pickDay, progressText, useHabitsModel, type ActionItem, type CheckState } from '../../app/habits/shared'
 import { holdForRow } from '../../app/task-list/rowHold'
 import { useToday } from '../../app/useViews'
-
-/** The ring's look for a day's state: kept fills it, the tiny version half, an amount its share. */
-function Ring({ state, later, share }: { state: DayState; later: boolean; share?: number }) {
-  const base = 'flex h-7 w-7 items-center justify-center rounded-full border-2 transition-colors duration-(--duration-moment)'
-  if (share !== undefined && share < 1 && state !== 'done') {
-    const style = { backgroundImage: `conic-gradient(var(--hue-solid) ${Math.round(share * 360)}deg, transparent 0)` } as CSSProperties
-    return <span aria-hidden data-ring="partial" className={`${base} border-hue-solid`} style={style} />
-  }
-  switch (state) {
-    case 'done': return <span aria-hidden data-ring="done" className={`${base} border-hue-solid bg-hue-solid text-surface`}><Icon name="check" size="xs" /></span>
-    case 'tiny': return <span aria-hidden data-ring="tiny" className={`${base} border-hue-solid bg-[linear-gradient(90deg,var(--hue-solid)_50%,transparent_50%)]`} />
-    case 'skipped': return <span aria-hidden data-ring="skipped" className={`${base} border-input text-muted`}><Icon name="minus" size="xs" /></span>
-    case 'missed': return <span aria-hidden data-ring="missed" className={`${base} border-dashed border-strong`} />
-    case 'rest': return <span aria-hidden data-ring="rest" className={`${base} border-default`} />
-    default: return <span aria-hidden data-ring={later ? 'later' : 'due'} className={`${base} border-hue-solid ${later ? 'border-dashed' : ''}`} />
-  }
-}
 
 /** A past day's choices (habits-home D6): its state, Clear and Note, as the thread's day menu offers them. */
 function pastItems(series: Task, date: string, state: DayState): ActionItem[] {
@@ -84,7 +67,7 @@ function PhoneHabitRow({ series, rows, day, today, opts, hue }: { series: Task; 
       <button type="button" onClick={tap} data-check-in={series.id} data-kept={kept || undefined} data-later={!past && check === 'later' || undefined}
         aria-label={t('Check in {title}', { title })} aria-pressed={goal > 0 ? undefined : kept}
         className="press-selected flex h-14 w-12 shrink-0 items-center justify-center rounded-full bg-clip-content px-2 py-3 focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-focus">
-        <Ring state={state} later={!past && check === 'later'} share={share} />
+        <DayMark state={state} later={!past && check === 'later'} share={share} />
       </button>
       <button type="button" onClick={() => openHabit(series.id)} data-habit-open
         className="press-selected flex min-h-14 min-w-0 flex-1 flex-col justify-center py-2 pe-2 text-start focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">

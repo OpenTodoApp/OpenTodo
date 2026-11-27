@@ -300,6 +300,7 @@ Habits get their own place: easy to start, forgiving on a bad day, connected to 
 | [`habits-assistant`](openspec/changes/archive/2026-11-14-habits-assistant/) | Habit numbers on the server, `list_habits`, `get_habit` and `log_habit`, a habits route and `ot habits`, Start a habit and How are my habits?, check-ins from capture, routine steps | |
 | [`habit-targets`](openspec/changes/archive/2026-11-14-habit-targets/) | Times per week or month, and daily amounts that add up exactly across devices | |
 | [`habits-complete`](openspec/changes/archive/2026-11-27-habits-complete/) | Habits on a phone with a day strip and thumb rings, today's progress, taking a check-in back, Skip this day, Remind me in the form, and a habit's year | |
+| [`habits-board`](openspec/changes/archive/2026-11-27-habits-board/) | The Habits screen as a week board with Today, Last 7 days and Streak tiles; a habit's page as a dashboard with a By weekday chart | |
 
 They land in this order; each ships on its own. Every number stays derived from the records that already sync, and the server computes the same numbers from the same vectors.
 
