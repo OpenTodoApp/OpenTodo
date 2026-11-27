@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
-// The phone UI in the shell (OpenSpec change phone-ui-trial): the switch chooses the
-// screens below 768 px only; the phone Today lists what the desktop Today lists and
+// The phone UI in the shell (OpenSpec changes phone-ui-trial and phone-ui-only): the width
+// alone chooses the screens, below 768 px; the phone Today lists what the desktop Today lists and
 // its row writes through the shared code; the phone task page shows a task's facts
 // as rows and buttons and edits them with the present editors and the date sheet.
 import 'fake-indexeddb/auto'
@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { setTodayLimit } from '../lib/closedListPrefs'
 import { addDaysISO, logicalToday } from '../lib/dates'
+import { readString, writeString } from '../lib/deviceStorage'
 import { createProject, createSubtask, createTask, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
 import { click, minWidthPx, render, waitFor } from '../ui/test-utils'
@@ -15,7 +16,6 @@ import { resetPanel } from '../app/panel'
 import { navigate } from '../app/router'
 import { Shell } from '../app/Shell'
 import { resetTaskTrail } from '../app/taskTrail'
-import { setPhoneUiEnabled } from './prefs'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 let width = 390
@@ -34,10 +34,9 @@ beforeEach(async () => {
     addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
   })) as typeof window.matchMedia
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
-  setPhoneUiEnabled(false)
   navigate({ view: 'today' })
 })
-afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals(); setPhoneUiEnabled(false) })
+afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals() })
 
 const screen = (name: string) => document.querySelector(`[data-phone-screen="${name}"]`)
 const rowIds = () => [...document.querySelectorAll<HTMLElement>('[data-task-id]')].map((el) => el.dataset.taskId!)
@@ -53,19 +52,11 @@ async function seed() {
   return { work, late, timed, plain, daily }
 }
 
-describe('choosing the phone screens', () => {
-  it('leaves every screen as it was while the switch is off', async () => {
+describe('where the phone screens are shown', () => {
+  it('shows the phone screens below 768 px, whatever the "New phone screens" switch had stored, and removes that value', async () => {
     await seed()
-    const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => rowIds().length === 4, 'the present Today')
-    expect(screen('list')).toBeNull()
-    expect(document.querySelector('[data-phone-bar]')).not.toBeNull()
-    await r.unmount()
-  })
-
-  it('shows the phone screens with the switch on below 768 px', async () => {
-    await seed()
-    setPhoneUiEnabled(true)
+    // The switch is gone (phone-ui-only): its "off" is not read, and the shell drops the key.
+    writeString('opentodo.phoneUi', '0')
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!screen('list') && rowIds().length === 4, 'the phone Today')
     // It draws its own bar: the shell's phone bar is left out, the tab bar stays.
@@ -76,13 +67,21 @@ describe('choosing the phone screens', () => {
     await waitFor(() => document.querySelector('[data-phone-list]')?.getAttribute('data-phone-list') === 'inbox', 'the Inbox as the phone list')
     navigate({ view: 'labels' })
     await waitFor(() => !screen('list') && !!document.querySelector('[data-phone-header]') && !document.querySelector('[data-phone-bar]'), 'Labels under the phone header')
+    expect(readString('opentodo.phoneUi')).toBeNull()
     await r.unmount()
   })
 
-  it('keeps the desktop screens from 768 px with the switch on', async () => {
+  it('shows them at 767 px too', async () => {
     await seed()
-    setPhoneUiEnabled(true)
-    width = 1280
+    width = 767
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!screen('list') && rowIds().length === 4, 'the phone Today')
+    await r.unmount()
+  })
+
+  it('keeps the desktop screens from 768 px', async () => {
+    await seed()
+    width = 768
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => rowIds().length === 4, 'the desktop Today')
     expect(screen('list')).toBeNull()
@@ -96,7 +95,6 @@ describe('the phone Today', () => {
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => rowIds().length === 4, 'the present Today')
     const desktop = rowIds()
-    setPhoneUiEnabled(true)
     await waitFor(() => !!screen('list') && rowIds().length === 4, 'the phone Today')
     expect(rowIds()).toEqual(desktop)
     const names = [...screen('list')!.querySelectorAll('[data-group-label]')].map((h) => h.textContent)
@@ -110,7 +108,6 @@ describe('the phone Today', () => {
   it('a row shows the check, the title and one line of facts', async () => {
     const s = await seed()
     await createSubtask(s.plain, 'Find the card')
-    setPhoneUiEnabled(true)
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => rowIds().length === 4 && !!row(s.plain).querySelector('[data-fact="subtasks"]'), 'the rows')
     expect(row(s.late).querySelector('[data-fact="project"]')!.textContent).toBe('Work')
@@ -124,7 +121,6 @@ describe('the phone Today', () => {
 
   it('the check completes through the shared write: Undo is offered, a recurring task moves on', async () => {
     const s = await seed()
-    setPhoneUiEnabled(true)
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => rowIds().length === 4, 'the rows')
     await click(row(s.plain).querySelector('[data-phone-check]')!)
@@ -138,7 +134,6 @@ describe('the phone Today', () => {
 
   it('a task from another device appears without a reload', async () => {
     await seed()
-    setPhoneUiEnabled(true)
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => rowIds().length === 4, 'the rows')
     const added = await createTask({ title: 'Buy stamps', due: { date: today } })
@@ -148,7 +143,6 @@ describe('the phone Today', () => {
 
   it('the overdue group keeps its actions', async () => {
     const s = await seed()
-    setPhoneUiEnabled(true)
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     const move = () => [...(screen('list')?.querySelectorAll<HTMLElement>('[data-group-actions] button') ?? [])].find((el) => el.textContent?.includes('Move all to today'))
     await waitFor(() => !!move(), 'the group actions')
@@ -162,7 +156,6 @@ describe('the phone Today', () => {
     await createTask({ title: 'Two', due: { date: today } })
     await createTask({ title: 'Three', due: { date: today } })
     await setTodayLimit(2)
-    setPhoneUiEnabled(true)
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     const waiting = () => [...document.querySelectorAll<HTMLElement>('[data-group-toggle]')].find((el) => el.textContent?.includes('Waiting for a slot'))
     await waitFor(() => rowIds().length === 2 && !!waiting(), 'two slots and a folded group')
@@ -178,7 +171,6 @@ describe('the phone Today', () => {
 
   it('the menu button opens the drawer', async () => {
     await seed()
-    setPhoneUiEnabled(true)
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!screen('list'), 'the phone Today')
     const aside = document.querySelector('aside[data-sidebar]')!
@@ -192,7 +184,6 @@ describe('the phone Today', () => {
 describe('the phone task page', () => {
   async function open(patch: Parameters<typeof createTask>[0]) {
     const id = await createTask(patch)
-    setPhoneUiEnabled(true)
     navigate({ view: 'task', id })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!screen('task'), 'the phone task page')
@@ -202,7 +193,6 @@ describe('the phone task page', () => {
 
   it('opens from Today on a tap, with the way back named and the tab bar hidden', async () => {
     const s = await seed()
-    setPhoneUiEnabled(true)
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => rowIds().length === 4, 'the rows')
     await click(row(s.timed).querySelector('[data-phone-open]')!)

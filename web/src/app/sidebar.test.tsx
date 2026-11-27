@@ -14,7 +14,7 @@ import { createView } from '../lib/views'
 import { applyOps, createProject, createTask, resetDeviceId } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
 import type { Membership, Op, User } from '../lib/types'
-import { click, flush, key, render, spokenText, type, visibleText, waitFor } from '../ui/test-utils'
+import { click, flush, key, render, spokenText, type, visibleText, waitFor, minWidthPx } from '../ui/test-utils'
 import { setMethodMode } from '../lib/method/mode'
 import { REVIEW_DEFAULTS } from '../lib/ops'
 import { resetPanel } from './panel'
@@ -23,7 +23,6 @@ import { sidebarFind } from './signals'
 import { Shell } from './Shell'
 import { Sidebar } from './Sidebar'
 import { resetSidebarLayout, setSidebarWidth, sidebarLayout, toggleSidebarCollapsed } from './sidebarLayout'
-import { setPhoneUiEnabled } from '../phone/prefs'
 
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
@@ -646,7 +645,8 @@ describe('find in the sidebar (sidebar-groups 3.2)', () => {
   it('g / opens the field from the shell, expanding the icon rail first', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
     const original = window.matchMedia
-    window.matchMedia = ((q: string) => ({ matches: /64rem/.test(q), media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false })) as typeof window.matchMedia
+    // A 1024 px window: the sidebar is a column that folds to the icon rail.
+    window.matchMedia = ((q: string) => ({ matches: q.includes('min-width') && minWidthPx(q) <= 1024, media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false })) as typeof window.matchMedia
     try {
       await createProject({ name: 'Home' })
       navigate({ view: 'inbox' })
@@ -682,8 +682,10 @@ describe('find in the drawer and the budget (sidebar-groups 3.4)', () => {
       await waitFor(() => document.querySelector('aside[data-sidebar]') !== null)
       const aside = () => document.querySelector('aside[data-sidebar]')!
       expect(aside().className).toContain('-translate-x-full')
-      // The phone bar's menu button opens the drawer (precision-phone D3).
-      await click(document.querySelector<HTMLElement>('[data-phone-bar] button[aria-label="Open menu"]')!)
+      // The phone header's menu button opens the drawer.
+      const menu = () => document.querySelector<HTMLElement>('[data-phone-header] button[aria-label="Open menu"]')
+      await waitFor(() => !!menu(), 'the header\'s menu button')
+      await click(menu()!)
       await waitFor(() => aside().className.includes('translate-x-0'))
       // The palette command (and `g /`) open the field inside the drawer.
       sidebarFind.request('open')
@@ -1229,6 +1231,3 @@ describe('the start guide entry (moments-and-onboarding 3.3)', () => {
   })
 })
 
-// These tests are about the earlier phone layout, the way back while the phone screens are the default
-// (phone-ui-default D3). Registered last, so it runs after the setup above has cleared the device's storage.
-beforeEach(() => setPhoneUiEnabled(false))

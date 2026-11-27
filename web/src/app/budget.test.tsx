@@ -19,7 +19,6 @@ import { Shell } from './Shell'
 import { TaskListView } from './TaskListView'
 // The limits, shared with the interface audit tour (scripts/ux-audit, ux-audit-three-widths D2).
 import budget from './budget.json'
-import { setPhoneUiEnabled } from '../phone/prefs'
 
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
@@ -305,9 +304,9 @@ describe('on a phone (390 px)', () => {
     await seed()
     navigate({ view: 'inbox' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector('[data-phone-bar] [data-triage-start]'))
-    expect(document.querySelector('[data-list-page] [data-triage-start]')).toBeNull()
-    const more = () => document.querySelector<HTMLButtonElement>('[data-phone-bar] [data-inbox-menu], [data-phone-bar] button[aria-label="More actions"]')
+    await waitFor(() => !!document.querySelector('[data-phone-header] [data-triage-start]'))
+    expect(document.querySelectorAll('[data-triage-start]')).toHaveLength(1)
+    const more = () => document.querySelector<HTMLButtonElement>('[data-phone-header] [data-inbox-menu], [data-phone-header] button[aria-label="More actions"]')
     await waitFor(() => !!more())
     more()!.click()
     await waitFor(() => !!document.querySelector('[data-phone-item="select"]'))
@@ -325,8 +324,8 @@ describe('on a phone (390 px)', () => {
     await createTask({ title: 'Quick call', project_id: project, estimate_minutes: 10 })
     navigate({ view: 'project', id: project })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    const bar = () => document.querySelector('[data-phone-bar]')!
-    const menu = () => bar().querySelector<HTMLButtonElement>('button[aria-label="Project menu"]')
+    const bar = () => document.querySelector('[data-phone-header]')!
+    const menu = () => document.querySelector<HTMLButtonElement>('[data-phone-header] button[aria-label="Project menu"]')
     await waitFor(() => !!menu() && document.querySelectorAll('[data-task-id]').length === 9)
     expect(bar().querySelector('button[aria-label="Filter"]')).toBeNull()
     expect(bar().querySelector('[data-duration-active]')).toBeNull()
@@ -374,6 +373,3 @@ describe('on a phone (390 px)', () => {
   })
 })
 
-// These tests are about the earlier phone layout, the way back while the phone screens are the default
-// (phone-ui-default D3). Registered last, so it runs after the setup above has cleared the device's storage.
-beforeEach(() => setPhoneUiEnabled(false))

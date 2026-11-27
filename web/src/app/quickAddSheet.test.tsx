@@ -13,10 +13,7 @@ import { act } from 'react'
 import { click, key, render, type, minWidthPx, waitFor } from '../ui/test-utils'
 import { navigate } from './router'
 import { Shell } from './Shell'
-import { setPhoneUiEnabled } from '../phone/prefs'
 
-// These tests are about the earlier phone layout, the way back while the phone screens are the default (phone-ui-default D3).
-beforeEach(() => setPhoneUiEnabled(false))
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 const original = window.matchMedia
@@ -41,7 +38,7 @@ describe('the add button', () => {
   it('opens quick add as a bottom sheet with the field focused, and the Upcoming default date applied', async () => {
     navigate({ view: 'upcoming' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector('[data-add-button]'), 'the add button')
+    await waitFor(() => !!document.querySelector('[data-add-button]') && !!document.querySelector('[data-phone-list="upcoming"]'), 'the add button over Upcoming')
     const button = document.querySelector<HTMLButtonElement>('[data-add-button]')!
     expect(button.getAttribute('aria-expanded')).toBe('false')
     await click(button)
@@ -49,7 +46,7 @@ describe('the add button', () => {
     await waitFor(() => document.activeElement === field(), 'the field focused')
     // Keyboard-safe: the sheet is bottom-anchored on the visual viewport, and the list stays behind it.
     expect((sheet() as HTMLElement).style.bottom).toContain('--vv-bottom')
-    expect(document.querySelector('[data-list-page]')).toBeTruthy()
+    expect(document.querySelector('[data-phone-list="upcoming"]')).toBeTruthy()
     // The bar and the button make room for the sheet.
     expect(document.querySelector('[data-tab-bar]')).toBeNull()
 

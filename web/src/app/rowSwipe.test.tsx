@@ -19,7 +19,6 @@ import { UndoToast } from './bulk/UndoToast'
 import { panelTaskId, resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
 import { TaskRow } from './TaskRow'
-import { setPhoneUiEnabled } from '../phone/prefs'
 
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
@@ -220,53 +219,6 @@ describe('the swipes\' twins and touch selection', () => {
     await waitFor(async () => (await db.tasks.get(id))!.completed_at !== null, 'the completion written')
   })
 
-  it('Select tasks in the bar\'s menu shows every checkbox without a tick; Close hides them and keeps the ticks', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
-    await createTask({ title: 'One' })
-    await createTask({ title: 'Two' })
-    navigate({ view: 'inbox' })
-    const r = await render(<Shell user={user} onLogout={() => {}} />)
-    mounted.push(r)
-    await waitFor(() => !!document.querySelector('[data-phone-bar] [data-inbox-menu]'))
-    await act(async () => { document.querySelector<HTMLButtonElement>('[data-phone-bar] [data-inbox-menu]')!.click() })
-    await waitFor(() => !!document.querySelector('[data-phone-item="select"]'))
-    await act(async () => { document.querySelector<HTMLElement>('[data-phone-item="select"]')!.click() })
-    await waitFor(() => document.querySelectorAll('[data-tick]').length === 2)
-    expect(document.querySelectorAll('[data-ticked]')).toHaveLength(0)
-    // 48 px on touch: the 20 px box with 14 px of reach on each side.
-    expect(document.querySelector('[data-tick]')!.closest('label')!.className).toContain('pointer-coarse:-inset-3.5')
-    await act(async () => { document.querySelector<HTMLInputElement>('[data-tick]')!.click() })
-    await waitFor(() => document.querySelectorAll('[data-ticked]').length === 1)
-    await act(async () => { document.querySelector<HTMLButtonElement>('[data-select-done]')!.click() })
-    // Only the ticked row keeps its box; the others go back to the completion circle.
-    await waitFor(() => [...document.querySelectorAll('[data-tick]')].filter((i) => i.closest('label')!.className.includes('inline-flex')).length === 1)
-    expect(document.querySelectorAll('[data-ticked]')).toHaveLength(1)
-    expect(document.querySelector('[data-selection-bar]')).toBeTruthy()
-  })
-
-  it('in Select mode a tap on a row ticks it and does not open it, the title or the bare row alike', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
-    const one = await createTask({ title: 'One' })
-    const two = await createTask({ title: 'Two' })
-    navigate({ view: 'inbox' })
-    const r = await render(<Shell user={user} onLogout={() => {}} />)
-    mounted.push(r)
-    await waitFor(() => !!document.querySelector('[data-phone-bar] [data-inbox-menu]'))
-    await act(async () => { document.querySelector<HTMLButtonElement>('[data-phone-bar] [data-inbox-menu]')!.click() })
-    await waitFor(() => !!document.querySelector('[data-phone-item="select"]'))
-    await act(async () => { document.querySelector<HTMLElement>('[data-phone-item="select"]')!.click() })
-    await waitFor(() => document.querySelectorAll('[data-tick]').length === 2)
-    await act(async () => { row(one).querySelector<HTMLButtonElement>('[data-row-open]')!.click() })
-    await waitFor(() => row(one).hasAttribute('data-ticked'))
-    // Ticked, not opened: no task is in the side panel.
-    expect(panelTaskId()).toBeNull()
-    // The bare row (outside its title button) ticks too.
-    await act(async () => { row(two).click() })
-    await waitFor(() => document.querySelectorAll('[data-ticked]').length === 2)
-    await act(async () => { row(one).querySelector<HTMLButtonElement>('[data-row-open]')!.click() })
-    await waitFor(() => document.querySelectorAll('[data-ticked]').length === 1)
-    expect(row(two).hasAttribute('data-ticked')).toBe(true)
-  })
 })
 
 describe('rows that never swipe', () => {
@@ -282,6 +234,3 @@ describe('rows that never swipe', () => {
   })
 })
 
-// These tests are about the earlier phone layout, the way back while the phone screens are the default
-// (phone-ui-default D3). Registered last, so it runs after the setup above has cleared the device's storage.
-beforeEach(() => setPhoneUiEnabled(false))

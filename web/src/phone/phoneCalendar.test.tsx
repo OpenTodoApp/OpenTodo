@@ -16,7 +16,6 @@ import { click, minWidthPx, render, waitFor } from '../ui/test-utils'
 import { hideBulkToast } from '../app/bulk/toastStore'
 import { navigate, type Route } from '../app/router'
 import { Shell } from '../app/Shell'
-import { setPhoneUiEnabled } from './prefs'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 const original = window.matchMedia
@@ -42,9 +41,8 @@ beforeEach(async () => {
     }
   }) as typeof window.matchMedia
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
-  setPhoneUiEnabled(false)
 })
-afterEach(() => { window.matchMedia = original; vi.restoreAllMocks(); vi.unstubAllGlobals(); hideBulkToast(); setPhoneUiEnabled(false) })
+afterEach(() => { window.matchMedia = original; vi.restoreAllMocks(); vi.unstubAllGlobals(); hideBulkToast() })
 
 const rows = (root: ParentNode = document) => [...root.querySelectorAll<HTMLElement>('[data-calendar-row]')]
 const row = (id: string) => document.querySelector<HTMLElement>(`[data-calendar-row][data-cal-id="${id}"]`)
@@ -56,7 +54,6 @@ const completed = async (id: string) => !!(await db.tasks.get(id))?.completed_at
 
 /** Opens a calendar route in the phone UI. */
 async function open(route: Route) {
-  setPhoneUiEnabled(true)
   navigate(route)
   return render(<Shell user={user} onLogout={() => {}} />)
 }
@@ -116,13 +113,8 @@ describe('Week\'s list of days in the phone UI', () => {
     await r.unmount()
   })
 
-  it('keeps the earlier rows with the phone screens off, and from 768 px with them on', async () => {
+  it('keeps the grid, without phone rows, from 768 px', async () => {
     const id = await createTask({ title: 'Call the plumber', due: { date: today, time: '09:30' } })
-    navigate({ view: 'week' })
-    const off = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector(`[data-week-agenda] [data-agenda-task="${id}"]`), 'the earlier agenda row')
-    expect(rows()).toHaveLength(0)
-    await off.unmount()
     width = 1024
     const wide = await open({ view: 'week' })
     await waitFor(() => !!document.querySelector(`[data-cal-id="${id}"]`), 'the task in the wide Week')
