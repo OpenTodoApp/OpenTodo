@@ -15,6 +15,6 @@ While Habits is on, below 768 px the Habits screen SHALL be drawn for the phone:
 - **WHEN** the person holds Read's row
 - **THEN** a sheet offers Check in, the tiny version, Skip this day, Open and Edit
 
-#### Scenario: A wider window
+#### Scenario: Off
 - **WHEN** the window is 768 px wide
 - **THEN** the Habits screen is the desktop screen
