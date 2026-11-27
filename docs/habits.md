@@ -23,12 +23,12 @@ A habit is a repeating task you want to keep, such as reading every evening. Hab
 
 Open **Habits** from the sidebar's **More** group, with `g` then `Shift+H`, or from the command palette.
 
-The title's line counts today: "3 of 5 today". Habits are grouped by part of the day (Morning, Afternoon, This Evening, Any time). Each row shows the habit's colour, title, anchor, its last seven days, how many of them you kept ("6 of 7") and a check button. Graduated habits come last.
+Three tiles open the screen: **Today**, **Last 7 days** and your longest **Streak**. Below, the week board has a column per day and a row per habit by part of the day: its anchor, how many of the last seven you kept, a mark per day (an earlier day's sets it done or clears it) and its streak. Graduated habits come last; a narrow window shows rows.
 
-- **Check in**: the check button, or `Space` on a focused row, with one Undo. A habit due later has a dashed button that checks in early.
-- **Take it back**: press a kept habit's button again.
-- **The tiny version**: the button's menu, a long press, or `Shift+Space`.
-- **Skip this day**: the button's menu; the streak holds. Not for a target or an amount.
+- **Check in**: today's mark, or `Space` on a focused row, with one Undo. A habit due later has a dashed mark that checks in early.
+- **Take it back**: press a kept habit's mark again.
+- **The tiny version**: the row's menu or `Shift+Space`.
+- **Skip this day**: the row's menu; the streak holds. Not for a target or an amount.
 - **Open the habit**: its title, or `Enter` on a focused row.
 
 ## Habits in Today
@@ -37,13 +37,13 @@ While Habits is on, Today starts with one quiet line: **Habits**, then each habi
 
 ## A habit's page
 
-A habit opens a page of its own: its note, how often, the anchor, the tiny version, its numbers, **Check in**, the month history, its last 53 weeks and **Check-ins**. Its menu has **Edit**, **Graduate**, **Open as a task** (for its project, labels and reminders), **Stop tracking as a habit** and **Delete**.
+A habit opens a page of its own: **Check in**, its streak, best, strength and last 30 days, the month, **By weekday**, its last 53 weeks, its note and tiny version, and **Check-ins**. Its menu has **Edit**, **Graduate**, **Open as a task** (for its project, labels and reminders), **Stop tracking as a habit** and **Delete**.
 
 ## Notes
 
 - **The habit's note** is its task note: why you keep it. Days don't copy it.
 - **How did it go?** After a check-in, one line opens under it (focus stays put until `Tab`). `Enter` keeps it as that day's note; `Escape` writes nothing. On a touch screen it is **Add a note** first.
-- **A past day**: choose it in the thread or the month history, then **Note**. A day without a check-in asks for its state first.
+- **A past day**: choose it in the month history, then **Note**.
 - A day with a note has a small mark, read out as "with a note"; **Check-ins** lists them newest first.
 
 A day's note is an ordinary task note: formatted, [linked](note-links.md), searchable and editable offline.

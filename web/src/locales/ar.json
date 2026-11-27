@@ -2643,7 +2643,6 @@
   "Keep “{source}” as text": "الإبقاء على «{source}» كنص",
   "Keeps each colour's hue and moves only its lightness until the pair reads.": "يحافظ على تدرّج كل لون ويغيّر سطوعه فقط حتى يصبح الزوج مقروءًا.",
   "Keeps its place": "يحافظ على مكانه",
-  "Kept": "محفوظ",
   "Kept away": "مُبعَد",
   "Kept away, through {parent}": "مُبعَد، عبر {parent}",
   "Kept because they were changed again since: {items}.": "أُبقي عليها لأنها تغيّرت مجددًا منذئذ: {items}.",
@@ -7935,5 +7934,6 @@
   "Check-in taken back": "أُلغي تسجيل اليوم",
   "{kept} of {due} today": "{kept} من {due} اليوم",
   "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} من {of} يومًا مجدولًا محفوظة في آخر 53 أسبوعًا",
-  "Checked in": "تم التسجيل"
+  "Checked in": "تم التسجيل",
+  "By weekday": "حسب يوم الأسبوع"
 }

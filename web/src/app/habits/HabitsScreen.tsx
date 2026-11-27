@@ -7,7 +7,9 @@ import { habitStats, keptDays } from '../../lib/habits'
 import { resume } from '../../lib/habitActions'
 import { useHabitsEnabled } from '../../lib/habitPrefs'
 import { t } from '../../lib/i18n'
-import { Button, EmptyState, ListGroupHeader, PageBody, PageHeader, type HueName } from '../../ui'
+import { Button, EmptyState, ListGroupHeader, PageBody, PageHeader, useMediaQuery, type HueName } from '../../ui'
+import { HabitBoard } from './HabitBoard'
+import { HabitsOverview } from './HabitsOverview'
 import type { Task } from '../../lib/types'
 import { act } from '../actionError'
 import { showUndoToast } from '../bulk/toastStore'
@@ -37,11 +39,13 @@ export default function HabitsScreen({ id }: { id?: string } = {}) {
   const today = useToday()
   const model = useHabitsModel(today, today)
   const opts = model.opts
+  // From 640 px the habits are a week board under the week's tiles (habits-board D1); below, the rows.
+  const board = useMediaQuery('(min-width: 40rem)')
   if (!on) return model.loaded ? <HabitsOff /> : null
   if (id) return <HabitPage key={id} id={id} />
   const hue = model.hue
   return (
-    <PageBody width="form" data-habits-page>
+    <PageBody width={board ? 'wide' : 'form'} data-habits-page>
       <PageHeader title={t('Habits')} help="habits" meta={progressText(model.progress, true)}
         actions={<Button variant="primary" size="sm" icon="plus" onClick={() => openHabitForm()} data-new-habit>{t('New habit')}</Button>} />
       {model.count === 0 && model.graduated.length === 0 && (
@@ -52,7 +56,8 @@ export default function HabitsScreen({ id }: { id?: string } = {}) {
             </div>
           )} />
       )}
-      {model.groups.map(({ g, items }) => (
+      {board && model.count > 0 && <HabitsOverview habits={model.open} rowsOf={model.rowsOf} today={today} opts={opts} progress={model.progress} />}
+      {board ? <HabitBoard groups={model.groups} rowsOf={model.rowsOf} hue={hue} today={today} opts={opts} /> : model.groups.map(({ g, items }) => (
         <section key={g} aria-label={GROUP_TITLE[g]()} data-habit-group={g}>
           <ListGroupHeader title={GROUP_TITLE[g]()} />
           <ul className="space-y-0.5">

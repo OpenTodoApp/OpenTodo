@@ -2597,7 +2597,6 @@
   "Keep “{source}” as text": "“{source}” ifadesini metin olarak koru",
   "Keeps each colour's hue and moves only its lightness until the pair reads.": "Her rengin tonunu korur ve ikili okunaklı olana dek yalnızca açıklığını ayarlar.",
   "Keeps its place": "Yerini korur",
-  "Kept": "Sürdürüldü",
   "Kept away": "Uzak tutuldu",
   "Kept away, through {parent}": "{parent} üzerinden uzak tutuldu",
   "Kept because they were changed again since: {items}.": "O zamandan beri yeniden değiştirildikleri için korundular: {items}.",
@@ -7935,5 +7934,6 @@
   "Check-in taken back": "İşaret geri alındı",
   "{kept} of {due} today": "Bugün {due} alışkanlıktan {kept}",
   "{kept} of {of} scheduled days kept in the last 53 weeks": "Son 53 haftada planlanan {of} günün {kept} günü tutuldu",
-  "Checked in": "İşaretlendi"
+  "Checked in": "İşaretlendi",
+  "By weekday": "Haftanın gününe göre"
 }
