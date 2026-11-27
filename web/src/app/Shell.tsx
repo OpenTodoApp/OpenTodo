@@ -1,4 +1,5 @@
 import { useFeatures } from '../lib/features'
+import { removeItem } from '../lib/deviceStorage'
 import { ROUTE_FEATURES } from './screens'
 import { useHabitsEnabled } from '../lib/habitPrefs'
 import { resettable } from '../lib/moduleState'
@@ -35,7 +36,6 @@ import { currentAddress, openTaskPage, settleTrail } from './taskTrail'
 import { AddButton, TAB_BAR_ROOM, TabBar } from './TabBar'
 import { PHONE_BAR_FRAME, PHONE_BAR_LINE, hasPhoneChrome } from './phoneFrame'
 import { usePhoneOwnBar } from '../phone/chrome'
-import { usePhoneUiEnabled } from '../phone/prefs'
 import { usePhoneChrome } from './useScrollDirection'
 import { onQuickAddSheetRequest, QuickAddSheet, requestQuickAddSheet } from './QuickAddSheet'
 import { PanelHost } from './PanelHost'
@@ -73,25 +73,26 @@ const FeatureOff = lazy(() => import('./FeatureOff'))
 // per-device switch is on, so the default bundle carries just this boundary.
 const VimLayer = lazy(() => import('./vim/VimLayer'))
 const WorkspaceActivity = lazy(() => import('./WorkspaceActivity'))
-// The phone UI's screens (phone-ui-trial D2): their own chunks, fetched only while the per-device switch is on below 768 px.
+// The phone UI's screens (phone-ui-trial D2): their own chunks, fetched only below 768 px.
 const PhoneChrome = lazy(() => import('../phone/PhoneChrome').then((m) => ({ default: m.PhoneChrome })))
 const PhoneList = lazy(() => import('../phone/screens/PhoneList').then((m) => ({ default: m.PhoneList })))
 const PhoneTaskPage = lazy(() => import('../phone/screens/PhoneTaskPage').then((m) => ({ default: m.PhoneTaskPage })))
-/** A task list: the phone UI's list while it is on (phone-lists D7); a project in another layout keeps the present screen. */
+/** A task list: the phone UI's list below 768 px (phone-lists D7); a project in another layout keeps the present screen. */
 function ListScreen({ route, user, phoneUi, onMenu }: { route: ListRoute; user: User; phoneUi: boolean; onMenu: () => void }) {
   const layout = useProjectViewMode(phoneUi && route.view === 'project' ? route.id : null)
   if (!phoneUi || layout !== 'list') return <TaskListView userId={user.id} userRole={user.role} route={route} />
   return <Suspense fallback={null}><PhoneList route={route} userId={user.id} userRole={user.role} onMenu={onMenu} /></Suspense>
 }
-/** The phone UI around the screens while it is on (phone-all-screens): every page's header is the phone's. */
+/** The phone UI around the screens below 768 px (phone-all-screens): every page's header is the phone's. */
 function PhoneOr({ on, onMenu, children }: { on: boolean; onMenu: () => void; children: ReactNode }) {
-  // Its chunk is fetched only while the phone UI is on; the screens mount once it is here.
+  // Its chunk is fetched only below 768 px; the screens mount once it is here.
   return on ? <Suspense fallback={null}><PhoneChrome onMenu={onMenu}>{children}</PhoneChrome></Suspense> : <>{children}</>
 }
-/** Whether the phone UI's screens are shown: the switch is on and the window is a phone's. */
+/** Whether the phone UI's screens are shown: the window is a phone's, narrower than 768 px (phone-ui-only). */
 function usePhoneUi(): boolean {
-  const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
-  return usePhoneUiEnabled() && !desktop
+  // What the "New phone screens" switch stored: the switch is gone and nothing reads it, so it leaves the device (phone-ui-only D2).
+  useEffect(() => removeItem('opentodo.phoneUi'), [])
+  return !useMediaQuery(DESKTOP_HEADER_QUERY)
 }
 // Pull to sync (pull-to-sync): the gesture and its mark load only on a touch device, where a pull is possible; a mouse
 // or a trackpad never loads them, and a chunk that is gone just leaves the gesture out.

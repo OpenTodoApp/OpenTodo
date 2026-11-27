@@ -13,10 +13,7 @@ import { resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
 import css from '../index.css?raw'
-import { setPhoneUiEnabled } from '../phone/prefs'
 
-// These tests are about the earlier phone layout, the way back while the phone screens are the default (phone-ui-default D3).
-beforeEach(() => setPhoneUiEnabled(false))
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 const original = window.matchMedia
@@ -58,7 +55,8 @@ const row = (title: string) => [...document.querySelectorAll<HTMLElement>('li[da
  * appears above the row in the flow (as the old sticky bar did) pushes it down.
  */
 function position(el: HTMLElement) {
-  const frame = el.closest('[data-page-body]')!
+  // The page: the desktop's page body, or the phone's list screen.
+  const frame = el.closest('[data-page-body], [data-phone-screen]')!
   const before = [...frame.querySelectorAll('*')].filter((x) =>
     !x.contains(el) && !!(x.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) && !x.closest('.fixed'))
   return { top: el.getBoundingClientRect().top, offset: el.offsetTop, before: before.length }

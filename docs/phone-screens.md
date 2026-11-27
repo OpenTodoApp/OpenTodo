@@ -1,27 +1,23 @@
 ---
-title: New phone screens
-summary: On a phone OpenTodo shows screens made for a phone; what they do, and how to go back to the earlier ones on a device.
+title: Phone screens
+summary: On a screen narrower than 768 px OpenTodo shows screens made for a phone; what they are and what they do.
 audience: user
 section: Guides
 specs: []
 screens: []
 order: 153
 ---
-# New phone screens
+# Phone screens
 
 <picture><source srcset="images/phone-screens-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/phone-screens-light.webp" alt="Today on a phone in the new design: the menu button, the display options and the menu in the bar, the title Today with the date and the briefing, then cards of tasks under Earlier, Today and This Evening, each task with its circle, its title and one line with its date or time, repeat and project; the tab bar and the add button at the bottom."></picture>
 
 On a phone OpenTodo shows screens designed for a phone from the start, in the apps and in a phone's browser alike. They cover every **task list** (the Inbox, Today, Upcoming, Anytime, Someday, Assigned to me, Completed, a label, a location and a project as a list) and the **task page**. Every other screen keeps its content and gets the same bar, title and task rows.
 
-## The earlier screens
-
-Until now a phone showed the same screens as a computer, rearranged to fit. They are still there: open **Settings → Appearance → Theme and density** and turn off **New phone screens** at the end of the page. It takes effect at once, and turning it on brings the phone screens back. The switch is only shown on a screen narrower than 768 px.
-
-The choice is kept on that phone and is not synced: your other devices are not affected.
+They are what every screen narrower than 768 px shows, and a wider one shows the screens of a computer. There is nothing to turn on: the **New phone screens** switch that Settings had while the screens were new is gone, and so are the screens a phone showed before them.
 
 ## The task lists
 
-Every list shows the same tasks, groups and order as before, and does the same things.
+Every list shows the same tasks, groups and order as on a computer, and does the same things.
 
 - **Rows.** Each group is one card. Under a task's title, one line holds its time or date, subtasks, repeat and project. Subtasks sit under their task; the arrow at its end folds them.
 - **Tap, swipe, hold.** Tap a task to open it and its circle to complete it; **Undo** is offered as before. Swipe right to complete, left to choose a date. Hold a task and lift your finger for its menu; hold and move to put it somewhere else in a list you order by hand.

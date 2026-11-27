@@ -62,7 +62,7 @@ node scripts/e2e-habits.mjs
 
 ## `e2e-phone.mjs`
 
-The phone UI (`phone-ui-trial`, `phone-lists`) on a phone with touch and the "New phone screens" switch on: a hold opens the row's menu, a hold and a move reorders and the order survives a reload, a swipe completes and Undo brings the task back, Select tasks ticks rows and a bulk action writes them, a tap opens the task page and Back returns, and the other lists open as phone lists. Needs a fresh data directory.
+The phone UI (`phone-ui-trial`, `phone-lists`) on a phone with touch: a hold opens the row's menu, a hold and a move reorders and the order survives a reload, a swipe completes and Undo brings the task back, Select tasks ticks rows and a bulk action writes them, a tap opens the task page and Back returns, and the other lists open as phone lists. Needs a fresh data directory.
 
 ```sh
 node scripts/e2e-phone.mjs

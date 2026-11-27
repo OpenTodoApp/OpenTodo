@@ -7917,8 +7917,6 @@
   "Label deleted": "ラベルを削除しました",
   "Merged into {label}": "{label} に統合しました",
   "Field deleted": "フィールドを削除しました",
-  "Phone screens": "スマートフォン画面",
-  "New phone screens": "新しいスマートフォン画面",
   "Quick add notification": "クイック追加の通知",
   "Add a task from the notification shade, in any app.": "どのアプリを使っていても、通知シェードからタスクを追加できます。",
   "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android が OpenTodo の通知を拒否しました。Android の設定で許可してください。",
@@ -7930,7 +7928,5 @@
   "This project already has a field named “{name}” from “{workspace}”.": "このプロジェクトにはすでに「{workspace}」からの「{name}」という名前のフィールドがあります。",
   "This workspace already has a field named “{name}”.": "このワークスペースにはすでに「{name}」という名前のフィールドがあります。",
   "Workspace fields are edited in the workspace’s settings.": "ワークスペースのフィールドはワークスペースの設定で編集します。",
-  "Only the workspace’s owner can change its fields.": "ワークスペースのフィールドを変更できるのはオーナーだけです。",
-  "Screens made for a phone. This device only.": "スマートフォン向けに作った画面。この端末のみ。",
-  "The app in the design made for a phone. Turn it off for the earlier screens.": "スマートフォン向けデザインのアプリ。オフにすると以前の画面に戻ります。"
+  "Only the workspace’s owner can change its fields.": "ワークスペースのフィールドを変更できるのはオーナーだけです。"
 }

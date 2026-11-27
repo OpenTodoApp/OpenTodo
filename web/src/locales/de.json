@@ -7917,8 +7917,6 @@
   "Label deleted": "Label gelöscht",
   "Merged into {label}": "Mit {label} zusammengeführt",
   "Field deleted": "Feld gelöscht",
-  "Phone screens": "Telefonansichten",
-  "New phone screens": "Neue Telefonansichten",
   "Quick add notification": "Schnelleingabe-Benachrichtigung",
   "Add a task from the notification shade, in any app.": "Füge aus der Benachrichtigungsleiste eine Aufgabe hinzu, in jeder App.",
   "Android refused notifications for OpenTodo. Allow them in Android's settings.": "Android hat Benachrichtigungen für OpenTodo abgelehnt. Erlaube sie in den Android-Einstellungen.",
@@ -7930,7 +7928,5 @@
   "This project already has a field named “{name}” from “{workspace}”.": "Dieses Projekt hat bereits ein Feld namens „{name}“ aus „{workspace}“.",
   "This workspace already has a field named “{name}”.": "Dieser Arbeitsbereich hat bereits ein Feld namens „{name}“.",
   "Workspace fields are edited in the workspace’s settings.": "Felder des Arbeitsbereichs bearbeitest du in seinen Einstellungen.",
-  "Only the workspace’s owner can change its fields.": "Nur der Eigentümer des Arbeitsbereichs kann seine Felder ändern.",
-  "Screens made for a phone. This device only.": "Ansichten, die für das Telefon gemacht sind. Nur auf diesem Gerät.",
-  "The app in the design made for a phone. Turn it off for the earlier screens.": "Die App im Design für das Telefon. Schalte es ab, um die früheren Ansichten zu sehen."
+  "Only the workspace’s owner can change its fields.": "Nur der Eigentümer des Arbeitsbereichs kann seine Felder ändern."
 }

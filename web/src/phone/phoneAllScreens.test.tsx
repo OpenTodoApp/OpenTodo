@@ -15,7 +15,6 @@ import { resetPanel } from '../app/panel'
 import { navigate, type Route } from '../app/router'
 import { Shell } from '../app/Shell'
 import { resetTaskTrail } from '../app/taskTrail'
-import { setPhoneUiEnabled } from './prefs'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 let width = 390
@@ -33,9 +32,8 @@ beforeEach(async () => {
     addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
   })) as typeof window.matchMedia
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
-  setPhoneUiEnabled(false)
 })
-afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals(); setPhoneUiEnabled(false) })
+afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals() })
 
 const header = () => document.querySelector<HTMLElement>('[data-phone-header]')
 const shellBar = () => document.querySelector('[data-phone-bar]')
@@ -55,7 +53,6 @@ const SCREENS: [Route, string][] = [
 describe('every screen has the phone header', () => {
   for (const [route, name] of SCREENS) {
     it(`${name}: the phone header with its title, and no shell bar`, async () => {
-      setPhoneUiEnabled(true)
       navigate(route)
       const r = await render(<Shell user={user} onLogout={() => {}} />)
       await waitFor(() => !!header() && title() === name, `${name} under the phone header`)
@@ -66,14 +63,9 @@ describe('every screen has the phone header', () => {
     })
   }
 
-  it('is the page\'s own header with the switch off, and from 768 px with it on', async () => {
+  it('is the page\'s own header from 768 px', async () => {
     navigate({ view: 'labels' })
-    const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!shellBar(), 'the shell\'s bar')
-    expect(header()).toBeNull()
-    await r.unmount()
-    setPhoneUiEnabled(true)
-    width = 1280
+    width = 768
     const wide = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!document.querySelector('[data-page-header]'), 'the desktop header')
     expect(header()).toBeNull()
@@ -81,7 +73,6 @@ describe('every screen has the phone header', () => {
   })
 
   it('a nested page starts with Back', async () => {
-    setPhoneUiEnabled(true)
     navigate({ view: 'settings', section: 'appearance', page: 'theme' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!header()?.querySelector('[data-page-back]'), 'Back in the bar')
@@ -93,7 +84,6 @@ describe('every task row is the phone row', () => {
   it('Next lists its tasks as phone rows; the check completes with the screen\'s own write', async () => {
     const work = await createProject({ name: 'Work' })
     const first = await createTask({ title: 'Send the invoice', project_id: work })
-    setPhoneUiEnabled(true)
     navigate({ view: 'next' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     const row = () => document.querySelector<HTMLElement>(`[data-phone-row="${first}"]`)
@@ -107,7 +97,6 @@ describe('every task row is the phone row', () => {
   it('a tap on a row opens the task page', async () => {
     const work = await createProject({ name: 'Work' })
     const first = await createTask({ title: 'Send the invoice', project_id: work })
-    setPhoneUiEnabled(true)
     navigate({ view: 'next' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!document.querySelector(`[data-phone-row="${first}"]`), 'the row')
@@ -125,7 +114,6 @@ describe('the phone row on the other screens that list tasks', () => {
     await createTask({ title: 'Urgent two', priority: 1 })
     await createTask({ title: 'Not urgent' })
     const id = await createView({ name: 'Urgent', query: 'p1' })
-    setPhoneUiEnabled(true)
     navigate({ view: 'view', id })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => titles().length === 2, 'the view\'s two tasks')
@@ -139,7 +127,6 @@ describe('the phone row on the other screens that list tasks', () => {
   it('a filter\'s results are phone rows', async () => {
     await createTask({ title: 'Urgent one', priority: 1 })
     await createTask({ title: 'Not urgent' })
-    setPhoneUiEnabled(true)
     navigate({ view: 'filter', q: 'p1' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => titles().length === 1, 'the filter\'s one task')
@@ -151,7 +138,6 @@ describe('the phone row on the other screens that list tasks', () => {
     const work = await createProject({ name: 'Work' })
     const card = await createTask({ title: 'A card', project_id: work })
     await saveViewMode(work, 'board')
-    setPhoneUiEnabled(true)
     navigate({ view: 'project', id: work })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!document.querySelector(`[data-task-id="${card}"]`), 'the card')
@@ -178,19 +164,20 @@ describe('the page menu under the phone header', () => {
   }
   const helpIn = (bar: Element | null | undefined) => !!bar?.querySelector('[data-help-screen]')
 
-  for (const [route, name] of [[{ view: 'projects' }, 'Projects'], [{ view: 'labels' }, 'Labels'], [{ view: 'views' }, 'Views'], [{ view: 'next' }, 'Next'], [{ view: 'waiting' }, 'Waiting']] as [Route, string][]) {
-    it(`${name} offers what its present phone bar offers`, async () => {
+  // Help is a button where the page has no menu, and the menu's last item where it has one.
+  const NO_MENU = { menu: null, help: true }
+  const PAGES: [Route, string, { menu: string[] | null; help: boolean }][] = [
+    [{ view: 'projects' }, 'Projects', { menu: ['Collapse all', 'Expand all', 'Help', 'Select projects'], help: false }],
+    [{ view: 'labels' }, 'Labels', NO_MENU], [{ view: 'views' }, 'Views', NO_MENU], [{ view: 'next' }, 'Next', NO_MENU], [{ view: 'waiting' }, 'Waiting', NO_MENU],
+  ]
+  for (const [route, name, offered] of PAGES) {
+    it(`${name} offers its menu and Help in the phone header`, async () => {
       const work = await createProject({ name: 'Work' })
       await createTask({ title: 'Send the invoice', project_id: work })
       navigate(route)
       const r = await render(<Shell user={user} onLogout={() => {}} />)
-      await waitFor(() => !!shellBar() && (triggers(shellBar()).length > 0 || helpIn(shellBar())), 'the present bar')
-      const before = { menu: await menuOf(shellBar), help: helpIn(shellBar()) }
-      setPhoneUiEnabled(true)
-      await waitFor(() => !!header() && title() === name, 'the phone header')
-      const after = { menu: await menuOf(header), help: helpIn(header()) }
-      // Help is a button where the page has no menu, and the menu's last item where it has one: the same on both.
-      expect(after).toEqual(before)
+      await waitFor(() => !!header() && title() === name && (triggers(header()).length > 0 || helpIn(header())), 'the phone header')
+      expect({ menu: await menuOf(header), help: helpIn(header()) }).toEqual(offered)
       await r.unmount()
     })
   }

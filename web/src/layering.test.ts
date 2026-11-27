@@ -51,9 +51,9 @@ describe('web layering', () => {
     expect(await rules('src/phone/components/Fake.tsx', "import { Icon } from '../../ui'\nexport const x = Icon\n")).toEqual([])
     // The phone UI reads local data through src/lib, like every screen.
     expect(await rules('src/phone/screens/Fake.tsx', "import { db } from '../../lib/db'\nexport const x = db\n")).toEqual(['no-restricted-imports'])
-    // A desktop screen imports the phone UI only where it is chosen and switched on.
+    // A desktop screen imports the phone UI only where it is chosen: the shell.
     expect(await rules('src/app/TaskListView.tsx', "import { PhoneRow } from '../phone/components/PhoneRow'\nexport const x = PhoneRow\n")).toEqual(['no-restricted-imports'])
-    expect(await rules('src/app/Shell.tsx', "import { usePhoneUi } from '../phone/prefs'\nexport const x = usePhoneUi\n")).toEqual([])
-    expect(await rules('src/app/PreferencesPanels.tsx', "import { usePhoneUi } from '../phone/prefs'\nexport const x = usePhoneUi\n")).toEqual([])
+    expect(await rules('src/app/Shell.tsx', "import { usePhoneOwnBar } from '../phone/chrome'\nexport const x = usePhoneOwnBar\n")).toEqual([])
+    expect(await rules('src/app/PreferencesPanels.tsx', "import { usePhoneOwnBar } from '../phone/chrome'\nexport const x = usePhoneOwnBar\n")).toEqual(['no-restricted-imports'])
   })
 })
