@@ -57,7 +57,7 @@ export function TodayGlance({ listed, all, late, today, onLate, at }: {
         <Ring value={g.done} total={g.total} />
         <div className="min-w-0">
           <p className="text-title text-strong tabular-nums">{g.done}<span className="text-muted">/{g.total}</span></p>
-          <p className="truncate text-meta text-muted">{t('Done today')}</p>
+          <p className="text-meta leading-tight text-muted">{t('Done today')}</p>
         </div>
       </div>
       {g.next && (
@@ -67,7 +67,7 @@ export function TodayGlance({ listed, all, late, today, onLate, at }: {
           </span>
           <span className="min-w-0">
             <span className="line-clamp-2 text-prose font-medium leading-snug text-strong">{g.next.title}</span>
-            <span className="block truncate text-meta text-muted">{t('Up next')}</span>
+            <span className="block text-meta leading-tight text-muted">{t('Up next')}</span>
           </span>
         </button>
       )}
@@ -76,7 +76,7 @@ export function TodayGlance({ listed, all, late, today, onLate, at }: {
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-danger-soft text-danger"><Icon name="circle-alert" size="sm" /></span>
           <span className="min-w-0">
             <span className="block text-title text-danger tabular-nums">{g.late}</span>
-            <span className="block truncate text-meta text-muted">{t('Late')}</span>
+            <span className="block text-meta leading-tight text-muted">{t('Late')}</span>
           </span>
         </button>
       )}
