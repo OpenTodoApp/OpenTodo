@@ -2,7 +2,8 @@
 // next seven days as a row of day pills, each with its weekday, its date and up to
 // three dots for its tasks. A day with tasks scrolls the list to its group; a day
 // without is shown but cannot be chosen. The counts are the groups Upcoming already
-// lists, so the strip and the list never disagree.
+// lists, so the strip and the list never disagree. A day's name is its visible weekday
+// and date, then its number of tasks.
 import { addDaysISO, formatDateParts } from '../../lib/dates'
 import { t } from '../../lib/i18n'
 
@@ -15,10 +16,11 @@ export function WeekStrip({ today, counts, onDay }: { today: string; counts: Rea
         return (
           <li key={date} className="min-w-0">
             <button type="button" disabled={!n} onClick={() => onDay(date)} data-week-day={date}
-              aria-label={`${formatDateParts(date, { weekday: 'long', day: 'numeric', month: 'long' })}${n ? `, ${t('{n, plural, one {# task} other {# tasks}}', { n })}` : ''}`}
               className="press-selected flex w-full flex-col items-center gap-1 rounded-phone-card bg-surface py-2.5 shadow-2 disabled:bg-transparent disabled:shadow-none dark:bg-raised dark:disabled:bg-transparent">
               <span className="text-hint text-muted">{formatDateParts(date, { weekday: 'short' })}</span>
               <span className={`text-title tabular-nums ${n ? 'text-strong' : 'text-faint'}`}>{formatDateParts(date, { day: 'numeric' })}</span>
+              {/* The name is the visible weekday and date (WCAG 2.5.3), then the count the dots draw. */}
+              {n > 0 && <span className="sr-only">{`, ${t('{n, plural, one {# task} other {# tasks}}', { n })}`}</span>}
               <span aria-hidden className="flex h-1.5 items-center gap-0.5">
                 {Array.from({ length: Math.min(3, n) }, (_, i) => <span key={i} className="h-1.5 w-1.5 rounded-full bg-accent" />)}
               </span>

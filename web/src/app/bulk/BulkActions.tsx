@@ -526,7 +526,7 @@ export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPi
   if (!shown) return null
   return (
     <div data-selection-dock style={box ? { left: box.left, right: "auto", width: box.width } : undefined}
-      className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--toast-lift,4.25rem)-3.5rem+var(--safe-bottom))] z-30 flex justify-center px-4 md:bottom-[calc(1.25rem+var(--safe-bottom))] md:px-8">
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--toast-lift,4.25rem)-0.25rem+var(--safe-bottom))] z-30 flex justify-center px-4 md:bottom-[calc(1.25rem+var(--safe-bottom))] md:px-8">
       <div className="pointer-events-auto flex w-full max-w-[40rem] items-center gap-2 rounded-control border border-default bg-selected px-3 py-1.5 text-body shadow-2" data-selection-bar>
         <span role="status" className="min-w-0 flex-1 font-medium text-strong">{t('{count} selected', { count: ids.length })}</span>
         {ids.length > 0 && (menu

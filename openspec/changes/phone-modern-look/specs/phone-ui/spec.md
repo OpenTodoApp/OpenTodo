@@ -20,7 +20,7 @@ Below 768 px, Today in the phone UI SHALL show up to three tiles under its title
 - **THEN** no tile is shown
 
 ### Requirement: Upcoming's week
-Below 768 px, Upcoming in the phone UI SHALL show the next seven days, from tomorrow, as a row of day pills under its title, each with its short weekday, its date and one dot per task up to three. A day with tasks SHALL scroll the list to that day's group when tapped; a day without SHALL be shown without a card and SHALL NOT be offered. Each day's name for assistive technology SHALL be its full date and its number of tasks. The counts SHALL be the day groups Upcoming lists.
+Below 768 px, Upcoming in the phone UI SHALL show the next seven days, from tomorrow, as a row of day pills under its title, each with its short weekday, its date and one dot per task up to three. A day with tasks SHALL scroll the list to that day's group when tapped; a day without SHALL be shown without a card and SHALL NOT be offered. Each day's name for assistive technology SHALL start with its visible weekday and date and end with its number of tasks. The counts SHALL be the day groups Upcoming lists.
 
 #### Scenario: A busy tomorrow
 - **WHEN** Upcoming lists five tasks tomorrow and one on the third day
