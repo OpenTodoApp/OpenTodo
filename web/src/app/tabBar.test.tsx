@@ -7,9 +7,11 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
-import { applyOps, createTask, resetDeviceId } from '../lib/ops'
+import { applyOps, createProject, createTask, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
-import { click, key, render, minWidthPx, waitFor } from '../ui/test-utils'
+import { click, key, render, minWidthPx, type, waitFor } from '../ui/test-utils'
+import { createNote } from '../lib/noteOps'
+import { noteViewOf } from './NotesEditor'
 import { openTaskPanel, resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
@@ -276,6 +278,84 @@ describe('the tab bar while the list scrolls', () => {
     await waitFor(() => add()?.getAttribute('aria-label') === 'New note', 'the New note button')
     await act(async () => { add()!.click() })
     await waitFor(() => location.pathname === '/notes' && location.search === '?new=1' || location.pathname.startsWith('/notes/'), 'a new note started')
+    await r.unmount()
+  })
+
+  it.each([
+    { phoneUi: false, source: false },
+    { phoneUi: true, source: false },
+    { phoneUi: true, source: true },
+  ])('finishes the current note offline without creating another ($phoneUi, source: $source)', async ({ phoneUi, source }) => {
+    setPhoneUiEnabled(phoneUi)
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await act(async () => { navigate({ view: 'notes' }) })
+    const add = () => document.querySelector<HTMLButtonElement>('[data-add-button]')!
+    await waitFor(() => add()?.getAttribute('aria-label') === 'New note')
+    await click(add())
+    await waitFor(() => !!document.querySelector('.notes-editor[contenteditable="true"]'))
+    const id = location.pathname.split('/').at(-1)!
+    expect(add().getAttribute('aria-label')).toBe('Done')
+    expect(add().querySelector('[data-icon="arrow-up"]')).toBeTruthy()
+    expect(add().hasAttribute('aria-haspopup')).toBe(false)
+    if (source) {
+      const editor = document.querySelector<HTMLElement>('.notes-editor[contenteditable="true"]')!
+      await act(async () => { editor.focus() })
+      await key(editor, 'M', { code: 'KeyM', keyCode: 77, ctrlKey: true, shiftKey: true })
+      await waitFor(() => !!document.querySelector('textarea[data-notes-source]'))
+      await type(document.querySelector<HTMLTextAreaElement>('textarea[data-notes-source]')!, 'The final sentence')
+    }
+    // Leave before the 400 ms save timers: unmount must retain both fields.
+    const title = document.querySelector<HTMLInputElement>('[data-note-title-field]')!
+    await act(async () => { title.focus() })
+    await type(title, 'Test note')
+    await act(async () => {
+      if (!source) {
+        const view = noteViewOf(document.querySelector('.notes-editor[contenteditable="true"]')!)!
+        view.dispatch(view.state.tr.insertText('The final sentence'))
+      }
+      add().click()
+    })
+    await waitFor(() => location.pathname === '/notes' && add()?.getAttribute('aria-label') === 'New note')
+    await waitFor(async () => (await db.notes.get(id))?.description === 'The final sentence')
+    expect((await db.notes.get(id))?.title).toBe('Test note')
+    expect(await db.notes.count()).toBe(1)
+    expect(add().querySelector('[data-icon="plus"]')).toBeTruthy()
+    // Reopening uses that same note, with its pending edits retained offline.
+    await act(async () => { navigate({ view: 'notes', id }) })
+    await waitFor(() => document.querySelector('.notes-editor[contenteditable="true"]')?.textContent === 'The final sentence')
+    expect(document.querySelector<HTMLInputElement>('[data-note-title-field]')!.value).toBe('Test note')
+    add().focus()
+    await click(add())
+    expect(location.pathname).toBe('/notes')
+    expect(await db.notes.count()).toBe(1)
+    await click(add())
+    await waitFor(() => location.pathname.startsWith('/notes/') && location.pathname !== `/notes/${id}`)
+    expect(await db.notes.count()).toBe(2)
+    await r.unmount()
+  })
+
+  it('finishes a read-only note without enabling editing or creating a note', async () => {
+    const project = await createProject({ name: 'Shared' })
+    const id = await createNote({ title: 'Read only', description: 'Kept', project_id: project })
+    await db.memberships.put({ projectId: project, role: 'viewer', ownerId: 'other', members: [] })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await act(async () => { navigate({ view: 'notes', id }) })
+    await waitFor(() => !!document.querySelector(`[data-note-page="${id}"] [data-note-title-field]`))
+    expect(document.querySelector('input[data-note-title-field]')).toBeNull()
+    expect(document.querySelector('.notes-editor[contenteditable="true"]')).toBeNull()
+    await click(document.querySelector('[data-add-button][aria-label="Done"]')!)
+    expect(location.pathname).toBe('/notes')
+    expect(await db.notes.count()).toBe(1)
+    expect((await db.notes.get(id))?.description).toBe('Kept')
+    await r.unmount()
+  })
+
+  it('keeps the New note plus for a daily note', async () => {
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await act(async () => { navigate({ view: 'notes', day: '2026-11-27' }) })
+    await waitFor(() => document.querySelector('[data-add-button]')?.getAttribute('aria-label') === 'New note')
+    expect(document.querySelector('[data-add-button] [data-icon="plus"]')).toBeTruthy()
     await r.unmount()
   })
 })
