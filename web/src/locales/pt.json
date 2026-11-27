@@ -7505,7 +7505,6 @@
   "Day closed": "Dia fechado",
   "Day closed · {n} moved to tomorrow": "Dia fechado · {n} movidas para amanhã",
   "Keeps its place": "Fica onde está",
-  "Kept": "Cumprido",
   "More for {title}": "Mais para {title}",
   "Move {title} to": "Mover {title} para",
   "Moves to {date}": "Passa para {date}",
@@ -7931,5 +7930,6 @@
   "Check-in taken back": "Registo anulado",
   "{kept} of {due} today": "{kept} de {due} hoje",
   "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} de {of} dias previstos cumpridos nas últimas 53 semanas",
-  "Checked in": "Registado"
+  "Checked in": "Registado",
+  "By weekday": "Por dia da semana"
 }

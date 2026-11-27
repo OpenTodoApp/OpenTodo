@@ -7,7 +7,7 @@
 // rows only, offline too.
 import { useMemo } from 'react'
 import { graduate, resume } from '../../lib/habitActions'
-import { habitRowsOf, habitStats, habitTarget, isGraduated, keptDays, type HabitStats } from '../../lib/habits'
+import { habitRowsOf, habitStats, habitTarget, isGraduated, keptDays, type HabitOptions, type HabitStats } from '../../lib/habits'
 import { useHabitsChoice } from '../../lib/habitPrefs'
 import { trackAsHabit } from '../../lib/habitPrefs'
 import { t } from '../../lib/i18n'
@@ -15,7 +15,7 @@ import { useLiveTasks } from '../../lib/liveTasks'
 import { useProjects } from '../../lib/localData'
 import type { Task } from '../../lib/types'
 import { trashUndoable } from '../../lib/undoActions'
-import { Button, PageBody, PageHeader, Skeleton } from '../../ui'
+import { Button, Icon, PageBody, PageHeader, Skeleton } from '../../ui'
 import { act } from '../actionError'
 import { showUndoToast } from '../bulk/toastStore'
 import { HabitHistory } from '../HabitHistory'
@@ -28,6 +28,9 @@ import { habitHue, measureText } from './habitText'
 import { checkStateOf, onCheck, type CheckState } from './HabitRow'
 import { checkInWithUndo, pickDay, skipWithUndo, stepAmount } from './habitUndo'
 import { HabitYear } from './HabitYear'
+import { WeekdayChart } from './WeekdayChart'
+import { recentKept } from '../../lib/habitDay'
+import { checkInsOf } from '../../lib/habitNotes'
 import { openSetAmount } from './amountStore'
 import { CheckInNote } from './CheckInNote'
 import { CheckIns } from './CheckIns'
@@ -42,22 +45,33 @@ import { useHabitOptions } from './useHabitOptions'
 type Undoable = Promise<{ entry: { id: string } | null; label: string } | null>
 const undo = (p: Undoable) => act(p.then((r) => { if (r?.entry) showUndoToast(r.label, r.entry.id) }))
 
-/** Strength, Kept, Streak and Best as four quiet numbers. */
-function Numbers({ stats, unit }: { stats: HabitStats; unit?: string }) {
-  const cells = [
-    { label: t('Strength'), value: String(stats.strength) },
-    { label: stats.goal ? t('Today') : t('Kept'), value: stats.period || stats.goal ? measureText({ ...stats, backOnTrack: false }, unit) ?? '' : t('{kept} of {of}', { kept: stats.kept, of: stats.keptOf }) },
-    { label: t('Streak'), value: String(stats.current) },
-    { label: t('Best'), value: String(stats.best) },
-  ]
+/** The streak with its flame, the best, the strength with its bar, the last 30 days (habits-board D4). */
+function Tiles({ task, stats, rows, today, opts }: { task: Task; stats: HabitStats; rows: readonly Task[]; today: string; opts?: HabitOptions }) {
+  const days = (n: number) => (stats.period ? String(n) : t('{n, plural, one {# day} other {# days}}', { n }))
+  const recent = recentKept(task, rows, today, 30, opts)
+  const measure = stats.period || stats.goal ? measureText({ ...stats, backOnTrack: false }, task.habit_unit) : undefined
+  const tile = 'surface-card min-w-0 p-3'
   return (
-    <dl className="grid grid-cols-4 gap-2" data-habit-numbers>
-      {cells.map((c) => (
-        <div key={c.label} className="min-w-0">
-          <dt className="truncate text-meta text-muted">{c.label}</dt>
-          <dd className="text-h3 tabular-nums text-strong">{c.value}</dd>
-        </div>
-      ))}
+    <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4" data-habit-numbers>
+      <div className={tile} data-tile="streak">
+        <dt className="flex items-center gap-1 text-meta text-muted"><Icon name="flame" size="xs" className={stats.current > 0 ? 'text-hue' : ''} />{t('Streak')}</dt>
+        <dd className="text-display tabular-nums text-strong">{days(stats.current)}</dd>
+        {stats.backOnTrack && <dd className="text-hint text-hue" data-habit-status>{t('Back on track')}</dd>}
+      </div>
+      <div className={tile} data-tile="best">
+        <dt className="text-meta text-muted">{t('Best')}</dt>
+        <dd className="text-display tabular-nums text-strong">{days(stats.best)}</dd>
+      </div>
+      <div className={tile} data-tile="strength">
+        <dt className="text-meta text-muted">{t('Strength')}</dt>
+        <dd className="text-display tabular-nums text-strong">{stats.strength}</dd>
+        <dd aria-hidden className="mt-1 h-1 overflow-hidden rounded-full bg-sunken"><span className="block h-full rounded-full bg-hue-solid" style={{ width: `${stats.strength}%` }} /></dd>
+      </div>
+      <div className={tile} data-tile="recent">
+        <dt className="text-meta text-muted">{t('Last 30 days')}</dt>
+        <dd className="text-display tabular-nums text-strong">{recent.of ? t('{kept} of {of}', { kept: recent.kept, of: recent.of }) : '–'}</dd>
+        {measure && <dd className="text-hint text-faint">{measure}</dd>}
+      </div>
     </dl>
   )
 }
@@ -121,31 +135,43 @@ export function HabitPage({ id }: { id: string }) {
   const stats = graduated ? null : habitStats(task, rows, today, opts)
   const colour = task.project_id ? projects.find((p) => p.id === task.project_id)?.color : null
   const state = checkStateOf(task, rows, today, opts)
+  const hasCheckIns = checkInsOf(task, rows).length > 0
   return (
-    <PageBody width="form" data-habit-page={task.id}>
+    <PageBody width="wide" data-habit-page={task.id}>
       <div data-hue={habitHue(task, colour)}>
         <PageHeader title={task.title || t('Untitled')} back={back} meta={habitFacts(task)}
           leading={<span className="h-3 w-3 shrink-0 rounded-full bg-hue-solid" aria-hidden="true" />}
           actions={graduated ? undefined : <CheckIn task={task} state={state} />}
           menu={<ActionMenu label={t('Habit actions')} groups={[{ items: menuItems(task, graduated, state, choice, today) }]} />} />
-        <div className="space-y-5 px-1 pb-8">
+        <div className="max-w-[72rem] space-y-4 px-1 pb-8">
           <CheckInNote seriesId={task.id} title={task.title || t('Untitled')} />
-          <div data-habit-note><TaskNotes task={task} readOnly={false} /></div>
-          {task.habit_tiny && (
-            <p className="text-body text-muted" data-habit-tiny-line><span className="text-default">{t('Tiny version')}</span> · {task.habit_tiny}</p>
-          )}
           {graduated && (
             <div className="flex items-center gap-2" data-habit-graduated>
               <p className="min-w-0 flex-1 text-meta text-muted">{t('Graduated')} · {t('{n, plural, one {Kept for # day} other {Kept for # days}}', { n: keptDays(task, rows) })}</p>
               <Button size="sm" variant="secondary" onClick={() => undo(resume(task.id))} data-resume>{t('Resume')}</Button>
             </div>
           )}
-          {stats && <Numbers stats={stats} unit={task.habit_unit} />}
-          {stats?.backOnTrack && <p className="text-meta text-hue" data-habit-status>{t('Back on track')}</p>}
-          <HabitHistory series={task} records={rows} today={today} opts={opts} hued onPick={graduated ? undefined : (date, c) => act(pickDay(task.id, date, c))}
-            onNote={graduated ? undefined : (date) => openDayNote(task.id, date)} />
-          <HabitYear series={task} rows={rows} today={today} opts={opts} />
-          <CheckIns series={task} rows={rows} today={today} />
+          {stats && <Tiles task={task} stats={stats} rows={rows} today={today} opts={opts} />}
+          {/* The month and the weekdays side by side from 1024 px, the year under them (habits-board D4). */}
+          <div className="grid gap-4 lg:grid-cols-[auto_minmax(0,1fr)]">
+            <section className="surface-card p-4" aria-label={t('Month')}>
+              <HabitHistory series={task} records={rows} today={today} opts={opts} hued onPick={graduated ? undefined : (date, c) => act(pickDay(task.id, date, c))}
+                onNote={graduated ? undefined : (date) => openDayNote(task.id, date)} />
+            </section>
+            <section className="surface-card p-4" aria-label={t('By weekday')}>
+              <WeekdayChart series={task} rows={rows} today={today} opts={opts} />
+            </section>
+          </div>
+          <section className="surface-card w-fit max-w-full p-4" aria-label={t('Year')}><HabitYear series={task} rows={rows} today={today} opts={opts} /></section>
+          <div className={`grid gap-4 ${hasCheckIns ? 'lg:grid-cols-2' : ''}`}>
+            <section className="surface-card space-y-3 p-4" aria-label={t('Notes')}>
+              <div data-habit-note><TaskNotes task={task} readOnly={false} /></div>
+              {task.habit_tiny && (
+                <p className="text-body text-muted" data-habit-tiny-line><span className="text-default">{t('Tiny version')}</span> · {task.habit_tiny}</p>
+              )}
+            </section>
+            {hasCheckIns && <section className="surface-card p-4" aria-label={t('Check-ins')}><CheckIns series={task} rows={rows} today={today} /></section>}
+          </div>
         </div>
         <DayNoteHost />
         <AmountHost />

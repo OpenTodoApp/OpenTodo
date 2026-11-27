@@ -9,7 +9,7 @@ order: 52
 ---
 # Targets and amounts
 
-<picture><source srcset="images/habit-targets-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/habit-targets-light.webp" alt="The Habits screen: Gym under Morning with its week as a bar of three parts after the earlier weeks, reading 2 of 3 this week, and Water with each day filled by its share of 8 glasses, reading 3 of 8 glasses."></picture>
+<picture><source srcset="images/habit-targets-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/habit-targets-light.webp" alt="The Habits screen's week board: Gym under Morning with its check-ins of the week, reading 2 of 3 this week, and Water with each day filled by its share of 8 glasses, reading 3 of 8 glasses."></picture>
 
 Some habits don't fit fixed days or a single tick. In the habit form, **How often** has **Times per week** and **Times per month**, and **Amount** counts how much you do each day.
 
@@ -17,7 +17,7 @@ Some habits don't fit fixed days or a single tick. In the habit form, **How ofte
 
 "Gym, 3 times a week" is offered every day until the week holds three check-ins, then rests until the next week. A day without a check-in is a rest day, never a miss. The week starts on the first day of the week you chose in **Settings → General**; a month starts on the 1st.
 
-- **The row** reads "2 of 3 this week". Its thread is the week as one bar in three parts, after the earlier weeks as filled (met) or empty (not met).
+- **The row** reads "2 of 3 this week". On the week board its days show the check-ins, the other days resting; on a narrow screen and a phone its week is one bar in three parts, after the earlier weeks as filled (met) or empty (not met).
 - **The numbers** count weeks: a week is met with three check-ins, the streak counts met weeks in a row, and strength adds each week's share of the target.
 - **At risk** means the days left in the week are fewer than the check-ins still needed, or the last two weeks were not met. Skipping isn't offered.
 

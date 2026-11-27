@@ -7494,7 +7494,6 @@
   "Day closed": "今日已收尾",
   "Day closed · {n} moved to tomorrow": "今日已收尾 · {n} 项已移至明天",
   "Keeps its place": "保持原位",
-  "Kept": "坚持",
   "More for {title}": "{title} 的更多操作",
   "Move {title} to": "将 {title} 移到",
   "Moves to {date}": "移到 {date}",
@@ -7931,5 +7930,6 @@
   "Check-in taken back": "已撤销打卡",
   "{kept} of {due} today": "今天 {kept}/{due}",
   "{kept} of {of} scheduled days kept in the last 53 weeks": "过去 53 周计划的 {of} 天中坚持了 {kept} 天",
-  "Checked in": "已打卡"
+  "Checked in": "已打卡",
+  "By weekday": "按星期"
 }

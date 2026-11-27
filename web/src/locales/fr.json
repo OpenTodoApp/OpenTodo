@@ -7505,7 +7505,6 @@
   "Day closed": "Journée clôturée",
   "Day closed · {n} moved to tomorrow": "Journée clôturée · {n} déplacées à demain",
   "Keeps its place": "Reste à sa place",
-  "Kept": "Tenu",
   "More for {title}": "Plus pour {title}",
   "Move {title} to": "Déplacer {title} au",
   "Moves to {date}": "Passe au {date}",
@@ -7931,5 +7930,6 @@
   "Check-in taken back": "Pointage annulé",
   "{kept} of {due} today": "{kept} sur {due} aujourd’hui",
   "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} jours tenus sur {of} prévus ces 53 dernières semaines",
-  "Checked in": "Pointé"
+  "Checked in": "Pointé",
+  "By weekday": "Par jour de la semaine"
 }

@@ -2814,6 +2814,10 @@
   "By its trigger": [
     "web/src/app/routines/RunHistory.tsx"
   ],
+  "By weekday": [
+    "web/src/app/habits/HabitPage.tsx",
+    "web/src/app/habits/WeekdayChart.tsx"
+  ],
   "CSV files and other apps’ exports go through Settings → Data → Import.": [
     "web/src/app/TemplateDialogs.tsx"
   ],
@@ -3286,7 +3290,8 @@
     "web/src/lib/habitActions.ts"
   ],
   "Check-ins": [
-    "web/src/app/habits/CheckIns.tsx"
+    "web/src/app/habits/CheckIns.tsx",
+    "web/src/app/habits/HabitPage.tsx"
   ],
   "Check-list lines to subtasks (a task's note) or tasks": [
     "web/src/lib/richtextEditor.ts"
@@ -5897,6 +5902,7 @@
   ],
   "Edit…": [
     "web/src/app/LabelsView.tsx",
+    "web/src/app/habits/HabitBoard.tsx",
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/routines/RoutinesView.tsx",
     "web/src/phone/screens/PhoneHabits.tsx"
@@ -9115,9 +9121,6 @@
   "Keeps its place": [
     "web/src/app/review/CarryOver.tsx"
   ],
-  "Kept": [
-    "web/src/app/habits/HabitPage.tsx"
-  ],
   "Kept away": [
     "web/src/app/AgentAccessRow.tsx"
   ],
@@ -9323,13 +9326,15 @@
     "web/src/app/AuditPanel.tsx"
   ],
   "Last 30 days": [
-    "web/src/app/AuditPanel.tsx"
+    "web/src/app/AuditPanel.tsx",
+    "web/src/app/habits/HabitPage.tsx"
   ],
   "Last 4 weeks": [
     "web/src/lib/stats.ts"
   ],
   "Last 7 days": [
-    "web/src/app/AuditPanel.tsx"
+    "web/src/app/AuditPanel.tsx",
+    "web/src/app/habits/HabitsOverview.tsx"
   ],
   "Last action": [
     "web/src/app/ToastActionHost.tsx",
@@ -10404,6 +10409,7 @@
   ],
   "Month": [
     "web/src/app/CalendarRange.tsx",
+    "web/src/app/habits/HabitPage.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-detail/SectorChoice.tsx",
     "web/src/lib/shortcuts.ts"
@@ -10463,6 +10469,7 @@
     "web/src/app/themes/ThemeEditor.tsx"
   ],
   "More ways to check in {title}": [
+    "web/src/app/habits/HabitBoard.tsx",
     "web/src/app/habits/HabitRow.tsx",
     "web/src/phone/screens/PhoneHabits.tsx"
   ],
@@ -12037,6 +12044,7 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/SpaceSwitch.tsx",
     "web/src/app/WebhooksPanel.tsx",
+    "web/src/app/habits/HabitPage.tsx",
     "web/src/app/notes/DailyNote.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NotesPage.tsx",
@@ -12877,6 +12885,7 @@
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageBar.tsx",
     "web/src/app/calendar/occurrenceMenu.tsx",
+    "web/src/app/habits/HabitBoard.tsx",
     "web/src/app/palette/addFromBar.ts",
     "web/src/app/review/ProjectWalk.tsx",
     "web/src/app/task-list/afterListAdd.ts",
@@ -17729,6 +17738,7 @@
   ],
   "Streak": [
     "web/src/app/habits/HabitPage.tsx",
+    "web/src/app/habits/HabitsOverview.tsx",
     "web/src/app/review/StatsView.tsx"
   ],
   "Streak of at least": [
@@ -20542,7 +20552,7 @@
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/focus/FocusPicker.tsx",
-    "web/src/app/habits/HabitPage.tsx",
+    "web/src/app/habits/HabitsOverview.tsx",
     "web/src/app/notes/NoteSearchField.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/review/CloseDay.tsx",
@@ -21336,8 +21346,10 @@
     "web/src/app/focus/useFocusTimer.ts",
     "web/src/app/habits/AmountDialog.tsx",
     "web/src/app/habits/DayNoteDialog.tsx",
+    "web/src/app/habits/HabitBoard.tsx",
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/habits/HabitRow.tsx",
+    "web/src/app/habits/HabitsOverview.tsx",
     "web/src/app/habits/HabitsScreen.tsx",
     "web/src/app/habits/TodayStrip.tsx",
     "web/src/app/notes/NoteRow.tsx",
@@ -22362,6 +22374,7 @@
   ],
   "Year": [
     "web/src/app/CalendarRange.tsx",
+    "web/src/app/habits/HabitPage.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Yes": [
@@ -25481,6 +25494,8 @@
     "web/src/app/NotesEditor.tsx",
     "web/src/app/habits/DayStrip.tsx",
     "web/src/app/habits/HabitPage.tsx",
+    "web/src/app/habits/HabitsOverview.tsx",
+    "web/src/app/habits/WeekdayChart.tsx",
     "web/src/app/habits/habitText.ts",
     "web/src/app/habits/useHabitsModel.ts",
     "web/src/app/review/ReviewHabits.tsx"
@@ -25689,6 +25704,9 @@
     "web/src/app/PublicLinksSection.tsx",
     "web/src/app/TimelineView.tsx",
     "web/src/app/assistant/blocks/HabitBlock.tsx",
+    "web/src/app/habits/HabitBoard.tsx",
+    "web/src/app/habits/HabitPage.tsx",
+    "web/src/app/habits/HabitsOverview.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/lib/facets.ts"
   ],

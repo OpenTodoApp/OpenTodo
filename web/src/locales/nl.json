@@ -7394,7 +7394,6 @@
   "Is not": "Is niet",
   "Jump to latest": "Naar het nieuwste springen",
   "Keeps its place": "Blijft op zijn plaats",
-  "Kept": "Volgehouden",
   "Later days": "Latere dagen",
   "Latest captures": "Laatste vangsten",
   "Least urgent first": "Minst dringende eerst",
@@ -7931,5 +7930,6 @@
   "Check-in taken back": "Afvinken teruggedraaid",
   "{kept} of {due} today": "{kept} van {due} vandaag",
   "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} van {of} geplande dagen volgehouden in de laatste 53 weken",
-  "Checked in": "Afgevinkt"
+  "Checked in": "Afgevinkt",
+  "By weekday": "Per weekdag"
 }
