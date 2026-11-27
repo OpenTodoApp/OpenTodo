@@ -7934,5 +7934,6 @@
   "The app in the design made for a phone. Turn it off for the earlier screens.": "La aplicación con el diseño hecho para el teléfono. Desactívalo para volver a las pantallas anteriores.",
   "Check-in taken back": "Registro deshecho",
   "{kept} of {due} today": "{kept} de {due} hoy",
-  "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} de {of} días previstos cumplidos en las últimas 53 semanas"
+  "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} de {of} días previstos cumplidos en las últimas 53 semanas",
+  "Checked in": "Registrado"
 }

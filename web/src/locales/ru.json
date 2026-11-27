@@ -7934,5 +7934,6 @@
   "The app in the design made for a phone. Turn it off for the earlier screens.": "Приложение в оформлении для телефона. Отключите, чтобы вернуть прежние экраны.",
   "Check-in taken back": "Отметка отменена",
   "{kept} of {due} today": "{kept} из {due} сегодня",
-  "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} из {of} запланированных дней выполнено за последние 53 недели"
+  "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} из {of} запланированных дней выполнено за последние 53 недели",
+  "Checked in": "Отмечено"
 }

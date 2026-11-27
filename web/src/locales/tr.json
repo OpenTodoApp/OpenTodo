@@ -7934,5 +7934,6 @@
   "The app in the design made for a phone. Turn it off for the earlier screens.": "Uygulama, telefon için yapılmış tasarımda. Önceki ekranlar için kapat.",
   "Check-in taken back": "İşaret geri alındı",
   "{kept} of {due} today": "Bugün {due} alışkanlıktan {kept}",
-  "{kept} of {of} scheduled days kept in the last 53 weeks": "Son 53 haftada planlanan {of} günün {kept} günü tutuldu"
+  "{kept} of {of} scheduled days kept in the last 53 weeks": "Son 53 haftada planlanan {of} günün {kept} günü tutuldu",
+  "Checked in": "İşaretlendi"
 }

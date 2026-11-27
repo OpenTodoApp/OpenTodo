@@ -7934,5 +7934,6 @@
   "The app in the design made for a phone. Turn it off for the earlier screens.": "Aplikacja w wyglądzie zaprojektowanym dla telefonu. Wyłącz, aby wrócić do wcześniejszych ekranów.",
   "Check-in taken back": "Odhaczenie cofnięte",
   "{kept} of {due} today": "{kept} z {due} dzisiaj",
-  "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} z {of} zaplanowanych dni dotrzymanych w ostatnich 53 tygodniach"
+  "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} z {of} zaplanowanych dni dotrzymanych w ostatnich 53 tygodniach",
+  "Checked in": "Odhaczone"
 }

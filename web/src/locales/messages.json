@@ -3297,6 +3297,9 @@
   "Checkbox fields support \"= true\" or \"= false\" only, at position {pos}": [
     "web/src/lib/filter/evaluate.ts"
   ],
+  "Checked in": [
+    "web/src/lib/occurrenceActions.ts"
+  ],
   "Checked {ago}": [
     "web/src/app/IssuesPanel.tsx"
   ],

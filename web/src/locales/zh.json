@@ -7934,5 +7934,6 @@
   "The app in the design made for a phone. Turn it off for the earlier screens.": "应用使用为手机设计的界面。关闭后恢复原来的界面。",
   "Check-in taken back": "已撤销打卡",
   "{kept} of {due} today": "今天 {kept}/{due}",
-  "{kept} of {of} scheduled days kept in the last 53 weeks": "过去 53 周计划的 {of} 天中坚持了 {kept} 天"
+  "{kept} of {of} scheduled days kept in the last 53 weeks": "过去 53 周计划的 {of} 天中坚持了 {kept} 天",
+  "Checked in": "已打卡"
 }
