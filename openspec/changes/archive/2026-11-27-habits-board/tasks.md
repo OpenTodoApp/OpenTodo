@@ -14,5 +14,5 @@
 
 ## 4. The whole
 
-- [ ] 4.1 Stories; `npm test`, `npm run lint`, `npm run build`, the bundle budget, catalogues; the layout check on the habit screens. Verify: they pass.
+- [x] 4.1 Stories; `npm test`, `npm run lint`, `npm run build`, the bundle budget, catalogues; the layout check on the habit screens. Verify: they pass. Done: CI on 795e7161 is green (the three web test shards, typecheck and lint, the server, Docker, docs, scale tests, CodeQL, gosec); the layout check on the habit screens passes in Chromium at 360, 390, 768 and 1280 px, light and dark; `scripts/e2e-habits.mjs` passes; one new message in every catalogue; no dependency, the new parts are in the Habits chunk.
 - [x] 4.2 Docs, changelog, `make docs`, `make docs-check`; screenshots refreshed. Verify: they pass. Done: `habits.md`, `habit-targets.md`, `changelog.d/Added/habits-board.md`, `ROADMAP.md`; the habits, habit-page, habit-targets and habits-phone screenshots regenerated; `make docs` and `make docs-check` pass.
