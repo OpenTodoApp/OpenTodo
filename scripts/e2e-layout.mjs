@@ -144,18 +144,27 @@ function overlayGeometry(el) {
 const ENGINE_DB_LOST = /Connection to Indexed Database server lost|unknown transient reason|the session was signed out/i
 
 // A combination that stops making progress (WebKit's web process can stall inside an
-// evaluate or a close under load, which no Playwright timeout covers) is stopped after
-// COMBO_TIMEOUT_MS and reported with the step it was on, instead of holding the job
-// until CI cancels it with no report. WebKit gets one more run, as above.
+// evaluate or a close under load, which no Playwright timeout covers) is stopped once
+// one step has lasted COMBO_TIMEOUT_MS and reported with that step, instead of holding
+// the job until CI cancels it with no report. The time is per step, not for the whole
+// combination: a slow runner that is still moving from screen to screen is not a stall.
+// WebKit gets one more run, as above.
 const COMBO_TIMEOUT_MS = Number(process.env.COMBO_TIMEOUT_MS ?? 8 * 60 * 1000)
 
 async function runCombo(engine, width, theme, ids, attempt = 1) {
   const mine = []
   const run = { browser: null, step: 'launching the browser', crashed: null }
   let timer
-  const stalled = new Promise((resolve) => { timer = setTimeout(() => resolve('stalled'), COMBO_TIMEOUT_MS) })
+  const stalled = new Promise((resolve) => {
+    let step = run.step
+    let since = Date.now()
+    timer = setInterval(() => {
+      if (run.step !== step) { step = run.step; since = Date.now() }
+      else if (Date.now() - since >= COMBO_TIMEOUT_MS) resolve('stalled')
+    }, 1000)
+  })
   const outcome = await Promise.race([runComboOnce(engine, width, theme, ids, mine, run), stalled])
-  clearTimeout(timer)
+  clearInterval(timer)
   // A page whose web process crashed (Playwright's Linux WebKit is built with libstdc++
   // assertions) answers nothing again, and a goto on it never returns: the browser is
   // closed at the crash and the step is reported, instead of a stall. WebKit gets one
@@ -173,10 +182,10 @@ async function runCombo(engine, width, theme, ids, attempt = 1) {
     const tag = `${engine} ${width}px ${theme}`
     run.browser?.close().catch(() => {})
     if (engine === 'webkit' && attempt === 1) {
-      log(`  ${tag}: stalled at ${run.step} for ${COMBO_TIMEOUT_MS / 60000} min; running this combination again`)
+      log(`  ${tag}: no progress at ${run.step} for ${COMBO_TIMEOUT_MS / 60000} min; running this combination again`)
       return runCombo(engine, width, theme, ids, 2)
     }
-    failures.push(`[${tag}] stalled for ${COMBO_TIMEOUT_MS / 60000} min at ${run.step}`)
+    failures.push(`[${tag}] no progress for ${COMBO_TIMEOUT_MS / 60000} min at ${run.step}`)
     return
   }
   if (outcome && attempt === 1) {
