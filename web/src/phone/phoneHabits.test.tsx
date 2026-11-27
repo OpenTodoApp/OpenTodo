@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 // The Habits screen on a phone (OpenSpec change habits-complete, task 3.1): the ring
 // checks in and takes back, an earlier day lists its habits and fixes a missed day,
-// a hold opens the row's actions, and the desktop screen stays with the switch off.
+// a hold opens the row's actions, and the desktop screen stays from 768 px.
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
