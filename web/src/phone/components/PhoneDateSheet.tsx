@@ -66,7 +66,7 @@ export function PhoneDatePanel({ value, today, choices, weekStart, weekdays, mon
         })}
       </ul>
 
-      <div className="rounded-card bg-canvas p-2" data-date-month={month}>
+      <div className="rounded-phone-card bg-canvas p-2" data-date-month={month}>
         <div className="flex items-center">
           <p className="flex-1 px-2 text-title text-strong" aria-live="polite">{monthName(anchor)}</p>
           <button type="button" aria-label={t('Previous month')} onClick={() => setAnchor(shiftMonth(anchor, -1))} data-date-prev
@@ -100,7 +100,7 @@ export function PhoneDatePanel({ value, today, choices, weekStart, weekdays, mon
       </div>
 
       {(time || parts) && (
-        <div className="rounded-card bg-canvas [&>*+*]:border-t [&>*+*]:border-soft">
+        <div className="rounded-phone-card bg-canvas [&>*+*]:border-t [&>*+*]:border-soft">
           {time}
           {parts}
         </div>
@@ -108,7 +108,7 @@ export function PhoneDatePanel({ value, today, choices, weekStart, weekdays, mon
 
       {onClear && (
         <button type="button" onClick={onClear} data-date-clear
-          className="min-h-11 rounded-card bg-canvas text-prose text-danger focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">{t('Clear')}</button>
+          className="min-h-11 rounded-phone-card bg-canvas text-prose text-danger focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">{t('Clear')}</button>
       )}
     </div>
   )

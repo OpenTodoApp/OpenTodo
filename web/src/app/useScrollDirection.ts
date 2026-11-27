@@ -49,7 +49,7 @@ export function useScrollMinimised(scroller: RefObject<HTMLElement | null>, enab
 export function usePhoneChrome(scroller: RefObject<HTMLElement | null>, phoneChrome: boolean, drawerOpen: boolean): boolean {
   const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
   useEffect(() => {
-    const lift = desktop ? '0px' : phoneChrome ? `${TAB_BAR_HEIGHT_REM + 4.25}rem` : '5rem'
+    const lift = desktop ? '0px' : phoneChrome ? `${TAB_BAR_HEIGHT_REM + 1.25}rem` : '5rem'
     document.documentElement.style.setProperty('--toast-lift', lift)
   }, [desktop, phoneChrome])
   return useScrollMinimised(scroller, phoneChrome && !drawerOpen)

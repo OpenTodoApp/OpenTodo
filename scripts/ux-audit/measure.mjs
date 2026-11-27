@@ -480,9 +480,12 @@ export async function addButtonRoom() {
   const content = document.querySelector('#content')
   if (!content) return []
   if (!button || !button.getClientRects().length) {
-    const pad = parseFloat(getComputedStyle(content).paddingBottom)
+    // The column may keep the floating tab bar's own room (phone-modern-look D1): from the bar's top to the screen's
+    // bottom, when the column runs on under the bar. Only what it keeps beyond that is room for a button.
     const bar = document.querySelector('[data-tab-bar]')
-    return bar?.getClientRects().length && pad > 0 && !document.documentElement.hasAttribute('data-selection-docked') ? [`the page keeps ${Math.round(pad)} px at its end for an add button it does not show`] : []
+    const under = bar?.getClientRects().length && content.getBoundingClientRect().bottom > bar.getBoundingClientRect().top + 1
+    const pad = parseFloat(getComputedStyle(content).paddingBottom) - (under ? innerHeight - bar.getBoundingClientRect().top : 0)
+    return bar?.getClientRects().length && pad > 1 && !document.documentElement.hasAttribute('data-selection-docked') ? [`the page keeps ${Math.round(pad)} px at its end for an add button it does not show`] : []
   }
   const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
   const scrollsY = (el) => /(auto|scroll)/.test(getComputedStyle(el).overflowY) && el.scrollHeight > el.clientHeight + 1

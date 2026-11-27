@@ -7931,5 +7931,7 @@
   "{kept} of {due} today": "{kept} из {due} сегодня",
   "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} из {of} запланированных дней выполнено за последние 53 недели",
   "Checked in": "Отмечено",
-  "By weekday": "По дням недели"
+  "By weekday": "По дням недели",
+  "Up next": "Далее",
+  "Next seven days": "Ближайшие семь дней"
 }

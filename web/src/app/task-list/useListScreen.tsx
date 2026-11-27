@@ -380,7 +380,7 @@ export function useListScreen(route: ListRoute, userId?: string, userRole?: Acco
     upcomingCal, selectedId, setSelectedId, currentColumn, setCurrentColumn, revealed, setRevealed, collapsedGroups, summarised,
     selection, ticked, contextIds, inline, renderInline, editTitle, menuItems, ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, rowMenu,
     quickAddRef, listRoot, toggleViewMode, chooseViewMode, toggleSection, dayOrderIds, ownOrder, manual, listReorder, drag, onAdd, onAddMany,
-    toggleComplete, setPrompt, acceptPrompt, rowActions, edgeOf, boardGroups, queryFilter, queryHost, cardNotes, own, hiddenDone, showCompleted,
+    toggleComplete, setPrompt, acceptPrompt, listedTasks, rowActions, edgeOf, boardGroups, queryFilter, queryHost, cardNotes, own, hiddenDone, showCompleted,
     displayControl, completedNarrowed, currentProject, currentLabel, currentPlace, phone, room, phoneActions, meta, methodSubtitle, title, agenda, ready, briefing,
   }
 }

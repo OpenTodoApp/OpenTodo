@@ -33,6 +33,8 @@ import { useListScreen } from '../../app/task-list/useListScreen'
 import { UrgencyContext } from '../../app/useUrgency'
 import { t } from '../../lib/i18n'
 import { PhoneChrome } from '../PhoneChrome'
+import { TodayGlance } from '../components/TodayGlance'
+import { WeekStrip } from '../components/WeekStrip'
 
 const CompletedSearch = lazy(() => import('../../app/completed/CompletedBar').then((m) => ({ default: m.CompletedSearch })))
 
@@ -70,7 +72,8 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
 
   return (
     <ListReorderContext.Provider value={s.listReorder}><UrgencyContext.Provider value={m.urgency}><PhoneChrome onMenu={onMenu}>
-      <div ref={s.room} data-phone-screen="list" data-phone-list={route.view} data-page-project={route.view === 'project' ? '' : undefined} className="min-h-full bg-canvas pb-6">
+      <div ref={s.room} data-phone-screen="list" data-phone-list={route.view} data-page-project={route.view === 'project' ? '' : undefined} className="relative isolate min-h-full bg-canvas pb-6">
+        <div aria-hidden className="phone-glow" />
         <div className="px-4" data-phone-list-body>
         {route.view === 'project' && currentProject ? (
             <ProjectHeader project={currentProject} userId={userId} extraGroups={s.boardGroups} print
@@ -80,6 +83,10 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
           )}
 
           {route.view === 'completed' && <Suspense fallback={<div className="mb-3 h-9" />}><CompletedSearch value={m.completedQuery} onChange={m.setCompletedQuery} /></Suspense>}
+          {route.view === 'today' && <TodayGlance listed={s.listedTasks} all={m.allTasks} late={(() => { const e = groups.find((g) => g.key === 'earlier'); return e ? e.count ?? e.rows.length : 0 })()} today={today}
+            onLate={() => s.listRoot.current?.querySelector('[data-group="earlier"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />}
+          {route.view === 'upcoming' && <WeekStrip today={today} counts={new Map(groups.map((g) => [g.key, g.count ?? g.rows.length]))}
+            onDay={(date) => s.listRoot.current?.querySelector(`[data-group="${date}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />}
           {agenda.toggle && <TodayAgenda cal={agenda.cal} zone={m.zone} />}{m.todayHabits && <TodayStrip tasks={m.allTasks} projects={m.projects} today={today} />}
 
           {/* Close ends the selection whole (phone-lists "Selecting tasks"): nothing stays ticked behind rows that show their checks again. */}

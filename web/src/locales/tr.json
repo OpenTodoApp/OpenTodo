@@ -7931,5 +7931,7 @@
   "{kept} of {due} today": "Bugün {due} alışkanlıktan {kept}",
   "{kept} of {of} scheduled days kept in the last 53 weeks": "Son 53 haftada planlanan {of} günün {kept} günü tutuldu",
   "Checked in": "İşaretlendi",
-  "By weekday": "Haftanın gününe göre"
+  "By weekday": "Haftanın gününe göre",
+  "Up next": "Sıradaki",
+  "Next seven days": "Önümüzdeki yedi gün"
 }

@@ -361,14 +361,15 @@ describe('on a phone (390 px)', () => {
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     const content = r.container.querySelector('#content')!
     expect(content.getAttribute('data-add-room')).toBe('true')
-    expect(content.className).toContain('max-md:pb-(--add-room)')
+    // The floating tab bar's room and the add button's gap are the scroller's own padding (phone-modern-look D1).
+    expect((content as HTMLElement).style.paddingBottom).toContain('var(--add-room)')
     const css = (await import('../index.css?raw')).default
-    expect(css).toMatch(/--add-room:\s*4\.75rem/)
+    expect(css).toMatch(/--add-room:\s*1rem/)
     // A page that fills the column and scrolls inside itself takes the room back and ends its scroller with it (phone-fab-scroll-room).
     expect(css).toContain('#content[data-add-room] > .page-fill { height: calc(100% + var(--add-room)); margin-bottom: calc(-1 * var(--add-room)); }')
     expect(css).toContain('#content[data-add-room] .add-room-end { padding-bottom: var(--add-room); }')
-    // The toast sits above the tab bar (3.5 rem) and the add button's room (4.25 rem), never on a row's last line.
-    expect(document.documentElement.style.getPropertyValue('--toast-lift')).toBe('7.75rem')
+    // The toast sits above the floating tab bar and the add button beside it (4 rem) with a 1.25 rem gap, never on a row's last line.
+    expect(document.documentElement.style.getPropertyValue('--toast-lift')).toBe('5.25rem')
     await r.unmount()
   })
 })

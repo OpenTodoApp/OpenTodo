@@ -7931,5 +7931,7 @@
   "{kept} of {due} today": "今日 {due} 件中 {kept} 件",
   "{kept} of {of} scheduled days kept in the last 53 weeks": "過去 53 週間の予定日 {of} 日中 {kept} 日を達成",
   "Checked in": "チェックインしました",
-  "By weekday": "曜日別"
+  "By weekday": "曜日別",
+  "Up next": "次の予定",
+  "Next seven days": "今後7日間"
 }

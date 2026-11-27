@@ -137,6 +137,8 @@
   --radius-card: var(--ot-radius-card, 8px);
   --radius-surface: var(--ot-radius-surface, 10px);
   --radius-popover: var(--ot-radius-popover, 12px);
+  /* A card of phone rows and a phone tile (phone-modern-look D3): rounder than a desktop card, as a phone's grouped lists are. */
+  --radius-phone-card: var(--ot-radius-phone-card, 16px);
   /* Lists and cards are flat (precision-tokens D4); only overlays keep a shadow. */
   --shadow-1: 0 0 #0000;
   --shadow-2: 0 4px 12px rgb(15 23 42 / 0.10);
@@ -1335,12 +1337,13 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    a toast (3.5 rem) and the selection bar (3.5 rem) plus their gap, so a focused row
    action scrolled into view with `block: 'nearest'` stays clear of both. */
 :root { --list-scroll-pad: 8rem; }
-/* The phone add button's footprint under every list (phone-v2 D2): its 3.5 rem, its 0.75 rem offset above the tab bar, a 0.5 rem gap.
+/* The phone add button's footprint under every list (phone-v2 D2): the button sits beside the floating tab bar at its height
+   (phone-modern-look D1), so past the bar's own room only a 1 rem gap is kept.
    One rule for every screen (phone-fab-scroll-room): the content column keeps that room at its end while the button is
    offered (`data-add-room`, set by the shell), so whatever ends a page scrolls clear of the button. A page that fills the
    column and scrolls inside itself (the calendar's Day and Week, the notes graph) is a `.page-fill`: it takes the room
    back and runs down to the tab bar, and its scroller ends with the same room (`.add-room-end`). */
-:root { --add-room: 4.75rem; }
+:root { --add-room: 1rem; }
 @layer components {
   .page-fill { height: 100%; }
 }
@@ -1411,13 +1414,22 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    a screen lists phone rows, the rows of one list are one card, with hairlines that start
    at the text. The phone row exists only while the phone screens are on. No `:has()` over a
    list: it would restyle a 2,000-row list on every change (styleScope.perf.test). */
-[data-phone-rows] { @apply overflow-hidden rounded-card; }
+[data-phone-rows] { @apply overflow-hidden rounded-phone-card; }
 /* A screen's own list of phone rows (Next, a saved view): the first and the last row round the card. */
-[data-phone-row]:first-child { border-top-left-radius: var(--radius-card); border-top-right-radius: var(--radius-card); }
-[data-phone-row]:last-child { border-bottom-left-radius: var(--radius-card); border-bottom-right-radius: var(--radius-card); }
+[data-phone-row]:first-child { border-top-left-radius: var(--radius-phone-card); border-top-right-radius: var(--radius-phone-card); }
+[data-phone-row]:last-child { border-bottom-left-radius: var(--radius-phone-card); border-bottom-right-radius: var(--radius-phone-card); }
 [data-phone-rows] [data-phone-row] { border-radius: 0; }
 /* The keyboard's cursor row, on a phone with a keyboard. */
 [data-phone-row][aria-current="true"] { box-shadow: inset 3px 0 0 var(--ot-accent); }
+/* The light at the top of a phone list (phone-modern-look D3): two soft washes of the accent behind the title,
+   fading out before the first rows. Decoration only, under the content and never in a print. */
+.phone-glow {
+  position: absolute; inset-inline: 0; top: 0; height: 22rem; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(70% 60% at 12% 0%, color-mix(in oklab, var(--ot-accent) 22%, transparent), transparent 70%),
+    radial-gradient(60% 50% at 95% 8%, color-mix(in oklab, var(--ot-info) 14%, transparent), transparent 70%);
+}
+@media print { .phone-glow { display: none; } }
 [data-phone-row][aria-current="true"]:dir(rtl) { box-shadow: inset -3px 0 0 var(--ot-accent); }
 [data-phone-row] + [data-phone-row]::before { content: ''; @apply absolute inset-s-12 inset-e-0 top-0 z-[1] border-t border-soft; }
 [data-phone-list] [data-phone-list-body] > section { @apply mb-5; }
