@@ -1,1 +1,0 @@
-- **Process the Inbox: a swipe that starts on the title decides the task.** The title is a text field that kept the touch for itself, so on a phone the swipe did nothing unless it began on the card's edge.
