@@ -144,7 +144,7 @@ function Card({ task, n, total, projects, labels, swipe, onComplete, onSchedule,
   return (
     <section data-drag-id="triage-card" ref={cardRef} tabIndex={-1} aria-label={t('Task {n} of {total}', { n, total })} data-triage-card={task.id} data-swipeable={swipe ? '' : undefined}
       onPointerDown={(e) => { if (!editing(e.target)) swiping.onPointerDown(e) }}
-      className={`relative rounded-card border border-default bg-surface p-5 outline-none shadow-1 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus ${swipe ? 'touch-pan-y' : ''}`}>
+      className={`relative rounded-card border border-default bg-surface p-5 outline-none shadow-1 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus ${swipe ? 'touch-pan-y [&_textarea]:[touch-action:pan-y]' : ''}`}>
       {swiping.layers}
       <TriageTitle task={task} projects={projects} labels={labels} onLeave={() => cardRef.current?.focus()} />
       {(task.due || task.labels.length > 0 || reminders > 0) && (
