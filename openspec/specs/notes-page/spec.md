@@ -402,4 +402,4 @@ Below 768 px, while a standalone note is open, the floating button SHALL show an
 
 #### Scenario: Start the next note
 - **WHEN** a person has finished a note and taps the plus on Notes
-- **THEN** one new note opens and the floating button becomes the Done arrow again
+- **THEN** one new note opens with the title field focused for typing, and the floating button becomes the Done arrow again

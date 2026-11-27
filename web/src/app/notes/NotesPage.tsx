@@ -42,7 +42,7 @@ import { navigate, NOTES_VIEW_KEY, useRoute } from '../router'
 import { useShortcutScope } from '../shortcuts'
 import { relativeLabel } from '../task-detail/RelativeTime'
 import { NoteSearchField } from './NoteSearchField'
-import { focusBodyOnOpen, NotePage, NotePanel } from './NoteEditor'
+import { focusBodyOnOpen, focusTitleOnOpen, NotePage, NotePanel } from './NoteEditor'
 // A daily note (daily-notes): its own chunk, loaded when one is opened.
 const DailyNotePanel = lazy(() => import('./DailyNote').then((m) => ({ default: m.DailyNotePanel })))
 const DailyNotePage = lazy(() => import('./DailyNote').then((m) => ({ default: m.DailyNotePage })))
@@ -364,11 +364,11 @@ export function NotesPage({ id, day }: { id?: string; day?: string }) {
     const live = new Set(labels.filter((l) => !l.deleted_at).map((l) => l.id))
     return { project_id: project?.id ?? null, labels: tokens.flatMap((x) => (x.key === 'label' && live.has(x.id) ? [x.id] : [])) }
   }
-  const startNote = async () => {
+  const newNote = () => act((async () => {
     const created = await createNote(placeOfNew())
+    if (!desktop) focusTitleOnOpen(created)
     navigate({ view: 'notes', id: created })
-  }
-  const newNote = () => act(startNote())
+  })())
   const fromTemplate = useFromTemplate(() => placeOfNew().project_id)
   // New note "<text>": titled with the words, in the chips' project and labels (D3), one Undo, the caret in its body.
   const createFromSearch = async () => {

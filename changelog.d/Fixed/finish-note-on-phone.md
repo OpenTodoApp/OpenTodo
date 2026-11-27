@@ -1,1 +1,1 @@
-- **Finish a note from the phone's floating button.** While a standalone note is open, the plus becomes a Done arrow that keeps your edits and returns to Notes instead of starting another note.
+- **Finish a note from the phone's floating button.** While a standalone note is open, the plus becomes a Done arrow that keeps your edits and returns to Notes instead of starting another note. Starting a new note focuses its title for typing.

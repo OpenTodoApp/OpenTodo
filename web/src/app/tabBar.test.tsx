@@ -294,6 +294,7 @@ describe('the tab bar while the list scrolls', () => {
     await waitFor(() => add()?.getAttribute('aria-label') === 'New note')
     await click(add())
     await waitFor(() => !!document.querySelector('.notes-editor[contenteditable="true"]'))
+    expect(document.activeElement).toBe(document.querySelector('input[data-note-title-field]'))
     const id = location.pathname.split('/').at(-1)!
     expect(add().getAttribute('aria-label')).toBe('Done')
     expect(add().querySelector('[data-icon="arrow-up"]')).toBeTruthy()
@@ -331,6 +332,7 @@ describe('the tab bar while the list scrolls', () => {
     expect(await db.notes.count()).toBe(1)
     await click(add())
     await waitFor(() => location.pathname.startsWith('/notes/') && location.pathname !== `/notes/${id}`)
+    await waitFor(() => document.activeElement === document.querySelector('input[data-note-title-field]'))
     expect(await db.notes.count()).toBe(2)
     await r.unmount()
   })
