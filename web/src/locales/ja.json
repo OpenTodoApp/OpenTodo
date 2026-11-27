@@ -7247,7 +7247,6 @@
   "{title} is in the {slot} slot.": "{title} は {slot} スロットに入っています。",
   "{title} is in today’s focus.": "{title} は今日のフォーカスに入っています。",
   "{title} left today’s focus.": "{title} を今日のフォーカスから外しました。",
-  "{title}, done today": "{title}、今日完了",
   "{title}, open task": "{title}、タスクを開く",
   "{title}, waits for {blockers}": "{title}、{blockers} を待っています",
   "{title}, {kind, select, note {note} task {task} other {project}}, {n, plural, one {# link} other {# links}}": "{title}、{kind, select, note {ノート} task {タスク} other {プロジェクト}}、{n, plural, other {#件のリンク}}",
@@ -7932,5 +7931,8 @@
   "Workspace fields are edited in the workspace’s settings.": "ワークスペースのフィールドはワークスペースの設定で編集します。",
   "Only the workspace’s owner can change its fields.": "ワークスペースのフィールドを変更できるのはオーナーだけです。",
   "Screens made for a phone. This device only.": "スマートフォン向けに作った画面。この端末のみ。",
-  "The app in the design made for a phone. Turn it off for the earlier screens.": "スマートフォン向けデザインのアプリ。オフにすると以前の画面に戻ります。"
+  "The app in the design made for a phone. Turn it off for the earlier screens.": "スマートフォン向けデザインのアプリ。オフにすると以前の画面に戻ります。",
+  "Check-in taken back": "チェックインを取り消しました",
+  "{kept} of {due} today": "今日 {due} 件中 {kept} 件",
+  "{kept} of {of} scheduled days kept in the last 53 weeks": "過去 53 週間の予定日 {of} 日中 {kept} 日を達成"
 }

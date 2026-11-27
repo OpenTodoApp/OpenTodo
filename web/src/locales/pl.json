@@ -7748,7 +7748,6 @@
   "{title} is in the {slot} slot.": "{title} jest w slocie {slot}.",
   "{title} is in today’s focus.": "{title} jest w dzisiejszym skupieniu.",
   "{title} left today’s focus.": "{title} opuściło dzisiejsze skupienie.",
-  "{title}, done today": "{title}, zrobione dziś",
   "{title}, open task": "{title}, otwarte zadanie",
   "{title}, waits for {blockers}": "{title}, czeka na: {blockers}",
   "{title}, {kind, select, note {note} task {task} other {project}}, {n, plural, one {# link} other {# links}}": "{title}, {kind, select, note {notatka} task {zadanie} other {projekt}}, {n, plural, one {# link} few {# linki} many {# linków} other {# linku}}",
@@ -7932,5 +7931,8 @@
   "Workspace fields are edited in the workspace’s settings.": "Pola obszaru roboczego edytuje się w jego ustawieniach.",
   "Only the workspace’s owner can change its fields.": "Tylko właściciel obszaru roboczego może zmieniać jego pola.",
   "Screens made for a phone. This device only.": "Ekrany zaprojektowane dla telefonu. Tylko na tym urządzeniu.",
-  "The app in the design made for a phone. Turn it off for the earlier screens.": "Aplikacja w wyglądzie zaprojektowanym dla telefonu. Wyłącz, aby wrócić do wcześniejszych ekranów."
+  "The app in the design made for a phone. Turn it off for the earlier screens.": "Aplikacja w wyglądzie zaprojektowanym dla telefonu. Wyłącz, aby wrócić do wcześniejszych ekranów.",
+  "Check-in taken back": "Odhaczenie cofnięte",
+  "{kept} of {due} today": "{kept} z {due} dzisiaj",
+  "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} z {of} zaplanowanych dni dotrzymanych w ostatnich 53 tygodniach"
 }

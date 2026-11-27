@@ -7,7 +7,7 @@
 // rows only, offline too.
 import { useMemo } from 'react'
 import { graduate, resume } from '../../lib/habitActions'
-import { habitRowsOf, habitStats, isGraduated, keptDays, type HabitStats } from '../../lib/habits'
+import { habitRowsOf, habitStats, habitTarget, isGraduated, keptDays, type HabitStats } from '../../lib/habits'
 import { useHabitsChoice } from '../../lib/habitPrefs'
 import { trackAsHabit } from '../../lib/habitPrefs'
 import { t } from '../../lib/i18n'
@@ -25,8 +25,9 @@ import { useToday } from '../useViews'
 import { openHabitForm } from './habitFormStore'
 import { habitFacts } from './habitRule'
 import { habitHue, measureText } from './habitText'
-import { checkStateOf, type CheckState } from './HabitRow'
-import { checkInWithUndo, pickDay, stepAmount } from './habitUndo'
+import { checkStateOf, onCheck, type CheckState } from './HabitRow'
+import { checkInWithUndo, pickDay, skipWithUndo, stepAmount } from './habitUndo'
+import { HabitYear } from './HabitYear'
 import { openSetAmount } from './amountStore'
 import { CheckInNote } from './CheckInNote'
 import { CheckIns } from './CheckIns'
@@ -61,19 +62,21 @@ function Numbers({ stats, unit }: { stats: HabitStats; unit?: string }) {
   )
 }
 
-/** Check in as a labelled button: Done today once kept, Check in early for a habit due later. */
+/** Check in as a labelled button: Done today once kept (pressed, it takes the check-in back, habits-complete D4), Check in early for a habit due later. */
 function CheckIn({ task, state }: { task: Task; state: CheckState }) {
   const kept = state === 'kept'
   // An amount habit adds its step (habit-targets D2).
   const step = task.habit_amount ? task.habit_step || 1 : 0
   return (
-    <Button size="sm" variant={kept ? 'ghost' : 'secondary'} icon={step ? 'plus' : 'check'} disabled={kept} onClick={() => act(checkInWithUndo(task.id, false))} data-check-in={task.id} data-kept={kept || undefined}>
+    <Button size="sm" variant={kept && !step ? 'ghost' : 'secondary'} icon={step ? 'plus' : 'check'} aria-pressed={step ? undefined : kept}
+      onClick={() => act(onCheck(task, state))} data-check-in={task.id} data-kept={kept || undefined}>
       {kept ? t('Done today') : step ? t('Add {step}', { step }) : state === 'later' ? t('Check in early') : t('Check in')}
     </Button>
   )
 }
 
-function menuItems(task: Task, graduated: boolean, kept: boolean, choice: ReturnType<typeof useHabitsChoice>, today: string): ActionItem[] {
+function menuItems(task: Task, graduated: boolean, state: CheckState, choice: ReturnType<typeof useHabitsChoice>, today: string): ActionItem[] {
+  const kept = state === 'kept'
   const step = task.habit_step || 1
   return [
     ...(!graduated && task.habit_amount ? [
@@ -81,6 +84,8 @@ function menuItems(task: Task, graduated: boolean, kept: boolean, choice: Return
       { kind: 'action' as const, id: 'set', label: t('Set amount…'), icon: 'pencil' as const, onSelect: () => openSetAmount(task.id, today) },
     ] : []),
     ...(!graduated && !kept && !task.habit_amount ? [{ kind: 'action' as const, id: 'tiny', label: task.habit_tiny ? t('Log the tiny version: {tiny}', { tiny: task.habit_tiny }) : t('Log the tiny version'), icon: 'circle' as const, onSelect: () => checkInWithUndo(task.id, true) }] : []),
+    // Skip this day (habits-complete D5): not for a target habit, which rests, or an amount habit.
+    ...(!graduated && state === 'due' && !task.habit_amount && !habitTarget(task) ? [{ kind: 'action' as const, id: 'skip', label: t('Skip this day'), icon: 'arrow-right' as const, onSelect: () => skipWithUndo(task.id) }] : []),
     { kind: 'action', id: 'edit', label: t('Edit…'), icon: 'pencil', onSelect: () => openHabitForm({ taskId: task.id }) },
     graduated
       ? { kind: 'action', id: 'resume', label: t('Resume'), icon: 'rotate-ccw', onSelect: () => undo(resume(task.id)) }
@@ -122,7 +127,7 @@ export function HabitPage({ id }: { id: string }) {
         <PageHeader title={task.title || t('Untitled')} back={back} meta={habitFacts(task)}
           leading={<span className="h-3 w-3 shrink-0 rounded-full bg-hue-solid" aria-hidden="true" />}
           actions={graduated ? undefined : <CheckIn task={task} state={state} />}
-          menu={<ActionMenu label={t('Habit actions')} groups={[{ items: menuItems(task, graduated, state === 'kept', choice, today) }]} />} />
+          menu={<ActionMenu label={t('Habit actions')} groups={[{ items: menuItems(task, graduated, state, choice, today) }]} />} />
         <div className="space-y-5 px-1 pb-8">
           <CheckInNote seriesId={task.id} title={task.title || t('Untitled')} />
           <div data-habit-note><TaskNotes task={task} readOnly={false} /></div>
@@ -137,8 +142,9 @@ export function HabitPage({ id }: { id: string }) {
           )}
           {stats && <Numbers stats={stats} unit={task.habit_unit} />}
           {stats?.backOnTrack && <p className="text-meta text-hue" data-habit-status>{t('Back on track')}</p>}
-          <HabitHistory series={task} records={rows} today={today} opts={opts} onPick={graduated ? undefined : (date, c) => act(pickDay(task.id, date, c))}
+          <HabitHistory series={task} records={rows} today={today} opts={opts} hued onPick={graduated ? undefined : (date, c) => act(pickDay(task.id, date, c))}
             onNote={graduated ? undefined : (date) => openDayNote(task.id, date)} />
+          <HabitYear series={task} rows={rows} today={today} opts={opts} />
           <CheckIns series={task} rows={rows} today={today} />
         </div>
         <DayNoteHost />

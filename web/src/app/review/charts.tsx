@@ -343,8 +343,12 @@ const LEVEL_CLASS = ['bg-chart-seq-1', 'bg-chart-seq-2', 'bg-chart-seq-3', 'bg-c
  * Weeks as columns, weekdays as rows, five shades (D4). It scrolls sideways inside
  * the figure on narrow screens, with the current week in view.
  */
-export function Heatmap({ weeks, rowLabels, columnLabels, tip, summary }: {
+export function Heatmap({ weeks, rowLabels, columnLabels, tip, summary, levels = LEVEL_CLASS, legend = true }: {
   weeks: readonly (HeatDay | null)[][]
+  /** The class of each level (a habit's year draws its states, habits-complete D7); the five shades by default. */
+  levels?: readonly string[]
+  /** The Fewer … More legend; off where the levels are states, named in each day's tip. */
+  legend?: boolean
   /** The weekdays, from the first day of the week; shown for every other row. */
   rowLabels: string[]
   /** A month name on the first week of each month, '' elsewhere. */
@@ -380,7 +384,7 @@ export function Heatmap({ weeks, rowLabels, columnLabels, tip, summary }: {
               {weeks.map((col, c) => {
                 const d = col[r]
                 return d
-                  ? <div key={c} {...grid.cellProps(r, c)} style={{ gridRow: r + 1, gridColumn: c + 1 }} className={`size-(--heat) rounded-[3px] outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-1 focus-visible:outline-focus ${LEVEL_CLASS[d.level]}`} data-day={d.date} data-level={d.level} />
+                  ? <div key={c} {...grid.cellProps(r, c)} style={{ gridRow: r + 1, gridColumn: c + 1 }} className={`size-(--heat) rounded-[3px] outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-1 focus-visible:outline-focus ${levels[d.level] ?? ''}`} data-day={d.date} data-level={d.level} />
                   : <div key={c} role="gridcell" aria-hidden="true" style={{ gridRow: r + 1, gridColumn: c + 1 }} className="size-(--heat)" />
               })}
             </div>
@@ -390,11 +394,11 @@ export function Heatmap({ weeks, rowLabels, columnLabels, tip, summary }: {
     </div>
     <ChartTooltip tip={grid.tooltip} box={box} />
     {/* Outside the sideways scroller, so it stays in view. */}
-    <div className="mt-2 flex items-center gap-1 text-hint text-muted" aria-hidden="true" data-heat-legend>
+    {legend && <div className="mt-2 flex items-center gap-1 text-hint text-muted" aria-hidden="true" data-heat-legend>
       <span>{t('Fewer')}</span>
       {LEVEL_CLASS.map((c, i) => <span key={i} className={`size-3 rounded-[3px] ${c}`} />)}
       <span>{t('More')}</span>
-    </div>
+    </div>}
     </div>
   )
 }

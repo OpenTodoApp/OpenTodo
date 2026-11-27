@@ -17,14 +17,16 @@ import { canonicalOf, compatibleRule, firstOccurrence, parseRule } from './recur
 import { recordFields, seriesBudget } from './recurring'
 import { copyReminders } from './seriesPlan'
 import { endedRule } from './seriesSplit'
-import type { Reminder, Task } from './types'
+import type { Due, Reminder, Task } from './types'
 import { applyBatch } from './undo'
 import type { ProposedChange } from './assistantTypes'
 import { t } from './i18n'
 
-export { planPastDay, type DayChoice } from './habitLog'
+export { planPastDay, planUncheck, type DayChoice } from './habitLog'
 import type { DayChoice } from './habitLog'
-import { planPastDay } from './habitLog'
+import { planPastDay, planUncheck } from './habitLog'
+import { nameId } from './ids'
+import { relativeFireAt } from './reminderTime'
 
 /** The last date the rule schedules before `today`, within a year; null when none. */
 function lastScheduledBefore(series: Task, today: string): string | null {
@@ -97,6 +99,42 @@ export interface HabitInput {
   target?: { count: number; period: 'week' | 'month' } | null
   /** A daily amount with its unit and step (habit-targets D2); null for none; left out keeps the stored one. */
   amount?: { goal: number; unit: string; step: number } | null
+  /** Remind me at (habits-complete D6): "HH:MM" sets the due time and the reminder, null clears them, left out keeps both. */
+  remindAt?: string | null
+}
+
+/** The id of the form's reminder on a habit (habits-complete D6): the same on every device. */
+export function habitReminderId(taskId: string): string {
+  return nameId('habit-reminder', taskId)
+}
+
+const atDue = (r: Pick<Reminder, 'kind' | 'offset_minutes' | 'deleted_at'>) => !r.deleted_at && r.kind === 'relative' && r.offset_minutes === 0
+
+/** What Remind me at shows (D6): the due time while the habit has a live reminder at it, else nothing. */
+export function remindTimeOf(task: Pick<Task, 'due'> | null | undefined, reminders: readonly Reminder[]): string {
+  return task?.due?.time && reminders.some(atDue) ? task.due.time : ''
+}
+
+/**
+ * The writes of Remind me at (D6) for a habit whose due becomes `due`: a time sets the
+ * due time and the derived reminder at 0 minutes; null removes the reminders at the due
+ * time and the time itself. Returns the task's due patch (or undefined) and the reminder changes.
+ */
+export function planRemind(taskId: string, due: Due, remindAt: string | null, reminders: readonly Reminder[], now: number): { due?: Due; changes: Change[] } {
+  if (remindAt === null) {
+    const live = reminders.filter(atDue)
+    if (!live.length) return { changes: [] }
+    const { time: _time, ...rest } = due
+    return { due: rest, changes: live.map((r) => ({ entity: 'reminder' as const, entityId: r.id, patch: { deleted_at: now } })) }
+  }
+  const next: Due = { ...due, time: remindAt }
+  const id = habitReminderId(taskId)
+  const fire = relativeFireAt(next, 0)
+  const own = reminders.find((r) => r.id === id)
+  const patch = own
+    ? { kind: 'relative', offset_minutes: 0, fire_at: fire, delivered_at: null, dismissed_at: null, deleted_at: null }
+    : { task_id: taskId, kind: 'relative', offset_minutes: 0, fire_at: fire, delivered_at: null, dismissed_at: null, created_at: now, deleted_at: null }
+  return { due: next, changes: [{ entity: 'reminder', entityId: id, patch }] }
 }
 
 /** Why a habit cannot be made from a rule: none (ok), not a valid rule, or a completion-relative rule. */
@@ -125,7 +163,7 @@ function habitPatch(input: HabitInput): Record<string, unknown> {
  * tiny version, anchor and part of the day in the same batch. Null for a
  * completion-relative or invalid rule (the form asks for a calendar rule first).
  */
-export function planMakeHabit(task: Task, input: HabitInput, today: string): Change[] | null {
+export function planMakeHabit(task: Task, input: HabitInput, today: string, reminders: readonly Reminder[] = [], now = Date.now()): Change[] | null {
   if (habitRuleProblem(input.rule)) return null
   const p = parseRule(input.rule)
   if (!p.ok) return null
@@ -135,7 +173,10 @@ export function planMakeHabit(task: Task, input: HabitInput, today: string): Cha
   const due = task.due ?? { date: firstOccurrence(p.rule, today) }
   if (!task.due) patch.due = due
   if (task.recurrence !== p.canonical) patch.recurrence = compatibleRule(p.canonical, due.date)
-  return [{ entity: 'task', entityId: task.id, patch }]
+  if (input.remindAt === undefined) return [{ entity: 'task', entityId: task.id, patch }]
+  const remind = planRemind(task.id, due, input.remindAt, reminders.filter((r) => r.task_id === task.id), now)
+  if (remind.due) patch.due = remind.due
+  return [{ entity: 'task', entityId: task.id, patch }, ...remind.changes]
 }
 
 /** The rule the form proposes for a task (D9): its own rule (a completion-relative one is then refused), else `every day`. */
@@ -223,14 +264,35 @@ export async function resume(seriesId: string, now = Date.now(), today = logical
 export async function createHabit(input: HabitInput) {
   if (habitRuleProblem(input.rule)) return null
   const planned = await planTask({ title: input.title, recurrence: input.rule, project_id: input.projectId ?? null })
-  const patch = { ...planned.change.patch, ...habitPatch(input) }
-  const r = await apply([{ entity: 'task', entityId: planned.id, patch }], t('Habit created'))
+  const patch: Record<string, unknown> = { ...planned.change.patch, ...habitPatch(input) }
+  const extra: Change[] = []
+  if (input.remindAt) {
+    const due = (patch.due as Due | null | undefined) ?? { date: firstOccurrence(input.rule, logicalToday()) }
+    const remind = planRemind(planned.id, due, input.remindAt, [], Date.now())
+    patch.due = remind.due
+    extra.push(...remind.changes)
+  }
+  const r = await apply([{ entity: 'task', entityId: planned.id, patch }, ...extra], t('Habit created'))
   return r ? { ...r, id: planned.id } : null
 }
 
 /** Make an existing task a habit (D9), or save an edited habit (habits-polish D4), with an Undo offer. */
 export async function makeHabit(taskId: string, input: HabitInput, today = logicalToday()) {
   const task = await db.tasks.get(taskId)
-  const changes = task ? planMakeHabit(task, input, today) : null
+  const reminders = input.remindAt !== undefined ? await db.reminders.where('task_id').equals(taskId).toArray() : []
+  const changes = task ? planMakeHabit(task, input, today, reminders) : null
   return changes ? apply(changes, task?.habit ? t('Habit saved') : t('Habit created')) : null
+}
+
+/** Take back today's check-in (habits-complete D4) with an Undo offer. */
+export async function uncheckToday(seriesId: string, now = Date.now(), today = logicalToday()) {
+  const series = await db.tasks.get(seriesId)
+  if (!series) return null
+  const changes = planUncheck(series, await lineageRows(seriesId), today, now)
+  return changes ? apply(changes, t('Check-in taken back')) : null
+}
+
+/** Skip today (habits-complete D5): the current occurrence skipped as a repeating task's Skip does, with an Undo offer. */
+export async function skipToday(seriesId: string, opts: { now?: number; today?: string } = {}) {
+  return actOnOccurrenceUndoable(seriesId, null, { kind: 'skip' }, opts)
 }

@@ -7108,7 +7108,6 @@
   "{title} is in the {slot} slot.": "{title} è nello spazio {slot}.",
   "{title} is in today’s focus.": "{title} è nel focus di oggi.",
   "{title} left today’s focus.": "{title} è uscito dal focus di oggi.",
-  "{title}, done today": "{title}, fatto oggi",
   "{title}, open task": "{title}, apri l’attività",
   "{title}, waits for {blockers}": "{title}, attende {blockers}",
   "{title}, {kind, select, note {note} task {task} other {project}}, {n, plural, one {# link} other {# links}}": "{title}, {kind, select, note {nota} task {attività} other {progetto}}, {n, plural, one {# collegamento} other {# collegamenti}}",
@@ -7932,5 +7931,8 @@
   "Workspace fields are edited in the workspace’s settings.": "I campi dello spazio di lavoro si modificano nelle sue impostazioni.",
   "Only the workspace’s owner can change its fields.": "Solo il proprietario dello spazio di lavoro può modificarne i campi.",
   "Screens made for a phone. This device only.": "Schermate pensate per il telefono. Solo su questo dispositivo.",
-  "The app in the design made for a phone. Turn it off for the earlier screens.": "L’app nel design pensato per il telefono. Disattivalo per tornare alle schermate precedenti."
+  "The app in the design made for a phone. Turn it off for the earlier screens.": "L’app nel design pensato per il telefono. Disattivalo per tornare alle schermate precedenti.",
+  "Check-in taken back": "Registrazione annullata",
+  "{kept} of {due} today": "{kept} di {due} oggi",
+  "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} di {of} giorni previsti mantenuti nelle ultime 53 settimane"
 }

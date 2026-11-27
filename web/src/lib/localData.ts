@@ -464,6 +464,11 @@ export function useReminderRows(taskId: string | null | undefined): Reminder[] {
   return useLiveQuery(() => (taskId ? db.reminders.where('task_id').equals(taskId).toArray() : NO_REMINDERS), [taskId], NO_REMINDERS)
 }
 
+/** A task's reminder rows once read (undefined before), for a form that starts from them (habits-complete D6). */
+export function useLoadedReminderRows(taskId: string | null): { taskId: string | null; rows: Reminder[] } | undefined {
+  return useLiveQuery(async () => ({ taskId, rows: taskId ? await db.reminders.where('task_id').equals(taskId).toArray() : NO_REMINDERS }), [taskId])
+}
+
 /** Re-puts reminder rows the service worker wrote straight into IndexedDB, so live queries notice them. */
 export async function touchReminders(ids: readonly string[]): Promise<void> {
   for (const id of ids) {
