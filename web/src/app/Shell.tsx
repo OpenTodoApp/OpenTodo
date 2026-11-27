@@ -5,7 +5,7 @@ import { resettable } from '../lib/moduleState'
 import { useHabitForm } from './habits/habitFormStore'
 import { DESKTOP_HEADER_QUERY, IconButton, PageActions, PageBarTitle, Skeleton, TruncatedText, trapTab, useMediaQuery, useOverlay, pageBar, usePageBar, useOverlayDepth } from '../ui'
 import { useCommandBar } from './palette/useCommandBar'
-import { Suspense, useCallback, useEffect, useRef, useState, type ComponentType, type ReactNode, type RefObject } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState, type ComponentType, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { lazy, preloadable } from '../lib/lazy'
 import type { User } from '../lib/types'
 import { openStartView } from './startView'
@@ -232,6 +232,11 @@ function openAddressItem(): boolean {
   return false
 }
 
+/** Below 768 px the floating tab bar's room is the scroller's own padding, not the frame's, so the list runs on under the bar (phone-modern-look D1). */
+function scrollerRoom(phoneChrome: boolean, addRoom: boolean): CSSProperties | undefined {
+  return phoneChrome ? { paddingBottom: addRoom ? `calc(${TAB_BAR_ROOM} + var(--add-room))` : TAB_BAR_ROOM } : undefined
+}
+
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -377,7 +382,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       </aside>
       {/* From 768 px the page is one inset content surface on the canvas: 8 px from the window, the surface radius, one hairline (precision-shell D1). */}
       <main ref={frame} className="flex min-w-0 flex-1 flex-col md:!pb-0 md:mt-[max(0.5rem,var(--safe-top))] md:mb-2 md:me-2 md:overflow-hidden md:rounded-surface md:border md:border-default md:bg-surface" data-app-frame data-phone-chrome={phoneChrome || undefined} inert={drawer.open || panelCoversPage || undefined}
-        style={phoneChrome ? { paddingBottom: TAB_BAR_ROOM } : undefined}>
+>
         {/* Below 768 px: the bar with the menu button, the page's title and its actions (app-shell "No desktop top bar"). */}
         <PhoneBar onMenu={() => setSidebarOpen(true)} /><PullHost scroller={content} />
         {/* relative: the containing block of absolutely positioned content (every
@@ -385,8 +390,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             document below the frame (issue #95). */}
         {/* Below 768 px the add button's footprint is reserved at the end of every page that shows it, so it never covers the last row
             (phone-v2 D2, phone-fab-scroll-room; a page with its own scroller: `.page-fill` in index.css); the room under the selection bar is in index.css (no-layout-jump). */}
-        <div ref={content} id="content" data-main-scroller data-add-room={addRoom || undefined}
-          className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${addRoom ? 'max-md:pb-(--add-room)' : ''} ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
+        <div ref={content} id="content" data-main-scroller data-add-room={addRoom || undefined} style={scrollerRoom(phoneChrome, addRoom)}
+          className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${addRoom && !phoneChrome ? 'max-md:pb-(--add-room)' : ''} ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
           {/* One screen failing (a render bug, a chunk gone after an upgrade) leaves the shell usable (client-sync-robustness). */}
           <PanelBoundary resetKey={route}><PhoneOr on={phoneUi} onMenu={openDrawer}>
           {!on(ROUTE_FEATURES[route.view]) ? <Suspense fallback={null}><FeatureOff id={ROUTE_FEATURES[route.view]!} /></Suspense> : route.view === 'help' ? (
@@ -454,7 +459,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         )}
       </main>
       <PanelBoundary><PanelHost user={user} /></PanelBoundary>
-      {phoneChrome && <TabBar route={route} onSearch={openPalette} minimised={minimised} />}
+      {phoneChrome && <TabBar route={route} onSearch={openPalette} minimised={minimised} withAdd={addRoom || addOpen} />}
       {(addRoom || addOpen) && <AddButton ref={addButton} open={addOpen} away={minimised && !addOpen} note={route.view === 'notes' && !addOpen}
         onClick={() => (route.view === 'notes' && !addOpen ? navigate({ view: 'notes', create: true }) : setAddOpen((v) => !v))} />}
       <QuickAddSheet open={addOpen} onClose={() => setAddOpen(false)} anchor={addButton} route={route} userId={user.id} />

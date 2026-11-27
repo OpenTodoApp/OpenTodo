@@ -29,6 +29,7 @@ Every list shows the same tasks, groups and order as before, and does the same t
 - **Selecting.** **Select tasks** turns the circles into tick boxes. The bar at the bottom acts on the ticked tasks; **Close** ends the selection.
 - **Adding.** The add button adds to the list on screen; a list has no add field of its own. A task's menu has **Add task below** and **Add subtask**.
 - **Each list's own parts** stay, such as Today's briefing and the Inbox's **Process**.
+- **At a glance.** Today opens with tiles for what is done, up next and late; Upcoming with the next seven days. Tap one to go there.
 
 ## The task page
 

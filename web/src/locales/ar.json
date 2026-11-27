@@ -7935,5 +7935,7 @@
   "{kept} of {due} today": "{kept} من {due} اليوم",
   "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} من {of} يومًا مجدولًا محفوظة في آخر 53 أسبوعًا",
   "Checked in": "تم التسجيل",
-  "By weekday": "حسب يوم الأسبوع"
+  "By weekday": "حسب يوم الأسبوع",
+  "Up next": "التالي",
+  "Next seven days": "الأيام السبعة القادمة"
 }

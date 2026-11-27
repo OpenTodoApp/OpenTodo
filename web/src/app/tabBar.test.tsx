@@ -54,7 +54,8 @@ describe('the tab bar', () => {
     // On touch a tab and the add button show their own pressed colour (touch-pressed-states).
     for (const t of document.querySelectorAll('[data-tab]')) expect(t.className).toContain('press-selected')
     expect(document.querySelector('[data-add-button]')!.className).toContain('press-accent-hover')
-    expect(bar()!.className).toContain('pb-safe')
+    // It floats 8 px above the bottom safe area (phone-modern-look D1).
+    expect(bar()!.className).toContain('bottom-[calc(0.5rem+var(--safe-bottom))]')
     expect(bar()!.className).toContain('md:hidden')
     // The content column leaves room for the bar.
     expect(document.querySelector('main')!.getAttribute('data-phone-chrome')).toBe('true')
@@ -230,12 +231,14 @@ describe('the tab bar while the list scrolls', () => {
     // Restored by the describe's afterEach, also when an assertion fails half-way.
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
       const h = this.hasAttribute('data-tab-bar') ? (this.hasAttribute('data-minimised') ? 44 : 56) + 1 + 34 : 0
-      return { height: h, width: 0, top: 0, left: 0, right: 0, bottom: h, x: 0, y: 0, toJSON() {} } as DOMRect
+      // The bar floats: the room is measured from its top to the bottom of the screen.
+      const top = h ? innerHeight - h : 0
+      return { height: h, width: 0, top, left: 0, right: 0, bottom: top + h, x: 0, y: 0, toJSON() {} } as DOMRect
     })
     const room = () => document.documentElement.style.getPropertyValue('--tab-bar-h')
     const resized = async () => { await act(async () => { observers.filter((o) => o.targets.includes(bar()!)).forEach((o) => o.cb()) }) }
     const r = await renderScrolling()
-    expect(document.querySelector<HTMLElement>('main')!.style.paddingBottom).toContain('var(--tab-bar-h')
+    expect(document.querySelector<HTMLElement>('#content')!.style.paddingBottom).toContain('var(--tab-bar-h')
     expect(room()).toBe('91px')
     await scrollTo(60)
     await resized()

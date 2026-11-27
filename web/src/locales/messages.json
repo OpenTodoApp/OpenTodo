@@ -5521,7 +5521,8 @@
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/review/CloseDay.tsx",
-    "web/src/lib/listGroups.ts"
+    "web/src/lib/listGroups.ts",
+    "web/src/phone/components/TodayGlance.tsx"
   ],
   "Done today, {instant}": [
     "web/src/app/review/DailyCheck.tsx"
@@ -9408,7 +9409,8 @@
     "web/src/lib/stats.ts"
   ],
   "Late": [
-    "web/src/app/ProjectsTable.tsx"
+    "web/src/app/ProjectsTable.tsx",
+    "web/src/phone/components/TodayGlance.tsx"
   ],
   "Later": [
     "web/src/app/TimelineView.tsx",
@@ -11127,6 +11129,9 @@
   ],
   "Next run:": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "Next seven days": [
+    "web/src/phone/components/WeekStrip.tsx"
   ],
   "Next step|method": [
     "web/src/app/method/LoopHome.tsx",
@@ -20581,7 +20586,8 @@
     "web/src/lib/logbook.ts",
     "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts",
-    "web/src/lib/views.ts"
+    "web/src/lib/views.ts",
+    "web/src/phone/components/TodayGlance.tsx"
   ],
   "Today holds": [
     "web/src/lib/settingsCopy.ts"
@@ -21465,6 +21471,9 @@
   ],
   "Up": [
     "web/src/app/palette/BarParts.tsx"
+  ],
+  "Up next": [
+    "web/src/phone/components/TodayGlance.tsx"
   ],
   "Up to 5. Each one chooses the events it receives.": [
     "web/src/lib/settingsCopy.ts"
@@ -25717,7 +25726,6 @@
     "web/src/app/PublicLinksSection.tsx",
     "web/src/app/TimelineView.tsx",
     "web/src/app/assistant/blocks/HabitBlock.tsx",
-    "web/src/app/habits/HabitBoard.tsx",
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/habits/HabitsOverview.tsx",
     "web/src/app/review/StatsView.tsx",
@@ -26068,7 +26076,8 @@
     "web/src/app/task-list/useListDrag.ts",
     "web/src/app/templates/TemplateLibrary.tsx",
     "web/src/lib/assistantBlocks.ts",
-    "web/src/lib/rules/sentence.ts"
+    "web/src/lib/rules/sentence.ts",
+    "web/src/phone/components/WeekStrip.tsx"
   ],
   "{n, plural, one {# task} other {# tasks}} without estimate": [
     "web/src/app/calendar/CapacityLine.tsx",

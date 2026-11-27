@@ -7935,5 +7935,7 @@
   "{kept} of {due} today": "今天 {kept}/{due}",
   "{kept} of {of} scheduled days kept in the last 53 weeks": "过去 53 周计划的 {of} 天中坚持了 {kept} 天",
   "Checked in": "已打卡",
-  "By weekday": "按星期"
+  "By weekday": "按星期",
+  "Up next": "接下来",
+  "Next seven days": "未来七天"
 }

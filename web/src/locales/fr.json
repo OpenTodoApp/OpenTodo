@@ -7935,5 +7935,7 @@
   "{kept} of {due} today": "{kept} sur {due} aujourd’hui",
   "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} jours tenus sur {of} prévus ces 53 dernières semaines",
   "Checked in": "Pointé",
-  "By weekday": "Par jour de la semaine"
+  "By weekday": "Par jour de la semaine",
+  "Up next": "À suivre",
+  "Next seven days": "Sept prochains jours"
 }

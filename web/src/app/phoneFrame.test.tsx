@@ -3,7 +3,7 @@
 // bar with the frame the real ones use, and only where the shell will show them.
 import { describe, expect, it } from 'vitest'
 import { render } from '../ui/test-utils'
-import { PHONE_BAR_FRAME, PHONE_BAR_LINE, PhoneFrameSkeleton, TAB_BAR_FRAME, TAB_FRAME, TAB_HEIGHT, hasPhoneChrome } from './phoneFrame'
+import { PHONE_BAR_FRAME, PHONE_BAR_LINE, PhoneFrameSkeleton, TAB_FRAME, TAB_HEIGHT, hasPhoneChrome, tabBarFrame } from './phoneFrame'
 import { TabBar } from './TabBar'
 import type { Route } from './router'
 
@@ -17,7 +17,8 @@ describe('the cold-start skeleton on a phone', () => {
   it('holds the bar and the tab bar in the real frame around the rows', async () => {
     const { container, bar, tabs } = await skeleton({ view: 'inbox' })
     expect(bar.className).toBe(`${PHONE_BAR_FRAME} ${PHONE_BAR_LINE}`)
-    expect(tabs.className).toBe(TAB_BAR_FRAME)
+    // The skeleton holds the place of the bar beside the add button, as on Today and every list.
+    expect(tabs.className).toBe(tabBarFrame(true))
     // Four tabs, each a button in the tab's box, so the touch rules size them as the real ones.
     expect([...tabs.children].map((tab) => `${tab.tagName} ${tab.className}`)).toEqual(Array(4).fill(`BUTTON ${TAB_FRAME} ${TAB_HEIGHT}`))
     expect([...tabs.querySelectorAll('button')].every((tab) => tab.disabled)).toBe(true)
@@ -27,9 +28,9 @@ describe('the cold-start skeleton on a phone', () => {
   })
 
   it('draws the same frame as the real tab bar', async () => {
-    const { container } = await render(<TabBar route={{ view: 'inbox' }} onSearch={() => {}} />)
+    const { container } = await render(<TabBar route={{ view: 'inbox' }} onSearch={() => {}} withAdd />)
     const nav = container.querySelector('nav')!
-    expect(nav.className).toBe(TAB_BAR_FRAME)
+    expect(nav.className).toBe(tabBarFrame(true))
     expect(nav.children).toHaveLength(4)
     for (const tab of nav.children) expect(tab.className.startsWith(`${TAB_FRAME} `)).toBe(true)
     expect(nav.children[0].className).toContain(TAB_HEIGHT)
