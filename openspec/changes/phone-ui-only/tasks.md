@@ -5,6 +5,7 @@
 - [x] 1.1 Delete `web/src/phone/prefs.ts`; `Shell.tsx` shows the phone UI by the width alone and removes the stored `opentodo.phoneUi` when it mounts (design D2). Verify: `phoneScreens.test.tsx` "shows the phone screens below 768 px, whatever the switch had stored, and removes that value", "shows them at 767 px too", "keeps the desktop screens from 768 px".
 - [x] 1.2 Remove the toggle from Settings → Appearance (`PreferencesPanels.tsx`, `settingsPages.tsx`, `settingsCopy.ts`) and its four strings from every catalogue. Verify: `node scripts/i18n-check.mjs` (7,930 messages, every shipped catalogue complete); no `[data-phone-ui-switch]` in a browser at 390 and 1280 px.
 - [x] 1.3 Only the shell imports the phone UI (`web/eslint.config.js`). Verify: `layering.test.ts`.
+- [x] 1.4 The Habits screen for the phone (`habits-complete`, merged while this change was open) no longer names the switch: the requirement "Habits on a phone" is modified in `specs/habits/spec.md`, and `phoneHabits.test.tsx` keeps its width case only. Verify: `phoneHabits.test.tsx`.
 
 ## 2. The tests
 
