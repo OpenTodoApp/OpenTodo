@@ -2,48 +2,25 @@
 // part of the day (Morning, Afternoon, This Evening, then Any time), ordered by time
 // and title, then a folded Graduated group; /habits/<id> is a habit's page (habits-polish D3). One title row of chrome; rendered from
 // the device's rows only, offline too. While Habits is not on, the address says so.
-import { useMemo, useState } from 'react'
-import { continuedIds, habitRowsOf, habitStats, isGraduated, isOpenHabit, keptDays } from '../../lib/habits'
+import { useState } from 'react'
+import { habitStats, keptDays } from '../../lib/habits'
 import { resume } from '../../lib/habitActions'
 import { useHabitsEnabled } from '../../lib/habitPrefs'
 import { t } from '../../lib/i18n'
-import { useLiveTasks } from '../../lib/liveTasks'
-import { useProjects } from '../../lib/localData'
+import { Button, EmptyState, ListGroupHeader, PageBody, PageHeader, type HueName } from '../../ui'
 import type { Task } from '../../lib/types'
-import { Button, EmptyState, ListGroupHeader, PageBody, PageHeader } from '../../ui'
 import { act } from '../actionError'
 import { showUndoToast } from '../bulk/toastStore'
 import { navigate } from '../router'
 import { useToday } from '../useViews'
 import { openHabitForm } from './habitFormStore'
-import { habitHue } from './habitText'
 import { HabitPage } from './HabitPage'
 import { HabitRow } from './HabitRow'
 import { DayNoteHost } from './DayNoteDialog'
 import { AmountHost } from './AmountDialog'
-import { useHabitOptions } from './useHabitOptions'
+import { GROUP_TITLE, progressText, useHabitsModel } from './useHabitsModel'
 
-type Group = 'morning' | 'afternoon' | 'evening' | 'any'
-
-function groupOf(task: Task): Group {
-  if (task.evening) return 'evening'
-  if (task.day_part === 'morning' || task.day_part === 'afternoon') return task.day_part
-  return 'any'
-}
-
-const GROUP_TITLE: Record<Group, () => string> = {
-  morning: () => t('Morning'), afternoon: () => t('Afternoon'), evening: () => t('This Evening'), any: () => t('Any time'),
-}
-const ORDER: Group[] = ['morning', 'afternoon', 'evening', 'any']
-
-/** By time of day, then title (D9: no manual order). */
-function compareHabits(a: Task, b: Task): number {
-  const ta = a.due?.time ?? '99:99'
-  const tb = b.due?.time ?? '99:99'
-  return ta < tb ? -1 : ta > tb ? 1 : a.title.localeCompare(b.title) || (a.id < b.id ? -1 : 1)
-}
-
-const STARTERS = [() => t('Drink water'), () => t('Read 10 minutes'), () => t('Walk after lunch')]
+export const STARTERS = [() => t('Drink water'), () => t('Read 10 minutes'), () => t('Walk after lunch')]
 
 export function HabitsOff() {
   return (
@@ -57,31 +34,15 @@ export function HabitsOff() {
 
 export default function HabitsScreen({ id }: { id?: string } = {}) {
   const on = useHabitsEnabled()
-  const tasks = useLiveTasks()
-  const projects = useProjects()
   const today = useToday()
-  const opts = useHabitOptions()
-  const [graduatedOpen, setGraduatedOpen] = useState(false)
-  const colours = useMemo(() => new Map(projects.map((p) => [p.id, p.color])), [projects])
-  const model = useMemo(() => {
-    const all = tasks ?? []
-    const rowsOf = habitRowsOf(all)
-    const continued = continuedIds(all)
-    const habits = all.filter((x) => isOpenHabit(x) && !continued.has(x.id))
-    const open = habits.filter((x) => !isGraduated(x)).sort(compareHabits)
-    const graduated = habits.filter(isGraduated).sort((a, b) => (b.habit_graduated_at ?? 0) - (a.habit_graduated_at ?? 0))
-    return {
-      rowsOf, graduated,
-      groups: ORDER.map((g) => ({ g, items: open.filter((x) => groupOf(x) === g) })).filter((x) => x.items.length > 0),
-      count: open.length,
-    }
-  }, [tasks])
-  if (!on) return tasks === undefined ? null : <HabitsOff />
+  const model = useHabitsModel(today, today)
+  const opts = model.opts
+  if (!on) return model.loaded ? <HabitsOff /> : null
   if (id) return <HabitPage key={id} id={id} />
-  const hue = (x: Task) => habitHue(x, x.project_id ? colours.get(x.project_id) : null)
+  const hue = model.hue
   return (
     <PageBody width="form" data-habits-page>
-      <PageHeader title={t('Habits')} help="habits"
+      <PageHeader title={t('Habits')} help="habits" meta={progressText(model.progress, true)}
         actions={<Button variant="primary" size="sm" icon="plus" onClick={() => openHabitForm()} data-new-habit>{t('New habit')}</Button>} />
       {model.count === 0 && model.graduated.length === 0 && (
         <EmptyState title={t('Start with something small')}
@@ -102,7 +63,20 @@ export default function HabitsScreen({ id }: { id?: string } = {}) {
           </ul>
         </section>
       ))}
-      {model.graduated.length > 0 && (
+      <GraduatedGroup habits={model.graduated} rowsOf={model.rowsOf} hue={hue} />
+      <DayNoteHost />
+      <AmountHost />
+    </PageBody>
+  )
+}
+
+/** Graduated habits, folded, with how long each was kept and Resume (habits-home D7); shared with the phone screen. */
+export function GraduatedGroup({ habits, rowsOf, hue }: { habits: readonly Task[]; rowsOf: (t: Task) => readonly Task[]; hue: (t: Task) => HueName }) {
+  const [graduatedOpen, setGraduatedOpen] = useState(false)
+  const model = { graduated: habits, rowsOf }
+  return (
+    <>
+      {habits.length > 0 && (
         <section aria-label={t('Graduated')} data-habit-group="graduated">
           <ListGroupHeader title={t('Graduated')} count={model.graduated.length} countLabel={(n) => t('{n, plural, one {# graduated habit} other {# graduated habits}}', { n })}
             collapsed={!graduatedOpen} onToggle={() => setGraduatedOpen((v) => !v)} />
@@ -122,8 +96,6 @@ export default function HabitsScreen({ id }: { id?: string } = {}) {
           )}
         </section>
       )}
-      <DayNoteHost />
-      <AmountHost />
-    </PageBody>
+    </>
   )
 }

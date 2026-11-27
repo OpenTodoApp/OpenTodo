@@ -7892,7 +7892,6 @@
   "{title} is in today’s focus.": "{title} في تركيز اليوم.",
   "{title} is no longer in your calendar": "لم تعد {title} في تقويمك",
   "{title} left today’s focus.": "غادرت {title} تركيز اليوم.",
-  "{title}, done today": "{title}، منجزة اليوم",
   "{title}, open task": "{title}، مهمة مفتوحة",
   "{title}, waits for {blockers}": "{title}، تنتظر {blockers}",
   "{title}, {kind, select, note {note} task {task} other {project}}, {n, plural, one {# link} other {# links}}": "{title}، {kind, select, note {ملاحظة} task {مهمة} other {مشروع}}، {n, plural, one {رابط واحد} two {رابطان} few {# روابط} many {# رابطًا} other {# رابط}}",
@@ -7928,5 +7927,9 @@
   "“{title}” already waits for this task, so it cannot block it": "«{title}» تنتظر هذه المهمة بالفعل، فلا يمكنها تعطيلها",
   "“{title}” is in a project shared differently; a task can only wait for tasks shared the same way": "«{title}» في مشروع مشترك بطريقة مختلفة؛ لا يمكن لمهمة أن تنتظر إلا مهامًا مشتركة بالطريقة نفسها",
   "← → move the selected task, Shift+← → its deadline.": "← → تنقل المهمة المختارة، وShift+← → موعدها النهائي.",
-  "⤼ Skip": "⤼ تخطٍّ"
+  "⤼ Skip": "⤼ تخطٍّ",
+  "Check-in taken back": "أُلغي تسجيل اليوم",
+  "{kept} of {due} today": "{kept} من {due} اليوم",
+  "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} من {of} يومًا مجدولًا محفوظة في آخر 53 أسبوعًا",
+  "Checked in": "تم التسجيل"
 }

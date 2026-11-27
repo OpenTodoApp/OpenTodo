@@ -39,6 +39,13 @@ const CELL: Record<DayState, string> = {
   upcoming: 'border border-default bg-surface text-muted',
   blank: 'text-faint',
 }
+// In the habit's own hue (habits-complete D8), from data-hue on an ancestor; the shapes are the same.
+const HUED: Partial<Record<DayState, string>> = {
+  done: 'bg-hue-solid text-surface',
+  tiny: 'border border-hue-solid bg-[linear-gradient(90deg,var(--hue-soft)_50%,transparent_50%)] text-default',
+  partial: 'border border-dotted border-hue-solid bg-[linear-gradient(0deg,var(--hue-soft)_50%,transparent_50%)] text-default',
+  pending: 'bg-hue-soft text-default',
+}
 const GLYPH: Partial<Record<DayState, IconName>> = { done: 'check', skipped: 'minus', pending: 'circle' }
 
 function monthOf(iso: string): { year: number; month: number } {
@@ -59,7 +66,7 @@ function shiftMonth(iso: string, n: number): string {
 const monthNameOf = (year: number, month: number, withYear: boolean) =>
   monthName(`${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`, 'long', withYear)
 
-export function HabitHistory({ series, records, today = logicalToday(), onPick, onNote, opts }: {
+export function HabitHistory({ series, records, today = logicalToday(), onPick, onNote, opts, hued = false }: {
   series: Task
   records: readonly Task[]
   today?: string
@@ -69,7 +76,13 @@ export function HabitHistory({ series, records, today = logicalToday(), onPick, 
   onNote?: (date: string) => void
   /** The tallies and week start (habit-targets). */
   opts?: HabitOptions
+  /** Drawn in the habit's hue at the page's size (habits-complete D8): 32 px days, the width below 640 px. */
+  hued?: boolean
 }) {
+  // A day's box: 24 px in a block; on the habit's page 32 px, and below 640 px the width in seven square columns.
+  const box = hued ? 'aspect-square w-full sm:h-8 sm:w-8 sm:aspect-auto' : 'h-6 w-6'
+  const row = hued ? 'grid grid-cols-7 gap-1 sm:flex' : 'flex gap-1'
+  const cellOf = (state: DayState) => (hued ? HUED[state] : undefined) ?? CELL[state]
   const dt = useDateTimeFormat()
   const [focus, setFocus] = useState(today)
   const moved = useRef(false)
@@ -118,22 +131,22 @@ export function HabitHistory({ series, records, today = logicalToday(), onPick, 
   const heading = monthNameOf(year, month, true)
   const headingId = `habit-month-${series.id}`
   return (
-    <div className="w-fit space-y-1" data-habit-history>
+    <div className={`${hued ? 'w-full sm:w-fit' : 'w-fit'} space-y-1`} data-habit-history>
       <div className="flex items-center gap-1">
         <IconButton icon="chevron-left" size="sm" label={t('Previous month')} onClick={() => setFocus(shiftMonth(focus, -1))} />
         <p id={headingId} className="min-w-0 flex-1 text-center text-meta font-semibold text-default" aria-live="polite">{heading}</p>
         <IconButton icon="chevron-right" size="sm" label={t('Next month')} onClick={() => setFocus(shiftMonth(focus, 1))} />
       </div>
-      <div ref={grid} role="grid" aria-labelledby={headingId} className="flex w-fit flex-col gap-1" onKeyDown={onKey}>
-        <div role="row" className="flex gap-1">
+      <div ref={grid} role="grid" aria-labelledby={headingId} className={`flex ${hued ? 'w-full sm:w-fit' : 'w-fit'} flex-col gap-1`} onKeyDown={onKey}>
+        <div role="row" className={row}>
           {header.map((d) => (
-            <span key={d} role="columnheader" aria-label={weekday(d)} className="flex h-6 w-6 items-center justify-center text-hint text-muted">
+            <span key={d} role="columnheader" aria-label={weekday(d)} className={`flex ${hued ? 'h-6 w-full sm:w-8' : 'h-6 w-6'} items-center justify-center text-hint text-muted`}>
               {weekday(d).slice(0, 2)}
             </span>
           ))}
         </div>
         {weeks.map((week, w) => (
-          <div key={w} role="row" className="flex gap-1">
+          <div key={w} role="row" className={row}>
             {week.map((c, i) => c ? (
               <span
                 key={c.date}
@@ -149,17 +162,17 @@ export function HabitHistory({ series, records, today = logicalToday(), onPick, 
                 onKeyDown={(e) => {
                   if ((e.key === 'Enter' || e.key === ' ') && e.currentTarget.querySelector('button')) { e.preventDefault(); e.currentTarget.querySelector('button')!.click() }
                 }}
-                className={`relative flex h-6 w-6 items-center justify-center rounded-chip focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus
-                  ${CELL[c.state]} ${c.today ? 'ring-1 ring-focus' : ''}`}
+                className={`relative flex ${box} items-center justify-center rounded-chip focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus
+                  ${cellOf(c.state)} ${c.today ? 'ring-1 ring-focus' : ''}`}
               >
                 {onPick && editableDay(c, today)
                   ? <DayMenu cell={c} label={dayLabel(c.date, c.state, notes.has(c.date))} onPick={(choice) => onPick(c.date, choice)}
                     onNote={onNote ? () => onNote(c.date) : undefined}
-                    trigger={<Glyph state={c.state} date={c.date} />} triggerClassName="flex h-6 w-6 items-center justify-center rounded-chip" />
+                    trigger={<Glyph state={c.state} date={c.date} />} triggerClassName={`flex ${hued ? 'h-full w-full' : 'h-6 w-6'} items-center justify-center rounded-chip`} />
                   : <Glyph state={c.state} date={c.date} />}
                 {notes.has(c.date) && <span aria-hidden="true" className="pointer-events-none absolute -bottom-0.5 inset-e-0 h-1.5 w-1.5 rounded-full border border-surface bg-accent" />}
               </span>
-            ) : <span key={`blank-${w}-${i}`} role="gridcell" aria-hidden="true" className="h-6 w-6" />)}
+            ) : <span key={`blank-${w}-${i}`} role="gridcell" aria-hidden="true" className={box} />)}
           </div>
         ))}
       </div>

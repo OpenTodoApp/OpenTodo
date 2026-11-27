@@ -103,7 +103,8 @@ describe('the Habits screen', () => {
     await waitFor(async () => (await db.tasks.get(occurrenceId(walk, '2026-11-11')))?.tiny === true, 'the tiny record')
     await waitFor(() => document.querySelector<HTMLElement>(`[data-habit-row="${read}"] [data-day="2026-11-11"]`)?.dataset.state === 'done', 'the filled day')
     await waitFor(() => document.querySelector<HTMLElement>(`[data-habit-row="${walk}"] [data-day="2026-11-11"]`)?.dataset.state === 'tiny', 'the half-filled day')
-    expect(document.querySelector(`[data-habit-row="${read}"] [data-check-in]`)!.hasAttribute('disabled')).toBe(true)
+    // A kept habit's button is a pressed toggle (habits-complete D4).
+    expect(document.querySelector(`[data-habit-row="${read}"] [data-check-in]`)!.getAttribute('aria-pressed')).toBe('true')
     expect(fetch).not.toHaveBeenCalled()
     await r.unmount()
   })

@@ -7270,7 +7270,6 @@
   "{title} is in the {slot} slot.": "{title} ligt in de plek {slot}.",
   "{title} is in today’s focus.": "{title} staat in de focus van vandaag.",
   "{title} left today’s focus.": "{title} staat niet meer in de focus van vandaag.",
-  "{title}, done today": "{title}, vandaag gedaan",
   "{title}, open task": "{title}, taak openen",
   "{title}, waits for {blockers}": "{title}, wacht op {blockers}",
   "{token} asks to read this with {tool}:": "{token} vraagt dit te lezen met {tool}:",
@@ -7928,5 +7927,9 @@
   "This project already has a field named “{name}” from “{workspace}”.": "Dit project heeft al een veld met de naam “{name}” uit “{workspace}”.",
   "This workspace already has a field named “{name}”.": "Deze werkruimte heeft al een veld met de naam “{name}”.",
   "Workspace fields are edited in the workspace’s settings.": "Velden van de werkruimte bewerk je in de instellingen van de werkruimte.",
-  "Only the workspace’s owner can change its fields.": "Alleen de eigenaar van de werkruimte kan de velden ervan wijzigen."
+  "Only the workspace’s owner can change its fields.": "Alleen de eigenaar van de werkruimte kan de velden ervan wijzigen.",
+  "Check-in taken back": "Afvinken teruggedraaid",
+  "{kept} of {due} today": "{kept} van {due} vandaag",
+  "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} van {of} geplande dagen volgehouden in de laatste 53 weken",
+  "Checked in": "Afgevinkt"
 }

@@ -7247,7 +7247,6 @@
   "{title} is in the {slot} slot.": "{title} 位于 {slot} 时段。",
   "{title} is in today’s focus.": "{title} 已加入今日专注。",
   "{title} left today’s focus.": "{title} 已移出今日专注。",
-  "{title}, done today": "“{title}”今天已完成",
   "{title}, open task": "{title}，未完成任务",
   "{title}, waits for {blockers}": "{title}，等待 {blockers}",
   "{title}, {kind, select, note {note} task {task} other {project}}, {n, plural, one {# link} other {# links}}": "{title}，{kind, select, note {笔记} task {任务} other {项目}}，{n, plural, other {# 个链接}}",
@@ -7928,5 +7927,9 @@
   "This project already has a field named “{name}” from “{workspace}”.": "此项目已有来自“{workspace}”的名为“{name}”的字段。",
   "This workspace already has a field named “{name}”.": "此工作区已有名为“{name}”的字段。",
   "Workspace fields are edited in the workspace’s settings.": "工作区字段需在工作区的设置中编辑。",
-  "Only the workspace’s owner can change its fields.": "只有工作区的所有者可以更改其字段。"
+  "Only the workspace’s owner can change its fields.": "只有工作区的所有者可以更改其字段。",
+  "Check-in taken back": "已撤销打卡",
+  "{kept} of {due} today": "今天 {kept}/{due}",
+  "{kept} of {of} scheduled days kept in the last 53 weeks": "过去 53 周计划的 {of} 天中坚持了 {kept} 天",
+  "Checked in": "已打卡"
 }

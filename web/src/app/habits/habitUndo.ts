@@ -27,3 +27,21 @@ export async function stepAmount(seriesId: string, step: number): Promise<void> 
   const r = await changeAmount(seriesId, { add: step })
   if (r?.entry) showUndoToast(r.label, r.entry.id)
 }
+
+/** Take back today's check-in (habits-complete D4) with the Undo toast. */
+export async function uncheckWithUndo(seriesId: string): Promise<void> {
+  const { uncheckToday } = await import('../../lib/habitActions')
+  const r = await uncheckToday(seriesId)
+  if (!r?.entry) return
+  showUndoToast(r.label, r.entry.id)
+  // The check-in it was offered for is gone: so is "How did it go?" (habit-notes D2).
+  const notes = await import('./checkInNoteStore')
+  if (notes.pendingFor(seriesId)) notes.closeNote()
+}
+
+/** Skip today (habits-complete D5) with the Undo toast. */
+export async function skipWithUndo(seriesId: string): Promise<void> {
+  const { skipToday } = await import('../../lib/habitActions')
+  const r = await skipToday(seriesId)
+  if (r?.entry) showUndoToast(r.label, r.entry.id)
+}
