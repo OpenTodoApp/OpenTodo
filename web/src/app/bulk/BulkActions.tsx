@@ -505,13 +505,13 @@ export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPi
 }) {
   const shown = ids.length > 0 || !!onDone
   const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
-  // From 768 px a toast in the bottom corner rises above the bar (its lift is 0 there); on a
-  // phone its lift above the add button's place already clears the bar. The add button steps
-  // aside and the content keeps room under the bar by CSS (index.css).
+  // A toast rises above the bar: from 768 px from the bottom corner (its lift is 0 there), on a
+  // phone from above the floating tab bar, where the bar now stands too (phone-modern-look D1).
+  // The add button steps aside and the content keeps room under the bar by CSS (index.css).
   useEffect(() => {
-    if (!shown || !desktop) return
+    if (!shown) return
     const root = document.documentElement.style
-    root.setProperty('--selection-lift', '3.75rem')
+    root.setProperty('--selection-lift', desktop ? '3.75rem' : '3rem')
     return () => { root.removeProperty('--selection-lift') }
   }, [shown, desktop])
   // The room under the content and the add button stepping aside (index.css) read this mark on
