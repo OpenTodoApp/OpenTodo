@@ -785,6 +785,11 @@ const shots = [
     await dialog.locator('[data-away-preview]', { hasText: /Skips/ }).waitFor(); await settle(p, 400)
     return clipOf(p, dialog, 16)
   }, async after(p, { ctx }) { await p.keyboard.press('Escape'); if (++habitShots % 2 === 0) await habitsScene(ctx, true) } },
+  // Habits on a phone (habits-complete D1): the day strip, a ring per habit and its week.
+  { name: 'habits-phone', server: P, phone: true, async run(p, { ctx }) {
+    await habitsScene(ctx)
+    await go(p, plainBase, '/habits', () => p.locator('[data-phone-habit]').first().waitFor()); await settle(p, 400)
+  }, async after(p, { ctx }) { if (++habitShots % 2 === 0) await habitsScene(ctx, true) } },
   // Targets and amounts (habit-targets): Gym three times a week, Water eight glasses.
   { name: 'habit-targets', server: P, async run(p, { ctx }) {
     await targetsScene(ctx)

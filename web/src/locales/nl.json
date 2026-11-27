@@ -7270,7 +7270,6 @@
   "{title} is in the {slot} slot.": "{title} ligt in de plek {slot}.",
   "{title} is in today’s focus.": "{title} staat in de focus van vandaag.",
   "{title} left today’s focus.": "{title} staat niet meer in de focus van vandaag.",
-  "{title}, done today": "{title}, vandaag gedaan",
   "{title}, open task": "{title}, taak openen",
   "{title}, waits for {blockers}": "{title}, wacht op {blockers}",
   "{token} asks to read this with {tool}:": "{token} vraagt dit te lezen met {tool}:",
@@ -7932,5 +7931,9 @@
   "Workspace fields are edited in the workspace’s settings.": "Velden van de werkruimte bewerk je in de instellingen van de werkruimte.",
   "Only the workspace’s owner can change its fields.": "Alleen de eigenaar van de werkruimte kan de velden ervan wijzigen.",
   "Screens made for a phone. This device only.": "Schermen die voor de telefoon zijn gemaakt. Alleen op dit apparaat.",
-  "The app in the design made for a phone. Turn it off for the earlier screens.": "De app in het ontwerp voor de telefoon. Zet het uit voor de eerdere schermen."
+  "The app in the design made for a phone. Turn it off for the earlier screens.": "De app in het ontwerp voor de telefoon. Zet het uit voor de eerdere schermen.",
+  "Check-in taken back": "Afvinken teruggedraaid",
+  "{kept} of {due} today": "{kept} van {due} vandaag",
+  "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} van {of} geplande dagen volgehouden in de laatste 53 weken",
+  "Checked in": "Afgevinkt"
 }

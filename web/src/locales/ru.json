@@ -7748,7 +7748,6 @@
   "{title} is in the {slot} slot.": "{title} в слоте {slot}.",
   "{title} is in today’s focus.": "{title} в фокусе дня.",
   "{title} left today’s focus.": "{title} убрано из фокуса дня.",
-  "{title}, done today": "{title}, выполнено сегодня",
   "{title}, open task": "{title}, открытая задача",
   "{title}, waits for {blockers}": "{title}, ждёт {blockers}",
   "{title}, {kind, select, note {note} task {task} other {project}}, {n, plural, one {# link} other {# links}}": "{title}, {kind, select, note {заметка} task {задача} other {проект}}, {n, plural, one {# ссылка} few {# ссылки} many {# ссылок} other {# ссылки}}",
@@ -7932,5 +7931,9 @@
   "Workspace fields are edited in the workspace’s settings.": "Поля рабочего пространства изменяются в его настройках.",
   "Only the workspace’s owner can change its fields.": "Изменять поля рабочего пространства может только его владелец.",
   "Screens made for a phone. This device only.": "Экраны, сделанные для телефона. Только на этом устройстве.",
-  "The app in the design made for a phone. Turn it off for the earlier screens.": "Приложение в оформлении для телефона. Отключите, чтобы вернуть прежние экраны."
+  "The app in the design made for a phone. Turn it off for the earlier screens.": "Приложение в оформлении для телефона. Отключите, чтобы вернуть прежние экраны.",
+  "Check-in taken back": "Отметка отменена",
+  "{kept} of {due} today": "{kept} из {due} сегодня",
+  "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} из {of} запланированных дней выполнено за последние 53 недели",
+  "Checked in": "Отмечено"
 }

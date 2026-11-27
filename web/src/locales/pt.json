@@ -7108,7 +7108,6 @@
   "{title} is in the {slot} slot.": "{title} está no espaço {slot}.",
   "{title} is in today’s focus.": "{title} está no foco de hoje.",
   "{title} left today’s focus.": "{title} saiu do foco de hoje.",
-  "{title}, done today": "{title}, feito hoje",
   "{title}, open task": "{title}, abrir a tarefa",
   "{title}, waits for {blockers}": "{title}, aguarda {blockers}",
   "{title}, {kind, select, note {note} task {task} other {project}}, {n, plural, one {# link} other {# links}}": "{title}, {kind, select, note {nota} task {tarefa} other {projeto}}, {n, plural, one {# ligação} other {# ligações}}",
@@ -7932,5 +7931,9 @@
   "Workspace fields are edited in the workspace’s settings.": "Os campos do espaço de trabalho são editados nas suas definições.",
   "Only the workspace’s owner can change its fields.": "Só o proprietário do espaço de trabalho pode alterar os seus campos.",
   "Screens made for a phone. This device only.": "Ecrãs feitos para o telemóvel. Apenas neste dispositivo.",
-  "The app in the design made for a phone. Turn it off for the earlier screens.": "A aplicação no design feito para o telemóvel. Desative para voltar aos ecrãs anteriores."
+  "The app in the design made for a phone. Turn it off for the earlier screens.": "A aplicação no design feito para o telemóvel. Desative para voltar aos ecrãs anteriores.",
+  "Check-in taken back": "Registo anulado",
+  "{kept} of {due} today": "{kept} de {due} hoje",
+  "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} de {of} dias previstos cumpridos nas últimas 53 semanas",
+  "Checked in": "Registado"
 }

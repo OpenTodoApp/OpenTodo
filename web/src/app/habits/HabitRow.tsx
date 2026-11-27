@@ -14,8 +14,8 @@ import type { Task } from '../../lib/types'
 import { Icon, Tooltip, type HueName } from '../../ui'
 import { formatDate } from '../../lib/dates'
 import { act } from '../actionError'
-import { ActionMenu } from '../menus/ActionMenu'
-import { checkInWithUndo, pickDay, stepAmount } from './habitUndo'
+import { ActionMenu, type ActionItem } from '../menus/ActionMenu'
+import { checkInWithUndo, pickDay, skipWithUndo, stepAmount, uncheckWithUndo } from './habitUndo'
 import { navigate } from '../router'
 import { measureText } from './habitText'
 import { Thread } from './Thread'
@@ -42,6 +42,37 @@ export function openHabit(id: string): void {
   navigate({ view: 'habits', id })
 }
 
+/**
+ * The other ways to check in (habits-home D5, habit-targets D2, habits-complete D5): an
+ * amount habit's Add, Subtract and Set amount; any other habit's Check in, the tiny
+ * version and Skip, the last for a habit due today or earlier without a target.
+ */
+export function checkInItems(series: Task, state: CheckState, today: string): ActionItem[] {
+  const step = habitStep(series)
+  if (habitGoal(series) > 0) {
+    return [
+      ...(state === 'kept' ? [] : [{ kind: 'action' as const, id: 'add', label: t('Add {step}', { step }), icon: 'plus' as const, shortcut: 'Space', onSelect: () => checkInWithUndo(series.id, false) }]),
+      { kind: 'action', id: 'subtract', label: t('Subtract {step}', { step }), icon: 'minus', onSelect: () => stepAmount(series.id, -step) },
+      { kind: 'action', id: 'set', label: t('Set amount…'), icon: 'pencil', onSelect: () => openSetAmount(series.id, today) },
+    ]
+  }
+  if (state === 'kept') return []
+  return [
+    { kind: 'action', id: 'done', label: t('Check in'), icon: 'check', shortcut: 'Space', onSelect: () => checkInWithUndo(series.id, false) },
+    { kind: 'action', id: 'tiny', label: series.habit_tiny ? t('Log the tiny version: {tiny}', { tiny: series.habit_tiny }) : t('Log the tiny version'), icon: 'circle', shortcut: 'Shift+Space', onSelect: () => checkInWithUndo(series.id, true) },
+    ...(state === 'due' && !habitTarget(series) ? [{ kind: 'action' as const, id: 'skip', label: t('Skip this day'), icon: 'arrow-right' as const, onSelect: () => skipWithUndo(series.id) }] : []),
+  ]
+}
+
+/**
+ * Check in, or take it back (habits-complete D4): a toggle that is pressed while the habit
+ * is kept today and keeps its name. An amount habit's button always adds its step.
+ */
+export function onCheck(series: Task, state: CheckState): Promise<void> {
+  if (state === 'kept' && habitGoal(series) === 0) return uncheckWithUndo(series.id)
+  return checkInWithUndo(series.id, false)
+}
+
 export function CheckButton({ series, state, today, compact = false }: { series: Task; state: CheckState; today: string; compact?: boolean }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const long = useRef(false)
@@ -50,39 +81,33 @@ export function CheckButton({ series, state, today, compact = false }: { series:
   const step = habitStep(series)
   const amount = habitGoal(series) > 0
   // A habit due later checks in its current occurrence early, named with its date (D2).
-  // An amount habit's button adds its step to today (habit-targets D2).
-  const name = kept ? t('{title}, done today', { title })
-    : amount ? t('Add {step} to {title}', { step: series.habit_unit ? `${step} ${series.habit_unit}` : step, title })
-      : state === 'later' && series.due ? t('Check in {title} early ({date})', { title, date: formatDate(series.due.date, 'full', undefined, today) })
-        : t('Check in {title}', { title })
+  // An amount habit's button adds its step to today (habit-targets D2). A kept habit's
+  // button is pressed and takes the check-in back (habits-complete D4).
+  const name = amount ? t('Add {step} to {title}', { step: series.habit_unit ? `${step} ${series.habit_unit}` : step, title })
+    : state === 'later' && series.due ? t('Check in {title} early ({date})', { title, date: formatDate(series.due.date, 'full', undefined, today) })
+      : t('Check in {title}', { title })
   const down = (e: PointerEvent) => {
     if (kept || e.button !== 0) return
     long.current = false
     timer.current = setTimeout(() => { long.current = true; act(checkInWithUndo(series.id, true)) }, LONG_PRESS_MS)
   }
   const up = () => { if (timer.current) clearTimeout(timer.current); timer.current = null }
+  const items = checkInItems(series, state, today)
   return (
     <span className="flex shrink-0 items-center">
-      <button type="button" data-check-in={series.id} data-kept={kept || undefined} disabled={kept}
-        aria-label={name} data-later={state === 'later' || undefined}
+      <button type="button" data-check-in={series.id} data-kept={kept || undefined}
+        aria-label={name} aria-pressed={amount ? undefined : kept} data-later={state === 'later' || undefined}
         onPointerDown={down} onPointerUp={up} onPointerLeave={up}
-        onClick={() => { if (long.current) { long.current = false; return } act(checkInWithUndo(series.id, false)) }}
+        onClick={() => { if (long.current) { long.current = false; return } act(onCheck(series, state)) }}
         className={`touch-target flex ${compact ? 'h-6 w-6' : 'h-8 w-8'} items-center justify-center rounded-full border-2 border-hue-solid transition-colors duration-(--duration-moment)
           ${kept ? 'bg-hue-solid text-surface' : state === 'later' ? 'border-dashed text-hue hover:bg-hue-soft' : 'text-hue hover:bg-hue-soft'} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}>
         <Icon name="check" size="sm" className={kept ? '' : 'opacity-0'} />
       </button>
       {/* The menu's slot keeps its width on a kept row, so buttons and measures line up (habits-polish D2). */}
-      {!compact && <span className="flex w-7 justify-center">{(!kept || amount) && (
+      {!compact && <span className="flex w-7 justify-center">{items.length > 0 && (
         <ActionMenu label={t('More ways to check in {title}', { title })} align="end" width="sm:w-56"
           trigger={<Icon name="chevron-down" size="xs" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1 text-faint opacity-0 pointer-coarse:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
-          groups={[{ items: amount ? [
-            ...(kept ? [] : [{ kind: 'action' as const, id: 'add', label: t('Add {step}', { step }), icon: 'plus' as const, shortcut: 'Space', onSelect: () => checkInWithUndo(series.id, false) }]),
-            { kind: 'action', id: 'subtract', label: t('Subtract {step}', { step }), icon: 'minus', onSelect: () => stepAmount(series.id, -step) },
-            { kind: 'action', id: 'set', label: t('Set amount…'), icon: 'pencil', onSelect: () => openSetAmount(series.id, today) },
-          ] : [
-            { kind: 'action', id: 'done', label: t('Check in'), icon: 'check', shortcut: 'Space', onSelect: () => checkInWithUndo(series.id, false) },
-            { kind: 'action', id: 'tiny', label: series.habit_tiny ? t('Log the tiny version: {tiny}', { tiny: series.habit_tiny }) : t('Log the tiny version'), icon: 'circle', shortcut: 'Shift+Space', onSelect: () => checkInWithUndo(series.id, true) },
-          ] }]} />
+          groups={[{ items }]} />
       )}</span>}
     </span>
   )
@@ -100,9 +125,10 @@ export function HabitRow({ series, rows, stats, hue, today, opts }: { series: Ta
   const onKey = (e: KeyboardEvent<HTMLLIElement>) => {
     if (e.target !== e.currentTarget) return
     if (e.key === 'Enter') { e.preventDefault(); openHabit(series.id); return }
-    if (e.key !== ' ' || state === 'kept') return
+    if (e.key !== ' ') return
     e.preventDefault()
-    act(checkInWithUndo(series.id, e.shiftKey))
+    // Space on a kept row takes the check-in back, as the button does (habits-complete D4).
+    act(state === 'kept' && !e.shiftKey ? onCheck(series, state) : state === 'kept' ? Promise.resolve() : checkInWithUndo(series.id, e.shiftKey))
   }
   // A grid that never wraps (D2): the title cuts to one line; below 640 px the thread is a second row under it.
   return (

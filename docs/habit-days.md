@@ -1,6 +1,6 @@
 ---
 title: A habit's days
-summary: The tiny version and the anchor, the thread of the last seven days, kept, strength and streaks, fixing a past day and graduating a habit.
+summary: The tiny version and the anchor, the thread of the last seven days, kept, strength and streaks, the year, fixing a past day and graduating a habit.
 audience: user
 section: Guides
 specs: [habits]
@@ -29,6 +29,10 @@ The thread draws each scheduled day of the last seven: filled for done, half fil
 - **Back on track** shows after a kept day that follows two or more misses.
 
 The numbers are worked out on each device from the habit and its days, so every device shows the same, offline too. The rules are in [Repeat rules: Habits](recurrence.md#habits).
+
+## The year
+
+Under the month, the page shows the last 53 weeks as [Statistics](statistics.md) shows a year: a column per week in the habit's colour, filled for done, half for the tiny version, a dash for a skip and a dashed edge for a miss.
 
 ## Fix a past day
 
