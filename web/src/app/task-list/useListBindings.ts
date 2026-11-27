@@ -8,6 +8,8 @@ import type { ListColumn, ListRow } from '../../lib/listGroups'
 import type { Task } from '../../lib/types'
 import { act } from '../actionError'
 import { registerListState } from '../listActions'
+import { DESKTOP_HEADER_QUERY } from '../../ui'
+import { requestQuickAddSheet } from '../QuickAddSheet'
 import { panelTaskId, registerPanelHandlers, setPanelTaskId as setOpenId, taskSplitDocks, watchPanelTaskId } from '../panel'
 import { openTaskPage } from '../taskTrail'
 import type { useSelection } from '../selection'
@@ -164,6 +166,7 @@ export function useListBindings(c: BindingContext): RowActions {
     moveBy: (id, step) => live.current.moveInView?.(id, step) ?? Promise.resolve(false),
     focusQuickAdd: (after) => {
       const input = quickAddRef.current
+      if (after === null && !window.matchMedia(DESKTOP_HEADER_QUERY).matches && requestQuickAddSheet()) return true
       if (!input) return false
       insertAfter.current = after
       input.focus()

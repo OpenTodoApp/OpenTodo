@@ -24,7 +24,7 @@ Each heading shows how many open tasks it holds. Tasks without a section are lis
 
 ## Add tasks to a section
 
-Select the **+** on a section heading and type: the task goes straight into that section. You can also open any task and choose a **Section** in its panel.
+A section's **+** or a column's **Add a task** opens the shared sheet on phones, prefilling project and section. Desktop uses inline entry. Tasks have **Section** in their panel.
 
 ## Rename, reorder or delete a section
 

@@ -9,7 +9,7 @@ import { useMethodMode } from '../lib/method/mode'
 import { useProjects } from '../lib/localData'
 import { colourPickerSpec, iconPickerSpec } from './menus/stylePickers'
 import { useRowMenuShortcut } from './menus/useRowMenuShortcut'
-import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react'
+import { type FormEvent, type KeyboardEvent, type MouseEventHandler, useRef, useState } from 'react'
 import { preferredPlacement } from '../lib/userPrefs'
 import { selectTask } from './signals'
 import { addTasksUndoable } from '../lib/pasteTasks'
@@ -114,7 +114,7 @@ export function SectionHeader({ section, name: heading, count, layout, editable,
   last: boolean
   collapsed?: boolean
   onToggleCollapse?: () => void
-  onAdd?: () => void
+  onAdd?: MouseEventHandler<HTMLButtonElement>
   /** Completed tasks under the section; with no open task the header reads "n completed" and offers to show them. */
   completed?: number
   revealed?: boolean

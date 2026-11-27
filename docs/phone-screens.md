@@ -27,7 +27,7 @@ Every list shows the same tasks, groups and order as before, and does the same t
 - **Tap, swipe, hold.** Tap a task to open it and its circle to complete it; **Undo** is offered as before. Swipe right to complete, left to choose a date. Hold a task and lift your finger for its menu; hold and move to put it somewhere else in a list you order by hand.
 - **The menu.** The bar's menu holds display options, filters, **Select tasks** and the list's own items, such as Today's limit and a project's layout.
 - **Selecting.** **Select tasks** turns the circles into tick boxes. The bar at the bottom acts on the ticked tasks; **Close** ends the selection.
-- **Adding.** The add button adds to the list on screen; a list has no add field of its own. A task's menu has **Add task below** and **Add subtask**.
+- **Adding.** The floating button, section **+** and board **Add a task** use one sheet with project/section defaults. Both phone layouts omit the top input. Task menus retain **Add task below** and **Add subtask**.
 - **Each list's own parts** stay, such as Today's briefing and the Inbox's **Process**.
 
 ## The task page

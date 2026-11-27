@@ -1,0 +1,1 @@
+- **One add-task sheet on phones.** Section and project-board add buttons open the floating Add task button's sheet with the project and section filled in. The earlier phone layout also drops its top add box; desktop inline adding stays the same.

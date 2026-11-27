@@ -290,6 +290,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `phone-lists` | Every task list in the phone screens, with all a list does: its menu, selection, reordering, subtasks and each list's own parts | In progress (15 of 19) |
 | `phone-all-screens` | The phone header and the phone task row on every screen of the app, so the phone screens are one interface | In progress (10 of 11) |
 | `phone-ui-default` | The phone screens are what a phone shows by default; the switch stays as the way back on a device | In progress (7 of 8) |
+| `unify-phone-task-add` | One task-capture sheet for phone list, section and board add actions, with project and section defaults | In progress (4 of 5) |
 | `shell-push` | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | Shipped in 1.5 |
 
 <!-- roadmap:end -->

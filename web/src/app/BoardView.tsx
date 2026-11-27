@@ -2,7 +2,8 @@
 // by "No section", each listing its open top-level tasks by position. A pure
 // rendering of the same local query as the list (design D5); the parent view owns
 // selection and keyboard handling. Columns are drop targets for lib/dnd.
-import { Button, useWide } from '../ui'
+import { Button, DESKTOP_HEADER_QUERY, useMediaQuery, useWide } from '../ui'
+import { requestQuickAddSheet } from './QuickAddSheet'
 import type { ReactNode } from 'react'
 import { Suspense, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { lazy } from '../lib/lazy'
@@ -86,6 +87,11 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
   // Phones (below 640 px): columns are 88 % of the screen with snapping; a dot pager
   // follows the scroll position and the current column's name goes to the page bar.
   const wide = useWide()
+  const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
+  const addTo = (col: BoardColumn, trigger: HTMLElement) => {
+    if (!desktop && requestQuickAddSheet({ projectId: project.id, sectionId: col.key || null, sectionName: nameOf(col), trigger })) return
+    setAddingTo(col.key)
+  }
   const scroller = useRef<HTMLDivElement>(null)
   const [current, setCurrent] = useState(0)
   const announcement = useSyncExternalStore(subscribeNote, () => boardNote, () => '')
@@ -159,7 +165,7 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
               editable={editable}
               first={idx <= 0}
               last={idx === sections.length - 1}
-              onAdd={col.completed ? undefined : () => setAddingTo(col.key)}
+              onAdd={col.completed ? undefined : (e) => addTo(col, e.currentTarget)}
               onFold={onFold ? () => onFold(col.key, true) : undefined}
             />
             {/* Cards lift on hover and focus; the dragged one fades while its placeholder shows where it lands. */}
@@ -169,7 +175,7 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
             </ul>
             {/* "Add a task" ends every column's cards (D2); the header's plus opens the same field. */}
             {editable && !col.completed && addingTo !== col.key && (
-              <Button variant="ghost" size="sm" icon="plus" className="w-full justify-start text-muted" data-column-add={col.key} onClick={() => setAddingTo(col.key)}>
+              <Button variant="ghost" size="sm" icon="plus" className="w-full justify-start text-muted" data-column-add={col.key} onClick={(e) => addTo(col, e.currentTarget)}>
                 {t('Add a task')}
               </Button>
             )}
