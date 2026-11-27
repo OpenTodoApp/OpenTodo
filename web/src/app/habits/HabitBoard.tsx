@@ -4,12 +4,12 @@
 // the day. Today's mark checks in as the check button does; an earlier day's mark sets
 // or clears that day; every write is the one the rows and the habit's page make.
 import { useMemo, type KeyboardEvent } from 'react'
-import { editableDay, habitGoal, habitStats, habitTarget, threadDays, type DayCell, type HabitOptions } from '../../lib/habits'
+import { editableDay, habitGoal, habitStats, threadDays, type DayCell, type HabitOptions } from '../../lib/habits'
 import { noteDatesOf } from '../../lib/habitNotes'
 import { t } from '../../lib/i18n'
 import type { Task } from '../../lib/types'
 import { weekday } from '../../lib/dates'
-import { Icon, ListGroupHeader, type HueName } from '../../ui'
+import { Icon, ListGroupHeader, Tooltip, type HueName } from '../../ui'
 import { act } from '../actionError'
 import { ActionMenu } from '../menus/ActionMenu'
 import { openSetAmount } from './amountStore'
@@ -94,17 +94,19 @@ function BoardRow({ series, rows, today, opts, hue }: { series: Task; rows: read
     <li tabIndex={0} onKeyDown={onKey} data-hue={hue} data-habit-row={series.id} data-board-row={series.id}
       className="group rounded-control focus-visible:outline-2 focus-visible:outline-focus">
       <div className={`${COLS} rounded-control py-1 hover:bg-sunken/60`}>
+        <Tooltip label={title}>
         <button type="button" onClick={() => openHabit(series.id)} tabIndex={-1} className="flex min-w-0 items-center gap-3 px-2 text-start" data-habit-open>
           <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-hue-solid" aria-hidden="true" />
           <span className="min-w-0">
-            <span className="block truncate text-body text-strong" data-habit-title title={title}>{title}</span>
+            <span className="block truncate text-body text-strong" data-habit-title>{title}</span>
             {facts && <span className={`block truncate text-meta ${stats?.backOnTrack ? 'text-hue' : 'text-muted'}`} data-habit-measure>{facts}</span>}
           </span>
         </button>
+        </Tooltip>
         {days.map((c) => <Day key={c.date} series={series} cell={c} today={today} check={check} goal={goal} unit={series.habit_unit} note={notes.has(c.date)} />)}
         <span className={`flex items-center justify-center gap-0.5 text-meta tabular-nums ${streak > 0 ? 'text-hue font-semibold' : 'text-faint'}`}
-          data-board-streak={streak} title={habitTarget(series) ? undefined : t('{n, plural, one {# day} other {# days}}', { n: streak })}>
-          <Icon name="flame" size="xs" className={streak > 0 ? '' : 'opacity-50'} />{streak}
+          data-board-streak={streak}>
+          <Icon name="flame" size="xs" />{streak}
         </span>
         <ActionMenu label={t('More ways to check in {title}', { title })} align="end" width="sm:w-56" groups={[{ items }]}
           trigger={<Icon name="ellipsis" size="sm" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1 text-faint opacity-0 pointer-coarse:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100" />
