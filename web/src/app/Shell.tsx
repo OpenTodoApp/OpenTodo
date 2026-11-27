@@ -76,6 +76,8 @@ const WorkspaceActivity = lazy(() => import('./WorkspaceActivity'))
 const PhoneChrome = lazy(() => import('../phone/PhoneChrome').then((m) => ({ default: m.PhoneChrome })))
 const PhoneList = lazy(() => import('../phone/screens/PhoneList').then((m) => ({ default: m.PhoneList })))
 const PhoneTaskPage = lazy(() => import('../phone/screens/PhoneTaskPage').then((m) => ({ default: m.PhoneTaskPage })))
+// The Habits screen drawn for the phone (habits-complete D1): its chunk loads only while the phone UI is on.
+const PhoneHabits = lazy(() => import('../phone/screens/PhoneHabits').then((m) => ({ default: m.PhoneHabits })))
 /** A task list: the phone UI's list while it is on (phone-lists D7); a project in another layout keeps the present screen. */
 function ListScreen({ route, user, phoneUi, onMenu }: { route: ListRoute; user: User; phoneUi: boolean; onMenu: () => void }) {
   const layout = useProjectViewMode(phoneUi && route.view === 'project' ? route.id : null)
@@ -420,7 +422,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'loop' ? (
             <Suspense fallback={null}><LoopHome move={route.move} /></Suspense>
           ) : route.view === 'habits' ? (
-            <Suspense fallback={null}><HabitsScreen id={route.id} /></Suspense>
+            <Suspense fallback={null}>{phoneUi ? <PhoneHabits id={route.id} /> : <HabitsScreen id={route.id} />}</Suspense>
           ) : route.view === 'stats' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading statistics…')}</p>}><StatsView /></Suspense>
           ) : route.view === 'focus' ? (

@@ -1161,7 +1161,7 @@ html:root[data-contrast="high"] .ui-block--projected:not(:focus-visible) { backg
 }
 .ui-column { @apply rounded-card bg-sunken p-1.5 dark:border dark:border-default; }
 /* The board's "Add a section" column (precision-boards-timeline D4): a dashed outline the height of a column. */
-.ui-column-add { @apply flex h-[calc(100dvh-14rem)] w-[88vw] shrink-0 snap-start flex-col items-stretch gap-2 rounded-card border border-dashed border-input p-1.5 text-meta text-muted sm:w-72; }
+.ui-column-add { @apply flex h-[calc(100dvh-14rem)] w-[88vw] shrink-0 snap-start snap-always flex-col items-stretch gap-2 rounded-card border border-dashed border-input p-1.5 text-meta text-muted sm:w-72; }
 button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hover:bg-sunken hover:text-default focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus; }
 .ui-drop-placeholder {
   border: 2px dashed var(--ot-border-input);
@@ -1171,7 +1171,7 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
 /* A folded board column (board-polish D2): a strip of the column surface the board's height,
    48 px on a phone and 40 px from 640 px; it lifts like a card, and a card dragged over it
    gives it the placeholder's dashed edge along its whole length (D3). */
-.ui-column-strip { @apply flex h-[calc(100dvh-14rem)] w-12 shrink-0 snap-start flex-col rounded-card bg-sunken p-0 transition-shadow duration-(--duration-ui) hover:shadow-2 focus-within:shadow-2 sm:w-10 dark:border dark:border-default; }
+.ui-column-strip { @apply flex h-[calc(100dvh-14rem)] w-12 shrink-0 snap-start snap-always flex-col rounded-card bg-sunken p-0 transition-shadow duration-(--duration-ui) hover:shadow-2 focus-within:shadow-2 sm:w-10 dark:border dark:border-default; }
 .ui-column-strip[data-drop-over] { border: 2px dashed var(--ot-border-input); background: var(--ot-accent-soft); }
 .ui-section-flat { @apply px-4 py-5 sm:px-6; }
 /* A settings section (precision-settings D3): flat on the page, its rows between hairlines; the page spaces them. */
@@ -1786,6 +1786,11 @@ html[dir='rtl'][data-phone-nav]::view-transition-old(root), html[dir='rtl'][data
 @utility ps-safe { padding-inline-start: var(--safe-start); }
 @utility pe-safe { padding-inline-end: var(--safe-end); }
 @layer utilities {
+/* A row that swipes sideways keeps the vertical pan for the browser. Said plainly: the composed value
+   Tailwind writes (three variables with empty fallbacks) computes to `auto` in Android's WebView 113,
+   where the browser then took the sideways pan and every row swipe was cancelled (seen in the 1.10.1 app
+   on an API 34 emulator). */
+.touch-pan-y { touch-action: pan-y; }
 /* Controls revealed on hover stay visible where there is no hover. */
 @media (hover: hover) {
   .hover-reveal { opacity: 0; }
@@ -1843,6 +1848,8 @@ html[dir='rtl'][data-phone-nav]::view-transition-old(root), html[dir='rtl'][data
   li[data-task-id] [data-row-details] { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
   li[data-task-id] :is(input, textarea, [contenteditable="true"]) { -webkit-user-select: text; user-select: text; }
   :where(button, [role="button"], summary, select, a.ui-btn) { min-height: 44px; min-width: 44px; }
+  /* A hold on a group's or a board column's name is the start of a drag or nothing: not a text selection with Android's Copy and Share bar. */
+  [data-group-label], [data-timeline-group], [data-timeline-name] { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   :where(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"], [type="color"]), textarea) { min-height: 44px; }
   :where(label:has(> input[type="checkbox"], > input[type="radio"])) { min-height: 44px; }
 }

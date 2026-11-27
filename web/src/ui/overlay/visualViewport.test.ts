@@ -102,6 +102,24 @@ describe('the focused field above the keyboard', () => {
     expect(into).toHaveBeenCalledWith({ block: 'nearest' })
   })
 
+  // The composer's send button sits under its field: on a phone's task page the keyboard cut it (seen in the Android app).
+  it('keeps a composer with its send button above the keyboard, not only its field', () => {
+    const vv = fakeViewport()
+    document.body.innerHTML = '<div id="page" style="overflow-y:auto"><div style="height:2000px"><div id="frame" data-composer-frame="true"><div id="f" contenteditable="true"></div><button>Comment</button></div></div></div>'
+    const page = document.getElementById('page')!
+    Object.defineProperty(page, 'scrollHeight', { value: 2000, configurable: true })
+    Object.defineProperty(page, 'clientHeight', { value: 530, configurable: true })
+    // The field ends at 518, just inside the room; the frame with its send row ends at 579.
+    vi.spyOn(document.getElementById('frame')!, 'getBoundingClientRect').mockImplementation(() => ({ top: 341 - page.scrollTop, bottom: 579 - page.scrollTop, height: 238, left: 0, right: 100, width: 100, x: 0, y: 341, toJSON: () => ({}) }) as DOMRect)
+    const field = document.getElementById('f') as HTMLElement
+    vi.spyOn(field, 'getBoundingClientRect').mockReturnValue({ top: 406, bottom: 518, height: 112, left: 0, right: 100, width: 100, x: 0, y: 406, toJSON: () => ({}) } as DOMRect)
+    field.focus()
+    const stop = watchVisualViewport()
+    vv.set(530)
+    expect(page.scrollTop).toBe(579 - (530 - KEYBOARD_GAP))
+    stop()
+  })
+
   // touch-title-editing D4: the touch title editor's Save and Cancel sit under its field.
   it('keeps the whole touch title editor above the keyboard, not only its field', () => {
     const vv = fakeViewport()

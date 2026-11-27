@@ -7108,7 +7108,6 @@
   "{title} is in the {slot} slot.": "{title} liegt im Platz {slot}.",
   "{title} is in today’s focus.": "{title} ist im Fokus von heute.",
   "{title} left today’s focus.": "{title} ist nicht mehr im Fokus von heute.",
-  "{title}, done today": "{title}, heute erledigt",
   "{title}, open task": "{title}, Aufgabe öffnen",
   "{title}, waits for {blockers}": "{title}, wartet auf {blockers}",
   "{title}, {kind, select, note {note} task {task} other {project}}, {n, plural, one {# link} other {# links}}": "{title}, {kind, select, note {Notiz} task {Aufgabe} other {Projekt}}, {n, plural, one {# Link} other {# Links}}",
@@ -7506,7 +7505,6 @@
   "Day closed": "Tag abgeschlossen",
   "Day closed · {n} moved to tomorrow": "Tag abgeschlossen · {n} auf morgen verschoben",
   "Keeps its place": "Bleibt, wo sie ist",
-  "Kept": "Gehalten",
   "More for {title}": "Mehr zu {title}",
   "Move {title} to": "{title} verschieben auf",
   "Moves to {date}": "Wandert auf {date}",
@@ -7932,5 +7930,10 @@
   "Workspace fields are edited in the workspace’s settings.": "Felder des Arbeitsbereichs bearbeitest du in seinen Einstellungen.",
   "Only the workspace’s owner can change its fields.": "Nur der Eigentümer des Arbeitsbereichs kann seine Felder ändern.",
   "Screens made for a phone. This device only.": "Ansichten, die für das Telefon gemacht sind. Nur auf diesem Gerät.",
-  "The app in the design made for a phone. Turn it off for the earlier screens.": "Die App im Design für das Telefon. Schalte es ab, um die früheren Ansichten zu sehen."
+  "The app in the design made for a phone. Turn it off for the earlier screens.": "Die App im Design für das Telefon. Schalte es ab, um die früheren Ansichten zu sehen.",
+  "Check-in taken back": "Check-in zurückgenommen",
+  "{kept} of {due} today": "{kept} von {due} heute",
+  "{kept} of {of} scheduled days kept in the last 53 weeks": "{kept} von {of} geplanten Tagen gehalten in den letzten 53 Wochen",
+  "Checked in": "Eingecheckt",
+  "By weekday": "Nach Wochentag"
 }

@@ -254,6 +254,8 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `habit-notes` | The habit's note, a note on each check-in, habits in `[[` links, Make habits from a note, habits in the weekly review | Shipped in 1.5 |
 | `habits-assistant` | Habit numbers on the server, `list_habits`, `get_habit` and `log_habit`, a habits route and `ot habits`, Start a habit and How are my habits?, check-ins from capture, routine steps | Shipped in 1.5 |
 | `habit-targets` | Times per week or month, and daily amounts that add up exactly across devices | Shipped in 1.5 |
+| `habits-complete` | Habits on a phone with a day strip and thumb rings, today's progress, taking a check-in back, Skip this day, Remind me in the form, and a habit's year | Shipped in 1.10 |
+| `habits-board` | The Habits screen as a week board with Today, Last 7 days and Streak tiles; a habit's page as a dashboard with a By weekday chart | Shipped in 1.10 |
 
 ## Shells that feel native
 

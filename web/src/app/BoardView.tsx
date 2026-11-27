@@ -139,7 +139,8 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
       </div>
     )}
     {/* Columns stretch to the board's height, so every band runs to the bottom (precision-boards-timeline D1).
-        A held card scrolls the row at its sides and a column's cards at their top and bottom (phone-board D1). */}
+        A held card scrolls the row at its sides and a column's cards at their top and bottom (phone-board D1).
+        Every snap point stops a flick (snap-always, also on the strip and "Add a section" in index.css): a quick one passed a column. */}
     <div ref={scroller} onScroll={wide ? undefined : onScroll} onPointerDown={touched} onWheel={touched} data-edge-scroll="x" className="-mx-4 flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto px-4 pb-6 md:mx-0 md:snap-none md:px-0" data-board data-scroll-x>
       {columns.map((col) => {
         const idx = sections.findIndex((c) => c.key === col.key)
@@ -154,7 +155,7 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
             data-column={col.key}
             aria-label={col.completed ? t('{name}, {n, plural, one {# completed task} other {# completed tasks}}', { name, n: open }) : t('{name}, {n, plural, one {# open task} other {# open tasks}}', { name, n: open })}
             data-column-completed={col.completed || undefined}
-            className="ui-column flex h-[calc(100dvh-14rem)] w-[88vw] shrink-0 snap-start flex-col sm:w-72 sm:max-w-72"
+            className="ui-column flex h-[calc(100dvh-14rem)] w-[88vw] shrink-0 snap-start snap-always flex-col sm:w-72 sm:max-w-72"
           >
             <SectionHeader
               section={col.section}

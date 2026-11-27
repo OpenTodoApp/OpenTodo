@@ -23,6 +23,8 @@ const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', cre
 const originalMedia = window.matchMedia
 
 beforeEach(async () => {
+  // These tests read the habit rows, which the screen shows below 640 px (habits-board D1).
+  window.matchMedia = ((media: string) => ({ matches: false, media, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => true })) as typeof window.matchMedia
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 10, 11, 12, 0)) // Wednesday 11 November 2026
   await db.delete()
@@ -103,7 +105,8 @@ describe('the Habits screen', () => {
     await waitFor(async () => (await db.tasks.get(occurrenceId(walk, '2026-11-11')))?.tiny === true, 'the tiny record')
     await waitFor(() => document.querySelector<HTMLElement>(`[data-habit-row="${read}"] [data-day="2026-11-11"]`)?.dataset.state === 'done', 'the filled day')
     await waitFor(() => document.querySelector<HTMLElement>(`[data-habit-row="${walk}"] [data-day="2026-11-11"]`)?.dataset.state === 'tiny', 'the half-filled day')
-    expect(document.querySelector(`[data-habit-row="${read}"] [data-check-in]`)!.hasAttribute('disabled')).toBe(true)
+    // A kept habit's button is a pressed toggle (habits-complete D4).
+    expect(document.querySelector(`[data-habit-row="${read}"] [data-check-in]`)!.getAttribute('aria-pressed')).toBe('true')
     expect(fetch).not.toHaveBeenCalled()
     await r.unmount()
   })

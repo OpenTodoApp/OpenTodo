@@ -1499,8 +1499,8 @@
   "Afternoon": [
     "web/src/app/ParseChips.tsx",
     "web/src/app/habits/HabitForm.tsx",
-    "web/src/app/habits/HabitsScreen.tsx",
     "web/src/app/habits/habitRule.ts",
+    "web/src/app/habits/useHabitsModel.ts",
     "web/src/lib/dayParts.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/testdata/dayParts-1.0.ts"
@@ -1895,8 +1895,8 @@
     "web/src/app/AuditPanel.tsx",
     "web/src/app/assistant/blocks/CalendarBlock.tsx",
     "web/src/app/habits/HabitForm.tsx",
-    "web/src/app/habits/HabitsScreen.tsx",
     "web/src/app/habits/habitRule.ts",
+    "web/src/app/habits/useHabitsModel.ts",
     "web/src/lib/dayParts.ts",
     "web/src/lib/testdata/dayParts-1.0.ts"
   ],
@@ -2814,6 +2814,10 @@
   "By its trigger": [
     "web/src/app/routines/RunHistory.tsx"
   ],
+  "By weekday": [
+    "web/src/app/habits/HabitPage.tsx",
+    "web/src/app/habits/WeekdayChart.tsx"
+  ],
   "CSV files and other apps’ exports go through Settings → Data → Import.": [
     "web/src/app/TemplateDialogs.tsx"
   ],
@@ -3266,7 +3270,8 @@
   "Check in {title}": [
     "web/src/app/habits/HabitRow.tsx",
     "web/src/app/habits/TodayStrip.tsx",
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/phone/screens/PhoneHabits.tsx"
   ],
   "Check in {title} early ({date})": [
     "web/src/app/habits/HabitRow.tsx"
@@ -3281,8 +3286,12 @@
   "Check your operating system's notification settings for this browser, and any do-not-disturb mode.": [
     "web/src/lib/push.ts"
   ],
+  "Check-in taken back": [
+    "web/src/lib/habitActions.ts"
+  ],
   "Check-ins": [
-    "web/src/app/habits/CheckIns.tsx"
+    "web/src/app/habits/CheckIns.tsx",
+    "web/src/app/habits/HabitPage.tsx"
   ],
   "Check-list lines to subtasks (a task's note) or tasks": [
     "web/src/lib/richtextEditor.ts"
@@ -3292,6 +3301,9 @@
   ],
   "Checkbox fields support \"= true\" or \"= false\" only, at position {pos}": [
     "web/src/lib/filter/evaluate.ts"
+  ],
+  "Checked in": [
+    "web/src/lib/occurrenceActions.ts"
   ],
   "Checked {ago}": [
     "web/src/app/IssuesPanel.tsx"
@@ -3525,6 +3537,7 @@
     "web/src/app/task-detail/FieldsGroup.tsx",
     "web/src/app/views/ViewToolbar.tsx",
     "web/src/phone/components/PhoneDateSheet.tsx",
+    "web/src/phone/screens/PhoneHabits.tsx",
     "web/src/phone/screens/TaskDateSheet.tsx"
   ],
   "Clear a note": [
@@ -5486,6 +5499,7 @@
     "web/src/app/themes/previewData.ts",
     "web/src/lib/assistant.ts",
     "web/src/page/TaskPageScreen.tsx",
+    "web/src/phone/screens/PhoneHabits.tsx",
     "web/src/ui/AccentPicker.tsx"
   ],
   "Done already": [
@@ -5888,8 +5902,10 @@
   ],
   "Edit…": [
     "web/src/app/LabelsView.tsx",
+    "web/src/app/habits/HabitBoard.tsx",
     "web/src/app/habits/HabitPage.tsx",
-    "web/src/app/routines/RoutinesView.tsx"
+    "web/src/app/routines/RoutinesView.tsx",
+    "web/src/phone/screens/PhoneHabits.tsx"
   ],
   "Eisenhower": [
     "web/src/lib/boardTemplates.ts"
@@ -7900,7 +7916,8 @@
     "web/src/lib/features.ts",
     "web/src/lib/rules/sentence.ts",
     "web/src/lib/settingsCopy.ts",
-    "web/src/lib/shortcuts.ts"
+    "web/src/lib/shortcuts.ts",
+    "web/src/phone/screens/PhoneHabits.tsx"
   ],
   "Habits is in the sidebar under More.": [
     "web/src/app/method/HowYouWorkSection.tsx"
@@ -9104,9 +9121,6 @@
   "Keeps its place": [
     "web/src/app/review/CarryOver.tsx"
   ],
-  "Kept": [
-    "web/src/app/habits/HabitPage.tsx"
-  ],
   "Kept away": [
     "web/src/app/AgentAccessRow.tsx"
   ],
@@ -9312,13 +9326,15 @@
     "web/src/app/AuditPanel.tsx"
   ],
   "Last 30 days": [
-    "web/src/app/AuditPanel.tsx"
+    "web/src/app/AuditPanel.tsx",
+    "web/src/app/habits/HabitPage.tsx"
   ],
   "Last 4 weeks": [
     "web/src/lib/stats.ts"
   ],
   "Last 7 days": [
-    "web/src/app/AuditPanel.tsx"
+    "web/src/app/AuditPanel.tsx",
+    "web/src/app/habits/HabitsOverview.tsx"
   ],
   "Last action": [
     "web/src/app/ToastActionHost.tsx",
@@ -9366,6 +9382,7 @@
     "web/src/app/DigestCard.tsx"
   ],
   "Last seven days": [
+    "web/src/app/habits/DayStrip.tsx",
     "web/src/app/habits/Thread.tsx"
   ],
   "Last sync: {moved} tasks moved, {renamed} renamed, {unscheduled} unscheduled; {written} events written, {removed} removed": [
@@ -10392,6 +10409,7 @@
   ],
   "Month": [
     "web/src/app/CalendarRange.tsx",
+    "web/src/app/habits/HabitPage.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-detail/SectorChoice.tsx",
     "web/src/lib/shortcuts.ts"
@@ -10451,13 +10469,15 @@
     "web/src/app/themes/ThemeEditor.tsx"
   ],
   "More ways to check in {title}": [
-    "web/src/app/habits/HabitRow.tsx"
+    "web/src/app/habits/HabitBoard.tsx",
+    "web/src/app/habits/HabitRow.tsx",
+    "web/src/phone/screens/PhoneHabits.tsx"
   ],
   "Morning": [
     "web/src/app/ParseChips.tsx",
     "web/src/app/habits/HabitForm.tsx",
-    "web/src/app/habits/HabitsScreen.tsx",
     "web/src/app/habits/habitRule.ts",
+    "web/src/app/habits/useHabitsModel.ts",
     "web/src/lib/dayParts.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/testdata/dayParts-1.0.ts"
@@ -10928,7 +10948,8 @@
   "New habit": [
     "web/src/app/habits/HabitForm.tsx",
     "web/src/app/habits/HabitsScreen.tsx",
-    "web/src/app/palette/registry.ts"
+    "web/src/app/palette/registry.ts",
+    "web/src/phone/screens/PhoneHabits.tsx"
   ],
   "New invitation": [
     "web/src/app/MembersPanel.tsx"
@@ -12027,6 +12048,7 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/SpaceSwitch.tsx",
     "web/src/app/WebhooksPanel.tsx",
+    "web/src/app/habits/HabitPage.tsx",
     "web/src/app/notes/DailyNote.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NotesPage.tsx",
@@ -12066,7 +12088,8 @@
     "web/src/app/CardNotes.tsx"
   ],
   "Note…": [
-    "web/src/app/habits/DayMenu.tsx"
+    "web/src/app/habits/DayMenu.tsx",
+    "web/src/phone/screens/PhoneHabits.tsx"
   ],
   "Nothing": [
     "web/src/app/routines/StepCard.tsx"
@@ -12866,9 +12889,11 @@
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageBar.tsx",
     "web/src/app/calendar/occurrenceMenu.tsx",
+    "web/src/app/habits/HabitBoard.tsx",
     "web/src/app/palette/addFromBar.ts",
     "web/src/app/review/ProjectWalk.tsx",
-    "web/src/app/task-list/afterListAdd.ts"
+    "web/src/app/task-list/afterListAdd.ts",
+    "web/src/phone/screens/PhoneHabits.tsx"
   ],
   "Open Account settings": [
     "web/src/app/EmailScreens.tsx"
@@ -14799,7 +14824,8 @@
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Remind me": [
-    "web/src/app/LocationReminderEditor.tsx"
+    "web/src/app/LocationReminderEditor.tsx",
+    "web/src/app/habits/HabitForm.tsx"
   ],
   "Remind me after": [
     "web/src/lib/settingsCopy.ts"
@@ -16360,7 +16386,8 @@
   ],
   "Set amount…": [
     "web/src/app/habits/HabitPage.tsx",
-    "web/src/app/habits/HabitRow.tsx"
+    "web/src/app/habits/HabitRow.tsx",
+    "web/src/phone/screens/PhoneHabits.tsx"
   ],
   "Set away": [
     "web/src/app/away/AwayDialog.tsx"
@@ -17107,6 +17134,8 @@
   ],
   "Skip this day": [
     "web/src/app/calendar/occurrenceMenu.tsx",
+    "web/src/app/habits/HabitPage.tsx",
+    "web/src/app/habits/HabitRow.tsx",
     "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
   "Skip this occurrence": [
@@ -17131,7 +17160,8 @@
     "web/src/app/habits/DayMenu.tsx",
     "web/src/app/habits/DayNoteDialog.tsx",
     "web/src/app/routines/RunHistory.tsx",
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/phone/screens/PhoneHabits.tsx"
   ],
   "Skipped {day}: the mail server could not be reached for six hours": [
     "web/src/app/DigestCard.tsx"
@@ -17518,7 +17548,8 @@
     "web/src/app/task-list/ListMenu.tsx"
   ],
   "Start with something small": [
-    "web/src/app/habits/HabitsScreen.tsx"
+    "web/src/app/habits/HabitsScreen.tsx",
+    "web/src/phone/screens/PhoneHabits.tsx"
   ],
   "Start with three sample tasks": [
     "web/src/app/FirstRun.tsx"
@@ -17717,6 +17748,7 @@
   ],
   "Streak": [
     "web/src/app/habits/HabitPage.tsx",
+    "web/src/app/habits/HabitsOverview.tsx",
     "web/src/app/review/StatsView.tsx"
   ],
   "Streak of at least": [
@@ -19478,8 +19510,8 @@
   "This Evening": [
     "web/src/app/ParseChips.tsx",
     "web/src/app/display/DisplayScreen.tsx",
-    "web/src/app/habits/HabitsScreen.tsx",
     "web/src/app/habits/habitRule.ts",
+    "web/src/app/habits/useHabitsModel.ts",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/lib/activity.ts",
     "web/src/lib/listGroups.ts"
@@ -20435,7 +20467,8 @@
     "web/src/app/habits/HabitForm.tsx",
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/habits/HabitSection.tsx",
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/phone/screens/PhoneHabits.tsx"
   ],
   "Title": [
     "web/src/app/ImportScreen.tsx",
@@ -20532,7 +20565,7 @@
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/focus/FocusPicker.tsx",
-    "web/src/app/habits/HabitPage.tsx",
+    "web/src/app/habits/HabitsOverview.tsx",
     "web/src/app/notes/NoteSearchField.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/review/CloseDay.tsx",
@@ -21326,8 +21359,10 @@
     "web/src/app/focus/useFocusTimer.ts",
     "web/src/app/habits/AmountDialog.tsx",
     "web/src/app/habits/DayNoteDialog.tsx",
+    "web/src/app/habits/HabitBoard.tsx",
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/habits/HabitRow.tsx",
+    "web/src/app/habits/HabitsOverview.tsx",
     "web/src/app/habits/HabitsScreen.tsx",
     "web/src/app/habits/TodayStrip.tsx",
     "web/src/app/notes/NoteRow.tsx",
@@ -21367,6 +21402,7 @@
     "web/src/lib/useFlow.ts",
     "web/src/page/TaskPageScreen.tsx",
     "web/src/phone/rowModel.tsx",
+    "web/src/phone/screens/PhoneHabits.tsx",
     "web/src/phone/screens/PhoneTaskPage.tsx"
   ],
   "Untitled heading": [
@@ -22351,6 +22387,7 @@
   ],
   "Year": [
     "web/src/app/CalendarRange.tsx",
+    "web/src/app/habits/HabitPage.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Yes": [
@@ -25463,11 +25500,21 @@
   "{kept} of last {of}": [
     "web/src/app/habits/HabitSection.tsx"
   ],
+  "{kept} of {due} today": [
+    "web/src/app/habits/useHabitsModel.ts"
+  ],
   "{kept} of {of}": [
     "web/src/app/NotesEditor.tsx",
+    "web/src/app/habits/DayStrip.tsx",
     "web/src/app/habits/HabitPage.tsx",
+    "web/src/app/habits/HabitsOverview.tsx",
+    "web/src/app/habits/WeekdayChart.tsx",
     "web/src/app/habits/habitText.ts",
+    "web/src/app/habits/useHabitsModel.ts",
     "web/src/app/review/ReviewHabits.tsx"
+  ],
+  "{kept} of {of} scheduled days kept in the last 53 weeks": [
+    "web/src/app/habits/HabitYear.tsx"
   ],
   "{kept} of {of} this month": [
     "web/src/app/habits/habitText.ts"
@@ -25670,6 +25717,9 @@
     "web/src/app/PublicLinksSection.tsx",
     "web/src/app/TimelineView.tsx",
     "web/src/app/assistant/blocks/HabitBlock.tsx",
+    "web/src/app/habits/HabitBoard.tsx",
+    "web/src/app/habits/HabitPage.tsx",
+    "web/src/app/habits/HabitsOverview.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/lib/facets.ts"
   ],
@@ -26863,10 +26913,6 @@
   ],
   "{title} left today’s focus.": [
     "web/src/lib/focusEdit.ts"
-  ],
-  "{title}, done today": [
-    "web/src/app/habits/HabitRow.tsx",
-    "web/src/app/habits/TodayStrip.tsx"
   ],
   "{title}, open task": [
     "web/src/app/Briefing.tsx"

@@ -1,0 +1,1 @@
+The rest of OpenTodo now works with one thumb. In the calendar, a tap opens a task, its circle completes it and a swipe moves it to another day. Process the Inbox has its decisions in a bar at the bottom. On a board, a held card turns the board to the next column; on a timeline, a finger can grab a bar's end. Explanations in tooltips open on a tap.

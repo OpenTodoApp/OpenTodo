@@ -2597,7 +2597,6 @@
   "Keep “{source}” as text": "“{source}” ifadesini metin olarak koru",
   "Keeps each colour's hue and moves only its lightness until the pair reads.": "Her rengin tonunu korur ve ikili okunaklı olana dek yalnızca açıklığını ayarlar.",
   "Keeps its place": "Yerini korur",
-  "Kept": "Sürdürüldü",
   "Kept away": "Uzak tutuldu",
   "Kept away, through {parent}": "{parent} üzerinden uzak tutuldu",
   "Kept because they were changed again since: {items}.": "O zamandan beri yeniden değiştirildikleri için korundular: {items}.",
@@ -7754,7 +7753,6 @@
   "{title} is in the {slot} slot.": "{title}, {slot} aralığında.",
   "{title} is in today’s focus.": "{title} bugünün odağında.",
   "{title} left today’s focus.": "{title} bugünün odağından ayrıldı.",
-  "{title}, done today": "{title}, bugün tamamlandı",
   "{title}, open task": "{title}, açık görev",
   "{title}, waits for {blockers}": "{title}, {blockers} için bekliyor",
   "{title}, {kind, select, note {note} task {task} other {project}}, {n, plural, one {# link} other {# links}}": "{title}, {kind, select, note {not} task {görev} other {proje}}, {n, plural, one {# bağlantı} other {# bağlantı}}",
@@ -7932,5 +7930,10 @@
   "Workspace fields are edited in the workspace’s settings.": "Çalışma alanının alanları, çalışma alanının ayarlarında düzenlenir.",
   "Only the workspace’s owner can change its fields.": "Çalışma alanının alanlarını yalnızca sahibi değiştirebilir.",
   "Screens made for a phone. This device only.": "Telefon için tasarlanmış ekranlar. Yalnızca bu cihazda.",
-  "The app in the design made for a phone. Turn it off for the earlier screens.": "Uygulama, telefon için yapılmış tasarımda. Önceki ekranlar için kapat."
+  "The app in the design made for a phone. Turn it off for the earlier screens.": "Uygulama, telefon için yapılmış tasarımda. Önceki ekranlar için kapat.",
+  "Check-in taken back": "İşaret geri alındı",
+  "{kept} of {due} today": "Bugün {due} alışkanlıktan {kept}",
+  "{kept} of {of} scheduled days kept in the last 53 weeks": "Son 53 haftada planlanan {of} günün {kept} günü tutuldu",
+  "Checked in": "İşaretlendi",
+  "By weekday": "Haftanın gününe göre"
 }
