@@ -222,6 +222,8 @@
                   "quota_exceeded",
                   "rate_limited",
                   "reauth_required",
+                  "relay-off",
+                  "relay-unreachable",
                   "reset_invalid",
                   "routine_changed",
                   "run_closed",
@@ -16619,9 +16621,9 @@
                     {
                       "clientId": "00000000-0000-4000-8000-000000000019",
                       "clientName": "Gemini",
-                      "createdAt": 1794906000164,
+                      "createdAt": 1794906000166,
                       "id": "00000000-0000-4000-8000-000000000020",
-                      "lastUsedAt": 1794906000167,
+                      "lastUsedAt": 1794906000169,
                       "scope": "agent",
                       "workspaces": []
                     }
@@ -21982,14 +21984,14 @@
                       "text": "- decided: green"
                     }
                   ],
-                  "body_version": "1794906000103:server:0a1b2c3d",
-                  "created_at": 1794906000102,
+                  "body_version": "1794906000105:server:0a1b2c3d",
+                  "created_at": 1794906000104,
                   "description": "- fence\n- beds",
                   "energy": null,
                   "fields": {},
                   "id": "00000000-0000-4000-8000-000000000011",
                   "origin": null,
-                  "position": 1794906000102,
+                  "position": 1794906000104,
                   "priority": 4,
                   "rotation": [],
                   "sector": null,
@@ -27654,6 +27656,383 @@
           "Tasks, projects and other synced data"
         ],
         "x-opentodo-policy": "public"
+      }
+    },
+    "/api/v1/push/apple": {
+      "post": {
+        "description": "`{deviceId, token, environment, dueToken, includeContent}` → 201 `{registration:{id, deviceId, includeContent, expiresAt, createdAt}}`: registers this iPhone with the push relay; 403 `relay-off` while the owner's switch is off, 502 `relay-unreachable`, 400 `invalid_input`, 429 `rate_limited` with `Retry-After` after 5 an hour per account or while the relay is busy\n\nNeeds a session; tokens are refused.",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#your-account-and-credentials"
+        },
+        "operationId": "postPushApple",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "deviceId": "00000000-0000-4000-8000-000000000001",
+                "dueToken": "ot_example_token",
+                "environment": "example",
+                "includeContent": false,
+                "token": "ot_example_token"
+              },
+              "schema": {
+                "properties": {
+                  "deviceId": {
+                    "type": "string"
+                  },
+                  "dueToken": {
+                    "type": "string"
+                  },
+                  "environment": {
+                    "type": "string"
+                  },
+                  "includeContent": {
+                    "type": "boolean"
+                  },
+                  "token": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "deviceId",
+                  "dueToken",
+                  "environment",
+                  "includeContent",
+                  "token"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "registration": {
+                    "createdAt": 1794906000000,
+                    "deviceId": "00000000-0000-4000-8000-000000000001",
+                    "expiresAt": 1794906000000,
+                    "id": "00000000-0000-4000-8000-000000000001",
+                    "includeContent": false
+                  }
+                },
+                "schema": {
+                  "properties": {
+                    "registration": {
+                      "properties": {
+                        "createdAt": {
+                          "type": "number"
+                        },
+                        "deviceId": {
+                          "type": "string"
+                        },
+                        "expiresAt": {
+                          "type": "number"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "includeContent": {
+                          "type": "boolean"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Push apple",
+        "tags": [
+          "Your account and credentials"
+        ],
+        "x-opentodo-policy": "signed-in.session-only"
+      }
+    },
+    "/api/v1/push/apple/due": {
+      "get": {
+        "description": "`{reminders:[{id, taskId, fireAt, title?}]}`: reminders firing from 5 minutes ago to 1 minute ahead, a plain-text title (at most 120 characters) only when the device includes titles and the account is not encrypted; 401 for an unknown token, 429 after 30 an hour per device\n\nNo authentication.",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#your-account-and-credentials"
+        },
+        "operationId": "getPushAppleDue",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "reminders": [
+                    {
+                      "fireAt": 1794906000000,
+                      "id": "00000000-0000-4000-8000-000000000001",
+                      "taskId": "00000000-0000-4000-8000-000000000001",
+                      "title": "Buy paint for the fence"
+                    }
+                  ]
+                },
+                "schema": {
+                  "properties": {
+                    "reminders": {
+                      "items": {
+                        "properties": {
+                          "fireAt": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "taskId": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [],
+        "summary": "Get push apple due",
+        "tags": [
+          "Your account and credentials"
+        ],
+        "x-opentodo-policy": "public"
+      }
+    },
+    "/api/v1/push/apple/status": {
+      "get": {
+        "description": "`{relay:{reached, protocol, error}, registration?}`: the relay's part of the delivery check; with `?device={id}` also that device's `{id, expiresAt, failures, relayUnreachable}` or `null`. The relay is asked only while the owner's switch is on (403 `relay-off` otherwise)\n\nNeeds a session; tokens are refused.",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#your-account-and-credentials"
+        },
+        "operationId": "getPushAppleStatus",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "registration": {
+                    "expiresAt": 1794906000000,
+                    "failures": 1,
+                    "id": "00000000-0000-4000-8000-000000000001",
+                    "relayUnreachable": false
+                  },
+                  "relay": {
+                    "error": "example",
+                    "protocol": 1,
+                    "reached": false
+                  }
+                },
+                "schema": {
+                  "properties": {
+                    "registration": {
+                      "properties": {
+                        "expiresAt": {
+                          "type": "number"
+                        },
+                        "failures": {
+                          "type": "number"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "relayUnreachable": {
+                          "type": "boolean"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "relay": {
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        },
+                        "protocol": {
+                          "type": "number"
+                        },
+                        "reached": {
+                          "type": "boolean"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "List push apple status",
+        "tags": [
+          "Your account and credentials"
+        ],
+        "x-opentodo-policy": "signed-in.session-only"
+      }
+    },
+    "/api/v1/push/apple/{id}": {
+      "delete": {
+        "description": "204, or 404 `not_found`; works with the owner's switch off too, and contacts no relay\n\nNeeds a session; tokens are refused.",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#your-account-and-credentials"
+        },
+        "operationId": "deletePushAppleById",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Delete a push apple",
+        "tags": [
+          "Your account and credentials"
+        ],
+        "x-opentodo-policy": "signed-in.session-only"
+      }
+    },
+    "/api/v1/push/apple/{id}/schedule": {
+      "put": {
+        "description": "`{cursor, until}` → `{renew}`: the phone's schedule reflects the op log up to `cursor`, through `until` (ms); 404 `not_found` when the registration is gone\n\nNeeds a session; tokens are refused.",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#your-account-and-credentials"
+        },
+        "operationId": "putPushAppleByIdSchedule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "cursor": 1,
+                "until": 1
+              },
+              "schema": {
+                "properties": {
+                  "cursor": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "until": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "renew": false
+                },
+                "schema": {
+                  "properties": {
+                    "renew": {
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Update push apple schedule",
+        "tags": [
+          "Your account and credentials"
+        ],
+        "x-opentodo-policy": "signed-in.session-only"
       }
     },
     "/api/v1/push/subscriptions": {
@@ -35332,6 +35711,147 @@
         "x-opentodo-policy": "owner-only"
       }
     },
+    "/api/v1/settings/push/apple-relay": {
+      "get": {
+        "description": "`{enabled, url, urlFixedBy}`: iPhone push through the OpenTodo relay (off by default) and the relay's address; `urlFixedBy` is `OPENTODO_APPLE_RELAY` when the environment sets it",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#administration-owner-and-admins"
+        },
+        "operationId": "getSettingsPushAppleRelay",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "enabled": false,
+                  "url": "https://push.open-todo.app",
+                  "urlFixedBy": null
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Get settings push apple relay",
+        "tags": [
+          "Administration (owner and admins)"
+        ],
+        "x-opentodo-policy": "signed-in"
+      },
+      "put": {
+        "description": "`{enabled}` → the same shape; recorded as `settings.changed` (`push.apple_relay`)\n\nOnly the server's owner.",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#administration-owner-and-admins"
+        },
+        "operationId": "putSettingsPushAppleRelay",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "enabled": false
+              }
+            }
+          },
+          "description": "The body's fields are not described yet; the example shows one."
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "enabled": false,
+                  "url": "https://push.open-todo.app",
+                  "urlFixedBy": null
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Update settings push apple relay",
+        "tags": [
+          "Administration (owner and admins)"
+        ],
+        "x-opentodo-policy": "owner-only"
+      }
+    },
+    "/api/v1/settings/push/apple-relay/url": {
+      "put": {
+        "description": "`{url}` (`\"\"` restores the project's relay) → the same shape; 400 `invalid_input` (https only), 400 `private_target`, 409 `set_by_environment`\n\nOnly the server's owner.",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#administration-owner-and-admins"
+        },
+        "operationId": "putSettingsPushAppleRelayUrl",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "url": "https://todo.example.com/"
+              },
+              "schema": {
+                "properties": {
+                  "url": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "url": "https://todo.example.com/",
+                  "urlFixedBy": "https://todo.example.com/"
+                },
+                "schema": {
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    },
+                    "urlFixedBy": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Update settings push apple relay url",
+        "tags": [
+          "Administration (owner and admins)"
+        ],
+        "x-opentodo-policy": "owner-only"
+      }
+    },
     "/api/v1/settings/row-click": {
       "put": {
         "description": "Owner. `{default}`, `select` or `open` (400 `invalid_input` otherwise); answers `{default}`. Recorded as `settings.changed` (`row_click.default`). Refused on a demo instance\n\nOnly the server's owner.",
@@ -39096,7 +39616,7 @@
                   "appends": [],
                   "body_version": "0",
                   "completed_at": null,
-                  "created_at": 1794906000124,
+                  "created_at": 1794906000126,
                   "deleted_at": null,
                   "due": {
                     "date": "2026-11-27"
@@ -39106,7 +39626,7 @@
                   "id": "00000000-0000-4000-8000-000000000013",
                   "occurrence_date": "2026-11-27",
                   "origin": null,
-                  "position": 1794906000120,
+                  "position": 1794906000122,
                   "priority": 4,
                   "project_id": null,
                   "recurrence": null,
@@ -39166,9 +39686,9 @@
                 "example": {
                   "appends": [],
                   "body_version": "0",
-                  "completed_at": 1794906000134,
+                  "completed_at": 1794906000136,
                   "completed_by": "00000000-0000-4000-8000-000000000001",
-                  "created_at": 1794906000134,
+                  "created_at": 1794906000136,
                   "deleted_at": null,
                   "due": {
                     "date": "2026-11-20"
@@ -39178,7 +39698,7 @@
                   "id": "00000000-0000-4000-8000-000000000016",
                   "occurrence_date": "2026-11-20",
                   "origin": null,
-                  "position": 1794906000120,
+                  "position": 1794906000122,
                   "priority": 4,
                   "project_id": null,
                   "recurrence": null,
@@ -39238,9 +39758,9 @@
                 "example": {
                   "appends": [],
                   "body_version": "0",
-                  "completed_at": 1794906000129,
+                  "completed_at": 1794906000131,
                   "completed_by": "00000000-0000-4000-8000-000000000001",
-                  "created_at": 1794906000129,
+                  "created_at": 1794906000131,
                   "deleted_at": null,
                   "due": {
                     "date": "2026-12-04"
@@ -39250,7 +39770,7 @@
                   "id": "00000000-0000-4000-8000-000000000015",
                   "occurrence_date": "2026-12-04",
                   "origin": null,
-                  "position": 1794906000120,
+                  "position": 1794906000122,
                   "priority": 4,
                   "project_id": null,
                   "recurrence": null,
@@ -39903,7 +40423,7 @@
                   "appends": [],
                   "body_version": "0",
                   "completed_at": null,
-                  "created_at": 1794906000143,
+                  "created_at": 1794906000145,
                   "deleted_at": null,
                   "due": {
                     "date": "2026-11-25",
@@ -39913,7 +40433,7 @@
                   "fields": {},
                   "id": "00000000-0000-4000-8000-000000000017",
                   "origin": null,
-                  "position": 1794906000139,
+                  "position": 1794906000141,
                   "priority": 4,
                   "project_id": null,
                   "recurrence": "every weekday",

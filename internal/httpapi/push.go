@@ -30,6 +30,8 @@ func (s *Server) registerPushRoutes(mux *routes) {
 	mux.handle("DELETE /api/v1/push/subscriptions/{id}", signedIn.DemoDenied(), s.handlePushUnsubscribe)
 	s.pushTestLimiter = s.limit("push.test", pushTestLimit, pushTestWindow)
 	mux.handle("POST /api/v1/push/test", signedIn.DemoDenied(), s.handlePushTest)
+	// iPhone push through the OpenTodo relay (ios-push-relay).
+	s.registerApplePushRoutes(mux)
 }
 
 // Test pushes per account (OpenSpec `push-test-delivery` D3): enough for a

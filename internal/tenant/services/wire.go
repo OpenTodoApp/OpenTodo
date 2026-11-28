@@ -15,6 +15,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/maps"
 	"github.com/OpenTodoApp/opentodo/internal/oidc"
 	ob "github.com/OpenTodoApp/opentodo/internal/outbound"
+	"github.com/OpenTodoApp/opentodo/internal/push"
 	"github.com/OpenTodoApp/opentodo/internal/settings"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
@@ -51,6 +52,13 @@ func (s *Set) openSwitches(ctx context.Context, db *sql.DB) {
 	s.IssuesOn = open(IssuesKey, true)
 	s.CalendarSync = open(CalendarSyncKey, true)
 	s.MembersInvite = open(MembersInviteKey, false)
+	s.AppleRelay = open(push.AppleRelayKey, true)
+	if s.Hosted != nil {
+		// One switch for a whole host is the operator's (ios-push-relay D8);
+		// until a host offers it, hosted tenants keep the relay off.
+		off := false
+		s.AppleRelay = settings.NewSwitch(db, push.AppleRelayKey, settings.SwitchOptions{Log: s.Log, Fixed: &off, FixedBy: "the host"})
+	}
 	if _, err := s.CalDAV.Seed(ctx, s.Cfg.CalDAV); err != nil {
 		s.Log.Error("seed caldav setting", "err", err)
 	}
@@ -69,6 +77,27 @@ func (s *Set) openSwitches(ctx context.Context, db *sql.DB) {
 	if s.Cfg.BaseURL != nil {
 		s.CalSync.BaseURL = strings.TrimRight(s.Cfg.BaseURL.String(), "/")
 	}
+}
+
+// openApple builds iPhone push through the relay (ios-push-relay): only with
+// web push, under the webhooks' outbound policy (private relay addresses
+// refused unless the owner allowed private targets). Nothing reaches the
+// relay while the owner's switch is off.
+func (s *Set) openApple(db *sql.DB, o Options) {
+	if s.Push == nil {
+		return
+	}
+	s.Apple = push.NewApple(db, s.Sync, push.AppleOptions{On: s.AppleRelay.On, URL: s.AppleRelayURL, Client: s.Hooks.Client(), Now: o.Now})
+}
+
+// AppleRelayURL is the relay's address in use: OPENTODO_APPLE_RELAY, else the
+// owner's setting, else the project's relay.
+func (s *Set) AppleRelayURL(ctx context.Context) string {
+	var stored string
+	if _, err := s.Settings.Get(ctx, push.AppleRelayURLKey, &stored); err != nil {
+		s.Log.Warn("read the push relay address", "err", err)
+	}
+	return push.RelayURL(s.Cfg.AppleRelayURL, stored)
 }
 
 // wireAccounts connects accounts to the other services: single sign-on and

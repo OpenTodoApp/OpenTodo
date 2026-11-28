@@ -111,6 +111,8 @@ type Set struct {
 	MCP      *mcp.Settings
 	MCPOAuth *mcpoauth.Store // OAuth in front of /mcp (mcp-oauth)
 	Push     *push.Service   // nil when web push is off
+	// Apple is iPhone push through the relay (ios-push-relay); nil with Push.
+	Apple    *push.Apple
 	Email    *email.Service
 	Calendar *calfeed.Worker
 	Issues   *issues.Worker  // issue connections (issue-import)
@@ -141,6 +143,9 @@ type Set struct {
 	IssuesOn      *settings.Switch
 	CalendarSync  *settings.Switch
 	MembersInvite *settings.Switch
+	// AppleRelay is "iPhone push through the OpenTodo relay" (ios-push-relay),
+	// off by default, fixed off on a demo instance and on a host.
+	AppleRelay *settings.Switch
 	// ChannelsOn is the notification channels switch: Channels.Switch(), or a
 	// switch of its own on a demo instance, which has no channel service.
 	ChannelsOn *settings.Switch
@@ -239,6 +244,7 @@ func Build(ctx context.Context, cfg config.Config, db, reader *sql.DB, o Options
 	}
 	s.wireWakes()
 	s.openSwitches(ctx, db)
+	s.openApple(db, o)
 	s.wireAccounts()
 	s.openImporter()
 	s.openAttachments(ctx)

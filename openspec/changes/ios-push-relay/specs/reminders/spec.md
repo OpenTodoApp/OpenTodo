@@ -3,11 +3,15 @@
 ## ADDED Requirements
 
 ### Requirement: The owner turns on the push relay
-The server SHALL offer an owner switch, "iPhone push through the OpenTodo relay" (`push.apple_relay`), in Settings → Notifications with the server scope. The switch SHALL be off by default. The relay address (`push.apple_relay_url`) SHALL default to the project's relay and SHALL be shown under the switch only while the switch is on. The optional environment variable `OPENTODO_APPLE_RELAY` SHALL override the address only; it SHALL never turn the relay on, and SHALL have no effect while the switch is off. With push turned off on the server, the switch SHALL NOT be offered, and on a demo instance it SHALL be fixed off. While the switch is off, the server SHALL make no request to any relay, including no health probe from the delivery check, and SHALL answer the routes under `/api/v1/push/apple` with 403 `relay-off`. Every request to the relay SHALL go through the server's outbound request policy, with no version in its user agent.
+The server SHALL offer an owner switch, "iPhone push through the OpenTodo relay" (`push.apple_relay`), in Settings → Notifications with the server scope. The switch SHALL be off by default. The relay address (`push.apple_relay_url`) SHALL default to the project's relay and SHALL be shown under the switch only while the switch is on. The optional environment variable `OPENTODO_APPLE_RELAY` SHALL override the address only; it SHALL never turn the relay on, and SHALL have no effect while the switch is off. With push turned off on the server, the switch SHALL NOT be offered, and on a demo instance it SHALL be fixed off. While the switch is off, the server SHALL make no request to any relay, including no health probe from the delivery check, and SHALL answer the routes under `/api/v1/push/apple` with 403 `relay-off`, except `DELETE /api/v1/push/apple/{id}`, which contacts no relay and SHALL remove the registration whatever the switch says. Every request to the relay SHALL go through the server's outbound request policy, with no version in its user agent.
 
 #### Scenario: Default
 - **WHEN** a server starts with default settings
 - **THEN** the switch is off, no request to any relay is ever made, and the iPhone app shows no relay setting
+
+#### Scenario: Opting out while the switch is off
+- **WHEN** the owner turned the switch off and an iPhone that registered earlier turns delivery off
+- **THEN** the server deletes its registration and contacts no relay
 
 #### Scenario: Address override alone
 - **WHEN** `OPENTODO_APPLE_RELAY` is set and the owner's switch is off
