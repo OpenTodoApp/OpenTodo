@@ -1,0 +1,1 @@
+- **Detailed lists keep their group separators in narrow desktop panes.** The faint line still separates a task and its visible subtasks from the next group when the task details panel is open.

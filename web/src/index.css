@@ -1251,13 +1251,18 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
 .row-selected::before { content: ''; position: absolute; inset-block: 0.375rem; inset-inline-start: 0; width: 2px; border-radius: 9999px; background-color: var(--text-color-accent); }
 @media (hover: hover) { .row-hover:hover { background-color: var(--ot-hover); } }
 @media screen and (min-width: 768px) {
+  [data-task-group-separator] > [data-leading-slot]::after {
+    position: absolute;
+    inset: 0 0.5rem auto;
+    border-top: 1px solid var(--ot-border-soft);
+    pointer-events: none;
+  }
+  [data-task-group-separator][data-row-layout="detailed"] > [data-leading-slot]::after {
+    content: '';
+  }
   @container row (width >= 40rem) {
     [data-task-group-separator] > [data-leading-slot]::after {
       content: '';
-      position: absolute;
-      inset: 0 0.5rem auto;
-      border-top: 1px solid var(--ot-border-soft);
-      pointer-events: none;
     }
   }
 }
