@@ -19,7 +19,10 @@ import { TrackMenuItem } from './TimeTab'
 import { openConnections, useConnected } from '../signals'
 import type { TaskDetailModel } from './useTaskDetail'
 
-export function TaskActionsMenu({ m, page, readOnly, onOpen }: { m: TaskDetailModel; page: boolean; readOnly: boolean; onOpen?: (id: string) => void }) {
+/** The phone page's stepping, which its bar no longer holds (phone-calm D2): the place in the list and the two steps. */
+export interface TaskMenuStep { position: string; hasPrev: boolean; hasNext: boolean; onStep: (step: 1 | -1) => void }
+
+export function TaskActionsMenu({ m, page, readOnly, onOpen, step }: { m: TaskDetailModel; page: boolean; readOnly: boolean; onOpen?: (id: string) => void; step?: TaskMenuStep }) {
   const { task, parent, series } = m
   const connected = useConnected('task', task?.id)
   const habits = useHabitsEnabled()
@@ -27,6 +30,10 @@ export function TaskActionsMenu({ m, page, readOnly, onOpen }: { m: TaskDetailMo
   const done = !!task.completed_at
   return (
     <Menu kind="menu" label={t('Task actions')} trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-60">
+      {step && <>
+        <MenuItem label={t('Next task')} icon="arrow-down" description={step.position} disabled={!step.hasNext} onSelect={() => step.onStep(1)} data-task-next />
+        <MenuItem label={t('Previous task')} icon="arrow-up" description={step.position} disabled={!step.hasPrev} onSelect={() => step.onStep(-1)} data-task-prev />
+      </>}
       <MenuItem label={t('Copy link')} icon="link" onSelect={m.copyLink} />
       <MenuItem label={t('Help')} icon="circle-help" description={t('The guide to the task page')} onSelect={() => openHelp('task-panel')} />
       {!page && <MenuItem label={t('Expand')} icon="external-link" description={t('Open the task as a page')} onSelect={() => navigate({ view: 'task', id: task.id })} />}

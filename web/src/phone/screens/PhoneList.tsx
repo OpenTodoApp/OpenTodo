@@ -7,7 +7,8 @@
 import { Suspense, useMemo } from 'react'
 import { lazy } from '../../lib/lazy'
 import { setCompletedDisplay } from '../../lib/completedDisplay'
-import { completedOpenKey } from '../../lib/listGroups'
+import type { Briefing } from '../../lib/briefing'
+import { completedOpenKey, DONE_OPEN_KEY } from '../../lib/listGroups'
 import { LOGBOOK_PAGE } from '../../lib/logbook'
 import { canEditTasks, roleOf } from '../../lib/sharing'
 import type { AccountRole } from '../../lib/types'
@@ -41,7 +42,17 @@ import { WeekStrip } from '../components/WeekStrip'
 const CompletedSearch = lazy(() => import('../../app/completed/CompletedBar').then((m) => ({ default: m.CompletedSearch })))
 
 const NO_DONE = new Map<string, never[]>()
-const earlierActions = (ids: readonly string[]) => <EarlierActions ids={ids} />
+const earlierActions = (ids: readonly string[]) => <EarlierActions ids={ids} compact />
+
+/**
+ * Today's briefing on a phone, without what the Late card says (phone-calm D4): the late facts go,
+ * and a briefing that had nothing else to say goes with them.
+ */
+function withoutLate(b: Briefing | null): Briefing | null {
+  if (b?.mode !== 'today' || !b.facts.some((f) => f.kind === 'late')) return b
+  const facts = b.facts.filter((f) => f.kind !== 'late')
+  return facts.length ? { ...b, facts } : null
+}
 
 export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRoute; userId?: string; userRole?: AccountRole; onMenu: () => void }) {
   const s = useListScreen(route, userId, userRole)
@@ -89,12 +100,17 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
             <ProjectHeader project={currentProject} userId={userId} extraGroups={s.boardGroups} print
               phone={{ slots: phoneActions.slots, groups: phoneGroups(phoneActions.projectItems) }} />
           ) : (
-            <ListHeader route={route} title={s.title} label={currentLabel} meta={s.meta} subtitle={s.methodSubtitle} briefing={s.briefing} actions={null} phone={phoneActions} agenda={agenda.toggle} upcomingEvents={upcomingCal.toggle} />
+            <ListHeader route={route} title={s.title} label={currentLabel} meta={s.meta} subtitle={s.methodSubtitle} briefing={isToday ? withoutLate(s.briefing) : s.briefing} actions={null} phone={phoneActions} agenda={agenda.toggle} upcomingEvents={upcomingCal.toggle} />
           )}
 
           {route.view === 'completed' && <Suspense fallback={<div className="mb-3 h-9" />}><CompletedSearch value={m.completedQuery} onChange={m.setCompletedQuery} /></Suspense>}
           {route.view === 'today' && <TodayGlance listed={s.listedTasks} all={m.allTasks} late={late} today={today}
-            onLate={() => s.listRoot.current?.querySelector('[data-group="earlier"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />}
+            onLate={() => s.listRoot.current?.querySelector('[data-group="earlier"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            onDone={!groups.some((g) => g.key === 'done') ? undefined : () => {
+              // Open the Done today group, folded by default, then bring it into view (phone-calm D6).
+              if (!m.collapsed.has(DONE_OPEN_KEY)) m.toggleCollapsed(DONE_OPEN_KEY)
+              requestAnimationFrame(() => s.listRoot.current?.querySelector('[data-group="done"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+            }} />}
           {route.view === 'upcoming' && <WeekStrip today={today} counts={new Map(groups.map((g) => [g.key, g.count ?? g.rows.length]))}
             onDay={(date) => s.listRoot.current?.querySelector(`[data-group="${date}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />}
           {agenda.toggle && <TodayAgenda cal={agenda.cal} zone={m.zone} />}{m.todayHabits && <TodayStrip tasks={m.allTasks} projects={m.projects} today={today} />}

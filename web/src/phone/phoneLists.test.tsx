@@ -255,11 +255,11 @@ describe('the page menu of the phone list', () => {
   // Every item of each list's menu, sorted: its own items, the filters, Select tasks, Print and Help.
   const DURATIONS = ['Over 1 h', 'Quick wins', 'Under 30 min', 'Unestimated']
   const MENUS: Record<string, string[]> = {
-    'the Inbox': ['Help', 'Print…', 'Select tasks', ...DURATIONS],
-    Today: ['Away…', 'Display mode', 'Help', 'Hide briefing', 'Print…', 'Select tasks', ...DURATIONS],
-    Upcoming: ['Display mode', 'Filter…', 'Help', 'Hide briefing', 'Print…', 'Select tasks', 'Show repeating occurrencesFuture dates of repeating tasks, read-only', 'Start with TodayShow Today’s tasks before Tomorrow', ...DURATIONS],
-    'a label': ['Delete label…', 'Edit…', 'Help', 'Merge into…There is no other label', 'Move downAlready lastAlt+↓', 'Move upAlready firstAlt+↑', 'Pin to sidebar', 'Print…', 'RenameF2', 'Select tasks'],
-    'a project': ['ActivityShift+H', 'Add a note', 'Archive…', 'Board', 'Calendar', 'Delete project…', 'Display mode', 'Duplicate…', 'Fields…Shift+F', 'Filter…', 'Help', 'History', 'Icon…', 'List', 'List…', 'Move to…m', 'Pin to sidebar', 'Print…', 'Rename', 'Routines', 'Save as template…', 'Select tasks', 'Share project…', 'Show completed tasks', 'Timeline', ...DURATIONS],
+    'the Inbox': ['Display options', 'Help', 'Print…', 'Select tasks', ...DURATIONS],
+    Today: ['Away…', 'Display mode', 'Display options', 'Help', 'Hide briefing', 'Print…', 'Select tasks', ...DURATIONS],
+    Upcoming: ['Display mode', 'Display options', 'Filter…', 'Help', 'Hide briefing', 'Print…', 'Select tasks', 'Show repeating occurrencesFuture dates of repeating tasks, read-only', 'Start with TodayShow Today’s tasks before Tomorrow', ...DURATIONS],
+    'a label': ['Delete label…', 'Display options', 'Edit…', 'Help', 'Merge into…There is no other label', 'Move downAlready lastAlt+↓', 'Move upAlready firstAlt+↑', 'Pin to sidebar', 'Print…', 'RenameF2', 'Select tasks'],
+    'a project': ['ActivityShift+H', 'Add a note', 'Archive…', 'Board', 'Calendar', 'Delete project…', 'Display mode', 'Display options', 'Duplicate…', 'Fields…Shift+F', 'Filter…', 'Help', 'History', 'Icon…', 'List', 'List…', 'Move to…m', 'Pin to sidebar', 'Print…', 'Rename', 'Routines', 'Save as template…', 'Select tasks', 'Share project…', 'Show completed tasks', 'Timeline', ...DURATIONS],
   }
   for (const [name, route] of ROUTES.filter(([n]) => n in MENUS)) {
     it(`${name} offers every item of its menu`, async () => {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import ruleRaw from '../../../internal/timetrack/testdata/rule_fixture.json?raw'
 import csvRaw from '../../../internal/timetrack/testdata/csv_fixture.json?raw'
 import occurrenceRaw from '../../../internal/timetrack/testdata/occurrence_fixture.json?raw'
-import { csvCell, currentTotals, durationMinutes, entryDay, minutesOf, occurrenceStarts, ownMinutesOnDay, repairs, running, startBatch, toCSV, totalsByTask, type EntryLike, type OccurrenceTaskLike } from './time'
+import { csvCell, currentTotals, dayTotalsText, durationMinutes, entryDay, minutesOf, occurrenceStarts, ownMinutesOnDay, repairs, running, startBatch, toCSV, totalsByTask, type EntryLike, type OccurrenceTaskLike } from './time'
 
 // The shared fixtures of internal/timetrack (OpenSpec time-tracking, task 2.2):
 // both implementations agree on the running rule and byte for byte on the CSV.
@@ -96,5 +96,14 @@ describe('time: totals and durations', () => {
   it('reads the typed durations of the filter grammar', () => {
     for (const [s, n] of [['30m', 30], ['45min', 45], ['1h', 60], ['1h30', 90], ['1h30m', 90], ['1.5h', 90], ['90', 90], ['0', 0], ['2H', 120]] as const) expect(durationMinutes(s)).toBe(n)
     for (const s of ['soon', '+30m', '1h75', '1,5h', '', '30s']) expect(durationMinutes(s)).toBeNull()
+  })
+})
+
+describe('dayTotalsText', () => {
+  it('leaves a zero total out (phone-calm D9)', () => {
+    expect(dayTotalsText(180, 80)).toBe('3h planned · 1h 20m tracked')
+    expect(dayTotalsText(180, 0)).toBe('3h planned')
+    expect(dayTotalsText(0, 20)).toBe('20m tracked')
+    expect(dayTotalsText(0, 0)).toBeNull()
   })
 })

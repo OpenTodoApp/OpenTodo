@@ -7935,5 +7935,7 @@
   "By weekday": "Według dnia tygodnia",
   "Up next": "Następne",
   "Next seven days": "Najbliższe siedem dni",
-  "in {time}": "za {time}"
+  "in {time}": "za {time}",
+  "Reschedule": "Przeplanuj",
+  "{planned} planned": "zaplanowano {planned}"
 }

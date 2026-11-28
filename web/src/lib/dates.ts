@@ -313,13 +313,13 @@ export function compareDue(a: Due | null, b: Due | null, zone?: string): number 
   return ta < tb ? -1 : ta > tb ? 1 : 0
 }
 
-export function describeDue(due: Due | null, today = logicalToday(), zone?: string, p: ResolvedDateTime = current): { label: string; day: string; tone: 'overdue' | 'today' | 'soon' | 'later'; time: string | null } | null {
+export function describeDue(due: Due | null, today = logicalToday(), zone?: string, p: ResolvedDateTime = current): { label: string; day: string; tone: 'overdue' | 'today' | 'soon' | 'later'; time: string | null; date: string } | null {
   if (!due) return null
   const local = localDueOf(due, zone)
   // The time on its own (calm-rows D4): a row under a heading that already names the day shows only this.
   const at = local.time ? formatTime(local.time, p) : null
-  // The day's words on their own (rows-v2 D3): a row whose time sits in the list's time column.
-  const words = (day: string, tone: 'overdue' | 'today' | 'soon' | 'later') => ({ label: at ? `${day} ${at}` : day, day, tone, time: at })
+  // The day's words on their own (rows-v2 D3): a row whose time sits in the list's time column. The local date, for a caller's own words (phone-calm D7).
+  const words = (day: string, tone: 'overdue' | 'today' | 'soon' | 'later') => ({ label: at ? `${day} ${at}` : day, day, tone, time: at, date: local.date })
   if (local.date < today) return words(formatDate(local.date, 'compact', p, today), 'overdue')
   if (local.date === today) return words(t('Today'), 'today')
   if (local.date === addDaysISO(today, 1)) return words(t('Tomorrow'), 'soon')

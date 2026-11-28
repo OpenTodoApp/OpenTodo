@@ -72,14 +72,27 @@ async function open(route: Route) {
 describe('Today in the phone list', () => {
   it('shows the briefing under the title while it is on, and not once it is hidden', async () => {
     await createTask({ title: 'Send the invoice', due: { date: addDaysISO(today, -2) } })
+    // More than a day's work: a fact the cards do not say.
+    await createTask({ title: 'Paint the hall', due: { date: today }, estimate_minutes: 900 })
     const r = await open({ view: 'today' })
     await waitFor(() => !!inList('[data-phone-head] [data-page-briefing] [data-briefing="today"]'), 'the briefing')
     const briefing = inList('[data-page-briefing]')!
+    // The late task is the Late card's to say (phone-calm D4).
     expect(briefing.querySelector('[data-briefing-lead]')!.textContent).toBe('One thing matters today.')
-    expect(briefing.querySelector('[data-briefing-fact="late"]')!.textContent).toContain('Send the invoice')
+    expect(briefing.querySelector('[data-briefing-fact="overfull"]')).not.toBeNull()
+    expect(briefing.querySelector('[data-briefing-fact="late"]')).toBeNull()
     expect(before(inList('[data-page-title]')!, briefing)).toBe(true)
     await setBriefingShown(false)
     await waitFor(() => !!list() && !inList('[data-page-briefing]'), 'the briefing hidden')
+    await r.unmount()
+  })
+
+  it('shows no briefing when the late tasks were all it had to say', async () => {
+    await createTask({ title: 'Send the invoice', due: { date: addDaysISO(today, -2) } })
+    await createTask({ title: 'Write the notes', due: { date: today } })
+    const r = await open({ view: 'today' })
+    await waitFor(() => !!inList('[data-glance="late"]'), 'the Late card')
+    expect(inList('[data-page-briefing]')).toBeNull()
     await r.unmount()
   })
 
@@ -109,8 +122,9 @@ describe('Today in the phone list', () => {
     expect(rowIds()).toEqual([late, now])
     const earlier = inList('[data-group="earlier"]')!
     expect(earlier.querySelector(`[data-phone-row="${late}"]`)).not.toBeNull()
-    expect(earlier.querySelector('[data-earlier-move]')!.textContent).toBe('Move all to today')
-    expect(earlier.querySelector('[data-earlier-reschedule]')).not.toBeNull()
+    // One Reschedule pill, not two words (phone-calm D5).
+    expect(earlier.querySelector('[data-earlier-move]')).toBeNull()
+    expect(earlier.querySelector('[data-earlier-reschedule]')!.textContent).toBe('Reschedule')
     // Done today is closed until opened; it counts the task and lists it.
     const doneGroup = () => inList('[data-group="done"]')!
     expect(doneGroup().querySelector('[data-group-count] [aria-hidden]')!.textContent).toBe('1')

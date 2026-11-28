@@ -52,8 +52,11 @@ export function FactCard({ label, children }: { label?: string; children: ReactN
   )
 }
 
-/** The facts the task does not have yet, as buttons: one tap adds one. */
-export function FactChips({ facts, label, open, anchor, onOpen }: {
+/** A chip's look, for a chip drawn elsewhere (the Attach menu's trigger). */
+export const FACT_CHIP = 'press-selected inline-flex min-h-10 items-center gap-1.5 rounded-full border border-soft bg-surface px-3 text-meta text-default focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus dark:bg-raised'
+
+/** The facts the task does not have yet, as small chips in one wrapping row: one tap adds one (phone-calm D1). */
+export function FactChips({ facts, label, open, anchor, onOpen, end }: {
   facts: Pick<FactModel, 'id' | 'label' | 'icon'>[]
   /** The list's accessible name. */
   label: string
@@ -61,19 +64,21 @@ export function FactChips({ facts, label, open, anchor, onOpen }: {
   open?: string | null
   anchor?: FactAnchor
   onOpen: (id: string) => void
+  /** A last chip of its own (Attach). */
+  end?: ReactNode
 }) {
-  if (!facts.length) return null
+  if (!facts.length && !end) return null
   return (
-    // A grid of tiles, three to a row (phone-modern-look D4): each a thumb-sized target with its icon over its name.
-    <ul aria-label={label} className="grid grid-cols-3 gap-2" data-fact-chips>
+    <ul aria-label={label} className="flex flex-wrap gap-2" data-fact-chips>
       {facts.map((f) => (
         <li key={f.id} className="min-w-0">
           <button type="button" aria-haspopup="dialog" aria-expanded={open === f.id} ref={(el) => anchor?.(f.id, el)} onClick={() => onOpen(f.id)} data-fact-add={f.id} data-part={f.id}
-            className="press-selected flex min-h-18 w-full flex-col items-center justify-center gap-1.5 rounded-phone-card bg-surface px-2 py-2.5 text-meta text-default shadow-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus dark:bg-raised">
-            <Icon name={f.icon} size="md" className="text-muted" /><span className="line-clamp-2 text-center leading-tight">{f.label}</span>
+            className={FACT_CHIP}>
+            <Icon name={f.icon} size="sm" className="text-muted" /><span className="truncate">{f.label}</span>
           </button>
         </li>
       ))}
+      {end && <li className="min-w-0" data-fact-chip-end>{end}</li>}
     </ul>
   )
 }

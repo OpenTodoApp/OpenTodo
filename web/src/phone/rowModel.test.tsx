@@ -40,4 +40,10 @@ describe('a phone row', () => {
     expect(rowOf(task({ priority: 2 }), undefined, of).priority).toBe(2)
     expect(rowOf(task({ priority: 9 as never, completed_at: 5 }), undefined, of)).toMatchObject({ priority: 4, done: true })
   })
+
+  it('says Yesterday for the day before today, with its time, and the date further back (phone-calm D7)', () => {
+    expect(factsOf(task({ due: { date: '2026-10-13', time: '09:30' } }), undefined, of)[0]).toMatchObject({ id: 'due', text: 'Yesterday 09:30', tone: 'danger' })
+    expect(factsOf(task({ due: { date: '2026-10-13' } }), undefined, of)[0]).toMatchObject({ text: 'Yesterday' })
+    expect(factsOf(task({ due: { date: '2026-10-12' } }), undefined, of)[0].text).not.toBe('Yesterday')
+  })
 })

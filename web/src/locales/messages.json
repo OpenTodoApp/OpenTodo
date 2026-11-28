@@ -5422,6 +5422,7 @@
     "web/src/app/completed/CompletedBar.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/shortcuts/Spotlight.tsx",
+    "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/views/DisplayPanel.tsx"
   ],
   "Display pinned on this device": [
@@ -11135,8 +11136,8 @@
   ],
   "Next task": [
     "web/src/app/focus/FocusView.tsx",
-    "web/src/app/task-detail/TaskPageView.tsx",
-    "web/src/phone/screens/PhoneTaskView.tsx"
+    "web/src/app/task-detail/TaskActionsMenu.tsx",
+    "web/src/app/task-detail/TaskPageView.tsx"
   ],
   "Next task of today's focus": [
     "web/src/lib/shortcuts.ts"
@@ -14024,8 +14025,8 @@
     "web/src/app/calendar/MonthsSpanView.tsx"
   ],
   "Previous task": [
-    "web/src/app/task-detail/TaskPageView.tsx",
-    "web/src/phone/screens/PhoneTaskView.tsx"
+    "web/src/app/task-detail/TaskActionsMenu.tsx",
+    "web/src/app/task-detail/TaskPageView.tsx"
   ],
   "Previous week": [
     "web/src/app/CalendarView.tsx",
@@ -15224,6 +15225,9 @@
   ],
   "Required for the owner": [
     "web/src/app/TwoFactorPanel.tsx"
+  ],
+  "Reschedule": [
+    "web/src/app/task-list/EarlierActions.tsx"
   ],
   "Reschedule earlier tasks…": [
     "web/src/app/palette/registry.ts"
@@ -22400,7 +22404,8 @@
     "web/src/app/auditFormat.ts",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/notes/NoteSearchField.tsx",
-    "web/src/lib/logbook.ts"
+    "web/src/lib/logbook.ts",
+    "web/src/phone/rowModel.tsx"
   ],
   "Yesterday’s line": [
     "web/src/app/review/DailyCheck.tsx"
@@ -26733,6 +26738,9 @@
   ],
   "{pending} pending": [
     "web/src/app/MembersPanel.tsx"
+  ],
+  "{planned} planned": [
+    "web/src/lib/time.ts"
   ],
   "{planned} planned · {tracked} tracked": [
     "web/src/lib/time.ts"

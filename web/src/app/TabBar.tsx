@@ -98,13 +98,17 @@ export function TabBar({ route, onSearch, minimised = false, withAdd = false }: 
     inbox: () => { navigate({ view: 'inbox' }); setTimeout(() => requestQuickAddSheet(), 0) },
   }
   return (
+    <>
+    {/* The content fades into the page under the bar, so a row's text does not show through it (phone-calm D8). */}
+    <div aria-hidden data-tab-fade className="pointer-events-none fixed inset-x-0 bottom-0 z-30 h-[calc(var(--tab-bar-h,5rem)+1.5rem)] bg-linear-to-t from-canvas via-canvas/80 to-transparent md:hidden" />
     <nav ref={nav} aria-label={t('Primary destinations')} data-tab-bar data-minimised={minimised || undefined}
       className={tabBarFrame(withAdd && !minimised)}>
       {tabs.map((item) => {
         const active = !!item.route && route.view === item.route.view
         const tap = item.route ? () => navigate(item.route!) : onSearch
         const onClick = () => { if (hold.held.current) { hold.held.current = false; return } tap() }
-        const count = item.id === 'inbox' ? counts.inbox : item.id === 'today' ? counts.today : 0
+        // The current tab's screen lists its tasks: no count there (phone-calm D8).
+        const count = active ? 0 : item.id === 'inbox' ? counts.inbox : item.id === 'today' ? counts.today : 0
         return (
           <button key={item.id} type="button" onClick={onClick} {...hold.props(holds[item.id])} data-tab={item.id} data-focus-key={`tab-${item.id}`} aria-current={active ? 'page' : undefined}
             aria-haspopup={item.id === 'search' ? 'dialog' : undefined}
@@ -125,6 +129,7 @@ export function TabBar({ route, onSearch, minimised = false, withAdd = false }: 
         )
       })}
     </nav>
+    </>
   )
 }
 

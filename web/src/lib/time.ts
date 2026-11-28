@@ -196,7 +196,9 @@ export function elapsedText(minutes: number): string {
 
 /** Today's header figures (time-tracking D4): "3h planned · 1h 20m tracked"; null when both are zero. */
 export function dayTotalsText(planned: number, tracked: number): string | null {
-  if (!planned && !tracked) return null
+  // A zero half is left out (phone-calm D9): "3h planned", not "3h planned · 0m tracked".
+  if (!tracked) return planned ? t('{planned} planned', { planned: formatMinutes(planned) }) : null
+  if (!planned) return t('{tracked} tracked', { tracked: formatMinutes(tracked) })
   return t('{planned} planned · {tracked} tracked', { planned: formatMinutes(planned), tracked: formatMinutes(tracked) })
 }
 

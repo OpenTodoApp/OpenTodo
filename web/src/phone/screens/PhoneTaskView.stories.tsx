@@ -1,11 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { PhoneFrame, StoryScroller } from '../stories/frame'
 import { details, more, noop, schedule, unset } from '../stories/sample'
+import { Icon } from '../../ui'
+import { FACT_CHIP } from '../components/FactRow'
 import { PhoneTaskView, type PhoneTaskViewProps } from './PhoneTaskView'
 
 // The task page on a phone, drawn with fixed data (phone-ui-trial "Phone task page").
 const meta: Meta = { title: 'Phone/Design/Task page' }
 export default meta
+
+const attach = <button type="button" className={FACT_CHIP}><Icon name="paperclip" size="sm" className="text-muted" /><span>Attach</span></button>
 
 function Rest() {
   return (
@@ -27,10 +31,10 @@ function Task(props: Partial<PhoneTaskViewProps>) {
   return (
     <PhoneFrame>
       <StoryScroller>
-        <PhoneTaskView title={<h1 className="text-h1 text-strong">Renew passport</h1>} done={false} priority={2} backLabel="Today" position="2 of 6" hasPrev hasNext
+        <PhoneTaskView title={<h1 className="text-h1 text-strong">Renew passport</h1>} done={false} priority={2} backLabel="Today"
           schedule={schedule} details={details} unset={unset} menu={more}
           notes={<p className="text-muted">The old one expires in March. Bring two photos and the form from the town hall.</p>}
-          rest={<Rest />} onBack={noop} onStep={noop} onToggle={noop} onFact={noop} {...props} />
+          rest={<Rest />} chipEnd={attach} onBack={noop} onToggle={noop} onFact={noop} {...props} />
       </StoryScroller>
     </PhoneFrame>
   )
@@ -40,7 +44,7 @@ export const Full: StoryObj = { name: 'A full task', render: () => <Task /> }
 export const Bare: StoryObj = {
   name: 'A bare task',
   render: () => (
-    <Task position="" backLabel="Inbox" hasPrev={false} hasNext={false} notes={<p className="text-muted">Add notes…</p>} rest={null}
+    <Task backLabel="Inbox" notes={<p className="text-muted">Add notes…</p>} rest={null}
       schedule={[{ id: 'due', label: 'Do', icon: 'sun', value: 'Set a date', tone: 'text-muted' }]}
       details={[{ id: 'project', label: 'Project', icon: 'folder', value: 'Inbox' }]}
       unset={[{ id: 'deadline', label: 'Deadline', icon: 'hourglass' }, { id: 'reminders', label: 'Reminder', icon: 'alarm-clock' }, { id: 'priority', label: 'Priority', icon: 'flag' }, ...unset, { id: 'labels', label: 'Labels', icon: 'tag' }]} />
