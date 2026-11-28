@@ -74,7 +74,7 @@ All three are in the Shortcuts app, ready to use in your own shortcuts, and any 
 
 ## Widgets
 
-**Today**, in the medium size, shows the tasks due today and the overdue ones, with the time and priority, from the last thing the web app published. Tap a task to open it. For an encrypted account the widget shows counts only until you unlock.
+**Today**, in the medium size, shows the tasks due today and the overdue ones, with the time and priority, from the last thing the web app published. Tap a task to open it. On iOS 17 and later, tap the circle beside a task to complete it: it leaves the widget at once, and the app records the completion the next time it runs (when you open it, or at its background refresh), as if you had ticked it in the app (a repeating task moves to its next date). A widget cannot start the app, so until then the task stays hidden. If the completion could not be recorded (an older server, an expired session), the task comes back half an hour later; tick it in the app. For an encrypted account the widget shows counts only, without circles, until you unlock.
 
 Version 1.2.0 of the app never filled the widget, never scheduled reminders and offered browser push in **Settings → Notifications**. Update the app from the App Store or TestFlight and open it once; the widget fills and reminders are scheduled.
 

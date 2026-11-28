@@ -41,6 +41,7 @@ final class AppModel: ObservableObject {
     func forgetServer() {
         webDataCleanup()
         Task { await Reminders.shared.clear() }
+        WidgetPublication.clearCompletions()
         WidgetPublication.publish("{\"updatedAt\":0,\"locked\":false,\"count\":0,\"overdue\":0,\"tasks\":[]}")
         ShareInbox.clear()
         BiometricKeyStore.forget()

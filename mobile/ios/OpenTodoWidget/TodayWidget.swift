@@ -1,12 +1,16 @@
+import AppIntents
 import SwiftUI
 import WidgetKit
 
 /// The Today widget (ios-shell design D8): today's and overdue open tasks from the last
 /// publication, the count in the header, the update time in the footer, and counts only
 /// when the account is locked. It reads the App Group file and never makes a request.
+/// On iOS 17 each row has a completion circle (ios-widget-complete D1).
 struct TodayEntry: TimelineEntry {
     let date: Date
     let publication: WidgetPublication.Publication?
+    /// The rows ticked on the widget that no publication has confirmed yet.
+    var hidden: Set<String> = []
 }
 
 struct TodayProvider: TimelineProvider {
@@ -20,13 +24,43 @@ struct TodayProvider: TimelineProvider {
             ]))
     }
 
+    private func entry(at date: Date) -> TodayEntry {
+        TodayEntry(date: date, publication: WidgetPublication.load(), hidden: WidgetPublication.hidden(now: date))
+    }
+
     func getSnapshot(in context: Context, completion: @escaping (TodayEntry) -> Void) {
-        completion(TodayEntry(date: Date(), publication: WidgetPublication.load()))
+        completion(entry(at: Date()))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<TodayEntry>) -> Void) {
-        // Reloaded whenever the app publishes; no timeline of its own.
-        completion(Timeline(entries: [TodayEntry(date: Date(), publication: WidgetPublication.load())], policy: .never))
+        // Reloaded whenever the app publishes or a row is ticked; a second entry shows a
+        // hidden row again once its 30 minutes are over (ios-widget-complete D3).
+        let now = Date()
+        var entries = [entry(at: now)]
+        if let back = WidgetPublication.nextReturn(after: now) { entries.append(entry(at: back)) }
+        completion(Timeline(entries: entries, policy: .never))
+    }
+}
+
+/// The completion circle's action (ios-widget-complete D1, D2): hides the row and queues the
+/// tick for the web app, which completes the task as its own op the next time the app runs.
+/// Runs in the widget's process, writes no task data and makes no request.
+struct CompleteTaskIntent: AppIntent {
+    static let title: LocalizedStringResource = "Complete task"
+    static let isDiscoverable = false
+
+    @Parameter(title: "Task")
+    var taskID: String
+
+    init() {}
+
+    init(taskID: String) {
+        self.taskID = taskID
+    }
+
+    func perform() async throws -> some IntentResult {
+        WidgetPublication.complete(taskID: taskID)
+        return .result()
     }
 }
 
@@ -34,9 +68,10 @@ struct TodayWidgetView: View {
     let entry: TodayEntry
 
     private var rows: [WidgetPublication.Task] {
-        guard let publication = entry.publication, !publication.locked else { return [] }
-        return Array(publication.tasks.prefix(5))
+        Array((entry.publication?.visibleTasks(hidden: entry.hidden) ?? []).prefix(5))
     }
+
+    private var canComplete: Bool { entry.publication?.canComplete ?? false }
 
     private var updated: String {
         guard let at = entry.publication?.updatedAt, at > 0 else { return "" }
@@ -54,16 +89,19 @@ struct TodayWidgetView: View {
             if entry.publication == nil {
                 Text("Open OpenTodo to fill this widget.").font(.caption).foregroundStyle(.secondary)
             } else if rows.isEmpty {
-                Text(count == 0 ? "Nothing left for today." : "Locked. Open OpenTodo to see your tasks.")
+                Text(entry.publication?.locked == true && count > 0 ? "Locked. Open OpenTodo to see your tasks." : "Nothing left for today.")
                     .font(.caption).foregroundStyle(.secondary)
             } else {
                 ForEach(rows, id: \.id) { task in
-                    // No force unwrap: the id is the server's data, and a widget that crashes
-                    // shows nothing at all. A row without a usable link is shown, not tappable.
-                    if let link = task.link {
-                        Link(destination: link) { row(task) }
-                    } else {
-                        row(task)
+                    HStack(spacing: 6) {
+                        if canComplete { circle(task) }
+                        // No force unwrap: the id is the server's data, and a widget that crashes
+                        // shows nothing at all. A row without a usable link is shown, not tappable.
+                        if let link = task.link {
+                            Link(destination: link) { row(task) }
+                        } else {
+                            row(task)
+                        }
                     }
                 }
             }
@@ -71,6 +109,18 @@ struct TodayWidgetView: View {
             if !updated.isEmpty { Text(updated).font(.caption2).foregroundStyle(.tertiary) }
         }
         .modifier(WidgetBackground())
+    }
+
+    /// Below iOS 17 a widget cannot run an intent, so the row is drawn as before.
+    @ViewBuilder
+    private func circle(_ task: WidgetPublication.Task) -> some View {
+        if #available(iOS 17.0, *) {
+            Button(intent: CompleteTaskIntent(taskID: task.id)) {
+                Image(systemName: "circle").font(.caption).foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Complete \(task.title ?? String(localized: "Task"))"))
+        }
     }
 
     private func row(_ task: WidgetPublication.Task) -> some View {
@@ -83,10 +133,10 @@ struct TodayWidgetView: View {
         }
     }
 
-    private var count: Int { entry.publication?.count ?? 0 }
+    private var count: Int { entry.publication?.visibleCount(hidden: entry.hidden) ?? 0 }
 
     private var header: String {
-        let overdue = entry.publication?.overdue ?? 0
+        let overdue = entry.publication?.visibleOverdue(hidden: entry.hidden) ?? 0
         return overdue > 0 ? String(localized: "\(count) today · \(overdue) overdue") : String(localized: "\(count) today")
     }
 }
