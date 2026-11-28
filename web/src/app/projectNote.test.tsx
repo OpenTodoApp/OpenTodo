@@ -79,16 +79,18 @@ describe('project note', () => {
     await r.unmount()
   })
 
-  // copy-code-block: the corner's width is a variable on the frame, so a code block's
-  // Copy button leaves the corner its room instead of sliding under the note's controls.
-  it("a code block's Copy button leaves the note's corner its room", async () => {
+  // copy-code-block: a code block takes no slot in the note's corner. Its Copy button
+  // sits at the block's own corner, so a note with no controls reserves no room for it.
+  it("a code block's Copy button sits at the block's own corner", async () => {
     const p = await createProject({ name: 'Deploy' })
     await updateProject(p, { description: 'Run:\n\n```bash\nmake dev\n```' })
     const r = await render(<TaskListView route={{ view: 'project', id: p }} />)
     await waitFor(() => !!r.container.querySelector('[data-project-note] [data-code-copy]'))
     const frame = r.container.querySelector<HTMLElement>('[data-project-note] .notes-frame')!
-    expect(frame.getAttribute('data-corner')).not.toBeNull()
-    expect(frame.style.getPropertyValue('--notes-corner')).toBe('2.25rem')
+    // Nothing to make room for: the block keeps the note's full width and the button
+    // ends where the block does.
+    expect(frame.getAttribute('data-corner')).toBeNull()
+    expect(frame.style.getPropertyValue('--notes-corner')).toBe('')
     await r.unmount()
   })
 

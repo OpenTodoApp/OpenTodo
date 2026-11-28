@@ -1,0 +1,1 @@
+- **A code block's Copy button sits in the block's own corner.** It floated a button's width or more in from the right edge of the code, so it read as detached from the block; it now ends where the code does, and the block keeps the note's full width.
