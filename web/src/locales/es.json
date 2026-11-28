@@ -7934,5 +7934,7 @@
   "By weekday": "Por día de la semana",
   "Up next": "A continuación",
   "Next seven days": "Próximos siete días",
-  "in {time}": "en {time}"
+  "in {time}": "en {time}",
+  "{n, plural, one {It repeats, so it stays scheduled} other {They repeat, so they stay scheduled}}": "{n, plural, one {Se repite, así que sigue programada} other {Se repiten, así que siguen programadas}}",
+  "{n, plural, one {Moved to {target}; it repeats, so it stays scheduled} other {Moved to {target}; # repeat, so they stay scheduled}}": "{n, plural, one {Movida a {target}; se repite, así que sigue programada} other {Movidas a {target}; # se repiten, así que siguen programadas}}"
 }

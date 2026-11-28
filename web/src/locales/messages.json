@@ -8688,7 +8688,6 @@
     "web/src/app/palette/index.ts",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-detail/ActivityTab.tsx",
-    "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
     "web/src/app/task-detail/TaskPageView.tsx",
@@ -11538,6 +11537,7 @@
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
+    "web/src/lib/listGroups.ts",
     "web/src/lib/pickerSources.ts",
     "web/src/lib/rules/sentence.ts"
   ],
@@ -26177,6 +26177,9 @@
   "{n, plural, one {It moves to the Trash with # open task. You can restore it from the Trash.} other {It moves to the Trash with # open tasks. You can restore it from the Trash.}}": [
     "web/src/app/menus/projectMenu.tsx"
   ],
+  "{n, plural, one {It repeats, so it stays scheduled} other {They repeat, so they stay scheduled}}": [
+    "web/src/lib/undoActions.ts"
+  ],
   "{n, plural, one {Its open task moves to “No section” in this project.} other {Its # open tasks move to “No section” in this project.}}": [
     "web/src/app/Sections.tsx"
   ],
@@ -26204,6 +26207,9 @@
     "web/src/app/assistant/blocks/MapBlock.tsx",
     "web/src/app/assistant/blocks/ProposalShapes.tsx",
     "web/src/lib/assistantBlocks.ts"
+  ],
+  "{n, plural, one {Moved to {target}; it repeats, so it stays scheduled} other {Moved to {target}; # repeat, so they stay scheduled}}": [
+    "web/src/lib/undoActions.ts"
   ],
   "{n, plural, one {Moving this task moves its subtask too.} other {Moving this task moves its subtasks too.}}": [
     "web/src/app/task-detail/Facets.tsx"

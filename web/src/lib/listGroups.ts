@@ -909,7 +909,8 @@ function chosenTodayGroups(p: GroupInput, tasks: Task[], groupBy: ListDisplay['g
   if (groupBy === 'project' || groupBy === 'priority' || groupBy === 'label') {
     const named = (key: string) => (groupBy === 'project' ? key !== 'inbox' && key !== 'unknown' : groupBy === 'label' && key !== 'none')
     return groupTasks(tasks, groupBy, { today: p.today, labels: p.labels ?? [], projects: p.projects }, true).map((x) => ({
-      key: `day:${x.key}`, heading: x.heading, rows: withImplied(rows(x.tasks), groupBy === 'project' ? { ...implied, project: true } : implied),
+      // A dated task without a project is not in the Inbox (inbox-drop-unplaces D3).
+      key: `day:${x.key}`, heading: groupBy === 'project' && x.key === 'inbox' ? t('No project') : x.heading, rows: withImplied(rows(x.tasks), groupBy === 'project' ? { ...implied, project: true } : implied),
       ...(named(x.key) ? { named: true as const } : {}),
       ...(groupBy === 'project' && named(x.key) ? { project: x.key } : {}),
       // A line stays within a priority or label group (day-manual-order D2); projects take project drops.

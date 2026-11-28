@@ -33,4 +33,4 @@ Today's **Earlier** group has two actions in its header: **Move all to today** a
 
 ## Drop on the sidebar
 
-From any list or board, drag a task onto a sidebar project or **Inbox** to move it, onto a label to add it, or onto **Today** to plan it today. A ticked task takes every ticked one along, there or among a list's rows (onto a task, they nest); one **Undo** reverts it. A project you can only view takes no drops, and dropping a task on a label it has changes nothing. Without a mouse, use **Move to project** in the task's menu (<kbd>.</kbd>) and <kbd>Shift</kbd>+<kbd>L</kbd> for labels.
+From any list or board, drag a task onto a sidebar project or **Inbox** (undated, unless it repeats) to move it, onto a label to add it, or onto **Today** to plan it today. A ticked task takes every ticked one along, there or among a list's rows (onto a task, they nest); one **Undo** reverts it. A project you can only view takes no drops; a label the task has changes nothing. Without a mouse, use **Move to project** in the task's menu (<kbd>.</kbd>) and <kbd>Shift</kbd>+<kbd>L</kbd> for labels.

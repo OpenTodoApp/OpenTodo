@@ -108,7 +108,31 @@ function topmost(tasks: readonly Task[], all: Task[]): Task[] {
   return tasks.filter((tk) => ![...ticked].some((other) => other !== tk.id && descendants(other, all).has(tk.id)))
 }
 
-export type MoveTarget = { projectId: string | null; sectionId?: string | null }
+/**
+ * A move to the Inbox (OpenSpec change inbox-drop-unplaces): `inbox` also clears
+ * the schedule, so the task without a project is an Inbox task (lib/inbox.ts).
+ * Only with `projectId: null`; a drop into a "No project" group keeps the date.
+ */
+export type MoveTarget = { projectId: string | null; sectionId?: string | null; inbox?: boolean }
+
+/**
+ * The fields that place a task in time, cleared (inbox-drop-unplaces D1): the do-on
+ * date, the start, the time sector, the evening flag and the part of the day. A
+ * repeating task keeps them: clearing its date would end the series (D2).
+ */
+export function unschedulePatch(task: Pick<Task, 'due' | 'start' | 'sector' | 'evening' | 'day_part' | 'recurrence'>): Partial<Task> {
+  const patch: Partial<Task> = {}
+  if (task.recurrence) return patch
+  if (task.due) patch.due = null
+  if (task.start) patch.start = null
+  if (task.sector) patch.sector = ''
+  if (task.evening) patch.evening = false
+  if (task.day_part) patch.day_part = null
+  return patch
+}
+
+/** Whether a move to the Inbox leaves this task scheduled because it repeats (inbox-drop-unplaces D2). */
+export const staysScheduled = (task: Task): boolean => !!task.recurrence && !!(task.due || task.start || task.sector)
 
 /** Per ticked (topmost) task, the changes that move it with its subtree. */
 export function planMoveGroups(tasks: readonly Task[], all: Task[], target: MoveTarget,
@@ -116,11 +140,13 @@ export function planMoveGroups(tasks: readonly Task[], all: Task[], target: Move
   const out: { task: Task; changes: Change[] }[] = []
   for (const tk of topmost(tasks, all)) {
     const sameProject = (tk.project_id ?? null) === target.projectId
+    const unschedule = target.inbox && target.projectId === null ? unschedulePatch(tk) : {}
     if (sameProject) {
-      if (target.sectionId !== undefined && (tk.section_id ?? null) !== target.sectionId) out.push({ task: tk, changes: [{ entity: 'task', entityId: tk.id, patch: { section_id: target.sectionId } }] })
+      const patch: Partial<Task> = { ...unschedule, ...(target.sectionId !== undefined && (tk.section_id ?? null) !== target.sectionId ? { section_id: target.sectionId } : {}) }
+      if (Object.keys(patch).length) out.push({ task: tk, changes: [{ entity: 'task', entityId: tk.id, patch }] })
       continue
     }
-    const patch: Partial<Task> = { project_id: target.projectId, ...(target.sectionId !== undefined ? { section_id: target.sectionId } : {}) }
+    const patch: Partial<Task> = { ...unschedule, project_id: target.projectId, ...(target.sectionId !== undefined ? { section_id: target.sectionId } : {}) }
     const cross = scopeOf(tk.project_id, memberships) !== scopeOf(target.projectId, memberships)
       ? { assignable: assignableIn(target.projectId, memberships, me) } : undefined
     out.push({ task: tk, changes: planProjectChange(tk, all, patch, cross, now, keep).changes })
@@ -268,7 +294,10 @@ export async function reviewMove(ids: readonly string[], target: MoveTarget): Pr
   const groups = planMoveGroups(tasks, all, target, memberships, await currentUserId(), Date.now(), await keepWorkspaceFor())
   const shared = !!target.projectId && memberships.has(target.projectId)
   const items = groups.map(({ task }): ProposedChange => {
-    const patch: Record<string, unknown> = (task.project_id ?? null) === target.projectId ? { section_id: target.sectionId ?? null } : { project_id: target.projectId, ...(target.sectionId !== undefined ? { section_id: target.sectionId } : {}) }
+    const unschedule = target.inbox && target.projectId === null ? unschedulePatch(task) : {}
+    const patch: Record<string, unknown> = (task.project_id ?? null) === target.projectId
+      ? { ...unschedule, ...(target.sectionId !== undefined || !target.inbox ? { section_id: target.sectionId ?? null } : {}) }
+      : { ...unschedule, project_id: target.projectId, ...(target.sectionId !== undefined ? { section_id: target.sectionId } : {}) }
     return { entity: 'task', entityId: task.id, patch, base: Object.fromEntries(Object.keys(patch).map((f) => [f, (task as unknown as Record<string, unknown>)[f] ?? null])), ...(shared ? { shared } : {}) }
   })
   return {

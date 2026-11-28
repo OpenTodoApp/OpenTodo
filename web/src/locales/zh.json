@@ -7934,5 +7934,7 @@
   "By weekday": "按星期",
   "Up next": "接下来",
   "Next seven days": "未来七天",
-  "in {time}": "{time}后"
+  "in {time}": "{time}后",
+  "{n, plural, one {It repeats, so it stays scheduled} other {They repeat, so they stay scheduled}}": "{n, plural, other {因为重复，仍保留日程}}",
+  "{n, plural, one {Moved to {target}; it repeats, so it stays scheduled} other {Moved to {target}; # repeat, so they stay scheduled}}": "{n, plural, other {已移至 {target}；因为重复，仍保留日程}}"
 }

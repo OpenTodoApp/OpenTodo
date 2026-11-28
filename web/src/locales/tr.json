@@ -7934,5 +7934,7 @@
   "By weekday": "Haftanın gününe göre",
   "Up next": "Sıradaki",
   "Next seven days": "Önümüzdeki yedi gün",
-  "in {time}": "{time} sonra"
+  "in {time}": "{time} sonra",
+  "{n, plural, one {It repeats, so it stays scheduled} other {They repeat, so they stay scheduled}}": "{n, plural, one {Tekrarlandığı için planlı kalıyor} other {Tekrarlandıkları için planlı kalıyorlar}}",
+  "{n, plural, one {Moved to {target}; it repeats, so it stays scheduled} other {Moved to {target}; # repeat, so they stay scheduled}}": "{n, plural, one {{target} hedefine taşındı; tekrarlandığı için planlı kalıyor} other {{target} hedefine taşındı; # görev tekrarlandığı için planlı kalıyor}}"
 }

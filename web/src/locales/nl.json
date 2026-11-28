@@ -7934,5 +7934,7 @@
   "By weekday": "Per weekdag",
   "Up next": "Hierna",
   "Next seven days": "Komende zeven dagen",
-  "in {time}": "over {time}"
+  "in {time}": "over {time}",
+  "{n, plural, one {It repeats, so it stays scheduled} other {They repeat, so they stay scheduled}}": "{n, plural, one {Hij herhaalt zich, dus blijft gepland} other {Ze herhalen zich, dus blijven gepland}}",
+  "{n, plural, one {Moved to {target}; it repeats, so it stays scheduled} other {Moved to {target}; # repeat, so they stay scheduled}}": "{n, plural, one {Verplaatst naar {target}; hij herhaalt zich, dus blijft gepland} other {Verplaatst naar {target}; # herhalen zich, dus blijven gepland}}"
 }
