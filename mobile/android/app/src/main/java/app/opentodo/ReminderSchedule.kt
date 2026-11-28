@@ -94,7 +94,7 @@ object ReminderSchedule {
     /** The actions the web app's address accepts (`shellActions.ts`); anything else is ignored. */
     fun isAction(action: String?): Boolean = action == "done" || action == "snooze" || action == "dismiss"
 
-    /** The address a notification action opens in the background (handled by the web app like push-sw.js). */
+    /** The address a notification action opens in the background (handled by the web app like the service worker's notification actions). */
     fun actionPath(id: String, action: String): String =
         "/?reminder=" + java.net.URLEncoder.encode(id, "UTF-8") + "&action=" + action
 

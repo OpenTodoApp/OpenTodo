@@ -6,7 +6,8 @@
 // the local database (Dexie `versionchange`, see db.ts). Each one leads to a
 // reload, now or on the user's word, instead of a broken screen. Once refusal
 // is on, the worker also says when it refused an update (`refused`): that one
-// is shown with its cause and no reload.
+// is shown with its cause and no reload. And a new worker that the verified
+// list doesn't name raises a warning (signed-web-app D8, lib/workerChange.ts).
 import { useSyncExternalStore } from 'react'
 import { databaseOutdated, onDatabaseOutdated } from './db'
 import { createStore } from './store'
@@ -61,6 +62,19 @@ function showRefusal(r: Refusal): void {
   refusal.set(r)
 }
 
+const workerWarning = createStore<boolean>('appWorkerChanged', false)
+
+/** The server serves a service worker the verified list doesn't name (D8), until dismissed. */
+export const useWorkerChanged = workerWarning.use
+
+/** Hides the changed-worker warning. */
+export function dismissWorkerChange(): void {
+  workerWarning.set(false)
+}
+
+/** Compares the server's worker with the verified list; loaded only when a worker changes. */
+const compareWorker = (): Promise<boolean> => import('./workerChange').then((m) => m.workerChanged())
+
 interface WorkerMessage { type?: string; state?: string; check?: CheckResult; ownKey?: boolean }
 
 /** A chunk failed to load this long after the last automatic reload: ask instead of looping. */
@@ -88,7 +102,7 @@ interface UpdateTarget {
  * nothing about a release: the error reaches its caller and the page stays
  * (a reload would open an empty page while the service worker is not in control).
  */
-export function watchAppUpdates(win: UpdateTarget = window, sw: Pick<ServiceWorkerContainer, 'addEventListener' | 'controller'> | undefined = typeof navigator !== 'undefined' ? navigator.serviceWorker : undefined, now: () => number = Date.now, online: () => boolean = () => typeof navigator === 'undefined' || navigator.onLine !== false): void {
+export function watchAppUpdates(win: UpdateTarget = window, sw: Pick<ServiceWorkerContainer, 'addEventListener' | 'controller'> | undefined = typeof navigator !== 'undefined' ? navigator.serviceWorker : undefined, now: () => number = Date.now, online: () => boolean = () => typeof navigator === 'undefined' || navigator.onLine !== false, compare: () => Promise<boolean> = compareWorker): void {
   // The worker checks for updates after navigations; a tab left open asks it
   // again when it comes back online or into focus (the worker checks at most once a minute).
   const ask = () => sw?.controller?.postMessage({ type: 'opentodo-app', check: true })
@@ -113,7 +127,14 @@ export function watchAppUpdates(win: UpdateTarget = window, sw: Pick<ServiceWork
     // refused the update, or the old worker installed it already), so the page
     // asks it, as it does on start: the worker answers with a refusal the page
     // may have missed while it reloaded. Each refusal is shown once.
-    sw.addEventListener('controllerchange', ask)
+    // A new worker in control is also compared with the verified list (D8). Only
+    // once it is in control: anything the page fetches while a new worker waits
+    // goes through the old one and holds the new one back, and Chromium can then
+    // let it take over in the middle of a navigation the old one is answering.
+    sw.addEventListener('controllerchange', () => {
+      ask()
+      void compare().then((changed) => { if (changed) workerWarning.set(true) }, () => undefined)
+    })
     sw.addEventListener('message', (ev) => {
       const data = (ev as MessageEvent).data as WorkerMessage | null
       if (data?.type !== 'opentodo-app') return
@@ -136,5 +157,6 @@ export function logUnhandledRejections(win: Pick<Window, 'addEventListener'> = w
 export function resetAppUpdate(): void {
   reason.set(null)
   refusal.set(null)
+  workerWarning.set(false)
   shownAt = null
 }

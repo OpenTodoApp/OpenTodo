@@ -20,3 +20,23 @@ export function pagePolicy(serverPolicy: string | null | undefined): string {
   const extra = [...new Set((connect ?? []).slice(1).filter((o) => ORIGIN.test(o) && !base.has(o)))]
   return extra.length ? `${CSP_BASE} ${extra.join(' ')}` : CSP_BASE
 }
+
+/**
+ * The policy the worker adds to a document from one of the server's addresses
+ * once refusal is on (design D7, phase 2): no script runs, so the document cannot
+ * read the app's storage. Forms and the origin stay, so the server's sign-in steps
+ * still post with their Origin; a stricter policy the server sends (an
+ * attachment's own sandbox) still applies beside it.
+ */
+export const SERVER_DOCUMENT_POLICY = 'sandbox allow-forms allow-same-origin'
+
+/** Statuses whose response has no body. */
+const NO_BODY = new Set([101, 103, 204, 205, 304])
+
+/** The server's document with SERVER_DOCUMENT_POLICY added; a redirect is no document and passes as it is. */
+export function sandboxed(res: Response): Response {
+  if (res.type === 'opaqueredirect' || res.type === 'opaque' || res.status === 0) return res
+  const headers = new Headers(res.headers)
+  headers.append('Content-Security-Policy', SERVER_DOCUMENT_POLICY)
+  return new Response(NO_BODY.has(res.status) ? null : res.body, { status: res.status, statusText: res.statusText, headers })
+}

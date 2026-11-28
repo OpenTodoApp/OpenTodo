@@ -8,6 +8,7 @@ import { formatInstant } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { useOnline } from '../lib/online'
 import { roleName } from '../lib/roleNames'
+import { inviterName } from '../lib/inviterName'
 import type { AuthStatus, User } from '../lib/types'
 import { workspaceApi, type WorkspaceInvitePreview } from '../lib/workspaceApi'
 import { switchTo } from '../lib/workspaces'
@@ -120,7 +121,7 @@ export function WorkspaceInviteView({ state, onRetry, children }: { state: Works
   return (
     <Card title={t('Join {name}', { name: p.workspaceName })}>
       <div className="rounded-control bg-accent-soft p-3 text-body text-on-accent-soft" data-testid="workspace-invite-summary">
-        <p>{t('{inviter} invited you to the workspace {name} as {role}.', { inviter: p.inviterName, name: p.workspaceName, role: roleName(p.role) })}</p>
+        <p>{t('{inviter} invited you to the workspace {name} as {role}.', { inviter: inviterName(p.inviterName), name: p.workspaceName, role: roleName(p.role) })}</p>
         {p.email && <p className="mt-1">{t('This link is for {email}.', { email: p.email })}</p>}
         <p className="mt-1 text-meta">{t('It expires {when} and works once.', { when: formatInstant(p.expiresAt, 'datetime') })}</p>
       </div>

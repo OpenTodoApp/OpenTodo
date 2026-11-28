@@ -90,7 +90,7 @@ func handlerFor(sub fs.FS, o Options) http.Handler {
 					if strings.HasPrefix(p, "assets/") {
 						w.Header().Set("Cache-Control", "public, max-age=31536000, immutable, no-transform")
 					} else if strings.HasSuffix(p, ".js") || p == "app-manifest.json" {
-						// Service worker scripts (sw.js, registerSW.js, push-sw.js) and the
+						// Service worker scripts (sw.js, registerSW.js) and the
 						// signed file list must never be cached: a CDN in front (Cloudflare
 						// gives .js a 4 h TTL and rewrites no-cache) would keep phones on the
 						// previous release.

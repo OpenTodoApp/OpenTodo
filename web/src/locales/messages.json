@@ -5396,7 +5396,6 @@
     "web/src/app/ConnectedApps.tsx"
   ],
   "Dismiss": [
-    "web/public/push-sw.js",
     "web/src/app/ArchivePrompt.tsx",
     "web/src/app/DemoBanner.tsx",
     "web/src/app/RefusedBanner.tsx",
@@ -5408,7 +5407,8 @@
     "web/src/app/assistant/ComposerCapture.tsx",
     "web/src/app/bulk/UndoToast.tsx",
     "web/src/app/quickadd/VoiceParts.tsx",
-    "web/src/app/routines/ProposalReview.tsx"
+    "web/src/app/routines/ProposalReview.tsx",
+    "web/src/push-sw.js"
   ],
   "Dismiss {name}": [
     "web/src/app/routines/RoutinesInboxCard.tsx"
@@ -5534,7 +5534,7 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Done|task": [
-    "web/public/push-sw.js"
+    "web/src/push-sw.js"
   ],
   "Don’t ask again for {scheme}: on this device": [
     "web/src/app/AppLinkConfirm.tsx"
@@ -14841,13 +14841,13 @@
     "web/src/app/ParseChips.tsx"
   ],
   "Reminder": [
-    "web/public/push-sw.js",
     "web/src/app/ParseChips.tsx",
     "web/src/app/ReminderToasts.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/useTaskFacts.tsx",
-    "web/src/lib/facets.ts"
+    "web/src/lib/facets.ts",
+    "web/src/push-sw.js"
   ],
   "Reminder date": [
     "web/src/app/RemindersField.tsx"
@@ -17214,8 +17214,8 @@
     "web/src/app/ReminderToasts.tsx"
   ],
   "Snooze 10 min": [
-    "web/public/push-sw.js",
-    "web/src/app/ReminderToasts.tsx"
+    "web/src/app/ReminderToasts.tsx",
+    "web/src/push-sw.js"
   ],
   "Snooze 10 minutes": [
     "web/src/app/RemindersField.tsx"
@@ -17295,7 +17295,6 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Someone": [
-    "web/public/push-sw.js",
     "web/src/app/FeedView.tsx",
     "web/src/app/InvitationAnswer.tsx",
     "web/src/app/NotificationBell.tsx",
@@ -17305,7 +17304,8 @@
     "web/src/app/assistant/blocks/TaskBlock.tsx",
     "web/src/app/task-detail/ActivityTab.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
-    "web/src/app/task-detail/HistoryTab.tsx"
+    "web/src/app/task-detail/HistoryTab.tsx",
+    "web/src/push-sw.js"
   ],
   "Someone else": [
     "web/src/lib/method/groups.ts"
@@ -18269,7 +18269,7 @@
     "web/src/lib/push.ts"
   ],
   "Test notification: push works on this device.": [
-    "web/public/push-sw.js"
+    "web/src/push-sw.js"
   ],
   "Test runs every step against your tasks and shows what each would do. Nothing is written.": [
     "web/src/app/routines/RoutineEditor.tsx"
@@ -18885,6 +18885,9 @@
   ],
   "The owner has not enabled issue connections on this server.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "The owner of this server": [
+    "web/src/lib/inviterName.ts"
   ],
   "The owner of this server requires a second sign-in step for {email}. Set it up to continue; your tasks and any changes waiting on this device are kept and sync as soon as you are done.": [
     "web/src/app/TwoFactorPanel.tsx"
@@ -20110,6 +20113,9 @@
   "This server cannot email links until the owner sets its public address (OPENTODO_BASE_URL).": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "This server changed how the app checks updates. Don't enter your passphrase, and ask the server's operator.": [
+    "web/src/lib/appCodeCopy.ts"
+  ],
   "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": [
     "web/src/lib/limits.ts"
   ],
@@ -20552,7 +20558,6 @@
     "web/src/app/CaldavPanel.tsx"
   ],
   "Today": [
-    "web/public/push-sw.js",
     "web/src/app/AppBadge.tsx",
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/CalendarView.tsx",
@@ -20592,7 +20597,8 @@
     "web/src/lib/logbook.ts",
     "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts",
-    "web/src/lib/views.ts"
+    "web/src/lib/views.ts",
+    "web/src/push-sw.js"
   ],
   "Today holds": [
     "web/src/lib/settingsCopy.ts"
@@ -20657,7 +20663,6 @@
     "web/src/app/TokensSection.tsx"
   ],
   "Tomorrow": [
-    "web/public/push-sw.js",
     "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
@@ -20669,7 +20674,8 @@
     "web/src/app/task-list/EarlierActions.tsx",
     "web/src/app/task-list/RowSwipe.tsx",
     "web/src/lib/dates.ts",
-    "web/src/lib/views.ts"
+    "web/src/lib/views.ts",
+    "web/src/push-sw.js"
   ],
   "Tomorrow 09:00": [
     "web/src/app/ReminderToasts.tsx"
@@ -22547,7 +22553,7 @@
     "web/src/app/AuthScreen.tsx"
   ],
   "You have a reminder": [
-    "web/public/push-sw.js"
+    "web/src/push-sw.js"
   ],
   "You have not accepted yet; the assistant asks before your first message.": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -22900,9 +22906,6 @@
   "a label": [
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/lib/assistant.ts"
-  ],
-  "a member": [
-    "web/src/app/InviteLinksSection.tsx"
   ],
   "a model id from your OpenAI account": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -26401,7 +26404,7 @@
     "web/src/app/Briefing.tsx"
   ],
   "{name} assigned you a task": [
-    "web/public/push-sw.js"
+    "web/src/push-sw.js"
   ],
   "{name} can sign in again.": [
     "web/src/app/UsersPanel.tsx"
@@ -26410,7 +26413,7 @@
     "web/src/lib/assistant.ts"
   ],
   "{name} completed a task": [
-    "web/public/push-sw.js"
+    "web/src/push-sw.js"
   ],
   "{name} failed · {why}": [
     "web/src/lib/rules/inbox.ts"
@@ -26468,7 +26471,7 @@
     "web/src/lib/rules/inbox.ts"
   ],
   "{name} reopened a task": [
-    "web/public/push-sw.js"
+    "web/src/push-sw.js"
   ],
   "{name} replied": [
     "web/src/app/Briefing.tsx"
@@ -26904,8 +26907,8 @@
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "{tiny} is enough": [
-    "web/public/push-sw.js",
-    "web/src/lib/reminderBody.ts"
+    "web/src/lib/reminderBody.ts",
+    "web/src/push-sw.js"
   ],
   "{title} and its history move to the Trash.": [
     "web/src/app/habits/HabitPage.tsx"

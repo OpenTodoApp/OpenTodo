@@ -29,3 +29,6 @@ export function causeMessage(cause: CheckCause | undefined, ownKey: boolean): st
 export const REFUSED = msg("This update wasn't installed.")
 export const REPORTED = msg("The last update didn't pass the check. It was installed: checks only report for now.")
 export const WHAT_TO_DO = msg('What to do')
+
+/** A new service worker that no verified list names (design D8). */
+export const WORKER_CHANGED = msg("This server changed how the app checks updates. Don't enter your passphrase, and ask the server's operator.")

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Browser end to end of the signed web app (OpenSpec change signed-web-app,
-// tasks 5.3, 5.7 and 7.5): Chromium installs the app from a server and follows its
+// tasks 5.3, 5.7, 7.2, 7.4 and 7.5): Chromium installs the app from a server and follows its
 // updates, each signed with the test key (internal/websign/testdata). It checks
 // the trust record the service worker keeps:
 //
@@ -11,7 +11,13 @@
 //   4. a signed v0.9.0 is recorded as older;
 //   5. with the server stopped, a reload opens the app from the verified set;
 //   6. v1.3.0 says refuse: true and turns refusal on;
-//   7. a tampered v1.4.0 is refused: v1.3.0 stays, and the page shows the cause.
+//   6a. with refusal on, a task page is the verified t.html, a file the list doesn't
+//      name is a 404 although the server has it, and a page from /api/, opened or
+//      answering a form's POST, runs no script;
+//   6b. the server swaps sw.js under the installed list: the page warns that it
+//      changed how the app checks updates;
+//   7. a tampered v1.4.0 is refused: v1.3.0 stays, and the page shows the cause,
+//      without the changed-worker warning (a newer signed list names its sw.js).
 //
 // Then a second, new device rehearses the key rotation (task 5.7) with
 // throwaway keys made by `websign keygen` in the temporary directory; the test
@@ -104,6 +110,12 @@ const v3 = release('v3', { version: '1.2.0' })
 const v0 = release('v0', { version: '0.9.0' })
 const v4 = release('v4-refuse', { version: '1.3.0', refuse: true })
 const v5 = release('v5-tampered', { version: '1.4.0', tamper: true })
+// A file the server has but no list names, as an injected script would be.
+writeFileSync(path.join(v4.dir, 'injected.js'), 'window.injected = true\n')
+// v1.3.0's files and list as installed, with another sw.js: no list names it.
+const v6 = { dir: path.join(tmp, 'v6-worker'), version: '1.3.0' }
+cpSync(v4.dir, v6.dir, { recursive: true })
+appendFileSync(path.join(v6.dir, 'sw.js'), '\n// not in any list\n')
 const r1 = release('r1', { version: '2.0.0', listed: listing([A], R) })
 const r2 = release('r2-a-and-b', { version: '2.1.0', signers: [A.file, B.file], listed: listing([A, B], R) })
 const r3 = release('r3-b', { version: '2.2.0', signers: [B.file], listed: listing([B], R) })
@@ -118,6 +130,12 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '
 let serving = v1
 const server = http.createServer((req, res) => {
   const p = decodeURIComponent(new URL(req.url, 'http://x').pathname).replace(/^\/+/, '')
+  if (p === 'api/v1/page') {
+    // A page of the server's own with an inline script, as a hostile server would send:
+    // it marks the document and reads the app's local data when it runs.
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end('<!doctype html><title>server page</title><script>document.documentElement.dataset.ran = "1"; indexedDB.databases().then((d) => { document.documentElement.dataset.read = String(d.length) })</script>')
+    return
+  }
   if (p.startsWith('api/') || p === 'healthz') {
     res.writeHead(404, { 'Content-Type': 'application/json' }).end('{"error":{"code":"not_found","message":"no API here"}}')
     return
@@ -176,6 +194,10 @@ try {
   await page.goto(origin + '/', { waitUntil: 'load' })
   let r = await until('v1 installed', (x) => x.current?.version === '1.0.0')
   check(r.mode === 'signed' && r.lastCheck?.passed === true && r.refuse === false, `v1 in signed mode, check passed (${r.mode}, ${JSON.stringify(r.lastCheck)})`)
+  // While reporting, the server's page runs as the server sent it: what step 6a's marker would show.
+  await page.goto(origin + '/api/v1/page', { waitUntil: 'load' })
+  check(await page.waitForFunction(() => document.documentElement.dataset.ran === '1', null, { timeout: 5_000 }).then(() => true, () => false), "while reporting, a server page's own script runs (the control for 6a)")
+  await page.goto(origin + '/', { waitUntil: 'load' })
 
   log('2. tampered', v2.version, '(report-only)')
   await serve(v2)
@@ -212,12 +234,44 @@ try {
   r = await until('v4 installed', (x) => x.current?.version === '1.3.0')
   check(r.refuse === true && r.lastCheck?.passed === true, 'refuse: true turns refusal on')
 
+  log('6a. refusal on: the worker is the only door')
+  // Every new worker has taken over (a navigation that a successor interrupts can stall in Chromium, task 7.5).
+  await page.waitForFunction(async () => !(await navigator.serviceWorker.getRegistration())?.waiting, null, { timeout: 20_000 })
+  const task = await page.goto(origin + '/t/abc', { waitUntil: 'load' })
+  const taskPage = await page.evaluate(() => !!document.querySelector('script[src*="/assets/t-"]'))
+  check(task?.fromServiceWorker() && taskPage && task.headers()['x-robots-tag'] === 'noindex, nofollow' && task.headers()['referrer-policy'] === 'no-referrer',
+    `a task page is the verified t.html with the server's headers (${JSON.stringify(task?.headers())})`)
+  await page.goto(origin + '/', { waitUntil: 'load' })
+  const injected = await page.evaluate(() => fetch('/injected.js').then((r) => r.status))
+  check(injected === 404, `a file no list names is a 404, though the server has it (${injected})`)
+  const doc = await page.goto(origin + '/api/v1/page', { waitUntil: 'load' })
+  const ran = await page.evaluate(() => ({ ran: document.documentElement.dataset.ran ?? null, read: document.documentElement.dataset.read ?? null, origin: self.origin }))
+  check(/sandbox allow-forms allow-same-origin/.test(doc?.headers()['content-security-policy'] ?? '') && ran.ran === null && ran.read === null && ran.origin === origin,
+    `a page from /api/ runs no script and keeps the app's origin (${doc?.headers()['content-security-policy']}, ${JSON.stringify(ran)})`)
+  // A form's POST navigation, as a cross-site form or one in a sandboxed page would send: its answer is sandboxed too.
+  await page.goto(origin + '/', { waitUntil: 'load' })
+  const [posted] = await Promise.all([
+    page.waitForNavigation({ waitUntil: 'load' }),
+    page.evaluate(() => { const f = document.createElement('form'); f.method = 'post'; f.action = '/api/v1/page'; document.body.append(f); f.submit() }),
+  ])
+  const postRan = await page.evaluate(() => document.documentElement.dataset.ran ?? null)
+  check(posted?.request().method() === 'POST' && /sandbox allow-forms allow-same-origin/.test(posted?.headers()['content-security-policy'] ?? '') && postRan === null,
+    `the answer to a form post runs no script (${posted?.headers()['content-security-policy']}, ran=${postRan})`)
+  await page.goto(origin + '/', { waitUntil: 'load' })
+
+  log('6b. the server swaps sw.js under the installed list')
+  await serve(v6)
+  const warning = await page.waitForSelector('[data-update-banner="worker-changed"]', { timeout: 20_000 }).then((el) => el.textContent()).catch(() => '')
+  check(warning.includes("This server changed how the app checks updates. Don't enter your passphrase, and ask the server's operator."), `the page warns about the changed worker: "${warning}"`)
+
   log('7. tampered', v5.version, '(refusal on)')
   await serve(v5)
   r = await until('v5 refused', (x) => x.lastCheck?.version === '1.4.0')
   check(r.lastCheck?.refused === true && r.lastCheck?.cause === 'changed-file' && r.current?.version === '1.3.0', `tampered update refused, 1.3.0 kept (${JSON.stringify(r.lastCheck)})`)
   const banner = await page.waitForSelector('[data-update-banner="refused"]', { timeout: 15_000 }).then((el) => el.textContent()).catch(() => '')
   check(/This update wasn.t installed\. A proxy or the server changed the app.s files\./.test(banner) && banner.includes('What to do'), `the page names the cause: "${banner}"`)
+  await page.waitForLoadState('networkidle')
+  check(!(await page.$('[data-update-banner="worker-changed"]')), 'no changed-worker warning: a newer signed list names the new sw.js')
 
   // Key rotation, on a new device (task 5.7).
   await context.close()

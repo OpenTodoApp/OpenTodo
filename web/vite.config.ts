@@ -104,7 +104,7 @@ export default defineConfig({
         // offline. It passed Workbox's default limit of 2 MiB per file on 2026-11-13,
         // and a file over the limit fails the build instead of being left out.
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
-        // A classic worker, so importScripts('push-sw.js') keeps working.
+        // A classic worker: no module syntax, so every browser that runs the app runs it.
         rollupFormat: 'iife',
       },
     }),

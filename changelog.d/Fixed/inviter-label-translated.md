@@ -1,0 +1,1 @@
+- **An invitation from someone without a name is in your language.** When the person who shared a project or workspace, or invited you to the server, has no name on their account (an account from single sign-on can have none), the invitation said "The owner of this server" in English whatever the language; it is now translated, there and in the lists of invite links (#2178).

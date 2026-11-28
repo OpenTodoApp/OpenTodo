@@ -25,6 +25,8 @@ export interface InstalledVersion {
   /** The cache holding its files. */
   cache: string
   files: Record<string, ManifestFile>
+  /** SHA-256 of the service worker the list names, for the changed-worker warning (D8); absent in records from before it. */
+  worker?: string
   at: number
 }
 

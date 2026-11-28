@@ -30,6 +30,6 @@
 /web/src/lib/crypto.ts          @pixari
 /web/src/lib/e2ee.ts            @pixari
 /web/src/lib/e2eeSync.ts        @pixari
-/web/public/push-sw.js          @pixari
+/web/src/push-sw.js          @pixari
 /extension/manifest.json        @pixari
 /SECURITY.md                    @pixari
