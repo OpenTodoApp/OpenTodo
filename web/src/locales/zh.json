@@ -7933,5 +7933,6 @@
   "Checked in": "已打卡",
   "By weekday": "按星期",
   "Up next": "接下来",
-  "Next seven days": "未来七天"
+  "Next seven days": "未来七天",
+  "in {time}": "{time}后"
 }

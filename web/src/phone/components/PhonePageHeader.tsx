@@ -5,10 +5,11 @@
 // are built once. The bar takes the title when the large one has scrolled away. A
 // page places its header inside its own 16 px gutter, so the bar bleeds to the edges
 // and the title starts 4 px inside the gutter, at the same place on every screen.
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { use, useEffect, useRef, useState, type ReactNode } from 'react'
 import { t } from '../../lib/i18n'
 import { Icon, IconButton, PageActions, type PageHeaderProps } from '../../ui'
-import { useOwnBar } from '../chrome'
+import { BarProgressContext, useOwnBar } from '../chrome'
+import { Ring } from './TodayGlance'
 import { PhoneHeader } from './PhoneHeader'
 
 /** What scrolls `el`: the nearest ancestor that scrolls, or null for the window. */
@@ -37,9 +38,15 @@ export function PhonePageHeader({ title, meta, subtitle, leading, actions, barAc
     return () => io.disconnect()
   }, [])
   const lead: ReactNode = meta ?? subtitle
+  const progress = use(BarProgressContext)
   return (
     <>
       <PhoneHeader bleed title={typeof title === 'string' ? title : undefined} shown={titled}
+        progress={progress && progress.total > 0 ? (
+          <span className="inline-flex items-center gap-1 text-meta text-muted tabular-nums" data-bar-progress>
+            <Ring value={progress.done} total={progress.total} small />{progress.done}/{progress.total}
+          </span>
+        ) : undefined}
         lead={back
           ? <a href={back.href ?? '#'} aria-label={back.label} data-page-back className="flex h-11 w-11 items-center justify-center rounded-control text-default focus-visible:outline-2 focus-visible:outline-focus"
               onClick={(e) => { e.preventDefault(); back.onClick() }}><Icon name="arrow-left" size="md" /></a>

@@ -1,19 +1,25 @@
 // Quick add on a phone (OpenSpec change palette-quick-add, design D7;
 // natural-language-capture "Quick add tools on a phone"): under the line, one neutral
-// chip per understood attribute (× keeps its words as text) and a dashed placeholder
-// for the project and the label while the line sets none; then a tool row that starts
+// chip per understood attribute (× keeps its words as text), Today, Tomorrow and Next
+// week as dashed chips while the line has no date (phone-delight D6), and a dashed
+// placeholder for the project and the label while the line sets none; then a tool row that starts
 // a token at the end of the line, a Notes tool that opens the notes field
 // (quick-add-notes D2), and the send button. The buttons never take focus from the
 // fields, so the keyboard stays up.
+import { logicalToday, quickChoices } from '../../lib/dates'
 import { findLabel, type Chip, type LabelRef, type ProjectRef } from '../../lib/nlp'
 import type { Due } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { Icon } from '../../ui'
 import { chipText } from '../ParseChips'
+import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { ProjectMark } from '../ProjectMark'
 import { FIELD_ICON, fieldOf, type FieldKind, type QuickAddProject } from './fields'
 import { FIELD_NAME } from './FieldRows'
 import { LineDatePicker, type LineDate } from './LineDatePicker'
+
+// The dates a line without one offers in one tap (phone-delight D6), from the date picker's quick dates.
+const DATE_CHIPS = new Set(['today', 'tomorrow', 'next-week'])
 
 // The tools that start a token the line understands. A date has no token (dates are
 // words, "tomorrow"): its tool opens the date picker instead (phone-quickadd-date-picker).
@@ -46,6 +52,8 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
   const tools: FieldKind[] = energy ? [...TOOLS, 'energy'] : TOOLS
   const set = new Set(chips.map((c) => fieldOf(c.kind)))
   const placeholders = (['project', 'label'] as const).filter((k) => !set.has(k))
+  const { resolved } = useDateTimeFormat()
+  const dates = date && !set.has('when') ? quickChoices('due', logicalToday(), resolved).filter((c) => DATE_CHIPS.has(c.id)) : []
   return (
     <div data-quick-add-sheet-bar>
       {date?.open && <LineDatePicker id={date.id} due={date.due} onPick={date.pick} onKeyDown={date.escape} />}
@@ -67,6 +75,13 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
             </span>
           )
         })}
+        {/* A date in one tap: the same as the When tool's quick dates, so hidden from assistive technology like the placeholders. */}
+        {dates.map((c) => (
+          <button key={c.id} type="button" data-sheet-date={c.id} onMouseDown={keepFocus} onClick={() => date?.pick({ date: c.date as string })} aria-hidden="true" tabIndex={-1}
+            className="inline-flex h-[1.875rem] shrink-0 items-center gap-1.5 rounded-full border border-dashed border-input px-2.5 text-body text-faint">
+            <Icon name={FIELD_ICON.when} size={14} />{c.label}
+          </button>
+        ))}
         {/* A tap target for the same action as the toolbar's Project and Label below, so hidden from
             assistive technology and the tab order: a screen reader met each name twice. */}
         {placeholders.map((k) => (

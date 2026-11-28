@@ -197,6 +197,20 @@ describe('chips and tools (palette-quick-add D7; natural-language-capture "Quick
     await r.unmount()
   })
 
+  // phone-delight D6: a date in one tap while the line has none.
+  it('Today, Tomorrow and Next week as dashed chips while the line has no date; a tap writes it and they go', async () => {
+    const r = await openSheet()
+    await type(field()!, 'Call Anna')
+    const chips = () => [...document.querySelectorAll<HTMLElement>('[data-sheet-date]')].map((c) => c.dataset.sheetDate)
+    expect(chips()).toEqual(['today', 'tomorrow', 'next-week'])
+    expect(document.querySelector('[data-sheet-date="tomorrow"]')!.getAttribute('aria-hidden')).toBe('true')
+    await click(document.querySelector('[data-sheet-date="tomorrow"]')!)
+    await waitFor(() => field()!.value === 'Call Anna tomorrow', 'the date in the line')
+    await waitFor(() => chips().length === 0, 'the date chips gone')
+    expect(document.querySelector('[data-sheet-chip="due"]')).toBeTruthy()
+    await r.unmount()
+  })
+
   it('a pick replaces the line date rather than adding a second; Clear removes it', async () => {
     const r = await openSheet()
     await type(field()!, 'Call the plumber tomorrow')

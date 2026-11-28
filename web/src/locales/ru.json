@@ -7933,5 +7933,6 @@
   "Checked in": "Отмечено",
   "By weekday": "По дням недели",
   "Up next": "Далее",
-  "Next seven days": "Ближайшие семь дней"
+  "Next seven days": "Ближайшие семь дней",
+  "in {time}": "через {time}"
 }

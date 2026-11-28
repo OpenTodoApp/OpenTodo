@@ -7933,5 +7933,6 @@
   "Checked in": "Pointé",
   "By weekday": "Par jour de la semaine",
   "Up next": "À suivre",
-  "Next seven days": "Sept prochains jours"
+  "Next seven days": "Sept prochains jours",
+  "in {time}": "dans {time}"
 }

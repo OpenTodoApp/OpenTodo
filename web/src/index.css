@@ -1426,10 +1426,21 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 .phone-glow {
   position: absolute; inset-inline: 0; top: 0; height: 22rem; z-index: -1; pointer-events: none;
   background:
-    radial-gradient(70% 60% at 12% 0%, color-mix(in oklab, var(--ot-accent) 22%, transparent), transparent 70%),
-    radial-gradient(60% 50% at 95% 8%, color-mix(in oklab, var(--ot-info) 14%, transparent), transparent 70%);
+    radial-gradient(70% 60% at 12% 0%, color-mix(in oklab, var(--glow-a, var(--ot-accent)) 22%, transparent), transparent 70%),
+    radial-gradient(60% 50% at 95% 8%, color-mix(in oklab, var(--glow-b, var(--ot-info)) 14%, transparent), transparent 70%);
 }
 @media print { .phone-glow { display: none; } }
+/* phone-delight D1: the Done today ring moves to its new value. D8: an empty list sits in the middle of the free height,
+   its drawing larger. D2: the tapped row's title and the task page's title share one name while a phone push or pop runs
+   (transition.ts names the row; the page's title is named here), so the title travels between them. */
+.phone-glow[data-hue] { --glow-a: var(--hue-solid); }
+[data-glance-ring] { transition: stroke-dasharray var(--duration-emphasis) var(--ease-spring); }
+[data-phone-empty] { min-block-size: calc(100dvh - 20rem - var(--safe-top) - var(--safe-bottom)); display: flex; flex-direction: column; justify-content: center; }
+[data-phone-empty] [data-illustration-slot] svg { inline-size: 10rem; block-size: auto; }
+html[data-phone-nav] [data-phone-screen="task"] [data-task-title] { view-transition-name: phone-task-title; }
+html[data-phone-nav]::view-transition-group(phone-task-title) { animation-duration: var(--duration-emphasis); animation-timing-function: var(--ease-spring); z-index: 2; }
+html[data-phone-nav]::view-transition-old(phone-task-title), html[data-phone-nav]::view-transition-new(phone-task-title) { animation-duration: var(--duration-emphasis); height: 100%; object-fit: none; object-position: left top; }
+@media (prefers-reduced-motion: reduce) { [data-glance-ring] { transition: none; } }
 [data-phone-row][aria-current="true"]:dir(rtl) { box-shadow: inset -3px 0 0 var(--ot-accent); }
 [data-phone-row] + [data-phone-row]::before { content: ''; @apply absolute inset-s-12 inset-e-0 top-0 z-[1] border-t border-soft; }
 [data-phone-list] [data-phone-list-body] > section { @apply mb-5; }

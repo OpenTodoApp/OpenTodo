@@ -7933,5 +7933,6 @@
   "Checked in": "Odhaczone",
   "By weekday": "Według dnia tygodnia",
   "Up next": "Następne",
-  "Next seven days": "Najbliższe siedem dni"
+  "Next seven days": "Najbliższe siedem dni",
+  "in {time}": "za {time}"
 }

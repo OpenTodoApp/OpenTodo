@@ -20573,8 +20573,7 @@
     "web/src/lib/logbook.ts",
     "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts",
-    "web/src/lib/views.ts",
-    "web/src/phone/components/TodayGlance.tsx"
+    "web/src/lib/views.ts"
   ],
   "Today holds": [
     "web/src/lib/settingsCopy.ts"
@@ -23750,6 +23749,9 @@
   "in {projects}": [
     "web/src/lib/rules/summary.ts"
   ],
+  "in {time}": [
+    "web/src/phone/components/TodayGlance.tsx"
+  ],
   "including each day of a recurring task": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -26052,6 +26054,7 @@
   "{n, plural, one {# task} other {# tasks}}": [
     "web/src/app/ClosedListSettings.tsx",
     "web/src/app/PlanView.tsx",
+    "web/src/app/TabBar.tsx",
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/calendar/MonthDensityCells.tsx",
@@ -26585,7 +26588,8 @@
   "{n} left": [
     "web/src/app/method/LoopHome.tsx",
     "web/src/app/review/ReviewProgress.tsx",
-    "web/src/app/review/ReviewView.tsx"
+    "web/src/app/review/ReviewView.tsx",
+    "web/src/phone/components/TodayGlance.tsx"
   ],
   "{n} min": [
     "web/src/app/ParseChips.tsx",

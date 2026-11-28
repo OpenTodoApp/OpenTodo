@@ -7933,5 +7933,6 @@
   "Checked in": "チェックインしました",
   "By weekday": "曜日別",
   "Up next": "次の予定",
-  "Next seven days": "今後7日間"
+  "Next seven days": "今後7日間",
+  "in {time}": "{time}後"
 }

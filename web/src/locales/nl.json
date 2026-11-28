@@ -7933,5 +7933,6 @@
   "Checked in": "Afgevinkt",
   "By weekday": "Per weekdag",
   "Up next": "Hierna",
-  "Next seven days": "Komende zeven dagen"
+  "Next seven days": "Komende zeven dagen",
+  "in {time}": "over {time}"
 }

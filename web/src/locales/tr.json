@@ -7933,5 +7933,6 @@
   "Checked in": "İşaretlendi",
   "By weekday": "Haftanın gününe göre",
   "Up next": "Sıradaki",
-  "Next seven days": "Önümüzdeki yedi gün"
+  "Next seven days": "Önümüzdeki yedi gün",
+  "in {time}": "{time} sonra"
 }

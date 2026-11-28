@@ -7933,5 +7933,6 @@
   "Checked in": "تم التسجيل",
   "By weekday": "حسب يوم الأسبوع",
   "Up next": "التالي",
-  "Next seven days": "الأيام السبعة القادمة"
+  "Next seven days": "الأيام السبعة القادمة",
+  "in {time}": "خلال {time}"
 }

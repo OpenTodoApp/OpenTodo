@@ -45,7 +45,7 @@ describe('Today at a glance', () => {
   it('opens the next task, and the Late tile goes to the earlier tasks', async () => {
     const onLate = vi.fn()
     const r = await render(<TodayGlance listed={[task('a', { due: { date: TODAY, time: '23:59' } })]} all={[]} late={2} today={TODAY} onLate={onLate} />)
-    expect([...r.container.querySelectorAll('[data-glance]')].map((el) => el.getAttribute('data-glance'))).toEqual(['done', 'next', 'late'])
+    expect([...r.container.querySelectorAll('[data-glance]')].map((el) => el.getAttribute('data-glance'))).toEqual(['next', 'done', 'late'])
     await click(r.container.querySelector('[data-glance="next"]')!)
     expect(opened).toEqual(['a'])
     await click(r.container.querySelector('[data-glance="late"]')!)
