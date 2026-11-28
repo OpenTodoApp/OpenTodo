@@ -9,6 +9,7 @@ import { t } from '../lib/i18n'
 import { formatInstant } from '../lib/dates'
 import { useOutgoingEmail } from '../lib/outgoingEmail'
 import { roleName } from '../lib/roleNames'
+import { inviterName } from '../lib/inviterName'
 import type { Workspace, WorkspaceRole } from '../lib/types'
 import { workspaceApi, type WorkspaceInvite } from '../lib/workspaceApi'
 import { cardCopy } from '../lib/settingsCopy'
@@ -23,7 +24,7 @@ const expiryLabel = (hours: number) =>
 
 // Row lines that are data (who, who created a link), not settings copy.
 const createdBy = (name: string) => t('Created by {name}', { name })
-const inviteLine = (inv: WorkspaceInvite) => `${createdBy(inv.createdByName)} · ${t('expires {date}', { date: formatInstant(inv.expiresAt, 'date') })}`
+const inviteLine = (inv: WorkspaceInvite) => `${createdBy(inviterName(inv.createdByName))} · ${t('expires {date}', { date: formatInstant(inv.expiresAt, 'date') })}`
 
 export function WorkspaceInvites({ ws, online }: { ws: Workspace; online: boolean }) {
   const [invites, setInvites] = useState<WorkspaceInvite[]>([])

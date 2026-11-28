@@ -10,6 +10,7 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { formatInstant } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { roleName } from '../lib/roleNames'
+import { inviterName } from '../lib/inviterName'
 import { copyText } from '../lib/clipboard'
 
 // "Invite with a link" in the share dialog (OpenSpec `project-invite-links`):
@@ -143,7 +144,7 @@ export function InviteLinksView(p: InviteLinksViewProps) {
                 <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={disabled}
                   aria-label={(inv.email ? t('Revoke the {role} link for {email}', { role: roleName(inv.role), email: inv.email }) : t('Revoke the {role} link', { role: roleName(inv.role) }))} onClick={() => p.onRevoke(inv)}>{t('Revoke')}</button>
               </div>
-              <p className="text-faint">{t('Expires {when} · created by {name}', { when: when(inv.expiresAt), name: inv.createdByName || t('a member') })}</p>
+              <p className="text-faint">{t('Expires {when} · created by {name}', { when: when(inv.expiresAt), name: inviterName(inv.createdByName) })}</p>
             </li>
           ))}
         </ul>

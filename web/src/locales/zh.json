@@ -6104,7 +6104,7 @@
   "a comment needs some text": "评论内容不能为空",
   "a deleted task": "已删除的任务",
   "a label": "标签",
-  "a member": "成员",
+  "The owner of this server": "此服务器的所有者",
   "a model id from your OpenAI account": "来自你的 OpenAI 账户的模型 ID",
   "a parent project": "父项目",
   "a place": "地点",

@@ -10,6 +10,7 @@ import { navigate } from './router'
 import { t } from '../lib/i18n'
 import { InstanceMark, InstanceWordmark, PoweredBy } from './InstanceBrand'
 import { roleName } from '../lib/roleNames'
+import { inviterName } from '../lib/inviterName'
 
 /** When set, the screen is the acceptance form of an invitation (OpenSpec `invitations`). */
 export interface InviteContext {
@@ -221,14 +222,14 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
         )}
         {invite?.project && (
           <p className="mb-4 rounded-control bg-accent-soft p-3 text-body text-on-accent-soft" data-testid="project-invite-banner">
-            {t.rich('<strong>{inviterName}</strong> invited you to <strong2>{name}</strong2> as {role}. Create your account to join.', { inviterName: invite.preview.inviterName, name: invite.project.name, role: roleName(invite.project.role), strong: (chunks) => <strong>{chunks}</strong>, strong2: (chunks) => <strong className="user-text">{chunks}</strong> })}
+            {t.rich('<strong>{inviterName}</strong> invited you to <strong2>{name}</strong2> as {role}. Create your account to join.', { inviterName: inviterName(invite.preview.inviterName), name: invite.project.name, role: roleName(invite.project.role), strong: (chunks) => <strong>{chunks}</strong>, strong2: (chunks) => <strong className="user-text">{chunks}</strong> })}
             {invite.preview.email && <>{' '}{t.rich('This link is for <strong>{email}</strong>.', { email: invite.preview.email, strong: (chunks) => <strong>{chunks}</strong> })}</>}
             <span className="mt-1 block text-meta">{t('The link expires {instant} and works once.', { instant: dt.formatInstant(invite.preview.expiresAt, 'datetime') })}</span>
           </p>
         )}
         {invite && !invite.project && (
           <p className="mb-4 rounded-control bg-accent-soft p-3 text-body text-on-accent-soft">
-            {t.rich('<strong>{inviterName}</strong> invited you to join this server. Create your account below.', { inviterName: invite.preview.inviterName, strong: (chunks) => <strong>{chunks}</strong> })}
+            {t.rich('<strong>{inviterName}</strong> invited you to join this server. Create your account below.', { inviterName: inviterName(invite.preview.inviterName), strong: (chunks) => <strong>{chunks}</strong> })}
             {invite.preview.email && <>{' '}{t.rich('This invitation is for <strong>{email}</strong>.', { email: invite.preview.email, strong: (chunks) => <strong>{chunks}</strong> })}</>}
             <span className="mt-1 block text-meta">{t('The link expires {instant} and works once.', { instant: dt.formatInstant(invite.preview.expiresAt, 'datetime') })}</span>
           </p>

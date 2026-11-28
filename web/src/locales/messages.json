@@ -18877,6 +18877,9 @@
   "The owner has not enabled issue connections on this server.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "The owner of this server": [
+    "web/src/lib/inviterName.ts"
+  ],
   "The owner of this server requires a second sign-in step for {email}. Set it up to continue; your tasks and any changes waiting on this device are kept and sync as soon as you are done.": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
@@ -22874,9 +22877,6 @@
   "a label": [
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/lib/assistant.ts"
-  ],
-  "a member": [
-    "web/src/app/InviteLinksSection.tsx"
   ],
   "a model id from your OpenAI account": [
     "web/src/app/assistant/AssistantSettings.tsx"

@@ -6104,7 +6104,7 @@
   "a comment needs some text": "コメントにはテキストが必要です",
   "a deleted task": "削除されたタスク",
   "a label": "ラベル",
-  "a member": "メンバー",
+  "The owner of this server": "このサーバーのオーナー",
   "a model id from your OpenAI account": "OpenAI アカウントのモデル ID",
   "a parent project": "親プロジェクト",
   "a place": "場所",
