@@ -6,6 +6,27 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 Changes since the last release are in [changelog.d/](changelog.d/README.md), one file per change; `make release-prepare` moves them here when a release is cut.
 
+## [1.11.0] - 2026-11-28
+
+A new look on a phone and a complete Habits. On a phone the tab bar floats with the add button beside it, Today opens with what is done, up next and late, and Upcoming with the week ahead. Habits gets a week board on a computer and a habit app's screen on a phone. The phone screens are now the only screens below 768 px: the switch back to the earlier ones is gone.
+
+### Upgrade notes
+
+A phone on which **New phone screens** was turned off shows the phone screens after this update; there is no way back to the earlier ones. Nothing changes from 768 px. No data or setting to migrate.
+
+### Added
+
+- **Habits on a computer is a week board, and each habit's page a dashboard.** From 640 px the Habits screen opens with three tiles (Today, Last 7 days, your longest Streak) and shows every habit's last seven days as large marks to click: today's checks in, an earlier day's sets it done or clears it. A habit's page shows its streak, best, strength and last 30 days as tiles, the month beside a new **By weekday** chart, and its year.
+- **Habits feel like a habits app, on a phone too.** On a phone, Habits has a strip of the last seven days with each day's progress, a ring under your thumb for every habit and its week beside it: choose yesterday to fix a day you forgot, hold a habit for the tiny version, Skip this day, a note, Open or Edit. Everywhere, the screen says how today is going ("3 of 5 today"), a second tap on a kept habit takes the check-in back, **Skip this day** is in each habit's menu, the habit form has **Remind me** for a daily reminder at a time, and a habit's page shows its month in its own colour and its last 53 weeks as a heatmap. With Habits off, nothing of it shows.
+
+### Changed
+
+- **A fresher look on a phone.** The tab bar floats above the screen with the add button beside it, and lists scroll on under it. Today opens with three tiles: what is done today, what is up next and what is late; Upcoming opens with the next seven days, each with a dot per task. Cards are rounder, a soft light sits behind each list's title, and a task's fields to add are tiles.
+
+### Removed
+
+- **The "New phone screens" switch and the earlier phone screens are gone.** A screen narrower than 768 px always shows the phone screens, in the apps and in a browser; a phone on which the switch was off shows them from this update on. Wider screens are unchanged. The switch is no longer in Settings → Appearance.
+
 ## [1.10.3] - 2026-11-27
 
 One fix, found by using the 1.10.2 Android app with real touches on a recent Android System WebView: in Process the Inbox a swipe that began on the task's title did nothing.
@@ -2143,7 +2164,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.10.3...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.11.0...HEAD
+[1.11.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.10.3...v1.11.0
 [1.10.3]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.10.2...v1.10.3
 [1.10.2]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.10.1...v1.10.2
 [1.10.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.10.0...v1.10.1

@@ -1,1 +1,0 @@
-- **A fresher look on a phone.** The tab bar floats above the screen with the add button beside it, and lists scroll on under it. Today opens with three tiles: what is done today, what is up next and what is late; Upcoming opens with the next seven days, each with a dot per task. Cards are rounder, a soft light sits behind each list's title, and a task's fields to add are tiles.

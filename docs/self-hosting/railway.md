@@ -46,7 +46,7 @@ Add the domain under the service's **Settings → Networking → Custom Domain**
 
 ## Updates
 
-The service uses the `stable` image, which every release moves. To update, redeploy the service (**Deployments → Redeploy**): Railway pulls the image again. Migrations run on start and there are no down-migrations, so back up first. To stay on one release line, set the image to `ghcr.io/opentodoapp/opentodo:1.10`, or to one version such as `1.10.3`, in the service's **Settings → Source**.
+The service uses the `stable` image, which every release moves. To update, redeploy the service (**Deployments → Redeploy**): Railway pulls the image again. Migrations run on start and there are no down-migrations, so back up first. To stay on one release line, set the image to `ghcr.io/opentodoapp/opentodo:1.11`, or to one version such as `1.11.0`, in the service's **Settings → Source**.
 
 ## Data and backups
 
