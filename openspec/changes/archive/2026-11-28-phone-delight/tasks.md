@@ -23,6 +23,6 @@
 ## 4. Checks and docs
 
 - [x] 4.1 Strings in every catalogue, `messages.json` regenerated. Verify: `node scripts/i18n-check.mjs`.
-- [ ] 4.2 Stories for the new states, baselines regenerated, full CI on the branch (layout, e2e, a11y, visual). Verify: the full CI run passes every leg.
+- [x] 4.2 Stories for the new states, baselines regenerated, full CI on the branch (layout, e2e, a11y, visual). Verify: the full CI run passes every leg. Done: run 46130676382; the run before it (46129044767) found two gradients that did not mirror and a component without a story, both fixed.
 - [x] 4.3 `docs/phone-screens.md`, `changelog.d/Added/phone-delight.md`, docs build. Verify: `make docs-check`.
-- [ ] 4.4 Screenshots of each item at 390 px in both themes, sent to the owner.
+- [x] 4.4 Screenshots of each item at 390 px in both themes, sent to the owner (2026-11-28), and the Today cards before and after.
