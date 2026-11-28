@@ -29,7 +29,7 @@ export function CalendarsToggle({ shown, subs, menu = false }: { shown: boolean;
   }
   return (
     <Menu kind="menu" label={t('Calendars')} namedByContent triggerProps={{ 'data-calendars-menu': true }}
-      triggerClassName={`ui-btn ui-btn--ghost ui-btn--sm ${shown ? 'bg-selected text-strong' : 'text-muted'}`}
+      triggerClassName={`ui-btn ui-btn--ghost ui-btn--sm ${shown ? 'bg-sunken dark:bg-raised' : 'text-muted'}`}
       trigger={<><Icon name="calendar-range" size="sm" />{t('Calendars')}</>}>
       <MenuItem label={t('Show calendar events')} checked={shown} keepOpen data-calendars-toggle onSelect={() => act(setShowEvents(!shown))} />
       <MenuSeparator />

@@ -172,8 +172,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 function ColumnsToggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
     <div className="mb-1 flex justify-end">
-      <Button variant="ghost" size="sm" icon="list" aria-pressed={on} data-columns-toggle
-        className={on ? 'bg-sunken text-default dark:bg-raised' : undefined} onClick={onToggle}>
+      <Button variant="ghost" size="sm" icon="list" aria-pressed={on} data-columns-toggle onClick={onToggle}>
         {t('Columns')}
       </Button>
     </div>

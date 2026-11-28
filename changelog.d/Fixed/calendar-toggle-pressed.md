@@ -1,1 +1,1 @@
-- **The Calendar's Show completed tasks button shows when it is on.** Pressed, it now takes the same fill as other pressed buttons, and so does the Calendars menu button while events are shown; before, both looked almost the same on and off.
+- **Pressed toggle buttons show that they are on.** The Calendar's Show completed tasks button, a list's Columns button and Pick on the map now take the selected fill while on; before, they looked almost the same on and off.
