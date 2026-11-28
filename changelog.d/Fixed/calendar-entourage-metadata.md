@@ -1,0 +1,1 @@
+- **Calendars with legacy Entourage metadata refresh again.** The `X-ENTOURAGE_UUID` field, which can remain in Google Calendar exports, no longer makes the whole feed fail with `invalid_calendar`.
