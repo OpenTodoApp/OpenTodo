@@ -1,0 +1,1 @@
+- **Dragging a task no longer scrolls the list back to where it started.** After a drop the list stays where you let go, with the task selected in its new place, in lists and in saved views.
