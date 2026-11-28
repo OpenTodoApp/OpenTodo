@@ -1,7 +1,8 @@
 // The worker serves a task's page from its cached copy with the Smart App Banner the
 // server's copy carries, naming its own origin (ios-app-banner D4); every other page
-// is served as cached. The banner goes on what page() serves, after its checks
-// (signed-web-app D7, D17): never on a page they refused, never twice on the server's.
+// is served as cached. The banner goes only on the page page() checked (signed-web-app
+// D7, D17): never on a page the checks refused, and while reporting the server's
+// copy passes through untouched.
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TrustRecord } from './lib/appTrust'
 import { workerCaches } from './test/workerCaches'
@@ -93,16 +94,33 @@ describe('the app banner in the worker', () => {
     expect(await res.text()).toBe('')
   })
 
-  it('is not added twice to the server\'s copy, passed on while reporting', async () => {
+  /** A worker that read the reporting record as it started, with no cached page. */
+  async function reporting(): Promise<void> {
     refuse = false
     inCache = false
     shared.reset()
     vi.resetModules()
-    await import('./sw') // a worker that read the reporting record as it started
+    await import('./sw')
+  }
+
+  it('leaves the server\'s copy untouched while reporting: the same response, unread', async () => {
+    await reporting()
     const server = html(SERVED)
     served = () => server
     const res = await navigate('/task/abc')
     expect(res).toBe(server)
+    expect(res.bodyUsed).toBe(false)
     expect(await res.text()).toBe(SERVED)
+  })
+
+  it('leaves a server error untouched while reporting', async () => {
+    await reporting()
+    const server = new Response(PAGE, { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+    served = () => server
+    const res = await navigate('/task/abc')
+    expect(res).toBe(server)
+    expect(res.bodyUsed).toBe(false)
+    expect(res.status).toBe(503)
+    expect(await res.text()).toBe(PAGE)
   })
 })

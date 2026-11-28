@@ -203,21 +203,18 @@ async function page(event: FetchEvent, t: TrustState, file: string, extra: Recor
   headers.set('Content-Security-Policy', pagePolicy(stored ? await stored.text() : null))
   headers.set('Cache-Control', 'no-cache')
   for (const [k, v] of Object.entries(extra)) headers.set(k, v)
+  // A task's page offers the iPhone app in Safari, as the server's copy does (ios-app-banner):
+  // only on the page checked here, so the network's answer passes through untouched.
+  const task = file === 'index.html' && doc.ok ? taskPageId(new URL(event.request.url).pathname) : null
+  if (task !== null) {
+    headers.delete('Content-Length')
+    return new Response(withAppBanner(await doc.text(), self.location.origin, task), { status: 200, headers })
+  }
   return new Response(await doc.blob(), { status: 200, headers })
 }
 
 async function navigation(event: FetchEvent, extra?: Record<string, string>): Promise<Response> {
-  const res = await page(event, await trustState(), 'index.html', extra)
-  // A task's page offers the iPhone app in Safari, as the server's copy does
-  // (ios-app-banner): added to the page the checks let through, never twice to
-  // the server's own copy passed on while reporting.
-  const task = taskPageId(new URL(event.request.url).pathname)
-  if (task === null || !res.ok) return res
-  const html = await res.clone().text()
-  if (html.includes('<meta name="apple-itunes-app"')) return res
-  const headers = new Headers(res.headers)
-  headers.delete('Content-Length')
-  return new Response(withAppBanner(html, self.location.origin, task), { status: res.status, statusText: res.statusText, headers })
+  return page(event, await trustState(), 'index.html', extra)
 }
 
 /**
