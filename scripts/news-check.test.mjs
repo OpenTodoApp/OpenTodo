@@ -50,6 +50,21 @@ test('with no news file, the newest release needs its entry (#2140)', () => {
   assert.deepEqual(buildNews({ files: [file('1.11.0')], changelog }).problems, [])
 })
 
+test('the newest release needs its entry even when the series started after it', () => {
+  // A news file newer than every release is refused, and the newest release still needs its own.
+  const changelog = '## [1.11.0] - 2026-11-28\n'
+  assert.deepEqual(buildNews({ files: [file('1.12.0')], changelog }).problems, [
+    'CHANGELOG.md has a section [1.11.0], the newest release, with no news/1.11.0.md',
+    'news/1.12.0.md: CHANGELOG.md has no released section [1.12.0]',
+  ])
+})
+
+test('an entry for a version the changelog has not released is refused', () => {
+  const changelog = '## [Unreleased]\n\n## [1.11.0] - 2026-11-28\n'
+  assert.deepEqual(buildNews({ files: [file('1.11.0'), file('1.11.1')], changelog }).problems, ['news/1.11.1.md: CHANGELOG.md has no released section [1.11.1]'])
+  assert.deepEqual(buildNews({ files: [file('1.11.0')], changelog: '## [1.11.0-rc.1] - 2026-11-27\n' }).problems, ['news/1.11.0.md: CHANGELOG.md has no released section [1.11.0]'])
+})
+
 test('entries come newest first, and the latest version is the newest', () => {
   const { entries } = buildNews({ files: [file('0.9.0'), file('0.10.0'), file('0.9.1')] })
   assert.deepEqual(entries.map((e) => e.version), ['0.10.0', '0.9.1', '0.9.0'])

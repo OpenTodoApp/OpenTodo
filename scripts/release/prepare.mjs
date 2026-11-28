@@ -358,6 +358,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       if (!changed.some((f) => f.startsWith('changelog.d/'))) console.log('No changelog fragments: the release has no entries yet (changelog.d/README.md).')
       console.log(`Next: write the release's summary paragraph under "## [${to}]" in CHANGELOG.md, check the order of its entries (and the add-on's entry if it needs more),`)
       console.log(`write ${fdroidChangelog(to)} as what changed for the Android app (at most 500 characters),`)
+      console.log(`write news/${to}.md, the What's new entry, from the summary (at most four plain sentences, news/README.md),`)
       console.log('run make deploy-check docs-check, commit "Prepare ' + to + '" and open the pull request (RELEASING.md).')
     }
   } catch (e) {

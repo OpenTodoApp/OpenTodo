@@ -1,6 +1,6 @@
 ## 1. The check
 
-- [x] 1.1 `buildNews` fails when `news/` is empty and the changelog has a released section, naming the newest one; an empty folder before the first release still passes. Verified by `node --test scripts/news-check.test.mjs` ("with no news file, the newest release needs its entry").
+- [x] 1.1 `buildNews` fails while the newest released section has no entry, and refuses an entry for a version the changelog has not released; an empty folder before the first release still passes. Verified by `node --test scripts/news-check.test.mjs` ("with no news file, the newest release needs its entry", "the newest release needs its entry even when the series started after it", "an entry for a version the changelog has not released is refused").
 
 ## 2. The first entry
 

@@ -6,7 +6,8 @@ Settings → About → What's new has said "Nothing new in this version yet" on 
 
 ## What Changes
 
-- **The newest release always has its entry.** With no file in `news/`, `make news-check` fails while `CHANGELOG.md` has a released `## [x.y.z]` section with no `news/x.y.z.md`. The rule that every release newer than the first file needs its entry stays as it is.
+- **The newest release always has its entry.** `make news-check` fails while the newest released `## [x.y.z]` section in `CHANGELOG.md` has no `news/x.y.z.md`, whether or not `news/` holds other files. The rule that every release newer than the first file needs its entry stays as it is.
+- **Released facts only.** `make news-check` refuses an entry for a version `CHANGELOG.md` has not released (a release candidate's section does not count).
 - **`news/1.11.0.md`**, the 1.11.0 summary, starts the series. Older releases stay without an entry, as before: history is not backfilled.
 - `RELEASING.md` and `news/README.md` name the entry as a step of a release, next to its summary.
 
