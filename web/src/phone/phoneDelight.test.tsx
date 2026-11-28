@@ -110,12 +110,17 @@ describe('through the shell', () => {
     await createTask({ title: 'An idea' })
     await createTask({ title: 'Another idea' })
     await createTask({ title: 'Call Anna', due: { date: today } })
-    navigate({ view: 'inbox' })
+    navigate({ view: 'upcoming' })
     const r = await render(<Host />)
     const tab = (id: string) => document.querySelector<HTMLElement>(`[data-tab="${id}"]`)!
     await waitFor(() => tab('inbox').querySelector('[data-tab-count]')?.textContent === '2', 'the Inbox count')
     expect(tab('today').querySelector('[data-tab-count]')?.textContent).toBe('1')
     expect(tab('today').textContent).toContain('1 task')
+    // The current tab's screen lists its tasks: no count there (phone-calm D8).
+    navigate({ view: 'inbox' })
+    await waitFor(() => !tab('inbox').querySelector('[data-tab-count]'), 'no count on the current tab')
+    expect(tab('inbox').textContent).not.toContain('2 tasks')
+    expect(tab('today').querySelector('[data-tab-count]')?.textContent).toBe('1')
     expect(tab('upcoming').querySelector('[data-tab-count]')).toBeNull()
     await r.unmount()
   })

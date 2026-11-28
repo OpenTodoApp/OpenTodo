@@ -31,7 +31,7 @@ import { type TaskDetailModel, useTaskDetail } from '../../app/task-detail/useTa
 import { type Fact, useTaskFacts } from '../../app/task-detail/useTaskFacts'
 import { useOwnBar } from '../chrome'
 import { leaveScreen } from '../transition'
-import type { FactModel } from '../components/FactRow'
+import { FACT_CHIP, type FactModel } from '../components/FactRow'
 import { PhoneTaskView } from './PhoneTaskView'
 import { TaskDateSheet } from './TaskDateSheet'
 
@@ -125,14 +125,13 @@ function Body({ m, task, viewer, readOnly, locked, root, facts: props, nav, onBa
             ariaLabel={t('Title')} placeholder={t('Untitled')} dataAttrs={{ 'data-task-title': true }} />
         )}
         done={!!task.completed_at} priority={(task.priority >= 1 && task.priority <= 4 ? task.priority : 4) as 1 | 2 | 3 | 4} readOnly={locked}
-        backLabel={nav.backLabel} position={position} hasPrev={nav.hasPrev} hasNext={nav.hasNext}
+        backLabel={nav.backLabel}
         schedule={schedule} details={details} unset={unset} openFact={dating ? 'due' : f.pe.open} factAnchor={f.pe.partRef}
         notice={<>{viewer && <ReadOnlyNote />}{isSample(task) && !readOnly && <SampleNotice />}</>}
         relations={<TaskRelations m={m} onOpen={onOpen} readOnly={viewer} />}
         notes={(
           <div className="space-y-2" data-task-notes-block>
             <TaskNotes task={task} readOnly={locked} outline="auto" />
-            {!locked && <div className="flex items-center gap-1" data-content-tools><AttachMenu taskId={task.id} /></div>}
           </div>
         )}
         extra={<><RotationLine as="div" className="px-1" task={task} userId={userId} /><LocationPreview shown={f.shownLocation} /></>}
@@ -146,8 +145,10 @@ function Body({ m, task, viewer, readOnly, locked, root, facts: props, nav, onBa
             <div ref={setFooter} data-panel-footer className="sticky bottom-0 z-[6] bg-canvas pb-3 pt-2 empty:hidden" />
           </div>
         )}
-        menu={<TaskActionsMenu m={m} page readOnly={locked} onOpen={onOpen} />}
-        onBack={onBack} onStep={nav.onStep} onToggle={() => m.toggle(task)} onFact={openFact} />
+        chipEnd={!locked && <AttachMenu taskId={task.id} chip={FACT_CHIP} />}
+        menu={<TaskActionsMenu m={m} page readOnly={locked} onOpen={onOpen}
+          step={position ? { position, hasPrev: nav.hasPrev, hasNext: nav.hasNext, onStep: nav.onStep } : undefined} />}
+        onBack={onBack} onToggle={() => m.toggle(task)} onFact={openFact} />
       {!readOnly && f.pe.open && (
         <PartEditor id={f.pe.open} props={props} m={f.m} anchor={f.pe.anchor} segment={f.pe.segment} onSegment={f.pe.setSegment} onClose={f.pe.close} />
       )}

@@ -7935,5 +7935,7 @@
   "By weekday": "Haftanın gününe göre",
   "Up next": "Sıradaki",
   "Next seven days": "Önümüzdeki yedi gün",
-  "in {time}": "{time} sonra"
+  "in {time}": "{time} sonra",
+  "Reschedule": "Yeniden planla",
+  "{planned} planned": "{planned} planlandı"
 }

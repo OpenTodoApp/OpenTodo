@@ -6,7 +6,7 @@
 // a part whose value is absent is left out. The panel's content (DisplayOptionsBody)
 // loads with the first list that shows the button, after the first screen
 // (builtin-view-options: bundle budget).
-import { Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
+import { createContext, Suspense, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { lazy } from '../../lib/lazy'
 import { IconButton, Popover } from '../../ui'
 import type { FieldDef, GroupBy, RowProperty, SortBy, SortDir, ViewLayout } from '../../lib/types'
@@ -76,16 +76,39 @@ export interface DisplayPanelProps<V extends PanelValue = ViewDisplay> {
   onReset?: () => void
 }
 
-/** The toolbar's display button and its panel. */
+const OPEN_EVENT = 'opentodo:display-options'
+
+/** Opens the display options of a panel drawn without its button (`inMenu`): a phone menu's item (phone-calm D3). */
+export function requestDisplayOptions(): void {
+  // After the menu that asked has closed and given focus back.
+  setTimeout(() => window.dispatchEvent(new Event(OPEN_EVENT)), 0)
+}
+
+/** Set by a phone bar whose menu holds Display options: the panels inside draw no button (phone-calm D3). */
+export const DisplayInMenuContext = createContext(false)
+
+/** The toolbar's display button and its panel; in a menu (`DisplayInMenuContext`), the panel alone, opened by `requestDisplayOptions`. */
 export function DisplayPanel<V extends PanelValue = ViewDisplay>(props: DisplayPanelProps<V>) {
+  const inMenu = useContext(DisplayInMenuContext)
   const [open, setOpen] = useState(false)
   const anchor = useRef<HTMLButtonElement>(null)
   // Loaded once the button is on screen, so the panel opens at once.
   useEffect(() => { void loadBody() }, [])
+  useEffect(() => {
+    if (!inMenu) return
+    // Anchored to what has focus then, the menu's button the closed menu gave it back to: a wide screen places the panel under it, and focus returns there.
+    const show = () => {
+      const at = document.activeElement
+      if (at instanceof HTMLButtonElement) anchor.current = at
+      setOpen(true)
+    }
+    window.addEventListener(OPEN_EVENT, show)
+    return () => window.removeEventListener(OPEN_EVENT, show)
+  }, [inMenu])
   return (
     <>
-      <IconButton ref={anchor} icon="sliders-horizontal" size="sm" label={t('Display options')} aria-haspopup="dialog" aria-expanded={open}
-        data-display-trigger className={open ? 'bg-selected text-default' : ''} onClick={() => setOpen(!open)} />
+      {!inMenu && <IconButton ref={anchor} icon="sliders-horizontal" size="sm" label={t('Display options')} aria-haspopup="dialog" aria-expanded={open}
+        data-display-trigger className={open ? 'bg-selected text-default' : ''} onClick={() => setOpen(!open)} />}
       <Popover open={open} onClose={() => setOpen(false)} anchor={anchor} label={t('Display options')} width="sm:w-[22rem]" className="p-0">
         <Suspense fallback={null}><DisplayOptionsBody {...props} /></Suspense>
       </Popover>

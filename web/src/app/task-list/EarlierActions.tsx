@@ -5,7 +5,7 @@
 import { useState } from 'react'
 import { applyGroupDue, type DuePick } from '../../lib/bulk'
 import { t } from '../../lib/i18n'
-import { Button, Dialog, Menu, MenuItem } from '../../ui'
+import { Button, Dialog, Icon, Menu, MenuItem } from '../../ui'
 import { DateField } from '../datetime/DateField'
 import { showBulkToast } from '../bulk/toastStore'
 import { act } from '../actionError'
@@ -39,8 +39,19 @@ export function GroupDateDialog({ ids, onClose }: { ids: readonly string[]; onCl
   )
 }
 
-export function EarlierActions({ ids }: { ids: readonly string[] }) {
+export function EarlierActions({ ids, compact = false }: { ids: readonly string[]; compact?: boolean }) {
   const [dating, setDating] = useState(false)
+  // On a phone one pill, Reschedule, whose first choice is Today (phone-calm D5).
+  if (compact) return (
+    <>
+      <Menu kind="menu" label={t('Reschedule')} namedByContent width="sm:w-56" triggerProps={{ 'data-earlier-reschedule': true }}
+        trigger={<><span>{t('Reschedule')}</span><Icon name="chevron-down" size="xs" /></>}
+        triggerClassName="press-selected inline-flex min-h-8 items-center gap-1 rounded-full bg-danger-soft px-3 text-meta font-medium text-danger focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus">
+        <RescheduleChoices ids={ids} onPickDate={() => setDating(true)} />
+      </Menu>
+      {dating && <GroupDateDialog ids={ids} onClose={() => setDating(false)} />}
+    </>
+  )
   return (
     <>
       <Button variant="ghost" size="sm" className="text-meta" onClick={() => act(runGroupDue(ids, 'today'))} data-earlier-move>{t('Move all to today')}</Button>

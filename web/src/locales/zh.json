@@ -7935,5 +7935,7 @@
   "By weekday": "按星期",
   "Up next": "接下来",
   "Next seven days": "未来七天",
-  "in {time}": "{time}后"
+  "in {time}": "{time}后",
+  "Reschedule": "重新安排",
+  "{planned} planned": "计划 {planned}"
 }

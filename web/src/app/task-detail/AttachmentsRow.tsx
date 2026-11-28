@@ -233,10 +233,12 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget, note }: {
  * The paperclip beside a task's notes (GitHub issue 342): files or a link, like the row's Attach menu,
  * also on a task without attachments yet. Both ask the task's row through attachRequest.
  */
-export function AttachMenu({ taskId }: { taskId: string }) {
+/** The attach choices behind a paperclip, or behind `chip`'s look with the word (the phone's chips, phone-calm D1). */
+export function AttachMenu({ taskId, chip }: { taskId: string; chip?: string }) {
   return (
-    <Menu kind="menu" label={t('Attach')} align="start" width="sm:w-64" trigger={<Icon name="paperclip" size="sm" />}
-      triggerClassName="ui-btn ui-btn--icon ui-btn--ghost ui-btn--sm" triggerProps={{ 'data-attach-menu': true }}>
+    <Menu kind="menu" label={t('Attach')} align="start" width="sm:w-64" namedByContent={!!chip}
+      trigger={chip ? <><Icon name="paperclip" size="sm" className="text-muted" /><span>{t('Attach')}</span></> : <Icon name="paperclip" size="sm" />}
+      triggerClassName={chip ?? 'ui-btn ui-btn--icon ui-btn--ghost ui-btn--sm'} triggerProps={{ 'data-attach-menu': true }}>
       <MenuItem label={t('Choose files…')} icon="upload" description={t('Or paste or drop files on the task')} onSelect={() => requestAttach(taskId)} />
       <MenuItem label={t('Add a link…')} icon="link" onSelect={() => requestAttach(taskId, 'link')} />
     </Menu>

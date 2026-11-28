@@ -14,6 +14,7 @@ import { Button, DESKTOP_HEADER_QUERY, EmptyState as EmptyStatePattern, type Emp
 import { TodayAskAction, useTodayAsk } from '../assistant/AskEntry'
 import { AssigneePicker } from '../AssigneePicker'
 import { DEFAULT_DISPLAY_OPTIONS } from '../display/displayOptions'
+import { DisplayInMenuContext, requestDisplayOptions } from '../views/DisplayPanel'
 import { LabelPicker } from '../LabelPicker'
 import type { ActionGroup, ActionItem } from '../menus/ActionMenu'
 import { Dialog, Menu } from '../../ui'
@@ -124,12 +125,14 @@ export interface PhoneItem { id: string; label: string; icon?: IconName; checked
  * the room of a Filter button (phone-bar-overflow); an active filter shows as a chip
  * in the bar.
  */
-export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, onSelectMode, filterKey, duration, onDuration, project, extraSlot, queryFilter, root }: {
+export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, onSelectMode, filterKey, duration, onDuration, project, extraSlot, displayInMenu = false, queryFilter, root }: {
   route: ListRoute
   /** The list's root. Its width is measured through `room`: in a narrow column the header takes the phone's slots and menu items (tablet-header-room). */
   root?: RefObject<HTMLDivElement | null>
   /** A last slot of the bar: a project's or label's display options (list-display-options). */
   extraSlot?: ReactNode
+  /** The slot is the list's display options: on a phone they are an item of the menu, the panel drawn without its button (phone-calm D3). */
+  displayInMenu?: boolean
   userRole?: AccountRole
   rowCount: number
   topLevelCount: number
@@ -152,6 +155,7 @@ export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, 
     const target = { kind: route.view }
     items.push({ id: 'display', label: t('Display mode'), icon: 'monitor', onSelect: () => navigate({ view: 'display', target, options: { ...DEFAULT_DISPLAY_OPTIONS } }) })
   }
+  if (displayInMenu && phone) items.push({ id: 'display-options', label: t('Display options'), icon: 'sliders-horizontal', onSelect: requestDisplayOptions })
   if (filterKey) {
     for (const f of DURATION_FILTERS) items.push({ id: `duration-${f.kind}`, label: f.label, checked: duration === f.kind, group: t('Filter by duration'), onSelect: () => onDuration(duration === f.kind ? null : f.kind) })
   }
@@ -168,7 +172,7 @@ export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, 
       )}
       {queryFilter?.query && <FilterQueryChip query={queryFilter.query} onOpen={queryFilter.onOpen} onClear={queryFilter.onClear} />}
       {current && <PhoneDurationChip label={current.label} onClear={() => onDuration(null)} />}
-      {extraSlot}
+      {displayInMenu && phone ? <DisplayInMenuContext value>{extraSlot}</DisplayInMenuContext> : extraSlot}
     </>
   )
   const projectItems: PhoneItem[] = project ? [

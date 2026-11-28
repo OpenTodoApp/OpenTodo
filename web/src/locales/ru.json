@@ -7935,5 +7935,7 @@
   "By weekday": "По дням недели",
   "Up next": "Далее",
   "Next seven days": "Ближайшие семь дней",
-  "in {time}": "через {time}"
+  "in {time}": "через {time}",
+  "Reschedule": "Перенести",
+  "{planned} planned": "Запланировано {planned}"
 }

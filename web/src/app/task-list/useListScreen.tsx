@@ -361,7 +361,7 @@ export function useListScreen(route: ListRoute, userId?: string, userRole?: Acco
   const { currentProject, currentLabel, currentPlace } = m
   // Below 768 px the list's actions sit in the shell's bar and its overflow (phone-v2 D1); in a narrow column the header's row takes the same (tablet-header-room).
   const { phone, room, ...phoneActions } = usePhoneListActions({ route, root: listRoot, userRole, rowCount: own.length, topLevelCount: own.filter((r) => r.depth === 0).length,
-    onSelectMode: () => setSelectMode(true), extraSlot: displayControl, filterKey: m.filterKey, duration: m.duration, onDuration: m.chooseDuration, queryFilter,
+    onSelectMode: () => setSelectMode(true), extraSlot: displayControl, displayInMenu: route.view !== 'completed' && !!m.listDisplay.control, filterKey: m.filterKey, duration: m.duration, onDuration: m.chooseDuration, queryFilter,
     project: currentProject && { row: currentProject, editable: m.projectEditable, viewMode, onViewMode: chooseViewMode } })
   // The Open Loops move this screen serves (open-loops "References to the method").
   const methodMove = route.view === 'inbox' ? 'catch' as const : route.view === 'someday' ? 'place' as const : undefined

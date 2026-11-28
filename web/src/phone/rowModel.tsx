@@ -2,7 +2,7 @@
 // words of its one line of facts, from the functions the desktop row and the task
 // page read (`describeDue`, the subtask progress, the project), in a fixed order:
 // when, subtasks, repeat, project. At most four.
-import { describeDue } from '../lib/dates'
+import { addDaysISO, describeDue } from '../lib/dates'
 import type { ResolvedDateTime } from '../lib/dates'
 import { t } from '../lib/i18n'
 import type { ListRow } from '../lib/listGroups'
@@ -32,7 +32,9 @@ export function factsOf(task: Task, implied: ListRow['implied'], of: FactsOf): P
   if (due) {
     // Under a heading that names the day, the time alone; a task of another day keeps its day.
     const sameDay = !!implied?.date && due.tone === 'today'
-    const text = sameDay ? due.time : due.label
+    // The day before today is Yesterday, as tomorrow is Tomorrow (phone-calm D7).
+    const yesterday = due.date === addDaysISO(of.today, -1)
+    const text = sameDay ? due.time : yesterday ? [t('Yesterday'), due.time].filter(Boolean).join(' ') : due.label
     if (text) facts.push({ id: 'due', text, tone: due.tone === 'overdue' ? 'danger' : due.tone === 'today' ? 'accent' : undefined })
   }
   const sub = of.progress

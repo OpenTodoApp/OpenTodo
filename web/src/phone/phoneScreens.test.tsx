@@ -17,6 +17,12 @@ import { navigate } from '../app/router'
 import { Shell } from '../app/Shell'
 import { resetTaskTrail } from '../app/taskTrail'
 
+
+/** The element once it is there. */
+async function found<T extends Element>(get: () => T | null, what: string): Promise<T> {
+  await waitFor(() => get() !== null, what)
+  return get()!
+}
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 let width = 390
 const original = window.matchMedia
@@ -144,9 +150,12 @@ describe('the phone Today', () => {
   it('the overdue group keeps its actions', async () => {
     const s = await seed()
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    const move = () => [...(screen('list')?.querySelectorAll<HTMLElement>('[data-group-actions] button') ?? [])].find((el) => el.textContent?.includes('Move all to today'))
-    await waitFor(() => !!move(), 'the group actions')
-    await click(move()!)
+    // One Reschedule pill on a phone, Today its first choice (phone-calm D5).
+    const pill = await found(() => screen('list')?.querySelector<HTMLElement>('[data-group-actions] [data-earlier-reschedule]') ?? null, 'the group actions')
+    expect(screen('list')!.querySelectorAll('[data-group-actions] button')).toHaveLength(1)
+    await click(pill)
+    const item = await found(() => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((el) => el.textContent === 'Today') ?? null, 'Today in the menu')
+    await click(item)
     await waitFor(async () => (await stored(s.late))?.due?.date === today, 'the overdue task moved to today')
     await r.unmount()
   })
@@ -201,9 +210,13 @@ describe('the phone task page', () => {
     expect(document.querySelector('[data-tab-bar]')).toBeNull()
     expect(document.querySelector('[data-phone-bar]')).toBeNull()
     expect(screen('task')!.querySelector('[data-page-back]')!.textContent).toBe('Today')
-    // The second of four: it can step both ways.
-    expect(screen('task')!.querySelector<HTMLButtonElement>('[data-task-next]')!.disabled).toBe(false)
-    await click(screen('task')!.querySelector('[data-task-next]')!)
+    // The bar holds Back and the menu (phone-calm D2); the second of four steps both ways from the menu.
+    expect(screen('task')!.querySelector('[data-phone-header] [data-task-next]')).toBeNull()
+    await click(screen('task')!.querySelector('[data-phone-header] button[aria-label="Task actions"]')!)
+    const next = await found(() => document.querySelector<HTMLButtonElement>('[role="menuitem"][data-task-next]'), 'Next task in the menu')
+    expect(next.disabled).toBe(false)
+    expect(next.textContent).toContain('2 of 4')
+    await click(next)
     await waitFor(() => location.pathname === `/task/${s.plain}`, 'the next task')
     await r.unmount()
   })

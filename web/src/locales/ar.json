@@ -7935,5 +7935,7 @@
   "By weekday": "حسب يوم الأسبوع",
   "Up next": "التالي",
   "Next seven days": "الأيام السبعة القادمة",
-  "in {time}": "خلال {time}"
+  "in {time}": "خلال {time}",
+  "Reschedule": "إعادة الجدولة",
+  "{planned} planned": "{planned} مخطط"
 }

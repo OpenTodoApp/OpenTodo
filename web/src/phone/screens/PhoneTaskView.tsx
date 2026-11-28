@@ -5,7 +5,7 @@
 // the stories draw the same thing.
 import type { ReactNode } from 'react'
 import { t } from '../../lib/i18n'
-import { Icon, IconButton } from '../../ui'
+import { Icon } from '../../ui'
 import { FactCard, FactChips, FactRow, type FactAnchor, type FactModel } from '../components/FactRow'
 import { PhoneHeader } from '../components/PhoneHeader'
 
@@ -18,10 +18,6 @@ export interface PhoneTaskViewProps {
   readOnly?: boolean
   /** The list the task was opened from ("Today"); without one, Back alone. */
   backLabel: string
-  /** "2 of 6", or empty when the task was not opened from a list. */
-  position?: string
-  hasPrev: boolean
-  hasNext: boolean
   /** The facts the task has, in cards: when, then where and what. */
   schedule: FactModel[]
   details: FactModel[]
@@ -39,9 +35,10 @@ export interface PhoneTaskViewProps {
   extra?: ReactNode
   /** Subtasks, custom fields, attachments and the conversation, drawn by the screen. */
   rest?: ReactNode
+  /** The last of the chips: Attach (phone-calm D1). */
+  chipEnd?: ReactNode
   menu?: ReactNode
   onBack: () => void
-  onStep: (step: 1 | -1) => void
   onToggle: () => void
   onFact: (id: string) => void
 }
@@ -49,22 +46,18 @@ export interface PhoneTaskViewProps {
 const RING: Record<number, string> = { 1: 'border-p1', 2: 'border-p2', 3: 'border-p3', 4: 'border-input' }
 
 export function PhoneTaskView(p: PhoneTaskViewProps) {
-  const stepper = !!p.position
   return (
     // The conversation's tab bar pins just under the bar: it reads the bar's height here, as on the desktop page.
     <div data-phone-screen="task" className="min-h-full bg-canvas [--panel-header-h:calc(3rem+max(0.25rem,var(--safe-top)))]">
-      <PhoneHeader shown title={p.position}
+      {/* Back and the menu, nothing else (phone-calm D2): the next and previous task are in the menu. */}
+      <PhoneHeader shown title=""
         lead={(
           <button type="button" onClick={p.onBack} aria-label={p.backLabel ? undefined : t('Back to the list')} data-page-back
             className="flex min-h-11 min-w-11 items-center gap-0.5 rounded-control ps-1 pe-2 text-prose text-accent focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">
             <Icon name="chevron-left" size="md" /><span className="max-w-[8rem] truncate">{p.backLabel}</span>
           </button>
         )}
-        trailing={<>
-          {stepper && <IconButton icon="arrow-up" label={t('Previous task')} disabled={!p.hasPrev} onClick={() => p.onStep(-1)} className="touch-target" data-task-prev />}
-          {stepper && <IconButton icon="arrow-down" label={t('Next task')} disabled={!p.hasNext} onClick={() => p.onStep(1)} className="touch-target" data-task-next />}
-          {p.menu}
-        </>} />
+        trailing={p.menu} />
 
       <div className="flex flex-col gap-5 px-4 pb-8 pt-3">
         {p.notice}
@@ -91,7 +84,7 @@ export function PhoneTaskView(p: PhoneTaskViewProps) {
           <FactCard label={t('Details')}>{p.details.map((f) => <FactRow key={f.id} fact={f} open={p.openFact === f.id} anchor={p.factAnchor} onOpen={p.onFact} />)}</FactCard>
         )}
         {p.extra}
-        {!p.readOnly && <FactChips label={t('Add')} facts={p.unset} open={p.openFact} anchor={p.factAnchor} onOpen={p.onFact} />}
+        {!p.readOnly && <FactChips label={t('Add')} facts={p.unset} open={p.openFact} anchor={p.factAnchor} onOpen={p.onFact} end={p.chipEnd} />}
         </div>
         {p.rest}
       </div>

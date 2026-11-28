@@ -7,7 +7,7 @@
 // which scrolls to them; either takes the whole row when the other is not shown. The
 // open tasks are the ones Today lists, so the cards agree with the list under them,
 // also while Done today is hidden.
-import { useId, useMemo } from 'react'
+import { type ReactNode, useId, useMemo } from 'react'
 import { formatMinutes } from '../../lib/duration'
 import { dayOf } from '../../lib/feed'
 import { t } from '../../lib/i18n'
@@ -72,8 +72,17 @@ const LABEL = 'text-meta leading-tight text-muted'
 /** A card's name, above its figure: small capitals that wrap rather than squeeze. */
 const KICKER = 'text-hint font-semibold uppercase tracking-wide'
 
-export function TodayGlance({ listed, all, late, today, onLate, at }: {
+/** The Done today card: a button that opens the group once a task was done, a plain card before. */
+function DoneCard({ onClick, className, children }: { onClick?: () => void; className: string; children: ReactNode }) {
+  return onClick
+    ? <button type="button" data-glance="done" onClick={onClick} className={`${className} press-selected`}>{children}</button>
+    : <div data-glance="done" className={className}>{children}</div>
+}
+
+export function TodayGlance({ listed, all, late, today, onLate, onDone, at }: {
   listed: readonly Task[]; all: readonly Task[]; late: number; today: string; onLate: () => void
+  /** Opens the Done today group (phone-calm D6); the card is a button while something was done. */
+  onDone?: () => void
   /** A fixed time instead of the clock (a story). */
   at?: number
 }) {
@@ -101,14 +110,14 @@ export function TodayGlance({ listed, all, late, today, onLate, at }: {
           <Icon name="chevron-right" size="sm" className="shrink-0 text-faint" />
         </button>
       )}
-      <div data-glance="done" className={`${CARD} ${PLAIN} flex-col gap-2 ${g.late ? '' : 'col-span-2'}`}>
+      <DoneCard onClick={g.done > 0 ? onDone : undefined} className={`${CARD} ${PLAIN} flex-col gap-2 ${g.late ? '' : 'col-span-2'}`}>
         <span className={`${KICKER} text-muted`}>{t('Done today')}</span>
         <span className="flex items-center gap-3">
           <Ring value={g.done} total={g.total} />
           <span className="text-display tabular-nums text-strong">{g.done}<span className="text-h2 text-faint">/{g.total}</span></span>
           {!g.late && left > 0 && <span className="ms-auto text-meta text-muted tabular-nums">{t('{n} left', { n: left })}</span>}
         </span>
-      </div>
+      </DoneCard>
       {g.late > 0 && (
         <button type="button" data-glance="late" onClick={onLate}
           className={`${CARD} press-selected flex-col gap-2 bg-linear-to-b from-danger-soft to-surface dark:to-raised`}>
