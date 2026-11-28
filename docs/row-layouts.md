@@ -18,7 +18,7 @@ Task rows come in two layouts:
 
 The date stays on the row in both layouts. Priority is never shown by colour alone: a one-line row shows the bars (three for priority 1, two for priority 2, one for priority 3) after the title, and screen readers read "Priority 1". Open tasks at P1 and P2 have filled circles, with a stronger fill for P1. The P3 circle has a blue outline and an empty centre. The default P4 circle has a neutral outline.
 
-In wide task lists, a faint line separates each top-level task and its visible subtasks from the next group. Phones and narrow panes hide the lines.
+In desktop lists, a faint line separates each top-level task and its visible subtasks from the next group. **Detailed** keeps the lines in narrow panes, including beside task details. **One line** shows them in wide lists. Phone cards use their own dividers.
 
 ## For every list
 
