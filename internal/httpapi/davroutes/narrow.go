@@ -11,8 +11,9 @@ import (
 
 // Partial views (OpenSpec change caldav-verified, "Large-account budgets"): a
 // request for a few resources (a GET, a PUT, a multiget, a sync-collection
-// after a token) reads only those tasks and what serving them needs, through
-// the primary key, instead of the account's whole task list. What it reads is
+// after a token) or for one project's calendar (listing) reads only those
+// tasks and what serving them needs, through the primary key or the project,
+// instead of the account's whole task list. What it reads is
 // put in the same lookups load fills, so every rule of the view (calendars,
 // scope, ETags, parents, blockers, series) gives the same answer as on the
 // whole view. A request that needs the whole account after all (a split
@@ -85,47 +86,56 @@ func (d *davRequest) fetchRows(v *davView, ids []string) ([]opsync.Entity, error
 		if err != nil {
 			return nil, err
 		}
-		if len(rows) == 0 {
-			continue
-		}
-		live := make([]string, 0, len(rows))
-		projects := make([]string, 0, len(rows))
-		for _, t := range rows {
-			v.tasks = append(v.tasks, t)
-			v.addTask(t)
-			live = append(live, idOf(t["id"]))
-			projects = append(projects, idOf(t["project_id"]))
+		if err := d.addRows(v, rows); err != nil {
+			return nil, err
 		}
 		got = append(got, rows...)
-		if err := d.fetchProjects(v, projects); err != nil {
-			return nil, err
-		}
-		res, err := d.s.sync.DB().QueryContext(d.ctx(), `SELECT task_id, name, uid FROM caldav_resources WHERE user_id = ? AND task_id IN (`+marks(len(live))+`)`,
-			append([]any{v.uid}, anyStrings(live)...)...)
-		if err != nil {
-			return nil, err
-		}
-		if err := v.addResources(res); err != nil {
-			return nil, err
-		}
-		mod, err := d.s.sync.ModifiedIDs(d.ctx(), v.uid, "task", live)
-		if err != nil {
-			return nil, err
-		}
-		for id, ts := range mod {
-			v.modified[id] = ts
-		}
-		values := make([]json.RawMessage, len(live))
-		for i, id := range live {
-			values[i] = mustJSON(id)
-		}
-		reminders, err := d.s.sync.ListWhere(d.ctx(), v.uid, "reminder", false, &opsync.Match{Field: "task_id", Values: values})
-		if err != nil {
-			return nil, err
-		}
-		v.addReminders(reminders)
 	}
 	return got, nil
+}
+
+// addRows puts tasks just read (at most opsync.MaxListIDs) in a partial view,
+// with their projects, resource names, modification times and reminders.
+func (d *davRequest) addRows(v *davView, rows []opsync.Entity) error {
+	if len(rows) == 0 {
+		return nil
+	}
+	live := make([]string, 0, len(rows))
+	projects := make([]string, 0, len(rows))
+	for _, t := range rows {
+		v.tasks = append(v.tasks, t)
+		v.addTask(t)
+		live = append(live, idOf(t["id"]))
+		projects = append(projects, idOf(t["project_id"]))
+	}
+	if err := d.fetchProjects(v, projects); err != nil {
+		return err
+	}
+	res, err := d.s.sync.DB().QueryContext(d.ctx(), `SELECT task_id, name, uid FROM caldav_resources WHERE user_id = ? AND task_id IN (`+marks(len(live))+`)`,
+		append([]any{v.uid}, anyStrings(live)...)...)
+	if err != nil {
+		return err
+	}
+	if err := v.addResources(res); err != nil {
+		return err
+	}
+	mod, err := d.s.sync.ModifiedIDs(d.ctx(), v.uid, "task", live)
+	if err != nil {
+		return err
+	}
+	for id, ts := range mod {
+		v.modified[id] = ts
+	}
+	values := make([]json.RawMessage, len(live))
+	for i, id := range live {
+		values[i] = mustJSON(id)
+	}
+	reminders, err := d.s.sync.ListWhere(d.ctx(), v.uid, "reminder", false, &opsync.Match{Field: "task_id", Values: values})
+	if err != nil {
+		return err
+	}
+	v.addReminders(reminders)
+	return nil
 }
 
 // taskRefs are the tasks serving t names: its parent, its blockers, its series
@@ -149,6 +159,10 @@ func (d *davRequest) fetch(v *davView, ids []string) error {
 	if v.full {
 		return nil
 	}
+	if d.s.wholeView.Load() {
+		_, err := d.load()
+		return err
+	}
 	var want []string
 	for _, id := range ids {
 		if id != "" && !v.served[id] {
@@ -166,6 +180,13 @@ func (d *davRequest) fetch(v *davView, ids []string) error {
 	if _, err := d.fetchRows(v, want); err != nil {
 		return err
 	}
+	return d.serve(v, want)
+}
+
+// serve reads what serving the tasks want of a partial view (read already)
+// needs: the tasks they name, the parents up to the top, their labels and
+// their series' records.
+func (d *davRequest) serve(v *davView, want []string) error {
 	var refs []string
 	for _, id := range want {
 		if t := v.byID[id]; t != nil {
@@ -195,6 +216,70 @@ func (d *davRequest) fetch(v *davView, ids []string) error {
 		return err
 	}
 	return d.fetchSeries(v, want)
+}
+
+// listing fills tasksIn and find for calendar cal as the whole view gives
+// them: a project calendar reads its own tasks, in list order, with what
+// serving them needs, so listing a calendar costs what the calendar holds,
+// not what the account holds (caldav-verified, "Large-account budgets").
+// The Inbox, whose tasks are placed by their workspace, and a calendar of
+// more than maxNarrow tasks read the whole view.
+func (d *davRequest) listing(v *davView, cal string) error {
+	if v.full {
+		return nil
+	}
+	if isInboxID(cal) || d.s.wholeView.Load() {
+		_, err := d.load()
+		return err
+	}
+	rows, err := d.s.sync.ListWhere(d.ctx(), v.uid, "task", false, &opsync.Match{Field: "project_id", Value: mustJSON(cal)})
+	if err != nil {
+		return err
+	}
+	// Over maxNarrow the calendar's rows are read twice, here and by load:
+	// counting them first would cost a query on every listing to save one
+	// on the few calendars that large, whose listing reads the account anyway.
+	if len(v.fetched)+len(rows) > maxNarrow {
+		_, err := d.load()
+		return err
+	}
+	var fresh []opsync.Entity
+	var want []string
+	for _, t := range rows {
+		id := idOf(t["id"])
+		if !v.fetched[id] {
+			v.fetched[id] = true
+			fresh = append(fresh, t)
+		}
+		if !v.served[id] {
+			v.served[id] = true
+			want = append(want, id)
+		}
+	}
+	for len(fresh) > 0 {
+		chunk := fresh[:min(len(fresh), opsync.MaxListIDs)]
+		fresh = fresh[len(chunk):]
+		if err := d.addRows(v, chunk); err != nil {
+			return err
+		}
+	}
+	if err := d.serve(v, want); err != nil || v.full {
+		return err
+	}
+	list := make([]opsync.Entity, 0, len(rows))
+	for _, r := range rows {
+		t := v.byID[idOf(r["id"])]
+		if t == nil || v.calendarOf(t) != cal || (v.events && !servedAsEvent(t)) {
+			continue
+		}
+		list = append(list, t)
+		key := cal + "\x00" + v.resourceName(idOf(t["id"]))
+		if _, dup := v.byRes[key]; !dup {
+			v.byRes[key] = t
+		}
+	}
+	v.byCal[cal] = list
+	return nil
 }
 
 // fetchLabels reads the labels the tasks ids carry, unless every label is read.

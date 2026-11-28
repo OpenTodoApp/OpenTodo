@@ -659,7 +659,7 @@ func (d *davRequest) propfind() {
 		v, err = d.calendarView(d.path.calendar)
 	}
 	if err == nil && d.path.kind == kindCalendar && depth1 && v.calendarVisible(d.path.calendar) {
-		v, err = d.load()
+		err = d.listing(v, d.path.calendar)
 	}
 	if err != nil {
 		d.fail(err)
@@ -781,7 +781,7 @@ func (d *davRequest) report() {
 	case body.Is(caldav.NSCalDAV, "calendar-multiget"):
 		d.multiget(v, body, names, all)
 	case body.Is(caldav.NSCalDAV, "calendar-query"):
-		if _, err := d.load(); err != nil {
+		if err := d.listing(v, d.path.calendar); err != nil {
 			d.fail(err)
 			return
 		}
@@ -872,7 +872,7 @@ func (d *davRequest) syncCollection(v *davView, body *caldav.Node, names []calda
 	m := caldav.NewMultistatus()
 	m.SyncToken(syncToken(v.cursor))
 	if tok == "" {
-		if _, err := d.load(); err != nil {
+		if err := d.listing(v, d.path.calendar); err != nil {
 			d.fail(err)
 			return
 		}

@@ -44,6 +44,7 @@ At the 1.0 tag, `not verified` is allowed only in the Mitra row (a small third-p
 - A 10,000-task account across 20 calendars is seeded through `sync.Apply`, with the fixture generator shared with `performance-10k`: `internal/perfseed`, deterministic from a seed.
 - Allocation counts and response sizes are stable across machines and are the hard gates.
 - Wall-clock budgets are generous ceilings: they catch an accidental O(n²) without flaking on a slow CI runner.
+- Listing one project's calendar (PROPFIND Depth 1, calendar-query, the first sync-collection) reads that calendar's tasks, not the whole account (2026-11-28): reading every task cost about 1.47 million allocations, which took up to 1.5 s on a loaded CI runner and kept the 1 s ceiling within noise of the real cost. The Inbox and a calendar of more than 1,000 tasks still read the whole view.
 
 | Request | Gate (allocations, size) | Ceiling (time, CI runner) |
 |---|---|---|

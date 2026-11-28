@@ -59,12 +59,17 @@ async function advance(ms: number) {
   await flush()
 }
 
-/** The engine, with the phase it last rendered, so a test can wait for it. */
+/** The engine, with the phase and the sound it last rendered, so a test can wait for them. */
 function Engine() {
-  const { state } = useFocusTimer()
-  return <i data-engine-phase={state?.phase ?? ''} />
+  const { state, prefs } = useFocusTimer()
+  return <i data-engine-phase={state?.phase ?? ''} data-engine-sound={prefs.sound ? 'on' : 'off'} />
 }
 const phases = () => [...document.querySelectorAll('[data-engine-phase]')].map((e) => e.getAttribute('data-engine-phase'))
+/** Turns the sound off and waits until the engine renders it: the row reaches it through a live query, not within one flush. */
+async function soundOff() {
+  await mutate('user_prefs', 'me', { focus_sound: 'off' })
+  await waitFor(() => document.querySelector('[data-engine-sound]')?.getAttribute('data-engine-sound') === 'off', 'the engine sees the sound off')
+}
 
 let task = ''
 beforeEach(async () => {
@@ -473,8 +478,7 @@ describe('the sound in a hidden tab (focus-alert-hidden-tab)', () => {
     await audioTick()
     await waitFor(async () => (await readFocus())?.phase === 'done', 'done')
     expect(heard()).toBe(2)
-    await mutate('user_prefs', 'me', { focus_sound: 'off' })
-    await flush()
+    await soundOff()
     await passTime(20_000)
     expect(heard()).toBe(2)
     await r.unmount()
@@ -486,8 +490,7 @@ describe('the sound in a hidden tab (focus-alert-hidden-tab)', () => {
     await startHere()
     await setVisibility('hidden')
     await passTime(10 * MIN)
-    await mutate('user_prefs', 'me', { focus_sound: 'off' })
-    await flush()
+    await soundOff()
     expect(readString('focusAlertRung')).toBeNull()
     await passTime(16 * MIN)
     await audioTick()
