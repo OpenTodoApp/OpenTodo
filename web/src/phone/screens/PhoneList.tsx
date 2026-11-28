@@ -53,7 +53,7 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
     showCheckbox: selectMode, selectMode, fieldColumns: false, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
     timeColumn: false, slotsOff: m.slotsOff, rowLayout: m.display?.rowLayout, actions: s.rowActions, ...useAddLines(rows, ui), edgeOf: s.edgeOf, cardNotes: s.cardNotes,
     inlineId: inline?.id ?? null, renderInline: s.renderInline, expandedId: null, swipe: useListSwipe(s.listRoot, coarse && selection.ticked.size === 0 && !selectMode, rows.length),
-    swipeEditTitle: false,
+    swipeEditTitle: true,
   })
 
   const missing = route.view === 'project' && m.projects.length > 0 && !currentProject ? 'project' as const

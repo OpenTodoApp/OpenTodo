@@ -19,9 +19,10 @@
    { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" },
    { "file": "web/src/app/bulk/BulkActions.tsx", "item": "pick-date" }
   ] },
-  { "id": "phone-row", "what": "A row of the phone UI's Today (phone-ui-trial): on touch, swipe right to complete or reopen, swipe left to open the date sheet.", "alternatives": [
+  { "id": "phone-row", "what": "A phone task row: on touch, swipe right to complete or reopen, fully left to open the date sheet, or briefly left to edit the title in a list that supports it.", "alternatives": [
    { "file": "web/src/phone/components/PhoneRow.tsx", "contains": "data-phone-check" },
-   { "file": "web/src/phone/screens/PhoneTaskPage.tsx", "contains": "<TaskDateSheet task={task}" }
+   { "file": "web/src/phone/screens/PhoneTaskPage.tsx", "contains": "<TaskDateSheet task={task}" },
+   { "file": "web/src/app/bulk/BulkActions.tsx", "item": "edit-title" }
   ] },
   { "id": "triage-card", "what": "The card of Process the Inbox below 768 px (phone-triage): on touch, swipe right to complete, swipe left to open the scheduling sheet.", "alternatives": [
    { "file": "web/src/app/TriageBar.tsx", "contains": "data-decision={d.key}" },
