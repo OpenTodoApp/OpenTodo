@@ -54,14 +54,30 @@ func TestPlanAwayScaleIsBounded(t *testing.T) {
 }
 
 func TestPlanAwayStopsAtTheLimit(t *testing.T) {
-	tasks := awayAccount(200, 0, 0)
-	start := time.Now()
-	_, err := PlanAway(tasks, AwayScope{All: true}, "2026-12-01", "2027-02-28", func(Entity) bool { return true }, 5, "2026-12-01", 2000)
+	const from, to, limit = "2026-12-01", "2027-02-28", 2000
+	everyone := func(Entity) bool { return true }
+	// What one series' plan changes: every series of the account is the same.
+	one, err := PlanAway(awayAccount(1, 0, 0), AwayScope{All: true}, from, to, everyone, 5, from, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	perSeries := 0
+	for _, w := range one.Writes {
+		perSeries += len(w.Fields)
+	}
+	if perSeries == 0 || perSeries > limit {
+		t.Fatalf("one series changes %d fields, want between 1 and %d", perSeries, limit)
+	}
+	// The work done before refusing, counted in series planned (canEdit is
+	// asked once per series): exactly those whose changes pass the limit,
+	// not the 200 of the account.
+	planned := 0
+	_, err = PlanAway(awayAccount(200, 0, 0), AwayScope{All: true}, from, to, func(Entity) bool { planned++; return true }, 5, from, limit)
 	if !errors.Is(err, ErrAwayTooLarge) {
 		t.Fatalf("err = %v, want ErrAwayTooLarge", err)
 	}
-	if took := time.Since(start); !raceDetector && took > time.Second {
-		t.Fatalf("refusing took %v", took)
+	if want := limit/perSeries + 1; planned != want {
+		t.Fatalf("refusing planned %d series, want %d (%d fields each, limit %d)", planned, want, perSeries, limit)
 	}
 }
 
