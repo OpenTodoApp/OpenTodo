@@ -27,9 +27,9 @@ Binaries:
   https://github.com/OpenTodoApp/OpenTodo/releases/download/v%v/opentodo-android-%v.apk
 
 Builds:
-  - versionName: 1.10.3
-    versionCode: 11003
-    commit: v1.10.3
+  - versionName: 1.11.0
+    versionCode: 11100
+    commit: v1.11.0
     subdir: mobile/android/app
     gradle:
       - yes
@@ -45,5 +45,5 @@ AutoUpdateMode: Version
 UpdateCheckMode: Tags
 UpdateCheckData: 
   mobile/android/store/fdroid/app.opentodo.yml|CurrentVersionCode:\s*(\d+)|.|CurrentVersion:\s*([0-9.]+)
-CurrentVersion: 1.10.3
-CurrentVersionCode: 11003
+CurrentVersion: 1.11.0
+CurrentVersionCode: 11100
