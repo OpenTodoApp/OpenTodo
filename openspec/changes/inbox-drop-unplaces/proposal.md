@@ -6,9 +6,9 @@ GitHub issue #2137: a task added while Today is on screen gets today's date, so 
 
 ## What Changes
 
-- Every move to the Inbox (a drop on the sidebar's Inbox, "No project" in the task panel's project picker, the list's inline project field, a title edit, bulk Move to the Inbox) clears the project and the schedule (do-on date, start, time sector, evening, part of the day) in one batch with Undo, so the task is an Inbox task.
-- A repeating task keeps its date, since clearing it would end the series; the toast says it stays scheduled because it repeats.
-- The task panel says "No project" for a task without a project that is not in the Inbox, and Today's and Upcoming's "by project" grouping heads such tasks "No project".
+- Every move to the Inbox (a drop on the sidebar's Inbox, "No project" in the task panel's project picker or the list's edit bar, bulk Move to the Inbox) clears the project and the schedule (do-on date, start, time sector, evening, part of the day) in one batch with Undo, so the task is an Inbox task.
+- A repeating task keeps its do-on date, since clearing it would end the series; the toast, or the bulk review's result, says it stays scheduled because it repeats (naming it, or giving the count).
+- "Inbox" names only Inbox tasks: the task panel, and the group of tasks without a project in Today, Upcoming, Someday, Anytime, Completed, label pages, Assigned to me and saved views grouped by project, read "No project" for tasks that are not in the Inbox.
 
 No new mandatory environment variable, no change to the op log format, routes or stored fields.
 
@@ -25,3 +25,6 @@ ROADMAP.md: none (a bug fix).
 ### Modified Capabilities
 
 - `project-organization`: a move to the Inbox unschedules the task; "No project" names a task without a project outside the Inbox.
+- `manual-ordering`: Today's group of tasks without a project is the "No project" group; a transfer to it keeps the date.
+- `start-dates`: Someday and Anytime head their group of tasks without a project by that rule.
+- `web-app`: Completed grouped by project heads tasks without a project "No project".

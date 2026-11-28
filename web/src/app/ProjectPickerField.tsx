@@ -22,11 +22,13 @@ export interface ProjectPickerFieldProps {
   inbox?: boolean
   /** Label of the "no project" option when the Inbox is not offered. */
   noneLabel?: string
+  /** Report a pick of "No project" while it is the value too (a scheduled task without a project, inbox-drop-unplaces). */
+  repickNone?: boolean
   disabled?: boolean
   className?: string
 }
 
-export function ProjectPickerField({ label, projects, value, onChange, rankContext, inbox = true, noneLabel = t('None'), disabled, className = '' }: ProjectPickerFieldProps) {
+export function ProjectPickerField({ label, projects, value, onChange, rankContext, inbox = true, noneLabel = t('None'), repickNone = false, disabled, className = '' }: ProjectPickerFieldProps) {
   const [open, setOpen] = useState(false)
   const anchor = useRef<HTMLButtonElement>(null)
   const items = useMemo<PickerItem[]>(() => {
@@ -66,7 +68,7 @@ export function ProjectPickerField({ label, projects, value, onChange, rankConte
           renderLeading={(i) => <span className="flex h-6 w-6 items-center justify-center text-faint">
             {i.project ? <ProjectMark project={i.project} /> : <Icon name={i.key === INBOX_KEY ? 'inbox' : 'circle'} />}
           </span>}
-          onPick={(i) => { if (i.value !== value) onChange(i.value) }}
+          onPick={(i) => { if (i.value !== value || (repickNone && i.value === null)) onChange(i.value) }}
           onClose={() => setOpen(false)}
         />
       </Popover>

@@ -17,7 +17,7 @@ import { effectiveSection, groupBySection } from './sections'
 import { breadcrumbOf, buildTaskTree } from './subtasks'
 import { effectiveParents, flattenTree, type Tree, type TreeNode } from './tree'
 import { fieldSortId, type FieldDef, type Label, type Project, type Section, type Task } from './types'
-import { compareTasks, groupTasks, inAnytime, inLater, inToday, inUpcoming, isSomeday } from './views'
+import { compareTasks, groupTasks, inAnytime, inLater, inToday, inUpcoming, isSomeday, noProjectHeading } from './views'
 import { compareManual } from './viewOrder'
 import type { ListDisplay } from './listDisplay'
 import type { DayPart } from './dayParts'
@@ -798,13 +798,13 @@ function flatGroups(p: GroupInput): ListGroup[] {
   if (p.view === 'today') return todayGroups(p, row)
   if (p.logbook) {
     // Completed as a logbook: one group per local completion day, newest first.
-    // Grouped by project (completed-view-review D2): the project's name, the Inbox for none.
+    // Grouped by project (completed-view-review D2): the project's name, "No project" for none (inbox-drop-unplaces D3).
     return p.logbook.groups.map((g): ListGroup => {
       const note = t('{n, plural, one {# done} other {# done}}', { n: g.tasks.length })
       if (g.project === undefined) return { key: g.date, heading: logbookHeading(g.date, p.today, p.resolved), note, rows: g.tasks.map(row) }
       const id = g.project
       return {
-        key: id || 'inbox', heading: id ? p.projectMap.get(id)?.name ?? t('Project') : t('Inbox'), note, named: true,
+        key: id || 'inbox', heading: id ? p.projectMap.get(id)?.name ?? t('Project') : noProjectHeading(g.tasks), note, named: true,
         rows: withImplied(g.tasks.map(row), { project: true }), ...(id && p.projectMap.has(id) ? { project: id } : {}),
       }
     })
@@ -832,13 +832,13 @@ function flatGroups(p: GroupInput): ListGroup[] {
       .map((g) => ({ key: g.key, heading: g.heading, rows: g.tasks.map(row) }))
   }
   if (p.view === 'label' || p.view === 'assigned' || p.view === 'someday' || p.view === 'anytime') {
-    // Grouped by project: Inbox first, then projects in sidebar order; flat rows with breadcrumbs.
+    // Grouped by project: tasks without a project first, then projects in sidebar order; flat rows with breadcrumbs.
     const sort = p.view === 'label' ? displayOrder(p.display, p.manualOrder, p.projects, p.fields, p.score, p.fieldPlacement) : null
     const byProject = groupBy(sort ? [...p.tasks].sort(sort) : p.tasks, (tk) => tk.project_id ?? '')
     const order = ['', ...p.projects.slice().sort(compareByPosition).map((pr) => pr.id)]
     const implied: RowImplied | undefined = p.view === 'someday' ? { someday: true } : undefined
     return order.filter((id) => byProject.has(id)).map((id) => ({
-      key: id || 'inbox', heading: id ? p.projectMap.get(id)?.name ?? t('Project') : t('Inbox'), rows: withImplied(byProject.get(id)!.map(row), implied), named: true as const,
+      key: id || 'inbox', heading: id ? p.projectMap.get(id)?.name ?? t('Project') : noProjectHeading(byProject.get(id)!, (pid) => p.taskMap.get(pid)), rows: withImplied(byProject.get(id)!.map(row), implied), named: true as const,
       ...(id && p.projectMap.has(id) ? { project: id } : {}),
     }))
   }
@@ -909,8 +909,7 @@ function chosenTodayGroups(p: GroupInput, tasks: Task[], groupBy: ListDisplay['g
   if (groupBy === 'project' || groupBy === 'priority' || groupBy === 'label') {
     const named = (key: string) => (groupBy === 'project' ? key !== 'inbox' && key !== 'unknown' : groupBy === 'label' && key !== 'none')
     return groupTasks(tasks, groupBy, { today: p.today, labels: p.labels ?? [], projects: p.projects }, true).map((x) => ({
-      // A dated task without a project is not in the Inbox (inbox-drop-unplaces D3).
-      key: `day:${x.key}`, heading: groupBy === 'project' && x.key === 'inbox' ? t('No project') : x.heading, rows: withImplied(rows(x.tasks), groupBy === 'project' ? { ...implied, project: true } : implied),
+      key: `day:${x.key}`, heading: x.heading, rows: withImplied(rows(x.tasks), groupBy === 'project' ? { ...implied, project: true } : implied),
       ...(named(x.key) ? { named: true as const } : {}),
       ...(groupBy === 'project' && named(x.key) ? { project: x.key } : {}),
       // A line stays within a priority or label group (day-manual-order D2); projects take project drops.

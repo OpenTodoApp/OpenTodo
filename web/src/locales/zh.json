@@ -7935,6 +7935,7 @@
   "Up next": "接下来",
   "Next seven days": "未来七天",
   "in {time}": "{time}后",
-  "{n, plural, one {It repeats, so it stays scheduled} other {They repeat, so they stay scheduled}}": "{n, plural, other {因为重复，仍保留日程}}",
-  "{n, plural, one {Moved to {target}; it repeats, so it stays scheduled} other {Moved to {target}; # repeat, so they stay scheduled}}": "{n, plural, other {已移至 {target}；因为重复，仍保留日程}}"
+  "{n, plural, one {“{title}” repeats, so it stays scheduled} other {# repeating tasks stay scheduled}}": "{n, plural, other {“{title}”会重复，因此仍保留日程}}",
+  "{n, plural, one {Moved to {target}; “{title}” repeats, so it stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}": "{n, plural, other {已移至 {target}；“{title}”会重复，因此仍保留日程}}",
+  "{changes}; {r, plural, one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{changes}；{r, plural, other {# 项重复任务仍保留日程}}"
 }

@@ -218,9 +218,9 @@ describe('runView', () => {
     expect(r.ok && r.groups.at(-1)!.heading).toBe('No date')
   })
 
-  it('groups by project: Inbox first, then projects in sidebar tree order with their path', () => {
+  it('groups by project: tasks without a project first (a dated one is "No project"), then projects in sidebar tree order with their path', () => {
     const r = runView(view({ id: 'v', query: '@work' }), CTX)
-    expect(r.ok && r.groups.map((g) => g.heading)).toEqual(['Inbox', 'Work', 'Work › Client A', 'Home'])
+    expect(r.ok && r.groups.map((g) => g.heading)).toEqual(['No project', 'Work', 'Work › Client A', 'Home'])
   })
 
   it('groups by priority 1 to 4 and by label in label order (a task under each of its labels)', () => {
@@ -415,7 +415,7 @@ describe('runView', () => {
 
   it('reads unknown option values as defaults', () => {
     const r = runView(view({ id: 'v', query: '@work', group_by: 'colour', sort_by: 'mood' }), CTX)
-    expect(r.ok && r.groups[0].heading).toBe('Inbox')
+    expect(r.ok && r.groups[0].heading).toBe('No project')
     expect(groupTasks([], 'none', CTX)).toEqual([])
   })
 

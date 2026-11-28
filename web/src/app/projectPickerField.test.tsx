@@ -66,6 +66,18 @@ describe('ProjectPickerField', () => {
     await view.unmount()
   })
 
+  it('reports No project picked again only with repickNone (inbox-drop-unplaces)', async () => {
+    const picks: (string | null)[] = []
+    for (const repickNone of [false, true]) {
+      const view = await render(<ProjectPickerField label="Project" projects={[project('work', 'Work')]} value={null} onChange={(id) => { picks.push(id) }}
+        rankContext="task.project" repickNone={repickNone} />)
+      await click(document.querySelector('button[aria-label="Project: No project"]')!)
+      await click([...document.querySelectorAll<HTMLElement>('[role="option"]')].find((el) => el.textContent?.trim() === 'No project')!)
+      await view.unmount()
+    }
+    expect(picks).toEqual([null])
+  })
+
   it('as the new-project parent: Top level first, no Inbox, archived projects left out, paths shown', async () => {
     let value: string | null = 'p1'
     const projects = [project('p1', 'Work'), project('p2', 'Acme', 'p1'), { ...project('p3', 'Old'), archived: true }]

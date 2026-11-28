@@ -8699,7 +8699,6 @@
     "web/src/lib/assistant.ts",
     "web/src/lib/assistantBlockData.ts",
     "web/src/lib/dashboard.ts",
-    "web/src/lib/listGroups.ts",
     "web/src/lib/pickerSources.ts",
     "web/src/lib/review.ts",
     "web/src/lib/rules/proposal.ts",
@@ -11537,9 +11536,9 @@
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
-    "web/src/lib/listGroups.ts",
     "web/src/lib/pickerSources.ts",
-    "web/src/lib/rules/sentence.ts"
+    "web/src/lib/rules/sentence.ts",
+    "web/src/lib/views.ts"
   ],
   "No project is shared with this group.": [
     "web/src/app/WorkspaceGroups.tsx"
@@ -25279,6 +25278,9 @@
   "{browser} on {os}": [
     "web/src/app/auditFormat.ts"
   ],
+  "{changes}; {r, plural, one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": [
+    "web/src/app/bulk/BulkReview.tsx"
+  ],
   "{checked} of {count} selected": [
     "web/src/app/assistant/ChangeSetReview.tsx"
   ],
@@ -26177,9 +26179,6 @@
   "{n, plural, one {It moves to the Trash with # open task. You can restore it from the Trash.} other {It moves to the Trash with # open tasks. You can restore it from the Trash.}}": [
     "web/src/app/menus/projectMenu.tsx"
   ],
-  "{n, plural, one {It repeats, so it stays scheduled} other {They repeat, so they stay scheduled}}": [
-    "web/src/lib/undoActions.ts"
-  ],
   "{n, plural, one {Its open task moves to “No section” in this project.} other {Its # open tasks move to “No section” in this project.}}": [
     "web/src/app/Sections.tsx"
   ],
@@ -26208,7 +26207,7 @@
     "web/src/app/assistant/blocks/ProposalShapes.tsx",
     "web/src/lib/assistantBlocks.ts"
   ],
-  "{n, plural, one {Moved to {target}; it repeats, so it stays scheduled} other {Moved to {target}; # repeat, so they stay scheduled}}": [
+  "{n, plural, one {Moved to {target}; “{title}” repeats, so it stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}": [
     "web/src/lib/undoActions.ts"
   ],
   "{n, plural, one {Moving this task moves its subtask too.} other {Moving this task moves its subtasks too.}}": [
@@ -26342,6 +26341,9 @@
   ],
   "{n, plural, one {{p} set on # task} other {{p} set on # tasks}}": [
     "web/src/lib/bulk.ts"
+  ],
+  "{n, plural, one {“{title}” repeats, so it stays scheduled} other {# repeating tasks stay scheduled}}": [
+    "web/src/lib/undoActions.ts"
   ],
   "{name} (copy)": [
     "web/src/lib/rules/store.ts"

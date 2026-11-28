@@ -7935,6 +7935,7 @@
   "Up next": "Als Nächstes",
   "Next seven days": "Nächste sieben Tage",
   "in {time}": "in {time}",
-  "{n, plural, one {It repeats, so it stays scheduled} other {They repeat, so they stay scheduled}}": "{n, plural, one {Sie wiederholt sich und bleibt deshalb geplant} other {Sie wiederholen sich und bleiben deshalb geplant}}",
-  "{n, plural, one {Moved to {target}; it repeats, so it stays scheduled} other {Moved to {target}; # repeat, so they stay scheduled}}": "{n, plural, one {Nach {target} verschoben; sie wiederholt sich und bleibt deshalb geplant} other {Nach {target} verschoben; # wiederholen sich und bleiben deshalb geplant}}"
+  "{n, plural, one {“{title}” repeats, so it stays scheduled} other {# repeating tasks stay scheduled}}": "{n, plural, one {„{title}“ wiederholt sich und bleibt deshalb geplant} other {# wiederkehrende Aufgaben bleiben geplant}}",
+  "{n, plural, one {Moved to {target}; “{title}” repeats, so it stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}": "{n, plural, one {Nach {target} verschoben; „{title}“ wiederholt sich und bleibt deshalb geplant} other {Nach {target} verschoben; # wiederkehrende Aufgaben bleiben geplant}}",
+  "{changes}; {r, plural, one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{changes}; {r, plural, one {# wiederkehrende Aufgabe bleibt geplant} other {# wiederkehrende Aufgaben bleiben geplant}}"
 }

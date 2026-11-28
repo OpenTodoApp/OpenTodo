@@ -4,7 +4,7 @@
 // way bulk actions are (bulk-edit D5). The inverse is stored with the clocks each
 // field got; undo writes ordinary ops, locally first, so it works offline and
 // every device converges by last-writer-wins.
-import { bulkLabel, planComplete, planLabels, planMove, planPriority, planReopen, planTrash, readTicked, staysScheduled, toProposed, unschedulePatch } from './bulk'
+import { bulkLabel, planComplete, planLabels, planMove, planPriority, planReopen, planTrash, readTicked, repeatingStays, staysScheduled, toProposed, unschedulePatch } from './bulk'
 import { db, type AssistantUndo } from './db'
 import { formatDate, logicalToday } from './dates'
 import { planSkip, seriesRule } from './recurring'
@@ -336,10 +336,12 @@ export async function trashUndoable(id: string, now = Date.now()): Promise<Undoa
  * The toast of a move to the Inbox (inbox-drop-unplaces D2): a repeating task keeps
  * its date, so it is not in the Inbox, and the toast says why.
  */
-function inboxLabel(target: string, repeating: number, wrote: boolean): string {
-  if (!wrote) return repeating ? t('{n, plural, one {It repeats, so it stays scheduled} other {They repeat, so they stay scheduled}}', { n: repeating }) : ''
-  if (!repeating) return t('Moved to {target}', { target })
-  return t('{n, plural, one {Moved to {target}; it repeats, so it stays scheduled} other {Moved to {target}; # repeat, so they stay scheduled}}', { n: repeating, target })
+function inboxLabel(target: string, repeating: readonly Task[], wrote: boolean): string {
+  const n = repeating.length
+  const title = repeating[0]?.title ?? ''
+  if (!wrote) return n ? t('{n, plural, one {“{title}” repeats, so it stays scheduled} other {# repeating tasks stay scheduled}}', { n, title }) : ''
+  if (!n) return t('Moved to {target}', { target })
+  return t('{n, plural, one {Moved to {target}; “{title}” repeats, so it stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}', { n, target, title })
 }
 
 /**
@@ -350,7 +352,7 @@ function inboxLabel(target: string, repeating: number, wrote: boolean): string {
 export async function moveUndoable(id: string, projectId: string | null, targetName: string, now = Date.now(), toWorkspace?: string): Promise<UndoableResult & { newId: string }> {
   const { tasks, all } = await readTicked([id])
   const task = tasks[0]
-  const repeating = task && projectId === null && staysScheduled(task) ? 1 : 0
+  const repeating = task && projectId === null && staysScheduled(task) ? [task] : []
   // "No project" of another workspace (workspaces, "Move an Inbox task"): the task lands
   // in that workspace's Inbox. A subtask follows its parent's workspace, so it leaves it.
   const target = projectId === null && toWorkspace !== undefined ? workspaceIdFor(toWorkspace, (await readWorkspaceState()).list) : undefined
@@ -377,7 +379,7 @@ export async function moveUndoable(id: string, projectId: string | null, targetN
  */
 export async function moveManyUndoable(ids: readonly string[], projectId: string | null, targetName: string, now = Date.now(), sectionId?: string | null): Promise<UndoableResult> {
   const { tasks, all } = await readTicked(ids)
-  const repeating = projectId === null ? tasks.filter(staysScheduled).length : 0
+  const repeating = projectId === null ? repeatingStays(tasks, all) : []
   const moving = projectId === null ? tasks : tasks.filter((task) => (task.project_id ?? null) !== projectId)
   const changes = planMove(moving, all, { projectId, inbox: true, ...(sectionId !== undefined ? { sectionId } : {}) }, await membershipMap(), await currentUserId(), now, await keepWorkspaceFor())
   if (!changes.length) return { entry: null, label: inboxLabel(targetName, repeating, false) }

@@ -12,6 +12,7 @@ import { describeDue, localDueOf, logicalToday } from '../../lib/dates'
 import { sectorLabel } from '../../lib/sectorNames'
 import { removeLabel, resolveLabels } from '../../lib/labels'
 import type { EditPlan } from '../../lib/nlp/edit'
+import { pickMoves } from '../../lib/inbox'
 import { priorityShort } from '../../lib/priority'
 import { priorityUndoable } from '../../lib/undoActions'
 import type { Label, Priority, Project, Task } from '../../lib/types'
@@ -160,9 +161,9 @@ export function EditBar({ task, projects, labelMap, onDetails }: { task: Task; p
       <BarButton icon="tag" label={t('Labels')} text={labels.length ? labels.map((l) => l.name).join(', ') : t('Labels')} empty={!labels.length} expanded={open === 'labels'}
         buttonRef={(el) => { anchors.current.labels = el }} onClick={() => setOpen(open === 'labels' ? null : 'labels')} />
       <span className="inline-flex" data-edit-project>
-        <ProjectPickerField label={t('Project')} projects={projects} value={task.project_id ?? null} rankContext="task.project"
+        <ProjectPickerField label={t('Project')} projects={projects} value={task.project_id ?? null} rankContext="task.project" repickNone={pickMoves(task, null)}
           className="min-h-7 border-transparent bg-transparent px-1.5 py-0 text-meta text-muted shadow-none hover:bg-sunken dark:hover:bg-raised"
-          onChange={(id) => { if (id !== (task.project_id ?? null)) act(moveWithUndo(task.id, id, id ? projects.find((p) => p.id === id)?.name ?? t('the project') : t('Inbox'))) }} />
+          onChange={(id) => { if (pickMoves(task, id)) act(moveWithUndo(task.id, id, id ? projects.find((p) => p.id === id)?.name ?? t('the project') : t('Inbox'))) }} />
       </span>
       <IconButton icon="chevron-right" size="sm" label={t('Open details')} shortcut="Shift+Enter" onClick={onDetails} className="ms-auto" data-open-details />
       {open === 'date' && (

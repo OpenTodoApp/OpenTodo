@@ -15,6 +15,7 @@ beforeEach(() => {
 })
 
 const TODAY = '2026-11-26'
+const FRIDAY = '2026-11-27'
 
 describe('a move to the Inbox (inbox-drop-unplaces)', () => {
   it('a task without a project, due today, dropped on the Inbox joins it; Undo puts the date back', async () => {
@@ -53,37 +54,51 @@ describe('a move to the Inbox (inbox-drop-unplaces)', () => {
 
   it('the project picker\'s Inbox choice (moveUndoable with no project) unschedules a task with or without a project', async () => {
     const home = await createProject({ name: 'Home' })
-    const placed = await createTask({ title: 'In Home', project_id: home, due: { date: TODAY } })
+    const placed = await createTask({ title: 'In Home', project_id: home, due: { date: FRIDAY } })
     const loose = await createTask({ title: 'Loose', start: 'someday' })
     const a = await moveUndoable(placed, null, 'Inbox')
     const b = await moveUndoable(loose, null, 'Inbox')
     expect([a.label, b.label]).toEqual(['Moved to Inbox', 'Moved to Inbox'])
     for (const id of [placed, loose]) expect(isInboxTask((await db.tasks.get(id))!)).toBe(true)
-    // An Inbox task already there writes nothing.
+    // An Inbox task already there writes nothing, an evening flag alone included.
     expect((await moveUndoable(loose, null, 'Inbox')).entry).toBeNull()
+    const evening = await createTask({ title: 'Evening only', evening: true })
+    expect((await moveUndoable(evening, null, 'Inbox')).entry).toBeNull()
+    // Undo puts it back in Home on Friday, project and date together.
+    await undoBatch(a.entry!.id)
+    expect(await db.tasks.get(placed)).toMatchObject({ project_id: home, due: { date: FRIDAY } })
   })
 
-  it('a repeating task keeps its date, and the toast says why', async () => {
+  it('a repeating task keeps its do-on date (its start and sector are cleared), and the toast names it', async () => {
     const home = await createProject({ name: 'Home' })
     const loose = await createTask({ title: 'Water plants', due: { date: TODAY }, recurrence: 'every day' })
     await db.outbox.clear()
     const stay = (await dropUndoable('inbox', [loose]))!
-    expect(stay).toMatchObject({ entry: null, label: 'It repeats, so it stays scheduled' })
+    expect(stay).toMatchObject({ entry: null, label: '“Water plants” repeats, so it stays scheduled' })
     expect(await db.outbox.count()).toBe(0)
-    const placed = await createTask({ title: 'Bins', project_id: home, due: { date: TODAY }, recurrence: 'every week' })
+    const placed = await createTask({ title: 'Bins', project_id: home, due: { date: TODAY }, start: '2026-11-20', recurrence: 'every week' })
     const moved = await moveUndoable(placed, null, 'Inbox')
-    expect(moved.label).toBe('Moved to Inbox; it repeats, so it stays scheduled')
-    expect(await db.tasks.get(placed)).toMatchObject({ project_id: null, due: { date: TODAY } })
+    expect(moved.label).toBe('Moved to Inbox; “Bins” repeats, so it stays scheduled')
+    expect(await db.tasks.get(placed)).toMatchObject({ project_id: null, start: null, due: { date: TODAY } })
+    // Several: counted once each, a ticked subtask under a ticked parent not again.
+    const other = await createTask({ title: 'Laundry', project_id: home, due: { date: TODAY }, recurrence: 'every week' })
+    const child = await createTask({ title: 'Sort', project_id: home, parent_id: other, due: { date: TODAY }, recurrence: 'every day' })
+    const plain = await createTask({ title: 'Plain', project_id: home, due: { date: TODAY } })
+    const many = (await dropUndoable('inbox', [loose, other, child, plain]))!
+    expect(many.label).toBe('Moved to Inbox; 2 repeating tasks stay scheduled')
   })
 
-  it('bulk Move to the Inbox reviews and writes the cleared schedule', async () => {
+  it('bulk Move to the Inbox reviews and writes the cleared schedule, and counts the repeating tasks that stay', async () => {
     const home = await createProject({ name: 'Home' })
     const a = await createTask({ title: 'A', project_id: home, due: { date: TODAY } })
     const b = await createTask({ title: 'B', due: { date: TODAY } })
-    const plan = await reviewMove([a, b], { projectId: null, inbox: true })
-    expect(plan.items.map((i) => i.patch)).toEqual([{ due: null, project_id: null }, { due: null }])
-    const changes = await plan.resolve([a, b])
+    const r = await createTask({ title: 'R', project_id: home, due: { date: TODAY }, recurrence: 'every day' })
+    const plan = await reviewMove([a, b, r], { projectId: null, inbox: true })
+    expect(plan.items.map((i) => i.patch)).toEqual([{ due: null, project_id: null }, { due: null }, { project_id: null }])
+    const changes = await plan.resolve([a, b, r])
     expect(changes.find((c) => c.entityId === b)!.patch).toMatchObject({ due: null })
+    expect(plan.repeating?.([a, b, r])).toBe(1)
+    expect(plan.repeating?.([a, b])).toBe(0)
   })
 
   it('a drop on a project leaves the date as it is', async () => {
