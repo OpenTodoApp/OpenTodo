@@ -32,7 +32,7 @@ beforeEach(async () => {
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
   navigate({ view: 'inbox' })
 })
-afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals() })
+afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals(); width = 390 })
 
 const bar = () => document.querySelector('[data-tab-bar]')
 const tab = (id: string) => document.querySelector<HTMLButtonElement>(`[data-tab="${id}"]`)!
@@ -141,6 +141,9 @@ describe('the tab bar', () => {
     await waitFor(() => !!document.querySelector('main'), 'the shell')
     // Rendered for the stylesheet to hide (md:hidden); the shell adds no bottom padding there.
     expect(document.querySelector('main')!.className).toContain('md:!pb-0')
+    // Nor does the content column: the hidden bar measures as the whole window, so its room
+    // left a page that fills the column (the calendar's Day and Week) 0 px tall (1.11.0).
+    expect(document.querySelector<HTMLElement>('#content')!.style.paddingBottom).toBe('')
     await r.unmount()
     width = 390
   })
