@@ -88,7 +88,7 @@ export function TodayGlance({ listed, all, late, today, onLate, at }: {
     <div data-today-glance className="mb-5 grid grid-cols-2 gap-2.5">
       {g.next && (
         <button type="button" data-glance="next" onClick={() => openTaskFromList(g.next!.id)}
-          className={`${CARD} press-selected col-span-2 items-center gap-4 bg-linear-to-br from-accent-soft via-surface to-surface dark:via-raised dark:to-raised`}>
+          className={`${CARD} press-selected col-span-2 items-center gap-4 bg-linear-to-b from-accent-soft via-surface to-surface dark:via-raised dark:to-raised`}>
           <span className="flex shrink-0 flex-col items-start">
             <span className={`${KICKER} text-accent`}>{t('Up next')}</span>
             {time
@@ -111,7 +111,7 @@ export function TodayGlance({ listed, all, late, today, onLate, at }: {
       </div>
       {g.late > 0 && (
         <button type="button" data-glance="late" onClick={onLate}
-          className={`${CARD} press-selected flex-col gap-2 bg-linear-to-br from-danger-soft to-surface dark:to-raised`}>
+          className={`${CARD} press-selected flex-col gap-2 bg-linear-to-b from-danger-soft to-surface dark:to-raised`}>
           <span className={`${KICKER} text-danger`}>{t('Late')}</span>
           <span className="flex items-center gap-3">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-danger text-on-accent min-[380px]:h-14 min-[380px]:w-14"><Icon name="circle-alert" size="md" /></span>
