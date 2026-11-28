@@ -1,1 +1,0 @@
-- **The "New phone screens" switch and the earlier phone screens are gone.** A screen narrower than 768 px always shows the phone screens, in the apps and in a browser; a phone on which the switch was off shows them from this update on. Wider screens are unchanged. The switch is no longer in Settings → Appearance.
