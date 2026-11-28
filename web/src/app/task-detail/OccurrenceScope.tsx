@@ -130,7 +130,7 @@ function Continues({ task, rows }: { task: Task; rows: readonly Task[] }) {
   const after = rows.filter((r) => r.split_from?.series === task.id && !r.deleted_at && !r.series_id)
   if (!before && after.length === 0) return null
   const link = (to: Task, label: string, key: string) => (
-    <button key={key} type="button" className="touch-target flex items-center gap-1 text-left text-meta text-faint hover:text-default" data-continues={key} onClick={() => setPanelTaskId(to.id)}>
+    <button key={key} type="button" className="touch-target flex items-center gap-1 text-start text-meta text-faint hover:text-default" data-continues={key} onClick={() => setPanelTaskId(to.id)}>
       <Icon name="repeat" />{label}
     </button>
   )

@@ -1,1 +1,0 @@
-- **Upcoming and Calendar widgets on Android.** Upcoming lists your next tasks under a heading per day; tap a task to open it or its circle to complete it. Calendar shows the month with a dot on each day that has tasks; tap a day to open it in OpenTodo, and use the arrows for the next months. Both can be resized and follow light and dark mode.

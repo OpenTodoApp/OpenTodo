@@ -39,6 +39,7 @@ import { isProjectionTarget } from './calendar/projections'
 import { completeWithUndo, setDueWithUndo, spanWithUndo } from './undoable'
 import { moveSpanPatch, spanOf } from '../lib/span'
 import { useToday, useViewerZone } from './useViews'
+import { inlineKey } from '../lib/direction'
 
 const ARROWS: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }
 
@@ -182,9 +183,9 @@ export function PlanView({ date }: { date?: string }) {
   // The Plan's keys are `view` entries of the shortcut registry (planner-view D6).
   useShortcutScope('view', {
     'plan.move': (e) => {
-      if (selectedTask) { if (editable(selectedTask)) move(selectedTask.id, ARROWS[e.key]) } else show(addDaysISO(focused, ARROWS[e.key]))
+      if (selectedTask) { if (editable(selectedTask)) move(selectedTask.id, ARROWS[inlineKey(e)]) } else show(addDaysISO(focused, ARROWS[inlineKey(e)]))
     },
-    'plan.focus': (e) => show(addDaysISO(focused, ARROWS[e.key])),
+    'plan.focus': (e) => show(addDaysISO(focused, ARROWS[inlineKey(e)])),
     'plan.next': () => step(1),
     'plan.prev': () => step(-1),
     // A focused button (a projected occurrence, series-occurrences D6) keeps its own Enter.
@@ -327,7 +328,7 @@ function PlanGrid({ gridRef, title, days, today, focused, dayLength, eventHue, o
                 aria-selected={isFocused} aria-current={d === today ? 'date' : undefined}
                 onClick={() => onFocusDay(d)}
                 onFocus={(e) => { if (e.target === e.currentTarget) onFocusDay(d, true) }}
-                className={`group relative flex min-h-36 min-w-0 flex-col gap-1 border-b border-l border-default p-1 outline-none first:border-l-0 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-focus data-[drop-active]:bg-accent-soft ${d < today ? 'bg-sunken' : ''} ${isFocused ? 'bg-accent-soft/40' : ''}`}>
+                className={`group relative flex min-h-36 min-w-0 flex-col gap-1 border-b border-s border-default p-1 outline-none first:border-s-0 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-focus data-[drop-active]:bg-accent-soft ${d < today ? 'bg-sunken' : ''} ${isFocused ? 'bg-accent-soft/40' : ''}`}>
                 {/* Named by its content (WCAG 2.5.3 Label in Name): the date, the counts and the load first, then the rows' own names. */}
                 <span className="sr-only">{[formatShort(d), tasks ? t('{n, plural, one {# task} other {# tasks}}', { n: tasks }) : '', day.load.over ? t('over capacity') : ''].filter(Boolean).join(', ')}</span>
                 <div aria-hidden className="flex items-center justify-between gap-1">

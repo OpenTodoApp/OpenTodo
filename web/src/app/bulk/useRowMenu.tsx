@@ -67,7 +67,7 @@ export function useRowMenu(ticked: ReadonlySet<string>, order: readonly string[]
     <BulkActionsMenu ids={menu.ids} open onOpenChange={(v) => { if (!v) close() }}
       {...(menu.ids.length === 1 && !ticked.has(menu.ids[0]) ? items : {})}
       trigger={<span className="sr-only" />} triggerClassName="sr-only"
-      triggerProps={{ style: { position: 'fixed', left: menu.x, top: menu.y } }} />
+      triggerProps={{ style: { /* physical: at the pointer */ position: 'fixed', left: menu.x, top: menu.y } }} />
   ) : null
 
   return { element, open, openIds, close, dismiss }

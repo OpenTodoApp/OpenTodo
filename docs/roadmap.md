@@ -123,6 +123,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `away-periods` | Away: mark a period, also after the fact, that skips the repeating occurrences in it in one Undo, keeps streaks and pauses reminders | Shipped in 1.6 |
 | `workspace-activity` | A workspace Activity page for retrospectives: every project, a date range, several kinds at once, tracked time, filters remembered on the device | Shipped in 1.6 |
 | `workspace-feature-switches` | Feature switches per workspace: the owner and admins turn Notes, Calendar, Habits, Time tracking, Focus, Routines, Reviews and Locations on or off for everyone in it; off hides, never deletes | Shipped in 1.8 |
+| `workspace-fields` | Fields a workspace's owner defines once for every project of the workspace | Shipped in 1.10 |
 | `caldav-push` | Push to calendar apps: a change on any device wakes a subscribed CalDAV client (WebDAV-Push), off until the owner turns it on | Shipped in 1.6 |
 | `drag-ticked-together` | Drag several ticked tasks within a list to reorder or nest them in one move, with one Undo | Shipped in 1.6 |
 | `quarter-view-and-plan-spans` | A Quarter view in the Calendar (three months at a glance, `g q`), and 3-day and custom Plan spans | Shipped in 1.6 |
@@ -157,6 +158,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `more-languages` | Dutch, quick add in Dutch, and a kit for community languages | Shipped in 1.5 |
 | `simplified-chinese` | Simplified Chinese (简体中文) | Shipped in 0.23 |
 | `japanese` | Japanese (日本語) as a community language, reviewed by a native speaker | In progress (8 of 9) |
+| `arabic-rtl` | Arabic (العربية) as a community language, and the app laid out right to left | In progress (16 of 17) |
 | `priority-names` | Rename the four priorities | Shipped in 1.4 |
 
 ## 1.0 "Trust"
@@ -204,7 +206,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `notes-bulk-actions` | Select several notes to move, label, pin, trash or turn into tasks at once | Shipped in 1.5 |
 | `note-markdown-source` | Edit a note's Markdown source as plain text | Shipped in 1.5 |
 | `note-outline` | An outline of a long note's headings | Shipped in 1.5 |
-| `note-templates` | Start a note from a template, with built-in ones and a routine step | Shipped in 1.5 |
+| `note-templates` | Start a note from a template, with built-in ones and a routine step | Shipped in 1.10 |
 | `daily-notes` | One note per day, opened from Today, that routines can add to | Shipped in 1.5 |
 | `note-public-links` | A read-only public link for one note | Shipped in 1.5 |
 | `note-webhooks` | Opt-in note events for webhooks | Shipped in 1.5 |
@@ -252,6 +254,8 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `habit-notes` | The habit's note, a note on each check-in, habits in `[[` links, Make habits from a note, habits in the weekly review | Shipped in 1.5 |
 | `habits-assistant` | Habit numbers on the server, `list_habits`, `get_habit` and `log_habit`, a habits route and `ot habits`, Start a habit and How are my habits?, check-ins from capture, routine steps | Shipped in 1.5 |
 | `habit-targets` | Times per week or month, and daily amounts that add up exactly across devices | Shipped in 1.5 |
+| `habits-complete` | Habits on a phone with a day strip and thumb rings, today's progress, taking a check-in back, Skip this day, Remind me in the form, and a habit's year | Shipped in 1.10 |
+| `habits-board` | The Habits screen as a week board with Today, Last 7 days and Streak tiles; a habit's page as a dashboard with a By weekday chart | Shipped in 1.10 |
 
 ## Shells that feel native
 
@@ -283,7 +287,10 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `reminder-card-compact` | The in-app reminder as one compact card on touch: Snooze and Dismiss on one row | Shipped in 1.6 |
 | `phone-fab-scroll-room` | The calendar's Day and Week reach the tab bar; no empty room under pages without the add button | Shipped in 1.6 |
 | `phone-ui-trial` | A trial of screens made only for a phone, behind a switch on the device: Today and the task page, a date sheet, and a place and rules for the phone screens that follow | In progress (20 of 23) |
-| `phone-lists` | Every task list in the phone screens, with all a list does: its menu, selection, reordering, subtasks and each list's own parts | In progress (10 of 19) |
+| `phone-lists` | Every task list in the phone screens, with all a list does: its menu, selection, reordering, subtasks and each list's own parts | In progress (15 of 19) |
+| `phone-all-screens` | The phone header and the phone task row on every screen of the app, so the phone screens are one interface | In progress (10 of 11) |
+| `phone-ui-default` | The phone screens are what a phone shows by default; the switch stays as the way back on a device | In progress (7 of 8) |
+| `phone-ui-only` | The phone screens are the only thing a screen narrower than 768 px shows: the "New phone screens" switch and the earlier phone layout are removed | In progress (11 of 12) |
 | `shell-push` | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | Shipped in 1.5 |
 
 <!-- roadmap:end -->

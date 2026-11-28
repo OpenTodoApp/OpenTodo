@@ -4,14 +4,14 @@
 // tasks, groups, order, selection, drag and every write are the same; this file
 // draws it for a phone: the phone header, each list's own parts, the groups with the
 // phone row, the selection bar and the prompts. No add line: the add button adds.
-import { Suspense, useCallback } from 'react'
+import { Suspense, useMemo } from 'react'
 import { lazy } from '../../lib/lazy'
 import { setCompletedDisplay } from '../../lib/completedDisplay'
 import { completedOpenKey } from '../../lib/listGroups'
 import { LOGBOOK_PAGE } from '../../lib/logbook'
 import { canEditTasks, roleOf } from '../../lib/sharing'
 import type { AccountRole } from '../../lib/types'
-import { GroupBarContext, PageHeaderDrawContext, type PageHeaderProps, useMediaQuery } from '../../ui'
+import { hueFor, PageHeader, useMediaQuery } from '../../ui'
 import { BulkActionsMenu, ListReorderContext, SelectionBar } from '../../app/bulk/BulkActions'
 import { TodayAgenda } from '../../app/calendar/TodayAgenda'
 import { UpcomingEventsNote } from '../../app/calendar/UpcomingAgenda'
@@ -32,9 +32,11 @@ import type { ListRoute } from '../../app/task-list/useListModel'
 import { useListScreen } from '../../app/task-list/useListScreen'
 import { UrgencyContext } from '../../app/useUrgency'
 import { t } from '../../lib/i18n'
-import { useOwnBar } from '../chrome'
-import { PhonePageHeader } from '../components/PhonePageHeader'
-import { PhoneListRow } from './PhoneListRow'
+import { PhoneChrome } from '../PhoneChrome'
+import { doneToday, glanceOf, TodayGlance } from '../components/TodayGlance'
+import { BarProgressContext } from '../chrome'
+import { useDayClosed } from '../dayClosed'
+import { WeekStrip } from '../components/WeekStrip'
 
 const CompletedSearch = lazy(() => import('../../app/completed/CompletedBar').then((m) => ({ default: m.CompletedSearch })))
 
@@ -43,14 +45,11 @@ const earlierActions = (ids: readonly string[]) => <EarlierActions ids={ids} />
 
 export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRoute; userId?: string; userRole?: AccountRole; onMenu: () => void }) {
   const s = useListScreen(route, userId, userRole)
-  useOwnBar()
   const { m, rows, taskGroups, groups, projectId, today, isReadOnly, upcomingCal, selectedId, revealed, setRevealed, collapsedGroups, summarised,
     selection, ticked, contextIds, inline, ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, rowMenu, ownOrder, manual, drag, own, hiddenDone, showCompleted,
     completedNarrowed, currentProject, currentLabel, currentPlace, phoneActions, agenda } = s
   const coarse = useMediaQuery('(pointer: coarse)')
-  const header = useCallback((p: PageHeaderProps) => <PhonePageHeader {...p} onMenu={onMenu} />, [onMenu])
   const renderRow = useRowRenderer({
-    Row: PhoneListRow,
     view: route.view, labelId: route.view === 'label' ? route.id : undefined, userId, projectMap: m.projectMap, labelMap: m.labelMap, memberMap: m.memberMap, selectedId, progress: m.progress, blocked: m.blocked, flow: m.flow,
     habits: m.habits, isReadOnly, board: false, manual, ownOrder: !!ownOrder, dayOrderIds: s.dayOrderIds, treeView: m.treeView || m.nested, dropAt: drag.dropAt, draggingId: drag.draggingId, ticked: selection.ticked,
     showCheckbox: selectMode, selectMode, fieldColumns: false, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
@@ -59,23 +58,45 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
     swipeEditTitle: false,
   })
 
-  if (route.view === 'project' && m.projects.length > 0 && !currentProject) return <MissingTarget kind="project" />
-  if (route.view === 'label' && m.labels.length > 0 && (!currentLabel || currentLabel.deleted_at)) return <MissingTarget kind="label" />
-  if (route.view === 'place' && currentPlace !== undefined && (!currentPlace || currentPlace.deleted_at)) return <MissingTarget kind="place" />
+  const isToday = route.view === 'today'
+  const late = (() => { const e = groups.find((g) => g.key === 'earlier'); return e ? e.count ?? e.rows.length : 0 })()
+  // The day's numbers for the tiles' ring in the bar and the closed day (phone-delight D1, D9); the time does not change them.
+  const day = useMemo(() => isToday ? glanceOf(s.listedTasks, m.allTasks, late, today, 0) : null, [isToday, s.listedTasks, m.allTasks, late, today])
+  const doneNow = useMemo(() => isToday ? doneToday(m.allTasks, today) : 0, [isToday, m.allTasks, today])
+  const openNow = isToday ? s.listedTasks.filter((x) => !x.completed_at).length : 0
+  useDayClosed(isToday && s.ready, openNow, doneNow)
+
+  const missing = route.view === 'project' && m.projects.length > 0 && !currentProject ? 'project' as const
+    : route.view === 'label' && m.labels.length > 0 && (!currentLabel || currentLabel.deleted_at) ? 'label' as const
+      : route.view === 'place' && currentPlace !== undefined && (!currentPlace || currentPlace.deleted_at) ? 'place' as const : null
+  // What is gone is said inside the phone screen, under the phone header: its menu button is the way out.
+  if (missing) return (
+    <PhoneChrome onMenu={onMenu}>
+      <div data-phone-screen="list" data-phone-list={route.view} data-phone-missing={missing} className="min-h-full bg-canvas">
+        <div className="px-4"><PageHeader title={s.title} /></div>
+        <MissingTarget kind={missing} />
+      </div>
+    </PhoneChrome>
+  )
   if (!s.ready) return <div className="min-h-full bg-canvas" data-list-loading />
 
   return (
-    <ListReorderContext.Provider value={s.listReorder}><UrgencyContext.Provider value={m.urgency}><PageHeaderDrawContext value={header}><GroupBarContext value={false}>
-      <div ref={s.room} data-phone-screen="list" data-phone-list={route.view} className="min-h-full bg-canvas pb-6">
-        {route.view === 'project' && currentProject ? (
-          <ProjectHeader project={currentProject} userId={userId} extraGroups={s.boardGroups} print
-            phone={{ slots: phoneActions.slots, groups: phoneGroups(phoneActions.projectItems) }} />
-        ) : (
-          <ListHeader route={route} title={s.title} label={currentLabel} meta={s.meta} subtitle={s.methodSubtitle} briefing={s.briefing} actions={null} phone={phoneActions} agenda={agenda.toggle} upcomingEvents={upcomingCal.toggle} />
-        )}
-
+    <ListReorderContext.Provider value={s.listReorder}><UrgencyContext.Provider value={m.urgency}><BarProgressContext value={day ? { done: day.done, total: day.total } : null}><PhoneChrome onMenu={onMenu}>
+      <div ref={s.room} data-phone-screen="list" data-phone-list={route.view} data-page-project={route.view === 'project' ? '' : undefined} className="relative isolate min-h-full bg-canvas pb-6">
+        <div aria-hidden className="phone-glow" data-hue={route.view === 'project' && currentProject?.color ? hueFor(currentProject.color) : undefined} />
         <div className="px-4" data-phone-list-body>
+        {route.view === 'project' && currentProject ? (
+            <ProjectHeader project={currentProject} userId={userId} extraGroups={s.boardGroups} print
+              phone={{ slots: phoneActions.slots, groups: phoneGroups(phoneActions.projectItems) }} />
+          ) : (
+            <ListHeader route={route} title={s.title} label={currentLabel} meta={s.meta} subtitle={s.methodSubtitle} briefing={s.briefing} actions={null} phone={phoneActions} agenda={agenda.toggle} upcomingEvents={upcomingCal.toggle} />
+          )}
+
           {route.view === 'completed' && <Suspense fallback={<div className="mb-3 h-9" />}><CompletedSearch value={m.completedQuery} onChange={m.setCompletedQuery} /></Suspense>}
+          {route.view === 'today' && <TodayGlance listed={s.listedTasks} all={m.allTasks} late={late} today={today}
+            onLate={() => s.listRoot.current?.querySelector('[data-group="earlier"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />}
+          {route.view === 'upcoming' && <WeekStrip today={today} counts={new Map(groups.map((g) => [g.key, g.count ?? g.rows.length]))}
+            onDay={(date) => s.listRoot.current?.querySelector(`[data-group="${date}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />}
           {agenda.toggle && <TodayAgenda cal={agenda.cal} zone={m.zone} />}{m.todayHabits && <TodayStrip tasks={m.allTasks} projects={m.projects} today={today} />}
 
           {/* Close ends the selection whole (phone-lists "Selecting tasks"): nothing stays ticked behind rows that show their checks again. */}
@@ -90,7 +111,7 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
           {route.view === 'project' && currentProject && <><ProjectNote project={currentProject} phone /><LinkedRefs kind="project" id={currentProject.id} folded /></>}
           {own.length === 0 && !upcomingCal.hasEvents && !taskGroups.find((g) => g.key === 'all')?.folded && m.liveSections.length === 0 && (m.duration || m.queryFilter?.query || completedNarrowed
             ? <FilteredEmpty onClear={() => { m.chooseDuration(null); m.queryFilter?.setQuery(''); m.setCompletedQuery(''); if (completedNarrowed) setCompletedDisplay({ projects: [] }) }} />
-            : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={m.projectReadOnly} completed={hiddenDone} onShowCompleted={showCompleted} />)}
+            : <div data-phone-empty><EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={m.projectReadOnly} completed={hiddenDone} onShowCompleted={showCompleted} /></div>)}
 
           <GroupedList groups={groups} view={route.view} project={currentProject} fieldColumns={false} projectFieldDefs={m.projectFieldDefs} siblingPos={m.treeView || m.nested ? m.siblingPos : undefined} reveal={selectedId}
             todayDropTarget={ownOrder?.todayDrop?.canEdit} activeTodayDrop={drag.dropGroup} contextualDrag={!!drag.draggingId && contextIds.has(drag.draggingId)}
@@ -110,6 +131,6 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
         {ui.prompt && <CompleteParentPrompt parent={ui.prompt} onAccept={s.acceptPrompt} onDismiss={() => s.setPrompt(null)} />}
         <RowPickerDialogs assignFor={ui.assignFor} pickerFor={ui.pickerFor} userId={userId} onCloseAssign={() => ui.setAssignFor(null)} onClosePicker={() => ui.setPickerFor(null)} />
       </div>
-    </GroupBarContext></PageHeaderDrawContext></UrgencyContext.Provider></ListReorderContext.Provider>
+    </PhoneChrome></BarProgressContext></UrgencyContext.Provider></ListReorderContext.Provider>
   )
 }

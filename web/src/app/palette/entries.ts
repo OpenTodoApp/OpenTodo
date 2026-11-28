@@ -4,7 +4,7 @@
 // the local tables, never persisted and never sent anywhere.
 import type { ConfirmSpec, PickerSpec } from '../menus/ActionMenu'
 import type { IconName } from '../../ui'
-import { msg, translatedMap } from '../../lib/i18n'
+import { msg, stripIsolates, translatedMap } from '../../lib/i18n'
 
 export type EntryKind = 'command' | 'task' | 'project' | 'label' | 'view' | 'settings' | 'filter' | 'note'
 
@@ -41,8 +41,14 @@ export interface Entry {
  */
 export function secondaryOf(e: Entry, withShortcut = true): string | undefined {
   const parts = [e.marker, e.secondary, withShortcut ? e.shortcut : undefined].filter(Boolean)
-  return parts.length ? parts.join(' · ') : undefined
+  return parts.length ? stripIsolates(parts.join(' · ')) : undefined
 }
+
+/**
+ * The label the bar matches and shows: without the direction isolates a right-to-left
+ * language puts around a value (arabic-rtl D5), so "Open Plan" still matches exactly.
+ */
+export function labelOf(e: Entry): string { return stripIsolates(e.label) }
 
 /** Section headings of the palette (keyboard-shortcuts / search-and-command-palette: Recent, Tasks, Projects, Labels, Views, Commands, Settings). */
 export const KIND_GROUP = translatedMap<EntryKind>({

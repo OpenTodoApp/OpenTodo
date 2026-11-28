@@ -206,7 +206,7 @@ export function IssueEditor({ draft: d, projects, busy, connected, error, genera
         <div className="sticky -bottom-4 -mx-4 flex justify-end gap-2 border-t border-default bg-surface px-4 py-3" data-issue-actions>
           <Button variant="ghost" onClick={onClose}>{t('Cancel')}</Button>
           {/* Why Test is off, in the dialog itself: a disabled button cannot open a tooltip (ux-fixes-phone). */}
-          {!d.id && <p id="issue-test-hint" className="mr-auto self-center text-meta text-muted" data-issue-test-hint>{t('Save the connection first, then test it.')}</p>}
+          {!d.id && <p id="issue-test-hint" className="me-auto self-center text-meta text-muted" data-issue-test-hint>{t('Save the connection first, then test it.')}</p>}
           <Button variant="secondary" disabled={!connected || !d.id || !onTest} onClick={onTest} data-issue-test
             aria-describedby={d.id ? undefined : 'issue-test-hint'}>{t('Test')}</Button>
           <Button variant="primary" type="submit" busy={busy} disabled={!connected}>{d.id ? t('Save') : t('Connect')}</Button>

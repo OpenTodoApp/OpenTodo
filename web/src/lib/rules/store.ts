@@ -151,7 +151,7 @@ export async function duplicateRule(id: string): Promise<string> {
   const rule = await db.rules.get(id)
   if (!rule || rule.deleted_at) throw new Error(t('Rule not found'))
   const copy = await createRule({
-    name: t('{name} (copy)', { name: rule.name }),
+    name: t.plain('{name} (copy)', { name: rule.name }),
     trigger: rule.trigger as RuleTrigger,
     condition: rule.condition as RuleCondition | null,
     actions: rule.actions as RuleActions | null,

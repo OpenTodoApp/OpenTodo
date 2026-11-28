@@ -6,6 +6,7 @@
 // Arrow keys move between the word buttons of one card (data-word).
 import { forwardRef, type KeyboardEvent, type ReactNode } from 'react'
 import { Icon, type IconName } from './Icon'
+import { inlineKey } from '../lib/direction'
 
 export interface WordButtonProps {
   /** The input's name as read ("Project"). */
@@ -38,12 +39,12 @@ export interface WordButtonProps {
 
 /** Moves focus to the previous or next word button of the same card. */
 export function wordKeys(e: KeyboardEvent<HTMLElement>): void {
-  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+  if (inlineKey(e) !== 'ArrowLeft' && inlineKey(e) !== 'ArrowRight') return
   const card = e.currentTarget.closest('[data-word-group]')
   if (!card) return
   const words = [...card.querySelectorAll<HTMLElement>('[data-word]')].filter((w) => w.closest('[data-word-group]') === card)
   const i = words.indexOf(e.currentTarget)
-  const next = words[i + (e.key === 'ArrowRight' ? 1 : -1)]
+  const next = words[i + (inlineKey(e) === 'ArrowRight' ? 1 : -1)]
   if (next) {
     e.preventDefault()
     next.focus()
@@ -56,7 +57,7 @@ export const WordButton = forwardRef<HTMLButtonElement, WordButtonProps>(functio
   const empty = value === undefined || value === null || value === ''
   const read = empty ? placeholder : valueText ?? (typeof value === 'string' ? value : '')
   const asChip = chip && !empty
-  const text = wrap && !empty ? `whitespace-pre-wrap break-words text-left${clamp ? ' line-clamp-4' : ''}` : 'truncate'
+  const text = wrap && !empty ? `whitespace-pre-wrap break-words text-start ${clamp ? 'line-clamp-4' : ''}` : 'truncate'
   return (
     // No minimum width: a short word ("all") reads as a word, not a 44 px box with a gap
     // after it (the touch rule sets one on buttons, unlayered, so it is undone inline). A

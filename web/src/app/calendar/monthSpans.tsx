@@ -15,6 +15,7 @@ import { spanWithUndo } from '../undoable'
 import type { SpanBandProps } from './SpanBand'
 import { startExtend } from './spanModel'
 import { spanKeyPatch } from './useCalendarKeys'
+import { inlineKey } from '../../lib/direction'
 
 /** The month's spans and its cells' other tasks (by the stored rows, in the viewer's zone). */
 export function useMonthSpans(drawnRaw: readonly Task[], viewedMap: ReadonlyMap<string, Task>, projections: readonly Projection[], days: readonly string[], zone?: string) {
@@ -41,7 +42,7 @@ export function monthOrder(days: readonly string[], cells: ReadonlyMap<string, T
  */
 export function monthSpanKeys(c: { selected: Task | undefined; viewed: ReadonlyMap<string, Task>; editable: (task: Task) => boolean; queue: MutableRefObject<Promise<void>>; focus: (date: string) => void }) {
   const run = (end: 'first' | 'last') => (e: KeyboardEvent) => {
-    const days = e.key === 'ArrowLeft' ? -1 : 1
+    const days = inlineKey(e) === 'ArrowLeft' ? -1 : 1
     const v = c.selected ? c.viewed.get(c.selected.id) : undefined
     if (!c.selected || !v || !spanKeyPatch(v, end, days)) return false
     if (!c.editable(c.selected)) return

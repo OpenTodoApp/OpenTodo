@@ -61,7 +61,7 @@ export function ToastActionHost() {
         }}>
         <span className="shrink-0 text-danger"><Icon name="circle-alert" /></span>
         <p role="status" className="min-w-0 flex-1">{shown.label}</p>
-        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -mr-1 px-1 py-1 text-muted" aria-label={t('Dismiss')}
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -me-1 px-1 py-1 text-muted" aria-label={t('Dismiss')}
           onClick={() => hideActionToast(shown.key)} data-action-toast-dismiss><Icon name="x" size="sm" /></button>
       </div>
     </ToastRegion>

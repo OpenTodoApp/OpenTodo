@@ -26,11 +26,11 @@ export function WaitingSoonList({ soon, onOpenGroup }: { soon: readonly Soon[]; 
         {shown.map((s) => {
           const title = titleOf(s)
           return (
-            <li key={s.task.id} className="flex min-h-9 items-center gap-2 rounded-control pl-2 hover:bg-hover" data-waiting-soon-task={s.task.id}>
+            <li key={s.task.id} className="flex min-h-9 items-center gap-2 rounded-control ps-2 hover:bg-hover" data-waiting-soon-task={s.task.id}>
               <span className={`w-16 shrink-0 truncate text-meta tabular-nums ${s.passed ? 'text-danger' : 'text-muted'}`} data-soon-time>
                 {s.time ? formatTime(s.time) : t('Deadline')}
               </span>
-              <button type="button" className="min-w-0 flex-1 truncate rounded-control py-1 text-left text-body text-default hover:text-strong"
+              <button type="button" className="min-w-0 flex-1 truncate rounded-control py-1 text-start text-body text-default hover:text-strong"
                 onClick={() => openTaskPanel(s.task.id)}>
                 {title}
               </button>
@@ -44,7 +44,7 @@ export function WaitingSoonList({ soon, onOpenGroup }: { soon: readonly Soon[]; 
         })}
       </ul>
       {more > 0 && (
-        <Button variant="ghost" size="sm" className="ml-[4.5rem] text-meta text-muted" onClick={onOpenGroup} data-waiting-soon-more>
+        <Button variant="ghost" size="sm" className="ms-[4.5rem] text-meta text-muted" onClick={onOpenGroup} data-waiting-soon-more>
           {t('{n, plural, one {# more with a time} other {# more with a time}}', { n: more })}
         </Button>
       )}

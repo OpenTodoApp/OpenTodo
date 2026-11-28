@@ -145,18 +145,18 @@ export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(fu
     if (!reply && !edit && !del && !(coarse && react)) return null
     if (coarse) {
       return (
-        <span className="absolute -top-1 right-0" data-comment-actions>
+        <span className="absolute -top-1 inset-e-0" data-comment-actions>
           <Menu kind="menu" label={t('More actions for this comment')} trigger={<Icon name="ellipsis" size="sm" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2">
             {reply && <MenuItem label={t('Reply')} icon="corner-down-right" onSelect={() => startReply(c.id)} />}
             {edit && <MenuItem label={t('Edit')} icon="pencil" onSelect={() => setEditing(c.id)} />}
             {del && <MenuItem label={t('Delete')} icon="trash-2" danger onSelect={() => setDeleting(c.id)} />}
-            {react && <ReactionMenuItems comment={c} me={me} onReact={onReact} />}
+            {react && <ReactionMenuItems comment={c} me={me} name={name} onReact={onReact} />}
           </Menu>
         </span>
       )
     }
     return (
-      <span className="hover-reveal absolute -top-1 right-0 flex gap-0.5 rounded-control bg-surface" data-comment-actions>
+      <span className="hover-reveal absolute -top-1 inset-e-0 flex gap-0.5 rounded-control bg-surface" data-comment-actions>
         {reply && <Button variant="ghost" size="sm" onClick={() => startReply(c.id)}>{t('Reply')}</Button>}
         {edit && <Button variant="ghost" size="sm" onClick={() => setEditing(c.id)}>{t('Edit')}</Button>}
         {del && <Button variant="ghost" size="sm" className="text-danger" onClick={() => setDeleting(c.id)}>{t('Delete')}</Button>}
@@ -209,7 +209,7 @@ export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(fu
   // The composer: pinned to the panel's bottom when a host is given, so it is in
   // view without scrolling past the thread.
   const composer = me && resting ? (
-    <button type="button" className="ui-input flex w-full items-center text-left text-muted" data-composer-resting
+    <button type="button" className="ui-input flex w-full items-center text-start text-muted" data-composer-resting
       onClick={() => { setOpen(true); focusComposer() }} onFocus={() => { setOpen(true); focusComposer() }}>
       {t('Write a comment…')}
     </button>
@@ -255,7 +255,7 @@ export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(fu
               className={`rounded-control focus-visible:outline-2 focus-visible:outline-focus ${focusComment === entry.root.id ? 'bg-accent-soft' : ''}`}>
               {renderComment(entry.root, false)}
               {entry.replies.length > 0 && (
-                <ol className="ml-4 mt-3 space-y-3 border-l-2 border-default pl-4 sm:ml-[1.125rem]" aria-label={t('Replies')}>
+                <ol className="ms-4 mt-3 space-y-3 border-s-2 border-default ps-4 sm:ms-[1.125rem]" aria-label={t('Replies')}>
                   {entry.replies.map((r) => (
                     <li key={r.id} id={`comment-${r.id}`} tabIndex={-1} data-reply={r.id}>{renderComment(r, true)}</li>
                   ))}

@@ -89,7 +89,11 @@ export default function EventEditor({ ev, zone, onDone }: { ev: CalendarEvent; z
           </div>
         </form>
       ) : access?.delete ? (
-        <Button size="sm" variant="danger" onClick={() => { void editEventWithUndo(ev, { delete: true }); onDone?.() }}>{t('Delete')}</Button>
+        // It can be deleted but not changed: the reason the block's tooltip gives, where a tap reads it (phone-control-facts).
+        <>
+          <p className="text-meta text-faint" data-event-locked={access.reason}>{eventAccessText(access.reason)}</p>
+          <Button size="sm" variant="danger" onClick={() => { void editEventWithUndo(ev, { delete: true }); onDone?.() }}>{t('Delete')}</Button>
+        </>
       ) : (
         <p className="text-meta text-faint" data-event-locked={access?.reason}>
           {eventAccessText(access?.reason)}

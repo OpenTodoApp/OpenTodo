@@ -88,3 +88,19 @@ export function edges(rows: readonly Pick<Task, 'id' | 'blocked_by' | 'completed
   }
   return out
 }
+
+/** How far into a bar a finger still takes its end (phone-timeline D2): WCAG 2.2's target size. */
+export const TOUCH_END_PX = 24
+
+/**
+ * The part of a bar a finger pressed `x` pixels from its left edge: an end within
+ * TOUCH_END_PX of it, and never more than a third of the bar, so the middle of a
+ * short bar still moves it. An end that cannot be dragged (the bar runs past the
+ * axis there) belongs to the middle.
+ */
+export function touchGrab(x: number, barWidth: number, ends: { start: boolean; end: boolean } = { start: true, end: true }): 'start' | 'move' | 'end' {
+  const zone = Math.min(TOUCH_END_PX, barWidth / 3)
+  if (ends.end && x >= barWidth - zone) return 'end'
+  if (ends.start && x < zone) return 'start'
+  return 'move'
+}

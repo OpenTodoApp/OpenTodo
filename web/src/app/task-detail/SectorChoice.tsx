@@ -32,7 +32,7 @@ export async function setSectorWithUndo(id: string, sector: string, name = ''): 
 function Choice({ checked, name, detail, onPick, sector }: { checked: boolean; name: string; detail: string; onPick: () => void; sector: string }) {
   return (
     <button type="button" role="radio" aria-checked={checked} data-sector-choice={sector} onClick={onPick}
-      className={`flex min-h-8 w-full min-w-0 flex-wrap items-baseline gap-x-2 rounded-control px-2 py-1 text-left text-body ${checked ? 'bg-selected font-medium text-strong' : 'text-default hover:bg-sunken dark:hover:bg-raised'}`}>
+      className={`flex min-h-8 w-full min-w-0 flex-wrap items-baseline gap-x-2 rounded-control px-2 py-1 text-start text-body ${checked ? 'bg-selected font-medium text-strong' : 'text-default hover:bg-sunken dark:hover:bg-raised'}`}>
       <Icon name={checked ? 'check' : 'calendar-range'} size="xs" className={`self-center ${checked ? '' : 'text-faint'}`} />
       <span>{name}</span>
       <span className="text-meta font-normal text-muted">{detail}</span>
@@ -72,7 +72,7 @@ export function SectorChoice({ task, readOnly, onChosen }: { task: Task; readOnl
       </div>
       <div className="space-y-1.5" data-sector-later>
         <div role="radiogroup" aria-label={t('Later…')} className="flex flex-wrap items-center gap-1">
-          <span className="mr-1 text-meta text-muted">{t('Later…')}</span>
+          <span className="me-1 text-meta text-muted">{t('Later…')}</span>
           {KINDS.map((k) => (
             <button key={k.kind} type="button" role="radio" aria-checked={later === k.kind} data-sector-kind={k.kind}
               className={`min-h-8 rounded-control border px-2 py-1 text-meta ${later === k.kind ? 'border-accent bg-accent-soft text-on-accent-soft' : 'border-default text-muted hover:bg-sunken dark:hover:bg-raised'}`}

@@ -1,24 +1,20 @@
 // @vitest-environment happy-dom
-// The phone in the Precision look (OpenSpec change precision-phone): a day page keeps
-// its title, date and briefing in the page under a bar with only the menu and the
-// actions (D1), a phone row keeps one cell (D2), the tab bar is Inbox, Today, Upcoming
-// and Search (D3, tabBar.test.tsx), and the task page stacks its facts (D4).
+// The page's own header and row below 768 px (OpenSpec change precision-phone), where a
+// screen is drawn outside the phone UI's header and row: a day page keeps its title, date
+// and briefing in the page (D1), a row keeps one cell (D2), and the task's facts stack (D4).
+// The tab bar is Inbox, Today, Upcoming and Search (D3, tabBar.test.tsx).
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
-import { createProject, createTask, resetDeviceId } from '../lib/ops'
-import type { User } from '../lib/types'
+import { resetDeviceId } from '../lib/ops'
 import { PageHeader } from '../ui'
 import { pageBar } from '../ui/patterns/pageBar'
-import { click, minWidthPx, render, waitFor } from '../ui/test-utils'
+import { minWidthPx, render } from '../ui/test-utils'
 import { resetPanel } from './panel'
-import { navigate } from './router'
-import { Shell } from './Shell'
 import { stackedFirst } from './task-detail/TaskFacts'
 import { phoneCell } from './TaskRow'
 import { resetTaskTrail } from './taskTrail'
 
-const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 
 /** matchMedia answering `width` for min-width queries. */
 function stubMedia(width: number) {
@@ -63,22 +59,6 @@ describe('the day head on a phone (D1)', () => {
     await r.unmount()
   })
 
-  it('Today\'s bar has the menu and no title or hairline; a project\'s bar has both', async () => {
-    navigate({ view: 'today' })
-    const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector('[data-phone-bar][data-phone-bar-day]'))
-    const bar = document.querySelector<HTMLElement>('[data-phone-bar]')!
-    expect(bar.querySelector('button[aria-label="Open menu"]')).not.toBeNull()
-    expect(bar.querySelector('[data-phone-title]')).toBeNull()
-    expect(bar.className).not.toContain('border-b')
-    // One level-one heading on the page, the day head's.
-    expect([...document.querySelectorAll('h1')].map((h) => h.textContent)).toEqual(['Today'])
-    const project = await createProject({ name: 'Home' })
-    navigate({ view: 'project', id: project })
-    await waitFor(() => document.querySelector('[data-phone-bar] [data-phone-title]')?.textContent === 'Home')
-    expect(document.querySelector('[data-phone-bar]')!.className).toContain('border-b')
-    await r.unmount()
-  })
 })
 
 describe('the phone row (D2)', () => {
@@ -90,17 +70,6 @@ describe('the phone row (D2)', () => {
     expect(phoneCell({ date: false, deadline: false, assignee: false, project: false })).toBeNull()
   })
 
-  it('a row in Upcoming marks its date cell; the project keeps its dot', async () => {
-    const project = await createProject({ name: 'Home', color: '#e07a3f' })
-    await createTask({ title: 'Paint the fence', project_id: project, due: { date: '2099-03-04' } })
-    navigate({ view: 'project', id: project })
-    const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector('[data-task-id]'))
-    const row = document.querySelector('[data-task-id]')!
-    expect(row.querySelector('[data-row-phone]')?.getAttribute('data-row-cell')).toBe('date')
-    expect(row.querySelectorAll('[data-row-phone]')).toHaveLength(1)
-    await r.unmount()
-  })
 })
 
 describe('the stacked facts (D4)', () => {
@@ -113,22 +82,4 @@ describe('the stacked facts (D4)', () => {
     expect(stackedFirst({ id: 'priority', set: true, priority: 2 })).toBe(true)
   })
 
-  it('the task page on a phone is one card of rows; More shows the rest', async () => {
-    const id = await createTask({ title: 'Call the plumber', due: { date: '2099-03-04' } })
-    navigate({ view: 'task', id })
-    const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector('[data-facts="stacked"]'))
-    const facts = document.querySelector<HTMLElement>('[data-facts="stacked"]')!
-    const shown = () => [...facts.querySelectorAll('[data-fact]')].map((f) => f.getAttribute('data-fact'))
-    expect(facts.querySelector('[data-fact-group]')).toBeNull()
-    expect(shown()).toEqual(['due', 'deadline', 'project'])
-    expect(facts.querySelector('[data-fact="deadline"]')!.textContent).toContain('Set a deadline')
-    // The bar's Back takes the menu button's place.
-    expect(document.querySelector('[data-phone-bar] [data-page-back]')).not.toBeNull()
-    expect(document.querySelector('[data-phone-bar] button[aria-label="Open menu"]')).toBeNull()
-    await click(facts.querySelector<HTMLButtonElement>('[data-facts-more]')!)
-    expect(shown()).toEqual(expect.arrayContaining(['estimate', 'repeat', 'location', 'labels']))
-    expect(facts.querySelector('[data-facts-more]')).toBeNull()
-    await r.unmount()
-  })
 })

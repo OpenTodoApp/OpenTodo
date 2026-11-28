@@ -116,11 +116,11 @@ describe('locale resolution (D4)', () => {
     }
   })
 
-  it('simplified Chinese sets lang to zh and does not change direction', () => {
+  it('simplified Chinese sets lang to zh and keeps the direction left to right', () => {
     document.documentElement.removeAttribute('dir')
     applyCatalog('zh' as LanguageCode, 'zh', {})
     expect(document.documentElement.lang).toBe('zh')
-    expect(document.documentElement.hasAttribute('dir')).toBe(false)
+    expect(document.documentElement.dir).toBe('ltr')
     document.documentElement.dir = 'ltr'
     applyCatalog('zh' as LanguageCode, 'zh-CN', {})
     expect(document.documentElement.lang).toBe('zh')
@@ -139,6 +139,27 @@ describe('locale resolution (D4)', () => {
     expect(t('Inbox')).toBe('インボックス')
     expect(t('{n, plural, one {# task} other {# tasks}}', { n: 1 })).toBe('1件のタスク')
     expect(t('{n, plural, one {# task} other {# tasks}}', { n: 1234 })).toBe('1,234件のタスク')
+  })
+
+  it('resolves Arabic, sets lang to ar, turns the page right to left and keeps Western digits (arabic-rtl)', async () => {
+    expect(resolveLanguage('system', ['ar-EG', 'en'])).toBe('ar')
+    expect(intlLocale('system', ['ar-EG'])).toBe('ar-EG-u-nu-latn')
+    expect(intlLocale('ar', ['en-US'])).toBe('ar-u-nu-latn')
+    document.documentElement.dir = 'ltr'
+    await applyLanguagePreference('ar', ['en-US'])
+    expect(currentLanguage()).toBe('ar')
+    expect(document.documentElement.lang).toBe('ar')
+    expect(document.documentElement.dir).toBe('rtl')
+    expect(t('Inbox')).toBe('الوارد')
+    const days = '{n, plural, one {# day} other {# days}}'
+    expect(t(days, { n: 1 })).toBe('يوم واحد')
+    expect(t(days, { n: 2 })).toBe('يومان')
+    expect(t(days, { n: 3 })).toBe('3 أيام')
+    expect(t(days, { n: 11 })).toBe('11 يومًا')
+    expect(t(days, { n: 100 })).toBe('100 يوم')
+    expect(t(days, { n: 1234 })).toMatch(/^1.234 يومًا$/)
+    await applyLanguagePreference('en', ['en-US'])
+    expect(document.documentElement.dir).toBe('ltr')
   })
 
   it('resolves Turkish and loads its catalog offline', async () => {
@@ -246,5 +267,17 @@ describe('words for tasks that are late (page-rhythm D8)', () => {
       expect(late, lang).toEqual([])
       expect(catalog.Earlier, `${lang} translates Earlier`).toBeTruthy()
     }
+  })
+})
+
+describe('Arabic numbers (arabic-rtl D6)', () => {
+  it('keeps Western digits and the six plural categories', async () => {
+    const { westernDigits } = await import('./locale')
+    expect(westernDigits('ar')).toBe('ar-u-nu-latn')
+    expect(westernDigits('ar-EG')).toBe('ar-EG-u-nu-latn')
+    expect(westernDigits('ar-EG-u-nu-arab')).toBe('ar-EG-u-nu-arab')
+    expect(westernDigits('de-CH')).toBe('de-CH')
+    expect(new Intl.NumberFormat(westernDigits('ar-EG')).format(12345)).toMatch(/^12.345$/)
+    expect(new Intl.PluralRules('ar').resolvedOptions().pluralCategories.sort()).toEqual(['few', 'many', 'one', 'other', 'two', 'zero'])
   })
 })

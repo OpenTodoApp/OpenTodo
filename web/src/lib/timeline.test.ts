@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { axis, edges, shiftDates, spanOf } from './timeline'
+import { axis, edges, shiftDates, spanOf, TOUCH_END_PX, touchGrab } from './timeline'
 
 const today = '2026-10-15'
 
@@ -60,5 +60,44 @@ describe('axis and edges', () => {
       { id: 'done', blocked_by: [], completed_at: 1, deleted_at: null },
     ]
     expect(edges(rows)).toEqual([{ from: 'confirm', to: 'book' }])
+  })
+})
+
+describe('touchGrab: the part of a bar a finger pressed (phone-timeline D2)', () => {
+  it('takes an end within 24 px of it and the whole bar between', () => {
+    expect(TOUCH_END_PX).toBe(24)
+    // A five-day bar on the day axis, 160 px.
+    expect(touchGrab(0, 160)).toBe('start')
+    expect(touchGrab(12, 160)).toBe('start')
+    expect(touchGrab(23.9, 160)).toBe('start')
+    expect(touchGrab(24, 160)).toBe('move')
+    expect(touchGrab(80, 160)).toBe('move')
+    expect(touchGrab(135.9, 160)).toBe('move')
+    expect(touchGrab(136, 160)).toBe('end')
+    expect(touchGrab(148, 160)).toBe('end')
+    expect(touchGrab(160, 160)).toBe('end')
+  })
+
+  it('never gives an end more than a third of a short bar, so its middle moves it', () => {
+    // A one-day bar, 32 px: 10.67 px at each end.
+    expect(touchGrab(10, 32)).toBe('start')
+    expect(touchGrab(11, 32)).toBe('move')
+    expect(touchGrab(16, 32)).toBe('move')
+    expect(touchGrab(21, 32)).toBe('move')
+    expect(touchGrab(22, 32)).toBe('end')
+    // 72 px is the first width with the full 24 px at each end.
+    expect(touchGrab(23, 72)).toBe('start')
+    expect(touchGrab(24, 72)).toBe('move')
+    expect(touchGrab(47, 72)).toBe('move')
+    expect(touchGrab(48, 72)).toBe('end')
+    // A day at the week zoom, 14 px: still three parts.
+    expect([2, 7, 12].map((x) => touchGrab(x, 14))).toEqual(['start', 'move', 'end'])
+  })
+
+  it('an end that cannot be dragged belongs to the middle', () => {
+    expect(touchGrab(5, 160, { start: false, end: true })).toBe('move')
+    expect(touchGrab(155, 160, { start: true, end: false })).toBe('move')
+    expect(touchGrab(155, 160, { start: false, end: true })).toBe('end')
+    expect(touchGrab(5, 160, { start: true, end: false })).toBe('start')
   })
 })

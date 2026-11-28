@@ -23,12 +23,19 @@ export function reactionLabel(name: ReactionName): string {
 }
 
 /** The six reactions as menu items, checked when the viewer chose them (Add reaction, touch's More actions). */
-export function ReactionMenuItems({ comment, me, onReact }: { comment: Pick<Comment, 'id' | 'reactions'>; me: string | null; onReact: (id: string, name: ReactionName) => void }) {
+export function ReactionMenuItems({ comment, me, name, onReact }: {
+  comment: Pick<Comment, 'id' | 'reactions'>
+  me: string | null
+  /** An account's display name: with it, a chosen reaction says who chose it (a tap never opens the bar's tooltip). */
+  name?: (id: string) => string
+  onReact: (id: string, name: ReactionName) => void
+}) {
   const mine = myReactions(comment, me)
+  const who = new Map(name ? reactionCounts(comment).map((c) => [c.name, c.accounts.map(name).join(', ')]) : [])
   return (
     <MenuGroup label={t('React')}>
       {REACTION_NAMES.map((n) => (
-        <MenuItem key={n} label={reactionLabel(n)} icon={REACTION_ICON[n]} checked={mine.includes(n)} onSelect={() => onReact(comment.id, n)} />
+        <MenuItem key={n} label={reactionLabel(n)} icon={REACTION_ICON[n]} checked={mine.includes(n)} description={who.get(n)} data-react={n} onSelect={() => onReact(comment.id, n)} />
       ))}
     </MenuGroup>
   )
@@ -64,7 +71,7 @@ export function ReactionBar({ comment, me, name, onReact, coarse }: {
       })}
       {me && (
         <Menu kind="menu" label={t('Add reaction')} align="start" trigger={<Icon name="smile-plus" size="sm" />} triggerClassName="ui-btn ui-btn--icon ui-btn--ghost ui-btn--sm" triggerProps={{ 'data-add-reaction': true }}>
-          <ReactionMenuItems comment={comment} me={me} onReact={onReact} />
+          <ReactionMenuItems comment={comment} me={me} name={name} onReact={onReact} />
         </Menu>
       )}
     </div>

@@ -104,7 +104,7 @@ export function OriginChip({ origin, quiet = false, iconOnly = false }: { origin
   if (url) {
     return (
       <span data-origin={origin.kind} className="mt-0.5 inline-flex max-w-40 min-w-0 shrink-0" onClick={stop} onPointerDown={stop}>
-        <Menu kind="menu" label={from} trigger={face} triggerClassName={LINK} tip={origin.title || undefined} width="sm:w-48">
+        <Menu kind="menu" label={from} title={origin.title || undefined} trigger={face} triggerClassName={LINK} tip={origin.title || undefined} width="sm:w-48">
           <MenuItem label={t('Copy link')} icon="copy" onSelect={() => act(copyText(url))} data-origin-copy />
         </Menu>
       </span>

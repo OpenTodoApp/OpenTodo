@@ -16,7 +16,7 @@ function Focus({ tasks, room }: { tasks: Task[]; room: boolean }) {
   const done = tasks.filter((x) => x.completed_at).length
   const r = 7
   const c = 2 * Math.PI * r
-  const add = room && <Button size="sm" variant="ghost" icon="plus" className="mt-1 ml-1" data-focus-add onClick={() => requestFocusPick({ mode: 'task', slot: null })}>{t('Add to focus')}</Button>
+  const add = room && <Button size="sm" variant="ghost" icon="plus" className="mt-1 ms-1" data-focus-add onClick={() => requestFocusPick({ mode: 'task', slot: null })}>{t('Add to focus')}</Button>
   return (
     <section aria-labelledby="loop-focus" data-loop-focus>
       <GroupHeading id="loop-focus" end={tasks.length > 0 && (

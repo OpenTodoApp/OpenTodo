@@ -142,10 +142,14 @@ The automated gate runs on every pull request; "not toured" screens are only rea
 | `loop` | core | pass | 2 of 6 passes done, 4 pending |
 | `focus` | core | pass | 2 of 6 passes done, 4 pending |
 | `review` | core | pass | 2 of 6 passes done, 4 pending |
+| `review-close` | core | pass | 2 of 6 passes done, 4 pending |
+| `review-daily` | core | pass | 2 of 6 passes done, 4 pending |
 | `stats` | core | pass | 2 of 6 passes done, 4 pending |
 | `habits` | rare | pass | not in the manual audit |
+| `habit` | rare | pass | not in the manual audit |
 | `completed` | core | pass | 2 of 6 passes done, 4 pending |
 | `notes` | core | pass | 2 of 6 passes done, 4 pending |
+| `note` | core | pass | 2 of 6 passes done, 4 pending |
 | `trash` | core | pass | 2 of 6 passes done, 4 pending |
 | `feed` | core | pass | 2 of 6 passes done, 4 pending |
 | `workspace-activity` | rare | pass | not in the manual audit |

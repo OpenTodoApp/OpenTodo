@@ -41,10 +41,10 @@ export function animatesScreens(): boolean {
  * Run `update` (a navigation) as a push or a pop. `update` may return a promise that ends
  * when the address has changed; `shown` says when the new screen is in the document.
  */
-export function withScreenTransition(direction: ScreenDirection, update: () => void | Promise<void>, shown: () => boolean = () => true): void {
-  if (!animatesScreens()) { void update(); return }
+export function withScreenTransition(direction: ScreenDirection, update: () => void | Promise<void>, shown: () => boolean = () => true, after: () => void = () => {}): void {
+  if (!animatesScreens()) { void update(); after(); return }
   const root = document.documentElement
-  const done = () => { if (root.dataset.phoneNav === direction) delete root.dataset.phoneNav }
+  const done = () => { if (root.dataset.phoneNav === direction) delete root.dataset.phoneNav; after() }
   root.dataset.phoneNav = direction
   try {
     const start = (document as unknown as { startViewTransition: StartViewTransition }).startViewTransition
@@ -54,14 +54,34 @@ export function withScreenTransition(direction: ScreenDirection, update: () => v
     transition.updateCallbackDone?.catch(quiet)
     transition.finished.then(done, done)
   } catch {
-    done()
-    void update()
+    if (root.dataset.phoneNav === direction) delete root.dataset.phoneNav
+    void Promise.resolve().then(update).finally(after)
   }
 }
 
-/** Open a task from a phone list: its page pushes in. */
+/** The name the tapped row's title and the task page's title share while a push or pop runs (phone-delight D2). */
+export const SHARED_TITLE = 'phone-task-title'
+
+/** A row's title on the phone list, if the row is on screen. */
+const rowTitle = (id: string) => document.querySelector<HTMLElement>(`[data-phone-row="${CSS.escape(id)}"] [data-row-title]`)
+
+/**
+ * Give the row's title the shared name until the transition ends. The page's title has the
+ * name through index.css while `data-phone-nav` is set, and is never in the same capture as
+ * the row, so one element carries the name in each capture.
+ */
+function nameRow(el: HTMLElement | null): () => void {
+  if (!el) return () => {}
+  el.style.setProperty('view-transition-name', SHARED_TITLE)
+  return () => el.style.removeProperty('view-transition-name')
+}
+
+/** Open a task from a phone list: its page pushes in, the tapped row's title growing into the page's. */
 export function openTaskFromList(id: string): void {
-  withScreenTransition('push', () => openTaskPage(id), screenShown('task'))
+  if (!animatesScreens()) { void openTaskPage(id); return }
+  const clear = nameRow(rowTitle(id))
+  // The row leaves the old capture with the name; the page's title takes it in the new one.
+  withScreenTransition('push', () => { clear(); return openTaskPage(id) }, screenShown('task'), clear)
 }
 
 /** How long a Back waits for the history to move before the transition goes on without it. */
@@ -75,6 +95,9 @@ const BACK_WAIT_MS = 300
  */
 export function leaveScreen(back: () => void): void {
   const scroll = taskTrail()?.scroll ?? 0
+  // The task that is open, whose row takes the shared title back (phone-delight D2); none without the transition.
+  const id = animatesScreens() ? location.pathname.match(/^\/task\/([^/?#]+)/)?.[1] ?? null : null
+  let clear = () => {}
   withScreenTransition('pop', async () => {
     await new Promise<void>((resolve) => {
       const before = location.pathname + location.search
@@ -90,5 +113,7 @@ export function leaveScreen(back: () => void): void {
       await until(() => content.scrollHeight - content.clientHeight >= scroll)
       content.scrollTop = scroll
     }
-  })
+    // The page's title left the old capture with the name; the row it came from takes it in the new one.
+    if (id) clear = nameRow(rowTitle(decodeURIComponent(id)))
+  }, undefined, () => clear())
 }

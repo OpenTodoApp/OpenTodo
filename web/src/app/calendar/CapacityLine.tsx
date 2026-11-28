@@ -33,7 +33,7 @@ export function CapacityLine({ load, dayLength, unestimated = false, focusable =
     >
       {formatLoad(load, dayLength)}
       {load.over && sayOver && <span className="sr-only">{' '}{capacityState(load)}</span>}
-      {unestimated && load.unestimated > 0 && <span className="ml-1 text-faint">+{load.unestimated}?</span>}
+      {unestimated && load.unestimated > 0 && <span className="ms-1 text-faint">+{load.unestimated}?</span>}
     </span>
   )
 }

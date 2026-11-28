@@ -16,6 +16,7 @@ import { deriveAccent, normalizeHex, type DerivedAccent } from '../lib/accentDer
 import { customAccentStyle } from '../lib/appearance'
 import { hueName } from '../lib/colourNames'
 import { t } from '../lib/i18n'
+import { inlineKey } from '../lib/direction'
 import { composing } from '../lib/composeKey'
 
 const COLS = 9
@@ -79,8 +80,8 @@ export function AccentPicker({ value, onPick, onDone }: AccentPickerProps) {
   const onSwatchKey = (e: KeyboardEvent, i: number) => {
     const n = ACCENT_SWATCHES.length
     let next = -1
-    if (e.key === 'ArrowRight') next = (i + 1) % n
-    else if (e.key === 'ArrowLeft') next = (i - 1 + n) % n
+    if (inlineKey(e) === 'ArrowRight') next = (i + 1) % n
+    else if (inlineKey(e) === 'ArrowLeft') next = (i - 1 + n) % n
     else if (e.key === 'ArrowDown') next = (i + COLS) % n
     else if (e.key === 'ArrowUp') next = (i - COLS + n) % n
     else if (e.key === 'Home') next = 0

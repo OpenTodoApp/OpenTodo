@@ -22,8 +22,8 @@ export function LinkOption({ c }: { c: LinkCandidate }) {
     <span className="flex min-w-0 flex-1 items-center gap-2" data-link-option={c.kind}>
       <Icon name={c.habit ? HABIT_ICON : LINK_ICON[c.kind]} size="sm" className="shrink-0 text-muted" />
       <span className={`user-text min-w-0 truncate ${c.done ? 'text-muted line-through' : ''}`}>{c.title}</span>
-      {c.habit?.measure && <span className="ml-auto shrink-0 text-meta tabular-nums text-muted" data-link-measure>{c.habit.measure}</span>}
-      {c.secondary && !c.habit?.measure && <span className="user-text ml-auto min-w-0 max-w-[45%] shrink truncate text-meta text-faint">{c.secondary}</span>}
+      {c.habit?.measure && <span className="ms-auto shrink-0 text-meta tabular-nums text-muted" data-link-measure>{c.habit.measure}</span>}
+      {c.secondary && !c.habit?.measure && <span className="user-text ms-auto min-w-0 max-w-[45%] shrink truncate text-meta text-faint">{c.secondary}</span>}
     </span>
   )
 }

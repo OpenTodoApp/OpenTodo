@@ -113,7 +113,7 @@ function VersionItem({ v, props }: { v: Version; props: HistoryViewProps }) {
         <PersonAvatar id={who.id || 'unknown'} name={who.name || who.device} size="md" />
         <div className="min-w-0 flex-1">
           <button type="button" aria-expanded={open} onClick={() => setOpen((x) => !x)}
-            className="inline-flex max-w-full items-start gap-1 rounded-chip text-left text-body font-medium text-default hover:underline focus-visible:outline-2 focus-visible:outline-focus">
+            className="inline-flex max-w-full items-start gap-1 rounded-chip text-start text-body font-medium text-default hover:underline focus-visible:outline-2 focus-visible:outline-focus">
             <Icon name="chevron-right" size="xs" className={`mt-1 shrink-0 transition-transform duration-(--duration-ui) ${open ? 'rotate-90' : ''}`} />
             <span>{summary}</span>
           </button>
@@ -123,7 +123,7 @@ function VersionItem({ v, props }: { v: Version; props: HistoryViewProps }) {
         </div>
       </div>
       {open && (
-        <div className="ml-11 mt-2 space-y-2">
+        <div className="ms-11 mt-2 space-y-2">
           <ul className="space-y-2" aria-label={t('Changes: {summary}', { summary })}>
             {v.changes.map((c) => (
               <li key={c.opIds.join(':')} className={`rounded-control border p-2 text-body ${c.lost ? 'border-dashed border-input bg-sunken' : 'border-default'}`} data-change={c.field}>
@@ -156,7 +156,7 @@ function VersionItem({ v, props }: { v: Version; props: HistoryViewProps }) {
           consequence={(
             <div className="space-y-2">
               <p>{t('These fields go back to this version’s values:')}</p>
-              <ul className="list-disc pl-5">{restorable.map((c) => <li key={c.field}>{changeLabel(c.field)}</li>)}</ul>
+              <ul className="list-disc ps-5">{restorable.map((c) => <li key={c.field}>{changeLabel(c.field)}</li>)}</ul>
               <p className="text-meta text-muted">{t('Each field is restored as its own change, recorded in the history.')}</p>
             </div>
           )}

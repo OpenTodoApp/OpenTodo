@@ -1,9 +1,10 @@
 // End-to-end check of the phone UI (OpenSpec changes `phone-ui-trial` and `phone-lists`)
 // against a running server with a FRESH data directory: a phone with touch and the
-// device's "New phone screens" switch on. The gestures a unit test cannot make: a hold
+// phone screens a phone shows (`phone-ui-only`). The gestures a unit test cannot make: a hold
 // opens the row's menu, a hold and a move reorders, a swipe completes and Undo brings
 // the task back, Select tasks ticks rows and a bulk action writes them, a tap opens
-// the task page and Back returns to the same place. See scripts/README.md.
+// the task page and Back returns to the same place; a screen that is not a list has
+// the phone header and phone rows (`phone-all-screens`). See scripts/README.md.
 const { chromium } = await import('playwright').catch(async () => {
   const { createRequire } = await import('node:module')
   const { execSync } = await import('node:child_process')
@@ -19,7 +20,6 @@ const assert = (c, msg) => { if (!c) throw new Error('ASSERT: ' + msg) }
 const HOLD_MS = 600 // past the row's 350 ms hold
 
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
-await ctx.addInitScript(() => { try { localStorage.setItem('opentodo.phoneUi', '1') } catch { /* no storage */ } })
 const page = await ctx.newPage()
 page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
 page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|net::/.test(m.text())) errors.push(`console: ${m.text()}`) })
@@ -119,6 +119,53 @@ try {
     await page.locator(`[data-phone-list="${view}"]`).waitFor({ timeout: 10000 })
   }
   await page.locator('[data-phone-row]', { hasText: 'Charlie' }).first().waitFor({ timeout: 10000 })
+
+  step('a screen that is not a list has the phone header, and Next lists phone rows')
+  await page.goto(`${base}/labels`)
+  await page.locator('[data-phone-header]').waitFor({ timeout: 10000 })
+  assert(await page.locator('[data-phone-bar]').count() === 0, 'Labels has no shell bar')
+  assert((await page.locator('[data-phone-head] [data-page-title]').textContent()) === 'Labels', 'the title is large under the bar')
+  await page.goto(`${base}/next`)
+  const next = page.locator('[data-phone-row]').first()
+  await next.waitFor({ timeout: 10000 })
+  assert(await page.locator('[data-drag-id="task-row"]').count() === 0, 'Next has no desktop row')
+  const nextTitle = await next.locator('[data-row-title]').textContent()
+  await next.locator('[data-phone-open]').tap()
+  await page.locator('[data-phone-screen="task"]').waitFor({ timeout: 10000 })
+  await page.locator('[data-page-back]').tap()
+  await page.locator('[data-phone-row]', { hasText: nextTitle }).first().waitFor({ timeout: 10000 })
+  await clear()
+  await page.locator('[data-phone-row]', { hasText: nextTitle }).first().locator('[data-phone-check]').tap()
+  // Next shows the next action: the completed one gives way to the one after it.
+  await page.locator('[data-phone-row]', { hasText: nextTitle }).first().waitFor({ state: 'detached', timeout: 5000 })
+
+  step('the calendar lists tasks as phone rows: a tap opens, a swipe opens the date sheet, the circle completes')
+  await post('/api/v1/tasks', { title: 'Foxtrot at ten', due: { date: today, time: '10:00' } })
+  await page.goto(`${base}/week`)
+  const cal = () => page.locator('[data-calendar-row]', { hasText: 'Foxtrot at ten' }).first()
+  await cal().waitFor({ timeout: 20000 })
+  await clear()
+  assert(await page.locator('[data-agenda-task]').count() === 0, 'Week has no row of the earlier kind')
+  await cal().locator('[data-phone-open]').tap()
+  await page.locator('[data-phone-screen="task"]').waitFor({ timeout: 10000 })
+  await page.locator('[data-page-back]').tap()
+  await cal().waitFor({ timeout: 10000 })
+  // In the middle of the screen, clear of the add button, and from the row's middle (the button floats over its end).
+  await cal().evaluate((el) => el.scrollIntoView({ block: 'center' }))
+  await wait(300)
+  b = await cal().boundingBox()
+  await touch('touchStart', b.x + 250, b.y + 25)
+  for (let k = 1; k <= 10; k++) { await touch('touchMove', b.x + 250 - 22 * k, b.y + 25); await wait(25) }
+  await touch('touchEnd')
+  await page.locator('[data-testid="phone-date-sheet"]').waitFor({ timeout: 5000 })
+  await page.keyboard.press('Escape')
+  await page.locator('[data-testid="phone-date-sheet"]').waitFor({ state: 'detached', timeout: 5000 })
+  await page.goto(`${base}/month`)
+  const monthRow = page.locator('[data-month-day-list] [data-calendar-row]', { hasText: 'Foxtrot at ten' }).first()
+  await monthRow.waitFor({ timeout: 20000 })
+  assert(await page.locator('[data-month-day-list] [data-month-task]').count() === 0, 'the day under Month has no row of the earlier kind')
+  await monthRow.locator('[data-phone-check]').tap()
+  await page.getByRole('button', { name: 'Undo' }).waitFor({ timeout: 5000 })
 
   assert(errors.length === 0, errors.join('\n'))
   console.log('e2e-phone: ok')

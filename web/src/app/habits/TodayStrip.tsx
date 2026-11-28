@@ -13,7 +13,7 @@ import { Icon } from '../../ui'
 import { act } from '../actionError'
 import { navigate } from '../router'
 import { habitHue } from './habitText'
-import { checkInWithUndo } from './habitUndo'
+import { checkInWithUndo, uncheckWithUndo } from './habitUndo'
 import { CheckInNoteSlot } from './CheckInNoteSlot'
 
 const PART_ORDER = (x: Task) => (x.day_part === 'morning' ? 0 : x.day_part === 'afternoon' ? 1 : x.evening ? 2 : 3)
@@ -74,8 +74,9 @@ export function TodayStrip({ tasks, projects, today }: { tasks: readonly Task[];
           const title = task.title || t('Untitled')
           return (
             <li key={task.id} data-strip-chip={task.id} data-hue={habitHue(task, task.project_id ? colours.get(task.project_id) : null)} className="flex min-w-0 max-w-48 items-center gap-1.5">
-              <button type="button" disabled={kept} aria-label={kept ? t('{title}, done today', { title }) : t('Check in {title}', { title })}
-                onClick={() => act(checkInWithUndo(task.id, false))} data-kept={kept || undefined} data-strip-check
+              {/* A toggle: pressed while kept, it takes the check-in back (habits-complete D4); an amount habit's ring keeps adding. */}
+              <button type="button" aria-label={t('Check in {title}', { title })} aria-pressed={task.habit_amount ? undefined : kept}
+                onClick={() => act(kept && !task.habit_amount ? uncheckWithUndo(task.id) : checkInWithUndo(task.id, false))} data-kept={kept || undefined} data-strip-check
                 className={`touch-target flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-[1.5px] border-hue-solid transition-colors duration-(--duration-moment)
                   ${kept ? 'bg-hue-solid text-surface' : 'hover:bg-hue-soft'} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}>
                 {kept && <Icon name="check" size="xs" />}

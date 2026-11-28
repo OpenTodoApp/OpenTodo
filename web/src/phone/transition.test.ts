@@ -4,7 +4,7 @@
 // motion or in Display mode the screen just changes.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { waitFor } from '../ui/test-utils'
-import { animatesScreens, leaveScreen, withScreenTransition } from './transition'
+import { animatesScreens, leaveScreen, openTaskFromList, SHARED_TITLE, withScreenTransition } from './transition'
 
 /** The document with the API as something a test can set and remove. */
 const doc = document as unknown as { startViewTransition?: unknown }
@@ -84,5 +84,42 @@ describe('screen transitions', () => {
     leaveScreen(back)
     await waitFor(() => back.mock.calls.length === 1 && document.documentElement.dataset.phoneNav === undefined, 'the pop finished')
     expect(seen).toEqual(['pop'])
+  })
+
+  // phone-delight D2: the tapped row's title and the page's title share one name, one element per capture.
+  it('a Back names the row of the task it leaves after the list returns, and clears the name when done', async () => {
+    let named: string[] = []
+    doc.startViewTransition = (update: () => Promise<void>) => {
+      const finished = Promise.resolve().then(update).then(() => {
+        named = [...document.querySelectorAll<HTMLElement>('[data-row-title]')].filter((el) => el.style.getPropertyValue('view-transition-name') === SHARED_TITLE).map((el) => el.textContent ?? '')
+      })
+      return { finished, updateCallbackDone: finished }
+    }
+    history.pushState(null, '', '/today')
+    history.pushState(null, '', '/task/t1')
+    document.body.innerHTML = ''
+    const back = () => {
+      history.replaceState(null, '', '/today')
+      document.body.innerHTML = '<ul><li data-phone-row="t0"><span data-row-title>Other</span></li><li data-phone-row="t1"><span data-row-title>Call Anna</span></li></ul>'
+    }
+    leaveScreen(back)
+    await waitFor(() => document.documentElement.dataset.phoneNav === undefined, 'the pop finished')
+    expect(named).toEqual(['Call Anna'])
+    await waitFor(() => !document.querySelector<HTMLElement>('[data-phone-row="t1"] [data-row-title]')!.style.getPropertyValue('view-transition-name'), 'the name cleared')
+  })
+
+  it('a push names the tapped row in the old capture only, and clears it', async () => {
+    let atStart: string[] = []
+    doc.startViewTransition = (update: () => Promise<void>) => {
+      atStart = [...document.querySelectorAll<HTMLElement>('[data-row-title]')].filter((el) => el.style.getPropertyValue('view-transition-name') === SHARED_TITLE).map((el) => el.textContent ?? '')
+      const finished = Promise.resolve().then(update)
+      return { finished, updateCallbackDone: finished }
+    }
+    history.replaceState(null, '', '/today')
+    document.body.innerHTML = '<ul><li data-phone-row="t0"><span data-row-title>Other</span></li><li data-phone-row="t1"><span data-row-title>Call Anna</span></li></ul>'
+    openTaskFromList('t1')
+    expect(atStart).toEqual(['Call Anna'])
+    await waitFor(() => document.documentElement.dataset.phoneNav === undefined, 'the push finished')
+    expect(document.querySelector<HTMLElement>('[data-phone-row="t1"] [data-row-title]')!.style.getPropertyValue('view-transition-name')).toBe('')
   })
 })

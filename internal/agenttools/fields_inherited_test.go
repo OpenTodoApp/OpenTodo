@@ -2,6 +2,7 @@ package agenttools
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -59,5 +60,42 @@ func TestInheritedFieldsInTools(t *testing.T) {
 	f.mustCall(c, "update_tasks", map[string]any{"updates": []any{map[string]any{"id": "t1", "fields": map[string]any{"cost": 55, "grout": "white"}}}})
 	if v := string(f.get("u1", "t1")["fields.cost"]); v != "55" {
 		t.Fatalf("inherited write = %s", v)
+	}
+}
+
+// Workspace fields (OpenSpec change workspace-fields): list_projects lists a
+// project's workspace fields first, each with the workspace that defines it,
+// and a task reads and writes them like its own.
+func TestWorkspaceFieldsInTools(t *testing.T) {
+	f := newFixture(t)
+	f.kitchen("u1")
+	f.put("u1", "field", "stage", map[string]any{"name": "Stage", "workspace_id": nil, "type": "text", "options": "", "position": 1})
+	f.task("u1", "t1", "Wall", map[string]any{"project_id": "kitchen", "fields.stage": "Quote"})
+	c := agent("u1")
+
+	out := f.mustCall(c, "list_projects", map[string]any{})
+	raw, _ := json.Marshal(out["projects"])
+	var ps []struct {
+		ID     string `json:"id"`
+		Fields []struct {
+			ID        string `json:"id"`
+			Workspace string `json:"workspace_id"`
+		} `json:"fields"`
+	}
+	_ = json.Unmarshal(raw, &ps)
+	var kitchen []string
+	for _, p := range ps {
+		if p.ID == "kitchen" {
+			for _, fd := range p.Fields {
+				kitchen = append(kitchen, fd.ID+"@"+fd.Workspace)
+			}
+		}
+	}
+	if len(kitchen) == 0 || kitchen[0] == "stage@" || !strings.HasPrefix(kitchen[0], "stage@") {
+		t.Fatalf("kitchen fields = %v (projects %s)", kitchen, raw)
+	}
+	f.mustCall(c, "update_tasks", map[string]any{"updates": []any{map[string]any{"id": "t1", "fields": map[string]any{"stage": "Ordered"}}}})
+	if v := string(f.get("u1", "t1")["fields.stage"]); v != `"Ordered"` {
+		t.Fatalf("workspace field write = %s", v)
 	}
 }

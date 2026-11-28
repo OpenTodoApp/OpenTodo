@@ -129,6 +129,23 @@ export const Page: StoryObj = {
   render: () => <div className="-m-4 bg-canvas"><ByTitle title="Read" render={(id) => <HabitPage id={id} />} /></div>,
 }
 
+/** A habit kept for months (habits-complete D7, D8): the month in its colour and its year as a heatmap. */
+export const PageWithYear: StoryObj = {
+  ...withSeed(async () => {
+    await mutate('user_prefs', 'me', { habits: 'on' })
+    const start = addDaysISO(TODAY, -150)
+    const read = await habit('Read', 'every day', start, { evening: true, habit_anchor: 'After dinner', habit_tiny: 'One page' })
+    await completeTask(read, { today: start })
+    await updateTask(read, { due: { date: TODAY } })
+    for (let i = 149; i >= 1; i--) {
+      const n = (i * 7919) % 10
+      if (n < 7) await setPastDay(read, addDaysISO(TODAY, -i), n === 0 ? 'tiny' : 'done', 1, TODAY)
+      else if (n === 7) await setPastDay(read, addDaysISO(TODAY, -i), 'skipped', 1, TODAY)
+    }
+  }),
+  render: () => <div className="-m-4 bg-canvas"><ByTitle title="Read" render={(id) => <HabitPage id={id} />} /></div>,
+}
+
 /** Edit habit (habits-polish D4): the lean form with Colour and the "?" after Tiny version and After. */
 export const Form: StoryObj = {
   ...withSeed(seedHabits),

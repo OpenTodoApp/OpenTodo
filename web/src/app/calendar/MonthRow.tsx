@@ -3,6 +3,7 @@
 // range (multi-day-tasks D8) and a date-only row its trailing end, which makes it a
 // span when dragged (D2).
 import { formatTime } from '../../lib/dates'
+import { use } from 'react'
 import { beginDrag } from '../../lib/dnd'
 import { t } from '../../lib/i18n'
 import { customPriorityName, priorityAccessibleName, priorityShort } from '../../lib/priority'
@@ -12,6 +13,7 @@ import type { HueName } from '../../ui'
 import { DeadlineDiamond, deadlineMark } from './DeadlineMarker'
 import { ExtendHandle } from './monthSpans'
 import { usePreloadSpanDrag } from './spanModel'
+import { CalendarRowDrawContext } from '../task-list/rowDraw'
 
 export function MonthRow({ task, v, compact, list = false, today, selected, hue, canMove, readOnly, extend, onDrop, onSelect, onOpen }: {
   task: Task
@@ -34,6 +36,9 @@ export function MonthRow({ task, v, compact, list = false, today, selected, hue,
   const onDeadline = !!v?.due && task.deadline === v.due.date
   const span = v ? spanOf(v) : null
   usePreloadSpanDrag(canMove && extend)
+  // The chosen day's list on a phone with the phone screens: the phone row (phone-calendar).
+  const draw = use(CalendarRowDrawContext)
+  if (list && draw && v?.due) return draw({ task, date: v.due.date, today, time: v.due.time && !span ? formatTime(v.due.time) : null, note: span ? formatSpan(span) : undefined, readOnly })
   return (
     <button data-drag-id="month-task" type="button" tabIndex={-1} data-month-task={task.id} data-hue={hue} aria-pressed={selected}
       onPointerDown={canMove ? (e) => {
@@ -42,7 +47,7 @@ export function MonthRow({ task, v, compact, list = false, today, selected, hue,
       } : undefined}
       onClick={(e) => { e.stopPropagation(); onSelect(task.id, v?.due?.date) }}
       onDoubleClick={() => onOpen(task.id)}
-      className={`ui-block ui-block--row relative flex w-full min-w-0 touch-manipulation items-center gap-1 px-1 text-left ${compact ? 'py-0 text-hint' : list ? 'title-phone-row py-0.5 text-meta pointer-fine:[--title-phone-row:1.375rem]' : 'py-0.5 text-meta'} ${task.completed_at || (v?.due && v.due.date < today) ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canMove ? 'cursor-grab' : ''}`}>
+      className={`ui-block ui-block--row relative flex w-full min-w-0 touch-manipulation items-center gap-1 px-1 text-start ${compact ? 'py-0 text-hint' : list ? 'title-phone-row py-0.5 text-meta pointer-fine:[--title-phone-row:1.375rem]' : 'py-0.5 text-meta'} ${task.completed_at || (v?.due && v.due.date < today) ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canMove ? 'cursor-grab' : ''}`}>
       {/* Named by its content (WCAG 2.5.3 Label in Name): the spoken text is visually hidden, the visible one is not read twice. */}
       <span className="sr-only">{[task.title || t('Untitled'), task.completed_at ? t('(completed)') : '', span ? formatSpan(span) : '', v?.due?.time ? formatTime(v.due.time) : '', task.priority < 4 ? (customPriorityName(task.priority) ? priorityAccessibleName(task.priority) : t('priority {n}', { n: task.priority })) : '', onDeadline ? deadlineMark(task, v!.due!.date) : '', readOnly ? t('read-only') : ''].filter(Boolean).join(', ')}</span>
       {v?.due?.time && !span && <span aria-hidden className="shrink-0 tabular-nums">{formatTime(v.due.time)}</span>}

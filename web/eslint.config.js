@@ -26,9 +26,9 @@ const PHONE_MAY_IMPORT = [
   // Editors and sections shown unchanged.
   'task-detail/Facets', 'task-detail/TaskActionsMenu', 'task-detail/TaskNotes', 'task-detail/Subtasks', 'task-detail/FieldsGroup',
   'task-detail/AttachmentsRow', 'task-detail/ConversationTabs', 'task-detail/TaskHead', 'task-detail/TaskPageDialog', 'task-detail/RotationLine',
-  'task-detail/WhenControl', 'task-list/EarlierActions', 'habits/TodayStrip', 'TitleField', 'LabelPicker', 'ProjectMark', 'locations/LocationPreview', 'SampleNotice',
+  'task-detail/WhenControl', 'task-list/EarlierActions', 'habits/TodayStrip', 'habits/shared', 'TitleField', 'LabelPicker', 'ProjectMark', 'locations/LocationPreview', 'SampleNotice',
   // The task list (phone-lists D1 to D5): its wiring, its groups and row renderer, and the parts of a list shown as they are.
-  'task-list/useListScreen', 'task-list/ListGroups', 'task-list/ListHeader', 'task-list/ListChrome', 'task-list/TaskListRow', 'task-list/rowHold', 'task-list/belowLine', 'listDrop',
+  'task-list/useListScreen', 'task-list/ListGroups', 'task-list/ListHeader', 'task-list/ListChrome', 'task-list/TaskListRow', 'task-list/rowHold', 'task-list/rowDraw', 'task-list/belowLine', 'listDrop',
   'bulk/BulkActions', 'useUrgency', 'ProjectHeader', 'ProjectNote', 'Markdown', 'Sections', 'CloseDayRow', 'routines/InboxSlot', 'calendar/UpcomingAgenda', 'completed/CompletedBar',
 ]
 
@@ -108,12 +108,12 @@ export default [
   // calls of lib/db are open to screens. Tests and test kits seed the database.
   // The phone UI (src/phone, OpenSpec phone-ui-trial D1) is held to the same rule,
   // and the two sets of screens are kept apart: a desktop screen imports the phone
-  // UI only where it is chosen (Shell) and switched on (PreferencesPanels), and a
+  // UI only where it is chosen (Shell), and a
   // phone screen imports from src/app only the shared hooks, models and editors
   // listed in PHONE_MAY_IMPORT, never a desktop screen.
   ...[
-    { files: ['src/app/**/*.{ts,tsx}'], ignores: ['src/app/Shell.tsx', 'src/app/PreferencesPanels.tsx'], extra: [{ regex: '(^|/)phone(/|$)', message: 'Only Shell.tsx and PreferencesPanels.tsx import the phone UI (phone-ui-trial D1).' }] },
-    { files: ['src/app/Shell.tsx', 'src/app/PreferencesPanels.tsx'], ignores: [], extra: [] },
+    { files: ['src/app/**/*.{ts,tsx}'], ignores: ['src/app/Shell.tsx'], extra: [{ regex: '(^|/)phone(/|$)', message: 'Only Shell.tsx imports the phone UI (phone-ui-trial D1).' }] },
+    { files: ['src/app/Shell.tsx'], ignores: [], extra: [] },
     { files: ['src/phone/**/*.{ts,tsx}'], ignores: [], extra: [{ regex: `(^|/)app/(?!(${PHONE_MAY_IMPORT.join('|')})$)`, message: 'A phone screen imports from src/app only what PHONE_MAY_IMPORT lists (shared hooks, models and editors), never a desktop screen (phone-ui-trial D1).' }] },
   ].map(({ files, ignores, extra }) => ({
     files,

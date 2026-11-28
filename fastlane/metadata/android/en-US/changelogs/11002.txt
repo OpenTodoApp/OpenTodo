@@ -1,0 +1,6 @@
+Fixes for the phone screens:
+• Swiping a task works on phones with an older Android System WebView.
+• Earlier and Later move the timeline, and its day labels are all readable.
+• One flick turns the board by one column.
+• The comment field keeps its send button above the keyboard.
+• A task's title lines up with its circle.

@@ -6,7 +6,6 @@ package sync
 
 import (
 	"encoding/json"
-	"strings"
 )
 
 // Op is one field assignment.
@@ -47,39 +46,6 @@ const (
 	// op so a device makes progress; hasMore tells it to ask again.
 	MaxPullBytes = 4 * 1024 * 1024
 )
-
-// ValidEntityID reports whether id is a usable entity id: 1 to MaxIDLen
-// characters from ASCII letters, digits and . _ : @ + = ~ -. That covers every
-// id the clients make (UUIDs, name-derived UUIDs, "me", CalDAV UIDs) and keeps
-// out quotes, backslashes, control characters and spaces, which would break the
-// JSON and the URLs ids are written into (OpenSpec change
-// harden-links-and-sharing).
-func ValidEntityID(id string) bool {
-	if id == "" || len(id) > MaxIDLen {
-		return false
-	}
-	for i := 0; i < len(id); i++ {
-		c := id[i]
-		switch {
-		case c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z', c >= '0' && c <= '9':
-		case strings.IndexByte("._:@+=~-", c) >= 0:
-		default:
-			return false
-		}
-	}
-	return true
-}
-
-// QuoteJSON is s as a JSON string, for building values and for matching stored
-// ones. It is the only quoting helper: fmt's %q and strconv.Quote produce
-// escapes (\a, \x00, \U...) that are not JSON.
-func QuoteJSON(s string) string {
-	b, err := json.Marshal(s)
-	if err != nil { // a Go string always marshals
-		panic(err)
-	}
-	return string(b)
-}
 
 // MaxFocusSession is the largest time_entry.focus_session (focus-session-readable D2).
 const MaxFocusSession = 99
@@ -330,11 +296,18 @@ var Schema = map[string]map[string]Field{
 	"field": {
 		"name":       {Kind: kString, Default: `""`, Content: true},
 		"project_id": {Kind: kID, Default: `""`},
-		"type":       {Kind: kString, Default: `"text"`},
-		"options":    {Kind: kString, Default: `""`, Content: true},
-		"position":   {Kind: kNumber, Default: `0`},
-		"created_at": {Kind: kNumber, Default: `0`},
-		"deleted_at": {Kind: kNullableNumber, Default: `null`},
+		// The workspace a field without a project belongs to (workspace-fields
+		// D1): an empty project_id makes the definition a workspace field that
+		// applies to every project of this workspace, before the projects' own
+		// fields. Null is the default workspace, as for a label. It lives in the
+		// author's personal scope and never changes after creation; it is
+		// ignored on a field with a project. Additive.
+		"workspace_id": {Kind: kNullableString, Default: `null`},
+		"type":         {Kind: kString, Default: `"text"`},
+		"options":      {Kind: kString, Default: `""`, Content: true},
+		"position":     {Kind: kNumber, Default: `0`},
+		"created_at":   {Kind: kNumber, Default: `0`},
+		"deleted_at":   {Kind: kNullableNumber, Default: `null`},
 	},
 	// note: a standalone note (OpenSpec change notes-overview, design D1), not a
 	// task: it never shows in task lists, counts, calendars, filters or

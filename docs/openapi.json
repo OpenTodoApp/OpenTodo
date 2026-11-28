@@ -308,6 +308,13 @@
           },
           "type": {
             "type": "string"
+          },
+          "workspace_id": {
+            "description": "The workspace a field without a project belongs to (workspace-fields D1): an empty project_id makes the definition a workspace field that applies to every project of this workspace, before the projects' own fields. Null is the default workspace, as for a label. It lives in the author's personal scope and never changes after creation; it is ignored on a field with a project. Additive.",
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -9862,7 +9869,8 @@
                       "options": "example",
                       "position": 1,
                       "project_id": "00000000-0000-4000-8000-000000000001",
-                      "type": "example"
+                      "type": "example",
+                      "workspace_id": "00000000-0000-4000-8000-000000000001"
                     }
                   ]
                 },
@@ -9910,7 +9918,8 @@
                 "options": "example",
                 "position": 1,
                 "project_id": "00000000-0000-4000-8000-000000000001",
-                "type": "example"
+                "type": "example",
+                "workspace_id": "00000000-0000-4000-8000-000000000001"
               },
               "schema": {
                 "properties": {
@@ -9938,11 +9947,14 @@
                   },
                   "type": {
                     "type": "string"
+                  },
+                  "workspace_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 },
-                "required": [
-                  "project_id"
-                ],
                 "type": "object"
               }
             }
@@ -9961,7 +9973,8 @@
                   "options": "example",
                   "position": 1,
                   "project_id": "00000000-0000-4000-8000-000000000001",
-                  "type": "example"
+                  "type": "example",
+                  "workspace_id": "00000000-0000-4000-8000-000000000001"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/Field"
@@ -10046,7 +10059,8 @@
                   "options": "example",
                   "position": 1,
                   "project_id": "00000000-0000-4000-8000-000000000001",
-                  "type": "example"
+                  "type": "example",
+                  "workspace_id": "00000000-0000-4000-8000-000000000001"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/Field"
@@ -10094,7 +10108,8 @@
                 "options": "example",
                 "position": 1,
                 "project_id": "00000000-0000-4000-8000-000000000001",
-                "type": "example"
+                "type": "example",
+                "workspace_id": "00000000-0000-4000-8000-000000000001"
               },
               "schema": {
                 "properties": {
@@ -10122,6 +10137,12 @@
                   },
                   "type": {
                     "type": "string"
+                  },
+                  "workspace_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 },
                 "type": "object"
@@ -10142,7 +10163,8 @@
                   "options": "example",
                   "position": 1,
                   "project_id": "00000000-0000-4000-8000-000000000001",
-                  "type": "example"
+                  "type": "example",
+                  "workspace_id": "00000000-0000-4000-8000-000000000001"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/Field"

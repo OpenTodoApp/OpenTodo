@@ -12,6 +12,7 @@ import { InboxEmptyPane } from './InboxEmptyPane'
 import { closeTaskPanel, followTask, panelTaskId, type PanelWidthStore, setPanelTaskId, setPanelWidth, setTaskSplit, sidePanelDocks, SPLIT_QUERY, TASK_PANEL_WIDTH, useSidePanelOpen } from './panel'
 import { openTaskPage } from './taskTrail'
 import type { RowClickIntent } from './rowClick'
+import { inlineDelta, inlineKey } from '../lib/direction'
 
 /** Whether this account opens tasks in the side panel (the synced preference, D1); the screen width is not considered. */
 export function useSidePanelChosen(): boolean {
@@ -73,7 +74,7 @@ export function SidePanelEmpty() {
 export function SidePanelClose() {
   return (
     <IconButton icon="x" label={t('Close')} onClick={closeTaskPanel} data-side-panel-close data-overlay-close
-      className="touch-target absolute right-3 top-2" />
+      className="touch-target absolute inset-e-3 top-2" />
   )
 }
 
@@ -147,7 +148,7 @@ export function PanelResizeHandle({ store = TASK_PANEL_WIDTH, label = t('Resize 
       el.removeEventListener('pointermove', move)
       el.removeEventListener('pointerup', up)
       el.removeEventListener('pointercancel', up)
-      if (moved) apply(startW + (startX - ev.clientX), el)
+      if (moved) apply(startW - inlineDelta(ev.clientX - startX, el), el)
       else if (ev.type === 'pointerup') apply(startW >= panelWidthBounds().max - 1 ? null : panelWidthBounds().max, el)
     }
     el.addEventListener('pointermove', move)
@@ -157,8 +158,8 @@ export function PanelResizeHandle({ store = TASK_PANEL_WIDTH, label = t('Resize 
   const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     const el = e.currentTarget
     const step = e.shiftKey ? BIG_STEP : STEP
-    if (e.key === 'ArrowLeft') apply(measure(el) + step, el)
-    else if (e.key === 'ArrowRight') apply(measure(el) - step, el)
+    if (inlineKey(e) === 'ArrowLeft') apply(measure(el) + step, el)
+    else if (inlineKey(e) === 'ArrowRight') apply(measure(el) - step, el)
     else if (e.key === 'Home') apply(null, el)
     else return
     // The list's ← and → (row details, folding) must not see the key.
@@ -173,7 +174,7 @@ export function PanelResizeHandle({ store = TASK_PANEL_WIDTH, label = t('Resize 
       aria-valuetext={t('{n} pixels wide', { n: width ?? Math.round(min) })}
       onPointerDown={onPointerDown} onKeyDown={onKeyDown} data-drag-id="panel-resizer"
       onFocus={(e) => setWidth(measure(e.currentTarget))}
-      className="panel-resize absolute inset-y-0 left-0 z-10 hidden w-2 -translate-x-1/2 cursor-col-resize touch-none lg:block"
+      className="panel-resize absolute inset-y-0 inset-s-0 z-10 hidden w-2 -translate-x-1/2 rtl:translate-x-1/2 cursor-col-resize touch-none lg:block"
       data-panel-resize />
   )
 }

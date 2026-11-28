@@ -158,12 +158,23 @@ export function formatNumberIn(locale: string, n: number): string {
 export type Values = Record<string, unknown>
 export type TagFn<R> = (children: R[]) => R
 
+// In a right-to-left message, an interpolated value (a title, a name, a URL) is
+// wrapped in First Strong Isolate … Pop Directional Isolate, so a Latin title
+// does not pull the surrounding Arabic punctuation into its own direction.
+// Kept here rather than imported, as scripts/i18n-check.mjs loads this file alone.
+const RTL = /^(ar|fa|he|ur)\b/i
+const FSI = '\u2068'
+const PDI = '\u2069'
+
+/** Text without the isolates `render()` adds: for matching, measuring or a value stored as data. */
+export function stripIsolates(s: string): string { return s.replace(/[\u2068\u2069]/g, '') }
+
 /**
  * Formats parsed parts. `wrap` renders a tag (rich messages); without it a tag's
  * children are written as plain text. Values that are not strings or numbers are
  * passed through, so a rich message can carry elements.
  */
-export function render<R = string>(parts: Part[], values: Values, locale: string, tags?: Record<string, TagFn<R | string>>, hash?: number): (R | string)[] {
+export function render<R = string>(parts: Part[], values: Values, locale: string, tags?: Record<string, TagFn<R | string>>, hash?: number, isolate = true): (R | string)[] {
   const out: (R | string)[] = []
   const push = (v: R | string) => {
     if (typeof v === 'string' && typeof out[out.length - 1] === 'string') out[out.length - 1] = (out[out.length - 1] as string) + v
@@ -177,6 +188,7 @@ export function render<R = string>(parts: Part[], values: Values, locale: string
         const v = values[p.name]
         if (v === undefined || v === null) push(`{${p.name}}`)
         else if (typeof v === 'number') push(p.number ? formatNumberIn(locale, v) : String(v))
+        else if (isolate && RTL.test(locale)) { push(FSI); push(v as R | string); push(PDI) }
         else push(v as R | string)
         break
       }
@@ -184,16 +196,16 @@ export function render<R = string>(parts: Part[], values: Values, locale: string
         const n = Number(values[p.name] ?? 0)
         const exact = p.options[`=${n}`]
         const chosen = exact ?? p.options[pluralCategory(locale, n - p.offset)] ?? p.options.other
-        for (const v of render(chosen, values, locale, tags, n - p.offset)) push(v)
+        for (const v of render(chosen, values, locale, tags, n - p.offset, isolate)) push(v)
         break
       }
       case 'select': {
         const chosen = p.options[String(values[p.name])] ?? p.options.other
-        for (const v of render(chosen, values, locale, tags, hash)) push(v)
+        for (const v of render(chosen, values, locale, tags, hash, isolate)) push(v)
         break
       }
       case 'tag': {
-        const inner = render(p.children, values, locale, tags, hash)
+        const inner = render(p.children, values, locale, tags, hash, isolate)
         const fn = tags?.[p.name] ?? (values[p.name] as TagFn<R | string> | undefined)
         if (typeof fn === 'function') push(fn(inner))
         else for (const v of inner) push(v)

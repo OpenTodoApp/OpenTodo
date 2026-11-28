@@ -5,8 +5,9 @@
 // under forced colours), and one roving-tabindex grid of its marks: the arrow keys
 // move, and the focused mark shows the tooltip a pointer gets. Marks wear the chart
 // tokens; every text wears text tokens.
+// physical-file: a time axis drawn from computed left offsets, kept left to right in a dir="ltr" box (arabic-rtl D8).
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Icon, type IconName } from '../../ui'
+import { Icon, type IconName, useScrollEdges } from '../../ui'
 import { t } from '../../lib/i18n'
 
 // ---------------------------------------------------------------- figure
@@ -29,27 +30,30 @@ export function ChartFigure({ title, summary, table, children, note, wide, testI
 }) {
   const id = useId()
   const [open, setOpen] = useState(false)
+  // A table wider than the screen fades at the edge where columns are hidden (phone-rest D4).
+  const tableBox = useRef<HTMLDivElement>(null)
+  useScrollEdges(tableBox, 'x')
   return (
     <figure className={`ui-section-flat ui-panel-flat min-w-0 ${wide ? 'lg:col-span-2' : ''}`} data-panel={testId} aria-labelledby={`${id}-h`}>
       <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2 id={`${id}-h`} className="text-body font-semibold text-default">{title}</h2>
         {note && <p className="text-meta text-muted">{note}</p>}
-        <button type="button" className="ml-auto touch-target rounded-control px-2 py-1 text-meta text-muted hover:text-default focus-visible:outline-2 focus-visible:outline-focus"
+        <button type="button" className="ms-auto touch-target rounded-control px-2 py-1 text-meta text-muted hover:text-default focus-visible:outline-2 focus-visible:outline-focus"
           aria-expanded={open} aria-controls={`${id}-t`} onClick={() => setOpen(!open)} data-show-table>
           {open ? t('Hide table') : t('Show as table')}
         </button>
       </div>
-      <div data-chart-summary={summary}>{children}</div>
-      <div id={`${id}-t`} className={`${open ? 'block' : 'hidden'} mt-3 max-w-full overflow-x-auto forced-colors:block`} data-scroll-x data-chart-table>
+      <div data-chart-summary={summary} dir="ltr">{children}</div>
+      <div ref={tableBox} id={`${id}-t`} className={`ui-scroller ${open ? 'block' : 'hidden'} mt-3 max-w-full overflow-x-auto forced-colors:block`} data-scroll-x data-chart-table>
         <table className="w-full border-collapse text-meta tabular-nums">
           <caption className="sr-only">{title}</caption>
           <thead>
-            <tr>{table.head.map((h, i) => <th key={i} scope="col" className="border-b border-default px-2 py-1 text-left font-medium text-muted">{h}</th>)}</tr>
+            <tr>{table.head.map((h, i) => <th key={i} scope="col" className="border-b border-default px-2 py-1 text-start font-medium text-muted">{h}</th>)}</tr>
           </thead>
           <tbody>
             {table.rows.map((r, i) => (
               <tr key={i}>{r.map((c, j) => (j === 0
-                ? <th key={j} scope="row" className="px-2 py-1 text-left font-normal text-default">{c}</th>
+                ? <th key={j} scope="row" className="px-2 py-1 text-start font-normal text-default">{c}</th>
                 : <td key={j} className="px-2 py-1 text-default">{c}</td>))}</tr>
             ))}
           </tbody>
@@ -279,8 +283,8 @@ export function LineChart({ points, aName, bName, summary }: { points: readonly 
         </div>
         {last && (
           <div className="relative w-24 shrink-0 text-meta" aria-hidden="true" data-end-labels>
-            <span className="absolute left-0 max-w-full -translate-y-1/2 truncate text-default" style={{ top: `${(ends.a / PLOT_H) * 100}%` }}>{aName} {last.a}</span>
-            <span className="absolute left-0 max-w-full -translate-y-1/2 truncate text-muted" style={{ top: `${(ends.b / PLOT_H) * 100}%` }}>{bName} {last.b}</span>
+            <span className="absolute inset-s-0 max-w-full -translate-y-1/2 truncate text-default" style={{ top: `${(ends.a / PLOT_H) * 100}%` }}>{aName} {last.a}</span>
+            <span className="absolute inset-s-0 max-w-full -translate-y-1/2 truncate text-muted" style={{ top: `${(ends.b / PLOT_H) * 100}%` }}>{bName} {last.b}</span>
           </div>
         )}
       </div>
@@ -314,7 +318,7 @@ export function HBars({ bars, summary }: { bars: readonly HBar[]; summary: strin
           <div key={i} role="row" className="grid grid-cols-[minmax(0,7rem)_1fr] items-center gap-2">
             <span className="truncate text-meta text-default" aria-hidden="true">{b.label}</span>
             <div {...grid.cellProps(i, 0)} className="flex min-h-6 items-center gap-2 rounded-control outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus" data-bar={b.label}>
-              <span className="h-3 rounded-r-[4px] bg-chart-base" style={{ width: `${Math.max(2, (b.value / max) * 85)}%` }} aria-hidden="true" />
+              <span className="h-3 rounded-e-[4px] bg-chart-base" style={{ width: `${Math.max(2, (b.value / max) * 85)}%` }} aria-hidden="true" />
               <span className="text-meta tabular-nums text-muted" aria-hidden="true">{b.text}</span>
             </div>
           </div>
@@ -339,8 +343,12 @@ const LEVEL_CLASS = ['bg-chart-seq-1', 'bg-chart-seq-2', 'bg-chart-seq-3', 'bg-c
  * Weeks as columns, weekdays as rows, five shades (D4). It scrolls sideways inside
  * the figure on narrow screens, with the current week in view.
  */
-export function Heatmap({ weeks, rowLabels, columnLabels, tip, summary }: {
+export function Heatmap({ weeks, rowLabels, columnLabels, tip, summary, levels = LEVEL_CLASS, legend = true }: {
   weeks: readonly (HeatDay | null)[][]
+  /** The class of each level (a habit's year draws its states, habits-complete D7); the five shades by default. */
+  levels?: readonly string[]
+  /** The Fewer … More legend; off where the levels are states, named in each day's tip. */
+  legend?: boolean
   /** The weekdays, from the first day of the week; shown for every other row. */
   rowLabels: string[]
   /** A month name on the first week of each month, '' elsewhere. */
@@ -354,11 +362,14 @@ export function Heatmap({ weeks, rowLabels, columnLabels, tip, summary }: {
   const todayRow = weeks[lastCol]?.reduce((at, d, i) => (d ? i : at), 0) ?? 0
   const start = useMemo(() => ({ r: todayRow, c: lastCol }), [todayRow, lastCol])
   const grid = useChartGrid(7, weeks.length, label, start, true)
+  const scroller = useRef<HTMLDivElement>(null)
+  useScrollEdges(scroller, 'x')
   return (
     <div ref={box} className="relative min-w-0">
     {/* A reversed row starts scrolled to its end, so the current week is in view on a
-        narrow screen without measuring or scrolling after paint. */}
-    <div className="flex max-w-full flex-row-reverse overflow-x-auto pb-1" data-scroll-x data-heatmap>
+        narrow screen without measuring or scrolling after paint. It fades at the edge
+        where weeks are hidden (phone-rest D4). */}
+    <div ref={scroller} className="ui-scroller flex max-w-full flex-row-reverse overflow-x-auto pb-1" data-scroll-x data-heatmap>
       <div className="inline-grid shrink-0 grid-cols-[2rem_auto] gap-x-1 [--heat:14px] pointer-coarse:[--heat:24px]">
         <span aria-hidden="true" />
         <div className="grid grid-flow-col auto-cols-(--heat) gap-[2px] pb-1 text-hint text-muted" aria-hidden="true">
@@ -373,7 +384,7 @@ export function Heatmap({ weeks, rowLabels, columnLabels, tip, summary }: {
               {weeks.map((col, c) => {
                 const d = col[r]
                 return d
-                  ? <div key={c} {...grid.cellProps(r, c)} style={{ gridRow: r + 1, gridColumn: c + 1 }} className={`size-(--heat) rounded-[3px] outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-1 focus-visible:outline-focus ${LEVEL_CLASS[d.level]}`} data-day={d.date} data-level={d.level} />
+                  ? <div key={c} {...grid.cellProps(r, c)} style={{ gridRow: r + 1, gridColumn: c + 1 }} className={`size-(--heat) rounded-[3px] outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-1 focus-visible:outline-focus ${levels[d.level] ?? ''}`} data-day={d.date} data-level={d.level} />
                   : <div key={c} role="gridcell" aria-hidden="true" style={{ gridRow: r + 1, gridColumn: c + 1 }} className="size-(--heat)" />
               })}
             </div>
@@ -383,11 +394,11 @@ export function Heatmap({ weeks, rowLabels, columnLabels, tip, summary }: {
     </div>
     <ChartTooltip tip={grid.tooltip} box={box} />
     {/* Outside the sideways scroller, so it stays in view. */}
-    <div className="mt-2 flex items-center gap-1 text-hint text-muted" aria-hidden="true" data-heat-legend>
+    {legend && <div className="mt-2 flex items-center gap-1 text-hint text-muted" aria-hidden="true" data-heat-legend>
       <span>{t('Fewer')}</span>
       {LEVEL_CLASS.map((c, i) => <span key={i} className={`size-3 rounded-[3px] ${c}`} />)}
       <span>{t('More')}</span>
-    </div>
+    </div>}
     </div>
   )
 }
@@ -406,9 +417,11 @@ export function DotGrid({ counts, max, rowLabels, columnLabels, tip, summary }: 
   const box = useRef<HTMLDivElement>(null)
   const label = useCallback((r: number, c: number) => (counts[r]?.[c] === undefined ? null : tip(r, c)), [counts, tip])
   const grid = useChartGrid(counts.length, columnLabels.length, label)
+  const scroller = useRef<HTMLDivElement>(null)
+  useScrollEdges(scroller, 'x')
   return (
     <div ref={box} className="relative min-w-0">
-    <div className="max-w-full overflow-x-auto" data-scroll-x data-dot-grid>
+    <div ref={scroller} className="ui-scroller max-w-full overflow-x-auto" data-scroll-x data-dot-grid>
       <div className="inline-grid grid-cols-[2.5rem_repeat(24,var(--dot))] items-center [--dot:18px] pointer-coarse:[--dot:24px]" aria-hidden="true">
         <span />
         {columnLabels.map((h, i) => <span key={i} className="text-center text-hint text-muted">{i % 6 === 0 ? h : ''}</span>)}

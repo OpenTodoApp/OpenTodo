@@ -5,7 +5,7 @@
 # Key names in kbd spans
 web/src/app/LabelsView.tsx: Alt+↑
 web/src/app/LabelsView.tsx: Alt+↓
-web/src/app/TriageView.tsx: Enter
+web/src/app/TriageBar.tsx: Enter
 # Settings → About (welcome-note): proper names shown as link labels.
 web/src/app/AboutSection.tsx: open-todo.app
 web/src/app/AboutSection.tsx: GitHub

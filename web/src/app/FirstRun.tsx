@@ -148,7 +148,7 @@ function GuideStep({ step, id, userId, method, onMethod, next, onAdded, onClose 
             {t('Start with three sample tasks')}
           </Button>
         )}
-        <Button size="sm" variant="ghost" className="ml-auto" data-first-run-skip-all onClick={onClose}>{t('Skip all')}</Button>
+        <Button size="sm" variant="ghost" className="ms-auto" data-first-run-skip-all onClick={onClose}>{t('Skip all')}</Button>
       </div>
     </>
   )

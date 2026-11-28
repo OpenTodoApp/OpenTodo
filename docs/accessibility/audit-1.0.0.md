@@ -17,6 +17,7 @@ The manual half of the [accessibility statement](../accessibility.md): one row p
 
 - **Keyboard only** (2026-11-03, run by Claude for the maintainer): no pointer. The accessibility gate's Tab walk on every screen and overlay at 360 and 1280 px (every stop reachable, its ring visible and not covered), and the main flows by keyboard at both widths with `scripts/ux-audit/keyboard-flows.mjs`: the skip link, quick add with <kbd>q</kbd>, the <kbd>g</kbd> keys, <kbd>j</kbd>/<kbd>k</kbd>, priority, opening and closing a task, the row menu, labels, completing and undoing, search with <kbd>Ctrl</kbd>+<kbd>K</kbd>, a setting toggled with <kbd>Space</kbd>, a dialog that keeps <kbd>Tab</kbd> inside, the calendar and the weekly review.
 - **200% zoom, text size 20** (2026-11-03, run again on 2026-11-06 after the settings and Upcoming changes, by Claude): every core screen at 640 CSS px with a mouse (a 1280 px window at 200%) and the browser's text size at 20 px, through the accessibility gate (`A11Y_ONLY=1 WIDTHS=640 TOUCH_BELOW=0 TEXT_SIZE=20`), plus reflow at 320 px (400%).
+- **Screens added to the inventory on 2026-11-26** (`review-close`, `review-daily`, `note`; by Claude): the accessibility gate's Tab walk at 360 and 1280 px (`A11Y_ONLY=1 ONLY=review-close,review-daily,note WIDTHS=360,1280`) and the zoom pass (`WIDTHS=640 TOUCH_BELOW=0 TEXT_SIZE=20`), no finding in either. The keyboard flows script was not run again for them: it drives flows, not these screens.
 - **NVDA + Firefox, VoiceOver + Safari (macOS), VoiceOver (iOS shell), TalkBack (Android shell)**: pending, none recorded yet. These need the real screen readers on real devices and are recorded when someone runs them: the maintainer's VoiceOver on macOS and iOS, NVDA and TalkBack from community testers. To contribute a pass, follow the steps below and post your results on [issue #9](https://github.com/OpenTodoApp/OpenTodo/issues/9). Until they are done the statement claims partial conformance (1.0 ships that way, owner decision 2026-11-07).
 
 ## Steps for the screen-reader passes
@@ -75,9 +76,12 @@ Mark `pass`, or open an issue labelled `accessibility` and write `fail #<issue>`
 | `loop` | pass | pending | pending | pending | pending | pass |
 | `focus` | pass | pending | pending | pending | pending | pass |
 | `review` | pass | pending | pending | pending | pending | pass |
+| `review-close` | pass | pending | pending | pending | pending | pass |
+| `review-daily` | pass | pending | pending | pending | pending | pass |
 | `stats` | pass | pending | pending | pending | pending | pass |
 | `completed` | pass | pending | pending | pending | pending | pass |
 | `notes` | pass | pending | pending | pending | pending | pass |
+| `note` | pass | pending | pending | pending | pending | pass |
 | `trash` | pass | pending | pending | pending | pending | pass |
 | `feed` | pass | pending | pending | pending | pending | pass |
 | `ask` | pass | pending | pending | pending | pending | pass |

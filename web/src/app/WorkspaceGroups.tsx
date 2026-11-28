@@ -43,7 +43,7 @@ function GroupRow({ group, members, open, onToggle }: { group: WorkspaceGroup; m
   const more = group.members.length - shown.length
   return (
     <button type="button" onClick={onToggle} aria-expanded={open} data-group-row={group.id}
-      className={`touch-target flex w-full items-center gap-3 rounded-control px-3 py-2 text-left
+      className={`touch-target flex w-full items-center gap-3 rounded-control px-3 py-2 text-start
         focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus
         ${open ? 'bg-sunken' : 'hover:bg-sunken dark:hover:bg-raised'}`}>
       <span className="user-text min-w-0 flex-1 truncate font-medium text-default">{group.name}</span>
@@ -72,7 +72,7 @@ function GroupEditor({ ws, group, members, canManage, online, onDeleted }: {
   const projects = useProjectsOfGroup(group.id)
   const outside = members.filter((m) => !group.members.includes(m.userId))
   return (
-    <div className="mb-2 ml-3 space-y-4 border-l-2 border-default py-3 pl-4" data-group-editor={group.id}>
+    <div className="mb-2 ms-3 space-y-4 border-s-2 border-default py-3 ps-4" data-group-editor={group.id}>
       {canManage && <RenameGroup ws={ws} group={group} online={online} />}
       {canManage && (
         <div data-group-picker>

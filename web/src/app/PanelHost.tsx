@@ -107,7 +107,7 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
 function SplitPane({ children, side }: { children: ReactNode; side: boolean }) {
   return (
     <aside aria-label={t('Task details')} data-split-empty
-      className="relative hidden min-w-0 flex-col border-l border-default bg-surface min-[56.25rem]:flex min-[56.25rem]:w-(--panel-w)">
+      className="relative hidden min-w-0 flex-col border-s border-default bg-surface min-[56.25rem]:flex min-[56.25rem]:w-(--panel-w)">
       <PanelResizeHandle />
       {/* The side panel closes from its empty pane too (task-side-panel D8); the Inbox's split has no Close here. */}
       {side && <SidePanelClose />}

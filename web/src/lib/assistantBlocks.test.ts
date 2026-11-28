@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { SSEParser } from './assistant'
 import { answerMarkdown, blockLabel, blockOf, splitAnswer } from './assistantBlocks'
 import { db } from './db'
+import { applyCatalog } from './i18n/catalog'
 import { createTask, mutate, resetDeviceId } from './ops'
 
 beforeEach(async () => {
@@ -46,6 +47,19 @@ describe('blockOf', () => {
     await createTask({ title: 'Too late', deadline: '2026-11-20' })
     const md = await answerMarkdown({ text: 'Due:', blocks: [{ at: 4, block: { kind: 'deadlines', from: '2026-11-09', to: '2026-11-13' } }] })
     expect(md.split('\n').slice(3)).toEqual([expect.stringMatching(/^- Invoice \(/), expect.stringMatching(/^- Ship \(/)])
+  })
+
+  it('copies without the isolates Arabic puts around the dates in a block label (arabic-rtl D5)', async () => {
+    applyCatalog('ar', 'ar-u-nu-latn', { 'Calendar, {date}': 'التقويم، {date}' })
+    try {
+      const block = { kind: 'calendar' as const, date: '2026-11-12', span: 'day' as const }
+      expect(blockLabel(block)).toContain('\u2068')
+      const md = await answerMarkdown({ text: 'اليوم:', blocks: [{ at: 6, block }] })
+      expect(md).toMatch(/^اليوم:\n\nالتقويم، /)
+      expect(md).not.toMatch(/[\u2068\u2069]/)
+    } finally {
+      applyCatalog('en', 'en', {})
+    }
   })
 })
 

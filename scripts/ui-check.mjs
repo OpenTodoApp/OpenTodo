@@ -12,6 +12,11 @@
 //   6. a priority level is named only through web/src/lib/priority.ts (OpenSpec change
 //      priority-names, design D3): no raw "Priority {n}" message elsewhere, so a renamed
 //      level reads the same on every screen.
+//   7. layout classes name the start and end of the line, not left and right (OpenSpec
+//      change arabic-rtl, design D3): `ms-2`, `ps-4`, `inset-s-0`, `text-start`,
+//      `border-e`, `rounded-s-control`. A box placed by screen coordinates keeps
+//      `left-0` with a `// physical: <reason>` comment on the line or the line above;
+//      a centring `left-1/2` is fine.
 // A glyph counts as an icon when it stands alone in a string or JSX text, starts or
 // ends a label ("✓ Complete", "Next ›"), or is a trigger=/icon= prop. Typography
 // inside copy ("Settings → Integrations", "2 × 3") is fine.
@@ -153,6 +158,92 @@ export function illustrationProblems(file, text) {
   return out
 }
 
+// Physical direction utilities (rule 7): the ones with a logical twin in Tailwind.
+// A line is split into class tokens and each token's utility (the part after its
+// variants) is tested whole, so no pattern has to skip variants by backtracking.
+const PHYSICAL = new RegExp('^(?:' +
+  String.raw`(?:ml|mr|pl|pr|scroll-ml|scroll-mr|scroll-pl|scroll-pr|left|right)-(?:\d+(?:\.\d+)?(?:\/\d+)?|px|auto|full|safe|\[[^\]\s]+\]|\([^)\s]+\))` +
+  String.raw`|border-[lr](?:-[\w\[\]().%/-]+)?|rounded-(?:tl|tr|bl|br|l|r)(?:-[\w\[\]()-]+)?|text-(?:left|right)` +
+  String.raw`|float-(?:left|right)|clear-(?:left|right)|origin-(?:left|right|top-left|top-right|bottom-left|bottom-right)` +
+  String.raw`|bg-(?:linear|gradient)-to-(?:l|r|tl|tr|bl|br)|object-(?:left|right)(?:-top|-bottom)?|bg-(?:left|right)(?:-top|-bottom)?` +
+  ')$')
+// A horizontal translate moves the same way in both directions: it needs an `rtl:` twin
+// on the line, or it is a centring `-translate-x-1/2` with `left-1/2`.
+const TRANSLATE_X = /^translate-x-[\w.[\]/()-]+$/
+// Inline styles with a physical side.
+const STYLE_SIDE = /\b(left|right|marginLeft|marginRight|paddingLeft|paddingRight)\s*:\s*[^,}\s]|\btextAlign\s*:\s*['"](?:left|right)['"]/
+// `// physical: <reason>` on a line, or on the line above, keeps it physical; the reason is required.
+const PHYSICAL_NOTE = /(?:\/\/|\/\*)\s*physical:\s*[^\s*/]/
+// Files drawn from coordinates and kept left to right as a whole (arabic-rtl D8). Only these
+// may say `// physical-file: <reason>` near the top; a shared component never may.
+export const PHYSICAL_FILES = new Set([
+  'web/src/app/TimelineView.tsx',
+  'web/src/app/review/charts.tsx',
+  'web/src/app/assistant/blocks/FreeTimeBlock.tsx',
+  'web/src/app/assistant/blocks/TimelineBlock.tsx',
+])
+
+/** A class token's variants and utility (after its last colon outside brackets, without `!` or a leading `-`). */
+function utilityOf(token) {
+  const variants = []
+  let depth = 0
+  let from = 0
+  for (let i = 0; i < token.length; i++) {
+    const c = token[i]
+    if (c === '[' || c === '(') depth++
+    else if ((c === ']' || c === ')') && depth > 0) depth--
+    else if (c === ':' && depth === 0) { variants.push(token.slice(from, i)); from = i + 1 }
+  }
+  let u = token.slice(from)
+  if (u.startsWith('!')) u = u.slice(1)
+  if (u.endsWith('!')) u = u.slice(0, -1)
+  const negative = u.startsWith('-')
+  return { utility: negative ? u.slice(1) : u, negative, variants }
+}
+
+export function physicalDirectionProblems(file, text) {
+  const out = []
+  const lines = text.split('\n')
+  const head = lines.slice(0, 40).find((l) => /^\/\/ physical-file:/.test(l))
+  if (head) {
+    const reason = head.replace(/^\/\/ physical-file:/, '').trim()
+    if (file.startsWith('web/src/ui/')) out.push(`${file}: \`// physical-file:\` is not allowed in a shared component; mark each line with \`// physical: <reason>\``)
+    else if (!PHYSICAL_FILES.has(file)) out.push(`${file}: \`// physical-file:\` is only for the files listed in PHYSICAL_FILES (scripts/ui-check.mjs); mark each line with \`// physical: <reason>\``)
+    else if (!reason) out.push(`${file}: \`// physical-file:\` needs a reason`)
+    else return out
+  }
+  const hint = 'use its start/end twin (ms, me, ps, pe, inset-s, inset-e, text-start, border-s, rounded-s, ps-safe) so right to left mirrors'
+  lines.forEach((line, i) => {
+    if (PHYSICAL_NOTE.test(line) || PHYSICAL_NOTE.test(lines[i - 1] ?? '')) return
+    if (/^\s*(\/\/|\*|\/\*)/.test(line)) return
+    const moving = []
+    const twins = []
+    for (const token of line.split(/[\s"'`{};$]/)) {
+      if (!token) continue
+      const { utility, negative, variants } = utilityOf(token)
+      if (PHYSICAL.test(utility)) {
+        if (/^(left|right)-1\/2$/.test(utility)) continue
+        out.push(`${file}:${i + 1}: \`${utility}\` is a physical direction; ${hint}`)
+      } else if (TRANSLATE_X.test(utility) && utility !== 'translate-x-0' && !(negative && utility === 'translate-x-1/2')) {
+        // A translate's twin is an `rtl:` translate with the same variants, or narrower ones
+        // (`-translate-x-full max-md:rtl:translate-x-full` where `md:` already resets it).
+        const rest = variants.filter((v) => v !== 'rtl' && v !== 'ltr')
+        if (variants.length !== rest.length) twins.push(rest)
+        else moving.push({ token, rest })
+      }
+    }
+    const alone = moving.find((m) => !twins.some((t) => m.rest.every((v) => t.includes(v))))
+    if (alone) {
+      out.push(`${file}:${i + 1}: \`${alone.token}\` moves the same way right to left; add its \`rtl:\` translate twin, or say \`// physical: <reason>\``)
+    }
+    if (/style=\{\{|style:\s*\{/.test(line)) {
+      const m = line.match(STYLE_SIDE)
+      if (m) out.push(`${file}:${i + 1}: inline style \`${m[0].trim()}\` is a physical side; use insetInlineStart/End, marginInline*, paddingInline*, textAlign 'start'/'end', or say \`// physical: <reason>\``)
+    }
+  })
+  return out
+}
+
 /**
  * The component files under `dir` that no sibling stories file imports. The shared
  * primitives (web/src/ui) and the phone UI (web/src/phone, phone-ui-trial D7) are
@@ -192,6 +283,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
       .flatMap((f) => rawRadioProblems(relative(repo, f), readFileSync(f, 'utf8'))),
     ...[...screens(), ...walk(join(repo, 'web/src/lib')), ...walk(join(repo, 'web/src/ui'))].filter((f) => /\.tsx?$/.test(f) && !/\.(test|stories)\.tsx?$/.test(f))
       .flatMap((f) => rawPriorityNameProblems(relative(repo, f), readFileSync(f, 'utf8'))),
+    ...[...screens(), ...walk(join(repo, 'web/src/lib')), ...walk(join(repo, 'web/src/ui'))].filter((f) => /\.tsx?$/.test(f) && !/\.(test|stories)\.tsx?$/.test(f) && !/\/icons\//.test(f))
+      .flatMap((f) => physicalDirectionProblems(relative(repo, f), readFileSync(f, 'utf8'))),
     ...walk(join(repo, 'web/src/ui/illustrations')).filter((f) => f.endsWith('.tsx') && !/\.(test|stories)\.tsx$/.test(f))
       .flatMap((f) => illustrationProblems(relative(repo, f), readFileSync(f, 'utf8'))),
     ...untranslated().map((p) => `${p} (untranslated: wrap it in t() or add it to scripts/i18n/allow.txt)`),

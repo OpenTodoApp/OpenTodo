@@ -341,7 +341,8 @@ async function assistantSetup() {
   const state = await c.storageState(); await c.close(); return state
 }
 async function ask(p, question, ready) {
-  await go(p, assistantBase, '/inbox', () => p.getByRole('combobox', { name: 'Add a task' }).waitFor())
+  // The add line of the list, or the phone list, which has none (phone-ui-default).
+  await go(p, assistantBase, '/inbox', () => p.locator('[role="combobox"][aria-label="Add a task"], [data-phone-list]').first().waitFor())
   await p.keyboard.press('Shift+I'); await p.locator('[data-assistant-panel]').waitFor(); await settle(p, 400)
   await p.locator('[data-assistant-composer]').fill(question); await p.keyboard.press('Enter')
   await ready(); await settle(p, 600)
@@ -784,10 +785,15 @@ const shots = [
     await dialog.locator('[data-away-preview]', { hasText: /Skips/ }).waitFor(); await settle(p, 400)
     return clipOf(p, dialog, 16)
   }, async after(p, { ctx }) { await p.keyboard.press('Escape'); if (++habitShots % 2 === 0) await habitsScene(ctx, true) } },
+  // Habits on a phone (habits-complete D1): the day strip, a ring per habit and its week.
+  { name: 'habits-phone', server: P, phone: true, async run(p, { ctx }) {
+    await habitsScene(ctx)
+    await go(p, plainBase, '/habits', () => p.locator('[data-phone-habit]').first().waitFor()); await settle(p, 400)
+  }, async after(p, { ctx }) { if (++habitShots % 2 === 0) await habitsScene(ctx, true) } },
   // Targets and amounts (habit-targets): Gym three times a week, Water eight glasses.
   { name: 'habit-targets', server: P, async run(p, { ctx }) {
     await targetsScene(ctx)
-    await go(p, plainBase, '/habits', () => p.locator('[data-target-bar]').first().waitFor()); await settle(p, 400)
+    await go(p, plainBase, '/habits', () => p.locator('[data-board-row]').first().waitFor()); await settle(p, 400)
   }, async after(p, { ctx }) { await targetsScene(ctx, true) } },
   { name: 'week', server: D, card: true, async run(p) {
     await go(p, demoBase, '/week', () => p.getByRole('button', { name: 'Week' }).first().waitFor())

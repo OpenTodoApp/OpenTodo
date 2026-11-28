@@ -44,7 +44,7 @@ import { IssuesPanel } from './IssuesPanel'
 import { CalendarSyncPanel } from './CalendarSyncPanel'
 import { ConfigWarningsNotice } from './ConfigWarnings'
 import { EmailInboxPanel } from './EmailInboxPanel'
-import { BriefingSection, DayPartsSection, FocusSection, KeyboardSection, LanguageSection, PhoneUiSection, StartViewSection } from './PreferencesPanels'
+import { BriefingSection, DayPartsSection, FocusSection, KeyboardSection, LanguageSection, StartViewSection } from './PreferencesPanels'
 import { PrioritiesSection } from './PrioritiesSettings'
 import { TasksSection } from './TasksSettings'
 import { AppLinksSection } from './AppLinksSettings'
@@ -108,7 +108,7 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'language/date-time': () => <DateTimeSection />,
   'language/calendar': () => <CalendarSettingsSection />,
   // The phone UI's switch sits with how the app looks; it shows only on a phone (phone-ui-trial D3).
-  'appearance/theme': ({ user }) => <><AppearanceSection author={user.name || user.email} /><PhoneUiSection /></>,
+  'appearance/theme': ({ user }) => <AppearanceSection author={user.name || user.email} />,
   'appearance/sidebar': () => <SidebarSection />,
   'appearance/task-details': () => <TaskDetailsSection />,
   // Default reminders touch no server feature, so they stay usable on the demo (default-reminders D8).

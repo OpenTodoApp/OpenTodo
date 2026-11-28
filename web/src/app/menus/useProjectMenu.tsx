@@ -95,7 +95,7 @@ export function useProjectMenu(project: Project, o: { userId?: string; rename: (
   ] }
   // What's next? (assistant-in-context): the project-next skill on this project, while the assistant is available.
   const assistantGroup: ActionGroup[] = assistantAvailable ? [{ label: t('Assistant'), items: [{ kind: 'action', id: 'assistant-next', label: t('What’s next?'), icon: 'sparkles',
-    onSelect: () => openAssistantWith({ skill: 'project-next', text: t('What’s next in “{name}”?', { name: project.name }), send: true }) }] }] : []
+    onSelect: () => openAssistantWith({ skill: 'project-next', text: t.plain('What’s next in “{name}”?', { name: project.name }), send: true }) }] }] : []
   // Every role gets the copies (project-templates D6); editing items follow the role inside projectMenuGroups.
   const groups: ActionGroup[] = [
     ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, shownSubs, openTasks: o.page?.openTasks, pinned, workspaces: otherWorkspaces, mode, reviewEvery },

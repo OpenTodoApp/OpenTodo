@@ -32,5 +32,5 @@ export function HelpContent({ page, anchor, onOpen }: { page: HelpPage; anchor?:
   }
 
   // dangerouslySetInnerHTML: build-time content from docs/, see the docs build allow-list.
-  return <div ref={ref} className="help-prose" onClick={onClick} dangerouslySetInnerHTML={{ __html: page.html }} />
+  return <div ref={ref} className="help-prose" lang="en" dir="ltr" onClick={onClick} dangerouslySetInnerHTML={{ __html: page.html }} />
 }

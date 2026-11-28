@@ -36,7 +36,8 @@
       "options",
       "position",
       "project_id",
-      "type"
+      "type",
+      "workspace_id"
     ],
     "frame": [
       "color",

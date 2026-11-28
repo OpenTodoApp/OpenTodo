@@ -11,7 +11,7 @@ import { t } from '../../lib/i18n'
 import { Tooltip } from '../../ui'
 import { eventLabel, useEventDetails } from '../CalendarEvents'
 import type { useCalendarDrag } from '../calendarDrag'
-import { RESIZE_ZONE_PX } from './grid'
+import { resizeZone } from './grid'
 
 type DragStart = ReturnType<typeof useCalendarDrag>['start']
 
@@ -57,19 +57,19 @@ export function EventBlockView({ block, date, lane, lanes, overlap, pxPerMinute,
           onSelect?.(block.id)
           // The lowest and highest few pixels resize, as on a task block; the rest moves it.
           const rect = e.currentTarget.getBoundingClientRect()
-          const edge = Math.min(RESIZE_ZONE_PX, rect.height / 3)
+          const edge = resizeZone(rect.height, e.pointerType)
           if (e.clientY >= rect.bottom - edge) onDragStart!(e, { taskId: block.id, kind: 'resize', blockStart: block.start, blockDate: date })
           else if (e.clientY <= rect.top + edge) onDragStart!(e, { taskId: block.id, kind: 'resize-start', blockEnd: block.end, blockDate: date })
           else onDragStart!(e, { taskId: block.id, kind: 'move', grabOffset: e.clientY - rect.top })
         }}
-        className={`absolute z-10 overflow-hidden px-1.5 text-left ${movable ? 'cursor-grab touch-manipulation' : ''} ${height < 20 ? 'py-0 text-hint leading-none' : 'py-0.5 text-meta'} ${ev.free ? 'rounded-control border border-dashed border-hue-solid bg-transparent text-hue' : 'ui-block ui-block--event'} ${dim} ${selected ? 'ring-2 ring-accent' : ''} focus-visible:outline-2 focus-visible:outline-focus`}
+        className={`absolute z-10 overflow-hidden px-1.5 text-start ${movable ? 'cursor-grab touch-manipulation' : ''} ${height < 20 ? 'py-0 text-hint leading-none' : 'py-0.5 text-meta'} ${ev.free ? 'rounded-control border border-dashed border-hue-solid bg-transparent text-hue' : 'ui-block ui-block--event'} ${dim} ${selected ? 'ring-2 ring-accent' : ''} focus-visible:outline-2 focus-visible:outline-focus`}
         style={{
           top: block.start * pxPerMinute, height,
-          left: `calc(${(lane / lanes) * 100}% + 2px)`,
+          insetInlineStart: `calc(${(lane / lanes) * 100}% + 2px)`,
           width: `calc(${100 / lanes}% - 4px)`,
         }}
       >
-        <span className="flex min-w-0 items-center gap-1 font-medium">{!ev.free && <span aria-hidden className="ui-block-dot" />}<span className="truncate">{ev.summary || t('Busy')}</span></span>
+        <span className="flex min-w-0 items-center gap-1 font-medium">{!ev.free && <span aria-hidden className="ui-block-dot" />}<span dir="auto" className="truncate">{ev.summary || t('Busy')}</span></span>
         {/* Named by its visible summary, then the time, location and calendar as hidden text (WCAG 2.5.3 Label in Name): the short time line below is not read twice. */}
         <span className="sr-only">{eventLabel(ev, sub, zone).slice((ev.summary || t('Busy')).length)}</span>
         {height >= 30 && <span aria-hidden className="block truncate text-hint tabular-nums" data-event-time>{formatWallTime(toHHMM(block.start))}{ev.location ? ` · ${ev.location}` : ''}</span>}

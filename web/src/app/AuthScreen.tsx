@@ -279,7 +279,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
               autoComplete={mode === 'register' ? 'new-password' : 'current-password'} />
           </label>
           {mode === 'login' && !invite && !status.setupRequired && !sso.breakGlass && status.outgoingEmail?.enabled && (
-            <p className="-mt-1 text-right text-meta"><a href="/forgot" data-forgot-link className="text-muted underline hover:text-default"
+            <p className="-mt-1 text-end text-meta"><a href="/forgot" data-forgot-link className="text-muted underline hover:text-default"
               onClick={(e) => { e.preventDefault(); navigate({ view: 'forgot' }) }}>{t('Forgot password?')}</a></p>
           )}
           {needsSetupToken && (

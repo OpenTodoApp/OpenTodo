@@ -13,6 +13,7 @@ import { closePanel, openPanel, openTaskPanel, resetPanel, setTaskSplit } from '
 import { navigate } from './router'
 import { Shell } from './Shell'
 
+
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 const original = window.matchMedia
 function viewport(width: number) {
@@ -78,7 +79,7 @@ describe('the task panel over the page', () => {
     opener.focus()
     const unsplit = setTaskSplit(true)
     await act(async () => { openTaskPanel(id) })
-    await waitFor(() => main().inert && panel()!.contains(document.activeElement), 'focus in the panel')
+    await waitFor(() => main().inert && !!panel()?.contains(document.activeElement), 'focus in the panel')
     await act(async () => { closePanel() })
     await waitFor(() => document.activeElement === opener, 'focus back on the opener')
     expect(main().inert).toBe(false)
@@ -109,6 +110,9 @@ describe('the task panel over the page', () => {
 
   it('leaves focus in the panel when the window widens past 48 rem while it is open', async () => {
     viewport(700)
+    // On Labels, which is one screen at every width. A task list is the phone list below 768 px and the
+    // desktop list from there (phone-lists): crossing the width mounts the other one, and the Inbox then closes its pane.
+    navigate({ view: 'labels' })
     const id = await createTask({ title: 'Undated inbox task' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!main(), 'the shell')
@@ -118,7 +122,7 @@ describe('the task panel over the page', () => {
     opener.focus()
     const unsplit = setTaskSplit(true)
     await act(async () => { openTaskPanel(id) })
-    await waitFor(() => main().inert && panel()!.contains(document.activeElement), 'focus in the panel')
+    await waitFor(() => main().inert && !!panel()?.contains(document.activeElement), 'focus in the panel')
     viewport(800)
     await r.rerender(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !main().inert, 'the page usable')
@@ -154,7 +158,7 @@ describe('the task panel over the page', () => {
       sheet.remove()
       opener.focus()
     })
-    await waitFor(() => main().inert && panel()!.contains(document.activeElement), 'focus in the panel')
+    await waitFor(() => main().inert && !!panel()?.contains(document.activeElement), 'focus in the panel')
     await act(async () => { closePanel() })
     await waitFor(() => document.activeElement === opener, 'focus back on the trigger')
     unsplit()
@@ -165,7 +169,7 @@ describe('the task panel over the page', () => {
     const { id, r, opener, unsplit } = await withOpener()
     await act(async () => { openPanel('activity', () => <p>Activity</p>) })
     await act(async () => { openTaskPanel(id) })
-    await waitFor(() => main().inert && panel()!.contains(document.activeElement), 'focus in the panel')
+    await waitFor(() => main().inert && !!panel()?.contains(document.activeElement), 'focus in the panel')
     await act(async () => { closePanel() })
     await waitFor(() => document.activeElement === opener, 'focus back on the opener')
     unsplit()

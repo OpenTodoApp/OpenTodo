@@ -31,7 +31,7 @@ export default function HabitBlock({ block }: { block: Extract<AssistantBlock, {
         )}
       </p>
       <HabitHistory series={series} records={data.records} today={today} />
-      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -ml-2 gap-1" onClick={() => openTaskPanel(series.id)}>
+      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -ms-2 gap-1" onClick={() => openTaskPanel(series.id)}>
         <Icon name="arrow-right" size="sm" />{t('Open task')}
       </button>
     </div>

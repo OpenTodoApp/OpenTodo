@@ -43,7 +43,7 @@ export function DisclosureNoticeView({ fields, device, connected, error, open: i
       {memory && <p data-disclosure-memory>{t('Facts you keep in Memory are sent to the model provider with every message, as your stated preferences. You review each one before it is kept, and your consent still counts.')}</p>}
       {open && (
         <div id={listId} className="space-y-2" data-disclosure-notice-list>
-          <ul className="list-disc space-y-0.5 pl-5">
+          <ul className="list-disc space-y-0.5 ps-5">
             {fields.map((f) => <li key={f}>{disclosureField(f)}</li>)}
           </ul>
           <p>{t('In shared projects this includes text other members wrote.')}</p>

@@ -312,13 +312,6 @@ export const SETTINGS_COPY = {
       countEvents: { label: msg('Count meetings in capacity'), description: msg('Busy calendar events add to each day in Day, Week and Month.') },
     },
   },
-  // The phone UI's switch (phone-ui-trial D3): kept on this device, shown below 768 px only.
-  'phone-ui': {
-    title: msg('Phone screens'),
-    icon: 'sparkles',
-    description: msg('A trial of screens made for a phone. This device only.'),
-    rows: { on: { label: msg('New phone screens'), description: msg('Today and the task page in the new design. Turn it off at any time.') } },
-  },
   keyboard: {
     title: msg('Keyboard'),
     icon: 'keyboard',

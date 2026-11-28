@@ -3,15 +3,16 @@
 // on a day or week axis, dependency arrows, and date moves by drag and keyboard.
 // Selection and opening stay with the list (j / k / Enter); this view adds the
 // axis, the bars and the date edits, each one batch of ordinary field ops.
+// physical-file: a time axis drawn from computed left offsets, kept left to right in a dir="ltr" box (arabic-rtl D8).
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { DESKTOP_HEADER_QUERY, Icon, ReadAs, useMediaQuery } from '../ui'
+import { Button, DESKTOP_HEADER_QUERY, Icon, ReadAs, useMediaQuery } from '../ui'
 import { addDaysISO, daysBetweenISO, formatDate, viewedTask, formatDateRange, monthName } from '../lib/dates'
 import { isBlocked } from '../lib/dependencies'
 import { getTask } from '../lib/localData'
-import { beginDrag } from '../lib/dnd'
+import { beginDrag, dropTargetAt, edgeStep } from '../lib/dnd'
 import { calendarEditUndoable } from '../lib/undoActions'
 import { calendarEditWithUndo } from './undoable'
-import { axis, dayOffset, edges, shiftDates, spanOf, type Span, type Zoom } from '../lib/timeline'
+import { axis, dayOffset, edges, shiftDates, spanOf, touchGrab, type Span, type Zoom } from '../lib/timeline'
 import type { Task } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { useShortcutScope } from './shortcuts'
@@ -64,6 +65,55 @@ function readZoom(): Zoom {
 export function deadlineStep(task: Pick<Task, 'due' | 'deadline'>, days: number, zone?: string): string | null {
   const base = task.deadline ?? (task.due ? viewedTask({ due: task.due } as Task, zone).due?.date : undefined)
   return base ? addDaysISO(base, days) : null
+}
+
+/** Mark the day column under a point as the drop target, as the drag does when the pointer moves. */
+function markDay(x: number, y: number): void {
+  const key = dropTargetAt(x, y)
+  for (const el of document.querySelectorAll('[data-drop-active]')) {
+    if (el.getAttribute('data-drop-target') !== key) el.removeAttribute('data-drop-active')
+  }
+  if (key?.startsWith('tl:')) document.querySelector(`[data-drop-target="${key}"]`)?.setAttribute('data-drop-active', '')
+}
+
+/** A dragged bar scrolls the grid at a quarter of the lists' pace: at most 4 px a frame, about a week a second on the day axis. */
+export const edgeStepX = (x: number, left: number, right: number): number => {
+  const step = edgeStep(x, left, right)
+  return Math.sign(step) * Math.ceil(Math.abs(step) / 4)
+}
+
+/**
+ * The grid scrolls sideways under a lifted drag that rests near its left or right edge
+ * (phone-timeline D3), faster nearer the edge, so a bar reaches a day off screen. The
+ * timeline's own, beside the lists' vertical edge scroll in lib/dnd: `inset` is the
+ * width of the names column, which covers the grid's left edge from 768 px.
+ */
+function edgeScrollX(grid: () => HTMLElement | null, inset: () => number): { at: (x: number, y: number) => void; stop: () => void } {
+  let frame = 0, x = 0, y = 0, scrolled = false
+  const tick = () => {
+    frame = 0
+    const el = grid()
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    const step = y < r.top || y > r.bottom ? 0 : edgeStepX(x, r.left + inset(), r.right)
+    if (!step) return
+    const before = el.scrollLeft
+    el.scrollLeft = before + step
+    if (el.scrollLeft === before) return
+    scrolled = true
+    markDay(x, y)
+    frame = requestAnimationFrame(tick)
+  }
+  return {
+    at: (px, py) => {
+      x = px
+      y = py
+      // The drag's own mark is from before the grid moved: after a scroll this one is right.
+      if (scrolled) markDay(x, y)
+      if (!frame) frame = requestAnimationFrame(tick)
+    },
+    stop: () => { cancelAnimationFrame(frame); frame = 0 },
+  }
 }
 
 export function TimelineView({ groups, today, zone, editable, selectedId, onSelect, onOpen, byId, hue }: {
@@ -132,11 +182,11 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
     setZoom(z)
     writeString(ZOOM_KEY, z) // per-device convenience
   }
-  // Start with today in view.
+  // The day the range is on stays in view: today at first, then where Earlier, Later or their keys moved it (it went back to today each time, so they seemed to do nothing).
   useLayoutEffect(() => {
     const el = scroller.current
-    if (el) el.scrollLeft = Math.max(0, dayOffset(ax.from, today) * px - el.clientWidth / 3)
-  }, [ax.from, px, today])
+    if (el) el.scrollLeft = Math.max(0, dayOffset(ax.from, anchor) * px - el.clientWidth / 3)
+  }, [ax.from, px, anchor])
 
   const x = (iso: string) => dayOffset(ax.from, iso) * px
   /** The axis day under a pointer position. */
@@ -188,10 +238,12 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
     if (!editable || e.button !== 0) return
     e.stopPropagation()
     const grab = dayAt(e.clientX)
+    const edge = edgeScrollX(() => scroller.current, () => axisRef.current?.offsetLeft ?? 0)
     beginDrag(e, {
       label: task.title,
       onStart: () => setDragging(true),
-      onEnd: () => setDragging(false),
+      onMove: (_day, px, py) => edge.at(px, py),
+      onEnd: () => { edge.stop(); setDragging(false) },
       onDrop: (key) => {
         if (!key.startsWith('tl:')) return
         const day = key.slice(3)
@@ -205,7 +257,7 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
     })
   }
 
-  const barProps = { from: ax.from, totalDays, px, today, hue, editable, dragging, onDrag: startDrag, onSelect, onOpen }
+  const barProps = { from: ax.from, totalDays, px, today, hue, editable, dragging, coarse, onDrag: startDrag, onSelect, onOpen }
   const label = (l: Line) => {
     const blocked = isBlocked(l.task, byId)
     const blockers = arrows.filter((a) => a.to === l.task.id).map((a) => a.a.task.title || t('Untitled'))
@@ -219,7 +271,7 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
     }
     const place = !l.span ? (e: React.PointerEvent) => startDrag(e, l.task, 'place') : undefined
     const row = { role: 'row', 'aria-selected': selected, 'data-timeline-row': l.task.id, 'data-blocked': blocked || undefined }
-    const text = <>{blocked && <Icon name="lock" size="xs" className="mr-1 inline" />}{title}</>
+    const text = <>{blocked && <Icon name="lock" size="xs" className="me-1 inline" />}{title}</>
     if (stacked) {
       // The whole row is the name's button, under the bar; the name's text stays at the
       // grid's left edge while the days scroll, and covers the today line where they meet.
@@ -229,10 +281,10 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
         <div key={l.task.id} {...row} className={`relative border-b border-default ${selected ? 'bg-selected-row' : ''}`} style={{ height, width }}>
           <div role="rowheader" className="absolute inset-0">
             <button data-drag-id="timeline-unscheduled" {...name} className="absolute inset-0" onPointerDown={place} />
-            <span aria-hidden data-timeline-name className={`pointer-events-none sticky left-0 z-20 block w-fit truncate px-2 text-body leading-5 ${blocked ? 'text-muted' : 'text-default'} ${selected ? 'bg-selected-row' : 'bg-canvas'}`}
+            <span aria-hidden data-timeline-name className={`pointer-events-none sticky inset-s-0 z-20 block w-fit truncate px-2 text-body leading-5 ${blocked ? 'text-muted' : 'text-default'} ${selected ? 'bg-selected-row' : 'bg-canvas'}`}
               style={{ marginLeft: indent, marginTop: l.span ? 4 : (height - 20) / 2, maxWidth: `calc(100cqw - ${indent}px)` }}>{text}</span>
           </div>
-          <div role="gridcell" className="pointer-events-none absolute bottom-0 left-0" style={{ width, height: ROW_PX }}>
+          <div role="gridcell" className="pointer-events-none absolute bottom-0 inset-s-0" style={{ width, height: ROW_PX }}>
             {l.span && <TimelineBar task={l.task} s={l.span} selected={selected} {...barProps} />}
           </div>
         </div>
@@ -240,9 +292,9 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
     }
     return (
       <div key={l.task.id} {...row} className={`flex border-b border-default ${selected ? 'bg-selected-row' : ''}`} style={{ height: rowPx }}>
-        <div role="rowheader" className={`sticky left-0 z-10 flex w-[40vw] max-w-64 shrink-0 items-center gap-1 border-r border-default px-2 sm:w-64 ${selected ? 'bg-selected-row' : 'bg-surface'}`}
+        <div role="rowheader" className={`sticky inset-s-0 z-10 flex w-[40vw] max-w-64 shrink-0 items-center gap-1 border-e border-default px-2 sm:w-64 ${selected ? 'bg-selected-row' : 'bg-surface'}`}
           style={{ paddingLeft: 8 + l.depth * 14 }}>
-          <button data-drag-id="timeline-unscheduled" {...name} className={`min-w-0 flex-1 truncate text-left text-body ${blocked ? 'text-muted' : 'text-default'}`} onPointerDown={place}>{text}</button>
+          <button data-drag-id="timeline-unscheduled" {...name} className={`min-w-0 flex-1 truncate text-start text-body ${blocked ? 'text-muted' : 'text-default'}`} onPointerDown={place}>{text}</button>
         </div>
         <div role="gridcell" className="relative shrink-0" style={{ width, marginTop: (rowPx - ROW_PX) / 2 }}>
           {l.span && <TimelineBar task={l.task} s={l.span} selected={selected} {...barProps} />}
@@ -254,28 +306,32 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
   // A section heading is the list's group bar (D5): sentence case, the name and its number of rows.
   const heading = (key: string, text: string, count: number) => (
     <div key={`h:${key}`} role="row" data-timeline-group={key} className="flex border-b border-default bg-raised" style={{ height: ROW_PX }}>
-      <div role="rowheader" className={`sticky left-0 z-10 flex shrink-0 items-center gap-1.5 bg-raised px-2 ${stacked ? 'max-w-[100cqw]' : 'w-[40vw] max-w-64 border-r border-default sm:w-64'}`}>
+      <div role="rowheader" className={`sticky inset-s-0 z-10 flex shrink-0 items-center gap-1.5 bg-raised px-2 ${stacked ? 'max-w-[100cqw]' : 'w-[40vw] max-w-64 border-e border-default sm:w-64'}`}>
         <span className="min-w-0 truncate text-meta font-medium text-default">{text}</span>
         <span className="text-meta tabular-nums text-faint" data-group-count><ReadAs label={t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</ReadAs></span>
       </div>
-      <div className="shrink-0" style={{ width }} />
+      {/* The rest of the row, and no wider: below 768 px the name is part of the axis' width, so the grid ends where the axis does. */}
+      <div data-group-rest className="min-w-0 flex-1" />
     </div>
   )
 
-  const monthLabel = (iso: string) => monthName(iso, 'short')
-  // A week column reads as its range, "20–26 Oct" (D9), in the user's locale.
-  const weekLabel = (iso: string) => formatDateRange(iso, addDaysISO(iso, 6), { month: 'short', day: 'numeric' })
   const headerRows = 1
   return (
-    <div data-timeline className="min-w-0">
+    <div data-timeline dir="ltr" className="min-w-0">
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <span className="flex rounded-control border border-default text-meta" role="group" aria-label={t('Timeline zoom')}>
           {(['day', 'week'] as const).map((z, i) => (
             <button key={z} type="button" aria-pressed={zoom === z} onClick={() => chooseZoom(z)}
-              className={`${i === 0 ? 'rounded-l-control' : 'rounded-r-control'} px-2 py-1 ${zoom === z ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted'}`}>
+              className={`${i === 0 ? 'rounded-s-control' : 'rounded-e-control'} px-2 py-1 ${zoom === z ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted'}`}>
               {z === 'day' ? t('Days') : t('Weeks')}
             </button>
           ))}
+        </span>
+        {/* The range moves by its keys ([ ] t) and by these: a phone has no keys. */}
+        <span className="flex items-center" role="group" aria-label={t('Range')} data-timeline-range>
+          <Button variant="ghost" size="sm" icon="chevron-left" aria-label={t('Earlier')} onClick={() => setAnchor((a) => addDaysISO(a, -rangeStep))} />
+          <Button variant="ghost" size="sm" onClick={() => setAnchor(today)}>{t('Today')}</Button>
+          <Button variant="ghost" size="sm" icon="chevron-right" aria-label={t('Later')} onClick={() => setAnchor((a) => addDaysISO(a, rangeStep))} />
         </span>
         <span className="text-meta text-faint">
           {editable
@@ -289,17 +345,9 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
         <div className="relative" style={{ width: `calc(${names} + ${width}px)` }}>
           {/* Axis */}
           <div role="row" className="sticky top-0 z-20 flex border-b border-default bg-surface" style={{ height: ROW_PX }}>
-            <div role="columnheader" className={stacked ? 'sr-only' : 'sticky left-0 z-10 w-[40vw] max-w-64 shrink-0 border-r border-default bg-surface px-2 text-hint leading-8 text-muted sm:w-64'}>{t('Task')}</div>
+            <div role="columnheader" className={stacked ? 'sr-only' : 'sticky inset-s-0 z-10 w-[40vw] max-w-64 shrink-0 border-e border-default bg-surface px-2 text-hint leading-8 text-muted sm:w-64'}>{t('Task')}</div>
             <div ref={axisRef} className="relative shrink-0" style={{ width }}>
-              {ax.columns.map((c) => (
-                <span key={c} role="columnheader" className="absolute top-0 h-full border-l border-default px-0.5 text-hint leading-8 text-muted" style={{ left: x(c), width: (zoom === 'week' ? 7 : 1) * px }}>
-                  {zoom === 'week' ? weekLabel(c) : c.endsWith('-01') ? `${monthLabel(c)} ${Number(c.slice(8))}` : Number(c.slice(8))}
-                </span>
-              ))}
-              {dayOffset(ax.from, today) >= 0 && dayOffset(ax.from, today) < totalDays && (
-                // The today mark (D9): an accent pill on the axis above the line.
-                <span data-today-mark className="pointer-events-none absolute top-1.5 z-10 -translate-x-1/2 rounded-chip bg-accent px-1.5 text-hint font-medium leading-5 text-on-accent" style={{ left: (dayOffset(ax.from, today) + 0.5) * px }}>{t('Today')}</span>
-              )}
+              <AxisColumns columns={ax.columns} zoom={zoom} px={px} from={ax.from} today={today} />
             </div>
           </div>
           {/* Day columns: the drop targets, under the rows. */}
@@ -326,6 +374,25 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
       </div>
     </div>
   )
+}
+
+/**
+ * The axis' columns (D9): a day's number, the month's name on its first day, a week's range
+ * such as "20–26 Oct" in the user's locale. The column today is in carries the today mark:
+ * its own label on the accent. Each label is one line cut to its column: a "Today" mark over
+ * the labels covered two of them, and "Dec 1" wrapped in a 32 px column, its "1" over the first row.
+ */
+function AxisColumns({ columns, zoom, px, from, today }: { columns: string[]; zoom: Zoom; px: number; from: string; today: string }) {
+  const span = zoom === 'week' ? 7 : 1
+  return columns.map((c) => {
+    const label = zoom === 'week' ? formatDateRange(c, addDaysISO(c, 6), { month: 'short', day: 'numeric' }) : c.endsWith('-01') ? monthName(c, 'short') : Number(c.slice(8))
+    const now = dayOffset(c, today) >= 0 && dayOffset(c, today) < span
+    return (
+      <span key={c} role="columnheader" aria-current={now ? 'date' : undefined} className="absolute top-0 h-full overflow-hidden whitespace-nowrap border-s border-default px-0.5 text-hint leading-8 text-muted" style={{ left: dayOffset(from, c) * px, width: span * px }}>
+        {now ? <span data-today-mark className="inline-block rounded-chip bg-accent px-1 align-middle font-medium leading-5 text-on-accent">{label}</span> : label}
+      </span>
+    )
+  })
 }
 
 /** The dependency arrows (D4): from the end of the blocker's bar to the start of the dependent's, over the rows. */
@@ -373,7 +440,7 @@ export function notePlacement(barLeft: number, barRight: number, width: number, 
 }
 
 /** One task's bar (precision-boards-timeline D6–D8): its block, markers and the label after it. */
-function TimelineBar({ task, s, selected, from, totalDays, px, today, hue, editable, dragging, onDrag, onSelect, onOpen }: {
+function TimelineBar({ task, s, selected, from, totalDays, px, today, hue, editable, dragging, coarse, onDrag, onSelect, onOpen }: {
   task: Task
   s: Span
   selected: boolean
@@ -385,6 +452,8 @@ function TimelineBar({ task, s, selected, from, totalDays, px, today, hue, edita
   hue?: string
   editable: boolean
   dragging: boolean
+  /** A touch screen: a tap on the bar opens the task, as a tap on its name does. */
+  coarse: boolean
   onDrag: (e: React.PointerEvent, task: Task, kind: 'move' | 'start' | 'end') => void
   onSelect: (id: string) => void
   onOpen: (id: string) => void
@@ -395,7 +464,7 @@ function TimelineBar({ task, s, selected, from, totalDays, px, today, hue, edita
   if (to < 0 || first > totalDays - 1) {
     // Entirely outside the window: a marker at the near edge.
     const before = dayOffset(from, s.to) < 0
-    return <span data-beyond={before ? 'before' : 'after'} className={`absolute top-2.5 text-muted ${before ? 'left-1' : 'right-1'}`} aria-hidden><Icon name={before ? 'chevron-left' : 'chevron-right'} size="xs" /></span>
+    return <span data-beyond={before ? 'before' : 'after'} className={`absolute top-2.5 text-muted ${before ? 'inset-s-1' : 'inset-e-1'}`} aria-hidden><Icon name={before ? 'chevron-left' : 'chevron-right'} size="xs" /></span>
   }
   const clippedLeft = dayOffset(from, s.from) < 0
   const clippedRight = dayOffset(from, s.to) > totalDays - 1
@@ -414,15 +483,16 @@ function TimelineBar({ task, s, selected, from, totalDays, px, today, hue, edita
   return (
     <>
     <div data-drag-id="timeline-bar" data-bar={task.id} data-late={s.late || undefined} data-hue={hue}
-      onPointerDown={(e) => onDrag(e, task, 'move')}
-      onClick={() => onSelect(task.id)} onDoubleClick={() => onOpen(task.id)}
+      // A finger takes an end from a zone it can hit, by where it pressed (phone-timeline D2); a mouse or a pen takes the 6 px handles.
+      onPointerDown={(e) => onDrag(e, task, e.pointerType === 'touch' ? touchGrab(e.clientX - e.currentTarget.getBoundingClientRect().left, barPx, { start: !clippedLeft, end: !clippedRight }) : 'move')}
+      onClick={() => (coarse ? onOpen : onSelect)(task.id)} onDoubleClick={() => onOpen(task.id)}
       className={`ui-block ui-block--row absolute top-1.5 flex h-6 items-center ${s.late ? 'ui-block--late' : ''} ${allPast ? 'ui-block--past' : ''} ${selected ? 'ring-2 ring-accent' : ''} ${editable ? 'cursor-grab touch-manipulation' : ''} ${dragging ? 'pointer-events-none' : 'pointer-events-auto'}`}
       style={{ left: first * px, width: barPx }}>
       {pastDays > 0 && <span data-bar-past aria-hidden className="ui-block ui-block--row ui-block--past pointer-events-none absolute inset-y-0 rounded-e-none" style={{ insetInlineStart: -3, width: pastDays * px }} />}
       {clippedLeft && <Icon name="chevron-left" size="xs" className="relative text-muted" />}
       {/* Below 768 px the name already stands above the bar (phone-timeline-rows). */}
       {titled && <span data-bar-title aria-hidden className="user-text pointer-events-none relative min-w-0 flex-1 truncate px-1.5 text-meta font-medium max-md:hidden">{task.title || t('Untitled')}</span>}
-      {editable && !clippedLeft && <span data-drag-id="timeline-bar-start" data-bar-edge="start" className="absolute inset-y-0 left-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => onDrag(e, task, 'start')} />}
+      {editable && !clippedLeft && <span data-drag-id="timeline-bar-start" data-bar-edge="start" className="absolute inset-y-0 inset-s-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => { if (e.pointerType !== 'touch') onDrag(e, task, 'start') }} />}
       {s.dueAt && s.dueAt !== s.from && s.dueAt !== s.to && dayOffset(from, s.dueAt) >= 0 && (
         <span data-due-marker className="absolute top-1.5 h-3 w-0.5 rounded-full bg-accent" style={{ left: (dayOffset(from, s.dueAt) - first + 0.5) * px }} aria-hidden />
       )}
@@ -430,8 +500,8 @@ function TimelineBar({ task, s, selected, from, totalDays, px, today, hue, edita
         // The deadline diamond (D8): a 10 px square turned 45 degrees, centred on its day.
         <span data-deadline-marker className={`absolute top-1/2 size-2.5 -translate-y-1/2 rotate-45 rounded-[2px] ${s.late ? 'bg-danger' : 'bg-warning'}`} style={{ left: (dayOffset(from, s.deadlineAt!) - first + 0.5) * px - 5 }} aria-hidden />
       )}
-      {clippedRight && <Icon name="chevron-right" size="xs" className="relative ml-auto text-muted" />}
-      {editable && !clippedRight && <span data-drag-id="timeline-bar-end" data-bar-edge="end" className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => onDrag(e, task, 'end')} />}
+      {clippedRight && <Icon name="chevron-right" size="xs" className="relative ms-auto text-muted" />}
+      {editable && !clippedRight && <span data-drag-id="timeline-bar-end" data-bar-edge="end" className="absolute inset-y-0 inset-e-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => { if (e.pointerType !== 'touch') onDrag(e, task, 'end') }} />}
     </div>
     {after && !clippedRight && (
       <span data-bar-after className={`pointer-events-none absolute top-1.5 flex h-6 items-center whitespace-nowrap text-meta tabular-nums ${after.tone}`} style={{ left: notePlacement(first * px, first * px + barPx, noteWidth(after.text), todayIn ? (dayOffset(from, today) + 0.5) * px : null, totalDays * px) }}>{after.text}</span>

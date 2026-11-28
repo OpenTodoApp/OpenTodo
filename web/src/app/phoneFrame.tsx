@@ -7,15 +7,19 @@ import type { Route } from './router'
 
 /** The bar at the top: its height, its padding under the status area, phones only. A size container, so
  * its actions can measure its width in the root's rem, which follows the text size (text-size D5). */
-export const PHONE_BAR_FRAME = 'flex min-h-12 items-center gap-1 pl-2 pr-2 pt-[max(0.25rem,var(--safe-top))] md:hidden @container'
+export const PHONE_BAR_FRAME = 'flex min-h-12 items-center gap-1 ps-2 pe-2 pt-[max(0.25rem,var(--safe-top))] md:hidden @container'
 /** Its hairline; a day page's bar has none (precision-phone D1). */
 export const PHONE_BAR_LINE = 'border-b border-soft'
-/** The tab bar: fixed to the bottom, above the safe area, phones only. */
-export const TAB_BAR_FRAME = 'fixed inset-x-0 bottom-0 z-40 flex border-t border-soft bg-canvas px-safe pb-safe md:hidden'
-/** One tab's box; its height is `TAB_HEIGHT`, or `min-h-10` minimised. */
-export const TAB_FRAME = 'flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1'
+/** The tab bar: a capsule floating 8 px above the safe area and 12 px in from the sides, phones only (phone-modern-look D1). */
+export const TAB_BAR_FRAME = 'fixed inset-s-[calc(0.75rem+var(--safe-start))] bottom-[calc(0.5rem+var(--safe-bottom))] z-40 flex gap-0.5 rounded-full border border-soft bg-surface/90 p-1 shadow-3 backdrop-blur-xl backdrop-saturate-150 dark:bg-raised/90 md:hidden'
+/** The tab bar's whole frame: it ends before the add button, which sits beside it at its height, or at the gutter when there is none. */
+export function tabBarFrame(withAdd: boolean): string {
+  return `${TAB_BAR_FRAME} ${withAdd ? 'inset-e-[calc(5.25rem+var(--safe-end))]' : 'inset-e-[calc(0.75rem+var(--safe-end))]'} transition-[inset-inline-end] duration-(--duration-ui)`
+}
+/** One tab's box; its height is `TAB_HEIGHT`, or `min-h-10` minimised. The current one sits on a pill. */
+export const TAB_FRAME = 'flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-full px-1'
 /**
- * A tab's height, 56 px (`TAB_BAR_HEIGHT_REM`). Important, because the touch rule that
+ * A tab's height, 56 px (the bar is `TAB_BAR_HEIGHT_REM` with its padding). Important, because the touch rule that
  * makes every button at least 44 px is outside the layers and would otherwise replace
  * it: the tabs were 44 px on a touch screen (touch-pressed-states).
  */
@@ -48,7 +52,7 @@ export function PhoneFrameSkeleton({ route, signedIn, children }: { route: Route
       )}
       {children}
       {chrome && (
-        <div aria-hidden className={TAB_BAR_FRAME}>
+        <div aria-hidden className={tabBarFrame(true)}>
           {/* Buttons, as the tabs are: the touch rules that size a real tab size these too. */}
           {[0, 1, 2, 3].map((i) => <button key={i} disabled className={`${TAB_FRAME} ${TAB_HEIGHT}`}>{BLOCK}</button>)}
         </div>

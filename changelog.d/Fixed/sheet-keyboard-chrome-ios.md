@@ -1,1 +1,0 @@
-- **Chrome on iPhone: a bottom sheet stays above the keyboard.** Quick add and other sheets could jump to the top of the screen with only their title showing, because the keyboard's height was counted twice while the page was still resizing.
