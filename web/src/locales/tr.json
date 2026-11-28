@@ -7934,7 +7934,5 @@
   "By weekday": "Haftanın gününe göre",
   "Up next": "Sıradaki",
   "Next seven days": "Önümüzdeki yedi gün",
-  "Pull to sync": "Eşitlemek için çekin",
-  "Release to sync": "Eşitlemek için bırakın",
-  "{n, plural, one {All done for today: # task completed.} other {All done for today: # tasks completed.}}": "{n, plural, one {Bugünlük her şey tamam: # görev tamamlandı.} other {Bugünlük her şey tamam: # görev tamamlandı.}}"
+  "in {time}": "{time} sonra"
 }

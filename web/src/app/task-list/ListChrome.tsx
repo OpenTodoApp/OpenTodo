@@ -318,10 +318,8 @@ function emptyAction(kind: EmptyCopy['action']): EmptyStateAction | undefined {
   return undefined
 }
 
-export function EmptyState({ view, waiting = 0, readOnly = false, completed = 0, onShowCompleted, doneToday = 0 }: {
+export function EmptyState({ view, waiting = 0, readOnly = false, completed = 0, onShowCompleted }: {
   view: EmptyView
-  /** Today on a phone: the tasks completed today, so a cleared day says it is done (phone-delight D1). */
-  doneToday?: number
   /** Today: tasks due today that all wait for other tasks (task-dependencies). */
   waiting?: number
   /** A shared project the viewer may only read: no quick add, so the action opens the Inbox. */
@@ -342,9 +340,7 @@ export function EmptyState({ view, waiting = 0, readOnly = false, completed = 0,
         : undefined
   return (
     <div data-empty-state={view}>
-      <EmptyStatePattern title={blocked ? t('Nothing is ready to start today.')
-        : view === 'today' && doneToday > 0 ? t('{n, plural, one {All done for today: # task completed.} other {All done for today: # tasks completed.}}', { n: doneToday })
-          : copy.title} action={action} secondary={secondary}
+      <EmptyStatePattern title={blocked ? t('Nothing is ready to start today.') : copy.title} action={action} secondary={secondary}
         illustration={EMPTY_ILLUSTRATION[view]} />
     </div>
   )

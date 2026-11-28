@@ -35,8 +35,6 @@ import { t } from '../../lib/i18n'
 import { PhoneChrome } from '../PhoneChrome'
 import { doneToday, glanceOf, TodayGlance } from '../components/TodayGlance'
 import { BarProgressContext } from '../chrome'
-import { PullToSync } from '../components/PullToSync'
-import { usePullToSync } from '../pullToSync'
 import { useDayClosed } from '../dayClosed'
 import { WeekStrip } from '../components/WeekStrip'
 
@@ -67,7 +65,6 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
   const doneNow = useMemo(() => isToday ? doneToday(m.allTasks, today) : 0, [isToday, m.allTasks, today])
   const openNow = isToday ? s.listedTasks.filter((x) => !x.completed_at).length : 0
   useDayClosed(isToday && s.ready, openNow, doneNow)
-  const pull = usePullToSync(s.ready)
 
   const missing = route.view === 'project' && m.projects.length > 0 && !currentProject ? 'project' as const
     : route.view === 'label' && m.labels.length > 0 && (!currentLabel || currentLabel.deleted_at) ? 'label' as const
@@ -87,7 +84,6 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
     <ListReorderContext.Provider value={s.listReorder}><UrgencyContext.Provider value={m.urgency}><BarProgressContext value={day ? { done: day.done, total: day.total } : null}><PhoneChrome onMenu={onMenu}>
       <div ref={s.room} data-phone-screen="list" data-phone-list={route.view} data-page-project={route.view === 'project' ? '' : undefined} className="relative isolate min-h-full bg-canvas pb-6">
         <div aria-hidden className="phone-glow" data-hue={route.view === 'project' && currentProject?.color ? hueFor(currentProject.color) : undefined} />
-        <PullToSync pull={pull} />
         <div className="px-4" data-phone-list-body>
         {route.view === 'project' && currentProject ? (
             <ProjectHeader project={currentProject} userId={userId} extraGroups={s.boardGroups} print
@@ -115,7 +111,7 @@ export function PhoneList({ route, userId, userRole, onMenu }: { route: ListRout
           {route.view === 'project' && currentProject && <><ProjectNote project={currentProject} phone /><LinkedRefs kind="project" id={currentProject.id} folded /></>}
           {own.length === 0 && !upcomingCal.hasEvents && !taskGroups.find((g) => g.key === 'all')?.folded && m.liveSections.length === 0 && (m.duration || m.queryFilter?.query || completedNarrowed
             ? <FilteredEmpty onClear={() => { m.chooseDuration(null); m.queryFilter?.setQuery(''); m.setCompletedQuery(''); if (completedNarrowed) setCompletedDisplay({ projects: [] }) }} />
-            : <div data-phone-empty><EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={m.projectReadOnly} completed={hiddenDone} onShowCompleted={showCompleted} doneToday={doneNow} /></div>)}
+            : <div data-phone-empty><EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={m.projectReadOnly} completed={hiddenDone} onShowCompleted={showCompleted} /></div>)}
 
           <GroupedList groups={groups} view={route.view} project={currentProject} fieldColumns={false} projectFieldDefs={m.projectFieldDefs} siblingPos={m.treeView || m.nested ? m.siblingPos : undefined} reveal={selectedId}
             todayDropTarget={ownOrder?.todayDrop?.canEdit} activeTodayDrop={drag.dropGroup} contextualDrag={!!drag.draggingId && contextIds.has(drag.draggingId)}

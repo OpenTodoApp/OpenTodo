@@ -12475,8 +12475,7 @@
     "web/src/app/DataSettings.tsx",
     "web/src/app/PullToSync.tsx",
     "web/src/app/SyncStatus.tsx",
-    "web/src/app/display/DisplayScreen.tsx",
-    "web/src/phone/components/PullToSync.tsx"
+    "web/src/app/display/DisplayScreen.tsx"
   ],
   "Offline service worker active": [
     "web/src/lib/push.ts"
@@ -14464,9 +14463,6 @@
     "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
-  "Pull to sync": [
-    "web/src/phone/components/PullToSync.tsx"
-  ],
   "Purge history": [
     "web/src/app/EncryptionPanel.tsx"
   ],
@@ -14799,9 +14795,6 @@
   ],
   "Release notes on GitHub": [
     "web/src/app/WhatsNew.tsx"
-  ],
-  "Release to sync": [
-    "web/src/phone/components/PullToSync.tsx"
   ],
   "Releases and what is being built, on X.": [
     "web/src/app/settingsIndex.ts",
@@ -17923,8 +17916,7 @@
     "web/src/app/help/HelpView.tsx"
   ],
   "Sync error": [
-    "web/src/app/SyncStatus.tsx",
-    "web/src/phone/components/PullToSync.tsx"
+    "web/src/app/SyncStatus.tsx"
   ],
   "Sync now": [
     "web/src/app/CalendarSyncPanel.tsx",
@@ -17939,8 +17931,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Synced": [
-    "web/src/app/SyncStatus.tsx",
-    "web/src/phone/components/PullToSync.tsx"
+    "web/src/app/SyncStatus.tsx"
   ],
   "Synced {ago}": [
     "web/src/app/CalendarSyncPanel.tsx"
@@ -17951,8 +17942,7 @@
   ],
   "Syncing…": [
     "web/src/app/PullToSync.tsx",
-    "web/src/app/SyncStatus.tsx",
-    "web/src/phone/components/PullToSync.tsx"
+    "web/src/app/SyncStatus.tsx"
   ],
   "System": [
     "web/src/app/AppearanceSection.tsx",
@@ -20583,8 +20573,7 @@
     "web/src/lib/logbook.ts",
     "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts",
-    "web/src/lib/views.ts",
-    "web/src/phone/components/TodayGlance.tsx"
+    "web/src/lib/views.ts"
   ],
   "Today holds": [
     "web/src/lib/settingsCopy.ts"
@@ -23760,6 +23749,9 @@
   "in {projects}": [
     "web/src/lib/rules/summary.ts"
   ],
+  "in {time}": [
+    "web/src/phone/components/TodayGlance.tsx"
+  ],
   "including each day of a recurring task": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -26145,9 +26137,6 @@
   "{n, plural, one {Added # aisle section} other {Added # aisle sections}}": [
     "web/src/app/menus/ListModeStep.tsx"
   ],
-  "{n, plural, one {All done for today: # task completed.} other {All done for today: # tasks completed.}}": [
-    "web/src/app/task-list/ListChrome.tsx"
-  ],
   "{n, plural, one {All of # condition} other {All of # conditions}}": [
     "web/src/app/views/FilterChips.tsx"
   ],
@@ -26599,7 +26588,8 @@
   "{n} left": [
     "web/src/app/method/LoopHome.tsx",
     "web/src/app/review/ReviewProgress.tsx",
-    "web/src/app/review/ReviewView.tsx"
+    "web/src/app/review/ReviewView.tsx",
+    "web/src/phone/components/TodayGlance.tsx"
   ],
   "{n} min": [
     "web/src/app/ParseChips.tsx",

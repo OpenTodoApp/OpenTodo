@@ -2,10 +2,12 @@
 
 ## 1. Lists
 
-- [x] 1.1 The day closes (design D1): `TodayGlance.tsx` (ring transition), the Today empty state on a phone, the success haptic on the last completion. Verify: `phoneDelight.test.tsx`: "All done for today" with the count, the empty-day state without completions, the haptic once on the last completion and not on opening an empty Today.
-- [x] 1.2 Pull to sync (design D3): `phone/usePullToSync.ts`, its line in `PhoneList.tsx`. Verify: `phoneDelight.test.tsx`: a pull past the threshold calls `syncNow` once and shows the states; a short pull does not.
+- [x] 1.1 The day closes (design D1): `TodayGlance.tsx` (ring transition), the success haptic on the last completion (`dayClosed.ts`). Verify: `phoneDelight.test.tsx`: the haptic once on the last completion, not on opening an empty Today nor on moving the last task away.
+- [x] 1.2 Pull to sync (design D3): not added, it exists; the duplicate first written here is removed. Verify: no `pullToSync` under `src/phone`.
 - [x] 1.3 Empty lists centred (design D8). Verify: screenshot of an empty Inbox at 390 px, looked at; the layout check passes.
 - [x] 1.4 The header follows the screen (design D9): `.phone-glow` variables, the project colour, the progress in Today's bar. Verify: `phoneDelight.test.tsx`: the project's colour on the light; the bar's ring and count on Today.
+
+- [x] 1.5 Today's cards as a bento (design D10): `TodayGlance.tsx`, "in {time}" in every catalogue. Verify: `phoneModern.test.tsx` (the cards' order), screenshots at 390 px in both themes, looked at.
 
 ## 2. Gestures
 

@@ -1,15 +1,15 @@
 ## ADDED Requirements
 
 ### Requirement: The day closes
-Below 768 px the Done today ring SHALL move to a new value rather than jump, except under reduced motion. When Today has no open task left and at least one task was completed today, Today SHALL say "All done for today" with the number completed today instead of the empty state of a day without tasks. When the last open task of Today is completed while Today is on screen, the phone SHALL play the success haptic once, as well as the completion's own feedback.
+Below 768 px the Done today ring SHALL move to a new value rather than jump, except under reduced motion. When the last open task of Today is completed while Today is on screen, the phone SHALL play the success haptic once, as well as the completion's own feedback; the briefing already says the day is done.
 
 #### Scenario: The last task of the day
 - **WHEN** Today on a phone lists one open task, three were completed today, and the person completes the open one
-- **THEN** the row leaves as every completed row does, the success haptic plays once, and Today says "All done for today" with 4 done
+- **THEN** the row leaves as every completed row does, the ring fills, and the success haptic plays once
 
 #### Scenario: A day that never had tasks
 - **WHEN** Today is opened on a phone with no task for today and none completed today
-- **THEN** it shows the empty state for a day without tasks and no haptic plays
+- **THEN** no haptic plays
 
 ### Requirement: The task grows into its page
 When a task's page opens from a phone list with screen transitions on, the tapped row's title SHALL move into the page's title while the page slides in, and Back SHALL move the page's title back into the row. With reduced motion, Display mode or no view transitions, the screens SHALL change as they do without this.
@@ -17,17 +17,6 @@ When a task's page opens from a phone list with screen transitions on, the tappe
 #### Scenario: Open and back
 - **WHEN** the person taps a task in Today on a phone with motion on, then taps Back
 - **THEN** the title travels from the row to the page and back, and only one element is named for the shared title in each capture
-
-### Requirement: Pull to sync
-At the top of a phone list, pulling down SHALL show a line under the header that follows the pull; past the threshold it SHALL say "Release to sync" and play a tick once, and a release past it SHALL ask for a sync at once. While the sync runs the line SHALL say so, and it SHALL say "Synced", "Offline" or the sync status's own words when it ends, then go. A pull that does not reach the threshold SHALL do nothing. The list itself SHALL NOT be pulled away from its place.
-
-#### Scenario: Pull and release
-- **WHEN** the person pulls Today down by 100 px at its top and lets go while online
-- **THEN** a sync starts at once, the line says it is syncing and then "Synced", and it disappears
-
-#### Scenario: A short pull
-- **WHEN** the person pulls down by 30 px and lets go
-- **THEN** no sync is asked for and the line goes
 
 ### Requirement: A hold shows the task
 On a phone the actions sheet for one task SHALL be headed by that task as its row shows it (the check's priority ring, the title and the facts), not by a count, and the sheet's accessible name SHALL be the task's title. Several tasks keep the count.
@@ -67,3 +56,14 @@ On a project's screen the light at the top SHALL take the project's colour. On T
 #### Scenario: Progress stays in sight
 - **WHEN** Today has 3 of 10 done and the person scrolls until the title moves into the bar
 - **THEN** the bar shows "Today" with a ring and 3/10
+
+### Requirement: Today's cards
+Below 768 px Today at a glance SHALL lay its cards out in two columns rather than three equal tiles: Up next as a card across the full width with its time large, how long until it and its title on up to two lines; under it Done today and Late side by side, each named above its figure, and either across the full width when the other is not shown. A card's name SHALL wrap rather than be cut, and no figure SHALL be cut at 360 px.
+
+#### Scenario: A day with everything
+- **WHEN** Today has a next task at 11:00, 8 of 14 done and 3 late at 09:58 on a 390 px phone
+- **THEN** the Up next card spans the width with 11:00, "in 1h 2m" and the title, and Done today (a ring and 8/14) and Late (3) share the row under it
+
+#### Scenario: Nothing late
+- **WHEN** no task is late
+- **THEN** Done today spans the row and says how many are left

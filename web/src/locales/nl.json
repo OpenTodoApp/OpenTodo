@@ -7934,7 +7934,5 @@
   "By weekday": "Per weekdag",
   "Up next": "Hierna",
   "Next seven days": "Komende zeven dagen",
-  "Pull to sync": "Trek om te synchroniseren",
-  "Release to sync": "Laat los om te synchroniseren",
-  "{n, plural, one {All done for today: # task completed.} other {All done for today: # tasks completed.}}": "{n, plural, one {Alles klaar voor vandaag: # taak voltooid.} other {Alles klaar voor vandaag: # taken voltooid.}}"
+  "in {time}": "over {time}"
 }

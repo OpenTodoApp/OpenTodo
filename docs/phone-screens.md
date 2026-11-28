@@ -25,8 +25,8 @@ Every list shows the same tasks, groups and order as on a computer, and does the
 - **Selecting.** **Select tasks** turns the circles into tick boxes. The bar at the bottom acts on the ticked tasks; **Close** ends the selection.
 - **Adding.** The add button adds to the list on screen; a list has no add field of its own. A task's menu has **Add task below** and **Add subtask**.
 - **Each list's own parts** stay, such as Today's briefing and the Inbox's **Process**.
-- **At a glance.** Today opens with tiles for what is done, up next and late; Upcoming with the next seven days. Tap one to go there.
-- **Shortcuts.** Pull a list down to sync. Drag a task onto a day of Upcoming's week. Hold **Today** in the tab bar for the day's next task, **Inbox** to add one.
+- **At a glance.** Today opens with cards for what is up next, done and late; Upcoming with the next seven days. Tap one to go there.
+- **Shortcuts.** Drag a task onto a day of Upcoming's week. Hold **Today** in the tab bar for the day's next task, **Inbox** to add one.
 
 ## The task page
 

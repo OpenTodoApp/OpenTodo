@@ -7934,7 +7934,5 @@
   "By weekday": "Nach Wochentag",
   "Up next": "Als Nächstes",
   "Next seven days": "Nächste sieben Tage",
-  "Pull to sync": "Zum Synchronisieren ziehen",
-  "Release to sync": "Zum Synchronisieren loslassen",
-  "{n, plural, one {All done for today: # task completed.} other {All done for today: # tasks completed.}}": "{n, plural, one {Alles erledigt für heute: # Aufgabe abgeschlossen.} other {Alles erledigt für heute: # Aufgaben abgeschlossen.}}"
+  "in {time}": "in {time}"
 }

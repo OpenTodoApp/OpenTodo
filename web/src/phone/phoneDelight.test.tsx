@@ -1,14 +1,13 @@
 // @vitest-environment happy-dom
-// The phone's finishing touches (OpenSpec change phone-delight): the day closing, pull to
-// sync, the week strip taking drops, the bar's progress, and, through the whole shell, the
-// tab counts and holds, the task heading its actions sheet, the project's light and the
-// closed day's words.
+// The phone's finishing touches (OpenSpec change phone-delight): the day closing, the
+// week strip taking drops, the bar's progress, and, through the whole shell, the
+// tab counts and holds, the task heading its actions sheet and the project's light.
 import 'fake-indexeddb/auto'
 import { act, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { addDaysISO, logicalToday } from '../lib/dates'
-import { createProject, createTask, resetDeviceId, setTaskCompleted } from '../lib/ops'
+import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
 import { minWidthPx, render, waitFor } from '../ui/test-utils'
 import { resetPanel } from '../app/panel'
@@ -20,15 +19,9 @@ import { nextTimedToday } from '../app/tabCounts'
 import { PhoneHeader } from './components/PhoneHeader'
 import { WeekStrip } from './components/WeekStrip'
 import { DAY_CLOSED_DELAY_MS, useDayClosed } from './dayClosed'
-import { PULL_ARM_PX, PULL_DONE_MS, usePullToSync, type PullState } from './pullToSync'
 
 const haptics = vi.hoisted(() => ({ played: [] as string[] }))
 vi.mock('../lib/haptics', async (orig) => ({ ...(await orig<typeof import('../lib/haptics')>()), playHaptic: (kind: string) => { haptics.played.push(kind) } }))
-const sync = vi.hoisted(() => ({ calls: 0, release: () => {} }))
-vi.mock('../lib/sync', async (orig) => ({
-  ...(await orig<typeof import('../lib/sync')>()),
-  syncNow: () => { sync.calls++; return new Promise<void>((resolve) => { sync.release = resolve }) },
-}))
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 const original = window.matchMedia
@@ -36,7 +29,6 @@ const today = logicalToday()
 
 beforeEach(async () => {
   haptics.played = []
-  sync.calls = 0
   await db.delete()
   await db.open()
   resetDeviceId()
@@ -85,36 +77,6 @@ describe('the day closes (D1)', () => {
   })
 })
 
-describe('pull to sync (D3)', () => {
-  let state: PullState = { phase: 'idle', offset: 0 }
-  function Pull() { const s = usePullToSync(true); state = s; return null }
-  function touch(el: HTMLElement, type: string, y: number) {
-    const e = new Event(type) as Event & { touches: { clientY: number }[] }
-    e.touches = type === 'touchend' ? [] : [{ clientY: y }]
-    el.dispatchEvent(e)
-  }
-
-  it('a pull past the threshold ticks once and syncs on release; a short pull does nothing', async () => {
-    const content = document.createElement('div')
-    content.id = 'content'
-    document.body.append(content)
-    const r = await render(<Pull />)
-    await act(async () => { touch(content, 'touchstart', 100); touch(content, 'touchmove', 130); touch(content, 'touchend', 130) })
-    expect([sync.calls, state.phase, haptics.played]).toEqual([0, 'idle', []])
-    await act(async () => { touch(content, 'touchstart', 100); touch(content, 'touchmove', 140) })
-    expect(state.phase).toBe('pulling')
-    await act(async () => { touch(content, 'touchmove', 100 + PULL_ARM_PX + 10); touch(content, 'touchmove', 100 + PULL_ARM_PX + 30) })
-    expect([state.phase, haptics.played]).toEqual(['armed', ['tick']])
-    await act(async () => { touch(content, 'touchend', 0) })
-    expect([sync.calls, state.phase]).toEqual([1, 'syncing'])
-    await act(async () => { sync.release() })
-    await waitFor(() => state.phase === 'done', 'the pull says the sync ended')
-    await waitFor(() => state.phase === 'idle', 'the pill goes', PULL_DONE_MS + 2000)
-    await r.unmount()
-    content.remove()
-  })
-})
-
 describe('the week strip takes drops (D5)', () => {
   it('every day carries its drop key, a day without tasks too', async () => {
     const r = await render(<WeekStrip today={today} counts={new Map([[addDaysISO(today, 1), 2]])} onDay={() => {}} />)
@@ -142,7 +104,7 @@ describe('the hold on Today (D7)', () => {
 })
 
 describe('through the shell', () => {
-  function Host() { const [u] = useState(user); return <Shell user={u} /> }
+  function Host() { const [u] = useState(user); return <Shell user={u} onLogout={() => {}} /> }
 
   it('the Inbox and Today tabs show their counts, in their names too', async () => {
     await createTask({ title: 'An idea' })
@@ -182,15 +144,6 @@ describe('through the shell', () => {
     const head = await found(() => document.querySelector<HTMLElement>('[data-row-preview]'), 'the task at the sheet\'s head')
     expect(head.textContent).toContain('Work')
     expect(document.querySelector('[role="menu"], [role="dialog"]')?.getAttribute('aria-label') ?? '').toContain('Call the plumber')
-    await r.unmount()
-  })
-
-  it('a cleared Today says the day is done, with the count', async () => {
-    const a = await createTask({ title: 'Done one', due: { date: today } })
-    await setTaskCompleted(a, true)
-    navigate({ view: 'today' })
-    const r = await render(<Host />)
-    await waitFor(() => /All done for today: 1 task completed/.test(document.querySelector('[data-phone-empty]')?.textContent ?? ''), 'the closed day')
     await r.unmount()
   })
 

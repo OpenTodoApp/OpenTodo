@@ -2,7 +2,7 @@
 
 ## Context
 
-The phone UI (`web/src/phone/`) draws every screen below 768 px; `phone-modern-look` gave it the floating tab bar, the Today tiles, the week strip and the light at the top. Each item here reuses a mechanism that exists: completion motion and haptics (`motion.ts`, `lib/haptics.ts`), the phone push transition (`phone/transition.ts`), `syncNow` and the sync status (`lib/sync.ts`, `SyncStatus.tsx`), the actions sheet (`BulkActionsMenu`), the drag's `data-task-drop` targets (`lib/dnd.ts`, `dropUndoable` "day:"), quick add's sheet bar and line date (`SheetBar.tsx`, `useLineDate`), the drawer's counts (`lib/sidebarCounts.ts`) and the empty-state pattern.
+The phone UI (`web/src/phone/`) draws every screen below 768 px; `phone-modern-look` gave it the floating tab bar, the Today tiles, the week strip and the light at the top. Each item here reuses a mechanism that exists: completion motion and haptics (`motion.ts`, `lib/haptics.ts`), the phone push transition (`phone/transition.ts`), the actions sheet (`BulkActionsMenu`), the drag's `data-task-drop` targets (`lib/dnd.ts`, `dropUndoable` "day:"), quick add's sheet bar and line date (`SheetBar.tsx`, `useLineDate`), the drawer's counts (`lib/sidebarCounts.ts`) and the empty-state pattern.
 
 ## Goals / Non-Goals
 
@@ -12,15 +12,15 @@ Goals: the ten ideas the owner approved, each small, each presentation over exis
 
 ### D1. The day closes on Today's own numbers
 
-The ring's arc gets a CSS transition on `stroke-dasharray` (none under reduced motion). The empty state of Today reads "All done for today" with "{n} done" under it when `glanceOf` counts at least one task completed today; otherwise it keeps "Nothing due today". The success haptic for the last completion plays from Today's phone screen when the open count goes from at least one to zero while the screen is mounted (a ref of the previous count), so a fresh open of an empty Today plays nothing. Each completion's own feedback is unchanged.
+The ring's arc gets a CSS transition on `stroke-dasharray` (none under reduced motion). The words stay the briefing's ("All done for today."); the empty state is not changed. The success haptic for the last completion plays from Today's phone screen when the open count goes from at least one to zero while the screen is mounted (a ref of the previous count), so a fresh open of an empty Today plays nothing. Each completion's own feedback is unchanged.
 
 ### D2. One shared name for the title
 
 `openTaskFromList(id)` puts `view-transition-name: phone-task-title` on the tapped row's `[data-row-title]` before the transition captures the old screen; the task page's `[data-task-title]` carries the name through a CSS rule while `html[data-phone-nav]` is set. On a pop the rule names the page's title in the old capture, and `leaveScreen` names the row of the task that was open once the list is back, before the new capture. The names are removed when the transition finishes. Only one element carries the name in each capture. Without view transitions, or with reduced motion, nothing changes (the existing gate).
 
-### D3. Pull to sync is a phone list gesture over the scroller
+### D3. Pull to sync stays as it is
 
-A hook on the phone list (`usePullToSync`) listens to touch on `#content` while it is scrolled to the top: a pull down moves an indicator under the header by half the finger's distance, up to 80 px; past 64 px of finger travel a `tick` haptic plays once and the label turns to "Release to sync"; a release past it calls `syncNow()` and the line shows the sync state until the sync ends, then "Synced" for a moment. The page itself does not move (no overscroll fight with the browser: `overscroll-behavior-y: contain` on the phone scroller already). Offline, the line says Offline and no request is made. Reduced motion: the indicator appears without following the finger.
+Pull to sync exists (`pull-to-sync`, `app/PullToSync.tsx`, mounted by the Shell on a coarse pointer, and the iOS shell's own pull handed over with `takeOverPull`). A second one on the phone list drew two indicators; this change does not add one.
 
 ### D4. The actions sheet heads with the task
 
@@ -46,8 +46,11 @@ The phone list wraps the empty state in a flex box that fills the free height be
 
 `.phone-glow` reads `--glow-a` and `--glow-b` (accent and info by default); a project screen sets `--glow-a` to the project's colour. On Today the phone header's title gains a 20 px ring and "3/10" when the bar takes the title (the header already knows when the large title is gone); the screen hands the progress to its header through a context (`BarProgressContext`), so the header stays generic.
 
+### D10. Today's cards as a bento
+
+Three equal tiles at 390 px give each about 110 px: Up next's title wraps into a third of the width and the labels sit beside figures. The cards follow what makes the summary cards of Apple Fitness and Health, iOS widgets and shadcn/ui's stat cards read at a glance: one card leads, a figure is the largest thing on its card, its name is a small-capitals line above it, and colour carries meaning (accent for what is next, danger for late). So: a two-column grid; Up next spans both columns with its time in the display size, "in 1h 2m" under it (`formatMinutes`, one new string "in {time}") and its title on up to two lines beside it; Done today and Late share the next row, each with its name above, its figure in the display size, the ring (now with an accent-to-info gradient) or the danger icon beside it; either spans the row when the other is absent, and Done today then says how many are left. A card is tinted with a soft gradient of its colour. The ring and the icon step down from 56 to 48 px under 380 px so 360 px keeps every figure whole.
+
 ## Risks / Trade-offs
 
-- A pull gesture can fight the browser's own pull-to-refresh in a plain browser tab: the scroller already contains overscroll, and the gesture only starts at scroll top with a downward move.
 - Shared-element names must be unique per capture; a stale name would make a transition skip. Names are set and cleared in one place (D2) and the transition tests cover both directions.
 - Counting on every settled write costs as the drawer's count does; measured by the existing perf budgets (phone list switch, completion).

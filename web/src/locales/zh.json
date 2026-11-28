@@ -7934,7 +7934,5 @@
   "By weekday": "按星期",
   "Up next": "接下来",
   "Next seven days": "未来七天",
-  "Pull to sync": "下拉同步",
-  "Release to sync": "松开同步",
-  "{n, plural, one {All done for today: # task completed.} other {All done for today: # tasks completed.}}": "{n, plural, other {今天全部完成：已完成 # 项任务。}}"
+  "in {time}": "{time}后"
 }
