@@ -10,7 +10,7 @@ import { Kbd } from '../shortcuts/Kbd'
 import { createContext, Suspense, useContext, useEffect, useLayoutEffect, useMemo, useState, type RefObject } from 'react'
 import { lazy } from '../../lib/lazy'
 import type { Step } from '../../lib/move'
-import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan, useTickedTasks } from '../../lib/bulk'
+import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, staysScheduledLabel, type BulkAction, type ReviewPlan, useTickedTasks } from '../../lib/bulk'
 import { useAllLabels, useLabelsLoaded, useLiveSections, useProjects, useMembershipMapOrLoading, useReviewRow, useUserPrefsRow } from '../../lib/localData'
 import { DAY_PARTS, dayPartName, dayPartOf, dayPartsOn, type DayPart } from '../../lib/dayParts'
 import { dayPartUndoable, energyUndoable } from '../../lib/undoActions'
@@ -331,7 +331,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: RowMenuItems 
       { kind: 'picker', id: 'move', label: t('Move to project'), icon: 'folder-input', picker: {
         title: t('Move to project'), placeholder: t('Find a project…'), source: projectSource(d.projects, { memberships: d.memberships }),
         getKey: itemKey, getLabel: itemLabel, getPath: itemPath, getKeywords: itemKeywords, rankContext: 'project',
-        onPick: (i: PickerItem) => { a.review(i.value ? t('Move {tasks} to {target}', { tasks: tasksWord(n), target: i.label }) : t('Move {tasks} to the Inbox', { tasks: tasksWord(n) }), reviewMove(ids, { projectId: i.value })) },
+        onPick: (i: PickerItem) => { a.review(i.value ? t('Move {tasks} to {target}', { tasks: tasksWord(n), target: i.label }) : t('Move {tasks} to the Inbox', { tasks: tasksWord(n) }), reviewMove(ids, { projectId: i.value, inbox: true })) },
       } },
       { kind: 'picker', id: 'section', label: t('Move to section'), icon: 'kanban', disabled: !oneProject || !projectId, reason: t('The tasks must be in one project'), picker: {
         title: t('Move to section'), placeholder: t('Find a section…'), source: sectionSource(d.sections, projectId),
@@ -426,7 +426,14 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
   const urgencyOf = useContext(UrgencyContext)
   const why = urgencyOf && ids.length === 1 && data.tasks.length === 1 ? urgencyOf(data.tasks[0]) : null
   const groups = useMemo(() => bulkMenuGroups(ids, data, {
-    review: (title, plan) => { void plan.then((p) => bulkDialog.set({ kind: 'review', title, plan: p })) },
+    // Only repeating tasks without a project, moved to the Inbox: nothing to review, and the toast says why (inbox-drop-unplaces D2).
+    review: (title, plan) => {
+      void plan.then((p) => {
+        const stays = p.repeating?.([]) ?? []
+        if (!p.items.length && stays.length) showBulkToast(staysScheduledLabel(stays), null)
+        else bulkDialog.set({ kind: 'review', title, plan: p })
+      })
+    },
     pickDate: () => bulkDialog.set({ kind: 'date', ids, n }),
     schedule: touch && ids.length === 1 ? () => openRowSchedule(ids[0]) : undefined,
     editTitle,

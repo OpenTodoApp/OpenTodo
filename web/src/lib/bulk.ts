@@ -13,6 +13,7 @@ import { planCompletion, seriesRule, skipsInstead } from './recurring'
 import { refusedSeries, withNotMoved } from './seriesDates'
 import { assignableIn, canEditTask, currentUserId, membershipMap, scopeOf } from './sharing'
 import { descendants } from './tree'
+import { isScheduled } from './inbox'
 import type { Membership, Priority, Task } from './types'
 import { applyBatch } from './undo'
 import { t } from './i18n'
@@ -108,7 +109,43 @@ function topmost(tasks: readonly Task[], all: Task[]): Task[] {
   return tasks.filter((tk) => ![...ticked].some((other) => other !== tk.id && descendants(other, all).has(tk.id)))
 }
 
-export type MoveTarget = { projectId: string | null; sectionId?: string | null }
+/**
+ * A move to the Inbox (OpenSpec change inbox-drop-unplaces): `inbox` also clears
+ * the schedule, so the task without a project is an Inbox task (lib/inbox.ts).
+ * Only with `projectId: null`; a drop into a "No project" group keeps the date.
+ */
+export type MoveTarget = { projectId: string | null; sectionId?: string | null; inbox?: boolean }
+
+/**
+ * The fields that place a task in time, cleared (inbox-drop-unplaces D1): the do-on
+ * date, the start, the time sector, the evening flag and the part of the day. An
+ * unscheduled task gets nothing. A repeating task keeps its whole schedule: clearing
+ * its date would end the series, and it only loses its project (D2).
+ */
+export function unschedulePatch(task: Pick<Task, 'due' | 'start' | 'sector' | 'evening' | 'day_part' | 'recurrence'>): Partial<Task> {
+  const patch: Partial<Task> = {}
+  if (!isScheduled(task) || task.recurrence) return patch
+  if (task.due) patch.due = null
+  if (task.start) patch.start = null
+  if (task.sector) patch.sector = ''
+  if (task.evening) patch.evening = false
+  if (task.day_part) patch.day_part = null
+  return patch
+}
+
+/** Whether a move to the Inbox leaves this task scheduled because it repeats (inbox-drop-unplaces D2). */
+export const staysScheduled = (task: Pick<Task, 'due' | 'start' | 'sector' | 'recurrence'>): boolean => !!task.recurrence && isScheduled(task)
+
+/** What a move to the Inbox that wrote nothing says about the repeating tasks it left scheduled (inbox-drop-unplaces D2). */
+export function staysScheduledLabel(tasks: readonly Pick<Task, 'title'>[]): string {
+  const n = tasks.length
+  return n ? t('{n, plural, =1 {“{title}” repeats, so it stays scheduled} one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}', { n, title: tasks[0].title }) : ''
+}
+
+/** The ticked tasks a move to the Inbox leaves scheduled because they repeat, counted once each (not under a ticked parent). */
+export function repeatingStays(tasks: readonly Task[], all: Task[]): Task[] {
+  return topmost(tasks, all).filter(staysScheduled)
+}
 
 /** Per ticked (topmost) task, the changes that move it with its subtree. */
 export function planMoveGroups(tasks: readonly Task[], all: Task[], target: MoveTarget,
@@ -116,11 +153,13 @@ export function planMoveGroups(tasks: readonly Task[], all: Task[], target: Move
   const out: { task: Task; changes: Change[] }[] = []
   for (const tk of topmost(tasks, all)) {
     const sameProject = (tk.project_id ?? null) === target.projectId
+    const unschedule = target.inbox && target.projectId === null ? unschedulePatch(tk) : {}
     if (sameProject) {
-      if (target.sectionId !== undefined && (tk.section_id ?? null) !== target.sectionId) out.push({ task: tk, changes: [{ entity: 'task', entityId: tk.id, patch: { section_id: target.sectionId } }] })
+      const patch: Partial<Task> = { ...unschedule, ...(target.sectionId !== undefined && (tk.section_id ?? null) !== target.sectionId ? { section_id: target.sectionId } : {}) }
+      if (Object.keys(patch).length) out.push({ task: tk, changes: [{ entity: 'task', entityId: tk.id, patch }] })
       continue
     }
-    const patch: Partial<Task> = { project_id: target.projectId, ...(target.sectionId !== undefined ? { section_id: target.sectionId } : {}) }
+    const patch: Partial<Task> = { ...unschedule, project_id: target.projectId, ...(target.sectionId !== undefined ? { section_id: target.sectionId } : {}) }
     const cross = scopeOf(tk.project_id, memberships) !== scopeOf(target.projectId, memberships)
       ? { assignable: assignableIn(target.projectId, memberships, me) } : undefined
     out.push({ task: tk, changes: planProjectChange(tk, all, patch, cross, now, keep).changes })
@@ -260,6 +299,8 @@ export async function applyGroupDue(ids: readonly string[], pick: Exclude<DuePic
 export interface ReviewPlan {
   items: ProposedChange[]
   resolve: (checkedTaskIds: readonly string[]) => Promise<ProposedChange[]>
+  /** The tasks that stay scheduled because they repeat, for the checked ids (a move to the Inbox, inbox-drop-unplaces D2). */
+  repeating?: (checkedTaskIds: readonly string[]) => Task[]
 }
 
 export async function reviewMove(ids: readonly string[], target: MoveTarget): Promise<ReviewPlan> {
@@ -268,12 +309,19 @@ export async function reviewMove(ids: readonly string[], target: MoveTarget): Pr
   const groups = planMoveGroups(tasks, all, target, memberships, await currentUserId(), Date.now(), await keepWorkspaceFor())
   const shared = !!target.projectId && memberships.has(target.projectId)
   const items = groups.map(({ task }): ProposedChange => {
-    const patch: Record<string, unknown> = (task.project_id ?? null) === target.projectId ? { section_id: target.sectionId ?? null } : { project_id: target.projectId, ...(target.sectionId !== undefined ? { section_id: target.sectionId } : {}) }
+    const unschedule = target.inbox && target.projectId === null ? unschedulePatch(task) : {}
+    const patch: Record<string, unknown> = (task.project_id ?? null) === target.projectId
+      ? { ...unschedule, ...(target.sectionId !== undefined || !target.inbox ? { section_id: target.sectionId ?? null } : {}) }
+      : { ...unschedule, project_id: target.projectId, ...(target.sectionId !== undefined ? { section_id: target.sectionId } : {}) }
     return { entity: 'task', entityId: task.id, patch, base: Object.fromEntries(Object.keys(patch).map((f) => [f, (task as unknown as Record<string, unknown>)[f] ?? null])), ...(shared ? { shared } : {}) }
   })
+  // A repeating task stays scheduled whether its move is checked or it had nothing to review.
+  const stays = target.inbox && target.projectId === null ? repeatingStays(tasks, all) : []
+  const reviewed = new Set(items.map((i) => i.entityId))
   return {
     items,
     resolve: (checked) => toProposed(mergeChanges(groups.filter((g) => checked.includes(g.task.id)).flatMap((g) => g.changes)), memberships),
+    ...(stays.length ? { repeating: (checked: readonly string[]) => stays.filter((task) => !reviewed.has(task.id) || checked.includes(task.id)) } : {}),
   }
 }
 

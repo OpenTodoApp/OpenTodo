@@ -16,7 +16,7 @@ import { isSoloScope, memberName } from '../../lib/sharing'
 import type { Task } from '../../lib/types'
 import { parentUndoable } from '../../lib/undoActions'
 import { moveWithUndo } from '../undoable'
-import { isInboxTask } from '../../lib/inbox'
+import { isInboxTask, pickMoves } from '../../lib/inbox'
 import { useViewerZone } from '../useViews'
 import type { PropertiesProps } from './Facets'
 import { type Optional, usePropertyEditing } from './usePropertyEditing'
@@ -71,7 +71,8 @@ export function usePropertiesModel({ task, userId, projects, labelMap, parent, o
   /** `workspace`: another workspace's "No project" (its Inbox); a project's workspace follows the project. */
   const moveTo = async (id: string | null, workspace?: string) => {
     const elsewhere = id === null && workspace !== undefined && workspace !== workspaces.current
-    if (id === projectId && !elsewhere) return
+    // "No project" on a scheduled task without one still puts it in the Inbox (inbox-drop-unplaces D1).
+    if (!elsewhere && !pickMoves(task, id, (pid) => taskById.get(pid))) return
     const target = id ? everyProject.find((p) => p.id === id)?.name ?? t('the project') : elsewhere ? workspaces.list.find((w) => w.id === workspace)?.name ?? t('Inbox') : t('Inbox')
     const newId = await moveWithUndo(task.id, id, target, elsewhere ? workspace : undefined)
     if (newId !== task.id) onOpen?.(newId)

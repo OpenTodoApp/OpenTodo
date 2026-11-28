@@ -54,3 +54,12 @@ export function inboxTasks<T extends InboxFields & { id: string }>(tasks: readon
   const parentOf = inboxParents(known)
   return tasks.filter((task) => isInboxTask(task, parentOf))
 }
+
+/**
+ * Whether picking `projectId` in a project field moves the task: another project, or
+ * "No project" for a task without one that is not in the Inbox, which a move to the
+ * Inbox then unschedules (OpenSpec change inbox-drop-unplaces).
+ */
+export function pickMoves(task: InboxFields, projectId: string | null, parentOf?: InboxParentOf): boolean {
+  return projectId !== (task.project_id ?? null) || (projectId === null && !isInboxTask(task, parentOf))
+}

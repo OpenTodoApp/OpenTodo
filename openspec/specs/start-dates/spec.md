@@ -102,7 +102,7 @@ A task whose start is `someday` SHALL be parked: absent from Today, Upcoming, An
 - **THEN** every member sees it parked after sync, because the start is a task field
 
 ### Requirement: Someday view
-The client SHALL provide a Someday view, reachable from the sidebar and with `g` then `o`, listing every open parked task grouped by project with Inbox first and the standard task rows, rendered from local data. A task added from the Someday view with quick add SHALL be parked unless the line sets a date.
+The client SHALL provide a Someday view, reachable from the sidebar and with `g` then `o`, listing every open parked task grouped by project with the tasks without a project first, under the heading OpenSpec `project-organization` "Move to the Inbox" gives them ("No project", since a parked task is not in the Inbox) and the standard task rows, rendered from local data. A task added from the Someday view with quick add SHALL be parked unless the line sets a date.
 
 #### Scenario: Open Someday offline
 - **WHEN** the device is offline and the user presses `g` then `o`
@@ -110,10 +110,10 @@ The client SHALL provide a Someday view, reachable from the sidebar and with `g`
 
 #### Scenario: Capture in Someday
 - **WHEN** the user adds `Learn Portuguese` in the Someday view
-- **THEN** the task is created parked, in the Inbox, and stays in the view
+- **THEN** the task is created parked, without a project, and stays in the view
 
 ### Requirement: Anytime view
-The client SHALL provide an Anytime view, reachable from the sidebar and with `g` then `n`, listing every open task that is not parked, not deferred, has no due date, no start date and no time sector (OpenSpec `time-sectors`), grouped by project with Inbox first, rendered from local data. The Anytime view SHALL leave out tasks of archived projects like the other cross-project views.
+The client SHALL provide an Anytime view, reachable from the sidebar and with `g` then `n`, listing every open task that is not parked, not deferred, has no due date, no start date and no time sector (OpenSpec `time-sectors`), grouped by project with the tasks without a project first, under the heading OpenSpec `project-organization` "Move to the Inbox" gives them, rendered from local data. The Anytime view SHALL leave out tasks of archived projects like the other cross-project views.
 
 #### Scenario: Undated and active
 - **WHEN** an open task has no due date and no start, and another is deferred, and a third is due tomorrow

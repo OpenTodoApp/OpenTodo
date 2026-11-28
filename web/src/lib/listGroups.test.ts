@@ -668,6 +668,25 @@ describe('built-in view options (builtin-view-options)', () => {
     expect(g.some((x) => x.dropPart)).toBe(false)
   })
 
+  it('Today by project names the tasks without a project "No project", since they are not in the Inbox (issue 2137)', () => {
+    const loose = task({ title: 'From the phone', due: { date: TODAY } })
+    const w1 = task({ title: 'W1', due: { date: TODAY }, project_id: 'work' })
+    const g = listGroups(today([loose, w1], { display: d('today', { groupBy: 'project' }) }))
+    expect(shape(g)).toEqual([['day:inbox', 'No project', ['From the phone']], ['day:work', 'WORK', ['W1']]])
+    const up = listGroups(input({ view: 'upcoming', tasks: [loose, w1], projects, projectMap, upcomingToday: true, todayDisplay: d('today', { groupBy: 'project' }) }))
+    expect(up.find((x) => x.key === 'day:inbox')?.heading).toBe('No project')
+  })
+
+  it('Someday, Anytime and a label head tasks without a project "Inbox" only when all are Inbox tasks (inbox-drop-unplaces D3)', () => {
+    const parked = task({ title: 'Learn Welsh', start: 'someday' })
+    const loose = task({ title: 'Loose' })
+    const dated = task({ title: 'Dated', due: { date: TODAY }, labels: ['l1'] })
+    const head = (over: Partial<GroupInput>) => listGroups(input({ projects, projectMap, ...over })).find((g) => g.key === 'inbox')?.heading
+    expect(head({ view: 'someday', tasks: [parked] })).toBe('No project')
+    expect(head({ view: 'anytime', tasks: [loose] })).toBe('Inbox')
+    expect(head({ view: 'label', tasks: [{ ...loose, labels: ['l1'] }, dated] })).toBe('No project')
+  })
+
   it('Today by priority, label and None: each task once, the part of the day on its row', () => {
     const l1 = { id: 'l1', name: 'Calls', color: '#000', position: 1, created_at: 0, deleted_at: null } as Label
     const l2 = { id: 'l2', name: 'Errands', color: '#000', position: 2, created_at: 0, deleted_at: null } as Label

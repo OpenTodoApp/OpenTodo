@@ -7934,5 +7934,8 @@
   "By weekday": "حسب يوم الأسبوع",
   "Up next": "التالي",
   "Next seven days": "الأيام السبعة القادمة",
-  "in {time}": "خلال {time}"
+  "in {time}": "خلال {time}",
+  "{changes}; {r, plural, one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{changes}؛ {r, plural, one {مهمة متكررة واحدة تبقى مجدولة} two {مهمتان متكررتان تبقيان مجدولتين} few {# مهام متكررة تبقى مجدولة} other {# مهمة متكررة تبقى مجدولة}}",
+  "{n, plural, =1 {“{title}” repeats, so it stays scheduled} one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{n, plural, =1 {«{title}» تتكرر، لذا تبقى مجدولة} one {مهمة متكررة واحدة تبقى مجدولة} two {مهمتان متكررتان تبقيان مجدولتين} few {# مهام متكررة تبقى مجدولة} other {# مهمة متكررة تبقى مجدولة}}",
+  "{n, plural, =1 {Moved to {target}; “{title}” repeats, so it stays scheduled} one {Moved to {target}; # repeating task stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}": "{n, plural, =1 {نُقلت إلى {target}؛ «{title}» تتكرر، لذا تبقى مجدولة} one {نُقلت إلى {target}؛ مهمة متكررة واحدة تبقى مجدولة} two {نُقلت إلى {target}؛ مهمتان متكررتان تبقيان مجدولتين} few {نُقلت إلى {target}؛ # مهام متكررة تبقى مجدولة} other {نُقلت إلى {target}؛ # مهمة متكررة تبقى مجدولة}}"
 }

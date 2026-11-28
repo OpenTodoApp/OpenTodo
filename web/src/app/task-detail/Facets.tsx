@@ -88,7 +88,7 @@ export function useFacetParts(props: PropertiesProps, m: PropertiesModel, reveal
   const facets = facetsOf(task, {
     local: m.local,
     zoneCity: isZoned(task.due) ? zoneCity(task.due.tz) : null,
-    projectName: m.project?.name ?? t('Inbox'),
+    projectName: m.project?.name ?? m.projectName(task),
     projectArchived: !!m.project?.archived,
     sectionName: m.shownSection ? m.sectionMap.get(m.shownSection)?.name || t('Untitled section') : null,
     parentTitle: task.parent_id ? (parent?.title ?? '') : null,

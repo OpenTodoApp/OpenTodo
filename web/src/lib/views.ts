@@ -20,6 +20,7 @@ import {
   fieldSortId, readSortBy, type FieldDef, type GroupBy, type OnDropRule, type Project, type RowProperty, type SortBy, type SortDir, type Task, type View, type ViewKind, type ViewLayout,
 } from './types'
 import { t, msg } from './i18n'
+import { inboxParents, isInboxTask, type InboxParentOf } from './inbox'
 import { priorityName } from './priority'
 import { uuid } from './ids'
 import { workspaceFields } from './workspaces'
@@ -569,6 +570,15 @@ export function viewComparator(view: Pick<View, 'manual_order'>, sortBy: SortBy,
 }
 
 /**
+ * The heading of a group of tasks without a project (inbox-drop-unplaces D3): "Inbox"
+ * when every one is an Inbox task, else "No project", since a dated, parked or
+ * completed task without a project is not in the Inbox.
+ */
+export function noProjectHeading(tasks: readonly Task[], parentOf?: InboxParentOf): string {
+  return tasks.length && tasks.every((task) => isInboxTask(task, parentOf)) ? t('Inbox') : t('No project')
+}
+
+/**
  * Split sorted tasks into headed groups; headings come in a fixed, meaningful order.
  * `once` (a project or label page, list-display-options D3): a task with several
  * labels is listed once, under the first of them in label order, since a list page
@@ -628,8 +638,8 @@ export function groupTasks(tasks: Task[], groupBy: GroupBy, ctx: Pick<FilterCont
       const byId = new Map(projects.map((p) => [p.id, p]))
       for (const tVar of tasks) put(tVar.project_id && byId.has(tVar.project_id) ? tVar.project_id : tVar.project_id ? 'unknown' : 'inbox', tVar)
       const path = (id: string) => [...ancestors(id, byId).reverse(), byId.get(id)!].map((p) => p.name).join(' › ')
-      // Inbox first, then projects in sidebar (tree) order.
-      const order: [string, string][] = [['inbox', t('Inbox')]]
+      // Tasks without a project first, then projects in sidebar (tree) order.
+      const order: [string, string][] = [['inbox', noProjectHeading(buckets.get('inbox') ?? [], inboxParents(tasks))]]
       for (const n of flattenTree(buildProjectTree(projects).roots)) order.push([n.id, path(n.id)])
       for (const p of projects) if (!order.some(([k]) => k === p.id)) order.push([p.id, path(p.id)])
       order.push(['unknown', t('Other')])

@@ -7934,5 +7934,8 @@
   "By weekday": "按星期",
   "Up next": "接下来",
   "Next seven days": "未来七天",
-  "in {time}": "{time}后"
+  "in {time}": "{time}后",
+  "{changes}; {r, plural, one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{changes}；{r, plural, other {# 项重复任务仍保留日程}}",
+  "{n, plural, =1 {“{title}” repeats, so it stays scheduled} one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{n, plural, =1 {“{title}”会重复，因此仍保留日程} other {# 项重复任务仍保留日程}}",
+  "{n, plural, =1 {Moved to {target}; “{title}” repeats, so it stays scheduled} one {Moved to {target}; # repeating task stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}": "{n, plural, =1 {已移至 {target}；“{title}”会重复，因此仍保留日程} other {已移至 {target}；# 项重复任务仍保留日程}}"
 }

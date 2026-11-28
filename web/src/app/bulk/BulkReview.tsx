@@ -23,7 +23,10 @@ export function BulkReview({ title, plan, onClose, onApplied }: { title: string;
     setBusy(true)
     const checked = review.items.filter((i) => i.checked).map((i) => i.change.entityId)
     const total = review.items.length
-    const label = checked.length === total ? t('{n, plural, one {# change applied} other {# changes applied}}', { n: total }) : t('{n} of {total} changes applied', { n: checked.length, total })
+    const applied = checked.length === total ? t('{n, plural, one {# change applied} other {# changes applied}}', { n: total }) : t('{n} of {total} changes applied', { n: checked.length, total })
+    // A move to the Inbox leaves repeating tasks scheduled, and says so (inbox-drop-unplaces D2).
+    const repeating = plan.repeating?.(checked).length ?? 0
+    const label = repeating ? t('{changes}; {r, plural, one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}', { changes: applied, r: repeating }) : applied
     const entry = await applyBatch(await plan.resolve(checked), { source: 'bulk', label })
     showBulkToast(label, entry?.id ?? null)
     onApplied?.()

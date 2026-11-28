@@ -7934,5 +7934,8 @@
   "By weekday": "Według dnia tygodnia",
   "Up next": "Następne",
   "Next seven days": "Najbliższe siedem dni",
-  "in {time}": "za {time}"
+  "in {time}": "za {time}",
+  "{changes}; {r, plural, one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{changes}; {r, plural, one {# powtarzające się zadanie zostaje zaplanowane} few {# powtarzające się zadania zostają zaplanowane} many {# powtarzających się zadań zostaje zaplanowanych} other {# powtarzającego się zadania zostaje zaplanowane}}",
+  "{n, plural, =1 {“{title}” repeats, so it stays scheduled} one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{n, plural, =1 {„{title}” powtarza się, więc zostaje zaplanowane} one {# powtarzające się zadanie zostaje zaplanowane} few {# powtarzające się zadania zostają zaplanowane} many {# powtarzających się zadań zostaje zaplanowanych} other {# powtarzającego się zadania zostaje zaplanowane}}",
+  "{n, plural, =1 {Moved to {target}; “{title}” repeats, so it stays scheduled} one {Moved to {target}; # repeating task stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}": "{n, plural, =1 {Przeniesiono do: {target}; „{title}” powtarza się, więc zostaje zaplanowane} one {Przeniesiono do: {target}; # powtarzające się zadanie zostaje zaplanowane} few {Przeniesiono do: {target}; # powtarzające się zadania zostają zaplanowane} many {Przeniesiono do: {target}; # powtarzających się zadań zostaje zaplanowanych} other {Przeniesiono do: {target}; # powtarzającego się zadania zostaje zaplanowane}}"
 }

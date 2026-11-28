@@ -8673,7 +8673,6 @@
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/ProjectActivity.tsx",
     "web/src/app/SampleNotice.tsx",
-    "web/src/app/SavedViewView.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/SyncScopeField.tsx",
     "web/src/app/TabBar.tsx",
@@ -8688,7 +8687,6 @@
     "web/src/app/palette/index.ts",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-detail/ActivityTab.tsx",
-    "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
     "web/src/app/task-detail/TaskPageView.tsx",
@@ -8700,7 +8698,6 @@
     "web/src/lib/assistant.ts",
     "web/src/lib/assistantBlockData.ts",
     "web/src/lib/dashboard.ts",
-    "web/src/lib/listGroups.ts",
     "web/src/lib/pickerSources.ts",
     "web/src/lib/review.ts",
     "web/src/lib/rules/proposal.ts",
@@ -11534,12 +11531,15 @@
   ],
   "No project": [
     "web/src/app/DailyNotesSettings.tsx",
+    "web/src/app/SavedViewView.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
+    "web/src/app/task-list/useListScreen.tsx",
     "web/src/lib/pickerSources.ts",
-    "web/src/lib/rules/sentence.ts"
+    "web/src/lib/rules/sentence.ts",
+    "web/src/lib/views.ts"
   ],
   "No project is shared with this group.": [
     "web/src/app/WorkspaceGroups.tsx"
@@ -25279,6 +25279,9 @@
   "{browser} on {os}": [
     "web/src/app/auditFormat.ts"
   ],
+  "{changes}; {r, plural, one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": [
+    "web/src/app/bulk/BulkReview.tsx"
+  ],
   "{checked} of {count} selected": [
     "web/src/app/assistant/ChangeSetReview.tsx"
   ],
@@ -25617,6 +25620,12 @@
   ],
   "{n, plural, =0 {The Inbox is empty} one {# in the Inbox} other {# in the Inbox}}": [
     "web/src/app/method/LoopHome.tsx"
+  ],
+  "{n, plural, =1 {Moved to {target}; “{title}” repeats, so it stays scheduled} one {Moved to {target}; # repeating task stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}": [
+    "web/src/lib/undoActions.ts"
+  ],
+  "{n, plural, =1 {“{title}” repeats, so it stays scheduled} one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": [
+    "web/src/lib/bulk.ts"
   ],
   "{n, plural, one {# AI token} other {# AI tokens}}": [
     "web/src/app/routines/RunHistory.tsx"

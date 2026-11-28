@@ -52,7 +52,7 @@ async function typeInto(input: HTMLInputElement, text: string) {
   })
 }
 
-async function list(route: { view: 'inbox' } | { view: 'project'; id: string } = { view: 'inbox' }) {
+async function list(route: { view: 'inbox' } | { view: 'today' } | { view: 'project'; id: string } = { view: 'inbox' }) {
   const r = await render(<main><TaskListView route={route} /></main>)
   await waitFor(() => !!r.container.querySelector('[data-task-id]'))
   return r
@@ -173,6 +173,20 @@ describe('the contextual bar', () => {
     expect(bar.querySelector('[data-edit-project] button')).toBeTruthy()
     await act(async () => { bar.querySelector<HTMLButtonElement>('[data-open-details]')!.click() })
     await waitFor(() => openedTask() === id)
+    await r.unmount()
+  })
+
+  it('Project › No project on a dated task without a project puts it in the Inbox (inbox-drop-unplaces, issue 2137)', async () => {
+    const id = await createTask({ title: 'From the phone', due: { date: '2026-10-14' } })
+    const r = await list({ view: 'today' })
+    await clickTitle(r.container, 'From the phone')
+    await waitFor(() => !!r.container.querySelector('[data-edit-bar]'))
+    await act(async () => { r.container.querySelector<HTMLButtonElement>('[data-edit-project] button')!.click() })
+    await waitFor(() => [...document.querySelectorAll('[role="option"]')].some((el) => el.textContent?.trim() === 'No project'))
+    const none = [...document.querySelectorAll<HTMLElement>('[role="option"]')].find((el) => el.textContent?.trim() === 'No project')!
+    await act(async () => { none.click() })
+    await waitFor(async () => (await db.tasks.get(id))!.due === null)
+    expect((await db.tasks.get(id))!.project_id).toBeNull()
     await r.unmount()
   })
 

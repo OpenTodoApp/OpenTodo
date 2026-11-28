@@ -4,7 +4,7 @@
 // way bulk actions are (bulk-edit D5). The inverse is stored with the clocks each
 // field got; undo writes ordinary ops, locally first, so it works offline and
 // every device converges by last-writer-wins.
-import { bulkLabel, planComplete, planLabels, planMove, planPriority, planReopen, planTrash, readTicked, toProposed } from './bulk'
+import { bulkLabel, planComplete, planLabels, planMove, planPriority, planReopen, planTrash, readTicked, repeatingStays, staysScheduled, staysScheduledLabel, toProposed } from './bulk'
 import { db, type AssistantUndo } from './db'
 import { formatDate, logicalToday } from './dates'
 import { planSkip, seriesRule } from './recurring'
@@ -333,8 +333,21 @@ export async function trashUndoable(id: string, now = Date.now()): Promise<Undoa
 }
 
 /**
+ * The toast of a move to the Inbox (inbox-drop-unplaces D2): a repeating task keeps
+ * its date, so it is not in the Inbox, and the toast says why.
+ */
+function inboxLabel(target: string, repeating: readonly Task[], wrote: boolean): string {
+  const n = repeating.length
+  const title = repeating[0]?.title ?? ''
+  if (!wrote) return staysScheduledLabel(repeating)
+  if (!n) return t('Moved to {target}', { target })
+  return t('{n, plural, =1 {Moved to {target}; “{title}” repeats, so it stays scheduled} one {Moved to {target}; # repeating task stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}', { n, target, title })
+}
+
+/**
  * Move one task (with its subtree) to a project; across sharing scopes it becomes
- * a copy, whose id is returned so the panel can follow it.
+ * a copy, whose id is returned so the panel can follow it. To the Inbox
+ * (`projectId` null) it also loses its schedule (inbox-drop-unplaces).
  */
 export async function moveUndoable(id: string, projectId: string | null, targetName: string, now = Date.now(), toWorkspace?: string): Promise<UndoableResult & { newId: string }> {
   const { tasks, all } = await readTicked([id])
@@ -342,31 +355,38 @@ export async function moveUndoable(id: string, projectId: string | null, targetN
   // "No project" of another workspace (workspaces, "Move an Inbox task"): the task lands
   // in that workspace's Inbox. A subtask follows its parent's workspace, so it leaves it.
   const target = projectId === null && toWorkspace !== undefined ? workspaceIdFor(toWorkspace, (await readWorkspaceState()).list) : undefined
+  // Its schedule is left as it is: a move between workspaces is not a move to the Inbox.
   if (task && target !== undefined && task.project_id == null) {
     if ((task.workspace_id ?? null) === target && !task.parent_id) return { entry: null, label: '', newId: id }
     const patch = task.parent_id ? { workspace_id: target, parent_id: null } : { workspace_id: target }
     return { ...(await apply([{ entity: 'task', entityId: id, patch }], t('Moved to {target}', { target: targetName }))), newId: id }
   }
-  if (!task || (task.project_id ?? null) === projectId) return { entry: null, label: '', newId: id }
+  if (!task) return { entry: null, label: '', newId: id }
   const memberships = await membershipMap()
   const keep = target !== undefined ? () => target : await keepWorkspaceFor()
-  const changes = planMove([task], all, { projectId }, memberships, await currentUserId(), now, keep)
+  // To another workspace's "No project" only the workspace changes, the schedule stays (inbox-drop-unplaces).
+  const toInbox = projectId === null && target === undefined
+  const repeating = toInbox && staysScheduled(task) ? [task] : []
+  const changes = planMove([task], all, { projectId, inbox: toInbox }, memberships, await currentUserId(), now, keep)
+  if (!changes.length) return { entry: null, label: inboxLabel(targetName, repeating, false), newId: id }
   const copy = changes.find((c) => c.entity === 'task' && c.entityId !== id && c.patch.title !== undefined && !c.patch.deleted_at && c.patch.parent_id === (task.parent_id ?? null))
-  const r = await apply(changes, t('Moved to {target}', { target: targetName }))
+  const r = await apply(changes, inboxLabel(targetName, repeating, true))
   return { ...r, newId: copy?.entityId ?? id }
 }
 
 /**
  * Move tasks dropped on a sidebar project or the Inbox (OpenSpec change
  * ux-feedback-2, project-organization "Drop a task on a project"): as the Move
- * action does, as one batch; tasks already in that project are left alone.
+ * action does, as one batch; tasks already in that project are left alone, and
+ * tasks dropped on the Inbox lose their schedule (inbox-drop-unplaces).
  */
 export async function moveManyUndoable(ids: readonly string[], projectId: string | null, targetName: string, now = Date.now(), sectionId?: string | null): Promise<UndoableResult> {
   const { tasks, all } = await readTicked(ids)
-  const moving = tasks.filter((task) => (task.project_id ?? null) !== projectId)
-  if (!moving.length) return { entry: null, label: '' }
-  const changes = planMove(moving, all, { projectId, ...(sectionId !== undefined ? { sectionId } : {}) }, await membershipMap(), await currentUserId(), now, await keepWorkspaceFor())
-  return apply(changes, t('Moved to {target}', { target: targetName }))
+  const repeating = projectId === null ? repeatingStays(tasks, all) : []
+  const moving = projectId === null ? tasks : tasks.filter((task) => (task.project_id ?? null) !== projectId)
+  const changes = planMove(moving, all, { projectId, inbox: true, ...(sectionId !== undefined ? { sectionId } : {}) }, await membershipMap(), await currentUserId(), now, await keepWorkspaceFor())
+  if (!changes.length) return { entry: null, label: inboxLabel(targetName, repeating, false) }
+  return apply(changes, inboxLabel(targetName, repeating, true))
 }
 
 /**
