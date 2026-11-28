@@ -11,6 +11,12 @@ export const TaskRowDrawContext = createContext<((props: TaskRowProps) => ReactN
 export type { TaskRowProps }
 
 /**
+ * What heads the actions sheet of one task (OpenSpec change phone-delight, design D4): the phone
+ * UI draws the task's facts as its row shows them; without it the sheet is headed by its count.
+ */
+export const RowPreviewContext = createContext<((task: Task) => ReactNode) | null>(null)
+
+/**
  * A task in one of the calendar's lists (Week's days, Month's chosen day, Plan's agenda;
  * OpenSpec change phone-calendar, design D1): what the list says of the task on that day.
  * The lists keep their own rows; the phone UI gives one drawing for the three.

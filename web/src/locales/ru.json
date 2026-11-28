@@ -7933,5 +7933,8 @@
   "Checked in": "Отмечено",
   "By weekday": "По дням недели",
   "Up next": "Далее",
-  "Next seven days": "Ближайшие семь дней"
+  "Next seven days": "Ближайшие семь дней",
+  "Pull to sync": "Потяните для синхронизации",
+  "Release to sync": "Отпустите для синхронизации",
+  "{n, plural, one {All done for today: # task completed.} other {All done for today: # tasks completed.}}": "{n, plural, one {На сегодня всё: # задача выполнена.} few {На сегодня всё: # задачи выполнены.} many {На сегодня всё: # задач выполнено.} other {На сегодня всё: # задачи выполнено.}}"
 }

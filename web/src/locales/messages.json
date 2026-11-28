@@ -12475,7 +12475,8 @@
     "web/src/app/DataSettings.tsx",
     "web/src/app/PullToSync.tsx",
     "web/src/app/SyncStatus.tsx",
-    "web/src/app/display/DisplayScreen.tsx"
+    "web/src/app/display/DisplayScreen.tsx",
+    "web/src/phone/components/PullToSync.tsx"
   ],
   "Offline service worker active": [
     "web/src/lib/push.ts"
@@ -14463,6 +14464,9 @@
     "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
+  "Pull to sync": [
+    "web/src/phone/components/PullToSync.tsx"
+  ],
   "Purge history": [
     "web/src/app/EncryptionPanel.tsx"
   ],
@@ -14795,6 +14799,9 @@
   ],
   "Release notes on GitHub": [
     "web/src/app/WhatsNew.tsx"
+  ],
+  "Release to sync": [
+    "web/src/phone/components/PullToSync.tsx"
   ],
   "Releases and what is being built, on X.": [
     "web/src/app/settingsIndex.ts",
@@ -17916,7 +17923,8 @@
     "web/src/app/help/HelpView.tsx"
   ],
   "Sync error": [
-    "web/src/app/SyncStatus.tsx"
+    "web/src/app/SyncStatus.tsx",
+    "web/src/phone/components/PullToSync.tsx"
   ],
   "Sync now": [
     "web/src/app/CalendarSyncPanel.tsx",
@@ -17931,7 +17939,8 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Synced": [
-    "web/src/app/SyncStatus.tsx"
+    "web/src/app/SyncStatus.tsx",
+    "web/src/phone/components/PullToSync.tsx"
   ],
   "Synced {ago}": [
     "web/src/app/CalendarSyncPanel.tsx"
@@ -17942,7 +17951,8 @@
   ],
   "Syncing…": [
     "web/src/app/PullToSync.tsx",
-    "web/src/app/SyncStatus.tsx"
+    "web/src/app/SyncStatus.tsx",
+    "web/src/phone/components/PullToSync.tsx"
   ],
   "System": [
     "web/src/app/AppearanceSection.tsx",
@@ -26052,6 +26062,7 @@
   "{n, plural, one {# task} other {# tasks}}": [
     "web/src/app/ClosedListSettings.tsx",
     "web/src/app/PlanView.tsx",
+    "web/src/app/TabBar.tsx",
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/calendar/MonthDensityCells.tsx",
@@ -26133,6 +26144,9 @@
   ],
   "{n, plural, one {Added # aisle section} other {Added # aisle sections}}": [
     "web/src/app/menus/ListModeStep.tsx"
+  ],
+  "{n, plural, one {All done for today: # task completed.} other {All done for today: # tasks completed.}}": [
+    "web/src/app/task-list/ListChrome.tsx"
   ],
   "{n, plural, one {All of # condition} other {All of # conditions}}": [
     "web/src/app/views/FilterChips.tsx"

@@ -7933,5 +7933,8 @@
   "Checked in": "チェックインしました",
   "By weekday": "曜日別",
   "Up next": "次の予定",
-  "Next seven days": "今後7日間"
+  "Next seven days": "今後7日間",
+  "Pull to sync": "引っ張って同期",
+  "Release to sync": "離して同期",
+  "{n, plural, one {All done for today: # task completed.} other {All done for today: # tasks completed.}}": "{n, plural, other {今日はすべて完了しました：# 件のタスクを完了。}}"
 }

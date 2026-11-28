@@ -14,9 +14,14 @@ import { openTaskFromList } from '../transition'
 
 const hhmm = (ms: number) => { const d = new Date(ms); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` }
 
+/** The tasks completed today, a skipped occurrence not counted. */
+export function doneToday(all: readonly Task[], today: string): number {
+  return all.filter((x) => x.completed_at && !x.skipped && dayOf(x.completed_at) === today).length
+}
+
 /** What the tiles show: from the tasks Today lists, every task (for those completed today) and the earlier count. */
 export function glanceOf(listed: readonly Task[], all: readonly Task[], late: number, today: string, now: number) {
-  const done = all.filter((x) => x.completed_at && !x.skipped && dayOf(x.completed_at) === today).length
+  const done = doneToday(all, today)
   const open = listed.filter((x) => !x.completed_at)
   const at = hhmm(now)
   // The next task at a time still ahead; when none is, the first of the day's in the list's order.
@@ -29,13 +34,14 @@ export function glanceOf(listed: readonly Task[], all: readonly Task[], late: nu
   return { done, total, next, late }
 }
 
-function Ring({ value, total }: { value: number; total: number }) {
+/** The day's progress as a ring; it moves to a new value (phone-delight D1). `small` is the bar's 20 px one (D9). */
+export function Ring({ value, total, small = false }: { value: number; total: number; small?: boolean }) {
   const r = 15, c = 2 * Math.PI * r
   const share = total ? Math.min(1, value / total) : 0
   return (
-    <svg viewBox="0 0 36 36" className="h-9 w-9 -rotate-90" aria-hidden>
+    <svg viewBox="0 0 36 36" className={`${small ? 'h-5 w-5' : 'h-9 w-9'} shrink-0 -rotate-90`} aria-hidden>
       <circle cx="18" cy="18" r={r} fill="none" strokeWidth="4" stroke="currentColor" className="text-muted opacity-20" />
-      {share > 0 && <circle cx="18" cy="18" r={r} fill="none" strokeWidth="4" strokeLinecap="round" className="stroke-accent" strokeDasharray={`${share * c} ${c}`} />}
+      <circle cx="18" cy="18" r={r} fill="none" strokeWidth="4" strokeLinecap="round" className={`stroke-accent ${share > 0 ? '' : 'opacity-0'}`} strokeDasharray={`${share * c} ${c}`} data-glance-ring />
     </svg>
   )
 }

@@ -188,7 +188,7 @@ describe('the tab bar while the list scrolls', () => {
     await scrollTo(60)
     expect(bar()!.getAttribute('data-minimised')).toBe('true')
     expect(tab('today').className).toContain('min-h-10')
-    expect(tab('today').querySelector('span')!.className).toContain('sr-only')
+    expect(tab('today').querySelector('[data-tab-label]')!.className).toContain('sr-only')
     expect(tab('today').textContent).toBe('Today')
     expect(add().getAttribute('data-away')).toBe('true')
     expect(add().getAttribute('tabindex')).toBe('-1')

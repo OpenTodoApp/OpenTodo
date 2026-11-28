@@ -13,7 +13,7 @@ order: 153
 
 On a phone OpenTodo shows screens designed for a phone from the start, in the apps and in a phone's browser alike. They cover every **task list** (the Inbox, Today, Upcoming, Anytime, Someday, Assigned to me, Completed, a label, a location and a project as a list) and the **task page**. Every other screen keeps its content and gets the same bar, title and task rows.
 
-They are what every screen narrower than 768 px shows, and a wider one shows the screens of a computer. There is nothing to turn on: the **New phone screens** switch that Settings had while the screens were new is gone, and so are the screens a phone showed before them.
+There is nothing to turn on: every screen narrower than 768 px shows them, and a wider one the screens of a computer.
 
 ## The task lists
 
@@ -26,6 +26,7 @@ Every list shows the same tasks, groups and order as on a computer, and does the
 - **Adding.** The add button adds to the list on screen; a list has no add field of its own. A task's menu has **Add task below** and **Add subtask**.
 - **Each list's own parts** stay, such as Today's briefing and the Inbox's **Process**.
 - **At a glance.** Today opens with tiles for what is done, up next and late; Upcoming with the next seven days. Tap one to go there.
+- **Shortcuts.** Pull a list down to sync. Drag a task onto a day of Upcoming's week. Hold **Today** in the tab bar for the day's next task, **Inbox** to add one.
 
 ## The task page
 

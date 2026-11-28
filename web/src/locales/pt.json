@@ -7933,5 +7933,8 @@
   "Checked in": "Registado",
   "By weekday": "Por dia da semana",
   "Up next": "A seguir",
-  "Next seven days": "Próximos sete dias"
+  "Next seven days": "Próximos sete dias",
+  "Pull to sync": "Puxe para sincronizar",
+  "Release to sync": "Solte para sincronizar",
+  "{n, plural, one {All done for today: # task completed.} other {All done for today: # tasks completed.}}": "{n, plural, one {Tudo feito por hoje: # tarefa concluída.} other {Tudo feito por hoje: # tarefas concluídas.}}"
 }

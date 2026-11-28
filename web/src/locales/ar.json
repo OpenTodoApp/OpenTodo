@@ -7933,5 +7933,8 @@
   "Checked in": "تم التسجيل",
   "By weekday": "حسب يوم الأسبوع",
   "Up next": "التالي",
-  "Next seven days": "الأيام السبعة القادمة"
+  "Next seven days": "الأيام السبعة القادمة",
+  "Pull to sync": "اسحب للمزامنة",
+  "Release to sync": "أفلت للمزامنة",
+  "{n, plural, one {All done for today: # task completed.} other {All done for today: # tasks completed.}}": "{n, plural, zero {انتهى كل شيء لليوم: لم تكتمل أي مهمة.} one {انتهى كل شيء لليوم: اكتملت مهمة واحدة.} two {انتهى كل شيء لليوم: اكتملت مهمتان.} few {انتهى كل شيء لليوم: اكتملت # مهام.} many {انتهى كل شيء لليوم: اكتملت # مهمة.} other {انتهى كل شيء لليوم: اكتملت # مهمة.}}"
 }

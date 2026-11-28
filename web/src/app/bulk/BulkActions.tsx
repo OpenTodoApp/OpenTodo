@@ -26,6 +26,7 @@ import { Tooltip } from '../../ui'
 import { DateField } from '../datetime/DateField'
 import { ActionMenu, type ActionGroup, type ActionItem, type ConfirmSpec } from '../menus/ActionMenu'
 import { openRowSchedule } from '../task-list/RowSwipe'
+import { RowPreviewContext } from '../task-list/rowDraw'
 import { showBulkToast, showUndoToast } from './toastStore'
 import { navigate } from '../router'
 import { createStore } from '../../lib/store'
@@ -435,8 +436,12 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
     reorder,
     why,
   }, besideRow), [ids, data, besideRow, touch, n, reorder, why, editTitle, openDetails, showDetails, expandedId])
+  // One task on a phone: the sheet is named and headed by the task, not by "1 task" (phone-delight D4).
+  const preview = useContext(RowPreviewContext)
+  const only = preview && ids.length === 1 && data.tasks.length === 1 ? data.tasks[0] : null
   return (
-    <ActionMenu label={t('Actions for {tasks}', { tasks: tasksWord(n) })} title={tasksWord(n)} groups={groups} open={open} pending={!settled && !data.ready} onOpenChange={onOpenChange}
+    <ActionMenu label={only ? t('Actions for {tasks}', { tasks: only.title }) : t('Actions for {tasks}', { tasks: tasksWord(n) })} title={only ? only.title : tasksWord(n)}
+      header={only && preview ? preview(only) : undefined} groups={groups} open={open} pending={!settled && !data.ready} onOpenChange={onOpenChange}
       trigger={trigger} triggerClassName={triggerClassName} triggerProps={triggerProps} startPicker={startPicker} width="sm:w-72" anchor={anchor} />
   )
 }
