@@ -1,0 +1,1 @@
+- **Connect to shared address space servers over HTTP in the KMP app.** Addresses in `100.64.0.0/10` are now accepted alongside existing local ranges.
