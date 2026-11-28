@@ -21,6 +21,7 @@
     <string name="error_offline">Sunucuya ulaşılamıyor ve OpenTodo bu telefonda daha önce açılmamış.</string>
     <string name="error_untrusted">Bu telefon sunucunun sertifikasına güvenmiyor.</string>
     <string name="channel_reminders">Hatırlatıcılar</string>
+    <string name="channel_urgent">Acil hatırlatıcılar</string>
     <string name="reminder_generic">Hatırlatıcı</string>
     <string name="reminder_text">Görev hatırlatıcısı</string>
     <string name="action_snooze">10 dk ertele</string>
@@ -50,6 +51,17 @@
     <string name="widget_completed_description">Bu hafta kaç görev tamamladığın</string>
     <string name="widget_completed_locked">Kilitli: yalnızca bugünün sayısı</string>
     <string name="widget_completed_days">Günlük tamamlanan: %1$s</string>
+    <string name="widget_upcoming">Yaklaşan</string>
+    <string name="widget_upcoming_description">Sıradaki görevleriniz, güne göre</string>
+    <string name="widget_upcoming_empty">Yaklaşan görev yok.</string>
+    <string name="widget_upcoming_locked">Kilitli. Yaklaşan görevler: %1$d</string>
+    <string name="widget_tomorrow">Yarın</string>
+    <string name="widget_calendar">Takvim</string>
+    <string name="widget_calendar_description">Görevi olan günleriyle ay</string>
+    <string name="widget_calendar_locked">Kilitli</string>
+    <string name="widget_calendar_day">%1$s, görevler: %2$d</string>
+    <string name="widget_previous_month">Önceki ay</string>
+    <string name="widget_next_month">Gelecek ay</string>
     <string name="setup_old_webview">Bu telefonun Android System WebView sürümü eski (sürüm %1$s). OpenTodo’nun tam çalışması için uygulama mağazanızdan güncelleyin.</string>
     <string name="site_bar_host">%1$s üzerinde oturum açılıyor</string>
     <string name="site_bar_close">OpenTodo’ya dön</string>
@@ -58,6 +70,7 @@
     <string name="setup_sign_in">Buradan oturum açın</string>
     <string name="error_sign_in">Sunucunuz bir giriş sayfasının arkasında ve oturum açma işlemi uygulamada devam etmedi. Buradan tekrar oturum açın.</string>
     <string name="save_failed">Dosya kaydedilemedi.</string>
+    <string name="quick_add_failed">Görev eklenmedi. Eklemek için dokunun.</string>
     <string name="channel_focus">Odak</string>
     <string name="channel_sync">Eşitleniyor</string>
     <string name="focus_generic">Odak oturumu</string>

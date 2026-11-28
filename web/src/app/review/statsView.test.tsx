@@ -196,6 +196,51 @@ describe('Statistics dashboard', () => {
     expect(heatmap.className).toMatch(/overflow-x-auto/)
     await r.unmount()
   })
+
+  it('Phone: a chart or table wider than the screen fades at the edge where more is hidden, and the page never takes the scroll (phone-rest)', async () => {
+    // jsdom has no layout: every sideways region is 1400 px of content in 358 px.
+    const proto = HTMLElement.prototype as unknown as Record<string, unknown>
+    const own = { scrollWidth: Object.getOwnPropertyDescriptor(proto, 'scrollWidth'), clientWidth: Object.getOwnPropertyDescriptor(proto, 'clientWidth') }
+    const wide = (el: Element) => el.hasAttribute('data-scroll-x')
+    Object.defineProperty(proto, 'scrollWidth', { configurable: true, get(this: Element) { return wide(this) ? 1400 : 0 } })
+    Object.defineProperty(proto, 'clientWidth', { configurable: true, get(this: Element) { return wide(this) ? 358 : 0 } })
+    await seedWeek()
+    const r = await render(<StatsView />)
+    try {
+      await waitFor(() => !!r.container.querySelector('[data-dot-grid]') && !!r.container.querySelector('[data-heatmap]'), 'the charts')
+      const fades = (el: Element) => [el.hasAttribute('data-fade-left'), el.hasAttribute('data-fade-right')].join()
+      const scrolled = async (el: HTMLElement, left: number, want: string) => {
+        Object.defineProperty(el, 'scrollLeft', { configurable: true, value: left })
+        el.dispatchEvent(new Event('scroll'))
+        await waitFor(() => fades(el) === want, `fades ${want} at ${left}`, 2000)
+      }
+      // The dot grid starts at its left edge: more to the right.
+      const dots = r.container.querySelector<HTMLElement>('[data-dot-grid]')!
+      expect(dots.className.split(' ')).toContain('ui-scroller')
+      expect(fades(dots)).toBe('false,true')
+      await scrolled(dots, 500, 'true,true')
+      await scrolled(dots, 1042, 'true,false')
+      // The heatmap is a reversed row: it starts at its right end, with the current week, and more is to the left.
+      const heatmap = r.container.querySelector<HTMLElement>('[data-heatmap]')!
+      expect(heatmap.className.split(' ')).toEqual(expect.arrayContaining(['ui-scroller', 'flex-row-reverse']))
+      heatmap.style.flexDirection = 'row-reverse'
+      await scrolled(heatmap, -500, 'true,true')
+      await scrolled(heatmap, 0, 'true,false')
+      await scrolled(heatmap, -1042, 'false,true')
+      // "Show as table" opens the table; it scrolls inside itself with the same fade.
+      const fig = r.container.querySelector('[data-panel="heatmap"]')!
+      const table = fig.querySelector<HTMLElement>('[data-chart-table]')!
+      expect(table.className.split(' ')).toContain('hidden')
+      await click(fig.querySelector('[data-show-table]')!)
+      expect(table.className.split(' ')).toEqual(expect.arrayContaining(['ui-scroller', 'block', 'overflow-x-auto']))
+      expect(table.hasAttribute('data-scroll-x')).toBe(true)
+      expect(fades(table)).toBe('false,true')
+      expect(fig.querySelector('[data-show-table]')!.textContent).toBe('Hide table')
+    } finally {
+      for (const [name, was] of Object.entries(own)) { if (was) Object.defineProperty(proto, name, was); else delete proto[name] }
+      await r.unmount()
+    }
+  })
 })
 
 describe('accessible charts', () => {

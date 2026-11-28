@@ -12,7 +12,6 @@ import { removeLabel } from '../../lib/labels'
 import { priorityAccessibleName, priorityShort } from '../../lib/priority'
 import { createProject } from '../../lib/ops'
 import { INBOX_KEY, itemKeywords, NONE_KEY, sectionSource, type PickerItem } from '../../lib/pickerSources'
-import { moveTaskToSection } from '../../lib/sections'
 import { keysOf } from '../../lib/shortcuts'
 import { originOf } from '../../lib/taskOrigin'
 import { openOrigin, originLink } from '../../lib/originOpen'
@@ -41,7 +40,7 @@ import { act, reportActionError } from '../actionError'
 import { energyLevelsOn, energyOf, setTaskEnergy } from '../../lib/energy'
 import { useUserPrefsRow } from '../../lib/localData'
 import { estimateUndoable, eveningUndoable, priorityUndoable } from '../../lib/undoActions'
-import { assigneeWithUndo } from '../undoable'
+import { assigneeWithUndo, sectionMoveWithUndo } from '../undoable'
 import { EnergyChoice } from './EnergyChoice'
 
 export const PRIORITIES: { p: Priority; cls: string }[] = [
@@ -217,7 +216,7 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
         : (
           <ComboboxPanel<PickerItem> label={t('Section')} placeholder={t('Find a section…')} source={sectionSource(m.sections, m.projectId ?? '')}
             getKey={itemKey} getLabel={itemLabel} pinned={[NONE_KEY]} selected={[m.sectionId ?? NONE_KEY]} rankContext="task.section"
-            onPick={async (i) => { await moveTaskToSection(task.id, i.value).catch(reportActionError); onClose() }} onClose={onClose} />
+            onPick={async (i) => { if ((i.value ?? null) !== (m.sectionId ?? null)) await sectionMoveWithUndo(task.id, i.value, i.label).catch(reportActionError); onClose() }} onClose={onClose} />
         ))
     case 'parent':
       return frame('corner-down-right', t('Parent task'), (
@@ -269,7 +268,7 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
         <ul className="flex min-w-0 flex-col gap-0.5" aria-label={t('Tasks waiting for this one')}>
           {m.blocks.map((tk) => (
             <li key={tk.id} className="min-w-0">
-              <button type="button" className="max-w-full truncate text-left text-meta text-accent hover:underline" onClick={() => { onClose(); onOpen?.(tk.id) }}>{tk.title || t('Untitled')}</button>
+              <button type="button" className="max-w-full truncate text-start text-meta text-accent hover:underline" onClick={() => { onClose(); onOpen?.(tk.id) }}>{tk.title || t('Untitled')}</button>
             </li>
           ))}
         </ul>
@@ -312,7 +311,7 @@ function AddMenu({ task, userId, m }: { task: Task; userId?: string; m: Properti
   ]
   const shown = groups.map((g) => ({ ...g, offers: g.offers.filter((o) => (o.when ?? true) && !ed.visible(o.id)) })).filter((g) => g.offers.length > 0)
   return (
-    <div className="pl-7" data-add-property>
+    <div className="ps-7" data-add-property>
       <Menu kind="menu" label={t('Add a property')} title={t('Add')} width="sm:w-64" align="start"
         trigger={<span className="inline-flex items-center gap-1 text-meta"><Icon name="plus" size="xs" />{t('Add')}</span>}
         triggerClassName="inline-flex min-h-8 items-center rounded-control px-1 text-muted pointer-coarse:min-h-11 hover:bg-sunken hover:text-default dark:hover:bg-raised">

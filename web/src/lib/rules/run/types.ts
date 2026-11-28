@@ -2,7 +2,7 @@
 // design D7): what a run reads (RunWorld), what it is asked to run (RunRoutine,
 // RunOptions) and what it plans (RunPlan). Values are plaintext: the device
 // holds its decrypted copy; the runner encrypts before it commits.
-import type { Membership, RoutineRunBlock, RoutineStep, RuleCondition } from '../../types'
+import type { Membership, RoutineRunBlock, RoutineStep, RuleCondition, Workspace } from '../../types'
 import type { StepValue } from '../stepData'
 
 /** A stored row: field name to value (JSON-decoded). */
@@ -73,6 +73,8 @@ export interface RunWorld {
   prefs?: Row
   /** Each shared project's membership; a project absent here is personal. */
   memberships: Map<string, Membership>
+  /** The user's workspaces, for which workspace fields apply in a filter (workspace-fields). */
+  workspaces?: readonly Pick<Workspace, 'id' | 'default' | 'role'>[]
   /** Set for a shared routine: `assigned:` names only that project's members. */
   project?: string
   /**

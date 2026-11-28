@@ -95,7 +95,7 @@ export function useProjectMenu(project: Project, o: { userId?: string; rename: (
   ] }
   // What's next? (assistant-in-context): the project-next skill on this project, while the assistant is available.
   const assistantGroup: ActionGroup[] = assistantAvailable ? [{ label: t('Assistant'), items: [{ kind: 'action', id: 'assistant-next', label: t('What’s next?'), icon: 'sparkles',
-    onSelect: () => openAssistantWith({ skill: 'project-next', text: t('What’s next in “{name}”?', { name: project.name }), send: true }) }] }] : []
+    onSelect: () => openAssistantWith({ skill: 'project-next', text: t.plain('What’s next in “{name}”?', { name: project.name }), send: true }) }] }] : []
   // Every role gets the copies (project-templates D6); editing items follow the role inside projectMenuGroups.
   const groups: ActionGroup[] = [
     ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, shownSubs, openTasks: o.page?.openTasks, pinned, workspaces: otherWorkspaces, mode, reviewEvery },
@@ -113,6 +113,6 @@ export function useProjectMenu(project: Project, o: { userId?: string; rename: (
     {dialog === 'fields' && <FieldsDialog project={project} onClose={() => setDialog(null)} />}
   </Suspense></PanelBoundary>
   // Share project, or Members for a role that only sees them: the header's button, as a menu item (#1905).
-  const shareItem: ActionItem = { kind: 'action', id: 'share', label: canManageMembers(role) ? t('Share project') : t('Members'), icon: 'users', onSelect: () => setSharing(true) }
+  const shareItem: ActionItem = { kind: 'action', id: 'share', label: canManageMembers(role) ? t('Share project…') : t('Members'), icon: 'users', onSelect: () => setSharing(true) }
   return { groups, swatches, dialogs, membership, role, editable, shareItem, share: (section?: 'public') => setSharing(section ?? true), fields: () => setDialog('fields'), activity: showActivity }
 }

@@ -307,7 +307,7 @@ final class ReminderTests: XCTestCase {
             let want = try XCTUnwrap(fixture["expect"] as? [[String: Any]], name).map { r in
                 Reminders.Handed(id: r["id"] as? String ?? "?", taskId: r["taskId"] as? String ?? "?",
                                  fireAt: r["fireAt"] as? Double ?? -1, title: r["title"] as? String,
-                                 urgent: r["urgent"] as? Bool ?? false)
+                                 urgent: r["urgent"] as? Bool ?? false, due: r["due"] as? String)
             }
             let payload = try XCTUnwrap(fixture["payload"] as? String, name)
             XCTAssertEqual(Reminders.select(Reminders.parse(payload), now: Date(timeIntervalSince1970: nowMs / 1000)), want, name)
@@ -534,6 +534,7 @@ final class WidgetPublicationTests: XCTestCase {
             let payload = try XCTUnwrap(fixture["payload"] as? String, name)
             let want = try XCTUnwrap(fixture["expect"] as? [String: Any], name)
             let rows = try XCTUnwrap(want["rows"] as? [[String: Any]], name)
+            let decoded = try JSONDecoder().decode(WidgetPublication.Publication.self, from: Data(payload.utf8))
             let expected = WidgetPublication.Publication(
                 updatedAt: try XCTUnwrap(want["updatedAt"] as? Double, name),
                 locked: try XCTUnwrap(want["locked"] as? Bool, name),
@@ -541,10 +542,135 @@ final class WidgetPublicationTests: XCTestCase {
                 overdue: try XCTUnwrap(want["overdue"] as? Int, name),
                 tasks: try rows.map { r in
                     WidgetPublication.Task(id: try XCTUnwrap(r["id"] as? String, name), title: r["title"] as? String, time: r["time"] as? String,
-                                           priority: try XCTUnwrap(r["priority"] as? Int, name), overdue: try XCTUnwrap(r["overdue"] as? Bool, name))
-                })
-            XCTAssertEqual(try JSONDecoder().decode(WidgetPublication.Publication.self, from: Data(payload.utf8)), expected, name)
+                                           priority: try XCTUnwrap(r["priority"] as? Int, name), overdue: try XCTUnwrap(r["overdue"] as? Bool, name),
+                                           due: r["due"] as? String)
+                },
+                actions: decoded.actions)
+            XCTAssertEqual(decoded, expected, name)
+            // ios-widget-complete D1: the circle, and whether a tick names its occurrence (Android's WidgetModel).
+            XCTAssertEqual(decoded.canComplete, try XCTUnwrap(want["canComplete"] as? Bool, name), name)
+            XCTAssertEqual(decoded.canCompleteOn, try XCTUnwrap(want["canCompleteOn"] as? Bool, name), name)
         }
+    }
+
+    // MARK: ios-widget-complete
+
+    private func clearWidget() {
+        Store.remove(WidgetPublication.fileName)
+        WidgetPublication.clearCompletions()
+    }
+
+    /// Publishes the shared fixture `widget` (three rows: `late` overdue, `call`, `plain`; `complete`, `complete-on`).
+    private func publishFixture(_ name: String = "widget") throws {
+        addTeardownBlock { self.clearWidget() }
+        clearWidget()
+        XCTAssertTrue(WidgetPublication.publish(try XCTUnwrap(try bridgeFixture(name)["payload"] as? String)))
+    }
+
+    /// Every address of the shared fixture actions.json `completePaths`, byte for byte as the Android app builds it.
+    func testTheCompletionAddressIsTheFixtures() throws {
+        let cases = try XCTUnwrap(try bridgeFixture("actions")["completePaths"] as? [[String: Any]])
+        XCTAssertFalse(cases.isEmpty)
+        for c in cases {
+            let ids = try XCTUnwrap(c["taskIds"] as? [String])
+            XCTAssertEqual(WidgetPublication.completePath(ids), c["path"] as? String, ids.joined(separator: ","))
+        }
+    }
+
+    func testATickHidesTheRowLowersTheCountsAndQueuesTheOccurrence() throws {
+        try publishFixture()
+        let now = Date(timeIntervalSince1970: 1_792_670_400)
+        XCTAssertTrue(WidgetPublication.complete(taskID: "late", now: now))
+        let publication = try XCTUnwrap(WidgetPublication.load())
+        let hidden = WidgetPublication.hidden(now: now)
+        XCTAssertEqual(hidden, ["late"])
+        XCTAssertEqual(publication.visibleTasks(hidden: hidden).map(\.id), ["call", "plain"])
+        XCTAssertEqual(publication.visibleCount(hidden: hidden), 2)
+        XCTAssertEqual(publication.visibleOverdue(hidden: hidden), 0)
+        // `complete-on`: the tick names the occurrence due that day, once however often it is tapped.
+        XCTAssertTrue(WidgetPublication.complete(taskID: "late", now: now))
+        XCTAssertTrue(WidgetPublication.complete(taskID: "call", now: now))
+        XCTAssertEqual(WidgetPublication.loadQueue(), ["late@2026-10-20", "call@2026-10-22"])
+        XCTAssertEqual(WidgetPublication.takeCompletePath(now: now), "/?complete=late%402026-10-20&complete=call%402026-10-22")
+        XCTAssertNil(WidgetPublication.takeCompletePath(now: now), "each tick is sent once")
+    }
+
+    func testATickWithoutCompleteOnNamesTheTask() throws {
+        addTeardownBlock { self.clearWidget() }
+        clearWidget()
+        XCTAssertTrue(WidgetPublication.publish(#"{"updatedAt":1,"locked":false,"count":1,"overdue":0,"tasks":[{"id":"a b","due":"2026-10-22","priority":4,"overdue":false}],"actions":["complete"]}"#))
+        XCTAssertTrue(WidgetPublication.complete(taskID: "a b"))
+        XCTAssertEqual(WidgetPublication.takeCompletePath(), "/?complete=a+b")
+    }
+
+    /// Locked, an older web app without `actions`, or a task the publication does not list: nothing is hidden or queued.
+    func testATickIsRefusedWhenTheWidgetCannotComplete() throws {
+        try publishFixture("widget-locked")
+        XCTAssertFalse(WidgetPublication.complete(taskID: "late"))
+        XCTAssertTrue(WidgetPublication.publish(#"{"updatedAt":1,"locked":false,"count":1,"overdue":0,"tasks":[{"id":"a","priority":4,"overdue":false}]}"#))
+        XCTAssertFalse(try XCTUnwrap(WidgetPublication.load()).canComplete)
+        XCTAssertFalse(WidgetPublication.complete(taskID: "a"))
+        try publishFixture()
+        XCTAssertFalse(WidgetPublication.complete(taskID: "unknown"))
+        XCTAssertTrue(WidgetPublication.hidden().isEmpty)
+        XCTAssertNil(WidgetPublication.takeCompletePath())
+    }
+
+    /// A publication that no longer lists the task confirms the tick; one that still lists it keeps the row hidden.
+    func testAPublicationConfirmsATick() throws {
+        try publishFixture()
+        XCTAssertTrue(WidgetPublication.complete(taskID: "call"))
+        XCTAssertNotNil(WidgetPublication.takeCompletePath())
+        // The app republished before the run applied the tick: still listed, still hidden.
+        XCTAssertTrue(WidgetPublication.publish(try XCTUnwrap(try bridgeFixture("widget")["payload"] as? String)))
+        XCTAssertEqual(WidgetPublication.hidden(), ["call"])
+        XCTAssertTrue(WidgetPublication.publish(#"{"updatedAt":2,"locked":false,"count":2,"overdue":1,"tasks":[{"id":"late","priority":2,"overdue":true},{"id":"plain","priority":4,"overdue":false}],"actions":["complete","complete-on"]}"#))
+        XCTAssertTrue(WidgetPublication.hidden().isEmpty)
+        XCTAssertTrue(WidgetPublication.loadPending().isEmpty)
+    }
+
+    /// ios-widget-complete D3: a row stays hidden while its tick waits for the app, and for 30
+    /// minutes after the run that took it; then it comes back, and the timeline knows when.
+    func testAHiddenRowWaitsForTheAppThenThirtyMinutes() {
+        typealias Pending = WidgetPublication.Pending
+        let ticked = 1_000_000.0
+        let later = ticked + 2 * 60 * 60 * 1000
+        let pending = ["a": ticked]
+        XCTAssertEqual(Pending.hidden(pending, queued: ["a@2026-10-22"], now: later), ["a"], "queued: hidden however long the app waits")
+        XCTAssertNil(Pending.nextReturn(pending, queued: ["a@2026-10-22"], now: later))
+        XCTAssertEqual(Pending.hidden(pending, queued: [], now: ticked + Pending.hideFor - 1), ["a"])
+        XCTAssertEqual(Pending.hidden(pending, queued: [], now: ticked + Pending.hideFor), [])
+        XCTAssertEqual(Pending.nextReturn(pending, queued: [], now: ticked), ticked + Pending.hideFor)
+        XCTAssertEqual(WidgetPublication.taskID("a@2026-10-22"), "a")
+        XCTAssertEqual(WidgetPublication.taskID("a@b"), "a@b")
+        XCTAssertEqual(WidgetPublication.taskID("x@y@2026-10-22"), "x@y")
+    }
+
+    func testTakingTheQueueStartsTheThirtyMinutes() throws {
+        try publishFixture()
+        let ticked = Date(timeIntervalSince1970: 1_792_670_400)
+        XCTAssertTrue(WidgetPublication.complete(taskID: "plain", now: ticked))
+        let taken = ticked.addingTimeInterval(2 * 60 * 60)
+        XCTAssertEqual(WidgetPublication.takeCompletePath(now: taken), "/?complete=plain%402026-10-22")
+        XCTAssertEqual(WidgetPublication.hidden(now: taken.addingTimeInterval(29 * 60)), ["plain"])
+        XCTAssertEqual(WidgetPublication.hidden(now: taken.addingTimeInterval(30 * 60)), [])
+        XCTAssertEqual(WidgetPublication.nextReturn(after: taken), taken.addingTimeInterval(30 * 60))
+    }
+
+    /// A hidden run opens the queue's address on the configured server.
+    func testTheHiddenRunOpensTheCompletionAddress() throws {
+        let origin = try XCTUnwrap(URL(string: "https://todo.example.com"))
+        XCTAssertEqual(HiddenRun.address(origin: origin, path: "/?complete=t%2F1+%C3%BC").absoluteString, "https://todo.example.com/?complete=t%2F1+%C3%BC")
+        XCTAssertEqual(HiddenRun.address(origin: origin, path: nil), origin)
+    }
+
+    /// Changing the server (AppModel.forgetServer) deletes the old server's ticks.
+    func testTheOldServersTicksAreDeleted() throws {
+        try publishFixture()
+        XCTAssertTrue(WidgetPublication.complete(taskID: "call"))
+        WidgetPublication.clearCompletions()
+        XCTAssertTrue(WidgetPublication.hidden().isEmpty)
+        XCTAssertNil(WidgetPublication.takeCompletePath())
     }
 }
 
@@ -1023,6 +1149,33 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.pendingPath, "/?task=abc")
     }
 
+    /// ios-app-banner D5: the banner's address opens the task only on the configured server.
+    func testABannerLinkOpensTheTaskOnTheServerOnly() {
+        let server = URL(string: "https://todo.example.com")
+        let id = { (link: String) in AppModel.taskID(webLink: URL(string: link)!, server: server) }
+        XCTAssertEqual(id("https://todo.example.com/task/abc"), "abc")
+        XCTAssertEqual(id("https://TODO.example.com:443/task/abc"), "abc")
+        XCTAssertEqual(id("https://todo.example.com/task/a%20b"), "a b")
+        XCTAssertNil(id("https://evil.example.com/task/abc"), "another host")
+        XCTAssertNil(id("https://todo.example.com.evil.example/task/abc"))
+        XCTAssertNil(id("https://todo.example.com:8443/task/abc"), "another port")
+        XCTAssertNil(id("https://todo.example.com/task/"))
+        XCTAssertNil(id("https://todo.example.com/task/a/b"))
+        XCTAssertNil(id("https://todo.example.com/task/abc/"))
+        XCTAssertNil(id("https://todo.example.com/today"))
+        XCTAssertNil(AppModel.taskID(webLink: URL(string: "https://todo.example.com/task/abc")!, server: nil), "no server yet")
+        XCTAssertEqual(AppModel.taskID(webLink: URL(string: "http://192.168.1.5:8080/task/abc")!, server: URL(string: "http://192.168.1.5:8080")), "abc")
+    }
+
+    /// ios-app-banner D5: the scheme is the configured server's; the app's own links keep their own route.
+    func testABannerLinkOnAnotherSchemeIsIgnored() {
+        let server = URL(string: "https://todo.example.com")
+        XCTAssertNil(AppModel.taskID(webLink: URL(string: "http://todo.example.com/task/abc")!, server: server))
+        XCTAssertNil(AppModel.taskID(webLink: URL(string: "ftp://todo.example.com/task/abc")!, server: server))
+        XCTAssertNil(AppModel.taskID(webLink: URL(string: "opentodo://task/abc")!, server: server))
+        XCTAssertNil(AppModel.taskID(webLink: URL(string: "https://todo.example.com/task/abc")!, server: URL(string: "http://todo.example.com")))
+    }
+
     /// shell-repairs D6: Done, Snooze and Dismiss build the addresses of the shared bridge
     /// fixture (the Android app's too), which the web app reads.
     private func actionsFixture() throws -> [String: Any] {
@@ -1116,6 +1269,61 @@ final class AppModelTests: XCTestCase {
 
     func testTheChangeServerShortcutDoesNotResetWithoutConfirmation() {
         let model = AppModel()
+        XCTAssertFalse(model.changeServerRequested)
+    }
+
+    /// The tests below connect a model; the saved server of the test host is put back after.
+    private func keepServerOrigin() {
+        let saved = Prefs.shared.serverOrigin
+        addTeardownBlock { Prefs.shared.serverOrigin = saved }
+    }
+
+    /// native-shells "Quick actions on the app icon": the types of project.yml.
+    @MainActor
+    func testTheIconQuickActionsOpenTheirScreens() {
+        let model = AppModel()
+        XCTAssertTrue(model.perform(shortcut: "add-task"))
+        XCTAssertEqual(model.pendingPath, "/?add=")
+        XCTAssertTrue(model.perform(shortcut: "today"))
+        XCTAssertEqual(model.pendingPath, "/today")
+        XCTAssertFalse(model.changeServerRequested)
+        XCTAssertFalse(model.perform(shortcut: "unknown"))
+    }
+
+    @MainActor
+    func testTheChangeServerShortcutAsksFirst() {
+        keepServerOrigin()
+        let model = AppModel()
+        model.connect("https://todo.example.com")
+        XCTAssertTrue(model.perform(shortcut: "change-server"))
+        XCTAssertTrue(model.changeServerRequested)
+        XCTAssertEqual(model.origin?.absoluteString, "https://todo.example.com", "the server is kept until the user confirms")
+        XCTAssertNil(model.pendingPath)
+    }
+
+    /// At a cold start the dialog waits for the window's final root (StatusBar).
+    @MainActor
+    func testChangeServerAtLaunchAsksOnceTheWindowIsReady() {
+        keepServerOrigin()
+        let model = AppModel()
+        model.connect("https://todo.example.com")
+        XCTAssertTrue(model.perform(shortcut: "change-server", atLaunch: true))
+        XCTAssertFalse(model.changeServerRequested)
+        model.windowReady()
+        XCTAssertTrue(model.changeServerRequested)
+        model.changeServerRequested = false
+        model.windowReady()
+        XCTAssertFalse(model.changeServerRequested, "asked once")
+    }
+
+    /// Without a server the first-run screen is up: nothing to change, nothing to ask.
+    @MainActor
+    func testChangeServerWithoutAServerDoesNothing() {
+        keepServerOrigin()
+        Prefs.shared.serverOrigin = nil
+        let model = AppModel()
+        XCTAssertNil(model.origin)
+        XCTAssertFalse(model.perform(shortcut: "change-server"))
         XCTAssertFalse(model.changeServerRequested)
     }
 }

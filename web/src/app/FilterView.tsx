@@ -15,7 +15,7 @@ import { useFieldDefs } from './useFields'
 import { resolveLabels } from '../lib/labels'
 import { hasTimeColumn } from '../lib/rowTime'
 import { listSlotsOff } from '../lib/rowSlots'
-import { setTaskCompletedWithFeedback } from './completionSound'
+import { completeWithUndo } from './undoable'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
 import { habitStatsMap } from '../lib/habits'
 import { compareTasks, createView, groupTasks } from '../lib/views'
@@ -49,6 +49,7 @@ import { currentWorkspaceId } from '../lib/workspaces'
 import { ACTION_TOAST_MS, showBulkToast } from './bulk/toastStore'
 import { scoreOf, UrgencyChip, UrgencyContext, useUrgencyOf } from './useUrgency'
 import { GROUP_BY_OPTIONS, readSortBy, ROW_PROPERTIES, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VIEW_LAYOUTS, type GroupBy, type RowProperty, type SortBy, type SortDir, type ViewLayout } from '../lib/types'
+import { composing } from '../lib/composeKey'
 
 const DEBOUNCE_MS = 150
 
@@ -141,7 +142,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   useEffect(() => { setCurrentFilter(good.ast ? good.src : null); return () => setCurrentFilter(null) }, [good])
   // Custom field definitions, tracked minutes (time-tracking: `tracked > 1h` follows a running entry live) and the urgency order's scores (urgency-sort).
   const fieldDefs = useFieldDefs(), tracked = useTrackedTotals(), directory = useAssigneeDirectory(), scorer = useUrgencyOf(allTasks, today, zone), urgency = display.sortBy === 'urgency' ? scorer : null
-  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, sections: flow.sections, weekStart, fields: fieldDefs, ...tracked, ...directory, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf, score: scoreOf(scorer) }),
+  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, sections: flow.sections, weekStart, fields: fieldDefs, ...tracked, ...directory, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf, fieldPlacement: ws.fieldPlacement, score: scoreOf(scorer) }),
     [today, labels, projects, allTasks, flow.sections, weekStart, fieldDefs, tracked, directory, ws, scorer])
   const compiled = useMemo(() => {
     if (!good.ast) return null
@@ -214,6 +215,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   }, [focusFirst, debounced, query, good, rows, loadedTasks])
 
   function onInputKey(e: ReactKeyboardEvent<HTMLInputElement>) {
+    if (composing(e)) return
     if (e.key === 'Enter') {
       e.preventDefault()
       setDebounced(query)
@@ -228,9 +230,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
       if (histIdx === -1) draft.current = query
       setHistIdx(next)
       setQuery(next === -1 ? draft.current : history[next])
-    } else if (e.key === 'Escape') {
-      e.stopPropagation()
-    }
+    } else if (e.key === 'Escape') e.stopPropagation()
   }
 
   // The filter panel (views-and-display D5): open by default here, kept per device.
@@ -340,7 +340,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
             waitsFor={flow.waitsFor(tk.id)}
             habit={habits.get(tk.id)}
             breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
-            onToggle={() => act(setTaskCompletedWithFeedback(tk.id, !tk.completed_at))}
+            onToggle={() => act(completeWithUndo(tk.id, !tk.completed_at))}
             selectOnClick onOpen={(e, intent) => { setSelected(key); openFromRow(tk.id, e, intent) }} onOpenPage={() => openTaskPage(tk.id)}
             expanded={expanded === key}
             onExpand={() => { setSelected(key); setExpanded((cur) => (cur === key ? null : key)) }} score={urgency && shape !== 'card' ? <UrgencyChip of={urgency} task={tk} /> : undefined}

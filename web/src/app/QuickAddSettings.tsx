@@ -41,7 +41,7 @@ export function QuickAddSettingsSection() {
         <p className="text-meta text-muted">{t('English is always on.')}</p>
         <Checkbox label={t('Follow browser languages ({join})', { join: browser.join(', ') })} checked={followBrowser}
           onChange={(e) => update({ ...s, languages: e.target.checked ? null : active.filter((c) => c !== 'en') })} />
-        <div className="flex flex-wrap gap-x-5 gap-y-1 pl-6">
+        <div className="flex flex-wrap gap-x-5 gap-y-1 ps-6">
           {BUNDLED_LANGUAGES.map((code) => (
             <Checkbox key={code} label={languageName(code)} checked={active.includes(code)}
               disabled={code === 'en' || followBrowser} onChange={(e) => toggleLanguage(code, e.target.checked)} />

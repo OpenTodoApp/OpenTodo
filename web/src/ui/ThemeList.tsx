@@ -7,6 +7,7 @@
 // not text, so they carry no contrast duty.
 import { useRef, type KeyboardEvent, type ReactNode } from 'react'
 import { t } from '../lib/i18n'
+import { inlineKey } from '../lib/direction'
 
 export interface ThemeCardData {
   id: string
@@ -49,7 +50,7 @@ export function ThemeSwatches({ swatches, scheme }: Pick<ThemeCardData, 'swatche
 /** A card's name, author and badge. */
 function CardText({ theme, roomForMenu }: { theme: ThemeCardData; roomForMenu?: boolean }) {
   return (
-    <span className={`min-w-0${roomForMenu ? ' pr-7' : ''}`}>
+    <span className={`min-w-0${roomForMenu ? ' pe-7' : ''}`}>
       <span className="block truncate text-meta font-medium text-default">{theme.name}</span>
       {theme.author && <span className="block truncate text-hint text-muted">{t('by {name}', { name: theme.author })}</span>}
       {theme.origin && <span className="block truncate text-hint text-muted" data-theme-origin>{theme.origin}</span>}
@@ -66,8 +67,8 @@ export function ThemeList({ label, themes, value, onChange, note, menuFor, ...ho
     if ((e.target as HTMLElement).getAttribute?.('role') !== 'radio') return
     const i = themes.findIndex((x) => x.id === value)
     const n = themes.length
-    const next = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? (i + 1) % n
-      : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? (i - 1 + n) % n
+    const next = inlineKey(e) === 'ArrowRight' || e.key === 'ArrowDown' ? (i + 1) % n
+      : inlineKey(e) === 'ArrowLeft' || e.key === 'ArrowUp' ? (i - 1 + n) % n
       : e.key === 'Home' ? 0 : e.key === 'End' ? n - 1 : -1
     if (next < 0) return
     e.preventDefault()
@@ -84,7 +85,7 @@ export function ThemeList({ label, themes, value, onChange, note, menuFor, ...ho
           const card = (
             <button key={theme.id} ref={(el) => { refs.current[i] = el }} type="button" role="radio" aria-checked={on} tabIndex={on ? 0 : -1}
               data-theme-card={theme.id} onClick={() => { if (!on) onChange(theme.id) }}
-              className={`flex ${menuFor ? 'h-full w-full' : 'w-40 shrink-0 snap-start sm:w-auto'} flex-col gap-2 rounded-card border bg-surface p-2 text-left outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus ${on ? 'border-accent ring-2 ring-accent' : 'border-default'}`}>
+              className={`flex ${menuFor ? 'h-full w-full' : 'w-40 shrink-0 snap-start sm:w-auto'} flex-col gap-2 rounded-card border bg-surface p-2 text-start outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus ${on ? 'border-accent ring-2 ring-accent' : 'border-default'}`}>
               <ThemeSwatches swatches={theme.swatches} scheme={theme.scheme} />
               <CardText theme={theme} roomForMenu={!!menuFor} />
             </button>
@@ -93,7 +94,7 @@ export function ThemeList({ label, themes, value, onChange, note, menuFor, ...ho
           return (
             <div key={theme.id} className="relative w-40 shrink-0 snap-start sm:w-auto">
               {card}
-              <div className="absolute right-1 bottom-1">{menuFor(theme)}</div>
+              <div className="absolute inset-e-1 bottom-1">{menuFor(theme)}</div>
             </div>
           )
         })}

@@ -13,6 +13,7 @@ import { WorkspaceColours } from '../NewWorkspaceDialog'
 import { completeWithUndo } from '../undoable'
 import { formatTime } from './grid'
 import { runSlot } from './slotActions'
+import { composing } from '../../lib/composeKey'
 
 /** The slot's popover: its title (editable), time, the full checklist, colour and Delete. */
 export function SlotDetails({ view, editTitle = false, onOpenTask, onDone }: { view: SlotView; editTitle?: boolean; onOpenTask: (id: string) => void; onDone: () => void }) {
@@ -27,7 +28,7 @@ export function SlotDetails({ view, editTitle = false, onOpenTask, onDone }: { v
     <div className="space-y-3" data-slot-details={view.slot.id}>
       <div className="space-y-1">
         <Input ref={input} value={title} placeholder={t('Slot')} aria-label={t('Slot name')} maxLength={200} autoFocus={editTitle} data-slot-title
-          onChange={(e) => setTitle(e.target.value)} onBlur={save} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); save(); onDone() } }} />
+          onChange={(e) => setTitle(e.target.value)} onBlur={save} onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Enter') { e.preventDefault(); save(); onDone() } }} />
         <p className="text-meta text-muted tabular-nums">{formatTime(view.start)}–{formatTime(view.end === DAY_MINUTES ? DAY_MINUTES - 1 : view.end)} · <span className={view.overfull ? 'text-warning' : ''}>{slotCount(view)}</span></p>
       </div>
       {rows.length === 0
@@ -41,7 +42,7 @@ export function SlotDetails({ view, editTitle = false, onOpenTask, onDone }: { v
                   onClick={() => act(completeWithUndo(task.id, !task.completed_at))}>
                   <Icon name={task.completed_at ? 'check' : 'circle'} size="sm" />
                 </button>
-                <button type="button" className={`min-h-6 min-w-0 flex-1 truncate rounded-chip text-left outline-none hover:underline focus-visible:ring-2 focus-visible:ring-focus ${task.completed_at ? 'text-faint line-through' : ''}`}
+                <button type="button" className={`min-h-6 min-w-0 flex-1 truncate rounded-chip text-start outline-none hover:underline focus-visible:ring-2 focus-visible:ring-focus ${task.completed_at ? 'text-faint line-through' : ''}`}
                   onClick={() => onOpenTask(task.id)}>{task.title || t('Untitled')}</button>
                 {task.estimate_minutes ? <span className="shrink-0 text-hint tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
                 <Button variant="ghost" size="sm" icon="x" aria-label={t('Take {title} out of the slot', { title: task.title || t('Untitled') })} data-slot-take-out={task.id}

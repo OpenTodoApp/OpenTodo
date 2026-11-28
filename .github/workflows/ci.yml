@@ -381,6 +381,8 @@ jobs:
         working-directory: web
       # The library only: the image's browsers (PLAYWRIGHT_BROWSERS_PATH) match its version.
       - run: npm i -g --no-audit --no-fund playwright@1.56.1
+      # Below 768 px the run has the phone screens (OpenSpec phone-ui-only), and fails when a
+      # screen has neither the phone header nor a phone screen.
       - name: Run the layout check against a fresh server
         if: ${{ matrix.widths }}
         env:

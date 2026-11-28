@@ -45,6 +45,7 @@ import { knownThemes, useCatalogue, type ThemeSettingsProps } from './themeCatal
 
 const ThemeSettings = lazy(() => import('./ThemeRow'))
 import { effectiveSide } from '../lib/appearance'
+import { inlineKey } from '../lib/direction'
 
 const MODE_LABEL = translatedMap<ThemeModePref>({ system: msg('System'), light: msg('Light'), dark: msg('Dark') })
 const DENSITY_LABEL = translatedMap<Density>({ comfortable: msg('Comfortable'), compact: msg('Compact') })
@@ -87,8 +88,8 @@ export interface AppearanceViewProps {
 function roving<T>(e: KeyboardEvent, items: readonly T[], current: T, choose: (v: T) => void, focus: (i: number) => void) {
   const i = items.indexOf(current)
   let next = -1
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % items.length
-  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + items.length) % items.length
+  if (inlineKey(e) === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % items.length
+  else if (inlineKey(e) === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + items.length) % items.length
   else if (e.key === 'Home') next = 0
   else if (e.key === 'End') next = items.length - 1
   if (next < 0) return
@@ -131,7 +132,7 @@ function TilePreview() {
   )
 }
 
-const TILE = 'flex w-28 shrink-0 snap-start flex-col gap-2 rounded-card border bg-surface p-2 text-left outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-auto'
+const TILE = 'flex w-28 shrink-0 snap-start flex-col gap-2 rounded-card border bg-surface p-2 text-start outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-auto'
 
 export function AppearanceView({ value, onMode, onAccent, custom, onDensity, rows, titles, deadlineDates, haptics, completionSound, zoom, textSize, themes }: AppearanceViewProps) {
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([])

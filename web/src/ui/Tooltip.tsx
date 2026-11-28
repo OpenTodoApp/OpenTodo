@@ -1,7 +1,8 @@
 // Tooltip (OpenSpec change ux-overhaul, design-system "Tooltip primitive"): opens
 // on hover after 400 ms and on keyboard focus at once, shows a label and an optional
 // shortcut, closes on Escape and blur, is announced as the control's description
-// and does not open on touch (the accessible name still applies). Focus that a
+// and does not open on touch on a control (the accessible name still applies); on
+// something that is not a control a tap opens it (tooltip-tap). Focus that a
 // press leaves on the control (a tap on a phone, a click) does not open it either:
 // a tap focuses the button after the finger lifted, so the page's last input
 // decides (touch-no-tooltips, issues 169 and 1362). Icon-only
@@ -10,6 +11,7 @@ import { cloneElement, type ReactElement, type ReactNode, useCallback, useEffect
 import { createPortal } from 'react-dom'
 import { focusFromKeyboard } from '../lib/focusSource'
 import { t } from '../lib/i18n'
+import { inlineArrows, isRtl } from '../lib/direction'
 
 export interface TooltipProps {
   /** What the control does, in a few words. */
@@ -33,6 +35,13 @@ export function coarsePointer(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches
 }
 
+const CONTROL = 'a[href], button, input, select, textarea, summary, [role="button"], [role="link"], [role="menuitem"], [role="tab"], [role="checkbox"], [role="switch"], [role="option"]'
+
+/** Whether a tap on the element already does something: it is a control, or sits inside one. */
+function isControl(el: HTMLElement | null): boolean {
+  return !el || !!el.closest(CONTROL)
+}
+
 /**
  * A shortcut as keys: a sequence like "g t" reads "G then T" (precision-shell D4); a
  * chord or a single key is one badge.
@@ -44,7 +53,7 @@ export function KeySequence({ keys }: { keys: string }) {
       {steps.map((k, i) => (
         <span key={i} className="inline-flex items-center gap-1">
           {i > 0 && <span className="text-muted">{t('then')}</span>}
-          <kbd className="ui-kbd">{k.length === 1 ? k.toUpperCase() : k}</kbd>
+          <kbd className="ui-kbd">{k.length === 1 ? k.toUpperCase() : inlineArrows(k)}</kbd>
         </span>
       ))}
     </span>
@@ -72,6 +81,18 @@ export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 40
 
   useEffect(() => () => clearTimeout(timer.current), [])
   useEffect(() => { if (disabled) hide() }, [disabled, hide])
+
+  // A tip opened by a tap (tooltip-tap) stays until the next press anywhere or a scroll: there is no pointer to leave it.
+  const tapped = useRef(false)
+  const wasOpen = useRef(false)
+  useEffect(() => {
+    if (!open || !tapped.current) return
+    const close = (e: Event) => { if (e.type === 'scroll' || !(e.target instanceof Node) || !anchor.current?.contains(e.target)) hide() }
+    document.addEventListener('pointerdown', close, true)
+    window.addEventListener('scroll', close, true)
+    return () => { document.removeEventListener('pointerdown', close, true); window.removeEventListener('scroll', close, true) }
+  }, [open, hide])
+  useEffect(() => { if (!open) tapped.current = false }, [open])
 
   // Escape closes the tip wherever focus is (also from the control itself).
   useEffect(() => {
@@ -103,9 +124,11 @@ export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 40
     const vw = document.documentElement.clientWidth, vh = window.innerHeight
     if (side === 'right') {
       // Beside the control (the collapsed sidebar's icon rail); falls back below it at the viewport's edge.
-      const fits = r.right + GAP + w <= vw - 8
+      // Right to left the rail is on the right and the tip goes to its left (arabic-rtl D3).
+      const rtl = isRtl(a)
+      const fits = rtl ? r.left - GAP - w >= 8 : r.right + GAP + w <= vw - 8
       const top = fits ? Math.max(8, Math.min(vh - h - 8, r.top + r.height / 2 - h / 2)) : r.bottom + GAP
-      const left = fits ? r.right + GAP : Math.max(8, Math.min(vw - w - 8, r.left))
+      const left = fits ? (rtl ? r.left - GAP - w : r.right + GAP) : Math.max(8, Math.min(vw - w - 8, r.left))
       setPos({ top, left })
       return
     }
@@ -131,7 +154,15 @@ export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 40
     'data-tip': !disabled && typeof label === 'string' ? label : undefined,
     onPointerEnter: (e: PointerEvent) => { (child.props.onPointerEnter as ((e: PointerEvent) => void) | undefined)?.(e); if (e.pointerType !== 'touch' && !coarsePointer()) show(false) },
     onPointerLeave: (e: PointerEvent) => { (child.props.onPointerLeave as ((e: PointerEvent) => void) | undefined)?.(e); hide() },
-    onPointerDown: (e: PointerEvent) => { (child.props.onPointerDown as ((e: PointerEvent) => void) | undefined)?.(e); hide() },
+    onPointerDown: (e: PointerEvent) => { (child.props.onPointerDown as ((e: PointerEvent) => void) | undefined)?.(e); wasOpen.current = open; hide() },
+    // By touch a tip has no hover. On something that is not a control (a word, a time, a badge) a tap would do
+    // nothing, so it opens the tip, and a second tap closes it; a control keeps its tap for what it does (tooltip-tap).
+    onClick: (e: MouseEvent) => {
+      (child.props.onClick as ((e: MouseEvent) => void) | undefined)?.(e)
+      if (disabled || !coarsePointer() || wasOpen.current || isControl(anchor.current)) return
+      tapped.current = true
+      show(true)
+    },
     onFocus: (e: FocusEvent) => { (child.props.onFocus as ((e: FocusEvent) => void) | undefined)?.(e); if (focusFromKeyboard()) show(true) },
     onBlur: (e: FocusEvent) => { (child.props.onBlur as ((e: FocusEvent) => void) | undefined)?.(e); hide() },
   } as Record<string, unknown>)

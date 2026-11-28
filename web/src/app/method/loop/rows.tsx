@@ -5,7 +5,7 @@ import { resolveLabels } from '../../../lib/labels'
 import { useAllLabels, useAllProjects } from '../../../lib/localData'
 import { hasTimeColumn } from '../../../lib/rowTime'
 import { listSlotsOff } from '../../../lib/rowSlots'
-import { setTaskCompletedWithFeedback } from '../../completionSound'
+import { completeWithUndo } from '../../undoable'
 import type { Task } from '../../../lib/types'
 import { act } from '../../actionError'
 import { openFromRow } from '../../sidePanel'
@@ -26,7 +26,7 @@ export function Rows({ tasks, label }: { tasks: readonly Task[]; label?: string 
       {tasks.map((task) => (
         <TaskRow key={task.id} task={task} project={task.project_id ? projectMap.get(task.project_id) : undefined} labels={resolveLabels(task.labels, labelMap)}
           showProject selected={false} timeColumn={timeColumn} slotsOff={slotsOff}
-          onToggle={() => act(setTaskCompletedWithFeedback(task.id, !task.completed_at))}
+          onToggle={() => act(completeWithUndo(task.id, !task.completed_at))}
           onOpen={(e) => openFromRow(task.id, e)} onOpenPage={() => openTaskPage(task.id)} />
       ))}
     </ul>
@@ -38,7 +38,7 @@ export function GroupHeading({ id, children, end }: { id: string; children: Reac
   return (
     <div className="mb-1 flex items-center gap-2 px-2">
       <h3 id={id} className="text-meta font-semibold text-faint">{children}</h3>
-      {end && <span className="ml-auto">{end}</span>}
+      {end && <span className="ms-auto">{end}</span>}
     </div>
   )
 }

@@ -19,7 +19,7 @@ Write the note as you want every copy to start, then choose **Use as template** 
 
 ## Starting a note from one
 
-On the Notes page, open the arrow next to **New note** (or press `Shift+Q`) and choose a template: yours come first, then the built-in ones. An open template also has **Use template**. The new note takes the template's title, text, project and labels and opens with the caret in its text. It is a plain copy: changing the template later does not change it. It works offline, **Undo** removes it, and a viewer of the template's project gets the copy without a project.
+On the Notes page, open the arrow next to **New note** (or press `Shift+Q`) and choose a template: yours come first, then the built-in ones. On a phone, where the add button starts a blank note, **From template…** is the first item of the page's menu (**…**). An open template also has **Use template**. The new note takes the template's title, text, project and labels and opens with the caret in its text. It is a plain copy: changing the template later does not change it. It works offline, **Undo** removes it, and a viewer of the template's project gets the copy without a project.
 
 ## Placeholders
 

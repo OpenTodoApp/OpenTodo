@@ -55,7 +55,7 @@ export function LayoutSwitch({ mode, onChoose }: { mode: ProjectViewMode; onChoo
       {LAYOUTS.map((m) => (
         <Tooltip key={m} label={LAYOUT_LABEL[m]} shortcut={keysOf('project.view-mode')}>
           <button type="button" aria-pressed={mode === m} onClick={() => onChoose(m)} data-layout={m}
-            className={`${m === 'list' ? 'rounded-l-control' : m === 'calendar' ? 'rounded-r-control' : ''} touch-target flex items-center px-2 py-1 max-lg:px-1.5 ${mode === m ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
+            className={`${m === 'list' ? 'rounded-s-control' : m === 'calendar' ? 'rounded-e-control' : ''} touch-target flex items-center px-2 py-1 max-lg:px-1.5 ${mode === m ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
             {/* Below 1024 px the four layouts are icons (named by the hidden word and the tooltip), so the header fits at 768 px. */}
             <Icon name={LAYOUT_ICON[m]} className="hidden max-lg:inline-block" /><span className="max-lg:sr-only">{LAYOUT_LABEL[m]}</span>
           </button>
@@ -93,7 +93,7 @@ export function ListPageActions({ route, userRole, rowCount, selectMode, onSelec
         <Tooltip label={t('Process the Inbox one task at a time')} shortcut={keysOf('inbox.process')}>
           <Button variant="primary" size="sm" icon="inbox" onClick={() => navigate({ view: 'triage' })} data-triage-start aria-keyshortcuts="p">
             {/* A phone with a large text size keeps the icon, so the page title still fits beside it. */}
-            <span className="max-[21rem]:sr-only">{t('Process')}</span> <kbd className="ui-kbd ml-1 max-[21rem]:hidden" aria-hidden="true">P</kbd>
+            <span className="max-[21rem]:sr-only">{t('Process')}</span> <kbd className="ui-kbd ms-1 max-[21rem]:hidden" aria-hidden="true">P</kbd>
           </Button>
         </Tooltip>
       )}
@@ -208,7 +208,7 @@ export function PhoneMenuItems({ items }: { items: PhoneItem[] }) {
 /** The active duration filter as one chip with its clear control. */
 function DurationChip({ label, onClear }: { label: string; onClear: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-accent bg-accent-soft py-0.5 pl-2.5 pr-1 text-meta font-medium text-on-accent-soft" data-duration-active>
+    <span className="inline-flex items-center gap-1 rounded-full border border-accent bg-accent-soft py-0.5 ps-2.5 pe-1 text-meta font-medium text-on-accent-soft" data-duration-active>
       {label}
       <button type="button" className="touch-target flex h-5 w-5 items-center justify-center rounded-full hover:bg-accent/10" aria-label={t('Clear filter')} onClick={onClear} data-clear-duration>
         <Icon name="x" size="xs" />
@@ -399,8 +399,8 @@ export function CompleteParentPrompt({ parent, onAccept, onDismiss }: { parent: 
     <div role="status" className="fixed inset-x-0 z-40 flex justify-center px-4" style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, var(--safe-bottom)))' }}>
       <div className="flex flex-wrap items-center gap-3 rounded-control border border-default bg-surface px-4 py-2 text-body shadow-2">
         <span className="user-text min-w-0">{t.rich('All subtasks done. Complete <b>{title}</b> too?', { title: parent.title || t('Untitled'), b: (chunks) => <strong>{chunks}</strong> })}</span>
-        <button className="ui-btn ui-btn--primary ui-btn--sm text-meta" onClick={onAccept}>{t('Complete')} <Kbd k="Enter" only className="ml-1 border-on-accent/40 bg-accent-hover text-on-accent" /></button>
-        <button className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={onDismiss}>{t('Keep open')} <Kbd k="Esc" only className="ml-1" /></button>
+        <button className="ui-btn ui-btn--primary ui-btn--sm text-meta" onClick={onAccept}>{t('Complete')} <Kbd k="Enter" only className="ms-1 border-on-accent/40 bg-accent-hover text-on-accent" /></button>
+        <button className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={onDismiss}>{t('Keep open')} <Kbd k="Esc" only className="ms-1" /></button>
       </div>
     </div>
   )

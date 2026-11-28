@@ -21,6 +21,7 @@
     <string name="error_offline">Der Server ist nicht erreichbar, und OpenTodo wurde auf diesem Telefon noch nie geöffnet.</string>
     <string name="error_untrusted">Dieses Telefon vertraut dem Zertifikat des Servers nicht.</string>
     <string name="channel_reminders">Erinnerungen</string>
+    <string name="channel_urgent">Dringende Erinnerungen</string>
     <string name="reminder_generic">Erinnerung</string>
     <string name="reminder_text">Aufgabenerinnerung</string>
     <string name="action_snooze">10 Min. später</string>
@@ -50,6 +51,17 @@
     <string name="widget_completed_description">Wie viele Aufgaben du diese Woche erledigt hast</string>
     <string name="widget_completed_locked">Gesperrt: nur die Zahl von heute</string>
     <string name="widget_completed_days">Erledigt pro Tag: %1$s</string>
+    <string name="widget_upcoming">Demnächst</string>
+    <string name="widget_upcoming_description">Deine nächsten Aufgaben, nach Tag</string>
+    <string name="widget_upcoming_empty">Nichts geplant.</string>
+    <string name="widget_upcoming_locked">Gesperrt. Anstehende Aufgaben: %1$d</string>
+    <string name="widget_tomorrow">Morgen</string>
+    <string name="widget_calendar">Kalender</string>
+    <string name="widget_calendar_description">Der Monat, mit den Tagen, an denen Aufgaben anstehen</string>
+    <string name="widget_calendar_locked">Gesperrt</string>
+    <string name="widget_calendar_day">%1$s, Aufgaben: %2$d</string>
+    <string name="widget_previous_month">Vorheriger Monat</string>
+    <string name="widget_next_month">Nächster Monat</string>
     <string name="setup_old_webview">Das Android System WebView dieses Telefons ist alt (Version %1$s). Aktualisiere es im App-Store, damit OpenTodo vollständig funktioniert.</string>
     <string name="site_bar_host">Anmeldung bei %1$s</string>
     <string name="site_bar_close">Zurück zu OpenTodo</string>
@@ -58,6 +70,7 @@
     <string name="setup_sign_in">Hier anmelden</string>
     <string name="error_sign_in">Dein Server liegt hinter einer Anmeldeseite, und die Anmeldung ging in der App nicht weiter. Melde dich hier erneut an.</string>
     <string name="save_failed">Die Datei konnte nicht gespeichert werden.</string>
+    <string name="quick_add_failed">Die Aufgabe wurde nicht hinzugefügt. Tippe, um sie hinzuzufügen.</string>
     <string name="channel_focus">Fokus</string>
     <string name="channel_sync">Synchronisieren</string>
     <string name="focus_generic">Fokussitzung</string>

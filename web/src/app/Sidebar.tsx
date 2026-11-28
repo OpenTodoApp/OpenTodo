@@ -64,6 +64,8 @@ import { useShownSpace } from '../lib/sidebarSpace'
 import { SpaceSwitch } from './SpaceSwitch'
 import { useFeatures, type FeatureId } from '../lib/features'
 import { ROUTE_FEATURES } from './screens'
+import { inlineKey } from '../lib/direction'
+import { composing } from '../lib/composeKey'
 
 /** The Notes space's groups (notes-space D1), loaded when the space is first shown. */
 const NotesSidebar = lazy(() => import('./notes/NotesSidebar'))
@@ -96,7 +98,7 @@ const rowGap = (rows: readonly { depth: number }[], i: number) => (rows[i].depth
 function GuideLines({ levels }: { levels: number }) {
   return <>{Array.from({ length: levels }, (_, a) => (
     <span key={a} aria-hidden="true" data-guide-line={a} className="pointer-events-none absolute -bottom-0.5 top-0 w-px bg-(--ot-border)"
-      style={{ left: `calc(${a * INDENT_REM}rem + ${GUIDE_OFFSET_PX}px)` }} />
+      style={{ insetInlineStart: `calc(${a * INDENT_REM}rem + ${GUIDE_OFFSET_PX}px)` }} />
   ))}</>
 }
 
@@ -320,6 +322,7 @@ export function Sidebar({ route, user, onSearch, onAddTask, onShortcuts, onFeedb
     return sidebarFind.subscribe((id) => { if (id === 'open' && sidebarFind.take('open')) openFind() })
   }, [])
   const onFindKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (composing(e)) return
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeFind() }
     else if (e.key === 'Enter' && active) { e.preventDefault(); openMatch(active); closeFind(false) }
     else if (e.key === 'ArrowDown' && found) { e.preventDefault(); setActiveMatch((i) => Math.min(i + 1, found.order.length - 1)) }
@@ -397,11 +400,11 @@ export function Sidebar({ route, user, onSearch, onAddTask, onShortcuts, onFeedb
       act(moveProjectBy(n.id, e.shiftKey ? (up ? 'top' : 'bottom') : up ? -1 : 1))
       return
     }
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+    if (inlineKey(e) !== 'ArrowLeft' && inlineKey(e) !== 'ArrowRight') return
     e.preventDefault()
     e.stopPropagation()
     const has = n.children.length > 0
-    if (e.key === 'ArrowLeft') {
+    if (inlineKey(e) === 'ArrowLeft') {
       if (has && !collapsed_.has(n.id)) void toggleCollapsedProject(n.id, true)
       else focusRow(n.parent)
     } else if (has && collapsed_.has(n.id)) void toggleCollapsedProject(n.id, false)
@@ -508,13 +511,13 @@ export function Sidebar({ route, user, onSearch, onAddTask, onShortcuts, onFeedb
               <li data-drag-id="sidebar-project" key={n.id} role="treeitem" aria-level={n.depth + 1} aria-expanded={has ? !isCollapsed : undefined}
                 data-project-row={n.id} data-menu-row data-drop-target={`project:${n.id}`} data-task-drop={canEditTasks(roleOf(n.id, memberMap)) ? taskDrop.project(n.id) : undefined}
                 onPointerDown={!editing && movable(n.id) ? (e) => startDrag(e, n) : undefined}
-                className={`group relative flex items-center rounded-control ${countsAll ? 'ui-swap-row ' : ''}${movingProject ? '' : 'data-drop-active:ring-2 data-drop-active:ring-accent'} ${rowGap(shownRows, i)} ${drop === 'inside' ? feedback.inside : ''}`} style={{ paddingLeft: collapsed ? 0 : `${levels * INDENT_REM}rem` }}>
+                className={`group relative flex items-center rounded-control ${countsAll ? 'ui-swap-row ' : ''}${movingProject ? '' : 'data-drop-active:ring-2 data-drop-active:ring-accent'} ${rowGap(shownRows, i)} ${drop === 'inside' ? feedback.inside : ''}`} style={{ paddingInlineStart: collapsed ? 0 : `${levels * INDENT_REM}rem` }}>
                 <GuideLines levels={levels} />
                 {(drop === 'before' || drop === 'after') && (
                   // The task list's line with a dot, starting at the level the project lands on.
                   <span aria-hidden="true" data-drop-indicator={drop} data-drop-level={dropLevel(n, drop, isCollapsed, collapsed)}
                     className={`${feedback.line} ${drop === 'before' ? '-top-px' : '-bottom-px'}`}
-                    style={{ left: `${dropLevel(n, drop, isCollapsed, collapsed) * INDENT_REM + 0.25}rem` }} />
+                    style={{ insetInlineStart: `${dropLevel(n, drop, isCollapsed, collapsed) * INDENT_REM + 0.25}rem` }} />
                 )}
                 {!collapsed && (
                   // On touch the slot widens with its 44 px chevron, which then reaches at most 4 px under the destination (ux-fixes-phone, audit M11).
@@ -675,7 +678,7 @@ function NewProjectForm({ projects, parentId, onParent, onDone }: { projects: Pr
       <div className="flex items-center gap-1">
         <SidebarAppearance color={color} onColor={setColor} icon={icon} onIcon={setIcon} />
         <input ref={field} className="ui-input min-w-0 flex-1" placeholder={t('Project name')} value={name} onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Escape' && onDone()} />
+          onKeyDown={(e) => !composing(e) && e.key === 'Escape' && onDone()} />
       </div>
       <ProjectPickerField label={t('Parent project')} projects={projects} value={parentId || null} onChange={(id) => onParent(id ?? '')}
         rankContext="project.parent" inbox={false} noneLabel={t('Top level')} className="py-1 text-meta" />
@@ -835,7 +838,7 @@ function MoreMenu({ entries, active, collapsed, hints, extra }: {
       <Menu kind="menu" label={t('More')} namedByContent={!collapsed} title={t('More')} align="start" width="sm:w-64" triggerProps={{ 'aria-current': active ? 'true' : undefined }}
         triggerClassName={collapsed
           ? `flex min-h-8 w-full items-center justify-center rounded-control py-1 ${active ? 'bg-selected text-strong' : 'text-faint hover:bg-hover hover:text-default'}`
-          : `mt-2 flex min-h-6 w-full items-center gap-1 rounded-chip px-2 text-left ${SIDEBAR_HEADING} hover:text-muted focus-visible:text-muted ${active ? 'text-strong' : ''}`}
+          : `mt-2 flex min-h-6 w-full items-center gap-1 rounded-chip px-2 text-start ${SIDEBAR_HEADING} hover:text-muted focus-visible:text-muted ${active ? 'text-strong' : ''}`}
         trigger={collapsed ? <span aria-hidden="true"><Icon name="ellipsis" /></span> : <>
           <span aria-hidden="true"><Icon name="chevron-right" size="xs" /></span>
           <span className="min-w-0 flex-1 truncate">{t('More')}</span>

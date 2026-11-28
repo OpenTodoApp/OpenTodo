@@ -3,6 +3,7 @@
 // shell, asked through `platform` instead of browser globals. The web implementation
 // is the browser's and is installed by default; a test may install a fake (reset
 // before each test).
+import { directionOf } from './direction'
 import { resettable } from './moduleState'
 import type Dexie from 'dexie'
 import type { OpenTodoShell } from './shell'
@@ -45,7 +46,7 @@ export interface Platform {
   session: KeyValue
   /** The device's preferred languages, most preferred first. */
   languages(): readonly string[]
-  /** The interface language is now `code` (the page's language attribute on the web). */
+  /** The interface language is now `code` (the page's `lang` and `dir` attributes on the web, arabic-rtl D1). */
   showLanguage(code: string): void
   /** The host's IndexedDB, if it has one (the service worker's share inbox lives there on the web). */
   indexedDB(): IDBFactory | undefined
@@ -148,7 +149,9 @@ const web: Platform = {
     return navigator.languages?.length ? navigator.languages : [navigator.language || 'en']
   },
   showLanguage(code) {
-    if (typeof document !== 'undefined') document.documentElement.lang = code
+    if (typeof document === 'undefined') return
+    document.documentElement.lang = code
+    document.documentElement.dir = directionOf(code)
   },
   indexedDB: () => typeof indexedDB === 'undefined' ? undefined : indexedDB,
   async persistStorage() {

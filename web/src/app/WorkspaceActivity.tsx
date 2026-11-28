@@ -155,7 +155,7 @@ export default function WorkspaceActivity({ id }: { id: string }) {
                           <button type="button" className="text-default underline decoration-dotted" onClick={() => open(e)}>{task}</button>
                         </>
                       )}
-                      {isPending(e, pending) && <Tooltip label={t('Not yet synced')}><span className="ml-1 rounded-chip text-meta italic text-warning" tabIndex={0}>{t('(pending)')}</span></Tooltip>}
+                      {isPending(e, pending) && <Tooltip label={t('Not yet synced')}><span className="ms-1 rounded-chip text-meta italic text-warning" tabIndex={0}>{t('(pending)')}</span></Tooltip>}
                       <span className="mt-0.5 block truncate text-meta text-faint">{projectName(e.projectId, e.projectName)}</span>
                     </span>
                     <time className="shrink-0 text-meta text-faint" dateTime={new Date(e.ts).toISOString()}>{dt.formatInstant(e.ts, 'time')}</time>

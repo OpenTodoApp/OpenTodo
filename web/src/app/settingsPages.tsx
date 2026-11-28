@@ -17,6 +17,7 @@ import { AssistantsPanel } from './AssistantsPanel'
 import { AppearanceSection, SidebarSection, TaskDetailsSection } from './AppearanceSection'
 import { BackupsPanel } from './BackupsPanel'
 import { AddPositionSection, QuickAddSettingsSection } from './QuickAddSettings'
+import { QuickAddNotificationSection } from './QuickAddNotificationSettings'
 import { DefaultRemindersSection } from './DefaultRemindersSettings'
 import { RoutineRunsSection } from './routines/RoutineRunsSection'
 import { VoiceSettingsSection } from './VoiceSettings'
@@ -106,6 +107,7 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'language/language': () => <LanguageSection />,
   'language/date-time': () => <DateTimeSection />,
   'language/calendar': () => <CalendarSettingsSection />,
+  // The phone UI's switch sits with how the app looks; it shows only on a phone (phone-ui-trial D3).
   'appearance/theme': ({ user }) => <AppearanceSection author={user.name || user.email} />,
   'appearance/sidebar': () => <SidebarSection />,
   'appearance/task-details': () => <TaskDetailsSection />,
@@ -114,7 +116,8 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'notifications/push': ({ demo }) => <><DemoDisabled on={demo}><NotificationsSettings /></DemoDisabled><Suspense fallback={null}><LocationRemindersSection /></Suspense><AppBadgeSection /><RoutineRunsSection /></>,
   'notifications/channels': ({ user, demo }) => <DemoDisabled on={demo}><NotificationChannelsCard isOwner={user.role === 'owner'} /></DemoDisabled>,
   'notifications/digest': ({ demo }) => <DemoDisabled on={demo}><DigestCard /></DemoDisabled>,
-  'capture/quick-add': () => <><QuickAddSettingsSection /><AddPositionSection /></>,
+  // The Android app's quick-add notification (android-quick-add-notification): only where the shell offers it.
+  'capture/quick-add': () => <><QuickAddSettingsSection /><AddPositionSection /><QuickAddNotificationSection /></>,
   'capture/voice': () => <VoiceSettingsSection />,
   'capture/browser': () => <CaptureSection />,
   'capture/email': ({ demo }) => <DemoDisabled on={demo}><EmailInboxPanel /></DemoDisabled>,

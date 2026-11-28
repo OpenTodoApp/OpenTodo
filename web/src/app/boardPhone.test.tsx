@@ -71,6 +71,85 @@ describe('below 640 px', () => {
   })
 })
 
+describe('a held card can scroll the board (phone-board D1)', () => {
+  it('the board and its columns ask for edge scrolling', async () => {
+    const r = await board()
+    await flush()
+    expect(document.querySelector('[data-board]')!.getAttribute('data-edge-scroll')).toBe('x')
+    const lists = [...document.querySelectorAll('[data-column] > ul')]
+    expect(lists).toHaveLength(3)
+    for (const ul of lists) expect(ul.getAttribute('data-edge-scroll')).toBe('y')
+    await r.unmount()
+  })
+})
+
+describe('a board opens at its first column (phone-board D4)', () => {
+  const none: BoardColumn = { key: '', section: null, cards: [task('z', '')] }
+  const view = (cols: BoardColumn[]) => (
+    <BoardView project={project} columns={cols} editable addingTo={null} setAddingTo={() => {}} projects={[project]} labels={[]}
+      renderCard={(t) => <li key={t.id} data-task-id={t.id}>{t.title}</li>} />
+  )
+  /** The row's scroll position as a value the test and the board both read and write. */
+  function position(): { left: number; el: HTMLElement } {
+    const el = document.querySelector<HTMLElement>('[data-board]')!
+    const pos = { left: 0, el }
+    Object.defineProperty(el, 'scrollLeft', { get: () => pos.left, set: (v: number) => { pos.left = v }, configurable: true })
+    return pos
+  }
+
+  it('a first column that arrives late is shown', async () => {
+    const r = await render(view(columns))
+    await flush()
+    const pos = position()
+    // "No section" is put in front, and the browser keeps the row snapped to "Plan", now the second column.
+    pos.left = 371
+    await r.rerender(view([none, ...columns]))
+    expect(pos.left).toBe(0)
+    pos.el.dispatchEvent(new Event('scroll'))
+    await flush()
+    expect(document.querySelector('[data-board-dot="current"]')!.getAttribute('aria-label')).toBe('No section, column 1 of 4')
+    await r.unmount()
+  })
+
+  it('a board the person moved stays where it is: after a press, a wheel or a pager dot', async () => {
+    for (const touch of [
+      (el: HTMLElement) => { el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' })) },
+      (el: HTMLElement) => { el.dispatchEvent(new WheelEvent('wheel', { bubbles: true })) },
+      () => click(document.querySelectorAll<HTMLButtonElement>('[data-board-dot]')[1]),
+    ]) {
+      const r = await render(view(columns))
+      await flush()
+      const pos = position()
+      for (const c of document.querySelectorAll<HTMLElement>('[data-column]')) c.scrollIntoView = () => {}
+      await touch(pos.el)
+      pos.left = 371
+      await r.rerender(view([none, ...columns]))
+      expect(pos.left).toBe(371)
+      await r.unmount()
+    }
+  })
+
+  it('other changes to the columns leave the board alone, and so does a board from 640 px', async () => {
+    const r = await render(view(columns))
+    await flush()
+    const pos = position()
+    pos.left = 371
+    // A column added at the end: the first column is the same.
+    await r.rerender(view([...columns, { key: 's4', section: section('s4', 'Later', 3), cards: [] }]))
+    expect(pos.left).toBe(371)
+    await r.unmount()
+    width = 1024
+    const wide = await render(view(columns))
+    await flush()
+    const at = position()
+    at.left = 300
+    await wide.rerender(view([none, ...columns]))
+    expect(at.left).toBe(300)
+    await wide.unmount()
+    width = 390
+  })
+})
+
 describe('a folded column on a phone (board-polish D9)', () => {
   const withFolded: BoardColumn[] = [
     { key: 's1', section: section('s1', 'Backlog', 0), cards: [task('a', 's1')] },

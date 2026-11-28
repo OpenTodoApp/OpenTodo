@@ -11,6 +11,7 @@ import { type CSSProperties, Fragment, useEffect, useId, useLayoutEffect, useRef
 import { useScrollEdges } from './patterns/Sidebar'
 import { Icon, type IconName } from './Icon'
 import { Tooltip } from './Tooltip'
+import { inlineKey } from '../lib/direction'
 
 export interface TabItem {
   id: string
@@ -74,8 +75,8 @@ export function Tabs({ tabs, value, onChange, label, children, rowClassName = ''
   const refs = useRef<Record<string, HTMLButtonElement | null>>({})
   const move = (e: KeyboardEvent) => {
     const i = tabs.findIndex((t) => t.id === value)
-    const next = e.key === 'ArrowRight' ? (i + 1) % tabs.length
-      : e.key === 'ArrowLeft' ? (i - 1 + tabs.length) % tabs.length
+    const next = inlineKey(e) === 'ArrowRight' ? (i + 1) % tabs.length
+      : inlineKey(e) === 'ArrowLeft' ? (i - 1 + tabs.length) % tabs.length
       : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : -1
     if (next < 0) return
     e.preventDefault()
@@ -136,7 +137,7 @@ export function Tabs({ tabs, value, onChange, label, children, rowClassName = ''
           return (
             <Fragment key={t.id}>
             {startsGroup && (
-              <span aria-hidden="true" ref={(el) => { groupRefs.current[t.group!] = el }} data-tab-group={t.group} className={`flex shrink-0 items-center whitespace-nowrap text-hint font-semibold uppercase tracking-wide text-faint ${i > 0 ? 'ml-1 border-l border-default pl-2 sm:ml-2 sm:pl-3' : ''}`}><span className="hidden pr-1 sm:inline">{t.group}</span></span>
+              <span aria-hidden="true" ref={(el) => { groupRefs.current[t.group!] = el }} data-tab-group={t.group} className={`flex shrink-0 items-center whitespace-nowrap text-hint font-semibold uppercase tracking-wide text-faint ${i > 0 ? 'ms-1 border-s border-default ps-2 sm:ms-2 sm:ps-3' : ''}`}><span className="hidden pe-1 sm:inline">{t.group}</span></span>
             )}
             {withTip(fit && level > 0 ? t.name : undefined, <button
               ref={(el) => { refs.current[t.id] = el }}

@@ -8,7 +8,7 @@ import type { Label, Project, Task, User, View } from '../../lib/types'
 import { Partition, type WorkspaceState } from '../../lib/workspaces'
 import { prepareCached } from '../../ui'
 import { workspaceLabel } from '../workspaceNav'
-import { secondaryOf, type Entry } from './entries'
+import { labelOf, secondaryOf, type Entry } from './entries'
 import { buildEntries, type IndexSource } from './index'
 
 /** The workspace a task or project lives in when it is not the current one (workspaces); undefined with one workspace. */
@@ -37,5 +37,5 @@ export function usePaletteEntities(user: User | null, today: string, projects: P
 
 /** Folds an entry's text as the bar's combobox does (label; secondary text and keywords), into the shared cache. */
 export function prepareEntry(e: Entry): void {
-  prepareCached(e.label, [secondaryOf(e, false), e.keywords].filter(Boolean).join(' '))
+  prepareCached(labelOf(e), [secondaryOf(e, false), e.keywords].filter(Boolean).join(' '))
 }

@@ -52,6 +52,32 @@ func (r *cycle) mine(t calfeed.FeedTask) bool {
 	return r.targetOf == nil || r.targetOf(t) == r.c.calendarKey(r.target)
 }
 
+// zone is the time zone of this cycle's calendar, or else of the target
+// calendar; nil when neither names one.
+func (r *cycle) zone() *time.Location {
+	for _, u := range []string{r.target, r.c.TargetURL} {
+		for _, cal := range r.c.Calendars {
+			if cal.TimeZone == "" || r.c.calendarKey(cal.URL) != r.c.calendarKey(u) {
+				continue
+			}
+			if loc, err := zoned.Load(cal.TimeZone); err == nil {
+				return loc
+			}
+		}
+	}
+	return nil
+}
+
+// writeZone is the zone a floating timed task's event is written in: the
+// calendar's, so that every calendar app shows its wall time (GitHub issue
+// 2084); "" writes it floating. Graph writes it in the mailbox zone itself.
+func (r *cycle) writeZone() string {
+	if r.calZone == nil || r.c.Provider == ProviderMicrosoft {
+		return ""
+	}
+	return r.calZone.String()
+}
+
 // run pulls, pushes and refreshes the shown calendars.
 func (r *cycle) run(ctx context.Context) error {
 	var err error
@@ -61,11 +87,7 @@ func (r *cycle) run(ctx context.Context) error {
 	if r.encrypted, err = r.w.encrypted(ctx, r.c.UserID); err != nil {
 		return err
 	}
-	if cal := r.c.Calendar(r.c.TargetURL); cal != nil && cal.TimeZone != "" {
-		if loc, lerr := zoned.Load(cal.TimeZone); lerr == nil {
-			r.calZone = loc
-		}
-	}
+	r.calZone = r.zone()
 	if err := r.loadTasks(ctx); err != nil {
 		return err
 	}
@@ -290,7 +312,7 @@ func (r *cycle) push(ctx context.Context) error {
 		t := r.tasks[id]
 		want := TaskSnapshot(t, r.encrypted)
 		link := r.links[id]
-		if link != nil && link.Snapshot == want && link.Body == BodyHash(t, r.encrypted, r.w.BaseURL) && r.inPlace(link) {
+		if link != nil && link.Snapshot == want && link.Body == BodyHash(t, r.encrypted, r.w.BaseURL, r.writeZone()) && r.inPlace(link) {
 			continue
 		}
 		if r.writes >= MaxWritesPerRun {
@@ -324,7 +346,7 @@ func (r *cycle) push(ctx context.Context) error {
 
 // write creates or replaces one task's event.
 func (r *cycle) write(ctx context.Context, t calfeed.FeedTask, want Snapshot, link *Link) error {
-	opts := calfeed.FeedOptions{Now: r.w.clock(), BaseURL: r.w.BaseURL, Encrypted: r.encrypted}
+	opts := calfeed.FeedOptions{Now: r.w.clock(), BaseURL: r.w.BaseURL, Encrypted: r.encrypted, FloatingZone: r.writeZone()}
 	var status int
 	var href, etag string
 	var err error
@@ -371,7 +393,7 @@ func (r *cycle) write(ctx context.Context, t calfeed.FeedTask, want Snapshot, li
 		return statusError(status)
 	}
 	r.counts.Written++
-	nl := &Link{TaskID: t.ID, Href: href, ETag: etag, Snapshot: want, Body: BodyHash(t, r.encrypted, r.w.BaseURL)}
+	nl := &Link{TaskID: t.ID, Href: href, ETag: etag, Snapshot: want, Body: BodyHash(t, r.encrypted, r.w.BaseURL, r.writeZone())}
 	if r.c.calendarKey(r.target) != r.c.calendarKey(r.c.TargetURL) {
 		nl.Calendar = r.c.calendarKey(r.target)
 	}

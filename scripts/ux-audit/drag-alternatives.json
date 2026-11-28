@@ -19,6 +19,15 @@
    { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" },
    { "file": "web/src/app/bulk/BulkActions.tsx", "item": "pick-date" }
   ] },
+  { "id": "phone-row", "what": "A row of the phone UI's Today (phone-ui-trial): on touch, swipe right to complete or reopen, swipe left to open the date sheet.", "alternatives": [
+   { "file": "web/src/phone/components/PhoneRow.tsx", "contains": "data-phone-check" },
+   { "file": "web/src/phone/screens/PhoneTaskPage.tsx", "contains": "<TaskDateSheet task={task}" }
+  ] },
+  { "id": "triage-card", "what": "The card of Process the Inbox below 768 px (phone-triage): on touch, swipe right to complete, swipe left to open the scheduling sheet.", "alternatives": [
+   { "file": "web/src/app/TriageBar.tsx", "contains": "data-decision={d.key}" },
+   { "file": "web/src/app/TriageView.tsx", "contains": "{ key: 'complete', hint: 'c'" },
+   { "file": "web/src/app/TriageView.tsx", "contains": "{ key: 'schedule', hint: 's'" }
+  ] },
   { "id": "calendar-block", "what": "A timed block in Day and Week: move it, or resize its start or end.", "alternatives": [
    { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" },
    { "file": "web/src/app/EstimateField.tsx", "contains": "aria-label={t('Estimate')}" }
@@ -116,7 +125,9 @@
   { "file": "web/src/app/shortcuts/Spotlight.tsx", "contains": "if (e.target === e.currentTarget) { e.preventDefault(); cancel() }", "reason": "A press on the spotlight's backdrop closes it; nothing is dragged." },
   { "file": "web/src/app/habits/HabitRow.tsx", "contains": "{down}", "reason": "A long press on a habit's check button logs the tiny version; nothing moves, and the button's menu and Shift+Space do the same with one tap or key (habits-home)." },
   { "file": "web/src/app/Sidebar.tsx", "contains": "{holdForRowMenu}", "reason": "A touch hold on a sidebar row opens the row's menu; nothing moves, and the row's menu button (shown on keyboard focus and with a mouse) opens the same menu with one press (touch-sidebar-names)." },
+  { "file": "web/src/phone/screens/PhoneHabits.tsx", "contains": "{(e) => holdForRow(e, undefined, () => setMenu(true))}", "reason": "A touch hold on a habit's phone row opens the row's menu; nothing moves, and the row's menu button (for a keyboard or a screen reader) and the ring do the same with one press (habits-complete D1)." },
   { "file": "web/src/ui/Switch.tsx", "contains": "{press.down}", "reason": "It only notes whether the press is a touch, so a switch flipped by a finger plays the selection haptic; nothing moves (haptic-kinds D2)." },
-  { "file": "web/src/ui/SegmentedControl.tsx", "contains": "{press.down}", "reason": "It only notes whether the press is a touch, so a segment chosen by a finger plays the selection haptic; nothing moves (haptic-kinds D2)." }
+  { "file": "web/src/ui/SegmentedControl.tsx", "contains": "{press.down}", "reason": "It only notes whether the press is a touch, so a segment chosen by a finger plays the selection haptic; nothing moves (haptic-kinds D2)." },
+  { "file": "web/src/app/BoardView.tsx", "contains": "{touched}", "reason": "It only notes that the person pressed the board, so the board is no longer put back at its first column; nothing moves (phone-board D4)." }
  ]
 }

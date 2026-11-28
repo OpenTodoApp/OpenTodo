@@ -40,6 +40,15 @@ class WidgetColorTest {
         }
     }
 
+    /** android-upcoming-calendar-widgets D4: the calendar's ring and dots stand out from the background (non-text, 3:1). */
+    @Test fun calendarMarksVisibleInBothModes() {
+        for ((dir, under) in listOf("values" to 0.0, "values-night" to 1.0)) {
+            val c = colors(dir)
+            val ratio = contrast(c.getValue("widget_accent"), c.getValue("widget_background"), under)
+            assertTrue("$dir widget_accent contrast $ratio", ratio >= 3.0)
+        }
+    }
+
     /** android-widget-list D1: a row's colours are in its layout, so the launcher resolves them for the theme. */
     @Test fun rowsUseTheDayNightWidgetColours() {
         val row = File(res, "layout/widget_today_row.xml").readText()
@@ -48,12 +57,14 @@ class WidgetColorTest {
         assertTrue(row.contains("android:textColor=\"@color/widget_muted\""))
         assertTrue(File(res, "drawable/widget_circle.xml").readText().contains("@color/widget_muted"))
         // No colour is set from code: it would bake in the theme of the moment it was drawn (#966).
-        val code = File("src/main/java/app/opentodo/Widgets.kt").readText()
-        assertNull(Regex("""setTextColor|setColorStateList|getColor\(""").find(code))
+        for (file in listOf("Widgets.kt", "CalendarWidget.kt")) {
+            val code = File("src/main/java/app/opentodo/$file").readText()
+            assertNull(file, Regex("""setTextColor|setColorStateList|getColor\(|setInt\(""").find(code))
+        }
     }
 
     @Test fun widgetTextNeverHardCoded() {
-        for (name in listOf("widget_today.xml", "widget_today_row.xml", "widget_today_heading.xml", "widget_quick_add.xml")) {
+        for (name in listOf("widget_today.xml", "widget_today_row.xml", "widget_today_heading.xml", "widget_quick_add.xml", "widget_upcoming.xml", "widget_calendar.xml", "widget_calendar_day.xml", "widget_calendar_other.xml", "widget_calendar_today.xml")) {
             val layout = File(res, "layout/$name").readText()
             assertTrue(name, Regex("""textColor="(?!@color/widget_|@color/overdue")""").find(layout) == null)
         }

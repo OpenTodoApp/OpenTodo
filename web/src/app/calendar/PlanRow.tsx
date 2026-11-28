@@ -3,6 +3,7 @@
 // compact shape (rows-v2 D8: time, title, estimate and priority ring; the column says
 // the day). Projected rows are dimmed, read-only and never selected; event rows are
 // read-only buttons that open their details.
+import { use } from 'react'
 import type { EventBlock } from '../../lib/calendar'
 import { formatDate, formatTime } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
@@ -15,6 +16,7 @@ import { cappedNote, dayDrag, openProjection, useProjectionMenu } from './projec
 import { DeadlineMarker } from './DeadlineMarker'
 import { EventChip, EventRow } from '../CalendarEvents'
 import { TaskRow } from '../TaskRow'
+import { CalendarRowDrawContext } from '../task-list/rowDraw'
 
 /** One day of the Plan: its rows, its events and its load. */
 export interface PlanDayData {
@@ -64,8 +66,8 @@ export function ProjectedRow({ projection, large, position }: { projection: Proj
   const { handlers, menu } = useProjectionMenu(projection, dayDrag(projection))
   const row = (
     <button type="button" data-plan-projected={projection.id} onClick={() => openProjection(projection)} aria-haspopup="menu" aria-keyshortcuts="Shift+F10" {...handlers}
-      className={`flex w-full min-w-0 items-center gap-x-1 rounded-chip border border-dashed border-default px-1 text-left text-faint pointer-fine:hover:bg-hover ${large ? 'title-phone-row min-h-11 py-1 text-body' : 'min-h-6 flex-wrap py-0.5 text-meta'}`}>
-      <span className="sr-only">{[projection.title || t('Untitled'), t('projected'), formatDate(projection.date, 'full'), projection.time ? formatTime(projection.time) : '', projection.estimate_minutes ? formatMinutes(projection.estimate_minutes) : ''].filter(Boolean).join(', ')}</span>
+      className={`flex w-full min-w-0 items-center gap-x-1 rounded-chip border border-dashed border-default px-1 text-start text-faint pointer-fine:hover:bg-hover ${large ? 'title-phone-row min-h-11 py-1 text-body' : 'min-h-6 flex-wrap py-0.5 text-meta'}`}>
+      <span className="sr-only">{[projection.title || t('Untitled'), t('projected'), formatDate(projection.date, 'full'), projection.time ? formatTime(projection.time) : '', projection.estimate_minutes ? formatMinutes(projection.estimate_minutes) : '', note].filter(Boolean).join(', ')}</span>
       <span aria-hidden className="inline-flex shrink-0"><Icon name="repeat" size="xs" /></span>
       {projection.time && !position && <span aria-hidden className="shrink-0 tabular-nums">{formatTime(projection.time)}</span>}
       {position && <span aria-hidden data-span-position className="shrink-0 text-hint tabular-nums">{t('Day {n} of {m}', { n: position.n, m: position.of })}</span>}
@@ -114,6 +116,23 @@ export function PlanDayRows({ day, today, selectedId, large, canEdit, projectMap
   onSelect: (id: string, date: string) => void
   onOpen: (id: string) => void
 }) {
+  // The phone's agenda with the phone screens (phone-calendar): the day's tasks are phone rows in one card, the rest as it is.
+  const draw = use(CalendarRowDrawContext)
+  if (large && draw) return (
+    <div className="space-y-0.5">
+      {day.allDay.map((ev) => <EventChip key={ev.id} ev={ev} sub={subMap.get(ev.subscriptionId)} zone={zone} />)}
+      {day.events.map((b) => <EventRow key={b.id} ev={b.event} start={b.start} end={b.end} sub={subMap.get(b.event.subscriptionId)} zone={zone} />)}
+      <ul data-phone-rows>
+        {day.entries.map((entry) => entry.kind === 'projected'
+          ? <li key={entry.projection.id}><ProjectedRow projection={entry.projection} large position={entry.spanDay} /></li>
+          : draw({ task: entry.task, date: day.date, today, time: entry.time ? formatTime(entry.time) : null, readOnly: !canEdit(entry.task),
+            note: entry.spanDay ? t('Day {n} of {m}', { n: entry.spanDay.n, m: entry.spanDay.of }) : undefined }))}
+      </ul>
+      {day.deadlines?.map((task) => (
+        <div key={`deadline:${task.id}`} className="flex min-h-11 items-center"><DeadlineMarker task={task} date={day.date} today={today} variant="row" onOpen={onOpen} /></div>
+      ))}
+    </div>
+  )
   return (
     <div className="space-y-0.5">
       {day.allDay.map((ev) => <EventChip key={ev.id} ev={ev} sub={subMap.get(ev.subscriptionId)} zone={zone} />)}

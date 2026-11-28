@@ -7,8 +7,10 @@
 // it with plain frames and synthetic events.
 import { type Chord, chordKey, chordsOf, matchesChord, physicalShortcutKey, SEQUENCE_STEPS, SHORTCUTS, type Shortcut, type ShortcutScope } from '../../lib/shortcuts'
 import { resettable } from '../../lib/moduleState'
+import { inlineKey } from '../../lib/direction'
 import { createSignal } from '../../lib/store'
 import { isCharacterKey, singleKeysOn } from './singleKeys'
+import { composing } from '../../lib/composeKey'
 
 export type ShortcutHandler = (e: KeyboardEvent, s: Shortcut, chord: Chord) => boolean | void
 
@@ -236,7 +238,7 @@ function resolve(e: KeyboardEvent, key: string, active: ScopeFrame[], pend: Chor
 
 /** Resolves one key press; returns whether a shortcut ran (or a prefix was armed). */
 export function dispatch(e: KeyboardEvent): boolean {
-  if (MODIFIERS.has(e.key) || e.isComposing) return false
+  if (MODIFIERS.has(e.key) || composing(e)) return false
   // A control that already handled the key (a routine editor's own Ctrl+Z, an editor's
   // keymap) calls preventDefault; the dispatcher then stands back so one press is one action.
   if (e.defaultPrevented) return false
@@ -249,7 +251,7 @@ export function dispatch(e: KeyboardEvent): boolean {
     if (!frame.capture || !frame.any || !focusInside(frame)) continue
     if (frame.any(e) === true) { clearPrefix(); return true }
   }
-  if (resolve(e, e.key, active, pend, typing, dialog)) return true
+  if (resolve(e, inlineKey(e), active, pend, typing, dialog)) return true
   const fallback = physicalShortcutKey(e)
   if (fallback && resolve(e, fallback, active, pend, typing, dialog)) return true
   if (!pend.length) return false
@@ -299,7 +301,18 @@ function stepOf(seq: Chord[]): Shortcut | undefined {
 
 let installed = 0
 let lastKey = -Infinity
-const onWindowKey = (e: KeyboardEvent) => { lastKey = performance.now(); dispatch(e) }
+const keyWatchers = new Set<(e: KeyboardEvent) => void>()
+const onWindowKey = (e: KeyboardEvent) => {
+  lastKey = performance.now()
+  for (const fn of keyWatchers) fn(e)
+  dispatch(e)
+}
+
+/** Calls `fn` on every key the dispatcher sees, before it dispatches (a key that acknowledges something, never a shortcut); returns the unsubscribe. */
+export function watchKeys(fn: (e: KeyboardEvent) => void): () => void {
+  keyWatchers.add(fn)
+  return () => { keyWatchers.delete(fn) }
+}
 
 /** When the last key went down (performance.now): a page change made from the keyboard happens at once (page-transitions). */
 export function lastKeyAt(): number {

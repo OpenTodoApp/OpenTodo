@@ -12,6 +12,8 @@ import { Icon, isIconName } from './Icon'
 import { CATALOGUE_NAMES } from './icons/catalogue.names'
 import { categoryLabel, iconTitle, loadCatalogue, searchIcons, type CatalogueEntry, type IconCategory, type LoadedCatalogue, ICON_CATEGORIES, catalogueIfLoaded } from './icons/catalogue'
 import { t } from '../lib/i18n'
+import { inlineKey } from '../lib/direction'
+import { composing } from '../lib/composeKey'
 
 /** The columns of the grid with a mouse. */
 const COLS = 8
@@ -143,6 +145,7 @@ export function IconPicker({ value, onPick, onClose, color, noneMark, label = t(
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (composing(e)) return
     const keys: Record<string, () => void> = {
       ArrowRight: () => move(0, 1), ArrowLeft: () => move(0, -1),
       ArrowDown: () => move(1, 0), ArrowUp: () => move(-1, 0),
@@ -151,9 +154,9 @@ export function IconPicker({ value, onPick, onClose, color, noneMark, label = t(
     }
     // Home and End move the text caret while there is a query.
     const caretKey = (e.key === 'Home' || e.key === 'End') && query !== ''
-    if (keys[e.key] && !caretKey) {
+    if (keys[inlineKey(e)] && !caretKey) {
       e.preventDefault()
-      keys[e.key]()
+      keys[inlineKey(e)]()
     } else if (e.key === 'Escape' && onClose) {
       e.preventDefault()
       e.stopPropagation()
@@ -180,12 +183,12 @@ export function IconPicker({ value, onPick, onClose, color, noneMark, label = t(
   return (
     <div ref={root} className="space-y-1 in-data-[overlay=sheet]:px-2" data-icon-picker>
       <div className="relative">
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint"><Icon name="search" /></span>
+        <span className="pointer-events-none absolute inset-s-3 top-1/2 -translate-y-1/2 text-faint"><Icon name="search" /></span>
         <input role="combobox" aria-label={label} aria-expanded aria-controls={listboxId} aria-autocomplete="list"
           aria-activedescendant={cells.some((c) => c.key === active) ? optionId(active) : undefined}
           value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={onKeyDown}
           placeholder={t('Search icons')} autoComplete="off" spellCheck={false} {...pickerField()}
-          className="ui-input pl-9" />
+          className="ui-input ps-9" />
         <span role="status" aria-live="polite" className="sr-only">
           {query.trim() ? (count ? t('{n, plural, one {# result available} other {# results available}}', { n: count }) : t('No matches')) : ''}
         </span>

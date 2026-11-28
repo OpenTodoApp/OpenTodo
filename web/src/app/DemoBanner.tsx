@@ -25,7 +25,7 @@ export function DemoBanner({ notice }: { notice?: string }) {
   )
   return (
     <div role="status" data-testid="demo-banner" data-demo-limited={notice ? '' : undefined}
-      className={`flex min-h-0 items-center gap-1 whitespace-nowrap border-b py-0.5 pl-3 pr-1 text-meta sm:pl-4 sm:text-body ${notice ? 'border-warning bg-warning-soft text-on-warning-soft' : 'border-info bg-info-soft text-on-info-soft'}`}>
+      className={`flex min-h-0 items-center gap-1 whitespace-nowrap border-b py-0.5 ps-3 pe-1 text-meta sm:ps-4 sm:text-body ${notice ? 'border-warning bg-warning-soft text-on-warning-soft' : 'border-info bg-info-soft text-on-info-soft'}`}>
       {notice ? (
         <p className="min-w-0 flex-1 truncate font-medium" data-testid="demo-limit">{notice}</p>
       ) : (

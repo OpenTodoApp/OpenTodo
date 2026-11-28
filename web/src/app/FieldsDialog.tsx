@@ -1,49 +1,141 @@
 // The "Fields…" dialog of a project (OpenSpec custom-fields, "Managing
-// definitions"): list, add, rename, edit options, reorder (drag or Alt+↑/↓) and
-// delete the project's field definitions. Every action is an ordinary op through
-// lib/fields.ts, so it works offline and converges; every action is reachable
-// with the keyboard. Offered to editors and above only (the project menu hides it
-// from viewers).
+// definitions") or of a workspace the user owns (workspace-fields): list, add,
+// rename, edit options, reorder (drag or Alt+↑/↓) and delete the field
+// definitions. Every action is an ordinary op through lib/fields.ts, so it works
+// offline and converges; every action is reachable with the keyboard. Offered to
+// editors and above only (the project menu hides it from viewers) and, for a
+// workspace, to its owner.
 import { useMemo, useRef, useState, type DragEvent, type FormEvent, type KeyboardEvent } from 'react'
-import { useMembership, useProjectFieldRows, useProjects, useTaskRowsOfProjects } from '../lib/localData'
+import { useMembership, useProjectFieldRows, useProjects, useProjectsOfEveryWorkspace, useTaskRowsOfProjects, useWorkspaceMembers, useWorkspaceState } from '../lib/localData'
 import {
-  countValues, createField, deleteField, FIELD_TYPES, FieldError, fieldDescendants, liveFields, MAX_FIELDS, parseOptions, renameField, reorderField, setFieldOptions,
+  countValues, createField, createWorkspaceField, FIELD_TYPES, FieldError, fieldDescendants, fieldWorkspace, isWorkspaceField, liveFields, MAX_FIELDS, parseOptions,
+  renameField, reorderField, setFieldOptions, workspaceFields,
 } from '../lib/fields'
-import { useApplicableFields } from './useFields'
-import type { FieldDef, FieldType, Project, Task } from '../lib/types'
+import { deleteFieldUndoable } from '../lib/undoActions'
+import { withUndoToast } from './undoable'
+import { useApplicableFields, useFieldDefs, useFieldPlacement } from './useFields'
+import type { FieldDef, FieldType, Project, Task, Workspace } from '../lib/types'
 import { Button, ConfirmDialog, Field, Icon, IconButton, Input, Select, Textarea, Dialog } from '../ui'
 import { HelpLink } from './help/HelpLink'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
 import { messageOf } from '../lib/errorText'
+import { workspaceLabel } from './workspaceNav'
+import { composing } from '../lib/composeKey'
 
 const typeLabel = (item: string) => FIELD_TYPES.find((x) => x.type === item)?.label ?? item
 
-export function FieldsDialog({ project, onClose }: { project: Project; onClose: () => void }) {
+type FieldInput = { name: string; type: FieldType; options?: string }
+
+/** The dialog of a project (its own fields, after the workspace's and the inherited ones) or of a workspace. */
+export function FieldsDialog(props: { project: Project; onClose: () => void } | { workspace: Workspace; onClose: () => void }) {
+  return 'workspace' in props ? <WorkspaceFieldsDialog workspace={props.workspace} onClose={props.onClose} /> : <ProjectFieldsDialog project={props.project} onClose={props.onClose} />
+}
+
+function ProjectFieldsDialog({ project, onClose }: { project: Project; onClose: () => void }) {
   const defs = useProjectFieldRows(project.id)
   const live = useMemo(() => liveFields(project.id, defs), [project.id, defs])
-  // Inherited fields (inherited-custom-fields): the ancestors' fields, read-only here,
-  // and the tasks of every sub-project, which hold values of this project's fields too.
+  // Inherited fields (inherited-custom-fields) and the workspace's (workspace-fields):
+  // read-only here, and the tasks of every sub-project, which hold values of this project's fields too.
   const projects = useProjects()
+  const place = useFieldPlacement()
+  const workspaces = useWorkspaceState().list
   const applicable = useApplicableFields()(project.id)
   const inherited = useMemo(() => applicable.filter((d) => d.project_id !== project.id), [applicable, project.id])
+  const groupOf = useMemo(() => (d: FieldDef) => (isWorkspaceField(d) ? `workspace:${fieldWorkspace(d, place)}` : d.project_id), [place])
   const groups = useMemo(() => {
-    const out: { projectId: string; name: string; defs: FieldDef[] }[] = []
+    const out: { key: string; name: string; workspace: boolean; defs: FieldDef[] }[] = []
     for (const d of inherited) {
+      const key = groupOf(d)
       const last = out[out.length - 1]
-      if (last?.projectId === d.project_id) last.defs.push(d)
-      else out.push({ projectId: d.project_id, name: projects.find((p) => p.id === d.project_id)?.name ?? '', defs: [d] })
+      if (last?.key === key) {
+        last.defs.push(d)
+        continue
+      }
+      const ws = isWorkspaceField(d) ? workspaces.find((w) => w.id === fieldWorkspace(d, place)) : undefined
+      out.push({
+        key, workspace: isWorkspaceField(d), defs: [d],
+        name: isWorkspaceField(d) ? (ws ? workspaceLabel(ws.name, ws.default) : '') : projects.find((p) => p.id === d.project_id)?.name ?? '',
+      })
     }
     return out
-  }, [inherited, projects])
+  }, [inherited, projects, workspaces, place, groupOf])
   const subtree = useMemo(() => [project.id, ...fieldDescendants(project.id, projects)], [project.id, projects])
   const tasks = useTaskRowsOfProjects(subtree)
   const shared = !!useMembership(project.id)
   const clashOf = (d: FieldDef) => {
     const key = d.name.trim().toLocaleLowerCase()
     const other = inherited.find((i) => i.name.trim().toLocaleLowerCase() === key)
-    return other ? groups.find((g) => g.projectId === other.project_id)?.name ?? '' : null
+    return other ? groups.find((g) => g.key === groupOf(other))?.name ?? '' : null
   }
+  const fromProject = groups.some((g) => !g.workspace)
+  const fromWorkspace = groups.some((g) => g.workspace)
+  return (
+    <Dialog title={t('Fields of {name}', { name: project.name })} onClose={onClose} size="md" testId="fields-dialog">
+      <div className="space-y-4">
+        <p className="text-meta text-muted">
+          {t('Typed values every task of this project can hold, shown in the task panel, on cards and in the columns layout, and usable in filters. At most {max} fields.', { max: MAX_FIELDS })}{' '}<HelpLink screen="project-fields" topic={t('Custom fields')} />
+        </p>
+        {groups.map((g) => (
+          <section key={g.key} className="space-y-1.5" aria-label={t('From {name}', { name: g.name })} data-inherited-fields={g.key}>
+            <h3 className="text-meta font-semibold text-muted">{t('From {name}', { name: g.name })}</h3>
+            <ul className="divide-y divide-default rounded-card border border-default">
+              {g.defs.map((d) => (
+                <li key={d.id} data-field-inherited={d.id} className="flex items-center gap-2 px-3 py-2">
+                  <span className="user-text min-w-0 flex-1 truncate text-body text-default">{d.name}</span>
+                  <span className="shrink-0 text-meta text-faint">{typeLabel(d.type)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+        {groups.length > 0 && (
+          <p className="text-meta text-muted" data-inherited-note>
+            {fromProject && t('Inherited fields are edited in the project that defines them.')}
+            {fromProject && fromWorkspace && ' '}
+            {fromWorkspace && t('Workspace fields are edited in the workspace’s settings.')}
+            {shared && <> {t('People this project is shared with see them only if they can also see that project.')}</>}
+          </p>
+        )}
+        <FieldList live={live} tasks={tasks} clashOf={clashOf} empty={groups.length > 0 ? t('No fields of its own yet.') : t('No fields yet.')} />
+        <AddField create={(input) => createField(project.id, input)} disabled={applicable.length >= MAX_FIELDS} />
+      </div>
+    </Dialog>
+  )
+}
+
+/** A workspace's own fields (workspace-fields): they apply to every project in it, for its owner only. */
+function WorkspaceFieldsDialog({ workspace, onClose }: { workspace: Workspace; onClose: () => void }) {
+  const defs = useFieldDefs()
+  const place = useFieldPlacement()
+  const live = useMemo(() => workspaceFields(workspace.id, place, defs), [workspace.id, place, defs])
+  const everyProject = useProjectsOfEveryWorkspace()
+  const projectIds = useMemo(() => everyProject.filter((p) => place.project(p.id) === workspace.id).map((p) => p.id), [everyProject, place, workspace.id])
+  const tasks = useTaskRowsOfProjects(projectIds)
+  // A clash that arrived through sync or a move: a project of the workspace with its own field of the same name.
+  const clashOf = (d: FieldDef) => {
+    const key = d.name.trim().toLocaleLowerCase()
+    const p = everyProject.find((x) => projectIds.includes(x.id) && liveFields(x.id, defs).some((o) => o.name.trim().toLocaleLowerCase() === key))
+    return p ? p.name : null
+  }
+  const others = useWorkspaceMembers().some((m) => m.workspaceId === workspace.id && m.userId !== workspace.ownerId)
+  const name = workspaceLabel(workspace.name, workspace.default)
+  return (
+    <Dialog title={t('Fields of {name}', { name })} onClose={onClose} size="md" testId="fields-dialog">
+      <div className="space-y-4">
+        <p className="text-meta text-muted">
+          {t('Fields every project of this workspace has, before its own. At most {max} fields.', { max: MAX_FIELDS })}{' '}<HelpLink screen="project-fields" topic={t('Custom fields')} />
+        </p>
+        {others && <p className="text-meta text-muted" data-workspace-fields-private>{t('Only you see these fields; other members of the workspace do not.')}</p>}
+        <FieldList live={live} tasks={tasks} clashOf={clashOf} empty={t('No fields yet.')} />
+        <AddField create={(input) => createWorkspaceField(workspace, input)} disabled={live.length >= MAX_FIELDS} />
+      </div>
+    </Dialog>
+  )
+}
+
+/** The editable fields, with drag and keyboard reordering and the delete confirmation. */
+function FieldList({ live, tasks, clashOf, empty }: { live: FieldDef[]; tasks: Task[]; clashOf: (d: FieldDef) => string | null; empty: string }) {
   const [removing, setRemoving] = useState<FieldDef | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
   const listRef = useRef<HTMLUListElement>(null)
@@ -67,52 +159,26 @@ export function FieldsDialog({ project, onClose }: { project: Project; onClose: 
     const id = live[from].id
     for (let i = 0; i < Math.abs(to - from); i++) await reorderField(id, to > from ? 1 : -1)
   }
-
   return (
-    <Dialog title={t('Fields of {name}', { name: project.name })} onClose={onClose} size="md" testId="fields-dialog">
-      <div className="space-y-4">
-        <p className="text-meta text-muted">
-          {t('Typed values every task of this project can hold, shown in the task panel, on cards and in the columns layout, and usable in filters. At most {max} fields.', { max: MAX_FIELDS })}{' '}<HelpLink screen="project-fields" topic={t('Custom fields')} />
-        </p>
-        {groups.map((g) => (
-          <section key={g.projectId} className="space-y-1.5" aria-label={t('From {name}', { name: g.name })} data-inherited-fields={g.projectId}>
-            <h3 className="text-meta font-semibold text-muted">{t('From {name}', { name: g.name })}</h3>
-            <ul className="divide-y divide-default rounded-card border border-default">
-              {g.defs.map((d) => (
-                <li key={d.id} data-field-inherited={d.id} className="flex items-center gap-2 px-3 py-2">
-                  <span className="user-text min-w-0 flex-1 truncate text-body text-default">{d.name}</span>
-                  <span className="shrink-0 text-meta text-faint">{typeLabel(d.type)}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
-        {groups.length > 0 && (
-          <p className="text-meta text-muted" data-inherited-note>
-            {t('Inherited fields are edited in the project that defines them.')}
-            {shared && <> {t('People this project is shared with see them only if they can also see that project.')}</>}
-          </p>
-        )}
-        {live.length === 0 ? (
-          <p className="text-body text-faint">{groups.length > 0 ? t('No fields of its own yet.') : t('No fields yet.')}</p>
-        ) : (
-          <ul ref={listRef} className="divide-y divide-default rounded-card border border-default" aria-label={t('Fields')}>
-            {live.map((d, i) => (
-              <FieldItem key={d.id} def={d} first={i === 0} last={i === live.length - 1} dragging={dragId === d.id}
-                onMove={(delta) => act(move(d.id, delta))} onHandleKey={(e) => onHandleKey(e, d.id)}
-                onDragStart={() => setDragId(d.id)} onDrop={(e) => void onDrop(e, d.id)}
-                onDelete={() => setRemoving(d)} tasks={tasks} clash={clashOf(d)} />
-            ))}
-          </ul>
-        )}
-        <AddField projectId={project.id} disabled={applicable.length >= MAX_FIELDS} />
-      </div>
+    <>
+      {live.length === 0 ? (
+        <p className="text-body text-faint">{empty}</p>
+      ) : (
+        <ul ref={listRef} className="divide-y divide-default rounded-card border border-default" aria-label={t('Fields')}>
+          {live.map((d, i) => (
+            <FieldItem key={d.id} def={d} first={i === 0} last={i === live.length - 1} dragging={dragId === d.id}
+              onMove={(delta) => act(move(d.id, delta))} onHandleKey={(e) => onHandleKey(e, d.id)}
+              onDragStart={() => setDragId(d.id)} onDrop={(e) => void onDrop(e, d.id)}
+              onDelete={() => setRemoving(d)} tasks={tasks} clash={clashOf(d)} />
+          ))}
+        </ul>
+      )}
       {removing && (
         <ConfirmDialog title={t('Delete the field “{name}”?', { name: removing.name })} confirmLabel={t('Delete field')}
           consequence={valuesText(countValues(removing.id, tasks))}
-          onConfirm={() => deleteField(removing.id)} onCancel={() => setRemoving(null)} />
+          onConfirm={() => withUndoToast(deleteFieldUndoable(removing.id))} onCancel={() => setRemoving(null)} />
       )}
-    </Dialog>
+    </>
   )
 }
 
@@ -124,7 +190,7 @@ export function valuesText(n: number): string {
 
 function FieldItem({ def, first, last, dragging, tasks, clash, onMove, onHandleKey, onDragStart, onDrop, onDelete }: {
   def: FieldDef; first: boolean; last: boolean; dragging: boolean; tasks: Task[]
-  /** The project an inherited field of the same name comes from (a clash after a move), or null. */
+  /** The project or workspace an inherited field of the same name comes from (a clash after a move), or null. */
   clash: string | null
   onMove: (delta: -1 | 1) => void; onHandleKey: (e: KeyboardEvent) => void
   onDragStart: () => void; onDrop: (e: DragEvent) => void; onDelete: () => void
@@ -157,7 +223,7 @@ function FieldItem({ def, first, last, dragging, tasks, clash, onMove, onHandleK
           <form className="flex min-w-0 flex-1 items-center gap-2" onSubmit={(e: FormEvent) => { e.preventDefault(); void saveName() }}>
             <Input ref={nameRef} autoFocus value={name} aria-label={t('Rename {name}', { name: def.name })} aria-invalid={!!error || undefined} className="py-1.5"
               onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setName(def.name); setError(null); setRenaming(false) } }} />
+              onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Escape') { e.stopPropagation(); setName(def.name); setError(null); setRenaming(false) } }} />
             <Button type="submit" size="sm" variant="primary">{t('Save')}</Button>
           </form>
         ) : (
@@ -219,7 +285,7 @@ export function renamedOptions(before: string, after: string): Record<string, st
   return out
 }
 
-function AddField({ projectId, disabled }: { projectId: string; disabled: boolean }) {
+function AddField({ create, disabled }: { create: (input: FieldInput) => Promise<string>; disabled: boolean }) {
   const [name, setName] = useState('')
   const [type, setType] = useState<FieldType>('text')
   const [options, setOptions] = useState('')
@@ -229,7 +295,7 @@ function AddField({ projectId, disabled }: { projectId: string; disabled: boolea
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     try {
-      await createField(projectId, { name, type, options })
+      await create({ name, type, options })
       setName('')
       setOptions('')
       setError(null)

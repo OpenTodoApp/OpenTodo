@@ -60,7 +60,7 @@ func Order(dateFormat, lang string) string {
 	switch lang {
 	case "en":
 		return "MD"
-	case "zh":
+	case "zh", "ja":
 		return "YMD"
 	}
 	return "DM"
@@ -86,6 +86,8 @@ var weekdays = map[string][7]string{
 	"nl": {"zondag", "maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag"},
 	"pt": {"domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"},
 	"zh": {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"},
+	"ja": {"日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"},
+	"ar": {"الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"},
 }
 
 // FormatDate writes a day in the order: 12/11/2026, 11/12/2026 or 2026-11-12.

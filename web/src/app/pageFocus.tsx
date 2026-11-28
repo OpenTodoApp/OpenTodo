@@ -7,7 +7,7 @@
 // Settings row a link asked for, the list's cursor row).
 import { type RefObject, useEffect, useLayoutEffect, useRef } from 'react'
 import { isTypingTarget } from './shortcuts'
-import { t } from '../lib/i18n'
+import { stripIsolates, t } from '../lib/i18n'
 import { getBranding } from '../lib/branding'
 
 /** Elements that own focus over the page: dialogs, overlays (menus, sheets) and the task panel. */
@@ -15,11 +15,11 @@ const OWNERS = '[role="dialog"], [role="alertdialog"], [data-overlay], [data-ove
 
 /** The tab title for a page heading. */
 export function pageTitle(heading: string | null | undefined): string {
-  const page = heading?.replace(/\s+/g, ' ').trim()
+  const page = heading && stripIsolates(heading).replace(/\s+/g, ' ').trim()
   // A branded instance (instance-branding) names itself in the tab.
   const app = getBranding().name
   if (app) return page ? `${page} – ${app}` : app
-  return page ? t('{page} – OpenTodo', { page }) : 'OpenTodo'
+  return page ? t.plain('{page} – OpenTodo', { page }) : 'OpenTodo'
 }
 
 /** The page's level-one heading: the header's title, or the phone bar's below 768 px. */
@@ -148,7 +148,7 @@ export function SkipLink({ frame, content }: { frame: RefObject<HTMLElement | nu
         const target = pageHeading(content.current) ?? pageHeading(frame.current) ?? content.current
         if (target) focusHeading(target)
       }}
-      className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-control focus:bg-surface focus:px-3 focus:py-2 focus:text-body focus:text-strong focus:shadow-2 focus:outline-2 focus:outline-focus">
+      className="sr-only focus:not-sr-only focus:fixed focus:inset-s-3 focus:top-3 focus:z-[60] focus:rounded-control focus:bg-surface focus:px-3 focus:py-2 focus:text-body focus:text-strong focus:shadow-2 focus:outline-2 focus:outline-focus">
       {t('Skip to content')}
     </a>
   )

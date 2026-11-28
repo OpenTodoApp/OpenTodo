@@ -5,12 +5,15 @@ import { db, useDatabase } from './db'
 import { occurrenceId } from './ids'
 import { applyOps, completeTask, createProject, createTask, getDeviceId, mutate, resetDeviceId, updateTask } from './ops'
 import {
-  countValues, createField, deleteField, FieldError, fieldBadges, formatValue, liveFields, matchesType, MAX_FIELDS, parseLocaleNumber,
+  countValues, createField, FieldError, fieldBadges, formatValue, liveFields, matchesType, MAX_FIELDS, parseLocaleNumber,
   parseOptions, renameField, reorderField, setFieldOptions, setFieldValue, validateValue, applicableFields, fieldDescendants, type FieldProject,
+  createWorkspaceField, workspaceFieldsOf, fieldPlace,
 } from './fields'
+import { deleteFieldUndoable as deleteField } from './undoActions'
 import vectors from './fields.vectors.json'
 import { isContentField } from './e2ee'
-import type { FieldDef, Op, Task } from './types'
+import type { FieldDef, Op, Task, Workspace } from './types'
+import { Partition } from './workspaces'
 
 let n = 0
 const run = () => `fields-${Date.now()}-${n++}`
@@ -249,7 +252,10 @@ describe('definition ops', () => {
 describe('inherited fields', () => {
   it('matches the shared vectors', () => {
     for (const c of vectors.cases) {
-      const got = applicableFields(c.project, c.projects as FieldProject[], c.fields as unknown as FieldDef[]).map((d) => d.id)
+      // With workspaces (workspace-fields D2) the case places its projects.
+      const w = (c as { workspaces?: { default: string; known: string[]; owned?: string[]; foreign?: string[] } }).workspaces
+      const place = w ? fieldPlace(new Partition(w.default, w.known, c.projects as FieldProject[]), w.owned ?? w.known, w.foreign ?? []) : undefined
+      const got = applicableFields(c.project, c.projects as FieldProject[], c.fields as unknown as FieldDef[], place).map((d) => d.id)
       expect(got, c.name).toEqual(c.want)
     }
     for (const c of vectors.descendants) {
@@ -301,6 +307,86 @@ describe('inherited fields', () => {
       expect(fieldBadges(task, defs).map((b) => b.text)).toEqual([])
       expect(fieldBadges(task, defs, undefined, (pid) => applicableFields(pid, projects, defs)).map((b) => b.text)).toEqual(['Stage On order'])
       expect(countValues(stage, await db.tasks.toArray())).toBe(1)
+    })
+  })
+
+  // Workspace fields (OpenSpec workspace-fields): no project, the personal
+  // scope, before every project's own fields; names and the limit across the workspace.
+  describe('workspace fields', () => {
+    const ws = (id: string, name: string, isDefault: boolean): Workspace => ({ id, name, icon: '', color: '', default: isDefault, role: 'owner', ownerId: 'u1' })
+    const home = ws('home', 'Personal', true)
+    const work = ws('work', 'Work', false)
+    beforeEach(async () => {
+      await use(run())
+      await db.workspaces.bulkPut([home, work])
+    })
+    const place = async () => fieldPlace(new Partition('home', ['home', 'work'], await db.projects.toArray()), ['home', 'work'], [])
+
+    it('applies to every project of its workspace, first, and writes no project_id', async () => {
+      const kitchen = await createProject({ name: 'Kitchen' })
+      const office = await createProject({ name: 'Office' })
+      await mutate('project', office, { workspace_id: 'work' })
+      const client = await createWorkspaceField(home, { name: 'Client', type: 'text' })
+      const own = await createField(kitchen, { name: 'Cost', type: 'number' })
+      const ops = (await outbox()).filter((o) => o.entityId === client)
+      expect(ops.map((o) => o.field)).not.toContain('project_id')
+      expect(ops.find((o) => o.field === 'workspace_id')?.value).toBeNull()
+      expect(ops.map((o) => o.field)).toContain('name')
+      const defs = await db.fields.toArray()
+      const projects = await db.projects.toArray()
+      expect(applicableFields(kitchen, projects, defs, await place()).map((d) => d.id)).toEqual([client, own])
+      expect(applicableFields(office, projects, defs, await place()).map((d) => d.id)).toEqual([])
+      expect((await workspaceFieldsOf('home')).map((d) => d.id)).toEqual([client])
+      const remote = await createWorkspaceField(work, { name: 'Client', type: 'text' })
+      expect((await db.fields.get(remote))?.workspace_id).toBe('work')
+    })
+
+    it('refuses a name a project of the workspace or the workspace already uses', async () => {
+      const kitchen = await createProject({ name: 'Kitchen' })
+      await createField(kitchen, { name: 'Size', type: 'number' })
+      await expect(createWorkspaceField(home, { name: 'size', type: 'number' })).rejects.toThrow(/project “Kitchen” already has a field named “size”/)
+      const client = await createWorkspaceField(home, { name: 'Client', type: 'text' })
+      await expect(createWorkspaceField(home, { name: 'CLIENT', type: 'text' })).rejects.toThrow(/workspace already has a field named/)
+      await expect(createField(kitchen, { name: 'client', type: 'text' })).rejects.toThrow(/already has a field named “client” from “Personal”/)
+      await expect(renameField(client, 'Size')).rejects.toThrow(/project “Kitchen”/)
+      await renameField(client, 'Customer')
+      expect((await db.fields.get(client))?.name).toBe('Customer')
+    })
+
+    it('leaves out a project someone else shared, and a workspace the person does not own', async () => {
+      const theirs = await createProject({ name: 'Garden' })
+      await createField(theirs, { name: 'Client', type: 'text' })
+      await db.memberships.put({ projectId: theirs, role: 'editor', ownerId: 'u2', members: [] })
+      await db.workspaces.put({ ...work, role: 'admin' })
+      // The shared-in project neither clashes with the workspace field nor counts toward its limit.
+      const client = await createWorkspaceField(home, { name: 'Client', type: 'text' })
+      await expect(createWorkspaceField(work, { name: 'Stage', type: 'text' })).rejects.toThrow()
+      const tree = { projects: await db.projects.toArray(), defs: await db.fields.toArray() }
+      const placed = fieldPlace(new Partition('home', ['home', 'work'], tree.projects), ['home'], [theirs])
+      expect(applicableFields(theirs, tree.projects, tree.defs, placed).map((d) => d.name)).toEqual(['Client'])
+      expect(applicableFields(theirs, tree.projects, tree.defs, placed).map((d) => d.id)).not.toContain(client)
+    })
+
+    it('counts toward every project\'s limit of 30', async () => {
+      const kitchen = await createProject({ name: 'Kitchen' })
+      for (let i = 0; i < MAX_FIELDS - 1; i++) {
+        await mutate('field', `own-${i}`, { name: `F${i}`, project_id: kitchen, type: 'text', options: '', position: i, created_at: 1, deleted_at: null })
+      }
+      await createWorkspaceField(home, { name: 'Last', type: 'text' })
+      await expect(createWorkspaceField(home, { name: 'One more', type: 'text' })).rejects.toThrow(/project “Kitchen” would have more than 30 fields/)
+      await expect(createField(kitchen, { name: 'One more', type: 'text' })).rejects.toThrow(/at most 30 fields/)
+    })
+
+    it('renames an option in the tasks of every project of the workspace and reorders among its fields', async () => {
+      const kitchen = await createProject({ name: 'Kitchen' })
+      const stage = await createWorkspaceField(home, { name: 'Stage', type: 'choice', options: 'Quote\nOrdered' })
+      const second = await createWorkspaceField(home, { name: 'Client', type: 'text' })
+      const task = await createTask({ title: 'Tiles', project_id: kitchen })
+      await setFieldValue(task, stage, 'Ordered')
+      expect(await setFieldOptions(stage, 'Quote\nOn order', { Ordered: 'On order' })).toBe(1)
+      expect((await db.tasks.get(task))?.fields?.[stage]).toBe('On order')
+      expect(await reorderField(second, -1)).toBe(true)
+      expect((await workspaceFieldsOf('home')).map((d) => d.id)).toEqual([second, stage])
     })
   })
 })

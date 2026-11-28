@@ -228,7 +228,7 @@ export function OwnerAssistantSettings(p: OwnerViewProps & { onCancel?: () => vo
       <Checkbox checked={d.allow_member_keys} disabled={off} onChange={(e) => set({ allow_member_keys: e.target.checked })} label={t('Let members bring their own key')}
         description={t('Each person may then choose Anthropic, OpenAI or Google Gemini with their own key and model for their turns, instead of yours. The compatible endpoint is never offered to members, so no one but you decides which other host the server connects to.')} />
       {d.allow_member_keys && (
-        <div className="pl-6">
+        <div className="ps-6">
           <Checkbox checked={d.cap_member_keys} disabled={off} onChange={(e) => set({ cap_member_keys: e.target.checked })} label={t('Count members’ own keys toward the monthly limit')}
             description={t('Off by default: a person who pays with their own key is not held to your limit. One answer at a time per person still applies.')} />
         </div>
@@ -400,7 +400,7 @@ export function OwnProviderForm(p: UserViewProps & { status: AssistantStatus }) 
           { value: 'own', label: t('My own provider and key'), description: <>{t('Anthropic, OpenAI or Google Gemini, with an API key from your own account.')} {capNote}</> },
         ]} />
       {d.mode === 'own' && (
-        <div className="space-y-3 pl-6">
+        <div className="space-y-3 ps-6">
           <Field label={t('Provider')}>
             <Select className="min-w-0 max-w-full sm:max-w-sm" value={d.provider} disabled={off}
               onChange={(e) => {

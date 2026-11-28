@@ -10,6 +10,7 @@ import type { FieldDef, FieldValue, Task } from '../../lib/types'
 import { ComboboxPanel, Icon, Input, Switch, Popover } from '../../ui'
 import { DateField } from '../datetime/DateField'
 import { t, msg, translatedMap } from '../../lib/i18n'
+import { composing } from '../../lib/composeKey'
 
 const NOT_A = translatedMap<string>({ number: msg('not a number'), date: msg('not a date'), checkbox: msg('not on or off'), text: msg('not text'), link: msg('not a link'), choice: msg('not an option') })
 
@@ -95,6 +96,7 @@ function TextEditor({ id, def, value, readOnly, describedBy, invalid, onCommit, 
     if (!ok) editing.current = true
   }
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (composing(e)) return
     if (e.key === 'Enter') {
       e.preventDefault()
       void commit()
@@ -145,7 +147,7 @@ function ChoiceEditor({ id, def, value, readOnly, onPick }: { id: string; def: F
   return (
     <>
       <button ref={anchor} id={id} type="button" disabled={readOnly} aria-haspopup="dialog" aria-expanded={open}
-        className="ui-input flex min-w-0 py-1.5 items-center justify-between gap-2 text-left"
+        className="ui-input flex min-w-0 py-1.5 items-center justify-between gap-2 text-start"
         onClick={() => setOpen(true)} onKeyDown={onKeyDown}>
         <span className={`truncate ${value ? 'text-default' : 'text-faint'}`}>{value ?? (readOnly ? '' : t('Empty'))}</span>
         {!readOnly && <Icon name="chevron-down" size="xs" className="shrink-0 text-faint" />}

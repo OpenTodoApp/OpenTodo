@@ -40,6 +40,10 @@ Every decision moves on to the next task and shows **Undo**. The buttons do the 
 
 <kbd>s</kbd> opens a sheet with the same choices as the panel's **Do on**: **Today**, **Tomorrow**, **This weekend** and **Next week**, each with its date, a field that shows what it understood before you press <kbd>Enter</kbd>, and a calendar. When the task has a deadline, choices counted back from it come first, on number keys: <kbd>1</kbd> **On the deadline**, <kbd>2</kbd> **1 day before**, <kbd>3</kbd> **3 days before**, <kbd>4</kbd> **1 week before**, <kbd>5</kbd> **2 weeks before**, <kbd>6</kbd> **1 month before**. A choice that would fall before today isn't offered, and the deadline is marked in the calendar. <kbd>Esc</kbd> closes the sheet without a change.
 
+## On a phone
+
+The decisions are a bar at the bottom: **Today**, **Schedule**, **Move**, **Complete** and **More** (Delegate, Labels, Someday, Open, Trash), then **Back** and **Skip**. Swipe the card right to complete, left to schedule. There is no add button here.
+
 ## The queue
 
 The queue is the Inbox in its order when you start. Tasks you decide stay counted, so "4 of 17" doesn't jump; tasks captured meanwhile, on any device, join the end; a task someone moves out of the Inbox elsewhere drops out, and the mode tells you. When nothing is left you see **Inbox zero** and the way back.

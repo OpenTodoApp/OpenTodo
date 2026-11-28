@@ -4,6 +4,8 @@
 // and Project, the panel's own editors, and Open details. Enter or a click away saves,
 // Esc discards the title change, Shift+Enter saves and opens the panel. The title is
 // the panel's TitleField, so `tomorrow p1 #work` typed here applies as it does there.
+// On touch the compact editor has Save and Cancel, Return reads Done, and a tap outside
+// saves (touch-title-editing).
 import { type FocusEvent, type KeyboardEvent, Suspense, useMemo, useRef, useState } from 'react'
 import { lazy } from '../../lib/lazy'
 import { describeDue, localDueOf, logicalToday } from '../../lib/dates'
@@ -22,7 +24,9 @@ import { TitleField } from '../TitleField'
 import { commitTitleEdit } from '../titleEdit'
 import { moveWithUndo } from '../undoable'
 import { useViewerZone } from '../useViews'
+import { useTapOutside } from './tapOutside'
 import { t } from '../../lib/i18n'
+import { composing } from '../../lib/composeKey'
 
 // Date opens the row's Schedule popover, loaded on first use like the row's own, so the
 // When editor stays out of the list's first load (when-picker).
@@ -67,8 +71,15 @@ export function InlineEditor({ task, caret, compact = false, projects, labelMap,
     cancelled.current = true
     finish()
   }
+  // A press outside leaves the field, which saves (TitleField commits on blur).
+  useTapOutside(compact, (node) => insideEditor(root.current, node), () => {
+    const field = root.current?.querySelector<HTMLElement>('[data-inline-title]')
+    if (field && document.activeElement === field) field.blur()
+    else finish()
+  })
 
   const onKeyDownFirst = (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (composing(e)) return false
     if (e.key === 'Enter' && e.shiftKey) {
       e.preventDefault()
       details.current = true
@@ -97,6 +108,7 @@ export function InlineEditor({ task, caret, compact = false, projects, labelMap,
       <TitleField title={task.title} value={draft} onChange={setDraft} onCommit={commit}
         onCancel={cancel}
         projects={projects} labels={labels} autoFocus initialCaret={caret} onKeyDownFirst={onKeyDownFirst}
+        enterKeyHint={compact ? 'done' : undefined}
         className={`ui-input w-full py-1 text-body ${compact ? 'min-h-11' : ''}`} ariaLabel={t('Title')} placeholder={t('Untitled')} dataAttrs={{ 'data-inline-title': true }}
         actions={compact ? (save) => (
           <div className="mt-1 flex flex-wrap gap-1">
@@ -152,7 +164,7 @@ export function EditBar({ task, projects, labelMap, onDetails }: { task: Task; p
           className="min-h-7 border-transparent bg-transparent px-1.5 py-0 text-meta text-muted shadow-none hover:bg-sunken dark:hover:bg-raised"
           onChange={(id) => { if (id !== (task.project_id ?? null)) act(moveWithUndo(task.id, id, id ? projects.find((p) => p.id === id)?.name ?? t('the project') : t('Inbox'))) }} />
       </span>
-      <IconButton icon="chevron-right" size="sm" label={t('Open details')} shortcut="Shift+Enter" onClick={onDetails} className="ml-auto" data-open-details />
+      <IconButton icon="chevron-right" size="sm" label={t('Open details')} shortcut="Shift+Enter" onClick={onDetails} className="ms-auto" data-open-details />
       {open === 'date' && (
         <Suspense fallback={null}>
           <RowSchedule task={task} anchor={dateAnchor} onClose={() => setOpen(null)} />

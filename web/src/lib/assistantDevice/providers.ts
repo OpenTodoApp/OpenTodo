@@ -42,7 +42,8 @@ export interface Provider { start(req: Request): Conversation }
 
 /** A failed provider request: a code the panel describes, never the key or request content. */
 export class ProviderError extends Error {
-  constructor(public code: 'provider_auth' | 'provider_rate_limited' | 'provider_not_found' | 'provider_error' | 'blocked' | 'images_unsupported', message: string, public status = 0, public type = '') {
+  /** `refused`: the parameter and code a 400 names (refusedParam). */
+  constructor(public code: 'provider_auth' | 'provider_rate_limited' | 'provider_not_found' | 'provider_error' | 'blocked' | 'images_unsupported', message: string, public status = 0, public type = '', public refused: Refusal = { param: '', code: '' }) {
     super(message)
   }
 }
@@ -108,7 +109,7 @@ export function statusError(status: number, body = '', provider = ''): ProviderE
   }
   if (status === 429) return new ProviderError('provider_rate_limited', 'the provider is rate limiting requests; try again in a moment', status, type)
   if (status >= 500) return new ProviderError('provider_error', 'the provider had a problem; try again in a moment', status, type)
-  return new ProviderError('provider_error', `the provider refused the request (HTTP ${status})`, status, type)
+  return new ProviderError('provider_error', `the provider refused the request (HTTP ${status})`, status, type, refusedParam(status, body))
 }
 
 /** Up to MAX_ERROR_BODY bytes of an error answer, as text. */
@@ -163,6 +164,25 @@ async function post(f: Fetch, provider: string, url: string, headers: Record<str
     throw statusError(res.status, text, provider)
   }
   return res
+}
+
+/** The parameter and code a refused request names. */
+export interface Refusal { param: string; code: string }
+
+/**
+ * The param and code of a 400's error, or of the body's top level when the
+ * error has no param (refusedParam in Go). Fields of another type read as empty.
+ */
+export function refusedParam(status: number, body: string): Refusal {
+  const none = { param: '', code: '' }
+  if (status !== 400) return none
+  let v: unknown
+  try { v = JSON.parse(body) } catch { return none }
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return none
+  const str = (x: unknown) => (typeof x === 'string' ? x : '')
+  const top = v as { param?: unknown; code?: unknown; error?: unknown }
+  const inner = (top.error && typeof top.error === 'object' ? top.error : {}) as { param?: unknown; code?: unknown }
+  return str(inner.param) ? { param: str(inner.param), code: str(inner.code) } : { param: str(top.param), code: str(top.code) }
 }
 
 /** Server-sent events of a response body: {event, data} per blank-line-terminated event. */
@@ -344,15 +364,31 @@ export function chatProvider(setup: DeviceSetup, f: Fetch = fetch): Provider {
       const images = hasImages(req.messages)
       const toolsOf = (list: ManifestTool[]) => list.map((t) => ({ type: 'function', function: { name: t.name, description: t.description, parameters: setup.provider === 'gemini' ? t.strict_nullable_schema : t.input_schema } }))
       let tools = toolsOf(req.tools)
+      // Each set once the provider refused a parameter (askAgain in Go): tools at the
+      // model's default reasoning effort (#2045), or max_tokens (Azure OpenAI's reasoning models, #2087).
+      let effortNone = false
+      let completionTokens = setup.provider === 'openai'
       return {
         setTools(list) { tools = toolsOf(list) },
         async next(onText, signal) {
-          const body: Record<string, unknown> = { model: setup.model, messages, stream: true, stream_options: { include_usage: true } }
-          if (tools.length) { body.tools = tools; body.tool_choice = 'auto' }
-          body[setup.provider === 'openai' ? 'max_completion_tokens' : 'max_tokens'] = req.maxTokens
           const headers: Record<string, string> = {}
           if (setup.key) headers.authorization = `Bearer ${setup.key}`
-          const res = await post(f, setup.provider, baseUrlOf(setup) + '/chat/completions', headers, body, signal, images)
+          const send = () => {
+            const body: Record<string, unknown> = { model: setup.model, messages, stream: true, stream_options: { include_usage: true } }
+            if (tools.length) { body.tools = tools; body.tool_choice = 'auto' }
+            if (effortNone) body.reasoning_effort = 'none'
+            body[completionTokens ? 'max_completion_tokens' : 'max_tokens'] = req.maxTokens
+            return post(f, setup.provider, baseUrlOf(setup) + '/chat/completions', headers, body, signal, images)
+          }
+          const askAgain = (err: unknown): Promise<Response> => {
+            const { param, code } = err instanceof ProviderError ? err.refused : { param: '', code: '' }
+            if (param === 'reasoning_effort' && !effortNone && tools.length) effortNone = true
+            // Only an unsupported max_tokens: invalid_value (a limit too large) is reported as is.
+            else if (param === 'max_tokens' && code === 'unsupported_parameter' && !completionTokens && req.maxTokens) completionTokens = true
+            else throw err
+            return send().catch(askAgain)
+          }
+          const res = await send().catch(askAgain)
           const calls: { id: string; name: string; args: string }[] = []
           let text = ''
           let finish = ''

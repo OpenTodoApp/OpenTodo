@@ -13,7 +13,7 @@ import { formatInstant } from '../../lib/dates'
 import { createTask } from '../../lib/ops'
 import { chooseNextAction } from '../method/chooseNext'
 import type { NextChoice } from '../../lib/method/rules'
-import { setTaskCompletedWithFeedback } from '../completionSound'
+import { completeWithUndo } from '../undoable'
 import { resolveLabels } from '../../lib/labels'
 import { hasTimeColumn } from '../../lib/rowTime'
 import { listSlotsOff } from '../../lib/rowSlots'
@@ -111,7 +111,7 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
   const row = (item: Task) => (
     <TaskRow key={item.id} task={item} project={item.project_id ? projectMap.get(item.project_id) : undefined} labels={resolveLabels(item.labels, labelMap)}
       showProject={step !== 'clear'} selected={item.id === selected} timeColumn={timeColumn} slotsOff={slotsOff}
-      onToggle={() => act(setTaskCompletedWithFeedback(item.id, !item.completed_at))}
+      onToggle={() => act(completeWithUndo(item.id, !item.completed_at))}
       onOpen={() => { setSelected(item.id); setPanelTaskId(item.id) }} />
   )
   const allDone = !!steps && STEP_IDS.every((s) => steps.done[s])
@@ -212,7 +212,7 @@ const STEP_ICONS: Record<StepId, IconName> = { clear: 'inbox', sweep: 'lightbulb
 /** Every step done, or the review just finished: a calm moment of closure before the next week. */
 function AllClear({ finished }: { finished: number | null }) {
   return (
-    <Card className="mb-5 flex flex-col items-center gap-3 text-center sm:flex-row sm:text-left" data-review-all-clear>
+    <Card className="mb-5 flex flex-col items-center gap-3 text-center sm:flex-row sm:text-start" data-review-all-clear>
       <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-success-soft text-on-success-soft">
         <Icon name="circle-check-big" size="lg" />
       </span>

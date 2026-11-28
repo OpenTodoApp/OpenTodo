@@ -109,7 +109,7 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored, embedde
           {message && <p role="status" className="mb-1 text-meta text-success">{message}</p>}
           <ol className="space-y-2" aria-label={t('Changes')}>
             {sets.map((s) => (
-              <li key={`${s.ts}:${s.device}`} className="border-l-2 border-default pl-2">
+              <li key={`${s.ts}:${s.device}`} className="border-s-2 border-default ps-2">
                 {s === daily && <p className="mb-1 text-meta text-faint" data-testid="history-notes-daily">{t('Older note versions are kept one per day (UTC).')}</p>}
                 <div className="text-meta text-faint">{dt.formatInstant(s.ts, 'datetime')} · {deviceLabel(s, device)}</div>
                 <ul>
@@ -119,7 +119,7 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored, embedde
                       <span className="break-all">{fmt(c.field, c.from)} → {fmt(c.field, c.to)}</span>
                       {c.lost && <Tooltip label={t('Arrived after a newer change and was never applied')}><span className="rounded-chip text-meta italic" tabIndex={0}>{t('(lost)')}</span></Tooltip>}
                       {!readOnly && canRestoreField(entity, c.field) && (
-                        <button type="button" className="ml-auto text-meta text-accent underline"
+                        <button type="button" className="ms-auto text-meta text-accent underline"
                           aria-label={t('Restore this value: {field}, {value}', { field: fieldLabel(c.field), value: fmt(c.field, c.to) })} onClick={() => void restore(c.field, c.to)}>
                           {t('Restore this value')}
                         </button>

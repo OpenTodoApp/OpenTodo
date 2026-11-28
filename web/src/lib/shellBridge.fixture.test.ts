@@ -10,11 +10,12 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { shellGeofences } from './geofences'
-import { announcePainted, backgroundDone, forgetShellData, openAlarmSettings, setSystemBars, shellHaptic, shellVisible, takeOverPull, type OpenTodoShell, type ShellCapability, type ShellGeofencePayload, type ShellHaptic } from './shell'
+import { allowUrgentAlarms, announcePainted, backgroundDone, forgetShellData, openAlarmSettings, setSystemBars, shellHaptic, shellVisible, takeOverPull, type OpenTodoShell, type ShellCapability, type ShellGeofencePayload, type ShellHaptic } from './shell'
 import { fileChunks } from './saveFile'
 import { shellUrlAction } from './shellActions'
 import { parsePushState, parsePushSubscription, pushState, pushSubscribe, pushUnsubscribe } from './shellPush'
-import { shellCompleted, shellReminders, shellWidget } from './shellPublish'
+import { shellCalendar, shellCompleted, shellReminders, shellUpcoming, shellWidget } from './shellPublish'
+import { parseRoute } from '../app/router'
 import { focusPayload } from './focus/shellPublish'
 import { FOCUS_DEFAULTS } from './focus/prefs'
 import { finish, idleState, pause, resume, start } from './focus/timer'
@@ -24,6 +25,8 @@ import appLinkVectors from '../../../internal/origin/testdata/app_links.vectors.
 import { openAppLink, setAppLinkSchemes, trustScheme } from './appLinks'
 import type { Place, Reminder, Task } from './types'
 import { SCROLL_TOP_EVENT } from '../ui/scrollTop'
+import { publishEncryption } from './e2ee'
+import { quickAddNotificationState, setQuickAddNotification } from './shellQuickAdd'
 
 // Vitest runs in web/ (happy-dom's URL cannot resolve file: addresses).
 const dir = path.resolve(process.cwd(), '../mobile/android/app/src/test/resources/bridge')
@@ -43,6 +46,7 @@ const tasks = [
   task('late', { title: 'Überweisung «Miete»', due: { date: '2026-10-20' }, priority: 2, project_id: 'home' }),
   task('plain', { title: 'Water the plants', due: { date: TODAY } }),
   task('later', { title: 'Not today', due: { date: '2026-10-25' } }),
+  task('dentist', { title: 'Book the dentist', due: { date: '2026-10-23', time: '08:15' }, project_id: 'home' }),
   task('done', { title: 'Done', due: { date: TODAY }, completed_at: NOW - HOUR }),
 ]
 const reminders = [
@@ -176,8 +180,11 @@ function fixtures(): Record<string, Fixture> {
   // ios-urgent-alarms D3: the soon reminder urgent, the later one not.
   const urgent = shellReminders(reminders.map((r) => (r.id === 'r-soon' ? { ...r, urgent: true } : r)), tasks, NOW, { titles: true, encrypted: false })
   const projects = [{ id: 'home', name: 'Zuhause' }]
-  const widget = shellWidget(tasks, TODAY, NOW, false, null, projects)
-  const locked = shellWidget(tasks, TODAY, NOW, true, null, projects)
+  // As publishToday hands them over: Today, Upcoming and the calendar's days (android-upcoming-calendar-widgets D1).
+  const widget = { ...shellWidget(tasks, TODAY, NOW, false, null, projects), today: TODAY, dayStart: 240, upcoming: shellUpcoming(tasks, TODAY, false, null, projects), calendar: shellCalendar(tasks, [], TODAY, false, 1, true) }
+  const locked = { ...shellWidget(tasks, TODAY, NOW, true, null, projects), today: TODAY, dayStart: 240, upcoming: shellUpcoming(tasks, TODAY, true, null, projects), calendar: shellCalendar(tasks, [], TODAY, true, 1, true) }
+  const upcomingExpect = (u: typeof widget.upcoming) => ({ count: u.count, rows: u.tasks.map((t) => ({ id: t.id, title: t.title ?? null, date: t.date, time: t.time ?? null, due: t.due ?? null, project: t.project ?? null, priority: t.priority })), more: Math.max(0, u.count - u.tasks.length) })
+  const calendarExpect = (c: typeof widget.calendar) => ({ weekStart: c.weekStart, dayView: c.dayView, days: c.days ?? {} })
   const completedWidget = { ...widget, completed: shellCompleted(doneTasks, [], [], null, TODAY, false) }
   const completedLocked = { ...locked, completed: shellCompleted(doneTasks, [], [], null, TODAY, true) }
   const signOut = captureSignOut()
@@ -214,38 +221,38 @@ function fixtures(): Record<string, Fixture> {
       expect: { updatedAt: NOW, locked: true, today: completedLocked.completed.today, days: [] },
     },
     'reminders.json': {
-      description: 'The next reminders with titles (titles on, account readable), earliest first.',
+      description: 'The next reminders with titles and due texts (titles on, account readable), earliest first. The due text is the notification body, written as of the day the reminder fires (push-due-date D4).',
       method: 'scheduleReminders', payload: JSON.stringify(titled), now: NOW,
-      expect: titled.map((r) => ({ id: r.id, taskId: r.taskId, fireAt: r.fireAt, title: r.title ?? null })),
+      expect: titled.map((r) => ({ id: r.id, taskId: r.taskId, fireAt: r.fireAt, title: r.title ?? null, due: r.due ?? null })),
     },
     'reminders-encrypted.json': {
-      description: 'An end-to-end encrypted account: no titles reach the shell.',
+      description: 'An end-to-end encrypted account: no titles and no due texts reach the shell.',
       method: 'scheduleReminders', payload: JSON.stringify(untitled), now: NOW,
-      expect: untitled.map((r) => ({ id: r.id, taskId: r.taskId, fireAt: r.fireAt, title: null })),
+      expect: untitled.map((r) => ({ id: r.id, taskId: r.taskId, fireAt: r.fireAt, title: null, due: null })),
     },
     'reminders-urgent.json': {
-      description: 'An urgent reminder (ios-urgent-alarms D3) carries urgent: true, the others no urgent at all. The iPhone app rings an urgent one as an alarm where it can; every other shell schedules it as an ordinary reminder.',
+      description: 'An urgent reminder (ios-urgent-alarms D3) carries urgent: true, the others no urgent at all. The iPhone and Android apps ring an urgent one as an alarm where they can (android-urgent-alarms D3); every other shell schedules it as an ordinary reminder.',
       method: 'scheduleReminders', payload: JSON.stringify(urgent), now: NOW,
-      expect: urgent.map((r) => ({ id: r.id, taskId: r.taskId, fireAt: r.fireAt, title: r.title ?? null, urgent: r.urgent === true })),
+      expect: urgent.map((r) => ({ id: r.id, taskId: r.taskId, fireAt: r.fireAt, title: r.title ?? null, due: r.due ?? null, urgent: r.urgent === true })),
     },
     'reminders-signed-out.json': {
       description: 'Sign-out: the schedule is emptied.',
       method: 'scheduleReminders', payload: signOut.reminders, now: NOW, expect: [],
     },
     'widget.json': {
-      description: "The widgets' Today list: overdue first, titles, times, the project's name and an overdue task's date while readable, and the completion circle (actions: complete, android-widget-list D3).",
+      description: "The widgets' lists: Today overdue first, titles, times, the project's name and an overdue task's date while readable, and the completion circle (actions: complete, android-widget-list D3); Upcoming by day, each row with the day it is listed under; the calendar's open tasks per day, the first day of the week and whether a day opens Day (android-upcoming-calendar-widgets D1).",
       method: 'publishWidget', payload: JSON.stringify(widget), now: NOW,
-      expect: { updatedAt: NOW, locked: false, count: widget.count, overdue: widget.overdue, canComplete: true, rows: widget.tasks.map((t) => ({ id: t.id, title: t.title ?? null, time: t.time ?? null, date: t.date ?? null, project: t.project ?? null, priority: t.priority, overdue: t.overdue })), more: Math.max(0, widget.count - widget.tasks.length) },
+      expect: { updatedAt: NOW, locked: false, count: widget.count, overdue: widget.overdue, canComplete: true, canCompleteOn: true, today: TODAY, dayStart: 240, rows: widget.tasks.map((t) => ({ id: t.id, title: t.title ?? null, time: t.time ?? null, date: t.date ?? null, due: t.due ?? null, project: t.project ?? null, priority: t.priority, overdue: t.overdue })), more: Math.max(0, widget.count - widget.tasks.length), upcoming: upcomingExpect(widget.upcoming), calendar: calendarExpect(widget.calendar) },
     },
     'widget-locked.json': {
-      description: 'A locked encrypted account: counts only, no rows, so no completion circle.',
+      description: 'A locked encrypted account: counts only, no rows, so no completion circle; Upcoming its count only, the calendar no days.',
       method: 'publishWidget', payload: JSON.stringify(locked), now: NOW,
-      expect: { updatedAt: NOW, locked: true, count: locked.count, overdue: locked.overdue, canComplete: false, rows: [], more: locked.count },
+      expect: { updatedAt: NOW, locked: true, count: locked.count, overdue: locked.overdue, canComplete: false, canCompleteOn: false, today: TODAY, dayStart: 240, rows: [], more: locked.count, upcoming: upcomingExpect(locked.upcoming), calendar: calendarExpect(locked.calendar) },
     },
     'widget-signed-out.json': {
       description: 'Sign-out: an empty, locked widget.',
       method: 'publishWidget', payload: JSON.stringify(signedOutWidget), now: NOW,
-      expect: { updatedAt: NOW, locked: true, count: 0, overdue: 0, canComplete: false, rows: [], more: 0 },
+      expect: { updatedAt: NOW, locked: true, count: 0, overdue: 0, canComplete: false, canCompleteOn: false, today: null, dayStart: null, rows: [], more: 0 },
     },
   }
 }
@@ -266,7 +273,16 @@ function actions() {
     quickAdd: { path: '/?add=' },
     // android-widget-list D2: the Today widget's completion circle, opened in a background run only.
     // One run carries every queued tick.
-    completePaths: [['t1'], ['t/1 ü'], ['a', 'b']].map((taskIds) => ({ taskIds, path: `/?${taskIds.map((id) => `complete=${encodeURIComponent(id).replace(/%20/g, '+')}`).join('&')}` })),
+    // android-upcoming-calendar-widgets D6: a tick naming its occurrence, `<id>@<due>`, beside plain ids.
+    completePaths: [['t1'], ['t/1 ü'], ['a', 'b'], ['a@2026-10-23', 'b']].map((taskIds) => ({ taskIds, path: `/?${taskIds.map((id) => `complete=${encodeURIComponent(id).replace(/%20/g, '+')}`).join('&')}` })),
+    // android-upcoming-calendar-widgets D4: a calendar day and the month's name open Day and Month,
+    // or Upcoming while the current workspace has Calendar off (dayView false).
+    calendarPaths: [
+      { date: '2026-10-18', dayView: true, path: '/day/2026-10-18', route: { view: 'day', date: '2026-10-18' } },
+      { date: '2026-10-18', dayView: false, path: '/upcoming', route: { view: 'upcoming' } },
+      { month: '2026-11', dayView: true, path: '/month/2026-11-01', route: { view: 'month', date: '2026-11-01' } },
+      { month: '2026-11', dayView: false, path: '/upcoming', route: { view: 'upcoming' } },
+    ],
     // focus-live-activity D4: a tap on the activity or notification opens focusOpen; Pause and Resume open these.
     focusOpen: { path: '/focus' },
     focusActions: (['pause', 'resume'] as const).map((action) => ({ action, path: `/focus?action=${action}` })),
@@ -381,21 +397,21 @@ function haptics() {
  * has a screen" from `links`, so no background run may list anything of visibleOnly.
  */
 function capabilities() {
-  const visibleOnly = ['share', 'links', 'obsidian-links', 'app-links', 'system-bars', 'microphone', 'files', 'haptics', 'completion-sound', 'alarm-settings', 'first-paint', 'focus']
+  const visibleOnly = ['share', 'links', 'obsidian-links', 'app-links', 'system-bars', 'microphone', 'files', 'haptics', 'completion-sound', 'alarm-settings', 'urgent-alarms', 'first-paint', 'focus', 'quick-add-notification']
   const backgroundOnly = ['background']
   const both = ['reminders', 'widgets', 'push']
   const called: string[] = []
-  const bridge = (caps: string[]): OpenTodoShell => ({ bridge: 1, platform: 'android', app: '1.6.0', capabilities: caps, openAlarmSettings: () => void called.push('openAlarmSettings'), backgroundDone: () => void called.push('backgroundDone') })
+  const bridge = (caps: string[]): OpenTodoShell => ({ bridge: 1, platform: 'android', app: '1.6.0', capabilities: caps, openAlarmSettings: () => void called.push('openAlarmSettings'), allowUrgentAlarms: () => void called.push('allowUrgentAlarms'), backgroundDone: () => void called.push('backgroundDone') })
   // Each method is called only where its capability is listed.
   window.opentodoShell = bridge([...both, ...visibleOnly])
-  const visible = { shellVisible: shellVisible(), openAlarmSettings: openAlarmSettings(), backgroundDone: backgroundDone() }
+  const visible = { shellVisible: shellVisible(), openAlarmSettings: openAlarmSettings(), allowUrgentAlarms: allowUrgentAlarms(), backgroundDone: backgroundDone() }
   window.opentodoShell = bridge([...both, ...backgroundOnly])
-  const background = { shellVisible: shellVisible(), openAlarmSettings: openAlarmSettings(), backgroundDone: backgroundDone() }
+  const background = { shellVisible: shellVisible(), openAlarmSettings: openAlarmSettings(), allowUrgentAlarms: allowUrgentAlarms(), backgroundDone: backgroundDone() }
   delete window.opentodoShell
   return {
     description: 'Capabilities by kind of run (shell-reminders-on): visibleOnly is listed only by the app a person sees (biometric and geofences depend on the device and the store build and are not listed here), backgroundOnly only by a background run, both by either. methods names the capability each new method needs; expect is what the web app does in each run.',
     visibleOnly, backgroundOnly, both,
-    methods: { openAlarmSettings: 'alarm-settings', backgroundDone: 'background', playCompletionSound: 'completion-sound', painted: 'first-paint' },
+    methods: { openAlarmSettings: 'alarm-settings', allowUrgentAlarms: 'urgent-alarms', backgroundDone: 'background', playCompletionSound: 'completion-sound', painted: 'first-paint' },
     expect: { visible, background, called },
   }
 }
@@ -457,6 +473,43 @@ function pushBridge() {
 
 const text = (v: unknown) => JSON.stringify(v, null, 2) + '\n'
 
+/**
+ * android-quick-add-notification D2 to D4: the requests the web app hands over, captured
+ * from the real calls (Settings, an encrypted account, sign-out), the answers it reads, and
+ * the address of a reply, which the background run reads back as `add`.
+ */
+function quickAdd() {
+  const calls: string[] = []
+  window.opentodoShell = { bridge: 1, platform: 'android', app: '1.8.0', capabilities: ['quick-add-notification'], quickAddNotification: (json: string) => { calls.push(json); return 'on' } }
+  void quickAddNotificationState()
+  void setQuickAddNotification(true)
+  void setQuickAddNotification(false)
+  publishEncryption({ enabled: true })
+  void setQuickAddNotification(true)
+  publishEncryption({ enabled: false })
+  forgetShellData()
+  const ids = ['3f2b8c1e-5d4a-4e6f-9a7b-1c2d3e4f5a6b', '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d', 'c0ffee00-1234-4abc-8def-0123456789ab', '7e57ab1e-0000-4000-8000-000000000000']
+  const replies = ['Call the plumber tomorrow 9am #Home', '  Buy milk  ', 'Überweisung «Miete» ☎ 50% & more?', '   '].map((raw, i) => {
+    const t = raw.trim()
+    return { text: raw, id: ids[i], path: t ? `/?${new URLSearchParams({ add: t, id: ids[i] })}` : null, open: t ? `/?${new URLSearchParams({ add: t })}` : null }
+  })
+  // What a background run hands back with backgroundDone once it saved the first two replies.
+  const done: (string | undefined)[] = []
+  window.opentodoShell = { bridge: 1, platform: 'android', app: '1.8.0', capabilities: ['background'], backgroundDone: (json?: string) => void done.push(json) }
+  backgroundDone({ added: ids.slice(0, 2) })
+  backgroundDone({ added: [] })
+  delete window.opentodoShell
+  return {
+    description: 'The quick-add notification (android-quick-add-notification): a shell that lists the capability takes quickAddNotification(json) with one of calls (on absent: only read the state and take reply) and answers one of answers; a reply\'s text and a new id become path (text trimmed, at most 500 characters; none when empty), which the web app reads back as add and id in a background run and saves once as the task with that id. The run hands the saved ids to backgroundDone as one of done (absent: nothing saved); a reply not among them is offered again at open, which the visible app only prefills.',
+    capability: 'quick-add-notification' satisfies ShellCapability,
+    method: 'quickAddNotification' as const,
+    calls: calls.map((json) => ({ json, ...(JSON.parse(json) as object) })),
+    answers: ['on', 'off', 'denied'],
+    replies,
+    done: done.map((json) => ({ json: json ?? null, added: json ? (JSON.parse(json) as { added: string[] }).added : [] })),
+  }
+}
+
 /** status-bar-scroll-top D2: the capability, the event the page listens for and the script the iOS shell runs. */
 function scrollTop() {
   return {
@@ -473,7 +526,7 @@ afterEach(() => {
 
 describe('Android bridge fixtures', () => {
   it('are current (mobile/android/app/src/test/resources/bridge)', () => {
-    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'app-links.json': text(appLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()), 'pull.json': text(pull()), 'painted.json': text(painted()), 'push-bridge.json': text(pushBridge()), 'scroll-top.json': text(scrollTop()) }
+    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'app-links.json': text(appLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()), 'pull.json': text(pull()), 'painted.json': text(painted()), 'push-bridge.json': text(pushBridge()), 'scroll-top.json': text(scrollTop()), 'quick-add-notification.json': text(quickAdd()) }
     for (const [name, f] of Object.entries({ ...fixtures(), ...focusFixtures() })) want[name] = text(f)
     if (update) {
       mkdirSync(dir, { recursive: true })
@@ -482,6 +535,13 @@ describe('Android bridge fixtures', () => {
     for (const [name, body] of Object.entries(want)) {
       const file = path.join(dir, name)
       expect(existsSync(file) ? readFileSync(file, 'utf8') : '(missing)', `${name} is out of date: UPDATE_BRIDGE_FIXTURES=1 npx vitest run src/lib/shellBridge.fixture.test.ts`).toBe(body)
+    }
+  })
+
+  it('the web app reads every quick-add reply address back as add', () => {
+    for (const r of quickAdd().replies) {
+      if (r.path) expect(shellUrlAction(r.path.slice(1))).toEqual({ kind: 'add', text: r.text.trim(), id: r.id })
+      if (r.open) expect(shellUrlAction(r.open.slice(1))).toEqual({ kind: 'add', text: r.text.trim() })
     }
   })
 
@@ -516,7 +576,12 @@ describe('Android bridge fixtures', () => {
     const a = actions()
     for (const r of [...a.reminderActions, ...a.locationActions]) expect(shellUrlAction(new URL(r.path, 'https://x').search)).toEqual({ kind: 'reminder', id: r.id, action: r.action })
     expect(shellUrlAction(new URL(a.quickAdd.path, 'https://x').search)).toEqual({ kind: 'add', text: '' })
-    for (const c of a.completePaths) expect(shellUrlAction(new URL(c.path, 'https://x').search)).toEqual({ kind: 'complete', ids: c.taskIds })
+    for (const c of a.completePaths) {
+      const on = Object.fromEntries(c.taskIds.filter((t) => t.includes('@')).map((t) => t.split('@')))
+      const ids = c.taskIds.map((t) => t.split('@')[0])
+      expect(shellUrlAction(new URL(c.path, 'https://x').search)).toEqual(Object.keys(on).length ? { kind: 'complete', ids, on } : { kind: 'complete', ids })
+    }
+    for (const c of a.calendarPaths) expect(parseRoute(c.path)).toEqual(c.route)
     for (const f of a.focusActions) { const u = new URL(f.path, 'https://x'); expect(shellUrlAction(u.search, u.pathname)).toEqual({ kind: 'focus', action: f.action }) }
   })
 })

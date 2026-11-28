@@ -18,7 +18,7 @@ import { resolveLabels } from '../../lib/labels'
 import { hasTimeColumn } from '../../lib/rowTime'
 import { listSlotsOff } from '../../lib/rowSlots'
 import { useAllLabels, useReviewRow, useUserPrefsRow } from '../../lib/localData'
-import { setTaskCompletedWithFeedback } from '../completionSound'
+import { completeWithUndo } from '../undoable'
 import { dailyDue, finishDailyCheck, FOCUS_MAX, focusTasks, yesterdaysNote } from '../../lib/review'
 import { canEditTask } from '../../lib/sharing'
 import { qualifies } from '../../lib/triage'
@@ -125,7 +125,7 @@ export function DailyCheck() {
     return (
       <TaskRow key={key} task={task} project={task.project_id ? projectMap.get(task.project_id) : undefined} labels={resolveLabels(task.labels, labelMap)}
         showProject selected={key === selected} timeColumn={timeColumn} slotsOff={slotsOff} breadcrumb={crumb}
-        onToggle={() => act(setTaskCompletedWithFeedback(task.id, !task.completed_at))}
+        onToggle={() => act(completeWithUndo(task.id, !task.completed_at))}
         onOpen={() => { setSelected(key); setPanelTaskId(task.id) }} />
     )
   }
@@ -189,7 +189,7 @@ export function DailyCheck() {
               </ul>
               {/* Three tasks by touch (phone-touch-focus): the free places open the focus picker. */}
               {s.key === 'focus' && s.tasks.length < FOCUS_MAX && (
-                <button type="button" className="flex min-h-11 w-full items-center gap-2 rounded-control pl-8 pr-2 text-left text-body text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised"
+                <button type="button" className="flex min-h-11 w-full items-center gap-2 rounded-control ps-8 pe-2 text-start text-body text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised"
                   data-focus-add onClick={() => requestFocusPick({ mode: 'task', slot: null })}>
                   <span className="flex w-5 shrink-0 justify-center"><Icon name="plus" size="sm" /></span>{t('Add to focus')}
                 </button>

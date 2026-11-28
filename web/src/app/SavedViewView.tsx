@@ -12,7 +12,7 @@ import { parse } from '../lib/filter'
 import { resolveLabels } from '../lib/labels'
 import { hasTimeColumn } from '../lib/rowTime'
 import { listSlotsOff } from '../lib/rowSlots'
-import { setTaskCompletedWithFeedback } from './completionSound'
+import { completeWithUndo } from './undoable'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
 import { GROUP_BY_OPTIONS, SORT_BY_OPTIONS, type View } from '../lib/types'
 import { displayOptions, runView, updateView, viewOptions, type ViewPatch } from '../lib/views'
@@ -55,6 +55,7 @@ import { LIST_READY, perfMark } from '../lib/perfMarks'
 import { UrgencyChip, UrgencyContext } from './useUrgency'
 import { useCollapsedRows } from './task-list/collapsedRows'
 import { nestGroup, type NestedRow } from '../lib/viewNest'
+import { composing } from '../lib/composeKey'
 
 function parseError(src: string): string | null {
   if (!src.trim()) return t('The query must not be empty')
@@ -165,6 +166,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
     listRef.current?.focus()
   }
   function onInputKey(e: ReactKeyboardEvent<HTMLInputElement>) {
+    if (composing(e)) return
     if (e.key === 'Enter') {
       e.preventDefault()
       if (dirty) void saveQuery()
@@ -336,7 +338,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                 hasChildren={nested.get(key)?.hasChildren}
                 collapsed={nested.get(key)?.collapsed}
                 onToggleCollapse={nested.get(key)?.hasChildren ? () => toggleCollapsed(tk.id) : undefined}
-                onToggle={() => act(setTaskCompletedWithFeedback(tk.id, !tk.completed_at))}
+                onToggle={() => act(completeWithUndo(tk.id, !tk.completed_at))}
                 selectOnClick onOpen={(e, intent) => { setSelected(key); openFromRow(tk.id, e, intent) }}
                 onOpenPage={() => openTaskPage(tk.id)}
                 onExpand={() => { setSelected(key); setExpanded((cur) => (cur === key ? null : key)) }}

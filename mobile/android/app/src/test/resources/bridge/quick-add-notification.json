@@ -1,0 +1,75 @@
+{
+  "description": "The quick-add notification (android-quick-add-notification): a shell that lists the capability takes quickAddNotification(json) with one of calls (on absent: only read the state and take reply) and answers one of answers; a reply's text and a new id become path (text trimmed, at most 500 characters; none when empty), which the web app reads back as add and id in a background run and saves once as the task with that id. The run hands the saved ids to backgroundDone as one of done (absent: nothing saved); a reply not among them is offered again at open, which the visible app only prefills.",
+  "capability": "quick-add-notification",
+  "method": "quickAddNotification",
+  "calls": [
+    {
+      "json": "{\"reply\":true}",
+      "reply": true
+    },
+    {
+      "json": "{\"on\":true,\"reply\":true}",
+      "on": true,
+      "reply": true
+    },
+    {
+      "json": "{\"on\":false,\"reply\":true}",
+      "on": false,
+      "reply": true
+    },
+    {
+      "json": "{\"on\":true,\"reply\":false}",
+      "on": true,
+      "reply": false
+    },
+    {
+      "json": "{\"on\":false,\"reply\":false}",
+      "on": false,
+      "reply": false
+    }
+  ],
+  "answers": [
+    "on",
+    "off",
+    "denied"
+  ],
+  "replies": [
+    {
+      "text": "Call the plumber tomorrow 9am #Home",
+      "id": "3f2b8c1e-5d4a-4e6f-9a7b-1c2d3e4f5a6b",
+      "path": "/?add=Call+the+plumber+tomorrow+9am+%23Home&id=3f2b8c1e-5d4a-4e6f-9a7b-1c2d3e4f5a6b",
+      "open": "/?add=Call+the+plumber+tomorrow+9am+%23Home"
+    },
+    {
+      "text": "  Buy milk  ",
+      "id": "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+      "path": "/?add=Buy+milk&id=0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+      "open": "/?add=Buy+milk"
+    },
+    {
+      "text": "Überweisung «Miete» ☎ 50% & more?",
+      "id": "c0ffee00-1234-4abc-8def-0123456789ab",
+      "path": "/?add=%C3%9Cberweisung+%C2%ABMiete%C2%BB+%E2%98%8E+50%25+%26+more%3F&id=c0ffee00-1234-4abc-8def-0123456789ab",
+      "open": "/?add=%C3%9Cberweisung+%C2%ABMiete%C2%BB+%E2%98%8E+50%25+%26+more%3F"
+    },
+    {
+      "text": "   ",
+      "id": "7e57ab1e-0000-4000-8000-000000000000",
+      "path": null,
+      "open": null
+    }
+  ],
+  "done": [
+    {
+      "json": "{\"added\":[\"3f2b8c1e-5d4a-4e6f-9a7b-1c2d3e4f5a6b\",\"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d\"]}",
+      "added": [
+        "3f2b8c1e-5d4a-4e6f-9a7b-1c2d3e4f5a6b",
+        "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
+      ]
+    },
+    {
+      "json": null,
+      "added": []
+    }
+  ]
+}

@@ -79,10 +79,10 @@ function WorkspaceListItem({ ws, current, onOpen }: { ws: Workspace; current: bo
   return (
     <li>
       <button type="button" onClick={onOpen} aria-current={current ? 'true' : undefined} data-workspace-row={ws.id}
-        className={`touch-target relative flex w-full items-center gap-2.5 rounded-control py-2 pl-3 pr-2 text-left text-body
+        className={`touch-target relative flex w-full items-center gap-2.5 rounded-control py-2 ps-3 pe-2 text-start text-body
           focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus
           ${current ? 'bg-selected font-medium text-strong' : 'text-default hover:bg-hover'}`}>
-        {current && <span aria-hidden="true" className="absolute inset-y-1.5 left-0 w-1 rounded-full bg-accent" data-current-marker />}
+        {current && <span aria-hidden="true" className="absolute inset-y-1.5 inset-s-0 w-1 rounded-full bg-accent" data-current-marker />}
         <WorkspaceMark workspace={ws} />
         <span className="user-text min-w-0 flex-1 truncate">{name}</span>
         <span className="shrink-0 text-hint text-muted">{ws.default ? t('Default') : roleName(ws.role)}</span>
@@ -119,7 +119,7 @@ function WorkspaceDetail({ ws, user, online, encrypted, onBack }: { ws: Workspac
   return (
     <section aria-labelledby={`workspace-${ws.id}-name`} className="min-w-0 space-y-4" data-workspace-detail={ws.id}>
       {onBack && (
-        <Button variant="ghost" icon="chevron-left" onClick={onBack} data-workspace-back className="-ml-2">{t('Workspaces')}</Button>
+        <Button variant="ghost" icon="chevron-left" onClick={onBack} data-workspace-back className="-ms-2">{t('Workspaces')}</Button>
       )}
       <header className="flex items-center gap-3">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-sunken"><WorkspaceMark workspace={ws} size={24} /></span>

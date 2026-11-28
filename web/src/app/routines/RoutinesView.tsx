@@ -118,7 +118,7 @@ function RoutineRow({ rule, index, total, status, catalogue, names, onEdit, onHi
   return (
     <li className="flex min-h-11 items-start gap-3 rounded-control px-2 py-2 hover:bg-sunken dark:hover:bg-raised" data-rule-row={rule.id}>
       <Switch label={t('Routine {name} on', { name })} hideLabel checked={rule.enabled} disabled={!editable} onChange={(on) => act(setRuleEnabled(rule.id, on))} />
-      <button type="button" className="min-w-0 flex-1 text-left" onClick={known ? onEdit : undefined} disabled={!known} data-edit-routine>
+      <button type="button" className="min-w-0 flex-1 text-start" onClick={known ? onEdit : undefined} disabled={!known} data-edit-routine>
         <span className="block truncate text-body text-default">{name}</span>
         <span className="block text-meta text-muted" data-rule-line>{known ? routineLine(rule, names) : t('Made with a newer version')}</span>
         {project && (
@@ -131,7 +131,8 @@ function RoutineRow({ rule, index, total, status, catalogue, names, onEdit, onHi
         {missing > 0 && <span className="block text-meta text-warning" data-unavailable-count>{t('{n, plural, one {# step not available} other {# steps not available}}', { n: missing })}</span>}
         {meta && <span className="block text-meta text-faint">{meta}</span>}
       </button>
-      <Button size="sm" variant="ghost" icon="zap" disabled={!online || !editable} onClick={() => void runRoutineNow(rule, undefined)} aria-label={t('Run now: {name}', { name })}>{t('Run now')}</Button>
+      {/* Below 640 px Run now is the row menu's item only, so the name and the sentence keep the row's width (phone-rest D6). */}
+      <Button size="sm" variant="ghost" icon="zap" className="max-sm:hidden" disabled={!online || !editable} onClick={() => void runRoutineNow(rule, undefined)} aria-label={t('Run now: {name}', { name })} data-run-now>{t('Run now')}</Button>
       <ActionMenu label={t('Menu for routine {name}', { name })} groups={groups} />
       {confirm.element}
     </li>

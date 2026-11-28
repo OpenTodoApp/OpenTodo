@@ -187,6 +187,7 @@ function makeGhost(label: string): HTMLElement {
   g.textContent = label || t('Untitled')
   g.setAttribute('aria-hidden', 'true')
   g.setAttribute('data-drag-ghost', '')
+  // physical: the ghost follows the pointer's screen coordinates (translate).
   g.className = 'pointer-events-none fixed left-0 top-0 z-50 max-w-60 truncate rounded-md border border-accent bg-surface px-2 py-1 text-sm shadow-lg'
   document.body.appendChild(g)
   return g
@@ -206,17 +207,25 @@ export function swallowNextClick(): void {
 const EDGE_ZONE = 48
 export const EDGE_STEP = 16
 
+/** Sideways the zone is narrower (phone-board D2): on a phone the next column shows 35 px of itself, and a card held by its start should not turn the board. */
+const SIDE_ZONE = 32
+/** How long the pointer rests at the edge of a snapping scroller before it turns one column, and before each further one (phone-board D2). */
+export const PAGE_ARM = 300
+export const PAGE_DWELL = 700
+
 /** The scroll step for a pointer at `y` in a scroller showing `top` to `bottom`: negative near the top, positive near the bottom, faster nearer the edge. */
-export function edgeStep(y: number, top: number, bottom: number): number {
-  const zone = Math.min(EDGE_ZONE, (bottom - top) / 4)
+export function edgeStep(y: number, top: number, bottom: number, edge = EDGE_ZONE): number {
+  const zone = Math.min(edge, (bottom - top) / 4)
   if (zone <= 0) return 0
   if (y < top + zone) return -Math.ceil(EDGE_STEP * Math.min(1, (top + zone - y) / zone))
   if (y > bottom - zone) return Math.ceil(EDGE_STEP * Math.min(1, (y - (bottom - zone)) / zone))
   return 0
 }
 
-/** The page's own scrollers a drag can scroll: the main content and the sidebar's list. */
-const SCROLLERS = '[data-main-scroller], [data-sidebar-scroll]'
+/** The scrollers a drag can scroll up and down: the main content, the sidebar's list, and one that asks for it (a board column's cards, phone-board D1). */
+const SCROLLERS = '[data-main-scroller], [data-sidebar-scroll], [data-edge-scroll="y"]'
+/** The scrollers a drag can scroll sideways: only one that asks for it (a board's row of columns). */
+const SIDE_SCROLLERS = '[data-edge-scroll="x"]'
 
 /** The step for `el` at `y`, when it can still move that way (a 1 px tolerance for fractional scroll positions). */
 function edgeRoom(el: HTMLElement, y: number): number {
@@ -251,6 +260,54 @@ export function edgeScroller(x: number, y: number, doc: Document = document): { 
   for (const el of inside.reverse()) {
     const step = edgeRoom(el, y)
     if (step) return { el, step }
+  }
+  return null
+}
+
+/**
+ * The neighbouring snap point (phone-board D2): of the scroll positions `starts` that put a
+ * child at the scroller's start, each kept within `lo`..`hi`, the nearest one past `at`
+ * towards `dir` (1: the right, -1: the left), or null at the end. A 1 px tolerance, as above.
+ */
+export function nextSnap(starts: readonly number[], at: number, dir: 1 | -1, lo: number, hi: number): number | null {
+  let best: number | null = null
+  for (const s of starts) {
+    const p = Math.max(lo, Math.min(hi, s))
+    if (dir > 0 ? p <= at + 1 : p >= at - 1) continue
+    if (best === null || (dir > 0 ? p < best : p > best)) best = p
+  }
+  return best
+}
+
+/** A sideways scroller near the pointer: its step per frame, or `to`, the snap point it turns to when it snaps. */
+export interface SideHit { el: HTMLElement; step: number; to?: number }
+
+/**
+ * The marked sideways scroller a pointer at (x, y) is near the left or right edge of, when
+ * it can still move that way (phone-board D2): the innermost one whose box holds the point.
+ * Never one in an inert region, and never under a dialog.
+ */
+export function sideScroller(x: number, y: number, doc: Document = document): SideHit | null {
+  if (doc.elementFromPoint?.(x, y)?.closest('[data-overlay-root], [role="dialog"]')) return null
+  for (const el of [...doc.querySelectorAll<HTMLElement>(SIDE_SCROLLERS)].reverse()) {
+    if (el.closest('[inert]')) continue
+    const r = el.getBoundingClientRect()
+    if (r.width <= 0 || x < r.left || x > r.right || y < r.top || y > r.bottom) continue
+    const step = edgeStep(x, Math.max(r.left, 0), Math.min(r.right, window.innerWidth), SIDE_ZONE)
+    if (!step) continue
+    // Right to left the positions run from -max to 0; the edges stay the screen's.
+    const style = getComputedStyle(el)
+    const rtl = style.direction === 'rtl'
+    const max = Math.max(0, el.scrollWidth - el.clientWidth)
+    const lo = rtl ? -max : 0, hi = rtl ? 0 : max
+    const at = el.scrollLeft
+    if (step < 0 ? at <= lo + 1 : at >= hi - 1) continue
+    const snap = style.scrollSnapType ?? ''
+    if (!/mandatory/.test(snap) || /^(y|block)\b/.test(snap)) return { el, step }
+    const starts = [...el.children].filter((c) => { const a = getComputedStyle(c).scrollSnapAlign; return !!a && a !== 'none' })
+      .map((c) => { const b = c.getBoundingClientRect(); return rtl ? b.right - r.right + at : b.left - r.left + at })
+    const to = nextSnap(starts, at, step < 0 ? -1 : 1, lo, hi)
+    if (to !== null) return { el, step, to }
   }
   return null
 }
@@ -312,15 +369,43 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
   }
   // Near a scroller's edge the list keeps scrolling under a still pointer, so a row
   // reaches places off screen; each step re-reads the target under the pointer.
+  // Sideways a marked scroller moves too (phone-board D2): steadily, or one snap point at a
+  // time after the pointer has rested at its edge; the target is re-read while it slides.
+  let turn: { el: HTMLElement; dir: number; due: number } | null = null
+  let settle = 0
+  const scrollSide = (now: number): boolean => {
+    const side = sideScroller(lastX, lastY)
+    if (!side || side.to === undefined) turn = null
+    if (!side) return false
+    const { el, step, to } = side
+    if (to === undefined) {
+      const before = el.scrollLeft
+      el.scrollLeft = before + step
+      return el.scrollLeft !== before
+    }
+    const dir = Math.sign(step)
+    if (!turn || turn.el !== el || turn.dir !== dir) turn = { el, dir, due: now + PAGE_ARM }
+    else if (now >= turn.due) {
+      turn.due = settle = now + PAGE_DWELL
+      const smooth = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      if (el.scrollTo) el.scrollTo({ left: to, behavior: smooth ? 'smooth' : 'auto' })
+      else el.scrollLeft = to
+    }
+    return true
+  }
   const scrollEdge = () => {
     frame = 0
     if (!lifted) return
+    const now = performance.now()
+    let live = now < settle
     const hit = edgeScroller(lastX, lastY)
-    if (!hit) return
-    const { el, step } = hit
-    const before = el.scrollTop
-    el.scrollTop = before + step
-    if (el.scrollTop === before) return
+    if (hit) {
+      const before = hit.el.scrollTop
+      hit.el.scrollTop = before + hit.step
+      if (hit.el.scrollTop !== before) live = true
+    }
+    if (scrollSide(now)) live = true
+    if (!live) return
     place(lastX, lastY)
     frame = requestAnimationFrame(scrollEdge)
   }

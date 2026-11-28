@@ -23,6 +23,8 @@ const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', cre
 const originalMedia = window.matchMedia
 
 beforeEach(async () => {
+  // These tests read the habit rows, which the screen shows below 640 px (habits-board D1).
+  window.matchMedia = ((media: string) => ({ matches: false, media, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => true })) as typeof window.matchMedia
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 10, 11, 12, 0)) // Wednesday 11 November 2026
   await db.delete()
@@ -76,6 +78,22 @@ describe('the Habits screen', () => {
     await r.unmount()
   })
 
+  it('the control that opens the other ways to check in shows by touch, and on hover or focus with a mouse (touch-open-and-controls)', async () => {
+    const read = await habit('Read', 'every day', '2026-11-11')
+    const walk = await habit('Walk', 'every day', '2026-11-11')
+    await completeTask(walk, { today: '2026-11-11' })
+    const r = await render(<HabitsScreen />)
+    await waitFor(() => !!document.querySelector(`[data-habit-row="${read}"]`) && !!document.querySelector(`[data-habit-row="${walk}"] [data-check-in][data-kept]`), 'the rows')
+    const trigger = document.querySelector<HTMLElement>(`[data-habit-row="${read}"] button[aria-label="More ways to check in Read"]`)!
+    // happy-dom applies no CSS, so the classes are what can be read here: hidden at rest,
+    // shown with a coarse pointer, and with a fine one on the row's hover or focus.
+    const classes = trigger.className.split(/\s+/)
+    expect(classes).toEqual(expect.arrayContaining(['opacity-0', 'pointer-coarse:opacity-100', 'group-hover:opacity-100', 'group-focus-within:opacity-100', 'focus:opacity-100']))
+    // A row kept today offers no other way, so it has no control to show.
+    expect(document.querySelector(`[data-habit-row="${walk}"] button[aria-label^="More ways to check in"]`)).toBeNull()
+    await r.unmount()
+  })
+
   it('Check in from the screen with Space, and the tiny version with Shift+Space; the day fills at once', async () => {
     const read = await habit('Read', 'every day', '2026-11-11', { habit_tiny: 'One page' })
     const walk = await habit('Walk', 'every day', '2026-11-11')
@@ -87,7 +105,8 @@ describe('the Habits screen', () => {
     await waitFor(async () => (await db.tasks.get(occurrenceId(walk, '2026-11-11')))?.tiny === true, 'the tiny record')
     await waitFor(() => document.querySelector<HTMLElement>(`[data-habit-row="${read}"] [data-day="2026-11-11"]`)?.dataset.state === 'done', 'the filled day')
     await waitFor(() => document.querySelector<HTMLElement>(`[data-habit-row="${walk}"] [data-day="2026-11-11"]`)?.dataset.state === 'tiny', 'the half-filled day')
-    expect(document.querySelector(`[data-habit-row="${read}"] [data-check-in]`)!.hasAttribute('disabled')).toBe(true)
+    // A kept habit's button is a pressed toggle (habits-complete D4).
+    expect(document.querySelector(`[data-habit-row="${read}"] [data-check-in]`)!.getAttribute('aria-pressed')).toBe('true')
     expect(fetch).not.toHaveBeenCalled()
     await r.unmount()
   })

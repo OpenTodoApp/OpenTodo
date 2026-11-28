@@ -21,6 +21,7 @@
     <string name="error_offline">无法连接到服务器，而且这台手机上还没有打开过 OpenTodo。</string>
     <string name="error_untrusted">这台手机不信任服务器的证书。</string>
     <string name="channel_reminders">提醒</string>
+    <string name="channel_urgent">紧急提醒</string>
     <string name="reminder_generic">提醒</string>
     <string name="reminder_text">任务提醒</string>
     <string name="action_snooze">延后 10 分钟</string>
@@ -50,6 +51,17 @@
     <string name="widget_completed_description">本周完成了多少任务</string>
     <string name="widget_completed_locked">已锁定：仅显示今天的数量</string>
     <string name="widget_completed_days">每天完成：%1$s</string>
+    <string name="widget_upcoming">即将到来</string>
+    <string name="widget_upcoming_description">你接下来的任务，按天</string>
+    <string name="widget_upcoming_empty">没有即将到来的任务。</string>
+    <string name="widget_upcoming_locked">已锁定。即将到来的任务：%1$d</string>
+    <string name="widget_tomorrow">明天</string>
+    <string name="widget_calendar">日历</string>
+    <string name="widget_calendar_description">本月，标出有任务的日子</string>
+    <string name="widget_calendar_locked">已锁定</string>
+    <string name="widget_calendar_day">%1$s，任务：%2$d</string>
+    <string name="widget_previous_month">上个月</string>
+    <string name="widget_next_month">下个月</string>
     <string name="setup_old_webview">这台手机的 Android System WebView 版本较旧（版本 %1$s）。请从应用商店更新它，以便 OpenTodo 完整工作。</string>
     <string name="site_bar_host">正在 %1$s 上登录</string>
     <string name="site_bar_close">返回 OpenTodo</string>
@@ -58,6 +70,7 @@
     <string name="setup_sign_in">在这里登录</string>
     <string name="error_sign_in">你的服务器位于登录页之后，而且登录没有在应用中继续。请在这里重新登录。</string>
     <string name="save_failed">文件无法保存。</string>
+    <string name="quick_add_failed">任务未添加。点按以添加。</string>
     <string name="channel_focus">专注</string>
     <string name="channel_sync">正在同步</string>
     <string name="focus_generic">专注时段</string>

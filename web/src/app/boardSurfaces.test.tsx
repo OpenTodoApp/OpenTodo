@@ -9,6 +9,7 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
+import { sideScroller } from '../lib/dnd'
 import { createSection, saveViewMode } from '../lib/sections'
 import { click, flush, key, render, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
@@ -98,6 +99,47 @@ describe('board surfaces', () => {
     expect(r.container.querySelector('[data-drop-placeholder]')).toBeNull()
     await waitFor(() => r.container.querySelector(`[data-column="${doing}"] [data-task-id="${card}"]`) !== null)
     expect(r.container.querySelector('[data-drop-placeholder]')).toBeNull()
+    await r.unmount()
+  })
+
+  it('a card held at the board\'s edge scrolls it and the drop lands in the column that slid in (phone-board)', async () => {
+    const { r, todo, doing, done, card } = await board()
+    vi.stubGlobal('innerWidth', 390)
+    // The phone's geometry: the row is the screen's width and snaps, a column is 343 px after a 12 px gap.
+    const row = r.container.querySelector<HTMLElement>('[data-board]')!
+    const rect = (left: number, width: number) => ({ top: 0, bottom: 600, left, right: left + width, width, height: 600, x: left, y: 0, toJSON() {} })
+    let left = 16
+    const turns: number[] = []
+    row.style.scrollSnapType = 'x mandatory'
+    row.getBoundingClientRect = () => rect(0, 390)
+    Object.defineProperty(row, 'scrollLeft', { get: () => left, set: (v: number) => { left = v }, configurable: true })
+    Object.defineProperty(row, 'clientWidth', { value: 390, configurable: true })
+    Object.defineProperty(row, 'scrollWidth', { value: 1500, configurable: true })
+    row.scrollTo = ((o: { left: number }) => { turns.push(o.left); left = o.left }) as typeof row.scrollTo
+    const column = (key: string) => r.container.querySelector<HTMLElement>(`[data-column="${key}"]`)!
+    for (const [i, key] of [todo, doing, done].entries()) {
+      column(key).style.scrollSnapAlign = 'start'
+      column(key).getBoundingClientRect = () => rect(16 + i * 355 - left, 343)
+    }
+    // What is under the still pointer at the right edge follows the row's position.
+    document.elementFromPoint = () => column(left < 200 ? doing : done)
+    const li = r.container.querySelector<HTMLElement>(`[data-task-id="${card}"]`)!
+    await act(async () => {
+      li.dispatchEvent(pointer('pointerdown', 100, 100))
+      window.dispatchEvent(pointer('pointermove', 385, 120))
+    })
+    // Resting there: nothing yet, then "Doing", then "Done", and no further.
+    expect(turns).toEqual([])
+    await waitFor(() => turns.length === 1, 'the first turn')
+    await waitFor(() => turns.length === 2, 'the second turn')
+    expect(turns).toEqual([371, 726])
+    await waitFor(() => r.container.querySelector('[data-drop-placeholder]')?.closest('[data-column]')?.getAttribute('data-column') === done, 'the placeholder in Done')
+    expect(sideScroller(385, 120)).toBeNull()
+    // Nothing is written while the board scrolls; the drop is the move.
+    expect((await db.tasks.get(card))!.section_id).toBe(todo)
+    await act(async () => { window.dispatchEvent(pointer('pointerup', 385, 120)) })
+    await waitFor(async () => (await db.tasks.get(card))!.section_id === done, 'the card in Done')
+    await waitFor(() => r.container.querySelector(`[data-column="${done}"] li:last-child`)?.getAttribute('data-task-id') === card, 'last in Done')
     await r.unmount()
   })
 })

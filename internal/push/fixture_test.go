@@ -63,7 +63,7 @@ func buildPushFixture(t *testing.T) []byte {
 		t.Fatal(err)
 	}
 	auth, salt := fixtureBytes("auth secret", 16), fixtureBytes("salt", 16)
-	plaintext := BuildPayload("r-1", "t-1", 1_791_000_000_000, "Call the plumber ☎", true)
+	plaintext := BuildPayload("r-1", "t-1", 1_791_000_000_000, "Call the plumber ☎", nil, true)
 	body, err := encrypt(plaintext, ua.PublicKey().Bytes(), auth, as, salt)
 	if err != nil {
 		t.Fatal(err)

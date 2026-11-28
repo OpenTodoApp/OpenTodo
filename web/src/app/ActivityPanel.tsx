@@ -112,7 +112,7 @@ function ActivityDayList({ day, now }: { day: ActivityDay; now: number }) {
                 <span className="text-muted"> · {ev.userAgent ? <Tooltip label={ev.userAgent}><span tabIndex={0} className="rounded-chip">{shortAgent(ev.userAgent)}</span></Tooltip> : shortAgent(ev.userAgent)}</span>
               </span>
               <Tooltip label={[dt.formatInstant(ev.ts, 'datetime'), ev.ip].filter(Boolean).join(' · ')}>
-                <time dateTime={new Date(ev.ts).toISOString()} tabIndex={0} className="ml-auto shrink-0 rounded-chip text-meta tabular-nums text-muted">
+                <time dateTime={new Date(ev.ts).toISOString()} tabIndex={0} className="ms-auto shrink-0 rounded-chip text-meta tabular-nums text-muted">
                   {now - ev.ts < 3_600_000 ? relativeTime(ev.ts, now) : dt.formatInstant(ev.ts, 'time')}
                 </time>
               </Tooltip>

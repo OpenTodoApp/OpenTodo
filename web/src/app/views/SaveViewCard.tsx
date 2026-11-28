@@ -6,6 +6,7 @@ import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { Button, Icon } from '../../ui'
 import { t } from '../../lib/i18n'
 import { messageOf } from '../../lib/errorText'
+import { composing } from '../../lib/composeKey'
 
 export function SaveViewCard({ onSave, onCancel }: { onSave: (name: string) => Promise<void>; onCancel: () => void }) {
   const [name, setName] = useState('')
@@ -23,7 +24,7 @@ export function SaveViewCard({ onSave, onCancel }: { onSave: (name: string) => P
   }
   return (
     <form onSubmit={(e) => void submit(e)} data-save-view-card aria-label={t('Save as view')}
-      onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}
+      onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}
       className="my-2 flex flex-wrap items-center gap-3 rounded-card border border-strong bg-raised px-3 py-2.5">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-sunken text-muted" aria-hidden><Icon name="layers" size="md" /></span>
       <div className="min-w-0 flex-1 basis-48">
@@ -34,7 +35,7 @@ export function SaveViewCard({ onSave, onCancel }: { onSave: (name: string) => P
           {error ? <span role="alert" className="text-danger">{error}</span> : <span className="text-faint">{t('Saved with its conditions and display options, in the sidebar under Views.')}</span>}
         </p>
       </div>
-      <div className="ml-auto flex shrink-0 items-center gap-2">
+      <div className="ms-auto flex shrink-0 items-center gap-2">
         <Button variant="ghost" size="sm" type="button" onClick={onCancel}>{t('Cancel')}</Button>
         <Button variant="primary" size="sm" type="submit">{t('Save view')}</Button>
       </div>

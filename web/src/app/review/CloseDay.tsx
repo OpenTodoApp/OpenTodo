@@ -29,6 +29,7 @@ import { reopenDayAction } from '../reopenDay'
 import { MovesList, type Kind } from './CarryOver'
 import { CloseProgress } from './CloseProgress'
 import { DoneForToday, type DayDoneFigures } from './DoneForToday'
+import { inlineKey } from '../../lib/direction'
 
 /** Completed tasks shown before "and n more". */
 const DONE_FOLD = 8
@@ -160,7 +161,7 @@ export function CloseDay({ initialStep = 'done', initialDay }: { initialStep?: C
           onReopen={reopenable ? () => { reopenDayAction(live.today); setClosed(null) } : undefined} />
       ) : !summary || !day ? <Skeleton shape="row" count={4} /> : (
         <section aria-labelledby="close-step-title" data-close-step={step} data-review-step={step} className="mx-auto max-w-[42rem] pt-4 sm:pt-12">
-          {!desktop && <div className="-ml-1 mb-3"><CloseProgress step={step} seen={seen} onStep={go} /></div>}
+          {!desktop && <div className="-ms-1 mb-3"><CloseProgress step={step} seen={seen} onStep={go} /></div>}
           <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
             {/* Focused from code on each step so a screen reader reads it; not a stop for Tab, so no ring. */}
             <h2 id="close-step-title" ref={title} tabIndex={-1} className="text-h1 text-strong outline-none">{CLOSE_STEP_TITLES[step]}</h2>
@@ -263,7 +264,7 @@ function FirstStep({ tasks, projects, chosen, onChoose, note, onNote, onClose }:
   const refs = useRef<(HTMLButtonElement | null)[]>([])
   const at = Math.max(0, tasks.findIndex((x) => x.id === chosen))
   const onKeyDown = (e: KeyboardEvent, i: number) => {
-    const to = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? i - 1 : null
+    const to = e.key === 'ArrowDown' || inlineKey(e) === 'ArrowRight' ? i + 1 : e.key === 'ArrowUp' || inlineKey(e) === 'ArrowLeft' ? i - 1 : null
     if (to === null || to < 0 || to >= tasks.length) return
     e.preventDefault()
     refs.current[to]?.focus()
@@ -277,7 +278,7 @@ function FirstStep({ tasks, projects, chosen, onChoose, note, onNote, onClose }:
             return (
               <button key={x.id} ref={(el) => { refs.current[i] = el }} type="button" role="radio" aria-checked={on} tabIndex={i === at ? 0 : -1}
                 onClick={() => onChoose(on ? null : x.id)} onKeyDown={(e) => onKeyDown(e, i)} data-close-first={x.id}
-                className={`flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-control px-2 py-2.5 text-left max-md:items-start outline-none transition-colors duration-(--duration-ui) hover:bg-hover focus-visible:ring-2 focus-visible:ring-focus sm:px-3 ${on ? 'bg-accent-soft' : ''}`}>
+                className={`flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-control px-2 py-2.5 text-start max-md:items-start outline-none transition-colors duration-(--duration-ui) hover:bg-hover focus-visible:ring-2 focus-visible:ring-focus sm:px-3 ${on ? 'bg-accent-soft' : ''}`}>
                 <span aria-hidden="true" className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border max-md:mt-0.5 ${on ? 'border-accent bg-accent' : 'border-strong'}`}>
                   {on && <span className="h-1.5 w-1.5 rounded-full bg-on-accent" />}
                 </span>

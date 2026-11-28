@@ -100,7 +100,7 @@ export function NoteSearchField({ text, onText, tokens, onTokens, projects, labe
   }
   return (
     <div className="relative min-w-0 flex-[1_1_14rem]" data-note-search-field>
-      <div className="ui-input flex min-h-8 w-full cursor-text flex-wrap items-center gap-1 py-1 pl-2 focus-within:ring-2 focus-within:ring-focus/30"
+      <div className="ui-input flex min-h-8 w-full cursor-text flex-wrap items-center gap-1 py-1 ps-2 focus-within:ring-2 focus-within:ring-focus/30"
         onMouseDown={(e) => { if (e.target === e.currentTarget) { e.preventDefault(); (e.currentTarget.querySelector('input') as HTMLInputElement | null)?.focus() } }}>
         <Icon name="search" className="pointer-events-none shrink-0 text-faint" />
         {tokens.map((tk, i) => {

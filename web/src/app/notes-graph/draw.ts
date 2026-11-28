@@ -264,6 +264,10 @@ export function drawFrame(ctx: CanvasRenderingContext2D, f: Frame): number {
   for (const i of f.always) always.add(i)
   const labels = labelsFor(g, x, y, visible, cam, size, always)
   ctx.textBaseline = 'middle'
+  // Labels sit to the right of their node in every language (arabic-rtl D8): the canvas would
+  // otherwise inherit the page's direction and draw `start`-aligned text leftwards.
+  ctx.direction = 'ltr'
+  ctx.textAlign = 'left'
   ctx.lineJoin = 'round'
   const taken: { x: number; y: number; w: number; h: number }[] = []
   const draws: { text: string; font: string; x: number; y: number; alpha: number; colour: string }[] = []

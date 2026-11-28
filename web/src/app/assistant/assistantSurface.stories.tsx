@@ -75,7 +75,7 @@ export const Applied: StoryObj = {
 /** The side sheet's empty state: the greeting and the starters, the composer at its foot. */
 export const EmptySheet: StoryObj = {
   render: () => (
-    <div className="-m-4 flex h-[44rem] w-full max-w-[28rem] flex-col border-l border-default bg-surface">
+    <div className="-m-4 flex h-[44rem] w-full max-w-[28rem] flex-col border-s border-default bg-surface">
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3"><AssistantPanelBody {...base} layout="sheet" /></div>
       <div className="border-t border-default px-3 py-2">
         <Composer draft="" onDraft={noop} onSend={noop} onStop={noop} streaming={false} connected disabled={false} skills={SKILLS} onSkill={noop} context="Today" />
@@ -90,7 +90,7 @@ export const EmptySheet: StoryObj = {
  */
 export const CompleteListNotice: StoryObj = {
   render: () => (
-    <div className="-m-4 w-full max-w-[28rem] border-l border-default bg-surface px-4 py-3">
+    <div className="-m-4 w-full max-w-[28rem] border-s border-default bg-surface px-4 py-3">
       <DisclosureNoticeView connected open device={false} onSeen={noop} onTurnOff={noop}
         fields={['task titles and descriptions', 'due dates, repeats, priorities, estimates and completion', 'comments', 'notes', 'tracked time and its notes', 'your routines and calendar frames']} />
     </div>
@@ -100,7 +100,7 @@ export const CompleteListNotice: StoryObj = {
 /** The one-time notice that memory items go with every turn (assistant-memory D4), for a consent before memory. */
 export const MemoryNotice: StoryObj = {
   render: () => (
-    <div className="-m-4 w-full max-w-[28rem] border-l border-default bg-surface px-4 py-3">
+    <div className="-m-4 w-full max-w-[28rem] border-s border-default bg-surface px-4 py-3">
       <DisclosureNoticeView connected device={false} complete={false} memory onSeen={noop} onTurnOff={noop}
         fields={['task titles and descriptions', 'notes', 'your memory items, with every message']} />
     </div>

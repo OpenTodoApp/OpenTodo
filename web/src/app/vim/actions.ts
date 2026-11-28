@@ -1,11 +1,10 @@
 // Actions over a registered list (vim-keybindings, design D3). Lives in the lazy
 // Vim chunk; the main bundle only carries the ListState registry.
-import { moveTaskBy } from '../../lib/move'
 import type { Task } from '../../lib/types'
 import { priorityUndoable } from '../../lib/undoActions'
 import { listState, type ListActions, type ListState } from '../listActions'
 import { runBulk } from '../bulk/BulkActions'
-import { deleteWithUndo } from '../undoable'
+import { deleteWithUndo, stepRowWithUndo } from '../undoable'
 
 export function makeListActions(s: ListState): ListActions {
   const selectedRow = () => {
@@ -73,7 +72,7 @@ export function makeListActions(s: ListState): ListActions {
         return
       }
       if (!writable(task) || !s.manual()) return
-      for (let i = 0; i < Math.abs(n); i++) if (!(await moveTaskBy(task.id, n < 0 ? -1 : 1))) break
+      for (let i = 0; i < Math.abs(n); i++) if (!(await stepRowWithUndo(task.id, n < 0 ? -1 : 1))) break
     },
     openQuickAdd() {
       return s.focusQuickAdd(s.manual() ? s.selected() : null)

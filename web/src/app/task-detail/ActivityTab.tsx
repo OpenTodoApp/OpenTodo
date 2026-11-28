@@ -48,13 +48,13 @@ function RunItem({ run, name, project, task, onOpenComment, now }: { run: Activi
   const [open, setOpen] = useState(false)
   const first = run.events[0]
   const actor = name(run.actor, first)
-  const pending = run.pending && <Tooltip label={t('Not yet synced')}><span className="ml-1 rounded-chip text-meta italic text-warning" tabIndex={0}>{t('pending')}</span></Tooltip>
+  const pending = run.pending && <Tooltip label={t('Not yet synced')}><span className="ms-1 rounded-chip text-meta italic text-warning" tabIndex={0}>{t('pending')}</span></Tooltip>
   if (run.type === 'comment') {
     return (
       <div className="flex items-center gap-3 text-meta text-muted" data-run="comment">
         <PersonAvatar id={run.actor || 'unknown'} name={actor} size="sm" />
         <Icon name="message-circle" size="sm" className="shrink-0 text-faint" />
-        <button type="button" className="min-w-0 flex-1 rounded-chip text-left hover:underline focus-visible:outline-2 focus-visible:outline-focus"
+        <button type="button" className="min-w-0 flex-1 rounded-chip text-start hover:underline focus-visible:outline-2 focus-visible:outline-focus"
           onClick={() => onOpenComment(first.entityId)}>
           {summarizeRun(run, actor)}
         </button>
@@ -72,7 +72,7 @@ function RunItem({ run, name, project, task, onOpenComment, now }: { run: Activi
         <div className="min-w-0 flex-1 text-default">
           {many ? (
             <button type="button" aria-expanded={open} onClick={() => setOpen((v) => !v)}
-              className="inline-flex max-w-full items-start gap-1 rounded-chip text-left hover:underline focus-visible:outline-2 focus-visible:outline-focus">
+              className="inline-flex max-w-full items-start gap-1 rounded-chip text-start hover:underline focus-visible:outline-2 focus-visible:outline-focus">
               <Icon name="chevron-right" size="xs" className={`mt-1 shrink-0 transition-transform duration-(--duration-ui) ${open ? 'rotate-90' : ''}`} />
               <span className="user-text">{summarizeRun(run, actor)}</span>
             </button>
@@ -84,7 +84,7 @@ function RunItem({ run, name, project, task, onOpenComment, now }: { run: Activi
         <RelativeTime ts={run.ts} now={now} className="shrink-0" />
       </div>
       {many && open && (
-        <ol className="ml-[3.25rem] mt-1.5 space-y-1 border-l-2 border-default pl-3" aria-label={t('Changes in this group')}>
+        <ol className="ms-[3.25rem] mt-1.5 space-y-1 border-s-2 border-default ps-3" aria-label={t('Changes in this group')}>
           {run.events.map((ev) => (
             <li key={ev.id} className="flex items-baseline gap-2 text-meta text-muted" data-event={ev.kind}>
               <Icon name={KIND_ICON[ev.kind] ?? 'pencil'} size="xs" className="shrink-0 text-faint" />

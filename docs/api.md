@@ -962,19 +962,20 @@ curl -X POST -H "Authorization: Bearer $T" -d '{"name":"Doing","project_id":"mis
 
 ### Custom fields
 
-A custom field definition gives the tasks of one project a typed value (OpenSpec change `custom-fields`, see [the guide](custom-fields.md)). Definitions are soft-deleted like everything else, live in the sharing scope of their project (editors and up may write them, viewers read them) and appear in the export under `fields`, deleted ones included. Tasks carry their values in the `fields` object of [Task fields](#task-fields).
+A custom field definition gives the tasks of one project a typed value (OpenSpec change `custom-fields`, see [the guide](custom-fields.md)), or the tasks of every project of one workspace (OpenSpec change `workspace-fields`). Definitions are soft-deleted like everything else, live in the sharing scope of their project (editors and up may write them, viewers read them) or, for a workspace field, in its owner's own data, and appear in the export under `fields`, deleted ones included. Tasks carry their values in the `fields` object of [Task fields](#task-fields).
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `name` | string | required, not blank, at most 100 characters, unique in the project ignoring case |
+| `name` | string | required, not blank, at most 100 characters, unique ignoring case among the fields that apply to the project (its workspace's, its parents' and its own); a workspace field's name is unique among the workspace's fields and every project's own fields in it |
 | `type` | string | required on create: `text`, `number`, `date`, `choice`, `link` or `checkbox`; cannot change afterwards |
-| `project_id` | string | required on create: an existing, non-deleted project; cannot change afterwards |
+| `project_id` | string | on create, an existing, non-deleted project, or none for a workspace field; cannot change afterwards |
+| `workspace_id` | string or null | on create without `project_id`: a workspace you own (`null` in a row is the default workspace); the field then applies to every project of that workspace, before their own fields. Giving both, or neither, is `400 invalid_input`; cannot change afterwards |
 | `options` | string | a choice field's options, one per line (at most 50 of 100 characters); `""` for every other type (the default) |
 | `position` | number | ascending order within the project; defaults to now (last) |
 | `created_at` | number | set by the server when omitted |
 | `deleted_at` | number or null | set by `DELETE`; the values on tasks stay, hidden by the app |
 
-A project has at most 30 live definitions; one more is refused with `400 invalid_input` naming the limit. Values must match their definition's type: text of at most 2,000 characters, a finite number, a date `"YYYY-MM-DD"`, one of a choice's options, an `http` or `https` link of at most 2,000 characters, or a boolean; `null` clears. Unknown fields are refused with `400 invalid_input`; requests without credentials get `401 unauthorized`.
+A project has at most 30 live definitions, its workspace's and its parents' included; one more is refused with `400 invalid_input` naming the limit and the project that would pass it. Values must match their definition's type: text of at most 2,000 characters, a finite number, a date `"YYYY-MM-DD"`, one of a choice's options, an `http` or `https` link of at most 2,000 characters, or a boolean; `null` clears. Unknown fields are refused with `400 invalid_input`; requests without credentials get `401 unauthorized`.
 
 ```sh
 # Define a number field, set a value on a task, then read it back

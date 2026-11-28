@@ -14,7 +14,7 @@ export default function ProjectBlock({ block }: { block: Extract<AssistantBlock,
   return (
     <div className="space-y-1 p-3" data-assistant-project>
       <p className="flex items-center gap-1.5 text-body font-semibold user-text"><Icon name="folder" size="sm" className="text-muted" />{outline.project.name}</p>
-      <ul className="space-y-0.5 pl-6">
+      <ul className="space-y-0.5 ps-6">
         {outline.sections.map((s) => (
           <li key={s.id ?? '-'} className="flex items-baseline gap-2 text-body" data-outline-section>
             <span className="min-w-0 flex-1 user-text">{s.name}</span>
@@ -22,7 +22,7 @@ export default function ProjectBlock({ block }: { block: Extract<AssistantBlock,
           </li>
         ))}
       </ul>
-      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -ml-2 gap-1" onClick={() => navigate({ view: 'project', id: block.id })}>
+      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -ms-2 gap-1" onClick={() => navigate({ view: 'project', id: block.id })}>
         <Icon name="arrow-right" size="sm" />{t('Open project')}
       </button>
     </div>

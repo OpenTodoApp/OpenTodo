@@ -34,7 +34,7 @@ Use the **⋯** menu on a section heading (or press <kbd>.</kbd> with the headin
 - **Colour…** and **Icon…** mark the section before its name.
 - **Flow…**: one at a time or together ([flows](project-flows.md)).
 - **Move** it up or down (left or right on the board).
-- **Delete section…** asks first and says how many open tasks move to **No section**. The tasks aren't deleted.
+- **Delete section…** asks first and says how many open tasks move to **No section**. The tasks stay; **Undo** restores it.
 
 Fold a section with the small arrow next to its name. Folding is remembered on that device only.
 
@@ -47,11 +47,11 @@ The choice is remembered per project on each device. On a phone the board shows 
 
 ## Move cards between columns
 
-- **Drag** a card to another column, or to a place within a column. On a touch screen, press and hold the card first.
+- **Drag** a card to another column or to a place within one. On touch, hold the card first; at the board's edge the next column slides in.
 - **Keyboard:** select a card and press <kbd>Shift</kbd>+<kbd>→</kbd> or <kbd>Shift</kbd>+<kbd>←</kbd>.
 - **Panel:** open the task and pick another **Section**.
 
-Moving with the keyboard or the panel puts the card at the bottom of the new column.
+The keyboard and the panel put the card last in the new column.
 
 Cards show up to three [custom field](custom-fields.md) values as badges, such as **Cost 1,200**, and **+2** for the rest. To fold a column or show notes on cards, see [Fold columns](fold-columns.md).
 

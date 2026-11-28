@@ -5,6 +5,7 @@
 import { useSyncExternalStore } from 'react'
 import { raisesKeyboard, touchOnly } from '../../lib/keyboardLikely'
 import { createSignal } from '../../lib/store'
+import { composing } from '../../lib/composeKey'
 
 interface Entry { id: number; onEscape: () => void }
 const stack: Entry[] = []
@@ -15,7 +16,7 @@ const depth = createSignal()
 const notifyDepth = depth.notify
 
 function onKey(e: KeyboardEvent) {
-  if (e.key !== 'Escape' || e.isComposing) return
+  if (e.key !== 'Escape' || composing(e)) return
   const top = stack[stack.length - 1]
   if (!top) return
   // A field whose own suggestion list is open closes that list first (data-claims-escape).
@@ -322,7 +323,12 @@ export function watchVisualViewport(): () => void {
   if (!vv) return () => {}
   let keyboard = false
   const update = () => {
-    const covered = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop))
+    // The height sheets are laid out in. Chrome on iPhone shrinks the page itself for
+    // the keyboard while window.innerHeight can still hold the full height: counting the
+    // keyboard there too lifts a sheet a second time, up to the top of the screen.
+    const page = document.documentElement.clientHeight
+    const layout = page > 0 ? Math.min(window.innerHeight, page) : window.innerHeight
+    const covered = Math.max(0, layout - (vv.height + vv.offsetTop))
     document.documentElement.style.setProperty('--vv-bottom', `${Math.round(covered)}px`)
     // The keyboard closed (issue #724): Safari on iOS can leave the document scrolled
     // where it moved the focused field to, with a strip of nothing under the app. The
@@ -333,12 +339,17 @@ export function watchVisualViewport(): () => void {
     if (keyboard && !open && fits && vv.scale <= 1.01 && (window.scrollX || window.scrollY)) window.scrollTo(0, 0)
     keyboard = open
     const el = document.activeElement as HTMLElement | null
-    if (el && el.matches?.('input, textarea, select, [contenteditable="true"]')) keepAboveKeyboard(el, vv)
+    // The touch title editor keeps its Save and Cancel in view with its field (touch-title-editing D4),
+    // and a composer its send button: the row under the field was cut by the keyboard on a phone's task page.
+    if (el && el.matches?.('input, textarea, select, [contenteditable="true"]')) keepAboveKeyboard(el.closest<HTMLElement>('[data-inline-compact], [data-composer-frame]') ?? el, vv)
   }
   vv.addEventListener('resize', update)
   vv.addEventListener('scroll', update)
+  // The page can change height after the last viewport event; measure again then.
+  window.addEventListener('resize', update)
   return () => {
     vv.removeEventListener('resize', update)
     vv.removeEventListener('scroll', update)
+    window.removeEventListener('resize', update)
   }
 }

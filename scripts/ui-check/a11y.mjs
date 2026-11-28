@@ -39,8 +39,16 @@ const CONCURRENCY = Math.max(1, Number(process.env.CONCURRENCY ?? 4))
 
 async function check(id, theme) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } })
-  await page.goto(`${server.url}/iframe.html?id=${id}&viewMode=story&globals=theme:${theme}`)
-  await page.waitForFunction(() => document.querySelector('#storybook-root')?.childElementCount > 0, null, { timeout: 15000 })
+  // A story whose root stays empty is loaded once more, on a busy runner the first load can
+  // miss its chunk (seen three times in the merge queue on shard 2, never locally); a second
+  // empty root is reported with the story's id instead of ending the whole check unnamed.
+  let shown = false
+  for (let attempt = 1; attempt <= 2 && !shown; attempt++) {
+    await page.goto(`${server.url}/iframe.html?id=${id}&viewMode=story&globals=theme:${theme}`)
+    // The second load waits longer: a heavy story (a habit's year, 53 weeks of check-ins seeded first) can take over 15 s on a busy runner.
+    shown = await page.waitForFunction(() => document.querySelector('#storybook-root')?.childElementCount > 0, null, { timeout: attempt === 1 ? 15000 : 45000 }).then(() => true, () => false)
+  }
+  if (!shown) { failures.push(`${id} [${theme}]: the story rendered nothing in 15 s, then in 45 s`); await page.close(); return }
   // A story that changes a control's colour once its data arrives (the review's
   // "Finish review" turns primary when every step is done) is mid-transition for
   // 120 ms; axe would then measure a blended background and report a contrast

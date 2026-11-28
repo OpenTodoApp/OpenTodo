@@ -16,6 +16,7 @@ import { navigate } from './router'
 import { Shell } from './Shell'
 import { Sidebar } from './Sidebar'
 
+
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 const original = window.matchMedia
 
@@ -33,7 +34,8 @@ beforeEach(async () => {
 })
 afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals() })
 
-const menuButton = () => document.querySelector<HTMLButtonElement>('[data-phone-bar] button[aria-label="Open menu"]')
+// The menu button of the phone header, which every screen has below 768 px (phone-all-screens).
+const menuButton = () => document.querySelector<HTMLButtonElement>('[data-phone-header] button[aria-label="Open menu"]')
 const primary = () => [...document.querySelectorAll('nav[data-sidebar-primary] [data-sidebar-item]')].map((b) => b.textContent ?? '')
 
 describe('the phone drawer at 390 px', () => {
@@ -80,13 +82,13 @@ describe('the phone drawer at 390 px', () => {
   it('rows are 48 px in the drawer, at most 20 rem and 85 vw wide; Settings from the footer closes it', async () => {
     navigate({ view: 'inbox' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector('aside[data-sidebar]') && !!document.querySelector('[data-phone-bar] button[aria-label="Open menu"]'), 'the shell')
+    await waitFor(() => !!document.querySelector('aside[data-sidebar]') && !!menuButton(), 'the shell')
     const aside = document.querySelector('aside[data-sidebar]')!
     expect(aside.className).toContain('w-80')
     expect(aside.className).toContain('max-w-[85vw]')
     expect(aside.className).toContain('max-md:[&_[data-sidebar-item]]:min-h-12')
-    // The top bar's menu button opens it (precision-phone D3).
-    await click(document.querySelector<HTMLButtonElement>('[data-phone-bar] button[aria-label="Open menu"]')!)
+    // The header's menu button opens it.
+    await click(menuButton()!)
     expect(aside.className).toContain('translate-x-0')
     await click(document.querySelector<HTMLButtonElement>('[data-account-menu]')!)
     await waitFor(() => !!document.querySelector('[data-settings-button]'))
@@ -142,7 +144,7 @@ describe('the phone drawer at 390 px', () => {
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     const project = () => document.querySelector<HTMLElement>(`[data-project-row="${id}"] [data-sidebar-item]`)
     await waitFor(() => !!project())
-    await click(document.querySelector('[data-phone-bar] button[aria-label="Open menu"]')!)
+    await click(menuButton()!)
     await waitFor(() => (history.state as { overlay?: number } | null)?.overlay === 1, 'the drawer entry')
     await click(project()!)
     await waitFor(() => location.pathname === `/project/${id}` && history.state?.overlay === undefined, 'navigated over the marker')
@@ -155,8 +157,8 @@ describe('the phone drawer at 390 px', () => {
     navigate({ view: 'today' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     const aside = () => document.querySelector<HTMLElement>('aside[data-sidebar]')!
-    await waitFor(() => !!document.querySelector('[data-phone-bar] button[aria-label="Open menu"]'))
-    await click(document.querySelector('[data-phone-bar] button[aria-label="Open menu"]')!)
+    await waitFor(() => !!menuButton())
+    await click(menuButton()!)
     await waitFor(() => (history.state as { overlay?: number } | null)?.overlay === 1, 'the drawer entry')
     await act(async () => history.back())
     await waitFor(() => aside().className.includes('-translate-x-full'), 'the drawer closed')
@@ -181,3 +183,4 @@ describe('the sidebar at 1280 px', () => {
     await r.unmount()
   })
 })
+

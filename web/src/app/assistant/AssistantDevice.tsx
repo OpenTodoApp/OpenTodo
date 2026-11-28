@@ -189,7 +189,7 @@ export function OwnerDeviceGroup({ draft, off, onChange, apiOrigins }: { draft: 
       <Checkbox checked={draft.enabled} disabled={off} onChange={(e) => set({ enabled: e.target.checked })} label={t('Let encrypted accounts use the assistant from their own device')}
         description={t('Off by default. The server cannot read encrypted tasks, so the person’s browser calls the provider directly with the person’s own key. Your keys are never used or sent to a browser. Pages of this server may then connect to the providers you allow here.')} />
       {draft.enabled && (
-        <div className="flex flex-col gap-2 pl-6" data-device-providers>
+        <div className="flex flex-col gap-2 ps-6" data-device-providers>
           {DEVICE_PROVIDERS.map((p) => (
             <div key={p}>
               <Checkbox checked={draft.providers.includes(p)} disabled={off} onChange={(e) => toggle(p, e.target.checked)} label={NAME[p]}

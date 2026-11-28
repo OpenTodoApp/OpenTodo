@@ -4,7 +4,9 @@
 //   - every source message and translation parses (malformed),
 //   - a translation has the same placeholders, tags and plural/select arguments as
 //     its source, and only plural categories its language has,
-//   - "Settings → …" paths use the translated section names.
+//   - "Settings → …" paths use the translated section names,
+//   - a label ends in one "…" (never "..." or two) exactly when its source does
+//     (bug #2028: the menu adds it to an item that needs another step).
 // Also the iOS shell's String Catalog (scripts/i18n/shell.mjs) and the Obsidian
 // plugin's catalogues (scripts/i18n/obsidian.mjs).
 // A catalog that index.ts does not list is work in progress: it gets a summary line
@@ -20,7 +22,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { existsSync } from 'node:fs'
 import { extract } from './i18n/extract.mjs'
-import { checkShellCatalog, readShellCatalog, shellCatalogPath } from './i18n/shell.mjs'
+import { appShortcutsCatalogPath, checkShellCatalog, readAppShortcutsCatalog, readShellCatalog, shellCatalogPath } from './i18n/shell.mjs'
 import { checkObsidianCatalogs, checkObsidianSource, obsidianDir, obsidianMessages, readObsidianCatalogs } from './i18n/obsidian.mjs'
 import { repo, ts } from './i18n/source.mjs'
 import { androidSurface, shippedLanguages } from './i18n/status.mjs'
@@ -73,6 +75,17 @@ export async function loadFormat(root = repo) {
   return import(`data:text/javascript;base64,${Buffer.from(js).toString('base64')}`)
 }
 
+/** A trailing ellipsis, written "…" or "...". */
+const ENDS_ELLIPSIS = /(?:…|\.{3})$/
+const ENDS_TWO_ELLIPSES = /(?:…|\.{3})\s*(?:…|\.{3})$/
+
+/** The ellipsis problem of one text ("source" or a language), or null. */
+export function ellipsisProblem(who, id, text) {
+  if (ENDS_TWO_ELLIPSES.test(text)) return `${who}: "${id}" ends with two ellipses; use one "…"`
+  if (/\.{3}$/.test(text)) return `${who}: "${id}" ends with "..."; use "…"`
+  return null
+}
+
 const SETTINGS_PATH = /Settings → ([A-Z][\w-]*(?: [\w-]+)*)/g
 // Paths in an operating system's own settings ("On Android, check Settings → Apps …")
 // use that system's wording in each language, not the app's section names.
@@ -94,6 +107,12 @@ export function checkCatalog(lang, catalog, messages, fmt) {
     let src, tr
     try { src = fmt.messageShape(base(id)) } catch (err) { problems.push(`source: malformed "${id}": ${err.message}`); continue }
     try { tr = fmt.messageShape(value) } catch (err) { problems.push(`${lang}: malformed "${id}": ${err.message}`); continue }
+    // A trailing "……" is refused on purpose, also in zh: the UI's labels use one "…".
+    // A source's trailing "…" may move inside the translation (zh "Start with…": "从…开始").
+    const dots = ellipsisProblem(lang, id, value)
+    if (dots) problems.push(dots)
+    else if (base(id).endsWith('…') && !value.includes('…')) problems.push(`${lang}: "${id}" ends with "…", but its translation has none`)
+    else if (!ENDS_ELLIPSIS.test(base(id)) && value.endsWith('…')) problems.push(`${lang}: "${id}" has no "…", but its translation ends with one`)
     if (src.args.join() !== tr.args.join()) problems.push(`${lang}: placeholders of "${id}" are {${tr.args.join('}, {')}}, the source has {${src.args.join('}, {')}}`)
     if (src.tags.join() !== tr.tags.join()) problems.push(`${lang}: tags of "${id}" are <${tr.tags.join('>, <')}>, the source has <${src.tags.join('>, <')}>`)
     for (const [arg, cats] of Object.entries(tr.plurals)) {
@@ -124,6 +143,8 @@ export async function check(root = repo) {
   const problems = []
   for (const id of messages) {
     try { fmt.parseMessage(id.replace(/\|[\w-]+$/, '')) } catch (err) { problems.push(`source: malformed "${id}": ${err.message}`) }
+    const dots = ellipsisProblem('source', id, id.replace(/\|[\w-]+$/, ''))
+    if (dots) problems.push(dots)
   }
   const shipped = shippedCodes(root)
   const community = communityCodes(root)
@@ -170,6 +191,10 @@ export async function check(root = repo) {
   // Maintained languages are required; a community language may be partly there.
   if (existsSync(shellCatalogPath(root))) {
     problems.push(...checkShellCatalog(readShellCatalog(root), maintained.filter((c) => c !== 'en'), community))
+  }
+  // Its Siri phrases (apple-shortcuts D4): the same rules, and every phrase names the app.
+  if (existsSync(appShortcutsCatalogPath(root))) {
+    problems.push(...checkShellCatalog(readAppShortcutsCatalog(root), maintained.filter((c) => c !== 'en'), community, { label: 'shortcuts', appName: true }))
   }
   // The Obsidian plugin's own strings (obsidian-plugin task 6.1): obsidian/locales/.
   if (existsSync(join(obsidianDir(root), 'src'))) {

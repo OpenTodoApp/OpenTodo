@@ -670,15 +670,23 @@ Every task list SHALL reserve, between the checkbox and the title, a column for 
 - **THEN** the first row's column shows the evening icon, named "Evening", the second shows "09:00", both titles start at the same position, and the first row's date line carries no "evening" word
 
 ### Requirement: Revealed row actions
-On a fine pointer from 768 px wide, a row SHALL hold four actions at its right edge, shown while the pointer is over the row or focus is inside it as one small floating cluster on the popover surface over the row's end, at every row width: over the end of the property column of a one-line row, and over the end of the title's first line of a narrower row, which keeps no room for them: Show details, which shows the task's details under the row as → does (Hide details while they are shown, see "Expanded rows"); Schedule, which opens the same Do on popover as `s` anchored to the row; Priority, which opens the same priority choice as `1` to `4`; and More, which opens the row menu as `.` does. The actions SHALL be real buttons at all times, reachable by Tab from the row's open control and back with Shift+Tab, named with their key in their tooltips, with targets of at least 24 by 24 CSS pixels and 8 px apart (WCAG 2.2 2.5.8), and SHALL never be obscured by the sticky page header, the selection bar or a toast when focused (WCAG 2.2 2.4.11). `j` and `k` SHALL keep moving focus from open control to open control, skipping the actions. Revealing the actions SHALL NOT change the row's height, move the title or the properties, or hide the counts or the properties from assistive technology. On coarse pointers and below 768 px the actions SHALL NOT be rendered; the row menu stays reachable by `.`, the Menu key, and the selection bar's Actions after a long press ticks the row (`bulk-actions` "One ticked task on touch"); the details are shown by the row's disclosure button on a coarse pointer from 768 px, and by → at every width (see "Expanded rows"). Every action writes through the same path as its keyboard equivalent, so it works offline and converges per field. A viewer's row SHALL offer Show details only.
+On a fine pointer from 768 px wide, a row SHALL hold four actions at its right edge, shown while the pointer is over the row or focus is inside it as one small floating cluster on the popover surface over the row's end, at every row width: over the end of the property column of a one-line row, and over the end of the title's first line of a narrower row, which keeps no room for them: Edit, which opens the inline editor on that row as `F2` does ("Inline title editing", "Edit and Open details from a row"), on a row the user may change in a list that offers inline editing, and in its place on any other row Show details, which shows the task's details under the row as → does (Hide details while they are shown, see "Expanded rows"); Schedule, which opens the same Do on popover as `s` anchored to the row; Priority, which opens the same priority choice as `1` to `4`; and More, which opens the row menu as `.` does. The actions SHALL be real buttons at all times, reachable by Tab from the row's open control and back with Shift+Tab, named with their key in their tooltips, with targets of at least 24 by 24 CSS pixels and 8 px apart (WCAG 2.2 2.5.8), and SHALL never be obscured by the sticky page header, the selection bar or a toast when focused (WCAG 2.2 2.4.11). `j` and `k` SHALL keep moving focus from open control to open control, skipping the actions. Revealing the actions SHALL NOT change the row's height, move the title or the properties, or hide the counts or the properties from assistive technology. On coarse pointers and below 768 px the actions SHALL NOT be rendered; the row menu stays reachable by `.`, the Menu key, and the selection bar's Actions after a long press ticks the row (`bulk-actions` "One ticked task on touch"); the details are shown by the row's disclosure button on a coarse pointer from 768 px, and by → at every width (see "Expanded rows"). Every action writes through the same path as its keyboard equivalent, so it works offline and converges per field. A viewer's row SHALL offer Show details only.
 
 #### Scenario: Reveal on hover
 - **WHEN** the pointer enters a row with two comments on a 1280 px screen
-- **THEN** Show details, Schedule, Priority and More appear in a floating cluster at the row's right edge, the "2" beside the title stays, and the title does not move
+- **THEN** Edit, Schedule, Priority and More appear in a floating cluster at the row's right edge, the "2" beside the title stays, and the title does not move
+
+#### Scenario: Edit from the row
+- **WHEN** the user points at "Call the plumber" in a project on a 1280 px screen and activates Edit
+- **THEN** the row's title becomes the inline editor with the caret at its end and the Date, Priority, Labels and Project bar under it, exactly as `F2` on that row would, and the task does not open
+
+#### Scenario: A list without the inline editor
+- **WHEN** the pointer enters a row of a saved view on a 1280 px screen
+- **THEN** Show details, Schedule, Priority and More appear, and → still shows the details
 
 #### Scenario: Reveal on focus
 - **WHEN** the user presses `j` to focus a row's open control and then Tab
-- **THEN** focus moves to Show details, the four actions are visible, Tab moves on to Schedule, Priority and More, Shift+Tab returns, and `j` from the open control skips them
+- **THEN** focus moves to Edit, the four actions are visible, Tab moves on to Schedule, Priority and More, Shift+Tab returns, and `j` from the open control skips them
 
 #### Scenario: Schedule from the row
 - **WHEN** the user activates Schedule on a row and picks Tomorrow
@@ -1273,3 +1281,88 @@ The default SHALL be changed with `PUT /api/v1/settings/row-click` `{default}` (
 #### Scenario: An unknown value is refused
 - **WHEN** the owner sends `PUT /api/v1/settings/row-click` `{"default": "expand"}`
 - **THEN** the server answers 400 `invalid_input` and the default is unchanged
+
+### Requirement: Touch title editing
+On a touch screen of any width, without a fine pointer, a writable task or subtask row in a list SHALL turn its title into the compact editor when a left swipe is released at 48 px or more and below 96 px. A release at 96 px or more SHALL open Schedule, and a tap on the title SHALL still open the task. The compact editor SHALL show the title field with **Save** and **Cancel**, and the keyboard's return key SHALL read Done.
+
+Each way of ending the edit SHALL do one thing:
+- Return, Save, or a tap or click that starts outside the editor and outside the pickers it opened SHALL save the title.
+- A finger or pen tap on another task row of the list SHALL do nothing else: it SHALL not open, tick or expand that row.
+- A tap elsewhere (the tab bar, the add button, a toast, the header, the side panel) and a mouse or trackpad click SHALL save and then act as usual.
+- A press outside that moves (a scroll or a swipe), a long press, a second finger, and a press released in a menu or sheet SHALL leave the editor open.
+- **Cancel** SHALL discard the change.
+
+While the on-screen keyboard is open, the editor with its **Save** and **Cancel** SHALL stay in view above it. The edit is the task's title operation, so it SHALL apply locally at once, work offline and converge per field like any title edit. Viewers SHALL get no swipe and no editor.
+
+#### Scenario: On an iPad
+- **WHEN** the user swipes "Order the tiles" 70 px to the left on a 1024 px touch screen and lifts the finger
+- **THEN** the title becomes the compact editor in the row with the keyboard's return key reading Done, and the task does not open
+
+#### Scenario: A tap outside saves
+- **WHEN** the user is editing a title on a phone, changes it and taps another task's title
+- **THEN** the new title is saved, the editor closes and the other task does not open
+
+#### Scenario: A tap on the tab bar
+- **WHEN** the user is editing a title on a phone, changes it and taps Today in the tab bar
+- **THEN** the new title is saved and Today opens
+
+#### Scenario: A trackpad click
+- **WHEN** the user is editing a title on an iPad with a trackpad and clicks another task
+- **THEN** the new title is saved and the click acts on the other task as it would without the editor
+
+#### Scenario: A scroll keeps the edit
+- **WHEN** the user is editing a title on a phone and scrolls the list
+- **THEN** the editor stays open with the draft
+
+#### Scenario: Return saves
+- **WHEN** the user changes the title in the compact editor and presses Done on the keyboard
+- **THEN** the title is saved and the editor closes
+
+#### Scenario: Cancel
+- **WHEN** the user changes the title in the compact editor and taps Cancel
+- **THEN** the title is unchanged and the editor closes
+
+#### Scenario: A subtask
+- **WHEN** the user swipes a subtask a short way left on a phone, changes its title and taps outside
+- **THEN** the subtask's title is saved and its parent is unchanged
+
+#### Scenario: Above the keyboard
+- **WHEN** the keyboard opens for the compact editor near the bottom of the list
+- **THEN** the list scrolls so the field and its Save and Cancel sit above the keyboard
+
+### Requirement: Edit and Open details from a row
+In the lists that offer inline editing (the list layout of the Inbox, Today, Upcoming, Anytime, Someday, Completed, Assigned to me, projects, labels and places), the actions menu of one task (More, `.`, a right-click, a touch hold) SHALL hold, after Complete: **Edit**, named with `F2`, on a task the user may change; from 768 px wide, **Show details**, named with →, or **Hide details**, named with ←, while the details are shown under its row ("Expanded rows"); and **Open details**, named with Enter. A menu for several ticked tasks SHALL hold none of the three. Edit SHALL select the row and open the inline editor on it without opening the task: the editor of `F2` with a mouse, trackpad or pen on a fine pointer from 768 px, and otherwise the compact editor with visible Save and Cancel. Open details SHALL select the row and open the task as Enter on it does, following the account's "Open tasks" preference only: the side panel shows it (a task it already shows opens as its page); in the Inbox's split, and wherever no side panel shows tasks, its page opens.
+
+While the side panel or the Inbox's split shows a task and the user starts an edit on another row (Edit, the menu, `F2`, a second click on a selected title) or opens that row's More, the row SHALL become the cursor and the shown task SHALL stay. It SHALL keep staying after the edit is saved or cancelled, until the cursor moves to another row, a row is clicked (a click on the selected row's empty area shows that row), or another task is opened there. Closing the side panel SHALL leave it closed, as `web-app` "Task details in a side panel" says; closing the Inbox's split SHALL clear the cursor, as `inbox-triage` "Inbox list and detail" requires. Neither preference ("Click a task to", "Open tasks") nor a click on a title, `F2`, Enter, the double-click, → or `a` SHALL change. Nothing of this is stored or synced: edits made in the editor write through the same operations as before, so they work offline and converge per field.
+
+#### Scenario: Edit B while A stays in the side panel
+- **WHEN** the side panel shows "Order the tiles", the user activates Edit on "Call the plumber", sets its date to tomorrow and presses Enter
+- **THEN** "Call the plumber" is due tomorrow and selected, and the panel still shows "Order the tiles"
+
+#### Scenario: The next cursor move follows again
+- **WHEN** after that edit the user presses `j`
+- **THEN** the cursor moves to the next row and the panel shows its task
+
+#### Scenario: A click shows the edited row
+- **WHEN** after that edit the user clicks the empty area of "Call the plumber"
+- **THEN** the panel shows "Call the plumber" and no editor opens
+
+#### Scenario: The Inbox's split
+- **WHEN** the Inbox's split shows "Order the tiles" and the user opens More on "Call the plumber" and chooses Edit
+- **THEN** the editor opens on "Call the plumber" and the split still shows "Order the tiles" until the cursor moves
+
+#### Scenario: Open details follows Open tasks
+- **WHEN** a member with "Open tasks: As a page" chooses Open details in the menu of "Call the plumber" in a project
+- **THEN** the task's page opens; with "In a side panel" the side panel shows it instead
+
+#### Scenario: Show details from the menu
+- **WHEN** the user chooses Show details in a row's menu, then opens the menu again
+- **THEN** the details show under the row and the item reads Hide details, which hides them
+
+#### Scenario: On a phone
+- **WHEN** the user holds a writable row on a 390 px touch screen
+- **THEN** the menu holds Edit and Open details, and Edit opens the compact editor with Save and Cancel in the row
+
+#### Scenario: A viewer
+- **WHEN** a viewer of a shared project opens a row's menu
+- **THEN** it holds Show details and Open details and no Edit

@@ -105,6 +105,19 @@ describe('Routines page', () => {
     await r.unmount()
   })
 
+  it('"Narrow row": below 640 px Run now leaves the row and stays in the row\'s menu (phone-rest)', async () => {
+    await groceries()
+    const r = await render(<RoutinesView />)
+    await waitFor(() => rows().length === 1, 'the row')
+    // The row's button is hidden below 640 px by its class and shown from there on.
+    const run = rows()[0].querySelector<HTMLElement>('[data-run-now]')!
+    expect(run.className.split(' ')).toContain('max-sm:hidden')
+    // The menu holds Run now at every width.
+    await click(rows()[0].querySelector('[aria-label="Menu for routine Groceries"]')!)
+    await waitFor(() => [...document.querySelectorAll('[role="menuitem"]')].some((i) => i.textContent?.trim() === 'Run now'), 'Run now in the menu')
+    await r.unmount()
+  })
+
   it('"Provider removed": the row says how many steps are not available', async () => {
     const digest = await createRule({ name: 'Digest', trigger: { kind: 'manual' }, actions: null, steps: [{ id: 'a', kind: 'email_me', in: { subject: { literal: 'Hi' }, text: { literal: 'x' } } }] })
     catalogue = [{ kind: 'email_me', group: 'communication', available: false, reason: 'email_not_configured', setting: 'server.email' }]

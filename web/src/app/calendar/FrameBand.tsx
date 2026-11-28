@@ -35,11 +35,11 @@ function FrameBand({ occ, past }: { occ: PlacedFrame; past: boolean }) {
       className={`ui-frame-band pointer-events-none absolute z-0 overflow-hidden ${past ? 'ui-frame-band--past' : ''}`}
       style={{
         top: occ.start * PX_PER_MIN, height: (occ.end - occ.start) * PX_PER_MIN,
-        left: `${(occ.lane / occ.lanes) * 100}%`, width: `${100 / occ.lanes}%`,
+        insetInlineStart: `${(occ.lane / occ.lanes) * 100}%`, width: `${100 / occ.lanes}%`,
       }}>
       <button ref={anchor} type="button" data-frame-name={occ.frame.id} aria-haspopup="dialog" aria-expanded={open}
         aria-label={t('Frame {title}, {times}', { title, times })}
-        className="pointer-events-auto block min-h-6 max-w-full truncate rounded-chip px-1.5 pt-0.5 text-left text-hint text-faint outline-none hover:text-muted focus-visible:ring-2 focus-visible:ring-focus"
+        className="pointer-events-auto block min-h-6 max-w-full truncate rounded-chip px-1.5 pt-0.5 text-start text-hint text-faint outline-none hover:text-muted focus-visible:ring-2 focus-visible:ring-focus"
         onPointerDown={(e) => e.stopPropagation()} onClick={() => setOpen(true)}>
         {title} · <span className="tabular-nums">{times}</span>
       </button>
@@ -121,7 +121,7 @@ export function FrameHeading({ occ }: { occ: FrameOccurrence }) {
   return (
     <li data-agenda-frame={occ.frame.id}>
       <button ref={anchor} type="button" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}
-        className="flex min-h-8 w-full items-center gap-2 rounded-control px-2 text-left text-meta text-faint outline-none hover:text-muted focus-visible:ring-2 focus-visible:ring-focus">
+        className="flex min-h-8 w-full items-center gap-2 rounded-control px-2 text-start text-meta text-faint outline-none hover:text-muted focus-visible:ring-2 focus-visible:ring-focus">
         <span aria-hidden data-hue={hueFor(occ.frame.color)} className="ui-block-dot" />
         <span className="min-w-0 truncate">{title} · <span className="tabular-nums">{formatTime(occ.frame.start)}–{formatTime(occ.frame.end)}</span></span>
       </button>

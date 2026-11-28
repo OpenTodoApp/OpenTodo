@@ -2,12 +2,14 @@
 // section and every sub-page as the owner of a throwaway server with every owner
 // feature on (the audit's seeded account plus the switches and environment
 // overrides below), at 1280×800 and 390×844, and prints how tall each page is in
-// pixels and in screens. A page should stay within about 1.5 screens.
+// pixels and in screens. A page should stay within about 1.5 screens. At the touch
+// size it also lists every text field, select, text area and button under 44 px tall
+// (OpenSpec change phone-rest): a finger needs 44 px, in a setting row as anywhere.
 //
 //   node scripts/ux-audit/settings-heights.mjs          against bin/opentodo
 //
 // Env: OPENTODO_BIN (bin/opentodo), CHROMIUM_PATH, TEXT_SIZE (16), JSON=1 (print JSON),
-// LIMIT (1.5 screens; with STRICT=1 the script exits 1 when a page is taller),
+// LIMIT (1.5 screens; with STRICT=1 the script exits 1 when a page is taller or a touch control is under 44 px),
 // SHOTS=<dir> (a screenshot of each whole page), THEME=dark, DEBUG=1 (progress on stderr).
 // Pages are found by following the links of the section list (`data-settings-link`)
 // and of each overview (`data-settings-subpage`), so new sub-pages are measured
@@ -89,6 +91,12 @@ const pageHeight = () => {
   return document.scrollingElement.scrollHeight
 }
 
+/** Fields and buttons of the page under 44 px tall, as "select 32 px “Theme”" (measured at the touch size). */
+const smallControls = () => [...document.querySelectorAll('#content :is(input:not([type=checkbox], [type=radio], [type=hidden], [type=range], [type=color]), select, textarea, button, [role=button], [role=switch], a.ui-btn)')]
+  .map((el) => ({ el, box: el.getBoundingClientRect() }))
+  .filter(({ box }) => box.width > 0 && box.height > 0 && box.height < 43.5)
+  .map(({ el, box }) => `${el.tagName.toLowerCase()} ${Math.round(box.height)} px “${(el.getAttribute('aria-label') ?? el.getAttribute('placeholder') ?? el.textContent ?? '').trim().slice(0, 40)}”`)
+
 async function settle(p) {
   await p.locator('[data-settings-section], [data-settings-overview]').first().waitFor({ timeout: 10000 }).catch(() => {})
   await p.locator('[data-settings-settling]').waitFor({ state: 'detached', timeout: 3000 }).catch(() => {})
@@ -116,7 +124,8 @@ for (const size of SIZES) {
     await p.goto(base + path, { waitUntil: 'domcontentloaded' })
     await settle(p)
     const height = await p.evaluate(pageHeight)
-    rows.push({ width: size.width, path, height, screens: +(height / size.height).toFixed(2) })
+    const small = size.touch ? await p.evaluate(smallControls) : []
+    rows.push({ width: size.width, path, height, screens: +(height / size.height).toFixed(2), small })
     if (SHOTS) {
       await p.setViewportSize({ width: size.width, height: Math.min(height + 80, 8000) })
       await p.waitForTimeout(200)
@@ -138,6 +147,9 @@ else {
   console.log(`|---|${SIZES.map(() => '---').join('|')}|`)
   for (const path of paths) console.log(`| \`${path}\` | ${SIZES.map((s) => cell(rows.find((r) => r.path === path && r.width === s.width))).join(' | ')} |`)
   console.log(`\n* taller than ${LIMIT} screens`)
+  const small = rows.filter((r) => r.small.length)
+  console.log(`\nTouch controls under 44 px: ${small.reduce((n, r) => n + r.small.length, 0)}`)
+  for (const r of small) console.log(`- \`${r.path}\`: ${r.small.join('; ')}`)
 }
-const over = rows.filter((r) => r.screens > LIMIT)
+const over = rows.filter((r) => r.screens > LIMIT || r.small.length)
 process.exitCode = process.env.STRICT === '1' && over.length ? 1 : 0

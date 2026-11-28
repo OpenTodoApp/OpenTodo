@@ -21,6 +21,7 @@
     <string name="error_offline">De server is niet bereikbaar, en OpenTodo is op deze telefoon nog nooit geopend.</string>
     <string name="error_untrusted">Deze telefoon vertrouwt het certificaat van de server niet.</string>
     <string name="channel_reminders">Meldingen</string>
+    <string name="channel_urgent">Dringende meldingen</string>
     <string name="reminder_generic">Herinnering</string>
     <string name="reminder_text">Taakmelding</string>
     <string name="action_snooze">10 min. later</string>
@@ -50,6 +51,17 @@
     <string name="widget_completed_description">Hoeveel taken je deze week hebt afgerond</string>
     <string name="widget_completed_locked">Vergrendeld: alleen het aantal van vandaag</string>
     <string name="widget_completed_days">Afgerond per dag: %1$s</string>
+    <string name="widget_upcoming">Binnenkort</string>
+    <string name="widget_upcoming_description">Je volgende taken, per dag</string>
+    <string name="widget_upcoming_empty">Niets gepland.</string>
+    <string name="widget_upcoming_locked">Vergrendeld. Komende taken: %1$d</string>
+    <string name="widget_tomorrow">Morgen</string>
+    <string name="widget_calendar">Kalender</string>
+    <string name="widget_calendar_description">De maand, met de dagen waarop taken staan</string>
+    <string name="widget_calendar_locked">Vergrendeld</string>
+    <string name="widget_calendar_day">%1$s, taken: %2$d</string>
+    <string name="widget_previous_month">Vorige maand</string>
+    <string name="widget_next_month">Volgende maand</string>
     <string name="setup_old_webview">De Android System WebView van deze telefoon is oud (versie %1$s). Werk deze bij in de app store, zodat OpenTodo volledig werkt.</string>
     <string name="site_bar_host">Aangemeld bij %1$s</string>
     <string name="site_bar_close">Terug naar OpenTodo</string>
@@ -58,6 +70,7 @@
     <string name="setup_sign_in">Hier aanmelden</string>
     <string name="error_sign_in">Je server zit achter een aanmeldpagina, en de aanmelding ging in de app niet verder. Meld je hier opnieuw aan.</string>
     <string name="save_failed">Het bestand kon niet worden opgeslagen.</string>
+    <string name="quick_add_failed">De taak is niet toegevoegd. Tik om hem toe te voegen.</string>
     <string name="channel_focus">Focus</string>
     <string name="channel_sync">Synchroniseren</string>
     <string name="focus_generic">Focussessie</string>

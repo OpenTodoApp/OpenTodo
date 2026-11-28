@@ -3,7 +3,7 @@
 // Moving a task, by drag onto a day or with the arrows, is one due edit that keeps
 // its time and zone; `q` adds a task due on the focused day. Works offline. A device
 // may stack 2, 3 or 6 months (year-view D1); a phone always shows one. Loads on first use.
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { use, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button, EmptyState, MenuItem, MenuSeparator, PageBody, useMediaQuery } from '../ui'
 import { calendarTasks, eventsByDay, nudgeDue, type DayEvents, type EventBlock } from '../lib/calendar'
 import { MONTHS_SHOWN, monthsShown, rememberCalendarMode } from '../lib/calendarMode'
@@ -44,8 +44,10 @@ import { projectionsByDate, type Projection } from '../lib/occurrences'
 import { isProjectionTarget, ProjectedItem, useCalendarProjections } from './calendar/projections'
 import { moveSpanPatch, spanCovers, spanOf } from '../lib/span'
 import { MonthRow } from './calendar/MonthRow'
+import { CalendarRowDrawContext } from './task-list/rowDraw'
 import { monthOrder, monthSpanKeys, useMonthSpans } from './calendar/monthSpans'
 import { CELL_ROWS, MonthWeek, NO_PROJECTIONS, type CellEntry, type MonthCells } from './calendar/MonthWeek'
+import { inlineKey } from '../lib/direction'
 
 export { addMonthsISO }
 
@@ -112,6 +114,8 @@ export function MonthView({ date }: { date?: string }) {
   const prefs = useGridPrefs()
   const showCompleted = useCalendarShowCompleted()
   const narrow = useMediaQuery('(max-width: 39.99rem)')
+  // The chosen day's tasks as one card of phone rows (phone-calendar).
+  const phoneRows = !!use(CalendarRowDrawContext) && narrow
   const preferred = monthsShown.use()
   useEffect(() => rememberCalendarMode('month'), [])
 
@@ -231,9 +235,9 @@ export function MonthView({ date }: { date?: string }) {
   useShortcutScope('view', {
     // With a task selected the arrows move it (a day or a week); otherwise, or with Shift, they move the focused day.
     'month.move': (e) => {
-      if (selectedTask) { if (editable(selectedTask)) move(selectedTask.id, ARROWS[e.key]) } else focusDay(addDaysISO(focused, ARROWS[e.key]))
+      if (selectedTask) { if (editable(selectedTask)) move(selectedTask.id, ARROWS[inlineKey(e)]) } else focusDay(addDaysISO(focused, ARROWS[inlineKey(e)]))
     },
-    'month.focus': (e) => focusDay(addDaysISO(focused, ARROWS[e.key])),
+    'month.focus': (e) => focusDay(addDaysISO(focused, ARROWS[inlineKey(e)])),
     // A selected span's ends; anything else falls through to moving the focused day (multi-day-tasks D4).
     ...monthSpanKeys({ selected: selectedTask, viewed: viewedMap, editable, queue, focus: setFocused }),
     'month.next': () => step('next'),
@@ -324,7 +328,7 @@ export function MonthView({ date }: { date?: string }) {
         })}
       </div>
       {narrow && <MonthDayList focused={focused} empty={focusedTasks.length === 0 && focusedDeadlines.length === 0 && !projected.get(focused)?.length && focusedEvents.length === 0} onAdd={() => chrome.add.add({ date: focused })}>
-        {focusedTasks.map((task) => row(task))}{focusedDeadlines.map((task) => deadlineRow(task, focused))}{(projected.get(focused) ?? []).map((p) => <ProjectedItem key={p.id} p={p} hue={projectionHue(p)} variant="large" />)}
+        {phoneRows ? <ul data-phone-rows>{focusedTasks.map((task) => row(task))}</ul> : focusedTasks.map((task) => row(task))}{focusedDeadlines.map((task) => deadlineRow(task, focused))}{(projected.get(focused) ?? []).map((p) => <ProjectedItem key={p.id} p={p} hue={projectionHue(p)} variant="large" />)}
         {focusedEvents.map((e) => eventRow(e, 'agenda'))}
       </MonthDayList>}
       <p className="mt-3 hidden text-meta text-faint sm:block" data-kbd-keep>

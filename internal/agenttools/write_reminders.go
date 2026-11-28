@@ -34,7 +34,7 @@ var offsetProp = map[string]any{"type": "integer", "minimum": -opsync.MaxReminde
 
 // urgentProp is a reminder's urgent flag (OpenSpec change ios-urgent-alarms, design D1).
 var urgentProp = map[string]any{"type": "boolean",
-	"description": "Urgent: the iPhone app (iOS 26 and later) rings it as an alarm until it is stopped; everywhere else it is an ordinary reminder. Only for the kinds relative, deadline and absolute. Default false."}
+	"description": "Urgent: the iPhone app (iOS 26 and later) and the Android app ring it as an alarm until it is answered; everywhere else it is an ordinary reminder. Only for the kinds relative, deadline and absolute. Default false."}
 
 func init() {
 	register(tool{def: func(Caller) Definition {

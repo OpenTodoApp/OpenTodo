@@ -9,6 +9,7 @@ import { t } from '../../lib/i18n'
 import { MAX_OBJECTIVE_TITLE, OBJECTIVE_COUNTDOWN } from '../../lib/objectives'
 import type { Objective } from '../../lib/types'
 import { Button, MoveHandle, Tooltip } from '../../ui'
+import { composing } from '../../lib/composeKey'
 
 export interface ObjectiveActions {
   onToggle: (o: Objective, done: boolean) => void
@@ -46,6 +47,7 @@ export function ObjectiveInput({ initial = '', label, onCommit, onCancel }: {
         onChange={(e) => setValue(e.target.value.replace(/[\r\n]+/g, ' '))}
         onKeyDown={(e) => {
           e.stopPropagation()
+          if (composing(e)) return
           if (e.key === 'Enter') { e.preventDefault(); finish(true) }
           if (e.key === 'Escape') { e.preventDefault(); finish(false) }
         }}
@@ -114,7 +116,7 @@ function ObjectiveCard({ o, index, count, readOnly, actions, dragging, onDraggin
       ) : (
         <Tooltip label={title}><button ref={titleRef} type="button" aria-label={title} data-objective-title
           aria-describedby={readOnly ? undefined : hintId}
-          className={`min-w-0 flex-1 truncate rounded-chip text-left text-body focus-visible:outline-2 focus-visible:outline-focus ${done ? 'text-muted line-through' : 'text-default'} ${readOnly ? 'cursor-default' : ''}`}
+          className={`min-w-0 flex-1 truncate rounded-chip text-start text-body focus-visible:outline-2 focus-visible:outline-focus ${done ? 'text-muted line-through' : 'text-default'} ${readOnly ? 'cursor-default' : ''}`}
           onClick={() => { if (!readOnly) setMode('edit') }} onKeyDown={onKey}>{title}</button></Tooltip>
       )}
       {/* The card drags; with one pointer and no drag, its handle offers Move up and Move down

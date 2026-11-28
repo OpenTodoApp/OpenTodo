@@ -8,7 +8,8 @@ import { act, useEffect } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createFrame, MAX_FRAMES, type FrameInput } from '../lib/frames'
-import { createLabel, deleteLabel } from '../lib/labels'
+import { createLabel } from '../lib/labels'
+import { deleteLabelUndoable as deleteLabel } from '../lib/undoActions'
 import { getTask } from '../lib/localData'
 import { createTask, mutate, resetDeviceId } from '../lib/ops'
 import { setDateTime } from '../lib/dates'
@@ -130,7 +131,7 @@ describe('bands on the grid', () => {
     const r = await render(<Calendar />)
     await waitFor(() => qa('[data-frame-band]').length === 2, 'two bands')
     const [a, b] = qa('[data-frame-band]')
-    expect([a.style.left, a.style.width, b.style.left, b.style.width]).toEqual(['0%', '50%', '50%', '50%'])
+    expect([a.style.insetInlineStart, a.style.width, b.style.insetInlineStart, b.style.width]).toEqual(['0%', '50%', '50%', '50%'])
     await r.unmount()
   })
 })

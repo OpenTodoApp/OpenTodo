@@ -21,6 +21,7 @@ import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 import { SettingsSaveBar } from './SettingsSaveBar'
 import { relativeTime } from '../lib/dates'
+import { composing } from '../lib/composeKey'
 
 // Settings → Single sign-on (owner) and Linked accounts (everyone), OpenSpec
 // `oidc-login`. Both read server state that is never cached for offline use:
@@ -128,7 +129,7 @@ export interface SsoPanelViewProps {
 function Lock() {
   return (
     <Tooltip label={t('Set by an OPENTODO_OIDC_* environment variable')}>
-      <span className="ml-1 inline-flex items-center gap-1 rounded-chip text-meta text-faint" tabIndex={0}>
+      <span className="ms-1 inline-flex items-center gap-1 rounded-chip text-meta text-faint" tabIndex={0}>
         <Icon name="lock" size="xs" />{t('set by environment')}
       </span>
     </Tooltip>
@@ -185,7 +186,7 @@ export function SsoPanelView(p: SsoPanelViewProps & { configuring?: boolean }) {
       )}
       {p.notice && !open && <Notice tone="success">{p.notice}</Notice>}
       {open && (
-        <div className="space-y-4 py-3" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setOpen(false) } }}>
+        <div className="space-y-4 py-3" onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Escape') { e.stopPropagation(); setOpen(false) } }}>
           <Field label={t('Redirect URI (paste into your provider)')} description={s.baseUrlConfigured
             ? t('Taken from OPENTODO_BASE_URL.')
             : t('Derived from the address you are using now. Providers reject mismatches: set OPENTODO_BASE_URL so it never changes.')}>

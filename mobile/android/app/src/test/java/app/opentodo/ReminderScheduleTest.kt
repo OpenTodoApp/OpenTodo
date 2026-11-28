@@ -28,8 +28,15 @@ class ReminderScheduleTest {
     }
 
     @Test fun roundTrip() {
-        val list = listOf(ShellReminder("r1", "t1", now + hour, "A"), ShellReminder("r2", "t2", now + 2 * hour, null))
+        val list = listOf(ShellReminder("r1", "t1", now + hour, "A", "Today 14:00"), ShellReminder("r2", "t2", now + 2 * hour, null))
         assertEquals(list, ReminderSchedule.parse(ReminderSchedule.toJson(list), now))
+    }
+
+    /** push-due-date D4: the due text is the body; an empty or missing one is none, a long one is cut. */
+    @Test fun dueText() {
+        val long = "x".repeat(150)
+        val json = """[{"id":"a","taskId":"t","fireAt":${now + hour},"due":"Tomorrow"},{"id":"b","taskId":"t","fireAt":${now + hour},"due":""},{"id":"c","taskId":"t","fireAt":${now + hour},"due":"$long"},{"id":"d","taskId":"t","fireAt":${now + hour}}]"""
+        assertEquals(listOf("Tomorrow", null, "x".repeat(100), null), ReminderSchedule.parse(json, now).map { it.due })
     }
 
     /** The alarm receiver reads the stored schedule without a window: a 2026 timestamp is not "beyond the horizon of 1970". */
@@ -37,6 +44,62 @@ class ReminderScheduleTest {
         val list = listOf(ShellReminder("r1", "t1", now + hour, "A"))
         assertEquals(list, ReminderSchedule.parse(ReminderSchedule.toJson(list), null))
         assertTrue(ReminderSchedule.parse(ReminderSchedule.toJson(list), 0).isEmpty())
+    }
+
+    /** android-urgent-alarms D3: only a JSON `true` makes a reminder urgent, and the stored schedule keeps it (a reboot re-arms it). */
+    @Test fun urgentIsReadStrictlyAndStored() {
+        val json = """[{"id":"a","taskId":"t","fireAt":${now + hour},"urgent":true},{"id":"b","taskId":"t","fireAt":${now + hour},"urgent":"true"},{"id":"c","taskId":"t","fireAt":${now + hour},"urgent":1},{"id":"d","taskId":"t","fireAt":${now + hour}}]"""
+        val list = ReminderSchedule.parse(json, now)
+        assertEquals(listOf(true, false, false, false), list.map { it.urgent })
+        assertEquals(list, ReminderSchedule.parse(ReminderSchedule.toJson(list), null))
+        // An ordinary reminder is stored as before, without the field.
+        assertTrue(!ReminderSchedule.toJson(list.drop(1)).contains("urgent"))
+    }
+
+    @Test fun anUrgentReminderIsAnAlarmClockOnlyWhenExact() {
+        val urgent = ShellReminder("a", "t", now, null, urgent = true)
+        assertTrue(UrgentAlarms.armAsAlarmClock(urgent, exact = true))
+        assertEquals(false, UrgentAlarms.armAsAlarmClock(urgent, exact = false))
+        assertEquals(false, UrgentAlarms.armAsAlarmClock(urgent.copy(urgent = false), exact = true))
+    }
+
+    /** android-urgent-alarms D4: exact alarms first, then full-screen, each only where Android asks for it and once. */
+    @Test fun urgentAlarmsAskEachMissingPermissionOnce() {
+        fun ask(sdk: Int, exact: Boolean = false, full: Boolean = false, askedExact: Boolean = false, askedFull: Boolean = false) =
+            UrgentAlarms.nextAsk(sdk, exact, full, askedExact, askedFull)
+        // Before Android 12 neither is a permission.
+        assertEquals(null, ask(30))
+        // Android 12 and 13: exact alarms only (full-screen is granted at install).
+        assertEquals(UrgentAlarms.EXACT, ask(31))
+        assertEquals(null, ask(33, askedExact = true))
+        assertEquals(null, ask(33, exact = true))
+        // Android 14+: exact first, then full-screen, then nothing.
+        assertEquals(UrgentAlarms.EXACT, ask(34))
+        assertEquals(UrgentAlarms.FULL_SCREEN, ask(34, askedExact = true))
+        assertEquals(UrgentAlarms.FULL_SCREEN, ask(36, exact = true))
+        assertEquals(null, ask(36, askedExact = true, askedFull = true))
+        assertEquals(null, ask(36, exact = true, full = true))
+        assertEquals(null, ask(36, exact = true, askedFull = true))
+    }
+
+    /** android-urgent-alarms D2: one answer per firing, so a repeating task is not advanced twice. */
+    @Test fun aFiringIsAnsweredOnce() {
+        val first = UrgentAlarms.firstAnswer("{}", "r1", now, now)
+        assertTrue(first != null)
+        // A second tap, or Done from the shade while the alarm screen is open.
+        assertEquals(null, UrgentAlarms.firstAnswer(first!!, "r1", now, now + 1000))
+        assertEquals(null, UrgentAlarms.firstAnswer(first, "r1", now + 30_000, now + 1000))
+        // Snoozed, the next firing is answered again; another reminder is another.
+        assertTrue(UrgentAlarms.firstAnswer(first, "r1", now + 10 * 60_000, now + 10 * 60_000) != null)
+        assertTrue(UrgentAlarms.firstAnswer(first, "r2", now, now) != null)
+        // A location reminder has no time: every answer counts and nothing is stored.
+        assertEquals(first, UrgentAlarms.firstAnswer(first, "g1", 0, now))
+    }
+
+    @Test fun theLockedAlarmScreenHidesTheTitleWhenPrivateContentIsHidden() {
+        assertTrue(UrgentAlarms.showTitle(locked = false, privateOnLockScreen = false))
+        assertTrue(UrgentAlarms.showTitle(locked = true, privateOnLockScreen = true))
+        assertEquals(false, UrgentAlarms.showTitle(locked = true, privateOnLockScreen = false))
     }
 
     @Test fun atMost500() {

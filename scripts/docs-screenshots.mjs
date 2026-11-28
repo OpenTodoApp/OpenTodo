@@ -341,7 +341,8 @@ async function assistantSetup() {
   const state = await c.storageState(); await c.close(); return state
 }
 async function ask(p, question, ready) {
-  await go(p, assistantBase, '/inbox', () => p.getByRole('combobox', { name: 'Add a task' }).waitFor())
+  // The add line of the list, or the phone list, which has none (phone-ui-default).
+  await go(p, assistantBase, '/inbox', () => p.locator('[role="combobox"][aria-label="Add a task"], [data-phone-list]').first().waitFor())
   await p.keyboard.press('Shift+I'); await p.locator('[data-assistant-panel]').waitFor(); await settle(p, 400)
   await p.locator('[data-assistant-composer]').fill(question); await p.keyboard.press('Enter')
   await ready(); await settle(p, 600)
@@ -694,11 +695,12 @@ const shots = [
     await p.locator('[data-display-row-layout] [data-row-layout="line"]').click().catch(() => {})
     await p.keyboard.press('Escape')
   } },
-  // An expanded row (row-expand): Today with the kitchen quotes' details open under the row, as Show details opens them.
+  // An expanded row (row-expand): Today with the kitchen quotes' details open under the row, as → opens them.
   { name: 'expand-a-row', server: D, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { level: 1, name: 'Today' }).waitFor())
     const li = p.locator('li[data-task-id]', { has: p.locator('[data-row-title]', { hasText: 'Get three quotes for the kitchen' }) }).first()
-    await li.hover(); await li.locator('[data-row-action="details"]').click(); await p.locator('[data-row-details] [data-subtasks]').waitFor()
+    // Select the row, then → (the hover cluster has Edit in Show details' place, row-edit-action D1).
+    await li.locator('[data-row-title]').click(); await p.keyboard.press('ArrowRight'); await p.locator('[data-row-details] [data-subtasks]').waitFor()
     await p.mouse.move(700, 40); await p.locator('body').evaluate(() => (document.activeElement)?.blur()); await settle(p, 500)
   } },
   // Completed tasks kept in the project (project-completed-section): the switch is per device, so the scene turns it on and off again.
@@ -783,10 +785,15 @@ const shots = [
     await dialog.locator('[data-away-preview]', { hasText: /Skips/ }).waitFor(); await settle(p, 400)
     return clipOf(p, dialog, 16)
   }, async after(p, { ctx }) { await p.keyboard.press('Escape'); if (++habitShots % 2 === 0) await habitsScene(ctx, true) } },
+  // Habits on a phone (habits-complete D1): the day strip, a ring per habit and its week.
+  { name: 'habits-phone', server: P, phone: true, async run(p, { ctx }) {
+    await habitsScene(ctx)
+    await go(p, plainBase, '/habits', () => p.locator('[data-phone-habit]').first().waitFor()); await settle(p, 400)
+  }, async after(p, { ctx }) { if (++habitShots % 2 === 0) await habitsScene(ctx, true) } },
   // Targets and amounts (habit-targets): Gym three times a week, Water eight glasses.
   { name: 'habit-targets', server: P, async run(p, { ctx }) {
     await targetsScene(ctx)
-    await go(p, plainBase, '/habits', () => p.locator('[data-target-bar]').first().waitFor()); await settle(p, 400)
+    await go(p, plainBase, '/habits', () => p.locator('[data-board-row]').first().waitFor()); await settle(p, 400)
   }, async after(p, { ctx }) { await targetsScene(ctx, true) } },
   { name: 'week', server: D, card: true, async run(p) {
     await go(p, demoBase, '/week', () => p.getByRole('button', { name: 'Week' }).first().waitFor())

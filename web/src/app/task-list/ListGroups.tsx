@@ -1,7 +1,7 @@
 // The list body (OpenSpec change web-component-structure): rows, the grouped list
 // with its headers and section groups, and the logbook's "Show more". The board and
 // the timeline have their own bodies (BoardView, TimelineView).
-import { type CSSProperties, Fragment, isValidElement, Suspense, type ReactElement, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, Fragment, isValidElement, Suspense, type ReactElement, type ReactNode, use, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { lazy } from '../../lib/lazy'
 import { t, useLanguageVersion } from '../../lib/i18n'
 import { BLOCKED_OPEN_KEY, earlierCollapsed, flatRow, SUB_PROJECTS, type ListGroup, type ListRow as Row } from '../../lib/listGroups'
@@ -11,7 +11,7 @@ import type { Progress } from '../../lib/subtasks'
 import type { HabitStats } from '../../lib/habits'
 import type { RowLayout } from '../../lib/rowLayout'
 import type { FieldDef, Label, Membership, Project, Task } from '../../lib/types'
-import { Button, ListGroupHeader, type HueName } from '../../ui'
+import { Button, GroupBarContext, ListGroupHeader, type HueName } from '../../ui'
 import { projectHue } from '../projectHue'
 
 // Upcoming's projected rows load with their switch (series-occurrences D4).
@@ -93,6 +93,8 @@ export interface RowContext {
   /** The row being edited in place, and its editor (inline-task-editing). */
   inlineId?: string | null
   swipeEditTitle?: boolean
+  /** The list edits rows in place, so a row reveals Edit (row-edit-action D1). */
+  editInPlace?: boolean
   renderInline?: (task: Task) => ReactNode
   /** The one row whose details are shown under it (row-expand D4). */
   expandedId?: string | null
@@ -219,6 +221,7 @@ export function rowRenderer(c: RowContext): RenderRow {
           swipe={!!c.swipe && !ghost && !editing && !c.board}
           inline={editing ? c.renderInline?.(r.task) : undefined}
           swipeEditTitle={c.swipeEditTitle && !c.draggingId}
+          editInPlace={!!c.editInPlace && !c.board}
           edge={c.board ? c.edgeOf?.(r.task) : undefined}
           notes={c.board && !!c.cardNotes}
         />
@@ -619,12 +622,15 @@ type RowList = (children: ReactNode[], extra?: Record<string, string>) => ReactN
 function RowList({ children, extra }: { children: ReactNode[]; extra?: Record<string, string> }) {
   const memory = useRef<{ of: Map<string, string>; on: boolean; next: number; ids: string[]; blocks: RowBlock[] }>({ of: new Map(), on: false, next: 0, ids: [], blocks: [] })
   const m = memory.current
+  // The phone list (its group headings have no fill): the rows of one list are one card. A mark on the
+  // list, not a `:has()` rule over it, which would restyle the list on every change (issue 1179).
+  const card = use(GroupBarContext) ? undefined : ''
   const shown = children.filter(isValidElement) as ReactElement[]
   m.on = shown.length >= BLOCKS_FROM || (m.on && shown.length >= BLOCK_ROWS)
   if (!m.on) {
     m.of = new Map()
     m.ids = []
-    return <ul {...extra}>{children}</ul>
+    return <ul {...extra} data-phone-rows={card}>{children}</ul>
   }
   // The same rows in the same order (a write that changed none of this list's rows, or only their content): the same blocks.
   const ids = shown.map((el) => String(el.key))
@@ -636,7 +642,7 @@ function RowList({ children, extra }: { children: ReactNode[]; extra?: Record<st
   // Blocks hold consecutive rows, so each is a slice of the rows in order.
   let at = 0
   return (
-    <ul {...extra}>
+    <ul {...extra} data-phone-rows={card}>
       <RowBlockContext value>
         {m.blocks.map((b) => (
           <li key={b.key} role="none" className="row-block" style={{ '--block-rows': b.ids.length } as CSSProperties}>
