@@ -8,7 +8,7 @@ const port = Number(process.env.UI_CHECK_PORT ?? 6106)
 
 export default {
   testDir: '.',
-  testMatch: ['visual.spec.ts', 'alignment.spec.ts', 'text-size.spec.ts'],
+  testMatch: ['visual.spec.ts', 'alignment.spec.ts', 'text-size.spec.ts', 'header-row.spec.ts'],
   outputDir: '../../web/test-results/ui-visual',
   snapshotPathTemplate: process.env.UI_BASELINE_DIR
     ? `${process.env.UI_BASELINE_DIR}/{arg}{ext}`

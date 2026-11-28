@@ -1,5 +1,6 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite'
 import { useEffect } from 'react'
+import { createSubtask } from '../lib/ops'
 import { Shell } from './Shell'
 import { openTask } from './signals'
 import { forceMinimisedForStory } from './useScrollDirection'
@@ -33,6 +34,16 @@ export const TaskPage: StoryObj = {
     // A pending "open this task" request: the list takes it when it mounts, selects the
     // row and opens the task as its page, remembering the list for 1 / n and Esc.
     openTask.set(seeded.inboxTask)
+  }),
+  render: () => <Viewport><Shell user={storyUser} onLogout={noop} /></Viewport>,
+}
+
+/** A subtask with a 250-character title as its page (GitHub issue 2134): the header stays one row, the title cut in the path. */
+export const LongSubtaskPage: StoryObj = {
+  ...withSeed(async () => {
+    await seedInbox()
+    const words = 'Collect the old passport, two photos, the signed form, the fee receipt, proof of address and the appointment letter, then check every page'
+    openTask.set(await createSubtask(seeded.inboxTask, `${words}, ${words}`.slice(0, 250)))
   }),
   render: () => <Viewport><Shell user={storyUser} onLogout={noop} /></Viewport>,
 }
