@@ -76,13 +76,21 @@ export function buildNews({ files, changelog = '' }) {
   const versions = entries.map((e) => e.version)
   const dupes = versions.filter((v, i) => versions.indexOf(v) !== i)
   for (const v of new Set(dupes)) problems.push(`two news entries for version ${v}`)
-  // The first news file starts the series; a released version newer than it needs its entry (design D1).
-  if (versions.length && changelog) {
+  // The first news file starts the series; a released version newer than it needs its entry
+  // (design D1), and the newest release always does, so the series cannot stay empty (#2140).
+  // Without a changelog (tests of the files alone) there is nothing to hold the entries to.
+  if (changelog) {
+    const released = changelogVersions(changelog)
+    const newest = [...released].sort(compareVersions).at(-1)
     const first = [...versions].sort(compareVersions)[0]
-    for (const v of changelogVersions(changelog)) {
-      if (compareVersions(v, first) > 0 && !versions.includes(v)) {
-        problems.push(`${CHANGELOG} has a section [${v}] with no ${NEWS_DIR}/${v}.md (the news series starts at ${first})`)
-      }
+    for (const v of released) {
+      if (versions.includes(v)) continue
+      if (first && compareVersions(v, first) > 0) problems.push(`${CHANGELOG} has a section [${v}] with no ${NEWS_DIR}/${v}.md (the news series starts at ${first})`)
+      else if (v === newest) problems.push(`${CHANGELOG} has a section [${v}], the newest release, with no ${NEWS_DIR}/${v}.md`)
+    }
+    // Released facts only: an entry names a version the changelog has released.
+    for (const v of new Set(versions)) {
+      if (!released.includes(v)) problems.push(`${NEWS_DIR}/${v}.md: ${CHANGELOG} has no released section [${v}]`)
     }
   }
   entries.sort((a, b) => compareVersions(b.version, a.version))

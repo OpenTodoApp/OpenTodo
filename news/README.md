@@ -15,7 +15,7 @@ Plain text, at most four sentences. It is shown as written.
 - The body is English. The app says so in other languages.
 - No links, no lists: the body is plain text.
 - Versions from before the first file here have no entry, and that is intentional. Do not backfill history.
-- When a `## [x.y.z]` section in `CHANGELOG.md` is newer than the first file here, it needs its `<version>.md`.
+- Every release from the first file here on needs its `<version>.md`, written with the release's summary in `CHANGELOG.md` ([RELEASING.md](../RELEASING.md)). `make news-check` fails while the newest `## [x.y.z]` section has none, and refuses a file for a version `CHANGELOG.md` has not released.
 
 Build and check:
 

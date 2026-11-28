@@ -1,4 +1,10 @@
 {
  "schema": 1,
- "entries": []
+ "entries": [
+  {
+   "version": "1.11.0",
+   "date": "2026-11-28",
+   "body": "A new look on a phone and a complete Habits. On a phone the tab bar floats with the add button beside it, Today opens with what is done, up next and late, and Upcoming with the week ahead. Habits gets a week board on a computer and a habit app's screen on a phone. The phone screens are now the only screens below 768 px: the switch back to the earlier ones is gone."
+  }
+ ]
 }

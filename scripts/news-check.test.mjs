@@ -37,11 +37,32 @@ test('a file without front matter is refused', () => {
   assert.match(parseNews('0.20.0.md', 'No front matter.').problems[0], /missing front matter/)
 })
 
-test('an empty news folder is valid and publishes nothing', () => {
-  const { entries, problems } = buildNews({ files: [], changelog: '## [0.19.0] - 2026-10-31' })
+test('an empty news folder is valid before the first release and publishes nothing', () => {
+  const { entries, problems } = buildNews({ files: [], changelog: '## [Unreleased]\n' })
   assert.deepEqual(problems, [])
   assert.deepEqual(entries, [])
   assert.equal(outputs(entries)['web/src/generated/newsIndex.json'], '{"latest":null,"versions":[]}\n')
+})
+
+test('with no news file, the newest release needs its entry (#2140)', () => {
+  const changelog = '## [Unreleased]\n\n## [1.11.0] - 2026-11-28\n\n## [1.9.0] - 2026-11-26\n'
+  assert.deepEqual(buildNews({ files: [], changelog }).problems, ['CHANGELOG.md has a section [1.11.0], the newest release, with no news/1.11.0.md'])
+  assert.deepEqual(buildNews({ files: [file('1.11.0')], changelog }).problems, [])
+})
+
+test('the newest release needs its entry even when the series started after it', () => {
+  // A news file newer than every release is refused, and the newest release still needs its own.
+  const changelog = '## [1.11.0] - 2026-11-28\n'
+  assert.deepEqual(buildNews({ files: [file('1.12.0')], changelog }).problems, [
+    'CHANGELOG.md has a section [1.11.0], the newest release, with no news/1.11.0.md',
+    'news/1.12.0.md: CHANGELOG.md has no released section [1.12.0]',
+  ])
+})
+
+test('an entry for a version the changelog has not released is refused', () => {
+  const changelog = '## [Unreleased]\n\n## [1.11.0] - 2026-11-28\n'
+  assert.deepEqual(buildNews({ files: [file('1.11.0'), file('1.11.1')], changelog }).problems, ['news/1.11.1.md: CHANGELOG.md has no released section [1.11.1]'])
+  assert.deepEqual(buildNews({ files: [file('1.11.0')], changelog: '## [1.11.0-rc.1] - 2026-11-27\n' }).problems, ['news/1.11.0.md: CHANGELOG.md has no released section [1.11.0]'])
 })
 
 test('entries come newest first, and the latest version is the newest', () => {
