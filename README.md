@@ -39,17 +39,17 @@
 </p>
 
 <p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/mobile-today-dark.webp"><img src="docs/images/mobile-today-light.webp" width="280" alt="Today on a phone: the next timed task, the tasks done today as a ring, the late ones, and the tab bar with counts"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/mobile-today-dark.webp"><img src="docs/images/mobile-today-light.webp" width="280" alt="Today on a phone: the next timed task, the tasks done today as a ring, the late ones, and the floating tab bar with counts beside the add button"></picture>
 </p>
 
-**New: OpenTodo is in the App Store and on Google Play.** The apps connect to your OpenTodo server and add reminders on the phone, the share sheet, widgets and Face ID or fingerprint unlock. The iPhone app is a first release, so expect some rough edges; [tell us what to improve](https://github.com/OpenTodoApp/OpenTodo/issues/new/choose).
+The [iPhone and iPad](docs/ios-app.md) and [Android](docs/android-app.md) apps connect to your OpenTodo server and add reminders on the phone, the share sheet, widgets and Face ID or fingerprint unlock. On a computer, [install the web app](docs/install-app.md) from your server.
 
-**Ways to run it:** [PikaPods](https://www.pikapods.com/apps/opentodo) (hosted, no server needed) · [Docker](docs/self-hosting/docker.md) · [Umbrel](docs/self-hosting/umbrel.md) (coming soon) · [Unraid](docs/self-hosting/unraid.md) · [Home Assistant](docs/self-hosting/home-assistant-addon.md) · [Kubernetes (Helm)](docs/self-hosting/kubernetes.md) · [Single binary](#single-binary) · [iPhone and iPad app](https://apps.apple.com/us/app/opentodo/id6832200428) (App Store) · [Android app](docs/android-app.md) (Google Play or APK from GitHub; F-Droid coming soon) · [all 21 platforms](docs/self-hosting/README.md#1-install)
+**Ways to run it:** [PikaPods](https://www.pikapods.com/apps/opentodo) (hosted, no server needed) · [Docker](docs/self-hosting/docker.md) · [Umbrel](docs/self-hosting/umbrel.md) (coming soon) · [Unraid](docs/self-hosting/unraid.md) · [Home Assistant](docs/self-hosting/home-assistant-addon.md) · [Kubernetes (Helm)](docs/self-hosting/kubernetes.md) · [Single binary](#single-binary) · [all 21 platforms](docs/self-hosting/README.md#1-install)
 
 ## Why OpenTodo
 
 - **Local-first.** Every phone and computer keeps a full copy of your tasks. The app reads and writes that copy, so it is fast and works with no connection; changes sync when one is back. [Install the app](docs/install-app.md)
-- **Self-hosted.** One Go binary or one container, one SQLite file, no other service to run. It needs no configuration and idles at about 20 MB of memory.
+- **Self-hosted.** One Go binary or one container, one SQLite file, no other service to run. It needs no configuration and idles at about 20 MB of memory ([sizing](docs/self-hosting/README.md#8-sizing)).
 - **Open source.** AGPL-3.0, every feature included. No paid tier, no account with us, no telemetry.
 
 ## Features
@@ -83,31 +83,17 @@ Share a project with your family or your team as viewer, editor or admin. Assign
 - **Your data stays yours.** Everything lives in one folder on your server. Export it at any time, import it anywhere, and schedule backups, encrypted if you like, to disk, S3 or WebDAV. [Backups](docs/backups.md) · [Import and export](docs/import-export.md)
 - **Bring your tasks.** Import from Todoist, TickTick, Things, Super Productivity, Microsoft To Do, Apple Reminders and more, with a preview and undo. [Import](docs/import.md)
 - **Private by design.** No telemetry, no analytics, no third-party scripts. Turn on end-to-end encryption and the server holds only ciphertext. [Privacy](#privacy) · [Encryption](docs/e2ee.md)
-- **Bring your own AI, if you want it.** Talk to an assistant in the app, or connect the one you already use. Off by default, and every change can be undone. [AI](docs/ai-and-agents.md)
+- **Notes and habits.** Write notes beside your tasks and turn them into tasks; keep habits with a streak, a reminder and a tiny version for hard days. [Notes](docs/notes.md) · [Habits](docs/habits.md)
+- **Bring your own AI, if you want it.** Talk to an assistant in the app, or connect the one you already use over MCP. Off by default, and every change can be undone. [AI](docs/ai-and-agents.md) · [MCP](docs/mcp.md)
+- **Beyond the app.** The [`ot` command line](docs/cli.md), the [Obsidian plugin](docs/obsidian.md), [CalDAV](docs/caldav.md) for calendar apps and a [REST API](docs/api.md).
 
 **[Explore all features →](https://open-todo.app/features/)**
-
-## How it compares
-
-| | OpenTodo | Todoist | TickTick | Things | Super Productivity |
-| --- | :-: | :-: | :-: | :-: | :-: |
-| Open source | ✅ | ❌ | ❌ | ❌ | ✅ |
-| You can host it yourself | ✅ | ❌ | ❌ | ❌ | ✅ |
-| Works offline | ✅ | ✅ | ⚠️ | ✅ | ✅ |
-| Free, with every feature | ✅ | ❌ | ❌ | ❌ | ✅ |
-| No subscription | ✅ | ❌ | ❌ | ✅ | ✅ |
-| Optional end-to-end encryption | ✅ | ❌ | ❌ | ❌ | ✅ |
-| Shared projects | ✅ | ✅ | ✅ | ❌ | ❌ |
-
-✅ yes · ❌ no · ⚠️ partly, or not documented. Todoist and TickTick have a free plan with limits; Things is a one-time purchase per device type. Based on each product's public information as of November 2026. If an entry is wrong, open an issue with a source.
-
-**[Full comparisons →](https://open-todo.app/switch/)**
 
 ## Install
 
 ### Try it in 30 seconds
 
-- **No install:** open the [demo](https://demo.open-todo.app) and press **Try the demo**. You get a private copy with sample data, deleted after a few hours.
+- **No install:** open the [demo](https://demo.open-todo.app) and press **Try the demo**. You get a private copy with sample data, deleted after two hours without activity and every night.
 - **On your machine or server:**
 
   ```bash
@@ -126,11 +112,11 @@ docker compose up -d
 
 Data is kept in the `opentodo-data` volume. On a server reachable from the internet, finish setup right after starting it, or set `OPENTODO_SETUP_CODE=required` ([the setup code](docs/self-hosting/docker.md#the-setup-code)). Behind a reverse proxy, set `OPENTODO_BASE_URL=https://todo.example.com`.
 
-The image is published for `linux/amd64` and `linux/arm64`. `:stable` is the latest release, `:1` follows every 1.x release, a minor tag such as `:1.5` gets that line's fixes only, a full version such as `:1.5.0` pins one release, and `:latest` follows the main branch. Upgrades from any release since 0.1.0 work directly, and nothing you rely on breaks within 1.x ([stability](docs/stability.md)). More in [Running with Docker](docs/self-hosting/docker.md).
+The image is published for `linux/amd64` and `linux/arm64`. `:stable` is the latest release, `:1` follows every 1.x release, a minor tag such as `:1.11` gets that line's fixes only, a full version such as `:1.11.0` pins one release, and `:latest` follows the main branch. Upgrades from any release since 0.1.0 work directly, and nothing you rely on breaks within 1.x ([stability](docs/stability.md)). More in [Running with Docker](docs/self-hosting/docker.md).
 
 ### Single binary
 
-Download `opentodo-<os>-<arch>` for Linux, macOS or Windows from the [latest release](https://github.com/OpenTodoApp/OpenTodo/releases/latest) and run it. It serves on port 8080 and keeps its data in `./data`.
+Download `opentodo-<os>-<arch>` for Linux, macOS or Windows (amd64 or arm64) from the [latest release](https://github.com/OpenTodoApp/OpenTodo/releases/latest) and run it. It serves on port 8080 and keeps its data in `./data`.
 
 ### From source
 
@@ -174,7 +160,7 @@ curl -s https://todo.example.com/api/v1/openapi.json -o openapi.json
 npx openapi-typescript openapi.json -o opentodo.d.ts
 ```
 
-The same file is [`docs/openapi.json`](docs/openapi.json) and an asset of every [release](https://github.com/OpenTodoApp/OpenTodo/releases). Sign in with an API token from Settings → Integrations → API tokens; the [API guide](docs/api.md) has the details, and [`ot`](docs/cli.md), the [Obsidian plugin](obsidian/) and the [n8n nodes](https://github.com/OpenTodoApp/n8n-nodes-opentodo) are clients built on it.
+The same file is [`docs/openapi.json`](docs/openapi.json) and an asset of every [release](https://github.com/OpenTodoApp/OpenTodo/releases). Sign in with an API token from Settings → Integrations → API tokens; the [API guide](docs/api.md) has the details, and [`ot`](docs/cli.md), the [Obsidian plugin](docs/obsidian.md) and the [n8n nodes](https://github.com/OpenTodoApp/n8n-nodes-opentodo) are clients built on it.
 
 ## Architecture
 
@@ -191,7 +177,7 @@ The same file is [`docs/openapi.json`](docs/openapi.json) and an asset of every 
 - Every change is a small operation that sets one field of one entity, stamped with a hybrid logical clock and the device id.
 - Devices apply changes locally first, then sync. The same per-field rule runs everywhere, so all devices agree no matter the order. Notes merge character by character.
 - The REST API, CalDAV, email and imports write through the same log, so a task created with `curl` shows up on your phone right away.
-- One Go binary with the web app inside and a single SQLite file. It idles at about 20 MB of memory and runs on a Raspberry Pi.
+- One Go binary with the web app inside and a single SQLite file. A household runs on a Raspberry Pi 3 or a 512 MB VPS.
 
 More in [architecture](docs/architecture.md), [the sync protocol](docs/sync.md) and the [architecture tour](docs/contributing/architecture-tour.md), which follows one edit from the click to the other device.
 
@@ -206,7 +192,7 @@ Code: start with [your first contribution](docs/contributing/first-contribution.
 Without code:
 
 - **Report bugs** in [issues](https://github.com/OpenTodoApp/OpenTodo/issues) and leave feedback in [Discussions](https://github.com/OpenTodoApp/OpenTodo/discussions) or on [Discord](https://discord.gg/mmSsuCRduD).
-- **Review a translation.** The app speaks eleven languages; tell us where a word feels wrong ([translating](docs/translating.md)).
+- **Review a translation.** The app speaks ten languages, plus Russian, Japanese and Arabic as community translations; tell us where a word feels wrong ([translating](docs/translating.md)).
 - **Test it on your devices** and report back in the [call for testers](https://github.com/OpenTodoApp/OpenTodo/issues/9).
 - **Answer questions** from other people in Discussions and on Discord.
 - **Star and share.** A star helps other people find OpenTodo.
