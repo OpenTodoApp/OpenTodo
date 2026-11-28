@@ -37,11 +37,17 @@ test('a file without front matter is refused', () => {
   assert.match(parseNews('0.20.0.md', 'No front matter.').problems[0], /missing front matter/)
 })
 
-test('an empty news folder is valid and publishes nothing', () => {
-  const { entries, problems } = buildNews({ files: [], changelog: '## [0.19.0] - 2026-10-31' })
+test('an empty news folder is valid before the first release and publishes nothing', () => {
+  const { entries, problems } = buildNews({ files: [], changelog: '## [Unreleased]\n' })
   assert.deepEqual(problems, [])
   assert.deepEqual(entries, [])
   assert.equal(outputs(entries)['web/src/generated/newsIndex.json'], '{"latest":null,"versions":[]}\n')
+})
+
+test('with no news file, the newest release needs its entry (#2140)', () => {
+  const changelog = '## [Unreleased]\n\n## [1.11.0] - 2026-11-28\n\n## [1.9.0] - 2026-11-26\n'
+  assert.deepEqual(buildNews({ files: [], changelog }).problems, ['CHANGELOG.md has a section [1.11.0], the newest release, with no news/1.11.0.md'])
+  assert.deepEqual(buildNews({ files: [file('1.11.0')], changelog }).problems, [])
 })
 
 test('entries come newest first, and the latest version is the newest', () => {

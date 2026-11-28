@@ -1,0 +1,1 @@
+- **What's new shows the release's notes.** Settings → About → What's new said "Nothing new in this version yet" on every release, because no release had written its entry. The notes start with 1.11.0, and a release can no longer ship without its entry (#2140).

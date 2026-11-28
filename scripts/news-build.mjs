@@ -77,9 +77,15 @@ export function buildNews({ files, changelog = '' }) {
   const dupes = versions.filter((v, i) => versions.indexOf(v) !== i)
   for (const v of new Set(dupes)) problems.push(`two news entries for version ${v}`)
   // The first news file starts the series; a released version newer than it needs its entry (design D1).
-  if (versions.length && changelog) {
+  // With no file yet, the newest release needs one, so the series cannot stay empty (#2140).
+  const released = changelogVersions(changelog)
+  if (!versions.length && released.length) {
+    const newest = [...released].sort(compareVersions).at(-1)
+    problems.push(`${CHANGELOG} has a section [${newest}], the newest release, with no ${NEWS_DIR}/${newest}.md`)
+  }
+  if (versions.length) {
     const first = [...versions].sort(compareVersions)[0]
-    for (const v of changelogVersions(changelog)) {
+    for (const v of released) {
       if (compareVersions(v, first) > 0 && !versions.includes(v)) {
         problems.push(`${CHANGELOG} has a section [${v}] with no ${NEWS_DIR}/${v}.md (the news series starts at ${first})`)
       }
