@@ -100,6 +100,8 @@ describe.each([1280, 390])('completed calendar tasks at %i px', (width) => {
     const active = await controlAtWidth(r.container)
     expect(active.textContent?.trim()).toBe('Show completed tasks')
     expect(active.getAttribute(width === 1280 ? 'aria-pressed' : 'aria-checked')).toBe('true')
+    // aria-pressed alone styles the pressed button: no fill of its own to hide it (#2155).
+    if (width === 1280) expect([...active.classList].filter((c) => /^(bg|text)-/.test(c))).toEqual([])
     await click(active)
     await waitFor(() => !taskRow(r.container, done) && !taskRow(r.container, lane))
     expect(taskRow(r.container, open)).toBeTruthy()

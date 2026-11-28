@@ -78,7 +78,7 @@ export function SidebarFooter({ route, user, collapsed, onSearch, onShortcuts, o
         {/* The header carries the toggle (precision-shell D2); the collapsed rail keeps an Expand button here. */}
         {onToggleCollapse && collapsed && (
           <IconButton icon={collapsed ? 'panel-left-open' : 'panel-left-close'} label={collapsed ? t('Expand sidebar') : t('Collapse sidebar')} shortcut={keysOf('global.sidebar')} size="sm"
-            className="hidden lg:inline-flex" onClick={onToggleCollapse} data-sidebar-collapse aria-pressed={collapsed} />
+            className="hidden lg:inline-flex" onClick={onToggleCollapse} data-sidebar-collapse aria-expanded={false} />
         )}
       </div>
       {/* The brand line ends the sidebar (sidebar-brand-and-row-grid D1): quiet, it opens About. */}
