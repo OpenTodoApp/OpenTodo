@@ -3,7 +3,7 @@
 // Parsing and evaluation are pure (lib/filter); results are a live query, so local edits
 // and synced ops update them without a reload, offline too. The grouping and order are
 // the saved view's (lib/views), so what is saved is what was seen.
-import { isFirstRow, revealRow } from './task-list/revealRow'
+import { useRevealSelected } from './task-list/useDropSelect'
 import { Button, EmptyState, PageBody, PageHeader, Dialog } from '../ui'
 import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { blockedMap } from '../lib/dependencies'
@@ -254,13 +254,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   // `s` saves the query as a view (filter.save); the Filter list has no schedule action, so the key reaches this view scope.
   useShortcutScope('view', { 'filter.save': () => { if (!canSave) return false; setSaving(true) } }, { view: 'filter' })
 
-  useEffect(() => {
-    if (!selected) return
-    const i = selected.lastIndexOf(':')
-    const row = document.querySelector<HTMLElement>(`[data-group="${CSS.escape(selected.slice(0, i))}"] [data-task-id="${CSS.escape(selected.slice(i + 1))}"]`)
-    // Below the sticky header, and back to the very top on the first row (issue 514).
-    if (row) revealRow(row, { first: isFirstRow(row) })
-  }, [selected])
+  useRevealSelected(selected)
 
   const error = parsed.ok ? (compiled && !compiled.ok && good.src === debounced ? compiled.error : null) : parsed.error
   const warnings = !error && good.src === debounced ? result?.warnings ?? [] : []

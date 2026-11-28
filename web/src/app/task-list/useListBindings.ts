@@ -82,6 +82,8 @@ export interface BindingContext {
   /** Vim `o` (vim-keybindings): the task the next quick-add entry is placed after, if any. */
   insertAfter: RefObject<string | null>
   listRoot: RefObject<HTMLDivElement | null>
+  /** Whether a drag just selected this row (useDropSelect): it is in sight already. */
+  wasDropped: (id: string) => boolean
   projectReadOnly: boolean
   /** Starts inline editing on a selected title. */
   startInline?: (id: string, e: React.MouseEvent) => void
@@ -192,17 +194,17 @@ export function useListBindings(c: BindingContext): RowActions {
   // on its open button, so a screen reader reads the task, unless focus is elsewhere
   // (a panel, a dialog, the quick add, the sidebar): only an unfocused page or focus
   // already on a row of this list moves with the cursor.
-  const { listRoot } = c
+  const { listRoot, wasDropped } = c
   useEffect(() => {
     if (!selectedId) return
     const el = document.querySelector<HTMLElement>(`li[data-task-id="${CSS.escape(selectedId)}"]`) ?? document.querySelector<HTMLElement>(`[data-task-id="${CSS.escape(selectedId)}"]`)
     // Below the sticky header, and back to the very top on the first row (issue 514).
-    if (el) revealRow(el, { first: isFirstRow(el, listRoot.current) })
+    if (!wasDropped(selectedId) && el) revealRow(el, { first: isFirstRow(el, listRoot.current) })
     const active = document.activeElement as HTMLElement | null
     const free = !active || active === document.body
       || (!!listRoot.current?.contains(active) && !!active.closest('li[data-task-id]') && !isTypingTarget(active))
     if (el && free && !el.contains(active)) el.querySelector<HTMLElement>('[data-row-open]')?.focus({ preventScroll: true })
-  }, [selectedId, listRoot])
+  }, [selectedId, listRoot, wasDropped])
 
   // Row handlers (large-list-performance D1): one object for the life of the list,
   // reading the latest state through a ref, so a memoized row re-renders only when
