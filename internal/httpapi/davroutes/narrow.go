@@ -159,6 +159,10 @@ func (d *davRequest) fetch(v *davView, ids []string) error {
 	if v.full {
 		return nil
 	}
+	if d.s.wholeView.Load() {
+		_, err := d.load()
+		return err
+	}
 	var want []string
 	for _, id := range ids {
 		if id != "" && !v.served[id] {
@@ -224,7 +228,7 @@ func (d *davRequest) listing(v *davView, cal string) error {
 	if v.full {
 		return nil
 	}
-	if isInboxID(cal) {
+	if isInboxID(cal) || d.s.wholeView.Load() {
 		_, err := d.load()
 		return err
 	}
@@ -232,6 +236,9 @@ func (d *davRequest) listing(v *davView, cal string) error {
 	if err != nil {
 		return err
 	}
+	// Over maxNarrow the calendar's rows are read twice, here and by load:
+	// counting them first would cost a query on every listing to save one
+	// on the few calendars that large, whose listing reads the account anyway.
 	if len(v.fetched)+len(rows) > maxNarrow {
 		_, err := d.load()
 		return err

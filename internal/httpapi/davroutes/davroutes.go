@@ -14,6 +14,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/auth"
@@ -60,7 +61,14 @@ type Server struct {
 	auth     *auth.Service
 	log      *slog.Logger
 	caldavOn *settings.Switch
+	// wholeView makes every request read the whole view (SetWholeView).
+	wholeView atomic.Bool
 }
+
+// SetWholeView makes every request read the account's whole task list, as
+// before partial views (narrow.go): the reference a test compares the partial
+// views with. Off unless a test turns it on.
+func (s *Server) SetWholeView(on bool) { s.wholeView.Store(on) }
 
 // New builds the endpoint.
 func New(d Deps) *Server {

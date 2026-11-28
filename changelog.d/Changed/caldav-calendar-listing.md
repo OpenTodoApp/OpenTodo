@@ -1,1 +1,0 @@
-- **Calendar apps list a project faster on large accounts.** Listing one list over CalDAV now reads only that list's tasks, not the whole account: on 10,000 tasks a 500-task list answers in tens of milliseconds instead of about a second.
