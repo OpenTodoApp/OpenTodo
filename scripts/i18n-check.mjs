@@ -140,21 +140,31 @@ export function checkCatalog(lang, catalog, messages, fmt) {
 export const FOREIGN_BELOW = 20
 
 /**
+ * Translations that may be the same in two languages although they use a rare letter:
+ * proper nouns kept as they are written ("Weißensee" in a sample address). Add a value
+ * here only when it is right in every catalog that has it; it is a value, not an id.
+ */
+export const COPY_ALLOWED = new Set([])
+
+/**
  * Translations copied from another language (#2154: nl "Finish review" was the German
  * "Rückblick abschließen"): a translation equal to another catalog's, which uses a Latin
- * letter beyond ASCII that its own catalog hardly uses. `catalogs` maps codes to catalogs.
+ * letter beyond ASCII that its own catalog hardly uses. `catalogs` maps codes to catalogs;
+ * they are read in code order, so the problems do not depend on the order of the files.
  */
-export function copiedProblems(catalogs) {
+export function copiedProblems(catalogs, allowed = COPY_ALLOWED) {
   const problems = []
+  const codes = Object.keys(catalogs).sort()
   const letters = (text) => new Set((text.toLowerCase().match(/[^\x00-\x7f]/gu) ?? []).filter((c) => /\p{Script=Latin}/u.test(c)))
-  for (const [lang, catalog] of Object.entries(catalogs)) {
+  for (const lang of codes) {
+    const catalog = catalogs[lang]
     const uses = {}
     for (const v of Object.values(catalog)) if (typeof v === 'string') for (const c of v.toLowerCase()) uses[c] = (uses[c] ?? 0) + 1
     for (const [id, value] of Object.entries(catalog)) {
-      if (typeof value !== 'string') continue
+      if (typeof value !== 'string' || allowed.has(value)) continue
       const foreign = [...letters(value)].filter((c) => (uses[c] ?? 0) < FOREIGN_BELOW)
       if (!foreign.length) continue
-      const from = Object.keys(catalogs).find((other) => other !== lang && catalogs[other][id] === value)
+      const from = codes.find((other) => other !== lang && catalogs[other][id] === value)
       if (from) problems.push(`${lang}: "${id}" is the ${from} translation ("${value}"), copied from the wrong catalog`)
     }
   }
@@ -188,7 +198,7 @@ export async function check(root = repo) {
   const guide = maintainedInGuide(root)
   const summary = []
   const dir = join(root, 'web/src/locales')
-  const catalogs = Object.fromEntries(readdirSync(dir).filter((f) => /^[a-z]{2,3}\.json$/.test(f)).map((f) => [f.slice(0, -5), JSON.parse(readFileSync(join(dir, f), 'utf8'))]))
+  const catalogs = Object.fromEntries(readdirSync(dir).filter((f) => /^[a-z]{2,3}\.json$/.test(f)).sort().map((f) => [f.slice(0, -5), JSON.parse(readFileSync(join(dir, f), 'utf8'))]))
   problems.push(...copiedProblems(Object.fromEntries(Object.entries(catalogs).filter(([lang]) => shipped.includes(lang)))))
   for (const [lang, catalog] of Object.entries(catalogs)) {
     const found = checkCatalog(lang, catalog, messages, fmt)
