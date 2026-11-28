@@ -4,7 +4,7 @@ import { test } from 'node:test'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { checkCatalog, communityCodes, communityCoverage, loadFormat, maintainedInGuide } from './i18n-check.mjs'
+import { checkCatalog, communityCodes, copiedProblems, FOREIGN_BELOW, communityCoverage, loadFormat, maintainedInGuide } from './i18n-check.mjs'
 import { checkShellCatalog } from './i18n/shell.mjs'
 
 const fmt = await loadFormat()
@@ -108,4 +108,32 @@ test('a menu label ends in one "…" exactly when its source does (#2028)', () =
     ['de: "Move to workspace…" ends with "…", but its translation has none'])
   assert.deepEqual(checkCatalog('de', { ...ok, Rename: 'Umbenennen…' }, ids, fmt),
     ['de: "Rename" has no "…", but its translation ends with one'])
+})
+
+test('a translation copied from another language fails (#2154)', () => {
+  // Dutch writes ü now and then (geüpload), never ß; German writes both all the time.
+  const filler = Object.fromEntries(Array.from({ length: FOREIGN_BELOW }, (_, i) => [`m${i}`, 'geüpload']))
+  const de = { 'Finish review': 'Rückblick abschließen', Done: 'Erledigt', ...Object.fromEntries(Object.keys(filler).map((k) => [k, 'Größe für'])) }
+  const nl = { 'Finish review': 'Rückblick abschließen', Done: 'Klaar', ...filler }
+  assert.deepEqual(copiedProblems({ de, nl }), ['nl: "Finish review" is the de translation ("Rückblick abschließen"), copied from the wrong catalog'])
+  // Shared words with letters both languages use are not copies (es and pt "Conectar CalDAV").
+  assert.deepEqual(copiedProblems({ de, nl: { ...nl, 'Finish review': 'Terugblik afronden' } }), [])
+})
+
+test('a copied translation is named the same whatever the catalogs’ order, and the allowlist lets a proper noun pass', () => {
+  const filler = Object.fromEntries(Array.from({ length: FOREIGN_BELOW }, (_, i) => [`m${i}`, 'geüpload']))
+  const city = { City: 'Weißensee', ...filler }
+  const de = { City: 'Weißensee', Size: 'Größe', ...Object.fromEntries(Object.keys(filler).map((k) => [k, 'Größe für'])) }
+  const nl = { ...city, Size: 'Größe' }
+  const expected = ['nl: "Size" is the de translation ("Größe"), copied from the wrong catalog']
+  assert.deepEqual(copiedProblems({ nl, de }, new Set(['Weißensee'])), expected)
+  assert.deepEqual(copiedProblems({ de, nl }, new Set(['Weißensee'])), expected)
+  assert.ok(copiedProblems({ de, nl }).some((p) => p.startsWith('nl: "City"')))
+})
+
+test('the shipped catalogs hold no translation copied from another language', async () => {
+  const { readdirSync, readFileSync } = await import('node:fs')
+  const dir = new URL('../web/src/locales/', import.meta.url)
+  const catalogs = Object.fromEntries(readdirSync(dir).filter((f) => /^[a-z]{2,3}\.json$/.test(f)).sort().map((f) => [f.slice(0, -5), JSON.parse(readFileSync(new URL(f, dir), 'utf8'))]))
+  assert.deepEqual(copiedProblems(catalogs), [])
 })

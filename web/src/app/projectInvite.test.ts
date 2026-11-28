@@ -11,6 +11,9 @@ import { ProjectInviteView, type JoinState, type ProjectInviteState, type Visito
 import { PENDING_PROJECT_INVITE, rememberPendingInvite, takePendingInvite } from './pendingInvite'
 import { ProjectInvitePolicyView } from './ProjectInvitePolicyPanel'
 import { parseRoute, routePath } from './router'
+import { applyCatalog } from '../lib/i18n/catalog'
+import { UNNAMED_INVITER } from '../lib/inviterName'
+import fr from '../locales/fr.json'
 
 /** The card's markup without its Learn more link, the one help link a card may carry (settings-copy D3). */
 const withoutLearnMore = (html: string) => html.replace(/<button[^>]*data-learn-more[^>]*>Learn more<\/button>/g, '')
@@ -107,6 +110,17 @@ describe('ProjectInviteView', () => {
     expect(html).toContain('sign in to join')
     expect(html).toContain('Create an account')
     expect(html).not.toContain('data-testid="account-needed"')
+  })
+
+  it('shows the label for an inviter with no name in the interface language (#2178)', () => {
+    applyCatalog('fr', 'fr', fr as Record<string, string>)
+    try {
+      const html = screen({ kind: 'ready', preview: { ...preview, inviterName: UNNAMED_INVITER } })
+      expect(html).toContain('<strong>Le propriétaire de ce serveur</strong>')
+      expect(html).not.toContain(UNNAMED_INVITER)
+    } finally {
+      applyCatalog('en', 'en', {})
+    }
   })
 
   it('offers only sign-in when the link may not create an account', () => {

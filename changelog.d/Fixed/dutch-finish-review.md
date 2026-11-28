@@ -1,0 +1,1 @@
+- **The weekly review's Finish review button is in Dutch.** In Dutch it read the German "Rückblick abschließen"; it now reads "Terugblik afronden", and `make i18n-check` fails on a translation copied from another language (#2154).

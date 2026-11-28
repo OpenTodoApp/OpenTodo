@@ -10,6 +10,7 @@ import { formatInstant } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { InviteCard as Card, LinkStateCard } from './LinkCard'
 import { roleName } from '../lib/roleNames'
+import { inviterName } from '../lib/inviterName'
 import { rememberPendingInvite, takePendingInvite } from './pendingInvite'
 
 // Screen behind /invite/p/<token> (OpenSpec `project-invite-links`): previews a
@@ -147,7 +148,7 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
   if (!user && step !== 'choose' && form) return <>{form}</>
   const summary = (
     <div className="rounded-control bg-accent-soft p-3 text-body text-on-accent-soft" data-testid="project-invite-summary">
-      <p>{t.rich('<strong>{inviterName}</strong> invited you to the project <strong2>{projectName}</strong2> as <strong3>{role}</strong3>.', { inviterName: p.inviterName, projectName: p.projectName, role: roleName(p.role), strong: (chunks) => <strong>{chunks}</strong>, strong2: (chunks) => <strong className="user-text">{chunks}</strong>, strong3: (chunks) => <strong>{chunks}</strong> })}</p>
+      <p>{t.rich('<strong>{inviterName}</strong> invited you to the project <strong2>{projectName}</strong2> as <strong3>{role}</strong3>.', { inviterName: inviterName(p.inviterName), projectName: p.projectName, role: roleName(p.role), strong: (chunks) => <strong>{chunks}</strong>, strong2: (chunks) => <strong className="user-text">{chunks}</strong>, strong3: (chunks) => <strong>{chunks}</strong> })}</p>
       {p.email && <p className="mt-1">{t.rich('This link is for <strong>{email}</strong>.', { email: p.email, strong: (chunks) => <strong>{chunks}</strong> })}</p>}
       <p className="mt-1 text-meta">{t('It expires {when} and works once.', { when: when(p.expiresAt) })}</p>
     </div>
@@ -201,7 +202,7 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
       </div>
       {!p.canCreateAccount && (
         <p className="text-body text-muted" data-testid="account-needed">
-          {t('You need an account on this server first. Ask {inviterName} or the server owner for one, then open this link again and sign in.', { inviterName: p.inviterName })}
+          {t('You need an account on this server first. Ask {inviterName} or the server owner for one, then open this link again and sign in.', { inviterName: inviterName(p.inviterName) })}
         </p>
       )}
     </Card>
