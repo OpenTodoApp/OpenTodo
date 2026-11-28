@@ -47,4 +47,9 @@ describe('IconButton', () => {
     expect(document.querySelector('[role="tooltip"]')!.textContent).toBe('Label actions')
     await unmount()
   })
+
+  it('a pressed ghost toggle takes the selected fill, so it shows on the canvas (#2155)', async () => {
+    const css = (await import('../index.css?raw')).default
+    expect(css).toMatch(/\.ui-btn--ghost\[aria-pressed="true"\] \{ @apply bg-selected text-strong; \}/)
+  })
 })

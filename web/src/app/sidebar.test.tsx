@@ -356,7 +356,7 @@ describe('resize and collapse (ux-overhaul 4.9)', () => {
     const inbox = r.container.querySelector('[data-destination="inbox"]')!
     expect(inbox.querySelector('.sr-only')?.textContent).toBe('Inbox')
     expect(inbox.querySelector('[data-count]')).toBeNull()
-    expect(r.container.querySelector('[data-sidebar-collapse]')?.getAttribute('aria-pressed')).toBe('true')
+    expect(r.container.querySelector('[data-sidebar-collapse]')?.getAttribute('aria-expanded')).toBe('false')
     expect(r.container.querySelector('[data-sidebar-collapse]')?.getAttribute('aria-label')).toBe('Expand sidebar')
     expect(r.container.textContent).not.toContain('Projects')
     expect(r.container.textContent).not.toContain('OpenTodo')

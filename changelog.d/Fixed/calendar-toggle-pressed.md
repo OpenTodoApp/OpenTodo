@@ -1,0 +1,1 @@
+- **Pressed toggle buttons show that they are on.** The Calendar's Show completed tasks button, a list's Columns button and Pick on the map now take the selected fill while on; before, they looked almost the same on and off.

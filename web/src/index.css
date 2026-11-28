@@ -860,6 +860,8 @@ html:root[data-contrast="high"] .quick-add-surface:not(:focus-within) { @apply b
 .ui-btn--primary { @apply bg-accent text-on-accent shadow-1 hover:bg-accent-hover active:translate-y-px; }
 .ui-btn--secondary { @apply border border-default bg-surface text-default hover:bg-hover active:bg-selected; }
 .ui-btn--ghost { @apply text-muted hover:bg-hover hover:text-default active:bg-selected; }
+/* A pressed ghost toggle (aria-pressed is its only source of truth): the canvas tone it sits on would hide a sunken fill (#2155). */
+.ui-btn--ghost[aria-pressed="true"] { @apply bg-selected text-strong; }
 .ui-btn--danger { @apply text-danger hover:bg-danger-soft active:bg-danger-soft; }
 /* WebKit lets a long option label in a native select paint past the box, and the
    GTK port (Linux) ignores overflow on it; paint containment keeps it inside. */
