@@ -309,7 +309,7 @@ export class Engine {
         let out = value
         if (typeof value === 'string' && this.sealing(entity, id, f, b)) {
           try {
-            const sealed = await this.o.crypter!.seal(entity, id, f, value)
+            const sealed = await this.o.crypter!.seal(entity, id, f, value, ts)
             this.plain.set(`${entity}\0${id}\0${f}\0${sealed}`, value)
             out = sealed
           } catch {

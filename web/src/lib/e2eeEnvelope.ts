@@ -6,8 +6,25 @@
 // plugin (obsidian/) bundles this very file. e2ee.ts re-exports what the app uses;
 // e2ee.vectors.json pins it.
 import { OP_CONTENT_FIELDS } from '../generated/opSchema'
-import { decryptValue, encryptValue, isEnvelope } from './crypto'
+import { decryptValue, encryptValue, encryptValueV2, isEnvelope } from './crypto'
 import type { Entity } from './types'
+
+/**
+ * Writers seal v2 envelopes, bound to the op's timestamp (OpenSpec change
+ * e2ee-rollback, design D8). False in the reader release: every reader opens
+ * and checks v2, and writers keep writing v1 until the writer release turns
+ * this on, together with crypt.WriteV2 (internal/e2ee/crypt) and
+ * MinClientVersion 2.
+ */
+export const WRITE_V2 = false
+
+/**
+ * Encrypt one content value for an op with timestamp `ts`: a v2 envelope with
+ * WRITE_V2, else v1. Every writer that knows its op's timestamp seals here.
+ */
+export function sealText(key: CryptoKey, entity: Entity, entityId: string, field: string, text: string, ts: number): Promise<string> {
+  return WRITE_V2 ? encryptValueV2(key, ts, entity, entityId, field, text) : encryptValue(key, entity, entityId, field, text)
+}
 
 /**
  * Fields encrypted for an encrypted account, in its personal scope only (shared
@@ -66,16 +83,20 @@ export function contentFromString(entity: Entity, field: string, plaintext: stri
 /**
  * The wire value of one op value for the personal scope of an encrypted account:
  * an envelope for non-empty content, the value itself otherwise (not content,
- * empty, null, already an envelope).
+ * empty, null, already an envelope). `ts` is the timestamp of the op.
  */
-export async function sealValue(key: CryptoKey, entity: Entity, entityId: string, field: string, value: unknown): Promise<unknown> {
+export async function sealValue(key: CryptoKey, entity: Entity, entityId: string, field: string, value: unknown, ts: number): Promise<unknown> {
   if (!isContentField(entity, field) || isEnvelope(value)) return value
   const text = contentToString(entity, field, value)
-  return text ? encryptValue(key, entity, entityId, field, text) : value
+  return text ? sealText(key, entity, entityId, field, text, ts) : value
 }
 
-/** The device value of a wire value: decrypted when it is an envelope (throws DecryptError when it is not authentic). */
-export async function openValue(key: CryptoKey, entity: Entity, entityId: string, field: string, value: unknown): Promise<unknown> {
+/**
+ * The device value of a wire value: decrypted when it is an envelope (throws
+ * DecryptError when it is not authentic, StampMismatchError when a v2 value was
+ * sealed for another timestamp than `ts`, the op's).
+ */
+export async function openValue(key: CryptoKey, entity: Entity, entityId: string, field: string, value: unknown, ts?: number): Promise<unknown> {
   if (!isEnvelope(value)) return value
-  return contentFromString(entity, field, await decryptValue(key, entity, entityId, field, value))
+  return contentFromString(entity, field, await decryptValue(key, entity, entityId, field, value, ts))
 }

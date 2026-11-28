@@ -1780,6 +1780,10 @@
     "channels_disabled": [
       "listed"
     ],
+    "clock_skew": [
+      "400",
+      "listed"
+    ],
     "confirmation_mismatch": [
       "400",
       "listed"
@@ -2273,6 +2277,10 @@
     ],
     "sso_required": [
       "403",
+      "listed"
+    ],
+    "stale_ciphertext": [
+      "409",
       "listed"
     ],
     "stt_not_configured": [

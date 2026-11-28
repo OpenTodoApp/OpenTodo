@@ -10,6 +10,7 @@ import { api, ApiError } from '../api'
 import { encryptValue } from '../crypto'
 import { db } from '../db'
 import { currentKey } from '../e2ee'
+import { hlcNow } from '../hlc'
 import { sealValue } from '../e2eeEnvelope'
 import type { RoutineRunRequest } from '../relayTypes'
 import type { Entity, Rule } from '../types'
@@ -35,7 +36,9 @@ export function wireSteps(records: readonly StepRecord[]): DeviceStepRecord[] {
 /** One change with its content fields sealed for its entity, id and field. */
 export async function sealChange(key: CryptoKey, c: MergedChange): Promise<DeviceChange> {
   const fields: Record<string, unknown> = {}
-  for (const [f, v] of Object.entries(c.patch)) fields[f] = await sealValue(key, c.entity as Entity, c.id, f, v)
+  // The server stores a v2 value at its stamp (e2ee-rollback D3): this device's clock, past every op it pulled.
+  const ts = hlcNow()
+  for (const [f, v] of Object.entries(c.patch)) fields[f] = await sealValue(key, c.entity as Entity, c.id, f, v, ts)
   return { entity: c.entity, id: c.id, ...(c.create ? { create: true } : {}), fields }
 }
 

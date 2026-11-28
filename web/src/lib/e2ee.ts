@@ -10,10 +10,10 @@
 import { CONTENT_FIELDS, contentFromString, contentToString, isContentField } from './e2eeEnvelope'
 import { api, ApiError } from './api'
 import {
-  checkRecordParams, createKeyRecord, decryptValue, KeyRecordParamsError, isEnvelope, resetWithRecoveryKey, rewrapWithPassphrase, unlockWithPassphrase, unlockWithRecoveryKey,
+  checkRecordParams, createKeyRecord, decryptValue, KeyRecordParamsError, isEnvelope, stampOf, resetWithRecoveryKey, rewrapWithPassphrase, unlockWithPassphrase, unlockWithRecoveryKey,
   b64url, fromB64url, type KeyRecord,
 } from './crypto'
-import { db, getMeta, setMeta } from './db'
+import { db, getMeta, setMeta, tableOf } from './db'
 import type { Entity, EncryptionStatus } from './types'
 import { t, msg } from './i18n'
 import { biometricForget, biometricRead, biometricStore, has as shellHas } from './shell'
@@ -42,6 +42,18 @@ const K_KEY_FOR = 'e2ee.keyFor'
  * never turns encryption off.
  */
 const K_MISSING = 'e2ee.recordMissing'
+/**
+ * The newest key record this device adopted, { createdAt, version }
+ * (e2ee-rollback D6): an older record served later is refused. It survives
+ * turning encryption off and goes at sign-out with the rest of the database.
+ */
+const K_RECORD_HW = 'e2ee.recordHighWater'
+/** The older key record the server serves while this device keeps its own ({ version, createdAt }). */
+const K_SERVED = 'e2ee.olderRecordServed'
+/** Older versions of content this device refused and kept its own (e2ee-rollback D4). */
+const K_OLDER = 'e2ee.olderVersions'
+/** How many refused versions are kept for Settings; the oldest go first. */
+export const MAX_OLDER_VERSIONS = 200
 /** Set by the "both lost" path: undecryptable content is tombstoned on sight. */
 export const K_DISCARD = 'e2ee.discardUndecryptable'
 
@@ -76,6 +88,21 @@ export interface EncryptionSnapshot {
   updateRequired: boolean
   /** The account encrypts here but the server has no key record: sync is paused until the user decides. */
   recordMissing: boolean
+  /** Older versions of content the server sent and this device refused, keeping its own (e2ee-rollback D4). */
+  olderVersions?: number
+  /** The server sent an older key record than the one this device adopted; it kept its own (D6). */
+  olderRecord?: boolean
+  /** The served record's and this device's record's version and creation time, for that warning. */
+  olderRecordDetail?: OlderRecordDetail
+}
+
+export interface OlderRecordDetail {
+  served: { version: number; createdAt: number }
+  mine: { version: number; createdAt: number }
+}
+
+function olderDetail(served: { version: number; createdAt: number }, mine: KeyRecord): OlderRecordDetail {
+  return { served, mine: { version: mine.version, createdAt: mine.createdAt ?? 0 } }
 }
 
 const snap = createStore<EncryptionSnapshot>('encryption', { enabled: false, unlocked: false, keyVersion: 0, migration: null, updateRequired: false, recordMissing: false })
@@ -132,11 +159,21 @@ async function setEnabled(enabled: boolean, record: KeyRecord | null): Promise<v
   // enabled again, possibly elsewhere) has a new account key: lock instead of
   // producing undecryptable values.
   if (enabled && record && (await currentKey()) && (await getMeta<number | null>(K_KEY_FOR, null)) !== (record.createdAt ?? null)) {
-    await storeKey(null)
+    // Unless the record still carries a wrap this device's record has: then it
+    // wraps the same account key (a record uploaded again after a server restore,
+    // e2ee-rollback D6, gets a fresh creation time), and the key now belongs to it.
+    const cached = await cachedRecord()
+    const same = !!cached && (record.wrappedByPassphrase === cached.wrappedByPassphrase || record.wrappedByRecovery === cached.wrappedByRecovery)
+    if (same) await setMeta(K_KEY_FOR, record.createdAt ?? null)
+    else await storeKey(null)
   }
   await setMeta(K_ENABLED, enabled)
-  if (record) await setMeta(K_RECORD, record)
-  else await db.meta.delete(K_RECORD)
+  if (record) {
+    await setMeta(K_RECORD, record)
+    await setMeta(K_RECORD_HW, { createdAt: record.createdAt ?? 0, version: record.version })
+    await db.meta.delete(K_SERVED)
+    publishEncryption({ olderRecord: false, olderRecordDetail: undefined })
+  } else await db.meta.delete(K_RECORD)
   // Either the server has a record again or the user turned encryption off here.
   await db.meta.delete(K_MISSING)
   publishEncryption({ enabled, keyVersion: record?.version ?? 0, recordMissing: false })
@@ -159,8 +196,9 @@ export async function syncBlocked(): Promise<boolean> {
 /** Load the stored state into the snapshot (app start, database switch in tests). */
 export async function loadEncryptionState(): Promise<EncryptionSnapshot> {
   memKeys.delete(db.name)
-  const [enabled, key, record, missing] = await Promise.all([isEnabled(), currentKey(), cachedRecord(), isRecordMissing()])
-  publishEncryption({ enabled, unlocked: !!key, keyVersion: record?.version ?? 0, recordMissing: enabled && missing })
+  const [enabled, key, record, missing, older, served] = await Promise.all([isEnabled(), currentKey(), cachedRecord(), isRecordMissing(), olderVersions(), getMeta<{ version: number; createdAt: number } | null>(K_SERVED, null)])
+  publishEncryption({ enabled, unlocked: !!key, keyVersion: record?.version ?? 0, recordMissing: enabled && missing, olderVersions: olderCount(older), olderRecord: !!served,
+    olderRecordDetail: served && record ? olderDetail(served, record) : undefined })
   return snap.get()
 }
 
@@ -193,12 +231,113 @@ export async function refreshFromServer(): Promise<KeyRecord | null> {
       }
       throw err
     }
+    const cached = await cachedRecord()
+    if (cached && (await olderThanAdopted(record))) {
+      // An older record than the one this device uses, served unchanged (a
+      // server restored from a backup, e2ee-rollback D6): a warning, never a
+      // stop. The device keeps its own record, under the server's version number
+      // so a passphrase change or reuploadKeyRecord replaces the served one.
+      await setMeta(K_SERVED, { version: record.version, createdAt: record.createdAt ?? 0 })
+      publishEncryption({ olderRecord: true, olderRecordDetail: olderDetail({ version: record.version, createdAt: record.createdAt ?? 0 }, cached) })
+      return { ...cached, version: record.version }
+    }
     await setEnabled(true, record)
   } else if (await isEnabled()) {
     await setMeta(K_MISSING, true)
     publishEncryption({ recordMissing: true })
   }
   return record
+}
+
+/**
+ * Whether a served key record is older than the newest one this device adopted:
+ * an earlier enablement (createdAt) or an earlier version of the same record.
+ * A record the device's own upload returns is adopted without this check.
+ */
+async function olderThanAdopted(record: KeyRecord): Promise<boolean> {
+  const hw = await getMeta<{ createdAt: number; version: number } | null>(K_RECORD_HW, null)
+  if (!hw) return false
+  const created = record.createdAt ?? 0
+  return created < hw.createdAt || (created === hw.createdAt && record.version < hw.version)
+}
+
+/**
+ * Settings → Upload this device's key record, after the server served an older
+ * one (D6): this device's record replaces it on the server, under the next
+ * version number. It wraps the same account key, so other devices keep
+ * decrypting and adopt it on their next refresh. 409 when the record changed
+ * meanwhile (EncryptionConflictError): the user tries again.
+ */
+export async function reuploadKeyRecord(): Promise<void> {
+  const cached = await cachedRecord()
+  const served = await getMeta<{ version: number } | null>(K_SERVED, null)
+  if (!cached || !served) return
+  const { updatedAt: _updated, ...rest } = cached
+  // createdAt tells the server which enablement this record belongs to: a later
+  // one than the stored record gets a fresh creation time (e2ee/keys.go Put).
+  const stored = (await putOrConflict({ ...rest, version: served.version + 1 })).keys
+  await keepKeyFor(stored)
+  await setEnabled(true, stored)
+}
+
+/** The device's key belongs to a record it uploaded itself, whatever creation time the server gave it. */
+async function keepKeyFor(stored: KeyRecord): Promise<void> {
+  const key = await currentKey()
+  if (key) await storeKey(key, stored)
+}
+
+// ---- older versions of content (e2ee-rollback D4) ----
+
+/** One op this device refused because it carried an older version of a value. */
+export interface OlderVersion {
+  entity: Entity
+  entityId: string
+  field: string
+  /** The refused op's id and server sequence number, for diagnostics. */
+  op: string
+  seq?: number
+  /** When this device refused it (Unix ms). */
+  at: number
+}
+
+/** How many values (entity, id and field) the refusals are about: what Settings counts. */
+export function olderCount(list: readonly OlderVersion[]): number {
+  return new Set(list.map((o) => `${o.entity}\u0000${o.entityId}\u0000${o.field}`)).size
+}
+
+/** The refusals Settings lists, newest last. */
+export async function olderVersions(): Promise<OlderVersion[]> {
+  return getMeta<OlderVersion[]>(K_OLDER, [])
+}
+
+/** The refusals for Settings → Details, one per value, newest first, with the item's name on this device. */
+export async function olderVersionItems(): Promise<(OlderVersion & { name: string })[]> {
+  const seen = new Set<string>()
+  const list = [...(await olderVersions())].reverse().filter((o) => {
+    const k = `${o.entity}\u0000${o.entityId}\u0000${o.field}`
+    return !seen.has(k) && !!seen.add(k)
+  })
+  return Promise.all(list.map(async (o) => {
+    const row = await tableOf(o.entity).get(o.entityId).catch(() => undefined)
+    const name = row?.title ?? row?.name
+    return { ...o, name: typeof name === 'string' && name ? name : t('Untitled') }
+  }))
+}
+
+/** Record refused ops (once each, at most MAX_OLDER_VERSIONS) and publish the count. */
+export async function recordOlderVersions(list: OlderVersion[]): Promise<void> {
+  if (list.length === 0) return
+  const cur = await olderVersions()
+  const seen = new Set(cur.map((o) => o.op))
+  const next = [...cur, ...list.filter((o) => !seen.has(o.op) && seen.add(o.op))].slice(-MAX_OLDER_VERSIONS)
+  await setMeta(K_OLDER, next)
+  publishEncryption({ olderVersions: olderCount(next) })
+}
+
+/** Settings → Clear: forget the list (nothing else changes). */
+export async function clearOlderVersions(): Promise<void> {
+  await db.meta.delete(K_OLDER)
+  publishEncryption({ olderVersions: 0 })
 }
 
 /**
@@ -331,7 +470,9 @@ export async function changePassphrase(current: string, next: string, opts: { it
   const record = await refreshFromServer()
   if (!record) throw new Error(t('Encryption is not enabled for this account.'))
   const rewrapped = await attempt(() => rewrapWithPassphrase(record, current, next, opts))
-  const stored = (await putOrConflict(rewrapped)).keys
+  // The record's createdAt names its enablement (an older record served, D6).
+  const stored = (await putOrConflict({ ...rewrapped, createdAt: record.createdAt })).keys
+  await keepKeyFor(stored)
   await setEnabled(true, stored)
 }
 
@@ -341,7 +482,7 @@ export async function resetPassphrase(recoveryKey: string, next: string, opts: {
   const record = await refreshFromServer()
   if (!record) throw new Error(t('Encryption is not enabled for this account.'))
   const reset = await attempt(() => resetWithRecoveryKey(record, recoveryKey, next, opts))
-  const stored = (await putOrConflict(reset.record)).keys
+  const stored = (await putOrConflict({ ...reset.record, createdAt: record.createdAt })).keys
   await storeKey(reset.key, stored)
   await setEnabled(true, stored)
   return { recoveryKey: reset.recoveryKey }
@@ -432,7 +573,7 @@ export async function purgeHistory(): Promise<{ purged: number; notice: string }
 /** Settings → Sign out clears local data; forget the in-memory key as well. */
 export function forgetMemoryKeys(): void {
   memKeys.clear()
-  publishEncryption({ enabled: false, unlocked: false, keyVersion: 0, migration: null, recordMissing: false })
+  publishEncryption({ enabled: false, unlocked: false, keyVersion: 0, migration: null, recordMissing: false, olderVersions: 0, olderRecord: false })
 }
 
 /** A content value the UI should mark: plaintext on the server while the account encrypts. */
@@ -453,23 +594,29 @@ export function notYetEncrypted(row: { _e2ee?: { wire?: Record<string, string> }
 /**
  * Decrypt a value read from the server outside sync (revision history, server
  * activity pages) for display. Plaintext passes through; an envelope that does
- * not open with this device's key, or with no key, shows UNDECRYPTABLE.
+ * not open with this device's key, or with no key, shows UNDECRYPTABLE. With
+ * `ts`, the timestamp of the op that wrote the value, a v2 value sealed for
+ * another timestamp shows UNDECRYPTABLE too (e2ee-rollback D4). With `before`,
+ * for a value replaced by a change at that timestamp (its `from`), a v2 value
+ * stamped after it shows UNDECRYPTABLE: it cannot be the earlier value.
  */
-export async function displayValue(entity: Entity, entityId: string, field: string, value: unknown): Promise<unknown> {
+export async function displayValue(entity: Entity, entityId: string, field: string, value: unknown, ts?: number, before?: number): Promise<unknown> {
   if (!isContentField(entity, field) || !isEnvelope(value)) return value
   const key = await currentKey()
   if (!key) return UNDECRYPTABLE
+  const stamp = stampOf(value)
+  if (before !== undefined && stamp !== null && stamp > before) return UNDECRYPTABLE
   try {
-    return contentFromString(entity, field, await decryptValue(key, entity, entityId, field, value))
+    return contentFromString(entity, field, await decryptValue(key, entity, entityId, field, value, ts))
   } catch {
     return UNDECRYPTABLE
   }
 }
 
-/** Decrypt the from/to values of history or activity changes. */
-export async function decryptChanges<T extends { field: string; from: unknown; to: unknown }>(entity: Entity, entityId: string, changes: T[]): Promise<T[]> {
+/** Decrypt the from/to values of history or activity changes; `ts` is the timestamp of the change (its `to` value's op). */
+export async function decryptChanges<T extends { field: string; from: unknown; to: unknown }>(entity: Entity, entityId: string, changes: T[], ts?: number): Promise<T[]> {
   return Promise.all(changes.map(async (c) => ({
-    ...c, from: await displayValue(entity, entityId, c.field, c.from), to: await displayValue(entity, entityId, c.field, c.to),
+    ...c, from: await displayValue(entity, entityId, c.field, c.from, undefined, ts), to: await displayValue(entity, entityId, c.field, c.to, ts),
   })))
 }
 

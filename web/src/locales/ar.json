@@ -7935,5 +7935,12 @@
   "By weekday": "حسب يوم الأسبوع",
   "Up next": "التالي",
   "Next seven days": "الأيام السبعة القادمة",
-  "in {time}": "خلال {time}"
+  "in {time}": "خلال {time}",
+  "It replaces the key record on the server with this device’s, as version {next}. Other devices keep working and adopt it. If this device missed a passphrase change made elsewhere, its older passphrase is the one that works again.": "يستبدل سجل المفتاح على الخادم بسجل هذا الجهاز، بالإصدار {next}. تواصل الأجهزة الأخرى العمل وتعتمده. إن فات هذا الجهاز تغييرٌ لعبارة المرور جرى في مكان آخر، فإن عبارة مروره الأقدم هي التي تعمل مجددًا.",
+  "Older versions this device kept out": "الإصدارات الأقدم التي استبعدها هذا الجهاز",
+  "The server sent an older encryption key record (version {served}, {servedDate}) than this device’s (version {mine}, {mineDate}). This device kept its own.": "أرسل الخادم سجل مفتاح تشفير أقدم (الإصدار {served}، {servedDate}) من سجل هذا الجهاز (الإصدار {mine}، {mineDate}). احتفظ هذا الجهاز بسجله.",
+  "The server sent older versions of {n, plural, one {# item} other {# items}}. This device kept its own.": "أرسل الخادم إصدارات أقدم من {n, plural, zero {لا عناصر} one {عنصر واحد} two {عنصرين} few {# عناصر} many {# عنصرًا} other {# عنصر}}. احتفظ هذا الجهاز بإصداراته.",
+  "This item changed in the meantime. Try again.": "تغيّر هذا العنصر في هذه الأثناء. حاول مجددًا.",
+  "Upload this device’s key record": "رفع سجل مفتاح هذا الجهاز",
+  "Upload this device’s key record?": "رفع سجل مفتاح هذا الجهاز؟"
 }

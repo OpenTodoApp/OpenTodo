@@ -6,6 +6,10 @@
 //
 //	value   "enc:v1:" + base64url(nonce(12) || AES-256-GCM(plaintext, aad))
 //	aad     entity + "\x00" + entityId + "\x00" + field
+//	value   "enc:v2:" + base64url(stamp(8) || nonce(12) || AES-256-GCM(plaintext, aad))
+//	aad     "opentodo/e2ee/v2\x00" + entity + "\x00" + entityId + "\x00" + field + "\x00" || stamp(8)
+//	        where the stamp is the timestamp of the op that carries the value
+//	        (OpenSpec change e2ee-rollback)
 //	DEK     wrapped (RFC 3394 AES-KW) under a PBKDF2-SHA-256 passphrase key and
 //	        under an HKDF-SHA-256 recovery key
 //
@@ -27,6 +31,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
@@ -57,6 +62,9 @@ var (
 	ErrWrongSecret = errors.New("the passphrase or recovery key is not correct")
 	// ErrRecoveryFormat: a recovery key was mistyped.
 	ErrRecoveryFormat = errors.New("this is not a valid recovery key; check for typos")
+	// ErrStampMismatch: an authentic v2 value arrived in an op with another
+	// timestamp than the one it was sealed for, so an older value served again.
+	ErrStampMismatch = errors.New("the server sent an older version of this value")
 	// ErrIterations: the key record's derivation cost is outside the accepted range.
 	ErrIterations = errors.New("the key record's key derivation iterations are outside the accepted range")
 )
@@ -78,8 +86,32 @@ func gcm(key []byte) (cipher.AEAD, error) {
 	return cipher.NewGCM(blk)
 }
 
-// Seal encrypts one content value for entity/id/field with a fresh random nonce.
+// WriteV2 switches ot's writers to the v2 envelope (OpenSpec change
+// e2ee-rollback, design D8). It stays false in the reader release: ot opens v2
+// values but writes v1 until the writer release turns this on, together with
+// WRITE_V2 in web/src/lib/e2eeEnvelope.ts.
+const WriteV2 = e2ee.WriterRelease
+
+// Seal encrypts one content value for entity/id/field with a fresh random
+// nonce. With WriteV2 it writes a v2 envelope stamped now; the server makes the
+// stamp the timestamp of the op it stores.
 func Seal(key []byte, entity, id, field, plaintext string) (string, error) {
+	if WriteV2 {
+		return SealV2(key, time.Now().UnixMilli(), entity, id, field, plaintext)
+	}
+	nonce := make([]byte, nonceBytes)
+	if _, err := rand.Read(nonce); err != nil {
+		return "", err
+	}
+	return SealWithNonce(key, nonce, entity, id, field, plaintext)
+}
+
+// SealFor seals one content value for an op with timestamp ts that ot uploads
+// itself (ot vault): v2 bound to ts with WriteV2, v1 otherwise.
+func SealFor(key []byte, ts int64, entity, id, field, plaintext string) (string, error) {
+	if WriteV2 {
+		return SealV2(key, ts, entity, id, field, plaintext)
+	}
 	nonce := make([]byte, nonceBytes)
 	if _, err := rand.Read(nonce); err != nil {
 		return "", err
@@ -100,9 +132,80 @@ func SealWithNonce(key, nonce []byte, entity, id, field, plaintext string) (stri
 	return e2ee.PrefixV1 + b64.EncodeToString(out), nil
 }
 
-// Open decrypts one content value; ErrDecrypt when it is not authentic for this
-// key, entity, id and field.
+func aadV2(entity, id, field string, stamp int64) []byte {
+	return binary.BigEndian.AppendUint64([]byte("opentodo/e2ee/v2\x00"+entity+"\x00"+id+"\x00"+field+"\x00"), uint64(stamp))
+}
+
+// SealV2 encrypts one content value as a v2 envelope stamped with ts, the
+// timestamp of the op that carries it.
+func SealV2(key []byte, ts int64, entity, id, field, plaintext string) (string, error) {
+	nonce := make([]byte, nonceBytes)
+	if _, err := rand.Read(nonce); err != nil {
+		return "", err
+	}
+	return SealV2WithNonce(key, nonce, ts, entity, id, field, plaintext)
+}
+
+// SealV2WithNonce is SealV2 with a given nonce, for known-answer tests only.
+func SealV2WithNonce(key, nonce []byte, ts int64, entity, id, field, plaintext string) (string, error) {
+	g, err := gcm(key)
+	if err != nil {
+		return "", err
+	}
+	if len(nonce) != nonceBytes {
+		return "", errors.New("nonce must be 12 bytes")
+	}
+	if ts < 1 || ts > e2ee.MaxStamp {
+		return "", errors.New("the stamp must be a positive millisecond timestamp")
+	}
+	out := binary.BigEndian.AppendUint64(nil, uint64(ts))
+	out = append(out, nonce...)
+	out = g.Seal(out, nonce, []byte(plaintext), aadV2(entity, id, field, ts))
+	return e2ee.PrefixV2 + b64.EncodeToString(out), nil
+}
+
+// OpenAt decrypts one content value that arrived in an op with timestamp ts. An
+// authentic v2 value sealed for another timestamp is ErrStampMismatch: an older
+// value served again (e2ee-rollback, design D4). A v1 value opens as with Open.
+func OpenAt(key []byte, entity, id, field, value string, ts int64) (string, error) {
+	pt, err := Open(key, entity, id, field, value)
+	if err != nil {
+		return "", err
+	}
+	if stamp, ok := e2ee.Stamp(value); ok && stamp != ts {
+		return "", ErrStampMismatch
+	}
+	return pt, nil
+}
+
+func openV2(key []byte, entity, id, field, value string) (string, error) {
+	stamp, ok := e2ee.Stamp(value)
+	if !ok {
+		return "", ErrDecrypt
+	}
+	body, err := b64.DecodeString(value[len(e2ee.PrefixV2):])
+	if err != nil {
+		return "", ErrDecrypt
+	}
+	g, err := gcm(key)
+	if err != nil {
+		return "", err
+	}
+	nonce := body[8 : 8+nonceBytes]
+	pt, err := g.Open(nil, nonce, body[8+nonceBytes:], aadV2(entity, id, field, stamp))
+	if err != nil || !utf8.Valid(pt) {
+		return "", ErrDecrypt
+	}
+	return string(pt), nil
+}
+
+// Open decrypts one content value of either version; ErrDecrypt when it is not
+// authentic for this key, entity, id and field. It does not compare a v2 stamp
+// with an op's timestamp: a reader that has the op uses OpenAt.
 func Open(key []byte, entity, id, field, value string) (string, error) {
+	if e2ee.IsV2(value) {
+		return openV2(key, entity, id, field, value)
+	}
 	if !strings.HasPrefix(value, e2ee.PrefixV1) {
 		return "", ErrDecrypt
 	}

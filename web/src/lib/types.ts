@@ -1659,6 +1659,8 @@ export interface EncryptionStatus {
 export interface RowEncryption {
   wire?: Record<string, 'p' | 'c' | 'x'>
   raw?: Record<string, string>
+  /** Fields whose current value the server holds as a v2 envelope (e2ee-rollback D4); local only. */
+  v2?: Record<string, true>
 }
 
 /** Whether a provider is configured, as the sign-in screen needs it. */

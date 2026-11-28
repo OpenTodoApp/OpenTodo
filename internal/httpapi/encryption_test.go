@@ -3,6 +3,7 @@ package httpapi
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"net/http"
 	"os"
@@ -328,5 +329,72 @@ func TestRESTPlaintextWriteThenCiphertext(t *testing.T) {
 	e.mustStatus(resp, 200, out)
 	if out["title"] != ct("s") || out["due"].(map[string]any)["date"] != "2026-10-11" {
 		t.Fatalf("REST read = %v", out)
+	}
+}
+
+// ctV2 is a v2 envelope with the given stamp (e2ee-rollback D1); the server
+// never decrypts, so the rest is filler.
+func ctV2(stamp int64) string {
+	body := binary.BigEndian.AppendUint64(nil, uint64(stamp))
+	return e2ee.PrefixV2 + base64.RawURLEncoding.EncodeToString(append(body, []byte("nonce-12bytefiller-0123456789abcdef")...))
+}
+
+// TestStaleCiphertext (e2ee-rollback D3): a REST write of a v2 envelope takes
+// its stamp as the op's timestamp. A stamp that would not win, such as an older
+// ciphertext written again, answers 409 stale_ciphertext with the field's
+// current timestamp; a stamp far ahead 400 clock_skew; without a credential 401.
+func TestStaleCiphertext(t *testing.T) {
+	e := ownerEnv(t)
+	resp, out := e.do("PUT", "/api/v1/encryption/keys", keyRecord(1, 1))
+	e.mustStatus(resp, 201, out)
+	now := time.Now().UnixMilli()
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": ctV2(now - 60_000)})
+	e.mustStatus(resp, 201, out)
+	id := out["id"].(string)
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+id, map[string]any{"title": ctV2(now)})
+	e.mustStatus(resp, 200, out)
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+id, map[string]any{"title": ctV2(now - 60_000)})
+	e.mustStatus(resp, 409, out)
+	if errCode(out) != "stale_ciphertext" || out["error"].(map[string]any)["currentTs"] != float64(now) {
+		t.Fatalf("replay: %v", out)
+	}
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+id, map[string]any{"title": ctV2(now + 60*60_000)})
+	e.mustStatus(resp, 400, out)
+	if errCode(out) != "clock_skew" {
+		t.Fatalf("far ahead: %v", out)
+	}
+	resp, out = e.do("GET", "/api/v1/tasks/"+id, nil)
+	e.mustStatus(resp, 200, out)
+	if out["title"] != ctV2(now) {
+		t.Fatalf("title = %v", out["title"])
+	}
+	anon := newClientAt(e, "10.9.9.8")
+	resp, out = anon.do("PATCH", "/api/v1/tasks/"+id, map[string]any{"title": ctV2(now + 1)})
+	anon.mustStatus(resp, 401, out)
+}
+
+// TestKeyRecordUploadOfLaterEnablement (e2ee-rollback D6): a replacing record
+// keeps the stored creation time, unless the device uploads the record of a
+// later enablement (a newer createdAt than the stored one, after the server was
+// restored from an older backup): then it gets a fresh one, newer than both.
+func TestKeyRecordUploadOfLaterEnablement(t *testing.T) {
+	e := ownerEnv(t)
+	resp, out := e.do("PUT", "/api/v1/encryption/keys", keyRecord(1, 1))
+	e.mustStatus(resp, 201, out)
+	created := out["keys"].(map[string]any)["createdAt"].(float64)
+	next := keyRecord(2, 2)
+	next["createdAt"] = created - 1000
+	resp, out = e.do("PUT", "/api/v1/encryption/keys", next)
+	e.mustStatus(resp, 200, out)
+	if got := out["keys"].(map[string]any)["createdAt"].(float64); got != created {
+		t.Fatalf("an older claim moved createdAt: %v, want %v", got, created)
+	}
+	later := keyRecord(3, 3)
+	later["createdAt"] = created + 5
+	time.Sleep(2 * time.Millisecond)
+	resp, out = e.do("PUT", "/api/v1/encryption/keys", later)
+	e.mustStatus(resp, 200, out)
+	if got := out["keys"].(map[string]any)["createdAt"].(float64); got <= created {
+		t.Fatalf("a later enablement kept createdAt %v", got)
 	}
 }

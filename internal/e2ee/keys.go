@@ -131,7 +131,11 @@ func (s *Store) Put(ctx context.Context, userID string, rec KeyRecord, now int64
 	if rec.Version != current+1 {
 		return KeyRecord{}, false, ErrConflict
 	}
-	if !exists {
+	// A new record, or a device uploading the record of a later enablement than
+	// the stored one (it claims a newer createdAt: the server was restored from a
+	// backup and served an older record, OpenSpec change e2ee-rollback D6), gets
+	// a fresh creation time, so every device sees it as the newest record.
+	if !exists || rec.CreatedAt > created {
 		created = now
 	}
 	rec.CreatedAt, rec.UpdatedAt = created, now

@@ -12,12 +12,16 @@
 // Decryption happens before incoming ops are applied (decryptIncoming), so the
 // local tables, search, filters and live queries work on plaintext.
 import {
-  decryptValue, encryptValue, isEnvelope,
+  decryptValue, isEnvelope, isV2, stampOf,
 } from './crypto'
+import { sealText, WRITE_V2 } from './e2eeEnvelope'
+import { wins } from './hlc'
+import { isDocField } from './docfields'
 import { writesOwnRow } from './authored'
 import { db, entityTables, getMeta, setMeta, tableOf, type EntityRow } from './db'
 import {
-  CONTENT_FIELDS, contentFromString, contentToString, currentKey, isContentField, isEnabled, isRecordMissing, K_DISCARD, publishEncryption, refreshFromServer, syncBlocked, UNDECRYPTABLE,
+  CONTENT_FIELDS, contentFromString, contentToString, currentKey, isContentField, isEnabled, isRecordMissing, K_DISCARD, publishEncryption, recordOlderVersions, refreshFromServer, syncBlocked, UNDECRYPTABLE,
+  type OlderVersion,
 } from './e2ee'
 import { getDeviceId, mutateMany, mutationTables, readField, APPEND_PREFIX, FIELD_VALUE_PREFIX, type Change } from './ops'
 import { membershipMap } from './sharing'
@@ -30,6 +34,8 @@ export interface WireInfo {
   kind: Wire
   /** The envelope of a value this device could not decrypt. */
   raw?: string
+  /** The server holds the value as a v2 envelope (e2ee-rollback D4). */
+  v2?: boolean
 }
 
 /** The device holds no key for an encrypted account: nothing may be pulled or pushed. */
@@ -104,7 +110,7 @@ export async function prepareOutgoing(ops: Op[]): Promise<Op[]> {
   for (const op of ops) {
     const text = plaintextOf(op)
     if (text !== null && (await personal(op.entity, op.entityId))) {
-      out.push({ ...op, value: await encryptValue(key, op.entity, op.entityId, op.field, text) })
+      out.push({ ...op, value: await sealText(key, op.entity, op.entityId, op.field, text, op.ts) })
     } else {
       out.push(op)
     }
@@ -121,6 +127,29 @@ export interface Incoming {
   plaintext: boolean
   /** Ciphertext arrived and this device has no key. */
   needsKey: boolean
+  /** Ops left out because they carried an older version of a value (e2ee-rollback D4). */
+  refused: OlderVersion[]
+}
+
+/**
+ * Whether an incoming ciphertext op is an older version of a value served again
+ * (e2ee-rollback, design D4), decided before decryption and without a key: a v2
+ * value sealed for another timestamp than its op's, or a v1 value that would win
+ * over a field this device holds as v2. Mergeable documents (notes_doc) only get
+ * the first check: replaying an older update changes nothing. `held` is the
+ * field's held state, including v2 ops accepted earlier in the same batch.
+ * `downgrade` (the second check) is on from the writer release (WRITE_V2): in
+ * the reader release honest writers still write v1 after a v2 value.
+ */
+export function olderVersion(op: Op, held: { v2: boolean; clock?: { ts: number; device: string } }, downgrade = WRITE_V2): boolean {
+  // Only envelopes: a title someone typed as "enc:v2: …" is text.
+  if (!isEnvelope(op.value)) return false
+  if (isV2(op.value)) {
+    const stamp = stampOf(op.value)
+    return stamp !== null && stamp !== op.ts
+  }
+  if (isDocField(op.entity, op.field)) return false
+  return downgrade && held.v2 && wins(op.ts, op.device, held.clock)
 }
 
 /**
@@ -129,12 +158,47 @@ export interface Incoming {
  * the binding is part of the authentication) becomes the UNDECRYPTABLE
  * placeholder; the op is kept and its envelope remembered.
  */
-export async function decryptIncoming(ops: Op[]): Promise<Incoming> {
-  const res: Incoming = { ops: [], wire: new Map(), ciphertext: false, plaintext: false, needsKey: false }
+export async function decryptIncoming(ops: Op[], opts: { downgrade?: boolean } = {}): Promise<Incoming> {
+  const downgrade = opts.downgrade ?? WRITE_V2
+  const res: Incoming = { ops: [], wire: new Map(), ciphertext: false, plaintext: false, needsKey: false, refused: [] }
   if (ops.length === 0) return res
   const key = await currentKey()
   let personal: ((e: Entity, id: string) => Promise<boolean>) | null = null
+  // Fields held as v2, with their clock: read once per entity kind for the
+  // batch's ciphertext ops (one bulkGet each), then moved by its own winners.
+  const held = new Map<string, { v2: boolean; clock?: { ts: number; device: string } }>()
+  const wanted = new Map<Entity, Set<string>>()
   for (const op of ops) {
+    if (!isEnvelope(op.value) || !isContentField(op.entity, op.field)) continue
+    const ids = wanted.get(op.entity) ?? new Set<string>()
+    ids.add(op.entityId)
+    wanted.set(op.entity, ids)
+  }
+  const rows = new Map<string, EntityRow | undefined>()
+  for (const [entity, ids] of wanted) {
+    const list = [...ids]
+    const got = await tableOf(entity).bulkGet(list)
+    list.forEach((id, i) => rows.set(`${entity}:${id}`, got[i]))
+  }
+  const heldOf = (op: Op) => {
+    const k = `${op.entity}:${op.entityId}:${op.field}`
+    let h = held.get(k)
+    if (!h) {
+      const row = rows.get(`${op.entity}:${op.entityId}`)
+      h = { v2: !!row?._e2ee?.v2?.[op.field], clock: row?._clock?.[op.field] }
+      held.set(k, h)
+    }
+    return h
+  }
+  for (const op of ops) {
+    if (isEnvelope(op.value) && isContentField(op.entity, op.field)) {
+      const h = heldOf(op)
+      if (olderVersion(op, h, downgrade)) {
+        res.refused.push({ entity: op.entity, entityId: op.entityId, field: op.field, op: op.id, ...(op.seq !== undefined ? { seq: op.seq } : {}), at: Date.now() })
+        continue
+      }
+      if (wins(op.ts, op.device, h.clock)) held.set(`${op.entity}:${op.entityId}:${op.field}`, { v2: isV2(op.value), clock: { ts: op.ts, device: op.device } })
+    }
     // An object-valued content field (task.origin) is plaintext as an object, ciphertext as a string.
     const text = isContentField(op.entity, op.field) && !isEnvelope(op.value) ? contentToString(op.entity, op.field, op.value) : null
     if (!isEnvelope(op.value) && text === null) {
@@ -146,12 +210,12 @@ export async function decryptIncoming(ops: Op[]): Promise<Incoming> {
       if (!key) res.needsKey = true
       try {
         if (!key) throw new Error('no key')
-        const value = contentFromString(op.entity, op.field, await decryptValue(key, op.entity, op.entityId, op.field, op.value))
+        const value = contentFromString(op.entity, op.field, await decryptValue(key, op.entity, op.entityId, op.field, op.value, op.ts))
         res.ops.push({ ...op, value })
-        res.wire.set(op.id, { kind: 'c' })
+        res.wire.set(op.id, { kind: 'c', ...(isV2(op.value) ? { v2: true } : {}) })
       } catch {
         res.ops.push({ ...op, value: UNDECRYPTABLE })
-        res.wire.set(op.id, { kind: 'x', raw: op.value })
+        res.wire.set(op.id, { kind: 'x', raw: op.value, ...(isV2(op.value) ? { v2: true } : {}) })
       }
       continue
     }
@@ -163,6 +227,8 @@ export async function decryptIncoming(ops: Op[]): Promise<Incoming> {
       res.wire.set(op.id, { kind: 'p' })
     }
   }
+  // Recorded for Settings even when the batch waits for an unlock: once per op.
+  await recordOlderVersions(res.refused)
   return res
 }
 
@@ -205,7 +271,11 @@ export async function markSent(original: Op[], sent: Op[]): Promise<void> {
       if (!row || !c || c.ts !== op.ts || c.device !== op.device) continue
       const value = byId.get(op.id)?.value
       const kind: Wire = isEnvelope(value) ? (row._e2ee?.raw?.[op.field] ? 'x' : 'c') : 'p'
-      const e2ee: RowEncryption = { ...row._e2ee, wire: { ...row._e2ee?.wire, [op.field]: kind } }
+      const v2 = { ...row._e2ee?.v2 }
+      if (isV2(value)) v2[op.field] = true
+      else delete v2[op.field]
+      const { v2: _held, ...rest } = row._e2ee ?? {}
+      const e2ee: RowEncryption = { ...rest, wire: { ...row._e2ee?.wire, [op.field]: kind }, ...(Object.keys(v2).length ? { v2 } : {}) }
       await table.put({ ...row, _e2ee: e2ee })
     }
   })

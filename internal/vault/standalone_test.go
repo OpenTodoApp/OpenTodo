@@ -429,7 +429,7 @@ func TestNoteMerge3(t *testing.T) {
 
 func TestNoteEncrypted(t *testing.T) {
 	var c fakeCrypter
-	seal := func(id, pt string) string { s, _ := c.Seal("note", id, "title", pt); return s }
+	seal := func(id, pt string) string { s, _ := c.Seal("note", id, "title", pt, 1); return s }
 	f := &fake{}
 	f.log = append(f.log, row("note", "n-enc", map[string]any{"title": seal("n-enc", "Diary"), "description": seal("n-enc", "Dear diary"),
 		"project_id": nil, "labels": []string{}, "position": 1, "created_at": 1, "deleted_at": nil})...)

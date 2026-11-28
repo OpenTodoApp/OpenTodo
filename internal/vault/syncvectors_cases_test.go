@@ -278,7 +278,7 @@ var vxCases = []vxDef{
 		setup: func(c *vxCase) { c.Encrypted = true; c.Shared = []string{"p-shared"} },
 		run: func(r *vxRec) {
 			var c fakeCrypter
-			seal := func(entity, id, pt string) string { s, _ := c.Seal(entity, id, "", pt); return s }
+			seal := func(entity, id, pt string) string { s, _ := c.Seal(entity, id, "", pt, 1); return s }
 			r.project("p-home", seal("project", "p-home", "Home"), nil)
 			r.project("p-shared", "Shared", map[string]any{"position": 2000})
 			r.task("t-pass", seal("task", "t-pass", "Renew passport"), "p-home", map[string]any{"description": seal("task", "t-pass", "Bring photos")})

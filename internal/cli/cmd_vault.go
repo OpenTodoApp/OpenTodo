@@ -98,8 +98,8 @@ func (k keyCrypter) Open(entity, id, field, value string) (string, error) {
 	return crypt.Open(k.key, entity, id, field, value)
 }
 
-func (k keyCrypter) Seal(entity, id, field, plaintext string) (string, error) {
-	return crypt.Seal(k.key, entity, id, field, plaintext)
+func (k keyCrypter) Seal(entity, id, field, plaintext string, ts int64) (string, error) {
+	return crypt.SealFor(k.key, ts, entity, id, field, plaintext)
 }
 
 // vaultConnect checks the token's scope and the encryption state before any

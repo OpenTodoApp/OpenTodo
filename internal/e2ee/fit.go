@@ -7,12 +7,12 @@ import (
 
 // MaxEncryptableBytes is the longest plaintext an end-to-end encrypted account's
 // devices can still re-encrypt (encrypt-on-sight) into one synced value of at
-// most maxValue bytes: its ciphertext, "enc:v1:" + base64url(nonce(12) ||
-// ciphertext || tag(16)) between JSON quotes, must fit. For the sync limit of
+// most maxValue bytes: its ciphertext, "enc:v2:" + base64url(stamp(8) || nonce(12) ||
+// ciphertext || tag(16)) between JSON quotes, must fit (v1 is 8 bytes shorter). For the sync limit of
 // 64 KB that is about 48 KB of text. The caller passes the limit
 // (sync.MaxValueBytes) because this package imports nothing from sync.
 func MaxEncryptableBytes(maxValue int) int {
-	return (maxValue-2-len(PrefixV1))*3/4 - 12 - 16
+	return (maxValue-2-len(PrefixV2))*3/4 - 8 - 12 - 16
 }
 
 // FitsValue reports whether d, encoded as an operation encodes it, is within

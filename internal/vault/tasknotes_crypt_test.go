@@ -14,7 +14,7 @@ import (
 // entity like the real format; another binding does not open.
 type fakeCrypter struct{}
 
-func (fakeCrypter) Seal(entity, id, field, pt string) (string, error) {
+func (fakeCrypter) Seal(entity, id, field, pt string, _ int64) (string, error) {
 	return "enc:v1:" + id + ":" + base64.RawURLEncoding.EncodeToString([]byte(pt)), nil
 }
 
@@ -32,7 +32,7 @@ func (fakeCrypter) Open(entity, id, field, value string) (string, error) {
 // read-only (design D8).
 func TestTaskNotesEncrypted(t *testing.T) {
 	var c fakeCrypter
-	seal := func(id, pt string) string { s, _ := c.Seal("task", id, "title", pt); return s }
+	seal := func(id, pt string) string { s, _ := c.Seal("task", id, "title", pt, 1); return s }
 	f := &fake{}
 	f.log = append(f.log, task("tsk00001", seal("tsk00001", "Renew passport"), "", map[string]any{"description": seal("tsk00001", "Bring photos")})...)
 	f.log = append(f.log, task("tsk00002", seal("other", "Wrong binding"), "", nil)...)

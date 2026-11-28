@@ -16,12 +16,25 @@ import { t } from './i18n'
 //   "enc:v1:" + base64url(nonce(12) || AES-256-GCM(utf8(plaintext)) incl. 16-byte tag)
 //   additional authenticated data = utf8(entity + "\0" + entityId + "\0" + field)
 // The binding makes a value moved to another field or entity fail authentication.
+//
+// Format version 2 (OpenSpec change e2ee-rollback) adds the timestamp of the op
+// that carries the value, so an older ciphertext cannot come back as a newer op:
+//   "enc:v2:" + base64url(stamp(8, big-endian) || nonce(12) || AES-256-GCM(...) incl. tag)
+//   additional authenticated data = utf8("opentodo/e2ee/v2\0" + entity + "\0" + entityId + "\0" + field + "\0") || stamp(8)
+// The stamp is in the clear (the server checks it equals the op's timestamp)
+// and authenticated. Both versions are read; which one is written is WRITE_V2
+// in e2eeEnvelope.ts.
 // Nonces are 96 random bits per encryption; with a single key per account the
 // collision probability stays negligible far beyond any realistic number of
 // edits (NIST SP 800-38D's 2^32 bound for random nonces).
 
 export const PREFIX = 'enc:'
 export const PREFIX_V1 = 'enc:v1:'
+export const PREFIX_V2 = 'enc:v2:'
+/** The largest v2 stamp: Number.MAX_SAFE_INTEGER, as internal/e2ee MaxStamp. */
+export const MAX_STAMP = Number.MAX_SAFE_INTEGER
+const STAMP_BYTES = 8
+const V2_LABEL = 'opentodo/e2ee/v2'
 export const KDF_PBKDF2_SHA256 = 1
 export const PBKDF2_ITERATIONS = 600_000
 export const MIN_PASSPHRASE_LENGTH = 12
@@ -51,6 +64,16 @@ const BASE32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
 export class DecryptError extends Error {
   constructor(message = t('cannot decrypt this value')) {
     super(message)
+  }
+}
+
+/**
+ * An authentic v2 value arrived in an op with another timestamp than the one it
+ * was sealed for: an older value served again (e2ee-rollback, design D4).
+ */
+export class StampMismatchError extends DecryptError {
+  constructor(public stamp: number, public ts: number) {
+    super()
   }
 }
 
@@ -350,8 +373,90 @@ export async function encryptValue(key: CryptoKey, entity: string, entityId: str
   return PREFIX_V1 + b64url(out)
 }
 
-/** Decrypt one content value; throws DecryptError when it is not authentic for this key and location. */
-export async function decryptValue(key: CryptoKey, entity: string, entityId: string, field: string, value: string): Promise<string> {
+/** The v2 additional data: a version label, the binding, then the stamp. */
+export function bindingV2Of(entity: string, entityId: string, field: string, stamp: number): Bytes {
+  const label = utf8(`${V2_LABEL}\u0000${entity}\u0000${entityId}\u0000${field}\u0000`)
+  const out = new Uint8Array(label.length + STAMP_BYTES)
+  out.set(label)
+  new DataView(out.buffer).setBigUint64(label.length, BigInt(stamp))
+  return out
+}
+
+function validStamp(n: number): boolean {
+  return Number.isSafeInteger(n) && n >= 1 && n <= MAX_STAMP
+}
+
+/** The v2 envelope's body: stamp || nonce || ciphertext and tag; null when it is not a well-formed v2 envelope. */
+function v2Body(value: string): { stamp: number; raw: Uint8Array } | null {
+  if (!value.startsWith(PREFIX_V2)) return null
+  let raw: Uint8Array
+  try {
+    raw = fromB64url(value.slice(PREFIX_V2.length))
+  } catch {
+    return null
+  }
+  // Canonical unpadded base64url only, as the Go side decodes strictly (no
+  // stray trailing bits, no padding): the body must be exactly what its bytes encode to.
+  if (b64url(raw) !== value.slice(PREFIX_V2.length) || raw.length < STAMP_BYTES + NONCE_BYTES + 16) return null
+  const big = new DataView(raw.buffer, raw.byteOffset).getBigUint64(0)
+  if (big > BigInt(MAX_STAMP)) return null
+  const stamp = Number(big)
+  return validStamp(stamp) ? { stamp, raw } : null
+}
+
+/**
+ * The stamp of a well-formed v2 envelope, read from its clear header without a
+ * key (internal/e2ee Stamp); null for anything else, v1 included.
+ */
+export function stampOf(value: unknown): number | null {
+  return typeof value === 'string' ? (v2Body(value)?.stamp ?? null) : null
+}
+
+/** True for a value that starts like a v2 envelope, well formed or not. */
+export function isV2(value: unknown): value is string {
+  return typeof value === 'string' && value.startsWith(PREFIX_V2)
+}
+
+/**
+ * Encrypt one content value as a v2 envelope sealed for `stamp`, the timestamp
+ * of the op that carries it. `nonce` is for known-answer tests only.
+ */
+export async function encryptValueV2(key: CryptoKey, stamp: number, entity: string, entityId: string, field: string, plaintext: string, nonce?: Uint8Array): Promise<string> {
+  if (!validStamp(stamp)) throw new Error('the stamp must be a positive millisecond timestamp')
+  const iv = (nonce ?? random(NONCE_BYTES)) as Bytes
+  if (iv.length !== NONCE_BYTES) throw new Error('nonce must be 12 bytes')
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: bindingV2Of(entity, entityId, field, stamp), tagLength: 128 }, key, utf8(plaintext)))
+  const out = new Uint8Array(STAMP_BYTES + NONCE_BYTES + ct.length)
+  new DataView(out.buffer).setBigUint64(0, BigInt(stamp))
+  out.set(iv, STAMP_BYTES)
+  out.set(ct, STAMP_BYTES + NONCE_BYTES)
+  return PREFIX_V2 + b64url(out)
+}
+
+/**
+ * Decrypt one content value of either version; throws DecryptError when it is
+ * not authentic for this key and location. With `ts`, the timestamp of the op
+ * it arrived in, an authentic v2 value sealed for another timestamp throws
+ * StampMismatchError (an older value served again); without it the stamp is
+ * not compared (a reader that has no op, such as a shared page's snapshot).
+ */
+export async function decryptValue(key: CryptoKey, entity: string, entityId: string, field: string, value: string, ts?: number): Promise<string> {
+  if (value.startsWith(PREFIX_V2)) {
+    const body = v2Body(value)
+    if (!body) throw new DecryptError()
+    let text: string
+    try {
+      const pt = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: body.raw.slice(STAMP_BYTES, STAMP_BYTES + NONCE_BYTES), additionalData: bindingV2Of(entity, entityId, field, body.stamp), tagLength: 128 },
+        key, body.raw.slice(STAMP_BYTES + NONCE_BYTES),
+      )
+      text = dec.decode(pt)
+    } catch {
+      throw new DecryptError()
+    }
+    if (ts !== undefined && ts !== body.stamp) throw new StampMismatchError(body.stamp, ts)
+    return text
+  }
   if (!value.startsWith(PREFIX_V1)) throw new DecryptError(t('unknown ciphertext format; update the app'))
   let raw: Uint8Array
   try {

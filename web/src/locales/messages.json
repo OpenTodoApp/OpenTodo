@@ -3530,6 +3530,7 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Clear": [
+    "web/src/app/OlderVersionsDialog.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/habits/DayMenu.tsx",
     "web/src/app/quickadd/LineDatePicker.tsx",
@@ -5291,6 +5292,7 @@
   "Details": [
     "web/src/app/AuditPanel.tsx",
     "web/src/app/DemoBanner.tsx",
+    "web/src/app/EncryptionPanel.tsx",
     "web/src/app/ImportScreen.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/phone/screens/PhoneTaskView.tsx"
@@ -5478,6 +5480,7 @@
     "web/src/app/MembersPanel.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/OAuthClients.tsx",
+    "web/src/app/OlderVersionsDialog.tsx",
     "web/src/app/ProjectNote.tsx",
     "web/src/app/RefChip.tsx",
     "web/src/app/TokensSection.tsx",
@@ -8954,6 +8957,9 @@
   ],
   "It now names everything the assistant could already read and send to the model provider, such as notes, tracked time, routines, calendar frames and attachment names. Nothing new is sent, and your consent still counts.": [
     "web/src/app/assistant/DisclosureNotice.tsx"
+  ],
+  "It replaces the key record on the server with this device’s, as version {next}. Other devices keep working and adopt it. If this device missed a passphrase change made elsewhere, its older passphrase is the one that works again.": [
+    "web/src/app/EncryptionPanel.tsx"
   ],
   "It will no longer sign you in. Your password and other passkeys keep working.": [
     "web/src/app/SecurityPanel.tsx"
@@ -12551,6 +12557,9 @@
   ],
   "Older updates could not be loaded.": [
     "web/src/app/FeedView.tsx"
+  ],
+  "Older versions this device kept out": [
+    "web/src/app/OlderVersionsDialog.tsx"
   ],
   "Oldest": [
     "web/src/app/notes/NotesPage.tsx"
@@ -19226,6 +19235,12 @@
   "The server sent an answer this app does not understand. Your changes stay on this device.": [
     "web/src/lib/sync.ts"
   ],
+  "The server sent an older encryption key record (version {served}, {servedDate}) than this device’s (version {mine}, {mineDate}). This device kept its own.": [
+    "web/src/app/EncryptionPanel.tsx"
+  ],
+  "The server sent older versions of {n, plural, one {# item} other {# items}}. This device kept its own.": [
+    "web/src/app/EncryptionPanel.tsx"
+  ],
   "The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.": [
     "web/src/app/TaskRow.tsx"
   ],
@@ -19724,6 +19739,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "This device’s clock is far off and the server keeps refusing its changes. Your changes stay on this device.": [
+    "web/src/lib/i18n/errors.ts",
     "web/src/lib/sync.ts"
   ],
   "This device’s sync state": [
@@ -19850,6 +19866,9 @@
   ],
   "This is your only way to sign in. Add a passkey or another linked account first.": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "This item changed in the meantime. Try again.": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "This kind of link can never open": [
     "web/src/lib/settingsCopy.ts"
@@ -21390,6 +21409,7 @@
     "web/src/app/task-list/todayGroupDrop.ts",
     "web/src/lib/dependencies.ts",
     "web/src/lib/dnd.ts",
+    "web/src/lib/e2ee.ts",
     "web/src/lib/facets.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/localData.ts",
@@ -21541,6 +21561,12 @@
   ],
   "Upload progress": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "Upload this device’s key record": [
+    "web/src/app/EncryptionPanel.tsx"
+  ],
+  "Upload this device’s key record?": [
+    "web/src/app/EncryptionPanel.tsx"
   ],
   "Uploading": [
     "web/src/app/task-detail/AttachmentsRow.tsx"

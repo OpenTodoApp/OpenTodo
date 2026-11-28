@@ -44,7 +44,7 @@ Encryption hides **content fields** from the server: titles, descriptions, notes
 - **The shape of activity:** how many items there are, when each was edited, from how many devices, and the approximate length of each text (ciphertext length follows plaintext length).
 - **Shared projects.** They are never encrypted.
 - **Plaintext from before encryption was turned on,** until **Purge plaintext history**, and in backups made before the purge.
-- **Older versions.** The server can serve an older ciphertext of the same field, and the app cannot tell. Planned after 1.0 ([#969](https://github.com/OpenTodoApp/OpenTodo/issues/969)).
+- **Older versions.** The server can serve an older ciphertext of the same field, and the app cannot tell, until a later release writes every value in the `v2` format that binds it to its time ([#969](https://github.com/OpenTodoApp/OpenTodo/issues/969)). A key record older than the one a device uses is noticed when the server serves it unchanged, for example after a restore from a backup.
 - **The device relay.** While a device is opted in to answer for AI assistants and is unlocked, the server can ask it to decrypt or encrypt values within its caps.
 - **The code.** A malicious server can serve tampered JavaScript that captures the passphrase. Installed apps check every update against the release's signed file list, but **report-only mode is on**: an update that fails is recorded in Settings → About and still installed. Once refusal is on, in a browser a malicious server can still replace the update check itself, and a first visit is never checked. [Signed app code](signed-app.md) explains what is covered.
 

@@ -124,7 +124,7 @@ const SERVER_REWRITTEN = new Set(['comment.mentions', 'task.note_mentions'])
  * author (`op.actor`, else `opts.actor` for local edits) and old value.
  */
 export async function applyOps(
-  ops: Op[], opts: { actor?: string; local?: boolean; wire?: Map<string, { kind: 'p' | 'c' | 'x'; raw?: string }> } = {},
+  ops: Op[], opts: { actor?: string; local?: boolean; wire?: Map<string, { kind: 'p' | 'c' | 'x'; raw?: string; v2?: boolean }> } = {},
 ): Promise<void> {
   if (ops.length === 0) return
   // The clock's receive rule (hlcReceive): a later local edit, including an
@@ -202,7 +202,12 @@ export async function applyOps(
           if (info) wire[op.field] = info.kind
           if (info?.raw) raw[op.field] = info.raw
           else delete raw[op.field]
-          row._e2ee = { wire, raw }
+          // The server holds this value as v2 (e2ee-rollback D4): a v1 value
+          // that would replace it later is an older version served again.
+          const v2 = { ...enc?.v2 }
+          if (info?.v2) v2[op.field] = true
+          else delete v2[op.field]
+          row._e2ee = { wire, raw, ...(Object.keys(v2).length ? { v2 } : {}) }
         }
       }
       rows.set(`${entity}:${entityId}`, row)

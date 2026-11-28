@@ -39,6 +39,14 @@ type vectors struct {
 		Plaintext string `json:"plaintext"`
 		Value     string `json:"value"`
 	} `json:"content"`
+	// ContentV2 are v2 envelopes (OpenSpec change e2ee-rollback, design D1): the
+	// stamp is the timestamp of the op that carries the value.
+	ContentV2 []contentV2 `json:"contentV2"`
+	// Refused are values a device must not accept when they arrive in an op
+	// with timestamp ts: "mismatch" (authentic, but sealed for another
+	// timestamp), "decrypt" (not authentic here) or "malformed" (not a v2
+	// envelope the server or a device accepts; e2ee.Stamp reports !ok).
+	Refused    []refusedV2 `json:"refusedV2"`
 	Passphrase struct {
 		Passphrase string `json:"passphrase"`
 		Salt       string `json:"salt"`
@@ -118,6 +126,45 @@ func aesKeyWrap(kek, key []byte) []byte {
 	return out
 }
 
+type contentV2 struct {
+	Key       string `json:"key"`
+	Nonce     string `json:"nonce"`
+	Stamp     int64  `json:"stamp"`
+	Entity    string `json:"entity"`
+	EntityID  string `json:"entityId"`
+	Field     string `json:"field"`
+	Plaintext string `json:"plaintext"`
+	Value     string `json:"value"`
+}
+
+type refusedV2 struct {
+	Name     string `json:"name"`
+	Key      string `json:"key"`
+	Entity   string `json:"entity"`
+	EntityID string `json:"entityId"`
+	Field    string `json:"field"`
+	TS       int64  `json:"ts"`
+	Value    string `json:"value"`
+	Reason   string `json:"reason"`
+}
+
+// v2AAD is the v2 additional data: a version label, the binding, then the stamp.
+func v2AAD(entity, id, field string, stamp uint64) []byte {
+	aad := []byte("opentodo/e2ee/v2\x00" + entity + "\x00" + id + "\x00" + field + "\x00")
+	return binary.BigEndian.AppendUint64(aad, stamp)
+}
+
+// sealV2 seals with any stamp, even one outside the accepted range, so the
+// refusal vectors can be made.
+func sealV2(key, nonce []byte, stamp uint64, entity, id, field, plaintext string) string {
+	blk, _ := aes.NewCipher(key)
+	gcm, _ := cipher.NewGCM(blk)
+	body := binary.BigEndian.AppendUint64(nil, stamp)
+	body = append(body, nonce...)
+	body = gcm.Seal(body, nonce, []byte(plaintext), v2AAD(entity, id, field, stamp))
+	return PrefixV2 + base64.RawURLEncoding.EncodeToString(body)
+}
+
 func seq(start byte, n int) []byte {
 	b := make([]byte, n)
 	for i := range b {
@@ -169,6 +216,57 @@ func generate(t *testing.T) vectors {
 			Plaintext string `json:"plaintext"`
 			Value     string `json:"value"`
 		}{hex.EncodeToString(key), hex.EncodeToString(nonce), c.entity, c.id, c.field, c.pt, sealValue(key, nonce, c.entity, c.id, c.field, c.pt)})
+	}
+	for _, c := range []struct {
+		nonce                 byte
+		stamp                 int64
+		entity, id, field, pt string
+	}{
+		{0x50, 1, "task", "t1", "title", "Dentist"},
+		{0x60, 1764000000000, "task", "6b9f2c1e-3d4a-4f8b-9c2d-1e3f4a5b6c7d", "description", "Ask about the crown — café, \U0001F9B7"},
+		{0x70, MaxStamp, "label", "l1", "name", ""},
+		{0x90, 1764000000123, "task", "t1", "fields.f1", "Acme"},
+	} {
+		nonce := seq(c.nonce, 12)
+		v.ContentV2 = append(v.ContentV2, contentV2{hex.EncodeToString(key), hex.EncodeToString(nonce), c.stamp, c.entity, c.id, c.field, c.pt,
+			sealV2(key, nonce, uint64(c.stamp), c.entity, c.id, c.field, c.pt)})
+	}
+	{
+		const ts = 1764000000000
+		k := hex.EncodeToString(key)
+		good := sealV2(key, seq(0x30, 12), ts, "task", "t1", "title", "Last month's title")
+		body, _ := base64.RawURLEncoding.DecodeString(good[len(PrefixV2):])
+		restamped := append([]byte(nil), body...)
+		binary.BigEndian.PutUint64(restamped, ts+86400000)
+		v1 := sealValue(key, seq(0x31, 12), "task", "t1", "title", "Dentist")
+		short := binary.BigEndian.AppendUint64(nil, ts)
+		short = append(short, seq(0x32, 20)...)
+		rAt := func(name, entity, id string, tsIn int64, field, value, reason string) {
+			v.Refused = append(v.Refused, refusedV2{name, k, entity, id, field, tsIn, value, reason})
+		}
+		r := func(name string, tsIn int64, field, value, reason string) {
+			rAt(name, "task", "t1", tsIn, field, value, reason)
+		}
+		// 37 bytes: the last base64url character carries 4 unused bits, which a
+		// strict decoder requires to be zero.
+		shortPt := sealV2(key, seq(0x35, 12), ts, "task", "t1", "title", "x")
+		const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+		last := strings.IndexByte(alphabet, shortPt[len(shortPt)-1])
+		nonCanonical := shortPt[:len(shortPt)-1] + string(alphabet[last^1])
+		// The rollback itself: an authentic older value inside a newer op.
+		r("replayed under a later timestamp", ts+86400000, "title", good, "mismatch")
+		r("replayed under an earlier timestamp", ts-1, "title", good, "mismatch")
+		r("stamp in the header changed to match", ts+86400000, "title", PrefixV2+base64.RawURLEncoding.EncodeToString(restamped), "decrypt")
+		r("moved to another field", ts, "description", good, "decrypt")
+		r("v2 body labelled v1", ts, "title", PrefixV1+good[len(PrefixV2):], "decrypt")
+		r("v1 body labelled v2", ts, "title", PrefixV2+v1[len(PrefixV1):], "malformed")
+		r("stamp zero", 1, "title", sealV2(key, seq(0x33, 12), 0, "task", "t1", "title", "x"), "malformed")
+		r("stamp beyond 2^53-1", ts, "title", sealV2(key, seq(0x34, 12), MaxStamp+1, "task", "t1", "title", "x"), "malformed")
+		r("too short for stamp, nonce and tag", ts, "title", PrefixV2+base64.RawURLEncoding.EncodeToString(short), "malformed")
+		r("padded base64", ts, "title", good+"=", "malformed")
+		r("non-canonical base64 (trailing bits set)", ts, "title", nonCanonical, "malformed")
+		rAt("moved to another task", "task", "t2", ts, "title", good, "decrypt")
+		rAt("moved to another entity type", "note", "t1", ts, "title", good, "decrypt")
 	}
 	dek := seq(0x40, 32)
 	v.Passphrase.Passphrase = "correct horse battery staple"
@@ -237,6 +335,42 @@ func TestVectors(t *testing.T) {
 		body, _ := base64.RawURLEncoding.DecodeString(strings.TrimPrefix(c.Value, PrefixV1))
 		if _, err := gcm.Open(nil, body[:12], body[12:], []byte(c.Entity+"\x00"+c.EntityID+"\x00other")); err == nil {
 			t.Fatal("a value opened under another field's binding")
+		}
+	}
+	// Every v2 vector carries its stamp in the clear and is an envelope.
+	for _, c := range got.ContentV2 {
+		if st, ok := Stamp(c.Value); !ok || st != c.Stamp || !IsEnvelope(c.Value) {
+			t.Fatalf("%s.%s: stamp %d %v", c.Entity, c.Field, st, ok)
+		}
+	}
+	for _, c := range got.Refused {
+		_, ok := Stamp(c.Value)
+		if (c.Reason == "malformed" && ok) || (c.Reason != "malformed" && IsV2(c.Value) && !ok) {
+			t.Fatalf("%s: Stamp ok = %v", c.Name, ok)
+		}
+	}
+}
+
+func TestStamp(t *testing.T) {
+	key := seq(0, 32)
+	for _, c := range []struct {
+		name  string
+		value string
+		want  int64
+		ok    bool
+	}{
+		{"one", sealV2(key, seq(1, 12), 1, "task", "t", "title", "a"), 1, true},
+		{"max", sealV2(key, seq(1, 12), MaxStamp, "task", "t", "title", "a"), MaxStamp, true},
+		{"zero", sealV2(key, seq(1, 12), 0, "task", "t", "title", "a"), 0, false},
+		{"above max", sealV2(key, seq(1, 12), MaxStamp+1, "task", "t", "title", "a"), 0, false},
+		{"v1", sealValue(key, seq(1, 12), "task", "t", "title", "a"), 0, false},
+		{"plaintext", "enc:v2: a title someone typed", 0, false},
+		{"empty body", PrefixV2, 0, false},
+		{"not base64url", PrefixV2 + strings.Repeat("+", 48), 0, false},
+	} {
+		got, ok := Stamp(c.value)
+		if got != c.want || ok != c.ok {
+			t.Errorf("%s: Stamp = %d, %v; want %d, %v", c.name, got, ok, c.want, c.ok)
 		}
 	}
 }

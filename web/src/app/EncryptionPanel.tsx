@@ -7,9 +7,10 @@ import { ConfirmDialog } from '../ui'
 import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { MIN_PASSPHRASE_LENGTH } from '../lib/crypto'
+import { formatInstant } from '../lib/dates'
 import {
   changePassphrase, commitEnable, disableEncryption, disableWithoutKey, lock, prepareEnable, purgeHistory,
-  resetPassphrase, useEncryption, type EncryptionSnapshot, type PreparedEnable,
+  resetPassphrase, reuploadKeyRecord, useEncryption, type EncryptionSnapshot, type PreparedEnable,
 } from '../lib/e2ee'
 import { startMigration } from '../lib/e2eeSync'
 import { FileMigrationPaused, runFileMigration, waitForUploads } from '../lib/attachments'
@@ -20,6 +21,7 @@ import { useAction } from '../lib/useAction'
 import { copyText } from '../lib/clipboard'
 import { encryptionMessage, LostKeysConfirm } from './encryptionShared'
 // Loaded with the Encryption page only (routines-ai-step: Run my routines on this device).
+const OlderVersionsDialog = lazy(() => import('./OlderVersionsDialog').then((m) => ({ default: m.OlderVersionsDialog })))
 const RoutinesDeviceSettings = lazy(() => import('./routines/RoutinesDevice').then((m) => ({ default: m.RoutinesDeviceSettings })))
 
 // Settings → End-to-end encryption (OpenSpec `e2ee`, task 4.1). The pure
@@ -41,6 +43,8 @@ export type Mode =
   | { kind: 'confirmPurge' }
   | { kind: 'confirmDisable' }
   | { kind: 'confirmLost' }
+  | { kind: 'older' }
+  | { kind: 'confirmReupload' }
 
 export interface EncryptionViewProps {
   state: EncryptionSnapshot
@@ -60,6 +64,8 @@ export interface EncryptionViewProps {
   onLock: () => void
   onDisable: () => void
   onLost: () => void
+  /** The server serves an older key record (e2ee-rollback D6): replace it with this device's. */
+  onReuploadRecord?: () => void
   /** "Run my routines on this device" (routines-ai-step D7), shown while encryption is on. */
   routines?: ReactNode
 }
@@ -113,6 +119,25 @@ export function EncryptionView(p: EncryptionViewProps) {
     <SettingsSection {...cardCopy('e2ee')}>
       {p.error && <Notice tone="danger">{p.error}</Notice>}
       {p.notice && <Notice tone="success">{p.notice}</Notice>}
+      {/* Older versions the server sent and this device refused (e2ee-rollback D4, D6). */}
+      {state.olderRecord && state.olderRecordDetail && (
+        <Notice tone="warning" action={p.onReuploadRecord && <Button variant="secondary" size="sm" disabled={p.busy} onClick={() => p.onMode({ kind: 'confirmReupload' })}>{t('Upload this device’s key record')}</Button>}>
+          {t('The server sent an older encryption key record (version {served}, {servedDate}) than this device’s (version {mine}, {mineDate}). This device kept its own.', {
+            served: state.olderRecordDetail.served.version, servedDate: formatInstant(state.olderRecordDetail.served.createdAt, 'date'),
+            mine: state.olderRecordDetail.mine.version, mineDate: formatInstant(state.olderRecordDetail.mine.createdAt, 'date'),
+          })}
+        </Notice>
+      )}
+      {mode.kind === 'confirmReupload' && state.olderRecordDetail && p.onReuploadRecord && (
+        <ConfirmDialog title={t('Upload this device’s key record?')} confirmLabel={t('Upload this device’s key record')} onCancel={idle} onConfirm={p.onReuploadRecord}
+          consequence={t('It replaces the key record on the server with this device’s, as version {next}. Other devices keep working and adopt it. If this device missed a passphrase change made elsewhere, its older passphrase is the one that works again.', { next: state.olderRecordDetail.served.version + 1 })} />
+      )}
+      {!!state.olderVersions && (
+        <Notice tone="warning" action={<Button variant="secondary" size="sm" onClick={() => p.onMode({ kind: 'older' })}>{t('Details')}</Button>}>
+          {t('The server sent older versions of {n, plural, one {# item} other {# items}}. This device kept its own.', { n: state.olderVersions })}
+        </Notice>
+      )}
+      {mode.kind === 'older' && <Suspense fallback={null}><OlderVersionsDialog onClose={idle} /></Suspense>}
       {progress && (
         <Notice>
           {t('{mode, select, encrypt {Encrypting} other {Decrypting}} your {what, select, files {files: {done} of {total} files} other {data: {done} of {total}}}…', { mode: progress.mode, what: progress.files ? 'files' : 'data', done: progress.done, total: progress.total })}
@@ -316,6 +341,10 @@ export function EncryptionPanel() {
       })}
       onLock={() => void run(async () => {
         await lock()
+      })}
+      onReuploadRecord={() => void run(async () => {
+        await reuploadKeyRecord()
+        setMode({ kind: 'idle' })
       })}
       onDisable={() => void run(async () => {
         // Files first, while the key record still exists: each is re-uploaded

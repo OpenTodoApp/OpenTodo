@@ -23,6 +23,14 @@ type vectors struct {
 	Content []struct {
 		Key, Nonce, Entity, EntityID, Field, Plaintext, Value string
 	} `json:"content"`
+	ContentV2 []struct {
+		Key, Nonce, Entity, EntityID, Field, Plaintext, Value string
+		Stamp                                                 int64
+	} `json:"contentV2"`
+	RefusedV2 []struct {
+		Name, Key, Entity, EntityID, Field, Value, Reason string
+		TS                                                int64
+	} `json:"refusedV2"`
 	Passphrase struct {
 		Passphrase string `json:"passphrase"`
 		Salt       string `json:"salt"`
@@ -81,6 +89,63 @@ func TestContentVectors(t *testing.T) {
 		if _, err := Open(key, c.Entity, "other-id", c.Field, c.Value); !errors.Is(err, ErrDecrypt) {
 			t.Fatalf("opened under another id: %v", err)
 		}
+	}
+}
+
+// The v2 envelope (e2ee-rollback): the same bytes as the Go generator and the
+// browser, and every refusal case refused for its reason.
+func TestV2Vectors(t *testing.T) {
+	v := load(t)
+	if len(v.ContentV2) == 0 || len(v.RefusedV2) == 0 {
+		t.Fatal("no v2 vectors")
+	}
+	for _, c := range v.ContentV2 {
+		key := unhex(t, c.Key)
+		got, err := SealV2WithNonce(key, unhex(t, c.Nonce), c.Stamp, c.Entity, c.EntityID, c.Field, c.Plaintext)
+		if err != nil || got != c.Value {
+			t.Fatalf("%s.%s: seal = %q, %v; want %q", c.Entity, c.Field, got, err, c.Value)
+		}
+		if pt, err := OpenAt(key, c.Entity, c.EntityID, c.Field, c.Value, c.Stamp); err != nil || pt != c.Plaintext {
+			t.Fatalf("%s.%s: open = %q, %v", c.Entity, c.Field, pt, err)
+		}
+		if pt, err := Open(key, c.Entity, c.EntityID, c.Field, c.Value); err != nil || pt != c.Plaintext {
+			t.Fatalf("%s.%s: open without ts = %q, %v", c.Entity, c.Field, pt, err)
+		}
+		if _, err := OpenAt(key, c.Entity, c.EntityID, "other", c.Value, c.Stamp); !errors.Is(err, ErrDecrypt) {
+			t.Fatalf("opened under another field: %v", err)
+		}
+	}
+	for _, c := range v.RefusedV2 {
+		_, err := OpenAt(unhex(t, c.Key), c.Entity, c.EntityID, c.Field, c.Value, c.TS)
+		want := ErrDecrypt
+		if c.Reason == "mismatch" {
+			want = ErrStampMismatch
+		}
+		if !errors.Is(err, want) {
+			t.Errorf("%s: err = %v, want %v", c.Name, err, want)
+		}
+	}
+}
+
+func TestSealV2RefusesStampsOutOfRange(t *testing.T) {
+	key := bytes.Repeat([]byte{7}, KeyBytes)
+	for _, ts := range []int64{0, -1, e2ee.MaxStamp + 1} {
+		if _, err := SealV2(key, ts, "task", "t", "title", "x"); err == nil {
+			t.Fatalf("stamp %d sealed", ts)
+		}
+	}
+	v, err := SealV2(key, 1764000000000, "task", "t", "title", "x")
+	if st, ok := e2ee.Stamp(v); err != nil || !ok || st != 1764000000000 {
+		t.Fatalf("seal = %q, %v", v, err)
+	}
+}
+
+// The reader release still writes v1 (design D8): WriteV2 turns on in the
+// writer release.
+func TestReaderReleaseWritesV1(t *testing.T) {
+	v, err := Seal(bytes.Repeat([]byte{7}, KeyBytes), "task", "t", "title", "x")
+	if err != nil || !strings.HasPrefix(v, e2ee.PrefixV1) {
+		t.Fatalf("seal = %q, %v", v, err)
 	}
 }
 

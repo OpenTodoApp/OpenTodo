@@ -661,6 +661,8 @@ Refusals:
 | 404 | `not_found` | unknown, deleted or invisible ids (another member's reminder included), and anything in a project [kept away from assistants](#keeping-a-project-away-from-assistants), its reminders and time entries too (indistinguishable) |
 | 409 | `encryption_enabled` | readable text (title, description, name, comment, location, a time entry's note) for an end-to-end encrypted account |
 | 409 | `timer_running` | starting a timer while another of yours runs, without `stopRunning: true`; `task_id` names its task when you can read it |
+| 409 | `stale_ciphertext` | an [`enc:v2:` value](e2ee.md#how-it-works) whose stamp would not win over the field's current value: the change is stored at the stamp, so seal it again with a stamp after `currentTs` (in the error, or the item of a tool error) |
+| 400 | `clock_skew` | an `enc:v2:` value stamped more than five minutes ahead of the server's clock (`serverTime` in the error) |
 | 400 | `invalid_input`, `invalid` | a value the tool refuses (with the tool's message): a range past 24 hours, an 11th reminder on a task, a label name already taken, … |
 
 A `location` is `{name?, address?, lat?, lon?, place_id?}` with at least one key, or `null`; `{"place_id": "<id>"}` alone copies a saved location (unknown id: 404 `not_found`). A deadline sent this way moves the task's deadline reminders, as a session's edit does.
@@ -2905,6 +2907,8 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `email_disabled` | 409 | changing or rotating the email-to-task address when the operator has not configured email capture |
 | `encryption_disabled` | 404/409 | 404 for `GET`/`DELETE /api/v1/encryption/keys` without a key record; 409 for the history purge without one |
 | `encryption_conflict` | 409 | `PUT /api/v1/encryption/keys` with a version that is not the stored version + 1 (another device created or changed the record) |
+| `stale_ciphertext` | 409 | a write of an [`enc:v2:` value](e2ee.md#how-it-works) whose stamp, which becomes the change's timestamp, would not win over the field's current value; `currentTs` is that value's timestamp: seal it again with a later stamp. Nothing is applied |
+| `clock_skew` | 400 | a write of an `enc:v2:` value stamped more than five minutes ahead of the server's clock; `serverTime` is the server's clock. Nothing is applied |
 | `encryption_enabled` | 409 | sharing a project for the first time, creating a CalDAV app password, creating or enabling an issue connection, or writing a plaintext calendar frame title, while the account uses end-to-end encryption |
 | `method_not_allowed` | 405 | `/mcp` with a method other than `POST` |
 | `not_acceptable` | 406 | `/mcp` with an `Accept` header that admits only `text/event-stream` |

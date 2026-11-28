@@ -13,7 +13,9 @@
 // runner (lib/rules/deviceRun, loaded on the first request) plans on this
 // device's decrypted copy and commits ciphertext.
 import { api } from './api'
-import { b64url, decryptValue, encryptValue, fromB64url, utf8 } from './crypto'
+import { b64url, decryptValue, fromB64url, utf8 } from './crypto'
+import { sealText } from './e2eeEnvelope'
+import { hlcNow } from './hlc'
 import { getMeta, setMeta } from './db'
 import { currentKey, isContentField, onEncryptionChange, encryptionSnapshot } from './e2ee'
 import { getDeviceId } from './ops'
@@ -213,7 +215,8 @@ async function answerCall(req: RelayRequest, items: RelayItem[], note: (o: Recen
     try {
       results.push({ value: op === 'decrypt'
         ? await decryptValue(key, it.entity, it.id, it.field, it.value)
-        : await encryptValue(key, it.entity, it.id, it.field, it.value) })
+        // The server stores a v2 value at its stamp (e2ee-rollback D3): this device's clock.
+        : await sealText(key, it.entity as Entity, it.id, it.field, it.value, hlcNow()) })
     } catch {
       results.push({ error: op === 'decrypt' ? 'decrypt_failed' : 'encrypt_failed' })
     }

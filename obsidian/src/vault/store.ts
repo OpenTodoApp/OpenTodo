@@ -1,5 +1,8 @@
 // The vault's copy of the account (internal/vault/store.go): fields with the
 // clock of the op that wrote them, folded under the log's winner rule.
+import { isEnvelope, isV2, stampOf } from '../../../web/src/lib/crypto'
+import { isContentField, WRITE_V2 } from '../../../web/src/lib/e2eeEnvelope'
+import type { Entity } from '../../../web/src/lib/types'
 import { byteOrder, goJSON } from './gojson'
 
 /** One operation of the log, as POST /api/v1/sync sends and serves it. */
@@ -40,9 +43,22 @@ export function apply(s: Store, op: Op): boolean {
   if (!KEPT.has(op.entity)) return false
   const byID = own(s, op.entity) ? s[op.entity] : (s[op.entity] = {})
   const row = own(byID, op.entityId) ? byID[op.entityId] : (byID[op.entityId] = {})
-  if (own(row, op.field) && !wins(op.ts, op.device, row[op.field])) return false
+  const held = own(row, op.field)
+  if (held && !wins(op.ts, op.device, row[op.field])) return false
+  if (olderCiphertext(op, held ? row[op.field] : undefined)) return false
   row[op.field] = { v: op.value === undefined ? null : op.value, t: op.ts, d: op.device }
   return true
+}
+
+/**
+ * An op the store keeps out (internal/vault OlderCiphertext, e2ee-rollback D4):
+ * a v2 ciphertext sealed for another timestamp than its op's, or (from the
+ * writer release, WRITE_V2) a v1 ciphertext over a value held as v2. Both are an older value served again.
+ */
+export function olderCiphertext(op: Op, cur: Field | undefined): boolean {
+  if (!isEnvelope(op.value) || !isContentField(op.entity as Entity, op.field)) return false
+  if (isV2(op.value)) return stampOf(op.value) !== op.ts
+  return WRITE_V2 && cur !== undefined && isEnvelope(cur.v) && isV2(cur.v) && op.field !== 'notes_doc'
 }
 
 export function purge(s: Store, entity: string, id: string): void {

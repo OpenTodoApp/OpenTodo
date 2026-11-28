@@ -7935,5 +7935,12 @@
   "By weekday": "曜日別",
   "Up next": "次の予定",
   "Next seven days": "今後7日間",
-  "in {time}": "{time}後"
+  "in {time}": "{time}後",
+  "It replaces the key record on the server with this device’s, as version {next}. Other devices keep working and adopt it. If this device missed a passphrase change made elsewhere, its older passphrase is the one that works again.": "サーバーの鍵レコードをこの端末のものに置き換え、バージョン {next} にします。他の端末はそのまま動作し、これを採用します。この端末が別の場所でのパスフレーズ変更を取り込んでいない場合は、以前のパスフレーズが再び有効になります。",
+  "Older versions this device kept out": "この端末が取り込まなかった古いバージョン",
+  "The server sent an older encryption key record (version {served}, {servedDate}) than this device’s (version {mine}, {mineDate}). This device kept its own.": "サーバーから、この端末のもの（バージョン {mine}、{mineDate}）より古い暗号鍵レコード（バージョン {served}、{servedDate}）が送られました。この端末は自分のものを保持しました。",
+  "The server sent older versions of {n, plural, one {# item} other {# items}}. This device kept its own.": "サーバーから {n, plural, other {#件の項目}}の古いバージョンが送られました。この端末は自分のものを保持しました。",
+  "This item changed in the meantime. Try again.": "この項目はその間に変更されました。もう一度お試しください。",
+  "Upload this device’s key record": "この端末の鍵レコードをアップロード",
+  "Upload this device’s key record?": "この端末の鍵レコードをアップロードしますか？"
 }

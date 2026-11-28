@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -87,6 +88,13 @@ func applyError(err error) error {
 			date, state := opsync.SeriesDateTaken(rej)
 			item["date"], item["state"] = date, state
 			msg = strings.TrimPrefix(opsync.SeriesDateMessage(rej), "task.due: ") + "; nothing was applied"
+		case opsync.ReasonStaleCiphertext:
+			// A v2 envelope's stamp is the op's timestamp (e2ee-rollback D3).
+			cur, _ := strconv.ParseInt(rej.Detail, 10, 64)
+			item["currentTs"] = cur
+			msg = "the encrypted value is stamped before the field's current value; seal it again with a stamp after currentTs; nothing was applied"
+		case opsync.ReasonClockSkew:
+			msg = "the encrypted value is stamped too far ahead of the server's clock; nothing was applied"
 		case opsync.ReasonRateLimited:
 			msg = "too many comments in a short time; nothing was applied"
 			return &ToolError{Code: "rate_limited", Message: msg, Data: map[string]any{"retry_after_seconds": 60, "items": []any{item}}}

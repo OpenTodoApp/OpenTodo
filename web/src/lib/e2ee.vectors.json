@@ -38,6 +38,180 @@
       "value": "enc:v1:4OHi4-Tl5ufo6errdaGk5vcfPqzjy0C4KjQQwnxA6a0"
     }
   ],
+  "contentV2": [
+    {
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "nonce": "505152535455565758595a5b",
+      "stamp": 1,
+      "entity": "task",
+      "entityId": "t1",
+      "field": "title",
+      "plaintext": "Dentist",
+      "value": "enc:v2:AAAAAAAAAAFQUVJTVFVWV1hZWlvWQlgAjSPN8whbK2EYCCxE-T_OwyJZYA"
+    },
+    {
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "nonce": "606162636465666768696a6b",
+      "stamp": 1764000000000,
+      "entity": "task",
+      "entityId": "6b9f2c1e-3d4a-4f8b-9c2d-1e3f4a5b6c7d",
+      "field": "description",
+      "plaintext": "Ask about the crown — café, 🦷",
+      "value": "enc:v2:AAABmraX6ABgYWJjZGVmZ2hpamurqPB12iLsGgg2jUMXraIxSQLnqWbkpvnAwOav1d7X-C0_j68e8X_xgxLD86Qg3c5O2w8"
+    },
+    {
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "nonce": "707172737475767778797a7b",
+      "stamp": 9007199254740991,
+      "entity": "label",
+      "entityId": "l1",
+      "field": "name",
+      "plaintext": "",
+      "value": "enc:v2:AB________9wcXJzdHV2d3h5envCqFs_GdnXLLSI0wIm9l-R"
+    },
+    {
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "nonce": "909192939495969798999a9b",
+      "stamp": 1764000000123,
+      "entity": "task",
+      "entityId": "t1",
+      "field": "fields.f1",
+      "plaintext": "Acme",
+      "value": "enc:v2:AAABmraX6HuQkZKTlJWWl5iZmpu3qZhaouPHhDsjlsHCBIdJS6GYoQ"
+    }
+  ],
+  "refusedV2": [
+    {
+      "name": "replayed under a later timestamp",
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "entity": "task",
+      "entityId": "t1",
+      "field": "title",
+      "ts": 1764086400000,
+      "value": "enc:v2:AAABmraX6AAwMTIzNDU2Nzg5Ojv_VEK0yQIlbV5bqZ8y7Vcc8EI_TlHn6DeJupr9EetYV-0Z",
+      "reason": "mismatch"
+    },
+    {
+      "name": "replayed under an earlier timestamp",
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "entity": "task",
+      "entityId": "t1",
+      "field": "title",
+      "ts": 1763999999999,
+      "value": "enc:v2:AAABmraX6AAwMTIzNDU2Nzg5Ojv_VEK0yQIlbV5bqZ8y7Vcc8EI_TlHn6DeJupr9EetYV-0Z",
+      "reason": "mismatch"
+    },
+    {
+      "name": "stamp in the header changed to match",
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "entity": "task",
+      "entityId": "t1",
+      "field": "title",
+      "ts": 1764086400000,
+      "value": "enc:v2:AAABmru-RAAwMTIzNDU2Nzg5Ojv_VEK0yQIlbV5bqZ8y7Vcc8EI_TlHn6DeJupr9EetYV-0Z",
+      "reason": "decrypt"
+    },
+    {
+      "name": "moved to another field",
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "entity": "task",
+      "entityId": "t1",
+      "field": "description",
+      "ts": 1764000000000,
+      "value": "enc:v2:AAABmraX6AAwMTIzNDU2Nzg5Ojv_VEK0yQIlbV5bqZ8y7Vcc8EI_TlHn6DeJupr9EetYV-0Z",
+      "reason": "decrypt"
+    },
+    {
+      "name": "v2 body labelled v1",
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "entity": "task",
+      "entityId": "t1",
+      "field": "title",
+      "ts": 1764000000000,
+      "value": "enc:v1:AAABmraX6AAwMTIzNDU2Nzg5Ojv_VEK0yQIlbV5bqZ8y7Vcc8EI_TlHn6DeJupr9EetYV-0Z",
+      "reason": "decrypt"
+    },
+    {
+      "name": "v1 body labelled v2",
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "entity": "task",
+      "entityId": "t1",
+      "field": "title",
+      "ts": 1764000000000,
+      "value": "enc:v2:MTIzNDU2Nzg5Ojs8tJqw1X2_562RohZ9Y9Jg0gumVjcaHRo",
+      "reason": "malformed"
+    },
+    {
+      "name": "stamp zero",
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "entity": "task",
+      "entityId": "t1",
+      "field": "title",
+      "ts": 1,
+      "value": "enc:v2:AAAAAAAAAAAzNDU2Nzg5Ojs8PT5bDPpzo-sFOm9xxo3tMLr_ZA",
+      "reason": "malformed"
+    },
+    {
+      "name": "stamp beyond 2^53-1",
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "entity": "task",
+      "entityId": "t1",
+      "field": "title",
+      "ts": 1764000000000,
+      "value": "enc:v2:ACAAAAAAAAA0NTY3ODk6Ozw9Pj_MkWRS80qknF5MQrxHkuCL4A",
+      "reason": "malformed"
+    },
+    {
+      "name": "too short for stamp, nonce and tag",
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "entity": "task",
+      "entityId": "t1",
+      "field": "title",
+      "ts": 1764000000000,
+      "value": "enc:v2:AAABmraX6AAyMzQ1Njc4OTo7PD0-P0BBQkNERQ",
+      "reason": "malformed"
+    },
+    {
+      "name": "padded base64",
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "entity": "task",
+      "entityId": "t1",
+      "field": "title",
+      "ts": 1764000000000,
+      "value": "enc:v2:AAABmraX6AAwMTIzNDU2Nzg5Ojv_VEK0yQIlbV5bqZ8y7Vcc8EI_TlHn6DeJupr9EetYV-0Z=",
+      "reason": "malformed"
+    },
+    {
+      "name": "non-canonical base64 (trailing bits set)",
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "entity": "task",
+      "entityId": "t1",
+      "field": "title",
+      "ts": 1764000000000,
+      "value": "enc:v2:AAABmraX6AA1Njc4OTo7PD0-P0BKPZJLpKTHvVtdXwbnOFrJKh",
+      "reason": "malformed"
+    },
+    {
+      "name": "moved to another task",
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "entity": "task",
+      "entityId": "t2",
+      "field": "title",
+      "ts": 1764000000000,
+      "value": "enc:v2:AAABmraX6AAwMTIzNDU2Nzg5Ojv_VEK0yQIlbV5bqZ8y7Vcc8EI_TlHn6DeJupr9EetYV-0Z",
+      "reason": "decrypt"
+    },
+    {
+      "name": "moved to another entity type",
+      "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "entity": "note",
+      "entityId": "t1",
+      "field": "title",
+      "ts": 1764000000000,
+      "value": "enc:v2:AAABmraX6AAwMTIzNDU2Nzg5Ojv_VEK0yQIlbV5bqZ8y7Vcc8EI_TlHn6DeJupr9EetYV-0Z",
+      "reason": "decrypt"
+    }
+  ],
   "passphrase": {
     "passphrase": "correct horse battery staple",
     "salt": "101112131415161718191a1b1c1d1e1f",

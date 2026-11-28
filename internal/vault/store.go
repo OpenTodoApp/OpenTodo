@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"sort"
 	"strings"
+
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 )
 
 // Op is one operation of the log, as `POST /api/v1/sync` sends and serves it.
@@ -58,11 +60,36 @@ func (s Store) Apply(op Op) bool {
 		row = Row{}
 		byID[op.EntityID] = row
 	}
-	if cur, ok := row[op.Field]; ok && !wins(op.TS, op.Device, cur) {
+	cur, held := row[op.Field]
+	if held && !wins(op.TS, op.Device, cur) {
+		return false
+	}
+	if OlderCiphertext(op, cur, held) {
 		return false
 	}
 	row[op.Field] = Field{V: append(json.RawMessage(nil), op.Value...), TS: op.TS, D: op.Device}
 	return true
+}
+
+// OlderCiphertext reports an op the store keeps out (OpenSpec change
+// e2ee-rollback, design D4): a v2 ciphertext sealed for another timestamp than
+// its op's, or (from the writer release, e2ee.WriterRelease) a v1 ciphertext
+// over a value held as v2. Both are an older value served again; the store keeps what it holds. No key is needed: the
+// stamp is in the clear, and a forged one fails to decrypt.
+func OlderCiphertext(op Op, cur Field, held bool) bool {
+	if !e2ee.IsContentField(op.Entity, op.Field) {
+		return false
+	}
+	var s string
+	if json.Unmarshal(op.Value, &s) != nil || !e2ee.IsEnvelope(s) {
+		return false
+	}
+	if e2ee.IsV2(s) {
+		stamp, ok := e2ee.Stamp(s)
+		return !ok || stamp != op.TS
+	}
+	var was string
+	return e2ee.WriterRelease && held && json.Unmarshal(cur.V, &was) == nil && e2ee.IsEnvelope(was) && e2ee.IsV2(was) && op.Field != "notes_doc" // mergeable: replaying an update changes nothing
 }
 
 // Purge removes an entity the server purged.
