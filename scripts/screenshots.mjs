@@ -82,7 +82,8 @@ async function signIn(page, email) {
   await page.goto(base)
   await page.getByLabel('Email').fill(email); await page.getByLabel(/Password/).fill(PASSWORD)
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
-  await page.getByRole('combobox', { name: 'Add a task' }).waitFor({ timeout: 15000 })
+  // A phone shows the add button; quick add opens from it.
+  await page.getByRole('combobox', { name: 'Add a task' }).or(page.locator('[data-add-button]')).first().waitFor({ timeout: 15000 })
 }
 
 

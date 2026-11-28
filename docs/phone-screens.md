@@ -9,7 +9,7 @@ order: 153
 ---
 # Phone screens
 
-<picture><source srcset="images/phone-screens-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/phone-screens-light.webp" alt="Today on a phone in the new design: the menu button, the display options and the menu in the bar, the title Today with the date and the briefing, then cards of tasks under Earlier, Today and This Evening, each task with its circle, its title and one line with its date or time, repeat and project; the tab bar and the add button at the bottom."></picture>
+<picture><source srcset="images/mobile-today-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/mobile-today-light.webp" alt="Today on a phone: the title with the date and the briefing, a card with the next timed task, cards with the tasks done today as a ring and the late ones, then the tasks under Earlier and Today; the tab bar with the Inbox and Today counts and the add button at the bottom."></picture>
 
 On a phone OpenTodo shows screens designed for a phone from the start, in the apps and in a phone's browser alike. They cover every **task list** (the Inbox, Today, Upcoming, Anytime, Someday, Assigned to me, Completed, a label, a location and a project as a list) and the **task page**. Every other screen keeps its content and gets the same bar, title and task rows.
 
