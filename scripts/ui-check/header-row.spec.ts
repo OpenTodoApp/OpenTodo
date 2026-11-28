@@ -17,7 +17,16 @@ async function header(page: Page, id: string, width: number) {
     return {
       height: head.offsetHeight,
       middles: ['[data-sidebar-toggle]', '[data-breadcrumb]', '[data-task-close]', '[data-help-screen]'].map((s) => mid(box(s))),
-      stepsCut: crumbs.some((c) => c.scrollWidth > c.clientWidth + 1),
+      // The text's own width against its box: an ellipsis can take a fraction of a pixel that scrollWidth rounds away.
+      stepsCut: crumbs.some((c) => [...c.querySelectorAll('*'), c].some((el) => {
+        const text = [...el.childNodes].find((n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim())
+        if (!text) return false
+        const range = document.createRange()
+        range.selectNodeContents(text)
+        const cs = getComputedStyle(el)
+        const box = el.getBoundingClientRect().width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - parseFloat(cs.borderLeftWidth) - parseFloat(cs.borderRightWidth)
+        return range.getBoundingClientRect().width > box + 0.01
+      })),
       taskCut: ((el) => el.scrollWidth > el.clientWidth)(head.querySelector<HTMLElement>('[data-crumb="task"]')!),
     }
   })
