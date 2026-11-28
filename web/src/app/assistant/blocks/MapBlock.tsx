@@ -42,10 +42,10 @@ export default function MapBlock({ block }: { block: Extract<AssistantBlock, { k
       <ol className="divide-y divide-default">
         {items.map((it, i) => (
           <li key={it.id}>
-            <button type="button" className="flex min-h-9 w-full items-baseline gap-2 px-3 py-1.5 text-left text-body hover:bg-hover" onClick={() => (it.kind === 'task' ? openTaskPanel(it.id) : navigate({ view: 'place', id: it.id }))} data-map-item={it.id}>
+            <button type="button" className="flex min-h-9 w-full items-baseline gap-2 px-3 py-1.5 text-start text-body hover:bg-hover" onClick={() => (it.kind === 'task' ? openTaskPanel(it.id) : navigate({ view: 'place', id: it.id }))} data-map-item={it.id}>
               <span className="w-5 shrink-0 text-meta tabular-nums text-muted">{i + 1}.</span>
               <span className="min-w-0 flex-1 user-text">{it.title}</span>
-              {it.where && it.where !== it.title && <span className="min-w-0 truncate text-right text-meta text-muted user-text">{it.where}</span>}
+              {it.where && it.where !== it.title && <span className="min-w-0 truncate text-end text-meta text-muted user-text">{it.where}</span>}
               {/* The marks stay outside the cut address, so a long one never hides them. */}
               {it.approximate && <span className="shrink-0 text-meta text-faint" data-approximate>{t('found by address')}</span>}
               {mapsOn && it.lat === undefined && !pending && !offline && <span className="shrink-0 text-meta text-faint" data-not-found>{t('not on the map')}</span>}

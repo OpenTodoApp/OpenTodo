@@ -13,7 +13,7 @@ A routine does several things in a row, each step using what the steps before it
 
 ## The Routines page
 
-**New routine** opens the editor on an empty routine; **Start from a starter** opens the starters (below); **Describe it** lets the assistant draft one from a sentence (below). Each routine is one row: its switch, its trigger and steps as one line (*Every Friday at 17:00 → get the note text of the task, split the note text into lines, create tasks from the lines in Errands*), when it last ran and how often this week, how many steps are not available, **Run now** and a menu (Edit, Duplicate, Run now, Test, History, Move up, Move down, Delete). **Pause all routines** is in the page's menu. The **Runs** tab lists every run. Offline the routines are listed and editable from your device; runs and counts need a connection.
+**New routine** opens the editor on an empty routine; **Start from a starter** opens the starters (below); **Describe it** lets the assistant draft one from a sentence (below). Each routine is one row: its switch, its trigger and steps as one line (*Every Friday at 17:00 → get the note text of the task, split the note text into lines, create tasks from the lines in Errands*), when it last ran and how often this week, how many steps are not available, **Run now** and a menu (Edit, Duplicate, Run now, Test, History, Move up, Move down, Delete). On a screen narrower than 640 px the row keeps the switch, the text and the menu, and **Run now** is in the menu. **Pause all routines** is in the page's menu. The **Runs** tab lists every run. Offline the routines are listed and editable from your device; runs and counts need a connection.
 
 ## Start from a starter
 

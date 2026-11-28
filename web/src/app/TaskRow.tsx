@@ -42,6 +42,8 @@ import { notYetEncrypted, useEncryption } from '../lib/e2ee'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { prefersReducedMotion } from './motion'
 import { useRowSwipe } from './task-list/RowSwipe'
+import { holdForRow } from './task-list/rowHold'
+import { TaskRowDrawContext } from './task-list/rowDraw'
 import { dragFeedback, dropIndent } from './listDrop'
 import { fieldBadges } from '../lib/fields'
 import { useApplicableFields, useFieldDefs } from './useFields'
@@ -59,7 +61,6 @@ import { useDeadlineDates } from '../lib/deadlineDates'
 import { useFullTitles } from '../lib/fullTitles'
 import { rowClickMode } from '../lib/rowClickPref'
 import { useAccountRowLayout, type RowLayout } from '../lib/rowLayout'
-import { DRAG_THRESHOLD, swallowNextClick, trackHold } from '../lib/dnd'
 import { dayPartName, dayPartOf, dayPartWord, type DayPart } from '../lib/dayParts'
 import { energyChipLabel, energyName, energyOf, type Energy } from '../lib/energy'
 import { sectorLabel } from '../lib/sectorNames'
@@ -281,7 +282,7 @@ function CardMeta({ m }: { m: MetaValues }) {
       {m.project}
       {m.labels && <span data-row-labels="" className="inline-flex max-w-full min-w-0">{m.labels}</span>}
       {m.counts}
-      {m.assignee && <span data-row-assignee="" className="ml-auto inline-flex min-w-0 items-center gap-1 text-meta">{m.assignee}</span>}
+      {m.assignee && <span data-row-assignee="" className="ms-auto inline-flex min-w-0 items-center gap-1 text-meta">{m.assignee}</span>}
     </div>
   )
 }
@@ -646,7 +647,7 @@ function CompactRow({ task, date, time, today, selected, readOnly = false, proje
       onClick={(e) => { e.stopPropagation(); if (selected && large) onOpen(); else onSelect() }}
       onDoubleClick={onOpen}
       onKeyDown={large ? (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); onOpen() } } : undefined}
-      className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-x-1 px-1 text-left ${large ? 'title-phone-row min-h-11 py-1 text-body' : 'flex-wrap py-0.5 text-meta'} ${task.completed_at || date < today ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canDrag ? 'cursor-grab' : ''}`}>
+      className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-x-1 px-1 text-start ${large ? 'title-phone-row min-h-11 py-1 text-body' : 'flex-wrap py-0.5 text-meta'} ${task.completed_at || date < today ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canDrag ? 'cursor-grab' : ''}`}>
       {/* Named by its visible content (WCAG 2.5.3 Label in Name), in reading order; only "read-only" has no visible text. */}
       {time && <span data-plan-time className={`shrink-0 tabular-nums ${TONE_TEXT[ladderTone(date, today)] ?? 'text-muted'}`}>{formatTime(time)}</span>}
       {/* In a narrow column the title takes the first line and the time, estimate and priority the second. */}
@@ -666,57 +667,6 @@ function CompactRow({ task, date, time, today, selected, readOnly = false, proje
       {readOnly && <span className="sr-only">{`, ${t('read-only')}`}</span>}
     </button>
   )
-}
-
-/**
- * Touch hold on a row the drag does not own (task-row-context-menu "Touch: hold and
- * release"): the hold arms with a tint on the row, a release then opens the actions
- * menu at the finger, a move ends it as a scroll — one rule, so a long press means the
- * same thing on every list of every device. Selection moved to the row's grip
- * (bulk-actions), so a phone's long press no longer ticks the row: it is the menu's
- * gesture on a coarse pointer as on a fine one. A draggable row gets the same hold
- * inside beginDrag, so exactly one owner per row.
- */
-function holdForRow(e: React.PointerEvent<HTMLLIElement>, drag: TaskRowProps['onPointerDown'], open: TaskRowProps['onRowMenu']): void {
-  drag?.(e)
-  if (drag || e.pointerType !== 'touch' || !open) return
-  const fire = open
-  const li = e.currentTarget
-  const x0 = e.clientX
-  const y0 = e.clientY
-  const pointerId = e.pointerId
-  let done = false
-  // The shared hold: the timer, the armed latch and the scroll block live in lib/dnd.
-  const hold = trackHold(e, {
-    onArmed: () => li.setAttribute('data-touch-hold', ''),
-    onEnd: () => li.removeAttribute('data-touch-hold'),
-    press: li,
-  })
-  function stop() {
-    if (done) return
-    done = true
-    hold.stop()
-    window.removeEventListener('pointermove', move, true)
-    window.removeEventListener('pointerup', up)
-    window.removeEventListener('pointercancel', stop)
-  }
-  function move(ev: PointerEvent) {
-    if (ev.pointerId !== pointerId) return
-    // Before the hold, movement is the page's scroll; after it there is no drag here.
-    if (Math.hypot(ev.clientX - x0, ev.clientY - y0) > DRAG_THRESHOLD) stop()
-  }
-  function up(ev: PointerEvent) {
-    if (ev.pointerId !== pointerId) return
-    const held = hold.armed()
-    const { clientX: x, clientY: y } = ev
-    stop()
-    if (!held) return
-    swallowNextClick()
-    fire(x, y, li)
-  }
-  window.addEventListener('pointermove', move, true)
-  window.addEventListener('pointerup', up)
-  window.addEventListener('pointercancel', stop)
 }
 
 /**
@@ -746,7 +696,7 @@ function RowTitle({ title, tone, waiting, undecryptable, unencrypted, measure }:
         {undecryptable ? <span className="italic text-faint"><ReadAs label={t('This title could not be decrypted with this device\'s key')}>{title}</ReadAs></span>
           : title || <span className="italic text-faint">{t('Untitled')}</span>}
         {unencrypted && (
-          <span className="ml-2 rounded-chip bg-warning-soft px-1.5 py-0.5 align-middle text-hint text-on-warning-soft">
+          <span className="ms-2 rounded-chip bg-warning-soft px-1.5 py-0.5 align-middle text-hint text-on-warning-soft">
             <ReadAs label={t('The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.')}>{t('not yet encrypted')}</ReadAs>
           </span>
         )}
@@ -773,13 +723,16 @@ function RowMarks({ priority, m, counts }: { priority: number | null; m: MetaVal
  * boolean, not the list's selected id).
  */
 export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowProps) {
-  return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
+  const draw = use(TaskRowDrawContext)
+  if (props.shape === 'compact') return <CompactRow {...props} />
+  // The phone UI draws a list's row itself (phone-all-screens D3); a card stays a card.
+  return draw && props.shape !== 'card' ? draw(props) : <FullRow {...props} />
 })
 
 function RowTrailing({ score, origin, revealed, forceActions }: { score?: ReactNode; origin: ReactNode; revealed: boolean; forceActions: boolean }) {
   // Revealed actions float at the row's end. The shared trailing slot keeps their position stable.
   return (
-    <span data-row-trailing="" className={`ml-auto mt-0.5 flex h-5 min-w-0 items-center justify-end gap-2 transition-opacity duration-(--duration-ui) ${revealed ? (forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0 md:pointer-fine:group-has-[[data-urgency-chip]:focus-visible]:opacity-100!') : ''}`}>
+    <span data-row-trailing="" className={`ms-auto mt-0.5 flex h-5 min-w-0 items-center justify-end gap-2 transition-opacity duration-(--duration-ui) ${revealed ? (forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0 md:pointer-fine:group-has-[[data-urgency-chip]:focus-visible]:opacity-100!') : ''}`}>
       {score}{origin && <span className="flex shrink-0">{origin}</span>}
     </span>
   )
@@ -909,7 +862,7 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
   const lift = dragging ? feedback.lift : ''
   // The origin is a link, so it never sits inside the open button: on a card it ends the
   // card at the top right, as before rows-v2 (a link nested in a button is invalid).
-  const trailing = card ? originChip && <span data-row-trailing="" className="ml-auto flex shrink-0 items-start">{originChip}</span>
+  const trailing = card ? originChip && <span data-row-trailing="" className="ms-auto flex shrink-0 items-start">{originChip}</span>
     : (originChip || score || !inline) && <RowTrailing score={score} origin={originChip} revealed={revealed} forceActions={forceActions} />
 
   const grip = !!(onGripDown && (contextual ? onMore : onGripClick && onTick)) && !readOnly && !inline && !departing
@@ -952,7 +905,7 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
         clickRow(e, selectOnClick ? onOpen : () => onOpen())
       }}
       onDoubleClick={onOpenPage && !departing ? doubleClick : undefined} onContextMenu={onContextMenu}
-      style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
+      style={depth ? { paddingInlineStart: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
       data-expanded={showDetails || undefined}
       data-row-layout={detailed ? 'detailed' : undefined} {...(card && edge ? { 'data-hue': edge, 'data-card-edge': '' } : {})}
       className={`group relative flex items-start gap-2 rounded-control px-2 ${showDetails ? 'flex-wrap' : ''} ${card ? '' : '@container/row'} ${card && edge ? 'border-s-3 border-s-hue-solid' : ''} ${swipe ? 'touch-pan-y' : ''} transition-[opacity,transform,box-shadow] duration-(--duration-emphasis) ease-calm ${card ? 'py-2.5 border border-default bg-surface shadow-1 dark:bg-raised' : 'row-pad'} ${card || dragging || dropIndicator || inline || showDetails ? '' : 'row-offscreen'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
@@ -961,7 +914,7 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
         // The drop position: a line with a dot at its start (task-list-presentation "Drag feedback").
         // In a tree list it starts at the indent of the depth the task lands at (drop-depth).
         <span aria-hidden="true" data-drop-indicator={dropIndicator} data-drop-depth={dropDepth}
-          style={dropDepth !== undefined ? { left: dropIndent(dropDepth, MAX_INDENT) } : undefined}
+          style={dropDepth !== undefined ? { insetInlineStart: dropIndent(dropDepth, MAX_INDENT) } : undefined}
           className={`${feedback.line} ${dropIndicator === 'before' ? '-top-px' : '-bottom-px'}`} />
       )}
       {dropIndicator && dropNote && (
@@ -977,9 +930,9 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
               aria-label={collapsed ? t('Expand subtasks') : t('Collapse subtasks')}
               aria-expanded={!collapsed}
               onClick={onToggleCollapse} // its 44 px touch target ends where the checkbox's begins (phone-row-controls D2)
-              className="group/fold flex h-5 w-4 items-center justify-center rounded-chip text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-fine:-mx-1 pointer-fine:-my-0.5 pointer-fine:h-6 pointer-fine:w-6 pointer-coarse:-my-3 pointer-coarse:-ml-8 pointer-coarse:mr-1 pointer-coarse:h-11 pointer-coarse:w-11 pointer-coarse:justify-end pointer-coarse:active:animate-none"
+              className="group/fold flex h-5 w-4 items-center justify-center rounded-chip text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-fine:-mx-1 pointer-fine:-my-0.5 pointer-fine:h-6 pointer-fine:w-6 pointer-coarse:-my-3 pointer-coarse:-ms-8 pointer-coarse:me-1 pointer-coarse:h-11 pointer-coarse:w-11 pointer-coarse:justify-end pointer-coarse:active:animate-none"
             >
-              <span data-fold-mark className="pointer-events-none flex items-center justify-center rounded-full pointer-coarse:-mr-2 pointer-coarse:size-7 pointer-coarse:shrink-0 pointer-coarse:group-active/fold:bg-selected"><Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} /></span>
+              <span data-fold-mark className="pointer-events-none flex items-center justify-center rounded-full pointer-coarse:-me-2 pointer-coarse:size-7 pointer-coarse:shrink-0 pointer-coarse:group-active/fold:bg-selected"><Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} /></span>
             </button>
           )}
         </span>
@@ -1004,7 +957,7 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
         {onTick && !readOnly && <RowTick name={name} ticked={ticked} showCheckbox={showCheckbox} onTick={onTick} />}
       </span>
       {column && <TimeCell time={due?.time ?? null} slot={slotInColumn} part={partInColumn} timeTone={dueDay ? ladderTone(dueDay, logicalToday()) : 'muted'} deadline={deadlineInColumn ? deadline : null} deadlineLabel={deadlineLabel} />}
-      {inline ?? <button type="button" className="flex min-w-0 flex-1 flex-col text-left pointer-fine:-my-px pointer-fine:py-px" data-row-open
+      {inline ?? <button type="button" className="flex min-w-0 flex-1 flex-col text-start pointer-fine:-my-px pointer-fine:py-px" data-row-open
         aria-description={contextual ? t('Subtask shown for context') : undefined}
         aria-expanded={canExpand ? showDetails : undefined} aria-controls={showDetails ? detailsId : undefined}
         onClick={(e) => {
@@ -1038,7 +991,7 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
       {showDetails && (
         // Indented under the title column: past the leading slot, the checkbox and the time column (row-expand D3).
         // The id lives here, so `aria-controls` names an element while the lazy details still load.
-        <div id={detailsId} role="group" aria-label={t('Details of {title}', { title: name })} className={`min-w-0 basis-full pl-[3.25rem] ${column ? 'md:pl-[calc(3.75rem+var(--row-time-w))]' : ''}`}>
+        <div id={detailsId} role="group" aria-label={t('Details of {title}', { title: name })} className={`min-w-0 basis-full ps-[3.25rem] ${column ? 'md:ps-[calc(3.75rem+var(--row-time-w))]' : ''}`}>
           <Suspense fallback={null}>
             <RowDetails task={task} readOnly={readOnly} childrenShown={!!onToggleCollapse && hasChildren && !collapsed} onOpen={() => onOpen()} />
           </Suspense>

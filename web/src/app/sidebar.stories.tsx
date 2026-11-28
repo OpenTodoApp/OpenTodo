@@ -24,7 +24,7 @@ const TINTED = 'bg-(--sidebar-bg) [--sidebar-bg:var(--color-sidebar)]'
 
 /** The shell's sidebar column from 768 px: 16 rem wide, full height (tall enough here to show every group without scrolling). */
 function Column({ children, width = 'w-64' }: { children: ReactNode; width?: string }) {
-  return <div className={`flex h-[52rem] ${width} flex-col border-r border-default ${TINTED}`}>{children}</div>
+  return <div className={`flex h-[52rem] ${width} flex-col border-e border-default ${TINTED}`}>{children}</div>
 }
 
 /** The Inbox open on the tinted column: the brand header, the primary destinations with their counts, projects and labels. */
@@ -52,7 +52,7 @@ function FoldedScrolled() {
     return () => { try { localStorage.removeItem('ot.sidebar.group.filters') } catch { /* story only */ } }
   }, [])
   return (
-    <div ref={column} className={`flex h-[32rem] w-64 flex-col border-r border-default ${TINTED}`}>
+    <div ref={column} className={`flex h-[32rem] w-64 flex-col border-e border-default ${TINTED}`}>
       <Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} onToggleCollapse={noop} />
     </div>
   )
@@ -74,7 +74,7 @@ export const PhoneDrawer: StoryObj = {
     <div className="relative h-[52rem] overflow-hidden rounded-card border border-default bg-canvas" data-overlay>
       <div className="p-4 text-body text-muted">Inbox</div>
       <div className="absolute inset-0 bg-scrim" />
-      <aside className="absolute inset-y-0 left-0 flex w-64 max-w-[85vw] border-r border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)]" aria-label="Navigation">
+      <aside className="absolute inset-y-0 inset-s-0 flex w-64 max-w-[85vw] border-e border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)]" aria-label="Navigation">
         <div className="min-w-0 flex-1"><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onAddTask={noop} onShortcuts={noop} /></div>
       </aside>
     </div>

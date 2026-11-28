@@ -14,6 +14,7 @@ const ids = Object.values(index.entries).filter((e) => e.type === 'story' && !e.
 const RELOAD = new Set<string>([
   'screens-task-list--inbox-split-selected', // the selected task in the split differs after an in-place theme change
   'screens-task-list--project-side-panel-selected', // the selected task in the side panel differs after an in-place theme change
+  'screens-right-to-left--project-side-panel', // the same story right to left
   'foundations-colours--default', // reads the token values it lists when it mounts
   'screens-expanded-row--today-expanded', // expands its row once, by script, when it mounts
 ])

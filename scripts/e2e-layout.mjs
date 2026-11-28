@@ -55,9 +55,8 @@
 // LAYOUT_DATE (default 2026-11-01: the browsers' clock and the seeded dates),
 // SHARD (i/n: only every n-th engine × width × theme combination, from the i-th, so
 // n jobs side by side check them all; CI's pull request legs).
-// PHONE_UI=1 (the device's "New phone screens" switch is on, OpenSpec change
-// phone-ui-trial: Today and the task page are then the phone UI's below 768 px; run it
-// with ONLY=today,task-repeating, the screens that have a phone view).
+// Below 768 px the app shows the phone screens (phone-ui-only), and a run fails when a
+// screen of the app has neither the phone header nor a phone screen.
 //
 // The browsers' clock is fixed at 09:00 UTC on LAYOUT_DATE and the account is seeded
 // around that day, so the check sees the same calendars whatever day it runs: which
@@ -85,8 +84,8 @@ const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null
 const CONCURRENCY = Number(process.env.CONCURRENCY ?? 3)
 const SHOTS_ALL = process.env.SHOTS === 'all'
 const LANG = process.env.OPENTODO_LANG ?? ''
-// The phone UI's switch, as the app keeps it on a device (web/src/phone/prefs.ts).
-const PHONE_UI = process.env.PHONE_UI === '1'
+/** Screens outside the app's shell (Display mode, the share target, an invitation): no page header to draw. */
+const PHONE_UI_OUTSIDE = /^(display-|share-|project-invite)/
 const LAYOUT_DATE = process.env.LAYOUT_DATE ?? '2026-11-01'
 const [SHARD_AT, SHARD_OF] = (process.env.SHARD || '1/1').split('/').map(Number)
 if (!(SHARD_OF >= 1 && SHARD_AT >= 1 && SHARD_AT <= SHARD_OF)) throw new Error(`SHARD must be i/n with 1 <= i <= n, not ${process.env.SHARD}`)
@@ -145,18 +144,27 @@ function overlayGeometry(el) {
 const ENGINE_DB_LOST = /Connection to Indexed Database server lost|unknown transient reason|the session was signed out/i
 
 // A combination that stops making progress (WebKit's web process can stall inside an
-// evaluate or a close under load, which no Playwright timeout covers) is stopped after
-// COMBO_TIMEOUT_MS and reported with the step it was on, instead of holding the job
-// until CI cancels it with no report. WebKit gets one more run, as above.
+// evaluate or a close under load, which no Playwright timeout covers) is stopped once
+// one step has lasted COMBO_TIMEOUT_MS and reported with that step, instead of holding
+// the job until CI cancels it with no report. The time is per step, not for the whole
+// combination: a slow runner that is still moving from screen to screen is not a stall.
+// WebKit gets one more run, as above.
 const COMBO_TIMEOUT_MS = Number(process.env.COMBO_TIMEOUT_MS ?? 8 * 60 * 1000)
 
 async function runCombo(engine, width, theme, ids, attempt = 1) {
   const mine = []
   const run = { browser: null, step: 'launching the browser', crashed: null }
   let timer
-  const stalled = new Promise((resolve) => { timer = setTimeout(() => resolve('stalled'), COMBO_TIMEOUT_MS) })
+  const stalled = new Promise((resolve) => {
+    let step = run.step
+    let since = Date.now()
+    timer = setInterval(() => {
+      if (run.step !== step) { step = run.step; since = Date.now() }
+      else if (Date.now() - since >= COMBO_TIMEOUT_MS) resolve('stalled')
+    }, 1000)
+  })
   const outcome = await Promise.race([runComboOnce(engine, width, theme, ids, mine, run), stalled])
-  clearTimeout(timer)
+  clearInterval(timer)
   // A page whose web process crashed (Playwright's Linux WebKit is built with libstdc++
   // assertions) answers nothing again, and a goto on it never returns: the browser is
   // closed at the crash and the step is reported, instead of a stall. WebKit gets one
@@ -174,10 +182,10 @@ async function runCombo(engine, width, theme, ids, attempt = 1) {
     const tag = `${engine} ${width}px ${theme}`
     run.browser?.close().catch(() => {})
     if (engine === 'webkit' && attempt === 1) {
-      log(`  ${tag}: stalled at ${run.step} for ${COMBO_TIMEOUT_MS / 60000} min; running this combination again`)
+      log(`  ${tag}: no progress at ${run.step} for ${COMBO_TIMEOUT_MS / 60000} min; running this combination again`)
       return runCombo(engine, width, theme, ids, 2)
     }
-    failures.push(`[${tag}] stalled for ${COMBO_TIMEOUT_MS / 60000} min at ${run.step}`)
+    failures.push(`[${tag}] no progress for ${COMBO_TIMEOUT_MS / 60000} min at ${run.step}`)
     return
   }
   if (outcome && attempt === 1) {
@@ -216,13 +224,15 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
     const events = calendarEvents(NOW)
     await ctx.route('**/api/v1/calendar-feeds/events?*', (route) => route.fulfill({ json: events }))
     if (LANG) for (const c of [anonCtx, ctx]) await c.addInitScript((code) => { try { localStorage.setItem('opentodo.lang', code) } catch { /* storage blocked */ } }, LANG)
-    if (PHONE_UI) await ctx.addInitScript(() => { try { localStorage.setItem('opentodo.phoneUi', '1') } catch { /* storage blocked */ } })
     const page = await ctx.newPage()
     page.on('dialog', (d) => d.dismiss())
     page.on('crash', () => { run.crashed ??= run.step; browser.close().catch(() => {}) })
     const pageErrors = []
-    // WebKit reports fetches cut off by a navigation as errors; those are not app bugs.
-    page.on('pageerror', (e) => { if (!/access control checks|Load failed|The network connection was lost|cancelled/i.test(e.message)) pageErrors.push(e.message) })
+    // WebKit reports fetches cut off by a navigation as errors; those are not app bugs. A lazy chunk whose
+    // import the next navigation cut off is one of them ("Importing a module script failed"): seen three times
+    // in the 768 px leg on unrelated commits, each on a rerun that then passed. A chunk that is really
+    // missing still fails the check: its screen shows the load error instead of its content.
+    page.on('pageerror', (e) => { if (!/access control checks|Load failed|The network connection was lost|cancelled|Importing a module script failed/i.test(e.message)) pageErrors.push(e.message) })
     await page.goto(base + '/inbox')
     await page.locator('[data-task-id]').first().waitFor({ timeout: 30000 })
     // The touch probes (mobile-native-feel): each on a page of its own, opened on the
@@ -264,9 +274,13 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
           await p.waitForTimeout(300)
         }
         await p.waitForTimeout(250)
-        // With the switch on, a screen that has a phone view must be showing it: a run that
-        // quietly checked the present screens would pass and prove nothing (phone-ui-trial).
-        if (PHONE_UI && width < 768 && !s.anon && !(await p.locator('[data-phone-screen]').count())) throw new Error('the phone UI is on but the screen is not a phone screen')
+        // Below 768 px a screen of the app must be showing the phone UI: a run that quietly
+        // checked another layout would pass and prove nothing (phone-ui-trial).
+        // Waited for, not looked up once: a screen loaded on demand (the calendar) mounts after its `ready` has held.
+        if (width < 768 && !s.anon && !PHONE_UI_OUTSIDE.test(s.name)) {
+          await p.locator('[data-phone-screen], [data-phone-header]').first().waitFor({ state: 'attached', timeout: 20000 })
+            .catch(() => { throw new Error('below 768 px the screen has neither a phone screen nor the phone header') })
+        }
       }
       try {
         await visit()
@@ -310,7 +324,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       }
       await shot(p, s.name)
       // In another language only the overlays opened by data attributes (the start guide).
-      for (const o of (s.overlays ?? []).filter((n) => !OTHER_LANG || ANY_LANG_OVERLAYS.has(n))) {
+      for (const o of (s.overlays ?? []).filter((n) => (!OTHER_LANG || ANY_LANG_OVERLAYS.has(n)))) {
         run.step = `screen ${s.name} › ${o}`
         const checkOne = async () => {
           await visit()

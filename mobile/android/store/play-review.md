@@ -19,6 +19,12 @@ The app declares `SCHEDULE_EXACT_ALARM`, which the user grants in the system set
 
 > Users set reminders on their own tasks at a time they choose ("remind me at 9:00"). The app schedules the next seven days of these reminders as exact alarms so they fire on time without a push service. The user grants the permission from the app's notification settings; without it the app falls back to inexact alarms and reminders may arrive a few minutes late. No alarm is set that the user did not ask for.
 
+## Full-screen intent
+
+The app declares `USE_FULL_SCREEN_INTENT` for urgent reminders (OpenSpec change `android-urgent-alarms`): a reminder the user marked **Urgent** rings as a full-screen alarm over the lock screen. Since 2025-01-22 Play leaves the permission on by default on Android 14+ only for apps whose core functionality is an alarm clock or calls. OpenTodo is a task manager, so in **App content → Full-screen intent** answer that full-screen intents are **not** its core functionality. The app then asks the user for the permission (Android's full-screen notifications page) when they turn Urgent on, and without it shows the alarm as a heads-up notification that still rings. If the Console asks how the app uses it:
+
+> Users can mark a reminder they must not miss as Urgent ("take the medicine at 8:00"). At its time the app rings it like an alarm clock: a full-screen screen over the lock screen with Done, Snooze 10 min and Dismiss, and the alarm sound until the user answers. It is used only for reminders the user marked urgent, never for anything else. The user allows it from the app when turning Urgent on; without it the reminder is a heads-up notification.
+
 ## Content rating (IARC questionnaire)
 
 - **Category:** Utility, Productivity, Communication, or Other ("All other app types").

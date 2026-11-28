@@ -19,7 +19,13 @@ type evalVectors struct {
 	Members   []Member                     `json:"members"`
 	Sections  []map[string]any             `json:"sections"`
 	Tasks     []map[string]json.RawMessage `json:"tasks"`
-	Cases     []struct {
+	// FieldPlace places every project in the default workspace (workspace-fields).
+	FieldPlace struct {
+		Default string   `json:"default"`
+		Owned   []string `json:"owned"`
+		Foreign []string `json:"foreign"`
+	} `json:"field_place"`
+	Cases []struct {
 		Query    string   `json:"query"`
 		IDs      []string `json:"ids"`
 		Warnings int      `json:"warnings"`
@@ -38,6 +44,22 @@ func rowsOf(list []map[string]any) []Row {
 	}
 	return out
 }
+
+// vectorPlace is the vectors' FieldPlace: every project in the default
+// workspace, except those shared in by someone else.
+type vectorPlace struct {
+	def            string
+	owned, foreign map[string]bool
+}
+
+func (p vectorPlace) Project(id string) string {
+	if p.foreign[id] || !p.owned[p.def] {
+		return ""
+	}
+	return p.def
+}
+func (p vectorPlace) Default() string     { return p.def }
+func (p vectorPlace) Owns(ws string) bool { return p.owned[ws] }
 
 // taskRow fills the defaults a materialised task row has.
 func taskRow(m map[string]json.RawMessage) Row {
@@ -67,7 +89,14 @@ func TestEvaluateVectors(t *testing.T) {
 	for _, m := range v.Tasks {
 		tasks = append(tasks, taskRow(m))
 	}
-	ctx := Context{Today: v.Today, WeekStart: v.WeekStart, Labels: rowsOf(v.Labels), Projects: rowsOf(v.Projects), Sections: rowsOf(v.Sections), Fields: rowsOf(v.Fields), Tasks: tasks, Tracked: v.Tracked, TrackedOccurrence: v.TrackedOc, Me: v.Me, Members: v.Members}
+	place := vectorPlace{def: v.FieldPlace.Default, owned: map[string]bool{}, foreign: map[string]bool{}}
+	for _, id := range v.FieldPlace.Owned {
+		place.owned[id] = true
+	}
+	for _, id := range v.FieldPlace.Foreign {
+		place.foreign[id] = true
+	}
+	ctx := Context{Today: v.Today, WeekStart: v.WeekStart, Labels: rowsOf(v.Labels), Projects: rowsOf(v.Projects), Sections: rowsOf(v.Sections), Fields: rowsOf(v.Fields), Tasks: tasks, Tracked: v.Tracked, TrackedOccurrence: v.TrackedOc, Me: v.Me, Members: v.Members, FieldPlace: place}
 	for _, c := range v.Cases {
 		pred, warnings, err := Evaluate(c.Query, ctx)
 		if err != nil {

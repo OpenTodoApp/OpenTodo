@@ -14,6 +14,7 @@ import { click, key, render, type, minWidthPx, waitFor } from '../ui/test-utils'
 import { navigate } from './router'
 import { Shell } from './Shell'
 
+
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 const original = window.matchMedia
 
@@ -37,7 +38,7 @@ describe('the add button', () => {
   it('opens quick add as a bottom sheet with the field focused, and the Upcoming default date applied', async () => {
     navigate({ view: 'upcoming' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector('[data-add-button]'), 'the add button')
+    await waitFor(() => !!document.querySelector('[data-add-button]') && !!document.querySelector('[data-phone-list="upcoming"]'), 'the add button over Upcoming')
     const button = document.querySelector<HTMLButtonElement>('[data-add-button]')!
     expect(button.getAttribute('aria-expanded')).toBe('false')
     await click(button)
@@ -45,7 +46,7 @@ describe('the add button', () => {
     await waitFor(() => document.activeElement === field(), 'the field focused')
     // Keyboard-safe: the sheet is bottom-anchored on the visual viewport, and the list stays behind it.
     expect((sheet() as HTMLElement).style.bottom).toContain('--vv-bottom')
-    expect(document.querySelector('[data-list-page]')).toBeTruthy()
+    expect(document.querySelector('[data-phone-list="upcoming"]')).toBeTruthy()
     // The bar and the button make room for the sheet.
     expect(document.querySelector('[data-tab-bar]')).toBeNull()
 
@@ -193,6 +194,20 @@ describe('chips and tools (palette-quick-add D7; natural-language-capture "Quick
     expect((await db.tasks.toArray()).map((t) => [t.title, t.due])).toEqual([['Call the plumber', { date: tomorrow, time: '17:00' }]])
     // The line is empty for the next task, and the picker has closed with it.
     await waitFor(() => !document.querySelector('[data-line-date-picker]'), 'the picker closed')
+    await r.unmount()
+  })
+
+  // phone-delight D6: a date in one tap while the line has none.
+  it('Today, Tomorrow and Next week as dashed chips while the line has no date; a tap writes it and they go', async () => {
+    const r = await openSheet()
+    await type(field()!, 'Call Anna')
+    const chips = () => [...document.querySelectorAll<HTMLElement>('[data-sheet-date]')].map((c) => c.dataset.sheetDate)
+    expect(chips()).toEqual(['today', 'tomorrow', 'next-week'])
+    expect(document.querySelector('[data-sheet-date="tomorrow"]')!.getAttribute('aria-hidden')).toBe('true')
+    await click(document.querySelector('[data-sheet-date="tomorrow"]')!)
+    await waitFor(() => field()!.value === 'Call Anna tomorrow', 'the date in the line')
+    await waitFor(() => chips().length === 0, 'the date chips gone')
+    expect(document.querySelector('[data-sheet-chip="due"]')).toBeTruthy()
     await r.unmount()
   })
 

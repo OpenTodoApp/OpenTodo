@@ -2,13 +2,14 @@
 // Labels page, menu and edit panel (OpenSpec change labels-and-menus, tasks 5.1–5.4).
 import 'fake-indexeddb/auto'
 import { act } from 'react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { addLabel, createLabel } from '../lib/labels'
 import { createTask, resetDeviceId } from '../lib/ops'
 import type { Label } from '../lib/types'
 import { click, flush, key, render, spokenText, visibleText, waitFor } from '../ui/test-utils'
 import { LabelEditPanel, LabelsView, duplicatePair, labelDropAt, labelMenuGroups } from './LabelsView'
+import { ActionMenu } from './menus/ActionMenu'
 
 beforeEach(async () => { await db.delete(); await db.open(); resetDeviceId() })
 
@@ -44,6 +45,20 @@ describe('label menu groups (5.1)', () => {
     const merge = labelMenuGroups(labels[0], labels, { edit: () => {}, rename: () => {}, move: () => {} }).flatMap((g) => g.items).find((i) => i.id === 'merge')
     expect(merge?.kind).toBe('picker')
     if (merge?.kind === 'picker') expect((merge.picker.source as Label[]).map((x) => x.id)).toEqual(['b', 'c'])
+  })
+
+  // phone-control-facts: a tap on the row opens the label, never the badge's tooltip.
+  it('a duplicate label says what the badge means under Merge into, where a tap reads it', async () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('coarse'), media: q, addEventListener() {}, removeEventListener() {} }))
+    const labels = [l('a', 'Errand'), l('b', 'errand')]
+    const actions = { edit: () => {}, rename: () => {}, move: () => {} }
+    const mergeOf = (duplicate: boolean) => labelMenuGroups(labels[0], labels, { ...actions, duplicate }).flatMap((g) => g.items).find((i) => i.id === 'merge')
+    expect(mergeOf(false)?.description).toBeUndefined()
+    const r = await render(<ActionMenu label="Menu for label Errand" groups={labelMenuGroups(labels[0], labels, { ...actions, duplicate: true })} open onOpenChange={() => {}} />)
+    await waitFor(() => !!document.querySelector('[data-action="merge"]'), 'the menu')
+    expect(document.querySelector('[data-action="merge"]')!.textContent).toContain('Another label has this name. Merge them from the menu or the banner on the labels page.')
+    await r.unmount()
+    vi.unstubAllGlobals()
   })
 })
 

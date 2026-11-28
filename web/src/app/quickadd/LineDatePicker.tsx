@@ -15,6 +15,7 @@ import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { CalendarGrid } from '../datetime/DateField'
 import { Icon } from '../../ui'
 import { FIELD_ICON, fieldOf } from './fields'
+import { composing } from '../../lib/composeKey'
 
 const TIMES = ['09:00', '12:00', '17:00', '20:00']
 
@@ -56,7 +57,7 @@ export function useLineDate({ input, value, chips, context, change }: {
   const hide = () => setOpen(false)
   /** Escape closes the open picker first, before the field or the dialog around it (quick-add-calendar). */
   const escape = (e: KeyboardEvent) => {
-    if (e.key !== 'Escape' || !open) return false
+    if (composing(e) || e.key !== 'Escape' || !open) return false
     e.stopPropagation()
     e.preventDefault()
     hide()

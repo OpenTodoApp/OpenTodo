@@ -6,6 +6,7 @@
 // name, so the stepper fits a 375 px screen without scrolling (and, tighter, a 320 px one:
 // accessibility-aa). Close the day
 // (close-the-day D2) passes its own steps and its one phase.
+import { useLayoutEffect, useRef, useState } from 'react'
 import { t } from '../../lib/i18n'
 import { PHASE_OF as WEEKLY_PHASE_OF, PHASE_TITLES as WEEKLY_PHASE_TITLES, STEP_IDS as WEEKLY_IDS, STEP_TITLES as WEEKLY_STEP_TITLES, type PhaseId, type StepId } from '../../lib/review'
 import { Icon } from '../../ui'
@@ -35,17 +36,18 @@ export function ReviewProgress<S extends string = StepId, P extends string = Pha
   const at = STEP_IDS.indexOf(step)
   const columns = PHASES.map((p) => `minmax(min-content, ${STEP_IDS.filter((s) => PHASE_OF[s] === p).length}fr)`).join(' ')
   const status = (s: S) => (steps.done[s] ? t('done') : t('{n} left', { n: steps.left[s] }))
+  const { list, tight } = usePhasesFit(PHASES.map((p) => PHASE_TITLES[p]).join('|'))
   return (
     <nav aria-label={props.label ?? t('Review progress')} className="mb-5" data-review-progress>
       <p className="sr-only">{t('Step {n} of {total} · {phase}', { n: at + 1, total: STEP_IDS.length, phase: PHASE_TITLES[PHASE_OF[step]] })}</p>
       {/* Below 360 px (a 320 px screen, 400% zoom, large text) the phases wrap onto more lines instead of scrolling sideways (WCAG 1.4.10). */}
-      <ol className="grid max-[359px]:flex max-[359px]:flex-wrap max-[359px]:gap-y-2" style={{ gridTemplateColumns: columns }}>
+      <ol ref={list} data-tight={tight || undefined} className="grid max-[359px]:flex max-[359px]:flex-wrap max-[359px]:gap-y-2 data-[tight]:flex data-[tight]:flex-wrap data-[tight]:gap-y-2" style={{ gridTemplateColumns: columns }}>
         {PHASES.map((phase) => (
           // In the narrow flex layout a phase grows with its number of steps, as its grid column does.
           <li key={phase} className="min-w-0" style={{ flexGrow: STEP_IDS.filter((s) => PHASE_OF[s] === phase).length }} data-phase={phase}>
             {/* Below 360 px (a 320 px screen, or 400% zoom) the names lose their letter spacing and the
                 joins narrow, so the stepper still fits without scrolling sideways (WCAG 1.4.10). */}
-            <p className={`mb-2 whitespace-nowrap ${phase === PHASES[PHASES.length - 1] ? '' : 'pr-3 max-[359px]:pr-2'} text-hint font-semibold uppercase tracking-wide max-[359px]:tracking-normal ${PHASE_OF[step] === phase ? 'text-accent' : 'text-faint'}`}>{PHASE_TITLES[phase]}</p>
+            <p className={`mb-2 whitespace-nowrap ${phase === PHASES[PHASES.length - 1] ? '' : 'pe-3 max-[359px]:pe-2'} text-hint font-semibold uppercase tracking-wide max-[359px]:tracking-normal ${PHASE_OF[step] === phase ? 'text-accent' : 'text-faint'}`}>{PHASE_TITLES[phase]}</p>
             <ol className="flex">
               {STEP_IDS.filter((s) => PHASE_OF[s] === phase).map((s) => {
                 const i = STEP_IDS.indexOf(s)
@@ -63,7 +65,7 @@ export function ReviewProgress<S extends string = StepId, P extends string = Pha
                           {done && !current ? <Icon name="check" size="sm" /> : i + 1}
                         </span>
                         {!done && !current && steps.left[s] > 0 && (
-                          <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-warning-soft px-1 text-hint font-semibold text-on-warning-soft">{steps.left[s]}</span>
+                          <span aria-hidden="true" className="absolute -inset-e-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-warning-soft px-1 text-hint font-semibold text-on-warning-soft">{steps.left[s]}</span>
                         )}
                         {/* The button carries the spoken name only; the circle above is its picture. */}
                         <button type="button" onClick={() => onStep(s)} aria-current={current ? 'step' : undefined} data-progress-step={s}
@@ -73,7 +75,7 @@ export function ReviewProgress<S extends string = StepId, P extends string = Pha
                       </div>
                       {!last && <span aria-hidden="true" className={`mx-1 max-[359px]:mx-0.5 h-0.5 flex-1 rounded-full ${i < at || (done && steps.done[STEP_IDS[i + 1]]) ? 'bg-accent' : 'bg-faint/30'}`} />}
                     </div>
-                    <span aria-hidden="true" className={`mt-2 hidden truncate pr-2 text-hint sm:block ${current ? 'font-semibold text-strong' : done ? 'text-muted' : 'text-faint'}`}>{STEP_TITLES[s]}</span>
+                    <span aria-hidden="true" className={`mt-2 hidden truncate pe-2 text-hint sm:block ${current ? 'font-semibold text-strong' : done ? 'text-muted' : 'text-faint'}`}>{STEP_TITLES[s]}</span>
                   </li>
                 )
               })}
@@ -83,4 +85,40 @@ export function ReviewProgress<S extends string = StepId, P extends string = Pha
       </ol>
     </nav>
   )
+}
+
+/**
+ * Whether the phases need more than one line: their names never break, so in a language
+ * with longer names (German at 360 px) the row was wider than the screen and the page
+ * scrolled sideways (WCAG 1.4.10). Measured, not guessed from the width: where the names
+ * fit, the row stays the grid it was.
+ */
+function usePhasesFit(names: string) {
+  const list = useRef<HTMLOListElement>(null)
+  const [tight, setTight] = useState(false)
+  useLayoutEffect(() => {
+    const el = list.current
+    if (!el) return
+    let width = -1
+    const measure = () => {
+      const now = el.parentElement?.clientWidth ?? 0
+      if (now === width) return
+      width = now
+      // Measured as the grid: back to it first, then see whether it runs over.
+      el.removeAttribute('data-tight')
+      // Over means past the screen's edge, which is what scrolls the page: a pixel or two into the
+      // page's own gutter does not, and English at 360 px has always had that.
+      const box = el.getBoundingClientRect()
+      const screen = document.documentElement.clientWidth
+      const over = getComputedStyle(el).direction === 'rtl' ? box.right - el.scrollWidth < -0.5 : box.left + el.scrollWidth > screen + 0.5
+      if (over) el.setAttribute('data-tight', '')
+      setTight(over)
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    if (el.parentElement) ro.observe(el.parentElement)
+    return () => ro.disconnect()
+  }, [names])
+  return { list, tight }
 }

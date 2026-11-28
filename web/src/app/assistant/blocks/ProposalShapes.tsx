@@ -18,6 +18,7 @@ import { useCalendarDrag } from '../../calendarDrag'
 import { LocationMap } from '../../locations/LocationMap'
 import { ItemEditor, type OnEdit } from '../ItemEditor'
 import { AgendaDays, type AgendaItem } from './CalendarBlock'
+import { inlineKey } from '../../../lib/direction'
 
 type Toggle = (index: number, checked: boolean) => void
 
@@ -34,7 +35,7 @@ export const labelOf = (item: ReviewItem) => `${item.title}${item.lines.length ?
 
 /** The small marks after an item's title: changed since proposed, edited, added or changed this turn. */
 export function ItemMarks({ item }: { item: ReviewItem }) {
-  const mark = 'ml-1.5 rounded-control border px-1 text-hint font-medium'
+  const mark = 'ms-1.5 rounded-control border px-1 text-hint font-medium'
   return (
     <>
       {item.state === 'stale' && <span className={`${mark} border-warning text-on-warning-soft`}>{t('changed since proposed')}</span>}
@@ -52,11 +53,11 @@ function CheckRow({ item, index, onToggle, edits, depth = 0, children }: { item:
   return (
     <li data-review-item={item.change.entityId}>
       <div className="flex items-start">
-        <label className="flex min-w-0 flex-1 items-start gap-2 py-1 pr-3 text-body hover:bg-hover" style={{ paddingLeft: `${0.75 + depth * 1.25}rem` }}>
+        <label className="flex min-w-0 flex-1 items-start gap-2 py-1 pe-3 text-body hover:bg-hover" style={{ paddingInlineStart: `${0.75 + depth * 1.25}rem` }}>
           <input type="checkbox" className="mt-1 h-4 w-4 shrink-0 accent-(--ot-accent)" checked={item.checked} aria-label={labelOf(item)} onChange={(e) => onToggle(index, e.target.checked)} />
           <span className={`min-w-0 flex-1 user-text ${item.checked ? '' : 'text-muted'}`}>{item.title}<ItemMarks item={item} /></span>
         </label>
-        {canEdit(item, edits) && <IconButton icon="pencil" size="sm" className="touch-target mr-1 text-muted" label={t('Edit {title}', { title: item.title })} aria-expanded={open} onClick={() => edits.setEditing(open ? null : index)} data-edit-item />}
+        {canEdit(item, edits) && <IconButton icon="pencil" size="sm" className="touch-target me-1 text-muted" label={t('Edit {title}', { title: item.title })} aria-expanded={open} onClick={() => edits.setEditing(open ? null : index)} data-edit-item />}
       </div>
       {open && edits.onEdit && <ItemEditor item={item} index={index} onEdit={edits.onEdit} onClose={() => edits.setEditing(null)} />}
       {children}
@@ -93,7 +94,7 @@ function CalendarShape({ review, onToggle, edits }: { review: Review; onToggle: 
     const movable = !!edits.onEdit && !!moveEdits(item, addDaysISO(placedDate(item)!, 1))
     const onKeyDown = (e: KeyboardEvent) => {
       if (!e.altKey || e.shiftKey || e.ctrlKey || e.metaKey) return
-      const step = e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : 0
+      const step = e.key === 'ArrowUp' || inlineKey(e) === 'ArrowLeft' ? -1 : e.key === 'ArrowDown' || inlineKey(e) === 'ArrowRight' ? 1 : 0
       if (!step) return
       // Alt+arrows move the item here, not a task in the list behind the panel.
       e.preventDefault()
@@ -178,7 +179,7 @@ function MapShape({ review, onToggle, edits }: { review: Review; onToggle: Toggl
       <ol>
         {review.items.map((item, index) => (
           <CheckRow key={index} item={item} index={index} onToggle={onToggle} edits={edits}>
-            <p className="flex items-center gap-1 pb-1 pl-9 text-meta text-muted user-text"><Icon name="map-pin" size="xs" />{String((item.change.patch.location as { name?: string } | null)?.name ?? '')}</p>
+            <p className="flex items-center gap-1 pb-1 ps-9 text-meta text-muted user-text"><Icon name="map-pin" size="xs" />{String((item.change.patch.location as { name?: string } | null)?.name ?? '')}</p>
           </CheckRow>
         ))}
       </ol>

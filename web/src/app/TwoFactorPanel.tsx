@@ -93,7 +93,7 @@ export function RecoveryCodesView(p: RecoveryCodesViewProps) {
 function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void }) {
   const [acknowledged, setAcknowledged] = useState(false)
   const [copied, setCopied] = useState(false)
-  const text = `${t('OpenTodo recovery codes ({host})', { host: location.host })}\n${t('Each code works once.')}\n\n${codes.join('\n')}\n`
+  const text = `${t.plain('OpenTodo recovery codes ({host})', { host: location.host })}\n${t('Each code works once.')}\n\n${codes.join('\n')}\n`
   return (
     <RecoveryCodesView
       codes={codes} acknowledged={acknowledged} copied={copied} onAcknowledge={setAcknowledged} onDone={onDone}
@@ -126,7 +126,7 @@ export function EnrolmentStepView(p: EnrolmentStepViewProps) {
   }
   return (
     <div className="space-y-3" data-testid="enrolment-wizard">
-      <ol className="list-decimal space-y-1 pl-5 text-body text-muted">
+      <ol className="list-decimal space-y-1 ps-5 text-body text-muted">
         <li>{t('Open an authenticator app on your phone (any app that supports time-based codes).')}</li>
         <li>{t('Scan this QR code, or enter the key by hand.')}</li>
         <li>{t('Type the six-digit code the app shows.')}</li>

@@ -26,7 +26,7 @@ const clip = (s: string, n = 60) => (s.length > n ? `${s.slice(0, n - 1)}…` : 
 /** A field's value in words; empty for nothing. */
 function words(field: string, v: unknown, names: Names): string {
   if (v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length)) {
-    return field === 'project_id' ? t('Inbox') : field === 'completed_at' ? t('Open') : ''
+    return field === 'project_id' ? t('Inbox') : field === 'completed_at' ? t('Open', { context: 'state' }) : ''
   }
   switch (field) {
     case 'due': {
@@ -68,13 +68,13 @@ export function BeforeAfter({ review }: { review: Review }) {
   if (!loaded) return null
   // One table: the column heads once, then each item as a group of its fields.
   return (
-    <table className="w-full table-fixed text-left text-meta" aria-label={t('Before and after')} data-before-after>
+    <table className="w-full table-fixed text-start text-meta" aria-label={t('Before and after')} data-before-after>
       <colgroup><col className="w-28" /><col /><col /></colgroup>
       <thead>
         <tr className="border-b border-soft text-faint">
-          <th scope="col" className="py-1.5 pl-3 font-normal"><span className="sr-only">{t('Field')}</span></th>
-          <th scope="col" className="py-1.5 pr-3 font-normal">{t('Before')}</th>
-          <th scope="col" className="py-1.5 pr-3 font-normal">{t('After')}</th>
+          <th scope="col" className="py-1.5 ps-3 text-start font-normal"><span className="sr-only">{t('Field')}</span></th>
+          <th scope="col" className="py-1.5 pe-3 text-start font-normal">{t('Before')}</th>
+          <th scope="col" className="py-1.5 pe-3 text-start font-normal">{t('After')}</th>
         </tr>
       </thead>
       {review.items.map((item, i) => <ItemDiff key={item.change.entity + item.change.entityId} item={item} row={loaded.rows[i]} names={loaded.names} />)}
@@ -87,7 +87,7 @@ function ItemDiff({ item, row, names }: { item: ReviewItem; row: Row | null; nam
   return (
     <tbody className="border-b border-soft last:border-b-0" data-review-item={item.change.entityId}>
       <tr>
-        <th scope="rowgroup" colSpan={3} className={`px-3 pt-2 pb-0.5 text-body font-normal user-text ${item.checked ? 'text-default' : 'text-muted'}`}>{item.title}<ItemMarks item={item} /></th>
+        <th scope="rowgroup" colSpan={3} className={`px-3 pt-2 pb-0.5 text-start text-body font-normal user-text ${item.checked ? 'text-default' : 'text-muted'}`}>{item.title}<ItemMarks item={item} /></th>
       </tr>
       {fields.map((f, i) => {
         const before = item.change.create ? '' : words(f, { ...(row ?? {}), ...(item.change.base ?? {}) }[f], names)
@@ -95,9 +95,9 @@ function ItemDiff({ item, row, names }: { item: ReviewItem; row: Row | null; nam
         const last = i === fields.length - 1 ? 'pb-2' : ''
         return (
           <tr key={f}>
-            <th scope="row" className={`pl-3 pr-3 font-normal text-muted ${last}`}>{FIELD[f]()}</th>
-            <td className={`truncate pr-3 text-muted user-text ${last}`} data-before={f}>{before || '—'}</td>
-            <td className={`truncate pr-3 font-medium text-default user-text ${last}`} data-after={f}>{after || '—'}</td>
+            <th scope="row" className={`ps-3 pe-3 text-start font-normal text-muted ${last}`}>{FIELD[f]()}</th>
+            <td className={`truncate pe-3 text-muted user-text ${last}`} data-before={f}>{before || '—'}</td>
+            <td className={`truncate pe-3 font-medium text-default user-text ${last}`} data-after={f}>{after || '—'}</td>
           </tr>
         )
       })}

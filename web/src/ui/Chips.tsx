@@ -110,7 +110,7 @@ export function LabelChip({ name, color, onRemove, className }: LabelChipProps) 
         // The touch rule's 44 px minimum would blow the chip up to a box: the button stays
         // icon-sized and a transparent 44 px area around it (::after) takes the tap.
         <button type="button" data-touch-exempt="hit-area" aria-label={t('Remove label {name}', { name })} onClick={onRemove} style={{ minWidth: 0, minHeight: 0 }}
-          className="relative ml-0.5 rounded-chip leading-none text-hue after:absolute after:-inset-[17px] hover:outline focus-visible:outline-2 focus-visible:outline-focus"><Icon name="x" size={10} /></button>
+          className="relative ms-0.5 rounded-chip leading-none text-hue after:absolute after:-inset-[17px] hover:outline focus-visible:outline-2 focus-visible:outline-focus"><Icon name="x" size={10} /></button>
       )}
     </span>
   )

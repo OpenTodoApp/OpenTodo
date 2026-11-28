@@ -15,6 +15,7 @@ import {
 } from '.'
 import { applyCatalog, fetchCatalog, formatNumber } from './catalog'
 import { ERROR_MESSAGES } from './errors'
+import { KEYWORD_NAME } from '../../app/filter/conditionText'
 import serverCodes from './server-error-codes.json'
 
 afterEach(async () => {
@@ -51,6 +52,13 @@ describe('messages', () => {
     expect(html).toBe('<p>Connecté en tant que <b>Ana</b>.</p>')
     expect(t('{entity, select, task {a task} project {a project} label {a label} section {a section} comment {a comment} view {a view} field {a field} reminder {a reminder} other {an item}}', { entity: 'label' })).toBe('une étiquette')
     expect(t('A message no catalog has')).toBe('A message no catalog has')
+  })
+
+  it('the state "Open" is its own message, apart from the verb (#2063)', async () => {
+    await applyLanguagePreference('de', ['en-US'])
+    expect(t('Open')).toBe('Öffnen')
+    expect(t('Open', { context: 'state' })).toBe('Offen')
+    expect(KEYWORD_NAME.open).toBe('Offen')
   })
 
   it('Dutch plural and grouping: 1 taak, 2 taken, 1.234 (more-languages 3.5)', async () => {
@@ -90,8 +98,8 @@ describe('locale resolution (D4)', () => {
     expect(resolveLanguage('de', ['en-US'])).toBe('de')
   })
   it('a browser language without a catalog falls back to English', () => {
-    expect(resolveLanguage('system', ['ja'])).toBe('en')
-    expect(resolveLanguage('xx', ['ja'])).toBe('en')
+    expect(resolveLanguage('system', ['qaa'])).toBe('en')
+    expect(resolveLanguage('xx', ['qaa'])).toBe('en')
   })
 
   it('classifies simplified Chinese and leaves traditional Chinese on English', () => {
@@ -108,14 +116,49 @@ describe('locale resolution (D4)', () => {
     }
   })
 
-  it('simplified Chinese sets lang to zh and does not change direction', () => {
+  it('simplified Chinese sets lang to zh and keeps the direction left to right', () => {
     document.documentElement.removeAttribute('dir')
     applyCatalog('zh' as LanguageCode, 'zh', {})
     expect(document.documentElement.lang).toBe('zh')
-    expect(document.documentElement.hasAttribute('dir')).toBe(false)
+    expect(document.documentElement.dir).toBe('ltr')
     document.documentElement.dir = 'ltr'
     applyCatalog('zh' as LanguageCode, 'zh-CN', {})
     expect(document.documentElement.lang).toBe('zh')
+    expect(document.documentElement.dir).toBe('ltr')
+  })
+
+  it('resolves Japanese, sets lang to ja and keeps the direction (japanese)', async () => {
+    expect(resolveLanguage('system', ['ja-JP', 'en'])).toBe('ja')
+    expect(intlLocale('system', ['ja-JP'])).toBe('ja-JP')
+    expect(intlLocale('ja', ['en-US'])).toBe('ja')
+    document.documentElement.dir = 'ltr'
+    await applyLanguagePreference('ja', ['en-US'])
+    expect(currentLanguage()).toBe('ja')
+    expect(document.documentElement.lang).toBe('ja')
+    expect(document.documentElement.dir).toBe('ltr')
+    expect(t('Inbox')).toBe('インボックス')
+    expect(t('{n, plural, one {# task} other {# tasks}}', { n: 1 })).toBe('1件のタスク')
+    expect(t('{n, plural, one {# task} other {# tasks}}', { n: 1234 })).toBe('1,234件のタスク')
+  })
+
+  it('resolves Arabic, sets lang to ar, turns the page right to left and keeps Western digits (arabic-rtl)', async () => {
+    expect(resolveLanguage('system', ['ar-EG', 'en'])).toBe('ar')
+    expect(intlLocale('system', ['ar-EG'])).toBe('ar-EG-u-nu-latn')
+    expect(intlLocale('ar', ['en-US'])).toBe('ar-u-nu-latn')
+    document.documentElement.dir = 'ltr'
+    await applyLanguagePreference('ar', ['en-US'])
+    expect(currentLanguage()).toBe('ar')
+    expect(document.documentElement.lang).toBe('ar')
+    expect(document.documentElement.dir).toBe('rtl')
+    expect(t('Inbox')).toBe('الوارد')
+    const days = '{n, plural, one {# day} other {# days}}'
+    expect(t(days, { n: 1 })).toBe('يوم واحد')
+    expect(t(days, { n: 2 })).toBe('يومان')
+    expect(t(days, { n: 3 })).toBe('3 أيام')
+    expect(t(days, { n: 11 })).toBe('11 يومًا')
+    expect(t(days, { n: 100 })).toBe('100 يوم')
+    expect(t(days, { n: 1234 })).toMatch(/^1.234 يومًا$/)
+    await applyLanguagePreference('en', ['en-US'])
     expect(document.documentElement.dir).toBe('ltr')
   })
 
@@ -182,6 +225,15 @@ describe('dates in the interface language (D4)', () => {
     expect(formatDate('2026-03-03', 'compact', undefined, '2026-01-01')).toMatch(/^3 mrt/)
     expect(formatTime('15:00')).toBe('15:00')
   })
+  it('Japanese with an en-US browser: year first, 2027年11月4日 and the weekday (japanese)', async () => {
+    await applyLanguagePreference('ja', ['en-US'])
+    setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
+    expect(currentLocale()).toBe('ja')
+    expect(formatDate('2026-11-04', 'full', undefined, '2026-01-01')).toBe('11月4日水曜日')
+    expect(formatDate('2027-11-04', 'numeric', undefined, '2026-01-01')).toBe('2027/11/04')
+    expect(formatDate('2027-11-04', 'compact', undefined, '2026-01-01')).toBe('2027年11月4日')
+    expect(formatTime('15:00')).toBe('15:00')
+  })
   it('Swiss German keeps its region', async () => {
     await applyLanguagePreference('system', ['de-CH'])
     expect(currentLocale()).toBe('de-CH')
@@ -215,5 +267,17 @@ describe('words for tasks that are late (page-rhythm D8)', () => {
       expect(late, lang).toEqual([])
       expect(catalog.Earlier, `${lang} translates Earlier`).toBeTruthy()
     }
+  })
+})
+
+describe('Arabic numbers (arabic-rtl D6)', () => {
+  it('keeps Western digits and the six plural categories', async () => {
+    const { westernDigits } = await import('./locale')
+    expect(westernDigits('ar')).toBe('ar-u-nu-latn')
+    expect(westernDigits('ar-EG')).toBe('ar-EG-u-nu-latn')
+    expect(westernDigits('ar-EG-u-nu-arab')).toBe('ar-EG-u-nu-arab')
+    expect(westernDigits('de-CH')).toBe('de-CH')
+    expect(new Intl.NumberFormat(westernDigits('ar-EG')).format(12345)).toMatch(/^12.345$/)
+    expect(new Intl.PluralRules('ar').resolvedOptions().pluralCategories.sort()).toEqual(['few', 'many', 'one', 'other', 'two', 'zero'])
   })
 })

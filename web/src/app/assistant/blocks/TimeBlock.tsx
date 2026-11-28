@@ -18,14 +18,14 @@ export default function TimeBlock({ block }: { block: Extract<AssistantBlock, { 
       <ul className="space-y-0.5">
         {time.groups.map((g) => (
           <li key={g.key} data-time-group={g.key}>
-            <button type="button" className="grid min-h-9 w-full grid-cols-[minmax(0,8rem)_1fr] items-center gap-3 rounded-control px-1.5 text-left hover:bg-hover"
+            <button type="button" className="grid min-h-9 w-full grid-cols-[minmax(0,8rem)_1fr] items-center gap-3 rounded-control px-1.5 text-start hover:bg-hover"
               onClick={() => navigate({ view: 'stats' })}>
               <span className={`truncate text-body ${block.group_by === 'project' && g.key ? 'user-text' : ''}`}>{g.label}</span>
               <span className="flex min-w-0 items-center gap-2">
                 <span className="min-w-0 flex-1" aria-hidden="true">
                   <span className="block h-2.5 rounded-full bg-chart-base" style={{ width: `${g.minutes ? Math.max(3, (g.minutes / max) * 100) : 0}%` }} />
                 </span>
-                <span className="w-14 shrink-0 whitespace-nowrap text-right text-meta tabular-nums text-muted">{g.minutes ? formatMinutes(g.minutes) : '–'}</span>
+                <span className="w-14 shrink-0 whitespace-nowrap text-end text-meta tabular-nums text-muted">{g.minutes ? formatMinutes(g.minutes) : '–'}</span>
               </span>
             </button>
           </li>

@@ -65,7 +65,7 @@ export default function BoardBlock({ block }: { block: Extract<AssistantBlock, {
           )}
         {more > 0 && <p className="px-2 pt-1.5 text-meta text-muted">{t('{n, plural, one {# more task} other {# more tasks}}', { n: more })}</p>}
       </section>
-      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -ml-2 gap-1" onClick={() => navigate({ view: 'project', id: block.id })}>
+      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -ms-2 gap-1" onClick={() => navigate({ view: 'project', id: block.id })}>
         <Icon name="arrow-right" size="sm" />{t('Open project')}
       </button>
     </div>

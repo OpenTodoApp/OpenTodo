@@ -23,6 +23,8 @@ import { dayNote } from './dayNoteStore'
 const originalMedia = window.matchMedia
 
 beforeEach(async () => {
+  // These tests read the habit rows, which the screen shows below 640 px (habits-board D1).
+  window.matchMedia = ((media: string) => ({ matches: false, media, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => true })) as typeof window.matchMedia
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 10, 11, 12, 0)) // Wednesday 11 November 2026
   await db.delete()
@@ -153,6 +155,21 @@ describe('Note on a past day', () => {
 })
 
 describe('Check-ins on the habit\'s page', () => {
+  it('the pencil of a check-in shows by touch, and on hover or focus with a mouse (touch-open-and-controls)', async () => {
+    const run = await habit('Run', 'every day', '2026-10-01')
+    await setPastDay(run, '2026-10-24', 'done', Date.now(), '2026-11-11')
+    await setDayNote(occurrenceId(run, '2026-10-24'), '5k by the river')
+    const r = await render(<HabitPage id={run} />)
+    await waitFor(() => !!document.querySelector('[data-check-in-entry="2026-10-24"] button svg'), 'the check-in with its pencil')
+    const pencil = document.querySelector('[data-check-in-entry="2026-10-24"] button svg')!
+    expect(pencil.getAttribute('data-icon')).toBe('pencil')
+    // happy-dom applies no CSS, so the classes are what can be read here: hidden at rest,
+    // shown with a coarse pointer, and with a fine one on the entry's hover or focus.
+    const classes = (pencil.getAttribute('class') ?? '').split(/\s+/)
+    expect(classes).toEqual(expect.arrayContaining(['opacity-0', 'pointer-coarse:opacity-100', 'group-hover:opacity-100', 'group-focus-visible:opacity-100']))
+    await r.unmount()
+  })
+
   it('A month of runs: 12 notes in October, newest first, and 12 marked days in the grid', async () => {
     const run = await habit('Run', 'every day', '2026-10-01', { description: 'Training for the 10k in March' })
     const days = ['02', '04', '06', '08', '10', '12', '14', '16', '18', '20', '22', '24']

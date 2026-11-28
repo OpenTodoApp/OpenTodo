@@ -101,6 +101,20 @@ describe('CommentsView', () => {
     await v.unmount()
   })
 
+  // phone-control-facts: a tap on a reaction toggles it and opens no tooltip.
+  it('on touch, the More actions menu says who chose each reaction', async () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q === '(pointer: coarse)', media: q, addEventListener() {}, removeEventListener() {} }))
+    const reacted = [{ root: { ...comment('c1', 'ana', MON, 'Monday thread'), reactions: { ana: ['heart'], me: ['heart', 'check'] } } as Comment, replies: [] }]
+    const v = await render(<CommentsView {...props({ threads: reacted, onReact: vi.fn() })} />)
+    await click(v.container.querySelector<HTMLButtonElement>('[data-thread="c1"] [data-comment-actions] button[aria-haspopup]')!)
+    await flush()
+    const item = (n: string) => document.querySelector(`[data-react="${n}"]`)!
+    expect(item('heart').textContent).toBe('HeartAna, You')
+    expect(item('check').textContent).toBe('CheckYou')
+    expect(item('eyes').textContent).toBe('Eyes')
+    await v.unmount()
+  })
+
   it('actions sit on the header line and reserve no row of their own', async () => {
     vi.stubGlobal('matchMedia', (q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {} }))
     const v = await render(<CommentsView {...props()} />)

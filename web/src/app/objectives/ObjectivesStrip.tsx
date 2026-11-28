@@ -65,7 +65,7 @@ export function ObjectivesStripView({ groups, rows, wide, actions = objectiveAct
     <section aria-label={t('Objectives')} data-objectives-strip className="mb-3 rounded-card border border-default bg-surface px-2 py-2">
       <h2 className="m-0">
         <button type="button" aria-expanded={!collapsed} aria-controls={`${id}-body`} data-objectives-toggle
-          className="flex w-full min-w-0 items-center gap-2 rounded-control px-2 py-1 text-left text-body font-semibold text-strong hover:bg-sunken focus-visible:outline-2 focus-visible:outline-focus"
+          className="flex w-full min-w-0 items-center gap-2 rounded-control px-2 py-1 text-start text-body font-semibold text-strong hover:bg-sunken focus-visible:outline-2 focus-visible:outline-focus"
           onClick={() => onCollapsed(!collapsed)}>
           <Icon name={collapsed ? 'chevron-right' : 'chevron-down'} size="sm" />
           <span>{t('Objectives')}</span>

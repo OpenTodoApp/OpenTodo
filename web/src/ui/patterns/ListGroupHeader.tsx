@@ -8,12 +8,13 @@
 // column's sunken surface it stays a plain heading. No header is red: how late a task
 // is shows on its row. A coloured section's header is tinted with its hue (section-tint):
 // the bar's fill, or on a board a strip of the same fill, never its rows.
-import type { ReactNode } from 'react'
+import { createContext, use, type ReactNode } from 'react'
 import type { HueName } from '../tokens/palette'
 import { Icon } from '../Icon'
 import { CatalogueIcon } from '../CatalogueIcon'
 import { ReadAs } from '../Chips'
 import { t } from '../../lib/i18n'
+import { inlineKey } from '../../lib/direction'
 
 export interface ListGroupHeaderProps {
   title: ReactNode
@@ -56,7 +57,16 @@ export interface ListGroupHeaderProps {
 /** The label's classes (precision-rows D4): one style whether the view or the user named the group; `kind` stays a hook for tests and drop targets. */
 const GROUP_LABEL = 'min-w-0 truncate text-meta font-medium text-default'
 
-export function ListGroupHeader({ title, icon, count, countLabel, countTone = 'faint', kind = 'generated', collapsed, onToggle, actions, actionsAlwaysVisible = false, note, detail, level = 2, testId, className = '', bar = true, hue }: ListGroupHeaderProps) {
+/**
+ * Whether a list's group headers are filled bars where they do not say (OpenSpec change
+ * phone-lists, design D2): the phone list turns the fill off, so a group is a quiet name
+ * over its card of rows.
+ */
+export const GroupBarContext = createContext(true)
+
+export function ListGroupHeader({ title, icon, count, countLabel, countTone = 'faint', kind = 'generated', collapsed, onToggle, actions, actionsAlwaysVisible = false, note, detail, level = 2, testId, className = '', bar: ownBar, hue }: ListGroupHeaderProps) {
+  const filled = use(GroupBarContext)
+  const bar = ownBar ?? filled
   const H = level === 2 ? 'h2' : 'h3'
   const collapsible = onToggle !== undefined
   const text = (
@@ -72,11 +82,11 @@ export function ListGroupHeader({ title, icon, count, countLabel, countTone = 'f
       <H className="flex min-w-0 flex-1 items-center">
         {collapsible ? (
           // Named by its visible title and count (WCAG 2.5.3 Label in Name); aria-expanded says whether it is open.
-          <button type="button" className="flex min-w-0 items-center gap-1.5 rounded-control py-1 pr-1 text-left hover:text-strong"
+          <button type="button" className="flex min-w-0 items-center gap-1.5 rounded-control py-1 pe-1 text-start hover:text-strong"
             aria-expanded={!collapsed} onClick={onToggle} data-group-toggle
             // → opens a closed group and ← closes an open one, as on a tree (sidebar-brand-and-row-grid D8).
             onKeyDown={(e) => {
-              if ((e.key === 'ArrowRight' && collapsed) || (e.key === 'ArrowLeft' && !collapsed)) { e.preventDefault(); e.stopPropagation(); onToggle() }
+              if ((inlineKey(e) === 'ArrowRight' && collapsed) || (inlineKey(e) === 'ArrowLeft' && !collapsed)) { e.preventDefault(); e.stopPropagation(); onToggle() }
             }}>
             <Icon name="chevron-right" size="xs" className={`shrink-0 text-faint transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} />
             {text}

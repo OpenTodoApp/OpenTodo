@@ -41,6 +41,7 @@ final class AppModel: ObservableObject {
     func forgetServer() {
         webDataCleanup()
         Task { await Reminders.shared.clear() }
+        WidgetPublication.clearCompletions()
         WidgetPublication.publish("{\"updatedAt\":0,\"locked\":false,\"count\":0,\"overdue\":0,\"tasks\":[]}")
         ShareInbox.clear()
         BiometricKeyStore.forget()
@@ -59,6 +60,11 @@ final class AppModel: ObservableObject {
     /// `opentodo://today` from the icon's quick actions. Any app may open these, so the
     /// values are treated as data and never pasted into a path.
     func handle(url: URL) {
+        // ios-app-banner: Safari's banner on a task's page hands over that page's address.
+        if let id = Self.taskID(webLink: url, server: origin) {
+            show(task: id)
+            return
+        }
         guard url.scheme?.lowercased() == "opentodo" else { return }
         let id = url.lastPathComponent
         let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
@@ -82,6 +88,21 @@ final class AppModel: ObservableObject {
         default:
             break
         }
+    }
+
+    /// The task id of `<server>/task/<id>`, the address Safari's Smart App Banner hands over
+    /// (ios-app-banner D5): only on the configured server's scheme, host and port, never another
+    /// host's, and nil for any other address.
+    nonisolated static func taskID(webLink url: URL, server: URL?) -> String? {
+        guard let server, let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "http",
+              scheme == server.scheme?.lowercased(),
+              let host = url.host?.lowercased(), host == server.host?.lowercased(),
+              (url.port ?? (scheme == "https" ? 443 : 80)) == (server.port ?? (scheme == "https" ? 443 : 80))
+        else { return nil }
+        // The same paths as the server's and the worker's banner: no trailing slash, no "/" in the id.
+        let parts = url.pathComponents
+        guard !url.hasDirectoryPath, parts.count == 3, parts[1] == "task", !parts[2].isEmpty, !parts[2].contains("/") else { return nil }
+        return parts[2]
     }
 
     /// The quick actions on the app icon (`UIApplicationShortcutItems` in project.yml): Add task

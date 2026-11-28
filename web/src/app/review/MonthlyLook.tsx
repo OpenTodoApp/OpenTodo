@@ -77,7 +77,7 @@ export function MonthlyLook() {
                       <span className="text-meta text-muted">{a.children.length ? t('{n, plural, one {# project} other {# projects}}, {k} need attention', { n: a.children.length, k: a.attention.length }) : t('Area')}</span>
                     </div>
                     {a.attention.length > 0 && (
-                      <ul className="mt-1 flex flex-wrap gap-2 pl-5">
+                      <ul className="mt-1 flex flex-wrap gap-2 ps-5">
                         {a.attention.map((w) => (
                           <li key={w.project.id}>
                             <button type="button" className="inline-flex items-center gap-1.5 text-meta" onClick={() => navigate({ view: 'project', id: w.project.id })}>

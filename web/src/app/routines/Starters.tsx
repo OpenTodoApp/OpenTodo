@@ -29,6 +29,7 @@ import { useRoutineNames, valueNamer, type RoutineNames } from './data'
 import { ChoicePopover, type Choice } from './pickers'
 import { openStarterDraft } from './routineNav'
 import { sentenceText } from './StepCard'
+import { composing } from '../../lib/composeKey'
 
 const CATEGORY_ORDER: readonly TemplateCategory[] = ['personal', 'home', 'work', 'study', 'method']
 const CATEGORY = translatedMap<string>({ personal: msg('Personal'), home: msg('Home'), work: msg('Work'), study: msg('Study'), method: msg('Method') })
@@ -69,7 +70,7 @@ export function StarterList({ starters, autoFocus = false }: { starters: Starter
   return (
     <div className="space-y-3" data-starter-list>
       <Input ref={search} type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('Search starters…')} aria-label={t('Search starters')}
-        data-starter-search onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); cards(list.current)[0]?.focus() } }} />
+        data-starter-search onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'ArrowDown') { e.preventDefault(); cards(list.current)[0]?.focus() } }} />
       <p className="sr-only" aria-live="polite">{t('{n, plural, one {# starter} other {# starters}}', { n: found.length })}</p>
       <div ref={list} className="space-y-4" onKeyDown={onListKey}>
         {CATEGORY_ORDER.map((c) => {
@@ -82,7 +83,7 @@ export function StarterList({ starters, autoFocus = false }: { starters: Starter
                 {items.map((s) => (
                   <li key={s.slug}>
                     <button type="button" data-starter-card={s.slug} onClick={() => openStarter(s.slug)}
-                      className="flex w-full items-start gap-3 rounded-control px-2 py-2 text-left hover:bg-sunken focus-visible:bg-sunken dark:hover:bg-raised dark:focus-visible:bg-raised">
+                      className="flex w-full items-start gap-3 rounded-control px-2 py-2 text-start hover:bg-sunken focus-visible:bg-sunken dark:hover:bg-raised dark:focus-visible:bg-raised">
                       <span className="mt-0.5 text-muted" aria-hidden><Icon name={isIconName(s.icon) ? s.icon : 'zap'} size="md" /></span>
                       <span className="min-w-0">
                         <span className="block text-body font-medium text-strong">{pick(s.text.title, lang)}<span className="sr-only">: </span></span>
@@ -266,7 +267,7 @@ function StarterDetail({ starter: s, onBack }: { starter: Starter; onBack: () =>
         <section aria-labelledby="starter-steps" className="space-y-1">
           <h2 id="starter-steps" className="text-body font-semibold text-strong">{t('What it does')}</h2>
           <p className="text-body text-default" data-starter-when>{when.charAt(0).toLocaleUpperCase() + when.slice(1)}{cond ? ` · ${cond}` : ''}</p>
-          <ol className="ml-5 list-decimal space-y-1 text-body text-default"><StepLines steps={draft.steps} ctx={ctx} /></ol>
+          <ol className="ms-5 list-decimal space-y-1 text-body text-default"><StepLines steps={draft.steps} ctx={ctx} /></ol>
         </section>
         {needs.length > 0 && (
           <section aria-labelledby="starter-needs" className="space-y-1" data-starter-needs>

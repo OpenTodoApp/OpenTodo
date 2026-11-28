@@ -14,7 +14,7 @@ import { createView } from '../lib/views'
 import { applyOps, createProject, createTask, resetDeviceId } from '../lib/ops'
 import { setCurrentUserId } from '../lib/sharing'
 import type { Membership, Op, User } from '../lib/types'
-import { click, flush, key, render, spokenText, type, visibleText, waitFor } from '../ui/test-utils'
+import { click, flush, key, render, spokenText, type, visibleText, waitFor, minWidthPx } from '../ui/test-utils'
 import { setMethodMode } from '../lib/method/mode'
 import { REVIEW_DEFAULTS } from '../lib/ops'
 import { resetPanel } from './panel'
@@ -23,6 +23,7 @@ import { sidebarFind } from './signals'
 import { Shell } from './Shell'
 import { Sidebar } from './Sidebar'
 import { resetSidebarLayout, setSidebarWidth, sidebarLayout, toggleSidebarCollapsed } from './sidebarLayout'
+
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 
@@ -411,7 +412,7 @@ describe('children read as children (ux-feedback-2 D6)', () => {
     const r = await render(<aside data-sidebar><Sidebar route={{ view: 'inbox' }} user={user} /></aside>)
     await waitFor(() => !!r.container.querySelector(`[data-project-row="${q4}"]`))
     const rowOf = (id: string) => r.container.querySelector<HTMLElement>(`[data-project-row="${id}"]`)!
-    expect([work, client, q4, hiring, home].map((id) => rowOf(id).style.paddingLeft)).toEqual(['0rem', '1rem', '2rem', '1rem', '0rem'])
+    expect([work, client, q4, hiring, home].map((id) => rowOf(id).style.paddingInlineStart)).toEqual(['0rem', '1rem', '2rem', '1rem', '0rem'])
     expect([work, client, q4, hiring, home].map((id) => rowOf(id).querySelectorAll('[data-guide-line]').length)).toEqual([0, 1, 2, 1, 0])
     for (const line of r.container.querySelectorAll('[data-guide-line]')) expect(line.getAttribute('aria-hidden')).toBe('true')
     // Hiring ends Work's subtree: 6 px before Home; other rows are 2 px apart.
@@ -431,7 +432,7 @@ describe('children read as children (ux-feedback-2 D6)', () => {
     await waitFor(() => !!r.container.querySelector(`[data-project-row="${ids[4]}"]`))
     const deepest = r.container.querySelector<HTMLElement>(`[data-project-row="${ids[4]}"]`)!
     expect(deepest.querySelectorAll('[data-guide-line]').length).toBe(3)
-    expect(deepest.style.paddingLeft).toBe('3rem')
+    expect(deepest.style.paddingInlineStart).toBe('3rem')
     expect(r.container.querySelector(`[data-project-id="${ids[4]}"]`)!.getAttribute('title')).toBe('L0 › L1 › L2 › L3 › L4')
     await r.unmount()
   })
@@ -644,7 +645,8 @@ describe('find in the sidebar (sidebar-groups 3.2)', () => {
   it('g / opens the field from the shell, expanding the icon rail first', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
     const original = window.matchMedia
-    window.matchMedia = ((q: string) => ({ matches: /64rem/.test(q), media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false })) as typeof window.matchMedia
+    // A 1024 px window: the sidebar is a column that folds to the icon rail.
+    window.matchMedia = ((q: string) => ({ matches: q.includes('min-width') && minWidthPx(q) <= 1024, media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false })) as typeof window.matchMedia
     try {
       await createProject({ name: 'Home' })
       navigate({ view: 'inbox' })
@@ -680,8 +682,10 @@ describe('find in the drawer and the budget (sidebar-groups 3.4)', () => {
       await waitFor(() => document.querySelector('aside[data-sidebar]') !== null)
       const aside = () => document.querySelector('aside[data-sidebar]')!
       expect(aside().className).toContain('-translate-x-full')
-      // The phone bar's menu button opens the drawer (precision-phone D3).
-      await click(document.querySelector<HTMLElement>('[data-phone-bar] button[aria-label="Open menu"]')!)
+      // The phone header's menu button opens the drawer.
+      const menu = () => document.querySelector<HTMLElement>('[data-phone-header] button[aria-label="Open menu"]')
+      await waitFor(() => !!menu(), 'the header\'s menu button')
+      await click(menu()!)
       await waitFor(() => aside().className.includes('translate-x-0'))
       // The palette command (and `g /`) open the field inside the drawer.
       sidebarFind.request('open')
@@ -1226,3 +1230,4 @@ describe('the start guide entry (moments-and-onboarding 3.3)', () => {
     await r.unmount()
   })
 })
+

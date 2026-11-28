@@ -19,6 +19,7 @@ import { dropInView, reorderInView } from '../viewOrderActions'
 import { indentStep } from '../task-list/dropDepth'
 import { t } from '../../lib/i18n'
 import { projectGroupPlacement, type DragDepth } from '../task-list/projectGroupPlacement'
+import { inlineDelta } from '../../lib/direction'
 
 /** A row of the view: its key is `<group key>:<task id>` (a task may be in several groups). */
 export interface ViewRow {
@@ -91,7 +92,7 @@ export function useViewOrderDrag(host: OrderHost | null, rows: readonly ViewRow[
           if (groupOfKey(k) !== group) return show(null)
           return show({ key: k, zone: dropZone(y, r.top, r.height, false) })
         }
-        show(viewProjectDrop(pg, latest.current.rows, task, group, k, r, y, { start, dx: x - e.clientX, step }))
+        show(viewProjectDrop(pg, latest.current.rows, task, group, k, r, y, { start, dx: inlineDelta(x - e.clientX), step }))
       },
       onDrop: (target) => {
         const { rows: rs, opts: o } = latest.current

@@ -6,6 +6,8 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
 import { prepare, prepareQuery, matchPrepared } from '../../ui'
+import { applyCatalog, t } from '../../lib/i18n/catalog'
+import { labelOf, secondaryOf, type Entry } from './entries'
 import { createProject, createTask, resetDeviceId } from '../../lib/ops'
 import { recordPick } from '../../lib/pickRank'
 import type { Task, User } from '../../lib/types'
@@ -421,5 +423,20 @@ describe('Notes in search (notes-overview 4.7)', () => {
     expect(commands(base).find((c) => c.label === 'Go to Notes')?.shortcut).toBe('g e')
     await commands(base).find((c) => c.label === 'New note')!.run()
     expect(`${location.pathname}${location.search}`).toBe('/notes?new=1')
+  })
+})
+
+describe('palette matching in a right-to-left language (arabic-rtl D5)', () => {
+  it('matches "Open Plan" although Arabic isolates the value', () => {
+    applyCatalog('ar', 'ar', {})
+    try {
+      const e: Entry = { kind: 'command', key: 'k', label: t('{title}', { title: 'Open Plan' }), secondary: t('{p}', { p: 'Work' }), run: () => {} }
+      expect(e.label).toContain('\u2068')
+      expect(labelOf(e)).toBe('Open Plan')
+      expect(secondaryOf(e, false)).toBe('Work')
+      expect(matchPrepared(prepareQuery('Open Plan'), prepare(labelOf(e)), labelOf(e).length).tier).toBe(3)
+    } finally {
+      applyCatalog('en', 'en', {})
+    }
   })
 })

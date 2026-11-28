@@ -34,7 +34,7 @@ function EventDetails({ ev, sub, zone, onDone }: { ev: CalendarEvent; sub?: Cale
     <div className="space-y-1 text-body" data-event-details>
       <p className="font-medium text-strong">{ev.summary || t('Busy')}</p>
       <p className="flex items-center gap-1.5 text-meta text-muted"><Icon name="clock" size="xs" />{eventTimeText(ev, zone)}</p>
-      {ev.location && <p className="truncate pl-[18px] text-meta text-muted">{ev.location}</p>}
+      {ev.location && <p className="truncate ps-[18px] text-meta text-muted">{ev.location}</p>}
       {sub && (
         <p className="flex items-center gap-1.5 text-meta text-muted">
           <span className="h-2 w-2 shrink-0 rounded-full bg-hue-solid" data-hue={hueFor(sub.color)} aria-hidden />{sub.name}
@@ -79,7 +79,7 @@ export function EventChip({ ev, sub, zone }: { ev: CalendarEvent; sub?: Calendar
         {...details.trigger}
         data-event-chip={ev.id}
         aria-label={eventLabel(ev, sub, zone)}
-        className={`flex w-full min-w-0 items-center gap-1 px-1.5 py-0.5 text-left text-hint ${ev.free ? 'rounded-chip border border-dashed border-hue-solid text-hue' : 'ui-block ui-block--row ui-block--event'} focus-visible:outline-2 focus-visible:outline-focus`}
+        className={`flex w-full min-w-0 items-center gap-1 px-1.5 py-0.5 text-start text-hint ${ev.free ? 'rounded-chip border border-dashed border-hue-solid text-hue' : 'ui-block ui-block--row ui-block--event'} focus-visible:outline-2 focus-visible:outline-focus`}
       >
         {!ev.free && <span aria-hidden className="ui-block-dot" />}
         <span className="truncate">{ev.summary || t('Busy')}</span>
@@ -117,7 +117,7 @@ export function EventRow({ ev, start, end, sub, zone, variant = 'plan' }: { ev: 
         data-agenda-event={variant === 'agenda' ? ev.id : undefined}
         data-month-event={variant === 'cell' ? ev.id : undefined}
         onClick={(e) => { e.stopPropagation(); details.toggle() }}
-        className={`flex w-full min-w-0 items-center text-left ${ROW_CLASS[variant]} ${ev.free ? 'rounded-chip border border-dashed border-hue-solid text-hue' : 'ui-block ui-block--row ui-block--event'} focus-visible:outline-2 focus-visible:outline-focus`}
+        className={`flex w-full min-w-0 items-center text-start ${ROW_CLASS[variant]} ${ev.free ? 'rounded-chip border border-dashed border-hue-solid text-hue' : 'ui-block ui-block--row ui-block--event'} focus-visible:outline-2 focus-visible:outline-focus`}
       >
         {/* Named by its visible content (WCAG 2.5.3 Label in Name); the location and calendar are not shown, so they follow as hidden text. */}
         {!ev.free && <span aria-hidden className="ui-block-dot" />}

@@ -76,7 +76,7 @@ export default function TaskBlock({ block }: { block: Extract<AssistantBlock, { 
             </ol>
           </section>
         )}
-        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -ml-2 gap-1" onClick={() => openTaskPanel(task.id)}>
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -ms-2 gap-1" onClick={() => openTaskPanel(task.id)}>
           <Icon name="arrow-right" size="sm" />{t('Open task')}
         </button>
       </div>

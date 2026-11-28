@@ -9,6 +9,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         Reminders.shared.registerCategory()
         Notifications.shared.start()
         BackgroundRefresh.register()
+        // The Today widget's ticks wait for the app (ios-widget-complete D3). A scene-based
+        // app is told it became active through this notification, not this delegate.
+        _ = NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { WidgetCompletions.apply() }
+        }
         return true
     }
 

@@ -1,19 +1,25 @@
 // Quick add on a phone (OpenSpec change palette-quick-add, design D7;
 // natural-language-capture "Quick add tools on a phone"): under the line, one neutral
-// chip per understood attribute (× keeps its words as text) and a dashed placeholder
-// for the project and the label while the line sets none; then a tool row that starts
+// chip per understood attribute (× keeps its words as text), Today, Tomorrow and Next
+// week as dashed chips while the line has no date (phone-delight D6), and a dashed
+// placeholder for the project and the label while the line sets none; then a tool row that starts
 // a token at the end of the line, a Notes tool that opens the notes field
 // (quick-add-notes D2), and the send button. The buttons never take focus from the
 // fields, so the keyboard stays up.
+import { logicalToday, quickChoices } from '../../lib/dates'
 import { findLabel, type Chip, type LabelRef, type ProjectRef } from '../../lib/nlp'
 import type { Due } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { Icon } from '../../ui'
 import { chipText } from '../ParseChips'
+import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { ProjectMark } from '../ProjectMark'
 import { FIELD_ICON, fieldOf, type FieldKind, type QuickAddProject } from './fields'
 import { FIELD_NAME } from './FieldRows'
 import { LineDatePicker, type LineDate } from './LineDatePicker'
+
+// The dates a line without one offers in one tap (phone-delight D6), from the date picker's quick dates.
+const DATE_CHIPS = new Set(['today', 'tomorrow', 'next-week'])
 
 // The tools that start a token the line understands. A date has no token (dates are
 // words, "tomorrow"): its tool opens the date picker instead (phone-quickadd-date-picker).
@@ -46,14 +52,17 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
   const tools: FieldKind[] = energy ? [...TOOLS, 'energy'] : TOOLS
   const set = new Set(chips.map((c) => fieldOf(c.kind)))
   const placeholders = (['project', 'label'] as const).filter((k) => !set.has(k))
+  const { resolved } = useDateTimeFormat()
+  const dates = date && !set.has('when') ? quickChoices('due', logicalToday(), resolved).filter((c) => DATE_CHIPS.has(c.id)) : []
   return (
     <div data-quick-add-sheet-bar>
       {date?.open && <LineDatePicker id={date.id} due={date.due} onPick={date.pick} onKeyDown={date.escape} />}
-      <div className="flex gap-1.5 overflow-x-auto px-3 pb-3 pt-1 [scrollbar-width:none]" role="group" aria-label={t('Understood')} data-scroll-x>
+      {/* The chips wrap: a row that scrolls sideways fails reflow at 320 CSS px (WCAG 1.4.10, the accessibility gate's M18). */}
+      <div className="flex flex-wrap gap-1.5 px-3 pb-3 pt-1" role="group" aria-label={t('Understood')}>
         {chips.map((c) => {
           const project = c.kind === 'project' ? projects.find((p) => p.id === c.value) : undefined
           return (
-            <span key={c.key} data-sheet-chip={c.kind} className="inline-flex h-[1.875rem] shrink-0 items-center gap-1.5 rounded-full border border-default bg-raised pl-2.5 pr-1 text-body text-strong">
+            <span key={c.key} data-sheet-chip={c.kind} className="inline-flex h-[1.875rem] shrink-0 items-center gap-1.5 rounded-full border border-default bg-raised ps-2.5 pe-1 text-body text-strong">
               {project?.color
                 ? <ProjectMark project={{ color: project.color, icon: project.icon }} size="xs" />
                 : <Icon name={FIELD_ICON[fieldOf(c.kind)]} size={14} className="text-muted" />}
@@ -66,6 +75,13 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
             </span>
           )
         })}
+        {/* A date in one tap: the same as the When tool's quick dates, so hidden from assistive technology like the placeholders. */}
+        {dates.map((c) => (
+          <button key={c.id} type="button" data-sheet-date={c.id} onMouseDown={keepFocus} onClick={() => date?.pick({ date: c.date as string })} aria-hidden="true" tabIndex={-1}
+            className="inline-flex h-[1.875rem] shrink-0 items-center gap-1.5 rounded-full border border-dashed border-input px-2.5 text-body text-faint">
+            <Icon name={FIELD_ICON.when} size={14} />{c.label}
+          </button>
+        ))}
         {/* A tap target for the same action as the toolbar's Project and Label below, so hidden from
             assistive technology and the tab order: a screen reader met each name twice. */}
         {placeholders.map((k) => (
@@ -75,7 +91,8 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
           </button>
         ))}
       </div>
-      <div className="flex items-center gap-1 border-t border-default px-2.5 py-2" role="toolbar" aria-label={t('Add details')}>
+      {/* Wraps at 320 CSS px, where seven tools and the send button are wider than the sheet (WCAG 1.4.10). */}
+      <div className="flex flex-wrap items-center gap-1 border-t border-default px-2.5 py-2" role="toolbar" aria-label={t('Add details')}>
         {date && (
           <button type="button" data-sheet-tool="when" onMouseDown={keepFocus} onClick={date.toggle} aria-label={FIELD_NAME.when} aria-expanded={date.open} aria-controls={date.id}
             className={`inline-flex h-[2.375rem] w-[2.375rem] items-center justify-center rounded-control hover:bg-hover hover:text-default ${date.open ? 'bg-selected text-default' : 'text-muted'}`}>
@@ -94,9 +111,8 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
             <Icon name="text-quote" size={18} />
           </button>
         )}
-        <span className="flex-1" />
         <button type="submit" onMouseDown={keepFocus} disabled={!canSend} aria-label={t('Add task')} data-sheet-send
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent text-on-accent disabled:opacity-40">
+          className="ms-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent text-on-accent disabled:opacity-40">
           <Icon name="arrow-up" size={18} />
         </button>
       </div>

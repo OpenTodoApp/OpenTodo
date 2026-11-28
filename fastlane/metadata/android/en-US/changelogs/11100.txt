@@ -1,0 +1,3 @@
+A new look: the tab bar floats with the add button beside it and lists scroll under it. Today opens with tiles for what is done, up next and late; Upcoming with the next seven days, a dot per task. Rounder cards, and a task's fields to add are tiles.
+Habits: a strip of your last seven days, a ring for every habit, Skip this day, a daily reminder, and a year heatmap.
+The "New phone screens" switch is gone: the phone screens are always on.

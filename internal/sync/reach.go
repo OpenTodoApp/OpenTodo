@@ -123,8 +123,14 @@ func workspaceOf(p *Partition, entity string, e Entity) string {
 		return p.Project(e.str("id"))
 	case "task":
 		return p.Task(e.str("id"))
-	case "section", "field":
+	case "section":
 		return p.Project(e.str("project_id"))
+	case "field":
+		// A workspace field (workspace-fields D1) has no project.
+		if pid := e.str("project_id"); pid != "" {
+			return p.Project(pid)
+		}
+		return p.Own(e.str("workspace_id"))
 	case "note", "rule":
 		if pid := e.str("project_id"); pid != "" {
 			return p.Project(pid)

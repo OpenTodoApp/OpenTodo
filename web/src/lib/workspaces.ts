@@ -12,6 +12,7 @@
 // The current workspace is device state in the `meta` table, never synced.
 import { db, getMeta, setMeta, tableOf } from './db'
 import type { Label, Project, Task, View, Workspace, WorkspaceEntry, WorkspaceGroup, WorkspaceMember } from './types'
+import { t } from './i18n'
 
 /** The meta key of this device's current workspace. */
 export const CURRENT_WORKSPACE_KEY = 'currentWorkspace'
@@ -301,3 +302,7 @@ export async function workspaceOfEntity(kind: PartitionedKind, id: string): Prom
   return ws
 }
 
+/** A workspace's name as shown: the default workspace's untouched name is translated. */
+export function workspaceLabel(name: string, isDefault: boolean): string {
+  return isDefault && name === 'Personal' ? t('Personal') : name
+}

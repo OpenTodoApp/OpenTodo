@@ -198,13 +198,16 @@
   "frequency": "daily",
   "core": true,
   "layoutCheck": null,
-  "layoutCheckReason": "the inline quick add is part of every list screen; the tour focuses it and types a phrase with chips",
+  "layoutCheckReason": "the inline quick add is part of every list screen; the tour focuses it and types a phrase with chips. On a phone screen (phone-lists) a list has no add line: the add button opens the same quick add as a sheet",
   "story": "Screens/Quick add",
   "on": "inbox",
   "open": {
    "steps": [
     {
-     "focus": "textarea[aria-label=\"Add a task\"]"
+     "clickIfVisible": ":root:has([data-phone-screen]) [data-add-button]"
+    },
+    {
+     "focus": "textarea[aria-label=\"Add a task\"], [data-overlay=\"sheet\"] textarea"
     },
     {
      "type": "Call mum tomorrow p1 @errand"
@@ -465,11 +468,8 @@
   "seed": "layout-check",
   "frequency": "weekly",
   "core": true,
-  "layoutCheck": null,
-  "layoutCheckReason": "a method view; added to the tour, not yet to the layout check",
-  "story": "Screens/Method views",
-  "path": "/next",
-  "ready": "main h1"
+  "layoutCheck": "next",
+  "story": "Screens/Method views"
  },
  {
   "id": "waiting",
@@ -478,11 +478,8 @@
   "seed": "layout-check",
   "frequency": "weekly",
   "core": true,
-  "layoutCheck": null,
-  "layoutCheckReason": "a method view; added to the tour, not yet to the layout check",
-  "story": "Screens/Method views",
-  "path": "/waiting",
-  "ready": "main h1"
+  "layoutCheck": "waiting",
+  "story": "Screens/Method views"
  },
  {
   "id": "loop",
@@ -491,11 +488,8 @@
   "seed": "layout-check",
   "frequency": "weekly",
   "core": true,
-  "layoutCheck": null,
-  "layoutCheckReason": "Open Loops home, shown only in that mode; added to the tour",
-  "story": "Screens/Loop home",
-  "path": "/loop",
-  "ready": "main"
+  "layoutCheck": "loop",
+  "story": "Screens/Loop home"
  },
  {
   "id": "focus",
@@ -504,11 +498,8 @@
   "seed": "layout-check",
   "frequency": "weekly",
   "core": true,
-  "layoutCheck": null,
-  "layoutCheckReason": "Open Loops focus, shown only in that mode; added to the tour",
-  "story": "Screens/Focus",
-  "path": "/focus",
-  "ready": "main"
+  "layoutCheck": "focus",
+  "story": "Screens/Focus"
  },
  {
   "id": "review",
@@ -517,11 +508,28 @@
   "seed": "layout-check",
   "frequency": "weekly",
   "core": true,
-  "layoutCheck": null,
-  "layoutCheckReason": "the weekly review walk; added to the tour, not yet to the layout check",
-  "story": "Screens/Review and statistics",
-  "path": "/review",
-  "ready": "main h1"
+  "layoutCheck": "review",
+  "story": "Screens/Review and statistics"
+ },
+ {
+  "id": "review-close",
+  "route": "review",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "review-close",
+  "story": "Screens/Review and statistics"
+ },
+ {
+  "id": "review-daily",
+  "route": "review",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "review-daily",
+  "story": "Screens/Review and statistics"
  },
  {
   "id": "stats",
@@ -540,11 +548,18 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
-  "layoutCheck": null,
-  "layoutCheckReason": "Shown only while Habits is on, and the layout seed has no habit; the screen's stories are in the visual baselines",
-  "story": "Screens/Habits",
-  "path": "/habits",
-  "ready": "main"
+  "layoutCheck": "habits",
+  "story": "Screens/Habits"
+ },
+ {
+  "id": "habit",
+  "route": "habits",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "habit",
+  "story": "Screens/Habits"
  },
  {
   "id": "completed",
@@ -564,6 +579,16 @@
   "frequency": "weekly",
   "core": true,
   "layoutCheck": "notes",
+  "story": "Screens/Notes"
+ },
+ {
+  "id": "note",
+  "route": "notes",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "weekly",
+  "core": true,
+  "layoutCheck": "note",
   "story": "Screens/Notes"
  },
  {

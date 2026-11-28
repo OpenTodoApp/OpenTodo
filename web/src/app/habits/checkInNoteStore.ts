@@ -29,3 +29,9 @@ export function usePendingNote(seriesId: string): PendingNote | null {
   const p = store.use()
   return p?.seriesId === seriesId ? p : null
 }
+
+/** The check-in waiting for a note when it belongs to `seriesId`, outside React. */
+export function pendingFor(seriesId: string): PendingNote | null {
+  const p = store.get()
+  return p?.seriesId === seriesId ? p : null
+}

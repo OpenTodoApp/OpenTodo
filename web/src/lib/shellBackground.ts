@@ -6,7 +6,7 @@
 import { db } from './db'
 import { resettable } from './moduleState'
 import { backgroundDone, has } from './shell'
-import { reminderActionsApplied, shellUrlAction } from './shellActions'
+import { notificationAddsSaved, reminderActionsApplied, shellUrlAction } from './shellActions'
 import { syncSnapshot } from './sync'
 
 /** The app gives up waiting after this long; the shell has its own, longer limit. */
@@ -54,8 +54,9 @@ export async function startBackgroundRun(opts: { now?: () => number; sleep?: (ms
   const now = opts.now ?? Date.now
   const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)))
   const started = now()
-  const kind = shellUrlAction(opts.search ?? location.search)?.kind
-  const wantsAction = kind === 'reminder' || kind === 'complete'
+  const action = shellUrlAction(opts.search ?? location.search)
+  // A quick-add notification's reply is saved in the run (android-quick-add-notification D4).
+  const wantsAction = action?.kind === 'reminder' || action?.kind === 'complete' || (action?.kind === 'add' && !!action.text.trim())
   const appliedAtStart = reminderActionsApplied()
   for (;;) {
     const snap = syncSnapshot()
@@ -72,5 +73,6 @@ export async function startBackgroundRun(opts: { now?: () => number; sleep?: (ms
   await sleep(BACKGROUND_SETTLE_MS)
   // A new endpoint from the UnifiedPush app is subscribed before the run ends (shell-push D6).
   if (has('push')) await Promise.race([import('./shellPush').then((m) => m.syncShellPush()).catch(() => undefined), sleep(BACKGROUND_PUSH_MS)])
-  backgroundDone()
+  // A reply that is not in `added` comes back as a notification (android-quick-add-notification D4).
+  backgroundDone({ added: [...notificationAddsSaved()] })
 }

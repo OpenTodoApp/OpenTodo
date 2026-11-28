@@ -27,7 +27,7 @@ export default function RefusedBanner({ refused, workerChanged = false }: { refu
             </>
           )}
         </p>
-        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -mr-1 px-1 py-1" aria-label={t('Dismiss')} onClick={dismiss}><Icon name="x" size="xs" /></button>
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -me-1 px-1 py-1" aria-label={t('Dismiss')} onClick={dismiss}><Icon name="x" size="xs" /></button>
       </div>
     </ToastRegion>
   )

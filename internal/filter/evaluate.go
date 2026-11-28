@@ -102,6 +102,19 @@ type Context struct {
 	// Me is the viewer. Members name the people `assigned:` can match.
 	Me      string
 	Members []Member
+	// FieldPlace says which workspace's fields apply to a project
+	// (workspace-fields D2; internal/sync FieldPlace is one); without it a
+	// workspace field applies nowhere.
+	FieldPlace FieldPlace
+}
+
+// FieldPlace is what a field term reads to apply workspace fields: the
+// workspace whose fields apply to a project ("" for none), the default
+// workspace and whether the viewer owns a workspace.
+type FieldPlace interface {
+	Project(id string) string
+	Default() string
+	Owns(workspaceID string) bool
 }
 
 // tracked is the map a tracked term reads.
@@ -534,9 +547,21 @@ func (k *compiler) datePred(n *Node) Pred {
 }
 
 // applies reports whether a field definition applies to the task's project:
-// its own project and the sub-projects (inherited-custom-fields).
+// its own project and the sub-projects (inherited-custom-fields), or, for a
+// workspace field, every project of the workspace (workspace-fields D2).
 func (k *compiler) applies(t Row, def Row) bool {
 	pid, want := str(t, "project_id"), str(def, "project_id")
+	if want == "" {
+		place := k.c.FieldPlace
+		if place == nil || pid == "" {
+			return false
+		}
+		ws := str(def, "workspace_id")
+		if ws == "" {
+			ws = place.Default()
+		}
+		return place.Owns(ws) && place.Project(pid) == ws
+	}
 	for i := 0; pid != "" && i < 64; i++ {
 		if pid == want {
 			return true

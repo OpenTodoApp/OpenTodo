@@ -3,8 +3,10 @@
 // 2.2): the Calendars menu holds the device switch and one row per enabled calendar; a
 // row hides its calendar in the current workspace only, through the synced user_prefs.
 import 'fake-indexeddb/auto'
+import { useSyncExternalStore } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, setMeta } from '../lib/db'
+import { useCalendarEvents } from '../lib/liveData'
 import { applyOps, resetDeviceId } from '../lib/ops'
 import { USER_PREFS_ID } from '../lib/userPrefs'
 import { switchTo } from '../lib/workspaces'
@@ -13,6 +15,35 @@ import { click, render, waitFor } from '../ui/test-utils'
 import { CalendarView } from './CalendarView'
 import { useTodayCalendar } from './calendar/TodayAgenda'
 import { resetPanel } from './panel'
+
+// The prefs row and the workspace state can each be held back as still loading, to order them after the events.
+const gate = vi.hoisted(() => ({ prefs: false, workspace: false, listeners: new Set<() => void>() }))
+vi.mock('../lib/localData', async (orig) => {
+  const actual = await orig<typeof import('../lib/localData')>()
+  const subscribe = (fn: () => void) => { gate.listeners.add(fn); return () => gate.listeners.delete(fn) }
+  const useHeld = (what: 'prefs' | 'workspace') => useSyncExternalStore(subscribe, () => gate[what])
+  return {
+    ...actual,
+    useUserPrefsRow: () => {
+      const row = actual.useUserPrefsRow()
+      return useHeld('prefs') ? undefined : row
+    },
+    useWorkspaceStateLoaded: () => {
+      const state = actual.useWorkspaceStateLoaded()
+      return useHeld('workspace') ? undefined : state
+    },
+    // What screens read before the state arrives.
+    useWorkspaceState: () => {
+      const state = actual.useWorkspaceState()
+      return useHeld('workspace') ? { current: '', defaultId: '', list: [] } : state
+    },
+  }
+})
+function release() {
+  gate.prefs = false
+  gate.workspace = false
+  for (const fn of gate.listeners) fn()
+}
 
 const DAY = '2026-10-14'
 const sub = (id: string, name: string, enabled = true) => ({ id, name, color: '#2563eb', enabled, lastSuccessAt: Date.now() })
@@ -37,6 +68,8 @@ beforeEach(async () => {
   await setMeta('calendar.events.window', { from: '2026-09-01', to: '2026-11-30', fetchedAt: Date.now() })
 })
 afterEach(() => {
+  gate.prefs = false
+  gate.workspace = false
   window.matchMedia = original
   vi.useRealTimers()
   vi.unstubAllGlobals()
@@ -155,6 +188,25 @@ describe("Today's agenda", () => {
     expect(r.container.querySelector('[data-agenda="standup"]')).toBeNull()
     await switchTo('work')
     await waitFor(() => r.container.querySelector('[data-agenda="standup"]') !== null, 'Work in the Work workspace')
+    await r.unmount()
+  })
+
+  it.each([['the prefs row', 'prefs'], ['the workspace', 'workspace']] as const)('never shows a hidden calendar while %s is still loading', async (what, held) => {
+    await applyOps([{ id: 'o4', entity: 'user_prefs', entityId: USER_PREFS_ID, field: 'calendars_hidden', value: JSON.stringify({ personal: ['cal-work'] }), ts: Date.now(), device: 'laptop' }] as never)
+    gate[held] = true
+    const seen = new Set<string>()
+    function Watched() {
+      const cached = useCalendarEvents()
+      const cal = useTodayCalendar(false, true, DAY)
+      for (const b of cal.timed) seen.add(b.event.id)
+      return <><span data-cached={cached.length} /><Agenda /></>
+    }
+    const r = await render(<Watched />)
+    await waitFor(() => r.container.querySelector('[data-cached="2"]') !== null, `the events read before ${what}`)
+    expect(seen.size).toBe(0)
+    release()
+    await waitFor(() => r.container.querySelector('[data-agenda="dinner"]') !== null, 'Family')
+    expect(seen.has('standup')).toBe(false)
     await r.unmount()
   })
 })

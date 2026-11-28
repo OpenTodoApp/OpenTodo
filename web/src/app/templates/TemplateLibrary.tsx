@@ -14,6 +14,7 @@ import { Button, Icon, IconButton, Input, isIconName } from '../../ui'
 import { DateField } from '../datetime/DateField'
 import { Markdown } from '../Markdown'
 import { ProjectPickerField } from '../ProjectPickerField'
+import { composing } from '../../lib/composeKey'
 
 const cards = (root: HTMLElement | null) => [...(root?.querySelectorAll<HTMLButtonElement>('[data-template-card]') ?? [])]
 
@@ -52,7 +53,7 @@ export function LibraryList({ templates, query, onQuery, onOpen, onUpload }: {
       <div className="flex flex-wrap items-center gap-2">
         <Input ref={search} type="search" value={query} onChange={(e) => onQuery(e.target.value)} placeholder={t('Search templates…')} aria-label={t('Search templates')}
           className="min-w-0 flex-1" data-template-search
-          onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); cards(list.current)[0]?.focus() } }} />
+          onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'ArrowDown') { e.preventDefault(); cards(list.current)[0]?.focus() } }} />
         <Button variant="secondary" size="sm" icon="upload" onClick={onUpload} data-template-upload>{t('Upload a file…')}</Button>
       </div>
       <p className="sr-only" aria-live="polite" data-template-count>{t('{n, plural, one {# template} other {# templates}}', { n: found.length })}</p>
@@ -67,7 +68,7 @@ export function LibraryList({ templates, query, onQuery, onOpen, onUpload }: {
                 return (
                   <li key={tpl.slug}>
                     <button type="button" data-template-card={tpl.slug} onClick={() => onOpen(tpl)}
-                      className="flex w-full items-start gap-3 rounded-control px-2 py-2 text-left hover:bg-sunken focus-visible:bg-sunken dark:hover:bg-raised dark:focus-visible:bg-raised">
+                      className="flex w-full items-start gap-3 rounded-control px-2 py-2 text-start hover:bg-sunken focus-visible:bg-sunken dark:hover:bg-raised dark:focus-visible:bg-raised">
                       <span className="mt-0.5 text-muted" aria-hidden><TemplateIcon name={tpl.icon} size="md" /></span>
                       <span className="min-w-0">
                         <span className="block text-body font-medium text-strong">{title}<span className="sr-only">: </span></span>
@@ -114,11 +115,11 @@ function Preview({ tpl, lang }: { tpl: LibraryTemplate; lang: string }) {
       {tpl.projects.map((p, i) => (
         <div key={i} className="rounded-control border border-default p-2 text-meta">
           <p className="font-medium text-strong">{pick(p.name, lang)}</p>
-          {p.tasks?.length ? <ul className="ml-4 list-disc">{p.tasks.map((tk, j) => <TaskLine key={j} task={tk} lang={lang} />)}</ul> : null}
+          {p.tasks?.length ? <ul className="ms-4 list-disc">{p.tasks.map((tk, j) => <TaskLine key={j} task={tk} lang={lang} />)}</ul> : null}
           {(p.sections ?? []).map((s, j) => (
             <div key={j} className="mt-1">
               <p className="text-muted">{pick(s.name, lang)}</p>
-              <ul className="ml-4 list-disc">{(s.tasks ?? []).map((tk, k) => <TaskLine key={k} task={tk} lang={lang} />)}</ul>
+              <ul className="ms-4 list-disc">{(s.tasks ?? []).map((tk, k) => <TaskLine key={k} task={tk} lang={lang} />)}</ul>
             </div>
           ))}
         </div>
@@ -149,7 +150,7 @@ export function LibraryDetail({ tpl, projects, startDay, onStartDay, parentId, o
   const steps = (title: string, list: LibraryTemplate['text']['howToUse']) => (
     <div>
       <h4 className="text-body font-semibold">{title}</h4>
-      <ol className="ml-5 list-decimal text-body">{list.map((s, i) => <li key={i}>{pick(s, lang)}</li>)}</ol>
+      <ol className="ms-5 list-decimal text-body">{list.map((s, i) => <li key={i}>{pick(s, lang)}</li>)}</ol>
     </div>
   )
   return (

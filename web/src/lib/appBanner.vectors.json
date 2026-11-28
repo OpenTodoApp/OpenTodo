@@ -1,0 +1,20 @@
+{
+  "comment": "ios-app-banner: the Smart App Banner tag a task's page carries on origin, the same from the server (internal/web/appbanner.go, with the base URL's origin) and the service worker (appBanner.ts, with its own origin). tag null: no banner.",
+  "origin": "https://todo.example.com",
+  "pages": [
+    { "path": "/task/abc", "tag": "<meta name=\"apple-itunes-app\" content=\"app-id=6832200428, app-argument=https://todo.example.com/task/abc\">" },
+    { "path": "/task/t-1.x_y~z", "tag": "<meta name=\"apple-itunes-app\" content=\"app-id=6832200428, app-argument=https://todo.example.com/task/t-1.x_y~z\">" },
+    { "path": "/task/a%20b%3Fc%2Cd", "tag": "<meta name=\"apple-itunes-app\" content=\"app-id=6832200428, app-argument=https://todo.example.com/task/a%20b%3Fc%2Cd\">" },
+    { "path": "/task/x%22%3E%3Cscript%3E%26%3D%2B%24%3A%40!'()*", "tag": "<meta name=\"apple-itunes-app\" content=\"app-id=6832200428, app-argument=https://todo.example.com/task/x%22%3E%3Cscript%3E%26%3D%2B%24%3A%40%21%27%28%29%2A\">" },
+    { "path": "/task/%C3%A4", "tag": "<meta name=\"apple-itunes-app\" content=\"app-id=6832200428, app-argument=https://todo.example.com/task/%C3%A4\">" },
+    { "path": "/task/a%2Fb", "tag": null },
+    { "path": "/task/abc/", "tag": null },
+    { "path": "/task/a/b", "tag": null },
+    { "path": "/task/", "tag": null },
+    { "path": "/task", "tag": null },
+    { "path": "/tasks/abc", "tag": null },
+    { "path": "/t/abc", "tag": null },
+    { "path": "/today", "tag": null },
+    { "path": "/", "tag": null }
+  ]
+}

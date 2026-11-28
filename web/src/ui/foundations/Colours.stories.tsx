@@ -50,7 +50,7 @@ function Colours() {
         <p className="text-meta text-muted">Dims the page behind dialogs, sheets and the phone sidebar (bg-scrim).</p>
         <div className="relative h-20 overflow-hidden rounded-card border border-default bg-surface">
           <div className="p-3 text-body">Page content</div>
-          <div className="absolute inset-y-0 right-0 w-1/2 bg-scrim" aria-hidden="true" />
+          <div className="absolute inset-y-0 inset-e-0 w-1/2 bg-scrim" aria-hidden="true" />
         </div>
       </Section>
       <Section title="Foreground tokens and their contrast">

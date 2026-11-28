@@ -4,7 +4,7 @@ summary: "The OpenTodo app for Android: connect it to your server, reminders wit
 audience: user
 section: Reference
 specs: []
-screens: []
+screens: [android-app]
 order: 22
 ---
 # The Android app
@@ -112,6 +112,12 @@ On Android 14 and later a new app may not set exact alarms. The app then says on
 
 A reminder's notification offers **Done**, **Snooze 10 min** and **Dismiss**. **Done** completes the task without opening the app, the same as ticking it off (a repeating task moves to its next date), and works offline: the change goes out with the next sync.
 
+### Urgent reminders
+
+A reminder marked **Urgent** (in its menu in the task panel, on any device) rings as an alarm: at its time the screen turns on over the lock screen with the task's name (or **Reminder** for an encrypted account, with task names off, or on a lock screen set to hide sensitive content), and the phone's alarm sound plays at the alarm volume, also with the ringer silent, until you tap **Done**, **Snooze 10 min** or **Dismiss**. Swiping the notification away or opening the notifications only silences it. While you use the phone it rings as a notification at the top of the screen with the same buttons.
+
+When you turn **Urgent** on in the app the first time, Android's **Alarms & reminders** page opens if exact alarms are not allowed, and on Android 14 and later then its **Full-screen notifications** page, each only once. Without exact alarms the alarm can ring a few minutes late; without full-screen notifications it rings as a notification instead of filling the screen. Change either later in Android's settings for OpenTodo. Do Not Disturb treats it as an alarm: it rings when your Do Not Disturb settings let alarms through, as they do unless you turned that off, and stays silent under **Total silence**. The **Urgent reminders** category in Android's notification settings for OpenTodo turns them off or lets them override Do Not Disturb. Urgent alarms are set again after a restart once you unlock the phone, so one due before that first unlock does not ring; signing out removes the ones set for later, and **Change server** also silences one that is ringing.
+
 ### On time through UnifiedPush
 
 A reminder set on another device shortly before it is due can miss the hourly refresh. With a [UnifiedPush](https://unifiedpush.org) app such as ntfy on the phone, your server pushes each reminder to the app the moment it is due, the way it pushes to a browser, without Google services.
@@ -173,13 +179,32 @@ The app appears in Android's share menu for links, text, photos and files, also 
 
 ## Widgets
 
-Three home-screen widgets: **Today**, **Completed** and **Quick add**. Long-press the home screen, choose **Widgets** and drag one from OpenTodo; each can be resized.
+Five home-screen widgets: **Today**, **Upcoming**, **Calendar**, **Completed** and **Quick add**. Long-press the home screen, choose **Widgets** and drag one from OpenTodo; each can be resized.
 
 **Today** lists your tasks for [Today](today-and-upcoming.md) in a list that scrolls: overdue ones under **Earlier** with their date, the rest under **Today**, each with its time and project when it has them. Tap a task to open it, the circle beside it to complete it, and **+** to open quick add. A completed task leaves the widget at once; the app records the completion in the background, as if you had ticked it in the app (a repeating task moves to its next date), and syncs it when the phone is online. Without a connection the completion waits on the phone like any other change. If the completion could not be recorded (an older server, the app could not start in the background, or your session or a [login wall's](#behind-a-login-page-pangolin-authelia-and-others) session has expired), it is not applied and the task comes back after half an hour; open the app, sign in again if it asks, and tick it there. The header shows the number of tasks and when the list was last updated.
 
+**Upcoming** lists what comes after today, as [Upcoming](today-and-upcoming.md) does, under a heading for each day (**Tomorrow**, then the weekday and date), each task with its time and project. Tap a task to open it, the circle to complete it (as in Today: a repeating task shows again under its next date), **+** for quick add, and the header to open Upcoming.
+
+**Calendar** shows a month, starting on your first day of the week (**Settings → Language and region → Date and time**), with a dot under each day that has open tasks (a repeating task on its next date) and today ringed. Tap a day to open it in [Day](calendar-views.md), or the month's name to open Month; while the current workspace has [Calendar switched off](workspace-features.md), both open Upcoming instead. The arrows move to the next five months and back; each Calendar widget keeps its own month.
+
+The widgets list the tasks the app's own lists show: open subtasks you [kept](keep-open-subtasks.md) when completing their parent stay out, and so do tasks of archived or trashed projects. They cover every workspace of your account.
+
 **Completed** shows how many tasks you completed today and a bar for each of the last 7 days (counted as in [Statistics](statistics.md), which a tap opens), and **Quick add** opens the app's quick add.
 
-The widgets follow the phone's light or dark mode, and show what the app last saw: it refreshes them while it is open and about once an hour in the background. While an encrypted account is locked, the Today widget shows only counts, without circles, and the Completed widget only today's number.
+The widgets follow the phone's light or dark mode, and show what the app last saw: it refreshes them while it is open and about once an hour in the background. While an encrypted account is locked, the Today and Upcoming widgets show only counts, without circles, the Calendar widget shows the month without dots, and the Completed widget only today's number.
+
+## Quick add in the notifications
+
+To add tasks from any app, turn on **Settings → Capture → Quick add → Quick add notification → On this phone**. It is off until you turn it on, and it is set per phone. On Android 13 and later, the app asks to send notifications the first time; if you refuse, the switch stays off until you allow notifications for OpenTodo in Android's settings. If you turn off the **Quick add** channel there, the switch reads off too.
+
+A silent notification then stays in the notification shade, on its own **Quick add** channel:
+
+- **Add task** opens a field right in the notification. Type a task and send it, and you stay in the app you were in. The app saves the task in the background, reading it as [quick add](quick-add.md) does: dates and times, `#project`, priority and existing labels. It goes to the Inbox unless you type a project. Without a connection, the task waits on the phone and syncs later, like any other change. If the app could not save it (you are signed out, or the app could not start in the background), a notification says so; tap it to open quick add with your words typed in.
+- **A tap on the notification** opens the app's quick add with the keyboard up.
+
+With [end-to-end encryption](e2ee.md), **Add task** opens quick add instead: the app cannot save to an encrypted account in the background.
+
+The notification comes back after the phone restarts or the app updates. On Android 14 and later you can swipe it away; it returns the next time you open the app. It goes when you turn the switch off, sign out or change the server.
 
 ## Status and navigation bars
 

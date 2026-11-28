@@ -2,6 +2,8 @@
 // functions of stepData.ts, steps with a tool plan through tools.ts.
 import { nameId } from '../../ids'
 import { compile, membersFrom, parse as parseQuery, type FilterContext } from '../../filter'
+import { fieldPlace } from '../../fieldTree'
+import { Partition } from '../../workspaces'
 import type { Label, Project, Section, Task, FieldDef, RoutineStep } from '../../types'
 import { cutText, filterLines, inFindScope, joinLines, replaceText, sortLines, sortTasks, splitLines, take, valueLen } from '../stepData'
 import { dateLiteral, noteSource } from '../steps'
@@ -111,6 +113,13 @@ function findTasks(st: RunState, s: RoutineStep): ExecResult {
   return [tasksVal(out), status]
 }
 
+/** Which workspace's fields apply to a project, as the server's routine runs read it (workspace-fields D2). */
+function routineFieldPlace(st: RunState): FilterContext['fieldPlacement'] {
+  const workspaces = st.w.workspaces ?? []
+  const part = new Partition(workspaces.find((w) => w.default)?.id ?? '', workspaces.map((w) => w.id), [...st.projects.values()] as never[])
+  return fieldPlace(part, workspaces.filter((w) => w.role === 'owner').map((w) => w.id), [...st.w.memberships.values()].filter((m) => m.role !== 'owner').map((m) => m.projectId))
+}
+
 /** A filter query or a saved view's query, evaluated with the device's filter. */
 function queryMatcher(st: RunState, s: RoutineStep): (t: Row) => boolean {
   let q = st.litStr(s, 'query') ?? ''
@@ -126,6 +135,7 @@ function queryMatcher(st: RunState, s: RoutineStep): (t: Row) => boolean {
     projects: [...st.projects.values()] as unknown as Project[], labels: st.labels as unknown as Label[],
     sections: [...st.sections.values()] as unknown as Section[], fields: (st.w.fields ?? []).filter((f) => isNull(f.deleted_at)) as unknown as FieldDef[],
     tracked: st.tracked(), trackedOccurrence: st.trackedOccurrence(), me: st.w.userId, members: membersFrom(known),
+    fieldPlacement: routineFieldPlace(st),
   }
   let test: (t: Task) => boolean
   try {

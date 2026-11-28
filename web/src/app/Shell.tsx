@@ -1,17 +1,20 @@
 import { useFeatures } from '../lib/features'
+import { removeItem } from '../lib/deviceStorage'
 import { ROUTE_FEATURES } from './screens'
 import { useHabitsEnabled } from '../lib/habitPrefs'
 import { resettable } from '../lib/moduleState'
 import { useHabitForm } from './habits/habitFormStore'
 import { DESKTOP_HEADER_QUERY, IconButton, PageActions, PageBarTitle, Skeleton, TruncatedText, trapTab, useMediaQuery, useOverlay, pageBar, usePageBar, useOverlayDepth } from '../ui'
 import { useCommandBar } from './palette/useCommandBar'
-import { Suspense, useEffect, useRef, useState, type ComponentType, type RefObject } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState, type ComponentType, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { lazy, preloadable } from '../lib/lazy'
 import type { User } from '../lib/types'
 import { openStartView } from './startView'
 import { describeRejected } from '../lib/sharing'
 import { useSyncStatus } from '../lib/sync'
-import { canonicalPath, navigate, offersQuickAdd, type Route, useRoute } from './router'
+import { canonicalPath, navigate, offersQuickAdd, useRoute } from './router'
+import { useProjectViewMode } from '../lib/liveData'
+import type { ListRoute } from './task-list/useListModel'
 import { SIDEBAR_COLLAPSED_REM, SIDEBAR_DEFAULT_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth } from './sidebarLayout'
 import { LabelsView } from './LabelsView'
 import { ViewsView } from './ViewsView'
@@ -33,7 +36,6 @@ import { currentAddress, openTaskPage, settleTrail } from './taskTrail'
 import { AddButton, TAB_BAR_ROOM, TabBar } from './TabBar'
 import { PHONE_BAR_FRAME, PHONE_BAR_LINE, hasPhoneChrome } from './phoneFrame'
 import { usePhoneOwnBar } from '../phone/chrome'
-import { usePhoneUiEnabled } from '../phone/prefs'
 import { usePhoneChrome } from './useScrollDirection'
 import { onQuickAddSheetRequest, QuickAddSheet, requestQuickAddSheet } from './QuickAddSheet'
 import { PanelHost } from './PanelHost'
@@ -63,6 +65,7 @@ import { TrackingPill } from './TrackingIndicator'
 import { BreakReminder } from './focus/BreakReminder'
 import { SkipLink, usePageFocus } from './pageFocus'
 import { useDuplicateCollapse } from '../lib/duplicateCollapse'
+import { inlineDelta, inlineKey } from '../lib/direction'
 
 // A page of a feature the workspace has off (workspace-feature-switches D4), loaded when one is opened.
 const FeatureOff = lazy(() => import('./FeatureOff'))
@@ -70,18 +73,28 @@ const FeatureOff = lazy(() => import('./FeatureOff'))
 // per-device switch is on, so the default bundle carries just this boundary.
 const VimLayer = lazy(() => import('./vim/VimLayer'))
 const WorkspaceActivity = lazy(() => import('./WorkspaceActivity'))
-// The phone UI's screens (phone-ui-trial D2): their own chunks, fetched only while the per-device switch is on below 768 px.
-const PhoneToday = lazy(() => import('../phone/screens/PhoneToday').then((m) => ({ default: m.PhoneToday })))
+// The phone UI's screens (phone-ui-trial D2): their own chunks, fetched only below 768 px.
+const PhoneChrome = lazy(() => import('../phone/PhoneChrome').then((m) => ({ default: m.PhoneChrome })))
+const PhoneList = lazy(() => import('../phone/screens/PhoneList').then((m) => ({ default: m.PhoneList })))
 const PhoneTaskPage = lazy(() => import('../phone/screens/PhoneTaskPage').then((m) => ({ default: m.PhoneTaskPage })))
-/** The task page, drawn by the phone UI while it is on, and the phone UI's Today (phone-ui-trial D2). */
-function TaskOrPhone({ route, user, phoneUi, onMenu }: { route: Route; user: User; phoneUi: boolean; onMenu: () => void }) {
-  if (route.view === 'task') return <Suspense fallback={null}><TaskPage id={route.id} user={user} asTask={route.asTask} View={phoneUi ? PhoneTaskPage : undefined} /></Suspense>
-  return <Suspense fallback={null}><PhoneToday userId={user.id} onMenu={onMenu} /></Suspense>
+// The Habits screen drawn for the phone (habits-complete D1): its chunk loads only below 768 px.
+const PhoneHabits = lazy(() => import('../phone/screens/PhoneHabits').then((m) => ({ default: m.PhoneHabits })))
+/** A task list: the phone UI's list below 768 px (phone-lists D7); a project in another layout keeps the present screen. */
+function ListScreen({ route, user, phoneUi, onMenu }: { route: ListRoute; user: User; phoneUi: boolean; onMenu: () => void }) {
+  const layout = useProjectViewMode(phoneUi && route.view === 'project' ? route.id : null)
+  if (!phoneUi || layout !== 'list') return <TaskListView userId={user.id} userRole={user.role} route={route} />
+  return <Suspense fallback={null}><PhoneList route={route} userId={user.id} userRole={user.role} onMenu={onMenu} /></Suspense>
 }
-/** Whether the phone UI's screens are shown: the switch is on and the window is a phone's. */
+/** The phone UI around the screens below 768 px (phone-all-screens): every page's header is the phone's. */
+function PhoneOr({ on, onMenu, children }: { on: boolean; onMenu: () => void; children: ReactNode }) {
+  // Its chunk is fetched only below 768 px; the screens mount once it is here.
+  return on ? <Suspense fallback={null}><PhoneChrome onMenu={onMenu}>{children}</PhoneChrome></Suspense> : <>{children}</>
+}
+/** Whether the phone UI's screens are shown: the window is a phone's, narrower than 768 px (phone-ui-only). */
 function usePhoneUi(): boolean {
-  const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
-  return usePhoneUiEnabled() && !desktop
+  // What the "New phone screens" switch stored: the switch is gone and nothing reads it, so it leaves the device (phone-ui-only D2).
+  useEffect(() => removeItem('opentodo.phoneUi'), [])
+  return !useMediaQuery(DESKTOP_HEADER_QUERY)
 }
 // Pull to sync (pull-to-sync): the gesture and its mark load only on a touch device, where a pull is possible; a mouse
 // or a trackpad never loads them, and a chunk that is gone just leaves the gesture out.
@@ -220,6 +233,11 @@ function openAddressItem(): boolean {
   return false
 }
 
+/** Below 768 px the floating tab bar's room is the scroller's own padding, not the frame's, so the list runs on under the bar (phone-modern-look D1). */
+function scrollerRoom(phoneChrome: boolean, addRoom: boolean): CSSProperties | undefined {
+  return phoneChrome ? { paddingBottom: addRoom ? `calc(${TAB_BAR_ROOM} + var(--add-room))` : TAB_BAR_ROOM } : undefined
+}
+
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -344,7 +362,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const connections = useConnectionsRequest()
   // Page changes are announced (assistive-tech-semantics): the tab title names the
   // page and a navigation moves focus to its heading; the skip link jumps there too.
-  const content = useRef<HTMLDivElement>(null)
+  const content = useRef<HTMLDivElement>(null), openDrawer = useCallback(() => setSidebarOpen(true), [setSidebarOpen])
   usePageFocus(route, frame, content)
   // The phone's bottom chrome: the tab bar minimises while scrolling down, the toast sits above it (phone-v2 D5, D6).
   const minimised = usePhoneChrome(content, phoneChrome, sidebarOpen)
@@ -356,7 +374,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       {drawer.open && <DrawerOverlay panel={drawer.drawer} onClose={() => setSidebarOpen(false)} />}
       <aside {...drawer.aside} data-sidebar data-sidebar-width={sidebar.collapsed ? 'collapsed' : sidebar.width}
         style={{ '--sidebar-w': `${sidebar.collapsed ? SIDEBAR_COLLAPSED_REM : sidebar.width}rem` } as React.CSSProperties}
-        className={`fixed inset-y-0 left-0 z-[45] flex w-80 max-w-[85vw] max-md:[&_[data-sidebar-item]]:min-h-12 transform max-md:border-r max-md:border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)] md:[--sidebar-bg:var(--color-canvas)] md:pointer-fine:[--sidebar-bg:var(--color-sidebar)] max-md:pl-safe transition-transform md:static md:h-full md:min-h-0 md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 inset-s-0 z-[45] flex w-80 max-w-[85vw] max-md:[&_[data-sidebar-item]]:min-h-12 transform max-md:border-e max-md:border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)] md:[--sidebar-bg:var(--color-canvas)] md:pointer-fine:[--sidebar-bg:var(--color-sidebar)] max-md:ps-safe transition-transform md:static md:h-full md:min-h-0 md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full max-md:rtl:translate-x-full'}`}
       >
         <div className="min-w-0 flex-1">
           <Sidebar route={route} user={user} onSearch={openPalette} onAddTask={palette.quickAdd} onShortcuts={() => setShowHelp(true)} onFeedback={() => { setSidebarOpen(false); openFeedback() }} onSignOut={onLogout} onAssistant={showLauncher(assistant) ? openAssistant : undefined} collapsed={sidebar.collapsed} onToggleCollapse={toggleSidebar} />
@@ -364,8 +382,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         {!sidebar.collapsed && <SidebarResizer width={sidebar.width} />}
       </aside>
       {/* From 768 px the page is one inset content surface on the canvas: 8 px from the window, the surface radius, one hairline (precision-shell D1). */}
-      <main ref={frame} className="flex min-w-0 flex-1 flex-col md:!pb-0 md:mt-[max(0.5rem,var(--safe-top))] md:mb-2 md:mr-2 md:overflow-hidden md:rounded-surface md:border md:border-default md:bg-surface" data-app-frame data-phone-chrome={phoneChrome || undefined} inert={drawer.open || panelCoversPage || undefined}
-        style={phoneChrome ? { paddingBottom: TAB_BAR_ROOM } : undefined}>
+      <main ref={frame} className="flex min-w-0 flex-1 flex-col md:!pb-0 md:mt-[max(0.5rem,var(--safe-top))] md:mb-2 md:me-2 md:overflow-hidden md:rounded-surface md:border md:border-default md:bg-surface" data-app-frame data-phone-chrome={phoneChrome || undefined} inert={drawer.open || panelCoversPage || undefined}
+>
         {/* Below 768 px: the bar with the menu button, the page's title and its actions (app-shell "No desktop top bar"). */}
         <PhoneBar onMenu={() => setSidebarOpen(true)} /><PullHost scroller={content} />
         {/* relative: the containing block of absolutely positioned content (every
@@ -373,10 +391,10 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             document below the frame (issue #95). */}
         {/* Below 768 px the add button's footprint is reserved at the end of every page that shows it, so it never covers the last row
             (phone-v2 D2, phone-fab-scroll-room; a page with its own scroller: `.page-fill` in index.css); the room under the selection bar is in index.css (no-layout-jump). */}
-        <div ref={content} id="content" data-main-scroller data-add-room={addRoom || undefined}
-          className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${addRoom ? 'max-md:pb-(--add-room)' : ''} ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
+        <div ref={content} id="content" data-main-scroller data-add-room={addRoom || undefined} style={scrollerRoom(phoneChrome, addRoom)}
+          className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${addRoom && !phoneChrome ? 'max-md:pb-(--add-room)' : ''} ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
           {/* One screen failing (a render bug, a chunk gone after an upgrade) leaves the shell usable (client-sync-robustness). */}
-          <PanelBoundary resetKey={route}>
+          <PanelBoundary resetKey={route}><PhoneOr on={phoneUi} onMenu={openDrawer}>
           {!on(ROUTE_FEATURES[route.view]) ? <Suspense fallback={null}><FeatureOff id={ROUTE_FEATURES[route.view]!} /></Suspense> : route.view === 'help' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading help…')}</p>}><HelpView page={route.page} q={route.q} /></Suspense>
           ) : route.view === 'settings' ? (
@@ -399,8 +417,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <SavedViewRoute id={route.id} />
           ) : route.view === 'trash' ? (
             <Suspense fallback={SCREEN_LOADING}><TrashView /></Suspense>
-          ) : route.view === 'task' || (route.view === 'today' && phoneUi) ? (
-            <TaskOrPhone route={route} user={user} phoneUi={phoneUi} onMenu={() => setSidebarOpen(true)} />
+          ) : route.view === 'task' ? (
+            <Suspense fallback={null}><TaskPage id={route.id} user={user} asTask={route.asTask} View={phoneUi ? PhoneTaskPage : undefined} /></Suspense>
           ) : route.view === 'review' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading the review…')}</p>}>
               {route.step === 'daily' ? <DailyCheck /> : route.step === 'monthly' ? <MonthlyLook /> : route.step === 'close' ? <CloseDay /> : <ReviewView key={route.step ?? ''} userId={user.id} step={route.step} />}
@@ -412,7 +430,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'loop' ? (
             <Suspense fallback={null}><LoopHome move={route.move} /></Suspense>
           ) : route.view === 'habits' ? (
-            <Suspense fallback={null}><HabitsScreen id={route.id} /></Suspense>
+            <Suspense fallback={null}>{phoneUi ? <PhoneHabits id={route.id} /> : <HabitsScreen id={route.id} />}</Suspense>
           ) : route.view === 'stats' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading statistics…')}</p>}><StatsView /></Suspense>
           ) : route.view === 'focus' ? (
@@ -429,9 +447,9 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <Suspense fallback={null}>{route.view === 'month' ? <MonthView date={route.date} /> : route.view === 'quarter' ? <QuarterView date={route.date} /> : route.view === 'plan' ? <PlanView date={route.date} /> : <YearView date={route.date} />}</Suspense>
           ) : (
             // App renders the invite, reset, capture and display screens itself; a stray /invite, /reset, /share or /display route inside the shell falls back to the Inbox.
-            <TaskListView userId={user.id} userRole={user.role} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'workspace-invite' || route.view === 'reset' || route.view === 'confirm-email' || route.view === 'forgot' || route.view === 'verify' || route.view === 'public' || route.view === 'share' || route.view === 'display' ? { view: 'inbox' } : route} />
+            <ListScreen route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'workspace-invite' || route.view === 'reset' || route.view === 'confirm-email' || route.view === 'forgot' || route.view === 'verify' || route.view === 'public' || route.view === 'share' || route.view === 'display' ? { view: 'inbox' } : route} user={user} phoneUi={phoneUi} onMenu={openDrawer} />
           )}
-          </PanelBoundary>
+          </PhoneOr></PanelBoundary>
         </div>
         {vim && (
           <PanelBoundary>
@@ -442,7 +460,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         )}
       </main>
       <PanelBoundary><PanelHost user={user} /></PanelBoundary>
-      {phoneChrome && <TabBar route={route} onSearch={openPalette} minimised={minimised} />}
+      {phoneChrome && <TabBar route={route} onSearch={openPalette} minimised={minimised} withAdd={addRoom || addOpen} />}
       {(addRoom || addOpen) && <AddButton ref={addButton} open={addOpen} away={minimised && !addOpen} note={route.view === 'notes' && !addOpen}
         onClick={() => (route.view === 'notes' && !addOpen ? navigate({ view: 'notes', create: true }) : setAddOpen((v) => !v))} />}
       <QuickAddSheet open={addOpen} onClose={() => setAddOpen(false)} anchor={addButton} route={route} userId={user.id} />
@@ -497,7 +515,7 @@ function SidebarResizer({ width }: { width: number }) {
         const d = dragging.current
         if (!d || (!d.moved && Math.abs(e.clientX - d.startX) < 4)) return
         d.moved = true
-        setSidebarWidth(d.startWidth + (e.clientX - d.startX) / rem())
+        setSidebarWidth(d.startWidth + inlineDelta(e.clientX - d.startX) / rem())
       }}
       onPointerUp={() => {
         const d = dragging.current
@@ -505,7 +523,7 @@ function SidebarResizer({ width }: { width: number }) {
         if (d && !d.moved) setSidebarWidth(width >= SIDEBAR_MAX_REM ? SIDEBAR_DEFAULT_REM : SIDEBAR_MAX_REM)
       }}
       onKeyDown={(e) => {
-        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); setSidebarWidth(width + (e.key === 'ArrowRight' ? 0.5 : -0.5)) }
+        if (inlineKey(e) === 'ArrowLeft' || inlineKey(e) === 'ArrowRight') { e.preventDefault(); setSidebarWidth(width + (inlineKey(e) === 'ArrowRight' ? 0.5 : -0.5)) }
         if (e.key === 'Home') { e.preventDefault(); setSidebarWidth(SIDEBAR_MIN_REM) }
         if (e.key === 'End') { e.preventDefault(); setSidebarWidth(SIDEBAR_MAX_REM) }
       }} />

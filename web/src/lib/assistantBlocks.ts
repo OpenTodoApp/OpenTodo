@@ -4,7 +4,7 @@
 // block holds ids and parameters only; content always comes from the device's rows.
 import { db, type AssistantBlock, type AssistantMessage, type AssistantSource } from './db'
 import { formatDate } from './dates'
-import { t } from './i18n'
+import { stripIsolates, t } from './i18n'
 import { dropKept } from './subtasks'
 
 export type { AssistantBlock }
@@ -191,8 +191,12 @@ export async function blockText(b: AssistantBlock): Promise<string> {
   }
 }
 
-/** An answer as Markdown, each block written as plain text where it was (Copy, D8). */
+/**
+ * An answer as Markdown, each block written as plain text where it was (Copy, D8). It goes to
+ * the clipboard, so it carries none of the direction isolates a right-to-left language puts
+ * around values in labels (arabic-rtl D5).
+ */
 export async function answerMarkdown(m: Pick<AssistantMessage, 'text' | 'blocks'>): Promise<string> {
   const parts = await Promise.all(splitAnswer(m.text, m.blocks).map((p) => (p.kind === 'text' ? p.text.trim() : p.kind === 'block' ? blockText(p.block) : '')))
-  return parts.filter(Boolean).join('\n\n')
+  return stripIsolates(parts.filter(Boolean).join('\n\n'))
 }

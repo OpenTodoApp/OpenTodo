@@ -17,7 +17,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { CALENDAR_COMPLETED_META_KEY, GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from './calendar'
 import { db, getMeta, localEpoch, setMeta, type AttachmentBlob } from './db'
 import { rememberFieldNames } from './fieldNames'
-import { applicableFieldsLookup } from './fieldTree'
+import { applicableFieldsLookup, fieldPlace, type FieldPlacement } from './fieldTree'
 import { t } from './i18n'
 import { activeLabels } from './labels'
 import { lineageRows } from './lineageRows'
@@ -25,7 +25,7 @@ import { derived, liveSnapshot } from './liveSnapshot'
 import { compareByPosition } from './ordering'
 import { REVIEW_ID } from './review'
 import { USER_PREFS_ID } from './userPrefs'
-import { ownIn, projectsIn, readWorkspaceState, tasksIn, type WorkspaceState } from './workspaces'
+import { ownIn, Partition, projectsIn, readWorkspaceState, tasksIn, type WorkspaceState } from './workspaces'
 import { pinnedNoteIds } from './favourites'
 import { dropKept } from './subtasks'
 import type {
@@ -131,6 +131,11 @@ const NO_WORKSPACES: WorkspaceState = { current: '', defaultId: '', list: [] }
 /** The device's workspaces and the current one (OpenSpec change workspaces). */
 export function useWorkspaceState(): WorkspaceState {
   return workspaceState.use() ?? NO_WORKSPACES
+}
+
+/** Like useWorkspaceState, but undefined until the first read. */
+export function useWorkspaceStateLoaded(): WorkspaceState | undefined {
+  return workspaceState.use()
 }
 
 /** Live projects of every workspace, in position order (the palette and grouped pickers). */
@@ -269,20 +274,49 @@ export function useFieldDefs(): FieldDef[] {
 }
 
 type FieldLookup = (projectId: string | null | undefined) => FieldDef[]
-const fieldLookups = new WeakMap<Project[], WeakMap<FieldDef[], FieldLookup>>()
+const fieldLookups = new WeakMap<Project[], WeakMap<FieldDef[], WeakMap<FieldPlacement, FieldLookup>>>()
+const placements = new WeakMap<WorkspaceState, WeakMap<Project[], WeakMap<Membership[], FieldPlacement>>>()
 
 /**
- * The fields that apply to each project, inherited ones included (OpenSpec
- * inherited-custom-fields): one shared, memoizing lookup per snapshot of projects
- * and definitions, so every row of a list reuses the same chain walks.
+ * Which workspace's fields apply to each project (workspace-fields D2): the
+ * person's own projects in a workspace they own, one placement per snapshot of
+ * the workspaces, the projects and the memberships.
+ */
+export function useFieldPlacement(): FieldPlacement {
+  const state = useWorkspaceState()
+  const all = everyProjectRow.use() ?? NO_PROJECTS
+  const memberships = useMemberships()
+  let byProjects = placements.get(state)
+  if (!byProjects) placements.set(state, (byProjects = new WeakMap()))
+  let byMembers = byProjects.get(all)
+  if (!byMembers) byProjects.set(all, (byMembers = new WeakMap()))
+  let place = byMembers.get(memberships)
+  if (!place) byMembers.set(memberships, (place = placementOf(state, all, memberships)))
+  return place
+}
+
+/** The placement of the cached workspaces, projects and memberships. */
+export function placementOf(state: Pick<WorkspaceState, 'defaultId' | 'list'>, projects: readonly Project[], memberships: readonly Membership[]): FieldPlacement {
+  return fieldPlace(new Partition(state.defaultId, state.list.map((w) => w.id), projects),
+    state.list.filter((w) => w.role === 'owner').map((w) => w.id), memberships.filter((m) => m.role !== 'owner').map((m) => m.projectId))
+}
+
+/**
+ * The fields that apply to each project, workspace and inherited ones included
+ * (OpenSpec inherited-custom-fields, workspace-fields): one shared, memoizing
+ * lookup per snapshot of projects, definitions and workspaces, so every row of
+ * a list reuses the same chain walks.
  */
 export function useApplicableFields(): FieldLookup {
   const projects = useProjects()
   const defs = useFieldDefs()
+  const place = useFieldPlacement()
   let byDefs = fieldLookups.get(projects)
   if (!byDefs) fieldLookups.set(projects, (byDefs = new WeakMap()))
-  let lookup = byDefs.get(defs)
-  if (!lookup) byDefs.set(defs, (lookup = applicableFieldsLookup(projects, defs)))
+  let byPlace = byDefs.get(defs)
+  if (!byPlace) byDefs.set(defs, (byPlace = new WeakMap()))
+  let lookup = byPlace.get(place)
+  if (!lookup) byPlace.set(place, (lookup = applicableFieldsLookup(projects, defs, place)))
   return lookup
 }
 
@@ -428,6 +462,11 @@ const NO_REMINDERS: Reminder[] = []
 /** Every reminder row of a task, deleted ones too. */
 export function useReminderRows(taskId: string | null | undefined): Reminder[] {
   return useLiveQuery(() => (taskId ? db.reminders.where('task_id').equals(taskId).toArray() : NO_REMINDERS), [taskId], NO_REMINDERS)
+}
+
+/** A task's reminder rows once read (undefined before), for a form that starts from them (habits-complete D6). */
+export function useLoadedReminderRows(taskId: string | null): { taskId: string | null; rows: Reminder[] } | undefined {
+  return useLiveQuery(async () => ({ taskId, rows: taskId ? await db.reminders.where('task_id').equals(taskId).toArray() : NO_REMINDERS }), [taskId])
 }
 
 /** Re-puts reminder rows the service worker wrote straight into IndexedDB, so live queries notice them. */

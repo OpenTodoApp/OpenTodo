@@ -103,13 +103,13 @@ function ExportSteps({ app, loadSteps }: { app: SwitchApp; loadSteps: (app: Swit
             {shown ? t('Hide steps') : t('Show steps')}
           </button>
         )}
-        <a className="ml-auto text-body text-accent underline" href={`/help/${encodeURIComponent(`switch/${app.guide}`)}`}
+        <a className="ms-auto text-body text-accent underline" href={`/help/${encodeURIComponent(`switch/${app.guide}`)}`}
           onClick={(e) => { e.preventDefault(); guide() }}>{t('Full guide')}</a>
       </div>
       {visible && (html === null
         ? <p className="text-body text-faint">{t('Loading the steps…')}</p>
         // dangerouslySetInnerHTML: build-time guide HTML from docs/ (the docs build's allow-list), as in HelpContent.
-        : html && <div className="help-prose" onClick={onLink} dangerouslySetInnerHTML={{ __html: html }} />)}
+        : html && <div className="help-prose" lang="en" dir="ltr" onClick={onLink} dangerouslySetInnerHTML={{ __html: html }} />)}
     </div>
   )
 }

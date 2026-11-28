@@ -146,7 +146,7 @@ export function ViewsView() {
     const s = summaries.get(v.id)
     return (
       <li key={v.id} className="group flex items-center gap-2 rounded-control hover:bg-sunken dark:hover:bg-raised">
-        <button className="flex min-w-0 flex-1 items-center gap-2 px-2 py-2 text-left text-body" onClick={() => navigate({ view: 'view', id: v.id })}>
+        <button className="flex min-w-0 flex-1 items-center gap-2 px-2 py-2 text-start text-body" onClick={() => navigate({ view: 'view', id: v.id })}>
           <span className="flex w-5 justify-center text-faint"><ViewMark view={v} /></span>
           <span className="truncate font-medium">{v.name}</span>
           <code className="hidden truncate text-meta text-faint sm:inline">{isDashboard(v) ? t('{n, plural, one {# panel} other {# panels}}', { n: v.panels.length }) : v.query}</code>

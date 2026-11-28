@@ -9,7 +9,7 @@ import { db, getMeta } from './db'
 import { cachedWindow, showEvents, type EventsWindow } from './calendarFeeds'
 import { CALENDAR_COMPLETED_META_KEY, DEFAULT_GRID_PREFS, GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from './calendar'
 import { hiddenIn, readCalendarsHidden } from './calendarVisibility'
-import { useUserPrefsRow, useWorkspaceState } from './localData'
+import { useUserPrefsRow, useWorkspaceStateLoaded } from './localData'
 import { compareByPosition } from './ordering'
 import { loadCollapsedSections, loadListColumns, loadShowCompleted, loadViewMode, type ProjectViewMode } from './sections'
 import type { CalendarEvent, CalendarSubscription, ProjectPrefs, Section, Task } from './types'
@@ -90,18 +90,24 @@ export function useCalendarSubscriptions(): CalendarSubscription[] {
   return useLiveQuery(() => db.calendarSubscriptions.toArray(), [], NO_SUBSCRIPTIONS)
 }
 
-/** The calendars hidden in the current workspace (calendars-per-workspace D1). */
-export function useHiddenCalendars(): { workspace: string; hidden: ReadonlySet<string> } {
-  const stored = useUserPrefsRow()?.calendars_hidden
-  const workspace = useWorkspaceState().current
-  const hidden = useMemo(() => hiddenIn(readCalendarsHidden({ calendars_hidden: stored }), workspace), [stored, workspace])
-  return { workspace, hidden }
+/**
+ * The calendars hidden in the current workspace (calendars-per-workspace D1); `hidden` is
+ * undefined until both the prefs row and the workspace have been read, so nothing is
+ * shown or written on a guess.
+ */
+export function useHiddenCalendars(): { workspace: string; hidden: ReadonlySet<string> | undefined } {
+  const row = useUserPrefsRow()
+  const workspace = useWorkspaceStateLoaded()?.current
+  const loaded = row !== undefined && workspace !== undefined
+  const stored = row?.calendars_hidden
+  const hidden = useMemo(() => (loaded ? hiddenIn(readCalendarsHidden({ calendars_hidden: stored }), workspace) : undefined), [loaded, stored, workspace])
+  return { workspace: workspace ?? '', hidden }
 }
 
 export interface VisibleCalendarEvents {
   subs: CalendarSubscription[]
   subMap: Map<string, CalendarSubscription>
-  /** Cached events of enabled calendars not hidden in the current workspace. */
+  /** Cached events of enabled calendars not hidden in the current workspace; none until that is known. */
   events: CalendarEvent[]
 }
 
@@ -115,7 +121,7 @@ export function useVisibleCalendarEvents(): VisibleCalendarEvents {
   const { hidden } = useHiddenCalendars()
   return useMemo(() => {
     const subMap = new Map(subs.map((s) => [s.id, s]))
-    const events = all.filter((e) => subMap.get(e.subscriptionId)?.enabled !== false && !hidden.has(e.subscriptionId))
+    const events = hidden ? all.filter((e) => subMap.get(e.subscriptionId)?.enabled !== false && !hidden.has(e.subscriptionId)) : NO_EVENTS
     return { subs, subMap, events }
   }, [all, subs, hidden])
 }

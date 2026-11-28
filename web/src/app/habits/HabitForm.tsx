@@ -4,10 +4,12 @@
 // completion-relative rule is refused until a calendar rule is chosen; nothing is
 // written before. No other task field.
 import { useState, type FormEvent } from 'react'
-import { createHabit, habitRuleProblem, makeHabit, proposedRule, type HabitInput } from '../../lib/habitActions'
+import { createHabit, habitRuleProblem, makeHabit, proposedRule, remindTimeOf, type HabitInput } from '../../lib/habitActions'
 import { t } from '../../lib/i18n'
 import { useTask } from '../../lib/localData'
-import type { Task } from '../../lib/types'
+import type { Reminder, Task } from '../../lib/types'
+import { useLoadedReminderRows } from '../../lib/localData'
+import { TimeField } from '../datetime/TimeField'
 import { Button, Dialog, Field, HUES, hueFor, Input, SegmentedControl } from '../../ui'
 import { hueName } from '../../lib/colourNames'
 import { act } from '../actionError'
@@ -15,7 +17,7 @@ import { showUndoToast } from '../bulk/toastStore'
 import { closeHabitForm, useHabitForm, type HabitFormRequest } from './habitFormStore'
 import { DAY_LABEL, DAYS, oftenOf, partOf, type Often, type Part } from './habitRule'
 
-export function HabitFormDialog({ req, task }: { req: HabitFormRequest; task: Task | null }) {
+export function HabitFormDialog({ req, task, reminders = [] }: { req: HabitFormRequest; task: Task | null; reminders?: readonly Reminder[] }) {
   const start = proposedRule(task)
   const first = oftenOf(start)
   const [title, setTitle] = useState(task?.title ?? req.title ?? '')
@@ -31,6 +33,9 @@ export function HabitFormDialog({ req, task }: { req: HabitFormRequest; task: Ta
   const [goal, setGoal] = useState(task?.habit_amount ? String(task.habit_amount) : '')
   const [unit, setUnit] = useState(task?.habit_unit ?? '')
   const [step, setStep] = useState(String(task?.habit_step || 1))
+  // Remind me (habits-complete D6): the due time while the habit has a reminder at it.
+  const shownRemind = remindTimeOf(task, reminders.filter((r) => r.task_id === task?.id))
+  const [remind, setRemind] = useState<string | null>(shownRemind || null)
   // A completion-relative rule asks for a calendar one at once (D9).
   const [tried, setTried] = useState(habitRuleProblem(start) === 'after-completion')
   const periodic = often === 'week' || often === 'month'
@@ -52,6 +57,8 @@ export function HabitFormDialog({ req, task }: { req: HabitFormRequest; task: Ta
       title, rule, tiny, anchor, part: part === 'any' ? null : part, color,
       target: periodic ? { count, period: often } : null,
       amount: !periodic && amount > 0 ? { goal: amount, unit, step: Number(step) > 0 ? Number(step) : 1 } : null,
+      // Left out when nothing changed; null clears a shown reminder (D6).
+      ...(remind ? (remind !== shownRemind ? { remindAt: remind } : {}) : shownRemind ? { remindAt: null } : {}),
     }
     act((async () => {
       const r = making && task ? await makeHabit(task.id, input) : await createHabit(input)
@@ -97,6 +104,7 @@ export function HabitFormDialog({ req, task }: { req: HabitFormRequest; task: Ta
           <SegmentedControl label={t('Part of the day')} value={part} onChange={setPart} wrap data-habit-part
             options={[{ id: 'any', label: t('Any time') }, { id: 'morning', label: t('Morning') }, { id: 'afternoon', label: t('Afternoon') }, { id: 'evening', label: t('Evening') }]} />
         </Field>
+        <Field label={t('Remind me')}><div data-habit-remind><TimeField label={t('Remind me')} hideLabel value={remind} onChange={setRemind} /></div></Field>
         <HabitColours value={color} onPick={setColor} />
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" size="sm" onClick={closeHabitForm}>{t('Cancel')}</Button>
@@ -134,6 +142,9 @@ function HabitColours({ value, onPick }: { value: string; onPick: (hex: string) 
 export default function HabitFormHost() {
   const req = useHabitForm()
   const task = useTask(req?.taskId ?? null)
-  if (!req || (req.taskId && task === undefined)) return null
-  return <HabitFormDialog key={req.taskId ?? req.title ?? ''} req={req} task={task ?? null} />
+  // Read before the form mounts, so Remind me starts with the habit's time (habits-complete D6).
+  const taskId = req?.taskId ?? null
+  const reminders = useLoadedReminderRows(taskId)
+  if (!req || (req.taskId && (task === undefined || reminders?.taskId !== taskId))) return null
+  return <HabitFormDialog key={req.taskId ?? req.title ?? ''} req={req} task={task ?? null} reminders={reminders?.rows ?? []} />
 }

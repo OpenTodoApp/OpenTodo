@@ -103,7 +103,7 @@ export const VIEW_QUICK_ADD: Readonly<Record<Route['view'], boolean>> = {
   day: true, week: true, month: true, quarter: true, plan: true, year: true,
   completed: true, assigned: true, project: true, task: true, label: true, labels: true,
   places: true, place: true, projects: true, filter: true, views: true, view: true,
-  triage: true, review: true, next: true, waiting: true, loop: true, focus: false, notes: true,
+  triage: false, review: true, next: true, waiting: true, loop: true, focus: false, notes: true,
   rules: false, settings: false, 'theme-editor': false, import: false, help: false,
   invite: false, 'project-invite': false, 'workspace-invite': false, reset: false,
   'confirm-email': false, forgot: false, verify: false, public: false, share: false,

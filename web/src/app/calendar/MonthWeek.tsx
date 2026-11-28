@@ -73,7 +73,7 @@ export function MonthWeek({ week, own, c }: {
   return (
     <div role="row" className="relative grid grid-cols-7">
       {week.map((d) => {
-        if (!ownDay(d)) return <div key={d} role="gridcell" data-month-empty className="min-w-0 border-b border-l border-default first:border-l-0" />
+        if (!ownDay(d)) return <div key={d} role="gridcell" data-month-empty className="min-w-0 border-b border-s border-default first:border-s-0" />
         const list = c.cells.get(d) ?? []
         const dayProjected = c.projected.get(d) ?? NO_PROJECTIONS
         const entries = c.entries(d, dayProjected.filter((p) => !p.spanFirst))
@@ -93,7 +93,7 @@ export function MonthWeek({ week, own, c }: {
             // Adding with the pointer (calendar-clarity D2): double-click, right-click or a long press on an empty part.
             {...addHandlers(c.add, () => ({ date: d }))}
             onFocus={(e) => { if (e.target === e.currentTarget) c.focus(d) }}
-            className={`relative min-w-0 border-b border-l border-default p-1 outline-none first:border-l-0 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-focus data-[drop-active]:bg-accent-soft ${c.narrow ? 'min-h-14' : 'min-h-28'} ${c.outside(d) ? 'bg-sunken text-faint' : ''} ${isFocused ? 'bg-accent-soft/40' : 'pointer-fine:hover:bg-hover'}`}>
+            className={`relative min-w-0 border-b border-s border-default p-1 outline-none first:border-s-0 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-focus data-[drop-active]:bg-accent-soft ${c.narrow ? 'min-h-14' : 'min-h-28'} ${c.outside(d) ? 'bg-sunken text-faint' : ''} ${isFocused ? 'bg-accent-soft/40' : 'pointer-fine:hover:bg-hover'}`}>
             {/* Named by its content (WCAG 2.5.3 Label in Name): the date and counts first, then the tasks' own names. */}
             <span className="sr-only">{[d, n ? t('{n, plural, one {# task} other {# tasks}}', { n }) : '', eventCount ? t('{n, plural, one {# event} other {# events}}', { n: eventCount }) : '', capacityState(load)].filter(Boolean).join(', ')}</span>
             {/* The load wraps under the date when the cell is too narrow for both and is cut
@@ -116,13 +116,13 @@ export function MonthWeek({ week, own, c }: {
                 {hidden > 0 && (
                   <button type="button" tabIndex={-1} data-month-more={hidden} aria-expanded={false}
                     onClick={(e) => { e.stopPropagation(); c.expand(d) }}
-                    className="w-full rounded-chip px-1 text-left text-hint font-medium text-muted hover:bg-sunken dark:hover:bg-raised">
+                    className="w-full rounded-chip px-1 text-start text-hint font-medium text-muted hover:bg-sunken dark:hover:bg-raised">
                     {t('+{hidden} more', { hidden })}
                   </button>
                 )}
                 {open && entries.length > CELL_ROWS && (
                   <button type="button" tabIndex={-1} aria-expanded onClick={(e) => { e.stopPropagation(); c.expand(null) }}
-                    className="w-full rounded-chip px-1 text-left text-hint text-muted hover:bg-sunken dark:hover:bg-raised">{t('Show less')}</button>
+                    className="w-full rounded-chip px-1 text-start text-hint text-muted hover:bg-sunken dark:hover:bg-raised">{t('Show less')}</button>
                 )}
               </div>
             )}

@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- android-urgent-alarms D4: an urgent reminder's alarm over the lock screen. On Android 14+
+         from Google Play the user allows it (the Play declaration is in store/play-review.md). -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -103,6 +106,18 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- android-urgent-alarms D2: an urgent reminder's full-screen alarm, opened only by its own
+             notification. Shown over the lock screen; no Recents entry, no back stack. -->
+        <activity
+            android:name=".AlarmActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:showWhenLocked="true"
+            android:taskAffinity=""
+            android:turnScreenOn="true"
+            tools:targetApi="o_mr1" />
+
         <!-- native-shells "Quick actions on the app icon": the shortcuts' target, so the task the
              system clears for a static shortcut is this one's and a running app keeps its state. -->
         <activity
@@ -116,6 +131,7 @@
         <receiver android:name=".AlarmReceiver" android:exported="false" />
         <receiver android:name=".FocusEndReceiver" android:exported="false" />
         <receiver android:name=".NotificationActionReceiver" android:exported="false" />
+        <receiver android:name=".QuickAddReceiver" android:exported="false" />
         <receiver android:name=".GeofenceReceiver" android:exported="false" />
         <!-- shell-push D2: the distributor's answers and messages. Exported, as UnifiedPush needs
              (the distributor is another app, and there is no permission to ask of it): every
@@ -158,6 +174,24 @@
             android:noHistory="true"
             android:taskAffinity=""
             android:theme="@android:style/Theme.NoDisplay" />
+        <!-- android-upcoming-calendar-widgets D3, D4: Upcoming (a list like Today's, through the same
+             row-tap activity) and Calendar (a month grid; its arrows are broadcasts to its own receiver). -->
+        <receiver android:name=".UpcomingWidget" android:exported="false" android:label="@string/widget_upcoming">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_upcoming" />
+        </receiver>
+        <service
+            android:name=".UpcomingListService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+        <receiver android:name=".CalendarWidget" android:exported="false" android:label="@string/widget_calendar">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_calendar" />
+        </receiver>
         <receiver android:name=".QuickAddWidget" android:exported="false" android:label="@string/widget_quick_add">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

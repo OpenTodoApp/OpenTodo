@@ -26,7 +26,7 @@ export default function DeadlinesBlock({ block }: { block: Extract<AssistantBloc
           const date = formatDate(task.deadline!, 'long')
           return (
             <li key={task.id} data-deadline-task={task.id}>
-              <button type="button" className="flex min-h-10 w-full items-center gap-3 px-3 text-left hover:bg-hover" onClick={() => openTaskPanel(task.id)}>
+              <button type="button" className="flex min-h-10 w-full items-center gap-3 px-3 text-start hover:bg-hover" onClick={() => openTaskPanel(task.id)}>
                 <span className="min-w-0 flex-1 truncate text-body user-text">{task.title || t('Untitled')}</span>
                 <span className="shrink-0 text-meta tabular-nums text-muted">{formatDate(task.deadline!, 'compact')}</span>
                 {d && <ToneText tone={DEADLINE_TONE[d.tone]} icon="hourglass" className="shrink-0" data-deadline="" label={t('Deadline {date}, {label}', { date, label: d.label })}>{d.label}</ToneText>}

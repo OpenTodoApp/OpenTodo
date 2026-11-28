@@ -18,7 +18,17 @@ export const closes = (overlay) => overlay.waitFor({ state: 'hidden', timeout: 2
 export async function openScreen(p, url) {
   const doc = (u) => u.split('#')[0]
   if (url.includes('#') && doc(p.url()) === doc(url)) await p.goto('about:blank')
-  await p.goto(url)
+  // A navigation the page itself was still making (Back out of the phone task page, the
+  // app's own redirect) aborts this one: net::ERR_ABORTED, seen three times in one day on
+  // the capture after the task panel at 360 px. That is two navigations racing, not a
+  // screen that does not open, so the page is left to settle and the navigation made again.
+  for (let attempt = 0; ; attempt++) {
+    try { await p.goto(url); return } catch (err) {
+      if (attempt >= 2 || !/ERR_ABORTED|interrupted by another navigation/.test(String(err?.message))) throw err
+      await p.waitForLoadState('load').catch(() => {})
+      await p.waitForTimeout(500)
+    }
+  }
 }
 
 // `overlays` names openers from OVERLAYS below; each runs on the screen it is listed for.
@@ -42,7 +52,7 @@ export function screens(ids, base) {
     ...(ids.repeating ? [{ name: 'task-repeating', path: `/task/${ids.repeating}`, ready: (p) => p.locator('[data-scope-control]').waitFor() }] : []),
     // A subtask two parents deep in a long-named project: its path never paints over itself, and on a
     // phone shows only the nearest parent (GitHub issue 1050), so the screen waits for that crumb.
-    ...(ids.deep ? [{ name: 'task-deep-path', path: `/task/${ids.deep}`, ready: (p) => p.locator('[data-breadcrumb] [data-crumb="parent"]').first().waitFor() }] : []),
+    ...(ids.deep ? [{ name: 'task-deep-path', path: `/task/${ids.deep}`, ready: (p) => p.locator('[data-breadcrumb] [data-crumb="parent"], [data-phone-screen="task"] [data-part="parent"]').first().waitFor() }] : []),
     // Display mode (display-mode 3.4, 5.1): no shell, large type; high contrast and the largest size included.
     { name: 'display-today', path: '/display/today', ready: (p) => p.locator('[data-screen="display"] [data-display-row]').first().waitFor() },
     { name: 'display-today-high-xl', path: '/display/today?contrast=high&size=xl', ready: (p) => p.locator('[data-screen="display"] [data-display-row]').first().waitFor() },
@@ -72,6 +82,20 @@ export function screens(ids, base) {
     { name: 'ask', path: '/ask', ready: heading('Assistant') },
     // Notes (notes-overview 4.8): the search field and the filters row, behind one Filters button on a phone.
     { name: 'notes', path: '/notes', ready: heading('Notes') },
+    // A standalone note's page (phone-rest): a long title, a long address and a code block that scrolls inside itself.
+    ...(ids.note ? [{ name: 'note', path: `/notes/${ids.note}`, ready: (p) => p.locator('[data-note-page], [data-note-form]').first().waitFor() }] : []), // its own page on a phone, docked beside the list on a wide screen
+    // The method lists, the Loop home, the reviews, Habits and Focus (phone-rest): the screens the check did not open.
+    { name: 'next', path: '/next', ready: heading('Next') },
+    { name: 'waiting', path: '/waiting', ready: heading('Waiting') },
+    { name: 'loop', path: '/loop', ready: heading('Loop home') },
+    { name: 'review', path: '/review', ready: (p) => p.locator('[data-review-step]').waitFor() },
+    { name: 'review-close', path: '/review/close', ready: (p) => p.locator('[data-close-step]').waitFor() },
+    { name: 'review-daily', path: '/review/daily', ready: heading('Daily check') },
+    ...(ids.habit ? [
+      { name: 'habits', path: '/habits', ready: (p) => p.locator('[data-habit-row]').first().waitFor() },
+      { name: 'habit', path: `/habits/${ids.habit}`, ready: (p) => p.locator('[data-habit-page]').waitFor() },
+    ] : []),
+    { name: 'focus', path: '/focus', ready: (p) => p.locator('[data-focus]').first().waitFor() },
     { name: 'trash', path: '/trash', ready: (p) => p.getByText('Old shopping list').first().waitFor() },
     { name: 'updates', path: '/updates', ready: heading('Updates') },
     // The old address still opens Updates (ux-overhaul vocabulary).

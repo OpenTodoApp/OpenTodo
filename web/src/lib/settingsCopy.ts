@@ -312,13 +312,6 @@ export const SETTINGS_COPY = {
       countEvents: { label: msg('Count meetings in capacity'), description: msg('Busy calendar events add to each day in Day, Week and Month.') },
     },
   },
-  // The phone UI's switch (phone-ui-trial D3): kept on this device, shown below 768 px only.
-  'phone-ui': {
-    title: msg('Phone screens'),
-    icon: 'sparkles',
-    description: msg('A trial of screens made for a phone. This device only.'),
-    rows: { on: { label: msg('New phone screens'), description: msg('Today and the task page in the new design. Turn it off at any time.') } },
-  },
   keyboard: {
     title: msg('Keyboard'),
     icon: 'keyboard',
@@ -446,6 +439,15 @@ export const SETTINGS_COPY = {
     rows: {
       parse: { label: msg('Parse natural language'), description: msg('Dates and times, {project}, {label}, {p1}–{p4} and {estimate}; "quotes" keep text as is.') },
     },
+  },
+  // The Android app's quick-add notification (android-quick-add-notification D1): the shell's switch for this phone.
+  'quick-add-notification': {
+    title: msg('Quick add notification'),
+    icon: 'bell',
+    description: msg('Add a task from the notification shade, in any app.'),
+    learnMore: 'android-app',
+    rows: { phone: { label: msg('On this phone') } },
+    notices: { denied: msg('Android refused notifications for OpenTodo. Allow them in Android\'s settings.') },
   },
   // Default reminders (default-reminders D8): the synced user_prefs.reminder_default_*.
   'default-reminders': {

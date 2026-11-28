@@ -20,14 +20,14 @@ export interface FactModel {
 /** Hands the fact's control to what anchors a sheet to it. */
 export type FactAnchor = (id: string, el: HTMLButtonElement | null) => void
 
-const ROW = 'flex min-h-12 w-full min-w-0 items-center gap-3 px-4 text-left text-prose'
+const ROW = 'flex min-h-12 w-full min-w-0 items-center gap-3 px-4 text-start text-prose'
 
 export function FactRow({ fact, open = false, anchor, onOpen }: { fact: FactModel; open?: boolean; anchor?: FactAnchor; onOpen: (id: string) => void }) {
   const inner = (
     <>
       <Icon name={fact.icon} size="md" className="text-muted" />
       <span className="shrink-0 text-default">{fact.label}</span>
-      <span className={`ml-auto min-w-0 truncate text-right ${fact.tone ?? 'text-muted'}`}>{fact.value}</span>
+      <span className={`ms-auto min-w-0 truncate text-end ${fact.tone ?? 'text-muted'}`}>{fact.value}</span>
     </>
   )
   return (
@@ -36,7 +36,7 @@ export function FactRow({ fact, open = false, anchor, onOpen }: { fact: FactMode
         <button type="button" aria-haspopup="dialog" aria-expanded={open} ref={(el) => anchor?.(fact.id, el)} onClick={() => onOpen(fact.id)} data-part={fact.id}
           className={`${ROW} focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus`}>
           {inner}
-          <Icon name="chevron-right" size="sm" className="-mr-1 text-faint" />
+          <Icon name="chevron-right" size="sm" className="-me-1 text-faint" />
         </button>
       )}
     </li>
@@ -46,7 +46,7 @@ export function FactRow({ fact, open = false, anchor, onOpen }: { fact: FactMode
 /** The facts as one card, hairlines starting at the names. */
 export function FactCard({ label, children }: { label?: string; children: ReactNode }) {
   return (
-    <ul aria-label={label} className="overflow-hidden rounded-card bg-surface shadow-1 [&>li+li]:relative [&>li+li]:before:absolute [&>li+li]:before:left-12 [&>li+li]:before:right-0 [&>li+li]:before:top-0 [&>li+li]:before:border-t [&>li+li]:before:border-soft">
+    <ul aria-label={label} className="overflow-hidden rounded-phone-card bg-surface shadow-1 dark:bg-raised [&>li+li]:relative [&>li+li]:before:absolute [&>li+li]:before:inset-s-12 [&>li+li]:before:inset-e-0 [&>li+li]:before:top-0 [&>li+li]:before:border-t [&>li+li]:before:border-soft">
       {children}
     </ul>
   )
@@ -64,12 +64,13 @@ export function FactChips({ facts, label, open, anchor, onOpen }: {
 }) {
   if (!facts.length) return null
   return (
-    <ul aria-label={label} className="flex flex-wrap gap-2" data-fact-chips>
+    // A grid of tiles, three to a row (phone-modern-look D4): each a thumb-sized target with its icon over its name.
+    <ul aria-label={label} className="grid grid-cols-3 gap-2" data-fact-chips>
       {facts.map((f) => (
-        <li key={f.id}>
+        <li key={f.id} className="min-w-0">
           <button type="button" aria-haspopup="dialog" aria-expanded={open === f.id} ref={(el) => anchor?.(f.id, el)} onClick={() => onOpen(f.id)} data-fact-add={f.id} data-part={f.id}
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-default bg-surface px-3.5 text-body text-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus">
-            <Icon name={f.icon} size="sm" className="text-faint" />{f.label}
+            className="press-selected flex min-h-18 w-full flex-col items-center justify-center gap-1.5 rounded-phone-card bg-surface px-2 py-2.5 text-meta text-default shadow-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus dark:bg-raised">
+            <Icon name={f.icon} size="md" className="text-muted" /><span className="line-clamp-2 text-center leading-tight">{f.label}</span>
           </button>
         </li>
       ))}

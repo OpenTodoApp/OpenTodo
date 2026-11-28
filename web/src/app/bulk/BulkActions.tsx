@@ -26,6 +26,7 @@ import { Tooltip } from '../../ui'
 import { DateField } from '../datetime/DateField'
 import { ActionMenu, type ActionGroup, type ActionItem, type ConfirmSpec } from '../menus/ActionMenu'
 import { openRowSchedule } from '../task-list/RowSwipe'
+import { RowPreviewContext } from '../task-list/rowDraw'
 import { showBulkToast, showUndoToast } from './toastStore'
 import { navigate } from '../router'
 import { createStore } from '../../lib/store'
@@ -435,8 +436,12 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
     reorder,
     why,
   }, besideRow), [ids, data, besideRow, touch, n, reorder, why, editTitle, openDetails, showDetails, expandedId])
+  // One task on a phone: the sheet is named and headed by the task, not by "1 task" (phone-delight D4).
+  const preview = useContext(RowPreviewContext)
+  const only = preview && ids.length === 1 && data.tasks.length === 1 ? data.tasks[0] : null
   return (
-    <ActionMenu label={t('Actions for {tasks}', { tasks: tasksWord(n) })} title={tasksWord(n)} groups={groups} open={open} pending={!settled && !data.ready} onOpenChange={onOpenChange}
+    <ActionMenu label={only ? t('Actions for {tasks}', { tasks: only.title }) : t('Actions for {tasks}', { tasks: tasksWord(n) })} title={only ? only.title : tasksWord(n)}
+      header={only && preview ? preview(only) : undefined} groups={groups} open={open} pending={!settled && !data.ready} onOpenChange={onOpenChange}
       trigger={trigger} triggerClassName={triggerClassName} triggerProps={triggerProps} startPicker={startPicker} width="sm:w-72" anchor={anchor} />
   )
 }
@@ -505,13 +510,13 @@ export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPi
 }) {
   const shown = ids.length > 0 || !!onDone
   const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
-  // From 768 px a toast in the bottom corner rises above the bar (its lift is 0 there); on a
-  // phone its lift above the add button's place already clears the bar. The add button steps
-  // aside and the content keeps room under the bar by CSS (index.css).
+  // A toast rises above the bar: from 768 px from the bottom corner (its lift is 0 there), on a
+  // phone from above the floating tab bar, where the bar now stands too (phone-modern-look D1).
+  // The add button steps aside and the content keeps room under the bar by CSS (index.css).
   useEffect(() => {
-    if (!shown || !desktop) return
+    if (!shown) return
     const root = document.documentElement.style
-    root.setProperty('--selection-lift', '3.75rem')
+    root.setProperty('--selection-lift', desktop ? '3.75rem' : '3rem')
     return () => { root.removeProperty('--selection-lift') }
   }, [shown, desktop])
   // The room under the content and the add button stepping aside (index.css) read this mark on
@@ -525,14 +530,14 @@ export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPi
   const box = useFrameBox(shown)
   if (!shown) return null
   return (
-    <div data-selection-dock style={box ? { left: box.left, width: box.width } : undefined}
-      className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--toast-lift,4.25rem)-3.5rem+var(--safe-bottom))] z-30 flex justify-center px-4 md:bottom-[calc(1.25rem+var(--safe-bottom))] md:px-8">
+    <div data-selection-dock style={box ? { left: box.left, right: "auto", width: box.width } : undefined}
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--toast-lift,4.25rem)-0.25rem+var(--safe-bottom))] z-30 flex justify-center px-4 md:bottom-[calc(1.25rem+var(--safe-bottom))] md:px-8">
       <div className="pointer-events-auto flex w-full max-w-[40rem] items-center gap-2 rounded-control border border-default bg-selected px-3 py-1.5 text-body shadow-2" data-selection-bar>
         <span role="status" className="min-w-0 flex-1 font-medium text-strong">{t('{count} selected', { count: ids.length })}</span>
         {ids.length > 0 && (menu
-          ? menu(<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ml-1" /></>, 'ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body')
+          ? menu(<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ms-1" /></>, 'ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body')
           : <BulkActionsMenu ids={ids} open={menuOpen} onOpenChange={onMenuOpenChange} startPicker={startPicker}
-            trigger={<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ml-1" /></>} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" />)}
+            trigger={<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ms-1" /></>} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" />)}
         {ids.length > 0 && (
           <Tooltip label={t('Clear the selection')} shortcut="Esc">
             <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" onClick={onClear}><Icon name="x" />{t('Clear')}</button>

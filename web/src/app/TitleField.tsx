@@ -9,7 +9,7 @@ import { logicalToday } from '../lib/dates'
 import { useMe } from '../lib/sharing'
 import { dismissChip, type Chip, type LabelRef, loadQuickAddSettings, onQuickAddSettingsChange, type ProjectRef, rebaseDismissed, resolveDayMonthOrder, resolveLanguages, type Span } from '../lib/nlp'
 import { editPlan, parseEdit, type EditPlan } from '../lib/nlp/edit'
-import { composingEnter } from '../lib/composeKey'
+import { composing } from '../lib/composeKey'
 import { preferredLanguages } from '../lib/i18n'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { dayPartsOn } from '../lib/dayParts'
@@ -46,13 +46,15 @@ export interface TitleFieldProps {
   onKeyDownFirst?: (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => boolean
   /** Explicit save and cancel controls can share the field's focus boundary. */
   actions?: (commit: () => void) => ReactNode
+  /** The on-screen keyboard's return key label ('done' in the touch editor). */
+  enterKeyHint?: 'done'
 }
 
 function nowHHMM(d = new Date()): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-export function TitleField({ title, value, onChange, onCommit, onCancel, projects, labels, readOnly = false, multiline = false, className = '', placeholder, ariaLabel, autoFocus, fieldRef, dataAttrs = {}, initialCaret, onKeyDownFirst, actions }: TitleFieldProps) {
+export function TitleField({ title, value, onChange, onCommit, onCancel, projects, labels, readOnly = false, multiline = false, className = '', placeholder, ariaLabel, autoFocus, fieldRef, dataAttrs = {}, initialCaret, onKeyDownFirst, actions, enterKeyHint }: TitleFieldProps) {
   const input = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
   const root = useRef<HTMLDivElement>(null)
   // From the field's focus until the edit ends; focus moving to its own chips is still the edit.
@@ -109,7 +111,7 @@ export function TitleField({ title, value, onChange, onCommit, onCancel, project
   }, [])
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    if (composingEnter(e)) return
+    if (composing(e)) return
     if (suggest.onKeyDown(e)) return
     if (onKeyDownFirst?.(e)) return
     if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur() }
@@ -125,6 +127,7 @@ export function TitleField({ title, value, onChange, onCommit, onCancel, project
     readOnly,
     placeholder,
     autoFocus,
+    enterKeyHint,
     'aria-label': ariaLabel,
     ...dataAttrs,
     onChange: (e: { target: { value: string } }) => change(e.target.value),

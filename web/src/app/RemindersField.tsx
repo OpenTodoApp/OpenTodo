@@ -7,6 +7,7 @@ import { addReminder, deleteReminder, dismissReminder, rearmReminder, setReminde
 import { isLocationKind, radiusOf, reminderPoint, useGeofencesHere, type LocationKind } from '../lib/geofences'
 import { locationLabel, shownLocation, usePlaceRows } from '../lib/locations'
 import { FiresOnPhone, LocationMenuGroup, locationReminderName, radiusText } from './LocationReminders'
+import { allowUrgentAlarms } from '../lib/shell'
 
 // The radius form loads with its first use (location-reminders: keep the first load small).
 const LocationReminderEditor = lazy(() => import('./LocationReminderEditor'))
@@ -19,6 +20,7 @@ import { TimeField } from './datetime/TimeField'
 import { t } from '../lib/i18n'
 import { messageOf } from '../lib/errorText'
 import { useAction } from '../lib/useAction'
+import { composing } from '../lib/composeKey'
 
 /** A local date and wall-clock time for an instant (the date and time fields edit these). */
 function toLocalParts(ms: number): { date: string; time: string } {
@@ -90,7 +92,7 @@ export function RemindersField({ task, onAddLocation }: { task: Task; onAddLocat
             }
             return (
               <li key={r.id} data-reminder-id={r.id} data-location-chip
-                className={`inline-flex max-w-full items-center gap-1 rounded-full border border-default py-0.5 pl-2.5 pr-0.5 text-body ${dismissed ? 'text-faint' : 'text-default'}`}>
+                className={`inline-flex max-w-full items-center gap-1 rounded-full border border-default py-0.5 ps-2.5 pe-0.5 text-body ${dismissed ? 'text-faint' : 'text-default'}`}>
                 <Icon name={r.kind === 'arrive' ? 'map-pin' : 'log-out'} className="shrink-0 text-faint" />
                 <span className="min-w-0">
                   <span className="flex min-w-0 items-center gap-1">
@@ -126,7 +128,7 @@ export function RemindersField({ task, onAddLocation }: { task: Task; onAddLocat
           }
           return (
             <li key={r.id} data-reminder-id={r.id}
-              className={`inline-flex max-w-full items-center gap-1 rounded-full border border-default py-0.5 pl-2.5 pr-0.5 text-body ${isDismissed(r) ? 'text-faint' : 'text-default'}`}>
+              className={`inline-flex max-w-full items-center gap-1 rounded-full border border-default py-0.5 ps-2.5 pe-0.5 text-body ${isDismissed(r) ? 'text-faint' : 'text-default'}`}>
               <Icon name={r.urgent ? 'alarm-clock' : 'bell'} className={fired && !isDismissed(r) ? 'text-accent' : 'text-faint'} />
               <span className="min-w-0 truncate">
                 {r.kind !== 'absolute' ? <>{name} <span className="text-meta text-muted" data-testid="reminder-time">{when}</span></> : <span data-testid="reminder-time">{when}</span>}
@@ -136,8 +138,12 @@ export function RemindersField({ task, onAddLocation }: { task: Task; onAddLocat
                 <MenuItem label={t('Edit')} icon="pencil" onSelect={() => setEditing(r.id)} />
                 {fired && !isDismissed(r) && <MenuItem label={t('Snooze 10 minutes')} icon="clock" onSelect={() => void run(() => snoozeReminder(r.id, '10m'))} />}
                 {fired && !isDismissed(r) && <MenuItem label={t('Dismiss')} icon="check" onSelect={() => void run(() => dismissReminder(r.id))} />}
-                {/* ios-urgent-alarms D2: rings as an alarm in the iPhone app, an ordinary reminder elsewhere. */}
-                <MenuItem label={t('Urgent')} checked={r.urgent === true} onSelect={() => void run(() => setReminderUrgent(r.id, r.urgent !== true))} />
+                {/* ios-urgent-alarms D2: rings as an alarm in the phone apps, an ordinary reminder elsewhere.
+                    android-urgent-alarms D4: turning it on lets the Android app ask for what an alarm needs. */}
+                <MenuItem label={t('Urgent')} checked={r.urgent === true} onSelect={() => {
+                  if (r.urgent !== true) allowUrgentAlarms()
+                  void run(() => setReminderUrgent(r.id, r.urgent !== true))
+                }} />
                 <MenuSeparator />
                 <MenuItem label={t('Delete reminder')} icon="trash-2" danger onSelect={() => void run(() => deleteReminder(r.id))} />
               </Menu>
@@ -238,7 +244,7 @@ function ReminderEditor({ task, initial, mode, onSave, onCancel }: {
       ref={form}
       className="flex flex-wrap items-center gap-2"
       onSubmit={(e) => { e.preventDefault(); save() }}
-      onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}
+      onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}
     >
       {initial && (
         <Select className="w-auto py-1" aria-label={t('Reminder kind')} value={kind} onChange={(e) => setKind(e.target.value as TimeKind)}>

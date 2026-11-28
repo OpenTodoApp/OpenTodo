@@ -64,7 +64,7 @@ export function SpanBand({ days, spans, today, variant, maxLanes, selectedId, hu
     <div className={`grid gap-y-0.5 ${className}`} data-span-band={variant} {...(inRow ? { role: 'gridcell', 'aria-colspan': days.length } : {})}
       style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${lanes}, 1.5rem)` }}>
       {days.map((d, i) => (
-        <div key={d} aria-hidden data-span-day={d} className={columnLines ? 'border-l border-default' : ''} style={{ gridColumn: i + 1, gridRow: '1 / -1' }} />
+        <div key={d} aria-hidden data-span-day={d} className={columnLines ? 'border-s border-default' : ''} style={{ gridColumn: i + 1, gridRow: '1 / -1' }} />
       ))}
       {pieces.map((p) => p.item.kind === 'task'
         ? <SpanBar key={p.item.id} piece={p as SpanPiece<Extract<DaySpan, { kind: 'task' }>>} today={today} variant={variant} selected={selectedId === p.item.id}
@@ -107,7 +107,7 @@ function SpanBar({ piece, today, variant, selected, hue, canMove, canEdit, dragg
         onPointerDown={canMove ? drag('move', (e) => grabDay(e, piece.first, piece.cols)) : undefined}
         onClick={(e) => { e.stopPropagation(); onSelect(task.id) }}
         onDoubleClick={() => onOpen(task.id)}
-        className={`ui-block ui-block--row relative flex h-6 w-full min-w-0 touch-manipulation items-center gap-1 overflow-hidden px-1.5 text-left text-meta ${piece.startsBefore ? 'ui-span--before' : ''} ${piece.endsAfter ? 'ui-span--after' : ''} ${task.completed_at || piece.last < today ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${dragging ? 'shadow-2' : ''} ${canMove ? 'cursor-grab' : ''}`}>
+        className={`ui-block ui-block--row relative flex h-6 w-full min-w-0 touch-manipulation items-center gap-1 overflow-hidden px-1.5 text-start text-meta ${piece.startsBefore ? 'ui-span--before' : ''} ${piece.endsAfter ? 'ui-span--after' : ''} ${task.completed_at || piece.last < today ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${dragging ? 'shadow-2' : ''} ${canMove ? 'cursor-grab' : ''}`}>
         {pastCols > 0 && piece.last >= today && !task.completed_at && <span aria-hidden className="ui-span-past pointer-events-none absolute inset-y-0 start-0" style={{ width: `${(pastCols / piece.cols) * 100}%` }} />}
         <span className="sr-only">{spanLabel(task, span, variant === 'day' ? piece.first : undefined)}{canEdit ? '' : `, ${t('read-only')}`}</span>
         {piece.startsBefore && <Icon name="chevron-left" size="xs" className="relative shrink-0" />}
@@ -134,7 +134,7 @@ function ProjectedSpan({ piece, hue, variant }: { piece: SpanPiece<Extract<DaySp
     <div data-span-piece={p.id} className="relative min-w-0 px-0.5" style={pieceStyle(piece)}>
       <button type="button" data-projected={p.id} data-span-projected={p.id} data-hue={hue} aria-haspopup="menu" aria-keyshortcuts="Shift+F10"
         onClick={() => openProjection(p)} {...handlers}
-        className={`ui-block ui-block--row ui-block--projected flex h-6 w-full min-w-0 touch-manipulation items-center gap-1 px-1.5 text-left text-meta ${piece.startsBefore ? 'ui-span--before' : ''} ${piece.endsAfter ? 'ui-span--after' : ''}`}>
+        className={`ui-block ui-block--row ui-block--projected flex h-6 w-full min-w-0 touch-manipulation items-center gap-1 px-1.5 text-start text-meta ${piece.startsBefore ? 'ui-span--before' : ''} ${piece.endsAfter ? 'ui-span--after' : ''}`}>
         <span className="sr-only">{`${projectionLabel(p)}, ${formatSpan(piece.item.span)}`}</span>
         {piece.startsBefore && <Icon name="chevron-left" size="xs" className="shrink-0" />}
         <Icon name="repeat" size="xs" className="shrink-0" />

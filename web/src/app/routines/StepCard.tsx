@@ -211,7 +211,7 @@ function Lane({ title, steps, parent, block, state, events, depth }: {
   title: string; steps: RoutineStep[]; parent: string; block: 'then' | 'otherwise' | 'do'; state: CardState; events: CardEvents; depth: number
 }) {
   return (
-    <div className="ml-3 space-y-2 border-l-2 border-default pl-3" data-lane={block} role="group" aria-label={title}>
+    <div className="ms-3 space-y-2 border-s-2 border-default ps-3" data-lane={block} role="group" aria-label={title}>
       <p className="text-meta font-medium text-muted">{title}</p>
       <Cards steps={steps} parent={parent} block={block} state={state} events={events} depth={depth + 1} />
       <AddButton parent={parent} block={block} state={state} onClick={() => events.addIn(parent, block)} />

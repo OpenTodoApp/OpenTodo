@@ -20,6 +20,7 @@ import { TaskListView } from './TaskListView'
 // The limits, shared with the interface audit tour (scripts/ux-audit, ux-audit-three-widths D2).
 import budget from './budget.json'
 
+
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 
 /** At most the sidebar, the content column and the panel scroll vertically. */
@@ -303,9 +304,9 @@ describe('on a phone (390 px)', () => {
     await seed()
     navigate({ view: 'inbox' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector('[data-phone-bar] [data-triage-start]'))
-    expect(document.querySelector('[data-list-page] [data-triage-start]')).toBeNull()
-    const more = () => document.querySelector<HTMLButtonElement>('[data-phone-bar] [data-inbox-menu], [data-phone-bar] button[aria-label="More actions"]')
+    await waitFor(() => !!document.querySelector('[data-phone-header] [data-triage-start]'))
+    expect(document.querySelectorAll('[data-triage-start]')).toHaveLength(1)
+    const more = () => document.querySelector<HTMLButtonElement>('[data-phone-header] [data-inbox-menu], [data-phone-header] button[aria-label="More actions"]')
     await waitFor(() => !!more())
     more()!.click()
     await waitFor(() => !!document.querySelector('[data-phone-item="select"]'))
@@ -323,8 +324,8 @@ describe('on a phone (390 px)', () => {
     await createTask({ title: 'Quick call', project_id: project, estimate_minutes: 10 })
     navigate({ view: 'project', id: project })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    const bar = () => document.querySelector('[data-phone-bar]')!
-    const menu = () => bar().querySelector<HTMLButtonElement>('button[aria-label="Project menu"]')
+    const bar = () => document.querySelector('[data-phone-header]')!
+    const menu = () => document.querySelector<HTMLButtonElement>('[data-phone-header] button[aria-label="Project menu"]')
     await waitFor(() => !!menu() && document.querySelectorAll('[data-task-id]').length === 9)
     expect(bar().querySelector('button[aria-label="Filter"]')).toBeNull()
     expect(bar().querySelector('[data-duration-active]')).toBeNull()
@@ -360,14 +361,16 @@ describe('on a phone (390 px)', () => {
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     const content = r.container.querySelector('#content')!
     expect(content.getAttribute('data-add-room')).toBe('true')
-    expect(content.className).toContain('max-md:pb-(--add-room)')
+    // The floating tab bar's room and the add button's gap are the scroller's own padding (phone-modern-look D1).
+    expect((content as HTMLElement).style.paddingBottom).toContain('var(--add-room)')
     const css = (await import('../index.css?raw')).default
-    expect(css).toMatch(/--add-room:\s*4\.75rem/)
+    expect(css).toMatch(/--add-room:\s*1rem/)
     // A page that fills the column and scrolls inside itself takes the room back and ends its scroller with it (phone-fab-scroll-room).
     expect(css).toContain('#content[data-add-room] > .page-fill { height: calc(100% + var(--add-room)); margin-bottom: calc(-1 * var(--add-room)); }')
     expect(css).toContain('#content[data-add-room] .add-room-end { padding-bottom: var(--add-room); }')
-    // The toast sits above the tab bar (3.5 rem) and the add button's room (4.25 rem), never on a row's last line.
-    expect(document.documentElement.style.getPropertyValue('--toast-lift')).toBe('7.75rem')
+    // The toast sits above the floating tab bar and the add button beside it (4 rem) with a 1.25 rem gap, never on a row's last line.
+    expect(document.documentElement.style.getPropertyValue('--toast-lift')).toBe('5.25rem')
     await r.unmount()
   })
 })
+

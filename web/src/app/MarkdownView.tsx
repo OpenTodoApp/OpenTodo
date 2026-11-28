@@ -61,7 +61,7 @@ function renderBlock(b: Block, i: number, ctx: Ctx): ReactNode {
     case 'pre':
       return <CodeBlock key={i} text={b.v} lang={b.lang} />
     case 'quote':
-      return <blockquote key={i} className="space-y-2 border-l-2 border-input pl-2 text-muted">{b.c.map((x, k) => renderBlock(x, k, ctx))}</blockquote>
+      return <blockquote key={i} className="space-y-2 border-s-2 border-input ps-2 text-muted">{b.c.map((x, k) => renderBlock(x, k, ctx))}</blockquote>
     case 'h': {
       const h = HEADING[b.level] ?? { tag: 'h4' as const, cls: 'text-body font-semibold text-strong' }
       const Tag = h.tag
@@ -72,7 +72,7 @@ function renderBlock(b: Block, i: number, ctx: Ctx): ReactNode {
       return (
         <div key={i} className="max-w-full overflow-x-auto" data-scroll-x>
           <table className="md-table border-collapse text-meta">
-            <thead><tr>{b.head.map((c, k) => <th key={k} style={b.align[k] ? { textAlign: b.align[k] as 'left' } : undefined} className="border border-default px-2 py-1 text-left font-semibold">{inl(c)}</th>)}</tr></thead>
+            <thead><tr>{b.head.map((c, k) => <th key={k} style={b.align[k] ? { textAlign: b.align[k] as 'left' } : undefined} className="border border-default px-2 py-1 text-start font-semibold">{inl(c)}</th>)}</tr></thead>
             <tbody>{b.rows.map((r, j) => <tr key={j}>{r.map((c, k) => <td key={k} style={b.align[k] ? { textAlign: b.align[k] as 'left' } : undefined} className="border border-default px-2 py-1">{inl(c)}</td>)}</tr>)}</tbody>
           </table>
         </div>
@@ -83,7 +83,7 @@ function renderBlock(b: Block, i: number, ctx: Ctx): ReactNode {
       if (b.checks) {
         // Check items read as a list of read-only boxes; editing happens in the editor.
         return (
-          <ul key={i} className="space-y-1 pl-1">
+          <ul key={i} className="space-y-1 ps-1">
             {b.items.map((item, j) => (
               <li key={j} className="flex items-start gap-2" data-checked={b.checks![j] ?? undefined}>
                 {b.checks![j] !== null && <input type="checkbox" disabled checked={!!b.checks![j]} className="mt-1 h-4 w-4 shrink-0" aria-label={b.checks![j] ? t('Done') : t('Not done')} />}
@@ -95,8 +95,8 @@ function renderBlock(b: Block, i: number, ctx: Ctx): ReactNode {
       }
       const items = b.items.map((item, j) => <li key={j}>{item.map((x, k) => renderBlock(x, k, ctx))}</li>)
       return b.ordered
-        ? <ol key={i} start={b.start} className="list-decimal space-y-1 pl-5">{items}</ol>
-        : <ul key={i} className="list-disc space-y-1 pl-5">{items}</ul>
+        ? <ol key={i} start={b.start} className="list-decimal space-y-1 ps-5">{items}</ol>
+        : <ul key={i} className="list-disc space-y-1 ps-5">{items}</ul>
     }
   }
 }
@@ -131,7 +131,7 @@ function renderInline(n: Inline, i: number, ctx: Ctx): ReactNode {
         return (
           <Tooltip key={i} label={n.href}>
             <a key={i} className="cursor-pointer text-accent underline" data-app-link="open" {...appLinkActivation(n.href)}>
-              {inl(n.c)}<Icon name="external-link" size="xs" className="ml-0.5 inline" />
+              {inl(n.c)}<Icon name="external-link" size="xs" className="ms-0.5 inline" />
             </a>
           </Tooltip>
         )

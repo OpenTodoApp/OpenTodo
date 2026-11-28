@@ -51,11 +51,12 @@ const RING: Record<number, string> = { 1: 'border-p1', 2: 'border-p2', 3: 'borde
 export function PhoneTaskView(p: PhoneTaskViewProps) {
   const stepper = !!p.position
   return (
-    <div data-phone-screen="task" className="min-h-full bg-canvas">
+    // The conversation's tab bar pins just under the bar: it reads the bar's height here, as on the desktop page.
+    <div data-phone-screen="task" className="min-h-full bg-canvas [--panel-header-h:calc(3rem+max(0.25rem,var(--safe-top)))]">
       <PhoneHeader shown title={p.position}
         lead={(
           <button type="button" onClick={p.onBack} aria-label={p.backLabel ? undefined : t('Back to the list')} data-page-back
-            className="flex min-h-11 min-w-11 items-center gap-0.5 rounded-control pl-1 pr-2 text-prose text-accent focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">
+            className="flex min-h-11 min-w-11 items-center gap-0.5 rounded-control ps-1 pe-2 text-prose text-accent focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">
             <Icon name="chevron-left" size="md" /><span className="max-w-[8rem] truncate">{p.backLabel}</span>
           </button>
         )}
@@ -69,18 +70,20 @@ export function PhoneTaskView(p: PhoneTaskViewProps) {
         {p.notice}
         <div className="flex items-start gap-1">
           <button type="button" aria-pressed={p.done} disabled={p.readOnly} aria-label={p.done ? t('Reopen task') : t('Complete task')} onClick={p.onToggle} data-phone-check
-            className="-ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-control focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-focus">
+            className="-ms-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-control focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-focus">
             <span aria-hidden className={`flex h-7 w-7 items-center justify-center rounded-full border-2 ${p.done ? 'border-transparent bg-faint text-on-accent' : RING[p.priority]}`}>
               {p.done && <Icon name="check" size="sm" />}
             </span>
           </button>
-          <div className="min-w-0 flex-1 pt-1.5">
+          <div className="min-w-0 flex-1 pt-1.5" data-task-content>
             {p.title}
-            {p.relations}
             <div className="mt-2 text-prose text-default" data-phone-notes>{p.notes}</div>
           </div>
         </div>
+        {/* The whole width, not the title's column: a repeating task's scope control needs it in a long language at 360 px. */}
+        {p.relations}
 
+        <div className="contents" data-facts>
         {p.schedule.length > 0 && (
           <FactCard label={t('Schedule')}>{p.schedule.map((f) => <FactRow key={f.id} fact={f} open={p.openFact === f.id} anchor={p.factAnchor} onOpen={p.onFact} />)}</FactCard>
         )}
@@ -89,6 +92,7 @@ export function PhoneTaskView(p: PhoneTaskViewProps) {
         )}
         {p.extra}
         {!p.readOnly && <FactChips label={t('Add')} facts={p.unset} open={p.openFact} anchor={p.factAnchor} onOpen={p.onFact} />}
+        </div>
         {p.rest}
       </div>
     </div>

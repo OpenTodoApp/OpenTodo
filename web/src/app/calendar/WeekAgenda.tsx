@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { use, useState } from 'react'
 import { dayLoad, type GridPrefs } from '../../lib/calendar'
 import type { DayData } from '../../lib/calendarDays'
 import { formatDateParts } from '../../lib/dates'
@@ -19,6 +19,7 @@ import { dayLoadProjections, dayProjections, type ProjectionHue } from './DayCol
 import { spanDay } from '../../lib/span'
 import { ProjectedItem } from './projections'
 import { EventRow } from '../CalendarEvents'
+import { CalendarRowDrawContext } from '../task-list/rowDraw'
 
 /**
  * The Week below 640 px: the days listed vertically, each with its capacity, its
@@ -52,11 +53,13 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
   /** An empty day's "Add a task": quick add with that day as the date. */
   onAdd: (date: string) => void
 }) {
-  const row = (task: Task, time: string | null, past: boolean, date: string, position?: string) => (
+  // On a phone with the phone screens the task is the phone row (phone-calendar): the list keeps its own otherwise.
+  const draw = use(CalendarRowDrawContext)
+  const row = (task: Task, time: string | null, past: boolean, date: string, position?: string) => draw ? draw({ task, date, today, time, note: position }) : (
     <li key={task.id}>
       <button type="button" data-cal-id={task.id} data-agenda-task={task.id} onClick={() => onSelect(task.id)} onDoubleClick={() => onOpen(task.id)}
         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onOpen(task.id) } }}
-        className={`ui-block title-phone-row flex min-h-11 w-full items-center gap-2 px-2 py-1 text-left text-body ${past || task.completed_at ? 'ui-block--past' : ''} ${selectedId === task.id ? 'ring-1 ring-accent' : ''}`}
+        className={`ui-block title-phone-row flex min-h-11 w-full items-center gap-2 px-2 py-1 text-start text-body ${past || task.completed_at ? 'ui-block--past' : ''} ${selectedId === task.id ? 'ring-1 ring-accent' : ''}`}
         data-hue={hueOf(task)}>
         <span className="w-14 shrink-0 text-meta tabular-nums">{time ?? t('all day')}</span>
         <span className={`title-phone min-w-0 flex-1 ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
@@ -109,7 +112,7 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
                 </>
               )
               : (
-                <ul className="mt-1 space-y-0.5">
+                <ul className={draw ? 'mt-1' : 'mt-1 space-y-0.5'} data-phone-rows={draw ? '' : undefined}>
                   {spanRows}
                   {d.allDay.map((ev) => <li key={`event:${ev.id}`}><EventRow ev={ev} sub={subMap?.get(ev.subscriptionId)} zone={zone} variant="agenda" /></li>)}
                   {d.lane.map((tk) => row(tk, null, d.date < today, d.date))}
@@ -136,14 +139,14 @@ function AgendaSlot({ view, past, onOpen }: { view: SlotView; past: boolean; onO
   return (
     <li data-agenda-slot={view.slot.id}>
       <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}
-        className={`ui-block flex min-h-11 w-full items-center gap-2 px-2 py-1 text-left text-body ${past ? 'ui-block--past' : ''}`} data-hue={hueFor(view.slot.color)}>
+        className={`ui-block flex min-h-11 w-full items-center gap-2 px-2 py-1 text-start text-body ${past ? 'ui-block--past' : ''}`} data-hue={hueFor(view.slot.color)}>
         <span className="w-14 shrink-0 text-meta tabular-nums">{formatTime(view.start)}</span>
         <Icon name="layers" size="xs" className="shrink-0" />
         <span className="min-w-0 flex-1 truncate">{name} · <span className="tabular-nums">{formatTime(view.start)}–{formatTime(view.end)}</span> · <span className={view.overfull ? 'text-warning' : ''}>{view.overfull ? slotCount(view) : t('{done} of {total}', { done: view.done.length, total: rows.length })}</span></span>
         <Icon name="chevron-down" size="xs" className={`shrink-0 ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <ul className="ml-16 mt-0.5 space-y-0.5" aria-label={t('Tasks in {title}', { title: name })}>
+        <ul className="ms-16 mt-0.5 space-y-0.5" aria-label={t('Tasks in {title}', { title: name })}>
           {rows.length === 0 && <li className="px-1 text-meta text-faint">{t('No tasks yet.')}</li>}
           {rows.map((task) => (
             <li key={task.id} data-agenda-slot-task={task.id} className="flex min-h-11 items-center gap-2 text-body max-md:items-start">
@@ -152,7 +155,7 @@ function AgendaSlot({ view, past, onOpen }: { view: SlotView; past: boolean; onO
                 onClick={() => act(completeWithUndo(task.id, !task.completed_at))}>
                 <Icon name={task.completed_at ? 'check' : 'circle'} size="sm" />
               </button>
-              <button type="button" className={`min-h-11 min-w-0 flex-1 text-left ${task.completed_at ? 'text-faint line-through' : ''}`} onClick={() => onOpen(task.id)}><span className="title-phone">{task.title || t('Untitled')}</span></button>
+              <button type="button" className={`min-h-11 min-w-0 flex-1 text-start ${task.completed_at ? 'text-faint line-through' : ''}`} onClick={() => onOpen(task.id)}><span className="title-phone">{task.title || t('Untitled')}</span></button>
               {task.estimate_minutes ? <span className="shrink-0 text-hint tabular-nums text-muted max-md:mt-3.5">{formatMinutes(task.estimate_minutes)}</span> : null}
             </li>
           ))}

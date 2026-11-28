@@ -188,7 +188,7 @@ function PublicRows({ rows, rights, pending, onToggle }: {
           </>
         )
         return (
-          <li key={x1.id} data-public-task={x1.id} data-done={done || undefined} style={{ paddingLeft: depth * 20 }}>
+          <li key={x1.id} data-public-task={x1.id} data-done={done || undefined} style={{ paddingInlineStart: depth * 20 }}>
             {rights === 'tick' ? (
               <label className="flex min-h-11 cursor-pointer items-center gap-3 px-3 py-1">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center">

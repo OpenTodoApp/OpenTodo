@@ -23,7 +23,7 @@ export interface OccurrenceResult extends UndoableResult {
 
 function labelOf(action: OccurrenceAction, habit: boolean): string {
   switch (action.kind) {
-    case 'complete': return t('Occurrence completed')
+    case 'complete': return habit ? t('Checked in') : t('Occurrence completed')
     case 'skip': return habit ? t('Day skipped') : t('Occurrence skipped')
     case 'move': return t('Occurrence moved')
     default: return t('Occurrence changed')

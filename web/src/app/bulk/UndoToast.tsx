@@ -158,7 +158,7 @@ export function UndoToast() {
         )}
         {/* Dismiss is not one of the toast's two actions: it only closes it (app-shell "Notices are toasts"). */}
         <Tooltip label={t('Dismiss')} shortcut="Esc">
-          <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -mr-1 px-1 py-1 text-muted" aria-label={t('Dismiss')} data-toast-dismiss
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -me-1 px-1 py-1 text-muted" aria-label={t('Dismiss')} data-toast-dismiss
             onClick={() => dismiss(toast.key)}><Icon name="x" size="sm" /></button>
         </Tooltip>
       </div>

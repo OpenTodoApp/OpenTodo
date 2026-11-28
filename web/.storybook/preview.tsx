@@ -2,6 +2,7 @@ import type { Decorator, Preview } from '@storybook/react-vite'
 import '../src/index.css'
 import { applyLanguagePreference, currentLanguage } from '../src/lib/i18n'
 import { SHIPPED } from '../src/locales'
+import { directionOf } from '../src/lib/direction'
 
 // Theme: light and dark set data-theme on the story root; side-by-side renders the
 // story twice, one per theme (tokens also apply to [data-theme] subtrees).
@@ -35,8 +36,17 @@ const withLanguage = async ({ globals }: { globals: Record<string, unknown> }) =
   await applyLanguagePreference(code === 'en' ? 'system' : code).catch(() => undefined)
 }
 
+// Direction (arabic-rtl D7): the language's, or `parameters.direction` for a story that
+// shows the right-to-left layout with any catalog. Set on every render, so a left-to-right
+// story after a right-to-left one is left to right again.
+const withDirection: Decorator = (Story, ctx) => {
+  const dir = (ctx.parameters.direction as 'ltr' | 'rtl' | undefined) ?? directionOf(currentLanguage())
+  if (document.documentElement.dir !== dir) document.documentElement.dir = dir
+  return <Story />
+}
+
 const preview: Preview = {
-  decorators: [withTheme],
+  decorators: [withTheme, withDirection],
   loaders: [withLanguage],
   globalTypes: {
     theme: {

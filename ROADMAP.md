@@ -38,6 +38,8 @@ Open changes, most of them part built.
 | [`android-home-network-notice`](openspec/changes/android-home-network-notice/) | The Android app says when the server address only works at home |  |
 | [`android-reveal-on-paint`](openspec/changes/android-reveal-on-paint/) | The Android app shows the web app at its first drawn frame, as the iPhone app does | [#1755](https://github.com/OpenTodoApp/OpenTodo/issues/1755) |
 | [`android-unicode-address`](openspec/changes/android-unicode-address/) | A server address typed in Unicode works in the Android app; both apps share one set of address cases |  |
+| [`android-urgent-alarms`](openspec/changes/android-urgent-alarms/) | Urgent reminders ring as full-screen alarms in the Android app; built, the device run is open | [#2023](https://github.com/OpenTodoApp/OpenTodo/issues/2023) |
+| [`android-quick-add-notification`](openspec/changes/android-quick-add-notification/) | A quick-add notification in the Android app: add a task from the notification shade in any app | [#2046](https://github.com/OpenTodoApp/OpenTodo/issues/2046) |
 | [`ios-microphone-origin`](openspec/changes/ios-microphone-origin/) | The iPhone app grants the microphone to the configured server only, without a second prompt |  |
 | [`ios-quick-look`](openspec/changes/ios-quick-look/) | An attached image or PDF opens in Quick Look in the iPhone app, without saving it first |  |
 | [`ios-web-location`](openspec/changes/ios-web-location/) | "Use my location" in a task's location editor works in the iPhone app |  |
@@ -133,6 +135,7 @@ Phones, Apple, Obsidian and voice.
 | [`away-periods`](openspec/changes/archive/2026-11-20-away-periods/) | Away: mark a period, also after the fact, that skips the repeating occurrences in it in one Undo, keeps streaks and pauses reminders | [#805](https://github.com/OpenTodoApp/OpenTodo/issues/805) |
 | [`workspace-activity`](openspec/changes/archive/2026-11-20-workspace-activity/) | A workspace Activity page for retrospectives: every project, a date range, several kinds at once, tracked time, filters remembered on the device | [#1443](https://github.com/OpenTodoApp/OpenTodo/issues/1443) |
 | [`workspace-feature-switches`](openspec/changes/archive/2026-11-24-workspace-feature-switches/) | Feature switches per workspace: the owner and admins turn Notes, Calendar, Habits, Time tracking, Focus, Routines, Reviews and Locations on or off for everyone in it; off hides, never deletes | [#1637](https://github.com/OpenTodoApp/OpenTodo/issues/1637) |
+| [`workspace-fields`](openspec/changes/archive/2026-11-25-workspace-fields/) | Fields a workspace's owner defines once for every project of the workspace | [#2029](https://github.com/OpenTodoApp/OpenTodo/issues/2029) |
 | [`caldav-push`](openspec/changes/archive/2026-11-21-caldav-push/) | Push to calendar apps: a change on any device wakes a subscribed CalDAV client (WebDAV-Push), off until the owner turns it on | [#1585](https://github.com/OpenTodoApp/OpenTodo/issues/1585) |
 | [`drag-ticked-together`](openspec/changes/archive/2026-11-20-drag-ticked-together/) | Drag several ticked tasks within a list to reorder or nest them in one move, with one Undo | [#1498](https://github.com/OpenTodoApp/OpenTodo/issues/1498) |
 | [`quarter-view-and-plan-spans`](openspec/changes/archive/2026-11-20-quarter-view-and-plan-spans/) | A Quarter view in the Calendar (three months at a glance, `g q`), and 3-day and custom Plan spans | [#1026](https://github.com/OpenTodoApp/OpenTodo/issues/1026) |
@@ -173,6 +176,8 @@ Longer horizons, and the household.
 | [`chore-rotation`](openspec/changes/archive/2026-11-02-chore-rotation/) | Recurring tasks that rotate between members of a group | [#582](https://github.com/OpenTodoApp/OpenTodo/issues/582) |
 | [`more-languages`](openspec/changes/archive/2026-11-12-more-languages/) | Dutch, quick add in Dutch, and a kit for community languages | [#584](https://github.com/OpenTodoApp/OpenTodo/issues/584) |
 | [`simplified-chinese`](openspec/changes/archive/2026-11-11-simplified-chinese/) | Simplified Chinese (简体中文) | [#883](https://github.com/OpenTodoApp/OpenTodo/issues/883) |
+| [`japanese`](openspec/changes/japanese/) | Japanese (日本語) as a community language, reviewed by a native speaker | [#884](https://github.com/OpenTodoApp/OpenTodo/issues/884) |
+| [`arabic-rtl`](openspec/changes/arabic-rtl/) | Arabic (العربية) as a community language, and the app laid out right to left | [#885](https://github.com/OpenTodoApp/OpenTodo/issues/885) |
 | [`priority-names`](openspec/changes/archive/2026-11-10-priority-names/) | Rename the four priorities |  |
 
 ### [1.0 "Trust"](https://github.com/OpenTodoApp/OpenTodo/milestone/6)
@@ -294,6 +299,8 @@ Habits get their own place: easy to start, forgiving on a bad day, connected to 
 | [`habit-notes`](openspec/changes/archive/2026-11-14-habit-notes/) | The habit's note, a note on each check-in, habits in `[[` links, Make habits from a note, habits in the weekly review | |
 | [`habits-assistant`](openspec/changes/archive/2026-11-14-habits-assistant/) | Habit numbers on the server, `list_habits`, `get_habit` and `log_habit`, a habits route and `ot habits`, Start a habit and How are my habits?, check-ins from capture, routine steps | |
 | [`habit-targets`](openspec/changes/archive/2026-11-14-habit-targets/) | Times per week or month, and daily amounts that add up exactly across devices | |
+| [`habits-complete`](openspec/changes/archive/2026-11-27-habits-complete/) | Habits on a phone with a day strip and thumb rings, today's progress, taking a check-in back, Skip this day, Remind me in the form, and a habit's year | |
+| [`habits-board`](openspec/changes/archive/2026-11-27-habits-board/) | The Habits screen as a week board with Today, Last 7 days and Streak tiles; a habit's page as a dashboard with a By weekday chart | |
 
 They land in this order; each ships on its own. Every number stays derived from the records that already sync, and the server computes the same numbers from the same vectors.
 
@@ -329,6 +336,10 @@ The phone apps stay web-view shells and are made to feel like apps, in the order
 | [`reminder-card-compact`](openspec/changes/archive/2026-11-21-reminder-card-compact/) | The in-app reminder as one compact card on touch: Snooze and Dismiss on one row | [#1381](https://github.com/OpenTodoApp/OpenTodo/issues/1381) |
 | [`phone-fab-scroll-room`](openspec/changes/archive/2026-11-21-phone-fab-scroll-room/) | The calendar's Day and Week reach the tab bar; no empty room under pages without the add button | [#1382](https://github.com/OpenTodoApp/OpenTodo/issues/1382) |
 | [`phone-ui-trial`](openspec/changes/phone-ui-trial/) | A trial of screens made only for a phone, behind a switch on the device: Today and the task page, a date sheet, and a place and rules for the phone screens that follow | |
+| [`phone-lists`](openspec/changes/phone-lists/) | Every task list in the phone screens, with all a list does: its menu, selection, reordering, subtasks and each list's own parts | |
+| [`phone-all-screens`](openspec/changes/phone-all-screens/) | The phone header and the phone task row on every screen of the app, so the phone screens are one interface | |
+| [`phone-ui-default`](openspec/changes/phone-ui-default/) | The phone screens are what a phone shows by default; the switch stays as the way back on a device | |
+| [`phone-ui-only`](openspec/changes/phone-ui-only/) | The phone screens are the only thing a screen narrower than 768 px shows: the "New phone screens" switch and the earlier phone layout are removed | |
 | [`shell-push`](openspec/changes/archive/2026-11-21-shell-push/) | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | [#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344) |
 
 ## Future ideas

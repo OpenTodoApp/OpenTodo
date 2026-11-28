@@ -8,6 +8,7 @@ import { createPortal } from 'react-dom'
 import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { t } from '../../lib/i18n'
 import { Button, ComboboxPanel, Dialog, Popover, useMediaQuery } from '../../ui'
+import { composing } from '../../lib/composeKey'
 
 /** One entry of a word's list: what it reads and what choosing it does. */
 export interface Choice {
@@ -142,11 +143,12 @@ export function InlineText({ label, value, max, insertable, onCommit }: {
   return (
     // Escape on "+ value" (where focus returns when its list closes) keeps the text too.
     <span className="relative my-1 flex w-full items-start gap-1" data-inline-text
-      onKeyDown={(e) => { if (e.key === 'Escape' && e.target === plus.current) { e.preventDefault(); e.stopPropagation(); commit() } }}>
+      onKeyDown={(e) => { if (composing(e)) return; if (e.key === 'Escape' && e.target === plus.current) { e.preventDefault(); e.stopPropagation(); commit() } }}>
       <textarea ref={area} rows={1} aria-label={label} value={text} maxLength={max} spellCheck
         className="ui-input min-h-9 flex-1 scroll-mt-24 resize-none overflow-hidden py-1.5 font-normal"
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {
+          if (composing(e)) return
           if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); commit() }
           else if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commit() }
           else if (e.key === '/' && insertable.length && (e.currentTarget.selectionStart === 0 || /\s$/.test(text.slice(0, e.currentTarget.selectionStart)))) { e.preventDefault(); openList('caret') }
@@ -157,7 +159,7 @@ export function InlineText({ label, value, max, insertable, onCommit }: {
           if (!inserting && to !== plus.current && !to?.closest('[data-overlay-root]')) commit()
         }} />
       {inserting === 'caret' && caret && (
-        <span ref={caretMark} aria-hidden="true" className="pointer-events-none absolute w-px" style={{ top: caret.top, left: caret.left, height: caret.height }} data-caret-anchor />
+        <span ref={caretMark} aria-hidden="true" className="pointer-events-none absolute w-px" style={{ /* physical: the caret's measured offset */ top: caret.top, left: caret.left, height: caret.height }} data-caret-anchor />
       )}
       {insertable.length > 0 && (
         <Button ref={plus} size="sm" variant="ghost" icon="plus" aria-haspopup="listbox" aria-expanded={!!inserting} onClick={() => openList('button')}>{t('value')}</Button>
