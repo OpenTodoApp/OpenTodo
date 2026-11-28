@@ -21,7 +21,7 @@ const listed = [
 ]
 const done = [task('e', 'Book the dentist', { completed_at: at('09:10') }), task('f', 'Pay the electricity bill', { completed_at: at('09:40') })]
 
-const box = (children: ReactNode) => <PhoneFrame height={200}><div className="px-4 pt-4">{children}</div></PhoneFrame>
+const box = (children: ReactNode) => <PhoneFrame height={300}><div className="px-4 pt-4">{children}</div></PhoneFrame>
 
 export const Day: StoryObj = {
   name: 'Today, a day in progress',
