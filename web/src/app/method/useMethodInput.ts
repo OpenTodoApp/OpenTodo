@@ -5,16 +5,19 @@ import { useMemo } from 'react'
 import { useLiveTasks } from '../../lib/liveTasks'
 import { useAllProjects, useLiveSections, useMembershipMap } from '../../lib/localData'
 import type { MethodInput } from '../../lib/method/rules'
-import { useMe } from '../../lib/sharing'
+import { useCurrentUserId } from '../../lib/sharing'
 import { useToday } from '../useViews'
 
-/** The rules' input, or null until the tasks are read. */
+/**
+ * The rules' input, or null until the tasks and the viewer are read: before the
+ * viewer is known, the personal lists would keep tasks assigned to others (issue 2127).
+ */
 export function useMethodInput(): MethodInput | null {
   const tasks = useLiveTasks()
   const projects = useAllProjects()
   const sections = useLiveSections()
   const memberships = useMembershipMap()
-  const me = useMe()
+  const me = useCurrentUserId()
   const today = useToday()
-  return useMemo(() => (tasks ? { tasks, projects, sections, memberships, me, today } : null), [tasks, projects, sections, memberships, me, today])
+  return useMemo(() => (tasks && me !== undefined ? { tasks, projects, sections, memberships, me, today } : null), [tasks, projects, sections, memberships, me, today])
 }

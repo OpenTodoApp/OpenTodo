@@ -1,0 +1,1 @@
+- **Close the day leaves out tasks assigned to someone else from its first frame.** Opened from Today in a shared project, it could briefly count another member's tasks before it had read who you are. Like Today, it now lists only your tasks and unassigned ones.

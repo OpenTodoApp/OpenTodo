@@ -214,6 +214,30 @@ describe('Close the day steps', () => {
   })
 })
 
+describe('Close the day is the viewer’s (issue 2127)', () => {
+  it('From Today, a task assigned to someone else is never planned or listed, not even before the viewer is read', async () => {
+    const family = await createProject({ name: 'Family' })
+    await db.memberships.put({ projectId: family, role: 'owner', ownerId: 'u1', members: [] })
+    await createTask({ title: 'Mine', project_id: family, due: { date: TODAY }, assignee_id: 'u1' })
+    await createTask({ title: 'Theirs', project_id: family, due: { date: TODAY }, assignee_id: 'u2' })
+    await createTask({ title: 'Free', project_id: family, due: { date: TODAY } })
+    const r = await shell({ view: 'today' })
+    await waitFor(() => document.querySelectorAll('[data-task-id]').length === 2 && !!document.querySelector('[data-close-day]'))
+    // Every planned figure the screen ever shows, from its first frame.
+    const planned = new Set<string>()
+    const seen = new MutationObserver(() => { const n = figure('planned'); if (n) planned.add(n) })
+    seen.observe(document.body, { subtree: true, childList: true, characterData: true })
+    await click(document.querySelector('[data-close-day] button')!)
+    await waitFor(() => figure('planned') === '2')
+    await key(document.body, ']')
+    await waitFor(() => stepOf() === 'moves' && rows().length === 2)
+    seen.disconnect()
+    expect([...planned]).toEqual(['2'])
+    expect(rows().map((x) => x.querySelector('[data-carry-title]')!.textContent)).toEqual(['Mine', 'Free'])
+    await r.unmount()
+  })
+})
+
 describe('What moves', () => {
   it('Default carry-over: every row on Tomorrow; closing writes ONE batch, "Day closed · 3 moved to tomorrow", Undo puts all back', async () => {
     const timed = await createTask({ title: 'Timed', due: { date: TODAY, time: '14:00' } })
