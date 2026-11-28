@@ -13,8 +13,7 @@ import { lazy } from '../../lib/lazy'
 const OccurrenceScope = lazy(() => import('./OccurrenceScope'))
 import type { TaskDetailModel } from './useTaskDetail'
 
-// P1 and P2 fill the circle as a row's does (rowTone PRIORITY_RING, priority-ring-fill).
-const RING: Record<number, string> = { 1: 'border-p1 bg-p1/55', 2: 'border-p2 bg-p2/25', 3: 'border-p3', 4: 'border-p4 bg-p4-soft' }
+import { PRIORITY_RING } from '../../lib/priority'
 
 /**
  * The checkbox and the title; `page` sets the title at the page's size and wraps it freely.
@@ -35,7 +34,7 @@ export function TaskHead({ m, readOnly, completeLocked = readOnly, projects, siz
         <button type="button" aria-label={done ? t('Reopen task') : t('Complete task')} aria-pressed={done} disabled={completeLocked} onClick={() => m.toggle(task)} data-panel-complete
           className="touch-target inline-flex shrink-0 items-center justify-center rounded-full pointer-coarse:items-start pointer-fine:-m-0.5 pointer-fine:size-6">
           <span className={`flex items-center ${page ? 'pointer-coarse:h-7' : 'pointer-coarse:h-6'}`}>
-            <span className={`flex size-[18px] items-center justify-center rounded-full border-2 transition ${done ? 'border-accent bg-accent text-on-accent' : `${RING[task.priority] ?? 'border-p4'} hover:bg-success-soft`}`}>
+            <span className={`flex size-[18px] items-center justify-center rounded-full border-2 transition ${done ? 'border-accent bg-accent text-on-accent' : `${PRIORITY_RING[task.priority] ?? 'border-p4'} hover:bg-success-soft`}`}>
               {done && <Icon name="check" size="xs" />}
             </span>
           </span>

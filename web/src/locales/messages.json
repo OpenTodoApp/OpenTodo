@@ -3472,6 +3472,9 @@
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Facets.tsx"
   ],
+  "Choose how P1 and P2 look in task lists and details.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Choose how many times, from 1 to {max}.": [
     "web/src/app/habits/HabitForm.tsx"
   ],
@@ -6838,6 +6841,9 @@
   ],
   "Files to attach": [
     "web/src/app/quickadd/PendingFiles.tsx"
+  ],
+  "Filled": [
+    "web/src/app/AppearanceSection.tsx"
   ],
   "Filter": [
     "web/src/app/task-list/ListChrome.tsx",
@@ -13411,6 +13417,9 @@
   "Outline of the headings (3 or more)": [
     "web/src/lib/richtextEditor.ts"
   ],
+  "Outline only": [
+    "web/src/app/AppearanceSection.tsx"
+  ],
   "Outlook was not connected: Microsoft did not complete the sign-in. Try again.": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
@@ -14092,6 +14101,10 @@
   ],
   "Priority 4": [
     "web/src/app/themes/tokenNames.ts"
+  ],
+  "Priority circles": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Priority is {name}": [
     "web/src/app/filter/conditionText.ts"

@@ -16,6 +16,7 @@ beforeEach(async () => {
   resetDeviceId()
   document.documentElement.removeAttribute('data-theme')
   document.documentElement.removeAttribute('data-accent')
+  document.documentElement.removeAttribute('data-priority-circles-outline')
   document.documentElement.removeAttribute('style')
   localStorage.clear()
 })
@@ -24,6 +25,27 @@ const root = () => document.documentElement
 const tile = (id: string) => document.querySelector<HTMLButtonElement>(`[data-theme-tile="${id}"]`)!
 
 describe('Appearance panel', () => {
+  it('defaults to Filled and switches the synced priority circles by keyboard', async () => {
+    const r = await render(<AppearanceProvider><AppearanceSection /></AppearanceProvider>)
+    const group = r.container.querySelector('[data-testid="appearance-priority-circles"]')!
+    const [filled, outline] = [...group.querySelectorAll<HTMLButtonElement>('[role="radio"]')]
+    expect(filled.getAttribute('aria-checked')).toBe('true')
+    expect(root().hasAttribute('data-priority-circles-outline')).toBe(false)
+
+    filled.focus()
+    await key(filled, 'ArrowRight')
+    await waitFor(() => outline.getAttribute('aria-checked') === 'true', 'outline selected')
+    expect(document.activeElement).toBe(outline)
+    expect(root().hasAttribute('data-priority-circles-outline')).toBe(true)
+    const ops = await db.outbox.toArray()
+    expect(ops.map(({ entity, field, value }) => [entity, field, value]))
+      .toEqual([['user_prefs', 'priority_circle_style', 'outline']])
+
+    await click(filled)
+    await waitFor(() => !root().hasAttribute('data-priority-circles-outline'), 'filled restored')
+    await r.unmount()
+  })
+
   it('arrow keys move through the themes and select; the root follows at once, through one op each', async () => {
     let renders = 0
     function Probe() { renders++; return null }

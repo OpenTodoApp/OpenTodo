@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from 'react'
 import { applyAppearance, cachedCustom, deriveCustom, readAppearance, reapplyAppearance, setAppearanceThemes } from '../lib/appearance'
 import { useUserPrefsRow } from '../lib/localData'
 import { applyFullTitles, fullTitlesOn } from '../lib/fullTitles'
+import { readPriorityCircleStyle } from '../lib/priorityCircleStyle'
 import { readThemeChoices, type SideChoice } from '../lib/theme/choice'
 import { useInstanceThemes } from '../lib/theme/choice'
 
@@ -62,6 +63,12 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
   // Full task titles (full-task-titles D1): an attribute on <html>, like the density.
   const fullTitles = row === undefined ? null : fullTitlesOn(row)
   useEffect(() => { if (fullTitles !== null) applyFullTitles(fullTitles) }, [fullTitles])
+  const priorityCircleStyle = row === undefined ? null : readPriorityCircleStyle(row)
+  useEffect(() => {
+    if (priorityCircleStyle !== null) {
+      document.documentElement.toggleAttribute('data-priority-circles-outline', priorityCircleStyle === 'outline')
+    }
+  }, [priorityCircleStyle])
   const loaded = row !== undefined
   useEffect(() => {
     if (!loaded) return

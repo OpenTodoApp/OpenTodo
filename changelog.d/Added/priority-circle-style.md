@@ -1,0 +1,1 @@
+- **Choose filled or outlined priority circles.** Set the style for P1 and P2 in Settings → Appearance. Your choice follows your account across desktop and phone.

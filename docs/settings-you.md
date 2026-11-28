@@ -39,7 +39,7 @@ Three pages, **Theme and density**, **Sidebar** and **Task details**. These choi
 - **Theme**: the colours of the whole app, one [theme](themes.md) for light and one for dark.
 - **Accent**: the colour of buttons, links and selected items: **Emerald** (the default) to **Graphite**, or [**Custom**](custom-accent.md). The arrow keys move between the tiles; on a phone they are one scrollable row.
 - **Density**: **Comfortable** (the default) or **Compact**, which makes task rows, group headers and the sidebar tighter. On a touch screen every target stays full size in both.
-- **Task rows**: [one line or detailed](row-layouts.md).
+- **Task rows and priority circles**: [row appearance](row-layouts.md).
 - **Text size**: on this device only.
 - **Show full task titles**: long titles wrap instead of ending with **…**.
 - **Haptic feedback**: a tick on completion, drags, switches and failures. On by default where supported.

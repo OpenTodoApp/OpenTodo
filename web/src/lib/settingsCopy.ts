@@ -198,6 +198,7 @@ export const SETTINGS_COPY = {
       themes: { label: msg('Theme') },
       theme: { label: msg('Accent') },
       textSize: { label: msg('Text size') },
+      priorityCircles: { label: msg('Priority circles'), description: msg('Choose how P1 and P2 look in task lists and details.') },
       density: { label: msg('Density'), description: msg('Compact tightens rows, headers and the sidebar; touch targets stay full size.') },
       rows: { label: msg('Task rows'), description: msg('Detailed adds the parent task and a line of dates, priority and labels.') },
       titles: { label: msg('Show full task titles'), description: msg('Long titles wrap in lists, boards and Today instead of ending with an ellipsis.') },

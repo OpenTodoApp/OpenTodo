@@ -14,6 +14,7 @@ import { taskFlowOf } from '../../lib/flow'
 import { useFlowView } from '../../lib/useFlow'
 import { useLiveTasks } from '../../lib/liveTasks'
 import { useToday } from '../useViews'
+import { PRIORITY_RING } from '../../lib/priority'
 import { flowUndoable } from '../../lib/undoActions'
 import { showUndoToast } from '../bulk/toastStore'
 import { addTasksUndoable, subtaskInputs } from '../../lib/pasteTasks'
@@ -89,7 +90,7 @@ export function Subtasks({ task, items, progress, readOnly, boxed = false, add =
               className="touch-target inline-flex size-5 shrink-0 items-center justify-center rounded-full"
             >
               {/* The circle is a span: on a touch screen the button grows to 44 px, the circle stays 16 px. */}
-              <span data-check-mark className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${c.completed_at ? 'border-accent bg-accent text-on-accent' : 'border-input hover:bg-success-soft'}`}>
+              <span data-check-mark className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${c.completed_at ? 'border-accent bg-accent text-on-accent' : `${PRIORITY_RING[c.priority]} hover:bg-success-soft`}`}>
                 {c.completed_at && <Icon name="check" size={10} />}
               </span>
             </button>

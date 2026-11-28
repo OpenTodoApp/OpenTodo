@@ -7,6 +7,7 @@
 import type { HTMLAttributes, PointerEvent as ReactPointerEvent, ReactNode, Ref } from 'react'
 import { Icon, type IconName } from '../../ui'
 import { t } from '../../lib/i18n'
+import { PRIORITY_RING } from '../../lib/priority'
 
 /** A fact on the row's second line: a time, a project, a date. */
 export interface PhoneRowFact {
@@ -30,7 +31,6 @@ export interface PhoneRowModel {
 /** The row shows at most this many facts (the interface budget counts the check and the title too). */
 export const MAX_ROW_FACTS = 4
 
-const RING: Record<number, string> = { 1: 'border-p1', 2: 'border-p2', 3: 'border-p3', 4: 'border-input' }
 const TONE: Record<string, string> = { danger: 'text-danger', accent: 'text-accent' }
 
 /** What a swipe adds to the row: the gesture's start and the edge it uncovers (`useRowSwipe`). */
@@ -95,7 +95,7 @@ export function PhoneRow({ row, readOnly = false, swipe, onToggle, onOpen, depth
         <button type="button" aria-pressed={!!row.done} disabled={readOnly} aria-label={row.done ? t('Reopen task') : t('Complete task')}
           onClick={() => onToggle(row.id)} data-phone-check
           className="press-selected flex h-14 w-12 shrink-0 items-center justify-center rounded-full bg-clip-content px-2 py-3 focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-focus">
-          <span aria-hidden data-check-mark className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${row.done ? 'border-transparent bg-faint text-on-accent' : RING[row.priority]}`}>
+          <span aria-hidden data-check-mark className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${row.done ? 'border-transparent bg-faint text-on-accent' : PRIORITY_RING[row.priority]}`}>
             {row.done && <Icon name="check" size="xs" />}
           </span>
         </button>
