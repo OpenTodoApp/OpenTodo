@@ -1,1 +1,0 @@
-- **Done on a repeating task's notification completes the occurrence that is due.** On the Android app, Done on a notification could complete an occurrence already done on another device and leave the due one open, with its reminder back. Done now syncs first, and leaves alone an occurrence already completed elsewhere.

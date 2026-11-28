@@ -21,6 +21,8 @@ import { dismissReminder, snoozeReminder } from './reminders'
 import { resettable } from './moduleState'
 import { has } from './shell'
 import { seriesRule } from './recurring'
+import { deadlineFireAt, relativeFireAt } from './reminderTime'
+import type { Reminder, Task } from './types'
 import { onSyncStatus, syncSnapshot } from './sync'
 
 export type ReminderAction = 'snooze' | 'dismiss' | 'done'
@@ -67,9 +69,13 @@ const OCCURRENCE = /^(.+)@(\d{4}-\d{2}-\d{2})$/
  * Writes a notification button's operation: Snooze 10 min or Dismiss, as `push-sw.js`
  * does, or Done, which completes the reminder's task through completeTask (a repeating
  * task moves to its next occurrence); completing disarms every reminder of the task.
- * A repeating task whose reminder now fires later has already moved past the firing
- * the notification showed (completed on another device): Done leaves it alone rather
- * than complete the next occurrence too.
+ * A repeating task whose relative or deadline reminder, computed here from the task's
+ * current due or deadline, fires more than an hour from now has already moved past the
+ * firing the notification showed (completed on another device): Done leaves it alone
+ * rather than complete the next occurrence too. Computed on this device, not read from
+ * `fire_at`, so a snooze set elsewhere, a server clock ahead or a firing written in
+ * another time zone does not stop a Done; a series moves by at least a day. Absolute
+ * and location reminders have no occurrence to compare with and are not guarded.
  */
 export async function applyReminderAction(id: string, action: ReminderAction, now = Date.now()): Promise<void> {
   if (action === 'snooze') await snoozeReminder(id, '10m', now)
@@ -78,9 +84,20 @@ export async function applyReminderAction(id: string, action: ReminderAction, no
     const r = await db.reminders.get(id)
     const task = r ? await db.tasks.get(r.task_id) : undefined
     if (!r || !task || task.deleted_at || task.completed_at) return
-    if (seriesRule(task) && r.fire_at != null && r.fire_at > now) return
+    if (seriesRule(task) && movedOn(r, task, now)) return
     await completeTask(task.id, { now })
   }
+}
+
+/** A series moves by at least a day; within this margin a firing is still the one shown. */
+const MOVED_ON_MARGIN_MS = 60 * 60_000
+
+/** Whether the reminder of a series now fires for a later occurrence than the one due by `now`. */
+function movedOn(r: Reminder, task: Task, now: number): boolean {
+  const at = r.kind === 'relative' ? relativeFireAt(task.due, r.offset_minutes)
+    : r.kind === 'deadline' ? deadlineFireAt(task.deadline, r.offset_minutes)
+    : null
+  return at != null && at > now + MOVED_ON_MARGIN_MS
 }
 
 /** Done from an address waits at most this long for the page's first sync. */
@@ -99,17 +116,17 @@ type SyncView = { state: string; lastSyncedAt: number | null }
  */
 export function afterFirstSync(read: () => SyncView = syncSnapshot, listen: (fn: () => void) => () => void = onSyncStatus, limitMs = DONE_SYNC_MS, noSyncMs = DONE_NO_SYNC_MS): Promise<void> {
   return new Promise((resolve) => {
-    const started = Date.now()
+    let noSyncPassed = false
     const timers: ReturnType<typeof setTimeout>[] = []
     let off = () => {}
     const finish = () => { off(); timers.forEach(clearTimeout); resolve() }
     const check = () => {
       const s = read()
       if (s.state === 'syncing' || s.state === 'reseeding') return
-      if (s.lastSyncedAt != null || s.state !== 'idle' || Date.now() - started >= noSyncMs) finish()
+      if (s.lastSyncedAt != null || s.state !== 'idle' || noSyncPassed) finish()
     }
     off = listen(check)
-    timers.push(setTimeout(check, noSyncMs), setTimeout(finish, limitMs))
+    timers.push(setTimeout(() => { noSyncPassed = true; check() }, noSyncMs), setTimeout(finish, limitMs))
     check()
   })
 }

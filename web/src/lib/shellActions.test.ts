@@ -161,6 +161,32 @@ describe('shell address actions', () => {
       expect(await db.outbox.count()).toBe(before)
     })
 
+    it('a snooze set on another device does not stop Done', async () => {
+      const { id, rid } = await dailyAt9('2026-10-23')
+      // Snoozed elsewhere until the afternoon: the stored firing is later, the occurrence is still today's.
+      await mutate('reminder', rid, { fire_at: new Date(2026, 9, 23, 15, 0).getTime(), delivered_at: null })
+      await applyReminderAction(rid, 'done')
+      expect((await db.tasks.get(occurrenceId(id, '2026-10-23')))?.completed_at).not.toBeNull()
+      expect((await db.tasks.get(id))!.due?.date).toBe('2026-10-24')
+    })
+
+    it('a firing written by a clock ahead or in another time zone does not stop Done', async () => {
+      const { id, rid } = await dailyAt9('2026-10-23')
+      // The stored fire_at is 09:00 read in a zone five hours behind: computed here, it is today's 09:00.
+      await mutate('reminder', rid, { fire_at: new Date(2026, 9, 23, 14, 0).getTime() })
+      await applyReminderAction(rid, 'done')
+      expect((await db.tasks.get(occurrenceId(id, '2026-10-23')))?.completed_at).not.toBeNull()
+    })
+
+    it('today an absolute reminder of a series is not guarded: Done moves it again (follow-up: the occurrence shown)', async () => {
+      const id = await createTask({ title: 'Water the plants' })
+      await mutate('task', id, { due: { date: '2026-10-23', time: '09:00' }, recurrence: 'every day' })
+      const rid = await addReminder(id, { kind: 'absolute', fire_at: new Date(2026, 9, 23, 9, 0).getTime() })
+      await completeTask(id)
+      await applyReminderAction(rid, 'done')
+      expect((await db.tasks.get(id))!.due?.date).toBe('2026-10-25')
+    })
+
     it('Snooze and Dismiss do not wait for the sync', async () => {
       const { rid } = await dailyAt9('2026-10-23')
       let waited = 0
