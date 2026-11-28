@@ -1,0 +1,1 @@
+- **The Calendar's Show completed tasks button shows when it is on.** Pressed, it now takes the same fill as other pressed buttons, and so does the Calendars menu button while events are shown; before, both looked almost the same on and off.

@@ -85,6 +85,7 @@ describe.each([1280, 390])('completed calendar tasks at %i px', (width) => {
     const control = await controlAtWidth(r.container)
     expect(control.textContent?.trim()).toBe('Show completed tasks')
     expect(control.getAttribute(width === 1280 ? 'aria-pressed' : 'aria-checked')).toBe('false')
+    if (width === 1280) expect(control.classList.contains('bg-selected')).toBe(false)
     await click(control)
     await waitFor(() => !!taskRow(r.container, done) && !!taskRow(r.container, lane))
     expect(await getMeta(CALENDAR_COMPLETED_META_KEY, false)).toBe(true)
@@ -100,6 +101,8 @@ describe.each([1280, 390])('completed calendar tasks at %i px', (width) => {
     const active = await controlAtWidth(r.container)
     expect(active.textContent?.trim()).toBe('Show completed tasks')
     expect(active.getAttribute(width === 1280 ? 'aria-pressed' : 'aria-checked')).toBe('true')
+    // Pressed shows the selected fill, as other pressed toggles do; the sunken tone matched the header's canvas (#2155).
+    if (width === 1280) expect(active.classList.contains('bg-selected')).toBe(true)
     await click(active)
     await waitFor(() => !taskRow(r.container, done) && !taskRow(r.container, lane))
     expect(taskRow(r.container, open)).toBeTruthy()

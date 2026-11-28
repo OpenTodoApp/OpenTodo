@@ -12,7 +12,7 @@ export function CalendarCompletedToggle({ shown, menu = false }: { shown: boolea
   if (menu) return <MenuItem label={label} icon="circle-check-big" checked={shown} data-calendar-completed-toggle onSelect={toggle} />
   return (
     <Button variant="ghost" size="sm" icon="circle-check-big" aria-pressed={shown} data-calendar-completed-toggle
-      className={shown ? 'bg-sunken dark:bg-raised' : 'text-muted'}
+      className={shown ? 'bg-selected text-strong' : 'text-muted'}
       onClick={toggle}>
       {label}
     </Button>
