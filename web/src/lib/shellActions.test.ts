@@ -2,11 +2,12 @@
 // Addresses a native shell opens the app at (OpenSpec change native-shells, "Snooze
 // from the notification", "Quick add from the widget").
 import 'fake-indexeddb/auto'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from './db'
-import { createTask, resetDeviceId } from './ops'
+import { occurrenceId } from './ids'
+import { completeTask, createTask, mutate, resetDeviceId } from './ops'
 import { addReminder } from './reminders'
-import { applyReminderAction, handleShellUrl, shellUrlAction, takeQuickAddPrefill } from './shellActions'
+import { afterFirstSync, applyReminderAction, handleShellUrl, shellUrlAction, takeQuickAddPrefill } from './shellActions'
 
 beforeEach(async () => {
   await db.delete()
@@ -126,6 +127,105 @@ describe('shell address actions', () => {
         expect(replaced.at(-1)).toBe('/')
       } finally { delete window.opentodoShell }
     })
+  })
+
+  describe('Done on a repeating task from a notification (#2183)', () => {
+    const hist = { state: null, replaceState: () => undefined } as unknown as History
+    const at = (search: string) => ({ pathname: '/', search, hash: '' }) as Location
+    // 10:00 on 23 October, local time: the 09:00 reminder of the day has fired.
+    beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 9, 23, 10, 0)) })
+    afterEach(() => { vi.useRealTimers() })
+
+    async function dailyAt9(due: string) {
+      const id = await createTask({ title: 'Water the plants' })
+      await mutate('task', id, { due: { date: due, time: '09:00' }, recurrence: 'every day' })
+      const rid = await addReminder(id, { kind: 'relative', offset_minutes: 0 })
+      return { id, rid }
+    }
+
+    it('waits for the first sync, so a copy that is behind completes the occurrence the server is on', async () => {
+      // The phone last synced on the 22nd; the 22nd was then completed on another device.
+      const { id, rid } = await dailyAt9('2026-10-22')
+      const sync = async () => { await completeTask(id) }
+      await handleShellUrl(() => false, at(`?reminder=${rid}&action=done`), hist, sync)
+      expect((await db.tasks.get(occurrenceId(id, '2026-10-23')))?.completed_at).not.toBeNull()
+      expect((await db.tasks.get(id))!.due?.date).toBe('2026-10-24')
+    })
+
+    it('an occurrence already completed elsewhere is not completed again', async () => {
+      const { id, rid } = await dailyAt9('2026-10-23')
+      await completeTask(id)
+      const before = await db.outbox.count()
+      await applyReminderAction(rid, 'done')
+      expect((await db.tasks.get(id))!.due?.date).toBe('2026-10-24')
+      expect(await db.outbox.count()).toBe(before)
+    })
+
+    it('a snooze set on another device does not stop Done', async () => {
+      const { id, rid } = await dailyAt9('2026-10-23')
+      // Snoozed elsewhere until the afternoon: the stored firing is later, the occurrence is still today's.
+      await mutate('reminder', rid, { fire_at: new Date(2026, 9, 23, 15, 0).getTime(), delivered_at: null })
+      await applyReminderAction(rid, 'done')
+      expect((await db.tasks.get(occurrenceId(id, '2026-10-23')))?.completed_at).not.toBeNull()
+      expect((await db.tasks.get(id))!.due?.date).toBe('2026-10-24')
+    })
+
+    it('a firing written by a clock ahead or in another time zone does not stop Done', async () => {
+      const { id, rid } = await dailyAt9('2026-10-23')
+      // The stored fire_at is 09:00 read in a zone five hours behind: computed here, it is today's 09:00.
+      await mutate('reminder', rid, { fire_at: new Date(2026, 9, 23, 14, 0).getTime() })
+      await applyReminderAction(rid, 'done')
+      expect((await db.tasks.get(occurrenceId(id, '2026-10-23')))?.completed_at).not.toBeNull()
+    })
+
+    it('a firing written east of the phone, already passed, does not stop Done', async () => {
+      // The phone is west of the writer: here the series computes to 15:00 today, hours
+      // ahead, but the stored fire_at, which the shell scheduled from, has passed.
+      const { id, rid } = await dailyAt9('2026-10-23')
+      await mutate('task', id, { due: { date: '2026-10-23', time: '15:00' } })
+      await mutate('reminder', rid, { fire_at: new Date(2026, 9, 23, 9, 0).getTime() })
+      await applyReminderAction(rid, 'done')
+      expect((await db.tasks.get(occurrenceId(id, '2026-10-23')))?.completed_at).not.toBeNull()
+    })
+
+    it('today an absolute reminder of a series is not guarded: Done moves it again (follow-up: the occurrence shown)', async () => {
+      const id = await createTask({ title: 'Water the plants' })
+      await mutate('task', id, { due: { date: '2026-10-23', time: '09:00' }, recurrence: 'every day' })
+      const rid = await addReminder(id, { kind: 'absolute', fire_at: new Date(2026, 9, 23, 9, 0).getTime() })
+      await completeTask(id)
+      await applyReminderAction(rid, 'done')
+      expect((await db.tasks.get(id))!.due?.date).toBe('2026-10-25')
+    })
+
+    it('Snooze and Dismiss do not wait for the sync', async () => {
+      const { rid } = await dailyAt9('2026-10-23')
+      let waited = 0
+      await handleShellUrl(() => false, at(`?reminder=${rid}&action=dismiss`), hist, async () => { waited++ })
+      expect(waited).toBe(0)
+      expect((await db.reminders.get(rid))!.dismissed_at).not.toBeNull()
+    })
+  })
+
+  it('the first sync ends at its first exchange, when it cannot run, or at the limits', async () => {
+    let snap = { state: 'idle', lastSyncedAt: null as number | null }
+    const fns = new Set<() => void>()
+    const listen = (fn: () => void) => { fns.add(fn); return () => void fns.delete(fn) }
+    const set = (next: typeof snap) => { snap = next; fns.forEach((fn) => fn()) }
+    let done = false
+    const waiting = afterFirstSync(() => snap, listen, 1_000, 500).then(() => { done = true })
+    set({ state: 'syncing', lastSyncedAt: null })
+    await Promise.resolve()
+    expect(done).toBe(false)
+    set({ state: 'idle', lastSyncedAt: 1 })
+    await waiting
+    expect(fns.size).toBe(0)
+    snap = { state: 'offline', lastSyncedAt: null }
+    await afterFirstSync(() => snap, listen, 1_000, 500)
+    // Sync never starts: the shorter limit.
+    snap = { state: 'idle', lastSyncedAt: null }
+    const t0 = Date.now()
+    await afterFirstSync(() => snap, listen, 1_000, 50)
+    expect(Date.now() - t0).toBeLessThan(900)
   })
 
   it('add prefills quick add without creating a task, and leaves the address clean', async () => {
