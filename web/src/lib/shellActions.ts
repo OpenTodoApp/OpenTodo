@@ -72,9 +72,9 @@ const OCCURRENCE = /^(.+)@(\d{4}-\d{2}-\d{2})$/
  * A repeating task whose relative or deadline reminder, computed here from the task's
  * current due or deadline, fires more than an hour from now has already moved past the
  * firing the notification showed (completed on another device): Done leaves it alone
- * rather than complete the next occurrence too. Computed on this device, not read from
- * `fire_at`, so a snooze set elsewhere, a server clock ahead or a firing written in
- * another time zone does not stop a Done; a series moves by at least a day. Absolute
+ * rather than complete the next occurrence too, and only when the stored `fire_at` is
+ * that far ahead as well: a snooze set elsewhere, a server clock ahead or a firing
+ * written in another time zone does not stop a Done; a series moves by at least a day. Absolute
  * and location reminders have no occurrence to compare with and are not guarded.
  */
 export async function applyReminderAction(id: string, action: ReminderAction, now = Date.now()): Promise<void> {
@@ -92,12 +92,17 @@ export async function applyReminderAction(id: string, action: ReminderAction, no
 /** A series moves by at least a day; within this margin a firing is still the one shown. */
 const MOVED_ON_MARGIN_MS = 60 * 60_000
 
-/** Whether the reminder of a series now fires for a later occurrence than the one due by `now`. */
+/**
+ * Whether the reminder of a series now fires for a later occurrence than the one due by
+ * `now`: both its firing computed here and its stored `fire_at` (which the shells schedule
+ * from; a writer in another zone may differ) are more than the margin away.
+ */
 function movedOn(r: Reminder, task: Task, now: number): boolean {
   const at = r.kind === 'relative' ? relativeFireAt(task.due, r.offset_minutes)
     : r.kind === 'deadline' ? deadlineFireAt(task.deadline, r.offset_minutes)
     : null
-  return at != null && at > now + MOVED_ON_MARGIN_MS
+  const later = (t: number) => t > now + MOVED_ON_MARGIN_MS
+  return at != null && later(at) && (r.fire_at == null || later(r.fire_at))
 }
 
 /** Done from an address waits at most this long for the page's first sync. */

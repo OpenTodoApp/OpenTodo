@@ -178,6 +178,16 @@ describe('shell address actions', () => {
       expect((await db.tasks.get(occurrenceId(id, '2026-10-23')))?.completed_at).not.toBeNull()
     })
 
+    it('a firing written east of the phone, already passed, does not stop Done', async () => {
+      // The phone is west of the writer: here the series computes to 15:00 today, hours
+      // ahead, but the stored fire_at, which the shell scheduled from, has passed.
+      const { id, rid } = await dailyAt9('2026-10-23')
+      await mutate('task', id, { due: { date: '2026-10-23', time: '15:00' } })
+      await mutate('reminder', rid, { fire_at: new Date(2026, 9, 23, 9, 0).getTime() })
+      await applyReminderAction(rid, 'done')
+      expect((await db.tasks.get(occurrenceId(id, '2026-10-23')))?.completed_at).not.toBeNull()
+    })
+
     it('today an absolute reminder of a series is not guarded: Done moves it again (follow-up: the occurrence shown)', async () => {
       const id = await createTask({ title: 'Water the plants' })
       await mutate('task', id, { due: { date: '2026-10-23', time: '09:00' }, recurrence: 'every day' })

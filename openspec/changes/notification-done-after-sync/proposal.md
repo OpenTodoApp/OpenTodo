@@ -7,7 +7,7 @@
 ## What Changes
 
 - **Done from a notification waits for the first sync** of the page it opened, up to 30 seconds (10 when sync never starts); offline, or when sync cannot run, it applies at once from what the device has. Snooze and Dismiss do not wait.
-- **Done on an occurrence already completed elsewhere writes nothing.** For a relative or deadline reminder of a repeating task, the device computes the firing from the task's current due or deadline; when that is more than an hour from now, the series has moved on and Done leaves it alone. A snooze set on another device, a server clock ahead or a firing written in another time zone does not stop it.
+- **Done on an occurrence already completed elsewhere writes nothing.** For a relative or deadline reminder of a repeating task, the device computes the firing from the task's current due or deadline; when that and the stored firing are both more than an hour from now, the series has moved on and Done leaves it alone. A snooze set on another device, a server clock ahead or a firing written in another time zone does not stop it.
 
 Not **BREAKING**. No op field, route, bridge method or environment variable. Convergence is unchanged: Done is the app's own completion, as ordinary operations.
 
@@ -26,7 +26,7 @@ None.
 
 ### Modified Capabilities
 
-- `reminders`: Done from a notification waits for the first sync and leaves an occurrence completed elsewhere alone (ADDED requirement "Done from a notification applies to the due occurrence").
+- `reminders`: "Done from a reminder notification" waits for the first sync and leaves an occurrence completed elsewhere alone (MODIFIED).
 
 ## Impact
 
