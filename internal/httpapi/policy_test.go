@@ -39,6 +39,9 @@ func routeTableOf(t *testing.T, demoMode bool) []routeEntry {
 	set := testSet(t, config.Config{SessionTTL: time.Hour, DataDir: dir, Demo: demoMode}, db, services.Options{Hosted: &services.Hosted{}})
 	set.Push = push.New(db, set.Sync, dir, push.Options{AllowHTTP: true, Client: http.DefaultClient})
 	set.Cfg.PushDisabled = false
+	if set.Apple == nil {
+		set.Apple = push.NewApple(db, set.Sync, push.AppleOptions{On: set.AppleRelay.On})
+	}
 	var srv *Server
 	New(set, http.NotFoundHandler(), func(s *Server) { srv = s })
 	if srv == nil || len(srv.routeTable) < 150 {

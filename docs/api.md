@@ -196,6 +196,11 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/push/subscriptions` | yes | `{deviceId, endpoint, keys:{p256dh, auth}, includeContent?}` → 201 `{subscription}` (200 when the device's subscription was replaced) |
 | DELETE | `/api/v1/push/subscriptions/{id}` | yes | 204, or 404 `not_found` |
 | POST | `/api/v1/push/test` | yes | `{deviceId}` → 200 `{outcome, testId?, subscription, status?, error?}`: sends one real test push to that device; 5 per account per 10 minutes, see [Reminders and push](#reminders-and-push) |
+| POST | `/api/v1/push/apple` | session | `{deviceId, token, environment, dueToken, includeContent}` → 201 `{registration:{id, deviceId, includeContent, expiresAt, createdAt}}`: registers this iPhone with the push relay; 403 `relay-off` while the owner's switch is off, 502 `relay-unreachable`, 400 `invalid_input`, 429 `rate_limited` with `Retry-After` after 5 an hour per account or while the relay is busy |
+| PUT | `/api/v1/push/apple/{id}/schedule` | session | `{cursor, until}` → `{renew}`: the phone's schedule reflects the op log up to `cursor`, through `until` (ms); 404 `not_found` when the registration is gone |
+| DELETE | `/api/v1/push/apple/{id}` | session | 204, or 404 `not_found`; works with the owner's switch off too, and contacts no relay |
+| GET | `/api/v1/push/apple/status` | session | `{relay:{reached, protocol, error}, registration?}`: the relay's part of the delivery check; with `?device={id}` also that device's `{id, expiresAt, failures, relayUnreachable}` or `null`. The relay is asked only while the owner's switch is on (403 `relay-off` otherwise) |
+| GET | `/api/v1/push/apple/due` | the device's due token (`Authorization: Bearer`) | `{reminders:[{id, taskId, fireAt, title?}]}`: reminders firing from 5 minutes ago to 1 minute ahead, a plain-text title (at most 120 characters) only when the device includes titles and the account is not encrypted; 401 for an unknown token, 429 after 30 an hour per device |
 
 #### Tasks, projects and other synced data
 
@@ -357,6 +362,9 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PUT | `/api/v1/settings/caldav` | owner | `{enabled}` → the same shape |
 | GET | `/api/v1/settings/caldav/push` | yes | `{enabled, available}` |
 | PUT | `/api/v1/settings/caldav/push` | owner | `{enabled}` → the same shape |
+| GET | `/api/v1/settings/push/apple-relay` | yes | `{enabled, url, urlFixedBy}`: iPhone push through the OpenTodo relay (off by default) and the relay's address; `urlFixedBy` is `OPENTODO_APPLE_RELAY` when the environment sets it |
+| PUT | `/api/v1/settings/push/apple-relay` | owner | `{enabled}` → the same shape; recorded as `settings.changed` (`push.apple_relay`) |
+| PUT | `/api/v1/settings/push/apple-relay/url` | owner | `{url}` (`""` restores the project's relay) → the same shape; 400 `invalid_input` (https only), 400 `private_target`, 409 `set_by_environment` |
 | GET | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` |
 | PUT | `/api/v1/settings/webhooks` | owner, credential | `{allowPrivate}` → `{allowPrivate}` |
 | GET | `/api/v1/audit` | owner | `{events:[…], cursor}` newest first; filters `name`, `actor`, `target`, `outcome`, `from`, `to`, `cursor`, `limit≤200`, see [Audit log](#audit-log) |
@@ -2788,6 +2796,8 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `series_date_taken` | 409 | a write that moves a repeating task's `due` onto a date that already has one of its occurrences (done, skipped or moved); the message names the date and which, and nothing is applied. See [recurrence](recurrence.md#moving-a-series-onto-a-recorded-date) |
 | `too_large` | 413, 400 | 413: a JSON request body over its limit (4 MB unless the route says otherwise); `/mcp` body over 1 MB; an assistant turn over 256 KB or 40 messages; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows, a CSV field over 1 MiB, a CSV record over 4 MiB or 1,000 fields, or JSON nested over 256 levels. 400: an [away period](#away) that would make more than 20,000 changes |
 | `rate_limited` | 429 | too many attempts in the window, see [Behaviour notes](#behaviour-notes) |
+| `relay-off` | 403 | the routes under `/api/v1/push/apple` while the owner's switch "iPhone push through the OpenTodo relay" is off, except `DELETE /api/v1/push/apple/{id}`, which always removes the registration |
+| `relay-unreachable` | 502 | registering an iPhone while the push relay cannot be reached or refuses; nothing is stored |
 | `demo_limit` | 429 | demo instance: the sandbox used its write budget (600 ops per hour, 5,000 ops and 2 MB of values in total), or the database is above its size limit, on `/sync` or a REST write; nothing of the batch is applied. Demo instances also cap values at 4 KB (32 KB for task notes) with `invalid_input` / `invalid_op` |
 | `internal` | 500 | unexpected server error (details only in the server log) |
 | `demo_busy` | 503 | demo instance: no new sandbox now (live cap reached with none idle for 15 minutes, or the database is above its size limit) |

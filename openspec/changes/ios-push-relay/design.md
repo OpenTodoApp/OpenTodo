@@ -267,7 +267,8 @@ Nothing gets worse than today:
   - someone who knows a phone's APNs token can register it and send those capped, content-free wakes;
   - someone who has a server's database can do the same for that server's iPhones until their handles expire. The wake signature does not help there, because the key sits beside the handle (D2);
   - a flood from many addresses below the per-address limit, beyond the instance cap;
-  - a restart of the relay resets its limits.
+  - a restart of the relay resets its limits;
+  - someone holding a very large number of valid handles (about 100,000, each needing a registration, capped at 30 an hour per address) can fill the device counters: no cap is reset, because device counters are never evicted, but phones without counters that day get `429` until the UTC day ends and keep their own schedule.
 
 **Component "Push relay":**
 - *Code:* `internal/pushrelay`, `cmd/opentodo-push-relay`, `internal/push/apple.go`, `mobile/ios/OpenTodoNotify`.
@@ -286,7 +287,7 @@ Nothing gets worse than today:
 ### Size and memory
 
 - **OpenTodo server:** about 10 KB of code and no dependency. The image grows by that much.
-- **Relay:** a separate image of about 10 MB distroless, using under 30 MB of memory with a full LRU.
+- **Relay:** a separate image of about 10 MB distroless. It keeps two rate-limit LRUs of at most 200,000 keys each, one for source addresses and one for device tokens, and uses under 80 MB of memory with both full.
 - **iOS:** the extension target adds about 200 KB.
 - **Web:** `applePush.ts` is a lazy chunk, so the first load does not grow (`make bundle-budget`).
 
