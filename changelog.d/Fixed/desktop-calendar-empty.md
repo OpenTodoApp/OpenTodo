@@ -1,0 +1,1 @@
+- **The calendar shows its days on a computer again.** Since 1.11.0 the calendar's Day and Week views on a window 768 px or wider showed only their header, because room meant for the phone's tab bar was kept under the page. Lists also had a window's height of empty space at their end.

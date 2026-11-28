@@ -391,7 +391,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             document below the frame (issue #95). */}
         {/* Below 768 px the add button's footprint is reserved at the end of every page that shows it, so it never covers the last row
             (phone-v2 D2, phone-fab-scroll-room; a page with its own scroller: `.page-fill` in index.css); the room under the selection bar is in index.css (no-layout-jump). */}
-        <div ref={content} id="content" data-main-scroller data-add-room={addRoom || undefined} style={scrollerRoom(phoneChrome, addRoom)}
+        <div ref={content} id="content" data-main-scroller data-add-room={addRoom || undefined} style={scrollerRoom(phoneChrome && phoneUi, addRoom)}
           className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${addRoom && !phoneChrome ? 'max-md:pb-(--add-room)' : ''} ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
           {/* One screen failing (a render bug, a chunk gone after an upgrade) leaves the shell usable (client-sync-robustness). */}
           <PanelBoundary resetKey={route}><PhoneOr on={phoneUi} onMenu={openDrawer}>
