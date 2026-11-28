@@ -1,0 +1,1 @@
+- **A long title no longer pushes a page's header onto several rows.** A subtask with a long title, or a page with a long name, kept the sidebar button, the title and Close, Task actions and Help on one row only while the title was short. The title is now cut in that row, the task's own title before the project and its parents, and shown whole on the page.

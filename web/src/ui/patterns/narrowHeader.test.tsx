@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 // A header follows its own width (OpenSpec change tablet-header-room): narrower than
 // 40 rem it gives Help to the page's menu and the title gives way before the actions
-// wrap; a lead line shows whole or not at all; a wide header is as before.
+// wrap, as it does at every width; a lead line shows whole or not at all; a wide header
+// keeps its Help button.
 import { afterEach, describe, expect, it } from 'vitest'
 import { MenuItem } from '../Menu'
 import { click, render, waitFor } from '../test-utils'
@@ -45,12 +46,12 @@ describe('a page header follows its own width', () => {
     await r.unmount()
   })
 
-  it('from 40 rem: the Help button, and the title as before', async () => {
+  it('from 40 rem: the Help button, and the title still gives way before the actions wrap (issue 2134)', async () => {
     layout(702)
     const r = await render(<PageHeader title="Inbox" overflow={print} help="inbox" />)
     expect(r.container.querySelector('[data-page-header]')!.hasAttribute('data-page-narrow')).toBe(false)
     expect(helpButton()?.getAttribute('aria-label')).toBe('Help')
-    expect(r.container.querySelector('[data-page-title]')!.className).not.toContain('max-w-max')
+    expect(r.container.querySelector('[data-page-title]')!.className).toContain('max-w-max')
     await r.unmount()
   })
 

@@ -106,8 +106,12 @@ export interface PageHeaderProps {
 /** The title of a day page at the display step, of every other page at the header step (precision-shell D1). */
 const TITLE = { day: 'text-display text-strong', tool: 'text-h3 text-strong' } as const
 
-/** In a narrow header the title asks for 6 rem at most before the actions wrap under it, then takes the room up to its whole text (tablet-header-room D2). */
-const NARROW_TITLE = 'basis-24 grow-[999] max-w-max'
+/**
+ * A tool page's title asks for 6 rem at most before the actions wrap under it, then takes the
+ * room up to its whole text (tablet-header-room D2), so a long title (a subtask's path, GitHub
+ * issue 2134) is cut in its row instead of taking a row of its own at any width.
+ */
+const TOOL_TITLE = 'basis-24 grow-[999] max-w-max'
 
 /**
  * A tool page's lead line (tablet-header-room D3): it takes the room the title and the
@@ -162,7 +166,7 @@ function OwnPageHeader({ title, subtitle, meta, leading, actions, barActions = f
   // The header's own width decides how much its row holds (tablet-header-room D1).
   const [room, measuredNarrow] = useNarrow<HTMLElement>()
   const narrow = ownRow && measuredNarrow
-  const narrowTitle = narrow && !day ? ` ${NARROW_TITLE}` : ''
+  const toolTitle = day ? '' : ` ${TOOL_TITLE}`
   // The bar takes the title, Back, the overflow menu, the page menu and Help; the
   // page's own actions stay in the page as a wrapping row, so nothing is clipped at 360 px,
   // unless the page fitted them into the bar's two slots (phone-v2 D1).
@@ -180,8 +184,8 @@ function OwnPageHeader({ title, subtitle, meta, leading, actions, barActions = f
     </a>
   )
   const heading = typeof title === 'string'
-    ? <TruncatedText as={H} text={title} elRef={titleRef} tabIndex={titleTabIndex} className={`min-w-0 ${TITLE[day ? 'day' : 'tool']} outline-none${narrowTitle}`} data-page-title="" />
-    : <H ref={titleRef} tabIndex={titleTabIndex} className={`flex min-w-0 items-center ${TITLE[day ? 'day' : 'tool']} outline-none${narrowTitle}`} data-page-title>{title}</H>
+    ? <TruncatedText as={H} text={title} elRef={titleRef} tabIndex={titleTabIndex} className={`min-w-0 ${TITLE[day ? 'day' : 'tool']} outline-none${toolTitle}`} data-page-title="" />
+    : <H ref={titleRef} tabIndex={titleTabIndex} className={`flex min-w-0 items-center ${TITLE[day ? 'day' : 'tool']} outline-none${toolTitle}`} data-page-title>{title}</H>
   // The lead line: beside a day page's title at the prose step, beside a tool page's title at the metadata step;
   // there it takes the room that is left (basis 0), so a narrow head wraps its actions under the title, never sideways.
   // A lead holding a button (the calendar's "2 blocks behind · Re-plan") is never cut: it keeps its width and the tools wrap instead.

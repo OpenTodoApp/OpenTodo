@@ -4,7 +4,7 @@
 import { type ReactNode } from 'react'
 import { t } from '../../lib/i18n'
 import { splitParents } from '../../lib/taskPath'
-import { Icon, Menu, MenuItem, useCut } from '../../ui'
+import { Icon, Menu, MenuItem, TruncatedText, useCut } from '../../ui'
 
 const crumbClass = 'min-h-6 rounded-control px-1 text-muted hover:bg-hover hover:text-default'
 
@@ -100,7 +100,8 @@ export function TaskPath({ origin, project, parents, current, onOpen, compact = 
   }
   bits.push({
     key: 'task',
-    node: <span className="min-w-0 truncate px-1 text-strong" aria-current="page" data-crumb="task">{current}</span>,
+    // Cut, it shows the whole title on hover and keyboard focus.
+    node: <TruncatedText text={current} className="min-w-0 px-1 text-strong" aria-current="page" data-crumb="task" />,
   })
 
   const nearest = shown.at(-1)
@@ -113,8 +114,10 @@ export function TaskPath({ origin, project, parents, current, onOpen, compact = 
     <nav aria-label={t('Task path')} data-breadcrumb className={`flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden font-normal ${compact ? 'text-meta' : 'text-body'}`}>
       {shownBits.map((b, i) => (
         // A squeezed crumb keeps room for its chevron and an ellipsis and clips the rest,
-        // so it never paints over the next one (GitHub issue 1050).
-        <span key={b.key} className={`flex items-center gap-0.5 ${b.key === 'more' ? 'shrink-0' : `overflow-hidden has-focus-visible:overflow-visible ${i > 0 ? 'min-w-10' : 'min-w-8'}`}`}>
+        // so it never paints over the next one (GitHub issue 1050). The task's own title,
+        // whole on the page below, takes only the room the steps up leave (basis 0), so they
+        // keep their whole names while they fit (GitHub issue 2134).
+        <span key={b.key} className={`flex items-center gap-0.5 ${b.key === 'more' ? 'shrink-0' : `overflow-hidden has-focus-visible:overflow-visible ${i > 0 ? 'min-w-10' : 'min-w-8'}${b.key === 'task' ? ' grow basis-0' : ''}`}`}>
           {i > 0 && <Icon name="chevron-right" size="xs" className="shrink-0 text-faint" aria-hidden />}
           {b.node}
         </span>
