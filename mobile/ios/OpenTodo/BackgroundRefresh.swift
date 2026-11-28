@@ -43,7 +43,8 @@ enum BackgroundRefresh {
                 }
                 let run = HiddenRun.shared(for: origin)
                 refresh.expirationHandler = { Task { @MainActor in run.stop() } }
-                let ok = await run.start(budget: budget)
+                // Ticks on the Today widget go with the hourly run (ios-widget-complete D3).
+                let ok = await run.start(budget: budget, path: run.busy ? nil : WidgetPublication.takeCompletePath())
                 refresh.setTaskCompleted(success: ok)
             }
         }
@@ -53,6 +54,47 @@ enum BackgroundRefresh {
     static func scheduleNext() {
         guard Prefs.shared.serverOrigin != nil else { return }
         try? BGTaskScheduler.shared.submit(request())
+    }
+}
+
+/// The Today widget's ticks (ios-widget-complete D3): a widget cannot start the app, so the
+/// queue waits for it, and the web app completes each task as its own op in a hidden run at
+/// `/?complete=…`. The visible app never applies that address (it lists no `background`).
+@MainActor
+enum WidgetCompletions {
+    /// Takes the queue and runs it, unless a run is going: that one is never replaced, and
+    /// the ticks queued meanwhile follow it. Called when the app becomes active.
+    static func apply() {
+        guard let origin = Prefs.shared.serverOrigin.flatMap(URL.init(string:)) else { return }
+        let run = HiddenRun.shared(for: origin)
+        guard !run.busy, let path = WidgetPublication.takeCompletePath() else { return }
+        // Leaving the app at once must not cut the run short; when iOS ends the extra time,
+        // the run stops (what it stored goes out with the next sync).
+        let background = BackgroundTask()
+        background.id = UIApplication.shared.beginBackgroundTask(withName: "widget-complete") {
+            // UIKit calls the expiration handler on the main thread.
+            MainActor.assumeIsolated {
+                run.stop()
+                background.end()
+            }
+        }
+        Task { @MainActor in
+            _ = await run.start(budget: BackgroundRefresh.budget, path: path)
+            background.end()
+            apply()
+        }
+    }
+
+    /// The extra time asked for, ended once.
+    @MainActor
+    final class BackgroundTask {
+        var id: UIBackgroundTaskIdentifier = .invalid
+
+        func end() {
+            guard id != .invalid else { return }
+            UIApplication.shared.endBackgroundTask(id)
+            id = .invalid
+        }
     }
 }
 
@@ -87,8 +129,17 @@ final class HiddenRun: NSObject, WKNavigationDelegate, WKUIDelegate {
         super.init()
     }
 
-    /// True when the page loaded; the web app publishes from its own effects.
-    func start(budget: TimeInterval) async -> Bool {
+    /// A run is going; a new one would be refused.
+    var busy: Bool { finish != nil }
+
+    /// The app's address for a `path` of it (`/?complete=…`, ios-widget-complete D3), the start page without one.
+    nonisolated static func address(origin: URL, path: String?) -> URL {
+        path.flatMap { URL(string: $0, relativeTo: origin)?.absoluteURL } ?? origin
+    }
+
+    /// True when the page loaded; the web app publishes from its own effects. `path`: an
+    /// address of the app to run at instead of its start page.
+    func start(budget: TimeInterval, path: String? = nil) async -> Bool {
         // A slow run that is still going must not be replaced by a second one.
         guard finish == nil else { return false }
         let webView = self.webView ?? makeWebView()
@@ -105,7 +156,7 @@ final class HiddenRun: NSObject, WKNavigationDelegate, WKUIDelegate {
                 continuation.resume(returning: ok)
                 _ = finish
             }
-            webView.load(URLRequest(url: origin))
+            webView.load(URLRequest(url: Self.address(origin: origin, path: path)))
             Task { @MainActor in
                 try? await Task.sleep(nanoseconds: UInt64(budget * 1_000_000_000))
                 guard self.run == token else { return }
