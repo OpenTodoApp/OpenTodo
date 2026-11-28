@@ -427,7 +427,13 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
   const why = urgencyOf && ids.length === 1 && data.tasks.length === 1 ? urgencyOf(data.tasks[0]) : null
   const groups = useMemo(() => bulkMenuGroups(ids, data, {
     // Only repeating tasks without a project, moved to the Inbox: nothing to review, and the toast says why (inbox-drop-unplaces D2).
-    review: (title, plan) => { void plan.then((p) => { const stays = p.repeating?.([]) ?? []; if (!p.items.length && stays.length) showBulkToast(staysScheduledLabel(stays), null); else bulkDialog.set({ kind: 'review', title, plan: p }) }) },
+    review: (title, plan) => {
+      void plan.then((p) => {
+        const stays = p.repeating?.([]) ?? []
+        if (!p.items.length && stays.length) showBulkToast(staysScheduledLabel(stays), null)
+        else bulkDialog.set({ kind: 'review', title, plan: p })
+      })
+    },
     pickDate: () => bulkDialog.set({ kind: 'date', ids, n }),
     schedule: touch && ids.length === 1 ? () => openRowSchedule(ids[0]) : undefined,
     editTitle,

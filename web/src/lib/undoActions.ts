@@ -352,7 +352,6 @@ function inboxLabel(target: string, repeating: readonly Task[], wrote: boolean):
 export async function moveUndoable(id: string, projectId: string | null, targetName: string, now = Date.now(), toWorkspace?: string): Promise<UndoableResult & { newId: string }> {
   const { tasks, all } = await readTicked([id])
   const task = tasks[0]
-  const repeating = task && projectId === null && staysScheduled(task) ? [task] : []
   // "No project" of another workspace (workspaces, "Move an Inbox task"): the task lands
   // in that workspace's Inbox. A subtask follows its parent's workspace, so it leaves it.
   const target = projectId === null && toWorkspace !== undefined ? workspaceIdFor(toWorkspace, (await readWorkspaceState()).list) : undefined
@@ -365,7 +364,10 @@ export async function moveUndoable(id: string, projectId: string | null, targetN
   if (!task) return { entry: null, label: '', newId: id }
   const memberships = await membershipMap()
   const keep = target !== undefined ? () => target : await keepWorkspaceFor()
-  const changes = planMove([task], all, { projectId, inbox: true }, memberships, await currentUserId(), now, keep)
+  // To another workspace's "No project" only the workspace changes, the schedule stays (inbox-drop-unplaces).
+  const toInbox = projectId === null && target === undefined
+  const repeating = toInbox && staysScheduled(task) ? [task] : []
+  const changes = planMove([task], all, { projectId, inbox: toInbox }, memberships, await currentUserId(), now, keep)
   if (!changes.length) return { entry: null, label: inboxLabel(targetName, repeating, false), newId: id }
   const copy = changes.find((c) => c.entity === 'task' && c.entityId !== id && c.patch.title !== undefined && !c.patch.deleted_at && c.patch.parent_id === (task.parent_id ?? null))
   const r = await apply(changes, inboxLabel(targetName, repeating, true))

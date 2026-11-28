@@ -131,6 +131,16 @@ describe('a move to the Inbox (inbox-drop-unplaces)', () => {
     }
   })
 
+  it('a task of a project moved to another workspace\'s No project keeps its date: only the workspace changes', async () => {
+    const ws = (id: string, name: string, dflt: boolean) => ({ id, name, icon: '', color: '', default: dflt, role: 'owner' as const, ownerId: 'me' })
+    await db.workspaces.bulkPut([ws('w-me', 'Personal', true), ws('w-work', 'Work', false)])
+    const home = await createProject({ name: 'Home' })
+    const id = await createTask({ title: 'Dated', project_id: home, due: { date: FRIDAY }, recurrence: null })
+    const r = await moveUndoable(id, null, 'Work', Date.now(), 'w-work')
+    expect(r.label).toBe('Moved to Work')
+    expect(await db.tasks.get(id)).toMatchObject({ project_id: null, workspace_id: 'w-work', due: { date: FRIDAY } })
+  })
+
   it('a drop on a project leaves the date as it is', async () => {
     const home = await createProject({ name: 'Home' })
     const id = await createTask({ title: 'Dated', due: { date: TODAY } })
