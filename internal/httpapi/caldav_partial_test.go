@@ -10,12 +10,14 @@ import (
 )
 
 // OpenSpec change caldav-verified, "Large-account budgets": a GET, a
-// multiget and a sync-collection after a token read only the tasks they
-// serve (davroutes narrow.go), a calendar-query reads the whole view. The
-// partial view must serve exactly what the whole view serves: the same
-// resources, ETags and calendar data, with subtasks at every depth (in a
-// project and in the Inbox), blockers, labels, reminders, a series with an
-// exception and a resource the client named.
+// multiget, a sync-collection after a token and the listing of a project's
+// calendar (PROPFIND Depth 1, calendar-query, the first sync-collection) read
+// only the tasks they serve (davroutes narrow.go); a multiget of more hrefs
+// than a request reads one by one reads the whole view. The partial view must
+// serve exactly what the whole view serves: the same resources, ETags and
+// calendar data, with subtasks at every depth (in a project and in the
+// Inbox), blockers, labels, reminders, a series with an exception and a
+// resource the client named.
 
 var (
 	hrefRe = regexp.MustCompile(`<d:href>([^<]*)</d:href>`)
@@ -91,10 +93,39 @@ func TestCalDAVPartialViewServesWhatTheWholeViewServes(t *testing.T) {
 			}
 			fmt.Fprintf(&hrefs, "<d:href>%s</d:href>", href)
 		}
-		_, body = c.must("REPORT", c.cal(cal), `<?xml version="1.0"?><c:calendar-multiget xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag/><c:calendar-data/></d:prop>`+
-			hrefs.String()+`</c:calendar-multiget>`, 207, "Depth", "1")
-		if got := served(t, body); fmt.Sprint(got) != fmt.Sprint(whole) {
+		multiget := func(hrefs string) map[string][2]string {
+			t.Helper()
+			_, body := c.must("REPORT", c.cal(cal), `<?xml version="1.0"?><c:calendar-multiget xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag/><c:calendar-data/></d:prop>`+
+				hrefs+`</c:calendar-multiget>`, 207, "Depth", "1")
+			got := served(t, body)
+			for href, g := range got {
+				if g[0] == "" {
+					delete(got, href) // a name no task has
+				}
+			}
+			return got
+		}
+		if got := multiget(hrefs.String()); fmt.Sprint(got) != fmt.Sprint(whole) {
 			t.Errorf("%s: the multiget serves\n%v\nthe calendar-query\n%v", cal, got, whole)
+		}
+		// The whole view: more names than a request reads one by one.
+		wide := hrefs.String()
+		for i := range 1001 {
+			wide += fmt.Sprintf("<d:href>%sabsent-%d.ics</d:href>", c.cal(cal), i)
+		}
+		if got := multiget(wide); fmt.Sprint(got) != fmt.Sprint(whole) {
+			t.Errorf("%s: the whole view serves\n%v\nthe calendar-query\n%v", cal, got, whole)
+		}
+		_, body = c.must("PROPFIND", c.cal(cal), propfindEtags, 207, "Depth", "1")
+		listed := served(t, body)
+		delete(listed, c.cal(cal))
+		if len(listed) != len(whole) {
+			t.Errorf("%s: the PROPFIND lists %d resources, the calendar-query %d\n%s", cal, len(listed), len(whole), body)
+		}
+		for href, w := range whole {
+			if listed[href][0] != w[0] {
+				t.Errorf("%s: PROPFIND ETag of %s is %q, want %q", cal, href, listed[href][0], w[0])
+			}
 		}
 		// Every task changed since the first position of the log: the same
 		// members (the other calendar's tasks are reported gone, as before).
