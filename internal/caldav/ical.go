@@ -162,7 +162,8 @@ func ParseLine(line string) (Prop, error) {
 		return p, fmt.Errorf("%w: malformed content line", ErrInvalid)
 	}
 	p.Name = strings.ToUpper(line[:i])
-	if !validName(p.Name) {
+	// Entourage metadata survives in exported calendars despite its nonstandard underscore.
+	if !validName(p.Name) && p.Name != "X-ENTOURAGE_UUID" {
 		return p, fmt.Errorf("%w: bad property name %q", ErrInvalid, textutil.Truncate(p.Name, 40))
 	}
 	for line[i] == ';' {

@@ -30,6 +30,7 @@ func TestStreamMatchesParse(t *testing.T) {
 	files2, _ := filepath.Glob("../calfeed/testdata/*.ics")
 	inputs := []string{
 		"\xef\xbb\xbfBEGIN:VCALENDAR\rX-A:1\r\nBEGIN:VEVENT\nUID:a\r\n  folded\r\n\tmore\r\n\r\nEND:VEVENT\r\nEND:VCALENDAR",
+		"BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:legacy\r\nX-ENTOURAGE_UUID:legacy-id\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n",
 	}
 	for _, p := range append(files, files2...) {
 		b, err := os.ReadFile(p)
@@ -63,6 +64,9 @@ func TestStreamRefuses(t *testing.T) {
 		{"not UTF-8", cal("X-A:\xff\r\n"), wide, ErrInvalid},
 		{"incomplete", "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\n", wide, ErrInvalid},
 		{"not a calendar", "<html></html>", wide, ErrInvalid},
+		{"other underscored property", cal("X-OTHER_UUID:a\r\n"), wide, ErrInvalid},
+		{"underscored parameter", cal("X-ENTOURAGE_UUID;BAD_PARAM=a:b\r\n"), wide, ErrInvalid},
+		{"underscored component", cal("BEGIN:X-ENTOURAGE_UUID\r\nEND:X-ENTOURAGE_UUID\r\n"), wide, ErrInvalid},
 		// The calendar's own properties have one budget for the whole stream: a
 		// child in between does not start them a new one.
 		{"calendar properties between children", cal(strings.Repeat("X-A:b\r\nBEGIN:VTIMEZONE\r\nEND:VTIMEZONE\r\n", 20)), StreamLimits{Bytes: 1 << 20, PartLines: 10, PartBytes: 1 << 20}, ErrTooLarge},

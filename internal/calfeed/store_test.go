@@ -133,6 +133,27 @@ func localFetcher() *Fetcher {
 	return f
 }
 
+func TestFetchLegacyEntourageMetadata(t *testing.T) {
+	for _, property := range []string{"X-ENTOURAGE_UUID", "x-entourage_uuid"} {
+		t.Run(property, func(t *testing.T) {
+			srv := serve(t, func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "text/calendar")
+				fmt.Fprintf(w, "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:legacy\r\nDTSTART:20261015T090000Z\r\nSUMMARY:Legacy event\r\n%s:legacy-id\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nUID:normal\r\nDTSTART:20261016T090000Z\r\nSUMMARY:Normal event\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n", property)
+			})
+			res, err := localFetcher().Fetch(context.Background(), &Subscription{URL: srv.URL})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !res.Replaced || len(res.Occurrences) != 2 || len(res.Warnings) != 0 {
+				t.Fatalf("fetch = %+v", res)
+			}
+			if res.Occurrences[0].Summary != "Legacy event" || res.Occurrences[1].Summary != "Normal event" {
+				t.Fatalf("events = %+v", res.Occurrences)
+			}
+		})
+	}
+}
+
 func TestFetchOutcomes(t *testing.T) {
 	google, _ := os.ReadFile("testdata/google.ics")
 	f := localFetcher()

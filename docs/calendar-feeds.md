@@ -28,6 +28,8 @@ Copy the calendar's iCal or `webcal://` address from its app, then open **Settin
 
 Outlook on the web on your own Exchange server refuses non-browser requests with error 400. When a calendar answers 400, 403 or 406, OpenTodo retries once as a desktop browser and keeps doing so for that calendar. If **http_400** stays, check the calendar is still published.
 
+`X-ENTOURAGE_UUID` metadata is ignored during refresh.
+
 ## Your tasks as a calendar
 
 In **Settings → Integrations → Calendar feeds**, under **Your tasks as a calendar**, choose **Create feed URL**. The address is shown **only once**, so copy it right away. Then subscribe to it:
