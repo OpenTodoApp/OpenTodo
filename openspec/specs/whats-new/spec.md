@@ -6,7 +6,7 @@ Settings › About shows a short English note for each release, compiled into th
 ## Requirements
 
 ### Requirement: News ships with the version
-Each released version that has news SHALL have one entry compiled into the web app: a version, a date, and a body of at most four sentences of plain text. The app SHALL NOT fetch entries, and SHALL NOT contact GitHub, the website, or any other host to learn them or to learn whether a newer version exists. Entries SHALL be available offline, because they are part of the client. Versions older than the first entry SHALL have none, and the page SHALL say so by simply not listing them.
+Each released version from the first entry on SHALL have one entry compiled into the web app: a version, a date, and a body of at most four sentences of plain text. The newest released version SHALL always have one, so the series cannot stay empty once a version is released; the repository's checks SHALL fail while it has none. An entry SHALL name a version the changelog has released, and the checks SHALL refuse one that does not. The app SHALL NOT fetch entries, and SHALL NOT contact GitHub, the website, or any other host to learn them or to learn whether a newer version exists. Entries SHALL be available offline, because they are part of the client. Versions older than the first entry SHALL have none, and the page SHALL say so by simply not listing them.
 
 #### Scenario: No request for news
 - **WHEN** a signed-in user opens What's new, online or offline, with the network inspected
@@ -15,6 +15,14 @@ Each released version that has news SHALL have one entry compiled into the web a
 #### Scenario: Nothing published yet
 - **WHEN** this client was built with no entries
 - **THEN** the page shows one line that there is nothing new in this version yet, and no dot is shown
+
+#### Scenario: A release without its entry
+- **WHEN** the changelog's newest released section is 1.11.0 and there is no entry for 1.11.0
+- **THEN** `make news-check` fails and names `news/1.11.0.md`, whether or not earlier entries exist
+
+#### Scenario: An entry ahead of the release
+- **WHEN** `news/1.12.0.md` exists and the changelog has no released section for 1.12.0
+- **THEN** `make news-check` fails and names `news/1.12.0.md`
 
 ### Requirement: What's new on About
 Settings → About SHALL show a What's new card. The card SHALL lead with a switch, "Version notices", on unless this device has turned it off. Under it the newest entry SHALL be shown in full, then a closed disclosure "Earlier versions" listing older entries one line each (version and date). Opening an entry's changelog link SHALL open that version's GitHub release in a new tab and SHALL load nothing into the app. The card SHALL be reachable from the settings search under "news", "changelog" and "what's new". With the disclosure closed, About SHALL stay within the settings page-length limit.
