@@ -155,6 +155,9 @@ export const ERROR_MESSAGES: Record<string, string> = {
   quota_exceeded: msg('This upload would go over your attachment storage.'),
   rate_limited: msg('Too many attempts. Try again later.'),
   upstream_failed: msg('The other service could not be reached. Try again.'),
+  // iPhone push through the relay (ios-push-relay).
+  'relay-off': msg('This is not available on this server.'),
+  'relay-unreachable': msg('The other service could not be reached. Try again.'),
   reauth_required: msg('Confirm your password or a code to continue.'),
   reset_invalid: msg('This password reset link is not valid.'),
   scope_change: msg('This change would move the item out of its project’s sharing.'),

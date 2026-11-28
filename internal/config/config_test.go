@@ -209,6 +209,25 @@ func TestPushSwitchIsOptional(t *testing.T) {
 	}
 }
 
+// OPENTODO_APPLE_RELAY is optional and only an https address
+// (ios-push-relay D8); it turns nothing on.
+func TestAppleRelayAddressIsOptional(t *testing.T) {
+	t.Setenv("OPENTODO_APPLE_RELAY", "")
+	if c, err := Load(); err != nil || c.AppleRelayURL != "" {
+		t.Fatalf("default: %v %q", err, c.AppleRelayURL)
+	}
+	t.Setenv("OPENTODO_APPLE_RELAY", "https://relay.example.com/")
+	if c, err := Load(); err != nil || c.AppleRelayURL != "https://relay.example.com" {
+		t.Fatalf("set: %v %q", err, c.AppleRelayURL)
+	}
+	for _, bad := range []string{"http://relay.example.com", "relay.example.com", "https://u:p@relay.example.com", "https://relay.example.com/?x=1"} {
+		t.Setenv("OPENTODO_APPLE_RELAY", bad)
+		if _, err := Load(); err == nil || !strings.Contains(err.Error(), "OPENTODO_APPLE_RELAY") {
+			t.Errorf("%q accepted: %v", bad, err)
+		}
+	}
+}
+
 func TestDemoSwitchIsOptional(t *testing.T) {
 	t.Setenv("OPENTODO_DEMO", "")
 	c, err := Load()

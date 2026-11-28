@@ -275,6 +275,9 @@ var demoRules = []demoRule{
 	// so the whole-server archive stays refused should that ever change.
 	{"Backups", false, exact("/api/v1/export/archive")},
 	{"End-to-end encryption", true, prefix("/api/v1/encryption")},
+	// iPhone push through the relay (ios-push-relay): every method, the due
+	// route too; the switch is fixed off on a demo instance.
+	{"iPhone push", false, prefix("/api/v1/push/apple")},
 	{"Web push", true, prefix("/api/v1/push")},
 	{"Sharing changes", true, projectMembership},
 	// Answering an invitation is a membership change; a sandbox never gets one

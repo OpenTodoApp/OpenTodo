@@ -260,8 +260,9 @@ func numberExample(name string, s map[string]any) any {
 // It only goes down, except by one for a new route that answers 204 or a
 // redirect (DELETE /api/v1/me/oauth-grants/{id}, connected-apps-list; 91 and
 // 92: POST /api/v1/auth/oidc/app-session and app-continue, app-sso-system-browser;
-// 93: DELETE /api/v1/calendar-sync/connections/{id}/events/{eventId}, calendar-event-edits).
-const openAPIExamplelessMax = 93
+// 93: DELETE /api/v1/calendar-sync/connections/{id}/events/{eventId}, calendar-event-edits;
+// 94: DELETE /api/v1/push/apple/{id}, ios-push-relay).
+const openAPIExamplelessMax = 94
 
 // examplelessProblems is the ratchet on examples: a JSON request or success
 // response without one always fails, and more operations without any
