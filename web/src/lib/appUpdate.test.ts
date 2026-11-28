@@ -1,7 +1,9 @@
 // Open tabs after a server upgrade (OpenSpec change client-sync-robustness).
 import Dexie from 'dexie'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { logUnhandledRejections, resetAppUpdate, updateReason, watchAppUpdates } from './appUpdate'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { dismissWorkerChange, logUnhandledRejections, resetAppUpdate, updateReason, useWorkerChanged, watchAppUpdates } from './appUpdate'
 import { databaseOutdated, db, requestPersistentStorage, useDatabase } from './db'
 
 function fakeWindow() {
@@ -63,6 +65,37 @@ describe('a new service worker takes over', () => {
     sw.dispatchEvent(Object.assign(new Event('message'), { data: { type: 'opentodo-app', state: 'ready', version: '1.4.0' } }))
     expect(updateReason()).toBe('release')
     expect(win.location.reload).not.toHaveBeenCalled()
+  })
+})
+
+describe('a changed service worker (signed-web-app D8)', () => {
+  /** Whether the page shows the changed-worker warning, as a component reads it. */
+  const currentWorkerChange = () => renderToStaticMarkup(createElement(() => String(useWorkerChanged()))) === 'true'
+  const settle = () => new Promise((r) => setTimeout(r, 0))
+
+  it('compares when a new worker takes control, and warns only when the comparison says so', async () => {
+    const compare = vi.fn(async () => false)
+    const sw = fakeServiceWorker({ postMessage: () => undefined })
+    watchAppUpdates(fakeWindow(), sw, Date.now, () => true, compare)
+    expect(compare).not.toHaveBeenCalled()
+    sw.dispatchEvent(new Event('controllerchange'))
+    await settle()
+    expect(compare).toHaveBeenCalledOnce()
+    expect(currentWorkerChange()).toBe(false)
+    compare.mockResolvedValue(true)
+    sw.dispatchEvent(new Event('controllerchange'))
+    await settle()
+    expect(currentWorkerChange()).toBe(true)
+    dismissWorkerChange()
+    expect(currentWorkerChange()).toBe(false)
+  })
+
+  it('a comparison that fails warns about nothing', async () => {
+    const sw = fakeServiceWorker({ postMessage: () => undefined })
+    watchAppUpdates(fakeWindow(), sw, Date.now, () => true, async () => { throw new Error('chunk failed') })
+    sw.dispatchEvent(new Event('controllerchange'))
+    await settle()
+    expect(currentWorkerChange()).toBe(false)
   })
 })
 

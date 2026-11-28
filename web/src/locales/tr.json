@@ -5786,6 +5786,7 @@
   "This token is limited to chosen workspaces and cannot do this.": "Bu belirteç seçilen çalışma alanlarıyla sınırlıdır ve bunu yapamaz.",
   "This token or session is not allowed to do this: {detail}": "Bu belirtecin veya oturumun bunu yapmasına izin verilmiyor: {detail}",
   "This update wasn't installed.": "Bu güncelleme yüklenemedi.",
+  "This server changed how the app checks updates. Don't enter your passphrase, and ask the server's operator.": "Bu sunucu, uygulamanın güncellemeleri nasıl denetlediğini değiştirdi. Parola ifadenizi girmeyin ve sunucu işletmenine sorun.",
   "This upload would go over your attachment storage.": "Bu yükleme ek depolama alanınızı aşacaktır.",
   "This view": "Bu görünüm",
   "This view does not exist (it may have been deleted on another device).": "Bu görünüm mevcut değil (başka bir cihazda silinmiş olabilir).",

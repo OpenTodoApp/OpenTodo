@@ -76,6 +76,7 @@ async function reread() {
 describe('the worker fetch handler after a failure', () => {
   it('answers 404 for a listed file with refusal on, without asking the network', async () => {
     stored = record(true)
+    await reread() // the worker read the record as it started
     const r = await answer('/assets/lang-de-1.js')
     expect(r.status).toBe(404)
     expect(network).not.toHaveBeenCalled()

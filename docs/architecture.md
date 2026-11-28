@@ -230,7 +230,7 @@ Files in the data directory: `opentodo.db` (plus WAL files), `opentodo.lock`, `p
 | `lib/comments.ts`, `lib/activity.ts`, `lib/feed.ts`, `lib/markdown.ts` | Comments and mentions; the shared activity rule, local recording and merging of older server pages; the cross-project feed and unread counts; the in-house Markdown subset (rendered by `app/Markdown.tsx` as React elements, so raw HTML never reaches the DOM) |
 | `lib/docfields.ts`, `lib/richtext.ts`, `lib/richtextEditor.ts`, `app/NotesEditor.tsx` | Rich-text notes ([sync.md](sync.md#mergeable-documents)): the document field list and lazy loader; the Yjs document code (envelope, merge, growth check, Markdown projection); the ProseMirror schema and binding; the editor component. The last three are lazy chunks |
 | `lib/share.ts` | Parsing of share-target and bookmarklet payloads |
-| `public/push-sw.js` | Imported by the service worker: `push`, `notificationclick` (snooze and dismiss written as ops into the outbox), `notificationclose` |
+| `push-sw.js` | Bundled into the service worker: `push`, `notificationclick` (snooze and dismiss written as ops into the outbox), `notificationclose` |
 | `sw.ts`, `lib/appInstall.ts`, `lib/appCode.ts`, `lib/appTrust.ts`, `lib/pagePolicy.ts` | The service worker: it installs and serves the app from the signed file list `app-manifest.json` (written by `scripts/app-manifest.mjs`), checking each update's signature, version and file hashes (report-only for now, [Signed app code](security/signed-app.md)); the trust record; the page policy it writes |
 | `app/` | Router, auth screens, shell, views (lists, board, calendar, filters, dashboards, feed, trash), detail panel, settings panels, Vim layer (`app/vim/`, lazy) |
 

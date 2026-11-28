@@ -82,15 +82,26 @@ async function download(env: InstallEnv, path: string): Promise<{ body: ArrayBuf
   }
   if (!res.ok) return null
   try {
-    return { body: await res.arrayBuffer(), type: res.headers.get('Content-Type') }
+    return { body: await res.arrayBuffer(), type: typeFor(path) ?? res.headers.get('Content-Type') }
   } catch {
     throw new Interrupted(path)
   }
 }
 
+/** The type of a listed file from its extension, so the server's header never decides how checked bytes run. */
+const TYPES: Record<string, string> = {
+  html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', mjs: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8',
+  json: 'application/json', svg: 'image/svg+xml', png: 'image/png', webp: 'image/webp', ico: 'image/x-icon', woff2: 'font/woff2',
+  md: 'text/markdown; charset=utf-8', txt: 'text/plain; charset=utf-8', wasm: 'application/wasm',
+}
+function typeFor(path: string): string | null {
+  const ext = /\.([a-z0-9]+)$/i.exec(path)?.[1]?.toLowerCase()
+  return (ext && TYPES[ext]) || null
+}
+
 /** A stored copy of a file, with only the headers the worker writes. */
 export function fileResponse(body: BodyInit | null, type: string | null): Response {
-  const headers = new Headers()
+  const headers = new Headers({ 'X-Content-Type-Options': 'nosniff' })
   if (type) headers.set('Content-Type', type)
   return new Response(body, { status: 200, headers })
 }
@@ -262,6 +273,7 @@ export async function checkForUpdate(env: InstallEnv): Promise<CheckOutcome> {
   // Install: the staged set becomes current in one write. The mode, the keys
   // and refusal move forward only on a check that passed, or on first use (D17).
   const installed: InstalledVersion = { version, payloadHash, cache: cacheName, files: list.manifest.files, at: now }
+  if (typeof list.manifest.worker?.sha256 === 'string') installed.worker = list.manifest.worker.sha256
   const first = !record
   const passed = !cause
   // First use decides the mode; after that only a passing check moves it, and
@@ -315,16 +327,6 @@ export async function cachedFile(env: Pick<InstallEnv, 'caches'>, record: TrustR
 }
 
 export type LazyResult = { response: Response; check?: CheckResult }
-
-/**
- * The answer for a request whose handling threw: 404 for a listed file once
- * refusal is on, so nothing unchecked is served; null (the network) otherwise,
- * as report-only serves while it records (D17).
- */
-export function answerAfterFailure(record: TrustRecord | null, path: string): Response | null {
-  if (!record?.refuse) return null
-  return path in (record.current?.files ?? {}) || path in (record.previous?.files ?? {}) ? new Response('', { status: 404 }) : null
-}
 
 /**
  * A listed file that isn't stored yet (a lazy chunk such as the map): fetched,

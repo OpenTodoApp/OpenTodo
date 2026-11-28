@@ -5857,6 +5857,7 @@
   "This server": "هذا الخادم",
   "This server asks for the token its operator configured. Find it in your hosting panel, for example Coolify, this service, Environment Variables, {variable}.": "يطلب هذا الخادم الرمز المميّز الذي كوّنه مشغّله. تجده في لوحة الاستضافة، مثلًا Coolify، هذه الخدمة، Environment Variables، {variable}.",
   "This server cannot email links until the owner sets its public address (OPENTODO_BASE_URL).": "لا يستطيع هذا الخادم إرسال الروابط بالبريد حتى يعيّن المالك عنوانه العام (OPENTODO_BASE_URL).",
+  "This server changed how the app checks updates. Don't enter your passphrase, and ask the server's operator.": "غيّر هذا الخادم طريقة تحقّق التطبيق من التحديثات. لا تُدخل عبارة مرورك، واسأل مشغّل الخادم.",
   "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "تعذّر على هذا الخادم قبول تغيير من هذا الجهاز. يبقى على هذا الجهاز، ويستمر كل شيء آخر بالمزامنة.",
   "This server does not send email. Password resets go through an administrator: ask the server owner or an admin for a reset link.": "لا يرسل هذا الخادم بريدًا. تمر إعادة تعيين كلمات المرور عبر مسؤول: اطلب رابط إعادة تعيين من مالك الخادم أو مسؤول.",
   "This server does not support push tests yet. You can still show a local notification.": "لا يدعم هذا الخادم اختبارات الإشعارات الفورية بعد. لا يزال بإمكانك عرض إشعار محلي.",

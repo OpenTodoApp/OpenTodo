@@ -49,7 +49,7 @@ Server errors keep their English JSON envelope. The client shows a translated me
 
 A key ending in `|context` translates the message used with that `context`. Keep every placeholder, tag and plural argument of the source; use the plural categories of your language (`one`/`other` for the six shipped ones). Use the typographic apostrophe `’` in translations: a straight `'` starts quoted text in the message syntax. A missing entry falls back to English.
 
-Each catalog becomes its own chunk of the build, loaded only when someone picks the language and precached for offline use. The browser extension has its own small catalogs in `extension/_locales/`, and the service worker keeps the few notification texts in a table in `web/public/push-sw.js`; both are pinned to the app's catalogs by tests.
+Each catalog becomes its own chunk of the build, loaded only when someone picks the language and precached for offline use. The browser extension has its own small catalogs in `extension/_locales/`, and the service worker keeps the few notification texts in a table in `web/src/push-sw.js`; both are pinned to the app's catalogs by tests.
 
 ## The checks
 

@@ -1,4 +1,4 @@
-// The service worker's reminder handlers (public/push-sw.js) run against the same
+// The service worker's reminder handlers (src/push-sw.js) run against the same
 // IndexedDB as the app. These tests load the script into a stubbed worker scope
 // over fake-indexeddb and check the push and notification-click paths.
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -11,7 +11,7 @@ import { describeDue, logicalDay, resolveDateTime, todayISO } from './dates'
 import { setUserPref, type DateTimePrefs } from './userPrefs'
 import { applyReminderAction, handleShellUrl } from './shellActions'
 import { occurrenceId } from './ids'
-import source from '../../public/push-sw.js?raw'
+import source from '../push-sw.js?raw'
 import { MAINTAINED } from '../locales'
 
 const HOUR = 3_600_000

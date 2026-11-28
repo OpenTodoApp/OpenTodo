@@ -1,0 +1,1 @@
+- **Note links and routine email stop links open their page.** In a browser where the web app was installed, they opened the app instead.

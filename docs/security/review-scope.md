@@ -62,7 +62,7 @@ Each item names the section of the threat model that describes its controls and 
 | `public-links-and-task-pages` | Capability links: public lists, task pages, calendar feeds | [Public links and task pages](threat-model.md#public-links-and-task-pages) | `internal/httpapi/publiclinks.go`, `taskpages.go`, `calfeed.go` |
 | `host-mode-isolation` | Tenant isolation, the operator interface | [Host mode isolation](threat-model.md#host-mode-isolation) | `internal/host`, `internal/tenant` |
 | `demo-mode` | Public sandboxes and their limits | [Demo mode](threat-model.md#demo-mode) | `internal/demo`, `internal/httpapi/demo.go` |
-| `web-client` | Rendering of user content (Markdown, links), the service worker, the share target | [Web client](threat-model.md#web-client) | `web/src`, `web/public/push-sw.js` |
+| `web-client` | Rendering of user content (Markdown, links), the service worker, the share target | [Web client](threat-model.md#web-client) | `web/src`, `web/src/push-sw.js` |
 | `android-and-ios-bridges` | The native shells' bridge to the web app | [Android and iOS bridges](threat-model.md#android-and-ios-bridges) | `web/src/lib/shell.ts`, `mobile/android`, `mobile/ios` |
 | `container-image` | The image's base, user, build and signing | [Container image](threat-model.md#container-image) | `Dockerfile`, `.github/workflows/ci.yml` |
 

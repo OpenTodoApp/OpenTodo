@@ -18,7 +18,7 @@ const FILES = {
   'web/src/locales/de.json': JSON.stringify({ Inbox: 'Eingang', Today: 'Heute', Upcoming: 'Demnächst', Someday: 'Irgendwann' }),
   'web/src/locales/pl.json': JSON.stringify({ Inbox: 'Skrzynka', Today: 'Dziś', Upcoming: 'Wkrótce' }),
   'web/src/locales/sv.json': '{}',
-  'web/public/push-sw.js': `(() => {
+  'web/src/push-sw.js': `(() => {
   const OWN_TEXT = {
     en: { reminder: 'Reminder', dismiss: 'Dismiss' },
     de: { reminder: 'Erinnerung', dismiss: 'Verwerfen' },

@@ -6,7 +6,7 @@
 // runs, and cleared at zero.
 //
 // While the app is closed only a push can wake it: the app keeps the counts of the
-// next days in the `meta` row BADGE_META, and the service worker (public/push-sw.js)
+// next days in the `meta` row BADGE_META, and the service worker (src/push-sw.js)
 // sets the badge to the count of its day when a reminder push arrives. The row holds
 // numbers and dates only, never task content.
 import { useEffect, useRef } from 'react'

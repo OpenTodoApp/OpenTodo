@@ -31,7 +31,7 @@ The scaffold refuses a code that is not two or three lowercase letters or that a
 | The interface catalog | `web/src/locales/<code>.json`: every key of `web/src/locales/messages.json`, translated |
 | The language list | `{ code, name }` in `SHIPPED`, `web/src/locales/index.ts`, with the name in the language itself, and `community: true` for a community language |
 | Browser tags that pick it | `web/src/lib/i18n/locale.ts`, only when the language has script or region variants (as Chinese does) |
-| Notification texts of the service worker | the table in `web/public/push-sw.js` |
+| Notification texts of the service worker | the table in `web/src/push-sw.js` |
 | The browser extension | `extension/_locales/<code>/messages.json` |
 | The Obsidian plugin (optional) | `obsidian/locales/<code>.json`, imported in `obsidian/src/strings.ts` |
 | The Android app | `mobile/android/app/src/main/res/values-<code>/strings.xml` |

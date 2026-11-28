@@ -57,6 +57,8 @@ The switch is the `refuse` field of the signed manifest, copied by the build fro
 
 With refusal on, a failed update is not installed. The page shows "This update wasn't installed." with the likely cause and **What to do**, which opens [Signed updates](../signed-updates.md).
 
+Refusal also makes the service worker the only door for code. A path the signed list doesn't name gets a 404 from the worker, never the network. Task pages, note pages and public lists come from the checked files. A page from one of the server's own addresses (an attachment opened in a tab, a sign-in step), and whatever the server answers to a form's post, runs no script, so it cannot read the app's local data. And when a new service worker takes control that no signed list names, the page warns: "This server changed how the app checks updates. Don't enter your passphrase, and ask the server's operator." That warning only catches a worker that isn't trying to hide: the page reads the worker and the list through the new worker, so a few lines in it silence the warning. An older signed worker still installs, too: the version order covers the app's files, not the worker. It is a warning, not a defence.
+
 ## How a release is signed
 
 The `web-sign` job of `.github/workflows/ci.yml` runs on `v*` tags only, in the GitHub environment `web-signing`. That environment allows only `v*` tags and has the maintainer as required reviewer, so the job waits for his approval on every release. It is the only job that reads the secret `WEB_SIGNING_KEY` (`scripts/repo-checks.test.mjs` checks this). It signs the build of the web-build job after `websign sign` has checked every file and that the version is the tag's, and hands it on as `web-dist-signed`; the binaries and the image (through `--build-context web-dist=…`) embed exactly those files. The image job then checks what the built image serves with `websign verify`, requiring an official signature once `release-keys.json` lists a key. The release attaches the signed list as `opentodo-web-manifest-<tag>.json`. Without the secret, the job warns and passes the build on unsigned.
@@ -105,7 +107,7 @@ Check any server with `go run github.com/OpenTodoApp/opentodo/cmd/websign@latest
 ## What the check does not cover
 
 - A first-ever visit to a hostile server, and any visit before the app is installed.
-- In a browser, a server that replaces the service worker itself or sends `Clear-Site-Data`: the browser installs a new worker without asking the current one.
+- In a browser, a server that replaces the service worker itself or sends `Clear-Site-Data`: the browser installs a new worker without asking the current one, an older signed one included.
 - A stolen release key, until a rotation reaches each device.
 - The iOS app, which is a later change.
 - While report-only mode is on, everything: a failed check is recorded and the update is installed.
@@ -117,5 +119,7 @@ Check any server with `go run github.com/OpenTodoApp/opentodo/cmd/websign@latest
 - `go test ./internal/websign/... ./cmd/websign`: key generation, signing and verifying, a signing step that refuses changed, missing or unlisted files and a wrong version, and `TestServerDoesNotLinkSign`.
 - `web/src/lib/appInstall.test.ts`: first use, valid updates, a tampered chunk recorded while reporting and refused with refusal on, unsigned, unknown-key and older lists, a cut-off download, offline, lazy chunks, rotation, refusal that cannot be turned off, and the trust record surviving sign-out.
 - `web/src/lib/pagePolicy.test.ts` and `TestCSPFixture`: the worker's page policy equals the server's.
+- `web/src/swRoutes.test.ts`: with refusal on, the 404 for unlisted paths, task pages from the checked `t.html`, and sandboxed server pages; while reporting, each reaches the server as before.
+- `web/src/lib/workerChange.test.ts`: the changed-worker warning, only for a worker no signed list names.
 - `internal/web` `TestServedAsBuilt` and `TestSecurityHeaders`: `/index.html` unmodified, the list never cached, `no-transform`.
 - `scripts/e2e-signed.mjs` (`make e2e-signed`): a real browser against servers signed with the test key, then the key rotation with throwaway keys on a new device.
