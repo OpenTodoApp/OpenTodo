@@ -9,7 +9,7 @@ import { db, useDatabase } from '../../lib/db'
 import { compareByPosition } from '../../lib/ordering'
 import { createTask, resetDeviceId } from '../../lib/ops'
 import { createView } from '../../lib/views'
-import { render, waitFor } from '../../ui/test-utils'
+import { key, render, waitFor } from '../../ui/test-utils'
 import { hideBulkToast } from '../bulk/toastStore'
 import { resetPanel } from '../panel'
 import { SavedViewRoute } from '../SavedViewView'
@@ -54,6 +54,25 @@ it('a dropped row is selected where it lands, without scrolling back to where it
   await waitFor(async () => (await order()).join() === 'E,A,B,C,D', 'E above A')
   await waitFor(() => row(ids.E).getAttribute('aria-current') === 'true', 'E selected')
   expect(revealRow).not.toHaveBeenCalled()
+  await r.unmount()
+})
+
+it('a drop on the row already selected leaves the next keyboard selection to scroll', async () => {
+  const ids: Record<string, string> = {}
+  for (const t of ['A', 'B', 'C', 'D', 'E']) ids[t] = await createTask({ title: t })
+  const r = await render(<TaskListView route={{ view: 'inbox' }} />)
+  await waitFor(() => !!row(ids.E))
+  // The row's empty area selects it.
+  await act(async () => { row(ids.E).dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 })) })
+  await waitFor(() => row(ids.E).getAttribute('aria-current') === 'true', 'E selected')
+  await drag(row(ids.E), row(ids.A), 102)
+  await waitFor(async () => (await order()).join() === 'E,A,B,C,D', 'E above A')
+  await key(document.body, 'Escape')
+  await waitFor(() => !document.querySelector('li[aria-current="true"]'), 'nothing selected')
+  vi.mocked(revealRow).mockClear()
+  await key(document.body, 'j')
+  await waitFor(() => row(ids.E).getAttribute('aria-current') === 'true', 'j selects E')
+  expect(revealRow).toHaveBeenCalledWith(row(ids.E), expect.anything())
   await r.unmount()
 })
 
