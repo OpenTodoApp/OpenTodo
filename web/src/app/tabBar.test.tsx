@@ -32,7 +32,7 @@ beforeEach(async () => {
   vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
   navigate({ view: 'inbox' })
 })
-afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals() })
+afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals(); width = 390 })
 
 const bar = () => document.querySelector('[data-tab-bar]')
 const tab = (id: string) => document.querySelector<HTMLButtonElement>(`[data-tab="${id}"]`)!
