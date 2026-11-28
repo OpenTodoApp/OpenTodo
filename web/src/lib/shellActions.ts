@@ -20,6 +20,10 @@ import { pauseSession, resumeSession } from './focus/session'
 import { dismissReminder, snoozeReminder } from './reminders'
 import { resettable } from './moduleState'
 import { has } from './shell'
+import { seriesRule } from './recurring'
+import { deadlineFireAt, relativeFireAt } from './reminderTime'
+import type { Reminder, Task } from './types'
+import { onSyncStatus, syncSnapshot } from './sync'
 
 export type ReminderAction = 'snooze' | 'dismiss' | 'done'
 export type FocusAction = 'pause' | 'resume'
@@ -65,6 +69,13 @@ const OCCURRENCE = /^(.+)@(\d{4}-\d{2}-\d{2})$/
  * Writes a notification button's operation: Snooze 10 min or Dismiss, as `push-sw.js`
  * does, or Done, which completes the reminder's task through completeTask (a repeating
  * task moves to its next occurrence); completing disarms every reminder of the task.
+ * A repeating task whose relative or deadline reminder, computed here from the task's
+ * current due or deadline, fires more than an hour from now has already moved past the
+ * firing the notification showed (completed on another device): Done leaves it alone
+ * rather than complete the next occurrence too, and only when the stored `fire_at` is
+ * that far ahead as well: a snooze set elsewhere, a server clock ahead or a firing
+ * written in another time zone does not stop a Done; a series moves by at least a day. Absolute
+ * and location reminders have no occurrence to compare with and are not guarded.
  */
 export async function applyReminderAction(id: string, action: ReminderAction, now = Date.now()): Promise<void> {
   if (action === 'snooze') await snoozeReminder(id, '10m', now)
@@ -72,8 +83,57 @@ export async function applyReminderAction(id: string, action: ReminderAction, no
   else {
     const r = await db.reminders.get(id)
     const task = r ? await db.tasks.get(r.task_id) : undefined
-    if (task && !task.deleted_at && !task.completed_at) await completeTask(task.id, { now })
+    if (!r || !task || task.deleted_at || task.completed_at) return
+    if (seriesRule(task) && movedOn(r, task, now)) return
+    await completeTask(task.id, { now })
   }
+}
+
+/** A series moves by at least a day; within this margin a firing is still the one shown. */
+const MOVED_ON_MARGIN_MS = 60 * 60_000
+
+/**
+ * Whether the reminder of a series now fires for a later occurrence than the one due by
+ * `now`: both its firing computed here and its stored `fire_at` (which the shells schedule
+ * from; a writer in another zone may differ) are more than the margin away.
+ */
+function movedOn(r: Reminder, task: Task, now: number): boolean {
+  const at = r.kind === 'relative' ? relativeFireAt(task.due, r.offset_minutes)
+    : r.kind === 'deadline' ? deadlineFireAt(task.deadline, r.offset_minutes)
+    : null
+  const later = (t: number) => t > now + MOVED_ON_MARGIN_MS
+  return at != null && later(at) && (r.fire_at == null || later(r.fire_at))
+}
+
+/** Done from an address waits at most this long for the page's first sync. */
+const DONE_SYNC_MS = 30_000
+/** ...and this long for a sync that never starts (signed out, a login wall). */
+const DONE_NO_SYNC_MS = 10_000
+
+type SyncView = { state: string; lastSyncedAt: number | null }
+
+/**
+ * Resolves once the page's first sync exchange has ended, or cannot run (offline, an
+ * error, signed out, locked), or after the limits. Done from an address applies after
+ * it: a page just opened by a notification (a background run, a cold start) may hold a
+ * repeating task several occurrences behind the server, and completing that copy would
+ * write the occurrence already done elsewhere and move the series back (#2183).
+ */
+export function afterFirstSync(read: () => SyncView = syncSnapshot, listen: (fn: () => void) => () => void = onSyncStatus, limitMs = DONE_SYNC_MS, noSyncMs = DONE_NO_SYNC_MS): Promise<void> {
+  return new Promise((resolve) => {
+    let noSyncPassed = false
+    const timers: ReturnType<typeof setTimeout>[] = []
+    let off = () => {}
+    const finish = () => { off(); timers.forEach(clearTimeout); resolve() }
+    const check = () => {
+      const s = read()
+      if (s.state === 'syncing' || s.state === 'reseeding') return
+      if (s.lastSyncedAt != null || s.state !== 'idle' || noSyncPassed) finish()
+    }
+    off = listen(check)
+    timers.push(setTimeout(() => { noSyncPassed = true; check() }, noSyncMs), setTimeout(finish, limitMs))
+    check()
+  })
 }
 
 /**
@@ -123,7 +183,7 @@ export function takeQuickAddPrefill(): string | null {
 }
 
 /** Handles the shell's address action, if any, and removes it from the address. Returns what it did. */
-export async function handleShellUrl(openQuickAdd: () => boolean, loc: Location = location, hist: History = history): Promise<ShellUrlAction> {
+export async function handleShellUrl(openQuickAdd: () => boolean, loc: Location = location, hist: History = history, synced: () => Promise<void> = afterFirstSync): Promise<ShellUrlAction> {
   const action = shellUrlAction(loc.search, loc.pathname)
   if (!action) return null
   const p = new URLSearchParams(loc.search)
@@ -132,7 +192,10 @@ export async function handleShellUrl(openQuickAdd: () => boolean, loc: Location 
   const query = p.toString()
   hist.replaceState(hist.state, '', `${loc.pathname}${query ? `?${query}` : ''}${loc.hash}`)
   if (action.kind === 'reminder') {
-    try { await applyReminderAction(action.id, action.action) } finally { applied++ }
+    try {
+      if (action.action === 'done') await synced()
+      await applyReminderAction(action.id, action.action)
+    } finally { applied++ }
   }
   else if (action.kind === 'complete') {
     // Only in a background run: any app can open the visible app at an address (D2).
