@@ -7935,7 +7935,7 @@
   "Up next": "Prossima",
   "Next seven days": "Prossimi sette giorni",
   "in {time}": "tra {time}",
-  "{n, plural, one {“{title}” repeats, so it stays scheduled} other {# repeating tasks stay scheduled}}": "{n, plural, one {«{title}» si ripete, quindi resta pianificata} other {# attività ricorrenti restano pianificate}}",
-  "{n, plural, one {Moved to {target}; “{title}” repeats, so it stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}": "{n, plural, one {Spostata in {target}; «{title}» si ripete, quindi resta pianificata} other {Spostate in {target}; # attività ricorrenti restano pianificate}}",
-  "{changes}; {r, plural, one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{changes}; {r, plural, one {# attività ricorrente resta pianificata} other {# attività ricorrenti restano pianificate}}"
+  "{changes}; {r, plural, one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{changes}; {r, plural, one {# attività ricorrente resta pianificata} other {# attività ricorrenti restano pianificate}}",
+  "{n, plural, =1 {“{title}” repeats, so it stays scheduled} one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{n, plural, =1 {«{title}» si ripete, quindi resta pianificata} one {# attività ricorrente resta pianificata} other {# attività ricorrenti restano pianificate}}",
+  "{n, plural, =1 {Moved to {target}; “{title}” repeats, so it stays scheduled} one {Moved to {target}; # repeating task stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}": "{n, plural, =1 {Spostata in {target}; «{title}» si ripete, quindi resta pianificata} one {Spostata in {target}; # attività ricorrente resta pianificata} other {Spostata in {target}; # attività ricorrenti restano pianificate}}"
 }

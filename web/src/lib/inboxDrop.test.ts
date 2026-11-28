@@ -1,7 +1,8 @@
 // OpenSpec change inbox-drop-unplaces (GitHub issue 2137): a move to the Inbox puts
 // the task in the Inbox, clearing its project and its schedule; a repeating task keeps its date.
 import { beforeEach, describe, expect, it } from 'vitest'
-import { reviewMove } from './bulk'
+import { reviewMove, staysScheduledLabel } from './bulk'
+import { applyLanguagePreference } from './i18n'
 import { db, useDatabase } from './db'
 import { isInboxTask } from './inbox'
 import { createProject, createTask, resetDeviceId } from './ops'
@@ -69,7 +70,7 @@ describe('a move to the Inbox (inbox-drop-unplaces)', () => {
     expect(await db.tasks.get(placed)).toMatchObject({ project_id: home, due: { date: FRIDAY } })
   })
 
-  it('a repeating task keeps its do-on date (its start and sector are cleared), and the toast names it', async () => {
+  it('a repeating task keeps its whole schedule and only loses its project, and the toast names it', async () => {
     const home = await createProject({ name: 'Home' })
     const loose = await createTask({ title: 'Water plants', due: { date: TODAY }, recurrence: 'every day' })
     await db.outbox.clear()
@@ -79,7 +80,10 @@ describe('a move to the Inbox (inbox-drop-unplaces)', () => {
     const placed = await createTask({ title: 'Bins', project_id: home, due: { date: TODAY }, start: '2026-11-20', recurrence: 'every week' })
     const moved = await moveUndoable(placed, null, 'Inbox')
     expect(moved.label).toBe('Moved to Inbox; “Bins” repeats, so it stays scheduled')
-    expect(await db.tasks.get(placed)).toMatchObject({ project_id: null, start: null, due: { date: TODAY } })
+    expect(await db.tasks.get(placed)).toMatchObject({ project_id: null, start: '2026-11-20', due: { date: TODAY } })
+    // Parked and repeating: still nothing written.
+    const parked = await createTask({ title: 'Someday series', start: 'someday', recurrence: 'every month' })
+    expect((await moveUndoable(parked, null, 'Inbox')).entry).toBeNull()
     // Several: counted once each, a ticked subtask under a ticked parent not again.
     const other = await createTask({ title: 'Laundry', project_id: home, due: { date: TODAY }, recurrence: 'every week' })
     const child = await createTask({ title: 'Sort', project_id: home, parent_id: other, due: { date: TODAY }, recurrence: 'every day' })
@@ -97,8 +101,34 @@ describe('a move to the Inbox (inbox-drop-unplaces)', () => {
     expect(plan.items.map((i) => i.patch)).toEqual([{ due: null, project_id: null }, { due: null }, { project_id: null }])
     const changes = await plan.resolve([a, b, r])
     expect(changes.find((c) => c.entityId === b)!.patch).toMatchObject({ due: null })
-    expect(plan.repeating?.([a, b, r])).toBe(1)
-    expect(plan.repeating?.([a, b])).toBe(0)
+    expect(plan.repeating?.([a, b, r]).length).toBe(1)
+    expect(plan.repeating?.([a, b]).length).toBe(0)
+  })
+
+  it('bulk Move to the Inbox of repeating tasks without a project only: nothing to review, the note names them', async () => {
+    const one = await createTask({ title: 'Water plants', due: { date: TODAY }, recurrence: 'every day' })
+    const two = await createTask({ title: 'Bins', due: { date: TODAY }, recurrence: 'every week' })
+    const plan = await reviewMove([one, two], { projectId: null, inbox: true })
+    expect(plan.items).toEqual([])
+    const stays = plan.repeating!([])
+    expect(staysScheduledLabel(stays)).toBe('2 repeating tasks stay scheduled')
+    expect(staysScheduledLabel(stays.slice(0, 1))).toBe('“Water plants” repeats, so it stays scheduled')
+  })
+
+  it('counts in languages with other plural rules: Japanese has no "one", Russian "one" is also 21 (=1 names the task)', async () => {
+    const tasks = (n: number) => Array.from({ length: n }, (_, i) => ({ title: `T${i}` }))
+    try {
+      await applyLanguagePreference('ja', ['en-US'])
+      expect(staysScheduledLabel(tasks(1))).toBe('「T0」は繰り返しのため予定はそのままです')
+      expect(staysScheduledLabel(tasks(5))).toBe('繰り返しタスク 5件は予定がそのままです')
+      expect(staysScheduledLabel(tasks(21))).toBe('繰り返しタスク 21件は予定がそのままです')
+      await applyLanguagePreference('ru', ['en-US'])
+      expect(staysScheduledLabel(tasks(1))).toBe('«T0» повторяется, поэтому остаётся запланированной')
+      expect(staysScheduledLabel(tasks(5))).toBe('5 повторяющихся задач остаются запланированными')
+      expect(staysScheduledLabel(tasks(21))).toBe('21 повторяющаяся задача остаётся запланированной')
+    } finally {
+      await applyLanguagePreference('en', ['en-US'])
+    }
   })
 
   it('a drop on a project leaves the date as it is', async () => {

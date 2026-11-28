@@ -7935,7 +7935,7 @@
   "Up next": "Hierna",
   "Next seven days": "Komende zeven dagen",
   "in {time}": "over {time}",
-  "{n, plural, one {“{title}” repeats, so it stays scheduled} other {# repeating tasks stay scheduled}}": "{n, plural, one {“{title}” herhaalt zich, dus blijft gepland} other {# herhalende taken blijven gepland}}",
-  "{n, plural, one {Moved to {target}; “{title}” repeats, so it stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}": "{n, plural, one {Verplaatst naar {target}; “{title}” herhaalt zich, dus blijft gepland} other {Verplaatst naar {target}; # herhalende taken blijven gepland}}",
-  "{changes}; {r, plural, one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{changes}; {r, plural, one {# herhalende taak blijft gepland} other {# herhalende taken blijven gepland}}"
+  "{changes}; {r, plural, one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{changes}; {r, plural, one {# herhalende taak blijft gepland} other {# herhalende taken blijven gepland}}",
+  "{n, plural, =1 {“{title}” repeats, so it stays scheduled} one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{n, plural, =1 {“{title}” herhaalt zich, dus blijft gepland} one {# herhalende taak blijft gepland} other {# herhalende taken blijven gepland}}",
+  "{n, plural, =1 {Moved to {target}; “{title}” repeats, so it stays scheduled} one {Moved to {target}; # repeating task stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}": "{n, plural, =1 {Verplaatst naar {target}; “{title}” herhaalt zich, dus blijft gepland} one {Verplaatst naar {target}; # herhalende taak blijft gepland} other {Verplaatst naar {target}; # herhalende taken blijven gepland}}"
 }

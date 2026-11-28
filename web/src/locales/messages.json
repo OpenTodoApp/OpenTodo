@@ -8673,7 +8673,6 @@
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/ProjectActivity.tsx",
     "web/src/app/SampleNotice.tsx",
-    "web/src/app/SavedViewView.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/SyncScopeField.tsx",
     "web/src/app/TabBar.tsx",
@@ -11532,10 +11531,12 @@
   ],
   "No project": [
     "web/src/app/DailyNotesSettings.tsx",
+    "web/src/app/SavedViewView.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
+    "web/src/app/task-list/useListScreen.tsx",
     "web/src/lib/pickerSources.ts",
     "web/src/lib/rules/sentence.ts",
     "web/src/lib/views.ts"
@@ -25620,6 +25621,12 @@
   "{n, plural, =0 {The Inbox is empty} one {# in the Inbox} other {# in the Inbox}}": [
     "web/src/app/method/LoopHome.tsx"
   ],
+  "{n, plural, =1 {Moved to {target}; “{title}” repeats, so it stays scheduled} one {Moved to {target}; # repeating task stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}": [
+    "web/src/lib/undoActions.ts"
+  ],
+  "{n, plural, =1 {“{title}” repeats, so it stays scheduled} one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": [
+    "web/src/lib/bulk.ts"
+  ],
   "{n, plural, one {# AI token} other {# AI tokens}}": [
     "web/src/app/routines/RunHistory.tsx"
   ],
@@ -26207,9 +26214,6 @@
     "web/src/app/assistant/blocks/ProposalShapes.tsx",
     "web/src/lib/assistantBlocks.ts"
   ],
-  "{n, plural, one {Moved to {target}; “{title}” repeats, so it stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}": [
-    "web/src/lib/undoActions.ts"
-  ],
   "{n, plural, one {Moving this task moves its subtask too.} other {Moving this task moves its subtasks too.}}": [
     "web/src/app/task-detail/Facets.tsx"
   ],
@@ -26341,9 +26345,6 @@
   ],
   "{n, plural, one {{p} set on # task} other {{p} set on # tasks}}": [
     "web/src/lib/bulk.ts"
-  ],
-  "{n, plural, one {“{title}” repeats, so it stays scheduled} other {# repeating tasks stay scheduled}}": [
-    "web/src/lib/undoActions.ts"
   ],
   "{name} (copy)": [
     "web/src/lib/rules/store.ts"

@@ -4,7 +4,7 @@
 // way bulk actions are (bulk-edit D5). The inverse is stored with the clocks each
 // field got; undo writes ordinary ops, locally first, so it works offline and
 // every device converges by last-writer-wins.
-import { bulkLabel, planComplete, planLabels, planMove, planPriority, planReopen, planTrash, readTicked, repeatingStays, staysScheduled, toProposed, unschedulePatch } from './bulk'
+import { bulkLabel, planComplete, planLabels, planMove, planPriority, planReopen, planTrash, readTicked, repeatingStays, staysScheduled, staysScheduledLabel, toProposed } from './bulk'
 import { db, type AssistantUndo } from './db'
 import { formatDate, logicalToday } from './dates'
 import { planSkip, seriesRule } from './recurring'
@@ -339,9 +339,9 @@ export async function trashUndoable(id: string, now = Date.now()): Promise<Undoa
 function inboxLabel(target: string, repeating: readonly Task[], wrote: boolean): string {
   const n = repeating.length
   const title = repeating[0]?.title ?? ''
-  if (!wrote) return n ? t('{n, plural, one {“{title}” repeats, so it stays scheduled} other {# repeating tasks stay scheduled}}', { n, title }) : ''
+  if (!wrote) return staysScheduledLabel(repeating)
   if (!n) return t('Moved to {target}', { target })
-  return t('{n, plural, one {Moved to {target}; “{title}” repeats, so it stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}', { n, target, title })
+  return t('{n, plural, =1 {Moved to {target}; “{title}” repeats, so it stays scheduled} one {Moved to {target}; # repeating task stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}', { n, target, title })
 }
 
 /**
@@ -356,10 +356,11 @@ export async function moveUndoable(id: string, projectId: string | null, targetN
   // "No project" of another workspace (workspaces, "Move an Inbox task"): the task lands
   // in that workspace's Inbox. A subtask follows its parent's workspace, so it leaves it.
   const target = projectId === null && toWorkspace !== undefined ? workspaceIdFor(toWorkspace, (await readWorkspaceState()).list) : undefined
+  // Its schedule is left as it is: a move between workspaces is not a move to the Inbox.
   if (task && target !== undefined && task.project_id == null) {
-    const patch: Partial<Task> = { ...unschedulePatch(task), ...((task.workspace_id ?? null) !== target || task.parent_id ? { workspace_id: target } : {}), ...(task.parent_id ? { parent_id: null } : {}) }
-    if (!Object.keys(patch).length) return { entry: null, label: inboxLabel(targetName, repeating, false), newId: id }
-    return { ...(await apply([{ entity: 'task', entityId: id, patch }], inboxLabel(targetName, repeating, true))), newId: id }
+    if ((task.workspace_id ?? null) === target && !task.parent_id) return { entry: null, label: '', newId: id }
+    const patch = task.parent_id ? { workspace_id: target, parent_id: null } : { workspace_id: target }
+    return { ...(await apply([{ entity: 'task', entityId: id, patch }], t('Moved to {target}', { target: targetName }))), newId: id }
   }
   if (!task) return { entry: null, label: '', newId: id }
   const memberships = await membershipMap()

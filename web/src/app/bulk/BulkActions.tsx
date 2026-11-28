@@ -10,7 +10,7 @@ import { Kbd } from '../shortcuts/Kbd'
 import { createContext, Suspense, useContext, useEffect, useLayoutEffect, useMemo, useState, type RefObject } from 'react'
 import { lazy } from '../../lib/lazy'
 import type { Step } from '../../lib/move'
-import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan, useTickedTasks } from '../../lib/bulk'
+import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, staysScheduledLabel, type BulkAction, type ReviewPlan, useTickedTasks } from '../../lib/bulk'
 import { useAllLabels, useLabelsLoaded, useLiveSections, useProjects, useMembershipMapOrLoading, useReviewRow, useUserPrefsRow } from '../../lib/localData'
 import { DAY_PARTS, dayPartName, dayPartOf, dayPartsOn, type DayPart } from '../../lib/dayParts'
 import { dayPartUndoable, energyUndoable } from '../../lib/undoActions'
@@ -426,7 +426,8 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
   const urgencyOf = useContext(UrgencyContext)
   const why = urgencyOf && ids.length === 1 && data.tasks.length === 1 ? urgencyOf(data.tasks[0]) : null
   const groups = useMemo(() => bulkMenuGroups(ids, data, {
-    review: (title, plan) => { void plan.then((p) => bulkDialog.set({ kind: 'review', title, plan: p })) },
+    // Only repeating tasks without a project, moved to the Inbox: nothing to review, and the toast says why (inbox-drop-unplaces D2).
+    review: (title, plan) => { void plan.then((p) => { const stays = p.repeating?.([]) ?? []; if (!p.items.length && stays.length) showBulkToast(staysScheduledLabel(stays), null); else bulkDialog.set({ kind: 'review', title, plan: p }) }) },
     pickDate: () => bulkDialog.set({ kind: 'date', ids, n }),
     schedule: touch && ids.length === 1 ? () => openRowSchedule(ids[0]) : undefined,
     editTitle,

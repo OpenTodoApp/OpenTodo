@@ -570,12 +570,6 @@ export function viewComparator(view: Pick<View, 'manual_order'>, sortBy: SortBy,
 }
 
 /**
- * Split sorted tasks into headed groups; headings come in a fixed, meaningful order.
- * `once` (a project or label page, list-display-options D3): a task with several
- * labels is listed once, under the first of them in label order, since a list page
- * selects, drags and opens a task by its id.
- */
-/**
  * The heading of a group of tasks without a project (inbox-drop-unplaces D3): "Inbox"
  * when every one is an Inbox task, else "No project", since a dated, parked or
  * completed task without a project is not in the Inbox.
@@ -584,6 +578,12 @@ export function noProjectHeading(tasks: readonly Task[], parentOf?: InboxParentO
   return tasks.length && tasks.every((task) => isInboxTask(task, parentOf)) ? t('Inbox') : t('No project')
 }
 
+/**
+ * Split sorted tasks into headed groups; headings come in a fixed, meaningful order.
+ * `once` (a project or label page, list-display-options D3): a task with several
+ * labels is listed once, under the first of them in label order, since a list page
+ * selects, drags and opens a task by its id.
+ */
 export function groupTasks(tasks: Task[], groupBy: GroupBy, ctx: Pick<FilterContext, 'today' | 'labels' | 'projects'>, once = false): ViewGroup[] {
   const buckets = new Map<string, Task[]>()
   const put = (key: string, task: Task) => {

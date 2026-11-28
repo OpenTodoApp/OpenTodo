@@ -164,7 +164,8 @@ function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], boa
     const projectOf = (key: string) => {
       const g = latest.current.groups.find((x) => x.key === key)
       if (g?.project) return { id: g.project, name: g.heading ?? t('Project') }
-      return g && (g.key === 'inbox' || g.key.endsWith(':inbox')) ? { id: null, name: t('Inbox') } : null
+      // The group's own heading, as Today's does: a drop there keeps the date (inbox-drop-unplaces).
+      return g && (g.key === 'inbox' || g.key.endsWith(':inbox')) ? { id: null, name: g.heading ?? t('No project') } : null
     }
     return {
       projectOf,

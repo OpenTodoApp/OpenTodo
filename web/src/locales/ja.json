@@ -7935,7 +7935,7 @@
   "Up next": "次の予定",
   "Next seven days": "今後7日間",
   "in {time}": "{time}後",
-  "{n, plural, one {“{title}” repeats, so it stays scheduled} other {# repeating tasks stay scheduled}}": "{n, plural, other {「{title}」は繰り返しのため予定はそのままです}}",
-  "{n, plural, one {Moved to {target}; “{title}” repeats, so it stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}": "{n, plural, other {{target} へ移動しました。「{title}」は繰り返しのため予定はそのままです}}",
-  "{changes}; {r, plural, one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{changes}。{r, plural, other {繰り返しタスク #件は予定がそのままです}}"
+  "{changes}; {r, plural, one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{changes}。{r, plural, other {繰り返しタスク #件は予定がそのままです}}",
+  "{n, plural, =1 {“{title}” repeats, so it stays scheduled} one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{n, plural, =1 {「{title}」は繰り返しのため予定はそのままです} other {繰り返しタスク #件は予定がそのままです}}",
+  "{n, plural, =1 {Moved to {target}; “{title}” repeats, so it stays scheduled} one {Moved to {target}; # repeating task stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}": "{n, plural, =1 {{target} へ移動しました。「{title}」は繰り返しのため予定はそのままです} other {{target} へ移動しました。繰り返しタスク #件は予定がそのままです}}"
 }

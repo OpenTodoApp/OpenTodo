@@ -228,10 +228,10 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
       },
     }
   }, [host])
-  // Grouped by Project in the List layout, a drop may move a task to another project or nest it (view-project-drops).
+  // Grouped by Project in the List layout, a drop may move a task to another project or nest it (view-project-drops); the no-project group's toast names its heading.
   const memberships = useMembershipMap()
   const projectGroups = useMemo<ProjectGroups | null>(() => (opts.groupBy !== 'project' || display.layout !== 'list' ? null : {
-    projectOf: (k) => (k === 'inbox' ? { id: null, name: t('Inbox') } : projectMap.has(k) ? { id: k, name: projectMap.get(k)!.name } : null),
+    projectOf: (k) => (k === 'inbox' ? { id: null, name: latestRows.current.groups.find((g) => g.key === 'inbox')?.heading || t('No project') } : projectMap.has(k) ? { id: k, name: projectMap.get(k)!.name } : null),
     canEdit: (id) => canEditTasks(roleOf(id, memberships)),
     canNest: (from, to) => scopeOf(from, memberships) === scopeOf(to, memberships),
     nest,

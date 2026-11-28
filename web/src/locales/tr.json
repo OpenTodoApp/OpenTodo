@@ -7935,7 +7935,7 @@
   "Up next": "Sıradaki",
   "Next seven days": "Önümüzdeki yedi gün",
   "in {time}": "{time} sonra",
-  "{n, plural, one {“{title}” repeats, so it stays scheduled} other {# repeating tasks stay scheduled}}": "{n, plural, one {“{title}” tekrarlandığı için planlı kalıyor} other {# tekrarlanan görev planlı kalıyor}}",
-  "{n, plural, one {Moved to {target}; “{title}” repeats, so it stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}": "{n, plural, one {{target} hedefine taşındı; “{title}” tekrarlandığı için planlı kalıyor} other {{target} hedefine taşındı; # tekrarlanan görev planlı kalıyor}}",
-  "{changes}; {r, plural, one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{changes}; {r, plural, one {# tekrarlanan görev planlı kalıyor} other {# tekrarlanan görev planlı kalıyor}}"
+  "{changes}; {r, plural, one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{changes}; {r, plural, one {# tekrarlanan görev planlı kalıyor} other {# tekrarlanan görev planlı kalıyor}}",
+  "{n, plural, =1 {“{title}” repeats, so it stays scheduled} one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}": "{n, plural, =1 {“{title}” tekrarlandığı için planlı kalıyor} one {# tekrarlanan görev planlı kalıyor} other {# tekrarlanan görev planlı kalıyor}}",
+  "{n, plural, =1 {Moved to {target}; “{title}” repeats, so it stays scheduled} one {Moved to {target}; # repeating task stays scheduled} other {Moved to {target}; # repeating tasks stay scheduled}}": "{n, plural, =1 {{target} hedefine taşındı; “{title}” tekrarlandığı için planlı kalıyor} one {{target} hedefine taşındı; # tekrarlanan görev planlı kalıyor} other {{target} hedefine taşındı; # tekrarlanan görev planlı kalıyor}}"
 }

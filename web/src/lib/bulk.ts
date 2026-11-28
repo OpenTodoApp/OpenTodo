@@ -119,23 +119,28 @@ export type MoveTarget = { projectId: string | null; sectionId?: string | null; 
 /**
  * The fields that place a task in time, cleared (inbox-drop-unplaces D1): the do-on
  * date, the start, the time sector, the evening flag and the part of the day. An
- * unscheduled task gets nothing. A repeating task keeps its do-on date, with its
- * evening and part of the day: clearing the date would end the series (D2).
+ * unscheduled task gets nothing. A repeating task keeps its whole schedule: clearing
+ * its date would end the series, and it only loses its project (D2).
  */
 export function unschedulePatch(task: Pick<Task, 'due' | 'start' | 'sector' | 'evening' | 'day_part' | 'recurrence'>): Partial<Task> {
   const patch: Partial<Task> = {}
-  if (!isScheduled(task)) return patch
+  if (!isScheduled(task) || task.recurrence) return patch
+  if (task.due) patch.due = null
   if (task.start) patch.start = null
   if (task.sector) patch.sector = ''
-  if (task.recurrence && task.due) return patch
-  if (task.due) patch.due = null
   if (task.evening) patch.evening = false
   if (task.day_part) patch.day_part = null
   return patch
 }
 
 /** Whether a move to the Inbox leaves this task scheduled because it repeats (inbox-drop-unplaces D2). */
-export const staysScheduled = (task: Pick<Task, 'due' | 'recurrence'>): boolean => !!task.recurrence && !!task.due
+export const staysScheduled = (task: Pick<Task, 'due' | 'start' | 'sector' | 'recurrence'>): boolean => !!task.recurrence && isScheduled(task)
+
+/** What a move to the Inbox that wrote nothing says about the repeating tasks it left scheduled (inbox-drop-unplaces D2). */
+export function staysScheduledLabel(tasks: readonly Pick<Task, 'title'>[]): string {
+  const n = tasks.length
+  return n ? t('{n, plural, =1 {“{title}” repeats, so it stays scheduled} one {# repeating task stays scheduled} other {# repeating tasks stay scheduled}}', { n, title: tasks[0].title }) : ''
+}
 
 /** The ticked tasks a move to the Inbox leaves scheduled because they repeat, counted once each (not under a ticked parent). */
 export function repeatingStays(tasks: readonly Task[], all: Task[]): Task[] {
@@ -294,8 +299,8 @@ export async function applyGroupDue(ids: readonly string[], pick: Exclude<DuePic
 export interface ReviewPlan {
   items: ProposedChange[]
   resolve: (checkedTaskIds: readonly string[]) => Promise<ProposedChange[]>
-  /** How many tasks stay scheduled because they repeat, for the checked ids (a move to the Inbox, inbox-drop-unplaces D2). */
-  repeating?: (checkedTaskIds: readonly string[]) => number
+  /** The tasks that stay scheduled because they repeat, for the checked ids (a move to the Inbox, inbox-drop-unplaces D2). */
+  repeating?: (checkedTaskIds: readonly string[]) => Task[]
 }
 
 export async function reviewMove(ids: readonly string[], target: MoveTarget): Promise<ReviewPlan> {
@@ -311,12 +316,12 @@ export async function reviewMove(ids: readonly string[], target: MoveTarget): Pr
     return { entity: 'task', entityId: task.id, patch, base: Object.fromEntries(Object.keys(patch).map((f) => [f, (task as unknown as Record<string, unknown>)[f] ?? null])), ...(shared ? { shared } : {}) }
   })
   // A repeating task stays scheduled whether its move is checked or it had nothing to review.
-  const stays = target.inbox && target.projectId === null ? repeatingStays(tasks, all).map((task) => task.id) : []
+  const stays = target.inbox && target.projectId === null ? repeatingStays(tasks, all) : []
   const reviewed = new Set(items.map((i) => i.entityId))
   return {
     items,
     resolve: (checked) => toProposed(mergeChanges(groups.filter((g) => checked.includes(g.task.id)).flatMap((g) => g.changes)), memberships),
-    ...(stays.length ? { repeating: (checked: readonly string[]) => stays.filter((id) => !reviewed.has(id) || checked.includes(id)).length } : {}),
+    ...(stays.length ? { repeating: (checked: readonly string[]) => stays.filter((task) => !reviewed.has(task.id) || checked.includes(task.id)) } : {}),
   }
 }
 
