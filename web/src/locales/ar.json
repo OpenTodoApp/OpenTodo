@@ -1,4 +1,8 @@
 {
+  "Priority circles": "دوائر الأولوية",
+  "Filled": "مع تعبئة",
+  "Outline only": "حدود فقط",
+  "Choose how P1 and P2 look in task lists and details.": "اختر طريقة عرض P1 وP2 في قوائم المهام وتفاصيلها.",
   "\"after completion\" only applies to day, week, month and year intervals": "\"بعد الإكمال\" ينطبق فقط على الفترات باليوم والأسبوع والشهر والسنة",
   "(10+ characters)": "(10 أحرف أو أكثر)",
   "(added this turn)": "(أُضيف في هذه الجولة)",

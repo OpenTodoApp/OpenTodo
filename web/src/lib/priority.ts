@@ -13,6 +13,18 @@ import { t } from './i18n'
 import { resettable } from './moduleState'
 import type { UserPrefs } from './types'
 
+/**
+ * The priority ring of an open task: coloured for P1 to P3, neutral for P4.
+ * In Filled mode P1 and P2 also fill the circle, P1 more than P2 (OpenSpec change priority-ring-fill), so the
+ * levels differ in lightness and not by hue alone: red and orange look alike to many people.
+ */
+export const PRIORITY_RING: Record<number, string> = {
+  1: 'border-p1 filled-priority:bg-p1/55',
+  2: 'border-p2 filled-priority:bg-p2/25',
+  3: 'border-p3',
+  4: 'border-input',
+}
+
 /** The longest name, in characters: it has to fit a chip and a menu row at 360 px. */
 export const PRIORITY_NAME_MAX = 24
 

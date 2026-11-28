@@ -907,6 +907,8 @@ var Schema = map[string]map[string]Field{
 		// with an ellipsis; clients read an empty or unknown value as off and
 		// keep the stored value. Settings, never content.
 		"full_titles": {Kind: kString, Default: `""`},
+		// Priority circles (#2170): only "outline" opts out of the default fills.
+		"priority_circle_style": {Kind: kString, Default: `""`},
 		// Deadlines as dates (OpenSpec change deadline-dates, design D1): "on" makes
 		// task rows show a deadline as its date ("Nov 28") instead of the countdown
 		// ("5d"), in the same tone; clients read an empty or unknown value as off and

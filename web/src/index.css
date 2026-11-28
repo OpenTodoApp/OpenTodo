@@ -45,6 +45,7 @@
    a field's `:focus` ring; its border still shows the focus. */
 @custom-variant focus-visible (&:where(:not([data-tap])):focus-visible);
 @custom-variant focus-ring (&:where(:not([data-tap])):focus);
+@custom-variant filled-priority (&:where(:root:not([data-priority-circles-outline]) *));
 
 @theme inline {
   /* A theme may set --ot-font (theme-engine D1: a system, serif, monospace or installed

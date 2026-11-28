@@ -4,6 +4,7 @@
 // comes in as props, so the screen (fed by the hooks the desktop page runs on) and
 // the stories draw the same thing.
 import type { ReactNode } from 'react'
+import { PRIORITY_RING } from '../../lib/priority'
 import { t } from '../../lib/i18n'
 import { Icon, IconButton } from '../../ui'
 import { FactCard, FactChips, FactRow, type FactAnchor, type FactModel } from '../components/FactRow'
@@ -46,8 +47,6 @@ export interface PhoneTaskViewProps {
   onFact: (id: string) => void
 }
 
-const RING: Record<number, string> = { 1: 'border-p1', 2: 'border-p2', 3: 'border-p3', 4: 'border-input' }
-
 export function PhoneTaskView(p: PhoneTaskViewProps) {
   const stepper = !!p.position
   return (
@@ -71,7 +70,7 @@ export function PhoneTaskView(p: PhoneTaskViewProps) {
         <div className="flex items-start gap-1">
           <button type="button" aria-pressed={p.done} disabled={p.readOnly} aria-label={p.done ? t('Reopen task') : t('Complete task')} onClick={p.onToggle} data-phone-check
             className="-ms-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-control focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-focus">
-            <span aria-hidden className={`flex h-7 w-7 items-center justify-center rounded-full border-2 ${p.done ? 'border-transparent bg-faint text-on-accent' : RING[p.priority]}`}>
+            <span aria-hidden className={`flex h-7 w-7 items-center justify-center rounded-full border-2 ${p.done ? 'border-transparent bg-faint text-on-accent' : PRIORITY_RING[p.priority]}`}>
               {p.done && <Icon name="check" size="sm" />}
             </span>
           </button>

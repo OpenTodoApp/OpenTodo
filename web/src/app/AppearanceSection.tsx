@@ -39,6 +39,7 @@ import { readTaskOpen, setTaskOpen, type TaskOpenPref } from '../lib/userPrefs'
 import { readRowClick, ROW_CLICK_LABEL, ROW_CLICK_PREFS, setRowClick, useServerRowClick, type RowClickMode, type RowClickPref } from '../lib/rowClickPref'
 import { accountRowLayout, ROW_LAYOUTS, setAccountRowLayout, type RowLayout } from '../lib/rowLayout'
 import { ROW_LAYOUT_LABEL } from './views/DisplayPanel'
+import { PRIORITY_CIRCLE_STYLES, readPriorityCircleStyle, setPriorityCircleStyle, type PriorityCircleStyle } from '../lib/priorityCircleStyle'
 import { readThemeChoices } from '../lib/theme/choice'
 import { useInstanceThemes } from '../lib/theme/choice'
 import { knownThemes, useCatalogue, type ThemeSettingsProps } from './themeCatalogue'
@@ -50,6 +51,7 @@ import { inlineKey } from '../lib/direction'
 const MODE_LABEL = translatedMap<ThemeModePref>({ system: msg('System'), light: msg('Light'), dark: msg('Dark') })
 const DENSITY_LABEL = translatedMap<Density>({ comfortable: msg('Comfortable'), compact: msg('Compact') })
 const TEXT_SIZE_LABEL = translatedMap<TextSize>({ default: msg('Default'), large: msg('Large'), larger: msg('Larger'), largest: msg('Largest') })
+const PRIORITY_CIRCLE_LABEL = translatedMap<PriorityCircleStyle>({ filled: msg('Filled'), outline: msg('Outline only') })
 const TASK_OPEN: readonly TaskOpenPref[] = ['page', 'panel']
 const TASK_OPEN_LABEL = translatedMap<TaskOpenPref>({ page: msg('As a page'), panel: msg('In a side panel') })
 
@@ -69,6 +71,7 @@ export interface AppearanceViewProps {
   onDensity?: (d: Density) => void
   /** The account's task row layout (row-layouts D4): every list without its own choice. */
   rows?: { value: RowLayout; onChange: (r: RowLayout) => void }
+  priorityCircles?: { value: PriorityCircleStyle; onChange: (style: PriorityCircleStyle) => void }
   /** Full task titles (full-task-titles D1): wrap titles instead of cutting them. */
   titles?: { on: boolean; onChange: (on: boolean) => void }
   /** Deadlines as dates (deadline-dates D1): the date in rows instead of the countdown. */
@@ -134,7 +137,7 @@ function TilePreview() {
 
 const TILE = 'flex w-28 shrink-0 snap-start flex-col gap-2 rounded-card border bg-surface p-2 text-start outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-auto'
 
-export function AppearanceView({ value, onMode, onAccent, custom, onDensity, rows, titles, deadlineDates, haptics, completionSound, zoom, textSize, themes }: AppearanceViewProps) {
+export function AppearanceView({ value, onMode, onAccent, custom, onDensity, rows, priorityCircles, titles, deadlineDates, haptics, completionSound, zoom, textSize, themes }: AppearanceViewProps) {
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([])
   const [picking, setPicking] = useState(false)
   const customRef = useRef<HTMLButtonElement | null>(null)
@@ -207,6 +210,10 @@ export function AppearanceView({ value, onMode, onAccent, custom, onDensity, row
       {rows && (
         <SettingRow id="appearance-rows" {...rowCopy('appearance', 'rows')}
           control={<Segmented label={t('Task rows')} items={ROW_LAYOUTS} labels={ROW_LAYOUT_LABEL} value={rows.value} onChange={rows.onChange} testId="appearance-rows" />} />
+      )}
+      {priorityCircles && (
+        <SettingRow id="appearance-priority-circles" {...rowCopy('appearance', 'priorityCircles')}
+          control={<Segmented label={t('Priority circles')} items={PRIORITY_CIRCLE_STYLES} labels={PRIORITY_CIRCLE_LABEL} value={priorityCircles.value} onChange={priorityCircles.onChange} testId="appearance-priority-circles" />} />
       )}
       {titles && (
         <SettingRow id="appearance-titles" {...rowCopy('appearance', 'titles')} htmlFor="appearance-titles-switch"
@@ -371,6 +378,7 @@ export function AppearanceSection({ author = '' }: { author?: string }) {
     custom={{ values, onPick: (hex) => act(setCustomAccent(hex)) }} themes={themes}
     onDensity={(d) => act(setAppearance('density', d))}
     rows={{ value: accountRowLayout(row), onChange: (r) => act(setAccountRowLayout(r)) }}
+    priorityCircles={{ value: readPriorityCircleStyle(row), onChange: (style) => act(setPriorityCircleStyle(style)) }}
     titles={{ on: fullTitlesOn(row), onChange: (on) => act(setFullTitles(on)) }}
     deadlineDates={{ on: deadlineDatesOn(row), onChange: (on) => act(setDeadlineDates(on)) }}
     haptics={canVibrate() ? { on: hapticsPrefOn(row), onChange: (on) => act(setHapticsPref(on)) } : undefined}
