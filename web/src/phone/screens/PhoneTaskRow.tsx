@@ -19,7 +19,7 @@ import { openTaskFromList } from '../transition'
 import { TaskDateSheet } from './TaskDateSheet'
 
 export function PhoneTaskRow({ task, selected = false, contextual, depth = 0, project, showProject = true, progress, implied, hasChildren, collapsed, readOnly = false, swipe = false, selectMode = false, ticked = false, dragging = false,
-  dropIndicator, dropDepth, dropNote, dropKey, inline, treeItem, motion, onToggle, onTick, onToggleCollapse, onPointerDown, onRowMenu, onContextMenu }: TaskRowProps) {
+  dropIndicator, dropDepth, dropNote, dropKey, inline, treeItem, motion, onToggle, onTick, onToggleCollapse, onPointerDown, onRowMenu, onContextMenu, onEditTitle }: TaskRowProps) {
   const today = useToday()
   const zone = useViewerZone()
   const dateTime = useDateTimeFormat().resolved
@@ -27,7 +27,7 @@ export function PhoneTaskRow({ task, selected = false, contextual, depth = 0, pr
   const schedule = useCallback(() => setDating(true), [])
   const departing = motion === 'leave'
   const swipes = swipe && !readOnly && !inline && !departing
-  const swiping = useRowSwipe({ task, enabled: swipes, onComplete: onToggle, onSchedule: schedule })
+  const swiping = useRowSwipe({ task, enabled: swipes, onComplete: onToggle, onEditTitle, onSchedule: schedule })
   // The tick shows with the tap, before the write has come back through the list, as the desktop row's does
   // (a completion draws only its own row; found by the phone profile of the time benchmark).
   const checked = usePendingDone(task) || departing

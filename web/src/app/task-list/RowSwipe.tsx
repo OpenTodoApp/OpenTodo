@@ -94,15 +94,21 @@ export function useRowSwipe({ task, enabled, onComplete, onEditTitle, onSchedule
     })
   }, [canEdit, enabled, onComplete, onEditTitle, onSchedule, task.id])
   const doneTask = !!task.completed_at
+  const editOnLeft = dir === 'left' && canEdit
+  const edgeTone = dir === 'right' ? 'inset-s-0 bg-success-soft text-on-success-soft'
+    : editOnLeft ? 'inset-e-0 bg-info-soft text-on-info-soft data-[full-swipe]:bg-accent-soft data-[full-swipe]:text-on-accent-soft'
+      : 'inset-e-0 bg-accent-soft text-on-accent-soft'
+  const fullOnly = editOnLeft ? 'hidden group-data-[full-swipe]/edge:block' : undefined
   const layers = dir && (
     <span aria-hidden="true" {...{ [EDGE]: dir }}
       // The icon over its word, so both fit from the reveal distance (64 px) on.
-      className={`group/edge pointer-events-none absolute inset-y-0 flex w-0 flex-col items-center justify-center gap-0.5 overflow-hidden px-1 text-hint font-medium ${dir === 'right' ? 'inset-s-0 bg-success-soft text-on-success-soft' : 'inset-e-0 bg-accent-soft text-on-accent-soft'}`}>
-      {dir === 'left' && canEdit && <Icon name="pencil" size="sm" className="group-data-[full-swipe]/edge:hidden" />}
+      className={`group/edge pointer-events-none absolute inset-y-0 flex w-0 flex-col items-center justify-center gap-0.5 overflow-hidden px-1 text-hint font-medium ${edgeTone}`}>
+      {editOnLeft && <Icon name="pencil" size="sm" className="group-data-[full-swipe]/edge:hidden" />}
       <Icon name={dir === 'right' ? (doneTask ? 'rotate-ccw' : 'check') : 'calendar-days'} size="sm"
-        className={dir === 'left' && canEdit ? 'hidden group-data-[full-swipe]/edge:block' : undefined} />
-      <span className={`whitespace-nowrap opacity-0 transition-opacity duration-(--duration-ui) ${dir === 'left' && canEdit ? 'hidden group-data-[full-swipe]/edge:block' : ''} group-data-revealed/edge:opacity-100`}>
-        {dir === 'right' ? (doneTask ? t('Reopen') : t('Complete')) : t('Schedule')}
+        className={fullOnly} />
+      <span className="whitespace-nowrap opacity-0 transition-opacity duration-(--duration-ui) group-data-revealed/edge:opacity-100">
+        {editOnLeft && <span className="group-data-[full-swipe]/edge:hidden">{t('Edit')}</span>}
+        <span className={fullOnly}>{dir === 'right' ? (doneTask ? t('Reopen') : t('Complete')) : t('Schedule')}</span>
       </span>
     </span>
   )

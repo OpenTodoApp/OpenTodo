@@ -1,0 +1,1 @@
+- **Short swipes edit task titles on phones again.** Swipe left until **Edit** appears and lift your finger to edit the title in place. A longer swipe switches to **Schedule** and opens the date sheet.
