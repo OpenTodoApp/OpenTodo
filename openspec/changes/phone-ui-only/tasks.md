@@ -16,7 +16,7 @@
 
 - [x] 3.1 `scripts/e2e-layout.mjs` without `PHONE_UI`; `scripts/perf/run.mjs` and `run.sh` without `PERF_PHONE_UI` and the second phone run; `.github/workflows/ci.yml` without "Layout check with the earlier phone screens" (design D5). Verify: `ENGINES=chromium WIDTHS=360,768 node scripts/e2e-layout.mjs` prints `LAYOUT OK`; `node scripts/e2e-phone.mjs` passes; `node --test scripts/repo-checks.test.mjs scripts/perf/budgets.test.mjs`.
 - [ ] 3.2 The time benchmark's phone profile without the second run. Verify: `scripts/perf/run.sh` in the nightly workflow. Not run here: it builds the 10,000-task account and takes the nightly's machine; the edit removes one invocation and one report path.
-- [ ] 3.3 WebKit and the full CI run (every layout leg, the visual job). Verify: `gh workflow run ci.yml --ref phone-ui-only` passes. Not run: the branch is not pushed.
+- [x] 3.3 WebKit and the full CI run (every layout leg, the visual job). Verify: `gh workflow run ci.yml --ref phone-ui-only` passes. Done: run 46053788943, every leg, after the layout check's stall timer counted per step (#2171).
 
 ## 4. The specs of the open changes
 

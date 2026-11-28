@@ -3,7 +3,7 @@ title: Phone screens
 summary: On a screen narrower than 768 px OpenTodo shows screens made for a phone; what they are and what they do.
 audience: user
 section: Guides
-specs: []
+specs: [phone-ui]
 screens: []
 order: 153
 ---

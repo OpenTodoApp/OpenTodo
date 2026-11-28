@@ -102,6 +102,10 @@ Open:
 - Back-to-close for overlays stays off on WebKit (`web/src/ui/overlay/useBackToClose.ts:20`).
 - Proposed, not on main: `tablet-shells` (hardware keyboards, window resizing) and `focus-live-activity`.
 
+A modern look (2026-11-27, `phone-modern-look`): the owner asked for the phone UI to look like a modern phone app, not only to work like one. The tab bar floats with the add button beside it, Today opens with tiles for done, up next and late, Upcoming with the week ahead, and the lists have a light behind their titles and rounder cards. Checked by the full CI run (every layout leg in Chromium and WebKit, French, German, safe area, end-to-end, accessibility, visual).
+
+Owner sign-off (2026-11-28): after testing the phone UI on a phone, the owner approved it ("Tutto bene, la approvo") and asked for 1.11.0 to be released with it. The device and system were not stated, so the device check below is not recorded as done for a named phone.
+
 ## Device check, after each step
 
 Fresh install, then: a reminder set on another device fires with the app closed, after a force quit and after a reboot; Done from the notification completes the task; a download saves; Back and the back swipe go back; cold start shows no blank screen, online and offline.
