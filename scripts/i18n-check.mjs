@@ -136,6 +136,31 @@ export function checkCatalog(lang, catalog, messages, fmt) {
   return problems
 }
 
+/** A Latin letter a catalog uses fewer times than this is foreign to its language ("ß" in Dutch). */
+export const FOREIGN_BELOW = 20
+
+/**
+ * Translations copied from another language (#2154: nl "Finish review" was the German
+ * "Rückblick abschließen"): a translation equal to another catalog's, which uses a Latin
+ * letter beyond ASCII that its own catalog hardly uses. `catalogs` maps codes to catalogs.
+ */
+export function copiedProblems(catalogs) {
+  const problems = []
+  const letters = (text) => new Set((text.toLowerCase().match(/[^\x00-\x7f]/gu) ?? []).filter((c) => /\p{Script=Latin}/u.test(c)))
+  for (const [lang, catalog] of Object.entries(catalogs)) {
+    const uses = {}
+    for (const v of Object.values(catalog)) if (typeof v === 'string') for (const c of v.toLowerCase()) uses[c] = (uses[c] ?? 0) + 1
+    for (const [id, value] of Object.entries(catalog)) {
+      if (typeof value !== 'string') continue
+      const foreign = [...letters(value)].filter((c) => (uses[c] ?? 0) < FOREIGN_BELOW)
+      if (!foreign.length) continue
+      const from = Object.keys(catalogs).find((other) => other !== lang && catalogs[other][id] === value)
+      if (from) problems.push(`${lang}: "${id}" is the ${from} translation ("${value}"), copied from the wrong catalog`)
+    }
+  }
+  return problems
+}
+
 /** Every problem across the catalogs, plus summary lines for work-in-progress ones. */
 export async function check(root = repo) {
   const fmt = await loadFormat(root)
@@ -163,9 +188,9 @@ export async function check(root = repo) {
   const guide = maintainedInGuide(root)
   const summary = []
   const dir = join(root, 'web/src/locales')
-  for (const file of readdirSync(dir).filter((f) => /^[a-z]{2,3}\.json$/.test(f))) {
-    const lang = file.slice(0, -5)
-    const catalog = JSON.parse(readFileSync(join(dir, file), 'utf8'))
+  const catalogs = Object.fromEntries(readdirSync(dir).filter((f) => /^[a-z]{2,3}\.json$/.test(f)).map((f) => [f.slice(0, -5), JSON.parse(readFileSync(join(dir, f), 'utf8'))]))
+  problems.push(...copiedProblems(Object.fromEntries(Object.entries(catalogs).filter(([lang]) => shipped.includes(lang)))))
+  for (const [lang, catalog] of Object.entries(catalogs)) {
     const found = checkCatalog(lang, catalog, messages, fmt)
     if (community.includes(lang)) {
       // Missing messages are shown in English; every other problem still fails.
